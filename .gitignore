@@ -1,0 +1,24 @@
+# Rust
+target/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+*.egg-info/
+dist/
+
+# Generated stubs (regenerated at build time)
+rust/src/gen/
+python/src/gen/
+
+# OS
+.DS_Store
+*.swp
+*~
+
+# IDE
+.idea/
+.vscode/
+*.iml
