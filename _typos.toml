@@ -1,0 +1,13 @@
+[default.extend-words]
+# Add project-specific words that typos should not flag
+agileplus = "agileplus"
+
+[files]
+extend-exclude = [
+    "*.lock",
+    "target/",
+    "*.pyc",
+    "__pycache__/",
+    "python/src/gen/",
+    "rust/src/gen/",
+]
