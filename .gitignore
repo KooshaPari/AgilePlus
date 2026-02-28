@@ -1,0 +1,20 @@
+# Added by Spec Kitty CLI (auto-managed)
+references
+.claude/
+.codex/
+.opencode/
+.windsurf/
+.gemini/
+.cursor/
+.qwen/
+.kilocode/
+.augment/
+.roo/
+.amazonq/
+.github/copilot/
+.kittify/.dashboard
+
+# VitePress docs
+node_modules/
+docs/.vitepress/cache/
+docs/.vitepress/dist/
