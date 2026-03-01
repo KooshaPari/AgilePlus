@@ -1,56 +1,37 @@
 package version
 
-import (
-	"testing"
-
-	"github.com/KooshaPari/pheno-cli/internal/adapters"
-)
+import "testing"
 
 func TestCalculate(t *testing.T) {
 	tests := []struct {
 		name      string
 		base      string
-		channel   adapters.Channel
+		channel   string
 		increment int
-		registry  adapters.Registry
+		registry  string
 		want      string
 		wantErr   bool
 	}{
-		// NPM
-		{"npm alpha", "0.2.0", adapters.ChannelAlpha, 1, adapters.RegistryNPM, "0.2.0-alpha.1", false},
-		{"npm beta", "0.2.0", adapters.ChannelBeta, 2, adapters.RegistryNPM, "0.2.0-beta.2", false},
-		{"npm rc", "1.0.0", adapters.ChannelRC, 1, adapters.RegistryNPM, "1.0.0-rc.1", false},
-		{"npm canary", "0.2.0", adapters.ChannelCanary, 3, adapters.RegistryNPM, "0.2.0-canary.3", false},
-		{"npm prod", "1.0.0", adapters.ChannelProd, 0, adapters.RegistryNPM, "1.0.0", false},
-
-		// PyPI
-		{"pypi alpha", "0.2.0", adapters.ChannelAlpha, 1, adapters.RegistryPyPI, "0.2.0a1", false},
-		{"pypi beta", "0.2.0", adapters.ChannelBeta, 1, adapters.RegistryPyPI, "0.2.0b1", false},
-		{"pypi rc", "1.0.0", adapters.ChannelRC, 2, adapters.RegistryPyPI, "1.0.0rc2", false},
-		{"pypi canary", "0.2.0", adapters.ChannelCanary, 3, adapters.RegistryPyPI, "0.2.0.dev3", false},
-		{"pypi prod", "1.0.0", adapters.ChannelProd, 0, adapters.RegistryPyPI, "1.0.0", false},
-
-		// Crates.io
-		{"crates alpha", "0.2.0", adapters.ChannelAlpha, 1, adapters.RegistryCrates, "0.2.0-alpha.1", false},
-		{"crates prod", "1.0.0", adapters.ChannelProd, 0, adapters.RegistryCrates, "1.0.0", false},
-
-		// Go
-		{"go alpha", "0.2.0", adapters.ChannelAlpha, 1, adapters.RegistryGo, "v0.2.0-alpha.1", false},
-		{"go prod", "1.0.0", adapters.ChannelProd, 0, adapters.RegistryGo, "v1.0.0", false},
-
-		// Hex
-		{"hex beta", "0.2.0", adapters.ChannelBeta, 1, adapters.RegistryHex, "0.2.0-beta.1", false},
-		{"hex prod", "1.0.0", adapters.ChannelProd, 0, adapters.RegistryHex, "1.0.0", false},
-
-		// Zig
-		{"zig alpha", "0.2.0", adapters.ChannelAlpha, 1, adapters.RegistryZig, "v0.2.0-alpha.1", false},
-		{"zig prod", "1.0.0", adapters.ChannelProd, 0, adapters.RegistryZig, "v1.0.0", false},
-
-		// Mojo — not supported
-		{"mojo alpha", "0.2.0", adapters.ChannelAlpha, 1, adapters.RegistryMojo, "", true},
-
-		// Unknown registry
-		{"unknown registry", "1.0.0", adapters.ChannelAlpha, 1, adapters.Registry("nope"), "", true},
+		{"npm alpha", "0.2.0", "alpha", 1, "npm", "0.2.0-alpha.1", false},
+		{"npm beta", "0.2.0", "beta", 2, "npm", "0.2.0-beta.2", false},
+		{"npm rc", "1.0.0", "rc", 1, "npm", "1.0.0-rc.1", false},
+		{"npm canary", "0.2.0", "canary", 3, "npm", "0.2.0-canary.3", false},
+		{"npm prod", "1.0.0", "prod", 0, "npm", "1.0.0", false},
+		{"pypi alpha", "0.2.0", "alpha", 1, "pypi", "0.2.0a1", false},
+		{"pypi beta", "0.2.0", "beta", 1, "pypi", "0.2.0b1", false},
+		{"pypi rc", "1.0.0", "rc", 2, "pypi", "1.0.0rc2", false},
+		{"pypi canary", "0.2.0", "canary", 3, "pypi", "0.2.0.dev3", false},
+		{"pypi prod", "1.0.0", "prod", 0, "pypi", "1.0.0", false},
+		{"crates alpha", "0.2.0", "alpha", 1, "crates.io", "0.2.0-alpha.1", false},
+		{"crates prod", "1.0.0", "prod", 0, "crates.io", "1.0.0", false},
+		{"go alpha", "0.2.0", "alpha", 1, "go_proxy", "v0.2.0-alpha.1", false},
+		{"go prod", "1.0.0", "prod", 0, "go_proxy", "v1.0.0", false},
+		{"hex beta", "0.2.0", "beta", 1, "hex.pm", "0.2.0-beta.1", false},
+		{"hex prod", "1.0.0", "prod", 0, "hex.pm", "1.0.0", false},
+		{"zig alpha", "0.2.0", "alpha", 1, "zig", "v0.2.0-alpha.1", false},
+		{"zig prod", "1.0.0", "prod", 0, "zig", "v1.0.0", false},
+		{"mojo alpha", "0.2.0", "alpha", 1, "mojo", "", true},
+		{"unknown registry", "1.0.0", "alpha", 1, "nope", "", true},
 	}
 
 	for _, tt := range tests {
@@ -68,17 +49,17 @@ func TestCalculate(t *testing.T) {
 
 func TestDistTag(t *testing.T) {
 	tests := []struct {
-		channel adapters.Channel
+		channel string
 		want    string
 	}{
-		{adapters.ChannelProd, "latest"},
-		{adapters.ChannelAlpha, "alpha"},
-		{adapters.ChannelBeta, "beta"},
-		{adapters.ChannelCanary, "canary"},
-		{adapters.ChannelRC, "rc"},
+		{"prod", "latest"},
+		{"alpha", "alpha"},
+		{"beta", "beta"},
+		{"canary", "canary"},
+		{"rc", "rc"},
 	}
 	for _, tt := range tests {
-		t.Run(string(tt.channel), func(t *testing.T) {
+		t.Run(tt.channel, func(t *testing.T) {
 			if got := DistTag(tt.channel); got != tt.want {
 				t.Errorf("DistTag(%q) = %q, want %q", tt.channel, got, tt.want)
 			}
