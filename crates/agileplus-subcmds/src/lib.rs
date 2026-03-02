@@ -7,7 +7,9 @@
 //! Traceability: FR-048, FR-049 / WP20
 
 pub mod audit;
+pub mod device;
 pub mod registry;
 
 pub use audit::AuditLog;
+pub use device::{DeviceArgs, DeviceSubcommand, run as run_device};
 pub use registry::{SubCommand, SubCommandCategory, SubCommandRegistry};
