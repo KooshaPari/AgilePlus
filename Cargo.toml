@@ -1,0 +1,29 @@
+[workspace]
+resolver = "3"
+members = [
+    "crates/agileplus-domain",
+    "crates/agileplus-cli",
+    "crates/agileplus-api",
+    "crates/agileplus-grpc",
+    "crates/agileplus-sqlite",
+    "crates/agileplus-git",
+    "crates/agileplus-telemetry",
+    "rust",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+rust-version = "1.85"
+
+[workspace.dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+chrono = { version = "0.4", features = ["serde"] }
+sha2 = "0.10"
+tokio = { version = "1", features = ["full"] }
+thiserror = "2"
+anyhow = "1"
+tracing = "0.1"
+tracing-subscriber = "0.3"
