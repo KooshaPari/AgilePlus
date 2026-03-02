@@ -16,6 +16,7 @@ members = [
     "crates/agileplus-graph",
     "crates/agileplus-nats",
     "crates/agileplus-sync",
+    "crates/agileplus-dashboard",
     "rust",
 ]
 
