@@ -1,5 +1,6 @@
 # Rust
 target/
+agileplus-agents/target/
 
 # Python
 __pycache__/
@@ -22,3 +23,5 @@ python/src/gen/
 .idea/
 .vscode/
 *.iml
+# Excluded via sparse-checkout
+kitty-specs/
