@@ -17,6 +17,8 @@ members = [
     "crates/agileplus-nats",
     "crates/agileplus-sync",
     "crates/agileplus-dashboard",
+    "crates/agileplus-sync",
+    "crates/agileplus-p2p",
     "rust",
 ]
 
