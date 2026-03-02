@@ -9,6 +9,7 @@ members = [
     "crates/agileplus-git",
     "crates/agileplus-telemetry",
     "rust",
+    "tests/bdd",
 ]
 
 [workspace.package]
