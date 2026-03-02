@@ -20,6 +20,7 @@ members = [
     "crates/agileplus-sync",
     "crates/agileplus-p2p",
     "crates/agileplus-integration-tests",
+    "crates/agileplus-contract-tests",
     "rust",
 ]
 
