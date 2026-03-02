@@ -21,6 +21,7 @@ members = [
     "crates/agileplus-p2p",
     "crates/agileplus-integration-tests",
     "crates/agileplus-contract-tests",
+    "crates/agileplus-benchmarks",
     "rust",
 ]
 
@@ -41,3 +42,4 @@ anyhow = "1"
 tracing = "0.1"
 tracing-subscriber = "0.3"
 futures-util = "0.3"
+criterion = { version = "0.5", features = ["async_tokio", "html_reports"] }
