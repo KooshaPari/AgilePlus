@@ -52,7 +52,6 @@ func initConfig() {
 var publishCmd *cobra.Command
 var promoteCmd *cobra.Command
 
-
 var configCmd = &cobra.Command{
 	Use:   "config",
 	Short: "Manage CLI configuration",
