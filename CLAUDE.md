@@ -189,8 +189,13 @@ This is intentional and correct - it ensures a single source of truth for projec
 - ✅ **Quality**: Follow secure, tested, documented practices.  
 - 📝 **Git**: Commit cleanly with clear messages.
 ## Child-Agent and Delegation Policy
-- Use child agents for scoped discovery, audits, multi-repo scans, and implementation planning before direct parent-agent edits.
-- Delegate high-context or high-churn tasks to subagents and keep parent-agent writes narrowly focused on integration.
-- Reserve parent-agent direct writes for the final decision layer.
-- Favor clean, auditable handoffs and explicit integration checkpoints.
+- Use child agents liberally for scoped discovery, audits, multi-repo scans, and implementation planning before direct parent-agent edits.
+- Prefer delegating high-context or high-churn tasks to subagents, and keep parent-agent changes focused on integration and finalization.
+- Reserve parent-agent direct writes for the narrowest, final decision layer.
+
+## Child Agent Usage
+- Use child agents liberally for discovery-heavy, migration-heavy, and high-context work.
+- Delegate broad scans, decomposition, and implementation waves to subagents before final parent-agent integration.
+- Keep the parent lane focused on deterministic integration and finalization.
+- Preserve explicit handoffs and cross-agent context in session notes and audits.
 
