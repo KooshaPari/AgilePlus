@@ -45,12 +45,9 @@ impl DashboardStore {
     pub fn seeded() -> Self {
         let (features, work_packages) = crate::seed::seed_dogfood_features();
         let projects = vec![
-            Project::new("agileplus", "AgilePlus", "Spec-driven development platform"),
-            Project::new("speckitty", "SpecKitty", "Spec Kitty CLI and framework"),
+            Project::with_id(1, "agileplus", "AgilePlus", "Spec-driven development platform"),
+            Project::with_id(2, "speckitty", "SpecKitty", "Spec Kitty CLI and framework"),
         ];
-        let mut projects = projects;
-        projects[0].id = 1;
-        projects[1].id = 2;
         Self {
             features,
             work_packages,

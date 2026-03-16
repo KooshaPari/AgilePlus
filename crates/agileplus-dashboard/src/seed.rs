@@ -7,18 +7,33 @@ use agileplus_domain::domain::feature::Feature;
 use agileplus_domain::domain::state_machine::FeatureState;
 use agileplus_domain::domain::work_package::{WorkPackage, WpState};
 
+/// Drive a feature through a sequence of state transitions, panicking on failure.
+fn drive_to_state(feature: &mut Feature, target: FeatureState) {
+    use FeatureState::*;
+    let path: &[FeatureState] = match target {
+        Created => &[],
+        Specified => &[Specified],
+        Researched => &[Specified, Researched],
+        Planned => &[Specified, Researched, Planned],
+        Implementing => &[Specified, Researched, Planned, Implementing],
+        Validated => &[Specified, Researched, Planned, Implementing, Validated],
+        Shipped => &[Specified, Researched, Planned, Implementing, Validated, Shipped],
+        Retrospected => &[Specified, Researched, Planned, Implementing, Validated, Shipped, Retrospected],
+    };
+    for &state in path {
+        feature
+            .transition(state)
+            .expect("seed: state transition failed");
+    }
+}
+
 /// Helper function to create a shipped feature with all state transitions.
 fn make_shipped_feature(id: i64, slug: &str, name: &str, labels: Vec<String>, project_id: Option<i64>) -> Feature {
     let mut f = Feature::new(slug, name, [0u8; 32], Some("main"));
     f.id = id;
     f.labels = labels;
     f.project_id = project_id;
-    let _ = f.transition(FeatureState::Specified);
-    let _ = f.transition(FeatureState::Researched);
-    let _ = f.transition(FeatureState::Planned);
-    let _ = f.transition(FeatureState::Implementing);
-    let _ = f.transition(FeatureState::Validated);
-    let _ = f.transition(FeatureState::Shipped);
+    drive_to_state(&mut f, FeatureState::Shipped);
     f
 }
 
@@ -213,10 +228,7 @@ pub fn seed_dogfood_features() -> (Vec<Feature>, HashMap<i64, Vec<WorkPackage>>)
     f4.labels = vec!["organization".to_string(), "planning".to_string()];
     f4.project_id = Some(1);
     // Transition to Implementing (Created -> Specified -> Researched -> Planned -> Implementing)
-    let _ = f4.transition(FeatureState::Specified);
-    let _ = f4.transition(FeatureState::Researched);
-    let _ = f4.transition(FeatureState::Planned);
-    let _ = f4.transition(FeatureState::Implementing);
+    drive_to_state(&mut f4, FeatureState::Implementing);
     features.push(f4.clone());
 
     // Work packages for feature 4
@@ -453,7 +465,7 @@ pub fn seed_dogfood_features() -> (Vec<Feature>, HashMap<i64, Vec<WorkPackage>>)
         ),
     ];
 
-    let mut wp_id = 15; // continue from last AgilePlus WP id
+    let mut wp_id = work_packages.values().flatten().map(|wp| wp.id).max().unwrap_or(0) + 1;
     for (id, slug, name, labels) in speckitty_specs {
         features.push(make_shipped_feature(id, slug, name, labels, Some(2)));
         let wps = make_shipped_wps(

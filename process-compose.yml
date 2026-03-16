@@ -88,11 +88,11 @@ services:
     environment:
       - PGDATA=.agileplus/postgres-data
       - POSTGRES_USER=agileplus
-      - POSTGRES_PASSWORD=agileplus-dev
+      - POSTGRES_PASSWORD=${PLANE_POSTGRES_PASSWORD:-agileplus-dev}
       - POSTGRES_DB=plane
 
   plane-api:
-    command: sh -c "cd .agileplus/plane && python manage.py runserver 0.0.0.0:8000"
+    command: sh -c "cd .agileplus/plane/apiserver && .venv/bin/python manage.py runserver 0.0.0.0:8000"
     depends_on:
       postgres:
         condition: process_healthy
@@ -108,9 +108,9 @@ services:
       period_seconds: 5
       failure_threshold: 3
     environment:
-      - DATABASE_URL=postgresql://agileplus:agileplus-dev@localhost:5432/plane
+      - DATABASE_URL=postgresql://agileplus:${PLANE_POSTGRES_PASSWORD:-agileplus-dev}@localhost:5432/plane
       - REDIS_URL=redis://localhost:6379
-      - SECRET_KEY=agileplus-dev-secret-key
+      - SECRET_KEY=${PLANE_SECRET_KEY:-agileplus-dev-secret-key}
       - WEB_URL=http://localhost:3100
       - CORS_ALLOWED_ORIGINS=http://localhost:3100,http://localhost:3000
       - PYTHONUNBUFFERED=1
@@ -134,25 +134,25 @@ services:
       - NEXT_PUBLIC_WEB_URL=http://localhost:3100
 
   plane-worker:
-    command: sh -c "cd .agileplus/plane && celery -A plane worker -l info"
+    command: sh -c "cd .agileplus/plane/apiserver && .venv/bin/celery -A plane worker -l info"
     depends_on:
       plane-api:
         condition: process_healthy
     log_location: .agileplus/logs/plane-worker.log
     readiness_probe:
       exec:
-        command: sh -c "celery -A plane inspect active | grep -q plane"
+        command: sh -c "cd .agileplus/plane/apiserver && .venv/bin/celery -A plane inspect ping | grep -q pong"
       initial_delay_seconds: 15
       period_seconds: 10
       failure_threshold: 3
     environment:
-      - DATABASE_URL=postgresql://agileplus:agileplus-dev@localhost:5432/plane
+      - DATABASE_URL=postgresql://agileplus:${PLANE_POSTGRES_PASSWORD:-agileplus-dev}@localhost:5432/plane
       - REDIS_URL=redis://localhost:6379
-      - SECRET_KEY=agileplus-dev-secret-key
+      - SECRET_KEY=${PLANE_SECRET_KEY:-agileplus-dev-secret-key}
       - PYTHONUNBUFFERED=1
 
   plane-beat:
-    command: sh -c "cd .agileplus/plane && celery -A plane beat -l info --pidfile=.agileplus/plane-beat.pid"
+    command: sh -c "cd .agileplus/plane/apiserver && .venv/bin/celery -A plane beat -l info --pidfile=../../plane-beat.pid"
     depends_on:
       plane-api:
         condition: process_healthy
@@ -164,9 +164,9 @@ services:
       period_seconds: 10
       failure_threshold: 3
     environment:
-      - DATABASE_URL=postgresql://agileplus:agileplus-dev@localhost:5432/plane
+      - DATABASE_URL=postgresql://agileplus:${PLANE_POSTGRES_PASSWORD:-agileplus-dev}@localhost:5432/plane
       - REDIS_URL=redis://localhost:6379
-      - SECRET_KEY=agileplus-dev-secret-key
+      - SECRET_KEY=${PLANE_SECRET_KEY:-agileplus-dev-secret-key}
       - PYTHONUNBUFFERED=1
 
   agileplus-api:

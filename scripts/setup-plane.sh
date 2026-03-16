@@ -4,6 +4,7 @@ set -euo pipefail
 # Bootstrap Plane.so Community Edition for local AgilePlus development.
 # This script clones and configures plane.so to run natively via process-compose.
 
+PLANE_REF="${PLANE_REF:-v0.23-dev}"
 PLANE_DIR=".agileplus/plane"
 PLANE_WEB_DIR=".agileplus/plane-web"
 POSTGRES_DIR=".agileplus/postgres-data"
@@ -18,12 +19,13 @@ if [ ! -f "$POSTGRES_DIR/PG_VERSION" ]; then
     echo "Initializing PostgreSQL database..."
     initdb -D "$POSTGRES_DIR" --auth=trust --username=agileplus
     echo "PostgreSQL initialized."
+    createdb -U agileplus plane
 fi
 
 # 3. Clone plane.so API (Django backend) if not present
 if [ ! -d "$PLANE_DIR" ]; then
     echo "Cloning Plane.so API..."
-    git clone --depth=1 https://github.com/makeplane/plane.git "$PLANE_DIR"
+    git clone --depth=1 --branch "$PLANE_REF" https://github.com/makeplane/plane.git "$PLANE_DIR"
     echo "Installing Python dependencies..."
     cd "$PLANE_DIR/apiserver"
     python3 -m venv .venv
@@ -51,15 +53,19 @@ else
     echo "Plane Web already present at $PLANE_WEB_DIR"
 fi
 
-# 5. Create .env for plane API
-cat > "$PLANE_DIR/apiserver/.env" << 'ENVEOF'
+# 5. Create .env for plane API (idempotent)
+ENV_FILE="$PLANE_DIR/apiserver/.env"
+if [ ! -f "$ENV_FILE" ]; then
+    GENERATED_SECRET_KEY=$(openssl rand -hex 32)
+    cat > "$ENV_FILE" << ENVEOF
 DATABASE_URL=postgresql://agileplus:agileplus-dev@localhost:5432/plane
 REDIS_URL=redis://localhost:6379
-SECRET_KEY=agileplus-dev-secret-key-change-in-production
+SECRET_KEY=${GENERATED_SECRET_KEY}
 WEB_URL=http://localhost:3100
 CORS_ALLOWED_ORIGINS=http://localhost:3100,http://localhost:3000
 DEBUG=1
 ENVEOF
+fi
 
 echo ""
 echo "=== Setup Complete ==="

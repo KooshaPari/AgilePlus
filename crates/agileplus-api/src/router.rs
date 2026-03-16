@@ -106,6 +106,9 @@ where
         .merge(public)
         .merge(protected)
         .merge(dashboard)
+        // NOTE: "templates/static" is relative to the process CWD, which must
+        // be the workspace root (where the `templates/` directory lives).
+        // A future improvement could use a compile-time or env-based path.
         .nest_service("/static", ServeDir::new("templates/static"))
         .layer(opentelemetry_tracing_layer())
         .layer(TraceLayer::new_for_http())

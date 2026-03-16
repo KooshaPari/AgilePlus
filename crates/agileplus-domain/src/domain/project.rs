@@ -23,4 +23,11 @@ impl Project {
             updated_at: now,
         }
     }
+
+    /// Create a project with a specific ID pre-assigned.
+    pub fn with_id(id: i64, slug: &str, name: &str, description: &str) -> Self {
+        let mut p = Self::new(slug, name, description);
+        p.id = id;
+        p
+    }
 }
