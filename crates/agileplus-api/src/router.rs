@@ -35,6 +35,7 @@ use axum::Json;
 use axum::routing::get;
 use axum::{Router, middleware};
 use tower_http::cors::CorsLayer;
+use tower_http::services::ServeDir;
 use tower_http::trace::TraceLayer;
 
 use agileplus_domain::credentials::CredentialStore;
@@ -95,9 +96,17 @@ where
         ))
         .with_state(state);
 
+    // Dashboard UI routes (no auth, seeded with dogfood data).
+    let dashboard_state = std::sync::Arc::new(tokio::sync::RwLock::new(
+        agileplus_dashboard::app_state::DashboardStore::seeded(),
+    ));
+    let dashboard = agileplus_dashboard::routes::router(dashboard_state);
+
     Router::new()
         .merge(public)
         .merge(protected)
+        .merge(dashboard)
+        .nest_service("/static", ServeDir::new("templates/static"))
         .layer(opentelemetry_tracing_layer())
         .layer(TraceLayer::new_for_http())
         .layer(CorsLayer::permissive())
