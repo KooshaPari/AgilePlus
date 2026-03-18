@@ -15,7 +15,8 @@
     {% for wp in workpackages %}
       <tr class="border-b border-zinc-700 hover:bg-zinc-700 transition">
         <td class="p-2">
-          <a href="/api/dashboard/wp/{{ wp.id }}"
+          <a href="/api/dashboard/features/{{ feature_id }}"
+             title="Open feature detail"
              class="text-zinc-200 hover:text-white hover:underline">{{ wp.title }}</a>
         </td>
         <td class="p-2">
