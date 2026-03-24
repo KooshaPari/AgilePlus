@@ -1,9 +1,14 @@
-// Feature/work-package state machine — minimal types for WP04 governance/audit.
-// Full implementation deferred to WP03.
+// Feature/work-package state machine -- now backed by phenotype-state-machine crate.
 
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::str::FromStr;
+
+// Re-export shared types for downstream consumers.
+pub use phenotype_state_machine::{
+    StateMachine, StateMachineConfig, StateMachineError, TransitionGuard,
+    TransitionRecord,
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -37,19 +42,6 @@ impl fmt::Display for FeatureState {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct StateTransition {
-    pub from: FeatureState,
-    pub to: FeatureState,
-    pub skipped: Vec<FeatureState>,
-}
-
-impl fmt::Display for StateTransition {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{} -> {}", self.from, self.to)
-    }
-}
-
 impl FromStr for FeatureState {
     type Err = String;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -67,16 +59,9 @@ impl FromStr for FeatureState {
     }
 }
 
-/// Result of a state transition.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TransitionResult {
-    pub transition: StateTransition,
-    pub timestamp: chrono::DateTime<chrono::Utc>,
-}
-
-impl FeatureState {
-    /// Ordered index for determining valid forward transitions.
-    pub fn ordinal(self) -> u8 {
+// Implement the shared State trait so FeatureState works with StateMachine<FeatureState>.
+impl phenotype_state_machine::State for FeatureState {
+    fn ordinal(&self) -> u32 {
         match self {
             Self::Created => 0,
             Self::Specified => 1,
@@ -87,6 +72,49 @@ impl FeatureState {
             Self::Shipped => 6,
             Self::Retrospected => 7,
         }
+    }
+
+    fn all_states() -> Vec<Self> {
+        vec![
+            Self::Created,
+            Self::Specified,
+            Self::Researched,
+            Self::Planned,
+            Self::Implementing,
+            Self::Validated,
+            Self::Shipped,
+            Self::Retrospected,
+        ]
+    }
+}
+
+// --- Backward-compatible local types ---
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StateTransition {
+    pub from: FeatureState,
+    pub to: FeatureState,
+    pub skipped: Vec<FeatureState>,
+}
+
+impl fmt::Display for StateTransition {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{} -> {}", self.from, self.to)
+    }
+}
+
+/// Result of a state transition.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TransitionResult {
+    pub transition: StateTransition,
+    pub timestamp: chrono::DateTime<chrono::Utc>,
+}
+
+impl FeatureState {
+    /// Ordered index for determining valid forward transitions.
+    pub fn ordinal(self) -> u8 {
+        // Delegate to the trait impl, narrowing to u8 for backward compat.
+        <Self as phenotype_state_machine::State>::ordinal(&self) as u8
     }
 
     /// All states in lifecycle order.
