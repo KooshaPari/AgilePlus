@@ -4,6 +4,7 @@ import json
 import re
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 import typer
@@ -113,6 +114,10 @@ def build_runner_catalog(target: str, repo_checkout: Path) -> RunnerCatalog:
 def pick_command_interactive(catalog: RunnerCatalog) -> RunnerCommand:
     if not catalog.commands:
         raise ValueError("No runnable commands found in runner catalog")
+    if not sys.stdin.isatty() or not sys.stdout.isatty():
+        raise ValueError(
+            "Interactive command selection requires a TTY; pass --runner and --command explicitly"
+        )
 
     typer.echo("Select command to run:")
     for idx, command in enumerate(catalog.commands, start=1):

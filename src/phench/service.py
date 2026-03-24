@@ -191,7 +191,10 @@ def target_timeline(target: str, repo_id: str | None = None, limit: int = 30) ->
 
 
 def build_catalog(target: str, repo_id: str | None = None) -> RunnerCatalog:
-    runtime = read_dual(target, RUNTIME_FILE)
+    try:
+        runtime = read_dual(target, RUNTIME_FILE)
+    except FileNotFoundError as exc:
+        raise ValueError("target has no runtime materialization; run target materialize") from exc
     materializations = runtime.get("repo_materializations")
     if not isinstance(materializations, list) or not materializations:
         raise ValueError("target has no runtime materialization; run target materialize")
@@ -293,7 +296,10 @@ def run_target(
 
 
 def run_env_doctor_for_target(target: str) -> dict[str, Any]:
-    runtime = read_dual(target, RUNTIME_FILE)
+    try:
+        runtime = read_dual(target, RUNTIME_FILE)
+    except FileNotFoundError as exc:
+        raise ValueError("target has no runtime materialization; run target materialize") from exc
     materializations = runtime.get("repo_materializations")
     if not isinstance(materializations, list) or not materializations:
         raise ValueError("target has no runtime materialization; run target materialize")
