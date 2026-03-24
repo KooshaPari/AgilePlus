@@ -21,6 +21,13 @@
 //!   POST /api/v1/features/:slug/audit/verify        — verify audit chain
 //!   GET  /api/v1/features/:slug/governance          — governance contract
 //!   POST /api/v1/features/:slug/validate            — run governance validation
+//!   GET  /api/v1/backlog                            - backlog list
+//!   POST /api/v1/backlog                            - backlog create
+//!   POST /api/v1/backlog/import                     - backlog bulk import
+//!   GET  /api/v1/branches                           - branch list
+//!   POST /api/v1/branches                           - branch create
+//!   GET  /api/v1/worktrees                          - worktree list
+//!   POST /api/v1/worktrees                          - worktree create
 //!   GET  /api/v1/events                             — query events (T068)
 //!   GET  /api/v1/events/:id                         — single event (T068)
 //!   GET  /api/v1/stream                             — SSE real-time events (T069)
@@ -47,7 +54,10 @@ type BoxError = Box<dyn std::error::Error + Send + Sync>;
 
 use crate::middleware::otel::opentelemetry_tracing_layer;
 use crate::responses::DetailedHealthResponse;
-use crate::routes::{audit, cycle, events, features, governance, module, stream, work_packages};
+use crate::routes::{
+    audit, backlog, branch, cycle, events, features, governance, module, stream, work_packages,
+    worktree,
+};
 use crate::state::AppState;
 
 /// Build the axum [`Router`] with all routes, middleware, and shared state.
@@ -75,6 +85,10 @@ where
         .nest("/api/v1/features", features::routes::<S, V, O>())
         // Work-package CRUD + transitions
         .nest("/api/v1/work-packages", work_packages::routes::<S, V, O>())
+        // Backlog / triage / worktree
+        .nest("/api/v1/backlog", backlog::routes::<S, V, O>())
+        .nest("/api/v1/branches", branch::routes::<S, V, O>())
+        .nest("/api/v1/worktrees", worktree::routes::<S, V, O>())
         // Work-package routes nested under features
         .nest(
             "/api/v1/features",
