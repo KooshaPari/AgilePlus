@@ -1,0 +1,87 @@
+# https://taskfile.dev — preferred DX entrypoint (Makefile targets remain for legacy/proto flows).
+# Install: brew install go-task/tap/go-task  |  https://taskfile.dev/installation/
+version: "3"
+
+vars:
+  COMPOSE: process-compose.yml
+
+tasks:
+  default:
+    desc: List tasks (developer UX)
+    cmds:
+      - task --list
+
+  # ─── Platform (process-compose + agileplus CLI) ─────────────────────────
+  platform:up:
+    desc: Start stack via CLI (resolves repo root + compose; use from any cwd)
+    cmds:
+      - cargo run -p agileplus-cli -- platform up --config {{.COMPOSE}}
+
+  platform:down:
+    desc: Stop process-compose daemon for this project
+    cmds:
+      - cargo run -p agileplus-cli -- platform down --config {{.COMPOSE}}
+
+  platform:status:
+    desc: Show API / platform health
+    cmds:
+      - cargo run -p agileplus-cli -- platform status
+
+  platform:logs:
+    desc: "Logs from running stack — extra args after -- (e.g. task platform:logs -- nats --follow)"
+    cmds:
+      - cargo run -p agileplus-cli -- platform logs --config {{.COMPOSE}} {{.CLI_ARGS}}
+
+  pc:up:
+    desc: Raw process-compose TUI (must run from repo root with compose file)
+    cmds:
+      - process-compose up -f {{.COMPOSE}}
+
+  pc:ps:
+    desc: List processes in the running process-compose project
+    cmds:
+      - process-compose list
+
+  urls:
+    desc: Print URLs for dashboard and Plane when stack is up
+    cmds:
+      - 'echo "AgilePlus API/dashboard (default): http://localhost:3000/dashboard"'
+      - 'echo "Plane web (optional): http://localhost:3100"'
+
+  # ─── Rust / quality ───────────────────────────────────────────────────────
+  build:
+    desc: cargo build workspace
+    cmds:
+      - cargo build --workspace
+
+  test:
+    desc: cargo test workspace
+    cmds:
+      - cargo test --workspace
+
+  clippy:
+    desc: cargo clippy workspace
+    cmds:
+      - cargo clippy --workspace -- -D warnings
+
+  fmt:
+    desc: cargo fmt check
+    cmds:
+      - cargo fmt --all --check
+
+  # ─── Docs (VitePress) ─────────────────────────────────────────────────────
+  docs:dev:
+    desc: VitePress dev server (see package.json)
+    cmds:
+      - bun run docs:dev
+
+  docs:build:
+    desc: Build static docs site
+    cmds:
+      - bun run docs:build
+
+  # ─── Legacy Makefile ─────────────────────────────────────────────────────
+  make:check:
+    desc: Delegate to Makefile check (buf + rust + python)
+    cmds:
+      - make check

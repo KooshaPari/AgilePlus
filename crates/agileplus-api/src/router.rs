@@ -53,9 +53,9 @@ use crate::state::AppState;
 /// Build the axum [`Router`] with all routes, middleware, and shared state.
 pub fn create_router<S, V, O>(state: AppState<S, V, O>) -> Router
 where
-    S: StoragePort + Send + Sync + Clone + 'static,
-    V: VcsPort + Send + Sync + Clone + 'static,
-    O: ObservabilityPort + Send + Sync + Clone + 'static,
+    S: StoragePort + Send + Sync + 'static,
+    V: VcsPort + Send + Sync + 'static,
+    O: ObservabilityPort + Send + Sync + 'static,
 {
     let creds: Arc<dyn CredentialStore> = state.credentials.clone();
 
@@ -120,9 +120,9 @@ async fn health_handler<S, V, O>(
     axum::extract::State(app): axum::extract::State<AppState<S, V, O>>,
 ) -> Json<DetailedHealthResponse>
 where
-    S: StoragePort + Send + Sync + Clone + 'static,
-    V: VcsPort + Send + Sync + Clone + 'static,
-    O: ObservabilityPort + Send + Sync + Clone + 'static,
+    S: StoragePort + Send + Sync + 'static,
+    V: VcsPort + Send + Sync + 'static,
+    O: ObservabilityPort + Send + Sync + 'static,
 {
     use std::collections::HashMap;
 
@@ -168,9 +168,9 @@ async fn info_handler() -> Json<serde_json::Value> {
 /// Start the HTTP API server, binding to `addr`.
 pub async fn start_api<S, V, O>(addr: SocketAddr, state: AppState<S, V, O>) -> Result<(), BoxError>
 where
-    S: StoragePort + Send + Sync + Clone + 'static,
-    V: VcsPort + Send + Sync + Clone + 'static,
-    O: ObservabilityPort + Send + Sync + Clone + 'static,
+    S: StoragePort + Send + Sync + 'static,
+    V: VcsPort + Send + Sync + 'static,
+    O: ObservabilityPort + Send + Sync + 'static,
 {
     let app = create_router(state);
     let listener = tokio::net::TcpListener::bind(addr).await?;
