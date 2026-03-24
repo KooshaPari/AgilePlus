@@ -43,7 +43,9 @@ fn render<T: Template>(tpl: T) -> Response {
 }
 
 /// Build the project list and active project from the store.
-fn load_projects(store: &crate::app_state::DashboardStore) -> (Vec<ProjectView>, Option<ProjectView>) {
+fn load_projects(
+    store: &crate::app_state::DashboardStore,
+) -> (Vec<ProjectView>, Option<ProjectView>) {
     let projects: Vec<ProjectView> = store
         .projects
         .iter()
@@ -246,10 +248,7 @@ pub async fn project_switcher(State(state): State<SharedState>) -> Response {
 
 // ── /api/dashboard/projects/:id/activate ─────────────────────────────
 
-pub async fn switch_project(
-    State(state): State<SharedState>,
-    Path(id): Path<i64>,
-) -> Response {
+pub async fn switch_project(State(state): State<SharedState>, Path(id): Path<i64>) -> Response {
     {
         let mut store = state.write().await;
         if id == 0 {
@@ -371,7 +370,10 @@ pub fn router(state: SharedState) -> Router {
         .route("/api/dashboard/events", get(event_timeline))
         .route("/api/dashboard/agents", get(agent_activity))
         .route("/api/dashboard/projects", get(project_switcher))
-        .route("/api/dashboard/projects/{id}/activate", post(switch_project))
+        .route(
+            "/api/dashboard/projects/{id}/activate",
+            post(switch_project),
+        )
         .with_state(state)
 }
 
