@@ -65,6 +65,8 @@ impl MockStorage {
             project_id: None,
             created_at: now,
             updated_at: now,
+            created_at_commit: None,
+            last_modified_commit: None,
         });
         s.work_packages.lock().unwrap().push(WorkPackage {
             id: 1,
@@ -81,6 +83,8 @@ impl MockStorage {
             plane_sub_issue_id: None,
             created_at: now,
             updated_at: now,
+            base_commit: None,
+            head_commit: None,
         });
 
         // Build a valid 2-entry audit chain.
