@@ -150,6 +150,7 @@ dependencies = [
  "chrono",
  "dirs-next",
  "keyring",
+ "phenotype-state-machine",
  "proptest",
  "serde",
  "serde_json",
@@ -3052,6 +3053,17 @@ checksum = "3672b37090dbd86368a4145bc067582552b29c27377cad4e0a306c97f9bd7772"
 dependencies = [
  "fixedbitset",
  "indexmap 2.13.0",
+]
+
+[[package]]
+name = "phenotype-state-machine"
+version = "0.1.0"
+source = "git+https://github.com/KooshaPari/phenotype-infrakit#3fcfc5ce42098bf39a4d23b94dc296daba5eb981"
+dependencies = [
+ "chrono",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
 ]
 
 [[package]]
