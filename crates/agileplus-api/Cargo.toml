@@ -23,6 +23,9 @@ opentelemetry = { version = "0.28", features = ["trace"] }
 opentelemetry_sdk = { version = "0.28", features = ["trace"] }
 tracing-opentelemetry = "0.29"
 agileplus-telemetry = { path = "../agileplus-telemetry" }
+agileplus-sqlite = { path = "../agileplus-sqlite" }
+agileplus-git = { path = "../agileplus-git" }
+anyhow = "1.0"
 rand = "0.8"
 base64 = "0.22"
 sha2 = "0.10"

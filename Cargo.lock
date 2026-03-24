@@ -8,7 +8,10 @@ version = "0.1.0"
 dependencies = [
  "agileplus-dashboard",
  "agileplus-domain",
+ "agileplus-git",
+ "agileplus-sqlite",
  "agileplus-telemetry",
+ "anyhow",
  "askama",
  "async-trait",
  "axum 0.8.8",
