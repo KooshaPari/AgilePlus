@@ -5,9 +5,9 @@
   "description": "AgilePlus documentation — spec-driven development engine",
   "type": "module",
   "scripts": {
-    "dev": "vitepress dev docs",
-    "build": "vitepress build docs",
-    "preview": "vitepress preview docs"
+    "docs:dev": "vitepress dev .",
+    "docs:build": "vitepress build .",
+    "docs:preview": "vitepress preview ."
   },
   "dependencies": {
     "vitepress": "^1.6.4",
