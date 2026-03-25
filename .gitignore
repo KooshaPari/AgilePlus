@@ -35,3 +35,6 @@ kitty-specs/
 
 # Reference repos (not submodules)
 references/
+.claude/
+.codex/
+.cursor/
