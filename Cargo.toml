@@ -27,10 +27,14 @@ members = [
 ]
 
 [workspace.package]
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 license = "MIT"
-rust-version = "1.88"
+rust-version = "1.86"
+authors = ["AgilePlus Team"]
+repository = "https://github.com/AgilePlus/agileplus"
+keywords = ["agile", "project-management", "software-development"]
+categories = ["Software Development", "Project Management"]
 
 [workspace.dependencies]
 serde = { version = "1", features = ["derive"] }
@@ -62,3 +66,17 @@ opentelemetry_sdk = { version = "0.31", features = [
 ] }
 criterion = { version = "0.5", features = ["async_tokio", "html_reports"] }
 time = ">=0.3.49"
+trait-variant = "0.1"
+async-trait = "0.1"
+
+# Plugin crates (external from separate repos)
+agileplus-plugin-core = { git = "https://github.com/KooshaPari/agileplus-plugin-core" }
+agileplus-plugin-git = { git = "https://github.com/KooshaPari/agileplus-plugin-git" }
+agileplus-plugin-sqlite = { git = "https://github.com/KooshaPari/agileplus-plugin-sqlite" }
+
+# Git operations
+gix = "0.71"
+git2 = "0.20"
+
+# Database
+rusqlite = { version = "0.32", features = ["bundled"] }

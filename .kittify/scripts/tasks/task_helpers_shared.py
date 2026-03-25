@@ -580,9 +580,7 @@ class WorkPackage:
 # ---------------------------------------------------------------------------
 
 
-def locate_work_package(
-    repo_root: Path, feature: str, wp_id: str
-) -> WorkPackage:
+def locate_work_package(repo_root: Path, feature: str, wp_id: str) -> WorkPackage:
     """Locate a work package by ID, supporting both legacy and new formats.
 
     Legacy format: WP files in ``tasks/{lane}/`` subdirectories.
@@ -633,9 +631,7 @@ def locate_work_package(
             f"Work package '{wp_id}' not found under kitty-specs/{feature}/tasks."
         )
     if len(candidates) > 1:
-        joined = "\n".join(
-            str(item[1].relative_to(repo_root)) for item in candidates
-        )
+        joined = "\n".join(str(item[1].relative_to(repo_root)) for item in candidates)
         raise TaskCliError(
             f"Multiple files matched '{wp_id}'. Refine the ID or clean "
             f"duplicates:\n{joined}"
@@ -673,9 +669,7 @@ def load_meta(meta_path: Path) -> Dict:
     return json.loads(meta_path.read_text(encoding="utf-8-sig"))
 
 
-def get_lane_from_frontmatter(
-    wp_path: Path, warn_on_missing: bool = True
-) -> str:
+def get_lane_from_frontmatter(wp_path: Path, warn_on_missing: bool = True) -> str:
     """Extract lane from WP file frontmatter.
 
     This is the authoritative way to determine a work package's lane in the
@@ -718,8 +712,7 @@ def get_lane_from_frontmatter(
 
     if lane not in LANES:
         raise ValueError(
-            f"Invalid lane '{lane}' in {wp_path.name}. "
-            f"Valid lanes: {', '.join(LANES)}"
+            f"Invalid lane '{lane}' in {wp_path.name}. Valid lanes: {', '.join(LANES)}"
         )
 
     return lane

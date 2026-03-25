@@ -11,6 +11,7 @@
     "lint": "oxlint -c ../oxlint.config.json ."
   },
   "dependencies": {
+    "@phenotype/docs": "file:vendor/phenodocs/packages/docs",
     "vitepress": "^1.6.4",
     "vue": "^3.5.0"
   },

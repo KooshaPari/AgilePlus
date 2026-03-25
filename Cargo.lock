@@ -10,7 +10,7 @@ checksum = "320119579fcad9c21884f5c4861d16174d0e06250625266f50fe6898340abefa"
 
 [[package]]
 name = "agileplus-api"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "agileplus-dashboard",
  "agileplus-domain",
@@ -43,7 +43,7 @@ dependencies = [
 
 [[package]]
 name = "agileplus-bdd"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "agileplus-domain",
  "chrono",
@@ -58,7 +58,7 @@ dependencies = [
 
 [[package]]
 name = "agileplus-benchmarks"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "agileplus-domain",
  "agileplus-events",
@@ -74,7 +74,7 @@ dependencies = [
 
 [[package]]
 name = "agileplus-cache"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "agileplus-domain",
  "async-trait",
@@ -90,7 +90,7 @@ dependencies = [
 
 [[package]]
 name = "agileplus-cli"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "agileplus-domain",
  "agileplus-git",
@@ -115,7 +115,7 @@ dependencies = [
 
 [[package]]
 name = "agileplus-contract-tests"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "agileplus-api",
  "agileplus-domain",
@@ -133,7 +133,7 @@ dependencies = [
 
 [[package]]
 name = "agileplus-dashboard"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "agileplus-domain",
  "agileplus-events",
@@ -155,7 +155,7 @@ dependencies = [
 
 [[package]]
 name = "agileplus-domain"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "chrono",
  "dirs-next",
@@ -173,7 +173,7 @@ dependencies = [
 
 [[package]]
 name = "agileplus-events"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "agileplus-domain",
  "async-trait",
@@ -187,10 +187,10 @@ dependencies = [
 
 [[package]]
 name = "agileplus-git"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "agileplus-domain",
- "async-nats 0.40.0",
+ "async-nats",
  "chrono",
  "git2",
  "gix",
@@ -205,7 +205,7 @@ dependencies = [
 
 [[package]]
 name = "agileplus-github"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "agileplus-domain",
  "agileplus-triage",
@@ -223,7 +223,7 @@ dependencies = [
 
 [[package]]
 name = "agileplus-graph"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "async-trait",
  "serde",
@@ -234,7 +234,7 @@ dependencies = [
 
 [[package]]
 name = "agileplus-grpc"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "agileplus-domain",
  "agileplus-proto",
@@ -252,7 +252,7 @@ dependencies = [
 
 [[package]]
 name = "agileplus-integration-tests"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "agileplus-domain",
  "agileplus-sqlite",
@@ -271,7 +271,7 @@ dependencies = [
 
 [[package]]
 name = "agileplus-nats"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "agileplus-domain",
  "async-trait",
@@ -285,12 +285,12 @@ dependencies = [
 
 [[package]]
 name = "agileplus-p2p"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "agileplus-domain",
  "agileplus-events",
  "agileplus-sync",
- "async-nats 0.46.0",
+ "async-nats",
  "async-trait",
  "bytes",
  "chrono",
@@ -310,7 +310,7 @@ dependencies = [
 
 [[package]]
 name = "agileplus-plane"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "agileplus-domain",
  "anyhow",
@@ -342,7 +342,7 @@ dependencies = [
 
 [[package]]
 name = "agileplus-sqlite"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "agileplus-domain",
  "agileplus-events",
@@ -356,7 +356,7 @@ dependencies = [
 
 [[package]]
 name = "agileplus-subcmds"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "agileplus-domain",
  "agileplus-triage",
@@ -372,11 +372,11 @@ dependencies = [
 
 [[package]]
 name = "agileplus-sync"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "agileplus-domain",
  "agileplus-events",
- "async-nats 0.46.0",
+ "async-nats",
  "async-trait",
  "chrono",
  "futures-util",
@@ -390,7 +390,7 @@ dependencies = [
 
 [[package]]
 name = "agileplus-telemetry"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "agileplus-domain",
  "chrono",
@@ -414,7 +414,7 @@ dependencies = [
 
 [[package]]
 name = "agileplus-triage"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "agileplus-domain",
  "anyhow",
@@ -600,42 +600,6 @@ dependencies = [
  "predicates-core",
  "predicates-tree",
  "wait-timeout",
-]
-
-[[package]]
-name = "async-nats"
-version = "0.40.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e23419d455dc57d3ae60a2f4278cf561fc74fe866e548e14d2b0ad3e1b8ca0b2"
-dependencies = [
- "base64",
- "bytes",
- "futures",
- "memchr",
- "nkeys",
- "nuid",
- "once_cell",
- "pin-project",
- "portable-atomic",
- "rand 0.8.5",
- "regex",
- "ring",
- "rustls-native-certs 0.7.3",
- "rustls-pemfile",
- "rustls-webpki 0.102.8",
- "serde",
- "serde_json",
- "serde_nanos",
- "serde_repr",
- "thiserror 1.0.69",
- "time",
- "tokio",
- "tokio-rustls",
- "tokio-util",
- "tokio-websockets",
- "tracing",
- "tryhard",
- "url",
 ]
 
 [[package]]
