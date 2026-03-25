@@ -1236,13 +1236,14 @@ mod tests {
         let fid = StoragePort::create_feature(&db, &f).await.unwrap();
         // Manually set module_id via tag so the module owns this feature
         // (we use the raw feature.module_id path by updating directly)
-        let conn = db.conn_for_bench().unwrap();
-        conn.execute(
-            "UPDATE features SET module_id = ?1 WHERE id = ?2",
-            rusqlite::params![mid, fid],
-        )
-        .unwrap();
-        drop(conn);
+        {
+            let conn = db.conn_for_bench().unwrap();
+            conn.execute(
+                "UPDATE features SET module_id = ?1 WHERE id = ?2",
+                rusqlite::params![mid, fid],
+            )
+            .unwrap();
+        }
 
         let result = StoragePort::delete_module(&db, mid).await;
         assert!(result.is_err());
