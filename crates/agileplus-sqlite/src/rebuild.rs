@@ -179,6 +179,8 @@ impl SqliteStorageAdapter {
             project_id: None,
             created_at,
             updated_at,
+            created_at_commit: None,
+            last_modified_commit: None,
         };
 
         let feature_id = {
@@ -359,7 +361,7 @@ mod tests {
             self.artifacts
                 .get(&key)
                 .cloned()
-                .ok_or_else(|| DomainError::NotFound(key))
+                .ok_or(DomainError::NotFound(key))
         }
 
         async fn write_artifact(
@@ -475,7 +477,10 @@ mod tests {
         assert_eq!(report.features_restored, 1);
         assert_eq!(report.audit_entries_restored, 2);
 
-        let feat = db.get_feature_by_slug(slug).await.unwrap().unwrap();
+        let feat = StoragePort::get_feature_by_slug(&db, slug)
+            .await
+            .unwrap()
+            .unwrap();
         assert_eq!(feat.slug, slug);
         assert_eq!(
             feat.state,
