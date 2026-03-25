@@ -26,8 +26,111 @@ use crate::templates::{
     EventsPage, EvidenceBundleView, FeatureDetailPage, FeatureView, FeaturesPage,
     HealthPanelPartial, HomePage, KanbanPartial, MediaAssetView, PlaneHealthEndpointView,
     PlaneSettingsPage, ProjectSummaryView, ProjectSwitcherPartial, ProjectView, ReportArtifactView,
-    ServicesSettingsPage, SettingsPage, WpListPartial, WpView, all_feature_states,
+    ServicesSettingsPage, SettingsPage, ToastPartial, WpListPartial, WpView, all_feature_states,
 };
+
+use serde::{Deserialize, Serialize};
+use std::fs;
+use std::path::PathBuf;
+
+// ── Configuration Types ────────────────────────────────────────────────────
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PlaneConfig {
+    pub api_url: String,
+    pub api_key: String,
+    pub workspace_slug: String,
+    pub project_slug: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AgentConfig {
+    pub pool_size: usize,
+    pub retry_budget: usize,
+    pub dispatch_mode: String,
+    pub default_provider: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ServiceConfig {
+    pub name: String,
+    pub endpoint_url: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DashboardConfig {
+    pub theme: String,
+    pub log_level: String,
+    pub data_directory: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Config {
+    pub plane: Option<PlaneConfig>,
+    pub agents: Option<AgentConfig>,
+    pub services: Option<Vec<ServiceConfig>>,
+    pub dashboard: Option<DashboardConfig>,
+}
+
+impl Config {
+    pub fn load() -> Result<Self, Box<dyn std::error::Error>> {
+        let config_path = Self::config_path();
+        if config_path.exists() {
+            let content = fs::read_to_string(&config_path)?;
+            let config = toml::from_str(&content)?;
+            Ok(config)
+        } else {
+            Ok(Config {
+                plane: None,
+                agents: None,
+                services: None,
+                dashboard: None,
+            })
+        }
+    }
+
+    pub fn save(&self) -> Result<(), Box<dyn std::error::Error>> {
+        let config_path = Self::config_path();
+        if let Some(parent) = config_path.parent() {
+            fs::create_dir_all(parent)?;
+        }
+        let content = toml::to_string_pretty(self)?;
+        fs::write(config_path, content)?;
+        Ok(())
+    }
+
+    fn config_path() -> PathBuf {
+        std::env::var("HOME")
+            .ok()
+            .map(|home| PathBuf::from(home).join(".agileplus/config.toml"))
+            .unwrap_or_else(|| PathBuf::from(".agileplus/config.toml"))
+    }
+}
+
+// ── Form Request Types ────────────────────────────────────────────────────
+
+#[derive(Debug, Deserialize)]
+pub struct PlaneSettingsForm {
+    pub api_url: String,
+    pub api_key: String,
+    pub workspace_slug: String,
+    pub project_slug: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct AgentSettingsForm {
+    pub pool_size: usize,
+    pub retry_budget: usize,
+    pub dispatch_mode: String,
+    pub default_provider: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct DashboardSettingsForm {
+    pub theme: String,
+    pub log_level: String,
+    pub data_directory: String,
+}
 
 /// Returns `true` if the `HX-Request` header is present and truthy.
 fn is_htmx(headers: &HeaderMap) -> bool {
@@ -751,6 +854,126 @@ pub async fn stream_placeholder() -> StatusCode {
 
 // ── Router builder ───────────────────────────────────────────────────────
 
+// ── Settings POST Handlers ─────────────────────────────────────────────────
+
+pub async fn save_plane_settings(
+    axum::Form(form): axum::Form<PlaneSettingsForm>,
+) -> Response {
+    let mut config = match Config::load() {
+        Ok(c) => c,
+        Err(_) => Config {
+            plane: None,
+            agents: None,
+            services: None,
+            dashboard: None,
+        },
+    };
+
+    config.plane = Some(PlaneConfig {
+        api_url: form.api_url.trim().to_string(),
+        api_key: form.api_key.trim().to_string(),
+        workspace_slug: form.workspace_slug.trim().to_string(),
+        project_slug: form.project_slug.trim().to_string(),
+    });
+
+    match config.save() {
+        Ok(_) => render(ToastPartial {
+            message: "Plane settings saved successfully".to_string(),
+            success: true,
+        }),
+        Err(e) => render(ToastPartial {
+            message: format!("Failed to save settings: {}", e),
+            success: false,
+        }),
+    }
+}
+
+pub async fn save_agent_settings(
+    axum::Form(form): axum::Form<AgentSettingsForm>,
+) -> Response {
+    let mut config = match Config::load() {
+        Ok(c) => c,
+        Err(_) => Config {
+            plane: None,
+            agents: None,
+            services: None,
+            dashboard: None,
+        },
+    };
+
+    config.agents = Some(AgentConfig {
+        pool_size: form.pool_size,
+        retry_budget: form.retry_budget,
+        dispatch_mode: form.dispatch_mode.trim().to_string(),
+        default_provider: form.default_provider.trim().to_string(),
+    });
+
+    match config.save() {
+        Ok(_) => render(ToastPartial {
+            message: "Agent settings saved successfully".to_string(),
+            success: true,
+        }),
+        Err(e) => render(ToastPartial {
+            message: format!("Failed to save settings: {}", e),
+            success: false,
+        }),
+    }
+}
+
+pub async fn save_dashboard_settings(
+    axum::Form(form): axum::Form<DashboardSettingsForm>,
+) -> Response {
+    let mut config = match Config::load() {
+        Ok(c) => c,
+        Err(_) => Config {
+            plane: None,
+            agents: None,
+            services: None,
+            dashboard: None,
+        },
+    };
+
+    config.dashboard = Some(DashboardConfig {
+        theme: form.theme.trim().to_string(),
+        log_level: form.log_level.trim().to_string(),
+        data_directory: form.data_directory.trim().to_string(),
+    });
+
+    match config.save() {
+        Ok(_) => render(ToastPartial {
+            message: "Dashboard settings saved successfully".to_string(),
+            success: true,
+        }),
+        Err(e) => render(ToastPartial {
+            message: format!("Failed to save settings: {}", e),
+            success: false,
+        }),
+    }
+}
+
+pub async fn test_plane_connection(
+    axum::Form(form): axum::Form<PlaneSettingsForm>,
+) -> Response {
+    // Simple validation: check that required fields are filled and api_url looks like a URL
+    let is_valid = !form.api_url.trim().is_empty()
+        && !form.api_key.trim().is_empty()
+        && !form.workspace_slug.trim().is_empty()
+        && form.api_url.starts_with("http");
+
+    if is_valid {
+        // In a real implementation, you would make an HTTP request to verify connectivity
+        render(ToastPartial {
+            message: "Plane connection test passed (mock)".to_string(),
+            success: true,
+        })
+    } else {
+        render(ToastPartial {
+            message: "Plane settings are incomplete or invalid".to_string(),
+            success: false,
+        })
+    }
+}
+
 pub fn router(state: SharedState) -> Router {
     Router::new()
         .route("/", get(root))
@@ -762,6 +985,10 @@ pub fn router(state: SharedState) -> Router {
         .route("/settings/plane", get(plane_settings_page))
         .route("/settings/agents", get(agent_settings_page))
         .route("/settings/services", get(services_settings_page))
+        .route("/api/settings/plane", post(save_plane_settings))
+        .route("/api/settings/plane/test", post(test_plane_connection))
+        .route("/api/settings/agents", post(save_agent_settings))
+        .route("/api/settings/dashboard", post(save_dashboard_settings))
         .route("/api/dashboard/kanban", get(kanban_board))
         .route("/api/dashboard/features/{id}", get(feature_detail))
         .route("/api/dashboard/features/{id}/work-packages", get(wp_list))
