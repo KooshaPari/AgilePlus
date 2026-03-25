@@ -8,6 +8,7 @@ Traceability: WP14-T082
 from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock
+
 import pytest
 
 from agileplus_mcp.grpc_client import AgilePlusCoreClient
@@ -15,9 +16,7 @@ from agileplus_mcp.grpc_client import AgilePlusCoreClient
 
 def _mock_client() -> MagicMock:
     client = MagicMock(spec=AgilePlusCoreClient)
-    client.run_command = AsyncMock(
-        return_value={"success": True, "message": "ok", "outputs": {}}
-    )
+    client.run_command = AsyncMock(return_value={"success": True, "message": "ok", "outputs": {}})
     client.get_feature = AsyncMock(
         return_value={
             "id": 1,
@@ -37,12 +36,8 @@ def _mock_client() -> MagicMock:
         return_value={"state": "created", "next_command": "specify", "blockers": []}
     )
     client.get_audit_trail = AsyncMock(return_value={"entries": [], "verification": None})
-    client.verify_audit_chain = AsyncMock(
-        return_value={"valid": True, "entries_verified": 0}
-    )
-    client.check_governance_gate = AsyncMock(
-        return_value={"passed": True, "violations": []}
-    )
+    client.verify_audit_chain = AsyncMock(return_value={"valid": True, "entries_verified": 0})
+    client.check_governance_gate = AsyncMock(return_value={"passed": True, "violations": []})
     return client
 
 
@@ -50,9 +45,11 @@ def _mock_client() -> MagicMock:
 # Feature tools
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_specify_tool_calls_run_command():
     from fastmcp import FastMCP
+
     from agileplus_mcp.tools import features as features_module
 
     mcp = FastMCP("test")
@@ -64,7 +61,9 @@ async def test_specify_tool_calls_run_command():
     # We reach them through the client mock
     result = await client.run_command("specify", feature_slug="my-feat", target_branch="main")
     assert result["success"] is True
-    client.run_command.assert_called_once_with("specify", feature_slug="my-feat", target_branch="main")
+    client.run_command.assert_called_once_with(
+        "specify", feature_slug="my-feat", target_branch="main"
+    )
 
 
 @pytest.mark.asyncio
@@ -82,6 +81,7 @@ async def test_implement_tool_passes_wp_id():
 # ---------------------------------------------------------------------------
 # Governance tools
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_validate_tool_success():
@@ -103,6 +103,7 @@ async def test_get_audit_trail_with_verify():
 # ---------------------------------------------------------------------------
 # Status tools
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_status_all_features():
@@ -127,6 +128,7 @@ async def test_status_single_feature():
 # ---------------------------------------------------------------------------
 # Sampling handler
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_auto_triage_detects_errors():
@@ -170,7 +172,10 @@ async def test_generate_retrospective():
     client = _mock_client()
     # get_audit_trail is called with verify=True in the handler
     client.get_audit_trail = AsyncMock(
-        return_value={"entries": [{"id": 1}], "verification": {"valid": True, "entries_verified": 1}}
+        return_value={
+            "entries": [{"id": 1}],
+            "verification": {"valid": True, "entries_verified": 1},
+        }
     )
     handler = SamplingHandler(client)
     result = await handler.generate_retrospective("my-feat")

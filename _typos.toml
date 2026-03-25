@@ -10,4 +10,6 @@ extend-exclude = [
     "__pycache__/",
     "python/src/gen/",
     "rust/src/gen/",
+    "pheno-cli/go.mod",
+    "templates/static/*.min.js",
 ]

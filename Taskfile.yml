@@ -1,0 +1,45 @@
+version: '3'
+
+tasks:
+  build:
+    desc: Build the Rust workspace
+    cmds:
+      - cargo build
+
+  test:
+    desc: Run all tests
+    cmds:
+      - cargo test
+
+  lint:
+    desc: Run clippy linter
+    cmds:
+      - cargo clippy --all-targets --all-features -- -D warnings
+
+  fmt:
+    desc: Format code with rustfmt
+    cmds:
+      - cargo fmt --all
+
+  python-lint:
+    desc: Run ruff linter on Python code
+    cmds:
+      - ruff check python/
+
+  python-test:
+    desc: Run pytest on Python tests
+    cmds:
+      - cd python && uv run pytest
+
+  quality:
+    desc: Run all quality checks
+    cmds:
+      - task: lint
+      - task: fmt
+      - task: python-lint
+      - task: test
+      - task: python-test
+
+  default:
+    cmds:
+      - task: quality

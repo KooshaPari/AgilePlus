@@ -8,10 +8,12 @@
 use axum::extract::{Path, State};
 use axum::routing::{get, post};
 use axum::{Json, Router};
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 use agileplus_domain::domain::audit::AuditChain;
-use agileplus_domain::ports::{observability::ObservabilityPort, storage::StoragePort, vcs::VcsPort};
+use agileplus_domain::ports::{
+    observability::ObservabilityPort, storage::StoragePort, vcs::VcsPort,
+};
 
 use crate::error::ApiError;
 use crate::responses::AuditEntryResponse;
@@ -19,9 +21,9 @@ use crate::state::AppState;
 
 pub fn routes<S, V, O>() -> Router<AppState<S, V, O>>
 where
-    S: StoragePort + Send + Sync + Clone + 'static,
-    V: VcsPort + Send + Sync + Clone + 'static,
-    O: ObservabilityPort + Send + Sync + Clone + 'static,
+    S: StoragePort + Send + Sync + 'static,
+    V: VcsPort + Send + Sync + 'static,
+    O: ObservabilityPort + Send + Sync + 'static,
 {
     Router::new()
         .route("/{slug}/audit", get(get_audit_trail::<S, V, O>))
@@ -34,9 +36,9 @@ pub async fn get_audit_trail<S, V, O>(
     Path(slug): Path<String>,
 ) -> Result<Json<Vec<AuditEntryResponse>>, ApiError>
 where
-    S: StoragePort + Send + Sync + Clone + 'static,
-    V: VcsPort + Send + Sync + Clone + 'static,
-    O: ObservabilityPort + Send + Sync + Clone + 'static,
+    S: StoragePort + Send + Sync + 'static,
+    V: VcsPort + Send + Sync + 'static,
+    O: ObservabilityPort + Send + Sync + 'static,
 {
     let feature = state
         .storage
@@ -64,9 +66,9 @@ pub async fn verify_audit_chain<S, V, O>(
     Path(slug): Path<String>,
 ) -> Result<Json<Value>, ApiError>
 where
-    S: StoragePort + Send + Sync + Clone + 'static,
-    V: VcsPort + Send + Sync + Clone + 'static,
-    O: ObservabilityPort + Send + Sync + Clone + 'static,
+    S: StoragePort + Send + Sync + 'static,
+    V: VcsPort + Send + Sync + 'static,
+    O: ObservabilityPort + Send + Sync + 'static,
 {
     let feature = state
         .storage
@@ -81,7 +83,9 @@ where
         .await
         .map_err(ApiError::from)?;
 
-    let chain = AuditChain { entries: trail.clone() };
+    let chain = AuditChain {
+        entries: trail.clone(),
+    };
     match chain.verify_chain() {
         Ok(()) => Ok(Json(json!({
             "feature_slug": slug,

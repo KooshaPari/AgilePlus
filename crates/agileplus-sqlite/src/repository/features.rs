@@ -33,10 +33,16 @@ fn row_to_feature(row: &Row<'_>) -> rusqlite::Result<Feature> {
     let target_branch: String = row.get(5)?;
     let created_at_str: String = row.get(6)?;
     let updated_at_str: String = row.get(7)?;
+    // module_id column added by migration 015 -- may be NULL.
+    let module_id: Option<i64> = row.get(8).unwrap_or(None);
 
-    let state = state_str
-        .parse::<FeatureState>()
-        .map_err(|e| rusqlite::Error::FromSqlConversionFailure(3, rusqlite::types::Type::Text, Box::new(std::io::Error::new(std::io::ErrorKind::InvalidData, e))))?;
+    let state = state_str.parse::<FeatureState>().map_err(|e| {
+        rusqlite::Error::FromSqlConversionFailure(
+            3,
+            rusqlite::types::Type::Text,
+            Box::new(std::io::Error::new(std::io::ErrorKind::InvalidData, e)),
+        )
+    })?;
 
     let mut spec_hash = [0u8; 32];
     if spec_hash_bytes.len() == 32 {
@@ -45,11 +51,29 @@ fn row_to_feature(row: &Row<'_>) -> rusqlite::Result<Feature> {
 
     let created_at = created_at_str
         .parse::<chrono::DateTime<chrono::Utc>>()
-        .map_err(|e| rusqlite::Error::FromSqlConversionFailure(6, rusqlite::types::Type::Text, Box::new(std::io::Error::new(std::io::ErrorKind::InvalidData, e.to_string()))))?;
+        .map_err(|e| {
+            rusqlite::Error::FromSqlConversionFailure(
+                6,
+                rusqlite::types::Type::Text,
+                Box::new(std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    e.to_string(),
+                )),
+            )
+        })?;
 
     let updated_at = updated_at_str
         .parse::<chrono::DateTime<chrono::Utc>>()
-        .map_err(|e| rusqlite::Error::FromSqlConversionFailure(7, rusqlite::types::Type::Text, Box::new(std::io::Error::new(std::io::ErrorKind::InvalidData, e.to_string()))))?;
+        .map_err(|e| {
+            rusqlite::Error::FromSqlConversionFailure(
+                7,
+                rusqlite::types::Type::Text,
+                Box::new(std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    e.to_string(),
+                )),
+            )
+        })?;
 
     Ok(Feature {
         id,
@@ -58,6 +82,11 @@ fn row_to_feature(row: &Row<'_>) -> rusqlite::Result<Feature> {
         state,
         spec_hash,
         target_branch,
+        plane_issue_id: None,
+        plane_state_id: None,
+        labels: Vec::new(),
+        module_id,
+        project_id: None,
         created_at,
         updated_at,
     })
@@ -112,6 +141,22 @@ pub fn update_feature_state(
     conn.execute(
         "UPDATE features SET state = ?1, updated_at = ?2 WHERE id = ?3",
         params![state_str(state), now, id],
+    )
+    .map_err(map_err)?;
+    Ok(())
+}
+
+pub fn update_feature(conn: &Connection, feature: &Feature) -> Result<(), DomainError> {
+    let now = chrono::Utc::now().to_rfc3339();
+    conn.execute(
+        "UPDATE features SET slug = ?1, friendly_name = ?2, state = ?3, updated_at = ?4 WHERE id = ?5",
+        params![
+            feature.slug,
+            feature.friendly_name,
+            state_str(feature.state),
+            now,
+            feature.id
+        ],
     )
     .map_err(map_err)?;
     Ok(())

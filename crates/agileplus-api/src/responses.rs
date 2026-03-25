@@ -8,6 +8,7 @@
 use serde::{Deserialize, Serialize};
 
 use agileplus_domain::domain::audit::AuditEntry;
+use agileplus_domain::domain::backlog::BacklogItem;
 use agileplus_domain::domain::feature::Feature;
 use agileplus_domain::domain::governance::GovernanceContract;
 use agileplus_domain::domain::work_package::WorkPackage;
@@ -133,6 +134,127 @@ impl HealthResponse {
         Self {
             status: "ok",
             version: env!("CARGO_PKG_VERSION"),
+        }
+    }
+}
+
+// ----- Detailed Health (T070) -----
+
+#[derive(Debug, Serialize)]
+pub struct ServiceHealth {
+    pub status: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub latency_ms: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
+}
+
+impl ServiceHealth {
+    pub fn healthy(latency_ms: u64) -> Self {
+        Self {
+            status: "healthy".to_string(),
+            latency_ms: Some(latency_ms),
+            error: None,
+        }
+    }
+
+    pub fn degraded(reason: impl Into<String>) -> Self {
+        Self {
+            status: "degraded".to_string(),
+            latency_ms: None,
+            error: Some(reason.into()),
+        }
+    }
+
+    pub fn unavailable(reason: impl Into<String>) -> Self {
+        Self {
+            status: "unavailable".to_string(),
+            latency_ms: None,
+            error: Some(reason.into()),
+        }
+    }
+}
+
+#[derive(Debug, Serialize)]
+pub struct ApiHealth {
+    pub status: String,
+    pub uptime_seconds: u64,
+}
+
+#[derive(Debug, Serialize)]
+pub struct DetailedHealthResponse {
+    /// Overall status: "healthy" | "degraded" | "unavailable"
+    pub status: String,
+    pub timestamp: String,
+    pub services: std::collections::HashMap<String, ServiceHealth>,
+    pub api: ApiHealth,
+}
+
+impl DetailedHealthResponse {
+    /// Build a basic healthy response (used when no external services are wired up).
+    pub fn basic(uptime_seconds: u64) -> Self {
+        use std::collections::HashMap;
+        let services: HashMap<String, ServiceHealth> = [("sqlite", ServiceHealth::healthy(0))]
+            .into_iter()
+            .map(|(k, v)| (k.to_string(), v))
+            .collect();
+
+        Self {
+            status: "healthy".to_string(),
+            timestamp: chrono::Utc::now().to_rfc3339(),
+            services,
+            api: ApiHealth {
+                status: "healthy".to_string(),
+                uptime_seconds,
+            },
+        }
+    }
+
+    /// Derive overall status from individual service statuses.
+    pub fn compute_status(
+        services: &std::collections::HashMap<String, ServiceHealth>,
+    ) -> &'static str {
+        if services.values().any(|s| s.status == "unavailable") {
+            return "unavailable";
+        }
+        if services.values().any(|s| s.status == "degraded") {
+            return "degraded";
+        }
+        "healthy"
+    }
+}
+
+// ----- Backlog -----
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct BacklogItemResponse {
+    pub id: Option<i64>,
+    pub title: String,
+    pub description: String,
+    pub intent: String,
+    pub priority: String,
+    pub status: String,
+    pub source: String,
+    pub feature_slug: Option<String>,
+    pub tags: Vec<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+impl From<BacklogItem> for BacklogItemResponse {
+    fn from(item: BacklogItem) -> Self {
+        Self {
+            id: item.id,
+            title: item.title,
+            description: item.description,
+            intent: item.intent.to_string(),
+            priority: format!("{:?}", item.priority).to_lowercase(),
+            status: format!("{:?}", item.status).to_lowercase(),
+            source: item.source,
+            feature_slug: item.feature_slug,
+            tags: item.tags,
+            created_at: item.created_at.to_rfc3339(),
+            updated_at: item.updated_at.to_rfc3339(),
         }
     }
 }

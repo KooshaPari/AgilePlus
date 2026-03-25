@@ -5,12 +5,13 @@
 use std::pin::Pin;
 
 use tokio::sync::broadcast;
-use tokio_stream::wrappers::BroadcastStream;
 use tokio_stream::Stream;
 use tokio_stream::StreamExt as TokioStreamExt;
+use tokio_stream::wrappers::BroadcastStream;
 use tonic::Status;
 
 use agileplus_proto::agileplus::v1::AgentEvent as ProtoAgentEvent;
+use agileplus_proto::agileplus::v1::StreamAgentEventsResponse;
 
 use crate::event_bus::AgentEvent;
 
@@ -33,14 +34,14 @@ pub fn domain_event_to_proto(e: AgentEvent) -> ProtoAgentEvent {
 pub fn agent_event_stream(
     rx: broadcast::Receiver<AgentEvent>,
     feature_slug_filter: String,
-) -> Pin<Box<dyn Stream<Item = Result<ProtoAgentEvent, Status>> + Send + 'static>> {
+) -> Pin<Box<dyn Stream<Item = Result<StreamAgentEventsResponse, Status>> + Send + 'static>> {
     let base = TokioStreamExt::filter_map(BroadcastStream::new(rx), move |result| {
         let filter = feature_slug_filter.clone();
         match result {
-            Ok(event) if event.matches_feature(&filter) => {
-                Some(Ok(domain_event_to_proto(event)))
-            }
-            Ok(_) => None, // Filtered out
+            Ok(event) if event.matches_feature(&filter) => Some(Ok(StreamAgentEventsResponse {
+                event: Some(domain_event_to_proto(event)),
+            })),
+            Ok(_) => None,  // Filtered out
             Err(_) => None, // Lagged — drop silently
         }
     });
@@ -52,7 +53,6 @@ pub fn agent_event_stream(
 mod tests {
     use super::*;
     use crate::event_bus::EventBus;
-    use futures::StreamExt as _;
 
     #[tokio::test]
     async fn stream_delivers_matching_events() {
@@ -78,6 +78,6 @@ mod tests {
             received.push(item.unwrap());
         }
         assert_eq!(received.len(), 1);
-        assert_eq!(received[0].feature_slug, "feat-a");
+        assert_eq!(received[0].event.as_ref().unwrap().feature_slug, "feat-a");
     }
 }
