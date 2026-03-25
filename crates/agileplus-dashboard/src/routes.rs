@@ -883,8 +883,10 @@ mod tests {
     use tokio::sync::RwLock;
 
     fn make_state() -> SharedState {
-        let mut store = DashboardStore::default();
-        store.health = default_health();
+        let store = DashboardStore {
+            health: default_health(),
+            ..Default::default()
+        };
         Arc::new(RwLock::new(store))
     }
 
