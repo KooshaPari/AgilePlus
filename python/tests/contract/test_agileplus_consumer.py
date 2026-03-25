@@ -32,8 +32,9 @@ class TestGetFeatureContract:
     @pytest.mark.asyncio
     async def test_get_feature_request_uses_slug_field(self):
         """Consumer must send a GetFeatureRequest with a 'slug' field."""
-        from agileplus_mcp.grpc_client import AgilePlusCoreClient
         from unittest.mock import patch
+
+        from agileplus_mcp.grpc_client import AgilePlusCoreClient
 
         client = AgilePlusCoreClient()
         captured_request = {}
@@ -71,10 +72,13 @@ class TestGetFeatureContract:
         mock_v1 = MagicMock()
         mock_v1.core_pb2 = mock_core_pb2
 
-        with patch.dict("sys.modules", {
-            "agileplus_proto.gen.agileplus.v1.core_pb2": mock_core_pb2,
-            "agileplus_proto.gen.agileplus.v1": mock_v1,
-        }):
+        with patch.dict(
+            "sys.modules",
+            {
+                "agileplus_proto.gen.agileplus.v1.core_pb2": mock_core_pb2,
+                "agileplus_proto.gen.agileplus.v1": mock_v1,
+            },
+        ):
             result = await client.get_feature("test-feature")
 
         assert captured_request.get("slug") == "test-feature"
