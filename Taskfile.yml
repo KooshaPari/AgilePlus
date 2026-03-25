@@ -1,0 +1,22 @@
+version: '3'
+
+tasks:
+  lint:
+    desc: Run oxlint on the project
+    cmd: oxlint .
+    silent: false
+
+  build:
+    desc: Build VitePress documentation
+    cmd: bun run build
+    silent: false
+
+  test:
+    desc: Run tests
+    cmd: echo "No tests configured"
+    silent: false
+
+  default:
+    desc: Show available tasks
+    cmd: task -l
+    silent: false
