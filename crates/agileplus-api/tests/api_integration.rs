@@ -19,6 +19,9 @@ use agileplus_domain::credentials::CredentialStore;
 use agileplus_domain::credentials::InMemoryCredentialStore;
 use agileplus_domain::credentials::keys as cred_keys;
 use agileplus_domain::domain::audit::{AuditEntry, hash_entry};
+use agileplus_domain::domain::backlog::{
+    BacklogFilters, BacklogItem, BacklogPriority, BacklogStatus,
+};
 use agileplus_domain::domain::cycle::{Cycle, CycleFeature, CycleState, CycleWithFeatures};
 use agileplus_domain::domain::feature::Feature;
 use agileplus_domain::domain::governance::{Evidence, GovernanceContract, PolicyRule};
@@ -28,10 +31,9 @@ use agileplus_domain::domain::state_machine::FeatureState;
 use agileplus_domain::domain::sync_mapping::SyncMapping;
 use agileplus_domain::domain::work_package::{WorkPackage, WpDependency, WpState};
 use agileplus_domain::error::DomainError;
+use agileplus_domain::ports::ContentStoragePort;
 use agileplus_domain::ports::observability::{LogEntry, ObservabilityPort, SpanContext};
 use agileplus_domain::ports::storage::StoragePort;
-use agileplus_domain::ports::ContentStoragePort;
-use agileplus_domain::domain::backlog::{BacklogFilters, BacklogItem, BacklogPriority, BacklogStatus};
 use agileplus_domain::ports::vcs::{
     ConflictInfo, FeatureArtifacts, MergeResult, VcsPort, WorktreeInfo,
 };
@@ -578,7 +580,9 @@ impl ContentStoragePort for MockStorage {
     fn get_feature_by_slug(
         &self,
         slug: &str,
-    ) -> impl Future<Output = Result<Option<agileplus_domain::domain::feature::Feature>, DomainError>> + Send {
+    ) -> impl Future<
+        Output = Result<Option<agileplus_domain::domain::feature::Feature>, DomainError>,
+    > + Send {
         let feats = self.features.lock().unwrap();
         let found = feats.iter().find(|f| f.slug == slug).cloned();
         async move { Ok(found) }
@@ -587,7 +591,9 @@ impl ContentStoragePort for MockStorage {
     fn get_feature_by_id(
         &self,
         id: i64,
-    ) -> impl Future<Output = Result<Option<agileplus_domain::domain::feature::Feature>, DomainError>> + Send {
+    ) -> impl Future<
+        Output = Result<Option<agileplus_domain::domain::feature::Feature>, DomainError>,
+    > + Send {
         let feats = self.features.lock().unwrap();
         let found = feats.iter().find(|f| f.id == id).cloned();
         async move { Ok(found) }
@@ -611,8 +617,12 @@ impl ContentStoragePort for MockStorage {
     fn list_features_by_state(
         &self,
         state: agileplus_domain::domain::state_machine::FeatureState,
-    ) -> impl Future<Output = Result<Vec<agileplus_domain::domain::feature::Feature>, DomainError>> + Send {
-        let feats: Vec<_> = self.features.lock().unwrap()
+    ) -> impl Future<Output = Result<Vec<agileplus_domain::domain::feature::Feature>, DomainError>> + Send
+    {
+        let feats: Vec<_> = self
+            .features
+            .lock()
+            .unwrap()
             .iter()
             .filter(|f| f.state == state)
             .cloned()
@@ -622,7 +632,8 @@ impl ContentStoragePort for MockStorage {
 
     fn list_all_features(
         &self,
-    ) -> impl Future<Output = Result<Vec<agileplus_domain::domain::feature::Feature>, DomainError>> + Send {
+    ) -> impl Future<Output = Result<Vec<agileplus_domain::domain::feature::Feature>, DomainError>> + Send
+    {
         let feats: Vec<_> = self.features.lock().unwrap().clone();
         async move { Ok(feats) }
     }
@@ -680,7 +691,9 @@ impl ContentStoragePort for MockStorage {
     fn get_work_package(
         &self,
         _id: i64,
-    ) -> impl Future<Output = Result<Option<agileplus_domain::domain::work_package::WorkPackage>, DomainError>> + Send {
+    ) -> impl Future<
+        Output = Result<Option<agileplus_domain::domain::work_package::WorkPackage>, DomainError>,
+    > + Send {
         async move { Ok(None) }
     }
 
@@ -702,7 +715,9 @@ impl ContentStoragePort for MockStorage {
     fn list_wps_by_feature(
         &self,
         _feature_id: i64,
-    ) -> impl Future<Output = Result<Vec<agileplus_domain::domain::work_package::WorkPackage>, DomainError>> + Send {
+    ) -> impl Future<
+        Output = Result<Vec<agileplus_domain::domain::work_package::WorkPackage>, DomainError>,
+    > + Send {
         async move { Ok(vec![]) }
     }
 
@@ -716,14 +731,18 @@ impl ContentStoragePort for MockStorage {
     fn get_wp_dependencies(
         &self,
         _wp_id: i64,
-    ) -> impl Future<Output = Result<Vec<agileplus_domain::domain::work_package::WpDependency>, DomainError>> + Send {
+    ) -> impl Future<
+        Output = Result<Vec<agileplus_domain::domain::work_package::WpDependency>, DomainError>,
+    > + Send {
         async move { Ok(vec![]) }
     }
 
     fn get_ready_wps(
         &self,
         _feature_id: i64,
-    ) -> impl Future<Output = Result<Vec<agileplus_domain::domain::work_package::WorkPackage>, DomainError>> + Send {
+    ) -> impl Future<
+        Output = Result<Vec<agileplus_domain::domain::work_package::WorkPackage>, DomainError>,
+    > + Send {
         async move { Ok(vec![]) }
     }
 }

@@ -53,8 +53,7 @@ type BoxError = Box<dyn std::error::Error + Send + Sync>;
 use crate::middleware::otel::opentelemetry_tracing_layer;
 use crate::responses::DetailedHealthResponse;
 use crate::routes::{
-    audit, backlog, cycle, events, features, governance, module, stream, work_packages,
-    worktree,
+    audit, backlog, cycle, events, features, governance, module, stream, work_packages, worktree,
 };
 use crate::state::AppState;
 
