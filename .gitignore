@@ -13,3 +13,5 @@ __pycache__/
 .github/copilot-instructions.md
 .claudeignore
 .llmignore
+worktrees/
+worktrees/
