@@ -763,16 +763,13 @@ pub fn router(state: SharedState) -> Router {
         .route("/settings/agents", get(agent_settings_page))
         .route("/settings/services", get(services_settings_page))
         .route("/api/dashboard/kanban", get(kanban_board))
-        .route("/api/dashboard/features/{id}", get(feature_detail))
-        .route("/api/dashboard/features/{id}/work-packages", get(wp_list))
+        .route("/api/dashboard/features/:id", get(feature_detail))
+        .route("/api/dashboard/features/:id/work-packages", get(wp_list))
         .route("/api/dashboard/health", get(health_panel))
         .route("/api/dashboard/events", get(event_timeline))
         .route("/api/dashboard/agents", get(agent_activity))
         .route("/api/dashboard/projects", get(project_switcher))
-        .route(
-            "/api/dashboard/projects/{id}/activate",
-            post(switch_project),
-        )
+        .route("/api/dashboard/projects/:id/activate", post(switch_project))
         .route("/api/time", get(time_footer))
         .route("/api/stream-placeholder", get(stream_placeholder))
         .with_state(state)
