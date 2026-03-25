@@ -34,7 +34,10 @@ fn evidence_type_from_str(s: &str) -> Result<EvidenceType, DomainError> {
     }
 }
 
-fn row_to_evidence(row: &Row<'_>) -> rusqlite::Result<(i64, i64, String, String, String, Option<String>, String)> {
+#[allow(clippy::type_complexity)]
+fn row_to_evidence(
+    row: &Row<'_>,
+) -> rusqlite::Result<(i64, i64, String, String, String, Option<String>, String)> {
     Ok((
         row.get(0)?,
         row.get(1)?,
@@ -46,7 +49,9 @@ fn row_to_evidence(row: &Row<'_>) -> rusqlite::Result<(i64, i64, String, String,
     ))
 }
 
-fn parse_evidence(row_data: (i64, i64, String, String, String, Option<String>, String)) -> Result<Evidence, DomainError> {
+fn parse_evidence(
+    row_data: (i64, i64, String, String, String, Option<String>, String),
+) -> Result<Evidence, DomainError> {
     let (id, wp_id, fr_id, evidence_type_s, artifact_path, metadata_s, created_at_s) = row_data;
 
     let evidence_type = evidence_type_from_str(&evidence_type_s)?;
@@ -73,7 +78,7 @@ pub fn create_evidence(conn: &Connection, evidence: &Evidence) -> Result<i64, Do
     let metadata_s = evidence
         .metadata
         .as_ref()
-        .map(|m| serde_json::to_string(m))
+        .map(serde_json::to_string)
         .transpose()
         .map_err(|e| DomainError::Storage(e.to_string()))?;
 

@@ -73,6 +73,7 @@ impl SqliteStorageAdapter {
     ///
     /// This clears all existing data and reconstructs from scratch within a
     /// single transaction. If any error occurs, the database is left unchanged.
+    #[allow(clippy::await_holding_lock)] // Guard is explicitly dropped before any .await
     pub async fn rebuild_from_git<V: VcsPort>(
         &self,
         vcs: &V,
@@ -80,10 +81,15 @@ impl SqliteStorageAdapter {
     ) -> Result<RebuildReport, DomainError> {
         let mut report = RebuildReport::default();
 
-        // Lock the connection and do everything in a single transaction
-        let conn = self.conn.lock().map_err(|e| DomainError::Storage(e.to_string()))?;
+        // Lock the connection and do everything in a single transaction.
+        // The guard is explicitly dropped below before any `.await`.
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| DomainError::Storage(e.to_string()))?;
 
-        conn.execute_batch("BEGIN;").map_err(|e| DomainError::Storage(e.to_string()))?;
+        conn.execute_batch("BEGIN;")
+            .map_err(|e| DomainError::Storage(e.to_string()))?;
 
         // Clear existing data
         conn.execute_batch(
@@ -120,7 +126,10 @@ impl SqliteStorageAdapter {
         }
 
         // Commit
-        let conn = self.conn.lock().map_err(|e| DomainError::Storage(e.to_string()))?;
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| DomainError::Storage(e.to_string()))?;
         conn.execute_batch("COMMIT;")
             .map_err(|e| DomainError::Storage(format!("commit failed: {e}")))?;
 
@@ -163,6 +172,11 @@ impl SqliteStorageAdapter {
             state,
             spec_hash,
             target_branch: meta.target_branch,
+            plane_issue_id: None,
+            plane_state_id: None,
+            labels: Vec::new(),
+            module_id: None,
+            project_id: None,
             created_at,
             updated_at,
         };
@@ -213,6 +227,8 @@ impl SqliteStorageAdapter {
                     evidence_refs: al.evidence_refs,
                     prev_hash: entry_prev_hash,
                     hash: entry_hash,
+                    event_id: None,
+                    archived_to: None,
                 };
 
                 // Verify self-hash
@@ -267,9 +283,8 @@ mod tests {
         domain::audit::hash_entry,
         error::DomainError,
         ports::{
+            StoragePort, VcsPort,
             vcs::{ConflictInfo, FeatureArtifacts, MergeResult, WorktreeInfo},
-            StoragePort,
-            VcsPort,
         },
     };
 
@@ -386,6 +401,8 @@ mod tests {
             evidence_refs: vec![],
             prev_hash: [0u8; 32],
             hash: [0u8; 32],
+            event_id: None,
+            archived_to: None,
         };
         e1.hash = hash_entry(&e1);
 
@@ -400,6 +417,8 @@ mod tests {
             evidence_refs: vec![],
             prev_hash: e1.hash,
             hash: [0u8; 32],
+            event_id: None,
+            archived_to: None,
         };
         e2.hash = hash_entry(&e2);
 
@@ -458,14 +477,20 @@ mod tests {
 
         let feat = db.get_feature_by_slug(slug).await.unwrap().unwrap();
         assert_eq!(feat.slug, slug);
-        assert_eq!(feat.state, agileplus_domain::domain::state_machine::FeatureState::Specified);
+        assert_eq!(
+            feat.state,
+            agileplus_domain::domain::state_machine::FeatureState::Specified
+        );
     }
 
     #[tokio::test]
     async fn rebuild_skips_missing_meta() {
         let mock = MockVcs::new(); // No artifacts
         let db = SqliteStorageAdapter::in_memory().unwrap();
-        let report = db.rebuild_from_git(&mock, &["no-such-feature"]).await.unwrap();
+        let report = db
+            .rebuild_from_git(&mock, &["no-such-feature"])
+            .await
+            .unwrap();
         assert_eq!(report.features_restored, 0);
     }
 }

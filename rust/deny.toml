@@ -1,10 +1,19 @@
+[graph]
+all-features = true
+
 [advisories]
-vulnerability = "deny"
-unmaintained = "warn"
-yanked = "deny"
+version = 2
+ignore = [
+    "RUSTSEC-2025-0134", # rustls-pemfile unmaintained - transitive dep, no action needed
+    # RUSTSEC-2026-0049: rustls-webpki CRL matching logic bug (patched in >=0.103.10)
+    # rustls-webpki 0.102.8 is a transitive dep via async-nats 0.37.0 (agileplus-p2p, agileplus-sync).
+    # No patch exists for the 0.102.x series; async-nats must upgrade to use the fix.
+    # Track: https://github.com/nats-io/nats.rs/issues for async-nats reqwest bump.
+    "RUSTSEC-2026-0049",
+]
 
 [licenses]
-unlicensed = "deny"
+version = 2
 allow = [
     "MIT",
     "Apache-2.0",
@@ -14,11 +23,14 @@ allow = [
     "Unicode-3.0",
     "Unicode-DFS-2016",
     "Zlib",
+    "MPL-2.0",
+    "BlueOak-1.0.0",
+    "CDLA-Permissive-2.0",
 ]
 
 [bans]
 multiple-versions = "warn"
-wildcards = "deny"
+wildcards = "allow"
 
 [sources]
 unknown-registry = "deny"

@@ -3,7 +3,7 @@
 use rusqlite::{Connection, Row, params};
 
 use agileplus_domain::{
-    domain::work_package::{DependencyType, PrState, WpDependency, WpState, WorkPackage},
+    domain::work_package::{DependencyType, PrState, WorkPackage, WpDependency, WpState},
     error::DomainError,
 };
 
@@ -74,12 +74,19 @@ fn row_to_wp(row: &Row<'_>) -> rusqlite::Result<WorkPackage> {
     let created_at_s: String = row.get(11)?;
     let updated_at_s: String = row.get(12)?;
 
-    let state = wp_state_from_str(&state_s)
-        .map_err(|_| rusqlite::Error::FromSqlConversionFailure(3, rusqlite::types::Type::Text, Box::new(std::io::Error::new(std::io::ErrorKind::InvalidData, "bad wp state"))))?;
+    let state = wp_state_from_str(&state_s).map_err(|_| {
+        rusqlite::Error::FromSqlConversionFailure(
+            3,
+            rusqlite::types::Type::Text,
+            Box::new(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                "bad wp state",
+            )),
+        )
+    })?;
 
     // We use serde_json to parse, but can't use ? directly in rusqlite's Result<T>
-    let file_scope: Vec<String> =
-        serde_json::from_str(&file_scope_json).unwrap_or_default();
+    let file_scope: Vec<String> = serde_json::from_str(&file_scope_json).unwrap_or_default();
 
     let pr_state = pr_state_s.as_deref().map(|s| match s {
         "open" => PrState::Open,
@@ -92,11 +99,29 @@ fn row_to_wp(row: &Row<'_>) -> rusqlite::Result<WorkPackage> {
 
     let created_at = created_at_s
         .parse::<chrono::DateTime<chrono::Utc>>()
-        .map_err(|e| rusqlite::Error::FromSqlConversionFailure(11, rusqlite::types::Type::Text, Box::new(std::io::Error::new(std::io::ErrorKind::InvalidData, e.to_string()))))?;
+        .map_err(|e| {
+            rusqlite::Error::FromSqlConversionFailure(
+                11,
+                rusqlite::types::Type::Text,
+                Box::new(std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    e.to_string(),
+                )),
+            )
+        })?;
 
     let updated_at = updated_at_s
         .parse::<chrono::DateTime<chrono::Utc>>()
-        .map_err(|e| rusqlite::Error::FromSqlConversionFailure(12, rusqlite::types::Type::Text, Box::new(std::io::Error::new(std::io::ErrorKind::InvalidData, e.to_string()))))?;
+        .map_err(|e| {
+            rusqlite::Error::FromSqlConversionFailure(
+                12,
+                rusqlite::types::Type::Text,
+                Box::new(std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    e.to_string(),
+                )),
+            )
+        })?;
 
     Ok(WorkPackage {
         id,
@@ -110,6 +135,7 @@ fn row_to_wp(row: &Row<'_>) -> rusqlite::Result<WorkPackage> {
         pr_url,
         pr_state,
         worktree_path,
+        plane_sub_issue_id: None,
         created_at,
         updated_at,
     })
@@ -166,6 +192,34 @@ pub fn update_wp_state(conn: &Connection, id: i64, state: WpState) -> Result<(),
     Ok(())
 }
 
+pub fn update_work_package(conn: &Connection, wp: &WorkPackage) -> Result<(), DomainError> {
+    let now = chrono::Utc::now().to_rfc3339();
+    let file_scope_json =
+        serde_json::to_string(&wp.file_scope).map_err(|e| DomainError::Storage(e.to_string()))?;
+    let pr_state_s = wp.pr_state.map(pr_state_str);
+
+    conn.execute(
+        "UPDATE work_packages SET title = ?1, state = ?2, sequence = ?3, file_scope = ?4, \
+         acceptance_criteria = ?5, agent_id = ?6, pr_url = ?7, pr_state = ?8, worktree_path = ?9, \
+         updated_at = ?10 WHERE id = ?11",
+        params![
+            wp.title,
+            wp_state_str(wp.state),
+            wp.sequence,
+            file_scope_json,
+            wp.acceptance_criteria,
+            wp.agent_id,
+            wp.pr_url,
+            pr_state_s,
+            wp.worktree_path,
+            now,
+            wp.id
+        ],
+    )
+    .map_err(map_err)?;
+    Ok(())
+}
+
 pub fn list_wps_by_feature(
     conn: &Connection,
     feature_id: i64,
@@ -178,7 +232,9 @@ pub fn list_wps_by_feature(
         )
         .map_err(map_err)?;
 
-    let rows = stmt.query_map(params![feature_id], row_to_wp).map_err(map_err)?;
+    let rows = stmt
+        .query_map(params![feature_id], row_to_wp)
+        .map_err(map_err)?;
     rows.collect::<rusqlite::Result<Vec<_>>>().map_err(map_err)
 }
 
@@ -214,7 +270,11 @@ pub fn get_wp_dependencies(
     for row in rows {
         let (wp_id, depends_on, dep_type_s) = row.map_err(map_err)?;
         let dep_type = dep_type_from_str(&dep_type_s)?;
-        deps.push(WpDependency { wp_id, depends_on, dep_type });
+        deps.push(WpDependency {
+            wp_id,
+            depends_on,
+            dep_type,
+        });
     }
     Ok(deps)
 }
@@ -236,7 +296,9 @@ pub fn get_ready_wps(conn: &Connection, feature_id: i64) -> Result<Vec<WorkPacka
         )
         .map_err(map_err)?;
 
-    let rows = stmt.query_map(params![feature_id], row_to_wp).map_err(map_err)?;
+    let rows = stmt
+        .query_map(params![feature_id], row_to_wp)
+        .map_err(map_err)?;
     rows.collect::<rusqlite::Result<Vec<_>>>().map_err(map_err)
 }
 
@@ -254,4 +316,3 @@ impl<T> OptionalExt<T> for rusqlite::Result<T> {
         }
     }
 }
-
