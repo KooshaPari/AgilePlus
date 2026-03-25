@@ -2,10 +2,7 @@
 
 use rusqlite::{Connection, params};
 
-use agileplus_domain::{
-    domain::metric::Metric,
-    error::DomainError,
-};
+use agileplus_domain::{domain::metric::Metric, error::DomainError};
 
 fn map_err(e: rusqlite::Error) -> DomainError {
     DomainError::Storage(e.to_string())
@@ -15,7 +12,7 @@ pub fn record_metric(conn: &Connection, metric: &Metric) -> Result<i64, DomainEr
     let metadata_s = metric
         .metadata
         .as_ref()
-        .map(|m| serde_json::to_string(m))
+        .map(serde_json::to_string)
         .transpose()
         .map_err(|e| DomainError::Storage(e.to_string()))?;
 
@@ -67,7 +64,16 @@ pub fn get_metrics_by_feature(
         .map_err(map_err)?
         .into_iter()
         .map(
-            |(id, feature_id, command, duration_ms, agent_runs, review_cycles, metadata_s, timestamp_s)| {
+            |(
+                id,
+                feature_id,
+                command,
+                duration_ms,
+                agent_runs,
+                review_cycles,
+                metadata_s,
+                timestamp_s,
+            )| {
                 let metadata = metadata_s
                     .map(|s| serde_json::from_str(&s))
                     .transpose()

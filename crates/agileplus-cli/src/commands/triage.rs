@@ -5,8 +5,6 @@
 //!
 //! Traceability: FR-048 / WP21-T121
 
-use std::path::PathBuf;
-
 use anyhow::Result;
 
 use agileplus_triage::{Intent, TriageClassifier};
