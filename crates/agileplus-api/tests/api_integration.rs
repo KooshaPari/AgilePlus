@@ -18,6 +18,9 @@ use agileplus_domain::credentials::CredentialStore;
 use agileplus_domain::credentials::InMemoryCredentialStore;
 use agileplus_domain::credentials::keys as cred_keys;
 use agileplus_domain::domain::audit::{AuditEntry, hash_entry};
+use agileplus_domain::domain::backlog::{
+    BacklogFilters, BacklogItem, BacklogPriority, BacklogStatus,
+};
 use agileplus_domain::domain::cycle::{Cycle, CycleFeature, CycleState, CycleWithFeatures};
 use agileplus_domain::domain::feature::Feature;
 use agileplus_domain::domain::governance::{Evidence, GovernanceContract, PolicyRule};
@@ -27,6 +30,7 @@ use agileplus_domain::domain::state_machine::FeatureState;
 use agileplus_domain::domain::sync_mapping::SyncMapping;
 use agileplus_domain::domain::work_package::{WorkPackage, WpDependency, WpState};
 use agileplus_domain::error::DomainError;
+use agileplus_domain::ports::ContentStoragePort;
 use agileplus_domain::ports::observability::{LogEntry, ObservabilityPort, SpanContext};
 use agileplus_domain::ports::storage::StoragePort;
 use agileplus_domain::ports::vcs::{
@@ -172,7 +176,10 @@ impl StoragePort for MockStorage {
         Ok(())
     }
 
-    async fn list_features_by_state(&self, state: FeatureState) -> Result<Vec<Feature>, DomainError> {
+    async fn list_features_by_state(
+        &self,
+        state: FeatureState,
+    ) -> Result<Vec<Feature>, DomainError> {
         let features: Vec<Feature> = self
             .features
             .lock()
@@ -469,17 +476,173 @@ impl StoragePort for MockStorage {
     }
 }
 
+// ── ContentStoragePort for MockStorage ───────────────────────────────────────
+
+impl ContentStoragePort for MockStorage {
+    async fn create_feature(
+        &self,
+        f: &agileplus_domain::domain::feature::Feature,
+    ) -> Result<i64, DomainError> {
+        let id = (self.features.lock().unwrap().len() + 1) as i64;
+        let _ = f;
+        Ok(id)
+    }
+
+    async fn get_feature_by_slug(
+        &self,
+        slug: &str,
+    ) -> Result<Option<agileplus_domain::domain::feature::Feature>, DomainError> {
+        let feats = self.features.lock().unwrap();
+        let found = feats.iter().find(|f| f.slug == slug).cloned();
+        Ok(found)
+    }
+
+    async fn get_feature_by_id(
+        &self,
+        id: i64,
+    ) -> Result<Option<agileplus_domain::domain::feature::Feature>, DomainError> {
+        let feats = self.features.lock().unwrap();
+        let found = feats.iter().find(|f| f.id == id).cloned();
+        Ok(found)
+    }
+
+    async fn update_feature_state(
+        &self,
+        _id: i64,
+        _state: agileplus_domain::domain::state_machine::FeatureState,
+    ) -> Result<(), DomainError> {
+        Ok(())
+    }
+
+    async fn update_feature(
+        &self,
+        _feature: &agileplus_domain::domain::feature::Feature,
+    ) -> Result<(), DomainError> {
+        Ok(())
+    }
+
+    async fn list_features_by_state(
+        &self,
+        state: agileplus_domain::domain::state_machine::FeatureState,
+    ) -> Result<Vec<agileplus_domain::domain::feature::Feature>, DomainError> {
+        let feats: Vec<_> = self
+            .features
+            .lock()
+            .unwrap()
+            .iter()
+            .filter(|f| f.state == state)
+            .cloned()
+            .collect();
+        Ok(feats)
+    }
+
+    async fn list_all_features(
+        &self,
+    ) -> Result<Vec<agileplus_domain::domain::feature::Feature>, DomainError> {
+        let feats: Vec<_> = self.features.lock().unwrap().clone();
+        Ok(feats)
+    }
+
+    async fn create_backlog_item(&self, _item: &BacklogItem) -> Result<i64, DomainError> {
+        Ok(1)
+    }
+
+    async fn get_backlog_item(&self, _id: i64) -> Result<Option<BacklogItem>, DomainError> {
+        Ok(None)
+    }
+
+    async fn list_backlog_items(
+        &self,
+        _filters: &BacklogFilters,
+    ) -> Result<Vec<BacklogItem>, DomainError> {
+        Ok(vec![])
+    }
+
+    async fn update_backlog_status(
+        &self,
+        _id: i64,
+        _status: BacklogStatus,
+    ) -> Result<(), DomainError> {
+        Ok(())
+    }
+
+    async fn update_backlog_priority(
+        &self,
+        _id: i64,
+        _priority: BacklogPriority,
+    ) -> Result<(), DomainError> {
+        Ok(())
+    }
+
+    async fn pop_next_backlog_item(&self) -> Result<Option<BacklogItem>, DomainError> {
+        Ok(None)
+    }
+
+    async fn create_work_package(
+        &self,
+        _wp: &agileplus_domain::domain::work_package::WorkPackage,
+    ) -> Result<i64, DomainError> {
+        Ok(1)
+    }
+
+    async fn get_work_package(
+        &self,
+        _id: i64,
+    ) -> Result<Option<agileplus_domain::domain::work_package::WorkPackage>, DomainError> {
+        Ok(None)
+    }
+
+    async fn update_wp_state(
+        &self,
+        _id: i64,
+        _state: agileplus_domain::domain::work_package::WpState,
+    ) -> Result<(), DomainError> {
+        Ok(())
+    }
+
+    async fn update_work_package(
+        &self,
+        _wp: &agileplus_domain::domain::work_package::WorkPackage,
+    ) -> Result<(), DomainError> {
+        Ok(())
+    }
+
+    async fn list_wps_by_feature(
+        &self,
+        _feature_id: i64,
+    ) -> Result<Vec<agileplus_domain::domain::work_package::WorkPackage>, DomainError> {
+        Ok(vec![])
+    }
+
+    async fn add_wp_dependency(
+        &self,
+        _dep: &agileplus_domain::domain::work_package::WpDependency,
+    ) -> Result<(), DomainError> {
+        Ok(())
+    }
+
+    async fn get_wp_dependencies(
+        &self,
+        _wp_id: i64,
+    ) -> Result<Vec<agileplus_domain::domain::work_package::WpDependency>, DomainError> {
+        Ok(vec![])
+    }
+
+    async fn get_ready_wps(
+        &self,
+        _feature_id: i64,
+    ) -> Result<Vec<agileplus_domain::domain::work_package::WorkPackage>, DomainError> {
+        Ok(vec![])
+    }
+}
+
 // ── Mock VCS ─────────────────────────────────────────────────────────────────
 
 #[derive(Clone)]
 struct MockVcs;
 
 impl VcsPort for MockVcs {
-    async fn create_worktree(
-        &self,
-        _fs: &str,
-        _wp: &str,
-    ) -> Result<PathBuf, DomainError> {
+    async fn create_worktree(&self, _fs: &str, _wp: &str) -> Result<PathBuf, DomainError> {
         Ok(PathBuf::from("/tmp/worktree"))
     }
     async fn list_worktrees(&self) -> Result<Vec<WorktreeInfo>, DomainError> {
