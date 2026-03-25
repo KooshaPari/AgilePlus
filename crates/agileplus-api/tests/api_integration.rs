@@ -311,9 +311,7 @@ impl StoragePort for MockStorage {
             .audit
             .lock()
             .unwrap()
-            .iter()
-            .filter(|e| e.feature_id == feature_id)
-            .last()
+            .iter().rfind(|e| e.feature_id == feature_id)
             .cloned();
         async move { Ok(entry) }
     }
