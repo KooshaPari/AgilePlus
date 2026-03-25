@@ -2,7 +2,7 @@
 
 Standalone control-plane repository for Phenotype project-state runtime orchestration.
 
-- Materialized runtime root: `/Users/kooshapari/CodeProjects/Phenotype/projects`
+- Materialized runtime root: `$HOME/CodeProjects/Phenotype/projects`
 - Home mirror root: `~/phench`
 - State metadata per target: `.phench/`
 
