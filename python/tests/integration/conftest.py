@@ -6,7 +6,6 @@ import os
 
 import pytest
 
-
 SKIP_REASON = (
     "AGILEPLUS_GRPC_URL not set; skipped outside Docker Compose environment"
 )

@@ -63,6 +63,8 @@ impl MockStorage {
             labels: vec![],
             module_id: None,
             project_id: None,
+            created_at_commit: None,
+            last_modified_commit: None,
             created_at: now,
             updated_at: now,
         });
@@ -79,6 +81,8 @@ impl MockStorage {
             pr_state: None,
             worktree_path: None,
             plane_sub_issue_id: None,
+            base_commit: None,
+            head_commit: None,
             created_at: now,
             updated_at: now,
         });
