@@ -24,8 +24,6 @@
 //!   GET  /api/v1/backlog                            - backlog list
 //!   POST /api/v1/backlog                            - backlog create
 //!   POST /api/v1/backlog/import                     - backlog bulk import
-//!   GET  /api/v1/branches                           - branch list
-//!   POST /api/v1/branches                           - branch create
 //!   GET  /api/v1/worktrees                          - worktree list
 //!   POST /api/v1/worktrees                          - worktree create
 //!   GET  /api/v1/events                             — query events (T068)
@@ -47,7 +45,7 @@ use tower_http::trace::TraceLayer;
 
 use agileplus_domain::credentials::CredentialStore;
 use agileplus_domain::ports::{
-    observability::ObservabilityPort, storage::StoragePort, vcs::VcsPort,
+    ContentStoragePort, observability::ObservabilityPort, storage::StoragePort, vcs::VcsPort,
 };
 
 type BoxError = Box<dyn std::error::Error + Send + Sync>;
@@ -55,7 +53,7 @@ type BoxError = Box<dyn std::error::Error + Send + Sync>;
 use crate::middleware::otel::opentelemetry_tracing_layer;
 use crate::responses::DetailedHealthResponse;
 use crate::routes::{
-    audit, backlog, branch, cycle, events, features, governance, module, stream, work_packages,
+    audit, backlog, cycle, events, features, governance, module, stream, work_packages,
     worktree,
 };
 use crate::state::AppState;
@@ -63,7 +61,7 @@ use crate::state::AppState;
 /// Build the axum [`Router`] with all routes, middleware, and shared state.
 pub fn create_router<S, V, O>(state: AppState<S, V, O>) -> Router
 where
-    S: StoragePort + Send + Sync + 'static,
+    S: StoragePort + ContentStoragePort + Send + Sync + 'static,
     V: VcsPort + Send + Sync + 'static,
     O: ObservabilityPort + Send + Sync + 'static,
 {
@@ -87,7 +85,6 @@ where
         .nest("/api/v1/work-packages", work_packages::routes::<S, V, O>())
         // Backlog / triage / worktree
         .nest("/api/v1/backlog", backlog::routes::<S, V, O>())
-        .nest("/api/v1/branches", branch::routes::<S, V, O>())
         .nest("/api/v1/worktrees", worktree::routes::<S, V, O>())
         // Work-package routes nested under features
         .nest(
@@ -134,7 +131,7 @@ async fn health_handler<S, V, O>(
     axum::extract::State(app): axum::extract::State<AppState<S, V, O>>,
 ) -> Json<DetailedHealthResponse>
 where
-    S: StoragePort + Send + Sync + 'static,
+    S: StoragePort + ContentStoragePort + Send + Sync + 'static,
     V: VcsPort + Send + Sync + 'static,
     O: ObservabilityPort + Send + Sync + 'static,
 {
@@ -144,7 +141,7 @@ where
     let mut services: HashMap<String, crate::responses::ServiceHealth> = HashMap::new();
 
     let t0 = Instant::now();
-    let sqlite_health = match app.storage.list_all_features().await {
+    let sqlite_health = match StoragePort::list_all_features(&*app.storage).await {
         Ok(_) => crate::responses::ServiceHealth::healthy(t0.elapsed().as_millis() as u64),
         Err(e) => crate::responses::ServiceHealth::unavailable(e.to_string()),
     };
@@ -182,7 +179,7 @@ async fn info_handler() -> Json<serde_json::Value> {
 /// Start the HTTP API server, binding to `addr`.
 pub async fn start_api<S, V, O>(addr: SocketAddr, state: AppState<S, V, O>) -> Result<(), BoxError>
 where
-    S: StoragePort + Send + Sync + 'static,
+    S: StoragePort + ContentStoragePort + Send + Sync + 'static,
     V: VcsPort + Send + Sync + 'static,
     O: ObservabilityPort + Send + Sync + 'static,
 {
