@@ -21,7 +21,7 @@ services:
       - NATS_LOG_FILE=.agileplus/logs/nats.log
 
   dragonfly:
-    command: dragonfly --port 6379 --dbfilename .agileplus/dragonfly.rdb --bind localhost
+    command: /Users/kooshapari/CodeProjects/Phenotype/repos/AgilePlus/.agileplus/build/dragonfly/build-opt/dragonfly --port 6379 --dbfilename dragonfly --dir .agileplus --bind localhost --maxmemory=4gb
     depends_on:
       nats:
         condition: process_healthy
@@ -36,7 +36,7 @@ services:
       - DRAGONFLY_LOG_LEVEL=info
 
   neo4j:
-    command: neo4j console
+    command: sh -c "if lsof -i :7687 >/dev/null 2>&1; then echo 'Neo4j already running, skipping start'; sleep infinity; else neo4j console; fi"
     depends_on:
       dragonfly:
         condition: process_healthy
