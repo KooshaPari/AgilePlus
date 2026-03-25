@@ -4,7 +4,14 @@
 //! Traceability: WP07
 
 pub mod artifact;
+pub mod coordinator;
+pub mod events;
+pub mod guard;
+pub mod materialize;
+pub mod observer;
 pub mod repository;
+pub mod snapshot;
+pub mod topology;
 pub mod worktree;
 
 use std::path::{Path, PathBuf};
@@ -177,10 +184,11 @@ pub fn scan_all_features(adapter: &GitVcsAdapter) -> Result<Vec<String>, DomainE
     for entry in std::fs::read_dir(&base).map_err(|e| DomainError::Vcs(e.to_string()))? {
         let entry = entry.map_err(|e| DomainError::Vcs(e.to_string()))?;
         let path = entry.path();
-        if path.is_dir() && path.join("meta.json").exists() {
-            if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
-                slugs.push(name.to_string());
-            }
+        if path.is_dir()
+            && path.join("meta.json").exists()
+            && let Some(name) = path.file_name().and_then(|n| n.to_str())
+        {
+            slugs.push(name.to_string());
         }
     }
     Ok(slugs)

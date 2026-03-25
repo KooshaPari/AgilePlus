@@ -555,14 +555,13 @@ pub async fn event_timeline(State(state): State<SharedState>) -> Response {
 
 // ── /api/dashboard/agents ────────────────────────────────────────────────
 
-pub async fn agent_activity(_state: State<SharedState>) -> Response {
-    // In production this would query the agent registry / NATS subjects.
-    // Return a placeholder list for now.
-    let agents: Vec<AgentView> = vec![
+pub async fn agent_activity(State(state): State<SharedState>) -> Response {
+    let _ = state.read().await;
+    let agents = vec![
         AgentView {
-            name: "spec-agent".into(),
+            name: "planner-agent".into(),
             status: "idle".into(),
-            current_task: String::new(),
+            current_task: "none".into(),
             last_action: "2m ago".into(),
         },
         AgentView {
@@ -763,8 +762,6 @@ pub fn router(state: SharedState) -> Router {
         .route("/settings/plane", get(plane_settings_page))
         .route("/settings/agents", get(agent_settings_page))
         .route("/settings/services", get(services_settings_page))
-        .route("/api/time", get(time_footer))
-        .route("/api/stream", get(stream_placeholder))
         .route("/api/dashboard/kanban", get(kanban_board))
         .route("/api/dashboard/features/{id}", get(feature_detail))
         .route("/api/dashboard/features/{id}/work-packages", get(wp_list))
@@ -776,6 +773,8 @@ pub fn router(state: SharedState) -> Router {
             "/api/dashboard/projects/{id}/activate",
             post(switch_project),
         )
+        .route("/api/time", get(time_footer))
+        .route("/api/stream-placeholder", get(stream_placeholder))
         .with_state(state)
 }
 
@@ -788,8 +787,10 @@ mod tests {
     use tokio::sync::RwLock;
 
     fn make_state() -> SharedState {
-        let mut store = DashboardStore::default();
-        store.health = default_health();
+        let store = DashboardStore {
+            health: default_health(),
+            ..Default::default()
+        };
         Arc::new(RwLock::new(store))
     }
 

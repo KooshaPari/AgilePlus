@@ -140,7 +140,7 @@ impl BacklogStatus {
 }
 
 /// Sorting modes for backlog queries.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum BacklogSort {
     #[default]
