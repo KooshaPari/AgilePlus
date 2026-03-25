@@ -1,80 +1,99 @@
-# https://taskfile.dev — preferred DX entrypoint (Makefile targets remain for legacy/proto flows).
-# Install: brew install go-task/tap/go-task  |  https://taskfile.dev/installation/
-version: "3"
+version: '3'
 
 vars:
-  COMPOSE: process-compose.yml
+  AGILEPLUS_DIR: .agileplus
 
 tasks:
-  default:
-    desc: Run all quality checks
+  # === Dev Stack ===
+  dev:
+    desc: Start the full AgilePlus dev stack (OrbStack containers + native services)
     cmds:
-      - task: quality
+      - task: dev:deps
+      - task: dev:up
 
-  # ─── Platform (process-compose + agileplus CLI) ─────────────────────────
-  platform:up:
-    desc: Start stack via CLI (resolves repo root + compose; use from any cwd)
+  dev:deps:
+    desc: Ensure brew dependencies are installed
     cmds:
-      - cargo run -p agileplus-cli -- platform up --config {{.COMPOSE}}
+      - |
+        missing=""
+        for cmd in nats-server minio neo4j process-compose orb; do
+          command -v "$cmd" >/dev/null 2>&1 || missing="$missing $cmd"
+        done
+        if [ -n "$missing" ]; then
+          echo "Missing dependencies:$missing"
+          echo "Run: brew bundle --file=Brewfile"
+          exit 1
+        fi
+    silent: true
 
-  platform:down:
-    desc: Stop process-compose daemon for this project
+  dev:up:
+    desc: Start all services via process-compose (OrbStack containers + native)
     cmds:
-      - cargo run -p agileplus-cli -- platform down --config {{.COMPOSE}}
+      - mkdir -p {{.AGILEPLUS_DIR}}/logs
+      - bash scripts/orb-up.sh
+      - process-compose up -f process-compose.yml
 
-  platform:status:
-    desc: Show API / platform health
+  dev:down:
+    desc: Stop all services and OrbStack containers
     cmds:
-      - cargo run -p agileplus-cli -- platform status
+      - process-compose down 2>/dev/null || true
+      - bash scripts/orb-down.sh
 
-  platform:logs:
-    desc: "Logs from running stack — extra args after -- (e.g. task platform:logs -- nats --follow)"
+  dev:status:
+    desc: Show status of all dev stack services
     cmds:
-      - cargo run -p agileplus-cli -- platform logs --config {{.COMPOSE}} {{.CLI_ARGS}}
+      - |
+        echo "=== OrbStack Containers ==="
+        orb list 2>/dev/null | grep agileplus || echo "  No OrbStack containers running"
+        echo ""
+        echo "=== Process Compose ==="
+        process-compose process list 2>/dev/null || echo "  Process compose not running"
 
-  pc:up:
-    desc: Raw process-compose TUI (must run from repo root with compose file)
+  dev:logs:
+    desc: Tail all service logs
     cmds:
-      - process-compose up -f {{.COMPOSE}}
+      - tail -f {{.AGILEPLUS_DIR}}/logs/*.log
 
-  pc:ps:
-    desc: List processes in the running process-compose project
+  dev:restart:
+    desc: Restart the full dev stack
     cmds:
-      - process-compose list
+      - task: dev:down
+      - task: dev:up
 
-  urls:
-    desc: Print URLs for dashboard and Plane when stack is up
-    cmds:
-      - 'echo "AgilePlus API/dashboard (default): http://localhost:3000/dashboard"'
-      - 'echo "Plane web (optional): http://localhost:3100"'
-
-  # ─── Rust / quality ───────────────────────────────────────────────────────
+  # === Build ===
   build:
-    desc: cargo build workspace
+    desc: Build the Rust workspace
     cmds:
-      - cargo build --workspace
+      - cargo build
 
+  build:release:
+    desc: Build release binaries
+    cmds:
+      - cargo build --release
+
+  # === Test ===
   test:
-    desc: cargo test workspace
+    desc: Run all tests
     cmds:
-      - cargo test --workspace
+      - cargo test
 
-  clippy:
-    desc: cargo clippy workspace
-    cmds:
-      - cargo clippy --workspace --all-targets --all-features -- -D warnings
-
+  # === Lint & Format ===
   lint:
     desc: Run clippy linter
     cmds:
-      - task: clippy
+      - cargo clippy --all-targets --all-features -- -D warnings
 
   fmt:
-    desc: cargo fmt check
+    desc: Format code with rustfmt
     cmds:
-      - cargo fmt --all --check
+      - cargo fmt --all
 
-  # ─── Python / quality ─────────────────────────────────────────────────────
+  fmt:check:
+    desc: Check formatting without modifying
+    cmds:
+      - cargo fmt --all -- --check
+
+  # === Python ===
   python-lint:
     desc: Run ruff linter on Python code
     cmds:
@@ -85,28 +104,46 @@ tasks:
     cmds:
       - cd python && uv run pytest
 
+  # === Docs ===
+  docs:build:
+    desc: Build VitePress documentation
+    cmds:
+      - bun run docs:build
+    dir: docs
+
+  docs:dev:
+    desc: Start VitePress dev server
+    cmds:
+      - bun run docs:dev
+    dir: docs
+
+  # === Proto ===
+  proto:
+    desc: Generate protobuf/gRPC code
+    cmds:
+      - buf generate
+
+  # === Quality ===
   quality:
     desc: Run all quality checks
     cmds:
+      - task: fmt:check
       - task: lint
-      - task: fmt
       - task: python-lint
       - task: test
       - task: python-test
 
-  # ─── Docs (VitePress) ─────────────────────────────────────────────────────
-  docs:dev:
-    desc: VitePress dev server (see package.json)
+  # === Setup ===
+  setup:
+    desc: First-time project setup
     cmds:
-      - bun run docs:dev
+      - brew bundle --file=Brewfile
+      - mise install
+      - rustup component add clippy rustfmt
+      - cargo fetch
+      - mkdir -p {{.AGILEPLUS_DIR}}/logs
+      - echo "Setup complete. Run 'task dev' to start the dev stack."
 
-  docs:build:
-    desc: Build static docs site
+  default:
     cmds:
-      - bun run docs:build
-
-  # ─── Legacy Makefile ─────────────────────────────────────────────────────
-  make:check:
-    desc: Delegate to Makefile check (buf + rust + python)
-    cmds:
-      - make check
+      - task: quality

@@ -1,10 +1,30 @@
 version: "0.5"
 
 # Environment variables apply to all services
-environment:
+env:
   - RUST_BACKTRACE=1
 
-processes:
+services:
+  # ============================================================
+  # OrbStack containers: Dragonfly + PostgreSQL
+  # Managed via scripts/orb-up.sh and scripts/orb-down.sh
+  # ============================================================
+  orb-containers:
+    command: sh scripts/orb-up.sh
+    shutdown:
+      command: sh scripts/orb-down.sh
+    depends_on: {}
+    log_location: .agileplus/logs/orb-containers.log
+    readiness_probe:
+      exec:
+        command: sh -c "redis-cli -h localhost -p 6379 ping | grep -q PONG && pg_isready -h localhost -p 5432"
+      initial_delay_seconds: 5
+      period_seconds: 5
+      failure_threshold: 6
+
+  # ============================================================
+  # Native services
+  # ============================================================
   nats:
     command: nats-server --jetstream --store_dir .agileplus/nats-data --port 4222 --http_port 8222
     depends_on: {}
@@ -20,25 +40,10 @@ processes:
     environment:
       - NATS_LOG_FILE=.agileplus/logs/nats.log
 
-  dragonfly:
-    command: dragonfly --port 6379 --dbfilename .agileplus/dragonfly.rdb --bind localhost
-    depends_on:
-      nats:
-        condition: process_healthy
-    log_location: .agileplus/logs/dragonfly.log
-    readiness_probe:
-      exec:
-        command: redis-cli -p 6379 ping
-      initial_delay_seconds: 3
-      period_seconds: 5
-      failure_threshold: 3
-    environment:
-      - DRAGONFLY_LOG_LEVEL=info
-
   neo4j:
     command: neo4j console
     depends_on:
-      dragonfly:
+      nats:
         condition: process_healthy
     log_location: .agileplus/logs/neo4j.log
     readiness_probe:
@@ -73,30 +78,13 @@ processes:
       - MINIO_LOG_DIR=.agileplus/logs
       - MINIO_LOGS_DIR=.agileplus/logs
 
-  postgres:
-    command: postgres -D .agileplus/postgres-data -p 5432
-    depends_on:
-      minio:
-        condition: process_healthy
-    log_location: .agileplus/logs/postgres.log
-    readiness_probe:
-      exec:
-        command: pg_isready -h localhost -p 5432
-      initial_delay_seconds: 10
-      period_seconds: 5
-      failure_threshold: 3
-    environment:
-      - PGDATA=.agileplus/postgres-data
-      - POSTGRES_USER=agileplus
-      - POSTGRES_PASSWORD=${PLANE_POSTGRES_PASSWORD:-agileplus-dev}
-      - POSTGRES_DB=plane
-
+  # ============================================================
+  # Plane.so services (native Python/Node, connect to OrbStack containers)
+  # ============================================================
   plane-api:
-    command: sh -c "cd .agileplus/plane/apps/api && .venv/bin/python manage.py runserver 0.0.0.0:8000"
+    command: sh -c "cd .agileplus/plane/apiserver && .venv/bin/python manage.py runserver 0.0.0.0:8000"
     depends_on:
-      postgres:
-        condition: process_healthy
-      dragonfly:
+      orb-containers:
         condition: process_healthy
     log_location: .agileplus/logs/plane-api.log
     readiness_probe:
@@ -116,7 +104,7 @@ processes:
       - PYTHONUNBUFFERED=1
 
   plane-web:
-    command: sh -c "cd .agileplus/plane && bun run dev --filter web"
+    command: sh -c "cd .agileplus/plane-web && npx next start -p 3100"
     depends_on:
       plane-api:
         condition: process_healthy
@@ -132,17 +120,16 @@ processes:
     environment:
       - NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
       - NEXT_PUBLIC_WEB_URL=http://localhost:3100
-      - PORT=3100
 
   plane-worker:
-    command: sh -c "cd .agileplus/plane/apps/api && .venv/bin/celery -A plane worker -l info"
+    command: sh -c "cd .agileplus/plane/apiserver && .venv/bin/celery -A plane worker -l info"
     depends_on:
       plane-api:
         condition: process_healthy
     log_location: .agileplus/logs/plane-worker.log
     readiness_probe:
       exec:
-        command: sh -c "cd .agileplus/plane/apps/api && .venv/bin/celery -A plane inspect ping | grep -q pong"
+        command: sh -c "cd .agileplus/plane/apiserver && .venv/bin/celery -A plane inspect ping | grep -q pong"
       initial_delay_seconds: 15
       period_seconds: 10
       failure_threshold: 3
@@ -153,7 +140,7 @@ processes:
       - PYTHONUNBUFFERED=1
 
   plane-beat:
-    command: sh -c "cd .agileplus/plane/apps/api && .venv/bin/celery -A plane beat -l info --pidfile=../../plane-beat.pid"
+    command: sh -c "cd .agileplus/plane/apiserver && .venv/bin/celery -A plane beat -l info --pidfile=../../plane-beat.pid"
     depends_on:
       plane-api:
         condition: process_healthy
@@ -170,12 +157,15 @@ processes:
       - SECRET_KEY=${PLANE_SECRET_KEY:-agileplus-dev-secret-key}
       - PYTHONUNBUFFERED=1
 
+  # ============================================================
+  # AgilePlus API (native Rust)
+  # ============================================================
   agileplus-api:
     command: cargo run --release -p agileplus-api
     depends_on:
       nats:
         condition: process_healthy
-      dragonfly:
+      orb-containers:
         condition: process_healthy
       neo4j:
         condition: process_healthy
@@ -195,7 +185,7 @@ processes:
     environment:
       - RUST_LOG=info,agileplus=debug
       - NATS_URL=nats://localhost:4222
-      - REDIS_URL=redis://localhost:6379
+      - DRAGONFLY_URL=redis://localhost:6379
       - NEO4J_URI=bolt://localhost:7687
       - NEO4J_USERNAME=neo4j
       - NEO4J_PASSWORD=agileplus
