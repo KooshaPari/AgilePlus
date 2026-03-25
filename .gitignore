@@ -38,3 +38,7 @@ references/
 .claude/
 .codex/
 .cursor/
+
+# Worktrees
+worktrees/
+.worktrees/
