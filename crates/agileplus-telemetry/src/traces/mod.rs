@@ -33,7 +33,7 @@ use tracing_subscriber::{Layer, registry::LookupSpan};
 /// Callers may choose to fall back gracefully (e.g. no-op provider).
 pub fn init_tracer() -> Result<(), String> {
     use opentelemetry_otlp::WithExportConfig;
-    use opentelemetry_sdk::trace::SdkTracerProvider;
+    use opentelemetry_sdk::trace::TracerProvider;
 
     let endpoint = std::env::var("OTEL_EXPORTER_OTLP_ENDPOINT")
         .unwrap_or_else(|_| "http://localhost:4317".to_string());
@@ -44,8 +44,8 @@ pub fn init_tracer() -> Result<(), String> {
         .build()
         .map_err(|e| e.to_string())?;
 
-    let provider = SdkTracerProvider::builder()
-        .with_batch_exporter(exporter)
+    let provider = TracerProvider::builder()
+        .with_batch_exporter(exporter, opentelemetry_sdk::runtime::Tokio)
         .build();
 
     global::set_tracer_provider(provider);
@@ -80,13 +80,13 @@ pub fn telemetry_layer<S>() -> impl Layer<S>
 where
     S: Subscriber + for<'a> LookupSpan<'a>,
 {
-    use opentelemetry_sdk::trace::SdkTracerProvider;
+    use opentelemetry_sdk::trace::TracerProvider;
 
     let endpoint = std::env::var("OTEL_EXPORTER_OTLP_ENDPOINT")
         .unwrap_or_else(|_| "http://localhost:4317".to_string());
 
     // Attempt to build an OTLP exporter; fall back to no-op on failure.
-    let provider: SdkTracerProvider = (|| {
+    let provider: TracerProvider = (|| {
         use opentelemetry_otlp::WithExportConfig;
         let exporter = opentelemetry_otlp::SpanExporter::builder()
             .with_http()
@@ -94,12 +94,12 @@ where
             .build()
             .ok()?;
         Some(
-            SdkTracerProvider::builder()
-                .with_batch_exporter(exporter)
+            TracerProvider::builder()
+                .with_batch_exporter(exporter, opentelemetry_sdk::runtime::Tokio)
                 .build(),
         )
     })()
-    .unwrap_or_else(SdkTracerProvider::default);
+    .unwrap_or_else(TracerProvider::default);
 
     let tracer = provider.tracer("agileplus");
     tracing_opentelemetry::layer().with_tracer(tracer)

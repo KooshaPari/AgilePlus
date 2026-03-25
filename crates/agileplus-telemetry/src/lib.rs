@@ -295,7 +295,7 @@ impl ObservabilityPort for TelemetryAdapter {
 /// If an OTLP endpoint is configured we attempt to connect; on failure we
 /// fall back to a no-op exporter and emit a warning.
 fn init_trace_provider(config: &TelemetryConfig) {
-    use opentelemetry_sdk::trace::SdkTracerProvider;
+    use opentelemetry_sdk::trace::TracerProvider;
 
     if let Some(otlp) = &config.otlp {
         match build_otlp_provider(otlp) {
@@ -313,14 +313,14 @@ fn init_trace_provider(config: &TelemetryConfig) {
     }
 
     // No OTLP configured or connection failed — use SDK default (no export).
-    let provider = SdkTracerProvider::builder().build();
+    let provider = TracerProvider::builder().build();
     global::set_tracer_provider(provider);
 }
 
 /// Attempt to build an OTLP trace exporter.
 fn build_otlp_provider(
     otlp: &crate::config::OtlpConfig,
-) -> Result<opentelemetry_sdk::trace::SdkTracerProvider, String> {
+) -> Result<opentelemetry_sdk::trace::TracerProvider, String> {
     use opentelemetry_otlp::WithExportConfig;
     use opentelemetry_sdk::trace::SdkTracerProvider;
 

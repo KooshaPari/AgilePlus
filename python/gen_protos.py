@@ -2,7 +2,6 @@ import glob
 import os
 import subprocess
 
-
 def generate_protos():
     proto_dir = "../proto"
     python_out = "src/agileplus_proto/gen"
@@ -45,7 +44,6 @@ def generate_protos():
         if not os.path.exists(init_path):
             with open(init_path, "w") as f:
                 pass
-
 
 if __name__ == "__main__":
     generate_protos()
