@@ -35,7 +35,6 @@ class TestGetFeatureContract:
         from unittest.mock import patch
 
         from agileplus_mcp.grpc_client import AgilePlusCoreClient
-        from unittest.mock import patch
 
         client = AgilePlusCoreClient()
         captured_request = {}
