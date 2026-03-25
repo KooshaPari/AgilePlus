@@ -7,9 +7,9 @@ vars:
 
 tasks:
   default:
-    desc: List tasks (developer UX)
+    desc: Run all quality checks
     cmds:
-      - task --list
+      - task: quality
 
   # ─── Platform (process-compose + agileplus CLI) ─────────────────────────
   platform:up:
@@ -62,12 +62,37 @@ tasks:
   clippy:
     desc: cargo clippy workspace
     cmds:
-      - cargo clippy --workspace -- -D warnings
+      - cargo clippy --workspace --all-targets --all-features -- -D warnings
+
+  lint:
+    desc: Run clippy linter
+    cmds:
+      - task: clippy
 
   fmt:
     desc: cargo fmt check
     cmds:
       - cargo fmt --all --check
+
+  # ─── Python / quality ─────────────────────────────────────────────────────
+  python-lint:
+    desc: Run ruff linter on Python code
+    cmds:
+      - ruff check python/
+
+  python-test:
+    desc: Run pytest on Python tests
+    cmds:
+      - cd python && uv run pytest
+
+  quality:
+    desc: Run all quality checks
+    cmds:
+      - task: lint
+      - task: fmt
+      - task: python-lint
+      - task: test
+      - task: python-test
 
   # ─── Docs (VitePress) ─────────────────────────────────────────────────────
   docs:dev:
