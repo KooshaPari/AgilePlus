@@ -15,6 +15,11 @@ on:
         required: true
         type: string
         description: 'Package version to publish'
+      channel:
+        required: false
+        type: string
+        default: 'latest'
+        description: 'Release channel (latest, beta, canary)'
       dry_run:
         required: false
         type: boolean

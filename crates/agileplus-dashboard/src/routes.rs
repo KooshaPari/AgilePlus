@@ -439,7 +439,7 @@ pub async fn home(State(state): State<SharedState>) -> Response {
     root(State(state)).await
 }
 
-// -- /dashboard -----------------------------------------------------------
+// ── /dashboard ───────────────────────────────────────────────────────────
 
 pub async fn dashboard_page(
     State(state): State<SharedState>,
@@ -459,7 +459,7 @@ pub async fn dashboard_page(
     })
 }
 
-// -- /api/dashboard/kanban ------------------------------------------------
+// ── /api/dashboard/kanban ────────────────────────────────────────────────
 
 pub async fn kanban_board(
     State(state): State<SharedState>,
@@ -485,7 +485,7 @@ pub async fn kanban_board(
     }
 }
 
-// -- /api/dashboard/features/:id -----------------------------------------
+// ── /api/dashboard/features/:id ─────────────────────────────────────────
 
 pub async fn feature_detail(
     State(state): State<SharedState>,
@@ -519,7 +519,7 @@ pub async fn feature_detail(
     })
 }
 
-// -- /api/dashboard/features/:id/work-packages ----------------------------
+// ── /api/dashboard/features/:id/work-packages ────────────────────────────
 
 pub async fn wp_list(State(state): State<SharedState>, Path(id): Path<i64>) -> Response {
     let store = state.read().await;
@@ -534,7 +534,7 @@ pub async fn wp_list(State(state): State<SharedState>, Path(id): Path<i64>) -> R
     })
 }
 
-// -- /api/dashboard/health ------------------------------------------------
+// ── /api/dashboard/health ────────────────────────────────────────────────
 
 pub async fn health_panel(State(state): State<SharedState>) -> Response {
     let store = state.read().await;
@@ -543,7 +543,7 @@ pub async fn health_panel(State(state): State<SharedState>) -> Response {
     })
 }
 
-// -- /api/dashboard/events ------------------------------------------------
+// ── /api/dashboard/events ────────────────────────────────────────────────
 
 pub async fn event_timeline(State(state): State<SharedState>) -> Response {
     let _ = state.read().await;
@@ -553,16 +553,15 @@ pub async fn event_timeline(State(state): State<SharedState>) -> Response {
     })
 }
 
-// -- /api/dashboard/agents ------------------------------------------------
+// ── /api/dashboard/agents ────────────────────────────────────────────────
 
-pub async fn agent_activity(_state: State<SharedState>) -> Response {
-    // In production this would query the agent registry / NATS subjects.
-    // Return a placeholder list for now.
-    let agents: Vec<AgentView> = vec![
+pub async fn agent_activity(State(state): State<SharedState>) -> Response {
+    let _ = state.read().await;
+    let agents = vec![
         AgentView {
-            name: "spec-agent".into(),
+            name: "planner-agent".into(),
             status: "idle".into(),
-            current_task: String::new(),
+            current_task: "none".into(),
             last_action: "2m ago".into(),
         },
         AgentView {
@@ -575,7 +574,7 @@ pub async fn agent_activity(_state: State<SharedState>) -> Response {
     render(AgentActivityPartial { agents })
 }
 
-// -- /api/dashboard/projects ----------------------------------------------
+// ── /api/dashboard/projects ──────────────────────────────────────────
 
 pub async fn project_switcher(State(state): State<SharedState>) -> Response {
     let store = state.read().await;
@@ -595,7 +594,7 @@ pub async fn project_switcher(State(state): State<SharedState>) -> Response {
     })
 }
 
-// -- /api/dashboard/projects/:id/activate ---------------------------------
+// ── /api/dashboard/projects/:id/activate ─────────────────────────────
 
 pub async fn switch_project(State(state): State<SharedState>, Path(id): Path<i64>) -> Response {
     {
@@ -616,13 +615,13 @@ pub async fn switch_project(State(state): State<SharedState>, Path(id): Path<i64
     render(KanbanPartial { cards })
 }
 
-// -- /settings ------------------------------------------------------------
+// ── /settings ────────────────────────────────────────────────────────────
 
 pub async fn settings_page() -> Response {
     render(SettingsPage)
 }
 
-// -- /features ------------------------------------------------------------
+// ── /features ────────────────────────────────────────────────────────────
 
 pub async fn features_page(State(state): State<SharedState>) -> Response {
     let store = state.read().await;
@@ -634,7 +633,7 @@ pub async fn features_page(State(state): State<SharedState>) -> Response {
     render(FeaturesPage { features })
 }
 
-// -- /events --------------------------------------------------------------
+// ── /events ──────────────────────────────────────────────────────────────
 
 pub async fn events_page() -> Response {
     render(EventsPage {
@@ -642,7 +641,7 @@ pub async fn events_page() -> Response {
     })
 }
 
-// -- /settings/* ----------------------------------------------------------
+// ── /settings/* ──────────────────────────────────────────────────────────
 
 pub async fn plane_settings_page(State(state): State<SharedState>) -> Response {
     let store = state.read().await;
@@ -736,7 +735,7 @@ pub async fn services_settings_page(State(state): State<SharedState>) -> Respons
     })
 }
 
-// -- /api/time ------------------------------------------------------------
+// ── /api/time ────────────────────────────────────────────────────────────
 
 pub async fn time_footer() -> Html<String> {
     Html(
@@ -750,7 +749,7 @@ pub async fn stream_placeholder() -> StatusCode {
     StatusCode::NO_CONTENT
 }
 
-// -- Router builder -------------------------------------------------------
+// ── Router builder ───────────────────────────────────────────────────────
 
 pub fn router(state: SharedState) -> Router {
     Router::new()
@@ -763,8 +762,6 @@ pub fn router(state: SharedState) -> Router {
         .route("/settings/plane", get(plane_settings_page))
         .route("/settings/agents", get(agent_settings_page))
         .route("/settings/services", get(services_settings_page))
-        .route("/api/time", get(time_footer))
-        .route("/api/stream", get(stream_placeholder))
         .route("/api/dashboard/kanban", get(kanban_board))
         .route("/api/dashboard/features/{id}", get(feature_detail))
         .route("/api/dashboard/features/{id}/work-packages", get(wp_list))
@@ -776,6 +773,8 @@ pub fn router(state: SharedState) -> Router {
             "/api/dashboard/projects/{id}/activate",
             post(switch_project),
         )
+        .route("/api/time", get(time_footer))
+        .route("/api/stream-placeholder", get(stream_placeholder))
         .with_state(state)
 }
 
@@ -790,7 +789,7 @@ mod tests {
     fn make_state() -> SharedState {
         let store = DashboardStore {
             health: default_health(),
-            ..DashboardStore::default()
+            ..Default::default()
         };
         Arc::new(RwLock::new(store))
     }

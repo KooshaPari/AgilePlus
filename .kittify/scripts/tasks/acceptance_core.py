@@ -389,10 +389,9 @@ def collect_feature_summary(
     # Resolve branch
     branch: Optional[str] = None
     try:
-        branch_value = (
-            run_git(["rev-parse", "--abbrev-ref", "HEAD"], cwd=repo_root, check=True)
-            .stdout.strip()
-        )
+        branch_value = run_git(
+            ["rev-parse", "--abbrev-ref", "HEAD"], cwd=repo_root, check=True
+        ).stdout.strip()
         if branch_value and branch_value != "HEAD":
             branch = branch_value
     except TaskCliError:
@@ -401,8 +400,9 @@ def collect_feature_summary(
     # Resolve worktree root
     try:
         worktree_root = Path(
-            run_git(["rev-parse", "--show-toplevel"], cwd=repo_root, check=True)
-            .stdout.strip()
+            run_git(
+                ["rev-parse", "--show-toplevel"], cwd=repo_root, check=True
+            ).stdout.strip()
         ).resolve()
     except TaskCliError:
         worktree_root = repo_root
@@ -410,8 +410,9 @@ def collect_feature_summary(
     # Resolve primary (main) repo root
     try:
         git_common_dir = Path(
-            run_git(["rev-parse", "--git-common-dir"], cwd=repo_root, check=True)
-            .stdout.strip()
+            run_git(
+                ["rev-parse", "--git-common-dir"], cwd=repo_root, check=True
+            ).stdout.strip()
         ).resolve()
         primary_repo_root = git_common_dir.parent
     except TaskCliError:
@@ -453,13 +454,9 @@ def collect_feature_summary(
             if not wp.agent:
                 metadata_issues.append(f"{wp_id}: missing agent in frontmatter")
             if wp.current_lane in {"doing", "for_review", "done"} and not wp.assignee:
-                metadata_issues.append(
-                    f"{wp_id}: missing assignee in frontmatter"
-                )
+                metadata_issues.append(f"{wp_id}: missing assignee in frontmatter")
             if not wp.shell_pid:
-                metadata_issues.append(
-                    f"{wp_id}: missing shell_pid in frontmatter"
-                )
+                metadata_issues.append(f"{wp_id}: missing shell_pid in frontmatter")
 
         if not entries:
             activity_issues.append(f"{wp_id}: Activity Log missing entries")
@@ -505,9 +502,7 @@ def collect_feature_summary(
 
     warnings: List[str] = []
     if missing_optional:
-        warnings.append(
-            "Optional artifacts missing: " + ", ".join(missing_optional)
-        )
+        warnings.append("Optional artifacts missing: " + ", ".join(missing_optional))
 
     return AcceptanceSummary(
         feature=feature,
@@ -521,7 +516,9 @@ def collect_feature_summary(
         work_packages=work_packages,
         metadata_issues=metadata_issues,
         activity_issues=activity_issues,
-        unchecked_tasks=unchecked_tasks if unchecked_tasks != ["tasks.md missing"] else [],
+        unchecked_tasks=unchecked_tasks
+        if unchecked_tasks != ["tasks.md missing"]
+        else [],
         needs_clarification=needs_clarification,
         missing_artifacts=missing_required,
         optional_missing=missing_optional,
@@ -597,8 +594,7 @@ def perform_acceptance(
             parent_commit = (
                 run_git(
                     ["rev-parse", "HEAD"], cwd=summary.repo_root, check=False
-                )
-                .stdout.strip()
+                ).stdout.strip()
                 or None
             )
         except TaskCliError:
@@ -626,9 +622,7 @@ def perform_acceptance(
         meta["accepted_from_commit"] = parent_commit
         meta["accept_commit"] = None
 
-        history: List[Dict[str, object]] = meta.setdefault(
-            "acceptance_history", []
-        )
+        history: List[Dict[str, object]] = meta.setdefault("acceptance_history", [])
         history.append(acceptance_record)
         if len(history) > 20:
             meta["acceptance_history"] = history[-20:]
@@ -659,14 +653,11 @@ def perform_acceptance(
             )
             commit_created = True
             try:
-                accept_commit = (
-                    run_git(
-                        ["rev-parse", "HEAD"],
-                        cwd=summary.repo_root,
-                        check=True,
-                    )
-                    .stdout.strip()
-                )
+                accept_commit = run_git(
+                    ["rev-parse", "HEAD"],
+                    cwd=summary.repo_root,
+                    check=True,
+                ).stdout.strip()
             except TaskCliError:
                 accept_commit = None
 
@@ -744,16 +735,16 @@ def normalize_feature_encoding(repo_root: Path, feature: str) -> List[Path]:
     NORMALIZE_MAP = {
         "\u2018": "'",
         "\u2019": "'",
-        "\u201A": "'",
-        "\u201C": '"',
-        "\u201D": '"',
-        "\u201E": '"',
+        "\u201a": "'",
+        "\u201c": '"',
+        "\u201d": '"',
+        "\u201e": '"',
         "\u2014": "--",
         "\u2013": "-",
         "\u2026": "...",
-        "\u00A0": " ",
+        "\u00a0": " ",
         "\u2022": "*",
-        "\u00B7": "*",
+        "\u00b7": "*",
     }
 
     feature_dir = repo_root / "kitty-specs" / feature

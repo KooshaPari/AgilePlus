@@ -32,6 +32,7 @@ from task_helpers import (
 # Core module import resolution
 # ---------------------------------------------------------------------------
 
+
 def _load_module_from_file(filepath: Path, module_name: str) -> ModuleType:
     """Load a Python module directly from a file path."""
     spec = importlib.util.spec_from_file_location(module_name, str(filepath))
@@ -63,9 +64,7 @@ def _import_acceptance_core() -> ModuleType:
     # Strategy 3: source tree (src/specify_cli/scripts/tasks/ -> src/specify_cli/core/)
     source_core = script_dir.parents[1] / "core" / "acceptance_core.py"
     if source_core.is_file():
-        return _load_module_from_file(
-            source_core, "specify_cli.core.acceptance_core"
-        )
+        return _load_module_from_file(source_core, "specify_cli.core.acceptance_core")
 
     raise ImportError(
         "Cannot locate acceptance_core module. "
@@ -97,6 +96,7 @@ normalize_feature_encoding = _core.normalize_feature_encoding
 # Standalone feature detection (no dependency on core.feature_detection)
 # ---------------------------------------------------------------------------
 
+
 def detect_feature_slug(
     repo_root: Path,
     *,
@@ -123,12 +123,9 @@ def detect_feature_slug(
         return env["SPECIFY_FEATURE"].strip()
 
     try:
-        branch = (
-            run_git(
-                ["rev-parse", "--abbrev-ref", "HEAD"], cwd=repo_root, check=True
-            )
-            .stdout.strip()
-        )
+        branch = run_git(
+            ["rev-parse", "--abbrev-ref", "HEAD"], cwd=repo_root, check=True
+        ).stdout.strip()
         if branch and branch != "HEAD" and re.match(r"^\d{3}-", branch):
             return branch
     except TaskCliError:
