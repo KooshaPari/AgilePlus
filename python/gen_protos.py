@@ -1,29 +1,34 @@
+import glob
 import os
 import subprocess
-import glob
+
 
 def generate_protos():
     proto_dir = "../proto"
     python_out = "src/agileplus_proto/gen"
     os.makedirs(python_out, exist_ok=True)
-    
+
     # Get all .proto files recursively
     proto_files = glob.glob(f"{proto_dir}/**/*.proto", recursive=True)
-    
+
     if not proto_files:
         print("No proto files found")
         return
 
     command = [
-        "uv", "run", "python", "-m", "grpc_tools.protoc",
+        "uv",
+        "run",
+        "python",
+        "-m",
+        "grpc_tools.protoc",
         f"-I{proto_dir}",
         f"--python_out={python_out}",
         f"--grpc_python_out={python_out}",
     ] + proto_files
-    
+
     print(f"Running: {' '.join(command)}")
     result = subprocess.run(command, capture_output=True, text=True)
-    
+
     if result.returncode != 0:
         print(f"Error: {result.stderr}")
     else:
@@ -40,6 +45,7 @@ def generate_protos():
         if not os.path.exists(init_path):
             with open(init_path, "w") as f:
                 pass
+
 
 if __name__ == "__main__":
     generate_protos()
