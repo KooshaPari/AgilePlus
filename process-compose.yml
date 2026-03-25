@@ -38,7 +38,7 @@ processes:
   neo4j:
     command: neo4j console
     depends_on:
-      redis:
+      dragonfly:
         condition: process_healthy
     log_location: .agileplus/logs/neo4j.log
     readiness_probe:
@@ -92,11 +92,11 @@ processes:
       - POSTGRES_DB=plane
 
   plane-api:
-    command: sh -c "cd .agileplus/plane/apiserver && .venv/bin/python manage.py runserver 0.0.0.0:8000"
+    command: sh -c "cd .agileplus/plane/apps/api && .venv/bin/python manage.py runserver 0.0.0.0:8000"
     depends_on:
       postgres:
         condition: process_healthy
-      redis:
+      dragonfly:
         condition: process_healthy
     log_location: .agileplus/logs/plane-api.log
     readiness_probe:
@@ -116,7 +116,7 @@ processes:
       - PYTHONUNBUFFERED=1
 
   plane-web:
-    command: sh -c "cd .agileplus/plane-web && npx next start -p 3100"
+    command: sh -c "cd .agileplus/plane && bun run dev --filter web"
     depends_on:
       plane-api:
         condition: process_healthy
@@ -132,16 +132,17 @@ processes:
     environment:
       - NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
       - NEXT_PUBLIC_WEB_URL=http://localhost:3100
+      - PORT=3100
 
   plane-worker:
-    command: sh -c "cd .agileplus/plane/apiserver && .venv/bin/celery -A plane worker -l info"
+    command: sh -c "cd .agileplus/plane/apps/api && .venv/bin/celery -A plane worker -l info"
     depends_on:
       plane-api:
         condition: process_healthy
     log_location: .agileplus/logs/plane-worker.log
     readiness_probe:
       exec:
-        command: sh -c "cd .agileplus/plane/apiserver && .venv/bin/celery -A plane inspect ping | grep -q pong"
+        command: sh -c "cd .agileplus/plane/apps/api && .venv/bin/celery -A plane inspect ping | grep -q pong"
       initial_delay_seconds: 15
       period_seconds: 10
       failure_threshold: 3
@@ -152,7 +153,7 @@ processes:
       - PYTHONUNBUFFERED=1
 
   plane-beat:
-    command: sh -c "cd .agileplus/plane/apiserver && .venv/bin/celery -A plane beat -l info --pidfile=../../plane-beat.pid"
+    command: sh -c "cd .agileplus/plane/apps/api && .venv/bin/celery -A plane beat -l info --pidfile=../../plane-beat.pid"
     depends_on:
       plane-api:
         condition: process_healthy
@@ -174,7 +175,7 @@ processes:
     depends_on:
       nats:
         condition: process_healthy
-      redis:
+      dragonfly:
         condition: process_healthy
       neo4j:
         condition: process_healthy
