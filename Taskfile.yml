@@ -1,22 +1,56 @@
 version: '3'
 
 tasks:
-  lint:
-    desc: Run oxlint on the project
-    cmd: oxlint .
-    silent: false
-
   build:
+    desc: Build the Rust workspace
+    cmds:
+      - cargo build
+
+  build-docs:
     desc: Build VitePress documentation
     cmd: bun run build
     silent: false
 
   test:
-    desc: Run tests
-    cmd: echo "No tests configured"
+    desc: Run all tests
+    cmds:
+      - cargo test
+
+  lint:
+    desc: Run clippy linter
+    cmds:
+      - cargo clippy --all-targets --all-features -- -D warnings
+
+  lint-js:
+    desc: Run oxlint on the project
+    cmd: oxlint .
     silent: false
 
+  fmt:
+    desc: Format code with rustfmt
+    cmds:
+      - cargo fmt --all
+
+  python-lint:
+    desc: Run ruff linter on Python code
+    cmds:
+      - ruff check python/
+
+  python-test:
+    desc: Run pytest on Python tests
+    cmds:
+      - cd python && uv run pytest
+
+  quality:
+    desc: Run all quality checks
+    cmds:
+      - task: lint
+      - task: fmt
+      - task: python-lint
+      - task: test
+      - task: python-test
+      - task: lint-js
+
   default:
-    desc: Show available tasks
-    cmd: task -l
-    silent: false
+    cmds:
+      - task: quality

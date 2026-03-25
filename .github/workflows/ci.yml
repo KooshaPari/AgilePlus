@@ -16,8 +16,14 @@ env:
 jobs:
   # ─── Proto Lint & Breaking ─────────────────────────────────────────
   buf:
+    permissions:
+      contents: read
+      pull-requests: write
     name: Buf Lint & Breaking
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - uses: actions/checkout@v6
         with:
@@ -27,11 +33,11 @@ jobs:
           lint: true
           format: true
           breaking: false
+          pr_comment: false
 
   # ─── Rust Quality ──────────────────────────────────────────────────
   rust-check:
     name: Rust Quality
-    needs: buf
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -56,7 +62,6 @@ jobs:
 
   rust-build:
     name: Rust Build (${{ matrix.os }})
-    needs: buf
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
@@ -76,7 +81,6 @@ jobs:
 
   rust-msrv:
     name: Rust MSRV (stable)
-    needs: buf
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -94,7 +98,6 @@ jobs:
   # ─── Rust Security & Dep Audit ─────────────────────────────────────
   rust-audit:
     name: Rust Security Audit
-    needs: buf
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -111,7 +114,6 @@ jobs:
 
   rust-extras:
     name: Rust Extras (machete, semver, typos)
-    needs: buf
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -135,7 +137,6 @@ jobs:
   # ─── Core Workspace ───────────────────────────────────────────────
   core-check:
     name: Core Workspace Quality
-    needs: buf
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -158,7 +159,6 @@ jobs:
 
   core-build:
     name: Core Build (${{ matrix.os }})
-    needs: buf
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
@@ -176,7 +176,6 @@ jobs:
 
   core-msrv:
     name: Core MSRV (1.85)
-    needs: buf
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -191,7 +190,6 @@ jobs:
 
   core-docs:
     name: Core Documentation
-    needs: buf
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -206,7 +204,6 @@ jobs:
 
   domain-deps-lint:
     name: Domain Zero-Dep Lint
-    needs: buf
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -225,11 +222,10 @@ jobs:
   # ─── Python Quality ────────────────────────────────────────────────
   python-check:
     name: Python Quality
-    needs: buf
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.14"
       - name: Install uv
@@ -241,18 +237,19 @@ jobs:
       - name: Ruff lint
         run: cd python && uvx ruff check .
       - name: pip-audit
-        run: cd python && uvx pip-audit
+        # CVE-2026-4539: pygments 2.19.2 vulnerability with no released fix yet.
+        # Ignore until a patched version of pygments is available upstream.
+        run: cd python && uvx pip-audit --ignore-vuln CVE-2026-4539
 
   python-install:
     name: Python Install (${{ matrix.os }})
-    needs: buf
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.14"
       - name: Install uv
