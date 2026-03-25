@@ -8,9 +8,11 @@
 use axum::extract::{Path, State};
 use axum::routing::{get, post};
 use axum::{Json, Router};
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
-use agileplus_domain::ports::{observability::ObservabilityPort, storage::StoragePort, vcs::VcsPort};
+use agileplus_domain::ports::{
+    observability::ObservabilityPort, storage::StoragePort, vcs::VcsPort,
+};
 
 use crate::error::ApiError;
 use crate::responses::GovernanceResponse;
@@ -18,9 +20,9 @@ use crate::state::AppState;
 
 pub fn routes<S, V, O>() -> Router<AppState<S, V, O>>
 where
-    S: StoragePort + Send + Sync + Clone + 'static,
-    V: VcsPort + Send + Sync + Clone + 'static,
-    O: ObservabilityPort + Send + Sync + Clone + 'static,
+    S: StoragePort + Send + Sync + 'static,
+    V: VcsPort + Send + Sync + 'static,
+    O: ObservabilityPort + Send + Sync + 'static,
 {
     Router::new()
         .route("/{slug}/governance", get(get_governance::<S, V, O>))
@@ -33,9 +35,9 @@ pub async fn get_governance<S, V, O>(
     Path(slug): Path<String>,
 ) -> Result<Json<GovernanceResponse>, ApiError>
 where
-    S: StoragePort + Send + Sync + Clone + 'static,
-    V: VcsPort + Send + Sync + Clone + 'static,
-    O: ObservabilityPort + Send + Sync + Clone + 'static,
+    S: StoragePort + Send + Sync + 'static,
+    V: VcsPort + Send + Sync + 'static,
+    O: ObservabilityPort + Send + Sync + 'static,
 {
     let feature = state
         .storage
@@ -65,9 +67,9 @@ pub async fn trigger_validate<S, V, O>(
     Path(slug): Path<String>,
 ) -> Result<Json<Value>, ApiError>
 where
-    S: StoragePort + Send + Sync + Clone + 'static,
-    V: VcsPort + Send + Sync + Clone + 'static,
-    O: ObservabilityPort + Send + Sync + Clone + 'static,
+    S: StoragePort + Send + Sync + 'static,
+    V: VcsPort + Send + Sync + 'static,
+    O: ObservabilityPort + Send + Sync + 'static,
 {
     let feature = state
         .storage
@@ -106,8 +108,9 @@ where
                 .await
                 .map_err(ApiError::from)?;
             let wp_ids: std::collections::HashSet<i64> = wps.iter().map(|w| w.id).collect();
-            if evidence.iter().any(|e| wp_ids.contains(&e.wp_id)
-                && e.evidence_type == req.evidence_type)
+            if evidence
+                .iter()
+                .any(|e| wp_ids.contains(&e.wp_id) && e.evidence_type == req.evidence_type)
             {
                 rule_satisfied = true;
             }

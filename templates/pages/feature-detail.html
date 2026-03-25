@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}{{ feature.title }}{% endblock %}
+
+{% block content %}
+<div class="p-6 max-w-5xl mx-auto space-y-8">
+  <section class="border-b border-zinc-700 pb-6">
+    <h1 class="text-3xl font-bold tracking-tight">{{ feature.title }}</h1>
+    <p class="text-sm text-zinc-500 mt-1">slug: {{ feature.slug }}</p>
+    <div class="mt-3 flex flex-wrap gap-2">
+      {% for label in feature.labels %}
+        <span class="text-xs px-2 py-0.5 rounded border border-zinc-600 text-zinc-300 bg-zinc-800">{{ label }}</span>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="space-y-3">
+    <h2 class="text-xl font-bold">Work Packages</h2>
+    {% include "partials/wp-list.html" %}
+  </section>
+
+  <section class="space-y-3">
+    <h2 class="text-xl font-bold">Event Timeline</h2>
+    {% include "partials/event-timeline.html" %}
+  </section>
+
+  <section class="space-y-3">
+    <h2 class="text-xl font-bold">Evidence Bundles</h2>
+    {% include "partials/feature-evidence.html" %}
+  </section>
+
+  <section class="space-y-3">
+    <h2 class="text-xl font-bold">Media Assets</h2>
+    {% include "partials/feature-media.html" %}
+  </section>
+
+  <section class="space-y-3">
+    <h2 class="text-xl font-bold">Reports</h2>
+    {% include "partials/feature-reports.html" %}
+  </section>
+</div>
+{% endblock %}

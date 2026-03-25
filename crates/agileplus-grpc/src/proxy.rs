@@ -18,7 +18,9 @@ pub struct DownstreamHealth {
 /// `agileplus-integrations` services. If they are unavailable it logs a
 /// warning and uses in-process stubs for development / single-binary mode.
 pub struct ProxyRouter {
+    #[allow(dead_code)] // WIP: used for future downstream forwarding
     agents_address: Option<String>,
+    #[allow(dead_code)] // WIP: used for future downstream forwarding
     integrations_address: Option<String>,
     health: DownstreamHealth,
 }
@@ -66,7 +68,9 @@ impl ProxyRouter {
     /// Probe whether a gRPC endpoint is reachable by attempting a TCP connect.
     async fn probe(addr: &str) -> bool {
         // Strip grpc:// scheme if present
-        let host_port = addr.trim_start_matches("http://").trim_start_matches("grpc://");
+        let host_port = addr
+            .trim_start_matches("http://")
+            .trim_start_matches("grpc://");
         tokio::net::TcpStream::connect(host_port).await.is_ok()
     }
 
