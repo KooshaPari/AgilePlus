@@ -214,7 +214,9 @@ mod tests {
     fn sample_config() -> ProjectConfig {
         ProjectConfig {
             name: "my-project".to_string(),
-            languages: ["Rust".to_string(), "TypeScript".to_string()].into_iter().collect(),
+            languages: ["Rust".to_string(), "TypeScript".to_string()]
+                .into_iter()
+                .collect(),
             frameworks: ["Cargo".to_string()].into_iter().collect(),
             test_command: Some("cargo test".to_string()),
             lint_command: Some("cargo clippy".to_string()),
