@@ -93,12 +93,12 @@
 **Estimated**: ~250 lines, 6 subtasks
 
 ### Included Subtasks
-- [ ] T007 Initialize `agileplus-mcp` repo, create `pyproject.toml` with FastMCP 3.0, grpcio, opentelemetry-sdk deps
-- [ ] T008 Create `src/agileplus_mcp/__init__.py` and `server.py` (FastMCP entry)
-- [ ] T009 [P] Create `src/agileplus_mcp/grpc_client.py` (stub gRPC connection to Rust core)
-- [ ] T010 [P] Create `src/agileplus_mcp/tools/`, `resources/`, `prompts/`, `sampling/` directory stubs
-- [ ] T011 Add `proto/` git submodule pointing to `agileplus-proto` and create `tests/` directory structure
-- [ ] T011b Add sphinx/autodoc CI generation for Python API reference
+- [x] T007 Initialize `agileplus-mcp` repo, create `pyproject.toml` with FastMCP 3.0, grpcio, opentelemetry-sdk deps
+- [x] T008 Create `src/agileplus_mcp/__init__.py` and `server.py` (FastMCP entry)
+- [x] T009 [P] Create `src/agileplus_mcp/grpc_client.py` (stub gRPC connection to Rust core)
+- [x] T010 [P] Create `src/agileplus_mcp/tools/`, `resources/`, `prompts/`, `sampling/` directory stubs
+- [x] T011 Add `proto/` git submodule pointing to `agileplus-proto` and create `tests/` directory structure
+- [x] T011b Add sphinx/autodoc CI generation for Python API reference
 
 ### Implementation Notes
 - Use `uv` for Python package management
@@ -291,14 +291,14 @@
 **Estimated**: ~550 lines, 8 subtasks
 
 ### Included Subtasks
-- [ ] T044 Initialize `agileplus-agents` repo with Cargo workspace (3 crates), proto git submodule, Makefile
-- [ ] T044b Implement `AgentDispatchAdapter` in `crates/agileplus-agent-dispatch/src/`
-- [ ] T045 Implement `claude_code.rs`: spawn Claude Code with `--print` mode, pass WP prompt, collect output
-- [ ] T046 Implement `codex.rs`: spawn Codex in batch mode, pass WP prompt, collect output
-- [ ] T047 Implement `dispatch.rs`: select agent (from config), create worktree, inject prompt, spawn 1-3 subagents
-- [ ] T048 Implement `pr_loop.rs`: create PR (gh CLI), set description with WP goal/prompt (FR-011), poll for review
-- [ ] T049 Implement review-fix loop: read Coderabbit comments → feed to agent → re-push → re-poll (FR-012)
-- [ ] T049b Implement `agileplus-agent-service` gRPC server implementing `agents.proto` AgentDispatchService
+- [x] T044 Initialize `agileplus-agents` repo with Cargo workspace (3 crates), proto git submodule, Makefile
+- [x] T044b Implement `AgentDispatchAdapter` in `crates/agileplus-agent-dispatch/src/`
+- [x] T045 Implement `claude_code.rs`: spawn Claude Code with `--print` mode, pass WP prompt, collect output
+- [x] T046 Implement `codex.rs`: spawn Codex in batch mode, pass WP prompt, collect output
+- [x] T047 Implement `dispatch.rs`: select agent (from config), create worktree, inject prompt, spawn 1-3 subagents
+- [x] T048 Implement `pr_loop.rs`: create PR (gh CLI), set description with WP goal/prompt (FR-011), poll for review
+- [x] T049 Implement review-fix loop: read Coderabbit comments → feed to agent → re-push → re-poll (FR-012)
+- [x] T049b Implement `agileplus-agent-service` gRPC server implementing `agents.proto` AgentDispatchService
 
 ### Implementation Notes
 - This is a separate repo (`agileplus-agents`) with its own Cargo workspace (3 crates)
@@ -329,11 +329,11 @@
 **Estimated**: ~300 lines, 5 subtasks
 
 ### Included Subtasks
-- [ ] T050 Implement `ReviewAdapter` struct in `crates/agileplus-agent-review/src/`
-- [ ] T051 Implement `coderabbit.rs`: fetch review via GitHub API, parse comments into structured feedback
-- [ ] T052 Implement `fallback.rs`: manual review approval flow (user confirms via CLI prompt)
-- [ ] T053 Implement CI status checking: poll GitHub checks API for PR, return pass/fail/pending
-- [ ] T054 Write unit tests with mock GitHub API responses
+- [x] T050 Implement `ReviewAdapter` struct in `crates/agileplus-agent-review/src/`
+- [x] T051 Implement `coderabbit.rs`: fetch review via GitHub API, parse comments into structured feedback
+- [x] T052 Implement `fallback.rs`: manual review approval flow (user confirms via CLI prompt)
+- [x] T053 Implement CI status checking: poll GitHub checks API for PR, return pass/fail/pending
+- [x] T054 Write unit tests with mock GitHub API responses
 
 ### Implementation Notes
 - Lives in `agileplus-agents` repo, `crates/agileplus-agent-review/` crate
@@ -360,11 +360,11 @@
 **Estimated**: ~300 lines, 5 subtasks
 
 ### Included Subtasks
-- [ ] T055 Implement `TelemetryAdapter` struct implementing `ObservabilityPort` in `crates/agileplus-telemetry/src/`
-- [ ] T056 Implement `traces.rs`: OpenTelemetry trace spans per command execution, agent dispatch
-- [ ] T057 [P] Implement `metrics.rs`: counters (agent_runs, review_cycles), histograms (command_duration_ms)
-- [ ] T058 [P] Implement `logs.rs`: structured JSON logging with tracing crate, configurable output (stdout/file)
-- [ ] T059 Create `~/.agileplus/otel-config.yaml` schema and loader
+- [x] T055 Implement `TelemetryAdapter` struct implementing `ObservabilityPort` in `crates/agileplus-telemetry/src/`
+- [x] T056 Implement `traces.rs`: OpenTelemetry trace spans per command execution, agent dispatch
+- [x] T057 [P] Implement `metrics.rs`: counters (agent_runs, review_cycles), histograms (command_duration_ms)
+- [x] T058 [P] Implement `logs.rs`: structured JSON logging with tracing crate, configurable output (stdout/file)
+- [x] T059 Create `~/.agileplus/otel-config.yaml` schema and loader
 
 ### Implementation Notes
 - Use `opentelemetry` + `opentelemetry-otlp` crates
@@ -489,16 +489,16 @@
 **Estimated**: ~450 lines, 7 subtasks
 
 ### Included Subtasks
-- [ ] T079 Implement tonic gRPC server in `agileplus-core/crates/agileplus-grpc/src/server.rs` implementing `AgilePlusCoreService` from `core.proto`
-- [ ] T080 Wire gRPC handlers to domain services (feature queries, governance checks, audit trail, command dispatch)
-- [ ] T080b Implement gRPC proxy/routing: core server forwards agent/integration requests to agileplus-agents and agileplus-integrations services (or stubs them when those services are unavailable)
-- [ ] T081 Implement Python gRPC client in `agileplus-mcp/src/agileplus_mcp/grpc_client.py` using generated stubs from `agileplus-proto`
-- [ ] T082 Implement MCP tool handlers in `agileplus-mcp/src/agileplus_mcp/tools/` — each tool calls gRPC client
-- [ ] T083 Implement agent event streaming: bidirectional gRPC stream for real-time agent status
-- [ ] T084 Write Pact contract tests for Rust↔Python gRPC boundary
-- [ ] T084b Implement MCP Sampling primitive: server-initiated triage analysis and governance pre-checks (FR-049)
-- [ ] T084c Implement MCP Roots primitive: workspace boundary declarations per feature/WP (FR-049)
-- [ ] T084d Implement MCP Elicitation primitive: discovery interview flows for specify/clarify commands (FR-049)
+- [x] T079 Implement tonic gRPC server in `agileplus-core/crates/agileplus-grpc/src/server.rs` implementing `AgilePlusCoreService` from `core.proto`
+- [x] T080 Wire gRPC handlers to domain services (feature queries, governance checks, audit trail, command dispatch)
+- [x] T080b Implement gRPC proxy/routing: core server forwards agent/integration requests to agileplus-agents and agileplus-integrations services (or stubs them when those services are unavailable)
+- [x] T081 Implement Python gRPC client in `agileplus-mcp/src/agileplus_mcp/grpc_client.py` using generated stubs from `agileplus-proto`
+- [x] T082 Implement MCP tool handlers in `agileplus-mcp/src/agileplus_mcp/tools/` — each tool calls gRPC client
+- [x] T083 Implement agent event streaming: bidirectional gRPC stream for real-time agent status
+- [x] T084 Write Pact contract tests for Rust↔Python gRPC boundary
+- [x] T084b Implement MCP Sampling primitive: server-initiated triage analysis and governance pre-checks (FR-049)
+- [x] T084c Implement MCP Roots primitive: workspace boundary declarations per feature/WP (FR-049)
+- [x] T084d Implement MCP Elicitation primitive: discovery interview flows for specify/clarify commands (FR-049)
 
 ### Implementation Notes
 - gRPC server in core serves `core.proto` endpoints directly
@@ -526,12 +526,12 @@
 **Estimated**: ~400 lines, 6 subtasks
 
 ### Included Subtasks
-- [ ] T085 Implement axum router in `crates/agileplus-api/src/` with routes for features, WPs, governance, audit
-- [ ] T086 Implement API route handlers: delegate to domain services via ports
-- [ ] T087 [P] Implement integration key auth middleware: validate API keys from credential store (FR-030)
-- [ ] T088 [P] Implement credential management: OS keychain storage (macOS Keychain, Linux secret-service) (FR-030, FR-031)
-- [ ] T089 [P] Create `~/.agileplus/config.toml` schema and loader (core config, credential references)
-- [ ] T090 Write API integration tests with mock HTTP client
+- [x] T085 Implement axum router in `crates/agileplus-api/src/` with routes for features, WPs, governance, audit
+- [x] T086 Implement API route handlers: delegate to domain services via ports
+- [x] T087 [P] Implement integration key auth middleware: validate API keys from credential store (FR-030)
+- [x] T088 [P] Implement credential management: OS keychain storage (macOS Keychain, Linux secret-service) (FR-030, FR-031)
+- [x] T089 [P] Create `~/.agileplus/config.toml` schema and loader (core config, credential references)
+- [x] T090 Write API integration tests with mock HTTP client
 
 ### Implementation Notes
 - axum runs alongside gRPC in the same tokio runtime (shared binary)
@@ -558,13 +558,13 @@
 **Estimated**: ~450 lines, 7 subtasks
 
 ### Included Subtasks
-- [ ] T091 Create `.feature` files for core user stories: specify.feature, implement.feature, governance.feature, audit.feature
-- [ ] T092 Implement cucumber-rs step definitions for Rust BDD tests in `tests/bdd/`
-- [ ] T093 [P] Implement behave step definitions for Python BDD tests in `mcp/tests/bdd/`
-- [ ] T094 [P] Create Pact contract test fixtures for gRPC boundary in `tests/contract/`
-- [ ] T095 Create `docker-compose.test.yml` for full-stack integration tests (spins up all 4 services: core, mcp, agents, integrations)
-- [ ] T096 Implement integration test scenarios: full workflow (specify → ship) on test repo
-- [ ] T097 Create test fixtures: sample specs, plans, WPs, evidence artifacts in `tests/fixtures/`
+- [x] T091 Create `.feature` files for core user stories: specify.feature, implement.feature, governance.feature, audit.feature
+- [x] T092 Implement cucumber-rs step definitions for Rust BDD tests in `tests/bdd/`
+- [x] T093 [P] Implement behave step definitions for Python BDD tests in `mcp/tests/bdd/`
+- [x] T094 [P] Create Pact contract test fixtures for gRPC boundary in `tests/contract/`
+- [x] T095 Create `docker-compose.test.yml` for full-stack integration tests (spins up all 4 services: core, mcp, agents, integrations)
+- [x] T096 Implement integration test scenarios: full workflow (specify → ship) on test repo
+- [x] T097 Create test fixtures: sample specs, plans, WPs, evidence artifacts in `tests/fixtures/`
 
 ### Implementation Notes
 - BDD .feature files reference FR IDs in scenario names (e.g., "Scenario: FR-001 - Specify creates spec in git+SQLite")
