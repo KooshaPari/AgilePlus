@@ -96,13 +96,20 @@ pub struct KeychainCredentialStore {
 #[cfg(feature = "keychain")]
 impl KeychainCredentialStore {
     pub fn new() -> Self {
-        Self {
-            service_prefix: "agileplus".to_string(),
-        }
+        Self::default()
     }
 
     fn entry_service(&self, service: &str) -> String {
         format!("{}-{}", self.service_prefix, service)
+    }
+}
+
+#[cfg(feature = "keychain")]
+impl Default for KeychainCredentialStore {
+    fn default() -> Self {
+        Self {
+            service_prefix: "agileplus".to_string(),
+        }
     }
 }
 
@@ -325,12 +332,23 @@ pub fn create_credential_store(config: &AppConfig) -> Box<dyn CredentialStore> {
     match config.credentials.backend {
         #[cfg(feature = "keychain")]
         CredentialBackend::Keychain => Box::new(KeychainCredentialStore::new()),
+        #[cfg(not(feature = "keychain"))]
+        CredentialBackend::Keychain => {
+            // Without the `keychain` feature, fall back to file.
+            Box::new(FileCredentialStore::new(&config.credentials.file_path))
+        }
         CredentialBackend::File => {
             Box::new(FileCredentialStore::new(&config.credentials.file_path))
         }
-        CredentialBackend::Auto | CredentialBackend::Keychain => {
-            // Without the `keychain` feature, always fall back to file.
-            Box::new(FileCredentialStore::new(&config.credentials.file_path))
+        CredentialBackend::Auto => {
+            #[cfg(feature = "keychain")]
+            {
+                Box::new(KeychainCredentialStore::new())
+            }
+            #[cfg(not(feature = "keychain"))]
+            {
+                Box::new(FileCredentialStore::new(&config.credentials.file_path))
+            }
         }
     }
 }
