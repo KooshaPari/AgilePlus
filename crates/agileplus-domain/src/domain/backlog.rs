@@ -96,7 +96,7 @@ impl BacklogPriority {
 }
 
 /// Queue lifecycle state.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum BacklogStatus {
     New,
@@ -140,19 +140,15 @@ impl BacklogStatus {
 }
 
 /// Sorting modes for backlog queries.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum BacklogSort {
+    #[default]
     Priority,
     Age,
     Impact,
 }
 
-impl Default for BacklogSort {
-    fn default() -> Self {
-        Self::Priority
-    }
-}
 
 impl std::fmt::Display for BacklogSort {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
