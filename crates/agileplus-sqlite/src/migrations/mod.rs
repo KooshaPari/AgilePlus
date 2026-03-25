@@ -17,6 +17,12 @@ const MIGRATION_006: &str = include_str!("006_create_policy_rules.sql");
 const MIGRATION_007: &str = include_str!("007_create_metrics.sql");
 const MIGRATION_008: &str = include_str!("008_create_wp_dependencies.sql");
 const MIGRATION_009: &str = include_str!("009_create_indexes.sql");
+const MIGRATION_010: &str = include_str!("010_create_events.sql");
+const MIGRATION_011: &str = include_str!("011_create_snapshots.sql");
+const MIGRATION_012: &str = include_str!("012_create_sync_mappings.sql");
+const MIGRATION_013: &str = include_str!("013_create_api_keys.sql");
+const MIGRATION_014: &str = include_str!("014_create_device_nodes.sql");
+const MIGRATION_015: &str = include_str!("015_modules_cycles.sql");
 
 /// All migrations in order: (name, up_sql, down_sql)
 const MIGRATIONS: &[(&str, &str)] = &[
@@ -29,6 +35,12 @@ const MIGRATIONS: &[(&str, &str)] = &[
     ("007_create_metrics", MIGRATION_007),
     ("008_create_wp_dependencies", MIGRATION_008),
     ("009_create_indexes", MIGRATION_009),
+    ("010_create_events", MIGRATION_010),
+    ("011_create_snapshots", MIGRATION_011),
+    ("012_create_sync_mappings", MIGRATION_012),
+    ("013_create_api_keys", MIGRATION_013),
+    ("014_create_device_nodes", MIGRATION_014),
+    ("015_modules_cycles", MIGRATION_015),
 ];
 
 /// Parse the UP section from a migration SQL file.
@@ -103,9 +115,9 @@ impl<'a> MigrationRunner<'a> {
             }
 
             let up_sql = parse_up(sql);
-            self.conn.execute_batch(up_sql).map_err(|e| {
-                DomainError::Storage(format!("migration {name} failed: {e}"))
-            })?;
+            self.conn
+                .execute_batch(up_sql)
+                .map_err(|e| DomainError::Storage(format!("migration {name} failed: {e}")))?;
 
             let now = chrono::Utc::now().to_rfc3339();
             self.conn
@@ -142,9 +154,9 @@ impl<'a> MigrationRunner<'a> {
         if let Some((_, sql)) = migration {
             let down_sql = parse_down(sql);
             if !down_sql.is_empty() {
-                self.conn.execute_batch(down_sql).map_err(|e| {
-                    DomainError::Storage(format!("rollback of {name} failed: {e}"))
-                })?;
+                self.conn
+                    .execute_batch(down_sql)
+                    .map_err(|e| DomainError::Storage(format!("rollback of {name} failed: {e}")))?;
             }
         }
 

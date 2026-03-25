@@ -10,13 +10,13 @@ use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 
 use agileplus_cli::commands::{
-    implement::ImplementArgs, plan::PlanArgs, queue::QueueArgs,
-    research::ResearchArgs, retrospective::RetrospectiveArgs,
-    ship::ShipArgs, specify::SpecifyArgs, triage::TriageArgs,
-    validate::ValidateArgs,
+    cycle::CycleArgs, implement::ImplementArgs, module::ModuleArgs, plan::PlanArgs,
+    queue::QueueArgs, research::ResearchArgs, retrospective::RetrospectiveArgs, ship::ShipArgs,
+    specify::SpecifyArgs, triage::TriageArgs, validate::ValidateArgs,
 };
 use agileplus_git::GitVcsAdapter;
 use agileplus_sqlite::SqliteStorageAdapter;
+use agileplus_subcmds::{DashboardArgs, PlatformArgs, run_dashboard, run_platform};
 
 mod agent_stub;
 use agent_stub::StubAgentAdapter;
@@ -43,6 +43,8 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
+    /// Manage cycles (time-boxed delivery units).
+    Cycle(CycleArgs),
     /// Create or revise a feature specification.
     Specify(SpecifyArgs),
     /// Research a feature (pre-specify codebase scan or post-specify feasibility).
@@ -61,6 +63,12 @@ enum Commands {
     Triage(TriageArgs),
     /// Manage the triage backlog queue.
     Queue(QueueArgs),
+    /// Manage modules (product-area groupings of features).
+    Module(ModuleArgs),
+    /// Open or configure the web dashboard.
+    Dashboard(DashboardArgs),
+    /// Manage platform services (up, down, status, logs).
+    Platform(PlatformArgs),
 }
 
 #[tokio::main]
@@ -90,7 +98,23 @@ async fn run(cli: Cli) -> Result<()> {
     match cli.command {
         Commands::Triage(args) => return agileplus_cli::commands::triage::run_triage(args).await,
         Commands::Queue(args) => return agileplus_cli::commands::queue::run_queue(args).await,
+        Commands::Dashboard(args) => return run_dashboard(args),
+        Commands::Platform(args) => return run_platform(args),
         _ => {}
+    }
+
+    // Module command only needs storage (no VCS)
+    if let Commands::Module(args) = cli.command {
+        // Initialise storage adapter early for module commands
+        if let Some(parent) = cli.db.parent() {
+            if !parent.as_os_str().is_empty() && !parent.exists() {
+                std::fs::create_dir_all(parent)
+                    .with_context(|| format!("creating directory {}", parent.display()))?;
+            }
+        }
+        let storage = SqliteStorageAdapter::new(&cli.db)
+            .with_context(|| format!("opening database at {}", cli.db.display()))?;
+        return agileplus_cli::commands::module::run(args, &storage).await;
     }
 
     // Initialise storage adapter (create DB directory if needed)
@@ -106,8 +130,9 @@ async fn run(cli: Cli) -> Result<()> {
 
     // Initialise VCS adapter
     let vcs = match cli.repo {
-        Some(ref path) => GitVcsAdapter::new(path.clone())
-            .context("opening git repository at specified path")?,
+        Some(ref path) => {
+            GitVcsAdapter::new(path.clone()).context("opening git repository at specified path")?
+        }
         None => GitVcsAdapter::from_current_dir()
             .context("Not inside a git repository. Run agileplus from your project root.")?,
     };
@@ -116,6 +141,9 @@ async fn run(cli: Cli) -> Result<()> {
     let agent = StubAgentAdapter;
 
     match cli.command {
+        Commands::Cycle(args) => {
+            agileplus_cli::commands::cycle::run(args, &storage).await?;
+        }
         Commands::Specify(args) => {
             agileplus_cli::commands::specify::run_specify(args, &storage, &vcs).await?;
         }
@@ -137,7 +165,11 @@ async fn run(cli: Cli) -> Result<()> {
         Commands::Retrospective(args) => {
             agileplus_cli::commands::retrospective::run_retrospective(args, &storage, &vcs).await?;
         }
-        Commands::Triage(_) | Commands::Queue(_) => unreachable!("handled above"),
+        Commands::Triage(_)
+        | Commands::Queue(_)
+        | Commands::Module(_)
+        | Commands::Dashboard(_)
+        | Commands::Platform(_) => unreachable!("handled above"),
     }
 
     Ok(())

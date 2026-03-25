@@ -71,7 +71,9 @@ pub fn detect_file_scope(wp_description: &str) -> Vec<String> {
 
     for word in wp_description.split_whitespace() {
         // Strip surrounding punctuation (backticks, parens, commas, etc.)
-        let w = word.trim_matches(|c: char| !c.is_alphanumeric() && c != '/' && c != '.' && c != '_' && c != '-');
+        let w = word.trim_matches(|c: char| {
+            !c.is_alphanumeric() && c != '/' && c != '.' && c != '_' && c != '-'
+        });
         if w.is_empty() {
             continue;
         }
@@ -84,7 +86,7 @@ pub fn detect_file_scope(wp_description: &str) -> Vec<String> {
             found.insert(w.to_string());
         } else if let Some(dot_pos) = w.rfind('.') {
             let ext = &w[dot_pos + 1..];
-            if ext.len() >= 1 && ext.len() <= 6 && ext.chars().all(|c| c.is_ascii_alphabetic()) {
+            if !ext.is_empty() && ext.len() <= 6 && ext.chars().all(|c| c.is_ascii_alphabetic()) {
                 found.insert(w.to_string());
             }
         }

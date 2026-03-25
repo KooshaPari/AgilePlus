@@ -17,13 +17,14 @@ Traceability: WP14-T084
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock
-import pytest
+from unittest.mock import MagicMock
 
+import pytest
 
 # ---------------------------------------------------------------------------
 # Contract: GetFeature
 # ---------------------------------------------------------------------------
+
 
 class TestGetFeatureContract:
     """GetFeature RPC consumer contract."""
@@ -65,6 +66,7 @@ class TestGetFeatureContract:
             {"agileplus_proto.gen.agileplus.v1.core_pb2": mock_core_pb2},
         ):
             import sys
+
             sys.modules["agileplus_proto.gen.agileplus.v1"] = MagicMock()
             sys.modules["agileplus_proto.gen.agileplus.v1.core_pb2"] = mock_core_pb2
             result = await client.get_feature("test-feature")
@@ -78,7 +80,7 @@ class TestGetFeatureContract:
         """GetFeature response must contain id, slug, state, and timestamps."""
         from agileplus_mcp.grpc_client import AgilePlusCoreClient
 
-        client = AgilePlusCoreClient()
+        _client = AgilePlusCoreClient()
 
         mock_feature = MagicMock(
             id=42,
@@ -95,8 +97,17 @@ class TestGetFeatureContract:
         result = AgilePlusCoreClient._feature_to_dict(mock_feature)
 
         # Verify all required fields are present
-        required_fields = ["id", "slug", "friendly_name", "state", "target_branch",
-                           "created_at", "updated_at", "wp_count", "wp_done"]
+        required_fields = [
+            "id",
+            "slug",
+            "friendly_name",
+            "state",
+            "target_branch",
+            "created_at",
+            "updated_at",
+            "wp_count",
+            "wp_done",
+        ]
         for field in required_fields:
             assert field in result, f"Missing field: {field}"
 
@@ -108,6 +119,7 @@ class TestGetFeatureContract:
 # ---------------------------------------------------------------------------
 # Contract: ListWorkPackages
 # ---------------------------------------------------------------------------
+
 
 class TestListWorkPackagesContract:
     """ListWorkPackages RPC consumer contract."""
@@ -130,8 +142,17 @@ class TestListWorkPackagesContract:
 
         result = AgilePlusCoreClient._wp_to_dict(mock_wp)
 
-        required_fields = ["id", "title", "state", "sequence", "agent_id",
-                           "pr_url", "pr_state", "depends_on", "file_scope"]
+        required_fields = [
+            "id",
+            "title",
+            "state",
+            "sequence",
+            "agent_id",
+            "pr_url",
+            "pr_state",
+            "depends_on",
+            "file_scope",
+        ]
         for field in required_fields:
             assert field in result, f"Missing field: {field}"
 
@@ -144,12 +165,12 @@ class TestListWorkPackagesContract:
 # Contract: DispatchCommand
 # ---------------------------------------------------------------------------
 
+
 class TestDispatchCommandContract:
     """DispatchCommand RPC consumer contract."""
 
     def test_command_response_shape(self):
         """CommandResponse must have success, message, and outputs."""
-        from agileplus_mcp.grpc_client import AgilePlusCoreClient
 
         mock_result = MagicMock(
             success=True,
@@ -175,6 +196,7 @@ class TestDispatchCommandContract:
 # Contract: AuditEntry
 # ---------------------------------------------------------------------------
 
+
 class TestAuditEntryContract:
     """GetAuditTrail RPC consumer contract."""
 
@@ -196,8 +218,17 @@ class TestAuditEntryContract:
 
         result = AgilePlusCoreClient._audit_entry_to_dict(mock_entry)
 
-        required_fields = ["id", "feature_slug", "wp_sequence", "timestamp",
-                           "actor", "transition", "evidence_refs", "prev_hash", "hash"]
+        required_fields = [
+            "id",
+            "feature_slug",
+            "wp_sequence",
+            "timestamp",
+            "actor",
+            "transition",
+            "evidence_refs",
+            "prev_hash",
+            "hash",
+        ]
         for field in required_fields:
             assert field in result, f"Missing field: {field}"
 
