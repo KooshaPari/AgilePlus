@@ -5,10 +5,10 @@
 use crate::domain::audit::AuditEntry;
 use crate::domain::cycle::{Cycle, CycleFeature, CycleState, CycleWithFeatures};
 use crate::domain::feature::Feature;
-use crate::domain::project::Project;
 use crate::domain::governance::{Evidence, GovernanceContract, PolicyRule};
 use crate::domain::metric::Metric;
 use crate::domain::module::{Module, ModuleFeatureTag, ModuleWithFeatures};
+use crate::domain::project::Project;
 use crate::domain::state_machine::FeatureState;
 use crate::domain::sync_mapping::SyncMapping;
 use crate::domain::work_package::{WorkPackage, WpDependency, WpState};

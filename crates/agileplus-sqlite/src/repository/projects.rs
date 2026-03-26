@@ -44,10 +44,7 @@ pub fn create_project(conn: &Connection, project: &Project) -> Result<i64, Domai
 }
 
 /// Look up a project by its slug. Returns None if not found.
-pub fn get_project_by_slug(
-    conn: &Connection,
-    slug: &str,
-) -> Result<Option<Project>, DomainError> {
+pub fn get_project_by_slug(conn: &Connection, slug: &str) -> Result<Option<Project>, DomainError> {
     let mut stmt = conn
         .prepare(
             "SELECT id, slug, name, description, created_at, updated_at \
