@@ -21,6 +21,7 @@ use agileplus_domain::domain::{
 };
 
 use crate::app_state::SharedState;
+use crate::process_detector;
 use crate::templates::{
     AgentActivityPartial, AgentSettingsPage, AgentView, DashboardPage, EventTimelinePartial,
     EventsPage, EvidenceBundleView, FeatureDetailPage, FeatureView, FeaturesPage,
@@ -258,6 +259,14 @@ fn build_feature_events(
         kind: "system".into(),
         description: format!("Feature '{}' opened in dashboard", feature.slug),
         timestamp: now.clone(),
+        agent_name: None,
+        agent_link: None,
+        wp_id: None,
+        wp_link: None,
+        commit_sha: None,
+        commit_link: None,
+        ci_run_id: None,
+        ci_run_link: None,
     }];
 
     if !workpackages.is_empty() {
@@ -266,6 +275,14 @@ fn build_feature_events(
             kind: "agent_action".into(),
             description: format!("{} work package entries synced", workpackages.len()),
             timestamp: now.clone(),
+            agent_name: Some("sync-agent".to_string()),
+            agent_link: Some("/agents/sync-agent".to_string()),
+            wp_id: None,
+            wp_link: None,
+            commit_sha: None,
+            commit_link: None,
+            ci_run_id: None,
+            ci_run_link: None,
         });
 
         for wp in workpackages {
@@ -274,6 +291,14 @@ fn build_feature_events(
                 kind: "state_change".into(),
                 description: format!("Work-package {} is in state '{}'", wp.title, wp.state),
                 timestamp: now.clone(),
+                agent_name: None,
+                agent_link: None,
+                wp_id: Some(wp.id.to_string()),
+                wp_link: Some(format!("/features/{}#wp-{}", feature.id, wp.id)),
+                commit_sha: None,
+                commit_link: None,
+                ci_run_id: None,
+                ci_run_link: None,
             });
         }
     } else {
@@ -282,6 +307,14 @@ fn build_feature_events(
             kind: "system".into(),
             description: "No work packages linked yet".into(),
             timestamp: now.clone(),
+            agent_name: None,
+            agent_link: None,
+            wp_id: None,
+            wp_link: None,
+            commit_sha: None,
+            commit_link: None,
+            ci_run_id: None,
+            ci_run_link: None,
         });
     }
 
@@ -302,6 +335,12 @@ fn build_feature_evidence_bundles(
         created_at: Utc::now().format("%Y-%m-%d %H:%M:%S UTC").to_string(),
         artifact_ext: "md".into(),
         status: "available".into(),
+        content_preview: Some("# Feature Summary
+
+This feature provides...".to_string()),
+        is_text_artifact: true,
+        is_image_artifact: false,
+        download_url: format!("/api/evidence/{}/summary/content", feature.id),
     }];
 
     for wp in workpackages {
@@ -324,6 +363,10 @@ fn build_feature_evidence_bundles(
                 "generated"
             }
             .into(),
+            content_preview: Some(r#"{"status":"generated","progress":0}"#.to_string()),
+            is_text_artifact: true,
+            is_image_artifact: false,
+            download_url: format!("/api/evidence/{}/{}/content", feature.id, wp.id),
         });
     }
 
@@ -489,18 +532,42 @@ fn sample_events() -> Vec<crate::templates::EventView> {
             kind: "system".into(),
             description: "Dashboard booted with native Plane surface".into(),
             timestamp: "just now".into(),
+            agent_name: None,
+            agent_link: None,
+            wp_id: None,
+            wp_link: None,
+            commit_sha: None,
+            commit_link: None,
+            ci_run_id: None,
+            ci_run_link: None,
         },
         crate::templates::EventView {
             id: "evt-2".into(),
             kind: "agent_action".into(),
             description: "Planner synced feature ownership metadata".into(),
             timestamp: "2m ago".into(),
+            agent_name: Some("planner-agent".to_string()),
+            agent_link: Some("/agents/planner-agent".to_string()),
+            wp_id: None,
+            wp_link: None,
+            commit_sha: Some("abc1234".to_string()),
+            commit_link: Some("https://github.com/example/repo/commit/abc1234".to_string()),
+            ci_run_id: None,
+            ci_run_link: None,
         },
         crate::templates::EventView {
             id: "evt-3".into(),
             kind: "state_change".into(),
             description: "Feature moved from researched to planned".into(),
             timestamp: "9m ago".into(),
+            agent_name: None,
+            agent_link: None,
+            wp_id: Some("42".to_string()),
+            wp_link: Some("/features/1#wp-42".to_string()),
+            commit_sha: None,
+            commit_link: None,
+            ci_run_id: Some("12345678".to_string()),
+            ci_run_link: Some("https://github.com/example/repo/actions/runs/12345678".to_string()),
         },
     ]
 }
@@ -660,21 +727,46 @@ pub async fn event_timeline(State(state): State<SharedState>) -> Response {
 
 pub async fn agent_activity(State(state): State<SharedState>) -> Response {
     let _ = state.read().await;
-    let agents = vec![
-        AgentView {
-            name: "planner-agent".into(),
-            status: "idle".into(),
-            current_task: "none".into(),
-            last_action: "2m ago".into(),
-        },
-        AgentView {
-            name: "impl-agent".into(),
-            status: "running".into(),
-            current_task: "WP13 implementation".into(),
-            last_action: "just now".into(),
-        },
-    ];
+    
+    // Detect real agent processes
+    let detected = process_detector::detect_agents();
+    
+    // Convert detected agents to view models
+    let agents: Vec<AgentView> = detected
+        .into_iter()
+        .map(|agent| {
+            let uptime = calculate_uptime(&agent.started_at);
+            let worktree_label = agent
+                .worktree
+                .as_deref()
+                .and_then(|wt| wt.split('/').last())
+                .unwrap_or("")
+                .to_string();
+            let worktree = agent.worktree.unwrap_or_default();
+            AgentView {
+                name: agent.name,
+                status: agent.status.clone(),
+                current_task: agent.current_task,
+                last_action: uptime,
+                pid: Some(agent.pid),
+                started_at: agent.started_at,
+                worktree,
+                worktree_label,
+                is_live: agent.status == "running",
+            }
+        })
+        .collect();
+    
     render(AgentActivityPartial { agents })
+}
+
+/// Calculate uptime string from the elapsed duration string produced by
+/// `process_detector::get_process_start_time` (e.g. "5m", "1h 20m").
+fn calculate_uptime(started_at: &Option<String>) -> String {
+    match started_at {
+        Some(elapsed) => format!("running for {}", elapsed),
+        None => "uptime unknown".into(),
+    }
 }
 
 // ── /api/dashboard/projects ──────────────────────────────────────────
@@ -848,6 +940,38 @@ pub async fn time_footer() -> Html<String> {
     )
 }
 
+
+// ── /api/evidence ────────────────────────────────────────────────────────
+
+pub async fn evidence_content(
+    State(_state): State<SharedState>,
+    Path((feature_id, artifact_id)): Path<(i64, String)>,
+) -> Response {
+    // In production, this would serve from MinIO or local filesystem
+    // For now, return a sample response
+    let sample_content = format!(
+        "# Evidence Bundle {}
+
+## Artifact ID: {}
+
+This is sample evidence content.",
+        feature_id, artifact_id
+    );
+    Html(sample_content).into_response()
+}
+
+pub async fn evidence_preview(
+    State(_state): State<SharedState>,
+    Path((feature_id, artifact_id)): Path<(i64, String)>,
+) -> Response {
+    // Return an htmx partial with inline preview
+    let preview = format!(
+        "<div class='p-3 rounded bg-zinc-800 border border-zinc-700'>         <pre class='text-xs font-mono text-zinc-300'>Evidence #{} - {}</pre>         </div>",
+        feature_id, artifact_id
+    );
+    Html(preview).into_response()
+}
+
 pub async fn stream_placeholder() -> StatusCode {
     StatusCode::NO_CONTENT
 }
@@ -1002,6 +1126,8 @@ pub fn router(state: SharedState) -> Router {
         )
         .route("/api/time", get(time_footer))
         .route("/api/stream-placeholder", get(stream_placeholder))
+        .route("/api/evidence/{feature_id}/{artifact_id}/content", get(evidence_content))
+        .route("/api/evidence/{feature_id}/{artifact_id}/preview", get(evidence_preview))
         .with_state(state)
 }
 
@@ -1088,6 +1214,11 @@ mod tests {
                 status: "running".into(),
                 current_task: "doing work".into(),
                 last_action: "1m ago".into(),
+                pid: Some(12345),
+                started_at: None,
+                worktree: String::new(),
+                worktree_label: String::new(),
+                is_live: true,
             }],
         };
         let html = tpl.render().expect("template renders");
