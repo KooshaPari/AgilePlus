@@ -19,11 +19,14 @@ AgilePlus tracks its own work through its own system.
 3. **Update work package status**: `agileplus status <feature-id> --wp <wp-id> --state <state>`
 4. **No code without corresponding AgilePlus spec**
 
-## Specs Location
+## Spec Management
 
-- kitty-specs/<feature-id>/spec.md
-- kitty-specs/<feature-id>/plan.md
-- kitty-specs/<feature-id>/tasks/WP*.md
+Use AgilePlus: `agileplus specify` and `agileplus status`
+
+Specs are stored in `.agileplus/specs/<feature-id>/`:
+- `.agileplus/specs/<feature-id>/spec.md` - feature description
+- `.agileplus/specs/<feature-id>/meta.json` - id, title, status
+- `.agileplus/specs/<feature-id>/tasks.md` - work packages
 
 ## Worklog
 
