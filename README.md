@@ -4,6 +4,8 @@
 
 AgilePlus is a schema-driven project management platform built on Rust and gRPC. This repository is a **monorepo** containing the core domain logic, CLI, API server, and Protocol Buffer definitions for the entire ecosystem.
 
+In the Phenotype `repos` layout, the **data shelf** (SQLite DB, `kitty-specs/`, helper scripts) often lives in the sibling directory `repos/AgilePlus/`; the **`agileplus` binary is built from this workspace** (`cargo build -p agileplus-cli` or `cargo install --path crates/agileplus-cli`). Use `agileplus list` to inspect features in a given `--db` path.
+
 ## Repository Layout
 
 | Path | Description |
