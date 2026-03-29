@@ -7,7 +7,16 @@ The project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 
 ## [Unreleased]
 
+### Added
+- Airlock: New main.yml workflow definition for CI/CD integration
+- Security: Comprehensive gitleaks configuration and secret-scanning hooks
+- Test: Module manifest and snapshot tests for phench runtime validation
+- Workspace: New members including hexagonal-rs, hexkit, cipher, gauge, logger, metrics, tracing, cli-framework, config-core, and xdd-lib-rs
+
 ### Fixed
+- Security: Added .env to gitignore and implemented secret scanning hooks
+- Gitleaks: Fixed exit code handling and case-insensitive 'no leaks found' matching
+- Import paths: Updated phench imports to use correct paths
 - Quality: Resolved all 48+ Clippy warnings across `agileplus-api`, `agileplus-sqlite`, `agileplus-domain`, `agileplus-events`, `agileplus-git`, `agileplus-plane`, `agileplus-triage`, and `agileplus-subcmds`.
 - Quality: Simplified `manual_async_fn` usage in tests.
 - Quality: Fixed `DoubleEndedIterator` usage (`filter().next_back() -> rfind()`).
@@ -16,6 +25,8 @@ The project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 
 ### Changed
 - Domain: Implemented `Default` for `KeychainCredentialStore`.
+- Configuration: Updated gitignore patterns to handle sibling workspace files and worktrees directory
+- Documentation: Synced evidence ledger and session documentation
 
 ## [0.1.2] - 2026-03-25 
 
