@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.2.0] - 2026-03-29
 
 ### Added
 - Kitty-specs for phenosdk-decompose-llm (WP01: initial implementation)
