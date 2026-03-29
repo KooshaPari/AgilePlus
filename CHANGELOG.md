@@ -7,15 +7,36 @@ The project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 
 ## [Unreleased]
 
+### Added
+- Kitty-specs for phenosdk-decompose-llm (WP01: initial implementation)
+- Kitty-specs for phenosdk-decompose-mcp (structured decomposition framework)
+- Kitty-specs for phenosdk-sanitize-atoms (atom type validation and sanitization)
+- Module manifest and snapshot tests to phench runtime test suite
+- Phench integration testing infrastructure
+
 ### Fixed
 - Quality: Resolved all 48+ Clippy warnings across `agileplus-api`, `agileplus-sqlite`, `agileplus-domain`, `agileplus-events`, `agileplus-git`, `agileplus-plane`, `agileplus-triage`, and `agileplus-subcmds`.
 - Quality: Simplified `manual_async_fn` usage in tests.
 - Quality: Fixed `DoubleEndedIterator` usage (`filter().next_back() -> rfind()`).
 - Quality: Fixed `await_holding_lock` in `agileplus-sqlite` tests.
 - CLI: Resolved `E0061` argument count errors in `agileplus-cli` build.
+- Update phench import paths from thegent to phench (module reorganization)
+- Gitleaks hooks exit code handling (case-insensitive 'no leaks found' match)
 
 ### Changed
 - Domain: Implemented `Default` for `KeychainCredentialStore`.
+- Phenotype workspace structure updated with new module boundaries
+
+### Security
+- Add .env to gitignore
+- Add gitleaks configuration for secret scanning
+- Add secret-scanning hooks to prevent credential leaks
+
+### Chore
+- Ignore phenotype-config-wtrees workspace directory
+- Ignore sibling workspace files
+- Update evidence ledger and WORKLOG for waves 86-87
+- Add workspace members: hexagonal-rs, hexkit, cipher, gauge, logger, metrics, tracing, cli-framework, config-core, xdd-lib-rs
 
 ## [0.1.2] - 2026-03-25 
 
