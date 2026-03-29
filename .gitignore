@@ -193,3 +193,13 @@ SESSION_GAPS_2026_03_29.md
 audit_worktrees.sh
 infra/
 platforms/
+
+# Cloned repos — not part of this monorepo
+infra/agent-devops-setups/
+infra/agentops-policy-federation/
+infra/colab-temp/
+platforms/agileplus/
+platforms/heliosApp/
+platforms/heliosCLI/
+platforms/thegent/
+platforms/vibe-kanban/
