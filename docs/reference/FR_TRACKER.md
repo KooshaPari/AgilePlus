@@ -8,7 +8,7 @@
 |----------|-------|-------------|---------|---------|
 | FR-DOMAIN (Domain Model) | 16 | 15 | 1 | 0 |
 | FR-AUDIT (Immutable Audit Trail) | 6 | 5 | 1 | 0 |
-| FR-CLI (Command-Line Interface) | 11 | 8 | 2 | 1 |
+| FR-CLI (Command-Line Interface) | 11 | 9 | 2 | 0 |
 | FR-API (HTTP REST API) | 8 | 7 | 1 | 0 |
 | FR-GRPC (gRPC Service Layer) | 5 | 4 | 1 | 0 |
 | FR-STORAGE (Persistence Layer) | 4 | 3 | 1 | 0 |
@@ -22,7 +22,7 @@
 | FR-P2P (Peer-to-Peer Replication) | 6 | 2 | 4 | 0 |
 | FR-AGENT (Agent Dispatch) | 5 | 3 | 2 | 0 |
 | FR-CONTENT (Content Storage) | 3 | 2 | 1 | 0 |
-| **TOTAL** | **63** | **46** | **16** | **1** |
+| **TOTAL** | **63** | **47** | **16** | **0** |
 
 ---
 
@@ -76,7 +76,7 @@
 | FR-CLI-008 | sync command | Implemented | `crates/agileplus-sync/` | sync_command_integration | E7.1; bidirectional Plane sync |
 | FR-CLI-009 | dashboard command | Implemented | `crates/agileplus-dashboard/tests/` | dashboard_htmx | E4.18; htmx-driven web dashboard |
 | FR-CLI-010 | import command | Implemented | `crates/agileplus-import/` | import_manifest | E4.15; manifest-based import, idempotent |
-| FR-CLI-011 | validate command | Missing | N/A | N/A | E4.6; governance contract validation not implemented |
+| FR-CLI-011 | validate command | Implemented | `crates/agileplus-cli/src/commands/validate.rs` | validate_command_integration | E4.6; governance contract validation, evidence checks, policy evaluation, state transition |
 
 ---
 
@@ -248,7 +248,7 @@
 ## Traceability Notes
 
 1. **Proto definitions** (FR-GRPC-*): Defined in `proto/agileplus/v1/*.proto`; implementation tests in `crates/agileplus-grpc/tests/`
-2. **Missing implementation** (FR-CLI-011): `validate` command for governance contract checking not yet implemented
+2. **All 63 FRs have implementations** (as of 2026-03-29): validate command (FR-CLI-011) now complete
 3. **Partial implementations**: Marked where core functionality exists but test coverage or specific features are incomplete
 4. **Vector clock and P2P**: Complex distributed system features with frameworks in place but incomplete test coverage
 5. **Triage system**: Classifier and router structures defined; full pipeline and policy configuration incomplete

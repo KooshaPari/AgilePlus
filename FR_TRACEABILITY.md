@@ -47,16 +47,16 @@ Enables rapid lookup: FR → Code → Tests or Code → FR → Requirements
 
 ### Implementation Status
 - **Total FRs:** 63
-- **Implemented:** 46 (73%)
+- **Implemented:** 47 (75%)
 - **Partial:** 16 (25%)
-- **Missing:** 1 (2%)
+- **Missing:** 0 (0%)
 
 ### By Category
 | Category | Status | Count |
 |----------|--------|-------|
 | FR-DOMAIN | 15/16 Implemented | Domain entities, state machines |
 | FR-AUDIT | 5/6 Implemented | Immutable audit trail with hash-chaining |
-| FR-CLI | 8/11 Implemented | Command-line interface (missing: validate cmd) |
+| FR-CLI | 9/11 Implemented | Command-line interface (all commands implemented) |
 | FR-API | 7/8 Implemented | HTTP REST API (all core routes) |
 | FR-GRPC | 4/5 Implemented | gRPC service layer |
 | FR-STORAGE | 3/4 Implemented | SQLite and cache layers |
@@ -76,9 +76,9 @@ Enables rapid lookup: FR → Code → Tests or Code → FR → Requirements
 - ✓ All API endpoints (REST + gRPC)
 - ✓ Audit and governance framework
 - ✓ Main integrations (Plane, Git, GitHub)
+- ✓ CLI commands including `validate` (governance enforcement)
 - ⚠ P2P replication (framework in place, incomplete)
 - ⚠ Graph queries (core present, critical path incomplete)
-- ✗ Governance validation command (not implemented)
 
 ---
 
