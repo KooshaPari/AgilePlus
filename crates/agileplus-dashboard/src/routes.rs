@@ -1454,10 +1454,19 @@ pub async fn evidence_content(
     Path((feature_id, artifact_id)): Path<(i64, String)>,
 ) -> Response {
     // Serve from .agileplus/evidence/<feature_id>/<artifact_id>
-    let artifact_path = PathBuf::from(".agileplus")
-        .join("evidence")
-        .join(feature_id.to_string())
-        .join(&artifact_id);
+    let base_path = PathBuf::from(".agileplus").join("evidence").join(feature_id.to_string());
+    
+    // Validate artifact_id to prevent path traversal attacks
+    if artifact_id.contains("..") || artifact_id.starts_with('/') || artifact_id.contains('\0') {
+        return Html("# Forbidden\n\nInvalid artifact ID.".to_string()).into_response();
+    }
+    
+    let artifact_path = base_path.join(&artifact_id);
+    
+    // Ensure the resolved path is within the base directory (security check)
+    if !artifact_path.starts_with(&base_path) {
+        return Html("# Forbidden\n\nPath traversal detected.".to_string()).into_response();
+    }
 
     if let Ok(content) = fs::read_to_string(&artifact_path) {
         let escaped = html_escape(&content);

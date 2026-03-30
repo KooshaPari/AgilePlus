@@ -84,9 +84,16 @@ pub async fn ensure_api_key(
         std::fs::set_permissions(&key_path, perms)?;
     }
 
-    // Print to stdout for the operator.
+    // Log key metadata securely (never log the actual key)
+    tracing::info!("AgilePlus API initialized. Key saved to {}", key_path.display());
+    // Show only first 8 chars + "..." for operator confirmation
+    let masked_key = if plaintext.len() > 8 {
+        format!("{}...", &plaintext[..8])
+    } else {
+        "[key too short]".to_string()
+    };
     println!("AgilePlus API initialized.");
-    println!("API Key: {plaintext}");
+    println!("API Key (masked): {}", masked_key);
     println!("Store this key securely; it won't be shown again.");
     println!("(Also saved to {})", key_path.display());
 
