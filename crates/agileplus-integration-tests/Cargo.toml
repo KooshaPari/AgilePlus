@@ -12,6 +12,7 @@ integration = []
 
 [dependencies]
 agileplus-domain = { path = "../agileplus-domain" }
+agileplus-fixtures = { path = "../agileplus-fixtures" }
 agileplus-sqlite = { path = "../agileplus-sqlite" }
 rusqlite = { version = "0.32", features = ["bundled"] }
 serde.workspace = true
