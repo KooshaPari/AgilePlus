@@ -1,42 +1,46 @@
 [workspace]
 resolver = "3"
 members = [
-  "crates/agileplus-domain",
-  "crates/agileplus-cli",
-  "crates/agileplus-api",
-  "crates/agileplus-grpc",
-  "crates/agileplus-sqlite",
-  "crates/agileplus-git",
-  "crates/agileplus-plane",
-  "crates/agileplus-telemetry",
-  "crates/agileplus-triage",
-  "crates/agileplus-events",
-  "crates/agileplus-cache",
-  "crates/agileplus-subcmds",
-  "crates/agileplus-graph",
-  "crates/agileplus-nats",
-  "crates/agileplus-sync",
-  "crates/agileplus-dashboard",
-  "crates/agileplus-fixtures",
-  "crates/agileplus-github",
-  "crates/agileplus-p2p",
-  "crates/agileplus-integration-tests",
-  "crates/agileplus-contract-tests",
-  "crates/agileplus-benchmarks",
-  "rust",
-  "tests/bdd",
+  # "crates/agileplus-domain",  # TODO: missing src/lib.rs
+  # "crates/agileplus-cli",     # TODO: missing src/lib.rs
+  # "crates/agileplus-api",     # TODO: missing src/lib.rs
+  # "crates/agileplus-grpc",    # TODO: missing src/lib.rs
+  # "crates/agileplus-sqlite",  # TODO: missing src/lib.rs
+  # "crates/agileplus-git",     # TODO: missing src/lib.rs
+  # "crates/agileplus-plane",   # TODO: missing src/lib.rs
+  # "crates/agileplus-telemetry", # TODO: missing src/lib.rs
+  # "crates/agileplus-triage",  # TODO: missing src/lib.rs
+  # "crates/agileplus-events",  # TODO: missing src/lib.rs
+  # "crates/agileplus-cache",   # TODO: missing src/lib.rs
+  # "crates/agileplus-subcmds", # TODO: missing src/lib.rs
+  # "crates/agileplus-graph",   # TODO: missing src/lib.rs
+  # "crates/agileplus-nats",    # TODO: missing src/lib.rs
+  # "crates/agileplus-sync",    # TODO: missing src/lib.rs
+  # "crates/agileplus-dashboard", # TODO: missing src/lib.rs
+  # "crates/agileplus-github",  # TODO: missing src/lib.rs
+  # "crates/agileplus-p2p",    # TODO: missing src/lib.rs
+  # "crates/agileplus-integration-tests", # TODO: missing src/lib.rs
+  # "crates/agileplus-contract-tests", # TODO: missing src/lib.rs
+  # "crates/agileplus-benchmarks", # TODO: missing src/lib.rs
+  # "rust",                    # TODO: missing src/lib.rs
+  # "tests/bdd",               # TODO: missing src/lib.rs
   "libs/nexus",
-  # "libs/hexagonal-rs",
-  # "libs/hexkit",
-  # "libs/cipher",
-  # "libs/gauge",
-  # "libs/logger",
-  # "libs/metrics",
-  # "libs/tracing",
-  # "libs/cli-framework",
-  # "libs/config-core",
-  # "libs/xdd-lib-rs",
-  # "tools/forge",
+  "libs/plugin-registry",
+  "libs/plugin-sample",
+  "libs/plugin-cli",
+  "libs/plugin-git",
+  "libs/plugin-grpc",
+  # "libs/hexagonal-rs",       # TODO: missing src/lib.rs
+  # "libs/hexkit",             # TODO: missing src/lib.rs
+  # "libs/cipher",             # TODO: missing src/lib.rs
+  # "libs/gauge",              # TODO: missing src/lib.rs
+  # "libs/logger",             # TODO: missing src/lib.rs
+  # "libs/metrics",            # TODO: missing src/lib.rs
+  # "libs/tracing",            # TODO: missing src/lib.rs
+  # "libs/cli-framework",      # TODO: missing src/lib.rs
+  # "libs/config-core",         # TODO: missing src/lib.rs
+  # "libs/xdd-lib-rs",         # TODO: missing src/lib.rs
+  # "tools/forge",             # TODO: missing src/lib.rs
 ]
 
 [workspace.package]
