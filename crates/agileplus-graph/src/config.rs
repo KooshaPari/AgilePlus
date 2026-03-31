@@ -55,4 +55,26 @@ mod tests {
         .with_database("mydb".to_string());
         assert_eq!(config.database, "mydb");
     }
+
+    #[test]
+    fn test_config_new_sets_all_fields() {
+        let config = GraphConfig::new(
+            "bolt://neo4j:7687".to_string(),
+            "admin".to_string(),
+            "secret".to_string(),
+        );
+        assert_eq!(config.bolt_uri, "bolt://neo4j:7687");
+        assert_eq!(config.username, "admin");
+        assert_eq!(config.password, "secret");
+        assert_eq!(config.database, "neo4j");
+    }
+
+    #[test]
+    fn test_config_clone() {
+        let config = GraphConfig::default();
+        let cloned = config.clone();
+        assert_eq!(cloned.bolt_uri, config.bolt_uri);
+        assert_eq!(cloned.username, config.username);
+        assert_eq!(cloned.database, config.database);
+    }
 }

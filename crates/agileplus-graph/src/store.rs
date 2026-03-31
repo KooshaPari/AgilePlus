@@ -312,6 +312,20 @@ impl GraphBackend for InMemoryBackend {
 mod tests {
     use super::*;
 
+    struct FailingBackend;
+    #[async_trait]
+    impl GraphBackend for FailingBackend {
+        async fn run_cypher(&self, _: &str, _: &Value) -> Result<(), GraphError> {
+            Err(GraphError::ConnectionError("simulated".into()))
+        }
+        async fn query_cypher(&self, _: &str, _: &Value) -> Result<Vec<Value>, GraphError> {
+            Err(GraphError::ConnectionError("simulated".into()))
+        }
+        async fn health_check(&self) -> Result<(), GraphError> {
+            Err(GraphError::ConnectionError("simulated".into()))
+        }
+    }
+
     #[tokio::test]
     async fn test_in_memory_health_check() {
         let store = GraphStore::in_memory(GraphConfig::default());
@@ -322,5 +336,251 @@ mod tests {
     async fn test_init_constraints() {
         let store = GraphStore::in_memory(GraphConfig::default());
         assert!(store.init_constraints().await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_graph_store_new_with_custom_backend() {
+        let backend = Box::new(FailingBackend);
+        let store = GraphStore::new(GraphConfig::default(), backend);
+        let err = store.health_check().await.unwrap_err();
+        assert!(matches!(err, GraphError::ConnectionError(_)));
+    }
+
+    #[tokio::test]
+    async fn test_graph_store_backend_accessor() {
+        let store = GraphStore::in_memory(GraphConfig::default());
+        let backend = store.backend();
+        assert!(backend.health_check().await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_in_memory_run_cypher_creates_agent() {
+        let backend = InMemoryBackend::new();
+        backend
+            .run_cypher(
+                "CREATE (a:Agent {name: $name, type: $type})",
+                &serde_json::json!({"name": "test", "type": "human"}),
+            )
+            .await
+            .unwrap();
+    }
+
+    #[tokio::test]
+    async fn test_in_memory_run_cypher_creates_label() {
+        let backend = InMemoryBackend::new();
+        backend
+            .run_cypher(
+                "CREATE (l:Label {name: $name, color: $color})",
+                &serde_json::json!({"name": "bug", "color": "#red"}),
+            )
+            .await
+            .unwrap();
+    }
+
+    #[tokio::test]
+    async fn test_in_memory_run_cypher_creates_project() {
+        let backend = InMemoryBackend::new();
+        backend
+            .run_cypher(
+                "CREATE (p:Project {name: $name, slug: $slug})",
+                &serde_json::json!({"name": "Test", "slug": "test"}),
+            )
+            .await
+            .unwrap();
+    }
+
+    #[tokio::test]
+    async fn test_in_memory_run_cypher_sets_feature_state() {
+        let backend = InMemoryBackend::new();
+        backend
+            .run_cypher(
+                "CREATE (f:Feature {id: 1, slug: 'f1', state: 'open', friendly_name: 'F1'})",
+                &serde_json::json!({}),
+            )
+            .await
+            .unwrap();
+        backend
+            .run_cypher(
+                "MATCH (f:Feature {id: $id}) SET f.state = $state",
+                &serde_json::json!({"id": 1, "state": "closed"}),
+            )
+            .await
+            .unwrap();
+    }
+
+    #[tokio::test]
+    async fn test_in_memory_run_cypher_constraint_noop() {
+        let backend = InMemoryBackend::new();
+        let result = backend
+            .run_cypher(
+                "CREATE CONSTRAINT feature_id IF NOT EXISTS FOR (f:Feature) REQUIRE f.id IS UNIQUE",
+                &serde_json::json!({}),
+            )
+            .await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_in_memory_run_cypher_create_index_noop() {
+        let backend = InMemoryBackend::new();
+        let result = backend
+            .run_cypher(
+                "CREATE INDEX feature_slug IF NOT EXISTS FOR (f:Feature) ON (f.slug)",
+                &serde_json::json!({}),
+            )
+            .await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_in_memory_run_cypher_drop_index_noop() {
+        let backend = InMemoryBackend::new();
+        let result = backend
+            .run_cypher("DROP INDEX feature_slug IF EXISTS", &serde_json::json!({}))
+            .await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_in_memory_run_cypher_health_check() {
+        let backend = InMemoryBackend::new();
+        let result = backend.run_cypher("RETURN 1", &serde_json::json!({})).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_in_memory_query_cypher_feature_found() {
+        let backend = InMemoryBackend::new();
+        backend
+            .run_cypher(
+                "CREATE (f:Feature {id: 1, slug: 'f1', state: 'open', friendly_name: 'F1'})",
+                &serde_json::json!({}),
+            )
+            .await
+            .unwrap();
+        let result = backend
+            .query_cypher(
+                "MATCH (f:Feature {id: $id}) RETURN f",
+                &serde_json::json!({"id": 1}),
+            )
+            .await
+            .unwrap();
+        assert!(!result.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_in_memory_query_cypher_workpackage_found() {
+        let backend = InMemoryBackend::new();
+        backend
+            .run_cypher(
+                "CREATE (w:WorkPackage {id: 10, title: 'WP10', state: 'todo', ordinal: 1})",
+                &serde_json::json!({}),
+            )
+            .await
+            .unwrap();
+        let result = backend
+            .query_cypher(
+                "MATCH (w:WorkPackage {id: $id}) RETURN w",
+                &serde_json::json!({"id": 10}),
+            )
+            .await
+            .unwrap();
+        assert!(!result.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_in_memory_query_cypher_agent_found() {
+        let backend = InMemoryBackend::new();
+        backend
+            .run_cypher(
+                "CREATE (a:Agent {name: $name, type: $type})",
+                &serde_json::json!({"name": "alice", "type": "human"}),
+            )
+            .await
+            .unwrap();
+        let result = backend
+            .query_cypher(
+                "MATCH (a:Agent {name: $name}) RETURN a",
+                &serde_json::json!({"name": "alice"}),
+            )
+            .await
+            .unwrap();
+        assert!(!result.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_in_memory_query_cypher_project_found() {
+        let backend = InMemoryBackend::new();
+        backend
+            .run_cypher(
+                "CREATE (p:Project {name: $name, slug: $slug})",
+                &serde_json::json!({"name": "TestProj", "slug": "testproj"}),
+            )
+            .await
+            .unwrap();
+        let result = backend
+            .query_cypher(
+                "MATCH (p:Project {slug: $slug}) RETURN p",
+                &serde_json::json!({"slug": "testproj"}),
+            )
+            .await
+            .unwrap();
+        assert!(!result.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_in_memory_query_cypher_traversal_returns_empty() {
+        let backend = InMemoryBackend::new();
+        let result = backend
+            .query_cypher(
+                "MATCH (f:Feature {id: $id})-[:DEPENDS_ON*]->(dep:Feature) RETURN dep.id AS id",
+                &serde_json::json!({"id": 1}),
+            )
+            .await
+            .unwrap();
+        assert!(result.is_empty());
+    }
+
+    #[tokio::test]
+    fn test_graph_error_display() {
+        let err = GraphError::ConnectionError("oops".into());
+        assert!(err.to_string().contains("Connection error"));
+        let err = GraphError::QueryError("bad".into());
+        assert!(err.to_string().contains("Query error"));
+        let err = GraphError::ConstraintViolation("cv".into());
+        assert!(err.to_string().contains("Constraint violation"));
+        let err = GraphError::NotFound("nf".into());
+        assert!(err.to_string().contains("Not found"));
+        let err = GraphError::InvalidInput("ii".into());
+        assert!(err.to_string().contains("Invalid input"));
+    }
+
+    #[tokio::test]
+    async fn test_in_memory_backend_run_cypher_unknown_query() {
+        let backend = InMemoryBackend::new();
+        let result = backend
+            .run_cypher("UNKNOWN QUERY", &serde_json::json!({}))
+            .await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_graph_store_run_cypher_error_propagates() {
+        let backend = Box::new(FailingBackend);
+        let store = GraphStore::new(GraphConfig::default(), backend);
+        let result = store
+            .run_cypher("CREATE (f:Feature {id: 1})", &serde_json::json!({}))
+            .await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_graph_store_query_cypher_error_propagates() {
+        let backend = Box::new(FailingBackend);
+        let store = GraphStore::new(GraphConfig::default(), backend);
+        let result = store
+            .query_cypher("MATCH (f:Feature) RETURN f", &serde_json::json!({}))
+            .await;
+        assert!(result.is_err());
     }
 }

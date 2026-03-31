@@ -66,12 +66,36 @@ impl<'a> IndexManager<'a> {
 mod tests {
     use super::*;
     use crate::config::GraphConfig;
+    use crate::store::{GraphBackend, InMemoryBackend};
+    use async_trait::async_trait;
+    use serde_json::Value;
+
+    struct UnhealthyBackend;
+    #[async_trait]
+    impl GraphBackend for UnhealthyBackend {
+        async fn run_cypher(&self, _: &str, _: &Value) -> Result<(), GraphError> {
+            Err(GraphError::ConnectionError("failing".into()))
+        }
+        async fn query_cypher(&self, _: &str, _: &Value) -> Result<Vec<Value>, GraphError> {
+            Err(GraphError::ConnectionError("failing".into()))
+        }
+        async fn health_check(&self) -> Result<(), GraphError> {
+            Err(GraphError::ConnectionError("failing".into()))
+        }
+    }
 
     #[tokio::test]
     async fn test_health_check_healthy() {
         let store = GraphStore::in_memory(GraphConfig::default());
         let checker = GraphHealthChecker::new(&store);
         assert_eq!(checker.check().await, GraphHealth::Healthy);
+    }
+
+    #[tokio::test]
+    async fn test_health_check_unavailable() {
+        let store = GraphStore::new(GraphConfig::default(), Box::new(UnhealthyBackend));
+        let checker = GraphHealthChecker::new(&store);
+        assert_eq!(checker.check().await, GraphHealth::Unavailable);
     }
 
     #[tokio::test]
@@ -86,5 +110,27 @@ mod tests {
         let store = GraphStore::in_memory(GraphConfig::default());
         let mgr = IndexManager::new(&store);
         assert!(mgr.delete_indexes().await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_graph_health_checker_new() {
+        let store = GraphStore::in_memory(GraphConfig::default());
+        let checker = GraphHealthChecker::new(&store);
+        assert_eq!(checker.check().await, GraphHealth::Healthy);
+    }
+
+    #[tokio::test]
+    async fn test_index_manager_new() {
+        let store = GraphStore::in_memory(GraphConfig::default());
+        let mgr = IndexManager::new(&store);
+        assert!(mgr.create_indexes().await.is_ok());
+        assert!(mgr.delete_indexes().await.is_ok());
+    }
+
+    #[tokio::test]
+    fn test_graph_health_enum_equality() {
+        assert_eq!(GraphHealth::Healthy, GraphHealth::Healthy);
+        assert_eq!(GraphHealth::Unavailable, GraphHealth::Unavailable);
+        assert_ne!(GraphHealth::Healthy, GraphHealth::Unavailable);
     }
 }

@@ -181,4 +181,76 @@ mod tests {
                 .is_ok()
         );
     }
+
+    #[tokio::test]
+    async fn test_blocks_relationship() {
+        let store = GraphStore::in_memory(GraphConfig::default());
+        let nodes = NodeStore::new(&store);
+        let rels = RelationshipStore::new(&store);
+
+        nodes
+            .create_workpackage(100, "WP-100".into(), "todo".into(), 1)
+            .await
+            .unwrap();
+        nodes
+            .create_workpackage(101, "WP-101".into(), "todo".into(), 2)
+            .await
+            .unwrap();
+
+        assert!(rels.blocks(100, 101).await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_tag_feature() {
+        let store = GraphStore::in_memory(GraphConfig::default());
+        let nodes = NodeStore::new(&store);
+        let rels = RelationshipStore::new(&store);
+
+        nodes
+            .create_feature(50, "feat-50".into(), "open".into(), "Feature 50".into())
+            .await
+            .unwrap();
+        nodes
+            .create_label("bug".into(), "#ff0000".into())
+            .await
+            .unwrap();
+
+        assert!(rels.tag_feature(50, "bug".into()).await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_feature_in_project() {
+        let store = GraphStore::in_memory(GraphConfig::default());
+        let nodes = NodeStore::new(&store);
+        let rels = RelationshipStore::new(&store);
+
+        nodes
+            .create_feature(60, "feat-60".into(), "open".into(), "Feature 60".into())
+            .await
+            .unwrap();
+        nodes
+            .create_project("AgilePlus".into(), "agileplus".into())
+            .await
+            .unwrap();
+
+        assert!(rels.feature_in_project(60, "agileplus".into()).await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_workpackage_in_project() {
+        let store = GraphStore::in_memory(GraphConfig::default());
+        let nodes = NodeStore::new(&store);
+        let rels = RelationshipStore::new(&store);
+
+        nodes
+            .create_workpackage(70, "WP-70".into(), "todo".into(), 1)
+            .await
+            .unwrap();
+        nodes
+            .create_project("AgilePlus".into(), "agileplus".into())
+            .await
+            .unwrap();
+
+        assert!(rels.workpackage_in_project(70, "agileplus".into()).await.is_ok());
+    }
 }

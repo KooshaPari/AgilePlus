@@ -267,4 +267,84 @@ mod tests {
         let result = nodes.get_feature(999).await.unwrap();
         assert!(result.is_none());
     }
+
+    #[tokio::test]
+    async fn test_delete_workpackage() {
+        let store = GraphStore::in_memory(GraphConfig::default());
+        let nodes = NodeStore::new(&store);
+
+        nodes
+            .create_workpackage(20, "WP-20".into(), "todo".into(), 2)
+            .await
+            .unwrap();
+
+        let result = nodes.get_workpackage(20).await.unwrap();
+        assert!(result.is_some());
+
+        nodes.delete_workpackage(20).await.unwrap();
+
+        let result = nodes.get_workpackage(20).await.unwrap();
+        assert!(result.is_none());
+    }
+
+    #[tokio::test]
+    async fn test_create_label() {
+        let store = GraphStore::in_memory(GraphConfig::default());
+        let nodes = NodeStore::new(&store);
+
+        nodes
+            .create_label("bug".into(), "#ff0000".into())
+            .await
+            .unwrap();
+        nodes
+            .create_label("enhancement".into(), "#00ff00".into())
+            .await
+            .unwrap();
+    }
+
+    #[tokio::test]
+    async fn test_update_nonexistent_feature() {
+        let store = GraphStore::in_memory(GraphConfig::default());
+        let nodes = NodeStore::new(&store);
+
+        nodes
+            .update_feature_state(999, "closed".into())
+            .await
+            .unwrap();
+    }
+
+    #[tokio::test]
+    async fn test_delete_nonexistent_workpackage() {
+        let store = GraphStore::in_memory(GraphConfig::default());
+        let nodes = NodeStore::new(&store);
+
+        nodes.delete_workpackage(999).await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn test_get_nonexistent_workpackage() {
+        let store = GraphStore::in_memory(GraphConfig::default());
+        let nodes = NodeStore::new(&store);
+
+        let result = nodes.get_workpackage(999).await.unwrap();
+        assert!(result.is_none());
+    }
+
+    #[tokio::test]
+    async fn test_get_nonexistent_agent() {
+        let store = GraphStore::in_memory(GraphConfig::default());
+        let nodes = NodeStore::new(&store);
+
+        let result = nodes.get_agent("nonexistent").await.unwrap();
+        assert!(result.is_none());
+    }
+
+    #[tokio::test]
+    async fn test_get_nonexistent_project() {
+        let store = GraphStore::in_memory(GraphConfig::default());
+        let nodes = NodeStore::new(&store);
+
+        let result = nodes.get_project("nonexistent").await.unwrap();
+        assert!(result.is_none());
+    }
 }
