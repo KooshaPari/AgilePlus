@@ -1,58 +1,92 @@
-# CLAUDE.md — repos shelf root
+# CLAUDE.md — AgilePlus
 
 ## Identity
 
-This is the **repos shelf** for `CodeProjects/Phenotype/organizational-shelf/repos`.
-A shelf is a top-level organizational unit containing related but independent
-project repositories. Think of it like a `/opt` or `~/code` directory, but
-versioned and synced as a polyrepo (repo of repos).
+AgilePlus is a Rust monorepo implementing a next-generation project management system with hexagonal architecture, event sourcing, and multi-VCS support.
 
-**NOT AgilePlus.** AgilePlus is one of ~30 projects inside this shelf.
-See `projects/INDEX.md` for the full catalog.
+**Repository:** https://github.com/KooshaPari/AgilePlus
+**Architecture:** 24-crate Rust workspace with hexagonal/ports-and-adapters pattern
+**Stack:** Rust (Axum, Tonic/gRPC, SQLite), Python MCP server
+**Integrations:** Plane.so, GitHub, NATS
 
-## Structure
+## Project Structure
 
 ```
-repos/                          # ← YOU ARE HERE (shelf root)
-├── .worktrees/                 # Canonical worktree staging area
-├── .archive/                   # Archived/rejected items
-├── apps/                       # Application projects (user-facing)
-├── libs/                       # Shared libraries (internal packages)
-├── tooling/                    # Developer tools, CLIs, scripts
-├── infra/                      # Infrastructure, deployment, devops
-├── platforms/                  # Platform-as-product projects
-├── crates/                     # Rust workspace members
-├── packages/                   # JS/TS monorepo packages
-├── docs/                       # Cross-project documentation
-│   ├── adr/                   #   Architecture decision records
-│   └── guides/                #   How-to guides
-├── scripts/                    # Cross-project utility scripts
-├── governance/                 # Governance tooling (policy, scoring)
-├── projects/                   # Project catalog & metadata
-│   └── INDEX.md               #   Master project list
-├── WORKSTORES.md               # Worktree management guide
-└── REPOS_INDEX.md              # Detailed shelf index
+AgilePlus/
+├── crates/              # Core Rust domain crates (currently commented out in workspace)
+├── libs/                # Active Rust libraries
+│   ├── nexus/          # Core messaging/coordination
+│   ├── intent-registry/
+│   ├── health-monitor/
+│   └── plugin-*/       # Plugin implementations (git, grpc, sqlite, etc.)
+├── agileplus/          # Python MCP server for AgilePlus
+├── agileplus-agents/   # Agent tooling
+├── agileplus-mcp/      # MCP protocol implementation
+├── apps/               # Application entry points
+├── docs/               # Documentation
+│   ├── agents/         # Agent governance and prompts
+│   ├── adr/            # Architecture decision records
+│   ├── specs/          # Feature specifications
+│   └── guides/         # How-to guides
+├── python/             # Python packages
+├── proto/              # gRPC protocol definitions
+└── tests/             # Integration tests
 ```
 
-## Agent Rules
+## Key Concepts
 
-**READ `AGENTS.md` FIRST.** It contains the authoritative agent interaction
-rules for this shelf. Key points:
+- **Work Packages (WPs):** Atomic units of work with explicit file scopes
+- **Event Sourcing:** All state changes recorded as immutable events with hash chains
+- **Hexagonal Architecture:** Domain logic isolated from infrastructure via ports
+- **Plugin System:** Storage and VCS adapters loaded dynamically
+- **Evidence Ledger:** Audit trail for governance compliance
 
-- When working on a project, cd into its directory first (e.g., `cd heliosCLI`)
-- Never assume a project is at shelf root — always verify
-- Test commands must run inside the target project directory, not shelf root
-- File reads should specify the correct relative path from shelf root
+## Development Commands
 
-## Project Index
+```bash
+# Build the workspace
+cargo build
 
-See `projects/INDEX.md` for the full catalog of all projects in this shelf.
+# Run tests
+cargo test
 
-## Quick Reference
+# Run clippy lints
+cargo clippy --all
+
+# Format code
+cargo fmt --all
+
+# Build gRPC stubs (requires buf)
+buf generate
+
+# Run the Python MCP server
+cd agileplus && python -m agileplus
+```
+
+## Documentation
 
 | What you need | Where to look |
 |---------------|---------------|
-| Project list | `projects/INDEX.md` |
-| Governance rules | `AGENTS.md` |
+| Agent rules | `docs/agents/governance-constraints.md` |
+| Agent prompts | `docs/agents/prompt-format.md` |
 | Architecture decisions | `docs/adr/` |
-| Cross-project scripts | `scripts/` |
+| Feature specifications | `docs/specs/` |
+| Implementation plan | `PLAN.md` |
+| Functional requirements | `FUNCTIONAL_REQUIREMENTS.md` |
+
+## Agent Workflow
+
+1. Read `docs/agents/governance-constraints.md` for safety rules
+2. Read `docs/agents/prompt-format.md` for work package format
+3. Work in isolated git worktrees (never commit directly to main)
+4. Follow spec-driven development: implement exactly what spec says
+5. All changes must be traceable to a work package
+
+## Workspace Status
+
+Many crates are currently commented out in `Cargo.toml` pending implementation:
+- agileplus-domain, agileplus-cli, agileplus-api, agileplus-grpc
+- agileplus-sqlite, agileplus-git, agileplus-plane, agileplus-telemetry
+- And others...
+
+Active development happens in `libs/` and `agileplus/` directories.
