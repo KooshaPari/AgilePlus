@@ -79,3 +79,24 @@ impl RateLimiter {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn limiter_error_display() {
+        let err = LimiterError::Error("rate limit exceeded".into());
+        assert!(err.to_string().contains("Rate limit error"));
+        assert!(err.to_string().contains("rate limit exceeded"));
+    }
+
+    #[test]
+    fn limiter_error_eq() {
+        let err1 = LimiterError::Error("e1".into());
+        let err2 = LimiterError::Error("e1".into());
+        let err3 = LimiterError::Error("e2".into());
+        assert_eq!(err1, err2);
+        assert_ne!(err1, err3);
+    }
+}

@@ -18,4 +18,5 @@ tokio = { workspace = true }
 chrono = { workspace = true }
 
 [dev-dependencies]
-tokio = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
+dashmap = "6"
