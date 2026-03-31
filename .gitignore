@@ -4,3 +4,4 @@
 *.yaml
 *.json
 !pyproject.toml
+!.agileplus/kilo-sync.json
