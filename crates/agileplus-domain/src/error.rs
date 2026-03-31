@@ -28,7 +28,8 @@ pub enum DomainError {
     Conflict(String),
     #[error("{0}")]
     Other(String),
-    // --- Module errors ---
+    #[error("validation error: {0}")]
+    Validation(String),
     #[error("module not found: {0}")]
     ModuleNotFound(String),
     #[error("circular module reference: cannot set {child} as parent of {ancestor}")]
@@ -42,9 +43,32 @@ pub enum DomainError {
         feature_slug: String,
         module_slug: String,
     },
-    // --- Cycle errors ---
     #[error("cycle not found: {0}")]
     CycleNotFound(String),
     #[error("cycle gate not met: {0}")]
     CycleGateNotMet(String),
+}
+
+#[derive(Debug, Clone, thiserror::Error)]
+pub enum ValidationError {
+    #[error("field '{field}' cannot be empty")]
+    EmptyField { field: String },
+    #[error("field '{field}' exceeds maximum length of {max}")]
+    FieldTooLong { field: String, max: usize },
+    #[error("invalid value for '{field}': {reason}")]
+    InvalidValue { field: String, reason: String },
+}
+
+impl ValidationError {
+    pub fn empty_field(field: impl Into<String>) -> Self {
+        Self::EmptyField { field: field.into() }
+    }
+
+    pub fn field_too_long(field: impl Into<String>, max: usize) -> Self {
+        Self::FieldTooLong { field: field.into(), max }
+    }
+
+    pub fn invalid_value(field: impl Into<String>, reason: impl Into<String>) -> Self {
+        Self::InvalidValue { field: field.into(), reason: reason.into() }
+    }
 }

@@ -11,15 +11,8 @@ serde_json.workspace = true
 chrono.workspace = true
 sha2.workspace = true
 thiserror.workspace = true
-toml = "0.8"
-dirs-next = "2"
-zeroize = { version = "1", features = ["derive"] }
-keyring = { version = "3", optional = true }
-agileplus-plugin-core = { git = "https://github.com/KooshaPari/agileplus-plugin-core", optional = true }
-
-[features]
-keychain = ["dep:keyring"]
-plugins = ["agileplus-plugin-core"]
+uuid = { version = "1", features = ["v4", "serde"] }
+std::collections = { version = "0.1", features = ["hash_map"] }
 
 [dev-dependencies]
 proptest = "1"

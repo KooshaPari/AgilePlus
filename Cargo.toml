@@ -15,6 +15,7 @@ members = [
     "libs/config-core",
     "libs/tracing-core",
     "libs/cli-framework",
+    "crates/agileplus-domain",
 ]
 
 [workspace.package]
@@ -32,6 +33,7 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 chrono = { version = "0.4", features = ["serde"] }
 sha2 = "0.10"
+uuid = { version = "1", features = ["v4", "serde"] }
 tokio = { version = "1", features = ["full"] }
 thiserror = "2"
 anyhow = "1"
