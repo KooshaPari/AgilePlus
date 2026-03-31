@@ -29,3 +29,4 @@ tokio-retry = "0.3"
 
 [dev-dependencies]
 tokio = { workspace = true }
+proptest = "1"

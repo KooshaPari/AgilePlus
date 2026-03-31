@@ -208,4 +208,84 @@ mod tests {
             assert!(tailscale_socket_path().is_err());
         }
     }
+
+    #[test]
+    fn peer_info_debug_impl() {
+        let peer = PeerInfo {
+            device_id: "peer-debug".to_string(),
+            hostname: "peer-host".to_string(),
+            tailscale_ip: "100.64.0.50".to_string(),
+            status: PeerStatus::Online,
+        };
+        let debug_str = format!("{:?}", peer);
+        assert!(debug_str.contains("peer-debug"));
+        assert!(debug_str.contains("Online"));
+    }
+
+    #[test]
+    fn peer_status_variants() {
+        assert_eq!(format!("{:?}", PeerStatus::Online), "Online");
+        assert_eq!(format!("{:?}", PeerStatus::Offline), "Offline");
+        assert_eq!(format!("{:?}", PeerStatus::Unknown), "Unknown");
+    }
+
+    #[test]
+    fn peer_info_clone() {
+        let peer = PeerInfo {
+            device_id: "clone-test".to_string(),
+            hostname: "clone-host".to_string(),
+            tailscale_ip: "100.64.0.60".to_string(),
+            status: PeerStatus::Offline,
+        };
+        let cloned = peer.clone();
+        assert_eq!(cloned.device_id, peer.device_id);
+        assert_eq!(cloned.status, peer.status);
+    }
+
+    #[test]
+    fn peer_status_partial_eq() {
+        assert_eq!(PeerStatus::Online, PeerStatus::Online);
+        assert_ne!(PeerStatus::Offline, PeerStatus::Online);
+        assert_ne!(PeerStatus::Unknown, PeerStatus::Offline);
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn socket_path_on_linux_is_correct() {
+        let p = tailscale_socket_path().unwrap();
+        assert_eq!(p, std::path::PathBuf::from("/var/run/tailscale/tailscaled.sock"));
+    }
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn socket_path_on_macos_uses_env_or_default() {
+        std::env::remove_var("TAILSCALE_SOCKET");
+        let p = tailscale_socket_path().unwrap();
+        assert_eq!(p, std::path::PathBuf::from("/var/run/tailscale/tailscaled.sock"));
+    }
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn socket_path_on_macos_respects_env() {
+        use std::io::Error;
+        std::env::set_var("TAILSCALE_SOCKET", "/custom/path/socket");
+        let p = tailscale_socket_path().unwrap();
+        std::env::remove_var("TAILSCALE_SOCKET");
+        assert_eq!(p, std::path::PathBuf::from("/custom/path/socket"));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn peer_info_serialize_deserialize() {
+        let peer = PeerInfo {
+            device_id: "json-test".to_string(),
+            hostname: "json-host".to_string(),
+            tailscale_ip: "100.64.0.70".to_string(),
+            status: PeerStatus::Online,
+        };
+        let json = serde_json::to_string(&peer).unwrap();
+        let parsed: PeerInfo = serde_json::from_str(&json).unwrap();
+        assert_eq!(parsed.device_id, "json-test");
+        assert_eq!(parsed.tailscale_ip, "100.64.0.70");
+    }
 }

@@ -148,4 +148,112 @@ mod tests {
         let result = detect_conflict("wp", 1, original.clone(), original.clone(), &stored);
         assert!(result.is_none());
     }
+
+    #[test]
+    fn detect_conflict_both_changed_to_same_value() {
+        let original = json!({"title": "original"});
+        let stored = hash_value(&original);
+        let local = json!({"title": "changed"});
+        let remote = json!({"title": "changed"});
+        let result = detect_conflict("wp", 1, local, remote, &stored);
+        assert!(result.is_none(), "both changed to same value is not a conflict");
+    }
+
+    #[test]
+    fn sync_conflict_is_real_conflict_true() {
+        let local = json!({"a": 1});
+        let remote = json!({"a": 2});
+        let c = SyncConflict::new("test", 1, local, remote);
+        assert!(c.is_real_conflict());
+    }
+
+    #[test]
+    fn sync_conflict_is_real_conflict_false_when_hashes_match() {
+        let same = json!({"x": 42});
+        let c = SyncConflict::new("test", 1, same.clone(), same);
+        assert!(!c.is_real_conflict());
+    }
+
+    #[test]
+    fn detect_conflict_uses_canonic_serialization() {
+        let v1 = json!({"b": 1, "a": 2});
+        let v2 = json!({"a": 2, "b": 1});
+        assert_eq!(hash_value(&v1), hash_value(&v2));
+    }
+
+    #[test]
+    fn detect_conflict_empty_object() {
+        let original = json!({});
+        let stored = hash_value(&original);
+        let local = json!({"k": "v"});
+        let remote = json!({"k": "v"});
+        let result = detect_conflict("empty", 1, local, remote, &stored);
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn detect_conflict_nested_json() {
+        let original = json!({"nested": {"inner": 1}});
+        let stored = hash_value(&original);
+        let local = json!({"nested": {"inner": 2}});
+        let remote = json!({"nested": {"inner": 3}});
+        let result = detect_conflict("nested", 1, local, remote, &stored);
+        assert!(result.is_some());
+        let c = result.unwrap();
+        assert_eq!(c.entity_type, "nested");
+        assert_eq!(c.entity_id, 1);
+        assert!(c.local_hash != c.remote_hash);
+    }
+
+    #[test]
+    fn detect_conflict_with_arrays() {
+        let original = json!({"items": [1, 2, 3]});
+        let stored = hash_value(&original);
+        let local = json!({"items": [1, 2, 3, 4]});
+        let remote = json!({"items": [1, 2, 3, 5]});
+        let result = detect_conflict("array_test", 1, local, remote, &stored);
+        assert!(result.is_some());
+    }
+
+    #[test]
+    fn sync_conflict_new_preserves_versions() {
+        let local = json!({"field": "local_val"});
+        let remote = json!({"field": "remote_val"});
+        let c = SyncConflict::new("entity", 99, local.clone(), remote.clone());
+        assert_eq!(c.local_version, local);
+        assert_eq!(c.remote_version, remote);
+        assert!(!c.local_hash.is_empty());
+        assert!(!c.remote_hash.is_empty());
+    }
+
+    #[test]
+    fn sync_conflict_detected_at_is_set() {
+        let before = chrono::Utc::now();
+        let local = json!({"val": 1});
+        let remote = json!({"val": 2});
+        let c = SyncConflict::new("t", 1, local, remote);
+        let after = chrono::Utc::now();
+        assert!(c.detected_at >= before && c.detected_at <= after);
+    }
+
+    proptest::proptest! {
+        #[test]
+        fn hash_value_is_deterministic_and_nonzero(prop_value: serde_json::Value) {
+            let h = hash_value(&prop_value);
+            prop_assert!(!h.is_empty());
+            prop_assert_eq!(h, hash_value(&prop_value));
+        }
+
+        #[test]
+        fn detect_conflict_property_different_hashes(local: serde_json::Value, remote: serde_json::Value, stored: String) {
+            let local_hash = hash_value(&local);
+            let remote_hash = hash_value(&remote);
+            let local_changed = local_hash != stored;
+            let remote_changed = remote_hash != stored;
+            let different_hashes = local_hash != remote_hash;
+            let has_conflict = local_changed && remote_changed && different_hashes;
+            let result = detect_conflict("test", 1, local, remote, &stored);
+            prop_assert_eq!(result.is_some(), has_conflict);
+        }
+    }
 }

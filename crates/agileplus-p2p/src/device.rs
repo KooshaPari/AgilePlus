@@ -242,4 +242,132 @@ mod tests {
             Err(ConnectionError::ConflictingRegistration)
         ));
     }
+
+    #[test]
+    fn in_memory_store_allows_re_insert_after_different_successful_insert() {
+        let store = InMemoryDeviceStore::default();
+        let device1 = DeviceNode {
+            device_id: "first".to_string(),
+            hostname: "host1".to_string(),
+            tailscale_ip: "100.64.0.1".to_string(),
+            created_at: Utc::now(),
+        };
+        let device2 = DeviceNode {
+            device_id: "second".to_string(),
+            hostname: "host2".to_string(),
+            tailscale_ip: "100.64.0.2".to_string(),
+            created_at: Utc::now(),
+        };
+        store.insert_device(&device1).unwrap();
+        store.insert_device(&device2).unwrap();
+        let fetched = store.get_device().unwrap().unwrap();
+        assert_eq!(fetched.device_id, "second");
+    }
+
+    #[test]
+    fn in_memory_store_get_device_returns_none_when_empty() {
+        let store = InMemoryDeviceStore::default();
+        let result = store.get_device().unwrap();
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn in_memory_store_insert_and_get_roundtrip() {
+        let store = InMemoryDeviceStore::default();
+        let device = DeviceNode {
+            device_id: "roundtrip-test".to_string(),
+            hostname: "rt-host".to_string(),
+            tailscale_ip: "100.64.0.99".to_string(),
+            created_at: Utc::now(),
+        };
+        store.insert_device(&device).unwrap();
+        let fetched = store.get_device().unwrap().unwrap();
+        assert_eq!(fetched.device_id, "roundtrip-test");
+        assert_eq!(fetched.hostname, "rt-host");
+        assert_eq!(fetched.tailscale_ip, "100.64.0.99");
+    }
+
+    #[test]
+    fn in_memory_store_lock_error_returns_error() {
+        let store = InMemoryDeviceStore::default();
+        let device = DeviceNode {
+            device_id: "lock-test".to_string(),
+            hostname: "lh".to_string(),
+            tailscale_ip: "100.64.0.1".to_string(),
+            created_at: Utc::now(),
+        };
+        store.insert_device(&device).unwrap();
+        let result = store.insert_device(&device);
+        assert!(matches!(result, Err(ConnectionError::ConflictingRegistration)));
+    }
+
+    #[test]
+    fn device_node_debug_impl() {
+        let device = DeviceNode {
+            device_id: "debug-test".to_string(),
+            hostname: "debug-host".to_string(),
+            tailscale_ip: "100.64.0.5".to_string(),
+            created_at: Utc::now(),
+        };
+        let debug_str = format!("{:?}", device);
+        assert!(debug_str.contains("debug-test"));
+        assert!(debug_str.contains("debug-host"));
+    }
+
+    #[test]
+    fn device_node_serialize_deserialize() {
+        use serde::{Deserialize, Serialize};
+        let device = DeviceNode {
+            device_id: "serde-test".to_string(),
+            hostname: "serde-host".to_string(),
+            tailscale_ip: "100.64.0.7".to_string(),
+            created_at: Utc::now(),
+        };
+        let json = serde_json::to_string(&device).unwrap();
+        let parsed: DeviceNode = serde_json::from_str(&json).unwrap();
+        assert_eq!(parsed.device_id, "serde-test");
+        assert_eq!(parsed.hostname, "serde-host");
+        assert_eq!(parsed.tailscale_ip, "100.64.0.7");
+    }
+
+    #[tokio::test]
+    async fn register_device_returns_correct_hostname() {
+        let store = InMemoryDeviceStore::default();
+        let device = register_device(&store).await.unwrap();
+        assert!(!device.hostname.is_empty());
+    }
+
+    #[tokio::test]
+    async fn register_device_creates_uuid_v4() {
+        let store = InMemoryDeviceStore::default();
+        let device = register_device(&store).await.unwrap();
+        let parsed = Uuid::parse_str(&device.device_id);
+        assert!(parsed.is_ok());
+    }
+
+    #[tokio::test]
+    async fn get_local_device_returns_none_when_not_registered() {
+        let store = InMemoryDeviceStore::default();
+        let result = get_local_device(&store).unwrap();
+        assert!(result.is_none());
+    }
+
+    #[tokio::test]
+    async fn get_local_device_returns_device_after_registration() {
+        let store = InMemoryDeviceStore::default();
+        let registered = register_device(&store).await.unwrap();
+        let fetched = get_local_device(&store).unwrap().unwrap();
+        assert_eq!(registered.device_id, fetched.device_id);
+        assert_eq!(registered.hostname, fetched.hostname);
+    }
+
+    #[tokio::test]
+    async fn multiple_registrations_return_same_device() {
+        let store = InMemoryDeviceStore::default();
+        let first = register_device(&store).await.unwrap();
+        let second = register_device(&store).await.unwrap();
+        let third = register_device(&store).await.unwrap();
+        assert_eq!(first.device_id, second.device_id);
+        assert_eq!(second.device_id, third.device_id);
+    }
 }

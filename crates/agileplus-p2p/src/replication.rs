@@ -222,4 +222,94 @@ mod tests {
         assert_eq!(back.sender_device_id, "dev-1");
         assert_eq!(back.events.len(), 1);
     }
+
+    #[test]
+    fn event_batch_with_multiple_events() {
+        use agileplus_domain::domain::event::Event;
+        let batch = EventBatch {
+            sender_device_id: "multi-dev".to_string(),
+            events: vec![
+                Event::new("Feature", 1, "created", serde_json::json!({}), "user1"),
+                Event::new("Feature", 1, "updated", serde_json::json!({"status": "done"}), "user2"),
+                Event::new("Epic", 2, "created", serde_json::json!({}), "user1"),
+            ],
+        };
+        let json = serde_json::to_string(&batch).unwrap();
+        let back: EventBatch = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.sender_device_id, "multi-dev");
+        assert_eq!(back.events.len(), 3);
+    }
+
+    #[test]
+    fn event_batch_empty_events() {
+        let batch = EventBatch {
+            sender_device_id: "empty-dev".to_string(),
+            events: vec![],
+        };
+        let json = serde_json::to_string(&batch).unwrap();
+        let back: EventBatch = serde_json::from_str(&json).unwrap();
+        assert!(back.events.is_empty());
+    }
+
+    #[test]
+    fn replication_result_default() {
+        let result = ReplicationResult::default();
+        assert_eq!(result.events_sent, 0);
+        assert_eq!(result.events_received, 0);
+    }
+
+    #[test]
+    fn replication_result_with_counts() {
+        let result = ReplicationResult {
+            events_sent: 5,
+            events_received: 3,
+        };
+        assert_eq!(result.events_sent, 5);
+        assert_eq!(result.events_received, 3);
+    }
+
+    #[test]
+    fn replication_result_debug() {
+        let result = ReplicationResult {
+            events_sent: 10,
+            events_received: 2,
+        };
+        let debug_str = format!("{:?}", result);
+        assert!(debug_str.contains("events_sent"));
+        assert!(debug_str.contains("10"));
+    }
+
+    #[test]
+    fn device_subject_with_various_ids() {
+        assert_eq!(device_subject("abc-123"), "agileplus.sync.device.abc-123");
+        assert_eq!(device_subject("x"), "agileplus.sync.device.x");
+        assert_eq!(device_subject("device-with-dashes"), "agileplus.sync.device.device-with-dashes");
+    }
+
+    #[test]
+    fn event_batch_serialization_preserves_payload() {
+        use agileplus_domain::domain::event::Event;
+        let batch = EventBatch {
+            sender_device_id: "serializer-test".to_string(),
+            events: vec![Event::new(
+                "WorkPackage",
+                99,
+                "state_transitioned",
+                serde_json::json!({"from": "open", "to": "closed"}),
+                "system",
+            )],
+        };
+        let json = serde_json::to_string(&batch).unwrap();
+        let parsed: EventBatch = serde_json::from_str(&json).unwrap();
+        assert_eq!(parsed.events[0].entity_type, "WorkPackage");
+        assert_eq!(parsed.events[0].entity_id, 99);
+        assert_eq!(parsed.events[0].event_type, "state_transitioned");
+    }
+
+    #[test]
+    fn device_subject_different_devices_have_different_subjects() {
+        let s1 = device_subject("device-1");
+        let s2 = device_subject("device-2");
+        assert_ne!(s1, s2);
+    }
 }

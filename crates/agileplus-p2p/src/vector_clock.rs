@@ -290,4 +290,165 @@ mod tests {
             "local should not send events it doesn't have"
         );
     }
+
+    #[test]
+    fn advance_with_same_sequence_is_noop() {
+        let mut v = SyncVector::new("dev");
+        v.advance("Feature", "1", 5);
+        v.advance("Feature", "1", 5);
+        assert_eq!(v.get("Feature", "1"), 5);
+    }
+
+    #[test]
+    fn advance_multiple_entities_independently() {
+        let mut v = SyncVector::new("dev");
+        v.advance("Feature", "1", 10);
+        v.advance("Epic", "2", 20);
+        v.advance("Story", "3", 30);
+        assert_eq!(v.get("Feature", "1"), 10);
+        assert_eq!(v.get("Epic", "2"), 20);
+        assert_eq!(v.get("Story", "3"), 30);
+    }
+
+    #[test]
+    fn sync_vector_default_is_empty() {
+        let v = SyncVector::new("dev");
+        assert!(v.entries.is_empty());
+        assert_eq!(v.get("Anything", "999"), 0);
+    }
+
+    #[test]
+    fn sync_vector_device_id_is_set() {
+        let v = SyncVector::new("my-device-id");
+        assert_eq!(v.device_id, "my-device-id");
+    }
+
+    #[test]
+    fn compute_missing_locally_empty_when_no_overlap() {
+        let mut local = SyncVector::new("dev-a");
+        local.advance("Feature", "1", 10);
+
+        let mut peer = SyncVector::new("dev-b");
+        peer.advance("Epic", "2", 5);
+
+        let missing = compute_missing_locally(&local, &peer);
+        assert_eq!(missing.len(), 1);
+        assert_eq!(missing[0].0, "Feature");
+        assert_eq!(missing[0].1, "1");
+    }
+
+    #[test]
+    fn compute_missing_locally_returns_correct_sequences() {
+        let mut local = SyncVector::new("dev-a");
+        local.advance("Entity", "X", 100);
+
+        let mut peer = SyncVector::new("dev-b");
+        peer.advance("Entity", "X", 50);
+
+        let missing = compute_missing_locally(&local, &peer);
+        assert_eq!(missing.len(), 1);
+        assert_eq!(missing[0].2, 50);
+        assert_eq!(missing[0].3, 100);
+    }
+
+    #[test]
+    fn sync_result_default() {
+        let result = SyncResult::default();
+        assert_eq!(result.events_sent, 0);
+        assert_eq!(result.events_received, 0);
+        assert_eq!(result.conflicts_detected, 0);
+    }
+
+    #[test]
+    fn sync_result_debug() {
+        let result = SyncResult::default();
+        let debug_str = format!("{:?}", result);
+        assert!(debug_str.contains("events_sent"));
+    }
+
+    proptest::proptest! {
+        #[test]
+        fn advance_is_monotonic(entity_type: String, entity_id: String, seq1: u64, seq2: u64) {
+            let mut v = SyncVector::new("dev");
+            v.advance(&entity_type, &entity_id, seq1);
+            v.advance(&entity_type, &entity_id, seq2);
+            let max_expected = std::cmp::max(seq1, seq2);
+            prop_assert_eq!(v.get(&entity_type, &entity_id), max_expected);
+        }
+
+        #[test]
+        fn merge_is_idempotent(entity_type: String, entity_id: String, seq: u64) {
+            let mut v1 = SyncVector::new("dev-a");
+            let mut v2 = SyncVector::new("dev-b");
+            v1.advance(&entity_type, &entity_id, seq);
+            v2.advance(&entity_type, &entity_id, seq);
+            let mut merged = v1.clone();
+            merged.merge(&v2);
+            merged.merge(&v2);
+            prop_assert_eq!(merged.get(&entity_type, &entity_id), seq);
+        }
+
+        #[test]
+        fn merge_preserves_local_only_entries(local_seq: u64, remote_only_seq: u64) {
+            let mut local = SyncVector::new("dev-a");
+            let mut remote = SyncVector::new("dev-b");
+            local.advance("LocalOnly", "1", local_seq);
+            remote.advance("RemoteOnly", "2", remote_only_seq);
+            let mut merged = local.clone();
+            merged.merge(&remote);
+            prop_assert_eq!(merged.get("LocalOnly", "1"), local_seq);
+            prop_assert_eq!(merged.get("RemoteOnly", "2"), remote_only_seq);
+        }
+
+        #[test]
+        fn get_returns_zero_for_unknown(entity_type: String, entity_id: String) {
+            let v = SyncVector::new("dev");
+            prop_assert_eq!(v.get(&entity_type, &entity_id), 0);
+        }
+
+        #[test]
+        fn compute_missing_returns_nothing_when_equal(seq: u64) {
+            let mut v1 = SyncVector::new("dev-a");
+            let mut v2 = SyncVector::new("dev-b");
+            v1.advance("Shared", "1", seq);
+            v2.advance("Shared", "1", seq);
+            let missing = compute_missing_locally(&v1, &v2);
+            prop_assert!(missing.is_empty());
+        }
+
+        #[test]
+        fn compute_missing_returns_nothing_when_peer_ahead(local_seq: u64, peer_seq: u64) {
+            let peer_ahead = peer_seq > local_seq;
+            let mut local = SyncVector::new("dev-a");
+            let mut peer = SyncVector::new("dev-b");
+            local.advance("E", "1", local_seq);
+            peer.advance("E", "1", peer_seq);
+            let missing = compute_missing_locally(&local, &peer);
+            if peer_ahead {
+                prop_assert!(missing.is_empty());
+            }
+        }
+
+        #[test]
+        fn sync_vector_clone_is_independent(entity_type: String, entity_id: String, seq: u64) {
+            let mut v1 = SyncVector::new("dev");
+            v1.advance(&entity_type, &entity_id, seq);
+            let mut v2 = v1.clone();
+            v2.advance(&entity_type, &entity_id, seq + 10);
+            prop_assert_ne!(v1.get(&entity_type, &entity_id), v2.get(&entity_type, &entity_id));
+        }
+
+        #[test]
+        fn advance_with_various_sequences(sequences: Vec<u64>) {
+            let mut v = SyncVector::new("dev");
+            let mut expected_max = 0u64;
+            for (i, &seq) in sequences.iter().enumerate() {
+                v.advance("E", &i.to_string(), seq);
+                expected_max = expected_max.max(seq);
+            }
+            for i in 0..sequences.len() {
+                prop_assert_eq!(v.get("E", &i.to_string()), sequences[i].max(expected_max));
+            }
+        }
+    }
 }

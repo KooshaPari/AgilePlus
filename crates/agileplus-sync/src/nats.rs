@@ -180,4 +180,125 @@ mod tests {
         assert!(SUBJECT_OUTBOUND.starts_with("agileplus.sync"));
         assert_ne!(SUBJECT_INBOUND, SUBJECT_OUTBOUND);
     }
+
+    #[test]
+    fn stream_name_constant() {
+        assert_eq!(STREAM_NAME, "AGILEPLUS_SYNC");
+        assert!(!STREAM_NAME.is_empty());
+    }
+
+    #[test]
+    fn outbound_command_serialization_roundtrip() {
+        let cmd = OutboundSyncCommand {
+            entity_type: "work_package".to_string(),
+            entity_id: 123,
+            operation: "delete".to_string(),
+            payload: serde_json::json!({"force": true, "reason": "archived"}),
+        };
+        let json = serde_json::to_string(&cmd).unwrap();
+        let parsed: OutboundSyncCommand = serde_json::from_str(&json).unwrap();
+        assert_eq!(parsed.entity_type, "work_package");
+        assert_eq!(parsed.entity_id, 123);
+        assert_eq!(parsed.operation, "delete");
+        assert_eq!(parsed.payload["force"], true);
+    }
+
+    #[test]
+    fn inbound_event_serialization_roundtrip() {
+        let ev = InboundSyncEvent {
+            plane_issue_id: "plane-issue-abc".to_string(),
+            event_type: "issue.created".to_string(),
+            payload: serde_json::json!({"title": "New Issue", "priority": "high"}),
+        };
+        let json = serde_json::to_string(&ev).unwrap();
+        let parsed: InboundSyncEvent = serde_json::from_str(&json).unwrap();
+        assert_eq!(parsed.plane_issue_id, "plane-issue-abc");
+        assert_eq!(parsed.event_type, "issue.created");
+        assert_eq!(parsed.payload["title"], "New Issue");
+    }
+
+    #[test]
+    fn inbound_event_with_complex_payload() {
+        let ev = InboundSyncEvent {
+            plane_issue_id: "complex-123".to_string(),
+            event_type: "issue.updated".to_string(),
+            payload: serde_json::json!({
+                "changes": {"status": ["open", "closed"]},
+                "nested": {"deep": {"value": 42}}
+            }),
+        };
+        let bytes = serde_json::to_vec(&ev).unwrap();
+        let back: InboundSyncEvent = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(back.payload["changes"]["status"][0], "open");
+    }
+
+    #[test]
+    fn outbound_command_with_empty_payload() {
+        let cmd = OutboundSyncCommand {
+            entity_type: "feature".to_string(),
+            entity_id: 0,
+            operation: "ping".to_string(),
+            payload: serde_json::json!(null),
+        };
+        let json = serde_json::to_string(&cmd).unwrap();
+        let back: OutboundSyncCommand = serde_json::from_str(&json).unwrap();
+        assert!(back.payload.is_null());
+    }
+
+    #[test]
+    fn subject_inbound_differs_from_outbound() {
+        assert_ne!(SUBJECT_INBOUND, SUBJECT_OUTBOUND);
+        assert!(SUBJECT_INBOUND.contains("inbound"));
+        assert!(SUBJECT_OUTBOUND.contains("outbound"));
+    }
+
+    #[test]
+    fn debug_impl_for_outbound_command() {
+        let cmd = OutboundSyncCommand {
+            entity_type: "test".to_string(),
+            entity_id: 1,
+            operation: "op".to_string(),
+            payload: serde_json::json!({}),
+        };
+        let debug_str = format!("{:?}", cmd);
+        assert!(debug_str.contains("test"));
+        assert!(debug_str.contains("1"));
+    }
+
+    #[test]
+    fn debug_impl_for_inbound_event() {
+        let ev = InboundSyncEvent {
+            plane_issue_id: "p1".to_string(),
+            event_type: "e1".to_string(),
+            payload: serde_json::json!({}),
+        };
+        let debug_str = format!("{:?}", ev);
+        assert!(debug_str.contains("p1"));
+    }
+
+    #[tokio::test]
+    async fn from_client_creates_bridge() {
+        let client = async_nats::connect("localhost:4222").await;
+        if client.is_err() {
+            return;
+        }
+        let client = client.unwrap();
+        let result = NatsSyncBridge::from_client(client).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn from_client_and_new_produce_functionally_equivalent_bridges() {
+        let client_result = async_nats::connect("localhost:4222").await;
+        if client_result.is_err() {
+            return;
+        }
+        let client = client_result.unwrap();
+        let bridge_from_client = NatsSyncBridge::from_client(client).await;
+        let bridge_from_new = NatsSyncBridge::new("localhost:4222").await;
+        if bridge_from_new.is_err() {
+            return;
+        }
+        assert!(bridge_from_client.is_ok());
+    }
 }

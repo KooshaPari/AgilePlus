@@ -157,4 +157,130 @@ mod tests {
         let expected = hash_value(&result.resolved_value);
         assert_eq!(result.resolved_hash, expected);
     }
+
+    #[test]
+    fn field_level_unknown_field_falls_back_to_remote() {
+        let c = SyncConflict::new(
+            "feature",
+            1,
+            json!({"title": "local", "extra": "local_extra"}),
+            json!({"title": "remote", "extra": "remote_extra", "status": "open"}),
+        );
+        let mut field_map = HashMap::new();
+        field_map.insert("title".to_string(), FieldSource::Local);
+        let result = apply_resolution(&c, &ResolutionStrategy::FieldLevel(field_map)).unwrap();
+        assert_eq!(result.resolved_value["title"], "local");
+        assert_eq!(result.resolved_value["extra"], "remote_extra");
+        assert_eq!(result.resolved_value["status"], "open");
+    }
+
+    #[test]
+    fn field_level_with_empty_map_uses_remote() {
+        let c = make_conflict();
+        let result = apply_resolution(&c, &ResolutionStrategy::FieldLevel(HashMap::new())).unwrap();
+        assert_eq!(result.resolved_value["title"], "remote title");
+        assert_eq!(result.resolved_value["status"], "closed");
+    }
+
+    #[test]
+    fn field_level_merges_all_keys_from_both_sides() {
+        let c = SyncConflict::new(
+            "test",
+            1,
+            json!({"local_only": 1}),
+            json!({"remote_only": 2}),
+        );
+        let field_map = HashMap::new();
+        let result = apply_resolution(&c, &ResolutionStrategy::FieldLevel(field_map)).unwrap();
+        assert!(result.resolved_value.get("local_only").is_some());
+        assert!(result.resolved_value.get("remote_only").is_some());
+    }
+
+    #[test]
+    fn manual_resolution_with_null_value() {
+        let c = make_conflict();
+        let result = apply_resolution(&c, &ResolutionStrategy::Manual(serde_json::Value::Null)).unwrap();
+        assert_eq!(result.resolved_value, serde_json::Value::Null);
+        assert_eq!(result.strategy_label, "manual");
+    }
+
+    #[test]
+    fn manual_resolution_with_complex_value() {
+        let c = make_conflict();
+        let merged = json!({"nested": {"deep": [1, 2, 3]}, "scalar": "ok"});
+        let result = apply_resolution(&c, &ResolutionStrategy::Manual(merged.clone())).unwrap();
+        assert_eq!(result.resolved_value, merged);
+    }
+
+    #[test]
+    fn remote_wins_resolution_label() {
+        let c = make_conflict();
+        let result = apply_resolution(&c, &ResolutionStrategy::RemoteWins).unwrap();
+        assert_eq!(result.strategy_label, "remote_wins");
+    }
+
+    #[test]
+    fn local_wins_resolution_label() {
+        let c = make_conflict();
+        let result = apply_resolution(&c, &ResolutionStrategy::LocalWins).unwrap();
+        assert_eq!(result.strategy_label, "local_wins");
+    }
+
+    #[test]
+    fn field_level_resolution_label() {
+        let c = make_conflict();
+        let result = apply_resolution(&c, &ResolutionStrategy::FieldLevel(HashMap::new())).unwrap();
+        assert_eq!(result.strategy_label, "field_level");
+    }
+
+    #[test]
+    fn field_level_non_object_local_returns_error() {
+        let c = SyncConflict::new("test", 1, serde_json::Value::String("not an object".into()), json!({"a": 1}));
+        let result = apply_resolution(&c, &ResolutionStrategy::FieldLevel(HashMap::new()));
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn field_level_non_object_remote_returns_error() {
+        let c = SyncConflict::new("test", 1, json!({"a": 1}), serde_json::Value::Number(42.into()));
+        let result = apply_resolution(&c, &ResolutionStrategy::FieldLevel(HashMap::new()));
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn resolution_result_fields_are_populated() {
+        let c = make_conflict();
+        let result = apply_resolution(&c, &ResolutionStrategy::LocalWins).unwrap();
+        assert!(!result.resolved_hash.is_empty());
+        assert!(!result.strategy_label.is_empty());
+    }
+
+    proptest::proptest! {
+        #[test]
+        fn local_wins_always_returns_local_version(local: serde_json::Value, remote: serde_json::Value) {
+            let c = SyncConflict::new("test", 1, local.clone(), remote.clone());
+            let result = apply_resolution(&c, &ResolutionStrategy::LocalWins).unwrap();
+            prop_assert_eq!(result.resolved_value, local);
+        }
+
+        #[test]
+        fn remote_wins_always_returns_remote_version(local: serde_json::Value, remote: serde_json::Value) {
+            let c = SyncConflict::new("test", 1, local.clone(), remote.clone());
+            let result = apply_resolution(&c, &ResolutionStrategy::RemoteWins).unwrap();
+            prop_assert_eq!(result.resolved_value, remote);
+        }
+
+        #[test]
+        fn manual_resolution_returns_provided_value(provided: serde_json::Value) {
+            let c = make_conflict();
+            let result = apply_resolution(&c, &ResolutionStrategy::Manual(provided.clone())).unwrap();
+            prop_assert_eq!(result.resolved_value, provided);
+        }
+
+        #[test]
+        fn resolution_never_panics(local: serde_json::Value, remote: serde_json::Value, field_map: HashMap<String, FieldSource>) {
+            let c = SyncConflict::new("test", 1, local, remote.clone());
+            let _ = apply_resolution(&c, &ResolutionStrategy::FieldLevel(field_map));
+        }
+    }
 }
