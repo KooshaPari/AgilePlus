@@ -88,7 +88,9 @@ where
         .map_err(ApiError::from)?
         .ok_or_else(|| ApiError::NotFound(format!("Feature '{slug}' not found")))?;
 
-    let wps = StoragePort::list_wps_by_feature(state.storage.as_ref(), feature.id)
+    let wps = state
+        .storage
+        .list_wps_by_feature(feature.id)
         .await
         .map_err(ApiError::from)?;
 

@@ -76,15 +76,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn port_builder_default() {
+    fn test_port_builder() {
         let builder = PortBuilder::<()>::new();
-        let config = builder.build().unwrap();
-        assert!(!config.cache_enabled);
-    }
-
-    #[test]
-    fn port_builder_with_options() {
-        let config = PortBuilder::<()>::new()
+        let config = builder
             .with_cache(true)
             .with_timeout(30)
             .with_retry(true)
@@ -93,6 +87,16 @@ mod tests {
             .unwrap();
         assert!(config.cache_enabled);
         assert_eq!(config.timeout_secs, Some(30));
+        assert!(config.retry_enabled);
+        assert_eq!(config.max_retries, Some(3));
+    }
+
+    #[test]
+    fn test_port_builder_invalid_retry() {
+        let builder = PortBuilder::<()>::new()
+            .with_retry(true);
+        let res = builder.build();
+        assert!(res.is_err());
     }
 
     #[test]

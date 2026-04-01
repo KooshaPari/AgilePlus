@@ -243,6 +243,7 @@ dependencies = [
  "rand 0.8.5",
  "serde",
  "serde_json",
+ "tokio",
  "uuid",
 ]
 
@@ -308,19 +309,6 @@ dependencies = [
  "tokio-stream",
  "tonic 0.13.1",
  "tonic-build",
- "tracing",
-]
-
-[[package]]
-name = "agileplus-import"
-version = "0.1.1"
-dependencies = [
- "agileplus-domain",
- "anyhow",
- "chrono",
- "serde",
- "serde_json",
- "sha2",
  "tracing",
 ]
 

@@ -39,12 +39,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[tokio::test]
-    async fn timeout_success() {
-        let result = with_timeout(async { 42 }, Duration::from_secs(1)).await.unwrap();
-        assert_eq!(result, 42);
-    }
+    use std::time::Duration;
 
     #[tokio::test]
     async fn retry_success() {
@@ -71,10 +66,16 @@ mod tests {
     #[tokio::test]
     async fn retry_failure() {
         let res = retry_on_failure(
-            || async { Err::<i32, _>("always fail".into()) },
+            || async { Err::<i32, Box<dyn std::error::Error>>("always fail".into()) },
             2,
             Duration::from_millis(1),
         ).await;
         assert!(res.is_err());
+    }
+
+    #[tokio::test]
+    async fn with_timeout_success() {
+        let res = with_timeout(async { 42 }, Duration::from_millis(100)).await;
+        assert_eq!(res.unwrap(), 42);
     }
 }

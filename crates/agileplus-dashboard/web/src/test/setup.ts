@@ -1,12 +1,6 @@
 import '@testing-library/jest-dom';
-import { expect, afterEach, afterAll, beforeAll, vi } from 'vitest';
+import { expect, afterEach, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
-
-// Polyfill jest for test compatibility
-globalThis.jest = {
-  fn: vi.fn,
-  spyOn: vi.spyOn,
-} as any;
 
 /**
  * Test Environment Setup

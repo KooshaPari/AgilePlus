@@ -1,3 +1,8 @@
+//! Builder patterns for constructing test fixtures.
+//!
+//! Provides fluent builders for creating features, work packages, and related
+//! domain objects for testing. All builders produce valid, deterministic objects.
+
 use agileplus_domain::domain::feature::Feature;
 use agileplus_domain::domain::state_machine::FeatureState;
 use agileplus_domain::domain::work_package::{WorkPackage, WpState};
@@ -6,26 +11,34 @@ use chrono::Utc;
 /// Builder for constructing Feature test objects.
 #[derive(Clone)]
 pub struct FeatureBuilder {
-    pub id: i64,
-    pub slug: String,
-    pub friendly_name: String,
-    pub project_id: Option<i64>,
-    pub state: FeatureState,
-    pub labels: Vec<String>,
-    pub target_branch: String,
+    id: i64,
+    slug: String,
+    friendly_name: String,
+    state: FeatureState,
+    spec_hash: [u8; 32],
+    target_branch: String,
+    labels: Vec<String>,
+    project_id: Option<i64>,
+}
+
+impl Default for FeatureBuilder {
+    fn default() -> Self {
+        Self::new("test-feature", "Test Feature")
+    }
 }
 
 impl FeatureBuilder {
-    /// Create a new builder with required fields.
-    pub fn new(slug: impl Into<String>, name: impl Into<String>) -> Self {
+    /// Create a new feature builder with slug and friendly_name.
+    pub fn new(slug: &str, friendly_name: &str) -> Self {
         Self {
-            id: 0,
-            slug: slug.into(),
-            friendly_name: name.into(),
-            project_id: None,
+            id: 1,
+            slug: slug.to_string(),
+            friendly_name: friendly_name.to_string(),
             state: FeatureState::Created,
-            labels: Vec::new(),
+            spec_hash: [0u8; 32],
             target_branch: "main".to_string(),
+            labels: Vec::new(),
+            project_id: None,
         }
     }
 
@@ -35,97 +48,105 @@ impl FeatureBuilder {
         self
     }
 
-    /// Set the feature project ID.
-    pub fn project_id(mut self, project_id: i64) -> Self {
-        self.project_id = Some(project_id);
-        self
-    }
-
     /// Set the feature state.
     pub fn state(mut self, state: FeatureState) -> Self {
         self.state = state;
         self
     }
 
-    /// Add a label.
-    pub fn with_label(mut self, label: impl Into<String>) -> Self {
-        self.labels.push(label.into());
+    /// Add a label to the feature.
+    pub fn with_label(mut self, label: &str) -> Self {
+        self.labels.push(label.to_string());
         self
     }
 
-    /// Set the target branch.
-    pub fn target_branch(mut self, branch: impl Into<String>) -> Self {
-        self.target_branch = branch.into();
+    /// Set multiple labels.
+    pub fn with_labels(mut self, labels: Vec<String>) -> Self {
+        self.labels = labels;
+        self
+    }
+
+    /// Set the project ID.
+    pub fn project_id(mut self, project_id: i64) -> Self {
+        self.project_id = Some(project_id);
+        self
+    }
+
+    /// Set the spec hash.
+    pub fn spec_hash(mut self, hash: [u8; 32]) -> Self {
+        self.spec_hash = hash;
         self
     }
 
     /// Build the Feature.
-    pub fn build(&self) -> Feature {
+    pub fn build(self) -> Feature {
         Feature {
             id: self.id,
-            slug: self.slug.clone(),
-            friendly_name: self.friendly_name.clone(),
-            project_id: self.project_id,
+            slug: self.slug,
+            friendly_name: self.friendly_name,
             state: self.state,
-            labels: self.labels.clone(),
-            target_branch: self.target_branch.clone(),
+            spec_hash: self.spec_hash,
+            target_branch: self.target_branch,
+            plane_issue_id: None,
+            plane_state_id: None,
+            labels: self.labels,
+            module_id: None,
+            project_id: self.project_id,
             created_at: Utc::now(),
             updated_at: Utc::now(),
             created_at_commit: None,
             last_modified_commit: None,
-            module_id: None,
-            plane_issue_id: None,
-            plane_state_id: None,
-            spec_hash: [0u8; 32],
         }
-    }
-}
-
-impl Default for FeatureBuilder {
-    fn default() -> Self {
-        Self::new("default-feature", "Default Feature")
     }
 }
 
 /// Builder for constructing WorkPackage test objects.
 #[derive(Clone)]
 pub struct WorkPackageBuilder {
-    pub id: i64,
-    pub feature_id: i64,
-    pub title: String,
-    pub sequence: i32,
-    pub state: WpState,
-    pub file_scope: Vec<String>,
+    id: i64,
+    feature_id: i64,
+    title: String,
+    sequence: i32,
+    summary: String,
+    state: WpState,
+    file_scope: Vec<String>,
 }
 
 impl WorkPackageBuilder {
-    /// Create a new builder with required fields.
-    pub fn new(feature_id: i64, title: impl Into<String>, sequence: i32) -> Self {
+    /// Create a new work package builder.
+    pub fn new(feature_id: i64, title: &str, sequence: i32) -> Self {
         Self {
-            id: 0,
+            id: 1,
             feature_id,
-            title: title.into(),
+            title: title.to_string(),
             sequence,
+            summary: String::new(),
             state: WpState::Planned,
             file_scope: Vec::new(),
         }
     }
 
-    /// Set the WP ID.
+    /// Set the work package ID.
     pub fn id(mut self, id: i64) -> Self {
         self.id = id;
         self
     }
 
-    /// Set the WP state.
+    /// Set the work package state.
     pub fn state(mut self, state: WpState) -> Self {
         self.state = state;
         self
     }
 
-    /// Add a file to scope.
-    pub fn with_file(mut self, file: impl Into<String>) -> Self {
-        self.file_scope.push(file.into());
+    /// Set the summary/description.
+    pub fn summary(mut self, summary: &str) -> Self {
+        self.summary = summary.to_string();
+        self
+    }
+
+    /// Add a file to the scope.
+    pub fn with_file(mut self, file: &str) -> Self {
+        self.file_scope.push(file.to_string());
         self
     }
 
@@ -136,24 +157,25 @@ impl WorkPackageBuilder {
     }
 
     /// Build the WorkPackage.
-    pub fn build(&self) -> WorkPackage {
+    pub fn build(self) -> WorkPackage {
+        let now = Utc::now();
         WorkPackage {
             id: self.id,
             feature_id: self.feature_id,
-            title: self.title.clone(),
-            state: self.state,
+            title: self.title,
             sequence: self.sequence,
-            file_scope: self.file_scope.clone(),
-            acceptance_criteria: String::new(),
+            acceptance_criteria: self.summary,
+            state: self.state,
+            file_scope: self.file_scope,
             agent_id: None,
             pr_url: None,
             pr_state: None,
             worktree_path: None,
             plane_sub_issue_id: None,
-            created_at: Utc::now(),
-            updated_at: Utc::now(),
             base_commit: None,
             head_commit: None,
+            created_at: now,
+            updated_at: now,
         }
     }
 }
@@ -192,6 +214,7 @@ mod tests {
         let wp = WorkPackageBuilder::new(1, "Test WP", 1)
             .id(100)
             .state(WpState::Done)
+            .summary("This is a test")
             .with_file("src/lib.rs")
             .build();
 
@@ -199,6 +222,7 @@ mod tests {
         assert_eq!(wp.feature_id, 1);
         assert_eq!(wp.title, "Test WP");
         assert_eq!(wp.state, WpState::Done);
+        assert_eq!(wp.acceptance_criteria, "This is a test");
         assert_eq!(wp.file_scope, vec!["src/lib.rs"]);
     }
 

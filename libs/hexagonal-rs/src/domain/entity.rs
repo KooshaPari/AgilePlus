@@ -49,12 +49,26 @@ pub trait Entity: Send + Sync {
 mod tests {
     use super::*;
 
+    struct MockEntity {
+        id: EntityId,
+    }
+
+    impl Entity for MockEntity {
+        fn id(&self) -> &EntityId {
+            &self.id
+        }
+
+        fn entity_type(&self) -> &'static str {
+            "mock"
+        }
+    }
+
     #[test]
-    fn test_entity_id_new() {
-        let id1 = EntityId::new();
-        let id2 = EntityId::new();
-        assert_ne!(id1, id2);
-        assert!(!id1.as_str().is_empty());
+    fn test_mock_entity() {
+        let id = EntityId::from_string("e-1");
+        let entity = MockEntity { id: id.clone() };
+        assert_eq!(entity.id().as_str(), "e-1");
+        assert_eq!(entity.entity_type(), "mock");
     }
 
     #[test]

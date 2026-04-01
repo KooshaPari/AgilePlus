@@ -97,7 +97,9 @@ mod tests {
     #[test]
     fn test_initialize_without_dsn() {
         // FR-SENTRY-001: Sentry should initialize in test mode without DSN
-        env::remove_var("SENTRY_DSN");
+        unsafe {
+            env::remove_var("SENTRY_DSN");
+        }
         let _guard = initialize();
         // Guard should be valid
         assert!(true);
@@ -106,7 +108,9 @@ mod tests {
     #[test]
     fn test_environment_override() {
         // FR-SENTRY-002: Environment should be overridable via env var
-        env::set_var("SENTRY_ENVIRONMENT", "test");
+        unsafe {
+            env::set_var("SENTRY_ENVIRONMENT", "test");
+        }
         let _guard = initialize();
         // Guard should be valid
         assert!(true);

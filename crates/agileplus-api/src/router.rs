@@ -47,13 +47,15 @@ type BoxError = Box<dyn std::error::Error + Send + Sync>;
 
 use crate::middleware::otel::opentelemetry_tracing_layer;
 use crate::responses::DetailedHealthResponse;
-use crate::routes::{audit, cycle, events, features, governance, module, stream, work_packages};
+use crate::routes::{
+    audit, backlog, cycle, events, features, governance, module, stream, work_packages,
+};
 use crate::state::AppState;
 
 /// Build the axum [`Router`] with all routes, middleware, and shared state.
 pub fn create_router<S, V, O>(state: AppState<S, V, O>) -> Router
 where
-    S: StoragePort + Send + Sync + 'static,
+    S: StoragePort + agileplus_domain::ports::ContentStoragePort + Send + Sync + 'static,
     V: VcsPort + Send + Sync + 'static,
     O: ObservabilityPort + Send + Sync + 'static,
 {
@@ -71,6 +73,8 @@ where
 
     // Protected routes — all require a valid API key.
     let protected = Router::new()
+        // Backlog items (WP15-T090)
+        .nest("/api/v1/backlog", backlog::routes::<S, V, O>())
         // Feature CRUD + transitions
         .nest("/api/v1/features", features::routes::<S, V, O>())
         // Work-package CRUD + transitions
@@ -168,7 +172,7 @@ async fn info_handler() -> Json<serde_json::Value> {
 /// Start the HTTP API server, binding to `addr`.
 pub async fn start_api<S, V, O>(addr: SocketAddr, state: AppState<S, V, O>) -> Result<(), BoxError>
 where
-    S: StoragePort + Send + Sync + 'static,
+    S: StoragePort + agileplus_domain::ports::ContentStoragePort + Send + Sync + 'static,
     V: VcsPort + Send + Sync + 'static,
     O: ObservabilityPort + Send + Sync + 'static,
 {

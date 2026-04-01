@@ -103,14 +103,14 @@ impl<R: SpecRepository> InputPort<(), Vec<Spec>> for ListSpecsUseCase<R> {
 mod tests {
     use super::*;
     use crate::adapters::spec_repository::InMemorySpecRepository;
-    use crate::ports::InputPort;
     use crate::domain::entity::Entity;
+    use crate::ports::SpecRepository;
+    use std::sync::Arc;
 
     #[tokio::test]
     async fn test_create_spec_use_case() {
         let repo = Arc::new(InMemorySpecRepository::default());
         let use_case = CreateSpecUseCase::new(repo);
-        
         let input = CreateSpecInput {
             title: "Test Spec".to_string(),
             description: "Test Description".to_string(),
@@ -137,5 +137,16 @@ mod tests {
         let result = use_case.execute(input).await;
         assert_eq!(result.spec.title(), "Updated");
         assert_eq!(result.spec.status(), SpecStatus::Active);
+    }
+
+    #[tokio::test]
+    async fn test_list_specs_use_case() {
+        let repo = Arc::new(InMemorySpecRepository::default());
+        repo.save(Spec::new("Spec 1", "Desc 1")).await.unwrap();
+        repo.save(Spec::new("Spec 2", "Desc 2")).await.unwrap();
+        
+        let use_case = ListSpecsUseCase::new(repo);
+        let result = use_case.execute(()).await;
+        assert_eq!(result.len(), 2);
     }
 }

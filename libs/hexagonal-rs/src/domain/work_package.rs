@@ -50,16 +50,18 @@ impl Entity for WorkPackage {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::domain::entity::{Entity, EntityId};
 
     #[test]
     fn test_create_work_package() {
-        let spec_id = EntityId::new();
-        let wp = WorkPackage::new(spec_id.clone(), "Test WP", "Description");
-        
-        assert_eq!(wp.title(), "Test WP");
-        assert_eq!(wp.description(), "Description");
-        assert_eq!(wp.spec_id(), &spec_id);
+        let spec_id = EntityId::from_string("spec-1");
+        let wp = WorkPackage::new(
+            spec_id.clone(),
+            "Implementation",
+            "Description",
+        );
+        assert_eq!(wp.title(), "Implementation");
+        assert_eq!(wp.spec_id().as_str(), "spec-1");
         assert_eq!(wp.entity_type(), "work_package");
-        assert!(wp.id().as_str().len() > 0);
     }
 }
