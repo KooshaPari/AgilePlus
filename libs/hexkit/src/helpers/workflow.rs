@@ -61,4 +61,20 @@ mod tests {
         ).await.unwrap();
         assert_eq!(result, 42);
     }
+
+    #[tokio::test]
+    async fn timeout_failure() {
+        let res = with_timeout(tokio::time::sleep(Duration::from_millis(50)), Duration::from_millis(10)).await;
+        assert!(res.is_err());
+    }
+
+    #[tokio::test]
+    async fn retry_failure() {
+        let res = retry_on_failure(
+            || async { Err::<i32, _>("always fail".into()) },
+            2,
+            Duration::from_millis(1),
+        ).await;
+        assert!(res.is_err());
+    }
 }

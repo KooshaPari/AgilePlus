@@ -94,4 +94,26 @@ mod tests {
         assert!(config.cache_enabled);
         assert_eq!(config.timeout_secs, Some(30));
     }
+
+    #[test]
+    fn context_builder_test() {
+        let ctx = ContextBuilder::<i32, String, bool>::new()
+            .with_storage(42)
+            .with_vcs("git".to_string())
+            .with_agent(true)
+            .build()
+            .unwrap();
+        assert_eq!(ctx.0, 42);
+        assert_eq!(ctx.1, "git");
+        assert_eq!(ctx.2, true);
+    }
+
+    #[test]
+    fn context_builder_missing_vcs() {
+        let res = ContextBuilder::<i32, String, bool>::new()
+            .with_storage(42)
+            .with_agent(true)
+            .build();
+        assert!(res.is_err());
+    }
 }

@@ -46,3 +46,20 @@ impl Entity for WorkPackage {
         "work_package"
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_create_work_package() {
+        let spec_id = EntityId::new();
+        let wp = WorkPackage::new(spec_id.clone(), "Test WP", "Description");
+        
+        assert_eq!(wp.title(), "Test WP");
+        assert_eq!(wp.description(), "Description");
+        assert_eq!(wp.spec_id(), &spec_id);
+        assert_eq!(wp.entity_type(), "work_package");
+        assert!(wp.id().as_str().len() > 0);
+    }
+}

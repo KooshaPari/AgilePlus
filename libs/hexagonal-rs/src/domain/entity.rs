@@ -44,3 +44,29 @@ pub trait Entity: Send + Sync {
     /// Get the entity type name
     fn entity_type(&self) -> &'static str;
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_entity_id_new() {
+        let id1 = EntityId::new();
+        let id2 = EntityId::new();
+        assert_ne!(id1, id2);
+        assert!(!id1.as_str().is_empty());
+    }
+
+    #[test]
+    fn test_entity_id_from_string() {
+        let id = EntityId::from_string("test-id");
+        assert_eq!(id.as_str(), "test-id");
+        assert_eq!(id.to_string(), "test-id");
+    }
+
+    #[test]
+    fn test_entity_id_default() {
+        let id = EntityId::default();
+        assert!(!id.as_str().is_empty());
+    }
+}

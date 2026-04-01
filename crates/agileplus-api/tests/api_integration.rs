@@ -17,7 +17,7 @@ use agileplus_domain::config::AppConfig;
 use agileplus_domain::credentials::CredentialStore;
 use agileplus_domain::credentials::InMemoryCredentialStore;
 use agileplus_domain::credentials::keys as cred_keys;
-use agileplus_domain::domain::audit::{AuditEntry, hash_entry};
+use agileplus_domain::domain::audit::{hash_entry, AuditEntry};
 use agileplus_domain::domain::backlog::{
     BacklogFilters, BacklogItem, BacklogPriority, BacklogStatus,
 };
@@ -26,11 +26,12 @@ use agileplus_domain::domain::feature::Feature;
 use agileplus_domain::domain::governance::{Evidence, GovernanceContract, PolicyRule};
 use agileplus_domain::domain::metric::Metric;
 use agileplus_domain::domain::module::{Module, ModuleFeatureTag, ModuleWithFeatures};
+use agileplus_domain::domain::project::Project;
 use agileplus_domain::domain::state_machine::FeatureState;
 use agileplus_domain::domain::sync_mapping::SyncMapping;
 use agileplus_domain::domain::work_package::{WorkPackage, WpDependency, WpState};
 use agileplus_domain::error::DomainError;
-use agileplus_domain::ports::ContentStoragePort;
+use agileplus_domain::ports::content::ContentStoragePort;
 use agileplus_domain::ports::observability::{LogEntry, ObservabilityPort, SpanContext};
 use agileplus_domain::ports::storage::StoragePort;
 use agileplus_domain::ports::vcs::{
@@ -41,13 +42,12 @@ use axum_test::TestServer;
 use chrono::Utc;
 
 // ── Mock Storage ─────────────────────────────────────────────────────────────
-
 #[derive(Clone)]
 struct MockStorage {
     features: Arc<std::sync::Mutex<Vec<Feature>>>,
     work_packages: Arc<std::sync::Mutex<Vec<WorkPackage>>>,
     governance: Arc<std::sync::Mutex<Vec<GovernanceContract>>>,
-    projects: Arc<std::sync::Mutex<Vec<Project>>>
+    projects: Arc<std::sync::Mutex<Vec<Project>>>,
     audit: Arc<std::sync::Mutex<Vec<AuditEntry>>>,
 }
 
@@ -57,8 +57,8 @@ impl Default for MockStorage {
             features: Arc::new(std::sync::Mutex::new(Vec::new())),
             work_packages: Arc::new(std::sync::Mutex::new(Vec::new())),
             governance: Arc::new(std::sync::Mutex::new(Vec::new())),
-            audit: Arc::new(std::sync::Mutex::new(Vec::new())),
             projects: Arc::new(std::sync::Mutex::new(Vec::new())),
+            audit: Arc::new(std::sync::Mutex::new(Vec::new())),
         }
     }
 }
@@ -163,8 +163,12 @@ impl MockStorage {
 }
 
 impl StoragePort for MockStorage {
-    async fn create_feature(&self, _f: &Feature) -> Result<i64, DomainError> {
+    async fn create_feature(&self, feature: &Feature) -> Result<i64, DomainError> {
         let id = (self.features.lock().unwrap().len() + 1) as i64;
+        let mut features = self.features.lock().unwrap();
+        let mut feature = feature.clone();
+        feature.id = id;
+        features.push(feature);
         Ok(id)
     }
 
@@ -218,8 +222,13 @@ impl StoragePort for MockStorage {
         Ok(features)
     }
 
-    async fn create_work_package(&self, _wp: &WorkPackage) -> Result<i64, DomainError> {
-        Ok(99)
+    async fn create_work_package(&self, wp: &WorkPackage) -> Result<i64, DomainError> {
+        let id = (self.work_packages.lock().unwrap().len() + 1) as i64;
+        let mut wps = self.work_packages.lock().unwrap();
+        let mut wp = wp.clone();
+        wp.id = id;
+        wps.push(wp);
+        Ok(id)
     }
 
     async fn get_work_package(&self, id: i64) -> Result<Option<WorkPackage>, DomainError> {
@@ -271,7 +280,7 @@ impl StoragePort for MockStorage {
 
     async fn append_audit_entry(&self, entry: &AuditEntry) -> Result<i64, DomainError> {
         let id = (self.audit.lock().unwrap().len() + 1) as i64;
-        let _ = entry;
+        self.audit.lock().unwrap().push(entry.clone());
         Ok(id)
     }
 
@@ -366,18 +375,20 @@ impl StoragePort for MockStorage {
         Ok(found)
     }
 
-    // -- Module stubs (WP02/WP04) --
-
-    async fn create_module(&self, _module: &Module) -> Result<i64, DomainError> {
-        Ok(1)
+    async fn create_module(&self, module: &Module) -> Result<i64, DomainError> {
+        Ok(module.id)
     }
 
-    async fn get_module(&self, _id: i64) -> Result<Option<Module>, DomainError> {
+    async fn get_module(&self, id: i64) -> Result<Option<Module>, DomainError> {
         Ok(None)
     }
 
-    async fn get_module_by_slug(&self, _slug: &str) -> Result<Option<Module>, DomainError> {
+    async fn get_module_by_slug(&self, slug: &str) -> Result<Option<Module>, DomainError> {
         Ok(None)
+    }
+
+    async fn list_modules(&self) -> Result<Vec<Module>, DomainError> {
+        Ok(vec![])
     }
 
     async fn update_module(
@@ -408,14 +419,16 @@ impl StoragePort for MockStorage {
         Ok(None)
     }
 
-    // -- Cycle stubs (WP02/WP04) --
-
-    async fn create_cycle(&self, _cycle: &Cycle) -> Result<i64, DomainError> {
-        Ok(1)
+    async fn create_cycle(&self, cycle: &Cycle) -> Result<i64, DomainError> {
+        Ok(cycle.id)
     }
 
-    async fn get_cycle(&self, _id: i64) -> Result<Option<Cycle>, DomainError> {
+    async fn get_cycle(&self, id: i64) -> Result<Option<Cycle>, DomainError> {
         Ok(None)
+    }
+
+    async fn list_cycles(&self) -> Result<Vec<Cycle>, DomainError> {
+        Ok(vec![])
     }
 
     async fn update_cycle_state(&self, _id: i64, _state: CycleState) -> Result<(), DomainError> {
@@ -441,7 +454,9 @@ impl StoragePort for MockStorage {
         Ok(None)
     }
 
-    // -- Join table stubs (WP02/WP04) --
+    async fn delete_cycle(&self, _id: i64) -> Result<(), DomainError> {
+        Ok(())
+    }
 
     async fn tag_feature_to_module(&self, _tag: &ModuleFeatureTag) -> Result<(), DomainError> {
         Ok(())
@@ -467,6 +482,67 @@ impl StoragePort for MockStorage {
         Ok(())
     }
 
+    async fn list_governance_contracts(&self) -> Result<Vec<GovernanceContract>, DomainError> {
+        Ok(self.governance.lock().unwrap().clone())
+    }
+
+    async fn update_governance_contract(&self, contract: &GovernanceContract) -> Result<(), DomainError> {
+        let mut contracts = self.governance.lock().unwrap();
+        if let Some(c) = contracts.iter_mut().find(|c| c.id == contract.id) {
+            *c = contract.clone();
+        }
+        Ok(())
+    }
+
+    async fn delete_governance_contract(&self, id: i64) -> Result<(), DomainError> {
+        let mut contracts = self.governance.lock().unwrap();
+        contracts.retain(|c| c.id != id);
+        Ok(())
+    }
+
+    async fn list_sync_mappings(&self) -> Result<Vec<SyncMapping>, DomainError> {
+        Ok(vec![])
+    }
+
+    async fn create_project(
+        &self,
+        project: &Project,
+    ) -> Result<i64, DomainError> {
+        self.projects.lock().unwrap().push(project.clone());
+        Ok(project.id.parse().unwrap_or(1))
+    }
+
+    async fn get_project_by_slug(
+        &self,
+        slug: &str,
+    ) -> Result<Option<Project>, DomainError> {
+        Ok(self.projects.lock().unwrap().iter().find(|p| p.slug == slug).cloned())
+    }
+
+    async fn update_project(&self, project: &Project) -> Result<(), DomainError> {
+        let mut projects = self.projects.lock().unwrap();
+        if let Some(p) = projects.iter_mut().find(|p| p.id == project.id) {
+            *p = project.clone();
+        }
+        Ok(())
+    }
+
+    async fn delete_project(&self, id: i64) -> Result<(), DomainError> {
+        let mut projects = self.projects.lock().unwrap();
+        projects.retain(|p| p.id.parse::<i64>().unwrap_or(0) != id);
+        Ok(())
+    }
+
+    // -- Audit stubs --
+    async fn create_audit_entry(&self, entry: AuditEntry) -> Result<(), DomainError> {
+        self.audit.lock().unwrap().push(entry);
+        Ok(())
+    }
+
+    async fn get_audit_entries(&self) -> Result<Vec<AuditEntry>, DomainError> {
+        Ok(self.audit.lock().unwrap().clone())
+    }
+
     // -- Sync Mapping stubs (WP06) --
 
     async fn get_sync_mapping(
@@ -475,6 +551,10 @@ impl StoragePort for MockStorage {
         _entity_id: i64,
     ) -> Result<Option<SyncMapping>, DomainError> {
         Ok(None)
+    }
+
+    async fn list_sync_mappings(&self) -> Result<Vec<SyncMapping>, DomainError> {
+        Ok(vec![])
     }
 
     async fn upsert_sync_mapping(&self, _mapping: &SyncMapping) -> Result<(), DomainError> {
@@ -495,20 +575,6 @@ impl StoragePort for MockStorage {
         _entity_id: i64,
     ) -> Result<(), DomainError> {
         Ok(())
-    }
-
-    async fn create_project(
-        &self,
-        _project: &agileplus_domain::domain::project::Project,
-    ) -> Result<i64, DomainError> {
-        Ok(1)
-    }
-
-    async fn get_project_by_slug(
-        &self,
-        _slug: &str,
-    ) -> Result<Option<agileplus_domain::domain::project::Project>, DomainError> {
-        Ok(None)
     }
 }
 
@@ -579,26 +645,126 @@ impl ContentStoragePort for MockStorage {
         Ok(feats)
     }
 
-    async fn create_backlog_item(&self, _item: &BacklogItem) -> Result<i64, DomainError> {
-        Ok(1)
+    async fn create_backlog_item(&self, item: &BacklogItem) -> Result<i64, DomainError> {
+        let id = (self.features.lock().unwrap().len() + 1) as i64;
+        let feature = Feature {
+            id,
+            slug: item.id.clone(),
+            title: item.title.clone(),
+            description: item.description.clone(),
+            state: FeatureState::Proposed,
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+        };
+        self.features.lock().unwrap().push(feature);
+        Ok(id)
     }
 
-    async fn get_backlog_item(&self, _id: i64) -> Result<Option<BacklogItem>, DomainError> {
-        Ok(None)
+    async fn get_backlog_item(&self, id: i64) -> Result<Option<BacklogItem>, DomainError> {
+        let feats = self.features.lock().unwrap();
+        let found = feats.iter().find(|f| f.id == id).map(|f| BacklogItem {
+            id: f.slug.clone(),
+            title: f.title.clone(),
+            description: f.description.clone(),
+            priority: BacklogPriority::Medium,
+            status: BacklogStatus::Draft,
+            created_at: f.created_at,
+            updated_at: f.updated_at,
+            tags: vec![],
+        });
+        Ok(found)
     }
 
-    async fn list_backlog_items(
+    async fn create_backlog_item(
         &self,
-        _filters: &BacklogFilters,
-    ) -> Result<Vec<BacklogItem>, DomainError> {
-        Ok(vec![])
+        item: &BacklogItem,
+    ) -> Result<i64, DomainError> {
+        let mut feats = self.features.lock().unwrap();
+        let id = (feats.len() + 1) as i64;
+        let mut f = Feature::default();
+        f.id = id;
+        f.slug = item.id.clone();
+        f.description = item.description.clone();
+        f.state = match item.status {
+            BacklogStatus::Draft => FeatureState::Draft,
+            BacklogStatus::Active => FeatureState::Active,
+            BacklogStatus::InProgress => FeatureState::Active,
+            BacklogStatus::Completed => FeatureState::Completed,
+            BacklogStatus::Archived => FeatureState::Archived,
+        };
+        feats.push(f);
+        Ok(id)
     }
-
     async fn update_backlog_status(
         &self,
-        _id: i64,
-        _status: BacklogStatus,
+        id: i64,
+        status: BacklogStatus,
     ) -> Result<(), DomainError> {
+        let mut feats = self.features.lock().unwrap();
+        if let Some(f) = feats.iter_mut().find(|f| f.id == id) {
+            f.state = match status {
+                BacklogStatus::Draft => FeatureState::Proposed,
+                BacklogStatus::Ready => FeatureState::Proposed,
+                BacklogStatus::InProgress => FeatureState::Active,
+                BacklogStatus::Completed => FeatureState::Completed,
+                BacklogStatus::Archived => FeatureState::Archived,
+            };
+        }
+        Ok(())
+    }
+
+    async fn delete_backlog_item(&self, id: i64) -> Result<(), DomainError> {
+        let mut feats = self.features.lock().unwrap();
+        feats.retain(|f| f.id != id);
+        Ok(())
+    }
+
+    async fn update_backlog_item(&self, item: &BacklogItem) -> Result<(), DomainError> {
+        let mut feats = self.features.lock().unwrap();
+        if let Some(f) = feats.iter_mut().find(|f| f.slug == item.id) {
+            f.title = item.title.clone();
+            f.description = item.description.clone();
+        }
+        Ok(())
+    }
+
+    async fn create_work_package(&self, wp: &WorkPackage) -> Result<i64, DomainError> {
+        self.work_packages.lock().unwrap().push(wp.clone());
+        Ok(wp.id)
+    }
+
+    async fn get_work_package(&self, id: i64) -> Result<Option<WorkPackage>, DomainError> {
+        Ok(self.work_packages.lock().unwrap().iter().find(|w| w.id == id).cloned())
+    }
+
+    async fn list_work_packages(&self) -> Result<Vec<WorkPackage>, DomainError> {
+        Ok(self.work_packages.lock().unwrap().clone())
+    }
+
+    async fn update_work_package(&self, wp: &WorkPackage) -> Result<(), DomainError> {
+        let mut wps = self.work_packages.lock().unwrap();
+        if let Some(w) = wps.iter_mut().find(|w| w.id == wp.id) {
+            *w = wp.clone();
+        }
+        Ok(())
+    }
+
+    async fn delete_work_package(&self, id: i64) -> Result<(), DomainError> {
+        let mut wps = self.work_packages.lock().unwrap();
+        wps.retain(|w| w.id != id);
+        Ok(())
+    }
+
+    async fn list_audit_entries(&self) -> Result<Vec<AuditEntry>, DomainError> {
+        Ok(self.audit.lock().unwrap().clone())
+    }
+
+    async fn get_audit_entry(&self, hash: &str) -> Result<Option<AuditEntry>, DomainError> {
+        Ok(self.audit.lock().unwrap().iter().find(|e| e.hash == hash).cloned())
+    }
+
+    async fn create_audit_entry(&self, entry: &AuditEntry) -> Result<(), DomainError> {
+        self.audit.lock().unwrap().push(entry.clone());
         Ok(())
     }
 
@@ -614,31 +780,10 @@ impl ContentStoragePort for MockStorage {
         Ok(None)
     }
 
-    async fn create_work_package(
-        &self,
-        _wp: &agileplus_domain::domain::work_package::WorkPackage,
-    ) -> Result<i64, DomainError> {
-        Ok(1)
-    }
-
-    async fn get_work_package(
-        &self,
-        _id: i64,
-    ) -> Result<Option<agileplus_domain::domain::work_package::WorkPackage>, DomainError> {
-        Ok(None)
-    }
-
     async fn update_wp_state(
         &self,
         _id: i64,
         _state: agileplus_domain::domain::work_package::WpState,
-    ) -> Result<(), DomainError> {
-        Ok(())
-    }
-
-    async fn update_work_package(
-        &self,
-        _wp: &agileplus_domain::domain::work_package::WorkPackage,
     ) -> Result<(), DomainError> {
         Ok(())
     }
@@ -673,7 +818,6 @@ impl ContentStoragePort for MockStorage {
 }
 
 // ── Mock VCS ─────────────────────────────────────────────────────────────────
-
 #[derive(Clone)]
 struct MockVcs;
 

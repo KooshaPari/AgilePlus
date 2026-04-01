@@ -98,3 +98,44 @@ impl<R: SpecRepository> InputPort<(), Vec<Spec>> for ListSpecsUseCase<R> {
         self.repository.find_all().await.expect("Failed to list specs")
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::adapters::spec_repository::InMemorySpecRepository;
+    use crate::ports::InputPort;
+    use crate::domain::entity::Entity;
+
+    #[tokio::test]
+    async fn test_create_spec_use_case() {
+        let repo = Arc::new(InMemorySpecRepository::default());
+        let use_case = CreateSpecUseCase::new(repo);
+        
+        let input = CreateSpecInput {
+            title: "Test Spec".to_string(),
+            description: "Test Description".to_string(),
+        };
+        
+        let result = use_case.execute(input).await;
+        assert_eq!(result.spec.title(), "Test Spec");
+    }
+
+    #[tokio::test]
+    async fn test_update_spec_use_case() {
+        let repo = Arc::new(InMemorySpecRepository::default());
+        let spec = Spec::new("Original", "Desc");
+        let spec_id = spec.id().clone();
+        repo.save(spec).await.unwrap();
+        
+        let use_case = UpdateSpecUseCase::new(repo);
+        let input = UpdateSpecInput {
+            id: spec_id,
+            title: Some("Updated".to_string()),
+            status: Some(SpecStatus::Active),
+        };
+        
+        let result = use_case.execute(input).await;
+        assert_eq!(result.spec.title(), "Updated");
+        assert_eq!(result.spec.status(), SpecStatus::Active);
+    }
+}

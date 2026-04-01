@@ -102,4 +102,22 @@ mod tests {
 
         assert_ne!(c1, c2); // Different nonces
     }
+
+    #[test]
+    fn invalid_ciphertext_too_short() {
+        let key = AesGcmCipher::generate_key();
+        let cipher = AesGcmCipher::from_key(key);
+        let res = cipher.decrypt(&[0u8; 5]);
+        assert!(matches!(res, Err(CipherError::InvalidCiphertext)));
+    }
+
+    #[test]
+    fn decrypt_with_wrong_key() {
+        let c1 = AesGcmCipher::from_key([1u8; 32]);
+        let c2 = AesGcmCipher::from_key([2u8; 32]);
+        let plaintext = b"secret";
+        let ciphertext = c1.encrypt(plaintext).unwrap();
+        let res = c2.decrypt(&ciphertext);
+        assert!(res.is_err());
+    }
 }

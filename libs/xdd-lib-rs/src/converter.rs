@@ -73,4 +73,20 @@ mod tests {
         let result = DialectConverter::reformat(input, &JsonDialect::new()).unwrap();
         assert!(result.contains('\n')); // Pretty printed
     }
+
+    #[test]
+    fn invalid_input_fails() {
+        let input = "not a json";
+        let res = DialectConverter::convert_types(input, DialectType::Json, DialectType::Toml);
+        assert!(res.is_err());
+    }
+
+    #[test]
+    fn dialect_to_json_to_string_roundtrip() {
+        let val = serde_json::json!({"test": 42});
+        let dialect = YamlDialect::new();
+        let s = DialectConverter::from_json(&val, &dialect).unwrap();
+        let val2 = DialectConverter::to_json(&s, &dialect).unwrap();
+        assert_eq!(val, val2);
+    }
 }

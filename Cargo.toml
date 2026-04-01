@@ -15,13 +15,41 @@ members = [
     "libs/config-core",
     "libs/tracing-core",
     "libs/cli-framework",
+    "libs/hexagonal-rs",
+    "libs/hexkit",
+    "libs/cipher",
+    "libs/gauge",
+    "libs/xdd-lib-rs",
+    "crates/agileplus-api",
+    "crates/agileplus-benchmarks",
+    "crates/agileplus-cache",
+    "crates/agileplus-cli",
+    "crates/agileplus-contract-tests",
+    "crates/agileplus-dashboard",
+    "crates/agileplus-domain",
+    "crates/agileplus-events",
+    "crates/agileplus-fixtures",
+    "crates/agileplus-git",
+    "crates/agileplus-github",
+    "crates/agileplus-graph",
+    "crates/agileplus-grpc",
+    "crates/agileplus-import",
+    "crates/agileplus-integration-tests",
+    "crates/agileplus-nats",
+    "crates/agileplus-p2p",
+    "crates/agileplus-plane",
+    "crates/agileplus-sqlite",
+    "crates/agileplus-subcmds",
+    "crates/agileplus-sync",
+    "crates/agileplus-telemetry",
+    "crates/agileplus-triage",
 ]
 
 [workspace.package]
 version = "0.1.1"
-edition = "2021"
+edition = "2024"
 license = "MIT"
-rust-version = "1.75"
+rust-version = "1.85"
 authors = ["AgilePlus Team"]
 repository = "https://github.com/KooshaPari/AgilePlus"
 keywords = ["agile", "project-management", "software-development"]
@@ -30,6 +58,7 @@ categories = ["Software Development", "Project Management"]
 [workspace.dependencies]
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+toml = "0.8"
 chrono = { version = "0.4", features = ["serde"] }
 sha2 = "0.10"
 tokio = { version = "1", features = ["full"] }
