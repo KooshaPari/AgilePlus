@@ -31,7 +31,7 @@ jobs:
       SENTRY_DSN: ${{ secrets.SENTRY_DSN_AGILEPLUS }}
       SENTRY_ENVIRONMENT: production
       SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-      SENTRY_ORG_SLUG: phenotype
+      SENTRY_ORG_SLUG: stealth-startup-3u
       SENTRY_PROJECT_ID: agileplus
 
     steps:
@@ -82,7 +82,7 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     env:
-      SENTRY_ORG_SLUG: phenotype
+      SENTRY_ORG_SLUG: stealth-startup-3u
       SENTRY_PROJECT_ID: agileplus
 
     steps:
