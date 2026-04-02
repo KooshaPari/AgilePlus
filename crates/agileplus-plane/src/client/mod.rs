@@ -6,6 +6,8 @@ mod endpoints;
 mod models;
 mod rate_limit;
 mod resources;
+#[cfg(test)]
+mod tests;
 mod transport;
 
 use std::sync::Arc;

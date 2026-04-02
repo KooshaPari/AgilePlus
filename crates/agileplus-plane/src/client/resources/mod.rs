@@ -113,4 +113,55 @@ impl PlaneClient {
                 .context("Plane.so POST request failed")?;
         transport::read_text_response(resp, "reading Plane.so response body").await
     }
+
+    /// Sync labels to Plane.so: create any local labels that don't exist remotely.
+    ///
+    /// Returns a map of label name → Plane label ID.
+    pub async fn sync_labels(&self, local_labels: &[String]) -> Result<std::collections::HashMap<String, String>> {
+        let url = self.labels_url();
+        let resp = self
+            .get_raw(&url)
+            .await
+            .context("fetching Plane.so labels")?;
+
+        #[derive(serde::Deserialize)]
+        struct LabelListResponse {
+            results: Vec<PlaneLabel>,
+        }
+
+        #[derive(serde::Deserialize)]
+        struct PlaneLabel {
+            id: String,
+            name: String,
+        }
+
+        let remote: Vec<PlaneLabel> = if let Ok(list) = serde_json::from_str::<Vec<PlaneLabel>>(&resp) {
+            list
+        } else {
+            let wrapped: LabelListResponse =
+                serde_json::from_str(&resp).context("parsing label list response")?;
+            wrapped.results
+        };
+
+        let mut name_to_id: std::collections::HashMap<String, String> =
+            remote.into_iter().map(|l| (l.name, l.id)).collect();
+
+        for label in local_labels {
+            if !name_to_id.contains_key(label.as_str()) {
+                let body = serde_json::json!({ "name": label });
+                let json_body = serde_json::to_string(&body)?;
+                let create_resp = self.post_raw(&url, &json_body).await?;
+                let created: PlaneLabel =
+                    serde_json::from_str(&create_resp).context("parsing created label")?;
+                tracing::info!(
+                    label_name = label,
+                    plane_label_id = created.id,
+                    "created remote label"
+                );
+                name_to_id.insert(label.clone(), created.id);
+            }
+        }
+
+        Ok(name_to_id)
+    }
 }

@@ -16,6 +16,9 @@ pub const MAX_BACKOFF: Duration = Duration::from_secs(300);
 /// Base backoff duration (1 second).
 pub const BASE_BACKOFF: Duration = Duration::from_secs(1);
 
+/// Maximum number of retry attempts before discarding an item.
+pub const MAX_RETRIES: u32 = 3;
+
 /// Errors from queue operations.
 #[derive(Debug, Error)]
 pub enum QueueError {
@@ -118,12 +121,23 @@ impl SyncQueue {
     }
 
     /// Re-enqueue an item after a failed attempt (with incremented backoff).
-    pub fn requeue(&mut self, item: SyncQueueItem) -> Result<(), QueueError> {
+    ///
+    /// Returns `Ok(true)` if re-enqueued, `Ok(false)` if max retries exceeded.
+    pub fn requeue(&mut self, item: SyncQueueItem) -> Result<bool, QueueError> {
+        if item.attempt >= MAX_RETRIES {
+            tracing::warn!(
+                sync_op = ?item.kind,
+                item_id = item.id,
+                attempt = item.attempt,
+                "max retries exceeded, dropping sync item"
+            );
+            return Ok(false);
+        }
         if self.items.len() >= QUEUE_CAPACITY {
             return Err(QueueError::Full(QUEUE_CAPACITY));
         }
         self.items.push_back(item.with_next_attempt());
-        Ok(())
+        Ok(true)
     }
 
     /// Number of items currently in the queue.
@@ -282,9 +296,41 @@ mod tests {
         q.enqueue(SyncOpKind::UpdateIssue, "data".into()).unwrap();
         let item = q.pop_ready().unwrap();
         assert_eq!(item.attempt, 0);
-        q.requeue(item).unwrap();
+        let requeued = q.requeue(item).unwrap();
+        assert!(requeued);
         // The requeued item has attempt=1 and is not immediately ready.
         assert_eq!(q.len(), 1);
+    }
+
+    #[test]
+    fn requeue_drops_after_max_retries() {
+        let mut q = SyncQueue::new();
+        q.enqueue(SyncOpKind::UpdateIssue, "data".into()).unwrap();
+        let item = q.pop_ready().unwrap();
+        assert_eq!(item.attempt, 0);
+
+        // Requeue at attempt 0 -> success (now attempt=1)
+        assert!(q.requeue(item).unwrap());
+
+        let item = q.pop_ready().unwrap();
+        assert_eq!(item.attempt, 1);
+
+        // Requeue at attempt 1 -> success (now attempt=2)
+        assert!(q.requeue(item).unwrap());
+
+        let item = q.pop_ready().unwrap();
+        assert_eq!(item.attempt, 2);
+
+        // Requeue at attempt 2 -> success (now attempt=3)
+        assert!(q.requeue(item).unwrap());
+
+        let item = q.pop_ready().unwrap();
+        assert_eq!(item.attempt, 3);
+
+        // Requeue at attempt 3 -> dropped (exceeds MAX_RETRIES=3)
+        let dropped = q.requeue(item).unwrap();
+        assert!(!dropped);
+        assert!(q.is_empty());
     }
 
     #[test]
