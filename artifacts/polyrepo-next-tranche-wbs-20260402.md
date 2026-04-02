@@ -23,25 +23,37 @@ repo, worktree, stash, and PR geometry on 2026-04-02.
 
 - Base checkout at the shelf root is still polluted by sibling repo state and cannot be treated as a
   safe edit surface.
-- `.worktrees/feat/cache-adapter-impl` is detached `HEAD` and requires explicit classification before
-  use.
+- `.worktrees/feat/cache-adapter-impl` is a clean detached snapshot at `f32cf946a4` with no working
+  tree drift; it currently behaves like a frozen reference point, not an active implementation lane.
 - `.worktrees/feat/phenotype-crypto-complete` contains real implementation drift on
-  `feat/crypto-complete-rebased`:
+  `feat/crypto-complete-rebased` at `280ac87862`:
   - modified `Cargo.toml`
   - modified `crates/phenotype-crypto/Cargo.toml`
   - modified `crates/phenotype-crypto/src/lib.rs`
   - untracked `encryption.rs`, `hash.rs`, `keys.rs`, `signatures.rs`, and `tests/`
 - No stash entries were observed.
+- Immediate local execution choice:
+  - treat `feat/phenotype-crypto-complete` as the only active non-PR infrakit implementation lane
+  - keep `feat/cache-adapter-impl` as a classified detached checkpoint until explicitly revived or pruned
 
 ### thegent
 
 - `platforms/worktrees/thegent/pr-876-fix` is the active non-root lane and sits
   `ahead 29, behind 7` relative to `origin/chore/sync-docs-security-deps`.
-- `platforms/thegent-pr882` remains stale metadata and still reports shelf-root pollution through
-  relative paths, so it should not be used as an active edit surface.
+- `platforms/thegent-pr882` is now confirmed as an empty metadata shell on disk and should not be
+  used as an active edit surface.
 - Two stashes remain on `main` and must be preserved until they are reclassified:
   - `stash@{0}` `feat(thegent): enhance phench, governance providers, observability`
   - `stash@{1}` `docs(prd): expand PRD with 5 feature epics (#888)`
+- Stash content is now partially classified:
+  - `stash@{0}` spans `src/thegent/adapters/__init__.py`, `src/thegent/cli/apps/phench.py`,
+    `src/thegent/governance/providers.py`, `src/thegent/phench/service.py`, and
+    `tests/test_phench_runtime.py`
+  - `stash@{1}` spans `src/thegent/cli/apps/phench.py`, `src/thegent/phench/__init__.py`,
+    `src/thegent/phench/service.py`, and `tests/conftest.py`
+- Immediate local execution choice:
+  - record the two stash scopes as separate hygiene items before any prune or reapply action
+  - treat `platforms/thegent-pr882` as prune-candidate metadata once the stash notes are durable
 
 ### agentapi-plusplus
 
