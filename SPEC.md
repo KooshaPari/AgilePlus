@@ -1,61 +1,57 @@
 # AgilePlus Specification
 
-> Agile project management platform with AI agent integration
-
-## Overview
-
-AgilePlus provides a comprehensive project management system for agile teams, with built-in support for AI agent workflows, sprint planning, and governance.
-
 ## Architecture
-
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        AgilePlus                                 │
-│                                                                  │
-│  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐          │
-│  │   Domain     │ │   State      │ │   Spec       │          │
-│  │   Model      │ │   Machine    │ │   Registry   │          │
-│  └──────┬───────┘ └──────┬───────┘ └──────┬───────┘          │
-│         └────────────────┼────────────────┘                     │
-│                          │                                       │
-│                   ┌──────┴───────┐                              │
-│                   │    API       │                              │
-│                   │   Server     │                              │
-│                   └──────────────┘                              │
-└─────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────┐
+│                   AgilePlus (Monorepo)                   │
+├──────────────────────────────────────────────────────────────────────┤
+│  apps/                                                     │
+│  ├─ space    (Frontend - Next.js)                        │
+│  ├─ api     (Backend - Node.js)                          │
+│  └─ worker  (Background jobs)                          │
+│                                                         │
+│  packages/                                               │
+│  ├─ ui        (Shared React components)               │
+│  ├─ config    (Configuration)                         │
+│  ├─ database  (Database layer)                         │
+│  └─ events   (Event system)                          │
+└──────────────────────────────────────────────────────┘
 ```
 
 ## Components
 
-| Component | Description |
-|-----------|-------------|
-| Domain Model | Project, Sprint, Task, Backlog entities |
-| State Machine | Workflow state transitions |
-| Spec Registry | Feature requirements and traceability |
-| API Server | REST and gRPC endpoints |
+| Package | Responsibility | Tech |
+|---------|----------------|------|
+| space | Web UI | Next.js, React |
+| api | REST + WebSocket API | Fastify |
+| worker | Async jobs | BullMQ |
+| database | Prisma ORM | PostgreSQL |
 
-## Key Entities
+## Data Models
 
-```python
-class Project:
-    id: str
-    name: str
-    sprints: list[Sprint]
-    backlog: Backlog
+```typescript
+interface Issue {
+  id: string;
+  title: string;
+  status: 'open' | 'in_progress' | 'closed';
+  workspace_id: string;
+  assignee_id: string | null;
+  labels: string[];
+}
 
-class Sprint:
-    id: str
-    start_date: Date
-    end_date: Date
-    tasks: list[Task]
-    velocity: float
+interface Workspace {
+  id: string;
+  name: string;
+  slug: string;
+  members: Member[];
+}
 ```
 
 ## Performance Targets
 
 | Metric | Target |
 |--------|--------|
-| Project creation | <50ms |
-| Sprint planning | <100ms |
-| Task state transitions | <20ms |
-| API response time | <100ms |
+| API response | <200ms |
+| Page load | <1s |
+| Worker job | <30s |
+| DB query | <50ms |
