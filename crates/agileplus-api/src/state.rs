@@ -4,11 +4,15 @@
 
 use std::sync::Arc;
 
+use agileplus_cache::store::CacheStore;
 use agileplus_domain::config::AppConfig;
 use agileplus_domain::credentials::CredentialStore;
 use agileplus_domain::ports::{
     observability::ObservabilityPort, storage::StoragePort, vcs::VcsPort,
 };
+use agileplus_events::store::EventStore;
+use agileplus_graph::store::GraphStore;
+use agileplus_sync::store::SyncMappingStore;
 use tokio::sync::broadcast;
 
 /// Broadcast channel capacity for SSE event streaming.
@@ -26,8 +30,10 @@ where
     pub telemetry: Arc<O>,
     pub config: Arc<AppConfig>,
     pub credentials: Arc<dyn CredentialStore>,
-    /// Broadcast sender for real-time SSE event streaming (T069).
-    /// Publish JSON objects with `event_type` and `data` keys.
+    pub event_store: Arc<dyn EventStore>,
+    pub cache_store: Arc<dyn CacheStore>,
+    pub sync_orchestrator: Arc<dyn SyncMappingStore>,
+    pub graph_store: Arc<dyn GraphStore>,
     pub event_tx: broadcast::Sender<serde_json::Value>,
 }
 
@@ -44,6 +50,10 @@ where
             telemetry: Arc::clone(&self.telemetry),
             config: Arc::clone(&self.config),
             credentials: Arc::clone(&self.credentials),
+            event_store: Arc::clone(&self.event_store),
+            cache_store: Arc::clone(&self.cache_store),
+            sync_orchestrator: Arc::clone(&self.sync_orchestrator),
+            graph_store: Arc::clone(&self.graph_store),
             event_tx: self.event_tx.clone(),
         }
     }
@@ -61,6 +71,10 @@ where
         telemetry: Arc<O>,
         config: Arc<AppConfig>,
         credentials: Arc<dyn CredentialStore>,
+        event_store: Arc<dyn EventStore>,
+        cache_store: Arc<dyn CacheStore>,
+        sync_orchestrator: Arc<dyn SyncMappingStore>,
+        graph_store: Arc<dyn GraphStore>,
     ) -> Self {
         let (event_tx, _) = broadcast::channel(EVENT_CHANNEL_CAPACITY);
         Self {
@@ -69,18 +83,24 @@ where
             telemetry,
             config,
             credentials,
+            event_store,
+            cache_store,
+            sync_orchestrator,
+            graph_store,
             event_tx,
         }
     }
 
-    /// Create state with an explicit broadcast sender (allows sharing the channel
-    /// with other subsystems such as a NATS bridge).
     pub fn with_event_tx(
         storage: Arc<S>,
         vcs: Arc<V>,
         telemetry: Arc<O>,
         config: Arc<AppConfig>,
         credentials: Arc<dyn CredentialStore>,
+        event_store: Arc<dyn EventStore>,
+        cache_store: Arc<dyn CacheStore>,
+        sync_orchestrator: Arc<dyn SyncMappingStore>,
+        graph_store: Arc<dyn GraphStore>,
         event_tx: broadcast::Sender<serde_json::Value>,
     ) -> Self {
         Self {
@@ -89,6 +109,10 @@ where
             telemetry,
             config,
             credentials,
+            event_store,
+            cache_store,
+            sync_orchestrator,
+            graph_store,
             event_tx,
         }
     }

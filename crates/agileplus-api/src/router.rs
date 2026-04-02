@@ -47,7 +47,7 @@ type BoxError = Box<dyn std::error::Error + Send + Sync>;
 
 use crate::middleware::otel::opentelemetry_tracing_layer;
 use crate::responses::DetailedHealthResponse;
-use crate::routes::{audit, cycle, events, features, governance, module, stream, work_packages};
+use crate::routes::{audit, cycle, events, features, governance, keys, module, stream, work_packages};
 use crate::state::AppState;
 
 /// Build the axum [`Router`] with all routes, middleware, and shared state.
@@ -88,6 +88,8 @@ where
         .nest("/api/cycles", cycle::routes::<S, V, O>())
         // Event query endpoints
         .nest("/api/v1/events", events::routes::<S, V, O>())
+        // API key management
+        .nest("/api/v1/keys", keys::routes::<S, V, O>())
         // SSE streaming
         .route("/api/v1/stream", get(stream::stream_events::<S, V, O>))
         .layer(middleware::from_fn_with_state(

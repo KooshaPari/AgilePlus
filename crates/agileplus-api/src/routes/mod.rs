@@ -5,6 +5,7 @@ pub mod cycle;
 pub mod events;
 pub mod features;
 pub mod governance;
+pub mod keys;
 pub mod module;
 pub mod stream;
 pub mod work_packages;

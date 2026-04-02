@@ -14,7 +14,7 @@ pub use hash::{HashError, compute_hash, verify_chain};
 pub use query::{EventQuery, QueryError};
 pub use replay::{Aggregate, ReplayError, replay_events, replay_events_since};
 pub use snapshot::{SnapshotConfig, SnapshotError, SnapshotStore, should_snapshot};
-pub use store::{EventError, EventStore};
+pub use store::{EventError, EventStore, InMemoryEventStore};
 
 #[derive(Debug, thiserror::Error)]
 pub enum EventSourcingError {

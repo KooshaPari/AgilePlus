@@ -5,10 +5,14 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use agileplus_api::AppState;
+use agileplus_cache::{CacheStore, InMemoryCacheStore};
 use agileplus_domain::config::AppConfig;
 use agileplus_domain::credentials::create_credential_store;
+use agileplus_events::{EventStore, InMemoryEventStore};
 use agileplus_git::GitVcsAdapter;
+use agileplus_graph::{GraphConfig, GraphStore, InMemoryBackend};
 use agileplus_sqlite::SqliteStorageAdapter;
+use agileplus_sync::{InMemoryStore, SyncMappingStore};
 use agileplus_telemetry::{TelemetryAdapter, config::TelemetryConfig};
 use anyhow::{Context, Result, anyhow};
 use tracing::warn;
@@ -23,7 +27,22 @@ async fn main() -> Result<()> {
     let vcs = Arc::new(GitVcsAdapter::from_current_dir()?);
     let telemetry = Arc::new(init_telemetry());
     let credentials = Arc::from(create_credential_store(&config));
-    let state = AppState::new(storage, vcs, telemetry, Arc::new(config), credentials);
+    let event_store: Arc<dyn EventStore> = Arc::new(InMemoryEventStore::new());
+    let cache_store: Arc<dyn CacheStore> = Arc::new(InMemoryCacheStore::new(3600));
+    let sync_orchestrator: Arc<dyn SyncMappingStore> = Arc::new(InMemoryStore::default());
+    let graph_store: Arc<dyn GraphStore> = Arc::new(GraphStore::in_memory(GraphConfig::default()));
+
+    let state = AppState::new(
+        storage,
+        vcs,
+        telemetry,
+        Arc::new(config),
+        credentials,
+        event_store,
+        cache_store,
+        sync_orchestrator,
+        graph_store,
+    );
 
     agileplus_api::router::start_api(addr, state)
         .await

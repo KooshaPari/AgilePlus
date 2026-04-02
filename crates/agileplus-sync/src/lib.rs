@@ -14,4 +14,4 @@ pub use error::SyncError;
 pub use nats::NatsSyncBridge;
 pub use report::SyncReport;
 pub use resolution::{FieldSource, ResolutionStrategy};
-pub use store::SyncMappingStore;
+pub use store::{SyncMappingStore, InMemoryStore};

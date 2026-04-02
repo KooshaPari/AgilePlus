@@ -10,7 +10,7 @@ pub use health::GraphHealth;
 pub use nodes::NodeStore;
 pub use queries::GraphQueries;
 pub use relationships::RelationshipStore;
-pub use store::{GraphError, GraphStore};
+pub use store::{GraphError, GraphStore, InMemoryBackend};
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {

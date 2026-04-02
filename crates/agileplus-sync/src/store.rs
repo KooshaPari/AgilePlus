@@ -41,10 +41,9 @@ pub trait SyncMappingStore: Send + Sync {
 }
 
 // ---------------------------------------------------------------------------
-// In-memory implementation for tests
+// In-memory implementation
 // ---------------------------------------------------------------------------
 
-#[cfg(test)]
 pub mod mem {
     use super::*;
     use std::sync::{Arc, Mutex};
@@ -108,6 +107,8 @@ pub mod mem {
         }
     }
 }
+
+pub use mem::InMemoryStore;
 
 #[cfg(test)]
 mod tests {

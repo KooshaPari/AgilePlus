@@ -25,6 +25,10 @@ tracing-opentelemetry.workspace = true
 agileplus-telemetry = { path = "../agileplus-telemetry" }
 agileplus-sqlite = { path = "../agileplus-sqlite" }
 agileplus-git = { path = "../agileplus-git" }
+agileplus-events = { path = "../agileplus-events" }
+agileplus-cache = { path = "../agileplus-cache" }
+agileplus-sync = { path = "../agileplus-sync" }
+agileplus-graph = { path = "../agileplus-graph" }
 anyhow = "1.0"
 rand = "0.8"
 base64 = "0.22"

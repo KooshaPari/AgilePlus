@@ -16,7 +16,7 @@ pub use health::{CacheHealth, CacheHealthChecker};
 pub use limiter::RateLimiter;
 pub use pool::CachePool;
 pub use projection::ProjectionCache;
-pub use store::{CacheError, CacheStore, RedisCacheStore};
+pub use store::{CacheError, CacheStore, InMemoryCacheStore, RedisCacheStore};
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {

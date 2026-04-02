@@ -39,8 +39,8 @@ pub async fn validate_api_key(
         return Ok(next.run(request).await);
     }
 
-    // Try X-API-Key header first, then fall back to ?api_key= query param.
-    let api_key = if let Some(header_val) = headers.get("X-API-Key").and_then(|v| v.to_str().ok()) {
+    // Try X-AgilePlus-Key header first, then fall back to ?api_key= query param.
+    let api_key = if let Some(header_val) = headers.get("X-AgilePlus-Key").and_then(|v| v.to_str().ok()) {
         header_val.to_string()
     } else if let Some(query) = request.uri().query() {
         // Parse api_key= from the query string.
