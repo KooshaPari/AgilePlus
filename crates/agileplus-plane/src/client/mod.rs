@@ -3,10 +3,13 @@
 //! Traceability: WP18-T104
 
 mod endpoints;
+mod memory_client;
 mod models;
 mod rate_limit;
 mod resources;
 mod transport;
+
+pub use memory_client::InMemoryPlaneClient;
 
 use std::sync::Arc;
 

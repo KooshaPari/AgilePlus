@@ -1,7 +1,13 @@
 use anyhow::Context;
 use reqwest::Method;
+use serde::Deserialize;
 
 use super::{PlaneClient, PlaneIssue, PlaneWorkItem, PlaneWorkItemResponse, transport};
+
+#[derive(Debug, Clone, Deserialize)]
+struct WorkItemsListResponse {
+    results: Vec<PlaneWorkItemResponse>,
+}
 
 impl PlaneClient {
     /// Create a work item in Plane.so.
@@ -41,6 +47,19 @@ impl PlaneClient {
         transport::read_json_response(resp, "parsing Plane.so response").await
     }
 
+    /// List all work items (issues) in the project.
+    pub async fn list_work_items(&self) -> anyhow::Result<Vec<PlaneWorkItemResponse>> {
+        self.acquire_token().await?;
+        let resp = self
+            .execute_request_without_body(Method::GET, &self.work_items_url())
+            .await
+            .context("Plane.so list work items request failed")?;
+        let body = transport::read_text_response(resp, "reading work items list").await?;
+        let parsed: WorkItemsListResponse =
+            serde_json::from_str(&body).context("parsing work items list response")?;
+        Ok(parsed.results)
+    }
+
     // --- Back-compat aliases (outbound / sync use "issue" naming) ---
 
     /// Alias for [`Self::create_work_item`].
@@ -60,6 +79,18 @@ impl PlaneClient {
     /// Alias for [`Self::get_work_item`].
     pub async fn get_issue(&self, issue_id: &str) -> anyhow::Result<PlaneWorkItemResponse> {
         self.get_work_item(issue_id).await
+    }
+
+    /// Alias for [`Self::list_work_items`].
+    pub async fn list_issues(&self) -> anyhow::Result<Vec<PlaneWorkItemResponse>> {
+        self.list_work_items().await
+    }
+
+    /// Create a sub-issue (child issue) under a parent issue.
+    pub async fn create_sub_issue(&self, parent_id: &str, issue: &PlaneIssue) -> anyhow::Result<PlaneWorkItemResponse> {
+        let mut sub_issue = issue.clone();
+        sub_issue.parent = Some(parent_id.to_string());
+        self.create_issue(&sub_issue).await
     }
 
     /// Alias for [`Self::add_work_item_to_module`].

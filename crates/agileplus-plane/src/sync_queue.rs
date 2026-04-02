@@ -16,6 +16,9 @@ pub const MAX_BACKOFF: Duration = Duration::from_secs(300);
 /// Base backoff duration (1 second).
 pub const BASE_BACKOFF: Duration = Duration::from_secs(1);
 
+/// Maximum number of retries for a sync operation (3 retries = initial + 3 = 4 attempts).
+pub const MAX_RETRIES: u32 = 3;
+
 /// Errors from queue operations.
 #[derive(Debug, Error)]
 pub enum QueueError {
@@ -73,6 +76,10 @@ impl SyncQueueItem {
 
     pub fn is_ready(&self) -> bool {
         chrono::Utc::now() >= self.next_attempt_at
+    }
+
+    pub fn is_exhausted(&self) -> bool {
+        self.attempt >= MAX_RETRIES
     }
 }
 
@@ -323,5 +330,21 @@ mod tests {
         assert!(q.is_empty());
         q.reload(items);
         assert_eq!(q.len(), 1);
+    }
+
+    #[test]
+    fn is_exhausted_respects_max_retries() {
+        let item = SyncQueueItem {
+            id: 1,
+            kind: SyncOpKind::CreateIssue,
+            payload: "{}".into(),
+            attempt: 0,
+            next_attempt_at: chrono::Utc::now(),
+            created_at: chrono::Utc::now(),
+        };
+        assert!(!item.is_exhausted());
+        assert!(!item.with_next_attempt().is_exhausted());
+        assert!(!item.with_next_attempt().with_next_attempt().is_exhausted());
+        assert!(item.with_next_attempt().with_next_attempt().with_next_attempt().is_exhausted());
     }
 }

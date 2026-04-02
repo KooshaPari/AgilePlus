@@ -17,7 +17,7 @@ pub mod sync;
 pub mod sync_queue;
 pub mod webhook;
 
-pub use client::PlaneClient;
+pub use client::{PlaneClient, InMemoryPlaneClient};
 pub use client::{
     PlaneCreateCycleRequest, PlaneCreateModuleRequest, PlaneCycleResponse, PlaneModuleResponse,
 };
