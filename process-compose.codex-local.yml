@@ -1,0 +1,94 @@
+version: "0.5"
+
+environment:
+  - RUST_BACKTRACE=1
+
+processes:
+  nats:
+    command: >-
+      nats-server --jetstream --store_dir .agileplus/nats-data
+      --port ${AGILEPLUS_NATS_PORT} --http_port ${AGILEPLUS_NATS_HTTP_PORT}
+    depends_on: {}
+    log_location: .agileplus/logs/nats.log
+    readiness_probe:
+      http_get:
+        host: localhost
+        port: ${AGILEPLUS_NATS_HTTP_PORT}
+        path: /healthz
+      initial_delay_seconds: 5
+      period_seconds: 5
+      failure_threshold: 3
+
+  minio:
+    command: >-
+      minio server .agileplus/minio-data
+      --address :${AGILEPLUS_MINIO_PORT}
+      --console-address :${AGILEPLUS_MINIO_CONSOLE_PORT}
+    depends_on: {}
+    log_location: .agileplus/logs/minio.log
+    readiness_probe:
+      http_get:
+        host: localhost
+        port: ${AGILEPLUS_MINIO_PORT}
+        path: /minio/health/live
+      initial_delay_seconds: 5
+      period_seconds: 5
+      failure_threshold: 3
+    environment:
+      - MINIO_ROOT_USER=agileplus
+      - MINIO_ROOT_PASSWORD=agileplus-dev
+
+  plane-api:
+    command: bash scripts/start-plane-api-codex-local.sh --serve-only
+    depends_on:
+      minio:
+        condition: process_healthy
+    log_location: .agileplus/logs/plane-api.log
+    readiness_probe:
+      http_get:
+        host: localhost
+        port: ${AGILEPLUS_PLANE_API_PORT}
+        path: /
+      initial_delay_seconds: 10
+      period_seconds: 5
+      failure_threshold: 24
+    environment:
+      - DATABASE_URL=postgresql://agileplus:${PLANE_POSTGRES_PASSWORD:-agileplus-dev}@127.0.0.1:${AGILEPLUS_POSTGRES_PORT}/plane
+      - REDIS_URL=redis://127.0.0.1:${AGILEPLUS_REDIS_PORT}
+      - SECRET_KEY=${PLANE_SECRET_KEY:-agileplus-dev-secret-key}
+      - WEB_URL=http://127.0.0.1:${AGILEPLUS_PLANE_WEB_PORT}
+      - CORS_ALLOWED_ORIGINS=http://127.0.0.1:${AGILEPLUS_PLANE_WEB_PORT},http://127.0.0.1:${AGILEPLUS_API_PORT}
+      - APP_BASE_URL=http://127.0.0.1:${AGILEPLUS_PLANE_WEB_PORT}
+      - LIVE_BASE_URL=http://127.0.0.1:${AGILEPLUS_PLANE_WEB_PORT}
+      - LIVE_BASE_PATH=/live
+      - AWS_S3_ENDPOINT_URL=http://127.0.0.1:${AGILEPLUS_MINIO_PORT}
+      - AWS_ACCESS_KEY_ID=agileplus
+      - AWS_SECRET_ACCESS_KEY=agileplus-dev
+      - AWS_S3_BUCKET_NAME=uploads
+      - USE_MINIO=1
+      - AMQP_URL=memory://
+      - PYTHONUNBUFFERED=1
+
+  plane-web:
+    command: bash scripts/start-plane-web-codex-local.sh
+    depends_on:
+      plane-api:
+        condition: process_healthy
+    log_location: .agileplus/logs/plane-web.log
+    readiness_probe:
+      http_get:
+        host: localhost
+        port: ${AGILEPLUS_PLANE_WEB_PORT}
+        path: /
+      initial_delay_seconds: 20
+      period_seconds: 5
+      failure_threshold: 3
+    environment:
+      - VITE_API_BASE_URL=http://127.0.0.1:${AGILEPLUS_PLANE_API_PORT}
+      - VITE_WEB_BASE_URL=http://127.0.0.1:${AGILEPLUS_PLANE_WEB_PORT}
+      - VITE_ADMIN_BASE_URL=http://127.0.0.1:${AGILEPLUS_PLANE_WEB_PORT}
+      - VITE_ADMIN_BASE_PATH=/god-mode
+      - VITE_SPACE_BASE_URL=http://127.0.0.1:${AGILEPLUS_PLANE_WEB_PORT}
+      - VITE_SPACE_BASE_PATH=/spaces
+      - VITE_LIVE_BASE_URL=http://127.0.0.1:${AGILEPLUS_PLANE_WEB_PORT}
+      - VITE_LIVE_BASE_PATH=/live

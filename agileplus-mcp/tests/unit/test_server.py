@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import pytest
+from fastmcp.server.auth.providers.workos import AuthKitProvider, WorkOSProvider
 
 
 def test_server_creates() -> None:
@@ -58,3 +59,72 @@ async def test_grpc_client_stubs_raise_not_implemented() -> None:
     client = AgilePlusCoreClient()
     with pytest.raises(NotImplementedError):
         await client.get_feature("test-slug")
+
+
+def test_auth_disabled_without_provider_env() -> None:
+    """Verify auth stays off when no provider env is configured."""
+    from agileplus_mcp.server import ServerSettings, build_auth_provider
+
+    settings = ServerSettings()
+    assert build_auth_provider(settings) is None
+
+
+def test_authkit_provider_selected_from_settings() -> None:
+    """Verify AuthKit is the default provider when auth env is present."""
+    from agileplus_mcp.server import ServerSettings, build_auth_provider
+
+    settings = ServerSettings(
+        authkit_domain="https://example.authkit.app",
+        base_url="http://127.0.0.1:8000",
+        client_id="client_123",
+    )
+
+    provider = build_auth_provider(settings)
+    assert isinstance(provider, AuthKitProvider)
+
+
+def test_workos_provider_selected_when_requested() -> None:
+    """Verify the proxy provider is used when explicitly requested."""
+    from agileplus_mcp.server import ServerSettings, build_auth_provider
+
+    settings = ServerSettings(
+        authkit_domain="https://example.authkit.app",
+        base_url="http://127.0.0.1:8000",
+        auth_mode="workos",
+        client_id="client_123",
+        client_secret="secret_123",  # noqa: S106
+    )
+
+    provider = build_auth_provider(settings)
+    assert isinstance(provider, WorkOSProvider)
+
+
+def test_workos_provider_requires_credentials() -> None:
+    """Verify WorkOS mode fails closed without client credentials."""
+    from agileplus_mcp.server import ServerSettings, build_auth_provider
+
+    settings = ServerSettings(
+        authkit_domain="https://example.authkit.app",
+        base_url="http://127.0.0.1:8000",
+        auth_mode="workos",
+    )
+
+    with pytest.raises(ValueError, match="WORKOS_CLIENT_ID"):
+        build_auth_provider(settings)
+
+
+def test_http_app_exposes_oauth_well_known_routes() -> None:
+    """Verify the auth-enabled HTTP app exposes the discovery routes."""
+    from agileplus_mcp.server import ServerSettings, create_http_app
+
+    settings = ServerSettings(
+        authkit_domain="https://example.authkit.app",
+        base_url="http://127.0.0.1:8000",
+        client_id="client_123",
+    )
+    app = create_http_app(settings)
+    route_paths = {route.path for route in app.routes}
+
+    assert "/mcp" in route_paths
+    assert "/.well-known/oauth-authorization-server" in route_paths
+    assert "/.well-known/oauth-protected-resource/mcp" in route_paths
