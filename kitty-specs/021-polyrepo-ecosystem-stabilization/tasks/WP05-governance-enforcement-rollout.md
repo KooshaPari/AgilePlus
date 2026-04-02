@@ -49,3 +49,16 @@ Convert stabilized active-lane truth into enforcement-ready governance state for
 
 Use stabilized PR and branch truth from the dependent WPs. Do not guess required checks from stale
 or mixed repo state.
+
+## Current Gate Status
+
+| Repo | Target PR(s) | Gate Status | Blocker Class | Notes |
+| AgilePlus | #274, #275, #276, #278, #279 | blocked | review | Multiple split lanes still under review; no single lane has merged, so governance gate remains blocked until at least one PR demonstrates clean state changes. |
+| heliosCLI | #182, #184 | blocked | review | Governance baseline lanes intentionally target `main`; waiting on policy/CD gate plus remaining review threads before the repo can claim `ready`. |
+| heliosApp | #362 | blocked | review | Large federation/backfill change still needs CI/merge cleanup; treat as blocked until the PR is rebased/CI-green. |
+| cliproxyapi-plusplus | #942 | blocked | external-provider | SAST workflows include Snyk steps that currently fail due to billing limits; gating blocked on Snyk quota. |
+| phenodocs | #119 | blocked | ci | Required-check manifest is new and still awaiting remote verification and matching workflow names before the gate can flip. |
+| agentapi-plusplus | #438 | blocked | ci | SAST/self-merge governance additions rely on pinned workflows; gate stays blocked until updated jobs fully pass. |
+| phenotype-infrakit | (recovery PRs) | blocked | review | Multiple infra PRs remain open; treat staged recovery work as blocked until PRs merge and leave only one canonical lane. |
+
+Update this table each poll cycle. When a repo transitions to `ready`, record the merge commit and the verified required checks list.

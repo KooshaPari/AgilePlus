@@ -34,6 +34,25 @@ Dependency rule:
 - `WP05` depends on `WP01`, `WP02`, and `WP03`
 - all other work packages are parallel-ready
 
+## Governance Readiness Snapshot
+
+| Repo | Gate Status | Blocker | Notes |
+| AgilePlus | blocked | review | Split PR lanes (#274-#279) still under review. |
+| heliosCLI | blocked | review | Governance baseline lanes waiting on policy gate/CI. |
+| heliosApp | blocked | review | `#362` still undergoing large rebase/CI work. |
+| cliproxyapi-plusplus | blocked | external-provider | Security workflows flagged Snyk billing quota. |
+| phenodocs | blocked | ci | Required-check manifest needs remote verification. |
+| agentapi-plusplus | blocked | ci | SAST/self-merge gate workflows still stabilizing. |
+| phenotype-infrakit | blocked | review | Recovery PRs remain open without a canonical lane. |
+
+Refresh this snapshot each manager poll cycle to reflect gate transitions.
+
+## Boundary Intake Status
+
+- `WP06` records boundary treatments for `koosha-portfolio`, `phenotype-hub`, and `bifrost` in
+  `artifacts/external-intake-wave-1-20260402.md`.
+- Each intake/boundary candidate now has an explicit classification, readiness note, and next artifact.
+
 ### WP01 status
 
 | PR | Status | Notes |
