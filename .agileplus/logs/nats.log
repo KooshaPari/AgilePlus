@@ -1,0 +1,30 @@
+{"level":"error","process":"nats","replica":0,"message":"[82472] 2026/04/02 04:16:55.821789 [INF] Starting nats-server"}
+{"level":"error","process":"nats","replica":0,"message":"[82472] 2026/04/02 04:16:55.822016 [INF]   Version:  2.12.6"}
+{"level":"error","process":"nats","replica":0,"message":"[82472] 2026/04/02 04:16:55.822021 [INF]   Git:      [not set]"}
+{"level":"error","process":"nats","replica":0,"message":"[82472] 2026/04/02 04:16:55.822024 [INF]   Name:     NCKBTBLPQHESOYDCZHBUCTLXUXRP454TR5UIPK472O4OBDRW6NK6SSK5"}
+{"level":"error","process":"nats","replica":0,"message":"[82472] 2026/04/02 04:16:55.822029 [INF]   Node:     ng866Bdz"}
+{"level":"error","process":"nats","replica":0,"message":"[82472] 2026/04/02 04:16:55.822031 [INF]   ID:       NCKBTBLPQHESOYDCZHBUCTLXUXRP454TR5UIPK472O4OBDRW6NK6SSK5"}
+{"level":"error","process":"nats","replica":0,"message":"[82472] 2026/04/02 04:16:55.825630 [INF] Starting http monitor on 0.0.0.0:8222"}
+{"level":"error","process":"nats","replica":0,"message":"[82472] 2026/04/02 04:16:55.825879 [INF] Starting JetStream"}
+{"level":"error","process":"nats","replica":0,"message":"[82472] 2026/04/02 04:16:55.827175 [INF]     _ ___ _____ ___ _____ ___ ___   _   __  __"}
+{"level":"error","process":"nats","replica":0,"message":"[82472] 2026/04/02 04:16:55.827204 [INF]  _ | | __|_   _/ __|_   _| _ \\ __| /_\\ |  \\/  |"}
+{"level":"error","process":"nats","replica":0,"message":"[82472] 2026/04/02 04:16:55.827206 [INF] | || | _|  | | \\__ \\ | | |   / _| / _ \\| |\\/| |"}
+{"level":"error","process":"nats","replica":0,"message":"[82472] 2026/04/02 04:16:55.827207 [INF]  \\__/|___| |_| |___/ |_| |_|_\\___/_/ \\_\\_|  |_|"}
+{"level":"error","process":"nats","replica":0,"message":"[82472] 2026/04/02 04:16:55.827208 [INF] "}
+{"level":"error","process":"nats","replica":0,"message":"[82472] 2026/04/02 04:16:55.827211 [INF]          https://docs.nats.io/jetstream"}
+{"level":"error","process":"nats","replica":0,"message":"[82472] 2026/04/02 04:16:55.827212 [INF] "}
+{"level":"error","process":"nats","replica":0,"message":"[82472] 2026/04/02 04:16:55.827213 [INF] ---------------- JETSTREAM ----------------"}
+{"level":"error","process":"nats","replica":0,"message":"[82472] 2026/04/02 04:16:55.827215 [INF]   Strict:          true"}
+{"level":"error","process":"nats","replica":0,"message":"[82472] 2026/04/02 04:16:55.827219 [INF]   Max Memory:      12.00 GB"}
+{"level":"error","process":"nats","replica":0,"message":"[82472] 2026/04/02 04:16:55.827222 [INF]   Max Storage:     132.93 GB"}
+{"level":"error","process":"nats","replica":0,"message":"[82472] 2026/04/02 04:16:55.827223 [INF]   Store Directory: \".agileplus/nats-data/jetstream\""}
+{"level":"error","process":"nats","replica":0,"message":"[82472] 2026/04/02 04:16:55.827226 [INF]   API Level:       3"}
+{"level":"error","process":"nats","replica":0,"message":"[82472] 2026/04/02 04:16:55.827227 [INF] -------------------------------------------"}
+{"level":"error","process":"nats","replica":0,"message":"[82472] 2026/04/02 04:16:55.827928 [INF] Took 2.038375ms to start JetStream"}
+{"level":"error","process":"nats","replica":0,"message":"[82472] 2026/04/02 04:16:55.828213 [INF] Listening for client connections on 0.0.0.0:4222"}
+{"level":"error","process":"nats","replica":0,"message":"[82472] 2026/04/02 04:16:55.828600 [INF] Server is ready"}
+{"level":"error","process":"nats","replica":0,"message":"[82472] 2026/04/02 04:17:49.472601 [INF] Trapped \"terminated\" signal"}
+{"level":"error","process":"nats","replica":0,"message":"[82472] 2026/04/02 04:17:49.490239 [INF] Initiating Shutdown..."}
+{"level":"error","process":"nats","replica":0,"message":"[82472] 2026/04/02 04:17:49.491740 [INF] Initiating JetStream Shutdown..."}
+{"level":"error","process":"nats","replica":0,"message":"[82472] 2026/04/02 04:17:49.492166 [INF] JetStream Shutdown"}
+{"level":"error","process":"nats","replica":0,"message":"[82472] 2026/04/02 04:17:49.493823 [INF] Server Exiting.."}
