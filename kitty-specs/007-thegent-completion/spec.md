@@ -82,3 +82,60 @@ Complete decomposition and stabilization of thegent agent framework (1027 commit
 
 - Related: 001-spec-driven-development-engine
 - Related: 004-modules-and-cycles
+- Related: 021-polyrepo-ecosystem-stabilization
+
+## Audit Update — 2026-04-02
+
+### Current State
+- **Active branch**: `refactor/cleanup-error-variants` (NOT on main)
+- **Dirty files**: 4 (WORKLOG.md, crates/thegent-offload/Cargo.toml, docs/WORKLOG.md, CODEOWNERS)
+- **Open PRs**: 5 (PRs #908-912)
+- **Disk usage**: 8.1 GB (node_modules, .venv)
+- **Worktrees**: 3 checked out (bun-migrate, dotagents + primary)
+
+### In-Progress Tasks
+1. **Error variant cleanup** (85% complete):
+   - PR #908 open, dirty Cargo.toml
+   - Left: Commit dirty Cargo.toml, review and merge PR
+
+2. **Convoy methodology specs** (95% complete):
+   - PRs #910-911 open
+   - Left: Review and merge
+
+3. **Planning/security modules** (90% complete):
+   - PR #912 open
+   - Left: Review and merge
+
+4. **Dependabot aiohttp bump** (100% complete):
+   - PR #909 open
+   - Left: Merge
+
+5. **Distribution automation** (60% complete):
+   - Branch `chore/distribution-automation` exists
+   - Left: Finish or merge
+
+6. **GitOps refactor (WP011)** (50% complete):
+   - AgilePlus spec 007 tracking
+   - Left: Track remaining gitops refactor
+
+7. **BytePort** (40% complete):
+   - docs/WORKLOG.md says "ACTIVE — NOT archived"
+   - Left: Feature implementation needed
+
+### Immediate Actions
+- [ ] Commit 4 dirty files (WORKLOG.md, Cargo.toml, docs/WORKLOG.md, CODEOWNERS)
+- [ ] Merge PR #909 (dependabot)
+- [ ] Review and merge PRs #908, #910, #911, #912
+- [ ] Decide on distribution automation: finish or close
+- [ ] Merge or close sibling worktrees (bun-migrate, dotagents)
+- [ ] Merge `refactor/cleanup-error-variants` → main
+- [ ] Clean node_modules and .venv (saves ~5 GB)
+
+### Merge Opportunity
+- **thegent-plugin-host** should be merged into `thegent/apps/plugin-host`
+- Reduces repo count by 1
+
+### Disk Optimization
+- **Current**: 8.1 GB
+- **Target**: 3 GB after cleanup
+- **Savings**: ~5.1 GB (63% reduction)

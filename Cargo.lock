@@ -138,6 +138,7 @@ name = "agileplus-cli"
 version = "0.1.1"
 dependencies = [
  "agileplus-domain",
+ "agileplus-events",
  "agileplus-git",
  "agileplus-plane",
  "agileplus-sqlite",

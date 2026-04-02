@@ -59,3 +59,54 @@ Complete heliosCLI multi-runtime AI coding CLI (153 commits since 2025-01-01).
 
 - Related: 001-spec-driven-development-engine
 - Related: 007-thegent-completion
+- Related: 021-polyrepo-ecosystem-stabilization
+
+## Audit Update — 2026-04-02
+
+### Current State
+- **Active branch**: `refactor/decouple-harness-crates` (NOT on main)
+- **Dirty files**: 8 (session docs, WORKLOG.md)
+- **Open PRs**: 1 (PR #179, 90% complete)
+- **Disk usage**: 39 GB (dominated by bazel artifacts)
+- **Worktrees**: 4 active (governance-migration, codex-rs-core WIP, ci-failures, decompose-key-router)
+- **Stale worktrees**: 1 (dep-drift-python — prunable)
+
+### In-Progress Tasks
+1. **Decouple harness crates** (90% complete):
+   - PR #179 open
+   - Left: Review and merge
+
+2. **Rollout limit safety fix** (80% complete):
+   - PR #130 (draft), branch `fix/rollout-limit-expect`
+   - Left: Re-verify limit behavior, convert from draft, merge
+
+3. **Governance migration** (50% complete):
+   - Worktree `chore-govern-pi`, branch `chore/governance-migration-hc`
+   - Left: Complete migration or close
+
+4. **Codex-rs-core WIP** (30% complete):
+   - Parked worktree `wip/codex-rs-core`
+   - Left: Split into PRs or abandon
+
+5. **CI failures fix** (40% complete):
+   - Worktree `fix-ci-failures`
+   - Left: Finish or close
+
+6. **Key router decomposition** (40% complete):
+   - Worktree `decompose-key-router`
+   - Left: Finish or close
+
+### Immediate Actions
+- [ ] Commit 8 dirty session doc files
+- [ ] Review and merge PR #179
+- [ ] Convert PR #130 from draft, verify, merge
+- [ ] Decide on 4 worktrees: finish or close each
+- [ ] Delete prunable worktree (dep-drift-python)
+- [ ] Clean bazel artifacts (saves ~30 GB)
+- [ ] Merge `refactor/decouple-harness-crates` → main
+- [ ] Add docs/sessions/ directory if missing
+
+### Disk Optimization
+- **Current**: 39 GB
+- **Target**: 8 GB after bazel cleanup
+- **Savings**: ~31 GB (79% reduction)

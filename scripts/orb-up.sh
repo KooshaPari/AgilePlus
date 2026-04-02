@@ -1,8 +1,11 @@
-#!/bin/sh
+#!/usr/bin/env bash
 # Start OrbStack containers for Dragonfly and PostgreSQL.
 # OrbStack v2 exposes docker CLI - this script uses docker commands.
 # Idempotent -- reuses existing containers.
-set -e
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$SCRIPT_DIR/resolve-local-ports.sh"
 
 DRAGONFLY_NAME="agileplus-dragonfly"
 POSTGRES_NAME="agileplus-postgres"
@@ -11,68 +14,71 @@ POSTGRES_USER="agileplus"
 POSTGRES_PASSWORD="${PLANE_POSTGRES_PASSWORD:-agileplus-dev}"
 POSTGRES_DB="plane"
 
-# Function to cleanup port before starting
-cleanup_port() {
-    port="$1"
-    # Kill any process using this port
-    lsof -ti :"$port" 2>/dev/null | xargs kill -9 2>/dev/null || true
-}
-
 start_container() {
     name="$1"
     image="$2"
-    port="$3"
-    shift 3
-    extra_args="$@"
+    host_port="$3"
+    container_port="$4"
+    shift 4
+    extra_args=("$@")
 
-    # If running, skip
+    current_port() {
+        docker inspect \
+            --format "{{(index (index .HostConfig.PortBindings \"${container_port}/tcp\") 0).HostPort}}" \
+            "$name" 2>/dev/null || true
+    }
+
     if docker ps --format '{{.Names}}' | grep -q "^${name}$"; then
-        echo "${name} is already running"
-        return 0
+        if [ "$(current_port)" = "${host_port}" ]; then
+            echo "${name} is already running on host port ${host_port}"
+            return 0
+        fi
+        echo "Recreating ${name} to move host port to ${host_port}"
+        docker stop "${name}" >/dev/null 2>&1 || true
+        docker rm "${name}" >/dev/null 2>&1 || true
+    elif docker ps -a --format '{{.Names}}' | grep -q "^${name}$"; then
+        echo "Removing stale container ${name} so host port ${host_port} can be applied"
+        docker rm "${name}" >/dev/null 2>&1 || true
     fi
 
-    # Cleanup port if something else is using it
-    cleanup_port "$port"
-
-    # If exists but stopped, start it
-    if docker ps -a --format '{{.Names}}' | grep -q "^${name}$"; then
-        echo "Starting existing container ${name}"
-        docker start "${name}"
-        return 0
+    if lsof -iTCP:"${host_port}" -sTCP:LISTEN >/dev/null 2>&1; then
+        echo "Host port ${host_port} is already in use; export a different AGILEPLUS_*_PORT first." >&2
+        return 1
     fi
 
-    # Create and run
-    echo "Creating container ${name}"
-    docker run -d --name "${name}" -p "${port}:${port}" $extra_args "$image"
+    echo "Creating container ${name} on host port ${host_port}"
+    docker run -d --name "${name}" -p "${host_port}:${container_port}" "${extra_args[@]}" "${image}" >/dev/null
 }
 
 echo "--- Starting Dragonfly (Redis-compatible cache) ---"
 start_container "${DRAGONFLY_NAME}" \
     "docker.dragonflydb.io/dragonflydb/dragonfly:latest" \
+    "${AGILEPLUS_REDIS_PORT}" \
     6379 \
     --maxmemory=4gb --bind 0.0.0.0
 
 echo "--- Starting PostgreSQL 16 ---"
 start_container "${POSTGRES_NAME}" \
     "postgres:16-alpine" \
+    "${AGILEPLUS_POSTGRES_PORT}" \
     5432 \
     -e "POSTGRES_USER=${POSTGRES_USER}" \
     -e "POSTGRES_PASSWORD=${POSTGRES_PASSWORD}" \
     -e "POSTGRES_DB=${POSTGRES_DB}"
 
-# Wait for both to be healthy
 echo "Waiting for containers to become ready..."
 for i in 1 2 3 4 5 6 7 8 9 10; do
     pg_ok=false
     df_ok=false
-    # Check dragonfly
-    if redis-cli -h localhost -p 6379 ping 2>/dev/null | grep -q PONG; then
+
+    if redis-cli -h localhost -p "${AGILEPLUS_REDIS_PORT}" ping 2>/dev/null | grep -q PONG; then
         df_ok=true
     fi
-    # Check postgres - use lsof first then pg_isready
-    if lsof -ti :5432 > /dev/null 2>&1 && pg_isready -h localhost -p 5432 2>/dev/null; then
+
+    if pg_isready -h localhost -p "${AGILEPLUS_POSTGRES_PORT}" 2>/dev/null; then
         pg_ok=true
     fi
+
     if [ "$pg_ok" = true ] && [ "$df_ok" = true ]; then
         echo "All OrbStack containers are ready."
         exit 0
