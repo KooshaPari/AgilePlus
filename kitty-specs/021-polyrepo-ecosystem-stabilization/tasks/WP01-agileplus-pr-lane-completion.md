@@ -28,6 +28,16 @@ Advance the active AgilePlus split PR lanes without reintroducing mixed `main` s
   event-flow, or docs/worklog/spec backfill.
 - Manager surfaces record the exact state of each lane and any next action.
 
+## Current Status
+
+| PR | Status | Notes |
+|---|---|---|
+| `#274` | advanced | Governance baseline restored on `agileplus/chore/governance-baseline-clean`. Scope limited to governance files. |
+| `#275` | advanced | Local deploy workflow updates on `agileplus/chore/runtime-local-deploy-clean`; runtime path unchanged. |
+| `#276` | advanced | CLI event-flow split remains on `agileplus/refactor/cli-event-flow-clean`; branch is focused on CLI commands only. |
+| `#278` | advanced | Docs backfill lane on `agileplus/docs/worklog-and-spec-backfill-clean` continues with worklog/spec updates. |
+| `#279` | advanced | Draft `layer/agileplus-docs-spec-backfill` lane is planning-only; no code impact blockers. |
+
 ## File Scope
 
 - `kitty-specs/`

@@ -34,6 +34,23 @@ Dependency rule:
 - `WP05` depends on `WP01`, `WP02`, and `WP03`
 - all other work packages are parallel-ready
 
+### WP01 status
+
+| PR | Status | Notes |
+|---|---|---|
+| `#274` | advanced | governance baseline surfaces restored cleanly on `agileplus/chore/governance-baseline-clean`. |
+| `#275` | advanced | local deploy workflow branch `agileplus/chore/runtime-local-deploy-clean` now contains only runtime/local docs surfaces. |
+| `#276` | advanced | CLI event-flow branch `agileplus/refactor/cli-event-flow-clean` remains focused on CLI commands; no cross-lane spill. |
+| `#278` | advanced | docs/worklog/spec lane `agileplus/docs/worklog-and-spec-backfill-clean` continues with planning-only content. |
+| `#279` | advanced | draft lane `layer/agileplus-docs-spec-backfill` is planning-only; ready for manager review. |
+
+### WP03 Status Snapshot
+
+- `cliproxyapi-plusplus` `#942` is blocked by external `security/snyk (kooshapari)` quota; CI exception is documented but the merge remains gated on the SAST workflow and the new Kilo Gastown spec.
+- `phenodocs` `#119` is ready for merge once the required-check manifest is verified; all edits stay within docs/ruleset surfaces.
+- `agentapi-plusplus` `#438` is blocked by the ongoing cleanup of `docs/node_modules` churn; branch-local governance scripts are stable but the root repo still contains unrelated tracked deletions, so the lane stays blocked until that noise is resolved.
+- `phenotype-infrakit` recovery work remains a standby lane (no safe commit yet) — any movement must go through WP01/WP02 before WP03 reopens new changes.
+
 ## Execution Update 2026-04-02
 
 ### Runtime and Evidence
@@ -41,11 +58,15 @@ Dependency rule:
 - Captured a fresh AgilePlus event snapshot to `/tmp/agileplus-events-latest.csv`.
 - Query used:
   - `sqlite3 AgilePlus/.agileplus/agileplus.db "select entity_type,entity_id,event_type,timestamp from events order by timestamp desc limit 200;"`
-- Current event history is effectively empty for the tranche; the snapshot contains only one recent
-  row:
-  - `feature|2|state_transitioned|2026-04-02T05:16:03.479064+00:00`
-- This confirms that runtime transitions and tranche progress are still under-recorded in the live
-  AgilePlus surfaces.
+- Current event history remains sparse; the latest row in the snapshot is still early 2026-04-02, showing the system only recorded one runtime transition that day.
+- `scripts/dev-up.sh` now starts the local stack via Process Compose with the port map recorded in `.agileplus/runtime/local-ports.env`.
+- Attempting to run `scripts/local-health-check.sh` failed because the script does not exist in the `chore-runtime-local-deploy-clean` surface; document this as a blocker (missing health-check script).
+
+Documented evidence:
+
+- `/tmp/agileplus-events-latest.csv` (snapshot query + result).
+- `scripts/dev-up.sh` start output captured in the docs session notes.
+- blocker note about missing `scripts/local-health-check.sh` recorded under the Wave 1 evidence entry.
 
 ### phenotype-infrakit
 
@@ -340,3 +361,5 @@ Work packages:
 3. Normalize local scope on `heliosApp` PR `#362`.
 4. Triage `agentapi-plusplus` root noise separately from draft PR `#438`.
 5. Keep `cliproxyapi-plusplus` moving until only external or repo-wide debt remains.
+
+- **WP02 status:** `heliosCLI` PRs #182/#184 remain blocked until the new governance ruleset workflows finish the `security/snyk` and `policy-gate` checks; `heliosApp` PR #362 still carries the rebased federation/conflict cleanup and is awaiting manual review of its deps/CLAUDE drift before a follow-up merge.
