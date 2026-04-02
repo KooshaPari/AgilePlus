@@ -13,6 +13,8 @@ repo, worktree, stash, and PR geometry on 2026-04-02.
 ### Runtime and Evidence
 
 - Captured a fresh AgilePlus event snapshot to `/tmp/agileplus-events-latest.csv`.
+- Query used:
+  - `sqlite3 AgilePlus/.agileplus/agileplus.db "select entity_type,entity_id,event_type,timestamp from events order by timestamp desc limit 200;"`
 - Current event history is effectively empty for the tranche; the snapshot contains only one recent
   row:
   - `feature|2|state_transitioned|2026-04-02T05:16:03.479064+00:00`
@@ -30,11 +32,19 @@ repo, worktree, stash, and PR geometry on 2026-04-02.
   - modified `Cargo.toml`
   - modified `crates/phenotype-crypto/Cargo.toml`
   - modified `crates/phenotype-crypto/src/lib.rs`
+  - added `crates/phenotype-casbin-wrapper/Cargo.toml`
   - untracked `encryption.rs`, `hash.rs`, `keys.rs`, `signatures.rs`, and `tests/`
 - No stash entries were observed.
 - Immediate local execution choice:
   - treat `feat/phenotype-crypto-complete` as the only active non-PR infrakit implementation lane
   - keep `feat/cache-adapter-impl` as a classified detached checkpoint until explicitly revived or pruned
+- Validation progress on the active lane:
+  - `cargo check -p phenotype-crypto` passes
+  - `cargo check -p phenotype-casbin-wrapper` passes
+  - `cargo test -p phenotype-casbin-wrapper` passes (`4` tests)
+  - `cargo test -p phenotype-crypto --lib` passes (`49` tests)
+  - representative integration validation passes via
+    `cargo test -p phenotype-crypto --test crypto_test test_hmac_hex_workflow`
 
 ### thegent
 
