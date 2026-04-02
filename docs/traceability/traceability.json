@@ -311,6 +311,26 @@
       "specsList": [
         { "id": "XDD-001", "title": "Cross-Domain Data", "status": "implemented", "priority": "P0" }
       ]
+    },
+    {
+      "name": "AgilePlus",
+      "specs": 10,
+      "codeEntities": 45,
+      "tests": 120,
+      "coverage": 94,
+      "specsList": [
+        { "id": "AP-001", "title": "Work Package Tracking", "status": "implemented", "priority": "P0" }
+      ]
+    },
+    {
+      "name": "heliosCLI",
+      "specs": 8,
+      "codeEntities": 32,
+      "tests": 85,
+      "coverage": 91,
+      "specsList": [
+        { "id": "HEL-001", "title": "Command Execution", "status": "implemented", "priority": "P0" }
+      ]
     }
   ]
 }
