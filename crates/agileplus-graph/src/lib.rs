@@ -1,16 +1,8 @@
-pub mod config;
-pub mod health;
-pub mod nodes;
-pub mod queries;
-pub mod relationships;
-pub mod store;
+pub mod types;
+pub mod graph_store;
 
-pub use config::GraphConfig;
-pub use health::GraphHealth;
-pub use nodes::NodeStore;
-pub use queries::GraphQueries;
-pub use relationships::RelationshipStore;
-pub use store::{GraphError, GraphStore};
+pub use types::{NodeType, RelType, Node, Relationship};
+pub use graph_store::{GraphStore, InMemoryGraphStore, GraphError};
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -19,3 +11,4 @@ pub enum Error {
     #[error("Config error: {0}")]
     Config(String),
 }
+
