@@ -23,16 +23,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
 
-      - name: Install Cucumber
-        run: npm install @cucumber/cucumber
-
-      - name: Run BDD Tests
-        run: npx cucumber run tests/bdd/*.feature
+      - name: Install & Run Cucumber
+        run: |
+          bun add @cucumber/cucumber
+          bun run cucumber run tests/bdd/*.feature
 
   vitest-tests:
     name: Vitest Unit Tests
@@ -40,16 +37,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
 
-      - name: Install dependencies
-        run: npm install vitest @vitest/coverage-v8
-
-      - name: Run Vitest
-        run: npx vitest run --reporter=json
+      - name: Install & Run Vitest
+        run: |
+          bun add -d vitest @vitest/coverage-v8
+          bun run vitest run --reporter=json
 
   playwright-tests:
     name: Playwright Visual Tests
@@ -57,16 +51,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
 
-      - name: Install Playwright
-        run: npm install @playwright/test && npx playwright install --with-deps
-
-      - name: Run Playwright Visual Tests
-        run: npx playwright test
+      - name: Install & Run Playwright
+        run: |
+          bun add -d @playwright/test
+          bunx playwright install --with-deps
+          bun run playwright test
 
   spec-traceability:
     name: FR Traceability Validation
@@ -75,6 +67,4 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Check FR References
-        run: |
-          echo "Validating FR-XXX-NNN traceability in tests"
-          grep -r "FR-" tests/ 2>/dev/null | head -10 || echo "No FR references"
+        run: grep -r "FR-" tests/ 2>/dev/null | head -10 || echo "No FR references"
