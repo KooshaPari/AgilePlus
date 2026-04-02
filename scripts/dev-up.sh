@@ -8,6 +8,13 @@ cd "$PROJ_DIR"
 source "$SCRIPT_DIR/resolve-local-ports.sh"
 
 LOG_DIR="$PROJ_DIR/.agileplus/logs"
+COMPOSE_FILE="$PROJ_DIR/process-compose.local.yml"
+mkdir -p \
+  "$PROJ_DIR/.agileplus/minio-data" \
+  "$PROJ_DIR/.agileplus/neo4j/data" \
+  "$PROJ_DIR/.agileplus/neo4j/import" \
+  "$PROJ_DIR/.agileplus/neo4j/logs" \
+  "$PROJ_DIR/.agileplus/neo4j/plugins"
 mkdir -p "$LOG_DIR"
 
 require_port_free() {
@@ -54,11 +61,12 @@ echo "  web:      ${AGILEPLUS_PLANE_WEB_PORT}"
 echo "  api:      ${AGILEPLUS_API_PORT}"
 
 if [[ "${1:-}" == "--foreground" ]]; then
-  exec process-compose up -f process-compose.yml
+  exec process-compose up -e .agileplus/runtime/local-ports.env -f "$COMPOSE_FILE"
 fi
 
 exec process-compose up \
-  -f process-compose.yml \
+  -e .agileplus/runtime/local-ports.env \
+  -f "$COMPOSE_FILE" \
   -t=false \
   -D \
   -L "$LOG_DIR/process-compose.log"

@@ -62,7 +62,15 @@ start_container() {
     fi
 
     echo "Creating container ${name} on host port ${host_port}"
-    docker run -d --name "${name}" -p "${host_port}:${container_port}" "${docker_args[@]}" "${image}" "${command_args[@]}" >/dev/null
+    docker_run_args=(-d --name "${name}" -p "${host_port}:${container_port}")
+    if [[ ${#docker_args[@]} -gt 0 ]]; then
+        docker_run_args+=("${docker_args[@]}")
+    fi
+    docker_run_args+=("${image}")
+    if [[ ${#command_args[@]} -gt 0 ]]; then
+        docker_run_args+=("${command_args[@]}")
+    fi
+    docker run "${docker_run_args[@]}" >/dev/null
 }
 
 echo "--- Starting Dragonfly (Redis-compatible cache) ---"
@@ -83,7 +91,7 @@ start_container "${POSTGRES_NAME}" \
     -e "POSTGRES_DB=${POSTGRES_DB}"
 
 echo "Waiting for containers to become ready..."
-for i in 1 2 3 4 5 6 7 8 9 10; do
+for i in $(seq 1 30); do
     pg_ok=false
     df_ok=false
 
@@ -99,7 +107,7 @@ for i in 1 2 3 4 5 6 7 8 9 10; do
         echo "All OrbStack containers are ready."
         exit 0
     fi
-    echo "  Waiting... (${i}/10)"
+    echo "  Waiting... (${i}/30)"
     sleep 2
 done
 
