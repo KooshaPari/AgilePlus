@@ -1,6 +1,48 @@
 use chrono::Utc;
 
-use super::{EvidenceCheck, PolicyEvalResult};
+/// Result of checking a single evidence requirement.
+#[derive(Debug, Clone)]
+pub struct EvidenceCheck {
+    pub fr_id: String,
+    pub evidence_type: String,
+    pub found: bool,
+    pub threshold_met: bool,
+    pub message: String,
+}
+
+impl EvidenceCheck {
+    fn to_markdown_row(&self) -> String {
+        format!(
+            "| {} | {} | {} | {} | {} |",
+            self.fr_id,
+            self.evidence_type,
+            if self.found { "Yes" } else { "No" },
+            if self.threshold_met { "Yes" } else { "N/A" },
+            self.message
+        )
+    }
+}
+
+/// Result of evaluating a policy rule.
+#[derive(Debug, Clone)]
+pub struct PolicyEvalResult {
+    pub policy_id: i64,
+    pub domain: String,
+    pub passed: bool,
+    pub message: String,
+}
+
+impl PolicyEvalResult {
+    fn to_markdown_row(&self) -> String {
+        format!(
+            "| {} | {} | {} | {} |",
+            self.policy_id,
+            self.domain,
+            if self.passed { "Yes" } else { "No" },
+            self.message
+        )
+    }
+}
 
 /// Aggregated validation report.
 #[derive(Debug)]
@@ -35,14 +77,7 @@ impl ValidationReport {
             lines.push("| FR ID | Type | Found | Threshold Met | Notes |".to_string());
             lines.push("|-------|------|-------|---------------|-------|".to_string());
             for check in &self.evidence_results {
-                lines.push(format!(
-                    "| {} | {} | {} | {} | {} |",
-                    check.fr_id,
-                    check.evidence_type,
-                    if check.found { "Yes" } else { "No" },
-                    if check.threshold_met { "Yes" } else { "N/A" },
-                    check.message,
-                ));
+                lines.push(check.to_markdown_row());
             }
         }
 
@@ -53,13 +88,7 @@ impl ValidationReport {
             lines.push("| Policy ID | Domain | Passed | Notes |".to_string());
             lines.push("|-----------|--------|--------|-------|".to_string());
             for p in &self.policy_results {
-                lines.push(format!(
-                    "| {} | {} | {} | {} |",
-                    p.policy_id,
-                    p.domain,
-                    if p.passed { "Yes" } else { "No" },
-                    p.message,
-                ));
+                lines.push(p.to_markdown_row());
             }
         }
 

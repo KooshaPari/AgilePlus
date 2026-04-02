@@ -9,12 +9,18 @@ use std::path::PathBuf;
 use anyhow::{Context, Result};
 use chrono::Utc;
 
-use agileplus_domain::domain::audit::{AuditEntry, hash_entry};
+use agileplus_domain::domain::audit::{hash_entry, AuditEntry};
 use agileplus_domain::domain::event::Event;
-use agileplus_domain::domain::governance::{Evidence, GovernanceContract, PolicyCheck};
+use agileplus_domain::domain::governance::{GovernanceContract, PolicyCheck};
 use agileplus_domain::domain::state_machine::FeatureState;
 use agileplus_domain::ports::{StoragePort, VcsPort};
-use agileplus_events::{EventStore, compute_hash};
+use agileplus_events::{compute_hash, EventStore};
+
+mod evidence;
+mod report;
+
+use self::evidence::evaluate_evidence;
+pub use report::{EvidenceCheck, PolicyEvalResult, ValidationReport};
 
 /// Arguments for the `validate` subcommand.
 #[derive(Debug, clap::Args)]
@@ -38,243 +44,6 @@ pub struct ValidateArgs {
     /// Force validation even if not in Implementing state (logs governance exception).
     #[arg(long)]
     pub force: bool,
-}
-
-/// Result of checking a single evidence requirement.
-#[derive(Debug, Clone)]
-pub struct EvidenceCheck {
-    pub fr_id: String,
-    pub evidence_type: String,
-    pub found: bool,
-    pub threshold_met: bool,
-    pub message: String,
-}
-
-/// Result of evaluating a policy rule.
-#[derive(Debug, Clone)]
-pub struct PolicyEvalResult {
-    pub policy_id: i64,
-    pub domain: String,
-    pub passed: bool,
-    pub message: String,
-}
-
-/// Aggregated validation report.
-#[derive(Debug)]
-pub struct ValidationReport {
-    pub feature_slug: String,
-    pub timestamp: chrono::DateTime<Utc>,
-    pub overall_pass: bool,
-    pub evidence_results: Vec<EvidenceCheck>,
-    pub policy_results: Vec<PolicyEvalResult>,
-    pub missing_evidence: Vec<(String, String)>,
-    pub governance_exceptions: Vec<String>,
-}
-
-impl ValidationReport {
-    fn to_markdown(&self) -> String {
-        let status = if self.overall_pass { "PASS" } else { "FAIL" };
-        let mut lines = vec![
-            format!("# Validation Report: {}", self.feature_slug),
-            format!(
-                "**Timestamp**: {} | **Result**: {}",
-                self.timestamp.format("%Y-%m-%dT%H:%M:%SZ"),
-                status
-            ),
-            String::new(),
-            "## Evidence Checks".to_string(),
-            String::new(),
-        ];
-
-        if self.evidence_results.is_empty() {
-            lines.push("_(no evidence requirements defined in governance contract)_".to_string());
-        } else {
-            lines.push("| FR ID | Type | Found | Threshold Met | Notes |".to_string());
-            lines.push("|-------|------|-------|---------------|-------|".to_string());
-            for check in &self.evidence_results {
-                lines.push(format!(
-                    "| {} | {} | {} | {} | {} |",
-                    check.fr_id,
-                    check.evidence_type,
-                    if check.found { "Yes" } else { "No" },
-                    if check.threshold_met { "Yes" } else { "N/A" },
-                    check.message,
-                ));
-            }
-        }
-
-        if !self.policy_results.is_empty() {
-            lines.push(String::new());
-            lines.push("## Policy Checks".to_string());
-            lines.push(String::new());
-            lines.push("| Policy ID | Domain | Passed | Notes |".to_string());
-            lines.push("|-----------|--------|--------|-------|".to_string());
-            for p in &self.policy_results {
-                lines.push(format!(
-                    "| {} | {} | {} | {} |",
-                    p.policy_id,
-                    p.domain,
-                    if p.passed { "Yes" } else { "No" },
-                    p.message,
-                ));
-            }
-        }
-
-        if !self.missing_evidence.is_empty() {
-            lines.push(String::new());
-            lines.push("## Missing Evidence".to_string());
-            lines.push(String::new());
-            for (fr_id, ev_type) in &self.missing_evidence {
-                lines.push(format!("- FR `{}`: missing `{}` evidence", fr_id, ev_type));
-            }
-        }
-
-        if !self.governance_exceptions.is_empty() {
-            lines.push(String::new());
-            lines.push("## Governance Exceptions".to_string());
-            lines.push(String::new());
-            for exc in &self.governance_exceptions {
-                lines.push(format!("- {exc}"));
-            }
-        }
-
-        lines.push(String::new());
-        lines.join("\n")
-    }
-
-    fn to_json(&self) -> String {
-        let missing: Vec<serde_json::Value> = self
-            .missing_evidence
-            .iter()
-            .map(|(f, t)| serde_json::json!({"fr_id": f, "type": t}))
-            .collect();
-        let evidence: Vec<serde_json::Value> = self
-            .evidence_results
-            .iter()
-            .map(|e| {
-                serde_json::json!({
-                    "fr_id": e.fr_id,
-                    "type": e.evidence_type,
-                    "found": e.found,
-                    "threshold_met": e.threshold_met,
-                    "message": e.message,
-                })
-            })
-            .collect();
-        let policies: Vec<serde_json::Value> = self
-            .policy_results
-            .iter()
-            .map(|p| {
-                serde_json::json!({
-                    "policy_id": p.policy_id,
-                    "domain": p.domain,
-                    "passed": p.passed,
-                    "message": p.message,
-                })
-            })
-            .collect();
-        serde_json::to_string_pretty(&serde_json::json!({
-            "feature_slug": self.feature_slug,
-            "timestamp": self.timestamp.to_rfc3339(),
-            "overall_pass": self.overall_pass,
-            "evidence_results": evidence,
-            "policy_results": policies,
-            "missing_evidence": missing,
-            "governance_exceptions": self.governance_exceptions,
-        }))
-        .unwrap_or_default()
-    }
-}
-
-/// Evaluate governance evidence requirements against stored evidence.
-async fn evaluate_evidence<S: StoragePort>(
-    storage: &S,
-    contract: &GovernanceContract,
-    _feature_id: i64,
-) -> Result<(Vec<EvidenceCheck>, Vec<(String, String)>)> {
-    // Collect all evidence for all WPs of this feature by querying storage
-    // We use get_evidence_by_fr for each required FR.
-    let mut results = Vec::new();
-    let mut missing = Vec::new();
-
-    // Gather rules for implementing -> validated transition
-    let target_transition_keywords = ["Implementing", "validated", "Validate", "implementing"];
-
-    for rule in &contract.rules {
-        let is_validate_rule = target_transition_keywords
-            .iter()
-            .any(|kw| rule.transition.to_lowercase().contains(&kw.to_lowercase()));
-
-        // Include all rules — implementing-level rules apply here
-        for req in &rule.required_evidence {
-            let evidence_list = storage
-                .get_evidence_by_fr(&req.fr_id)
-                .await
-                .unwrap_or_default();
-
-            // Filter to evidence belonging to this feature's WPs
-            // We check if any evidence exists for this fr_id
-            let relevant: Vec<&Evidence> = evidence_list.iter().collect();
-            let found = !relevant.is_empty();
-
-            let threshold_met = if let (true, Some(threshold)) = (found, &req.threshold) {
-                // Check threshold if present
-                evaluate_threshold(relevant.as_slice(), threshold)
-            } else {
-                found
-            };
-
-            let message = if !found {
-                format!("No evidence found for FR `{}`", req.fr_id)
-            } else if !threshold_met {
-                format!("Threshold not met for FR `{}`", req.fr_id)
-            } else {
-                "OK".to_string()
-            };
-
-            if !found {
-                missing.push((req.fr_id.clone(), format!("{:?}", req.evidence_type)));
-            }
-
-            results.push(EvidenceCheck {
-                fr_id: req.fr_id.clone(),
-                evidence_type: format!("{:?}", req.evidence_type),
-                found,
-                threshold_met,
-                message,
-            });
-
-            let _ = is_validate_rule; // rule context noted
-        }
-    }
-
-    Ok((results, missing))
-}
-
-/// Check if evidence meets a threshold defined in the governance contract.
-fn evaluate_threshold(evidence: &[&Evidence], threshold: &serde_json::Value) -> bool {
-    if let Some(min_cov) = threshold.get("min_coverage").and_then(|v| v.as_f64()) {
-        for ev in evidence {
-            if let Some(meta) = &ev.metadata {
-                if let Some(cov) = meta.get("coverage").and_then(|v| v.as_f64()) {
-                    if cov >= min_cov {
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
-    }
-    if let Some(max_crit) = threshold.get("max_critical").and_then(|v| v.as_u64()) {
-        let critical_count: u64 = evidence
-            .iter()
-            .filter_map(|ev| ev.metadata.as_ref())
-            .filter_map(|meta| meta.get("critical_count"))
-            .filter_map(|v| v.as_u64())
-            .sum();
-        return critical_count <= max_crit;
-    }
-    true
 }
 
 /// Evaluate active policy rules against evidence.
@@ -494,15 +263,9 @@ where
         .await
         .context("appending audit entry")?;
 
-    append_feature_transition_event(
-        storage,
-        feature.id,
-        "Implementing",
-        "Validated",
-        "user",
-    )
-    .await
-    .context("appending state transition event")?;
+    append_feature_transition_event(storage, feature.id, "Implementing", "Validated", "user")
+        .await
+        .context("appending state transition event")?;
 
     // Also write report as artifact
     let report_md = if args.format == "json" {
@@ -570,162 +333,20 @@ async fn append_feature_transition_event<S: EventStore>(
     )
     .context("computing event hash")?;
 
-    storage
-        .append(&event)
-        .await
-        .context("persisting event")?;
+    storage.append(&event).await.context("persisting event")?;
+
+    tracing::info!(
+        entity = "feature",
+        feature_id,
+        from,
+        to,
+        sequence,
+        hash = ?event.hash,
+        "persisted state transition event"
+    );
 
     Ok(())
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use agileplus_domain::domain::governance::{
-        EvidenceRequirement, EvidenceType, GovernanceContract, GovernanceRule,
-    };
-
-    #[allow(dead_code)]
-    fn make_contract(feature_id: i64) -> GovernanceContract {
-        GovernanceContract {
-            id: 1,
-            feature_id,
-            version: 1,
-            rules: vec![GovernanceRule {
-                transition: "Implementing -> Validated".to_string(),
-                required_evidence: vec![EvidenceRequirement {
-                    fr_id: "FR-001".to_string(),
-                    evidence_type: EvidenceType::CiOutput,
-                    threshold: None,
-                }],
-                policy_refs: vec![],
-            }],
-            bound_at: Utc::now(),
-        }
-    }
-
-    #[test]
-    fn report_to_markdown_pass() {
-        let report = ValidationReport {
-            feature_slug: "my-feat".to_string(),
-            timestamp: Utc::now(),
-            overall_pass: true,
-            evidence_results: vec![EvidenceCheck {
-                fr_id: "FR-001".to_string(),
-                evidence_type: "CiOutput".to_string(),
-                found: true,
-                threshold_met: true,
-                message: "OK".to_string(),
-            }],
-            policy_results: vec![],
-            missing_evidence: vec![],
-            governance_exceptions: vec![],
-        };
-        let md = report.to_markdown();
-        assert!(md.contains("PASS"));
-        assert!(md.contains("FR-001"));
-    }
-
-    #[test]
-    fn report_to_markdown_fail_missing_evidence() {
-        let report = ValidationReport {
-            feature_slug: "my-feat".to_string(),
-            timestamp: Utc::now(),
-            overall_pass: false,
-            evidence_results: vec![EvidenceCheck {
-                fr_id: "FR-001".to_string(),
-                evidence_type: "CiOutput".to_string(),
-                found: false,
-                threshold_met: false,
-                message: "No evidence found for FR `FR-001`".to_string(),
-            }],
-            policy_results: vec![],
-            missing_evidence: vec![("FR-001".to_string(), "CiOutput".to_string())],
-            governance_exceptions: vec![],
-        };
-        let md = report.to_markdown();
-        assert!(md.contains("FAIL"));
-        assert!(md.contains("Missing Evidence"));
-    }
-
-    #[test]
-    fn report_to_json_has_required_fields() {
-        let report = ValidationReport {
-            feature_slug: "feat".to_string(),
-            timestamp: Utc::now(),
-            overall_pass: true,
-            evidence_results: vec![],
-            policy_results: vec![],
-            missing_evidence: vec![],
-            governance_exceptions: vec![],
-        };
-        let json = report.to_json();
-        let v: serde_json::Value = serde_json::from_str(&json).unwrap();
-        assert_eq!(v["feature_slug"], "feat");
-        assert_eq!(v["overall_pass"], true);
-    }
-
-    #[test]
-    fn evaluate_threshold_min_coverage_pass() {
-        use agileplus_domain::domain::governance::Evidence;
-        let ev = Evidence {
-            id: 1,
-            wp_id: 1,
-            fr_id: "FR-001".to_string(),
-            evidence_type: EvidenceType::TestResult,
-            artifact_path: "ci.log".to_string(),
-            metadata: Some(serde_json::json!({"coverage": 85.0})),
-            created_at: Utc::now(),
-        };
-        let threshold = serde_json::json!({"min_coverage": 80.0});
-        assert!(evaluate_threshold(&[&ev], &threshold));
-    }
-
-    #[test]
-    fn evaluate_threshold_min_coverage_fail() {
-        use agileplus_domain::domain::governance::Evidence;
-        let ev = Evidence {
-            id: 1,
-            wp_id: 1,
-            fr_id: "FR-001".to_string(),
-            evidence_type: EvidenceType::TestResult,
-            artifact_path: "ci.log".to_string(),
-            metadata: Some(serde_json::json!({"coverage": 60.0})),
-            created_at: Utc::now(),
-        };
-        let threshold = serde_json::json!({"min_coverage": 80.0});
-        assert!(!evaluate_threshold(&[&ev], &threshold));
-    }
-
-    #[test]
-    fn evaluate_threshold_max_critical_pass() {
-        use agileplus_domain::domain::governance::Evidence;
-        let ev = Evidence {
-            id: 1,
-            wp_id: 1,
-            fr_id: "FR-SEC".to_string(),
-            evidence_type: EvidenceType::SecurityScan,
-            artifact_path: "scan.json".to_string(),
-            metadata: Some(serde_json::json!({"critical_count": 0})),
-            created_at: Utc::now(),
-        };
-        let threshold = serde_json::json!({"max_critical": 0});
-        assert!(evaluate_threshold(&[&ev], &threshold));
-    }
-
-    #[test]
-    fn evaluate_threshold_max_critical_fail() {
-        use agileplus_domain::domain::governance::Evidence;
-        let ev = Evidence {
-            id: 1,
-            wp_id: 1,
-            fr_id: "FR-SEC".to_string(),
-            evidence_type: EvidenceType::SecurityScan,
-            artifact_path: "scan.json".to_string(),
-            metadata: Some(serde_json::json!({"critical_count": 3})),
-            created_at: Utc::now(),
-        };
-        let threshold = serde_json::json!({"max_critical": 0});
-        assert!(!evaluate_threshold(&[&ev], &threshold));
-    }
-}
+mod tests;
