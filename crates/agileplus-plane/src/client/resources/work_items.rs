@@ -1,7 +1,14 @@
-use anyhow::Context;
+use anyhow::{Context, Result};
 use reqwest::Method;
+use serde::Deserialize;
 
 use super::{PlaneClient, PlaneIssue, PlaneWorkItem, PlaneWorkItemResponse, transport};
+
+#[derive(Debug, Clone, Deserialize)]
+struct PaginatedResponse<T> {
+    results: Vec<T>,
+    next: Option<String>,
+}
 
 impl PlaneClient {
     /// Create a work item in Plane.so.
@@ -41,6 +48,41 @@ impl PlaneClient {
         transport::read_json_response(resp, "parsing Plane.so response").await
     }
 
+    /// List all work items in the project.
+    pub async fn list_work_items(&self) -> anyhow::Result<Vec<PlaneWorkItemResponse>> {
+        self.acquire_token().await?;
+        let resp = self
+            .execute_request_without_body(Method::GET, &self.work_items_url())
+            .await
+            .context("Plane.so list work items request failed")?;
+        let text = transport::read_text_response(resp, "reading Plane.so list response").await?;
+        if let Ok(items) = serde_json::from_str::<Vec<PlaneWorkItemResponse>>(&text) {
+            return Ok(items);
+        }
+        let paginated: PaginatedResponse<PlaneWorkItemResponse> =
+            serde_json::from_str(&text).context("parsing Plane.so paginated response")?;
+        Ok(paginated.results)
+    }
+
+    /// Create a sub-issue (child work item) under a parent.
+    pub async fn create_sub_issue(
+        &self,
+        parent_id: &str,
+        title: &str,
+        description_html: Option<String>,
+    ) -> anyhow::Result<PlaneWorkItemResponse> {
+        let work_item = PlaneWorkItem {
+            id: None,
+            name: title.to_string(),
+            description_html,
+            state: None,
+            priority: Some(3),
+            parent: Some(parent_id.to_string()),
+            labels: vec![],
+        };
+        self.create_work_item(&work_item).await
+    }
+
     // --- Back-compat aliases (outbound / sync use "issue" naming) ---
 
     /// Alias for [`Self::create_work_item`].
@@ -60,6 +102,11 @@ impl PlaneClient {
     /// Alias for [`Self::get_work_item`].
     pub async fn get_issue(&self, issue_id: &str) -> anyhow::Result<PlaneWorkItemResponse> {
         self.get_work_item(issue_id).await
+    }
+
+    /// Alias for [`Self::list_work_items`].
+    pub async fn list_issues(&self) -> anyhow::Result<Vec<PlaneWorkItemResponse>> {
+        self.list_work_items().await
     }
 
     /// Alias for [`Self::add_work_item_to_module`].

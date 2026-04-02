@@ -119,7 +119,6 @@ pub fn verify_hmac_signature(secret: &[u8], body: &[u8], header_value: &str) -> 
     let sig_bytes = match hex::decode(hex_sig) {
         Ok(b) => b,
         Err(_) => {
-            // Try without prefix (some implementations send raw hex).
             match hex::decode(header_value) {
                 Ok(b) => b,
                 Err(_) => return false,
@@ -131,6 +130,11 @@ pub fn verify_hmac_signature(secret: &[u8], body: &[u8], header_value: &str) -> 
         Hmac::new_from_slice(secret).expect("HMAC can accept any key length");
     mac.update(body);
     mac.verify_slice(&sig_bytes).is_ok()
+}
+
+/// Alias for [`verify_hmac_signature`] — verifies a Plane.so webhook signature.
+pub fn verify_webhook_signature(secret: &[u8], body: &[u8], header_value: &str) -> bool {
+    verify_hmac_signature(secret, body, header_value)
 }
 
 /// Parse and validate a Plane.so webhook request.

@@ -10,7 +10,7 @@ use crate::outbound::{
     push_module_delete,
 };
 
-const DEFAULT_PLANE_API_URL: &str = "https://app.plane.so";
+const DEFAULT_PLANE_API_URL: &str = "https://api.plane.so";
 
 fn plane_client_from_env() -> Option<PlaneClient> {
     let api_key = env::var("PLANE_API_KEY").ok()?;

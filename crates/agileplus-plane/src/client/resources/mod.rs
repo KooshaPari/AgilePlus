@@ -7,6 +7,7 @@ use super::{
     PlaneClient, PlaneCreateCycleRequest, PlaneCreateModuleRequest, PlaneCycleResponse, PlaneIssue,
     PlaneModuleResponse, PlaneWorkItem, PlaneWorkItemResponse,
 };
+use crate::labels::{LabelSync, PlaneLabel};
 
 mod cycles;
 mod modules;
@@ -112,5 +113,22 @@ impl PlaneClient {
                 .await
                 .context("Plane.so POST request failed")?;
         transport::read_text_response(resp, "reading Plane.so response body").await
+    }
+
+    /// Sync local labels to remote Plane.so.
+    ///
+    /// Creates any labels that don't exist. Returns a map of label name → Plane label ID.
+    pub async fn sync_labels(
+        &self,
+        local_labels: &[String],
+    ) -> Result<std::collections::HashMap<String, String>> {
+        let label_sync = LabelSync::new(self.clone());
+        label_sync.sync_labels_to_remote(local_labels).await
+    }
+
+    /// Fetch all labels from Plane.so.
+    pub async fn get_labels(&self) -> Result<Vec<PlaneLabel>> {
+        let label_sync = LabelSync::new(self.clone());
+        label_sync.fetch_remote_labels().await
     }
 }

@@ -304,3 +304,70 @@ fn plane_work_item_serialize() {
     let json = serde_json::to_string(&work_item).unwrap();
     assert!(json.contains("Test work item"));
 }
+
+#[tokio::test]
+async fn list_work_items_returns_array() {
+    use wiremock::matchers::{method, path};
+    use wiremock::{Mock, MockServer, ResponseTemplate};
+
+    let mock_server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/api/v1/workspaces/ws/projects/proj/work-items/"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!([
+            { "id": "wi-1", "name": "Issue 1", "description_html": null, "state": null, "updated_at": null },
+            { "id": "wi-2", "name": "Issue 2", "description_html": null, "state": null, "updated_at": null }
+        ])))
+        .mount(&mock_server)
+        .await;
+
+    let client = PlaneClient::new(mock_server.uri(), "key".into(), "ws".into(), "proj".into());
+    let issues = client.list_work_items().await.unwrap();
+    assert_eq!(issues.len(), 2);
+    assert_eq!(issues[0].name, "Issue 1");
+}
+
+#[tokio::test]
+async fn list_issues_alias_works() {
+    use wiremock::matchers::{method, path};
+    use wiremock::{Mock, MockServer, ResponseTemplate};
+
+    let mock_server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/api/v1/workspaces/ws/projects/proj/work-items/"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!([
+            { "id": "wi-1", "name": "Issue 1", "description_html": null, "state": null, "updated_at": null }
+        ])))
+        .mount(&mock_server)
+        .await;
+
+    let client = PlaneClient::new(mock_server.uri(), "key".into(), "ws".into(), "proj".into());
+    let issues = client.list_issues().await.unwrap();
+    assert_eq!(issues.len(), 1);
+}
+
+#[tokio::test]
+async fn create_sub_issue_sends_post_with_parent() {
+    use wiremock::matchers::{method, path, body_partial_json};
+    use wiremock::{Mock, MockServer, ResponseTemplate};
+
+    let mock_server = MockServer::start().await;
+    Mock::given(method("POST"))
+        .and(path("/api/v1/workspaces/ws/projects/proj/work-items/"))
+        .and(body_partial_json("{\"parent\":\"parent-123\"}"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "id": "wi-child",
+            "name": "Child Issue",
+            "description_html": null,
+            "state": null,
+            "updated_at": null
+        })))
+        .mount(&mock_server)
+        .await;
+
+    let client = PlaneClient::new(mock_server.uri(), "key".into(), "ws".into(), "proj".into());
+    let result = client
+        .create_sub_issue("parent-123", "Child Issue", None)
+        .await
+        .unwrap();
+    assert_eq!(result.id, "wi-child");
+}

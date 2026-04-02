@@ -6,7 +6,12 @@ mod endpoints;
 mod models;
 mod rate_limit;
 mod resources;
+#[cfg(test)]
+mod tests;
 mod transport;
+
+#[cfg(test)]
+mod mock;
 
 use std::sync::Arc;
 
@@ -18,7 +23,10 @@ pub use self::models::{
     PlaneCreateCycleRequest, PlaneCreateModuleRequest, PlaneCycleResponse, PlaneIssue,
     PlaneModuleResponse, PlaneWorkItem, PlaneWorkItemResponse,
 };
-use self::rate_limit::TokenBucket;
+pub use self::rate_limit::TokenBucket;
+
+#[cfg(test)]
+pub use mock::InMemoryPlaneClient;
 
 /// Plane.so API client with token bucket rate limiter.
 #[derive(Debug, Clone)]
@@ -81,6 +89,3 @@ impl PlaneClient {
         transport::request_without_body(&self.client, method, url, &self.api_key).await
     }
 }
-
-#[cfg(test)]
-mod tests;

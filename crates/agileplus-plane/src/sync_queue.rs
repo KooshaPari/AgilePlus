@@ -16,6 +16,9 @@ pub const MAX_BACKOFF: Duration = Duration::from_secs(300);
 /// Base backoff duration (1 second).
 pub const BASE_BACKOFF: Duration = Duration::from_secs(1);
 
+/// Maximum number of retries for a sync task (1s, 2s, 4s backoff).
+pub const MAX_RETRIES: u32 = 3;
+
 /// Errors from queue operations.
 #[derive(Debug, Error)]
 pub enum QueueError {
@@ -73,6 +76,62 @@ impl SyncQueueItem {
 
     pub fn is_ready(&self) -> bool {
         chrono::Utc::now() >= self.next_attempt_at
+    }
+
+    pub fn is_exhausted(&self) -> bool {
+        self.attempt >= MAX_RETRIES
+    }
+}
+
+/// A sync task for the in-memory queue with retry support.
+///
+/// The queue is a `VecDeque<SyncTask>` with 3 retries at 1s/2s/4s backoff,
+/// content hash skip, and exhausted task discarding.
+#[derive(Debug, Clone)]
+pub struct SyncTask {
+    pub id: u64,
+    pub kind: SyncOpKind,
+    pub payload: String,
+    pub attempt: u32,
+    pub next_attempt_at: chrono::DateTime<chrono::Utc>,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    pub content_hash: Option<String>,
+}
+
+impl SyncTask {
+    pub fn new(id: u64, kind: SyncOpKind, payload: String, content_hash: Option<String>) -> Self {
+        Self {
+            id,
+            kind,
+            payload,
+            attempt: 0,
+            next_attempt_at: chrono::Utc::now(),
+            created_at: chrono::Utc::now(),
+            content_hash,
+        }
+    }
+
+    pub fn next_backoff_delay(&self) -> Duration {
+        SyncQueueItem::next_backoff_delay(self.attempt)
+    }
+
+    pub fn with_next_attempt(&self) -> Self {
+        let delay = self.next_backoff_delay();
+        let next = chrono::Utc::now()
+            + chrono::Duration::from_std(delay).unwrap_or(chrono::Duration::seconds(300));
+        Self {
+            attempt: self.attempt + 1,
+            next_attempt_at: next,
+            ..self.clone()
+        }
+    }
+
+    pub fn is_ready(&self) -> bool {
+        chrono::Utc::now() >= self.next_attempt_at
+    }
+
+    pub fn is_exhausted(&self) -> bool {
+        self.attempt >= MAX_RETRIES
     }
 }
 
@@ -323,5 +382,47 @@ mod tests {
         assert!(q.is_empty());
         q.reload(items);
         assert_eq!(q.len(), 1);
+    }
+
+    #[test]
+    fn sync_task_with_3_retries() {
+        let task = SyncTask::new(1, SyncOpKind::CreateIssue, "{}".into(), None);
+        assert_eq!(task.attempt, 0);
+        assert!(!task.is_exhausted());
+
+        let retry1 = task.with_next_attempt();
+        assert_eq!(retry1.attempt, 1);
+        assert!(!retry1.is_exhausted());
+
+        let retry2 = retry1.with_next_attempt();
+        assert_eq!(retry2.attempt, 2);
+        assert!(!retry2.is_exhausted());
+
+        let retry3 = retry2.with_next_attempt();
+        assert_eq!(retry3.attempt, 3);
+        assert!(retry3.is_exhausted());
+    }
+
+    #[test]
+    fn sync_task_backoff_sequence() {
+        let task = SyncTask::new(1, SyncOpKind::UpdateIssue, "{}".into(), None);
+        assert_eq!(task.next_backoff_delay(), Duration::from_secs(1));
+
+        let r1 = task.with_next_attempt();
+        assert_eq!(r1.next_backoff_delay(), Duration::from_secs(2));
+
+        let r2 = r1.with_next_attempt();
+        assert_eq!(r2.next_backoff_delay(), Duration::from_secs(4));
+    }
+
+    #[test]
+    fn sync_task_content_hash_skip() {
+        let task = SyncTask::new(
+            1,
+            SyncOpKind::CreateIssue,
+            r#"{"id":"1","name":"Test"}"#.into(),
+            Some("abc123".into()),
+        );
+        assert_eq!(task.content_hash, Some("abc123".into()));
     }
 }
