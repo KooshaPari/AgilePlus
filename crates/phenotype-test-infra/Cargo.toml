@@ -15,9 +15,11 @@ tempfile = "3"
 uuid = { version = "1", features = ["v4"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 chrono = { version = "0.4", optional = true }
+proptest = { version = "1", optional = true }
 
 [dev-dependencies]
 
 [features]
 default = []
 chrono = ["dep:chrono"]
+proptest = ["dep:proptest"]

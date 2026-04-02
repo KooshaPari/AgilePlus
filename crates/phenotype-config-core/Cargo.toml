@@ -1,0 +1,13 @@
+[package]
+name = "phenotype-config-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+description = "Core configuration types and traits for Phenotype crates"
+
+[dependencies]
+serde = { workspace = true, features = ["derive"] }
+serde_json.workspace = true
+thiserror.workspace = true
+toml.workspace = true
