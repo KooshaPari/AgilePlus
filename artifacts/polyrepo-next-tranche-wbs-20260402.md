@@ -86,6 +86,7 @@ Documented evidence:
 - `/tmp/agileplus-events-latest.csv` (snapshot query + result).
 - `scripts/dev-up.sh` start output captured in the docs session notes.
 - blocker note about missing `scripts/local-health-check.sh` recorded under the Wave 1 evidence entry.
+- `artifacts/local-deploy-surface-baseline.md` now documents the clean runtime work tree, the `dev-up` command, and the same event snapshot plus the missing health-check blocker.
 
 ### phenotype-infrakit
 

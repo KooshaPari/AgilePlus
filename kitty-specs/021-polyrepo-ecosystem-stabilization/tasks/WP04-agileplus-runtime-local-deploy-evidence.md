@@ -38,6 +38,8 @@ from prose-only notes to concrete evidence artifacts.
 ## Evidence
 
 - `/tmp/agileplus-events-latest.csv`
+- `artifacts/local-deploy-surface-baseline.md` now records the clean runtime worktree, the `scripts/dev-up.sh` invocation, and the latest snapshot entry.
+- `scripts/local-health-check.sh` is currently missing from `AgilePlus/.worktrees/chore-runtime-local-deploy-clean`; document this absence as the blocker to a full health validation.
 - health-check output summary
 - local deploy evidence note with command paths and result state
 
