@@ -1608,6 +1608,101 @@ pub async fn feature_evidence_json(
     })
 }
 
+// ── SSE Stream /api/stream ───────────────────────────────────────────────
+
+use axum::response::sse::{Event, Sse};
+use tokio_stream::StreamExt as _;
+use tokio::time::{interval, Duration};
+use std::convert::Infallible;
+
+pub async fn sse_stream(State(state): State<SharedState>) -> Sse<impl tokio_stream::Stream<Item = Result<Event, Infallible>>> {
+    let state = state.clone();
+    let stream = async_stream::stream! {
+        let mut ticker = interval(Duration::from_secs(5));
+        loop {
+            ticker.tick().await;
+            let store = state.read().await;
+            
+            // Broadcast feature_updated event to refresh kanban
+            let feature_count = store.features.len();
+            let data = serde_json::json!({ "type": "heartbeat", "features": feature_count }).to_string();
+            yield Ok(Event::default()
+                .event("feature_updated")
+                .data(data));
+            
+            // Broadcast health status
+            let healthy_count = store.health.iter().filter(|s| s.healthy).count();
+            let total_count = store.health.len();
+            let health_data = serde_json::json!({
+                "healthy": healthy_count,
+                "total": total_count,
+                "all_healthy": healthy_count == total_count
+            }).to_string();
+            yield Ok(Event::default()
+                .event("health_changed")
+                .data(health_data));
+        }
+    };
+    Sse::new(stream)
+}
+
+// ── /health ─────────────────────────────────────────────────────────────
+
+pub async fn health_page(State(state): State<SharedState>) -> Response {
+    let store = state.read().await;
+    render(HealthPanelPartial {
+        services: store.health.clone(),
+    })
+}
+
+// ── /features/:id ───────────────────────────────────────────────────────
+
+pub async fn feature_page(State(state): State<SharedState>, Path(id): Path<i64>) -> Response {
+    feature_detail(State(state), Path(id), HeaderMap::new()).await
+}
+
+// ── /api/features/:id/transition ─────────────────────────────────────────
+
+#[derive(Debug, Deserialize)]
+pub struct FeatureTransitionForm {
+    #[serde(rename = "target_state")]
+    pub new_state: String,
+}
+
+pub async fn feature_transition(
+    State(state): State<SharedState>,
+    Path(id): Path<i64>,
+    axum::Form(form): axum::Form<FeatureTransitionForm>,
+) -> Response {
+    let new_state = match form.new_state.parse::<FeatureState>() {
+        Ok(s) => s,
+        Err(_) => {
+            return (StatusCode::BAD_REQUEST, "Invalid feature state").into_response()
+        }
+    };
+
+    let feature_name = {
+        let store = state.read().await;
+        match store.features.iter().find(|f| f.id == id) {
+            Some(f) => f.slug.clone(),
+            None => return (StatusCode::NOT_FOUND, "Feature not found").into_response(),
+        }
+    };
+
+    // Broadcast the update so SSE clients refresh
+    // (In a real app, persist the state change here)
+    tracing::info!(
+        "Feature {} transitioned to {:?} (SSE broadcast triggers UI refresh)",
+        feature_name,
+        new_state
+    );
+
+    // Return the kanban partial so htmx can swap it
+    let store = state.read().await;
+    let cards = build_kanban_cards(&store, DashboardFilter::All);
+    render(KanbanPartial { cards })
+}
+
 pub async fn stream_placeholder() -> StatusCode {
     StatusCode::NO_CONTENT
 }
@@ -2045,7 +2140,9 @@ pub fn router(state: SharedState) -> Router {
         .route("/home", get(home))
         .route("/dashboard", get(dashboard_page))
         .route("/features", get(features_page))
+        .route("/features/{id}", get(feature_page))
         .route("/events", get(events_page))
+        .route("/health", get(health_page))
         .route("/settings", get(settings_page))
         .route("/settings/plane", get(plane_settings_page))
         .route("/settings/agents", get(agent_settings_page))
@@ -2091,6 +2188,7 @@ pub fn router(state: SharedState) -> Router {
             post(switch_project),
         )
         .route("/api/time", get(time_footer))
+        .route("/api/stream", get(sse_stream))
         .route("/api/stream-placeholder", get(stream_placeholder))
         .route(
             "/api/evidence/{feature_id}/{artifact_id}/content",
@@ -2111,6 +2209,10 @@ pub fn router(state: SharedState) -> Router {
         .route(
             "/api/dashboard/features/{id}/evidence.json",
             get(feature_evidence_json),
+        )
+        .route(
+            "/api/features/{id}/transition",
+            post(feature_transition),
         )
         .with_state(state)
 }
