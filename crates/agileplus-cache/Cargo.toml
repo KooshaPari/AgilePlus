@@ -16,6 +16,7 @@ thiserror = { workspace = true }
 async-trait = "0.1"
 tokio = { workspace = true }
 chrono = { workspace = true }
+tracing = { workspace = true }
 
 [dev-dependencies]
 tokio = { workspace = true }

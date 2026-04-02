@@ -5,6 +5,9 @@ use agileplus_domain::domain::feature::Feature;
 use agileplus_domain::domain::work_package::WorkPackage;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
+use std::time::Duration;
+
+const PROJECTION_TTL_SECS: u64 = 60;
 
 #[derive(Debug, thiserror::Error)]
 pub enum ProjectionError {
@@ -49,7 +52,11 @@ impl ProjectionCache {
             cached_at: chrono::Utc::now(),
         };
         self.store
-            .set(&format!("feature:{}", feature.id), &projection, None)
+            .set(
+                &format!("feature:{}", feature.id),
+                &projection,
+                Some(Duration::from_secs(PROJECTION_TTL_SECS)),
+            )
             .await
             .map_err(|e| ProjectionError::CacheError(e.to_string()))
     }
@@ -70,7 +77,11 @@ impl ProjectionCache {
             cached_at: chrono::Utc::now(),
         };
         self.store
-            .set(&format!("wp:{}", wp.id), &projection, None)
+            .set(
+                &format!("wp:{}", wp.id),
+                &projection,
+                Some(Duration::from_secs(PROJECTION_TTL_SECS)),
+            )
             .await
             .map_err(|e| ProjectionError::CacheError(e.to_string()))
     }
