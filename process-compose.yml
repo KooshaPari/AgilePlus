@@ -43,21 +43,21 @@ processes:
 
   neo4j:
     command: sh -c "if lsof -i :7687 >/dev/null 2>&1; then echo 'Neo4j already running, skipping start'; sleep infinity; else neo4j console; fi"
+    environment:
+      - NEO4J_AUTH=neo4j/agileplus
+      - NEO4J_HOME=.agileplus/neo4j
+      - NEO4J_LOGS_DIR=.agileplus/logs
+      - NEO4J_DATA_DIR=.agileplus/neo4j/data
     depends_on:
       nats:
         condition: process_healthy
     log_location: .agileplus/logs/neo4j.log
     readiness_probe:
       exec:
-        command: cypher-shell -u neo4j -p agileplus "RETURN 1"
+        command: sh -c "cypher-shell -u neo4j -p agileplus 'RETURN 1' 2>/dev/null || nc -z localhost 7687 2>/dev/null"
       initial_delay_seconds: 15
       period_seconds: 10
-      failure_threshold: 3
-    environment:
-      - NEO4J_AUTH=neo4j/agileplus
-      - NEO4J_HOME=.agileplus/neo4j
-      - NEO4J_LOGS_DIR=.agileplus/logs
-      - NEO4J_DATA_DIR=.agileplus/neo4j/data
+      failure_threshold: 10
 
   minio:
     command: minio server .agileplus/minio-data --console-address :9001
