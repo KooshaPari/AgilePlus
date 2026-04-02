@@ -5,7 +5,7 @@
 - **ID**: 021-polyrepo-ecosystem-stabilization
 - **Title**: Full 247-Repo Ecosystem Audit, Stabilization, and Optimization
 - **Created**: 2026-04-02
-- **State**: specified
+- **State**: planned
 - **Scope**: Shelf-level (cross-repo, all 247 repos)
 - **Priority**: P0 — Critical
 - **Depends On**: 012-github-portfolio-triage, 013-phenotype-infrakit-stabilization, eco-001-worktree-remediation, eco-002-branch-consolidation
@@ -45,6 +45,38 @@ This spec orchestrates a **4-phase stabilization plan** targeting full ecosystem
 - Create **docs federation** hub at docs.phenotype.dev
 - Return **all canonical repos to main** branch
 - Establish **worktree discipline** with documented rules
+
+## Current Approved Execution Unit
+
+The active execution unit for this spec is no longer the quarter-scale program as a whole. The
+immediate implementation surface is the approved mixed-tranche wave:
+
+- **Feature slug**: `polyrepo-mixed-tranche-wave-1`
+- **Topology**: `1 manager + 6 workers`
+- **Manager responsibilities**:
+  - create and dispatch the six work packages
+  - poll and classify worker outcomes every `30s`
+  - enforce dependencies
+  - rebalance blocked substeps
+  - roll up tranche evidence and closeout state
+- **Worker responsibilities**:
+  - own exactly one work package
+  - stay inside the assigned repo and file-surface scope
+  - terminate in `done`, `blocked:<class>`, or `needs-rebalance`
+
+The six work packages for the active wave are:
+
+1. `WP01` AgilePlus PR lane completion
+2. `WP02` Helios family PR convergence
+3. `WP03` Secondary PR lane cleanup
+4. `WP04` AgilePlus runtime and local deploy evidence
+5. `WP05` Governance enforcement rollout
+6. `WP06` Intake and boundary normalization
+
+Dependency rule:
+
+- `WP05` depends on `WP01`, `WP02`, and `WP03`
+- all other work packages are dispatch-ready in parallel
 
 ## Non-Goals
 

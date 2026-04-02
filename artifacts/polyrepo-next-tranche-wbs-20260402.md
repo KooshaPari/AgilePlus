@@ -8,6 +8,32 @@ This is the execution WBS for the next polyrepo stabilization tranche after the 
 wave. It supersedes the older quarter-scale plan for immediate execution order and reflects the live
 repo, worktree, stash, and PR geometry on 2026-04-02.
 
+## Current Active Wave
+
+The current manager-controlled execution unit for this tranche is:
+
+- **Feature slug**: `polyrepo-mixed-tranche-wave-1`
+- **Topology**: `1 manager + 6 workers`
+- **Control surfaces**:
+  - `kitty-specs/021-polyrepo-ecosystem-stabilization/spec.md`
+  - `kitty-specs/021-polyrepo-ecosystem-stabilization/plan.md`
+  - `kitty-specs/021-polyrepo-ecosystem-stabilization/tasks.md`
+  - `kitty-specs/021-polyrepo-ecosystem-stabilization/tasks/WP01-*.md` through `WP06-*.md`
+
+Dispatch-ready work packages:
+
+1. `WP01` AgilePlus PR lane completion
+2. `WP02` Helios family PR convergence
+3. `WP03` Secondary PR lane cleanup
+4. `WP04` AgilePlus runtime and local deploy evidence
+5. `WP05` Governance enforcement rollout
+6. `WP06` Intake and boundary normalization
+
+Dependency rule:
+
+- `WP05` depends on `WP01`, `WP02`, and `WP03`
+- all other work packages are parallel-ready
+
 ## Execution Update 2026-04-02
 
 ### Runtime and Evidence

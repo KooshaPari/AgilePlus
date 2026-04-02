@@ -1,5 +1,59 @@
 # Plan: Polyrepo Ecosystem Stabilization
 
+## Current Wave Override
+
+The active execution unit for this spec is now the approved mixed-tranche six-worker wave:
+
+- **Feature slug**: `polyrepo-mixed-tranche-wave-1`
+- **Topology**: `1 manager + 6 workers`
+- **Execution surface**:
+  - `artifacts/polyrepo-next-tranche-wbs-20260402.md`
+  - `kitty-specs/021-polyrepo-ecosystem-stabilization/tasks.md`
+
+This wave acts as both:
+- the manager-facing tranche plan across current active repo work
+- the concrete AgilePlus-native feature surface for immediate dispatch
+
+## Wave 1 Summary
+
+The manager owns dispatch, polling, dependency enforcement, rebalance, evidence rollup, and tranche
+closeout. The six workers each own one bounded work package:
+
+1. `WP01` AgilePlus PR lane completion
+2. `WP02` Helios family PR convergence
+3. `WP03` Secondary PR lane cleanup
+4. `WP04` AgilePlus runtime and local deploy evidence
+5. `WP05` Governance enforcement rollout
+6. `WP06` Intake and boundary normalization
+
+## Wave 1 Dependencies
+
+```text
+Dispatch:
+  WP01, WP02, WP03, WP04, WP06
+
+Dependency-gated:
+  WP05 depends on WP01 + WP02 + WP03
+```
+
+## Wave 1 Control Contract
+
+- One worker per WP, with no overlapping ownership.
+- Worker completion contract is exactly one of:
+  - `done`
+  - `blocked:<class>`
+  - `needs-rebalance`
+- Allowed blocker classes:
+  - `local-state`
+  - `review`
+  - `ci`
+  - `access`
+  - `external-provider`
+  - `boundary`
+- The manager polls every `30s` and rebalances only blocked substeps, not full WP ownership,
+  unless a worker is fully stalled.
+- `WP05` cannot begin execution until `WP01`, `WP02`, and `WP03` are done or blocker-finalized.
+
 ## Current Tranche Override
 
 The quarter-scale plan below is not the active execution surface for the current stabilization wave.
