@@ -16,7 +16,7 @@ use agileplus_cli::commands::{
 };
 use agileplus_git::GitVcsAdapter;
 use agileplus_sqlite::SqliteStorageAdapter;
-use agileplus_subcmds::{DashboardArgs, PlatformArgs, run_dashboard, run_platform};
+use agileplus_subcmds::{DashboardArgs, PlatformArgs, run_dashboard, run_platform, SyncArgs, run_sync};
 
 mod agent_stub;
 use agent_stub::StubAgentAdapter;
@@ -71,6 +71,8 @@ enum Commands {
     Dashboard(DashboardArgs),
     /// Manage platform services (up, down, status, logs).
     Platform(PlatformArgs),
+    /// Sync local features/WPs with Plane.so (push, pull, auto, status, resolve).
+    Sync(SyncArgs),
 }
 
 #[tokio::main]
@@ -101,6 +103,7 @@ async fn run(cli: Cli) -> Result<()> {
         Commands::Triage(args) => return agileplus_cli::commands::triage::run_triage(args).await,
         Commands::Dashboard(args) => return run_dashboard(args),
         Commands::Platform(args) => return run_platform(args),
+        Commands::Sync(args) => return run_sync(args).await,
         _ => {}
     }
 
@@ -175,7 +178,8 @@ async fn run(cli: Cli) -> Result<()> {
         Commands::Triage(_)
         | Commands::Module(_)
         | Commands::Dashboard(_)
-        | Commands::Platform(_) => unreachable!("handled above"),
+        | Commands::Platform(_)
+        | Commands::Sync(_) => unreachable!("handled above"),
     }
 
     Ok(())
