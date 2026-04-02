@@ -1,0 +1,347 @@
+# Self-Healing Locators for AgilePlus Integration Tests
+# Adapts to UI changes automatically using AI
+
+selectors:
+  # ============================================
+  # Plane.so Sync Page
+  # ============================================
+  sync_page:
+    title:
+      - "text=Sync with Plane.so"
+      - "data-testid=sync-title"
+      - "h1:contains('Sync')"
+      - ai: "the page header about syncing with Plane"
+      
+    pull_button:
+      - "button:contains('Pull from Plane.so')"
+      - "data-testid=pull-button"
+      - "aria-label=Pull changes from Plane.so"
+      - ai: "the button to import data from Plane"
+      
+    push_button:
+      - "button:contains('Push to Plane.so')"
+      - "data-testid=push-button"  
+      - "aria-label=Push changes to Plane.so"
+      - ai: "the button to publish to Plane"
+      
+    sync_status:
+      - "data-testid=sync-status"
+      - ".sync-status"
+      - "div:contains('Last sync:')"
+      - ai: "the status indicator showing sync state"
+      
+    progress_indicator:
+      - "data-testid=progress-bar"
+      - "role=progressbar"
+      - ".progress-bar"
+      - ai: "the loading indicator during sync"
+      
+  # ============================================
+  # Conflict Resolution
+  # ============================================
+  conflict_resolution:
+    conflict_table:
+      - "data-testid=conflict-table"
+      - "table:contains('Conflicts')"
+      - ai: "the table showing conflicts between local and Plane"
+      
+    merge_button:
+      - "button:contains('Merge')"
+      - "data-testid=merge-button"
+      - ai: "the button to merge conflicting items"
+      
+    force_local_button:
+      - "button:contains('Use Local')"
+      - "data-testid=force-local"
+      - ai: "the button to prefer local version"
+      
+    force_remote_button:
+      - "button:contains('Use Plane')"
+      - "data-testid=force-remote"
+      - ai: "the button to prefer Plane version"
+      
+    conflict_row:
+      - "data-testid=conflict-row"
+      - "tr:has(.conflict-indicator)"
+      - ai: "a row in the conflicts table"
+      
+  # ============================================
+  # Feature Management
+  # ============================================
+  features_page:
+    new_feature_button:
+      - "button:contains('New Feature')"
+      - "data-testid=new-feature"
+      - "a:contains('Create')"
+      - ai: "the button to create a new feature"
+      
+    feature_list:
+      - "data-testid=feature-list"
+      - ".feature-list"
+      - "ul:has(.feature-card)"
+      - ai: "the list of features"
+      
+    feature_card:
+      - "data-testid=feature-card"
+      - ".feature-card"
+      - ai: "a card showing feature details"
+      
+    search_input:
+      - "input[placeholder*='search' i]"
+      - "data-testid=feature-search"
+      - "input[type='search']"
+      - ai: "the search box for finding features"
+      
+    filter_dropdown:
+      - "button:contains('Filters')"
+      - "data-testid=filters"
+      - ai: "the filters button for feature list"
+      
+  # ============================================
+  # Work Package Management
+  # ============================================
+  work_packages:
+    kanban_board:
+      - "data-testid=kanban-board"
+      - ".kanban"
+      - ai: "the kanban board showing work packages"
+      
+    backlog_column:
+      - "data-testid=column-backlog"
+      - ".column:contains('Backlog')"
+      - ai: "the leftmost column for pending work"
+      
+    in_progress_column:
+      - "data-testid=column-in_progress"
+      - ".column:contains('In Progress')"
+      - ai: "the middle column for active work"
+      
+    done_column:
+      - "data-testid=column-done"
+      - ".column:contains('Done')"
+      - ai: "the rightmost column for completed work"
+      
+    work_package_card:
+      - "data-testid=work-package-card"
+      - ".wp-card"
+      - ai: "a draggable card representing a work package"
+      
+    assign_agent_button:
+      - "button:contains('Assign Agent')"
+      - "data-testid=assign-agent"
+      - ai: "the button to dispatch an AI agent"
+      
+  # ============================================
+  # Agent Monitoring
+  # ============================================
+  agent_monitoring:
+    agent_list:
+      - "data-testid=agent-list"
+      - ".agent-list"
+      - ai: "the list of running agents"
+      
+    agent_card:
+      - "data-testid=agent-card"
+      - ".agent-card"
+      - ai: "a card showing agent status and progress"
+      
+    log_stream:
+      - "data-testid=log-stream"
+      - ".log-output"
+      - "pre:contains('Agent log')"
+      - ai: "the live streaming log output"
+      
+    progress_bar:
+      - "data-testid=agent-progress"
+      - "role=progressbar"
+      - ai: "the progress indicator for agent work"
+      
+    review_changes_button:
+      - "button:contains('Review Changes')"
+      - "data-testid=review-changes"
+      - ai: "the button to see what the agent changed"
+      
+  # ============================================
+  # Settings & Configuration
+  # ============================================
+  settings:
+    plane_integration:
+      - "data-testid=plane-integration"
+      - "a:contains('Plane.so')"
+      - ai: "the Plane.so integration settings section"
+      
+    workspace_slug_input:
+      - "input[name='workspace_slug']"
+      - "data-testid=workspace-slug"
+      - ai: "the input for Plane workspace identifier"
+      
+    api_key_input:
+      - "input[name='api_key']"
+      - "data-testid=api-key"
+      - "input[type='password']"
+      - ai: "the secure input for Plane API key"
+      
+    test_connection_button:
+      - "button:contains('Test Connection')"
+      - "data-testid=test-connection"
+      - ai: "the button to verify Plane credentials"
+      
+    enable_sync_toggle:
+      - "data-testid=enable-sync"
+      - "input[type='checkbox'][name='sync_enabled']"
+      - ai: "the toggle to enable/disable sync"
+      
+  # ============================================
+  # Dashboard
+  # ============================================
+  dashboard:
+    active_features_metric:
+      - "data-testid=metric-active-features"
+      - ".metric:contains('Active Features')"
+      - ai: "the metric card showing active feature count"
+      
+    velocity_chart:
+      - "data-testid=velocity-chart"
+      - ".chart:contains('Velocity')"
+      - ai: "the chart showing team velocity"
+      
+    agent_utilization_chart:
+      - "data-testid=agent-utilization"
+      - ".chart:contains('Agent')"
+      - ai: "the chart showing AI agent usage"
+      
+    time_range_dropdown:
+      - "button:contains('7 Days')"
+      - "data-testid=time-range"
+      - ai: "the dropdown to select time period"
+      
+  # ============================================
+  # Common Elements
+  # ============================================
+  common:
+    navigation:
+      - "nav"
+      - "role=navigation"
+      - ai: "the main navigation bar"
+      
+    sidebar:
+      - "aside"
+      - "data-testid=sidebar"
+      - ai: "the left sidebar with menu items"
+      
+    toast_notification:
+      - "data-testid=toast"
+      - ".toast"
+      - "role=alert"
+      - ai: "popup notification messages"
+      
+    modal:
+      - "data-testid=modal"
+      - "role=dialog"
+      - ".modal-overlay"
+      - ai: "popup dialog boxes"
+      
+    loading_spinner:
+      - "data-testid=spinner"
+      - ".spinner"
+      - ai: "loading indicator"
+      
+    error_message:
+      - "data-testid=error"
+      - ".error"
+      - "role=alert"
+      - ai: "error notification"
+
+# ============================================
+# Self-Healing Configuration
+# ============================================
+healing:
+  enabled: true
+  
+  # AI-assisted locator healing
+  ai_assistance:
+    enabled: true
+    model: gpt-4o
+    temperature: 0.1
+    
+  # Fallback strategies (in order)
+  strategies:
+    - selector
+    - text_content
+    - aria_attributes
+    - visual_position
+    - ai_description
+    
+  # Retry configuration
+  retries:
+    max_attempts: 3
+    backoff_ms: 1000
+    
+  # Confidence thresholds
+  confidence:
+    accept: 0.85
+    require_review: 0.70
+    reject: 0.50
+    
+  # Visual comparison for layout changes
+  visual:
+    enabled: true
+    tolerance: 0.05  # 5% pixel difference allowed
+    screenshot_on_failure: true
+
+# ============================================
+# Element Action Mapping
+# ============================================
+actions:
+  click:
+    preferred: "selector > text_content > ai_description"
+    wait_for_stable: true
+    timeout_ms: 10000
+    
+  fill:
+    preferred: "selector > aria_attributes > ai_description"
+    clear_before_fill: true
+    timeout_ms: 5000
+    
+  read:
+    preferred: "selector > text_content > ai_description"
+    timeout_ms: 5000
+    
+  drag:
+    preferred: "selector > visual_position"
+    wait_for_drop_zone: true
+    timeout_ms: 10000
+
+# ============================================
+# Environment-Specific Overrides
+# ============================================
+environments:
+  staging:
+    base_url: https://staging.agileplus.dev
+    selectors:
+      sync_page:
+        pull_button:
+          - "button:contains('Pull')"  # Shorter text on staging
+          - ai: "import button"
+          
+  production:
+    base_url: https://agileplus.dev
+    selectors:
+      # Same as default, but with stricter timeouts
+      pass
+
+# ============================================
+# Maintenance Mode
+# ============================================
+maintenance:
+  # Auto-update locators when tests fail
+  auto_update:
+    enabled: true
+    min_confidence: 0.90
+    require_approval: true
+    
+  # Periodic health checks
+  health_check:
+    enabled: true
+    schedule: "0 2 * * *"  # Daily at 2 AM
+    notify_on_drift: true

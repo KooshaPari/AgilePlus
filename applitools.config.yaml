@@ -1,0 +1,209 @@
+# Applitools Visual AI Configuration
+# For AgilePlus Dashboard UI Testing
+# https://applitools.com
+
+app_name: "AgilePlus Dashboard"
+batch_name: "AgilePlus E2E Tests"
+
+# Eyes configuration
+eyes:
+  api_key: ${APPLITOOLS_API_KEY}
+  server_url: https://eyes.applitools.com
+  
+  # Visual testing settings
+  viewport:
+    width: 1920
+    height: 1080
+    
+  # Match level - strict for pixel-perfect, content for text-heavy
+  match_level: Strict
+  
+  # Ignore regions (dynamic content)
+  ignore_regions:
+    - selector: "[data-testid='timestamp']"
+    - selector: "[data-testid='user-avatar']"
+    - selector: ".sync-status-indicator"
+    
+  # Accessibility validation
+  accessibility_validation:
+    level: AA
+    version: "WCAG 2.1"
+
+# Dashboard-specific visual tests
+test_suites:
+  # Feature Kanban Board
+  kanban_board:
+    - name: "Feature Board - Empty State"
+      url: "/dashboard/features"
+      steps:
+        - wait_for: "[data-testid='empty-state']"
+        - check_window: "Empty Kanban Board"
+        
+    - name: "Feature Board - With Data"
+      url: "/dashboard/features"
+      setup: seed_test_features
+      steps:
+        - wait_for: "[data-testid='kanban-column']"
+        - check_window: "Kanban Board with Features"
+        - click: "[data-testid='feature-card-1']"
+        - check_window: "Feature Detail Modal"
+        
+  # Work Package Timeline
+  timeline_view:
+    - name: "Timeline - Month View"
+      url: "/dashboard/work-packages?view=timeline"
+      steps:
+        - wait_for: "[data-testid='timeline-container']"
+        - check_window: "Work Package Timeline"
+        
+    - name: "Timeline - Week View"
+      url: "/dashboard/work-packages?view=timeline&scale=week"
+      steps:
+        - wait_for: "[data-testid='timeline-week-view']"
+        - check_window: "Timeline Week View"
+        
+  # Plane.so Sync Status
+  sync_dashboard:
+    - name: "Sync Status - Idle"
+      url: "/dashboard/sync"
+      steps:
+        - wait_for: "[data-testid='sync-status-idle']"
+        - check_window: "Sync Dashboard - Idle"
+        
+    - name: "Sync Status - In Progress"
+      url: "/dashboard/sync"
+      setup: trigger_sync
+      steps:
+        - wait_for: "[data-testid='sync-progress-bar']"
+        - check_window: "Sync Dashboard - In Progress"
+        
+  # CLI Command Output
+  cli_output:
+    - name: "CLI - Module List"
+      command: "agileplus module list --format=json"
+      visual_check: false
+      text_check: true
+      expected_output_contains:
+        - "module_id"
+        - "module_name"
+        - "status"
+        
+    - name: "CLI - Sync Status"
+      command: "agileplus sync status"
+      visual_check: false
+      text_check: true
+      expected_output_contains:
+        - "last_sync"
+        - "pending_changes"
+        - "conflicts"
+
+# Cross-browser testing
+browsers:
+  - name: Chrome
+    version: latest
+    platform: macOS
+    
+  - name: Firefox
+    version: latest
+    platform: macOS
+    
+  - name: Safari
+    version: latest
+    platform: macOS
+    
+  - name: Chrome
+    version: latest
+    platform: Windows
+    
+  - name: Chrome
+    version: latest
+    platform: Linux
+
+# Responsive breakpoints
+responsive:
+  - name: Desktop
+    width: 1920
+    height: 1080
+    
+  - name: Laptop
+    width: 1440
+    height: 900
+    
+  - name: Tablet
+    width: 768
+    height: 1024
+    
+  - name: Mobile
+    width: 375
+    height: 812
+
+# Self-healing configuration
+self_healing:
+  enabled: true
+  strategies:
+    - name: "AI-assisted locator healing"
+      description: "When a selector fails, use AI to find the element"
+      enabled: true
+      
+    - name: "Layout shift tolerance"
+      description: "Allow minor layout changes without failing"
+      threshold: 5  # pixels
+      
+    - name: "Dynamic content masking"
+      description: "Mask regions that change frequently"
+      selectors:
+        - ".live-data"
+        - ".sync-indicator"
+        - "[data-dynamic]"
+
+# Integration with Playwright MCP
+mcp_integration:
+  enabled: true
+  server_url: "http://localhost:3001"
+  
+  # Map Playwright actions to Eyes checkpoints
+  action_mapping:
+    - playwright: "click"
+      eyes: "check_window"
+      
+    - playwright: "fill"
+      eyes: "check_region"
+      
+    - playwright: "navigate"
+      eyes: "check_window"
+      delay: 500  # ms to wait for page load
+
+# Baseline management
+baselines:
+  auto_save: false  # Require manual approval
+  branches:
+    main: "production_baseline"
+    develop: "develop_baseline"
+    feature/*: "feature_baseline"
+    
+  # When to update baselines
+  update_conditions:
+    - intentional_ui_change
+    - design_system_update
+    - accessibility_improvement
+
+# Notifications
+notifications:
+  slack:
+    webhook: ${SLACK_WEBHOOK_URL}
+    on_failure: true
+    on_baseline_update: true
+    
+  github:
+    create_pr_comment: true
+    include_diff_images: true
+
+# Reporting
+reporting:
+  format: html
+  output_dir: test-results/applitools
+  include:
+    - step_by_step
+    - diff_images
+    - baseline_comparison
+    - accessibility_report

@@ -1,0 +1,398 @@
+# AgilePlus TestRigor Specification
+# https://testrigor.com
+# Plain English → Executable Tests via AI
+
+name: "AgilePlus Platform"
+url: ${AGILEPLUS_BASE_URL:-http://localhost:8000}
+
+# Authentication
+credentials:
+  api_key: ${TESTRIGOR_API_KEY}
+  test_suite_id: ${TESTRIGOR_SUITE_ID}
+
+# TestRigor Language Reference:
+# - "click" → click on element
+# - "enter" → type into input
+# - "check" → verify element exists/text matches
+# - "wait" → wait for element/condition
+# - "refresh" → reload page
+# - "click with text" → click element containing text
+
+# ============================================
+# Feature: Bidirectional Plane.so Sync
+# FR: FR-SYNC-001 to FR-SYNC-005
+# ============================================
+tests:
+  - name: "Sync Pull - Import New Feature from Plane.so"
+    steps: |
+      login as "test_user" with password "test_pass"
+      navigate to "Sync"
+      click "Pull from Plane.so"
+      wait for "Sync in progress" to disappear
+      check that page contains "Features imported:"
+      check that page contains button "Review Imported Features"
+      
+  - name: "Sync Push - Publish Feature to Plane.so"
+    steps: |
+      login as "test_user" with password "test_pass"
+      navigate to "Features"
+      click with text "Create Feature"
+      enter "Test Push Feature" into "Feature Name"
+      click "Save"
+      click "Sync to Plane.so"
+      wait for "Successfully published to Plane.so"
+      check that page contains "Plane Work Item ID:"
+      
+  - name: "Sync Conflict Detection"
+    steps: |
+      login as "test_user" with password "test_pass"
+      navigate to "Sync"
+      click "Pull from Plane.so"
+      wait for "Conflicts detected"
+      check that page contains table with columns "Feature, Local State, Plane State, Resolution"
+      click with text "Merge" on the right of "Feature A"
+      check that page contains "Conflict resolved"
+      
+  - name: "Sync Status Dashboard"
+    steps: |
+      login as "test_user" with password "test_pass"
+      navigate to "Dashboard"
+      check that page contains "Last Sync"
+      check that page contains "Pending Changes"
+      check that page contains "Sync Status"
+      click "View Sync History"
+      check that page contains table with columns "Timestamp, Direction, Status, Details"
+
+# ============================================
+# Feature: Feature Specification Management
+# FR: FR-SPEC-001 to FR-SPEC-010
+# ============================================
+  - name: "Create Feature with PRD Structure"
+    steps: |
+      login as "test_user" with password "test_pass"
+      navigate to "Features"
+      click "New Feature"
+      enter "Mobile Authentication" into "Title"
+      enter "FR-AUTH-001" into "Feature ID"
+      click "Generate from PRD"
+      enter file "prd/mobile-auth.md"
+      click "Parse PRD"
+      wait for "PRD parsed successfully"
+      check that page contains "User Stories: 5"
+      check that page contains "Acceptance Criteria: 12"
+      click "Create Feature"
+      check that page contains "Feature created successfully"
+      
+  - name: "View Feature Hierarchy"
+    steps: |
+      login as "test_user" with password "test_pass"
+      navigate to "Features"
+      click with text "Auth System"
+      check that page contains "Overview"
+      check that page contains "User Stories"
+      check that page contains "Work Packages"
+      check that page contains "Specifications"
+      click "Dependencies"
+      check that page contains tree with "Blocks, Blocked By"
+      
+  - name: "Edit Feature with Rich Text"
+    steps: |
+      login as "test_user" with password "test_pass"
+      navigate to "Features"
+      click with text "API Design"
+      click "Edit"
+      enter "## New Section" into "Overview"
+      click "Save"
+      check that page contains "Feature updated"
+      check that page contains "## New Section"
+      
+  - name: "Feature Search and Filter"
+    steps: |
+      login as "test_user" with password "test_pass"
+      navigate to "Features"
+      enter "authentication" into "Search"
+      check that table contains row with text "Auth System"
+      check that table contains row with text "Login Flow"
+      click "Filters"
+      select "Status" as "In Progress"
+      check that table only contains rows with text "In Progress"
+      click "Clear Filters"
+      check that table contains more than 2 rows
+
+# ============================================
+# Feature: Work Package Management
+# FR: FR-WP-001 to FR-WP-008
+# ============================================
+  - name: "Create Work Package from Feature"
+    steps: |
+      login as "test_user" with password "test_pass"
+      navigate to "Features"
+      click with text "API Design"
+      click "Work Packages"
+      click "Create Work Package"
+      enter "Database Schema" into "Title"
+      select "Type" as "Implementation"
+      enter "Design and implement the database schema" into "Description"
+      click "Create"
+      check that page contains "Work Package created"
+      check that page contains link "Parent: API Design"
+      
+  - name: "Work Package Kanban Board"
+    steps: |
+      login as "test_user" with password "test_pass"
+      navigate to "Work Packages"
+      check that page contains column "Backlog"
+      check that page contains column "In Progress"
+      check that page contains column "Review"
+      check that page contains column "Done"
+      drag "Database Schema" from "Backlog" to "In Progress"
+      check that "Database Schema" is in column "In Progress"
+      
+  - name: "Work Package Timeline View"
+    steps: |
+      login as "test_user" with password "test_pass"
+      navigate to "Work Packages"
+      click "Timeline"
+      check that page contains timeline with "Months"
+      check that page contains bar "Database Schema"
+      click bar "Database Schema"
+      check that popup contains "Start Date"
+      check that popup contains "End Date"
+      check that popup contains "Progress"
+
+# ============================================
+# Feature: Agent Orchestration
+# FR: FR-AGENT-001 to FR-AGENT-006
+# ============================================
+  - name: "Dispatch Agent to Work Package"
+    steps: |
+      login as "test_user" with password "test_pass"
+      navigate to "Work Packages"
+      click with text "Database Schema"
+      click "Assign Agent"
+      select "Agent" as "Claude"
+      select "Strategy" as "TDD-First"
+      click "Dispatch"
+      wait for "Agent dispatched"
+      check that page contains "Status: Running"
+      check that page contains "Logs"
+      
+  - name: "Monitor Agent Progress"
+    steps: |
+      login as "test_user" with password "test_pass"
+      navigate to "Agents"
+      click with text "Claude - Database Schema"
+      check that page contains "Live Log Stream"
+      check that page contains "Progress: 45%"
+      check that page contains "Files Modified"
+      wait for "Progress: 100%"
+      check that page contains "Status: Completed"
+      check that page contains button "Review Changes"
+      
+  - name: "Agent Configuration"
+    steps: |
+      login as "test_user" with password "test_pass"
+      navigate to "Settings"
+      click "Agents"
+      click "Configure Claude"
+      enter "claude-3-5-sonnet-20241022" into "Model"
+      enter "4" into "Max Parallel Agents"
+      check "Enable Coderabbit Review"
+      click "Save"
+      check that page contains "Configuration saved"
+
+# ============================================
+# Feature: Plane.so Integration
+# FR: FR-PLANE-001 to FR-PLANE-010
+# ============================================
+  - name: "Connect Plane.so Workspace"
+    steps: |
+      login as "test_user" with password "test_pass"
+      navigate to "Settings"
+      click "Integrations"
+      click "Plane.so"
+      enter "workspace-slug" into "Workspace Slug"
+      enter "API_KEY_123" into "API Key"
+      click "Test Connection"
+      wait for "Connection successful"
+      check that page contains "Projects: 12"
+      check that page contains "Features: 45"
+      click "Enable Sync"
+      check that page contains "Sync enabled"
+      
+  - name: "Map Plane Project to AgilePlus Module"
+    steps: |
+      login as "test_user" with password "test_pass"
+      navigate to "Settings"
+      click "Integrations"
+      click "Plane.so"
+      click "Project Mapping"
+      select "Plane Project" as "Backend API"
+      select "AgilePlus Module" as "API Development"
+      click "Save Mapping"
+      check that page contains "Mapping saved"
+      check that table contains row with "Backend API → API Development"
+
+# ============================================
+# Feature: Dashboard and Analytics
+# FR: FR-DASH-001 to FR-DASH-005
+# ============================================
+  - name: "View Dashboard Metrics"
+    steps: |
+      login as "test_user" with password "test_pass"
+      navigate to "Dashboard"
+      check that page contains metric "Active Features" with value
+      check that page contains metric "Completed Work Packages" with value
+      check that page contains chart "Velocity Trend"
+      check that page contains chart "Agent Utilization"
+      click "Last 7 Days" dropdown
+      select "Last 30 Days"
+      check that chart values changed
+      
+  - name: "Drill Down from Chart"
+    steps: |
+      login as "test_user" with password "test_pass"
+      navigate to "Dashboard"
+      click on bar in chart "Work Package Completion"
+      check that page contains "Work Packages for March 2026"
+      check that table contains work package names
+      click on row "Database Schema"
+      check that page navigates to work package detail
+
+# ============================================
+# Feature: Git Operations
+# FR: FR-GIT-001 to FR-GIT-008
+# ============================================
+  - name: "View Git Activity"
+    steps: |
+      login as "test_user" with password "test_pass"
+      navigate to "Work Packages"
+      click with text "Database Schema"
+      click "Git Activity"
+      check that page contains timeline with "Commits"
+      check that page contains "Branches"
+      check that page contains "Pull Requests"
+      click "View Diff"
+      check that page contains code diff
+      
+  - name: "Create Branch from Work Package"
+    steps: |
+      login as "test_user" with password "test_pass"
+      navigate to "Work Packages"
+      click with text "Database Schema"
+      click "Create Branch"
+      enter "feat/db-schema-wp123" into "Branch Name"
+      select "Base Branch" as "develop"
+      click "Create"
+      wait for "Branch created"
+      check that page contains link to "View on GitHub"
+
+# ============================================
+# Cross-Cutting Concerns
+# ============================================
+  - name: "Dark Mode Toggle"
+    steps: |
+      login as "test_user" with password "test_pass"
+      navigate to "Dashboard"
+      check that page has class "light-mode"
+      click "Toggle Theme"
+      check that page has class "dark-mode"
+      refresh the page
+      check that page still has class "dark-mode"
+      
+  - name: "Responsive Mobile Menu"
+    steps: |
+      set viewport to mobile
+      navigate to "Dashboard"
+      check that page contains "☰" hamburger menu
+      click "☰"
+      check that menu contains "Features"
+      check that menu contains "Work Packages"
+      check that menu contains "Sync"
+      click "Features"
+      check that page navigates to Features
+      
+  - name: "Keyboard Navigation"
+    steps: |
+      login as "test_user" with password "test_pass"
+      navigate to "Dashboard"
+      press key "Tab" 3 times
+      check that focused element is "Features" link
+      press key "Enter"
+      check that page is "Features"
+      press key "Tab" 5 times
+      check that focused element is "New Feature" button
+      press key "Enter"
+      check that modal "Create Feature" is visible
+
+# ============================================
+# Test Data Management
+# ============================================
+test_data:
+  users:
+    - email: test_user@example.com
+      password: test_pass
+      role: admin
+      
+  features:
+    - id: FR-TEST-001
+      title: "Test Feature One"
+      status: draft
+      
+    - id: FR-TEST-002
+      title: "Test Feature Two"
+      status: in_progress
+      
+  work_packages:
+    - id: WP-TEST-001
+      title: "Test Work Package"
+      feature_id: FR-TEST-002
+      status: backlog
+
+# ============================================
+# Execution Configuration
+# ============================================
+execution:
+  parallel: true
+  max_parallel: 5
+  retry_failed: true
+  retry_count: 2
+  
+  # Self-healing configuration
+  self_healing:
+    enabled: true
+    ai_assistance: true
+    layout_tolerance: 5
+    
+  # Visual validation
+  visual_testing:
+    enabled: true
+    tool: applitools
+    config_file: applitools.config.yaml
+
+# ============================================
+# CI/CD Integration
+# ============================================
+ci:
+  triggers:
+    - push_to_main
+    - pr_open
+    - nightly_schedule
+    
+  environments:
+    - name: staging
+      url: https://staging.agileplus.dev
+      
+    - name: production
+      url: https://agileplus.dev
+      
+  notifications:
+    slack:
+      channel: "#agileplus-ci"
+      on_failure: true
+      on_success: false
+      
+    email:
+      recipients:
+        - team@agileplus.dev
+      on_failure: true
