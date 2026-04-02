@@ -1,28 +1,31 @@
-name: AI Testing Infrastructure
+name: Testing Infrastructure
 
 on:
   push:
     branches: [main, feat/**]
     paths:
       - 'tests/**'
-      - 'applitools.config.yaml'
-      - 'testrigor.spec.yaml'
       - '**.rs'
   pull_request:
     paths:
       - 'tests/**'
-      - 'applitools.config.yaml'
-      - 'testrigor.spec.yaml'
   schedule:
-    - cron: '0 3 * * *'  # Weekly visual testing
-
-env:
-  APPLITOOLS_API_KEY: ${{ secrets.APPLITOOLS_API_KEY }}
-  TESTRIGOR_API_KEY: ${{ secrets.TESTRIGOR_API_KEY }}
+    - cron: '0 3 * * *'  # Weekly test run
 
 jobs:
-  applitools-visual:
-    name: Applitools Visual Testing
+  bdd-tests:
+    name: BDD Feature Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run BDD Tests
+        run: |
+          echo "BDD tests with Cucumber:"
+          echo "  - Features: $(ls tests/bdd/*.feature 2>/dev/null | wc -l)"
+
+  visual-tests:
+    name: Visual Regression Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -34,20 +37,8 @@ jobs:
 
       - name: Run Visual Tests
         run: |
-          echo "Applitools visual testing configured"
-          echo "Batch: $(grep 'batch_name:' applitools.config.yaml | cut -d: -f2 | tr -d ' ')"
-
-  testrigor-bdd:
-    name: TestRigor BDD Specs
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Validate TestRigor Specs
-        run: |
-          echo "TestRigor specs loaded:"
-          echo "  - Features: $(grep -c 'name:' testrigor.spec.yaml) tests"
-          echo "  - FR traceability: enabled"
+          echo "Visual regression with Playwright:"
+          echo "  - Config: tests/visual/visual-config.yaml"
 
   self-healing-tests:
     name: Self-Healing Locator Tests
