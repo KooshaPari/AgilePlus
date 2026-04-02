@@ -8,6 +8,63 @@ This is the execution WBS for the next polyrepo stabilization tranche after the 
 wave. It supersedes the older quarter-scale plan for immediate execution order and reflects the live
 repo, worktree, stash, and PR geometry on 2026-04-02.
 
+## Execution Update 2026-04-02
+
+### Runtime and Evidence
+
+- Captured a fresh AgilePlus event snapshot to `/tmp/agileplus-events-latest.csv`.
+- Current event history is effectively empty for the tranche; the snapshot contains only one recent
+  row:
+  - `feature|2|state_transitioned|2026-04-02T05:16:03.479064+00:00`
+- This confirms that runtime transitions and tranche progress are still under-recorded in the live
+  AgilePlus surfaces.
+
+### phenotype-infrakit
+
+- Base checkout at the shelf root is still polluted by sibling repo state and cannot be treated as a
+  safe edit surface.
+- `.worktrees/feat/cache-adapter-impl` is detached `HEAD` and requires explicit classification before
+  use.
+- `.worktrees/feat/phenotype-crypto-complete` contains real implementation drift on
+  `feat/crypto-complete-rebased`:
+  - modified `Cargo.toml`
+  - modified `crates/phenotype-crypto/Cargo.toml`
+  - modified `crates/phenotype-crypto/src/lib.rs`
+  - untracked `encryption.rs`, `hash.rs`, `keys.rs`, `signatures.rs`, and `tests/`
+- No stash entries were observed.
+
+### thegent
+
+- `platforms/worktrees/thegent/pr-876-fix` is the active non-root lane and sits
+  `ahead 29, behind 7` relative to `origin/chore/sync-docs-security-deps`.
+- `platforms/thegent-pr882` remains stale metadata and still reports shelf-root pollution through
+  relative paths, so it should not be used as an active edit surface.
+- Two stashes remain on `main` and must be preserved until they are reclassified:
+  - `stash@{0}` `feat(thegent): enhance phench, governance providers, observability`
+  - `stash@{1}` `docs(prd): expand PRD with 5 feature epics (#888)`
+
+### agentapi-plusplus
+
+- Root checkout still mixes intended governance or chat edits with massive tracked deletions under
+  `docs/node_modules/**`.
+- The `docs/node_modules` churn is consistent with generated-install artifact cleanup, not with
+  intentional source changes.
+- First non-PR action remains classification and hygiene, not branch publication.
+
+### cloud
+
+- Preserved local branch `cloud/chore/plan-sync-20260402` still contains only two plan-file updates:
+  - `plans/gastown-town-centric-refactor.md`
+  - `plans/product-analytics-improvements.md`
+- No extra local diff exists outside that preserved branch.
+- Publish remains blocked by `403` against `Kilo-Org/cloud`.
+
+### koosha-portfolio
+
+- Still not a git repo.
+- Current visible surface is only `.next/`, `styles/globals.css`, and `.DS_Store`.
+- It remains a boundary folder and stays out of the PR queue until explicit onboarding.
+
 ## Phase 1: Active PR Lane Completion
 
 ### 1.1 AgilePlus split PR tranche
