@@ -12,7 +12,7 @@ POSTGRES_DIR=".agileplus/postgres-data"
 echo "=== AgilePlus: Plane.so Local Setup ==="
 
 # 1. Create data directories
-mkdir -p .agileplus/logs "$POSTGRES_DIR"
+mkdir -p .agileplus/logs .agileplus/evidence "$POSTGRES_DIR"
 
 # 2. Initialize PostgreSQL if needed
 if [ ! -f "$POSTGRES_DIR/PG_VERSION" ]; then
@@ -40,31 +40,34 @@ fi
 if [ ! -d "$PLANE_DIR" ]; then
     echo "Cloning Plane.so..."
     git clone --depth=1 --branch "$PLANE_REF" https://github.com/makeplane/plane.git "$PLANE_DIR"
-    echo "Installing Python dependencies..."
-    cd "$PLANE_DIR/apps/api"
-    python3 -m venv .venv
-    source .venv/bin/activate
-    pip install -r requirements.txt
-    cd -
 else
     echo "Plane already present at $PLANE_DIR"
 fi
 
-# 4. Clone/setup plane.so web frontend if not present
-if [ ! -d "$PLANE_DIR" ]; then
-    # Cloned in step 3
-    true
+if [ ! -d "$PLANE_DIR/node_modules" ]; then
+    echo "Installing Plane dependencies (monorepo)..."
+    cd "$PLANE_DIR"
+    if command -v bun &>/dev/null; then
+        bun install
+    elif command -v pnpm &>/dev/null; then
+        pnpm install
+    else
+        echo "Error: bun or pnpm is required."
+        exit 1
+    fi
+    cd -
+else
+    echo "Plane monorepo dependencies already present."
 fi
 
-echo "Installing Plane dependencies (monorepo)..."
-cd "$PLANE_DIR"
-if command -v bun &>/dev/null; then
-    bun install
-elif command -v pnpm &>/dev/null; then
-    pnpm install
-else
-    echo "Error: bun or pnpm is required."
-    exit 1
+echo "Installing Python dependencies..."
+cd "$PLANE_DIR/apps/api"
+if [ ! -x .venv/bin/python ]; then
+    python3 -m venv .venv
+fi
+source .venv/bin/activate
+if ! python -c "import django, dj_database_url, corsheaders, requests" >/dev/null 2>&1; then
+    pip install -r requirements.txt
 fi
 cd -
 
@@ -73,11 +76,11 @@ ENV_FILE="$PLANE_DIR/apps/api/.env"
 if [ ! -f "$ENV_FILE" ]; then
     GENERATED_SECRET_KEY=$(openssl rand -hex 32)
     cat > "$ENV_FILE" << ENVEOF
-DATABASE_URL=postgresql://agileplus:agileplus-dev@localhost:5432/plane
-REDIS_URL=redis://localhost:6379
+DATABASE_URL=postgresql://agileplus:agileplus-dev@127.0.0.1:5432/plane
+REDIS_URL=redis://127.0.0.1:6379
 SECRET_KEY=${GENERATED_SECRET_KEY}
-WEB_URL=http://localhost:3100
-CORS_ALLOWED_ORIGINS=http://localhost:3100,http://localhost:3000
+WEB_URL=http://127.0.0.1:3100
+CORS_ALLOWED_ORIGINS=http://127.0.0.1:3100,http://127.0.0.1:3000
 DEBUG=1
 ENVEOF
 fi
@@ -85,5 +88,5 @@ fi
 echo ""
 echo "=== Setup Complete ==="
 echo "Start the dev stack with: process-compose up"
-echo "Dashboard: http://localhost:3000/dashboard"
-echo "Plane.so:  http://localhost:3100"
+echo "Dashboard: http://127.0.0.1:3000/dashboard"
+echo "Plane.so:  http://127.0.0.1:3100"

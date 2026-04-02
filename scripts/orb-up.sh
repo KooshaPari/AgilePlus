@@ -14,6 +14,29 @@ POSTGRES_USER="agileplus"
 POSTGRES_PASSWORD="${PLANE_POSTGRES_PASSWORD:-agileplus-dev}"
 POSTGRES_DB="plane"
 
+select_postgres_image() {
+    if [ -n "${AGILEPLUS_POSTGRES_IMAGE:-}" ]; then
+        printf '%s\n' "${AGILEPLUS_POSTGRES_IMAGE}"
+        return 0
+    fi
+
+    local cached_candidates=(
+        "postgres:15.7-alpine"
+        "postgres:16-alpine"
+    )
+    local image
+
+    for image in "${cached_candidates[@]}"; do
+        if docker image inspect "${image}" >/dev/null 2>&1; then
+            printf '%s\n' "${image}"
+            return 0
+        fi
+    done
+
+    echo "No cached Postgres image available. Set AGILEPLUS_POSTGRES_IMAGE to a local image name." >&2
+    exit 1
+}
+
 start_container() {
     name="$1"
     image="$2"
@@ -57,9 +80,10 @@ start_container "${DRAGONFLY_NAME}" \
     6379 \
     --maxmemory=4gb --bind 0.0.0.0
 
-echo "--- Starting PostgreSQL 16 ---"
+echo "--- Starting PostgreSQL ---"
+POSTGRES_IMAGE="$(select_postgres_image)"
 start_container "${POSTGRES_NAME}" \
-    "postgres:16-alpine" \
+    "${POSTGRES_IMAGE}" \
     "${AGILEPLUS_POSTGRES_PORT}" \
     5432 \
     -e "POSTGRES_USER=${POSTGRES_USER}" \
