@@ -39,7 +39,8 @@ from prose-only notes to concrete evidence artifacts.
 
 - `/tmp/agileplus-events-latest.csv`
 - `artifacts/local-deploy-surface-baseline.md` now records the clean runtime worktree, the `scripts/dev-up.sh` invocation, and the latest snapshot entry.
-- `scripts/local-health-check.sh` and `scripts/authkit-smoke.sh` now exist in `AgilePlus/.worktrees/chore-runtime-local-deploy-clean`; the remaining blocker is collecting fresh execution evidence from those scripts against the live local stack and a real provider domain.
+- `scripts/local-health-check.sh` and `scripts/authkit-smoke.sh` now exist in `AgilePlus/.worktrees/chore-runtime-local-deploy-clean`, and the port/bootstrap glue has been repaired.
+- The remaining blocker is no longer missing scripts: `neo4j` still aborts during startup, `plane-api` still exits from the stale `.agileplus/plane/apiserver` path, and live execution evidence remains incomplete until those services boot.
 - health-check output summary
 - local deploy evidence note with command paths and result state
 
