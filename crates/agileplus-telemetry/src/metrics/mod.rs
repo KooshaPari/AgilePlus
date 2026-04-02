@@ -1,11 +1,14 @@
 //! Counters and histograms for AgilePlus operational metrics.
 //!
-//! Instruments are stored as a [`MetricsRecorder`] and exported via the
+//! Instruments are stored in [`MetricsRecorder`] and exported via the
 //! OpenTelemetry Meter.  A [`MetricSnapshot`] type captures point-in-time
 //! values for persistence to SQLite.
 
 use std::{
-    sync::atomic::{AtomicU64, Ordering},
+    sync::{
+        atomic::{AtomicU64, Ordering},
+        Arc,
+    },
     time::Duration,
 };
 
@@ -26,13 +29,10 @@ pub struct MetricsRecorder {
     agent_runs: Counter<u64>,
     review_cycles: Counter<u64>,
     command_duration: Histogram<f64>,
-    /// Internal delta tracking for snapshot (monotonic).
     agent_runs_total: AtomicU64,
     review_cycles_total: AtomicU64,
-    /// Last snapshot baseline (for delta calculation).
     agent_runs_snapshot: AtomicU64,
     review_cycles_snapshot: AtomicU64,
-    // T093: domain-level instruments
     events_processed: Counter<u64>,
     sync_duration_ms: Histogram<f64>,
     cache_hit_rate: Gauge<f64>,
@@ -41,7 +41,6 @@ pub struct MetricsRecorder {
 }
 
 impl MetricsRecorder {
-    /// Construct using a configured `Meter`.
     pub fn new(meter: &Meter) -> Self {
         let agent_runs = meter
             .u64_counter("agileplus.agent.runs")
@@ -61,7 +60,6 @@ impl MetricsRecorder {
             ])
             .build();
 
-        // T093: domain-level instruments
         let events_processed = meter
             .u64_counter("events_processed")
             .with_description("Total events appended to the event store")
@@ -105,11 +103,6 @@ impl MetricsRecorder {
         }
     }
 
-    // -----------------------------------------------------------------------
-    // Recording methods
-    // -----------------------------------------------------------------------
-
-    /// Increment the `agileplus.agent.runs` counter.
     pub fn record_agent_run(&self, feature_slug: &str, wp_id: &str, agent_type: &str) {
         let labels = [
             KeyValue::new("feature_slug", feature_slug.to_owned()),
@@ -120,7 +113,6 @@ impl MetricsRecorder {
         self.agent_runs_total.fetch_add(1, Ordering::Relaxed);
     }
 
-    /// Increment the `agileplus.review.cycles` counter.
     pub fn record_review_cycle(&self, feature_slug: &str, wp_id: &str, cycle: u32) {
         let labels = [
             KeyValue::new("feature_slug", feature_slug.to_owned()),
@@ -131,36 +123,26 @@ impl MetricsRecorder {
         self.review_cycles_total.fetch_add(1, Ordering::Relaxed);
     }
 
-    // -----------------------------------------------------------------------
-    // T093: Domain-level instruments
-    // -----------------------------------------------------------------------
-
-    /// Increment `events_processed` counter.
     pub fn record_event_processed(&self, labels: &[KeyValue]) {
         self.events_processed.add(1, labels);
     }
 
-    /// Record a sync operation duration in milliseconds.
     pub fn record_sync_duration(&self, duration_ms: f64, labels: &[KeyValue]) {
         self.sync_duration_ms.record(duration_ms, labels);
     }
 
-    /// Set the cache hit rate (0.0 to 1.0).
     pub fn set_cache_hit_rate(&self, ratio: f64, labels: &[KeyValue]) {
         self.cache_hit_rate.record(ratio, labels);
     }
 
-    /// Record an API request duration in milliseconds.
     pub fn record_api_request_duration(&self, duration_ms: f64, labels: &[KeyValue]) {
         self.api_request_duration_ms.record(duration_ms, labels);
     }
 
-    /// Set the count of active (non-terminal) features.
     pub fn set_active_features(&self, count: u64, labels: &[KeyValue]) {
         self.active_features.record(count, labels);
     }
 
-    /// Record an observation in the `agileplus.command.duration_ms` histogram.
     pub fn record_command_duration(
         &self,
         command: &str,
@@ -175,13 +157,6 @@ impl MetricsRecorder {
         self.command_duration.record(ms, &labels);
     }
 
-    // -----------------------------------------------------------------------
-    // Snapshot
-    // -----------------------------------------------------------------------
-
-    /// Capture a point-in-time snapshot with delta values since the last call.
-    ///
-    /// Callers persist this to SQLite via `StoragePort`.
     pub fn collect_snapshot(&self, command: &str, duration: Duration) -> MetricSnapshot {
         let total_runs = self.agent_runs_total.load(Ordering::Relaxed);
         let total_cycles = self.review_cycles_total.load(Ordering::Relaxed);
@@ -200,7 +175,6 @@ impl MetricsRecorder {
         }
     }
 
-    /// Reset internal counters — intended for test isolation only.
     pub fn reset(&self) {
         self.agent_runs_total.store(0, Ordering::Relaxed);
         self.review_cycles_total.store(0, Ordering::Relaxed);
@@ -209,16 +183,6 @@ impl MetricsRecorder {
     }
 }
 
-// ---------------------------------------------------------------------------
-// T093: Standalone init helper
-// ---------------------------------------------------------------------------
-
-/// Initialise all domain metrics instruments on the given meter.
-///
-/// This registers the instruments so that the OTel SDK knows about them even
-/// before any observations are recorded.  Callers that use [`MetricsRecorder`]
-/// directly do not need to call this function — it is provided as a
-/// convenience for integrations that hold only a `&Meter` reference.
 pub fn init_metrics(meter: &Meter) {
     let _ = meter.u64_counter("events_processed").build();
     let _ = meter.f64_histogram("sync_duration_ms").build();
@@ -228,10 +192,63 @@ pub fn init_metrics(meter: &Meter) {
 }
 
 // ---------------------------------------------------------------------------
+// AgilePlusMetrics
+// ---------------------------------------------------------------------------
+
+pub struct AgilePlusMetrics {
+    inner: Arc<MetricsRecorder>,
+}
+
+impl Clone for AgilePlusMetrics {
+    fn clone(&self) -> Self {
+        Self { inner: self.inner.clone() }
+    }
+}
+
+impl AgilePlusMetrics {
+    pub fn new(meter: &Meter) -> Self {
+        Self {
+            inner: Arc::new(MetricsRecorder::new(meter)),
+        }
+    }
+
+    pub fn events_processed(&self, labels: &[(&str, &str)]) {
+        let kv: Vec<KeyValue> = labels
+            .iter()
+            .map(|(k, v)| KeyValue::new(*k, v.to_string()))
+            .collect();
+        self.inner.record_event_processed(&kv);
+    }
+
+    pub fn record_sync_duration(&self, duration_ms: f64, labels: &[(&str, &str)]) {
+        let kv: Vec<KeyValue> = labels
+            .iter()
+            .map(|(k, v)| KeyValue::new(*k, v.to_string()))
+            .collect();
+        self.inner.record_sync_duration(duration_ms, &kv);
+    }
+
+    pub fn set_cache_hit_rate(&self, ratio: f64, labels: &[(&str, &str)]) {
+        let kv: Vec<KeyValue> = labels
+            .iter()
+            .map(|(k, v)| KeyValue::new(*k, v.to_string()))
+            .collect();
+        self.inner.set_cache_hit_rate(ratio, &kv);
+    }
+
+    pub fn record_api_request_duration(&self, duration_ms: f64, labels: &[(&str, &str)]) {
+        let kv: Vec<KeyValue> = labels
+            .iter()
+            .map(|(k, v)| KeyValue::new(*k, v.to_string()))
+            .collect();
+        self.inner.record_api_request_duration(duration_ms, &kv);
+    }
+}
+
+// ---------------------------------------------------------------------------
 // MetricSnapshot
 // ---------------------------------------------------------------------------
 
-/// Point-in-time metric values for SQLite persistence.
 #[derive(Debug, Clone)]
 pub struct MetricSnapshot {
     pub command: String,
@@ -274,7 +291,6 @@ mod tests {
         assert_eq!(snap.agent_runs, 1);
         assert_eq!(snap.review_cycles, 1);
 
-        // Second snapshot should have delta=0 since no new events.
         let snap2 = rec.collect_snapshot("implement", Duration::from_millis(50));
         assert_eq!(snap2.agent_runs, 0);
         assert_eq!(snap2.review_cycles, 0);
@@ -292,10 +308,8 @@ mod tests {
     fn histogram_records_without_panic() {
         let rec = test_recorder();
         rec.record_command_duration("implement", Some("001-sde"), Duration::from_millis(42));
-        // No assertion — just verify no panic.
     }
 
-    // T093: domain instrument tests
     #[test]
     fn events_processed_counter_does_not_panic() {
         let rec = test_recorder();
@@ -334,5 +348,46 @@ mod tests {
         let provider = SdkMeterProvider::builder().build();
         let meter = provider.meter("agileplus-init-test");
         super::init_metrics(&meter);
+    }
+
+    #[test]
+    fn agileplus_metrics_clone() {
+        let provider = SdkMeterProvider::builder().build();
+        let meter = provider.meter("agileplus-test");
+        let metrics = AgilePlusMetrics::new(&meter);
+        let _ = metrics.clone();
+    }
+
+    #[test]
+    fn agileplus_metrics_events_processed() {
+        let provider = SdkMeterProvider::builder().build();
+        let meter = provider.meter("agileplus-test");
+        let metrics = AgilePlusMetrics::new(&meter);
+        metrics.events_processed(&[("source", "git")]);
+        metrics.events_processed(&[]);
+    }
+
+    #[test]
+    fn agileplus_metrics_sync_duration() {
+        let provider = SdkMeterProvider::builder().build();
+        let meter = provider.meter("agileplus-test");
+        let metrics = AgilePlusMetrics::new(&meter);
+        metrics.record_sync_duration(42.5, &[("sync_type", "full")]);
+    }
+
+    #[test]
+    fn agileplus_metrics_cache_hit_rate() {
+        let provider = SdkMeterProvider::builder().build();
+        let meter = provider.meter("agileplus-test");
+        let metrics = AgilePlusMetrics::new(&meter);
+        metrics.set_cache_hit_rate(0.75, &[]);
+    }
+
+    #[test]
+    fn agileplus_metrics_api_request_duration() {
+        let provider = SdkMeterProvider::builder().build();
+        let meter = provider.meter("agileplus-test");
+        let metrics = AgilePlusMetrics::new(&meter);
+        metrics.record_api_request_duration(12.3, &[("endpoint", "/health")]);
     }
 }

@@ -192,6 +192,15 @@ impl Drop for SpanGuard {
     }
 }
 
+/// Alias for [`telemetry_layer`] — a tracing layer for Axum that exports
+/// spans via OTLP HTTP/proto exporter.
+pub fn trace_layer<S>() -> impl Layer<S>
+where
+    S: Subscriber + for<'a> LookupSpan<'a>,
+{
+    telemetry_layer()
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
