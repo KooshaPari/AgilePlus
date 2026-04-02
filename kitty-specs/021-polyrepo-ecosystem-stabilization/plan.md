@@ -1,5 +1,15 @@
 # Plan: Polyrepo Ecosystem Stabilization
 
+## Current Tranche Override
+
+The quarter-scale plan below is not the active execution surface for the current stabilization wave.
+The live next-step WBS now lives in:
+
+- `artifacts/polyrepo-next-tranche-wbs-20260402.md`
+
+Use that artifact for immediate execution order, PR-lane sequencing, and blocked or boundary cohort
+handling. Keep this plan as the broader ecosystem target state and governance horizon.
+
 ## Overview
 
 This plan orchestrates the stabilization of 247 repositories across the KooshaPari GitHub organization through a 4-phase approach targeting full ecosystem governance within one quarter.
