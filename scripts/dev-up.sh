@@ -21,12 +21,13 @@ echo "  minio:    ${AGILEPLUS_MINIO_PORT}"
 echo "  plane:    ${AGILEPLUS_PLANE_API_PORT}"
 echo "  web:      ${AGILEPLUS_PLANE_WEB_PORT}"
 echo "  api:      ${AGILEPLUS_API_PORT}"
+echo "  pc ctl:   ${AGILEPLUS_PROCESS_COMPOSE_PORT}"
 
 if [[ "${1:-}" == "--foreground" ]]; then
-  exec process-compose up -f process-compose.yml
+  exec env PC_PORT_NUM="${AGILEPLUS_PROCESS_COMPOSE_PORT}" process-compose up -f process-compose.yml
 fi
 
-exec process-compose up \
+exec env PC_PORT_NUM="${AGILEPLUS_PROCESS_COMPOSE_PORT}" process-compose up \
   -f process-compose.yml \
   -t=false \
   -D \

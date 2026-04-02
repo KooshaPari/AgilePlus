@@ -20,7 +20,22 @@ start_container() {
     host_port="$3"
     container_port="$4"
     shift 4
-    extra_args=("$@")
+    docker_args=()
+    command_args=()
+    command_mode=false
+
+    for arg in "$@"; do
+        if [ "$arg" = "--" ] && [ "$command_mode" = false ]; then
+            command_mode=true
+            continue
+        fi
+
+        if [ "$command_mode" = true ]; then
+            command_args+=("$arg")
+        else
+            docker_args+=("$arg")
+        fi
+    done
 
     current_port() {
         docker inspect \
@@ -47,7 +62,15 @@ start_container() {
     fi
 
     echo "Creating container ${name} on host port ${host_port}"
-    docker run -d --name "${name}" -p "${host_port}:${container_port}" "${extra_args[@]}" "${image}" >/dev/null
+    cmd=(docker run -d --name "${name}" -p "${host_port}:${container_port}")
+    if [ ${#docker_args[@]} -gt 0 ]; then
+        cmd+=("${docker_args[@]}")
+    fi
+    cmd+=("${image}")
+    if [ ${#command_args[@]} -gt 0 ]; then
+        cmd+=("${command_args[@]}")
+    fi
+    "${cmd[@]}" >/dev/null
 }
 
 echo "--- Starting Dragonfly (Redis-compatible cache) ---"
@@ -55,6 +78,7 @@ start_container "${DRAGONFLY_NAME}" \
     "docker.dragonflydb.io/dragonflydb/dragonfly:latest" \
     "${AGILEPLUS_REDIS_PORT}" \
     6379 \
+    -- \
     --maxmemory=4gb --bind 0.0.0.0
 
 echo "--- Starting PostgreSQL 16 ---"

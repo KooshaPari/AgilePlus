@@ -8,6 +8,22 @@ PORTS_FILE="${RUNTIME_DIR}/local-ports.env"
 
 mkdir -p "$RUNTIME_DIR"
 
+saved_port() {
+  local env_name="$1"
+
+  if [[ ! -f "$PORTS_FILE" ]]; then
+    return 1
+  fi
+
+  local value
+  value="$(grep -E "^${env_name}=" "$PORTS_FILE" | tail -n 1 | cut -d= -f2-)"
+  if [[ -z "$value" ]]; then
+    return 1
+  fi
+
+  printf '%s' "$value"
+}
+
 port_in_use() {
   local port="$1"
   lsof -iTCP:"$port" -sTCP:LISTEN >/dev/null 2>&1
@@ -19,6 +35,11 @@ pick_port() {
   local value="${!env_name:-}"
 
   if [[ -n "$value" ]]; then
+    printf '%s' "$value"
+    return 0
+  fi
+
+  if value="$(saved_port "$env_name")"; then
     printf '%s' "$value"
     return 0
   fi
@@ -44,6 +65,7 @@ export AGILEPLUS_MINIO_CONSOLE_PORT="$(pick_port AGILEPLUS_MINIO_CONSOLE_PORT 90
 export AGILEPLUS_PLANE_API_PORT="$(pick_port AGILEPLUS_PLANE_API_PORT 8000)"
 export AGILEPLUS_PLANE_WEB_PORT="$(pick_port AGILEPLUS_PLANE_WEB_PORT 3100)"
 export AGILEPLUS_API_PORT="$(pick_port AGILEPLUS_API_PORT 3000)"
+export AGILEPLUS_PROCESS_COMPOSE_PORT="$(pick_port AGILEPLUS_PROCESS_COMPOSE_PORT 18080)"
 
 cat >"$PORTS_FILE" <<EOF
 AGILEPLUS_POSTGRES_PORT=${AGILEPLUS_POSTGRES_PORT}
@@ -57,4 +79,5 @@ AGILEPLUS_MINIO_CONSOLE_PORT=${AGILEPLUS_MINIO_CONSOLE_PORT}
 AGILEPLUS_PLANE_API_PORT=${AGILEPLUS_PLANE_API_PORT}
 AGILEPLUS_PLANE_WEB_PORT=${AGILEPLUS_PLANE_WEB_PORT}
 AGILEPLUS_API_PORT=${AGILEPLUS_API_PORT}
+AGILEPLUS_PROCESS_COMPOSE_PORT=${AGILEPLUS_PROCESS_COMPOSE_PORT}
 EOF
