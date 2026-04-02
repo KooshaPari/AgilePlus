@@ -156,4 +156,28 @@ impl ValidationReport {
         }))
         .unwrap_or_default()
     }
+
+    pub(crate) fn summary(&self) -> String {
+        let total_evidence = self.evidence_results.len();
+        let passed_evidence = self
+            .evidence_results
+            .iter()
+            .filter(|e| e.found && e.threshold_met)
+            .count();
+        let total_policies = self.policy_results.len();
+        let passed_policies = self.policy_results.iter().filter(|p| p.passed).count();
+        let missing = self.missing_evidence.len();
+        let exceptions = self.governance_exceptions.len();
+        let status = if self.overall_pass { "PASS" } else { "FAIL" };
+        format!(
+            "{}: Evidence {}/{} passed, policies {}/{} passed, missing evidence {}, exceptions {}",
+            status,
+            passed_evidence,
+            total_evidence,
+            passed_policies,
+            total_policies,
+            missing,
+            exceptions
+        )
+    }
 }

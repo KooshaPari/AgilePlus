@@ -12,7 +12,7 @@
 use std::fmt::Debug;
 use std::time::{Duration, Instant};
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use serde::Serialize;
 
 use agileplus_domain::ports::{StoragePort, VcsPort};
@@ -170,13 +170,13 @@ impl<'a, S: StoragePort, V: VcsPort> CommandContext<'a, S, V> {
         F: FnOnce(&mut tracing::Span),
     {
         self.telemetry.duration = self.start_time.elapsed();
-        let span = tracing::info_span!(
+        let mut span = tracing::info_span!(
             "command_complete",
             command = %self.command_name,
             elapsed_ms = self.telemetry.duration_ms()
         );
-        let mut guard = span.enter();
-        let _ = guard;
+        extra_fields(&mut span);
+        let _guard = span.enter();
         tracing::info!("command completed successfully");
     }
 

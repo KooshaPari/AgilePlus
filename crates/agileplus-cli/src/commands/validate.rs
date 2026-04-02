@@ -215,6 +215,9 @@ where
         governance_exceptions,
     };
 
+    let summary = report.summary();
+    println!("Validation summary: {summary}");
+
     // Format and output the report
     let report_content = match args.format.as_str() {
         "json" => report.to_json(),
@@ -280,7 +283,13 @@ where
         });
 
     let elapsed_ms = start.elapsed().as_millis();
-    tracing::info!(command = "validate", slug = %slug, elapsed_ms = %elapsed_ms, "validate completed");
+    tracing::info!(
+        command = "validate",
+        slug = %slug,
+        summary = %summary,
+        elapsed_ms = %elapsed_ms,
+        "validate completed"
+    );
 
     println!("Feature '{}' validated successfully.", slug);
     println!("  State: Implementing -> Validated");
