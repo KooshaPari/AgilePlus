@@ -7,11 +7,12 @@ import (
 	"github.com/KooshaPari/pheno-cli/internal/plugin"
 )
 
+var pluginCmd = &cobra.Command{
+	Use:   "plugin",
+	Short: "Manage pheno plugins",
+}
+
 func init() {
-	pluginCmd := &cobra.Command{
-		Use:   "plugin",
-		Short: "Manage pheno plugins",
-	}
 	pluginListCmd := &cobra.Command{
 		Use:   "list",
 		Short: "List installed plugins",

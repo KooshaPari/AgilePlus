@@ -82,8 +82,7 @@ pub fn email() -> String {
         2 => "net",
         _ => "io",
     };
-    format!("{}@{}.{}.{}", local, domain, tld, "")[..(local.len() + domain.len() + tld.len() + 4)]
-        .to_string()
+    format!("{}@{}.{}", local, domain, tld)
 }
 
 /// Generate a random UUID string

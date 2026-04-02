@@ -1,16 +1,38 @@
-# Root-level workflow
 name: CI
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, feature/*, bugfix/*, docs/*, release/*, hotfix/*]
   pull_request:
-    branches: [main, master]
+    branches: [main]
 
 jobs:
-  check:
+  test:
     runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        rust-version: ['1.70', 'stable']
+    
     steps:
       - uses: actions/checkout@v4
-      - name: Run checks
-        run: echo "Add project-specific checks here"
+
+      
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: $123matrix.rust-version125
+
+      - name: Build
+        run: cargo build --verbose
+
+      - name: Run tests
+        run: cargo test --verbose
+
+      - name: Run clippy
+        run: cargo clippy -- -D warnings
+      
+
+  phenotype-validate:
+    runs-on: ubuntu-latest
+    uses: KooshaPari/phenotypeActions/.github/workflows/validate-governance.yml@main

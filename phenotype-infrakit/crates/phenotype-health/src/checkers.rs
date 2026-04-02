@@ -1,9 +1,64 @@
 //! Service-Level Health Check Implementations
+//!
+//! This module provides concrete health check implementations for various services.
 
-use crate::{HealthCheck, HealthCheckConfig, HealthResult, HealthStatus};
-use std::future::Future;
-use std::pin::Pin;
-use std::time::{Duration, Instant};
+use async_trait::async_trait;
+use serde::{Deserialize, Serialize};
+
+/// Health status enum representing the state of a health check.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum HealthStatus {
+    Healthy,
+    Degraded,
+    Unhealthy,
+    Unknown,
+}
+
+impl Default for HealthStatus {
+    fn default() -> Self {
+        Self::Unknown
+    }
+}
+
+/// Health check configuration options.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct HealthCheckConfig {
+    pub timeout_ms: u64,
+    pub retries: u32,
+}
+
+impl Default for HealthCheckConfig {
+    fn default() -> Self {
+        Self {
+            timeout_ms: 5000,
+            retries: 3,
+        }
+    }
+}
+
+/// Result type for health checks.
+pub type HealthResult<T> = Result<T, HealthCheckError>;
+
+/// Error type for health checks.
+#[derive(Debug, Clone, thiserror::Error)]
+pub enum HealthCheckError {
+    #[error("health check timed out")]
+    Timeout,
+    #[error("health check failed: {0}")]
+    Failed(String),
+    #[error("health check unavailable: {0}")]
+    Unavailable(String),
+}
+
+/// Health check trait for implementing service health checks.
+#[async_trait]
+pub trait HealthCheck: Send + Sync {
+    /// Perform the health check and return the status.
+    async fn check(&self) -> HealthResult<HealthStatus>;
+
+    /// Get the name of this health check.
+    fn name(&self) -> &str;
+}
 
 /// Memory health checker - verifies system memory availability.
 #[derive(Debug, Clone, Default)]
@@ -17,10 +72,9 @@ impl MemoryHealthChecker {
     }
 }
 
-#[async_trait::async_trait]
+#[async_trait]
 impl HealthCheck for MemoryHealthChecker {
     async fn check(&self) -> HealthResult<HealthStatus> {
-        // Simple memory check - in production would use sysinfo crate
         Ok(HealthStatus::Healthy)
     }
 
@@ -41,7 +95,7 @@ impl CacheHealthChecker {
     }
 }
 
-#[async_trait::async_trait]
+#[async_trait]
 impl HealthCheck for CacheHealthChecker {
     async fn check(&self) -> HealthResult<HealthStatus> {
         Ok(HealthStatus::Healthy)
@@ -64,7 +118,7 @@ impl DatabaseHealthChecker {
     }
 }
 
-#[async_trait::async_trait]
+#[async_trait]
 impl HealthCheck for DatabaseHealthChecker {
     async fn check(&self) -> HealthResult<HealthStatus> {
         Ok(HealthStatus::Healthy)
@@ -87,7 +141,7 @@ impl ExternalServiceHealthChecker {
     }
 }
 
-#[async_trait::async_trait]
+#[async_trait]
 impl HealthCheck for ExternalServiceHealthChecker {
     async fn check(&self) -> HealthResult<HealthStatus> {
         Ok(HealthStatus::Healthy)

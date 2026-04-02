@@ -25,6 +25,7 @@ func init() {
 	cobra.OnInitialize(initConfig)
 	rootCmd.PersistentFlags().String("config", "", "config file (default: ~/.config/pheno/config.toml)")
 	rootCmd.PersistentFlags().Bool("verbose", false, "verbose output")
+	// Commands are registered in their respective files
 }
 
 func initConfig() {

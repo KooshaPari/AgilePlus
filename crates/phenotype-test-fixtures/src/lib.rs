@@ -4,10 +4,12 @@
 //! for the Phenotype ecosystem.
 
 pub mod fixture;
+pub mod memory;
 pub mod property;
 pub mod spy;
 
 pub use fixture::{Fixture, FixtureManager};
+pub use memory::{InMemoryStore, InMemoryStoreExt};
 pub use property::{PropertyTest, Strategy};
 pub use spy::{Spy, SpyAssertions};
 

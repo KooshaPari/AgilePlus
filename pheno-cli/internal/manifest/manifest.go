@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/pelletier/go-toml/v2"
 )
@@ -65,7 +66,7 @@ func registryForLanguage(lang string) string {
 }
 
 // GenerateManifest auto-detects repositories by scanning reposDir for manifest files.
-// It treats each immediate subdirectory that contains a known manifest file as a repo.
+// It treats EVERY subdirectory as a potential repo.
 func GenerateManifest(reposDir string) (*OrgManifest, error) {
 	entries, err := os.ReadDir(reposDir)
 	if err != nil {
@@ -77,13 +78,18 @@ func GenerateManifest(reposDir string) (*OrgManifest, error) {
 		if !entry.IsDir() {
 			continue
 		}
-		repoPath := filepath.Join(reposDir, entry.Name())
-		lang := detectLanguage(repoPath)
-		if lang == "" {
+		name := entry.Name()
+		// Skip hidden dirs (except .github, .claude, .devcontainer)
+		if strings.HasPrefix(name, ".") && name != ".github" && name != ".devcontainer" && name != ".claude" && name != ".vscode" {
 			continue
 		}
+		repoPath := filepath.Join(reposDir, name)
+		lang := detectLanguage(repoPath)
+		if lang == "" {
+			lang = "docs"
+		}
 		repos = append(repos, RepoConfig{
-			Name:        entry.Name(),
+			Name:        name,
 			Language:    lang,
 			Registry:    registryForLanguage(lang),
 			RiskProfile: "low",
@@ -93,13 +99,65 @@ func GenerateManifest(reposDir string) (*OrgManifest, error) {
 	return &OrgManifest{Repos: repos}, nil
 }
 
-// detectLanguage returns the primary language of a repo by checking for manifest files.
+// detectLanguage returns the primary language of a repo by checking for manifest files, .git, or source files.
 func detectLanguage(repoPath string) string {
-	// Priority order: go.mod > Cargo.toml > package.json > pyproject.toml
-	priority := []string{"go.mod", "Cargo.toml", "package.json", "pyproject.toml", "setup.py", "requirements.txt"}
-	for _, name := range priority {
-		if _, err := os.Stat(filepath.Join(repoPath, name)); err == nil {
-			return manifestIndicators[name]
+	// Check .git first
+	if _, err := os.Stat(filepath.Join(repoPath, ".git")); err == nil {
+		// It's a git repo - find manifest or source
+		if lang := detectFromManifest(repoPath); lang != "" {
+			return lang
+		}
+		return detectFromSource(repoPath)
+	}
+	// Not a git repo - check manifest
+	return detectFromManifest(repoPath)
+}
+
+// detectFromManifest checks for package manifest files.
+func detectFromManifest(repoPath string) string {
+	manifests := []string{
+		"go.mod", "Cargo.toml", "package.json", "pyproject.toml",
+		"setup.py", "requirements.txt", "setup.cfg", "Pipfile", "pyproject.toml",
+		"*.cabal", "mix.exs", "stack.yaml", "pom.xml", "build.gradle", "build.sbt",
+		"Makefile", "CMakeLists.txt", "Dockerfile", "Dockerfile.dev", "Dockerfile.prod",
+		"docker-compose.yml", "docker-compose.yaml",
+	}
+	for _, m := range manifests {
+		if strings.HasPrefix(m, "*") {
+			continue
+		}
+		if _, err := os.Stat(filepath.Join(repoPath, m)); err == nil {
+			if lang, ok := manifestIndicators[m]; ok {
+				return lang
+			}
+		}
+	}
+	return ""
+}
+
+// detectFromSource detects language from source file extensions.
+func detectFromSource(repoPath string) string {
+	exts := []string{".go", ".rs", ".ts", ".tsx", ".js", ".jsx", ".py", ".java", ".kt", ".cs", ".cpp", ".c", ".h", ".hpp", ".rb", ".php", ".swift", ".scala", ".ex", ".exs", ".erl", ".hs", ".ml", ".clj", ".zig", ".lua", ".r", ".nims"}
+	entries, err := os.ReadDir(repoPath)
+	if err != nil {
+		return ""
+	}
+	for _, entry := range entries {
+		if entry.IsDir() {
+			name := entry.Name()
+			if name == "node_modules" || name == "target" || name == ".git" || name == "dist" || name == "build" || name == "__pycache__" || name == ".venv" {
+				continue
+			}
+			if lang := detectFromSource(filepath.Join(repoPath, name)); lang != "" {
+				return lang
+			}
+		} else {
+			name := entry.Name()
+			for _, ext := range exts {
+				if strings.HasSuffix(name, ext) {
+					return "code"
+				}
+			}
 		}
 	}
 	return ""

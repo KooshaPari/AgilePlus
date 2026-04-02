@@ -41,14 +41,6 @@ members = [
     "crates/phenotype-testing",
     "crates/phenotype-time",
     "crates/phenotype-validation",
-    "Logify",
-    "Metron",
-    "Tasken",
-    "Eventra",
-    "Traceon",
-    "Stashly",
-    "Settly",
-    "Authvault",
 ]
 [workspace.dependencies]
 # Core

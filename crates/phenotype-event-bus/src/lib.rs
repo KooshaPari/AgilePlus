@@ -1,12 +1,13 @@
 use async_trait::async_trait;
+use async_trait::async_trait;
 use phenotype_error_core::{RepositoryError, StorageError};
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 use thiserror::Error;
 use ulid::Ulid;
 
 /// Event ID using ULID for sortability
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct EventId(Ulid);
 
 impl EventId {
@@ -32,7 +33,7 @@ impl std::fmt::Display for EventId {
 }
 
 /// Event envelope with metadata
-#[derive(Debug, Clone, Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EventEnvelope<T> {
     pub id: EventId,
     pub timestamp: u64,
@@ -90,25 +91,18 @@ pub enum EventBusError {
 /// Event bus trait for pluggable backends
 #[async_trait]
 pub trait EventBus: Send + Sync + 'static {
-    type Event: Serialize + DeserializeOwned + Send + Sync + Debug + 'static;
+    type Event: Serialize + de::DeserializeOwned + Send + Sync + Debug + 'static;
 
     /// Publish an event to the bus
     async fn publish(&self, event: EventEnvelope<Self::Event>) -> Result<(), EventBusError>;
 
     /// Subscribe to events matching a pattern
-    async fn subscribe<F>(
-        &self,
-        subject: &str,
-        handler: F,
-    ) -> Result<Subscription, EventBusError>
+    async fn subscribe<F>(&self, subject: &str, handler: F) -> Result<Subscription, EventBusError>
     where
-        F: Fn(EventEnvelope<Self::Event>) -> Result<(), EventBusError>
-            + Send
-            + Sync
-            + 'static;
+        F: Fn(EventEnvelope<Self::Event>) -> Result<(), EventBusError> + Send + Sync + 'static;
 
     /// Request-response pattern
-    async fn request<T: Serialize + DeserializeOwned + Send + Sync + Debug + 'static>(
+    async fn request<T: Serialize + de::DeserializeOwned + Send + Sync + Debug + 'static>(
         &self,
         subject: &str,
         payload: T,
@@ -142,7 +136,7 @@ pub mod memory;
 mod tests {
     use super::*;
 
-    #[derive(Debug, Clone, Serialize, serde::Deserialize, PartialEq)]
+    #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
     struct TestEvent {
         data: String,
     }
@@ -175,7 +169,7 @@ mod tests {
             .with_correlation_id("cor-123")
             .with_causation_id("cause-456");
 
-        assert_eq!(envelope.correlation_id, Some("cor-123".to_string()));
-        assert_eq!(envelope.causation_id, Some("cause-456".to_string()));
+        assert_eq!(envelope.correlation_id.as_deref(), Some("cor-123"));
+        assert_eq!(envelope.causation_id.as_deref(), Some("cause-456"));
     }
 }
