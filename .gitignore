@@ -9,6 +9,3 @@
 .env
 .env.local
 .env.*.local
-
-# AgilePlus runtime artifacts
-.agileplus/

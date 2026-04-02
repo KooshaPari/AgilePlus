@@ -438,6 +438,7 @@ name = "agileplus-subcmds"
 version = "0.1.1"
 dependencies = [
  "agileplus-domain",
+ "agileplus-plane",
  "agileplus-triage",
  "anyhow",
  "chrono",
