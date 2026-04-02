@@ -1,78 +1,76 @@
-# Feature Specification: NanoVMS — Nano Virtual Machine Services
+# Feature Specification: NanoVMS — Three-Tier Isolation Architecture
 
 **Feature Branch**: `008-nanovms-completion`
 **Created**: 2026-04-02
 **Status**: Draft
 **Mission**: infrastructure
 **Repository**: nanovms
+**Last Updated**: 2026-04-02
 
 ## Overview
 
-NanoVMS (Nano Virtual Machine Services) provides a lightweight, headless VM abstraction for agent-driven development workflows. It implements a **two-level abstraction**:
+NanoVMS (Nano Virtual Machine Services) provides lightweight, secure VM abstraction for AI agent workloads. The architecture adopts a **three-tier isolation model** based on trust level.
 
-1. **Infrastructure Layer** (CURRENT): VM runtimes (Native, Lima, WSL, MicroVM, WASM)
-2. **Platform Layer** (PLANNED): Target platforms (iOS, Android, tvOS, etc.)
+## Three-Tier Isolation Model
 
-This spec covers the **Infrastructure Layer** completion — implementing the VM adapters and sandbox isolation system.
+| Tier | Technology | Startup | Memory | Trust Level | Use Case |
+|------|------------|---------|--------|-------------|----------|
+| **1: Trusted** | Wasmtime | ~1ms | ~1MB | Agent-native | Formatters, linters, compilers |
+| **2: Semi-trusted** | gVisor | ~90ms | ~20MB | Third-party | Scripts, dev containers |
+| **3: Untrusted** | Firecracker | ~125ms | <5MB | LLM-generated | Arbitrary Docker images |
 
-### Architecture
+### Architecture Diagram
 
 ```
-nanovms/
-├── cmd/nanovms/              # CLI entry point
-├── internal/
-│   ├── adapters/             # Infrastructure implementations
-│   │   ├── mac/             # Lima/VZ adapter (macOS)
-│   │   ├── windows/         # WSL adapter (Windows)
-│   │   ├── linux/           # Native/KVM adapter (Linux)
-│   │   ├── microvm/         # Firecracker adapter (all platforms)
-│   │   ├── wasm/            # WASM runtime adapter
-│   │   └── sandbox/         # Isolation adapters (bwrap, gVisor, etc.)
-│   ├── domain/               # Core models (Sandbox, VMFlavor, VMConfig)
-│   └── ports/                # Interface definitions (VMAdapter)
-└── pkg/                      # Public API library
+┌─────────────────────────────────────────────────────────────────┐
+│                         Agent Controller                          │
+├─────────────────────────────────────────────────────────────────┤
+│  Tier 1: WASM Sandboxes (~1ms startup, ~1MB memory)             │
+│  └── Wasmtime, WASI sandbox, no syscalls                       │
+├─────────────────────────────────────────────────────────────────┤
+│  Tier 2: gVisor Containers (~90ms startup, ~20MB memory)        │
+│  └── runsc, seccomp filtering, network isolation                 │
+├─────────────────────────────────────────────────────────────────┤
+│  Tier 3: MicroVMs (~125ms startup, <5MB memory)                  │
+│  └── Firecracker, OCI compatible, full hardware isolation        │
+├─────────────────────────────────────────────────────────────────┤
+│                         Infrastructure Layer                       │
+│  └── Lima (macOS), WSL (Windows), Native KVM (Linux)            │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-## Core Types (IMPLEMENTED)
+## Technology Stack
 
-### VMFlavor — Infrastructure Layer
+### Languages
 
-```go
-// internal/domain/sandbox.go
+| Language | Use Case | Rationale |
+|----------|----------|-----------|
+| **Rust** | VMM core, Firecracker | Memory safety, rust-vmm ecosystem |
+| **Zig** | Hypervisor adapters, sandbox shims | Explicit memory, comptime code gen |
+| **Go** | CLI, orchestration | Existing codebase, ecosystem |
+| **C** | Performance paths | crun replacement if needed |
 
-type VMFlavor string
+### Key Technologies
 
-const (
-    VMFlavorNative  VMFlavor = "native"   // HyperKit, Hyper-V, KVM
-    VMFlavorLima    VMFlavor = "lima"     // Lima with vz driver (macOS)
-    VMFlavorWSL     VMFlavor = "wsl"      // Windows Subsystem for Linux
-    VMFlavorMicroVM VMFlavor = "microvm"  // Firecracker microVM
-    VMFlavorWasm    VMFlavor = "wasm"     // WebAssembly runtime
-)
-```
+| Technology | Tier | Use Case | Status |
+|------------|------|----------|--------|
+| **Firecracker** | 3 | Production microVMs (<125ms startup) | ⚠️ Partial |
+| **gVisor** | 2 | Userspace kernel for container isolation | 📋 Planned |
+| **Wasmtime** | 1 | WASM runtime for trusted execution | ⚠️ Partial |
+| **Lima** | Infra | macOS VM compatibility (VZ + virtiofs) | ⚠️ Partial |
+| **WSL2** | Infra | Windows Linux subsystem integration | ⚠️ Stub |
+| **KVM** | Infra | Linux hardware virtualization | ⚠️ Stub |
 
-### SandboxType — Isolation Levels
+## Performance Benchmarks (2026)
 
-```go
-type SandboxType string
-
-const (
-    SandboxTypeVM        SandboxType = "vm"        // Full virtual machine
-    SandboxTypeContainer SandboxType = "container" // Container isolation
-    SandboxTypeWasm      SandboxType = "wasm"      // WebAssembly isolation
-    SandboxTypeProcess   SandboxType = "process"   // gVisor, landlock
-    SandboxTypeNative    SandboxType = "native"    // bwrap, firejail, namespaces
-)
-```
-
-## VM Tiers
-
-| Tier | Technology | Use Case | Overhead |
-|------|------------|----------|----------|
-| 1 - Native | HyperKit, Hyper-V, KVM | Production parity | Highest |
-| 2 - Lima/WSL | Lima/VZ, WSL2 | Daily development | Medium |
-| 3 - MicroVM | Firecracker, Cloud Hypervisor | CI/CD, isolation | Lowest |
-| 4 - WASM | Wasmtime, Wasmer | Lightweight execution | Minimal |
+| Technology | Container Ops | Startup | Memory | Source |
+|------------|---------------|---------|--------|--------|
+| crun (C) | 47ms | — | Low | Production |
+| youki (Rust) | 111ms | — | Medium | Production |
+| runc (Go) | 225ms | — | High | Docker default |
+| Firecracker | — | <125ms | <5MB | AWS Lambda |
+| gVisor | — | ~90ms | ~20MB | Google |
+| Wasmtime | — | ~1ms | ~1MB | Bytecode Alliance |
 
 ## Security Model
 
