@@ -5,10 +5,14 @@ on:
     branches: [main, feat/**]
     paths:
       - 'tests/**'
+      - 'vitest.config.ts'
+      - 'playwright.config.ts'
       - '**.rs'
   pull_request:
     paths:
       - 'tests/**'
+      - 'vitest.config.ts'
+      - 'playwright.config.ts'
   schedule:
     - cron: '0 3 * * *'  # Weekly test run
 
@@ -19,13 +23,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Run BDD Tests
-        run: |
-          echo "BDD tests with Cucumber:"
-          echo "  - Features: $(ls tests/bdd/*.feature 2>/dev/null | wc -l)"
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
-  visual-tests:
-    name: Visual Regression Tests
+      - name: Install Cucumber
+        run: npm install @cucumber/cucumber
+
+      - name: Run BDD Tests
+        run: npx cucumber run tests/bdd/*.feature
+
+  vitest-tests:
+    name: Vitest Unit Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -35,21 +45,28 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Run Visual Tests
-        run: |
-          echo "Visual regression with Playwright:"
-          echo "  - Config: tests/visual/visual-config.yaml"
+      - name: Install dependencies
+        run: npm install vitest @vitest/coverage-v8
 
-  self-healing-tests:
-    name: Self-Healing Locator Tests
+      - name: Run Vitest
+        run: npx vitest run --reporter=json
+
+  playwright-tests:
+    name: Playwright Visual Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Run Self-Healing Tests
-        run: |
-          echo "Self-healing locators configured for Plane.so"
-          echo "Selectors: $(grep -c 'selector:' tests/self-healing-locators.yaml 2>/dev/null || echo 0)"
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Playwright
+        run: npm install @playwright/test && npx playwright install --with-deps
+
+      - name: Run Playwright Visual Tests
+        run: npx playwright test
 
   spec-traceability:
     name: FR Traceability Validation
@@ -60,4 +77,4 @@ jobs:
       - name: Check FR References
         run: |
           echo "Validating FR-XXX-NNN traceability in tests"
-          grep -r "FR-" tests/ 2>/dev/null | head -10 || echo "No FR references in current branch"
+          grep -r "FR-" tests/ 2>/dev/null | head -10 || echo "No FR references"
