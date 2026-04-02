@@ -1,6 +1,8 @@
 use agileplus_cache::{
-    CacheError, CacheStore, CacheConfig, InMemoryCacheStore, ProjectionCache,
+    CacheError, CacheStore, CacheConfig, InMemoryCacheStore, ProjectionCache, RateLimiter,
 };
+use agileplus_domain::domain::feature::Feature;
+use agileplus_domain::domain::work_package::WorkPackage;
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
@@ -225,4 +227,99 @@ async fn test_concurrent_cache_access() {
 
     let retrieved: Option<TestValue> = store.get("concurrent_key").await.unwrap();
     assert_eq!(retrieved, Some(value));
+}
+
+#[tokio::test]
+async fn test_in_memory_health_check() {
+    let store = InMemoryCacheStore::new(3600);
+    assert!(store.health_check().await.unwrap());
+}
+
+#[tokio::test]
+async fn test_projection_cache_with_in_memory_store() {
+    use std::sync::Arc;
+    let store = Arc::new(InMemoryCacheStore::new(60));
+    let cache = ProjectionCache::new(store.clone());
+
+    let feature = Feature::new(
+        "test-feature",
+        "Test Feature",
+        [0u8; 32],
+        None,
+    );
+
+    cache.set_feature(&feature).await.unwrap();
+
+    let cached = cache.get_feature(feature.id).await.unwrap();
+    assert!(cached.is_some());
+    assert_eq!(cached.unwrap().feature.id, feature.id);
+}
+
+#[tokio::test]
+async fn test_projection_cache_invalidate() {
+    use std::sync::Arc;
+    let store = Arc::new(InMemoryCacheStore::new(60));
+    let cache = ProjectionCache::new(store.clone());
+
+    let feature = Feature::new(
+        "test-feature-2",
+        "Feature to invalidate",
+        [0u8; 32],
+        None,
+    );
+
+    cache.set_feature(&feature).await.unwrap();
+    assert!(cache.get_feature(feature.id).await.unwrap().is_some());
+
+    cache.invalidate_feature(feature.id).await.unwrap();
+    assert!(cache.get_feature(feature.id).await.unwrap().is_none());
+}
+
+#[tokio::test]
+async fn test_projection_cache_workpackage() {
+    use std::sync::Arc;
+    let store = Arc::new(InMemoryCacheStore::new(60));
+    let cache = ProjectionCache::new(store.clone());
+
+    let wp = WorkPackage::new(
+        1,
+        "Test WorkPackage",
+        1,
+        "Acceptance criteria here",
+    );
+
+    cache.set_workpackage(&wp).await.unwrap();
+
+    let cached = cache.get_workpackage(wp.id).await.unwrap();
+    assert!(cached.is_some());
+    assert_eq!(cached.unwrap().workpackage.id, wp.id);
+}
+
+#[test]
+fn test_rate_limiter_error_display() {
+    use agileplus_cache::limiter::LimiterError;
+    let err = LimiterError::Error("rate limit exceeded".to_string());
+    assert!(err.to_string().contains("Rate limit error"));
+}
+
+#[test]
+fn test_projection_error_display() {
+    use agileplus_cache::projection::ProjectionError;
+    let err = ProjectionError::CacheError("connection failed".to_string());
+    assert!(err.to_string().contains("Cache error"));
+}
+
+#[test]
+fn test_cache_config_clone() {
+    let config = CacheConfig::new("localhost", 6379);
+    let cloned = config.clone();
+    assert_eq!(cloned.host, "localhost");
+    assert_eq!(cloned.port, 6379);
+}
+
+#[test]
+fn test_cache_config_debug() {
+    let config = CacheConfig::default();
+    let debug_str = format!("{:?}", config);
+    assert!(debug_str.contains("CacheConfig"));
 }

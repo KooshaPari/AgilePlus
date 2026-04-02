@@ -38,6 +38,8 @@ pub trait CacheStore: Send + Sync {
     async fn delete(&self, key: &str) -> Result<(), CacheError>;
 
     async fn exists(&self, key: &str) -> Result<bool, CacheError>;
+
+    async fn health_check(&self) -> Result<bool, CacheError>;
 }
 
 /// Redis/Dragonfly-backed cache store.
@@ -129,6 +131,17 @@ impl CacheStore for RedisCacheStore {
             .await
             .map_err(|e| CacheError::RedisError(e.to_string()))
     }
+
+    async fn health_check(&self) -> Result<bool, CacheError> {
+        let mut conn = self
+            .pool
+            .get_connection()
+            .await
+            .map_err(|e| CacheError::ConnectionError(e.to_string()))?;
+
+        let result: Result<String, _> = redis::cmd("PING").query_async(&mut *conn).await;
+        Ok(result.map(|p| p == "PONG").unwrap_or(false))
+    }
 }
 
 struct Entry {
@@ -208,5 +221,9 @@ impl CacheStore for InMemoryCacheStore {
     async fn exists(&self, key: &str) -> Result<bool, CacheError> {
         let data = self.data.read().await;
         Ok(data.get(key).map(|e| !e.is_expired()).unwrap_or(false))
+    }
+
+    async fn health_check(&self) -> Result<bool, CacheError> {
+        Ok(true)
     }
 }

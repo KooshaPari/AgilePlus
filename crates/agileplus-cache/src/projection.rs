@@ -1,6 +1,6 @@
 //! Projection cache for Feature and WorkPackage state.
 
-use crate::store::{CacheStore, RedisCacheStore};
+use crate::store::CacheStore;
 use agileplus_domain::domain::feature::Feature;
 use agileplus_domain::domain::work_package::WorkPackage;
 use serde::{Deserialize, Serialize};
@@ -28,11 +28,11 @@ pub struct WorkPackageProjection {
 }
 
 pub struct ProjectionCache {
-    store: Arc<RedisCacheStore>,
+    store: Arc<dyn CacheStore>,
 }
 
 impl ProjectionCache {
-    pub fn new(store: Arc<RedisCacheStore>) -> Self {
+    pub fn new(store: Arc<dyn CacheStore>) -> Self {
         Self { store }
     }
 
