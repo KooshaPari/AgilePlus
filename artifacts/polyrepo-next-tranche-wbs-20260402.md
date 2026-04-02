@@ -79,14 +79,14 @@ Refresh this snapshot each manager poll cycle to reflect gate transitions.
   - `sqlite3 AgilePlus/.agileplus/agileplus.db "select entity_type,entity_id,event_type,timestamp from events order by timestamp desc limit 200;"`
 - Current event history remains sparse; the latest row in the snapshot is still early 2026-04-02, showing the system only recorded one runtime transition that day.
 - `scripts/dev-up.sh` now starts the local stack via Process Compose with the port map recorded in `.agileplus/runtime/local-ports.env`.
-- Attempting to run `scripts/local-health-check.sh` failed because the script does not exist in the `chore-runtime-local-deploy-clean` surface; document this as a blocker (missing health-check script).
+- `scripts/local-health-check.sh` and `scripts/authkit-smoke.sh` now exist in the `chore-runtime-local-deploy-clean` surface, so the blocker has moved from missing scripts to missing live execution evidence against the local stack and a real provider domain.
 
 Documented evidence:
 
 - `/tmp/agileplus-events-latest.csv` (snapshot query + result).
 - `scripts/dev-up.sh` start output captured in the docs session notes.
-- blocker note about missing `scripts/local-health-check.sh` recorded under the Wave 1 evidence entry.
-- `artifacts/local-deploy-surface-baseline.md` now documents the clean runtime work tree, the `dev-up` command, and the same event snapshot plus the missing health-check blocker.
+- script publication note recorded under the Wave 1 evidence entry, with the remaining gap narrowed to live execution evidence.
+- `artifacts/local-deploy-surface-baseline.md` now documents the clean runtime work tree, the `dev-up` command, the same event snapshot, and the shift from missing scripts to unverified script execution.
 
 ### phenotype-infrakit
 
