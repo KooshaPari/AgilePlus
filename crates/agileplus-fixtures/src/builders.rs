@@ -158,14 +158,24 @@ impl WorkPackageBuilder {
 
     /// Build the WorkPackage.
     pub fn build(self) -> WorkPackage {
+        let now = Utc::now();
         WorkPackage {
             id: self.id,
             feature_id: self.feature_id,
             title: self.title,
-            sequence: self.sequence,
-            summary: self.summary,
             state: self.state,
+            sequence: self.sequence,
             file_scope: self.file_scope,
+            acceptance_criteria: self.summary,
+            agent_id: None,
+            pr_url: None,
+            pr_state: None,
+            worktree_path: None,
+            plane_sub_issue_id: None,
+            base_commit: None,
+            head_commit: None,
+            created_at: now,
+            updated_at: now,
         }
     }
 }
@@ -212,7 +222,7 @@ mod tests {
         assert_eq!(wp.feature_id, 1);
         assert_eq!(wp.title, "Test WP");
         assert_eq!(wp.state, WpState::Done);
-        assert_eq!(wp.summary, "This is a test");
+        assert_eq!(wp.acceptance_criteria, "This is a test");
         assert_eq!(wp.file_scope, vec!["src/lib.rs"]);
     }
 
