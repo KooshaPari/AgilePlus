@@ -23,4 +23,5 @@ reviewable standalone PR.
 ## Outcome
 
 This branch is the documentation-only follow-up lane after the governance, runtime, and CLI slices
-were split into their own PRs.
+were split into their own PRs. WP04 evidence capture is recorded here: dev-up succeeded, health-check
+script missing, blocker logged under the manager taxonomy.
