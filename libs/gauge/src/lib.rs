@@ -6,10 +6,10 @@
 //! - Memory usage
 //! - Benchmarking
 
+pub mod benchmark;
 pub mod gauge;
 pub mod metrics;
-pub mod benchmark;
 
+pub use benchmark::{BenchmarkResult, benchmark};
 pub use gauge::{Gauge, ScopedGauge};
-pub use metrics::{MetricsCollector, MetricValue, MetricSnapshot};
-pub use benchmark::{benchmark, BenchmarkResult};
+pub use metrics::{MetricSnapshot, MetricValue, MetricsCollector};

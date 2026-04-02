@@ -34,12 +34,12 @@
 //! └─────────────────────────────────────────────────────────────┘
 //! ```
 
+pub mod adapters;
 pub mod domain;
 pub mod ports;
-pub mod adapters;
 pub mod use_cases;
 
-pub use domain::{Entity, EntityId, Spec, WorkPackage, Task, SpecStatus, TaskStatus};
-pub use ports::{InputPort, OutputPort, SpecRepository, TaskRepository};
 pub use adapters::{InMemorySpecRepository, InMemoryTaskRepository};
-pub use use_cases::{CreateSpecUseCase, UpdateSpecUseCase, ListSpecsUseCase};
+pub use domain::{Entity, EntityId, Spec, SpecStatus, Task, TaskStatus, WorkPackage};
+pub use ports::{InputPort, OutputPort, SpecRepository, TaskRepository};
+pub use use_cases::{CreateSpecUseCase, ListSpecsUseCase, UpdateSpecUseCase};

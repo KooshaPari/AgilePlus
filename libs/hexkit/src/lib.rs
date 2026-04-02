@@ -6,11 +6,11 @@
 pub mod builders;
 pub mod defaults;
 pub mod error;
-pub mod registry;
 pub mod helpers;
+pub mod registry;
 
-pub use builders::{PortBuilder, ContextBuilder};
-pub use defaults::{DefaultPort, NoOpPort};
-pub use registry::{PortRegistry, PortKey};
-pub use helpers::{with_timeout, retry_on_failure};
 pub use crate::error::{HexkitError, HexkitResult};
+pub use builders::{ContextBuilder, PortBuilder};
+pub use defaults::{DefaultPort, NoOpPort};
+pub use helpers::{retry_on_failure, with_timeout};
+pub use registry::{PortKey, PortRegistry};

@@ -161,7 +161,9 @@ async fn test_duplicate_plugin_rejected() {
     let config = PluginConfig::default();
     registry.load_plugin(plugin.clone(), config).await.unwrap();
     // Try to load again - should fail
-    let result = registry.load_plugin(plugin.clone(), PluginConfig::default()).await;
+    let result = registry
+        .load_plugin(plugin.clone(), PluginConfig::default())
+        .await;
     assert!(result.is_err());
 }
 

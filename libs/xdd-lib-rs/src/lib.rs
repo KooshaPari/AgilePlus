@@ -7,12 +7,12 @@
 //!
 //! Useful for AgilePlus spec files that may be stored in different formats.
 
-pub mod dialect;
 pub mod converter;
-pub mod registry;
+pub mod dialect;
 pub mod error;
+pub mod registry;
 
-pub use dialect::{Dialect, DialectType};
 pub use converter::DialectConverter;
-pub use registry::DialectRegistry;
+pub use dialect::{Dialect, DialectType};
 pub use error::{XddError, XddResult};
+pub use registry::DialectRegistry;

@@ -6,7 +6,7 @@ pub mod error;
 
 pub use error::{ConfigError, Result};
 
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{Serialize, de::DeserializeOwned};
 
 /// Configuration trait for loading and saving application settings.
 pub trait Config: Sized {
@@ -141,8 +141,7 @@ impl<T: Serialize + DeserializeOwned + Default> Config for TomlConfig<T> {
     }
 
     fn to_string(&self) -> Result<String> {
-        toml::to_string_pretty(&self.config)
-            .map_err(|e| ConfigError::SaveFailed(e.to_string()))
+        toml::to_string_pretty(&self.config).map_err(|e| ConfigError::SaveFailed(e.to_string()))
     }
 
     fn to_file(&self, path: &str) -> Result<()> {
@@ -213,10 +212,12 @@ enabled = true
     #[test]
     fn test_config_update() {
         let mut config: JsonConfig<TestConfig> = JsonConfig::new();
-        config.update(|c: &mut TestConfig| {
-            c.name = "updated".to_string();
-            c.port = 9999;
-        }).unwrap();
+        config
+            .update(|c: &mut TestConfig| {
+                c.name = "updated".to_string();
+                c.port = 9999;
+            })
+            .unwrap();
         assert_eq!(config.config.name, "updated");
         assert_eq!(config.config.port, 9999);
     }

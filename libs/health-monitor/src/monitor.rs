@@ -1,8 +1,8 @@
 //! Main health monitor implementation
 
+use parking_lot::RwLock;
 use std::collections::HashMap;
 use std::sync::Arc;
-use parking_lot::RwLock;
 use tokio::sync::broadcast;
 
 use crate::check::{HealthCheckResult, HealthStatus};
@@ -47,7 +47,7 @@ impl HealthMonitor {
     /// Record a health check result
     pub fn record(&self, result: HealthCheckResult) {
         let action = self.strategy.evaluate(&result);
-        
+
         // Update status
         {
             let mut statuses = self.statuses.write();
@@ -99,7 +99,10 @@ mod tests {
         let monitor = HealthMonitor::new(None);
         let result = HealthCheckResult::healthy("test-service");
         monitor.record(result);
-        assert_eq!(monitor.get_status("test-service"), Some(HealthStatus::Healthy));
+        assert_eq!(
+            monitor.get_status("test-service"),
+            Some(HealthStatus::Healthy)
+        );
     }
 
     #[test]
@@ -107,7 +110,10 @@ mod tests {
         let monitor = HealthMonitor::new(None);
         let result = HealthCheckResult::unhealthy("test-service", "failed");
         monitor.record(result);
-        assert_eq!(monitor.get_status("test-service"), Some(HealthStatus::Unhealthy));
+        assert_eq!(
+            monitor.get_status("test-service"),
+            Some(HealthStatus::Unhealthy)
+        );
     }
 
     #[test]

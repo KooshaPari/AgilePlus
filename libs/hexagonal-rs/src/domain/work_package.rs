@@ -1,7 +1,7 @@
 //! WorkPackage entity
 
-use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 
 use crate::domain::entity::{Entity, EntityId};
 
@@ -18,7 +18,11 @@ pub struct WorkPackage {
 
 impl WorkPackage {
     /// Create a new work package linked to a spec
-    pub fn new(spec_id: EntityId, title: impl Into<String>, description: impl Into<String>) -> Self {
+    pub fn new(
+        spec_id: EntityId,
+        title: impl Into<String>,
+        description: impl Into<String>,
+    ) -> Self {
         let now = Utc::now();
         Self {
             id: EntityId::new(),
@@ -30,11 +34,21 @@ impl WorkPackage {
         }
     }
 
-    pub fn title(&self) -> &str { &self.title }
-    pub fn description(&self) -> &str { &self.description }
-    pub fn spec_id(&self) -> &EntityId { &self.spec_id }
-    pub fn created_at(&self) -> DateTime<Utc> { self.created_at }
-    pub fn updated_at(&self) -> DateTime<Utc> { self.updated_at }
+    pub fn title(&self) -> &str {
+        &self.title
+    }
+    pub fn description(&self) -> &str {
+        &self.description
+    }
+    pub fn spec_id(&self) -> &EntityId {
+        &self.spec_id
+    }
+    pub fn created_at(&self) -> DateTime<Utc> {
+        self.created_at
+    }
+    pub fn updated_at(&self) -> DateTime<Utc> {
+        self.updated_at
+    }
 }
 
 impl Entity for WorkPackage {
@@ -55,11 +69,7 @@ mod tests {
     #[test]
     fn test_create_work_package() {
         let spec_id = EntityId::from_string("spec-1");
-        let wp = WorkPackage::new(
-            spec_id.clone(),
-            "Implementation",
-            "Description",
-        );
+        let wp = WorkPackage::new(spec_id.clone(), "Implementation", "Description");
         assert_eq!(wp.title(), "Implementation");
         assert_eq!(wp.spec_id().as_str(), "spec-1");
         assert_eq!(wp.entity_type(), "work_package");

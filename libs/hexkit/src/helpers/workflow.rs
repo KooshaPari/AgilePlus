@@ -48,18 +48,28 @@ mod tests {
             || {
                 attempts += 1;
                 async move {
-                    if attempts < 2 { Err("fail".into()) } else { Ok(42) }
+                    if attempts < 2 {
+                        Err("fail".into())
+                    } else {
+                        Ok(42)
+                    }
                 }
             },
             3,
             Duration::from_millis(1),
-        ).await.unwrap();
+        )
+        .await
+        .unwrap();
         assert_eq!(result, 42);
     }
 
     #[tokio::test]
     async fn timeout_failure() {
-        let res = with_timeout(tokio::time::sleep(Duration::from_millis(50)), Duration::from_millis(10)).await;
+        let res = with_timeout(
+            tokio::time::sleep(Duration::from_millis(50)),
+            Duration::from_millis(10),
+        )
+        .await;
         assert!(res.is_err());
     }
 
@@ -69,7 +79,8 @@ mod tests {
             || async { Err::<i32, Box<dyn std::error::Error>>("always fail".into()) },
             2,
             Duration::from_millis(1),
-        ).await;
+        )
+        .await;
         assert!(res.is_err());
     }
 

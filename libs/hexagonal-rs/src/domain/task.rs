@@ -1,7 +1,7 @@
 //! Task entity
 
-use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 
 use crate::domain::entity::{Entity, EntityId};
 
@@ -62,16 +62,36 @@ impl Task {
         }
     }
 
-    pub fn title(&self) -> &str { &self.title }
-    pub fn description(&self) -> &str { &self.description }
-    pub fn status(&self) -> TaskStatus { self.status }
-    pub fn priority(&self) -> TaskPriority { self.priority }
-    pub fn estimated_hours(&self) -> Option<f32> { self.estimated_hours }
-    pub fn actual_hours(&self) -> Option<f32> { self.actual_hours }
-    pub fn assignee(&self) -> Option<&str> { self.assignee.as_deref() }
-    pub fn work_package_id(&self) -> &EntityId { &self.work_package_id }
-    pub fn created_at(&self) -> DateTime<Utc> { self.created_at }
-    pub fn updated_at(&self) -> DateTime<Utc> { self.updated_at }
+    pub fn title(&self) -> &str {
+        &self.title
+    }
+    pub fn description(&self) -> &str {
+        &self.description
+    }
+    pub fn status(&self) -> TaskStatus {
+        self.status
+    }
+    pub fn priority(&self) -> TaskPriority {
+        self.priority
+    }
+    pub fn estimated_hours(&self) -> Option<f32> {
+        self.estimated_hours
+    }
+    pub fn actual_hours(&self) -> Option<f32> {
+        self.actual_hours
+    }
+    pub fn assignee(&self) -> Option<&str> {
+        self.assignee.as_deref()
+    }
+    pub fn work_package_id(&self) -> &EntityId {
+        &self.work_package_id
+    }
+    pub fn created_at(&self) -> DateTime<Utc> {
+        self.created_at
+    }
+    pub fn updated_at(&self) -> DateTime<Utc> {
+        self.updated_at
+    }
 
     pub fn set_status(&mut self, status: TaskStatus) {
         self.status = status;

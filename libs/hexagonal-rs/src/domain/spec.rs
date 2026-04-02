@@ -1,7 +1,7 @@
 //! Spec entity - represents a feature or requirement
 
-use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 
 use crate::domain::entity::{Entity, EntityId};
 
@@ -89,13 +89,27 @@ impl Spec {
     }
 
     // Getters
-    pub fn title(&self) -> &str { &self.title }
-    pub fn description(&self) -> &str { &self.description }
-    pub fn status(&self) -> SpecStatus { self.status }
-    pub fn priority(&self) -> SpecPriority { self.priority }
-    pub fn acceptance_criteria(&self) -> &[String] { &self.acceptance_criteria }
-    pub fn created_at(&self) -> DateTime<Utc> { self.created_at }
-    pub fn updated_at(&self) -> DateTime<Utc> { self.updated_at }
+    pub fn title(&self) -> &str {
+        &self.title
+    }
+    pub fn description(&self) -> &str {
+        &self.description
+    }
+    pub fn status(&self) -> SpecStatus {
+        self.status
+    }
+    pub fn priority(&self) -> SpecPriority {
+        self.priority
+    }
+    pub fn acceptance_criteria(&self) -> &[String] {
+        &self.acceptance_criteria
+    }
+    pub fn created_at(&self) -> DateTime<Utc> {
+        self.created_at
+    }
+    pub fn updated_at(&self) -> DateTime<Utc> {
+        self.updated_at
+    }
 }
 
 impl Entity for Spec {

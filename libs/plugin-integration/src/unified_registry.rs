@@ -90,11 +90,21 @@ mod tests {
         struct MockPlugin;
         #[async_trait::async_trait]
         impl Plugin for MockPlugin {
-            fn name(&self) -> &str { "mock" }
-            fn version(&self) -> &str { "0.1.0" }
-            fn metadata(&self) -> Option<PluginMetadata> { None }
-            async fn initialize(&self, _: PluginConfig) -> Result<(), PluginError> { Ok(()) }
-            async fn shutdown(&self) -> Result<(), PluginError> { Ok(()) }
+            fn name(&self) -> &str {
+                "mock"
+            }
+            fn version(&self) -> &str {
+                "0.1.0"
+            }
+            fn metadata(&self) -> Option<PluginMetadata> {
+                None
+            }
+            async fn initialize(&self, _: PluginConfig) -> Result<(), PluginError> {
+                Ok(())
+            }
+            async fn shutdown(&self) -> Result<(), PluginError> {
+                Ok(())
+            }
         }
 
         let plugin: Arc<dyn Plugin> = Arc::new(MockPlugin);

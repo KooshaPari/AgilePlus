@@ -160,7 +160,10 @@ impl HealthMonitor {
     /// Get health status for a service
     pub async fn get_health(&self, service_name: &str) -> Option<HealthStatus> {
         let services = self.services.read().await;
-        services.iter().find(|s| s.service_name == service_name).map(|s| s.status.clone())
+        services
+            .iter()
+            .find(|s| s.service_name == service_name)
+            .map(|s| s.status.clone())
     }
 
     /// Get all service health statuses
@@ -204,7 +207,10 @@ mod tests {
         monitor.register_service("test-svc".to_string()).await;
         monitor.record_success("test-svc").await;
         monitor.record_success("test-svc").await;
-        assert_eq!(monitor.get_health("test-svc").await, Some(HealthStatus::Healthy));
+        assert_eq!(
+            monitor.get_health("test-svc").await,
+            Some(HealthStatus::Healthy)
+        );
     }
 
     #[tokio::test]
@@ -214,7 +220,10 @@ mod tests {
         monitor.record_failure("test-svc").await;
         monitor.record_failure("test-svc").await;
         monitor.record_failure("test-svc").await;
-        assert_eq!(monitor.get_health("test-svc").await, Some(HealthStatus::Unhealthy));
+        assert_eq!(
+            monitor.get_health("test-svc").await,
+            Some(HealthStatus::Unhealthy)
+        );
     }
 
     #[tokio::test]

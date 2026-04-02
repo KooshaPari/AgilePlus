@@ -10,16 +10,36 @@ use std::time::Duration;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "lowercase")]
 pub enum MetricValue {
-    Counter { value: u64 },
-    Gauge { value: f64 },
-    Histogram { samples: Vec<f64>, count: u64, sum: f64, min: f64, max: f64 },
-    Timing { duration_ms: f64 },
+    Counter {
+        value: u64,
+    },
+    Gauge {
+        value: f64,
+    },
+    Histogram {
+        samples: Vec<f64>,
+        count: u64,
+        sum: f64,
+        min: f64,
+        max: f64,
+    },
+    Timing {
+        duration_ms: f64,
+    },
 }
 
 impl MetricValue {
-    pub fn counter(value: u64) -> Self { Self::Counter { value } }
-    pub fn gauge(value: f64) -> Self { Self::Gauge { value } }
-    pub fn timing(duration: Duration) -> Self { Self::Timing { duration_ms: duration.as_secs_f64() * 1000.0 } }
+    pub fn counter(value: u64) -> Self {
+        Self::Counter { value }
+    }
+    pub fn gauge(value: f64) -> Self {
+        Self::Gauge { value }
+    }
+    pub fn timing(duration: Duration) -> Self {
+        Self::Timing {
+            duration_ms: duration.as_secs_f64() * 1000.0,
+        }
+    }
 }
 
 /// A snapshot of all metrics
@@ -31,7 +51,10 @@ pub struct MetricSnapshot {
 
 impl MetricSnapshot {
     pub fn new() -> Self {
-        Self { timestamp: utc_timestamp(), metrics: HashMap::new() }
+        Self {
+            timestamp: utc_timestamp(),
+            metrics: HashMap::new(),
+        }
     }
 
     pub fn with_metric(mut self, name: &str, value: MetricValue) -> Self {
@@ -41,11 +64,16 @@ impl MetricSnapshot {
 }
 
 impl Default for MetricSnapshot {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 fn utc_timestamp() -> i64 {
-    std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs() as i64
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_secs() as i64
 }
 
 /// Thread-safe metrics collector
@@ -57,7 +85,9 @@ pub struct MetricsCollector {
 }
 
 impl MetricsCollector {
-    pub fn new() -> Self { Self::default() }
+    pub fn new() -> Self {
+        Self::default()
+    }
 
     pub fn increment(&self, name: &str, value: u64) {
         *self.counters.write().entry(name.to_string()).or_insert(0) += value;
@@ -75,15 +105,21 @@ impl MetricsCollector {
         let mut snapshot = MetricSnapshot::new();
 
         for (name, &value) in self.counters.read().iter() {
-            snapshot.metrics.insert(name.clone(), MetricValue::counter(value));
+            snapshot
+                .metrics
+                .insert(name.clone(), MetricValue::counter(value));
         }
 
         for (name, &value) in self.gauges.read().iter() {
-            snapshot.metrics.insert(name.clone(), MetricValue::gauge(value));
+            snapshot
+                .metrics
+                .insert(name.clone(), MetricValue::gauge(value));
         }
 
         for (name, duration) in self.timings.read().iter() {
-            snapshot.metrics.insert(name.clone(), MetricValue::timing(*duration));
+            snapshot
+                .metrics
+                .insert(name.clone(), MetricValue::timing(*duration));
         }
 
         snapshot

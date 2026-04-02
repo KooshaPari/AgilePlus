@@ -8,18 +8,18 @@ use std::collections::HashMap;
 pub struct ServiceMetadata {
     /// Human-readable name
     pub name: String,
-    
+
     /// Version of the service
     pub version: String,
-    
+
     /// Optional description
     #[serde(default)]
     pub description: Option<String>,
-    
+
     /// Health check endpoint
     #[serde(default)]
     pub health_endpoint: Option<String>,
-    
+
     /// Additional key-value metadata
     #[serde(default)]
     pub labels: HashMap<String, String>,
@@ -61,14 +61,14 @@ impl ServiceMetadata {
 pub struct RegisteredService {
     /// Unique identifier
     pub id: String,
-    
+
     /// Service metadata
     pub metadata: ServiceMetadata,
-    
+
     /// Base URL or connection string
     #[serde(default)]
     pub endpoint: Option<String>,
-    
+
     /// Whether the service is currently available
     #[serde(default)]
     pub available: bool,
@@ -116,7 +116,7 @@ mod tests {
         let meta = ServiceMetadata::new("git-service", "1.0.0")
             .with_description("Git operations service")
             .with_label("env", "production");
-        
+
         assert_eq!(meta.name, "git-service");
         assert_eq!(meta.version, "1.0.0");
         assert_eq!(meta.labels.get("env"), Some(&"production".to_string()));
@@ -125,9 +125,9 @@ mod tests {
     #[test]
     fn test_registered_service() {
         let meta = ServiceMetadata::new("storage", "2.0.0");
-        let mut service = RegisteredService::new("storage-service", meta)
-            .with_endpoint("http://localhost:8080");
-        
+        let mut service =
+            RegisteredService::new("storage-service", meta).with_endpoint("http://localhost:8080");
+
         assert_eq!(service.id, "storage-service");
         assert!(service.is_available());
         service.mark_unavailable();

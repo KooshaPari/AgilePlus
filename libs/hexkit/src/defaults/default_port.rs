@@ -9,9 +9,18 @@ pub struct DefaultPort {
 }
 
 impl DefaultPort {
-    pub fn new() -> Self { Self::default() }
-    pub fn with_latency(mut self, ms: u64) -> Self { self.simulate_latency = true; self.latency_ms = ms; self }
-    pub fn with_failure(mut self, _msg: impl Into<String>) -> Self { self.fail_on_use = true; self }
+    pub fn new() -> Self {
+        Self::default()
+    }
+    pub fn with_latency(mut self, ms: u64) -> Self {
+        self.simulate_latency = true;
+        self.latency_ms = ms;
+        self
+    }
+    pub fn with_failure(mut self, _msg: impl Into<String>) -> Self {
+        self.fail_on_use = true;
+        self
+    }
 }
 
 /// No-op port for testing
@@ -19,5 +28,7 @@ impl DefaultPort {
 pub struct NoOpPort;
 
 impl NoOpPort {
-    pub fn new() -> Self { Self }
+    pub fn new() -> Self {
+        Self
+    }
 }

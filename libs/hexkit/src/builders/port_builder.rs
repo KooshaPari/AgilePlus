@@ -18,7 +18,10 @@ pub struct PortBuilder<P> {
 
 impl<P> PortBuilder<P> {
     pub fn new() -> Self {
-        Self { config: PortConfig::default(), _phantom: std::marker::PhantomData }
+        Self {
+            config: PortConfig::default(),
+            _phantom: std::marker::PhantomData,
+        }
     }
 
     pub fn with_cache(mut self, enabled: bool) -> Self {
@@ -43,7 +46,9 @@ impl<P> PortBuilder<P> {
 
     pub fn build(self) -> HexkitResult<PortConfig> {
         if self.config.retry_enabled && self.config.max_retries.is_none() {
-            return Err(HexkitError::BuilderValidation("retry enabled but max_retries not set".into()));
+            return Err(HexkitError::BuilderValidation(
+                "retry enabled but max_retries not set".into(),
+            ));
         }
         Ok(self.config)
     }
@@ -57,16 +62,37 @@ pub struct ContextBuilder<Storage, Vcs, Agent> {
 }
 
 impl<Storage, Vcs, Agent> ContextBuilder<Storage, Vcs, Agent> {
-    pub fn new() -> Self { Self { storage: None, vcs: None, agent: None } }
+    pub fn new() -> Self {
+        Self {
+            storage: None,
+            vcs: None,
+            agent: None,
+        }
+    }
 
-    pub fn with_storage(mut self, storage: Storage) -> Self { self.storage = Some(storage); self }
-    pub fn with_vcs(mut self, vcs: Vcs) -> Self { self.vcs = Some(vcs); self }
-    pub fn with_agent(mut self, agent: Agent) -> Self { self.agent = Some(agent); self }
+    pub fn with_storage(mut self, storage: Storage) -> Self {
+        self.storage = Some(storage);
+        self
+    }
+    pub fn with_vcs(mut self, vcs: Vcs) -> Self {
+        self.vcs = Some(vcs);
+        self
+    }
+    pub fn with_agent(mut self, agent: Agent) -> Self {
+        self.agent = Some(agent);
+        self
+    }
 
     pub fn build(self) -> HexkitResult<(Storage, Vcs, Agent)> {
-        let storage = self.storage.ok_or_else(|| HexkitError::BuilderValidation("storage not set".into()))?;
-        let vcs = self.vcs.ok_or_else(|| HexkitError::BuilderValidation("vcs not set".into()))?;
-        let agent = self.agent.ok_or_else(|| HexkitError::BuilderValidation("agent not set".into()))?;
+        let storage = self
+            .storage
+            .ok_or_else(|| HexkitError::BuilderValidation("storage not set".into()))?;
+        let vcs = self
+            .vcs
+            .ok_or_else(|| HexkitError::BuilderValidation("vcs not set".into()))?;
+        let agent = self
+            .agent
+            .ok_or_else(|| HexkitError::BuilderValidation("agent not set".into()))?;
         Ok((storage, vcs, agent))
     }
 }
@@ -93,8 +119,7 @@ mod tests {
 
     #[test]
     fn test_port_builder_invalid_retry() {
-        let builder = PortBuilder::<()>::new()
-            .with_retry(true);
+        let builder = PortBuilder::<()>::new().with_retry(true);
         let res = builder.build();
         assert!(res.is_err());
     }

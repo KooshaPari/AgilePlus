@@ -55,7 +55,8 @@ mod tests {
     #[test]
     fn json_to_toml() {
         let input = r#"{"name": "test", "count": 42}"#;
-        let result = DialectConverter::convert_types(input, DialectType::Json, DialectType::Toml).unwrap();
+        let result =
+            DialectConverter::convert_types(input, DialectType::Json, DialectType::Toml).unwrap();
         assert!(result.contains("name"));
         assert!(result.contains("test"));
     }
@@ -63,7 +64,8 @@ mod tests {
     #[test]
     fn json_to_yaml() {
         let input = r#"{"name": "test"}"#;
-        let result = DialectConverter::convert_types(input, DialectType::Json, DialectType::Yaml).unwrap();
+        let result =
+            DialectConverter::convert_types(input, DialectType::Json, DialectType::Yaml).unwrap();
         assert!(result.contains("name:"));
     }
 

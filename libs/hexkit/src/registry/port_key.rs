@@ -1,7 +1,7 @@
 //! Port key types
 
-use std::fmt;
 use std::any::type_name;
+use std::fmt;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct PortKey {
@@ -11,11 +11,17 @@ pub struct PortKey {
 
 impl PortKey {
     pub fn new<T: 'static>() -> Self {
-        Self { type_name: type_name::<T>().to_string(), qualifier: None }
+        Self {
+            type_name: type_name::<T>().to_string(),
+            qualifier: None,
+        }
     }
 
     pub fn with_qualifier<T: 'static>(qualifier: impl Into<String>) -> Self {
-        Self { type_name: type_name::<T>().to_string(), qualifier: Some(qualifier.into()) }
+        Self {
+            type_name: type_name::<T>().to_string(),
+            qualifier: Some(qualifier.into()),
+        }
     }
 
     pub fn as_str(&self) -> String {

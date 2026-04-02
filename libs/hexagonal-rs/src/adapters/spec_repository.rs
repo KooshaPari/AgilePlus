@@ -33,7 +33,8 @@ impl SpecRepository for InMemorySpecRepository {
 
     async fn find_by_id(&self, id: &EntityId) -> RepositoryResult<Spec> {
         let specs = self.specs.read().await;
-        specs.get(id.as_str())
+        specs
+            .get(id.as_str())
             .cloned()
             .ok_or_else(|| RepositoryError::NotFound(id.as_str().to_string()))
     }
@@ -45,7 +46,8 @@ impl SpecRepository for InMemorySpecRepository {
 
     async fn delete(&self, id: &EntityId) -> RepositoryResult<()> {
         let mut specs = self.specs.write().await;
-        specs.remove(id.as_str())
+        specs
+            .remove(id.as_str())
             .ok_or_else(|| RepositoryError::NotFound(id.as_str().to_string()))?;
         Ok(())
     }

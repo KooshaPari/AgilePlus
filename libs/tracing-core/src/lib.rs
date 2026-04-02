@@ -4,7 +4,7 @@
 
 pub mod error;
 
-pub use error::{TraceError, Result};
+pub use error::{Result, TraceError};
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};

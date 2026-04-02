@@ -133,8 +133,8 @@ impl PluginGrpcService {
         let req = request.into_inner();
         info!(name = %req.name, "gRPC: init plugin request");
 
-        let config: PluginConfig = serde_json::from_str(&req.config_json)
-            .unwrap_or_else(|_| PluginConfig::default());
+        let config: PluginConfig =
+            serde_json::from_str(&req.config_json).unwrap_or_else(|_| PluginConfig::default());
 
         match self.registry.initialize(&req.name, config).await {
             Ok(()) => Ok(Response::new(InitPluginResponse {

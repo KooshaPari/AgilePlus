@@ -48,20 +48,22 @@ pub trait Dialect: Send + Sync {
 pub struct JsonDialect;
 
 impl JsonDialect {
-    pub fn new() -> Self { Self }
+    pub fn new() -> Self {
+        Self
+    }
 }
 
 impl Dialect for JsonDialect {
-    fn dialect_type(&self) -> DialectType { DialectType::Json }
+    fn dialect_type(&self) -> DialectType {
+        DialectType::Json
+    }
 
     fn parse(&self, input: &str) -> XddResult<Value> {
-        serde_json::from_str(input)
-            .map_err(|e| XddError::ParseError(e.to_string()))
+        serde_json::from_str(input).map_err(|e| XddError::ParseError(e.to_string()))
     }
 
     fn serialize(&self, value: &Value) -> XddResult<String> {
-        serde_json::to_string_pretty(value)
-            .map_err(|e| XddError::SerializationError(e.to_string()))
+        serde_json::to_string_pretty(value).map_err(|e| XddError::SerializationError(e.to_string()))
     }
 }
 
@@ -70,22 +72,25 @@ impl Dialect for JsonDialect {
 pub struct TomlDialect;
 
 impl TomlDialect {
-    pub fn new() -> Self { Self }
+    pub fn new() -> Self {
+        Self
+    }
 }
 
 impl Dialect for TomlDialect {
-    fn dialect_type(&self) -> DialectType { DialectType::Toml }
+    fn dialect_type(&self) -> DialectType {
+        DialectType::Toml
+    }
 
     fn parse(&self, input: &str) -> XddResult<Value> {
-        let value: toml::Value = toml::from_str(input)
-            .map_err(|e| XddError::ParseError(e.to_string()))?;
+        let value: toml::Value =
+            toml::from_str(input).map_err(|e| XddError::ParseError(e.to_string()))?;
         Ok(toml_to_json(value))
     }
 
     fn serialize(&self, value: &Value) -> XddResult<String> {
         let toml_value = json_to_toml(value)?;
-        toml::to_string_pretty(&toml_value)
-            .map_err(|e| XddError::SerializationError(e.to_string()))
+        toml::to_string_pretty(&toml_value).map_err(|e| XddError::SerializationError(e.to_string()))
     }
 }
 
@@ -94,20 +99,22 @@ impl Dialect for TomlDialect {
 pub struct YamlDialect;
 
 impl YamlDialect {
-    pub fn new() -> Self { Self }
+    pub fn new() -> Self {
+        Self
+    }
 }
 
 impl Dialect for YamlDialect {
-    fn dialect_type(&self) -> DialectType { DialectType::Yaml }
+    fn dialect_type(&self) -> DialectType {
+        DialectType::Yaml
+    }
 
     fn parse(&self, input: &str) -> XddResult<Value> {
-        serde_yaml::from_str(input)
-            .map_err(|e| XddError::ParseError(e.to_string()))
+        serde_yaml::from_str(input).map_err(|e| XddError::ParseError(e.to_string()))
     }
 
     fn serialize(&self, value: &Value) -> XddResult<String> {
-        serde_yaml::to_string(value)
-            .map_err(|e| XddError::SerializationError(e.to_string()))
+        serde_yaml::to_string(value).map_err(|e| XddError::SerializationError(e.to_string()))
     }
 }
 
@@ -122,9 +129,12 @@ fn toml_to_json(toml: toml::Value) -> Value {
         toml::Value::Boolean(b) => Value::Bool(b),
         toml::Value::Datetime(dt) => Value::String(dt.to_string()),
         toml::Value::Array(arr) => Value::Array(arr.into_iter().map(toml_to_json).collect()),
-        toml::Value::Table(table) => Value::Object(table.into_iter()
-            .map(|(k, v)| (k, toml_to_json(v)))
-            .collect()),
+        toml::Value::Table(table) => Value::Object(
+            table
+                .into_iter()
+                .map(|(k, v)| (k, toml_to_json(v)))
+                .collect(),
+        ),
     }
 }
 
@@ -143,7 +153,11 @@ fn json_to_toml(json: &Value) -> XddResult<toml::Value> {
             }
         }
         Value::String(s) => Ok(toml::Value::String(s.clone())),
-        Value::Array(arr) => Ok(toml::Value::Array(arr.iter().map(json_to_toml).collect::<XddResult<Vec<_>>>()?)),
+        Value::Array(arr) => Ok(toml::Value::Array(
+            arr.iter()
+                .map(json_to_toml)
+                .collect::<XddResult<Vec<_>>>()?,
+        )),
         Value::Object(obj) => {
             let mut table = toml::map::Map::new();
             for (k, v) in obj {
@@ -177,8 +191,12 @@ mod tests {
     #[test]
     fn toml_dialect_parse() {
         let dialect = TomlDialect::new();
-        let value = dialect.parse(r#"name = "test"
-count = 42"#).unwrap();
+        let value = dialect
+            .parse(
+                r#"name = "test"
+count = 42"#,
+            )
+            .unwrap();
         assert_eq!(value["name"], "test");
         assert_eq!(value["count"], 42);
     }

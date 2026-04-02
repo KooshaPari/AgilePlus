@@ -4,14 +4,14 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 
 /// A semantic capability that a service provides
-/// 
+///
 /// Intents are high-level descriptions of what a service can do,
 /// allowing consumers to find services by capability rather than name.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Capability {
     /// The primary category of capability (e.g., "vcs", "storage", "auth")
     pub category: String,
-    
+
     /// Specific actions or features within the category
     pub actions: HashSet<String>,
 }
@@ -59,10 +59,10 @@ impl Capability {
 pub struct ServiceIntent {
     /// The primary capability category
     pub capability: Capability,
-    
+
     /// Version constraints (semver format)
     pub version_constraint: Option<String>,
-    
+
     /// Priority for resolution (higher = preferred)
     #[serde(default)]
     pub priority: u32,
@@ -70,10 +70,7 @@ pub struct ServiceIntent {
 
 impl ServiceIntent {
     /// Create a new service intent
-    pub fn new(
-        category: impl Into<String>,
-        actions: impl IntoIterator<Item = String>,
-    ) -> Self {
+    pub fn new(category: impl Into<String>, actions: impl IntoIterator<Item = String>) -> Self {
         Self {
             capability: Capability::new(category, actions),
             version_constraint: None,
@@ -112,7 +109,7 @@ mod tests {
         let intent = ServiceIntent::new("storage", vec!["read".to_string(), "write".to_string()])
             .with_version(">=1.0.0")
             .with_priority(10);
-        
+
         assert_eq!(intent.capability.category, "storage");
         assert_eq!(intent.version_constraint, Some(">=1.0.0".to_string()));
         assert_eq!(intent.priority, 10);

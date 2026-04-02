@@ -1,8 +1,8 @@
 //! AES-GCM cipher implementation
 
 use aes_gcm::{
-    aead::{Aead, KeyInit, OsRng},
     Aes256Gcm, Nonce,
+    aead::{Aead, KeyInit, OsRng},
 };
 use rand::RngCore;
 

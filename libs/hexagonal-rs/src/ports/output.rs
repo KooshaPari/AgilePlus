@@ -42,7 +42,8 @@ pub trait SpecRepository: OutputPort {
 pub trait TaskRepository: OutputPort {
     async fn save(&self, task: Task) -> RepositoryResult<Task>;
     async fn find_by_id(&self, id: &EntityId) -> RepositoryResult<Task>;
-    async fn find_by_work_package(&self, work_package_id: &EntityId) -> RepositoryResult<Vec<Task>>;
+    async fn find_by_work_package(&self, work_package_id: &EntityId)
+    -> RepositoryResult<Vec<Task>>;
     async fn find_all(&self) -> RepositoryResult<Vec<Task>>;
     async fn delete(&self, id: &EntityId) -> RepositoryResult<()>;
 }

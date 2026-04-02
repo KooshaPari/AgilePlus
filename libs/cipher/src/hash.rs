@@ -61,7 +61,11 @@ impl HashOutput {
         }
         hasher.update(data);
         let hash = hex::encode(hasher.finalize());
-        Self { algorithm: "SHA-256".to_string(), hash, salt }
+        Self {
+            algorithm: "SHA-256".to_string(),
+            hash,
+            salt,
+        }
     }
 }
 

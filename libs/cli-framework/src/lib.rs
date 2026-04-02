@@ -246,7 +246,9 @@ impl CliApp for CliAppImpl {
             .get_command(name)
             .ok_or_else(|| CliError::CommandNotFound(name.to_string()))?;
 
-        let handler = cmd.handler.as_ref()
+        let handler = cmd
+            .handler
+            .as_ref()
             .ok_or_else(|| CliError::ExecutionFailed("command has no handler".to_string()))?;
 
         handler(ctx)
@@ -305,9 +307,7 @@ mod tests {
 
     #[test]
     fn test_command_not_found() {
-        let app = CliAppBuilder::new()
-            .name("testapp")
-            .build();
+        let app = CliAppBuilder::new().name("testapp").build();
 
         let mut ctx = CommandContext::new();
         let result = app.execute("nonexistent", &mut ctx);

@@ -1,8 +1,8 @@
 //! Key derivation functions
 
 use argon2::{
-    password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
     Argon2,
+    password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString, rand_core::OsRng},
 };
 
 use super::error::{CipherError, CipherResult};
@@ -53,15 +53,22 @@ fn derive_key_with_salt_impl(
     let argon2 = Argon2::new(
         argon2::Algorithm::Argon2id,
         argon2::Version::V0x13,
-        argon2::Params::new(config.memory_kib, config.iterations, config.parallelism, Some(32))
-            .map_err(|e| CipherError::KeyDerivationFailed(e.to_string()))?,
+        argon2::Params::new(
+            config.memory_kib,
+            config.iterations,
+            config.parallelism,
+            Some(32),
+        )
+        .map_err(|e| CipherError::KeyDerivationFailed(e.to_string()))?,
     );
 
     let hash = argon2
         .hash_password(password.as_bytes(), &salt)
         .map_err(|e| CipherError::KeyDerivationFailed(e.to_string()))?;
 
-    let hash_str = hash.hash.ok_or_else(|| CipherError::KeyDerivationFailed("no hash output".into()))?;
+    let hash_str = hash
+        .hash
+        .ok_or_else(|| CipherError::KeyDerivationFailed("no hash output".into()))?;
     let hash_bytes = hash_str.as_bytes();
 
     let mut key = [0u8; 32];
@@ -83,8 +90,8 @@ pub fn hash_password(password: &str) -> CipherResult<String> {
 
 /// Verify a password against a stored hash
 pub fn verify_password(password: &str, hash: &str) -> CipherResult<bool> {
-    let parsed_hash = PasswordHash::new(hash)
-        .map_err(|e| CipherError::KeyDerivationFailed(e.to_string()))?;
+    let parsed_hash =
+        PasswordHash::new(hash).map_err(|e| CipherError::KeyDerivationFailed(e.to_string()))?;
 
     Ok(Argon2::default()
         .verify_password(password.as_bytes(), &parsed_hash)

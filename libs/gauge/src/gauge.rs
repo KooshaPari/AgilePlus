@@ -13,7 +13,11 @@ pub struct Gauge {
 impl Gauge {
     /// Start a new gauge with a name
     pub fn new(name: impl Into<String>) -> Self {
-        Self { name: name.into(), start: Instant::now(), metadata: Vec::new() }
+        Self {
+            name: name.into(),
+            start: Instant::now(),
+            metadata: Vec::new(),
+        }
     }
 
     /// Add metadata to the gauge
@@ -32,8 +36,12 @@ impl Gauge {
         self.start.elapsed()
     }
 
-    pub fn name(&self) -> &str { &self.name }
-    pub fn metadata(&self) -> &[(String, String)] { &self.metadata }
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+    pub fn metadata(&self) -> &[(String, String)] {
+        &self.metadata
+    }
 }
 
 /// RAII gauge that automatically stops on drop
@@ -43,7 +51,9 @@ pub struct ScopedGauge {
 
 impl ScopedGauge {
     pub fn new(name: impl Into<String>) -> Self {
-        Self { gauge: Gauge::new(name) }
+        Self {
+            gauge: Gauge::new(name),
+        }
     }
 
     pub fn elapsed(&self) -> Duration {

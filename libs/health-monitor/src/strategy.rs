@@ -1,7 +1,7 @@
 //! Health monitoring strategies
 
-use serde::{Deserialize, Serialize};
 use crate::check::{HealthCheckResult, HealthStatus};
+use serde::{Deserialize, Serialize};
 
 /// Actions to take based on health evaluation
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]

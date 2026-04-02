@@ -1,9 +1,9 @@
 //! Service registry module
 
+use crate::{NexusError, Service};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use crate::{Service, NexusError};
 
 /// Service registry for managing service registrations
 ///
@@ -36,7 +36,9 @@ impl Registry {
     /// Register a service
     pub async fn register(&self, service: Service) -> Result<(), NexusError> {
         let mut services = self.services.write().await;
-        let entries = services.entry(service.name.clone()).or_insert_with(Vec::new);
+        let entries = services
+            .entry(service.name.clone())
+            .or_insert_with(Vec::new);
         entries.push(service);
         Ok(())
     }
@@ -79,8 +81,17 @@ mod tests {
     #[tokio::test]
     async fn test_registry_deregister() {
         let registry = Registry::new();
-        registry.register(Service::new("test-svc", crate::Endpoint::new("localhost:8080"))).await.unwrap();
-        registry.deregister("test-svc", "localhost:8080").await.unwrap();
+        registry
+            .register(Service::new(
+                "test-svc",
+                crate::Endpoint::new("localhost:8080"),
+            ))
+            .await
+            .unwrap();
+        registry
+            .deregister("test-svc", "localhost:8080")
+            .await
+            .unwrap();
         let discovered = registry.discover("test-svc").await.unwrap();
         assert!(discovered.is_empty());
     }

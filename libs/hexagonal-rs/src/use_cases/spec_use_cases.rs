@@ -34,7 +34,11 @@ impl<R: SpecRepository> CreateSpecUseCase<R> {
 impl<R: SpecRepository> InputPort<CreateSpecInput, CreateSpecResult> for CreateSpecUseCase<R> {
     async fn execute(&self, input: CreateSpecInput) -> CreateSpecResult {
         let spec = Spec::new(input.title, input.description);
-        let saved = self.repository.save(spec).await.expect("Failed to save spec");
+        let saved = self
+            .repository
+            .save(spec)
+            .await
+            .expect("Failed to save spec");
         CreateSpecResult { spec: saved }
     }
 }
@@ -67,7 +71,11 @@ impl<R: SpecRepository> UpdateSpecUseCase<R> {
 #[async_trait]
 impl<R: SpecRepository> InputPort<UpdateSpecInput, UpdateSpecResult> for UpdateSpecUseCase<R> {
     async fn execute(&self, input: UpdateSpecInput) -> UpdateSpecResult {
-        let mut spec = self.repository.find_by_id(&input.id).await.expect("Spec not found");
+        let mut spec = self
+            .repository
+            .find_by_id(&input.id)
+            .await
+            .expect("Spec not found");
 
         if let Some(title) = input.title {
             spec.set_title(title);
@@ -76,7 +84,11 @@ impl<R: SpecRepository> InputPort<UpdateSpecInput, UpdateSpecResult> for UpdateS
             spec.set_status(status);
         }
 
-        let saved = self.repository.save(spec).await.expect("Failed to save spec");
+        let saved = self
+            .repository
+            .save(spec)
+            .await
+            .expect("Failed to save spec");
         UpdateSpecResult { spec: saved }
     }
 }
@@ -95,7 +107,10 @@ impl<R: SpecRepository> ListSpecsUseCase<R> {
 #[async_trait]
 impl<R: SpecRepository> InputPort<(), Vec<Spec>> for ListSpecsUseCase<R> {
     async fn execute(&self, _input: ()) -> Vec<Spec> {
-        self.repository.find_all().await.expect("Failed to list specs")
+        self.repository
+            .find_all()
+            .await
+            .expect("Failed to list specs")
     }
 }
 
@@ -115,7 +130,7 @@ mod tests {
             title: "Test Spec".to_string(),
             description: "Test Description".to_string(),
         };
-        
+
         let result = use_case.execute(input).await;
         assert_eq!(result.spec.title(), "Test Spec");
     }
@@ -126,14 +141,14 @@ mod tests {
         let spec = Spec::new("Original", "Desc");
         let spec_id = spec.id().clone();
         repo.save(spec).await.unwrap();
-        
+
         let use_case = UpdateSpecUseCase::new(repo);
         let input = UpdateSpecInput {
             id: spec_id,
             title: Some("Updated".to_string()),
             status: Some(SpecStatus::Active),
         };
-        
+
         let result = use_case.execute(input).await;
         assert_eq!(result.spec.title(), "Updated");
         assert_eq!(result.spec.status(), SpecStatus::Active);
@@ -144,7 +159,7 @@ mod tests {
         let repo = Arc::new(InMemorySpecRepository::default());
         repo.save(Spec::new("Spec 1", "Desc 1")).await.unwrap();
         repo.save(Spec::new("Spec 2", "Desc 2")).await.unwrap();
-        
+
         let use_case = ListSpecsUseCase::new(repo);
         let result = use_case.execute(()).await;
         assert_eq!(result.len(), 2);

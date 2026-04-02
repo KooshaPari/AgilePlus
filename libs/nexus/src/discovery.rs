@@ -1,7 +1,7 @@
 //! Service discovery module
 
+use crate::{NexusError, Registry, Service};
 use std::hash::BuildHasher;
-use crate::{Registry, Service, NexusError};
 
 /// Discovery strategies for load balancing
 #[derive(Debug, Clone)]
@@ -52,7 +52,10 @@ mod tests {
     #[tokio::test]
     async fn test_discovery_round_robin() {
         let registry = Registry::new();
-        registry.register(Service::new("api", crate::Endpoint::new("localhost:8080"))).await.unwrap();
+        registry
+            .register(Service::new("api", crate::Endpoint::new("localhost:8080")))
+            .await
+            .unwrap();
         let discovery = Discovery::new(registry, Strategy::RoundRobin);
         let service = discovery.next("api").await.unwrap();
         assert!(service.is_some());

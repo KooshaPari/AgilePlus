@@ -173,19 +173,13 @@ impl InMemoryMetrics {
 impl Metrics for InMemoryMetrics {
     fn increment(&self, name: &str, value: f64) -> Result<()> {
         let mut counters = self.counters.write();
-        counters
-            .entry(name.to_string())
-            .or_default()
-            .inc(value);
+        counters.entry(name.to_string()).or_default().inc(value);
         Ok(())
     }
 
     fn set_gauge(&self, name: &str, value: f64) -> Result<()> {
         let mut gauges = self.gauges.write();
-        gauges
-            .entry(name.to_string())
-            .or_default()
-            .set(value);
+        gauges.entry(name.to_string()).or_default().set(value);
         Ok(())
     }
 

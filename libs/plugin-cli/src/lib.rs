@@ -48,9 +48,9 @@ impl Plugin for CliPlugin {
     }
 
     async fn initialize(&self, config: PluginConfig) -> Result<()> {
-        let config_json = serde_json::to_string_pretty(&config.config)
-            .unwrap_or_else(|_| "{}".to_string());
-        
+        let config_json =
+            serde_json::to_string_pretty(&config.config).unwrap_or_else(|_| "{}".to_string());
+
         info!(
             host_version = %config.host_version,
             config = %config_json,

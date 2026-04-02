@@ -15,14 +15,14 @@
 //! # }
 //! ```
 
-pub mod registry;
-pub mod service;
 pub mod discovery;
 pub mod error;
 pub mod health;
+pub mod registry;
+pub mod service;
 
-pub use registry::Registry;
-pub use service::{Service, Endpoint};
 pub use discovery::Discovery;
 pub use error::NexusError;
-pub use health::{HealthMonitor, HealthStatus, HealthCheckConfig, ServiceHealth};
+pub use health::{HealthCheckConfig, HealthMonitor, HealthStatus, ServiceHealth};
+pub use registry::Registry;
+pub use service::{Endpoint, Service};

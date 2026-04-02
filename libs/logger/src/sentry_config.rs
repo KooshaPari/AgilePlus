@@ -27,7 +27,9 @@ pub fn initialize() -> sentry::ClientInitGuard {
     let release = env!("CARGO_PKG_VERSION");
 
     // If no DSN is provided, use test mode (errors logged to stderr)
-    let dsn_url = dsn.as_deref().unwrap_or("https://test@test.ingest.sentry.io/0");
+    let dsn_url = dsn
+        .as_deref()
+        .unwrap_or("https://test@test.ingest.sentry.io/0");
 
     sentry::init((
         dsn_url,

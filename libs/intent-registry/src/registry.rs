@@ -14,10 +14,10 @@ use crate::service::{RegisteredService, ServiceMetadata};
 pub struct IntentRegistry {
     /// Services indexed by ID
     services: Arc<RwLock<HashMap<String, RegisteredService>>>,
-    
+
     /// Services indexed by capability category
     by_category: Arc<RwLock<HashMap<String, Vec<String>>>>,
-    
+
     /// Services indexed by individual action
     by_action: Arc<RwLock<HashMap<String, Vec<String>>>>,
 }
@@ -77,15 +77,23 @@ impl IntentRegistry {
             }
         }
 
-        info!("Registered service '{}' with {} intents", service_id, intents.len());
+        info!(
+            "Registered service '{}' with {} intents",
+            service_id,
+            intents.len()
+        );
         Ok(())
     }
 
     /// Unregister a service
-    pub async fn unregister(&self, service_id: &str) -> Result<RegisteredService, IntentRegistryError> {
+    pub async fn unregister(
+        &self,
+        service_id: &str,
+    ) -> Result<RegisteredService, IntentRegistryError> {
         let service = {
             let mut services = self.services.write().await;
-            services.remove(service_id)
+            services
+                .remove(service_id)
                 .ok_or_else(|| IntentRegistryError::ServiceNotFound(service_id.to_string()))?
         };
 
@@ -137,32 +145,43 @@ impl IntentRegistry {
     }
 
     /// Update service availability status
-    pub async fn set_available(&self, service_id: &str, available: bool) -> Result<(), IntentRegistryError> {
+    pub async fn set_available(
+        &self,
+        service_id: &str,
+        available: bool,
+    ) -> Result<(), IntentRegistryError> {
         let mut services = self.services.write().await;
-        let service = services.get_mut(service_id)
+        let service = services
+            .get_mut(service_id)
             .ok_or_else(|| IntentRegistryError::ServiceNotFound(service_id.to_string()))?;
-        
+
         if available {
             service.mark_available();
         } else {
             service.mark_unavailable();
         }
-        
+
         Ok(())
     }
 
     /// Get a service's intents (metadata contains category info)
-    pub async fn get_service_intents(&self, service_id: &str) -> Result<Vec<String>, IntentRegistryError> {
+    pub async fn get_service_intents(
+        &self,
+        service_id: &str,
+    ) -> Result<Vec<String>, IntentRegistryError> {
         let services = self.services.read().await;
-        let service = services.get(service_id)
+        let service = services
+            .get(service_id)
             .ok_or_else(|| IntentRegistryError::ServiceNotFound(service_id.to_string()))?;
-        
+
         // Extract categories from labels (in a real impl, this would be stored separately)
-        let categories: Vec<String> = service.metadata.labels
+        let categories: Vec<String> = service
+            .metadata
+            .labels
             .get("categories")
             .map(|c| c.split(',').map(String::from).collect())
             .unwrap_or_default();
-        
+
         Ok(categories)
     }
 
@@ -183,30 +202,32 @@ mod tests {
     #[tokio::test]
     async fn test_register_and_find() {
         let registry = IntentRegistry::new();
-        
+
         let metadata = ServiceMetadata::new("git-service", "1.0.0");
-        let intents = vec![
-            ServiceIntent::new("vcs", vec!["git".to_string(), "commit".to_string(), "push".to_string()]),
-        ];
-        
-        registry.register(
-            "git-svc".to_string(),
-            metadata,
-            intents,
-            Some("http://localhost:8080".to_string()),
-        )
-        .await
-        .unwrap();
-        
+        let intents = vec![ServiceIntent::new(
+            "vcs",
+            vec!["git".to_string(), "commit".to_string(), "push".to_string()],
+        )];
+
+        registry
+            .register(
+                "git-svc".to_string(),
+                metadata,
+                intents,
+                Some("http://localhost:8080".to_string()),
+            )
+            .await
+            .unwrap();
+
         // Find by category
         let found = registry.find_by_category("vcs").await;
         assert_eq!(found.len(), 1);
         assert_eq!(found[0].id, "git-svc");
-        
+
         // Find by action
         let found = registry.find_by_action("commit").await;
         assert_eq!(found.len(), 1);
-        
+
         // List all
         let all = registry.list_all().await;
         assert_eq!(all.len(), 1);
@@ -215,30 +236,36 @@ mod tests {
     #[tokio::test]
     async fn test_unregister() {
         let registry = IntentRegistry::new();
-        
+
         let metadata = ServiceMetadata::new("test", "1.0.0");
         let intents = vec![ServiceIntent::new("test", vec!["test".to_string()])];
-        
-        registry.register("test".to_string(), metadata, intents, None).await.unwrap();
-        
+
+        registry
+            .register("test".to_string(), metadata, intents, None)
+            .await
+            .unwrap();
+
         let removed = registry.unregister("test").await.unwrap();
         assert_eq!(removed.id, "test");
-        
+
         assert!(registry.get("test").await.is_none());
     }
 
     #[tokio::test]
     async fn test_availability() {
         let registry = IntentRegistry::new();
-        
+
         let metadata = ServiceMetadata::new("test", "1.0.0");
         let intents = vec![ServiceIntent::new("test", vec!["test".to_string()])];
-        
-        registry.register("test".to_string(), metadata, intents, None).await.unwrap();
-        
+
+        registry
+            .register("test".to_string(), metadata, intents, None)
+            .await
+            .unwrap();
+
         registry.set_available("test", false).await.unwrap();
         assert!(!registry.get("test").await.unwrap().is_available());
-        
+
         registry.set_available("test", true).await.unwrap();
         assert!(registry.get("test").await.unwrap().is_available());
     }

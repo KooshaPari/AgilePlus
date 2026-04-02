@@ -109,7 +109,11 @@ impl PluginRegistry {
         let plugin = plugin.ok_or_else(|| PluginError::NotFound(name.to_string()))?;
 
         // Version check
-        if let Some(min_version) = &plugin.metadata().as_ref().and_then(|m| m.min_host_version.clone()) {
+        if let Some(min_version) = &plugin
+            .metadata()
+            .as_ref()
+            .and_then(|m| m.min_host_version.clone())
+        {
             if config.host_version < *min_version {
                 return Err(PluginError::VersionMismatch {
                     plugin: name.to_string(),

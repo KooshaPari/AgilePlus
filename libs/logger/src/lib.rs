@@ -6,10 +6,21 @@ pub mod error;
 pub mod sentry_config;
 
 pub use error::{LogError, Result};
-pub use sentry_config::{initialize, initialize_with_options, capture_error, capture_message};
+pub use sentry_config::{capture_error, capture_message, initialize, initialize_with_options};
 
 /// Log severity levels.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default, serde::Serialize, serde::Deserialize)]
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Default,
+    serde::Serialize,
+    serde::Deserialize,
+)]
 #[serde(rename_all = "lowercase")]
 pub enum LogLevel {
     Debug,
@@ -154,7 +165,11 @@ impl Logger for ConsoleLogger {
         if !self.level.should_log(LogLevel::Debug) {
             return Ok(());
         }
-        println!("[{}] DEBUG: {}", chrono::Local::now().format("%Y-%m-%d %H:%M:%S"), msg);
+        println!(
+            "[{}] DEBUG: {}",
+            chrono::Local::now().format("%Y-%m-%d %H:%M:%S"),
+            msg
+        );
         Ok(())
     }
 
@@ -162,7 +177,11 @@ impl Logger for ConsoleLogger {
         if !self.level.should_log(LogLevel::Info) {
             return Ok(());
         }
-        println!("[{}] INFO: {}", chrono::Local::now().format("%Y-%m-%d %H:%M:%S"), msg);
+        println!(
+            "[{}] INFO: {}",
+            chrono::Local::now().format("%Y-%m-%d %H:%M:%S"),
+            msg
+        );
         Ok(())
     }
 
@@ -170,7 +189,11 @@ impl Logger for ConsoleLogger {
         if !self.level.should_log(LogLevel::Warn) {
             return Ok(());
         }
-        println!("[{}] WARN: {}", chrono::Local::now().format("%Y-%m-%d %H:%M:%S"), msg);
+        println!(
+            "[{}] WARN: {}",
+            chrono::Local::now().format("%Y-%m-%d %H:%M:%S"),
+            msg
+        );
         Ok(())
     }
 
@@ -178,7 +201,11 @@ impl Logger for ConsoleLogger {
         if !self.level.should_log(LogLevel::Error) {
             return Ok(());
         }
-        println!("[{}] ERROR: {}", chrono::Local::now().format("%Y-%m-%d %H:%M:%S"), msg);
+        println!(
+            "[{}] ERROR: {}",
+            chrono::Local::now().format("%Y-%m-%d %H:%M:%S"),
+            msg
+        );
         Ok(())
     }
 

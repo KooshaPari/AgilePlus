@@ -1,8 +1,8 @@
 //! Dialect registry for dynamic dialect resolution
 
+use parking_lot::RwLock;
 use std::collections::HashMap;
 use std::sync::Arc;
-use parking_lot::RwLock;
 
 use super::dialect::{Dialect, DialectType};
 use super::error::{XddError, XddResult};
@@ -29,7 +29,9 @@ impl DialectRegistry {
     /// Register a dialect
     pub fn register<D: Dialect + 'static>(&self, dialect: D) {
         let dialect_type = dialect.dialect_type();
-        self.dialects.write().insert(dialect_type, Arc::new(dialect));
+        self.dialects
+            .write()
+            .insert(dialect_type, Arc::new(dialect));
     }
 
     /// Register the default JSON, TOML, and YAML dialects
@@ -42,7 +44,8 @@ impl DialectRegistry {
 
     /// Get a dialect by type
     pub fn get(&self, dialect_type: DialectType) -> XddResult<Arc<dyn Dialect>> {
-        self.dialects.read()
+        self.dialects
+            .read()
             .get(&dialect_type)
             .cloned()
             .ok_or_else(|| XddError::DialectNotFound(format!("{:?}", dialect_type)))
