@@ -391,13 +391,12 @@ where
     };
 
     // Generate report
-    let report_content =
-        generate_retro_markdown(
-            slug,
-            &feature.friendly_name,
-            &feature_metrics,
-            args.include_raw_metrics,
-        );
+    let report_content = generate_retro_markdown(
+        slug,
+        &feature.friendly_name,
+        &feature_metrics,
+        args.include_raw_metrics,
+    );
 
     // Write to output path
     let output_path = args
@@ -524,10 +523,7 @@ async fn append_feature_transition_event<S: EventStore>(
     )
     .context("computing event hash")?;
 
-    storage
-        .append(&event)
-        .await
-        .context("persisting event")?;
+    storage.append(&event).await.context("persisting event")?;
 
     Ok(())
 }

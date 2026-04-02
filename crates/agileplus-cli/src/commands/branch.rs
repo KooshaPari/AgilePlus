@@ -129,21 +129,26 @@ pub async fn run<V: VcsPort>(args: BranchArgs, vcs: &V) -> Result<()> {
             } else {
                 vec!["branch", "-l"]
             };
-            let git_out = Command::new("git").args(&args).output()
+            let git_out = Command::new("git")
+                .args(&args)
+                .output()
                 .context("running git branch")?;
             if !git_out.status.success() {
-                anyhow::bail!("git branch failed: {}", String::from_utf8_lossy(&git_out.stderr));
+                anyhow::bail!(
+                    "git branch failed: {}",
+                    String::from_utf8_lossy(&git_out.stderr)
+                );
             }
             let raw = String::from_utf8_lossy(&git_out.stdout);
             let branches: Vec<BranchInfo> = raw
                 .lines()
                 .filter(|l| !l.trim().is_empty())
                 .map(|line| {
-                    let name = line
-                        .trim_start_matches('*')
-                        .trim()
-                        .to_string();
-                    BranchInfo { name, is_remote: remote }
+                    let name = line.trim_start_matches('*').trim().to_string();
+                    BranchInfo {
+                        name,
+                        is_remote: remote,
+                    }
                 })
                 .filter(|b| pattern.as_ref().map_or(true, |p| b.name.contains(p)))
                 .collect();

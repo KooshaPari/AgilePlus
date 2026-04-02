@@ -298,10 +298,7 @@ async fn append_feature_transition_event<S: EventStore>(
     )
     .context("computing event hash")?;
 
-    storage
-        .append(&event)
-        .await
-        .context("persisting event")?;
+    storage.append(&event).await.context("persisting event")?;
 
     Ok(())
 }
