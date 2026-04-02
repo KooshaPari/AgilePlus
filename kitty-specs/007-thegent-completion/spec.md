@@ -114,6 +114,22 @@ Complete decomposition and stabilization of thegent agent framework (1027 commit
    - Branch `chore/distribution-automation` exists
    - Left: Finish or merge
 
+### Lane And Stash Refresh — 2026-04-02
+
+- Active non-root lane is `platforms/worktrees/thegent/pr-876-fix`, currently `ahead 29, behind 7`
+  relative to `origin/chore/sync-docs-security-deps`.
+- `platforms/thegent-pr882` was a broken prunable detached worktree entry; the git admin metadata
+  has now been pruned and the remaining on-disk path is only an empty shell, not an active edit
+  surface.
+- Preserve these `main` stashes as separate hygiene items before any reapply action:
+  - `stash@{0}` `feat(thegent): enhance phench, governance providers, observability` touching
+    `src/thegent/adapters/__init__.py`, `src/thegent/cli/apps/phench.py`,
+    `src/thegent/governance/providers.py`, `src/thegent/phench/service.py`, and
+    `tests/test_phench_runtime.py`
+  - `stash@{1}` `docs(prd): expand PRD with 5 feature epics (#888)` touching
+    `src/thegent/cli/apps/phench.py`, `src/thegent/phench/__init__.py`,
+    `src/thegent/phench/service.py`, and `tests/conftest.py`
+
 6. **GitOps refactor (WP011)** (50% complete):
    - AgilePlus spec 007 tracking
    - Left: Track remaining gitops refactor

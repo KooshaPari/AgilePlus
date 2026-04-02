@@ -181,3 +181,19 @@ Based on audit findings, the following crates should be consolidated:
 - **Current**: 1.8 GB (source + target)
 - **Target**: 0.5 GB after `cargo clean`
 - **Build artifacts**: ~1.3 GB in target/
+
+### Worktree Classification Refresh — 2026-04-02
+
+- `.worktrees/feat/cache-adapter-impl` is a clean detached snapshot at `f32cf946a4` with no
+  working-tree drift; treat it as a classified checkpoint, not an active implementation lane.
+- `.worktrees/feat/phenotype-crypto-complete` on `feat/crypto-complete-rebased` at `280ac87862`
+  is the only active non-PR infrakit lane.
+- Active-lane validation currently passes:
+  - `cargo check -p phenotype-crypto`
+  - `cargo check -p phenotype-casbin-wrapper`
+  - `cargo test -p phenotype-casbin-wrapper` (`4` tests)
+  - `cargo test -p phenotype-crypto --lib` (`49` tests)
+  - `cargo test -p phenotype-crypto --test crypto_test test_hmac_hex_workflow`
+  - `cargo test -p phenotype-crypto --test crypto_test test_complete_encryption_workflow`
+  - `cargo test -p phenotype-crypto --test crypto_test test_hex_encoding_roundtrip`
+  - `cargo clippy -p phenotype-crypto --all-targets -- -D warnings`

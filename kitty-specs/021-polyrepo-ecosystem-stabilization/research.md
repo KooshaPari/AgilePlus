@@ -87,6 +87,19 @@ Across 9 cloned repos:
 - heliosCLI: 4 active worktrees need finish/close decisions
 - thegent: BytePort feature implementation (40% done)
 
+### agentapi-plusplus Docs Reproducibility Repair — 2026-04-02
+
+- The tracked `docs/node_modules/**` deletions are generated-install churn, not authored docs
+  changes.
+- The root docs workspace has been locally repaired to point at the live shelf package path
+  `../../phenodocs/packages/docs` instead of the obsolete
+  `../vendor/phenodocs/packages/docs`.
+- Reproducibility now succeeds locally:
+  - `npm --prefix agentapi-plusplus/docs ci`
+  - `npm --prefix agentapi-plusplus/docs run build`
+- The remaining local churn in this repo is no longer the docs dependency graph; it is the
+  broader mixed checkout state outside the docs workspace.
+
 ### 6. Merge Opportunities
 
 15 repos can be merged into 8 targets:

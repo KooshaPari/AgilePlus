@@ -45,13 +45,18 @@ repo, worktree, stash, and PR geometry on 2026-04-02.
   - `cargo test -p phenotype-crypto --lib` passes (`49` tests)
   - representative integration validation passes via
     `cargo test -p phenotype-crypto --test crypto_test test_hmac_hex_workflow`
+  - additional integration validations now pass via
+    `cargo test -p phenotype-crypto --test crypto_test test_complete_encryption_workflow` and
+    `cargo test -p phenotype-crypto --test crypto_test test_hex_encoding_roundtrip`
+  - `cargo clippy -p phenotype-crypto --all-targets -- -D warnings` passes
 
 ### thegent
 
 - `platforms/worktrees/thegent/pr-876-fix` is the active non-root lane and sits
   `ahead 29, behind 7` relative to `origin/chore/sync-docs-security-deps`.
-- `platforms/thegent-pr882` is now confirmed as an empty metadata shell on disk and should not be
-  used as an active edit surface.
+- `platforms/thegent-pr882` was a prunable detached worktree entry whose gitdir file pointed to a
+  non-existent location; `git worktree prune --verbose` has removed the stale admin record, and
+  the remaining on-disk path is only an empty shell.
 - Two stashes remain on `main` and must be preserved until they are reclassified:
   - `stash@{0}` `feat(thegent): enhance phench, governance providers, observability`
   - `stash@{1}` `docs(prd): expand PRD with 5 feature epics (#888)`
@@ -72,6 +77,19 @@ repo, worktree, stash, and PR geometry on 2026-04-02.
 - The `docs/node_modules` churn is consistent with generated-install artifact cleanup, not with
   intentional source changes.
 - First non-PR action remains classification and hygiene, not branch publication.
+- Immediate hygiene sequence:
+  - add `docs/node_modules/` to `.gitignore`
+  - stop tracking the generated directory with `git rm -r --cached docs/node_modules`
+  - verify docs still build from declared dependencies rather than committed install artifacts
+- Local path repair:
+  - repoint `agentapi-plusplus/docs` from the obsolete `../vendor/phenodocs/packages/docs` path to
+    the live shelf package at `../../phenodocs/packages/docs`
+- Verification results after repair:
+  - `npm --prefix agentapi-plusplus/docs ci` now succeeds
+  - `npm --prefix agentapi-plusplus/docs run build` now completes successfully
+- Net result:
+  - generated artifact tracking is isolated from the real authored diff
+  - the root docs workspace is locally reproducible against the live `phenodocs` package path
 
 ### cloud
 
@@ -80,6 +98,16 @@ repo, worktree, stash, and PR geometry on 2026-04-02.
   - `plans/product-analytics-improvements.md`
 - No extra local diff exists outside that preserved branch.
 - Publish remains blocked by `403` against `Kilo-Org/cloud`.
+
+### Immediate Non-PR Next Actions
+
+- `phenotype-infrakit`: active crypto lane is locally green but still uncommitted and unpublished.
+- `thegent`: stash scopes are now classified; next hygiene move is pruning the empty
+  `platforms/thegent-pr882` metadata shell after the note is durable.
+- `agentapi-plusplus`: generated docs-install churn should be reduced without touching authored
+  docs or the live governance lane.
+- `cloud`: blocker is fully local-access related; no additional branch surgery is needed before
+  push rights change.
 
 ### koosha-portfolio
 
