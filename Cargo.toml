@@ -35,6 +35,7 @@ members = [
     "crates/agileplus-graph",
     "crates/agileplus-nats",
     "crates/agileplus-sync",
+    "crates/agileplus-artifacts",
     "crates/agileplus-dashboard",
     "crates/agileplus-github",
     "crates/agileplus-p2p",
