@@ -4,7 +4,7 @@ import os, re, json, sys, argparse
 from typing import Set
 
 SPEC_MARKERS = {
-    "FR": re.compile(r"FR-[A-Z0-9]+-\d+"),
+    "FR": re.compile(r"FR-(?:[A-Z0-9]+-)?\d+"),
     "TRACE": re.compile(r"@trace\s+([A-Z0-9-]+\d+)"),
     "TEST_ID": re.compile(r"TEST-[A-Z0-9]*-\d+"),
 }

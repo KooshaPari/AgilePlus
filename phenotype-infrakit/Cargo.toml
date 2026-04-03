@@ -8,8 +8,6 @@ members = [
     "crates/phenotype-contract-tests",
     "crates/phenotype-git-core",
     "crates/phenotype-health",
-    "crates/phenotype-compliance-scanner",
-    "crates/phenotype-security-aggregator",
     "crates/phenotype-http-client",
     "crates/phenotype-rate-limiter",
     "crates/phenotype-sentry-config",

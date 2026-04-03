@@ -6,7 +6,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 /// Severity level for security findings.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum Severity {
     /// Critical severity
@@ -35,7 +35,7 @@ impl Severity {
 }
 
 /// Alert source
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type", content = "value")]
 pub enum AlertSource {
     /// Snyk security scanner
@@ -67,10 +67,8 @@ impl AlertSource {
 }
 
 /// A security finding from a scanner
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct SecurityFinding {
-    /// Unique identifier
-    pub id: String,
     /// Finding title
     pub title: String,
     /// Detailed description
