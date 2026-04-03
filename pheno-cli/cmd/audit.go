@@ -26,6 +26,7 @@ func init() {
 	auditCmd.Flags().StringVar(&auditReposDir, "repos-dir", ".", "Root directory to search for repositories")
 	auditCmd.Flags().StringVar(&auditRepo, "repo", "", "Specific repository path (overrides repos-dir)")
 	auditCmd.Flags().StringVar(&auditFormat, "format", "table", "Output format: table, json, or csv")
+	rootCmd.AddCommand(auditCmd)
 }
 
 func runAudit(cmd *cobra.Command, args []string) error {

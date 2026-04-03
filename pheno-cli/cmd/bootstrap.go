@@ -22,6 +22,7 @@ var (
 	bootstrapReposDir    string
 	bootstrapSkip        []string
 	bootstrapManifest    string
+	bootstrapBDD         bool
 )
 
 var bootstrapCmd = &cobra.Command{
@@ -48,6 +49,8 @@ func init() {
 	bootstrapCmd.Flags().StringVar(&bootstrapReposDir, "repos-dir", "", "Directory containing repositories (used with --all)")
 	bootstrapCmd.Flags().StringSliceVar(&bootstrapSkip, "skip", nil, "Comma-separated list of repo names to skip (used with --all)")
 	bootstrapCmd.Flags().StringVar(&bootstrapManifest, "manifest", "", "Path to repos.toml manifest (used with --all; auto-detects if omitted)")
+	bootstrapCmd.Flags().BoolVar(&bootstrapBDD, "bdd", false, "Include BDD testing templates and structure")
+	rootCmd.AddCommand(bootstrapCmd)
 }
 
 func runBootstrap(cmd *cobra.Command, args []string) error {
@@ -72,6 +75,7 @@ func runBulkBootstrap(cmd *cobra.Command) error {
 		ManifestPath: bootstrapManifest,
 		DryRun:       bootstrapDryRun,
 		Skip:         bootstrapSkip,
+		BDD:          bootstrapBDD,
 	}
 
 	results, err := rollout.RunBulkBootstrap(context.Background(), opts)
@@ -126,6 +130,14 @@ func runSingleBootstrap(cmd *cobra.Command, args []string) error {
 		".git/hooks/pre-push":           "pre-push.sh",
 		".github/workflows/ci.yml":      "ci.yml",
 		".github/workflows/release.yml": "release.yml",
+	}
+
+	// Add BDD templates if requested
+	if bootstrapBDD {
+		bddTemplates := getBDDTemplates(language, ctx.RepoName)
+		for path, tmpl := range bddTemplates {
+			filesToGenerate[path] = tmpl
+		}
 	}
 
 	// Render all templates
@@ -188,6 +200,9 @@ func runSingleBootstrap(cmd *cobra.Command, args []string) error {
 	fmt.Println("\n✓ Bootstrap complete!")
 	fmt.Printf("Repository: %s (%s)\n", repoName, language)
 	fmt.Printf("Risk profile: %s\n", bootstrapRiskProfile)
+	if bootstrapBDD {
+		fmt.Println("BDD templates: enabled")
+	}
 	fmt.Println("\nNext steps:")
 	fmt.Println("1. Review the generated files")
 	fmt.Println("2. Customize them as needed")
@@ -210,4 +225,28 @@ func inferRegistry(language string) string {
 	default:
 		return "unknown"
 	}
+}
+
+// getBDDTemplates returns the BDD template mappings for a given language
+func getBDDTemplates(language, repoName string) map[string]string {
+	templates := map[string]string{
+		"tests/bdd/features/domain.feature": "bdd-feature",
+	}
+
+	switch language {
+	case "rust":
+		templates["tests/bdd/steps/steps.rs"] = "bdd-steps-rs"
+		templates["tests/bdd/cargo.toml"] = "bdd-cargo-toml"
+	case "python":
+		templates["tests/bdd/steps/steps.py"] = "bdd-steps-py"
+	case "go":
+		templates["tests/bdd/steps/steps_test.go"] = "bdd-steps-go"
+		templates["tests/bdd/runner_test.go"] = "bdd-test-go"
+	case "typescript":
+		templates["tests/bdd/steps/steps.ts"] = "bdd-steps-ts"
+		templates["tests/bdd/cucumber.json"] = "bdd-cucumber-json"
+		templates["tests/bdd/package.json"] = "bdd-package-json"
+	}
+
+	return templates
 }

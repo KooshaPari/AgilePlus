@@ -1,0 +1,165 @@
+name: Publish npm Package
+
+on:
+  workflow_dispatch:
+    inputs:
+      package:
+        description: 'Package to publish (e.g., auth-ts, docs-engine)'
+        required: true
+        type: string
+      version:
+        description: 'Version to publish (e.g., 0.1.0)'
+        required: true
+        type: string
+      dry_run:
+        description: 'Dry run (do not actually publish)'
+        required: false
+        type: boolean
+        default: true
+      tag:
+        description: 'npm dist-tag (latest, beta, alpha)'
+        required: false
+        type: string
+        default: 'latest'
+
+  push:
+    tags:
+      - '@phenotype/*@*'
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Setup mise
+        uses: jdx/mise-action@v4
+
+      - name: Parse tag (if triggered by tag)
+        if: github.event_name == 'push'
+        id: parse-tag
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}
+          # Parse @phenotype/<package>@<version>
+          if [[ $TAG =~ ^@phenotype/(.+)@(.+)$ ]]; then
+            echo "package=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
+            echo "version=${BASH_REMATCH[2]}" >> $GITHUB_OUTPUT
+          else
+            echo "Invalid tag format: $TAG"
+            exit 1
+          fi
+
+      - name: Determine package path
+        id: package-path
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            PKG="${{ steps.parse-tag.outputs.package }}"
+          else
+            PKG="${{ inputs.package }}"
+          fi
+
+          # Map package names to paths
+          case "$PKG" in
+            auth-ts)          echo "path=phenotype-auth-ts" >> $GITHUB_OUTPUT ;;
+            docs-engine)      echo "path=phenotype-docs-engine" >> $GITHUB_OUTPUT ;;
+            agent-core)       echo "path=phenotype-agent-core" >> $GITHUB_OUTPUT ;;
+            task-engine)      echo "path=phenotype-task-engine" >> $GITHUB_OUTPUT ;;
+            research-engine)  echo "path=phenotype-research-engine" >> $GITHUB_OUTPUT ;;
+            config-ts)        echo "path=phenotype-config-ts" >> $GITHUB_OUTPUT ;;
+            ui)               echo "path=phenotype-hub/packages/ui" >> $GITHUB_OUTPUT ;;
+            dashboard)        echo "path=phenotype-hub/apps/dashboard" >> $GITHUB_OUTPUT ;;
+            web)              echo "path=phenotype-hub/apps/web" >> $GITHUB_OUTPUT ;;
+            *)
+              # Assume path matches package name
+              echo "path=$PKG" >> $GITHUB_OUTPUT
+              ;;
+          esac
+
+      - name: Validate package exists
+        run: |
+          if [ ! -f "${{ steps.package-path.outputs.path }}/package.json" ]; then
+            echo "Error: Package not found at ${{ steps.package-path.outputs.path }}/package.json"
+            exit 1
+          fi
+
+      - name: Install dependencies
+        working-directory: ${{ steps.package-path.outputs.path }}
+        run: |
+          if [ -f ../../bun.lockb ] || [ -f ../../bun.lock ]; then
+            bun install
+          elif [ -f ../../pnpm-lock.yaml ]; then
+            pnpm install
+          elif [ -f ../../package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
+
+      - name: Build package
+        working-directory: ${{ steps.package-path.outputs.path }}
+        run: |
+          if grep -q '"build"' package.json; then
+            npm run build
+          fi
+
+      - name: Run tests
+        working-directory: ${{ steps.package-path.outputs.path }}
+        run: |
+          if grep -q '"test"' package.json; then
+            npm test
+          fi
+
+      - name: Update version
+        if: github.event_name == 'workflow_dispatch'
+        working-directory: ${{ steps.package-path.outputs.path }}
+        run: |
+          npm version ${{ inputs.version }} --no-git-tag-version
+
+      - name: Dry run publish
+        if: inputs.dry_run || github.event_name == 'push'
+        working-directory: ${{ steps.package-path.outputs.path }}
+        run: npm publish --dry-run
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish to npm
+        if: ${{ (github.event_name == 'workflow_dispatch' && !inputs.dry_run) || github.event_name == 'push' }}
+        working-directory: ${{ steps.package-path.outputs.path }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ inputs.tag }}"
+          else
+            VERSION="${{ steps.parse-tag.outputs.version }}"
+            # Determine tag from version
+            if [[ $VERSION =~ -(alpha|beta|rc) ]]; then
+              TAG="${BASH_REMATCH[1]}"
+            else
+              TAG="latest"
+            fi
+          fi
+          npm publish --access public --tag $TAG
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create GitHub Release
+        if: ${{ (github.event_name == 'workflow_dispatch' && !inputs.dry_run) || github.event_name == 'push' }}
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.event_name == 'push' && github.ref_name || format('@phenotype/{0}@{1}', inputs.package, inputs.version) }}
+          name: ${{ github.event_name == 'push' && github.ref_name || format('@phenotype/{0}@{1}', inputs.package, inputs.version) }}
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

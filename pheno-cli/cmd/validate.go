@@ -44,6 +44,7 @@ Examples:
 
 func init() {
 	validateCmd.Flags().StringVar(&validateRepos, "repos", "", "Comma-separated list of repositories to validate")
+        rootCmd.AddCommand(validateCmd)
 	validateCmd.Flags().StringVar(&validateFormat, "format", "table", "Output format: table, json, yaml")
 	validateCmd.Flags().BoolVar(&validateCheckOnly, "check-only", false, "Report-only mode (no fixes applied)")
 }

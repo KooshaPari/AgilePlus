@@ -1,25 +1,28 @@
-//! Stub implementations for test doubles
+//! Mock stub implementation for function mocking.
+//!
+//! Provides a simple stub implementation for creating mock functions
+//! that can be used in tests.
 
-use super::Result;
 use std::sync::{Arc, Mutex};
 
-/// A simple stub that returns a fixed value or executes a closure
-#[derive(Clone)]
+/// A mock stub that captures calls and returns predefined values.
+///
+/// # Type Parameters
+///
+/// * `I` - Input type (the function argument)
+/// * `O` - Output type (the function return value)
+#[derive(Debug)]
 pub struct Stub<I, O> {
-    func: Arc<Mutex<Box<dyn Fn(I) -> O + Send>>>,
+    func: Arc<Mutex<Box<dyn Fn(I) -> O + Send + Sync>>>,
     call_count: Arc<Mutex<usize>>,
     recorded_calls: Arc<Mutex<Vec<I>>>,
 }
 
-impl<I, O> Stub<I, O>
-where
-    I: Clone + Send + 'static,
-    O: Clone + Send + 'static,
-{
-    /// Create a new stub with a function
+impl<I: Clone, O> Stub<I, O> {
+    /// Create a new stub from a function
     pub fn new<F>(func: F) -> Self
     where
-        F: Fn(I) -> O + Send + 'static,
+        F: Fn(I) -> O + Send + Sync + 'static,
     {
         Self {
             func: Arc::new(Mutex::new(Box::new(func))),
@@ -28,110 +31,68 @@ where
         }
     }
 
-    /// Create a stub that always returns a fixed value
-    pub fn returns(value: O) -> Self
-    where
-        O: Clone,
-    {
-        Self::new(move |_input: I| value.clone())
-    }
-
-    /// Call the stub
+    /// Invoke the stub with the given input
     pub fn call(&self, input: I) -> O {
-        let mut count = self.call_count.lock().unwrap();
-        *count += 1;
-
-        let mut calls = self.recorded_calls.lock().unwrap();
-        calls.push(input.clone());
-
+        {
+            let mut count = self.call_count.lock().unwrap();
+            *count += 1;
+        }
+        {
+            let mut calls = self.recorded_calls.lock().unwrap();
+            calls.push(input.clone());
+        }
         let func = self.func.lock().unwrap();
-        (func)(input)
+        func(input)
     }
 
-    /// Get the number of times the stub was called
+    /// Returns how many times this stub has been called
     pub fn call_count(&self) -> usize {
         *self.call_count.lock().unwrap()
     }
 
-    /// Get all recorded calls
+    /// Returns all recorded calls
     pub fn recorded_calls(&self) -> Vec<I> {
         self.recorded_calls.lock().unwrap().clone()
     }
 
-    /// Reset the stub's call tracking
-    pub fn reset(&self) {
-        *self.call_count.lock().unwrap() = 0;
+    /// Clear all recorded calls
+    pub fn clear_calls(&self) {
         self.recorded_calls.lock().unwrap().clear();
     }
 
-    /// Change the stub's function
-    pub fn set_func<F>(&self, func: F)
+    /// Create a stub that returns a constant value
+    pub fn returning(value: O) -> Self
     where
-        F: Fn(I) -> O + Send + 'static,
-        I: Clone,
+        O: Clone + Send + Sync + 'static,
     {
-        let mut f = self.func.lock().unwrap();
-        *f = Box::new(func);
+        Self::new(move |_input: I| value.clone())
+    }
+
+    /// Create a stub that panics when called
+    pub fn panic(msg: String) -> Self
+    where
+        O: Send + Sync + 'static,
+    {
+        Self::new(move |_input: I| panic!("{}", msg))
     }
 }
 
-impl<I, O> Default for Stub<I, O>
+impl<I: Clone, O> Default for Stub<I, O>
 where
-    I: Clone + Default + Send + 'static,
-    O: Clone + Default + Send + 'static,
+    O: Default + Send + Sync + 'static,
 {
     fn default() -> Self {
-        Self::new(|_| Default::default())
+        Self::returning(O::default())
     }
 }
 
-/// Builder for creating stubs
-#[derive(Debug, Default)]
-pub struct StubBuilder {
-    sequence: Vec<Box<dyn Any>>,
-}
-
-use std::any::Any;
-
-impl StubBuilder {
-    /// Create a new stub builder
-    pub fn new() -> Self {
-        Self { sequence: Vec::new() }
-    }
-
-    /// Add a return value to the sequence
-    pub fn then_return<T: Any + Clone + 'static>(mut self, value: T) -> Self {
-        self.sequence.push(Box::new(value));
-        self
-    }
-
-    /// Add an error to the sequence
-    pub fn then_error<E: Any + Clone + 'static>(mut self, error: E) -> Self {
-        self.sequence.push(Box::new(error));
-        self
-    }
-}
-
-/// A stub function that delegates to a closure
-type StubFn<I, O> = Box<dyn Fn(I) -> O + Send + Sync>;
-
-/// Extension methods for stub functions
-pub trait StubFnExt<I, O> {
-    /// Chain another stub after this one
-    fn then(self, next: impl Fn(I) -> O + Send + Sync + 'static) -> StubFn<I, O>
-    where
-        I: Clone;
-}
-
-impl<I: Clone + 'static, O: 'static> StubFnExt<I, O> for StubFn<I, O> {
-    fn then(self, next: impl Fn(I) -> O + Send + Sync + 'static) -> StubFn<I, O>
-    where
-        I: Clone,
-    {
-        Box::new(move |input| {
-            let _result = self(input.clone());
-            next(input)
-        })
+impl<I: Clone, O> Clone for Stub<I, O> {
+    fn clone(&self) -> Self {
+        Self {
+            func: self.func.clone(),
+            call_count: self.call_count.clone(),
+            recorded_calls: self.recorded_calls.clone(),
+        }
     }
 }
 
@@ -139,60 +100,76 @@ impl<I: Clone + 'static, O: 'static> StubFnExt<I, O> for StubFn<I, O> {
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_stub_new() {
-        let stub = Stub::new(|x: i32| x * 2);
-        assert_eq!(stub.call(5), 10);
-    }
-
-    #[test]
-    fn test_stub_returns() {
-        let stub: Stub<(), i32> = Stub::returns(42);
-        assert_eq!(stub.call(()), 42);
-    }
-
+    // Traces to: FR-MOCK-001
     #[test]
     fn test_stub_call_count() {
-        let stub: Stub<i32, i32> = Stub::new(|x: i32| x + 1);
-        stub.call(1);
-        stub.call(2);
-        stub.call(3);
-        assert_eq!(stub.call_count(), 3);
+        let stub = Stub::<i32, i32>::returning(42);
+        assert_eq!(stub.call(1), 42);
+        assert_eq!(stub.call(2), 42);
+        assert_eq!(stub.call_count(), 2);
     }
 
+    // Traces to: FR-MOCK-002
     #[test]
     fn test_stub_recorded_calls() {
-        let stub: Stub<i32, i32> = Stub::new(|x: i32| x * 2);
+        let stub = Stub::<i32, i32>::returning(10);
         stub.call(1);
         stub.call(2);
         stub.call(3);
         assert_eq!(stub.recorded_calls(), vec![1, 2, 3]);
     }
 
+    // Traces to: FR-MOCK-003
     #[test]
-    fn test_stub_reset() {
-        let stub: Stub<i32, i32> = Stub::new(|x: i32| x);
-        stub.call(1);
-        stub.call(2);
+    fn test_stub_clear_calls() {
+        let stub = Stub::<String, i32>::returning(5);
+        stub.call("a".to_string());
+        stub.call("b".to_string());
         assert_eq!(stub.call_count(), 2);
-
-        stub.reset();
-        assert_eq!(stub.call_count(), 0);
+        stub.clear_calls();
+        assert_eq!(stub.call_count(), 2); // Count preserved
         assert!(stub.recorded_calls().is_empty());
     }
 
+    // Traces to: FR-MOCK-004
     #[test]
-    fn test_stub_set_func() {
-        let stub: Stub<i32, i32> = Stub::new(|x: i32| x + 1);
-        assert_eq!(stub.call(5), 6);
-
-        stub.set_func(|x| x * 2);
+    fn test_stub_with_custom_function() {
+        let stub = Stub::new(|x: i32| x * 2);
         assert_eq!(stub.call(5), 10);
+        assert_eq!(stub.call(3), 6);
     }
 
+    // Traces to: FR-MOCK-005
+    #[test]
+    fn test_stub_clone_independence() {
+        let stub = Stub::<i32, i32>::returning(100);
+        let stub2 = stub.clone();
+        stub.call(1);
+        stub2.call(1);
+        assert_eq!(stub.call_count(), 1);
+        assert_eq!(stub2.call_count(), 1);
+    }
+
+    // Traces to: FR-MOCK-006
+    #[test]
+    fn test_stub_with_unit_input() {
+        let stub = Stub::<(), String>::returning("done".to_string());
+        assert_eq!(stub.call(()), "done");
+    }
+
+    // Traces to: FR-MOCK-007
+    #[test]
+    fn test_stub_panics() {
+        let stub = Stub::<i32, i32>::panic("test panic".to_string());
+        let result = std::panic::catch_unwind(|| stub.call(42));
+        assert!(result.is_err());
+    }
+
+    // Traces to: FR-MOCK-008
     #[test]
     fn test_stub_default() {
-        let stub: Stub<(), i32> = Stub::default();
-        assert_eq!(stub.call(()), 0);
+        let stub: Stub<i32, String> = Default::default();
+        assert_eq!(stub.call(1), "");
+        assert_eq!(stub.call(2), "");
     }
 }

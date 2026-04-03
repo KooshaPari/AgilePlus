@@ -1,80 +1,68 @@
 #!/usr/bin/env python3
-"""
-Traceability Checker for Phenotype Ecosystem.
-Supports mass verification across 170+ repositories.
-"""
+"""Traceability Checker for Phenotype Ecosystem."""
+import os, re, json, sys, argparse
+from typing import Set
 
-import os
-import re
-import json
-import sys
-import argparse
-from typing import Dict, List, Set, Tuple
-
-# Regex patterns
 SPEC_MARKERS = {
     "FR": re.compile(r"FR-[A-Z0-9]+-\d+"),
     "TRACE": re.compile(r"@trace\s+([A-Z0-9-]+\d+)"),
-    "TEST_ID": re.compile(r"TEST-\d+"),
+    "TEST_ID": re.compile(r"TEST-[A-Z0-9]*-\d+"),
 }
 
-def find_markers_in_dir(directory: str, extensions: Tuple[str, ...] = (".rs", ".ts", ".py", ".yaml", ".yml", ".md", ".zig", ".go", ".proto")) -> Set[str]:
-    found_frs = set()
+def find_markers(directory: str) -> Set[str]:
+    found = set()
     for root, _, files in os.walk(directory):
         if any(d in root for d in ["target", "node_modules", ".git", "vendor", "__pycache__"]):
             continue
         for file in files:
-            if file.endswith(extensions):
-                path = os.path.join(root, file)
+            if file.endswith((".rs", ".ts", ".py", ".yaml", ".yml", ".md", ".zig", ".go", ".json", ".txt")):
                 try:
-                    with open(path, "r", encoding="utf-8", errors="ignore") as f:
+                    with open(os.path.join(root, file), "r", encoding="utf-8", errors="ignore") as f:
                         content = f.read()
-                        found_frs.update(SPEC_MARKERS["FR"].findall(content))
-                        found_frs.update(SPEC_MARKERS["TRACE"].findall(content))
+                        found.update(SPEC_MARKERS["FR"].findall(content))
+                        found.update(SPEC_MARKERS["TRACE"].findall(content))
+                        found.update(SPEC_MARKERS["TEST_ID"].findall(content))
                 except Exception:
                     pass
-    return found_frs
+    return found
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--json", required=True)
-    parser.add_argument("--repos-file", help="File containing list of repo paths")
-    parser.add_argument("--strict", action="store_true")
-    args = parser.parse_args()
+    p = argparse.ArgumentParser()
+    p.add_argument("--json", default="docs/traceability/traceability.json")
+    p.add_argument("--root", default=".")
+    p.add_argument("--repos-file")
+    p.add_argument("--strict", action="store_true")
+    p.add_argument("--verbose", action="store_true")
+    args = p.parse_args()
 
-    with open(args.json, "r") as f:
+    with open(args.json) as f:
         data = json.load(f)
 
-    repos_to_check = []
+    repos = []
     if args.repos_file:
-        with open(args.repos_file, "r") as f:
-            repos_to_check = [line.strip() for line in f if line.strip()]
+        with open(args.repos_file) as f:
+            repos = [l.strip() for l in f if l.strip()]
     else:
-        repos_to_check = ["."]
+        repos = [args.root]
 
-    print(f"--- Traceability Validation for {len(repos_to_check)} repositories ---")
-    
-    global_missing = []
-    for repo_path in repos_to_check:
-        repo_name = os.path.basename(repo_path)
-        # Find spec config for this repo
-        repo_spec = next((r for r in data["repositories"] if r["name"] == repo_name), None)
-        
-        if not repo_spec:
+    missing_total = 0
+    for repo_path in repos:
+        name = os.path.basename(repo_path.rstrip("/"))
+        cfg = next((r for r in data["repositories"] if r["name"] == name), None)
+        if not cfg:
             continue
-
-        markers = find_markers_in_dir(repo_path)
-        implemented = [s["id"] for s in repo_spec["specsList"] if s["status"] == "implemented"]
-        missing = [sid for sid in implemented if sid not in markers]
-        
+        markers = find_markers(repo_path)
+        impl = [s["id"] for s in cfg["specsList"] if s["status"] == "implemented"]
+        missing = [sid for sid in impl if sid not in markers]
         if missing:
-            print(f"❌ {repo_name}: Missing {len(missing)}: {', '.join(missing)}")
-            global_missing.extend([(repo_name, sid) for sid in missing])
+            print(f"FAIL {name}: {len(missing)} missing")
+            missing_total += len(missing)
+            if args.verbose:
+                for m in missing: print(f"  - {m}")
         else:
-            print(f"✅ {repo_name}: Verified.")
-
-    print(f"\nSummary: {len(global_missing)} total missing markers.")
-    if args.strict and global_missing:
+            print(f"PASS {name}: verified")
+    print(f"\nTotal missing: {missing_total}")
+    if args.strict and missing_total:
         sys.exit(1)
 
 if __name__ == "__main__":

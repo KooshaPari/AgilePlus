@@ -45,6 +45,7 @@ Examples:
 
 func init() {
 	scaffoldCmd.Flags().StringVar(&scaffoldName, "name", "", "Service name (required)")
+        rootCmd.AddCommand(scaffoldCmd)
 	scaffoldCmd.Flags().StringVar(&scaffoldLanguage, "lang", "", "Language: go, python, rust, typescript (required)")
 	scaffoldCmd.Flags().StringVar(&scaffoldPattern, "pattern", "hexagonal", "Pattern: hexagonal, clean, microservice")
 	scaffoldCmd.Flags().StringVar(&scaffoldOutput, "output", ".", "Output directory")

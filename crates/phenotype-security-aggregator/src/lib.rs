@@ -1,133 +1,55 @@
-//! Security alert aggregation from multiple sources (Snyk, CodeQL, Dependabot, etc.).
+//! Phenotype Security Aggregator
 //!
-//! Provides unified security posture tracking for project health dashboards.
+//! Aggregates security findings from multiple sources.
 
-#![warn(missing_docs)]
-
-use async_trait::async_trait;
 use chrono::{DateTime, Utc};
-use phenotype_health::{DimensionScore, Finding, Severity};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use tracing::debug;
 
-/// Aggregates security alerts from multiple sources
-#[derive(Debug, Clone)]
-pub struct SecurityAggregator {
-    sources: Vec<Box<dyn SecuritySource>>,
+/// Severity level for security findings.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum Severity {
+    /// Critical severity
+    Critical,
+    /// High severity
+    High,
+    /// Medium severity
+    Medium,
+    /// Low severity
+    Low,
+    /// Info-level severity
+    Info,
 }
 
-impl SecurityAggregator {
-    /// Create a new aggregator
-    pub fn new() -> Self {
-        Self {
-            sources: Vec::new(),
+impl Severity {
+    /// Get numeric value for sorting
+    pub fn numeric_value(&self) -> u8 {
+        match self {
+            Severity::Critical => 5,
+            Severity::High => 4,
+            Severity::Medium => 3,
+            Severity::Low => 2,
+            Severity::Info => 1,
         }
     }
-
-    /// Add a security source to aggregate from
-    pub fn add_source(&mut self, source: impl SecuritySource + 'static) {
-        self.sources.push(Box::new(source));
-    }
-
-    /// Aggregate security score from all configured sources
-    pub async fn aggregate_security_score(
-        &self,
-        owner: &str,
-        repo: &str,
-    ) -> anyhow::Result<DimensionScore> {
-        let mut all_alerts = Vec::new();
-
-        for source in &self.sources {
-            match source.fetch_alerts(owner, repo).await {
-                Ok(alerts) => {
-                    debug!("Fetched {} alerts from source", alerts.len());
-                    all_alerts.extend(alerts);
-                }
-                Err(e) => {
-                    tracing::warn!("Security source failed: {}", e);
-                }
-            }
-        }
-
-        // Calculate score based on severity counts
-        let critical = all_alerts
-            .iter()
-            .filter(|a| matches!(a.severity, Severity::Critical))
-            .count();
-        let high = all_alerts
-            .iter()
-            .filter(|a| matches!(a.severity, Severity::Error))
-            .count();
-        let medium = all_alerts
-            .iter()
-            .filter(|a| matches!(a.severity, Severity::Warning))
-            .count();
-
-        let score = 100.0_f32
-            .saturating_sub(critical as f32 * 25.0)
-            .saturating_sub(high as f32 * 10.0)
-            .saturating_sub(medium as f32 * 2.0);
-
-        let findings: Vec<Finding> = all_alerts
-            .iter()
-            .map(|a| Finding {
-                severity: a.severity,
-                message: format!(
-                    "[{}] {}: {}",
-                    a.source.short_name(),
-                    a.package_name.as_deref().unwrap_or("unknown"),
-                    a.title
-                ),
-                file_path: None,
-                line_number: None,
-            })
-            .collect();
-
-        Ok(DimensionScore {
-            score,
-            target: 100.0,
-            raw_value: all_alerts.len() as f32,
-            unit: "alerts".to_string(),
-            findings,
-        })
-    }
 }
 
-impl Default for SecurityAggregator {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-/// Trait for security alert sources
-#[async_trait]
-pub trait SecuritySource: Send + Sync {
-    /// Fetch alerts for a specific repository
-    async fn fetch_alerts(&self, owner: &str, repo: &str) -> anyhow::Result<Vec<SecurityAlert>>;
-}
-
-/// Security alert from any source
+/// Alert source
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SecurityAlert {
-    /// Source of the alert
-    pub source: AlertSource,
-    /// Alert severity
-    pub severity: Severity,
-    /// Alert title
-    pub title: String,
-    /// Detailed description
-    pub description: String,
-    /// CVE ID if applicable
-    pub cve_id: Option<String>,
-    /// Affected package name
-    pub package_name: Option<String>,
-    /// Affected versions
-    pub affected_versions: Option<String>,
-    /// Fixed version if available
-    pub fixed_version: Option<String>,
-    /// When the alert was detected
-    pub detected_at: DateTime<Utc>,
+#[serde(tag = "type", content = "value")]
+pub enum AlertSource {
+    /// Snyk security scanner
+    Snyk,
+    /// GitHub CodeQL
+    CodeQL,
+    /// Cargo audit
+    CargoAudit,
+    /// GitHub Dependabot
+    Dependabot,
+    /// Trivy scanner
+    Trivy,
+    /// Custom source
+    Custom(String),
 }
 
 impl AlertSource {
@@ -139,70 +61,124 @@ impl AlertSource {
             AlertSource::CargoAudit => "CARGO",
             AlertSource::Dependabot => "DEPND",
             AlertSource::Trivy => "TRIVY",
-            AlertSource::Custom(s) => s,
+            AlertSource::Custom(_) => "CUST",
         }
     }
 }
 
-/// Source of a security alert
+/// A security finding from a scanner
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum AlertSource {
-    /// Snyk vulnerability scanner
-    Snyk,
-    /// GitHub CodeQL analysis
-    CodeQL,
-    /// Rust cargo audit
-    CargoAudit,
-    /// GitHub Dependabot
-    Dependabot,
-    /// Trivy container/file scanner
-    Trivy,
-    /// Custom source
-    Custom(String),
+pub struct SecurityFinding {
+    /// Unique identifier
+    pub id: String,
+    /// Finding title
+    pub title: String,
+    /// Detailed description
+    pub description: String,
+    /// Severity level
+    pub severity: Severity,
+    /// Source of the finding
+    pub source: AlertSource,
+    /// Package or file affected
+    pub target: String,
+    /// When it was detected
+    pub detected_at: DateTime<Utc>,
 }
 
-/// GitHub Dependabot security source
-#[derive(Debug, Clone)]
-pub struct GitHubDependabotSource {
-    client: reqwest::Client,
-    token: String,
-}
-
-impl GitHubDependabotSource {
-    /// Create a new GitHub Dependabot source
-    pub fn new(token: String) -> Self {
+impl SecurityFinding {
+    /// Create a new security finding
+    pub fn new(
+        id: impl Into<String>,
+        title: impl Into<String>,
+        description: impl Into<String>,
+        severity: Severity,
+        source: AlertSource,
+        target: impl Into<String>,
+    ) -> Self {
         Self {
-            client: reqwest::Client::new(),
-            token,
+            id: id.into(),
+            title: title.into(),
+            description: description.into(),
+            severity,
+            source,
+            target: target.into(),
+            detected_at: Utc::now(),
+        }
+    }
+
+    /// Get CVSS score if available (placeholder)
+    pub fn cvss_score(&self) -> Option<f32> {
+        match self.severity {
+            Severity::Critical => Some(9.5),
+            Severity::High => Some(7.5),
+            Severity::Medium => Some(5.0),
+            Severity::Low => Some(2.5),
+            Severity::Info => Some(0.0),
         }
     }
 }
 
-#[async_trait]
-impl SecuritySource for GitHubDependabotSource {
-    async fn fetch_alerts(
-        &self,
-        owner: &str,
-        repo: &str,
-    ) -> anyhow::Result<Vec<SecurityAlert>> {
-        let url = format!(
-            "https://api.github.com/repos/{}/{}/dependabot/alerts",
-            owner, repo
-        );
+/// Aggregates security findings from multiple sources
+#[derive(Debug, Clone, Default)]
+pub struct SecurityAggregator {
+    findings: Vec<SecurityFinding>,
+}
 
-        let _response = self
-            .client
-            .get(&url)
-            .header("Authorization", format!("Bearer {}", self.token))
-            .header("Accept", "application/vnd.github+json")
-            .header("X-GitHub-Api-Version", "2022-11-28")
-            .send()
-            .await?;
+impl SecurityAggregator {
+    /// Create a new aggregator
+    pub fn new() -> Self {
+        Self::default()
+    }
 
-        // TODO: Parse JSON response into SecurityAlert structs
-        // For now, return empty vec until full implementation
-        Ok(Vec::new())
+    /// Add a finding
+    pub fn add_finding(&mut self, finding: SecurityFinding) {
+        self.findings.push(finding);
+    }
+
+    /// Add multiple findings
+    pub fn add_findings(&mut self, findings: impl IntoIterator<Item = SecurityFinding>) {
+        self.findings.extend(findings);
+    }
+
+    /// Get all findings
+    pub fn findings(&self) -> &[SecurityFinding] {
+        &self.findings
+    }
+
+    /// Get findings by severity
+    pub fn by_severity(&self, severity: Severity) -> Vec<&SecurityFinding> {
+        self.findings.iter().filter(|f| f.severity == severity).collect()
+    }
+
+    /// Get findings by source
+    pub fn by_source(&self, source: &AlertSource) -> Vec<&SecurityFinding> {
+        self.findings.iter().filter(|f| f.source == *source).collect()
+    }
+
+    /// Get unique targets (packages/files) with findings
+    pub fn unique_targets(&self) -> Vec<&str> {
+        let mut targets: Vec<&str> = self.findings.iter().map(|f| f.target.as_str()).collect();
+        targets.sort();
+        targets.dedup();
+        targets
+    }
+
+    /// Count findings by severity
+    pub fn count_by_severity(&self) -> std::collections::HashMap<Severity, usize> {
+        let mut counts = std::collections::HashMap::new();
+        for finding in &self.findings {
+            *counts.entry(finding.severity).or_insert(0) += 1;
+        }
+        counts
+    }
+
+    /// Sort findings by severity (most severe first)
+    pub fn sorted_by_severity(&self) -> Vec<&SecurityFinding> {
+        let mut findings: Vec<&SecurityFinding> = self.findings.iter().collect();
+        findings.sort_by(|a, b| {
+            b.severity.numeric_value().cmp(&a.severity.numeric_value())
+        });
+        findings
     }
 }
 
@@ -211,15 +187,25 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_empty_aggregator() {
-        let aggregator = SecurityAggregator::new();
-        assert_eq!(aggregator.sources.len(), 0);
+    fn test_severity_ordering() {
+        assert!(Severity::Critical.numeric_value() > Severity::High.numeric_value());
+        assert!(Severity::High.numeric_value() > Severity::Medium.numeric_value());
     }
 
     #[test]
-    fn test_alert_source_short_name() {
-        assert_eq!(AlertSource::Snyk.short_name(), "SNYK");
-        assert_eq!(AlertSource::Dependabot.short_name(), "DEPND");
-        assert_eq!(AlertSource::Custom("TEST".to_string()).short_name(), "TEST");
+    fn test_aggregator() {
+        let mut aggregator = SecurityAggregator::new();
+        
+        aggregator.add_finding(SecurityFinding::new(
+            "CVE-2024-1234",
+            "Remote Code Execution",
+            "A vulnerability allows remote code execution",
+            Severity::Critical,
+            AlertSource::Snyk,
+            "package-a@1.0.0",
+        ));
+
+        assert_eq!(aggregator.findings().len(), 1);
+        assert_eq!(aggregator.unique_targets(), vec!["package-a@1.0.0"]);
     }
 }

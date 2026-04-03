@@ -2356,10 +2356,12 @@ dependencies = [
 
 [[package]]
 name = "phenotype-compliance-scanner"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
+ "async-trait",
  "chrono",
+ "phenotype-error-core",
  "phenotype-health",
  "regex",
  "serde",
@@ -2406,16 +2408,15 @@ name = "phenotype-core"
 version = "0.2.0"
 dependencies = [
  "async-trait",
+ "criterion",
  "dashmap",
  "phenotype-async-traits",
  "phenotype-cache-adapter",
  "phenotype-config-core",
  "phenotype-contracts",
- "phenotype-error-core",
  "phenotype-event-bus",
  "phenotype-health",
  "phenotype-http-client-core",
- "phenotype-policy-engine",
  "phenotype-port-traits",
  "phenotype-retry",
  "phenotype-state-machine",
@@ -2475,7 +2476,7 @@ dependencies = [
  "thiserror 2.0.18",
  "tokio",
  "tracing",
- "ulid",
+ "uuid",
 ]
 
 [[package]]
@@ -2591,7 +2592,7 @@ dependencies = [
 
 [[package]]
 name = "phenotype-project-registry"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "chrono",
@@ -2693,6 +2694,7 @@ name = "phenotype-test-infra"
 version = "0.2.0"
 dependencies = [
  "chrono",
+ "proptest",
  "serde",
  "serde_json",
  "tempfile",
@@ -4588,6 +4590,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "470dbf6591da1b39d43c14523b2b469c86879a53e8b758c8e090a470fe7b1fbe"
 dependencies = [
  "rand 0.9.2",
+ "serde",
  "web-time",
 ]
 

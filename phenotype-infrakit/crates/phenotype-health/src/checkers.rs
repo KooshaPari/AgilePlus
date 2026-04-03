@@ -21,7 +21,7 @@ impl Default for HealthStatus {
 }
 
 /// Health check configuration options.
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HealthCheckConfig {
     pub timeout_ms: u64,
     pub retries: u32,

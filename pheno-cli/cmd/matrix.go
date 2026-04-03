@@ -22,6 +22,7 @@ var (
 
 func init() {
 	matrixCmd.Flags().StringVar(&matrixOutput, "output", "", "Output file path (prints to stdout if not specified)")
+        rootCmd.AddCommand(matrixCmd)
 }
 
 func runMatrix(cmd *cobra.Command, args []string) error {

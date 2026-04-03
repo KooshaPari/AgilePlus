@@ -42,7 +42,7 @@ pub fn normalize(text: &str, _form: NormalizationForm) -> crate::Result<String> 
 /// let text = "Hello";
 /// assert!(is_normalized(text, NormalizationForm::NFC).unwrap());
 /// ```
-pub fn is_normalized(text: &str, _form: NormalizationForm) -> crate::Result<bool> {
+pub fn is_normalized(_text: &str, _form: NormalizationForm) -> crate::Result<bool> {
     // Stub implementation - always returns true
     // Full implementation would use unicode-normalization crate
     Ok(true)

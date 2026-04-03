@@ -1,19 +1,21 @@
 use crate::{EventBus, EventBusError, EventEnvelope, Subscription};
 use async_trait::async_trait;
 use dashmap::DashMap;
-use serde::{de::DeserializeOwned, Serialize};
+use serde::de::DeserializeOwned;
+use serde::Serialize;
 use std::fmt::Debug;
 use std::sync::Arc;
 use tokio::sync::mpsc;
 use tokio::sync::RwLock;
+use uuid::Uuid;
 
 /// In-memory event bus for testing
-pub struct InMemoryEventBus<T: Serialize + DeserializeOwned + Send + Sync + Debug + 'static> {
+pub struct InMemoryEventBus<T: Serialize + DeserializeOwned + Send + Sync + Debug + Clone + 'static> {
     subscribers: Arc<DashMap<String, Vec<mpsc::UnboundedSender<EventEnvelope<T>>>>>,
     closed: Arc<RwLock<bool>>,
 }
 
-impl<T: Serialize + DeserializeOwned + Send + Sync + Debug + 'static> Default
+impl<T: Serialize + DeserializeOwned + Send + Sync + Debug + Clone + 'static> Default
     for InMemoryEventBus<T>
 {
     fn default() -> Self {
@@ -21,7 +23,7 @@ impl<T: Serialize + DeserializeOwned + Send + Sync + Debug + 'static> Default
     }
 }
 
-impl<T: Serialize + DeserializeOwned + Send + Sync + Debug + 'static> InMemoryEventBus<T> {
+impl<T: Serialize + DeserializeOwned + Send + Sync + Debug + Clone + 'static> InMemoryEventBus<T> {
     pub fn new() -> Self {
         Self {
             subscribers: Arc::new(DashMap::new()),
@@ -31,7 +33,7 @@ impl<T: Serialize + DeserializeOwned + Send + Sync + Debug + 'static> InMemoryEv
 }
 
 #[async_trait]
-impl<T: Serialize + DeserializeOwned + Send + Sync + Debug + 'static> EventBus
+impl<T: Serialize + DeserializeOwned + Send + Sync + Debug + Clone + 'static> EventBus
     for InMemoryEventBus<T>
 {
     type Event = T;
@@ -78,7 +80,7 @@ impl<T: Serialize + DeserializeOwned + Send + Sync + Debug + 'static> EventBus
         }
 
         let (tx, mut rx) = mpsc::unbounded_channel();
-        let sub_id = ulid::Ulid::new().to_string();
+        let sub_id = Uuid::new_v4().to_string();
 
         self.subscribers
             .entry(subject.to_string())
@@ -97,7 +99,7 @@ impl<T: Serialize + DeserializeOwned + Send + Sync + Debug + 'static> EventBus
         Ok(Subscription::new(sub_id, subject.to_string()))
     }
 
-    async fn request<R: Serialize + DeserializeOwned + Send + Sync + Debug + 'static>(
+    async fn request<R: Serialize + DeserializeOwned + Send + Sync + Debug + Clone + 'static>(
         &self,
         _subject: &str,
         _payload: R,

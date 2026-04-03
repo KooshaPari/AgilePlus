@@ -1,0 +1,165 @@
+name: Publish PyPI Package
+
+on:
+  workflow_dispatch:
+    inputs:
+      package:
+        description: 'Package to publish (e.g., phenosdk, pheno-core)'
+        required: true
+        type: string
+      version:
+        description: 'Version to publish (e.g., 0.1.0)'
+        required: true
+        type: string
+      dry_run:
+        description: 'Dry run (do not actually publish)'
+        required: false
+        type: boolean
+        default: true
+
+  push:
+    tags:
+      - 'phenotype-*-v*'
+
+env:
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    environment:
+      name: pypi
+      url: https://pypi.org/p/${{ steps.package-info.outputs.pypi_name }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: 'latest'
+
+      - name: Parse tag (if triggered by tag)
+        if: github.event_name == 'push'
+        id: parse-tag
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}
+          # Parse phenotype-<package>-v<version>
+          if [[ $TAG =~ ^phenotype-(.+)-v(.+)$ ]]; then
+            echo "package=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
+            echo "version=${BASH_REMATCH[2]}" >> $GITHUB_OUTPUT
+          else
+            echo "Invalid tag format: $TAG"
+            exit 1
+          fi
+
+      - name: Determine package path and PyPI name
+        id: package-info
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            PKG="${{ steps.parse-tag.outputs.package }}"
+          else
+            PKG="${{ inputs.package }}"
+          fi
+
+          # Map package names to paths and PyPI names
+          case "$PKG" in
+            phenosdk|sdk)
+              echo "path=python/phenosdk" >> $GITHUB_OUTPUT
+              echo "pypi_name=phenotype-sdk" >> $GITHUB_OUTPUT
+              ;;
+            pheno-core|core)
+              echo "path=python/pheno-core" >> $GITHUB_OUTPUT
+              echo "pypi_name=phenotype-core" >> $GITHUB_OUTPUT
+              ;;
+            pheno-atoms|atoms)
+              echo "path=python/pheno-atoms" >> $GITHUB_OUTPUT
+              echo "pypi_name=phenotype-atoms" >> $GITHUB_OUTPUT
+              ;;
+            pheno-agents|agents)
+              echo "path=python/pheno-agents" >> $GITHUB_OUTPUT
+              echo "pypi_name=phenotype-agents" >> $GITHUB_OUTPUT
+              ;;
+            pheno-llm|llm)
+              echo "path=python/pheno-llm" >> $GITHUB_OUTPUT
+              echo "pypi_name=phenotype-llm" >> $GITHUB_OUTPUT
+              ;;
+            pheno-mcp|mcp)
+              echo "path=python/pheno-mcp" >> $GITHUB_OUTPUT
+              echo "pypi_name=phenotype-mcp" >> $GITHUB_OUTPUT
+              ;;
+            *)
+              # Assume path matches package name
+              echo "path=$PKG" >> $GITHUB_OUTPUT
+              echo "pypi_name=phenotype-$PKG" >> $GITHUB_OUTPUT
+              ;;
+          esac
+
+      - name: Validate package exists
+        run: |
+          if [ ! -f "${{ steps.package-info.outputs.path }}/pyproject.toml" ]; then
+            echo "Error: Package not found at ${{ steps.package-info.outputs.path }}/pyproject.toml"
+            exit 1
+          fi
+
+      - name: Install build dependencies
+        run: |
+          uv pip install build twine
+
+      - name: Update version (workflow_dispatch only)
+        if: github.event_name == 'workflow_dispatch'
+        working-directory: ${{ steps.package-info.outputs.path }}
+        run: |
+          # Update version in pyproject.toml
+          sed -i "s/^version = .*/version = \"${{ inputs.version }}\"/" pyproject.toml
+
+      - name: Build package
+        working-directory: ${{ steps.package-info.outputs.path }}
+        run: |
+          python -m build
+
+      - name: Check package with twine
+        working-directory: ${{ steps.package-info.outputs.path }}
+        run: |
+          twine check dist/*
+
+      - name: Test import
+        working-directory: ${{ steps.package-info.outputs.path }}
+        run: |
+          uv pip install dist/*.whl
+          PKG_NAME=$(grep '^name = ' pyproject.toml | head -1 | sed 's/name = "\(.*\)"/\1/')
+          python -c "import $PKG_NAME; print(f'Successfully imported {PKG_NAME}')"
+
+      - name: Dry run publish
+        if: inputs.dry_run
+        working-directory: ${{ steps.package-info.outputs.path }}
+        run: |
+          echo "Would publish to PyPI:"
+          echo "Package: ${{ steps.package-info.outputs.pypi_name }}"
+          echo "Version: ${{ inputs.version }}"
+          ls -la dist/
+
+      - name: Publish to PyPI
+        if: ${{ (github.event_name == 'workflow_dispatch' && !inputs.dry_run) || github.event_name == 'push' }}
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: ${{ steps.package-info.outputs.path }}/dist/
+          print-hash: true
+
+      - name: Create GitHub Release
+        if: ${{ (github.event_name == 'workflow_dispatch' && !inputs.dry_run) || github.event_name == 'push' }}
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.event_name == 'push' && github.ref_name || format('phenotype-{0}-v{1}', inputs.package, inputs.version) }}
+          name: ${{ github.event_name == 'push' && github.ref_name || format('phenotype-{0} v{1}', inputs.package, inputs.version) }}
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

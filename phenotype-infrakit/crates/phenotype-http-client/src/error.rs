@@ -2,6 +2,8 @@
 
 use thiserror::Error;
 
+pub type Error = HttpError;
+
 #[derive(Error, Debug)]
 pub enum HttpError {
     #[error("request failed: {0}")]
@@ -12,6 +14,10 @@ pub enum HttpError {
     Serialization(#[from] serde_json::Error),
     #[error("unknown error: {0}")]
     Unknown(String),
+    #[error("rate limited, retry after {retry_after_ms}ms")]
+    RateLimited { retry_after_ms: u64 },
+    #[error("circuit breaker open: {0}")]
+    CircuitBreakerOpen(String),
 }
 
 pub type Result<T> = std::result::Result<T, HttpError>;

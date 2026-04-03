@@ -78,6 +78,8 @@ fn convert_step(step: &gherkin::Step) -> Step {
         gherkin::StepType::Given => StepType::Given,
         gherkin::StepType::When => StepType::When,
         gherkin::StepType::Then => StepType::Then,
+        gherkin::StepType::And => StepType::And,
+        gherkin::StepType::But => StepType::But,
     };
 
     let mut s = Step::new(step_type, &step.value);

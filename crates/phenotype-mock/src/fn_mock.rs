@@ -113,7 +113,11 @@ where
 }
 
 /// Builder for configuring mock expectations
-pub struct MockExpectation<'a, I, O> {
+pub struct MockExpectation<'a, I, O>
+where
+    I: Clone + PartialEq + std::fmt::Debug + 'static,
+    O: Clone + 'static,
+{
     mock: &'a mut MockFn<I, O>,
     expected_arg: Option<I>,
     return_value: Option<O>,

@@ -1,6 +1,12 @@
 //! HTTP client with retry and timeout support
 
 pub mod error;
+pub mod interceptor;
+pub mod ports;
+pub mod types;
+
+#[cfg(feature = "rate-limiter")]
+pub use interceptor::RateLimitInterceptor;
 
 pub use error::{HttpError, Result};
 use std::time::Duration;

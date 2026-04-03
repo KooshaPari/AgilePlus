@@ -2,37 +2,16 @@
 //!
 //! This crate provides utilities for creating mock implementations of traits,
 //! making it easier to write unit tests with dependency injection.
-//!
-//! # Example
-//!
-//! ```rust
-//! use phenotype_mock::{MockFn, MockBuilder, MockResult};
-//!
-//! // Create a mock function
-//! let mut mock = MockFn::new();
-//! mock.expect_call()
-//!     .with(5)
-//!     .returns(10);
-//!
-//! assert_eq!(mock.call(5), 10);
-//! ```
 
 use std::any::{Any, TypeId};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 mod fn_mock;
-mod mock_builder;
-mod stub;
-
 pub use fn_mock::{MockCall, MockFn, MockResult};
-pub use mock_builder::{MockBuilder, MockInstance};
-pub use stub::{Stub, StubBuilder, StubFn};
-
-use thiserror::Error;
 
 /// Errors that can occur when working with mocks
-#[derive(Error, Debug, Clone, PartialEq)]
+#[derive(thiserror::Error, Debug, Clone, PartialEq)]
 pub enum MockError {
     #[error("Unexpected call to mock: {0}")]
     UnexpectedCall(String),
@@ -52,17 +31,8 @@ pub enum MockError {
 pub type Result<T> = std::result::Result<T, MockError>;
 
 /// Create a mock instance builder
-pub fn builder() -> MockBuilder {
-    MockBuilder::new()
-}
-
-/// Create a new stub
-pub fn stub<T, R>(func: impl Fn(T) -> R + Send + 'static) -> Stub<T, R>
-where
-    T: Clone + Send + 'static,
-    R: Clone + Send + 'static,
-{
-    Stub::new(func)
+pub fn builder() -> MockFn {
+    MockFn::new()
 }
 
 /// Verify that a mock was called
@@ -74,18 +44,6 @@ pub fn verify_mock(mock: &impl Verifiable) -> Result<()> {
 pub trait Verifiable {
     /// Verify the mock expectations
     fn verify(&self) -> Result<()>;
-}
-
-/// Extension trait for setting up expectations
-pub trait ExpectationExt {
-    /// Expect the mock to be called exactly once
-    fn expect_once(&mut self);
-    /// Expect the mock to be called exactly n times
-    fn expect_times(&mut self, times: usize);
-    /// Expect the mock to be called at least once
-    fn expect_at_least(&mut self, times: usize);
-    /// Expect the mock to never be called
-    fn expect_never(&mut self);
 }
 
 /// A generic mock store for any types
@@ -140,10 +98,8 @@ mod tests {
     #[test]
     fn test_mock_registry() {
         let registry = MockRegistry::new();
-
         let mock_fn: MockFn<i32, i32> = MockFn::new();
         registry.register(mock_fn.clone());
-
         let retrieved: MockFn<i32, i32> = registry.get().unwrap();
         assert_eq!(retrieved.call_count(), 0);
     }

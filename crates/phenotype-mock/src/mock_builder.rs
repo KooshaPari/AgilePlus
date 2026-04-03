@@ -92,20 +92,26 @@ mod tests {
     #[test]
     fn test_mock_builder() {
         let mock = MockBuilder::new()
-            .with_method("add", |x: i32| x + 1)
-            .with_method("multiply", |x: i32| x * 2)
+            .with_method("add", Box::new(|x: i32| x + 1) as Box<dyn Fn(i32) -> i32>)
+            .with_method("multiply", Box::new(|x: i32| x * 2) as Box<dyn Fn(i32) -> i32>)
             .build();
 
-        let add_fn: Option<fn(i32) -> i32> = mock.get_method("add");
+        let add_fn: Option<Box<dyn Fn(i32) -> i32>> = mock.get_method("add");
         assert!(add_fn.is_some());
+        if let Some(add) = add_fn {
+            assert_eq!(add(5), 6);
+        }
     }
 
     #[test]
     fn test_mock_instance_set_method() {
         let mut mock = MockInstance::new();
-        mock.set_method("get", |_: ()| -> i32 { 42 });
+        mock.set_method("get", Box::new(|_: ()| -> i32 { 42 }) as Box<dyn Fn(()) -> i32>);
 
-        let result: Option<fn(()) -> i32> = mock.get_method("get");
+        let result: Option<Box<dyn Fn(()) -> i32>> = mock.get_method("get");
         assert!(result.is_some());
+        if let Some(get_fn) = result {
+            assert_eq!(get_fn(()), 42);
+        }
     }
 }

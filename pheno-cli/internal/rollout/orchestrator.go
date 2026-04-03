@@ -18,6 +18,7 @@ type RolloutOptions struct {
 	ManifestPath string
 	DryRun       bool
 	Skip         []string
+	BDD          bool
 }
 
 // RolloutResult captures the outcome of bootstrapping a single repo.
@@ -63,7 +64,7 @@ func RunBulkBootstrap(ctx context.Context, opts RolloutOptions) ([]RolloutResult
 		}
 
 		repoPath := filepath.Join(opts.ReposDir, repo.Name)
-		result := bootstrapRepo(repoPath, repo, opts.DryRun)
+		result := bootstrapRepo(repoPath, repo, opts.DryRun, opts.BDD)
 		results = append(results, result)
 	}
 
@@ -71,7 +72,7 @@ func RunBulkBootstrap(ctx context.Context, opts RolloutOptions) ([]RolloutResult
 }
 
 // bootstrapRepo runs bootstrap logic for a single repo and returns the result.
-func bootstrapRepo(repoPath string, repo manifest.RepoConfig, dryRun bool) RolloutResult {
+func bootstrapRepo(repoPath string, repo manifest.RepoConfig, dryRun, bdd bool) RolloutResult {
 	result := RolloutResult{Repo: repo.Name}
 
 	// Resolve language: use manifest value or auto-detect
@@ -108,6 +109,14 @@ func bootstrapRepo(repoPath string, repo manifest.RepoConfig, dryRun bool) Rollo
 		".git/hooks/pre-push":           "pre-push.sh",
 		".github/workflows/ci.yml":      "ci.yml",
 		".github/workflows/release.yml": "release.yml",
+	}
+
+	// Add BDD templates if requested
+	if bdd {
+		bddTemplates := getBDDTemplates(language, repo.Name)
+		for path, tmpl := range bddTemplates {
+			filesToGenerate[path] = tmpl
+		}
 	}
 
 	renderedFiles := make(map[string]string)
@@ -201,4 +210,28 @@ func inferRegistry(language string) string {
 	default:
 		return "unknown"
 	}
+}
+
+// getBDDTemplates returns the BDD template mappings for a given language
+func getBDDTemplates(language, repoName string) map[string]string {
+	templates := map[string]string{
+		"tests/bdd/features/domain.feature": "bdd-feature",
+	}
+
+	switch language {
+	case "rust":
+		templates["tests/bdd/steps/steps.rs"] = "bdd-steps-rs"
+		templates["tests/bdd/cargo.toml"] = "bdd-cargo-toml"
+	case "python":
+		templates["tests/bdd/steps/steps.py"] = "bdd-steps-py"
+	case "go":
+		templates["tests/bdd/steps/steps_test.go"] = "bdd-steps-go"
+		templates["tests/bdd/runner_test.go"] = "bdd-test-go"
+	case "typescript":
+		templates["tests/bdd/steps/steps.ts"] = "bdd-steps-ts"
+		templates["tests/bdd/cucumber.json"] = "bdd-cucumber-json"
+		templates["tests/bdd/package.json"] = "bdd-package-json"
+	}
+
+	return templates
 }

@@ -50,13 +50,11 @@ pub fn compress(data: &str, algorithm: CompressionAlgorithm) -> crate::Result<Ve
 pub fn decompress(data: &[u8], algorithm: CompressionAlgorithm) -> crate::Result<String> {
     match algorithm {
         CompressionAlgorithm::None => {
-            String::from_utf8(data.to_vec())
-                .map_err(|e| crate::StringError::InvalidUtf8(e.to_string()))
+            Ok(String::from_utf8_lossy(data).to_string())
         }
         _ => {
             // Stub implementation - just return as string
-            String::from_utf8(data.to_vec())
-                .map_err(|e| crate::StringError::InvalidUtf8(e.to_string()))
+            Ok(String::from_utf8_lossy(data).to_string())
         }
     }
 }

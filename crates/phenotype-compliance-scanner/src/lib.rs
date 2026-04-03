@@ -1,123 +1,116 @@
-//! Phenotype Compliance Scanner
-//!
-//! Provides compliance scanning functionality for security and policy enforcement.
+use phenotype_error_core::ConfigError as Error;
+type Result<T> = std::result::Result<T, Error>;
 
-use phenotype_error_core::{Error, Result};
+use phenotype_health::{HealthChecker, HealthStatus};
+use serde::{Deserialize, Serialize};
+use std::path::{Path, PathBuf};
+use std::future::Future;
+use std::pin::Pin;
+use async_trait::async_trait;
 
-/// Compliance check result
-#[derive(Debug, Clone)]
-pub struct ComplianceResult {
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Finding {
     pub rule_id: String,
-    pub passed: bool,
+    pub severity: String,
     pub message: String,
-    pub severity: Severity,
+    pub file: Option<PathBuf>,
 }
 
-/// Severity levels for compliance violations
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Severity {
-    Info,
-    Low,
-    Medium,
-    High,
-    Critical,
+#[async_trait]
+pub trait ComplianceRule: Send + Sync {
+    fn id(&self) -> &str;
+    async fn check(&self, root: &Path) -> Result<Vec<Finding>>;
 }
 
-impl std::fmt::Display for Severity {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Severity::Info => write!(f, "INFO"),
-            Severity::Low => write!(f, "LOW"),
-            Severity::Medium => write!(f, "MEDIUM"),
-            Severity::High => write!(f, "HIGH"),
-            Severity::Critical => write!(f, "CRITICAL"),
-        }
-    }
-}
-
-/// Scanner for compliance checks
-pub struct Scanner {
+pub struct ComplianceScanner {
+    root: PathBuf,
     rules: Vec<Box<dyn ComplianceRule>>,
 }
 
-/// Trait for compliance rules
-pub trait ComplianceRule: Send + Sync {
-    fn id(&self) -> &str;
-    fn description(&self) -> &str;
-    fn check(&self, target: &ScanTarget) -> Result<ComplianceResult>;
-}
-
-/// Target to scan
-#[derive(Debug, Clone)]
-pub enum ScanTarget {
-    File(String),
-    Directory(String),
-    Content(String),
-}
-
-impl Scanner {
-    /// Create a new scanner
-    pub fn new() -> Self {
-        Self { rules: Vec::new() }
+impl ComplianceScanner {
+    pub fn new(root: PathBuf) -> Self {
+        Self {
+            root,
+            rules: Vec::new(),
+        }
     }
 
-    /// Add a compliance rule
     pub fn add_rule(&mut self, rule: Box<dyn ComplianceRule>) {
         self.rules.push(rule);
     }
 
-    /// Scan a target against all rules
-    pub fn scan(&self, target: &ScanTarget) -> Vec<ComplianceResult> {
-        self.rules
-            .iter()
-            .filter_map(|rule| match rule.check(target) {
-                Ok(result) => Some(result),
-                Err(_) => None,
-            })
-            .collect()
+    pub async fn scan(&self) -> Result<Vec<Finding>> {
+        let mut all_findings = Vec::new();
+        for rule in &self.rules {
+            let findings = rule.check(&self.root).await?;
+            all_findings.extend(findings);
+        }
+        Ok(all_findings)
     }
 }
 
-impl Default for Scanner {
-    fn default() -> Self {
-        Self::new()
+impl HealthChecker for ComplianceScanner {
+    fn name(&self) -> &str {
+        "compliance-scanner"
+    }
+
+    fn check(&self) -> Pin<Box<dyn Future<Output = HealthStatus> + Send + '_>> {
+        Box::pin(async move {
+            match self.scan().await {
+                Ok(findings) => {
+                    if findings.is_empty() {
+                        HealthStatus::Healthy
+                    } else {
+                        HealthStatus::Degraded
+                    }
+                }
+                Err(_) => HealthStatus::Unhealthy,
+            }
+        })
+    }
+}
+
+pub struct LicenseFileRule;
+
+#[async_trait]
+impl ComplianceRule for LicenseFileRule {
+    fn id(&self) -> &str {
+        "missing-license"
+    }
+
+    async fn check(&self, root: &Path) -> Result<Vec<Finding>> {
+        let license_path = root.join("LICENSE");
+        let license_md_path = root.join("LICENSE.md");
+
+        if !license_path.exists() && !license_md_path.exists() {
+            Ok(vec![Finding {
+                rule_id: self.id().to_string(),
+                severity: "High".to_string(),
+                message: "Missing LICENSE file".to_string(),
+                file: None,
+            }])
+        } else {
+            Ok(vec![])
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use tempfile::tempdir;
 
-    struct TestRule;
+    #[tokio::test]
+    async fn test_license_rule() {
+        let dir = tempdir().unwrap();
+        let rule = LicenseFileRule;
+        
+        let findings = rule.check(dir.path()).await.unwrap();
+        assert_eq!(findings.len(), 1);
+        assert_eq!(findings[0].rule_id, "missing-license");
 
-    impl ComplianceRule for TestRule {
-        fn id(&self) -> &str {
-            "TEST-001"
-        }
-
-        fn description(&self) -> &str {
-            "Test rule"
-        }
-
-        fn check(&self, _target: &ScanTarget) -> Result<ComplianceResult> {
-            Ok(ComplianceResult {
-                rule_id: "TEST-001".to_string(),
-                passed: true,
-                message: "Test passed".to_string(),
-                severity: Severity::Info,
-            })
-        }
-    }
-
-    #[test]
-    fn test_scanner() {
-        let mut scanner = Scanner::new();
-        scanner.add_rule(Box::new(TestRule));
-
-        let target = ScanTarget::Content("test".to_string());
-        let results = scanner.scan(&target);
-
-        assert_eq!(results.len(), 1);
-        assert!(results[0].passed);
+        std::fs::write(dir.path().join("LICENSE"), "MIT").unwrap();
+        let findings = rule.check(dir.path()).await.unwrap();
+        assert_eq!(findings.len(), 0);
     }
 }
