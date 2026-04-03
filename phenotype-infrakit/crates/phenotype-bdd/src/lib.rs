@@ -25,7 +25,7 @@ impl StepArg {
 #[derive(Debug)]
 pub struct StepContext {
     pub args: Vec<StepArg>,
-    pub table: Option<Vec<Vec<String>>,
+    pub table: Option<Vec<Vec<String>>>,
 }
 
 impl StepContext {

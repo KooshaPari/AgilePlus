@@ -1,22 +1,22 @@
 //! Event Bus - Async event bus with in-memory implementation
 
 use async_trait::async_trait;
+use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::fmt::Debug;
 use thiserror::Error;
-use ulid::Ulid;
+use uuid::Uuid;
 
-/// Event ID using ULID for sortability
+/// Event ID using UUID v4 for uniqueness
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub struct EventId(Ulid);
+pub struct EventId(Uuid);
 
 impl EventId {
     pub fn new() -> Self {
-        Self(Ulid::new())
+        Self(Uuid::new_v4())
     }
 
-    pub fn as_ulid(&self) -> Ulid {
+    pub fn as_uuid(&self) -> Uuid {
         self.0
     }
 }
@@ -34,15 +34,11 @@ impl std::fmt::Display for EventId {
 }
 
 /// Event envelope with metadata
-#[derive(Debug, Serialize, Deserialize)]
-pub struct EventEnvelope<T>
-where
-    T: Clone,
-{
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EventEnvelope<T: Clone> {
     pub id: EventId,
     pub timestamp: u64,
     pub source: String,
-    #[serde(skip)]
     pub payload: T,
     pub correlation_id: Option<String>,
     pub causation_id: Option<String>,
@@ -162,7 +158,7 @@ pub mod memory {
         where
             F: Fn(EventEnvelope<Self::Event>) -> Result<(), EventBusError> + Send + Sync + 'static,
         {
-            let sub = Subscription::new(Ulid::new().to_string(), subject.to_string());
+            let sub = Subscription::new(Uuid::new_v4().to_string(), subject.to_string());
             let mut subs = self.subscriptions.lock().unwrap();
             subs.push((sub.id.clone(), sub.subject.clone()));
             Ok(sub)

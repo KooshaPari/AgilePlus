@@ -1,5 +1,4 @@
 //! Documentation and compliance scanner
-
 #[cfg(test)]
 mod tests {
     #[test]

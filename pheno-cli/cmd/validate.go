@@ -43,6 +43,7 @@ Examples:
 }
 
 func init() {
+        rootCmd.AddCommand(validateCmd)
 	validateCmd.Flags().StringVar(&validateRepos, "repos", "", "Comma-separated list of repositories to validate")
         rootCmd.AddCommand(validateCmd)
 	validateCmd.Flags().StringVar(&validateFormat, "format", "table", "Output format: table, json, yaml")

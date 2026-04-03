@@ -57,3 +57,9 @@ As a developer, I want reusable UI components across Phenotype apps.
 - **Week 1-2**: Setup monorepo, shared UI package
 - **Week 3-4**: Next.js app with 3D integration
 - **Week 5-6**: Polish, animations, optimization
+
+/// @trace HUB-001: Service Discovery
+/// @trace HUB-002: Message Routing
+/// @trace HUB-003: Event Streaming
+/// @trace HUB-004: API Gateway
+/// @trace HUB-005: State Management

@@ -38,6 +38,7 @@ Examples:
 }
 
 func init() {
+        rootCmd.AddCommand(cleanupCmd)
 	cleanupCmd.Flags().StringVar(&cleanupRepo, "repo", "", "Specific repository to clean (default: current)")
         rootCmd.AddCommand(cleanupCmd)
 	cleanupCmd.Flags().BoolVar(&cleanupDryRun, "dry-run", false, "Preview actions without making changes")

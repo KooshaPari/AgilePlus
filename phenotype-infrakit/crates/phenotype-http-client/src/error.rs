@@ -20,4 +20,16 @@ pub enum HttpError {
     CircuitBreakerOpen(String),
 }
 
+impl HttpError {
+    /// Create a request error from a message
+    pub fn request(msg: impl Into<String>) -> Self {
+        HttpError::Unknown(msg.into())
+    }
+
+    /// Create a serialization error from a message
+    pub fn serialization(msg: impl Into<String>) -> Self {
+        HttpError::Unknown(msg.into())
+    }
+}
+
 pub type Result<T> = std::result::Result<T, HttpError>;

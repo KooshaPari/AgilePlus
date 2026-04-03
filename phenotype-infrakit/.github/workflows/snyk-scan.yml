@@ -1,3 +1,11 @@
+# CI Tool Layering Strategy:
+# Tier 1 (Critical): cargo clippy/fmt, cargo test - Must pass
+# Tier 2 (Important): CodeQL, Semgrep - Important signals
+# Tier 3 (Nice-to-have): Snyk, Fossa - Security enrichment (non-blocking)
+#
+# Snyk is Tier 3 - FAILURE DOES NOT BLOCK MERGE
+# Configure at: https://app.snyk.io/org/phenotype/settings/integrations/github-integration
+
 name: Snyk Security Scan
 
 on:
@@ -17,6 +25,9 @@ jobs:
   snyk-test:
     name: Snyk Vulnerability Test
     runs-on: ubuntu-latest
+    # Tier 3: Non-blocking - does not prevent merge
+    # Results available at: https://app.snyk.io
+    continue-on-error: true  # KEY: Prevents Snyk quota from blocking PRs
     env:
       SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
     steps:
@@ -48,7 +59,7 @@ jobs:
 
       - name: Upload SARIF to GitHub Code Scanning
         if: always()
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: snyk.sarif
           category: snyk-security-scan

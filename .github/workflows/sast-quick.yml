@@ -28,7 +28,7 @@ jobs:
           generateSarif: true
 
       - name: Upload SARIF
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: semgrep.sarif
@@ -65,5 +65,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: licensefinder/license_finder_action@v2
+      - uses: fsfe/reuse-action@v2
         continue-on-error: true

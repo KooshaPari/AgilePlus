@@ -1,5 +1,4 @@
 //! Security alert aggregation
-
 #[cfg(test)]
 mod tests {
     #[test]

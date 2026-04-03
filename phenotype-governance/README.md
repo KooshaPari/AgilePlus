@@ -166,3 +166,7 @@ Templates use these placeholders (replaced by bootstrap):
 ## License
 
 MIT
+
+/// @trace GOV-001: Policy Engine
+/// @trace GOV-002: RBAC/ABAC
+/// @trace GOV-003: Compliance Auditing

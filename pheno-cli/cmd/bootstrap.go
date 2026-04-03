@@ -41,6 +41,7 @@ Use --all to bootstrap all repositories in a directory.`,
 }
 
 func init() {
+        rootCmd.AddCommand(bootstrapCmd)
 	bootstrapCmd.Flags().StringVar(&bootstrapLanguage, "language", "", "Programming language (go, rust, python, typescript). If not specified, detected from manifests.")
 	bootstrapCmd.Flags().StringVar(&bootstrapRiskProfile, "risk-profile", "low", "Risk profile (low, medium, high)")
 	bootstrapCmd.Flags().BoolVar(&bootstrapDryRun, "dry-run", false, "Show files that would be created without writing them")
