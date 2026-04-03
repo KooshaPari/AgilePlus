@@ -1,0 +1,62 @@
+# Fuzzing Configuration
+# Continuous fuzzing for security and reliability
+
+fuzzing:
+  # LibFuzzer-style fuzzing (C/C++/Rust)
+  libfuzzer:
+    enabled: true
+    max_input_size: 65536
+    max_total_time: 3600  # 1 hour
+    max_len: 4096
+    timeout: 30
+    print_final_stats: true
+    handle_sigint: true
+    
+  # Go fuzzing (built-in)
+  go:
+    enabled: true
+    fuzz_time: 60s
+    test_main_required: true
+    
+  # Python fuzzing (using atheris)
+  python:
+    enabled: false
+    engine: "atheris"
+    max_input_size: 65536
+    max_time: 300
+    
+  # Rust fuzzing (cargo-fuzz)
+  rust:
+    enabled: true
+    targets:
+      - "fuzz_target_1"
+      - "fuzz_target_2"
+    max_total_time: 3600
+    fork: true
+    leak_check: true
+
+# Coverage-guided fuzzing
+coverage:
+  format: "llvm"  # or "sanitizer"
+  corpus:
+    min_size: 100
+    max_size: 1048576  # 1MB
+    
+# Corpus management
+corpus:
+  primary: ".fuzz/corpus/primary"
+  generated: ".fuzz/corpus/generated"
+  crashers: ".fuzz/crashers"
+  regressions: ".fuzz/regressions"
+  
+# Minimization
+minimize:
+  enabled: true
+  max_time: 600
+  print_final_stats: true
+
+# CI integration
+ci:
+  enabled: true
+  schedule: "weekly"
+  corpus_pruning: "monthly"

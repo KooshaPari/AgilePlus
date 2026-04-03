@@ -1,0 +1,42 @@
+# Mutation Testing Configuration
+# Test quality verification through code mutation
+
+mutation_testing:
+  # Go mutation testing (using mutagen or signatory)
+  go:
+    enabled: true
+    package: "./..."
+    timeout: 10m
+    strategy: "random"  # or "systematic"
+    coverage_threshold: 80
+    min_mutations: 100
+    
+  # Python mutation testing (using mutmut or cosmic-ray)
+  python:
+    enabled: true
+    package: "src/"
+    timeout: 30m
+    storage: "mutmut.sqlite"
+    
+  # Rust mutation testing (using muter or cargo-mutants)
+  rust:
+    enabled: true
+    manifest: "Cargo.toml"
+    timeout: 60m
+    skip_tests:
+      - "doc_tests"
+      - "bench_tests"
+
+# Test quality gates
+quality_gates:
+  mutation_score:
+    minimum: 70  # 70% of mutations should be killed
+    warning: 60
+    
+  line_coverage:
+    minimum: 80
+    warning: 70
+    
+  branch_coverage:
+    minimum: 70
+    warning: 60
