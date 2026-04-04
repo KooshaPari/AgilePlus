@@ -55,6 +55,8 @@ fn sample_governance() -> GovernanceContract {
 // Tests
 // ─────────────────────────────────────────────────────────────────────────────
 
+/// FR-AGILE-052: Sample audit chain verifies
+/// Verifies: Sample audit chain fixture forms valid hash chain
 #[test]
 fn sample_audit_chain_verifies() {
     let entries = sample_audit_chain();
@@ -65,6 +67,8 @@ fn sample_audit_chain_verifies() {
         .expect("sample-audit-chain.jsonl must form a valid hash chain");
 }
 
+/// FR-AGILE-053: Sample governance parses
+/// Verifies: Governance contract fixture parses correctly with version and rules
 #[test]
 fn sample_governance_parses() {
     let contract = sample_governance();
@@ -72,6 +76,8 @@ fn sample_governance_parses() {
     assert!(!contract.rules.is_empty());
 }
 
+/// FR-AGILE-054: Sample spec contains FRs
+/// Verifies: Sample spec fixture contains FR-001, FR-002, FR-003 references
 #[test]
 fn sample_spec_contains_frs() {
     let spec = load_fixture("sample-spec.md");
@@ -89,6 +95,8 @@ fn sample_spec_contains_frs() {
     );
 }
 
+/// FR-AGILE-055: Sample plan contains WPs
+/// Verifies: Sample plan fixture contains WP01, WP02, WP03 work package references
 #[test]
 fn sample_plan_contains_wps() {
     let plan = load_fixture("sample-plan.md");
@@ -97,6 +105,8 @@ fn sample_plan_contains_wps() {
     assert!(plan.contains("WP03"), "sample-plan.md must contain WP03");
 }
 
+/// FR-AGILE-056: Sample meta parses
+/// Verifies: Sample meta fixture parses correctly with slug and state fields
 #[test]
 fn sample_meta_parses() {
     let json = load_fixture("sample-meta.json");
@@ -105,6 +115,8 @@ fn sample_meta_parses() {
     assert_eq!(v["state"], "implementing");
 }
 
+/// FR-AGILE-057: Evidence fixtures parse
+/// Verifies: Evidence fixtures for WP01 and WP02 parse correctly
 #[test]
 fn evidence_fixtures_parse() {
     let ev = serde_json::from_str::<serde_json::Value>(&load_fixture(
@@ -129,6 +141,8 @@ fn evidence_fixtures_parse() {
     assert_eq!(wp2_ev["wp_sequence"], 2);
 }
 
+/// FR-AGILE-058: Pact fixture parses
+/// Verifies: Pact fixture for AgilePlusMCP-AgilePlusCore parses correctly
 #[test]
 fn pact_fixture_parses() {
     let pact_path = fixtures_root()

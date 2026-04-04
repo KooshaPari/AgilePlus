@@ -1,0 +1,193 @@
+#!/usr/bin/env python3
+"""
+Phenotype SARIF Generator - GitHub Advanced Security Integration
+Outputs SARIF format for GitHub code scanning integration
+"""
+
+import argparse
+import json
+import subprocess
+import sys
+from datetime import datetime
+from pathlib import Path
+from typing import Dict, List, Optional
+
+
+def generate_sarif_from_tools(path: Path) -> Dict:
+    """Generate SARIF from running quality tools."""
+    
+    bin_dir = Path(__file__).parent
+    
+    # Run tools and collect violations
+    violations = []
+    
+    # Tooling audit
+    try:
+        result = subprocess.run(
+            [sys.executable, bin_dir / "ptool-audit-expanded", "--path", str(path), "--format", "json"],
+            capture_output=True,
+            text=True,
+            timeout=60
+        )
+        if result.returncode == 0:
+            data = json.loads(result.stdout)
+            for v in data if isinstance(data, list) else []:
+                violations.append({
+                    "ruleId": f"TOOL-{v.get('tool', 'UNKNOWN').upper()}",
+                    "level": "error" if v.get('severity') == "error" else "warning",
+                    "message": {"text": v.get('message', 'Unknown issue')},
+                    "locations": [{
+                        "physicalLocation": {
+                            "artifactLocation": {"uri": v.get('file', 'unknown')},
+                            "region": {"startLine": v.get('line', 1)}
+                        }
+                    }]
+                })
+    except Exception as e:
+        print(f"Tooling audit failed: {e}", file=sys.stderr)
+    
+    # Anti-pattern lint
+    try:
+        result = subprocess.run(
+            [sys.executable, bin_dir / "panti-lint-expanded", "--path", str(path), "--format", "json"],
+            capture_output=True,
+            text=True,
+            timeout=60
+        )
+        if result.returncode == 0:
+            data = json.loads(result.stdout)
+            for v in data if isinstance(data, list) else []:
+                violations.append({
+                    "ruleId": v.get('pattern_id', 'ANTI-UNKNOWN'),
+                    "level": v.get('severity', 'warning'),
+                    "message": {
+                        "text": v.get('message', 'Unknown issue'),
+                        "markdown": f"**{v.get('pattern_id', 'Unknown')}**: {v.get('message', 'Unknown issue')}\n\nFix: {v.get('recommendation', 'N/A')}"
+                    },
+                    "locations": [{
+                        "physicalLocation": {
+                            "artifactLocation": {"uri": str(v.get('file', 'unknown'))},
+                            "region": {"startLine": v.get('line', 1), "startColumn": v.get('column', 1)}
+                        }
+                    }]
+                })
+    except Exception as e:
+        print(f"Anti-pattern lint failed: {e}", file=sys.stderr)
+    
+    # LOC enforcement
+    try:
+        result = subprocess.run(
+            [sys.executable, bin_dir / "ploc-enforce", "--path", str(path), "--format", "json"],
+            capture_output=True,
+            text=True,
+            timeout=60
+        )
+        if result.returncode == 0:
+            data = json.loads(result.stdout)
+            for v in data.get('violations', []):
+                violations.append({
+                    "ruleId": "LOC-OVERLIMIT",
+                    "level": "warning",
+                    "message": {"text": v.get('message', 'File exceeds size limit')},
+                    "locations": [{
+                        "physicalLocation": {
+                            "artifactLocation": {"uri": v.get('file', 'unknown')}
+                        }
+                    }]
+                })
+    except Exception as e:
+        print(f"LOC enforcement failed: {e}", file=sys.stderr)
+    
+    # Build SARIF
+    sarif = {
+        "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+        "version": "2.1.0",
+        "runs": [{
+            "tool": {
+                "driver": {
+                    "name": "Phenotype Quality Gate",
+                    "version": "0.1.0",
+                    "informationUri": "https://github.com/phenotype/AgilePlus",
+                    "rules": _build_rules()
+                }
+            },
+            "results": violations,
+            "invocations": [{
+                "executionSuccessful": True,
+                "startTimeUtc": datetime.utcnow().isoformat() + "Z"
+            }]
+        }]
+    }
+    
+    return sarif
+
+
+def _build_rules() -> List[Dict]:
+    """Build SARIF rules for all checks."""
+    rules = []
+    
+    # Tooling rules
+    forbidden_tools = ["npm", "yarn", "pnpm", "pip", "make", "jest", "webpack"]
+    for tool in forbidden_tools:
+        rules.append({
+            "id": f"TOOL-{tool.upper()}",
+            "name": f"Forbidden tool: {tool}",
+            "shortDescription": {"text": f"{tool} is forbidden, use preferred alternative"},
+            "fullDescription": {"text": f"{tool} is not allowed in this codebase. See tooling policy."},
+            "defaultConfiguration": {"level": "error"}
+        })
+    
+    # Anti-pattern rules
+    anti_patterns = [
+        ("PY001", "bare_except", "Bare except clause", "error"),
+        ("PY002", "mutable_default", "Mutable default argument", "error"),
+        ("PY004", "hardcoded_secret", "Hardcoded secret", "error"),
+        ("RS001", "unwrap_expect", "unwrap() or expect() usage", "warning"),
+        ("TS001", "any_type", "Using 'any' type", "warning"),
+        ("TS003", "var_usage", "var declaration", "error"),
+    ]
+    
+    for rule_id, name, description, level in anti_patterns:
+        rules.append({
+            "id": rule_id,
+            "name": name,
+            "shortDescription": {"text": description},
+            "fullDescription": {"text": f"{description}. See anti-pattern documentation."},
+            "defaultConfiguration": {"level": level}
+        })
+    
+    # LOC rules
+    rules.append({
+        "id": "LOC-OVERLIMIT",
+        "name": "File size exceeds limit",
+        "shortDescription": {"text": "Source file is too large"},
+        "fullDescription": {"text": "File exceeds per-language line limits. Consider refactoring."},
+        "defaultConfiguration": {"level": "warning"}
+    })
+    
+    return rules
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Phenotype SARIF Generator")
+    parser.add_argument("--path", "-p", type=Path, default=Path("."), help="Path to analyze")
+    parser.add_argument("--output", "-o", type=Path, help="Output SARIF file")
+    parser.add_argument("--pretty", action="store_true", help="Pretty print JSON")
+    
+    args = parser.parse_args()
+    
+    sarif = generate_sarif_from_tools(args.path)
+    
+    if args.output:
+        indent = 2 if args.pretty else None
+        args.output.write_text(json.dumps(sarif, indent=indent))
+        print(f"✅ SARIF written to: {args.output}")
+        print(f"   Results: {len(sarif['runs'][0]['results'])} violations")
+    else:
+        print(json.dumps(sarif, indent=2 if args.pretty else None))
+
+
+if __name__ == "__main__":
+    main()
+EOF
+echo "✅ Created psarif-gen"

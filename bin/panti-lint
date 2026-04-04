@@ -1,0 +1,497 @@
+#!/usr/bin/env python3
+"""
+Phenotype Anti-Pattern Linter (panti-lint)
+
+Detects code smells, anti-patterns, and bad practices using a growing heuristics database.
+"""
+
+import argparse
+import ast
+import json
+import os
+import re
+import sys
+from dataclasses import dataclass, asdict
+from pathlib import Path
+from typing import Dict, List, Optional, Set, Tuple, Any
+
+
+@dataclass
+class AntiPattern:
+    """Definition of a code anti-pattern."""
+    id: str
+    name: str
+    category: str  # 'design', 'performance', 'security', 'maintainability', 'correctness'
+    severity: str  # 'error', 'warning', 'info'
+    languages: List[str]  # 'python', 'rust', 'typescript', 'javascript', 'go'
+    description: str
+    recommendation: str
+    pattern_regex: Optional[str] = None
+    ast_check: Optional[str] = None  # Python AST node type to check
+    file_pattern: Optional[str] = None
+    
+
+# Heuristics Database - Growing database of anti-patterns
+ANTI_PATTERNS_DB: Dict[str, AntiPattern] = {
+    # === Python Anti-Patterns ===
+    "PY001": AntiPattern(
+        id="PY001",
+        name="bare_except",
+        category="correctness",
+        severity="error",
+        languages=["python"],
+        description="Bare except: catches all exceptions including KeyboardInterrupt and SystemExit",
+        recommendation="Use 'except Exception:' or specific exception types",
+        pattern_regex=r"except\s*:\s*$",
+    ),
+    "PY002": AntiPattern(
+        id="PY002",
+        name="mutable_default_arg",
+        category="correctness",
+        severity="error",
+        languages=["python"],
+        description="Mutable default argument (list/dict in function signature)",
+        recommendation="Use None as default and initialize inside function",
+        pattern_regex=r"def\s+\w+\s*\([^)]*=\s*(\[|\{)",
+    ),
+    "PY003": AntiPattern(
+        id="PY003",
+        name="unused_import",
+        category="maintainability",
+        severity="warning",
+        languages=["python"],
+        description="Potentially unused import",
+        recommendation="Remove unused imports or prefix with underscore",
+        ast_check="Import",
+    ),
+    "PY004": AntiPattern(
+        id="PY004",
+        name="hardcoded_password",
+        category="security",
+        severity="error",
+        languages=["python", "rust", "typescript", "javascript", "go"],
+        description="Hardcoded password/secret detected",
+        recommendation="Use environment variables or secret management",
+        pattern_regex=r'(?i)(password|secret|token|key)\s*=\s*["\'][^"\']{8,}["\']',
+    ),
+    "PY005": AntiPattern(
+        id="PY005",
+        name="print_debug",
+        category="maintainability",
+        severity="warning",
+        languages=["python"],
+        description="Print statement found (use logging instead)",
+        recommendation="Replace print() with proper logging",
+        pattern_regex=r'^\s*print\s*\(',
+    ),
+    "PY006": AntiPattern(
+        id="PY006",
+        name="too_many_nesting",
+        category="maintainability",
+        severity="warning",
+        languages=["python"],
+        description="Excessive nesting detected (>4 levels)",
+        recommendation="Refactor into smaller functions",
+    ),
+    "PY007": AntiPattern(
+        id="PY007",
+        name="no_docstring",
+        category="maintainability",
+        severity="warning",
+        languages=["python"],
+        description="Public function/class missing docstring",
+        recommendation="Add docstring to document purpose",
+        ast_check="FunctionDef",
+    ),
+    
+    # === Rust Anti-Patterns ===
+    "RS001": AntiPattern(
+        id="RS001",
+        name="unwrap_expect",
+        category="correctness",
+        severity="warning",
+        languages=["rust"],
+        description="unwrap() or expect() may cause panics",
+        recommendation="Use proper error handling with ? or match",
+        pattern_regex=r'\.unwrap\(\)|\.expect\s*\(',
+    ),
+    "RS002": AntiPattern(
+        id="RS002",
+        name="unnecessary_clone",
+        category="performance",
+        severity="warning",
+        languages=["rust"],
+        description="Potentially unnecessary .clone()",
+        recommendation="Consider borrowing or ownership transfer",
+        pattern_regex=r'\.clone\(\)',
+    ),
+    "RS003": AntiPattern(
+        id="RS003",
+        name="large_enum_variant",
+        category="performance",
+        severity="warning",
+        languages=["rust"],
+        description="Large size difference between enum variants",
+        recommendation="Box large variants to reduce size",
+    ),
+    
+    # === TypeScript/JavaScript Anti-Patterns ===
+    "TS001": AntiPattern(
+        id="TS001",
+        name="any_type",
+        category="maintainability",
+        severity="warning",
+        languages=["typescript"],
+        description="Using 'any' defeats type safety",
+        recommendation="Use specific types or 'unknown'",
+        pattern_regex=r':\s*any\b',
+    ),
+    "TS002": AntiPattern(
+        id="TS002",
+        name="console_log",
+        category="maintainability",
+        severity="warning",
+        languages=["typescript", "javascript"],
+        description="console.log found in production code",
+        recommendation="Remove or use proper logging framework",
+        pattern_regex=r'console\.(log|debug|info)\s*\(',
+    ),
+    "TS003": AntiPattern(
+        id="TS003",
+        name="var_declaration",
+        category="correctness",
+        severity="error",
+        languages=["typescript", "javascript"],
+        description="var has function scope, use let/const instead",
+        recommendation="Replace var with const or let",
+        pattern_regex=r'\bvar\s+\w+\s*=',
+    ),
+    "TS004": AntiPattern(
+        id="TS004",
+        name="non_null_assertion",
+        category="correctness",
+        severity="warning",
+        languages=["typescript"],
+        description="Non-null assertion (!) may hide null errors",
+        recommendation="Use proper null checks or optional chaining",
+        pattern_regex=r'\w+\!\.[\w\[]',
+    ),
+    "TS005": AntiPattern(
+        id="TS005",
+        name="eval_usage",
+        category="security",
+        severity="error",
+        languages=["typescript", "javascript"],
+        description="eval() is dangerous and slow",
+        recommendation="Use JSON.parse or safer alternatives",
+        pattern_regex=r'\beval\s*\(',
+    ),
+    "TS006": AntiPattern(
+        id="TS006",
+        name="deprecated_api",
+        category="maintainability",
+        severity="warning",
+        languages=["typescript", "javascript"],
+        description="Usage of deprecated browser APIs",
+        recommendation="Update to modern alternatives",
+        pattern_regex=r'navigator\.plugins|document\.write|alert\s*\(',
+    ),
+    
+    # === Go Anti-Patterns ===
+    "GO001": AntiPattern(
+        id="GO001",
+        name="panic_in_lib",
+        category="correctness",
+        severity="error",
+        languages=["go"],
+        description="panic() in library code",
+        recommendation="Return errors instead of panicking",
+        pattern_regex=r'^\s*panic\s*\(',
+    ),
+    "GO002": AntiPattern(
+        id="GO002",
+        name="ignored_error",
+        category="correctness",
+        severity="warning",
+        languages=["go"],
+        description="Error value ignored with _",
+        recommendation="Handle the error properly",
+        pattern_regex=r'_\s*,\s*\w+\s*:=\s*|_\s*=\s*\w+\s*\(',
+    ),
+    "GO003": AntiPattern(
+        id="GO003",
+        name="context_background",
+        category="performance",
+        severity="warning",
+        languages=["go"],
+        description="context.Background() without cancellation",
+        recommendation="Use context.WithTimeout/WithCancel",
+        pattern_regex=r'context\.Background\s*\(\)',
+    ),
+    
+    # === Universal Anti-Patterns ===
+    "ALL001": AntiPattern(
+        id="ALL001",
+        name="todo_comment",
+        category="maintainability",
+        severity="info",
+        languages=["python", "rust", "typescript", "javascript", "go"],
+        description="TODO/FIXME/XXX comment found",
+        recommendation="Create an issue ticket instead of TODO",
+        pattern_regex=r'(?i)#?\s*(todo|fixme|xxx|hack)',
+    ),
+    "ALL002": AntiPattern(
+        id="ALL002",
+        name="long_line",
+        category="maintainability",
+        severity="warning",
+        languages=["python", "rust", "typescript", "javascript", "go"],
+        description="Line exceeds 100 characters",
+        recommendation="Break into multiple lines or refactor",
+    ),
+    "ALL003": AntiPattern(
+        id="ALL003",
+        name="trailing_whitespace",
+        category="maintainability",
+        severity="info",
+        languages=["python", "rust", "typescript", "javascript", "go"],
+        description="Trailing whitespace on line",
+        recommendation="Remove trailing whitespace",
+    ),
+}
+
+
+@dataclass
+class Violation:
+    pattern_id: str
+    pattern_name: str
+    file: Path
+    line: int
+    column: Optional[int]
+    severity: str
+    message: str
+    recommendation: str
+    code_snippet: Optional[str] = None
+
+
+class AntiPatternLinter:
+    def __init__(self, database: Dict[str, AntiPattern] = None):
+        self.database = database or ANTI_PATTERNS_DB
+        self.violations: List[Violation] = []
+        
+    def lint_directory(self, path: Path, languages: List[str] = None) -> List[Violation]:
+        self.violations = []
+        
+        for root, dirs, files in os.walk(path):
+            # Skip common non-source directories
+            dirs[:] = [d for d in dirs if d not in {
+                "node_modules", ".git", "target", "dist", "build",
+                ".venv", "__pycache__", ".pytest_cache", ".mypy_cache"
+            }]
+            
+            for file in files:
+                file_path = Path(root) / file
+                lang = self._detect_language(file_path)
+                if languages and lang not in languages:
+                    continue
+                self._lint_file(file_path, lang)
+        
+        return self.violations
+    
+    def _detect_language(self, file_path: Path) -> Optional[str]:
+        ext = file_path.suffix.lower()
+        mapping = {
+            ".py": "python",
+            ".rs": "rust",
+            ".ts": "typescript",
+            ".tsx": "typescript",
+            ".js": "javascript",
+            ".jsx": "javascript",
+            ".go": "go",
+        }
+        return mapping.get(ext)
+    
+    def _lint_file(self, file_path: Path, language: str):
+        if not language:
+            return
+            
+        try:
+            content = file_path.read_text(encoding="utf-8", errors="ignore")
+            lines = content.splitlines()
+        except:
+            return
+        
+        # Apply pattern-based checks
+        for pattern_id, anti_pattern in self.database.items():
+            if language not in anti_pattern.languages:
+                continue
+            
+            # Regex-based checks
+            if anti_pattern.pattern_regex:
+                for i, line in enumerate(lines, 1):
+                    if re.search(anti_pattern.pattern_regex, line):
+                        # Skip if it's just a comment (for some patterns)
+                        if line.strip().startswith("#") and anti_pattern.id not in ["ALL001", "ALL003"]:
+                            continue
+                        
+                        self._add_violation(
+                            anti_pattern, file_path, i, 1, line.strip()
+                        )
+            
+            # Long line check
+            if anti_pattern.id == "ALL002":
+                for i, line in enumerate(lines, 1):
+                    if len(line) > 100:
+                        self._add_violation(
+                            anti_pattern, file_path, i, 100, line[:50] + "..."
+                        )
+            
+            # Trailing whitespace
+            if anti_pattern.id == "ALL003":
+                for i, line in enumerate(lines, 1):
+                    if line.rstrip() != line:
+                        self._add_violation(
+                            anti_pattern, file_path, i, len(line.rstrip()) + 1, line.strip()
+                        )
+        
+        # AST-based checks for Python
+        if language == "python":
+            self._lint_python_ast(file_path, content)
+    
+    def _lint_python_ast(self, file_path: Path, content: str):
+        try:
+            tree = ast.parse(content)
+            
+            for node in ast.walk(tree):
+                # Check for bare except
+                if isinstance(node, ast.ExceptHandler):
+                    if node.type is None:
+                        pattern = self.database.get("PY001")
+                        if pattern:
+                            self._add_violation(pattern, file_path, node.lineno, node.col_offset, "")
+                
+                # Check for mutable default args
+                if isinstance(node, ast.FunctionDef):
+                    for default in node.args.defaults + node.args.kw_defaults:
+                        if isinstance(default, (ast.List, ast.Dict, ast.Call)):
+                            if isinstance(default, ast.Call) and isinstance(default.func, ast.Name):
+                                if default.func.id in ("list", "dict", "set"):
+                                    pattern = self.database.get("PY002")
+                                    if pattern:
+                                        self._add_violation(pattern, file_path, node.lineno, node.col_offset, f"def {node.name}(...)")
+                            elif isinstance(default, (ast.List, ast.Dict)):
+                                pattern = self.database.get("PY002")
+                                if pattern:
+                                    self._add_violation(pattern, file_path, node.lineno, node.col_offset, f"def {node.name}(...)")
+                
+                # Check for missing docstrings on public functions
+                if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                    if not node.name.startswith("_") and ast.get_docstring(node) is None:
+                        # Skip test functions and special methods
+                        if not node.name.startswith("test_") and not node.name.startswith("__"):
+                            pattern = self.database.get("PY007")
+                            if pattern:
+                                self._add_violation(pattern, file_path, node.lineno, node.col_offset, f"def {node.name}(...)")
+                                
+        except SyntaxError:
+            pass
+    
+    def _add_violation(self, pattern: AntiPattern, file_path: Path, line: int, col: int, snippet: str):
+        violation = Violation(
+            pattern_id=pattern.id,
+            pattern_name=pattern.name,
+            file=file_path,
+            line=line,
+            column=col,
+            severity=pattern.severity,
+            message=f"{pattern.id}: {pattern.description}",
+            recommendation=pattern.recommendation,
+            code_snippet=snippet if len(snippet) < 80 else snippet[:77] + "...",
+        )
+        
+        # Avoid duplicates
+        if not any(v.file == violation.file and v.pattern_id == violation.pattern_id and v.line == violation.line
+                   for v in self.violations):
+            self.violations.append(violation)
+    
+    def generate_report(self, format: str = "markdown") -> str:
+        if format == "json":
+            return json.dumps([asdict(v) for v in self.violations], indent=2, default=str)
+        
+        if format == "markdown":
+            lines = [
+                "# Anti-Pattern Report",
+                "",
+                f"**Total Violations:** {len(self.violations)}",
+                "",
+            ]
+            
+            by_severity = {"error": [], "warning": [], "info": []}
+            for v in self.violations:
+                by_severity.get(v.severity, []).append(v)
+            
+            for severity in ["error", "warning", "info"]:
+                if by_severity[severity]:
+                    lines.extend([f"## {severity.upper()}", ""])
+                    for v in by_severity[severity]:
+                        lines.append(f"- **{v.pattern_id}** ({v.pattern_name})")
+                        lines.append(f"  File: `{v.file}:{v.line}`")
+                        lines.append(f"  {v.message}")
+                        if v.code_snippet:
+                            lines.append(f"  Code: `{v.code_snippet}`")
+                        lines.append(f"  Fix: {v.recommendation}")
+                        lines.append("")
+            
+            return "\n".join(lines)
+        
+        lines = [f"Anti-Pattern Lint: {len(self.violations)} violations"]
+        for v in self.violations:
+            lines.append(f"[{v.severity.upper()}] {v.pattern_id} at {v.file}:{v.line}")
+            lines.append(f"  {v.message}")
+            lines.append(f"  -> {v.recommendation}")
+        return "\n".join(lines)
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Phenotype Anti-Pattern Linter")
+    parser.add_argument("--path", "-p", type=Path, default=Path("."), help="Path to lint")
+    parser.add_argument("--format", "-f", choices=["text", "markdown", "json"], default="markdown")
+    parser.add_argument("--output", "-o", type=Path, help="Output file")
+    parser.add_argument("--strict", "-s", action="store_true", help="Exit with error on violations")
+    parser.add_argument("--language", "-l", help="Filter by language")
+    parser.add_argument("--severity", choices=["error", "warning", "info"], help="Minimum severity")
+    parser.add_argument("--export-database", action="store_true", help="Export patterns database")
+    
+    args = parser.parse_args()
+    
+    if args.export_database:
+        db = {k: asdict(v) for k, v in ANTI_PATTERNS_DB.items()}
+        print(json.dumps(db, indent=2))
+        return
+    
+    linter = AntiPatternLinter()
+    languages = [args.language] if args.language else None
+    violations = linter.lint_directory(args.path, languages)
+    
+    if args.severity:
+        severity_order = {"error": 0, "warning": 1, "info": 2}
+        violations = [v for v in violations if severity_order.get(v.severity, 3) <= severity_order[args.severity]]
+    
+    report = linter.generate_report(args.format)
+    
+    if args.output:
+        args.output.write_text(report)
+        print(f"Report written to {args.output}")
+    else:
+        print(report)
+    
+    if args.strict and violations:
+        errors = [v for v in violations if v.severity == "error"]
+        if errors:
+            sys.exit(1)
+    
+    sys.exit(0)
+
+
+if __name__ == "__main__":
+    main()

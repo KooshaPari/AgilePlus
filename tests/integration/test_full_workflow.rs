@@ -42,6 +42,8 @@ async fn wait_for_healthy(url: &str, max_attempts: u32) {
     panic!("Service at {url} did not become healthy after {max_attempts} attempts");
 }
 
+/// FR-AGILE-065: Full specify to ship workflow
+/// Verifies: Complete lifecycle from specify through research, plan, implement, validate, ship
 #[tokio::test]
 #[ignore = "Requires running Docker Compose stack (make test-integration)"]
 async fn test_full_specify_to_ship_workflow() {
@@ -215,6 +217,8 @@ async fn test_full_specify_to_ship_workflow() {
     );
 }
 
+/// FR-AGILE-066: Specify rejects invalid state transition
+/// Verifies: Specify command is rejected when attempted from non-initial state
 #[tokio::test]
 #[ignore = "Requires running Docker Compose stack (make test-integration)"]
 async fn test_specify_rejects_invalid_state_transition() {
@@ -275,6 +279,8 @@ async fn test_specify_rejects_invalid_state_transition() {
     );
 }
 
+/// FR-AGILE-067: Validate blocks on missing evidence
+/// Verifies: Validate command fails when required evidence is missing
 #[tokio::test]
 #[ignore = "Requires running Docker Compose stack (make test-integration)"]
 async fn test_validate_blocks_on_missing_evidence() {
@@ -326,6 +332,8 @@ async fn test_validate_blocks_on_missing_evidence() {
     );
 }
 
+/// FR-AGILE-068: Audit chain integrity after full lifecycle
+/// Verifies: Audit chain remains valid after completing feature lifecycle
 #[tokio::test]
 #[ignore = "Requires running Docker Compose stack (make test-integration)"]
 async fn test_audit_chain_integrity_after_full_lifecycle() {

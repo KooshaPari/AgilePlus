@@ -1,0 +1,64 @@
+name: PR Requirements Check
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+jobs:
+  check-requirements:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check PR description checklist
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prBody = context.payload.pull_request.body || '';
+            
+            // Check for visual evidence
+            const hasVisualEvidence = 
+              prBody.includes('![') || 
+              prBody.includes('screenshot') || 
+              prBody.includes('gif') ||
+              prBody.includes('GIF');
+            
+            // Check for spec reference
+            const hasSpecRef = 
+              prBody.includes('kitty-specs/') ||
+              prBody.includes('spec completed');
+            
+            // Check for docs reference  
+            const hasDocsRef =
+              prBody.includes('docs/') ||
+              prBody.includes('Documentation page');
+            
+            // Check checklist items
+            const visualChecked = prBody.includes('[x] Screenshot or GIF');
+            const specChecked = prBody.includes('[x] kitty-spec completed');
+            const docsChecked = prBody.includes('[x] Documentation page exists');
+            
+            const issues = [];
+            
+            if (!visualChecked) {
+              issues.push('❌ Visual evidence checkbox not checked');
+            }
+            if (!specChecked) {
+              issues.push('❌ Spec completion checkbox not checked');
+            }
+            if (!docsChecked) {
+              issues.push('❌ Documentation checkbox not checked');
+            }
+            
+            if (issues.length > 0) {
+              const body = `## PR Requirements Check\n\n${issues.join('\n')}\n\nSee [PR Requirements Policy](./GOVERNANCE_PR_REQUIREMENTS.md) for details.`;
+              
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: body
+              });
+              
+              core.setFailed('PR requirements not met. See comments for details.');
+            } else {
+              console.log('✅ All PR requirements met');
+            }

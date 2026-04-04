@@ -1,0 +1,435 @@
+#!/usr/bin/env python3
+"""
+Phenotype Tooling Audit (ptool-audit)
+
+Detects forbidden/legacy tools and enforces standardized tooling across repos.
+Blocks usage of deprecated tools where modern alternatives are mandated.
+"""
+
+import argparse
+import json
+import os
+import re
+import sys
+from dataclasses import dataclass, asdict
+from pathlib import Path
+from typing import Dict, List, Optional, Set
+
+
+@dataclass
+class ToolRule:
+    """Rule for a specific tool/package manager/test framework."""
+    name: str
+    category: str  # 'package_manager', 'task_runner', 'test_framework', 'build_tool', 'bundler'
+    status: str  # 'allowed', 'forbidden', 'deprecated', 'discouraged'
+    preferred_alternative: Optional[str] = None
+    reason: Optional[str] = None
+    file_patterns: List[str] = None
+    content_patterns: List[str] = None
+    severity: str = "error"  # 'error', 'warning', 'info'
+    autofix_available: bool = False
+    
+    def __post_init__(self):
+        if self.file_patterns is None:
+            self.file_patterns = []
+        if self.content_patterns is None:
+            self.content_patterns = []
+
+
+# Canonical tooling database - the "source of truth" for allowed/forbidden tools
+TOOLING_DATABASE: Dict[str, ToolRule] = {
+    # Package Managers
+    "npm": ToolRule(
+        name="npm",
+        category="package_manager",
+        status="forbidden",
+        preferred_alternative="bun",
+        reason="Bun is the standardized package manager for JS/TS projects",
+        file_patterns=["package-lock.json", "npm-shrinkwrap.json", ".npmrc"],
+        content_patterns=[r'"npm":', r'npm install', r'npm run'],
+        severity="error",
+    ),
+    "yarn": ToolRule(
+        name="yarn",
+        category="package_manager",
+        status="forbidden",
+        preferred_alternative="bun",
+        reason="Bun is the standardized package manager for JS/TS projects",
+        file_patterns=["yarn.lock", ".yarnrc", ".yarnrc.yml"],
+        content_patterns=[r'yarn install', r'yarn run', r'yarn add'],
+        severity="error",
+    ),
+    "pnpm": ToolRule(
+        name="pnpm",
+        category="package_manager",
+        status="forbidden",
+        preferred_alternative="bun",
+        reason="Bun is the standardized package manager for JS/TS projects",
+        file_patterns=["pnpm-lock.yaml", ".pnpmrc"],
+        content_patterns=[r'pnpm install', r'pnpm run', r'pnpm add'],
+        severity="error",
+    ),
+    "bun": ToolRule(
+        name="bun",
+        category="package_manager",
+        status="allowed",
+        file_patterns=["bun.lockb"],
+        content_patterns=[r'bun install', r'bun run', r'bun add'],
+        severity="info",
+    ),
+    "pip": ToolRule(
+        name="pip",
+        category="package_manager",
+        status="discouraged",
+        preferred_alternative="uv",
+        reason="uv is the standardized Python package manager",
+        file_patterns=["requirements.txt", "requirements-*.txt"],
+        content_patterns=[r'pip install', r'pip3 install'],
+        severity="warning",
+    ),
+    "uv": ToolRule(
+        name="uv",
+        category="package_manager",
+        status="allowed",
+        file_patterns=["uv.lock", "pyproject.toml"],
+        content_patterns=[r'uv add', r'uv run', r'uv pip'],
+        severity="info",
+    ),
+    
+    # Task Runners
+    "make": ToolRule(
+        name="make",
+        category="task_runner",
+        status="forbidden",
+        preferred_alternative="task",
+        reason="Task is the standardized task runner (Makefile handrolls are error-prone)",
+        file_patterns=["Makefile", "makefile", "GNUmakefile"],
+        content_patterns=[r'make ', r'make\t', r'\.PHONY'],
+        severity="error",
+    ),
+    "just": ToolRule(
+        name="just",
+        category="task_runner",
+        status="discouraged",
+        preferred_alternative="task",
+        reason="Task is the standardized task runner across all repos",
+        file_patterns=["justfile", "Justfile", ".justfile"],
+        content_patterns=[r'just ', r'@just'],
+        severity="warning",
+    ),
+    "task": ToolRule(
+        name="task",
+        category="task_runner",
+        status="allowed",
+        file_patterns=["Taskfile.yml", "Taskfile.yaml", "taskfile.yml"],
+        content_patterns=[r'task ', r'task:'],
+        severity="info",
+    ),
+    
+    # Test Frameworks
+    "jest": ToolRule(
+        name="jest",
+        category="test_framework",
+        status="forbidden",
+        preferred_alternative="vitest",
+        reason="Vitest is the standardized test runner (faster, native ESM, Vite-aligned)",
+        file_patterns=["jest.config.js", "jest.config.ts", "jest.setup.js"],
+        content_patterns=[r'jest\(', r'from.*jest', r'@jest/globals'],
+        severity="error",
+    ),
+    "mocha": ToolRule(
+        name="mocha",
+        category="test_framework",
+        status="forbidden",
+        preferred_alternative="vitest",
+        reason="Mocha is legacy; Vitest provides better ESM and TypeScript support",
+        file_patterns=[".mocharc.js", ".mocharc.json", ".mocharc.yml"],
+        content_patterns=[r'mocha', r'describe.*it.*mocha'],
+        severity="error",
+    ),
+    "vitest": ToolRule(
+        name="vitest",
+        category="test_framework",
+        status="allowed",
+        file_patterns=["vitest.config.ts", "vitest.config.js"],
+        content_patterns=[r'vitest', r'from.*vitest'],
+        severity="info",
+    ),
+    "pytest": ToolRule(
+        name="pytest",
+        category="test_framework",
+        status="allowed",
+        file_patterns=["pytest.ini", "pyproject.toml"],
+        content_patterns=[r'pytest', r'@pytest.mark'],
+        severity="info",
+    ),
+    
+    # Bundlers
+    "webpack": ToolRule(
+        name="webpack",
+        category="bundler",
+        status="forbidden",
+        preferred_alternative="vite",
+        reason="Webpack is legacy complexity; Vite provides instant HMR and simpler config",
+        file_patterns=["webpack.config.js", "webpack.config.ts", "webpack.*.js"],
+        content_patterns=[r'webpack', r'webpack-cli'],
+        severity="error",
+    ),
+    "vite": ToolRule(
+        name="vite",
+        category="bundler",
+        status="allowed",
+        file_patterns=["vite.config.ts", "vite.config.js", "vite.config.mjs"],
+        content_patterns=[r'vite', r'from.*vite'],
+        severity="info",
+    ),
+    
+    # Linting
+    "eslint": ToolRule(
+        name="eslint",
+        category="linter",
+        status="discouraged",
+        preferred_alternative="oxlint",
+        reason="oxlint (Rust-based) is faster for JS/TS",
+        file_patterns=[".eslintrc.js", ".eslintrc.json", ".eslintrc.yml", "eslint.config.js"],
+        content_patterns=[r'eslint', r'@eslint'],
+        severity="warning",
+    ),
+    "prettier": ToolRule(
+        name="prettier",
+        category="linter",
+        status="discouraged",
+        preferred_alternative="biome",
+        reason="Biome provides linting + formatting in one tool (Rust-based, faster)",
+        file_patterns=[".prettierrc", ".prettierrc.json", ".prettierrc.yml"],
+        content_patterns=[r'prettier'],
+        severity="warning",
+    ),
+    
+    # CI/CD
+    "circleci": ToolRule(
+        name="circleci",
+        category="ci_cd",
+        status="forbidden",
+        preferred_alternative="github-actions",
+        reason="GitHub Actions is the standardized CI/CD platform",
+        file_patterns=[".circleci/config.yml"],
+        content_patterns=[r'circleci'],
+        severity="error",
+    ),
+}
+
+
+@dataclass
+class Violation:
+    """Represents a tooling violation found in the codebase."""
+    tool: str
+    category: str
+    file: Path
+    line: Optional[int]
+    severity: str
+    message: str
+    fix_suggestion: Optional[str]
+
+
+class ToolingAuditor:
+    """Audits a codebase for forbidden/discouraged tooling."""
+    
+    def __init__(self, database: Dict[str, ToolRule] = None):
+        self.database = database or TOOLING_DATABASE
+        self.violations: List[Violation] = []
+        self.allowed_tools_found: Set[str] = set()
+        
+    def audit_directory(self, path: Path, respect_gitignore: bool = True) -> List[Violation]:
+        """Audit a directory for tooling violations."""
+        self.violations = []
+        self.allowed_tools_found = set()
+        
+        ignore_patterns = self._load_gitignore_patterns(path) if respect_gitignore else set()
+        
+        for root, dirs, files in os.walk(path):
+            root_path = Path(root)
+            dirs[:] = [d for d in dirs if not self._should_ignore(d, ignore_patterns)]
+            
+            for file in files:
+                if self._should_ignore(file, ignore_patterns):
+                    continue
+                file_path = root_path / file
+                self._audit_file(file_path)
+        
+        return self.violations
+    
+    def _load_gitignore_patterns(self, path: Path) -> Set[str]:
+        patterns = {"node_modules", ".git", "target", "dist", "build", ".venv", "__pycache__"}
+        gitignore_path = path / ".gitignore"
+        if gitignore_path.exists():
+            try:
+                content = gitignore_path.read_text()
+                for line in content.splitlines():
+                    line = line.strip()
+                    if line and not line.startswith("#"):
+                        patterns.add(line.rstrip("/"))
+            except:
+                pass
+        return patterns
+    
+    def _should_ignore(self, name: str, patterns: Set[str]) -> bool:
+        for pattern in patterns:
+            if pattern in name or name in pattern:
+                return True
+        return False
+    
+    def _audit_file(self, file_path: Path):
+        file_name = file_path.name
+        
+        for tool_name, rule in self.database.items():
+            for pattern in rule.file_patterns:
+                if self._match_pattern(file_name, pattern):
+                    if rule.status in ("forbidden", "deprecated"):
+                        self._add_violation(rule, file_path, None)
+                    elif rule.status == "allowed":
+                        self.allowed_tools_found.add(tool_name)
+        
+        if self._should_check_contents(file_path):
+            try:
+                content = file_path.read_text(encoding="utf-8", errors="ignore")
+                lines = content.splitlines()
+                
+                for tool_name, rule in self.database.items():
+                    for pattern in rule.content_patterns:
+                        for i, line in enumerate(lines, 1):
+                            if re.search(pattern, line):
+                                if rule.status in ("forbidden", "deprecated", "discouraged"):
+                                    self._add_violation(rule, file_path, i, line.strip())
+                                elif rule.status == "allowed":
+                                    self.allowed_tools_found.add(tool_name)
+            except:
+                pass
+    
+    def _match_pattern(self, file_name: str, pattern: str) -> bool:
+        if "*" in pattern:
+            import fnmatch
+            return fnmatch.fnmatch(file_name, pattern)
+        return file_name == pattern
+    
+    def _should_check_contents(self, file_path: Path) -> bool:
+        ext = file_path.suffix.lower()
+        return ext in (".js", ".ts", ".json", ".yml", ".yaml", ".toml", ".py", ".sh", ".md")
+    
+    def _add_violation(self, rule: ToolRule, file_path: Path, line: Optional[int], context: str = ""):
+        message = f"{rule.status.upper()}: {rule.name} ({rule.category})"
+        if rule.reason:
+            message += f" - {rule.reason}"
+        
+        fix_suggestion = None
+        if rule.preferred_alternative:
+            fix_suggestion = f"Use {rule.preferred_alternative} instead"
+        
+        violation = Violation(
+            tool=rule.name,
+            category=rule.category,
+            file=file_path,
+            line=line,
+            severity=rule.severity,
+            message=message,
+            fix_suggestion=fix_suggestion,
+        )
+        
+        if not any(v.file == violation.file and v.tool == violation.tool and v.line == violation.line 
+                   for v in self.violations):
+            self.violations.append(violation)
+    
+    def generate_report(self, format: str = "markdown") -> str:
+        if format == "json":
+            return json.dumps([asdict(v) for v in self.violations], indent=2, default=str)
+        
+        if format == "markdown":
+            lines = [
+                "# Tooling Audit Report",
+                "",
+                f"**Total Violations:** {len(self.violations)}",
+                f"**Allowed Tools Found:** {', '.join(sorted(self.allowed_tools_found)) or 'None'}",
+                "",
+            ]
+            
+            errors = [v for v in self.violations if v.severity == "error"]
+            warnings = [v for v in self.violations if v.severity == "warning"]
+            
+            if errors:
+                lines.extend(["## Errors (Must Fix)", ""])
+                for v in errors:
+                    location = f"{v.file}"
+                    if v.line:
+                        location += f":{v.line}"
+                    lines.append(f"- **{v.tool}** in `{location}`")
+                    lines.append(f"  - {v.message}")
+                    if v.fix_suggestion:
+                        lines.append(f"  - Fix: {v.fix_suggestion}")
+                    lines.append("")
+            
+            if warnings:
+                lines.extend(["## Warnings (Should Fix)", ""])
+                for v in warnings:
+                    location = f"{v.file}"
+                    if v.line:
+                        location += f":{v.line}"
+                    lines.append(f"- **{v.tool}** in `{location}`")
+                    lines.append(f"  - {v.message}")
+                    if v.fix_suggestion:
+                        lines.append(f"  - Fix: {v.fix_suggestion}")
+                    lines.append("")
+            
+            return "\n".join(lines)
+        
+        lines = [f"Tooling Audit: {len(self.violations)} violations found"]
+        for v in self.violations:
+            location = f"{v.file}"
+            if v.line:
+                location += f":{v.line}"
+            lines.append(f"[{v.severity.upper()}] {v.tool} at {location}")
+            lines.append(f"  {v.message}")
+            if v.fix_suggestion:
+                lines.append(f"  -> {v.fix_suggestion}")
+        return "\n".join(lines)
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Phenotype Tooling Audit")
+    parser.add_argument("--path", "-p", type=Path, default=Path("."), help="Path to audit")
+    parser.add_argument("--format", "-f", choices=["text", "markdown", "json"], default="markdown")
+    parser.add_argument("--output", "-o", type=Path, help="Output file (default: stdout)")
+    parser.add_argument("--strict", "-s", action="store_true", help="Exit with error on any violation")
+    parser.add_argument("--category", "-c", help="Filter by category")
+    parser.add_argument("--export-database", action="store_true", help="Export the tooling database as JSON")
+    
+    args = parser.parse_args()
+    
+    if args.export_database:
+        db = {k: asdict(v) for k, v in TOOLING_DATABASE.items()}
+        print(json.dumps(db, indent=2))
+        return
+    
+    auditor = ToolingAuditor()
+    violations = auditor.audit_directory(args.path)
+    
+    if args.category:
+        violations = [v for v in violations if v.category == args.category]
+    
+    report = auditor.generate_report(args.format)
+    
+    if args.output:
+        args.output.write_text(report)
+        print(f"Report written to {args.output}")
+    else:
+        print(report)
+    
+    if args.strict and violations:
+        errors = [v for v in violations if v.severity == "error"]
+        if errors:
+            sys.exit(1)
+    
+    sys.exit(0)
+
+
+if __name__ == "__main__":
+    main()

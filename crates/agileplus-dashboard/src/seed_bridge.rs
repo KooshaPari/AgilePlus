@@ -89,6 +89,7 @@ pub fn build_dashboard_store() -> DashboardStore {
         cycles,
         cycle_features,
         health,
+        unified_health: crate::app_state::UnifiedHealthSnapshot::default(),
         projects,
         active_project_id: Some(1),
     }

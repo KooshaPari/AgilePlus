@@ -1,0 +1,435 @@
+#!/usr/bin/env python3
+"""
+Phenotype Quality Gate - Full Audit Runner
+Runs comprehensive audit across ALL repos and generates fix tickets
+"""
+
+import argparse
+import json
+import os
+import subprocess
+import sys
+from concurrent.futures import ProcessPoolExecutor, as_completed
+from datetime import datetime
+from pathlib import Path
+from typing import Dict, List, Optional, Tuple
+import html
+
+# List of all phenotype repos to audit
+DEFAULT_REPOS = [
+    "AgilePlus", "Tracera", "thegent", "phenoSDK", "heliosCLI",
+    "BytePort", "Profila", "Tokn", "Dino", "Tossy",
+    "portage", "Phenotype", "hexagon-go", "heliosApp",
+    "cliproxyapi-plusplus", "agentapi-plusplus", "PolicyStack"
+]
+
+# Severity scoring
+SEVERITY_SCORES = {
+    "error": 10,
+    "warning": 3,
+    "info": 1
+}
+
+class FullAuditor:
+    def __init__(self, repos_dir: Path):
+        self.repos_dir = repos_dir
+        self.results: Dict[str, Dict] = {}
+        self.fix_tickets: List[Dict] = []
+        
+    def audit_all(self, repos: List[str], parallel: bool = True) -> Dict[str, Dict]:
+        """Run full audit on all repos."""
+        print(f"🔍 Auditing {len(repos)} repositories...")
+        print("=" * 70)
+        
+        if parallel and len(repos) > 1:
+            with ProcessPoolExecutor(max_workers=4) as executor:
+                futures = {executor.submit(self._audit_repo, repo): repo for repo in repos}
+                for future in as_completed(futures):
+                    repo = futures[future]
+                    try:
+                        self.results[repo] = future.result()
+                        self._generate_fix_tickets(repo, self.results[repo])
+                    except Exception as e:
+                        print(f"  ✗ {repo}: {e}")
+                        self.results[repo] = {"error": str(e)}
+        else:
+            for repo in repos:
+                self.results[repo] = self._audit_repo(repo)
+                self._generate_fix_tickets(repo, self.results[repo])
+        
+        return self.results
+    
+    def _audit_repo(self, repo: str) -> Dict:
+        """Audit a single repository."""
+        repo_path = self.repos_dir / repo
+        if not repo_path.exists():
+            return {"error": "Repository not found"}
+        
+        print(f"📊 Auditing {repo}...", end=" ", flush=True)
+        
+        result = {
+            "path": str(repo_path),
+            "tooling": self._run_tooling_audit(repo_path),
+            "antipatterns": self._run_antipattern_lint(repo_path),
+            "loc": self._run_loc_enforce(repo_path),
+            "score": 0,
+            "grade": "F"
+        }
+        
+        # Calculate score
+        score = 100
+        score -= result["tooling"].get("errors", 0) * 10
+        score -= result["tooling"].get("warnings", 0) * 3
+        score -= result["antipatterns"].get("errors", 0) * 5
+        score -= result["antipatterns"].get("warnings", 0) * 2
+        score -= result["loc"].get("violations", 0) * 2
+        result["score"] = max(0, score)
+        result["grade"] = self._calculate_grade(result["score"])
+        
+        print(f"Score: {result['score']}/100 (Grade {result['grade']})")
+        return result
+    
+    def _run_tooling_audit(self, path: Path) -> Dict:
+        """Quick tooling audit - check for forbidden files."""
+        violations = []
+        
+        forbidden_files = {
+            "package-lock.json": ("npm", "error", "Use bun instead"),
+            "yarn.lock": ("yarn", "error", "Use bun instead"),
+            "pnpm-lock.yaml": ("pnpm", "error", "Use bun instead"),
+            "Pipfile": ("pipenv", "error", "Use uv instead"),
+            "poetry.lock": ("poetry", "warning", "Consider uv"),
+            "requirements.txt": ("pip", "warning", "Consider uv"),
+            "Makefile": ("make", "error", "Use Taskfile.yml"),
+            "justfile": ("just", "warning", "Consider Task"),
+            "jest.config.js": ("jest", "error", "Use vitest"),
+            "webpack.config.js": ("webpack", "error", "Use vite"),
+            ".eslintrc.js": ("eslint", "warning", "Consider oxlint"),
+            ".prettierrc": ("prettier", "warning", "Consider biome"),
+            ".travis.yml": ("travis", "error", "Use GitHub Actions"),
+            ".circleci/config.yml": ("circleci", "error", "Use GitHub Actions"),
+        }
+        
+        for filename, (tool, severity, fix) in forbidden_files.items():
+            if (path / filename).exists():
+                violations.append({
+                    "tool": tool,
+                    "severity": severity,
+                    "file": filename,
+                    "fix": fix
+                })
+        
+        return {
+            "violations": violations,
+            "errors": len([v for v in violations if v["severity"] == "error"]),
+            "warnings": len([v for v in violations if v["severity"] == "warning"]),
+        }
+    
+    def _run_antipattern_lint(self, path: Path) -> Dict:
+        """Quick anti-pattern scan - sample largest files."""
+        violations = []
+        
+        # Find source files
+        source_files = []
+        for ext in [".py", ".rs", ".ts", ".js", ".go"]:
+            for f in path.rglob(f"*{ext}"):
+                if not any(part.startswith(".") for part in f.parts):
+                    try:
+                        size = f.stat().st_size
+                        if size < 1024 * 1024:  # Skip files > 1MB
+                            source_files.append((f, size))
+                    except:
+                        pass
+        
+        # Sample largest files
+        source_files.sort(key=lambda x: x[1], reverse=True)
+        sample = source_files[:20]
+        
+        # Quick pattern checks
+        patterns = {
+            "bare_except": (r"except\s*:", "PY001", "error"),
+            "print_debug": (r"^\s*print\s*\(", "PY005", "warning"),
+            "console_log": (r"console\.(log|debug)\s*\(", "TS002", "warning"),
+            "var_usage": (r"\bvar\s+\w+\s*=", "TS003", "error"),
+            "unwrap": (r"\.unwrap\(\)", "RS001", "warning"),
+            "todo": (r"(?i)#?\s*todo", "ALL001", "info"),
+            "hardcoded_ip": (r"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b", "ALL010", "warning"),
+        }
+        
+        for filepath, _ in sample:
+            try:
+                content = filepath.read_text(encoding="utf-8", errors="ignore")
+                lines = content.splitlines()
+                
+                for i, line in enumerate(lines, 1):
+                    for name, (pattern, code, severity) in patterns.items():
+                        if re.search(pattern, line):
+                            violations.append({
+                                "code": code,
+                                "pattern": name,
+                                "file": str(filepath.relative_to(path)),
+                                "line": i,
+                                "severity": severity,
+                                "snippet": line[:80].strip()
+                            })
+            except:
+                pass
+        
+        return {
+            "violations": violations[:50],  # Limit to 50
+            "errors": len([v for v in violations if v["severity"] == "error"]),
+            "warnings": len([v for v in violations if v["severity"] == "warning"]),
+            "info": len([v for v in violations if v["severity"] == "info"]),
+        }
+    
+    def _run_loc_enforce(self, path: Path) -> Dict:
+        """Quick LOC check - find oversized files."""
+        limits = {".rs": 500, ".py": 400, ".ts": 400, ".tsx": 350, ".go": 500}
+        violations = []
+        
+        for ext, limit in limits.items():
+            for f in path.rglob(f"*{ext}"):
+                if not any(part.startswith(".") for part in f.parts):
+                    try:
+                        line_count = len(f.read_text().splitlines())
+                        if line_count > limit:
+                            violations.append({
+                                "file": str(f.relative_to(path)),
+                                "lines": line_count,
+                                "limit": limit,
+                                "over_by": line_count - limit,
+                                "severity": "error" if line_count > limit + 100 else "warning"
+                            })
+                    except:
+                        pass
+        
+        return {
+            "violations": sorted(violations, key=lambda x: x["over_by"], reverse=True)[:20],
+            "total": len(violations),
+        }
+    
+    def _calculate_grade(self, score: int) -> str:
+        if score >= 90: return "A"
+        if score >= 80: return "B"
+        if score >= 70: return "C"
+        if score >= 60: return "D"
+        return "F"
+    
+    def _generate_fix_tickets(self, repo: str, result: Dict):
+        """Generate fix tickets from audit results."""
+        if "error" in result:
+            return
+        
+        # Tooling fix tickets
+        for v in result["tooling"].get("violations", []):
+            if v["severity"] == "error":
+                self.fix_tickets.append({
+                    "repo": repo,
+                    "type": "tooling",
+                    "severity": v["severity"],
+                    "title": f"Remove {v['tool']} - {v['file']}",
+                    "description": f"Replace {v['tool']} with: {v['fix']}",
+                    "autofix": True,
+                    "migration": v["tool"].lower().replace(" ", "_").replace(".", "")
+                })
+        
+        # LOC fix tickets
+        for v in result["loc"].get("violations", [])[:10]:
+            self.fix_tickets.append({
+                "repo": repo,
+                "type": "loc",
+                "severity": v["severity"],
+                "title": f"Refactor oversized file: {v['file']}",
+                "description": f"File has {v['lines']} lines (limit: {v['limit']}). Split into modules.",
+                "autofix": False,
+            })
+    
+    def generate_html_report(self, output_path: Path):
+        """Generate comprehensive HTML report."""
+        total_repos = len(self.results)
+        passing = sum(1 for r in self.results.values() if r.get("grade", "F") in ["A", "B"])
+        
+        html_content = f"""<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Phenotype Quality Gate - Full Audit Report</title>
+    <style>
+        body {{ font-family: -apple-system, sans-serif; max-width: 1400px; margin: 0 auto; padding: 20px; background: #f5f5f5; }}
+        h1 {{ color: #333; border-bottom: 3px solid #4a90d9; padding-bottom: 10px; }}
+        .summary {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin: 20px 0; }}
+        .card {{ background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }}
+        .card h3 {{ margin: 0 0 10px 0; font-size: 14px; text-transform: uppercase; color: #666; }}
+        .card .value {{ font-size: 36px; font-weight: bold; color: #4a90d9; }}
+        .grade-a {{ color: #2e7d32; }} .grade-b {{ color: #689f38; }} .grade-c {{ color: #f9a825; }}
+        .grade-d {{ color: #ef6c00; }} .grade-f {{ color: #c62828; }}
+        table {{ width: 100%; background: white; border-collapse: collapse; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin: 20px 0; }}
+        th, td {{ padding: 12px; text-align: left; border-bottom: 1px solid #eee; }}
+        th {{ background: #4a90d9; color: white; font-weight: 600; }}
+        tr:hover {{ background: #f9f9f9; }}
+        .badge {{ display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }}
+        .badge-error {{ background: #ffebee; color: #c62828; }} .badge-warning {{ background: #fff3e0; color: #ef6c00; }}
+        .badge-success {{ background: #e8f5e9; color: #2e7d32; }} .badge-info {{ background: #e3f2fd; color: #1565c0; }}
+        .tickets {{ background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-top: 20px; }}
+        .ticket {{ border-left: 4px solid #4a90d9; padding: 10px 15px; margin: 10px 0; background: #f9f9f9; }}
+        .ticket-autofix {{ border-left-color: #2e7d32; }}
+        .ticket-error {{ border-left-color: #c62828; }}
+        .timestamp {{ color: #999; font-size: 12px; margin-top: 20px; }}
+    </style>
+</head>
+<body>
+    <h1>Phenotype Quality Gate - Full Audit Report</h1>
+    <p class="timestamp">Generated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}</p>
+    
+    <div class="summary">
+        <div class="card">
+            <h3>Repositories</h3>
+            <div class="value">{total_repos}</div>
+        </div>
+        <div class="card">
+            <h3>Passing (A/B)</h3>
+            <div class="value grade-{'a' if passing/total_repos > 0.7 else 'c'}">{passing}</div>
+        </div>
+        <div class="card">
+            <h3>Fix Tickets</h3>
+            <div class="value">{len(self.fix_tickets)}</div>
+        </div>
+        <div class="card">
+            <h3>Avg Score</h3>
+            <div class="value">{sum(r.get('score', 0) for r in self.results.values()) // max(len(self.results), 1)}/100</div>
+        </div>
+    </div>
+    
+    <h2>Repository Scores</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Repository</th>
+                <th>Grade</th>
+                <th>Score</th>
+                <th>Tooling Issues</th>
+                <th>Anti-Patterns</th>
+                <th>LOC Violations</th>
+            </tr>
+        </thead>
+        <tbody>
+"""
+        
+        for repo, data in sorted(self.results.items(), key=lambda x: x[1].get("score", 0), reverse=True):
+            if "error" in data:
+                continue
+            grade_class = f"grade-{data.get('grade', 'f').lower()}"
+            html_content += f"""
+            <tr>
+                <td><strong>{repo}</strong></td>
+                <td><span class="badge {grade_class}">{data.get('grade', 'F')}</span></td>
+                <td>{data.get('score', 0)}/100</td>
+                <td>{data['tooling'].get('errors', 0)} errors, {data['tooling'].get('warnings', 0)} warnings</td>
+                <td>{data['antipatterns'].get('errors', 0)} errors, {data['antipatterns'].get('warnings', 0)} warnings</td>
+                <td>{data['loc'].get('total', 0)}</td>
+            </tr>
+"""
+        
+        html_content += """
+        </tbody>
+    </table>
+    
+    <div class="tickets">
+        <h2>Fix Tickets (Auto-Generated)</h2>
+        <p>These tickets are prioritized by severity and impact.</p>
+"""
+        
+        # Sort tickets: autofixable first, then by severity
+        sorted_tickets = sorted(
+            self.fix_tickets,
+            key=lambda t: (not t.get("autofix", False), {"error": 0, "warning": 1, "info": 2}.get(t["severity"], 3))
+        )
+        
+        for ticket in sorted_tickets[:50]:  # Show top 50
+            autofix_class = "ticket-autofix" if ticket.get("autofix") else ""
+            error_class = "ticket-error" if ticket["severity"] == "error" else ""
+            html_content += f"""
+        <div class="ticket {autofix_class} {error_class}">
+            <strong>[{ticket['repo']}] {html.escape(ticket['title'])}</strong>
+            <span class="badge badge-{ticket['severity']}">{ticket['severity']}</span>
+            {('<span class="badge badge-success">autofix</span>' if ticket.get('autofix') else '')}
+            <p>{html.escape(ticket['description'])}</p>
+        </div>
+"""
+        
+        html_content += """
+    </div>
+</body>
+</html>
+"""
+        
+        output_path.write_text(html_content)
+        print(f"\n✅ HTML report written to: {output_path}")
+    
+    def generate_json_report(self, output_path: Path):
+        """Generate JSON report for programmatic access."""
+        report = {
+            "generated_at": datetime.now().isoformat(),
+            "summary": {
+                "total_repos": len(self.results),
+                "passing": sum(1 for r in self.results.values() if r.get("grade", "F") in ["A", "B"]),
+                "fix_tickets": len(self.fix_tickets),
+                "avg_score": sum(r.get("score", 0) for r in self.results.values()) // max(len(self.results), 1),
+            },
+            "repositories": self.results,
+            "fix_tickets": self.fix_tickets,
+        }
+        output_path.write_text(json.dumps(report, indent=2, default=str))
+        print(f"✅ JSON report written to: {output_path}")
+    
+    def print_summary(self):
+        """Print text summary to console."""
+        print("\n" + "=" * 70)
+        print("AUDIT SUMMARY")
+        print("=" * 70)
+        
+        for repo, data in sorted(self.results.items(), key=lambda x: x[1].get("score", 0), reverse=True):
+            if "error" in data:
+                print(f"\n{repo}: ERROR - {data['error']}")
+                continue
+            
+            grade_icon = "✅" if data.get("grade") in ["A", "B"] else "⚠️" if data.get("grade") in ["C", "D"] else "❌"
+            print(f"\n{grade_icon} {repo}: Grade {data.get('grade', 'F')} ({data.get('score', 0)}/100)")
+            
+            if data["tooling"].get("errors", 0) > 0:
+                print(f"   Tooling: {data['tooling']['errors']} errors")
+            if data["loc"].get("total", 0) > 0:
+                print(f"   LOC: {data['loc']['total']} files over limit")
+        
+        print(f"\n{'=' * 70}")
+        print(f"Total fix tickets: {len(self.fix_tickets)}")
+        autofixable = sum(1 for t in self.fix_tickets if t.get("autofix"))
+        print(f"Auto-fixable: {autofixable}")
+        print(f"{'=' * 70}\n")
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Phenotype Full Quality Gate Audit")
+    parser.add_argument("--repos", nargs="+", help="Repos to audit (default: all)")
+    parser.add_argument("--output-html", type=Path, default=Path("full-audit-report.html"))
+    parser.add_argument("--output-json", type=Path, default=Path("full-audit-report.json"))
+    parser.add_argument("--repos-dir", type=Path, default=Path(".."))
+    parser.add_argument("--sequential", action="store_true", help="Disable parallel processing")
+    
+    args = parser.parse_args()
+    
+    repos = args.repos or DEFAULT_REPOS
+    
+    auditor = FullAuditor(args.repos_dir)
+    auditor.audit_all(repos, parallel=not args.sequential)
+    
+    auditor.generate_html_report(args.output_html)
+    auditor.generate_json_report(args.output_json)
+    auditor.print_summary()
+
+
+if __name__ == "__main__":
+    import re  # Import here for the pattern matching
+    main()
+EOF
+echo "✅ Created pfull-audit"

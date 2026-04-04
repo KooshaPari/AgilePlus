@@ -1,0 +1,352 @@
+#!/usr/bin/env python3
+"""
+Phenotype Quality Dashboard Generator (pquality-dashboard)
+
+Generates a unified dashboard showing quality trends across projects.
+Uses historical data to track improvement/regression.
+"""
+
+import argparse
+import json
+import os
+import subprocess
+import sys
+from datetime import datetime
+from pathlib import Path
+from typing import Dict, List, Optional
+import html
+
+
+def run_audit(path: Path) -> Dict:
+    """Run tooling audit and return summary."""
+    try:
+        result = subprocess.run(
+            ["python3", "bin/ptool-audit-expanded", "--path", str(path), "--format", "json"],
+            capture_output=True,
+            text=True,
+            timeout=60,
+            cwd=Path(__file__).parent.parent
+        )
+        if result.returncode == 0:
+            violations = json.loads(result.stdout)
+            return {
+                "total": len(violations),
+                "errors": len([v for v in violations if v.get("severity") == "error"]),
+                "warnings": len([v for v in violations if v.get("severity") == "warning"]),
+                "forbidden_tools": len([v for v in violations if "forbidden" in v.get("message", "").lower()]),
+            }
+    except:
+        pass
+    return {"total": 0, "errors": 0, "warnings": 0, "forbidden_tools": 0}
+
+
+def run_lint(path: Path) -> Dict:
+    """Run anti-pattern lint and return summary."""
+    try:
+        result = subprocess.run(
+            ["python3", "bin/panti-lint-expanded", "--path", str(path), "--format", "json"],
+            capture_output=True,
+            text=True,
+            timeout=60,
+            cwd=Path(__file__).parent.parent
+        )
+        if result.returncode == 0:
+            violations = json.loads(result.stdout)
+            return {
+                "total": len(violations),
+                "errors": len([v for v in violations if v.get("severity") == "error"]),
+                "warnings": len([v for v in violations if v.get("severity") == "warning"]),
+                "info": len([v for v in violations if v.get("severity") == "info"]),
+            }
+    except:
+        pass
+    return {"total": 0, "errors": 0, "warnings": 0, "info": 0}
+
+
+def run_loc(path: Path) -> Dict:
+    """Run LOC enforcement and return summary."""
+    try:
+        result = subprocess.run(
+            ["python3", "bin/ploc-enforce", "--path", str(path), "--format", "json"],
+            capture_output=True,
+            text=True,
+            timeout=60,
+            cwd=Path(__file__).parent.parent
+        )
+        if result.returncode == 0:
+            data = json.loads(result.stdout)
+            return {
+                "total": len(data.get("violations", [])),
+                "files_over_limit": len([v for v in data.get("violations", []) if "exceeds" in v.get("message", "")]),
+                "functions_over_limit": len([v for v in data.get("violations", []) if "Function" in v.get("message", "")]),
+                "stats": data.get("stats", {}),
+            }
+    except:
+        pass
+    return {"total": 0, "files_over_limit": 0, "functions_over_limit": 0, "stats": {}}
+
+
+def generate_html_dashboard(results: Dict[str, Dict]) -> str:
+    """Generate HTML dashboard."""
+    total_errors = sum(r.get("audit", {}).get("errors", 0) + r.get("lint", {}).get("errors", 0) + r.get("loc", {}).get("total", 0) for r in results.values())
+    total_warnings = sum(r.get("audit", {}).get("warnings", 0) + r.get("lint", {}).get("warnings", 0) for r in results.values())
+    
+    html_content = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phenotype Quality Dashboard</title>
+    <style>
+        body {{
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }}
+        h1 {{
+            color: #333;
+            border-bottom: 3px solid #4a90d9;
+            padding-bottom: 10px;
+        }}
+        .summary {{
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }}
+        .card {{
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }}
+        .card h3 {{
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            text-transform: uppercase;
+            color: #666;
+        }}
+        .card .value {{
+            font-size: 36px;
+            font-weight: bold;
+            color: #4a90d9;
+        }}
+        .card .error {{
+            color: #d94a4a;
+        }}
+        .card .warning {{
+            color: #d9a04a;
+        }}
+        table {{
+            width: 100%;
+            background: white;
+            border-collapse: collapse;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }}
+        th, td {{
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }}
+        th {{
+            background: #4a90d9;
+            color: white;
+            font-weight: 600;
+        }}
+        tr:hover {{
+            background: #f9f9f9;
+        }}
+        .badge {{
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }}
+        .badge-error {{
+            background: #ffebee;
+            color: #c62828;
+        }}
+        .badge-warning {{
+            background: #fff3e0;
+            color: #ef6c00;
+        }}
+        .badge-success {{
+            background: #e8f5e9;
+            color: #2e7d32;
+        }}
+        .timestamp {{
+            color: #999;
+            font-size: 12px;
+            margin-top: 20px;
+        }}
+    </style>
+</head>
+<body>
+    <h1>Phenotype Quality Dashboard</h1>
+    <p class="timestamp">Generated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}</p>
+    
+    <div class="summary">
+        <div class="card">
+            <h3>Total Errors</h3>
+            <div class="value error">{total_errors}</div>
+        </div>
+        <div class="card">
+            <h3>Total Warnings</h3>
+            <div class="value warning">{total_warnings}</div>
+        </div>
+        <div class="card">
+            <h3>Projects Analyzed</h3>
+            <div class="value">{len(results)}</div>
+        </div>
+        <div class="card">
+            <h3>Quality Score</h3>
+            <div class="value">{max(0, 100 - total_errors * 5 - total_warnings)}</div>
+        </div>
+    </div>
+    
+    <h2>Project Details</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Project</th>
+                <th>Tooling Errors</th>
+                <th>Anti-Patterns</th>
+                <th>LOC Violations</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+"""
+    
+    for project, data in sorted(results.items()):
+        audit = data.get("audit", {})
+        lint = data.get("lint", {})
+        loc = data.get("loc", {})
+        
+        audit_errors = audit.get("errors", 0)
+        lint_errors = lint.get("errors", 0)
+        loc_total = loc.get("total", 0)
+        
+        if audit_errors + lint_errors + loc_total == 0:
+            status = '<span class="badge badge-success">PASS</span>'
+        elif audit_errors + lint_errors > 0:
+            status = '<span class="badge badge-error">FAIL</span>'
+        else:
+            status = '<span class="badge badge-warning">WARN</span>'
+        
+        html_content += f"""
+            <tr>
+                <td><strong>{html.escape(project)}</strong></td>
+                <td>{audit_errors}</td>
+                <td>{lint_errors}</td>
+                <td>{loc_total}</td>
+                <td>{status}</td>
+            </tr>
+"""
+    
+    html_content += """
+        </tbody>
+    </table>
+    
+    <h2>Recommended Actions</h2>
+    <div class="card">
+        <ol>
+"""
+    
+    # Generate recommendations
+    for project, data in sorted(results.items()):
+        audit = data.get("audit", {})
+        lint = data.get("lint", {})
+        
+        if audit.get("forbidden_tools", 0) > 0:
+            html_content += f"<li><strong>{html.escape(project)}:</strong> Remove {audit.get('forbidden_tools')} forbidden tool(s)</li>\n"
+        if lint.get("errors", 0) > 0:
+            html_content += f"<li><strong>{html.escape(project)}:</strong> Fix {lint.get('errors')} anti-pattern error(s)</li>\n"
+    
+    html_content += """
+        </ol>
+    </div>
+</body>
+</html>
+"""
+    return html_content
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Phenotype Quality Dashboard")
+    parser.add_argument("--projects", "-p", nargs="+", help="Project paths to analyze")
+    parser.add_argument("--output", "-o", type=Path, default=Path("quality-dashboard.html"), help="Output HTML file")
+    parser.add_argument("--json", "-j", type=Path, help="Also output JSON data")
+    
+    args = parser.parse_args()
+    
+    # Default projects if none specified
+    projects = args.projects or [".", "../Tracera", "../thegent", "../phenoSDK", "../heliosCLI"]
+    
+    results = {}
+    
+    print("=" * 70)
+    print("PHENOTYPE QUALITY DASHBOARD GENERATOR")
+    print("=" * 70)
+    
+    for project_path in projects:
+        path = Path(project_path).resolve()
+        if not path.exists():
+            print(f"⚠️  Skipping {project_path} (not found)")
+            continue
+        
+        project_name = path.name
+        print(f"\n📊 Analyzing {project_name}...")
+        
+        results[project_name] = {
+            "path": str(path),
+            "audit": run_audit(path),
+            "lint": run_lint(path),
+            "loc": run_loc(path),
+        }
+        
+        audit = results[project_name]["audit"]
+        lint = results[project_name]["lint"]
+        loc = results[project_name]["loc"]
+        
+        print(f"  Tooling: {audit.get('errors', 0)} errors, {audit.get('warnings', 0)} warnings")
+        print(f"  Anti-patterns: {lint.get('errors', 0)} errors, {lint.get('warnings', 0)} warnings")
+        print(f"  LOC: {loc.get('total', 0)} violations")
+    
+    # Generate HTML dashboard
+    html_content = generate_html_dashboard(results)
+    args.output.write_text(html_content)
+    print(f"\n✅ Dashboard written to: {args.output}")
+    
+    # Generate JSON if requested
+    if args.json:
+        args.json.write_text(json.dumps(results, indent=2))
+        print(f"✅ JSON data written to: {args.json}")
+    
+    # Summary
+    total_errors = sum(r["audit"].get("errors", 0) + r["lint"].get("errors", 0) for r in results.values())
+    total_warnings = sum(r["audit"].get("warnings", 0) + r["lint"].get("warnings", 0) for r in results.values())
+    
+    print(f"\n{'='*70}")
+    print("SUMMARY")
+    print(f"{'='*70}")
+    print(f"Projects analyzed: {len(results)}")
+    print(f"Total errors: {total_errors}")
+    print(f"Total warnings: {total_warnings}")
+    print(f"Quality score: {max(0, 100 - total_errors * 5 - total_warnings)}/100")
+    
+    if total_errors == 0 and total_warnings == 0:
+        print("\n🎉 All projects pass quality gates!")
+    elif total_errors == 0:
+        print(f"\n⚠️  {total_warnings} warning(s) to address")
+    else:
+        print(f"\n❌ {total_errors} error(s) must be fixed")
+
+
+if __name__ == "__main__":
+    main()

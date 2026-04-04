@@ -6,10 +6,7 @@
 
 use std::path::PathBuf;
 
-use agileplus_domain::domain::{
-    audit::AuditEntry,
-    governance::GovernanceContract,
-};
+use agileplus_domain::domain::{audit::AuditEntry, governance::GovernanceContract};
 
 /// Return the absolute path to the `tests/fixtures/` directory.
 fn fixtures_dir() -> PathBuf {
@@ -41,8 +38,8 @@ pub fn sample_governance_contract() -> GovernanceContract {
         rules: Vec<agileplus_domain::domain::governance::GovernanceRule>,
     }
     let json = load_fixture("sample-governance.json");
-    let fixture: FixtureContract = serde_json::from_str(&json)
-        .expect("sample-governance.json must be valid JSON");
+    let fixture: FixtureContract =
+        serde_json::from_str(&json).expect("sample-governance.json must be valid JSON");
     GovernanceContract {
         id: 1,
         feature_id: 1,
@@ -103,6 +100,8 @@ mod tests {
     use super::*;
     use agileplus_domain::domain::audit::AuditChain;
 
+    /// FR-AGILE-059: Sample audit chain loads and verifies
+    /// Verifies: Sample audit chain fixture loads and forms valid hash chain
     #[test]
     fn sample_audit_chain_loads_and_verifies() {
         let entries = sample_audit_chain();
@@ -113,25 +112,36 @@ mod tests {
             .expect("Sample audit chain must verify as valid");
     }
 
+    /// FR-AGILE-060: Sample governance contract loads
+    /// Verifies: Governance contract fixture loads with version and rules
     #[test]
     fn sample_governance_contract_loads() {
         let contract = sample_governance_contract();
         assert_eq!(contract.version, 1);
-        assert!(!contract.rules.is_empty(), "Contract must have at least one rule");
+        assert!(
+            !contract.rules.is_empty(),
+            "Contract must have at least one rule"
+        );
     }
 
+    /// FR-AGILE-061: Sample spec loads
+    /// Verifies: Sample spec fixture loads and contains FR-001 reference
     #[test]
     fn sample_spec_loads() {
         let spec = sample_spec();
         assert!(spec.contains("FR-001"), "spec must reference FR-001");
     }
 
+    /// FR-AGILE-062: Sample plan loads
+    /// Verifies: Sample plan fixture loads and contains WP01 reference
     #[test]
     fn sample_plan_loads() {
         let plan = sample_plan();
         assert!(plan.contains("WP01"), "plan must contain WP01");
     }
 
+    /// FR-AGILE-063: Sample meta loads
+    /// Verifies: Sample meta fixture loads with correct slug and state fields
     #[test]
     fn sample_meta_loads() {
         let meta = sample_meta();
@@ -139,6 +149,8 @@ mod tests {
         assert_eq!(meta["state"], "implementing");
     }
 
+    /// FR-AGILE-064: Evidence fixtures load
+    /// Verifies: Evidence fixtures for WP01 load correctly with test-results and review-approval
     #[test]
     fn evidence_fixtures_load() {
         let ev = load_evidence(1, "test-results");

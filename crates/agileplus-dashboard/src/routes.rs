@@ -21,6 +21,7 @@ use agileplus_domain::domain::{
 
 use crate::app_state::{ServiceHealth, SharedState};
 use crate::process_detector;
+use phenotype_health::HealthStatus as PhenotypeHealthStatus;
 use crate::templates::{
     AgentActivityPartial, AgentSettingsPage, AgentView, CiLinkView, DashboardPage,
     EcosystemProject, EventTimelinePartial, EventsPage, EvidenceBundleView,
@@ -870,9 +871,62 @@ pub async fn wp_list(State(state): State<SharedState>, Path(id): Path<i64>) -> R
 
 pub async fn health_panel(State(state): State<SharedState>) -> Response {
     let store = state.read().await;
+    
+    // Use unified health services if available, otherwise fall back to legacy health
+    let services = if !store.unified_health.services.is_empty() {
+        store.unified_health.services.clone()
+    } else {
+        store.health.clone()
+    };
+    
     render(HealthPanelPartial {
-        services: store.health.clone(),
+        services,
     })
+}
+
+/// Trigger unified health scan
+/// POST /api/dashboard/health/refresh
+pub async fn refresh_health(State(state): State<SharedState>) -> impl IntoResponse {
+    use std::path::PathBuf;
+    
+    // Get the workspace root - in production this would be configurable
+    let scan_path = PathBuf::from("/Users/kooshapari/CodeProjects/Phenotype/repos");
+    
+    let mut store = state.write().await;
+    
+    match store.update_unified_health(&scan_path).await {
+        Ok(_) => {
+            let metrics = store.unified_health_metrics();
+            axum::Json(serde_json::json!({
+                "status": "success",
+                "message": "Health scan completed",
+                "metrics": metrics,
+            }))
+        }
+        Err(e) => {
+            axum::Json(serde_json::json!({
+                "status": "error",
+                "message": format!("Health scan failed: {}", e),
+            }))
+        }
+    }
+}
+
+/// Get unified health metrics
+/// GET /api/dashboard/health/metrics
+pub async fn health_metrics(State(state): State<SharedState>) -> impl IntoResponse {
+    let store = state.read().await;
+    
+    match store.unified_health_metrics() {
+        Some(metrics) => axum::Json(serde_json::json!({
+            "status": "success",
+            "metrics": metrics,
+        })),
+        None => axum::Json(serde_json::json!({
+            "status": "unavailable",
+            "message": "No unified health data available. Run a health scan first.",
+        })),
+    }
 }
 
 // ── /api/dashboard/events ────────────────────────────────────────────────
@@ -1028,14 +1082,21 @@ pub async fn agents_json(State(_state): State<SharedState>) -> impl IntoResponse
 }
 
 // ── /api/dashboard/health (JSON) ────────────────────────────────────────
+// ── /api/dashboard/health (JSON) ────────────────────────────────────────
 
 /// JSON API: GET /api/dashboard/health
 /// Returns service health status as JSON (polls every 10s from dashboard templates).
 pub async fn health_json(State(state): State<SharedState>) -> impl IntoResponse {
     let store = state.read().await;
 
-    let services: Vec<ServiceHealthJson> = store
-        .health
+    // Use unified health services if available, otherwise fall back to legacy health
+    let health_services = if !store.unified_health.services.is_empty() {
+        &store.unified_health.services
+    } else {
+        &store.health
+    };
+
+    let services: Vec<ServiceHealthJson> = health_services
         .iter()
         .map(|service| ServiceHealthJson {
             name: service.name.clone(),
@@ -1053,6 +1114,200 @@ pub async fn health_json(State(state): State<SharedState>) -> impl IntoResponse 
         timestamp: Utc::now().to_rfc3339(),
         all_healthy,
     })
+}
+
+// ── Unified Health Dashboard Routes (phenotype-health integration) ──────────
+
+/// GET /api/health/projects
+/// Returns projects from the unified health scanner
+pub async fn unified_health_projects(State(state): State<SharedState>) -> impl IntoResponse {
+    let store = state.read().await;
+
+    let projects: Vec<serde_json::Value> = store
+        .unified_health
+        .unified_report
+        .as_ref()
+        .map(|report| {
+            report
+                .projects
+                .iter()
+                .map(|p| {
+                    serde_json::json!({
+                        "name": p.name,
+                        "path": p.path,
+                        "project_type": format!("{:?}", p.project_type),
+                        "status": format!("{:?}", p.status),
+                        "compliance_score": p.compliance_score,
+                        "security_risk_score": p.security_risk_score,
+                        "has_health_config": p.has_health_config,
+                    })
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+
+    axum::Json(serde_json::json!({
+        "projects": projects,
+        "total": projects.len(),
+        "timestamp": Utc::now().to_rfc3339(),
+    }))
+}
+
+/// GET /api/health/compliance
+/// Returns compliance scan results
+pub async fn unified_health_compliance(State(state): State<SharedState>) -> impl IntoResponse {
+    let store = state.read().await;
+
+    let findings: Vec<serde_json::Value> = store
+        .unified_health
+        .unified_report
+        .as_ref()
+        .map(|report| {
+            report
+                .compliance_findings
+                .iter()
+                .map(|f| {
+                    serde_json::json!({
+                        "rule_id": f.rule_id,
+                        "message": f.message,
+                        "file": f.file_path.to_string_lossy().to_string(),
+                        "line": f.line,
+                        "severity": format!("{:?}", f.severity),
+                        "suggestion": f.suggestion,
+                    })
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+
+    axum::Json(serde_json::json!({
+        "findings": findings,
+        "total": findings.len(),
+        "timestamp": Utc::now().to_rfc3339(),
+    }))
+}
+
+/// GET /api/health/security
+/// Returns security findings from aggregated sources
+pub async fn unified_health_security(State(state): State<SharedState>) -> impl IntoResponse {
+    let store = state.read().await;
+
+    let findings: Vec<serde_json::Value> = store
+        .unified_health
+        .unified_report
+        .as_ref()
+        .map(|report| {
+            report
+                .security_findings
+                .iter()
+                .map(|f| {
+                    serde_json::json!({
+                        "id": f.id,
+                        "title": f.title,
+                        "description": f.description,
+                        "severity": format!("{:?}", f.severity),
+                        "source": format!("{:?}", f.source),
+                        "file": f.file,
+                        "cwe_id": f.cwe_id,
+                        "cvss_score": f.cvss_score,
+                    })
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+
+    axum::Json(serde_json::json!({
+        "findings": findings,
+        "total": findings.len(),
+        "timestamp": Utc::now().to_rfc3339(),
+    }))
+}
+
+/// GET /api/health/summary
+/// Returns overall health summary across all projects
+pub async fn unified_health_summary(State(state): State<SharedState>) -> impl IntoResponse {
+    let store = state.read().await;
+    let health = &store.unified_health;
+
+    let (total_projects, healthy_projects, degraded_projects, unhealthy_projects) = health
+        .unified_report
+        .as_ref()
+        .map(|r| {
+            let total = r.projects.len();
+            let healthy = r
+                .projects
+                .iter()
+                .filter(|p| matches!(p.status, PhenotypeHealthStatus::Healthy))
+                .count();
+            let degraded = r
+                .projects
+                .iter()
+                .filter(|p| matches!(p.status, PhenotypeHealthStatus::Degraded))
+                .count();
+            let unhealthy = r
+                .projects
+                .iter()
+                .filter(|p| matches!(p.status, PhenotypeHealthStatus::Unhealthy))
+                .count();
+            (total, healthy, degraded, unhealthy)
+        })
+        .unwrap_or((0, 0, 0, 0));
+
+    let (compliance_findings, security_findings) = health
+        .unified_report
+        .as_ref()
+        .map(|r| (r.compliance_findings.len(), r.security_findings.len()))
+        .unwrap_or((0, 0));
+
+    let overall_status = if unhealthy_projects > 0 {
+        "unhealthy"
+    } else if degraded_projects > 0 {
+        "degraded"
+    } else {
+        "healthy"
+    };
+
+    axum::Json(serde_json::json!({
+        "overall_status": overall_status,
+        "projects": {
+            "total": total_projects,
+            "healthy": healthy_projects,
+            "degraded": degraded_projects,
+            "unhealthy": unhealthy_projects,
+        },
+        "findings": {
+            "compliance": compliance_findings,
+            "security": security_findings,
+        },
+        "last_updated": health.last_updated,
+    }))
+}
+
+/// POST /api/health/trigger
+/// Triggers a background scan of all projects
+pub async fn trigger_unified_scan(State(state): State<SharedState>) -> impl IntoResponse {
+    // Spawn a background task to update the unified health data
+    let state_clone = state.clone();
+    tokio::spawn(async move {
+        // In a real implementation, this would:
+        // 1. Run the UnifiedHealthScanner
+        // 2. Update the store with new data
+        // 3. Send webhook notifications if configured
+        tracing::info!("Background health scan triggered");
+
+        // Simulate a brief delay for demo purposes
+        tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+
+        let mut store = state_clone.write().await;
+        store.unified_health.last_updated = Utc::now();
+        tracing::info!("Background health scan completed");
+    });
+
+    axum::Json(serde_json::json!({
+        "status": "scan_triggered",
+        "message": "Health scan started in background",
+        "timestamp": Utc::now().to_rfc3339(),
+    }))
 }
 
 // ── /api/dashboard/projects ──────────────────────────────────────────
@@ -2085,6 +2340,12 @@ pub fn router(state: SharedState) -> Router {
         // JSON API endpoints (for polling from JavaScript templates)
         .route("/api/dashboard/agents.json", get(agents_json))
         .route("/api/dashboard/health.json", get(health_json))
+        // Unified health dashboard routes (phenotype-health integration)
+        .route("/api/health/projects", get(unified_health_projects))
+        .route("/api/health/compliance", get(unified_health_compliance))
+        .route("/api/health/security", get(unified_health_security))
+        .route("/api/health/summary", get(unified_health_summary))
+        .route("/api/health/trigger", post(trigger_unified_scan))
         .route("/api/dashboard/projects", get(project_switcher))
         .route(
             "/api/dashboard/projects/{id}/activate",

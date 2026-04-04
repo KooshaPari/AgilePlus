@@ -36,6 +36,8 @@ fn make_event(seq: i64, entity_type: &str, entity_id: i64, event_type: &str) -> 
 // Contract: Event fields are complete (API can map to response)
 // ---------------------------------------------------------------------------
 
+/// FR-AGILE-001: Event has all API required fields
+/// Verifies: Event struct contains all fields required by API response contract
 #[test]
 fn contract_event_has_all_api_required_fields() {
     let event = make_event(1, "Feature", 10, "Created");
@@ -50,6 +52,8 @@ fn contract_event_has_all_api_required_fields() {
     let _ts_str = event.timestamp.to_rfc3339();
 }
 
+/// FR-AGILE-002: Event payload is JSON value
+/// Verifies: Event payload field serializes correctly to JSON object
 #[test]
 fn contract_event_payload_is_json_value() {
     let event = make_event(1, "Feature", 1, "Transitioned");
@@ -62,6 +66,8 @@ fn contract_event_payload_is_json_value() {
 // Contract: EventQuery filters — entity_type
 // ---------------------------------------------------------------------------
 
+/// FR-AGILE-003: Query filter by entity_type isolates stream
+/// Verifies: EventQuery correctly filters events by entity_type field
 #[test]
 fn contract_query_filter_by_entity_type_isolates_stream() {
     let events = vec![
@@ -80,6 +86,8 @@ fn contract_query_filter_by_entity_type_isolates_stream() {
 // Contract: EventQuery filters — entity_id
 // ---------------------------------------------------------------------------
 
+/// FR-AGILE-004: Query filter by entity_id
+/// Verifies: EventQuery correctly filters events by entity_id field
 #[test]
 fn contract_query_filter_by_entity_id() {
     let events = vec![
@@ -101,6 +109,8 @@ fn contract_query_filter_by_entity_id() {
 // Contract: EventQuery pagination — limit
 // ---------------------------------------------------------------------------
 
+/// FR-AGILE-005: Query limit matches API page size
+/// Verifies: EventQuery limit parameter respects API page size contract
 #[test]
 fn contract_query_limit_matches_api_page_size() {
     let events: Vec<Event> = (1..=25)
@@ -119,6 +129,8 @@ fn contract_query_limit_matches_api_page_size() {
 // Contract: EventQuery pagination — sequence range for offset simulation
 // ---------------------------------------------------------------------------
 
+/// FR-AGILE-006: Query sequence range enables offset pagination
+/// Verifies: EventQuery supports sequence-based offset pagination
 #[test]
 fn contract_query_sequence_range_enables_offset_pagination() {
     let events: Vec<Event> = (1..=10)
@@ -145,6 +157,8 @@ fn contract_query_sequence_range_enables_offset_pagination() {
 // Contract: EventQuery returns events in sequence order (no reordering)
 // ---------------------------------------------------------------------------
 
+/// FR-AGILE-007: Query preserves sequence order
+/// Verifies: EventQuery returns events in sequential order without reordering
 #[test]
 fn contract_query_preserves_sequence_order() {
     // Build events in forward order — filter must preserve order.
@@ -163,6 +177,8 @@ fn contract_query_preserves_sequence_order() {
 // Contract: EventQuery by event_type filter
 // ---------------------------------------------------------------------------
 
+/// FR-AGILE-008: Query filter by event_type
+/// Verifies: EventQuery correctly filters events by event_type field
 #[test]
 fn contract_query_filter_by_event_type() {
     let events = vec![
@@ -182,6 +198,8 @@ fn contract_query_filter_by_event_type() {
 // Contract: EventQuery with no results returns empty vec (not error)
 // ---------------------------------------------------------------------------
 
+/// FR-AGILE-009: Query no match returns empty not error
+/// Verifies: EventQuery returns empty vec when no events match filter
 #[test]
 fn contract_query_no_match_returns_empty_not_error() {
     let events = vec![make_event(1, "Feature", 1, "Created")];
@@ -193,6 +211,8 @@ fn contract_query_no_match_returns_empty_not_error() {
 // Contract: Event serialization to JSON for API response
 // ---------------------------------------------------------------------------
 
+/// FR-AGILE-010: Event serializes to API JSON shape
+/// Verifies: Event struct serializes to JSON matching API response shape
 #[test]
 fn contract_event_serializes_to_api_json_shape() {
     let event = make_event(5, "Feature", 1, "Transitioned");
@@ -213,6 +233,8 @@ fn contract_event_serializes_to_api_json_shape() {
 // Contract: Event timestamp is RFC3339 serializable
 // ---------------------------------------------------------------------------
 
+/// FR-AGILE-011: Event timestamp is RFC3339
+/// Verifies: Event timestamp field is valid RFC3339 format
 #[test]
 fn contract_event_timestamp_is_rfc3339() {
     let event = make_event(1, "Feature", 1, "Created");
@@ -225,6 +247,8 @@ fn contract_event_timestamp_is_rfc3339() {
 // Contract: hash fields are 32-byte arrays (API serializes as hex)
 // ---------------------------------------------------------------------------
 
+/// FR-AGILE-012: Event hash fields are 32 bytes
+/// Verifies: Event prev_hash and hash fields are 32-byte arrays
 #[test]
 fn contract_event_hash_fields_are_32_bytes() {
     let event = make_event(1, "Feature", 1, "Created");
@@ -236,6 +260,8 @@ fn contract_event_hash_fields_are_32_bytes() {
 // Contract: combined filter (entity_type + entity_id + event_type + limit)
 // ---------------------------------------------------------------------------
 
+/// FR-AGILE-013: Combined filter and limit
+/// Verifies: EventQuery correctly combines multiple filters with limit
 #[test]
 fn contract_combined_filter_and_limit() {
     let events: Vec<Event> = (1..=20)
@@ -255,9 +281,7 @@ fn contract_combined_filter_and_limit() {
         .filter(&events);
 
     assert_eq!(result.len(), 5);
-    assert!(
-        result
-            .iter()
-            .all(|e| e.entity_id == 1 && e.event_type == "Transitioned")
-    );
+    assert!(result
+        .iter()
+        .all(|e| e.entity_id == 1 && e.event_type == "Transitioned"));
 }

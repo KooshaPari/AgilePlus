@@ -1,0 +1,171 @@
+#!/usr/bin/env python3
+"""Phenotype LOC/File Size Enforcer (ploc-enforce)"""
+
+import argparse
+import json
+import os
+import sys
+from dataclasses import dataclass, asdict
+from pathlib import Path
+from typing import Dict, List, Optional
+
+
+@dataclass
+class LocLimit:
+    extension: str
+    max_lines: int
+    severity: str = "error"
+
+
+LOC_DATABASE: Dict[str, LocLimit] = {
+    "rs": LocLimit(".rs", 500),
+    "py": LocLimit(".py", 400),
+    "ts": LocLimit(".ts", 400),
+    "tsx": LocLimit(".tsx", 350),
+    "js": LocLimit(".js", 400),
+    "go": LocLimit(".go", 500),
+}
+
+
+@dataclass
+class Violation:
+    file: Path
+    line_count: int
+    limit: int
+    severity: str
+    message: str
+
+
+class LocEnforcer:
+    def __init__(self, database: Dict[str, LocLimit] = None):
+        self.database = database or LOC_DATABASE
+        self.violations: List[Violation] = []
+        self.stats: Dict[str, Dict] = {}
+
+    def enforce_directory(self, path: Path) -> List[Violation]:
+        self.violations = []
+        self.stats = {}
+
+        for root, dirs, files in os.walk(path):
+            dirs[:] = [d for d in dirs if d not in {
+                "node_modules", ".git", "target", "dist", "build",
+                ".venv", "__pycache__"
+            }]
+
+            for file in files:
+                file_path = Path(root) / file
+                self._check_file(file_path)
+
+        return self.violations
+
+    def _check_file(self, file_path: Path):
+        ext = file_path.suffix.lower().lstrip(".")
+        if ext not in self.database:
+            return
+
+        limit = self.database[ext]
+
+        # Check exclude patterns
+        for pattern in ["generated", "bindings", ".d.ts", "pb.go"]:
+            if pattern in file_path.name or pattern in str(file_path):
+                return
+
+        try:
+            content = file_path.read_text(encoding="utf-8", errors="ignore")
+            line_count = len(content.splitlines())
+        except:
+            return
+
+        # Track stats
+        ext_stats = self.stats.get(ext, {"count": 0, "total_lines": 0, "max_lines": 0})
+        ext_stats["count"] += 1
+        ext_stats["total_lines"] += line_count
+        ext_stats["max_lines"] = max(ext_stats["max_lines"], line_count)
+        self.stats[ext] = ext_stats
+
+        # Check file size limit
+        if line_count > limit.max_lines:
+            over_by = line_count - limit.max_lines
+            severity = "error" if over_by > 100 else "warning"
+
+            self.violations.append(Violation(
+                file=file_path,
+                line_count=line_count,
+                limit=limit.max_lines,
+                severity=severity,
+                message=f"File exceeds {limit.max_lines} lines (has {line_count}, +{over_by})"
+            ))
+
+    def generate_report(self, fmt: str = "markdown") -> str:
+        if fmt == "json":
+            return json.dumps({
+                "violations": [{"file": str(v.file), "lines": v.line_count, "limit": v.limit, "severity": v.severity} for v in self.violations],
+                "stats": self.stats,
+            }, indent=2)
+
+        lines = [
+            "# LOC Enforcement Report",
+            "",
+            f"**Total Violations:** {len(self.violations)}",
+            "",
+        ]
+
+        errors = [v for v in self.violations if v.severity == "error"]
+        warnings = [v for v in self.violations if v.severity == "warning"]
+
+        if errors:
+            lines.extend(["## Errors (Must Fix)", ""])
+            for v in errors:
+                lines.append(f"- `{v.file}`: {v.message}")
+            lines.append("")
+
+        if warnings:
+            lines.extend(["## Warnings (Should Fix)", ""])
+            for v in warnings:
+                lines.append(f"- `{v.file}`: {v.message}")
+            lines.append("")
+
+        lines.extend(["## Statistics", ""])
+        for ext, stat in sorted(self.stats.items()):
+            avg = stat["total_lines"] // stat["count"] if stat["count"] > 0 else 0
+            lines.append(f"- .{ext}: {stat['count']} files, {stat['total_lines']} total lines, {avg} avg, {stat['max_lines']} max")
+
+        return "\n".join(lines)
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Phenotype LOC Enforcer")
+    parser.add_argument("--path", "-p", type=Path, default=Path("."))
+    parser.add_argument("--format", "-f", choices=["text", "markdown", "json"], default="markdown")
+    parser.add_argument("--output", "-o", type=Path)
+    parser.add_argument("--strict", "-s", action="store_true")
+    parser.add_argument("--export-database", action="store_true")
+
+    args = parser.parse_args()
+
+    if args.export_database:
+        db = {k: asdict(v) for k, v in LOC_DATABASE.items()}
+        print(json.dumps(db, indent=2))
+        return
+
+    enforcer = LocEnforcer()
+    violations = enforcer.enforce_directory(args.path)
+
+    report = enforcer.generate_report(args.format)
+
+    if args.output:
+        args.output.write_text(report)
+        print(f"Report written to {args.output}")
+    else:
+        print(report)
+
+    if args.strict and violations:
+        errors = [v for v in violations if v.severity == "error"]
+        if errors:
+            sys.exit(1)
+
+    sys.exit(0)
+
+
+if __name__ == "__main__":
+    main()

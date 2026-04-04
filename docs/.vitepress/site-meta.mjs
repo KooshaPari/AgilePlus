@@ -7,7 +7,45 @@ export function createSiteMeta({ base = '/' } = {}) {
       nav: [
         { text: 'Home', link: base || '/' },
         { text: 'Guide', link: '/guide/' },
+        { text: 'Dashboard', link: '/dashboard/' },
+        { text: 'CLI', link: '/cli/' },
+        { text: 'API', link: '/api/' },
       ],
+      sidebar: {
+        '/dashboard/': [
+          {
+            text: 'Dashboard',
+            items: [
+              { text: 'Overview', link: '/dashboard/' },
+              { text: 'Service Controls', link: '/dashboard/service-controls' },
+            ]
+          }
+        ],
+        '/cli/': [
+          {
+            text: 'CLI',
+            items: [
+              { text: 'Overview', link: '/cli/' },
+            ]
+          }
+        ],
+        '/api/': [
+          {
+            text: 'API',
+            items: [
+              { text: 'Overview', link: '/api/' },
+            ]
+          }
+        ],
+        '/guide/': [
+          {
+            text: 'Guide',
+            items: [
+              { text: 'Getting Started', link: '/guide/' },
+            ]
+          }
+        ],
+      },
     },
   }
 }

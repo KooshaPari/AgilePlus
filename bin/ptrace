@@ -1,0 +1,267 @@
+#!/usr/bin/env python3
+"""Phenotype Traceability CLI (ptrace) - Python implementation"""
+
+import argparse
+import os
+import re
+import sys
+from pathlib import Path
+from collections import defaultdict
+
+def main():
+    parser = argparse.ArgumentParser(description="Phenotype Traceability CLI")
+    subparsers = parser.add_subparsers(dest="command", help="Commands")
+
+    # Analyze command
+    analyze = subparsers.add_parser("analyze", help="Analyze FR coverage")
+    analyze.add_argument("--path", "-p", default=".", help="Path to analyze")
+    analyze.add_argument("--lang", "-l", default="all", help="Language filter")
+
+    # Coverage command
+    coverage = subparsers.add_parser("coverage", help="Generate coverage report")
+    coverage.add_argument("--path", "-p", default=".", help="Path to analyze")
+    coverage.add_argument("--output", "-o", default="TEST_COVERAGE.md", help="Output file")
+
+    # Drift command
+    drift = subparsers.add_parser("check-drift", help="Check for spec drift")
+    drift.add_argument("--path", "-p", default=".", help="Path to analyze")
+    drift.add_argument("--threshold", "-t", type=int, default=10, help="Drift threshold %")
+
+    # AI validation command
+    ai = subparsers.add_parser("validate-ai", help="Validate AI attribution")
+    ai.add_argument("--project", "-p", default=".", help="Project path")
+    ai.add_argument("--strict", action="store_true", help="Strict mode")
+
+    # FR Report command
+    report = subparsers.add_parser("fr-report", help="Generate FR report")
+    report.add_argument("--project", "-p", default=".", help="Project path")
+    report.add_argument("--with-ai", action="store_true", help="Include AI data")
+
+    args = parser.parse_args()
+
+    if args.command == "analyze":
+        cmd_analyze(args.path, args.lang)
+    elif args.command == "coverage":
+        cmd_coverage(args.path, args.output)
+    elif args.command == "check-drift":
+        cmd_drift(args.path, args.threshold)
+    elif args.command == "validate-ai":
+        cmd_validate_ai(args.project, args.strict)
+    elif args.command == "fr-report":
+        cmd_fr_report(args.project, args.with_ai)
+    else:
+        parser.print_help()
+
+def cmd_analyze(path, lang):
+    """Analyze FR coverage in source files."""
+    fr_pattern = re.compile(r"FR-[A-Z][A-Z0-9]*-\d{3,}(?:-[A-Z0-9]+)?")
+
+    ext_map = {
+        "rust": [".rs"],
+        "python": [".py"],
+        "go": [".go"],
+        "ts": [".ts", ".js"],
+        "javascript": [".js", ".ts"],
+        "typescript": [".ts", ".js"],
+        "all": [".rs", ".py", ".go", ".ts", ".js"]
+    }
+
+    exts = ext_map.get(lang, [".rs", ".py", ".go", ".ts", ".js"])
+    fr_ids = set()
+    test_count = 0
+    file_count = 0
+
+    for root, dirs, files in os.walk(path):
+        dirs[:] = [d for d in dirs if d not in ["node_modules", "target", "dist", ".git", "__pycache__"]]
+
+        for file in files:
+            if any(file.endswith(ext) for ext in exts):
+                filepath = os.path.join(root, file)
+                try:
+                    with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
+                        content = f.read()
+                        found_frs = fr_pattern.findall(content)
+                        if found_frs:
+                            file_count += 1
+                            for fr in found_frs:
+                                fr_ids.add(fr)
+                            if lang in ["python", "all"] and file.endswith(".py"):
+                                test_count += len(re.findall(r"^def test_", content, re.MULTILINE))
+                            elif lang in ["rust", "all"] and file.endswith(".rs"):
+                                test_count += len(re.findall(r"#\[test\]", content))
+                except Exception:
+                    pass
+
+    print(f"\n=== FR Coverage Analysis ===")
+    print(f"Files with FR annotations: {file_count}")
+    print(f"Unique FR IDs found: {len(fr_ids)}")
+    print(f"Test functions: {test_count}")
+
+    if fr_ids:
+        print(f"\nFR IDs found:")
+        for fr in sorted(fr_ids):
+            print(f"  - {fr}")
+
+    return len(fr_ids)
+
+def cmd_coverage(path, output):
+    """Generate coverage report."""
+    fr_pattern = re.compile(r"FR-[A-Z][A-Z0-9]*-\d{3,}(?:-[A-Z0-9]+)?")
+    fr_to_files = defaultdict(list)
+
+    for root, dirs, files in os.walk(path):
+        dirs[:] = [d for d in dirs if d not in ["node_modules", "target", "dist", ".git", "__pycache__"]]
+
+        for file in files:
+            if file.endswith((".rs", ".py", ".go", ".ts", ".js")):
+                filepath = os.path.join(root, file)
+                try:
+                    with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
+                        content = f.read()
+                        for fr_match in fr_pattern.finditer(content):
+                            fr = fr_match.group(0)
+                            fr_to_files[fr].append(filepath)
+                except Exception:
+                    pass
+
+    report_lines = [
+        "# FR Coverage Report",
+        "",
+        f"Generated: {os.popen('date').read().strip()}",
+        f"Path: {path}",
+        "",
+        "## Summary",
+        "",
+        f"- Total FR IDs found: {len(fr_to_files)}",
+        f"- Files with FR annotations: {len(set(f for files in fr_to_files.values() for f in files))}",
+        "",
+        "## FR to Test Mapping",
+        "",
+    ]
+
+    for fr in sorted(fr_to_files.keys()):
+        files = fr_to_files[fr]
+        report_lines.append(f"### {fr}")
+        report_lines.append("")
+        for f in files[:5]:
+            report_lines.append(f"- `{f}`")
+        if len(files) > 5:
+            report_lines.append(f"- ... and {len(files) - 5} more")
+        report_lines.append("")
+
+    with open(output, 'w') as f:
+        f.write('\n'.join(report_lines))
+
+    print(f"Coverage report written to: {output}")
+    print(f"Total FRs covered: {len(fr_to_files)}")
+
+def cmd_drift(path, threshold):
+    """Check for spec drift between defined FRs and test coverage."""
+    print(f"=== Spec Drift Analysis ===")
+    print(f"Path: {path}")
+    print(f"Threshold: {threshold}%")
+    print()
+
+    # Find all defined FRs from specs
+    defined_frs = set()
+    specs_dir = None
+
+    # Look for specs directory
+    possible_specs = [
+        os.path.join(path, "AgilePlus", "specs"),
+        os.path.join(path, "specs"),
+        "/Users/kooshapari/CodeProjects/Phenotype/repos/AgilePlus/specs"
+    ]
+    for specs in possible_specs:
+        if os.path.exists(specs):
+            specs_dir = specs
+            break
+
+    if specs_dir:
+        for file in os.listdir(specs_dir):
+            if file.startswith("FR-") and file.endswith(".md"):
+                fr_id = file[:-3]  # Remove .md
+                defined_frs.add(fr_id)
+
+    # Find FRs in test files
+    tested_frs = set()
+    fr_pattern = re.compile(r"FR-[A-Z][A-Z0-9]*-\d{3,}(?:-[A-Z0-9]+)?")
+
+    for root, dirs, files in os.walk(path):
+        dirs[:] = [d for d in dirs if d not in ["node_modules", "target", "dist", ".git", "__pycache__"]]
+
+        for file in files:
+            if any(file.endswith(ext) for ext in [".rs", ".py", ".go", ".ts", ".js"]):
+                filepath = os.path.join(root, file)
+                try:
+                    with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
+                        content = f.read()
+                        # Check if it's a test file
+                        is_test = ("test" in file.lower() or
+                                  "test" in root.lower() or
+                                  "spec" in root.lower())
+                        if is_test:
+                            frs = fr_pattern.findall(content)
+                            for fr in frs:
+                                tested_frs.add(fr)
+                except Exception:
+                    pass
+
+    # Calculate drift
+    print(f"Defined FRs: {len(defined_frs)}")
+    print(f"Tested FRs: {len(tested_frs)}")
+    print()
+
+    if defined_frs:
+        untested = defined_frs - tested_frs
+        drift_pct = len(untested) / len(defined_frs) * 100
+
+        print(f"Drift: {drift_pct:.1f}% ({len(untested)}/{len(defined_frs)} FRs untested)")
+        print()
+
+        if untested:
+            print("Untested FRs:")
+            for fr in sorted(untested):
+                print(f"  ⚠ {fr}")
+            print()
+
+        if drift_pct > threshold:
+            print(f"❌ WARNING: Drift ({drift_pct:.1f}%) exceeds threshold ({threshold}%)")
+            return 1
+        else:
+            print(f"✅ OK: Drift within threshold")
+            return 0
+    else:
+        print("No FR specs found. Run from project root or specify specs directory.")
+        return 1
+
+def cmd_validate_ai(project, strict):
+    """Validate AI attribution file."""
+    ai_file = os.path.join(project, ".phenotype/ai-traceability.yaml")
+
+    if not os.path.exists(ai_file):
+        msg = f"AI attribution file not found: {ai_file}"
+        if strict:
+            print(f"ERROR: {msg}")
+            sys.exit(1)
+        else:
+            print(f"WARNING: {msg}")
+    else:
+        print(f"OK: AI attribution file found: {ai_file}")
+
+def cmd_fr_report(project, with_ai):
+    """Generate FR tracker report."""
+    print(f"FR Report for {project}")
+
+    if with_ai:
+        ai_file = os.path.join(project, ".phenotype/ai-traceability.yaml")
+        if os.path.exists(ai_file):
+            print(f"  AI attribution: {ai_file}")
+        else:
+            print(f"  AI attribution: Not found")
+
+    count = cmd_analyze(project, "all")
+    print(f"\nTotal FR coverage: {count} requirements traced")
+
+if __name__ == "__main__":
+    main()

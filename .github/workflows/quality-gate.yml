@@ -1,9 +1,47 @@
-name: quality-gate
-on: [pull_request]
+name: Phenotype Quality Gate
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
 jobs:
-  verify:
+  quality-gate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Run quality checks
-        run: ./scripts/quality-gate.sh verify
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run Tooling Audit
+        run: |
+          ./AgilePlus/bin/ptool-audit --path . --format markdown --output TOOLING_AUDIT.md || true
+          cat TOOLING_AUDIT.md
+
+      - name: Run Anti-Pattern Lint
+        run: |
+          ./AgilePlus/bin/panti-lint --path . --format markdown --output ANTI_PATTERN_REPORT.md || true
+          cat ANTI_PATTERN_REPORT.md
+
+      - name: Run LOC Enforcement
+        run: |
+          ./AgilePlus/bin/ploc-enforce --path . --format markdown --output LOC_REPORT.md || true
+          cat LOC_REPORT.md
+
+      - name: Run Unified Quality Gate (Strict)
+        run: |
+          ./AgilePlus/bin/pquality-gate --path . --strict --ci-mode
+
+      - name: Upload Reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: quality-gate-reports
+          path: |
+            TOOLING_AUDIT.md
+            ANTI_PATTERN_REPORT.md
+            LOC_REPORT.md

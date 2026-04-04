@@ -22,6 +22,8 @@ fn make_feature(slug: &str, state: FeatureState) -> Feature {
     f
 }
 
+/// FR-AGILE-014: Feature response has required fields
+/// Verifies: FeatureResponse contains all fields required by dashboard consumer
 #[test]
 fn contract_feature_response_has_required_fields() {
     let feature = make_feature("my-feature", FeatureState::Specified);
@@ -37,6 +39,8 @@ fn contract_feature_response_has_required_fields() {
     assert!(!resp.updated_at.is_empty());
 }
 
+/// FR-AGILE-015: Feature response state is lowercase string
+/// Verifies: FeatureResponse state field is lowercase for HTMX data-status attribute
 #[test]
 fn contract_feature_response_state_is_lowercase_string() {
     // Dashboard HTMX uses data-status="<state>" — must be lowercase.
@@ -57,6 +61,8 @@ fn contract_feature_response_state_is_lowercase_string() {
     }
 }
 
+/// FR-AGILE-016: Feature response serializes to JSON with correct types
+/// Verifies: FeatureResponse JSON serialization maintains correct field types
 #[test]
 fn contract_feature_response_serializes_to_json_with_correct_types() {
     let feature = make_feature("kanban-feature", FeatureState::Specified);
@@ -73,6 +79,8 @@ fn contract_feature_response_serializes_to_json_with_correct_types() {
     assert!(json["updated_at"].is_string());
 }
 
+/// FR-AGILE-017: Feature response deserializes from JSON
+/// Verifies: FeatureResponse can deserialize from JSON for dashboard consumers
 #[test]
 fn contract_feature_response_deserializes_from_json() {
     // Dashboard consumers will deserialize API responses — must round-trip.
@@ -99,6 +107,8 @@ fn make_wp(feature_id: i64, title: &str) -> WorkPackage {
     WorkPackage::new(feature_id, title, 1, "AC: feature works")
 }
 
+/// FR-AGILE-018: Work package response has required fields
+/// Verifies: WorkPackageResponse contains all fields required by dashboard
 #[test]
 fn contract_work_package_response_has_required_fields() {
     let wp = make_wp(10, "Implement login");
@@ -112,6 +122,8 @@ fn contract_work_package_response_has_required_fields() {
     assert!(resp.pr_url.is_none());
 }
 
+/// FR-AGILE-019: Work package response state is lowercase
+/// Verifies: WorkPackageResponse state field is lowercase string
 #[test]
 fn contract_work_package_response_state_lowercase() {
     let wp = make_wp(10, "WP");
@@ -127,6 +139,8 @@ fn contract_work_package_response_state_lowercase() {
 // Contract: API error JSON shape expected by dashboard
 // ---------------------------------------------------------------------------
 
+/// FR-AGILE-020: API error not found produces JSON error field
+/// Verifies: ApiError::NotFound returns correct status code for dashboard error handling
 #[test]
 fn contract_api_error_not_found_produces_json_error_field() {
     use agileplus_api::error::ApiError;
@@ -136,6 +150,8 @@ fn contract_api_error_not_found_produces_json_error_field() {
     assert_eq!(response.status(), StatusCode::NOT_FOUND);
 }
 
+/// FR-AGILE-021: API error bad request status code
+/// Verifies: ApiError::BadRequest returns HTTP 400 status code
 #[test]
 fn contract_api_error_bad_request_status_code() {
     use agileplus_api::error::ApiError;
@@ -145,6 +161,8 @@ fn contract_api_error_bad_request_status_code() {
     assert_eq!(response.status(), StatusCode::BAD_REQUEST);
 }
 
+/// FR-AGILE-022: API error conflict status code
+/// Verifies: ApiError::Conflict returns HTTP 409 status code
 #[test]
 fn contract_api_error_conflict_status_code() {
     use agileplus_api::error::ApiError;
@@ -158,6 +176,8 @@ fn contract_api_error_conflict_status_code() {
 // Contract: state filter string parsing matches dashboard request format
 // ---------------------------------------------------------------------------
 
+/// FR-AGILE-023: State strings parse to feature states
+/// Verifies: Dashboard state filter strings correctly parse to FeatureState enum
 #[test]
 fn contract_state_strings_parse_to_feature_states() {
     // The dashboard sends ?state=<lowercase-state> — API must parse these.
@@ -183,6 +203,8 @@ fn contract_state_strings_parse_to_feature_states() {
 // Contract: timestamps in responses are RFC3339 formatted
 // ---------------------------------------------------------------------------
 
+/// FR-AGILE-024: Timestamps are RFC3339 formatted
+/// Verifies: FeatureResponse timestamps are valid RFC3339 format
 #[test]
 fn contract_timestamps_are_rfc3339() {
     let feature = make_feature("ts-test", FeatureState::Created);

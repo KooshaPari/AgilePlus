@@ -1,0 +1,456 @@
+#!/usr/bin/env python3
+"""
+Phenotype Auto-Migration Tool (pautofix)
+
+Automatically migrates legacy tooling to modern standardized alternatives.
+Uses templates and heuristics to perform safe, automated migrations.
+"""
+
+import argparse
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+from typing import Dict, List, Optional, Tuple
+
+
+# Migration definitions - maps legacy tools to modern alternatives
+MIGRATIONS: Dict[str, dict] = {
+    "package_manager": {
+        "description": "Migrate from npm/yarn/pnpm to bun",
+        "from_patterns": ["package-lock.json", "yarn.lock", "pnpm-lock.yaml"],
+        "to_tool": "bun",
+        "files_to_remove": ["package-lock.json", "yarn.lock", "pnpm-lock.yaml", ".npmrc", ".yarnrc"],
+        "files_to_create": {
+            "bun.lockb": "",
+        },
+        "package_json_updates": {
+            "remove_dev_deps": ["jest", "webpack", "eslint", "prettier"],
+            "add_dev_deps": ["vitest", "vite", "oxlint", "biome"],
+        },
+    },
+    "task_runner": {
+        "description": "Migrate from Makefile/just to Taskfile",
+        "from_patterns": ["Makefile", "justfile", "GNUmakefile"],
+        "to_tool": "task",
+        "files_to_remove": ["Makefile", "makefile", "justfile", "Justfile"],
+        "files_to_create": {
+            "Taskfile.yml": """version: '3'
+
+tasks:
+  default:
+    desc: List all tasks
+    cmds:
+      - task --list
+  
+  build:
+    desc: Build the project
+    cmds:
+      - echo 'Add build commands here'
+  
+  test:
+    desc: Run tests
+    cmds:
+      - echo 'Add test commands here'
+  
+  lint:
+    desc: Run linters
+    cmds:
+      - echo 'Add lint commands here'
+""",
+        },
+    },
+    "test_framework": {
+        "description": "Migrate from Jest/Mocha to Vitest",
+        "from_patterns": ["jest.config.js", "jest.config.ts", ".mocharc.js"],
+        "to_tool": "vitest",
+        "files_to_remove": [
+            "jest.config.js", "jest.config.ts", "jest.setup.js", "jest.setup.ts",
+            ".mocharc.js", ".mocharc.json", "mocha.opts"
+        ],
+        "files_to_create": {
+            "vitest.config.ts": """import { defineConfig } from 'vitest/config'
+
+export default defineConfig({
+  test: {
+    globals: true,
+    environment: 'node',
+    include: ['src/**/*.{test,spec}.{js,ts}'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html'],
+    },
+  },
+})
+""",
+        },
+        "package_json_updates": {
+            "remove_scripts": ["jest", "mocha"],
+            "add_scripts": {
+                "test": "vitest",
+                "test:coverage": "vitest --coverage",
+            },
+        },
+    },
+    "bundler": {
+        "description": "Migrate from Webpack to Vite",
+        "from_patterns": ["webpack.config.js", "webpack.config.ts"],
+        "to_tool": "vite",
+        "files_to_remove": [
+            "webpack.config.js", "webpack.config.ts", "webpack/",
+        ],
+        "files_to_create": {
+            "vite.config.ts": """import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    port: 3000,
+    open: true,
+  },
+  build: {
+    outDir: 'dist',
+    sourcemap: true,
+  },
+})
+""",
+        },
+        "package_json_updates": {
+            "remove_scripts": ["webpack"],
+            "add_scripts": {
+                "dev": "vite",
+                "build": "vite build",
+                "preview": "vite preview",
+            },
+        },
+    },
+    "linter": {
+        "description": "Migrate from ESLint/Prettier to oxlint/Biome",
+        "from_patterns": [".eslintrc.js", ".prettierrc"],
+        "to_tool": "oxlint + biome",
+        "files_to_remove": [
+            ".eslintrc.js", ".eslintrc.json", ".eslintrc.yml",
+            ".prettierrc", ".prettierrc.json", ".prettierrc.yml",
+            "eslint.config.js"
+        ],
+        "files_to_create": {
+            "biome.json": """{
+  "$schema": "https://biomejs.dev/schemas/1.4.1/schema.json",
+  "organizeImports": {
+    "enabled": true
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true
+    }
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "tab",
+    "indentWidth": 2
+  }
+}
+""",
+        },
+    },
+    "python_linter": {
+        "description": "Migrate from flake8/black/isort to ruff",
+        "from_patterns": [".flake8", "setup.cfg"],
+        "to_tool": "ruff",
+        "files_to_remove": [".flake8", ".isort.cfg", ".black"],
+        "files_to_create": {
+            "ruff.toml": """[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP", "B", "C4", "SIM"]
+ignore = ["E501"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+""",
+        },
+    },
+    "ci": {
+        "description": "Migrate from CircleCI/Travis to GitHub Actions",
+        "from_patterns": [".circleci/config.yml", ".travis.yml"],
+        "to_tool": "github-actions",
+        "files_to_remove": [".circleci/", ".travis.yml", ".gitlab-ci.yml"],
+        "files_to_create": {
+            ".github/workflows/ci.yml": """name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Install
+        run: bun install
+      
+      - name: Lint
+        run: bun run lint
+      
+      - name: Test
+        run: bun run test
+      
+      - name: Build
+        run: bun run build
+""",
+        },
+    "npm_to_bun": {
+        "description": "Migrate from npm to bun package manager",
+        "from_patterns": ["package-lock.json", "npm-shrinkwrap.json", "npm ci"],
+        "to_tool": "bun",
+        "template": "npm-to-bun",
+        "backup_required": True,
+    },
+    "pip_to_uv": {
+        "description": "Migrate from pip to uv package manager",
+        "from_patterns": ["requirements.txt", "pip install"],
+        "to_tool": "uv",
+        "template": "pip-to-uv",
+        "backup_required": True,
+    },
+    "docker_compose_v1_to_v2": {
+        "description": "Migrate from docker-compose v1 to v2",
+        "from_patterns": ["docker-compose up", "docker-compose build"],
+        "to_tool": "docker compose (v2)",
+        "template": "docker-compose-v1-to-v2",
+        "backup_required": True,
+    },
+    "circleci_to_github_actions": {
+        "description": "Migrate from CircleCI to GitHub Actions",
+        "from_patterns": [".circleci/config.yml"],
+        "to_tool": "GitHub Actions",
+        "template": "circleci-to-github-actions",
+        "backup_required": True,
+    },
+}
+
+
+def detect_project_type(project_path: Path) -> Dict[str, List[str]]:
+    """Detect what types of migrations are applicable."""
+    detected = {
+        "package_manager": [],
+        "task_runner": [],
+        "test_framework": [],
+        "bundler": [],
+        "linter": [],
+        "python_linter": [],
+        "ci": [],
+    }
+    
+    # Check for package managers
+    if (project_path / "package-lock.json").exists():
+        detected["package_manager"].append("npm")
+    if (project_path / "yarn.lock").exists():
+        detected["package_manager"].append("yarn")
+    if (project_path / "pnpm-lock.yaml").exists():
+        detected["package_manager"].append("pnpm")
+    
+    # Check for task runners
+    if (project_path / "Makefile").exists() or (project_path / "makefile").exists():
+        detected["task_runner"].append("make")
+    if (project_path / "justfile").exists():
+        detected["task_runner"].append("just")
+    
+    # Check for test frameworks
+    if (project_path / "jest.config.js").exists() or (project_path / "jest.config.ts").exists():
+        detected["test_framework"].append("jest")
+    if (project_path / ".mocharc.js").exists():
+        detected["test_framework"].append("mocha")
+    
+    # Check for bundlers
+    if (project_path / "webpack.config.js").exists() or (project_path / "webpack.config.ts").exists():
+        detected["bundler"].append("webpack")
+    
+    # Check for linters
+    if (project_path / ".eslintrc.js").exists() or (project_path / ".eslintrc.json").exists():
+        detected["linter"].append("eslint")
+    if (project_path / ".prettierrc").exists():
+        detected["linter"].append("prettier")
+    
+    # Check for Python linters
+    if (project_path / ".flake8").exists():
+        detected["python_linter"].append("flake8")
+    
+    # Check for CI
+    if (project_path / ".circleci").exists():
+        detected["ci"].append("circleci")
+    if (project_path / ".travis.yml").exists():
+        detected["ci"].append("travis")
+    
+    return detected
+
+
+def generate_migration_plan(project_path: Path, migration_type: str) -> List[dict]:
+    """Generate a migration plan for a specific type."""
+    plan = []
+    migration = MIGRATIONS.get(migration_type)
+    if not migration:
+        return plan
+    
+    # Files to remove
+    for pattern in migration.get("files_to_remove", []):
+        for file_path in project_path.rglob(pattern):
+            if file_path.is_file():
+                plan.append({
+                    "action": "remove",
+                    "file": str(file_path.relative_to(project_path)),
+                    "reason": f"Replace with {migration['to_tool']}",
+                })
+    
+    # Files to create
+    for filename, content in migration.get("files_to_create", {}).items():
+        target = project_path / filename
+        if not target.exists():
+            plan.append({
+                "action": "create",
+                "file": filename,
+                "reason": f"New configuration for {migration['to_tool']}",
+            })
+    
+    return plan
+
+
+def execute_migration(project_path: Path, migration_type: str, dry_run: bool = True) -> bool:
+    """Execute a migration plan."""
+    migration = MIGRATIONS.get(migration_type)
+    if not migration:
+        print(f"Unknown migration type: {migration_type}")
+        return False
+    
+    plan = generate_migration_plan(project_path, migration_type)
+    
+    if not plan:
+        print(f"No actions needed for {migration_type}")
+        return True
+    
+    print(f"\n{'='*60}")
+    print(f"Migration: {migration['description']}")
+    print(f"{'='*60}")
+    
+    for action in plan:
+        file_path = project_path / action["file"]
+        
+        if action["action"] == "remove":
+            if dry_run:
+                print(f"[DRY-RUN] Would remove: {action['file']}")
+            else:
+                if file_path.exists():
+                    file_path.unlink()
+                    print(f"Removed: {action['file']}")
+        
+        elif action["action"] == "create":
+            if dry_run:
+                print(f"[DRY-RUN] Would create: {action['file']}")
+            else:
+                file_path.parent.mkdir(parents=True, exist_ok=True)
+                file_path.write_text(MIGRATIONS[migration_type]["files_to_create"].get(action["file"], ""))
+                print(f"Created: {action['file']}")
+    
+    return True
+
+
+def list_available_migrations():
+    """Print all available migrations."""
+    print("Available migrations:\n")
+    for key, mig in sorted(MIGRATIONS.items()):
+        print(f"  {key}")
+        print(f"    Description: {mig['description']}")
+        print(f"    From: {', '.join(mig['from_patterns'])}")
+        print(f"    To: {mig['to_tool']}")
+        print()
+
+
+def main():
+    # Handle --list-migrations before argparse
+    if "--list-migrations" in sys.argv or "-l" in sys.argv:
+        list_available_migrations()
+        return
+    
+    parser = argparse.ArgumentParser(description="Phenotype Auto-Migration Tool")
+    parser.add_argument("--path", "-p", type=Path, default=Path("."), help="Project path")
+    parser.add_argument("--type", "-t", choices=list(MIGRATIONS.keys()) + ["all"], default="all",
+                       help="Migration type")
+    parser.add_argument("--dry-run", "-d", action="store_true",
+                       help="Preview changes without applying")
+    parser.add_argument("--apply", "-a", action="store_true",
+                       help="Apply migrations (requires --type)")
+    parser.add_argument("--list-migrations", "-l", action="store_true",
+                       help="List available migrations")
+    
+    args = parser.parse_args()
+    
+    if args.list_migrations:
+        list_available_migrations()
+        return
+    
+    project_path = args.path.resolve()
+    
+    if not project_path.exists():
+        print(f"Error: Path does not exist: {project_path}")
+        sys.exit(1)
+    
+    print(f"Scanning {project_path} for migration opportunities...")
+    
+    detected = detect_project_type(project_path)
+    applicable = {k: v for k, v in detected.items() if v}
+    
+    if not applicable:
+        print("No legacy tools detected. Nothing to migrate!")
+        sys.exit(0)
+    
+    print(f"\nDetected legacy tooling:")
+    for mig_type, tools in applicable.items():
+        print(f"  - {mig_type}: {', '.join(tools)}")
+    
+    if args.type == "all":
+        mig_types = list(applicable.keys())
+    else:
+        mig_types = [args.type]
+    
+    success = True
+    for mig_type in mig_types:
+        if mig_type not in applicable:
+            print(f"\nSkipping {mig_type} (not detected)")
+            continue
+        
+        if not execute_migration(project_path, mig_type, dry_run=args.dry_run):
+            success = False
+    
+    print(f"\n{'='*60}")
+    if args.dry_run:
+        print("This was a DRY RUN. No changes were made.")
+        print("Use --apply to execute the migration.")
+    else:
+        print("Migration complete!")
+    print(f"{'='*60}")
+    
+    sys.exit(0 if success else 1)
+
+
+if __name__ == "__main__":
+    main()

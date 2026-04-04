@@ -38,6 +38,8 @@ fn make_event(entity_type: &str, entity_id: i64, event_type: &str, sequence: i64
 // Contract: append returns an i64 row id
 // ---------------------------------------------------------------------------
 
+/// FR-AGILE-025: Append returns positive row id
+/// Verifies: SqliteStorageAdapter::append returns positive rowid on success
 #[tokio::test]
 async fn contract_append_returns_positive_row_id() {
     let store = make_adapter();
@@ -50,6 +52,8 @@ async fn contract_append_returns_positive_row_id() {
 // Contract: get_events returns events ordered by sequence ascending
 // ---------------------------------------------------------------------------
 
+/// FR-AGILE-026: Get events ordered by sequence ascending
+/// Verifies: get_events returns events in ascending sequence order
 #[tokio::test]
 async fn contract_get_events_ordered_by_sequence_ascending() {
     let store = make_adapter();
@@ -73,6 +77,8 @@ async fn contract_get_events_ordered_by_sequence_ascending() {
 // Contract: get_events scopes to the requested entity
 // ---------------------------------------------------------------------------
 
+/// FR-AGILE-027: Get events scoped to entity
+/// Verifies: get_events correctly scopes results to specific entity_type and entity_id
 #[tokio::test]
 async fn contract_get_events_scoped_to_entity() {
     let store = make_adapter();
@@ -102,6 +108,8 @@ async fn contract_get_events_scoped_to_entity() {
 // Contract: get_events returns empty vec for unknown entity (not an error)
 // ---------------------------------------------------------------------------
 
+/// FR-AGILE-028: Get events empty for unknown entity
+/// Verifies: get_events returns empty vec for non-existent entity (not error)
 #[tokio::test]
 async fn contract_get_events_empty_for_unknown_entity() {
     let store = make_adapter();
@@ -116,6 +124,8 @@ async fn contract_get_events_empty_for_unknown_entity() {
 // Contract: get_events_since returns only events AFTER the given sequence
 // ---------------------------------------------------------------------------
 
+/// FR-AGILE-029: Get events since is exclusive
+/// Verifies: get_events_since returns only events with sequence > given value
 #[tokio::test]
 async fn contract_get_events_since_is_exclusive() {
     let store = make_adapter();
@@ -135,6 +145,8 @@ async fn contract_get_events_since_is_exclusive() {
 // Contract: get_latest_sequence returns 0 for empty entity
 // ---------------------------------------------------------------------------
 
+/// FR-AGILE-030: Get latest sequence zero for empty entity
+/// Verifies: get_latest_sequence returns 0 for entity with no events
 #[tokio::test]
 async fn contract_get_latest_sequence_zero_for_empty() {
     let store = make_adapter();
@@ -149,6 +161,8 @@ async fn contract_get_latest_sequence_zero_for_empty() {
 // Contract: get_latest_sequence reflects highest appended sequence
 // ---------------------------------------------------------------------------
 
+/// FR-AGILE-031: Get latest sequence reflects max
+/// Verifies: get_latest_sequence returns highest appended sequence for entity
 #[tokio::test]
 async fn contract_get_latest_sequence_reflects_max() {
     let store = make_adapter();
@@ -167,6 +181,8 @@ async fn contract_get_latest_sequence_reflects_max() {
 // Contract: get_events_by_range returns events within timestamp window
 // ---------------------------------------------------------------------------
 
+/// FR-AGILE-032: Get events by range inclusive
+/// Verifies: get_events_by_range returns events within specified timestamp window
 #[tokio::test]
 async fn contract_get_events_by_range_inclusive() {
     let store = make_adapter();
@@ -189,6 +205,8 @@ async fn contract_get_events_by_range_inclusive() {
 // Contract: event fields round-trip faithfully through the store
 // ---------------------------------------------------------------------------
 
+/// FR-AGILE-033: Event fields round-trip
+/// Verifies: All event fields are preserved when stored and retrieved
 #[tokio::test]
 async fn contract_event_fields_roundtrip() {
     let store = make_adapter();
@@ -223,6 +241,8 @@ async fn contract_event_fields_roundtrip() {
 // Contract: multiple entity streams are isolated
 // ---------------------------------------------------------------------------
 
+/// FR-AGILE-034: Entity streams are isolated
+/// Verifies: Each entity stream is independent and does not mix with others
 #[tokio::test]
 async fn contract_entity_streams_are_isolated() {
     let store = make_adapter();

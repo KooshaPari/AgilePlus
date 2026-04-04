@@ -2,6 +2,7 @@ pub mod branch;
 pub mod cycle;
 pub mod governance;
 pub mod implement;
+pub mod legacy_scan;
 pub mod list;
 pub mod module;
 pub mod plan;

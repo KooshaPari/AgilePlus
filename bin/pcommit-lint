@@ -1,0 +1,140 @@
+#!/usr/bin/env python3
+"""Phenotype Commit Message Linter - Conventional Commits + FR Traceability"""
+
+import argparse
+import re
+import sys
+from pathlib import Path
+from typing import Optional, Tuple
+
+# Conventional commit types
+VALID_TYPES = {
+    "feat", "fix", "docs", "style", "refactor", "perf", "test",
+    "chore", "ci", "build", "revert", "deprecate", "security"
+}
+
+# Scopes that require FR traceability
+REQUIRES_FR = {"feat", "fix", "refactor", "perf", "security"}
+
+# FR ID pattern
+FR_PATTERN = re.compile(r"\(FR-[A-Z][A-Z0-9]*-\d{3,}(-[A-Z0-9]+)?\)")
+
+class CommitLinter:
+    def __init__(self):
+        self.errors = []
+        self.warnings = []
+    
+    def lint_message(self, message: str) -> Tuple[bool, list]:
+        self.errors = []
+        self.warnings = []
+        
+        lines = message.strip().split("\n")
+        if not lines:
+            self.errors.append("Empty commit message")
+            return False, self.errors + self.warnings
+        
+        subject = lines[0]
+        
+        # Check for merge commits (allow these)
+        if subject.startswith(("Merge ", "Revert ", "Auto-merged ")):
+            return True, []
+        
+        # Parse conventional commit
+        # Format: type(scope): subject [FR-XXX-NNN]
+        conv_pattern = re.compile(
+            r"^(?P<type>\w+)"                    # type
+            r"(?:\((?P<scope>[\w-]+)\))?"        # optional scope
+            r"(?P<breaking>!)?: "                # breaking indicator
+            r"(?P<subject>.+)"                     # subject
+        )
+        
+        match = conv_pattern.match(subject)
+        if not match:
+            self.errors.append(f"Invalid format: '{subject[:50]}'")
+            self.errors.append("  Expected: type(scope): subject [FR-XXX-NNN]")
+            return False, self.errors + self.warnings
+        
+        msg_type = match.group("type")
+        scope = match.group("scope")
+        is_breaking = match.group("breaking") == "!"
+        msg_subject = match.group("subject")
+        
+        # Validate type
+        if msg_type not in VALID_TYPES:
+            self.errors.append(f"Invalid type: '{msg_type}'")
+            self.errors.append(f"  Valid: {', '.join(sorted(VALID_TYPES))}")
+        
+        # Check subject length
+        if len(msg_subject) > 72:
+            self.warnings.append(f"Subject too long ({len(msg_subject)} chars, max 72)")
+        
+        # Check for FR traceability (required for certain types)
+        has_fr = FR_PATTERN.search(subject) is not None
+        
+        if msg_type in REQUIRES_FR and not has_fr:
+            self.errors.append(f"Missing FR traceability for '{msg_type}' commit")
+            self.errors.append("  Add: (FR-XXX-NNN) or use --no-fr-check to skip")
+        
+        # Validate FR format if present
+        fr_match = FR_PATTERN.search(subject)
+        if fr_match:
+            fr_id = fr_match.group(0)
+            if not re.match(r"^\(FR-[A-Z][A-Z0-9]*-\d{3,}(-[A-Z0-9]+)?\)$", fr_id):
+                self.warnings.append(f"FR ID format looks off: {fr_id}")
+        
+        # Check for breaking change marker
+        if is_breaking and "BREAKING CHANGE:" not in message:
+            self.warnings.append("Breaking change (!) but no 'BREAKING CHANGE:' in body")
+        
+        # Check body for line length
+        if len(lines) > 1:
+            for i, line in enumerate(lines[1:], 2):
+                if len(line) > 100:
+                    self.warnings.append(f"Body line {i} too long ({len(line)} chars)")
+        
+        return len(self.errors) == 0, self.errors + self.warnings
+    
+    def lint_file(self, file_path: Path) -> Tuple[bool, list]:
+        try:
+            message = file_path.read_text()
+            return self.lint_message(message)
+        except Exception as e:
+            return False, [f"Could not read {file_path}: {e}"]
+
+def main():
+    parser = argparse.ArgumentParser(description="Phenotype Commit Message Linter")
+    parser.add_argument("--file", "-f", type=Path, help="Commit message file")
+    parser.add_argument("--message", "-m", help="Commit message string")
+    parser.add_argument("--no-fr-check", action="store_true", help="Skip FR traceability check")
+    parser.add_argument("--edit", "-e", action="store_true", help="Open editor on failure")
+    args = parser.parse_args()
+    
+    linter = CommitLinter()
+    
+    if args.message:
+        message = args.message
+    elif args.file:
+        valid, messages = linter.lint_file(args.file)
+    else:
+        # Read from stdin
+        message = sys.stdin.read()
+    
+    if 'message' in locals():
+        valid, messages = linter.lint_message(message)
+    
+    for msg in messages:
+        if msg.startswith(("Invalid", "Missing", "Could not")):
+            print(f"❌ {msg}")
+        else:
+            print(f"⚠️  {msg}")
+    
+    if valid:
+        print("✅ Commit message OK")
+        sys.exit(0)
+    else:
+        print("\nFormat: type(scope): subject (FR-XXX-NNN)")
+        print("Types: feat, fix, docs, style, refactor, perf, test, chore")
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()

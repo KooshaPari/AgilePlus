@@ -1,0 +1,229 @@
+#!/usr/bin/env python3
+"""
+Phenotype PR Bot - GitHub PR Commenter
+Posts quality gate results as PR comments and suggests autofixes
+"""
+
+import argparse
+import json
+import os
+import re
+import subprocess
+import sys
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Dict, List, Optional
+import urllib.request
+import urllib.error
+
+@dataclass
+class PRComment:
+    repo: str
+    pr_number: int
+    tool: str
+    severity: str
+    message: str
+    file: Optional[str] = None
+    line: Optional[int] = None
+    suggestion: Optional[str] = None
+
+class PRBot:
+    def __init__(self, github_token: Optional[str] = None):
+        self.token = github_token or os.environ.get("GITHUB_TOKEN")
+        self.comments: List[PRComment] = []
+        
+    def analyze_pr(self, repo: str, pr_number: int, base_path: Path) -> List[PRComment]:
+        """Analyze a PR and generate comments."""
+        print(f"🔍 Analyzing PR #{pr_number} in {repo}...")
+        
+        comments = []
+        
+        # Get changed files
+        changed_files = self._get_changed_files(repo, pr_number, base_path)
+        
+        for filepath in changed_files:
+            file_comments = self._analyze_file(filepath, base_path)
+            comments.extend(file_comments)
+        
+        self.comments = comments
+        return comments
+    
+    def _get_changed_files(self, repo: str, pr_number: int, base_path: Path) -> List[Path]:
+        """Get list of files changed in PR."""
+        try:
+            # Try to get from git diff
+            result = subprocess.run(
+                ["git", "diff", "--name-only", "HEAD~1", "HEAD"],
+                cwd=base_path,
+                capture_output=True,
+                text=True
+            )
+            files = [base_path / f for f in result.stdout.strip().split("\n") if f]
+            return [f for f in files if f.exists()]
+        except:
+            # Fallback: scan all source files
+            return list(base_path.rglob("*.py")) + list(base_path.rglob("*.rs")) + list(base_path.rglob("*.ts"))
+    
+    def _analyze_file(self, filepath: Path, base_path: Path) -> List[PRComment]:
+        """Analyze a single file for issues."""
+        comments = []
+        
+        try:
+            content = filepath.read_text(encoding="utf-8", errors="ignore")
+            rel_path = filepath.relative_to(base_path)
+        except:
+            return comments
+        
+        # Check for forbidden patterns
+        forbidden_patterns = {
+            r'npm install': ('npm', 'Use `bun install` instead'),
+            r'yarn (add|install)': ('yarn', 'Use `bun install` instead'),
+            r'pip install(?!.*uv)': ('pip', 'Use `uv add` instead'),
+            r'jest\s*\(': ('jest', 'Use `vitest` instead'),
+            r'webpack': ('webpack', 'Use `vite` instead'),
+            r'Makefile': ('make', 'Use `Taskfile.yml` instead'),
+        }
+        
+        lines = content.splitlines()
+        for i, line in enumerate(lines, 1):
+            for pattern, (tool, suggestion) in forbidden_patterns.items():
+                if re.search(pattern, line, re.IGNORECASE):
+                    comments.append(PRComment(
+                        repo="",
+                        pr_number=0,
+                        tool=tool,
+                        severity="error",
+                        message=f"Forbidden tool '{tool}' detected",
+                        file=str(rel_path),
+                        line=i,
+                        suggestion=suggestion
+                    ))
+        
+        return comments
+    
+    def post_pr_comment(self, repo: str, pr_number: int, github_token: Optional[str] = None):
+        """Post summary comment to PR."""
+        token = github_token or self.token
+        if not token:
+            print("⚠️  No GitHub token provided - printing to console only")
+            self._print_comment()
+            return
+        
+        # Build comment body
+        body = self._build_comment_body()
+        
+        # Post to GitHub
+        try:
+            import urllib.request
+            import json
+            
+            url = f"https://api.github.com/repos/{repo}/issues/{pr_number}/comments"
+            headers = {
+                "Authorization": f"token {token}",
+                "Accept": "application/vnd.github.v3+json"
+            }
+            data = json.dumps({"body": body}).encode()
+            
+            req = urllib.request.Request(url, data=data, headers=headers, method="POST")
+            with urllib.request.urlopen(req) as response:
+                if response.status == 201:
+                    print(f"✅ Posted comment to PR #{pr_number}")
+                else:
+                    print(f"⚠️  Failed to post comment: {response.status}")
+        except Exception as e:
+            print(f"⚠️  Could not post to GitHub: {e}")
+            self._print_comment()
+    
+    def _build_comment_body(self) -> str:
+        """Build markdown comment body."""
+        if not self.comments:
+            return "## ✅ Quality Gate Passed\n\nNo forbidden tools or patterns detected."
+        
+        errors = [c for c in self.comments if c.severity == "error"]
+        warnings = [c for c in self.comments if c.severity == "warning"]
+        
+        body = f"""## 🚨 Quality Gate Report
+
+| Severity | Count |
+|----------|-------|
+| 🔴 Errors | {len(errors)} |
+| ⚠️ Warnings | {len(warnings)} |
+
+### Forbidden Tools Detected
+
+"""
+        
+        for comment in errors[:20]:  # Limit to 20
+            body += f"""🔴 **{comment.tool}** in `{comment.file}`
+   - {comment.message}
+   - 💡 **Suggestion:** {comment.suggestion}
+   - Line: {comment.line}
+
+"""
+        
+        if len(errors) > 20:
+            body += f"\n... and {len(errors) - 20} more errors\n"
+        
+        body += """
+### Auto-Fix Available
+
+Some of these issues can be auto-fixed:
+```bash
+./AgilePlus/bin/pautofix --path . --type all --apply
+```
+
+---
+*Generated by Phenotype Quality Gate*
+"""
+        
+        return body
+    
+    def _print_comment(self):
+        """Print comment to console."""
+        print("\n" + "=" * 70)
+        print("PR COMMENT (would be posted to GitHub)")
+        print("=" * 70)
+        print(self._build_comment_body())
+        print("=" * 70)
+    
+    def check_and_block(self, repo: str, pr_number: int, strict: bool = True) -> bool:
+        """Check if PR should be blocked."""
+        errors = [c for c in self.comments if c.severity == "error"]
+        
+        if strict and errors:
+            print(f"\n❌ PR #{pr_number} blocked: {len(errors)} errors found")
+            return False
+        
+        print(f"\n✅ PR #{pr_number} can proceed")
+        return True
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Phenotype PR Bot")
+    parser.add_argument("--repo", required=True, help="Repository (owner/repo)")
+    parser.add_argument("--pr", type=int, required=True, help="PR number")
+    parser.add_argument("--path", type=Path, default=Path("."), help="Repo path")
+    parser.add_argument("--token", help="GitHub token (or GITHUB_TOKEN env)")
+    parser.add_argument("--dry-run", action="store_true", help="Don't post to GitHub")
+    parser.add_argument("--strict", action="store_true", help="Block on errors")
+    
+    args = parser.parse_args()
+    
+    bot = PRBot(args.token)
+    bot.analyze_pr(args.repo, args.pr, args.path)
+    
+    if args.dry_run:
+        print("\n🔍 Dry run - printing to console only")
+        bot._print_comment()
+    else:
+        bot.post_pr_comment(args.repo, args.pr, args.token)
+    
+    if args.strict:
+        success = bot.check_and_block(args.repo, args.pr, strict=True)
+        sys.exit(0 if success else 1)
+
+
+if __name__ == "__main__":
+    main()
+EOF
+echo "✅ Created ppr-bot"

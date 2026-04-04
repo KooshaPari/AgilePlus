@@ -10,9 +10,10 @@ use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 
 use agileplus_cli::commands::{
-    branch::BranchArgs, cycle::CycleArgs, implement::ImplementArgs, module::ModuleArgs,
-    plan::PlanArgs, queue::QueueArgs, research::ResearchArgs, retrospective::RetrospectiveArgs,
-    ship::ShipArgs, specify::SpecifyArgs, triage::TriageArgs, validate::ValidateArgs,
+    branch::BranchArgs, cycle::CycleArgs, implement::ImplementArgs, legacy_scan::LegacyScanArgs,
+    module::ModuleArgs, plan::PlanArgs, queue::QueueArgs, research::ResearchArgs,
+    retrospective::RetrospectiveArgs, ship::ShipArgs, specify::SpecifyArgs, triage::TriageArgs,
+    validate::ValidateArgs,
 };
 use agileplus_git::GitVcsAdapter;
 use agileplus_sqlite::SqliteStorageAdapter;
@@ -67,6 +68,8 @@ enum Commands {
     Queue(QueueArgs),
     /// Manage modules (product-area groupings of features).
     Module(ModuleArgs),
+    /// Scan for legacy tooling anti-patterns.
+    LegacyScan(LegacyScanArgs),
     /// Open or configure the web dashboard.
     Dashboard(DashboardArgs),
     /// Manage platform services (up, down, status, logs).
@@ -96,11 +99,12 @@ async fn main() {
 }
 
 async fn run(cli: Cli) -> Result<()> {
-    // Triage command doesn't need full storage/VCS setup
+    // Commands that don't need full storage/VCS setup
     match cli.command {
         Commands::Triage(args) => return agileplus_cli::commands::triage::run_triage(args).await,
         Commands::Dashboard(args) => return run_dashboard(args),
         Commands::Platform(args) => return run_platform(args),
+        Commands::LegacyScan(args) => return agileplus_cli::commands::legacy_scan::run(args).await,
         _ => {}
     }
 

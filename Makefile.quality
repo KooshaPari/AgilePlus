@@ -1,0 +1,38 @@
+# Phenotype Quality Gate Makefile
+# Include in your project: include ../AgilePlus/Makefile.quality
+
+QUALITY_BIN ?= ../AgilePlus/bin
+
+## Run all quality checks
+quality-gate:
+	$(QUALITY_BIN)/pquality-gate --path . --strict
+
+## Run tooling audit only
+quality-tool-audit:
+	$(QUALITY_BIN)/ptool-audit --path . --format markdown --output TOOLING_AUDIT.md
+
+## Run anti-pattern lint only
+quality-anti-lint:
+	$(QUALITY_BIN)/panti-lint --path . --format markdown --output ANTI_PATTERN_REPORT.md
+
+## Run LOC enforcement only
+quality-loc:
+	$(QUALITY_BIN)/ploc-enforce --path . --format markdown --output LOC_REPORT.md --strict
+
+## Generate all quality reports
+quality-reports: quality-tool-audit quality-anti-lint quality-loc
+
+## Check if all quality tools are available
+quality-check-tools:
+	@echo "Checking quality tools..."
+	@test -f $(QUALITY_BIN)/ptool-audit && echo "✓ ptool-audit" || echo "✗ ptool-audit missing"
+	@test -f $(QUALITY_BIN)/panti-lint && echo "✓ panti-lint" || echo "✗ panti-lint missing"
+	@test -f $(QUALITY_BIN)/ploc-enforce && echo "✓ ploc-enforce" || echo "✗ ploc-enforce missing"
+	@test -f $(QUALITY_BIN)/pquality-gate && echo "✓ pquality-gate" || echo "✗ pquality-gate missing"
+
+## Export tooling databases for inspection
+quality-export-databases:
+	$(QUALITY_BIN)/ptool-audit --export-database > .tooling-database.json
+	$(QUALITY_BIN)/panti-lint --export-database > .anti-pattern-database.json
+	$(QUALITY_BIN)/ploc-enforce --export-database > .loc-database.json
+	@echo "Databases exported to .tooling-database.json, .anti-pattern-database.json, .loc-database.json"

@@ -11,6 +11,10 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 
+// Phenotype Health Integration
+use phenotype_health::{HealthStatus, HealthRegistry};
+use phenotype_health_cli::{UnifiedHealthReport, UnifiedHealthScanner};
+
 /// A lightweight health snapshot for one service.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ServiceHealth {
@@ -19,6 +23,36 @@ pub struct ServiceHealth {
     pub degraded: bool,
     pub latency_ms: Option<u64>,
     pub last_check: DateTime<Utc>,
+}
+
+impl ServiceHealth {
+    /// Convert from phenotype-health HealthStatus
+    pub fn from_phenotype_status(name: String, status: &HealthStatus, latency_ms: Option<u64>) -> Self {
+        let (healthy, degraded) = match status {
+            HealthStatus::Healthy => (true, false),
+            HealthStatus::Degraded => (true, true),
+            HealthStatus::Unhealthy => (false, false),
+        };
+        
+        Self {
+            name,
+            healthy,
+            degraded,
+            latency_ms,
+            last_check: Utc::now(),
+        }
+    }
+}
+
+/// Unified health snapshot combining phenotype-health with dashboard health
+#[derive(Debug, Clone, Default)]
+pub struct UnifiedHealthSnapshot {
+    /// Legacy service health entries
+    pub services: Vec<ServiceHealth>,
+    /// Full unified health report from phenotype-health
+    pub unified_report: Option<UnifiedHealthReport>,
+    /// When the health was last updated
+    pub last_updated: DateTime<Utc>,
 }
 
 /// In-memory store used by dashboard handlers.
@@ -31,6 +65,8 @@ pub struct DashboardStore {
     pub cycles: Vec<Cycle>,
     pub cycle_features: HashMap<i64, Vec<i64>>,
     pub health: Vec<ServiceHealth>,
+    /// Unified health snapshot with phenotype-health integration
+    pub unified_health: UnifiedHealthSnapshot,
     pub projects: Vec<Project>,
     pub active_project_id: Option<i64>,
 }
@@ -164,6 +200,91 @@ impl DashboardStore {
                     .unwrap_or(false)
             })
     }
+
+    /// Update unified health from phenotype-health scanner
+    /// 
+    /// This method runs the unified health scanner and updates both
+    /// the legacy health vector and the new unified health snapshot.
+    pub async fn update_unified_health(&mut self, scan_path: &std::path::Path) -> anyhow::Result<()> {
+        use std::path::PathBuf;
+        
+        let mut scanner = UnifiedHealthScanner::new();
+        let report = scanner.scan_workspace(scan_path).await;
+        
+        // Convert unified report to legacy ServiceHealth entries
+        let mut services: Vec<ServiceHealth> = report
+            .projects
+            .iter()
+            .map(|p| ServiceHealth::from_phenotype_status(
+                p.name.clone(),
+                &p.status,
+                None,
+            ))
+            .collect();
+        
+        // Add default infrastructure services if not already present
+        let existing_names: std::collections::HashSet<_> = services
+            .iter()
+            .map(|s| s.name.clone())
+            .collect();
+        
+        for default_service in default_health() {
+            if !existing_names.contains(&default_service.name) {
+                services.push(default_service);
+            }
+        }
+        
+        // Update legacy health field (for backward compatibility)
+        self.health = services.clone();
+        
+        // Update unified health snapshot
+        self.unified_health = UnifiedHealthSnapshot {
+            services,
+            unified_report: Some(report),
+            last_updated: Utc::now(),
+        };
+        
+        Ok(())
+    }
+    
+    /// Get unified health metrics for dashboard display
+    pub fn unified_health_metrics(&self) -> Option<UnifiedHealthMetrics> {
+        self.unified_health.unified_report.as_ref().map(|report| {
+            UnifiedHealthMetrics {
+                total_projects: report.metrics.total_projects,
+                healthy_projects: report.metrics.healthy_projects,
+                degraded_projects: report.metrics.degraded_projects,
+                unhealthy_projects: report.metrics.unhealthy_projects,
+                critical_findings: report.metrics.critical_findings,
+                high_findings: report.metrics.high_findings,
+                compliance_score: if report.projects.is_empty() {
+                    100.0
+                } else {
+                    report.projects.iter().map(|p| p.compliance_score).sum::<f32>() 
+                        / report.projects.len() as f32
+                },
+                security_risk_score: if report.projects.is_empty() {
+                    0.0
+                } else {
+                    report.projects.iter().map(|p| p.security_risk_score).sum::<f32>() 
+                        / report.projects.len() as f32
+                },
+            }
+        })
+    }
+}
+
+/// Unified health metrics for dashboard display
+#[derive(Debug, Clone, Serialize)]
+pub struct UnifiedHealthMetrics {
+    pub total_projects: usize,
+    pub healthy_projects: usize,
+    pub degraded_projects: usize,
+    pub unhealthy_projects: usize,
+    pub critical_findings: usize,
+    pub high_findings: usize,
+    pub compliance_score: f32,
+    pub security_risk_score: f32,
 }
 
 pub fn default_health() -> Vec<ServiceHealth> {

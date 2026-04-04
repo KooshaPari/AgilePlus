@@ -1,0 +1,240 @@
+#!/usr/bin/env python3
+"""Semantic Versioning Enforcement - psemver-enforce"""
+import argparse
+import json
+import re
+import subprocess
+import sys
+from dataclasses import dataclass
+from pathlib import Path
+from typing import List, Optional, Tuple
+
+@dataclass
+class Change:
+    commit_hash: str
+    commit_type: str
+    scope: Optional[str]
+    message: str
+    breaking: bool
+    fr_id: Optional[str]
+
+class SemverEnforcer:
+    def __init__(self, path: Path):
+        self.path = path
+        self.changes: List[Change] = []
+        self.current_version = self._get_current_version()
+    
+    def _get_current_version(self) -> str:
+        files = ["package.json", "Cargo.toml", "pyproject.toml", "VERSION"]
+        for f in files:
+            fp = self.path / f
+            if fp.exists():
+                try:
+                    content = fp.read_text()
+                    if f == "package.json":
+                        data = json.loads(content)
+                        return data.get("version", "0.0.0")
+                    elif f == "Cargo.toml":
+                        m = re.search(r'^version\s*=\s*"([^"]+)"', content, re.M)
+                        if m:
+                            return m.group(1)
+                    elif f == "pyproject.toml":
+                        m = re.search(r'^version\s*=\s*"([^"]+)"', content, re.M)
+                        if m:
+                            return m.group(1)
+                    elif f == "VERSION":
+                        return content.strip()
+                except:
+                    pass
+        return "0.0.0"
+    
+    def _parse_version(self, version: str) -> Tuple[int, int, int]:
+        parts = version.lstrip("v").split(".")
+        if len(parts) >= 3:
+            return (int(parts[0]), int(parts[1]), int(parts[2]))
+        return (0, 0, 0)
+    
+    def analyze_commits(self, since: Optional[str] = None) -> List[Change]:
+        cmd = ["git", "log", "--format=%H|%s|%b|END", "--no-merges"]
+        if since:
+            cmd.extend([f"{since}..HEAD"])
+        else:
+            cmd.extend(["-20"])
+        
+        try:
+            result = subprocess.run(cmd, capture_output=True, text=True, cwd=self.path)
+            output = result.stdout
+        except:
+            return []
+        
+        changes = []
+        fr_pattern = re.compile(r"\(FR-[A-Z][A-Z0-9]*-\d{3,}(-[A-Z0-9]+)?\)")
+        conv_pattern = re.compile(r"^(\w+)(?:\(([\w-]+)\))?(!)?: (.+)$")
+        
+        for commit in output.split("|END"):
+            parts = commit.strip().split("|")
+            if len(parts) < 2:
+                continue
+            
+            commit_hash = parts[0][:8]
+            subject = parts[1]
+            body = parts[2] if len(parts) > 2 else ""
+            
+            match = conv_pattern.match(subject)
+            if not match:
+                continue
+            
+            msg_type = match.group(1)
+            scope = match.group(2)
+            breaking_marker = match.group(3) == "!"
+            message = match.group(4)
+            
+            fr_match = fr_pattern.search(subject)
+            fr_id = fr_match.group(0) if fr_match else None
+            
+            is_breaking = breaking_marker or "BREAKING CHANGE:" in body
+            
+            if msg_type in ("feat", "fix", "refactor", "perf"):
+                changes.append(Change(
+                    commit_hash=commit_hash,
+                    commit_type=msg_type,
+                    scope=scope,
+                    message=message,
+                    breaking=is_breaking,
+                    fr_id=fr_id
+                ))
+        
+        self.changes = changes
+        return changes
+    
+    def calculate_next_version(self) -> Tuple[str, str, List[str]]:
+        major, minor, patch = self._parse_version(self.current_version)
+        
+        breaking = any(c.breaking for c in self.changes)
+        features = any(c.commit_type == "feat" for c in self.changes)
+        fixes = any(c.commit_type == "fix" for c in self.changes)
+        
+        if breaking:
+            bump_type = "MAJOR"
+            next_version = f"{major + 1}.0.0"
+        elif features:
+            bump_type = "MINOR"
+            next_version = f"{major}.{minor + 1}.0"
+        elif fixes:
+            bump_type = "PATCH"
+            next_version = f"{major}.{minor}.{patch + 1}"
+        else:
+            bump_type = "NONE"
+            next_version = self.current_version
+        
+        notes = []
+        if breaking:
+            notes.append(f"⚠️  {sum(1 for c in self.changes if c.breaking)} breaking changes")
+        if features:
+            notes.append(f"✨ {sum(1 for c in self.changes if c.commit_type == 'feat')} features")
+        if fixes:
+            notes.append(f"🐛 {sum(1 for c in self.changes if c.commit_type == 'fix')} fixes")
+        
+        missing_fr = [c for c in self.changes if not c.fr_id and c.commit_type in ("feat", "fix")]
+        if missing_fr:
+            notes.append(f"❌ {len(missing_fr)} changes missing FR traceability")
+        
+        return next_version, bump_type, notes
+    
+    def check_changelog(self) -> bool:
+        cl_files = ["CHANGELOG.md", "CHANGELOG.rst", "HISTORY.md"]
+        for f in cl_files:
+            if (self.path / f).exists():
+                return True
+        return False
+    
+    def generate_report(self) -> str:
+        lines = [
+            "# Semantic Versioning Report",
+            "",
+            f"**Current Version:** {self.current_version}",
+        ]
+        
+        if not self.changes:
+            lines.extend(["", "No relevant commits found."])
+            return "\n".join(lines)
+        
+        next_version, bump_type, notes = self.calculate_next_version()
+        
+        lines.extend([
+            "",
+            f"**Next Version:** {next_version}",
+            f"**Bump Type:** {bump_type}",
+            "",
+            "## Summary",
+        ])
+        
+        for note in notes:
+            lines.append(f"- {note}")
+        
+        has_changelog = self.check_changelog()
+        lines.extend([
+            "",
+            f"**Changelog:** {'✅ Present' if has_changelog else '❌ Missing'}",
+        ])
+        
+        if not has_changelog:
+            lines.append("⚠️  Consider adding a CHANGELOG.md file")
+        
+        lines.extend([
+            "",
+            "## Changes",
+        ])
+        
+        for change in self.changes[:10]:
+            fr = change.fr_id or "❌ No FR"
+            scope = f"({change.scope})" if change.scope else ""
+            breaking = " 💥 BREAKING" if change.breaking else ""
+            lines.append(f"- `{change.commit_hash}` {change.commit_type}{scope}: {change.message[:50]}{breaking} [{fr}]")
+        
+        if len(self.changes) > 10:
+            lines.append(f"- ... and {len(self.changes) - 10} more")
+        
+        return "\n".join(lines)
+
+def main():
+    parser = argparse.ArgumentParser(description="Semantic Versioning Enforcement")
+    parser.add_argument("--path", "-p", type=Path, default=Path("."))
+    parser.add_argument("--since", "-s", help="Analyze commits since tag/commit")
+    parser.add_argument("--check-changelog", "-c", action="store_true", help="Require changelog")
+    parser.add_argument("--strict", action="store_true", help="Exit error if issues found")
+    parser.add_argument("--output", "-o", type=Path, help="Output report file")
+    args = parser.parse_args()
+    
+    enforcer = SemverEnforcer(args.path)
+    
+    print(f"Current version: {enforcer.current_version}")
+    print(f"Analyzing commits...")
+    
+    changes = enforcer.analyze_commits(args.since)
+    print(f"Found {len(changes)} relevant commits")
+    
+    report = enforcer.generate_report()
+    
+    if args.output:
+        args.output.write_text(report)
+        print(f"\nReport written to: {args.output}")
+    else:
+        print(report)
+    
+    if args.strict:
+        next_version, bump_type, notes = enforcer.calculate_next_version()
+        issues = [n for n in notes if n.startswith("❌") or n.startswith("⚠️")]
+        if issues:
+            print("\n❌ Issues found:")
+            for issue in issues:
+                print(f"  {issue}")
+            sys.exit(1)
+        if not enforcer.check_changelog() and args.check_changelog:
+            print("\n❌ Changelog required but not found")
+            sys.exit(1)
+    
+    sys.exit(0)
+
+if __name__ == "__main__":
+    main()

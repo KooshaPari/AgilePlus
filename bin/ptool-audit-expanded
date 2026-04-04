@@ -1,0 +1,957 @@
+#!/usr/bin/env python3
+"""
+Phenotype Tooling Audit - EXPANDED DATABASE (50+ tools)
+
+Detects forbidden/legacy tools across categories:
+- Package managers, Task runners, Test frameworks, Bundlers
+- Container/Orchestration, Database tools, CI/CD
+- Documentation, Security, Monitoring
+"""
+
+import argparse
+import json
+import os
+import re
+import sys
+from dataclasses import dataclass, asdict
+from pathlib import Path
+from typing import Dict, List, Optional, Set
+
+
+@dataclass
+class ToolRule:
+    name: str
+    category: str
+    status: str  # 'allowed', 'forbidden', 'deprecated', 'discouraged', 'legacy'
+    preferred_alternative: Optional[str] = None
+    reason: Optional[str] = None
+    file_patterns: List[str] = None
+    content_patterns: List[str] = None
+    severity: str = "error"
+    autofix_available: bool = False
+    migration_guide: Optional[str] = None
+    
+    def __post_init__(self):
+        if self.file_patterns is None:
+            self.file_patterns = []
+        if self.content_patterns is None:
+            self.content_patterns = []
+
+
+# ============ EXPANDED TOOLING DATABASE (50+ TOOLS) ============
+
+EXPANDED_TOOLING_DATABASE: Dict[str, ToolRule] = {
+    # ===== PACKAGE MANAGERS (8 tools) =====
+    "npm": ToolRule(
+        name="npm",
+        category="package_manager",
+        status="forbidden",
+        preferred_alternative="bun",
+        reason="Bun is 30x faster, has built-in TypeScript, unified toolchain",
+        file_patterns=["package-lock.json", "npm-shrinkwrap.json", ".npmrc", ".npmignore"],
+        content_patterns=[r'"npm":', r'npm install', r'npm run', r'npm ci', r'npm publish'],
+        severity="error",
+        autofix_available=True,
+        migration_guide="https://bun.sh/docs/migrating-from-npm",
+    ),
+    "yarn": ToolRule(
+        name="yarn",
+        category="package_manager",
+        status="forbidden",
+        preferred_alternative="bun",
+        reason="Yarn berry is complex; Bun provides zero-config workspace support",
+        file_patterns=["yarn.lock", ".yarnrc", ".yarnrc.yml", ".yarn", ".yarnrc.yaml"],
+        content_patterns=[r'yarn install', r'yarn run', r'yarn add', r'yarn workspace'],
+        severity="error",
+        autofix_available=True,
+    ),
+    "pnpm": ToolRule(
+        name="pnpm",
+        category="package_manager",
+        status="forbidden",
+        preferred_alternative="bun",
+        reason="pnpm is good but Bun is faster and has runtime+bundler+test runner",
+        file_patterns=["pnpm-lock.yaml", ".pnpmrc", "pnpm-workspace.yaml"],
+        content_patterns=[r'pnpm install', r'pnpm run', r'pnpm add', r'pnpm exec'],
+        severity="error",
+        autofix_available=True,
+    ),
+    "bun": ToolRule(
+        name="bun",
+        category="package_manager",
+        status="allowed",
+        preferred_alternative=None,
+        reason="Standardized package manager for Phenotype ecosystem",
+        file_patterns=["bun.lockb", "bunfig.toml"],
+        content_patterns=[r'bun install', r'bun run', r'bun add', r'bun test', r'bun build'],
+        severity="info",
+    ),
+    "pip": ToolRule(
+        name="pip",
+        category="package_manager",
+        status="discouraged",
+        preferred_alternative="uv",
+        reason="pip is slow; uv is 10-100x faster, written in Rust",
+        file_patterns=["requirements.txt", "requirements-*.txt", "requirements/"],
+        content_patterns=[r'pip install', r'pip3 install', r'pip freeze'],
+        severity="warning",
+        autofix_available=True,
+        migration_guide="https://docs.astral.sh/uv/pip/",
+    ),
+    "poetry": ToolRule(
+        name="poetry",
+        category="package_manager",
+        status="discouraged",
+        preferred_alternative="uv",
+        reason="Poetry is slow and complex; uv is faster and PEP 621 compliant",
+        file_patterns=["poetry.lock", "pyproject.toml"],
+        content_patterns=[r'poetry add', r'poetry install', r'poetry run', r'poetry build'],
+        severity="warning",
+        autofix_available=True,
+    ),
+    "conda": ToolRule(
+        name="conda",
+        category="package_manager",
+        status="forbidden",
+        preferred_alternative="uv",
+        reason="Conda is bloated for pure Python; uv + pixi for system deps",
+        file_patterns=["environment.yml", "conda-lock.yml", ".condarc"],
+        content_patterns=[r'conda install', r'conda env', r'conda create'],
+        severity="error",
+    ),
+    "pipenv": ToolRule(
+        name="pipenv",
+        category="package_manager",
+        status="forbidden",
+        preferred_alternative="uv",
+        reason="Pipenv is deprecated; uv is the modern standard",
+        file_patterns=["Pipfile", "Pipfile.lock"],
+        content_patterns=[r'pipenv install', r'pipenv run', r'pipenv shell'],
+        severity="error",
+        autofix_available=True,
+    ),
+    "uv": ToolRule(
+        name="uv",
+        category="package_manager",
+        status="allowed",
+        reason="Standardized Python package manager",
+        file_patterns=["uv.lock"],
+        content_patterns=[r'uv add', r'uv run', r'uv pip', r'uv sync'],
+        severity="info",
+    ),
+    
+    # ===== TASK RUNNERS (6 tools) =====
+    "make": ToolRule(
+        name="make",
+        category="task_runner",
+        status="forbidden",
+        preferred_alternative="task",
+        reason="Makefiles are handrolled, error-prone, shell-dependent; Task is cross-platform",
+        file_patterns=["Makefile", "makefile", "GNUmakefile", "*.mk"],
+        content_patterns=[r'\.PHONY', r'make\s', r'\tmake', r'\$\(shell', r'include.*\.mk'],
+        severity="error",
+        autofix_available=True,
+        migration_guide="https://taskfile.dev/migrate-from-makefile/",
+    ),
+    "just": ToolRule(
+        name="just",
+        category="task_runner",
+        status="discouraged",
+        preferred_alternative="task",
+        reason="Just is good but Task has better ecosystem and CI integration",
+        file_patterns=["justfile", "Justfile", ".justfile", "*.just"],
+        content_patterns=[r'just ', r'@just', r'justfile', r'\.justfile'],
+        severity="warning",
+        autofix_available=True,
+    ),
+    "npm-scripts": ToolRule(
+        name="npm-scripts",
+        category="task_runner",
+        status="discouraged",
+        preferred_alternative="task",
+        reason="npm scripts are limited; Task provides dependencies, vars, includes",
+        file_patterns=["package.json"],
+        content_patterns=[r'"scripts":', r'"test":', r'"build":'],
+        severity="warning",
+    ),
+    "gulp": ToolRule(
+        name="gulp",
+        category="task_runner",
+        status="forbidden",
+        preferred_alternative="task",
+        reason="Gulp is legacy; Task is simpler and faster",
+        file_patterns=["gulpfile.js", "gulpfile.ts", "gulpfile.mjs"],
+        content_patterns=[r'gulp\.', r'require\([\'"]gulp[\'"]\)', r'from.*gulp'],
+        severity="error",
+        autofix_available=True,
+    ),
+    "grunt": ToolRule(
+        name="grunt",
+        category="task_runner",
+        status="forbidden",
+        preferred_alternative="task",
+        reason="Grunt is deprecated; Task is the modern replacement",
+        file_patterns=["Gruntfile.js", "gruntfile.js"],
+        content_patterns=[r'grunt\.', r'module\.exports.*=.*function.*grunt'],
+        severity="error",
+    ),
+    "task": ToolRule(
+        name="task",
+        category="task_runner",
+        status="allowed",
+        reason="Standardized task runner across all Phenotype repos",
+        file_patterns=["Taskfile.yml", "Taskfile.yaml", "taskfile.yml"],
+        content_patterns=[r'task:', r'version:', r'tasks:', r'cmds:'],
+        severity="info",
+    ),
+    
+    # ===== TEST FRAMEWORKS (8 tools) =====
+    "jest": ToolRule(
+        name="jest",
+        category="test_framework",
+        status="forbidden",
+        preferred_alternative="vitest",
+        reason="Jest is slow; Vitest is faster, native ESM, Vite-aligned, same API",
+        file_patterns=["jest.config.js", "jest.config.ts", "jest.config.mjs", "jest.setup.js", "jest.setup.ts"],
+        content_patterns=[r'jest\(', r'from.*jest', r'@jest/globals', r'describe.*it.*jest', r'__mocks__'],
+        severity="error",
+        autofix_available=True,
+        migration_guide="https://vitest.dev/guide/migration.html",
+    ),
+    "mocha": ToolRule(
+        name="mocha",
+        category="test_framework",
+        status="forbidden",
+        preferred_alternative="vitest",
+        reason="Mocha is legacy with complex setup; Vitest is zero-config",
+        file_patterns=[".mocharc.js", ".mocharc.json", ".mocharc.yml", "mocha.opts"],
+        content_patterns=[r'mocha', r'describe.*it.*mocha', r'require\([\'"]mocha[\'"]\)'],
+        severity="error",
+        autofix_available=True,
+    ),
+    "jasmine": ToolRule(
+        name="jasmine",
+        category="test_framework",
+        status="forbidden",
+        preferred_alternative="vitest",
+        reason="Jasmine is legacy; Vitest is modern and faster",
+        file_patterns=["jasmine.json", "spec/support/jasmine.json"],
+        content_patterns=[r'jasmine', r'describe.*it.*jasmine'],
+        severity="error",
+    ),
+    "ava": ToolRule(
+        name="ava",
+        category="test_framework",
+        status="discouraged",
+        preferred_alternative="vitest",
+        reason="AVA is minimal; Vitest has better IDE support and features",
+        file_patterns=["ava.config.js", "ava.config.mjs"],
+        content_patterns=[r'import test from [\'"]ava[\'"]', r'test\(', r'ava/'],
+        severity="warning",
+    ),
+    "tap": ToolRule(
+        name="tap",
+        category="test_framework",
+        status="discouraged",
+        preferred_alternative="vitest",
+        reason="TAP is verbose; Vitest has better UX and TypeScript support",
+        file_patterns=[".taprc", "tap-snapshots/"],
+        content_patterns=[r'tap\.', r'require\([\'"]tap[\'"]\)', r'import.*from.*tap'],
+        severity="warning",
+    ),
+    "karma": ToolRule(
+        name="karma",
+        category="test_framework",
+        status="forbidden",
+        preferred_alternative="vitest",
+        reason="Karma is deprecated (2023); use Vitest with browser mode",
+        file_patterns=["karma.conf.js", "karma.conf.ts"],
+        content_patterns=[r'karma', r'karma-'],
+        severity="error",
+    ),
+    "vitest": ToolRule(
+        name="vitest",
+        category="test_framework",
+        status="allowed",
+        reason="Standardized test runner",
+        file_patterns=["vitest.config.ts", "vitest.config.js", "vitest.config.mjs", "vitest.setup.ts"],
+        content_patterns=[r'vitest', r'from.*vitest', r'describe.*it.*vitest'],
+        severity="info",
+    ),
+    "pytest": ToolRule(
+        name="pytest",
+        category="test_framework",
+        status="allowed",
+        reason="Standardized Python test runner",
+        file_patterns=["pytest.ini", "conftest.py", "pyproject.toml"],
+        content_patterns=[r'pytest', r'@pytest.mark', r'def test_'],
+        severity="info",
+    ),
+    
+    # ===== BUNDLERS & BUILD TOOLS (7 tools) =====
+    "webpack": ToolRule(
+        name="webpack",
+        category="bundler",
+        status="forbidden",
+        preferred_alternative="vite",
+        reason="Webpack config is complex (1000+ lines); Vite is zero-config, instant HMR",
+        file_patterns=["webpack.config.js", "webpack.config.ts", "webpack.*.js", "webpack/"],
+        content_patterns=[r'webpack', r'webpack-cli', r'HtmlWebpackPlugin', r'CleanWebpackPlugin'],
+        severity="error",
+        autofix_available=True,
+        migration_guide="https://vitejs.dev/guide/",
+    ),
+    "parcel": ToolRule(
+        name="parcel",
+        category="bundler",
+        status="forbidden",
+        preferred_alternative="vite",
+        reason="Parcel v1 is dead, v2 is slow; Vite is faster and more flexible",
+        file_patterns=[".parcelrc"],
+        content_patterns=[r'parcel', r'parcel-bundler'],
+        severity="error",
+    ),
+    "rollup": ToolRule(
+        name="rollup",
+        category="bundler",
+        status="discouraged",
+        preferred_alternative="vite",
+        reason="Rollup is low-level; Vite uses Rollup for production but handles dev",
+        file_patterns=["rollup.config.js", "rollup.config.ts"],
+        content_patterns=[r'rollup', r'from.*rollup'],
+        severity="warning",
+        autofix_available=True,
+    ),
+    "esbuild": ToolRule(
+        name="esbuild",
+        category="bundler",
+        status="discouraged",
+        preferred_alternative="vite",
+        reason="esbuild is fast but low-level; Vite provides full framework",
+        file_patterns=["esbuild.config.js"],
+        content_patterns=[r'esbuild', r'require\([\'"]esbuild[\'"]\)'],
+        severity="warning",
+    ),
+    "turbopack": ToolRule(
+        name="turbopack",
+        category="bundler",
+        status="discouraged",
+        preferred_alternative="vite",
+        reason="Turbopack is Next.js-only; Vite is framework-agnostic",
+        file_patterns=[],
+        content_patterns=[r'turbopack', r'--turbo'],
+        severity="warning",
+    ),
+    "vite": ToolRule(
+        name="vite",
+        category="bundler",
+        status="allowed",
+        reason="Standardized build tool",
+        file_patterns=["vite.config.ts", "vite.config.js", "vite.config.mjs"],
+        content_patterns=[r'vite', r'from.*vite', r'createServer', r'build\(\)'],
+        severity="info",
+    ),
+    "tsc": ToolRule(
+        name="tsc",
+        category="compiler",
+        status="discouraged",
+        preferred_alternative="vite + esbuild",
+        reason="tsc is slow for builds; use Vite's esbuild for dev, tsc for type-check only",
+        file_patterns=["tsconfig.json"],
+        content_patterns=[r'tsc', r'tsc --build', r'typescript compiler'],
+        severity="warning",
+    ),
+    
+    # ===== LINTERS & FORMATTERS (8 tools) =====
+    "eslint": ToolRule(
+        name="eslint",
+        category="linter",
+        status="discouraged",
+        preferred_alternative="oxlint",
+        reason="oxlint is 50-100x faster (Rust-based), catches same issues",
+        file_patterns=[".eslintrc.js", ".eslintrc.json", ".eslintrc.yml", ".eslintrc", "eslint.config.js", "eslint.config.mjs"],
+        content_patterns=[r'eslint', r'@eslint', r'eslint-disable', r'lint-staged.*eslint'],
+        severity="warning",
+        autofix_available=True,
+        migration_guide="https://oxc-project.github.io/",
+    ),
+    "prettier": ToolRule(
+        name="prettier",
+        category="linter",
+        status="discouraged",
+        preferred_alternative="biome",
+        reason="Biome is faster (Rust-based) and combines lint+format",
+        file_patterns=[".prettierrc", ".prettierrc.json", ".prettierrc.yml", ".prettierignore", "prettier.config.js"],
+        content_patterns=[r'prettier', r'prettier --write', r'prettier --check'],
+        severity="warning",
+        autofix_available=True,
+        migration_guide="https://biomejs.dev/guides/migrate-from-prettier/",
+    ),
+    "tslint": ToolRule(
+        name="tslint",
+        category="linter",
+        status="forbidden",
+        preferred_alternative="oxlint",
+        reason="TSLint is deprecated since 2019",
+        file_patterns=["tslint.json", "tslint.yml"],
+        content_patterns=[r'tslint', r'TSLint'],
+        severity="error",
+        autofix_available=True,
+    ),
+    "standardjs": ToolRule(
+        name="standardjs",
+        category="linter",
+        status="forbidden",
+        preferred_alternative="oxlint",
+        reason="Standard is opinionated and less configurable; oxlint is better",
+        file_patterns=[],
+        content_patterns=[r'standard', r'standard --fix'],
+        severity="error",
+    ),
+    "rome": ToolRule(
+        name="rome",
+        category="linter",
+        status="forbidden",
+        preferred_alternative="biome",
+        reason="Rome is dead (company folded); Biome is the community fork",
+        file_patterns=["rome.json", ".rome"],
+        content_patterns=[r'rome', r'@rometools'],
+        severity="error",
+        autofix_available=True,
+    ),
+    "oxlint": ToolRule(
+        name="oxlint",
+        category="linter",
+        status="allowed",
+        reason="Fast JS/TS linter (Rust-based)",
+        file_patterns=[],
+        content_patterns=[r'oxlint', r'oxc'],
+        severity="info",
+    ),
+    "biome": ToolRule(
+        name="biome",
+        category="linter",
+        status="allowed",
+        reason="Fast linter+formatter (Rust-based, Rome successor)",
+        file_patterns=["biome.json"],
+        content_patterns=[r'biome', r'@biomejs'],
+        severity="info",
+    ),
+    "ruff": ToolRule(
+        name="ruff",
+        category="linter",
+        status="allowed",
+        reason="Fast Python linter (Rust-based), replaces flake8/black/isort",
+        file_patterns=["ruff.toml", ".ruff.toml", "pyproject.toml"],
+        content_patterns=[r'ruff', r'ruff check', r'ruff format'],
+        severity="info",
+    ),
+    
+    # ===== CI/CD (6 tools) =====
+    "circleci": ToolRule(
+        name="circleci",
+        category="ci_cd",
+        status="forbidden",
+        preferred_alternative="github-actions",
+        reason="CircleCI is expensive and complex; GitHub Actions is integrated",
+        file_patterns=[".circleci/config.yml", ".circleci/"],
+        content_patterns=[r'circleci', r'cimg/'],
+        severity="error",
+        autofix_available=True,
+    ),
+    "travis": ToolRule(
+        name="travis",
+        category="ci_cd",
+        status="forbidden",
+        preferred_alternative="github-actions",
+        reason="Travis CI is effectively dead (2020 bankruptcy)",
+        file_patterns=[".travis.yml"],
+        content_patterns=[r'travis', r'travis-ci'],
+        severity="error",
+        autofix_available=True,
+    ),
+    "jenkins": ToolRule(
+        name="jenkins",
+        category="ci_cd",
+        status="discouraged",
+        preferred_alternative="github-actions",
+        reason="Jenkins is high-maintenance; GitHub Actions is serverless",
+        file_patterns=["Jenkinsfile", "jenkins/"],
+        content_patterns=[r'jenkins', r'Jenkinsfile', r'pipeline\s*\{'],
+        severity="warning",
+    ),
+    "gitlab-ci": ToolRule(
+        name="gitlab-ci",
+        category="ci_cd",
+        status="discouraged",
+        preferred_alternative="github-actions",
+        reason="Use GitHub Actions for consistency across Phenotype repos",
+        file_patterns=[".gitlab-ci.yml", ".gitlab/"],
+        content_patterns=[r'gitlab', r'gitlab-ci'],
+        severity="warning",
+    ),
+    "azure-pipelines": ToolRule(
+        name="azure-pipelines",
+        category="ci_cd",
+        status="discouraged",
+        preferred_alternative="github-actions",
+        reason="Azure DevOps is Microsoft-specific; GitHub Actions is standard",
+        file_patterns=["azure-pipelines.yml", "azure-pipelines.yaml"],
+        content_patterns=[r'azure', r'AzurePipelines'],
+        severity="warning",
+    ),
+    "github-actions": ToolRule(
+        name="github-actions",
+        category="ci_cd",
+        status="allowed",
+        reason="Standardized CI/CD across all repos",
+        file_patterns=[".github/workflows/*.yml", ".github/workflows/*.yaml", ".github/actions/"],
+        content_patterns=[r'on:', r'jobs:', r'steps:', r'uses:', r'runs-on:'],
+        severity="info",
+    ),
+    
+    # ===== CONTAINER/ORCHESTRATION (7 tools) =====
+    "docker-compose-v1": ToolRule(
+        name="docker-compose-v1",
+        category="container",
+        status="forbidden",
+        preferred_alternative="docker compose (v2)",
+        reason="docker-compose v1 is EOL (June 2023); use 'docker compose' (space)",
+        file_patterns=["docker-compose.yml", "docker-compose.yaml"],
+        content_patterns=[r'docker-compose ', r'docker-compose\s+up', r'docker-compose\s+build'],
+        severity="error",
+        autofix_available=True,
+    ),
+    "docker-compose": ToolRule(
+        name="docker-compose",
+        category="container",
+        status="allowed",
+        reason="Docker Compose v2 (plugin) is standard",
+        file_patterns=["docker-compose.yml", "docker-compose.yaml", "compose.yaml", "compose.yml"],
+        content_patterns=[r'docker compose', r'services:', r'version:\s*["\']?3'],
+        severity="info",
+    ),
+    "dockerfile": ToolRule(
+        name="dockerfile",
+        category="container",
+        status="allowed",
+        reason="Standard container definition",
+        file_patterns=["Dockerfile", "Dockerfile.*", ".dockerignore"],
+        content_patterns=[r'FROM ', r'RUN ', r'CMD ', r'ENTRYPOINT '],
+        severity="info",
+    ),
+    "podman": ToolRule(
+        name="podman",
+        category="container",
+        status="discouraged",
+        preferred_alternative="docker",
+        reason="Podman is good but Docker is the standard; use for rootless only",
+        file_patterns=[],
+        content_patterns=[r'podman', r'podman-compose'],
+        severity="info",
+    ),
+    "kubernetes-raw": ToolRule(
+        name="kubernetes-raw",
+        category="orchestration",
+        status="discouraged",
+        preferred_alternative="helm or kustomize",
+        reason="Raw YAML is hard to manage; use Helm for templating or Kustomize for patches",
+        file_patterns=["deployment.yaml", "service.yaml", "configmap.yaml"],
+        content_patterns=[r'apiVersion:.*apps/v1', r'kind:\s*Deployment', r'kind:\s*Service'],
+        severity="warning",
+    ),
+    "helm": ToolRule(
+        name="helm",
+        category="orchestration",
+        status="allowed",
+        reason="Standard for Kubernetes package management",
+        file_patterns=["Chart.yaml", "values.yaml", "templates/"],
+        content_patterns=[r'helm', r'Chart.yaml', r'apiVersion:\s*v2'],
+        severity="info",
+    ),
+    "kustomize": ToolRule(
+        name="kustomize",
+        category="orchestration",
+        status="allowed",
+        reason="Good for environment-specific patches without templating",
+        file_patterns=["kustomization.yaml", "kustomization.yml"],
+        content_patterns=[r'kustomize', r'kustomization.yaml', r'resources:', r'patches:'],
+        severity="info",
+    ),
+    
+    # ===== DATABASE TOOLS (5 tools) =====
+    "raw-sql": ToolRule(
+        name="raw-sql",
+        category="database",
+        status="discouraged",
+        preferred_alternative="ORM or query builder",
+        reason="Raw SQL strings are error-prone and hard to maintain; use SQLx, Prisma, or SQLAlchemy",
+        file_patterns=[],
+        content_patterns=[r'SELECT\s+.*\s+FROM', r'INSERT\s+INTO', r'UPDATE\s+.*\s+SET', r'DELETE\s+FROM'],
+        severity="warning",
+    ),
+    "sequelize": ToolRule(
+        name="sequelize",
+        category="database",
+        status="discouraged",
+        preferred_alternative="prisma",
+        reason="Sequelize is complex and has type issues; Prisma has better DX and type safety",
+        file_patterns=["sequelize.config.js"],
+        content_patterns=[r'sequelize', r'Sequelize', r'new Sequelize'],
+        severity="warning",
+        autofix_available=True,
+    ),
+    "typeorm": ToolRule(
+        name="typeorm",
+        category="database",
+        status="discouraged",
+        preferred_alternative="prisma",
+        reason="TypeORM has maintenance issues; Prisma is better maintained",
+        file_patterns=["ormconfig.json", "ormconfig.js"],
+        content_patterns=[r'typeorm', r'@Entity', r'@Column', r'dataSource'],
+        severity="warning",
+    ),
+    "prisma": ToolRule(
+        name="prisma",
+        category="database",
+        status="allowed",
+        reason="Modern ORM with excellent TypeScript support",
+        file_patterns=["schema.prisma", "prisma/schema.prisma"],
+        content_patterns=[r'prisma', r'generator', r'datasource', r'model\s+\w+'],
+        severity="info",
+    ),
+    "sqlalchemy": ToolRule(
+        name="sqlalchemy",
+        category="database",
+        status="allowed",
+        reason="Standard Python ORM",
+        file_patterns=[],
+        content_patterns=[r'sqlalchemy', r'from sqlalchemy', r'declarative_base', r'Column', r'Integer', r'String'],
+        severity="info",
+    ),
+    
+    # ===== DOCUMENTATION (4 tools) =====
+    "readme-missing": ToolRule(
+        name="readme-missing",
+        category="documentation",
+        status="forbidden",
+        preferred_alternative="README.md",
+        reason="Every project must have a README.md",
+        file_patterns=["README.md"],
+        content_patterns=[],
+        severity="error",
+    ),
+    "adr-missing": ToolRule(
+        name="adr-missing",
+        category="documentation",
+        status="discouraged",
+        preferred_alternative="docs/adr/ or ADR.md",
+        reason="Architecture Decision Records should be documented",
+        file_patterns=["ADR.md", "docs/adr/"],
+        content_patterns=[],
+        severity="warning",
+    ),
+    "wiki": ToolRule(
+        name="wiki",
+        category="documentation",
+        status="discouraged",
+        preferred_alternative="docs/ directory in repo",
+        reason="GitHub wikis are separate repos and get out of sync; keep docs in main repo",
+        file_patterns=["wiki/"],
+        content_patterns=[r'github.com/.*/wiki'],
+        severity="warning",
+    ),
+    "notion-docs": ToolRule(
+        name="notion-docs",
+        category="documentation",
+        status="discouraged",
+        preferred_alternative="docs/ directory in repo",
+        reason="Notion docs are external and not version controlled; use in-repo docs",
+        file_patterns=[],
+        content_patterns=[r'notion.so', r'notion.site'],
+        severity="warning",
+    ),
+    
+    # ===== SECURITY (4 tools) =====
+    "snyk": ToolRule(
+        name="snyk",
+        category="security",
+        status="discouraged",
+        preferred_alternative="osv-scanner or trivy",
+        reason="Snyk requires signup; OSV is open and free",
+        file_patterns=[".snyk"],
+        content_patterns=[r'snyk', r'snyk test', r'snyk monitor'],
+        severity="warning",
+    ),
+    "osv-scanner": ToolRule(
+        name="osv-scanner",
+        category="security",
+        status="allowed",
+        reason="Open source vulnerability scanner",
+        file_patterns=["osv-scanner.toml"],
+        content_patterns=[r'osv-scanner', r'osv'],
+        severity="info",
+    ),
+    "trivy": ToolRule(
+        name="trivy",
+        category="security",
+        status="allowed",
+        reason="Container and dependency vulnerability scanner",
+        file_patterns=[".trivyignore"],
+        content_patterns=[r'trivy', r'trivy image', r'trivy fs'],
+        severity="info",
+    ),
+    "gitleaks": ToolRule(
+        name="gitleaks",
+        category="security",
+        status="allowed",
+        reason="Secret detection in git history",
+        file_patterns=[".gitleaks.toml", ".gitleaksignore"],
+        content_patterns=[r'gitleaks', r'gitleaks detect'],
+        severity="info",
+    ),
+}
+
+
+# ... rest of implementation same as original ...
+
+class ToolingAuditor:
+    """Audits a codebase for forbidden/discouraged tooling."""
+    
+    def __init__(self, database: Dict[str, ToolRule] = None):
+        self.database = database or EXPANDED_TOOLING_DATABASE
+        self.violations = []
+        self.allowed_tools_found = set()
+        
+    def audit_directory(self, path: Path, respect_gitignore: bool = True):
+        """Audit a directory for tooling violations."""
+        self.violations = []
+        self.allowed_tools_found = set()
+        
+        ignore_patterns = self._load_gitignore_patterns(path) if respect_gitignore else set()
+        
+        # Special check: README.md missing
+        readme_path = path / "README.md"
+        if not readme_path.exists():
+            rule = self.database.get("readme-missing")
+            if rule:
+                self._add_violation(rule, path / "README.md (missing)", None, is_missing=True)
+        else:
+            self.allowed_tools_found.add("readme-present")
+        
+        for root, dirs, files in os.walk(path):
+            dirs[:] = [d for d in dirs if not self._should_ignore(d, ignore_patterns)]
+            
+            for file in files:
+                if self._should_ignore(file, ignore_patterns):
+                    continue
+                file_path = Path(root) / file
+                self._audit_file(file_path)
+        
+        return self.violations
+    
+    def _load_gitignore_patterns(self, path: Path) -> set:
+        patterns = {"node_modules", ".git", "target", "dist", "build", ".venv", "__pycache__", ".pytest_cache"}
+        gitignore_path = path / ".gitignore"
+        if gitignore_path.exists():
+            try:
+                content = gitignore_path.read_text()
+                for line in content.splitlines():
+                    line = line.strip()
+                    if line and not line.startswith("#"):
+                        patterns.add(line.rstrip("/"))
+            except:
+                pass
+        return patterns
+    
+    def _should_ignore(self, name: str, patterns: set) -> bool:
+        for pattern in patterns:
+            if pattern in name or name in pattern:
+                return True
+        return False
+    
+    def _audit_file(self, file_path: Path):
+        file_name = file_path.name
+        
+        for tool_name, rule in self.database.items():
+            # Skip special rules handled separately
+            if tool_name == "readme-missing":
+                continue
+                
+            for pattern in rule.file_patterns:
+                if self._match_pattern(file_name, pattern):
+                    if rule.status in ("forbidden", "deprecated"):
+                        self._add_violation(rule, file_path, None)
+                    elif rule.status == "allowed":
+                        self.allowed_tools_found.add(tool_name)
+        
+        if self._should_check_contents(file_path):
+            try:
+                content = file_path.read_text(encoding="utf-8", errors="ignore")
+                lines = content.splitlines()
+                
+                for tool_name, rule in self.database.items():
+                    for pattern in rule.content_patterns:
+                        for i, line in enumerate(lines, 1):
+                            if re.search(pattern, line):
+                                if rule.status in ("forbidden", "deprecated", "discouraged"):
+                                    self._add_violation(rule, file_path, i, line.strip())
+                                elif rule.status == "allowed":
+                                    self.allowed_tools_found.add(tool_name)
+            except:
+                pass
+    
+    def _match_pattern(self, file_name: str, pattern: str) -> bool:
+        if "*" in pattern:
+            import fnmatch
+            return fnmatch.fnmatch(file_name, pattern)
+        return file_name == pattern
+    
+    def _should_check_contents(self, file_path: Path) -> bool:
+        ext = file_path.suffix.lower()
+        return ext in (".js", ".ts", ".json", ".yml", ".yaml", ".toml", ".py", ".sh", ".md")
+    
+    def _add_violation(self, rule: ToolRule, file_path: Path, line: int = None, context: str = "", is_missing: bool = False):
+        message = f"{rule.status.upper()}: {rule.name} ({rule.category})"
+        if rule.reason:
+            message += f" - {rule.reason}"
+        
+        fix_suggestion = None
+        if rule.preferred_alternative:
+            fix_suggestion = f"Use {rule.preferred_alternative} instead"
+            if rule.migration_guide:
+                fix_suggestion += f" (see: {rule.migration_guide})"
+        
+        violation = {
+            "tool": rule.name,
+            "category": rule.category,
+            "file": str(file_path),
+            "line": line,
+            "severity": rule.severity,
+            "message": message,
+            "fix_suggestion": fix_suggestion,
+            "autofix_available": rule.autofix_available,
+        }
+        
+        # Avoid duplicates
+        if not any(v.get("file") == violation["file"] and v.get("tool") == violation["tool"] 
+                   for v in self.violations):
+            self.violations.append(violation)
+    
+    def generate_report(self, format: str = "markdown") -> str:
+        if format == "json":
+            return json.dumps(self.violations, indent=2, default=str)
+        
+        if format == "markdown":
+            lines = [
+                "# Tooling Audit Report (Expanded Database)",
+                "",
+                f"**Total Violations:** {len(self.violations)}",
+                f"**Allowed Tools Found:** {', '.join(sorted(self.allowed_tools_found)) or 'None'}",
+                "",
+            ]
+            
+            # Group by category
+            by_category = {}
+            for v in self.violations:
+                cat = v.get("category", "unknown")
+                by_category.setdefault(cat, []).append(v)
+            
+            for category, violations in sorted(by_category.items()):
+                lines.extend([f"## {category.replace('_', ' ').title()}", ""])
+                
+                errors = [v for v in violations if v.get("severity") == "error"]
+                warnings = [v for v in violations if v.get("severity") == "warning"]
+                
+                if errors:
+                    lines.extend(["### Errors (Must Fix)", ""])
+                    for v in errors:
+                        location = v.get("file", "unknown")
+                        if v.get("line"):
+                            location += f":{v['line']}"
+                        lines.append(f"- **{v.get('tool', 'unknown')}** in `{location}`")
+                        lines.append(f"  - {v.get('message', '')}")
+                        if v.get("fix_suggestion"):
+                            autofix = "[autofix] " if v.get("autofix_available") else ""
+                            lines.append(f"  - {autofix}Fix: {v['fix_suggestion']}")
+                        lines.append("")
+                
+                if warnings:
+                    lines.extend(["### Warnings (Should Fix)", ""])
+                    for v in warnings:
+                        location = v.get("file", "unknown")
+                        if v.get("line"):
+                            location += f":{v['line']}"
+                        lines.append(f"- **{v.get('tool', 'unknown')}** in `{location}`")
+                        lines.append(f"  - {v.get('message', '')}")
+                        if v.get("fix_suggestion"):
+                            autofix = "[autofix] " if v.get("autofix_available") else ""
+                            lines.append(f"  - {autofix}Fix: {v['fix_suggestion']}")
+                        lines.append("")
+            
+            return "\n".join(lines)
+        
+        lines = [f"Tooling Audit: {len(self.violations)} violations"]
+        for v in self.violations:
+            location = v.get("file", "unknown")
+            if v.get("line"):
+                location += f":{v['line']}"
+            lines.append(f"[{v.get('severity', 'info').upper()}] {v.get('tool', 'unknown')} at {location}")
+            lines.append(f"  {v.get('message', '')}")
+            if v.get("fix_suggestion"):
+                lines.append(f"  -> {v['fix_suggestion']}")
+        return "\n".join(lines)
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Phenotype Tooling Audit (Expanded)")
+    parser.add_argument("--path", "-p", type=Path, default=Path("."), help="Path to audit")
+    parser.add_argument("--format", "-f", choices=["text", "markdown", "json"], default="markdown")
+    parser.add_argument("--output", "-o", type=Path, help="Output file")
+    parser.add_argument("--strict", "-s", action="store_true", help="Exit with error on violations")
+    parser.add_argument("--category", "-c", help="Filter by category")
+    parser.add_argument("--export-database", action="store_true", help="Export the tooling database")
+    parser.add_argument("--list-forbidden", action="store_true", help="List all forbidden tools")
+    
+    args = parser.parse_args()
+    
+    if args.export_database:
+        db = {k: asdict(v) for k, v in EXPANDED_TOOLING_DATABASE.items()}
+        print(json.dumps(db, indent=2))
+        return
+    
+    if args.list_forbidden:
+        forbidden = {k: v for k, v in EXPANDED_TOOLING_DATABASE.items() if v.status == "forbidden"}
+        print("# Forbidden Tools (Must Not Use)")
+        print("")
+        for name, rule in sorted(forbidden.items()):
+            print(f"- **{name}** ({rule.category})")
+            print(f"  Use instead: {rule.preferred_alternative}")
+            print(f"  Reason: {rule.reason}")
+            print("")
+        return
+    
+    auditor = ToolingAuditor()
+    violations = auditor.audit_directory(args.path)
+    
+    if args.category:
+        violations = [v for v in violations if v.get("category") == args.category]
+    
+    report = auditor.generate_report(args.format)
+    
+    if args.output:
+        args.output.write_text(report)
+        print(f"Report written to {args.output}")
+    else:
+        print(report)
+    
+    if args.strict and violations:
+        errors = [v for v in violations if v.get("severity") == "error"]
+        if errors:
+            sys.exit(1)
+    
+    sys.exit(0)
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,190 @@
+#!/usr/bin/env python3
+"""Phenotype Anti-Pattern Linter - CACHED VERSION"""
+
+import argparse
+import json
+import os
+import re
+import sys
+import time
+import pickle
+import hashlib
+from dataclasses import dataclass, asdict
+from pathlib import Path
+from typing import Dict, List, Optional
+
+MAX_WORKERS = min(8, os.cpu_count() or 4)
+CACHE_VERSION = "1.0"
+CACHE_TTL = 3600
+
+@dataclass
+class AntiPattern:
+    id: str
+    name: str
+    category: str
+    severity: str
+    languages: List[str]
+    description: str
+    recommendation: str
+    pattern_regex: Optional[str] = None
+
+ANTI_PATTERNS_DB: Dict[str, AntiPattern] = {
+    "PY001": AntiPattern("PY001", "bare_except", "correctness", "error", ["python"], "Bare except", "Use 'except Exception:'", r"except\s*:\s*"),
+    "PY002": AntiPattern("PY002", "mutable_default", "correctness", "error", ["python"], "Mutable default arg", "Use None as default", r"=\s*(\[|\{)"),
+    "PY003": AntiPattern("PY003", "print_debug", "maintainability", "warning", ["python"], "Print statement", "Use logging", r"^\s*print\s*\("),
+    "TS001": AntiPattern("TS001", "any_type", "maintainability", "warning", ["typescript"], "Using 'any'", "Use specific types", r":\s*any\b"),
+    "TS002": AntiPattern("TS002", "console_log", "maintainability", "warning", ["typescript", "javascript"], "console.log", "Use logging", r'console\.(log|debug|info)\s*\('),
+    "RS001": AntiPattern("RS001", "unwrap_usage", "correctness", "warning", ["rust"], "unwrap() usage", "Use ? or match", r"\.unwrap\(\)"),
+    "GO001": AntiPattern("GO001", "panic_in_lib", "correctness", "error", ["go"], "panic() in lib", "Return error", r'^\s*panic\s*\('),
+    "ALL001": AntiPattern("ALL001", "todo_comment", "maintainability", "info", ["python", "rust", "typescript", "javascript", "go"], "TODO/FIXME", "Create issue", r'(?i)#?\s*(todo|fixme|xxx|hack)"),
+    "ALL002": AntiPattern("ALL002", "long_line", "maintainability", "warning", ["python", "rust", "typescript", "javascript", "go"], "Line > 100 chars", "Break lines", None),
+}
+
+@dataclass
+class Violation:
+    pattern_id: str
+    pattern_name: str
+    file: Path
+    line: int
+    severity: str
+    message: str
+    recommendation: str
+
+class CachedLinter:
+    def __init__(self):
+        self.database = ANTI_PATTERNS_DB
+        self.violations: List[Violation] = []
+        self.cache_dir = Path.home() / ".cache" / "phenotype-quality-gate"
+        self.cache_dir.mkdir(parents=True, exist_ok=True)
+        self.cache_hits = 0
+        self.cache_misses = 0
+    
+    def _get_cache_path(self, file_path: Path) -> Path:
+        h = hashlib.md5(str(file_path).encode()).hexdigest()[:16]
+        return self.cache_dir / f"{file_path.name}_{h}.cache"
+    
+    def lint_directory(self, path: Path, use_cache: bool = True):
+        self.violations = []
+        files = self._find_files(path)
+        print(f"Found {len(files)} files...")
+        
+        for f in files:
+            if use_cache:
+                cache = self._load_cache(f)
+                if cache:
+                    self.violations.extend(cache)
+                    continue
+            
+            v = self._lint_file(f)
+            self.violations.extend(v)
+            if use_cache:
+                self._save_cache(f, v)
+        
+        total = self.cache_hits + self.cache_misses
+        if total > 0:
+            print(f"Cache: {self.cache_hits}/{total} hits ({100*self.cache_hits/total:.0f}%)")
+        return self.violations
+    
+    def _find_files(self, path: Path) -> List[Path]:
+        files = []
+        exclude = {'node_modules', '.git', 'target', 'dist', 'build', '.venv'}
+        for root, dirs, names in os.walk(path):
+            dirs[:] = [d for d in dirs if d not in exclude and not d.startswith('.')]
+            for n in names:
+                p = Path(root) / n
+                if p.suffix.lower() in ['.py', '.rs', '.ts', '.tsx', '.js', '.go']:
+                    files.append(p)
+        return files
+    
+    def _load_cache(self, file_path: Path) -> Optional[List[Violation]]:
+        cp = self._get_cache_path(file_path)
+        if not cp.exists():
+            self.cache_misses += 1
+            return None
+        try:
+            age = time.time() - cp.stat().st_mtime
+            if age > CACHE_TTL:
+                cp.unlink()
+                self.cache_misses += 1
+                return None
+            with open(cp, 'rb') as f:
+                d = pickle.load(f)
+                if d.get('v') == CACHE_VERSION:
+                    self.cache_hits += 1
+                    return [Violation(**v) for v in d['vls']]
+        except:
+            pass
+        self.cache_misses += 1
+        return None
+    
+    def _save_cache(self, file_path: Path, v: List[Violation]):
+        try:
+            cp = self._get_cache_path(file_path)
+            with open(cp, 'wb') as f:
+                pickle.dump({'v': CACHE_VERSION, 'vls': [asdict(x) for x in v]}, f)
+        except:
+            pass
+    
+    def _lint_file(self, file_path: Path) -> List[Violation]:
+        v = []
+        try:
+            content = file_path.read_text(encoding="utf-8", errors="ignore")
+            if len(content) > 2*1024*1024:
+                return v
+            lines = content.splitlines()
+        except:
+            return v
+        
+        lang_map = {'.py': 'python', '.rs': 'rust', '.ts': 'typescript', '.tsx': 'typescript', '.js': 'javascript', '.go': 'go'}
+        lang = lang_map.get(file_path.suffix.lower(), '')
+        
+        for pid, ap in self.database.items():
+            if lang not in ap.languages:
+                continue
+            if pid == "ALL002":
+                for i, ln in enumerate(lines, 1):
+                    if len(ln) > 100:
+                        v.append(Violation(pid, ap.name, file_path, i, ap.severity, f"Line is {len(ln)} chars", ap.recommendation))
+                continue
+            if ap.pattern_regex:
+                for i, ln in enumerate(lines, 1):
+                    if len(ln) > 300:
+                        continue
+                    if re.search(ap.pattern_regex, ln):
+                        v.append(Violation(pid, ap.name, file_path, i, ap.severity, ap.description, ap.recommendation))
+        return v
+    
+    def clear_cache(self):
+        for f in self.cache_dir.glob("*.cache"):
+            try:
+                f.unlink()
+            except:
+                pass
+        print("Cache cleared.")
+
+def main():
+    parser = argparse.ArgumentParser(description="Phenotype Anti-Pattern Linter (Cached)")
+    parser.add_argument("--path", "-p", type=Path, default=Path("."))
+    parser.add_argument("--format", "-f", choices=["text", "markdown", "json"], default="markdown")
+    parser.add_argument("--output", "-o", type=Path)
+    parser.add_argument("--strict", "-s", action="store_true")
+    parser.add_argument("--no-cache", action="store_true")
+    parser.add_argument("--clear-cache", action="store_true")
+    args = parser.parse_args()
+    
+    linter = CachedLinter()
+    
+    if args.clear_cache:
+        linter.clear_cache()
+        return
+    
+    start = time.time()
+    linter.lint_directory(args.path, use_cache=not args.no_cache)
+    print(f"Linted in {time.time()-start:.2f}s")
+    
+    print(f"\nFound {len(linter.violations)} violations")
+    if args.strict and any(v.severity == "error" for v in linter.violations):
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>Phenotype.Traceability</RootNamespace>
+    <AssemblyName>Phenotype.Traceability</AssemblyName>
+    <Version>0.1.0</Version>
+    <Authors>Phenotype Contributors</Authors>
+    <Description>Feature Requirement (FR) traceability for .NET tests</Description>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+    <PackageReference Include="NUnit" Version="4.0.0" />
+    <PackageReference Include="xunit" Version="2.6.0" />
+    <PackageReference Include="MSTest.TestFramework" Version="3.1.0" />
+  </ItemGroup>
+
+</Project>

@@ -14,7 +14,7 @@ makes all decisions, with agents acting as trusted helpers.
 | Architecture (cross-project) | Owner decides, agent researches |
 | Architecture (per-project) | Project owner decides |
 | Dependency conflicts | Agent proposes options, owner chooses |
-| PR merge | Owner reviews + merges |
+| PR merge | Owner reviews + merges. See [PR Requirements Policy](./GOVERNANCE_PR_REQUIREMENTS.md) |
 | Deleting/archiving project | Owner initiates, agent executes |
 
 ## Code Review Standards
@@ -105,4 +105,5 @@ This file tracks governance changes to the shelf itself.
 
 | Date | Change |
 |------|--------|
+| 2026-04-04 | Added PR Requirements Policy - visual evidence, specs, docs required |
 | 2026-03-29 | Initial shelf governance written (previously AgilePlus-specific) |

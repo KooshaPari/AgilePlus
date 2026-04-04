@@ -1,0 +1,171 @@
+#!/usr/bin/env python3
+"""
+Phenotype Quality Gate (pquality-gate)
+
+Unified quality gate combining:
+- ptool-audit: Forbidden/legacy tooling detection
+- panti-lint: Anti-pattern and code smell detection
+- ploc-enforce: File size and complexity enforcement
+
+Usage in pre-commit or CI:
+  pquality-gate --path . --strict
+"""
+
+import argparse
+import subprocess
+import sys
+from pathlib import Path
+from typing import List, Tuple
+
+
+def run_tool(name: str, script_path: Path, args: List[str]) -> Tuple[int, str, str]:
+    """Run a quality tool and return (exit_code, stdout, stderr)."""
+    cmd = [sys.executable, str(script_path)] + args
+    try:
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=300,  # 5 minute timeout
+        )
+        return result.returncode, result.stdout, result.stderr
+    except subprocess.TimeoutExpired:
+        return 1, "", f"{name} timed out after 5 minutes"
+    except Exception as e:
+        return 1, "", f"Failed to run {name}: {e}"
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Phenotype Unified Quality Gate",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  pquality-gate --path .                    # Run all checks
+  pquality-gate --path . --strict           # Exit with error on violations
+  pquality-gate --tool loc --path src        # Run only LOC checks
+  pquality-gate --skip tool --path .        # Run all except tooling audit
+  pquality-gate --ci-mode --path .         # CI-optimized output
+        """
+    )
+    
+    parser.add_argument("--path", "-p", type=Path, default=Path("."), help="Path to check")
+    parser.add_argument("--strict", "-s", action="store_true", help="Exit with error on any violation")
+    parser.add_argument("--tool", "-t", choices=["tool", "anti", "loc", "all"], default="all",
+                       help="Run only specific tool (default: all)")
+    parser.add_argument("--skip", help="Skip specific tool (tool, anti, loc)")
+    parser.add_argument("--ci-mode", action="store_true", help="CI-optimized output (no colors, compact)")
+    parser.add_argument("--output", "-o", type=Path, help="Output report file")
+    parser.add_argument("--format", "-f", choices=["text", "markdown", "json"], default="markdown",
+                       help="Report format")
+    
+    args = parser.parse_args()
+    
+    # Find tool scripts
+    bin_dir = Path(__file__).parent
+    tool_scripts = {
+        "tool": bin_dir / "ptool-audit",
+        "anti": bin_dir / "panti-lint",
+        "loc": bin_dir / "ploc-enforce",
+    }
+    
+    # Check which tools to run
+    tools_to_run = []
+    if args.tool == "all":
+        tools_to_run = ["tool", "anti", "loc"]
+    else:
+        tools_to_run = [args.tool]
+    
+    if args.skip and args.skip in tools_to_run:
+        tools_to_run.remove(args.skip)
+    
+    # Run tools
+    results = {}
+    all_violations = 0
+    errors = 0
+    
+    print("=" * 70)
+    print("PHENOTYPE QUALITY GATE")
+    print("=" * 70)
+    
+    for tool_name in tools_to_run:
+        script = tool_scripts.get(tool_name)
+        if not script or not script.exists():
+            print(f"\n⚠️  {tool_name}: Script not found at {script}")
+            continue
+        
+        display_name = {
+            "tool": "Tooling Audit",
+            "anti": "Anti-Pattern Lint",
+            "loc": "LOC Enforcement",
+        }.get(tool_name, tool_name)
+        
+        print(f"\n{'='*70}")
+        print(f"Running: {display_name}")
+        print(f"{'='*70}")
+        
+        tool_args = [
+            "--path", str(args.path),
+            "--format", "text" if args.ci_mode else args.format,
+        ]
+        
+        if args.strict:
+            tool_args.append("--strict")
+        
+        exit_code, stdout, stderr = run_tool(display_name, script, tool_args)
+        
+        if stdout:
+            print(stdout)
+        if stderr:
+            print(f"STDERR: {stderr}", file=sys.stderr)
+        
+        results[tool_name] = {
+            "exit_code": exit_code,
+            "has_output": bool(stdout.strip()),
+        }
+        
+        if exit_code != 0:
+            errors += 1
+        
+        # Count violations from output
+        if "violation" in stdout.lower():
+            import re
+            matches = re.findall(r'(\d+)\s+violation', stdout, re.IGNORECASE)
+            for m in matches:
+                all_violations += int(m)
+    
+    # Summary
+    print(f"\n{'='*70}")
+    print("QUALITY GATE SUMMARY")
+    print(f"{'='*70}")
+    
+    for tool_name, result in results.items():
+        display_name = {
+            "tool": "Tooling Audit",
+            "anti": "Anti-Pattern Lint",
+            "loc": "LOC Enforcement",
+        }.get(tool_name, tool_name)
+        
+        status = "✅ PASS" if result["exit_code"] == 0 else "❌ FAIL"
+        if args.ci_mode:
+            status = "PASS" if result["exit_code"] == 0 else "FAIL"
+        
+        print(f"{display_name}: {status}")
+    
+    print(f"\nTotal violations: {all_violations}")
+    
+    if errors > 0:
+        print(f"Errors found: {errors}")
+        if args.strict:
+            print("\n❌ QUALITY GATE FAILED")
+            sys.exit(1)
+        else:
+            print("\n⚠️ QUALITY GATE WARNINGS (non-strict mode)")
+    else:
+        print("\n✅ QUALITY GATE PASSED")
+    
+    sys.exit(0)
+
+
+if __name__ == "__main__":
+    main()

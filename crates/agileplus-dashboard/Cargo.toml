@@ -13,6 +13,14 @@ agileplus-domain = { path = "../agileplus-domain" }
 agileplus-events = { path = "../agileplus-events" }
 agileplus-sqlite = { path = "../agileplus-sqlite" }
 agileplus-fixtures = { path = "../agileplus-fixtures" }
+
+# Phenotype Health Integration
+phenotype-health = { path = "../../../crates/phenotype-health", features = ["http"] }
+phenotype-project-registry = { path = "../../../crates/phenotype-project-registry" }
+phenotype-compliance-scanner = { path = "../../../crates/phenotype-compliance-scanner" }
+phenotype-security-aggregator = { path = "../../../crates/phenotype-security-aggregator", features = ["real-sources"] }
+phenotype-health-cli = { path = "../../../crates/phenotype-health-cli" }
+
 askama = "0.12"
 axum = { version = "0.8", features = ["json", "macros"] }
 axum-extra = { version = "0.10", features = ["typed-header"] }
