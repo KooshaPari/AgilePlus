@@ -12,94 +12,87 @@
 //! A Neo4j-backed benchmark would be added in CI using the `neo4j` feature.
 
 use agileplus_benchmarks::helpers::make_feature;
-use agileplus_graph::{GraphConfig, GraphQueries, GraphStore, NodeStore, RelationshipStore};
+use agileplus_graph::{GraphStore, InMemoryGraphStore, Node, NodeType, Relationship, RelType};
 use criterion::{BenchmarkId, Criterion, black_box, criterion_group, criterion_main};
-use tokio::runtime::Runtime;
+use uuid::Uuid;
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-fn make_store() -> GraphStore {
-    GraphStore::in_memory(GraphConfig::default())
+fn make_store() -> InMemoryGraphStore {
+    InMemoryGraphStore::new()
 }
 
-/// Seed N feature nodes into the store and return it.
-async fn seed_features(store: &GraphStore, n: i64) {
-    let nodes = NodeStore::new(store);
+async fn seed_features(store: &InMemoryGraphStore, n: u64) {
     for i in 1..=n {
-        let f = make_feature(i);
-        nodes
-            .create_feature(
-                f.id,
-                f.slug.clone(),
-                format!("{:?}", f.state),
-                f.friendly_name.clone(),
-            )
-            .await
-            .expect("create feature node");
+        let f = make_feature(i as i64);
+        let node = Node::new(
+            NodeType::Feature,
+            serde_json::json!({
+                "id": f.id,
+                "slug": f.slug,
+                "state": format!("{:?}", f.state),
+                "friendly_name": f.friendly_name,
+            }),
+        );
+        store.upsert_node(&node).await.expect("create feature node");
     }
 }
 
-// ---------------------------------------------------------------------------
-// Benchmark: create a single feature node
-// ---------------------------------------------------------------------------
-
 fn bench_create_feature_node(c: &mut Criterion) {
-    let rt = Runtime::new().unwrap();
-
     c.bench_function("graph_create_feature_node", |b| {
         b.iter(|| {
             let store = make_store();
-            let nodes = NodeStore::new(&store);
-            rt.block_on(async {
-                nodes
-                    .create_feature(
-                        black_box(1),
-                        black_box("feat-bench".to_string()),
-                        black_box("Created".to_string()),
-                        black_box("Bench Feature".to_string()),
-                    )
-                    .await
-                    .expect("create");
+            let node = Node::new(
+                NodeType::Feature,
+                serde_json::json!({
+                    "slug": "feat-bench",
+                    "state": "Created",
+                    "friendly_name": "Bench Feature",
+                }),
+            );
+            let store = &store;
+            let node = &node;
+            futures::executor::block_on(async {
+                store.upsert_node(node).await.expect("create");
             });
         });
     });
 }
 
-// ---------------------------------------------------------------------------
-// Benchmark: get feature node by ID
-// ---------------------------------------------------------------------------
-
 fn bench_get_feature_node(c: &mut Criterion) {
-    let rt = Runtime::new().unwrap();
     let store = make_store();
-    rt.block_on(seed_features(&store, 100));
+    let feature_node = Node::new(
+        NodeType::Feature,
+        serde_json::json!({
+            "id": 50_i64,
+            "slug": "feat-50",
+            "state": "Created",
+            "friendly_name": "Feature 50",
+        }),
+    );
+    let feature_id = feature_node.id;
+    futures::executor::block_on(async {
+        store.upsert_node(&feature_node).await.expect("seed");
+    });
 
     c.bench_function("graph_get_feature_node", |b| {
         b.iter(|| {
-            let nodes = NodeStore::new(&store);
-            rt.block_on(async {
-                let f = nodes.get_feature(black_box(50)).await.expect("get");
-                black_box(f.map(|v| v["id"].as_i64()))
+            let store = &store;
+            let feature_id = black_box(feature_id);
+            futures::executor::block_on(async {
+                let node = store.get_node(feature_id);
+                black_box(node.map(|v| v.id));
             })
         });
     });
 }
 
-// ---------------------------------------------------------------------------
-// Benchmark: seed N nodes (measures bulk-creation throughput)
-// ---------------------------------------------------------------------------
-
 fn bench_seed_n_features(c: &mut Criterion) {
-    let rt = Runtime::new().unwrap();
     let mut group = c.benchmark_group("graph_seed_features");
 
-    for count in [10_i64, 50, 100] {
+    for count in [10_u64, 50, 100] {
         group.bench_with_input(BenchmarkId::new("seed_features", count), &count, |b, &n| {
             b.iter(|| {
                 let store = make_store();
-                rt.block_on(seed_features(&store, black_box(n)));
+                futures::executor::block_on(seed_features(&store, black_box(n)));
             });
         });
     }
@@ -107,57 +100,61 @@ fn bench_seed_n_features(c: &mut Criterion) {
     group.finish();
 }
 
-// ---------------------------------------------------------------------------
-// Benchmark: relationship creation
-// ---------------------------------------------------------------------------
-
 fn bench_create_relationships(c: &mut Criterion) {
-    let rt = Runtime::new().unwrap();
     let store = make_store();
-    rt.block_on(async {
-        // Seed features 1..=10 and WPs 1..=10
-        let nodes = NodeStore::new(&store);
-        for i in 1..=10_i64 {
-            nodes
-                .create_feature(i, format!("f-{i}"), "Created".into(), format!("F{i}"))
-                .await
-                .unwrap();
-            nodes
-                .create_workpackage(i, format!("WP-{i}"), "todo".into(), i as i32)
-                .await
-                .unwrap();
+    futures::executor::block_on(async {
+        for i in 1..=10_u64 {
+            let feature_node = Node::new(
+                NodeType::Feature,
+                serde_json::json!({"id": i, "slug": format!("f-{i}"), "state": "Created", "friendly_name": format!("F{i}")}),
+            );
+            let wp_node = Node::new(
+                NodeType::WorkPackage,
+                serde_json::json!({"id": i, "title": format!("WP-{i}"), "state": "todo", "ordinal": i as i32}),
+            );
+            store.upsert_node(&feature_node).await.unwrap();
+            store.upsert_node(&wp_node).await.unwrap();
         }
     });
 
     c.bench_function("graph_create_owns_relationship", |b| {
         b.iter(|| {
-            let rels = RelationshipStore::new(&store);
-            rt.block_on(async {
-                rels.owns(black_box(1), black_box(1)).await.expect("owns");
+            let store = &store;
+            let nodes = futures::executor::block_on(async {
+                store.get_nodes_by_type(NodeType::Feature)
             });
+            if let Some(feature) = nodes.first() {
+                let wps = futures::executor::block_on(async {
+                    store.get_nodes_by_type(NodeType::WorkPackage)
+                });
+                if let Some(wp) = wps.first() {
+                    let rel = Relationship::new(feature.id, wp.id, RelType::Owns);
+                    futures::executor::block_on(async {
+                        store.create_relationship(&rel).await.expect("owns");
+                    });
+                }
+            }
         });
     });
 }
 
-// ---------------------------------------------------------------------------
-// Benchmark: dependency-chain traversal query
-// ---------------------------------------------------------------------------
-
 fn bench_dependency_chain_query(c: &mut Criterion) {
-    let rt = Runtime::new().unwrap();
     let store = make_store();
-    rt.block_on(seed_features(&store, 100));
+    futures::executor::block_on(seed_features(&store, 100));
 
     c.bench_function("graph_dependency_chain_query", |b| {
         b.iter(|| {
-            let queries = GraphQueries::new(&store);
-            rt.block_on(async {
-                let chain = queries
-                    .get_dependency_chain(black_box(1))
-                    .await
-                    .expect("query");
-                black_box(chain.len())
-            })
+            let store = &store;
+            let nodes = futures::executor::block_on(async {
+                store.get_nodes_by_type(NodeType::Feature)
+            });
+            if let Some(first_feature) = nodes.first() {
+                let id = black_box(first_feature.id);
+                futures::executor::block_on(async {
+                    let chain = store.get_dependencies(id).await.expect("query");
+                    black_box(chain.len())
+                })
+            }
         });
     });
 }
@@ -172,61 +169,57 @@ criterion_group!(
 );
 criterion_main!(benches);
 
-// ---------------------------------------------------------------------------
-// Smoke tests
-// ---------------------------------------------------------------------------
-
 #[cfg(test)]
-#[allow(unused_imports)]
 mod tests {
-    use super::{make_store, seed_features};
-    use agileplus_graph::{GraphQueries, NodeStore, RelationshipStore};
+    use super::*;
 
     #[tokio::test]
     async fn create_and_get_feature_smoke() {
         let store = make_store();
-        let nodes = NodeStore::new(&store);
-        nodes
-            .create_feature(1, "smoke".into(), "Created".into(), "Smoke".into())
-            .await
-            .unwrap();
-        let f = nodes.get_feature(1).await.unwrap();
-        assert!(f.is_some());
+        let node = Node::new(
+            NodeType::Feature,
+            serde_json::json!({"slug": "smoke", "state": "Created", "friendly_name": "Smoke"}),
+        );
+        store.upsert_node(&node).await.unwrap();
+        let retrieved = store.get_node(node.id);
+        assert!(retrieved.is_some());
     }
 
     #[tokio::test]
     async fn seed_100_features_smoke() {
         let store = make_store();
         seed_features(&store, 100).await;
-        // No panic = success; in-memory backend doesn't enforce uniqueness
-        let nodes = NodeStore::new(&store);
-        let f = nodes.get_feature(50).await.unwrap();
-        assert!(f.is_some());
+        let nodes = store.get_nodes_by_type(NodeType::Feature);
+        assert_eq!(nodes.len(), 100);
     }
 
     #[tokio::test]
     async fn dependency_chain_empty_smoke() {
         let store = make_store();
         seed_features(&store, 10).await;
-        let queries = GraphQueries::new(&store);
-        let chain = queries.get_dependency_chain(1).await.unwrap();
-        // In-memory backend returns empty for traversal queries
-        assert!(chain.is_empty());
+        let nodes = store.get_nodes_by_type(NodeType::Feature);
+        if let Some(first) = nodes.first() {
+            let chain = store.get_dependencies(first.id).await.unwrap();
+            assert!(chain.is_empty());
+        }
     }
 
     #[tokio::test]
     async fn relationship_create_smoke() {
         let store = make_store();
-        let nodes = NodeStore::new(&store);
-        nodes
-            .create_feature(1, "f1".into(), "Created".into(), "F1".into())
-            .await
-            .unwrap();
-        nodes
-            .create_workpackage(1, "WP1".into(), "todo".into(), 1)
-            .await
-            .unwrap();
-        let rels = RelationshipStore::new(&store);
-        rels.owns(1, 1).await.unwrap();
+        let feature = Node::new(
+            NodeType::Feature,
+            serde_json::json!({"id": 1, "slug": "f1", "state": "Created", "friendly_name": "F1"}),
+        );
+        let wp = Node::new(
+            NodeType::WorkPackage,
+            serde_json::json!({"id": 1, "title": "WP1", "state": "todo", "ordinal": 1}),
+        );
+        store.upsert_node(&feature).await.unwrap();
+        store.upsert_node(&wp).await.unwrap();
+        let rel = Relationship::new(feature.id, wp.id, RelType::Owns);
+        store.create_relationship(&rel).await.unwrap();
+        let deps = store.get_dependencies(feature.id).await.unwrap();
+        assert_eq!(deps.len(), 1);
     }
 }
