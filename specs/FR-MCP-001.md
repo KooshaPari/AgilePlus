@@ -33,6 +33,19 @@ heliosCLI has `helios-mcp-server` for MCP functionality. Phenotype crates have `
 - Establish `phenotype-mcp-core` as canonical
 - Align helios-mcp-server on phenotype types
 
+
+## User Stories
+
+### US-1: Core Functionality (P1)
+**Given** a user of the system,
+**When** they interact with this feature,
+**Then** the system behaves as specified with proper traceability.
+
+### US-2: Integration Scenario (P2)
+**Given** the component is part of the ecosystem,
+**When** integrated with other components,
+**Then** it maintains FR traceability and governance compliance.
+
 ## Acceptance Criteria
 
 - [ ] MCP duplication audit complete

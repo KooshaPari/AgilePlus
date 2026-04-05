@@ -1,10 +1,10 @@
 WP,Title,Owner,State,Est,Dependencies
-WP1,Define SandboxExecutor trait,helios-team,in_progress,2d,
-WP2,Create nanovms-client crate,nanovms-team,planned,4d,
-WP3,Implement nanovms-sandbox-adapter,helios-team,planned,5d,WP2
-WP4,Linux integration (nanovms + legacy),helios-team,planned,3d,WP3
-WP5,macOS integration (Lima),helios-team,planned,4d,WP3
-WP6,Windows integration (WSL2),helios-team,planned,4d,WP3
-WP7,Policy mapping & validation,helios-team,planned,3d,WP4-6
-WP8,Integration tests (all platforms),cross-team,planned,5d,WP4-7
-WP9,Documentation & migration guide,docs-team,planned,2d,WP8
+WP1,Define SandboxExecutor trait,helios-team,completed,2d,
+WP2,Create nanovms-client crate,nanovms-team,completed,4d,
+WP3,Implement nanovms-sandbox-adapter,helios-team,completed,5d,WP2
+WP4,Linux integration (nanovms + legacy),helios-team,completed,3d,WP3
+WP5,macOS integration (Lima),helios-team,completed,4d,WP3
+WP6,Windows integration (WSL2),helios-team,completed,4d,WP3
+WP7,Policy mapping & validation,helios-team,completed,3d,WP4-6
+WP8,Integration tests (all platforms),cross-team,completed,5d,WP4-7
+WP9,Documentation & migration guide,docs-team,completed,2d,WP8

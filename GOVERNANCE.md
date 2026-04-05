@@ -99,6 +99,110 @@ Rare. Only after confirmed backup + no downstream dependencies.
 
 **All agents ask before acting outside their authority.**
 
+## Agent Artifact Population Requirements
+
+### Default Agent Behavior
+
+All agents MUST populate artifacts by default when creating or modifying code:
+
+| When Agent... | Must Populate... |
+|--------------|------------------|
+| Creates new repo | All 10 required artifacts |
+| Adds FR reference | Update `specs/` and traceability |
+| Modifies core logic | Update `ADR.md` if architectural |
+| Changes API | Update `ARCHITECTURE.md` interfaces |
+| Implements feature | Add User Stories to FR specs |
+| Creates tests | Add FR annotations to test files |
+| Fixes bug | Update `plan.md` completion status |
+
+### Artifact Completeness Check
+
+Before ANY commit, agents must verify:
+- [ ] `CLAUDE.md` exists and reflects current state
+- [ ] `AGENTS.md` rules up to date
+- [ ] `README.md` accurate for users
+- [ ] `plan.md` shows current work items
+- [ ] All tests have FR traceability annotations
+
+## Documentation & GitHub Pages Governance
+
+### VitePress Documentation Sites
+
+All repositories MUST derive documentation from:
+- **Primary Source**: `AgilePlus/docs/` (shared patterns)
+- **Repository**: `docs/` folder within each repo
+- **Backend**: PhenoDocs VitePress instance
+- **Hosting**: GitHub Pages (auto-deploy via CI/CD)
+
+| Repository | Docs Source | GitHub Pages URL |
+|------------|-------------|------------------|
+| `AgilePlus` | `/docs` + `/specs` | `phenotype.io/agileplus` |
+| `phenoSDK` | `/docs` derived from AgilePlus | `phenotype.io/phenosdk` |
+| `thegent` | `/docs` + generated API docs | `phenotype.io/thegent` |
+| All others | `/docs` folder (minimal) | `phenotype.io/<repo-name>` |
+
+### GitHub Repository Metadata Standards
+
+All repositories MUST maintain complete GitHub metadata:
+
+**Description** (Required)
+- Pattern: "[Component Type]: [Purpose] | [Status] | [Owner]"
+- Example: "SDK: Python infrastructure toolkit | Active | Phenotype"
+
+**Website** (Required)
+- Primary: `https://phenotype.io/[repo-name]`
+- Fallback: GitHub Pages URL if custom domain unavailable
+
+**Topics** (Required, 3-5 tags)
+```
+# Language/Runtime
+rust python typescript go elixir
+
+# Component Type  
+sdk cli library framework tool
+
+# Domain
+observability security governance tracing
+mcp testing infrastructure
+
+# Status
+active maintenance archived experimental
+```
+
+**Repository Features** (Enable All)
+- ✅ Releases (with automated changelog)
+- ✅ Deployments (GitHub Actions)
+- ✅ Packages (container/npm/crates)
+- ✅ Issues (bug reports, feature requests)
+- ✅ Discussions (community Q&A)
+- ✅ Wiki (deprecated - use docs/ instead)
+- ✅ Projects (AgilePlus integration)
+- ✅ Security (Snyk scanning)
+
+### Documentation Deployment Flow
+
+```
+1. Agent updates code
+   ↓
+2. Agent updates docs/ folder artifacts
+   ↓
+3. CI/CD triggers on push to main
+   ↓
+4. VitePress builds documentation
+   ↓
+5. GitHub Pages deploys to phenotype.io/[repo]
+   ↓
+6. Validation script verifies docs are current
+```
+
+### PhenoDocs Integration
+
+- **Backend**: VitePress with custom theme
+- **Search**: Algolia DocSearch integration
+- **Versioning**: Semantic versioning per repo
+- **Cross-linking**: All docs link to related repos
+- **Traceability**: All docs include FR references
+
 ## Change Log
 
 This file tracks governance changes to the shelf itself.

@@ -27,6 +27,19 @@ phenoSDK mixes 10+ domains in one monolith. The foundation should be extracted a
 - `pheno.ports.observability` (Logger, Tracer, Meter, HealthChecker, Alerter)
 - `pheno.ports.registry` (Registry, SearchableRegistry, ObservableRegistry)
 
+
+## User Stories
+
+### US-1: SDK Integration (P0)
+**Given** a developer integrating phenoSDK,
+**When** they use SDK features,
+**Then** the SDK provides consistent, well-documented interfaces.
+
+### US-2: SDK Reliability (P1)
+**Given** a production system using phenoSDK,
+**When** SDK operations are performed,
+**Then** they complete successfully without NotImplementedError.
+
 ## Acceptance Criteria
 
 - [ ] New package: pheno-core with foundation modules

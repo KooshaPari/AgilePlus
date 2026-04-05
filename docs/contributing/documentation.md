@@ -217,5 +217,7 @@ See [Service Controls Documentation](../dashboard/service-controls.md) for a com
 
 ## Related
 
+- [Recording Visuals](./recording-visuals.md) - Tools for creating GIFs/screenshots
+- [pvalidate Tool](./pvalidate.md) - Validate PR requirements locally
 - [PR Requirements Policy](../../GOVERNANCE_PR_REQUIREMENTS.md)
 - [Spec Format](./specs.md)

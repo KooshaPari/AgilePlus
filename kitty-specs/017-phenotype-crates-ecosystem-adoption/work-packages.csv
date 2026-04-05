@@ -1,8 +1,8 @@
 WP,Title,Owner,State,Est,Dependencies
-WP1,bare-cua migration (config validation errors),infrakit-team,in_progress,5d,
-WP2,heliosCLI migration (telemetry metrics health),infrakit-team,in_progress,5d,
-WP3,HexaKit migration (contracts port-traits),infrakit-team,in_progress,4d,
-WP4,agentapi-plusplus migration (errors async),infrakit-team,in_progress,3d,
-WP5,Create migration guides,docs-team,planned,3d,WP1-4
-WP6,Adoption tracking dashboard,infrakit-team,planned,2d,WP5
-WP7,Cross-project integration tests,cross-team,planned,3d,WP1-4
+WP1,bare-cua migration (config validation errors),infrakit-team,completed,5d,
+WP2,heliosCLI migration (telemetry metrics health),infrakit-team,completed,5d,
+WP3,HexaKit migration (contracts port-traits),infrakit-team,completed,4d,
+WP4,agentapi-plusplus migration (errors async),infrakit-team,completed,1d,
+WP5,Create migration guides,docs-team,completed,3d,WP1-4
+WP6,Adoption tracking dashboard,infrakit-team,completed,2d,WP5
+WP7,Cross-project integration tests,cross-team,completed,3d,WP1-4

@@ -8,8 +8,9 @@ Cross-repo documentation and architectural decisions for the AgilePlus project m
 - **[CLI](./cli/)** - Command-line interface reference
 - **[API](./api/)** - REST API documentation
 - **[Guide](./guide/)** - Getting started and how-to guides
+- **[Contributing](./contributing/)** - Contribution guidelines and tools
 - **[ADR](./adr/)** - Architecture Decision Records
-- **[Specs](./specs/)** - Feature specifications
+- **[Specs](../kitty-specs/)** - Feature specifications
 
 ## Navigation
 
@@ -21,7 +22,15 @@ Use the sidebar to browse feature documentation. Each feature includes:
 
 ## Contributing
 
-- [Documentation Guide](./contributing/documentation.md) - How to write feature docs
-- [Spec Format](./contributing/specs.md) - Specification structure
-- [PR Requirements](../GOVERNANCE_PR_REQUIREMENTS.md) - PR requirements policy
+See the [Contributing Guide](./contributing/) for:
+- PR requirements and workflow
+- Documentation standards
+- Recording visual evidence
+- Using validation tools
+
+## Related
+
+- [PR Requirements Policy](../GOVERNANCE_PR_REQUIREMENTS.md)
+- [Contributing Guide](../CONTRIBUTING.md)
+
 

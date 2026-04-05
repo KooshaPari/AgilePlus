@@ -23,6 +23,33 @@ AgilePlus is a local, git+SQLite-backed spec-driven development engine that runs
 - Implement governance with smart contract system for evidence-backed transitions
 - Maintain hash-chained audit logs and policy-driven quality gates
 
+## User Stories
+
+### US-1: Developer Initializes Project (P0)
+**Given** a developer with a new project idea,  
+**When** they run `agileplus init`,  
+**Then** a git+SQLite project structure is created with CLAUDE.md and AGENTS.md templates.
+
+### US-2: Spec Creation with Agent Assistance (P0)
+**Given** a developer wants to capture requirements,  
+**When** they use natural language to describe the feature,  
+**Then** AgilePlus generates a structured FR spec with acceptance criteria and work packages.
+
+### US-3: Plan Generation with Work Packages (P1)
+**Given** an approved FR spec,  
+**When** the developer runs `agileplus plan`,  
+**Then** work packages are created with estimates, dependencies, and assigned repositories.
+
+### US-4: Evidence-Backed State Transitions (P1)
+**Given** a work package in "implementing" state,  
+**When** the developer provides commit evidence,  
+**Then** the state transitions to "verify" with hash-chained audit log entry.
+
+### US-5: Cross-Repo Coordination (P1)
+**Given** a feature spanning multiple repositories,  
+**When** work packages are assigned to different repos,  
+**Then** gRPC communication ensures synchronized state across the ecosystem.
+
 ## Acceptance Criteria
 
 - [ ] CLI with 7 primary commands: `init`, `specify`, `plan`, `implement`, `verify`, `deliver`, `archive`

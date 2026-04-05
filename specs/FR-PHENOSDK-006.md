@@ -19,6 +19,19 @@ Extract stable ports and public DTOs from `pheno/ports` into versioned contract 
 
 Versioned contracts consumable by TypeScript, Go, and other language clients.
 
+
+## User Stories
+
+### US-1: SDK Integration (P0)
+**Given** a developer integrating phenoSDK,
+**When** they use SDK features,
+**Then** the SDK provides consistent, well-documented interfaces.
+
+### US-2: SDK Reliability (P1)
+**Given** a production system using phenoSDK,
+**When** SDK operations are performed,
+**Then** they complete successfully without NotImplementedError.
+
 ## Acceptance Criteria
 
 - [ ] Inventory of port modules and adapter coupling

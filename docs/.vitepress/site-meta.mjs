@@ -10,6 +10,7 @@ export function createSiteMeta({ base = '/' } = {}) {
         { text: 'Dashboard', link: '/dashboard/' },
         { text: 'CLI', link: '/cli/' },
         { text: 'API', link: '/api/' },
+        { text: 'Contributing', link: '/contributing/documentation' },
       ],
       sidebar: {
         '/dashboard/': [
@@ -42,6 +43,17 @@ export function createSiteMeta({ base = '/' } = {}) {
             text: 'Guide',
             items: [
               { text: 'Getting Started', link: '/guide/' },
+            ]
+          }
+        ],
+        '/contributing/': [
+          {
+            text: 'Contributing',
+            items: [
+              { text: 'Overview', link: '/contributing/' },
+              { text: 'Documentation', link: '/contributing/documentation' },
+              { text: 'Recording Visuals', link: '/contributing/recording-visuals' },
+              { text: 'pvalidate Tool', link: '/contributing/pvalidate' },
             ]
           }
         ],

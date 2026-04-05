@@ -23,6 +23,23 @@ Module system and development cycle management for AgilePlus, enabling granular 
 - Enable dependency tracking between modules
 - Provide cycle metrics and analytics
 
+## User Stories
+
+### US-1: Module Definition (P1)
+**Given** a complex project with multiple components,  
+**When** the architect defines module boundaries,  
+**Then** each module has clear interfaces, dependencies, and ownership assigned.
+
+### US-2: Cycle-Based Development (P1)
+**Given** a work package in "planned" state,  
+**When** a developer starts implementation,  
+**Then** the cycle transitions through: draft → planned → active → review → done with gating criteria at each step.
+
+### US-3: Dependency Visualization (P2)
+**Given** multiple modules with interdependencies,  
+**When** viewing the project dashboard,  
+**Then** a dependency graph shows critical path and potential blockers.
+
 ## Acceptance Criteria
 
 - [ ] Module definition with clear interfaces

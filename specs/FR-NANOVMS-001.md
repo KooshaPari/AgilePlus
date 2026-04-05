@@ -33,6 +33,19 @@ bare-cua enables AI agents to interact with computer systems through tool execut
   - Tier 2 (gVisor): Browser automation and semi-trusted code (~90ms startup)
   - Tier 3 (Firecracker): Full isolation for untrusted file operations (~125ms startup)
 
+
+## User Stories
+
+### US-1: Sandboxed Execution (P1)
+**Given** a system running untrusted code,
+**When** execution is triggered,
+**Then** the code runs in an appropriately tiered sandbox (WASM/gVisor/Firecracker).
+
+### US-2: Cross-Platform Isolation (P1)
+**Given** developers on different platforms (macOS, Linux, Windows),
+**When** they run sandboxed workloads,
+**Then** they get consistent isolation behavior.
+
 ## Acceptance Criteria
 
 - [ ] WASM sandbox for fast tool execution

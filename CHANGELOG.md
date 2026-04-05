@@ -9,6 +9,13 @@ Format: [CalVer](https://calver.org) -- `YEAR.MONTH(WAVE).PATCH`
 
 ## [Unreleased]
 
+### Governance
+
+- **governance**: Add PR visual requirements policy (#023)
+  - PRs now require embedded screenshots/GIFs, completed specs, and documentation pages
+  - [Documentation →](docs/contributing/documentation.md)
+  - [Spec →](kitty-specs/023-pr-visual-requirements/spec.md)
+
 ### Features
 
 <!-- Template for new entries:

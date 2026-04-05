@@ -15,6 +15,19 @@ source: kitty-specs/phenosdk-fix-notimplemented
 
 Address 60+ NotImplementedError instances across phenoSDK to make it production-ready. Critical: auth playwright adapter (BROKEN), vector search client (PARTIALLY IMPLEMENTED), DB adapters (in-memory only).
 
+
+## User Stories
+
+### US-1: SDK Integration (P0)
+**Given** a developer integrating phenoSDK,
+**When** they use SDK features,
+**Then** the SDK provides consistent, well-documented interfaces.
+
+### US-2: SDK Reliability (P1)
+**Given** a production system using phenoSDK,
+**When** SDK operations are performed,
+**Then** they complete successfully without NotImplementedError.
+
 ## Acceptance Criteria
 
 - [ ] auth/playwright_adapter.py: implement or properly abstract

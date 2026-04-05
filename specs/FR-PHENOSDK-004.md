@@ -27,6 +27,19 @@ Extract pheno-llm package from monolith with high-value CPU-intensive components
 - `context_folder.fold()` — tokenizer string manipulation
 - Expose as: `from pheno_llm_rs import route, fold`
 
+
+## User Stories
+
+### US-1: SDK Integration (P0)
+**Given** a developer integrating phenoSDK,
+**When** they use SDK features,
+**Then** the SDK provides consistent, well-documented interfaces.
+
+### US-2: SDK Reliability (P1)
+**Given** a production system using phenoSDK,
+**When** SDK operations are performed,
+**Then** they complete successfully without NotImplementedError.
+
 ## Acceptance Criteria
 
 - [ ] pheno-llm package with routing, optimization, protocol modules

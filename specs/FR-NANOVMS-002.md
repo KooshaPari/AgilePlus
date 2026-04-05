@@ -15,6 +15,19 @@ source: kitty-specs/015-helioscli-nanovms-integration
 
 Integrate heliosCLI with nanovms isolation for secure agent execution.
 
+
+## User Stories
+
+### US-1: Sandboxed Execution (P1)
+**Given** a system running untrusted code,
+**When** execution is triggered,
+**Then** the code runs in an appropriately tiered sandbox (WASM/gVisor/Firecracker).
+
+### US-2: Cross-Platform Isolation (P1)
+**Given** developers on different platforms (macOS, Linux, Windows),
+**When** they run sandboxed workloads,
+**Then** they get consistent isolation behavior.
+
 ## Acceptance Criteria
 
 - [ ] heliosCLI runs in nanovms sandboxed environment

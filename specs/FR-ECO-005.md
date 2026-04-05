@@ -15,6 +15,19 @@ source: kitty-specs/eco-005-xdd-quality
 
 XDD (Executable-Driven Development) quality verification. Test infrastructure verified.
 
+
+## User Stories
+
+### US-1: Maintenance Automation (P1)
+**Given** an operations engineer monitoring the system,
+**When** maintenance tasks are required,
+**Then** automated tools handle routine operations with minimal manual intervention.
+
+### US-2: Ecosystem Health (P2)
+**Given** a platform administrator,
+**When** ecosystem health degrades,
+**Then** early warnings and remediation guidance are provided.
+
 ## Acceptance Criteria
 
 - [ ] XDD quality gates implemented

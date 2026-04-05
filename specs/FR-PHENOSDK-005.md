@@ -25,6 +25,19 @@ pheno/mcp is atoms-specific and embedded in monolith. Should be usable by any MC
 - `pheno/mcp/agents/orchestration.py` (372 LOC)
 - `pheno/mcp/entry_points.py` (generalized)
 
+
+## User Stories
+
+### US-1: SDK Integration (P0)
+**Given** a developer integrating phenoSDK,
+**When** they use SDK features,
+**Then** the SDK provides consistent, well-documented interfaces.
+
+### US-2: SDK Reliability (P1)
+**Given** a production system using phenoSDK,
+**When** SDK operations are performed,
+**Then** they complete successfully without NotImplementedError.
+
 ## Acceptance Criteria
 
 - [ ] pheno-mcp package with mcp/, tools/, agents/ modules

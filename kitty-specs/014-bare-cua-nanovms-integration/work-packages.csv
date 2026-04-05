@@ -1,5 +1,5 @@
 WP,Title,Owner,State,Est,Dependencies
-WP1,nanovms Rust client library,nanovms-team,in_progress,3d,
+WP1,nanovms Rust client library,nanovms-team,completed,3d,
 WP2,bare-cua sandbox trait,bare-cua-team,planned,2d,
 WP3,Tier 1 (WASM) adapter,nanovms-team,planned,3d,WP1
 WP4,Tier 2 (gVisor) adapter,nanovms-team,planned,4d,WP1
