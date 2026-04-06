@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100">
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#4a90d9;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#5cb85c;stop-opacity:1" />
+    </linearGradient>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#666"/>
+    </marker>
+  </defs>
+  <!-- Background -->
+  <rect width="200" height="100" fill="#f8f9fa"/>
+  <!-- Nodes -->
+  <circle cx="40" cy="50" r="18" fill="#4a90d9"/>
+  <circle cx="100" cy="50" r="18" fill="url(#grad1)"/>
+  <circle cx="160" cy="50" r="18" fill="#5cb85c"/>
+  <!-- Arrows -->
+  <path d="M58 50 L82 50" stroke="#666" stroke-width="3" marker-end="url(#arrow)"/>
+  <path d="M118 50 L142 50" stroke="#666" stroke-width="3" marker-end="url(#arrow)"/>
+  <!-- Labels -->
+  <text x="40" y="85" text-anchor="middle" font-size="11" fill="#333">Source</text>
+  <text x="100" y="85" text-anchor="middle" font-size="11" fill="#333">Transform</text>
+  <text x="160" y="85" text-anchor="middle" font-size="11" fill="#333">Target</text>
+</svg>
