@@ -8,6 +8,39 @@
 - **State**: specified
 - **Scope**: Cross-repo (8 repositories)
 
+## Research
+
+This specification is informed by comprehensive SOTA research documented in [SOTA_RESEARCH_POLYINFRA.md](../../../SOTA_RESEARCH_POLYINFRA.md).
+
+### Storage Backend Decisions
+
+Based on benchmark analysis, the observability stack uses:
+
+| Component | Choice | Alternative | Benchmark |
+|-----------|--------|-------------|-----------|
+| **Cache/Sessions** | Dragonfly | Redis | 25x faster, 30-50% less memory |
+| **Time-Series (Metrics)** | QuestDB | InfluxDB | 100x faster, SQL native |
+| **Vector Search (Traces)** | Qdrant | Pinecone | Self-hosted, Apache license |
+| **Messaging** | NATS | Redis Pub/Sub | Persistence, JetStream |
+| **Object Storage** | MinIO | AWS S3 | Self-hosted, S3-compatible |
+
+### Rationale
+
+- **Dragonfly**: BSL license accepted for 25x performance gain. Fallback to KeyDB/Valkey available if license becomes problematic.
+- **QuestDB**: SQL interface critical for observability queries. Can migrate to TimescaleDB if ecosystem concerns arise.
+- **Qdrant**: Self-hosted eliminates Pinecone costs ($70/mo+). Apache license preferred.
+- **NATS**: Redis Pub/Sub lacks persistence - not suitable for production messaging.
+- **MinIO**: AGPL acceptable for infrastructure. 10x faster than S3, no egress costs.
+
+### Gap Analysis
+
+From SOTA research, we identified:
+- No unified storage backend selection criteria existed
+- Performance benchmarks were assumptions, not validated
+- License implications not fully considered
+
+This research ensures data-driven decisions rather than assumptions.
+
 ## Context
 
 The Phenotype ecosystem requires comprehensive observability to support debugging, performance monitoring, and operational excellence. Currently, observability concerns are scattered across 8 repositories with incomplete implementations, inconsistent interfaces, and missing integration points.
