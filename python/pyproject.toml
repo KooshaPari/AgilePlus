@@ -6,7 +6,7 @@ requires-python = ">=3.14"
 dependencies = [
   "grpcio>=1.62",
   "grpcio-tools>=1.62",
-  "protobuf>=5.0",
+  "protobuf>=7.34.1",
   "fastmcp>=2.0",
   "grpcio-health-checking>=1.62",
 ]
