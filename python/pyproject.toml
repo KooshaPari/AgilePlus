@@ -5,7 +5,7 @@ description = "AgilePlus Python components: gRPC proto stubs and MCP service"
 requires-python = ">=3.14"
 dependencies = [
   "grpcio>=1.62",
-  "grpcio-tools>=1.62",
+  "grpcio-tools>=1.80.0",
   "protobuf>=5.0",
   "fastmcp>=2.0",
   "grpcio-health-checking>=1.62",
