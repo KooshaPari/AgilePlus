@@ -56,3 +56,11 @@ See `projects/INDEX.md` for the full catalog of all projects in this shelf.
 | Governance rules | `AGENTS.md` |
 | Architecture decisions | `docs/adr/` |
 | Cross-project scripts | `scripts/` |
+| Scripting language policy | `docs/governance/scripting_policy.md` |
+
+## Scripting Language Hierarchy
+
+All scripts and tools in AgilePlus (and any project in this shelf) follow the Phenotype-org scripting hierarchy: **Rust default; Zig/Mojo/Go with one-line justification; Python/TS only when embedded in an existing Python/TS runtime; Bash only as ≤5-line glue with an inline justification comment.** No new shell for CI, hooks, sync, or codegen; migrate existing shell when touched.
+
+- Canonical long-form: `/Users/kooshapari/CodeProjects/Phenotype/repos/docs/governance/scripting_policy.md`
+- Canonical wording (global): `~/.claude/CLAUDE.md` → "Scripting Language Hierarchy"
