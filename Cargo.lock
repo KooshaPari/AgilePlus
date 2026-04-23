@@ -237,15 +237,13 @@ dependencies = [
 
 [[package]]
 name = "agileplus-fixtures"
-version = "0.1.1"
+version = "0.1.0"
 dependencies = [
  "agileplus-domain",
  "chrono",
- "rand 0.8.5",
  "serde",
  "serde_json",
  "tokio",
- "uuid",
 ]
 
 [[package]]

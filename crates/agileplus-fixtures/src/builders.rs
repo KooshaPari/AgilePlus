@@ -223,7 +223,7 @@ mod tests {
         assert_eq!(wp.feature_id, 1);
         assert_eq!(wp.title, "Test WP");
         assert_eq!(wp.state, WpState::Done);
-        assert_eq!(wp.summary, "This is a test");
+        assert_eq!(wp.acceptance_criteria, "This is a test");
         assert_eq!(wp.file_scope, vec!["src/lib.rs"]);
     }
 
