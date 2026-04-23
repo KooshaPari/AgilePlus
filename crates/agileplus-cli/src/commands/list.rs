@@ -36,8 +36,8 @@ pub async fn run<S: StoragePort>(args: ListArgs, storage: &S) -> Result<()> {
     }
 
     println!(
-        "{:<8}  {:<36}  {:<14}  {}",
-        "ID", "SLUG", "STATE", "TITLE"
+        "{:<8}  {:<36}  {:<14}  TITLE",
+        "ID", "SLUG", "STATE"
     );
     println!("{}", "-".repeat(100));
 

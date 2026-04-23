@@ -10,9 +10,10 @@
 //! Traceability: WP11-T060, T065 / Cross-command consolidation
 
 use std::fmt::Debug;
+use std::str::FromStr;
 use std::time::{Duration, Instant};
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use serde::Serialize;
 
 use agileplus_domain::ports::{StoragePort, VcsPort};
@@ -26,9 +27,11 @@ pub enum OutputFormat {
     Json,
 }
 
-impl OutputFormat {
+impl FromStr for OutputFormat {
+    type Err = anyhow::Error;
+
     /// Parse from string (case-insensitive).
-    pub fn from_str(s: &str) -> Result<Self> {
+    fn from_str(s: &str) -> Result<Self> {
         match s.to_lowercase().as_str() {
             "json" => Ok(OutputFormat::Json),
             "table" => Ok(OutputFormat::Table),
@@ -117,7 +120,7 @@ impl<'a, S: StoragePort, V: VcsPort> CommandContext<'a, S, V> {
 
     /// Parse and set output format from a string argument.
     pub fn with_format_str(mut self, format_str: &str) -> Result<Self> {
-        self.output_format = OutputFormat::from_str(format_str)?;
+        self.output_format = format_str.parse::<OutputFormat>()?;
         Ok(self)
     }
 
@@ -170,13 +173,13 @@ impl<'a, S: StoragePort, V: VcsPort> CommandContext<'a, S, V> {
         F: FnOnce(&mut tracing::Span),
     {
         self.telemetry.duration = self.start_time.elapsed();
-        let span = tracing::info_span!(
+        let mut span = tracing::info_span!(
             "command_complete",
             command = %self.command_name,
             elapsed_ms = self.telemetry.duration_ms()
         );
-        let mut guard = span.enter();
-        let _ = guard;
+        extra_fields(&mut span);
+        let _guard = span.enter();
         tracing::info!("command completed successfully");
     }
 
@@ -272,7 +275,7 @@ impl<'a, S: StoragePort> StorageOnlyContext<'a, S> {
 
     /// Parse and set output format from a string argument.
     pub fn with_format_str(mut self, format_str: &str) -> Result<Self> {
-        self.output_format = OutputFormat::from_str(format_str)?;
+        self.output_format = format_str.parse::<OutputFormat>()?;
         Ok(self)
     }
 
