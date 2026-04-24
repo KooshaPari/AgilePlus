@@ -5,6 +5,28 @@ ignore = [
     { id = "RUSTSEC-2025-0140", reason = "No safe upgrade available. gix = 0.71 pinned in Cargo.toml, requires breaking API change." },
 ]
 
+# LOW severity advisories deferred pending upstream fixes (2026-04-24 audit)
+# Expires: 2026-07-23
+[[advisories.ignore]]
+advisory = "RUSTSEC-2026-0009"
+reason = "time crate: LOW severity DoS via stack exhaustion. Awaiting upstream mitigation."
+
+[[advisories.ignore]]
+advisory = "RUSTSEC-2026-0037"
+reason = "quinn-proto: LOW severity panic on invalid QUIC params. Awaiting upstream fix."
+
+[[advisories.ignore]]
+advisory = "RUSTSEC-2026-0098"
+reason = "rustls-webpki: LOW severity name constraint bypass. Awaiting upstream patch."
+
+[[advisories.ignore]]
+advisory = "RUSTSEC-2026-0099"
+reason = "rustls-webpki: LOW severity wildcard name constraint bypass. Awaiting upstream patch."
+
+[[advisories.ignore]]
+advisory = "RUSTSEC-2026-0104"
+reason = "rustls-webpki: LOW severity panic in CRL parsing. Awaiting upstream patch."
+
 [licenses]
 version = 2
 allow = [
