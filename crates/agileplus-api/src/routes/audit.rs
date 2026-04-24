@@ -31,6 +31,20 @@ where
 }
 
 /// `GET /api/v1/features/:slug/audit`
+#[utoipa::path(
+    get,
+    path = "/api/v1/features/{slug}/audit",
+    tag = "audit",
+    params(
+        ("slug" = String, Path, description = "Feature slug"),
+    ),
+    responses(
+        (status = 200, description = "Audit trail entries", body = [AuditEntryResponse]),
+        (status = 404, description = "Feature not found"),
+        (status = 401, description = "Missing or invalid API key"),
+    ),
+    security(("api_key" = []))
+)]
 pub async fn get_audit_trail<S, V, O>(
     State(state): State<AppState<S, V, O>>,
     Path(slug): Path<String>,

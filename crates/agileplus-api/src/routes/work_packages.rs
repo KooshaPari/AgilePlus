@@ -52,6 +52,20 @@ where
 }
 
 /// `GET /api/v1/work-packages/:id`
+#[utoipa::path(
+    get,
+    path = "/api/v1/work-packages/{id}",
+    tag = "work-packages",
+    params(
+        ("id" = i64, Path, description = "Numeric work-package identifier"),
+    ),
+    responses(
+        (status = 200, description = "Work package found", body = WorkPackageResponse),
+        (status = 404, description = "Work package not found"),
+        (status = 401, description = "Missing or invalid API key"),
+    ),
+    security(("api_key" = []))
+)]
 pub async fn get_work_package<S, V, O>(
     State(state): State<AppState<S, V, O>>,
     Path(id): Path<i64>,

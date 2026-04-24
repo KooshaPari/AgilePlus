@@ -6,6 +6,7 @@
 //! Traceability: WP15-T086
 
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
 use agileplus_domain::domain::audit::AuditEntry;
 use agileplus_domain::domain::feature::Feature;
@@ -14,7 +15,7 @@ use agileplus_domain::domain::work_package::WorkPackage;
 
 // ----- Features -----
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct FeatureResponse {
     pub id: i64,
     pub slug: String,
@@ -41,7 +42,7 @@ impl From<Feature> for FeatureResponse {
 
 // ----- Work Packages -----
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct WorkPackageResponse {
     pub id: i64,
     pub feature_id: i64,
@@ -72,7 +73,7 @@ impl From<WorkPackage> for WorkPackageResponse {
 
 // ----- Governance -----
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct GovernanceResponse {
     pub id: i64,
     pub feature_id: i64,
@@ -95,7 +96,7 @@ impl From<GovernanceContract> for GovernanceResponse {
 
 // ----- Audit -----
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct AuditEntryResponse {
     pub id: i64,
     pub feature_id: i64,

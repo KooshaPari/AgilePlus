@@ -32,6 +32,10 @@ sha2 = "0.10"
 chrono = { version = "0.4", features = ["serde"] }
 askama = "0.12"
 
+# OpenAPI scaffolding (utoipa). MVP scope: 5 annotated endpoints; see openapi.yaml at repo root.
+utoipa = { workspace = true }
+utoipa-axum = { workspace = true }
+
 [dev-dependencies]
 tokio = { version = "1", features = ["full"] }
 axum-test = "19"

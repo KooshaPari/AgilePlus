@@ -89,6 +89,10 @@ trait-variant = "0.1"
 async-trait = "0.1"
 sentry = { version = "0.33", features = ["backtrace", "contexts", "debug-images"] }
 
+# OpenAPI scaffolding (utoipa). See WP: feat/rest-openapi-scaffold (#138, #118).
+utoipa = { version = "5", features = ["axum_extras", "chrono"] }
+utoipa-axum = "0.2"
+
 # Plugin crates (external from separate repos)
 agileplus-plugin-core = { git = "https://github.com/KooshaPari/agileplus-plugin-core" }
 agileplus-plugin-git = { git = "https://github.com/KooshaPari/agileplus-plugin-git" }

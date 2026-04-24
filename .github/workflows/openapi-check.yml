@@ -1,0 +1,54 @@
+name: OpenAPI Drift Check
+
+# Traceability: #118 (OpenAPI governance), #138 (scaffold retry).
+#
+# This workflow regenerates `openapi.yaml` from the `#[utoipa::path]`
+# annotations in `crates/agileplus-api/` and fails the PR if it drifts
+# from the committed file.
+#
+# NOTE (deferred): While the `agileplus-plugin-core` git dependency
+# (SHA `ba652dec…`) returns HTTP 404, `cargo build` cannot resolve the
+# workspace. During that window the drift-check step is gated off with
+# `if: false` and the workflow short-circuits with a reminder. Once the
+# dep is unpinned or republished, flip the gate to `if: true` (or drop
+# the condition entirely) — no other changes required.
+
+on:
+  pull_request:
+    paths:
+      - "crates/agileplus-api/**"
+      - "crates/agileplus-domain/**"
+      - "openapi.yaml"
+      - ".github/workflows/openapi-check.yml"
+
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Plugin-core dependency block notice
+        run: |
+          echo "::notice::OpenAPI drift check is deferred while the"
+          echo "::notice::agileplus-plugin-core git dependency (SHA ba652dec...)"
+          echo "::notice::returns HTTP 404. Once resolved, flip \`if: false\`"
+          echo "::notice::on the drift step below to re-enable automated checking."
+
+      - name: Install Rust toolchain
+        if: false  # gated: see header comment
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        if: false  # gated: see header comment
+        uses: Swatinem/rust-cache@v2
+
+      - name: Regenerate openapi.yaml
+        if: false  # gated: see header comment
+        run: |
+          cargo run --bin agileplus-api -- --dump-openapi > /tmp/current.yaml
+
+      - name: Verify no drift
+        if: false  # gated: see header comment
+        run: |
+          git diff --no-index --exit-code openapi.yaml /tmp/current.yaml

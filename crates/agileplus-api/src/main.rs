@@ -15,6 +15,18 @@ use tracing::warn;
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    // --dump-openapi: serialize the OpenAPI document to YAML on stdout and exit.
+    // When redirected to `openapi.yaml` at the workspace root, this seeds the
+    // committed contract used by the (deferred) CI drift check.
+    if env::args().any(|a| a == "--dump-openapi") {
+        use utoipa::OpenApi;
+        let yaml = agileplus_api::openapi::ApiDoc::openapi()
+            .to_yaml()
+            .context("failed to serialize OpenAPI to YAML")?;
+        print!("{yaml}");
+        return Ok(());
+    }
+
     let config = load_runtime_config()?;
     ensure_database_parent(&config.core.database_path)?;
     let addr = bind_address(&config)?;

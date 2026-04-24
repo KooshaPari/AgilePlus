@@ -14,6 +14,7 @@ use axum::routing::get;
 use axum::{Json, Router};
 use chrono::{DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
+use utoipa::{IntoParams, ToSchema};
 
 use agileplus_domain::ports::{
     observability::ObservabilityPort, storage::StoragePort, vcs::VcsPort,
@@ -34,7 +35,7 @@ where
 }
 
 /// Query params for the event list endpoint.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, IntoParams)]
 pub struct EventListParams {
     /// Filter by entity type: "feature" or "work_package".
     pub entity_type: Option<String>,
@@ -55,7 +56,7 @@ pub struct EventListParams {
     pub offset: Option<usize>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
 pub struct EventResponse {
     pub id: i64,
     pub entity_type: String,
@@ -67,6 +68,17 @@ pub struct EventResponse {
 }
 
 /// `GET /api/v1/events`
+#[utoipa::path(
+    get,
+    path = "/api/v1/events",
+    tag = "events",
+    params(EventListParams),
+    responses(
+        (status = 200, description = "Paginated event list", body = [EventResponse]),
+        (status = 401, description = "Missing or invalid API key"),
+    ),
+    security(("api_key" = []))
+)]
 pub async fn list_events<S, V, O>(
     State(app): State<AppState<S, V, O>>,
     Query(params): Query<EventListParams>,

@@ -5,6 +5,7 @@
 pub mod api_key;
 pub mod error;
 pub mod middleware;
+pub mod openapi;
 pub mod responses;
 pub mod router;
 pub mod routes;
