@@ -89,10 +89,10 @@ trait-variant = "0.1"
 async-trait = "0.1"
 sentry = { version = "0.33", features = ["backtrace", "contexts", "debug-images"] }
 
-# Plugin crates (external from separate repos)
-agileplus-plugin-core = { git = "https://github.com/KooshaPari/agileplus-plugin-core" }
-agileplus-plugin-git = { git = "https://github.com/KooshaPari/agileplus-plugin-git" }
-agileplus-plugin-sqlite = { git = "https://github.com/KooshaPari/agileplus-plugin-sqlite" }
+# Plugin crates (external from separate repos) were removed in #144:
+# the three git remotes (agileplus-plugin-{core,git,sqlite}) all return 404.
+# Re-introduce either by vendoring into `crates/` or publishing the stubs
+# under KooshaPari/ before re-adding. Tracked in GH issues #79/#82/#138/#142/#144.
 
 # Git operations
 gix = "0.71"
