@@ -1,9 +1,10 @@
 name: self-merge-gate
+
+# Delegates to phenoShared reusable workflow.
+# See: https://github.com/KooshaPari/phenoShared/blob/main/.github/workflows/reusable/self-merge-gate.yml
+
 on: [pull_request_review]
+
 jobs:
-  check:
-    runs-on: ubuntu-latest
-    if: github.event.review.state == 'approved'
-    steps:
-      - name: Check self-merge eligibility
-        run: ./scripts/self-merge-gate.sh
+  gate:
+    uses: KooshaPari/phenoShared/.github/workflows/reusable/self-merge-gate.yml@main
