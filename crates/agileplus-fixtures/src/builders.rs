@@ -107,7 +107,7 @@ pub struct WorkPackageBuilder {
     feature_id: i64,
     title: String,
     sequence: i32,
-    summary: String,
+    acceptance_criteria: String,
     state: WpState,
     file_scope: Vec<String>,
 }
@@ -120,7 +120,7 @@ impl WorkPackageBuilder {
             feature_id,
             title: title.to_string(),
             sequence,
-            summary: String::new(),
+            acceptance_criteria: String::new(),
             state: WpState::Planned,
             file_scope: Vec::new(),
         }
@@ -138,10 +138,18 @@ impl WorkPackageBuilder {
         self
     }
 
-    /// Set the summary/description.
-    pub fn summary(mut self, summary: &str) -> Self {
-        self.summary = summary.to_string();
+    /// Set the acceptance criteria (previously `summary`; aligned with
+    /// `agileplus_domain::WorkPackage::acceptance_criteria`).
+    pub fn acceptance_criteria(mut self, acceptance_criteria: &str) -> Self {
+        self.acceptance_criteria = acceptance_criteria.to_string();
         self
+    }
+
+    /// Deprecated alias for [`Self::acceptance_criteria`]; retained for
+    /// backwards compatibility with older fixture callers.
+    #[deprecated(note = "use `acceptance_criteria` to match `WorkPackage` field name")]
+    pub fn summary(self, summary: &str) -> Self {
+        self.acceptance_criteria(summary)
     }
 
     /// Add a file to the scope.
@@ -158,15 +166,16 @@ impl WorkPackageBuilder {
 
     /// Build the WorkPackage.
     pub fn build(self) -> WorkPackage {
-        WorkPackage {
-            id: self.id,
-            feature_id: self.feature_id,
-            title: self.title,
-            sequence: self.sequence,
-            summary: self.summary,
-            state: self.state,
-            file_scope: self.file_scope,
-        }
+        let mut wp = WorkPackage::new(
+            self.feature_id,
+            &self.title,
+            self.sequence,
+            &self.acceptance_criteria,
+        );
+        wp.id = self.id;
+        wp.state = self.state;
+        wp.file_scope = self.file_scope;
+        wp
     }
 }
 
@@ -204,7 +213,7 @@ mod tests {
         let wp = WorkPackageBuilder::new(1, "Test WP", 1)
             .id(100)
             .state(WpState::Done)
-            .summary("This is a test")
+            .acceptance_criteria("This is a test")
             .with_file("src/lib.rs")
             .build();
 
@@ -212,7 +221,7 @@ mod tests {
         assert_eq!(wp.feature_id, 1);
         assert_eq!(wp.title, "Test WP");
         assert_eq!(wp.state, WpState::Done);
-        assert_eq!(wp.summary, "This is a test");
+        assert_eq!(wp.acceptance_criteria, "This is a test");
         assert_eq!(wp.file_scope, vec!["src/lib.rs"]);
     }
 
