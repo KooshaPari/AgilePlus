@@ -1,3 +1,10 @@
+[advisories]
+db-path = "$CARGO_HOME/advisory-db"
+ignore = [
+    # No safe upgrade available - gix = "0.71" pinned in Cargo.toml, requires major version bump
+    { id = "RUSTSEC-2025-0140", reason = "No safe upgrade available. gix = 0.71 pinned in Cargo.toml, requires breaking API change." },
+]
+
 [licenses]
 version = 2
 allow = [
@@ -22,11 +29,11 @@ allow = [
     "WTFPL",
 ]
 
+[bans]
+multiple-versions = "warn"
+wildcards = "warn"
+
 [sources]
 unknown-git = "deny"
-
-[advisories]
-ignore = [
-    # No safe upgrade available - gix = "0.71" pinned in Cargo.toml, requires major version bump
-    { id = "RUSTSEC-2025-0140", reason = "No safe upgrade available. gix = 0.71 pinned in Cargo.toml, requires breaking API change." },
-]
+unknown-registry = "warn"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
