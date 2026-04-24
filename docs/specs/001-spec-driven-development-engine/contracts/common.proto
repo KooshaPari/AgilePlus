@@ -1,6 +1,10 @@
 syntax = "proto3";
 
-package agileplus.common.v1;
+package agileplus.v1;
+
+option go_package = "github.com/phenotype/agileplus-proto/gen/go/agileplus/v1;agileplusv1";
+option java_outer_classname = "CommonProto";
+option java_package = "com.phenotype.agileplus.v1";
 
 // Shared message types used across all AgilePlus services.
 
@@ -20,8 +24,8 @@ message Feature {
 
 message FeatureState {
   string state = 1;
-  string next_command = 2;        // recommended next action
-  repeated string blockers = 3;   // what's blocking progression
+  string next_command = 2;
+  repeated string blockers = 3;
   GovernanceStatus governance = 4;
 }
 
@@ -60,7 +64,7 @@ message GovernanceStatus {
 message AuditEntry {
   int64 id = 1;
   string feature_slug = 2;
-  int32 wp_sequence = 3; // 0 if feature-level
+  int32 wp_sequence = 3;
   string timestamp = 4;
   string actor = 5;
   string transition = 6;
@@ -72,30 +76,30 @@ message AuditEntry {
 // --- Commands ---
 
 message CommandRequest {
-  string command = 1;          // "specify", "research", "plan", etc.
-  string feature_slug = 2;     // target feature
-  map<string, string> args = 3; // command-specific arguments
+  string command = 1;
+  string feature_slug = 2;
+  map<string, string> args = 3;
 }
 
 message CommandResponse {
   bool success = 1;
   string message = 2;
-  map<string, string> outputs = 3; // command-specific outputs
+  map<string, string> outputs = 3;
 }
 
 // --- Agent Events ---
 
 message AgentEvent {
-  string event_type = 1;  // "started", "progress", "pr_created", "review_received", "completed", "failed"
+  string event_type = 1;
   string feature_slug = 2;
   int32 wp_sequence = 3;
   string agent_id = 4;
-  string payload = 5;     // JSON, event-specific
+  string payload = 5;
   string timestamp = 6;
 }
 
 message AgentEventAck {
   string event_id = 1;
   bool acknowledged = 2;
-  string instruction = 3; // optional follow-up instruction
+  string instruction = 3;
 }
