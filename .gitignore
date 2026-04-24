@@ -1,6 +1,8 @@
 ../*
 ../.*
 !pyproject.toml
+# openapi.yaml is the committed API contract; do not ignore.
+!openapi.yaml
 
 # Environment configuration
 .env

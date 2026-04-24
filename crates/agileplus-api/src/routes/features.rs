@@ -14,6 +14,7 @@ use axum::routing::{get, post};
 use axum::{Json, Router};
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
+use utoipa::{IntoParams, ToSchema};
 
 use agileplus_domain::domain::feature::Feature;
 use agileplus_domain::domain::state_machine::FeatureState;
@@ -43,13 +44,26 @@ where
         .route("/{slug}/transition", post(transition_feature::<S, V, O>))
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, IntoParams)]
 pub struct FeatureListParams {
+    /// Filter by feature state (e.g. `planned`, `in_progress`, `done`).
     pub state: Option<String>,
+    /// Filter by label (informational — not yet wired to storage).
     pub label: Option<String>,
 }
 
 /// `GET /api/v1/features[?state=<state>&label=<label>]`
+#[utoipa::path(
+    get,
+    path = "/api/v1/features",
+    tag = "features",
+    params(FeatureListParams),
+    responses(
+        (status = 200, description = "List features", body = [FeatureResponse]),
+        (status = 401, description = "Missing or invalid API key"),
+    ),
+    security(("api_key" = []))
+)]
 pub async fn list_features<S, V, O>(
     State(state): State<AppState<S, V, O>>,
     Query(params): Query<FeatureListParams>,
@@ -102,15 +116,31 @@ where
     Ok(Json(FeatureResponse::from(feature)))
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, ToSchema)]
 pub struct CreateFeatureRequest {
+    /// Human-friendly title; used to derive the slug.
     pub title: String,
+    /// Optional long-form description.
     pub description: Option<String>,
+    /// Initial state (defaults to `planned`).
     pub state: Option<String>,
+    /// Target git branch for the feature; defaults to `main`.
     pub target_branch: Option<String>,
 }
 
 /// `POST /api/v1/features`
+#[utoipa::path(
+    post,
+    path = "/api/v1/features",
+    tag = "features",
+    request_body = CreateFeatureRequest,
+    responses(
+        (status = 201, description = "Feature created", body = FeatureResponse),
+        (status = 400, description = "Invalid payload"),
+        (status = 401, description = "Missing or invalid API key"),
+    ),
+    security(("api_key" = []))
+)]
 pub async fn create_feature<S, V, O>(
     State(app): State<AppState<S, V, O>>,
     Json(body): Json<CreateFeatureRequest>,

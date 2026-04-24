@@ -30,6 +30,20 @@ where
 }
 
 /// `GET /api/v1/features/:slug/governance`
+#[utoipa::path(
+    get,
+    path = "/api/v1/features/{slug}/governance",
+    tag = "governance",
+    params(
+        ("slug" = String, Path, description = "Feature slug"),
+    ),
+    responses(
+        (status = 200, description = "Latest governance contract for feature", body = GovernanceResponse),
+        (status = 404, description = "Feature or contract not found"),
+        (status = 401, description = "Missing or invalid API key"),
+    ),
+    security(("api_key" = []))
+)]
 pub async fn get_governance<S, V, O>(
     State(state): State<AppState<S, V, O>>,
     Path(slug): Path<String>,
