@@ -1,6 +1,5 @@
 ../*
 ../.*
-*.toml
 !pyproject.toml
 
 # Environment configuration
