@@ -31,9 +31,7 @@ macro_rules! require_services {
 async fn dashboard_service_control_integration() -> anyhow::Result<()> {
     require_services!();
 
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("info")
-        .try_init();
+    let _ = tracing_subscriber::fmt().with_env_filter("info").try_init();
 
     let harness = TestHarness::start().await?;
     let client = harness.client();
@@ -66,7 +64,12 @@ async fn dashboard_service_control_integration() -> anyhow::Result<()> {
     let restart_json: serde_json::Value = restart_resp.json().await?;
     assert_eq!(restart_json["status"], "ok");
     assert_eq!(restart_json["service"], "NATS");
-    assert!(restart_json["stdout"].as_str().unwrap_or_default().contains("restarted NATS"));
+    assert!(
+        restart_json["stdout"]
+            .as_str()
+            .unwrap_or_default()
+            .contains("restarted NATS")
+    );
 
     Ok(())
 }

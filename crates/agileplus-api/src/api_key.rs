@@ -85,7 +85,10 @@ pub async fn ensure_api_key(
     }
 
     // Log key metadata securely (never log the actual key)
-    tracing::info!("AgilePlus API initialized. Key saved to {}", key_path.display());
+    tracing::info!(
+        "AgilePlus API initialized. Key saved to {}",
+        key_path.display()
+    );
     // Show only first 8 chars + "..." for operator confirmation
     let masked_key = if plaintext.len() > 8 {
         format!("{}...", &plaintext[..8])

@@ -1,6 +1,4 @@
-use agileplus_cache::{
-    CacheConfig, CacheError, CacheStore, InMemoryCacheStore, ProjectionCache,
-};
+use agileplus_cache::{CacheConfig, CacheError, CacheStore, InMemoryCacheStore, ProjectionCache};
 use agileplus_domain::domain::feature::Feature;
 use agileplus_domain::domain::work_package::WorkPackage;
 use serde::{Deserialize, Serialize};
@@ -69,7 +67,10 @@ async fn test_in_memory_cache_with_ttl() {
         value: 42,
     };
 
-    store.set("key1", &value, Some(Duration::from_secs(1))).await.unwrap();
+    store
+        .set("key1", &value, Some(Duration::from_secs(1)))
+        .await
+        .unwrap();
     assert!(store.exists("key1").await.unwrap());
 
     tokio::time::sleep(Duration::from_secs(2)).await;
@@ -218,9 +219,8 @@ async fn test_concurrent_cache_access() {
 
     let store_clone = store.clone();
     let value_clone = value.clone();
-    let handle = tokio::spawn(async move {
-        store_clone.set("concurrent_key", &value_clone, None).await
-    });
+    let handle =
+        tokio::spawn(async move { store_clone.set("concurrent_key", &value_clone, None).await });
 
     store.set("concurrent_key", &value, None).await.unwrap();
     handle.await.unwrap().unwrap();
@@ -240,12 +240,7 @@ async fn test_projection_cache_with_in_memory_store() {
     let store = InMemoryCacheStore::new(60);
     let cache = ProjectionCache::new(store);
 
-    let feature = Feature::new(
-        "test-feature",
-        "Test Feature",
-        [0u8; 32],
-        None,
-    );
+    let feature = Feature::new("test-feature", "Test Feature", [0u8; 32], None);
 
     cache.set_feature(&feature).await.unwrap();
 
@@ -259,12 +254,7 @@ async fn test_projection_cache_invalidate() {
     let store = InMemoryCacheStore::new(60);
     let cache = ProjectionCache::new(store);
 
-    let feature = Feature::new(
-        "test-feature-2",
-        "Feature to invalidate",
-        [0u8; 32],
-        None,
-    );
+    let feature = Feature::new("test-feature-2", "Feature to invalidate", [0u8; 32], None);
 
     cache.set_feature(&feature).await.unwrap();
     assert!(cache.get_feature(feature.id).await.unwrap().is_some());
@@ -278,12 +268,7 @@ async fn test_projection_cache_workpackage() {
     let store = InMemoryCacheStore::new(60);
     let cache = ProjectionCache::new(store);
 
-    let wp = WorkPackage::new(
-        1,
-        "Test WorkPackage",
-        1,
-        "Acceptance criteria here",
-    );
+    let wp = WorkPackage::new(1, "Test WorkPackage", 1, "Acceptance criteria here");
 
     cache.set_workpackage(&wp).await.unwrap();
 

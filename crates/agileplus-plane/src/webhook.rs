@@ -118,12 +118,10 @@ pub fn verify_hmac_signature(secret: &[u8], body: &[u8], header_value: &str) -> 
     };
     let sig_bytes = match hex::decode(hex_sig) {
         Ok(b) => b,
-        Err(_) => {
-            match hex::decode(header_value) {
-                Ok(b) => b,
-                Err(_) => return false,
-            }
-        }
+        Err(_) => match hex::decode(header_value) {
+            Ok(b) => b,
+            Err(_) => return false,
+        },
     };
 
     let mut mac: Hmac<Sha256> =

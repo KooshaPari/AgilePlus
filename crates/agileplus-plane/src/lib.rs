@@ -31,7 +31,7 @@ pub use outbound::{
 pub use runtime::*;
 pub use state_mapper::{PlaneStateMapper, PlaneStateMapperConfig};
 pub use sync::{PlaneSyncAdapter, SyncState};
-pub use sync_queue::{SyncOpKind, SyncQueue, SyncQueueItem, SyncQueueStore, SyncTask, MAX_RETRIES};
+pub use sync_queue::{MAX_RETRIES, SyncOpKind, SyncQueue, SyncQueueItem, SyncQueueStore, SyncTask};
 pub use webhook::{
     PlaneInboundEvent, PlaneWebhookAction, PlaneWebhookCycle, PlaneWebhookModule,
     PlaneWebhookPayload, handle_plane_webhook, parse_webhook, verify_hmac_signature,

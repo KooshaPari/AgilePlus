@@ -7,7 +7,6 @@
 //! Traceability: WP19-T107
 
 pub use agileplus_fixtures::{
-    TestFixtures, seed_test_data,
-    feature_create_payload, transition_payload, plane_webhook_payload,
-    FeatureBuilder, WorkPackageBuilder,
+    FeatureBuilder, TestFixtures, WorkPackageBuilder, feature_create_payload,
+    plane_webhook_payload, seed_test_data, transition_payload,
 };

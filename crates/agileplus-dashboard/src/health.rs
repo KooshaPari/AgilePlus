@@ -6,9 +6,9 @@
 //! - Process metrics: PID + uptime
 //! - Build info: version + commit (from env)
 
-use std::time::SystemTime;
-use chrono::Utc;
 use crate::app_state::ServiceHealth;
+use chrono::Utc;
+use std::time::SystemTime;
 
 /// Trait for a health checker implementation.
 pub trait HealthChecker: Send + Sync {
@@ -27,7 +27,8 @@ impl HealthChecker for SqliteChecker {
         // For now, we'll simulate a fast check (~0ms local)
         let _ = start.elapsed();
 
-        let latency = start.elapsed()
+        let latency = start
+            .elapsed()
             .ok()
             .and_then(|d| u64::try_from(d.as_millis()).ok());
 
@@ -45,7 +46,8 @@ impl HealthChecker for MemoryStoreChecker {
         // Test a simple in-memory operation (mimics store lookup).
         let _test = "healthy".to_string();
 
-        let latency = start.elapsed()
+        let latency = start
+            .elapsed()
             .ok()
             .and_then(|d| u64::try_from(d.as_millis()).ok());
 
@@ -64,7 +66,8 @@ impl HealthChecker for ProcessChecker {
         let pid = std::process::id();
         let _ = pid; // use pid to simulate a check
 
-        let latency = start.elapsed()
+        let latency = start
+            .elapsed()
             .ok()
             .and_then(|d| u64::try_from(d.as_millis()).ok());
 
@@ -82,7 +85,8 @@ impl HealthChecker for BuildInfoChecker {
         // Simulate reading version from env/metadata (~0ms).
         let _version = env!("CARGO_PKG_VERSION");
 
-        let latency = start.elapsed()
+        let latency = start
+            .elapsed()
             .ok()
             .and_then(|d| u64::try_from(d.as_millis()).ok());
 

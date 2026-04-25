@@ -3,9 +3,7 @@
 
 use std::collections::HashMap;
 
-use agileplus_domain::domain::{
-    cycle::Cycle, module::Module, project::Project,
-};
+use agileplus_domain::domain::{cycle::Cycle, module::Module, project::Project};
 
 use crate::app_state::DashboardStore;
 use crate::seed::seed_dogfood_features;

@@ -347,13 +347,15 @@ async fn list_issues_alias_works() {
 
 #[tokio::test]
 async fn create_sub_issue_sends_post_with_parent() {
-    use wiremock::matchers::{method, path, body_partial_json};
+    use wiremock::matchers::{body_partial_json, method, path};
     use wiremock::{Mock, MockServer, ResponseTemplate};
 
     let mock_server = MockServer::start().await;
     Mock::given(method("POST"))
         .and(path("/api/v1/workspaces/ws/projects/proj/work-items/"))
-        .and(body_partial_json(serde_json::json!({"parent": "parent-123"})))
+        .and(body_partial_json(
+            serde_json::json!({"parent": "parent-123"}),
+        ))
         .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
             "id": "wi-child",
             "name": "Child Issue",

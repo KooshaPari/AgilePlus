@@ -1,7 +1,7 @@
 //! Error types for agileplus-sync.
 
-use thiserror::Error;
 use agileplus_events::EventError;
+use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum SyncError {

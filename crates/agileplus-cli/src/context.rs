@@ -367,14 +367,8 @@ mod tests {
 
     #[test]
     fn output_format_from_str_table() {
-        assert_eq!(
-            OutputFormat::parse("table").unwrap(),
-            OutputFormat::Table
-        );
-        assert_eq!(
-            OutputFormat::parse("TABLE").unwrap(),
-            OutputFormat::Table
-        );
+        assert_eq!(OutputFormat::parse("table").unwrap(), OutputFormat::Table);
+        assert_eq!(OutputFormat::parse("TABLE").unwrap(), OutputFormat::Table);
     }
 
     #[test]

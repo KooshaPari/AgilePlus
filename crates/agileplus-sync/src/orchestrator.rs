@@ -13,10 +13,10 @@ use tracing::{debug, error, info, warn};
 use agileplus_events::EventStore;
 use agileplus_plane::{PlaneClient, PlaneStateMapper};
 
-use crate::conflict::{detect_conflict, SyncConflict};
+use crate::conflict::{SyncConflict, detect_conflict};
 use crate::error::SyncError;
 use crate::report::SyncReport;
-use crate::resolution::{apply_resolution, ResolutionResult, ResolutionStrategy};
+use crate::resolution::{ResolutionResult, ResolutionStrategy, apply_resolution};
 use crate::store::SyncMappingStore;
 
 pub struct SyncOrchestrator {
@@ -43,13 +43,21 @@ impl SyncOrchestrator {
         }
     }
 
-    pub async fn sync_push(&self, entity_type: &str, entity_id: i64) -> Result<SyncReport, SyncError> {
+    pub async fn sync_push(
+        &self,
+        entity_type: &str,
+        entity_id: i64,
+    ) -> Result<SyncReport, SyncError> {
         let start = Instant::now();
         let mut report = SyncReport::new();
 
         info!(entity_type, entity_id, "Starting push sync");
 
-        let mapping = match self.mapping_store.get_by_entity(entity_type, entity_id).await? {
+        let mapping = match self
+            .mapping_store
+            .get_by_entity(entity_type, entity_id)
+            .await?
+        {
             Some(m) => m,
             None => {
                 warn!(entity_type, entity_id, "No mapping found, skipping push");
@@ -83,7 +91,13 @@ impl SyncOrchestrator {
 
         let remote_opt = self.fetch_remote(&mapping.plane_issue_id).await?;
         if let Some(remote_value) = remote_opt {
-            if let Some(conflict) = detect_conflict(entity_type, entity_id, local_value.clone(), remote_value, &mapping.content_hash) {
+            if let Some(conflict) = detect_conflict(
+                entity_type,
+                entity_id,
+                local_value.clone(),
+                remote_value,
+                &mapping.content_hash,
+            ) {
                 debug!(entity_type, entity_id, "Conflict detected during push");
                 report.conflicts.push(conflict);
                 report.duration = start.elapsed();
@@ -91,12 +105,17 @@ impl SyncOrchestrator {
             }
         }
 
-        match self.push_to_plane(&mapping.plane_issue_id, &local_value).await {
+        match self
+            .push_to_plane(&mapping.plane_issue_id, &local_value)
+            .await
+        {
             Ok(_) => {
                 info!(entity_type, entity_id, plane_issue_id = %mapping.plane_issue_id, "Push successful");
                 report.updated.push((entity_type.to_string(), entity_id));
                 let new_hash = crate::conflict::hash_value(&local_value);
-                self.mapping_store.update_hash(mapping.id, new_hash, Utc::now()).await?;
+                self.mapping_store
+                    .update_hash(mapping.id, new_hash, Utc::now())
+                    .await?;
             }
             Err(e) => {
                 error!(entity_type, entity_id, error = %e, "Push failed");
@@ -108,13 +127,21 @@ impl SyncOrchestrator {
         Ok(report)
     }
 
-    pub async fn sync_pull(&self, entity_type: &str, entity_id: i64) -> Result<SyncReport, SyncError> {
+    pub async fn sync_pull(
+        &self,
+        entity_type: &str,
+        entity_id: i64,
+    ) -> Result<SyncReport, SyncError> {
         let start = Instant::now();
         let mut report = SyncReport::new();
 
         info!(entity_type, entity_id, "Starting pull sync");
 
-        let mapping = match self.mapping_store.get_by_entity(entity_type, entity_id).await? {
+        let mapping = match self
+            .mapping_store
+            .get_by_entity(entity_type, entity_id)
+            .await?
+        {
             Some(m) => m,
             None => {
                 warn!(entity_type, entity_id, "No mapping found for pull");
@@ -149,18 +176,29 @@ impl SyncOrchestrator {
             .map(|e| serde_json::to_value(e).unwrap_or(Value::Null))
             .unwrap_or(Value::Null);
 
-        if let Some(conflict) = detect_conflict(entity_type, entity_id, local_value, remote_value.clone(), &mapping.content_hash) {
+        if let Some(conflict) = detect_conflict(
+            entity_type,
+            entity_id,
+            local_value,
+            remote_value.clone(),
+            &mapping.content_hash,
+        ) {
             debug!(entity_type, entity_id, "Conflict detected during pull");
             report.conflicts.push(conflict);
             report.duration = start.elapsed();
             return Ok(report);
         }
 
-        match self.apply_to_local(entity_type, entity_id, &remote_value).await {
+        match self
+            .apply_to_local(entity_type, entity_id, &remote_value)
+            .await
+        {
             Ok(_) => {
                 info!(entity_type, entity_id, "Pull successful");
                 report.updated.push((entity_type.to_string(), entity_id));
-                self.mapping_store.update_hash(mapping.id, remote_hash, Utc::now()).await?;
+                self.mapping_store
+                    .update_hash(mapping.id, remote_hash, Utc::now())
+                    .await?;
             }
             Err(e) => {
                 error!(entity_type, entity_id, error = %e, "Pull apply failed");
@@ -175,7 +213,12 @@ impl SyncOrchestrator {
     pub fn detect_conflict(&self, local: Value, remote_hash: &str) -> Option<SyncConflict> {
         let local_hash = crate::conflict::hash_value(&local);
         if local_hash != remote_hash {
-            Some(SyncConflict::new("entity", 0, local, serde_json::Value::Null))
+            Some(SyncConflict::new(
+                "entity",
+                0,
+                local,
+                serde_json::Value::Null,
+            ))
         } else {
             None
         }
@@ -194,7 +237,10 @@ impl SyncOrchestrator {
         let mut report = SyncReport::new();
 
         let mappings = self.mapping_store.list_all().await?;
-        info!(count = mappings.len(), "Starting bidirectional sync for all mappings");
+        info!(
+            count = mappings.len(),
+            "Starting bidirectional sync for all mappings"
+        );
 
         for mapping in mappings {
             let entity_type = &mapping.entity_type;
@@ -231,7 +277,12 @@ impl SyncOrchestrator {
         Ok(())
     }
 
-    async fn apply_to_local(&self, _entity_type: &str, _entity_id: i64, _value: &Value) -> Result<(), SyncError> {
+    async fn apply_to_local(
+        &self,
+        _entity_type: &str,
+        _entity_id: i64,
+        _value: &Value,
+    ) -> Result<(), SyncError> {
         Ok(())
     }
 }
@@ -343,7 +394,9 @@ mod tests {
             serde_json::json!({"title": "local"}),
             serde_json::json!({"title": "remote"}),
         );
-        let result = orch.resolve_conflict(conflict, &ResolutionStrategy::LocalWins).unwrap();
+        let result = orch
+            .resolve_conflict(conflict, &ResolutionStrategy::LocalWins)
+            .unwrap();
         assert_eq!(result.resolved_value["title"], "local");
     }
 
@@ -356,7 +409,9 @@ mod tests {
             serde_json::json!({"title": "local"}),
             serde_json::json!({"title": "remote"}),
         );
-        let result = orch.resolve_conflict(conflict, &ResolutionStrategy::RemoteWins).unwrap();
+        let result = orch
+            .resolve_conflict(conflict, &ResolutionStrategy::RemoteWins)
+            .unwrap();
         assert_eq!(result.resolved_value["title"], "remote");
     }
 }

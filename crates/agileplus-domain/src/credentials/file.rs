@@ -30,13 +30,13 @@ impl FileCredentialStore {
     ///
     /// SECURITY WARNING: This implementation stores an unencrypted JSON file with
     /// restricted permissions (0o600). This is a security vulnerability.
-    /// 
+    ///
     /// TODO (SECURITY): Implement full AES-256-GCM + Argon2id encryption:
     /// - Use `aes-gcm` crate for authenticated encryption
     /// - Use `argon2` crate for key derivation from passphrase
     /// - Derive encryption key from AGILEPLUS_CREDENTIAL_KEY env var or user passphrase
     /// - Store encrypted blob instead of plaintext JSON
-    /// 
+    ///
     /// The file API is stable; only the storage format needs changing.
     fn ensure_loaded(&self) -> Result<(), CredentialError> {
         {

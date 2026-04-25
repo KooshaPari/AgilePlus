@@ -3,7 +3,7 @@
 //! Provides canonical JSON payloads for feature creation, state transitions,
 //! and webhook simulations.
 
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 /// Build a canonical JSON payload for creating a feature via the API.
 pub fn feature_create_payload(title: &str, description: &str) -> Value {

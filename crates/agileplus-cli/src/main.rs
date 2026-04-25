@@ -16,7 +16,9 @@ use agileplus_cli::commands::{
 };
 use agileplus_git::GitVcsAdapter;
 use agileplus_sqlite::SqliteStorageAdapter;
-use agileplus_subcmds::{DashboardArgs, PlatformArgs, run_dashboard, run_platform, SyncArgs, run_sync};
+use agileplus_subcmds::{
+    DashboardArgs, PlatformArgs, SyncArgs, run_dashboard, run_platform, run_sync,
+};
 
 mod agent_stub;
 use agent_stub::StubAgentAdapter;

@@ -9,7 +9,7 @@
 //! Note: The in-memory backend provides a simple HashMap-based storage.
 //! A Neo4j-backed benchmark would be added in CI using the `neo4j` feature.
 
-use agileplus_graph::{GraphStore, InMemoryGraphStore, Node, NodeType, Relationship, RelType};
+use agileplus_graph::{GraphStore, InMemoryGraphStore, Node, NodeType, RelType, Relationship};
 use criterion::{BenchmarkId, Criterion, black_box, criterion_group, criterion_main};
 use tokio::runtime::Runtime;
 use uuid::Uuid;
@@ -184,7 +184,10 @@ fn bench_dependency_chain_query(c: &mut Criterion) {
         b.iter(|| {
             let store = &store;
             rt.block_on(async {
-                let deps = store.get_dependencies(black_box(Uuid::nil())).await.expect("query");
+                let deps = store
+                    .get_dependencies(black_box(Uuid::nil()))
+                    .await
+                    .expect("query");
                 black_box(deps.len())
             })
         });

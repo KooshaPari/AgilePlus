@@ -9,12 +9,12 @@ use std::path::PathBuf;
 use anyhow::{Context, Result};
 use chrono::Utc;
 
-use agileplus_domain::domain::audit::{hash_entry, AuditEntry};
+use agileplus_domain::domain::audit::{AuditEntry, hash_entry};
 use agileplus_domain::domain::event::Event;
 use agileplus_domain::domain::governance::{GovernanceContract, PolicyCheck};
 use agileplus_domain::domain::state_machine::FeatureState;
 use agileplus_domain::ports::{StoragePort, VcsPort};
-use agileplus_events::{compute_hash, EventStore};
+use agileplus_events::{EventStore, compute_hash};
 
 mod evidence;
 mod report;

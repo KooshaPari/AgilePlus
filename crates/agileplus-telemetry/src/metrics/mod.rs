@@ -6,8 +6,8 @@
 
 use std::{
     sync::{
-        atomic::{AtomicU64, Ordering},
         Arc,
+        atomic::{AtomicU64, Ordering},
     },
     time::Duration,
 };
@@ -201,7 +201,9 @@ pub struct AgilePlusMetrics {
 
 impl Clone for AgilePlusMetrics {
     fn clone(&self) -> Self {
-        Self { inner: self.inner.clone() }
+        Self {
+            inner: self.inner.clone(),
+        }
     }
 }
 
