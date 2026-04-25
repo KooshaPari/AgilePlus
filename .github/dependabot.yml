@@ -39,3 +39,16 @@ updates:
     labels:
       - dependencies
       - go
+
+  - package-ecosystem: cargo
+    directory: "/agileplus-agents"
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - rust
