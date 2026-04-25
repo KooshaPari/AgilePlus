@@ -1,25 +1,54 @@
 #!/usr/bin/env bash
-# pre-commit: trufflehog secrets scan (migrated from gitleaks 2026-04-24)
-# Justification: shell glue ≤40 lines; trufflehog is a CLI tool, Rust wrapper not warranted.
-set -euo pipefail
+# Canonical Phenotype pre-commit hook: verified-secret scan only.
+# Bypass: HOOKS_SKIP=1 git commit
+#         PRE_COMMIT_SKIP_SECRETS=1 git commit
+#         git commit --no-verify
+set -u
 
-REPO_ROOT="$(git rev-parse --show-toplevel)"
-GIT_DIR="$(git rev-parse --git-common-dir)"
-
-echo "🔍 Running trufflehog scan..."
-
-if ! command -v trufflehog &>/dev/null; then
-    echo "⚠️  trufflehog not installed. Install: brew install trufflehog"
-    exit 0
+if [ "${HOOKS_SKIP:-0}" = "1" ]; then
+  echo "[hooks] HOOKS_SKIP=1; skipping pre-commit"
+  exit 0
 fi
 
-cd "$REPO_ROOT"
-
-# Scan verified secrets only; exit non-zero on any finding.
-if ! trufflehog git "file://$REPO_ROOT" --since-commit HEAD --only-verified --fail --no-update 2>&1; then
-    echo "❌ trufflehog detected verified secrets."
-    exit 1
+if [ "${PRE_COMMIT_SKIP_SECRETS:-0}" = "1" ]; then
+  echo "[hooks] PRE_COMMIT_SKIP_SECRETS=1; skipping secret scan"
+  exit 0
 fi
 
-echo "✅ trufflehog scan clean."
-exit 0
+if ! command -v trufflehog >/dev/null 2>&1; then
+  echo "[hooks] trufflehog not installed; skipping (brew install trufflehog)"
+  exit 0
+fi
+
+timeout_bin="${TIMEOUT_BIN:-timeout}"
+if ! command -v "$timeout_bin" >/dev/null 2>&1; then
+  timeout_bin="gtimeout"
+fi
+if ! command -v "$timeout_bin" >/dev/null 2>&1; then
+  echo "[hooks] timeout/gtimeout not installed; running without timeout"
+  timeout_bin=""
+fi
+
+repo_root="$(git rev-parse --show-toplevel)"
+to_secrets="${PRE_COMMIT_TIMEOUT_SECRETS:-60}"
+echo "[hooks] trufflehog staged-file scan"
+
+files="$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null || true)"
+if [ -z "$files" ]; then
+  echo "[hooks] no staged files to scan"
+  exit 0
+fi
+
+cmd=(bash -c 'printf "%s\n" "$1" | xargs -I{} trufflehog filesystem --only-verified --fail --no-update "$2/{}"' _ "$files" "$repo_root")
+if [ -n "$timeout_bin" ]; then
+  "$timeout_bin" --kill-after=5s "${to_secrets}s" "${cmd[@]}"
+else
+  "${cmd[@]}"
+fi
+rc=$?
+if [ "$rc" -ne 0 ]; then
+  echo "[hooks] verified secret scan failed"
+  exit "$rc"
+fi
+
+echo "[hooks] pre-commit OK"
