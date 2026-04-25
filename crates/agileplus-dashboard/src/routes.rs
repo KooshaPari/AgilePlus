@@ -23,12 +23,12 @@ use crate::app_state::{ServiceHealth, SharedState};
 use crate::process_detector;
 use crate::templates::{
     AgentActivityPartial, AgentSettingsPage, AgentView, CiLinkView, DashboardPage,
-    EcosystemProject, EventTimelinePartial, EventsPage, EvidenceBundleView,
-    FeatureDetailPage, FeatureEvidencePartial, FeatureView, FeaturesPage, GenerateEvidenceResponse,
-    GitCommitView, HealthPanelPartial, HomePage, HubPage, KanbanPartial, MediaAssetView,
+    EcosystemProject, EventTimelinePartial, EventsPage, EvidenceBundleView, FeatureDetailPage,
+    FeatureEvidencePartial, FeatureView, FeaturesPage, GenerateEvidenceResponse, GitCommitView,
+    HealthPage, HealthPanelPartial, HomePage, HubPage, KanbanPartial, MediaAssetView,
     PlaneHealthEndpointView, PlaneSettingsPage, PrLinkView, ProjectSummaryView,
-    ProjectSwitcherPartial, ProjectView, ReportArtifactView, ServicesSettingsPage, SettingsPage,
-    ToastPartial, WpListPartial, WpView, all_feature_states,
+    ProjectSwitcherPartial, ProjectView, ReportArtifactView, ServiceHealthView,
+    ServicesSettingsPage, SettingsPage, ToastPartial, WpListPartial, WpView, all_feature_states,
 };
 
 use chrono::Utc;
@@ -515,7 +515,12 @@ fn build_feature_evidence_bundles(
             ),
             created_at: Utc::now().format("%Y-%m-%d %H:%M:%S UTC").to_string(),
             artifact_ext: "json".into(),
-            status: if wp.progress > 0 { "accepted" } else { "generated" }.into(),
+            status: if wp.progress > 0 {
+                "accepted"
+            } else {
+                "generated"
+            }
+            .into(),
             content_preview: Some(r#"{"status":"generated","progress":0}"#.to_string()),
             is_text_artifact: true,
             is_image_artifact: false,
@@ -903,10 +908,7 @@ pub async fn feature_events(
         .unwrap_or_default();
     let events = build_feature_events(&feature, &wps);
 
-    render(EventTimelinePartial {
-        feature_id,
-        events,
-    })
+    render(EventTimelinePartial { feature_id, events })
 }
 
 // ── /api/dashboard/features/{id}/media ───────────────────────────────────
@@ -1042,7 +1044,10 @@ pub async fn health_json(State(state): State<SharedState>) -> impl IntoResponse 
             healthy: service.healthy,
             degraded: service.degraded,
             latency_ms: service.latency_ms,
-            last_check: service.last_check.format("%Y-%m-%d %H:%M:%S UTC").to_string(),
+            last_check: service
+                .last_check
+                .format("%Y-%m-%d %H:%M:%S UTC")
+                .to_string(),
         })
         .collect();
 
@@ -1358,10 +1363,7 @@ fn load_evidence_bundles_from_disk(feature_id: &str) -> Vec<EvidenceBundleView> 
         Err(_) => return vec![],
     };
 
-    let timestamp = val["timestamp"]
-        .as_str()
-        .unwrap_or("unknown")
-        .to_string();
+    let timestamp = val["timestamp"].as_str().unwrap_or("unknown").to_string();
 
     // Parse test_results
     let tr = &val["test_results"];
@@ -1454,15 +1456,17 @@ pub async fn evidence_content(
     Path((feature_id, artifact_id)): Path<(i64, String)>,
 ) -> Response {
     // Serve from .agileplus/evidence/<feature_id>/<artifact_id>
-    let base_path = PathBuf::from(".agileplus").join("evidence").join(feature_id.to_string());
-    
+    let base_path = PathBuf::from(".agileplus")
+        .join("evidence")
+        .join(feature_id.to_string());
+
     // Validate artifact_id to prevent path traversal attacks
     if artifact_id.contains("..") || artifact_id.starts_with('/') || artifact_id.contains('\0') {
         return Html("# Forbidden\n\nInvalid artifact ID.".to_string()).into_response();
     }
-    
+
     let artifact_path = base_path.join(&artifact_id);
-    
+
     // Ensure the resolved path is within the base directory (security check)
     if !artifact_path.starts_with(&base_path) {
         return Html("# Forbidden\n\nPath traversal detected.".to_string()).into_response();
@@ -1538,7 +1542,9 @@ pub async fn feature_evidence_generate(
             feature_id: feature_id.clone(),
             bundle_path: String::new(),
             status: "error".into(),
-            message: "generate-evidence.sh not found — ensure the server is started from the repo root".into(),
+            message:
+                "generate-evidence.sh not found — ensure the server is started from the repo root"
+                    .into(),
         })
         .into_response();
     }
@@ -1571,7 +1577,8 @@ pub async fn feature_evidence_generate(
         feature_id,
         bundle_path,
         status: "started".into(),
-        message: "Evidence generation started — poll GET /api/features/{id}/evidence for results".into(),
+        message: "Evidence generation started — poll GET /api/features/{id}/evidence for results"
+            .into(),
     })
     .into_response()
 }
@@ -1597,9 +1604,7 @@ pub async fn feature_evidence_json(
         })
         .collect();
 
-    let generated_at = bundles
-        .first()
-        .map(|b| b.created_at.clone());
+    let generated_at = bundles.first().map(|b| b.created_at.clone());
 
     axum::Json(EvidenceGalleryJson {
         feature_id,
@@ -1611,25 +1616,26 @@ pub async fn feature_evidence_json(
 // ── SSE Stream /api/stream ───────────────────────────────────────────────
 
 use axum::response::sse::{Event, Sse};
-use tokio_stream::StreamExt as _;
-use tokio::time::{interval, Duration};
 use std::convert::Infallible;
+use tokio::time::{Duration, interval};
 
-pub async fn sse_stream(State(state): State<SharedState>) -> Sse<impl tokio_stream::Stream<Item = Result<Event, Infallible>>> {
+pub async fn sse_stream(
+    State(state): State<SharedState>,
+) -> Sse<impl tokio_stream::Stream<Item = Result<Event, Infallible>>> {
     let state = state.clone();
     let stream = async_stream::stream! {
         let mut ticker = interval(Duration::from_secs(5));
         loop {
             ticker.tick().await;
             let store = state.read().await;
-            
+
             // Broadcast feature_updated event to refresh kanban
             let feature_count = store.features.len();
             let data = serde_json::json!({ "type": "heartbeat", "features": feature_count }).to_string();
             yield Ok(Event::default()
                 .event("feature_updated")
                 .data(data));
-            
+
             // Broadcast health status
             let healthy_count = store.health.iter().filter(|s| s.healthy).count();
             let total_count = store.health.len();
@@ -1650,8 +1656,35 @@ pub async fn sse_stream(State(state): State<SharedState>) -> Sse<impl tokio_stre
 
 pub async fn health_page(State(state): State<SharedState>) -> Response {
     let store = state.read().await;
-    render(HealthPanelPartial {
-        services: store.health.clone(),
+    let services: Vec<ServiceHealthView> = store
+        .health
+        .iter()
+        .map(|service| ServiceHealthView {
+            name: service.name.clone(),
+            healthy: service.healthy,
+            degraded: service.degraded,
+            latency_ms: service.latency_ms,
+            last_check_str: service
+                .last_check
+                .format("%Y-%m-%d %H:%M:%S UTC")
+                .to_string(),
+        })
+        .collect();
+    let healthy_count = services
+        .iter()
+        .filter(|service| service.healthy && !service.degraded)
+        .count();
+    let degraded_count = services.iter().filter(|service| service.degraded).count();
+    let unhealthy_count = services
+        .iter()
+        .filter(|service| !service.healthy && !service.degraded)
+        .count();
+
+    render(HealthPage {
+        services,
+        healthy_count,
+        degraded_count,
+        unhealthy_count,
     })
 }
 
@@ -1676,9 +1709,7 @@ pub async fn feature_transition(
 ) -> Response {
     let new_state = match form.new_state.parse::<FeatureState>() {
         Ok(s) => s,
-        Err(_) => {
-            return (StatusCode::BAD_REQUEST, "Invalid feature state").into_response()
-        }
+        Err(_) => return (StatusCode::BAD_REQUEST, "Invalid feature state").into_response(),
     };
 
     let feature_name = {
@@ -2198,10 +2229,7 @@ pub fn router(state: SharedState) -> Router {
             "/api/evidence/{feature_id}/{artifact_id}/preview",
             get(evidence_preview),
         )
-        .route(
-            "/api/features/{id}/evidence",
-            get(feature_evidence_list),
-        )
+        .route("/api/features/{id}/evidence", get(feature_evidence_list))
         .route(
             "/api/features/{id}/evidence/generate",
             post(feature_evidence_generate),
@@ -2210,21 +2238,18 @@ pub fn router(state: SharedState) -> Router {
             "/api/dashboard/features/{id}/evidence.json",
             get(feature_evidence_json),
         )
-        .route(
-            "/api/features/{id}/transition",
-            post(feature_transition),
-        )
+        .route("/api/features/{id}/transition", post(feature_transition))
         .with_state(state)
 }
 
 #[cfg(test)]
 mod tests {
-    use tower::util::ServiceExt;
-        use super::*;
+    use super::*;
     use crate::app_state::{DashboardStore, default_health};
     use crate::templates::{AgentActivityPartial, AgentView, EventTimelinePartial};
     use std::sync::Arc;
     use tokio::sync::RwLock;
+    use tower::util::ServiceExt;
 
     fn make_state() -> SharedState {
         let store = DashboardStore {
@@ -2558,10 +2583,8 @@ mod tests {
 
     #[test]
     fn test_plane_connection_checks_both_present() {
-        let (ok, status, warnings) = plane_connection_checks(
-            &Some("mykey".to_string()),
-            &Some("myworkspace".to_string()),
-        );
+        let (ok, status, warnings) =
+            plane_connection_checks(&Some("mykey".to_string()), &Some("myworkspace".to_string()));
         assert!(ok);
         assert!(status.contains("Connected"));
         assert!(warnings.is_empty());
@@ -2738,5 +2761,4 @@ mod tests {
         let all_healthy = json.get("all_healthy").unwrap().as_bool().unwrap();
         assert!(all_healthy);
     }
-
 }

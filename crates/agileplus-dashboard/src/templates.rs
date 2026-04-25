@@ -211,6 +211,24 @@ pub struct ReportArtifactView {
     pub compliant: bool,
 }
 
+#[derive(Debug, Clone)]
+pub struct ServiceHealthView {
+    pub name: String,
+    pub healthy: bool,
+    pub degraded: bool,
+    pub latency_ms: Option<u64>,
+    pub last_check_str: String,
+}
+
+#[derive(Template)]
+#[template(path = "pages/health.html")]
+pub struct HealthPage {
+    pub services: Vec<ServiceHealthView>,
+    pub healthy_count: usize,
+    pub degraded_count: usize,
+    pub unhealthy_count: usize,
+}
+
 #[derive(Template)]
 #[template(path = "pages/settings.html")]
 pub struct SettingsPage;
