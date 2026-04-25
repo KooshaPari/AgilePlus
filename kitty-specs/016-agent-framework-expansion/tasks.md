@@ -1,253 +1,260 @@
 # Work Packages: Agent Framework Expansion — Complete Across 6 Repositories
 
-**Inputs**: Design documents from `kitty-specs/016-agent-framework-expansion/`
-**Prerequisites**: spec.md, Rust toolchain, MCP protocol knowledge
-**Scope**: Cross-repo (6 repositories): Agentora, AgentMCP, agent-wave, agentops-policy-federation, helMo, agent-devops-setups
+> Specification: `spec.md` · Plan: `plan.md` · Spec ID: `AgilePlus-016`
+>
+> Planner mandate: deliverables, acceptance criteria, references, dependencies.
+> No code, no shell snippets. Implementers own all source-level decisions.
+
+**Inputs:** `spec.md`, `plan.md`, repo CLAUDE.md files for each affected repo,
+`phenotype-shared` crate APIs, MCP specification (referenced in `spec.md`).
+
+**Prerequisites:** Phase 1 (Discovery) and Phase 2 (Design) tasks from
+`plan.md` complete; reuse audit logged in `repos/worklogs/RESEARCH.md`.
+
+**Scope:** Six repositories — Agentora, AgentMCP, agent-wave,
+agentops-policy-federation, helMo, agent-devops-setups.
 
 ---
 
 ## WP-001: Agentora — Complete Agent Orchestration Framework
 
-- **State:** planned
-- **Sequence:** 1
-- **File Scope:** Agentora repository (src/, tests/, docs/)
-- **Acceptance Criteria:**
-  - Multi-agent coordination with leader-follower and peer-to-peer patterns
-  - Agent task decomposition and assignment engine
-  - Unified agent lifecycle management across all orchestrated agents
-  - Integration hooks for MCP protocol (AgentMCP), event communication (agent-wave), and policy (agentops-policy-federation)
-  - ≥80% test coverage on orchestration core
-  - All quality checks passing
-- **Estimated Effort:** L
+- **Phase:** 3 — Build
+- **Sequence:** 1 (gates WP-002..WP-005)
+- **Owner Repo:** Agentora
+- **File Scope:** Agentora `src/`, `tests/`, `docs/`
+- **Depends On:** Plan task D2.1 (lifecycle state-machine spec)
+- **Estimated Effort:** Major refactor — 3–5 parallel build subagents,
+  15–30 tool calls, ~15–20 min wall clock.
 
-Complete Agentora as the central agent orchestration framework. Agentora coordinates multiple agents, decomposes tasks, assigns work, and manages the unified agent lifecycle. This is the backbone that all other agent framework components integrate with.
+### Deliverables
 
-### Subtasks
-- [ ] T001 Audit current Agentora state: existing orchestration code, gaps, dependencies
-- [ ] T002 Design multi-agent coordination architecture: leader-follower, peer-to-peer, broadcast
-- [ ] T003 Implement AgentOrchestrator: create, manage, and coordinate agent groups
-- [ ] T004 Implement task decomposition engine: break complex tasks into subtasks, assign to agents
-- [ ] T005 Implement agent coordination patterns: leader election, task distribution, result aggregation
-- [ ] T006 Implement unified agent lifecycle: initialize, start, monitor, stop, cleanup
-- [ ] T007 Define integration interfaces for MCP, event communication, policy, and mobility
-- [ ] T008 Implement health monitoring: agent heartbeat, failure detection, recovery
-- [ ] T009 Write unit tests for orchestration core (target: ≥80% coverage)
-- [ ] T010 Write integration tests: multi-agent task execution with mock agents
-- [ ] T011 Add comprehensive rustdoc with orchestration examples
-- [ ] T012 Run quality checks: `cargo test`, `cargo clippy -- -D warnings`, `cargo fmt`
+- Multi-agent coordination supporting leader-follower and peer-to-peer
+  patterns, with a documented choice point for broadcast.
+- Task decomposition + assignment engine.
+- Unified agent-lifecycle implementation matching the D2.1 state-machine spec.
+- Integration interfaces (trait surface) consumed by WP-002, WP-003, WP-004,
+  WP-005. Interfaces published as a versioned crate contract for downstream
+  pinning.
+- Health monitoring: heartbeat, failure detection, recovery hooks.
+- Reuse: build on `phenotype-state-machine` and `phenotype-event-sourcing`
+  rather than re-implementing FSM or audit log primitives.
 
-### Dependencies
-- None (starting WP for this spec)
+### Acceptance Criteria
 
-### Risks & Mitigations
-- Orchestration complexity: Start with leader-follower pattern, add peer-to-peer incrementally
-- Agent failure handling: Implement retry with checkpoint, graceful degradation
+- All deliverables present and exercised by tests.
+- ≥80% line coverage on orchestration core.
+- Multi-agent integration test demonstrates leader-follower and peer-to-peer
+  coordination through public interfaces only.
+- Per-repo Phase 4 gates green (V4.1).
+- Public APIs documented; coordination examples included in repo docs.
+- No suppressions added to bypass clippy or test failures.
+
+### Risks
+
+- Orchestration complexity → start from leader-follower, layer peer-to-peer.
+- Failure recovery semantics → use checkpoint-based retry; document drop
+  vs replay semantics per lifecycle state.
 
 ---
 
-## WP-002: AgentMCP — Implement MCP Protocol Server
+## WP-002: AgentMCP — MCP Protocol Server + Agentora Bridge
 
-- **State:** planned
+- **Phase:** 3 — Build
 - **Sequence:** 2
-- **File Scope:** AgentMCP repository (src/, tests/, docs/)
-- **Acceptance Criteria:**
-  - Complete MCP protocol server implementation (tools, resources, prompts, sampling)
-  - Integrated with Agentora orchestration layer (agents exposed as MCP tools)
-  - MCP tool definitions auto-generated from agent capabilities
-  - MCP resource serving for agent state and results
-  - ≥80% test coverage on MCP server
-  - All quality checks passing
-- **Estimated Effort:** M
+- **Owner Repo:** AgentMCP
+- **File Scope:** AgentMCP `src/`, `tests/`, `docs/`
+- **Depends On:** WP-001 (orchestrator interfaces), plan task D2.2 (MCP
+  contract).
+- **Estimated Effort:** Cross-stack feature — 8–15 tool calls, ~12 min.
 
-Implement the Model Context Protocol (MCP) server in AgentMCP and integrate it with Agentora's orchestration layer. This exposes agent capabilities as MCP tools, enabling external MCP clients to interact with the agent framework.
+### Deliverables
 
-### Subtasks
-- [ ] T013 Audit current AgentMCP state: existing MCP implementation, protocol coverage
-- [ ] T014 Complete MCP tool server: register tools, handle tool calls, return results
-- [ ] T015 Implement MCP resource server: serve agent state, results, and metadata
-- [ ] T016 Implement MCP prompt server: provide structured prompts for agent interactions
-- [ ] T017 Implement MCP sampling: server-initiated analysis requests
-- [ ] T018 Integrate with Agentora: expose orchestrated agents as MCP tools
-- [ ] T019 Implement MCP tool auto-generation from agent capability definitions
-- [ ] T020 Write unit tests for MCP protocol handlers (target: ≥80% coverage)
-- [ ] T021 Write integration tests: MCP client calling agent tools via AgentMCP
-- [ ] T022 Add rustdoc with MCP server setup and tool definition examples
-- [ ] T023 Run quality checks: `cargo test`, `cargo clippy -- -D warnings`, `cargo fmt`
+- MCP protocol server: tools, resources, prompts, sampling. Conformance
+  references the official MCP specification cited in `spec.md`.
+- Agentora bridge: orchestrated agents surface as MCP tools; tool
+  definitions auto-derived from agent capability metadata published by
+  WP-001.
+- MCP resource endpoints serving agent state and run results.
+- MCP version negotiation with documented supported range.
 
-### Dependencies
-- WP-001 (Agentora orchestration layer available for integration)
+### Acceptance Criteria
 
-### Risks & Mitigations
-- MCP spec compliance: Reference official MCP specification, test against MCP conformance
-- Protocol versioning: Support MCP version negotiation, document supported versions
+- ≥80% coverage on protocol handlers.
+- Integration test: external MCP client invokes an Agentora-managed agent
+  end-to-end and receives a result.
+- Per-repo Phase 4 gates green.
+- No suppressions; protocol non-conformance treated as a defect, not a
+  documented exception.
+
+### Risks
+
+- Protocol drift → pin to MCP version in tests; surface negotiation failures
+  loudly per "Optionality and Failure Behavior."
 
 ---
 
 ## WP-003: agent-wave — Event-Driven Agent Communication
 
-- **State:** planned
-- **Sequence:** 3
-- **File Scope:** agent-wave repository (src/, tests/, docs/)
-- **Acceptance Criteria:**
-  - Event-driven communication integrated with agent lifecycle
-  - Event routing and filtering by type, source, and priority
-  - Publish/subscribe pattern for agent-to-agent messaging
-  - Event persistence and replay for debugging
-  - Integration with Agentora for lifecycle-aware event delivery
-  - ≥80% test coverage on event system
-  - All quality checks passing
-- **Estimated Effort:** M
+- **Phase:** 3 — Build
+- **Sequence:** 3 (parallel with WP-002, WP-004, WP-005 after WP-001)
+- **Owner Repo:** agent-wave
+- **File Scope:** agent-wave `src/`, `tests/`, `docs/`
+- **Depends On:** WP-001 (lifecycle hooks), plan task D2.3 (bus contract).
+- **Estimated Effort:** Cross-stack feature — 8–15 tool calls, ~12 min.
 
-Complete agent-wave as the event-driven communication layer for agent-to-agent messaging. Events are integrated with the agent lifecycle, ensuring proper delivery, routing, and filtering. This enables asynchronous coordination between agents.
+### Deliverables
 
-### Subtasks
-- [ ] T024 Audit current agent-wave state: existing event system, routing, gaps
-- [ ] T025 Design event schema: event types, payloads, metadata (source, timestamp, priority)
-- [ ] T026 Implement event bus: publish, subscribe, unsubscribe with topic-based routing
-- [ ] T027 Implement event filtering: by type, source agent, priority, custom predicates
-- [ ] T028 Integrate with Agentora lifecycle: deliver events only to running agents, queue for starting
-- [ ] T029 Implement event persistence: store events for replay, debugging, and audit
-- [ ] T030 Implement event replay: replay events from history for debugging and testing
-- [ ] T031 Write unit tests for event bus and routing (target: ≥80% coverage)
-- [ ] T032 Write integration tests: multi-agent event communication via agent-wave
-- [ ] T033 Add rustdoc with event system setup and usage examples
-- [ ] T034 Run quality checks: `cargo test`, `cargo clippy -- -D warnings`, `cargo fmt`
+- Event bus with publish / subscribe / unsubscribe and topic-based routing.
+- Filter expressions: type, source agent, priority, custom predicates.
+- Lifecycle-aware delivery: queue on `starting`, deliver on `running`, drop
+  with audit on `terminated`.
+- Event persistence + replay backed by `phenotype-event-sourcing`.
+- Reuse: do not re-implement the hash-chained log; depend on
+  `phenotype-event-sourcing`.
 
-### Dependencies
-- WP-001 (Agentora lifecycle available for event delivery integration)
+### Acceptance Criteria
 
-### Risks & Mitigations
-- Event ordering: Implement causal ordering for related events, document ordering guarantees
-- Event volume: Implement rate limiting, backpressure, and event deduplication
+- ≥80% coverage on bus + routing.
+- Integration test: three agents exchange events under back-pressure with
+  documented ordering guarantees.
+- Per-repo Phase 4 gates green.
+
+### Risks
+
+- Event volume → rate limiting and dedup at publish.
+- Ordering → causal ordering for related events; document guarantees.
 
 ---
 
-## WP-004: agentops-policy-federation — Policy Distribution Across Agents
+## WP-004: agentops-policy-federation — Policy Distribution
 
-- **State:** planned
-- **Sequence:** 4
-- **File Scope:** agentops-policy-federation repository (src/, tests/, docs/)
-- **Acceptance Criteria:**
-  - Policy distribution integrated with Agentora orchestration
-  - Policy enforcement at agent level (per-agent policy evaluation)
-  - Policy distribution across agent groups with versioning
-  - Policy conflict detection and resolution
-  - ≥80% test coverage on policy system
-  - All quality checks passing
-- **Estimated Effort:** M
+- **Phase:** 3 — Build
+- **Sequence:** 4 (parallel with WP-002, WP-003, WP-005)
+- **Owner Repo:** agentops-policy-federation
+- **File Scope:** agentops-policy-federation `src/`, `tests/`, `docs/`
+- **Depends On:** WP-001 (group/agent surfaces), plan task D2.4 (policy
+  attachment model).
+- **Estimated Effort:** Cross-stack feature — 8–15 tool calls, ~12 min.
 
-Complete agentops-policy-federation for policy distribution and enforcement across agents. Policies are distributed to agent groups, enforced at the agent level, and versioned for consistency. This ensures agents operate within defined constraints.
+### Deliverables
 
-### Subtasks
-- [ ] T035 Audit current agentops-policy-federation: existing policy code, distribution mechanism
-- [ ] T036 Design policy schema: policy rules, scopes, priorities, versioning
-- [ ] T037 Implement policy distribution: push policies to agent groups, version tracking
-- [ ] T038 Implement policy enforcement: evaluate policies before agent actions
-- [ ] T039 Integrate with Agentora: attach policies to agent groups, enforce during orchestration
-- [ ] T040 Implement policy conflict detection: detect conflicting rules, resolution strategies
-- [ ] T041 Implement policy audit: log policy evaluations, violations, and overrides
-- [ ] T042 Write unit tests for policy distribution and enforcement (target: ≥80%)
-- [ ] T043 Write integration tests: policy enforcement across multi-agent scenarios
-- [ ] T044 Add rustdoc with policy definition and distribution examples
-- [ ] T045 Run quality checks: `cargo test`, `cargo clippy -- -D warnings`, `cargo fmt`
+- Policy schema with rules, scopes, priorities, versioning.
+- Distribution: push to agent groups; version tracking.
+- Enforcement at agent level; deny-overrides default per D2.4.
+- Conflict detection + resolution.
+- Audit log of evaluations, violations, overrides — backed by
+  `phenotype-event-sourcing`.
+- Reuse: build on `phenotype-policy-engine` rather than authoring a parallel
+  rule evaluator.
 
-### Dependencies
-- WP-001 (Agentora orchestration available for policy attachment)
+### Acceptance Criteria
 
-### Risks & Mitigations
-- Policy enforcement performance: Cache policy evaluations, optimize hot paths
-- Policy conflicts: Implement clear resolution strategy (priority-based, deny-overrides)
+- ≥80% coverage on distribution + enforcement.
+- Integration test: multi-agent scenario with conflicting policies; expected
+  resolution outcome verified.
+- Per-repo Phase 4 gates green.
+
+### Risks
+
+- Enforcement performance → cache policy evaluations; benchmark hot paths.
+- Conflict semantics → resolution rule made explicit in docs and tests.
 
 ---
 
-## WP-005: helMo — Agent Mobility and Communication
+## WP-005: helMo — Agent Mobility
 
-- **State:** planned
-- **Sequence:** 5
-- **File Scope:** helMo repository (src/, tests/, docs/)
-- **Acceptance Criteria:**
-  - Agent mobility implementation: migrate agent state between hosts
-  - Integrated with Agentora orchestration (mobility as orchestration action)
-  - State serialization and deserialization for agent migration
-  - Communication between mobile agents and stationary agents
-  - Rollback mechanisms for failed migrations
-  - ≥80% test coverage on mobility core
-  - All quality checks passing
-- **Estimated Effort:** M
+- **Phase:** 3 — Build
+- **Sequence:** 5 (parallel with WP-002, WP-003, WP-004)
+- **Owner Repo:** helMo
+- **File Scope:** helMo `src/`, `tests/`, `docs/`
+- **Depends On:** WP-001 (lifecycle + orchestrator action surface), plan
+  task D2.5 (mobility protocol).
+- **Estimated Effort:** Cross-stack feature — 8–15 tool calls, ~12 min.
 
-Complete helMo for agent mobility — the ability to migrate agent state between hosts. This enables load balancing, fault tolerance, and dynamic resource allocation. helMo integrates with Agentora for orchestration-aware mobility.
+### Deliverables
 
-### Subtasks
-- [ ] T046 Audit current helMo state: existing mobility prototype, serialization approach
-- [ ] T047 Design agent state serialization format: what to serialize, what to reconstruct
-- [ ] T048 Implement state serialization: capture agent context, memory, and execution state
-- [ ] T049 Implement state deserialization: reconstruct agent on target host
-- [ ] T050 Implement agent migration: coordinate source and target hosts, transfer state
-- [ ] T051 Integrate with Agentora: mobility as orchestration action, lifecycle-aware migration
-- [ ] T052 Implement rollback: revert migration on failure, restore original agent state
-- [ ] T053 Implement mobile-stationary agent communication: messaging across migration boundaries
-- [ ] T054 Write unit tests for serialization and migration (target: ≥80% coverage)
-- [ ] T055 Write integration tests: agent migration between mock hosts
-- [ ] T056 Add rustdoc with mobility setup and migration examples
-- [ ] T057 Run quality checks: `cargo test`, `cargo clippy -- -D warnings`, `cargo fmt`
+- Snapshot format for agent state, memory, execution context.
+- Capture + restore implementation honoring D2.5 protocol.
+- Migration coordinator: source ↔ target host handshake, transfer, commit.
+- Rollback on failure with checkpoint restore.
+- Mobile ↔ stationary agent messaging across migration boundaries.
 
-### Dependencies
-- WP-001 (Agentora orchestration for mobility actions)
+### Acceptance Criteria
 
-### Risks & Mitigations
-- State serialization completeness: Thorough testing of agent state capture, document limitations
-- Migration failures: Implement checkpoint-based rollback, test failure scenarios extensively
+- ≥80% coverage on serialization + migration.
+- Integration test: mock multi-host migration with induced failure +
+  rollback.
+- Per-repo Phase 4 gates green.
+
+### Risks
+
+- State capture completeness → enumerate captured fields in docs; treat
+  uncaptured state as a documented defect, not silent loss.
+- Migration failure → checkpoint-based rollback exercised in tests.
 
 ---
 
-## WP-006: agent-devops-setups — CI/CD Templates for Agent Projects
+## WP-006: agent-devops-setups — CI/CD + Deployment Templates
 
-- **State:** planned
+- **Phase:** 3 — Build (final convergence)
 - **Sequence:** 6
-- **File Scope:** agent-devops-setups repository (templates/, docs/)
-- **Acceptance Criteria:**
-  - CI/CD templates for agent projects (GitHub Actions, GitLab CI)
-  - Templates integrate with Agentora, AgentMCP, agent-wave, and policy-federation
-  - Deployment templates for agent orchestration clusters
-  - Monitoring and alerting templates for agent health
-  - Documentation for all templates with usage examples
-  - All templates validated (lint, dry-run)
-- **Estimated Effort:** S
+- **Owner Repo:** agent-devops-setups
+- **File Scope:** agent-devops-setups `templates/`, `docs/`
+- **Depends On:** WP-001 through WP-005 + plan task D2.6 (template matrix).
+- **Estimated Effort:** Small feature — 3–6 tool calls, ~3 min.
 
-Complete agent-devops-setups with CI/CD templates for deploying and managing agent projects. Templates cover GitHub Actions, GitLab CI, deployment configurations, and monitoring setups for the full agent framework.
+### Deliverables
 
-### Subtasks
-- [ ] T058 Audit current agent-devops-setups: existing templates, gaps
-- [ ] T059 Create GitHub Actions template for agent project CI (build, test, lint)
-- [ ] T060 Create GitHub Actions template for agent deployment (orchestration cluster)
-- [ ] T061 Create GitLab CI template mirroring GitHub Actions functionality
-- [ ] T062 Create deployment template: Docker Compose for agent orchestration cluster
-- [ ] T063 Create monitoring template: Prometheus + Grafana dashboards for agent health
-- [ ] T064 Create alerting template: alert rules for agent failures, policy violations
-- [ ] T065 Validate all templates: lint, dry-run, verify syntax
-- [ ] T066 Document all templates with setup instructions and customization guide
-- [ ] T067 Create example agent project using all templates end-to-end
+- GitHub Actions templates: agent-project CI (build, test, lint) and
+  orchestration-cluster deployment.
+- GitLab CI templates mirroring functionality.
+- Deployment template for an orchestration cluster (container + manifest).
+- Monitoring template (Prometheus + Grafana dashboards) for agent health.
+- Alerting template covering agent failure and policy violations.
+- End-to-end example agent project consuming all templates.
+- Compliance: templates conform to Phenotype scripting hierarchy — no new
+  shell beyond ≤5-line glue with inline justification.
 
-### Dependencies
-- WP-001 through WP-005 (agent framework components available for template integration)
+### Acceptance Criteria
 
-### Risks & Mitigations
-- Template drift: Pin dependency versions in templates, document update process
-- Platform compatibility: Test templates on both GitHub Actions and GitLab CI
+- All templates pass platform-native lint + dry-run.
+- Documentation includes per-template setup and customization steps.
+- Example project boots through CI green.
+- Per-repo Phase 4 gates green (V4.6).
+
+### Risks
+
+- Template drift → pin upstream actions/images by digest where possible;
+  document update cadence.
+- Cross-platform parity → tested on both GitHub Actions and GitLab CI.
 
 ---
 
-## Dependency & Execution Summary
+## Dependency Summary
 
 ```
-WP-001 (Agentora orchestration) ─────── first, no deps
-WP-002 (AgentMCP protocol) ──────────── depends on WP-001
-WP-003 (agent-wave events) ──────────── depends on WP-001 (parallel with WP-002)
-WP-004 (agentops-policy-federation) ─── depends on WP-001 (parallel with WP-002, WP-003)
-WP-005 (helMo mobility) ─────────────── depends on WP-001 (parallel with WP-002, WP-003, WP-004)
-WP-006 (agent-devops-setups) ────────── depends on WP-001 through WP-005
+                    ┌── WP-002 (AgentMCP) ──┐
+WP-001 (Agentora) ──┼── WP-003 (agent-wave) ┼── WP-006 (devops-setups)
+                    ├── WP-004 (policy-fed) ─┤
+                    └── WP-005 (helMo) ──────┘
 ```
 
-**Parallelization**: WP-002 through WP-005 can run in parallel after WP-001. WP-006 is the final integration step.
+WP-001 is the gate; WP-002..WP-005 fan out in parallel; WP-006 converges.
 
-**MVP Scope**: WP-001 alone provides agent orchestration. WP-002 adds MCP protocol support for external integration.
+## Phase 4 Validation Hook
+
+Each WP must satisfy `plan.md` V4.x acceptance before its WP closes. Cross-repo
+scenarios (V4.2..V4.5) are owned by Phase 4 and may flag regressions back into
+the originating WP. WP-006 is gated on V4.6.
+
+## Phase 5 Handoff
+
+On Phase 4 sign-off, plan tasks H5.1..H5.4 update CHANGELOGs, the org-pages
+portfolio entry, and `repos/worklogs/ARCHITECTURE.md`. Open follow-ups
+(device-automation, plugin system) are routed to specs 011 and 015.
+
+## MVP Note
+
+Spec MVP slice is WP-001 alone (orchestration-only). WP-001 + WP-002 yields
+external MCP-client integration. Full success criteria (`spec.md`) require
+all six WPs.
