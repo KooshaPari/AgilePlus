@@ -1,6 +1,6 @@
 <div id="kanban-board"
      hx-get="/api/dashboard/kanban"
-     hx-trigger="sse:feature_updated"
+     hx-trigger="sse:feature_updated from:body"
      hx-swap="outerHTML"
      x-data="kanbanBoard()"
      class="flex flex-col md:flex-row gap-4 p-2 md:p-4 overflow-x-auto">

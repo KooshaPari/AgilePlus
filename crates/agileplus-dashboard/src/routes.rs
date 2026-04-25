@@ -2220,6 +2220,7 @@ pub fn router(state: SharedState) -> Router {
         )
         .route("/api/time", get(time_footer))
         .route("/api/stream", get(sse_stream))
+        .route("/api/v1/stream", get(sse_stream))
         .route("/api/stream-placeholder", get(stream_placeholder))
         .route(
             "/api/evidence/{feature_id}/{artifact_id}/content",
