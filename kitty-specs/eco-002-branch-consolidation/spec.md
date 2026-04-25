@@ -1,3 +1,17 @@
+---
+spec_id: AgilePlus-eco-002
+state: COMPLETED
+plan_status: NOT_REQUIRED
+last_audit: 2026-04-25
+superseded_by: |
+  Acceptance criteria met 2026-03-28/29: 45 stale branches removed, 230+ PRs triaged.
+  Ongoing branch hygiene now handled by:
+    - patch-id sweep (executed this session, 2026-04-25)
+    - GitHub branch protection rules
+    - per-repo branch triage in worklogs
+plan_rationale: All work packages complete; no forward implementation remaining.
+---
+
 # Specification: Branch Consolidation
 **Slug**: branch-consolidation | **Date**: 2026-03-29 | **State**: completed
 

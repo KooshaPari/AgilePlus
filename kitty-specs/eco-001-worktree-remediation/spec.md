@@ -1,3 +1,17 @@
+---
+spec_id: AgilePlus-eco-001
+state: COMPLETED
+plan_status: NOT_REQUIRED
+last_audit: 2026-04-25
+superseded_by: |
+  Acceptance criteria fully met 2026-03-28/29 (see checked items below).
+  Live worktree governance now embedded in:
+    - Phenotype/CLAUDE.md "Worktree Rule"
+    - repos/CLAUDE.md worktree discipline
+    - repos/.worktrees/ + repos/<repo>-wtrees/<topic> conventions
+plan_rationale: All work packages complete; no forward implementation remaining.
+---
+
 # Specification: Worktree Remediation
 **Slug**: worktree-remediation | **Date**: 2026-03-29 | **State**: completed
 
