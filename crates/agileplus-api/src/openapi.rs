@@ -11,7 +11,8 @@
 //! ```no_run
 //! use agileplus_api::openapi::ApiDoc;
 //! use utoipa::OpenApi;
-//! let yaml = ApiDoc::openapi().to_yaml().unwrap();
+//! // utoipa 5 removed `OpenApi::to_yaml()`; serialize via serde_yaml.
+//! let yaml = serde_yaml::to_string(&ApiDoc::openapi()).unwrap();
 //! ```
 //!
 //! A `--dump-openapi` flag on `agileplus-api`'s binary writes this to

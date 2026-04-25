@@ -3,13 +3,13 @@
 //! # Quick-start
 //!
 //! ```no_run
-//! use agileplus_telemetry::{init_telemetry, config::TelemetryConfig, trace_layer};
+//! use agileplus_telemetry::{TelemetryAdapter, TelemetryConfig, trace_layer};
 //! use tracing_subscriber::prelude::*;
 //!
 //! #[tokio::main]
 //! async fn main() {
 //!     let cfg = TelemetryConfig::load().unwrap_or_default();
-//!     let _guard = init_telemetry(cfg.clone()).expect("telemetry init");
+//!     let _adapter = TelemetryAdapter::new(cfg).expect("telemetry init");
 //!     tracing_subscriber::registry().with(trace_layer()).init();
 //! }
 //! ```

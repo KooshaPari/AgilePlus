@@ -353,7 +353,7 @@ async fn create_sub_issue_sends_post_with_parent() {
     let mock_server = MockServer::start().await;
     Mock::given(method("POST"))
         .and(path("/api/v1/workspaces/ws/projects/proj/work-items/"))
-        .and(body_partial_json("{\"parent\":\"parent-123\"}"))
+        .and(body_partial_json(serde_json::json!({"parent": "parent-123"})))
         .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
             "id": "wi-child",
             "name": "Child Issue",
