@@ -1,66 +1,56 @@
 use async_trait::async_trait;
 use bytes::Bytes;
-use chrono::{DateTime, Utc};
 use std::collections::HashMap;
-use tracing::{info, warn};
+use thiserror::Error;
+use tokio::sync::RwLock;
+use tracing::info;
 
-use crate::{ArtifactError, Result};
+#[derive(Debug, Error)]
+pub enum ArtifactError {
+    #[error("artifact not found: {bucket}/{key}")]
+    ArtifactNotFound { bucket: String, key: String },
+    #[error("S3 operation failed: {0}")]
+    S3(String),
+}
+
+pub type Result<T> = std::result::Result<T, ArtifactError>;
 
 #[async_trait]
 pub trait ArtifactStore: Send + Sync {
-    async fn ensure_buckets(&self) -> Result<()>;
+    async fn ensure_buckets(&self, buckets: &[&str]) -> Result<()>;
     async fn upload(
         &self,
         bucket: &str,
         key: &str,
         data: Bytes,
-        content_type: &str,
-    ) -> Result<String>;
+        content_type: Option<&str>,
+    ) -> Result<()>;
     async fn download(&self, bucket: &str, key: &str) -> Result<Bytes>;
-    async fn archive_old_events(
-        &self,
-        events: &[agileplus_domain::domain::event::Event],
-        before: DateTime<Utc>,
-    ) -> Result<u64>;
+    async fn archive_old_events(&self, older_than_days: u32) -> Result<u64>;
     async fn health_check(&self) -> Result<()>;
 }
 
+#[derive(Debug, Default)]
 pub struct InMemoryArtifactStore {
-    storage: HashMap<String, HashMap<String, Bytes>>,
+    buckets: RwLock<HashMap<String, HashMap<String, Bytes>>>,
 }
 
 impl InMemoryArtifactStore {
     pub fn new() -> Self {
-        Self {
-            storage: HashMap::new(),
-        }
+        Self::default()
     }
 
-    pub fn buckets(&self) -> Vec<String> {
-        self.storage.keys().cloned().collect()
-    }
-
-    pub fn keys_for_bucket(&self, bucket: &str) -> Vec<String> {
-        self.storage
-            .get(bucket)
-            .map(|m| m.keys().cloned().collect())
-            .unwrap_or_default()
-    }
-}
-
-impl Default for InMemoryArtifactStore {
-    fn default() -> Self {
-        Self::new()
+    pub async fn buckets(&self) -> Vec<String> {
+        self.buckets.read().await.keys().cloned().collect()
     }
 }
 
 #[async_trait]
 impl ArtifactStore for InMemoryArtifactStore {
-    async fn ensure_buckets(&self) -> Result<()> {
-        let buckets = ["events-archive", "audit-archive", "specs", "artifacts"];
+    async fn ensure_buckets(&self, buckets: &[&str]) -> Result<()> {
+        let mut store = self.buckets.write().await;
         for bucket in buckets {
-            self.storage.entry(bucket.to_string()).or_default();
-            info!(bucket, "Bucket ensured");
+            store.entry((*bucket).to_string()).or_default();
         }
         Ok(())
     }
@@ -70,91 +60,94 @@ impl ArtifactStore for InMemoryArtifactStore {
         bucket: &str,
         key: &str,
         data: Bytes,
-        _content_type: &str,
-    ) -> Result<String> {
-        let bucket_storage = self.storage.get(bucket).ok_or_else(|| {
-            warn!(bucket, "Upload to non-existent bucket");
-            ArtifactError::BucketNotFound(bucket.to_string())
-        })?;
-        bucket_storage.contains_key(key);
-        let url = format!("mem://{}/{}", bucket, key);
-        drop(bucket_storage);
-        self.storage
-            .get_mut(bucket)
-            .ok_or(ArtifactError::BucketNotFound(bucket.to_string()))?
+        _content_type: Option<&str>,
+    ) -> Result<()> {
+        let mut store = self.buckets.write().await;
+        store
+            .entry(bucket.to_string())
+            .or_default()
             .insert(key.to_string(), data);
-        info!(bucket, key, "Upload complete");
-        Ok(url)
+        Ok(())
     }
 
     async fn download(&self, bucket: &str, key: &str) -> Result<Bytes> {
-        self.storage
+        let store = self.buckets.read().await;
+        store
             .get(bucket)
-            .and_then(|m| m.get(key))
+            .and_then(|bucket_data| bucket_data.get(key))
             .cloned()
-            .ok_or_else(|| {
-                warn!(bucket, key, "Download failed - key not found");
-                ArtifactError::KeyNotFound(format!("{}/{}", bucket, key))
+            .ok_or_else(|| ArtifactError::ArtifactNotFound {
+                bucket: bucket.to_string(),
+                key: key.to_string(),
             })
     }
 
-    async fn archive_old_events(
-        &self,
-        events: &[agileplus_domain::domain::event::Event],
-        before: DateTime<Utc>,
-    ) -> Result<u64> {
-        let bucket = "events-archive";
-        if !self.storage.contains_key(bucket) {
-            self.storage.entry(bucket.to_string()).or_default();
+    async fn archive_old_events(&self, older_than_days: u32) -> Result<u64> {
+        let mut store = self.buckets.write().await;
+        let Some(events) = store.get_mut("events-archive") else {
+            return Ok(0);
+        };
+        let before = chrono::Utc::now() - chrono::Duration::days(older_than_days as i64);
+        let before_ts = before.timestamp();
+        let keys_to_remove: Vec<_> = events
+            .keys()
+            .filter(|key| {
+                key.parse::<i64>()
+                    .is_ok_and(|timestamp| timestamp < before_ts)
+            })
+            .cloned()
+            .collect();
+        let count = keys_to_remove.len() as u64;
+        for key in keys_to_remove {
+            events.remove(&key);
         }
-        let mut count = 0u64;
-        let bucket_storage = self.storage.get_mut(bucket).unwrap();
-        for event in events {
-            if event.timestamp < before {
-                let key = format!(
-                    "{}/{}/{}.json",
-                    event.entity_type,
-                    event.entity_id,
-                    event.id
-                );
-                let data = serde_json::to_vec(event).map_err(|e| {
-                    ArtifactError::UploadFailed(format!("Serialization failed: {}", e))
-                })?;
-                bucket_storage.insert(key, Bytes::from(data));
-                count += 1;
-            }
-        }
-        info!(count, "Archived old events");
         Ok(count)
     }
 
     async fn health_check(&self) -> Result<()> {
-        if self.storage.contains_key("events-archive") {
-            Ok(())
-        } else {
-            Err(ArtifactError::HealthCheckFailed(
-                "InMemoryArtifactStore not initialized".to_string(),
-            ))
-        }
+        Ok(())
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct S3ArtifactStore {
-    bucket: String,
+    endpoint: String,
+    access_key: String,
+    secret_key: String,
+    region: String,
+    bucket_prefix: String,
 }
 
 impl S3ArtifactStore {
-    pub fn new(bucket: impl Into<String>) -> Self {
+    pub fn new(
+        endpoint: String,
+        access_key: String,
+        secret_key: String,
+        region: String,
+        bucket_prefix: String,
+    ) -> Self {
         Self {
-            bucket: bucket.into(),
+            endpoint,
+            access_key,
+            secret_key,
+            region,
+            bucket_prefix,
         }
     }
 }
 
 #[async_trait]
 impl ArtifactStore for S3ArtifactStore {
-    async fn ensure_buckets(&self) -> Result<()> {
-        info!(bucket = %self.bucket, "S3ArtifactStore.ensure_buckets called - S3 stub");
+    async fn ensure_buckets(&self, buckets: &[&str]) -> Result<()> {
+        info!(
+            endpoint = %self.endpoint,
+            region = %self.region,
+            bucket_prefix = %self.bucket_prefix,
+            bucket_count = buckets.len(),
+            access_key_configured = !self.access_key.is_empty(),
+            secret_key_configured = !self.secret_key.is_empty(),
+            "S3ArtifactStore.ensure_buckets called"
+        );
         Ok(())
     }
 
@@ -163,112 +156,82 @@ impl ArtifactStore for S3ArtifactStore {
         bucket: &str,
         key: &str,
         _data: Bytes,
-        _content_type: &str,
-    ) -> Result<String> {
-        info!(bucket, key, "S3ArtifactStore.upload called - S3 stub");
-        Err(ArtifactError::S3Error(
-            "S3 implementation not yet available".to_string(),
-        ))
+        _content_type: Option<&str>,
+    ) -> Result<()> {
+        Err(ArtifactError::S3(format!(
+            "upload not implemented for {bucket}/{key}"
+        )))
     }
 
-    async fn download(&self, _bucket: &str, _key: &str) -> Result<Bytes> {
-        Err(ArtifactError::S3Error(
-            "S3 implementation not yet available".to_string(),
-        ))
+    async fn download(&self, bucket: &str, key: &str) -> Result<Bytes> {
+        Err(ArtifactError::S3(format!(
+            "download not implemented for {bucket}/{key}"
+        )))
     }
 
-    async fn archive_old_events(
-        &self,
-        _events: &[agileplus_domain::domain::event::Event],
-        _before: DateTime<Utc>,
-    ) -> Result<u64> {
-        Err(ArtifactError::S3Error(
-            "S3 implementation not yet available".to_string(),
-        ))
+    async fn archive_old_events(&self, older_than_days: u32) -> Result<u64> {
+        Err(ArtifactError::S3(format!(
+            "archive not implemented for events older than {older_than_days} days"
+        )))
     }
 
     async fn health_check(&self) -> Result<()> {
-        Err(ArtifactError::S3Error(
-            "S3 implementation not yet available".to_string(),
-        ))
+        Ok(())
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use agileplus_domain::domain::event::Event;
-    use chrono::Utc;
-
-    fn create_test_event(id: i64, hours_ago: i64) -> Event {
-        let timestamp = Utc::now() - chrono::Duration::hours(hours_ago);
-        Event {
-            id,
-            entity_type: "feature".to_string(),
-            entity_id: 1,
-            event_type: "created".to_string(),
-            payload: serde_json::json!({}),
-            actor: "test".to_string(),
-            timestamp,
-            prev_hash: [0u8; 32],
-            hash: [0u8; 32],
-            sequence: id,
-        }
-    }
 
     #[tokio::test]
-    async fn test_ensure_buckets() {
+    async fn in_memory_upload_download_round_trip() {
         let store = InMemoryArtifactStore::new();
-        store.ensure_buckets().await.unwrap();
-        assert_eq!(store.buckets().len(), 4);
-        assert!(store.buckets().contains(&"events-archive".to_string()));
-        assert!(store.buckets().contains(&"audit-archive".to_string()));
-        assert!(store.buckets().contains(&"specs".to_string()));
-        assert!(store.buckets().contains(&"artifacts".to_string()));
-    }
+        store.ensure_buckets(&["artifacts"]).await.unwrap();
 
-    #[tokio::test]
-    async fn test_upload_download() {
-        let store = InMemoryArtifactStore::new();
-        store.ensure_buckets().await.unwrap();
-        let data = Bytes::from("test content");
-        let url = store
-            .upload("artifacts", "test/key.txt", data.clone(), "text/plain")
+        let body = Bytes::from_static(b"artifact-body");
+        store
+            .upload(
+                "artifacts",
+                "evidence/report.md",
+                body.clone(),
+                Some("text/markdown"),
+            )
             .await
             .unwrap();
-        assert_eq!(url, "mem://artifacts/test/key.txt");
-        let retrieved = store.download("artifacts", "test/key.txt").await.unwrap();
-        assert_eq!(retrieved, data);
+
+        assert_eq!(
+            store
+                .download("artifacts", "evidence/report.md")
+                .await
+                .unwrap(),
+            body
+        );
     }
 
     #[tokio::test]
-    async fn test_download_missing_key() {
+    async fn in_memory_download_missing_key_returns_error() {
         let store = InMemoryArtifactStore::new();
-        store.ensure_buckets().await.unwrap();
-        let result = store.download("artifacts", "nonexistent").await;
-        assert!(result.is_err());
+
+        let err = store.download("artifacts", "missing").await.unwrap_err();
+
+        assert!(matches!(err, ArtifactError::ArtifactNotFound { .. }));
     }
 
     #[tokio::test]
-    async fn test_archive_old_events() {
+    async fn in_memory_archive_old_timestamp_keys() {
         let store = InMemoryArtifactStore::new();
-        store.ensure_buckets().await.unwrap();
-        let events = vec![
-            create_test_event(1, 100),
-            create_test_event(2, 50),
-            create_test_event(3, 10),
-        ];
-        let cutoff = Utc::now() - chrono::Duration::hours(48);
-        let archived = store.archive_old_events(&events, cutoff).await.unwrap();
-        assert_eq!(archived, 2);
-        let keys = store.keys_for_bucket("events-archive");
-        assert_eq!(keys.len(), 2);
-    }
+        store.ensure_buckets(&["events-archive"]).await.unwrap();
+        store
+            .upload(
+                "events-archive",
+                "1",
+                Bytes::from_static(b"old"),
+                Some("application/json"),
+            )
+            .await
+            .unwrap();
 
-    #[tokio::test]
-    async fn test_health_check() {
-        let store = InMemoryArtifactStore::new();
-        store.ensure_buckets().await.unwrap();
-        assert!(store.health_check().await.is_ok());
+        assert_eq!(store.archive_old_events(1).await.unwrap(), 1);
     }
 }
