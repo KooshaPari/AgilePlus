@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use std::collections::HashMap;
 use std::sync::Mutex;
 
-use super::types::{Node, NodeType, Relationship, RelType};
+use super::types::{Node, NodeType, RelType, Relationship};
 
 #[derive(Debug, thiserror::Error)]
 pub enum GraphError {
@@ -134,11 +134,20 @@ mod tests {
     #[tokio::test]
     async fn test_upsert_node() {
         let store = InMemoryGraphStore::new();
-        let node = Node::new(NodeType::Feature, serde_json::json!({"slug": "feat-1"}));
+        let node_id = uuid::Uuid::new_v4();
+        let node = Node::with_id(
+            node_id,
+            NodeType::Feature,
+            serde_json::json!({"slug": "feat-1"}),
+        );
 
         store.upsert_node(&node).await.unwrap();
 
-        assert_eq!(store.get_node(node.id).unwrap().properties["slug"], "feat-1");
+        assert_eq!(node.id, node_id);
+        assert_eq!(
+            store.get_node(node.id).unwrap().properties["slug"],
+            "feat-1"
+        );
     }
 
     #[tokio::test]
@@ -163,10 +172,34 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_relationship_with_stable_uuid() {
+        let store = InMemoryGraphStore::new();
+        let node1 = Node::new(NodeType::Feature, serde_json::json!({"slug": "f1"}));
+        let node2 = Node::new(NodeType::Feature, serde_json::json!({"slug": "f2"}));
+        let relationship_id = uuid::Uuid::new_v4();
+
+        store.upsert_node(&node1).await.unwrap();
+        store.upsert_node(&node2).await.unwrap();
+
+        let rel = Relationship::with_id(relationship_id, node1.id, node2.id, RelType::DependsOn);
+        store.create_relationship(&rel).await.unwrap();
+
+        let rels = store.get_relationships_from(node1.id);
+        assert_eq!(rels.len(), 1);
+        assert_eq!(rels[0].id, relationship_id);
+    }
+
+    #[tokio::test]
     async fn test_get_blocking_path() {
         let store = InMemoryGraphStore::new();
-        let blocker = Node::new(NodeType::WorkPackage, serde_json::json!({"title": "blocker"}));
-        let blocked = Node::new(NodeType::WorkPackage, serde_json::json!({"title": "blocked"}));
+        let blocker = Node::new(
+            NodeType::WorkPackage,
+            serde_json::json!({"title": "blocker"}),
+        );
+        let blocked = Node::new(
+            NodeType::WorkPackage,
+            serde_json::json!({"title": "blocked"}),
+        );
 
         store.upsert_node(&blocker).await.unwrap();
         store.upsert_node(&blocked).await.unwrap();

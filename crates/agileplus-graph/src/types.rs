@@ -53,8 +53,12 @@ pub struct Node {
 
 impl Node {
     pub fn new(node_type: NodeType, properties: serde_json::Value) -> Self {
+        Self::with_id(uuid::Uuid::new_v4(), node_type, properties)
+    }
+
+    pub fn with_id(id: uuid::Uuid, node_type: NodeType, properties: serde_json::Value) -> Self {
         Node {
-            id: uuid::Uuid::new_v4(),
+            id,
             node_type,
             properties,
         }
@@ -72,8 +76,17 @@ pub struct Relationship {
 
 impl Relationship {
     pub fn new(from_node_id: uuid::Uuid, to_node_id: uuid::Uuid, rel_type: RelType) -> Self {
+        Self::with_id(uuid::Uuid::new_v4(), from_node_id, to_node_id, rel_type)
+    }
+
+    pub fn with_id(
+        id: uuid::Uuid,
+        from_node_id: uuid::Uuid,
+        to_node_id: uuid::Uuid,
+        rel_type: RelType,
+    ) -> Self {
         Relationship {
-            id: uuid::Uuid::new_v4(),
+            id,
             from_node_id,
             to_node_id,
             rel_type,

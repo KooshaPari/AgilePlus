@@ -1,8 +1,8 @@
-pub mod types;
 pub mod graph_store;
+pub mod types;
 
-pub use types::{NodeType, RelType, Node, Relationship};
-pub use graph_store::{GraphStore, InMemoryGraphStore, GraphError};
+pub use graph_store::{GraphError, GraphStore, InMemoryGraphStore};
+pub use types::{Node, NodeType, RelType, Relationship};
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -11,4 +11,3 @@ pub enum Error {
     #[error("Config error: {0}")]
     Config(String),
 }
-
