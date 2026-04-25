@@ -2178,7 +2178,10 @@ pub fn router(state: SharedState) -> Router {
         .route("/features", get(features_page))
         .route("/features/{id}", get(feature_page))
         .route("/events", get(events_page))
-        .route("/health", get(health_page))
+        // NOTE: /health is owned by agileplus-api (router.rs, T070, detailed
+        // JSON health). The HTML health page lives at /health-page to avoid
+        // a route conflict panic when build_router merges the two routers.
+        .route("/health-page", get(health_page))
         .route("/settings", get(settings_page))
         .route("/settings/plane", get(plane_settings_page))
         .route("/settings/agents", get(agent_settings_page))
@@ -2225,7 +2228,9 @@ pub fn router(state: SharedState) -> Router {
         )
         .route("/api/time", get(time_footer))
         .route("/api/stream", get(sse_stream))
-        .route("/api/v1/stream", get(sse_stream))
+        // NOTE: /api/v1/stream is owned by agileplus-api (router.rs, T069).
+        // Previously this crate registered an alias (#334), but that caused a
+        // route conflict panic when build_router merged the two routers.
         .route("/api/stream-placeholder", get(stream_placeholder))
         .route(
             "/api/evidence/{feature_id}/{artifact_id}/content",
