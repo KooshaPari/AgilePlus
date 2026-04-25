@@ -6,6 +6,6 @@ on:
 
 jobs:
   sync:
-    uses: KooshaPari/phenoShared/.github/workflows/reusable/alert-sync-issues.yml@6a6e1b06026e9443449e419a2892cd0e47c19442
+    uses: KooshaPari/phenoShared/.github/workflows/reusable/alert-sync-issues.yml@5e6c1f05d696d056b24df431401b4632b01be0d3
     with:
       auto-label: auto-alert-sync
