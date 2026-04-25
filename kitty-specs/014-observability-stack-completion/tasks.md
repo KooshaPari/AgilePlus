@@ -1,239 +1,366 @@
-# Work Packages: Observability Stack Completion — Complete Across 8 Repositories
+# Work Packages: Observability Stack Completion
 
-**Inputs**: Design documents from `kitty-specs/014-observability-stack-completion/`
-**Prerequisites**: spec.md, Rust toolchain, OpenTelemetry knowledge
-**Scope**: Cross-repo (8 repositories): tracely, thegent-metrics, thegent-shm, helix-logging, Tracera, Profila, Phench, helix-tracing (archive)
+**Inputs:** `spec.md`, `plan.md` in this directory.
+**Prerequisites:** Rust toolchain, OpenTelemetry knowledge, Snyk + cargo-deny installed.
+**Primary scope:** `repos/PhenoObservability/` (13-crate Rust workspace).
+**Secondary scope:** consumer repos (AgilePlus, heliosApp, thegent, cliproxyapi-plusplus) for reference sweep.
 
----
-
-## WP-001: Phench (Benchmarking) — Complete Implementation with Reporting
-
-- **State:** planned
-- **Sequence:** 1
-- **File Scope:** Phench repository (src/, tests/, docs/)
-- **Acceptance Criteria:**
-  - Phench benchmarking framework fully implemented with statistical analysis
-  - Benchmark results exportable to JSON, CSV, and human-readable formats
-  - Integration hooks for correlation with production metrics pipeline
-  - ≥80% test coverage on benchmarking core
-  - All quality checks passing (clippy, tests, fmt)
-- **Estimated Effort:** M
-
-Complete the Phench benchmarking framework with full statistical analysis, result reporting, and integration hooks for the observability pipeline. Phench serves as the benchmarking component that correlates development-time benchmarks with production performance metrics.
-
-### Subtasks
-- [ ] T001 Audit current Phench state: existing code, gaps, dependencies
-- [ ] T002 Implement statistical analysis module: mean, stddev, percentiles, confidence intervals
-- [ ] T003 Implement benchmark result exporters: JSON, CSV, Markdown report
-- [ ] T004 Add benchmark suite runner with warmup, iteration, and cooldown phases
-- [ ] T005 Implement observability integration hooks: emit benchmark results as metrics events
-- [ ] T006 Write unit tests for statistical analysis (target: ≥80% coverage)
-- [ ] T007 Write integration tests for result export formats
-- [ ] T008 Add comprehensive rustdoc with benchmarking examples
-- [ ] T009 Run quality checks: `cargo test`, `cargo clippy -- -D warnings`, `cargo fmt`
-
-### Dependencies
-- None (can start independently)
-
-### Risks & Mitigations
-- Statistical analysis complexity: Use existing crates (statrs) as reference, implement core functions
-- Benchmark flakiness: Implement warmup phases, multiple iterations, outlier rejection
+> Per global governance: planner WPs equip implementers. No code in this document. Acceptance criteria + file scope + dependencies + handoff prompts only.
 
 ---
 
-## WP-002: tracely — Implement Distributed Tracing with OpenTelemetry
+## Phase 1 — Discovery
+
+### WP-000 — Inventory & Freshness Audit
 
 - **State:** planned
-- **Sequence:** 2
-- **File Scope:** tracely repository (src/, tests/, docs/)
-- **Acceptance Criteria:**
-  - W3C Trace Context propagation implemented for HTTP, gRPC, and message queues
-  - Trace context extraction and injection working across all protocol adapters
-  - OpenTelemetry SDK integration with configurable exporters (OTLP, stdout, file)
-  - Integration with thegent-metrics and thegent-shm for trace-metric correlation
-  - ≥80% test coverage on tracing core
-  - All quality checks passing
-- **Estimated Effort:** L
-
-Complete the tracely distributed tracing implementation with full W3C Trace Context propagation. This is the backbone of the observability stack, providing trace IDs that correlate logs, metrics, and profiling data across services.
-
-### Subtasks
-- [ ] T010 Audit current tracely state: existing tracing code, protocol adapters, gaps
-- [ ] T011 Implement W3C Trace Context: traceparent and traceparent header parsing/generation
-- [ ] T012 Implement HTTP trace context injection/extraction middleware
-- [ ] T013 Implement gRPC trace context propagation via metadata
-- [ ] T014 Implement message queue trace context propagation (for async workflows)
-- [ ] T015 Integrate OpenTelemetry SDK with configurable exporters (OTLP, stdout, file)
-- [ ] T016 Implement trace sampling strategies: always-on, probability-based, head/tail
-- [ ] T017 Add trace-metric correlation hooks for thegent-metrics integration
-- [ ] T018 Write unit tests for trace context propagation (target: ≥80% coverage)
-- [ ] T019 Write integration tests for HTTP and gRPC trace propagation
-- [ ] T020 Add comprehensive rustdoc with tracing setup examples
-- [ ] T021 Run quality checks: `cargo test`, `cargo clippy -- -D warnings`, `cargo fmt`
-
-### Dependencies
-- None (can start in parallel with WP-001)
-
-### Risks & Mitigations
-- W3C spec compliance: Reference official W3C Trace Context spec, test against conformance suite
-- Performance overhead: Benchmark tracing overhead, optimize hot paths, support sampling
+- **Phase:** 1 (Discovery)
+- **Depends on:** —
+- **Effort:** Small (3-6 tool calls, ~2 min)
+- **File scope (read-only):**
+  - `repos/PhenoObservability/crates/*`
+  - `repos/PhenoObservability/CHANGELOG.md`
+  - `repos/PhenoObservability/Cargo.toml`
+  - `repos/AgilePlus/kitty-specs/014-observability-stack-completion/spec.md`
+- **File scope (write):** `kitty-specs/014-observability-stack-completion/research/inventory.md`
+- **Acceptance criteria:**
+  - Table of all 13 crates: name, version, last-touched commit, role (tracing/logging/metrics/sentinel/macros/storage), public surface summary.
+  - Delta vs. spec.md "8 repos" list documented (which crates absorbed which legacy repo).
+  - List of duplicate or orphaned crates flagged for archival.
+- **Handoff prompt:** "Audit `PhenoObservability/crates/`; produce inventory.md per WP-000 acceptance."
 
 ---
 
-## WP-003: thegent-metrics + thegent-shm — Metrics Collection and Shared Memory
+### WP-001 — W3C Trace Context Contract Doc
 
 - **State:** planned
-- **Sequence:** 3
-- **File Scope:** thegent-metrics repository, thegent-shm repository
-- **Acceptance Criteria:**
-  - thegent-metrics integrated with tracely for trace-metric correlation
-  - Consistent labeling scheme across all metrics (service, environment, version)
-  - thegent-shm shared memory optimized for low-latency metric writes
-  - Metrics exportable via OTLP with consistent schema
-  - Integration tests verifying trace ID propagation into metrics
-  - All quality checks passing
-- **Estimated Effort:** M
-
-Integrate thegent-metrics with the tracing pipeline and optimize thegent-shm shared memory for low-latency metric collection. Metrics receive trace context from tracely, enabling correlation between traces and metric anomalies.
-
-### Subtasks
-- [ ] T022 Audit thegent-metrics: current metric types, collection patterns, export formats
-- [ ] T023 Audit thegent-shm: shared memory layout, read/write performance, safety guarantees
-- [ ] T024 Implement trace ID injection into metric labels in thegent-metrics
-- [ ] T025 Establish consistent labeling scheme: service, environment, version, trace_id
-- [ ] T026 Integrate thegent-metrics with tracely trace context extraction
-- [ ] T027 Optimize thegent-shm: reduce lock contention, batch writes, memory alignment
-- [ ] T028 Implement OTLP metric export with consistent schema
-- [ ] T029 Write integration tests: trace → metric correlation, SHM read/write correctness
-- [ ] T030 Benchmark SHM performance: latency, throughput, memory usage
-- [ ] T031 Run quality checks across both crates
-
-### Dependencies
-- WP-002 (tracely trace context available for metric injection)
-
-### Risks & Mitigations
-- SHM safety: Use unsafe carefully, add extensive safety tests, consider memmap2 crate
-- Metric cardinality explosion: Enforce label limits, document cardinality best practices
+- **Phase:** 1 (Discovery)
+- **Depends on:** WP-000
+- **Effort:** Cross-stack (8-15 tool calls, ~5 min)
+- **File scope (write):** `kitty-specs/014-observability-stack-completion/research/w3c-contract.md`
+- **Acceptance criteria:**
+  - References W3C Trace Context spec (level 1 + level 2) by section number.
+  - Defines `traceparent` and `tracestate` parsing/emission requirements.
+  - Lists protocol adapters in scope: HTTP (axum, reqwest, hyper), gRPC (tonic metadata), async queues (NATS, Kafka).
+  - Specifies sampling decision propagation rules.
+  - Brief pseudocode (3-5 lines) showing extract/inject signature shape — no implementation.
+- **Handoff prompt:** "Author w3c-contract.md per WP-001 acceptance using PhenoObservability inventory."
 
 ---
 
-## WP-004: helix-logging — Structured Logging with Correlation IDs
+### WP-002 — Residual CVE + SBOM Verification
 
 - **State:** planned
-- **Sequence:** 4
-- **File Scope:** helix-logging repository (src/, tests/, docs/)
-- **Acceptance Criteria:**
-  - Automatic trace ID injection into all log entries
-  - Unified log format across all services (JSON with standard fields)
-  - Log levels configurable per module/service
-  - Integration with tracely for trace-log correlation
-  - ≥80% test coverage on logging core
-  - All quality checks passing
-- **Estimated Effort:** M
-
-Complete helix-logging with automatic trace ID injection and unified log format. Logs become correlated with traces and metrics through shared trace IDs, enabling full-stack observability queries.
-
-### Subtasks
-- [ ] T032 Audit helix-logging: current log format, structured logging support, output targets
-- [ ] T033 Implement automatic trace ID injection via tracing subscriber layer
-- [ ] T034 Define unified log format: timestamp, level, service, trace_id, span_id, message, fields
-- [ ] T035 Implement JSON log formatter with the unified format
-- [ ] T036 Add configurable log levels per module/service
-- [ ] T037 Implement multiple output targets: stdout, file, OTLP
-- [ ] T038 Integrate with tracely: extract trace context from current span
-- [ ] T039 Write unit tests for log formatting and trace ID injection (target: ≥80%)
-- [ ] T040 Write integration tests: log → trace correlation verification
-- [ ] T041 Run quality checks: `cargo test`, `cargo clippy -- -D warnings`, `cargo fmt`
-
-### Dependencies
-- WP-002 (tracely trace context available for log injection)
-
-### Risks & Mitigations
-- Log volume: Implement sampling, rate limiting, and structured field filtering
-- Trace ID extraction failures: Graceful degradation — log without trace_id, warn once
+- **Phase:** 1 (Discovery)
+- **Depends on:** WP-000
+- **Effort:** Small (3-6 tool calls, ~3 min)
+- **File scope (read):** `repos/PhenoObservability/Cargo.lock`, `repos/PhenoObservability/deny.toml`, recent SBOM under `repos/PhenoObservability/.sbom/` if present.
+- **File scope (write):** `kitty-specs/014-observability-stack-completion/research/cve-status.md`
+- **Acceptance criteria:**
+  - List of all open CVEs (HIGH/CRIT/MED) with crate + version + advisory ID.
+  - Confirmation PR #25 protobuf MED CVE is closed.
+  - Action plan for residual MED CVE (upgrade path or accept-with-justification).
+  - `cargo deny check advisories` exit code recorded.
+- **Handoff prompt:** "Run `cargo deny check advisories` and Snyk scan on PhenoObservability; produce cve-status.md."
 
 ---
 
-## WP-005: Profila — Profiling Toolkit Integration
+## Phase 2 — Design
+
+### WP-003 — Unified Labeling Scheme Spec
 
 - **State:** planned
-- **Sequence:** 5
-- **File Scope:** Profila repository, Tracera repository
-- **Acceptance Criteria:**
-  - Profila profiling toolkit integrated with tracing pipeline
-  - CPU, memory, and allocation profiling supported
-  - Profile data correlated with trace spans
-  - Tracera profiling prototype completed and merged into Profila
-  - Profile export in standard formats (pprof, flamegraph)
-  - All quality checks passing
-- **Estimated Effort:** M
-
-Complete Profila as the profiling toolkit and integrate it with the tracing pipeline. Tracera's profiling prototype functionality is merged into Profila. Profile data is correlated with trace spans, enabling identification of performance bottlenecks within specific request flows.
-
-### Subtasks
-- [ ] T042 Audit Profila and Tracera: existing profiling code, overlap, gaps
-- [ ] T043 Merge Tracera profiling functionality into Profila
-- [ ] T044 Implement CPU profiling with pprof-compatible output
-- [ ] T045 Implement memory/allocation profiling
-- [ ] T046 Integrate Profila with tracely: attach profile data to trace spans
-- [ ] T047 Implement flamegraph generation from profile data
-- [ ] T048 Write unit tests for profiling core (target: ≥80% coverage)
-- [ ] T049 Write integration tests: profile → trace correlation
-- [ ] T050 Run quality checks across merged codebase
-
-### Dependencies
-- WP-002 (tracely trace context for profile correlation)
-
-### Risks & Mitigations
-- Profiling overhead: Support sampling profilers, document overhead benchmarks
-- Platform-specific profiling: Test on macOS and Linux, document platform limitations
+- **Phase:** 2 (Design)
+- **Depends on:** WP-001
+- **Effort:** Cross-stack (8-15 tool calls, ~4 min)
+- **File scope (write):** `phenotype-shared/docs/observability/labeling-scheme.md` (cross-repo reuse target).
+- **Acceptance criteria:**
+  - Required labels: `service`, `env`, `version`, `trace_id`, `span_id`.
+  - Optional labels: `tenant`, `region`, `instance_id`.
+  - Cardinality budget per label documented.
+  - Forbidden label patterns (high-cardinality user IDs, free-text).
+  - Conformance check: deterministic label set per metric family.
+- **Handoff prompt:** "Author labeling-scheme.md per WP-003 acceptance; place in phenotype-shared for cross-repo reuse."
 
 ---
 
-## WP-006: Archive helix-tracing and Document Rationale
+### WP-004 — Log/Trace/Metric Correlation Spec
 
 - **State:** planned
-- **Sequence:** 6
-- **File Scope:** helix-tracing repository, observability documentation
-- **Acceptance Criteria:**
-  - helix-tracing archived via GitHub API
-  - Archival README documents: why archived, functionality migrated to tracely, migration guide
-  - All references to helix-tracing in active repos updated to use tracely
-  - No broken imports or dependencies on helix-tracing
-- **Estimated Effort:** S
+- **Phase:** 2 (Design)
+- **Depends on:** WP-001, WP-003
+- **Effort:** Cross-stack (8-15 tool calls, ~5 min)
+- **File scope (write):** `phenotype-shared/docs/observability/correlation-spec.md`
+- **Acceptance criteria:**
+  - JSON log field names: `timestamp`, `level`, `service`, `trace_id`, `span_id`, `message`, `fields`.
+  - Metric exemplar format (OTLP exemplar with `trace_id` + `span_id`).
+  - Span attribute conventions (semconv aligned).
+  - Propagation rules across async boundaries documented.
+  - Failure mode: missing trace_id -> log without it + warn-once metric.
+- **Handoff prompt:** "Author correlation-spec.md per WP-004 acceptance referencing labeling-scheme.md."
 
-Archive helix-tracing now that tracely provides complete distributed tracing functionality. Document the archival rationale, migration path, and ensure no active repos depend on the archived code.
+---
 
-### Subtasks
-- [ ] T051 Audit helix-tracing: confirm all functionality covered by tracely
-- [ ] T052 Create archival README with rationale, tracely migration guide, and timeline
-- [ ] T053 Archive helix-tracing via GitHub API
-- [ ] T054 Search all active repos for helix-tracing references
-- [ ] T055 Update any remaining references to use tracely instead
-- [ ] T056 Verify no broken imports or dependencies remain
-- [ ] T057 Document archival decision in observability stack documentation
+### WP-005 — Profile-to-Span Attachment Contract
 
-### Dependencies
-- WP-002 (tracely complete and verified as replacement)
-- WP-004 (helix-logging updated to use tracely)
+- **State:** planned
+- **Phase:** 2 (Design)
+- **Depends on:** WP-001
+- **Effort:** Cross-stack (8-15 tool calls, ~4 min)
+- **File scope (write):** `kitty-specs/014-observability-stack-completion/research/profile-span-contract.md`
+- **Acceptance criteria:**
+  - Defines pprof + flamegraph output schema.
+  - Span attribute name for attached profile artifact (e.g. `phenotype.profile.uri`).
+  - Rules for sampling (do not profile every span; budget-bound).
+  - Tracera vs. Profila role split (final state).
+- **Handoff prompt:** "Author profile-span-contract.md per WP-005 acceptance."
 
-### Risks & Mitigations
-- Missed references: Comprehensive grep/search across all active repos before archival
-- Functionality gap: Audit (T051) confirms tracely covers all helix-tracing features
+---
+
+## Phase 3 — Build (Handoff Packages)
+
+### WP-006 — `tracely-core` W3C Propagation Handoff
+
+- **State:** planned
+- **Phase:** 3 (Build)
+- **Depends on:** WP-001, WP-004
+- **Effort:** Cross-stack (8-15 tool calls, ~6 min planning; implementation in worktree)
+- **Implementation worktree:** `repos/PhenoObservability-wtrees/wp-006-tracely-w3c/`
+- **File scope (target):** `repos/PhenoObservability/crates/tracely-core/src/`
+- **Acceptance criteria for implementer agent:**
+  - W3C `traceparent` + `tracestate` parse/emit functions in tracely-core.
+  - HTTP middleware (axum + reqwest) for inject/extract.
+  - gRPC tonic metadata adapter.
+  - Async queue helper (generic, NATS-first).
+  - Sampling strategies: always-on, probability, parent-based.
+  - >= 80% line coverage on tracing core.
+  - `cargo clippy -- -D warnings` clean; `cargo fmt --check` clean.
+- **Handoff prompt:** "Implement W3C propagation in tracely-core per WP-006 acceptance; reference research/w3c-contract.md."
+
+---
+
+### WP-007 — `phenotype-observably-logging` Trace-ID Injection Handoff
+
+- **State:** planned
+- **Phase:** 3 (Build)
+- **Depends on:** WP-004
+- **Effort:** Cross-stack (8-15 tool calls, ~5 min planning)
+- **Implementation worktree:** `repos/PhenoObservability-wtrees/wp-007-logging-traceid/`
+- **File scope (target):** `repos/PhenoObservability/crates/phenotype-observably-logging/src/`, `repos/PhenoObservability/crates/helix-logging/src/` (if duplicate, merge).
+- **Acceptance criteria:**
+  - JSON log formatter emitting all fields per correlation-spec.md.
+  - tracing-subscriber layer that pulls current span's trace_id/span_id.
+  - Configurable per-module log levels via env or config.
+  - Output targets: stdout, file, OTLP log exporter.
+  - Graceful degradation when no span is active.
+  - >= 80% coverage; clippy + fmt clean.
+- **Handoff prompt:** "Implement trace-id injection in phenotype-observably-logging per WP-007."
+
+---
+
+### WP-008 — Metrics Correlation Handoff
+
+- **State:** planned
+- **Phase:** 3 (Build)
+- **Depends on:** WP-003, WP-004
+- **Effort:** Cross-stack (8-15 tool calls, ~5 min planning)
+- **Implementation worktree:** `repos/PhenoObservability-wtrees/wp-008-metrics-corr/`
+- **File scope (target):** `repos/PhenoObservability/crates/tracely-sentinel/src/`, `repos/PhenoObservability/crates/phenotype-observably-sentinel/src/`.
+- **Acceptance criteria:**
+  - OTLP metric exporter emits exemplars with trace_id + span_id.
+  - Label set conforms to labeling-scheme.md.
+  - Cardinality enforcement at registration (reject metrics exceeding budget).
+  - Integration test: trace -> metric exemplar present.
+  - SHM hot-path benchmark recorded (regression budget: <= +5% vs. baseline).
+  - clippy + fmt clean.
+- **Handoff prompt:** "Implement metrics correlation per WP-008; honor labeling + correlation specs."
+
+---
+
+### WP-009 — Phench Reporting + Observability Emission Handoff
+
+- **State:** planned
+- **Phase:** 3 (Build)
+- **Depends on:** WP-003
+- **Effort:** Cross-stack (8-15 tool calls, ~5 min planning)
+- **Implementation worktree:** `repos/Phench-wtrees/wp-009-obs-emission/` (or PhenoObservability if Phench already absorbed).
+- **File scope (target):** Phench source tree (`src/`, `tests/`).
+- **Acceptance criteria:**
+  - Statistical analysis: mean, stddev, p50/p95/p99, confidence intervals.
+  - Exporters: JSON, CSV, Markdown.
+  - Warmup + iteration + cooldown phases.
+  - Observability emission hook: benchmark results emitted as OTLP metrics with labeling-scheme labels.
+  - >= 80% coverage; clippy + fmt clean.
+- **Handoff prompt:** "Complete Phench reporting + emission per WP-009."
+
+---
+
+### WP-010 — Profila / Tracera Profiling Integration Handoff
+
+- **State:** planned
+- **Phase:** 3 (Build)
+- **Depends on:** WP-005
+- **Effort:** Cross-stack (8-15 tool calls, ~5 min planning)
+- **Implementation worktree:** `repos/PhenoObservability-wtrees/wp-010-profile-integration/`
+- **File scope (target):** Profila source tree, Tracera source tree under PhenoKits.
+- **Acceptance criteria:**
+  - CPU profiling with pprof-compatible output.
+  - Memory/allocation profiling.
+  - Span attachment per profile-span-contract.md.
+  - Flamegraph generation utility.
+  - macOS + Linux platform tests.
+  - Tracera <-> Profila role split documented; redundant code merged.
+- **Handoff prompt:** "Integrate Profila/Tracera per WP-010; attach profiles to spans."
+
+---
+
+## Phase 4 — Test / Validate
+
+### WP-011 — W3C Conformance Test Plan
+
+- **State:** planned
+- **Phase:** 4 (Test/Validate)
+- **Depends on:** WP-006
+- **Effort:** Cross-stack (8-15 tool calls, ~5 min)
+- **File scope (write):** `repos/PhenoObservability/tests/w3c_conformance/README.md` (test plan, not code).
+- **Acceptance criteria:**
+  - Test matrix vs. W3C trace-context test suite.
+  - Pass criteria: 100% of MUST tests; documented exclusions for SHOULD/MAY.
+  - Reference to upstream conformance harness.
+- **Handoff prompt:** "Author W3C conformance test plan per WP-011."
+
+---
+
+### WP-012 — Correlation Integration Test Plan
+
+- **State:** planned
+- **Phase:** 4 (Test/Validate)
+- **Depends on:** WP-006, WP-007, WP-008
+- **Effort:** Cross-stack (8-15 tool calls, ~5 min)
+- **File scope (write):** `repos/PhenoObservability/tests/correlation/README.md`
+- **Acceptance criteria:**
+  - Scenarios: HTTP request -> log + metric + span all carry same trace_id.
+  - Async boundary preservation.
+  - Missing-context fallback path.
+  - Multi-hop propagation (3 services).
+- **Handoff prompt:** "Author correlation integration test plan per WP-012."
+
+---
+
+### WP-013 — Performance Overhead Benchmark Plan
+
+- **State:** planned
+- **Phase:** 4 (Test/Validate)
+- **Depends on:** WP-006, WP-008, WP-009
+- **Effort:** Cross-stack (8-15 tool calls, ~5 min)
+- **File scope (write):** `repos/PhenoObservability/benches/README.md`
+- **Acceptance criteria:**
+  - Baseline (no observability) vs. sampled vs. always-on deltas.
+  - Hot-path budget: <= 5% throughput regression at p99.
+  - SHM read/write latency targets documented.
+  - Reproducibility: bench command + environment fingerprint.
+- **Handoff prompt:** "Author overhead benchmark plan per WP-013."
+
+---
+
+### WP-014 — Quality Gate Sweep
+
+- **State:** planned
+- **Phase:** 4 (Test/Validate)
+- **Depends on:** WP-006, WP-007, WP-008, WP-009, WP-010
+- **Effort:** Cross-stack (8-15 tool calls, ~6 min)
+- **File scope (write):** `kitty-specs/014-observability-stack-completion/research/quality-gate-report.md`
+- **Acceptance criteria:**
+  - `cargo test --workspace` exit 0.
+  - `cargo clippy --workspace -- -D warnings` exit 0.
+  - `cargo fmt --check` exit 0.
+  - `cargo deny check advisories` exit 0 (or documented accept-with-justification).
+  - SBOM regenerated.
+- **Handoff prompt:** "Run all quality gates on PhenoObservability; record results in quality-gate-report.md."
+
+---
+
+## Phase 5 — Deploy / Handoff
+
+### WP-015 — Unified Dashboard + Alert Rule Spec
+
+- **State:** planned
+- **Phase:** 5 (Deploy/Handoff)
+- **Depends on:** WP-012
+- **Effort:** Cross-stack (8-15 tool calls, ~5 min)
+- **File scope (write):** `repos/PhenoObservability/dashboards/README.md`, `repos/PhenoObservability/alerting/README.md`.
+- **Acceptance criteria:**
+  - Dashboard inventory: which panels exist, what they query.
+  - Alert rule inventory: SLO-based, error-rate, latency p99, saturation.
+  - References to existing OSS backends (Grafana, Prometheus, Loki, Tempo).
+  - No new visualization code authored in this WP — references file paths to dashboard JSON / Prometheus rule YAML to be produced by implementer.
+- **Handoff prompt:** "Author dashboard + alert spec per WP-015."
+
+---
+
+### WP-016 — helix-tracing Archival Rationale
+
+- **State:** planned
+- **Phase:** 5 (Deploy/Handoff)
+- **Depends on:** WP-006, WP-007
+- **Effort:** Small (3-6 tool calls, ~2 min)
+- **File scope (write):** `repos/PhenoObservability/docs/archival/helix-tracing.md`.
+- **Acceptance criteria:**
+  - Why archived (functionality absorbed by tracely-core).
+  - Migration map: helix-tracing symbol -> tracely-core symbol.
+  - GitHub archive action recorded.
+- **Handoff prompt:** "Author helix-tracing archival doc per WP-016 and archive the repo."
+
+---
+
+### WP-017 — Runbooks
+
+- **State:** planned
+- **Phase:** 5 (Deploy/Handoff)
+- **Depends on:** WP-015
+- **Effort:** Small (3-6 tool calls, ~3 min)
+- **File scope (write):** `repos/PhenoObservability/docs/runbooks/`
+  - `trace-correlation-missing.md`
+  - `metric-cardinality-explosion.md`
+  - `sampler-config.md`
+  - `profile-attach-failure.md`
+- **Acceptance criteria:**
+  - Each runbook: symptom, diagnosis steps, remediation, escalation path.
+  - Linked from `repos/PhenoObservability/docs/README.md`.
+- **Handoff prompt:** "Author 4 runbooks per WP-017."
+
+---
+
+### WP-018 — Cross-Repo Reference Sweep
+
+- **State:** planned
+- **Phase:** 5 (Deploy/Handoff)
+- **Depends on:** WP-016
+- **Effort:** Small (3-6 tool calls, ~3 min)
+- **File scope (read):** all active repos under `repos/`.
+- **File scope (write):** `kitty-specs/014-observability-stack-completion/research/reference-sweep.md`
+- **Acceptance criteria:**
+  - Grep all active repos for `helix-tracing`, legacy tracely paths, and removed crates.
+  - Open one PR per consumer repo (or one stacked PR) updating imports.
+  - Verify no broken builds post-update.
+- **Handoff prompt:** "Sweep all active repos for legacy observability references per WP-018."
 
 ---
 
 ## Dependency & Execution Summary
 
 ```
-WP-001 (Phench benchmarking) ───────── first, no deps (parallel with WP-002)
-WP-002 (tracely distributed tracing) ─ first, no deps (parallel with WP-001)
-WP-003 (thegent-metrics + thegent-shm) ── depends on WP-002
-WP-004 (helix-logging) ───────────────── depends on WP-002
-WP-005 (Profila profiling) ───────────── depends on WP-002
-WP-006 (Archive helix-tracing) ───────── depends on WP-002, WP-004
+Phase 1 (Discovery):   WP-000 -> { WP-001, WP-002 }
+Phase 2 (Design):      WP-001 -> { WP-003, WP-005 }; WP-003 -> WP-004
+Phase 3 (Build):       WP-006 (needs WP-001+WP-004); WP-007 (WP-004); WP-008 (WP-003+WP-004); WP-009 (WP-003); WP-010 (WP-005)
+Phase 4 (Validate):    WP-011 (WP-006); WP-012 (WP-006+007+008); WP-013 (WP-006+008+009); WP-014 (all build WPs)
+Phase 5 (Deploy):      WP-015 (WP-012); WP-016 (WP-006+007); WP-017 (WP-015); WP-018 (WP-016)
 ```
 
-**Parallelization**: WP-001 and WP-002 can run in parallel (independent codebases). WP-003, WP-004, and WP-005 can run in parallel after WP-002. WP-006 is the final cleanup step.
+**Critical path (7 nodes):** WP-000 -> WP-001 -> WP-004 -> WP-006 -> WP-012 -> WP-015 -> WP-017
 
-**MVP Scope**: WP-002 alone provides distributed tracing. WP-003 + WP-004 adds metrics and logging correlation.
+**Parallelization opportunities:**
+- Phase 3 build WPs (006, 007, 008, 009, 010) can dispatch as 5 concurrent implementer agents after Phase 2 closes.
+- Phase 4 test plans (011, 012, 013) can author in parallel after their respective build WPs land.
+
+**Total WP count:** 19 (WP-000 through WP-018).
