@@ -85,7 +85,7 @@ opentelemetry_sdk = { version = "0.31", features = [
   "rt-tokio",
 ] }
 criterion = { version = "0.5", features = ["async_tokio", "html_reports"] }
-time = ">=0.3.49"
+time = ">=0.3.47"
 trait-variant = "0.1"
 async-trait = "0.1"
 sentry = { version = "0.33", features = ["backtrace", "contexts", "debug-images"] }
