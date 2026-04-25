@@ -4,6 +4,8 @@ use agileplus_domain::domain::event::Event;
 use agileplus_domain::domain::snapshot::Snapshot;
 use async_trait::async_trait;
 use chrono::{TimeDelta, Utc};
+use std::collections::HashMap;
+use tokio::sync::RwLock;
 
 use crate::store::EventStore;
 
@@ -109,9 +111,77 @@ impl LoadedState {
     }
 }
 
+#[derive(Debug, Default)]
+pub struct InMemorySnapshotStore {
+    snapshots: RwLock<HashMap<(String, i64), Vec<Snapshot>>>,
+}
+
+impl InMemorySnapshotStore {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+
+#[async_trait]
+impl SnapshotStore for InMemorySnapshotStore {
+    async fn save(&self, snapshot: &Snapshot) -> Result<(), SnapshotError> {
+        self.snapshots
+            .write()
+            .await
+            .entry((snapshot.entity_type.clone(), snapshot.entity_id))
+            .or_default()
+            .push(snapshot.clone());
+        Ok(())
+    }
+
+    async fn load(
+        &self,
+        entity_type: &str,
+        entity_id: i64,
+    ) -> Result<Option<Snapshot>, SnapshotError> {
+        Ok(self
+            .snapshots
+            .read()
+            .await
+            .get(&(entity_type.to_string(), entity_id))
+            .and_then(|snapshots| {
+                snapshots
+                    .iter()
+                    .max_by_key(|snapshot| snapshot.event_sequence)
+                    .cloned()
+            }))
+    }
+
+    async fn delete_before(
+        &self,
+        entity_type: &str,
+        entity_id: i64,
+        sequence: i64,
+    ) -> Result<(), SnapshotError> {
+        if let Some(snapshots) = self
+            .snapshots
+            .write()
+            .await
+            .get_mut(&(entity_type.to_string(), entity_id))
+        {
+            snapshots.retain(|snapshot| snapshot.event_sequence >= sequence);
+        }
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn make_snapshot(entity_type: &str, entity_id: i64, event_sequence: i64) -> Snapshot {
+        Snapshot::new(
+            entity_type,
+            entity_id,
+            serde_json::json!({ "state": "test" }),
+            event_sequence,
+        )
+    }
 
     #[test]
     fn should_snapshot_event_threshold() {
@@ -132,5 +202,36 @@ mod tests {
         let old = Utc::now() - TimeDelta::seconds(400);
         assert!(should_snapshot(&config, 50, 0, Some(old)));
         assert!(!should_snapshot(&config, 50, 0, Some(Utc::now())));
+    }
+
+    #[tokio::test]
+    async fn in_memory_snapshot_loads_latest() {
+        let store = InMemorySnapshotStore::new();
+        store.save(&make_snapshot("Feature", 1, 50)).await.unwrap();
+        store.save(&make_snapshot("Feature", 1, 100)).await.unwrap();
+
+        let loaded = store.load("Feature", 1).await.unwrap().unwrap();
+
+        assert_eq!(loaded.event_sequence, 100);
+    }
+
+    #[tokio::test]
+    async fn in_memory_snapshot_delete_before_keeps_newer_snapshots() {
+        let store = InMemorySnapshotStore::new();
+        store.save(&make_snapshot("Feature", 1, 50)).await.unwrap();
+        store.save(&make_snapshot("Feature", 1, 100)).await.unwrap();
+        store.save(&make_snapshot("Feature", 1, 150)).await.unwrap();
+
+        store.delete_before("Feature", 1, 100).await.unwrap();
+        let loaded = store.load("Feature", 1).await.unwrap().unwrap();
+
+        assert_eq!(loaded.event_sequence, 150);
+    }
+
+    #[tokio::test]
+    async fn in_memory_snapshot_returns_none_for_unknown_entity() {
+        let store = InMemorySnapshotStore::new();
+
+        assert!(store.load("Feature", 99).await.unwrap().is_none());
     }
 }
