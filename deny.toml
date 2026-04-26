@@ -29,4 +29,7 @@ unknown-git = "deny"
 ignore = [
     # No safe upgrade available - gix = "0.71" pinned in Cargo.toml, requires major version bump
     { id = "RUSTSEC-2025-0140", reason = "No safe upgrade available. gix = 0.71 pinned in Cargo.toml, requires breaking API change." },
+    # No safe upgrade available - utoipa-axum 0.2.0 is latest and still depends on paste.
+    # Remove once the OpenAPI route macro stack migrates off utoipa-axum.
+    { id = "RUSTSEC-2024-0436", reason = "No safe upgrade available. utoipa-axum 0.2.0 is latest and pulls paste; requires OpenAPI route macro replacement." },
 ]
