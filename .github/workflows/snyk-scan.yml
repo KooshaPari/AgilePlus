@@ -69,7 +69,12 @@ jobs:
             exit 0
           fi
 
-          if jq -e '(.vulnerabilities // []) | any(.severity == "critical" or .severity == "high")' snyk-test-report.json; then
+          if jq -e '
+            (if type == "array" then . else [.] end)
+            | map(.vulnerabilities // [])
+            | add // []
+            | any(.severity == "critical" or .severity == "high")
+          ' snyk-test-report.json; then
             echo "High or critical vulnerabilities detected."
             exit 1
           fi

@@ -71,6 +71,8 @@ jobs:
       - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
       - name: Install cargo-deny
-        uses: taiki-e/install-action@cargo-deny
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-deny
       - name: Check Rust licenses
-        run: cargo deny check licenses
+        run: cargo deny check -c rust/deny.toml licenses

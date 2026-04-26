@@ -42,7 +42,6 @@ members = [
   "crates/agileplus-integration-tests",
   "crates/agileplus-contract-tests",
   "crates/agileplus-benchmarks",
-  "libs/nexus",
 ]
 
 [workspace.package]

@@ -43,9 +43,13 @@ jobs:
             fi
           fi
 
-          git fetch origin "$BASE_REF" --depth=100 || true
-          git fetch origin "pull/${PR_NUMBER}/head:refs/remotes/origin/pr-head" --depth=100 || true
-          MERGES=$(git rev-list --merges "origin/$BASE_REF..$PR_HEAD_SHA" || true)
+          git fetch origin "$BASE_REF" --depth=100
+          git fetch origin "pull/${PR_NUMBER}/head:refs/remotes/origin/pr-head" --depth=100
+          if ! git cat-file -e "$PR_HEAD_SHA^{commit}" 2>/dev/null; then
+            echo "ERROR: PR head SHA $PR_HEAD_SHA is not reachable after fetch."
+            exit 1
+          fi
+          MERGES=$(git rev-list --merges "origin/$BASE_REF..$PR_HEAD_SHA")
           if [[ -n "$MERGES" ]]; then
             echo "ERROR: merge commits detected in PR diff range:"
             echo "$MERGES"
