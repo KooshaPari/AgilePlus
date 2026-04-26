@@ -16,6 +16,9 @@ on:
         description: 'Force Sentry health report'
         required: false
         default: 'false'
+permissions:
+  contents: read
+
 
 env:
   CARGO_TERM_COLOR: always
