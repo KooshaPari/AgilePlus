@@ -1,101 +1,72 @@
-# repos — CodeProjects/Phenotype organizational shelf
+# AgilePlus
 
-This is the **repos shelf**: a polyrepo containing ~30 independent projects
-organized under `CodeProjects/Phenotype/organizational-shelf/repos`.
-
-## What is a shelf?
-
-A shelf is an organizational layer above individual projects. Think of it like
-`~/code/` or `/opt/` — a directory containing related but independent repositories.
-Each project is a standalone git repo; the shelf is their shared home.
+**AgilePlus is a local-first, spec-driven agile work-tracking CLI for AI-agent and human teams.** It models features, work packages, and acceptance criteria as versioned specs on disk, with optional sync to GitHub Issues, dashboards, and P2P merge for multi-actor collaboration.
 
 ## Quick Start
 
-### Finding a project
+Install (from this repo):
+
 ```bash
-ls projects/INDEX.md   # Master project list with descriptions
-cat projects/INDEX.md   # Find your project
+cargo install --path crates/agileplus-cli
 ```
 
-### Working on a project
+Three-step flow:
+
 ```bash
-cd <project-name>      # e.g., cd heliosCLI
-git status             # Verify you're in the right place
+# 1. Create a feature spec (slug-based, kebab-case)
+agileplus specify --feature my-feature-slug
+
+# 2. Generate work packages and tasks for the feature
+agileplus tasks --feature my-feature-slug
+
+# 3. Update work-package state as you progress
+agileplus status my-feature-slug --wp wp-001 --state doing
 ```
 
-### Creating a worktree
-```bash
-git worktree add .worktrees/my-feature -b my-feature
-cd .worktrees/my-feature
-```
+See **[`docs/guide/quick-start.md`](docs/guide/quick-start.md)** for the full quickstart, including project init, dashboard, and GitHub sync.
 
-## Project Categories
+## Documentation
 
-Projects are organized into functional categories at the top level:
+The canonical user guide lives under **[`docs/guide/`](docs/guide/)**:
 
-| Category | Contents |
-|----------|----------|
-| `apps/` | User-facing applications |
-| `tooling/` | Developer tools, CLIs, scripts |
-| `infra/` | Infrastructure, deployment, devops |
-| `libs/` | Shared libraries and packages |
-| `platforms/` | Platform-as-product projects |
+| Topic | File |
+|-------|------|
+| Quick start | [`docs/guide/quick-start.md`](docs/guide/quick-start.md) |
+| Getting started (concepts) | [`docs/guide/getting-started.md`](docs/guide/getting-started.md) |
+| `agileplus init` | [`docs/guide/init.md`](docs/guide/init.md) |
+| Workflow | [`docs/guide/workflow.md`](docs/guide/workflow.md) |
+| Configuration | [`docs/guide/configuration.md`](docs/guide/configuration.md) |
+| Sync (GitHub) | [`docs/guide/sync.md`](docs/guide/sync.md) |
+| Triage | [`docs/guide/triage.md`](docs/guide/triage.md) |
+| Local-first deployment | [`docs/guide/local-first-deployment.md`](docs/guide/local-first-deployment.md) |
 
-Note: Not all projects are yet in these categories — the reorganization is ongoing.
-Use `projects/INDEX.md` for the authoritative list.
+> **Note on `docs/guide/` vs `docs/guides/`:** `docs/guide/` (singular) is the **canonical** product user guide. `docs/guides/` (plural) holds supplementary contributor/developer references (e.g. `DEV_STACK.md`, `FR_ANNOTATION_GUIDE.md`). When linking from external docs, prefer `docs/guide/`.
 
-## Key Files
-
-| File | Purpose |
-|------|---------|
-| `projects/INDEX.md` | Master project catalog |
-| `AGENTS.md` | Agent interaction rules |
-| `GOVERNANCE.md` | Shelf governance |
-| `CLAUDE.md` | Claude Code settings |
-| `WORKSTORES.md` | Worktree management guide |
-| `REPOS_INDEX.md` | Detailed shelf index |
-
-## Architecture
+## Repository Layout
 
 ```
-repos/                          # ← Shelf root (YOU ARE HERE)
-├── .worktrees/                 # Worktree staging area
-├── .archive/                    # Archived projects
-├── .claude/                     # Shelf-level Claude settings
-├── .cursor/                     # Shelf-level Cursor settings
-├── projects/                    # Project metadata & catalog
-├── docs/                        # Cross-project documentation
-│   ├── adr/                   # Architecture Decision Records
-│   └── guides/                # How-to guides
-├── scripts/                     # Cross-project scripts
-├── governance/                  # Governance tooling
-├── plans/                       # Work plans
-└── [projects]                   # ~30 independent git repos
+crates/                  # Rust workspace (CLI, dashboard, sqlite, p2p, grpc, ...)
+docs/
+  guide/                 # Canonical user guide (start here)
+  guides/                # Contributor/developer references
+  adr/                   # Architecture Decision Records
+  reference/             # API and CLI reference
+kitty-specs/             # Live AgilePlus feature specs (eat-our-own-dogfood)
+.work-audit/             # Worklog and audit trail
 ```
 
-## Agent Workflow
+## Governance
 
-1. **Identify the project** — Check `projects/INDEX.md` or ask the user
-2. **Navigate to project** — `cd <project-name>`
-3. **Read project rules** — Check for `CLAUDE.md` or `AGENTS.md` in project
-4. **Do the work** — Follow shelf rules in `AGENTS.md`
-5. **Commit & push** — Use conventional commits, open PR if needed
+- `GOVERNANCE.md` — project governance
+- `AGENTS.md` — agent interaction rules
+- `CLAUDE.md` — Claude Code settings
 
-## NOT AgilePlus
+## Contributing
 
-This shelf contains **many projects**, of which AgilePlus is one.
-AgilePlus-specific documentation lives inside the `AgilePlus/` project directory,
-not at shelf level.
+1. Read [`docs/guide/quick-start.md`](docs/guide/quick-start.md).
+2. Create a feature spec: `agileplus specify --feature <your-slug>`.
+3. Open a PR referencing the spec.
 
-The files that were previously here describing AgilePlus have been moved to
-their correct locations:
-- AgilePlus governance → `AgilePlus/GOVERNANCE.md`
-- AgilePlus agent rules → `AgilePlus/AGENTS.md`
-- AgilePlus README → `AgilePlus/README.md`
+## License
 
-## Getting Help
-
-- Shelf-level issues: Ask here
-- Project-specific issues: `cd <project>` and check that project's docs
-- Architecture decisions: `cat docs/adr/INDEX.md`
-- General questions: Check `projects/INDEX.md` first
+See [`LICENSE`](LICENSE).
