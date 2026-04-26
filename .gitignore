@@ -11,3 +11,4 @@
 
 # AgilePlus runtime artifacts
 .agileplus/
+.worktrees/
