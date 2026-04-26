@@ -13,3 +13,9 @@
 .agileplus/
 .worktrees/
 .claude/worktrees/
+
+# Browser-history / research exports (leaked secrets risk)
+data/safari/
+docs/research/gemini_export.html
+docs/research/*_export.html
+docs/research/*_export.json
