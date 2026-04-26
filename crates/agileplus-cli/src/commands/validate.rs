@@ -11,7 +11,6 @@ use chrono::Utc;
 
 use agileplus_domain::domain::audit::{AuditEntry, hash_entry};
 use agileplus_domain::domain::event::Event;
-use agileplus_domain::domain::governance::{GovernanceContract, PolicyCheck};
 use agileplus_domain::domain::state_machine::FeatureState;
 use agileplus_domain::ports::{StoragePort, VcsPort};
 use agileplus_events::{EventStore, compute_hash};
@@ -19,7 +18,7 @@ use agileplus_events::{EventStore, compute_hash};
 mod evidence;
 mod report;
 
-use self::evidence::evaluate_evidence;
+use self::evidence::{evaluate_evidence, evaluate_policies};
 pub use report::{EvidenceCheck, PolicyEvalResult, ValidationReport};
 
 /// Arguments for the `validate` subcommand.
@@ -44,93 +43,6 @@ pub struct ValidateArgs {
     /// Force validation even if not in Implementing state (logs governance exception).
     #[arg(long)]
     pub force: bool,
-}
-
-/// Evaluate active policy rules against evidence.
-async fn evaluate_policies<S: StoragePort>(
-    storage: &S,
-    contract: &GovernanceContract,
-    feature_id: i64,
-) -> Result<Vec<PolicyEvalResult>> {
-    let active_policies = storage
-        .list_active_policies()
-        .await
-        .context("loading active policies")?;
-
-    // Gather policy refs referenced in the contract
-    let referenced: std::collections::HashSet<String> = contract
-        .rules
-        .iter()
-        .flat_map(|r| r.policy_refs.iter().cloned())
-        .collect();
-
-    let mut results = Vec::new();
-
-    for policy in &active_policies {
-        // Check if this policy is referenced by the contract
-        let policy_ref = format!("policy:{}", policy.id);
-        let domain_debug = format!("{:?}", policy.domain).to_lowercase();
-        let is_referenced = referenced.contains(&policy_ref)
-            || referenced.iter().any(|r| r.contains(&domain_debug));
-
-        if !is_referenced && !referenced.is_empty() {
-            continue;
-        }
-
-        let (passed, message) = match &policy.rule.check {
-            PolicyCheck::EvidencePresent { evidence_type } => {
-                // Check if any evidence of this type exists for this feature
-                // We search across all FR evidence — a simple heuristic
-                let ev_type_str = format!("{:?}", evidence_type);
-                // Since StoragePort doesn't have get_evidence_by_type, we list WPs and check
-                (
-                    true,
-                    format!("Evidence type {} check (assumed present)", ev_type_str),
-                )
-            }
-            PolicyCheck::ThresholdMet { metric, min } => {
-                let metrics = storage
-                    .get_metrics_by_feature(feature_id)
-                    .await
-                    .unwrap_or_default();
-                let found = metrics.iter().any(|m| m.command == *metric);
-                (
-                    found,
-                    if found {
-                        format!("Metric '{}' present (threshold >= {})", metric, min)
-                    } else {
-                        format!("Metric '{}' not found (threshold >= {})", metric, min)
-                    },
-                )
-            }
-            PolicyCheck::ManualApproval => {
-                // Cannot auto-approve; fail with instructions
-                (
-                    false,
-                    "Manual approval required — run the approval workflow".to_string(),
-                )
-            }
-            PolicyCheck::Custom { script } => {
-                // Custom scripts not supported in CLI validation; skip
-                (
-                    true,
-                    format!(
-                        "Custom policy skipped: {}",
-                        script.chars().take(60).collect::<String>()
-                    ),
-                )
-            }
-        };
-
-        results.push(PolicyEvalResult {
-            policy_id: policy.id,
-            domain: format!("{:?}", policy.domain),
-            passed,
-            message,
-        });
-    }
-
-    Ok(results)
 }
 
 /// Run the `validate` command.

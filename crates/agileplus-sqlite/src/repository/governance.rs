@@ -14,13 +14,7 @@ fn map_err(e: rusqlite::Error) -> DomainError {
 }
 
 fn policy_domain_str(d: PolicyDomain) -> &'static str {
-    match d {
-        PolicyDomain::Security => "security",
-        PolicyDomain::Quality => "quality",
-        PolicyDomain::Compliance => "compliance",
-        PolicyDomain::Performance => "performance",
-        PolicyDomain::Custom => "custom",
-    }
+    d.as_str()
 }
 
 fn policy_domain_from_str(s: &str) -> Result<PolicyDomain, DomainError> {

@@ -12,14 +12,7 @@ fn map_err(e: rusqlite::Error) -> DomainError {
 }
 
 fn evidence_type_str(t: EvidenceType) -> &'static str {
-    match t {
-        EvidenceType::TestResult => "test_result",
-        EvidenceType::CiOutput => "ci_output",
-        EvidenceType::ReviewApproval => "review_approval",
-        EvidenceType::SecurityScan => "security_scan",
-        EvidenceType::LintResult => "lint_result",
-        EvidenceType::ManualAttestation => "manual_attestation",
-    }
+    t.as_str()
 }
 
 fn evidence_type_from_str(s: &str) -> Result<EvidenceType, DomainError> {

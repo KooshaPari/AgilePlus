@@ -17,6 +17,20 @@ pub enum EvidenceType {
     ManualAttestation,
 }
 
+impl EvidenceType {
+    /// Stable storage/reporting key for this evidence type.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::TestResult => "test_result",
+            Self::CiOutput => "ci_output",
+            Self::ReviewApproval => "review_approval",
+            Self::SecurityScan => "security_scan",
+            Self::LintResult => "lint_result",
+            Self::ManualAttestation => "manual_attestation",
+        }
+    }
+}
+
 /// A single evidence requirement attached to a governance rule.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EvidenceRequirement {
@@ -66,6 +80,19 @@ pub enum PolicyDomain {
     Custom,
 }
 
+impl PolicyDomain {
+    /// Stable storage/reporting key for this policy domain.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Security => "security",
+            Self::Quality => "quality",
+            Self::Compliance => "compliance",
+            Self::Performance => "performance",
+            Self::Custom => "custom",
+        }
+    }
+}
+
 /// The definition body of a policy rule.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PolicyDefinition {
@@ -81,6 +108,17 @@ pub enum PolicyCheck {
     ThresholdMet { metric: String, min: f64 },
     ManualApproval,
     Custom { script: String },
+}
+
+impl PolicyCheck {
+    /// Evidence type required by checks that can be satisfied with stored evidence.
+    pub fn required_evidence_type(&self) -> Option<EvidenceType> {
+        match self {
+            Self::EvidencePresent { evidence_type } => Some(*evidence_type),
+            Self::ManualApproval => Some(EvidenceType::ManualAttestation),
+            Self::ThresholdMet { .. } | Self::Custom { .. } => None,
+        }
+    }
 }
 
 /// Outcome of evaluating a policy rule.
@@ -101,4 +139,76 @@ pub struct PolicyRule {
     pub active: bool,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
+}
+
+/// A built-in policy reference emitted by generated governance contracts.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct BuiltinPolicy {
+    pub label: &'static str,
+    pub domain: PolicyDomain,
+    pub evidence_type: EvidenceType,
+}
+
+impl BuiltinPolicy {
+    pub fn from_ref(policy_ref: &str) -> Option<Self> {
+        let (label, domain, evidence_type) = match policy_ref {
+            "policy:ci-required" => (
+                "CI evidence required",
+                PolicyDomain::Quality,
+                EvidenceType::CiOutput,
+            ),
+            "policy:review-required" => (
+                "Review approval required",
+                PolicyDomain::Quality,
+                EvidenceType::ReviewApproval,
+            ),
+            "policy:security-scan-required" => (
+                "Security scan evidence required",
+                PolicyDomain::Security,
+                EvidenceType::SecurityScan,
+            ),
+            "policy:lint-required" => (
+                "Lint evidence required",
+                PolicyDomain::Quality,
+                EvidenceType::LintResult,
+            ),
+            "policy:test-result-required" => (
+                "Test result evidence required",
+                PolicyDomain::Quality,
+                EvidenceType::TestResult,
+            ),
+            "policy:manual-attestation-required" => (
+                "Manual attestation required",
+                PolicyDomain::Compliance,
+                EvidenceType::ManualAttestation,
+            ),
+            _ => return None,
+        };
+        Some(Self {
+            label,
+            domain,
+            evidence_type,
+        })
+    }
+}
+
+impl PolicyRule {
+    /// Stable references that can bind governance contract policy refs to this rule.
+    pub fn reference_keys(&self) -> Vec<String> {
+        let mut keys = vec![
+            format!("policy:{}", self.id),
+            format!("policy:{}", self.domain.as_str()),
+        ];
+
+        if let Some(evidence_type) = self.rule.check.required_evidence_type() {
+            keys.push(format!("policy:{}-required", evidence_type.as_str()));
+        }
+
+        keys
+    }
+
+    /// Whether a governance contract policy ref targets this rule.
+    pub fn matches_reference(&self, policy_ref: &str) -> bool {
+        self.reference_keys().iter().any(|key| key == policy_ref)
+    }
 }

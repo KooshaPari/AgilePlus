@@ -1,7 +1,11 @@
 use super::*;
+use agileplus_domain::domain::feature::Feature;
 use agileplus_domain::domain::governance::{
-    EvidenceRequirement, EvidenceType, GovernanceContract, GovernanceRule,
+    Evidence, EvidenceRequirement, EvidenceType, GovernanceContract, GovernanceRule,
 };
+use agileplus_domain::domain::work_package::WorkPackage;
+use agileplus_domain::ports::StoragePort;
+use agileplus_sqlite::SqliteStorageAdapter;
 use chrono::Utc;
 
 #[allow(dead_code)]
@@ -146,4 +150,126 @@ fn evaluate_threshold_max_critical_fail() {
     };
     let threshold = serde_json::json!({"max_critical": 0});
     assert!(!super::evidence::evaluate_threshold(&[&ev], &threshold));
+}
+
+#[tokio::test]
+async fn builtin_ci_policy_fails_without_matching_evidence() {
+    let db = SqliteStorageAdapter::in_memory().unwrap();
+    let feature_id = create_feature_with_wp(&db).await.0;
+    let contract = contract_with_policy(
+        feature_id,
+        EvidenceType::CiOutput,
+        "FR-CI",
+        "policy:ci-required",
+    );
+
+    let results = super::evidence::evaluate_policies(&db, &contract, feature_id)
+        .await
+        .unwrap();
+
+    assert_eq!(results.len(), 1);
+    assert!(!results[0].passed);
+    assert!(results[0].message.contains("missing evidence"));
+}
+
+#[tokio::test]
+async fn builtin_ci_policy_ignores_wrong_evidence_type() {
+    let db = SqliteStorageAdapter::in_memory().unwrap();
+    let (feature_id, wp_id) = create_feature_with_wp(&db).await;
+    let contract = contract_with_policy(
+        feature_id,
+        EvidenceType::CiOutput,
+        "FR-CI",
+        "policy:ci-required",
+    );
+    create_evidence(&db, wp_id, "FR-CI", EvidenceType::ReviewApproval).await;
+
+    let results = super::evidence::evaluate_policies(&db, &contract, feature_id)
+        .await
+        .unwrap();
+
+    assert_eq!(results.len(), 1);
+    assert!(!results[0].passed);
+    assert!(results[0].message.contains("missing evidence"));
+}
+
+#[tokio::test]
+async fn builtin_ci_policy_passes_with_matching_evidence() {
+    let db = SqliteStorageAdapter::in_memory().unwrap();
+    let (feature_id, wp_id) = create_feature_with_wp(&db).await;
+    let contract = contract_with_policy(
+        feature_id,
+        EvidenceType::CiOutput,
+        "FR-CI",
+        "policy:ci-required",
+    );
+    create_evidence(&db, wp_id, "FR-CI", EvidenceType::CiOutput).await;
+
+    let results = super::evidence::evaluate_policies(&db, &contract, feature_id)
+        .await
+        .unwrap();
+
+    assert_eq!(results.len(), 1);
+    assert!(results[0].passed);
+    assert!(results[0].message.contains("satisfied"));
+}
+
+async fn create_feature_with_wp(db: &SqliteStorageAdapter) -> (i64, i64) {
+    let feature_id = StoragePort::create_feature(
+        db,
+        &Feature::new(
+            "validate-policy-test",
+            "Validate Policy Test",
+            [0u8; 32],
+            None,
+        ),
+    )
+    .await
+    .unwrap();
+    let wp_id =
+        StoragePort::create_work_package(db, &WorkPackage::new(feature_id, "WP", 1, "criteria"))
+            .await
+            .unwrap();
+    (feature_id, wp_id)
+}
+
+async fn create_evidence(
+    db: &SqliteStorageAdapter,
+    wp_id: i64,
+    fr_id: &str,
+    evidence_type: EvidenceType,
+) {
+    let evidence = Evidence {
+        id: 0,
+        wp_id,
+        fr_id: fr_id.to_string(),
+        evidence_type,
+        artifact_path: "artifact.txt".to_string(),
+        metadata: None,
+        created_at: Utc::now(),
+    };
+    StoragePort::create_evidence(db, &evidence).await.unwrap();
+}
+
+fn contract_with_policy(
+    feature_id: i64,
+    evidence_type: EvidenceType,
+    fr_id: &str,
+    policy_ref: &str,
+) -> GovernanceContract {
+    GovernanceContract {
+        id: 1,
+        feature_id,
+        version: 1,
+        rules: vec![GovernanceRule {
+            transition: "Implementing -> Validated".to_string(),
+            required_evidence: vec![EvidenceRequirement {
+                fr_id: fr_id.to_string(),
+                evidence_type,
+                threshold: None,
+            }],
+            policy_refs: vec![policy_ref.to_string()],
+        }],
+        bound_at: Utc::now(),
+    }
 }
