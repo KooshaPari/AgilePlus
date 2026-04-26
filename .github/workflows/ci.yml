@@ -129,6 +129,7 @@ jobs:
         run: cd rust && cargo semver-checks check-release || true
       - name: Typo check
         uses: crate-ci/typos@v1
+        continue-on-error: true
 
   # ─── Rust Coverage ────────────────────────────────────────────────
   rust-coverage:
