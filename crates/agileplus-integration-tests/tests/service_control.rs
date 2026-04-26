@@ -7,6 +7,9 @@
 use agileplus_integration_tests::common::harness::is_process_compose_installed;
 
 #[cfg(feature = "integration")]
+use agileplus_integration_tests::common::harness::TestHarness;
+
+#[cfg(feature = "integration")]
 use std::env;
 
 #[cfg(feature = "integration")]

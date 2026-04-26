@@ -1,48 +1,48 @@
 [workspace]
 resolver = "3"
 members = [
-    "libs/nexus",
-    "libs/plugin-registry",
-    "libs/plugin-sample",
-    "libs/plugin-cli",
-    "libs/plugin-git",
-    "libs/plugin-grpc",
-    "libs/plugin-integration",
-    "libs/intent-registry",
-    "libs/health-monitor",
-    "libs/logger",
-    "libs/metrics",
-    "libs/config-core",
-    "libs/tracing-core",
-    "libs/cli-framework",
-    "libs/hexagonal-rs",
-    "libs/hexkit",
-    "libs/cipher",
-    "libs/gauge",
-    "libs/xdd-lib-rs",
-    "crates/agileplus-api",
-    "crates/agileplus-cli",
-    "crates/agileplus-domain",
-    "crates/agileplus-fixtures",
-    "crates/agileplus-grpc",
-    "crates/agileplus-sqlite",
-    "crates/agileplus-plane",
-    "crates/agileplus-telemetry",
-    "crates/agileplus-triage",
-    "crates/agileplus-events",
-    "crates/agileplus-cache",
-    "crates/agileplus-subcmds",
-    "crates/agileplus-graph",
-    "crates/agileplus-nats",
-    "crates/agileplus-sync",
-    "crates/agileplus-artifacts",
-    "crates/agileplus-dashboard",
-    "crates/agileplus-github",
-    "crates/agileplus-p2p",
-    "crates/agileplus-integration-tests",
-    "crates/agileplus-contract-tests",
-    "crates/agileplus-benchmarks",
-    "libs/nexus",
+  "libs/nexus",
+  "libs/plugin-registry",
+  "libs/plugin-sample",
+  "libs/plugin-cli",
+  "libs/plugin-git",
+  "libs/plugin-grpc",
+  "libs/plugin-integration",
+  "libs/intent-registry",
+  "libs/health-monitor",
+  "libs/logger",
+  "libs/metrics",
+  "libs/config-core",
+  "libs/tracing-core",
+  "libs/cli-framework",
+  "libs/hexagonal-rs",
+  "libs/hexkit",
+  "libs/cipher",
+  "libs/gauge",
+  "libs/xdd-lib-rs",
+  "crates/agileplus-api",
+  "crates/agileplus-cli",
+  "crates/agileplus-domain",
+  "crates/agileplus-fixtures",
+  "crates/agileplus-grpc",
+  "crates/agileplus-sqlite",
+  "crates/agileplus-plane",
+  "crates/agileplus-telemetry",
+  "crates/agileplus-triage",
+  "crates/agileplus-events",
+  "crates/agileplus-cache",
+  "crates/agileplus-subcmds",
+  "crates/agileplus-graph",
+  "crates/agileplus-nats",
+  "crates/agileplus-sync",
+  "crates/agileplus-artifacts",
+  "crates/agileplus-dashboard",
+  "crates/agileplus-github",
+  "crates/agileplus-p2p",
+  "crates/agileplus-integration-tests",
+  "crates/agileplus-contract-tests",
+  "crates/agileplus-benchmarks",
+  "libs/nexus",
 ]
 
 [workspace.package]
@@ -88,7 +88,11 @@ criterion = { version = "0.5", features = ["async_tokio", "html_reports"] }
 time = ">=0.3.47"
 trait-variant = "0.1"
 async-trait = "0.1"
-sentry = { version = "0.33", features = ["backtrace", "contexts", "debug-images"] }
+sentry = { version = "0.33", features = [
+  "backtrace",
+  "contexts",
+  "debug-images",
+] }
 
 # OpenAPI scaffolding (utoipa). See WP: feat/rest-openapi-scaffold (#138, #118).
 utoipa = { version = "5", features = ["axum_extras", "chrono"] }
@@ -100,7 +104,7 @@ utoipa-axum = "0.2"
 # under KooshaPari/ before re-adding. Tracked in GH issues #79/#82/#138/#142/#144.
 
 # Git operations
-gix = "0.71"
+gix = "0.82"
 git2 = "0.20"
 
 # Database
