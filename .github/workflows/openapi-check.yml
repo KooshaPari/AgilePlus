@@ -20,6 +20,9 @@ on:
       - "crates/agileplus-domain/**"
       - "openapi.yaml"
       - ".github/workflows/openapi-check.yml"
+permissions:
+  contents: read
+
 
 jobs:
   drift:
