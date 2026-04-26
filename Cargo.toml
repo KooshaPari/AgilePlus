@@ -100,7 +100,7 @@ utoipa-axum = "0.2"
 # under KooshaPari/ before re-adding. Tracked in GH issues #79/#82/#138/#142/#144.
 
 # Git operations
-gix = "0.71"
+gix = "0.82"
 git2 = "0.20"
 
 # Database
