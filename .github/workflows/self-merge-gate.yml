@@ -5,6 +5,9 @@ name: self-merge-gate
 
 on: [pull_request_review]
 
+permissions:
+  contents: read
+
 jobs:
   gate:
     uses: KooshaPari/phenoShared/.github/workflows/reusable/self-merge-gate.yml@main
