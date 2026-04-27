@@ -1,7 +1,7 @@
 name: self-merge-gate
 
 # Delegates to phenoShared reusable workflow.
-# See: https://github.com/KooshaPari/phenoShared/blob/main/.github/workflows/reusable/self-merge-gate.yml
+# See: https://github.com/KooshaPari/phenoShared/blob/main/.github/workflows/self-merge-gate.yml
 
 on: [pull_request_review]
 
@@ -10,4 +10,4 @@ permissions:
 
 jobs:
   gate:
-    uses: KooshaPari/phenoShared/.github/workflows/reusable/self-merge-gate.yml@main
+    uses: KooshaPari/phenoShared/.github/workflows/self-merge-gate.yml@main
