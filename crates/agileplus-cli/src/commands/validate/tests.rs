@@ -1,7 +1,8 @@
 use super::*;
 use agileplus_domain::domain::feature::Feature;
 use agileplus_domain::domain::governance::{
-    Evidence, EvidenceRequirement, EvidenceType, GovernanceContract, GovernanceRule,
+    Evidence, EvidenceRequirement, EvidenceType, GovernanceContract, GovernanceRule, PolicyCheck,
+    PolicyDefinition, PolicyDomain, PolicyRule,
 };
 use agileplus_domain::domain::work_package::WorkPackage;
 use agileplus_domain::ports::StoragePort;
@@ -214,6 +215,49 @@ async fn builtin_ci_policy_passes_with_matching_evidence() {
     assert!(results[0].message.contains("satisfied"));
 }
 
+#[tokio::test]
+async fn active_policy_matches_generated_ci_ref() {
+    let db = SqliteStorageAdapter::in_memory().unwrap();
+    let (feature_id, wp_id) = create_feature_with_wp(&db).await;
+    let policy_id = create_policy_rule(
+        &db,
+        PolicyDomain::Quality,
+        PolicyCheck::EvidencePresent {
+            evidence_type: EvidenceType::CiOutput,
+        },
+    )
+    .await;
+    let contract = contract_with_policy(
+        feature_id,
+        EvidenceType::CiOutput,
+        "FR-CI",
+        "policy:ci-required",
+    );
+    create_evidence(&db, wp_id, "FR-CI", EvidenceType::CiOutput).await;
+
+    let results = super::evidence::evaluate_policies(&db, &contract, feature_id)
+        .await
+        .unwrap();
+
+    assert_eq!(results.len(), 1);
+    assert_eq!(results[0].policy_id, policy_id);
+    assert!(results[0].passed);
+}
+
+#[tokio::test]
+async fn empty_policy_refs_do_not_evaluate_active_policies() {
+    let db = SqliteStorageAdapter::in_memory().unwrap();
+    let feature_id = create_feature_with_wp(&db).await.0;
+    create_policy_rule(&db, PolicyDomain::Compliance, PolicyCheck::ManualApproval).await;
+    let contract = make_contract(feature_id);
+
+    let results = super::evidence::evaluate_policies(&db, &contract, feature_id)
+        .await
+        .unwrap();
+
+    assert!(results.is_empty());
+}
+
 async fn create_feature_with_wp(db: &SqliteStorageAdapter) -> (i64, i64) {
     let feature_id = StoragePort::create_feature(
         db,
@@ -249,6 +293,26 @@ async fn create_evidence(
         created_at: Utc::now(),
     };
     StoragePort::create_evidence(db, &evidence).await.unwrap();
+}
+
+async fn create_policy_rule(
+    db: &SqliteStorageAdapter,
+    domain: PolicyDomain,
+    check: PolicyCheck,
+) -> i64 {
+    let now = Utc::now();
+    let rule = PolicyRule {
+        id: 0,
+        domain,
+        rule: PolicyDefinition {
+            description: "test policy".to_string(),
+            check,
+        },
+        active: true,
+        created_at: now,
+        updated_at: now,
+    };
+    StoragePort::create_policy_rule(db, &rule).await.unwrap()
 }
 
 fn contract_with_policy(
