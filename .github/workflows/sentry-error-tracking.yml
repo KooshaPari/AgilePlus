@@ -71,12 +71,14 @@ jobs:
         run: |
           ORG_SLUG="phenotype"
           PROJECT_ID="agileplus"
-          echo "## Sentry Error Dashboard" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "🔗 **View errors**: https://sentry.io/organizations/${ORG_SLUG}/issues/?project=${PROJECT_ID}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Environment**: production" >> $GITHUB_STEP_SUMMARY
-          echo "**Workflow**: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" >> $GITHUB_STEP_SUMMARY
+          {
+            echo "## Sentry Error Dashboard"
+            echo ""
+            echo "🔗 **View errors**: https://sentry.io/organizations/${ORG_SLUG}/issues/?project=${PROJECT_ID}"
+            echo ""
+            echo "**Environment**: production"
+            echo "**Workflow**: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          } >> "$GITHUB_STEP_SUMMARY"
 
   integration-with-github-issues:
     name: GitHub-Sentry Integration Verification
@@ -107,15 +109,17 @@ jobs:
 
       - name: Generate integration checklist
         run: |
-          echo "## Sentry-GitHub Integration Checklist" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- [ ] GitHub authorization granted in Sentry" >> $GITHUB_STEP_SUMMARY
-          echo "- [ ] Auto-issue creation enabled for high severity" >> $GITHUB_STEP_SUMMARY
-          echo "- [ ] Alert labels configured (sentry-critical, error-tracking)" >> $GITHUB_STEP_SUMMARY
-          echo "- [ ] Notification channel selected" >> $GITHUB_STEP_SUMMARY
-          echo "- [ ] Test issue created and verified" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Last checked**: $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          {
+            echo "## Sentry-GitHub Integration Checklist"
+            echo ""
+            echo "- [ ] GitHub authorization granted in Sentry"
+            echo "- [ ] Auto-issue creation enabled for high severity"
+            echo "- [ ] Alert labels configured (sentry-critical, error-tracking)"
+            echo "- [ ] Notification channel selected"
+            echo "- [ ] Test issue created and verified"
+            echo ""
+            echo "**Last checked**: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+          } >> "$GITHUB_STEP_SUMMARY"
 
   notify-on-failure:
     name: Notify on Sentry Tracking Issues
