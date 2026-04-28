@@ -1,0 +1,20 @@
+[package]
+name = "agileplus-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2024"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+agileplus-domain = { path = "../crates/agileplus-domain" }
+libfuzzer-sys = "0.4"
+serde_json = "1"
+
+[[bin]]
+name = "feature_deserialize"
+path = "fuzz_targets/feature_deserialize.rs"
+test = false
+doc = false
+bench = false
