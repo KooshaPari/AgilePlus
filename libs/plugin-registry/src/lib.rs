@@ -35,5 +35,5 @@ pub mod plugin_trait;
 pub mod registry;
 
 pub use error::{PluginError, Result};
-pub use plugin_trait::{Plugin, PluginConfig, PluginDiscovery, PluginMetadata};
-pub use registry::{PluginRegistry, PluginState};
+pub use plugin_trait::{Plugin, PluginConfig, PluginMetadata};
+pub use registry::PluginRegistry;

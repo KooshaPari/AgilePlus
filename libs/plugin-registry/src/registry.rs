@@ -3,25 +3,13 @@
 //! Manages plugin lifecycle: discovery, loading, initialization, and shutdown.
 
 use std::collections::HashMap;
-use std::path::Path;
 use std::sync::Arc;
 
 use tokio::sync::RwLock;
 use tracing::{debug, error, info, warn};
 
 use crate::error::{PluginError, Result};
-use crate::plugin_trait::{Plugin, PluginConfig, PluginDiscovery, PluginMetadata};
-
-/// Lifecycle state for a loaded plugin.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum PluginState {
-    /// Plugin is loaded but not initialized.
-    Loaded,
-    /// Plugin is initialized and running.
-    Running,
-    /// Plugin was shut down but remains loaded.
-    Stopped,
-}
+use crate::plugin_trait::{Plugin, PluginConfig, PluginMetadata};
 
 /// Main registry for managing plugins.
 pub struct PluginRegistry {
@@ -29,8 +17,6 @@ pub struct PluginRegistry {
     plugins: Arc<RwLock<HashMap<String, Arc<dyn Plugin>>>>,
     /// Plugin metadata cache.
     metadata: Arc<RwLock<HashMap<String, PluginMetadata>>>,
-    /// Plugin lifecycle states indexed by name.
-    states: Arc<RwLock<HashMap<String, PluginState>>>,
 }
 
 impl Default for PluginRegistry {
@@ -45,7 +31,6 @@ impl PluginRegistry {
         Self {
             plugins: Arc::new(RwLock::new(HashMap::new())),
             metadata: Arc::new(RwLock::new(HashMap::new())),
-            states: Arc::new(RwLock::new(HashMap::new())),
         }
     }
 
@@ -69,11 +54,6 @@ impl PluginRegistry {
         self.metadata.read().await.values().cloned().collect()
     }
 
-    /// Returns the current lifecycle state for a loaded plugin.
-    pub async fn get_state(&self, name: &str) -> Option<PluginState> {
-        self.states.read().await.get(name).copied()
-    }
-
     /// Loads a plugin into the registry.
     ///
     /// # Errors
@@ -83,6 +63,7 @@ impl PluginRegistry {
         let name = plugin.name().to_string();
         let version = plugin.version().to_string();
 
+        // Check if already loaded
         {
             let plugins = self.plugins.read().await;
             if plugins.contains_key(&name) {
@@ -90,6 +71,7 @@ impl PluginRegistry {
             }
         }
 
+        // Store metadata
         {
             let mut metadata = self.metadata.write().await;
             metadata.insert(
@@ -103,40 +85,14 @@ impl PluginRegistry {
             );
         }
 
+        // Store plugin
         {
             let mut plugins = self.plugins.write().await;
             plugins.insert(name.clone(), plugin);
         }
-        {
-            let mut states = self.states.write().await;
-            states.insert(name.clone(), PluginState::Loaded);
-        }
 
         info!(plugin = %name, version = %version, "plugin loaded");
         Ok(())
-    }
-
-    /// Discovers plugins through the provided discovery strategy and loads them.
-    ///
-    /// Returns the names of plugins successfully loaded in discovery order.
-    ///
-    /// # Errors
-    ///
-    /// Returns discovery errors from the discoverer or load errors from the registry.
-    pub async fn discover_and_load<D>(&self, path: &Path, discoverer: &D) -> Result<Vec<String>>
-    where
-        D: PluginDiscovery,
-    {
-        let plugins = discoverer.discover(path).await?;
-        let mut loaded_names = Vec::with_capacity(plugins.len());
-
-        for plugin in plugins {
-            let name = plugin.name().to_string();
-            self.load(plugin).await?;
-            loaded_names.push(name);
-        }
-
-        Ok(loaded_names)
     }
 
     /// Initializes a loaded plugin with the given configuration.
@@ -152,6 +108,7 @@ impl PluginRegistry {
 
         let plugin = plugin.ok_or_else(|| PluginError::NotFound(name.to_string()))?;
 
+        // Version check
         if let Some(min_version) = &plugin
             .metadata()
             .as_ref()
@@ -171,11 +128,6 @@ impl PluginRegistry {
             error!(plugin = %name, error = %e, "plugin initialization failed");
             PluginError::InitializationFailed(name.to_string(), e.to_string())
         })?;
-
-        {
-            let mut states = self.states.write().await;
-            states.insert(name.to_string(), PluginState::Running);
-        }
 
         info!(plugin = %name, "plugin initialized");
         Ok(())
@@ -202,11 +154,6 @@ impl PluginRegistry {
             PluginError::ShutdownFailed(name.to_string(), e.to_string())
         })?;
 
-        {
-            let mut states = self.states.write().await;
-            states.insert(name.to_string(), PluginState::Stopped);
-        }
-
         info!(plugin = %name, "plugin shutdown complete");
         Ok(())
     }
@@ -219,8 +166,10 @@ impl PluginRegistry {
     ///
     /// Returns [`PluginError::NotFound`] if the plugin is not loaded.
     pub async fn unload(&self, name: &str) -> Result<()> {
+        // Shutdown first
         self.shutdown(name).await?;
 
+        // Remove from registry
         {
             let mut plugins = self.plugins.write().await;
             plugins.remove(name);
@@ -228,10 +177,6 @@ impl PluginRegistry {
         {
             let mut metadata = self.metadata.write().await;
             metadata.remove(name);
-        }
-        {
-            let mut states = self.states.write().await;
-            states.remove(name);
         }
 
         info!(plugin = %name, "plugin unloaded");
@@ -253,5 +198,98 @@ impl PluginRegistry {
 }
 
 #[cfg(test)]
-#[path = "registry/tests.rs"]
-mod tests;
+mod tests {
+    use super::*;
+    use crate::plugin_trait::PluginConfig;
+
+    struct TestPlugin {
+        name: String,
+        version: String,
+    }
+
+    impl TestPlugin {
+        fn new(name: &str, version: &str) -> Self {
+            Self {
+                name: name.to_string(),
+                version: version.to_string(),
+            }
+        }
+    }
+
+    #[async_trait::async_trait]
+    impl Plugin for TestPlugin {
+        fn name(&self) -> &str {
+            &self.name
+        }
+
+        fn version(&self) -> &str {
+            &self.version
+        }
+
+        async fn initialize(&self, _config: PluginConfig) -> Result<()> {
+            Ok(())
+        }
+
+        async fn shutdown(&self) -> Result<()> {
+            Ok(())
+        }
+    }
+
+    #[tokio::test]
+    async fn test_load_unload_plugin() {
+        let registry = PluginRegistry::new();
+
+        // Initially empty
+        assert!(registry.is_empty().await);
+
+        // Load a plugin
+        let plugin = Arc::new(TestPlugin::new("test-plugin", "1.0.0"));
+        registry.load(plugin).await.unwrap();
+
+        assert_eq!(registry.len().await, 1);
+        assert!(!registry.is_empty().await);
+
+        // Unload the plugin
+        registry.unload("test-plugin").await.unwrap();
+
+        assert!(registry.is_empty().await);
+    }
+
+    #[tokio::test]
+    async fn test_load_duplicate_plugin() {
+        let registry = PluginRegistry::new();
+
+        let plugin1 = Arc::new(TestPlugin::new("test-plugin", "1.0.0"));
+        registry.load(plugin1).await.unwrap();
+
+        let plugin2 = Arc::new(TestPlugin::new("test-plugin", "2.0.0"));
+        let result = registry.load(plugin2).await;
+
+        assert!(result.is_err());
+        assert!(matches!(result.unwrap_err(), PluginError::AlreadyLoaded(_)));
+    }
+
+    #[tokio::test]
+    async fn test_initialize_nonexistent_plugin() {
+        let registry = PluginRegistry::new();
+
+        let result = registry
+            .initialize("nonexistent", PluginConfig::default())
+            .await;
+
+        assert!(result.is_err());
+        assert!(matches!(result.unwrap_err(), PluginError::NotFound(_)));
+    }
+
+    #[tokio::test]
+    async fn test_get_plugin() {
+        let registry = PluginRegistry::new();
+
+        let plugin = Arc::new(TestPlugin::new("test-plugin", "1.0.0"));
+        registry.load(plugin).await.unwrap();
+
+        let retrieved = registry.get("test-plugin").await.unwrap();
+        assert_eq!(retrieved.name(), "test-plugin");
+        assert_eq!(retrieved.version(), "1.0.0");
+    }
+}
