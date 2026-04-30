@@ -5,6 +5,8 @@
 use async_trait::async_trait;
 
 use crate::error::Result;
+use std::path::Path;
+use std::sync::Arc;
 
 /// Configuration passed to a plugin during initialization.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -66,4 +68,15 @@ pub trait Plugin: Send + Sync {
     ///
     /// Called when the plugin is unloaded or the host is shutting down.
     async fn shutdown(&self) -> Result<()>;
+}
+
+/// Strategy for discovering plugins from a filesystem path or configuration.
+///
+/// Discovery implementors own the loading mechanism, which may be static
+/// construction, manifest parsing, dynamic libraries, or another host-specific
+/// approach. The registry only receives instantiated plugins.
+#[async_trait]
+pub trait PluginDiscovery: Send + Sync {
+    /// Discovers plugins at the given path and returns instantiated plugins.
+    async fn discover(&self, path: &Path) -> Result<Vec<Arc<dyn Plugin>>>;
 }
