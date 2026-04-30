@@ -6,7 +6,7 @@ repos:
         name: Semgrep
         args: ["--config=.semgrep.yml", "--error"]
         language: python
-        types: [python, rust, json, javascript, typescript, yaml, go]
+        types_or: [python, rust, json, javascript, ts, tsx, yaml, go]
         additional_dependencies: ["semgrep"]
 
   - repo: https://github.com/trufflesecurity/trufflehog

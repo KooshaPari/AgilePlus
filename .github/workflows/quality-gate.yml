@@ -1,11 +1,18 @@
 name: quality-gate
 on: [pull_request]
+
+permissions:
+  contents: read
 jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
+      - uses: arduino/setup-protoc@v3
+        with:
+          version: "28.x"
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Cache cargo registry
         uses: actions/cache@v5
         with:

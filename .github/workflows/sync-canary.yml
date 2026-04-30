@@ -28,7 +28,11 @@ jobs:
 
       - name: Prepare local canary ref
         run: |
-          git fetch origin canary:canary || git branch canary origin/canary
+          if git ls-remote --exit-code --heads origin canary >/dev/null 2>&1; then
+            git fetch origin canary:canary
+          else
+            git branch canary "$GITHUB_SHA"
+          fi
 
       - name: Sync canary from main
         run: cargo run -p agileplus-cli --locked -- branch:sync --source main --target canary

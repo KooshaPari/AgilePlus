@@ -1,3 +1,7 @@
+status: CANCELLED
+
+> **CANCELLED 2026-04-26** — superseded by Phase 1 libification (memory: `session_2026_03_29_libification.md`) which migrated the consolidation targets (`phenotype-error-core`, `phenotype-health`, `phenotype-config-core`) into **phenoShared/pheno/PhenoKits**. Target repo `KooshaPari/phenotype-infrakit` was archived 2026-04-06 (memory: `reference_archived_repos_locked.md`). Per-repo releases (Authvault, Tokn v0.1.1, PolicyStack v0.1.0, Httpora) shipped independently in 2026-04-25 wave (memory: `reference_session_2026_04_25_releases.md`). Only residual follow-up — verify all phenoShared consumers have no dangling `phenotype-infrakit::*` imports — has been folded into spec 021-polyrepo-ecosystem-stabilization.
+
 # phenotype-infrakit Stabilization
 
 ## Meta

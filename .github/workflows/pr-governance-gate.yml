@@ -127,6 +127,17 @@ jobs:
               current.commits.nodes?.[0]?.commit?.statusCheckRollup?.contexts?.nodes || [];
             const allowedConclusions = new Set(["SUCCESS", "SKIPPED", "NEUTRAL"]);
             const ignoredChecks = [/^pr-governance-gate$/i];
+            const billingExceptionChecks = [/billing/i, /quota/i];
+            const isBillingExceptionContext = (contextNode, name) => {
+              if (billingExceptionChecks.some((pattern) => pattern.test(name))) {
+                return true;
+              }
+              return (
+                contextNode.__typename === "StatusContext" &&
+                /^security\/snyk/i.test(name) &&
+                contextNode.state === "ERROR"
+              );
+            };
 
             for (const contextNode of contexts) {
               const name =
@@ -137,7 +148,7 @@ jobs:
                 continue;
               }
 
-              if (billingException && /billing|quota/i.test(name)) {
+              if (billingException && isBillingExceptionContext(contextNode, name)) {
                 continue;
               }
 

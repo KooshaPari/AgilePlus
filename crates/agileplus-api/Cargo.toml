@@ -34,7 +34,6 @@ askama = "0.12"
 
 # OpenAPI scaffolding (utoipa). MVP scope: 5 annotated endpoints; see openapi.yaml at repo root.
 utoipa = { workspace = true }
-utoipa-axum = { workspace = true }
 serde_yaml = "0.9"
 
 [dev-dependencies]

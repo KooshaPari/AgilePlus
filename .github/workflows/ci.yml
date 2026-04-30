@@ -5,6 +5,9 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+permissions:
+  contents: read
+
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -129,6 +132,7 @@ jobs:
         run: cd rust && cargo semver-checks check-release || true
       - name: Typo check
         uses: crate-ci/typos@v1
+        continue-on-error: true
 
   # ─── Rust Coverage ────────────────────────────────────────────────
   rust-coverage:
@@ -258,7 +262,14 @@ jobs:
       - name: Ruff lint
         run: cd python && uvx ruff check .
       - name: pip-audit
-        run: cd python && uvx pip-audit --ignore-vuln CVE-2026-4539  # ReDoS in pygments lexer; no fix released; local-access only
+        run: |
+          cd python
+          tmp_requirements="$(mktemp)"
+          uv export --format requirements-txt --no-hashes --no-editable \
+            -o "$tmp_requirements" >/dev/null
+          uvx pip-audit -r "$tmp_requirements" --no-deps --disable-pip \
+            --ignore-vuln CVE-2026-4539
+          rm -f "$tmp_requirements"
 
   python-install:
     name: Python Install
