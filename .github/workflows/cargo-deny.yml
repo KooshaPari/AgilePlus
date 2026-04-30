@@ -15,9 +15,6 @@ on:
   schedule:
     - cron: '0 9 * * 1'
 
-permissions:
-  contents: read
-
 jobs:
   cargo-deny:
     runs-on: ubuntu-latest

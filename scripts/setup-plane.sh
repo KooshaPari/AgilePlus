@@ -15,7 +15,6 @@ PLANE_REF="${PLANE_REF:-v1.2.3}"
 PLANE_DIR=".agileplus/plane"
 PLANE_API_DIR="$PLANE_DIR/apps/api"
 PLANE_WEB_DIR="$PLANE_DIR/apps/web"
-PLANE_API_REQUIREMENTS_LOCK=".agileplus/locks/plane-api-local-requirements.txt"
 API_ENV_FILE="$PLANE_API_DIR/.env"
 WEB_ENV_FILE="$PLANE_WEB_DIR/.env"
 
@@ -68,14 +67,10 @@ fi
 
 if ! "$PLANE_API_DIR/.venv/bin/python" -c "import django" >/dev/null 2>&1; then
   echo "Installing Plane API Python dependencies..."
-  if [[ ! -f "$PLANE_API_REQUIREMENTS_LOCK" ]]; then
-    echo "Missing Plane API requirements lock: $PLANE_API_REQUIREMENTS_LOCK" >&2
-    exit 1
-  fi
   (
     cd "$PLANE_API_DIR"
     source .venv/bin/activate
-    pip install --require-hashes -r "$PROJ_DIR/$PLANE_API_REQUIREMENTS_LOCK"
+    pip install -r requirements/local.txt
   )
 fi
 
