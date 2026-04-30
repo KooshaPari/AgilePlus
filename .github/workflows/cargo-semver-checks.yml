@@ -2,10 +2,6 @@ name: cargo-semver-checks
 on:
   pull_request: { paths: ['**/Cargo.toml'] }
   workflow_dispatch:
-
-permissions:
-  contents: read
-
 jobs:
   semver-checks:
     runs-on: ubuntu-latest

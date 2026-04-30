@@ -21,5 +21,4 @@ jobs:
           tool: cargo-machete
 
       - name: Run cargo machete
-        run: cargo machete
-        working-directory: rust
+        run: cargo machete .

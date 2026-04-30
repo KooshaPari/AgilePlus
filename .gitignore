@@ -11,9 +11,6 @@
 
 # AgilePlus runtime artifacts
 .agileplus/
-!.agileplus/
-!.agileplus/locks/
-!.agileplus/locks/plane-api-local-requirements.txt
 .worktrees/
 .claude/worktrees/
 
@@ -22,9 +19,3 @@ data/safari/
 docs/research/gemini_export.html
 docs/research/*_export.html
 docs/research/*_export.json
-
-# cargo-fuzz keeps an isolated lockfile but writes local build artifacts here.
-!/fuzz/Cargo.lock
-/fuzz/artifacts/
-/fuzz/corpus/
-/fuzz/target/

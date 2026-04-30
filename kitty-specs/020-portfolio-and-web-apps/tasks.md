@@ -111,6 +111,7 @@ Complete phenodocs as the VitePress federation hub that aggregates documentation
 - [ ] T031 Write tests for federation and search functionality
 - [ ] T032 Add documentation: contributing guide, federation setup
 - [ ] T033 Run quality checks: lint, type-check, test
+- [ ] T034 Audit shared VitePress asset handling across phenodocs, koosha-portfolio, and other web-app surfaces so deployed docs do not 404 on CSS, JS, fonts, or favicon assets.
 
 ### Dependencies
 - None (can start independently)

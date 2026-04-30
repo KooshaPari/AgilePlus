@@ -10,9 +10,6 @@ on:
     - cron: '37 5 * * 3'  # weekly Wednesday
   workflow_dispatch:
 
-permissions:
-  contents: read
-
 jobs:
   audit:
     runs-on: ubuntu-latest

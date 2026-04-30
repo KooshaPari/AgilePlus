@@ -1,6 +1,5 @@
 [workspace]
 resolver = "3"
-exclude = ["fuzz"]
 members = [
   "libs/nexus",
   "libs/plugin-registry",

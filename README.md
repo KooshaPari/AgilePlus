@@ -11,6 +11,7 @@
 [![Release](https://img.shields.io/github/v/release/KooshaPari/AgilePlus?include_prereleases&sort=semver)](https://github.com/KooshaPari/AgilePlus/releases)
 [![License](https://img.shields.io/github/license/KooshaPari/AgilePlus)](LICENSE)
 [![Phenotype](https://img.shields.io/badge/Phenotype-org-blueviolet)](https://github.com/KooshaPari)
+[![AI Slop Inside](https://sladge.net/badge.svg)](https://sladge.net)
 
 **AgilePlus is a local-first, spec-driven agile work-tracking CLI for AI-agent and human teams.** It models features, work packages, and acceptance criteria as versioned specs on disk, with optional sync to GitHub Issues, dashboards, and P2P merge for multi-actor collaboration.
 
