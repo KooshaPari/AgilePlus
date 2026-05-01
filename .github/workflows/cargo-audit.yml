@@ -14,7 +14,7 @@ jobs:
   audit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: rustsec/audit-check@v2
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - uses: rustsec/audit-check@b56e3e5648f2413fef2e9754a4c3dc43f4ad41c
         with:
           token: ${{ secrets.GITHUB_TOKEN }}

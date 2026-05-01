@@ -27,7 +27,7 @@ jobs:
       CHANNEL: ${{ inputs.channel }}
       RISK_PROFILE: ${{ inputs.risk_profile }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
 
       - name: Setup mise
         uses: jdx/mise-action@v4
