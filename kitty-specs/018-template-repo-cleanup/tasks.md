@@ -4,11 +4,19 @@
 **Prerequisites**: spec.md, access to all 27 template repositories
 **Scope**: Shelf-level (cross-repo) — 27 template repos → ~13 repos + generator
 
+> **🔄 RECONCILED 2026-04-28:** Audit via `gh api` confirms ALL 14 hexagon-* repos
+> AND ALL 14 template-lang-* repos return 404 (deleted). Spec 018's premise
+> ("cleanup 27 template repos") is obsolete — the source material is gone.
+> WP-001, WP-002, WP-003 marked complete (target repos already deleted).
+> WP-004 (template generator) + WP-005 (registry of remaining templates) may
+> still be relevant if a generator is desired; currently no template repos
+> exist to register.
+
 ---
 
 ## WP-001: Audit All 14 hexagon-* and Hexa* Repos — Identify Duplicates
 
-- **State:** planned
+- **State:** complete (reconciled 2026-04-28: all 14 target repos 404)
 - **Sequence:** 1
 - **File Scope:** 14 hexagonal architecture template repos (hexagon-rust, HexaRust, hexagon-go, HexaGo, hexagon-python, HexaPython, hexagon-typescript, HexaTS, hexagon-zig, HexaZig, hexagon-odin, hexagon-cpp, HexaCPP, hexagon-shared)
 - **Acceptance Criteria:**
@@ -21,19 +29,19 @@
 
 Conduct a comprehensive audit of all 14 hexagonal architecture template repositories. Identify duplicate pairs (hexagon-* vs Hexa* for each language), assess their differences, and plan merges. This audit produces the blueprint for WP-002's consolidation work.
 
-### Subtasks
-- [ ] T001 Clone all 14 hexagonal template repos
-- [ ] T002 Analyze each repo: file structure, dependencies, build tools, configuration
-- [ ] T003 Compare hexagon-rust vs HexaRust: identify differences, recommend merge target
-- [ ] T004 Compare hexagon-go vs HexaGo: identify differences, recommend merge target
-- [ ] T005 Compare hexagon-python vs HexaPython: identify differences, recommend merge target
-- [ ] T006 Compare hexagon-typescript vs HexaTS: identify differences, recommend merge target
-- [ ] T007 Compare hexagon-zig vs HexaZig: identify differences, recommend merge target
-- [ ] T008 Compare hexagon-cpp vs HexaCPP: identify differences, recommend merge target
-- [ ] T009 Assess hexagon-odin: confirm no active use, recommend archival
-- [ ] T010 Analyze hexagon-shared: identify shared config to migrate to generator
-- [ ] T011 Produce audit report with duplicate pairs, merge targets, and conflict resolution
-- [ ] T012 Create merge plan: order of merges, branch strategy, verification steps
+### Subtasks (all reconciled — target repos 404)
+- [x] T001 Clone all 14 hexagonal template repos (404 — already deleted)
+- [x] T002 Analyze each repo: file structure, dependencies, build tools, configuration (n/a)
+- [x] T003 Compare hexagon-rust vs HexaRust: identify differences (both 404)
+- [x] T004 Compare hexagon-go vs HexaGo (both 404)
+- [x] T005 Compare hexagon-python vs HexaPython (both 404)
+- [x] T006 Compare hexagon-typescript vs HexaTS (both 404)
+- [x] T007 Compare hexagon-zig vs HexaZig (both 404)
+- [x] T008 Compare hexagon-cpp vs HexaCPP (both 404)
+- [x] T009 Assess hexagon-odin (404 — already gone)
+- [x] T010 Analyze hexagon-shared (404)
+- [x] T011 Produce audit report (n/a — nothing to audit)
+- [x] T012 Create merge plan (n/a — nothing to merge)
 
 ### Dependencies
 - None (starting WP for this spec)
