@@ -17,21 +17,11 @@ pub(crate) async fn evaluate_evidence<S: StoragePort>(
 ) -> Result<(Vec<EvidenceCheck>, Vec<(String, String)>)> {
     let mut results = Vec::new();
     let mut missing = Vec::new();
-    let wp_ids = feature_wp_ids(storage, feature_id).await?;
+    let feature_evidence = load_feature_evidence(storage, feature_id).await?;
 
     for rule in &contract.rules {
         for req in &rule.required_evidence {
-            let evidence_list = storage
-                .get_evidence_by_fr(&req.fr_id)
-                .await
-                .unwrap_or_default();
-
-            let relevant: Vec<&Evidence> = evidence_list
-                .iter()
-                .filter(|evidence| {
-                    evidence.evidence_type == req.evidence_type && wp_ids.contains(&evidence.wp_id)
-                })
-                .collect();
+            let relevant = feature_evidence.evidence_for(req.fr_id.as_str(), req.evidence_type);
             let found = !relevant.is_empty();
 
             let threshold_met = if let (true, Some(threshold)) = (found, &req.threshold) {
@@ -108,6 +98,11 @@ pub(crate) async fn evaluate_policies<S: StoragePort>(
         .flat_map(|r| r.policy_refs.iter().cloned())
         .collect();
 
+    if referenced.is_empty() {
+        return Ok(Vec::new());
+    }
+
+    let feature_evidence = load_feature_evidence(storage, feature_id).await?;
     let mut results = Vec::new();
     let mut handled_refs = BTreeSet::new();
 
@@ -116,28 +111,23 @@ pub(crate) async fn evaluate_policies<S: StoragePort>(
             .iter()
             .filter(|policy_ref| policy.matches_reference(policy_ref))
             .collect();
-        let is_referenced = !matched_refs.is_empty() || referenced.is_empty();
 
-        if !is_referenced {
+        if matched_refs.is_empty() {
             continue;
         }
 
         let (passed, message) = match &policy.rule.check {
             PolicyCheck::EvidencePresent { evidence_type } => {
-                evaluate_evidence_policy(storage, contract, feature_id, *evidence_type).await?
+                evaluate_evidence_policy(contract, &feature_evidence, *evidence_type)
             }
             PolicyCheck::ThresholdMet { metric, min } => {
                 evaluate_metric_policy(storage, feature_id, metric, *min).await?
             }
-            PolicyCheck::ManualApproval => {
-                evaluate_evidence_policy(
-                    storage,
-                    contract,
-                    feature_id,
-                    EvidenceType::ManualAttestation,
-                )
-                .await?
-            }
+            PolicyCheck::ManualApproval => evaluate_evidence_policy(
+                contract,
+                &feature_evidence,
+                EvidenceType::ManualAttestation,
+            ),
             PolicyCheck::Custom { script } => (
                 false,
                 format!(
@@ -162,8 +152,7 @@ pub(crate) async fn evaluate_policies<S: StoragePort>(
     for policy_ref in referenced.difference(&handled_refs) {
         if let Some(builtin) = BuiltinPolicy::from_ref(policy_ref) {
             let (passed, message) =
-                evaluate_evidence_policy(storage, contract, feature_id, builtin.evidence_type)
-                    .await?;
+                evaluate_evidence_policy(contract, &feature_evidence, builtin.evidence_type);
             results.push(PolicyEvalResult {
                 policy_id: 0,
                 domain: builtin.domain.as_str().to_string(),
@@ -185,22 +174,20 @@ pub(crate) async fn evaluate_policies<S: StoragePort>(
     Ok(results)
 }
 
-async fn evaluate_evidence_policy<S: StoragePort>(
-    storage: &S,
+fn evaluate_evidence_policy(
     contract: &GovernanceContract,
-    feature_id: i64,
+    feature_evidence: &FeatureEvidence,
     evidence_type: EvidenceType,
-) -> Result<(bool, String)> {
+) -> (bool, String) {
     let requirements = requirements_for_evidence_type(contract, evidence_type);
-    let wp_ids = feature_wp_ids(storage, feature_id).await?;
     if requirements.is_empty() {
-        return Ok((
+        return (
             false,
             format!(
                 "No governance contract requirement declares {} evidence",
                 evidence_type.as_str()
             ),
-        ));
+        );
     }
 
     let mut satisfied = 0usize;
@@ -208,14 +195,7 @@ async fn evaluate_evidence_policy<S: StoragePort>(
     let mut below_threshold = Vec::new();
 
     for req in &requirements {
-        let evidence = storage
-            .get_evidence_by_fr(&req.fr_id)
-            .await
-            .with_context(|| format!("loading evidence for {}", req.fr_id))?;
-        let relevant: Vec<_> = evidence
-            .iter()
-            .filter(|ev| ev.evidence_type == evidence_type && wp_ids.contains(&ev.wp_id))
-            .collect();
+        let relevant = feature_evidence.evidence_for(req.fr_id.as_str(), evidence_type);
 
         if relevant.is_empty() {
             missing.push(req.fr_id.clone());
@@ -233,14 +213,14 @@ async fn evaluate_evidence_policy<S: StoragePort>(
     }
 
     if missing.is_empty() && below_threshold.is_empty() {
-        return Ok((
+        return (
             true,
             format!(
                 "{} evidence satisfied for {satisfied}/{} requirement(s)",
                 evidence_type.as_str(),
                 requirements.len()
             ),
-        ));
+        );
     }
 
     let mut failures = Vec::new();
@@ -254,22 +234,48 @@ async fn evaluate_evidence_policy<S: StoragePort>(
         ));
     }
 
-    Ok((
+    (
         false,
         format!(
             "{} evidence failed: {}",
             evidence_type.as_str(),
             failures.join("; ")
         ),
-    ))
+    )
 }
 
-async fn feature_wp_ids<S: StoragePort>(storage: &S, feature_id: i64) -> Result<BTreeSet<i64>> {
-    storage
+struct FeatureEvidence {
+    evidence: Vec<Evidence>,
+}
+
+impl FeatureEvidence {
+    fn evidence_for(&self, fr_id: &str, evidence_type: EvidenceType) -> Vec<&Evidence> {
+        self.evidence
+            .iter()
+            .filter(|ev| ev.fr_id == fr_id && ev.evidence_type == evidence_type)
+            .collect()
+    }
+}
+
+async fn load_feature_evidence<S: StoragePort>(
+    storage: &S,
+    feature_id: i64,
+) -> Result<FeatureEvidence> {
+    let wps = storage
         .list_wps_by_feature(feature_id)
         .await
-        .map(|wps| wps.into_iter().map(|wp| wp.id).collect())
-        .with_context(|| format!("loading work packages for feature {feature_id}"))
+        .with_context(|| format!("loading work packages for feature {feature_id}"))?;
+    let mut evidence = Vec::new();
+
+    for wp in wps {
+        let mut wp_evidence = storage
+            .get_evidence_by_wp(wp.id)
+            .await
+            .with_context(|| format!("loading evidence for work package {}", wp.id))?;
+        evidence.append(&mut wp_evidence);
+    }
+
+    Ok(FeatureEvidence { evidence })
 }
 
 async fn evaluate_metric_policy<S: StoragePort>(

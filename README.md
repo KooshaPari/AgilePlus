@@ -1,9 +1,17 @@
+> **Pinned references (Phenotype-org)**
+> - MSRV: see rust-toolchain.toml
+> - cargo-deny config: see deny.toml
+> - cargo-audit: rustsec/audit-check@v2 weekly
+> - Branch protection: 1 reviewer required, no force-push
+> - Authority: phenotype-org-governance/SUPERSEDED.md
+
 # AgilePlus
 
 [![Build](https://img.shields.io/github/actions/workflow/status/KooshaPari/AgilePlus/ci.yml?branch=main&label=build)](https://github.com/KooshaPari/AgilePlus/actions)
 [![Release](https://img.shields.io/github/v/release/KooshaPari/AgilePlus?include_prereleases&sort=semver)](https://github.com/KooshaPari/AgilePlus/releases)
 [![License](https://img.shields.io/github/license/KooshaPari/AgilePlus)](LICENSE)
 [![Phenotype](https://img.shields.io/badge/Phenotype-org-blueviolet)](https://github.com/KooshaPari)
+[![AI Slop Inside](https://sladge.net/badge.svg)](https://sladge.net)
 
 **AgilePlus is a local-first, spec-driven agile work-tracking CLI for AI-agent and human teams.** It models features, work packages, and acceptance criteria as versioned specs on disk, with optional sync to GitHub Issues, dashboards, and P2P merge for multi-actor collaboration.
 

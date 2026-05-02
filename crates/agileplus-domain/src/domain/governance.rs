@@ -29,6 +29,18 @@ impl EvidenceType {
             Self::ManualAttestation => "manual_attestation",
         }
     }
+
+    /// Stable short slug used in generated governance policy references.
+    pub fn policy_ref_slug(self) -> &'static str {
+        match self {
+            Self::TestResult => "test-result",
+            Self::CiOutput => "ci",
+            Self::ReviewApproval => "review",
+            Self::SecurityScan => "security-scan",
+            Self::LintResult => "lint",
+            Self::ManualAttestation => "manual-attestation",
+        }
+    }
 }
 
 /// A single evidence requirement attached to a governance rule.
@@ -201,7 +213,10 @@ impl PolicyRule {
         ];
 
         if let Some(evidence_type) = self.rule.check.required_evidence_type() {
-            keys.push(format!("policy:{}-required", evidence_type.as_str()));
+            keys.push(format!(
+                "policy:{}-required",
+                evidence_type.policy_ref_slug()
+            ));
         }
 
         keys
