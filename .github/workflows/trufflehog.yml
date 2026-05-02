@@ -1,8 +1,9 @@
-name: Trufflehog Secrets Scan
+name: TruffleHog Secrets Scan
 on:
   push:
     branches: [main]
   pull_request:
+
 jobs:
   trufflehog:
     runs-on: ubuntu-latest
