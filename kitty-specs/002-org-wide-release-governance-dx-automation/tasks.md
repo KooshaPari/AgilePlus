@@ -1,637 +1,449 @@
-# Work Packages: Org-Wide Release Governance & DX Automation
+# Tasks: 002-org-wide-release-governance-dx-automation
 
-**Inputs**: Design documents from `kitty-specs/002-org-wide-release-governance-dx-automation/`
-**Prerequisites**: plan.md, spec.md, research.md, data-model.md, contracts/registry-adapter.md
+**Spec**: `spec.md` | **Plan**: `plan.md` | **Work Packages**: 15 | **Total Subtasks**: 93
 
-**Tests**: Include testing in each WP where appropriate (adapter tests, CLI tests, workflow validation).
+## Overview
 
-**Organization**: Fine-grained subtasks (`Txxx`) roll up into work packages (`WPxx`). Each work package is independently deliverable and testable.
-
-**Prompt Files**: Each WP references a prompt file in `tasks/`. Lane status in YAML frontmatter.
+Codify the existing 5-tier release channel governance (alpha → canary → beta → rc → prod) into reusable GitHub Actions publishing workflows (npm, PyPI, crates.io), DX tooling (`pheno` CLI), standardized git hooks, and task runner configurations. Covers all ~47 Phenotype org repos. Eliminates per-repo manual publishing toil, enforces gate checks at every channel transition, and provides org-wide release status auditing. Currently only 3/47 repos implement the governance model; this spec drives it to 100%.
 
 ---
 
-## Work Package WP01: CLI Scaffold & Adapter Interface (Priority: P0)
+## Phase 0 — Foundation
 
-**Goal**: Create the `pheno-cli` Go project with Cobra skeleton, adapter interface, and version calculation logic.
-**Independent Test**: `pheno --help` shows all subcommands; adapter interface compiles; version calculation unit tests pass.
-**Prompt**: `tasks/WP01-cli-scaffold-adapter-interface.md`
-**Estimated Size**: ~450 lines
+### WP01: CLI Scaffold & Adapter Interface
+**Phase**: 0 | **Wave**: 0 | **Priority**: P0 | **Dependencies**: none
 
-### Included Subtasks
-- [x] T001 Initialize Go module (`pheno-cli`) with Cobra + Viper + Lipgloss deps
-- [x] T002 Create Cobra root command with subcommand stubs (publish, promote, audit, bootstrap, matrix, config)
-- [x] T003 Define `RegistryAdapter` interface in `internal/adapters/adapter.go`
-- [x] T004 Implement `internal/version/calculator.go` — version suffix logic per registry per channel
-- [x] T005 [P] Implement `internal/detect/detector.go` — language/manifest auto-detection
-- [x] T006 Unit tests for version calculator (all 7 registries × 5 channels)
+Create the `pheno-cli` Go project with Cobra skeleton, `RegistryAdapter` interface, and version calculation logic. This is the foundation every other WP depends on.
 
-### Implementation Notes
-- Go 1.23+, use `go mod init github.com/KooshaPari/pheno-cli`
-- Adapter interface: `Detect()`, `Version()`, `Build()`, `Publish()`, `Verify()`
-- Version calculator is pure logic, no I/O — easy to test exhaustively
+**Why**: Eliminates per-repo tribal knowledge by providing a single, consistent CLI for all release operations. Without this, each repo's CI/repo setup is bespoke and impossible to audit org-wide.
 
-### Parallel Opportunities
-- T005 (detector) can proceed in parallel with T004 (version calculator)
+**Effort**: ~450 lines | **Subtasks**: 6
 
-### Dependencies
-- None (starting package)
+**Subtasks**:
+- [ ] T001: Initialize Go module (`pheno-cli`) with Cobra + Viper + Lipgloss deps (Go 1.23+)
+- [ ] T002: Create Cobra root command with subcommand stubs (publish, promote, audit, bootstrap, matrix, config)
+- [ ] T003: Define `RegistryAdapter` interface in `internal/adapters/adapter.go` — `Detect()`, `Version()`, `Build()`, `Publish()`, `Verify()`
+- [ ] T004: Implement `internal/version/calculator.go` — version suffix logic per registry × per channel (7 registries × 5 channels)
+- [ ] T005: Implement `internal/detect/detector.go` — language/manifest auto-detection (parallel with T004)
+- [ ] T006: Unit tests for version calculator — exhaustively cover all 35 registry × channel combinations
 
-### Risks & Mitigations
-- PyPI PEP 440 edge cases (dev vs alpha ordering) → comprehensive test matrix
+**Acceptance Criteria**:
+- `pheno --help` shows all 6 subcommands
+- Adapter interface compiles with all 5 method signatures
+- Version calculator tests: 35/35 combinations pass (including PEP 440 edge cases)
+- PyPI PEP 440 edge cases (dev vs alpha ordering) covered by T006
 
 ---
 
-## Work Package WP02: npm Adapter (Priority: P0)
+### WP10: Centralized CI Workflows
+**Phase**: 0 | **Wave**: 0 | **Priority**: P1 | **Dependencies**: none
 
-**Goal**: Implement the npm registry adapter — detect, version, build, publish, verify.
-**Independent Test**: Adapter detects package.json, calculates correct npm pre-release versions, publishes with dist-tags.
-**Prompt**: `tasks/WP02-npm-adapter.md`
-**Estimated Size**: ~350 lines
+Create reusable GitHub Actions workflows in the `phenotypeActions` repo — publish, gate-check, promote, changelog, and audit — so every repo calls the same proven workflow templates. This is the org-wide consistency anchor.
 
-### Included Subtasks
-- [x] T007 Implement `internal/adapters/npm.go` — Detect (parse package.json, check private field)
-- [x] T008 Implement npm Version (SemVer pre-release + dist-tag mapping)
-- [x] T009 Implement npm Build (`npm pack`)
-- [x] T010 Implement npm Publish (`npm publish --tag <channel>`) with retry/backoff
-- [x] T011 Implement npm Verify (check registry API for published version)
-- [x] T012 Unit + integration tests for npm adapter
+**Why**: Without centralized workflows, each of the 47 repos has its own CI pipeline, its own publish logic, and its own failure modes. Centralizing into reusable workflows means one bug fix benefits all 47 repos simultaneously, and org-wide audit becomes a single workflow invocation.
 
-### Implementation Notes
-- Dist-tag mapping: alpha→alpha, canary→canary, beta→beta, rc→rc, prod→latest
-- Handle scoped packages (`@org/name`)
-- Private detection: `"private": true` in package.json
+**Effort**: ~500 lines | **Subtasks**: 7
 
-### Parallel Opportunities
-- All of WP02 can proceed in parallel with WP03 and WP04
+**Subtasks**:
+- [ ] T057: Create `publish.yml` reusable workflow — registry-specific publish with retry/backoff; handles 429 rate-limit with Retry-After parsing
+- [ ] T058: Create `gate-check.yml` reusable workflow — run channel-specific gate criteria (`mise run lint`, `mise run test`, etc.); fail on any gate failure
+- [ ] T059: Create `promote.yml` reusable workflow — composite: calls gate-check, then publish on success; supports both auto (tag/branch) and manual (workflow dispatch) triggers
+- [ ] T060: Create `changelog.yml` reusable workflow — git-cliff changelog generation on release, attached as CI artifact
+- [ ] T061: Create `audit.yml` scheduled workflow — org-wide release status report, scheduled nightly, posts to GitHub Issues or PR comment
+- [ ] T062: Add workflow inputs/outputs schema (language, registry, channel, risk_profile, version, credentials)
+- [ ] T063: Test workflows with `act` or dry-run mode; verify workflow_call inputs/outputs contract
 
-### Dependencies
-- Depends on WP01 (adapter interface)
-
-### Risks & Mitigations
-- npm 2FA/OTP — document that CI uses granular access tokens with 2FA bypass
+**Acceptance Criteria**:
+- All 5 reusable workflows pass workflow_call contract validation
+- `publish.yml` retries on 429 and honors Retry-After header
+- `gate-check.yml` returns non-zero exit code when any gate fails
+- `audit.yml` runs on schedule without manual intervention
 
 ---
 
-## Work Package WP03: PyPI Adapter (Priority: P0)
+## Phase 1 — Registry Adapters (all parallel after WP01)
 
-**Goal**: Implement the PyPI registry adapter with PEP 440 versioning.
-**Independent Test**: Adapter detects pyproject.toml, applies correct PEP 440 suffixes, publishes via twine.
-**Prompt**: `tasks/WP03-pypi-adapter.md`
-**Estimated Size**: ~350 lines
+### WP02: npm Adapter
+**Phase**: 1 | **Wave**: 1 | **Priority**: P0 | **Dependencies**: WP01
 
-### Included Subtasks
-- [x] T013 Implement `internal/adapters/pypi.go` — Detect (parse pyproject.toml, check classifiers)
-- [x] T014 Implement PyPI Version (PEP 440: alpha→aN, canary→devN, beta→bN, rc→rcN)
-- [x] T015 Implement PyPI Build (`python -m build`)
-- [x] T016 Implement PyPI Publish (`twine upload`) with retry/backoff
-- [x] T017 Implement PyPI Verify (check PyPI JSON API for version)
-- [x] T018 Unit + integration tests for PyPI adapter
+Implement the npm registry adapter — detect, version, build, publish, verify.
 
-### Implementation Notes
-- PEP 440 normalization: `0.2.0a1` not `0.2.0-alpha.1`
-- Canary maps to `devN` (sorts before alpha in PEP 440)
-- Private detection: `Private :: Do Not Upload` classifier
-- Support both hatchling and setuptools backends
+**Why**: npm packages represent a significant portion of Phenotype org's publishable artifacts. Without a standardized adapter, each TypeScript/Node repo has its own CI publish logic that must be manually maintained and audited.
 
-### Parallel Opportunities
-- All of WP03 can proceed in parallel with WP02 and WP04
+**Effort**: ~350 lines | **Subtasks**: 6
 
-### Dependencies
-- Depends on WP01 (adapter interface)
+**Subtasks**:
+- [ ] T007: Implement `internal/adapters/npm.go` — Detect: parse package.json, check `"private": true`
+- [ ] T008: Implement npm Version: SemVer pre-release + dist-tag mapping (alpha→alpha, canary→canary, beta→beta, rc→rc, prod→latest)
+- [ ] T009: Implement npm Build: `npm pack` producing tarball
+- [ ] T010: Implement npm Publish: `npm publish --tag <channel>` with retry/exponential backoff; handle scoped packages (`@org/name`)
+- [ ] T011: Implement npm Verify: check npm registry API for published version
+- [ ] T012: Unit + integration tests for npm adapter (mock registry responses, real publish in test environment)
 
-### Risks & Mitigations
-- Multiple Python build backends (hatchling, setuptools, uv_build) — adapter calls `python -m build` generically
+**Acceptance Criteria**:
+- Detects both plain and scoped packages correctly
+- Correct dist-tag applied per channel
+- Private packages skip publish step
+- npm 2FA/OTP: CI uses granular access tokens with 2FA bypass (documented in code)
 
 ---
 
-## Work Package WP04: crates.io Adapter (Priority: P0)
+### WP03: PyPI Adapter
+**Phase**: 1 | **Wave**: 1 | **Priority**: P0 | **Dependencies**: WP01
 
-**Goal**: Implement the crates.io registry adapter with workspace dependency ordering.
-**Independent Test**: Adapter detects Cargo.toml (including workspaces), publishes crates in topological order.
-**Prompt**: `tasks/WP04-crates-adapter.md`
-**Estimated Size**: ~400 lines
+Implement the PyPI registry adapter with PEP 440 versioning.
 
-### Included Subtasks
-- [x] T019 Implement `internal/adapters/crates.go` — Detect (parse Cargo.toml, workspace members, publish field)
-- [x] T020 Implement crates.io Version (SemVer pre-release: `-alpha.N`, `-beta.N`, etc.)
-- [x] T021 Implement topological dependency sorting for workspace crates
-- [x] T022 Implement crates.io Build (`cargo package`) and Publish (`cargo publish`) with rate-limit retry
-- [x] T023 Implement crates.io Verify (check crates.io API for version availability)
-- [x] T024 Unit + integration tests (including workspace ordering tests)
+**Why**: Python packages are second only to Rust in the Phenotype org. PEP 440 has subtle normalization rules that differ from SemVer — a dedicated adapter prevents the 404-publishing-failures that happen when teams hand-roll versioning without understanding PEP 440 ordering.
 
-### Implementation Notes
-- Rate limiting: crates.io returns 429 with Retry-After header — parse and honor it
-- Workspace detection: parse `[workspace] members = [...]`, resolve paths
-- Topological sort: build dependency graph from `[dependencies]` path deps, publish leaves first
-- Never `--allow-dirty` — fail if working tree is dirty
+**Effort**: ~350 lines | **Subtasks**: 6
 
-### Parallel Opportunities
-- All of WP04 can proceed in parallel with WP02 and WP03
+**Subtasks**:
+- [ ] T013: Implement `internal/adapters/pypi.go` — Detect: parse pyproject.toml, check `Private :: Do Not Upload` classifier
+- [ ] T014: Implement PyPI Version: PEP 440 normalization (alpha→aN, canary→devN, beta→bN, rc→rcN); `0.2.0a1` not `0.2.0-alpha.1`
+- [ ] T015: Implement PyPI Build: `python -m build` (generic, handles hatchling + setuptools + uv_build backends)
+- [ ] T016: Implement PyPI Publish: `twine upload` with retry/exponential backoff
+- [ ] T017: Implement PyPI Verify: check PyPI JSON API (`https://pypi.org/pypi/<package>/<version>/json`) for version
+- [ ] T018: Unit + integration tests for PyPI adapter (PEP 440 version normalization tests, private package skip)
 
-### Dependencies
-- Depends on WP01 (adapter interface)
-
-### Risks & Mitigations
-- crates.io rate limits (experienced firsthand) — retry with exponential backoff + Retry-After header
+**Acceptance Criteria**:
+- PEP 440 normalization: `0.2.0a1` format generated, not SemVer dashes
+- Canary maps to `devN` (sorts before alpha per PEP 440)
+- Both hatchling and setuptools build backends handled
+- Private packages skip publish step
 
 ---
 
-## Work Package WP05: Go Proxy + Pre-Wired Adapters (Priority: P1)
+### WP04: crates.io Adapter
+**Phase**: 1 | **Wave**: 1 | **Priority**: P0 | **Dependencies**: WP01
 
-**Goal**: Implement the Go module proxy adapter and stub adapters for Hex.pm, Zig, and Mojo.
-**Independent Test**: Go adapter detects go.mod, publishes via git tag. Stub adapters return "not yet supported" gracefully.
-**Prompt**: `tasks/WP05-go-proxy-prewired-adapters.md`
-**Estimated Size**: ~400 lines
+Implement the crates.io registry adapter with workspace dependency ordering and rate-limit handling.
 
-### Included Subtasks
-- [x] T025 Implement `internal/adapters/goproxy.go` — Detect (parse go.mod), Version (v-prefix SemVer)
-- [x] T026 Implement Go Publish (git tag + push — Go proxy pulls from VCS, no upload needed)
-- [x] T027 Implement Go Verify (check proxy.golang.org for module version)
-- [x] T028 [P] Implement `internal/adapters/hex.go` — Pre-wired stub (Detect from mix.exs, Version from SemVer, Publish/Verify return "not yet supported")
-- [x] T029 [P] Implement `internal/adapters/zig.go` — Pre-wired stub (Detect from build.zig.zon, git-tag-based versioning)
-- [x] T030 [P] Implement `internal/adapters/mojo.go` — Pre-wired stub (Detect from mojoproject.toml, returns "no registry available")
-- [x] T031 Unit tests for Go adapter + stub adapter behavior
+**Why**: crates.io rate-limits are aggressive and experienced firsthand. Without automatic retry handling and proper topological ordering, workspace publishes fail silently or publish crates out of dependency order, breaking consumers. A dedicated adapter codifies the retry policy and ordering so all Rust repos benefit.
 
-### Implementation Notes
-- Go proxy is unique: no "upload" step. Publishing = creating a git tag and pushing. Proxy discovers automatically.
-- Stubs implement the full adapter interface but return `ErrNotSupported` for Build/Publish/Verify
-- Hex adapter should parse mix.exs minimally (version, package name) even as a stub
+**Effort**: ~400 lines | **Subtasks**: 6
 
-### Parallel Opportunities
-- T028, T029, T030 are fully parallel (independent stubs)
+**Subtasks**:
+- [ ] T019: Implement `internal/adapters/crates.go` — Detect: parse Cargo.toml, workspace members, `publish = false` field
+- [ ] T020: Implement crates.io Version: SemVer pre-release (`-alpha.N`, `-beta.N`, etc.)
+- [ ] T021: Implement topological dependency sorting: parse `[dependencies]` path deps, publish leaves first
+- [ ] T022: Implement crates.io Build + Publish: `cargo package` + `cargo publish` with 429 retry + Retry-After header handling; **never `--allow-dirty`**
+- [ ] T023: Implement crates.io Verify: check crates.io API for published version
+- [ ] T024: Unit + integration tests including workspace ordering tests
 
-### Dependencies
-- Depends on WP01 (adapter interface)
-
-### Risks & Mitigations
-- Go proxy caching delays — Verify should poll with 5-min timeout
+**Acceptance Criteria**:
+- Workspace crates published in correct topological order
+- Dirty working tree blocks publish with clear error
+- 429 responses trigger exponential backoff using Retry-After header
+- `publish = false` crates skipped
 
 ---
 
-## Work Package WP06: Gate Evaluation Engine (Priority: P1)
+### WP05: Go Proxy + Pre-Wired Stub Adapters
+**Phase**: 1 | **Wave**: 1 | **Priority**: P1 | **Dependencies**: WP01
 
-**Goal**: Build the channel promotion gate evaluation system — define criteria per channel, evaluate, generate structured reports.
-**Independent Test**: Given a package and target channel, engine evaluates all gate criteria and returns pass/fail report.
-**Prompt**: `tasks/WP06-gate-evaluation-engine.md`
-**Estimated Size**: ~400 lines
+Implement the Go module proxy adapter and pre-wired stub adapters for Hex.pm, Zig, and Mojo.
 
-### Included Subtasks
-- [x] T032 Define gate criteria data model in `internal/gate/criteria.go` (per-channel requirements)
-- [x] T033 Implement gate evaluator in `internal/gate/evaluator.go` (run criteria, collect results)
-- [x] T034 Implement risk-based channel skip logic (low-risk can skip intermediates, high-risk must traverse all)
-- [x] T035 Implement structured report generation (pass/fail per criterion, stdout/stderr capture, duration)
-- [x] T036 Implement gate criteria: lint, unit_tests, integration_tests, security_audit, docs_build, rollback_plan
-- [x] T037 Unit tests for evaluator (mock task runner commands, test risk-based skipping)
+**Why**: Go proxy is architecturally distinct — publishing is a git tag push, not an upload. Stub adapters for future registries (Hex, Zig, Mojo) are pre-wired now to avoid retrofit work later. This reduces toil across the entire registry ecosystem.
 
-### Implementation Notes
-- Gate criteria execute task runner commands (e.g., `mise run lint`, `mise run test`)
-- Channel gates (from governance doc):
-  - canary: lint + unit tests + security pass, flags documented
-  - beta: user flows validated, default behavior unaffected
-  - rc: API contract freeze, migration/rollback runbook attached, docs synced
-  - prod: monitoring dashboards configured, rollback RTO met
-- Risk profile read from package config or inferred from manifest
+**Effort**: ~400 lines | **Subtasks**: 7
 
-### Parallel Opportunities
-- T032-T033 (data model + evaluator) sequential; T034-T036 parallel after
+**Subtasks**:
+- [ ] T025: Implement `internal/adapters/goproxy.go` — Detect: parse go.mod; Version: v-prefix SemVer (`v0.2.0-alpha.1`)
+- [ ] T026: Implement Go Publish: git tag create + push — proxy pulls from VCS, no upload step needed
+- [ ] T027: Implement Go Verify: poll proxy.golang.org with 5-minute timeout for module version
+- [ ] T028: Implement `internal/adapters/hex.go` — Pre-wired stub: Detect from mix.exs, Version from SemVer, Publish/Verify return `ErrNotSupported`; parses package name and version minimally
+- [ ] T029: Implement `internal/adapters/zig.go` — Pre-wired stub: Detect from build.zig.zon, git-tag-based versioning
+- [ ] T030: Implement `internal/adapters/mojo.go` — Pre-wired stub: Detect from mojoproject.toml, returns `"no registry available"`
+- [ ] T031: Unit tests for Go adapter + stub adapter behavior (mock git operations, verify ErrNotSupported paths)
 
-### Dependencies
-- Depends on WP01 (adapter interface for package detection)
-
-### Risks & Mitigations
-- Gate criteria may vary per repo — make criteria configurable via repo-level config file
+**Acceptance Criteria**:
+- Go publish creates and pushes git tag correctly
+- Go Verify polls with backoff up to 5 minutes
+- All stubs return `ErrNotSupported` for unsupported operations (not silent success)
+- Hex adapter minimally parses mix.exs
 
 ---
 
-## Work Package WP07: CLI Publish & Promote Commands (Priority: P1)
+### WP06: Gate Evaluation Engine
+**Phase**: 1 | **Wave**: 1 | **Priority**: P1 | **Dependencies**: WP01
 
-**Goal**: Wire up `pheno publish` and `pheno promote` commands using adapters and gate engine.
-**Independent Test**: `pheno publish` detects packages and publishes to registries. `pheno promote` runs gates then publishes.
-**Prompt**: `tasks/WP07-cli-publish-promote.md`
-**Estimated Size**: ~400 lines
+Build the channel promotion gate evaluation system — define criteria per channel, evaluate, generate structured reports.
 
-### Included Subtasks
-- [x] T038 Implement `cmd/publish.go` — detect packages, select adapter, build, publish
-- [x] T039 Implement `cmd/promote.go` — validate channel transition, run gate evaluation, publish on pass
-- [x] T040 Implement workspace publishing orchestration (topological order, verify between publishes)
-- [x] T041 Add Lipgloss-styled progress output (publish progress, gate results table)
-- [x] T042 Add Viper config loading (registry credentials, default risk profile, org settings)
-- [x] T043 Integration tests (mock registries, test full publish and promote flows)
+**Why**: The core governance enforcement mechanism. Without gate checks, any developer can promote a package to `rc` or `prod` without running integration tests or documenting a rollback plan. This engine makes the 5-tier governance enforceable, not aspirational — reducing the risk of broken releases reaching production consumers.
 
-### Implementation Notes
-- `pheno publish` is a direct publish (skip gates) — useful for manual intervention
-- `pheno promote` is gate-guarded — validates criteria before publishing
-- Config: `~/.config/pheno/config.toml` for global settings, `.pheno.toml` per repo
-- Credentials: read from env vars first, then config file, then GitHub secrets
+**Effort**: ~400 lines | **Subtasks**: 6
 
-### Parallel Opportunities
-- T041 (UI output) can proceed in parallel with T038-T040 (logic)
+**Subtasks**:
+- [ ] T032: Define gate criteria data model in `internal/gate/criteria.go` — per-channel requirements (from STACKED_PRS_AND_RELEASE_CHANNELS.md)
+- [ ] T033: Implement gate evaluator in `internal/gate/evaluator.go` — run criteria, collect results, return structured output
+- [ ] T034: Implement risk-based channel skip logic: high-risk must traverse all intermediates; low-risk can skip; configurable per-package
+- [ ] T035: Implement structured report generation: pass/fail per criterion, stdout/stderr capture, duration, total time
+- [ ] T036: Implement gate criteria: `lint`, `unit_tests`, `integration_tests`, `security_audit`, `docs_build`, `rollback_plan`
+- [ ] T037: Unit tests for evaluator (mock task runner commands, test risk-based skipping)
 
-### Dependencies
-- Depends on WP01 (scaffold), WP02-WP05 (adapters), WP06 (gate engine)
-
-### Risks & Mitigations
-- Credential management complexity — provide clear error messages when creds missing
+**Acceptance Criteria**:
+- canary: lint + unit tests + security pass
+- beta: user flows validated, default behavior unaffected
+- rc: API contract freeze, migration/rollback runbook attached, docs synced
+- prod: monitoring dashboards configured, rollback RTO met
+- Risk-based skip: low-risk packages can skip intermediate channels; high-risk must traverse all
+- Gate criteria configurable per-repo via `.pheno.toml`
 
 ---
 
-## Work Package WP08: CLI Audit & Matrix Commands (Priority: P2)
+## Phase 2 — CLI Commands
 
-**Goal**: Implement `pheno audit` (org-wide release status) and `pheno matrix` (release matrix generation).
-**Independent Test**: `pheno audit` scans all repos and shows package/channel/version table. `pheno matrix` generates governance-formatted matrix.
-**Prompt**: `tasks/WP08-cli-audit-matrix.md`
-**Estimated Size**: ~350 lines
+### WP07: CLI Publish & Promote Commands
+**Phase**: 2 | **Wave**: 2 | **Priority**: P1 | **Dependencies**: WP01, WP02, WP03, WP04, WP05, WP06
 
-### Included Subtasks
-- [x] T044 Implement `cmd/audit.go` — scan configured repos, detect packages, query registries for current versions
-- [x] T045 Implement Lipgloss-styled audit table output (package, channel, version, registry URL, blocked-by)
-- [x] T046 Implement `cmd/matrix.go` — generate release matrix matching RELEASE_MATRIX_TEMPLATE.md format
-- [x] T047 Add repo discovery (scan directory for repos, or read from config file)
-- [x] T048 Unit + integration tests for audit and matrix commands
+Wire up `pheno publish` and `pheno promote` commands using adapters and gate engine.
 
-### Implementation Notes
-- Repo discovery: by default scan parent directory for repos with supported manifests
-- Configurable via `~/.config/pheno/config.toml` → `repos_dir` or explicit repo list
-- Audit queries registries in parallel (one goroutine per repo)
-- Matrix output: markdown table matching governance template format
+**Why**: `pheno promote` is the primary DX command — developers run this to advance a package through channels. It must be frictionless (one command) while being rigorous (gates enforced). Without this, the governance model requires developers to manually orchestrate CI steps, leading to mistakes and shortcuts.
 
-### Parallel Opportunities
-- T044-T045 (audit) parallel with T046 (matrix)
+**Effort**: ~400 lines | **Subtasks**: 6
 
-### Dependencies
-- Depends on WP01 (scaffold), WP02-WP05 (adapters for registry queries)
+**Subtasks**:
+- [ ] T038: Implement `cmd/publish.go` — detect packages, select adapter, build, publish (no gates — direct publish for manual intervention)
+- [ ] T039: Implement `cmd/promote.go` — validate channel transition, run gate evaluation, publish on pass, block with report on fail
+- [ ] T040: Implement workspace publishing orchestration — topological order, verify between publishes
+- [ ] T041: Add Lipgloss-styled progress output — publish progress bars, gate results table with pass/fail indicators
+- [ ] T042: Add Viper config loading — registry credentials from env vars, then config file, then GitHub secrets; `~/.config/pheno/config.toml` global, `.pheno.toml` per-repo
+- [ ] T043: Integration tests — mock registries, test full publish and promote flows end-to-end
 
-### Risks & Mitigations
-- Registry API rate limits during audit — throttle parallel queries
+**Acceptance Criteria**:
+- `pheno publish` correctly detects all package types and routes to correct adapter
+- `pheno promote` blocks promotion when any gate fails, with structured failure report
+- Lipgloss table renders pass/fail status clearly
+- Credentials loaded in priority order (env → config → GH secrets)
+- Workspace crates published in topological order
 
 ---
 
-## Work Package WP09: CLI Bootstrap Command (Priority: P2)
+### WP08: CLI Audit & Matrix Commands
+**Phase**: 2 | **Wave**: 2 | **Priority**: P2 | **Dependencies**: WP01, WP02, WP03, WP04, WP05
 
-**Goal**: Implement `pheno bootstrap` — one-command governance onboarding for any repo.
-**Independent Test**: Running `pheno bootstrap` on a bare repo creates all governance artifacts (task runner config, hooks, CI workflows, release config).
-**Prompt**: `tasks/WP09-cli-bootstrap.md`
-**Estimated Size**: ~450 lines
+Implement `pheno audit` (org-wide release status) and `pheno matrix` (release matrix generation).
 
-### Included Subtasks
-- [x] T049 Implement `cmd/bootstrap.go` — orchestrate artifact generation based on detected languages
-- [x] T050 Create Go template files in `internal/templates/` for all generated artifacts
-- [x] T051 Implement mise.toml template generation (standardized tasks: lint, test, build, format, release:promote, release:status)
-- [x] T052 Implement pre-commit hook template generation (conventional commits, fast lint)
-- [x] T053 Implement pre-push hook template generation (channel-aware validation)
-- [x] T054 Implement CI workflow wrapper templates (ci.yml, release.yml calling phenotypeActions)
-- [x] T055 Implement cliff.toml template generation (git-cliff changelog config)
-- [x] T056 Integration test: bootstrap a mock repo and validate all artifacts
+**Why**: Provides org-wide visibility — the single biggest gap in the current state. Without `pheno audit`, release managers must manually check each of 47 repos to understand what's published where. This reduces a multi-hour manual audit to a single CLI invocation, eliminating toil at scale.
 
-### Implementation Notes
-- Language detection from WP01's detector → determines which templates to generate
-- Templates use Go `text/template` with repo-specific variables (name, language, registry, risk profile)
-- Multi-language repos get merged configs (e.g., mise.toml with both Rust and Python tasks)
-- Private repos: skip publishing templates but include lint/test/hook infrastructure
-- Generated CI workflows reference `KooshaPari/phenotypeActions/.github/workflows/<name>.yml@v1`
+**Effort**: ~350 lines | **Subtasks**: 5
 
-### Parallel Opportunities
-- T051-T055 are all parallel (independent template files)
+**Subtasks**:
+- [ ] T044: Implement `cmd/audit.go` — scan configured repos, detect packages, query registries in parallel (one goroutine per repo), collect current versions
+- [ ] T045: Implement Lipgloss-styled audit table — columns: package, channel, version, registry URL, blocked-by (failing gate)
+- [ ] T046: Implement `cmd/matrix.go` — generate release matrix matching RELEASE_MATRIX_TEMPLATE.md format (markdown table)
+- [ ] T047: Add repo discovery — scan `repos_dir` for repos with supported manifests; configurable via `~/.config/pheno/config.toml` → `repos_dir`
+- [ ] T048: Unit + integration tests for audit and matrix commands (mock registry responses)
 
-### Dependencies
-- Depends on WP01 (scaffold, detector), WP10 (centralized CI workflows to reference)
-
-### Risks & Mitigations
-- Template drift between bootstrap-generated and centralized workflows — version-pin references
+**Acceptance Criteria**:
+- `pheno audit` completes org-wide scan in under 30 seconds
+- Registry API rate limits handled via throttling
+- Blocked packages highlighted with failing gate name
+- Matrix output matches governance template format
 
 ---
 
-## Work Package WP10: Centralized CI Workflows (Priority: P1)
+## Phase 3 — DX Tooling
 
-**Goal**: Create reusable GitHub Actions workflows in `phenotypeActions` repo for publishing, gate-checking, and promotion.
-**Independent Test**: Reusable workflows can be called from any repo's CI with correct inputs.
-**Prompt**: `tasks/WP10-centralized-ci-workflows.md`
-**Estimated Size**: ~500 lines
+### WP11: Task Runner Evaluation & Standardization
+**Phase**: 3 | **Wave**: 3 | **Priority**: P1 | **Dependencies**: WP07
 
-### Included Subtasks
-- [x] T057 Create `publish.yml` reusable workflow (registry-specific publish with retry/backoff)
-- [x] T058 Create `gate-check.yml` reusable workflow (run channel-specific gate criteria)
-- [x] T059 Create `promote.yml` reusable workflow (orchestrate gate-check → publish)
-- [x] T060 Create `changelog.yml` reusable workflow (git-cliff changelog generation on release)
-- [x] T061 Create `audit.yml` scheduled workflow (org-wide release status report)
-- [x] T062 Add workflow inputs/outputs schema (language, registry, channel, risk_profile, credentials)
-- [x] T063 Test workflows with `act` or dry-run mode
+Finalize task runner choice (mise recommended), create standardized task definitions for all 4 active languages.
 
-### Implementation Notes
-- All workflows use `workflow_call` trigger for reusability
-- Inputs: language (rust|python|typescript|go), registry, channel, risk_profile, version
-- Secrets: `NPM_TOKEN`, `PYPI_TOKEN`, `CRATES_TOKEN` from org-level secrets
-- publish.yml: retry on 429 with exponential backoff (parse Retry-After header)
-- gate-check.yml: run `mise run lint`, `mise run test`, etc. — fail if any gate fails
-- promote.yml: composite — calls gate-check, then publish on success
+**Why**: Standardized tasks are the foundation of DX consistency. When `mise run lint` works identically in every Phenotype repo, developer onboarding time drops dramatically and CI gate checks become deterministic. This replaces the current fragmented state (31/47 repos with Taskfile.yml, no standardized targets) with a uniform interface.
 
-### Parallel Opportunities
-- T057-T061 are all parallel (independent workflow files)
+**Effort**: ~400 lines | **Subtasks**: 7
 
-### Dependencies
-- None (can proceed independently; WP09 references these)
+**Subtasks**:
+- [ ] T064: Final evaluation: validate mise monorepo tasks feature stability; fallback to moon if needed; document decision in ADR
+- [ ] T065: Create reference mise.toml for Rust projects — `cargo clippy`, `cargo test`, `cargo build`, `rustfmt`, MSRV pinning
+- [ ] T066: Create reference mise.toml for Python projects — `ruff check`, `pytest`, `ruff format`, `python -m build`
+- [ ] T067: Create reference mise.toml for TypeScript projects — `eslint`, `vitest`, `tsc --noEmit`, `prettier --check`
+- [ ] T068: Create reference mise.toml for Go projects — `golangci-lint run`, `go test ./...`, `go build ./...`, `gofmt`
+- [ ] T069: Create reference mise.toml with `release:promote` and `release:status` tasks — calls `pheno promote` and `pheno audit --repo .`
+- [ ] T070: Validate all reference configs on sample repos from the org (Rust, Python, TypeScript, Go)
 
-### Risks & Mitigations
-- GitHub Actions reusable workflow limitations (max 4 levels of nesting) — keep flat
+**Acceptance Criteria**:
+- All 4 language configs run correctly on sample repos
+- `release:promote` calls pheno CLI correctly
+- Tool version pinning present in all configs
+- If mise monorepo tasks unstable, moon fallback documented
 
 ---
 
-## Work Package WP11: Task Runner Evaluation & Standardization (Priority: P1)
+### WP12: Pre-Commit & Pre-Push Hooks
+**Phase**: 3 | **Wave**: 3 | **Priority**: P2 | **Dependencies**: WP11
 
-**Goal**: Finalize task runner choice (mise recommended), create standardized task definitions for all 4 active languages.
-**Independent Test**: Standard tasks (lint, test, build, format) work correctly for Rust, Python, TypeScript, and Go repos.
-**Prompt**: `tasks/WP11-task-runner-standardization.md`
-**Estimated Size**: ~400 lines
+Create standardized git hook infrastructure — conventional commit enforcement, fast lint, channel-aware pre-push validation.
 
-### Included Subtasks
-- [x] T064 Final evaluation: validate mise monorepo tasks feature stability (or select alternative)
-- [x] T065 Create reference mise.toml for Rust projects (cargo clippy, cargo test, cargo build, rustfmt)
-- [x] T066 [P] Create reference mise.toml for Python projects (ruff check, pytest, build, ruff format)
-- [x] T067 [P] Create reference mise.toml for TypeScript projects (eslint, vitest/jest, tsc, prettier)
-- [x] T068 [P] Create reference mise.toml for Go projects (golangci-lint, go test, go build, gofmt)
-- [x] T069 Create reference mise.toml with release:promote and release:status tasks (calls pheno CLI)
-- [x] T070 Validate all reference configs on sample repos from the org
+**Why**: Currently only 9/47 repos have pre-commit hooks. This creates inconsistent code quality across the org and makes it easy for non-conventional commits to enter the pipeline. Standardized hooks enforce the conventional commit format and run fast checks in <5s, reducing CI rejections and improving changelog quality for git-cliff.
 
-### Implementation Notes
-- If mise monorepo tasks not stable by implementation time, fall back to moon or per-repo mise.toml
-- Each reference config includes: lint, test, build, format, release:promote, release:status
-- release:promote calls `pheno promote <channel>`; release:status calls `pheno audit --repo .`
-- Tool version pinning in each mise.toml (rust, python, node, go versions)
+**Effort**: ~350 lines | **Subtasks**: 6
 
-### Parallel Opportunities
-- T065-T068 are fully parallel (per-language configs)
+**Subtasks**:
+- [ ] T071: Create pre-commit hook script — validate `^(feat|fix|chore|docs|refactor|test|perf|ci|build|style|revert)(\(.+\))?!?: .+`
+- [ ] T072: Add fast lint check to pre-commit — format check (`mise run format -- --check`), encoding validation; <5s target
+- [ ] T073: Create pre-push hook with channel-aware logic — `feature/*` → fast checks only; `beta/*` → full suite; `rc/*` → full suite + rollback plan check
+- [ ] T074: Create `.pre-commit-config.yaml` template — for repos using pre-commit framework
+- [ ] T075: Create standalone hook installer script — for repos not using pre-commit framework (POSIX sh)
+- [ ] T076: Test hooks — conventional commit rejection, timing validation, channel branching logic
 
-### Dependencies
-- Depends on WP07 (pheno CLI publish/promote for release tasks)
-
-### Risks & Mitigations
-- mise experimental features may be unstable — have moon fallback plan documented
+**Acceptance Criteria**:
+- Non-conventional commit messages rejected 100% of the time
+- Pre-commit completes in under 5 seconds for typical commits
+- Pre-push runs appropriate checks based on branch name pattern
+- Both pre-commit framework and standalone hook supported
 
 ---
 
-## Work Package WP12: Pre-Commit & Pre-Push Hooks (Priority: P2)
+## Phase 4 — Bootstrap & Rollout
 
-**Goal**: Create standardized git hook infrastructure — conventional commit enforcement, fast lint, channel-aware pre-push validation.
-**Independent Test**: Non-conventional commit messages are rejected in <5s. Pre-push runs channel-appropriate checks.
-**Prompt**: `tasks/WP12-pre-commit-pre-push-hooks.md`
-**Estimated Size**: ~350 lines
+### WP09: CLI Bootstrap Command
+**Phase**: 4 | **Wave**: 4 | **Priority**: P2 | **Dependencies**: WP01, WP10
 
-### Included Subtasks
-- [x] T071 Create pre-commit hook script (conventional commit message validation)
-- [x] T072 Add fast lint check to pre-commit (format check, encoding validation — <5s target)
-- [x] T073 Create pre-push hook script with channel-aware logic (feature/* → fast, beta/* → full suite)
-- [x] T074 Create `.pre-commit-config.yaml` template (for repos using pre-commit framework)
-- [x] T075 Create standalone hook installer script (for repos not using pre-commit framework)
-- [x] T076 Test hooks: conventional commit rejection, timing validation, channel branching logic
+Implement `pheno bootstrap` — one-command governance onboarding for any repo.
 
-### Implementation Notes
-- Pre-commit: validate `^(feat|fix|chore|docs|refactor|test|perf|ci|build|style|revert)(\(.+\))?!?: .+`
-- Fast lint: call `mise run format -- --check` (should complete in <5s for most repos)
-- Pre-push channel detection: parse branch name (`feature/*` → fast, `beta/*` → full, `rc/*` → full + rollback check)
-- Support both pre-commit framework (`.pre-commit-config.yaml`) and standalone scripts
-- Hooks are shell scripts (POSIX sh for portability)
+**Why**: Without frictionless bootstrap, the 47-repo rollout requires manual per-repo setup. `pheno bootstrap` makes adoption a one-command operation, reducing rollout toil from weeks of manual work to a single automated pass. This is the primary mechanism for reaching 100% governance coverage.
 
-### Parallel Opportunities
-- T071-T072 (pre-commit) parallel with T073 (pre-push)
+**Effort**: ~450 lines | **Subtasks**: 8
 
-### Dependencies
-- Depends on WP11 (task runner for lint/test commands)
+**Subtasks**:
+- [ ] T049: Implement `cmd/bootstrap.go` — orchestrate artifact generation based on detected languages (uses WP01 detector)
+- [ ] T050: Create Go template files in `internal/templates/` for all generated artifacts
+- [ ] T051: Implement mise.toml template generation — standard tasks (lint, test, build, format, release:promote, release:status) per language
+- [ ] T052: Implement pre-commit hook template generation — conventional commit enforcement + fast lint
+- [ ] T053: Implement pre-push hook template generation — channel-aware validation
+- [ ] T054: Implement CI workflow wrapper templates — `ci.yml`, `release.yml` calling `KooshaPari/phenotypeActions/.github/workflows/<name>.yml@v1`
+- [ ] T055: Implement cliff.toml template generation — git-cliff changelog config
+- [ ] T056: Integration test — bootstrap a mock repo and validate all generated artifacts
 
-### Risks & Mitigations
-- Pre-commit hook performance — keep under 5s; defer expensive checks to pre-push
+**Acceptance Criteria**:
+- `pheno bootstrap` on a bare repo generates all appropriate artifacts in under 1 minute
+- Multi-language repos get merged configs
+- Private repos skip publishing templates but get lint/test/hook infrastructure
+- Template version-pinning references `phenotypeActions` workflows (not inline)
+- Bootstrap detects and warns on conflicting existing configs (does not overwrite without confirmation)
 
 ---
 
-## Work Package WP13: Pilot Rollout — AgilePlus + 3 Repos (Priority: P2)
+### WP13: Pilot Rollout — AgilePlus + 3 Repos
+**Phase**: 4 | **Wave**: 4 | **Priority**: P2 | **Dependencies**: WP09, WP10, WP11, WP12
 
-**Goal**: Run `pheno bootstrap` on AgilePlus and 3 diverse repos (1 Rust, 1 Python, 1 Go) to validate end-to-end workflow.
-**Independent Test**: All 4 repos have governance artifacts, hooks work, CI workflows trigger, a test publish succeeds.
-**Prompt**: `tasks/WP13-pilot-rollout.md`
-**Estimated Size**: ~350 lines
+Run `pheno bootstrap` on AgilePlus and 3 diverse repos (1 Rust, 1 Python, 1 Go) to validate end-to-end workflow.
 
-### Included Subtasks
-- [x] T077 Bootstrap AgilePlus (TypeScript/VitePress) — validate mise.toml, hooks, CI workflows
-- [x] T078 [P] Bootstrap tokenledger (Rust) — validate Rust-specific artifacts, crates.io publish test
-- [x] T079 [P] Bootstrap thegent (Python) — validate Python-specific artifacts, PyPI publish test
-- [x] T080 [P] Bootstrap agentapi-plusplus (Go) — validate Go-specific artifacts, Go proxy publish test
-- [x] T081 Run `pheno audit` across all 4 repos — validate org-wide view
-- [x] T082 Document findings and adjust templates based on pilot feedback
+**Why**: Pilot validates that templates work in real repos before org-wide rollout. Discovering template bugs during org-wide rollout creates massive rework; discovering them during a 4-repo pilot is cheap. This reduces rollout risk dramatically.
 
-### Implementation Notes
-- AgilePlus: private (no publish), only hooks + lint/test infrastructure
-- tokenledger: already published to crates.io — test pre-release publish
-- thegent: already published to PyPI — test pre-release publish
-- agentapi-plusplus: Go module — test git tag-based publishing
+**Effort**: ~350 lines | **Subtasks**: 6
 
-### Parallel Opportunities
-- T077-T080 are fully parallel (independent repos)
+**Subtasks**:
+- [ ] T077: Bootstrap AgilePlus (TypeScript/VitePress) — validate mise.toml, hooks, CI workflows; AgilePlus is private (no publish)
+- [ ] T078: Bootstrap tokenledger (Rust) — validate Rust-specific artifacts, crates.io publish test to alpha channel
+- [ ] T079: Bootstrap thegent (Python) — validate Python-specific artifacts, PyPI publish test to canary channel
+- [ ] T080: Bootstrap agentapi-plusplus (Go) — validate Go-specific artifacts, git tag-based publish test
+- [ ] T081: Run `pheno audit` across all 4 repos — validate org-wide view works
+- [ ] T082: Document pilot findings — adjust templates based on real-repo feedback; capture all fixes
 
-### Dependencies
-- Depends on WP09 (bootstrap), WP10 (CI workflows), WP11 (task runner), WP12 (hooks)
-
-### Risks & Mitigations
-- Repos may have conflicting existing configs — bootstrap should detect and warn, not overwrite without confirmation
+**Acceptance Criteria**:
+- All 4 bootstrap attempts succeed without manual intervention
+- CI workflows trigger correctly after bootstrap
+- At least 1 test publish succeeds (Go module git tag push)
+- Pilot findings doc produced with concrete template fixes
 
 ---
 
-## Work Package WP14: Org-Wide Rollout Automation (Priority: P3)
+### WP14: Org-Wide Rollout Automation
+**Phase**: 4 | **Wave**: 5 | **Priority**: P3 | **Dependencies**: WP13
 
-**Goal**: Script the remaining ~43 repo rollout and create the bulk bootstrap tooling.
-**Independent Test**: Bulk bootstrap script processes all remaining repos, generating appropriate artifacts per language.
-**Prompt**: `tasks/WP14-org-wide-rollout.md`
-**Estimated Size**: ~300 lines
+Script the remaining ~43 repo rollout and create bulk bootstrap tooling.
 
-### Included Subtasks
-- [x] T083 Create bulk bootstrap script (`pheno bootstrap --all` or directory-scanning mode)
-- [x] T084 Generate repo manifest (CSV/TOML listing all repos, languages, risk profiles, publish targets)
-- [x] T085 Run bulk bootstrap on remaining repos (with dry-run first)
-- [x] T086 Create PRs for each bootstrapped repo (automated via `gh pr create`)
-- [x] T087 Validate org-wide `pheno audit` after rollout
+**Why**: Scales the pilot from 4 repos to all 47 in an automated pass. Without this, reaching 100% coverage requires 43 manual bootstrap operations, which is infeasible at agent-swarm scale.
 
-### Implementation Notes
-- `pheno bootstrap --all --repos-dir ~/CodeProjects/Phenotype/repos/` scans all subdirs
-- Dry-run mode: `--dry-run` shows what would be generated without writing files
-- PR creation: one PR per repo, titled "chore: add release governance infrastructure"
-- Risk profiles: default to `low` unless repo manifest overrides
+**Effort**: ~300 lines | **Subtasks**: 5
 
-### Parallel Opportunities
-- T085-T086 can be batched (bootstrap + PR creation per repo)
+**Subtasks**:
+- [ ] T083: Create bulk bootstrap script — `pheno bootstrap --all --repos-dir ~/CodeProjects/Phenotype/repos/`
+- [ ] T084: Generate repo manifest — CSV/TOML listing all repos, languages, risk profiles, publish targets (derived from audit data)
+- [ ] T085: Run bulk bootstrap on remaining repos — with `--dry-run` first, then full execution
+- [ ] T086: Create PRs for each bootstrapped repo — via `gh pr create`, one PR per repo, title: "chore: add release governance infrastructure"
+- [ ] T087: Validate org-wide `pheno audit` after rollout — confirm all 47 repos visible in audit output
 
-### Dependencies
-- Depends on WP13 (pilot validation)
-
-### Risks & Mitigations
-- Bulk operations may hit GitHub API rate limits for PR creation — batch with delays
+**Acceptance Criteria**:
+- `--dry-run` shows what would be generated without writing files
+- Bulk operation handles GitHub API rate limits via batching with delays
+- All 43 PRs created successfully (or graceful failure with clear error per repo)
+- `pheno audit` shows 47/47 repos after completion
 
 ---
 
-## Work Package WP15: Documentation & Polish (Priority: P3)
+## Phase 5 — Polish
 
-**Goal**: Write user-facing documentation for the pheno CLI, governance model, and contributor onboarding.
-**Independent Test**: A new contributor can read the docs and successfully bootstrap a repo, run standard tasks, and publish a pre-release.
-**Prompt**: `tasks/WP15-documentation-polish.md`
-**Estimated Size**: ~300 lines
+### WP15: Documentation & Polish
+**Phase**: 5 | **Wave**: 5 | **Priority**: P3 | **Dependencies**: WP07, WP11, WP13
 
-### Included Subtasks
-- [x] T088 Write pheno CLI README.md (installation, commands, configuration)
-- [x] T089 Write governance model overview (evolving the 5-tier model, risk profiles, gate criteria)
-- [x] T090 Write contributor quickstart (bootstrap → develop → promote → publish)
-- [x] T091 Create ADR: task runner selection rationale
-- [x] T092 Create ADR: registry adapter architecture rationale
-- [x] T093 Final cleanup: ensure all error messages are clear, help text is complete
+Write user-facing documentation for the pheno CLI, governance model, and contributor onboarding.
 
-### Implementation Notes
-- README goes in pheno-cli repo root
-- Governance overview and contributor quickstart can go in AgilePlus docs or pheno-cli docs
-- ADRs go in pheno-cli `docs/adr/` per constitution requirements
+**Why**: Documentation is what makes the governance model durable — anyone can read the docs and successfully bootstrap a repo, run standard tasks, and publish a pre-release. Without docs, the system depends on oral tradition and breaks when key people leave.
 
-### Parallel Opportunities
-- T088-T092 are all parallel (independent docs)
+**Effort**: ~300 lines | **Subtasks**: 6
 
-### Dependencies
-- Depends on WP07 (CLI finalized), WP11 (task runner chosen), WP13 (pilot feedback)
+**Subtasks**:
+- [ ] T088: Write pheno CLI README.md — installation, all commands, configuration, common workflows
+- [ ] T089: Write governance model overview — evolving the 5-tier model, risk profiles, gate criteria, channel definitions
+- [ ] T090: Write contributor quickstart — bootstrap → develop → promote → publish, with worked examples
+- [ ] T091: Create ADR: task runner selection rationale (mise vs moon decision)
+- [ ] T092: Create ADR: registry adapter architecture rationale (interface design decisions)
+- [ ] T093: Final cleanup — ensure all error messages are clear and actionable, all help text is complete
 
-### Risks & Mitigations
-- Docs get stale quickly — link to CLI help text rather than duplicating
+**Acceptance Criteria**:
+- README.md is complete and accurate for all subcommands
+- Contributor quickstart allows a new developer to go from zero to first publish in under 15 minutes
+- Both ADRs follow constitution requirements and go in `docs/adr/`
 
 ---
 
-## Dependency & Execution Summary
+## Dependency Summary
 
-```
-Phase 0 (Foundation):
-  WP01 (CLI scaffold + adapter interface) ←── no deps
-  WP10 (Centralized CI workflows) ←── no deps
+| WP | Dependencies | Blocks |
+|----|-------------|--------|
+| WP01 | — | WP02, WP03, WP04, WP05, WP06, WP07 |
+| WP10 | — | WP09, WP13 |
+| WP02 | WP01 | WP07 |
+| WP03 | WP01 | WP07 |
+| WP04 | WP01 | WP07 |
+| WP05 | WP01 | WP07 |
+| WP06 | WP01 | WP07 |
+| WP07 | WP01, WP02, WP03, WP04, WP05, WP06 | WP11 |
+| WP08 | WP01, WP02, WP03, WP04, WP05 | — |
+| WP11 | WP07 | WP12 |
+| WP12 | WP11 | WP13 |
+| WP09 | WP01, WP10 | WP13 |
+| WP13 | WP09, WP10, WP11, WP12 | WP14 |
+| WP14 | WP13 | — |
+| WP15 | WP07, WP11, WP13 | — |
 
-Phase 1 (Adapters — all parallel after WP01):
-  WP02 (npm adapter) ←── WP01
-  WP03 (PyPI adapter) ←── WP01
-  WP04 (crates.io adapter) ←── WP01
-  WP05 (Go proxy + stubs) ←── WP01
-  WP06 (Gate engine) ←── WP01
-
-Phase 2 (CLI Commands):
-  WP07 (publish + promote) ←── WP01, WP02-WP05, WP06
-  WP08 (audit + matrix) ←── WP01, WP02-WP05
-
-Phase 3 (DX Tooling):
-  WP11 (Task runner) ←── WP07
-  WP12 (Hooks) ←── WP11
-
-Phase 4 (Bootstrap + Rollout):
-  WP09 (Bootstrap command) ←── WP01, WP10
-  WP13 (Pilot rollout) ←── WP09, WP10, WP11, WP12
-  WP14 (Org-wide rollout) ←── WP13
-
-Phase 5 (Polish):
-  WP15 (Documentation) ←── WP07, WP11, WP13
-```
-
-**Parallelization highlights**:
-- WP01 + WP10 can run simultaneously (Phase 0)
-- WP02, WP03, WP04, WP05, WP06 can ALL run simultaneously (Phase 1)
-- WP08 can start as soon as adapters are done (doesn't need gate engine)
-- WP09 can start once WP01 + WP10 are done (doesn't need adapters yet — uses templates)
-
-**MVP Scope**: WP01 → WP02-WP04 → WP07 → WP10 (CLI can publish to 3 main registries with CI workflows)
+**Critical path**: WP01 → WP02/WP03/WP04/WP05 → WP07 → WP11 → WP12 → WP13 → WP14
+**Secondary path**: WP01 → WP06 → WP07 → WP11 → WP12 → WP13
+**Parallel foundation**: WP01 + WP10 (both Phase 0, no dependencies on each other)
 
 ---
 
-## Subtask Index
+## Success Criteria Mapping
 
-| ID | Summary | WP | Priority | Parallel |
-|----|---------|-----|----------|----------|
-| T001 | Init Go module with deps | WP01 | P0 | No |
-| T002 | Cobra root + subcommand stubs | WP01 | P0 | No |
-| T003 | RegistryAdapter interface | WP01 | P0 | No |
-| T004 | Version calculator | WP01 | P0 | No |
-| T005 | Language/manifest detector | WP01 | P0 | Yes |
-| T006 | Version calculator tests | WP01 | P0 | No |
-| T007 | npm Detect | WP02 | P0 | No |
-| T008 | npm Version | WP02 | P0 | No |
-| T009 | npm Build | WP02 | P0 | No |
-| T010 | npm Publish + retry | WP02 | P0 | No |
-| T011 | npm Verify | WP02 | P0 | No |
-| T012 | npm tests | WP02 | P0 | No |
-| T013 | PyPI Detect | WP03 | P0 | No |
-| T014 | PyPI Version (PEP 440) | WP03 | P0 | No |
-| T015 | PyPI Build | WP03 | P0 | No |
-| T016 | PyPI Publish + retry | WP03 | P0 | No |
-| T017 | PyPI Verify | WP03 | P0 | No |
-| T018 | PyPI tests | WP03 | P0 | No |
-| T019 | crates.io Detect (workspaces) | WP04 | P0 | No |
-| T020 | crates.io Version | WP04 | P0 | No |
-| T021 | Topological dependency sort | WP04 | P0 | No |
-| T022 | crates.io Build + Publish | WP04 | P0 | No |
-| T023 | crates.io Verify | WP04 | P0 | No |
-| T024 | crates.io tests | WP04 | P0 | No |
-| T025 | Go proxy Detect + Version | WP05 | P1 | No |
-| T026 | Go Publish (git tag) | WP05 | P1 | No |
-| T027 | Go Verify | WP05 | P1 | No |
-| T028 | Hex.pm stub | WP05 | P1 | Yes |
-| T029 | Zig stub | WP05 | P1 | Yes |
-| T030 | Mojo stub | WP05 | P1 | Yes |
-| T031 | Go + stub tests | WP05 | P1 | No |
-| T032 | Gate criteria data model | WP06 | P1 | No |
-| T033 | Gate evaluator | WP06 | P1 | No |
-| T034 | Risk-based skip logic | WP06 | P1 | No |
-| T035 | Structured report gen | WP06 | P1 | No |
-| T036 | Gate criteria impls | WP06 | P1 | No |
-| T037 | Gate evaluator tests | WP06 | P1 | No |
-| T038 | pheno publish command | WP07 | P1 | No |
-| T039 | pheno promote command | WP07 | P1 | No |
-| T040 | Workspace publish orchestration | WP07 | P1 | No |
-| T041 | Lipgloss progress output | WP07 | P1 | Yes |
-| T042 | Viper config loading | WP07 | P1 | Yes |
-| T043 | publish/promote integration tests | WP07 | P1 | No |
-| T044 | pheno audit command | WP08 | P2 | No |
-| T045 | Audit table output | WP08 | P2 | No |
-| T046 | pheno matrix command | WP08 | P2 | Yes |
-| T047 | Repo discovery | WP08 | P2 | No |
-| T048 | audit/matrix tests | WP08 | P2 | No |
-| T049 | pheno bootstrap command | WP09 | P2 | No |
-| T050 | Go template files | WP09 | P2 | No |
-| T051 | mise.toml template | WP09 | P2 | Yes |
-| T052 | pre-commit template | WP09 | P2 | Yes |
-| T053 | pre-push template | WP09 | P2 | Yes |
-| T054 | CI workflow templates | WP09 | P2 | Yes |
-| T055 | cliff.toml template | WP09 | P2 | Yes |
-| T056 | Bootstrap integration test | WP09 | P2 | No |
-| T057 | publish.yml reusable workflow | WP10 | P1 | Yes |
-| T058 | gate-check.yml workflow | WP10 | P1 | Yes |
-| T059 | promote.yml workflow | WP10 | P1 | Yes |
-| T060 | changelog.yml workflow | WP10 | P1 | Yes |
-| T061 | audit.yml scheduled workflow | WP10 | P1 | Yes |
-| T062 | Workflow inputs/outputs schema | WP10 | P1 | No |
-| T063 | Workflow testing | WP10 | P1 | No |
-| T064 | Task runner final eval | WP11 | P1 | No |
-| T065 | Rust reference mise.toml | WP11 | P1 | No |
-| T066 | Python reference mise.toml | WP11 | P1 | Yes |
-| T067 | TypeScript reference mise.toml | WP11 | P1 | Yes |
-| T068 | Go reference mise.toml | WP11 | P1 | Yes |
-| T069 | Release tasks mise.toml | WP11 | P1 | No |
-| T070 | Validate on sample repos | WP11 | P1 | No |
-| T071 | Pre-commit hook (conventional commits) | WP12 | P2 | No |
-| T072 | Pre-commit fast lint | WP12 | P2 | No |
-| T073 | Pre-push channel-aware hooks | WP12 | P2 | Yes |
-| T074 | .pre-commit-config.yaml template | WP12 | P2 | Yes |
-| T075 | Standalone hook installer | WP12 | P2 | Yes |
-| T076 | Hook tests | WP12 | P2 | No |
-| T077 | Bootstrap AgilePlus | WP13 | P2 | No |
-| T078 | Bootstrap tokenledger | WP13 | P2 | Yes |
-| T079 | Bootstrap thegent | WP13 | P2 | Yes |
-| T080 | Bootstrap agentapi-plusplus | WP13 | P2 | Yes |
-| T081 | Org-wide audit validation | WP13 | P2 | No |
-| T082 | Pilot findings doc | WP13 | P2 | No |
-| T083 | Bulk bootstrap script | WP14 | P3 | No |
-| T084 | Repo manifest | WP14 | P3 | No |
-| T085 | Bulk bootstrap execution | WP14 | P3 | No |
-| T086 | Automated PR creation | WP14 | P3 | No |
-| T087 | Org-wide audit post-rollout | WP14 | P3 | No |
-| T088 | pheno CLI README | WP15 | P3 | Yes |
-| T089 | Governance model docs | WP15 | P3 | Yes |
-| T090 | Contributor quickstart | WP15 | P3 | Yes |
-| T091 | ADR: task runner selection | WP15 | P3 | Yes |
-| T092 | ADR: adapter architecture | WP15 | P3 | Yes |
-| T093 | Error message cleanup | WP15 | P3 | No |
+| SC | Criterion | WP |
+|----|-----------|-----|
+| SC-001 | 100% of public packages publishable via automated CI within 10 min of promotion | WP07 |
+| SC-002 | All 5 channels correctly formatted and accepted by registries on first attempt | WP02, WP03, WP04, WP05 |
+| SC-003 | Any developer runs `lint`, `test`, `build` successfully within 2 min of setup | WP11 |
+| SC-004 | Gate checks block 100% of promotions that fail mandatory criteria | WP06 |
+| SC-005 | Pre-commit rejects non-conventional messages 100%, completes in <5s | WP12 |
+| SC-006 | New repo fully bootstrapped in under 1 minute via single command | WP09 |
+| SC-007 | Org-wide audit completes in under 30 seconds | WP08 |
+| SC-008 | Manual publishing errors reduced to zero (no dirty-tree publishes, no rate-limit surprises) | WP04, WP07 |
+
+---
+
+## MVP Recommendation
+
+**WP01 + WP10** is the MVP scope. Once the pheno CLI scaffold and centralized CI workflows exist, all Phase 1 adapters (WP02–WP06) can be dispatched in parallel — they only need WP01's adapter interface. The first parallel wave should be: WP02 (npm), WP03 (PyPI), WP04 (crates.io), WP05 (Go/stubs), WP06 (gate engine), WP10 (CI workflows).
+
+Once adapters + CI workflows are ready, WP07 (publish + promote) unblocks WP11 (task runner) and WP09 (bootstrap). WP08 (audit + matrix) is the fastest win for org-wide visibility and requires only the adapters, not the full CLI.
