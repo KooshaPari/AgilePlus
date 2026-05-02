@@ -1,0 +1,14 @@
+{
+  "spec_id": "eco-006",
+  "slug": "eco-006-governance-sync",
+  "title": "Governance Sync Automation",
+  "status": "in_progress",
+  "priority": "medium",
+  "created_at": "2026-05-02",
+  "source_description": "Automation system to detect, notify, and resolve governance doc drift across the Phenotype/AgilePlus ecosystem — ensuring all repos stay in sync with the latest CLAUDE.md hierarchy, policy docs, and worklog requirements without manual intervention",
+  "feature_number": "006",
+  "friendly_name": "Governance Sync Automation",
+  "mission": "infrastructure",
+  "target_branch": "main",
+  "vcs": "git"
+}
