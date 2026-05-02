@@ -1,10 +1,26 @@
+---
+work_package_id: WP05
+title: Data Sync Workflow Migration to Hatchet
+lane: "planned"
+dependencies: [WP04]
+created_at: '2026-04-01T00:00:00Z'
+subtasks: [T035, T036, T037, T038, T039]
+---
+
 # WP05: Data Sync Workflow Migration to Hatchet
 
 **Feature**: 008-temporal-deployment-workflow-migration
 **Phase**: 2 - Core Migration
 **Wave**: 1
 **Dependencies**: WP04 (Hatchet must be deployed first)
-**Author**: Claude Sonnet 4.6
+
+## Objective
+
+Audit all NATS JetStream data sync consumers and migrate them to Hatchet cron workflows. Each sync pipeline: scheduled automatically, retried on transient failure, alerted on permanent failure, visible in Hatchet dashboard.
+
+**Implementation command**: `spec-kitty implement WP05 --base WP04`
+
+**Reference**: Spec `../spec.md` (FR-TEMPORAL-004); Plan `../plan.md` (WP05 section).
 
 ## Mission
 

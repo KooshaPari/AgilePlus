@@ -1,10 +1,26 @@
+---
+work_package_id: WP01
+title: Temporal Docker Compose Deployment
+lane: "planned"
+dependencies: []
+created_at: '2026-04-01T00:00:00Z'
+subtasks: [T001, T002, T003, T004, T005, T006, T007, T008, T009]
+---
+
 # WP01: Temporal Docker Compose Deployment
 
 **Feature**: 008-temporal-deployment-workflow-migration
 **Phase**: 1 - Foundation
 **Wave**: 0
 **Dependencies**: none
-**Author**: Claude Sonnet 4.6
+
+## Objective
+
+Deploy Temporal as a Docker Compose stack on the Hetzner AX101. This is the load-bearing infrastructure for all durable workflow execution. All other work packages depend on this being operational.
+
+**Implementation command**: `spec-kitty implement WP01`
+
+**Reference**: Spec `../spec.md` (FR-TEMPORAL-001); Plan `../plan.md` (WP01 section); SC-001/SC-002/SC-003 verified via WP07.
 
 ## Mission
 

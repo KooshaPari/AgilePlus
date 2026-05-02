@@ -1,10 +1,26 @@
+---
+work_package_id: WP08
+title: Rollback Capability
+lane: "planned"
+dependencies: [WP03, WP04, WP05]
+created_at: '2026-04-01T00:00:00Z'
+subtasks: [T050, T051, T052, T053, T054]
+---
+
 # WP08: Rollback Capability
 
 **Feature**: 008-temporal-deployment-workflow-migration
 **Phase**: 3 - Observability
 **Wave**: 2
 **Dependencies**: WP03, WP04, WP05 (all workflows must be running in Temporal/Hatchet)
-**Author**: Claude Sonnet 4.6
+
+## Objective
+
+Ensure NATS can be restored as the primary workflow engine within 10 minutes of a critical Temporal/Hatchet failure. This is the safety net that makes the Big Bang migration acceptable.
+
+**Implementation command**: `spec-kitty implement WP08 --base WP03`
+
+**Reference**: Spec `../spec.md` (FR-TEMPORAL-006, SC-007); Plan `../plan.md` (WP08 section).
 
 ## Mission
 

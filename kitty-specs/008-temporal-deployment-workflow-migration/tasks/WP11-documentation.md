@@ -1,10 +1,26 @@
+---
+work_package_id: WP11
+title: Documentation and Runbooks
+lane: "planned"
+dependencies: [WP10]
+created_at: '2026-04-01T00:00:00Z'
+subtasks: [T065, T066, T067, T068, T069, T070, T071, T072, T073]
+---
+
 # WP11: Documentation and Runbooks
 
 **Feature**: 008-temporal-deployment-workflow-migration
 **Phase**: 5 - Handoff
 **Wave**: 1
-**Dependencies**: WP06 (traces), WP07 (dashboards), WP08 (rollback)
-**Author**: Claude Sonnet 4.6
+**Dependencies**: WP10 (observation complete — traces, dashboards, rollback all done by then)
+
+## Objective
+
+Create all operational documentation for the Temporal + Hatchet infrastructure. Every operational procedure must have a runbook. Archive all legacy NATS JetStream workflow documentation.
+
+**Implementation command**: `spec-kitty implement WP11 --base WP10`
+
+**Reference**: Spec `../spec.md` (FR-TEMPORAL-009); Plan `../plan.md` (WP11 section).
 
 ## Mission
 

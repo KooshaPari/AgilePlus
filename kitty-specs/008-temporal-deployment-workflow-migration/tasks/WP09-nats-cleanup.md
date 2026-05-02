@@ -1,10 +1,26 @@
+---
+work_package_id: WP09
+title: NATS Workflow Logic Removal
+lane: "planned"
+dependencies: [WP07, WP08]
+created_at: '2026-04-01T00:00:00Z'
+subtasks: [T055, T056, T057, T058, T059]
+---
+
 # WP09: NATS Workflow Logic Removal
 
 **Feature**: 008-temporal-deployment-workflow-migration
 **Phase**: 4 - Cutover
 **Wave**: 1
-**Dependencies**: WP08 (rollback tested and confirmed)
-**Author**: Claude Sonnet 4.6
+**Dependencies**: WP07, WP08 (rollback tested and confirmed)
+
+## Objective
+
+Remove all JetStream workflow/queue consumers and durable stream configurations from NATS. Retain only pub/sub for non-critical events. This is the irreversible step — only done after WP01–WP08 complete and WP08 rollback confirmed.
+
+**Implementation command**: `spec-kitty implement WP09 --base WP08`
+
+**Reference**: Spec `../spec.md` (FR-TEMPORAL-010); Plan `../plan.md` (WP09 section); SC-005.
 
 ## Mission
 

@@ -1,10 +1,26 @@
+---
+work_package_id: WP07
+title: SLO Monitoring Dashboard
+lane: "planned"
+dependencies: [WP06]
+created_at: '2026-04-01T00:00:00Z'
+subtasks: [T045, T046, T047, T048, T049]
+---
+
 # WP07: SLO Monitoring Dashboard
 
 **Feature**: 008-temporal-deployment-workflow-migration
 **Phase**: 3 - Observability
 **Wave**: 2
 **Dependencies**: WP06 (Jaeger traces needed for latency data)
-**Author**: Claude Sonnet 4.6
+
+## Objective
+
+Create Grafana dashboards displaying workflow-level SLOs for all Temporal and Hatchet workflows. Define alert rules for SLO breach. Alert fires within 5 minutes of threshold violation.
+
+**Implementation command**: `spec-kitty implement WP07 --base WP06`
+
+**Reference**: Spec `../spec.md` (FR-TEMPORAL-008, SC-002, SC-003, SC-008); Plan `../plan.md` (WP07 section).
 
 ## Mission
 

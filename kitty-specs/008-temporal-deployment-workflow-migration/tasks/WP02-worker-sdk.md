@@ -1,10 +1,26 @@
+---
+work_package_id: WP02
+title: Temporal Worker SDK Integration
+lane: "planned"
+dependencies: [WP01]
+created_at: '2026-04-01T00:00:00Z'
+subtasks: [T010, T011, T012, T013, T014, T015, T016, T017, T018]
+---
+
 # WP02: Temporal Worker SDK Integration
 
 **Feature**: 008-temporal-deployment-workflow-migration
 **Phase**: 1 - Foundation
 **Wave**: 0
 **Dependencies**: WP01 (Temporal must be deployed and healthy)
-**Author**: Claude Sonnet 4.6
+
+## Objective
+
+Integrate the Temporal Rust SDK into the codebase. Implement a minimal worker that connects to Temporal, registers a skeleton workflow and activity, and confirms end-to-end connectivity. This establishes the foundation for all subsequent workflow migrations.
+
+**Implementation command**: `spec-kitty implement WP02 --base WP01`
+
+**Reference**: Spec `../spec.md` (FR-TEMPORAL-002); Plan `../plan.md` (WP02 section).
 
 ## Mission
 

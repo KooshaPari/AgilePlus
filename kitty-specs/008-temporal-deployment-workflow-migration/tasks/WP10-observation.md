@@ -1,10 +1,26 @@
+---
+work_package_id: WP10
+title: 48-Hour Dual-Write Observation Period
+lane: "planned"
+dependencies: [WP09]
+created_at: '2026-04-01T00:00:00Z'
+subtasks: [T060, T061, T062, T063, T064]
+---
+
 # WP10: 48-Hour Dual-Write Observation Period
 
 **Feature**: 008-temporal-deployment-workflow-migration
 **Phase**: 4 - Cutover
 **Wave**: 2
 **Dependencies**: WP09 (NATS workflow streams removed)
-**Author**: Claude Sonnet 4.6
+
+## Objective
+
+Run Temporal + Hatchet in production for 48 hours monitoring all SLOs continuously. Declare success if zero critical failures in 48 hours. If critical failure occurs, execute rollback immediately.
+
+**Implementation command**: `spec-kitty implement WP10 --base WP09`
+
+**Reference**: Spec `../spec.md` (SC-003, SC-007); Plan `../plan.md` (WP10 section); SC-010.
 
 ## Mission
 

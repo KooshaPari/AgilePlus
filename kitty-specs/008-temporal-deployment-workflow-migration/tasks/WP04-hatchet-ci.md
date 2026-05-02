@@ -1,10 +1,26 @@
+---
+work_package_id: WP04
+title: Hatchet Deployment + CI Pipeline Migration
+lane: "planned"
+dependencies: [WP01]
+created_at: '2026-04-01T00:00:00Z'
+subtasks: [T028, T029, T030, T031, T032, T033, T034]
+---
+
 # WP04: Hatchet Deployment + CI Pipeline Migration
 
 **Feature**: 008-temporal-deployment-workflow-migration
 **Phase**: 2 - Core Migration
 **Wave**: 1
 **Dependencies**: WP01 (Hatchet deploys alongside Temporal)
-**Author**: Claude Sonnet 4.6
+
+## Objective
+
+Deploy Hatchet on Hetzner alongside Temporal. Migrate CI pipeline trigger workflows from NATS JetStream to Hatchet. Hatchet handles: GitHub webhook → CI pipeline with retry, concurrency limits, and dashboard for non-technical visibility.
+
+**Implementation command**: `spec-kitty implement WP04 --base WP01`
+
+**Reference**: Spec `../spec.md` (FR-TEMPORAL-004, FR-TEMPORAL-009); Plan `../plan.md` (WP04 section); SC-006.
 
 ## Mission
 

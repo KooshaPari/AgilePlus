@@ -1,10 +1,26 @@
+---
+work_package_id: WP06
+title: Distributed Tracing Integration
+lane: "planned"
+dependencies: [WP03]
+created_at: '2026-04-01T00:00:00Z'
+subtasks: [T040, T041, T042, T043, T044]
+---
+
 # WP06: Distributed Tracing Integration
 
 **Feature**: 008-temporal-deployment-workflow-migration
 **Phase**: 3 - Observability
 **Wave**: 2
 **Dependencies**: WP03 (Temporal workflows must exist before tracing)
-**Author**: Claude Sonnet 4.6
+
+## Objective
+
+Emit OpenTelemetry traces from Temporal workflows to Jaeger. Every workflow execution produces a trace. Full waterfall (workflow → activity → agent runtime → database) visible in Jaeger. Makes debugging production issues a trace query, not a log scavenger hunt.
+
+**Implementation command**: `spec-kitty implement WP06 --base WP03`
+
+**Reference**: Spec `../spec.md` (FR-TEMPORAL-007, SC-004, SC-009); Plan `../plan.md` (WP06 section).
 
 ## Mission
 

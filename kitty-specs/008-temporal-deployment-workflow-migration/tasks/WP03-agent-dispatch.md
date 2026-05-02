@@ -1,10 +1,26 @@
+---
+work_package_id: WP03
+title: Agent Dispatch Workflow Migration
+lane: "planned"
+dependencies: [WP02]
+created_at: '2026-04-01T00:00:00Z'
+subtasks: [T019, T020, T021, T022, T023, T024, T025, T026, T027]
+---
+
 # WP03: Agent Dispatch Workflow Migration
 
 **Feature**: 008-temporal-deployment-workflow-migration
 **Phase**: 2 - Core Migration
 **Wave**: 1
 **Dependencies**: WP02 (Worker SDK must be integrated)
-**Author**: Claude Sonnet 4.6
+
+## Objective
+
+Migrate the primary agent task dispatch workflow from NATS JetStream to Temporal. The most critical WP — agent dispatch must be durable, survive crashes, and be fully observable. After this, agent dispatch is fully Temporal-powered.
+
+**Implementation command**: `spec-kitty implement WP03 --base WP02`
+
+**Reference**: Spec `../spec.md` (FR-TEMPORAL-003, SC-001, SC-002, SC-003, SC-004, SC-009); Plan `../plan.md` (WP03 section).
 
 ## Mission
 

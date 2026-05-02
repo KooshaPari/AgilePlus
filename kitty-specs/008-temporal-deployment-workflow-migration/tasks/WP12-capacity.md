@@ -1,10 +1,26 @@
+---
+work_package_id: WP12
+title: AX101 Capacity Planning and Resource Audit
+lane: "planned"
+dependencies: [WP01]
+created_at: '2026-04-01T00:00:00Z'
+subtasks: [T074, T075, T076, T077, T078]
+---
+
 # WP12: AX101 Capacity Planning and Resource Audit
 
 **Feature**: 008-temporal-deployment-workflow-migration
 **Phase**: 5 - Handoff
 **Wave**: 2
-**Dependencies**: WP10 (observation complete)
-**Author**: Claude Sonnet 4.6
+**Dependencies**: WP01 (capacity baseline can be measured once Temporal is deployed; revisit after real usage in WP10)
+
+## Objective
+
+Audit actual AX101 resource usage with Temporal + Hatchet deployed. Confirm all services fit within headroom. Document scaling triggers and 6-month growth projection.
+
+**Implementation command**: `spec-kitty implement WP12 --base WP01`
+
+**Reference**: Spec `../spec.md` (SC-005); Plan `../plan.md` (WP12 section).
 
 ## Mission
 
