@@ -1,20 +1,19 @@
 ## Summary
 
-<!-- What does this PR do, in 1-3 sentences -->
+<!-- What changed and why? -->
 
-## Changes
+## Release / versioning
 
-<!-- Bullet list of key changes -->
-- 
+- [ ] Does this change affect release notes or `CHANGELOG.md`?
+- [ ] If yes, is the version bump and changelog entry correct?
+- [ ] If yes, does the publish workflow still validate the manifest version?
 
-## Testing
+## Validation
 
-<!-- How was this verified? -->
-- [ ] Local lint passes
-- [ ] Local tests pass
-- [ ] Manual smoke test (if applicable)
+- [ ] Local lint/test/format checks were run when applicable.
+- [ ] Coverage changes were considered for the changed surface.
+- [ ] No workflow, hook, or ownership path drift was introduced.
 
-## Related
+## Notes
 
-<!-- Issues/PRs/specs this addresses -->
-Closes #
+<!-- Add any rollout, risk, or follow-up context here. -->
