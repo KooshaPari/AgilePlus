@@ -1,0 +1,10 @@
+{
+  "spec_id": "consolidate-policy-engine-crate",
+  "slug": "consolidate-policy-engine-crate",
+  "title": "Consolidate Policy Engine Crate",
+  "status": "in_progress",
+  "priority": "high",
+  "created_at": "2026-05-02T00:00:00Z",
+  "source_description": "Consolidate `phenotype-policy-engine` to canonical `phenoShared`",
+  "type": "consolidation"
+}

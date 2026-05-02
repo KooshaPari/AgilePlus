@@ -1,0 +1,10 @@
+{
+  "spec_id": "consolidate-cache-adapter-crate",
+  "slug": "consolidate-cache-adapter-crate",
+  "title": "Consolidate Cache Adapter Crate",
+  "status": "in_progress",
+  "priority": "high",
+  "created_at": "2026-05-02T00:00:00Z",
+  "source_description": "Consolidate `phenotype-cache-adapter` to canonical `phenoShared`",
+  "type": "consolidation"
+}
