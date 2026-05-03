@@ -3,7 +3,7 @@ module github.com/KooshaPari/pheno-cli
 go 1.24.2
 
 require (
-	github.com/pelletier/go-toml/v2 v2.3.0
+	github.com/pelletier/go-toml/v2 v2.3.1
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/viper v1.21.0
 )
