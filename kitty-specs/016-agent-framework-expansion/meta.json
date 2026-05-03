@@ -1,9 +1,0 @@
-{
-  "spec_id": "016",
-  "slug": "016-agent-framework-expansion",
-  "title": "Agent Framework Expansion",
-  "status": "in_progress",
-  "created_at": "2026-03-22T00:00:00Z",
-  "type": "feature",
-  "notes": "6 work packages defined in tasks.md (Agentora, AgentMCP, agent-wave, agentops-policy-federation, helMo, agent-devops-setups). Expanded from 6 to 11 WPs: added Phase 4 (test/validate: WP-007 W3C conformance, WP-008 integration test plan, WP-009 migration test plan, WP-010 quality gate sweep) and Phase 5 (deploy: WP-011 CHANGELOG + portfolio). Each WP now has State, Phase, Depends on, Effort, file scope (read-only + write), numbered acceptance criteria, and handoff prompt."
-}

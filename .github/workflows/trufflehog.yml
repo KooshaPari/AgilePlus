@@ -1,4 +1,4 @@
-name: TruffleHog Secrets Scan
+name: Trufflehog Secrets Scan
 on:
   push:
     branches: [main]

@@ -1,9 +1,48 @@
 [workspace]
 resolver = "3"
-# All workspace members removed — AgilePlus has no Rust source files.
-# The real codebase lives in agile-main worktree (rust/ dir).
-# Canonical Cargo.toml updated to remove all empty members to prevent
-# "failed to load manifest: no targets specified" errors.
+members = [
+  "libs/nexus",
+  "libs/plugin-registry",
+  "libs/plugin-sample",
+  "libs/plugin-cli",
+  "libs/plugin-git",
+  "libs/plugin-grpc",
+  "libs/plugin-integration",
+  "libs/intent-registry",
+  "libs/health-monitor",
+  "libs/logger",
+  "libs/metrics",
+  "libs/config-core",
+  "libs/tracing-core",
+  "libs/cli-framework",
+  "libs/hexagonal-rs",
+  "libs/hexkit",
+  "libs/cipher",
+  "libs/gauge",
+  "libs/xdd-lib-rs",
+  "crates/agileplus-api",
+  "crates/agileplus-cli",
+  "crates/agileplus-domain",
+  "crates/agileplus-fixtures",
+  "crates/agileplus-grpc",
+  "crates/agileplus-sqlite",
+  "crates/agileplus-plane",
+  "crates/agileplus-telemetry",
+  "crates/agileplus-triage",
+  "crates/agileplus-events",
+  "crates/agileplus-cache",
+  "crates/agileplus-subcmds",
+  "crates/agileplus-graph",
+  "crates/agileplus-nats",
+  "crates/agileplus-sync",
+  "crates/agileplus-artifacts",
+  "crates/agileplus-dashboard",
+  "crates/agileplus-github",
+  "crates/agileplus-p2p",
+  "crates/agileplus-integration-tests",
+  "crates/agileplus-contract-tests",
+  "crates/agileplus-benchmarks",
+]
 
 [workspace.package]
 version = "0.1.1"

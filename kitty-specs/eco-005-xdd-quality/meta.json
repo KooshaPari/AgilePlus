@@ -1,9 +1,0 @@
-{
-  "spec_id": "eco-005",
-  "slug": "eco-005-xdd-quality",
-  "title": "XDD Quality Enforcement",
-  "status": "in_progress",
-  "priority": "high",
-  "created_at": "2026-05-02",
-  "source_description": "Enforce XDD (eXtreme Design Discipline) patterns across the AgilePlus Rust monorepo — covering pre-commit hooks, CI gates, violation detection, and team onboarding — so that wrap-over-handroll, rich-UI mandate, and quality-first principles are enforced automatically rather than by convention."
-}

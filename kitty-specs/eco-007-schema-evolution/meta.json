@@ -1,9 +1,0 @@
-{
-  "spec_id": "eco-007",
-  "slug": "eco-007-schema-evolution",
-  "title": "Schema Versioning and API Evolution",
-  "status": "in_progress",
-  "priority": "high",
-  "created_at": "2026-05-02",
-  "source_description": "Implement a schema versioning and API evolution strategy across the AgilePlus Rust monorepo — covering SQLite migrations, gRPC proto compatibility, event schema versioning, and backward-compatibility enforcement — so that the system can evolve without breaking existing clients, stored events, or plugins."
-}

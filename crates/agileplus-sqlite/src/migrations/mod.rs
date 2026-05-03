@@ -23,7 +23,6 @@ const MIGRATION_012: &str = include_str!("012_create_sync_mappings.sql");
 const MIGRATION_013: &str = include_str!("013_create_api_keys.sql");
 const MIGRATION_014: &str = include_str!("014_create_device_nodes.sql");
 const MIGRATION_015: &str = include_str!("015_modules_cycles.sql");
-const MIGRATION_016: &str = include_str!("016_create_backlog_items.sql");
 const MIGRATION_017: &str = include_str!("017_create_projects.sql");
 
 /// All migrations in order: (name, up_sql, down_sql)
@@ -43,7 +42,6 @@ const MIGRATIONS: &[(&str, &str)] = &[
     ("013_create_api_keys", MIGRATION_013),
     ("014_create_device_nodes", MIGRATION_014),
     ("015_modules_cycles", MIGRATION_015),
-    ("016_create_backlog_items", MIGRATION_016),
     ("017_create_projects", MIGRATION_017),
 ];
 
