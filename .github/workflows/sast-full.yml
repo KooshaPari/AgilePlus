@@ -79,7 +79,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: trufflesecurity/trufflehog@3fc0c2aa6648d54242e4af6fbfde0701796e4fb0  # was: @main
+      - uses: trufflesecurity/trufflehog@5f47aad1c2df34f7c6230784ce9a5a659922f479  # was: @main
         with:
           path: ./
           extra_args: --only-verified --fail
