@@ -9,7 +9,7 @@ rust-version.workspace = true
 agileplus-domain = { path = "../agileplus-domain" }
 agileplus-dashboard = { path = "../agileplus-dashboard" }
 axum.workspace = true
-axum-extra = { version = "0.10", features = ["typed-header"] }
+axum-extra = { version = "0.12", features = ["typed-header"] }
 tower = { version = "0.5", features = ["limit", "timeout"] }
 tower-http = { version = "0.6", features = ["cors", "fs", "trace"] }
 tokio.workspace = true
