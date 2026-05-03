@@ -15,13 +15,13 @@ serde_json.workspace = true
 chrono.workspace = true
 tokio.workspace = true
 async-trait = "0.1"
-rusqlite = { version = "0.32", features = ["bundled"] }
+rusqlite = { version = "0.39", features = ["bundled"] }
 uuid = { version = "1.10", features = ["v4", "serde"] }
 
 [dev-dependencies]
 criterion = { version = "0.5", features = ["async_tokio", "html_reports"] }
 tokio = { workspace = true, features = ["full"] }
-rusqlite = { version = "0.32", features = ["bundled"] }
+rusqlite = { version = "0.39", features = ["bundled"] }
 
 [[bench]]
 name = "event_append_throughput"

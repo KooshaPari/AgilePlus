@@ -20,7 +20,7 @@ axum.workspace = true
 hmac = "0.12"
 hex = "0.4"
 async-trait = "0.1"
-rusqlite = { version = "0.32", features = ["bundled"] }
+rusqlite = { version = "0.39", features = ["bundled"] }
 
 [dev-dependencies]
 tempfile = "3"
