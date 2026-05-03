@@ -2,6 +2,24 @@
 
 **This project is managed through AgilePlus.**
 
+## TruffleHog + deny.toml Fixes — 2026-05-03
+
+| Item | Status |
+|------|--------|
+| deny.toml: add allow-registry to 23 Rust repos | ✅ 15 committed+pushed, 5 already correct, 3 N/A |
+| trufflehog.yml: expand branch scan to chore/** feat/** fix/** | ✅ Applied |
+| AGENTS.md: clean CRLF/binary corruption, re-create | ✅ Applied |
+| Branch: reset to origin/main (force-pushed by org-bootstrap agent) | ✅ Clean base |
+
+## TruffleHog + deny.toml Fixes — 2026-05-03
+
+| Item | Status |
+|------|--------|
+| deny.toml: add allow-registry to 23 Rust repos | ✅ 15 committed+pushed, 5 already correct, 3 N/A |
+| trufflehog.yml: expand branch scan to chore/** feat/** fix/** | ✅ Applied |
+| AGENTS.md: clean CRLF/binary corruption, re-create | ✅ Applied |
+| Branch: reset to origin/main (force-pushed by org-bootstrap agent) | ✅ Clean base |
+
 ## Ecosystem Cleanup Complete - 2026-03-29
 
 ### ECO Work Package Status
