@@ -26,7 +26,7 @@ agileplus-telemetry = { path = "../agileplus-telemetry" }
 agileplus-sqlite = { path = "../agileplus-sqlite" }
 agileplus-git = { path = "../agileplus-git" }
 anyhow = "1.0"
-rand = "0.8"
+rand = "0.10"
 base64 = "0.22"
 sha2 = "0.10"
 chrono = { version = "0.4", features = ["serde"] }
