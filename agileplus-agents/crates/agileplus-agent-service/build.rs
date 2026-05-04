@@ -1,12 +1,10 @@
+use std::path::PathBuf;
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Proto files live in the shared proto/ directory at the workspace root
-    // (three levels up from this build script: crates/agileplus-agent-service → workspace root).
-    let proto_root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .parent()   // crates/
-        .and_then(|p| p.parent()) // agileplus-agents/
-        .and_then(|p| p.parent()) // repo root
-        .map(|p| p.join("proto"))
-        .expect("could not compute proto root path");
+    // Proto files live in this repository's local proto/ directory so standalone clones build.
+    let proto_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../..") // repo root
+        .join("proto");
 
     tonic_build::configure()
         .build_server(true)
