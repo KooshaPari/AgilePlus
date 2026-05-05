@@ -36,7 +36,7 @@ class TestCallOmniroute:
             result = dispatch_custom("worker", "hello")
             mock_client.post.assert_called_once()
             call_args = mock_client.post.call_args
-            assert "dispatch" in call_args[0][0]
+            assert call_args[0][0] == "http://localhost:8080/dispatch"
             assert call_args[1]["json"] == {"tier": "worker", "message": "hello"}
             assert result == {"ok": True, "tier": "worker", "message": "hello"}
 
@@ -140,7 +140,7 @@ class TestCallOmniroute:
             result = dispatch_health()
             mock_client.post.assert_called_once()
             call_args = mock_client.post.call_args
-            assert "health" in call_args[0][0]
+            assert call_args[0][0] == "http://localhost:8080/health"
             assert call_args[1]["json"] == {}
             assert result == {"status": "ok"}
 
@@ -234,8 +234,35 @@ class TestTierTools:
             seen[id_] = getattr(tool, "__name__", str(tool))
 
 
+
 class TestMessageSizeLimit:
     """Tests for MAX_MESSAGE_LENGTH enforcement."""
+
+    def test_unicode_message_is_accepted(self) -> None:
+        from dispatch_mcp.server import dispatch_custom
+
+        with patch.dict("os.environ", {"OMNIROUTE_URL": "http://localhost:8080"}), \
+             patch("dispatch_mcp.server.httpx.Client") as mock_client_cls:
+            mock_response = MagicMock()
+            mock_response.json.return_value = {"ok": True}
+            mock_response.raise_for_status = MagicMock()
+            mock_client = MagicMock()
+            mock_client.__enter__ = MagicMock(return_value=mock_client)
+            mock_client.__exit__ = MagicMock(return_value=False)
+            mock_client.post.return_value = mock_response
+            mock_client_cls.return_value = mock_client
+
+            dispatch_custom("worker", "hello 🐍")
+            call_args = mock_client.post.call_args
+            assert call_args[1]["json"]["message"] == "hello 🐍"
+
+
+    def test_liveness_does_not_call_backend(self) -> None:
+        with patch("dispatch_mcp.server.httpx.Client") as mock_client_cls:
+            from dispatch_mcp.server import dispatch_liveness
+
+            dispatch_liveness()
+            mock_client_cls.assert_not_called()
 
     def test_dispatch_custom_rejects_oversized_message(self) -> None:
         from dispatch_mcp.server import dispatch_custom
@@ -274,6 +301,53 @@ class TestLivenessProbe:
         result = dispatch_liveness()
         assert result["status"] == "alive"
         assert result["server"] == "dispatch-mcp"
+
+
+class TestOmniRouteUrlEdgeCases:
+    """URL construction edge cases."""
+
+    def test_trailing_slash_in_url_not_duplicated(self) -> None:
+        with (
+            patch.dict("os.environ", {"OMNIROUTE_URL": "http://localhost:8080/"}),
+            patch("dispatch_mcp.server.httpx.Client") as mock_client_cls,
+        ):
+            mock_response = MagicMock()
+            mock_response.json.return_value = {"ok": True}
+            mock_response.raise_for_status = MagicMock()
+            mock_client = MagicMock()
+            mock_client.__enter__ = MagicMock(return_value=mock_client)
+            mock_client.__exit__ = MagicMock(return_value=False)
+            mock_client.post.return_value = mock_response
+            mock_client_cls.return_value = mock_client
+
+            from dispatch_mcp.server import dispatch_custom
+
+            dispatch_custom("worker", "hello")
+            call_args = mock_client.post.call_args
+            # must not produce http://localhost:8080//dispatch
+            assert "//dispatch" not in call_args[0][0]
+            assert call_args[0][0] == "http://localhost:8080/dispatch"
+
+    def test_leading_slash_in_route_not_duplicated(self) -> None:
+        with (
+            patch.dict("os.environ", {"OMNIROUTE_URL": "http://localhost:8080"}),
+            patch("dispatch_mcp.server.httpx.Client") as mock_client_cls,
+        ):
+            mock_response = MagicMock()
+            mock_response.json.return_value = {"ok": True}
+            mock_response.raise_for_status = MagicMock()
+            mock_client = MagicMock()
+            mock_client.__enter__ = MagicMock(return_value=mock_client)
+            mock_client.__exit__ = MagicMock(return_value=False)
+            mock_client.post.return_value = mock_response
+            mock_client_cls.return_value = mock_client
+
+            from dispatch_mcp.server import dispatch_custom
+
+            dispatch_custom("worker", "hello")
+            call_args = mock_client.post.call_args
+            # must not produce http://localhost:8080//dispatch
+            assert "//dispatch" not in call_args[0][0]
 
 
 class TestRedirectPolicy:
