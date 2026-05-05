@@ -143,6 +143,9 @@ def dispatch_liveness() -> dict[str, Any]:
 
 
 def main() -> None:
+    """Start the MCP server. Registers SIGTERM/SIGINT handlers that log intent;
+    the event loop (mcp.run) controls its own lifecycle and does not
+    guarantee immediate interruption on signal receipt."""
     def _handle_signal(signum: int, frame: object) -> None:
         sig_name = signal.Signals(signum).name
         logger.warning("Received %s, initiating graceful shutdown", sig_name)
