@@ -237,6 +237,26 @@
 - [ ] T071 — heliosCLI: Merge `refactor/decouple-harness-crates` → main — `heliosCLI/`
 - [ ] T072 — Verify all repos on main branch — `/Users/kooshapari/CodeProjects/Phenotype/repos/`
 
+## WP-10b: Batch ecosystem audits (automatable probes)
+
+**File Scope:**
+- Read: [`*/.git`, `*/Cargo.toml`, `*/deny.toml`, `*/target/`, `*/README.md`]
+- Write: [`kitty-specs/021-polyrepo-ecosystem-stabilization/tasks.md`]
+**Depends on:** none
+**Effort:** S
+
+### Acceptance Criteria
+
+- [x] All five batch probes executed across the shelf root.
+
+### Tasks
+
+- [x] T187 — Dirty tree audit: identify repos with uncommitted changes — `/Users/kooshapari/CodeProjects/Phenotype/repos/*/`
+- [x] T188 — Cargo check probes: run cargo check on all Cargo repos — `/Users/kooshapari/CodeProjects/Phenotype/repos/*/Cargo.toml`
+- [x] T189 — deny.toml staleness: find all repos with deny.toml — `/Users/kooshapari/CodeProjects/Phenotype/repos/*/deny.toml`
+- [x] T190 — target/.gitignore presence: find repos missing target/.gitignore — `/Users/kooshapari/CodeProjects/Phenotype/repos/*/target/.gitignore`
+- [x] T191 — README presence: find repos missing README files — `/Users/kooshapari/CodeProjects/Phenotype/repos/*/README.md`
+
 ---
 
 ## Phase 2: Short-term (Weeks 2-3) — Consolidate and Deduplicate
