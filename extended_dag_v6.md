@@ -484,3 +484,64 @@ All ten workstreams completed. Six new workstreams identified from findings.
 | 4 | WS-O | Rationalize deny ignores | 9 repos | Auditable advisory policy |
 | 5 | WS-Q | BytePort todo!() triage | BytePort | Known implementation debt |
 | 6 | WS-P | Test infra for scorecard-remediation | phenodocs-scorecard-remediation | Consistent with reality |
+
+---
+
+# v9 Extension — 2026-05-05 (evening)
+
+## What changed since v8
+
+WS-K through WS-Q all completed. 4 new audits surfaced new findings.
+
+### Completion scorecard (v8 additions)
+
+| WS | Status | Outcome |
+|---|---|---|
+| WS-K | ✅ Done | AtomsBot `94303d1`, PhenoControl `012c7622` — duplicate allow-registry removed |
+| WS-L | ✅ Done | helios-router (PR#212), heliosBench (direct push), QuadSGM (direct push) — all have CI |
+| WS-M | ✅ Done | PhenoObservability `324cd90` — field names fixed, cargo deny passes |
+| WS-N | ✅ Done | helioscope `9be8873` — all 5 heliosCLI → helios-cli casing fixed |
+| WS-O | ✅ Done | hwLedger: RUSTSEC-2017-0008 removed (false positive), RUSTSEC-2023-0071 kept+reasoned. phenoData: RUSTSEC-2023-0071 kept+reasoned |
+| WS-P | ✅ Done | False alarm — libs/docslib has Go tests; Python layer is uv compat only |
+| WS-Q | ✅ Done | findings/byteport_todo_audit_2026-05-05.md — 1 live todo!() (nvms.rs:280), ~50 in .history/ (no action) |
+
+### New audit findings (v9)
+
+- **Go ecosystem**: 7 Go repos without CI (BytePort highest: 11,444 Go files). argis-extensions has interface mismatches (code/schema drift). netweave-final2 has 14 lock-copying violations.
+- **Dependency hygiene**: SHA-pinning status for GitHub Actions (in progress). npm staleness checks (in progress).
+- **Repo metadata**: CLAUDE.md/FUNDING.yml completeness scan (in progress). CI/CD coverage map (in progress).
+- **Broken symlinks**: 8 canonical repos affected. helioscope (8 links), helios-cli (transport/harness). Worktrees have orphaned CONSTITUTION.yaml/ADR.md links from refactors.
+- **Duplicate Cargo names**: None — all high-count names are distinct crates across subdirectories.
+
+## New workstreams (WS-R through WS-Z)
+
+### WS-R: Add CI to BytePort (P0)
+- 11,444 Go files, no CI. Highest-priority Go CI gap.
+- Add push/PR workflow: `go test ./...`, `go vet ./...`
+
+### WS-S: Fix argis-extensions interface mismatches (P1)
+- Interface mismatches between Go code and schema definitions
+- Code/schema drift from schema evolution without code sync
+- Audit: go_ecosystem_audit_2026-05-05.md
+
+### WS-T: Fix netweave-final2 lock-copying violations (P1)
+- 14 lock-copying violations (golangci-lint) — concurrency bug risk
+- Fix: ensure mutexes are never copied after initialization
+
+### WS-U: Fix broken symlinks (P2)
+- 8 canonical repos with broken symlinks (helioscope, helios-cli, etc.)
+- Most are transport/harness placeholders or refactor orphans
+- Remove or recreate symlinks pointing to moved files
+
+### WS-V: Add FUNDING.yml to repos missing it (P2)
+- Findings: repo_metadata_completeness_2026-05-05.md
+
+## Updated execution order (v9)
+
+| Priority | WS | Action | Repos | Expected outcome |
+|---|---|---|---|---|
+| 0 | WS-R | Add CI to BytePort | BytePort | Go test coverage in CI |
+| 1 | WS-S | Fix argis-extensions interface drift | argis-extensions | Code/schema aligned |
+| 2 | WS-T | Fix lock-copying violations | netweave-final2 | Concurrency safety |
+| 3 | WS-U | Fix broken symlinks | 8 repos | Clean working tree |
+| 4 | WS-V | Add FUNDING.yml | N repos | Open source readiness |
