@@ -34,12 +34,14 @@ Each accepts a single `message: str` argument and dispatches it to the configure
 
 | Variable | Required | Default | Description |
 |---|---|---|---|
-| `OMNIROUTE_URL` | Yes | — | Base URL of the OmniRoute dispatch backend (e.g. `http://localhost:8080`) |
+| `OMNIROUTE_URL` | Yes | — | Base URL of the OmniRoute dispatch backend (e.g. `http://localhost:8080`). Must use `http://` or `https://` scheme. |
+| `LOG_LEVEL` | No | (root logger) | Logging verbosity. Accepted values: `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`. Invalid values fall through to the root logger's level. |
 
 ### Constraints
 
 - `message` must not exceed **4096 bytes** (UTF-8 encoded).
 - `tier` must be one of the known tiers listed above.
+- `OMNIROUTE_URL` must use `http://` or `https://` scheme. Other schemes (e.g. `file://`, `javascript:`) are rejected at startup with a `ValueError`.
 - HTTP redirects are **not followed** — only direct requests to `OMNIROUTE_URL` are made.
 
 ## Run

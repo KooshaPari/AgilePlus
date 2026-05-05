@@ -280,6 +280,13 @@ class TestMessageSizeLimit:
         with pytest.raises(ValueError, match="exceeds maximum length"):
             dispatch_custom("worker", "x" * 5000)
 
+    def test_dispatch_worker_rejects_oversized_message(self) -> None:
+        # All named tier functions share _make_dispatch; verify one explicitly.
+        from dispatch_mcp.server import dispatch_worker
+
+        with pytest.raises(ValueError, match="exceeds maximum length"):
+            dispatch_worker("x" * 5000)
+
     def test_dispatch_custom_accepts_exact_limit(self) -> None:
         from dispatch_mcp.server import MAX_MESSAGE_LENGTH, dispatch_custom
 

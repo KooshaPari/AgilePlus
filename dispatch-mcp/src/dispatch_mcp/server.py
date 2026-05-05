@@ -93,7 +93,7 @@ def _call_omniroute(route: str, payload: dict[str, Any]) -> dict[str, Any]:
             ) from e
 
 
-def _make_dispatch(tier: str) -> Callable[[], Callable[..., Any]]:
+def _make_dispatch(tier: str) -> Callable[[], Callable[[str], dict[str, Any]]]:
     @mcp.tool(name=f"dispatch_{tier}")
     def dispatch(message: str) -> dict[str, Any]:
         if len(message.encode()) > MAX_MESSAGE_LENGTH:
@@ -143,13 +143,9 @@ def dispatch_liveness() -> dict[str, Any]:
 
 
 def main() -> None:
-    shutdown_requested = False
-
     def _handle_signal(signum: int, frame: object) -> None:
-        nonlocal shutdown_requested
         sig_name = signal.Signals(signum).name
         logger.warning("Received %s, initiating graceful shutdown", sig_name)
-        shutdown_requested = True
 
     signal.signal(signal.SIGTERM, _handle_signal)
     signal.signal(signal.SIGINT, _handle_signal)
