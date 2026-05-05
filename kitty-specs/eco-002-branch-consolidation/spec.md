@@ -1,7 +1,8 @@
 ---
 spec_id: AgilePlus-eco-002
-state: COMPLETED
+state: RETIRED
 plan_status: NOT_REQUIRED
+retirement_reason: COMPLETED_OPS
 last_audit: 2026-04-25
 superseded_by: |
   Acceptance criteria met 2026-03-28/29: 45 stale branches removed, 230+ PRs triaged.
@@ -10,6 +11,9 @@ superseded_by: |
     - GitHub branch protection rules
     - per-repo branch triage in worklogs
 plan_rationale: All work packages complete; no forward implementation remaining.
+retirement_note: |
+  Retired 2026-05-05. Work was verifiable ops (45 stale branches deleted, 230+ PRs
+  categorized and triaged). Checkboxes in spec.md body serve as task evidence.
 ---
 
 # Specification: Branch Consolidation
