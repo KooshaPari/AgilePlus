@@ -1,7 +1,8 @@
 ---
 spec_id: AgilePlus-eco-001
-state: COMPLETED
+state: RETIRED
 plan_status: NOT_REQUIRED
+retirement_reason: COMPLETED_OPS
 last_audit: 2026-04-25
 superseded_by: |
   Acceptance criteria fully met 2026-03-28/29 (see checked items below).
@@ -10,6 +11,10 @@ superseded_by: |
     - repos/CLAUDE.md worktree discipline
     - repos/.worktrees/ + repos/<repo>-wtrees/<topic> conventions
 plan_rationale: All work packages complete; no forward implementation remaining.
+retirement_note: |
+  Retired 2026-05-05. Work was verifiable ops (9 legacy worktrees archived,
+  governance scripts implemented, orphaned dirs cleaned, WIP stashed). Checkboxes
+  in spec.md body serve as task evidence.
 ---
 
 # Specification: Worktree Remediation
