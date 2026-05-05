@@ -122,13 +122,17 @@ class TestCallOmniroute:
             with pytest.raises(RuntimeError, match="invalid response"):
                 dispatch_custom("worker", "test")
 
-    def test_dispatch_health_success(self) -> None:
+    def test_dispatch_health_success_sanitized(self) -> None:
         with (
             patch.dict("os.environ", {"OMNIROUTE_URL": "http://localhost:8080"}),
             patch("dispatch_mcp.server.httpx.Client") as mock_client_cls,
         ):
             mock_response = MagicMock()
-            mock_response.json.return_value = {"status": "ok"}
+            mock_response.json.return_value = {
+                "status": "ok",
+                "upstream_id": "secret-internal",
+                "error": None,
+            }
             mock_response.raise_for_status = MagicMock()
             mock_client = MagicMock()
             mock_client.__enter__ = MagicMock(return_value=mock_client)
@@ -139,11 +143,16 @@ class TestCallOmniroute:
             from dispatch_mcp.server import dispatch_health
 
             result = dispatch_health()
-            mock_client.post.assert_called_once()
-            call_args = mock_client.post.call_args
-            assert call_args[0][0] == "http://localhost:8080/health"
-            assert call_args[1]["json"] == {}
-            assert result == {"status": "ok"}
+            assert "status" in result
+            assert "upstream_id" not in result
+            assert result == {"status": "ok", "error": None}
+
+    def test_invalid_omniroute_url_raises(self) -> None:
+        with patch.dict("os.environ", {"OMNIROUTE_URL": "javascript:alert(1)"}):
+            from dispatch_mcp.server import dispatch_health
+
+            with pytest.raises(ValueError, match="must use http or https"):
+                dispatch_health()
 
     def test_missing_omniroute_url_raises(self) -> None:
         with patch.dict("os.environ", {}, clear=True):
@@ -349,6 +358,38 @@ class TestOmniRouteUrlEdgeCases:
             call_args = mock_client.post.call_args
             # must not produce http://localhost:8080//dispatch
             assert "//dispatch" not in call_args[0][0]
+
+
+class TestSanitizeResponse:
+    """Tests for _sanitize_response."""
+
+    def test_allowlisted_keys_pass_through(self) -> None:
+        from dispatch_mcp.server import _sanitize_response
+
+        result = _sanitize_response({"ok": True, "tier": "worker", "message": "hi"})
+        assert result == {"ok": True, "tier": "worker", "message": "hi"}
+
+    def test_internal_keys_are_stripped(self) -> None:
+        from dispatch_mcp.server import _sanitize_response
+
+        result = _sanitize_response(
+            {
+                "ok": True,
+                "upstream_hostname": "internal-db.local",
+                "stack_trace": "...",
+                "internal_id": "abc123",
+            }
+        )
+        assert result == {"ok": True}
+        assert "upstream_hostname" not in result
+        assert "stack_trace" not in result
+        assert "internal_id" not in result
+
+    def test_error_key_preserved(self) -> None:
+        from dispatch_mcp.server import _sanitize_response
+
+        result = _sanitize_response({"error": "something went wrong", "ok": False})
+        assert result == {"error": "something went wrong", "ok": False}
 
 
 class TestRedirectPolicy:

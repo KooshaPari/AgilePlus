@@ -12,9 +12,17 @@ build/
 .benchmarks/
 .coverage
 htmlcov/
+.hypothesis/
 
-# Linting
+# Linting / Type checking
 .ruff_cache/
+.mypy_cache/
+.pyright/
+
+# Virtual environments
+.venv/
+.tox/
+.hatch/
 
 # Environment
 .env

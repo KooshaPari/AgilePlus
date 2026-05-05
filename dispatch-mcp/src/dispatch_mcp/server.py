@@ -6,6 +6,7 @@ import os
 import signal
 from collections.abc import Callable
 from typing import Any
+from urllib.parse import urlparse
 
 import httpx
 from mcp.server.fastmcp import FastMCP
@@ -53,6 +54,11 @@ def _call_omniroute(route: str, payload: dict[str, Any]) -> dict[str, Any]:
         raise ValueError(
             "OMNIROUTE_URL environment variable is not set. "
             "Set it to the base URL of the dispatch backend before starting the server."
+        )
+    parsed = urlparse(base)
+    if parsed.scheme not in ("http", "https"):
+        raise ValueError(
+            f"OMNIROUTE_URL must use http or https scheme, got: {parsed.scheme!r}"
         )
     with httpx.Client(timeout=10, follow_redirects=False) as client:
         try:
