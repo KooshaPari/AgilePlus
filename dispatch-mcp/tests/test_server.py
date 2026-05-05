@@ -232,3 +232,68 @@ class TestTierTools:
             id_ = id(tool)
             assert id_ not in seen, f"Duplicate tool reference for {seen[id_]}"
             seen[id_] = getattr(tool, "__name__", str(tool))
+
+
+class TestMessageSizeLimit:
+    """Tests for MAX_MESSAGE_LENGTH enforcement."""
+
+    def test_dispatch_custom_rejects_oversized_message(self) -> None:
+        from dispatch_mcp.server import dispatch_custom
+
+        with pytest.raises(ValueError, match="exceeds maximum length"):
+            dispatch_custom("worker", "x" * 5000)
+
+    def test_dispatch_custom_accepts_exact_limit(self) -> None:
+        from dispatch_mcp.server import MAX_MESSAGE_LENGTH, dispatch_custom
+
+        with (
+            patch.dict("os.environ", {"OMNIROUTE_URL": "http://localhost:8080"}),
+            patch("dispatch_mcp.server.httpx.Client") as mock_client_cls,
+        ):
+            mock_response = MagicMock()
+            mock_response.json.return_value = {"ok": True}
+            mock_response.raise_for_status = MagicMock()
+            mock_client = MagicMock()
+            mock_client.__enter__ = MagicMock(return_value=mock_client)
+            mock_client.__exit__ = MagicMock(return_value=False)
+            mock_client.post.return_value = mock_response
+            mock_client_cls.return_value = mock_client
+
+            # exactly at limit should pass
+            msg = "x" * MAX_MESSAGE_LENGTH
+            result = dispatch_custom("worker", msg)
+            assert result == {"ok": True}
+
+
+class TestLivenessProbe:
+    """Tests for dispatch_liveness."""
+
+    def test_liveness_returns_alive_status(self) -> None:
+        from dispatch_mcp.server import dispatch_liveness
+
+        result = dispatch_liveness()
+        assert result["status"] == "alive"
+        assert result["server"] == "dispatch-mcp"
+
+
+class TestRedirectPolicy:
+    """Tests that httpx.Client is configured with follow_redirects=False."""
+
+    def test_no_redirect_followed(self) -> None:
+        with (
+            patch.dict("os.environ", {"OMNIROUTE_URL": "http://localhost:8080"}),
+            patch("dispatch_mcp.server.httpx.Client") as mock_client_cls,
+        ):
+            mock_response = MagicMock()
+            mock_response.json.return_value = {"ok": True}
+            mock_response.raise_for_status = MagicMock()
+            mock_client = MagicMock()
+            mock_client.__enter__ = MagicMock(return_value=mock_client)
+            mock_client.__exit__ = MagicMock(return_value=False)
+            mock_client.post.return_value = mock_response
+            mock_client_cls.return_value = mock_client
+
+            from dispatch_mcp.server import dispatch_custom
+
+            dispatch_custom("worker", "hello")
+            mock_client_cls.assert_called_once_with(timeout=10, follow_redirects=False)

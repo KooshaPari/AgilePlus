@@ -1,87 +1,56 @@
-README for dispatch-mcp
+# dispatch-mcp
 
-Overview
+MCP server for tier-based dispatch delegation via OmniRoute.
 
-dispatch-mcp is the MCP (Model Control Plane) service intended to wrap the dispatch-worker and provide tier-based delegation for thegent/OmniRoute. The repository's history shows the project goal: a small server that exposes an HTTP API to accept delegation requests and routes them to dispatch-worker tiers (e.g. kimi, minimax, codex) according to configured policies.
+## Tools
 
-Important note about repository state
+### Per-tier dispatch tools
 
-- At the time this README was generated the repository contains CI configuration, test bytecode caches and lint caches, but there are no committed Python source files under src/ (only __pycache__ directories) nor a pyproject.toml/setup.cfg. Tests exist in compiled form (.pyc) in tests/__pycache__, and the Git history indicates the intended project purpose. Before the project can be built or run locally the missing source files must be restored or reintroduced.
+| Tool name | Tier |
+|---|---|
+| `dispatch_worker` | `worker` |
+| `dispatch_main` | `main` |
+| `dispatch_codeman` | `codeman` |
+| `dispatch_freetier` | `freetier` |
+| `dispatch_kimi` | `kimi` |
+| `dispatch_kimi_thinking` | `kimi_thinking` |
+| `dispatch_minimax` | `minimax` |
+| `dispatch_opus` | `opus` |
+| `dispatch_haiku` | `haiku` |
+| `dispatch_gemini` | `gemini` |
 
-Overview (short)
+Each accepts a single `message: str` argument and dispatches it to the configured OmniRoute backend under the corresponding tier.
 
-- Purpose: MCP server that wraps dispatch-worker for tier-based delegation.
-- Intended audience: developers and integrators who will run the MCP for local development, CI, or production integration with thegent/OmniRoute.
+### Custom dispatch
 
-Install
+`dispatch_custom(tier: str, message: str)` — dispatch to any tier from `VALID_TIERS` above.
 
-The CI workflow shows the project targets Python 3.13 and uses the uv helper (astral-sh/uv) to manage installs. Two recommended paths depending on repository state:
+### Health
 
-1) If the project gains a pyproject.toml (recommended):
+- `dispatch_health()` — probe the OmniRoute backend health endpoint. Requires `OMNIROUTE_URL` to be set.
+- `dispatch_liveness()` — returns server liveness status without contacting OmniRoute.
 
-   python -m pip install --upgrade pip
-   # using uv (CI uses uv); fallback to pip if uv not available
-   uv sync --all-extras --dev || python -m pip install -e ".[dev]"
+## Configuration
 
-2) If the repository only provides requirements.txt:
+| Variable | Required | Default | Description |
+|---|---|---|---|
+| `OMNIROUTE_URL` | Yes | — | Base URL of the OmniRoute dispatch backend (e.g. `http://localhost:8080`) |
 
-   python -m pip install --upgrade pip
-   uv pip install --system -r requirements.txt || python -m pip install -r requirements.txt
+### Constraints
 
-3) Minimal dev install (when packaging present):
+- `message` must not exceed **4096 bytes** (UTF-8 encoded).
+- `tier` must be one of the known tiers listed above.
+- HTTP redirects are **not followed** — only direct requests to `OMNIROUTE_URL` are made.
 
-   python -m pip install --upgrade pip
-   python -m pip install -e .[dev]
+## Run
 
-Usage
+```bash
+# Set the backend URL
+export OMNIROUTE_URL=http://localhost:8080
 
-Because no runnable server entrypoints are present in source form, the commands below describe the intended usage and CI-tested commands once sources are restored.
+# Via entry point
+dispatch-mcp
 
-Run tests (CI equivalent):
-
-   pytest -q
-
-Run lint/format checks (CI equivalent):
-
-   ruff format --check .
-   ruff check .
-
-Run the MCP server (intended):
-
-   # intended form, adjust module/path once src/dispatch_mcp/server.py exists
-   python -m dispatch_mcp.server
-
-Development
-
-- Add/restore Python source files under src/dispatch_mcp/ (package layout) and a pyproject.toml (PEP 621/Poetry/Flit or setup.cfg + setup.py) to enable editable installs.
-- Follow the repository CI: use Python 3.13 in development to match CI.
-- Keep linting and tests passing. The CI workflow at .github/workflows/ci.yml installs uv, runs ruff format --check, ruff check, and pytest.
-- Recommended steps to bootstrap if sources are missing:
-  1. Recreate package layout: src/dispatch_mcp/__init__.py and entry module server.py
-  2. Add a basic pyproject.toml with project metadata and dev dependencies (ruff, pytest)
-  3. Run uv sync or pip install -e .[dev]
-  4. Run pytest and ruff locally and iterate
-
-Project conventions and notes
-
-- This repository is tracked as part of the AgilePlus-managed workspace. Any work must be accompanied by an AgilePlus spec per the workspace governance: use the AgilePlus CLI to create/update work items before implementing code.
-- All markdown files must be UTF-8 encoded. Validate encoding with the AgilePlus CLI if required.
-
-Helpful paths in this repository
-
-- .github/workflows/ci.yml — CI steps (Python 3.13, uv, ruff, pytest)
-- tests/ — test artifacts (currently compiled .pyc files in __pycache__)
-
-License
-
-This repository does not currently contain an explicit license file. Add a LICENSE file (MIT/Apache-2.0/etc.) if you intend to publish or share this code.
-
-Contact / Next steps
-
-- If you want me to scaffold minimal working sources (pyproject.toml + simple server module + basic tests) I can create a focused scaffold PR/worktree. Confirm and I will:
-  - create src/dispatch_mcp/__init__.py and src/dispatch_mcp/server.py (minimal HTTP server using standard library or FastAPI per your preference)
-  - add pyproject.toml with dev deps
-  - add simple pytest tests and a README update
-
-----
-Generated by Claude agent. Repository path: /Users/kooshapari/CodeProjects/Phenotype/repos/dispatch-mcp
+# Or directly
+python -m dispatch_mcp.server
+```

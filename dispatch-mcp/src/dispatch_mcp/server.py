@@ -10,6 +10,8 @@ from mcp.server.fastmcp import FastMCP
 mcp = FastMCP("dispatch-mcp")
 logger = logging.getLogger("dispatch_mcp")
 
+MAX_MESSAGE_LENGTH = 4096  # bytes — prevents unbounded payload to OmniRoute
+
 # Allowlist of valid dispatch tiers — dispatch_custom must use one of these.
 VALID_TIERS = frozenset(
     {
@@ -34,7 +36,7 @@ def _call_omniroute(route: str, payload: dict[str, Any]) -> dict[str, Any]:
             "OMNIROUTE_URL environment variable is not set. "
             "Set it to the base URL of the dispatch backend before starting the server."
         )
-    with httpx.Client(timeout=10) as client:
+    with httpx.Client(timeout=10, follow_redirects=False) as client:
         try:
             response = client.post(
                 f"{base.rstrip('/')}/{route.lstrip('/')}", json=payload
@@ -60,6 +62,10 @@ def _call_omniroute(route: str, payload: dict[str, Any]) -> dict[str, Any]:
 def _make_dispatch(tier: str):
     @mcp.tool(name=f"dispatch_{tier}")
     def dispatch(message: str) -> dict[str, Any]:
+        if len(message.encode()) > MAX_MESSAGE_LENGTH:
+            raise ValueError(
+                f"message exceeds maximum length of {MAX_MESSAGE_LENGTH} bytes"
+            )
         return _call_omniroute("dispatch", {"tier": tier, "message": message})
 
     return dispatch
@@ -83,12 +89,23 @@ def dispatch_custom(tier: str, message: str) -> dict[str, Any]:
         raise ValueError(
             f"Invalid tier '{tier}'. Must be one of: {', '.join(sorted(VALID_TIERS))}"
         )
+    if len(message.encode()) > MAX_MESSAGE_LENGTH:
+        raise ValueError(
+            f"message exceeds maximum length of {MAX_MESSAGE_LENGTH} bytes"
+        )
     return _call_omniroute("dispatch", {"tier": tier, "message": message})
 
 
 @mcp.tool()
 def dispatch_health() -> dict[str, Any]:
+    """Check OmniRoute backend health. Requires OMNIROUTE_URL."""
     return _call_omniroute("health", {})
+
+
+@mcp.tool()
+def dispatch_liveness() -> dict[str, Any]:
+    """Return server liveness status. Does not require OmniRoute."""
+    return {"status": "alive", "server": "dispatch-mcp"}
 
 
 def main() -> None:
