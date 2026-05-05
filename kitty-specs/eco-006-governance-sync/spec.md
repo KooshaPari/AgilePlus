@@ -1,7 +1,8 @@
 ---
 spec_id: AgilePlus-eco-006
-state: COMPLETED
+state: RETIRED
 plan_status: NOT_REQUIRED
+retirement_reason: NO_FORWARD_WORK
 last_audit: 2026-04-25
 superseded_by: |
   Governance docs landed and indexed via:
@@ -10,6 +11,9 @@ superseded_by: |
     - thegent governance base (platforms/thegent/dotfiles/governance/CLAUDE.base.md)
     - Cross-collection dependency audit (commit da3a11977, 2026-04)
 plan_rationale: Sync is continuous via worklogs + governance index, not a scoped feature.
+retirement_note: |
+  Retired 2026-05-05. Governance sync is a continuous process, not a scoped
+  feature. Docs are maintained via worklogs and the governance index.
 ---
 
 # Specification: Governance Sync
