@@ -108,7 +108,8 @@ class TestCallOmniroute:
             patch("dispatch_mcp.server.httpx.Client") as mock_client_cls,
         ):
             mock_response = MagicMock()
-            mock_response.json.side_effect = json.JSONDecodeError("invalid", "", 0)
+            inner = json.JSONDecodeError("invalid", "", 0)
+            mock_response.json.side_effect = inner
             mock_response.raise_for_status = MagicMock()
             mock_client = MagicMock()
             mock_client.__enter__ = MagicMock(return_value=mock_client)
@@ -118,7 +119,7 @@ class TestCallOmniroute:
 
             from dispatch_mcp.server import dispatch_custom
 
-            with pytest.raises(json.JSONDecodeError):
+            with pytest.raises(RuntimeError, match="invalid response"):
                 dispatch_custom("worker", "test")
 
     def test_dispatch_health_success(self) -> None:

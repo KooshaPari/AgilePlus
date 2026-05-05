@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import logging
 import os
 import signal
@@ -10,9 +11,24 @@ import httpx
 from mcp.server.fastmcp import FastMCP
 
 mcp = FastMCP("dispatch-mcp")
-logger = logging.getLogger("dispatch_mcp")
+_logger = logging.getLogger("dispatch_mcp")
+_log_level = os.environ.get("LOG_LEVEL", "").upper()
+if _log_level in ("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"):
+    _logger.setLevel(getattr(logging, _log_level, logging.WARNING))
+logger = _logger
 
 MAX_MESSAGE_LENGTH = 4096  # bytes — prevents unbounded payload to OmniRoute
+
+# Allowlist of safe keys a dispatch tool may return to the MCP client.
+# OmniRoute may include internal details (hostnames, stack traces, etc.) under
+# other keys — those are stripped before passing the response up.
+_ALLOWED_RESPONSE_KEYS = frozenset({"ok", "tier", "message", "status", "error"})
+
+
+def _sanitize_response(response: dict[str, Any]) -> dict[str, Any]:
+    """Strip non-allowlisted keys from OmniRoute responses before passing up."""
+    return {k: v for k, v in response.items() if k in _ALLOWED_RESPONSE_KEYS}
+
 
 # Allowlist of valid dispatch tiers — dispatch_custom must use one of these.
 VALID_TIERS = frozenset(
@@ -44,7 +60,7 @@ def _call_omniroute(route: str, payload: dict[str, Any]) -> dict[str, Any]:
                 f"{base.rstrip('/')}/{route.lstrip('/')}", json=payload
             )
             response.raise_for_status()
-            return response.json()  # type: ignore[no-any-return]
+            return _sanitize_response(response.json())
         except httpx.TimeoutException as e:
             logger.error("OmniRoute timeout for route %s: %s", route, e)
             raise
@@ -59,6 +75,16 @@ def _call_omniroute(route: str, payload: dict[str, Any]) -> dict[str, Any]:
         except httpx.RequestError as e:
             logger.error("OmniRoute request error for route %s: %s", route, e)
             raise
+        except json.JSONDecodeError as e:
+            logger.error(
+                "OmniRoute returned non-JSON response for route %s: %s",
+                route,
+                e,
+            )
+            raise RuntimeError(
+                "OmniRoute returned an invalid response for route "
+                f"'{route}'"
+            ) from e
 
 
 def _make_dispatch(tier: str) -> Callable[[], Callable[..., Any]]:

@@ -39,7 +39,7 @@ jobs:
           else
             uv pip install --system -e . || true
           fi
-          uv pip install --system ruff pytest mypy bandit safety
+          uv pip install --system ruff pytest pytest-cov mypy bandit safety
 
       - name: Ruff format check
         run: ruff format --check .
@@ -56,5 +56,5 @@ jobs:
       - name: Safety dependency check
         run: safety check --output text 2>&1 || true
 
-      - name: Pytest
-        run: pytest -q
+      - name: Pytest + coverage
+        run: pytest --cov=src/dispatch_mcp --cov-fail-under=80 -q
