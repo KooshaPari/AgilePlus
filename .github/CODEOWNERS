@@ -1,17 +1,20 @@
-# CODEOWNERS — AgilePlus
+# CODEOWNERS — Phenotype Shelf
 # Default fallback owner
 * @KooshaPari
 
-# Code areas
-/src/ @KooshaPari
-/tests/ @KooshaPari
-/docs/ @KooshaPari
-
-# Configuration
-/.github/ @KooshaPari
+# Rust workspace
+/crates/ @KooshaPari
+/rust/ @KooshaPari
 /Cargo.toml @KooshaPari
-/package.json @KooshaPari
-/go.mod @KooshaPari
+/Cargo.lock @KooshaPari
+
+# Python
+/python/ @KooshaPari
+
+# Docs and config
+/docs/ @KooshaPari
+/.github/ @KooshaPari
+/Justfile @KooshaPari
 
 # Sensitive
 /SECURITY.md @KooshaPari

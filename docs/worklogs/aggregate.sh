@@ -99,7 +99,7 @@ case "${1:-all}" in
         echo -e "${BLUE}=== PROJECT-LEVEL WORKLOGS ===${NC}"
         echo ""
 
-        for proj in PROJECTS_agileplus PROJECTS_thegent PROJECTS_heliosCLI; do
+        for proj in PROJECTS_thegent PROJECTS_heliosCLI; do
             if [ -f "${proj}.md" ]; then
                 echo -e "${GREEN}## ${proj#PROJECTS_}${NC}"
                 # Show summary table
@@ -112,7 +112,6 @@ case "${1:-all}" in
         done
 
         echo -e "${YELLOW}Full project worklogs:${NC}"
-        echo "  worklogs/PROJECTS_agileplus.md"
         echo "  worklogs/PROJECTS_thegent.md"
         echo "  worklogs/PROJECTS_heliosCLI.md"
         echo ""

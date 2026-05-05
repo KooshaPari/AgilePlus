@@ -26,10 +26,10 @@ This root is a **polyrepo shelf** for the Phenotype organization: one workspace 
 3. For any active implementation, use the project worktree under `<project>-wtrees/`.
 4. Track implementation work in this shelf's AgilePlus feature specs:
    - [AgilePlus specs](AgilePlus/kitty-specs/) (spec index)
-   - [Shelf worklogs](worklogs/README.md)
+   - [Shelf worklogs](docs/worklogs/README.md)
 5. Use shelf docs for cross-project context:
-   - `docs/governance/` for org policies and process references
-   - `worklogs/` for ADR-like decisions, research notes, and issue findings
+   - `docs/` for org policies, ADRs, and process references
+   - `docs/worklogs/` for ADR-like decisions, research notes, and issue findings
 
 ## Major repos and project index
 
@@ -39,7 +39,7 @@ This is a curated index of the most active/major repos in this checkout.
 
 | Project | Description |
 |---|---|
-| [AgilePlus](AgilePlus/) | Local-first spec-driven agile work-tracking CLI/platform for AI-agent and human teams; manages feature specs, work packages, acceptance criteria, optional GitHub sync, dashboards, and P2P merge. Install from `AgilePlus/` with `cargo install --path crates/agileplus-cli`; see `AgilePlus/docs/guide/quick-start.md`. |
+| [AgilePlus](AgilePlus/) | Local-first spec-driven agile work-tracking CLI/platform for AI-agent and human teams; manages feature specs, work packages, acceptance criteria, optional GitHub sync, dashboards, and P2P merge. Install from `AgilePlus/` with `cargo install --path crates/agileplus-cli`; see `AgilePlus/README.md`. |
 
 ### Agent orchestration and LLM execution
 
@@ -193,13 +193,12 @@ This is a curated index of the most active/major repos in this checkout.
 
 | Path | Purpose |
 |---|---|
-| `worklogs/` | Shelf-wide worklog index by category (`ARCHITECTURE`, `RESEARCH`, `GOVERNANCE`, etc.). |
-| `kitty-specs/` | Feature specs and task packages used by AgilePlus. |
-| `docs/governance/` | Governance references and standards. |
+| `docs/worklogs/` | Shelf-wide worklog index by category (`ARCHITECTURE`, `RESEARCH`, `GOVERNANCE`, etc.). |
+| `AgilePlus/kitty-specs/` | Feature specs and task packages used by AgilePlus. |
 | `docs/` | Shared references, ADRs, and reusable docs. |
-| `worktrees/`, `.worktrees/` | Project worktree registry and archive for feature branches. |
-| `tooling/`, `scripts/` | Shared utility tooling and maintenance scripts. |
-| `references/`, `prompts/` | Internal references and reusable prompts. |
+| `*-wtrees/` | Project worktree directories (e.g. `AgilePlus-wtrees/`). |
+| `.github/scripts/` | Shared CI and maintenance scripts. |
+| `AgilePlus/` | Main platform implementation. |
 
 ## Notes
 
