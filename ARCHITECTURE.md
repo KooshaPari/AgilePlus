@@ -64,7 +64,7 @@ Shared behavior should move into `phenoShared` or `phenotype-infrakit` before it
 | Component | Location | Ownership |
 |-----------|----------|-----------|
 | Cross-project docs | `docs/` | Engineering standards, governance, and reference material. |
-| Worklogs | `worklogs/` | Architecture, governance, duplication, dependency, performance, integration, and research decisions. |
+| Worklogs | `docs/worklogs/` | Architecture, governance, duplication, dependency, performance, integration, and research decisions. |
 | Specs | `kitty-specs/` | Shelf-level AgilePlus specs and stabilization work packages. |
 | CI templates | `.github/workflows/` and per-repo `.github/workflows/` | Security, quality, release, SBOM, and documentation checks. |
 | Web landings | `*-landing/`, `projects-landing/`, `phenokits-landing/` | Independently deployed marketing and portfolio sites. |
@@ -131,7 +131,6 @@ Use this document for cross-repo boundaries. Use each repo README for local arch
 |---------|--------|
 | AgilePlus | [AgilePlus/README.md](AgilePlus/README.md) |
 | phenoShared | [phenoShared/README.md](phenoShared/README.md) |
-| phenotype-infrakit | [phenotype-infrakit/README.md](phenotype-infrakit/README.md) |
 | pheno-cli | [pheno-cli/README.md](pheno-cli/README.md) |
 | pheno | [pheno/README.md](pheno/README.md) |
 | thegent | [thegent/README.md](thegent/README.md) |
@@ -147,4 +146,3 @@ Use this document for cross-repo boundaries. Use each repo README for local arch
 | hwLedger | [hwLedger/README.md](hwLedger/README.md) |
 | PolicyStack | [PolicyStack/README.md](PolicyStack/README.md) |
 | phenoAI | [phenoAI/README.md](phenoAI/README.md) |
-| tooling | [tooling/README.md](tooling/README.md) |
