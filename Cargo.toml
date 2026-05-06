@@ -1,14 +1,34 @@
 [workspace]
 resolver = "3"
+members = ["crates/agileplus-*"]
+exclude = ["AgilePlus/rust", "rust", "crates/phenotype-config"]
 
 [workspace.package]
+version = "0.1.0"
 edition = "2024"
+license = "MIT"
+rust-version = "1.85"
 
 [package]
 name = "agileplus"
-version = "0.1.0"
+version.workspace = true
 edition.workspace = true
 publish = false
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+thiserror.workspace = true
+anyhow.workspace = true
+tracing.workspace = true
+axum.workspace = true
+chrono.workspace = true
+
+[dev-dependencies]
+chrono.workspace = true
+cucumber = "0.23"
+sha2.workspace = true
 
 [workspace.dependencies]
 serde = { version = "1.0", features = ["derive"] }
@@ -17,4 +37,23 @@ tokio = { version = "1.39", features = ["full"] }
 thiserror = "2"
 anyhow = "1"
 tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 axum = { version = "0.8", features = ["json", "macros"] }
+chrono = { version = "0.4", features = ["serde"] }
+sha2 = "0.10"
+async-trait = "0.1"
+futures = "0.3"
+futures-util = "0.3"
+tonic = { version = "0.13", features = ["transport", "prost"] }
+tonic-build = "0.13"
+prost = "0.13"
+prost-build = "0.13"
+gix = "0.65"
+# OpenTelemetry - matching versions for compatibility
+opentelemetry = { version = "0.27", features = ["metrics"] }
+opentelemetry_sdk = { version = "0.27", features = ["metrics", "trace", "rt-tokio"] }
+opentelemetry-otlp = { version = "0.27", features = ["tonic", "gzip-tonic"] }
+# tracing-opentelemetry 0.27 requires opentelemetry 0.26, so we skip it for now
+# Use opentelemetry directly without the tracing bridge, or upgrade to 0.32+ separately
+# tracing-opentelemetry = "0.27"
+utoipa = "4"
