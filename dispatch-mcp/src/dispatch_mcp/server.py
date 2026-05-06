@@ -69,9 +69,7 @@ def _call_omniroute(route: str, payload: dict[str, Any]) -> dict[str, Any]:
             f"OMNIROUTE_URL must use http or https scheme, got: {parsed.scheme!r}"
         )
     try:
-        response = _client.post(
-            f"{base.rstrip('/')}/{route.lstrip('/')}", json=payload
-        )
+        response = _client.post(f"{base.rstrip('/')}/{route.lstrip('/')}", json=payload)
         response.raise_for_status()
         return _sanitize_response(response.json())
     except httpx.TimeoutException as e:
@@ -95,8 +93,7 @@ def _call_omniroute(route: str, payload: dict[str, Any]) -> dict[str, Any]:
             e,
         )
         raise RuntimeError(
-            "OmniRoute returned an invalid response for route "
-            f"'{route}'"
+            f"OmniRoute returned an invalid response for route '{route}'"
         ) from e
 
 
@@ -153,6 +150,7 @@ def main() -> None:
     """Start the MCP server. Registers SIGTERM/SIGINT handlers that log intent;
     the event loop (mcp.run) controls its own lifecycle and does not
     guarantee immediate interruption on signal receipt."""
+
     def _handle_signal(signum: int, frame: object) -> None:
         sig_name = signal.Signals(signum).name
         logger.warning("Received %s, closing OmniRoute client", sig_name)
