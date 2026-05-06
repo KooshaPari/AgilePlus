@@ -18,6 +18,14 @@ if _log_level in ("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"):
     _logger.setLevel(getattr(logging, _log_level, logging.WARNING))
 logger = _logger
 
+# Shared httpx client for OmniRoute — reuses connections across dispatch calls.
+# Thread-safe for FastMCP's single-threaded async event loop.
+_client: httpx.Client = httpx.Client(
+    timeout=10,
+    follow_redirects=False,
+    limits=httpx.Limits(keepalive_expiry=60),
+)
+
 MAX_MESSAGE_LENGTH = 4096  # bytes — prevents unbounded payload to OmniRoute
 
 # Allowlist of safe keys a dispatch tool may return to the MCP client.
@@ -60,37 +68,36 @@ def _call_omniroute(route: str, payload: dict[str, Any]) -> dict[str, Any]:
         raise ValueError(
             f"OMNIROUTE_URL must use http or https scheme, got: {parsed.scheme!r}"
         )
-    with httpx.Client(timeout=10, follow_redirects=False) as client:
-        try:
-            response = client.post(
-                f"{base.rstrip('/')}/{route.lstrip('/')}", json=payload
-            )
-            response.raise_for_status()
-            return _sanitize_response(response.json())
-        except httpx.TimeoutException as e:
-            logger.error("OmniRoute timeout for route %s: %s", route, e)
-            raise
-        except httpx.HTTPStatusError as e:
-            logger.error(
-                "OmniRoute HTTP error %s for route %s: %s",
-                e.response.status_code,
-                route,
-                e,
-            )
-            raise
-        except httpx.RequestError as e:
-            logger.error("OmniRoute request error for route %s: %s", route, e)
-            raise
-        except json.JSONDecodeError as e:
-            logger.error(
-                "OmniRoute returned non-JSON response for route %s: %s",
-                route,
-                e,
-            )
-            raise RuntimeError(
-                "OmniRoute returned an invalid response for route "
-                f"'{route}'"
-            ) from e
+    try:
+        response = _client.post(
+            f"{base.rstrip('/')}/{route.lstrip('/')}", json=payload
+        )
+        response.raise_for_status()
+        return _sanitize_response(response.json())
+    except httpx.TimeoutException as e:
+        logger.error("OmniRoute timeout for route %s: %s", route, e)
+        raise
+    except httpx.HTTPStatusError as e:
+        logger.error(
+            "OmniRoute HTTP error %s for route %s: %s",
+            e.response.status_code,
+            route,
+            e,
+        )
+        raise
+    except httpx.RequestError as e:
+        logger.error("OmniRoute request error for route %s: %s", route, e)
+        raise
+    except json.JSONDecodeError as e:
+        logger.error(
+            "OmniRoute returned non-JSON response for route %s: %s",
+            route,
+            e,
+        )
+        raise RuntimeError(
+            "OmniRoute returned an invalid response for route "
+            f"'{route}'"
+        ) from e
 
 
 def _make_dispatch(tier: str) -> Callable[[], Callable[[str], dict[str, Any]]]:
@@ -148,11 +155,13 @@ def main() -> None:
     guarantee immediate interruption on signal receipt."""
     def _handle_signal(signum: int, frame: object) -> None:
         sig_name = signal.Signals(signum).name
-        logger.warning("Received %s, initiating graceful shutdown", sig_name)
+        logger.warning("Received %s, closing OmniRoute client", sig_name)
+        _client.close()
 
     signal.signal(signal.SIGTERM, _handle_signal)
     signal.signal(signal.SIGINT, _handle_signal)
     mcp.run()
+    _client.close()
 
 
 if __name__ == "__main__":
