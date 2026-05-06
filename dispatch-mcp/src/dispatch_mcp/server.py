@@ -27,6 +27,7 @@ _client: httpx.Client = httpx.Client(
 )
 
 MAX_MESSAGE_LENGTH = 4096  # bytes — prevents unbounded payload to OmniRoute
+MAX_RESPONSE_LENGTH = 1024 * 1024  # bytes — prevents unbounded response from OmniRoute
 
 # Allowlist of safe keys a dispatch tool may return to the MCP client.
 # OmniRoute may include internal details (hostnames, stack traces, etc.) under
@@ -71,6 +72,12 @@ def _call_omniroute(route: str, payload: dict[str, Any]) -> dict[str, Any]:
     try:
         response = _client.post(f"{base.rstrip('/')}/{route.lstrip('/')}", json=payload)
         response.raise_for_status()
+        body_size = len(response.content)
+        if body_size > MAX_RESPONSE_LENGTH:
+            raise RuntimeError(
+                f"OmniRoute response body ({body_size} bytes) exceeds "
+                f"maximum allowed size ({MAX_RESPONSE_LENGTH} bytes) for route '{route}'"
+            )
         return _sanitize_response(response.json())
     except httpx.TimeoutException as e:
         logger.error("OmniRoute timeout for route %s: %s", route, e)
