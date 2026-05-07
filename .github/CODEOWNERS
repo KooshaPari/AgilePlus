@@ -1,0 +1,21 @@
+# CODEOWNERS — Phenotype Shelf
+# Default fallback owner
+* @KooshaPari
+
+# Rust workspace
+/crates/ @KooshaPari
+/rust/ @KooshaPari
+/Cargo.toml @KooshaPari
+/Cargo.lock @KooshaPari
+
+# Python
+/python/ @KooshaPari
+
+# Docs and config
+/docs/ @KooshaPari
+/.github/ @KooshaPari
+/Justfile @KooshaPari
+
+# Sensitive
+/SECURITY.md @KooshaPari
+/.github/workflows/ @KooshaPari
