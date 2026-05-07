@@ -19,9 +19,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
-      - name: Checkout phenodocs
+      - name: Clone phenodocs
         run: |
-          git clone --depth 1 https://github.com/KooshaPari/phenodocs.git vendor/phenodocs
+          git clone --depth 1 https://github.com/KooshaPari/phenodocs.git /tmp/phenodocs
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6
@@ -34,6 +34,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # Link @phenotype/docs from phenodocs
+          mkdir -p docs/node_modules/@phenotype
+          ln -sf /tmp/phenodocs/packages/docs docs/node_modules/@phenotype/docs
+          # Configure npm for GitHub Packages (for any other deps)
           echo "@phenotype:registry=https://npm.pkg.github.com" >> ~/.npmrc
           echo "//npm.pkg.github.com/:_authToken=\${GITHUB_TOKEN}" >> ~/.npmrc
           bun install
