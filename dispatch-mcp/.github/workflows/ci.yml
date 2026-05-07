@@ -51,10 +51,10 @@ jobs:
         run: mypy src/ --strict
 
       - name: Bandit security scan
-        run: bandit -r src/ -f txt 2>&1 || true
+        run: bandit -r src/ -f txt
 
       - name: Safety dependency check
-        run: safety check --output text 2>&1 || true
+        run: safety check --output text
 
       - name: Pytest + coverage
         run: pytest --cov=src/dispatch_mcp --cov-fail-under=80 -q

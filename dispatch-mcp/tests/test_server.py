@@ -67,6 +67,20 @@ class TestCallOmniroute:
             with pytest.raises(httpx.ConnectError):
                 dispatch_custom("main", "test")
 
+    def test_dispatch_custom_request_error(self) -> None:
+        import httpx
+
+        with (
+            patch.dict("os.environ", {"OMNIROUTE_URL": "http://localhost:8080"}),
+            patch("dispatch_mcp.server._client") as mock_client,
+        ):
+            mock_client.post.side_effect = httpx.WriteTimeout("write timeout")
+
+            from dispatch_mcp.server import dispatch_custom
+
+            with pytest.raises(httpx.RequestError):
+                dispatch_custom("worker", "test")
+
     def test_dispatch_custom_timeout(self) -> None:
         import httpx
 
@@ -139,6 +153,24 @@ class TestCallOmniroute:
             assert "status" in result
             assert "upstream_id" not in result
             assert result == {"status": "ok", "error": None}
+
+    def test_dispatch_health_http_error(self) -> None:
+        import httpx
+
+        with (
+            patch.dict("os.environ", {"OMNIROUTE_URL": "http://localhost:8080"}),
+            patch("dispatch_mcp.server._client") as mock_client,
+        ):
+            mock_response = MagicMock()
+            mock_response.raise_for_status.side_effect = httpx.HTTPStatusError(
+                "", request=MagicMock(), response=MagicMock(status_code=503)
+            )
+            mock_client.post.return_value = mock_response
+
+            from dispatch_mcp.server import dispatch_health
+
+            with pytest.raises(httpx.HTTPStatusError):
+                dispatch_health()
 
     def test_invalid_omniroute_url_raises(self) -> None:
         with patch.dict("os.environ", {"OMNIROUTE_URL": "javascript:alert(1)"}):
@@ -222,6 +254,22 @@ class TestNamedDispatchTools:
                 dispatch_worker(oversized)
             mock_client.post.assert_not_called()
 
+    def test_dispatch_worker_accepts_empty_message(self) -> None:
+        with (
+            patch.dict("os.environ", {"OMNIROUTE_URL": "http://localhost:8080"}),
+            patch("dispatch_mcp.server._client") as mock_client,
+        ):
+            from dispatch_mcp.server import dispatch_worker
+
+            mock_response = MagicMock()
+            mock_response.json.return_value = {"ok": True}
+            mock_response.raise_for_status = MagicMock()
+            mock_client.post.return_value = mock_response
+
+            result = dispatch_worker("")
+            assert result["ok"] is True
+            mock_client.post.assert_called_once()
+
 
 class TestSanitizeResponse:
     """Tests for response sanitization."""
@@ -269,3 +317,42 @@ class TestSanitizeResponse:
         }
         result = _sanitize_response(response)
         assert result == response
+
+
+class TestDispatchLiveness:
+    """Tests for dispatch_liveness tool."""
+
+    def test_dispatch_liveness_returns_status(self) -> None:
+        from dispatch_mcp.server import dispatch_liveness
+
+        result = dispatch_liveness()
+        assert result == {"status": "alive", "server": "dispatch-mcp"}
+
+    def test_dispatch_liveness_no_omniroute_required(self) -> None:
+        from dispatch_mcp.server import dispatch_liveness
+
+        with patch.dict("os.environ", {}, clear=True):
+            # dispatch_liveness should NOT check OMNIROUTE_URL
+            # If it did, this would raise ValueError
+            result = dispatch_liveness()
+        assert result["status"] == "alive"
+
+
+class TestGeneratedDispatchTools:
+    """Tests for generated dispatch_$tier tool functions."""
+
+    def test_dispatch_worker_calls_omniroute(self) -> None:
+        with (
+            patch.dict("os.environ", {"OMNIROUTE_URL": "http://localhost:8080"}),
+            patch("dispatch_mcp.server._client") as mock_client,
+        ):
+            mock_response = MagicMock()
+            mock_response.json.return_value = {"ok": True, "tier": "worker"}
+            mock_response.raise_for_status = MagicMock()
+            mock_client.post.return_value = mock_response
+
+            from dispatch_mcp.server import dispatch_worker
+
+            result = dispatch_worker("hello from worker")
+            mock_client.post.assert_called_once()
+            assert result["ok"] is True
