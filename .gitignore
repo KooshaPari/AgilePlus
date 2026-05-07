@@ -22,4 +22,3 @@ docs/research/*_export.json
 
 # Rust build artifacts
 /target
-target/

@@ -1,0 +1,374 @@
+openapi: 3.1.0
+info:
+  title: AgilePlus REST API
+  description: |
+    MVP OpenAPI scaffold — 5 representative endpoints spanning features,
+    work packages, events, audit, and governance. Full coverage of all 36
+    handlers is tracked as a follow-up PR.
+
+    This document was hand-authored from the `#[utoipa::path]` annotations
+    in `crates/agileplus-api/` because the workspace cannot currently
+    `cargo build` — the `agileplus-plugin-core` git dependency (SHA
+    `ba652dec…`) returns HTTP 404. Once that dep is unpinned or republished,
+    run `cargo run -p agileplus-api --bin agileplus-api -- --dump-openapi \
+    > openapi.yaml` and let the CI drift check take over.
+  version: 0.1.1
+  license:
+    name: MIT
+tags:
+  - name: features
+    description: Feature CRUD + state transitions
+  - name: work-packages
+    description: Work package CRUD + state transitions
+  - name: events
+    description: Domain event queries
+  - name: audit
+    description: Audit trail inspection + verification
+  - name: governance
+    description: Governance contracts + validation
+components:
+  securitySchemes:
+    api_key:
+      type: apiKey
+      in: header
+      name: X-API-Key
+  schemas:
+    FeatureResponse:
+      type: object
+      required: [id, slug, name, state, target_branch, created_at, updated_at]
+      properties:
+        id:
+          type: integer
+          format: int64
+        slug:
+          type: string
+        name:
+          type: string
+        state:
+          type: string
+          description: Lowercase feature state (e.g. `planned`, `in_progress`, `done`)
+        target_branch:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    CreateFeatureRequest:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+          description: Human-friendly title; used to derive the slug.
+        description:
+          type: string
+          nullable: true
+        state:
+          type: string
+          nullable: true
+          description: Initial state (defaults to `planned`).
+        target_branch:
+          type: string
+          nullable: true
+          description: Target git branch for the feature; defaults to `main`.
+    WorkPackageResponse:
+      type: object
+      required:
+        - id
+        - feature_id
+        - title
+        - state
+        - sequence
+        - acceptance_criteria
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: integer
+          format: int64
+        feature_id:
+          type: integer
+          format: int64
+        title:
+          type: string
+        state:
+          type: string
+        sequence:
+          type: integer
+          format: int32
+        acceptance_criteria:
+          type: string
+        pr_url:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    EventResponse:
+      type: object
+      required: [id, entity_type, entity_id, event_type, actor, timestamp, payload]
+      properties:
+        id:
+          type: integer
+          format: int64
+        entity_type:
+          type: string
+        entity_id:
+          type: integer
+          format: int64
+        event_type:
+          type: string
+        actor:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        payload:
+          description: Arbitrary JSON payload for the event.
+    AuditEntryResponse:
+      type: object
+      required: [id, feature_id, timestamp, actor, transition, hash]
+      properties:
+        id:
+          type: integer
+          format: int64
+        feature_id:
+          type: integer
+          format: int64
+        wp_id:
+          type: integer
+          format: int64
+          nullable: true
+        timestamp:
+          type: string
+          format: date-time
+        actor:
+          type: string
+        transition:
+          type: string
+        hash:
+          type: string
+          description: Hex-encoded SHA-256 of the audit entry.
+    GovernanceResponse:
+      type: object
+      required: [id, feature_id, version, rules_count, bound_at]
+      properties:
+        id:
+          type: integer
+          format: int64
+        feature_id:
+          type: integer
+          format: int64
+        version:
+          type: integer
+          format: int32
+        rules_count:
+          type: integer
+          format: int64
+        bound_at:
+          type: string
+          format: date-time
+paths:
+  /api/v1/features:
+    get:
+      tags: [features]
+      summary: List features
+      operationId: list_features
+      security:
+        - api_key: []
+      parameters:
+        - in: query
+          name: state
+          required: false
+          schema:
+            type: string
+          description: Filter by feature state (e.g. `planned`, `in_progress`, `done`).
+        - in: query
+          name: label
+          required: false
+          schema:
+            type: string
+          description: Filter by label (informational — not yet wired to storage).
+      responses:
+        '200':
+          description: List features
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FeatureResponse'
+        '401':
+          description: Missing or invalid API key
+    post:
+      tags: [features]
+      summary: Create a feature
+      operationId: create_feature
+      security:
+        - api_key: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateFeatureRequest'
+      responses:
+        '201':
+          description: Feature created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeatureResponse'
+        '400':
+          description: Invalid payload
+        '401':
+          description: Missing or invalid API key
+  /api/v1/work-packages/{id}:
+    get:
+      tags: [work-packages]
+      summary: Get a work package by id
+      operationId: get_work_package
+      security:
+        - api_key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: Numeric work-package identifier
+      responses:
+        '200':
+          description: Work package found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkPackageResponse'
+        '404':
+          description: Work package not found
+        '401':
+          description: Missing or invalid API key
+  /api/v1/events:
+    get:
+      tags: [events]
+      summary: Query domain events
+      operationId: list_events
+      security:
+        - api_key: []
+      parameters:
+        - in: query
+          name: entity_type
+          required: false
+          schema:
+            type: string
+          description: Filter by entity type (`feature` or `work_package`).
+        - in: query
+          name: entity_id
+          required: false
+          schema:
+            type: integer
+            format: int64
+        - in: query
+          name: since
+          required: false
+          schema:
+            type: string
+          description: ISO-8601 datetime or relative duration like `1h`, `24h`.
+        - in: query
+          name: until
+          required: false
+          schema:
+            type: string
+          description: ISO-8601 datetime upper bound.
+        - in: query
+          name: type
+          required: false
+          schema:
+            type: string
+          description: Filter by event/transition type string.
+        - in: query
+          name: actor
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: integer
+          description: Maximum number of results (default 100).
+        - in: query
+          name: offset
+          required: false
+          schema:
+            type: integer
+          description: Offset for pagination (default 0).
+      responses:
+        '200':
+          description: Paginated event list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EventResponse'
+        '401':
+          description: Missing or invalid API key
+  /api/v1/features/{slug}/audit:
+    get:
+      tags: [audit]
+      summary: Get audit trail for a feature
+      operationId: get_audit_trail
+      security:
+        - api_key: []
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+          description: Feature slug
+      responses:
+        '200':
+          description: Audit trail entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AuditEntryResponse'
+        '404':
+          description: Feature not found
+        '401':
+          description: Missing or invalid API key
+  /api/v1/features/{slug}/governance:
+    get:
+      tags: [governance]
+      summary: Get latest governance contract for a feature
+      operationId: get_governance
+      security:
+        - api_key: []
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+          description: Feature slug
+      responses:
+        '200':
+          description: Latest governance contract for feature
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GovernanceResponse'
+        '404':
+          description: Feature or contract not found
+        '401':
+          description: Missing or invalid API key

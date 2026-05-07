@@ -1,0 +1,14 @@
+{
+  "wp_id": "WP13",
+  "feature_slug": "002-org-wide-release-governance-dx-automation",
+  "worktree_path": ".worktrees/002-org-wide-release-governance-dx-automation-WP13",
+  "branch_name": "002-org-wide-release-governance-dx-automation-WP13",
+  "base_branch": "002-org-wide-release-governance-dx-automation-WP09",
+  "base_commit": "d170e668ad5628848113077d5c00b2759fe44eed",
+  "dependencies": [
+    "WP09"
+  ],
+  "created_at": "2026-03-01T21:41:17.524321+00:00",
+  "created_by": "implement-command",
+  "vcs_backend": "git"
+}
