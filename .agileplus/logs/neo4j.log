@@ -1,0 +1,24 @@
+{"level":"info","process":"neo4j","replica":0,"message":"Configuration file validation successful (with warnings)."}
+{"level":"error","process":"neo4j","replica":0,"message":"Validating Neo4j configuration: /opt/homebrew/Cellar/neo4j/2026.02.3/libexec/conf/neo4j.conf"}
+{"level":"error","process":"neo4j","replica":0,"message":"No issues found."}
+{"level":"error","process":"neo4j","replica":0}
+{"level":"error","process":"neo4j","replica":0,"message":"Validating user Log4j configuration: /opt/homebrew/Cellar/neo4j/2026.02.3/libexec/conf/user-logs.xml"}
+{"level":"error","process":"neo4j","replica":0,"message":"No issues found."}
+{"level":"error","process":"neo4j","replica":0}
+{"level":"error","process":"neo4j","replica":0,"message":"Validating server Log4j configuration: /opt/homebrew/Cellar/neo4j/2026.02.3/libexec/conf/server-logs.xml"}
+{"level":"error","process":"neo4j","replica":0,"message":"5 issues found."}
+{"level":"error","process":"neo4j","replica":0,"message":"Warning: Cannot access RandomAccessFile java.io.FileNotFoundException: /opt/homebrew/var/log/neo4j/debug.log (Permission denied)"}
+{"level":"error","process":"neo4j","replica":0,"message":"Warning: Could not create plugin of type class org.apache.logging.log4j.core.appender.RollingRandomAccessFileAppender for element RollingRandomAccessFile: java.lang.IllegalStateException: ManagerFactory [org.apache.logging.log4j.core.appender.rolling.RollingRandomAccessFileManager$RollingRandomAccessFileManagerFactory@9635fa] unable to create manager for [/opt/homebrew/var/log/neo4j/debug.log] with data [org.apache.logging.log4j.core.appender.rolling.RollingRandomAccessFileManager$FactoryData@53ab0286]"}
+{"level":"error","process":"neo4j","replica":0,"message":"Warning: Unable to invoke factory method in class org.apache.logging.log4j.core.appender.RollingRandomAccessFileAppender for element RollingRandomAccessFile: java.lang.IllegalStateException: No factory method found for class org.apache.logging.log4j.core.appender.RollingRandomAccessFileAppender"}
+{"level":"error","process":"neo4j","replica":0,"message":"Warning: Null object returned for RollingRandomAccessFile in Appenders."}
+{"level":"error","process":"neo4j","replica":0,"message":"Warning: Unable to locate appender \"DebugLog\" for logger config \"root\""}
+{"level":"error","process":"neo4j","replica":0}
+{"level":"info","process":"neo4j","replica":0,"message":"2026-04-02 11:55:07.461+0000 WARN  /opt/homebrew/Cellar/neo4j/2026.02.3/libexec/conf/server-logs.xml - Warning: Cannot access RandomAccessFile java.io.FileNotFoundException: /opt/homebrew/var/log/neo4j/debug.log (Permission denied)"}
+{"level":"info","process":"neo4j","replica":0,"message":"2026-04-02 11:55:07.491+0000 WARN  /opt/homebrew/Cellar/neo4j/2026.02.3/libexec/conf/server-logs.xml - Warning: Could not create plugin of type class org.apache.logging.log4j.core.appender.RollingRandomAccessFileAppender for element RollingRandomAccessFile: java.lang.IllegalStateException: ManagerFactory [org.apache.logging.log4j.core.appender.rolling.RollingRandomAccessFileManager$RollingRandomAccessFileManagerFactory@9635fa] unable to create manager for [/opt/homebrew/var/log/neo4j/debug.log] with data [org.apache.logging.log4j.core.appender.rolling.RollingRandomAccessFileManager$FactoryData@53ab0286]"}
+{"level":"info","process":"neo4j","replica":0,"message":"2026-04-02 11:55:07.492+0000 WARN  /opt/homebrew/Cellar/neo4j/2026.02.3/libexec/conf/server-logs.xml - Warning: Unable to invoke factory method in class org.apache.logging.log4j.core.appender.RollingRandomAccessFileAppender for element RollingRandomAccessFile: java.lang.IllegalStateException: No factory method found for class org.apache.logging.log4j.core.appender.RollingRandomAccessFileAppender"}
+{"level":"info","process":"neo4j","replica":0,"message":"2026-04-02 11:55:07.492+0000 WARN  /opt/homebrew/Cellar/neo4j/2026.02.3/libexec/conf/server-logs.xml - Warning: Null object returned for RollingRandomAccessFile in Appenders."}
+{"level":"info","process":"neo4j","replica":0,"message":"2026-04-02 11:55:07.492+0000 WARN  /opt/homebrew/Cellar/neo4j/2026.02.3/libexec/conf/server-logs.xml - Warning: Unable to locate appender \"DebugLog\" for logger config \"root\""}
+{"level":"error","process":"neo4j","replica":0,"message":"-----------------------------------------------------"}
+{"level":"error","process":"neo4j","replica":0,"message":"Command Failed"}
+{"level":"error","process":"neo4j","replica":0,"message":"Neo4j is already running (pid:3382)."}
+{"level":"error","process":"neo4j","replica":0,"message":"-----------------------------------------------------"}

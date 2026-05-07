@@ -1,0 +1,13 @@
+{"level":"error","process":"plane-api","replica":0,"message":"Traceback (most recent call last):"}
+{"level":"error","process":"plane-api","replica":0,"message":"  File \"/Users/kooshapari/CodeProjects/Phenotype/repos/AgilePlus/.agileplus/plane/apps/api/manage.py\", line 12, in <module>"}
+{"level":"error","process":"plane-api","replica":0,"message":"    from django.core.management import execute_from_command_line"}
+{"level":"error","process":"plane-api","replica":0,"message":"ModuleNotFoundError: No module named 'django'"}
+{"level":"error","process":"plane-api","replica":0}
+{"level":"error","process":"plane-api","replica":0,"message":"The above exception was the direct cause of the following exception:"}
+{"level":"error","process":"plane-api","replica":0}
+{"level":"error","process":"plane-api","replica":0,"message":"Traceback (most recent call last):"}
+{"level":"error","process":"plane-api","replica":0,"message":"  File \"/Users/kooshapari/CodeProjects/Phenotype/repos/AgilePlus/.agileplus/plane/apps/api/manage.py\", line 14, in <module>"}
+{"level":"error","process":"plane-api","replica":0,"message":"    raise ImportError("}
+{"level":"error","process":"plane-api","replica":0,"message":"    ...<3 lines>..."}
+{"level":"error","process":"plane-api","replica":0,"message":"    ) from exc"}
+{"level":"error","process":"plane-api","replica":0,"message":"ImportError: Couldn't import Django. Are you sure it's installed and available on your PYTHONPATH environment variable? Did you forget to activate a virtual environment?"}
