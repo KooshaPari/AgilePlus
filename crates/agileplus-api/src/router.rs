@@ -45,7 +45,6 @@ use agileplus_domain::ports::{
 
 type BoxError = Box<dyn std::error::Error + Send + Sync>;
 
-use crate::middleware::otel::opentelemetry_tracing_layer;
 use crate::responses::DetailedHealthResponse;
 use crate::routes::{audit, cycle, events, features, governance, module, stream, work_packages};
 use crate::state::AppState;
@@ -110,7 +109,6 @@ where
         // be the workspace root (where the `templates/` directory lives).
         // A future improvement could use a compile-time or env-based path.
         .nest_service("/static", ServeDir::new("templates/static"))
-        .layer(opentelemetry_tracing_layer())
         .layer(TraceLayer::new_for_http())
         .layer(CorsLayer::permissive())
 }

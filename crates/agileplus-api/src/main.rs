@@ -7,9 +7,9 @@ use std::sync::Arc;
 use agileplus_api::AppState;
 use agileplus_domain::config::AppConfig;
 use agileplus_domain::credentials::create_credential_store;
+use agileplus_domain::ports::observability::{LogEntry, ObservabilityPort, SpanContext};
 use agileplus_git::GitVcsAdapter;
 use agileplus_sqlite::SqliteStorageAdapter;
-use agileplus_telemetry::{TelemetryAdapter, config::TelemetryConfig};
 use anyhow::{Context, Result, anyhow};
 use tracing::warn;
 
@@ -33,7 +33,7 @@ async fn main() -> Result<()> {
 
     let storage = Arc::new(SqliteStorageAdapter::new(&config.core.database_path)?);
     let vcs = Arc::new(GitVcsAdapter::from_current_dir()?);
-    let telemetry = Arc::new(init_telemetry());
+    let telemetry: Arc<dyn ObservabilityPort> = Arc::new(NoOpObservability);
     let credentials = Arc::from(create_credential_store(&config));
     let state = AppState::new(storage, vcs, telemetry, Arc::new(config), credentials);
 
@@ -41,6 +41,29 @@ async fn main() -> Result<()> {
         .await
         .map_err(|err| anyhow!(err.to_string()))?;
     Ok(())
+}
+
+// No-op observability adapter (telemetry crate temporarily excluded)
+struct NoOpObservability;
+
+impl ObservabilityPort for NoOpObservability {
+    fn start_span(&self, _n: &str, _p: Option<&SpanContext>) -> SpanContext {
+        SpanContext {
+            trace_id: String::new(),
+            span_id: String::new(),
+            parent_span_id: None,
+        }
+    }
+    fn end_span(&self, _c: &SpanContext) {}
+    fn add_span_event(&self, _c: &SpanContext, _n: &str, _a: &[(&str, &str)]) {}
+    fn set_span_error(&self, _c: &SpanContext, _e: &str) {}
+    fn record_counter(&self, _n: &str, _v: u64, _l: &[(&str, &str)]) {}
+    fn record_histogram(&self, _n: &str, _v: f64, _l: &[(&str, &str)]) {}
+    fn record_gauge(&self, _n: &str, _v: f64, _l: &[(&str, &str)]) {}
+    fn log(&self, _e: &LogEntry) {}
+    fn log_info(&self, _m: &str) {}
+    fn log_warn(&self, _m: &str) {}
+    fn log_error(&self, _m: &str) {}
 }
 
 fn load_runtime_config() -> Result<AppConfig> {
@@ -84,15 +107,4 @@ fn ensure_database_parent(database_path: &Path) -> Result<()> {
             .with_context(|| format!("failed to create database directory {parent:?}"))?;
     }
     Ok(())
-}
-
-fn init_telemetry() -> TelemetryAdapter {
-    let telemetry_config = TelemetryConfig::load().unwrap_or_default();
-    match TelemetryAdapter::new(telemetry_config) {
-        Ok(adapter) => adapter,
-        Err(err) => {
-            warn!(error = %err, "telemetry initialization failed; using no-op telemetry");
-            TelemetryAdapter::noop()
-        }
-    }
 }

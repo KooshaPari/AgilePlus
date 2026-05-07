@@ -17,4 +17,3 @@ pub struct ImportReport {
     pub artifacts_written: usize,
     pub audits_written: usize,
 }
-

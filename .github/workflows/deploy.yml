@@ -13,6 +13,7 @@ jobs:
     uses: KooshaPari/phenoShared/.github/workflows/vitepress-pages.yml@main
     with:
       concurrency_group: agileplus-vitepress-pages
+      custom_domain: "true"
     permissions:
       contents: read
       pages: write

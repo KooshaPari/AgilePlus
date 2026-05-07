@@ -1,8 +1,39 @@
 [workspace]
 resolver = "3"
+members = [
+  "crates/agileplus-api",
+  "crates/agileplus-artifacts",
+  "crates/agileplus-benchmarks",
+  "crates/agileplus-cache",
+  "crates/agileplus-cli",
+  "crates/agileplus-contract-tests",
+  "crates/agileplus-dashboard",
+  "crates/agileplus-domain",
+  "crates/agileplus-events",
+  "crates/agileplus-fixtures",
+  "crates/agileplus-git",
+  "crates/agileplus-github",
+  "crates/agileplus-governance",
+  "crates/agileplus-graph",
+  "crates/agileplus-grpc",
+  "crates/agileplus-import",
+  "crates/agileplus-integration-tests",
+  "crates/agileplus-nats",
+  "crates/agileplus-p2p",
+  "crates/agileplus-plane",
+  "crates/agileplus-sqlite",
+  "crates/agileplus-subcmds",
+  "crates/agileplus-sync",
+  "crates/agileplus-telemetry",
+  "crates/agileplus-triage",
+  "rust",
+]
 
 [workspace.package]
 edition = "2024"
+license = "MIT"
+rust-version = "1.85"
+version = "0.1.0"
 
 [package]
 name = "agileplus"
@@ -10,11 +41,88 @@ version = "0.1.0"
 edition.workspace = true
 publish = false
 
+[dev-dependencies]
+agileplus-domain = { path = "crates/agileplus-domain" }
+agileplus-events = { path = "crates/agileplus-events" }
+agileplus-plane = { path = "crates/agileplus-plane" }
+agileplus-sqlite = { path = "crates/agileplus-sqlite" }
+agileplus-api = { path = "crates/agileplus-api" }
+chrono = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+cucumber = "0.23"
+sha2 = { workspace = true }
+
 [workspace.dependencies]
-serde = { version = "1.0", features = ["derive"] }
+# Core
+serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+serde_yaml = "0.9"
+
+# Async runtime
 tokio = { version = "1.39", features = ["full"] }
+tokio-stream = { version = "0.1", features = ["sync"] }
+tokio-test = "0.4"
+tokio-retry = "0.3"
+
+# Web frameworks
+axum = { version = "0.8", features = ["json", "macros", "tokio"] }
+axum-extra = { version = "0.10", features = ["typed-header"] }
+tower = { version = "0.5", features = ["limit", "timeout"] }
+tower-http = { version = "0.6", features = ["cors", "fs", "trace"] }
+
+# Error handling
 thiserror = "2"
 anyhow = "1"
+
+# Tracing & telemetry
 tracing = "0.1"
-axum = { version = "0.8", features = ["json", "macros"] }
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+tracing-appender = "0.2"
+tracing-test = "0.2"
+tracing-opentelemetry = "0.32"
+opentelemetry = "0.31"
+opentelemetry_sdk = "0.31"
+opentelemetry-otlp = "0.31"
+
+# Time & hashing
+chrono = { version = "0.4", features = ["serde"] }
+sha2 = "0.10"
+
+# Async utilities
+async-trait = "0.1"
+async-stream = "0.3"
+
+# Database
+rusqlite = { version = "0.32", features = ["bundled"] }
+
+# Serialization
+bytes = "1"
+similar = "2"
+uuid = { version = "1.10", features = ["v4", "serde"] }
+
+# CLI
+clap = { version = "4", features = ["derive"] }
+
+# Redis
+redis = { version = "0.27", features = ["aio", "tokio-comp"] }
+bb8 = "0.9"
+bb8-redis = "0.18"
+
+# gRPC/prost
+futures-util = "0.3"
+futures = "0.3"
+tonic = { version = "0.13", features = ["transport"] }
+tonic-build = "0.13"
+prost = "0.13"
+
+# Templates
+askama = "0.12"
+utoipa = "5"
+
+# Utilities
+rand = "0.8"
+base64 = "0.22"
+regex = "1"
