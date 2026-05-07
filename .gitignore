@@ -13,7 +13,6 @@
 .agileplus/
 .worktrees/
 .claude/worktrees/
-.claude/scheduled_tasks.lock
 
 # Browser-history / research exports (leaked secrets risk)
 data/safari/
@@ -23,10 +22,4 @@ docs/research/*_export.json
 
 # Rust build artifacts
 /target
-
-# Orphaned lockfiles (no matching package.json at root)
-/bun.lock
-/Cargo.lock
-
-# Large runtime artifacts
-spec_dags.json
+target/
