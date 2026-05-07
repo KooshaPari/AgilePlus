@@ -1,0 +1,32 @@
+../*
+../.*
+!pyproject.toml
+# openapi.yaml is the committed API contract; do not ignore.
+!openapi.yaml
+
+# Environment configuration
+.env
+.env.local
+.env.*.local
+
+# AgilePlus runtime artifacts
+.agileplus/
+.worktrees/
+.claude/worktrees/
+.claude/scheduled_tasks.lock
+
+# Browser-history / research exports (leaked secrets risk)
+data/safari/
+docs/research/gemini_export.html
+docs/research/*_export.html
+docs/research/*_export.json
+
+# Rust build artifacts
+/target
+
+# Orphaned lockfiles (no matching package.json at root)
+/bun.lock
+/Cargo.lock
+
+# Large runtime artifacts
+spec_dags.json

@@ -1,0 +1,19 @@
+name: VitePress Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - ".github/workflows/deploy.yml"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    uses: KooshaPari/phenoShared/.github/workflows/vitepress-pages.yml@bf9d385002ba36c4bba4ff1b17c49212bea42d74
+    with:
+      concurrency_group: agileplus-vitepress-pages
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
