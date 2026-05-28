@@ -18,7 +18,7 @@ pub struct ProjectView {
     pub id: i64,
     pub slug: String,
     pub name: String,
-    pub description: String,
+    pub description: Option<String>,
 }
 
 /// Project summary view model used on the homepage.

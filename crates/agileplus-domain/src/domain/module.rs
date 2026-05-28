@@ -18,6 +18,20 @@ pub struct Module {
 }
 
 impl Module {
+    /// Construct a new module with a derived slug and default timestamps.
+    pub fn new(friendly_name: &str, parent_module_id: Option<i64>) -> Self {
+        let now = Utc::now();
+        Self {
+            id: 0,
+            slug: Self::slug_from_name(friendly_name),
+            friendly_name: friendly_name.to_string(),
+            description: None,
+            parent_module_id,
+            created_at: now,
+            updated_at: now,
+        }
+    }
+
     /// Derive a URL-safe slug from a human-readable name.
     pub fn slug_from_name(name: &str) -> String {
         name.to_lowercase()
@@ -45,4 +59,13 @@ pub struct ModuleWithFeatures {
 pub struct ModuleFeatureTag {
     pub module_id: i64,
     pub feature_id: i64,
+}
+
+impl ModuleFeatureTag {
+    pub fn new(module_id: i64, feature_id: i64) -> Self {
+        Self {
+            module_id,
+            feature_id,
+        }
+    }
 }

@@ -72,7 +72,7 @@ pub fn build_dashboard_store() -> DashboardStore {
         id: 1,
         slug: "agileplus-internal".to_string(),
         name: "AgilePlus Internal".to_string(),
-        description: "Internal AgilePlus development project".to_string(),
+        description: Some("Internal AgilePlus development project".to_string()),
         created_at: now,
         updated_at: now,
     }];

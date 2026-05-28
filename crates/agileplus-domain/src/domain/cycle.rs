@@ -13,6 +13,7 @@ use super::feature::Feature;
 pub enum CycleState {
     Draft,
     Active,
+    Review,
     Completed,
     Cancelled,
 }
@@ -22,6 +23,7 @@ impl fmt::Display for CycleState {
         let s = match self {
             CycleState::Draft => "draft",
             CycleState::Active => "active",
+            CycleState::Review => "review",
             CycleState::Completed => "completed",
             CycleState::Cancelled => "cancelled",
         };
@@ -36,6 +38,7 @@ impl FromStr for CycleState {
         match s {
             "draft" => Ok(CycleState::Draft),
             "active" => Ok(CycleState::Active),
+            "review" => Ok(CycleState::Review),
             "completed" => Ok(CycleState::Completed),
             "cancelled" => Ok(CycleState::Cancelled),
             _ => Err(format!("unknown CycleState: {s}")),
@@ -64,6 +67,15 @@ pub struct CycleFeature {
     pub feature_id: i64,
 }
 
+impl CycleFeature {
+    pub fn new(cycle_id: i64, feature_id: i64) -> Self {
+        Self {
+            cycle_id,
+            feature_id,
+        }
+    }
+}
+
 /// A cycle with its associated features expanded.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CycleWithFeatures {
@@ -80,4 +92,30 @@ pub struct WpProgressSummary {
     pub done: u32,
     pub in_progress: u32,
     pub blocked: u32,
+}
+
+impl Cycle {
+    pub fn new(
+        name: &str,
+        start_date: NaiveDate,
+        end_date: NaiveDate,
+        module_scope_id: Option<i64>,
+    ) -> Result<Self, String> {
+        if end_date < start_date {
+            return Err("end date must be on or after start date".into());
+        }
+
+        let now = Utc::now();
+        Ok(Self {
+            id: 0,
+            name: name.to_string(),
+            description: None,
+            state: CycleState::Draft,
+            start_date,
+            end_date,
+            module_scope_id,
+            created_at: now,
+            updated_at: now,
+        })
+    }
 }

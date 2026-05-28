@@ -30,8 +30,7 @@ impl PolicyDomain {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PolicyDefinition {
     pub description: String,
-    #[serde(default)]
-    pub conditions: Vec<String>,
+    pub check: PolicyCheck,
 }
 
 /// An active policy rule in the registry.
@@ -48,8 +47,9 @@ pub struct PolicyRule {
 /// A governance rule captured inside a contract.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GovernanceRule {
-    pub rule_id: i64,
-    pub description: String,
+    pub transition: String,
+    pub required_evidence: Vec<String>,
+    pub policy_refs: Vec<i64>,
 }
 
 /// A versioned governance contract bound to a feature.
@@ -100,9 +100,8 @@ pub struct Evidence {
 }
 
 /// The result of a policy check.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PolicyCheck {
-    pub rule_id: i64,
-    pub passed: bool,
-    pub message: Option<String>,
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum PolicyCheck {
+    ManualApproval,
+    Automated,
 }
