@@ -1,0 +1,13 @@
+# Minimal pre-commit configuration for Security Guard CI.
+# The `pre-commit/action` step requires a config file to be present.
+# Hooks are intentionally minimal to avoid adding CI-only dependencies.
+
+default_install_hook_types: []
+default_stages: []
+
+# Placeholder — add project-specific hooks as needed.
+# Example:
+# repos:
+#   - repo: https://github.com/pre-commit/pre-commit-hooks
+#     hooks:
+#       - id: trailing-whitespace

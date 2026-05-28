@@ -32,6 +32,12 @@ docs/research/*_export.json
 /bun.lock
 /Cargo.lock
 
+# Nested lockfiles
+rust/Cargo.lock
+python/.venv/.lock
+agileplus-mcp/.venv/.lock
+crates/agileplus-dashboard/web/bun.lock
+
 # Large runtime artifacts
 spec_dags.json
 crates/agileplus-dashboard/web/node_modules/

@@ -1,0 +1,15 @@
+[workspace]
+
+[abis]
+workspace = true
+
+[advisories]
+workspace = true
+only-warn = []
+
+[bans]
+workspace = true
+multi-license = "only-fallback"
+
+[sources]
+workspace = true
