@@ -1,6 +1,22 @@
 [workspace]
 resolver = "3"
-members = ["crates/agileplus-*"]
+members = [
+    "crates/agileplus-dashboard",
+    "crates/agileplus-domain",
+    "crates/agileplus-events",
+    "crates/agileplus-fixtures",
+    "crates/agileplus-git",
+    "crates/agileplus-sqlite",
+    "crates/agileplus-cli",
+    "crates/agileplus-api",
+    "crates/agileplus-grpc",
+    "crates/agileplus-github",
+    "crates/agileplus-nats",
+    "crates/agileplus-p2p",
+    "crates/agileplus-telemetry",
+    "crates/agileplus-triage",
+    "crates/agileplus-import",
+]
 exclude = ["AgilePlus/rust", "rust", "crates/phenotype-config"]
 
 [workspace.package]

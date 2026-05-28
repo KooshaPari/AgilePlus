@@ -1,0 +1,1 @@
+//! agileplus-nats stub

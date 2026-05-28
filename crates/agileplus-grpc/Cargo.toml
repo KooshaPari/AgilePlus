@@ -1,0 +1,13 @@
+[package]
+name = "agileplus-grpc"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+tokio.workspace = true
+tonic.workspace = true
+prost.workspace = true
+tracing.workspace = true
