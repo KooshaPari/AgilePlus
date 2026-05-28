@@ -35,6 +35,12 @@ pub enum DomainError {
     #[error("Validation error: {0}")]
     Validation(String),
 
+    #[error("Conflict: {0}")]
+    Conflict(String),
+
+    #[error("Invalid transition from {from} to {to}: {reason}")]
+    InvalidTransition { from: String, to: String, reason: String },
+
     #[error("Lock poisoned")]
     LockPoisoned,
 }

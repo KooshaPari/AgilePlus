@@ -33,15 +33,22 @@ dependencies = [
  "agileplus-git",
  "agileplus-sqlite",
  "anyhow",
- "async-trait",
+ "askama",
  "axum 0.8.9",
+ "base64",
  "chrono",
+ "rand",
  "serde",
  "serde_json",
  "serde_yaml",
+ "sha2",
+ "thiserror 2.0.18",
  "tokio",
- "tower-http 0.5.2",
+ "tokio-stream",
+ "tower 0.5.3",
+ "tower-http",
  "tracing",
+ "tracing-subscriber",
  "utoipa",
 ]
 
@@ -49,7 +56,10 @@ dependencies = [
 name = "agileplus-cli"
 version = "0.1.0"
 dependencies = [
+ "agileplus-domain",
  "anyhow",
+ "chrono",
+ "clap",
  "tokio",
  "tracing",
  "tracing-subscriber",
@@ -86,6 +96,8 @@ dependencies = [
 name = "agileplus-domain"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
+ "async-trait",
  "chrono",
  "serde",
  "serde_json",
@@ -121,7 +133,9 @@ name = "agileplus-git"
 version = "0.1.0"
 dependencies = [
  "agileplus-domain",
+ "anyhow",
  "async-nats",
+ "async-trait",
  "chrono",
  "git2",
  "gix",
@@ -4356,6 +4370,7 @@ dependencies = [
  "futures-core",
  "pin-project-lite",
  "tokio",
+ "tokio-util",
 ]
 
 [[package]]

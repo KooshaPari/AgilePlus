@@ -1,8 +1,12 @@
 //! Hexagonal-architecture ports — async traits implemented by adapters.
 
+pub mod observability;
+pub mod storage;
 pub mod vcs;
 
 use std::path::{Path, PathBuf};
+
+use async_trait::async_trait;
 
 use crate::domain::{
     audit::AuditEntry,
@@ -22,6 +26,7 @@ use crate::error::DomainError;
 use self::vcs::{BranchInfo, ConflictInfo, FeatureArtifacts, MergeResult, WorktreeInfo};
 
 /// Primary storage port — full CRUD across all domain aggregates.
+#[async_trait]
 pub trait StoragePort: Send + Sync {
     // --- Features ---
     async fn create_feature(&self, feature: &Feature) -> Result<i64, DomainError>;
@@ -94,6 +99,7 @@ pub trait StoragePort: Send + Sync {
 }
 
 /// Content storage port — subset used by the dashboard/content layer.
+#[async_trait]
 pub trait ContentStoragePort: Send + Sync {
     // Features
     async fn create_feature(&self, feature: &Feature) -> Result<i64, DomainError>;
@@ -122,6 +128,7 @@ pub trait ContentStoragePort: Send + Sync {
 }
 
 /// VCS port — git operations needed by the domain.
+#[async_trait]
 pub trait VcsPort: Send + Sync {
     async fn create_worktree(&self, feature_slug: &str, wp_id: &str) -> Result<PathBuf, DomainError>;
     async fn list_worktrees(&self) -> Result<Vec<WorktreeInfo>, DomainError>;

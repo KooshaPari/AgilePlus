@@ -5,7 +5,16 @@ edition.workspace = true
 license.workspace = true
 rust-version.workspace = true
 
+[package.metadata.askama]
+dirs = ["../../templates"]
+
 [dependencies]
+# workspace crates
+agileplus-domain    = { path = "../agileplus-domain" }
+agileplus-git       = { path = "../agileplus-git" }
+agileplus-sqlite    = { path = "../agileplus-sqlite" }
+agileplus-dashboard = { path = "../agileplus-dashboard" }
+# workspace-managed external deps
 anyhow.workspace = true
 tokio.workspace = true
 axum.workspace = true
@@ -13,13 +22,15 @@ serde.workspace = true
 serde_json.workspace = true
 serde_yaml = "0.9"
 tracing.workspace = true
+tracing-subscriber.workspace = true
 chrono.workspace = true
+sha2.workspace = true
 utoipa.workspace = true
-async-trait.workspace = true
-tower-http = { version = "0.5", features = ["cors", "trace", "fs"] }
-
-# Domain, storage, VCS, and related crates
-agileplus-domain = { path = "../agileplus-domain" }
-agileplus-git = { path = "../agileplus-git" }
-agileplus-sqlite = { path = "../agileplus-sqlite" }
-agileplus-dashboard = { path = "../agileplus-dashboard" }
+thiserror.workspace = true
+# non-workspace external deps
+tower        = "0.5"
+tower-http   = { version = "0.6", features = ["cors", "trace", "fs"] }
+tokio-stream = { version = "0.1", features = ["sync"] }
+askama       = "0.12"
+rand         = "0.8"
+base64       = "0.22"

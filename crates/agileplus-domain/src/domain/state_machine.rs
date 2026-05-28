@@ -1,8 +1,11 @@
 //! Feature lifecycle state machine.
 
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::str::FromStr;
+
+use crate::error::DomainError;
 
 /// States in the feature lifecycle.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -49,5 +52,47 @@ impl FromStr for FeatureState {
             "retrospected" => Ok(FeatureState::Retrospected),
             _ => Err(format!("unknown FeatureState: {s}")),
         }
+    }
+}
+
+/// A recorded state transition.
+#[derive(Debug, Clone)]
+pub struct Transition {
+    pub from: FeatureState,
+    pub to: FeatureState,
+}
+
+/// The result of a successful state machine transition.
+#[derive(Debug, Clone)]
+pub struct TransitionResult {
+    pub transition: Transition,
+    pub timestamp: DateTime<Utc>,
+}
+
+impl FeatureState {
+    /// Attempt a transition to `target`.  Returns `Err(DomainError::InvalidTransition)`
+    /// if the transition is not allowed by the linear lifecycle.
+    pub fn transition(self, target: FeatureState) -> Result<TransitionResult, DomainError> {
+        let allowed = matches!(
+            (self, target),
+            (FeatureState::Created, FeatureState::Specified)
+                | (FeatureState::Specified, FeatureState::Researched)
+                | (FeatureState::Researched, FeatureState::Planned)
+                | (FeatureState::Planned, FeatureState::Implementing)
+                | (FeatureState::Implementing, FeatureState::Validated)
+                | (FeatureState::Validated, FeatureState::Shipped)
+                | (FeatureState::Shipped, FeatureState::Retrospected)
+        );
+        if !allowed {
+            return Err(DomainError::InvalidTransition {
+                from: self.to_string(),
+                to: target.to_string(),
+                reason: "not an allowed lifecycle step".to_string(),
+            });
+        }
+        Ok(TransitionResult {
+            transition: Transition { from: self, to: target },
+            timestamp: Utc::now(),
+        })
     }
 }
