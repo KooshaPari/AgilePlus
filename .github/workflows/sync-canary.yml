@@ -1,9 +1,5 @@
 name: Sync Canary
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
 on:
   push:
     branches: [main]
@@ -39,7 +35,7 @@ jobs:
           fi
 
       - name: Sync canary from main
-        run: cargo run -p agileplus-cli --locked -- branch:sync --source main --target canary
+        run: git push origin main:canary
 
       - name: Push canary
         run: git push origin canary
