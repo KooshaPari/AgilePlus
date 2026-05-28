@@ -1,13 +1,25 @@
-# Minimal pre-commit configuration for Security Guard CI.
-# The `pre-commit/action` step requires a config file to be present.
-# Hooks are intentionally minimal to avoid adding CI-only dependencies.
+# pre-commit hooks for AgilePlus
+# Run `pre-commit install` to activate
 
-default_install_hook_types: []
-default_stages: []
+default_install_hook_types: [pre-commit, commit-msg]
+default_stages: [pre-commit, commit-msg]
 
-# Placeholder — add project-specific hooks as needed.
-# Example:
-# repos:
-#   - repo: https://github.com/pre-commit/pre-commit-hooks
-#     hooks:
-#       - id: trailing-whitespace
+repos:
+  # Generic housekeeping
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+      - id: check-merge-conflict
+      - id: check-toml
+      - id: mixed-line-ending
+
+  # Rust
+  - repo: https://github.com/RustProofLabs/rust-pre-commit
+    rev: v0.2.0
+    hooks:
+      - id: rustfmt
+      - id: clippy
