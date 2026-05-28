@@ -44,11 +44,20 @@ pub struct PolicyRule {
     pub updated_at: DateTime<Utc>,
 }
 
+/// A required-evidence entry inside a governance rule.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EvidenceRequirement {
+    /// Functional-requirement ID the evidence must satisfy.
+    pub fr_id: String,
+    /// Type of evidence required.
+    pub evidence_type: EvidenceType,
+}
+
 /// A governance rule captured inside a contract.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GovernanceRule {
     pub transition: String,
-    pub required_evidence: Vec<String>,
+    pub required_evidence: Vec<EvidenceRequirement>,
     pub policy_refs: Vec<i64>,
 }
 

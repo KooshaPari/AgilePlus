@@ -1,4 +1,6 @@
-//! VCS port value objects.
+//! VCS port value objects and the `VcsPort` trait re-export.
+
+pub use super::VcsPort;
 
 use serde::{Deserialize, Serialize};
 

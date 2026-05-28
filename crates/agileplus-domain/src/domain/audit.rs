@@ -27,6 +27,40 @@ pub struct AuditEntry {
     pub archived_to: Option<String>,
 }
 
+/// A verified, hash-chained collection of audit entries.
+pub struct AuditChain {
+    pub entries: Vec<AuditEntry>,
+}
+
+impl AuditChain {
+    /// Verify the hash chain is intact.  Returns `Err` with a description of
+    /// the first broken link, or `Ok(())` if all hashes are consistent.
+    pub fn verify_chain(&self) -> Result<(), String> {
+        for (i, entry) in self.entries.iter().enumerate() {
+            let computed = hash_entry(entry);
+            if computed != entry.hash {
+                return Err(format!(
+                    "hash mismatch at entry index {i} (id={})",
+                    entry.id
+                ));
+            }
+            if i > 0 {
+                let prev = &self.entries[i - 1];
+                if entry.prev_hash != prev.hash {
+                    return Err(format!(
+                        "chain break between entries {} and {} (index {}-{})",
+                        prev.id,
+                        entry.id,
+                        i - 1,
+                        i
+                    ));
+                }
+            }
+        }
+        Ok(())
+    }
+}
+
 /// Compute the SHA-256 hash of an audit entry (covers all mutable fields).
 pub fn hash_entry(entry: &AuditEntry) -> [u8; 32] {
     let mut hasher = Sha256::new();

@@ -6,6 +6,7 @@ use std::fmt;
 use std::str::FromStr;
 
 use super::feature::Feature;
+use crate::error::DomainError;
 
 /// Lifecycle state of a cycle.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -16,6 +17,8 @@ pub enum CycleState {
     Review,
     Completed,
     Cancelled,
+    Shipped,
+    Archived,
 }
 
 impl fmt::Display for CycleState {
@@ -26,13 +29,15 @@ impl fmt::Display for CycleState {
             CycleState::Review => "review",
             CycleState::Completed => "completed",
             CycleState::Cancelled => "cancelled",
+            CycleState::Shipped => "shipped",
+            CycleState::Archived => "archived",
         };
         write!(f, "{s}")
     }
 }
 
 impl FromStr for CycleState {
-    type Err = String;
+    type Err = DomainError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
@@ -41,7 +46,9 @@ impl FromStr for CycleState {
             "review" => Ok(CycleState::Review),
             "completed" => Ok(CycleState::Completed),
             "cancelled" => Ok(CycleState::Cancelled),
-            _ => Err(format!("unknown CycleState: {s}")),
+            "shipped" => Ok(CycleState::Shipped),
+            "archived" => Ok(CycleState::Archived),
+            _ => Err(DomainError::Validation(format!("unknown CycleState: {s}"))),
         }
     }
 }

@@ -154,8 +154,8 @@ where
             CycleState::Draft => draft.push(entry),
             CycleState::Active => active.push(entry),
             CycleState::Review => review.push(entry),
-            CycleState::Shipped => shipped.push(entry),
-            CycleState::Archived => archived.push(entry),
+            CycleState::Shipped | CycleState::Completed => shipped.push(entry),
+            CycleState::Archived | CycleState::Cancelled => archived.push(entry),
         }
     }
 

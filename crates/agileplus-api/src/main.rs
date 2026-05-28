@@ -33,7 +33,7 @@ async fn main() -> Result<()> {
 
     let storage = Arc::new(SqliteStorageAdapter::new(&config.core.database_path)?);
     let vcs = Arc::new(GitVcsAdapter::from_current_dir()?);
-    let telemetry: Arc<dyn ObservabilityPort> = Arc::new(NoOpObservability);
+    let telemetry = Arc::new(NoOpObservability);
     let credentials = Arc::from(create_credential_store(&config));
     let state = AppState::new(storage, vcs, telemetry, Arc::new(config), credentials);
 

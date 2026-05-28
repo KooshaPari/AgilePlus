@@ -98,6 +98,7 @@ impl SqliteStorageAdapter {
     }
 }
 
+#[async_trait::async_trait]
 impl StoragePort for SqliteStorageAdapter {
     // -- Feature CRUD --
 
@@ -420,6 +421,7 @@ impl StoragePort for SqliteStorageAdapter {
     }
 }
 
+#[async_trait::async_trait]
 impl ContentStoragePort for SqliteStorageAdapter {
     async fn create_feature(&self, feature: &Feature) -> Result<i64, DomainError> {
         let conn = self.lock()?;

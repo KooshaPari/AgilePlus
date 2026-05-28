@@ -63,6 +63,22 @@ pub struct WpDependency {
     pub dep_type: DependencyType,
 }
 
+impl WpState {
+    /// Returns `true` if a transition from `self` to `target` is allowed.
+    pub fn can_transition_to(self, target: WpState) -> bool {
+        use WpState::*;
+        matches!(
+            (self, target),
+            (Planned, Doing)
+                | (Doing, Review)
+                | (Doing, Blocked)
+                | (Blocked, Doing)
+                | (Review, Done)
+                | (Review, Doing)
+        )
+    }
+}
+
 impl WorkPackage {
     /// Construct a new WorkPackage with sensible defaults.
     pub fn new(feature_id: i64, title: &str, sequence: i32, acceptance_criteria: &str) -> Self {
