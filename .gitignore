@@ -30,3 +30,4 @@ docs/research/*_export.json
 
 # Large runtime artifacts
 spec_dags.json
+crates/agileplus-dashboard/web/node_modules/
