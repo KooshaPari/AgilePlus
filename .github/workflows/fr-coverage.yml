@@ -1,4 +1,7 @@
 name: FR Coverage
+permissions:
+  contents: read
+  pull-requests: read
 on: [pull_request]
 
 concurrency:
@@ -7,7 +10,7 @@ concurrency:
 
 jobs:
   coverage:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
       - run: echo "FR coverage check (phenotype-tooling integration)"

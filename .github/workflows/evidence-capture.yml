@@ -17,7 +17,7 @@ permissions:
 jobs:
   capture-evidence:
     name: Capture evidence bundle
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       BRANCH: ${{ github.ref_name }}
       RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
