@@ -40,7 +40,10 @@ dependencies = [
 name = "agileplus-cli"
 version = "0.1.0"
 dependencies = [
+ "agileplus-domain",
  "anyhow",
+ "chrono",
+ "clap",
  "tokio",
  "tracing",
  "tracing-subscriber",
