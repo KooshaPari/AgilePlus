@@ -124,6 +124,23 @@ impl From<AuditEntry> for AuditEntryResponse {
 // ----- Health -----
 
 #[derive(Debug, Serialize)]
+pub struct SimpleHealthResponse {
+    pub status: &'static str,
+    pub service: &'static str,
+    pub version: &'static str,
+}
+
+impl SimpleHealthResponse {
+    pub fn ok() -> Self {
+        Self {
+            status: "ok",
+            service: "agileplus-api",
+            version: env!("CARGO_PKG_VERSION"),
+        }
+    }
+}
+
+#[derive(Debug, Serialize)]
 pub struct HealthResponse {
     pub status: &'static str,
     pub version: &'static str,

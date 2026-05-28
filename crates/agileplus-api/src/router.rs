@@ -3,7 +3,8 @@
 //! Route layout:
 //!
 //! Public (no auth):
-//!   GET  /health    — detailed health check (T070)
+//!   GET  /health    — simple health check
+//!   GET  /detailed-health — detailed health check (T070)
 //!   GET  /info      — API metadata
 //!
 //! Protected (X-API-Key header or ?api_key= param):
@@ -45,7 +46,7 @@ use agileplus_domain::ports::{
 
 type BoxError = Box<dyn std::error::Error + Send + Sync>;
 
-use crate::responses::DetailedHealthResponse;
+use crate::responses::{DetailedHealthResponse, SimpleHealthResponse};
 use crate::routes::{audit, cycle, events, features, governance, module, stream, work_packages};
 use crate::state::AppState;
 
@@ -60,7 +61,8 @@ where
 
     // Public routes -- no auth middleware.
     let public = Router::new()
-        .route("/health", get(health_handler::<S, V, O>))
+        .route("/health", get(simple_health_handler))
+        .route("/detailed-health", get(health_handler::<S, V, O>))
         .route("/info", get(info_handler))
         // HTML dashboard pages (no auth for browser access)
         .route("/modules", get(module::module_tree_page::<S, V, O>))
@@ -113,7 +115,12 @@ where
         .layer(CorsLayer::permissive())
 }
 
-/// `GET /health` — aggregated health check, no auth required (T070).
+/// `GET /health` — simple health check, no auth required.
+async fn simple_health_handler() -> Json<SimpleHealthResponse> {
+    Json(SimpleHealthResponse::ok())
+}
+
+/// `GET /detailed-health` — aggregated health check, no auth required (T070).
 async fn health_handler<S, V, O>(
     axum::extract::State(app): axum::extract::State<AppState<S, V, O>>,
 ) -> Json<DetailedHealthResponse>
