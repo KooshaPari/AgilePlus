@@ -83,6 +83,9 @@ pub struct Story {
     pub points: Option<u32>,
     /// Assignee (user id).
     pub assignee_id: Option<i64>,
+    /// External requirement reference (e.g. Tracera FR/NFR catalog ID).
+    /// Additive, optional — existing stories default to `None`.
+    pub requirement_id: Option<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -116,6 +119,7 @@ impl Story {
             status: StoryStatus::Todo,
             points,
             assignee_id: None,
+            requirement_id: None,
             created_at: now,
             updated_at: now,
         })

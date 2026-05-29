@@ -6,6 +6,7 @@
 pub mod migrations;
 pub mod rebuild;
 pub mod repository;
+pub mod seed;
 
 use std::path::Path;
 use std::sync::{Arc, Mutex};

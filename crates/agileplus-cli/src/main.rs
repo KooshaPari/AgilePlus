@@ -2,6 +2,8 @@
 
 mod sync_cmd;
 
+pub mod commands;
+
 use clap::{Parser, Subcommand};
 
 use agileplus_domain::domain::{
@@ -48,6 +50,8 @@ enum Command {
     Version,
     /// Sync a GitHub repository with an AgilePlus project
     Sync(SyncArgs),
+    /// Seed FR/NFR catalogs as Epics + Stories (Tracera traceability)
+    SeedRequirements(commands::seed_requirements::SeedRequirementsArgs),
 }
 
 #[derive(Subcommand)]
@@ -212,6 +216,9 @@ async fn main() {
             Command::Version => cmd_version(),
             Command::Sync(args) => {
                 sync_cmd::run(args, None).await?;
+            }
+            Command::SeedRequirements(args) => {
+                commands::seed_requirements::run(&args)?;
             }
         }
         Ok(())

@@ -18,6 +18,8 @@ clap = { version = "4", features = ["derive", "env"] }
 chrono.workspace = true
 agileplus-domain = { path = "../agileplus-domain" }
 agileplus-github = { path = "../agileplus-github" }
+agileplus-sqlite = { path = "../agileplus-sqlite" }
+rusqlite = { version = "0.32", features = ["bundled"] }
 async-trait.workspace = true
 
 [dev-dependencies]

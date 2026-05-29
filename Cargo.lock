@@ -88,10 +88,12 @@ version = "0.1.0"
 dependencies = [
  "agileplus-domain",
  "agileplus-github",
+ "agileplus-sqlite",
  "anyhow",
  "async-trait",
  "chrono",
  "clap",
+ "rusqlite",
  "tokio",
  "tokio-test",
  "tracing",

@@ -12,6 +12,7 @@ pub mod retrospective;
 pub mod review_loop;
 pub mod scheduler;
 pub mod scope;
+pub mod seed_requirements;
 pub mod ship;
 pub mod specify;
 pub mod triage;
