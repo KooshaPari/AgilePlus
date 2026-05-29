@@ -13,6 +13,8 @@ pub enum Intent {
     Feature,
     Idea,
     Task,
+    /// Documentation work item (low priority by default).
+    Docs,
 }
 
 impl fmt::Display for Intent {
@@ -22,6 +24,7 @@ impl fmt::Display for Intent {
             Intent::Feature => "feature",
             Intent::Idea => "idea",
             Intent::Task => "task",
+            Intent::Docs => "docs",
         };
         write!(f, "{s}")
     }
@@ -35,7 +38,21 @@ impl FromStr for Intent {
             "feature" => Ok(Intent::Feature),
             "idea" => Ok(Intent::Idea),
             "task" => Ok(Intent::Task),
+            "docs" => Ok(Intent::Docs),
             _ => Err(format!("unknown Intent: {s}")),
+        }
+    }
+}
+
+impl Intent {
+    /// Returns the default `BacklogPriority` for this intent category.
+    pub fn default_priority(self) -> BacklogPriority {
+        match self {
+            Intent::Bug => BacklogPriority::High,
+            Intent::Feature => BacklogPriority::Medium,
+            Intent::Task => BacklogPriority::Medium,
+            Intent::Idea => BacklogPriority::Low,
+            Intent::Docs => BacklogPriority::Low,
         }
     }
 }
@@ -142,6 +159,34 @@ pub struct BacklogItem {
     pub tags: Vec<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
+}
+
+impl BacklogItem {
+    /// Construct a new `BacklogItem` from a triage classification result.
+    ///
+    /// Priority defaults to `intent.default_priority()`.
+    /// Status is set to `BacklogStatus::New`.
+    pub fn from_triage(
+        title: String,
+        description: String,
+        intent: Intent,
+        source: String,
+    ) -> Self {
+        let now = Utc::now();
+        Self {
+            id: None,
+            title,
+            description,
+            priority: intent.default_priority(),
+            intent,
+            status: BacklogStatus::New,
+            source,
+            feature_slug: None,
+            tags: Vec::new(),
+            created_at: now,
+            updated_at: now,
+        }
+    }
 }
 
 /// Filter parameters for backlog list queries.

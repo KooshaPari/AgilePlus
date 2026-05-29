@@ -367,7 +367,9 @@ dependencies = [
 name = "agileplus-triage"
 version = "0.1.0"
 dependencies = [
+ "agileplus-domain",
  "anyhow",
+ "chrono",
  "serde",
  "serde_json",
  "tokio",

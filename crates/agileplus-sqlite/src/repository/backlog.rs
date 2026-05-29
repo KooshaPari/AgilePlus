@@ -19,6 +19,7 @@ fn intent_str(intent: Intent) -> &'static str {
         Intent::Feature => "feature",
         Intent::Idea => "idea",
         Intent::Task => "task",
+        Intent::Docs => "docs",
     }
 }
 

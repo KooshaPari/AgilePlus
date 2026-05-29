@@ -234,6 +234,19 @@ AgilePlus is a hexagonal-architecture Rust workspace providing an agile project 
 
 ---
 
+### FR-AGP-017 — Triage Automation (Rule-Based Classify for Synced Items)
+
+| Field | Value |
+|---|---|
+| **ID** | FR-AGP-017 |
+| **Title** | Rule-based triage engine for synced GitHub items |
+| **Description** | Given a synced item (title / body / labels), the system shall apply a configurable, ordered rule set to assign a `BacklogPriority` and `Intent` (category). Rules are data-driven (`TriageRules` config struct with ordered `Vec<TriageRule>`); first match wins. A pure `classify(item, rules) -> TriageOutcome` function is the hexagonal port — no I/O, no side effects. Default rules ship with the crate: bug/crash keywords → `High` + `Bug`; docs keywords → `Low` + `Docs`; feature keywords → `Medium` + `Feature`; unmatched → `Medium` + `Task`. The domain `Intent` enum is extended with a `Docs` variant; `Intent::default_priority()` and `BacklogItem::from_triage()` are promoted to the domain crate. |
+| **Acceptance Criteria** | AC1: bug/crash keyword in title, body, or label → `BacklogPriority::High` + `Intent::Bug`. AC2: docs/documentation keyword or label → `BacklogPriority::Low` + `Intent::Docs`. AC3: No matching rule → `BacklogPriority::Medium` + `Intent::Task` (configurable default). AC4: Rule precedence: first matching rule in the ordered list wins (bug rule fires before docs when both terms appear). AC5: Empty input (`SyncedItem::default()`) returns the configured default without panic. AC6: Custom `TriageRules` override all built-in behaviours. AC7: `cargo test -p agileplus-triage` green; `cargo check --workspace` green. |
+| **Status** | SHIPPED |
+| **Traceability** | feat/triage-automation; `crates/agileplus-triage/src/engine.rs` (`SyncedItem`, `TriageRules`, `TriageRule`, `TriageOutcome`, `classify`); `crates/agileplus-triage/src/lib.rs` (module wiring + re-exports); `crates/agileplus-domain/src/domain/backlog.rs` (`Intent::Docs` variant, `Intent::default_priority`, `BacklogItem::from_triage`); `crates/agileplus-sqlite/src/repository/backlog.rs` (`intent_str` extended); 37 tests passing (9 engine unit + 7 classifier unit + 5 backlog unit + 9 adapter unit + 4 router unit + 1 doctest). |
+
+---
+
 ## Non-Functional Requirements
 
 ### NFR-AGP-001 — Hexagonal Architecture
@@ -330,9 +343,9 @@ AgilePlus is a hexagonal-architecture Rust workspace providing an agile project 
 | FR-AGP-014 | Live dashboard frontend | PLANNED |
 | FR-AGP-016 | CLI `list` subcommands (projects, epics, stories) | SHIPPED |
 | FR-AGP-015 | Observability: OpenTelemetry traces + metrics export | SHIPPED (feat/opentelemetry) |
+| FR-AGP-017 | Triage automation — rule-based classify for synced items | SHIPPED (feat/triage-automation) |
 | — | Plane.so integration adapter | PLANNED (`agileplus-plane` crate stubbed) |
 | — | Graph/dependency analysis for work items | PLANNED (`agileplus-graph` crate stubbed) |
-| — | Triage automation (auto-label, auto-assign) | PLANNED (`agileplus-triage` crate stubbed) |
 
 ---
 
@@ -369,3 +382,4 @@ AgilePlus is a hexagonal-architecture Rust workspace providing an agile project 
 | feat/sync-sqlite-persistence | PersistSyncedStories use case + 5 tests | FR-AGP-013, NFR-AGP-005 |
 | feat/opentelemetry | OTel subscriber init + OTLP adapter + request-span middleware + 35 tests | FR-AGP-015, NFR-AGP-004 |
 | feat/cli-list-commands | CLI list-projects / list-epics / list-stories subcommands + 10 unit tests + domain stubs (AgentPort, BuiltinPolicy, SyncMapping::new) | FR-AGP-016, NFR-AGP-005 |
+| feat/triage-automation | Rule-based triage engine (engine.rs) + domain Intent::Docs + default_priority + from_triage + 37 tests | FR-AGP-017, NFR-AGP-005 |
