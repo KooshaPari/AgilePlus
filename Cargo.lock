@@ -240,9 +240,17 @@ dependencies = [
 name = "agileplus-grpc"
 version = "0.1.0"
 dependencies = [
+ "agileplus-domain",
+ "agileplus-github",
+ "agileplus-proto",
  "anyhow",
+ "async-trait",
+ "chrono",
  "prost",
+ "serde",
+ "serde_json",
  "tokio",
+ "tokio-stream",
  "tonic 0.13.1",
  "tonic-build",
  "tracing",
@@ -304,6 +312,17 @@ dependencies = [
  "tokio",
  "tracing",
  "uuid",
+]
+
+[[package]]
+name = "agileplus-proto"
+version = "0.1.0"
+dependencies = [
+ "prost",
+ "prost-build",
+ "tokio-stream",
+ "tonic 0.13.1",
+ "tonic-build",
 ]
 
 [[package]]

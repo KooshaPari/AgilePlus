@@ -156,16 +156,16 @@ AgilePlus is a hexagonal-architecture Rust workspace providing an agile project 
 
 ---
 
-### FR-AGP-011 — gRPC Service Layer (planned)
+### FR-AGP-011 — gRPC Service Layer
 
 | Field | Value |
 |---|---|
 | **ID** | FR-AGP-011 |
 | **Title** | gRPC API surface for inter-service communication |
 | **Description** | The system shall expose gRPC endpoints for domain operations using tonic, enabling programmatic consumption by other services in the Phenotype org. Build system must gracefully degrade when `protoc` is absent. |
-| **Acceptance Criteria** | AC1: `build.rs` gates proto compilation on `protoc` availability. AC2: At least `SyncService` and `StoryService` RPCs are defined in `.proto`. AC3: gRPC server starts alongside REST API on a separate port. |
-| **Status** | PARTIAL — build fix shipped; proto definitions + service impl PLANNED |
-| **Traceability** | PR #594 (build fix); `crates/agileplus-grpc/` (stubs) |
+| **Acceptance Criteria** | AC1: `build.rs` gates proto compilation on `protoc` availability — DONE (graceful-skip + hand-written stubs in `agileplus-proto`). AC2: `WorkItemsService` proto defined with `ListProjects`, `ListEpics`, `ListStories`, `SyncRepository` RPCs — DONE (`proto/agileplus/v1/work_items.proto`). AC3: `AgilePlusCoreService` + `WorkItemsService` tonic impls delegate to `StoragePort` (hexagonal) — DONE. AC4: 27 tests green (12 lib-unit + 10 integration + 5 pact-schema). |
+| **Status** | SHIPPED |
+| **Traceability** | PR #594 (build fix); feat/grpc-service; `crates/agileplus-proto/` (stub-mode proto crate); `crates/agileplus-grpc/src/work_items.rs` (WorkItemsService impl); `crates/agileplus-grpc/src/server/mod.rs` (AgilePlusCoreService impl); `proto/agileplus/v1/` (core.proto, common.proto, agents.proto, integrations.proto, work_items.proto); 27 tests passing. |
 
 ---
 

@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package agileplus.v1;
+
+option go_package = "github.com/phenotype/agileplus-proto/gen/go/agileplus/v1;agileplusv1";
+
+// Agent coordination messages — used internally by the event bus / proxy layer.
+// Traceability: WP14-T083
+
+message AgentStatus {
+  string agent_id = 1;
+  string feature_slug = 2;
+  int32 wp_sequence = 3;
+  string status = 4;
+  string started_at = 5;
+  string completed_at = 6;
+}
+
+message AgentHealthRequest {}
+
+message AgentHealthResponse {
+  bool agents_reachable = 1;
+  bool integrations_reachable = 2;
+  string message = 3;
+}

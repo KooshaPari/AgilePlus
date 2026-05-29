@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package agileplus.v1;
+
+option go_package = "github.com/phenotype/agileplus-proto/gen/go/agileplus/v1;agileplusv1";
+
+// Shared message types used across multiple services.
+
+// Current state of a feature in the state machine.
+message FeatureState {
+  string state = 1;
+  string next_command = 2;
+  repeated string blockers = 3;
+  GovernanceSummary governance = 4;
+}
+
+message GovernanceSummary {
+  bool gate_passed = 1;
+  int32 violations_count = 2;
+}
+
+message GateViolation {
+  string fr_id = 1;
+  string rule_id = 2;
+  string message = 3;
+  string remediation = 4;
+}
+
+// Generic command response payload.
+message CommandResponse {
+  bool success = 1;
+  string message = 2;
+  map<string, string> outputs = 3;
+}

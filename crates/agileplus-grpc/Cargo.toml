@@ -14,3 +14,11 @@ tokio.workspace = true
 tonic.workspace = true
 prost.workspace = true
 tracing.workspace = true
+async-trait.workspace = true
+chrono.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+agileplus-domain = { path = "../agileplus-domain" }
+agileplus-github = { path = "../agileplus-github" }
+agileplus-proto = { path = "../agileplus-proto" }
+tokio-stream.workspace = true

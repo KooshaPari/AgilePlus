@@ -3,11 +3,14 @@
 //! Traceability: WP14-T079, T080
 
 use std::collections::HashMap;
-use std::net::SocketAddr;
 use std::pin::Pin;
 use std::sync::Arc;
 
+#[cfg(not(agileplus_proto_stubs))]
+use std::net::SocketAddr;
+#[cfg(not(agileplus_proto_stubs))]
 use tonic::transport::Server;
+
 use tonic::{Request, Response, Status};
 use tracing::info;
 
@@ -22,8 +25,10 @@ use agileplus_proto::agileplus::v1::{
     GetWorkPackageStatusResponse, ListFeaturesRequest, ListFeaturesResponse,
     ListWorkPackagesRequest, ListWorkPackagesResponse, VerifyAuditChainRequest,
     VerifyAuditChainResponse,
-    agile_plus_core_service_server::{AgilePlusCoreService, AgilePlusCoreServiceServer},
+    agile_plus_core_service_server::AgilePlusCoreService,
 };
+#[cfg(not(agileplus_proto_stubs))]
+use agileplus_proto::agileplus::v1::agile_plus_core_service_server::AgilePlusCoreServiceServer;
 
 use crate::conversions::{audit_entry_to_proto, feature_to_proto, wp_to_proto};
 use crate::event_bus::EventBus;
@@ -33,15 +38,17 @@ use crate::proxy::ProxyRouter;
 pub fn domain_error_to_status(e: agileplus_domain::error::DomainError) -> Status {
     use agileplus_domain::error::DomainError;
     match e {
-        DomainError::NotFound(msg) => Status::not_found(msg),
+        DomainError::NotFound(msg)
+        | DomainError::FeatureNotFound(msg)
+        | DomainError::WorkPackageNotFound(msg)
+        | DomainError::ModuleNotFound(msg)
+        | DomainError::CycleNotFound(msg) => Status::not_found(msg),
         DomainError::InvalidTransition { from, to, reason } => {
             Status::failed_precondition(format!("invalid transition {from}->{to}: {reason}"))
         }
-        DomainError::NoOpTransition(state) => {
-            Status::failed_precondition(format!("already in state: {state}"))
+        DomainError::Conflict(msg) | DomainError::ModuleHasDependents(msg) => {
+            Status::already_exists(msg)
         }
-        DomainError::Conflict(msg) => Status::already_exists(msg),
-        DomainError::Timeout(secs) => Status::deadline_exceeded(format!("timeout after {secs}s")),
         DomainError::NotImplemented => Status::unimplemented("not implemented"),
         other => Status::internal(other.to_string()),
     }
@@ -56,18 +63,18 @@ where
     R: ReviewPort + 'static,
     O: ObservabilityPort + 'static,
 {
-    storage: Arc<S>,
+    pub(crate) storage: Arc<S>,
     #[allow(dead_code)]
-    vcs: Arc<V>,
+    pub(crate) vcs: Arc<V>,
     #[allow(dead_code)]
-    agents: Arc<A>,
+    pub(crate) agents: Arc<A>,
     #[allow(dead_code)]
-    review: Arc<R>,
+    pub(crate) review: Arc<R>,
     #[allow(dead_code)]
-    telemetry: Arc<O>,
+    pub(crate) telemetry: Arc<O>,
     #[allow(dead_code)]
-    event_bus: Arc<EventBus>,
-    proxy: Arc<ProxyRouter>,
+    pub(crate) event_bus: Arc<EventBus>,
+    pub(crate) proxy: Arc<ProxyRouter>,
 }
 
 impl<S, V, A, R, O> AgilePlusCoreServer<S, V, A, R, O>
@@ -511,6 +518,8 @@ where
 }
 
 /// Start the gRPC server, binding to the given address.
+/// Requires a full protoc build (not available in stub mode).
+#[cfg(not(agileplus_proto_stubs))]
 #[allow(clippy::too_many_arguments)] // Server bootstrap requires all service ports
 pub async fn start_server<S, V, A, R, O>(
     addr: SocketAddr,
@@ -544,6 +553,7 @@ where
 }
 
 /// Listens for SIGTERM / SIGINT and resolves when either is received.
+#[cfg(not(agileplus_proto_stubs))]
 async fn shutdown_signal() {
     use tokio::signal;
 

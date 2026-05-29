@@ -67,10 +67,11 @@ fn invalid_transition_maps_to_failed_precondition() {
 }
 
 #[test]
-fn timeout_maps_to_deadline_exceeded() {
+fn storage_error_maps_to_internal() {
     use tonic::Code;
-    let s = domain_error_to_status(DomainError::Timeout(30));
-    assert_eq!(s.code(), Code::DeadlineExceeded);
+    // DomainError::Timeout is not in the domain; Storage maps to Internal.
+    let s = domain_error_to_status(DomainError::Storage("connection timeout".into()));
+    assert_eq!(s.code(), Code::Internal);
 }
 
 // --- Event bus tests ---

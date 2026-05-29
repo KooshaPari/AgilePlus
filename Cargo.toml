@@ -20,6 +20,7 @@ members = [
     "crates/agileplus-telemetry",
     "crates/agileplus-triage",
     "crates/agileplus-import",
+    "crates/agileplus-proto",
 ]
 exclude = ["AgilePlus/rust", "rust", "crates/phenotype-config"]
 
@@ -86,3 +87,5 @@ uuid = { version = "1", features = ["v4", "serde"] }
 async-nats = "0.38"
 paste = "1"
 agileplus-config = { path = "crates/agileplus-config" }
+agileplus-proto = { path = "crates/agileplus-proto" }
+tokio-stream = { version = "0.1", features = ["net", "sync"] }

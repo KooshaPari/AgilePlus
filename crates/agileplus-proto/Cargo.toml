@@ -1,0 +1,19 @@
+[package]
+name = "agileplus-proto"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+description = "Compiled protobuf/tonic types for AgilePlus gRPC layer"
+
+[build-dependencies]
+tonic-build.workspace = true
+prost-build.workspace = true
+
+[dependencies]
+tonic.workspace = true
+prost.workspace = true
+tokio-stream.workspace = true
+
+[features]
+default = []

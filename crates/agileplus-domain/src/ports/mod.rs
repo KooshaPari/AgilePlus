@@ -8,9 +8,17 @@ pub mod storage;
 pub mod story;
 pub mod vcs;
 
+pub use agent::AgentPort;
 pub use epic::EpicRepository;
 pub use events::{DomainEvent, DomainEventPublisher};
+pub use observability::ObservabilityPort;
 pub use story::StoryRepository;
+
+// ReviewPort — a no-op port for code-review integrations (WP09, not yet implemented).
+// Kept as a compile-time bound placeholder so the gRPC server type parameters compile.
+pub trait ReviewPort: Send + Sync {}
+// Blanket impl so any struct can satisfy the bound without implementing anything.
+impl ReviewPort for () {}
 
 use std::path::{Path, PathBuf};
 

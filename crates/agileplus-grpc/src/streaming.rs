@@ -22,7 +22,11 @@ pub fn domain_event_to_proto(e: AgentEvent) -> ProtoAgentEvent {
         feature_slug: e.feature_slug().to_string(),
         wp_sequence: e.wp_sequence(),
         agent_id: e.agent_id().to_string(),
-        payload: e.payload(),
+        payload: {
+            let mut m = std::collections::HashMap::new();
+            m.insert("data".to_string(), e.payload());
+            m
+        },
         timestamp: chrono::Utc::now().to_rfc3339(),
     }
 }
