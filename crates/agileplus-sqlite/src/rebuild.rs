@@ -286,7 +286,7 @@ mod tests {
         error::DomainError,
         ports::{
             StoragePort, VcsPort,
-            vcs::{ConflictInfo, FeatureArtifacts, MergeResult, WorktreeInfo},
+            vcs::{BranchInfo, ConflictInfo, FeatureArtifacts, MergeResult, WorktreeInfo},
         },
     };
 
@@ -311,6 +311,7 @@ mod tests {
         }
     }
 
+    #[async_trait::async_trait]
     impl VcsPort for MockVcs {
         async fn create_worktree(
             &self,
@@ -329,6 +330,23 @@ mod tests {
         }
 
         async fn create_branch(&self, _branch_name: &str, _base: &str) -> Result<(), DomainError> {
+            Err(DomainError::NotImplemented)
+        }
+
+        async fn list_branches(
+            &self,
+            _pattern: Option<&str>,
+            _remote: bool,
+        ) -> Result<Vec<BranchInfo>, DomainError> {
+            Err(DomainError::NotImplemented)
+        }
+
+        async fn delete_branch(
+            &self,
+            _branch_name: &str,
+            _force: bool,
+            _remote: Option<&str>,
+        ) -> Result<(), DomainError> {
             Err(DomainError::NotImplemented)
         }
 

@@ -12,13 +12,16 @@ use crate::domain::{
     audit::AuditEntry,
     backlog::{BacklogFilters, BacklogItem, BacklogPriority, BacklogStatus},
     cycle::{Cycle, CycleFeature, CycleWithFeatures, CycleState},
+    epic::{Epic, EpicStatus},
     feature::Feature,
     governance::{Evidence, GovernanceContract, PolicyRule},
     metric::Metric,
     module::{Module, ModuleFeatureTag, ModuleWithFeatures},
     project::Project,
     state_machine::FeatureState,
+    story::{Story, StoryStatus},
     sync_mapping::SyncMapping,
+    user::{User, UserRole, UserStatus},
     work_package::{WorkPackage, WpDependency, WpState},
 };
 use crate::error::DomainError;
@@ -96,6 +99,33 @@ pub trait StoragePort: Send + Sync {
     // --- Projects ---
     async fn create_project(&self, project: &Project) -> Result<i64, DomainError>;
     async fn get_project_by_slug(&self, slug: &str) -> Result<Option<Project>, DomainError>;
+    async fn get_project_by_id(&self, id: i64) -> Result<Option<Project>, DomainError>;
+    async fn list_all_projects(&self) -> Result<Vec<Project>, DomainError>;
+    async fn delete_project(&self, id: i64) -> Result<(), DomainError>;
+
+    // --- Users ---
+    async fn create_user(&self, user: &User) -> Result<i64, DomainError>;
+    async fn get_user_by_id(&self, id: i64) -> Result<Option<User>, DomainError>;
+    async fn get_user_by_email(&self, email: &str) -> Result<Option<User>, DomainError>;
+    async fn update_user_status(&self, id: i64, status: UserStatus) -> Result<(), DomainError>;
+    async fn update_user_role(&self, id: i64, role: UserRole) -> Result<(), DomainError>;
+    async fn list_all_users(&self) -> Result<Vec<User>, DomainError>;
+    async fn delete_user(&self, id: i64) -> Result<(), DomainError>;
+
+    // --- Epics ---
+    async fn create_epic(&self, epic: &Epic) -> Result<i64, DomainError>;
+    async fn get_epic_by_id(&self, id: i64) -> Result<Option<Epic>, DomainError>;
+    async fn update_epic_status(&self, id: i64, status: EpicStatus) -> Result<(), DomainError>;
+    async fn list_epics_by_project(&self, project_id: i64) -> Result<Vec<Epic>, DomainError>;
+    async fn delete_epic(&self, id: i64) -> Result<(), DomainError>;
+
+    // --- Stories ---
+    async fn create_story(&self, story: &Story) -> Result<i64, DomainError>;
+    async fn get_story_by_id(&self, id: i64) -> Result<Option<Story>, DomainError>;
+    async fn update_story_status(&self, id: i64, status: StoryStatus) -> Result<(), DomainError>;
+    async fn list_stories_by_epic(&self, epic_id: i64) -> Result<Vec<Story>, DomainError>;
+    async fn list_stories_by_project(&self, project_id: i64) -> Result<Vec<Story>, DomainError>;
+    async fn delete_story(&self, id: i64) -> Result<(), DomainError>;
 }
 
 /// Content storage port — subset used by the dashboard/content layer.
