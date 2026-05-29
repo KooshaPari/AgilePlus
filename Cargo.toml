@@ -72,3 +72,4 @@ opentelemetry-otlp = { version = "0.27", features = ["tonic", "gzip-tonic"] }
 # OpenTelemetry tracing bridge — uncomment when ready to use
 tracing-opentelemetry = "0.27"
 utoipa = "4"
+uuid = { version = "1", features = ["v4", "serde"] }

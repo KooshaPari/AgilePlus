@@ -57,13 +57,10 @@ name = "agileplus-cli"
 version = "0.1.0"
 dependencies = [
  "agileplus-domain",
- "agileplus-github",
  "anyhow",
- "async-trait",
  "chrono",
  "clap",
  "tokio",
- "tokio-test",
  "tracing",
  "tracing-subscriber",
 ]
@@ -120,6 +117,7 @@ dependencies = [
  "sha2",
  "thiserror 2.0.18",
  "tokio",
+ "uuid",
 ]
 
 [[package]]
@@ -4687,17 +4685,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "tokio-test"
-version = "0.4.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3f6d24790a10a7af737693a3e8f1d03faef7e6ca0cc99aae5066f533766de545"
-dependencies = [
- "futures-core",
- "tokio",
- "tokio-stream",
-]
-
-[[package]]
 name = "tokio-util"
 version = "0.7.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5166,6 +5153,7 @@ checksum = "ddd74a9687298c6858e9b88ec8935ec45d22e8fd5e6394fa1bd4e99a87789c76"
 dependencies = [
  "getrandom 0.4.2",
  "js-sys",
+ "serde_core",
  "wasm-bindgen",
 ]
 
