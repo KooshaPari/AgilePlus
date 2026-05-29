@@ -132,6 +132,27 @@ mod tests {
         async fn delete_sync_mapping(&self, _: &str, _: i64) -> Result<(), DomainError> { Ok(()) }
         async fn create_project(&self, _: &agileplus_domain::domain::project::Project) -> Result<i64, DomainError> { Ok(0) }
         async fn get_project_by_slug(&self, _: &str) -> Result<Option<agileplus_domain::domain::project::Project>, DomainError> { Ok(None) }
+        async fn get_project_by_id(&self, _: i64) -> Result<Option<agileplus_domain::domain::project::Project>, DomainError> { Ok(None) }
+        async fn list_all_projects(&self) -> Result<Vec<agileplus_domain::domain::project::Project>, DomainError> { Ok(vec![]) }
+        async fn delete_project(&self, _: i64) -> Result<(), DomainError> { Ok(()) }
+        async fn create_user(&self, _: &agileplus_domain::domain::user::User) -> Result<i64, DomainError> { Ok(0) }
+        async fn get_user_by_id(&self, _: i64) -> Result<Option<agileplus_domain::domain::user::User>, DomainError> { Ok(None) }
+        async fn get_user_by_email(&self, _: &str) -> Result<Option<agileplus_domain::domain::user::User>, DomainError> { Ok(None) }
+        async fn update_user_status(&self, _: i64, _: agileplus_domain::domain::user::UserStatus) -> Result<(), DomainError> { Ok(()) }
+        async fn update_user_role(&self, _: i64, _: agileplus_domain::domain::user::UserRole) -> Result<(), DomainError> { Ok(()) }
+        async fn list_all_users(&self) -> Result<Vec<agileplus_domain::domain::user::User>, DomainError> { Ok(vec![]) }
+        async fn delete_user(&self, _: i64) -> Result<(), DomainError> { Ok(()) }
+        async fn create_epic(&self, _: &agileplus_domain::domain::epic::Epic) -> Result<i64, DomainError> { Ok(0) }
+        async fn get_epic_by_id(&self, _: i64) -> Result<Option<agileplus_domain::domain::epic::Epic>, DomainError> { Ok(None) }
+        async fn update_epic_status(&self, _: i64, _: agileplus_domain::domain::epic::EpicStatus) -> Result<(), DomainError> { Ok(()) }
+        async fn list_epics_by_project(&self, _: i64) -> Result<Vec<agileplus_domain::domain::epic::Epic>, DomainError> { Ok(vec![]) }
+        async fn delete_epic(&self, _: i64) -> Result<(), DomainError> { Ok(()) }
+        async fn create_story(&self, _: &agileplus_domain::domain::story::Story) -> Result<i64, DomainError> { Ok(0) }
+        async fn get_story_by_id(&self, _: i64) -> Result<Option<agileplus_domain::domain::story::Story>, DomainError> { Ok(None) }
+        async fn update_story_status(&self, _: i64, _: agileplus_domain::domain::story::StoryStatus) -> Result<(), DomainError> { Ok(()) }
+        async fn list_stories_by_epic(&self, _: i64) -> Result<Vec<agileplus_domain::domain::story::Story>, DomainError> { Ok(vec![]) }
+        async fn list_stories_by_project(&self, _: i64) -> Result<Vec<agileplus_domain::domain::story::Story>, DomainError> { Ok(vec![]) }
+        async fn delete_story(&self, _: i64) -> Result<(), DomainError> { Ok(()) }
     }
 
     /// In-memory Story store.
