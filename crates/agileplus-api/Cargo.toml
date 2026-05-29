@@ -34,3 +34,7 @@ tokio-stream = { version = "0.1", features = ["sync"] }
 askama       = "0.12"
 rand         = "0.8"
 base64       = "0.22"
+
+[dev-dependencies]
+axum-test    = "17"
+async-trait  = "0.1"

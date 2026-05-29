@@ -1,6 +1,7 @@
 use std::sync::{Arc, Mutex};
 
 use agileplus_domain::domain::audit::{AuditEntry, hash_entry};
+use agileplus_domain::domain::epic::Epic;
 use agileplus_domain::domain::project::Project;
 use agileplus_domain::domain::backlog::BacklogItem;
 use agileplus_domain::domain::cycle::{Cycle, CycleFeature};
@@ -8,6 +9,8 @@ use agileplus_domain::domain::feature::Feature;
 use agileplus_domain::domain::governance::GovernanceContract;
 use agileplus_domain::domain::module::{Module, ModuleFeatureTag};
 use agileplus_domain::domain::state_machine::FeatureState;
+use agileplus_domain::domain::story::Story;
+use agileplus_domain::domain::user::User;
 use agileplus_domain::domain::work_package::{WorkPackage, WpState};
 use chrono::Utc;
 
@@ -23,6 +26,9 @@ pub(crate) struct MockStorage {
     pub(crate) governance: Arc<Mutex<Vec<GovernanceContract>>>,
     pub(crate) audit: Arc<Mutex<Vec<AuditEntry>>>,
     pub(crate) projects: Arc<Mutex<Vec<Project>>>,
+    pub(crate) epics: Arc<Mutex<Vec<Epic>>>,
+    pub(crate) stories: Arc<Mutex<Vec<Story>>>,
+    pub(crate) users: Arc<Mutex<Vec<User>>>,
 }
 
 impl MockStorage {

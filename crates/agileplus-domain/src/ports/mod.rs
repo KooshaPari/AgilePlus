@@ -12,13 +12,16 @@ use crate::domain::{
     audit::AuditEntry,
     backlog::{BacklogFilters, BacklogItem, BacklogPriority, BacklogStatus},
     cycle::{Cycle, CycleFeature, CycleWithFeatures, CycleState},
+    epic::{Epic, EpicStatus},
     feature::Feature,
     governance::{Evidence, GovernanceContract, PolicyRule},
     metric::Metric,
     module::{Module, ModuleFeatureTag, ModuleWithFeatures},
     project::Project,
     state_machine::FeatureState,
+    story::{Story, StoryStatus},
     sync_mapping::SyncMapping,
+    user::User,
     work_package::{WorkPackage, WpDependency, WpState},
 };
 use crate::error::DomainError;
@@ -96,6 +99,25 @@ pub trait StoragePort: Send + Sync {
     // --- Projects ---
     async fn create_project(&self, project: &Project) -> Result<i64, DomainError>;
     async fn get_project_by_slug(&self, slug: &str) -> Result<Option<Project>, DomainError>;
+    async fn list_all_projects(&self) -> Result<Vec<Project>, DomainError>;
+
+    // --- Epics ---
+    async fn create_epic(&self, epic: &Epic) -> Result<i64, DomainError>;
+    async fn get_epic(&self, id: i64) -> Result<Option<Epic>, DomainError>;
+    async fn list_epics_by_project(&self, project_id: i64) -> Result<Vec<Epic>, DomainError>;
+    async fn update_epic_status(&self, id: i64, status: EpicStatus) -> Result<(), DomainError>;
+
+    // --- Stories ---
+    async fn create_story(&self, story: &Story) -> Result<i64, DomainError>;
+    async fn get_story(&self, id: i64) -> Result<Option<Story>, DomainError>;
+    async fn list_stories_by_epic(&self, epic_id: i64) -> Result<Vec<Story>, DomainError>;
+    async fn update_story_status(&self, id: i64, status: StoryStatus) -> Result<(), DomainError>;
+
+    // --- Users ---
+    async fn create_user(&self, user: &User) -> Result<i64, DomainError>;
+    async fn get_user(&self, id: i64) -> Result<Option<User>, DomainError>;
+    async fn get_user_by_email(&self, email: &str) -> Result<Option<User>, DomainError>;
+    async fn list_all_users(&self) -> Result<Vec<User>, DomainError>;
 }
 
 /// Content storage port — subset used by the dashboard/content layer.

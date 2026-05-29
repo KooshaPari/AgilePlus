@@ -419,6 +419,58 @@ impl StoragePort for SqliteStorageAdapter {
         let conn = self.lock()?;
         projects::get_project_by_slug(&conn, slug)
     }
+
+    async fn list_all_projects(&self) -> Result<Vec<agileplus_domain::domain::project::Project>, DomainError> {
+        Err(DomainError::NotImplemented)
+    }
+
+    async fn create_epic(&self, _epic: &agileplus_domain::domain::epic::Epic) -> Result<i64, DomainError> {
+        Err(DomainError::NotImplemented)
+    }
+
+    async fn get_epic(&self, _id: i64) -> Result<Option<agileplus_domain::domain::epic::Epic>, DomainError> {
+        Err(DomainError::NotImplemented)
+    }
+
+    async fn list_epics_by_project(&self, _project_id: i64) -> Result<Vec<agileplus_domain::domain::epic::Epic>, DomainError> {
+        Err(DomainError::NotImplemented)
+    }
+
+    async fn update_epic_status(&self, _id: i64, _status: agileplus_domain::domain::epic::EpicStatus) -> Result<(), DomainError> {
+        Err(DomainError::NotImplemented)
+    }
+
+    async fn create_story(&self, _story: &agileplus_domain::domain::story::Story) -> Result<i64, DomainError> {
+        Err(DomainError::NotImplemented)
+    }
+
+    async fn get_story(&self, _id: i64) -> Result<Option<agileplus_domain::domain::story::Story>, DomainError> {
+        Err(DomainError::NotImplemented)
+    }
+
+    async fn list_stories_by_epic(&self, _epic_id: i64) -> Result<Vec<agileplus_domain::domain::story::Story>, DomainError> {
+        Err(DomainError::NotImplemented)
+    }
+
+    async fn update_story_status(&self, _id: i64, _status: agileplus_domain::domain::story::StoryStatus) -> Result<(), DomainError> {
+        Err(DomainError::NotImplemented)
+    }
+
+    async fn create_user(&self, _user: &agileplus_domain::domain::user::User) -> Result<i64, DomainError> {
+        Err(DomainError::NotImplemented)
+    }
+
+    async fn get_user(&self, _id: i64) -> Result<Option<agileplus_domain::domain::user::User>, DomainError> {
+        Err(DomainError::NotImplemented)
+    }
+
+    async fn get_user_by_email(&self, _email: &str) -> Result<Option<agileplus_domain::domain::user::User>, DomainError> {
+        Err(DomainError::NotImplemented)
+    }
+
+    async fn list_all_users(&self) -> Result<Vec<agileplus_domain::domain::user::User>, DomainError> {
+        Err(DomainError::NotImplemented)
+    }
 }
 
 #[async_trait::async_trait]
