@@ -141,7 +141,16 @@ async fn export_creates_expected_files() {
     let snap = Snapshot::new("Feature", 1, serde_json::json!({"title": "T1"}), 1);
     ss.save(&snap).await.unwrap();
 
-    let mappings = vec![SyncMapping::new("Feature", 1, "plane-001", "hash-aaa")];
+    let mappings = vec![SyncMapping {
+        id: 0,
+        entity_type: "Feature".to_string(),
+        entity_id: 1,
+        plane_issue_id: "plane-001".to_string(),
+        content_hash: "hash-aaa".to_string(),
+        last_synced_at: chrono::Utc::now(),
+        sync_direction: agileplus_domain::domain::sync_mapping::SyncDirection::Bidirectional,
+        conflict_count: 0,
+    }];
     let entities = vec![EntityRef {
         entity_type: "Feature".into(),
         entity_id: 1,

@@ -157,12 +157,11 @@ fn read_sync_mappings(sync_state_path: &Path) -> Result<Vec<SyncMapping>, Import
         .cloned()
         .unwrap_or(serde_json::Value::Array(Vec::new()));
 
-    let mappings: Vec<SyncMapping> = serde_json::from_value(mappings_value).map_err(|e| {
-        ImportError::Deserialization {
+    let mappings: Vec<SyncMapping> =
+        serde_json::from_value(mappings_value).map_err(|e| ImportError::Deserialization {
             file: sync_state_path.display().to_string(),
             source: e,
-        }
-    })?;
+        })?;
 
     Ok(mappings)
 }
@@ -209,17 +208,13 @@ where
         if event.sequence <= latest_seq {
             // Potentially a duplicate; verify by loading the exact event.
             let existing = event_store
-                .get_events_since(
-                    &event.entity_type,
-                    event.entity_id,
-                    event.sequence - 1,
-                )
+                .get_events_since(&event.entity_type, event.entity_id, event.sequence - 1)
                 .await
                 .map_err(|e| ImportError::EventStore(e.to_string()))?;
 
-            let already_present = existing.iter().any(|e| {
-                e.sequence == event.sequence && e.hash == event.hash
-            });
+            let already_present = existing
+                .iter()
+                .any(|e| e.sequence == event.sequence && e.hash == event.hash);
 
             if already_present {
                 debug!(
@@ -405,7 +400,13 @@ mod tests {
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     fn make_event(entity_type: &str, entity_id: i64, sequence: i64) -> Event {
-        let mut e = Event::new(entity_type, entity_id, "created", serde_json::json!({}), "test");
+        let mut e = Event::new(
+            entity_type,
+            entity_id,
+            "created",
+            serde_json::json!({}),
+            "test",
+        );
         e.sequence = sequence;
         e
     }
@@ -498,7 +499,10 @@ mod tests {
         std::fs::write(snaps_dir.join("1.json"), json).unwrap();
 
         let stats = import_state(dir, &es, &ss).await.unwrap();
-        assert_eq!(stats.snapshots_updated, 0, "older snapshot must not overwrite newer");
+        assert_eq!(
+            stats.snapshots_updated, 0,
+            "older snapshot must not overwrite newer"
+        );
     }
 
     #[tokio::test]
@@ -507,8 +511,28 @@ mod tests {
         let dir = tmp.path();
 
         let mappings = vec![
-            agileplus_domain::domain::sync_mapping::SyncMapping::new("Feature", 1, "p1", "h1"),
-            agileplus_domain::domain::sync_mapping::SyncMapping::new("Feature", 2, "p2", "h2"),
+            agileplus_domain::domain::sync_mapping::SyncMapping {
+                id: 0,
+                entity_type: "Feature".to_string(),
+                entity_id: 1,
+                plane_issue_id: "p1".to_string(),
+                content_hash: "h1".to_string(),
+                last_synced_at: chrono::Utc::now(),
+                sync_direction:
+                    agileplus_domain::domain::sync_mapping::SyncDirection::Bidirectional,
+                conflict_count: 0,
+            },
+            agileplus_domain::domain::sync_mapping::SyncMapping {
+                id: 0,
+                entity_type: "Feature".to_string(),
+                entity_id: 2,
+                plane_issue_id: "p2".to_string(),
+                content_hash: "h2".to_string(),
+                last_synced_at: chrono::Utc::now(),
+                sync_direction:
+                    agileplus_domain::domain::sync_mapping::SyncDirection::Bidirectional,
+                conflict_count: 0,
+            },
         ];
         let sync_state = serde_json::json!({ "sync_mappings": mappings, "sync_vector": {} });
         std::fs::write(

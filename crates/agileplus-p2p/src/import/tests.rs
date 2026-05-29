@@ -209,8 +209,26 @@ async fn import_sync_mappings_counted() {
     let dir = tmp.path();
 
     let mappings = vec![
-        agileplus_domain::domain::sync_mapping::SyncMapping::new("Feature", 1, "p1", "h1"),
-        agileplus_domain::domain::sync_mapping::SyncMapping::new("Feature", 2, "p2", "h2"),
+        agileplus_domain::domain::sync_mapping::SyncMapping {
+            id: 0,
+            entity_type: "Feature".to_string(),
+            entity_id: 1,
+            plane_issue_id: "p1".to_string(),
+            content_hash: "h1".to_string(),
+            last_synced_at: chrono::Utc::now(),
+            sync_direction: agileplus_domain::domain::sync_mapping::SyncDirection::Bidirectional,
+            conflict_count: 0,
+        },
+        agileplus_domain::domain::sync_mapping::SyncMapping {
+            id: 0,
+            entity_type: "Feature".to_string(),
+            entity_id: 2,
+            plane_issue_id: "p2".to_string(),
+            content_hash: "h2".to_string(),
+            last_synced_at: chrono::Utc::now(),
+            sync_direction: agileplus_domain::domain::sync_mapping::SyncDirection::Bidirectional,
+            conflict_count: 0,
+        },
     ];
     let sync_state = serde_json::json!({ "sync_mappings": mappings, "sync_vector": {} });
     std::fs::write(

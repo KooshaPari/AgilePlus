@@ -17,6 +17,15 @@ use tracing::{debug, info};
 use crate::discovery::PeerInfo;
 use crate::error::SyncError;
 
+/// Partial ordering between two vector-clock snapshots.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ClockRelation {
+    Equal,
+    Greater,
+    Less,
+    Concurrent,
+}
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 /// Per-entity watermark vector for one device.
@@ -63,6 +72,47 @@ impl SyncVector {
             .get(&(entity_type.to_string(), entity_id.to_string()))
             .copied()
             .unwrap_or(0)
+    }
+
+    /// Compare two clocks by taking the per-entry partial order.
+    pub fn compare(&self, other: &Self) -> ClockRelation {
+        let mut greater = false;
+        let mut less = false;
+
+        for key in self.entries.keys().chain(other.entries.keys()) {
+            let left = self.entries.get(key).copied().unwrap_or(0);
+            let right = other.entries.get(key).copied().unwrap_or(0);
+
+            if left > right {
+                greater = true;
+            } else if left < right {
+                less = true;
+            }
+
+            if greater && less {
+                return ClockRelation::Concurrent;
+            }
+        }
+
+        match (greater, less) {
+            (false, false) => ClockRelation::Equal,
+            (true, false) => ClockRelation::Greater,
+            (false, true) => ClockRelation::Less,
+            (true, true) => ClockRelation::Concurrent,
+        }
+    }
+
+    /// Returns `true` if `self` is greater than or equal to `other`.
+    pub fn dominates(&self, other: &Self) -> bool {
+        matches!(
+            self.compare(other),
+            ClockRelation::Equal | ClockRelation::Greater
+        )
+    }
+
+    /// Returns `true` if the two clocks are incomparable.
+    pub fn is_concurrent(&self, other: &Self) -> bool {
+        matches!(self.compare(other), ClockRelation::Concurrent)
     }
 }
 
