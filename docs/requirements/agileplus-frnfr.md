@@ -1,0 +1,342 @@
+# AgilePlus FR/NFR Requirements Catalog
+
+**Version:** 1.0.0  
+**Date:** 2026-05-29  
+**Status:** Backfilled from shipped session (PRs #574–#607) + forward gaps  
+**Audience:** Tracera + AgilePlus system-of-record ingestion, future agents
+
+---
+
+## System Overview
+
+AgilePlus is a hexagonal-architecture Rust workspace providing an agile project management backend with:
+- A rich domain model (User, Project, Epic, Feature, Story, WorkPackage, Cycle, Module, Backlog)
+- A GitHub sync adapter (octocrab) mapping issues/PRs to domain entities
+- SQLite-backed persistence via repository ports
+- NATS-based domain event bus
+- Axum REST API with OpenAPI
+- Clap CLI with sync subcommand
+- P2P replication via mDNS discovery + vector-clock merge
+- Application use-case layer wiring ports to adapters
+
+**Workspace root:** `crates/`  
+**Key crates:** `agileplus-domain`, `agileplus-application`, `agileplus-github`, `agileplus-sqlite`, `agileplus-events`, `agileplus-nats`, `agileplus-api`, `agileplus-cli`, `agileplus-p2p`, `agileplus-config`, `agileplus-import`
+
+---
+
+## Functional Requirements
+
+### FR-AGP-001 — Domain Aggregate Model
+
+| Field | Value |
+|---|---|
+| **ID** | FR-AGP-001 |
+| **Title** | Rich domain aggregates with enforced invariants |
+| **Description** | The system shall define User, Project, Epic, Feature, Story, WorkPackage, Cycle, Module, Backlog, and Governance aggregates as first-class domain types. Aggregates enforce business rules at construction time so illegal states are unrepresentable. |
+| **Acceptance Criteria** | AC1: Project requires a non-empty name and valid owner; constructor returns `Result`. AC2: Story has a state machine with valid transitions only (see `state_machine.rs`). AC3: All aggregates derive `Debug`, `Clone`, `Serialize/Deserialize`. AC4: Domain events emitted on aggregate mutations. |
+| **Status** | SHIPPED |
+| **Traceability** | PRs #581, #595; `crates/agileplus-domain/src/domain/{project,epic,story,user,feature,work_package,cycle,module,backlog}.rs`; `crates/agileplus-domain/src/domain/state_machine.rs` |
+
+---
+
+### FR-AGP-002 — GitHub Repository Sync
+
+| Field | Value |
+|---|---|
+| **ID** | FR-AGP-002 |
+| **Title** | Sync GitHub issues and PRs into domain Stories/Features |
+| **Description** | The system shall read GitHub issues and pull requests from a given repository via the octocrab client, map them to domain Story/Feature entities, and upsert them into the local store via the `SyncMappingRepository` port. |
+| **Acceptance Criteria** | AC1: `GithubClient` authenticates via PAT from config (no hardcoded secrets). AC2: Issues are mapped to `Story`; PRs are mapped to `Feature`. AC3: Labels/milestone/assignees are captured. AC4: `SyncMapping` records GitHub ID → domain ID relationship. AC5: Repeated syncs are idempotent (upsert). |
+| **Status** | SHIPPED |
+| **Traceability** | PRs #592, #596, #597; `crates/agileplus-github/src/{client.rs,map.rs,sync.rs}`; `crates/agileplus-domain/src/domain/sync_mapping.rs` |
+
+---
+
+### FR-AGP-003 — SQLite Persistence
+
+| Field | Value |
+|---|---|
+| **ID** | FR-AGP-003 |
+| **Title** | Persist all domain aggregates to SQLite |
+| **Description** | The system shall provide SQLite-backed implementations of all repository ports (User, Project, Epic, Feature, Story, WorkPackage, Cycle, Module, Backlog, SyncMapping, Event, Evidence, Metric) using `sqlx` with compile-time-checked queries and automatic migrations. |
+| **Acceptance Criteria** | AC1: All repository traits defined in `agileplus-domain::ports` have a corresponding `SqliteXxxRepository` impl. AC2: Migrations run automatically on startup. AC3: CRUD operations return domain types (not DTOs). AC4: Repository impls are wired via the application composition root. |
+| **Status** | SHIPPED |
+| **Traceability** | PR #602; `crates/agileplus-sqlite/src/repository/{projects,epics,stories,users,features,work_packages,cycles,modules,sync_mappings,events,evidence,metrics}.rs`; `crates/agileplus-sqlite/src/lib/` (migrations) |
+
+---
+
+### FR-AGP-004 — Domain Event Publishing via NATS
+
+| Field | Value |
+|---|---|
+| **ID** | FR-AGP-004 |
+| **Title** | Publish typed domain events over NATS JetStream |
+| **Description** | The system shall define a typed `DomainEvent` enum (StoryCreated, StoryTransitioned, EpicCreated, FeatureAdvanced, SyncCompleted, etc.) wrapped in an `EventEnvelope` with aggregate ID, timestamp, and correlation ID; publish these via a hexagonal `EventBus` port backed by a NATS JetStream adapter. |
+| **Acceptance Criteria** | AC1: `EventBus` port defined in `agileplus-events`. AC2: `NatsAdapter` implements `EventBus`. AC3: Subject naming follows `agileplus.<aggregate>.<event>` convention. AC4: Envelope includes `aggregate_id`, `event_id` (UUID), `occurred_at`, `correlation_id`. AC5: Adapter is optional at runtime (degrades gracefully if NATS unreachable). |
+| **Status** | SHIPPED |
+| **Traceability** | PRs #600, #605; `crates/agileplus-events/src/{domain_event.rs,envelope.rs,handler.rs}`; `crates/agileplus-nats/src/{nats_adapter.rs,subject.rs,bus/bus.rs}` |
+
+---
+
+### FR-AGP-005 — Application Use-Case Layer
+
+| Field | Value |
+|---|---|
+| **ID** | FR-AGP-005 |
+| **Title** | Hexagonal use-case orchestration |
+| **Description** | The system shall provide an `agileplus-application` crate with use-case structs that accept repository + event bus ports and orchestrate domain logic: CreateStory, CreateEpic, CreateFeature, AdvanceFeature, TransitionStory. Use cases return domain types and emit events. |
+| **Acceptance Criteria** | AC1: Use cases depend only on port traits, never on adapter impls. AC2: Each use case has a single public `execute()` method. AC3: Use cases emit relevant `DomainEvent`s through the `EventBus` port. AC4: DTOs live in `agileplus-application::dto`, not in domain. |
+| **Status** | SHIPPED |
+| **Traceability** | PR #603; `crates/agileplus-application/src/use_cases/{create_story,create_epic,create_feature,advance_feature,transition_story}.rs`; `crates/agileplus-application/src/dto/` |
+
+---
+
+### FR-AGP-006 — REST API (CRUD + sync routes)
+
+| Field | Value |
+|---|---|
+| **ID** | FR-AGP-006 |
+| **Title** | Axum HTTP REST API for domain aggregates |
+| **Description** | The system shall expose an Axum HTTP server with REST routes for Projects, Epics, Stories, Features, Cycles, Modules, Backlogs, WorkPackages, Governance, Branches/Worktrees, Import, Events, and a health endpoint. Routes delegate to application use-cases via the composition root `AppState`. |
+| **Acceptance Criteria** | AC1: `GET /health` returns `200 OK` with uptime and version. AC2: CRUD routes exist for Project/Epic/Story (create, list, get-by-id). AC3: OpenAPI schema generated at startup via `utoipa`. AC4: No secrets in route handlers; auth tokens read from request headers or config. AC5: `AppState` is assembled at main() from adapters, not hardcoded. |
+| **Status** | SHIPPED |
+| **Traceability** | PRs #587, #606; `crates/agileplus-api/src/{router.rs,state.rs,routes/,middleware/,health.rs,openapi.rs}` |
+
+---
+
+### FR-AGP-007 — CLI Sync Subcommand
+
+| Field | Value |
+|---|---|
+| **ID** | FR-AGP-007 |
+| **Title** | CLI `sync` subcommand for GitHub repository ingestion |
+| **Description** | The system shall provide an `agileplus-cli` binary with a `sync` subcommand accepting `--repo <owner/repo>` and `--project <id>` flags, invoking the GitHub sync service and printing a progress/summary report to stdout. |
+| **Acceptance Criteria** | AC1: `agileplus sync --repo owner/repo --project <uuid>` runs without error on a valid PAT. AC2: Sync output shows counts: issues mapped, PRs mapped, new stories, updated stories. AC3: Errors (missing token, unreachable GitHub) exit with non-zero code and human-readable message. AC4: Config loaded from `.env` / env vars, not CLI flags for secrets. |
+| **Status** | SHIPPED |
+| **Traceability** | PRs #586, #601; `crates/agileplus-cli/src/{main.rs,commands/sync_cmd.rs,context.rs}` |
+
+---
+
+### FR-AGP-008 — P2P Peer Discovery and Replication
+
+| Field | Value |
+|---|---|
+| **ID** | FR-AGP-008 |
+| **Title** | mDNS peer discovery + vector-clock replication |
+| **Description** | The system shall discover AgilePlus peers on the local network via mDNS, maintain a peer registry, and replicate domain state via a vector-clock-based merge protocol ensuring eventual consistency without a central coordinator. |
+| **Acceptance Criteria** | AC1: `PeerDiscovery` service registers and discovers `_agileplus._tcp` mDNS service. AC2: `VectorClock` correctly computes happens-before and concurrent relationships. AC3: Replicated events are deduplicated by event ID. AC4: Conflict resolution is deterministic (last-writer-wins by wall-clock tiebreaker). |
+| **Status** | SHIPPED |
+| **Traceability** | PRs #591, #599; `crates/agileplus-p2p/src/{discovery.rs,vector_clock.rs,replication.rs,device.rs}` |
+
+---
+
+### FR-AGP-009 — Import / Export Pipeline
+
+| Field | Value |
+|---|---|
+| **ID** | FR-AGP-009 |
+| **Title** | Import projects from external manifest formats |
+| **Description** | The system shall accept a manifest file describing a project structure (epics, stories, features) and import it into the domain model, producing an `ImportReport` with success/failure counts and error details. |
+| **Acceptance Criteria** | AC1: `ImportReport` captures total, succeeded, failed item counts. AC2: Individual item import failures do not abort the entire import. AC3: Unit tests cover `ImportReport` construction and error accumulation. |
+| **Status** | SHIPPED |
+| **Traceability** | PR #590; `crates/agileplus-import/src/{importer/,manifest.rs,report.rs}` |
+
+---
+
+### FR-AGP-010 — Config Builder Macro
+
+| Field | Value |
+|---|---|
+| **ID** | FR-AGP-010 |
+| **Title** | `config_builder!` macro for zero-boilerplate config structs |
+| **Description** | The system shall provide a `config_builder!` declarative macro in `agileplus-config` that generates typed config structs with env-var loading, defaults, and validation from a single declaration, eliminating duplicated config wiring across crates. |
+| **Acceptance Criteria** | AC1: Macro replaces at least 3 previously duplicated config sites. AC2: Generated structs load values from env vars with documented fallback defaults. AC3: Missing required values produce a compile-time or startup error with the var name. |
+| **Status** | SHIPPED |
+| **Traceability** | PR #607; `crates/agileplus-config/src/lib.rs` |
+
+---
+
+### FR-AGP-011 — gRPC Service Layer (planned)
+
+| Field | Value |
+|---|---|
+| **ID** | FR-AGP-011 |
+| **Title** | gRPC API surface for inter-service communication |
+| **Description** | The system shall expose gRPC endpoints for domain operations using tonic, enabling programmatic consumption by other services in the Phenotype org. Build system must gracefully degrade when `protoc` is absent. |
+| **Acceptance Criteria** | AC1: `build.rs` gates proto compilation on `protoc` availability. AC2: At least `SyncService` and `StoryService` RPCs are defined in `.proto`. AC3: gRPC server starts alongside REST API on a separate port. |
+| **Status** | PARTIAL — build fix shipped; proto definitions + service impl PLANNED |
+| **Traceability** | PR #594 (build fix); `crates/agileplus-grpc/` (stubs) |
+
+---
+
+### FR-AGP-012 — API Authentication (planned)
+
+| Field | Value |
+|---|---|
+| **ID** | FR-AGP-012 |
+| **Title** | Bearer-token authentication on REST API routes |
+| **Description** | All mutating REST API routes shall require a valid bearer token validated against a configured secret or issuer. Read routes may be optionally gated. |
+| **Acceptance Criteria** | AC1: Unauthenticated mutations return `401 Unauthorized`. AC2: Token validation uses middleware, not per-handler logic. AC3: API key configured via env var `AGILEPLUS_API_KEY`. |
+| **Status** | PLANNED |
+| **Traceability** | `crates/agileplus-api/src/api_key.rs` (scaffold exists, not wired) |
+
+---
+
+### FR-AGP-013 — End-to-End Sync → SQLite Wiring (planned)
+
+| Field | Value |
+|---|---|
+| **ID** | FR-AGP-013 |
+| **Title** | GitHub sync service wired to SQLite persistence end-to-end |
+| **Description** | The `sync_repository` service shall invoke the application use cases which call SQLite repository adapters, persisting synced Stories/Features durably. Currently, sync populates in-memory structures; the SQLite repos are independently implemented but the wiring through `AppState` for sync is incomplete. |
+| **Acceptance Criteria** | AC1: Running `agileplus sync` with a valid repo persists stories to the SQLite DB file. AC2: A subsequent `agileplus list stories --project <id>` returns the persisted items. AC3: Integration test covers full round-trip. |
+| **Status** | PLANNED |
+| **Traceability** | PRs #597, #602, #603, #606 (individual pieces shipped); integration wiring gap in `AppState` |
+
+---
+
+### FR-AGP-014 — Dashboard Frontend (planned)
+
+| Field | Value |
+|---|---|
+| **ID** | FR-AGP-014 |
+| **Title** | Web dashboard for project/backlog visualization |
+| **Description** | The system shall serve a web dashboard displaying project hierarchy, sprint backlogs, and story state distributions. File templates were restored but are not yet wired to live API data. |
+| **Acceptance Criteria** | AC1: Dashboard fetches from `GET /api/projects`. AC2: Kanban board reflects live story states. AC3: Auto-refreshes on domain events via SSE or WebSocket. |
+| **Status** | PLANNED |
+| **Traceability** | PRs #577, #578 (file restore); `crates/agileplus-dashboard/` |
+
+---
+
+## Non-Functional Requirements
+
+### NFR-AGP-001 — Hexagonal Architecture
+
+| Field | Value |
+|---|---|
+| **ID** | NFR-AGP-001 |
+| **Title** | Strict ports-and-adapters separation |
+| **Description** | Domain and application crates shall not depend on infrastructure crates. Adapters (SQLite, NATS, GitHub) implement port traits defined in `agileplus-domain::ports` and `agileplus-events`. No adapter type ever appears in domain or application crate signatures. |
+| **How Met** | `agileplus-domain` has no dep on `agileplus-sqlite`, `agileplus-nats`, or `agileplus-github`. Application crate depends on domain ports only. Composition root in `agileplus-api::state` performs the wiring. |
+| **Evidence** | `crates/agileplus-domain/Cargo.toml` (no infra deps); `crates/agileplus-domain/src/ports/` (trait-only); PR #603, #605, #606 |
+
+---
+
+### NFR-AGP-002 — Illegal States Unrepresentable
+
+| Field | Value |
+|---|---|
+| **ID** | NFR-AGP-002 |
+| **Title** | Domain invariants enforced at type level |
+| **Description** | Aggregates use private fields + constructors returning `Result` for invariant validation. The Story state machine uses an enum-based transition table rejecting invalid transitions at runtime before mutation. |
+| **How Met** | Project constructor validates non-empty name/owner. `state_machine.rs` defines allowed transitions as a match table. All invalid transitions return `Err`. |
+| **Evidence** | `crates/agileplus-domain/src/domain/state_machine.rs`; `crates/agileplus-domain/src/domain/project.rs`; PR #595 |
+
+---
+
+### NFR-AGP-003 — No Hardcoded Secrets
+
+| Field | Value |
+|---|---|
+| **ID** | NFR-AGP-003 |
+| **Title** | All secrets and config via environment variables |
+| **Description** | GitHub PATs, NATS credentials, DB paths, and API keys are loaded exclusively from environment variables or `.env` files. No secrets appear in source or committed config files. |
+| **How Met** | `agileplus-github::config` loads `GITHUB_TOKEN` from env. `agileplus-nats::config` loads `NATS_URL`. `config_builder!` macro enforces env-var sourcing. `.env.example` is the only committed secrets reference. |
+| **Evidence** | `crates/agileplus-github/src/config.rs`; `crates/agileplus-nats/src/config.rs`; PR #607 (`config_builder!`); PR #574 (CVE-aware dep bumps) |
+
+---
+
+### NFR-AGP-004 — Workspace Builds Clean
+
+| Field | Value |
+|---|---|
+| **ID** | NFR-AGP-004 |
+| **Title** | `cargo build --workspace` succeeds with no errors or warnings-as-errors |
+| **Description** | CI must pass `cargo build --workspace` and `cargo test --workspace` on every merge to main. All 27 crates must compile. gRPC build gracefully degrades when `protoc` is absent. |
+| **How Met** | CI workflow uses `ubuntu-24.04` with explicit workspace member declarations. PR #594 added `tonic-build` as build-dep with graceful protoc gate. PR #583 scaffolded 9 missing stub crates. PR #582 fixed workspace member list. |
+| **Evidence** | `.github/workflows/`; PRs #582, #583, #584, #594, #598 |
+
+---
+
+### NFR-AGP-005 — Test Coverage at Unit Layer
+
+| Field | Value |
+|---|---|
+| **ID** | NFR-AGP-005 |
+| **Title** | Unit tests for all domain + application logic |
+| **Description** | All domain aggregates, use cases, and import pipeline components shall have unit tests. Tests use only in-memory/mock adapters; no real I/O in unit tests. |
+| **How Met** | `agileplus-import` has unit tests for `ImportReport`. `agileplus-sqlite` has embedded tests. Domain crates have `#[cfg(test)]` modules. Fixtures crate provides shared test data. |
+| **Evidence** | PR #590; `crates/agileplus-sqlite/src/tests.rs`; `crates/agileplus-fixtures/`; `crates/agileplus-contract-tests/` |
+
+---
+
+### NFR-AGP-006 — CVE-Aware Dependency Management
+
+| Field | Value |
+|---|---|
+| **ID** | NFR-AGP-006 |
+| **Title** | All dependencies on latest stable, no known active CVEs |
+| **Description** | Rust workspace dependencies are bumped to latest stable on each session. Python dispatch-mcp dependencies follow the same policy. Downgrades are annotated with CVE ID in commit message. |
+| **How Met** | PR #574 bumped vulnerable Rust deps. PR #593 bumped `fastmcp` from 2.14.7 → 3.2.0. |
+| **Evidence** | PRs #574, #593; `Cargo.lock`; `dispatch-mcp/pyproject.toml` |
+
+---
+
+### NFR-AGP-007 — Eventual Consistency via P2P Replication
+
+| Field | Value |
+|---|---|
+| **ID** | NFR-AGP-007 |
+| **Title** | Multi-node deployments converge to consistent state |
+| **Description** | The P2P replication layer guarantees eventual consistency: any two nodes that receive the same set of events will converge to identical state, regardless of delivery order. |
+| **How Met** | Vector-clock based merge in `agileplus-p2p`. Events are identified by UUID; deduplication prevents double-apply. Conflict resolution is deterministic. |
+| **Evidence** | PRs #591, #599; `crates/agileplus-p2p/src/vector_clock.rs`; `crates/agileplus-p2p/src/replication.rs` |
+
+---
+
+## Gaps / Forward FRs Summary
+
+| ID | Title | Status |
+|---|---|---|
+| FR-AGP-011 | gRPC service definitions + impl | PARTIAL (build fix only) |
+| FR-AGP-012 | API bearer-token authentication | PLANNED |
+| FR-AGP-013 | End-to-end sync → SQLite wiring | PLANNED |
+| FR-AGP-014 | Live dashboard frontend | PLANNED |
+| — | CLI `list` subcommands (stories, epics, features) | PLANNED |
+| — | Observability: OpenTelemetry traces + metrics export | PLANNED (`agileplus-telemetry` crate stubbed) |
+| — | Plane.so integration adapter | PLANNED (`agileplus-plane` crate stubbed) |
+| — | Graph/dependency analysis for work items | PLANNED (`agileplus-graph` crate stubbed) |
+| — | Triage automation (auto-label, auto-assign) | PLANNED (`agileplus-triage` crate stubbed) |
+
+---
+
+## Traceability Matrix (PR → FRs)
+
+| PR | Title (condensed) | Satisfies |
+|---|---|---|
+| #574 | Security: bump vulnerable deps | NFR-AGP-006 |
+| #575 | Docs: tooling reference | (docs only) |
+| #577, #578 | Restore dashboard + sibling crates | FR-AGP-014 (partial) |
+| #581 | Domain scaffold: aggregate types + ports | FR-AGP-001 |
+| #582, #583, #584 | CI fixes, workspace members, stub crates | NFR-AGP-004 |
+| #585 | Domain events + dashboard templates sync | FR-AGP-001 |
+| #586 | CLI bootstrap (clap + in-memory mock) | FR-AGP-007 |
+| #587 | API bootstrap (axum server) | FR-AGP-006 |
+| #589 | Fix duplicate domain.rs (E0761) | NFR-AGP-004 |
+| #590 | Unit tests for ImportReport | FR-AGP-009, NFR-AGP-005 |
+| #591 | P2P mDNS peer discovery | FR-AGP-008 |
+| #592 | GitHub octocrab read client | FR-AGP-002 |
+| #593 | Bump fastmcp 2.14.7 → 3.2.0 | NFR-AGP-006 |
+| #594 | gRPC tonic-build dep + protoc gate | FR-AGP-011, NFR-AGP-004 |
+| #595 | User/Epic/Story aggregates; harden Project | FR-AGP-001, NFR-AGP-002 |
+| #596 | GitHub → domain mapping | FR-AGP-002 |
+| #597 | sync_repository capstone service | FR-AGP-002, FR-AGP-013 |
+| #598 | Hygiene: lib.rs conflict, lock update | NFR-AGP-004 |
+| #599 | P2P vector-clock replication | FR-AGP-008, NFR-AGP-007 |
+| #600 | DomainEvent enum + EventEnvelope + EventHandler | FR-AGP-004 |
+| #601 | CLI sync subcommand | FR-AGP-007 |
+| #602 | SQLite-backed repositories | FR-AGP-003 |
+| #603 | Application use-case layer | FR-AGP-005 |
+| #605 | NATS hexagonal adapter | FR-AGP-004 |
+| #606 | Wire use-cases into AppState | FR-AGP-005, FR-AGP-006 |
+| #607 | config_builder! macro | FR-AGP-010, NFR-AGP-003 |
