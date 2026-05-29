@@ -135,6 +135,44 @@ pub trait StoragePort: Send + Sync {
     async fn delete_story(&self, id: i64) -> Result<(), DomainError>;
 }
 
+// ── Blanket impls ─────────────────────────────────────────────────────────────
+//
+// Any type that implements `StoragePort` automatically satisfies the focused
+// repository sub-ports.  This lets `AppState<S, …>` pass `Arc<S>` directly
+// to use-cases that only depend on the narrower port trait.
+
+#[async_trait]
+impl<T: StoragePort> StoryRepository for T {
+    async fn create(&self, story: &Story) -> Result<i64, DomainError> {
+        self.create_story(story).await
+    }
+    async fn get_by_id(&self, id: i64) -> Result<Option<Story>, DomainError> {
+        self.get_story_by_id(id).await
+    }
+    async fn update_status(&self, id: i64, status: StoryStatus) -> Result<(), DomainError> {
+        self.update_story_status(id, status).await
+    }
+    async fn list_by_epic(&self, epic_id: i64) -> Result<Vec<Story>, DomainError> {
+        self.list_stories_by_epic(epic_id).await
+    }
+}
+
+#[async_trait]
+impl<T: StoragePort> EpicRepository for T {
+    async fn create(&self, epic: &Epic) -> Result<i64, DomainError> {
+        self.create_epic(epic).await
+    }
+    async fn get_by_id(&self, id: i64) -> Result<Option<Epic>, DomainError> {
+        self.get_epic_by_id(id).await
+    }
+    async fn update_status(&self, id: i64, status: EpicStatus) -> Result<(), DomainError> {
+        self.update_epic_status(id, status).await
+    }
+    async fn list_by_project(&self, project_id: i64) -> Result<Vec<Epic>, DomainError> {
+        self.list_epics_by_project(project_id).await
+    }
+}
+
 /// Content storage port — subset used by the dashboard/content layer.
 #[async_trait]
 pub trait ContentStoragePort: Send + Sync {

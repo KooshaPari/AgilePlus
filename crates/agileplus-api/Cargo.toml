@@ -10,10 +10,11 @@ dirs = ["../../templates"]
 
 [dependencies]
 # workspace crates
-agileplus-domain    = { path = "../agileplus-domain" }
-agileplus-git       = { path = "../agileplus-git" }
-agileplus-sqlite    = { path = "../agileplus-sqlite" }
-agileplus-dashboard = { path = "../agileplus-dashboard" }
+agileplus-domain       = { path = "../agileplus-domain" }
+agileplus-application  = { path = "../agileplus-application" }
+agileplus-git          = { path = "../agileplus-git" }
+agileplus-sqlite       = { path = "../agileplus-sqlite" }
+agileplus-dashboard    = { path = "../agileplus-dashboard" }
 # workspace-managed external deps
 anyhow.workspace = true
 tokio.workspace = true
@@ -34,3 +35,4 @@ tokio-stream = { version = "0.1", features = ["sync"] }
 askama       = "0.12"
 rand         = "0.8"
 base64       = "0.22"
+async-trait  = "0.1"
