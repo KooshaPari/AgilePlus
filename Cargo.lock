@@ -312,6 +312,7 @@ version = "0.1.0"
 dependencies = [
  "agileplus-domain",
  "agileplus-events",
+ "anyhow",
  "async-trait",
  "chrono",
  "rusqlite",

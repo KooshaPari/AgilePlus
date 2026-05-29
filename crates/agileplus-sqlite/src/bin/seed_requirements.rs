@@ -1,19 +1,14 @@
-//! `seed-requirements` CLI subcommand.
+//! Standalone seed-requirements binary for the agileplus-sqlite crate.
 //!
-//! Ingests the six FR/NFR catalogs (AgilePlus, Tracera, phenotype-voxel, Authvault,
-//! PhenoMCP, PhenoObservability) as Epics + Stories into an AgilePlus SQLite database,
-//! each cross-referencing its Tracera Requirement ID.  Idempotent — safe to run multiple times.
+//! Ingests all 6 FR/NFR catalogs (AgilePlus, Tracera, phenotype-voxel, Authvault,
+//! PhenoMCP, PhenoObservability) into the target SQLite database.
+//! Idempotent — safe to run multiple times (upsert by requirement_id).
+//!
+//! Usage:
+//!   cargo run -p agileplus-sqlite --bin seed_requirements -- --db agileplus.db
 
 use std::path::PathBuf;
 
-use clap::Args;
-
-use agileplus_sqlite::seed::{Initiative, seed_requirements};
-
-/// Embedded catalog markdown files — bundled at compile time.
-/// Paths are relative to this source file:
-///   crates/agileplus-cli/src/commands/seed_requirements.rs
-///   → up 4 dirs → workspace root → docs/requirements/
 const AGILEPLUS_CATALOG: &str = include_str!(
     "../../../../docs/requirements/agileplus-frnfr.md"
 );
@@ -33,23 +28,30 @@ const PHENOOBSERVABILITY_CATALOG: &str = include_str!(
     "../../../../docs/requirements/phenoobservability-frnfr.md"
 );
 
-/// Arguments for the `seed-requirements` subcommand.
-#[derive(Args, Debug)]
-pub struct SeedRequirementsArgs {
-    /// Path to the SQLite database file. Defaults to `./agileplus.db`.
-    #[arg(long, default_value = "agileplus.db")]
-    pub db: PathBuf,
+fn main() -> anyhow::Result<()> {
+    // Simple arg parse: --db <path>
+    let args: Vec<String> = std::env::args().collect();
+    let db_path: PathBuf = {
+        let mut p = PathBuf::from("agileplus.db");
+        let mut i = 1;
+        while i < args.len() {
+            if args[i] == "--db" && i + 1 < args.len() {
+                p = PathBuf::from(&args[i + 1]);
+                break;
+            }
+            i += 1;
+        }
+        p
+    };
 
-    /// Print a detailed per-story report.
-    #[arg(long)]
-    pub verbose: bool,
-}
-
-pub fn run(args: &SeedRequirementsArgs) -> anyhow::Result<()> {
-    let conn = rusqlite::Connection::open(&args.db)?;
+    println!("Opening database: {}", db_path.display());
+    let conn = rusqlite::Connection::open(&db_path)?;
     conn.execute_batch("PRAGMA foreign_keys=ON;")?;
+
     let runner = agileplus_sqlite::migrations::MigrationRunner::new(&conn);
     runner.run_all().map_err(|e| anyhow::anyhow!("{e}"))?;
+
+    use agileplus_sqlite::seed::{Initiative, seed_requirements};
 
     let initiatives = vec![
         Initiative {
@@ -94,16 +96,19 @@ pub fn run(args: &SeedRequirementsArgs) -> anyhow::Result<()> {
         report.initiatives.len()
     );
 
-    if args.verbose {
-        for init in &report.initiatives {
-            println!("\n  Epic [{}] id={}", init.epic_requirement_id, init.epic_id);
-            for s in &init.stories {
-                println!(
-                    "    Story [{}] id={} status={:?}",
-                    s.requirement_id, s.story_id, s.status
-                );
-            }
-        }
+    for init in &report.initiatives {
+        let done_count = init.stories.iter().filter(|s| {
+            matches!(s.status, agileplus_domain::domain::story::StoryStatus::Done)
+        }).count();
+        let todo_count = init.stories.len() - done_count;
+        println!(
+            "  [{}] epic_id={} stories={} (Done={} Todo={})",
+            init.initiative_slug,
+            init.epic_id,
+            init.stories.len(),
+            done_count,
+            todo_count,
+        );
     }
 
     Ok(())
