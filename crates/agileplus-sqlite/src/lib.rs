@@ -534,6 +534,11 @@ impl StoragePort for SqliteStorageAdapter {
         let conn = self.lock()?;
         stories::delete_story(&conn, id)
     }
+
+    async fn upsert_story_by_requirement_id(&self, story: &Story) -> Result<i64, DomainError> {
+        let conn = self.lock()?;
+        stories::upsert_story_by_requirement_id(&conn, story)
+    }
 }
 
 #[async_trait::async_trait]

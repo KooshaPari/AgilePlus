@@ -133,6 +133,9 @@ pub trait StoragePort: Send + Sync {
     async fn list_stories_by_epic(&self, epic_id: i64) -> Result<Vec<Story>, DomainError>;
     async fn list_stories_by_project(&self, project_id: i64) -> Result<Vec<Story>, DomainError>;
     async fn delete_story(&self, id: i64) -> Result<(), DomainError>;
+    /// Upsert a story keyed by `story.requirement_id` — see
+    /// [`StoryRepository::upsert_by_requirement_id`] for semantics.
+    async fn upsert_story_by_requirement_id(&self, story: &Story) -> Result<i64, DomainError>;
 }
 
 // ── Blanket impls ─────────────────────────────────────────────────────────────
@@ -154,6 +157,9 @@ impl<T: StoragePort> StoryRepository for T {
     }
     async fn list_by_epic(&self, epic_id: i64) -> Result<Vec<Story>, DomainError> {
         self.list_stories_by_epic(epic_id).await
+    }
+    async fn upsert_by_requirement_id(&self, story: &Story) -> Result<i64, DomainError> {
+        self.upsert_story_by_requirement_id(story).await
     }
 }
 

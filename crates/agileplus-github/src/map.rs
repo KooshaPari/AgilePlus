@@ -111,6 +111,8 @@ pub fn issue_to_story(
     story.description = issue.body.clone().filter(|b| !b.trim().is_empty());
     story.status = status;
     story.id = issue.number;
+    // Stable external key for idempotent upsert (FR-AGP-013).
+    story.requirement_id = Some(format!("gh:issue:{}", issue.number));
     Ok(story)
 }
 
@@ -127,6 +129,8 @@ pub fn pr_to_story(
     story.description = pr.body.clone().filter(|b| !b.trim().is_empty());
     story.status = status;
     story.id = pr.number;
+    // Stable external key for idempotent upsert (FR-AGP-013).
+    story.requirement_id = Some(format!("gh:pr:{}", pr.number));
     Ok(story)
 }
 

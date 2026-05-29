@@ -153,6 +153,7 @@ mod tests {
         async fn list_stories_by_epic(&self, _: i64) -> Result<Vec<agileplus_domain::domain::story::Story>, DomainError> { Ok(vec![]) }
         async fn list_stories_by_project(&self, _: i64) -> Result<Vec<agileplus_domain::domain::story::Story>, DomainError> { Ok(vec![]) }
         async fn delete_story(&self, _: i64) -> Result<(), DomainError> { Ok(()) }
+        async fn upsert_story_by_requirement_id(&self, _: &agileplus_domain::domain::story::Story) -> Result<i64, DomainError> { Ok(0) }
     }
 
     /// In-memory Story store.

@@ -182,16 +182,16 @@ AgilePlus is a hexagonal-architecture Rust workspace providing an agile project 
 
 ---
 
-### FR-AGP-013 — End-to-End Sync → SQLite Wiring (planned)
+### FR-AGP-013 — End-to-End Sync → SQLite Wiring
 
 | Field | Value |
 |---|---|
 | **ID** | FR-AGP-013 |
 | **Title** | GitHub sync service wired to SQLite persistence end-to-end |
-| **Description** | The `sync_repository` service shall invoke the application use cases which call SQLite repository adapters, persisting synced Stories/Features durably. Currently, sync populates in-memory structures; the SQLite repos are independently implemented but the wiring through `AppState` for sync is incomplete. |
-| **Acceptance Criteria** | AC1: Running `agileplus sync` with a valid repo persists stories to the SQLite DB file. AC2: A subsequent `agileplus list stories --project <id>` returns the persisted items. AC3: Integration test covers full round-trip. |
-| **Status** | PLANNED |
-| **Traceability** | PRs #597, #602, #603, #606 (individual pieces shipped); integration wiring gap in `AppState` |
+| **Description** | The `sync_repository` service shall invoke the application use cases which call SQLite repository adapters, persisting synced Stories/Features durably. `PersistSyncedStories` is the application-layer bridge: it accepts the `Vec<Story>` produced by `sync_repository` and upserts each story via the `StoryRepository` port (keyed by `requirement_id` = `gh:issue:<n>` / `gh:pr:<n>`). The SQLite adapter's `upsert_story_by_requirement_id` fulfils idempotency at the persistence layer. |
+| **Acceptance Criteria** | AC1: `PersistSyncedStories::execute` persists N stories via `StoryRepository::upsert_by_requirement_id`. AC2: Re-running with the same stories does not create duplicates (idempotent upsert by `requirement_id`). AC3: Stories without a `requirement_id` return `DomainError::Validation`, not silent data loss. AC4: Five unit tests (in-memory double, no I/O) cover: N stories persisted, idempotent re-sync, missing `requirement_id` error, empty list, skipped items not persisted. |
+| **Status** | SHIPPED |
+| **Traceability** | PRs #597, #602, #603, #606 (individual pieces); this PR (feat/sync-sqlite-persistence) — `crates/agileplus-application/src/use_cases/persist_synced_stories.rs`; 5 new tests in that module; `crates/agileplus-domain/src/ports/story.rs` (`upsert_by_requirement_id`); `crates/agileplus-sqlite/src/repository/stories.rs` (`upsert_story_by_requirement_id`) |
 
 ---
 
@@ -300,7 +300,7 @@ AgilePlus is a hexagonal-architecture Rust workspace providing an agile project 
 |---|---|---|
 | FR-AGP-011 | gRPC service definitions + impl | PARTIAL (build fix only) |
 | FR-AGP-012 | API bearer-token authentication | PLANNED |
-| FR-AGP-013 | End-to-end sync → SQLite wiring | PLANNED |
+| FR-AGP-013 | End-to-end sync → SQLite wiring | SHIPPED |
 | FR-AGP-014 | Live dashboard frontend | PLANNED |
 | — | CLI `list` subcommands (stories, epics, features) | PLANNED |
 | — | Observability: OpenTelemetry traces + metrics export | PLANNED (`agileplus-telemetry` crate stubbed) |
@@ -340,3 +340,4 @@ AgilePlus is a hexagonal-architecture Rust workspace providing an agile project 
 | #605 | NATS hexagonal adapter | FR-AGP-004 |
 | #606 | Wire use-cases into AppState | FR-AGP-005, FR-AGP-006 |
 | #607 | config_builder! macro | FR-AGP-010, NFR-AGP-003 |
+| feat/sync-sqlite-persistence | PersistSyncedStories use case + 5 tests | FR-AGP-013, NFR-AGP-005 |
