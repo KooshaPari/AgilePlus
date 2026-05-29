@@ -1,5 +1,7 @@
 //! agileplus-cli — minimal smoke-test CLI backed by in-memory mock data.
 
+mod sync_cmd;
+
 use clap::{Parser, Subcommand};
 
 use agileplus_domain::domain::{
@@ -9,6 +11,8 @@ use agileplus_domain::domain::{
     state_machine::FeatureState,
 };
 use chrono::NaiveDate;
+
+use sync_cmd::SyncArgs;
 
 // ── top-level CLI ────────────────────────────────────────────────────────────
 
@@ -42,6 +46,8 @@ enum Command {
     },
     /// Print CLI version information
     Version,
+    /// Sync a GitHub repository with an AgilePlus project
+    Sync(SyncArgs),
 }
 
 #[derive(Subcommand)]
@@ -186,21 +192,34 @@ fn cmd_version() {
 
 // ── entry point ──────────────────────────────────────────────────────────────
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let cli = Cli::parse();
     let store = MockStore::seed();
 
-    match cli.command {
-        Command::Feature { sub } => match sub {
-            FeatureCmd::List => cmd_feature_list(&store),
-            FeatureCmd::Show { id } => cmd_feature_show(&store, id),
-        },
-        Command::Module { sub } => match sub {
-            ModuleCmd::List => cmd_module_list(&store),
-        },
-        Command::Cycle { sub } => match sub {
-            CycleCmd::Current => cmd_cycle_current(&store),
-        },
-        Command::Version => cmd_version(),
+    let result: anyhow::Result<()> = async {
+        match cli.command {
+            Command::Feature { sub } => match sub {
+                FeatureCmd::List => cmd_feature_list(&store),
+                FeatureCmd::Show { id } => cmd_feature_show(&store, id),
+            },
+            Command::Module { sub } => match sub {
+                ModuleCmd::List => cmd_module_list(&store),
+            },
+            Command::Cycle { sub } => match sub {
+                CycleCmd::Current => cmd_cycle_current(&store),
+            },
+            Command::Version => cmd_version(),
+            Command::Sync(args) => {
+                sync_cmd::run(args, None).await?;
+            }
+        }
+        Ok(())
+    }
+    .await;
+
+    if let Err(e) = result {
+        eprintln!("error: {e:#}");
+        std::process::exit(1);
     }
 }
