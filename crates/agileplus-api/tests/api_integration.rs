@@ -1105,7 +1105,7 @@ async fn otel_request_span_middleware_wraps_handler() {
         .route("/ping", get(|| async { Json(serde_json::json!({"ok": true})) }))
         .layer(opentelemetry_tracing_layer());
 
-    let server = TestServer::new(app).unwrap();
+    let server = TestServer::new(app);
     let resp = server.get("/ping").await;
     resp.assert_status_ok();
 
@@ -1126,7 +1126,7 @@ async fn otel_request_span_propagates_traceparent() {
         .route("/ping", get(|| async { Json(serde_json::json!({"ok": true})) }))
         .layer(opentelemetry_tracing_layer());
 
-    let server = TestServer::new(app).unwrap();
+    let server = TestServer::new(app);
     let resp = server
         .get("/ping")
         .add_header(

@@ -10,7 +10,18 @@ anyhow.workspace = true
 tokio.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
+tracing-appender.workspace = true
+tracing-opentelemetry = "0.28"
 opentelemetry.workspace = true
 opentelemetry_sdk.workspace = true
 opentelemetry-otlp.workspace = true
-tracing-opentelemetry.workspace = true
+serde.workspace = true
+serde_yaml.workspace = true
+thiserror.workspace = true
+chrono.workspace = true
+url.workspace = true
+dirs.workspace = true
+agileplus-domain = { path = "../agileplus-domain" }
+
+[dev-dependencies]
+tempfile.workspace = true

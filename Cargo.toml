@@ -58,7 +58,12 @@ tokio = { version = "1.39", features = ["full"] }
 thiserror = "2"
 anyhow = "1"
 tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt", "json"] }
+tracing-appender = "0.2"
+serde_yaml = "0.9"
+url = "2"
+dirs = "5"
+tempfile = "3"
 axum = { version = "0.8", features = ["json", "macros"] }
 chrono = { version = "0.4", features = ["serde"] }
 sha2 = "0.10"
@@ -73,7 +78,7 @@ gix = "0.83.0"
 # OpenTelemetry - matching versions for compatibility
 opentelemetry = { version = "0.27", features = ["metrics"] }
 opentelemetry_sdk = { version = "0.27", features = ["metrics", "trace", "rt-tokio"] }
-opentelemetry-otlp = { version = "0.27", features = ["tonic", "gzip-tonic"] }
+opentelemetry-otlp = { version = "0.27", features = ["tonic", "gzip-tonic", "http-proto", "reqwest-client"] }
 # OpenTelemetry tracing bridge — uncomment when ready to use
 tracing-opentelemetry = "0.27"
 utoipa = "4"

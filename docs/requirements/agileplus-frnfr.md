@@ -208,6 +208,19 @@ AgilePlus is a hexagonal-architecture Rust workspace providing an agile project 
 
 ---
 
+### FR-AGP-015 — OpenTelemetry Observability
+
+| Field | Value |
+|---|---|
+| **ID** | FR-AGP-015 |
+| **Title** | OpenTelemetry traces + metrics export via OTLP |
+| **Description** | The system shall instrument the Axum API with a per-request tracing span (method, path, status, duration) and initialise an OTLP exporter pointed at `OTEL_EXPORTER_OTLP_ENDPOINT`. When no endpoint is configured the system runs in no-op mode (no network connection, no errors). The wiring is hexagonal: a thin `agileplus-telemetry` init module configures the global `tracing` subscriber with an optional `tracing-opentelemetry` layer; business logic is not polluted with OTel calls. |
+| **Acceptance Criteria** | AC1: `OTEL_EXPORTER_OTLP_ENDPOINT` absent → subscriber initialises successfully with no-op provider. AC2: `TelemetryAdapter::noop()` implements `ObservabilityPort` without panicking. AC3: `init_telemetry(TelemetryConfig::default())` returns `Ok(TelemetryGuard)`. AC4: `OtelTracingLayer` middleware wraps an axum handler without disrupting the response. AC5: W3C `traceparent` header propagates through middleware without panic. |
+| **Status** | SHIPPED |
+| **Traceability** | feat/opentelemetry; `crates/agileplus-telemetry/src/lib.rs` (`init_subscriber`, `SubscriberGuard`), `src/adapter.rs` (`TelemetryAdapter`, `TelemetryGuard`, `init_telemetry`), `src/traces/mod.rs` (`telemetry_layer`), `src/config.rs` (`TelemetryConfig`); `crates/agileplus-api/src/middleware/otel.rs` (`OtelTracingLayer`, `opentelemetry_tracing_layer`); 33 unit tests in `agileplus-telemetry`, 2 new integration tests in `agileplus-api`. Crates: `tracing 0.1`, `tracing-subscriber 0.3`, `tracing-opentelemetry 0.28`, `opentelemetry 0.27`, `opentelemetry_sdk 0.27`, `opentelemetry-otlp 0.27` (http-proto + reqwest). |
+
+---
+
 ## Non-Functional Requirements
 
 ### NFR-AGP-001 — Hexagonal Architecture
@@ -303,7 +316,7 @@ AgilePlus is a hexagonal-architecture Rust workspace providing an agile project 
 | FR-AGP-013 | End-to-end sync → SQLite wiring | SHIPPED |
 | FR-AGP-014 | Live dashboard frontend | PLANNED |
 | — | CLI `list` subcommands (stories, epics, features) | PLANNED |
-| — | Observability: OpenTelemetry traces + metrics export | PLANNED (`agileplus-telemetry` crate stubbed) |
+| FR-AGP-015 | Observability: OpenTelemetry traces + metrics export | SHIPPED (feat/opentelemetry) |
 | — | Plane.so integration adapter | PLANNED (`agileplus-plane` crate stubbed) |
 | — | Graph/dependency analysis for work items | PLANNED (`agileplus-graph` crate stubbed) |
 | — | Triage automation (auto-label, auto-assign) | PLANNED (`agileplus-triage` crate stubbed) |
@@ -341,3 +354,4 @@ AgilePlus is a hexagonal-architecture Rust workspace providing an agile project 
 | #606 | Wire use-cases into AppState | FR-AGP-005, FR-AGP-006 |
 | #607 | config_builder! macro | FR-AGP-010, NFR-AGP-003 |
 | feat/sync-sqlite-persistence | PersistSyncedStories use case + 5 tests | FR-AGP-013, NFR-AGP-005 |
+| feat/opentelemetry | OTel subscriber init + OTLP adapter + request-span middleware + 35 tests | FR-AGP-015, NFR-AGP-004 |
