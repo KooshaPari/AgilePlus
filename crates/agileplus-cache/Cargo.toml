@@ -6,6 +6,7 @@ license.workspace = true
 rust-version.workspace = true
 
 [dependencies]
+agileplus-config = { workspace = true }
 agileplus-domain = { path = "../agileplus-domain" }
 redis = { version = "0.27", features = ["aio", "tokio-comp"] }
 bb8 = "0.9"

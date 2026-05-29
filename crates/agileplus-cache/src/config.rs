@@ -1,42 +1,32 @@
 //! Cache configuration.
 
-#[derive(Clone, Debug)]
-pub struct CacheConfig {
-    pub host: String,
-    pub port: u16,
-    pub pool_size: u32,
-    pub default_ttl_secs: u64,
-    pub connection_timeout_secs: u64,
+use agileplus_config::config_builder;
+
+config_builder! {
+    #[derive(Clone, Debug)]
+    pub struct CacheConfig {
+        (str)  pub host: String = "localhost".to_string(),
+        (val)  pub port: u16 = 6379,
+        (val)  pub pool_size: u32 = 16,
+        (val)  pub default_ttl_secs: u64 = 3600,
+        (val)  pub connection_timeout_secs: u64 = 5,
+    }
 }
 
 impl CacheConfig {
+    /// Construct with explicit host and port; all other fields use defaults.
     pub fn new(host: String, port: u16) -> Self {
-        Self {
-            host,
-            port,
-            pool_size: 16,
-            default_ttl_secs: 3600,
-            connection_timeout_secs: 5,
-        }
+        Self { host, port, ..Self::default() }
     }
 
-    pub fn with_pool_size(mut self, size: u32) -> Self {
-        self.pool_size = size;
-        self
+    /// Back-compat alias for [`with_default_ttl_secs`].
+    #[inline]
+    pub fn with_default_ttl(self, secs: u64) -> Self {
+        self.with_default_ttl_secs(secs)
     }
 
-    pub fn with_default_ttl(mut self, secs: u64) -> Self {
-        self.default_ttl_secs = secs;
-        self
-    }
-
+    /// Redis connection URL.
     pub fn redis_url(&self) -> String {
         format!("redis://{}:{}", self.host, self.port)
-    }
-}
-
-impl Default for CacheConfig {
-    fn default() -> Self {
-        Self::new("localhost".into(), 6379)
     }
 }

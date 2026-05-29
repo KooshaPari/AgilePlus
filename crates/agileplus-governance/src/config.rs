@@ -13,6 +13,7 @@
 //! - `AGILEPLUS_POLICY_*` for policy config
 //! - `AGILEPLUS_RATE_LIMIT_*` for rate limit config
 
+use agileplus_config::config_builder;
 use crate::types::AuthMethod;
 use serde::{Deserialize, Serialize};
 
@@ -43,120 +44,61 @@ impl Default for GovernanceConfig {
     }
 }
 
-/// Remote governance settings
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct GovernanceSettings {
-    /// Enable governance
-    pub enabled: bool,
-    /// Base URL for governance API
-    pub base_url: String,
+config_builder! {
+    /// Remote governance settings
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct GovernanceSettings {
+        /// Enable governance
+        (val)  pub enabled: bool = false,
+        /// Base URL for governance API
+        (str)  pub base_url: String = "http://localhost:8080/api/v1".to_string(),
+        /// Authentication settings
+        (val)  pub auth: AuthSettings = AuthSettings::default(),
+        /// Request timeout in seconds
+        (val)  pub timeout_secs: u64 = 30,
+        /// Retry attempts
+        (val)  pub retry_attempts: u32 = 3,
+    }
+}
+
+config_builder! {
     /// Authentication settings
-    pub auth: AuthSettings,
-    /// Request timeout in seconds
-    pub timeout_secs: u64,
-    /// Retry attempts
-    pub retry_attempts: u32,
-}
-
-impl Default for GovernanceSettings {
-    fn default() -> Self {
-        Self {
-            enabled: false,
-            base_url: "http://localhost:8080/api/v1".to_string(),
-            auth: AuthSettings::default(),
-            timeout_secs: 30,
-            retry_attempts: 3,
-        }
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct AuthSettings {
+        /// Authentication method
+        (val) pub method: AuthMethod = AuthMethod::ApiKey,
+        /// API key (if using api-key auth)
+        (str) pub api_key: String = String::new(),
+        /// Bearer token (if using bearer auth)
+        (str) pub bearer_token: String = String::new(),
     }
 }
 
-/// Authentication settings
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct AuthSettings {
-    /// Authentication method
-    pub method: AuthMethod,
-    /// API key (if using api-key auth)
-    pub api_key: String,
-    /// Bearer token (if using bearer auth)
-    pub bearer_token: String,
-}
-
-impl Default for AuthSettings {
-    fn default() -> Self {
-        Self {
-            method: AuthMethod::ApiKey,
-            api_key: String::new(),
-            bearer_token: String::new(),
-        }
+config_builder! {
+    /// Local storage settings
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct LocalSettings {
+        /// Enable local governance storage
+        (val) pub enabled: bool = true,
+        /// Path to local database
+        (str) pub db_path: String = ".agileplus/governance.db".to_string(),
+        /// Retention days for audit logs
+        (val) pub retention_days: u32 = 90,
     }
 }
 
-/// Local storage settings
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct LocalSettings {
-    /// Enable local governance storage
-    pub enabled: bool,
-    /// Path to local database
-    pub db_path: String,
-    /// Retention days for audit logs
-    pub retention_days: u32,
-}
-
-impl Default for LocalSettings {
-    fn default() -> Self {
-        Self {
-            enabled: true,
-            db_path: ".agileplus/governance.db".to_string(),
-            retention_days: 90,
-        }
-    }
-}
-
-/// Sync settings for remote governance
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SyncSettings {
-    /// Enable sync to remote
-    pub enabled: bool,
-    /// Sync interval in milliseconds
-    pub interval_ms: u64,
-    /// Batch size for sync
-    pub batch_size: usize,
-    /// Sync timeout in seconds
-    pub timeout_secs: u64,
-}
-
-impl Default for SyncSettings {
-    fn default() -> Self {
-        Self {
-            enabled: true,
-            interval_ms: 300_000, // 5 minutes
-            batch_size: 100,
-            timeout_secs: 60,
-        }
-    }
-}
-
-/// Policy enforcement settings
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PolicySettings {
-    /// Enable policy enforcement
-    pub enabled: bool,
-    /// Default action if no policy matches
-    pub default_action: PolicyDefaultAction,
-    /// Enforce channel gates
-    pub enforce_gates: bool,
-    /// Enforce rate limits
-    pub enforce_rate_limits: bool,
-}
-
-impl Default for PolicySettings {
-    fn default() -> Self {
-        Self {
-            enabled: true,
-            default_action: PolicyDefaultAction::Allow,
-            enforce_gates: true,
-            enforce_rate_limits: true,
-        }
+config_builder! {
+    /// Sync settings for remote governance
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct SyncSettings {
+        /// Enable sync to remote
+        (val) pub enabled: bool = true,
+        /// Sync interval in milliseconds
+        (val) pub interval_ms: u64 = 300_000,
+        /// Batch size for sync
+        (val) pub batch_size: usize = 100,
+        /// Sync timeout in seconds
+        (val) pub timeout_secs: u64 = 60,
     }
 }
 
@@ -174,24 +116,31 @@ impl Default for PolicyDefaultAction {
     }
 }
 
-/// Rate limiting settings
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct RateLimitSettings {
-    /// Enable rate limiting
-    pub enabled: bool,
-    /// Max requests per window
-    pub max_requests: u64,
-    /// Window size in milliseconds
-    pub window_ms: u64,
+config_builder! {
+    /// Policy enforcement settings
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct PolicySettings {
+        /// Enable policy enforcement
+        (val) pub enabled: bool = true,
+        /// Default action if no policy matches
+        (val) pub default_action: PolicyDefaultAction = PolicyDefaultAction::Allow,
+        /// Enforce channel gates
+        (val) pub enforce_gates: bool = true,
+        /// Enforce rate limits
+        (val) pub enforce_rate_limits: bool = true,
+    }
 }
 
-impl Default for RateLimitSettings {
-    fn default() -> Self {
-        Self {
-            enabled: false,
-            max_requests: 100,
-            window_ms: 3_600_000, // 1 hour
-        }
+config_builder! {
+    /// Rate limiting settings
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct RateLimitSettings {
+        /// Enable rate limiting
+        (val) pub enabled: bool = false,
+        /// Max requests per window
+        (val) pub max_requests: u64 = 100,
+        /// Window size in milliseconds
+        (val) pub window_ms: u64 = 3_600_000,
     }
 }
 

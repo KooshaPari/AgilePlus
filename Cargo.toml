@@ -1,6 +1,9 @@
 [workspace]
 resolver = "3"
 members = [
+    "crates/agileplus-config",
+    "crates/agileplus-cache",
+    "crates/agileplus-governance",
     "crates/agileplus-application",
     "crates/agileplus-dashboard",
     "crates/agileplus-domain",
@@ -75,3 +78,5 @@ tracing-opentelemetry = "0.27"
 utoipa = "4"
 uuid = { version = "1", features = ["v4", "serde"] }
 async-nats = "0.38"
+paste = "1"
+agileplus-config = { path = "crates/agileplus-config" }

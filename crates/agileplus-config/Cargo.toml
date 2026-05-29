@@ -1,0 +1,12 @@
+[package]
+name = "agileplus-config"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+description = "Shared config-builder macro for AgilePlus crates"
+
+[dependencies]
+paste = "1"
+
+[dev-dependencies]
