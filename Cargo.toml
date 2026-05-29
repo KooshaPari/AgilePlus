@@ -1,6 +1,7 @@
 [workspace]
 resolver = "3"
 members = [
+    "crates/agileplus-application",
     "crates/agileplus-dashboard",
     "crates/agileplus-domain",
     "crates/agileplus-events",

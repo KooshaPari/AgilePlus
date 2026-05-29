@@ -1,0 +1,16 @@
+[package]
+name = "agileplus-application"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+description = "Application / use-case layer (hexagonal — no framework deps)"
+
+[dependencies]
+agileplus-domain = { path = "../agileplus-domain" }
+async-trait.workspace = true
+thiserror.workspace = true
+tokio = { workspace = true, features = ["full"] }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["full"] }

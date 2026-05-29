@@ -1,8 +1,15 @@
 //! Hexagonal-architecture ports — async traits implemented by adapters.
 
+pub mod epic;
+pub mod events;
 pub mod observability;
 pub mod storage;
+pub mod story;
 pub mod vcs;
+
+pub use epic::EpicRepository;
+pub use events::{DomainEvent, DomainEventPublisher};
+pub use story::StoryRepository;
 
 use std::path::{Path, PathBuf};
 
