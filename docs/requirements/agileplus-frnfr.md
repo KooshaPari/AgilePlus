@@ -169,16 +169,16 @@ AgilePlus is a hexagonal-architecture Rust workspace providing an agile project 
 
 ---
 
-### FR-AGP-012 — API Authentication (planned)
+### FR-AGP-012 — API Authentication
 
 | Field | Value |
 |---|---|
 | **ID** | FR-AGP-012 |
-| **Title** | Bearer-token authentication on REST API routes |
-| **Description** | All mutating REST API routes shall require a valid bearer token validated against a configured secret or issuer. Read routes may be optionally gated. |
-| **Acceptance Criteria** | AC1: Unauthenticated mutations return `401 Unauthorized`. AC2: Token validation uses middleware, not per-handler logic. AC3: API key configured via env var `AGILEPLUS_API_KEY`. |
-| **Status** | PLANNED |
-| **Traceability** | `crates/agileplus-api/src/api_key.rs` (scaffold exists, not wired) |
+| **Title** | Bearer-token / API-key authentication on REST API routes |
+| **Description** | All protected REST API routes require a valid bearer token or API key validated against a configured shared secret. Public routes (`/health`, `/detailed-health`, `/info`) remain unauthenticated. Token validation is isolated in a hexagonal `TokenVerifier` port trait so the backend (shared-secret, JWT, Authvault) can be swapped without touching route handlers. |
+| **Acceptance Criteria** | AC1: Unauthenticated request to a protected route returns `401 Unauthorized`. AC2: Valid `Authorization: Bearer <token>` header grants access (200). AC3: Invalid bearer token returns `401`. AC4: `GET /health` (and other public routes) require no credentials. AC5: Token validation uses axum middleware, not per-handler logic. AC6: Default impl (`SharedSecretTokenVerifier`) uses constant-time comparison (via `subtle::ConstantTimeEq`) to prevent timing attacks. AC7: Keys configured via `AGILEPLUS_API_KEY` env var (CSV for multiple keys). |
+| **Status** | SHIPPED |
+| **Traceability** | feat/api-auth PR; `crates/agileplus-api/src/middleware/auth.rs` (`TokenVerifier` port + `SharedSecretTokenVerifier` default impl + `authorize` middleware); `crates/agileplus-api/src/state.rs` (`token_verifier: Arc<dyn TokenVerifier>` field); `crates/agileplus-api/src/router.rs` (protected routes wired to `authorize`); `crates/agileplus-api/tests/api_integration.rs` (18 integration tests including 4 FR-AGP-012-specific: `auth_no_token_returns_401`, `auth_valid_bearer_token_returns_200`, `auth_wrong_bearer_token_returns_401`, `auth_health_is_public_no_token_needed`). Follow-up: JWT/Authvault `TokenVerifier` adapter (new FR). |
 
 ---
 
@@ -299,7 +299,7 @@ AgilePlus is a hexagonal-architecture Rust workspace providing an agile project 
 | ID | Title | Status |
 |---|---|---|
 | FR-AGP-011 | gRPC service definitions + impl | PARTIAL (build fix only) |
-| FR-AGP-012 | API bearer-token authentication | PLANNED |
+| FR-AGP-012 | API bearer-token authentication | SHIPPED |
 | FR-AGP-013 | End-to-end sync → SQLite wiring | SHIPPED |
 | FR-AGP-014 | Live dashboard frontend | PLANNED |
 | — | CLI `list` subcommands (stories, epics, features) | PLANNED |

@@ -1,81 +1,124 @@
-//! API key authentication middleware.
+//! Authentication middleware for protected API routes.
 //!
-//! Protected endpoints require the `X-API-Key` header or `?api_key=` query param.
-//! Health, info, and webhook endpoints are always accessible without API key auth.
-//!
-//! Keys are validated via the `CredentialStore`. Constant-time comparison
-//! is performed inside `CredentialStore::validate_api_key` to prevent
-//! timing attacks. The raw key value is never logged.
-//!
-//! Traceability: FR-030 / WP11-T065
+//! The default verifier is a shared-secret/API-key verifier that uses
+//! constant-time comparison. JWT and Authvault integration remain follow-up
+//! work once the token-verifier port is exercised in production.
 
-use axum::extract::Request;
-use axum::http::HeaderMap;
+use std::sync::Arc;
+
+use axum::extract::{Request, State};
+use axum::http::header;
 use axum::middleware::Next;
 use axum::response::Response;
+use subtle::ConstantTimeEq;
 use tracing::warn;
-
-use agileplus_domain::credentials::CredentialStore;
 
 use crate::error::ApiError;
 
-/// Paths that do not require authentication.
-const PUBLIC_PATHS: &[&str] = &["/health", "/info", "/webhooks"];
+/// Port for validating bearer tokens or API keys on protected routes.
+pub trait TokenVerifier: Send + Sync {
+    fn verify(&self, token: &str) -> bool;
+}
 
-/// axum middleware that validates the `X-API-Key` header (or `?api_key=` query
-/// param) for all non-public endpoints.
+/// Default token verifier backed by one or more shared secrets.
+#[derive(Clone, Debug)]
+pub struct SharedSecretTokenVerifier {
+    allowed_tokens: Arc<[String]>,
+}
+
+impl SharedSecretTokenVerifier {
+    pub fn new(tokens: impl IntoIterator<Item = impl Into<String>>) -> Self {
+        Self {
+            allowed_tokens: tokens.into_iter().map(Into::into).collect(),
+        }
+    }
+
+    pub fn from_csv(raw: Option<String>) -> Self {
+        let raw_str = raw.unwrap_or_default();
+        let tokens: Vec<&str> = raw_str
+            .split(',')
+            .map(str::trim)
+            .filter(|token| !token.is_empty())
+            .collect();
+        Self::new(tokens)
+    }
+}
+
+impl TokenVerifier for SharedSecretTokenVerifier {
+    fn verify(&self, token: &str) -> bool {
+        let candidate = token.as_bytes();
+        self.allowed_tokens
+            .iter()
+            .any(|expected| expected.as_bytes().ct_eq(candidate).into())
+    }
+}
+
+/// axum middleware that authorizes protected routes.
 ///
-/// Returns `401 Unauthorized` if the header/param is missing or the key is invalid.
-pub async fn validate_api_key(
-    axum::extract::State(creds): axum::extract::State<std::sync::Arc<dyn CredentialStore>>,
-    headers: HeaderMap,
+/// Accepts either `Authorization: Bearer <token>` or `X-API-Key: <token>`.
+/// Returns `401 Unauthorized` when the credential is missing or invalid.
+pub async fn authorize(
+    State(verifier): State<Arc<dyn TokenVerifier>>,
     request: Request,
     next: Next,
 ) -> Result<Response, ApiError> {
-    let path = request.uri().path().to_string();
+    let token = extract_token(request.headers()).ok_or_else(|| {
+        ApiError::Unauthorized("Missing bearer token or API key".to_string())
+    })?;
 
-    // Always allow public endpoints (health, info, webhooks).
-    if PUBLIC_PATHS.iter().any(|p| path.starts_with(p)) {
-        return Ok(next.run(request).await);
-    }
-
-    // Try X-API-Key header first, then fall back to ?api_key= query param.
-    let api_key = if let Some(header_val) = headers.get("X-API-Key").and_then(|v| v.to_str().ok()) {
-        header_val.to_string()
-    } else if let Some(query) = request.uri().query() {
-        // Parse api_key= from the query string.
-        query
-            .split('&')
-            .find_map(|pair| {
-                let (k, v) = pair.split_once('=')?;
-
-                if k == "api_key" {
-                    Some(v.to_string())
-                } else {
-                    None
-                }
-            })
-            .ok_or_else(|| {
-                ApiError::Unauthorized(
-                    "Missing API key (X-API-Key header or ?api_key= param required)".to_string(),
-                )
-            })?
+    if verifier.verify(&token) {
+        Ok(next.run(request).await)
     } else {
-        return Err(ApiError::Unauthorized(
-            "Missing API key (X-API-Key header or ?api_key= param required)".to_string(),
-        ));
-    };
+        warn!(token_hint = %token_hint(&token), "API authorization failed");
+        Err(ApiError::Unauthorized("Invalid bearer token or API key".to_string()))
+    }
+}
 
-    let valid = creds
-        .validate_api_key(&api_key)
-        .map_err(|e| ApiError::Internal(format!("credential store error: {e}")))?;
-
-    if !valid {
-        // Log only a truncated hint for identification — never the raw key.
-        let key_hint: String = api_key.chars().take(4).chain(['*'; 8]).collect();
-        warn!(key_hint, "API authentication failed for key hint");
-        return Err(ApiError::Unauthorized("Invalid API key".to_string()));
+fn extract_token(headers: &axum::http::HeaderMap) -> Option<String> {
+    if let Some(value) = headers
+        .get(header::AUTHORIZATION)
+        .and_then(|value| value.to_str().ok())
+        .and_then(|value| value.strip_prefix("Bearer "))
+    {
+        return Some(value.trim().to_string());
     }
 
-    Ok(next.run(request).await)
+    headers
+        .get("X-API-Key")
+        .and_then(|value| value.to_str().ok())
+        .map(|value| value.trim().to_string())
+}
+
+fn token_hint(token: &str) -> String {
+    let prefix = token.chars().take(4).collect::<String>();
+    format!("{prefix}…")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn shared_secret_verifier_accepts_matching_token() {
+        let verifier = SharedSecretTokenVerifier::new(["alpha"]);
+        assert!(verifier.verify("alpha"));
+    }
+
+    #[test]
+    fn shared_secret_verifier_rejects_non_matching_token() {
+        let verifier = SharedSecretTokenVerifier::new(["alpha"]);
+        assert!(!verifier.verify("omega"));
+    }
+
+    #[test]
+    fn shared_secret_verifier_rejects_length_mismatch() {
+        let verifier = SharedSecretTokenVerifier::new(["alpha"]);
+        assert!(!verifier.verify("alph"));
+    }
+
+    #[test]
+    fn shared_secret_verifier_parses_csv_tokens() {
+        let verifier = SharedSecretTokenVerifier::from_csv(Some("alpha, beta".to_string()));
+        assert!(verifier.verify("beta"));
+    }
 }

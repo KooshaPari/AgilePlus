@@ -15,6 +15,8 @@ use agileplus_domain::ports::{
 };
 use tokio::sync::broadcast;
 
+use crate::middleware::auth::TokenVerifier;
+
 /// Broadcast channel capacity for SSE event streaming.
 const EVENT_CHANNEL_CAPACITY: usize = 256;
 
@@ -30,6 +32,7 @@ where
     pub telemetry: Arc<O>,
     pub config: Arc<AppConfig>,
     pub credentials: Arc<dyn CredentialStore>,
+    pub token_verifier: Arc<dyn TokenVerifier>,
     /// Broadcast sender for real-time SSE event streaming (T069).
     /// Publish JSON objects with `event_type` and `data` keys.
     pub event_tx: broadcast::Sender<serde_json::Value>,
@@ -55,6 +58,7 @@ where
             telemetry: Arc::clone(&self.telemetry),
             config: Arc::clone(&self.config),
             credentials: Arc::clone(&self.credentials),
+            token_verifier: Arc::clone(&self.token_verifier),
             event_tx: self.event_tx.clone(),
             create_feature_uc: Arc::clone(&self.create_feature_uc),
             advance_feature_uc: Arc::clone(&self.advance_feature_uc),
@@ -77,9 +81,18 @@ where
         telemetry: Arc<O>,
         config: Arc<AppConfig>,
         credentials: Arc<dyn CredentialStore>,
+        token_verifier: Arc<dyn TokenVerifier>,
     ) -> Self {
         let (event_tx, _) = broadcast::channel(EVENT_CHANNEL_CAPACITY);
-        Self::with_event_tx(storage, vcs, telemetry, config, credentials, event_tx)
+        Self::with_event_tx(
+            storage,
+            vcs,
+            telemetry,
+            config,
+            credentials,
+            token_verifier,
+            event_tx,
+        )
     }
 
     /// Create state with an explicit broadcast sender (allows sharing the channel
@@ -90,6 +103,7 @@ where
         telemetry: Arc<O>,
         config: Arc<AppConfig>,
         credentials: Arc<dyn CredentialStore>,
+        token_verifier: Arc<dyn TokenVerifier>,
         event_tx: broadcast::Sender<serde_json::Value>,
     ) -> Self {
         // Composition root: wire use-cases with no-op publisher by default.
@@ -113,6 +127,7 @@ where
             telemetry,
             config,
             credentials,
+            token_verifier,
             event_tx,
             create_feature_uc,
             advance_feature_uc,

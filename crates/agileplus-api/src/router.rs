@@ -7,7 +7,7 @@
 //!   GET  /detailed-health — detailed health check (T070)
 //!   GET  /info      — API metadata
 //!
-//! Protected (X-API-Key header or ?api_key= param):
+//! Protected (Bearer token or X-API-Key):
 //!   GET  /api/v1/features                           — list features (T066)
 //!   POST /api/v1/features                           — create feature (T066)
 //!   GET  /api/v1/features/:slug                     — get feature (T066)
@@ -39,7 +39,6 @@ use tower_http::cors::CorsLayer;
 use tower_http::services::ServeDir;
 use tower_http::trace::TraceLayer;
 
-use agileplus_domain::credentials::CredentialStore;
 use agileplus_domain::ports::{
     observability::ObservabilityPort, storage::StoragePort, vcs::VcsPort,
 };
@@ -57,7 +56,7 @@ where
     V: VcsPort + Send + Sync + 'static,
     O: ObservabilityPort + Send + Sync + 'static,
 {
-    let creds: Arc<dyn CredentialStore> = state.credentials.clone();
+    let token_verifier = Arc::clone(&state.token_verifier);
 
     // Public routes -- no auth middleware.
     let public = Router::new()
@@ -92,8 +91,8 @@ where
         // SSE streaming
         .route("/api/v1/stream", get(stream::stream_events::<S, V, O>))
         .layer(middleware::from_fn_with_state(
-            creds,
-            crate::middleware::auth::validate_api_key,
+            token_verifier,
+            crate::middleware::auth::authorize,
         ))
         .with_state(state);
 
