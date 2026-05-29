@@ -68,6 +68,17 @@ pub struct ServiceHealthJson {
     pub last_check: String,
 }
 
+/// JSON response for GET /api/dashboard/work-packages.json
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WorkPackageJson {
+    pub id: String,
+    pub feature_id: i64,
+    pub title: String,
+    pub status: String,
+    pub priority: String,
+    pub assignee: Option<String>,
+}
+
 /// JSON response for GET /api/dashboard/features/{id}/evidence
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EvidenceGalleryJson {
@@ -2170,6 +2181,119 @@ pub async fn test_plane_connection(axum::Form(form): axum::Form<PlaneSettingsFor
     }
 }
 
+// ── /api/dashboard/work-packages.json ────────────────────────────────────
+
+/// JSON API: GET /api/dashboard/work-packages.json
+/// Returns all work packages across all features as a flat JSON array.
+/// Used by the React dashboard at port 5176 to populate the work-package store.
+pub async fn all_work_packages_json(State(state): State<SharedState>) -> impl IntoResponse {
+    let store = state.read().await;
+    let work_packages: Vec<WorkPackageJson> = store
+        .work_packages
+        .iter()
+        .flat_map(|(feature_id, wps)| {
+            wps.iter().map(|wp| {
+                let status = match wp.state {
+                    agileplus_domain::domain::work_package::WpState::Planned => "planned",
+                    agileplus_domain::domain::work_package::WpState::Doing => "in_progress",
+                    agileplus_domain::domain::work_package::WpState::Review => "in_progress",
+                    agileplus_domain::domain::work_package::WpState::Done => "completed",
+                    agileplus_domain::domain::work_package::WpState::Blocked => "blocked",
+                };
+                WorkPackageJson {
+                    id: wp.id.to_string(),
+                    feature_id: *feature_id,
+                    title: wp.title.clone(),
+                    status: status.to_string(),
+                    priority: "medium".to_string(),
+                    assignee: wp.agent_id.clone(),
+                }
+            })
+        })
+        .collect();
+
+    axum::Json(serde_json::json!({
+        "work_packages": work_packages,
+        "count": work_packages.len(),
+        "timestamp": chrono::Utc::now().to_rfc3339(),
+    }))
+}
+
+// ── /api/dashboard/epics-stories.json ────────────────────────────────────
+
+/// JSON API: GET /api/dashboard/epics-stories.json
+/// Reads Epics + Stories directly from the SQLite database and returns them
+/// as a flat JSON payload. Used by the React dashboard at port 5176.
+pub async fn epics_stories_json() -> impl IntoResponse {
+    // Resolve db path: DATABASE_URL env → DATABASE_PATH env → default agileplus.db
+    let db_path: PathBuf = if let Ok(url) = std::env::var("DATABASE_URL") {
+        url.strip_prefix("sqlite:").unwrap_or(&url).into()
+    } else if let Ok(p) = std::env::var("DATABASE_PATH") {
+        PathBuf::from(p)
+    } else {
+        PathBuf::from("agileplus.db")
+    };
+
+    let conn = match rusqlite::Connection::open(&db_path) {
+        Ok(c) => c,
+        Err(e) => {
+            return axum::Json(serde_json::json!({
+                "epics": [],
+                "stories": [],
+                "epic_count": 0,
+                "story_count": 0,
+                "error": format!("db open failed: {e}"),
+            }));
+        }
+    };
+
+    // Query epics
+    let epics: Vec<serde_json::Value> = {
+        let mut stmt = conn
+            .prepare("SELECT id, title, status, requirement_id FROM epics ORDER BY id")
+            .unwrap_or_else(|_| conn.prepare("SELECT 1 WHERE 0").unwrap());
+        stmt.query_map([], |row| {
+            Ok(serde_json::json!({
+                "id": row.get::<_, i64>(0).unwrap_or(0),
+                "title": row.get::<_, String>(1).unwrap_or_default(),
+                "status": row.get::<_, String>(2).unwrap_or_default(),
+                "requirement_id": row.get::<_, Option<String>>(3).unwrap_or(None),
+            }))
+        })
+        .map(|rows| rows.filter_map(|r| r.ok()).collect())
+        .unwrap_or_default()
+    };
+
+    // Query stories
+    let stories: Vec<serde_json::Value> = {
+        let mut stmt = conn
+            .prepare("SELECT id, epic_id, title, status, requirement_id FROM stories ORDER BY id")
+            .unwrap_or_else(|_| conn.prepare("SELECT 1 WHERE 0").unwrap());
+        stmt.query_map([], |row| {
+            Ok(serde_json::json!({
+                "id": row.get::<_, i64>(0).unwrap_or(0),
+                "epic_id": row.get::<_, Option<i64>>(1).unwrap_or(None),
+                "title": row.get::<_, String>(2).unwrap_or_default(),
+                "status": row.get::<_, String>(3).unwrap_or_default(),
+                "requirement_id": row.get::<_, Option<String>>(4).unwrap_or(None),
+            }))
+        })
+        .map(|rows| rows.filter_map(|r| r.ok()).collect())
+        .unwrap_or_default()
+    };
+
+    let epic_count = epics.len();
+    let story_count = stories.len();
+
+    axum::Json(serde_json::json!({
+        "epics": epics,
+        "stories": stories,
+        "epic_count": epic_count,
+        "story_count": story_count,
+        "timestamp": chrono::Utc::now().to_rfc3339(),
+    }))
+}
+
 pub fn router(state: SharedState) -> Router {
     Router::new()
         .route("/", get(root))
@@ -2221,6 +2345,8 @@ pub fn router(state: SharedState) -> Router {
         // JSON API endpoints (for polling from JavaScript templates)
         .route("/api/dashboard/agents.json", get(agents_json))
         .route("/api/dashboard/health.json", get(health_json))
+        .route("/api/dashboard/work-packages.json", get(all_work_packages_json))
+        .route("/api/dashboard/epics-stories.json", get(epics_stories_json))
         .route("/api/dashboard/projects", get(project_switcher))
         .route(
             "/api/dashboard/projects/{id}/activate",

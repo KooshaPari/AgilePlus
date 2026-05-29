@@ -121,6 +121,7 @@ dependencies = [
  "axum 0.8.9",
  "axum-extra",
  "chrono",
+ "rusqlite",
  "serde",
  "serde_json",
  "sysinfo",
@@ -309,6 +310,7 @@ version = "0.1.0"
 dependencies = [
  "agileplus-domain",
  "agileplus-events",
+ "anyhow",
  "async-trait",
  "chrono",
  "rusqlite",
