@@ -195,16 +195,42 @@ AgilePlus is a hexagonal-architecture Rust workspace providing an agile project 
 
 ---
 
-### FR-AGP-014 — Dashboard Frontend (planned)
+### FR-AGP-014 — Dashboard Frontend
 
 | Field | Value |
 |---|---|
 | **ID** | FR-AGP-014 |
 | **Title** | Web dashboard for project/backlog visualization |
-| **Description** | The system shall serve a web dashboard displaying project hierarchy, sprint backlogs, and story state distributions. File templates were restored but are not yet wired to live API data. |
-| **Acceptance Criteria** | AC1: Dashboard fetches from `GET /api/projects`. AC2: Kanban board reflects live story states. AC3: Auto-refreshes on domain events via SSE or WebSocket. |
-| **Status** | PLANNED |
-| **Traceability** | PRs #577, #578 (file restore); `crates/agileplus-dashboard/` |
+| **Description** | The system shall serve a web dashboard displaying project hierarchy, sprint backlogs, and story state distributions wired to live SQLite-backed API data. |
+| **Acceptance Criteria** | AC1: Dashboard fetches from `GET /api/dashboard/epics-stories.json`. AC2: Kanban board reflects live story states from SQLite. AC3: React frontend renders epics and stories with status-colored cards. |
+| **Status** | SHIPPED |
+| **Traceability** | PRs #577, #578 (file restore), #611 (live SQLite wiring); `crates/agileplus-dashboard/src/routes.rs` (epics_stories_json endpoint), `crates/agileplus-dashboard/web/src/main.tsx` (React kanban), `crates/agileplus-sqlite/src/bin/seed_db.rs` (seeding). |
+
+---
+
+### FR-AGP-018 — Plane.so Integration Adapter
+
+| Field | Value |
+|---|---|
+| **ID** | FR-AGP-018 |
+| **Title** | Plane.so REST API integration adapter for bi-directional work item sync |
+| **Description** | The system shall expose a `PlaneClient` that bridges AgilePlus domain aggregates to the Plane.so REST API, enabling creation, update, and deletion of issues, modules, cycles, labels, and sub-issues in Plane from AgilePlus events. The adapter reads `PLANE_BASE_URL`, `PLANE_WORKSPACE`, `PLANE_API_KEY` from env vars. HTTP errors are surfaced as typed `anyhow::Error`. |
+| **Acceptance Criteria** | AC1: `PlaneClient::new(base_url, workspace, api_key)` constructs a client with reqwest + rate-limiting. AC2: `create_work_item`, `update_work_item`, `list_work_items`, `create_sub_issue` cover the core CRUD surface. AC3: `create_module`, `update_module`, `delete_module`, `add_work_item_to_module` manage module lifecycle. AC4: `create_cycle`, `update_cycle`, `delete_cycle`, `add_work_item_to_cycle` manage cycle lifecycle. AC5: `sync_labels` and `get_labels` bridge AgilePlus label model. AC6: Wiremock-backed integration tests green. AC7: `state_mapper.rs` maps AgilePlus domain states to Plane state IDs. |
+| **Status** | SHIPPED |
+| **Traceability** | PRs #295, #464; `crates/agileplus-plane/src/client/` (PlaneClient + resources); `crates/agileplus-plane/src/state_mapper.rs`; `crates/agileplus-plane/src/outbound.rs`; `crates/agileplus-plane/src/sync.rs`; `crates/agileplus-plane/src/client/tests.rs` (wiremock tests). |
+
+---
+
+### FR-AGP-019 — Work-Item Dependency Graph
+
+| Field | Value |
+|---|---|
+| **ID** | FR-AGP-019 |
+| **Title** | Graph-layer dependency model for work items with blocking-path traversal |
+| **Description** | The system shall expose a hexagonal `GraphStore` port over a directed graph of work item nodes and typed relationships (blocks, is-blocked-by, related, etc.). The port supports `upsert_node`, `create_relationship`, `delete_relationship`, `get_dependencies`, and `get_blocking_path` for chain traversal. |
+| **Acceptance Criteria** | AC1: `GraphStore` trait is async-trait object-safe. AC2: `InMemoryGraphStore` fully implements all port methods. AC3: `get_dependencies(id)` returns all directly-dependent node UUIDs. AC4: `get_blocking_path(id)` returns the full upstream blocking chain. AC5: `upsert_node` is idempotent by UUID. AC6: Node types and relationship types are enum-typed (`NodeType`, `RelType`). |
+| **Status** | SHIPPED |
+| **Traceability** | PRs #326, #336; `crates/agileplus-graph/src/graph_store.rs` (GraphStore trait + InMemoryGraphStore); `crates/agileplus-graph/src/types.rs` (Node, Relationship, NodeType, RelType). |
 
 ---
 
@@ -340,12 +366,12 @@ AgilePlus is a hexagonal-architecture Rust workspace providing an agile project 
 | FR-AGP-011 | gRPC service definitions + impl | PARTIAL (build fix only) |
 | FR-AGP-012 | API bearer-token authentication | SHIPPED |
 | FR-AGP-013 | End-to-end sync → SQLite wiring | SHIPPED |
-| FR-AGP-014 | Live dashboard frontend | PLANNED |
+| FR-AGP-014 | Live dashboard frontend | SHIPPED (PR #611) |
 | FR-AGP-016 | CLI `list` subcommands (projects, epics, stories) | SHIPPED |
 | FR-AGP-015 | Observability: OpenTelemetry traces + metrics export | SHIPPED (feat/opentelemetry) |
 | FR-AGP-017 | Triage automation — rule-based classify for synced items | SHIPPED (feat/triage-automation) |
-| — | Plane.so integration adapter | PLANNED (`agileplus-plane` crate stubbed) |
-| — | Graph/dependency analysis for work items | PLANNED (`agileplus-graph` crate stubbed) |
+| FR-AGP-018 | Plane.so integration adapter | SHIPPED (`crates/agileplus-plane/`; PlaneClient + resources: work_items, modules, cycles, labels; sync outbound; wiremock tests) |
+| FR-AGP-019 | Graph/dependency analysis for work items | SHIPPED (`crates/agileplus-graph/`; InMemoryGraphStore; get_dependencies + get_blocking_path; UUID-based graph API) |
 
 ---
 
@@ -383,3 +409,6 @@ AgilePlus is a hexagonal-architecture Rust workspace providing an agile project 
 | feat/opentelemetry | OTel subscriber init + OTLP adapter + request-span middleware + 35 tests | FR-AGP-015, NFR-AGP-004 |
 | feat/cli-list-commands | CLI list-projects / list-epics / list-stories subcommands + 10 unit tests + domain stubs (AgentPort, BuiltinPolicy, SyncMapping::new) | FR-AGP-016, NFR-AGP-005 |
 | feat/triage-automation | Rule-based triage engine (engine.rs) + domain Intent::Docs + default_priority + from_triage + 37 tests | FR-AGP-017, NFR-AGP-005 |
+| #611 | Dashboard live wiring — epics_stories_json endpoint + React kanban + seed_db binary | FR-AGP-014 |
+| #295, #464 | Plane.so PlaneClient + resources (work_items, modules, cycles, labels) + state_mapper + sync outbound | FR-AGP-018 |
+| #326, #336 | agileplus-graph crate — GraphStore trait + InMemoryGraphStore + UUID-based API | FR-AGP-019 |
