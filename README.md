@@ -205,3 +205,19 @@ This is a curated index of the most active/major repos in this checkout.
 - Some directories are placeholders/landing/utility trees and may not represent standalone canonical products.
 - This README is intentionally a shelf-level index; source-of-truth setup for each project stays in that project's own `README.md`.
 - This index does not remove information from previous versions; it reorganizes it for polyrepo orientation and easier navigation.
+
+---
+
+## Rich Media Stubs
+
+<!-- RICH-MEDIA-STUB type="annotated-screenshot" subject="AgilePlus quickstart — agileplus status after first epic created" journey="" status="TODO" -->
+> **[RICH MEDIA PLACEHOLDER]** *Annotated screenshot of `agileplus status` terminal output after bootstrapping the first epic.*
+<!-- END-RICH-MEDIA-STUB -->
+
+<!-- RICH-MEDIA-STUB type="recording-gif" subject="Epic/Story lifecycle — create epic, break into stories, assign" journey="" status="TODO" -->
+> **[RICH MEDIA PLACEHOLDER]** *GIF of creating an epic, decomposing it into stories, and assigning them.*
+<!-- END-RICH-MEDIA-STUB -->
+
+<!-- RICH-MEDIA-STUB type="recording-mp4" subject="Dashboard walkthrough — AgilePlus web dashboard all panels" journey="" status="TODO" -->
+> **[RICH MEDIA PLACEHOLDER]** *Video walkthrough of the AgilePlus dashboard: backlog, kanban, burndown, release gates.*
+<!-- END-RICH-MEDIA-STUB -->
