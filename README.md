@@ -1,75 +1,143 @@
-# agileplus-proto
+# AgilePlus
 
-Protocol Buffer definitions for the AgilePlus gRPC API.
+**Spec-driven development engine** — from specification to shipped feature, governed, auditable, and agent-ready.
 
-## Overview
+[![Docs](https://img.shields.io/badge/docs-VitePress-42b883)](https://github.com/KooshaPari/AgilePlus)
 
-This repository is the **single source of truth** for all inter-service contracts in the AgilePlus ecosystem. It defines three gRPC services and a set of shared message types used across five repositories.
+AgilePlus is a monorepo housing a 9-phase governed pipeline that takes a feature from specification through to a merged change. Every state transition is auditable and immutable. It is designed agent-first: structured prompts, governance constraints, and harness integration let you dispatch work to Claude Code, Cursor, or custom agents.
 
-## Repository Layout
+> [!NOTE]
+> This repository is a **polyglot monorepo** (Rust core + Python MCP server + Go CLI + protobuf contracts + VitePress docs). The earlier README described only the `proto/` subset — see [Repository Layout](#repository-layout) below for the full picture.
 
-| Path | Description |
-|------|-------------|
-| `proto/agileplus/v1/` | Protocol Buffer definitions (4 files) |
-| `proto/agileplus/v1/common.proto` | Shared message types (Feature, AuditEntry, etc.) |
-| `proto/agileplus/v1/core.proto` | `AgilePlusCoreService` — feature lifecycle, governance, audit |
-| `proto/agileplus/v1/agents.proto` | `AgentDispatchService` — agent spawn, review loop |
-| `proto/agileplus/v1/integrations.proto` | `IntegrationsService` — Plane.so, GitHub, triage |
-| `rust/` | Rust crate (`agileplus-proto`) with tonic/prost codegen |
-| `python/` | Python package (`agileplus-proto`) with grpcio stubs |
-| `buf.yaml` | buf v2 lint and breaking change configuration |
-| `buf.gen.yaml` | buf codegen plugin configuration |
+## What's in the box
+
+| Component | Language | Path | Purpose |
+|-----------|----------|------|---------|
+| **Core engine** | Rust | `crates/` (`agileplus-domain`, `-api`, `-grpc`, `-graph`, …) | Port-based domain core: feature lifecycle, governance, audit, sync, triage, storage adapters (SQLite/NATS/P2P) |
+| **CLI** | Rust | `crates/agileplus-cli`, `crates/agileplus-subcmds` | `agileplus` command-line interface |
+| **pheno-cli** | Go | `pheno-cli/` | Companion Go CLI + git hooks |
+| **MCP server** | Python | `agileplus-mcp/` | Model Context Protocol server exposing AgilePlus to agents |
+| **Agents runtime** | Rust | `agileplus-agents/` | Agent spawn + review-loop orchestration |
+| **Protocol contracts** | protobuf | `proto/agileplus/v1/` | gRPC service + message definitions (single source of truth for inter-service contracts) |
+| **Rust/Python stubs** | Rust, Python | `rust/`, `python/` | Generated tonic/prost + grpcio bindings for the proto contracts |
+| **Docs** | VitePress | `docs/` | 51-page multi-audience documentation site (Agents / Developers / PMs / SDK consumers) |
+| **Templates / prompts** | — | `templates/`, `prompts/`, `kitty-specs/` | Spec templates and structured agent prompts |
+
+## Architecture
+
+```mermaid
+flowchart TD
+    subgraph Clients
+        CLI["agileplus CLI (Rust)"]
+        Pheno["pheno-cli (Go)"]
+        MCP["MCP server (Python)"]
+        Agents["Agents runtime (Rust)"]
+    end
+
+    subgraph Contracts["proto/agileplus/v1 (gRPC contracts)"]
+        Core["AgilePlusCoreService"]
+        Disp["AgentDispatchService"]
+        Integ["IntegrationsService"]
+    end
+
+    subgraph CoreEngine["Rust core (crates/)"]
+        Domain["agileplus-domain (ports)"]
+        API["agileplus-api / grpc"]
+        Graph["agileplus-graph"]
+    end
+
+    subgraph Adapters["Swappable adapters"]
+        SQLite["sqlite"]
+        NATS["nats"]
+        P2P["p2p"]
+        Git["git / github"]
+        Plane["plane.so"]
+    end
+
+    CLI --> Contracts
+    Pheno --> Contracts
+    MCP --> Contracts
+    Agents --> Disp
+    Contracts --> API
+    API --> Domain
+    Domain --> Adapters
+```
+
+## The 9-phase pipeline
+
+```mermaid
+flowchart LR
+    Specify --> Plan --> Design --> Decompose --> Dispatch --> Review --> Verify --> Merge --> Audit
+```
+
+Each state transition is governed and recorded as an immutable audit entry.
 
 ## Getting Started
 
 ### Prerequisites
 
-- [buf](https://buf.build/docs/installation) v2+
-- Rust toolchain (for building the Rust crate)
-- Python 3.12+ with [uv](https://docs.astral.sh/uv/) (for the Python package)
+- Rust toolchain (core engine, CLI)
+- Go 1.21+ (pheno-cli)
+- Python 3.12+ with [uv](https://docs.astral.sh/uv/) (MCP server, proto stubs)
+- [buf](https://buf.build/docs/installation) v2+ (proto lint/codegen)
+- [Bun](https://bun.sh) (docs)
 
-### Lint
-
-```bash
-make lint
-```
-
-### Generate Stubs
+### Build the core engine + CLI
 
 ```bash
-make generate
+cargo build --workspace
+cargo test --workspace
 ```
 
-### Build Rust Crate
+### Run the MCP server
 
 ```bash
-cd rust && cargo build
+cd agileplus-mcp && uv sync && uv run python -m agileplus_mcp
 ```
 
-### Install Python Package
+### Build pheno-cli
 
 ```bash
-cd python && uv sync
+cd pheno-cli && go build ./...
 ```
 
-### Check for Breaking Changes
+### Develop the docs
 
 ```bash
-make breaking
+cd docs && bun install && bun run docs:dev
 ```
 
-## Breaking Change Policy
+## Protocol Contracts (`proto/`)
 
-All proto changes are checked against `main` using `buf breaking`. Breaking changes require:
+The `proto/agileplus/v1/` directory is the single source of truth for all inter-service contracts.
 
-1. A version bump in `buf.yaml` module path (e.g., `v1` → `v2`)
-2. Explicit documentation in the PR description
-3. Coordination with all downstream consumers (agileplus-core, agileplus-mcp, agileplus-agents, agileplus-integrations)
+| File | Service / contents |
+|------|--------------------|
+| `common.proto` | Shared message types (Feature, AuditEntry, …) |
+| `core.proto` | `AgilePlusCoreService` — feature lifecycle, governance, audit |
+| `agents.proto` | `AgentDispatchService` — agent spawn, review loop |
+| `integrations.proto` | `IntegrationsService` — Plane.so, GitHub, triage |
+
+```bash
+make lint        # buf lint
+make generate    # regenerate Rust + Python stubs
+make breaking    # buf breaking-change check against main
+```
+
+**Breaking-change policy:** proto changes are checked against `main` with `buf breaking`. Breaking changes require a module version bump (`v1` → `v2`), PR documentation, and coordination with all downstream consumers.
+
+## Documentation
+
+The full documentation site lives in `docs/` (VitePress). It is multi-audience: a module switcher filters content by role (Agents, Developers, PMs, SDK consumers). See `docs/index.md` for the entry point and `docs/guide/getting-started.md` to start.
+
+> [!EMBED] STUB — quick-start walkthrough recording
+> A recorded `agileplus` quick-start journey (spec → dispatch → merge) belongs here. Pending rich-embed pipeline (#966).
 
 ## Contributing
 
-1. Edit proto files in `proto/agileplus/v1/`
-2. Run `make lint` to validate
-3. Run `make generate` to regenerate stubs
-4. Run `cargo build` in `rust/` and `uv sync` in `python/` to verify
-5. Submit a PR — CI will run lint, breaking change detection, and build checks
+See [`AGENTS.md`](./AGENTS.md) and [`CLAUDE.md`](./CLAUDE.md) for agent governance and contributor workflow.
+
+1. Make changes in the relevant component directory.
+2. For proto changes: `make lint && make generate && make breaking`.
+3. For Rust: `cargo test --workspace && cargo clippy --workspace -- -D warnings`.
+4. Submit a PR — CI runs lint, breaking-change detection, and build checks.
