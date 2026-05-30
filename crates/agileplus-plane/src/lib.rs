@@ -11,13 +11,14 @@ pub mod content_hash;
 pub mod inbound;
 pub mod labels;
 pub mod outbound;
+mod plane_sync;
 pub mod runtime;
 pub mod state_mapper;
 pub mod sync;
 pub mod sync_queue;
 pub mod webhook;
 
-pub use client::PlaneClient;
+pub use agileplus_domain::ports::{PlaneIssue, PlaneProject, PlaneSyncPort};
 pub use client::{
     PlaneCreateCycleRequest, PlaneCreateModuleRequest, PlaneCycleResponse, PlaneModuleResponse,
 };
@@ -28,6 +29,7 @@ pub use outbound::{
     OutboundSync, push_cycle, push_cycle_delete, push_feature_cycle_assignment,
     push_feature_module_assignment, push_module, push_module_delete,
 };
+pub use plane_sync::PlaneClient;
 pub use runtime::*;
 pub use state_mapper::{PlaneStateMapper, PlaneStateMapperConfig};
 pub use sync::{PlaneSyncAdapter, SyncState};

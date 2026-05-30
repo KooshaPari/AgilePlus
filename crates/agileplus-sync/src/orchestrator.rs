@@ -358,9 +358,8 @@ mod tests {
     fn make_test_orchestrator() -> SyncOrchestrator {
         let plane = Arc::new(PlaneClient::new(
             "https://plane.example.com".to_string(),
-            "test-key".to_string(),
             "workspace".to_string(),
-            "project".to_string(),
+            "test-key".to_string(),
         ));
         let sqlite = Arc::new(InMemoryEventStore::new()) as Arc<dyn EventStore>;
         let mapper = PlaneStateMapper::new();
