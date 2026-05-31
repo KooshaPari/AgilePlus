@@ -151,7 +151,31 @@ Use this document for cross-repo boundaries. Use each repo README for local arch
 
 ## Rich Media Stubs
 
-<!-- RICH-MEDIA-STUB type="annotated-screenshot" subject="AgilePlus hexagonal architecture — Rust workspace + MCP server diagram" journey="" status="TODO" -->
-> **[RICH MEDIA PLACEHOLDER — needs diagram render]** *Annotated component diagram of AgilePlus crates and the MCP server adapter.*
-> Intended content: a hexagonal-architecture diagram with the domain core (Epic/Story/WorkPackage value objects, traceability links) at center; driving adapters (CLI, Axum REST API on :4000, `agileplus-dashboard/web` React SPA) on the left; and driven adapters (SQLite persistence, GitHub sync, Plane.so client, MCP server) on the right. This is a rendered diagram rather than a UI capture — blocked on a generated SVG/PNG (no runnable surface to screenshot). Candidate source: a Mermaid `flowchart` checked into `docs/`, exported via the `@phenotype/doc-embeds` pipeline.
+<!-- RICH-MEDIA-STUB type="annotated-screenshot" subject="AgilePlus hexagonal architecture — Rust workspace + MCP server diagram" journey="" status="PUBLISHED" -->
+```mermaid
+flowchart LR
+  subgraph driving["Driving adapters"]
+    CLI["agileplus-cli"]
+    API["agileplus-api :4000"]
+    WEB["dashboard/web React"]
+  end
+  subgraph core["Domain core"]
+    DOM["Epic · Story · WorkPackage<br/>traceability links"]
+  end
+  subgraph driven["Driven adapters"]
+    SQL["agileplus-sqlite"]
+    GH["agileplus-github"]
+    PL["agileplus-plane"]
+    MCP["agileplus-mcp"]
+  end
+  CLI --> DOM
+  API --> DOM
+  WEB --> API
+  DOM --> SQL
+  DOM --> GH
+  DOM --> PL
+  MCP --> API
+```
+
+*Hexagonal view of the Rust workspace: driving adapters (CLI, REST API, React dashboard) call into the domain core; driven adapters persist and integrate externally. Export to annotated PNG via `doc-embeds` when a static asset is required for offline docs.*
 <!-- END-RICH-MEDIA-STUB -->

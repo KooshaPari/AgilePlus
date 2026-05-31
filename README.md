@@ -211,17 +211,21 @@ This is a curated index of the most active/major repos in this checkout.
 ## Rich Media Stubs
 
 <!-- RICH-MEDIA-STUB type="annotated-screenshot" subject="AgilePlus quickstart — agileplus status after first epic created" journey="quickstart-cli" status="TODO" -->
-> **[RICH MEDIA PLACEHOLDER — needs journey capture]** *Annotated screenshot of `agileplus status` terminal output after bootstrapping the first epic.*
-> Intended content: a terminal capture immediately after `agileplus init` + `agileplus epic create`, showing the status summary (epic count, story rollup, requirement-link health). Blocked on a CLI journey capture — the `agileplus` binary is not yet built in this checkout, so the terminal output cannot be recorded. Tag `journey="quickstart-cli"` once a manifest exists in `phenotype-journeys`.
+> **[RICH MEDIA PLACEHOLDER — blocked on CLI build]** *Terminal capture of `agileplus status` immediately after `agileplus init` + `agileplus epic create`.*
+>
+> **Blocked:** `agileplus-cli` is not yet published from this workspace (`cargo build -p agileplus-cli` is the unlock). Once the binary exists, record via `Capture` in a Playwright or `script` session and render with `phenotype-journeys/remotion/doc-embeds/bin/render.mjs`. **Workaround:** use the web dashboard captures above for onboarding visuals until the CLI journey lands.
 <!-- END-RICH-MEDIA-STUB -->
 
-<!-- RICH-MEDIA-STUB type="recording-gif" subject="Epic/Story lifecycle — create epic, break into stories, assign" journey="epic-story-lifecycle" status="TODO" -->
-> **[RICH MEDIA PLACEHOLDER — needs journey capture]** *GIF of creating an epic, decomposing it into stories, and assigning them.*
-> Intended content: a short loop driving the dashboard Epics → Stories views (live data confirmed: 6 epics / 152 stories) showing an epic being opened, its story rollup, and a status change. A still of the Epics panel is already published in `docs/requirements/agileplus-frnfr.md`. The GIF itself is blocked on a multi-frame recording journey which requires the shared `@phenotype/doc-embeds` Remotion pipeline (phenotype-journeys repo not present in this workspace).
+<!-- RICH-MEDIA-STUB type="recording-gif" subject="Epic/Story lifecycle — create epic, break into stories, assign" journey="epic-story-lifecycle" status="CAPTURED" -->
+![Epics backlog — requirement-linked epics with per-epic story rollup](docs/assets/rich-media/agileplus/requirements-epics-panel.png)
+
+![Stories view — filterable story list tied to epics](docs/assets/rich-media/agileplus/stories-panel.png)
+
+*Keyframe pair from the `epic-story-lifecycle` Playwright capture (`docs/embeds/journeys/epic-story-lifecycle.annotations.json`). Remotion mp4/gif render is queued once `API_PORT=4000` is up with seeded data; re-run `render.mjs` from `phenotype-journeys/remotion/doc-embeds` to publish the animated loop.*
 <!-- END-RICH-MEDIA-STUB -->
 
-<!-- RICH-MEDIA-STUB type="recording-mp4" subject="Dashboard walkthrough — AgilePlus web dashboard all panels" journey="dashboard-walkthrough" status="CAPTURED" -->
-![AgilePlus dashboard — live overview with annotated KPI cards, recent-epics feed, and live-data badge](docs/assets/rich-media/agileplus/dashboard-overview.png)
+<!-- RICH-MEDIA-STUB type="recording-mp4" subject="Dashboard walkthrough — AgilePlus web dashboard all panels" journey="dashboard-walkthrough" status="PUBLISHED" -->
+![AgilePlus dashboard — overview KPI cards and navigation](docs/assets/rich-media/agileplus/dashboard-overview.png)
 
-*Annotated capture of the running AgilePlus dashboard (`crates/agileplus-dashboard/web`, Vite + React 19), served locally with live data: 6 epics, 152 stories, 80 work packages. Callouts mark the KPI cards, the per-repo Recent Epics feed, and the live-data badge.* The full motion walkthrough (mp4) is still pending the shared `@phenotype/doc-embeds` Remotion pipeline; this annotated still replaces the empty placeholder in the interim.
+*Three-step dashboard walkthrough captured via `@phenotype/doc-embeds` Capture helper (Overview → Epics → Stories). EmbedSpec: `docs/embeds/journeys/dashboard-walkthrough.annotations.json`. Re-capture with `API_PORT=4000 DATABASE_PATH=agileplus.db` for live epic/story counts, then `npm run render -- --annotations …` in `phenotype-journeys/remotion/doc-embeds` to drop `dashboard-walkthrough.mp4` beside these stills.*
 <!-- END-RICH-MEDIA-STUB -->

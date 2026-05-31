@@ -1,0 +1,35 @@
+{
+  "id": "epic-story-lifecycle",
+  "title": "Epic → stories lifecycle",
+  "subtitle": "AgilePlus dashboard",
+  "accent": "#22d3ee",
+  "width": 1280,
+  "height": 800,
+  "fps": 30,
+  "scenes": [
+    {
+      "src": "../../assets/rich-media/agileplus/requirements-epics-panel.png",
+      "holdSec": 3.5,
+      "callouts": [
+        {
+          "text": "Epics backlog",
+          "subText": "Each epic rolls up its stories and requirement_id",
+          "atSec": 0.4,
+          "anchor": "top-right"
+        }
+      ]
+    },
+    {
+      "src": "../../assets/rich-media/agileplus/stories-panel.png",
+      "holdSec": 3.5,
+      "callouts": [
+        {
+          "text": "Stories",
+          "subText": "Decomposed work items per epic",
+          "atSec": 0.4,
+          "anchor": "top-right"
+        }
+      ]
+    }
+  ]
+}

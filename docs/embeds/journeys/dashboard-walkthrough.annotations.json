@@ -1,0 +1,46 @@
+{
+  "id": "dashboard-walkthrough",
+  "title": "AgilePlus dashboard",
+  "accent": "#22d3ee",
+  "width": 1280,
+  "height": 800,
+  "fps": 30,
+  "scenes": [
+    {
+      "src": "keyframes/frame-001.png",
+      "holdSec": 3.5,
+      "callouts": [
+        {
+          "text": "Overview",
+          "subText": "KPI cards (API must be running for live counts)",
+          "atSec": 0.4,
+          "anchor": "top-right"
+        }
+      ]
+    },
+    {
+      "src": "keyframes/frame-002.png",
+      "holdSec": 3.5,
+      "callouts": [
+        {
+          "text": "Epics backlog",
+          "subText": "Requirement-linked epics",
+          "atSec": 0.4,
+          "anchor": "top-right"
+        }
+      ]
+    },
+    {
+      "src": "keyframes/frame-003.png",
+      "holdSec": 3.5,
+      "callouts": [
+        {
+          "text": "Stories",
+          "subText": "Filtered story list",
+          "atSec": 0.4,
+          "anchor": "top-right"
+        }
+      ]
+    }
+  ]
+}
