@@ -152,5 +152,6 @@ Use this document for cross-repo boundaries. Use each repo README for local arch
 ## Rich Media Stubs
 
 <!-- RICH-MEDIA-STUB type="annotated-screenshot" subject="AgilePlus hexagonal architecture — Rust workspace + MCP server diagram" journey="" status="TODO" -->
-> **[RICH MEDIA PLACEHOLDER]** *Annotated component diagram of AgilePlus crates and the MCP server adapter.*
+> **[RICH MEDIA PLACEHOLDER — needs diagram render]** *Annotated component diagram of AgilePlus crates and the MCP server adapter.*
+> Intended content: a hexagonal-architecture diagram with the domain core (Epic/Story/WorkPackage value objects, traceability links) at center; driving adapters (CLI, Axum REST API on :4000, `agileplus-dashboard/web` React SPA) on the left; and driven adapters (SQLite persistence, GitHub sync, Plane.so client, MCP server) on the right. This is a rendered diagram rather than a UI capture — blocked on a generated SVG/PNG (no runnable surface to screenshot). Candidate source: a Mermaid `flowchart` checked into `docs/`, exported via the `@phenotype/doc-embeds` pipeline.
 <!-- END-RICH-MEDIA-STUB -->

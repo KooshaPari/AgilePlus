@@ -417,6 +417,8 @@ AgilePlus is a hexagonal-architecture Rust workspace providing an agile project 
 
 ## Rich Media Stubs
 
-<!-- RICH-MEDIA-STUB type="annotated-screenshot" subject="FR/NFR requirements panel — AgilePlus spec-driven view" journey="" status="TODO" -->
-> **[RICH MEDIA PLACEHOLDER]** *Annotated screenshot of the requirements panel showing FR/NFR linked to epics.*
+<!-- RICH-MEDIA-STUB type="annotated-screenshot" subject="FR/NFR requirements panel — AgilePlus spec-driven view" journey="" status="PUBLISHED" -->
+![AgilePlus Epics panel — each epic mapped to FR/NFR requirement IDs with per-epic story rollup](../assets/rich-media/agileplus/requirements-epics-panel.png)
+
+*Annotated capture of the running AgilePlus dashboard Epics view, which is the spec-driven requirements panel: each epic carries its backlog state and (per `App.tsx`) its `requirement_id` traceability link to the FR/NFR IDs catalogued in this document, and the story rollup count per epic feeds the dashboard KPIs.*
 <!-- END-RICH-MEDIA-STUB -->
