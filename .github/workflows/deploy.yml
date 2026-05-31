@@ -33,9 +33,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Link @phenotype/docs from phenodocs
-          mkdir -p docs/node_modules/@phenotype
-          ln -sf /tmp/phenodocs/packages/docs docs/node_modules/@phenotype/docs
+          # Link @phenotype/docs from the cloned phenodocs workspace
+          mkdir -p node_modules/@phenotype
+          ln -sf /tmp/phenodocs/packages/docs node_modules/@phenotype/docs
           # Configure npm for GitHub Packages
           echo "@phenotype:registry=https://npm.pkg.github.com" >> ~/.npmrc
           echo "//npm.pkg.github.com/:_authToken=\${GITHUB_TOKEN}" >> ~/.npmrc
@@ -44,14 +44,16 @@ jobs:
       - name: Build VitePress site
         working-directory: docs
         env:
-          GITHUB_PAGES: true
-          PHENOTYPE_CUSTOM_DOMAIN: "true"
+          GITHUB_PAGES: "true"
+          # No custom domain — site is served at kooshapari.github.io/AgilePlus/
+          # Keep PHENOTYPE_CUSTOM_DOMAIN unset so base stays /AgilePlus/
         run: bun run docs:build
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b
         with:
-          path: docs/docs/.vitepress/dist
+          # srcDir: '.' → VitePress outputs to docs/.vitepress/dist
+          path: docs/.vitepress/dist
 
       - name: Deploy to GitHub Pages
         id: deployment
