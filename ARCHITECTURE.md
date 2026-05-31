@@ -146,3 +146,11 @@ Use this document for cross-repo boundaries. Use each repo README for local arch
 | hwLedger | [hwLedger/README.md](hwLedger/README.md) |
 | PolicyStack | [PolicyStack/README.md](PolicyStack/README.md) |
 | phenoAI | [phenoAI/README.md](phenoAI/README.md) |
+
+---
+
+## Rich Media Stubs
+
+<!-- RICH-MEDIA-STUB type="annotated-screenshot" subject="AgilePlus hexagonal architecture — Rust workspace + MCP server diagram" journey="" status="TODO" -->
+> **[RICH MEDIA PLACEHOLDER]** *Annotated component diagram of AgilePlus crates and the MCP server adapter.*
+<!-- END-RICH-MEDIA-STUB -->

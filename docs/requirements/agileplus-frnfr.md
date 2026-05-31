@@ -412,3 +412,11 @@ AgilePlus is a hexagonal-architecture Rust workspace providing an agile project 
 | #611 | Dashboard live wiring — epics_stories_json endpoint + React kanban + seed_db binary | FR-AGP-014 |
 | #295, #464 | Plane.so PlaneClient + resources (work_items, modules, cycles, labels) + state_mapper + sync outbound | FR-AGP-018 |
 | #326, #336 | agileplus-graph crate — GraphStore trait + InMemoryGraphStore + UUID-based API | FR-AGP-019 |
+
+---
+
+## Rich Media Stubs
+
+<!-- RICH-MEDIA-STUB type="annotated-screenshot" subject="FR/NFR requirements panel — AgilePlus spec-driven view" journey="" status="TODO" -->
+> **[RICH MEDIA PLACEHOLDER]** *Annotated screenshot of the requirements panel showing FR/NFR linked to epics.*
+<!-- END-RICH-MEDIA-STUB -->
