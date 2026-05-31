@@ -203,6 +203,141 @@
 
 ---
 
+### FR-TRC-011 — Requirement Miner: Extract Candidate Requirements from Source Artifacts
+
+**Title:** Heuristic requirement miner with confidence scoring and embedding hook
+
+**Description:** The system shall provide a `requirement_miner` service that, given source text and/or file paths, extracts candidate Requirement statements by detecting (a) requirement-language modal verbs (`shall`/`must` → 0.90, `should`/`will` → 0.70, `may`/`can` → 0.50), (b) explicit FR/NFR/REQ/SYS/SRS identifier tags (→ 0.95), and (c) TODO/SPEC/FIXME/`@requirement` code-comment markers (→ 0.60). Candidates are emitted as `CandidateRequirement` records carrying `id`, `text`, `confidence`, `source_ref`, and `tags`. The service is a pure function (no DB access); an embedding hook (`_embedding_hook`) is stubbed for future RAG integration. The API shall expose a read-only POST endpoint: `POST /api/v1/mine/requirements`.
+
+**Acceptance Criteria:**
+- `mine_text(text)` returns `CandidateRequirement` list sorted descending by confidence.
+- `mine_files(paths)` reads real files and merges results; missing files are silently skipped.
+- Requirement-language sentence extracted as candidate; non-requirement prose not flagged.
+- FR/NFR-pattern detected at confidence 0.95; tags populated in `CandidateRequirement.tags`.
+- Confidence ordering: explicit tag (0.95) > `shall`/`must` (0.90) > `should`/`will` (0.70) > `may`/`can` (0.50) > marker (0.60).
+- Empty input returns empty list.
+- `MinerConfig.deduplicate` de-duplicates by normalised text when True.
+- `MinerConfig.min_confidence` filters candidates below threshold.
+- `POST /api/v1/mine/requirements` accepts `{text, paths, min_confidence, include_markers, deduplicate}` and returns `{total, candidates[]}`.
+- 26 unit tests pass with no live DB or graph required.
+
+**Traceability:**
+- Branch: `feat/requirement-miner`
+- Source: `src/tracertm/services/requirement_miner.py`, `src/tracertm/api/routers/mine.py`
+- Tests: `tests/unit/services/test_requirement_miner.py` (26 tests)
+- Closes: FR-TRC-011
+
+---
+
+### FR-TRC-012 — Automated Duplicate / Conflict Detection via TraceLink Miner
+
+**Title:** Detect near-duplicate requirements and mutually-exclusive TraceLinks
+
+**Description:** The system shall provide a `dup_conflict_detector` service that, given an in-memory collection of `Artifact`/`Requirement` objects and `TraceLink` objects, identifies (a) near-duplicate requirements using token-Jaccard similarity (stdlib `difflib`-compatible, no external NLP dependency) above a configurable threshold (default 0.75), and (b) conflicting TraceLinks where the same ordered (source, target) artifact pair carries mutually-exclusive link types (e.g. `CONFLICTS_WITH` co-existing with `SATISFIES`, `VERIFIES`, `IMPLEMENTS`, `DERIVES_FROM`, or `REFINES`). Both detectors are pure functions over in-memory collections (no live DB access required). The API shall expose two read-only POST endpoints: `POST /api/v1/quality/duplicates` and `POST /api/v1/quality/conflicts`.
+
+**Acceptance Criteria:**
+- `detect_duplicate_requirements(artifacts, threshold)` returns `DuplicateFinding` list sorted descending by similarity.
+- `detect_conflicting_links(links)` returns `ConflictFinding` list for all (source, target) pairs with cooperative + `CONFLICTS_WITH` link types.
+- Threshold outside `(0.0, 1.0]` raises `ValueError`.
+- `POST /api/v1/quality/duplicates` and `POST /api/v1/quality/conflicts` accept JSON bodies and return findings with confidence.
+- 22 unit tests pass with no live DB or graph required.
+
+**Traceability:**
+- Branch: `feat/dup-conflict-detector`
+- Source: `src/tracertm/services/dup_conflict_detector.py`, `src/tracertm/api/routers/dup_conflict.py`
+- Tests: `src/tracertm/services/test_dup_conflict_detector.py` (22 tests)
+- Closes: FR-TRC-012
+
+---
+
+### FR-TRC-018 — Canonical Typed-Graph Schema Contract
+
+**Title:** Single canonical node/edge-kind schema contract; GraphPort is the sole graph writer
+
+**Description:** The platform shall define one canonical typed-graph schema (node kinds: Requirement, Spec, ADR, Code, Test, PR, Commit, Release, Repo, Team, Portfolio, OKR, Roadmap, Evidence, Journey, Keyframe; edges: TRACES_TO, VERIFIES, IMPACTS, DEPENDS_ON, DUPLICATES, IMPLEMENTS, COVERS, EVIDENCES, BELONGS_TO, RELEASES) and route all Neo4j writes through a single `GraphPort`. No service may write Neo4j directly. Epic: EPIC-TRC-A-SPINE.
+
+**Acceptance Criteria:**
+- Node/edge kinds are enumerated in one shared contract (HexaKit canonical ports + Python mirror).
+- All existing trace/impact services write via `GraphPort`.
+- Schema drift is impossible: writes outside the contract are rejected.
+
+**Traceability:**
+- Epic: EPIC-TRC-PLATFORM / EPIC-TRC-A-SPINE
+- Blueprint: `docs/TRACERA_PLATFORM_RND.md` §3.3
+- Status: PLANNED (Phase 0)
+
+---
+
+### FR-TRC-019 — Pluggable Agreement Scorer Port
+
+**Title:** ScorerPort with Jaccard / SentenceTransformer / SigLIP / VLM strategies
+
+**Description:** The platform shall expose a `ScorerPort` strategy interface for requirement↔artifact agreement scoring, with interchangeable implementations: lexical (Jaccard), text-embedding (SentenceTransformer), visual-embedding (SigLIP), and blind-vs-intent VLM. Pillars A and C consume the same port.
+
+**Acceptance Criteria:**
+- Scoring strategy is selectable at call site without changing callers.
+- Each scorer returns a normalized confidence in [0.0, 1.0] + rationale.
+
+**Traceability:**
+- Epic: EPIC-TRC-A-SPINE
+- Blueprint: `docs/TRACERA_PLATFORM_RND.md` §3.2
+- Status: PLANNED (Phase 1)
+
+---
+
+### FR-TRC-020 — Blind-vs-Intent Visual Verification
+
+**Title:** VLM proof that running code matches the requirement, with keyframe evidence
+
+**Description:** The Evidence & Verification engine shall capture journey keyframes/recordings (via phenotype-journeys behind `EvidenceRunnerPort`), store them in MinIO as `Evidence`/`Keyframe` graph nodes, and produce a blind-vs-intent VLM verdict asserting whether the running code satisfies the requirement. Verdicts attach to the graph via `VERIFIES` edges.
+
+**Acceptance Criteria:**
+- Evidence artifacts are content-addressed in MinIO and linked from graph nodes.
+- A verdict (pass/fail + rationale + confidence) is recorded per requirement under test.
+- phenotype-journeys is wrapped, not re-implemented.
+
+**Traceability:**
+- Epic: EPIC-TRC-C-VERIFY
+- Blueprint: `docs/TRACERA_PLATFORM_RND.md` §4 (Phase 2)
+- Status: PLANNED (Phase 2)
+
+---
+
+### FR-TRC-021 — Program Management via AgilePlus PmEnginePort
+
+**Title:** Portfolios / OKRs / roadmaps / releases as first-class graph nodes via AgilePlus
+
+**Description:** Pillar B shall promote `agileplus_adapter` into a `PmEnginePort` backed by AgilePlus (Rust), projecting portfolios, OKRs, roadmaps, and releases as canonical graph nodes with a PG-backed compliance/audit trail. AgilePlus is wrapped as the PM engine, not duplicated.
+
+**Acceptance Criteria:**
+- Portfolio/OKR/Roadmap/Release exist as graph node kinds with TraceLinks to requirements.
+- AgilePlus is consumed via a contract port (gRPC/HTTP), not re-implemented in Python.
+
+**Traceability:**
+- Epic: EPIC-TRC-B-PM
+- Blueprint: `docs/TRACERA_PLATFORM_RND.md` §4 (Phase 3)
+- Status: PLANNED (Phase 3)
+
+---
+
+### FR-TRC-022 — Multi-Repo Org Intelligence via RegistryPort
+
+**Title:** Org-wide repo/ecosystem graph + dependency/dup rationalization view
+
+**Description:** Pillar D shall wrap phenotype-registry (ECOSYSTEM_MAP / RATIONALIZATION_PLAN) behind a `RegistryPort`, ingesting the org repo graph and surfacing cross-repo dependency and duplication rationalization as a Tracera SPA view.
+
+**Acceptance Criteria:**
+- Repo / Team nodes and DEPENDS_ON / DUPLICATES edges populate the org graph.
+- Rationalization findings render in the SPA org-map workspace.
+- phenotype-registry is wrapped, not re-implemented.
+
+**Traceability:**
+- Epic: EPIC-TRC-D-ORG
+- Blueprint: `docs/TRACERA_PLATFORM_RND.md` §4 (Phase 4)
+- Status: PLANNED (Phase 4)
+
+---
+
 ## Non-Functional Requirements
 
 ### NFR-TRC-001 — Spatial Index Query Performance
@@ -295,15 +430,18 @@
 
 | ID | Title | Status | Notes |
 |----|-------|--------|-------|
-| FR-TRC-011 | RAG-layer traceability query (LLM-assisted link suggestion) | PLANNED | Referenced in `trace_link.py` docstring as "later PRs"; miner posterior = `confidence` field |
-| FR-TRC-012 | Automated duplicate / conflict detection via TraceLink miner | PLANNED | `DUPLICATES` and `CONFLICTS_WITH` link types defined but no miner service wired |
-| FR-TRC-013 | Bulk TraceLink ingestion from external sources (Jira, GitHub Issues) | PLANNED | `github_import_service.py`, `jira_import_service.py` exist but TraceLink confidence mapping TBD |
-| FR-TRC-014 | Traceability coverage matrix export (CSV/JSON/PDF) | PLANNED | `traceability_matrix_service.py` and `frontend/apps/web/e2e/traceability-matrix.spec.ts` exist; FR/NFR ingestion path not wired |
-| FR-TRC-015 | Graph-level impact blast-radius scoring (risk-weighted path analysis) | PLANNED | `impact_analysis_service.py`, `critical_path_service.py` exist; no confidence-weighted scoring yet |
-| FR-TRC-016 | AgilePlus integration — push Requirements / TraceLinks to AgilePlus project | PLANNED | Dog-food use case; AgilePlus at `C:/Users/koosh/Dev/AgilePlus`; API contract TBD |
-| FR-TRC-017 | Requirement quality scoring (completeness, ambiguity detection) | PARTIAL | `requirement_quality_service.py` and `requirement_quality_repository.py` exist; needs FR spec |
+| FR-TRC-011 | RAG-layer traceability query / requirement miner | SHIPPED | Heuristic miner (modal verbs, FR/NFR tags, spec markers) + confidence scoring; `requirement_miner.py`; endpoint POST /api/v1/mine/requirements; PR: feat/requirement-miner |
+| FR-TRC-012 | Automated duplicate / conflict detection via TraceLink miner | SHIPPED | Token-Jaccard duplicate detector + structural conflict detector; `dup_conflict_detector.py`; endpoints POST /api/v1/quality/duplicates + /conflicts; PR: feat/dup-conflict-detector |
+| FR-TRC-013 | Bulk TraceLink ingestion from external sources (Jira, GitHub Issues) | SHIPPED | Branch `feat/trc013-bulk-tracelink-ingestion`; sources: `src/tracertm/services/github_import_service.py`, `src/tracertm/services/jira_import_service.py`, `src/tracertm/api/routers/ingest.py`; validated with 28 unit tests; `uv run python -c "import tracertm"` |
+| FR-TRC-014 | Traceability coverage matrix export (CSV/JSON/PDF) | SHIPPED | Pure-function `coverage_matrix_service.py`; rows=requirements, cols=impl/test + ArtifactKind buckets; endpoint GET /api/v1/coverage/matrix?format=csv\|json; CSV RFC 4180 + pipe-separated multi-artifact cells; PDF deferred (heavy dep); 25 unit tests; PR: feat/coverage-matrix-export |
+| FR-TRC-015 | Graph-level impact blast-radius scoring (risk-weighted path analysis) | SHIPPED | Pure-function `blast_radius_service.py`; BFS over Requirement/Artifact/TraceLink graph with per-ArtifactKind risk weights + link-confidence multipliers; score 0–100 with LOW/MEDIUM/HIGH/CRITICAL tiers; endpoint `GET /api/v1/impact/blast-radius/{artifact_id}`; 20 unit tests; PR: feat/trc015-blast-radius-scoring |
+| FR-TRC-016 | AgilePlus integration — push Requirements / TraceLinks to AgilePlus project | SHIPPED | branch `feat/trc016-agileplus-push`; `tests/unit/services/test_agileplus_adapter.py` (17 tests); `src/tracertm/adapters/agileplus_adapter.py`; endpoint `POST /api/v1/integrations/agileplus/push`; `.env.example` AgilePlus config |
+| FR-TRC-017 | Traceability coverage / health scoring over Requirement-Artifact-TraceLink graph | SHIPPED | Pure-function `traceability_score_service.py`; metrics: impl_coverage, test_coverage, orphan_req_pct, orphan_art_pct, avg_confidence, composite 0-100; endpoint GET /api/v1/quality/score; 19 unit tests; PR: feat/quality-scoring |
 | NFR-TRC-008 | Link confidence index selectivity target ≥ 90% for miner-generated links | PLANNED | Baseline TBD once miner ships |
 | NFR-TRC-009 | Neo4j projection sync latency < 500 ms p99 for single-link writes | PLANNED | No SLA defined yet |
+| NFR-TRC-010 | All graph writes go through exactly one contract; no service writes Neo4j directly | PLANNED | Blueprint §3.2; EPIC-TRC-A-SPINE |
+| NFR-TRC-011 | Wrap-over-handroll: Authvault/AgilePlus/phenotype-journeys/phenotype-registry/HexaKit consumed via ports, never re-implemented | PLANNED | Blueprint §2 |
+| NFR-TRC-012 | Self-hosting: every shipped capability traces Requirement→Code→Test→PR in Tracera's own graph | PLANNED | Blueprint §7 |
 
 ---
 
@@ -321,4 +459,10 @@
 | FR-TRC-008 | #466 | `test_auth_config_db.py` |
 | FR-TRC-009 | #469 | alembic `063` |
 | FR-TRC-010 | #470 | `test_project_lifecycle.py` |
+| FR-TRC-011 | feat/requirement-miner | `test_requirement_miner.py` (26 tests) |
+| FR-TRC-012 | feat/dup-conflict-detector | `test_dup_conflict_detector.py` (22 tests) |
+| FR-TRC-014 | feat/coverage-matrix-export | `test_coverage_matrix_service.py` (25 tests) |
+| FR-TRC-015 | feat/trc015-blast-radius-scoring | `test_blast_radius_scoring.py` (20 tests) |
+| FR-TRC-016 | feat/trc016-agileplus-push | `test_agileplus_adapter.py` (17 tests) |
+| FR-TRC-017 | feat/quality-scoring | `test_traceability_score_service.py` (19 tests) |
 | NFR-TRC-001..007 | #458–#470 | (see individual evidences above) |
