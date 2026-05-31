@@ -365,7 +365,11 @@ function App() {
           })),
         );
       })
-      .catch(() => {})
+      .catch((err) => {
+        setApiError(
+          `API unavailable: ${err.message}. Start backend with API_PORT=4000 DATABASE_PATH=agileplus.db`,
+        );
+      })
       .finally(() => setLoading(false));
   }, [setWorkPackages, setLoading]);
 
@@ -389,8 +393,8 @@ function App() {
 
   const views: { id: View; label: string }[] = [
     { id: 'dashboard', label: 'Dashboard' },
-    { id: 'epics', label: `Epics (${epics.length})` },
-    { id: 'stories', label: `Stories (${stories.length})` },
+    { id: 'epics', label: epicStoriesLoading ? 'Epics' : `Epics (${epics.length})` },
+    { id: 'stories', label: epicStoriesLoading ? 'Stories' : `Stories (${stories.length})` },
     { id: 'evidence', label: 'Evidence' },
   ];
 
