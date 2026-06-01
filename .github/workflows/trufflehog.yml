@@ -1,22 +1,13 @@
-name: TruffleHog Secrets Scan
-
+﻿name: TruffleHog Secrets Scan
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
-
 on:
   push:
-    branches: [main, "chore/**", "feat/**", "fix/**"]
+    branches: [main]
   pull_request:
-    branches: [main, "chore/**", "feat/**", "fix/**"]
-  workflow_dispatch:
+permissions:
+  contents: read
 jobs:
   trufflehog:
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-      - uses: trufflesecurity/trufflehog@3fc0c2aa6648d54242e4af6fbfde0701796e4fb0  # v3.92.0 — SHA-pinned (matches sast-quick.yml)
-        with:
-          extra_args: --only-verified
+    uses: KooshaPari/phenotype-tooling/.github/workflows/reusable/trufflehog.yml@main
