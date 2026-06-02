@@ -1,0 +1,56 @@
+    Blocking waiting for file lock on artifact directory
+   Compiling aws-lc-rs v1.17.0
+   Compiling aws-lc-sys v0.41.0
+   Compiling rustls v0.23.40
+   Compiling sysinfo v0.32.1
+   Compiling libgit2-sys v0.18.4+1.9.3
+warning: agileplus-proto@0.1.0: protoc not found on PATH — using hand-written stubs. Install protobuf-compiler or set PROTOC env var for a full build.
+   Compiling bb8-redis v0.18.0
+   Compiling agileplus-sqlite v0.1.0 (E:\scratch\fix-agileplus\crates\agileplus-sqlite)
+   Compiling agileplus v0.1.0 (E:\scratch\fix-agileplus)
+   Compiling agileplus-triage v0.1.0 (E:\scratch\fix-agileplus\crates\agileplus-triage)
+   Compiling agileplus-import v0.1.0 (E:\scratch\fix-agileplus\crates\agileplus-import)
+   Compiling agileplus-governance v0.1.0 (E:\scratch\fix-agileplus\crates\agileplus-governance)
+   Compiling agileplus-cache v0.1.0 (E:\scratch\fix-agileplus\crates\agileplus-cache)
+   Compiling git2 v0.20.4
+warning: unused import: `ReleaseChannel`
+  --> crates\agileplus-governance\src\client.rs:14:57
+   |
+14 | use crate::channel::{PromotionRequest, PromotionResult, ReleaseChannel};
+   |                                                         ^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `PolicyContext`
+  --> crates\agileplus-governance\src\client.rs:17:34
+   |
+17 | use crate::policy::{PolicyCheck, PolicyContext, PolicyEngine, PolicyResult};
+   |                                  ^^^^^^^^^^^^^
+
+   Compiling agileplus-dashboard v0.1.0 (E:\scratch\fix-agileplus\crates\agileplus-dashboard)
+   Compiling rustls-webpki v0.103.13
+warning: `agileplus-governance` (lib) generated 2 warnings (run `cargo fix --lib -p agileplus-governance` to apply 2 suggestions)
+   Compiling tokio-rustls v0.26.4
+   Compiling rustls-platform-verifier v0.7.0
+   Compiling tokio-websockets v0.10.1
+   Compiling hyper-rustls v0.27.9
+   Compiling reqwest v0.13.4
+   Compiling async-nats v0.47.0
+   Compiling async-nats v0.38.0
+   Compiling agileplus-plane v0.1.0 (E:\scratch\fix-agileplus\crates\agileplus-plane)
+   Compiling agileplus-nats v0.1.0 (E:\scratch\fix-agileplus\crates\agileplus-nats)
+   Compiling agileplus-git v0.1.0 (E:\scratch\fix-agileplus\crates\agileplus-git)
+   Compiling agileplus-p2p v0.1.0 (E:\scratch\fix-agileplus\crates\agileplus-p2p)
+warning: field `repo_root` is never read
+  --> crates\agileplus-git\src\lib.rs:12:5
+   |
+11 | pub struct GitVcsAdapter {
+   |            ------------- field in this struct
+12 |     repo_root: PathBuf,
+   |     ^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+   Compiling agileplus-api v0.1.0 (E:\scratch\fix-agileplus\crates\agileplus-api)
+warning: `agileplus-git` (lib) generated 1 warning
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2m 59s
