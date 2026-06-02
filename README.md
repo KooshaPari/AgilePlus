@@ -1,3 +1,6 @@
+> **Work state:** ACTIVE · **Progress:** `███████░░░ 70%`
+> AI-native spec-driven PM platform (28-crate Rust workspace + React/TS dashboard + Electrobun desktop); frontend candidate #1. Core domain/api/dashboard implemented (421 Rust files); CI partially red, README/CLAUDE below describe a stale "polyrepo shelf" era and need a rewrite to match the shipped product. · updated 2026-06-02
+
 # Phenotype Polyrepo Shelf
 
 > **Pinned references (Phenotype-org)**
