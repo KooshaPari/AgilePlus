@@ -15,7 +15,10 @@ fn make_event_line(seq: i64) -> String {
 }
 
 fn conflict_block(ours: &str, theirs: &str) -> String {
-    format!("<<<<<<< HEAD\n{ours}\n=======\n{theirs}\n>>>>>>> branch\n")
+    format!(
+        "<<<<<<< HEAD\n{}\n=======\n{}\n>>>>>>> branch\n",
+        ours, theirs
+    )
 }
 
 #[test]

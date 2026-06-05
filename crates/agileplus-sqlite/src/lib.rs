@@ -1857,12 +1857,9 @@ mod tests {
     use agileplus_domain::domain::epic::{Epic, EpicStatus};
 
     async fn make_project(db: &SqliteStorageAdapter) -> i64 {
-        StoragePort::create_project(
-            db,
-            &Project::new("Epic Project", "epic-project").unwrap(),
-        )
-        .await
-        .unwrap()
+        StoragePort::create_project(db, &Project::new("Epic Project", "epic-project").unwrap())
+            .await
+            .unwrap()
     }
 
     #[tokio::test]
