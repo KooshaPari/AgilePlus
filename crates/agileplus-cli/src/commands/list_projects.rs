@@ -12,6 +12,7 @@ pub struct ListProjectsArgs {
     pub json: bool,
 }
 
+#[allow(clippy::print_literal)] // table header rows use literal strings for column names
 pub async fn run<S: StoragePort>(args: &ListProjectsArgs, storage: &S) -> Result<()> {
     let projects = storage
         .list_all_projects()

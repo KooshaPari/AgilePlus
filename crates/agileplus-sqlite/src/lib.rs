@@ -1867,15 +1867,13 @@ mod tests {
 
     use agileplus_domain::domain::epic::{Epic, EpicStatus};
 
-    fn make_project(db: &SqliteStorageAdapter) -> impl std::future::Future<Output = i64> + '_ {
-        async move {
-            StoragePort::create_project(
-                db,
-                &Project::new("Epic Project", "epic-project").unwrap(),
-            )
-            .await
-            .unwrap()
-        }
+    async fn make_project(db: &SqliteStorageAdapter) -> i64 {
+        StoragePort::create_project(
+            db,
+            &Project::new("Epic Project", "epic-project").unwrap(),
+        )
+        .await
+        .unwrap()
     }
 
     #[tokio::test]

@@ -201,8 +201,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::collections::HashMap;
-    use std::sync::{Arc, Mutex};
+    use std::sync::Mutex;
 
     use agileplus_domain::domain::event::Event;
     use agileplus_domain::domain::snapshot::Snapshot;

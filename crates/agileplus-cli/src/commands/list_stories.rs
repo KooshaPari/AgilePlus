@@ -22,6 +22,7 @@ pub struct ListStoriesArgs {
     pub json: bool,
 }
 
+#[allow(clippy::print_literal)] // table header uses literal strings
 pub async fn run<S: StoragePort>(args: &ListStoriesArgs, storage: &S) -> Result<()> {
     // Parse status filter eagerly so we fail fast on a bad value.
     let status_filter: Option<StoryStatus> = args

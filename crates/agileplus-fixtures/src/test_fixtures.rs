@@ -68,7 +68,7 @@ impl Default for TestFixtures {
 ///
 /// For full integration tests this would also seed a database; here we return
 /// pure data so that unit tests can use fixtures without any I/O.
-pub async fn seed_test_data() -> TestFixtures {
+pub fn seed_test_data() -> TestFixtures {
     TestFixtures::new()
 }
 
@@ -89,9 +89,9 @@ mod tests {
         assert_eq!(f.feature2.state, FeatureState::Created);
     }
 
-    #[tokio::test]
-    async fn seed_test_data_returns_fixtures() {
-        let f = seed_test_data().await;
+    #[test]
+    fn seed_test_data_returns_fixtures() {
+        let f = seed_test_data();
         assert_eq!(f.feature1.id, 1);
         assert_eq!(f.feature2.id, 2);
     }

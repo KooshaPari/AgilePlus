@@ -9,6 +9,7 @@ use agileplus_domain::ports::vcs::{
 
 /// Git-backed VCS adapter.
 pub struct GitVcsAdapter {
+    #[allow(dead_code)] // reserved for future VCS operations
     repo_root: PathBuf,
 }
 

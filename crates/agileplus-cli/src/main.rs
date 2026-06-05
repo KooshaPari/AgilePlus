@@ -144,6 +144,7 @@ impl MockStore {
 
 // ── handlers ─────────────────────────────────────────────────────────────────
 
+#[allow(clippy::print_literal)] // table header uses literal strings
 fn cmd_feature_list(store: &MockStore) {
     println!("{:<5} {:<28} {:<14} {}", "ID", "SLUG", "STATE", "NAME");
     println!("{}", "-".repeat(70));
@@ -177,6 +178,7 @@ fn cmd_feature_show(store: &MockStore, id: i64) {
     }
 }
 
+#[allow(clippy::print_literal)] // table header uses literal strings
 fn cmd_module_list(store: &MockStore) {
     println!("{:<5} {:<20} {}", "ID", "SLUG", "NAME");
     println!("{}", "-".repeat(50));

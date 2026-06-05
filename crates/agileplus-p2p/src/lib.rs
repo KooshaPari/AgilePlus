@@ -182,6 +182,7 @@ impl P2pNode {
         let mut found: HashSet<PeerId> = HashSet::new();
         let local = &self.local_peer_id;
 
+        #[allow(clippy::while_let_loop)] // multi-arm match in body w/ break-on-Ok(Err) / break-on-timeout
         loop {
             let remaining = match deadline.checked_duration_since(tokio::time::Instant::now()) {
                 Some(d) => d,
