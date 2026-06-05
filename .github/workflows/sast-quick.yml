@@ -3,9 +3,6 @@ on:
   pull_request:
   push:
     branches: [main]
-
-permissions:
-  contents: read
   security-events: write
   pull-requests: write
 
@@ -60,7 +57,7 @@ jobs:
       - uses: arduino/setup-protoc@v3
         with:
           version: "28.x"
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          repo-token: ${{ github.token }}
       - run: cargo clippy --all-targets --all-features -- -D warnings
 
   license-check:
@@ -75,3 +72,10 @@ jobs:
           tool: cargo-deny
       - name: Check Rust licenses
         run: cargo deny check -c rust/deny.toml licenses
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+

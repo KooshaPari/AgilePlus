@@ -5,9 +5,6 @@ on:
     paths: ["Cargo.toml", "Cargo.lock", "crates/**", "src/**", "rust/**"]
   pull_request:
     paths: ["Cargo.toml", "Cargo.lock", "crates/**", "src/**", "rust/**"]
-
-permissions:
-  contents: read
   security-events: write
 
 jobs:
@@ -35,7 +32,7 @@ jobs:
       - uses: arduino/setup-protoc@v3
         with:
           version: "28.x"
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          repo-token: ${{ github.token }}
       - run: cargo clippy --all-targets --all-features -- -D warnings
 
   fmt:
@@ -47,3 +44,10 @@ jobs:
         with:
           components: rustfmt
       - run: cargo fmt --all -- --check
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
