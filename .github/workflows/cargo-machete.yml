@@ -1,7 +1,4 @@
 name: Cargo Machete
-on:
-  workflow_dispatch:
-
 permissions:
   contents: read
 

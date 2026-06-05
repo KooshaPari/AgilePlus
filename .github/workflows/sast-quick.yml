@@ -9,6 +9,10 @@ permissions:
   security-events: write
   pull-requests: write
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   semgrep:
     name: Semgrep Scan
