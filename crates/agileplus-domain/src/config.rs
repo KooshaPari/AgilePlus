@@ -57,7 +57,8 @@ impl AppConfig {
     pub fn load_with_env_overrides() -> anyhow::Result<Self> {
         let mut config = Self::default();
 
-        if let Ok(port) = std::env::var("API_PORT").or_else(|_| std::env::var("AGILEPLUS_API_PORT")) {
+        if let Ok(port) = std::env::var("API_PORT").or_else(|_| std::env::var("AGILEPLUS_API_PORT"))
+        {
             config.api.port = port.parse()?;
         }
 

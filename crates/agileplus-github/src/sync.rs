@@ -125,7 +125,12 @@ impl LiveGhDataSource {
     /// Construct a production data source.
     ///
     /// `base_url` is typically `"https://api.github.com"`.
-    pub fn new(base_url: impl Into<String>, token: impl Into<String>, owner: impl Into<String>, repo: impl Into<String>) -> Self {
+    pub fn new(
+        base_url: impl Into<String>,
+        token: impl Into<String>,
+        owner: impl Into<String>,
+        repo: impl Into<String>,
+    ) -> Self {
         Self {
             base_url: base_url.into(),
             token: token.into(),
@@ -338,7 +343,7 @@ mod tests {
         let source = FakeSource::new(
             vec![
                 good_issue(1, "Valid issue"),
-                bad_issue(2),              // <── should be skipped
+                bad_issue(2), // <── should be skipped
                 good_issue(3, "Another valid issue"),
             ],
             vec![good_pr(10, "Valid PR")],

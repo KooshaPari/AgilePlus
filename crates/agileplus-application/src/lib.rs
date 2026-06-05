@@ -35,11 +35,8 @@ mod tests {
     use crate::dto::*;
     use crate::error::AppError;
     use crate::use_cases::{
-        advance_feature::AdvanceFeature,
-        create_epic::CreateEpic,
-        create_feature::CreateFeature,
-        create_story::CreateStory,
-        transition_story::TransitionStory,
+        advance_feature::AdvanceFeature, create_epic::CreateEpic, create_feature::CreateFeature,
+        create_story::CreateStory, transition_story::TransitionStory,
     };
 
     // ── In-memory doubles ────────────────────────────────────────────────────
@@ -67,7 +64,11 @@ mod tests {
             Ok(self.store.read().await.get(&id).cloned())
         }
 
-        async fn update_feature_state(&self, id: i64, state: FeatureState) -> Result<(), DomainError> {
+        async fn update_feature_state(
+            &self,
+            id: i64,
+            state: FeatureState,
+        ) -> Result<(), DomainError> {
             let mut store = self.store.write().await;
             if let Some(f) = store.get_mut(&id) {
                 f.state = state;
@@ -79,81 +80,417 @@ mod tests {
 
         // Minimal stubs for the rest of the trait
         async fn get_feature_by_slug(&self, slug: &str) -> Result<Option<Feature>, DomainError> {
-            Ok(self.store.read().await.values().find(|f| f.slug == slug).cloned())
+            Ok(self
+                .store
+                .read()
+                .await
+                .values()
+                .find(|f| f.slug == slug)
+                .cloned())
         }
-        async fn list_features_by_state(&self, state: FeatureState) -> Result<Vec<Feature>, DomainError> {
-            Ok(self.store.read().await.values().filter(|f| f.state == state).cloned().collect())
+        async fn list_features_by_state(
+            &self,
+            state: FeatureState,
+        ) -> Result<Vec<Feature>, DomainError> {
+            Ok(self
+                .store
+                .read()
+                .await
+                .values()
+                .filter(|f| f.state == state)
+                .cloned()
+                .collect())
         }
         async fn list_all_features(&self) -> Result<Vec<Feature>, DomainError> {
             Ok(self.store.read().await.values().cloned().collect())
         }
-        async fn create_work_package(&self, _: &agileplus_domain::domain::work_package::WorkPackage) -> Result<i64, DomainError> { Ok(0) }
-        async fn get_work_package(&self, _: i64) -> Result<Option<agileplus_domain::domain::work_package::WorkPackage>, DomainError> { Ok(None) }
-        async fn update_wp_state(&self, _: i64, _: agileplus_domain::domain::work_package::WpState) -> Result<(), DomainError> { Ok(()) }
-        async fn list_wps_by_feature(&self, _: i64) -> Result<Vec<agileplus_domain::domain::work_package::WorkPackage>, DomainError> { Ok(vec![]) }
-        async fn add_wp_dependency(&self, _: &agileplus_domain::domain::work_package::WpDependency) -> Result<(), DomainError> { Ok(()) }
-        async fn get_wp_dependencies(&self, _: i64) -> Result<Vec<agileplus_domain::domain::work_package::WpDependency>, DomainError> { Ok(vec![]) }
-        async fn get_ready_wps(&self, _: i64) -> Result<Vec<agileplus_domain::domain::work_package::WorkPackage>, DomainError> { Ok(vec![]) }
-        async fn append_audit_entry(&self, _: &agileplus_domain::domain::audit::AuditEntry) -> Result<i64, DomainError> { Ok(0) }
-        async fn get_audit_trail(&self, _: i64) -> Result<Vec<agileplus_domain::domain::audit::AuditEntry>, DomainError> { Ok(vec![]) }
-        async fn get_latest_audit_entry(&self, _: i64) -> Result<Option<agileplus_domain::domain::audit::AuditEntry>, DomainError> { Ok(None) }
-        async fn create_evidence(&self, _: &agileplus_domain::domain::governance::Evidence) -> Result<i64, DomainError> { Ok(0) }
-        async fn get_evidence_by_wp(&self, _: i64) -> Result<Vec<agileplus_domain::domain::governance::Evidence>, DomainError> { Ok(vec![]) }
-        async fn get_evidence_by_fr(&self, _: &str) -> Result<Vec<agileplus_domain::domain::governance::Evidence>, DomainError> { Ok(vec![]) }
-        async fn create_policy_rule(&self, _: &agileplus_domain::domain::governance::PolicyRule) -> Result<i64, DomainError> { Ok(0) }
-        async fn list_active_policies(&self) -> Result<Vec<agileplus_domain::domain::governance::PolicyRule>, DomainError> { Ok(vec![]) }
-        async fn record_metric(&self, _: &agileplus_domain::domain::metric::Metric) -> Result<i64, DomainError> { Ok(0) }
-        async fn get_metrics_by_feature(&self, _: i64) -> Result<Vec<agileplus_domain::domain::metric::Metric>, DomainError> { Ok(vec![]) }
-        async fn create_governance_contract(&self, _: &agileplus_domain::domain::governance::GovernanceContract) -> Result<i64, DomainError> { Ok(0) }
-        async fn get_governance_contract(&self, _: i64, _: i32) -> Result<Option<agileplus_domain::domain::governance::GovernanceContract>, DomainError> { Ok(None) }
-        async fn get_latest_governance_contract(&self, _: i64) -> Result<Option<agileplus_domain::domain::governance::GovernanceContract>, DomainError> { Ok(None) }
-        async fn create_module(&self, _: &agileplus_domain::domain::module::Module) -> Result<i64, DomainError> { Ok(0) }
-        async fn get_module(&self, _: i64) -> Result<Option<agileplus_domain::domain::module::Module>, DomainError> { Ok(None) }
-        async fn get_module_by_slug(&self, _: &str) -> Result<Option<agileplus_domain::domain::module::Module>, DomainError> { Ok(None) }
-        async fn update_module(&self, _: i64, _: &str, _: Option<&str>) -> Result<(), DomainError> { Ok(()) }
-        async fn delete_module(&self, _: i64) -> Result<(), DomainError> { Ok(()) }
-        async fn list_root_modules(&self) -> Result<Vec<agileplus_domain::domain::module::Module>, DomainError> { Ok(vec![]) }
-        async fn list_child_modules(&self, _: i64) -> Result<Vec<agileplus_domain::domain::module::Module>, DomainError> { Ok(vec![]) }
-        async fn get_module_with_features(&self, _: i64) -> Result<Option<agileplus_domain::domain::module::ModuleWithFeatures>, DomainError> { Ok(None) }
-        async fn tag_feature_to_module(&self, _: &agileplus_domain::domain::module::ModuleFeatureTag) -> Result<(), DomainError> { Ok(()) }
-        async fn untag_feature_from_module(&self, _: i64, _: i64) -> Result<(), DomainError> { Ok(()) }
-        async fn create_cycle(&self, _: &agileplus_domain::domain::cycle::Cycle) -> Result<i64, DomainError> { Ok(0) }
-        async fn get_cycle(&self, _: i64) -> Result<Option<agileplus_domain::domain::cycle::Cycle>, DomainError> { Ok(None) }
-        async fn update_cycle_state(&self, _: i64, _: agileplus_domain::domain::cycle::CycleState) -> Result<(), DomainError> { Ok(()) }
-        async fn list_cycles_by_state(&self, _: agileplus_domain::domain::cycle::CycleState) -> Result<Vec<agileplus_domain::domain::cycle::Cycle>, DomainError> { Ok(vec![]) }
-        async fn list_cycles_by_module(&self, _: i64) -> Result<Vec<agileplus_domain::domain::cycle::Cycle>, DomainError> { Ok(vec![]) }
-        async fn list_all_cycles(&self) -> Result<Vec<agileplus_domain::domain::cycle::Cycle>, DomainError> { Ok(vec![]) }
-        async fn get_cycle_with_features(&self, _: i64) -> Result<Option<agileplus_domain::domain::cycle::CycleWithFeatures>, DomainError> { Ok(None) }
-        async fn add_feature_to_cycle(&self, _: &agileplus_domain::domain::cycle::CycleFeature) -> Result<(), DomainError> { Ok(()) }
-        async fn remove_feature_from_cycle(&self, _: i64, _: i64) -> Result<(), DomainError> { Ok(()) }
-        async fn get_sync_mapping(&self, _: &str, _: i64) -> Result<Option<agileplus_domain::domain::sync_mapping::SyncMapping>, DomainError> { Ok(None) }
-        async fn upsert_sync_mapping(&self, _: &agileplus_domain::domain::sync_mapping::SyncMapping) -> Result<(), DomainError> { Ok(()) }
-        async fn get_sync_mapping_by_plane_id(&self, _: &str, _: &str) -> Result<Option<agileplus_domain::domain::sync_mapping::SyncMapping>, DomainError> { Ok(None) }
-        async fn delete_sync_mapping(&self, _: &str, _: i64) -> Result<(), DomainError> { Ok(()) }
-        async fn create_project(&self, _: &agileplus_domain::domain::project::Project) -> Result<i64, DomainError> { Ok(0) }
-        async fn get_project_by_slug(&self, _: &str) -> Result<Option<agileplus_domain::domain::project::Project>, DomainError> { Ok(None) }
-        async fn get_project_by_id(&self, _: i64) -> Result<Option<agileplus_domain::domain::project::Project>, DomainError> { Ok(None) }
-        async fn list_all_projects(&self) -> Result<Vec<agileplus_domain::domain::project::Project>, DomainError> { Ok(vec![]) }
-        async fn delete_project(&self, _: i64) -> Result<(), DomainError> { Ok(()) }
-        async fn create_user(&self, _: &agileplus_domain::domain::user::User) -> Result<i64, DomainError> { Ok(0) }
-        async fn get_user_by_id(&self, _: i64) -> Result<Option<agileplus_domain::domain::user::User>, DomainError> { Ok(None) }
-        async fn get_user_by_email(&self, _: &str) -> Result<Option<agileplus_domain::domain::user::User>, DomainError> { Ok(None) }
-        async fn update_user_status(&self, _: i64, _: agileplus_domain::domain::user::UserStatus) -> Result<(), DomainError> { Ok(()) }
-        async fn update_user_role(&self, _: i64, _: agileplus_domain::domain::user::UserRole) -> Result<(), DomainError> { Ok(()) }
-        async fn list_all_users(&self) -> Result<Vec<agileplus_domain::domain::user::User>, DomainError> { Ok(vec![]) }
-        async fn delete_user(&self, _: i64) -> Result<(), DomainError> { Ok(()) }
-        async fn create_epic(&self, _: &agileplus_domain::domain::epic::Epic) -> Result<i64, DomainError> { Ok(0) }
-        async fn get_epic_by_id(&self, _: i64) -> Result<Option<agileplus_domain::domain::epic::Epic>, DomainError> { Ok(None) }
-        async fn update_epic_status(&self, _: i64, _: agileplus_domain::domain::epic::EpicStatus) -> Result<(), DomainError> { Ok(()) }
-        async fn list_epics_by_project(&self, _: i64) -> Result<Vec<agileplus_domain::domain::epic::Epic>, DomainError> { Ok(vec![]) }
-        async fn delete_epic(&self, _: i64) -> Result<(), DomainError> { Ok(()) }
-        async fn create_story(&self, _: &agileplus_domain::domain::story::Story) -> Result<i64, DomainError> { Ok(0) }
-        async fn get_story_by_id(&self, _: i64) -> Result<Option<agileplus_domain::domain::story::Story>, DomainError> { Ok(None) }
-        async fn update_story_status(&self, _: i64, _: agileplus_domain::domain::story::StoryStatus) -> Result<(), DomainError> { Ok(()) }
-        async fn list_stories_by_epic(&self, _: i64) -> Result<Vec<agileplus_domain::domain::story::Story>, DomainError> { Ok(vec![]) }
-        async fn list_stories_by_project(&self, _: i64) -> Result<Vec<agileplus_domain::domain::story::Story>, DomainError> { Ok(vec![]) }
-        async fn delete_story(&self, _: i64) -> Result<(), DomainError> { Ok(()) }
-        async fn upsert_story_by_requirement_id(&self, _: &agileplus_domain::domain::story::Story) -> Result<i64, DomainError> { Ok(0) }
+        async fn create_work_package(
+            &self,
+            _: &agileplus_domain::domain::work_package::WorkPackage,
+        ) -> Result<i64, DomainError> {
+            Ok(0)
+        }
+        async fn get_work_package(
+            &self,
+            _: i64,
+        ) -> Result<Option<agileplus_domain::domain::work_package::WorkPackage>, DomainError>
+        {
+            Ok(None)
+        }
+        async fn update_wp_state(
+            &self,
+            _: i64,
+            _: agileplus_domain::domain::work_package::WpState,
+        ) -> Result<(), DomainError> {
+            Ok(())
+        }
+        async fn list_wps_by_feature(
+            &self,
+            _: i64,
+        ) -> Result<Vec<agileplus_domain::domain::work_package::WorkPackage>, DomainError> {
+            Ok(vec![])
+        }
+        async fn add_wp_dependency(
+            &self,
+            _: &agileplus_domain::domain::work_package::WpDependency,
+        ) -> Result<(), DomainError> {
+            Ok(())
+        }
+        async fn get_wp_dependencies(
+            &self,
+            _: i64,
+        ) -> Result<Vec<agileplus_domain::domain::work_package::WpDependency>, DomainError>
+        {
+            Ok(vec![])
+        }
+        async fn get_ready_wps(
+            &self,
+            _: i64,
+        ) -> Result<Vec<agileplus_domain::domain::work_package::WorkPackage>, DomainError> {
+            Ok(vec![])
+        }
+        async fn append_audit_entry(
+            &self,
+            _: &agileplus_domain::domain::audit::AuditEntry,
+        ) -> Result<i64, DomainError> {
+            Ok(0)
+        }
+        async fn get_audit_trail(
+            &self,
+            _: i64,
+        ) -> Result<Vec<agileplus_domain::domain::audit::AuditEntry>, DomainError> {
+            Ok(vec![])
+        }
+        async fn get_latest_audit_entry(
+            &self,
+            _: i64,
+        ) -> Result<Option<agileplus_domain::domain::audit::AuditEntry>, DomainError> {
+            Ok(None)
+        }
+        async fn create_evidence(
+            &self,
+            _: &agileplus_domain::domain::governance::Evidence,
+        ) -> Result<i64, DomainError> {
+            Ok(0)
+        }
+        async fn get_evidence_by_wp(
+            &self,
+            _: i64,
+        ) -> Result<Vec<agileplus_domain::domain::governance::Evidence>, DomainError> {
+            Ok(vec![])
+        }
+        async fn get_evidence_by_fr(
+            &self,
+            _: &str,
+        ) -> Result<Vec<agileplus_domain::domain::governance::Evidence>, DomainError> {
+            Ok(vec![])
+        }
+        async fn create_policy_rule(
+            &self,
+            _: &agileplus_domain::domain::governance::PolicyRule,
+        ) -> Result<i64, DomainError> {
+            Ok(0)
+        }
+        async fn list_active_policies(
+            &self,
+        ) -> Result<Vec<agileplus_domain::domain::governance::PolicyRule>, DomainError> {
+            Ok(vec![])
+        }
+        async fn record_metric(
+            &self,
+            _: &agileplus_domain::domain::metric::Metric,
+        ) -> Result<i64, DomainError> {
+            Ok(0)
+        }
+        async fn get_metrics_by_feature(
+            &self,
+            _: i64,
+        ) -> Result<Vec<agileplus_domain::domain::metric::Metric>, DomainError> {
+            Ok(vec![])
+        }
+        async fn create_governance_contract(
+            &self,
+            _: &agileplus_domain::domain::governance::GovernanceContract,
+        ) -> Result<i64, DomainError> {
+            Ok(0)
+        }
+        async fn get_governance_contract(
+            &self,
+            _: i64,
+            _: i32,
+        ) -> Result<Option<agileplus_domain::domain::governance::GovernanceContract>, DomainError>
+        {
+            Ok(None)
+        }
+        async fn get_latest_governance_contract(
+            &self,
+            _: i64,
+        ) -> Result<Option<agileplus_domain::domain::governance::GovernanceContract>, DomainError>
+        {
+            Ok(None)
+        }
+        async fn create_module(
+            &self,
+            _: &agileplus_domain::domain::module::Module,
+        ) -> Result<i64, DomainError> {
+            Ok(0)
+        }
+        async fn get_module(
+            &self,
+            _: i64,
+        ) -> Result<Option<agileplus_domain::domain::module::Module>, DomainError> {
+            Ok(None)
+        }
+        async fn get_module_by_slug(
+            &self,
+            _: &str,
+        ) -> Result<Option<agileplus_domain::domain::module::Module>, DomainError> {
+            Ok(None)
+        }
+        async fn update_module(&self, _: i64, _: &str, _: Option<&str>) -> Result<(), DomainError> {
+            Ok(())
+        }
+        async fn delete_module(&self, _: i64) -> Result<(), DomainError> {
+            Ok(())
+        }
+        async fn list_root_modules(
+            &self,
+        ) -> Result<Vec<agileplus_domain::domain::module::Module>, DomainError> {
+            Ok(vec![])
+        }
+        async fn list_child_modules(
+            &self,
+            _: i64,
+        ) -> Result<Vec<agileplus_domain::domain::module::Module>, DomainError> {
+            Ok(vec![])
+        }
+        async fn get_module_with_features(
+            &self,
+            _: i64,
+        ) -> Result<Option<agileplus_domain::domain::module::ModuleWithFeatures>, DomainError>
+        {
+            Ok(None)
+        }
+        async fn tag_feature_to_module(
+            &self,
+            _: &agileplus_domain::domain::module::ModuleFeatureTag,
+        ) -> Result<(), DomainError> {
+            Ok(())
+        }
+        async fn untag_feature_from_module(&self, _: i64, _: i64) -> Result<(), DomainError> {
+            Ok(())
+        }
+        async fn create_cycle(
+            &self,
+            _: &agileplus_domain::domain::cycle::Cycle,
+        ) -> Result<i64, DomainError> {
+            Ok(0)
+        }
+        async fn get_cycle(
+            &self,
+            _: i64,
+        ) -> Result<Option<agileplus_domain::domain::cycle::Cycle>, DomainError> {
+            Ok(None)
+        }
+        async fn update_cycle_state(
+            &self,
+            _: i64,
+            _: agileplus_domain::domain::cycle::CycleState,
+        ) -> Result<(), DomainError> {
+            Ok(())
+        }
+        async fn list_cycles_by_state(
+            &self,
+            _: agileplus_domain::domain::cycle::CycleState,
+        ) -> Result<Vec<agileplus_domain::domain::cycle::Cycle>, DomainError> {
+            Ok(vec![])
+        }
+        async fn list_cycles_by_module(
+            &self,
+            _: i64,
+        ) -> Result<Vec<agileplus_domain::domain::cycle::Cycle>, DomainError> {
+            Ok(vec![])
+        }
+        async fn list_all_cycles(
+            &self,
+        ) -> Result<Vec<agileplus_domain::domain::cycle::Cycle>, DomainError> {
+            Ok(vec![])
+        }
+        async fn get_cycle_with_features(
+            &self,
+            _: i64,
+        ) -> Result<Option<agileplus_domain::domain::cycle::CycleWithFeatures>, DomainError>
+        {
+            Ok(None)
+        }
+        async fn add_feature_to_cycle(
+            &self,
+            _: &agileplus_domain::domain::cycle::CycleFeature,
+        ) -> Result<(), DomainError> {
+            Ok(())
+        }
+        async fn remove_feature_from_cycle(&self, _: i64, _: i64) -> Result<(), DomainError> {
+            Ok(())
+        }
+        async fn get_sync_mapping(
+            &self,
+            _: &str,
+            _: i64,
+        ) -> Result<Option<agileplus_domain::domain::sync_mapping::SyncMapping>, DomainError>
+        {
+            Ok(None)
+        }
+        async fn upsert_sync_mapping(
+            &self,
+            _: &agileplus_domain::domain::sync_mapping::SyncMapping,
+        ) -> Result<(), DomainError> {
+            Ok(())
+        }
+        async fn get_sync_mapping_by_plane_id(
+            &self,
+            _: &str,
+            _: &str,
+        ) -> Result<Option<agileplus_domain::domain::sync_mapping::SyncMapping>, DomainError>
+        {
+            Ok(None)
+        }
+        async fn delete_sync_mapping(&self, _: &str, _: i64) -> Result<(), DomainError> {
+            Ok(())
+        }
+        async fn create_project(
+            &self,
+            _: &agileplus_domain::domain::project::Project,
+        ) -> Result<i64, DomainError> {
+            Ok(0)
+        }
+        async fn get_project_by_slug(
+            &self,
+            _: &str,
+        ) -> Result<Option<agileplus_domain::domain::project::Project>, DomainError> {
+            Ok(None)
+        }
+        async fn get_project_by_id(
+            &self,
+            _: i64,
+        ) -> Result<Option<agileplus_domain::domain::project::Project>, DomainError> {
+            Ok(None)
+        }
+        async fn list_all_projects(
+            &self,
+        ) -> Result<Vec<agileplus_domain::domain::project::Project>, DomainError> {
+            Ok(vec![])
+        }
+        async fn delete_project(&self, _: i64) -> Result<(), DomainError> {
+            Ok(())
+        }
+        async fn create_user(
+            &self,
+            _: &agileplus_domain::domain::user::User,
+        ) -> Result<i64, DomainError> {
+            Ok(0)
+        }
+        async fn get_user_by_id(
+            &self,
+            _: i64,
+        ) -> Result<Option<agileplus_domain::domain::user::User>, DomainError> {
+            Ok(None)
+        }
+        async fn get_user_by_email(
+            &self,
+            _: &str,
+        ) -> Result<Option<agileplus_domain::domain::user::User>, DomainError> {
+            Ok(None)
+        }
+        async fn update_user_status(
+            &self,
+            _: i64,
+            _: agileplus_domain::domain::user::UserStatus,
+        ) -> Result<(), DomainError> {
+            Ok(())
+        }
+        async fn update_user_role(
+            &self,
+            _: i64,
+            _: agileplus_domain::domain::user::UserRole,
+        ) -> Result<(), DomainError> {
+            Ok(())
+        }
+        async fn list_all_users(
+            &self,
+        ) -> Result<Vec<agileplus_domain::domain::user::User>, DomainError> {
+            Ok(vec![])
+        }
+        async fn delete_user(&self, _: i64) -> Result<(), DomainError> {
+            Ok(())
+        }
+        async fn create_epic(
+            &self,
+            _: &agileplus_domain::domain::epic::Epic,
+        ) -> Result<i64, DomainError> {
+            Ok(0)
+        }
+        async fn get_epic_by_id(
+            &self,
+            _: i64,
+        ) -> Result<Option<agileplus_domain::domain::epic::Epic>, DomainError> {
+            Ok(None)
+        }
+        async fn update_epic_status(
+            &self,
+            _: i64,
+            _: agileplus_domain::domain::epic::EpicStatus,
+        ) -> Result<(), DomainError> {
+            Ok(())
+        }
+        async fn list_epics_by_project(
+            &self,
+            _: i64,
+        ) -> Result<Vec<agileplus_domain::domain::epic::Epic>, DomainError> {
+            Ok(vec![])
+        }
+        async fn delete_epic(&self, _: i64) -> Result<(), DomainError> {
+            Ok(())
+        }
+        async fn create_story(
+            &self,
+            _: &agileplus_domain::domain::story::Story,
+        ) -> Result<i64, DomainError> {
+            Ok(0)
+        }
+        async fn get_story_by_id(
+            &self,
+            _: i64,
+        ) -> Result<Option<agileplus_domain::domain::story::Story>, DomainError> {
+            Ok(None)
+        }
+        async fn update_story_status(
+            &self,
+            _: i64,
+            _: agileplus_domain::domain::story::StoryStatus,
+        ) -> Result<(), DomainError> {
+            Ok(())
+        }
+        async fn list_stories_by_epic(
+            &self,
+            _: i64,
+        ) -> Result<Vec<agileplus_domain::domain::story::Story>, DomainError> {
+            Ok(vec![])
+        }
+        async fn list_stories_by_project(
+            &self,
+            _: i64,
+        ) -> Result<Vec<agileplus_domain::domain::story::Story>, DomainError> {
+            Ok(vec![])
+        }
+        async fn delete_story(&self, _: i64) -> Result<(), DomainError> {
+            Ok(())
+        }
+        async fn upsert_story_by_requirement_id(
+            &self,
+            _: &agileplus_domain::domain::story::Story,
+        ) -> Result<i64, DomainError> {
+            Ok(0)
+        }
     }
 
     /// In-memory Story store.
@@ -190,7 +527,14 @@ mod tests {
         }
 
         async fn list_by_epic(&self, epic_id: i64) -> Result<Vec<Story>, DomainError> {
-            Ok(self.store.read().await.values().filter(|s| s.epic_id == epic_id).cloned().collect())
+            Ok(self
+                .store
+                .read()
+                .await
+                .values()
+                .filter(|s| s.epic_id == epic_id)
+                .cloned()
+                .collect())
         }
     }
 
@@ -228,7 +572,14 @@ mod tests {
         }
 
         async fn list_by_project(&self, project_id: i64) -> Result<Vec<Epic>, DomainError> {
-            Ok(self.store.read().await.values().filter(|e| e.project_id == project_id).cloned().collect())
+            Ok(self
+                .store
+                .read()
+                .await
+                .values()
+                .filter(|e| e.project_id == project_id)
+                .cloned()
+                .collect())
         }
     }
 
@@ -262,12 +613,15 @@ mod tests {
         let pub_ = Arc::new(SpyPublisher::default());
         let uc = CreateFeature::new(repo.clone(), pub_.clone());
 
-        let out = uc.execute(CreateFeatureCmd {
-            slug: "auth".to_string(),
-            friendly_name: "Authentication".to_string(),
-            spec_hash: None,
-            target_branch: None,
-        }).await.unwrap();
+        let out = uc
+            .execute(CreateFeatureCmd {
+                slug: "auth".to_string(),
+                friendly_name: "Authentication".to_string(),
+                spec_hash: None,
+                target_branch: None,
+            })
+            .await
+            .unwrap();
 
         assert_eq!(out.id, 1);
         assert_eq!(out.feature.slug, "auth");
@@ -286,17 +640,23 @@ mod tests {
         let create_uc = CreateFeature::new(repo.clone(), pub_.clone());
         let advance_uc = AdvanceFeature::new(repo.clone(), pub_.clone());
 
-        let out = create_uc.execute(CreateFeatureCmd {
-            slug: "feat-a".to_string(),
-            friendly_name: "Feature A".to_string(),
-            spec_hash: None,
-            target_branch: None,
-        }).await.unwrap();
+        let out = create_uc
+            .execute(CreateFeatureCmd {
+                slug: "feat-a".to_string(),
+                friendly_name: "Feature A".to_string(),
+                spec_hash: None,
+                target_branch: None,
+            })
+            .await
+            .unwrap();
 
-        advance_uc.execute(AdvanceFeatureCmd {
-            feature_id: out.id,
-            target_state: "specified".to_string(),
-        }).await.unwrap();
+        advance_uc
+            .execute(AdvanceFeatureCmd {
+                feature_id: out.id,
+                target_state: "specified".to_string(),
+            })
+            .await
+            .unwrap();
 
         let feature = repo.get_feature_by_id(out.id).await.unwrap().unwrap();
         assert_eq!(feature.state, FeatureState::Specified);
@@ -304,8 +664,10 @@ mod tests {
         let events = pub_.emitted().await;
         // created + advanced
         assert_eq!(events.len(), 2);
-        assert!(matches!(&events[1], DomainEvent::FeatureStateAdvanced { from, to, .. }
-            if from == "created" && to == "specified"));
+        assert!(
+            matches!(&events[1], DomainEvent::FeatureStateAdvanced { from, to, .. }
+            if from == "created" && to == "specified")
+        );
     }
 
     #[tokio::test]
@@ -315,18 +677,24 @@ mod tests {
         let create_uc = CreateFeature::new(repo.clone(), pub_.clone());
         let advance_uc = AdvanceFeature::new(repo.clone(), pub_.clone());
 
-        let out = create_uc.execute(CreateFeatureCmd {
-            slug: "feat-b".to_string(),
-            friendly_name: "Feature B".to_string(),
-            spec_hash: None,
-            target_branch: None,
-        }).await.unwrap();
+        let out = create_uc
+            .execute(CreateFeatureCmd {
+                slug: "feat-b".to_string(),
+                friendly_name: "Feature B".to_string(),
+                spec_hash: None,
+                target_branch: None,
+            })
+            .await
+            .unwrap();
 
         // Created -> Shipped is not allowed
-        let err = advance_uc.execute(AdvanceFeatureCmd {
-            feature_id: out.id,
-            target_state: "shipped".to_string(),
-        }).await.unwrap_err();
+        let err = advance_uc
+            .execute(AdvanceFeatureCmd {
+                feature_id: out.id,
+                target_state: "shipped".to_string(),
+            })
+            .await
+            .unwrap_err();
 
         assert!(matches!(err, AppError::Domain(_)));
     }
@@ -337,10 +705,13 @@ mod tests {
         let pub_ = Arc::new(SpyPublisher::default());
         let uc = AdvanceFeature::new(repo.clone(), pub_.clone());
 
-        let err = uc.execute(AdvanceFeatureCmd {
-            feature_id: 999,
-            target_state: "specified".to_string(),
-        }).await.unwrap_err();
+        let err = uc
+            .execute(AdvanceFeatureCmd {
+                feature_id: 999,
+                target_state: "specified".to_string(),
+            })
+            .await
+            .unwrap_err();
 
         assert!(matches!(err, AppError::NotFound(_)));
     }
@@ -353,19 +724,25 @@ mod tests {
         let pub_ = Arc::new(SpyPublisher::default());
         let uc = CreateStory::new(repo.clone(), pub_.clone());
 
-        let out = uc.execute(CreateStoryCmd {
-            epic_id: 1,
-            project_id: 10,
-            title: "User can log in".to_string(),
-            points: Some(3),
-        }).await.unwrap();
+        let out = uc
+            .execute(CreateStoryCmd {
+                epic_id: 1,
+                project_id: 10,
+                title: "User can log in".to_string(),
+                points: Some(3),
+            })
+            .await
+            .unwrap();
 
         assert_eq!(out.id, 1);
         assert_eq!(out.story.title, "User can log in");
 
         let events = pub_.emitted().await;
         assert_eq!(events.len(), 1);
-        assert!(matches!(&events[0], DomainEvent::StoryCreated { epic_id: 1, .. }));
+        assert!(matches!(
+            &events[0],
+            DomainEvent::StoryCreated { epic_id: 1, .. }
+        ));
     }
 
     #[tokio::test]
@@ -374,14 +751,20 @@ mod tests {
         let pub_ = Arc::new(SpyPublisher::default());
         let uc = CreateStory::new(repo, pub_);
 
-        let err = uc.execute(CreateStoryCmd {
-            epic_id: 1,
-            project_id: 10,
-            title: "".to_string(),
-            points: None,
-        }).await.unwrap_err();
+        let err = uc
+            .execute(CreateStoryCmd {
+                epic_id: 1,
+                project_id: 10,
+                title: "".to_string(),
+                points: None,
+            })
+            .await
+            .unwrap_err();
 
-        assert!(matches!(err, AppError::Domain(agileplus_domain::error::DomainError::Validation(_))));
+        assert!(matches!(
+            err,
+            AppError::Domain(agileplus_domain::error::DomainError::Validation(_))
+        ));
     }
 
     #[tokio::test]
@@ -390,12 +773,15 @@ mod tests {
         let pub_ = Arc::new(SpyPublisher::default());
         let uc = CreateStory::new(repo, pub_);
 
-        let err = uc.execute(CreateStoryCmd {
-            epic_id: 1,
-            project_id: 10,
-            title: "Some story".to_string(),
-            points: Some(0),
-        }).await.unwrap_err();
+        let err = uc
+            .execute(CreateStoryCmd {
+                epic_id: 1,
+                project_id: 10,
+                title: "Some story".to_string(),
+                points: Some(0),
+            })
+            .await
+            .unwrap_err();
 
         assert!(matches!(err, AppError::Domain(_)));
     }
@@ -409,25 +795,33 @@ mod tests {
         let create_uc = CreateStory::new(repo.clone(), pub_.clone());
         let trans_uc = TransitionStory::new(repo.clone(), pub_.clone());
 
-        let out = create_uc.execute(CreateStoryCmd {
-            epic_id: 2,
-            project_id: 20,
-            title: "Login flow".to_string(),
-            points: None,
-        }).await.unwrap();
+        let out = create_uc
+            .execute(CreateStoryCmd {
+                epic_id: 2,
+                project_id: 20,
+                title: "Login flow".to_string(),
+                points: None,
+            })
+            .await
+            .unwrap();
 
-        trans_uc.execute(TransitionStoryCmd {
-            story_id: out.id,
-            target_status: StoryStatus::InProgress,
-        }).await.unwrap();
+        trans_uc
+            .execute(TransitionStoryCmd {
+                story_id: out.id,
+                target_status: StoryStatus::InProgress,
+            })
+            .await
+            .unwrap();
 
         let story = repo.get_by_id(out.id).await.unwrap().unwrap();
         assert_eq!(story.status, StoryStatus::InProgress);
 
         let events = pub_.emitted().await;
         assert_eq!(events.len(), 2);
-        assert!(matches!(&events[1], DomainEvent::StoryStatusChanged { from, to, .. }
-            if from == "todo" && to == "in_progress"));
+        assert!(
+            matches!(&events[1], DomainEvent::StoryStatusChanged { from, to, .. }
+            if from == "todo" && to == "in_progress")
+        );
     }
 
     #[tokio::test]
@@ -437,18 +831,24 @@ mod tests {
         let create_uc = CreateStory::new(repo.clone(), pub_.clone());
         let trans_uc = TransitionStory::new(repo.clone(), pub_.clone());
 
-        let out = create_uc.execute(CreateStoryCmd {
-            epic_id: 2,
-            project_id: 20,
-            title: "Story skip".to_string(),
-            points: None,
-        }).await.unwrap();
+        let out = create_uc
+            .execute(CreateStoryCmd {
+                epic_id: 2,
+                project_id: 20,
+                title: "Story skip".to_string(),
+                points: None,
+            })
+            .await
+            .unwrap();
 
         // Todo -> Done is not allowed
-        let err = trans_uc.execute(TransitionStoryCmd {
-            story_id: out.id,
-            target_status: StoryStatus::Done,
-        }).await.unwrap_err();
+        let err = trans_uc
+            .execute(TransitionStoryCmd {
+                story_id: out.id,
+                target_status: StoryStatus::Done,
+            })
+            .await
+            .unwrap_err();
 
         assert!(matches!(err, AppError::Domain(_)));
     }
@@ -459,10 +859,13 @@ mod tests {
         let pub_ = Arc::new(SpyPublisher::default());
         let uc = TransitionStory::new(repo, pub_);
 
-        let err = uc.execute(TransitionStoryCmd {
-            story_id: 999,
-            target_status: StoryStatus::InProgress,
-        }).await.unwrap_err();
+        let err = uc
+            .execute(TransitionStoryCmd {
+                story_id: 999,
+                target_status: StoryStatus::InProgress,
+            })
+            .await
+            .unwrap_err();
 
         assert!(matches!(err, AppError::NotFound(_)));
     }
@@ -475,16 +878,22 @@ mod tests {
         let pub_ = Arc::new(SpyPublisher::default());
         let uc = CreateEpic::new(repo.clone(), pub_.clone());
 
-        let out = uc.execute(CreateEpicCmd {
-            project_id: 5,
-            title: "Auth Epic".to_string(),
-        }).await.unwrap();
+        let out = uc
+            .execute(CreateEpicCmd {
+                project_id: 5,
+                title: "Auth Epic".to_string(),
+            })
+            .await
+            .unwrap();
 
         assert_eq!(out.id, 1);
 
         let events = pub_.emitted().await;
         assert_eq!(events.len(), 1);
-        assert!(matches!(&events[0], DomainEvent::EpicCreated { project_id: 5, .. }));
+        assert!(matches!(
+            &events[0],
+            DomainEvent::EpicCreated { project_id: 5, .. }
+        ));
     }
 
     #[tokio::test]
@@ -493,10 +902,13 @@ mod tests {
         let pub_ = Arc::new(SpyPublisher::default());
         let uc = CreateEpic::new(repo, pub_);
 
-        let err = uc.execute(CreateEpicCmd {
-            project_id: 5,
-            title: "   ".to_string(),
-        }).await.unwrap_err();
+        let err = uc
+            .execute(CreateEpicCmd {
+                project_id: 5,
+                title: "   ".to_string(),
+            })
+            .await
+            .unwrap_err();
 
         assert!(matches!(err, AppError::Domain(_)));
     }

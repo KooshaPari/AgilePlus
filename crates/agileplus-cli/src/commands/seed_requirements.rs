@@ -8,30 +8,20 @@ use std::path::PathBuf;
 
 use clap::Args;
 
-use agileplus_sqlite::seed::{Initiative, seed_requirements};
+use agileplus_sqlite::seed::{seed_requirements, Initiative};
 
 /// Embedded catalog markdown files — bundled at compile time.
 /// Paths are relative to this source file:
 ///   crates/agileplus-cli/src/commands/seed_requirements.rs
 ///   → up 4 dirs → workspace root → docs/requirements/
-const AGILEPLUS_CATALOG: &str = include_str!(
-    "../../../../docs/requirements/agileplus-frnfr.md"
-);
-const TRACERA_CATALOG: &str = include_str!(
-    "../../../../docs/requirements/tracera-frnfr.md"
-);
-const PHENOTYPE_VOXEL_CATALOG: &str = include_str!(
-    "../../../../docs/requirements/phenotype-voxel-frnfr.md"
-);
-const AUTHVAULT_CATALOG: &str = include_str!(
-    "../../../../docs/requirements/authvault-frnfr.md"
-);
-const PHENOMCP_CATALOG: &str = include_str!(
-    "../../../../docs/requirements/phenomcp-frnfr.md"
-);
-const PHENOOBSERVABILITY_CATALOG: &str = include_str!(
-    "../../../../docs/requirements/phenoobservability-frnfr.md"
-);
+const AGILEPLUS_CATALOG: &str = include_str!("../../../../docs/requirements/agileplus-frnfr.md");
+const TRACERA_CATALOG: &str = include_str!("../../../../docs/requirements/tracera-frnfr.md");
+const PHENOTYPE_VOXEL_CATALOG: &str =
+    include_str!("../../../../docs/requirements/phenotype-voxel-frnfr.md");
+const AUTHVAULT_CATALOG: &str = include_str!("../../../../docs/requirements/authvault-frnfr.md");
+const PHENOMCP_CATALOG: &str = include_str!("../../../../docs/requirements/phenomcp-frnfr.md");
+const PHENOOBSERVABILITY_CATALOG: &str =
+    include_str!("../../../../docs/requirements/phenoobservability-frnfr.md");
 
 /// Arguments for the `seed-requirements` subcommand.
 #[derive(Args, Debug)]
@@ -84,8 +74,8 @@ pub fn run(args: &SeedRequirementsArgs) -> anyhow::Result<()> {
         },
     ];
 
-    let report = seed_requirements(&conn, &initiatives)
-        .map_err(|e| anyhow::anyhow!("seed failed: {e}"))?;
+    let report =
+        seed_requirements(&conn, &initiatives).map_err(|e| anyhow::anyhow!("seed failed: {e}"))?;
 
     println!(
         "Seeded {} epic(s) and {} story/stories across {} initiative(s).",
@@ -96,7 +86,10 @@ pub fn run(args: &SeedRequirementsArgs) -> anyhow::Result<()> {
 
     if args.verbose {
         for init in &report.initiatives {
-            println!("\n  Epic [{}] id={}", init.epic_requirement_id, init.epic_id);
+            println!(
+                "\n  Epic [{}] id={}",
+                init.epic_requirement_id, init.epic_id
+            );
             for s in &init.stories {
                 println!(
                     "    Story [{}] id={} status={:?}",

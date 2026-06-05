@@ -32,9 +32,9 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 use std::time::Instant;
 
-use axum::Json;
 use axum::routing::get;
-use axum::{Router, middleware};
+use axum::Json;
+use axum::{middleware, Router};
 use tower_http::cors::CorsLayer;
 use tower_http::services::ServeDir;
 use tower_http::trace::TraceLayer;

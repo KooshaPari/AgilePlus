@@ -1,6 +1,6 @@
 //! Metrics repository — CRUD for the `metrics` table.
 
-use rusqlite::{Connection, params};
+use rusqlite::{params, Connection};
 
 use agileplus_domain::{domain::metric::Metric, error::DomainError};
 

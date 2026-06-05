@@ -2,9 +2,9 @@
 //!
 //! Traceability: WP15-T086
 
-use axum::Json;
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
+use axum::Json;
 use serde_json::json;
 
 /// Errors returned by API handlers.

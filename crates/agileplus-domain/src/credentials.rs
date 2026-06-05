@@ -15,13 +15,23 @@ pub mod keys {
 /// expected by implementations to prevent timing attacks.
 pub trait CredentialStore: Send + Sync {
     /// Returns `Ok(true)` if the plaintext `key` is valid.
-    fn validate_api_key(&self, key: &str) -> Result<bool, Box<dyn std::error::Error + Send + Sync>>;
+    fn validate_api_key(&self, key: &str)
+        -> Result<bool, Box<dyn std::error::Error + Send + Sync>>;
 
     /// Retrieve a named credential value (namespace + key).
-    fn get(&self, namespace: &str, key: &str) -> Result<String, Box<dyn std::error::Error + Send + Sync>>;
+    fn get(
+        &self,
+        namespace: &str,
+        key: &str,
+    ) -> Result<String, Box<dyn std::error::Error + Send + Sync>>;
 
     /// Store a named credential value.
-    fn set(&self, namespace: &str, key: &str, value: &str) -> Result<(), Box<dyn std::error::Error + Send + Sync>>;
+    fn set(
+        &self,
+        namespace: &str,
+        key: &str,
+        value: &str,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>>;
 }
 
 /// In-memory credential store backed by a comma-separated list of allowed keys.
@@ -36,7 +46,10 @@ impl InMemoryCredentialStore {
 }
 
 impl CredentialStore for InMemoryCredentialStore {
-    fn validate_api_key(&self, key: &str) -> Result<bool, Box<dyn std::error::Error + Send + Sync>> {
+    fn validate_api_key(
+        &self,
+        key: &str,
+    ) -> Result<bool, Box<dyn std::error::Error + Send + Sync>> {
         // Constant-time comparison to resist timing attacks.
         use std::hint::black_box;
         let target = key.as_bytes();
@@ -45,19 +58,31 @@ impl CredentialStore for InMemoryCredentialStore {
             if kb.len() != target.len() {
                 black_box(false)
             } else {
-                let matches = kb.iter().zip(target.iter()).fold(0u8, |acc, (a, b)| acc | (a ^ b));
+                let matches = kb
+                    .iter()
+                    .zip(target.iter())
+                    .fold(0u8, |acc, (a, b)| acc | (a ^ b));
                 black_box(matches == 0)
             }
         });
         Ok(valid)
     }
 
-    fn get(&self, _namespace: &str, _key: &str) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+    fn get(
+        &self,
+        _namespace: &str,
+        _key: &str,
+    ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
         // In-memory store doesn't persist; return empty to signal no existing key.
         Ok(String::new())
     }
 
-    fn set(&self, _namespace: &str, _key: &str, _value: &str) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    fn set(
+        &self,
+        _namespace: &str,
+        _key: &str,
+        _value: &str,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         // In-memory store is read-only post-construction; silently accept writes.
         Ok(())
     }

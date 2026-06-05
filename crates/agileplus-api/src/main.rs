@@ -10,7 +10,7 @@ use agileplus_domain::credentials::create_credential_store;
 use agileplus_domain::ports::observability::{LogEntry, ObservabilityPort, SpanContext};
 use agileplus_git::GitVcsAdapter;
 use agileplus_sqlite::SqliteStorageAdapter;
-use anyhow::{Context, Result, anyhow};
+use anyhow::{anyhow, Context, Result};
 
 #[tokio::main]
 async fn main() -> Result<()> {

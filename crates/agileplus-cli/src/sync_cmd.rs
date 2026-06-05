@@ -9,10 +9,10 @@
 //! A `GhDataSource` trait-object is injected so the command can be unit-
 //! tested without touching the network.
 
-use anyhow::{Result, bail};
+use anyhow::{bail, Result};
 use clap::Args;
 
-use agileplus_github::sync::{GhDataSource, SyncReport, sync_repository};
+use agileplus_github::sync::{sync_repository, GhDataSource, SyncReport};
 
 /// Arguments for the `sync` subcommand.
 #[derive(Debug, Args)]
@@ -82,12 +82,8 @@ pub async fn run(args: SyncArgs, source: Option<Box<dyn GhDataSource>>) -> Resul
         if token.is_empty() {
             bail!("a GitHub token is required: use --token or GITHUB_TOKEN env var");
         }
-        let live = agileplus_github::sync::LiveGhDataSource::new(
-            &args.api_base,
-            token,
-            owner,
-            repo_name,
-        );
+        let live =
+            agileplus_github::sync::LiveGhDataSource::new(&args.api_base, token, owner, repo_name);
         sync_repository(&live, args.project, args.epic).await?
     };
 
@@ -240,7 +236,10 @@ mod tests {
     fn print_report_with_skipped() {
         let report = SyncReport {
             stories: vec![],
-            skipped: vec![(42, "empty title".to_string()), (99, "unknown state".to_string())],
+            skipped: vec![
+                (42, "empty title".to_string()),
+                (99, "unknown state".to_string()),
+            ],
         };
         print_report(&report);
     }

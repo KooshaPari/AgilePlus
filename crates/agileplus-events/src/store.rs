@@ -27,7 +27,7 @@ pub trait EventStore: Send + Sync {
 
     /// All events for an entity, ascending by sequence.
     async fn get_events(&self, entity_type: &str, entity_id: i64)
-    -> Result<Vec<Event>, EventError>;
+        -> Result<Vec<Event>, EventError>;
 
     /// Events from a specific sequence onward (exclusive).
     async fn get_events_since(

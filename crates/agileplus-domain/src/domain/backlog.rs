@@ -161,12 +161,7 @@ impl BacklogItem {
     ///
     /// Priority defaults to `intent.default_priority()`.
     /// Status is set to `BacklogStatus::New`.
-    pub fn from_triage(
-        title: String,
-        description: String,
-        intent: Intent,
-        source: String,
-    ) -> Self {
+    pub fn from_triage(title: String, description: String, intent: Intent, source: String) -> Self {
         let now = Utc::now();
         Self {
             id: None,

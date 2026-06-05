@@ -6,7 +6,10 @@ use thiserror::Error;
 #[derive(Debug, Error)]
 pub enum DomainError {
     #[error("Feature not in module scope: feature '{feature_slug}' not in module '{module_slug}'")]
-    FeatureNotInModuleScope { feature_slug: String, module_slug: String },
+    FeatureNotInModuleScope {
+        feature_slug: String,
+        module_slug: String,
+    },
 
     #[error("Module has dependents: {0}")]
     ModuleHasDependents(String),
@@ -39,7 +42,11 @@ pub enum DomainError {
     Conflict(String),
 
     #[error("Invalid transition from {from} to {to}: {reason}")]
-    InvalidTransition { from: String, to: String, reason: String },
+    InvalidTransition {
+        from: String,
+        to: String,
+        reason: String,
+    },
 
     #[error("Lock poisoned")]
     LockPoisoned,

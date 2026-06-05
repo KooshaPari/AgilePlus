@@ -21,8 +21,8 @@
 //! `agileplus-plugin-core` git dependency (SHA `ba652dec…`) resolves
 //! — the workspace currently cannot `cargo build` due to that 404.
 
-use utoipa::OpenApi;
 use utoipa::openapi::security::{ApiKey, ApiKeyValue, SecurityScheme};
+use utoipa::OpenApi;
 
 use crate::responses::{
     AuditEntryResponse, FeatureResponse, GovernanceResponse, WorkPackageResponse,

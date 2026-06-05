@@ -1,7 +1,7 @@
 use anyhow::{Context, Result};
 use reqwest::Method;
 
-use super::{PlaneClient, PlaneCreateCycleRequest, PlaneCycleResponse, transport};
+use super::{transport, PlaneClient, PlaneCreateCycleRequest, PlaneCycleResponse};
 
 impl PlaneClient {
     /// Create a Cycle in Plane.so. Returns Plane's cycle UUID.

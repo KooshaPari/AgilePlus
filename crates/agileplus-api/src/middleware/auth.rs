@@ -29,9 +29,13 @@ pub async fn authorize(
         Ok(true) => Ok(next.run(request).await),
         Ok(false) => {
             warn!(token_hint = %token_hint(&token), "API authorization failed");
-            Err(ApiError::Unauthorized("Invalid bearer token or API key".to_string()))
+            Err(ApiError::Unauthorized(
+                "Invalid bearer token or API key".to_string(),
+            ))
         }
-        Err(err) => Err(ApiError::Internal(format!("token verification failed: {err}"))),
+        Err(err) => Err(ApiError::Internal(format!(
+            "token verification failed: {err}"
+        ))),
     }
 }
 
@@ -57,9 +61,9 @@ fn token_hint(token: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
-    use crate::middleware::token_verifier::TokenVerifier;
     use crate::middleware::token_verifier::SharedSecretVerifier;
+    use crate::middleware::token_verifier::TokenVerifier;
+    use std::sync::Arc;
 
     #[test]
     fn shared_secret_verifier_accepts_matching_token() {

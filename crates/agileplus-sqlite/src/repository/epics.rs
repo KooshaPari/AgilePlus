@@ -3,7 +3,7 @@
 //! Traceability: FR-STORE-EPIC
 
 use chrono::DateTime;
-use rusqlite::{Connection, params};
+use rusqlite::{params, Connection};
 
 use agileplus_domain::domain::epic::{Epic, EpicStatus};
 use agileplus_domain::error::DomainError;
@@ -110,7 +110,10 @@ pub fn upsert_epic_by_requirement_id(conn: &Connection, epic: &Epic) -> Result<i
 }
 
 /// Look up an epic by `requirement_id`. Returns `None` if not found.
-pub fn get_epic_by_requirement_id(conn: &Connection, req_id: &str) -> Result<Option<Epic>, DomainError> {
+pub fn get_epic_by_requirement_id(
+    conn: &Connection,
+    req_id: &str,
+) -> Result<Option<Epic>, DomainError> {
     let mut stmt = conn
         .prepare(
             "SELECT id, project_id, title, description, status, owner_id, created_at, updated_at, requirement_id \
@@ -141,7 +144,11 @@ pub fn get_epic_by_id(conn: &Connection, id: i64) -> Result<Option<Epic>, Domain
 }
 
 /// Update the status of an epic.
-pub fn update_epic_status(conn: &Connection, id: i64, status: EpicStatus) -> Result<(), DomainError> {
+pub fn update_epic_status(
+    conn: &Connection,
+    id: i64,
+    status: EpicStatus,
+) -> Result<(), DomainError> {
     let now = chrono::Utc::now().to_rfc3339();
     let rows = conn
         .execute(

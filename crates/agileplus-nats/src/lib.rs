@@ -24,5 +24,5 @@ pub use config::NatsConfig;
 pub use envelope::Envelope;
 pub use handler::{FnHandler, Handler};
 pub use health::BusHealth;
-pub use nats_adapter::{NatsEventBus, NatsEventBusError, derive_subject};
+pub use nats_adapter::{derive_subject, NatsEventBus, NatsEventBusError};
 pub use subject::Subject;

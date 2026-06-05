@@ -66,18 +66,21 @@ impl PersistSyncedStories {
     ///
     /// Returns `AppError::Domain(DomainError::Validation)` if any story is
     /// missing its `requirement_id`.
-    pub async fn execute(&self, cmd: PersistSyncedStoriesCmd) -> Result<PersistSyncReport, AppError> {
+    pub async fn execute(
+        &self,
+        cmd: PersistSyncedStoriesCmd,
+    ) -> Result<PersistSyncReport, AppError> {
         let mut report = PersistSyncReport::default();
 
         for story in &cmd.stories {
             // Validate before calling the port so callers get a clear error.
             if story.requirement_id.is_none() {
-                return Err(AppError::Domain(agileplus_domain::error::DomainError::Validation(
-                    format!(
+                return Err(AppError::Domain(
+                    agileplus_domain::error::DomainError::Validation(format!(
                         "story '{}' has no requirement_id — cannot upsert idempotently",
                         story.title
-                    ),
-                )));
+                    )),
+                ));
             }
 
             let id = self.repo.upsert_by_requirement_id(story).await?;
@@ -185,11 +188,14 @@ mod tests {
 
         let stories = vec![
             make_story(1, 10, "Fix login crash", "gh:issue:1"),
-            make_story(1, 10, "Add dark mode",   "gh:issue:2"),
+            make_story(1, 10, "Add dark mode", "gh:issue:2"),
             make_story(1, 10, "feat: dark mode", "gh:pr:10"),
         ];
 
-        let report = uc.execute(PersistSyncedStoriesCmd { stories }).await.unwrap();
+        let report = uc
+            .execute(PersistSyncedStoriesCmd { stories })
+            .await
+            .unwrap();
 
         assert_eq!(report.persisted_ids.len(), 3, "should have 3 persisted ids");
 
@@ -215,24 +221,35 @@ mod tests {
 
         // First sync.
         let r1 = uc
-            .execute(PersistSyncedStoriesCmd { stories: stories.clone() })
+            .execute(PersistSyncedStoriesCmd {
+                stories: stories.clone(),
+            })
             .await
             .unwrap();
         assert_eq!(r1.persisted_ids.len(), 2);
 
         // Second sync — same stories.
         let r2 = uc
-            .execute(PersistSyncedStoriesCmd { stories: stories.clone() })
+            .execute(PersistSyncedStoriesCmd {
+                stories: stories.clone(),
+            })
             .await
             .unwrap();
-        assert_eq!(r2.persisted_ids.len(), 2, "second sync must still return 2 ids");
+        assert_eq!(
+            r2.persisted_ids.len(),
+            2,
+            "second sync must still return 2 ids"
+        );
 
         // Repo must still have exactly 2 stories for the epic.
         let all = repo.list_by_epic(2).await.unwrap();
         assert_eq!(all.len(), 2, "no duplicates after re-sync");
 
         // The ids from the second sync must be the same rows as the first.
-        assert_eq!(r1.persisted_ids, r2.persisted_ids, "upsert should return same ids");
+        assert_eq!(
+            r1.persisted_ids, r2.persisted_ids,
+            "upsert should return same ids"
+        );
     }
 
     /// Stories without a requirement_id are rejected, not silently skipped.
@@ -246,12 +263,17 @@ mod tests {
         // requirement_id left as None.
 
         let err = uc
-            .execute(PersistSyncedStoriesCmd { stories: vec![bad_story] })
+            .execute(PersistSyncedStoriesCmd {
+                stories: vec![bad_story],
+            })
             .await
             .unwrap_err();
 
         assert!(
-            matches!(err, crate::error::AppError::Domain(agileplus_domain::error::DomainError::Validation(_))),
+            matches!(
+                err,
+                crate::error::AppError::Domain(agileplus_domain::error::DomainError::Validation(_))
+            ),
             "expected Validation error, got {err:?}"
         );
     }
@@ -294,7 +316,8 @@ mod tests {
         // The repo has no story for issue #999 (skipped upstream).
         let all = repo.list_by_epic(4).await.unwrap();
         assert!(
-            !all.iter().any(|s| s.requirement_id.as_deref() == Some("gh:issue:999")),
+            !all.iter()
+                .any(|s| s.requirement_id.as_deref() == Some("gh:issue:999")),
             "skipped item must not be in repo"
         );
     }

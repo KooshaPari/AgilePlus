@@ -405,9 +405,7 @@ impl PolicyEngine {
     /// Evaluate a single condition
     fn evaluate_condition(&self, condition: &PolicyCondition, context: &PolicyContext) -> bool {
         match condition {
-            PolicyCondition::Equals { key, value } => {
-                context.get(key).is_none_or(|v| v == *value)
-            }
+            PolicyCondition::Equals { key, value } => context.get(key).is_none_or(|v| v == *value),
             PolicyCondition::Contains { key, value } => {
                 context.get(key).is_none_or(|v| match (v, value) {
                     (serde_json::Value::String(s), serde_json::Value::String(pattern)) => {

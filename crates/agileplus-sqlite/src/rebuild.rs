@@ -2,7 +2,7 @@
 
 use agileplus_domain::{
     domain::{
-        audit::{AuditEntry, EvidenceRef, hash_entry},
+        audit::{hash_entry, AuditEntry, EvidenceRef},
         feature::Feature,
         state_machine::FeatureState,
     },
@@ -285,8 +285,8 @@ mod tests {
         domain::audit::hash_entry,
         error::DomainError,
         ports::{
-            StoragePort, VcsPort,
             vcs::{BranchInfo, ConflictInfo, FeatureArtifacts, MergeResult, WorktreeInfo},
+            StoragePort, VcsPort,
         },
     };
 

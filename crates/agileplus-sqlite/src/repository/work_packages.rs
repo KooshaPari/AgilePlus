@@ -1,6 +1,6 @@
 //! Work package repository — CRUD operations for `work_packages` and `wp_dependencies`.
 
-use rusqlite::{Connection, Row, params};
+use rusqlite::{params, Connection, Row};
 
 use agileplus_domain::{
     domain::work_package::{DependencyType, PrState, WorkPackage, WpDependency, WpState},
