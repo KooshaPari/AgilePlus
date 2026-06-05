@@ -1,4 +1,9 @@
 name: self-merge-gate
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -8,10 +13,6 @@ concurrency:
 # See: https://github.com/KooshaPari/phenoShared/blob/main/.github/workflows/self-merge-gate.yml
 
 on: [pull_request_review]
-
-permissions:
-  contents: read
-
 jobs:
   gate:
     uses: KooshaPari/phenoShared/.github/workflows/self-merge-gate.yml@438e2e71e448c9f1f47f184d3ca4acbb28928677  # main

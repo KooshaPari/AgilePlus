@@ -1,4 +1,14 @@
 name: Cargo Machete
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 
 on:
   push:
@@ -6,10 +16,6 @@ on:
   schedule:
     - cron: "0 3 * * 1"
   workflow_dispatch:
-
-permissions:
-  contents: read
-
 jobs:
   detect-unused-dependencies:
     runs-on: ubuntu-24.04
