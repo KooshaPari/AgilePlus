@@ -131,18 +131,13 @@ impl FromStr for BacklogStatus {
 }
 
 /// Sort order for backlog queries.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum BacklogSort {
+    #[default]
     Age,
     Priority,
     Impact,
-}
-
-impl Default for BacklogSort {
-    fn default() -> Self {
-        BacklogSort::Age
-    }
 }
 
 /// A single backlog item.
