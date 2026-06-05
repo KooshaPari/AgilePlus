@@ -25,14 +25,14 @@ def main():
         print("  No features found!")
         print()
         print("Checking directories:")
-        print(f"  Main specs: {project_dir / 'kitty-specs'} exists: {(project_dir / 'kitty-specs').exists()}")
+        print(f"  Main specs: {project_dir / 'agileplus-specs'} exists: {(project_dir / 'agileplus-specs').exists()}")
         print(f"  Worktrees: {project_dir / '.worktrees'} exists: {(project_dir / '.worktrees').exists()}")
 
         if (project_dir / '.worktrees').exists():
             for wt_dir in (project_dir / '.worktrees').iterdir():
                 if wt_dir.is_dir():
-                    wt_specs = wt_dir / 'kitty-specs'
-                    print(f"    {wt_dir.name}/kitty-specs exists: {wt_specs.exists()}")
+                    wt_specs = wt_dir / 'agileplus-specs'
+                    print(f"    {wt_dir.name}/agileplus-specs exists: {wt_specs.exists()}")
                     if wt_specs.exists():
                         for feat_dir in wt_specs.iterdir():
                             if feat_dir.is_dir():

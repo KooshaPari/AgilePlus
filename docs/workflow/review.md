@@ -227,20 +227,20 @@ Effect:
 
 ```bash
 # View the WP prompt
-cat kitty-specs/001-feature/tasks/WP01-*.md
+cat agileplus-specs/001-feature/tasks/WP01-*.md
 
 # View the plan
-cat kitty-specs/001-feature/plan.md
+cat agileplus-specs/001-feature/plan.md
 
 # View the spec
-cat kitty-specs/001-feature/spec.md
+cat agileplus-specs/001-feature/spec.md
 ```
 
 ### Step 2: Check Deliverables
 
 ```bash
 # See what was supposed to be delivered
-grep -A 20 "## Deliverables" kitty-specs/001-feature/tasks/WP01-*.md
+grep -A 20 "## Deliverables" agileplus-specs/001-feature/tasks/WP01-*.md
 
 # Verify files exist
 ls -la src/models/email.rs

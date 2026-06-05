@@ -21,7 +21,7 @@ pub struct RebuildReport {
     pub evidence_restored: usize,
 }
 
-/// Git meta.json schema (minimal — matches what spec-kitty would write).
+/// Git meta.json schema (minimal — matches what agileplus would write).
 #[derive(Debug, serde::Deserialize)]
 struct MetaJson {
     slug: String,

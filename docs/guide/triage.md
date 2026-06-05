@@ -240,7 +240,7 @@ Next steps:
 Ready? (Y/n) y
 
 ✓ Started specification for item #47
-  kitty-specs/001-password-reset-fix/
+  agileplus-specs/001-password-reset-fix/
 ```
 
 ### Move Items Between States
@@ -358,7 +358,7 @@ agileplus queue pop
 agileplus specify 51 \
   --title "Draft save broken" \
   --description "Reproduce: edit post, autosave fails silently"
-# → Creates kitty-specs/001-draft-save-fix/
+# → Creates agileplus-specs/001-draft-save-fix/
 
 # Step 5: Continue pipeline
 agileplus clarify 001

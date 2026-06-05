@@ -1,10 +1,10 @@
 {
     "chat.promptFilesRecommendations": {
-        "spec-kitty.constitution": true,
-        "spec-kitty.specify": true,
-        "spec-kitty.plan": true,
-        "spec-kitty.tasks": true,
-        "spec-kitty.implement": true
+        "agileplus.constitution": true,
+        "agileplus.specify": true,
+        "agileplus.plan": true,
+        "agileplus.tasks": true,
+        "agileplus.implement": true
     },
     "chat.tools.terminal.autoApprove": {
         ".kittify/scripts/bash/": true,

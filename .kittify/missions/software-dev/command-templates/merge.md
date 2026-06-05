@@ -2,7 +2,7 @@
 description: Merge a completed feature into the main branch and clean up worktree
 ---
 
-# /spec-kitty.merge - Merge Feature to Main
+# /agileplus.merge - Merge Feature to Main
 
 **Version**: 0.11.0+
 **Purpose**: Merge ALL completed work packages for a feature into main branch.
@@ -44,7 +44,7 @@ git branch --show-current
 **Exception (main branch):**
 If you are on `main` and need to merge a workspace-per-WP feature, run:
 ```bash
-spec-kitty merge --feature <feature-slug>
+agileplus merge --feature <feature-slug>
 ```
 
 ---
@@ -84,20 +84,20 @@ else:
 Before running this command:
 
 1. ✅ All work packages must be in `done` lane (reviewed and approved)
-2. ✅ Feature must pass `/spec-kitty.accept` checks
+2. ✅ Feature must pass `/agileplus.accept` checks
 3. ✅ Working directory must be clean (no uncommitted changes in main)
 4. ✅ **You must be in main repository root** (not in a worktree)
 
 ## Command Syntax
 
 ```bash
-spec-kitty merge ###-feature-slug [OPTIONS]
+agileplus merge ###-feature-slug [OPTIONS]
 ```
 
 **Example**:
 ```bash
-cd /tmp/spec-kitty-test/test-project  # Main repo root
-spec-kitty merge 001-cli-hello-world
+cd /tmp/agileplus-test/test-project  # Main repo root
+agileplus merge 001-cli-hello-world
 ```
 
 ## What This Command Does
@@ -120,7 +120,7 @@ spec-kitty merge 001-cli-hello-world
 ### Basic merge (default: merge commit, cleanup everything)
 
 ```bash
-spec-kitty merge
+agileplus merge
 ```
 
 This will:
@@ -133,38 +133,38 @@ This will:
 
 ```bash
 # Squash all commits into one
-spec-kitty merge --strategy squash
+agileplus merge --strategy squash
 
 # Push to origin after merging
-spec-kitty merge --push
+agileplus merge --push
 
 # Keep the feature branch
-spec-kitty merge --keep-branch
+agileplus merge --keep-branch
 
 # Keep the worktree
-spec-kitty merge --keep-worktree
+agileplus merge --keep-worktree
 
 # Merge into a different branch
-spec-kitty merge --target develop
+agileplus merge --target develop
 
 # See what would happen without doing it
-spec-kitty merge --dry-run
+agileplus merge --dry-run
 
 # Run merge from main for a workspace-per-WP feature
-spec-kitty merge --feature 017-feature-slug
+agileplus merge --feature 017-feature-slug
 ```
 
 ### Common workflows
 
 ```bash
 # Feature complete, squash and push
-spec-kitty merge --strategy squash --push
+agileplus merge --strategy squash --push
 
 # Keep branch for reference
-spec-kitty merge --keep-branch
+agileplus merge --keep-branch
 
 # Merge into develop instead of main
-spec-kitty merge --target develop --push
+agileplus merge --target develop --push
 ```
 
 ## Merge Strategies
@@ -172,7 +172,7 @@ spec-kitty merge --target develop --push
 ### `merge` (default)
 Creates a merge commit preserving all feature branch commits.
 ```bash
-spec-kitty merge --strategy merge
+agileplus merge --strategy merge
 ```
 ✅ Preserves full commit history
 ✅ Clear feature boundaries in git log
@@ -181,7 +181,7 @@ spec-kitty merge --strategy merge
 ### `squash`
 Squashes all feature commits into a single commit.
 ```bash
-spec-kitty merge --strategy squash
+agileplus merge --strategy squash
 ```
 ✅ Clean, linear history on main
 ✅ Single commit per feature
@@ -190,7 +190,7 @@ spec-kitty merge --strategy squash
 ### `rebase`
 Requires manual rebase first (command will guide you).
 ```bash
-spec-kitty merge --strategy rebase
+agileplus merge --strategy rebase
 ```
 ✅ Linear history without merge commits
 ❌ Requires manual intervention
@@ -211,7 +211,7 @@ spec-kitty merge --strategy rebase
 
 ## Worktree Strategy
 
-Spec Kitty uses an **opinionated worktree approach**:
+AgilePlus uses an **opinionated worktree approach**:
 
 ### Workspace-per-WP Model (0.11.0+)
 
@@ -225,12 +225,12 @@ my-project/                              # Main repo (main branch)
 │   ├── 001-auth-system-WP03/           # WP03 worktree
 │   └── 002-dashboard-WP01/             # Different feature
 ├── .kittify/
-├── kitty-specs/
+├── agileplus-specs/
 └── ... (main branch files)
 ```
 
 **Merge behavior for workspace-per-WP**:
-- Run `spec-kitty merge` from **any** WP worktree for the feature
+- Run `agileplus merge` from **any** WP worktree for the feature
 - The command automatically detects all WP branches (WP01, WP02, WP03, etc.)
 - Merges each WP branch into main in sequence
 - Cleans up all WP worktrees and branches
@@ -243,7 +243,7 @@ my-project/                    # Main repo (main branch)
 │   ├── 002-dashboard/        # Feature 2 worktree (single)
 │   └── 003-notifications/    # Feature 3 worktree (single)
 ├── .kittify/
-├── kitty-specs/
+├── agileplus-specs/
 └── ... (main branch files)
 ```
 
@@ -263,14 +263,14 @@ my-project/                    # Main repo (main branch)
 
 ### The Flow
 ```
-1. /spec-kitty.specify           → Creates branch + worktree
+1. /agileplus.specify           → Creates branch + worktree
 2. cd .worktrees/<feature>/      → Enter worktree
-3. /spec-kitty.plan              → Work in isolation
-4. /spec-kitty.tasks
-5. /spec-kitty.implement
-6. /spec-kitty.review
-7. /spec-kitty.accept
-8. /spec-kitty.merge             → Merge + cleanup worktree
+3. /agileplus.plan              → Work in isolation
+4. /agileplus.tasks
+5. /agileplus.implement
+6. /agileplus.review
+7. /agileplus.accept
+8. /agileplus.merge             → Merge + cleanup worktree
 9. Back in main repo!            → Ready for next feature
 ```
 
@@ -299,7 +299,7 @@ Your main branch is behind origin:
 git checkout main
 git pull
 git checkout <feature-branch>
-spec-kitty merge
+agileplus merge
 ```
 
 ### "Merge failed - conflicts"
@@ -326,23 +326,23 @@ git branch -d <feature-branch>
 ### Complete feature and push
 ```bash
 cd .worktrees/001-auth-system
-/spec-kitty.accept
-/spec-kitty.merge --push
+/agileplus.accept
+/agileplus.merge --push
 ```
 
 ### Squash merge for cleaner history
 ```bash
-spec-kitty merge --strategy squash --push
+agileplus merge --strategy squash --push
 ```
 
 ### Merge but keep branch for reference
 ```bash
-spec-kitty merge --keep-branch --push
+agileplus merge --keep-branch --push
 ```
 
 ### Check what will happen first
 ```bash
-spec-kitty merge --dry-run
+agileplus merge --dry-run
 ```
 
 ## After Merging
@@ -359,23 +359,23 @@ The typical flow is:
 
 ```bash
 # 1. Run acceptance checks
-/spec-kitty.accept --mode local
+/agileplus.accept --mode local
 
 # 2. If checks pass, merge
-/spec-kitty.merge --push
+/agileplus.merge --push
 ```
 
 Or combine conceptually:
 ```bash
 # Accept verifies readiness
-/spec-kitty.accept --mode local
+/agileplus.accept --mode local
 
 # Merge performs integration
-/spec-kitty.merge --strategy squash --push
+/agileplus.merge --strategy squash --push
 ```
 
-The `/spec-kitty.accept` command **verifies** your feature is complete.
-The `/spec-kitty.merge` command **integrates** your feature into main.
+The `/agileplus.accept` command **verifies** your feature is complete.
+The `/agileplus.merge` command **integrates** your feature into main.
 
 Together they complete the workflow:
 ```

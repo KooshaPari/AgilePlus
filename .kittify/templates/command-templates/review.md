@@ -1,8 +1,8 @@
 ---
 description: Perform structured code review and kanban transitions for completed task prompt files.
 scripts:
-  sh: spec-kitty agent check-prerequisites --json --include-tasks
-  ps: spec-kitty agent -Json -IncludeTasks
+  sh: agileplus agent check-prerequisites --json --include-tasks
+  ps: agileplus agent -Json -IncludeTasks
 ---
 *Path: [templates/commands/review.md](templates/commands/review.md)*
 
@@ -27,7 +27,7 @@ Before proceeding with review, verify you are in the correct working directory b
 - You're not attempting to run from `main` or any release branch
 - The validator prints clear navigation instructions if you're outside the feature worktree
 
-**Path reference rule:** When you mention directories or files, provide either the absolute path or a path relative to the project root (for example, `kitty-specs/<feature>/tasks/`). Never refer to a folder by name alone.
+**Path reference rule:** When you mention directories or files, provide either the absolute path or a path relative to the project root (for example, `agileplus-specs/<feature>/tasks/`). Never refer to a folder by name alone.
 
 This is intentional - worktrees provide isolation for parallel feature development.
 
@@ -481,7 +481,7 @@ This is intentional - worktrees provide isolation for parallel feature developme
        - Set `reviewed_by: <YOUR_AGENT_ID>`
        - Clear `assignee` if needed
      * Append a new entry in the prompt's **Activity Log** with timestamp, reviewer agent, shell PID, and summary of feedback.
-     * Run `spec-kitty agent move-task <FEATURE> <TASK_ID> planned --note "Code review complete: [brief summary of issues]"` (use the PowerShell equivalent on Windows) so the move and history update are staged consistently.
+     * Run `agileplus agent move-task <FEATURE> <TASK_ID> planned --note "Code review complete: [brief summary of issues]"` (use the PowerShell equivalent on Windows) so the move and history update are staged consistently.
   - **Approved**:
      * Append Activity Log entry capturing approval details (capture shell PID via `echo $$` or helper script, e.g., `2025-11-11T13:45:00Z – claude – shell_pid=1234 – lane=done – Approved without changes`).
      * Update frontmatter:
@@ -495,7 +495,7 @@ This is intentional - worktrees provide isolation for parallel feature developme
      * Use helper script to mark the task complete in `tasks.md` (see Step 7).
 
 7. Update `tasks.md` automatically:
-   - Run `spec-kitty agent mark-status --task-id <TASK_ID> --status done` (POSIX) or `spec-kitty agent -TaskId <TASK_ID> -Status done` (PowerShell) from repo root.
+   - Run `agileplus agent mark-status --task-id <TASK_ID> --status done` (POSIX) or `agileplus agent -TaskId <TASK_ID> -Status done` (PowerShell) from repo root.
    - Confirm the task entry now shows `[X]` and includes a reference to the prompt file in its notes.
 
 7. Produce a review report summarizing:
@@ -505,6 +505,6 @@ This is intentional - worktrees provide isolation for parallel feature developme
    - Follow-up actions (if any) for other team members.
    - Reminder to push changes or notify teammates as per project conventions.
 
-Context for review: {ARGS} (resolve this to the prompt's relative path, e.g., `kitty-specs/<feature>/tasks/WPXX.md`)
+Context for review: {ARGS} (resolve this to the prompt's relative path, e.g., `agileplus-specs/<feature>/tasks/WPXX.md`)
 
 All review feedback must live inside the prompt file, ensuring future implementers understand historical decisions before revisiting the task.

@@ -39,7 +39,7 @@ This auto-detects your language, frameworks, and generates:
 ✓ Created .kittify/config.toml
 ✓ Created AGENTS.md
 ✓ Created CLAUDE.md
-✓ Created kitty-specs/ directory
+✓ Created agileplus-specs/ directory
 ```
 
 ## 3. Create a Feature Specification (2 minutes)
@@ -61,7 +61,7 @@ Scope: Send email on user signup, new comment
 **Output:**
 
 ```
-✓ Generated kitty-specs/001-email-notifications/spec.md
+✓ Generated agileplus-specs/001-email-notifications/spec.md
 ✓ Feature ready to plan
 
 Next: agileplus clarify 001
@@ -77,7 +77,7 @@ agileplus plan 001
 This generates an implementation blueprint:
 
 ```
-✓ Generated kitty-specs/001-email-notifications/plan.md
+✓ Generated agileplus-specs/001-email-notifications/plan.md
 ✓ Identified 3 files to create/modify
 ✓ Created dependency graph
 

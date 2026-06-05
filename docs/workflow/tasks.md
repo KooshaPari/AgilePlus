@@ -37,7 +37,7 @@ Decomposing plan into work packages...
 ✓ Created WP07-tests         (depends on: WP05, WP06)
 
 Generated:
-  kitty-specs/001-email-notifications/tasks/
+  agileplus-specs/001-email-notifications/tasks/
   ├── WP01-database.md
   ├── WP02-models.md
   ├── WP03-sendgrid.md
@@ -418,8 +418,8 @@ Each WP gets a prompt file for agent dispatch:
 You are implementing work package WP02 for feature 001.
 
 ## Context
-- Spec: `kitty-specs/001-email-notifications/spec.md`
-- Plan: `kitty-specs/001-email-notifications/plan.md`
+- Spec: `agileplus-specs/001-email-notifications/spec.md`
+- Plan: `agileplus-specs/001-email-notifications/plan.md`
 - Related WPs: WP01 (completed), WP03 (waiting on you)
 
 ## Your Task

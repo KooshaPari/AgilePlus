@@ -131,7 +131,7 @@ cd .worktrees/001-email-notifications-WP01
 
 ```bash
 # View the WP instructions
-cat ../../kitty-specs/001-email-notifications/tasks/WP01-database.md
+cat ../../agileplus-specs/001-email-notifications/tasks/WP01-database.md
 ```
 
 Example prompt:
@@ -514,7 +514,7 @@ The WP prompt has subtasks. Check them off:
 
 ```bash
 # View prompt
-cat ../../kitty-specs/001-feature/tasks/WP01-*.md
+cat ../../agileplus-specs/001-feature/tasks/WP01-*.md
 
 # As you implement, follow the subtasks
 # When all are done, move to review

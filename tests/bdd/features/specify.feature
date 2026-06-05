@@ -8,7 +8,7 @@ Feature: Specification workflow
     Given a fresh AgilePlus project with no features
     When I run "agileplus specify" with feature slug "test-feature"
     And I provide specification details via stdin
-    Then a spec.md file exists at "kitty-specs/test-feature/spec.md"
+    Then a spec.md file exists at "agileplus-specs/test-feature/spec.md"
     And the feature "test-feature" exists in SQLite with state "specified"
     And an audit entry records the "created -> specified" transition
 

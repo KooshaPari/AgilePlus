@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Validate and fix UTF-8 encoding in Spec Kitty markdown files.
+Validate and fix UTF-8 encoding in AgilePlus markdown files.
 
 This utility helps prevent UnicodeDecodeError issues by:
 1. Scanning markdown files for encoding problems
@@ -9,8 +9,8 @@ This utility helps prevent UnicodeDecodeError issues by:
 4. Reporting encoding issues with specific positions
 
 Usage:
-    python src/specify_cli/scripts/validate_encoding.py --check kitty-specs/
-    python src/specify_cli/scripts/validate_encoding.py --fix kitty-specs/001-feature/
+    python src/specify_cli/scripts/validate_encoding.py --check agileplus-specs/
+    python src/specify_cli/scripts/validate_encoding.py --fix agileplus-specs/001-feature/
     python src/specify_cli/scripts/validate_encoding.py --scan-all
 """
 
@@ -142,7 +142,7 @@ def scan_directory(directory: Path, fix: bool = False, dry_run: bool = False) ->
 
 def main():
     parser = argparse.ArgumentParser(description='Validate UTF-8 encoding in markdown files')
-    parser.add_argument('path', nargs='?', default='kitty-specs', help='Path to scan (default: kitty-specs)')
+    parser.add_argument('path', nargs='?', default='agileplus-specs', help='Path to scan (default: agileplus-specs)')
     parser.add_argument('--fix', action='store_true', help='Attempt to fix encoding issues')
     parser.add_argument('--dry-run', action='store_true', help='Show what would be fixed without making changes')
     parser.add_argument('--scan-all', action='store_true', help='Scan entire repository')

@@ -256,8 +256,8 @@ where
         println!("    Wave {}: [{}]", wave.wave_number, ids.join(", "));
     }
     println!();
-    println!("  Plan written to: kitty-specs/{slug}/plan.md");
-    println!("  Governance contract: kitty-specs/{slug}/contracts/governance-v1.json");
+    println!("  Plan written to: agileplus-specs/{slug}/plan.md");
+    println!("  Governance contract: agileplus-specs/{slug}/contracts/governance-v1.json");
     println!("  State: Researched -> Planned");
 
     Ok(())
@@ -443,10 +443,10 @@ fn generate_wp_prompt(wp: &WorkPackage, feature_name: &str, slug: &str) -> Strin
         "Implement this work package according to the acceptance criteria above.".to_string(),
     );
     lines.push(format!(
-        "Refer to `kitty-specs/{slug}/spec.md` for the full specification and"
+        "Refer to `agileplus-specs/{slug}/spec.md` for the full specification and"
     ));
     lines.push(format!(
-        "`kitty-specs/{slug}/plan.md` for the implementation plan."
+        "`agileplus-specs/{slug}/plan.md` for the implementation plan."
     ));
     lines.join("\n")
 }

@@ -4,7 +4,7 @@ description: "Work package task list template for research methodology execution
 
 # Work Packages: [RESEARCH QUESTION]
 
-**Inputs**: Research documents from `/kitty-specs/[###-research]/`  
+**Inputs**: Research documents from `/agileplus-specs/[###-research]/`  
 **Prerequisites**: plan.md (methodology), spec.md (research question), research.md (background), data-model.md, quickstart.md
 
 **Evidence Tracking**: All sources MUST be recorded in `research/source-register.csv` and findings in `research/evidence-log.csv`.

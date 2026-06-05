@@ -1,5 +1,5 @@
 # Feature Specification: Documentation Project - [PROJECT NAME]
-<!-- Replace [PROJECT NAME] with the confirmed friendly title generated during /spec-kitty.specify. -->
+<!-- Replace [PROJECT NAME] with the confirmed friendly title generated during /agileplus.specify. -->
 
 **Feature Branch**: `[###-feature-name]`
 **Created**: [DATE]

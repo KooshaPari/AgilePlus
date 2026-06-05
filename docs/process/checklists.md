@@ -17,7 +17,7 @@ Each feature gets three checklists generated automatically:
 Checklists are stored at:
 
 ```
-kitty-specs/{NNN}-{feature}/
+agileplus-specs/{NNN}-{feature}/
 ├── checklists/
 │   ├── specification.md
 │   ├── implementation.md
@@ -32,7 +32,7 @@ Generated after spec is written, validated before planning begins.
 agileplus checklist 001 --type specification
 ```
 
-Creates `kitty-specs/001-checkout-upsell/checklists/specification.md`:
+Creates `agileplus-specs/001-checkout-upsell/checklists/specification.md`:
 
 ```markdown
 # Specification Checklist — 001: Checkout Upsell
@@ -320,7 +320,7 @@ agileplus checklist 001 WP02 --item "Upsell widget tests" --complete
 agileplus checklist 001 --report
 ```
 
-Generates `kitty-specs/001/checklists/report.md` with summary and metrics.
+Generates `agileplus-specs/001/checklists/report.md` with summary and metrics.
 
 ## Checklist as Governance
 

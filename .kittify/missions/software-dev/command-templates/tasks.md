@@ -2,7 +2,7 @@
 description: Generate grouped work packages with actionable subtasks and matching prompt files for the feature in one pass.
 ---
 
-# /spec-kitty.tasks - Generate Work Packages
+# /agileplus.tasks - Generate Work Packages
 
 **Version**: 0.11.0+
 
@@ -29,19 +29,19 @@ description: Generate grouped work packages with actionable subtasks and matchin
 **IMPORTANT**: Tasks works in the planning repository. NO worktrees created.
 
 ```bash
-# Run from project root (same directory as /spec-kitty.plan):
-# You should already be here if you just ran /spec-kitty.plan
+# Run from project root (same directory as /agileplus.plan):
+# You should already be here if you just ran /agileplus.plan
 
 # Creates:
-# - kitty-specs/###-feature/tasks/WP01-*.md → In planning repository
-# - kitty-specs/###-feature/tasks/WP02-*.md → In planning repository
+# - agileplus-specs/###-feature/tasks/WP01-*.md → In planning repository
+# - agileplus-specs/###-feature/tasks/WP02-*.md → In planning repository
 # - Commits ALL to target branch
 # - NO worktrees created
 ```
 
 **Do NOT cd anywhere**. Stay in the planning repository root.
 
-**Worktrees created later**: After tasks are generated, use `spec-kitty implement WP##` to create workspace for each WP.
+**Worktrees created later**: After tasks are generated, use `agileplus implement WP##` to create workspace for each WP.
 
 ## User Input
 
@@ -67,17 +67,17 @@ cd $(git rev-parse --show-toplevel)
 git checkout <target-branch>
 ```
 
-Work packages are generated directly in `kitty-specs/###-feature/` and committed to the target branch. Worktrees are created later when implementing each work package.
+Work packages are generated directly in `agileplus-specs/###-feature/` and committed to the target branch. Worktrees are created later when implementing each work package.
 
 ## Outline
 
-1. **Setup**: Run `spec-kitty agent feature check-prerequisites --json --paths-only --include-tasks` from the repository root and capture `FEATURE_DIR` plus `AVAILABLE_DOCS`. All paths must be absolute.
+1. **Setup**: Run `agileplus agent feature check-prerequisites --json --paths-only --include-tasks` from the repository root and capture `FEATURE_DIR` plus `AVAILABLE_DOCS`. All paths must be absolute.
 
-   **CRITICAL**: The command returns JSON with `FEATURE_DIR` as an ABSOLUTE path (e.g., `/Users/robert/Code/new_specify/kitty-specs/001-feature-name`).
+   **CRITICAL**: The command returns JSON with `FEATURE_DIR` as an ABSOLUTE path (e.g., `/Users/robert/Code/new_specify/agileplus-specs/001-feature-name`).
 
    **YOU MUST USE THIS PATH** for ALL subsequent file operations. Example:
    ```
-   FEATURE_DIR = "/Users/robert/Code/new_specify/kitty-specs/001-a-simple-hello"
+   FEATURE_DIR = "/Users/robert/Code/new_specify/agileplus-specs/001-a-simple-hello"
    tasks.md location: FEATURE_DIR + "/tasks.md"
    prompt location: FEATURE_DIR + "/tasks/WP01-slug.md"
    ```
@@ -152,7 +152,7 @@ Work packages are generated directly in `kitty-specs/###-feature/` and committed
    - **MAXIMUM PROMPT SIZE**: 700 lines per WP (10 subtasks max)
    - **If prompts are >700 lines**: Split the WP - it's too large
 
-   **IMPORTANT**: All WP files live in flat `tasks/` directory. Lane status is tracked ONLY in the `lane:` frontmatter field, NOT by directory location. Agents can change lanes by editing the `lane:` field directly or using `spec-kitty agent tasks move-task`.
+   **IMPORTANT**: All WP files live in flat `tasks/` directory. Lane status is tracked ONLY in the `lane:` frontmatter field, NOT by directory location. Agents can change lanes by editing the `lane:` field directly or using `agileplus agent tasks move-task`.
 
 7. **Finalize tasks with dependency parsing and commit**:
    After generating all WP prompt files, run the finalization command to:
@@ -163,7 +163,7 @@ Work packages are generated directly in `kitty-specs/###-feature/` and committed
 
    **CRITICAL**: Run this command from repo root:
    ```bash
-   spec-kitty agent feature finalize-tasks --json
+   agileplus agent feature finalize-tasks --json
    ```
 
    This step is MANDATORY for workspace-per-WP features. Without it:
@@ -187,7 +187,7 @@ Work packages are generated directly in `kitty-specs/###-feature/` and committed
    - MVP scope recommendation (usually Work Package 1)
    - Prompt generation stats (files written, directory structure, any skipped items with rationale)
    - Finalization status (dependencies parsed, X WP files updated, committed to target branch)
-   - Next suggested command (e.g., `/spec-kitty.analyze` or `/spec-kitty.implement`)
+   - Next suggested command (e.g., `/agileplus.analyze` or `/agileplus.implement`)
 
 Context for work-package planning: {ARGS}
 
@@ -216,8 +216,8 @@ subtasks: ["T001", "T002"]
 ```
 
 **Include the correct implementation command**:
-- No dependencies: `spec-kitty implement WP01`
-- With dependencies: `spec-kitty implement WP02 --base WP01`
+- No dependencies: `agileplus implement WP01`
+- With dependencies: `agileplus implement WP02 --base WP01`
 
 The WP prompt must show the correct command so agents don't branch from the wrong base.
 
@@ -343,7 +343,7 @@ The WP prompt must show the correct command so agents don't branch from the wron
 
 ### Step 1: Setup
 
-Run `spec-kitty agent feature check-prerequisites --json --paths-only --include-tasks` and capture `FEATURE_DIR`.
+Run `agileplus agent feature check-prerequisites --json --paths-only --include-tasks` and capture `FEATURE_DIR`.
 
 ### Step 2: Load Design Documents
 
@@ -422,7 +422,7 @@ For each WP, generate `FEATURE_DIR/tasks/WPxx-slug.md` using the template.
 
 ### Step 7: Finalize Tasks
 
-Run `spec-kitty agent feature finalize-tasks --json` to:
+Run `agileplus agent feature finalize-tasks --json` to:
 - Parse dependencies
 - Update frontmatter
 - Validate (cycles, invalid refs)
@@ -464,8 +464,8 @@ subtasks: ["T001", "T002"]
 ```
 
 **Include the correct implementation command**:
-- No dependencies: `spec-kitty implement WP01`
-- With dependencies: `spec-kitty implement WP02 --base WP01`
+- No dependencies: `agileplus implement WP01`
+- With dependencies: `agileplus implement WP02 --base WP01`
 
 The WP prompt must show the correct command so agents don't branch from the wrong base.
 

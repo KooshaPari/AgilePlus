@@ -1,10 +1,10 @@
 ---
 description: Perform a non-destructive cross-artifact consistency and quality analysis across spec.md, plan.md, and tasks.md after task generation.
 scripts:
-  sh: spec-kitty agent check-prerequisites --json --require-tasks --include-tasks
-  ps: spec-kitty agent -Json -RequireTasks -IncludeTasks
+  sh: agileplus agent check-prerequisites --json --require-tasks --include-tasks
+  ps: agileplus agent -Json -RequireTasks -IncludeTasks
 ---
-**Path reference rule:** When you mention directories or files, provide either the absolute path or a path relative to the project root (for example, `kitty-specs/<feature>/tasks/`). Never refer to a folder by name alone.
+**Path reference rule:** When you mention directories or files, provide either the absolute path or a path relative to the project root (for example, `agileplus-specs/<feature>/tasks/`). Never refer to a folder by name alone.
 
 
 *Path: [templates/commands/analyze.md](templates/commands/analyze.md)*
@@ -62,7 +62,7 @@ This command performs a comprehensive cross-artifact analysis. It reads (but doe
 
 ## Workflow Context
 
-**Before this**: `/spec-kitty.tasks` created your task breakdown (tasks.md complete)
+**Before this**: `/agileplus.tasks` created your task breakdown (tasks.md complete)
 
 **This command**:
 - Validates consistency across all artifacts
@@ -73,8 +73,8 @@ This command performs a comprehensive cross-artifact analysis. It reads (but doe
 **After this**:
 - Review analysis findings
 - Fix any CRITICAL or HIGH severity issues
-- Proceed to `/spec-kitty.implement` when ready
-- Or return to `/spec-kitty.plan` or `/spec-kitty.tasks` if major revisions needed
+- Proceed to `/agileplus.implement` when ready
+- Or return to `/agileplus.plan` or `/agileplus.tasks` if major revisions needed
 
 This command is a quality gate before implementation begins.
 
@@ -225,7 +225,7 @@ At end of report, output a concise Next Actions block:
 
 - If CRITICAL issues exist: Recommend resolving before `/implement`
 - If only LOW/MEDIUM: User may proceed, but provide improvement suggestions
-- Provide explicit command suggestions: e.g., "Run /spec-kitty.specify with refinement", "Run /plan to adjust architecture", "Manually edit tasks.md to add coverage for 'performance-metrics'"
+- Provide explicit command suggestions: e.g., "Run /agileplus.specify with refinement", "Run /plan to adjust architecture", "Manually edit tasks.md to add coverage for 'performance-metrics'"
 
 ### 8. Offer Remediation
 

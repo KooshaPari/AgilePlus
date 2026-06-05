@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Shared task helper module for Spec Kitty task operations.
+"""Shared task helper module for AgilePlus task operations.
 
 This module is the single source of truth for task helper logic used by both:
 - ``specify_cli.tasks_support`` (installed package entrypoint)
@@ -255,7 +255,7 @@ def detect_conflicting_wp_status(
     Returns:
         List of status lines that represent conflicting changes.
     """
-    base_path = Path("kitty-specs") / feature / "tasks"
+    base_path = Path("agileplus-specs") / feature / "tasks"
     prefix = f"{base_path.as_posix()}/"
     allowed = {
         str(old_path).lstrip("./"),
@@ -311,7 +311,7 @@ def is_legacy_format(feature_path: Path) -> bool:
 
     Args:
         feature_path: Path to the feature directory
-            (e.g. ``kitty-specs/007-feature/``).
+            (e.g. ``agileplus-specs/007-feature/``).
 
     Returns:
         True if legacy directory-based lanes detected, False otherwise.
@@ -599,7 +599,7 @@ def locate_work_package(
     Raises:
         TaskCliError: If the WP cannot be found or multiple matches exist.
     """
-    feature_path = repo_root / "kitty-specs" / feature
+    feature_path = repo_root / "agileplus-specs" / feature
     tasks_root = feature_path / "tasks"
     if not tasks_root.exists():
         raise TaskCliError(
@@ -630,7 +630,7 @@ def locate_work_package(
 
     if not candidates:
         raise TaskCliError(
-            f"Work package '{wp_id}' not found under kitty-specs/{feature}/tasks."
+            f"Work package '{wp_id}' not found under agileplus-specs/{feature}/tasks."
         )
     if len(candidates) > 1:
         joined = "\n".join(

@@ -55,7 +55,7 @@ fn default_db_path() -> PathBuf {
 }
 
 fn default_specs_dir() -> String {
-    "kitty-specs".to_string()
+    "agileplus-specs".to_string()
 }
 
 fn default_target_branch() -> String {

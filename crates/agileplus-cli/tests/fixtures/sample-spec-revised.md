@@ -9,7 +9,7 @@ Added more detail about the problem being solved.
 Developers and tech leads using AgilePlus for spec-driven development.
 
 ## Functional Requirements
-- **FR-1**: The system shall create a spec.md artifact in kitty-specs/{slug}/.
+- **FR-1**: The system shall create a spec.md artifact in agileplus-specs/{slug}/.
 - **FR-2**: The system shall record the feature in SQLite with state Specified.
 - **FR-3**: The system shall append an audit entry for the Created -> Specified transition.
 - **FR-4**: The system shall detect when a spec is re-run and produce a diff artifact.

@@ -48,8 +48,8 @@ Source-of-truth documents: PRDs, ADRs, functional requirements, architecture doc
 
 | Type | Path | ID System |
 |------|------|-----------|
-| Spec | `kitty-specs/{NNN}-{slug}/spec.md` | Feature number |
-| Plan | `kitty-specs/{NNN}-{slug}/plan.md` | Feature number |
+| Spec | `agileplus-specs/{NNN}-{slug}/spec.md` | Feature number |
+| Plan | `agileplus-specs/{NNN}-{slug}/plan.md` | Feature number |
 | ADR | `docs/adr/ADR-{NNN}-{slug}.md` | ADR-{NNN} |
 
 ### <span class="layer-badge layer-3">Layer 3</span> Delivery / Audit
@@ -68,7 +68,7 @@ Retrospectives, knowledge extracts, lessons learned. Published under `/kb/`. Cre
 
 | Type | Path | Trigger |
 |------|------|---------|
-| Feature retro | `kitty-specs/{NNN}-{slug}/retrospective.md` | Feature shipped |
+| Feature retro | `agileplus-specs/{NNN}-{slug}/retrospective.md` | Feature shipped |
 | Sprint retro | `docs/retros/SPRINT-{NN}-retro.md` | Sprint end |
 | Knowledge extract | `docs/kb/{topic}/{slug}.md` | Semantic indexer |
 
@@ -103,7 +103,7 @@ Layer 1 (Working)
 Layer 2 (Formal Spec)
   2026-02-03
   Convert to feature specification:
-  kitty-specs/001-oauth-auth/spec.md
+  agileplus-specs/001-oauth-auth/spec.md
   "Add OAuth2 Authentication"
   - Functional Requirements (FR-1 through FR-5)
   - User Scenarios
@@ -128,7 +128,7 @@ Layer 3 (Delivery)
 Layer 4 (Knowledge)
   2026-02-20 (One week post-ship)
   Retrospective analysis:
-  kitty-specs/001-oauth-auth/retrospective.md
+  agileplus-specs/001-oauth-auth/retrospective.md
   - Timeline: 9 days (on estimate)
   - WP01 error handling gap caught and fixed
   - Lessons: edge cases matter for payment flows
@@ -361,9 +361,9 @@ Documents reference each other across layers:
 ---
 title: "OAuth2 Error Handling"
 relates_to:
-  - "kitty-specs/001-oauth-auth/spec.md"          # Layer 2
+  - "agileplus-specs/001-oauth-auth/spec.md"          # Layer 2
   - "docs/reports/001-oauth-auth-complete.md"    # Layer 3
-  - "kitty-specs/001-oauth-auth/retrospective.md" # Layer 4
+  - "agileplus-specs/001-oauth-auth/retrospective.md" # Layer 4
   - "docs/kb/auth/oauth2-patterns.md"             # Layer 4
 traces_to:
   - "FR-1"    # Functional requirement

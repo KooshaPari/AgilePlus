@@ -43,8 +43,8 @@ Q3: What's the success metric?
 Generated:
 
 ```
-✓ kitty-specs/001-user-authentication/spec.md
-✓ kitty-specs/001-user-authentication/meta.json
+✓ agileplus-specs/001-user-authentication/spec.md
+✓ agileplus-specs/001-user-authentication/meta.json
 ✓ Feature ready to clarify or research
 ```
 
@@ -170,7 +170,7 @@ Q7: Anything out of scope?
 Accept generated spec? (Y/n) y
 
 ✓ Specification generated successfully
-  kitty-specs/001-email-notifications/spec.md
+  agileplus-specs/001-email-notifications/spec.md
 ```
 
 ## Generated Specification Document

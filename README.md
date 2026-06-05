@@ -21,7 +21,7 @@ AgilePlus is a monorepo housing a 9-phase governed pipeline that takes a feature
 | **Protocol contracts** | protobuf | `proto/agileplus/v1/` | gRPC service + message definitions (single source of truth for inter-service contracts) |
 | **Rust/Python stubs** | Rust, Python | `rust/`, `python/` | Generated tonic/prost + grpcio bindings for the proto contracts |
 | **Docs** | VitePress | `docs/` | 51-page multi-audience documentation site (Agents / Developers / PMs / SDK consumers) |
-| **Templates / prompts** | — | `templates/`, `prompts/`, `kitty-specs/` | Spec templates and structured agent prompts |
+| **Templates / prompts** | — | `templates/`, `prompts/`, `agileplus-specs/` | Spec templates and structured agent prompts |
 
 ## Architecture
 
@@ -104,7 +104,8 @@ cd pheno-cli && go build ./...
 ### Develop the docs
 
 ```bash
-cd docs && bun install && bun run docs:dev
+npm install
+npm run dev
 ```
 
 ## Protocol Contracts (`proto/`)

@@ -118,7 +118,7 @@ fn specify_creates_spec_artifact() {
     // Verify the spec.md was written
     let spec_file = repo_dir
         .path()
-        .join("kitty-specs")
+        .join("agileplus-specs")
         .join("my-feature")
         .join("spec.md");
     assert!(

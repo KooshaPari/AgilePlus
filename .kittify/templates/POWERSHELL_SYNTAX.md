@@ -2,7 +2,7 @@
 
 **⚠️ READ THIS if you are working in a PowerShell environment**
 
-This guide helps AI agents use correct PowerShell syntax when working with spec-kitty workflows.
+This guide helps AI agents use correct PowerShell syntax when working with agileplus workflows.
 
 ---
 
@@ -38,17 +38,17 @@ git branch --show-current
 
 ## Running Spec-Kitty Commands (PowerShell)
 
-### Using the spec-kitty CLI
+### Using the agileplus CLI
 
 Spec-kitty uses a Python CLI that works across all platforms:
 
 **Common commands:**
-- `spec-kitty agent feature create-feature <slug>` - Create a new feature
-- `spec-kitty verify-setup` - Check environment and paths
-- `spec-kitty agent workflow implement <WPID> --agent <name>` - Start implementing a work package
-- `spec-kitty agent workflow review <WPID> --agent <name>` - Start reviewing a work package
-- `spec-kitty agent tasks move-task <WPID> --to for_review` - Complete implementation (move to review)
-- `spec-kitty merge` - Merge completed feature
+- `agileplus agent feature create-feature <slug>` - Create a new feature
+- `agileplus verify-setup` - Check environment and paths
+- `agileplus agent workflow implement <WPID> --agent <name>` - Start implementing a work package
+- `agileplus agent workflow review <WPID> --agent <name>` - Start reviewing a work package
+- `agileplus agent tasks move-task <WPID> --to for_review` - Complete implementation (move to review)
+- `agileplus merge` - Merge completed feature
 
 ### Parameter Naming Convention
 
@@ -75,7 +75,7 @@ PowerShell uses **PascalCase** with leading dash:
 **Move task to review (after implementation):**
 ```powershell
 # Using the CLI (recommended):
-spec-kitty agent tasks move-task WP01 --to for_review --note "Ready for review"
+agileplus agent tasks move-task WP01 --to for_review --note "Ready for review"
 
 # Or using PowerShell script:
 .\.kittify\scripts\powershell\Move-TaskToLane.ps1 `
@@ -122,7 +122,7 @@ cd ./.kittify/memory
 cd .\.kittify\memory
 ```
 
-Note: Git commands work with forward slashes, but native PowerShell file operations expect backslashes. The spec-kitty CLI handles this automatically.
+Note: Git commands work with forward slashes, but native PowerShell file operations expect backslashes. The agileplus CLI handles this automatically.
 
 ---
 
@@ -130,17 +130,17 @@ Note: Git commands work with forward slashes, but native PowerShell file operati
 
 **Setting variables:**
 ```powershell
-$env:SPEC_KITTY_TEMPLATE_ROOT = "C:\path\to\spec-kitty"
+$env:AGILEPLUS_TEMPLATE_ROOT = "C:\path\to\agileplus"
 ```
 
 **Reading variables:**
 ```powershell
-echo $env:SPEC_KITTY_TEMPLATE_ROOT
+echo $env:AGILEPLUS_TEMPLATE_ROOT
 ```
 
 **Checking if set:**
 ```powershell
-if ($env:SPEC_KITTY_TEMPLATE_ROOT) {
+if ($env:AGILEPLUS_TEMPLATE_ROOT) {
     Write-Host "Variable is set"
 }
 ```
@@ -190,13 +190,13 @@ New-Item -ItemType Directory -Path "tasks\planned" -Force
 - You're in bash/zsh/fish terminal
 - Templates reference `.sh` files in frontmatter
 
-**Using spec-kitty commands:**
-All spec-kitty commands work the same way on PowerShell and Bash:
+**Using agileplus commands:**
+All agileplus commands work the same way on PowerShell and Bash:
 ```powershell
-spec-kitty agent workflow implement WP01 --agent claude  # Auto-moves to doing
-spec-kitty agent tasks move-task WP01 --to for_review    # Completion step
-spec-kitty verify-setup
-spec-kitty dashboard
+agileplus agent workflow implement WP01 --agent claude  # Auto-moves to doing
+agileplus agent tasks move-task WP01 --to for_review    # Completion step
+agileplus verify-setup
+agileplus dashboard
 ```
 
 The CLI is cross-platform and handles path differences automatically.
@@ -221,9 +221,9 @@ The CLI is cross-platform and handles path differences automatically.
 
 4. **"Unable to import mission module"**
    - Python can't find specify_cli package
-   - Check: `pip show spec-kitty-cli`
+   - Check: `pip show agileplus-cli`
    - Fix: Reinstall or check virtual environment
 
 ---
 
-**For full spec-kitty documentation, see the main templates and README.**
+**For full agileplus documentation, see the main templates and README.**

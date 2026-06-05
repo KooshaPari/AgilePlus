@@ -1,5 +1,5 @@
 //! Seed/fixture module for populating dashboard with dogfood features.
-//! Contains all AgilePlus kitty-specs and creates placeholder work packages.
+//! Contains all AgilePlus agileplus-specs and creates placeholder work packages.
 
 use std::collections::HashMap;
 
@@ -17,8 +17,23 @@ fn drive_to_state(feature: &mut Feature, target: FeatureState) {
         Planned => &[Specified, Researched, Planned],
         Implementing => &[Specified, Researched, Planned, Implementing],
         Validated => &[Specified, Researched, Planned, Implementing, Validated],
-        Shipped => &[Specified, Researched, Planned, Implementing, Validated, Shipped],
-        Retrospected => &[Specified, Researched, Planned, Implementing, Validated, Shipped, Retrospected],
+        Shipped => &[
+            Specified,
+            Researched,
+            Planned,
+            Implementing,
+            Validated,
+            Shipped,
+        ],
+        Retrospected => &[
+            Specified,
+            Researched,
+            Planned,
+            Implementing,
+            Validated,
+            Shipped,
+            Retrospected,
+        ],
     };
     for &state in path {
         feature
@@ -28,7 +43,13 @@ fn drive_to_state(feature: &mut Feature, target: FeatureState) {
 }
 
 /// Helper function to create a shipped feature with all state transitions.
-fn make_shipped_feature(id: i64, slug: &str, name: &str, labels: Vec<String>, project_id: Option<i64>) -> Feature {
+fn make_shipped_feature(
+    id: i64,
+    slug: &str,
+    name: &str,
+    labels: Vec<String>,
+    project_id: Option<i64>,
+) -> Feature {
     let mut f = Feature::new(slug, name, [0u8; 32], Some("main"));
     f.id = id;
     f.labels = labels;
@@ -54,7 +75,7 @@ fn make_shipped_wps(feature_id: i64, base_wp_id: i64, titles: &[&str]) -> Vec<Wo
 /// Seed the dashboard with all AgilePlus dogfood features and work packages.
 ///
 /// Returns:
-/// - Vec<Feature>: all AgilePlus features with sequential IDs 1-4, plus SpecKitty reference specs 5-37
+/// - Vec<Feature>: all AgilePlus features with sequential IDs 1-4, plus AgilePlus reference specs 5-37
 /// - HashMap<i64, Vec<WorkPackage>>: work packages keyed by feature_id, 2-4 per feature
 pub fn seed_dogfood_features() -> (Vec<Feature>, HashMap<i64, Vec<WorkPackage>>) {
     let mut features = Vec::new();
@@ -76,7 +97,7 @@ pub fn seed_dogfood_features() -> (Vec<Feature>, HashMap<i64, Vec<WorkPackage>>)
         1,
         "Define spec schema and validation rules",
         1,
-        "Schema YAML defined and validated against kitty-specs",
+        "Schema YAML defined and validated against agileplus-specs",
     );
     wp1_1.id = 1;
     wp1_1.state = WpState::Done;
@@ -263,216 +284,255 @@ pub fn seed_dogfood_features() -> (Vec<Feature>, HashMap<i64, Vec<WorkPackage>>)
 
     work_packages.insert(4, vec![wp4_1, wp4_2, wp4_3]);
 
-    // --- SpecKitty Reference Features (IDs 5-37) ---
-    let speckitty_specs: Vec<(i64, &str, &str, Vec<String>)> = vec![
+    // --- AgilePlus Reference Features (IDs 5-37) ---
+    let agileplus_specs: Vec<(i64, &str, &str, Vec<String>)> = vec![
         (
             5,
             "sk-001-mission-system-architecture",
             "Mission System Architecture",
-            vec!["architecture".to_string(), "specKitty".to_string()],
+            vec!["architecture".to_string(), "agileplus".to_string()],
         ),
         (
             6,
             "sk-002-lightweight-pypi-release",
             "Lightweight PyPI Release",
-            vec!["release".to_string(), "specKitty".to_string()],
+            vec!["release".to_string(), "agileplus".to_string()],
         ),
         (
             7,
             "sk-003-auto-protect-agent",
             "Auto-Protect Agent",
-            vec!["agents".to_string(), "specKitty".to_string()],
+            vec!["agents".to_string(), "agileplus".to_string()],
         ),
         (
             8,
             "sk-004-modular-code-refactoring",
             "Modular Code Refactoring",
-            vec!["refactoring".to_string(), "specKitty".to_string()],
+            vec!["refactoring".to_string(), "agileplus".to_string()],
         ),
         (
             9,
             "sk-005-refactor-mission-system",
             "Refactor Mission System",
-            vec!["architecture".to_string(), "specKitty".to_string()],
+            vec!["architecture".to_string(), "agileplus".to_string()],
         ),
         (
             10,
             "sk-007-frontmatter-only-lane",
             "Frontmatter-Only Lane",
-            vec!["documentation".to_string(), "specKitty".to_string()],
+            vec!["documentation".to_string(), "agileplus".to_string()],
         ),
         (
             11,
             "sk-008-unified-python-cli",
             "Unified Python CLI",
-            vec!["cli".to_string(), "specKitty".to_string()],
+            vec!["cli".to_string(), "agileplus".to_string()],
         ),
         (
             12,
             "sk-010-workspace-per-work-package",
             "Workspace Per Work Package for Parallel Development",
-            vec!["organization".to_string(), "specKitty".to_string()],
+            vec!["organization".to_string(), "agileplus".to_string()],
         ),
         (
             13,
             "sk-011-constitution-packaging-safety",
             "Constitution Packaging Safety and Redesign",
-            vec!["infrastructure".to_string(), "specKitty".to_string()],
+            vec!["infrastructure".to_string(), "agileplus".to_string()],
         ),
         (
             14,
             "sk-012-documentation-mission",
             "Documentation Mission",
-            vec!["documentation".to_string(), "specKitty".to_string()],
+            vec!["documentation".to_string(), "agileplus".to_string()],
         ),
         (
             15,
             "sk-013-fix-and-test-dashboard",
             "Fix and Test Dashboard",
-            vec!["testing".to_string(), "specKitty".to_string()],
+            vec!["testing".to_string(), "agileplus".to_string()],
         ),
         (
             16,
             "sk-014-comprehensive-end-user-documentation",
             "Comprehensive End-User Documentation",
-            vec!["documentation".to_string(), "specKitty".to_string()],
+            vec!["documentation".to_string(), "agileplus".to_string()],
         ),
         (
             17,
             "sk-015-first-class-jujutsu-vcs-integration",
             "First-Class Jujutsu VCS Integration",
-            vec!["vcs".to_string(), "specKitty".to_string()],
+            vec!["vcs".to_string(), "agileplus".to_string()],
         ),
         (
             18,
             "sk-016-jujutsu-vcs-documentation",
             "Jujutsu VCS Documentation",
-            vec!["documentation".to_string(), "vcs".to_string(), "specKitty".to_string()],
+            vec![
+                "documentation".to_string(),
+                "vcs".to_string(),
+                "agileplus".to_string(),
+            ],
         ),
         (
             19,
             "sk-017-smarter-feature-merge-with-preflight",
             "Smarter Feature Merge with Preflight",
-            vec!["vcs".to_string(), "specKitty".to_string()],
+            vec!["vcs".to_string(), "agileplus".to_string()],
         ),
         (
             20,
             "sk-018-merge-preflight-documentation",
             "Merge Preflight Documentation",
-            vec!["documentation".to_string(), "specKitty".to_string()],
+            vec!["documentation".to_string(), "agileplus".to_string()],
         ),
         (
             21,
             "sk-019-autonomous-multi-agent-orchestration-research",
             "Autonomous Multi-Agent Orchestration Research",
-            vec!["agents".to_string(), "research".to_string(), "specKitty".to_string()],
+            vec![
+                "agents".to_string(),
+                "research".to_string(),
+                "agileplus".to_string(),
+            ],
         ),
         (
             22,
             "sk-020-autonomous-multi-agent-orchestrator",
             "Autonomous Multi-Agent Orchestrator",
-            vec!["agents".to_string(), "specKitty".to_string()],
+            vec!["agents".to_string(), "agileplus".to_string()],
         ),
         (
             23,
             "sk-021-orchestrator-end-to-end-testing-suite",
             "Orchestrator End-to-End Testing Suite",
-            vec!["testing".to_string(), "agents".to_string(), "specKitty".to_string()],
+            vec![
+                "testing".to_string(),
+                "agents".to_string(),
+                "agileplus".to_string(),
+            ],
         ),
         (
             24,
             "sk-022-orchestrator-user-documentation",
             "Orchestrator User Documentation",
-            vec!["documentation".to_string(), "specKitty".to_string()],
+            vec!["documentation".to_string(), "agileplus".to_string()],
         ),
         (
             25,
             "sk-023-documentation-sprint-agent-management-cleanup",
             "Documentation Sprint Agent Management Cleanup",
-            vec!["documentation".to_string(), "agents".to_string(), "specKitty".to_string()],
+            vec![
+                "documentation".to_string(),
+                "agents".to_string(),
+                "agileplus".to_string(),
+            ],
         ),
         (
             26,
             "sk-024-adversarial-test-suite-0-13-0",
             "Adversarial Test Suite v0.13.0",
-            vec!["testing".to_string(), "specKitty".to_string()],
+            vec!["testing".to_string(), "agileplus".to_string()],
         ),
         (
             27,
             "sk-025-cli-event-log-integration",
             "CLI Event Log Integration",
-            vec!["cli".to_string(), "specKitty".to_string()],
+            vec!["cli".to_string(), "agileplus".to_string()],
         ),
         (
             28,
             "sk-026-agent-directory-centralization-architecture-research",
             "Agent Directory Centralization Architecture Research",
-            vec!["agents".to_string(), "architecture".to_string(), "research".to_string(), "specKitty".to_string()],
+            vec![
+                "agents".to_string(),
+                "architecture".to_string(),
+                "research".to_string(),
+                "agileplus".to_string(),
+            ],
         ),
         (
             29,
             "sk-027-cli-authentication-module-commands",
             "CLI Authentication Module Commands",
-            vec!["cli".to_string(), "specKitty".to_string()],
+            vec!["cli".to_string(), "agileplus".to_string()],
         ),
         (
             30,
             "sk-028-cli-event-emission-sync",
             "CLI Event Emission Sync",
-            vec!["cli".to_string(), "sync".to_string(), "specKitty".to_string()],
+            vec![
+                "cli".to_string(),
+                "sync".to_string(),
+                "agileplus".to_string(),
+            ],
         ),
         (
             31,
             "sk-029-mission-aware-cleanup-docs-wiring",
             "Mission-Aware Cleanup Docs Wiring",
-            vec!["documentation".to_string(), "specKitty".to_string()],
+            vec!["documentation".to_string(), "agileplus".to_string()],
         ),
         (
             32,
             "sk-030-2x-sync-auth-docs",
             "2x Sync Auth Docs",
-            vec!["documentation".to_string(), "sync".to_string(), "specKitty".to_string()],
+            vec![
+                "documentation".to_string(),
+                "sync".to_string(),
+                "agileplus".to_string(),
+            ],
         ),
         (
             33,
             "sk-032-identity-aware-cli-event-sync",
             "Identity-Aware CLI Event Sync",
-            vec!["cli".to_string(), "sync".to_string(), "specKitty".to_string()],
+            vec![
+                "cli".to_string(),
+                "sync".to_string(),
+                "agileplus".to_string(),
+            ],
         ),
         (
             34,
             "sk-038-v0-15-0-quality-bugfix-release",
             "v0.15.0 Quality Bugfix Release",
-            vec!["release".to_string(), "specKitty".to_string()],
+            vec!["release".to_string(), "agileplus".to_string()],
         ),
         (
             35,
             "sk-039-cli-2x-readiness",
             "CLI 2x Readiness",
-            vec!["cli".to_string(), "specKitty".to_string()],
+            vec!["cli".to_string(), "agileplus".to_string()],
         ),
         (
             36,
             "sk-040-mission-collaboration-cli-soft-coordination",
             "Mission Collaboration CLI Soft Coordination",
-            vec!["cli".to_string(), "agents".to_string(), "specKitty".to_string()],
+            vec![
+                "cli".to_string(),
+                "agents".to_string(),
+                "agileplus".to_string(),
+            ],
         ),
         (
             37,
             "sk-041-enable-plan-mission-runtime-support",
             "Enable Plan Mission Runtime Support",
-            vec!["agents".to_string(), "specKitty".to_string()],
+            vec!["agents".to_string(), "agileplus".to_string()],
         ),
     ];
 
-    let mut wp_id = work_packages.values().flatten().map(|wp| wp.id).max().unwrap_or(0) + 1;
-    for (id, slug, name, labels) in speckitty_specs {
+    let mut wp_id = work_packages
+        .values()
+        .flatten()
+        .map(|wp| wp.id)
+        .max()
+        .unwrap_or(0)
+        + 1;
+    for (id, slug, name, labels) in agileplus_specs {
         features.push(make_shipped_feature(id, slug, name, labels, Some(1)));
-        let wps = make_shipped_wps(
-            id,
-            wp_id,
-            &["Research and design", "Core implementation"],
-        );
+        let wps = make_shipped_wps(id, wp_id, &["Research and design", "Core implementation"]);
         wp_id += wps.len() as i64;
         work_packages.insert(id, wps);
     }

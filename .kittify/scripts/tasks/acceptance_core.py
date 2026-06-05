@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Shared acceptance core logic for Spec Kitty features.
+"""Shared acceptance core logic for AgilePlus features.
 
 This module is the single source of truth for acceptance workflow logic used by:
 - ``specify_cli.acceptance`` (installed package CLI entrypoint)
@@ -259,7 +259,7 @@ def _iter_work_packages(repo_root: Path, feature: str) -> Iterable[WorkPackage]:
     Legacy format: WP files in ``tasks/{lane}/`` subdirectories.
     New format: WP files in flat ``tasks/`` directory with lane in frontmatter.
     """
-    feature_path = repo_root / "kitty-specs" / feature
+    feature_path = repo_root / "agileplus-specs" / feature
     tasks_dir = feature_path / "tasks"
     if not tasks_dir.exists():
         raise AcceptanceError(
@@ -381,7 +381,7 @@ def collect_feature_summary(
     Raises:
         AcceptanceError: If the feature directory or tasks directory is missing.
     """
-    feature_dir = repo_root / "kitty-specs" / feature
+    feature_dir = repo_root / "agileplus-specs" / feature
     tasks_dir = feature_dir / "tasks"
     if not feature_dir.exists():
         raise AcceptanceError(f"Feature directory not found: {feature_dir}")
@@ -756,7 +756,7 @@ def normalize_feature_encoding(repo_root: Path, feature: str) -> List[Path]:
         "\u00B7": "*",
     }
 
-    feature_dir = repo_root / "kitty-specs" / feature
+    feature_dir = repo_root / "agileplus-specs" / feature
     if not feature_dir.exists():
         return []
 

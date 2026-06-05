@@ -8,7 +8,7 @@ This is a test feature to validate the specify command works correctly.
 Developers using AgilePlus for spec-driven development.
 
 ## Functional Requirements
-- **FR-1**: The system shall create a spec.md artifact in kitty-specs/{slug}/.
+- **FR-1**: The system shall create a spec.md artifact in agileplus-specs/{slug}/.
 - **FR-2**: The system shall record the feature in SQLite with state Specified.
 - **FR-3**: The system shall append an audit entry for the Created -> Specified transition.
 

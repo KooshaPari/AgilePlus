@@ -316,7 +316,7 @@ You can also edit the spec directly:
 
 ```bash
 # Edit spec manually
-nano kitty-specs/001-feature/spec.md
+nano agileplus-specs/001-feature/spec.md
 
 # Then validate
 agileplus spec validate 001

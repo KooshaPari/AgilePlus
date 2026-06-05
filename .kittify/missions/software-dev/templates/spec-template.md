@@ -1,5 +1,5 @@
 # Feature Specification: [FEATURE NAME]
-<!-- Replace [FEATURE NAME] with the confirmed friendly title generated during /spec-kitty.specify. -->
+<!-- Replace [FEATURE NAME] with the confirmed friendly title generated during /agileplus.specify. -->
 
 **Feature Branch**: `[###-feature-name]`  
 **Created**: [DATE]  

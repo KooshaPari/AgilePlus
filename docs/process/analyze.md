@@ -28,7 +28,7 @@ Checks for:
 agileplus analyze 001
 ```
 
-Scans all artifacts in `kitty-specs/001-feature/` and generates a report.
+Scans all artifacts in `agileplus-specs/001-feature/` and generates a report.
 
 ## Output Example
 

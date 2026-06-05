@@ -2,14 +2,14 @@
 description: Implement documentation work packages using Divio templates and generators.
 ---
 
-# Command Template: /spec-kitty.implement (Documentation Mission)
+# Command Template: /agileplus.implement (Documentation Mission)
 
 **Phase**: Generate
 **Purpose**: Create documentation from templates, invoke generators for reference docs, populate templates with content.
 
 ## ⚠️ CRITICAL: Working Directory Requirement
 
-**After running `spec-kitty implement WP##`, you MUST:**
+**After running `agileplus implement WP##`, you MUST:**
 
 1. **Run the cd command shown in the output** - e.g., `cd .worktrees/###-feature-WP##/`
 2. **ALL file operations happen in this directory** - Read, Write, Edit tools must target files in the workspace
@@ -321,7 +321,7 @@ git commit -m "docs(WP##): <describe your documentation>"
 
 **Then move to review:**
 ```bash
-spec-kitty agent tasks move-task WP## --to for_review --note "Ready for review: <summary>"
+agileplus agent tasks move-task WP## --to for_review --note "Ready for review: <summary>"
 ```
 
 **Why this matters:**
@@ -334,4 +334,4 @@ spec-kitty agent tasks move-task WP## --to for_review --note "Ready for review: 
 
 ## Status Tracking Note
 
-If `/spec-kitty.status` shows your WP in "doing" after you moved it to "for_review", don't panic - a reviewer may have moved it back (changes requested), or there's a sync delay. Focus on your WP.
+If `/agileplus.status` shows your WP in "doing" after you moved it to "for_review", don't panic - a reviewer may have moved it back (changes requested), or there's a sync delay. Focus on your WP.

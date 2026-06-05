@@ -15,8 +15,8 @@ if [ ! -d ".git" ]; then
     git init --initial-branch=main
     git config user.email "test@agileplus.example"
     git config user.name "AgilePlus Test"
-    mkdir -p kitty-specs
-    echo '{}' > kitty-specs/.gitkeep
+    mkdir -p agileplus-specs
+    echo '{}' > agileplus-specs/.gitkeep
     git add .
     git commit -m "Initial test repository"
     echo "Test repository created."

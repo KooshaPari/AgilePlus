@@ -3,9 +3,9 @@
 
 
 **Branch**: `[###-feature-name]` | **Date**: [DATE] | **Spec**: [link]
-**Input**: Feature specification from `/kitty-specs/[###-feature-name]/spec.md`
+**Input**: Feature specification from `/agileplus-specs/[###-feature-name]/spec.md`
 
-**Note**: This template is filled in by the `/spec-kitty.plan` command. See `src/specify_cli/missions/software-dev/command-templates/plan.md` for the execution workflow.
+**Note**: This template is filled in by the `/agileplus.plan` command. See `src/specify_cli/missions/software-dev/command-templates/plan.md` for the execution workflow.
 
 The planner will not begin until all planning questions have been answered—capture those answers in this document before progressing to later phases.
 
@@ -42,13 +42,13 @@ The planner will not begin until all planning questions have been answered—cap
 ### Documentation (this feature)
 
 ```
-kitty-specs/[###-feature]/
-├── plan.md              # This file (/spec-kitty.plan command output)
-├── research.md          # Phase 0 output (/spec-kitty.plan command)
-├── data-model.md        # Phase 1 output (/spec-kitty.plan command)
-├── quickstart.md        # Phase 1 output (/spec-kitty.plan command)
-├── contracts/           # Phase 1 output (/spec-kitty.plan command)
-└── tasks.md             # Phase 2 output (/spec-kitty.tasks command - NOT created by /spec-kitty.plan)
+agileplus-specs/[###-feature]/
+├── plan.md              # This file (/agileplus.plan command output)
+├── research.md          # Phase 0 output (/agileplus.plan command)
+├── data-model.md        # Phase 1 output (/agileplus.plan command)
+├── quickstart.md        # Phase 1 output (/agileplus.plan command)
+├── contracts/           # Phase 1 output (/agileplus.plan command)
+└── tasks.md             # Phase 2 output (/agileplus.tasks command - NOT created by /agileplus.plan)
 ```
 
 ### Source Code (repository root)

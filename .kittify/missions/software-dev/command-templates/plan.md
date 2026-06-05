@@ -2,7 +2,7 @@
 description: Execute the implementation planning workflow using the plan template to generate design artifacts.
 ---
 
-# /spec-kitty.plan - Create Implementation Plan
+# /agileplus.plan - Create Implementation Plan
 
 **Version**: 0.11.0+
 
@@ -11,11 +11,11 @@ description: Execute the implementation planning workflow using the plan templat
 **IMPORTANT**: Plan works in the planning repository. NO worktrees created.
 
 ```bash
-# Run from project root (same directory as /spec-kitty.specify):
-# You should already be here if you just ran /spec-kitty.specify
+# Run from project root (same directory as /agileplus.specify):
+# You should already be here if you just ran /agileplus.specify
 
 # Creates:
-# - kitty-specs/###-feature/plan.md → In planning repository
+# - agileplus-specs/###-feature/plan.md → In planning repository
 # - Commits to target branch
 # - NO worktrees created
 ```
@@ -35,10 +35,10 @@ You **MUST** consider the user input before proceeding (if not empty).
 This command runs in the **planning repository**, not in a worktree.
 
 - Verify you're on the target branch (meta.json → target_branch) before scaffolding plan.md
-- Planning artifacts live in `kitty-specs/###-feature/`
+- Planning artifacts live in `agileplus-specs/###-feature/`
 - The plan template is committed to the target branch after generation
 
-**Path reference rule:** When you mention directories or files, provide either the absolute path or a path relative to the project root (for example, `kitty-specs/<feature>/tasks/`). Never refer to a folder by name alone.
+**Path reference rule:** When you mention directories or files, provide either the absolute path or a path relative to the project root (for example, `agileplus-specs/<feature>/tasks/`). Never refer to a folder by name alone.
 
 ## Planning Interrogation (mandatory)
 
@@ -85,11 +85,11 @@ Planning requirements (scale to complexity):
    b. **Check current directory**:
       - Look for `###-feature-name` pattern in the current path
       - Examples:
-        - Inside `kitty-specs/020-my-feature/` → Feature `020-my-feature`
+        - Inside `agileplus-specs/020-my-feature/` → Feature `020-my-feature`
         - Not in a worktree during planning (worktrees only used during implement): If detection runs from `.worktrees/020-my-feature-WP01/` → Feature `020-my-feature`
 
    c. **Prioritize features without plan.md** (if multiple exist):
-      - If multiple features exist and none detected from branch/path, list all features in `kitty-specs/`
+      - If multiple features exist and none detected from branch/path, list all features in `agileplus-specs/`
       - Prefer features that don't have `plan.md` yet (unplanned features)
       - If ambiguous, ask the user which feature to plan
 
@@ -98,7 +98,7 @@ Planning requirements (scale to complexity):
       - You MUST pass this explicitly to the setup-plan command using `--feature` flag
       - **DO NOT** rely on auto-detection by the CLI (prevents wrong feature selection)
 
-3. **Setup**: Run `spec-kitty agent feature setup-plan --feature <feature-slug> --json` from the repository root and parse JSON for:
+3. **Setup**: Run `agileplus agent feature setup-plan --feature <feature-slug> --json` from the repository root and parse JSON for:
    - `result`: "success" or error message
    - `plan_file`: Absolute path to the created plan.md
    - `feature_dir`: Absolute path to the feature directory
@@ -106,7 +106,7 @@ Planning requirements (scale to complexity):
    **Example**:
    ```bash
    # If detected feature is 020-my-feature:
-   spec-kitty agent feature setup-plan --feature 020-my-feature --json
+   agileplus agent feature setup-plan --feature 020-my-feature --json
    ```
 
    **Error handling**: If the command fails with "Cannot detect feature" or "Multiple features found", verify your feature detection logic in step 2 and ensure you're passing the correct feature slug.
@@ -124,7 +124,7 @@ Planning requirements (scale to complexity):
 
 6. **STOP and report**: This command ends after Phase 1 planning. Report branch, IMPL_PLAN path, and generated artifacts.
 
-   **⚠️ CRITICAL: DO NOT proceed to task generation!** The user must explicitly run `/spec-kitty.tasks` to generate work packages. Your job is COMPLETE after reporting the planning artifacts.
+   **⚠️ CRITICAL: DO NOT proceed to task generation!** The user must explicitly run `/agileplus.tasks` to generate work packages. Your job is COMPLETE after reporting the planning artifacts.
 
 ## Phases
 
@@ -199,6 +199,6 @@ Do NOT:
 - ❌ Create `tasks/` subdirectories
 - ❌ Proceed to implementation
 
-The user will run `/spec-kitty.tasks` when they are ready to generate work packages.
+The user will run `/agileplus.tasks` when they are ready to generate work packages.
 
-**Next suggested command**: `/spec-kitty.tasks` (user must invoke this explicitly)
+**Next suggested command**: `/agileplus.tasks` (user must invoke this explicitly)

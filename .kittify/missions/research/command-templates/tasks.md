@@ -2,7 +2,7 @@
 description: Generate research work packages with subtasks aligned to methodology phases.
 ---
 
-# Command Template: /spec-kitty.tasks (Research Mission)
+# Command Template: /agileplus.tasks (Research Mission)
 
 **Phase**: Design (finalizing work breakdown)
 **Purpose**: Break research work into independently executable work packages with subtasks.
@@ -23,15 +23,15 @@ Verify you are in the planning repository (not a worktree). Task generation happ
 git branch --show-current  # Should show the target branch (meta.json → target_branch)
 ```
 
-**Note**: Task generation in the target branch is standard for all spec-kitty missions. Implementation happens in per-WP worktrees.
+**Note**: Task generation in the target branch is standard for all agileplus missions. Implementation happens in per-WP worktrees.
 
 ---
 
 ## Outline
 
-1. **Setup**: Run `spec-kitty agent feature check-prerequisites --json --paths-only --include-tasks`
+1. **Setup**: Run `agileplus agent feature check-prerequisites --json --paths-only --include-tasks`
 
-   **CRITICAL**: The command returns JSON with `FEATURE_DIR` as an ABSOLUTE path (e.g., `/Users/robert/Code/project/kitty-specs/015-research-topic`).
+   **CRITICAL**: The command returns JSON with `FEATURE_DIR` as an ABSOLUTE path (e.g., `/Users/robert/Code/project/agileplus-specs/015-research-topic`).
 
    **YOU MUST USE THIS PATH** for ALL subsequent file operations.
 
@@ -130,13 +130,13 @@ git branch --show-current  # Should show the target branch (meta.json → target
        - Evidence tracking requirements
        - Quality validation criteria
 
-   **IMPORTANT**: All WP files live in flat `tasks/` directory. Lane status is tracked ONLY in the `lane:` frontmatter field, NOT by directory location. Agents can change lanes by editing the `lane:` field directly or using `spec-kitty agent tasks move-task`.
+   **IMPORTANT**: All WP files live in flat `tasks/` directory. Lane status is tracked ONLY in the `lane:` frontmatter field, NOT by directory location. Agents can change lanes by editing the `lane:` field directly or using `agileplus agent tasks move-task`.
 
 7. **Finalize tasks with dependency parsing and commit**:
 
    **CRITICAL**: Run this command from repo root:
    ```bash
-   spec-kitty agent feature finalize-tasks --json
+   agileplus agent feature finalize-tasks --json
    ```
 
    This step is MANDATORY. Without it:
@@ -148,7 +148,7 @@ git branch --show-current  # Should show the target branch (meta.json → target
    - Work package count and subtask tallies
    - Parallelization opportunities (different sources, databases)
    - MVP recommendation (typically WP01 Literature Search)
-   - Next command: `/spec-kitty.implement WP01`
+   - Next command: `/agileplus.implement WP01`
 
 ---
 
@@ -188,7 +188,7 @@ subtasks:
   - "T002"
 title: "Literature Search & Source Collection"
 phase: "Phase 1 - Literature Review"
-lane: "planned"  # DO NOT EDIT - use: spec-kitty agent tasks move-task <WPID> --to <lane>
+lane: "planned"  # DO NOT EDIT - use: agileplus agent tasks move-task <WPID> --to <lane>
 assignee: ""
 agent: ""
 shell_pid: ""
@@ -200,11 +200,11 @@ history:
     lane: "planned"
     agent: "system"
     shell_pid: ""
-    action: "Prompt generated via /spec-kitty.tasks"
+    action: "Prompt generated via /agileplus.tasks"
 ---
 ```
 
-**DO NOT use markdown status fields like `**Status**: planned`**. The `lane:` field in YAML frontmatter is the ONLY status tracking mechanism. The review command (`/spec-kitty.review`) searches for `lane: "for_review"` in frontmatter to find WPs ready for review.
+**DO NOT use markdown status fields like `**Status**: planned`**. The `lane:` field in YAML frontmatter is the ONLY status tracking mechanism. The review command (`/agileplus.review`) searches for `lane: "for_review"` in frontmatter to find WPs ready for review.
 
 ---
 
@@ -215,7 +215,7 @@ history:
 - Mark parallel subtasks (database searches, source reviews)
 - Include evidence tracking in every WP prompt
 - Quality validation depends on all content WPs
-- Use `spec-kitty agent tasks move-task` to change lanes
+- Use `agileplus agent tasks move-task` to change lanes
 
 **For Users**:
 - Tasks.md shows the full research work breakdown

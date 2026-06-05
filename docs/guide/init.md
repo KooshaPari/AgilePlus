@@ -93,7 +93,7 @@ Makefile            → Build system
 ├── metadata.yaml         # Version, timestamp, platform info
 └── .gitignore            # Git ignore patterns
 
-kitty-specs/             # Specification directory (empty initially)
+agileplus-specs/             # Specification directory (empty initially)
 
 CLAUDE.md                # Governance for Claude Code
 AGENTS.md                # Cross-agent coordination rules
@@ -156,7 +156,7 @@ enabled = ["claude"]
 
 ## Governance
 
-- Specifications: kitty-specs/ directory
+- Specifications: agileplus-specs/ directory
 - Work packages: spec-driven implementation
 - Code review: feature branch review required
 - Merge strategy: squash merge to main
@@ -274,7 +274,7 @@ my-project/
 │   ├── config.toml
 │   ├── metadata.yaml
 │   └── .gitignore
-├── kitty-specs/                # Specifications (empty)
+├── agileplus-specs/                # Specifications (empty)
 ├── .git/
 │   └── hooks/
 │       └── pre-commit          # File encoding check
@@ -340,7 +340,7 @@ Output:
 ✓ .kittify/config.toml (minimal)
 ✓ CLAUDE.md (stub)
 ✓ AGENTS.md
-✓ kitty-specs/
+✓ agileplus-specs/
 
 Quick setup complete. Minimal configuration created.
 ```
@@ -408,7 +408,7 @@ After init, verify setup:
 ```bash
 # Check generated files
 ls -la .kittify/
-ls -la kitty-specs/
+ls -la agileplus-specs/
 
 # View config
 cat .kittify/config.toml
@@ -418,7 +418,7 @@ cat .git/hooks/pre-commit
 
 # Test with first spec
 agileplus specify "Test feature"
-ls kitty-specs/001-test-feature/
+ls agileplus-specs/001-test-feature/
 ```
 
 ## Troubleshooting

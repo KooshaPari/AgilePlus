@@ -241,7 +241,7 @@ async fn run_create<S: StoragePort, V: VcsPort>(
         .context("appending audit entry")?;
 
     println!("Feature '{slug}' specified.");
-    println!("  Spec written to: kitty-specs/{slug}/spec.md");
+    println!("  Spec written to: agileplus-specs/{slug}/spec.md");
     println!("  State: Created -> Specified");
     Ok(())
 }
@@ -318,7 +318,7 @@ async fn run_refinement<S: StoragePort, V: VcsPort>(
 
     let _ = new_hash; // hash tracked in audit
     println!("Spec for '{slug}' updated (revision {rev_n}).");
-    println!("  Diff saved to: kitty-specs/{slug}/{diff_artifact_path}");
+    println!("  Diff saved to: agileplus-specs/{slug}/{diff_artifact_path}");
     Ok(())
 }
 

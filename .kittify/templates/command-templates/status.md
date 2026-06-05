@@ -22,13 +22,13 @@ Show the current status of all work packages in the active feature. This display
 Run the CLI command to display the status board:
 
 ```bash
-spec-kitty agent tasks status
+agileplus agent tasks status
 ```
 
 To specify a feature explicitly:
 
 ```bash
-spec-kitty agent tasks status --feature 012-documentation-mission
+agileplus agent tasks status --feature 012-documentation-mission
 ```
 
 The command displays a rich kanban board with:

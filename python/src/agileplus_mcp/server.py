@@ -71,7 +71,7 @@ async def get_workspace_roots() -> dict[str, Any]:
         slug = feature["slug"]
         roots.append(
             {
-                "uri": f"file://kitty-specs/{slug}/",
+                "uri": f"file://agileplus-specs/{slug}/",
                 "name": f"feature-spec-{slug}",
             }
         )

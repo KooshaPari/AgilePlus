@@ -81,8 +81,8 @@ cargo build -p agileplus-cli
 # Output: agileplus 0.1.0
 
 # Build docs
-bun install
-bun run docs:dev   # Start dev server at http://localhost:5173
+npm install
+npm run dev        # Start dev server at http://localhost:5173
 ```
 
 ### Verify Setup
@@ -101,7 +101,7 @@ cargo clippy --workspace -- -D warnings
 cargo fmt --all --check
 
 # Test docs build
-bun run docs:build
+npm run build
 ```
 
 ### Start Platform Services (for integration tests)
@@ -527,7 +527,7 @@ https://github.com/KooshaPari/AgilePlus/issues
 https://github.com/KooshaPari/AgilePlus/discussions
 
 **Existing work**: Check planned features in:
-`kitty-specs/` — specifications for in-progress or planned features
+`agileplus-specs/` — specifications for in-progress or planned features
 
 **Documentation**: Reference docs at:
 https://docs.agileplus.dev

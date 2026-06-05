@@ -24,7 +24,7 @@ python/src/gen/
 .vscode/
 *.iml
 # Excluded via sparse-checkout
-kitty-specs/
+agileplus-specs/
 
 # Local environment files
 .env
@@ -35,3 +35,9 @@ kitty-specs/
 
 # Reference repos (not submodules)
 references/
+
+# Node / VitePress (added 2026-06-05 for kitty->agileplus brand rename preservation)
+node_modules/
+yarn.lock
+docs/.vitepress/cache/
+docs/.vitepress/dist/

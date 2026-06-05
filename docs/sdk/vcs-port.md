@@ -165,7 +165,7 @@ Collection of all artifacts discovered for a feature during history scanning.
 
 ```rust
 pub struct FeatureArtifacts {
-    pub meta_json: Option<String>,           // kitty-specs/001-*/meta.json
+    pub meta_json: Option<String>,           // agileplus-specs/001-*/meta.json
     pub audit_chain: Option<String>,         // Audit log path
     pub evidence_paths: Vec<String>,         // All PR/test artifact refs
 }
@@ -276,7 +276,7 @@ asyncio.run(main())
 Artifacts are feature-relative files stored in the repository structure:
 
 ```
-kitty-specs/
+agileplus-specs/
 ├── 001-login/
 │   ├── meta.json          (Feature metadata)
 │   ├── spec.md            (Specification document)

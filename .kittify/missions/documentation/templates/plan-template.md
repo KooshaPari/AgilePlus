@@ -1,9 +1,9 @@
 # Implementation Plan: [DOCUMENTATION PROJECT]
 
 **Branch**: `[###-feature-name]` | **Date**: [DATE] | **Spec**: [link]
-**Input**: Feature specification from `/kitty-specs/[###-feature-name]/spec.md`
+**Input**: Feature specification from `/agileplus-specs/[###-feature-name]/spec.md`
 
-**Note**: This template is filled in by the `/spec-kitty.plan` command. See mission command templates for execution workflow.
+**Note**: This template is filled in by the `/agileplus.plan` command. See mission command templates for execution workflow.
 
 ## Summary
 
@@ -33,13 +33,13 @@
 ### Documentation (this feature)
 
 ```
-kitty-specs/[###-feature]/
+agileplus-specs/[###-feature]/
 ├── spec.md              # Documentation goals and user scenarios
 ├── plan.md              # This file
 ├── research.md          # Phase 0 output (gap analysis, framework research)
 ├── data-model.md        # Phase 1 output (Divio type definitions)
 ├── quickstart.md        # Phase 1 output (getting started guide)
-└── tasks.md             # Phase 2 output (/spec-kitty.tasks command)
+└── tasks.md             # Phase 2 output (/agileplus.tasks command)
 ```
 
 ### Documentation Files (repository root)
@@ -218,7 +218,7 @@ Detailed work packages will be generated in Phase 2 (tasks.md). High-level packa
 
 ## Phase 2: Implementation
 
-**Note**: Phase 2 (work package generation) is handled by the `/spec-kitty.tasks` command.
+**Note**: Phase 2 (work package generation) is handled by the `/agileplus.tasks` command.
 
 ## Success Criteria Validation
 

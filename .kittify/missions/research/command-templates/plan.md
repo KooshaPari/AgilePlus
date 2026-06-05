@@ -22,7 +22,7 @@ Before proceeding with planning, verify you are in the correct working directory
 - You're not attempting to run from `main` or any release branch
 - The validator prints clear navigation instructions if you're outside the feature worktree
 
-**Path reference rule:** When you mention directories or files, provide either the absolute path or a path relative to the project root (for example, `kitty-specs/<feature>/tasks/`). Never refer to a folder by name alone.
+**Path reference rule:** When you mention directories or files, provide either the absolute path or a path relative to the project root (for example, `agileplus-specs/<feature>/tasks/`). Never refer to a folder by name alone.
 
 ## Planning Interrogation (mandatory)
 

@@ -509,7 +509,7 @@ where
 
     println!("Feature '{}' validated successfully.", slug);
     println!("  State: Implementing -> Validated");
-    println!("  Report: kitty-specs/{slug}/validation-report.md");
+    println!("  Report: agileplus-specs/{slug}/validation-report.md");
 
     Ok(())
 }

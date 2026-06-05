@@ -1,4 +1,4 @@
-# Agent Rules for Spec Kitty Projects
+# Agent Rules for AgilePlus Projects
 
 **⚠️ CRITICAL**: All AI agents working in this project must follow these rules.
 
@@ -11,8 +11,8 @@ These rules apply to **all commands** (specify, plan, research, tasks, implement
 **When you mention directories or files, provide either the absolute path or a path relative to the project root.**
 
 ✅ **CORRECT**:
-- `kitty-specs/001-feature/tasks/WP01.md`
-- `/Users/robert/Code/myproject/kitty-specs/001-feature/spec.md`
+- `agileplus-specs/001-feature/tasks/WP01.md`
+- `/Users/robert/Code/myproject/agileplus-specs/001-feature/spec.md`
 - `tasks/WP01.md` (relative to feature directory)
 
 ❌ **WRONG**:
@@ -65,8 +65,8 @@ These rules apply to **all commands** (specify, plan, research, tasks, implement
 1. Paste into a plain-text buffer first (VS Code, TextEdit in plain mode)
 2. Replace smart quotes and dashes
 3. Verify no � replacement characters appear
-4. Run `spec-kitty validate-encoding --feature <feature-id>` to check
-5. Run `spec-kitty validate-encoding --feature <feature-id> --fix` to auto-repair
+4. Run `agileplus validate-encoding --feature <feature-id>` to check
+5. Run `agileplus validate-encoding --feature <feature-id> --fix` to auto-repair
 
 **Failure to follow this rule causes the dashboard to render blank pages.**
 
@@ -75,13 +75,13 @@ These rules apply to **all commands** (specify, plan, research, tasks, implement
 If you accidentally introduce problematic characters:
 ```bash
 # Check for encoding issues
-spec-kitty validate-encoding --feature 001-my-feature
+agileplus validate-encoding --feature 001-my-feature
 
 # Automatically fix all issues (creates .bak backups)
-spec-kitty validate-encoding --feature 001-my-feature --fix
+agileplus validate-encoding --feature 001-my-feature --fix
 
 # Check all features at once
-spec-kitty validate-encoding --all --fix
+agileplus validate-encoding --all --fix
 ```
 
 ---
@@ -148,8 +148,8 @@ Agent directories like `.claude/`, `.codex/`, `.gemini/` contain:
 
 ### Automatic Protection
 
-Spec Kitty automatically:
-1. Adds all agent directories to `.gitignore` during `spec-kitty init`
+AgilePlus automatically:
+1. Adds all agent directories to `.gitignore` during `agileplus init`
 2. Installs pre-commit hook to block accidental commits
 3. Creates `.claudeignore` to optimize AI scanning
 

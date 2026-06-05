@@ -83,7 +83,7 @@ pub(crate) fn list_worktrees(adapter: &GitVcsAdapter) -> Result<Vec<WorktreeInfo
             Err(_) => continue,
         };
 
-        let path = PathBuf::from(wt.path());
+        let path = std::fs::canonicalize(wt.path()).unwrap_or_else(|_| PathBuf::from(wt.path()));
 
         // Parse feature_slug and wp_id from worktree name (split on last '-').
         // Validate wp_id matches WP\d+ pattern.

@@ -69,7 +69,7 @@ def _import_acceptance_core() -> ModuleType:
 
     raise ImportError(
         "Cannot locate acceptance_core module. "
-        "Ensure spec-kitty-cli is installed (pip install spec-kitty-cli) "
+        "Ensure agileplus-cli is installed (pip install agileplus-cli) "
         "or that the source tree is intact."
     )
 

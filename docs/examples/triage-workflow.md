@@ -238,7 +238,7 @@ agileplus specify \
 Creating spec from queue item #1...
 
 Spec created: 002-login-500-fix
-  kitty-specs/002-login-500-fix/spec.md
+  agileplus-specs/002-login-500-fix/spec.md
 
 Queue item #1 marked as: in_progress
 

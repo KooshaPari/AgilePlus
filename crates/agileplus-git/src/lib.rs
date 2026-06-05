@@ -167,9 +167,9 @@ impl VcsPort for GitVcsAdapter {
     }
 }
 
-/// Scan all feature slugs found under kitty-specs/ that contain meta.json.
+/// Scan all feature slugs found under agileplus-specs/ that contain meta.json.
 pub fn scan_all_features(adapter: &GitVcsAdapter) -> Result<Vec<String>, DomainError> {
-    let base = adapter.repo_path().join("kitty-specs");
+    let base = adapter.repo_path().join("agileplus-specs");
     if !base.exists() {
         return Ok(vec![]);
     }
@@ -195,7 +195,7 @@ pub struct CommitInfo {
     pub timestamp: chrono::DateTime<chrono::Utc>,
 }
 
-/// Get commit history touching kitty-specs/<feature_slug>/.
+/// Get commit history touching agileplus-specs/<feature_slug>/.
 pub fn get_feature_history(
     adapter: &GitVcsAdapter,
     feature_slug: &str,
@@ -205,7 +205,7 @@ pub fn get_feature_history(
     revwalk.push_head().map_err(git_err)?;
     revwalk.set_sorting(git2::Sort::TIME).map_err(git_err)?;
 
-    let filter_prefix = format!("kitty-specs/{feature_slug}/");
+    let filter_prefix = format!("agileplus-specs/{feature_slug}/");
     let mut results = Vec::new();
 
     for oid in revwalk {

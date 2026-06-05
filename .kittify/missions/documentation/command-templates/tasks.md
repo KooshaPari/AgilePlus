@@ -2,7 +2,7 @@
 description: Generate documentation work packages and subtasks aligned to Divio types.
 ---
 
-# Command Template: /spec-kitty.tasks (Documentation Mission)
+# Command Template: /agileplus.tasks (Documentation Mission)
 
 **Phase**: Design (finalizing work breakdown)
 **Purpose**: Break documentation work into independently implementable work packages with subtasks.
@@ -23,13 +23,13 @@ Verify you are in the main repository (not a worktree). Task generation happens 
 git branch --show-current  # Should show "main"
 ```
 
-**Note**: Task generation in main is standard for all spec-kitty missions. Implementation happens in per-WP worktrees.
+**Note**: Task generation in main is standard for all agileplus missions. Implementation happens in per-WP worktrees.
 
 ---
 
 ## Outline
 
-1. **Setup**: Run `spec-kitty agent feature check-prerequisites --json --paths-only --include-tasks`
+1. **Setup**: Run `agileplus agent feature check-prerequisites --json --paths-only --include-tasks`
 
 2. **Load design documents**:
    - spec.md (documentation goals, selected Divio types)
@@ -139,7 +139,7 @@ git branch --show-current  # Should show "main"
    - Work package count and subtask tallies
    - Parallelization opportunities
    - MVP recommendation
-   - Next command: `/spec-kitty.implement WP01` (or review tasks.md first)
+   - Next command: `/agileplus.implement WP01` (or review tasks.md first)
 
 ---
 

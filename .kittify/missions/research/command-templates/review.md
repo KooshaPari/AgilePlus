@@ -11,7 +11,7 @@ Research WPs produce deliverables in a **worktree**, which merge to main like co
 | Type | Location | Review Focus |
 |------|----------|--------------|
 | **Research Deliverables** | `{{deliverables_path}}` (in worktree) | PRIMARY - Your main review target |
-| **Planning Artifacts** | `kitty-specs/{{feature_slug}}/research/` (in main) | SECONDARY - Citation validation only |
+| **Planning Artifacts** | `agileplus-specs/{{feature_slug}}/research/` (in main) | SECONDARY - Citation validation only |
 
 ### Review Checklist
 
@@ -36,7 +36,7 @@ Empty dependencies means this WP CAN start immediately - it's **not an error**.
 
 **To see dependency relationships:**
 ```bash
-spec-kitty agent tasks list-dependents WP##
+agileplus agent tasks list-dependents WP##
 
 # Output shows both:
 #   Depends on: (upstream - what blocks this WP)
@@ -69,7 +69,7 @@ Before proceeding with review, verify you are in the correct working directory b
 - You're not attempting to run from `main` or any release branch
 - The validator prints clear navigation instructions if you're outside the feature worktree
 
-**Path reference rule:** When you mention directories or files, provide either the absolute path or a path relative to the project root (for example, `kitty-specs/<feature>/tasks/`). Never refer to a folder by name alone.
+**Path reference rule:** When you mention directories or files, provide either the absolute path or a path relative to the project root (for example, `agileplus-specs/<feature>/tasks/`). Never refer to a folder by name alone.
 
 ## Citation Validation (Research Mission Specific)
 
@@ -132,15 +132,15 @@ if source_register.exists():
      * Append a new entry in the prompt’s **Activity Log** detailing feedback (include timestamp, reviewer agent, shell PID).
      * Update frontmatter `lane` back to `planned`, clear `assignee` if necessary, keep history entry.
      * Add/revise a `## Review Feedback` section (create if missing) summarizing action items.
-     * Run `spec-kitty agent tasks move-task <FEATURE> <TASK_ID> planned --note "Returned for changes"` (use the PowerShell equivalent on Windows) so the move and history update are staged consistently.
+     * Run `agileplus agent tasks move-task <FEATURE> <TASK_ID> planned --note "Returned for changes"` (use the PowerShell equivalent on Windows) so the move and history update are staged consistently.
   - **Approved**:
      * Append Activity Log entry capturing approval details (capture shell PID via `echo $$` or helper script).
      * Update frontmatter: set `lane=done`, set reviewer metadata (`agent`, `shell_pid`), optional `assignee` for approver.
      * Use helper script to mark the task complete in `tasks.md` (see Step 6).
-     * Run `spec-kitty agent tasks move-task <FEATURE> <TASK_ID> done --note "Approved for release"` (PowerShell variant available) to transition the prompt into `tasks/`.
+     * Run `agileplus agent tasks move-task <FEATURE> <TASK_ID> done --note "Approved for release"` (PowerShell variant available) to transition the prompt into `tasks/`.
 
 6. Update `tasks.md` automatically:
-   - Run `spec-kitty agent tasks mark-status --task-id <TASK_ID> --status done` (POSIX) or `spec-kitty agent tasks mark-status --task-id <TASK_ID> --status done` (PowerShell) from repo root.
+   - Run `agileplus agent tasks mark-status --task-id <TASK_ID> --status done` (POSIX) or `agileplus agent tasks mark-status --task-id <TASK_ID> --status done` (PowerShell) from repo root.
    - Confirm the task entry now shows `[X]` and includes a reference to the prompt file in its notes.
 
 7. Produce a review report summarizing:

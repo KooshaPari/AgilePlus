@@ -39,7 +39,7 @@ Evaluating feasibility...
 ✓ Integration points identified
 
 Generated research artifacts:
-  kitty-specs/001-email-notifications/research/
+  agileplus-specs/001-email-notifications/research/
   ├── codebase-scan.md
   ├── feasibility.md
   └── decisions.md
@@ -52,7 +52,7 @@ Next: agileplus plan 001
 Research creates three documents:
 
 ```
-kitty-specs/001-email-notifications/research/
+agileplus-specs/001-email-notifications/research/
 ├── codebase-scan.md       # What exists in the codebase
 ├── feasibility.md         # Can we build this? Risks?
 └── decisions.md           # Recommended technical decisions

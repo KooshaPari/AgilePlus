@@ -976,7 +976,7 @@ mod tests {
         let m = Metric {
             id: 0,
             feature_id: Some(fid),
-            command: "spec-kitty implement".into(),
+            command: "agileplus implement".into(),
             duration_ms: 1234,
             agent_runs: 3,
             review_cycles: 1,
@@ -988,7 +988,7 @@ mod tests {
 
         let ms = db.get_metrics_by_feature(fid).await.unwrap();
         assert_eq!(ms.len(), 1);
-        assert_eq!(ms[0].command, "spec-kitty implement");
+        assert_eq!(ms[0].command, "agileplus implement");
         assert_eq!(ms[0].duration_ms, 1234);
         assert!(ms[0].metadata.is_some());
     }

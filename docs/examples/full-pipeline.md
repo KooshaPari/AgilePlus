@@ -22,7 +22,7 @@ agileplus specify \
   --description "Add Google and GitHub OAuth2 login flows with persistent session management"
 ```
 
-This creates `kitty-specs/001-oauth2-auth/spec.md`. The spec includes:
+This creates `agileplus-specs/001-oauth2-auth/spec.md`. The spec includes:
 - **Functional Requirements** — what the feature does
   - Users can sign up via Google OAuth
   - Users can sign up via GitHub OAuth

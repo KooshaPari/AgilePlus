@@ -1,5 +1,5 @@
 ---
-description: Open the Spec Kitty dashboard in your browser.
+description: Open the AgilePlus dashboard in your browser.
 ---
 **⚠️ CRITICAL: Read the project's AGENTS.md for universal rules (paths, UTF-8 encoding, context management, quality expectations).**
 
@@ -53,7 +53,7 @@ A real-time, read-only web interface showing the health and status of all featur
 
 ## Dashboard Access
 
-The dashboard shows ALL features across the project. This command launches the Spec Kitty dashboard using the spec-kitty CLI.
+The dashboard shows ALL features across the project. This command launches the AgilePlus dashboard using the agileplus CLI.
 
 ## Important: Worktree Handling
 
@@ -63,7 +63,7 @@ The dashboard is project-wide (shows all features) and the CLI handles worktree 
 
 ## Implementation
 
-Simply run the `spec-kitty dashboard` command to:
+Simply run the `agileplus dashboard` command to:
 - Start the dashboard if it's not already running
 - Open it in your default web browser
 - Display the dashboard URL
@@ -72,13 +72,13 @@ Simply run the `spec-kitty dashboard` command to:
 Execute the following terminal command:
 
 ```bash
-spec-kitty dashboard
+agileplus dashboard
 ```
 
 ## Additional Options
 
-- To specify a preferred port: `spec-kitty dashboard --port 8080`
-- To stop the dashboard: `spec-kitty dashboard --kill`
+- To specify a preferred port: `agileplus dashboard --port 8080`
+- To stop the dashboard: `agileplus dashboard --kill`
 
 ## Success Criteria
 

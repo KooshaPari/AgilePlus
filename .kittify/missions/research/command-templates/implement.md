@@ -10,7 +10,7 @@ description: Implement a research work package by conducting research and docume
 
 | Type | Location | Edited Where | Purpose |
 |------|----------|--------------|---------|
-| **Sprint Planning** | `kitty-specs/{{feature_slug}}/research/` | Main repo | Evidence/sources for planning THIS sprint |
+| **Sprint Planning** | `agileplus-specs/{{feature_slug}}/research/` | Main repo | Evidence/sources for planning THIS sprint |
 | **Research Deliverables** | `{{deliverables_path}}` | Worktree | Actual research outputs (your work product) |
 
 ### Where to Put Your Research
@@ -21,7 +21,7 @@ This is configured in `meta.json` during planning. To find it:
 
 ```bash
 # Check deliverables_path in meta.json
-cat kitty-specs/{{feature_slug}}/meta.json | grep deliverables_path
+cat agileplus-specs/{{feature_slug}}/meta.json | grep deliverables_path
 ```
 
 Examples of valid deliverables paths:
@@ -29,8 +29,8 @@ Examples of valid deliverables paths:
 - `research-outputs/002-literature-review/`
 
 **DO NOT** put research deliverables in:
-- `kitty-specs/` (reserved for sprint planning)
-- `research/` at project root (ambiguous, conflicts with kitty-specs/###/research/)
+- `agileplus-specs/` (reserved for sprint planning)
+- `research/` at project root (ambiguous, conflicts with agileplus-specs/###/research/)
 
 ---
 
@@ -39,7 +39,7 @@ Examples of valid deliverables paths:
 Run this command to get started:
 
 ```bash
-spec-kitty agent workflow implement $ARGUMENTS --agent <your-name>
+agileplus agent workflow implement $ARGUMENTS --agent <your-name>
 ```
 
 **CRITICAL**: You MUST provide `--agent <your-name>` to track who is implementing!
@@ -88,14 +88,14 @@ Example commit messages:
 **Only after committing**, move your WP to review:
 
 ```bash
-spec-kitty agent tasks move-task {{wp_id}} --to for_review --note "Ready for review: <summary>"
+agileplus agent tasks move-task {{wp_id}} --to for_review --note "Ready for review: <summary>"
 ```
 
 ---
 
 ## Sprint Planning Artifacts (Separate)
 
-Planning artifacts in `kitty-specs/{{feature_slug}}/research/` are:
+Planning artifacts in `agileplus-specs/{{feature_slug}}/research/` are:
 - `evidence-log.csv` - Evidence collected DURING PLANNING
 - `source-register.csv` - Sources cited DURING PLANNING
 
@@ -132,7 +132,7 @@ timestamp,source_type,citation,key_finding,confidence,notes
 ```bash
 # Format: timestamp,source_type,citation,key_finding,confidence,notes
 echo '2025-01-25T14:00:00,journal,"Smith, J. (2024). AI Tools. Nature, 10(2), 123.",AI improves productivity 30%,high,Meta-analysis' \
-  >> kitty-specs/{{feature_slug}}/research/evidence-log.csv
+  >> agileplus-specs/{{feature_slug}}/research/evidence-log.csv
 ```
 
 ### source-register.csv Schema
@@ -155,11 +155,11 @@ source_id,citation,url,accessed_date,relevance,status
 ```bash
 # Format: source_id,citation,url,accessed_date,relevance,status
 echo 'S001,"Smith (2024). AI Tools.",https://example.com,2025-01-25,high,reviewed' \
-  >> kitty-specs/{{feature_slug}}/research/source-register.csv
+  >> agileplus-specs/{{feature_slug}}/research/source-register.csv
 ```
 
 **Why this matters:**
-- Schema validation runs during `/spec-kitty.review`
+- Schema validation runs during `/agileplus.review`
 - Wrong schemas BLOCK review (cannot proceed)
 - Agents must preserve exact column order and names
 - Templates have correct schemas - never overwrite, only append
@@ -172,12 +172,12 @@ echo 'S001,"Smith (2024). AI Tools.",https://example.com,2025-01-25,high,reviewe
 |--------|--------------|----------|
 | **Primary output** | Source code in worktree | Research docs in `deliverables_path` |
 | **Commit location** | Worktree branch | Worktree branch (same!) |
-| **Merges to main** | Yes, via spec-kitty merge | Yes, via spec-kitty merge |
-| **Planning artifacts** | N/A | `kitty-specs/.../research/` (in main) |
+| **Merges to main** | Yes, via agileplus merge | Yes, via agileplus merge |
+| **Planning artifacts** | N/A | `agileplus-specs/.../research/` (in main) |
 
 ### Why This Changed
 
-Previously, research artifacts went in `kitty-specs/` which is sparse-excluded from worktrees. This meant:
+Previously, research artifacts went in `agileplus-specs/` which is sparse-excluded from worktrees. This meant:
 - Research outputs never got merged to main
 - WPs were marked "done" but work was stuck in worktrees
 
@@ -190,12 +190,12 @@ Now, research deliverables go in `{{deliverables_path}}` which:
 
 ## Common Mistakes to Avoid
 
-### Mistake 1: Putting Deliverables in kitty-specs/
+### Mistake 1: Putting Deliverables in agileplus-specs/
 
 **Wrong**:
 ```bash
 # Creating files in planning artifacts location
-echo "# Findings" > kitty-specs/{{feature_slug}}/findings.md  # BAD!
+echo "# Findings" > agileplus-specs/{{feature_slug}}/findings.md  # BAD!
 ```
 
 **Right**:
@@ -210,7 +210,7 @@ echo "# Findings" > {{deliverables_path}}/findings.md  # GOOD!
 ```bash
 # Edit deliverables
 # Immediately run:
-spec-kitty agent tasks move-task {{wp_id}} --to for_review  # BAD! Nothing committed!
+agileplus agent tasks move-task {{wp_id}} --to for_review  # BAD! Nothing committed!
 ```
 
 **Right**:
@@ -218,7 +218,7 @@ spec-kitty agent tasks move-task {{wp_id}} --to for_review  # BAD! Nothing commi
 # Edit deliverables
 git add {{deliverables_path}}/
 git commit -m "research({{wp_id}}): Document findings"
-spec-kitty agent tasks move-task {{wp_id}} --to for_review  # GOOD!
+agileplus agent tasks move-task {{wp_id}} --to for_review  # GOOD!
 ```
 
 ### Mistake 3: Editing Planning Artifacts in Worktree
@@ -232,7 +232,7 @@ If you need to update them, do so in the main repository.
 
 **Research WPs CAN run in parallel** (unlike old model):
 
-Since deliverables go in `{{deliverables_path}}`, not `kitty-specs/`:
+Since deliverables go in `{{deliverables_path}}`, not `agileplus-specs/`:
 - Each WP writes to different files/subdirectories
 - No merge conflicts with planning artifacts
 - Works just like parallel software-dev WPs
@@ -248,8 +248,8 @@ Before running `move-task --to for_review`:
 - [ ] Research findings documented in `{{deliverables_path}}/`
 - [ ] All deliverable files committed to worktree branch: `git add {{deliverables_path}}/ && git commit`
 - [ ] Commit message follows format: `research({{wp_id}}): <description>`
-- [ ] All subtasks marked as done: `spec-kitty agent tasks mark-status T### --status done`
+- [ ] All subtasks marked as done: `agileplus agent tasks mark-status T### --status done`
 
 ---
 
-**NOTE**: If `/spec-kitty.status` shows your WP in "doing" after you moved it to "for_review", don't panic - a reviewer may have moved it back (changes requested), or there's a sync delay. Focus on your WP.
+**NOTE**: If `/agileplus.status` shows your WP in "doing" after you moved it to "for_review", don't panic - a reviewer may have moved it back (changes requested), or there's a sync delay. Focus on your WP.

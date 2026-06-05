@@ -2,7 +2,7 @@
 description: Create or update the research specification from a natural language research question.
 ---
 
-# /spec-kitty.specify - Create Research Specification
+# /agileplus.specify - Create Research Specification
 
 **Version**: 0.11.0+
 
@@ -15,12 +15,12 @@ description: Create or update the research specification from a natural language
 cd /path/to/project/root  # Your planning repository
 
 # All planning artifacts are created in the planning repo and committed:
-# - kitty-specs/###-feature/spec.md → Created in planning repo
+# - agileplus-specs/###-feature/spec.md → Created in planning repo
 # - Committed to target branch (meta.json → target_branch)
 # - NO worktrees created
 ```
 
-**Worktrees are created later** during `/spec-kitty.implement`, not during planning.
+**Worktrees are created later** during `/agileplus.implement`, not during planning.
 
 ## User Input
 
@@ -62,7 +62,7 @@ For research missions, focus on:
 
 | Type | Location | Purpose |
 |------|----------|---------|
-| **Planning Artifacts** | `kitty-specs/###/research/` | Evidence/sources for PLANNING this sprint |
+| **Planning Artifacts** | `agileplus-specs/###/research/` | Evidence/sources for PLANNING this sprint |
 | **Research Deliverables** | `deliverables_path` | Actual research OUTPUT (your work product) |
 
 ### Determining deliverables_path
@@ -76,12 +76,12 @@ During discovery, you MUST ask:
 > Other options:
 > - `research-outputs/<feature-name>/`
 > - `docs/<feature-name>/`
-> - Custom path (must NOT be inside `kitty-specs/`)"
+> - Custom path (must NOT be inside `agileplus-specs/`)"
 
 **Default**: If user doesn't specify, use `docs/research/<feature-slug>/`
 
 **Validation Rules**:
-- Must NOT be inside `kitty-specs/` (reserved for planning artifacts)
+- Must NOT be inside `agileplus-specs/` (reserved for planning artifacts)
 - Must NOT be just `research/` at root (ambiguous)
 - Should include feature name/slug for clarity
 
@@ -89,17 +89,17 @@ During discovery, you MUST ask:
 
 **Planning happens in the planning repository - NO worktree created!**
 
-1. Creates `kitty-specs/###-feature/spec.md` directly in planning repo
-2. Creates `kitty-specs/###-feature/meta.json` with `deliverables_path`
+1. Creates `agileplus-specs/###-feature/spec.md` directly in planning repo
+2. Creates `agileplus-specs/###-feature/meta.json` with `deliverables_path`
 3. Automatically commits to target branch
 4. No worktree created during specify
 
-**Worktrees created later**: Use `spec-kitty implement WP##` to create a workspace for each work package.
+**Worktrees created later**: Use `agileplus implement WP##` to create a workspace for each work package.
 
 ## Location
 
 - Work in: **Planning repository** (not a worktree)
-- Creates: `kitty-specs/###-feature/spec.md`
+- Creates: `agileplus-specs/###-feature/spec.md`
 - Commits to: target branch (`meta.json` → `target_branch`)
 
 ## Outline
@@ -120,7 +120,7 @@ During discovery, you MUST ask:
 When discovery is complete, run:
 
 ```bash
-spec-kitty agent feature create-feature "<slug>" --json
+agileplus agent feature create-feature "<slug>" --json
 ```
 
 Parse the JSON output for `feature` and `feature_dir`.
@@ -156,7 +156,7 @@ Example with default path:
 
 ### 4. Load Research Spec Template
 
-The spec template is bundled with spec-kitty and will be used automatically. The research mission uses a specialized template optimized for research projects.
+The spec template is bundled with agileplus and will be used automatically. The research mission uses a specialized template optimized for research projects.
 
 ### 5. Generate Research Specification
 
@@ -184,7 +184,7 @@ Report:
 - Feature directory path
 - Spec file path
 - Deliverables path (from meta.json)
-- Readiness for `/spec-kitty.plan`
+- Readiness for `/agileplus.plan`
 
 ## Research-Specific Guidelines
 

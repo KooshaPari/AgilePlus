@@ -48,8 +48,8 @@ pub fn build_pr_description(wp: &WorkPackage, feature: &Feature, spec_content: &
 
 ### Context
 This PR implements work package WP{wp_id:02} of feature `{slug}`.
-Full specification: `kitty-specs/{slug}/spec.md`
-Implementation plan: `kitty-specs/{slug}/plan.md`
+Full specification: `agileplus-specs/{slug}/spec.md`
+Implementation plan: `agileplus-specs/{slug}/plan.md`
 
 ### Acceptance Criteria
 {checklist}

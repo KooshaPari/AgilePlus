@@ -9,7 +9,7 @@
 #   cp templates/git-hooks/pre-commit-encoding-check .git/hooks/pre-commit
 #   chmod +x .git/hooks/pre-commit
 #
-# Or to install during spec-kitty init, this template will be copied automatically.
+# Or to install during agileplus init, this template will be copied automatically.
 
 set -e
 
@@ -29,10 +29,10 @@ else
     exit 0
 fi
 
-# Check if spec-kitty CLI is available
-if ! command -v spec-kitty &> /dev/null; then
-    echo -e "${YELLOW}Warning: spec-kitty command not found. Skipping encoding validation.${NC}"
-    echo "Install spec-kitty CLI to enable automatic encoding validation."
+# Check if agileplus CLI is available
+if ! command -v agileplus &> /dev/null; then
+    echo -e "${YELLOW}Warning: agileplus command not found. Skipping encoding validation.${NC}"
+    echo "Install agileplus CLI to enable automatic encoding validation."
     exit 0
 fi
 
@@ -137,7 +137,7 @@ if [ "$HAS_ISSUES" = true ]; then
     echo -e "${RED}❌ Commit blocked: Encoding errors detected in markdown files${NC}"
     echo ""
     echo -e "${YELLOW}To fix these issues:${NC}"
-    echo "  1. Run: spec-kitty validate-encoding --all --fix"
+    echo "  1. Run: agileplus validate-encoding --all --fix"
     echo "  2. Review the changes"
     echo "  3. Re-stage the fixed files: git add <files>"
     echo "  4. Commit again"

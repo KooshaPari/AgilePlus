@@ -4,7 +4,7 @@ subtasks:
   - "Txxx"
 title: "Replace with work package title"
 phase: "Phase N - Replace with phase name"
-lane: "planned"  # DO NOT EDIT - use: spec-kitty agent tasks move-task <WPID> --to <lane>
+lane: "planned"  # DO NOT EDIT - use: agileplus agent tasks move-task <WPID> --to <lane>
 assignee: ""      # Optional friendly name when in doing/for_review
 agent: ""         # CLI agent identifier (claude, codex, etc.)
 shell_pid: ""     # PID captured when the task moved to the current lane
@@ -15,7 +15,7 @@ history:
     lane: "planned"
     agent: "system"
     shell_pid: ""
-    action: "Prompt generated via /spec-kitty.tasks"
+    action: "Prompt generated via /agileplus.tasks"
 ---
 
 # Work Package Prompt: {{work_package_id}} – {{title}}
@@ -33,7 +33,7 @@ history:
 
 ## Review Feedback
 
-> **Populated by `/spec-kitty.review`** – Reviewers add detailed feedback here when work needs changes. Implementation must address every item listed below before returning for re-review.
+> **Populated by `/agileplus.review`** – Reviewers add detailed feedback here when work needs changes. Implementation must address every item listed below before returning for re-review.
 
 *[This section is empty initially. Reviewers will populate it if the work is returned from review. If you see feedback here, treat each item as a must-do before completion.]*
 
@@ -53,7 +53,7 @@ Use language identifiers in code blocks: ````python`, ````bash`
 ## Context & Constraints
 
 - Reference prerequisite work and related documents.
-- Link to supporting specs: `.kittify/memory/constitution.md`, `kitty-specs/.../plan.md`, `kitty-specs/.../tasks.md`, data model, contracts, research, quickstart.
+- Link to supporting specs: `.kittify/memory/constitution.md`, `agileplus-specs/.../plan.md`, `agileplus-specs/.../tasks.md`, data model, contracts, research, quickstart.
 - Highlight architectural decisions, constraints, or trade-offs to honor.
 
 ## Subtasks & Detailed Guidance
@@ -81,7 +81,7 @@ Use language identifiers in code blocks: ````python`, ````bash`
 
 ## Review Guidance
 
-- Key acceptance checkpoints for `/spec-kitty.review`.
+- Key acceptance checkpoints for `/agileplus.review`.
 - Any context reviewers should revisit before approving.
 
 ## Activity Log
@@ -129,7 +129,7 @@ Use language identifiers in code blocks: ````python`, ````bash`
 To change a work package's lane, either:
 
 1. **Edit directly**: Change the `lane:` field in frontmatter AND append activity log entry (at the end)
-2. **Use CLI**: `spec-kitty agent tasks move-task <WPID> --to <lane> --note "message"` (recommended)
+2. **Use CLI**: `agileplus agent tasks move-task <WPID> --to <lane> --note "message"` (recommended)
 
 The CLI command updates both frontmatter and activity log automatically.
 

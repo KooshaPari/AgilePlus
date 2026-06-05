@@ -97,7 +97,7 @@ Generated:
 | `CLAUDE.md` | Governance instructions for AI code assistants |
 | `AGENTS.md` | Cross-agent coordination rules |
 | `.claudeignore` | Context optimization for assistants |
-| `kitty-specs/` | Directory for feature specifications |
+| `agileplus-specs/` | Directory for feature specifications |
 
 ### 3. Review Project Config
 
@@ -155,8 +155,8 @@ What's the scope?
 
 ```
 Generated specification:
-  kitty-specs/001-user-authentication/spec.md
-  kitty-specs/001-user-authentication/meta.json
+  agileplus-specs/001-user-authentication/spec.md
+  agileplus-specs/001-user-authentication/meta.json
 
 Spec markdown:
 - 5 user scenarios
@@ -167,7 +167,7 @@ Spec markdown:
 View your generated spec:
 
 ```bash
-cat kitty-specs/001-user-authentication/spec.md
+cat agileplus-specs/001-user-authentication/spec.md
 ```
 
 ### Step 2: Clarify Ambiguities
@@ -207,7 +207,7 @@ agileplus research 001
 This scans your codebase and produces:
 
 ```
-kitty-specs/001-user-authentication/research/
+agileplus-specs/001-user-authentication/research/
 ├── codebase-scan.md       # Existing auth code, models
 ├── feasibility.md         # Risks, dependencies, complexity estimate
 └── decisions.md           # Technical decisions
@@ -244,7 +244,7 @@ agileplus plan 001
 Output:
 
 ```
-kitty-specs/001-user-authentication/plan.md
+agileplus-specs/001-user-authentication/plan.md
 
 ## Architecture Decisions
 1. Use Argon2 for password hashing (industry standard)
@@ -278,7 +278,7 @@ agileplus tasks 001
 Output:
 
 ```
-kitty-specs/001-user-authentication/tasks/
+agileplus-specs/001-user-authentication/tasks/
 ├── WP01-database.md        # Database schema and migrations
 ├── WP02-models.md          # User model and types
 ├── WP03-signup.md          # Signup endpoint
@@ -289,7 +289,7 @@ kitty-specs/001-user-authentication/tasks/
 View work packages:
 
 ```bash
-cat kitty-specs/001-user-authentication/tasks/WP01-database.md
+cat agileplus-specs/001-user-authentication/tasks/WP01-database.md
 ```
 
 ### Step 6: Start Implementation
@@ -469,7 +469,7 @@ chmod +x ~/.cargo/bin/agileplus
 
 **Error: `No specs found`**
 
-Make sure you've run `agileplus specify` first. Specs are stored in `kitty-specs/`.
+Make sure you've run `agileplus specify` first. Specs are stored in `agileplus-specs/`.
 
 **Error: `Worktree creation failed`**
 

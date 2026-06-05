@@ -175,7 +175,7 @@ class TestDispatchCommandContract:
         mock_result = MagicMock(
             success=True,
             message="command 'specify' queued",
-            outputs={"spec_path": "kitty-specs/feat-x/spec.md"},
+            outputs={"spec_path": "agileplus-specs/feat-x/spec.md"},
         )
         response = MagicMock()
         response.result = mock_result

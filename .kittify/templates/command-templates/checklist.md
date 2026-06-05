@@ -1,10 +1,10 @@
 ---
 description: Generate a custom checklist for the current feature based on user requirements.
 scripts:
-  sh: spec-kitty agent check-prerequisites --json
-  ps: spec-kitty agent -Json
+  sh: agileplus agent check-prerequisites --json
+  ps: agileplus agent -Json
 ---
-**Path reference rule:** When you mention directories or files, provide either the absolute path or a path relative to the project root (for example, `kitty-specs/<feature>/tasks/`). Never refer to a folder by name alone.
+**Path reference rule:** When you mention directories or files, provide either the absolute path or a path relative to the project root (for example, `agileplus-specs/<feature>/tasks/`). Never refer to a folder by name alone.
 
 
 *Path: [templates/commands/checklist.md](templates/commands/checklist.md)*
@@ -68,7 +68,7 @@ This command creates checklists in your feature directory. You must be in the fe
 ## What You Have Available
 
 After running `{SCRIPT}`, you will have paths to:
-- **FEATURE_DIR**: Absolute path to your feature directory (kitty-specs/001-feature-name/)
+- **FEATURE_DIR**: Absolute path to your feature directory (agileplus-specs/001-feature-name/)
 - **AVAILABLE_DOCS**: List of available documents (spec.md, plan.md, tasks.md, etc.)
 
 Your checklist will be created at:
@@ -81,7 +81,7 @@ Your checklist will be created at:
 **This command**: Creates custom quality checklists for your feature's requirements
 
 **When to use**:
-- Before or after `/spec-kitty.plan` to validate requirement quality
+- Before or after `/agileplus.plan` to validate requirement quality
 - Anytime during the workflow to validate specific quality dimensions
 - Multiple runs create different checklists (ux.md, api.md, security.md, etc.)
 
@@ -156,7 +156,7 @@ Your checklist will be created at:
      - Format: `[domain].md` 
      - If file exists, append to existing file
    - Number items sequentially starting from CHK001
-   - Each `/spec-kitty.checklist` run creates a NEW file (never overwrites existing checklists)
+   - Each `/agileplus.checklist` run creates a NEW file (never overwrites existing checklists)
 
    **CORE PRINCIPLE - Test the Requirements, Not the Implementation**:
    Every checklist item MUST evaluate the REQUIREMENTS THEMSELVES for:
@@ -274,7 +274,7 @@ Your checklist will be created at:
    - Actor/timing
    - Any explicit user-specified must-have items incorporated
 
-**Important**: Each `/spec-kitty.checklist` command invocation creates a checklist file using short, descriptive names unless file already exists. This allows:
+**Important**: Each `/agileplus.checklist` command invocation creates a checklist file using short, descriptive names unless file already exists. This allows:
 
 - Multiple checklists of different types (e.g., `ux.md`, `test.md`, `security.md`)
 - Simple, memorable filenames that indicate checklist purpose

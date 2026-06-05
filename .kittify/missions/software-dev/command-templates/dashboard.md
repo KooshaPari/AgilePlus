@@ -1,32 +1,32 @@
 ---
-description: Open the Spec Kitty dashboard in your browser.
+description: Open the AgilePlus dashboard in your browser.
 ---
 
 ## Dashboard Access
 
-This command launches the Spec Kitty dashboard in your browser using the spec-kitty CLI.
+This command launches the AgilePlus dashboard in your browser using the agileplus CLI.
 
 ## What to do
 
-Simply run the `spec-kitty dashboard` command to:
+Simply run the `agileplus dashboard` command to:
 - Start the dashboard if it's not already running
 - Open it in your default web browser
 - Display the dashboard URL
 
-If you need to stop the dashboard, you can use `spec-kitty dashboard --kill`.
+If you need to stop the dashboard, you can use `agileplus dashboard --kill`.
 
 ## Implementation
 
 Execute the following terminal command:
 
 ```bash
-spec-kitty dashboard
+agileplus dashboard
 ```
 
 ## Additional Options
 
-- To specify a preferred port: `spec-kitty dashboard --port 8080`
-- To stop the dashboard: `spec-kitty dashboard --kill`
+- To specify a preferred port: `agileplus dashboard --port 8080`
+- To stop the dashboard: `agileplus dashboard --kill`
 
 ## Success Criteria
 

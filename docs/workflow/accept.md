@@ -150,7 +150,7 @@ All success criteria must be:
 - [ ] Assumptions validated
 
 Check spec:
-  cat kitty-specs/001-email-notifications/spec.md | grep NEEDS
+  cat agileplus-specs/001-email-notifications/spec.md | grep NEEDS
   # Should return: (no results)
 ```
 
@@ -201,7 +201,7 @@ All should show `done`. If any are `planned`, `doing`, or `for_review`, they're 
 ```bash
 # View spec requirements
 grep -A 50 "## Functional Requirements" \
-  kitty-specs/001-feature/spec.md
+  agileplus-specs/001-feature/spec.md
 
 # View test coverage
 grep "fn test_" tests/email_integration_tests.rs

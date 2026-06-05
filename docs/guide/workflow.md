@@ -95,7 +95,7 @@ The tool asks targeted questions to capture:
 **Output:**
 
 ```
-kitty-specs/001-two-factor-auth/
+agileplus-specs/001-two-factor-auth/
 ├── spec.md              # Full specification
 └── meta.json            # Feature metadata
 ```
@@ -176,7 +176,7 @@ agileplus research 001
 **Output:**
 
 ```
-kitty-specs/001-two-factor-auth/research/
+agileplus-specs/001-two-factor-auth/research/
 ├── codebase-scan.md         # Existing patterns
 ├── feasibility.md           # Can we build this?
 └── decisions.md             # Technical decisions
@@ -222,7 +222,7 @@ agileplus plan 001
 **Output:**
 
 ```
-kitty-specs/001-two-factor-auth/plan.md
+agileplus-specs/001-two-factor-auth/plan.md
 ```
 
 **plan.md structure:**
@@ -271,7 +271,7 @@ agileplus tasks 001
 **Output:**
 
 ```
-kitty-specs/001-two-factor-auth/tasks/
+agileplus-specs/001-two-factor-auth/tasks/
 ├── WP01-database.md         # Database schema
 ├── WP02-models.md           # Data models and logic
 ├── WP03-login.md            # Login flow changes

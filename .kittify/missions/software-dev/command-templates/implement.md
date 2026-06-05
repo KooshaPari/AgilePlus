@@ -4,7 +4,7 @@ description: Create an isolated workspace (worktree) for implementing a specific
 
 ## ⚠️ CRITICAL: Working Directory Requirement
 
-**After running `spec-kitty implement WP##`, you MUST:**
+**After running `agileplus implement WP##`, you MUST:**
 
 1. **Run the cd command shown in the output** - e.g., `cd .worktrees/###-feature-WP##/`
 2. **ALL file operations happen in this directory** - Read, Write, Edit tools must target files in the workspace
@@ -24,7 +24,7 @@ description: Create an isolated workspace (worktree) for implementing a specific
 Run this command to get the work package prompt and implementation instructions:
 
 ```bash
-spec-kitty agent workflow implement $ARGUMENTS --agent <your-name>
+agileplus agent workflow implement $ARGUMENTS --agent <your-name>
 ```
 
 **CRITICAL**: You MUST provide `--agent <your-name>` to track who is implementing!
@@ -45,7 +45,7 @@ git commit -m "feat(WP##): <describe your implementation>"
 
 **Then move to review:**
 ```bash
-spec-kitty agent tasks move-task WP## --to for_review --note "Ready for review: <summary>"
+agileplus agent tasks move-task WP## --to for_review --note "Ready for review: <summary>"
 ```
 
 **Why this matters:**
@@ -57,4 +57,4 @@ spec-kitty agent tasks move-task WP## --to for_review --note "Ready for review: 
 
 **The Python script handles all file updates automatically - no manual editing required!**
 
-**NOTE**: If `/spec-kitty.status` shows your WP in "doing" after you moved it to "for_review", don't panic - a reviewer may have moved it back (changes requested), or there's a sync delay. Focus on your WP.
+**NOTE**: If `/agileplus.status` shows your WP in "doing" after you moved it to "for_review", don't panic - a reviewer may have moved it back (changes requested), or there's a sync delay. Focus on your WP.

@@ -2,7 +2,7 @@
 description: Produce a documentation mission plan with audit/design guidance and generator setup.
 ---
 
-# Command Template: /spec-kitty.plan (Documentation Mission)
+# Command Template: /agileplus.plan (Documentation Mission)
 
 **Phases**: Audit (if gap-filling), Design
 **Purpose**: Plan documentation structure, configure generators, prioritize gaps, design content outline.
@@ -23,7 +23,7 @@ Verify you are in the main repository (not a worktree). Planning happens in main
 git branch --show-current  # Should show "main"
 ```
 
-**Note**: Planning in main is standard for all spec-kitty missions. Implementation happens in per-WP worktrees.
+**Note**: Planning in main is standard for all agileplus missions. Implementation happens in per-WP worktrees.
 
 ---
 
@@ -57,7 +57,7 @@ For documentation missions, planning interrogation is lighter than software-dev:
 
 ## Outline
 
-1. **Setup**: Run `spec-kitty agent feature setup-plan --json` to initialize plan.md
+1. **Setup**: Run `agileplus agent feature setup-plan --json` to initialize plan.md
 
 2. **Load context**: Read spec.md, meta.json (especially `documentation_state`)
 
@@ -219,7 +219,7 @@ For documentation missions, planning interrogation is lighter than software-dev:
 
    ### Work Breakdown
 
-   Outline high-level work packages (detailed in `/spec-kitty.tasks`):
+   Outline high-level work packages (detailed in `/agileplus.tasks`):
 
    **For Initial Mode**:
    1. WP01: Structure Setup - Create docs/ dirs, configure generators
@@ -254,7 +254,7 @@ For documentation missions, planning interrogation is lighter than software-dev:
 5. **Report completion**:
    - Plan file path
    - Artifacts generated (research.md, data-model.md, gap-analysis.md, quickstart.md, release.md when publish is in scope)
-   - Next command: `/spec-kitty.tasks`
+   - Next command: `/agileplus.tasks`
 
 ---
 
@@ -272,4 +272,4 @@ For documentation missions, planning interrogation is lighter than software-dev:
 - Planning designs documentation structure, doesn't write content yet
 - Generator configs enable automated API reference
 - Gap analysis (if iterating) shows what needs attention
-- Work breakdown will be detailed in `/spec-kitty.tasks`
+- Work breakdown will be detailed in `/agileplus.tasks`

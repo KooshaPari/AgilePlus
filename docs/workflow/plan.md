@@ -33,7 +33,7 @@ Analyzing spec and research...
 ✓ Building dependency graph
 
 Generated:
-  kitty-specs/001-email-notifications/plan.md
+  agileplus-specs/001-email-notifications/plan.md
 
 Ready to generate work packages:
   agileplus tasks 001

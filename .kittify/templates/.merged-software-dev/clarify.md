@@ -14,14 +14,14 @@ You **MUST** consider the user input before proceeding (if not empty).
 
 Goal: Detect and reduce ambiguity or missing decision points in the active feature specification and record the clarifications directly in the spec file.
 
-Note: This clarification workflow is expected to run (and be completed) BEFORE invoking `/spec-kitty.plan`. If the user explicitly states they are skipping clarification (e.g., exploratory spike), you may proceed, but must warn that downstream rework risk increases.
+Note: This clarification workflow is expected to run (and be completed) BEFORE invoking `/agileplus.plan`. If the user explicitly states they are skipping clarification (e.g., exploratory spike), you may proceed, but must warn that downstream rework risk increases.
 
 Execution steps:
 
-1. Run `spec-kitty agent feature check-prerequisites --json --paths-only` from the repository root and parse JSON for:
-   - `FEATURE_DIR` - Absolute path to feature directory (e.g., `/path/to/kitty-specs/017-my-feature/`)
+1. Run `agileplus agent feature check-prerequisites --json --paths-only` from the repository root and parse JSON for:
+   - `FEATURE_DIR` - Absolute path to feature directory (e.g., `/path/to/agileplus-specs/017-my-feature/`)
    - `FEATURE_SPEC` - Absolute path to spec.md file
-   - If command fails or JSON parsing fails, abort and instruct user to run `/spec-kitty.specify` first or verify they are in a spec-kitty-initialized repository.
+   - If command fails or JSON parsing fails, abort and instruct user to run `/agileplus.specify` first or verify they are in a agileplus-initialized repository.
 
 2. Load the current spec file. Perform a structured ambiguity & coverage scan using this taxonomy. For each category, mark status: Clear / Partial / Missing. Produce an internal coverage map used for prioritization (do not output raw map unless no questions will be asked).
 
@@ -141,12 +141,12 @@ Execution steps:
    - Path to updated spec.
    - Sections touched (list names).
    - Coverage summary listing each taxonomy category with a status label (Resolved / Deferred / Clear / Outstanding). Present as plain text or bullet list, not a table.
-   - If any Outstanding or Deferred remain, recommend whether to proceed to `/spec-kitty.plan` or run `/spec-kitty.clarify` again later post-plan.
+   - If any Outstanding or Deferred remain, recommend whether to proceed to `/agileplus.plan` or run `/agileplus.clarify` again later post-plan.
    - Suggested next command.
 
 Behavior rules:
 - If no meaningful ambiguities found (or all potential questions would be low-impact), respond: "No critical ambiguities detected worth formal clarification." and suggest proceeding.
-- If spec file missing, instruct user to run `/spec-kitty.specify` first (do not create a new spec here).
+- If spec file missing, instruct user to run `/agileplus.specify` first (do not create a new spec here).
 - Never exceed 5 total asked questions (clarification retries for a single question do not count as new questions).
 - Avoid speculative tech stack questions unless the absence blocks functional clarity.
 - Respect user early termination signals ("stop", "done", "proceed").

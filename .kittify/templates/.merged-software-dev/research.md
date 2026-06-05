@@ -1,10 +1,10 @@
 ---
 description: Run the Phase 0 research workflow to scaffold research artifacts before task planning.
 scripts:
-  sh: spec-kitty research
-  ps: spec-kitty research
+  sh: agileplus research
+  ps: agileplus research
 ---
-**Path reference rule:** When you mention directories or files, provide either the absolute path or a path relative to the project root (for example, `kitty-specs/<feature>/tasks/`). Never refer to a folder by name alone.
+**Path reference rule:** When you mention directories or files, provide either the absolute path or a path relative to the project root (for example, `agileplus-specs/<feature>/tasks/`). Never refer to a folder by name alone.
 
 
 *Path: [templates/commands/research.md](templates/commands/research.md)*
@@ -46,13 +46,13 @@ When you run `{SCRIPT}`, the following files are generated in your feature direc
 - **research/evidence-log.csv** – Sources and findings audit trail
 - **research/source-register.csv** – Reference tracking for all sources
 
-**Location**: All files go in `kitty-specs/001-feature-name/`
+**Location**: All files go in `agileplus-specs/001-feature-name/`
 
 ---
 
 ## Workflow Context
 
-**Before this**: `/spec-kitty.plan` calls this as "Phase 0" research phase
+**Before this**: `/agileplus.plan` calls this as "Phase 0" research phase
 
 **This command**:
 - Scaffolds research artifacts
@@ -61,7 +61,7 @@ When you run `{SCRIPT}`, the following files are generated in your feature direc
 
 **After this**:
 - Fill in research.md, data-model.md, and CSV logs with actual findings
-- Continue with `/spec-kitty.plan` which uses your research to drive technical design
+- Continue with `/agileplus.plan` which uses your research to drive technical design
 
 ---
 
@@ -78,11 +78,11 @@ Create `research.md`, `data-model.md`, and supporting CSV stubs based on the act
    - `data-model.md` – document entities, attributes, and relationships discovered during research.
    - `research/evidence-log.csv` & `research/source-register.csv` – log all sources and findings so downstream reviewers can audit the trail.
 4. If your research generates additional templates (spreadsheets, notebooks, etc.), store them under `research/` and reference them inside `research.md`.
-5. Summarize open questions or risks at the bottom of `research.md`. These should feed directly into `/spec-kitty.tasks` and future implementation prompts.
+5. Summarize open questions or risks at the bottom of `research.md`. These should feed directly into `/agileplus.tasks` and future implementation prompts.
 
 ## Success Criteria
 
-- `kitty-specs/<feature>/research.md` explains every major decision with references to evidence.
-- `kitty-specs/<feature>/data-model.md` lists the entities and relationships needed for implementation.
+- `agileplus-specs/<feature>/research.md` explains every major decision with references to evidence.
+- `agileplus-specs/<feature>/data-model.md` lists the entities and relationships needed for implementation.
 - CSV logs exist (even if partially filled) so evidence gathering is traceable.
 - Outstanding questions from the research phase are tracked and ready for follow-up during planning or execution.

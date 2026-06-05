@@ -2,7 +2,7 @@
 description: Create or update the feature specification from a natural language feature description.
 ---
 
-# /spec-kitty.specify - Create Feature Specification
+# /agileplus.specify - Create Feature Specification
 
 **Version**: 0.11.0+
 
@@ -15,12 +15,12 @@ description: Create or update the feature specification from a natural language 
 cd /path/to/project/root  # Your planning repository
 
 # All planning artifacts are created in the planning repo and committed:
-# - kitty-specs/###-feature/spec.md → Created in planning repo
+# - agileplus-specs/###-feature/spec.md → Created in planning repo
 # - Committed to target branch (meta.json → target_branch)
 # - NO worktrees created
 ```
 
-**Worktrees are created later** during `/spec-kitty.implement`, not during planning.
+**Worktrees are created later** during `/agileplus.implement`, not during planning.
 
 ## User Input
 
@@ -97,16 +97,16 @@ Store the final mission selection in your notes and include it in the spec outpu
 
 **Planning happens in the planning repository - NO worktree created!**
 
-1. Creates `kitty-specs/###-feature/spec.md` directly in planning repo
+1. Creates `agileplus-specs/###-feature/spec.md` directly in planning repo
 2. Automatically commits to target branch
 3. No worktree created during specify
 
-**Worktrees created later**: Use `spec-kitty implement WP##` to create a workspace for each work package. Worktrees are created later during implement (e.g., `.worktrees/###-feature-WP##`).
+**Worktrees created later**: Use `agileplus implement WP##` to create a workspace for each work package. Worktrees are created later during implement (e.g., `.worktrees/###-feature-WP##`).
 
 ## Location
 
 - Work in: **Planning repository** (not a worktree)
-- Creates: `kitty-specs/###-feature/spec.md`
+- Creates: `agileplus-specs/###-feature/spec.md`
 - Commits to: target branch (`meta.json` → `target_branch`)
 
 ## Outline
@@ -117,7 +117,7 @@ Store the final mission selection in your notes and include it in the spec outpu
 - Read that title back during the Intent Summary and revise it if the user requests changes.
 - Use the confirmed title to derive the kebab-case feature slug for the create-feature command.
 
-The text the user typed after `/spec-kitty.specify` in the triggering message **is** the initial feature description. Capture it verbatim, but treat it only as a starting point for discovery—not the final truth. Your job is to interrogate the request, surface gaps, and co-create a complete specification with the user.
+The text the user typed after `/agileplus.specify` in the triggering message **is** the initial feature description. Capture it verbatim, but treat it only as a starting point for discovery—not the final truth. Your job is to interrogate the request, surface gaps, and co-create a complete specification with the user.
 
 Given that feature description, do this:
 
@@ -132,7 +132,7 @@ Given that feature description, do this:
 2. When discovery is complete and the intent summary, **title**, and **mission** are confirmed, run the feature creation command from repo root:
 
    ```bash
-   spec-kitty agent feature create-feature "<slug>" --json
+   agileplus agent feature create-feature "<slug>" --json
    ```
 
    Where `<slug>` is a kebab-case version of the friendly title (e.g., "Checkout Upsell Flow" → "checkout-upsell-flow").
@@ -147,7 +147,7 @@ Given that feature description, do this:
    **IMPORTANT**: You must only ever run this command once. The JSON is provided in the terminal output - always refer to it to get the actual paths you're looking for.
 3. **Stay in the main repository**: No worktree is created during specify.
 
-4. The spec template is bundled with spec-kitty at `src/specify_cli/missions/software-dev/templates/spec-template.md`. The template defines required sections for software development features.
+4. The spec template is bundled with agileplus at `src/specify_cli/missions/software-dev/templates/spec-template.md`. The template defines required sections for software development features.
 
 5. Create meta.json in the feature directory with:
    ```json
@@ -221,7 +221,7 @@ Given that feature description, do this:
       
       ## Notes
       
-      - Items marked incomplete require spec updates before `/spec-kitty.clarify` or `/spec-kitty.plan`
+      - Items marked incomplete require spec updates before `/agileplus.clarify` or `/agileplus.plan`
       ```
    
    b. **Run Validation Check**: Review the spec against each checklist item:
@@ -259,7 +259,7 @@ Given that feature description, do this:
    
    d. **Update Checklist**: After each validation iteration, update the checklist file with current pass/fail status
 
-9. Report completion with feature directory, spec file path, checklist results, and readiness for the next phase (`/spec-kitty.clarify` or `/spec-kitty.plan`).
+9. Report completion with feature directory, spec file path, checklist results, and readiness for the next phase (`/agileplus.clarify` or `/agileplus.plan`).
 
 **NOTE:** The script creates and checks out the new branch and initializes the spec file before writing.
 

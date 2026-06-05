@@ -2,7 +2,7 @@
 description: Review documentation work packages for Divio compliance and quality.
 ---
 
-# Command Template: /spec-kitty.review (Documentation Mission)
+# Command Template: /agileplus.review (Documentation Mission)
 
 **Phase**: Validate
 **Purpose**: Review documentation for Divio compliance, accessibility, completeness, and quality.

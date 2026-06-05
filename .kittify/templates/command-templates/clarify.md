@@ -1,10 +1,10 @@
 ---
 description: Identify underspecified areas in the current feature spec by asking up to 5 highly targeted clarification questions and encoding answers back into the spec.
 scripts:
-   sh: spec-kitty agent check-prerequisites --json --paths-only
-   ps: spec-kitty agent -Json -PathsOnly
+   sh: agileplus agent check-prerequisites --json --paths-only
+   ps: agileplus agent -Json -PathsOnly
 ---
-**Path reference rule:** When you mention directories or files, provide either the absolute path or a path relative to the project root (for example, `kitty-specs/<feature>/tasks/`). Never refer to a folder by name alone.
+**Path reference rule:** When you mention directories or files, provide either the absolute path or a path relative to the project root (for example, `agileplus-specs/<feature>/tasks/`). Never refer to a folder by name alone.
 
 
 *Path: [templates/commands/clarify.md](templates/commands/clarify.md)*
@@ -49,7 +49,7 @@ This command updates your feature's spec.md file. You must be in the feature wor
 ## What You Have Available
 
 After running `{SCRIPT}`, you will have paths to:
-- **FEATURE_DIR**: Absolute path to your feature directory (kitty-specs/001-feature-name/)
+- **FEATURE_DIR**: Absolute path to your feature directory (agileplus-specs/001-feature-name/)
 - **FEATURE_SPEC**: Absolute path to spec.md (the file you'll be clarifying)
 
 You may also have:
@@ -60,7 +60,7 @@ You may also have:
 
 ## Workflow Context
 
-**Before this**: `/spec-kitty.specify` created spec.md (your starting requirements)
+**Before this**: `/agileplus.specify` created spec.md (your starting requirements)
 
 **This command**:
 - Identifies ambiguities and gaps in your spec
@@ -70,8 +70,8 @@ You may also have:
 
 **After this**:
 - Review clarified spec
-- Run `/spec-kitty.plan` to create implementation plan
-- Or run `/spec-kitty.clarify` again if more questions arise post-planning
+- Run `/agileplus.plan` to create implementation plan
+- Or run `/agileplus.clarify` again if more questions arise post-planning
 
 This command is optional but recommended before planning to reduce rework.
 
@@ -81,7 +81,7 @@ This command is optional but recommended before planning to reduce rework.
 
 Goal: Detect and reduce ambiguity or missing decision points in the active feature specification and record the clarifications directly in the spec file.
 
-Note: This clarification workflow is expected to run (and be completed) BEFORE invoking `/spec-kitty.plan`. If the user explicitly states they are skipping clarification (e.g., exploratory spike), you may proceed, but must warn that downstream rework risk increases.
+Note: This clarification workflow is expected to run (and be completed) BEFORE invoking `/agileplus.plan`. If the user explicitly states they are skipping clarification (e.g., exploratory spike), you may proceed, but must warn that downstream rework risk increases.
 
 Execution steps:
 
@@ -89,7 +89,7 @@ Execution steps:
    - `FEATURE_DIR`
    - `FEATURE_SPEC`
    - (Optionally capture `IMPL_PLAN`, `TASKS` for future chained flows.)
-   - If JSON parsing fails, abort and instruct user to re-run `/spec-kitty.specify` or verify feature branch environment.
+   - If JSON parsing fails, abort and instruct user to re-run `/agileplus.specify` or verify feature branch environment.
 
 2. Load the current spec file. Perform a structured ambiguity & coverage scan using this taxonomy. For each category, mark status: Clear / Partial / Missing. Produce an internal coverage map used for prioritization (do not output raw map unless no questions will be asked).
 
@@ -209,12 +209,12 @@ Execution steps:
    - Path to updated spec.
    - Sections touched (list names).
    - Coverage summary listing each taxonomy category with a status label (Resolved / Deferred / Clear / Outstanding). Present as plain text or bullet list, not a table.
-   - If any Outstanding or Deferred remain, recommend whether to proceed to `/spec-kitty.plan` or run `/spec-kitty.clarify` again later post-plan.
+   - If any Outstanding or Deferred remain, recommend whether to proceed to `/agileplus.plan` or run `/agileplus.clarify` again later post-plan.
    - Suggested next command.
 
 Behavior rules:
 - If no meaningful ambiguities found (or all potential questions would be low-impact), respond: "No critical ambiguities detected worth formal clarification." and suggest proceeding.
-- If spec file missing, instruct user to run `/spec-kitty.specify` first (do not create a new spec here).
+- If spec file missing, instruct user to run `/agileplus.specify` first (do not create a new spec here).
 - Never exceed 5 total asked questions (clarification retries for a single question do not count as new questions).
 - Avoid speculative tech stack questions unless the absence blocks functional clarity.
 - Respect user early termination signals ("stop", "done", "proceed").

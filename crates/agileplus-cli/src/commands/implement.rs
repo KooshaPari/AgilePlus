@@ -246,7 +246,7 @@ where
 
         // Build prompt path
         let prompt_path = worktree_path.join(format!(
-            "kitty-specs/{}/tasks/WP{:02}-{}.md",
+            "agileplus-specs/{}/tasks/WP{:02}-{}.md",
             slug,
             wp.sequence,
             slugify(&wp.title)
@@ -254,9 +254,9 @@ where
 
         // Build context files
         let context_files = vec![
-            worktree_path.join(format!("kitty-specs/{slug}/spec.md")),
-            worktree_path.join(format!("kitty-specs/{slug}/plan.md")),
-            worktree_path.join(format!("kitty-specs/{slug}/research.md")),
+            worktree_path.join(format!("agileplus-specs/{slug}/spec.md")),
+            worktree_path.join(format!("agileplus-specs/{slug}/plan.md")),
+            worktree_path.join(format!("agileplus-specs/{slug}/research.md")),
         ];
 
         let task = AgentTask {

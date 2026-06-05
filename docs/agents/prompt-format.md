@@ -45,8 +45,8 @@ Agents receive a multi-section markdown prompt document via the `prompt_path` fi
   "wp_id": "WP01",
   "prompt_path": "/path/to/.worktrees/001-login-WP01/WP01.md",
   "context_paths": [
-    "/path/to/kitty-specs/001-user-login/spec.md",
-    "/path/to/kitty-specs/001-user-login/plan.md",
+    "/path/to/agileplus-specs/001-user-login/spec.md",
+    "/path/to/agileplus-specs/001-user-login/plan.md",
     "/path/to/ARCHITECTURE.md",
     "/path/to/GOVERNANCE.md"
   ],
@@ -440,14 +440,14 @@ cargo fmt --check                     # Formatting check
 - Test module `#[cfg(test)] mod tests { }` inline with code
 ```
 
-### spec-kitty Integration
+### agileplus Integration
 
-AgilePlus is integrated with `spec-kitty` — a specification formatting assistant. When the spec document has been through spec-kitty, it will contain additional structured annotations:
+AgilePlus is integrated with `agileplus` — a specification formatting assistant. When the spec document has been through agileplus, it will contain additional structured annotations:
 
 ```markdown
-<!-- spec-kitty: validated -->
-<!-- spec-kitty: fr-count: 5 -->
-<!-- spec-kitty: fr-coverage: 100% -->
+<!-- agileplus: validated -->
+<!-- agileplus: fr-count: 5 -->
+<!-- agileplus: fr-coverage: 100% -->
 
 # Feature: User Authentication
 

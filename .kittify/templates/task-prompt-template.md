@@ -4,7 +4,7 @@ subtasks:
   - "Txxx"
 title: "Replace with work package title"
 phase: "Phase N - Replace with phase name"
-lane: "planned"  # Edit directly or use: spec-kitty agent tasks move-task <WPID> --to <lane>
+lane: "planned"  # Edit directly or use: agileplus agent tasks move-task <WPID> --to <lane>
 assignee: ""      # Optional friendly name when in doing/for_review
 agent: ""         # CLI agent identifier (claude, codex, etc.)
 shell_pid: ""     # PID captured when the task moved to the current lane
@@ -15,7 +15,7 @@ history:
     lane: "planned"
     agent: "system"
     shell_pid: ""
-    action: "Prompt generated via /spec-kitty.tasks"
+    action: "Prompt generated via /agileplus.tasks"
 ---
 *Path: [templates/task-prompt-template.md](templates/task-prompt-template.md)*
 
@@ -35,7 +35,7 @@ history:
 
 ## Review Feedback
 
-> **Populated by `/spec-kitty.review`** – Reviewers add detailed feedback here when work needs changes. Implementation must address every item listed below before returning for re-review.
+> **Populated by `/agileplus.review`** – Reviewers add detailed feedback here when work needs changes. Implementation must address every item listed below before returning for re-review.
 
 *[This section is empty initially. Reviewers will populate it if the work is returned from review. If you see feedback here, treat each item as a must-do before completion.]*
 
@@ -64,7 +64,7 @@ When you make changes:
 2. They'll need to rebase their workspaces to get your changes
 3. This is a git limitation - future jj integration will auto-rebase
 
-The `spec-kitty implement` command will display warnings when:
+The `agileplus implement` command will display warnings when:
 - You resume work and the base has changed
 - You start work and other WPs depend on you
 
@@ -78,7 +78,7 @@ The `spec-kitty implement` command will display warnings when:
 ## Context & Constraints
 
 - Reference prerequisite work and related documents.
-- Link to supporting specs: `.kittify/memory/constitution.md`, `kitty-specs/.../plan.md`, `kitty-specs/.../tasks.md`, data model, contracts, research, quickstart.
+- Link to supporting specs: `.kittify/memory/constitution.md`, `agileplus-specs/.../plan.md`, `agileplus-specs/.../tasks.md`, data model, contracts, research, quickstart.
 - Highlight architectural decisions, constraints, or trade-offs to honor.
 
 ## Subtasks & Detailed Guidance
@@ -106,7 +106,7 @@ The `spec-kitty implement` command will display warnings when:
 
 ## Review Guidance
 
-- Key acceptance checkpoints for `/spec-kitty.review`.
+- Key acceptance checkpoints for `/agileplus.review`.
 - Any context reviewers should revisit before approving.
 
 ## Activity Log
@@ -154,7 +154,7 @@ The `spec-kitty implement` command will display warnings when:
 To change a work package's lane, either:
 
 1. **Edit directly**: Change the `lane:` field in frontmatter AND append activity log entry
-2. **Use CLI**: `spec-kitty agent tasks move-task <WPID> --to <lane> --note "message"`
+2. **Use CLI**: `agileplus agent tasks move-task <WPID> --to <lane> --note "message"`
 
 The CLI command updates both frontmatter and activity log automatically (recommended).
 

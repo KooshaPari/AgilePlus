@@ -5,7 +5,11 @@ use agileplus_domain::domain::state_machine::FeatureState;
 #[test]
 fn seed_creates_all_features() {
     let (features, _work_packages) = seed_dogfood_features();
-    assert_eq!(features.len(), 37, "Should create 4 AgilePlus + 33 SpecKitty features");
+    assert_eq!(
+        features.len(),
+        37,
+        "Should create 4 AgilePlus + 33 AgilePlus features"
+    );
 }
 
 #[test]
@@ -15,7 +19,7 @@ fn seed_assigns_correct_ids() {
     assert_eq!(features[1].id, 2);
     assert_eq!(features[2].id, 3);
     assert_eq!(features[3].id, 4);
-    // SpecKitty features start at ID 5
+    // AgilePlus features start at ID 5
     assert_eq!(features[4].id, 5);
     assert_eq!(features[features.len() - 1].id, 37);
 }
@@ -28,18 +32,31 @@ fn seed_assigns_correct_states() {
     assert_eq!(features[1].state, FeatureState::Shipped);
     assert_eq!(features[2].state, FeatureState::Shipped);
     assert_eq!(features[3].state, FeatureState::Implementing);
-    // All SpecKitty features: Shipped
+    // All AgilePlus features: Shipped
     for f in &features[4..] {
-        assert_eq!(f.state, FeatureState::Shipped, "SpecKitty feature {} should be Shipped", f.slug);
+        assert_eq!(
+            f.state,
+            FeatureState::Shipped,
+            "AgilePlus feature {} should be Shipped",
+            f.slug
+        );
     }
 }
 
 #[test]
 fn seed_creates_work_packages_for_all_features() {
     let (features, work_packages) = seed_dogfood_features();
-    assert_eq!(work_packages.len(), features.len(), "Should have work packages for all features");
+    assert_eq!(
+        work_packages.len(),
+        features.len(),
+        "Should have work packages for all features"
+    );
     for f in &features {
-        assert!(work_packages.contains_key(&f.id), "Missing WPs for feature {}", f.id);
+        assert!(
+            work_packages.contains_key(&f.id),
+            "Missing WPs for feature {}",
+            f.id
+        );
     }
 }
 
@@ -56,15 +73,23 @@ fn seed_creates_correct_agileplus_work_package_counts() {
 fn seed_feature_has_labels() {
     let (features, _work_packages) = seed_dogfood_features();
     for f in &features {
-        assert!(!f.labels.is_empty(), "Feature {} should have labels", f.slug);
+        assert!(
+            !f.labels.is_empty(),
+            "Feature {} should have labels",
+            f.slug
+        );
     }
 }
 
 #[test]
-fn seed_speckitty_features_tagged() {
+fn seed_agileplus_features_tagged() {
     let (features, _work_packages) = seed_dogfood_features();
     for f in &features[4..] {
-        assert!(f.labels.contains(&"specKitty".to_string()), "SpecKitty feature {} missing specKitty label", f.slug);
+        assert!(
+            f.labels.contains(&"agileplus".to_string()),
+            "AgilePlus feature {} missing agileplus label",
+            f.slug
+        );
     }
 }
 

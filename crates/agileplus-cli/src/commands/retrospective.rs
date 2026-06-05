@@ -21,7 +21,7 @@ pub struct RetrospectiveArgs {
     #[arg(long)]
     pub feature: String,
 
-    /// Output file path (default: kitty-specs/<feature>/retrospective.md).
+    /// Output file path (default: agileplus-specs/<feature>/retrospective.md).
     #[arg(long)]
     pub output: Option<PathBuf>,
 
@@ -396,7 +396,7 @@ where
     let output_path = args
         .output
         .clone()
-        .unwrap_or_else(|| PathBuf::from(format!("kitty-specs/{slug}/retrospective.md")));
+        .unwrap_or_else(|| PathBuf::from(format!("agileplus-specs/{slug}/retrospective.md")));
 
     // Write to file if we have a path that's not the VCS path
     if args.output.is_some() {
@@ -445,7 +445,7 @@ where
     println!("Retrospective for '{}' completed.", slug);
     println!("  WPs analyzed: {}", wps.len());
     println!("  Audit entries: {}", audit_trail.len());
-    println!("  Report: kitty-specs/{slug}/retrospective.md");
+    println!("  Report: agileplus-specs/{slug}/retrospective.md");
     println!("  State: Shipped -> Retrospected");
 
     Ok(())

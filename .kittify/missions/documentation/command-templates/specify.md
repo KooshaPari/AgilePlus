@@ -2,7 +2,7 @@
 description: Create a documentation-focused feature specification with discovery and Divio scoping.
 ---
 
-# Command Template: /spec-kitty.specify (Documentation Mission)
+# Command Template: /agileplus.specify (Documentation Mission)
 
 **Phase**: Discover
 **Purpose**: Understand documentation needs, identify iteration mode, select Divio types, detect languages, recommend generators.
@@ -145,7 +145,7 @@ Confirm with user before proceeding.
 
 1. **Check discovery status**: If questions unanswered, ask one at a time (Discovery Gate above)
 
-2. **Generate feature directory**: Run `spec-kitty agent feature create-feature "doc-{project-name}" --json --mission documentation`
+2. **Generate feature directory**: Run `agileplus agent feature create-feature "doc-{project-name}" --json --mission documentation`
    - Feature naming convention: `doc-{project-name}` or `docs-{feature-name}` for feature-specific
 
 3. **Create meta.json**: Include `mission: "documentation"` and `documentation_state` field:
@@ -185,7 +185,7 @@ Confirm with user before proceeding.
 
 6. **Validate specification**: Run quality checks (see spec-template.md checklist)
 
-7. **Report completion**: Spec file path, next command (`/spec-kitty.plan`)
+7. **Report completion**: Spec file path, next command (`/agileplus.plan`)
 
 ---
 

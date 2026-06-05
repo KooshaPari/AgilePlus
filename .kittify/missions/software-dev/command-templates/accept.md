@@ -2,7 +2,7 @@
 description: Validate feature readiness and guide final acceptance steps.
 ---
 
-# /spec-kitty.accept - Validate Feature Readiness
+# /agileplus.accept - Validate Feature Readiness
 
 **Version**: 0.11.0+
 **Purpose**: Validate all work packages are complete and feature is ready to merge.
@@ -16,7 +16,7 @@ description: Validate feature readiness and guide final acceptance steps.
 cd $(git rev-parse --show-toplevel)
 
 # Then run accept:
-spec-kitty accept
+agileplus accept
 ```
 
 ## User Input

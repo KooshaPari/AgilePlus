@@ -36,7 +36,7 @@ pub struct EventsArgs {
     #[arg(long = "type", name = "type")]
     pub event_type: Option<String>,
 
-    /// Filter by actor name (e.g. `spec-kitty`, `sync-oracle`).
+    /// Filter by actor name (e.g. `agileplus`, `sync-oracle`).
     #[arg(long)]
     pub actor: Option<String>,
 
@@ -244,7 +244,7 @@ fn load_events_stub() -> Vec<EventRecord> {
             event_type: "feature_created".to_string(),
             entity_type: "feature".to_string(),
             entity_id: 5,
-            actor: "spec-kitty".to_string(),
+            actor: "agileplus".to_string(),
             summary: "Auth Flow created".to_string(),
             payload: serde_json::json!({"title": "Auth Flow", "state": "created"}),
         },
@@ -357,10 +357,10 @@ mod tests {
     #[test]
     fn test_filter_by_actor() {
         let events = load_events_stub();
-        let args = make_args(None, None, Some("spec-kitty"));
+        let args = make_args(None, None, Some("agileplus"));
         let result = filter_events(&events, &args);
         assert_eq!(result.len(), 1);
-        assert_eq!(result[0].actor, "spec-kitty");
+        assert_eq!(result[0].actor, "agileplus");
     }
 
     #[test]
@@ -392,7 +392,7 @@ mod tests {
         let events = load_events_stub();
         let out = render_table(&events[..1]);
         assert!(out.contains("feature_created"));
-        assert!(out.contains("spec-kitty"));
+        assert!(out.contains("agileplus"));
     }
 
     #[test]

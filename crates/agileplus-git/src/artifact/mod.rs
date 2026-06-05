@@ -1,6 +1,6 @@
 //! Git artifact read/write operations for AgilePlus.
 //!
-//! Artifacts live under kitty-specs/<feature-slug>/<relative-path>.
+//! Artifacts live under agileplus-specs/<feature-slug>/<relative-path>.
 //! write_artifact stages the file but does NOT commit.
 //!
 //! Traceability: WP07-T041, WP07-T042
@@ -17,7 +17,7 @@ fn artifact_full_path(
     feature_slug: &str,
     relative_path: &str,
 ) -> Result<PathBuf, DomainError> {
-    let base = repo_root.join("kitty-specs").join(feature_slug);
+    let base = repo_root.join("agileplus-specs").join(feature_slug);
     let full = base.join(relative_path);
 
     // Normalize away any `..` components by iterating path components.
@@ -49,7 +49,7 @@ pub(crate) fn read_artifact(
     let path = artifact_full_path(adapter.repo_path(), feature_slug, relative_path)?;
     if !path.exists() {
         return Err(DomainError::NotFound(format!(
-            "artifact not found: kitty-specs/{feature_slug}/{relative_path}"
+            "artifact not found: agileplus-specs/{feature_slug}/{relative_path}"
         )));
     }
     std::fs::read_to_string(&path).map_err(|e| DomainError::Vcs(format!("read artifact: {e}")))
@@ -102,7 +102,10 @@ pub(crate) fn scan_feature_artifacts(
     adapter: &GitVcsAdapter,
     feature_slug: &str,
 ) -> Result<FeatureArtifacts, DomainError> {
-    let base = adapter.repo_path().join("kitty-specs").join(feature_slug);
+    let base = adapter
+        .repo_path()
+        .join("agileplus-specs")
+        .join(feature_slug);
 
     let meta_json = {
         let p = base.join("meta.json");

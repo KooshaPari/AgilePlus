@@ -231,7 +231,7 @@ Agent Effectiveness
 Retrospective notes are stored in the feature directory:
 
 ```
-kitty-specs/001-checkout-upsell/
+agileplus-specs/001-checkout-upsell/
 ├── spec.md
 ├── plan.md
 ├── tasks.md

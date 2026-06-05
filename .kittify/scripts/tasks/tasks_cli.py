@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""CLI utilities for managing Spec Kitty work-package prompts and acceptance."""
+"""CLI utilities for managing AgilePlus work-package prompts and acceptance."""
 
 from __future__ import annotations
 
@@ -97,7 +97,7 @@ def _collect_summary_with_encoding(
             raise
         cleaned = normalize_feature_encoding(repo_root, feature)
         if cleaned:
-            print("[spec-kitty] Normalized artifact encoding for:", file=sys.stderr)
+            print("[agileplus] Normalized artifact encoding for:", file=sys.stderr)
             for path in cleaned:
                 try:
                     rel = path.relative_to(repo_root)
@@ -106,7 +106,7 @@ def _collect_summary_with_encoding(
                 print(f"  - {rel}", file=sys.stderr)
         else:
             print(
-                "[spec-kitty] normalize-encoding enabled but no files required updates.",
+                "[agileplus] normalize-encoding enabled but no files required updates.",
                 file=sys.stderr,
             )
         return collect_feature_summary(
@@ -137,14 +137,14 @@ _legacy_warning_shown = False
 def _check_legacy_format(feature: str, repo_root: Path) -> bool:
     """Check for legacy format and warn once. Returns True if legacy format detected."""
     global _legacy_warning_shown
-    feature_path = repo_root / "kitty-specs" / feature
+    feature_path = repo_root / "agileplus-specs" / feature
     if is_legacy_format(feature_path):
         if not _legacy_warning_shown:
             print("\n" + "=" * 60, file=sys.stderr)
             print("Legacy directory-based lanes detected.", file=sys.stderr)
             print("", file=sys.stderr)
             print("Your project uses the old lane structure (tasks/planned/, tasks/doing/, etc.).", file=sys.stderr)
-            print("Run `spec-kitty upgrade` to migrate to frontmatter-only lanes.", file=sys.stderr)
+            print("Run `agileplus upgrade` to migrate to frontmatter-only lanes.", file=sys.stderr)
             print("", file=sys.stderr)
             print("Benefits of upgrading:", file=sys.stderr)
             print("  - No file conflicts during lane changes", file=sys.stderr)
@@ -171,7 +171,7 @@ def update_command(args: argparse.Namespace) -> None:
     # Check for legacy format and error out
     if _check_legacy_format(feature, repo_root):
         print("Error: Cannot use 'update' command on legacy format.", file=sys.stderr)
-        print("Run 'spec-kitty upgrade' first, then retry.", file=sys.stderr)
+        print("Run 'agileplus upgrade' first, then retry.", file=sys.stderr)
         sys.exit(1)
 
     wp = locate_work_package(repo_root, feature, args.work_package)
@@ -244,7 +244,7 @@ def history_command(args: argparse.Namespace) -> None:
 
 def list_command(args: argparse.Namespace) -> None:
     repo_root = find_repo_root()
-    feature_path = repo_root / "kitty-specs" / args.feature
+    feature_path = repo_root / "agileplus-specs" / args.feature
     feature_dir = feature_path / "tasks"
     if not feature_dir.exists():
         raise TaskCliError(f"Feature '{args.feature}' has no tasks directory at {feature_dir}.")
@@ -529,7 +529,7 @@ def _prepare_merge_metadata(
     strategy: str,
     pushed: bool,
 ) -> Optional[Path]:
-    feature_dir = repo_root / "kitty-specs" / feature
+    feature_dir = repo_root / "agileplus-specs" / feature
     feature_dir.mkdir(parents=True, exist_ok=True)
     meta_path = feature_dir / "meta.json"
 
@@ -717,7 +717,7 @@ def merge_command(args: argparse.Namespace) -> None:
         if push_result.returncode != 0:
             raise TaskCliError(f"Merge succeeded but push failed. Run `git push origin {args.target}` manually.")
     elif args.push and not has_remote:
-        print("[spec-kitty] Skipping push: no remote configured.", file=sys.stderr)
+        print("[agileplus] Skipping push: no remote configured.", file=sys.stderr)
 
     if in_worktree and args.remove_worktree:
         if worktree_root.exists():
@@ -730,7 +730,7 @@ def merge_command(args: argparse.Namespace) -> None:
 
     print(f"Merge complete: {feature} -> {args.target}")
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Spec Kitty task utilities")
+    parser = argparse.ArgumentParser(description="AgilePlus task utilities")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     update = subparsers.add_parser("update", help="Update a work package's lane in frontmatter")
