@@ -1,0 +1,9 @@
+{
+  "spec_id": "eco-020",
+  "slug": "eco-020-tpm-manager-mode",
+  "title": "TPM Manager Mode",
+  "status": "active",
+  "created_at": "2026-06-05T00:00:00Z",
+  "type": "operational",
+  "superseded_by": null
+}

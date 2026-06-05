@@ -1,0 +1,9 @@
+{
+  "spec_id": "eco-008",
+  "slug": "eco-008-build-remediation",
+  "title": "Build Remediation",
+  "status": "active",
+  "created_at": "2026-06-05T00:00:00Z",
+  "type": "operational",
+  "superseded_by": null
+}

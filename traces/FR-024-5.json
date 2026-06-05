@@ -1,0 +1,12 @@
+{
+  "schema_version": "1",
+  "fr_id": "FR-024-5",
+  "spec_slug": "eco-024-traceability",
+  "spec_anchor": "#fr-5",
+  "docs_pages": ["AgilePlus/traces/MATRIX.md"],
+  "tests": ["tooling/trace-validator/tests/matrix.rs::test_matrix_renders_all_frs"],
+  "code_modules": ["tooling/trace-validator/src/matrix.rs"],
+  "journeys": ["docs/operations/journeys/FR-024-5.md"],
+  "status": "proposed",
+  "last_validated": "2026-06-05T00:00:00Z"
+}

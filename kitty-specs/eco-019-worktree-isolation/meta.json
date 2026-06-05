@@ -1,0 +1,9 @@
+{
+  "spec_id": "eco-019",
+  "slug": "eco-019-worktree-isolation",
+  "title": "Worktree Isolation",
+  "status": "active",
+  "created_at": "2026-06-05T00:00:00Z",
+  "type": "operational",
+  "superseded_by": null
+}

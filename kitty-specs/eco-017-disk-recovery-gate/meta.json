@@ -1,0 +1,9 @@
+{
+  "spec_id": "eco-017",
+  "slug": "eco-017-disk-recovery-gate",
+  "title": "Disk Recovery Gate",
+  "status": "active",
+  "created_at": "2026-06-05T00:00:00Z",
+  "type": "operational",
+  "superseded_by": null
+}
