@@ -14,4 +14,4 @@ permissions:
 
 jobs:
   gate:
-    uses: KooshaPari/phenoShared/.github/workflows/self-merge-gate.yml@main
+    uses: KooshaPari/phenoShared/.github/workflows/self-merge-gate.yml@438e2e71e448c9f1f47f184d3ca4acbb28928677  # main

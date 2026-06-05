@@ -14,6 +14,6 @@ on:
 
 jobs:
   tag:
-    uses: KooshaPari/phenoShared/.github/workflows/tag-automation.yml@main
+    uses: KooshaPari/phenoShared/.github/workflows/tag-automation.yml@438e2e71e448c9f1f47f184d3ca4acbb28928677  # main
     permissions:
       contents: write

@@ -16,6 +16,10 @@ on:
   schedule:
     - cron: '0 3 * * *'  # Weekly test run
 
+permissions:
+  contents: read
+  actions: read
+
 jobs:
   bdd-tests:
     name: BDD Feature Tests
