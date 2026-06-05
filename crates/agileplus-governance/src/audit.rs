@@ -559,10 +559,8 @@ impl AuditLogger {
             Ok((row.get::<_, String>(0)?, row.get::<_, u64>(1)?))
         })?;
 
-        for row in rows {
-            if let Ok((level, count)) = row {
-                stats.by_level.insert(level, count);
-            }
+        for (level, count) in rows.flatten() {
+            stats.by_level.insert(level, count);
         }
 
         // Get top actions
@@ -576,10 +574,8 @@ impl AuditLogger {
             })
         })?;
 
-        for row in rows {
-            if let Ok(action) = row {
-                stats.top_actions.push(action);
-            }
+        for action in rows.flatten() {
+            stats.top_actions.push(action);
         }
 
         Ok(stats)

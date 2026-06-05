@@ -13,7 +13,7 @@ pub struct AuditEventId(pub String);
 pub struct PolicyCheckId(pub String);
 
 /// Connection status to remote governance
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum ConnectionStatus {
     /// Connected to remote governance
@@ -23,13 +23,8 @@ pub enum ConnectionStatus {
     /// Error connecting
     Error,
     /// Governance disabled
+    #[default]
     Disabled,
-}
-
-impl Default for ConnectionStatus {
-    fn default() -> Self {
-        Self::Disabled
-    }
 }
 
 impl std::fmt::Display for ConnectionStatus {
@@ -44,7 +39,7 @@ impl std::fmt::Display for ConnectionStatus {
 }
 
 /// Governance action categories
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ActionCategory {
     /// Release management actions
@@ -58,13 +53,8 @@ pub enum ActionCategory {
     /// Configuration changes
     Config,
     /// General operations
+    #[default]
     General,
-}
-
-impl Default for ActionCategory {
-    fn default() -> Self {
-        Self::General
-    }
 }
 
 impl std::str::FromStr for ActionCategory {
@@ -84,10 +74,11 @@ impl std::str::FromStr for ActionCategory {
 }
 
 /// Result of an operation
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum OperationResult {
     /// Operation succeeded
+    #[default]
     Success,
     /// Operation failed
     Failure,
@@ -105,12 +96,6 @@ impl std::fmt::Display for OperationResult {
     }
 }
 
-impl Default for OperationResult {
-    fn default() -> Self {
-        Self::Success
-    }
-}
-
 impl std::str::FromStr for OperationResult {
     type Err = String;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -124,19 +109,14 @@ impl std::str::FromStr for OperationResult {
 }
 
 /// Log level for audit entries
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum LogLevel {
     Debug,
+    #[default]
     Info,
     Warn,
     Error,
-}
-
-impl Default for LogLevel {
-    fn default() -> Self {
-        Self::Info
-    }
 }
 
 impl std::fmt::Display for LogLevel {
@@ -164,22 +144,17 @@ impl std::str::FromStr for LogLevel {
 }
 
 /// Authentication method for remote governance
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum AuthMethod {
+    #[default]
     ApiKey,
     BearerToken,
     None,
 }
 
-impl Default for AuthMethod {
-    fn default() -> Self {
-        Self::ApiKey
-    }
-}
-
 /// Governance statistics
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct GovernanceStats {
     /// Total audit events
     pub total: u64,
@@ -191,18 +166,6 @@ pub struct GovernanceStats {
     pub by_level: std::collections::HashMap<String, u64>,
     /// Top actions
     pub top_actions: Vec<TopAction>,
-}
-
-impl Default for GovernanceStats {
-    fn default() -> Self {
-        Self {
-            total: 0,
-            today: 0,
-            errors: 0,
-            by_level: std::collections::HashMap::new(),
-            top_actions: Vec::new(),
-        }
-    }
 }
 
 /// Top action statistics
