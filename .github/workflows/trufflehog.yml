@@ -20,6 +20,6 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-      - uses: trufflesecurity/trufflehog@3fc0c2aa6648d54242e4af6fbfde0701796e4fb0  # v3.92.0 — SHA-pinned (matches sast-quick.yml)
+      - uses: trufflesecurity/trufflehog@75add79b929b263dae147d2e5bcf0daf292165cf # v-latest — SHA-pinned (matches sast-quick.yml)
         with:
           extra_args: --only-verified
