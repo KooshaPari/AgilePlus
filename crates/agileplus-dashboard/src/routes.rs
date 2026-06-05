@@ -2384,7 +2384,6 @@ pub fn router(state: SharedState) -> Router {
 mod tests {
     use super::*;
     use crate::app_state::{default_health, DashboardStore};
-    use crate::templates::{AgentActivityPartial, AgentView, EventTimelinePartial};
     use std::sync::Arc;
     use tokio::sync::RwLock;
     use tower::util::ServiceExt;
