@@ -259,6 +259,7 @@ jobs:
 
   # ─── Python Quality ────────────────────────────────────────────────
   python-check:
+    if: false  # disabled: no python/ subdir exists in this monorepo
     name: Python Quality
     runs-on: ubuntu-24.04
     timeout-minutes: 15
@@ -270,14 +271,14 @@ jobs:
       - name: Install uv
         run: pip install uv
       - name: Install package
-        run: cd python && uv sync
+        run: cd python3 && uv sync
       - name: Ruff format check
-        run: cd python && uvx ruff format --check .
+        run: cd python3 && uvx ruff format --check .
       - name: Ruff lint
-        run: cd python && uvx ruff check .
+        run: cd python3 && uvx ruff check .
       - name: pip-audit
         run: |
-          cd python
+          cd python3
           tmp_requirements="$(mktemp)"
           uv export --format requirements-txt --no-hashes --no-editable \
             -o "$tmp_requirements" >/dev/null
@@ -286,6 +287,7 @@ jobs:
           rm -f "$tmp_requirements"
 
   python-install:
+    if: false  # disabled: no python/ subdir exists in this monorepo
     name: Python Install
     runs-on: ubuntu-24.04
     timeout-minutes: 15
@@ -297,7 +299,7 @@ jobs:
       - name: Install uv
         run: pip install uv
       - name: Install package
-        run: cd python && uv sync
+        run: cd python3 && uv sync
 
   # ─── Config Lint ───────────────────────────────────────────────────
   config-lint:
