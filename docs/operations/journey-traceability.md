@@ -27,27 +27,27 @@ Every user-facing or agent-facing flow should be traceable across:
 ## Rich Media Stubs
 
 <!-- RICH-MEDIA-STUB type="animated-gif" subject="Project backlog creation and invariant validation" journey="create-project-backlog" status="TODO" -->
-![AgilePlus project backlog creation — project, epic, feature, story, invariant validation, and saved state](../assets/rich-media/agileplus/create-project-backlog.gif)
+> **Stub (TODO):** AgilePlus project backlog creation — project, epic, feature, story, invariant validation, and saved state. *Capture pending; the linked asset `../assets/rich-media/agileplus/create-project-backlog.gif` is intentionally absent and will be recorded when the journey manifest is captured.*
 
 *Expected capture: create a project backlog through the CLI/API/UI path, show invalid-state rejection, then show the valid backlog persisted and queryable.*
 
 <!-- RICH-MEDIA-STUB type="annotated-screenshot" subject="Manifest import report" journey="manifest-import-report" status="TODO" -->
-![AgilePlus manifest import report — imported entities, skipped rows, validation errors, and traceability IDs](../assets/rich-media/agileplus/manifest-import-report.png)
+> **Stub (TODO):** AgilePlus manifest import report — imported entities, skipped rows, validation errors, and traceability IDs. *Capture pending; the linked asset `../assets/rich-media/agileplus/manifest-import-report.png` is intentionally absent and will be recorded when the journey manifest is captured.*
 
 *Expected capture: import a deterministic fixture manifest, annotate success/failure counts, and link imported entities back to FR-AGP-012.*
 
 <!-- RICH-MEDIA-STUB type="journey-eval" subject="GitHub sync evidence verdict" journey="github-sync-evidence" status="TODO" -->
-![AgilePlus GitHub sync evidence — fixture issue, mapped story, sync provenance, and eval verdict](../assets/rich-media/agileplus/github-sync-evidence.png)
+> **Stub (TODO):** AgilePlus GitHub sync evidence — fixture issue, mapped story, sync provenance, and eval verdict. *Capture pending; the linked asset `../assets/rich-media/agileplus/github-sync-evidence.png` is intentionally absent and will be recorded when the journey manifest is captured.*
 
 *Expected capture: sync GitHub fixture data, prove mapped domain entities match expected state, and attach a pass/fail eval verdict for FR-AGP-006 and NFR-AGP-002.*
 
 <!-- RICH-MEDIA-STUB type="annotated-screenshot" subject="Dashboard traceable epics and stories" journey="dashboard-traceable-work" status="TODO" -->
-![AgilePlus dashboard — epics, stories, FR/NFR links, and backlog status rollup](../assets/rich-media/agileplus/dashboard-traceable-work.png)
+> **Stub (TODO):** AgilePlus dashboard — epics, stories, FR/NFR links, and backlog status rollup. *Capture pending; the linked asset `../assets/rich-media/agileplus/dashboard-traceable-work.png` is intentionally absent and will be recorded when the journey manifest is captured.*
 
 *Expected capture: open the seeded dashboard, show epics/stories with FR/NFR IDs, and verify the JSON endpoint agrees with the rendered UI.*
 
 <!-- RICH-MEDIA-STUB type="journey-eval" subject="Agent triage intent and priority verdict" journey="agent-triage-intent-priority" status="TODO" -->
-![AgilePlus triage verdict — raw work item, inferred intent, priority, and rule trace](../assets/rich-media/agileplus/agent-triage-intent-priority.png)
+> **Stub (TODO):** AgilePlus triage verdict — raw work item, inferred intent, priority, and rule trace. *Capture pending; the linked asset `../assets/rich-media/agileplus/agent-triage-intent-priority.png` is intentionally absent and will be recorded when the journey manifest is captured.*
 
 *Expected capture: run the triage engine against fixture work items, show inferred intent/priority, and attach an eval verdict checking expected classifications.*
 

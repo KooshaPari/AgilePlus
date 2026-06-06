@@ -1,18 +1,81 @@
 name: Doc Links
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - ".github/workflows/doc-links.yml"
+  pull_request:
+    paths:
+      - "docs/**"
+      - ".github/workflows/doc-links.yml"
 
 permissions:
   contents: read
-
-on: [push, pull_request]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 jobs:
   links:
+    name: Check markdown links in docs/
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
-      - run: echo "Doc link check (phenotype-tooling integration)"
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+      - name: Install markdown-link-check
+        run: npm install --silent --no-audit --no-fund --no-progress markdown-link-check@3.13.7
+      - name: Write config
+        env:
+          WORKSPACE: ${{ github.workspace }}
+        run: |
+          cat > /tmp/mlc-config.json <<EOF
+          {
+            "ignorePatterns": [
+              {"pattern": "^http(s)?://localhost"},
+              {"pattern": "^http(s)?://127\\.0\\.0\\.1"},
+              {"pattern": "^http(s)?://0\\.0\\.0\\.0"},
+              {"pattern": "^http(s)?://example\\.com"},
+              {"pattern": "^http(s)?://www\\.iana\\.org"},
+              {"pattern": "^http(s)?://schemas\\."}
+            ],
+            "replacementPatterns": [
+              {"pattern": "^/repos", "replacement": "${WORKSPACE}/.."},
+              {"pattern": "^repos/", "replacement": "${WORKSPACE}/../"}
+            ],
+            "httpHeaders": [
+              {
+                "urls": ["https://github.com/"],
+                "headers": {"User-Agent": "Mozilla/5.0 (doc-link-check)"}
+              }
+            ],
+            "timeout": "20s",
+            "retryOn429": true,
+            "retryCount": 2
+          }
+          EOF
+      - name: Run markdown-link-check on docs/
+        run: |
+          set -euo pipefail
+          shopt -s globstar nullglob
+          failed=0
+          files=(docs/**/*.md)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No markdown files under docs/ - nothing to check."
+            exit 0
+          fi
+          for f in "${files[@]}"; do
+            echo "::group::$f"
+            if ! npx --no-install markdown-link-check --config /tmp/mlc-config.json "$f"; then
+              failed=1
+            fi
+            echo "::endgroup::"
+          done
+          if [ "$failed" -ne 0 ]; then
+            echo "Doc link check failed for one or more files." >&2
+            exit 1
+          fi
