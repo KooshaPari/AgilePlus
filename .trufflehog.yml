@@ -1,0 +1,14 @@
+exclude:
+  paths:
+    - ".git/**"
+    - "target/**"
+    - "node_modules/**"
+    - "*.sum"
+    - "*.lock"
+    - "dist/**"
+    - ".github/workflows/**"
+    - "**/*.yml"
+    - "**/*.yaml"
+include:
+  files:
+    - "**/*"
