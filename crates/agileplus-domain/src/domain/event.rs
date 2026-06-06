@@ -59,3 +59,68 @@ pub struct EventMetadata {
     pub causation_id: Option<String>,
     pub tags: Vec<String>,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use chrono::Utc;
+
+    fn sample_payload() -> serde_json::Value {
+        serde_json::json!({
+            "title": "Add FR-DOMAIN-001 traceability",
+            "status": "draft",
+        })
+    }
+
+    #[test]
+    fn event_new_preserves_identity_payload_actor() {
+        let payload = sample_payload();
+        let event = Event::new("story", 42, "Created", payload.clone(), "user@host");
+
+        assert_eq!(event.entity_type, "story");
+        assert_eq!(event.entity_id, 42);
+        assert_eq!(event.event_type, "Created");
+        assert_eq!(event.actor, "user@host");
+        assert_eq!(event.payload, payload);
+    }
+
+    #[test]
+    fn event_new_initializes_store_managed_fields() {
+        let event = Event::new("story", 42, "Created", sample_payload(), "user@host");
+
+        assert_eq!(event.id, 0);
+        assert_eq!(event.sequence, 0);
+        assert_eq!(event.prev_hash, [0u8; 32]);
+        assert_eq!(event.hash, [0u8; 32]);
+    }
+
+    #[test]
+    fn event_new_timestamp_is_non_future() {
+        let before = Utc::now();
+        let event = Event::new("story", 42, "Created", sample_payload(), "user@host");
+        let after = Utc::now();
+
+        assert!(
+            event.timestamp <= after,
+            "event timestamp {} must be <= post-construction clock {}",
+            event.timestamp,
+            after
+        );
+        assert!(event.timestamp >= before);
+    }
+
+    #[test]
+    fn event_round_trips_through_serde_json() {
+        let event = Event::new("story", 42, "Created", sample_payload(), "user@host");
+
+        let json = serde_json::to_string(&event).expect("serialize event");
+        let decoded: Event = serde_json::from_str(&json).expect("deserialize event");
+
+        assert_eq!(decoded.entity_type, event.entity_type);
+        assert_eq!(decoded.entity_id, event.entity_id);
+        assert_eq!(decoded.event_type, event.event_type);
+        assert_eq!(decoded.actor, event.actor);
+        assert_eq!(decoded.payload, event.payload);
+        assert_eq!(decoded.sequence, event.sequence);
+    }
+}
