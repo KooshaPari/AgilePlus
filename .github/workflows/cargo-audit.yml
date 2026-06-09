@@ -1,4 +1,5 @@
 name: cargo-audit
+permissions: read-all
 
 on:
   push:
