@@ -1,3 +1,53 @@
+# =============================================================================
+# AgilePlus — Rust Workspace
+# =============================================================================
+#
+# 21-crate Cargo workspace powering the AgilePlus platform: a Rust+TypeScript
+# product & engineering management system with an Axum HTTP/gRPC backend, a
+# SQLite-backed local store, an Electrobun desktop app, and a React/TS
+# dashboard.
+#
+# Crate layout (each crate has its own README and CHANGELOG):
+#
+#   Domain & Application core (pure-Rust, no I/O):
+#     - agileplus-domain         Domain types, aggregates, invariants
+#     - agileplus-application    Use cases / services orchestrating domain
+#     - agileplus-config         Typed config loading & validation
+#     - agileplus-events         Domain event taxonomy & envelope
+#     - agileplus-proto          Generated prost/tonic protobuf bindings
+#     - agileplus-fixtures       Test data builders (dev-dep)
+#
+#   Infrastructure adapters (I/O-bound):
+#     - agileplus-sqlite         SQLite repository implementation
+#     - agileplus-cache          In-memory + SQLite cache layer
+#     - agileplus-git            gix-based Git adapter
+#     - agileplus-nats           Async-nats pub/sub adapter
+#     - agileplus-telemetry      OpenTelemetry + tracing init
+#     - agileplus-import         Bulk import from GitHub / Plane
+#
+#   Interfaces (transport / surface):
+#     - agileplus-api            Axum HTTP server + REST endpoints
+#     - agileplus-grpc           Tonic gRPC server
+#     - agileplus-dashboard      React/TS web dashboard + health server
+#     - agileplus-github         GitHub webhook + sync adapter
+#     - agileplus-plane          Plane.so adapter
+#     - agileplus-p2p            libp2p / p2p sync transport
+#     - agileplus-triage         Triage queue / classifier
+#
+#   Operations & DX:
+#     - agileplus-cli            Top-level binary `agileplus` (clap subcmds)
+#     - xtask-anti-patterns      Build-time linter catching cargo anti-patterns
+#
+# Build & verify:
+#   cargo build --workspace --all-targets      # compile everything
+#   cargo test  --workspace                    # 646 tests
+#   cargo clippy --workspace --all-targets -- -D warnings
+#   cargo run -p xtask-anti-patterns           # workspace linter
+#
+# See SPEC.md, FUNCTIONAL_REQUIREMENTS.md, AGENTS.md, and CONTRIBUTING.md
+# for design rationale and contributor workflow.
+# =============================================================================
+
 [workspace]
 resolver = "3"
 members = [
@@ -22,6 +72,7 @@ members = [
     "crates/agileplus-triage",
     "crates/agileplus-import",
     "crates/agileplus-proto",
+    "xtask-anti-patterns",
 ]
 exclude = ["AgilePlus/rust", "rust", "crates/phenotype-config"]
 

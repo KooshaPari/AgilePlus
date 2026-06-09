@@ -62,6 +62,7 @@ version = "0.1.0"
 dependencies = [
  "agileplus-domain",
  "async-trait",
+ "phenotype-error-core",
  "thiserror 2.0.18",
  "tokio",
 ]
@@ -145,6 +146,7 @@ dependencies = [
  "anyhow",
  "async-trait",
  "chrono",
+ "phenotype-error-core",
  "serde",
  "serde_json",
  "sha2",
@@ -4303,6 +4305,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "phenotype-error-core"
+version = "0.2.0"
+dependencies = [
+ "anyhow",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+]
+
+[[package]]
 name = "pin-project"
 version = "1.1.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7073,6 +7085,14 @@ name = "writeable"
 version = "0.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1ffae5123b2d3fc086436f8834ae3ab053a283cfac8fe0a0b8eaae044768a4c4"
+
+[[package]]
+name = "xtask-anti-patterns"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+]
 
 [[package]]
 name = "yaml-rust2"
