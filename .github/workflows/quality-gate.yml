@@ -7,6 +7,15 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
+      # The workspace has relative-path deps on the phenoShared sibling
+      # (agileplus-domain/application -> ../../../phenoShared/crates/phenotype-error-core),
+      # which resolves to $GITHUB_WORKSPACE/../phenoShared. Clone it there so
+      # cargo can load those manifests during clippy/test.
+      - name: Checkout phenoShared sibling
+        run: |
+          git clone --depth 1 \
+            "https://x-access-token:${{ github.token }}@github.com/KooshaPari/phenoShared.git" \
+            "${{ github.workspace }}/../phenoShared"
       - uses: dtolnay/rust-toolchain@stable
       - uses: arduino/setup-protoc@v3
         with:
