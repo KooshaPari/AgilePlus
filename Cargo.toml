@@ -136,7 +136,7 @@ opentelemetry-otlp = { version = "0.27", features = ["tonic", "gzip-tonic", "htt
 tracing-opentelemetry = "0.27"
 utoipa = "4"
 uuid = { version = "1", features = ["v4", "serde"] }
-async-nats = "0.38"
+async-nats = "0.47"
 paste = "1"
 agileplus-config = { path = "crates/agileplus-config" }
 agileplus-proto = { path = "crates/agileplus-proto" }
