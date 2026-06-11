@@ -72,3 +72,18 @@ fn truncate(s: &str, max: usize) -> String {
     let t: String = s.chars().take(max.saturating_sub(1)).collect();
     format!("{t}…")
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn truncate_keeps_short_titles() {
+        assert_eq!(truncate("Epic", 10), "Epic");
+    }
+
+    #[test]
+    fn truncate_shortens_long_titles() {
+        assert_eq!(truncate("Implement everything", 10), "Implement…");
+    }
+}

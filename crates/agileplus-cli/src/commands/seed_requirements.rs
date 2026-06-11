@@ -101,3 +101,45 @@ pub fn run(args: &SeedRequirementsArgs) -> anyhow::Result<()> {
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn temp_db_path(name: &str) -> PathBuf {
+        let mut path = std::env::temp_dir();
+        path.push(format!(
+            "{name}-{}-{}.db",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        path
+    }
+
+    #[test]
+    fn seed_requirements_run_creates_database() {
+        let db = temp_db_path("agileplus-seed-requirements");
+        let args = SeedRequirementsArgs {
+            db: db.clone(),
+            verbose: false,
+        };
+
+        run(&args).unwrap();
+
+        let conn = rusqlite::Connection::open(&db).unwrap();
+        let epic_count: i64 = conn
+            .query_row("SELECT COUNT(*) FROM epics", [], |row| row.get(0))
+            .unwrap();
+        let story_count: i64 = conn
+            .query_row("SELECT COUNT(*) FROM stories", [], |row| row.get(0))
+            .unwrap();
+
+        assert!(epic_count >= 6);
+        assert!(story_count > epic_count);
+
+        let _ = std::fs::remove_file(db);
+    }
+}

@@ -45,3 +45,18 @@ fn truncate(s: &str, max: usize) -> String {
     let t: String = s.chars().take(max.saturating_sub(1)).collect();
     format!("{t}…")
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn truncate_keeps_values_within_limit() {
+        assert_eq!(truncate("project", 12), "project");
+    }
+
+    #[test]
+    fn truncate_shortens_values_past_limit() {
+        assert_eq!(truncate("project-alpha", 8), "project…");
+    }
+}

@@ -220,6 +220,34 @@ fn db_path_from_env() -> PathBuf {
         .unwrap_or_else(|_| PathBuf::from("agileplus.db"))
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn mock_store_seed_contains_cli_fixtures() {
+        let store = MockStore::seed();
+
+        assert_eq!(store.features.len(), 3);
+        assert_eq!(store.modules.len(), 2);
+        assert_eq!(store.cycles.len(), 1);
+        assert_eq!(store.cycles[0].state, CycleState::Active);
+    }
+
+    #[test]
+    fn db_path_defaults_when_env_missing() {
+        std::env::remove_var("AGILEPLUS_DB");
+        assert_eq!(db_path_from_env(), PathBuf::from("agileplus.db"));
+    }
+
+    #[test]
+    fn db_path_uses_env_override() {
+        std::env::set_var("AGILEPLUS_DB", "/tmp/agileplus-test.db");
+        assert_eq!(db_path_from_env(), PathBuf::from("/tmp/agileplus-test.db"));
+        std::env::remove_var("AGILEPLUS_DB");
+    }
+}
+
 // ── entry point ──────────────────────────────────────────────────────────────
 
 #[tokio::main]
