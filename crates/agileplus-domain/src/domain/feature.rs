@@ -78,3 +78,27 @@ impl Feature {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn valid_transition_updates_state() {
+        let mut feature = Feature::new("auth", "Authentication", [0; 32], None);
+
+        feature.transition(FeatureState::Specified).unwrap();
+
+        assert_eq!(feature.state, FeatureState::Specified);
+    }
+
+    #[test]
+    fn invalid_transition_is_rejected_without_mutating_state() {
+        let mut feature = Feature::new("auth", "Authentication", [0; 32], None);
+
+        let err = feature.transition(FeatureState::Shipped).unwrap_err();
+
+        assert_eq!(feature.state, FeatureState::Created);
+        assert!(err.contains("invalid transition Created -> Shipped"));
+    }
+}

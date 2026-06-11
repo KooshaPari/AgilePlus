@@ -103,3 +103,33 @@ impl WorkPackage {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn new_work_package_starts_planned_with_empty_scope() {
+        let wp = WorkPackage::new(42, "Implement login", 3, "User can sign in");
+
+        assert_eq!(wp.feature_id, 42);
+        assert_eq!(wp.title, "Implement login");
+        assert_eq!(wp.state, WpState::Planned);
+        assert_eq!(wp.sequence, 3);
+        assert!(wp.file_scope.is_empty());
+        assert_eq!(wp.acceptance_criteria, "User can sign in");
+    }
+
+    #[test]
+    fn work_package_state_machine_rejects_skipped_lifecycle_steps() {
+        assert!(!WpState::Planned.can_transition_to(WpState::Done));
+        assert!(!WpState::Review.can_transition_to(WpState::Blocked));
+        assert!(!WpState::Done.can_transition_to(WpState::Doing));
+    }
+
+    #[test]
+    fn work_package_state_machine_allows_blocked_recovery_path() {
+        assert!(WpState::Doing.can_transition_to(WpState::Blocked));
+        assert!(WpState::Blocked.can_transition_to(WpState::Doing));
+    }
+}
