@@ -24,12 +24,12 @@ jobs:
       SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
         with:
           fetch-depth: 0
 
       - name: Set up Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8  # stable
 
       - name: Install Snyk CLI
         run: npm install -g snyk
@@ -48,14 +48,14 @@ jobs:
 
       - name: Upload SARIF to GitHub Code Scanning
         if: always() && hashFiles('snyk.sarif') != ''
-        uses: github/codeql-action/upload-sarif@v4
+        uses: github/codeql-action/upload-sarif@411bbbed0c9e15ee1a5f1f5d6224039d1687c25b  # v4
         with:
           sarif_file: snyk.sarif
           category: snyk-security-scan
 
       - name: Add PR comment
         if: github.event_name == 'pull_request' && always()
-        uses: actions/github-script@v9
+        uses: actions/github-script@373c709c69115d41ff229c7e5df9f8788daa9553  # v9
         with:
           script: |
             github.rest.issues.createComment({
@@ -92,7 +92,7 @@ jobs:
       SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
 
       - name: Monitor dependencies
         run: |

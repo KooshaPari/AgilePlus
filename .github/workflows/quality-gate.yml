@@ -6,35 +6,24 @@ jobs:
   verify:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v6
-      # The workspace has relative-path deps on the phenoShared sibling
-      # (agileplus-domain/application -> ../../../phenoShared/crates/phenotype-error-core),
-      # which resolves to $GITHUB_WORKSPACE/../phenoShared. Clone it there so
-      # cargo can load those manifests during clippy/test.
-      - name: Checkout phenoShared sibling
-        run: |
-          git clone \
-            "https://x-access-token:${{ github.token }}@github.com/KooshaPari/phenoShared.git" \
-            "${{ github.workspace }}/../phenoShared"
-          git -C "${{ github.workspace }}/../phenoShared" \
-            checkout c3aee3361ff4888a8ced71c8861a8d54ae65fca0
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: arduino/setup-protoc@v3
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8  # stable
+      - uses: arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b  # v3
         with:
           version: "28.x"
           repo-token: ${{ github.token }}
       - name: Cache cargo registry
-        uses: actions/cache@v5
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae  # v5
         with:
           path: ~/.cargo/registry
           key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
       - name: Cache cargo index
-        uses: actions/cache@v5
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae  # v5
         with:
           path: ~/.cargo/git
           key: ${{ runner.os }}-cargo-git-${{ hashFiles('**/Cargo.lock') }}
       - name: Cache cargo build
-        uses: actions/cache@v5
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae  # v5
         with:
           path: target
           key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
