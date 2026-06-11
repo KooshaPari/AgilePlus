@@ -217,6 +217,34 @@ pub fn add_feature_to_cycle(conn: &Connection, entry: &CycleFeature) -> Result<(
     Ok(())
 }
 
+/// Link a story to a cycle via the `cycle_stories` join. Idempotent.
+pub fn add_story_to_cycle(
+    conn: &Connection,
+    cycle_id: i64,
+    story_id: i64,
+) -> Result<(), DomainError> {
+    let exists: Option<i64> = conn
+        .query_row(
+            "SELECT id FROM cycles WHERE id = ?1",
+            params![cycle_id],
+            |row| row.get(0),
+        )
+        .optional()
+        .map_err(map_err)?;
+    if exists.is_none() {
+        return Err(DomainError::CycleNotFound(cycle_id.to_string()));
+    }
+
+    let now = chrono::Utc::now().to_rfc3339();
+    conn.execute(
+        "INSERT OR IGNORE INTO cycle_stories (cycle_id, story_id, added_at)
+         VALUES (?1, ?2, ?3)",
+        params![cycle_id, story_id, now],
+    )
+    .map_err(map_err)?;
+    Ok(())
+}
+
 pub fn remove_feature_from_cycle(
     conn: &Connection,
     cycle_id: i64,

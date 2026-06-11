@@ -15,6 +15,7 @@ use agileplus_domain::ports::{ContentStoragePort, StoragePort};
 mod feature_work_packages;
 mod governance_metrics;
 mod modules_cycles;
+mod mvp_story_work_packages;
 
 fn make_adapter() -> SqliteStorageAdapter {
     SqliteStorageAdapter::in_memory().expect("in-memory adapter")

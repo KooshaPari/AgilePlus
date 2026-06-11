@@ -176,6 +176,38 @@ impl StoragePort for SqliteStorageAdapter {
         work_packages::get_ready_wps(&conn, feature_id)
     }
 
+    async fn create_work_package_for_story(
+        &self,
+        story_id: i64,
+        wp: &WorkPackage,
+    ) -> Result<i64, DomainError> {
+        let conn = self.lock()?;
+        work_packages::create_work_package_for_story(&conn, story_id, wp)
+    }
+
+    async fn list_wps_by_story(&self, story_id: i64) -> Result<Vec<WorkPackage>, DomainError> {
+        let conn = self.lock()?;
+        work_packages::list_wps_by_story(&conn, story_id)
+    }
+
+    async fn list_all_work_packages(&self) -> Result<Vec<WorkPackage>, DomainError> {
+        let conn = self.lock()?;
+        work_packages::list_all_work_packages(&conn)
+    }
+
+    async fn get_next_ready_wps(
+        &self,
+        cycle: Option<i64>,
+    ) -> Result<Vec<WorkPackage>, DomainError> {
+        let conn = self.lock()?;
+        work_packages::get_next_ready_wps(&conn, cycle)
+    }
+
+    async fn add_story_to_cycle(&self, cycle_id: i64, story_id: i64) -> Result<(), DomainError> {
+        let conn = self.lock()?;
+        cycles::add_story_to_cycle(&conn, cycle_id, story_id)
+    }
+
     // -- Audit CRUD --
 
     async fn append_audit_entry(&self, entry: &AuditEntry) -> Result<i64, DomainError> {

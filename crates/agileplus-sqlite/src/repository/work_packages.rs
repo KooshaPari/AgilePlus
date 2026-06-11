@@ -304,6 +304,180 @@ pub fn get_ready_wps(conn: &Connection, feature_id: i64) -> Result<Vec<WorkPacka
     rows.collect::<rusqlite::Result<Vec<_>>>().map_err(map_err)
 }
 
+/// Create a work package and link it to a story via `story_work_packages`.
+pub fn create_work_package_for_story(
+    conn: &Connection,
+    story_id: i64,
+    wp: &WorkPackage,
+) -> Result<i64, DomainError> {
+    let mut wp = wp.clone();
+    if wp.feature_id == 0 {
+        wp.feature_id = feature_id_for_story(conn, story_id)?;
+    }
+
+    let id = create_work_package(conn, &wp)?;
+    conn.execute(
+        "INSERT OR IGNORE INTO story_work_packages (story_id, wp_id) VALUES (?1, ?2)",
+        params![story_id, id],
+    )
+    .map_err(map_err)?;
+    Ok(id)
+}
+
+fn feature_id_for_story(conn: &Connection, story_id: i64) -> Result<i64, DomainError> {
+    let existing: Option<i64> = conn
+        .query_row(
+            "SELECT wp.feature_id
+             FROM work_packages wp
+             JOIN story_work_packages swp ON swp.wp_id = wp.id
+             WHERE swp.story_id = ?1
+             ORDER BY wp.id
+             LIMIT 1",
+            params![story_id],
+            |row| row.get(0),
+        )
+        .optional()
+        .map_err(map_err)?;
+    if let Some(feature_id) = existing {
+        return Ok(feature_id);
+    }
+
+    let story_title: String = conn
+        .query_row(
+            "SELECT title FROM stories WHERE id = ?1",
+            params![story_id],
+            |row| row.get(0),
+        )
+        .optional()
+        .map_err(map_err)?
+        .ok_or_else(|| DomainError::NotFound(format!("story {story_id}")))?;
+
+    let slug = format!("story-{story_id}");
+    let name = format!("Story {story_id}: {story_title}");
+    let now = chrono::Utc::now().to_rfc3339();
+    conn.execute(
+        "INSERT OR IGNORE INTO features
+         (slug, friendly_name, state, spec_hash, target_branch, created_at, updated_at)
+         VALUES (?1, ?2, 'planned', ?3, 'main', ?4, ?5)",
+        params![slug, name, vec![0_u8; 32], now, now],
+    )
+    .map_err(map_err)?;
+
+    conn.query_row(
+        "SELECT id FROM features WHERE slug = ?1",
+        params![slug],
+        |row| row.get(0),
+    )
+    .map_err(map_err)
+}
+
+/// List the work packages linked to a story, ordered by sequence.
+pub fn list_wps_by_story(
+    conn: &Connection,
+    story_id: i64,
+) -> Result<Vec<WorkPackage>, DomainError> {
+    let mut stmt = conn
+        .prepare(
+            "SELECT wp.id,wp.feature_id,wp.title,wp.state,wp.sequence,wp.file_scope,
+                    wp.acceptance_criteria,wp.agent_id,wp.pr_url,wp.pr_state,
+                    wp.worktree_path,wp.created_at,wp.updated_at
+             FROM work_packages wp
+             JOIN story_work_packages swp ON swp.wp_id = wp.id
+             WHERE swp.story_id = ?1
+             ORDER BY wp.sequence",
+        )
+        .map_err(map_err)?;
+    let rows = stmt
+        .query_map(params![story_id], row_to_wp)
+        .map_err(map_err)?;
+    rows.collect::<rusqlite::Result<Vec<_>>>().map_err(map_err)
+}
+
+/// List every work package across all features/stories.
+pub fn list_all_work_packages(conn: &Connection) -> Result<Vec<WorkPackage>, DomainError> {
+    let mut stmt = conn
+        .prepare(
+            "SELECT id,feature_id,title,state,sequence,file_scope,acceptance_criteria,
+                    agent_id,pr_url,pr_state,worktree_path,created_at,updated_at
+             FROM work_packages ORDER BY id",
+        )
+        .map_err(map_err)?;
+    let rows = stmt.query_map([], row_to_wp).map_err(map_err)?;
+    rows.collect::<rusqlite::Result<Vec<_>>>().map_err(map_err)
+}
+
+/// Return planned work packages that are ready to start.
+///
+/// A planned WP is ready iff:
+///   * every explicit dependency points to a Done WP, AND
+///   * no file in its `file_scope` overlaps the scope of any Doing/Review WP.
+///
+/// When `cycle` is `Some`, restrict to WPs whose story belongs to that cycle.
+pub fn get_next_ready_wps(
+    conn: &Connection,
+    cycle: Option<i64>,
+) -> Result<Vec<WorkPackage>, DomainError> {
+    let base_sql = "
+        SELECT wp.id,wp.feature_id,wp.title,wp.state,wp.sequence,wp.file_scope,
+               wp.acceptance_criteria,wp.agent_id,wp.pr_url,wp.pr_state,
+               wp.worktree_path,wp.created_at,wp.updated_at
+        FROM work_packages wp
+        WHERE wp.state = 'planned'
+          AND NOT EXISTS (
+              SELECT 1 FROM wp_dependencies d
+              JOIN work_packages dep ON dep.id = d.depends_on
+              WHERE d.wp_id = wp.id
+                AND d.dep_type = 'explicit'
+                AND dep.state != 'done'
+          )";
+
+    let candidates: Vec<WorkPackage> = if let Some(cycle_id) = cycle {
+        let sql = format!(
+            "{base_sql}
+              AND wp.id IN (
+                  SELECT swp.wp_id FROM story_work_packages swp
+                  JOIN cycle_stories cs ON cs.story_id = swp.story_id
+                  WHERE cs.cycle_id = ?1
+              )
+            ORDER BY wp.sequence"
+        );
+        let mut stmt = conn.prepare(&sql).map_err(map_err)?;
+        let rows = stmt
+            .query_map(params![cycle_id], row_to_wp)
+            .map_err(map_err)?;
+        rows.collect::<rusqlite::Result<Vec<_>>>()
+            .map_err(map_err)?
+    } else {
+        let sql = format!("{base_sql} ORDER BY wp.sequence");
+        let mut stmt = conn.prepare(&sql).map_err(map_err)?;
+        let rows = stmt.query_map([], row_to_wp).map_err(map_err)?;
+        rows.collect::<rusqlite::Result<Vec<_>>>()
+            .map_err(map_err)?
+    };
+
+    // Union of file scopes for all in-flight (Doing/Review) WPs.
+    let mut in_flight_files: std::collections::HashSet<String> = std::collections::HashSet::new();
+    {
+        let mut stmt = conn
+            .prepare("SELECT file_scope FROM work_packages WHERE state IN ('doing','review')")
+            .map_err(map_err)?;
+        let rows = stmt
+            .query_map([], |row| row.get::<_, String>(0))
+            .map_err(map_err)?;
+        for scope_json in rows {
+            let scope_json = scope_json.map_err(map_err)?;
+            let files: Vec<String> = serde_json::from_str(&scope_json).unwrap_or_default();
+            in_flight_files.extend(files);
+        }
+    }
+
+    let ready = candidates
+        .into_iter()
+        .filter(|wp| !wp.file_scope.iter().any(|f| in_flight_files.contains(f)))
+        .collect();
+    Ok(ready)
+}
+
 /// Extension trait to add `.optional()` on rusqlite query results.
 trait OptionalExt<T> {
     fn optional(self) -> rusqlite::Result<Option<T>>;
