@@ -631,6 +631,61 @@ mod tests {
         assert!(matches!(&events[0], DomainEvent::FeatureCreated { slug, .. } if slug == "auth"));
     }
 
+    #[tokio::test]
+    async fn create_feature_defaults_target_branch_and_spec_hash() {
+        let repo = Arc::new(InMemoryFeatureRepo::default());
+        let pub_ = Arc::new(SpyPublisher::default());
+        let uc = CreateFeature::new(repo.clone(), pub_.clone());
+
+        let out = uc
+            .execute(CreateFeatureCmd {
+                slug: "spec-default".to_string(),
+                friendly_name: "Spec-driven".to_string(),
+                spec_hash: None,
+                target_branch: None,
+            })
+            .await
+            .unwrap();
+
+        assert_eq!(out.feature.target_branch, "main");
+        assert_eq!(out.feature.spec_hash, [0u8; 32]);
+
+        let events = pub_.emitted().await;
+        assert_eq!(events.len(), 1);
+        assert!(matches!(
+            &events[0],
+            DomainEvent::FeatureCreated { slug, .. } if slug == "spec-default"
+        ));
+    }
+
+    #[tokio::test]
+    async fn create_feature_preserves_target_branch_and_spec_hash() {
+        let repo = Arc::new(InMemoryFeatureRepo::default());
+        let pub_ = Arc::new(SpyPublisher::default());
+        let uc = CreateFeature::new(repo.clone(), pub_.clone());
+        let spec_hash = [11u8; 32];
+
+        let out = uc
+            .execute(CreateFeatureCmd {
+                slug: "branched-feature".to_string(),
+                friendly_name: "Branch-aware feature".to_string(),
+                spec_hash: Some(spec_hash),
+                target_branch: Some("feature/login".to_string()),
+            })
+            .await
+            .unwrap();
+
+        assert_eq!(out.feature.target_branch, "feature/login");
+        assert_eq!(out.feature.spec_hash, spec_hash);
+
+        let events = pub_.emitted().await;
+        assert_eq!(events.len(), 1);
+        assert!(matches!(
+            &events[0],
+            DomainEvent::FeatureCreated { slug, .. } if slug == "branched-feature"
+        ));
+    }
+
     // --- AdvanceFeature ---
 
     #[tokio::test]
@@ -911,5 +966,36 @@ mod tests {
             .unwrap_err();
 
         assert!(matches!(err, AppError::Domain(_)));
+    }
+
+    #[tokio::test]
+    async fn create_epic_trims_title_and_emits_expected_event() {
+        let repo = Arc::new(InMemoryEpicRepo::default());
+        let pub_ = Arc::new(SpyPublisher::default());
+        let uc = CreateEpic::new(repo.clone(), pub_.clone());
+
+        let out = uc
+            .execute(CreateEpicCmd {
+                project_id: 42,
+                title: "  API hardening  ".to_string(),
+            })
+            .await
+            .unwrap();
+
+        assert_eq!(out.id, 1);
+
+        let stored = repo.get_by_id(1).await.unwrap().unwrap();
+        assert_eq!(stored.title, "API hardening");
+
+        let events = pub_.emitted().await;
+        assert_eq!(events.len(), 1);
+        assert!(matches!(
+            &events[0],
+            DomainEvent::EpicCreated {
+                project_id: 42,
+                title,
+                ..
+            } if title == "API hardening"
+        ));
     }
 }
