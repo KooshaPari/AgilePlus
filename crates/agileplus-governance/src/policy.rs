@@ -409,16 +409,16 @@ impl PolicyEngine {
     /// `&self`-free also satisfies `clippy::only_used_in_recursion`.
     fn evaluate_condition(condition: &PolicyCondition, context: &PolicyContext) -> bool {
         match condition {
-            PolicyCondition::Equals { key, value } => context.get(key).is_none_or(|v| v == *value),
+            PolicyCondition::Equals { key, value } => context.get(key).is_some_and(|v| v == *value),
             PolicyCondition::Contains { key, value } => {
-                context.get(key).is_none_or(|v| match (v, value) {
+                context.get(key).is_some_and(|v| match (v, value) {
                     (serde_json::Value::String(s), serde_json::Value::String(pattern)) => {
                         s.contains(pattern)
                     }
                     _ => false,
                 })
             }
-            PolicyCondition::Matches { key, pattern } => context.get(key).is_none_or(|v| {
+            PolicyCondition::Matches { key, pattern } => context.get(key).is_some_and(|v| {
                 if let serde_json::Value::String(s) = v {
                     regex::Regex::new(pattern)
                         .map(|r| r.is_match(s.as_str()))
@@ -437,9 +437,9 @@ impl PolicyEngine {
                         None
                     }
                 })
-                .is_none_or(|c| c >= *channel),
+                .is_some_and(|c| c >= *channel),
             PolicyCondition::Env { name, value } => {
-                std::env::var(name).ok().is_none_or(|v| v == *value)
+                std::env::var(name).ok().is_some_and(|v| v == *value)
             }
             PolicyCondition::Not { condition } => !Self::evaluate_condition(condition, context),
             PolicyCondition::And { conditions } => conditions
