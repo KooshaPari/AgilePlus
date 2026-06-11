@@ -10,7 +10,7 @@ use agileplus_domain::credentials::create_credential_store;
 use agileplus_domain::ports::observability::{LogEntry, ObservabilityPort, SpanContext};
 use agileplus_git::GitVcsAdapter;
 use agileplus_sqlite::SqliteStorageAdapter;
-use anyhow::{Context, Result, anyhow};
+use anyhow::{anyhow, Context, Result};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -33,7 +33,7 @@ async fn main() -> Result<()> {
     let storage = Arc::new(SqliteStorageAdapter::new(&config.core.database_path)?);
     let vcs = Arc::new(GitVcsAdapter::from_current_dir()?);
     let telemetry = Arc::new(NoOpObservability);
-    let credentials = Arc::from(create_credential_store(&config));
+    let credentials = create_credential_store(&config);
     let state = AppState::new(storage, vcs, telemetry, Arc::new(config), credentials);
 
     agileplus_api::router::start_api(addr, state)

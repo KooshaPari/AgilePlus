@@ -139,8 +139,16 @@ mod tests {
     }
 
     #[test]
+    fn cache_with_port_sets_value() {
+        let c = CacheConfig::default().with_port(6380);
+        assert_eq!(c.port, 6380);
+    }
+
+    #[test]
     fn cache_builders_chainable() {
-        let c = CacheConfig::default().with_pool_size(8).with_default_ttl_secs(60);
+        let c = CacheConfig::default()
+            .with_pool_size(8)
+            .with_default_ttl_secs(60);
         assert_eq!(c.pool_size, 8);
         assert_eq!(c.default_ttl_secs, 60);
     }

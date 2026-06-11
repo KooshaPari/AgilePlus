@@ -15,7 +15,10 @@ fn make_event_line(seq: i64) -> String {
 }
 
 fn conflict_block(ours: &str, theirs: &str) -> String {
-    format!("<<<<<<< HEAD\n{}\n=======\n{}\n>>>>>>> branch\n", ours, theirs)
+    format!(
+        "<<<<<<< HEAD\n{}\n=======\n{}\n>>>>>>> branch\n",
+        ours, theirs
+    )
 }
 
 #[test]
@@ -91,7 +94,8 @@ fn merge_sync_state_takes_max_per_entity() {
 
     let merged = merge_sync_state(&ours, &theirs);
 
-    let mappings: Vec<SyncMapping> = serde_json::from_value(merged["sync_mappings"].clone()).unwrap();
+    let mappings: Vec<SyncMapping> =
+        serde_json::from_value(merged["sync_mappings"].clone()).unwrap();
     assert_eq!(mappings.len(), 1);
     assert_eq!(mappings[0].conflict_count, 2);
 

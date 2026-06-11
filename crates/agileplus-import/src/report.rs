@@ -42,9 +42,11 @@ mod tests {
 
     #[test]
     fn report_roundtrips_through_serde_json() {
-        let mut report = ImportReport::default();
-        report.modules_created = 2;
-        report.cycles_created = 1;
+        let report = ImportReport {
+            modules_created: 2,
+            cycles_created: 1,
+            ..Default::default()
+        };
         let json = serde_json::to_string(&report).expect("serialize");
         let decoded: ImportReport = serde_json::from_str(&json).expect("deserialize");
         assert_eq!(decoded.modules_created, 2);

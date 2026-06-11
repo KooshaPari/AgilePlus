@@ -14,7 +14,7 @@ use async_nats::jetstream;
 use chrono::{DateTime, Utc};
 use futures_util::StreamExt as _;
 use serde::{Deserialize, Serialize};
-use tokio::time::{Duration, sleep};
+use tokio::time::{sleep, Duration};
 use tracing::{debug, error, info, warn};
 
 use crate::discovery::PeerInfo;
@@ -521,6 +521,7 @@ mod tests {
             description: None,
             status: EpicStatus::Active,
             owner_id: None,
+            requirement_id: None,
             created_at: updated_at,
             updated_at,
         }
@@ -536,6 +537,7 @@ mod tests {
             status: StoryStatus::Todo,
             points: Some(3),
             assignee_id: None,
+            requirement_id: None,
             created_at: updated_at,
             updated_at,
         }

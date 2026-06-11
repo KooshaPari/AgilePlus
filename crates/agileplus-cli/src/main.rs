@@ -144,6 +144,7 @@ impl MockStore {
 
 // ── handlers ─────────────────────────────────────────────────────────────────
 
+#[allow(clippy::print_literal)] // table header uses literal strings
 fn cmd_feature_list(store: &MockStore) {
     println!("{:<5} {:<28} {:<14} {}", "ID", "SLUG", "STATE", "NAME");
     println!("{}", "-".repeat(70));
@@ -170,13 +171,20 @@ fn cmd_feature_show(store: &MockStore, id: i64) {
                     .unwrap_or_else(|| "\u{2014}".to_string())
             );
             println!("labels       : [{}]", f.labels.join(", "));
-            println!("created_at   : {}", f.created_at.format("%Y-%m-%d %H:%M:%S UTC"));
-            println!("updated_at   : {}", f.updated_at.format("%Y-%m-%d %H:%M:%S UTC"));
+            println!(
+                "created_at   : {}",
+                f.created_at.format("%Y-%m-%d %H:%M:%S UTC")
+            );
+            println!(
+                "updated_at   : {}",
+                f.updated_at.format("%Y-%m-%d %H:%M:%S UTC")
+            );
         }
         None => eprintln!("error: feature {} not found", id),
     }
 }
 
+#[allow(clippy::print_literal)] // table header uses literal strings
 fn cmd_module_list(store: &MockStore) {
     println!("{:<5} {:<20} {}", "ID", "SLUG", "NAME");
     println!("{}", "-".repeat(50));

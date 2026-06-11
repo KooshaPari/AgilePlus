@@ -2,7 +2,7 @@
 
 use std::str::FromStr;
 
-use anyhow::{Context, Result, anyhow};
+use anyhow::{anyhow, Context, Result};
 use clap::Args;
 
 use agileplus_domain::{domain::story::StoryStatus, ports::StoragePort};
@@ -22,6 +22,7 @@ pub struct ListStoriesArgs {
     pub json: bool,
 }
 
+#[allow(clippy::print_literal)] // table header uses literal strings
 pub async fn run<S: StoragePort>(args: &ListStoriesArgs, storage: &S) -> Result<()> {
     // Parse status filter eagerly so we fail fast on a bad value.
     let status_filter: Option<StoryStatus> = args
@@ -66,10 +67,7 @@ pub async fn run<S: StoragePort>(args: &ListStoriesArgs, storage: &S) -> Result<
         return Ok(());
     }
 
-    println!(
-        "{:<6}  {:<6}  {:<12}  {}",
-        "ID", "EPIC", "STATUS", "TITLE"
-    );
+    println!("{:<6}  {:<6}  {:<12}  {}", "ID", "EPIC", "STATUS", "TITLE");
     println!("{}", "-".repeat(70));
     for s in &stories {
         println!(

@@ -36,9 +36,7 @@ use async_trait::async_trait;
 use futures_util::StreamExt as _;
 use tracing::{debug, error};
 
-use agileplus_events::{
-    AsyncEventBus, AsyncEventHandler, EventEnvelope, EventHandlerError,
-};
+use agileplus_events::{AsyncEventBus, AsyncEventHandler, EventEnvelope, EventHandlerError};
 
 use crate::config::NatsConfig;
 
@@ -228,17 +226,17 @@ impl AsyncEventBus for NatsEventBus {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use agileplus_domain::domain::epic::EpicStatus;
+    use agileplus_domain::domain::state_machine::FeatureState;
+    use agileplus_domain::domain::story::StoryStatus;
+    use agileplus_domain::domain::user::{UserRole, UserStatus};
+    use agileplus_domain::domain::work_package::WpState;
     use agileplus_events::{
         AggregateId, DomainEvent, EpicCreated, EpicStatusChanged, FeatureCreated, FeatureShipped,
         FeatureStateAdvanced, ProjectArchived, ProjectCreated, ProjectRenamed, StoryAssigned,
         StoryCreated, StoryStatusChanged, UserAdded, UserRoleChanged, UserStatusChanged,
         WorkPackageCreated, WorkPackageStateChanged,
     };
-    use agileplus_domain::domain::epic::EpicStatus;
-    use agileplus_domain::domain::state_machine::FeatureState;
-    use agileplus_domain::domain::story::StoryStatus;
-    use agileplus_domain::domain::user::{UserRole, UserStatus};
-    use agileplus_domain::domain::work_package::WpState;
 
     // ── helpers ───────────────────────────────────────────────────────────────
 

@@ -1,10 +1,5 @@
 name: quality-gate
 on: [pull_request]
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
 permissions:
   contents: read
 jobs:
@@ -16,7 +11,7 @@ jobs:
       - uses: arduino/setup-protoc@v3
         with:
           version: "28.x"
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          repo-token: ${{ github.token }}
       - name: Cache cargo registry
         uses: actions/cache@v5
         with:

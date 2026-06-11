@@ -1,13 +1,20 @@
 name: CI
 
+# DAG L2-35: read-only token default; override to `contents: write`
+# only on release/publish jobs (none in this workflow).
+permissions:
+  contents: read
+
 on:
   push:
     branches: [main]
   pull_request:
   merge_group:
   workflow_dispatch:
-permissions:
-  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 
 concurrency:
@@ -54,7 +61,7 @@ jobs:
       - uses: arduino/setup-protoc@v3
         with:
           version: "28.x"
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          repo-token: ${{ github.token }}
       - name: Format check
         run: cd rust && cargo fmt --check
       - name: Clippy (warnings = errors)
@@ -77,7 +84,7 @@ jobs:
       - uses: arduino/setup-protoc@v3
         with:
           version: "28.x"
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          repo-token: ${{ github.token }}
       - name: Build
         run: cd rust && cargo build --all
 
@@ -94,7 +101,7 @@ jobs:
       - uses: arduino/setup-protoc@v3
         with:
           version: "28.x"
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          repo-token: ${{ github.token }}
       - name: Check MSRV compatibility
         run: cd rust && cargo check
 
@@ -110,7 +117,7 @@ jobs:
       - uses: actions/checkout@v6
       - uses: rustsec/audit-check@v2.0.0
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ github.token }}
       - name: Install cargo-deny
         run: cargo install cargo-deny
       - name: Check licenses, advisories, duplicates
@@ -130,7 +137,7 @@ jobs:
       - uses: arduino/setup-protoc@v3
         with:
           version: "28.x"
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          repo-token: ${{ github.token }}
       - name: Install extras
         run: cargo install cargo-machete cargo-semver-checks
       - name: Detect unused deps
@@ -155,7 +162,7 @@ jobs:
       - uses: arduino/setup-protoc@v3
         with:
           version: "28.x"
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          repo-token: ${{ github.token }}
       - name: Install tarpaulin
         run: cargo install cargo-tarpaulin
       - name: Generate coverage
@@ -184,7 +191,7 @@ jobs:
       - uses: arduino/setup-protoc@v3
         with:
           version: "28.x"
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          repo-token: ${{ github.token }}
       - name: Format check
         run: cargo fmt --all -- --check
       - name: Clippy (warnings = errors)
@@ -205,7 +212,7 @@ jobs:
       - uses: arduino/setup-protoc@v3
         with:
           version: "28.x"
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          repo-token: ${{ github.token }}
       - name: Build
         run: cargo build --workspace
 
@@ -220,7 +227,7 @@ jobs:
       - uses: arduino/setup-protoc@v3
         with:
           version: "28.x"
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          repo-token: ${{ github.token }}
       - name: Check MSRV compatibility
         run: cargo check --workspace
 
@@ -235,7 +242,7 @@ jobs:
       - uses: arduino/setup-protoc@v3
         with:
           version: "28.x"
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          repo-token: ${{ github.token }}
       - name: Build docs
         run: cargo doc --no-deps --workspace
 

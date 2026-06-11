@@ -337,7 +337,7 @@ impl PolicyEngine {
     /// Create with custom policies
     pub fn with_policies(policies: Vec<Policy>) -> Self {
         let mut policies = policies;
-        policies.sort_by(|a, b| b.priority.cmp(&a.priority));
+        policies.sort_by_key(|b| std::cmp::Reverse(b.priority));
 
         Self {
             policies,
@@ -354,7 +354,7 @@ impl PolicyEngine {
     /// Add a policy
     pub fn add_policy(&mut self, policy: Policy) {
         self.policies.push(policy);
-        self.policies.sort_by(|a, b| b.priority.cmp(&a.priority));
+        self.policies.sort_by_key(|b| std::cmp::Reverse(b.priority));
     }
 
     /// Check if an action is allowed
@@ -405,18 +405,16 @@ impl PolicyEngine {
     /// Evaluate a single condition
     fn evaluate_condition(&self, condition: &PolicyCondition, context: &PolicyContext) -> bool {
         match condition {
-            PolicyCondition::Equals { key, value } => {
-                context.get(key).map_or(false, |v| v == *value)
-            }
+            PolicyCondition::Equals { key, value } => context.get(key).is_none_or(|v| v == *value),
             PolicyCondition::Contains { key, value } => {
-                context.get(key).map_or(false, |v| match (v, value) {
+                context.get(key).is_none_or(|v| match (v, value) {
                     (serde_json::Value::String(s), serde_json::Value::String(pattern)) => {
                         s.contains(pattern)
                     }
                     _ => false,
                 })
             }
-            PolicyCondition::Matches { key, pattern } => context.get(key).map_or(false, |v| {
+            PolicyCondition::Matches { key, pattern } => context.get(key).is_none_or(|v| {
                 if let serde_json::Value::String(s) = v {
                     regex::Regex::new(pattern)
                         .map(|r| r.is_match(s.as_str()))
@@ -435,9 +433,9 @@ impl PolicyEngine {
                         None
                     }
                 })
-                .map_or(false, |c| c >= *channel),
+                .is_none_or(|c| c >= *channel),
             PolicyCondition::Env { name, value } => {
-                std::env::var(name).ok().map_or(false, |v| v == *value)
+                std::env::var(name).ok().is_none_or(|v| v == *value)
             }
             PolicyCondition::Not { condition } => !self.evaluate_condition(condition, context),
             PolicyCondition::And { conditions } => conditions

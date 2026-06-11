@@ -13,12 +13,12 @@
 //! - `AGILEPLUS_POLICY_*` for policy config
 //! - `AGILEPLUS_RATE_LIMIT_*` for rate limit config
 
-use agileplus_config::config_builder;
 use crate::types::AuthMethod;
+use agileplus_config::config_builder;
 use serde::{Deserialize, Serialize};
 
 /// Main governance configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct GovernanceConfig {
     /// Governance settings
     pub governance: GovernanceSettings,
@@ -30,18 +30,6 @@ pub struct GovernanceConfig {
     pub policy: PolicySettings,
     /// Rate limiting settings
     pub rate_limit: RateLimitSettings,
-}
-
-impl Default for GovernanceConfig {
-    fn default() -> Self {
-        Self {
-            governance: GovernanceSettings::default(),
-            local: LocalSettings::default(),
-            sync: SyncSettings::default(),
-            policy: PolicySettings::default(),
-            rate_limit: RateLimitSettings::default(),
-        }
-    }
 }
 
 config_builder! {
@@ -103,17 +91,12 @@ config_builder! {
 }
 
 /// Default action when no policy matches
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum PolicyDefaultAction {
+    #[default]
     Allow,
     Deny,
-}
-
-impl Default for PolicyDefaultAction {
-    fn default() -> Self {
-        Self::Allow
-    }
 }
 
 config_builder! {

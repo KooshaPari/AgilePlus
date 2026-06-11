@@ -8,10 +8,10 @@
 //! Traceability: WP11-T069
 
 use axum::extract::State;
-use axum::response::IntoResponse;
 use axum::response::sse::{Event, KeepAlive, Sse};
-use tokio_stream::StreamExt as _;
+use axum::response::IntoResponse;
 use tokio_stream::wrappers::BroadcastStream;
+use tokio_stream::StreamExt as _;
 
 use crate::state::AppState;
 use agileplus_domain::ports::{

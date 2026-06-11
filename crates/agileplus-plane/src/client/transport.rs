@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
 use reqwest::{Method, Response};
-use serde::{Serialize, de::DeserializeOwned};
+use serde::{de::DeserializeOwned, Serialize};
 
 pub(super) async fn request_json<T: Serialize + ?Sized>(
     client: &reqwest::Client,

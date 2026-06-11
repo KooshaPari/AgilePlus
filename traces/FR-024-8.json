@@ -1,0 +1,12 @@
+{
+  "schema_version": "1",
+  "fr_id": "FR-024-8",
+  "spec_slug": "eco-024-traceability",
+  "spec_anchor": "#fr-8",
+  "docs_pages": ["AgilePlus/traces/SCHEMA.md"],
+  "tests": ["tooling/trace-validator/tests/schema.rs::test_schema_md_matches_shape"],
+  "code_modules": ["tooling/trace-validator/src/schema.rs"],
+  "journeys": ["docs/operations/journeys/FR-024-8.md"],
+  "status": "proposed",
+  "last_validated": "2026-06-05T00:00:00Z"
+}

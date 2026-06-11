@@ -1,4 +1,9 @@
 name: Evidence Capture
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -10,10 +15,6 @@ on:
       - "feat/**"
       - "fix/**"
       - "chore/**"
-
-permissions:
-  contents: read
-
 jobs:
   capture-evidence:
     name: Capture evidence bundle

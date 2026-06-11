@@ -11,9 +11,10 @@ use tokio::sync::RwLock;
 use tracing::{error, info, warn};
 
 use crate::audit::{AuditEvent, AuditFilter, AuditLogger};
-use crate::channel::{PromotionRequest, PromotionResult, ReleaseChannel};
+use crate::channel::{PromotionRequest, PromotionResult};
 use crate::config::GovernanceConfig;
 use crate::error::{GovernanceError, Result};
+#[allow(unused_imports)] // PolicyContext is used in tests
 use crate::policy::{PolicyCheck, PolicyContext, PolicyEngine, PolicyResult};
 use crate::rate_limiter::{RateLimitKey, RateLimiter};
 use crate::types::*;

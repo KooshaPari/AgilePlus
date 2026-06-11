@@ -1,6 +1,6 @@
 //! Evidence repository — CRUD for the `evidence` table.
 
-use rusqlite::{Connection, Row, params};
+use rusqlite::{params, Connection, Row};
 
 use agileplus_domain::{
     domain::governance::{Evidence, EvidenceType},

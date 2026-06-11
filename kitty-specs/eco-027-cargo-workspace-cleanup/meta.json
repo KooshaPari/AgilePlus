@@ -1,0 +1,9 @@
+{
+  "spec_id": "eco-027",
+  "slug": "eco-027-cargo-workspace-cleanup",
+  "title": "Cargo Workspace Cleanup",
+  "status": "active",
+  "created_at": "2026-06-05T00:00:00Z",
+  "type": "operational",
+  "superseded_by": null
+}

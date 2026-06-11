@@ -12,11 +12,11 @@
 
 use std::path::PathBuf;
 
-use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD};
+use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine as _};
 use rand::RngCore;
 use sha2::{Digest, Sha256};
 
-use agileplus_domain::credentials::{CredentialStore, keys};
+use agileplus_domain::credentials::{keys, CredentialStore};
 
 /// Prefix that identifies an AgilePlus API key.
 const KEY_PREFIX: &str = "agp_";

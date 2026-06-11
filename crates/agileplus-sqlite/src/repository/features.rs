@@ -1,6 +1,6 @@
 //! Feature repository — CRUD operations for the `features` table.
 
-use rusqlite::{Connection, Row, params};
+use rusqlite::{params, Connection, Row};
 
 use agileplus_domain::{
     domain::{feature::Feature, state_machine::FeatureState},

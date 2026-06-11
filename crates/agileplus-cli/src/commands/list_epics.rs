@@ -16,6 +16,7 @@ pub struct ListEpicsArgs {
     pub json: bool,
 }
 
+#[allow(clippy::print_literal)] // table header rows use literal strings for column names
 pub async fn run<S: StoragePort>(args: &ListEpicsArgs, storage: &S) -> Result<()> {
     let epics = if let Some(project_id) = args.project {
         storage
@@ -49,10 +50,7 @@ pub async fn run<S: StoragePort>(args: &ListEpicsArgs, storage: &S) -> Result<()
         return Ok(());
     }
 
-    println!(
-        "{:<6}  {:<6}  {:<12}  {}",
-        "ID", "PROJ", "STATUS", "TITLE"
-    );
+    println!("{:<6}  {:<6}  {:<12}  {}", "ID", "PROJ", "STATUS", "TITLE");
     println!("{}", "-".repeat(70));
     for e in &epics {
         println!(

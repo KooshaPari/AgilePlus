@@ -20,7 +20,10 @@ config_builder! {
 impl NatsConfig {
     /// Construct with explicit server URL; all other fields use defaults.
     pub fn new(url: impl Into<String>) -> Self {
-        Self { url: url.into(), ..Self::default() }
+        Self {
+            url: url.into(),
+            ..Self::default()
+        }
     }
 
     /// Back-compat alias: set auth token (wraps [`with_auth_token`]).

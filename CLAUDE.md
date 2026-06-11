@@ -2,13 +2,25 @@
 
 ## Overview
 
-AgilePlus is an AI-native project management platform. The Rust workspace is currently scaffolding (no `.rs` files yet). The primary implementation lives in TypeScript/Go layers.
+AgilePlus is an AI-native, spec-driven, local-first project-management platform. The primary
+implementation is a Rust Cargo workspace (~20 active crates, hexagonal architecture) with a
+web dashboard (Askama + React/TS) and an Electrobun desktop app. It is one of the org's three
+PM frontend candidates (with Tracera and Planify).
 
 ## Architecture
 
-- **Rust workspace**: Root `Cargo.toml` with `[workspace]` + `[package]` (placeholder). Members added as Rust code is created. 26 scaffolded crate dirs and 21 scaffolded lib dirs exist but are excluded from the workspace until they have source files.
-- **TypeScript/Go**: Primary application layers (see root directory structure).
-- **Python**: `python/phenotype_traceability/` package; `agileplus-mcp/` is a separate Python MCP server repo.
+Hexagonal (ports-and-adapters): `agileplus-domain` and `agileplus-application` have no framework
+deps; everything else is an adapter. Key crates:
+
+- **Core**: `agileplus-domain`, `agileplus-application`
+- **Interfaces**: `agileplus-cli`/`-subcmds`, `agileplus-api`, `agileplus-grpc`/`-proto`, `agileplus-dashboard` (web + desktop)
+- **Persistence/transport**: `agileplus-sqlite`, `agileplus-events`/`-nats`, `agileplus-sync`, `agileplus-p2p`
+- **Integrations**: `agileplus-github`, `agileplus-plane`, `agileplus-import`, `agileplus-git`
+- **Cross-cutting**: `agileplus-governance`, `agileplus-config`, `agileplus-cache`, `agileplus-telemetry`, `agileplus-triage`, `agileplus-graph`
+- **Tests/bench**: `agileplus-contract-tests`, `agileplus-integration-tests`, `agileplus-benchmarks`, `agileplus-fixtures`
+- **Python**: `python/phenotype_traceability/` package; `agileplus-mcp/` is a separate FastMCP server.
+
+Build: `cargo build --workspace`. CLI: `cargo install --path crates/agileplus-cli`. Dashboard: `cd crates/agileplus-dashboard/web && bun run dev`.
 
 ## Branch Discipline
 

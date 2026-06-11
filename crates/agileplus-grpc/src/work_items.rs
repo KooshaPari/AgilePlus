@@ -11,13 +11,12 @@ use tonic::{Request, Response, Status};
 
 use agileplus_domain::ports::{AgentPort, ObservabilityPort, ReviewPort, StoragePort, VcsPort};
 use agileplus_proto::agileplus::v1::{
-    EpicProto, ListEpicsRequest, ListEpicsResponse, ListProjectsRequest, ListProjectsResponse,
-    ListStoriesRequest, ListStoriesResponse, ProjectProto, StoryProto, SyncRepositoryRequest,
-    SyncRepositoryResponse,
-    work_items_service_server::WorkItemsService,
+    work_items_service_server::WorkItemsService, EpicProto, ListEpicsRequest, ListEpicsResponse,
+    ListProjectsRequest, ListProjectsResponse, ListStoriesRequest, ListStoriesResponse,
+    ProjectProto, StoryProto, SyncRepositoryRequest, SyncRepositoryResponse,
 };
 
-use crate::server::{AgilePlusCoreServer, domain_error_to_status};
+use crate::server::{domain_error_to_status, AgilePlusCoreServer};
 
 // ── WorkItemsService impl ─────────────────────────────────────────────────────
 
@@ -102,9 +101,7 @@ where
 
         // Require a GitHub token.
         let token = std::env::var("GITHUB_TOKEN").map_err(|_| {
-            Status::unauthenticated(
-                "GITHUB_TOKEN env var is required for SyncRepository",
-            )
+            Status::unauthenticated("GITHUB_TOKEN env var is required for SyncRepository")
         })?;
 
         // Build the live GitHub data source.
@@ -116,10 +113,9 @@ where
         );
 
         // Run the sync.
-        let report =
-            agileplus_github::sync::sync_repository(&source, req.project_id, req.epic_id)
-                .await
-                .map_err(|e| Status::internal(e.to_string()))?;
+        let report = agileplus_github::sync::sync_repository(&source, req.project_id, req.epic_id)
+            .await
+            .map_err(|e| Status::internal(e.to_string()))?;
 
         let stories_synced = report.stories.len() as i32;
         let stories_skipped = report.skipped.len() as i32;
