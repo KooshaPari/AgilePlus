@@ -60,6 +60,10 @@ enum Command {
     ListEpics(commands::list_epics::ListEpicsArgs),
     /// List stories, optionally filtered by epic and/or status
     ListStories(commands::list_stories::ListStoriesArgs),
+    /// Manage directed trace links between domain entities (L2 #40)
+    Trace(commands::trace::TraceArgs),
+    /// Render an in-flight DAG view of the SQLite database (L2 #40)
+    Dashboard(commands::dashboard::DashboardArgs),
     /// Worklog schema management (validate/convert/schema/list)
     Worklog(commands::worklog::WorklogArgs),
 }
@@ -294,6 +298,12 @@ async fn main() {
                 let storage = agileplus_sqlite::SqliteStorageAdapter::new(&db_path)
                     .map_err(|e| anyhow::anyhow!("open db: {e}"))?;
                 commands::list_stories::run(&args, &storage).await?;
+            }
+            Command::Trace(args) => {
+                commands::trace::run(&args)?;
+            }
+            Command::Dashboard(args) => {
+                commands::dashboard::run(&args)?;
             }
             Command::Worklog(args) => {
                 commands::worklog::run(&args)?;

@@ -24,6 +24,8 @@ rusqlite = { version = "0.32", features = ["bundled"] }
 async-trait.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+comfy-table = "7"
 
 [dev-dependencies]
 tokio-test = "0.4"
+tempfile = "3"
