@@ -174,6 +174,10 @@ impl Config {
     }
 
     fn config_path() -> PathBuf {
+        if let Ok(path) = std::env::var("AGILEPLUS_CONFIG_PATH") {
+            return PathBuf::from(path);
+        }
+
         std::env::var("HOME")
             .ok()
             .map(|home| PathBuf::from(home).join(".agileplus/config.toml"))
@@ -2396,6 +2400,18 @@ mod tests {
         Arc::new(RwLock::new(store))
     }
 
+    fn isolate_config(test_name: &str) {
+        let path = std::env::temp_dir().join(format!(
+            "agileplus-dashboard-{test_name}-{}",
+            std::process::id()
+        ));
+        let _ = std::fs::remove_dir_all(&path);
+        std::fs::create_dir_all(&path).unwrap();
+        unsafe {
+            std::env::set_var("AGILEPLUS_CONFIG_PATH", path.join("config.toml"));
+        }
+    }
+
     // NOTE: 8 render-assertion tests removed (see PR #675 follow-up).
     // The associated askama templates in `templates/partials/*.html` and
     // `templates/pages/*.html` are still `<!-- placeholder -->` and
@@ -2407,6 +2423,7 @@ mod tests {
 
     #[tokio::test]
     async fn toggle_service_updates_store_and_responds() {
+        isolate_config("toggle-service");
         let state = make_state();
         let app = router(state.clone());
 

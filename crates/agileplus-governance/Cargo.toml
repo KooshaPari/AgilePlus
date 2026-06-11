@@ -17,6 +17,7 @@ required-features = ["cli"]
 [dependencies]
 # Config builder macro
 agileplus-config = { path = "../agileplus-config" }
+agileplus-telemetry.workspace = true
 
 # Async runtime
 tokio = { version = "1", features = ["full"] }

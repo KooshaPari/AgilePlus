@@ -252,6 +252,7 @@ mod tests {
 
 #[tokio::main]
 async fn main() {
+    let _telemetry = agileplus_telemetry::init_subscriber().ok();
     let cli = Cli::parse();
     let store = MockStore::seed();
 

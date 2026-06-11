@@ -8,7 +8,8 @@ use tracing::info;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    tracing_subscriber::fmt().init();
+    let _telemetry = agileplus_telemetry::init_subscriber()
+        .map_err(|err| anyhow::anyhow!("failed to initialize telemetry: {err}"))?;
 
     let port = std::env::var("AGILEPLUS_DASHBOARD_PORT")
         .ok()

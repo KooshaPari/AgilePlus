@@ -34,6 +34,7 @@ dependencies = [
  "agileplus-domain",
  "agileplus-git",
  "agileplus-sqlite",
+ "agileplus-telemetry",
  "anyhow",
  "askama",
  "async-trait",
@@ -92,6 +93,7 @@ dependencies = [
  "agileplus-domain",
  "agileplus-github",
  "agileplus-sqlite",
+ "agileplus-telemetry",
  "anyhow",
  "async-trait",
  "chrono",
@@ -119,6 +121,7 @@ dependencies = [
  "agileplus-events",
  "agileplus-fixtures",
  "agileplus-sqlite",
+ "agileplus-telemetry",
  "anyhow",
  "askama",
  "async-stream",
@@ -217,6 +220,7 @@ name = "agileplus-governance"
 version = "0.1.0"
 dependencies = [
  "agileplus-config",
+ "agileplus-telemetry",
  "anyhow",
  "async-trait",
  "chrono",

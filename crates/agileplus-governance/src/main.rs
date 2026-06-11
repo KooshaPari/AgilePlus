@@ -70,8 +70,9 @@ async fn main() -> Result<()> {
 
     if cli.verbose {
         std::env::set_var("RUST_LOG", "agileplus_governance=debug");
-        tracing_subscriber::fmt::init();
     }
+    let _telemetry = agileplus_telemetry::init_subscriber()
+        .map_err(|err| anyhow!("failed to initialize telemetry: {err}"))?;
 
     match &cli.command {
         Commands::Policy {
