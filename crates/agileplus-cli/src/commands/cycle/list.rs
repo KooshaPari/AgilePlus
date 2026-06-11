@@ -38,7 +38,7 @@ pub(super) async fn cmd_list<S: StoragePort>(args: ListArgs, storage: &S) -> Res
         let scope = if let Some(mid) = c.module_scope_id {
             find_module_slug(storage, mid)
                 .await
-                .unwrap_or_else(|| format!("id:{}", mid))
+                .unwrap_or_else(|| format!("id:{mid}"))
         } else {
             "-".to_string()
         };

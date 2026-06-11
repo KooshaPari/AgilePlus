@@ -1928,7 +1928,7 @@ pub async fn toggle_service(
             "status": "error",
             "service": name,
             "enabled": enabled,
-            "error": format!("Failed to save config: {}", err),
+            "error": format!("Failed to save config: {err}"),
         }));
     }
 

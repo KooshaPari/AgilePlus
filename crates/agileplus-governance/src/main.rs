@@ -88,7 +88,7 @@ async fn main() -> Result<()> {
                 match ch.parse::<ReleaseChannel>() {
                     Ok(channel) => context = context.with_channel(channel),
                     Err(e) => {
-                        eprintln!("Invalid channel '{}': {}", ch, e);
+                        eprintln!("Invalid channel '{ch}': {e}");
                     }
                 }
             }
@@ -113,7 +113,7 @@ async fn main() -> Result<()> {
             let from_channel = match from.parse::<ReleaseChannel>() {
                 Ok(c) => c,
                 Err(e) => {
-                    eprintln!("Invalid from channel '{}': {}", from, e);
+                    eprintln!("Invalid from channel '{from}': {e}");
                     return Ok(());
                 }
             };
@@ -121,7 +121,7 @@ async fn main() -> Result<()> {
             let to_channel = match to.parse::<ReleaseChannel>() {
                 Ok(c) => c,
                 Err(e) => {
-                    eprintln!("Invalid to channel '{}': {}", to, e);
+                    eprintln!("Invalid to channel '{to}': {e}");
                     return Ok(());
                 }
             };

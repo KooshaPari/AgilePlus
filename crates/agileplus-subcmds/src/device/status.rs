@@ -14,7 +14,7 @@ pub async fn run_status(args: &StatusArgs) -> anyhow::Result<()> {
         .unwrap_or_else(|| "unknown".to_string());
 
     let local = LocalDeviceInfo {
-        device_id: format!("local-{}", &hostname),
+        device_id: format!("local-{hostname}"),
         hostname: hostname.clone(),
         tailscale_ip: String::from("(unavailable without Tailscale)"),
     };

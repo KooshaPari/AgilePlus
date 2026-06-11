@@ -22,7 +22,7 @@ pub(super) async fn cmd_show<S: StoragePort>(args: ShowArgs, storage: &S) -> Res
 
     println!("Cycle:        {}", cwf.cycle.name);
     if let Some(ref desc) = cwf.cycle.description {
-        println!("Description:  {}", desc);
+        println!("Description:  {desc}");
     }
     println!("State:        {}", cwf.cycle.state);
     println!("Start:        {}", cwf.cycle.start_date);
@@ -32,8 +32,8 @@ pub(super) async fn cmd_show<S: StoragePort>(args: ShowArgs, storage: &S) -> Res
     if let Some(mid) = cwf.cycle.module_scope_id {
         let scope_label = find_module_slug(storage, mid)
             .await
-            .unwrap_or_else(|| format!("id:{}", mid));
-        println!("Module scope: {}", scope_label);
+            .unwrap_or_else(|| format!("id:{mid}"));
+        println!("Module scope: {scope_label}");
     }
 
     // WP progress

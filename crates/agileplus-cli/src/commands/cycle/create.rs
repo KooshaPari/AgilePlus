@@ -49,7 +49,7 @@ pub(super) async fn cmd_create<S: StoragePort>(args: CreateArgs, storage: &S) ->
     println!("  Start:      {}", cycle.start_date);
     println!("  End:        {}", cycle.end_date);
     if let Some(mid) = cycle.module_scope_id {
-        println!("  Module id:  {}", mid);
+        println!("  Module id:  {mid}");
     }
 
     Ok(())

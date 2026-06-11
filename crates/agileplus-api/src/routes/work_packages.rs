@@ -255,7 +255,7 @@ where
     Ok(Json(WpTransitionResponse {
         wp_id: id,
         from_state,
-        to_state: format!("{:?}", target).to_lowercase(),
+        to_state: format!("{target:?}").to_lowercase(),
     }))
 }
 

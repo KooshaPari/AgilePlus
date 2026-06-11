@@ -96,7 +96,7 @@ pub async fn ensure_api_key(
         "[key too short]".to_string()
     };
     println!("AgilePlus API initialized.");
-    println!("API Key (masked): {}", masked_key);
+    println!("API Key (masked): {masked_key}");
     println!("Store this key securely; it won't be shown again.");
     println!("(Also saved to {})", key_path.display());
 

@@ -62,9 +62,9 @@ fn bench_get_feature_node(c: &mut Criterion) {
                 NodeType::Feature,
                 serde_json::json!({
                     "id": i,
-                    "slug": format!("feat-{}", i),
+                    "slug": format!("feat-{i}"),
                     "state": "Created",
-                    "friendly_name": format!("Feature {}", i)
+                    "friendly_name": format!("Feature {i}")
                 }),
             );
             store.upsert_node(&node).await.unwrap();
@@ -100,9 +100,9 @@ fn bench_seed_n_features(c: &mut Criterion) {
                             NodeType::Feature,
                             serde_json::json!({
                                 "id": i,
-                                "slug": format!("feat-{}", i),
+                                "slug": format!("feat-{i}"),
                                 "state": "Created",
-                                "friendly_name": format!("Feature {}", i)
+                                "friendly_name": format!("Feature {i}")
                             }),
                         );
                         store.upsert_node(&node).await.expect("create");
@@ -171,9 +171,9 @@ fn bench_dependency_chain_query(c: &mut Criterion) {
                 NodeType::Feature,
                 serde_json::json!({
                     "id": i,
-                    "slug": format!("feat-{}", i),
+                    "slug": format!("feat-{i}"),
                     "state": "Created",
-                    "friendly_name": format!("Feature {}", i)
+                    "friendly_name": format!("Feature {i}")
                 }),
             );
             store.upsert_node(&node).await.unwrap();
@@ -233,9 +233,9 @@ mod tests {
                 NodeType::Feature,
                 serde_json::json!({
                     "id": i,
-                    "slug": format!("feat-{}", i),
+                    "slug": format!("feat-{i}"),
                     "state": "Created",
-                    "friendly_name": format!("Feature {}", i)
+                    "friendly_name": format!("Feature {i}")
                 }),
             );
             store.upsert_node(&node).await.unwrap();
