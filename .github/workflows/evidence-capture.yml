@@ -109,7 +109,7 @@ jobs:
           BUNDLE_EOF
 
       - name: Upload evidence bundle as artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: evidence-bundle-${{ github.run_number }}
           path: .agileplus/evidence/ci-run/

@@ -168,7 +168,7 @@ jobs:
       - name: Generate coverage
         run: cargo tarpaulin --workspace --out xml --output-dir coverage
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v6
+        uses: codecov/codecov-action@v7
         with:
           files: ./coverage/cobertura.xml
           flags: rust
@@ -231,7 +231,7 @@ jobs:
             "${{ github.workspace }}/../phenoShared"
           git -C "${{ github.workspace }}/../phenoShared" \
             checkout c3aee3361ff4888a8ced71c8861a8d54ae65fca0
-      - uses: dtolnay/rust-toolchain@1.88.0
+      - uses: dtolnay/rust-toolchain@1.100.0
       - uses: Swatinem/rust-cache@v2
       - uses: arduino/setup-protoc@v3
         with:
@@ -280,7 +280,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.14"
       - name: Install uv
@@ -307,7 +307,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.14"
       - name: Install uv

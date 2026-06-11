@@ -1,4 +1,4 @@
-﻿name: TruffleHog Secrets Scan
+name: TruffleHog Secrets Scan
 on:
   push:
     branches: [main, "chore/**", "feat/**", "fix/**"]
@@ -20,6 +20,6 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-      - uses: trufflesecurity/trufflehog@3fc0c2aa6648d54242e4af6fbfde0701796e4fb0  # v3.92.0 — SHA-pinned (matches sast-quick.yml)
+      - uses: trufflesecurity/trufflehog@d03d0879a3d03548a000f6eb2640307f0815c3b3  # v3.92.0 — SHA-pinned (matches sast-quick.yml)
         with:
           extra_args: --only-verified

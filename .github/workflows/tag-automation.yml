@@ -16,6 +16,6 @@ concurrency:
 
 jobs:
   tag:
-    uses: KooshaPari/phenoShared/.github/workflows/tag-automation.yml@438e2e71e448c9f1f47f184d3ca4acbb28928677  # main
+    uses: KooshaPari/phenoShared/.github/workflows/tag-automation.yml@c3aee3361ff4888a8ced71c8861a8d54ae65fca0  # main
     permissions:
       contents: write
