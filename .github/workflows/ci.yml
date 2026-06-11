@@ -214,12 +214,21 @@ jobs:
         run: cargo build --workspace
 
   core-msrv:
-    name: Core MSRV (1.86)
+    name: Core MSRV (1.88)
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v6
-      - uses: dtolnay/rust-toolchain@1.86.0
+      # Workspace path-deps resolve into the phenoShared sibling; clone it so
+      # cargo check can load those manifests (see quality-gate.yml).
+      - name: Checkout phenoShared sibling
+        run: |
+          git clone \
+            "https://x-access-token:${{ github.token }}@github.com/KooshaPari/phenoShared.git" \
+            "${{ github.workspace }}/../phenoShared"
+          git -C "${{ github.workspace }}/../phenoShared" \
+            checkout c3aee3361ff4888a8ced71c8861a8d54ae65fca0
+      - uses: dtolnay/rust-toolchain@1.88.0
       - uses: Swatinem/rust-cache@v2
       - uses: arduino/setup-protoc@v3
         with:
