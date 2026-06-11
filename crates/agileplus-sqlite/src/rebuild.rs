@@ -467,7 +467,7 @@ mod tests {
             "hash": hex(e2.hash),
         });
 
-        format!("{}\n{}\n", line1, line2)
+        format!("{line1}\n{line2}\n")
     }
 
     #[tokio::test]
