@@ -99,6 +99,7 @@ dependencies = [
  "chrono",
  "clap",
  "rusqlite",
+ "serde",
  "serde_json",
  "tokio",
  "tokio-test",

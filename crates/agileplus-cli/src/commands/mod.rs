@@ -9,6 +9,7 @@ pub mod list_projects;
 pub mod list_stories;
 pub mod list_tests;
 pub mod seed_requirements;
+pub mod worklog;
 
 // ── stub modules (excluded until upstream deps are resolved) ──────────────────
 // pub mod branch;          // STUB: agileplus_events + missing VCS types
