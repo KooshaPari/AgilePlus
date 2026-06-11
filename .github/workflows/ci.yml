@@ -16,11 +16,6 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-
-concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
-
 env:
   CARGO_TERM_COLOR: always
   RUSTFLAGS: "-D warnings"
@@ -202,19 +197,56 @@ jobs:
         run: cargo test --workspace
 
   core-build:
-    name: Core Build
-    runs-on: ubuntu-24.04
+    name: Core Build (${{ matrix.package }}, ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        package:
+          - agileplus
+          - agileplus-config
+          - agileplus-cache
+          - agileplus-governance
+          - agileplus-application
+          - agileplus-dashboard
+          - agileplus-domain
+          - agileplus-events
+          - agileplus-fixtures
+          - agileplus-git
+          - agileplus-sqlite
+          - agileplus-cli
+          - agileplus-api
+          - agileplus-grpc
+          - agileplus-github
+          - agileplus-plane
+          - agileplus-nats
+          - agileplus-p2p
+          - agileplus-telemetry
+          - agileplus-triage
+          - agileplus-import
+          - agileplus-proto
+          - xtask-anti-patterns
     steps:
       - uses: actions/checkout@v6
+      - name: Checkout phenoShared sibling
+        run: |
+          git clone \
+            "https://x-access-token:${{ github.token }}@github.com/KooshaPari/phenoShared.git" \
+            "${{ github.workspace }}/../phenoShared"
+          git -C "${{ github.workspace }}/../phenoShared" \
+            checkout c3aee3361ff4888a8ced71c8861a8d54ae65fca0
       - uses: dtolnay/rust-toolchain@nightly
       - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ runner.os }}-${{ matrix.package }}
       - uses: arduino/setup-protoc@v3
         with:
           version: "28.x"
           repo-token: ${{ github.token }}
-      - name: Build
-        run: cargo build --workspace
+      - name: Build package
+        run: cargo build -p ${{ matrix.package }}
 
   core-msrv:
     name: Core MSRV (1.88)
