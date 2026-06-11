@@ -9,7 +9,7 @@ description = "Application / use-case layer (hexagonal — no framework deps)"
 [dependencies]
 agileplus-domain = { path = "../agileplus-domain" }
 async-trait.workspace = true
-phenotype-error-core = { path = "../../../phenoShared/crates/phenotype-error-core" }
+phenotype-error-core.workspace = true
 thiserror.workspace = true
 tokio = { workspace = true, features = ["full"] }
 

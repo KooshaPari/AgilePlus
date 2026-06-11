@@ -138,6 +138,8 @@ utoipa = "4"
 uuid = { version = "1", features = ["v4", "serde"] }
 async-nats = "0.38"
 paste = "1"
+phenotype-error-core = { path = "../phenoShared/crates/phenotype-error-core" }
+phenotype-logging = { path = "../phenoShared/crates/phenotype-logging" }
 agileplus-config = { path = "crates/agileplus-config" }
 agileplus-proto = { path = "crates/agileplus-proto" }
 tokio-stream = { version = "0.1", features = ["net", "sync"] }

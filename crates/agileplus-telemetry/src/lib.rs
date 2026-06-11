@@ -19,6 +19,9 @@ pub mod traces;
 
 pub use adapter::{init_telemetry, TelemetryAdapter, TelemetryError, TelemetryGuard};
 pub use config::TelemetryConfig;
+pub use phenotype_logging::{
+    init_tracing, init_tracing_for_test, init_tracing_with_default, DEFAULT_FILTER,
+};
 
 use tracing_subscriber::prelude::*;
 
@@ -40,12 +43,19 @@ pub fn init_subscriber() -> Result<SubscriberGuard, String> {
     let env_filter = tracing_subscriber::EnvFilter::try_new(&level_filter)
         .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info"));
 
+    let endpoint = std::env::var("OTEL_EXPORTER_OTLP_ENDPOINT").ok();
+    if endpoint.is_none() {
+        phenotype_logging::init_tracing_with_default(&level_filter);
+        return Ok(SubscriberGuard {
+            _log_guard: None,
+            _tracer_provider: None,
+        });
+    }
+
     let (stdout_writer, log_guard) = tracing_appender::non_blocking(std::io::stdout());
     let fmt_layer = tracing_subscriber::fmt::layer()
         .with_writer(stdout_writer)
         .with_target(true);
-
-    let endpoint = std::env::var("OTEL_EXPORTER_OTLP_ENDPOINT").ok();
 
     let (tracer_provider, otel_layer) = if let Some(ref ep) = endpoint {
         use opentelemetry::trace::TracerProvider as _;
