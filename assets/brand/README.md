@@ -31,3 +31,13 @@ Renderer preference matches the Civis pure-Rust SVG convention
 (`docs/research/RND-016-svg-pipeline-validation.md`): **resvg** (canonical),
 falling back to `rsvg-convert` → ImageMagick → Python/cairosvg+Pillow.
 ICO/JPG assembly uses ImageMagick when present, else Pillow.
+
+## Per-OS icon export placeholder
+
+The standing backlog per-OS icon pipeline lives at
+`tools/build-icons/Build-Icons.ps1` and reads
+`assets/brand/source/icon.svg`.
+
+TODO: `assets/brand/source/icon.svg` is only a placeholder. Replace it with the
+approved AgilePlus icon design before treating the generated `.ico`, `.icns`, or
+`.png` assets in `assets/brand/generated/icons/` as release-ready.
