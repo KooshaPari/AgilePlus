@@ -79,26 +79,22 @@ fn run_health_checks_returns_four_healthy_services() {
         services.len()
     );
     let names: Vec<&str> = services.iter().map(|s| s.name.as_str()).collect();
-    assert!(names.contains(&"SQLite"), "Missing SQLite in {:?}", names);
+    assert!(names.contains(&"SQLite"), "Missing SQLite in {names:?}");
     assert!(
         names.contains(&"In-Memory Store"),
-        "Missing In-Memory Store in {:?}",
-        names
+        "Missing In-Memory Store in {names:?}"
     );
     assert!(
         names.contains(&"Process Metrics"),
-        "Missing Process Metrics in {:?}",
-        names
+        "Missing Process Metrics in {names:?}"
     );
     assert!(
         names.contains(&"Build Info"),
-        "Missing Build Info in {:?}",
-        names
+        "Missing Build Info in {names:?}"
     );
     assert!(
         services.iter().all(|s| s.healthy),
-        "All services must report healthy: {:?}",
-        services
+        "All services must report healthy: {services:?}"
     );
 }
 
@@ -108,8 +104,7 @@ fn at_least_one_service_reports_measurable_latency() {
     let services = run_health_checks();
     assert!(
         services.iter().any(|s| s.latency_ms.is_some()),
-        "At least one service should report measurable latency, got {:?}",
-        services
+        "At least one service should report measurable latency, got {services:?}"
     );
 }
 

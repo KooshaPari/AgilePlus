@@ -231,7 +231,7 @@ mod tests {
     #[test]
     fn valid_yaml_parses() {
         let mut f = tempfile::NamedTempFile::new().unwrap();
-        write!(f, "{}", DEFAULT_CONFIG_YAML).unwrap();
+        write!(f, "{DEFAULT_CONFIG_YAML}").unwrap();
         let cfg = TelemetryConfig::load_from(f.path()).unwrap();
         assert!(cfg.otlp.is_some());
         assert_eq!(cfg.sampling.trace_ratio, 1.0);

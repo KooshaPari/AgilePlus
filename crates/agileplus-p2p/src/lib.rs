@@ -103,7 +103,7 @@ impl P2pBehaviour {
         let daemon = ServiceDaemon::new().map_err(|e| P2pError::MdnsStart(e.to_string()))?;
 
         // Register this node so other peers can discover it.
-        let host_name = format!("{}.local.", instance_name);
+        let host_name = format!("{instance_name}.local.");
         let service_info = mdns_sd::ServiceInfo::new(
             SERVICE_TYPE,
             instance_name,

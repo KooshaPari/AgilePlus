@@ -38,7 +38,7 @@ pub fn wp_to_proto(wp: DomainWorkPackage) -> ProtoWpStatus {
         pr_url: wp.pr_url.unwrap_or_default(),
         pr_state: wp
             .pr_state
-            .map(|ps| format!("{:?}", ps).to_lowercase())
+            .map(|ps| format!("{ps:?}").to_lowercase())
             .unwrap_or_default(),
         depends_on: Vec::new(), // Populated separately when needed
         file_scope: wp.file_scope,

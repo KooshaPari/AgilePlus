@@ -68,7 +68,7 @@ impl std::str::FromStr for ActionCategory {
             "audit" => Ok(Self::Audit),
             "config" => Ok(Self::Config),
             "general" => Ok(Self::General),
-            _ => Err(format!("Unknown action category: {}", s)),
+            _ => Err(format!("Unknown action category: {s}")),
         }
     }
 }
@@ -103,7 +103,7 @@ impl std::str::FromStr for OperationResult {
             "success" => Ok(OperationResult::Success),
             "failure" => Ok(OperationResult::Failure),
             "partial_success" | "partialsuccess" => Ok(OperationResult::PartialSuccess),
-            _ => Err(format!("Unknown result: {}", s)),
+            _ => Err(format!("Unknown result: {s}")),
         }
     }
 }
@@ -138,7 +138,7 @@ impl std::str::FromStr for LogLevel {
             "info" => Ok(LogLevel::Info),
             "warn" | "warning" => Ok(LogLevel::Warn),
             "error" | "err" => Ok(LogLevel::Error),
-            _ => Err(format!("Unknown log level: {}", s)),
+            _ => Err(format!("Unknown log level: {s}")),
         }
     }
 }

@@ -87,7 +87,7 @@ pub fn gh_user_to_domain(
 ) -> Result<User, DomainError> {
     let effective_email = match email {
         Some(e) if e.contains('@') => e.to_string(),
-        _ => format!("{}@github.invalid", login),
+        _ => format!("{login}@github.invalid"),
     };
 
     let mut user = User::new(login, &effective_email, UserRole::Member)?;

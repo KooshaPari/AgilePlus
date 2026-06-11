@@ -180,7 +180,7 @@ fn cmd_feature_show(store: &MockStore, id: i64) {
                 f.updated_at.format("%Y-%m-%d %H:%M:%S UTC")
             );
         }
-        None => eprintln!("error: feature {} not found", id),
+        None => eprintln!("error: feature {id} not found"),
     }
 }
 

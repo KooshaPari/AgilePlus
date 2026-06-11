@@ -378,7 +378,7 @@ impl PolicyEngine {
                 || policy
                     .conditions
                     .iter()
-                    .all(|c| self.evaluate_condition(c, context));
+                    .all(|c| Self::evaluate_condition(c, context));
 
             if all_conditions_met {
                 let reason = policy
@@ -402,8 +402,12 @@ impl PolicyEngine {
         }
     }
 
-    /// Evaluate a single condition
-    fn evaluate_condition(&self, condition: &PolicyCondition, context: &PolicyContext) -> bool {
+    /// Evaluate a single condition.
+    ///
+    /// Associated (no `&self`): condition evaluation depends only on the
+    /// condition tree and the request context, not on engine state. Keeping it
+    /// `&self`-free also satisfies `clippy::only_used_in_recursion`.
+    fn evaluate_condition(condition: &PolicyCondition, context: &PolicyContext) -> bool {
         match condition {
             PolicyCondition::Equals { key, value } => context.get(key).is_none_or(|v| v == *value),
             PolicyCondition::Contains { key, value } => {
@@ -437,13 +441,13 @@ impl PolicyEngine {
             PolicyCondition::Env { name, value } => {
                 std::env::var(name).ok().is_none_or(|v| v == *value)
             }
-            PolicyCondition::Not { condition } => !self.evaluate_condition(condition, context),
+            PolicyCondition::Not { condition } => !Self::evaluate_condition(condition, context),
             PolicyCondition::And { conditions } => conditions
                 .iter()
-                .all(|c| self.evaluate_condition(c, context)),
+                .all(|c| Self::evaluate_condition(c, context)),
             PolicyCondition::Or { conditions } => conditions
                 .iter()
-                .any(|c| self.evaluate_condition(c, context)),
+                .any(|c| Self::evaluate_condition(c, context)),
         }
     }
 

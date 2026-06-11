@@ -957,8 +957,7 @@ pub async fn feature_media(
         .join("\n");
 
     Html(format!(
-        r#"<div class="grid grid-cols-2 gap-3 media-gallery">{}</div>"#,
-        html
+        r#"<div class="grid grid-cols-2 gap-3 media-gallery">{html}</div>"#
     ))
     .into_response()
 }
@@ -1004,7 +1003,7 @@ pub async fn agent_activity(State(state): State<SharedState>) -> Response {
 /// `process_detector::get_process_start_time` (e.g. "5m", "1h 20m").
 fn calculate_uptime(started_at: &Option<String>) -> String {
     match started_at {
-        Some(elapsed) => format!("running for {}", elapsed),
+        Some(elapsed) => format!("running for {elapsed}"),
         None => "uptime unknown".into(),
     }
 }
@@ -1771,8 +1770,7 @@ fn validate_restart_command(cmd_line: &str) -> Result<(), String> {
     let program = parts.remove(0);
     if !is_restart_command_allowed(program) {
         return Err(format!(
-            "command '{}' is not in approved restart command registry: {:?}",
-            program, ALLOWED_RESTART_PROGRAMS
+            "command '{program}' is not in approved restart command registry: {ALLOWED_RESTART_PROGRAMS:?}"
         ));
     }
 
@@ -1880,11 +1878,11 @@ pub async fn patch_service_config(
 
     match config.save() {
         Ok(_) => render(ToastPartial {
-            message: format!("Service '{}' configuration saved", name),
+            message: format!("Service '{name}' configuration saved"),
             success: true,
         }),
         Err(e) => render(ToastPartial {
-            message: format!("Failed to save: {}", e),
+            message: format!("Failed to save: {e}"),
             success: false,
         }),
     }
@@ -1997,11 +1995,11 @@ pub async fn test_agent_connection(
             true,
             "Local provider requires no external credentials".to_string(),
         ),
-        other => (false, format!("Unknown provider: {}", other)),
+        other => (false, format!("Unknown provider: {other}")),
     };
 
     let css = if ok { "text-green-400" } else { "text-red-400" };
-    Html(format!(r#"<span class="{}">{}</span>"#, css, msg)).into_response()
+    Html(format!(r#"<span class="{css}">{msg}</span>"#)).into_response()
 }
 
 // ── Router builder ───────────────────────────────────────────────────────
@@ -2032,7 +2030,7 @@ pub async fn save_plane_settings(axum::Form(form): axum::Form<PlaneSettingsForm>
             success: true,
         }),
         Err(e) => render(ToastPartial {
-            message: format!("Failed to save settings: {}", e),
+            message: format!("Failed to save settings: {e}"),
             success: false,
         }),
     }
@@ -2062,7 +2060,7 @@ pub async fn save_agent_settings(axum::Form(form): axum::Form<AgentSettingsForm>
             success: true,
         }),
         Err(e) => render(ToastPartial {
-            message: format!("Failed to save settings: {}", e),
+            message: format!("Failed to save settings: {e}"),
             success: false,
         }),
     }
@@ -2093,7 +2091,7 @@ pub async fn save_dashboard_settings(
             success: true,
         }),
         Err(e) => render(ToastPartial {
-            message: format!("Failed to save settings: {}", e),
+            message: format!("Failed to save settings: {e}"),
             success: false,
         }),
     }
@@ -2130,7 +2128,7 @@ pub async fn save_services_settings(axum::Form(form): axum::Form<ServiceSettings
             success: true,
         }),
         Err(e) => render(ToastPartial {
-            message: format!("Failed to save settings: {}", e),
+            message: format!("Failed to save settings: {e}"),
             success: false,
         }),
     }

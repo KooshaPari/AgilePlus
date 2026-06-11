@@ -377,7 +377,7 @@ impl AuditLogger {
                 event.timestamp.to_rfc3339(),
                 event.level.to_string(),
                 event.action,
-                event.category.map(|c| format!("{:?}", c)),
+                event.category.map(|c| format!("{c:?}")),
                 event.message,
                 event.user_id,
                 event.client_ip,
@@ -420,7 +420,7 @@ impl AuditLogger {
 
         if let Some(ref category) = filter.category {
             sql.push_str(" AND category = ?");
-            params_vec.push(format!("{:?}", category));
+            params_vec.push(format!("{category:?}"));
         }
 
         if let Some(ref level) = filter.level {
@@ -594,8 +594,7 @@ impl AuditLogger {
         let now = Utc::now().to_rfc3339();
         let placeholders = ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
         let sql = format!(
-            "UPDATE audit_events SET synced_at = ? WHERE id IN ({})",
-            placeholders
+            "UPDATE audit_events SET synced_at = ? WHERE id IN ({placeholders})"
         );
 
         let mut params_vec: Vec<&dyn rusqlite::ToSql> = vec![&now];

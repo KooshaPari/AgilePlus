@@ -55,14 +55,14 @@ impl InMemoryPlaneClient {
                 updated_at: Some(chrono::Utc::now().to_rfc3339()),
             });
         }
-        anyhow::bail!("issue {} not found", id)
+        anyhow::bail!("issue {id} not found")
     }
 
     pub async fn get_work_item(&self, id: &str) -> anyhow::Result<PlaneWorkItemResponse> {
         self.issues
             .get(id)
             .cloned()
-            .ok_or_else(|| anyhow::anyhow!("issue {} not found", id))
+            .ok_or_else(|| anyhow::anyhow!("issue {id} not found"))
     }
 
     pub async fn list_work_items(&self) -> anyhow::Result<Vec<PlaneWorkItemResponse>> {

@@ -148,7 +148,7 @@ fn format_agent_name(process_name: &str, worktree: &Option<String>) -> String {
     if let Some(wt) = worktree {
         // Extract just the project name from the worktree path
         if let Some(last_segment) = wt.split('/').next_back() {
-            return format!("{}-{}", base_name, last_segment);
+            return format!("{base_name}-{last_segment}");
         }
     }
 
@@ -173,7 +173,7 @@ fn get_process_start_time(process: &sysinfo::Process) -> Option<String> {
 /// Format an elapsed duration in seconds as a human-readable string.
 fn format_elapsed(secs: u64) -> String {
     if secs < 60 {
-        format!("{}s", secs)
+        format!("{secs}s")
     } else if secs < 3600 {
         format!("{}m", secs / 60)
     } else {
