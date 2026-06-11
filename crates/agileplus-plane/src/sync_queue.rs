@@ -328,8 +328,7 @@ mod tests {
     fn queue_full_error() {
         let mut q = SyncQueue::new();
         for i in 0..QUEUE_CAPACITY {
-            q.enqueue(SyncOpKind::CreateIssue, format!("{i}"))
-                .unwrap();
+            q.enqueue(SyncOpKind::CreateIssue, format!("{i}")).unwrap();
         }
         let err = q.enqueue(SyncOpKind::CreateIssue, "overflow".into());
         assert!(matches!(err, Err(QueueError::Full(_))));

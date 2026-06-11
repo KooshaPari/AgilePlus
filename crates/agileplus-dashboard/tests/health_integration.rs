@@ -9,8 +9,8 @@
 
 use agileplus_dashboard::app_state::ServiceHealth;
 use agileplus_dashboard::health::{
-    BuildInfoChecker, HealthChecker, MemoryStoreChecker, ProcessChecker, SqliteChecker,
-    run_health_checks,
+    run_health_checks, BuildInfoChecker, HealthChecker, MemoryStoreChecker, ProcessChecker,
+    SqliteChecker,
 };
 use chrono::Utc;
 
@@ -143,7 +143,10 @@ fn checker_failures_surface_as_healthy_false() {
     }
     let (healthy, latency) = AlwaysFailing.check();
     assert!(!healthy, "Failing checker must report healthy == false");
-    assert!(latency.is_some(), "Failing checker should still report timing");
+    assert!(
+        latency.is_some(),
+        "Failing checker should still report timing"
+    );
 }
 
 // AC10: every AC has at least one passing test in this file.
