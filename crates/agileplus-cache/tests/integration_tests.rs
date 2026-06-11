@@ -302,6 +302,6 @@ fn test_cache_config_clone() {
 #[test]
 fn test_cache_config_debug() {
     let config = CacheConfig::default();
-    let debug_str = format!("{:?}", config);
+    let debug_str = format!("{config:?}");
     assert!(debug_str.contains("CacheConfig"));
 }
