@@ -18,9 +18,10 @@ on:
   workflow_dispatch:
 jobs:
   detect-unused-dependencies:
+    timeout-minutes: 30
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
       - uses: taiki-e/install-action@v2
         with:

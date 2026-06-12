@@ -9,10 +9,11 @@ on:
 
 jobs:
   audit:
+    timeout-minutes: 30
     name: Cargo Audit
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
       - name: Install cargo-audit
         uses: taiki-e/install-action@v2
         with:
@@ -21,10 +22,11 @@ jobs:
         run: cargo audit
 
   clippy:
+    timeout-minutes: 30
     name: Clippy
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
@@ -36,10 +38,11 @@ jobs:
       - run: cargo clippy --all-targets --all-features -- -D warnings
 
   fmt:
+    timeout-minutes: 30
     name: Format Check
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt

@@ -17,6 +17,7 @@ on:
       - "chore/**"
 jobs:
   capture-evidence:
+    timeout-minutes: 30
     name: Capture evidence bundle
     runs-on: ubuntu-24.04
     env:
@@ -29,7 +30,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable

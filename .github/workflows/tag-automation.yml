@@ -16,6 +16,7 @@ concurrency:
 
 jobs:
   tag:
+    timeout-minutes: 30
     uses: KooshaPari/phenoShared/.github/workflows/tag-automation.yml@438e2e71e448c9f1f47f184d3ca4acbb28928677  # main
     permissions:
       contents: write

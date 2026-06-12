@@ -15,4 +15,5 @@ concurrency:
 on: [pull_request_review]
 jobs:
   gate:
+    timeout-minutes: 30
     uses: KooshaPari/phenoShared/.github/workflows/self-merge-gate.yml@438e2e71e448c9f1f47f184d3ca4acbb28928677  # main

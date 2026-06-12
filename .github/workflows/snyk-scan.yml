@@ -18,13 +18,14 @@ concurrency:
 
 jobs:
   snyk-test:
+    timeout-minutes: 30
     name: Snyk Vulnerability Test
     runs-on: ubuntu-24.04
     env:
       SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -85,6 +86,7 @@ jobs:
           echo "No high or critical vulnerabilities detected by Snyk."
 
   snyk-monitor:
+    timeout-minutes: 30
     name: Snyk Monitor
     runs-on: ubuntu-24.04
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -92,7 +94,7 @@ jobs:
       SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Monitor dependencies
         run: |

@@ -19,6 +19,7 @@ on:
 
 jobs:
   bdd-tests:
+    timeout-minutes: 30
     name: BDD Feature Tests
     runs-on: ubuntu-latest
     steps:
@@ -36,6 +37,7 @@ jobs:
         run: npx cucumber run tests/bdd/*.feature
 
   vitest-tests:
+    timeout-minutes: 30
     name: Vitest Unit Tests
     runs-on: ubuntu-latest
     steps:
@@ -53,6 +55,7 @@ jobs:
         run: npx vitest run --reporter=json
 
   playwright-tests:
+    timeout-minutes: 30
     name: Playwright Visual Tests
     runs-on: ubuntu-latest
     steps:
@@ -70,6 +73,7 @@ jobs:
         run: npx playwright test
 
   spec-traceability:
+    timeout-minutes: 30
     name: FR Traceability Validation
     runs-on: ubuntu-latest
     steps:

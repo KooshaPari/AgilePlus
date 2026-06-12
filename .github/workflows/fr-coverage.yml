@@ -12,7 +12,8 @@ concurrency:
   cancel-in-progress: true
 jobs:
   coverage:
+    timeout-minutes: 30
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
       - run: echo "FR coverage check (phenotype-tooling integration)"
