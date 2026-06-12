@@ -1,5 +1,13 @@
-> **Work state:** ACTIVE · **Progress:** `███████░░░ 70%`
-> AI-native spec-driven PM platform (Rust workspace + React/TS dashboard + Electrobun desktop); frontend candidate #1. Core domain/api/dashboard implemented; CI partially red. · updated 2026-06-02
+## Work State
+
+| Field | Value |
+|---|---|
+| Last commit | 2026-06-08 |
+| Open issues | 1 |
+| Open PRs | 5 |
+| Focus | justfile + SPEC:011 work-package migration |
+
+Progress: ███████░░░ 70%
 
 # AgilePlus
 
