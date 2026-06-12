@@ -1,0 +1,22 @@
+[package]
+name = "agileplus-spec-harmonizer"
+version = "0.1.0"
+edition = "2021"
+description = "Harmonizes GSD, OpenSpec, BMAD-Method, and Spec-Kitty spec formats into a single normalized WorkPackage shape"
+license = "MIT"
+repository = "https://github.com/KooshaPari/agileplus-spec-harmonizer"
+readme = "README.md"
+keywords = ["spec", "harmonizer", "gsd", "openspec", "bmad", "kitty", "traceability"]
+
+[workspace]
+
+[lib]
+name = "agileplus_spec_harmonizer"
+path = "src/lib.rs"
+
+[dependencies]
+regex = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[dev-dependencies]
