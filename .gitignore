@@ -18,10 +18,6 @@
 .worktrees/
 .claude/worktrees/
 .claude/scheduled_tasks.lock
-# Agent / MCP caches — local-only
-.serena/
-.codex/
-.cursor/
 
 # Browser-history / research exports (leaked secrets risk)
 data/safari/
