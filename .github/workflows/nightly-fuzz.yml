@@ -36,7 +36,7 @@ jobs:
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
       - uses: dtolnay/rust-toolchain@5b842231ba77f5c045dba54ac5560fed2db780e2  # nightly
-      - uses: Swatinem/rust-cache@42dc69e1aa15d09112580998cf2ef0119e2e91ae  # v2
+      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32  # v2
         with:
           key: fuzz-${{ runner.os }}-${{ matrix.crate }}-${{ hashFiles(format('{0}/Cargo.toml', matrix.path), format('{0}/fuzz/Cargo.toml', matrix.path)) }}
           workspaces: |

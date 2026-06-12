@@ -13,7 +13,7 @@ jobs:
   governance-index:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Regenerate governance index
         run: python3 tooling/governance_index.py
       - name: Verify committed index
