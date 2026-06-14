@@ -5,7 +5,7 @@
   "work_package": {
     "wp_id": "L3-025",
     "title": "Stale-worktree cleanup pass",
-    "state": "doing",
+    "state": "done",
     "lane": "ops",
     "category": "automation",
     "dependencies": [
@@ -14,11 +14,11 @@
     "files_changed": [
       "scripts/worktree-cleanup.sh"
     ],
-    "commit_sha": "PENDING",
+    "commit_sha": "4cba532e6",
     "branch": "chore/l5-87-focus-repo-specs-2026-06-11",
     "test_results": [],
     "verification": {
-      "status": "pending",
+      "status": "passed",
       "commands": [
         "test -x scripts/worktree-cleanup.sh"
       ],

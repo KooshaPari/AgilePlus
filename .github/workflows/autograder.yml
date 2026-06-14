@@ -51,7 +51,14 @@ jobs:
         env:
           RUSTFLAGS: "-D warnings"
 
-      - name: Gate 5 — Cargo machete
+      - name: Gate 5 — Cargo audit
+        run: |
+          cargo install --locked cargo-audit
+          cargo audit
+        env:
+          RUSTFLAGS: "-D warnings"
+
+      - name: Gate 6 — Cargo machete
         run: |
           cargo install --locked cargo-machete
           cargo machete
@@ -77,6 +84,7 @@ jobs:
                 test: "passed",
                 clippy: "passed",
                 cargo_deny: "passed",
+                cargo_audit: "passed",
                 cargo_machete: "passed"
               },
               overall: "passed"

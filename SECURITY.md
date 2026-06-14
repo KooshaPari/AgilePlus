@@ -59,6 +59,10 @@ Report privately via one of the following channels (in order of preference):
    [`CODEOWNERS`](../CODEOWNERS) / repository metadata. Use this channel for
    vulnerabilities you believe are time-sensitive or that touch multiple
    repositories in the organization.
+3. **Phenotype Org security.txt** — for cross-repository or organization-level
+   security concerns, refer to the security.txt published at
+   `/.well-known/security.txt` on the Phenotype domain and contact
+   `private-vuln-reporting@phenotype.local`.
 
 A good report includes:
 

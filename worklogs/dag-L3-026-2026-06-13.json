@@ -5,7 +5,7 @@
   "work_package": {
     "wp_id": "L3-026",
     "title": "Retire xtask-anti-patterns; consolidate anti-pattern checks",
-    "state": "doing",
+    "state": "done",
     "lane": "refactor",
     "category": "technical_debt",
     "dependencies": [
@@ -16,11 +16,11 @@
       "justfile",
       "xtask-anti-patterns/"
     ],
-    "commit_sha": "PENDING",
+    "commit_sha": "4cba532e6",
     "branch": "chore/l5-87-focus-repo-specs-2026-06-11",
     "test_results": [],
     "verification": {
-      "status": "pending",
+      "status": "passed",
       "commands": [
         "cargo build --workspace"
       ],

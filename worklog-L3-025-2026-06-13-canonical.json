@@ -1,13 +1,13 @@
 {
-  "status": "in_progress",
+  "status": "completed",
   "task_id": "L3-025",
   "agent_id": "codex-exec-2026-06-13",
   "files_changed": [
     "scripts/worktree-cleanup.sh"
   ],
-  "commit_sha": "PENDING",
+  "commit_sha": "4cba532e6",
   "verification_result": {
-    "status": "pending",
+    "status": "passed",
     "commands": [
       "test -x scripts/worktree-cleanup.sh",
       "bash -n scripts/worktree-cleanup.sh"
@@ -15,5 +15,5 @@
     "notes": "eco-028 WP-04 T007-T008: Cleanup pass script for stale worktrees and dirty divergences."
   },
   "started_at": "2026-06-13T02:05:00Z",
-  "completed_at": "PENDING"
+  "completed_at": "2026-06-13T02:31:00Z"
 }
