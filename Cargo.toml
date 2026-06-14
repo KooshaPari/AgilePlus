@@ -70,6 +70,7 @@ members = [
     "crates/agileplus-telemetry",
     "crates/agileplus-triage",
     "crates/agileplus-trace-validator",
+    "crates/shared-traceability",
     "crates/agileplus-import",
     "crates/agileplus-validate",
     "crates/agileplus-proto",
@@ -152,6 +153,7 @@ agileplus-config = { path = "crates/agileplus-config" }
 agileplus-validate = { path = "crates/agileplus-validate" }
 agileplus-proto = { path = "crates/agileplus-proto" }
 agileplus-telemetry = { path = "crates/agileplus-telemetry" }
+shared-traceability = { path = "crates/shared-traceability" }
 tokio-stream = { version = "0.1", features = ["net", "sync"] }
 
 # cargo-machete false-positive ignores (dev-only / proc-macro / build-deps)
