@@ -781,6 +781,10 @@ mod tests {
         SqliteStorageAdapter::in_memory().expect("in-memory adapter")
     }
 
+    // MVP story-WP integration tests (story_work_packages + next-ready).
+    #[path = "../lib/tests/mvp_story_work_packages.rs"]
+    mod mvp_story_work_packages;
+
     // -- Feature tests --
 
     #[tokio::test]
