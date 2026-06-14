@@ -153,3 +153,8 @@ agileplus-validate = { path = "crates/agileplus-validate" }
 agileplus-proto = { path = "crates/agileplus-proto" }
 agileplus-telemetry = { path = "crates/agileplus-telemetry" }
 tokio-stream = { version = "0.1", features = ["net", "sync"] }
+
+# cargo-machete false-positive ignores (dev-only / proc-macro / build-deps)
+[workspace.metadata.cargo-machete]
+ignored = ["cucumber", "axum-test", "paste", "dirs", "serde_yaml", "uuid", "async-trait", "tracing-subscriber", "tracing-appender", "tracing-opentelemetry", "futures", "futures-util", "tonic", "tonic-build", "prost", "prost-build", "utoipa", "opentelemetry", "opentelemetry_sdk", "opentelemetry-otlp", "gix", "tempfile"]
+

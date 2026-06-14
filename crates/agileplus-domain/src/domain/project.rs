@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use agileplus_validate::{name_required, slug_format};
 
-use crate::error::DomainError;
+use crate::{error::DomainError, DomainResult};
 
 /// A project that owns modules, cycles, and features.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -23,7 +23,7 @@ pub struct Project {
 impl Project {
     /// Construct a new `Project`. `name` must be non-empty; `slug` must be
     /// non-empty and consist only of lowercase ASCII alphanumerics and hyphens.
-    pub fn new(name: &str, slug: &str) -> Result<Self, DomainError> {
+    pub fn new(name: &str, slug: &str) -> DomainResult<Self> {
         let name = name.trim();
         name_required(name)
             .map_err(|message| DomainError::Validation(format!("project {message}")))?;
