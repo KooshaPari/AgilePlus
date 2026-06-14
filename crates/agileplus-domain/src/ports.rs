@@ -149,6 +149,37 @@ pub trait StoragePort: Send + Sync {
     async fn get_wp_dependencies(&self, wp_id: i64) -> Result<Vec<WpDependency>, DomainError>;
     async fn get_ready_wps(&self, feature_id: i64) -> Result<Vec<WorkPackage>, DomainError>;
 
+    // --- MVP: story-scoped work packages ---
+    /// Create a work package and link it to a story (story_work_packages join).
+    async fn create_work_package_for_story(
+        &self,
+        _story_id: i64,
+        _wp: &WorkPackage,
+    ) -> Result<i64, DomainError> {
+        Err(DomainError::NotImplemented)
+    }
+    /// List the work packages linked to a story.
+    async fn list_wps_by_story(&self, _story_id: i64) -> Result<Vec<WorkPackage>, DomainError> {
+        Err(DomainError::NotImplemented)
+    }
+    /// List every work package across all features/stories.
+    async fn list_all_work_packages(&self) -> Result<Vec<WorkPackage>, DomainError> {
+        Err(DomainError::NotImplemented)
+    }
+    /// Return planned work packages that are ready to start: every explicit
+    /// dependency points to a Done WP AND no file in its scope overlaps a
+    /// Doing/Review WP. Optionally restricted to a cycle.
+    async fn get_next_ready_wps(
+        &self,
+        _cycle: Option<i64>,
+    ) -> Result<Vec<WorkPackage>, DomainError> {
+        Err(DomainError::NotImplemented)
+    }
+    /// Link a story to a cycle (cycle_stories join).
+    async fn add_story_to_cycle(&self, _cycle_id: i64, _story_id: i64) -> Result<(), DomainError> {
+        Err(DomainError::NotImplemented)
+    }
+
     // --- Audit ---
     async fn append_audit_entry(&self, entry: &AuditEntry) -> Result<i64, DomainError>;
     async fn get_audit_trail(&self, feature_id: i64) -> Result<Vec<AuditEntry>, DomainError>;

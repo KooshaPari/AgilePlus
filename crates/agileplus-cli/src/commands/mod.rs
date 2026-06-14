@@ -10,6 +10,7 @@ pub mod list_epics;
 pub mod list_projects;
 pub mod list_stories;
 pub mod list_tests;
+pub mod mvp;
 pub mod seed_requirements;
 pub mod worklog;
 
