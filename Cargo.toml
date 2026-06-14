@@ -74,6 +74,7 @@ members = [
     "crates/agileplus-validate",
     "crates/agileplus-proto",
     "crates/agileplus-subcmds",
+    "crates/pheno-ci-templates",
 ]
 exclude = ["AgilePlus/rust", "rust", "crates/phenotype-config"]
 
