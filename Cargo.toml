@@ -51,50 +51,48 @@
 [workspace]
 resolver = "3"
 members = [
-    "crates/agileplus-graph",
-    "crates/agileplus-config",
-    "crates/agileplus-cache",
-    "crates/agileplus-governance",
-    "crates/agileplus-application",
-    "crates/agileplus-dashboard",
-    "crates/agileplus-domain",
-    "crates/agileplus-events",
-    "crates/agileplus-fixtures",
-    "crates/agileplus-git",
-    "crates/agileplus-sqlite",
-    "crates/agileplus-cli",
-    "crates/agileplus-api",
-    "crates/agileplus-grpc",
-    "crates/agileplus-github",
-    "crates/agileplus-plane",
-    "crates/agileplus-sync",
-    "crates/agileplus-nats",
-    "crates/agileplus-p2p",
-    "crates/agileplus-telemetry",
-    "crates/agileplus-triage",
-    "crates/agileplus-subcmds",
-    "crates/agileplus-pipeline",
-    "crates/agileplus-trace-validator",
-    "crates/shared-traceability",
-    "crates/agileplus-import",
-    "crates/agileplus-proto",
-    "crates/agileplus-validate",
-    "crates/agileplus-artifacts",
-    "crates/agileplus-mcp-intent",
-    "crates/phenotype-dep-guard",
-    "crates/agileplus-benchmarks",
-    "crates/agileplus-contract-tests",
-    "crates/agileplus-convoy",
-    "crates/agileplus-factory",
-    "crates/agileplus-graph",
-    "crates/agileplus-hook",
-    "crates/agileplus-integration-tests",
-    "crates/agileplus-refinery",
-    "crates/agileplus-sync",
-    "crates/agileplus-witness",
-    "crates/pheno-ssot-template",
-    "crates/phenotype-mcp-sdk-rs",
-    "crates/phenotype-sandbox",
+  "crates/agileplus-graph",
+  "crates/agileplus-config",
+  "crates/agileplus-cache",
+  "crates/agileplus-governance",
+  "crates/agileplus-application",
+  "crates/agileplus-dashboard",
+  "crates/agileplus-domain",
+  "crates/agileplus-events",
+  "crates/agileplus-fixtures",
+  "crates/agileplus-git",
+  "crates/agileplus-sqlite",
+  "crates/agileplus-cli",
+  "crates/agileplus-api",
+  "crates/agileplus-grpc",
+  "crates/agileplus-github",
+  "crates/agileplus-plane",
+  "crates/agileplus-sync",
+  "crates/agileplus-nats",
+  "crates/agileplus-p2p",
+  "crates/agileplus-telemetry",
+  "crates/agileplus-triage",
+  "crates/agileplus-subcmds",
+  "crates/agileplus-pipeline",
+  "crates/agileplus-trace-validator",
+  "crates/shared-traceability",
+  "crates/agileplus-import",
+  "crates/agileplus-proto",
+  "crates/agileplus-validate",
+  "crates/agileplus-artifacts",
+  "crates/agileplus-mcp-intent",
+  "crates/phenotype-dep-guard",
+  "crates/agileplus-benchmarks",
+  "crates/agileplus-contract-tests",
+  "crates/agileplus-convoy",
+  "crates/agileplus-factory",
+  "crates/agileplus-hook",
+  "crates/agileplus-integration-tests",
+  "crates/agileplus-refinery",
+  "crates/agileplus-witness",
+  "crates/pheno-ssot-template",
+  "crates/phenotype-mcp-sdk-rs",
+  "crates/phenotype-sandbox",
 ]
 exclude = ["AgilePlus/rust", "rust", "crates/phenotype-config"]
 
@@ -124,7 +122,16 @@ axum.workspace = true
 chrono.workspace = true
 
 [package.metadata.cargo-machete]
-ignored = ["anyhow", "axum", "chrono", "serde", "serde_json", "thiserror", "tokio", "tracing"]
+ignored = [
+  "anyhow",
+  "axum",
+  "chrono",
+  "serde",
+  "serde_json",
+  "thiserror",
+  "tokio",
+  "tracing",
+]
 
 [dev-dependencies]
 axum-test = "20.1.0"
@@ -139,7 +146,11 @@ tokio = { version = "1.39", features = ["full"] }
 thiserror = "2"
 anyhow = "1"
 tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt", "json"] }
+tracing-subscriber = { version = "0.3", features = [
+  "env-filter",
+  "fmt",
+  "json",
+] }
 tracing-appender = "0.2"
 serde_yaml = "0.9"
 url = "2"
@@ -158,8 +169,17 @@ prost-build = "0.13"
 gix = "0.83.0"
 # OpenTelemetry - matching versions for compatibility
 opentelemetry = { version = "0.27", features = ["metrics"] }
-opentelemetry_sdk = { version = "0.27", features = ["metrics", "trace", "rt-tokio"] }
-opentelemetry-otlp = { version = "0.27", features = ["tonic", "gzip-tonic", "http-proto", "reqwest-client"] }
+opentelemetry_sdk = { version = "0.27", features = [
+  "metrics",
+  "trace",
+  "rt-tokio",
+] }
+opentelemetry-otlp = { version = "0.27", features = [
+  "tonic",
+  "gzip-tonic",
+  "http-proto",
+  "reqwest-client",
+] }
 # OpenTelemetry tracing bridge — uncomment when ready to use
 tracing-opentelemetry = "0.27"
 utoipa = "4"
