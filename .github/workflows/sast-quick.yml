@@ -83,5 +83,10 @@ jobs:
         uses: taiki-e/install-action@7a79fe8c3a13344501c80d99cae481c1c9085912  # v2
         with:
           tool: cargo-deny
+      - name: Checkout phenoShared sibling
+        run: |
+          git clone --depth 1 \
+            "https://x-access-token:${{ github.token }}@github.com/KooshaPari/phenoShared.git" \
+            "${{ github.workspace }}/../phenoShared"
       - name: Check Rust licenses
-        run: cargo deny check -c rust/deny.toml licenses
+        run: cargo deny check licenses
