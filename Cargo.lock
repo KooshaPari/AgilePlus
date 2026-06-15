@@ -113,7 +113,9 @@ version = "0.1.0"
 dependencies = [
  "agileplus-application",
  "agileplus-domain",
+ "agileplus-git",
  "agileplus-github",
+ "agileplus-plane",
  "agileplus-sqlite",
  "agileplus-telemetry",
  "agileplus-triage",
@@ -431,6 +433,26 @@ dependencies = [
  "tracera-core",
  "tracing",
  "uuid",
+]
+
+[[package]]
+name = "agileplus-sync"
+version = "0.1.0"
+dependencies = [
+ "agileplus-domain",
+ "agileplus-events",
+ "agileplus-plane",
+ "async-nats",
+ "async-trait",
+ "chrono",
+ "futures-util",
+ "proptest",
+ "serde",
+ "serde_json",
+ "sha2",
+ "thiserror 2.0.18",
+ "tokio",
+ "tracing",
 ]
 
 [[package]]

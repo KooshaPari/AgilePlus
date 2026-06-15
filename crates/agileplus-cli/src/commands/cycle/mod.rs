@@ -79,7 +79,9 @@ pub(super) fn prior_state_label(target: CycleState, cycle: &Cycle) -> String {
         CycleState::Draft => "Active",
         CycleState::Review => "Active",
         CycleState::Shipped => "Review",
-        CycleState::Archived => "Shipped",
+        CycleState::Archived => "Shipped or Completed",
+        CycleState::Completed => "Active or Review",
+        CycleState::Cancelled => "any",
     };
     prior.to_string()
 }

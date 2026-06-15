@@ -18,7 +18,9 @@ clap = { version = "4", features = ["derive", "env"] }
 chrono.workspace = true
 agileplus-application = { path = "../agileplus-application" }
 agileplus-domain = { path = "../agileplus-domain" }
+agileplus-git = { path = "../agileplus-git" }
 agileplus-github = { path = "../agileplus-github" }
+agileplus-plane = { path = "../agileplus-plane" }
 agileplus-sqlite = { path = "../agileplus-sqlite" }
 agileplus-triage = { path = "../agileplus-triage" }
 agileplus-telemetry.workspace = true

@@ -168,7 +168,7 @@ pub async fn run<V: VcsPort>(args: BranchArgs, vcs: &V) -> Result<()> {
                 &target,
                 result.success,
                 &output,
-                result.merged_commit,
+                result.commit,
             )?;
         }
     }
