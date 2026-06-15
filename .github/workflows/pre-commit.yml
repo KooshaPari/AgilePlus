@@ -24,6 +24,11 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
+      - name: Clone phenoShared sibling (required by cargo hooks)
+        run: |
+          git clone --depth 1 \
+            "https://x-access-token:${{ github.token }}@github.com/KooshaPari/phenoShared.git" \
+            "${{ github.workspace }}/../phenoShared"
       - name: Run pre-commit (auto + manual stages)
         uses: pre-commit/action@v3.0.1
         with:
