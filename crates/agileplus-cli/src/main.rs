@@ -65,6 +65,10 @@ enum Command {
     ListEpics(commands::list_epics::ListEpicsArgs),
     /// List stories, optionally filtered by epic and/or status
     ListStories(commands::list_stories::ListStoriesArgs),
+    /// Manage directed trace links between domain entities (L2 #40)
+    Trace(commands::trace::TraceArgs),
+    /// Render an in-flight DAG view of the SQLite database (L2 #40)
+    Dashboard(commands::dashboard::DashboardArgs),
     /// Worklog schema management (validate/convert/schema/list)
     Worklog(commands::worklog::WorklogArgs),
     /// DAG orchestration (pick/claim/heartbeat/done/dedup/scan/topology/where)
@@ -348,6 +352,12 @@ async fn main() {
             Command::ListStories(args) => {
                 let storage = open_storage(&db_path)?;
                 commands::list_stories::run(&args, &storage).await?;
+            }
+            Command::Trace(args) => {
+                commands::trace::run(&args)?;
+            }
+            Command::Dashboard(args) => {
+                commands::dashboard::run(&args)?;
             }
             Command::Worklog(args) => {
                 let db_path = db_path_from_env();
