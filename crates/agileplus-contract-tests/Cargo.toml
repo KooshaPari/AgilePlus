@@ -39,3 +39,6 @@ path = "../../tests/contracts/dashboard_api_contract.rs"
 [[test]]
 name = "api_events_contract"
 path = "../../tests/contracts/api_events_contract.rs"
+
+[package.metadata.cargo-machete]
+ignored = ["agileplus-api", "agileplus-domain", "agileplus-events", "agileplus-plane", "agileplus-sqlite", "anyhow", "axum", "chrono", "serde", "serde_json", "thiserror", "tokio"]

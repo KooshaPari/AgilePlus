@@ -75,3 +75,6 @@ version = "1"
 optional = true
 version = "4"
 features = ["derive"]
+
+[package.metadata.cargo-machete]
+ignored = ["async-trait", "envsubst", "tracing-subscriber"]

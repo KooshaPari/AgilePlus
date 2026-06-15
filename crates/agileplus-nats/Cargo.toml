@@ -20,3 +20,6 @@ async-nats.workspace = true
 futures-util.workspace = true
 agileplus-events = { path = "../agileplus-events" }
 agileplus-domain = { path = "../agileplus-domain" }
+
+[package.metadata.cargo-machete]
+ignored = ["anyhow"]

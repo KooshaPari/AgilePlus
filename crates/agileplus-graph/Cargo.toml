@@ -20,3 +20,6 @@ neo4j = ["neo4rs"]
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["full", "macros"] }
+
+[package.metadata.cargo-machete]
+ignored = ["tracing"]
