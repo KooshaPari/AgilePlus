@@ -32,22 +32,17 @@ jobs:
       - name: Install markdown-link-check
         run: npm install --silent --no-audit --no-fund --no-progress markdown-link-check@3.13.7
       - name: Write config
-        env:
-          WORKSPACE: ${{ github.workspace }}
         run: |
-          cat > /tmp/mlc-config.json <<EOF
-          {
+          python3 - <<'PYEOF'
+          import json, os
+          cfg = {
             "ignorePatterns": [
-              {"pattern": "^http(s)?://localhost"},
-              {"pattern": "^http(s)?://127\\.0\\.0\\.1"},
-              {"pattern": "^http(s)?://0\\.0\\.0\\.0"},
-              {"pattern": "^http(s)?://example\\.com"},
-              {"pattern": "^http(s)?://www\\.iana\\.org"},
-              {"pattern": "^http(s)?://schemas\\."}
-            ],
-            "replacementPatterns": [
-              {"pattern": "^/repos", "replacement": "${WORKSPACE}/.."},
-              {"pattern": "^repos/", "replacement": "${WORKSPACE}/../"}
+              {"pattern": "^https?://localhost"},
+              {"pattern": "^https?://127\\.0\\.0\\.1"},
+              {"pattern": "^https?://0\\.0\\.0\\.0"},
+              {"pattern": "^https?://example\\.com"},
+              {"pattern": "^https?://www\\.iana\\.org"},
+              {"pattern": "^https?://schemas\\."}
             ],
             "httpHeaders": [
               {
@@ -56,10 +51,13 @@ jobs:
               }
             ],
             "timeout": "20s",
-            "retryOn429": true,
+            "retryOn429": True,
             "retryCount": 2
           }
-          EOF
+          with open('/tmp/mlc-config.json', 'w') as f:
+            json.dump(cfg, f, indent=2)
+          print("Config written.")
+          PYEOF
       - name: Run markdown-link-check on docs/
         run: |
           set -euo pipefail
