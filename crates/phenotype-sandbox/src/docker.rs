@@ -2,9 +2,9 @@ use anyhow::{Context, Result};
 use bollard::container::{
     Config, CreateContainerOptions, RemoveContainerOptions, StopContainerOptions,
 };
-use bollard::models::HostConfig;
 use bollard::exec::{CreateExecOptions, StartExecOptions};
 use bollard::image::CreateImageOptions;
+use bollard::models::HostConfig;
 use bollard::Docker;
 use futures::StreamExt;
 use tracing::{debug, error, info, warn};
@@ -149,24 +149,27 @@ impl DockerBackend {
         let mut stdout = Vec::new();
         let mut stderr = Vec::new();
 
-        let mut stream = self
+        let exec_result = self
             .client
             .start_exec(&exec.id, Some(start_options))
             .await?;
 
-        while let Some(chunk) = stream.next().await {
-            match chunk {
-                Ok(bollard::container::LogOutput::StdOut { message }) => {
-                    stdout.extend_from_slice(&message);
-                }
-                Ok(bollard::container::LogOutput::StdErr { message }) => {
-                    stderr.extend_from_slice(&message);
-                }
-                Ok(bollard::container::LogOutput::Console { message }) => {
-                    stdout.extend_from_slice(&message);
-                }
-                Err(e) => {
-                    error!(error = %e, "exec stream error");
+        if let bollard::exec::StartExecResults::Attached { mut output, .. } = exec_result {
+            while let Some(chunk) = output.next().await {
+                match chunk {
+                    Ok(bollard::container::LogOutput::StdOut { message }) => {
+                        stdout.extend_from_slice(&message);
+                    }
+                    Ok(bollard::container::LogOutput::StdErr { message }) => {
+                        stderr.extend_from_slice(&message);
+                    }
+                    Ok(bollard::container::LogOutput::Console { message }) => {
+                        stdout.extend_from_slice(&message);
+                    }
+                    Err(e) => {
+                        error!(error = %e, "exec stream error");
+                    }
+                    _ => {}
                 }
             }
         }
