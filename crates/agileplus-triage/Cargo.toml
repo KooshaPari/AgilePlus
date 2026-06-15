@@ -53,4 +53,4 @@ rusqlite = { version = "0.32", optional = true, default-features = false, featur
 tempfile = "3"
 
 [package.metadata.cargo-machete]
-ignored = ["sqlx"]
+ignored = ["sqlx", "tracing"]
