@@ -10,11 +10,7 @@ use tempfile::TempDir;
 fn validate_whitespace_only_payload_fails() {
     let repo = TempDir::new().unwrap();
     fs::create_dir(repo.path().join("traces")).unwrap();
-    fs::write(
-        repo.path().join("traces/FR-whitespace.json"),
-        "   \n\t  \n",
-    )
-    .unwrap();
+    fs::write(repo.path().join("traces/FR-whitespace.json"), "   \n\t  \n").unwrap();
 
     Command::cargo_bin("agileplus-trace-validator")
         .unwrap()
@@ -69,7 +65,8 @@ fn validate_many_traces_with_many_links_succeeds() {
     let fr_ids: Vec<String> = (1..=trace_count).map(|i| format!("FR-multi-{i}")).collect();
     for fr in &fr_ids {
         fs::write(
-            repo.path().join(format!("docs/operations/journeys/{fr}.md")),
+            repo.path()
+                .join(format!("docs/operations/journeys/{fr}.md")),
             "journey",
         )
         .unwrap();

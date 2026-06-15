@@ -517,9 +517,7 @@ fn is_valid_node_id(id: &str) -> bool {
 /// ---------------------------------------------------------------------------
 /// Edge constraint rules — encoded from the ontology schema
 /// ---------------------------------------------------------------------------
-fn allowed_edge_constraints(
-    rel: RelationshipType,
-) -> &'static [(NodeType, NodeType)] {
+fn allowed_edge_constraints(rel: RelationshipType) -> &'static [(NodeType, NodeType)] {
     use NodeType::*;
     use RelationshipType::*;
     static IMPLEMENTS: &[(NodeType, NodeType)] = &[
@@ -554,11 +552,7 @@ fn allowed_edge_constraints(
         (Task, Story),
         (Task, Bug),
     ];
-    static RESOLVES: &[(NodeType, NodeType)] = &[
-        (Bug, Commit),
-        (Bug, PR),
-        (Bug, Task),
-    ];
+    static RESOLVES: &[(NodeType, NodeType)] = &[(Bug, Commit), (Bug, PR), (Bug, Task)];
     static BLOCKS: &[(NodeType, NodeType)] = &[
         (Task, Task),
         (Bug, Task),
@@ -656,8 +650,11 @@ impl IntentGraph {
             Gray,
             Black,
         }
-        let mut colors: HashMap<String, Color> =
-            self.nodes.iter().map(|n| (n.id.clone(), Color::White)).collect();
+        let mut colors: HashMap<String, Color> = self
+            .nodes
+            .iter()
+            .map(|n| (n.id.clone(), Color::White))
+            .collect();
 
         fn dfs(
             node_id: &str,
@@ -698,9 +695,7 @@ impl IntentGraph {
                     ))
                 })?;
                 if node.node_type != NodeType::Intent {
-                    return Err(ValidationError::InvalidRootNode(
-                        node.node_type.to_string(),
-                    ));
+                    return Err(ValidationError::InvalidRootNode(node.node_type.to_string()));
                 }
             }
         }
@@ -813,7 +808,10 @@ mod tests {
     fn node_type_display_and_from_str() {
         assert_eq!(NodeType::Feature.to_string(), "Feature");
         assert_eq!(NodeType::from("Bug"), NodeType::Bug);
-        assert_eq!(NodeType::try_from("Artifact".to_string()).unwrap(), NodeType::Artifact);
+        assert_eq!(
+            NodeType::try_from("Artifact".to_string()).unwrap(),
+            NodeType::Artifact
+        );
         assert!(NodeType::try_from("Unknown".to_string()).is_err());
     }
 
@@ -821,23 +819,38 @@ mod tests {
     fn dag_stage_display_and_from_str() {
         assert_eq!(DagStage::Commit.to_string(), "commit");
         assert_eq!(DagStage::from("pr"), DagStage::PR);
-        assert_eq!(DagStage::try_from("bug".to_string()).unwrap(), DagStage::Bug);
+        assert_eq!(
+            DagStage::try_from("bug".to_string()).unwrap(),
+            DagStage::Bug
+        );
         assert!(DagStage::try_from("unknown".to_string()).is_err());
     }
 
     #[test]
     fn relationship_type_display_and_from_str() {
         assert_eq!(RelationshipType::TracesTo.to_string(), "traces-to");
-        assert_eq!(RelationshipType::from("depends-on"), RelationshipType::DependsOn);
-        assert_eq!(RelationshipType::try_from("blocks".to_string()).unwrap(), RelationshipType::Blocks);
+        assert_eq!(
+            RelationshipType::from("depends-on"),
+            RelationshipType::DependsOn
+        );
+        assert_eq!(
+            RelationshipType::try_from("blocks".to_string()).unwrap(),
+            RelationshipType::Blocks
+        );
         assert!(RelationshipType::try_from("foo".to_string()).is_err());
     }
 
     #[test]
     fn canonical_link_type_display_and_from_str() {
         assert_eq!(CanonicalLinkType::ParentOf.to_string(), "parent_of");
-        assert_eq!(CanonicalLinkType::from("verifies"), CanonicalLinkType::Verifies);
-        assert_eq!(CanonicalLinkType::try_from("references".to_string()).unwrap(), CanonicalLinkType::References);
+        assert_eq!(
+            CanonicalLinkType::from("verifies"),
+            CanonicalLinkType::Verifies
+        );
+        assert_eq!(
+            CanonicalLinkType::try_from("references".to_string()).unwrap(),
+            CanonicalLinkType::References
+        );
         assert!(CanonicalLinkType::try_from("foo".to_string()).is_err());
     }
 
@@ -845,7 +858,10 @@ mod tests {
     fn status_display_and_from_str() {
         assert_eq!(Status::InProgress.to_string(), "in_progress");
         assert_eq!(Status::from("blocked"), Status::Blocked);
-        assert_eq!(Status::try_from("cancelled".to_string()).unwrap(), Status::Cancelled);
+        assert_eq!(
+            Status::try_from("cancelled".to_string()).unwrap(),
+            Status::Cancelled
+        );
         assert!(Status::try_from("foo".to_string()).is_err());
     }
 
@@ -859,9 +875,9 @@ mod tests {
     #[test]
     fn invalid_node_id_fails() {
         assert!(!is_valid_node_id("feature#auth-oauth2")); // lowercase start
-        assert!(!is_valid_node_id("Feature#"));             // empty slug
-        assert!(!is_valid_node_id("Feature_auth"));        // missing #
-        assert!(!is_valid_node_id("F#auth"));                // single upper letter
+        assert!(!is_valid_node_id("Feature#")); // empty slug
+        assert!(!is_valid_node_id("Feature_auth")); // missing #
+        assert!(!is_valid_node_id("F#auth")); // single upper letter
     }
 
     #[test]
@@ -871,10 +887,16 @@ mod tests {
                 sample_node("Intent#user-auth", NodeType::Intent, DagStage::Intent),
                 sample_node("Feature#oauth2", NodeType::Feature, DagStage::Feature),
             ],
-            edges: vec![sample_edge("e1", "Intent#user-auth", "Feature#oauth2", RelationshipType::Implements)],
+            edges: vec![sample_edge(
+                "e1",
+                "Intent#user-auth",
+                "Feature#oauth2",
+                RelationshipType::Implements,
+            )],
             metadata: GraphMetadata {
                 version: "1.0.0".to_string(),
-                schema_uri: "https://phenotype.dev/schemas/agileplus-intent-ontology/v1.json".to_string(),
+                schema_uri: "https://phenotype.dev/schemas/agileplus-intent-ontology/v1.json"
+                    .to_string(),
                 created_at: Utc::now(),
                 updated_at: None,
                 node_count: None,
@@ -896,7 +918,8 @@ mod tests {
             edges: vec![],
             metadata: GraphMetadata {
                 version: "1.0.0".to_string(),
-                schema_uri: "https://phenotype.dev/schemas/agileplus-intent-ontology/v1.json".to_string(),
+                schema_uri: "https://phenotype.dev/schemas/agileplus-intent-ontology/v1.json"
+                    .to_string(),
                 created_at: Utc::now(),
                 updated_at: None,
                 node_count: None,
@@ -906,19 +929,24 @@ mod tests {
             },
         };
         let err = graph.validate().unwrap_err();
-        assert!(err.iter().any(|e| matches!(e, ValidationError::DuplicateNodeId(_))));
+        assert!(err
+            .iter()
+            .any(|e| matches!(e, ValidationError::DuplicateNodeId(_))));
     }
 
     #[test]
     fn validate_rejects_invalid_node_id() {
         let graph = IntentGraph {
-            nodes: vec![
-                sample_node("intent#bad", NodeType::Intent, DagStage::Intent),
-            ],
+            nodes: vec![sample_node(
+                "intent#bad",
+                NodeType::Intent,
+                DagStage::Intent,
+            )],
             edges: vec![],
             metadata: GraphMetadata {
                 version: "1.0.0".to_string(),
-                schema_uri: "https://phenotype.dev/schemas/agileplus-intent-ontology/v1.json".to_string(),
+                schema_uri: "https://phenotype.dev/schemas/agileplus-intent-ontology/v1.json"
+                    .to_string(),
                 created_at: Utc::now(),
                 updated_at: None,
                 node_count: None,
@@ -928,7 +956,9 @@ mod tests {
             },
         };
         let err = graph.validate().unwrap_err();
-        assert!(err.iter().any(|e| matches!(e, ValidationError::InvalidNodeId(_))));
+        assert!(err
+            .iter()
+            .any(|e| matches!(e, ValidationError::InvalidNodeId(_))));
     }
 
     #[test]
@@ -940,13 +970,19 @@ mod tests {
                 sample_node("Task#b", NodeType::Task, DagStage::Task),
             ],
             edges: vec![
-                sample_edge("e1", "Intent#root", "Feature#a", RelationshipType::Implements),
+                sample_edge(
+                    "e1",
+                    "Intent#root",
+                    "Feature#a",
+                    RelationshipType::Implements,
+                ),
                 sample_edge("e2", "Feature#a", "Task#b", RelationshipType::Implements),
                 sample_edge("e3", "Task#b", "Feature#a", RelationshipType::DependsOn),
             ],
             metadata: GraphMetadata {
                 version: "1.0.0".to_string(),
-                schema_uri: "https://phenotype.dev/schemas/agileplus-intent-ontology/v1.json".to_string(),
+                schema_uri: "https://phenotype.dev/schemas/agileplus-intent-ontology/v1.json"
+                    .to_string(),
                 created_at: Utc::now(),
                 updated_at: None,
                 node_count: None,
@@ -966,12 +1002,16 @@ mod tests {
                 sample_node("Feature#root", NodeType::Feature, DagStage::Feature),
                 sample_node("Task#child", NodeType::Task, DagStage::Task),
             ],
-            edges: vec![
-                sample_edge("e1", "Feature#root", "Task#child", RelationshipType::Implements),
-            ],
+            edges: vec![sample_edge(
+                "e1",
+                "Feature#root",
+                "Task#child",
+                RelationshipType::Implements,
+            )],
             metadata: GraphMetadata {
                 version: "1.0.0".to_string(),
-                schema_uri: "https://phenotype.dev/schemas/agileplus-intent-ontology/v1.json".to_string(),
+                schema_uri: "https://phenotype.dev/schemas/agileplus-intent-ontology/v1.json"
+                    .to_string(),
                 created_at: Utc::now(),
                 updated_at: None,
                 node_count: None,
@@ -991,12 +1031,16 @@ mod tests {
                 sample_node("Bug#crash", NodeType::Bug, DagStage::Bug),
                 sample_node("Feature#auth", NodeType::Feature, DagStage::Feature),
             ],
-            edges: vec![
-                sample_edge("e1", "Bug#crash", "Feature#auth", RelationshipType::Implements),
-            ],
+            edges: vec![sample_edge(
+                "e1",
+                "Bug#crash",
+                "Feature#auth",
+                RelationshipType::Implements,
+            )],
             metadata: GraphMetadata {
                 version: "1.0.0".to_string(),
-                schema_uri: "https://phenotype.dev/schemas/agileplus-intent-ontology/v1.json".to_string(),
+                schema_uri: "https://phenotype.dev/schemas/agileplus-intent-ontology/v1.json"
+                    .to_string(),
                 created_at: Utc::now(),
                 updated_at: None,
                 node_count: None,
@@ -1016,12 +1060,16 @@ mod tests {
                 sample_node("Bug#crash", NodeType::Bug, DagStage::Bug),
                 sample_node("Artifact#bin", NodeType::Artifact, DagStage::Artifact),
             ],
-            edges: vec![
-                sample_edge("e1", "Bug#crash", "Artifact#bin", RelationshipType::TracesTo),
-            ],
+            edges: vec![sample_edge(
+                "e1",
+                "Bug#crash",
+                "Artifact#bin",
+                RelationshipType::TracesTo,
+            )],
             metadata: GraphMetadata {
                 version: "1.0.0".to_string(),
-                schema_uri: "https://phenotype.dev/schemas/agileplus-intent-ontology/v1.json".to_string(),
+                schema_uri: "https://phenotype.dev/schemas/agileplus-intent-ontology/v1.json"
+                    .to_string(),
                 created_at: Utc::now(),
                 updated_at: None,
                 node_count: None,
@@ -1036,13 +1084,16 @@ mod tests {
     #[test]
     fn validate_rejects_missing_meta_source() {
         let mut graph = IntentGraph {
-            nodes: vec![
-                sample_node("Intent#root", NodeType::Intent, DagStage::Intent),
-            ],
+            nodes: vec![sample_node(
+                "Intent#root",
+                NodeType::Intent,
+                DagStage::Intent,
+            )],
             edges: vec![],
             metadata: GraphMetadata {
                 version: "1.0.0".to_string(),
-                schema_uri: "https://phenotype.dev/schemas/agileplus-intent-ontology/v1.json".to_string(),
+                schema_uri: "https://phenotype.dev/schemas/agileplus-intent-ontology/v1.json"
+                    .to_string(),
                 created_at: Utc::now(),
                 updated_at: None,
                 node_count: None,
@@ -1053,19 +1104,24 @@ mod tests {
         };
         graph.nodes[0].meta.source = "   ".to_string();
         let err = graph.validate().unwrap_err();
-        assert!(err.iter().any(|e| matches!(e, ValidationError::MissingMeta(_))));
+        assert!(err
+            .iter()
+            .any(|e| matches!(e, ValidationError::MissingMeta(_))));
     }
 
     #[test]
     fn validate_rejects_confidence_out_of_range() {
         let mut graph = IntentGraph {
-            nodes: vec![
-                sample_node("Intent#root", NodeType::Intent, DagStage::Intent),
-            ],
+            nodes: vec![sample_node(
+                "Intent#root",
+                NodeType::Intent,
+                DagStage::Intent,
+            )],
             edges: vec![],
             metadata: GraphMetadata {
                 version: "1.0.0".to_string(),
-                schema_uri: "https://phenotype.dev/schemas/agileplus-intent-ontology/v1.json".to_string(),
+                schema_uri: "https://phenotype.dev/schemas/agileplus-intent-ontology/v1.json"
+                    .to_string(),
                 created_at: Utc::now(),
                 updated_at: None,
                 node_count: None,
@@ -1076,9 +1132,11 @@ mod tests {
         };
         graph.nodes[0].meta.confidence = Some(1.5);
         let err = graph.validate().unwrap_err();
-        assert!(err.iter().any(|e| matches!(e, ValidationError::ConfidenceOutOfRange(_))));
+        assert!(err
+            .iter()
+            .any(|e| matches!(e, ValidationError::ConfidenceOutOfRange(_))));
     }
 }
 
 // Re-export builder types so that intent_graph.rs satisfies the "Builder module" requirement.
-pub use crate::builder::{NodeBuilder, EdgeBuilder};
+pub use crate::builder::{EdgeBuilder, NodeBuilder};

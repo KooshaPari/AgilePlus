@@ -81,7 +81,9 @@ impl ClaimWatcher {
         ttl_seconds: i64,
         reason: ClaimReason,
     ) -> Option<Claim> {
-        let result = self.store.claim(id, resource, kind, agent, ttl_seconds, reason);
+        let result = self
+            .store
+            .claim(id, resource, kind, agent, ttl_seconds, reason);
         if result.is_some() {
             self.emit(id, ClaimEvent::Claimed);
         }
@@ -131,7 +133,13 @@ impl ClaimWatcher {
     ) -> Result<Claim, crate::claim::ClaimError> {
         let result = self.store.claim_transfer(from_id, to_id, to_agent);
         if let Ok(ref new_claim) = result {
-            self.emit(from_id, ClaimEvent::Transferred { from: from_id.to_string(), to: to_id.to_string() });
+            self.emit(
+                from_id,
+                ClaimEvent::Transferred {
+                    from: from_id.to_string(),
+                    to: to_id.to_string(),
+                },
+            );
             self.emit(to_id, ClaimEvent::Claimed);
         }
         result
@@ -165,7 +173,9 @@ impl ClaimWatcher {
     fn emit(&self, claim_id: &str, event: ClaimEvent) {
         // Append to event log.
         if let Ok(mut log) = self.event_log.lock() {
-            log.entry(claim_id.to_string()).or_default().push(event.clone());
+            log.entry(claim_id.to_string())
+                .or_default()
+                .push(event.clone());
         }
         // Broadcast to active listeners.
         if let Ok(mut listeners) = self.listeners.lock() {
@@ -191,7 +201,14 @@ mod tests {
     fn claim_watcher_emits_claimed_event() {
         let mut watcher = ClaimWatcher::new();
         let mut rx = watcher.watch("c1");
-        watcher.claim("c1", "repo:foo", ClaimKind::Repo, "agent-a", 60, ClaimReason::default());
+        watcher.claim(
+            "c1",
+            "repo:foo",
+            ClaimKind::Repo,
+            "agent-a",
+            60,
+            ClaimReason::default(),
+        );
         let event = rx.try_recv().expect("expected Claimed event");
         assert_eq!(event, ClaimEvent::Claimed);
     }
@@ -199,7 +216,14 @@ mod tests {
     #[test]
     fn claim_watcher_emits_heartbeat_event() {
         let mut watcher = ClaimWatcher::new();
-        watcher.claim("c1", "repo:foo", ClaimKind::Repo, "agent-a", 60, ClaimReason::default());
+        watcher.claim(
+            "c1",
+            "repo:foo",
+            ClaimKind::Repo,
+            "agent-a",
+            60,
+            ClaimReason::default(),
+        );
         let mut rx = watcher.watch("c1");
         watcher.heartbeat("c1");
         let event = rx.try_recv().expect("expected Heartbeat event");
@@ -209,7 +233,14 @@ mod tests {
     #[test]
     fn claim_watcher_emits_released_event() {
         let mut watcher = ClaimWatcher::new();
-        watcher.claim("c1", "repo:foo", ClaimKind::Repo, "agent-a", 60, ClaimReason::default());
+        watcher.claim(
+            "c1",
+            "repo:foo",
+            ClaimKind::Repo,
+            "agent-a",
+            60,
+            ClaimReason::default(),
+        );
         let mut rx = watcher.watch("c1");
         watcher.release("c1");
         let event = rx.try_recv().expect("expected Released event");
@@ -219,7 +250,14 @@ mod tests {
     #[test]
     fn claim_watcher_emits_expired_event() {
         let mut watcher = ClaimWatcher::new();
-        watcher.claim("c1", "repo:foo", ClaimKind::Repo, "agent-a", 1, ClaimReason::default());
+        watcher.claim(
+            "c1",
+            "repo:foo",
+            ClaimKind::Repo,
+            "agent-a",
+            1,
+            ClaimReason::default(),
+        );
         let mut rx = watcher.watch("c1");
         std::thread::sleep(std::time::Duration::from_millis(1100));
         let reaped = watcher.reap_expired(Utc::now());
@@ -231,11 +269,20 @@ mod tests {
     #[test]
     fn claim_watcher_emits_transferred_event() {
         let mut watcher = ClaimWatcher::new();
-        watcher.claim("c1", "repo:foo", ClaimKind::Repo, "agent-a", 60, ClaimReason::default());
+        watcher.claim(
+            "c1",
+            "repo:foo",
+            ClaimKind::Repo,
+            "agent-a",
+            60,
+            ClaimReason::default(),
+        );
         let mut rx = watcher.watch("c1");
         watcher.claim_transfer("c1", "c2", "agent-b").unwrap();
         let event = rx.try_recv().expect("expected Transferred event");
-        assert!(matches!(event, ClaimEvent::Transferred { from, to } if from == "c1" && to == "c2"));
+        assert!(
+            matches!(event, ClaimEvent::Transferred { from, to } if from == "c1" && to == "c2")
+        );
     }
 
     #[test]
@@ -243,7 +290,14 @@ mod tests {
         let mut watcher = ClaimWatcher::new();
         let mut rx1 = watcher.watch("c1");
         let mut rx2 = watcher.watch("c1");
-        watcher.claim("c1", "repo:foo", ClaimKind::Repo, "agent-a", 60, ClaimReason::default());
+        watcher.claim(
+            "c1",
+            "repo:foo",
+            ClaimKind::Repo,
+            "agent-a",
+            60,
+            ClaimReason::default(),
+        );
         assert_eq!(rx1.try_recv().unwrap(), ClaimEvent::Claimed);
         assert_eq!(rx2.try_recv().unwrap(), ClaimEvent::Claimed);
     }
@@ -251,7 +305,14 @@ mod tests {
     #[test]
     fn claim_watcher_event_log_accumulates() {
         let mut watcher = ClaimWatcher::new();
-        watcher.claim("c1", "repo:foo", ClaimKind::Repo, "agent-a", 60, ClaimReason::default());
+        watcher.claim(
+            "c1",
+            "repo:foo",
+            ClaimKind::Repo,
+            "agent-a",
+            60,
+            ClaimReason::default(),
+        );
         watcher.heartbeat("c1");
         watcher.release("c1");
         let log = watcher.event_log.lock().unwrap();
@@ -265,7 +326,14 @@ mod tests {
     #[test]
     fn claim_watcher_no_event_for_failed_claim() {
         let mut watcher = ClaimWatcher::new();
-        watcher.claim("c1", "repo:foo", ClaimKind::Repo, "agent-a", 60, ClaimReason::default());
+        watcher.claim(
+            "c1",
+            "repo:foo",
+            ClaimKind::Repo,
+            "agent-a",
+            60,
+            ClaimReason::default(),
+        );
         let mut rx = watcher.watch("c2");
         // c2 is not claimed, so no event should be emitted.
         assert!(rx.try_recv().is_err());
@@ -280,7 +348,17 @@ mod tests {
     #[test]
     fn claim_watcher_store_accessor() {
         let mut watcher = ClaimWatcher::new();
-        watcher.claim("c1", "repo:foo", ClaimKind::Repo, "agent-a", 60, ClaimReason::default());
-        assert!(watcher.store().lookup(ClaimKind::Repo, "repo:foo").is_some());
+        watcher.claim(
+            "c1",
+            "repo:foo",
+            ClaimKind::Repo,
+            "agent-a",
+            60,
+            ClaimReason::default(),
+        );
+        assert!(watcher
+            .store()
+            .lookup(ClaimKind::Repo, "repo:foo")
+            .is_some());
     }
 }

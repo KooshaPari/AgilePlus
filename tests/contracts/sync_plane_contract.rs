@@ -46,7 +46,10 @@ async fn mock_plane_client_create_get_list_roundtrip() {
 async fn mock_plane_client_not_found_is_error() {
     let client = InMemoryPlaneClient::new();
     let result = client.get_issue("nonexistent-id").await;
-    assert!(result.is_err(), "missing id must be a hard error, not Ok(None)");
+    assert!(
+        result.is_err(),
+        "missing id must be a hard error, not Ok(None)"
+    );
 }
 
 /// Contract: a `SyncMapping` written via `StoragePort` can be retrieved by
@@ -69,16 +72,17 @@ async fn sync_mapping_roundtrip_by_local_and_plane_id() {
         .await
         .unwrap();
 
-    let by_local = agileplus_domain::ports::storage::StoragePort::get_sync_mapping(
-        &db, "feature", 42,
-    )
-    .await
-    .unwrap()
-    .expect("mapping must exist by (entity_type, entity_id)");
+    let by_local =
+        agileplus_domain::ports::storage::StoragePort::get_sync_mapping(&db, "feature", 42)
+            .await
+            .unwrap()
+            .expect("mapping must exist by (entity_type, entity_id)");
     assert_eq!(by_local.plane_issue_id, "plane-issue-7");
 
     let by_plane = agileplus_domain::ports::storage::StoragePort::get_sync_mapping_by_plane_id(
-        &db, "feature", "plane-issue-7",
+        &db,
+        "feature",
+        "plane-issue-7",
     )
     .await
     .unwrap()
@@ -110,16 +114,22 @@ async fn sync_mapping_delete_clears_both_lookups() {
         .await
         .unwrap();
 
-    assert!(agileplus_domain::ports::storage::StoragePort::get_sync_mapping(&db, "work_package", 9)
+    assert!(
+        agileplus_domain::ports::storage::StoragePort::get_sync_mapping(&db, "work_package", 9)
+            .await
+            .unwrap()
+            .is_none()
+    );
+    assert!(
+        agileplus_domain::ports::storage::StoragePort::get_sync_mapping_by_plane_id(
+            &db,
+            "work_package",
+            "plane-wp-1",
+        )
         .await
         .unwrap()
-        .is_none());
-    assert!(agileplus_domain::ports::storage::StoragePort::get_sync_mapping_by_plane_id(
-        &db, "work_package", "plane-wp-1",
-    )
-    .await
-    .unwrap()
-    .is_none());
+        .is_none()
+    );
 }
 
 /// Contract: `upsert_sync_mapping` is idempotent — second call with the same
@@ -152,11 +162,13 @@ async fn sync_mapping_upsert_is_idempotent() {
         .await
         .unwrap();
 
-    let fetched = agileplus_domain::ports::storage::StoragePort::get_sync_mapping(
-        &db, "feature", 1,
-    )
-    .await
-    .unwrap()
-    .expect("mapping must exist");
-    assert_eq!(fetched.last_synced_hash, "h2", "upsert must update, not duplicate");
+    let fetched =
+        agileplus_domain::ports::storage::StoragePort::get_sync_mapping(&db, "feature", 1)
+            .await
+            .unwrap()
+            .expect("mapping must exist");
+    assert_eq!(
+        fetched.last_synced_hash, "h2",
+        "upsert must update, not duplicate"
+    );
 }

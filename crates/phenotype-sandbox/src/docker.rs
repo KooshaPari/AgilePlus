@@ -148,7 +148,10 @@ impl DockerBackend {
         let mut stdout = Vec::new();
         let mut stderr = Vec::new();
 
-        let mut stream = self.client.start_exec(&exec.id, Some(start_options)).await?;
+        let mut stream = self
+            .client
+            .start_exec(&exec.id, Some(start_options))
+            .await?;
 
         while let Some(chunk) = stream.next().await {
             match chunk {
@@ -184,7 +187,11 @@ impl DockerBackend {
             t: 10,
             ..Default::default()
         };
-        if let Err(e) = self.client.stop_container(container_id, Some(options)).await {
+        if let Err(e) = self
+            .client
+            .stop_container(container_id, Some(options))
+            .await
+        {
             warn!(error = %e, "stop container failed (container may already be stopped)");
         }
         Ok(())
@@ -197,7 +204,11 @@ impl DockerBackend {
             force: true,
             ..Default::default()
         };
-        if let Err(e) = self.client.remove_container(container_id, Some(options)).await {
+        if let Err(e) = self
+            .client
+            .remove_container(container_id, Some(options))
+            .await
+        {
             warn!(error = %e, "remove container failed (container may already be removed)");
         }
         Ok(())

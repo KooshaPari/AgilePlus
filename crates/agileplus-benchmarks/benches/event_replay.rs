@@ -5,11 +5,11 @@
 //! - Snapshot-assisted replay: load snapshot at seq 900, replay 100 deltas (target <10ms)
 
 use agileplus_benchmarks::helpers::{
-    CountingAggregate, make_event, make_in_memory_adapter, make_snapshot,
+    make_event, make_in_memory_adapter, make_snapshot, CountingAggregate,
 };
 use agileplus_events::{replay_events, replay_events_since};
 use agileplus_sqlite::repository::events as event_repo;
-use criterion::{Criterion, black_box, criterion_group, criterion_main};
+use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
 // ---------------------------------------------------------------------------
 // Setup helpers (synchronous – we drive the async runtime manually)

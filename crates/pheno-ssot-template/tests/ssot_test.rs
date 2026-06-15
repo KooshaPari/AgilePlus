@@ -6,7 +6,7 @@
 //! output is forced through a test update — exactly the
 //! behavior the SSOT pattern is meant to enforce.
 
-use pheno_ssot_template::{Environment, Render, SSOT, render};
+use pheno_ssot_template::{render, Environment, Render, SSOT};
 
 /// A custom `SSOT` impl used to verify the trait is
 /// implementable by third parties, not just by the stub
@@ -32,7 +32,10 @@ impl SSOT for ServiceConfig {
 fn markdown_format_emits_section_and_rows() {
     let cfg = ServiceConfig;
     let out = render(&cfg, Render::Markdown);
-    assert!(out.contains("## Services"), "missing section heading: {out}");
+    assert!(
+        out.contains("## Services"),
+        "missing section heading: {out}"
+    );
     assert!(out.contains("**billing-api:**"), "missing name: {out}");
     assert!(
         out.contains("- **replicas:** `3`"),
@@ -73,10 +76,7 @@ fn template_placeholder_format_uses_double_braces() {
 fn render_as_str_returns_stable_lowercase_ids() {
     assert_eq!(Render::Markdown.as_str(), "markdown");
     assert_eq!(Render::Json.as_str(), "json");
-    assert_eq!(
-        Render::TemplatePlaceholder.as_str(),
-        "template-placeholder"
-    );
+    assert_eq!(Render::TemplatePlaceholder.as_str(), "template-placeholder");
 }
 
 #[test]

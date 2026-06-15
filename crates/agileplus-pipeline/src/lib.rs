@@ -103,7 +103,9 @@ impl Pipeline {
     }
 
     pub async fn execute(&self) -> anyhow::Result<executor::ExecutionResult> {
-        self.executor.execute(&self.graph, &self.resource_limits).await
+        self.executor
+            .execute(&self.graph, &self.resource_limits)
+            .await
     }
 }
 
@@ -198,13 +200,7 @@ mod tests {
         assert!(result.node_outputs[&n1.id].success);
 
         // Verify topological order: n3 finished before n2, n2 before n1
-        assert!(
-            result.node_outputs[&n3.id].finished_at
-                <= result.node_outputs[&n2.id].started_at
-        );
-        assert!(
-            result.node_outputs[&n2.id].finished_at
-                <= result.node_outputs[&n1.id].started_at
-        );
+        assert!(result.node_outputs[&n3.id].finished_at <= result.node_outputs[&n2.id].started_at);
+        assert!(result.node_outputs[&n2.id].finished_at <= result.node_outputs[&n1.id].started_at);
     }
 }

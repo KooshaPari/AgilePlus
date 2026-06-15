@@ -95,8 +95,13 @@ mod tests {
 
     fn make_config(keys: Option<&str>) -> AppConfig {
         AppConfig {
-            core: CoreConfig { database_path: "test.db".into() },
-            api: ApiConfig { port: 3030, api_keys: keys.map(String::from) },
+            core: CoreConfig {
+                database_path: "test.db".into(),
+            },
+            api: ApiConfig {
+                port: 3030,
+                api_keys: keys.map(String::from),
+            },
         }
     }
 

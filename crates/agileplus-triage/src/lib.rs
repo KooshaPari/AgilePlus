@@ -36,20 +36,19 @@ pub mod bloom;
 pub mod claim;
 #[cfg(feature = "sqlite")]
 pub mod claim_store_sqlite;
+pub mod claim_watcher;
 pub mod classifier;
+#[cfg(feature = "codebert")]
+pub mod codebert;
 pub mod dedup;
 pub mod embeddings;
 pub mod engine;
 pub mod hybrid_pipeline;
+pub mod lsh;
 pub mod minhash;
 pub mod repo_introspect;
 pub mod router;
-pub mod lsh;
-#[cfg(feature = "codebert")]
-pub mod codebert;
-pub mod claim_watcher;
 pub mod tree_sitter;
-
 
 #[cfg(feature = "sqlite")]
 pub mod claim_store_sqlite;

@@ -3,8 +3,7 @@
 use serde_json::Value;
 
 use crate::intent_graph::{
-    CanonicalMap, DagStage, Edge, Meta, Node, NodeType, RelationshipType, Status,
-    ValidationError,
+    CanonicalMap, DagStage, Edge, Meta, Node, NodeType, RelationshipType, Status, ValidationError,
 };
 
 /// ---------------------------------------------------------------------------
@@ -124,7 +123,9 @@ impl NodeBuilder {
             .ok_or_else(|| ValidationError::MissingRequiredField("meta".to_string()))?;
 
         if meta.source.trim().is_empty() {
-            return Err(ValidationError::MissingMeta("node: source is empty".to_string()));
+            return Err(ValidationError::MissingMeta(
+                "node: source is empty".to_string(),
+            ));
         }
 
         let id = self.id.unwrap_or_else(|| {
@@ -231,7 +232,9 @@ impl EdgeBuilder {
             .ok_or_else(|| ValidationError::MissingRequiredField("meta".to_string()))?;
 
         if meta.source.trim().is_empty() {
-            return Err(ValidationError::MissingMeta("edge: source is empty".to_string()));
+            return Err(ValidationError::MissingMeta(
+                "edge: source is empty".to_string(),
+            ));
         }
 
         let id = self.id.unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
@@ -279,8 +282,8 @@ fn is_valid_node_id(id: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use chrono::Utc;
     use super::*;
+    use chrono::Utc;
 
     fn sample_meta() -> Meta {
         Meta {
@@ -362,7 +365,10 @@ mod tests {
 
         assert_eq!(node.status, Status::Active);
         assert_eq!(node.tags, vec!["frontend", "ui"]);
-        assert_eq!(node.description, Some("A story about the dashboard".to_string()));
+        assert_eq!(
+            node.description,
+            Some("A story about the dashboard".to_string())
+        );
         assert_eq!(node.table_ref, Some("stories".to_string()));
         assert_eq!(node.table_id, Some("ST-42".to_string()));
     }

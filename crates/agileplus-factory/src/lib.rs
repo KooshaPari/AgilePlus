@@ -19,7 +19,7 @@ use tokio::time::{sleep, Duration};
 use tracing::{info, warn};
 
 use agileplus_git::claim_bound::{ClaimBoundWorktree, ClaimStoreBound};
-use agileplus_triage::claim::{ClaimStore, ClaimStoreTrait, ClaimState};
+use agileplus_triage::claim::{ClaimState, ClaimStore, ClaimStoreTrait};
 
 pub mod config;
 pub mod pr;
@@ -67,10 +67,7 @@ impl<Q: IssueQueue> Factory<Q> {
     }
 
     /// Build with an explicit claim store (e.g. SQLite-backed).
-    pub fn with_claim_store<S: ClaimStoreTrait>(
-        self,
-        store: ClaimStore,
-    ) -> Self {
+    pub fn with_claim_store<S: ClaimStoreTrait>(self, store: ClaimStore) -> Self {
         Self {
             claim_store: store,
             ..self
@@ -108,7 +105,10 @@ impl<Q: IssueQueue> Factory<Q> {
             let active = self.claim_store.active().len();
             let capacity = self.config.max_workers.saturating_sub(active);
             if capacity == 0 {
-                warn!("max_workers ({}) reached, skipping poll", self.config.max_workers);
+                warn!(
+                    "max_workers ({}) reached, skipping poll",
+                    self.config.max_workers
+                );
                 sleep(Duration::from_secs(self.config.poll_interval_secs)).await;
                 continue;
             }

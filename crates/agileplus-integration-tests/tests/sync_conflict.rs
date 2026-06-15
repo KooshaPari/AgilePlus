@@ -10,7 +10,7 @@ use agileplus_integration_tests::common::fixtures::plane_webhook_payload;
 #[cfg(feature = "integration")]
 use agileplus_integration_tests::common::{
     fixtures::feature_create_payload,
-    harness::{TestHarness, is_process_compose_installed},
+    harness::{is_process_compose_installed, TestHarness},
 };
 
 /// Helper: skip the test if services are unavailable.

@@ -89,12 +89,9 @@ mod tests {
 
     #[test]
     fn tool_call_error_propagation() {
-        let t = Tool::new(
-            "fail",
-            "Always fails",
-            json!({}),
-            |_args: Value| Err("oops".into()),
-        );
+        let t = Tool::new("fail", "Always fails", json!({}), |_args: Value| {
+            Err("oops".into())
+        });
         let result = t.call(json!({}));
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), "oops");
@@ -134,7 +131,9 @@ mod tests {
     #[test]
     fn tool_schema_is_preserved() {
         let schema = json!({"type": "object", "properties": {"name": {"type": "string"}}});
-        let t = Tool::new(" greet", "Say hi", schema.clone(), |_args: Value| Ok(json!("hi")));
+        let t = Tool::new(" greet", "Say hi", schema.clone(), |_args: Value| {
+            Ok(json!("hi"))
+        });
         assert_eq!(t.input_schema, schema);
     }
 

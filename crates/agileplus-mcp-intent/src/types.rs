@@ -249,7 +249,8 @@ impl IntentGraph {
             edges,
             metadata: GraphMetadata {
                 version: "1.0.0".to_string(),
-                schema_uri: "https://phenotype.dev/schemas/agileplus-intent-ontology/v1.json".to_string(),
+                schema_uri: "https://phenotype.dev/schemas/agileplus-intent-ontology/v1.json"
+                    .to_string(),
                 created_at: now,
                 updated_at: Some(now),
                 node_count: Some(node_count),
@@ -372,7 +373,10 @@ pub fn make_edge(
         source: source.to_string(),
         target: target.to_string(),
         relationship_type: rel,
-        canonical_map: Some(CanonicalMap { link_type, direction }),
+        canonical_map: Some(CanonicalMap {
+            link_type,
+            direction,
+        }),
         meta: Meta {
             timestamp: Utc::now(),
             source: "agent-inference".to_string(),

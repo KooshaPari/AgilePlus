@@ -37,12 +37,15 @@ impl<S: McpServer> StdioTransport<S> {
             if line.trim().is_empty() {
                 continue;
             }
-            let req: serde_json::Value =
-                serde_json::from_str(&line).map_err(|e| McpError::InvalidArguments(e.to_string()))?;
+            let req: serde_json::Value = serde_json::from_str(&line)
+                .map_err(|e| McpError::InvalidArguments(e.to_string()))?;
             let resp = self.handle_request(req).await?;
-            let out = serde_json::to_string(&resp).map_err(|e| McpError::Internal(e.to_string()))?;
+            let out =
+                serde_json::to_string(&resp).map_err(|e| McpError::Internal(e.to_string()))?;
             writeln!(stdout, "{}", out).map_err(|e| McpError::Transport(e.to_string()))?;
-            stdout.flush().map_err(|e| McpError::Transport(e.to_string()))?;
+            stdout
+                .flush()
+                .map_err(|e| McpError::Transport(e.to_string()))?;
         }
         Ok(())
     }
@@ -95,7 +98,10 @@ impl<S: McpServer> StdioTransport<S> {
                 let content = server.read_resource(uri).await?;
                 Ok(serde_json::json!({ "content": content }))
             }
-            _ => Err(McpError::InvalidArguments(format!("unknown method: {}", method))),
+            _ => Err(McpError::InvalidArguments(format!(
+                "unknown method: {}",
+                method
+            ))),
         }
     }
 }
@@ -141,12 +147,7 @@ mod tests {
     #[async_trait]
     impl McpServer for MockServer {
         async fn list_tools(&self) -> Vec<Tool> {
-            vec![Tool::new(
-                "echo",
-                "echo",
-                json!({}),
-                |args: Value| Ok(args),
-            )]
+            vec![Tool::new("echo", "echo", json!({}), |args: Value| Ok(args))]
         }
         async fn call_tool(&self, _name: &str, _arguments: Value) -> Result<Value, McpError> {
             Ok(json!("ok"))
