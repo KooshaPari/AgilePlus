@@ -350,7 +350,8 @@ async fn main() {
                 commands::list_stories::run(&args, &storage).await?;
             }
             Command::Worklog(args) => {
-                commands::worklog::run(&args)?;
+                let db_path = db_path_from_env();
+                commands::worklog::run_with_db(&args, &db_path)?;
             }
             Command::Dag(args) => {
                 commands::dag::run_dag(args).await?;
