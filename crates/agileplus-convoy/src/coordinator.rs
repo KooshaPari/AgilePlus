@@ -3,7 +3,7 @@
 use anyhow::{anyhow, Result};
 use chrono::Utc;
 
-use agileplus_triage::claim::{ClaimState, ClaimStoreTrait};
+use agileplus_triage::claim::ClaimStoreTrait;
 
 use crate::{bead::BeadState, Convoy, ConvoyStatus};
 
