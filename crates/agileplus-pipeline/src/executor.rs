@@ -198,7 +198,6 @@ impl Executor {
                     .unwrap_or(default_timeout);
 
                 let mut attempts = 0u32;
-                let mut last_result: Option<NodeOutput> = None;
 
                 if cmd_str.is_empty() {
                     // No command — treat as no-op success.
@@ -219,6 +218,7 @@ impl Executor {
                     );
                 }
 
+                let mut last_result: Option<NodeOutput> = None;
                 loop {
                     attempts += 1;
                     let stdout_file = tempfile::NamedTempFile::new().ok();

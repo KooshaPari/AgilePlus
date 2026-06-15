@@ -9,7 +9,6 @@ description = "Hook primitive: claim-event trigger/dispatch for MEOW"
 [dependencies]
 agileplus-triage = { path = "../agileplus-triage" }
 agileplus-events = { path = "../agileplus-events" }
-anyhow.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 regex = "1"
