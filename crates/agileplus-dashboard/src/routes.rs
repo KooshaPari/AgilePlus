@@ -1755,10 +1755,6 @@ pub async fn feature_transition(
     render(KanbanPartial { cards })
 }
 
-pub async fn stream_placeholder() -> StatusCode {
-    StatusCode::NO_CONTENT
-}
-
 // ── /api/dashboard/services/:name/restart ────────────────────────────────
 
 const ALLOWED_RESTART_PROGRAMS: [&str; 4] = ["systemctl", "docker", "process-compose", "echo"];
@@ -2389,7 +2385,7 @@ pub fn router(state: SharedState) -> Router {
         // NOTE: /api/v1/stream is owned by agileplus-api (router.rs, T069).
         // Previously this crate registered an alias (#334), but that caused a
         // route conflict panic when build_router merged the two routers.
-        .route("/api/stream-placeholder", get(stream_placeholder))
+        .route("/api/stream-placeholder", get(sse_stream))
         .route(
             "/api/evidence/{feature_id}/{artifact_id}/content",
             get(evidence_content),

@@ -140,6 +140,7 @@ pub trait StoragePort: Send + Sync {
         state: FeatureState,
     ) -> Result<Vec<Feature>, DomainError>;
     async fn list_all_features(&self) -> Result<Vec<Feature>, DomainError>;
+    async fn list_features_by_label(&self, label: &str) -> Result<Vec<Feature>, DomainError>;
 
     // --- Work Packages ---
     async fn create_work_package(&self, wp: &WorkPackage) -> Result<i64, DomainError>;
@@ -364,6 +365,7 @@ pub trait ContentStoragePort: Send + Sync {
         state: FeatureState,
     ) -> Result<Vec<Feature>, DomainError>;
     async fn list_all_features(&self) -> Result<Vec<Feature>, DomainError>;
+    async fn list_features_by_label(&self, label: &str) -> Result<Vec<Feature>, DomainError>;
     // Work packages
     async fn create_work_package(&self, wp: &WorkPackage) -> Result<i64, DomainError>;
     async fn get_work_package(&self, id: i64) -> Result<Option<WorkPackage>, DomainError>;

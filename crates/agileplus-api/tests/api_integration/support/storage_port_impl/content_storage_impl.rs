@@ -57,6 +57,13 @@ impl ContentStoragePort for MockStorage {
         feature::list_all_features(self)
     }
 
+    fn list_features_by_label(
+        &self,
+        label: &str,
+    ) -> impl Future<Output = Result<Vec<Feature>, DomainError>> + Send {
+        feature::list_features_by_label(self, label)
+    }
+
     fn get_backlog_item(
         &self,
         id: i64,

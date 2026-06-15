@@ -195,6 +195,30 @@ pub fn list_all_features(conn: &Connection) -> Result<Vec<Feature>, DomainError>
     rows.collect::<rusqlite::Result<Vec<_>>>().map_err(map_err)
 }
 
+pub fn list_features_by_label(conn: &Connection, label: &str) -> Result<Vec<Feature>, DomainError> {
+    let mut stmt = conn
+        .prepare(
+            "SELECT id, slug, friendly_name, state, spec_hash, target_branch, created_at, updated_at
+             FROM features ORDER BY created_at DESC",
+        )
+        .map_err(map_err)?;
+
+    let rows = stmt.query_map([], row_to_feature).map_err(map_err)?;
+
+    let all: Vec<Feature> = rows
+        .collect::<rusqlite::Result<Vec<_>>>()
+        .map_err(map_err)?;
+
+    // Filter in-memory: labels are stored as Vec<String> on the domain model.
+    // Currently labels aren't persisted to the features table, so this will
+    // return empty until a labels column is added.  The wiring is correct and
+    // ready for when that happens.
+    Ok(all
+        .into_iter()
+        .filter(|f| f.labels.iter().any(|l| l == label))
+        .collect())
+}
+
 /// Extension trait to add `.optional()` on rusqlite query results.
 trait OptionalExt<T> {
     fn optional(self) -> rusqlite::Result<Option<T>>;

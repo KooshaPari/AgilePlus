@@ -1,6 +1,5 @@
 use axum::{
     extract::State,
-    http::StatusCode,
     response::{Html, Response},
 };
 
@@ -241,6 +240,4 @@ pub async fn time_footer() -> Html<String> {
     )
 }
 
-pub async fn stream_placeholder() -> StatusCode {
-    StatusCode::NO_CONTENT
-}
+

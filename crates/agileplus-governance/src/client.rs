@@ -212,8 +212,15 @@ impl GovernanceClient {
             ));
         }
 
-        // Calculate iteration
-        let iteration = 1; // TODO: Track iterations per channel
+        // Calculate iteration from SQLite channel_iterations table
+        let channel_id = request.to.to_string();
+        let iteration = match self.audit_logger.bump_channel_iteration(&channel_id) {
+            Ok(i) => i,
+            Err(e) => {
+                warn!("Failed to bump channel iteration for {channel_id}: {e}");
+                1 // Fallback to 1 on DB error
+            }
+        };
 
         Ok(PromotionResult::allowed(
             crate::channel::ChannelMetadata::new(

@@ -54,6 +54,11 @@ impl StoragePort for SqliteStorageAdapter {
         features::list_all_features(&conn)
     }
 
+    async fn list_features_by_label(&self, label: &str) -> Result<Vec<Feature>, DomainError> {
+        let conn = self.lock()?;
+        features::list_features_by_label(&conn, label)
+    }
+
     async fn create_work_package(&self, wp: &WorkPackage) -> Result<i64, DomainError> {
         let conn = self.lock()?;
         work_packages::create_work_package(&conn, wp)

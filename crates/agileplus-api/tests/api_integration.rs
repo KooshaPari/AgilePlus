@@ -732,6 +732,21 @@ impl ContentStoragePort for MockStorage {
         Ok(feats)
     }
 
+    async fn list_features_by_label(
+        &self,
+        label: &str,
+    ) -> Result<Vec<agileplus_domain::domain::feature::Feature>, DomainError> {
+        let feats: Vec<_> = self
+            .features
+            .lock()
+            .unwrap()
+            .iter()
+            .filter(|f| f.labels.iter().any(|l| l == label))
+            .cloned()
+            .collect();
+        Ok(feats)
+    }
+
     async fn create_backlog_item(&self, _item: &BacklogItem) -> Result<i64, DomainError> {
         Ok(1)
     }

@@ -355,6 +355,17 @@ impl AuditLogger {
             [],
         )?;
 
+        // Channel iteration tracking
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS channel_iterations (
+                channel_id TEXT NOT NULL,
+                iteration INTEGER NOT NULL DEFAULT 1,
+                updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+                PRIMARY KEY (channel_id)
+            )",
+            [],
+        )?;
+
         Ok(())
     }
 
@@ -579,6 +590,55 @@ impl AuditLogger {
         }
 
         Ok(stats)
+    }
+
+    /// Get the current iteration for a channel, inserting with default 1 if absent.
+    pub fn get_channel_iteration(&self, channel_id: &str) -> Result<u32> {
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| GovernanceError::Database(e.to_string()))?;
+
+        // Insert default row if not present, then return the iteration
+        conn.execute(
+            "INSERT OR IGNORE INTO channel_iterations (channel_id, iteration) VALUES (?1, 1)",
+            params![channel_id],
+        )?;
+
+        let iteration: u32 = conn.query_row(
+            "SELECT iteration FROM channel_iterations WHERE channel_id = ?1",
+            params![channel_id],
+            |row| row.get(0),
+        )?;
+
+        Ok(iteration)
+    }
+
+    /// Bump the iteration for a channel and return the new value.
+    pub fn bump_channel_iteration(&self, channel_id: &str) -> Result<u32> {
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| GovernanceError::Database(e.to_string()))?;
+
+        // Insert default row if not present
+        conn.execute(
+            "INSERT OR IGNORE INTO channel_iterations (channel_id, iteration) VALUES (?1, 1)",
+            params![channel_id],
+        )?;
+
+        conn.execute(
+            "UPDATE channel_iterations SET iteration = iteration + 1, updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now') WHERE channel_id = ?1",
+            params![channel_id],
+        )?;
+
+        let iteration: u32 = conn.query_row(
+            "SELECT iteration FROM channel_iterations WHERE channel_id = ?1",
+            params![channel_id],
+            |row| row.get(0),
+        )?;
+
+        Ok(iteration)
     }
 
     /// Mark events as synced
