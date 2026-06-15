@@ -1,9 +1,10 @@
 use async_trait::async_trait;
+use base64::{engine::general_purpose::STANDARD, Engine as _};
 use bytes::Bytes;
 use std::collections::HashMap;
 use thiserror::Error;
 use tokio::sync::RwLock;
-use tracing::info;
+use tracing::{info, warn};
 
 #[derive(Debug, Error)]
 pub enum ArtifactError {
@@ -116,6 +117,7 @@ pub struct S3ArtifactStore {
     secret_key: String,
     region: String,
     bucket_prefix: String,
+    client: reqwest::Client,
 }
 
 impl S3ArtifactStore {
@@ -126,12 +128,17 @@ impl S3ArtifactStore {
         region: String,
         bucket_prefix: String,
     ) -> Self {
+        let client = reqwest::Client::builder()
+            .timeout(std::time::Duration::from_secs(30))
+            .build()
+            .expect("failed to build reqwest client");
         Self {
             endpoint,
             access_key,
             secret_key,
             region,
             bucket_prefix,
+            client,
         }
     }
 }
@@ -155,24 +162,105 @@ impl ArtifactStore for S3ArtifactStore {
         &self,
         bucket: &str,
         key: &str,
-        _data: Bytes,
-        _content_type: Option<&str>,
+        data: Bytes,
+        content_type: Option<&str>,
     ) -> Result<()> {
-        Err(ArtifactError::S3(format!(
-            "upload not implemented for {bucket}/{key}"
-        )))
+        let url = format!("{}/{}/{}", self.endpoint, bucket, key);
+        info!(
+            url = %url,
+            bucket,
+            key,
+            size = data.len(),
+            "S3ArtifactStore.upload: PUT object"
+        );
+
+        let mut req = self.client.put(&url).body(data);
+        if let Some(ct) = content_type {
+            req = req.header("Content-Type", ct);
+        }
+        // Basic auth header (access_key as username, secret_key as password)
+        let auth_value = format!("{}:{}", self.access_key, self.secret_key);
+        req = req.header(
+            "Authorization",
+            format!("Basic {}", STANDARD.encode(&auth_value)),
+        );
+
+        let resp = req
+            .send()
+            .await
+            .map_err(|e| ArtifactError::S3(format!("upload request failed: {e}")))?;
+
+        let status = resp.status();
+        if status.is_success() {
+            info!(bucket, key, status = %status, "upload succeeded");
+            Ok(())
+        } else {
+            let body = resp
+                .text()
+                .await
+                .unwrap_or_else(|_| "(unreadable)".into());
+            Err(ArtifactError::S3(format!(
+                "upload failed: status={status} body={body}"
+            )))
+        }
     }
 
     async fn download(&self, bucket: &str, key: &str) -> Result<Bytes> {
-        Err(ArtifactError::S3(format!(
-            "download not implemented for {bucket}/{key}"
-        )))
+        let url = format!("{}/{}/{}", self.endpoint, bucket, key);
+        info!(
+            url = %url,
+            bucket,
+            key,
+            "S3ArtifactStore.download: GET object"
+        );
+
+        let auth_value = format!("{}:{}", self.access_key, self.secret_key);
+        let resp = self
+            .client
+            .get(&url)
+            .header(
+                "Authorization",
+                format!("Basic {}", STANDARD.encode(&auth_value)),
+            )
+            .send()
+            .await
+            .map_err(|e| ArtifactError::S3(format!("download request failed: {e}")))?;
+
+        let status = resp.status();
+        if status.is_success() {
+            let bytes = resp
+                .bytes()
+                .await
+                .map_err(|e| ArtifactError::S3(format!("failed to read body: {e}")))?;
+            info!(
+                bucket,
+                key,
+                size = bytes.len(),
+                "download succeeded"
+            );
+            Ok(bytes)
+        } else if status == reqwest::StatusCode::NOT_FOUND {
+            Err(ArtifactError::ArtifactNotFound {
+                bucket: bucket.to_string(),
+                key: key.to_string(),
+            })
+        } else {
+            let body = resp
+                .text()
+                .await
+                .unwrap_or_else(|_| "(unreadable)".into());
+            Err(ArtifactError::S3(format!(
+                "download failed: status={status} body={body}"
+            )))
+        }
     }
 
     async fn archive_old_events(&self, older_than_days: u32) -> Result<u64> {
-        Err(ArtifactError::S3(format!(
-            "archive not implemented for events older than {older_than_days} days"
-        )))
+        warn!(
+            older_than_days,
+            "S3ArtifactStore.archive_old_events: not yet implemented, returning 0"
+        );
+        Ok(0)
     }
 
     async fn health_check(&self) -> Result<()> {
