@@ -266,7 +266,7 @@ async fn amend_commit_with_gpg_signature(
 ) -> Result<String> {
     // Git's commit object format with a gpgsig header.
     let commit_text = get_commit_text(repo_root, commit_sha).await?;
-    let mut lines: Vec<&str> = commit_text.lines().collect();
+    let lines: Vec<&str> = commit_text.lines().collect();
     // Insert gpgsig after the first blank line (or after tree line).
     let mut new_commit = String::new();
     let mut found_gpgsig = false;

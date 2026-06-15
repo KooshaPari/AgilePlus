@@ -1,6 +1,6 @@
 //! Squash source branch into target branch.
 
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::process::{Command, Stdio};
 
 use agileplus_git::GitVcsAdapter;
@@ -9,6 +9,7 @@ use anyhow::{Context, Result};
 /// Squash helper.
 #[derive(Debug, Clone)]
 pub struct Squash {
+    #[allow(dead_code)]
     adapter: GitVcsAdapter,
     repo_root: PathBuf,
 }
