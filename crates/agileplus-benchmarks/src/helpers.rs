@@ -124,7 +124,7 @@ pub fn make_snapshot(entity_id: i64, seq: i64) -> Snapshot {
         entity_id,
         event_sequence: seq,
         state: serde_json::json!({"events_applied": seq, "last_state": "Specified"}),
-        created_at: Utc::now(),
+        taken_at: Utc::now(),
     }
 }
 

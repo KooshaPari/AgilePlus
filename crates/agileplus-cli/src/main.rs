@@ -278,7 +278,7 @@ async fn main() {
             },
             Command::Version => cmd_version(),
             Command::Sync(args) => {
-                sync_cmd::run(args, None).await?;
+                sync_cmd::run(args, None, None).await?;
             }
             Command::SeedRequirements(args) => {
                 commands::seed_requirements::run(&args)?;
