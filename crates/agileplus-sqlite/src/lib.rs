@@ -147,6 +147,11 @@ impl StoragePort for SqliteStorageAdapter {
         features::list_all_features(&conn)
     }
 
+    async fn list_features_by_label(&self, label: &str) -> Result<Vec<Feature>, DomainError> {
+        let conn = self.lock()?;
+        features::list_features_by_label(&conn, label)
+    }
+
     // -- Work Package CRUD --
 
     async fn create_work_package(&self, wp: &WorkPackage) -> Result<i64, DomainError> {
@@ -619,6 +624,11 @@ impl ContentStoragePort for SqliteStorageAdapter {
     async fn list_all_features(&self) -> Result<Vec<Feature>, DomainError> {
         let conn = self.lock()?;
         features::list_all_features(&conn)
+    }
+
+    async fn list_features_by_label(&self, label: &str) -> Result<Vec<Feature>, DomainError> {
+        let conn = self.lock()?;
+        features::list_features_by_label(&conn, label)
     }
 
     async fn create_backlog_item(&self, item: &BacklogItem) -> Result<i64, DomainError> {
