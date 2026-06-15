@@ -957,8 +957,7 @@ pub async fn feature_media(
         .join("\n");
 
     Html(format!(
-        r#"<div class="grid grid-cols-2 gap-3 media-gallery">{}</div>"#,
-        html
+        r#"<div class="grid grid-cols-2 gap-3 media-gallery">{html}</div>"#
     ))
     .into_response()
 }
@@ -1767,8 +1766,7 @@ fn validate_restart_command(cmd_line: &str) -> Result<(), String> {
     let program = parts.remove(0);
     if !is_restart_command_allowed(program) {
         return Err(format!(
-            "command '{}' is not in approved restart command registry: {:?}",
-            program, ALLOWED_RESTART_PROGRAMS
+            "command '{program}' is not in approved restart command registry: {ALLOWED_RESTART_PROGRAMS:?}"
         ));
     }
 
@@ -1997,7 +1995,7 @@ pub async fn test_agent_connection(
     };
 
     let css = if ok { "text-green-400" } else { "text-red-400" };
-    Html(format!(r#"<span class="{}">{}</span>"#, css, msg)).into_response()
+    Html(format!(r#"<span class="{css}">{msg}</span>"#)).into_response()
 }
 
 // ── Router builder ───────────────────────────────────────────────────────
