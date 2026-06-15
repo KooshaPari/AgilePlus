@@ -127,19 +127,18 @@ impl S3ArtifactStore {
         secret_key: String,
         region: String,
         bucket_prefix: String,
-    ) -> Self {
+    ) -> Result<Self, reqwest::Error> {
         let client = reqwest::Client::builder()
             .timeout(std::time::Duration::from_secs(30))
-            .build()
-            .expect("failed to build reqwest client");
-        Self {
+            .build()?;
+        Ok(Self {
             endpoint,
             access_key,
             secret_key,
             region,
             bucket_prefix,
             client,
-        }
+        })
     }
 }
 

@@ -30,6 +30,7 @@
 | eco-026 | eco-026-autograder | active | 2026-06-05T00:00:00Z | - | - | [eco-026-autograder](eco-026-autograder/spec.md) |
 | eco-027 | eco-027-cargo-workspace-cleanup | active | 2026-06-05T00:00:00Z | - | - | [eco-027-cargo-workspace-cleanup](eco-027-cargo-workspace-cleanup/spec.md) |
 | eco-028 | eco-028-commit-hygiene | active | 2026-06-05T00:00:00Z | - | - | [eco-028-commit-hygiene](eco-028-commit-hygiene/spec.md) |
+| eco-029 | eco-029-consolidate-integration-branch | active | 2026-06-15T00:00:00Z | - | - | [eco-029-consolidate-integration-branch](eco-029-consolidate-integration-branch/spec.md) |
 | eco-029 | eco-029-license-and-governance | active | 2026-06-05T00:00:00Z | - | - | [eco-029-license-and-governance](eco-029-license-and-governance/spec.md) |
 | eco-030 | eco-030-security-baseline | active | 2026-06-05T00:00:00Z | - | - | [eco-030-security-baseline](eco-030-security-baseline/spec.md) |
 | eco-031 | eco-031-observability-baseline | active | 2026-06-05T00:00:00Z | - | - | [eco-031-observability-baseline](eco-031-observability-baseline/spec.md) |
