@@ -134,6 +134,7 @@ pub trait StoragePort: Send + Sync {
     async fn get_feature_by_slug(&self, slug: &str) -> Result<Option<Feature>, DomainError>;
     async fn get_feature_by_id(&self, id: i64) -> Result<Option<Feature>, DomainError>;
     async fn update_feature_state(&self, id: i64, state: FeatureState) -> Result<(), DomainError>;
+    async fn update_feature(&self, feature: &Feature) -> Result<(), DomainError>;
     async fn list_features_by_state(
         &self,
         state: FeatureState,

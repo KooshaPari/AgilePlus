@@ -199,6 +199,10 @@ impl StoragePort for MockStorage {
         Ok(())
     }
 
+    async fn update_feature(&self, _feature: &Feature) -> Result<(), DomainError> {
+        Ok(())
+    }
+
     async fn list_features_by_state(
         &self,
         state: FeatureState,

@@ -275,6 +275,7 @@ fn open_storage(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::commands::worklog::db_path_from_env;
 
     #[test]
     fn mock_store_seed_contains_cli_fixtures() {

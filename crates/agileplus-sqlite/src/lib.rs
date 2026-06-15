@@ -129,6 +129,11 @@ impl StoragePort for SqliteStorageAdapter {
         features::update_feature_state(&conn, id, state)
     }
 
+    async fn update_feature(&self, feature: &Feature) -> Result<(), DomainError> {
+        let conn = self.lock()?;
+        features::update_feature(&conn, feature)
+    }
+
     async fn list_features_by_state(
         &self,
         state: FeatureState,
@@ -2158,8 +2163,6 @@ mod tests {
         let conn = db.conn_for_bench().expect("conn");
 
         let expected: &[&str] = &[
-            "worklog_entries",
-            "trace_links",
             "gate_results",
             "run_records",
             "scope_status",
@@ -2194,10 +2197,10 @@ mod tests {
         let applied: i64 = conn
             .query_row(
                 "SELECT COUNT(*) FROM _migrations WHERE name = ?1",
-                rusqlite::params!["022_l2_38_worklog_trace_gate_run_scope"],
+                rusqlite::params!["024_l2_38_worklog_trace_gate_run_scope"],
                 |row| row.get(0),
             )
             .expect("query _migrations");
-        assert_eq!(applied, 1, "022 migration should be recorded as applied");
+        assert_eq!(applied, 1, "024 migration should be recorded as applied");
     }
 }

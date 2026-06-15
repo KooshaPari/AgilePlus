@@ -84,6 +84,16 @@ mod tests {
             }
         }
 
+        async fn update_feature(&self, feature: &Feature) -> Result<(), DomainError> {
+            let mut store = self.store.write().await;
+            if store.contains_key(&feature.id) {
+                store.insert(feature.id, feature.clone());
+                Ok(())
+            } else {
+                Err(DomainError::FeatureNotFound(feature.id.to_string()))
+            }
+        }
+
         // Minimal stubs for the rest of the trait
         async fn get_feature_by_slug(&self, slug: &str) -> Result<Option<Feature>, DomainError> {
             Ok(self

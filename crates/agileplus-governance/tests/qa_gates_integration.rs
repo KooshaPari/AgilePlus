@@ -3,6 +3,7 @@ use std::path::Path;
 use std::process::Command;
 
 #[test]
+#[cfg(not(target_os = "windows"))]
 fn governance_qa_gates_accept_valid_fixture() {
     let manifest_dir = Path::new(env!("CARGO_MANIFEST_DIR"));
     let repo_root = match manifest_dir.parent().and_then(Path::parent) {

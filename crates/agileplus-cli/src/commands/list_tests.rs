@@ -126,6 +126,9 @@ impl StoragePort for MemStore {
     async fn update_feature_state(&self, _: i64, _: FeatureState) -> Result<(), DomainError> {
         unimplemented!()
     }
+    async fn update_feature(&self, _: &Feature) -> Result<(), DomainError> {
+        unimplemented!()
+    }
     async fn list_features_by_state(
         &self,
         state: FeatureState,

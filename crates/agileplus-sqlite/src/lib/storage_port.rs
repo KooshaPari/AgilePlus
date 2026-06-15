@@ -36,6 +36,11 @@ impl StoragePort for SqliteStorageAdapter {
         features::update_feature_state(&conn, id, state)
     }
 
+    async fn update_feature(&self, feature: &Feature) -> Result<(), DomainError> {
+        let conn = self.lock()?;
+        features::update_feature(&conn, feature)
+    }
+
     async fn list_features_by_state(
         &self,
         state: FeatureState,

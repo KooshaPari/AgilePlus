@@ -315,7 +315,7 @@ pub fn run_with_db(args: &WorklogArgs, db_path: &Path) -> Result<()> {
     }
 }
 
-fn db_path_from_env() -> PathBuf {
+pub fn db_path_from_env() -> PathBuf {
     std::env::var("AGILEPLUS_DB")
         .map(PathBuf::from)
         .unwrap_or_else(|_| PathBuf::from("agileplus.db"))
