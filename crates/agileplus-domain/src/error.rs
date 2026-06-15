@@ -3,6 +3,9 @@
 use phenotype_error_core::ErrorCode;
 use thiserror::Error;
 
+/// A convenience `Result` alias for domain operations.
+pub type DomainResult<T> = Result<T, DomainError>;
+
 /// Top-level domain error.
 #[derive(Debug, Error)]
 pub enum DomainError {
