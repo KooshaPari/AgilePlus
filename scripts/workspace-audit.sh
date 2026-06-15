@@ -22,7 +22,7 @@ fi
 
 # Check each member exists
 while IFS= read -r line; do
-    member=$(echo "$line" | tr -d '"' | tr -d ',' | sed 's/.*= *//')
+    member=$(echo "$line" | sed 's/.*path\s*=\s*"//' | sed 's/".*//' | tr -d ',')
     member_path="$REPO_ROOT/$member"
     if [ ! -d "$member_path" ]; then
         echo "MISSING: $member (path: $member_path)"

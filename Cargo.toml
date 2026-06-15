@@ -171,7 +171,9 @@ phenotype-logging = { path = "../phenoShared/crates/phenotype-logging" }
 agileplus-config = { path = "crates/agileplus-config" }
 agileplus-proto = { path = "crates/agileplus-proto" }
 agileplus-telemetry = { path = "crates/agileplus-telemetry" }
+agileplus-validate = { path = "crates/agileplus-validate" }
 shared-traceability = { path = "crates/shared-traceability" }
+toml = "0.8"
 tokio-stream = { version = "0.1", features = ["net", "sync"] }
 sqlx = { version = "0.8", default-features = false }
 hex = "0.4"

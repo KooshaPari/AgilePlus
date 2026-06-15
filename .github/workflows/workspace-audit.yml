@@ -19,6 +19,14 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Checkout phenoShared sibling
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+        with:
+          repository: KooshaPari/phenoShared
+          path: ../phenoShared
+          fetch-depth: 1
+          sparse-checkout: crates/
+
       - name: Run workspace audit
         run: |
           chmod +x scripts/workspace-audit.sh
