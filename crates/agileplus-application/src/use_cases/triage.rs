@@ -33,7 +33,7 @@ pub use crate::dto::{TopologyRequest, WhereRequest, WhereResponse};
 use anyhow::{anyhow, Result};
 use std::collections::{HashMap, HashSet, VecDeque};
 
-use agileplus_triage::claim::{Claim, ClaimKind, ClaimStore};
+use agileplus_triage::claim::{Claim, ClaimKind, ClaimReason, ClaimStore};
 use agileplus_triage::dedup::{find_duplicates, DuplicateCandidate};
 use agileplus_triage::repo_introspect::{inspect_repo, RepoInfo};
 

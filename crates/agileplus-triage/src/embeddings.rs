@@ -28,9 +28,6 @@
 //! Implements recommendation #3 from `AUDIT_BLOC_VS_2026_SOTA.md`:
 //! pluggable embedding backends with a `local` no-network default.
 
-#[cfg(any(feature = "oai", feature = "voyage"))]
-use serde::{Deserialize, Serialize};
-
 /// A backend that maps a batch of input strings to fixed-dimension
 /// embedding vectors.  Implementations should be deterministic for the
 /// same input (the local mock is; the remote ones are deterministic

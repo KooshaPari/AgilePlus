@@ -7,7 +7,11 @@ rust-version.workspace = true
 description = "Triage engine: dedup, claim, classifier, router, repo introspection, plus minhash/bloom/embeddings/hybrid/ast_tokenize primitives."
 
 [features]
-# Default features: local embedding backend (offline, no network), bloom filter.
+# Default features: local embedding backend (offline, no network) and the
+# bitvec-backed Bloom filter.  No regex / no syn / no tree-sitter — the
+# AST tokenizer is a hand-rolled single-pass scanner, which keeps the
+# default build dependency-light and avoids the `regex-automata 0.4.14`
+# NFA construction error we hit with a keyword alternation pattern.
 default = ["local", "bloom"]
 # `local` enables the deterministic hashing-based local embedding backend.
 local = []
@@ -20,6 +24,10 @@ http = ["dep:ureq"]
 oai = ["http", "dep:ureq"]
 # `voyage` enables `VoyageEmbeddings` (api.voyageai.com/v1/embeddings).
 voyage = ["http", "dep:ureq"]
+# `sqlite` enables the `agileplus_triage::claim_store_sqlite` module,
+# which persists claims to a `rusqlite::Connection`. Off by default to
+# keep the dependency-light default build.
+sqlite = ["dep:rusqlite"]
 
 [dependencies]
 agileplus-domain = { path = "../agileplus-domain" }
@@ -29,10 +37,16 @@ tokio.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 tracing.workspace = true
+thiserror.workspace = true
 clap = { version = "4", features = ["derive"] }
 sqlx.workspace = true
 # Optional deps — feature-gated to keep the default build offline and
 # dependency-light.  `bitvec` is used by `bloom.rs`; `ureq` is used by the
-# `oai` and `voyage` embedding backends.
+# `oai` and `voyage` embedding backends; `rusqlite` powers the optional
+# SQLite claim store.
 bitvec = { version = "1.0", optional = true, default-features = false, features = ["alloc"] }
 ureq = { version = "2", optional = true, default-features = false, features = ["tls", "json"] }
+rusqlite = { version = "0.32", optional = true, default-features = false, features = ["bundled"] }
+
+[dev-dependencies]
+tempfile = "3"

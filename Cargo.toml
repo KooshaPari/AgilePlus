@@ -36,12 +36,13 @@
 #
 #   Operations & DX:
 #     - agileplus-cli            Top-level binary `agileplus` (clap subcmds)
+#     - xtask-anti-patterns      Build-time linter catching cargo anti-patterns
 #
 # Build & verify:
 #   cargo build --workspace --all-targets      # compile everything
 #   cargo test  --workspace                    # 646 tests
 #   cargo clippy --workspace --all-targets -- -D warnings
-#   just lint                                # workspace lint checks
+#   cargo run -p xtask-anti-patterns           # workspace linter
 #
 # See SPEC.md, FUNCTIONAL_REQUIREMENTS.md, AGENTS.md, and CONTRIBUTING.md
 # for design rationale and contributor workflow.
@@ -71,9 +72,10 @@ members = [
     "crates/agileplus-triage",
     "crates/agileplus-trace-validator",
     "crates/agileplus-import",
-    "crates/agileplus-validate",
     "crates/agileplus-proto",
+    "crates/agileplus-validate",
     "crates/agileplus-subcmds",
+    "xtask-anti-patterns",
 ]
 exclude = ["AgilePlus/rust", "rust", "crates/phenotype-config"]
 
@@ -83,18 +85,15 @@ edition = "2021"
 license = "MIT"
 rust-version = "1.88"
 
+[workspace.metadata.tools]
+cargo-nextest = "0.9"
+
 [package]
 name = "agileplus"
 version.workspace = true
 edition.workspace = true
-license = "MIT-or-Apache-2.0"
-license-file = "LICENSE"
-description = "AgilePlus — Rust+TypeScript product & engineering management platform with Axum HTTP/gRPC backend, SQLite local store, Electrobun desktop app, and React/TS dashboard"
-homepage = "https://github.com/KooshaPari/AgilePlus"
-documentation = "https://docs.rs/agileplus"
-repository = "https://github.com/KooshaPari/AgilePlus"
-readme = "README.md"
 publish = false
+
 [dependencies]
 serde.workspace = true
 serde_json.workspace = true
@@ -114,7 +113,7 @@ sha2.workspace = true
 [workspace.dependencies]
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1"
-tokio = { version = "1.46", features = ["rt-multi-thread", "macros", "sync", "time", "io-util", "net"] }
+tokio = { version = "1.39", features = ["full"] }
 thiserror = "2"
 anyhow = "1"
 tracing = "0.1"
@@ -145,16 +144,10 @@ utoipa = "4"
 uuid = { version = "1", features = ["v4", "serde"] }
 async-nats = "0.47"
 paste = "1"
-sqlx = "0.8"
 phenotype-error-core = { path = "../phenoShared/crates/phenotype-error-core" }
 phenotype-logging = { path = "../phenoShared/crates/phenotype-logging" }
 agileplus-config = { path = "crates/agileplus-config" }
-agileplus-validate = { path = "crates/agileplus-validate" }
 agileplus-proto = { path = "crates/agileplus-proto" }
 agileplus-telemetry = { path = "crates/agileplus-telemetry" }
 tokio-stream = { version = "0.1", features = ["net", "sync"] }
-
-# cargo-machete false-positive ignores (dev-only / proc-macro / build-deps)
-[workspace.metadata.cargo-machete]
-ignored = ["cucumber", "axum-test", "paste", "dirs", "serde_yaml", "uuid", "async-trait", "tracing-subscriber", "tracing-appender", "tracing-opentelemetry", "futures", "futures-util", "tonic", "tonic-build", "prost", "prost-build", "utoipa", "opentelemetry", "opentelemetry_sdk", "opentelemetry-otlp", "gix", "tempfile"]
-
+sqlx = { version = "0.8", default-features = false }

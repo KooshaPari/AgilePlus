@@ -193,6 +193,7 @@ impl BloomFilter {
 
 #[cfg(feature = "bloom")]
 /// FNV-1a 64-bit, with an offset XOR.  The constant is the FNV-1a basis.
+#[cfg(feature = "bloom")]
 fn fnv1a(bytes: &[u8], offset_xor: u64) -> u64 {
     const FNV_OFFSET: u64 = 0xcbf2_9ce4_8422_2325;
     const FNV_PRIME: u64 = 0x100_0000_01b3;
@@ -209,6 +210,7 @@ fn fnv1a(bytes: &[u8], offset_xor: u64) -> u64 {
 /// different offset XORs.  These are independent enough for the
 /// double-hashing Bloom construction; collisions across both hashes
 /// simultaneously are negligible.
+#[cfg(feature = "bloom")]
 fn double_hash(bytes: &[u8]) -> (u64, u64) {
     let h1 = fnv1a(bytes, 0);
     let h2 = fnv1a(bytes, 0x9E37_79B9_7F4A_7C15);

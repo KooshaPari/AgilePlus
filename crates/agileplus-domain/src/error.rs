@@ -51,6 +51,12 @@ pub enum DomainError {
 
     #[error("Lock poisoned")]
     LockPoisoned,
+
+    /// The supplied claim is not valid for the requested operation (e.g. the
+    /// claim is for a different `kind`, is in the wrong `state`, or is
+    /// missing a required reason / agent binding).
+    #[error("Invalid claim: {0}")]
+    InvalidClaim(String),
 }
 
 /// Project the AgilePlus domain error onto the canonical Phenotype wire
@@ -84,6 +90,11 @@ impl From<DomainError> for ErrorCode {
 
             // infrastructure / internal faults
             DomainError::Storage(_) | DomainError::LockPoisoned => Self::InternalError,
+
+            // claim-bound: from the caller's perspective this is a precondition
+            // failure — the same shape as "you handed me a bad argument" — so
+            // it projects to ValidationError.
+            DomainError::InvalidClaim(_) => Self::ValidationError,
         }
     }
 }
@@ -155,6 +166,12 @@ mod code_projection_tests {
     fn not_implemented_projects_to_not_implemented() {
         let c: ErrorCode = DomainError::NotImplemented.into();
         assert_eq!(c, ErrorCode::NotImplemented);
+    }
+
+    #[test]
+    fn invalid_claim_projects_to_validation_error() {
+        let c: ErrorCode = DomainError::InvalidClaim("not active".into()).into();
+        assert_eq!(c, ErrorCode::ValidationError);
     }
 
     #[test]

@@ -891,7 +891,7 @@ pub fn print_table(entries: &[WorklogEntry]) {
             truncate(&e.task_id, 10),
             truncate(&e.status, 12),
             truncate(&e.agent_id, 22),
-            truncate(&e.started_at, 24),
+            truncate(e.started_at.as_deref().unwrap_or(""), 24),
             e.commit_sha.as_deref().unwrap_or("—"),
         );
     }

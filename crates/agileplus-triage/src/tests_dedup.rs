@@ -71,19 +71,19 @@ mod tests {
     #[test]
     fn claim_issue_and_release() {
         let mut s = ClaimStore::new();
-        let c1 = s.claim("c1", "repo:foo", ClaimKind::Repo, "agent-a", 60, None);
+        let c1 = s.claim("c1", "repo:foo", ClaimKind::Repo, "agent-a", 60, ClaimReason::default());
         assert!(c1.is_some());
-        let c2 = s.claim("c2", "repo:foo", ClaimKind::Repo, "agent-b", 60, None);
+        let c2 = s.claim("c2", "repo:foo", ClaimKind::Repo, "agent-b", 60, ClaimReason::default());
         assert!(c2.is_none());
         assert!(s.release("c1"));
-        let c3 = s.claim("c3", "repo:foo", ClaimKind::Repo, "agent-b", 60, None);
+        let c3 = s.claim("c3", "repo:foo", ClaimKind::Repo, "agent-b", 60, ClaimReason::default());
         assert!(c3.is_some());
     }
 
     #[test]
     fn claim_heartbeat_prevents_expiry() {
         let mut s = ClaimStore::new();
-        s.claim("c1", "branch:feat", ClaimKind::Branch, "agent-a", 1, None);
+        s.claim("c1", "branch:feat", ClaimKind::Branch, "agent-a", 1, ClaimReason::default());
         std::thread::sleep(std::time::Duration::from_millis(1100));
         let reaped_before = s.reap_expired(Utc::now());
         assert_eq!(reaped_before, 1);
@@ -92,7 +92,7 @@ mod tests {
     #[test]
     fn claim_heartbeat_refreshes() {
         let mut s = ClaimStore::new();
-        s.claim("c1", "branch:feat", ClaimKind::Branch, "agent-a", 1, None);
+        s.claim("c1", "branch:feat", ClaimKind::Branch, "agent-a", 1, ClaimReason::default());
         std::thread::sleep(std::time::Duration::from_millis(500));
         s.heartbeat("c1");
         std::thread::sleep(std::time::Duration::from_millis(700));
@@ -103,7 +103,7 @@ mod tests {
     #[test]
     fn claim_lookup_by_resource() {
         let mut s = ClaimStore::new();
-        s.claim("c1", "wt:/tmp/wt1", ClaimKind::Worktree, "agent-a", 60, None);
+        s.claim("c1", "wt:/tmp/wt1", ClaimKind::Worktree, "agent-a", 60, ClaimReason::default());
         let found = s.lookup(ClaimKind::Worktree, "wt:/tmp/wt1");
         assert!(found.is_some());
         assert_eq!(found.unwrap().agent_id, "agent-a");

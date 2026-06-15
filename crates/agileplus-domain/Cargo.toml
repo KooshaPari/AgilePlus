@@ -14,7 +14,7 @@ anyhow.workspace = true
 async-trait.workspace = true
 chrono.workspace = true
 sha2.workspace = true
-agileplus-validate.workspace = true
+agileplus-validate = { path = "../agileplus-validate" }
 
 [dev-dependencies]
 tokio.workspace = true

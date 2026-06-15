@@ -32,8 +32,8 @@ use anyhow::{anyhow, Result};
 use clap::{Args, Subcommand};
 
 use agileplus_application::dto::{
-    ClaimKind, ClaimRequest, DedupRequest, DoneRequest, HeartbeatRequest, PickRequest,
-    ReleaseRequest, ScanRequest, TopologyRequest, WhereRequest,
+    ClaimKind, ClaimReason, ClaimRequest, DedupRequest, DoneRequest, HeartbeatRequest,
+    PickRequest, ReleaseRequest, ScanRequest, TopologyRequest, WhereRequest,
 };
 use agileplus_application::use_cases::triage::{
     AppState, TopologyReport, WpRepository,
@@ -321,13 +321,19 @@ async fn cmd_claim(a: ClaimArgs) -> Result<()> {
         .claim_id
         .unwrap_or_else(|| format!("{}:{}", a.agent, a.resource));
     let state = shared_state().lock().map_err(|e| anyhow!("{e}"))?;
+    // Accept a structured prefix on `--reason` to opt into one of the
+    // typed variants: `task:<id>`, `branch:<name>`, `subproject:<name>`,
+    // `wip:<id>`. Anything else (including the empty string) becomes
+    // `ClaimReason::Manual(<value>)`. This keeps the CLI ergonomic for
+    // humans while preserving the structured typing on the wire.
+    let reason = parse_claim_reason(a.reason.as_deref());
     let req = ClaimRequest {
         claim_id,
         resource: a.resource,
         kind,
         agent_id: a.agent,
         ttl_seconds: a.ttl,
-        reason: a.reason,
+        reason,
     };
     let claim = state.claim(&req)?;
     println!(
@@ -495,6 +501,31 @@ fn parse_claim_kind(s: &str) -> Result<ClaimKind> {
         "worktree" => Ok(ClaimKind::Worktree),
         "subproject" => Ok(ClaimKind::Subproject),
         other => Err(anyhow!("unknown claim kind: {other}")),
+    }
+}
+
+/// Translate the human-typed `--reason` string into a [`ClaimReason`].
+///
+/// The CLI uses prefix syntax to opt into the structured variants:
+/// `task:<id>` -> `TaskRef`, `branch:<name>` -> `Branch`,
+/// `subproject:<name>` -> `Subproject`, `wip:<id>` -> `WipRun`. Anything
+/// else (including the empty / `None` value) becomes
+/// `ClaimReason::Manual(<value>)`.
+fn parse_claim_reason(value: Option<&str>) -> ClaimReason {
+    let s = match value {
+        Some(v) => v,
+        None => return ClaimReason::default(),
+    };
+    if let Some(rest) = s.strip_prefix("task:") {
+        ClaimReason::TaskRef(rest.to_string())
+    } else if let Some(rest) = s.strip_prefix("branch:") {
+        ClaimReason::Branch(rest.to_string())
+    } else if let Some(rest) = s.strip_prefix("subproject:") {
+        ClaimReason::Subproject(rest.to_string())
+    } else if let Some(rest) = s.strip_prefix("wip:") {
+        ClaimReason::WipRun(rest.to_string())
+    } else {
+        ClaimReason::Manual(s.to_string())
     }
 }
 

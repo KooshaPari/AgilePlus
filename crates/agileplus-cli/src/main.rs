@@ -2,12 +2,13 @@
 
 mod sync_cmd;
 
-pub mod commands;
-
 use std::path::PathBuf;
+
+pub use tokio::main as tokio_main;
 
 use clap::{Parser, Subcommand};
 
+use agileplus_cli::{commands, Context, SubcommandAsync};
 use agileplus_domain::domain::{
     cycle::{Cycle, CycleState},
     feature::Feature,
@@ -24,14 +25,9 @@ use sync_cmd::SyncArgs;
 #[command(
     name = "agileplus",
     about = "AgilePlus project management CLI",
-    version,
-    arg_required_else_help = true
+    version
 )]
 struct Cli {
-    /// SQLite database path. Defaults to AGILEPLUS_DB, then ./agileplus.db.
-    #[arg(long, env = "AGILEPLUS_DB", value_name = "PATH", global = true)]
-    db: Option<PathBuf>,
-
     #[command(subcommand)]
     command: Command,
 }
@@ -54,7 +50,7 @@ enum Command {
         sub: CycleCmd,
     },
     /// Print CLI version information
-    Version,
+    Version(commands::version::VersionArgs),
     /// Sync a GitHub repository with an AgilePlus project
     Sync(SyncArgs),
     /// Seed FR/NFR catalogs as Epics + Stories (Tracera traceability)
@@ -65,45 +61,10 @@ enum Command {
     ListEpics(commands::list_epics::ListEpicsArgs),
     /// List stories, optionally filtered by epic and/or status
     ListStories(commands::list_stories::ListStoriesArgs),
-    /// Manage directed trace links between domain entities (L2 #40)
-    Trace(commands::trace::TraceArgs),
-    /// Render an in-flight DAG view of the SQLite database (L2 #40)
-    Dashboard(commands::dashboard::DashboardArgs),
     /// Worklog schema management (validate/convert/schema/list)
     Worklog(commands::worklog::WorklogArgs),
-    /// DAG orchestration (pick/claim/heartbeat/done/dedup/scan/topology/where)
-    Dag(commands::dag::DagArgs),
-    /// Import a dagctl SQLite db into AgilePlus work_packages + wp_dependencies
-    ImportDagctl(commands::import_dagctl::ImportDagctlArgs),
-    /// Project management (MVP)
-    Project {
-        #[command(subcommand)]
-        sub: commands::mvp::ProjectCmd,
-    },
-    /// Epic management (MVP)
-    Epic {
-        #[command(subcommand)]
-        sub: commands::mvp::EpicCmd,
-    },
-    /// Story management (MVP)
-    Story {
-        #[command(subcommand)]
-        sub: commands::mvp::StoryCmd,
-    },
-    /// Work-package management (MVP)
-    Wp {
-        #[command(subcommand)]
-        sub: commands::mvp::WpCmd,
-    },
-    /// Work-package dependency management (MVP)
-    Dep {
-        #[command(subcommand)]
-        sub: commands::mvp::DepCmd,
-    },
-    /// Transition a work-package or story to a new state (MVP)
-    Transition(commands::mvp::TransitionArgs),
-    /// List planned work packages that are ready to start (MVP)
-    NextReady(commands::mvp::NextReadyArgs),
+    /// Classify free-text work into backlog intent
+    Triage(commands::triage::TriageArgs),
 }
 
 #[derive(Subcommand)]
@@ -127,10 +88,6 @@ enum ModuleCmd {
 enum CycleCmd {
     /// Show the current (active) cycle
     Current,
-    /// Create a cycle
-    Create(commands::mvp::CycleCreateArgs),
-    /// Add a story (or all stories of an epic) to a cycle
-    Add(commands::mvp::CycleAddArgs),
 }
 
 // ── in-memory mock store ─────────────────────────────────────────────────────
@@ -254,32 +211,19 @@ fn cmd_cycle_current(store: &MockStore) {
     }
 }
 
-fn cmd_version() {
-    println!("agileplus-cli {}", env!("CARGO_PKG_VERSION"));
-}
-
 // ── helpers ──────────────────────────────────────────────────────────────────
 
 /// Resolve the SQLite database path from `AGILEPLUS_DB` env var or fall back
 /// to `./agileplus.db` in the current directory.
-fn db_path(cli: &Cli) -> PathBuf {
-    cli.db
-        .clone()
-        .unwrap_or_else(|| PathBuf::from("agileplus.db"))
-}
-
-/// Open the file-backed SQLite storage adapter at the resolved DB path.
-fn open_storage(
-    db_path: &std::path::Path,
-) -> anyhow::Result<agileplus_sqlite::SqliteStorageAdapter> {
-    agileplus_sqlite::SqliteStorageAdapter::new(db_path)
-        .map_err(|e| anyhow::anyhow!("open db: {e}"))
+fn db_path_from_env() -> PathBuf {
+    std::env::var("AGILEPLUS_DB")
+        .map(PathBuf::from)
+        .unwrap_or_else(|_| PathBuf::from("agileplus.db"))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::commands::worklog::db_path_from_env;
 
     #[test]
     fn mock_store_seed_contains_cli_fixtures() {
@@ -307,12 +251,12 @@ mod tests {
 
 // ── entry point ──────────────────────────────────────────────────────────────
 
-#[tokio::main]
+#[tokio_main]
 async fn main() {
     let _telemetry = agileplus_telemetry::init_subscriber().ok();
     let cli = Cli::parse();
-    let db_path = db_path(&cli);
     let store = MockStore::seed();
+    let mut ctx = Context::new(db_path_from_env());
 
     let result: anyhow::Result<()> = async {
         match cli.command {
@@ -325,16 +269,12 @@ async fn main() {
             },
             Command::Cycle { sub } => match sub {
                 CycleCmd::Current => cmd_cycle_current(&store),
-                CycleCmd::Create(args) => {
-                    let storage = open_storage(&db_path)?;
-                    commands::mvp::cycle_create(&args, &storage).await?;
-                }
-                CycleCmd::Add(args) => {
-                    let storage = open_storage(&db_path)?;
-                    commands::mvp::cycle_add(&args, &storage).await?;
-                }
             },
-            Command::Version => cmd_version(),
+            Command::Version(args) => {
+                args.execute(&mut ctx)
+                    .await
+                    .map_err(|e| anyhow::anyhow!(e))?;
+            }
             Command::Sync(args) => {
                 sync_cmd::run(args, None).await?;
             }
@@ -342,80 +282,29 @@ async fn main() {
                 commands::seed_requirements::run(&args)?;
             }
             Command::ListProjects(args) => {
-                let storage = open_storage(&db_path)?;
-                commands::list_projects::run(&args, &storage).await?;
+                args.execute(&mut ctx)
+                    .await
+                    .map_err(|e| anyhow::anyhow!(e))?;
             }
             Command::ListEpics(args) => {
-                let storage = open_storage(&db_path)?;
+                let db_path = db_path_from_env();
+                let storage = agileplus_sqlite::SqliteStorageAdapter::new(&db_path)
+                    .map_err(|e| anyhow::anyhow!("open db: {e}"))?;
                 commands::list_epics::run(&args, &storage).await?;
             }
             Command::ListStories(args) => {
-                let storage = open_storage(&db_path)?;
+                let db_path = db_path_from_env();
+                let storage = agileplus_sqlite::SqliteStorageAdapter::new(&db_path)
+                    .map_err(|e| anyhow::anyhow!("open db: {e}"))?;
                 commands::list_stories::run(&args, &storage).await?;
             }
-            Command::Trace(args) => {
-                commands::trace::run(&args)?;
-            }
-            Command::Dashboard(args) => {
-                commands::dashboard::run(&args)?;
-            }
             Command::Worklog(args) => {
-                let db_path = db_path_from_env();
-                commands::worklog::run_with_db(&args, &db_path)?;
+                args.execute(&mut ctx)
+                    .await
+                    .map_err(|e| anyhow::anyhow!(e))?;
             }
-            Command::Dag(args) => {
-                commands::dag::run_dag(args).await?;
-            }
-            Command::ImportDagctl(args) => {
-                commands::import_dagctl::run(&args)?;
-            }
-            Command::Project { sub } => {
-                let storage = open_storage(&db_path)?;
-                match sub {
-                    commands::mvp::ProjectCmd::Create(args) => {
-                        commands::mvp::project_create(&args, &storage).await?;
-                    }
-                }
-            }
-            Command::Epic { sub } => {
-                let storage = open_storage(&db_path)?;
-                match sub {
-                    commands::mvp::EpicCmd::Create(args) => {
-                        commands::mvp::epic_create(&args, &storage).await?;
-                    }
-                }
-            }
-            Command::Story { sub } => {
-                let storage = open_storage(&db_path)?;
-                match sub {
-                    commands::mvp::StoryCmd::Create(args) => {
-                        commands::mvp::story_create(&args, &storage).await?;
-                    }
-                }
-            }
-            Command::Wp { sub } => {
-                let storage = open_storage(&db_path)?;
-                match sub {
-                    commands::mvp::WpCmd::Create(args) => {
-                        commands::mvp::wp_create(&args, &storage).await?;
-                    }
-                }
-            }
-            Command::Dep { sub } => {
-                let storage = open_storage(&db_path)?;
-                match sub {
-                    commands::mvp::DepCmd::Add(args) => {
-                        commands::mvp::dep_add(&args, &storage).await?;
-                    }
-                }
-            }
-            Command::Transition(args) => {
-                let storage = open_storage(&db_path)?;
-                commands::mvp::transition(&args, &storage).await?;
-            }
-            Command::NextReady(args) => {
-                let storage = open_storage(&db_path)?;
-                commands::mvp::next_ready(&args, &storage).await?;
+            Command::Triage(args) => {
+                commands::triage::run_triage(args).await?;
             }
         }
         Ok(())
