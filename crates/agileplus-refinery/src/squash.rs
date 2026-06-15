@@ -4,6 +4,7 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
 use anyhow::{Context, Result};
+use agileplus_domain::ports::VcsPort;
 use agileplus_git::GitVcsAdapter;
 
 /// Squash helper.

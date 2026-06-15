@@ -1,9 +1,10 @@
 use anyhow::{Context, Result};
 use bollard::container::{
-    Config, CreateContainerOptions, HostConfig, RemoveContainerOptions, StopContainerOptions,
+    Config, CreateContainerOptions, RemoveContainerOptions, StopContainerOptions,
 };
-use bollard::exec::{CreateExecOptions, StartExecOptions};
+use bollard::exec::{CreateExecOptions, StartExecOptions, StartExecResults};
 use bollard::image::CreateImageOptions;
+use bollard::models::HostConfig;
 use bollard::Docker;
 use futures::StreamExt;
 use tracing::{debug, error, info, warn};
@@ -145,31 +146,38 @@ impl DockerBackend {
             ..Default::default()
         };
 
-        let mut stdout = Vec::new();
-        let mut stderr = Vec::new();
+        let start_result = self.client.start_exec(&exec.id, Some(start_options)).await?;
 
-        let mut stream = self.client.start_exec(&exec.id, Some(start_options)).await?;
+        let mut stdout: Vec<u8> = Vec::new();
+        let mut stderr: Vec<u8> = Vec::new();
 
-        while let Some(chunk) = stream.next().await {
-            match chunk {
-                Ok(bollard::container::LogOutput::StdOut { message }) => {
-                    stdout.extend_from_slice(&message);
+        let exit_code = match start_result {
+            StartExecResults::Attached { mut output, .. } => {
+                while let Some(chunk) = output.next().await {
+                    match chunk {
+                        Ok(bollard::container::LogOutput::StdOut { message }) => {
+                            stdout.extend_from_slice(&message);
+                        }
+                        Ok(bollard::container::LogOutput::StdErr { message }) => {
+                            stderr.extend_from_slice(&message);
+                        }
+                        Ok(bollard::container::LogOutput::Console { message }) => {
+                            stdout.extend_from_slice(&message);
+                        }
+                        Ok(bollard::container::LogOutput::StdIn { .. }) => {
+                            // StdIn is not expected when we don't attach stdin.
+                        }
+                        Err(e) => {
+                            warn!(error = %e, "exec stream error");
+                        }
+                    }
                 }
-                Ok(bollard::container::LogOutput::StdErr { message }) => {
-                    stderr.extend_from_slice(&message);
-                }
-                Ok(bollard::container::LogOutput::Console { message }) => {
-                    stdout.extend_from_slice(&message);
-                }
-                Err(e) => {
-                    error!(error = %e, "exec stream error");
-                }
+                // Inspect exec to get exit code
+                let inspect = self.client.inspect_exec(&exec.id).await?;
+                inspect.exit_code.unwrap_or(-1)
             }
-        }
-
-        // Inspect exec to get exit code
-        let inspect = self.client.inspect_exec(&exec.id).await?;
-        let exit_code = inspect.exit_code.unwrap_or(-1);
+            StartExecResults::Detached => 0,
+        };
 
         let stdout = String::from_utf8_lossy(&stdout).to_string();
         let stderr = String::from_utf8_lossy(&stderr).to_string();

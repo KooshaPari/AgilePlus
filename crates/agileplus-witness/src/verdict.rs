@@ -7,7 +7,6 @@ use serde::{Deserialize, Serialize};
 use tracing::info;
 use uuid::Uuid;
 
-use agileplus_convoy::bead::BeadState;
 use agileplus_convoy::Convoy;
 
 use crate::Witness;

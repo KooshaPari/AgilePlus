@@ -131,7 +131,7 @@ fn parse_attributes(attr_str: &str) -> serde_json::Value {
             serde_json::Value::String(val.as_str().to_string())
         } else if let Some(val) = caps.get(3) {
             // Integer
-            val.as_str().parse::<i64>().map(serde_json::Value::Number).unwrap_or_else(|_| {
+            val.as_str().parse::<i64>().map(|n| serde_json::Value::Number(n.into())).unwrap_or_else(|_| {
                 serde_json::Value::String(val.as_str().to_string())
             })
         } else {

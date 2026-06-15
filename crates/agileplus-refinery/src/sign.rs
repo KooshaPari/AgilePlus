@@ -224,14 +224,18 @@ async fn get_commit_message(repo_root: &std::path::Path, commit_sha: &str) -> Re
 async fn amend_commit_message(repo_root: &std::path::Path, message: &str) -> Result<String> {
     let repo_root = repo_root.to_path_buf();
     let message = message.to_string();
-    let output = tokio::task::spawn_blocking(move || {
-        Command::new("git")
-            .args(["commit", "--amend", "-m", &message])
-            .current_dir(&repo_root)
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .output()
-            .with_context(|| "git commit --amend")
+    let output = tokio::task::spawn_blocking({
+        let message = message.clone();
+        let repo_root = repo_root.clone();
+        move || {
+            Command::new("git")
+                .args(["commit", "--amend", "-m", &message])
+                .current_dir(&repo_root)
+                .stdout(Stdio::piped())
+                .stderr(Stdio::piped())
+                .output()
+                .with_context(|| "git commit --amend")
+        }
     })
     .await
     .context("spawn_blocking failed")??;
@@ -298,23 +302,27 @@ async fn amend_commit_with_ssh_signature(
 async fn write_commit_object(repo_root: &std::path::Path, content: &str) -> Result<String> {
     let repo_root = repo_root.to_path_buf();
     let content = content.to_string();
-    let output = tokio::task::spawn_blocking(move || {
-        let mut child = Command::new("git")
-            .args(["hash-object", "-t", "commit", "--stdin", "-w"])
-            .current_dir(&repo_root)
-            .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .spawn()
-            .with_context(|| "git hash-object")?;
-        use std::io::Write;
-        {
-            let stdin = child.stdin.take().context("stdin unavailable")?;
-            let mut stdin = std::io::BufWriter::new(stdin);
-            stdin.write_all(content.as_bytes())?;
-            stdin.flush()?;
+    let output = tokio::task::spawn_blocking({
+        let content = content.clone();
+        let repo_root = repo_root.clone();
+        move || {
+            let mut child = Command::new("git")
+                .args(["hash-object", "-t", "commit", "--stdin", "-w"])
+                .current_dir(&repo_root)
+                .stdin(Stdio::piped())
+                .stdout(Stdio::piped())
+                .stderr(Stdio::piped())
+                .spawn()
+                .with_context(|| "git hash-object")?;
+            use std::io::Write;
+            {
+                let stdin = child.stdin.take().context("stdin unavailable")?;
+                let mut stdin = std::io::BufWriter::new(stdin);
+                stdin.write_all(content.as_bytes())?;
+                stdin.flush()?;
+            }
+            child.wait_with_output().with_context(|| "git hash-object failed")
         }
-        child.wait_with_output().with_context(|| "git hash-object failed")
     })
     .await
     .context("spawn_blocking failed")??;
@@ -326,9 +334,10 @@ async fn write_commit_object(repo_root: &std::path::Path, content: &str) -> Resu
     let sha = String::from_utf8_lossy(&output.stdout).trim().to_string();
 
     // Reset HEAD to the new commit.
+    let sha_for_reset = sha.clone();
     let _ = tokio::task::spawn_blocking(move || {
         Command::new("git")
-            .args(["reset", "--soft", &sha])
+            .args(["reset", "--soft", &sha_for_reset])
             .current_dir(&repo_root)
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())

@@ -7,7 +7,7 @@
 //!
 //! Traceability: audit rec #21 (claim state change event stream).
 
-use crate::claim::{Claim, ClaimKind, ClaimReason, ClaimStore, ClaimStoreTrait};
+use crate::claim::{Claim, ClaimKind, ClaimReason, ClaimStore};
 use chrono::{DateTime, Utc};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
@@ -130,7 +130,7 @@ impl ClaimWatcher {
         to_agent: &str,
     ) -> Result<Claim, crate::claim::ClaimError> {
         let result = self.store.claim_transfer(from_id, to_id, to_agent);
-        if let Ok(ref new_claim) = result {
+        if let Ok(ref _new_claim) = result {
             self.emit(from_id, ClaimEvent::Transferred { from: from_id.to_string(), to: to_id.to_string() });
             self.emit(to_id, ClaimEvent::Claimed);
         }
