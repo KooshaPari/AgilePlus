@@ -1,0 +1,46 @@
+{
+  "schema_version": "1.0",
+  "repo": "KooshaPari/AgilePlus",
+  "crutches": [
+    {
+      "id": "agents_md_drift",
+      "name": "AGENTS.md Do-Not-Touch Zone Guard",
+      "severity": "fail",
+      "description": "Staged files in AGENTS.md do-not-touch zones must have a WORKLOG.md row",
+      "file": ".forge/agents.md",
+      "check_command": "pheno-vibecoding-guard run --check agents_md_drift"
+    },
+    {
+      "id": "worklog_needs_task_id",
+      "name": "Worklog Task-ID Guard",
+      "severity": "fail",
+      "description": "WORKLOG.md changes must include a V*- task ID in the diff",
+      "file": ".forge/worklog-rules.md",
+      "check_command": "pheno-vibecoding-guard run --check worklog_needs_task_id"
+    },
+    {
+      "id": "gitignore_requires_deny_toml",
+      "name": "deny.toml Coordination Guard",
+      "severity": "advisory",
+      "description": ".gitignore changes should be coordinated with deny.toml",
+      "file": ".forge/deny-coordination.md",
+      "check_command": "pheno-vibecoding-guard run --check gitignore_requires_deny_toml"
+    },
+    {
+      "id": "ci_workflow_sha_pin",
+      "name": "CI Workflow SHA-Pin Guard",
+      "severity": "fail",
+      "description": "CI workflow actions must be SHA-pinned, not tag-pinned",
+      "file": ".forge/ci-sha-pin.md",
+      "check_command": "pheno-vibecoding-guard run --check ci_workflow_sha_pin"
+    },
+    {
+      "id": "merge_conflict_markers",
+      "name": "Merge Conflict Marker Guard",
+      "severity": "fail",
+      "description": "Source files must not contain unresolved merge conflict markers",
+      "file": ".forge/merge-conflict-guard.md",
+      "check_command": "pheno-vibecoding-guard run --check merge_conflict_markers"
+    }
+  ]
+}
