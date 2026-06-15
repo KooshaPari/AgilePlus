@@ -29,6 +29,13 @@ pub enum RelType {
     Blocks,
     Tagged,
     InProject,
+    OwnsClaim,
+    ClaimsWorktree,
+    DispatchedBy,
+    Verifies,
+    Produces,
+    Consumes,
+    Retries,
 }
 
 impl RelType {
@@ -40,6 +47,13 @@ impl RelType {
             RelType::Blocks => "BLOCKS",
             RelType::Tagged => "TAGGED",
             RelType::InProject => "IN_PROJECT",
+            RelType::OwnsClaim => "OWNS_CLAIM",
+            RelType::ClaimsWorktree => "CLAIMS_WORKTREE",
+            RelType::DispatchedBy => "DISPATCHED_BY",
+            RelType::Verifies => "VERIFIES",
+            RelType::Produces => "PRODUCES",
+            RelType::Consumes => "CONSUMES",
+            RelType::Retries => "RETRIES",
         }
     }
 }

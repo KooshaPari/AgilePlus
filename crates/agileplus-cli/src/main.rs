@@ -2,13 +2,12 @@
 
 mod sync_cmd;
 
-use std::path::PathBuf;
+pub mod commands;
 
-pub use tokio::main as tokio_main;
+use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
 
-use agileplus_cli::{commands, Context, SubcommandAsync};
 use agileplus_domain::domain::{
     cycle::{Cycle, CycleState},
     feature::Feature,
@@ -50,7 +49,7 @@ enum Command {
         sub: CycleCmd,
     },
     /// Print CLI version information
-    Version(commands::version::VersionArgs),
+    Version,
     /// Sync a GitHub repository with an AgilePlus project
     Sync(SyncArgs),
     /// Seed FR/NFR catalogs as Epics + Stories (Tracera traceability)
@@ -63,8 +62,12 @@ enum Command {
     ListStories(commands::list_stories::ListStoriesArgs),
     /// Worklog schema management (validate/convert/schema/list)
     Worklog(commands::worklog::WorklogArgs),
-    /// Classify free-text work into backlog intent
-    Triage(commands::triage::TriageArgs),
+    /// DAG orchestration (pick/claim/heartbeat/done/dedup/scan/topology/where)
+    Dag(commands::dag::DagArgs),
+    /// Import a dagctl SQLite db into AgilePlus work_packages + wp_dependencies
+    ImportDagctl(commands::import_dagctl::ImportDagctlArgs),
+    /// Convert a natural language prompt into a structured intent graph
+    Intent(commands::intent::IntentArgs),
 }
 
 #[derive(Subcommand)]
@@ -211,6 +214,10 @@ fn cmd_cycle_current(store: &MockStore) {
     }
 }
 
+fn cmd_version() {
+    println!("agileplus-cli {}", env!("CARGO_PKG_VERSION"));
+}
+
 // ── helpers ──────────────────────────────────────────────────────────────────
 
 /// Resolve the SQLite database path from `AGILEPLUS_DB` env var or fall back
@@ -251,12 +258,11 @@ mod tests {
 
 // ── entry point ──────────────────────────────────────────────────────────────
 
-#[tokio_main]
+#[tokio::main]
 async fn main() {
     let _telemetry = agileplus_telemetry::init_subscriber().ok();
     let cli = Cli::parse();
     let store = MockStore::seed();
-    let mut ctx = Context::new(db_path_from_env());
 
     let result: anyhow::Result<()> = async {
         match cli.command {
@@ -270,24 +276,18 @@ async fn main() {
             Command::Cycle { sub } => match sub {
                 CycleCmd::Current => cmd_cycle_current(&store),
             },
-            Command::Version(args) => {
-                args.execute(&mut ctx)
-                    .await
-                    .map_err(|e| anyhow::anyhow!(e))?;
-            }
+            Command::Version => cmd_version(),
             Command::Sync(args) => {
-                let db_path = db_path_from_env();
-                let storage = agileplus_sqlite::SqliteStorageAdapter::new(&db_path)
-                    .map_err(|e| anyhow::anyhow!("open db: {e}"))?;
-                sync_cmd::run(args, None, Some(&storage)).await?;
+                sync_cmd::run(args, None).await?;
             }
             Command::SeedRequirements(args) => {
                 commands::seed_requirements::run(&args)?;
             }
             Command::ListProjects(args) => {
-                args.execute(&mut ctx)
-                    .await
-                    .map_err(|e| anyhow::anyhow!(e))?;
+                let db_path = db_path_from_env();
+                let storage = agileplus_sqlite::SqliteStorageAdapter::new(&db_path)
+                    .map_err(|e| anyhow::anyhow!("open db: {e}"))?;
+                commands::list_projects::run(&args, &storage).await?;
             }
             Command::ListEpics(args) => {
                 let db_path = db_path_from_env();
@@ -302,12 +302,16 @@ async fn main() {
                 commands::list_stories::run(&args, &storage).await?;
             }
             Command::Worklog(args) => {
-                args.execute(&mut ctx)
-                    .await
-                    .map_err(|e| anyhow::anyhow!(e))?;
+                commands::worklog::run(&args)?;
             }
-            Command::Triage(args) => {
-                commands::triage::run_triage(args).await?;
+            Command::Dag(args) => {
+                commands::dag::run_dag(args).await?;
+            }
+            Command::ImportDagctl(args) => {
+                commands::import_dagctl::run(&args)?;
+            }
+            Command::Intent(args) => {
+                commands::intent::run(&args)?;
             }
         }
         Ok(())

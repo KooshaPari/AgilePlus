@@ -4,7 +4,7 @@ set -euo pipefail
 SPEC_FILE="${SPEC_FILE:-SPEC.md}"
 BODY="${PR_BODY:-}"
 
-refs="$(printf '%s\n' "$BODY" | grep -Eo '(FR|NFR)-[0-9]+([.][0-9]+)?' | sort -u || true)"
+refs="$(printf '%s\n' "$BODY" | grep --color=never -Eo '(FR|NFR)-[0-9]+([.][0-9]+)?' | sort -u || true)"
 
 if [ -z "$refs" ]; then
   echo "No FR/NFR references found in PR body; spec verification skipped."

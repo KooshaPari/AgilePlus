@@ -8,6 +8,17 @@ default:
 
 ci: fmt lint test audit docs
 
+# Run the full grading gate (alias of `ci`)
+[private]
+grade: ci
+
+# Quick grading mode — build, lint, fmt, test only
+grade-fast:
+    cargo build --workspace --all-targets
+    cargo clippy --workspace --all-targets --all-features -- -D warnings
+    cargo fmt --all --check
+    cargo test --workspace
+
 lint:
     cargo clippy --workspace --all-targets --all-features -- -D warnings
 
@@ -59,3 +70,29 @@ test-crate crate:
 test-agileplus-api: (test-crate "agileplus-api")
 
 test-agileplus-cli: (test-crate "agileplus-cli")
+
+# ── Intent Converter ─────────────────────────────────────────────────────────
+
+# Convert a prompt to an intent graph JSON (one-shot)
+# Usage: just convert-intent "Add dark mode"
+#        just convert-intent --store "Add dark mode"
+convert-intent prompt store="":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [ "{{store}}" = "--store" ]; then
+        cargo run -p agileplus-mcp-intent -- convert --store "{{prompt}}"
+    else
+        cargo run -p agileplus-mcp-intent -- convert "{{prompt}}"
+    fi
+
+# Convert a prompt and store the resulting graph in the AgilePlus database
+convert-intent-store prompt="Add dark mode to settings":
+    cargo run -p agileplus-mcp-intent -- convert --store "{{prompt}}"
+
+# Run the intent converter HTTP server
+run-intent-http port="8080":
+    cargo run -p agileplus-mcp-intent -- http --port {{port}}
+
+# Run the intent converter MCP server (stdio JSON-RPC)
+run-intent-mcp:
+    cargo run -p agileplus-mcp-intent -- mcp

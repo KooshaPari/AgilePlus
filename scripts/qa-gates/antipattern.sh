@@ -22,7 +22,7 @@ target_files() {
 files="$(
   target_files |
     sed '/^[[:space:]]*$/d' |
-    grep -E '\.(rs|ts|tsx|js|py)$' |
+    grep --color=never -E '\.(rs|ts|tsx|js|py)$' |
     while IFS= read -r file; do
       [ -f "$file" ] && printf '%s\n' "$file"
       [ -f "$ROOT/$file" ] && printf '%s\n' "$ROOT/$file"
@@ -40,7 +40,7 @@ scan() {
   local pattern="$2"
   local matches
 
-  matches="$(printf '%s\n' "$files" | xargs grep -InE "$pattern" || true)"
+  matches="$(printf '%s\n' "$files" | xargs grep --color=never -InE "$pattern" || true)"
   if [ -n "$matches" ]; then
     printf '%s\n' "$matches"
     echo "anti-pattern detected: $label" >&2

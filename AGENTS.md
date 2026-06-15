@@ -41,4 +41,10 @@ AgilePlus is the Phenotype-org spec-driven development framework. Rust CLI + wor
 ## Important Notes
 - **Never commit directly to `AgilePlus/` main** — it is bare. All changes go through PRs.
 - **Do not use `AgilePlus-wtrees/<subject>/`** — the worktree convention is `<repo>-wtrees/` (lowercase repo name).
-- See `agileplus/CLAUDE.md` for detailed workspace structure, bootstrap status, and agent operating notes.
+- ## Active DAG
+- **V3 DAG:** `FLEET_DAG_v3.db` (Phenotype org task graph)
+- **Current focus:** L5 #88 — Focus-repo README + AGENTS.md standardization
+
+---
+
+See `agileplus/CLAUDE.md` for detailed workspace structure, bootstrap status, and agent operating notes.

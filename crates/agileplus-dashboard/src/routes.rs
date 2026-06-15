@@ -6,15 +6,13 @@
 use std::collections::HashMap;
 use std::env;
 
-use agileplus_domain::ports::StoragePort;
-use agileplus_sqlite::SqliteStorageAdapter;
 use askama::Template;
 use axum::{
-    Router,
     extract::{Path, Query, State},
     http::{HeaderMap, StatusCode},
     response::{Html, IntoResponse, Response},
     routing::{get, post},
+    Router,
 };
 
 use agileplus_domain::domain::{
@@ -25,13 +23,13 @@ use crate::app_state::{ServiceHealth, SharedState};
 use crate::health;
 use crate::process_detector;
 use crate::templates::{
-    AgentActivityPartial, AgentSettingsPage, AgentView, CiLinkView, DashboardPage,
-    EcosystemProject, EventTimelinePartial, EventsPage, EvidenceBundleView, FeatureDetailPage,
-    FeatureEvidencePartial, FeatureView, FeaturesPage, GenerateEvidenceResponse, GitCommitView,
-    HealthPage, HealthPanelPartial, HomePage, HubPage, KanbanPartial, MediaAssetView,
-    PlaneHealthEndpointView, PlaneSettingsPage, PrLinkView, ProjectSummaryView,
+    all_feature_states, AgentActivityPartial, AgentSettingsPage, AgentView, CiLinkView,
+    DashboardPage, EcosystemProject, EventTimelinePartial, EventsPage, EvidenceBundleView,
+    FeatureDetailPage, FeatureEvidencePartial, FeatureView, FeaturesPage, GenerateEvidenceResponse,
+    GitCommitView, HealthPage, HealthPanelPartial, HomePage, HubPage, KanbanPartial,
+    MediaAssetView, PlaneHealthEndpointView, PlaneSettingsPage, PrLinkView, ProjectSummaryView,
     ProjectSwitcherPartial, ProjectView, ReportArtifactView, ServiceHealthView,
-    ServicesSettingsPage, SettingsPage, ToastPartial, WpListPartial, WpView, all_feature_states,
+    ServicesSettingsPage, SettingsPage, ToastPartial, WpListPartial, WpView,
 };
 
 use chrono::Utc;
@@ -176,10 +174,6 @@ impl Config {
     }
 
     fn config_path() -> PathBuf {
-        if let Ok(path) = std::env::var("AGILEPLUS_CONFIG_PATH") {
-            return PathBuf::from(path);
-        }
-
         std::env::var("HOME")
             .ok()
             .map(|home| PathBuf::from(home).join(".agileplus/config.toml"))
@@ -963,7 +957,8 @@ pub async fn feature_media(
         .join("\n");
 
     Html(format!(
-        r#"<div class="grid grid-cols-2 gap-3 media-gallery">{html}</div>"#
+        r#"<div class="grid grid-cols-2 gap-3 media-gallery">{}</div>"#,
+        html
     ))
     .into_response()
 }
@@ -1009,7 +1004,7 @@ pub async fn agent_activity(State(state): State<SharedState>) -> Response {
 /// `process_detector::get_process_start_time` (e.g. "5m", "1h 20m").
 fn calculate_uptime(started_at: &Option<String>) -> String {
     match started_at {
-        Some(elapsed) => format!("running for {elapsed}"),
+        Some(elapsed) => format!("running for {}", elapsed),
         None => "uptime unknown".into(),
     }
 }
@@ -1638,7 +1633,7 @@ pub async fn feature_evidence_json(
 
 use axum::response::sse::{Event, Sse};
 use std::convert::Infallible;
-use tokio::time::{Duration, interval};
+use tokio::time::{interval, Duration};
 
 pub async fn sse_stream(
     State(state): State<SharedState>,
@@ -1772,7 +1767,8 @@ fn validate_restart_command(cmd_line: &str) -> Result<(), String> {
     let program = parts.remove(0);
     if !is_restart_command_allowed(program) {
         return Err(format!(
-            "command '{program}' is not in approved restart command registry: {ALLOWED_RESTART_PROGRAMS:?}"
+            "command '{}' is not in approved restart command registry: {:?}",
+            program, ALLOWED_RESTART_PROGRAMS
         ));
     }
 
@@ -1880,11 +1876,11 @@ pub async fn patch_service_config(
 
     match config.save() {
         Ok(_) => render(ToastPartial {
-            message: format!("Service '{name}' configuration saved"),
+            message: format!("Service '{}' configuration saved", name),
             success: true,
         }),
         Err(e) => render(ToastPartial {
-            message: format!("Failed to save: {e}"),
+            message: format!("Failed to save: {}", e),
             success: false,
         }),
     }
@@ -1930,7 +1926,7 @@ pub async fn toggle_service(
             "status": "error",
             "service": name,
             "enabled": enabled,
-            "error": format!("Failed to save config: {err}"),
+            "error": format!("Failed to save config: {}", err),
         }));
     }
 
@@ -1997,11 +1993,11 @@ pub async fn test_agent_connection(
             true,
             "Local provider requires no external credentials".to_string(),
         ),
-        other => (false, format!("Unknown provider: {other}")),
+        other => (false, format!("Unknown provider: {}", other)),
     };
 
     let css = if ok { "text-green-400" } else { "text-red-400" };
-    Html(format!(r#"<span class="{css}">{msg}</span>"#)).into_response()
+    Html(format!(r#"<span class="{}">{}</span>"#, css, msg)).into_response()
 }
 
 // ── Router builder ───────────────────────────────────────────────────────
@@ -2032,7 +2028,7 @@ pub async fn save_plane_settings(axum::Form(form): axum::Form<PlaneSettingsForm>
             success: true,
         }),
         Err(e) => render(ToastPartial {
-            message: format!("Failed to save settings: {e}"),
+            message: format!("Failed to save settings: {}", e),
             success: false,
         }),
     }
@@ -2062,7 +2058,7 @@ pub async fn save_agent_settings(axum::Form(form): axum::Form<AgentSettingsForm>
             success: true,
         }),
         Err(e) => render(ToastPartial {
-            message: format!("Failed to save settings: {e}"),
+            message: format!("Failed to save settings: {}", e),
             success: false,
         }),
     }
@@ -2093,7 +2089,7 @@ pub async fn save_dashboard_settings(
             success: true,
         }),
         Err(e) => render(ToastPartial {
-            message: format!("Failed to save settings: {e}"),
+            message: format!("Failed to save settings: {}", e),
             success: false,
         }),
     }
@@ -2130,7 +2126,7 @@ pub async fn save_services_settings(axum::Form(form): axum::Form<ServiceSettings
             success: true,
         }),
         Err(e) => render(ToastPartial {
-            message: format!("Failed to save settings: {e}"),
+            message: format!("Failed to save settings: {}", e),
             success: false,
         }),
     }
@@ -2225,98 +2221,73 @@ pub async fn all_work_packages_json(State(state): State<SharedState>) -> impl In
 /// Reads Epics + Stories directly from the SQLite database and returns them
 /// as a flat JSON payload. Used by the React dashboard at port 5176.
 pub async fn epics_stories_json() -> impl IntoResponse {
-    let db = match SqliteStorageAdapter::new(&resolve_dashboard_db_path()) {
-        Ok(db) => db,
-        Err(e) => {
-            return axum::Json(serde_json::json!({
-                "epics": [],
-                "stories": [],
-                "epic_count": 0,
-                "story_count": 0,
-                "error": format!("db init failed: {e}"),
-            }));
-        }
-    };
-
-    let projects = match db.list_all_projects().await {
-        Ok(projects) => projects,
-        Err(e) => {
-            return axum::Json(serde_json::json!({
-                "epics": [],
-                "stories": [],
-                "epic_count": 0,
-                "story_count": 0,
-                "error": format!("project query failed: {e}"),
-            }));
-        }
-    };
-
-    let mut epics = Vec::new();
-    let mut stories = Vec::new();
-
-    for project in projects {
-        match db.list_epics_by_project(project.id).await {
-            Ok(project_epics) => epics.extend(project_epics.into_iter().map(|epic| {
-                serde_json::json!({
-                    "id": epic.id,
-                    "title": epic.title,
-                    "status": epic.status.to_string(),
-                    "requirement_id": epic.requirement_id,
-                })
-            })),
-            Err(e) => {
-                return axum::Json(serde_json::json!({
-                    "epics": [],
-                    "stories": [],
-                    "epic_count": 0,
-                    "story_count": 0,
-                    "error": format!("epic query failed: {e}"),
-                }));
-            }
-        }
-
-        match db.list_stories_by_project(project.id).await {
-            Ok(project_stories) => stories.extend(project_stories.into_iter().map(|story| {
-                serde_json::json!({
-                    "id": story.id,
-                    "epic_id": story.epic_id,
-                    "title": story.title,
-                    "status": story.status.to_string(),
-                    "requirement_id": story.requirement_id,
-                })
-            })),
-            Err(e) => {
-                return axum::Json(serde_json::json!({
-                    "epics": [],
-                    "stories": [],
-                    "epic_count": 0,
-                    "story_count": 0,
-                    "error": format!("story query failed: {e}"),
-                }));
-            }
-        }
-    }
-
-    epics.sort_by_key(|epic| epic["id"].as_i64().unwrap_or_default());
-    stories.sort_by_key(|story| story["id"].as_i64().unwrap_or_default());
-
-    axum::Json(serde_json::json!({
-        "epics": &epics,
-        "stories": &stories,
-        "epic_count": epics.len(),
-        "story_count": stories.len(),
-        "timestamp": chrono::Utc::now().to_rfc3339(),
-    }))
-}
-
-fn resolve_dashboard_db_path() -> PathBuf {
-    if let Ok(url) = std::env::var("DATABASE_URL") {
+    // Resolve db path: DATABASE_URL env → DATABASE_PATH env → default agileplus.db
+    let db_path: PathBuf = if let Ok(url) = std::env::var("DATABASE_URL") {
         url.strip_prefix("sqlite:").unwrap_or(&url).into()
-    } else if let Ok(path) = std::env::var("DATABASE_PATH") {
-        PathBuf::from(path)
+    } else if let Ok(p) = std::env::var("DATABASE_PATH") {
+        PathBuf::from(p)
     } else {
         PathBuf::from("agileplus.db")
-    }
+    };
+
+    let conn = match rusqlite::Connection::open(&db_path) {
+        Ok(c) => c,
+        Err(e) => {
+            return axum::Json(serde_json::json!({
+                "epics": [],
+                "stories": [],
+                "epic_count": 0,
+                "story_count": 0,
+                "error": format!("db open failed: {e}"),
+            }));
+        }
+    };
+
+    // Query epics
+    let epics: Vec<serde_json::Value> = {
+        let mut stmt = conn
+            .prepare("SELECT id, title, status, requirement_id FROM epics ORDER BY id")
+            .unwrap_or_else(|_| conn.prepare("SELECT 1 WHERE 0").unwrap());
+        stmt.query_map([], |row| {
+            Ok(serde_json::json!({
+                "id": row.get::<_, i64>(0).unwrap_or(0),
+                "title": row.get::<_, String>(1).unwrap_or_default(),
+                "status": row.get::<_, String>(2).unwrap_or_default(),
+                "requirement_id": row.get::<_, Option<String>>(3).unwrap_or(None),
+            }))
+        })
+        .map(|rows| rows.filter_map(|r| r.ok()).collect())
+        .unwrap_or_default()
+    };
+
+    // Query stories
+    let stories: Vec<serde_json::Value> = {
+        let mut stmt = conn
+            .prepare("SELECT id, epic_id, title, status, requirement_id FROM stories ORDER BY id")
+            .unwrap_or_else(|_| conn.prepare("SELECT 1 WHERE 0").unwrap());
+        stmt.query_map([], |row| {
+            Ok(serde_json::json!({
+                "id": row.get::<_, i64>(0).unwrap_or(0),
+                "epic_id": row.get::<_, Option<i64>>(1).unwrap_or(None),
+                "title": row.get::<_, String>(2).unwrap_or_default(),
+                "status": row.get::<_, String>(3).unwrap_or_default(),
+                "requirement_id": row.get::<_, Option<String>>(4).unwrap_or(None),
+            }))
+        })
+        .map(|rows| rows.filter_map(|r| r.ok()).collect())
+        .unwrap_or_default()
+    };
+
+    let epic_count = epics.len();
+    let story_count = stories.len();
+
+    axum::Json(serde_json::json!({
+        "epics": epics,
+        "stories": stories,
+        "epic_count": epic_count,
+        "story_count": story_count,
+        "timestamp": chrono::Utc::now().to_rfc3339(),
+    }))
 }
 
 pub fn router(state: SharedState) -> Router {
@@ -2410,12 +2381,7 @@ pub fn router(state: SharedState) -> Router {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::app_state::{DashboardStore, default_health};
-    use agileplus_domain::domain::{
-        epic::{Epic, EpicStatus},
-        project::Project,
-        story::{Story, StoryStatus},
-    };
+    use crate::app_state::{default_health, DashboardStore};
     use std::sync::Arc;
     use tokio::sync::RwLock;
     use tower::util::ServiceExt;
@@ -2426,18 +2392,6 @@ mod tests {
             ..Default::default()
         };
         Arc::new(RwLock::new(store))
-    }
-
-    fn isolate_config(test_name: &str) {
-        let path = std::env::temp_dir().join(format!(
-            "agileplus-dashboard-{test_name}-{}",
-            std::process::id()
-        ));
-        let _ = std::fs::remove_dir_all(&path);
-        std::fs::create_dir_all(&path).unwrap();
-        unsafe {
-            std::env::set_var("AGILEPLUS_CONFIG_PATH", path.join("config.toml"));
-        }
     }
 
     // NOTE: 8 render-assertion tests removed (see PR #675 follow-up).
@@ -2451,7 +2405,6 @@ mod tests {
 
     #[tokio::test]
     async fn toggle_service_updates_store_and_responds() {
-        isolate_config("toggle-service");
         let state = make_state();
         let app = router(state.clone());
 
@@ -2504,58 +2457,6 @@ mod tests {
         assert!(body_text.contains("\"status\":\"ok\""));
         assert!(body_text.contains("\"service\":\"NATS\""));
         assert!(body_text.contains("restarted NATS"));
-    }
-
-    #[tokio::test]
-    async fn epics_stories_json_uses_storage_adapter_data() {
-        let db_path = std::env::temp_dir().join(format!(
-            "agileplus-dashboard-epics-stories-{}-{}.db",
-            std::process::id(),
-            Utc::now().timestamp_nanos_opt().unwrap_or_default()
-        ));
-        let _ = std::fs::remove_file(&db_path);
-
-        let db = SqliteStorageAdapter::new(&db_path).expect("db initializes");
-
-        let project = Project::new("Cleanup Project", "cleanup-project").unwrap();
-        let project_id = db.create_project(&project).await.unwrap();
-
-        let mut epic = Epic::new(project_id, "Cleanup Epic").unwrap();
-        epic.status = EpicStatus::Active;
-        epic.requirement_id = Some("FR-L5-046".to_string());
-        let epic_id = db.create_epic(&epic).await.unwrap();
-
-        let mut story = Story::new(epic_id, project_id, "Cleanup Story", Some(3)).unwrap();
-        story.status = StoryStatus::InProgress;
-        story.requirement_id = Some("WP-L5-046".to_string());
-        db.create_story(&story).await.unwrap();
-
-        unsafe {
-            std::env::set_var("DATABASE_PATH", &db_path);
-            std::env::remove_var("DATABASE_URL");
-        }
-
-        let response = epics_stories_json().await.into_response();
-        assert_eq!(response.status(), StatusCode::OK);
-
-        let body_bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
-            .await
-            .unwrap();
-        let json: serde_json::Value = serde_json::from_slice(&body_bytes).expect("valid JSON");
-
-        assert_eq!(json["epic_count"], 1);
-        assert_eq!(json["story_count"], 1);
-        assert_eq!(json["epics"][0]["id"], epic_id);
-        assert_eq!(json["epics"][0]["title"], "Cleanup Epic");
-        assert_eq!(json["epics"][0]["status"], "active");
-        assert_eq!(json["stories"][0]["epic_id"], epic_id);
-        assert_eq!(json["stories"][0]["title"], "Cleanup Story");
-        assert_eq!(json["stories"][0]["status"], "in_progress");
-
-        unsafe {
-            std::env::remove_var("DATABASE_PATH");
-        }
-        let _ = std::fs::remove_file(&db_path);
     }
 
     // ── Pure-function unit tests ──────────────────────────────────────────

@@ -24,18 +24,18 @@ payload / state round-trip through `serde_json` without loss.
 ## Steps
 
 1. Construct a new event via `Event::new("story", 42, "Created", json, "user@host")`.
-   ![stub: domain-event-construction](./assets/stubs/domain-event-construction.gif)
+   *Stub (TODO):* `docs/journeys/assets/stubs/domain-event-construction.gif` — capture pending.
 2. Construct a new snapshot via `Snapshot::new("story", 42, json, 100)`.
-   ![stub: domain-snapshot-construction](./assets/stubs/domain-snapshot-construction.gif)
+   *Stub (TODO):* `docs/journeys/assets/stubs/domain-snapshot-construction.gif` — capture pending.
 3. Serialize both values to JSON and back, then compare payload / state.
-   ![stub: domain-event-roundtrip](./assets/stubs/domain-event-roundtrip.gif)
+   *Stub (TODO):* `docs/journeys/assets/stubs/domain-event-roundtrip.gif` — capture pending.
 4. Inspect store-managed fields: `id == 0`, `sequence == 0`,
    `prev_hash == [0; 32]`, `hash == [0; 32]` for `Event`;
    `id == 0` for `Snapshot`.
-   ![stub: domain-store-managed-defaults](./assets/stubs/domain-store-managed-defaults.gif)
+   *Stub (TODO):* `docs/journeys/assets/stubs/domain-store-managed-defaults.gif` — capture pending.
 5. Confirm timestamps are non-future and the hash-chain remains available
    for the event store to populate.
-   ![stub: domain-hash-chain-handoff](./assets/stubs/domain-hash-chain-handoff.gif)
+   *Stub (TODO):* `docs/journeys/assets/stubs/domain-hash-chain-handoff.gif` — capture pending.
 
 ## Traceability
 

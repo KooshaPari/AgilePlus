@@ -1,73 +1,17 @@
 version: "3"
 
 tasks:
-  default:
+  test-nextest:
+    desc: Run the Rust workspace test suite with cargo-nextest.
     cmds:
-      - task --list
+      - nextest run --workspace --profile default --cargo-quiet
 
-  ci:
-    desc: Run formatting, linting, tests, audit, and docs.
-    deps:
-      - fmt
-      - lint
-      - test
-      - audit
-      - docs
-
-  lint:
-    desc: Run Clippy across the workspace.
+  ci-nextest:
+    desc: Run the Rust workspace test suite with cargo-nextest and export JUnit XML.
     cmds:
-      - cargo clippy --workspace --all-targets --all-features -- -D warnings
+      - nextest run --workspace --profile default --cargo-quiet --no-fail-fast --export-junit target/nextest/junit.xml
 
-  fmt:
-    desc: Check Rust formatting.
+  coverage:
+    desc: Measure code coverage (SSOT: see grade.sh for the canonical command).
     cmds:
-      - cargo fmt --all --check
-
-  test:
-    desc: Run the full workspace test suite.
-    cmds:
-      - cargo test --workspace --all-features
-
-  audit:
-    desc: Run dependency and policy audits.
-    cmds:
-      - cargo deny check
-
-  docs:
-    desc: Build workspace documentation.
-    cmds:
-      - cargo doc --workspace --all-features --no-deps
-
-  release:
-    desc: Build release artifacts.
-    cmds:
-      - cargo build --workspace --all-targets --release
-
-  crates:
-    desc: List workspace crates discovered from Cargo metadata.
-    cmds:
-      - cargo metadata --no-deps --format-version 1 | jq -r '.packages[].name' | sort
-
-  test-crate:
-    desc: Test a crate discovered from Cargo metadata.
-    requires:
-      vars:
-        - crate
-    cmds:
-      - cargo metadata --no-deps --format-version 1 | jq -e --arg crate "{{.crate}}" 'any(.packages[].name; . == $crate)' >/dev/null
-      - cargo test -p "{{.crate}}" --all-features
-
-  test-agileplus-api:
-    desc: Test the agileplus-api crate.
-    cmds:
-      - task: test-crate
-        vars:
-          crate: agileplus-api
-
-  test-agileplus-cli:
-    desc: Test the agileplus-cli crate.
-    cmds:
-      - task: test-crate
-        vars:
-          crate: agileplus-cli
+      - cargo llvm-cov --workspace --fail-under-lines 85

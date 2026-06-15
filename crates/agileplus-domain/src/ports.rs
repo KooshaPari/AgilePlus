@@ -335,7 +335,7 @@ impl<T: StoragePort> StoryRepository for T {
 }
 
 #[async_trait]
-impl<T: StoragePort> epic::EpicRepository for T {
+impl<T: StoragePort> EpicRepository for T {
     async fn create(&self, epic: &Epic) -> Result<i64, DomainError> {
         self.create_epic(epic).await
     }

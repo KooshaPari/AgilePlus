@@ -28,6 +28,8 @@ rusqlite = { version = "0.32", features = ["bundled"] }
 async-trait.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+uuid.workspace = true
+agileplus-trace-validator = { path = "../agileplus-trace-validator" }
 comfy-table = "7"
 
 [dev-dependencies]

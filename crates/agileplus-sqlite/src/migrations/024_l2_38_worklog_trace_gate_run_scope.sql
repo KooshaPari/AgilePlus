@@ -1,50 +1,18 @@
 -- UP
 -- L2 #38: Add traceability/observability tables identified as missing by the
--- L1 #5 audit. These tables back the worklog, gate, run, scope, and
--- cross-entity trace-link surfaces used by the agent / dashboard layers.
+-- L1 #5 audit. These tables back the gate, run, and scope surfaces used by
+-- the agent / dashboard layers.
+--
+-- Notes:
+--   * `worklog_entries` is already created by migration 023 (canonical
+--     worklog ingest schema); it is NOT re-created here.
+--   * `trace_links` is already created by migration 022 (DAG trace-link
+--     schema); it is NOT re-created here.
 --
 -- Naming follows the existing conventions: plural snake_case, `id` is the
 -- INTEGER PK, timestamps are RFC3339 TEXT and `created_at`/`updated_at`
 -- are always populated. Foreign keys use `ON DELETE CASCADE` only where
 -- the parent lifetime strictly outlives the child row.
-
--- Per-work-package log entries (agent actions, comments, state changes).
-CREATE TABLE IF NOT EXISTS worklog_entries (
-    id              INTEGER PRIMARY KEY AUTOINCREMENT,
-    work_package_id INTEGER NOT NULL REFERENCES work_packages(id) ON DELETE CASCADE,
-    actor           TEXT    NOT NULL,
-    action          TEXT    NOT NULL,
-    message         TEXT,
-    payload         TEXT,
-    created_at      TEXT    NOT NULL,
-    updated_at      TEXT    NOT NULL
-);
-
-CREATE INDEX IF NOT EXISTS idx_worklog_entries_wp      ON worklog_entries (work_package_id);
-CREATE INDEX IF NOT EXISTS idx_worklog_entries_actor   ON worklog_entries (actor);
-CREATE INDEX IF NOT EXISTS idx_worklog_entries_action  ON worklog_entries (action);
-CREATE INDEX IF NOT EXISTS idx_worklog_entries_created ON worklog_entries (created_at);
-
--- Generic, polymorphic traceability links between any two entities.
--- `source_*` and `target_*` are intentionally text-typed so that a link
--- can point at features, stories, work packages, requirements, or any
--- future entity without a schema change.
-CREATE TABLE IF NOT EXISTS trace_links (
-    id          INTEGER PRIMARY KEY AUTOINCREMENT,
-    source_type TEXT    NOT NULL,
-    source_id   INTEGER NOT NULL,
-    target_type TEXT    NOT NULL,
-    target_id   INTEGER NOT NULL,
-    relation    TEXT    NOT NULL,
-    metadata    TEXT,
-    created_at  TEXT    NOT NULL,
-    updated_at  TEXT    NOT NULL,
-    UNIQUE (source_type, source_id, target_type, target_id, relation)
-);
-
-CREATE INDEX IF NOT EXISTS idx_trace_links_source ON trace_links (source_type, source_id);
-CREATE INDEX IF NOT EXISTS idx_trace_links_target ON trace_links (target_type, target_id);
-CREATE INDEX IF NOT EXISTS idx_trace_links_rel    ON trace_links (relation);
 
 -- Quality-gate evaluation results (clippy, tests, review, etc.).
 -- One row per (work_package, gate, evaluation) — append-only on insert.
@@ -122,13 +90,5 @@ DROP INDEX IF EXISTS idx_gate_results_gate;
 DROP INDEX IF EXISTS idx_gate_results_wp;
 DROP TABLE IF EXISTS gate_results;
 
-DROP INDEX IF EXISTS idx_trace_links_rel;
-DROP INDEX IF EXISTS idx_trace_links_target;
-DROP INDEX IF EXISTS idx_trace_links_source;
-DROP TABLE IF EXISTS trace_links;
-
-DROP INDEX IF EXISTS idx_worklog_entries_created;
-DROP INDEX IF EXISTS idx_worklog_entries_action;
-DROP INDEX IF EXISTS idx_worklog_entries_actor;
-DROP INDEX IF EXISTS idx_worklog_entries_wp;
-DROP TABLE IF EXISTS worklog_entries;
+-- Note: trace_links is owned by migration 022; do NOT drop here.
+-- Note: worklog_entries is owned by migration 023; do NOT drop here.

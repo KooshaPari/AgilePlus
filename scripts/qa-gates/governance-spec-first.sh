@@ -24,7 +24,7 @@ missing=0
 require_touch() {
   local label="$1"
   local pattern="$2"
-  if ! printf '%s\n' "$files" | grep -Eiq "$pattern"; then
+  if ! printf '%s\n' "$files" | grep --color=never -Eiq "$pattern"; then
     echo "Missing required governance document touch: $label" >&2
     missing=1
   fi

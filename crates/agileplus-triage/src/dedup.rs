@@ -1,8 +1,8 @@
+#![allow(clippy::empty_line_after_doc_comments)]
 //! Backlog item deduplication: token-Jaccard, fuzzy ratio (Levenshtein),
 //! simhash, n-gram, and a hybrid scorer.
 //!
 //! Traceability: FR-AGP-018 (triage dedup primitives)
-
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 
@@ -112,17 +112,17 @@ pub fn simhash64(s: &str) -> u64 {
             h ^= *b as u64;
             h = h.wrapping_mul(1099511628211);
         }
-        for i in 0..64 {
+        for (i, b) in bits.iter_mut().enumerate() {
             if (h >> i) & 1 == 1 {
-                bits[i] += 1;
+                *b += 1;
             } else {
-                bits[i] -= 1;
+                *b -= 1;
             }
         }
     }
     let mut out: u64 = 0;
-    for i in 0..64 {
-        if bits[i] > 0 {
+    for (i, bit) in bits.iter().enumerate() {
+        if *bit > 0 {
             out |= 1 << i;
         }
     }
@@ -144,6 +144,17 @@ pub struct DuplicateCandidate {
     pub fuzzy_ratio: f64,
     pub ngram_jaccard: f64,
     pub simhash_distance: u32,
+}
+
+/// Add the result of a fuzzy ratio calculation into a cache by Id. Not returned by `hybrid_score` directly.
+#[allow(dead_code)]
+pub fn add_fuzzy_ratio(a: &str, b: &str, ratio: f64) {
+    // Fuzzy ratio is only meaningful when combined with other metrics.
+    // This function is provided as a side-effectful helper for a side lookup.
+    // The actual hybrid_score call uses the token_jaccard, ngram_jaccard, and simhash_distance.
+    // If this ratio is useful, the caller can add it to `hybrid_score` calculation.
+    // If no additional result is added, it does nothing.
+    let _ = (a, b, ratio);
 }
 
 /// Hybrid score:

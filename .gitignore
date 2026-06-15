@@ -15,6 +15,10 @@
 .agileplus/*.db-journal
 .agileplus/*.db-wal
 .agileplus/*.db-shm
+agileplus.db
+agileplus.db-journal
+agileplus.db-wal
+agileplus.db-shm
 .worktrees/
 .claude/worktrees/
 .claude/scheduled_tasks.lock
@@ -95,3 +99,4 @@ _stub/obj/
 **/temp/
 .env.*
 !.env.example
+agileplus.db

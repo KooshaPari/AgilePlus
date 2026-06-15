@@ -3,6 +3,10 @@ use serde::Deserialize;
 use std::fs;
 use std::path::{Path, PathBuf};
 
+pub mod intent;
+
+pub use intent::{validate_intent_graph, IntentGraph, GraphMetadata, ValidationError};
+
 #[derive(Debug, Deserialize)]
 pub struct TraceEntry {
     pub fr_id: String,

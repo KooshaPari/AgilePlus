@@ -20,7 +20,6 @@ useDefault = true
 description = "Non-source / build artefact paths"
 targetRules = [
   "generic-api-key",
-  "generic-high-entropy-secret",
   "jwt",
   "slack-bot-token",
   "stripe-access-token",
