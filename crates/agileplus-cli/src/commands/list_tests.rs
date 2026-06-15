@@ -131,6 +131,12 @@ impl StoragePort for MemStore {
     async fn list_all_features(&self) -> Result<Vec<Feature>, DomainError> {
         unimplemented!()
     }
+    async fn update_feature(&self, _: &Feature) -> Result<(), DomainError> {
+        todo!()
+    }
+    async fn list_features_by_label(&self, _: &str) -> Result<Vec<Feature>, DomainError> {
+        todo!()
+    }
     async fn create_work_package(&self, _: &WorkPackage) -> Result<i64, DomainError> {
         unimplemented!()
     }
