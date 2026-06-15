@@ -13,6 +13,10 @@ tokio = { workspace = true }
 async-trait = { workspace = true }
 uuid = { version = "1", features = ["v4", "serde"] }
 tracing = { workspace = true }
+neo4rs = { version = "0.8", optional = true }
+
+[features]
+neo4j = ["neo4rs"]
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["full", "macros"] }
