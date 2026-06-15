@@ -71,6 +71,7 @@ members = [
     "crates/agileplus-telemetry",
     "crates/agileplus-triage",
     "crates/agileplus-trace-validator",
+    "crates/shared-traceability",
     "crates/agileplus-import",
     "crates/agileplus-proto",
     "crates/agileplus-validate",
@@ -150,5 +151,6 @@ phenotype-logging = { path = "../phenoShared/crates/phenotype-logging" }
 agileplus-config = { path = "crates/agileplus-config" }
 agileplus-proto = { path = "crates/agileplus-proto" }
 agileplus-telemetry = { path = "crates/agileplus-telemetry" }
+shared-traceability = { path = "crates/shared-traceability" }
 tokio-stream = { version = "0.1", features = ["net", "sync"] }
 sqlx = { version = "0.8", default-features = false }
