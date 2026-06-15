@@ -39,7 +39,9 @@ def validate_schema(specs: list[dict[str, Any]]) -> list[str]:
     errors: list[str] = []
     for spec in specs:
         spec_dir = Path(spec["_path"])
-        missing = [name for name in REQUIRED_SPEC_FILES if not (spec_dir / name).is_file()]
+        missing = [
+            name for name in REQUIRED_SPEC_FILES if not (spec_dir / name).is_file()
+        ]
         if missing:
             errors.append(f"{spec_dir.relative_to(ROOT)} missing {', '.join(missing)}")
     return errors
