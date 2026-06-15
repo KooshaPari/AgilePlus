@@ -1,11 +1,18 @@
 name: SAST Quick Check
-permissions: read-all
+
+permissions:
+  contents: read
+  security-events: write
+  pull-requests: write
+
 on:
   pull_request:
   push:
     branches: [main]
-  security-events: write
-  pull-requests: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   semgrep:
@@ -73,10 +80,3 @@ jobs:
           tool: cargo-deny
       - name: Check Rust licenses
         run: cargo deny check -c rust/deny.toml licenses
-permissions:
-  contents: read
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-

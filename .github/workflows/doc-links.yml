@@ -1,5 +1,8 @@
 name: Doc Links
-permissions: read-all
+
+permissions:
+  contents: read
+
 on:
   workflow_dispatch:
   push:
@@ -12,12 +15,10 @@ on:
       - "docs/**"
       - ".github/workflows/doc-links.yml"
 
-permissions:
-  contents: read
-
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+
 jobs:
   links:
     name: Check markdown links in docs/

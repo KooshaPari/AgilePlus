@@ -1,6 +1,4 @@
 name: FR Coverage
-on:
-  workflow_dispatch:
 
 permissions:
   contents: read

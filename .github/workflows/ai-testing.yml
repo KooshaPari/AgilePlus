@@ -1,5 +1,8 @@
 name: Testing Infrastructure
-permissions: read-all
+
+permissions:
+  contents: read
+  actions: read
 
 on:
   push:
@@ -16,7 +19,10 @@ on:
       - 'playwright.config.ts'
   schedule:
     - cron: '0 3 * * *'  # Weekly test run
-  actions: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   bdd-tests:
@@ -80,10 +86,3 @@ jobs:
         run: |
           echo "Validating FR-XXX-NNN traceability in tests"
           grep -r "FR-" tests/ 2>/dev/null | head -10 || echo "No FR references"
-permissions:
-  contents: read
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
