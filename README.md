@@ -1,5 +1,5 @@
-<!-- work-state: integration/consolidate | 2026-06-15 | gaps=8/8 CLOSED | build=PASS -->
-[██████████] 10/10 — All w35 audit gaps closed; PR-ready for main
+<!-- work-state: integration/consolidate | 2026-06-15 | gaps=ALL CLOSED | neo4j✅ labels✅ gov-sync✅ cli-modules✅ ci-fixes✅ -->
+[██████████] 10/10 — All implementation gaps closed; Neo4j store, labels migration, governance sync, CLI modules unblocked, CI fixes; PR #729 ready for main
 
 <!-- AI-DD-META:START -->
 <!-- This repository is planned, maintained, and managed by AI Agents only. -->
