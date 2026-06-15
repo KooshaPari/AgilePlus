@@ -48,7 +48,7 @@ where
 pub struct FeatureListParams {
     /// Filter by feature state (e.g. `planned`, `in_progress`, `done`).
     pub state: Option<String>,
-    /// Filter by label (informational — not yet wired to storage).
+    /// Filter by label.
     pub label: Option<String>,
 }
 
@@ -88,8 +88,14 @@ where
             .map_err(ApiError::from)?
     };
 
-    // label filter is informational for now — domain layer doesn't have label storage yet
-    let _ = params.label;
+    let features: Vec<Feature> = if let Some(label_filter) = params.label {
+        features
+            .into_iter()
+            .filter(|f| f.labels.contains(&label_filter))
+            .collect()
+    } else {
+        features
+    };
 
     Ok(Json(
         features.into_iter().map(FeatureResponse::from).collect(),
@@ -218,6 +224,11 @@ where
         updated_at: Utc::now(),
         ..feature
     };
+
+    app.storage
+        .update_feature(&updated)
+        .await
+        .map_err(ApiError::from)?;
 
     Ok(Json(FeatureResponse::from(updated)))
 }
