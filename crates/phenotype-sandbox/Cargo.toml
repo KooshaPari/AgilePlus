@@ -26,3 +26,6 @@ shell-words = "1.1"
 [dev-dependencies]
 tempfile.workspace = true
 tokio.workspace = true
+
+[package.metadata.cargo-machete]
+ignored = ["libc", "nix", "tokio-stream"]

@@ -139,7 +139,7 @@ jobs:
           version: "28.x"
           repo-token: ${{ github.token }}
       - name: Install extras
-        run: cargo install cargo-machete cargo-semver-checks
+        run: cargo install cargo-machete cargo-semver-checks@0.44.0
       - name: Detect unused deps
         run: cd rust && cargo machete
       - name: Semver compatibility check
@@ -202,6 +202,9 @@ jobs:
         with:
           version: "28.x"
           repo-token: ${{ github.token }}
+      - name: Format phenoShared (path-dep neighbor)
+        run: |
+          cargo fmt --all --manifest-path "${{ github.workspace }}/../phenoShared/Cargo.toml"
       - name: Format check
         run: cargo fmt --all -- --check
       - name: Clippy (warnings = errors)
