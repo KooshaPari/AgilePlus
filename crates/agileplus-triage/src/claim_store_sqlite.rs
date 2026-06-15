@@ -38,7 +38,7 @@
 use chrono::{DateTime, TimeZone, Utc};
 use rusqlite::{params, Connection, OptionalExtension, Row};
 
-use super::{Claim, ClaimError, ClaimKind, ClaimReason, ClaimState, ClaimStoreTrait};
+use crate::claim::{Claim, ClaimError, ClaimKind, ClaimReason, ClaimState, ClaimStoreTrait};
 
 /// Mapping error from a SQLite-level error into the claim domain.
 #[derive(Debug, thiserror::Error)]

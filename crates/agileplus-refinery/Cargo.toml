@@ -15,6 +15,7 @@ agileplus-git = { path = "../agileplus-git" }
 agileplus-triage = { path = "../agileplus-triage" }
 agileplus-domain = { path = "../agileplus-domain" }
 anyhow.workspace = true
+async-trait.workspace = true
 tokio = { version = "1", features = ["process", "rt-multi-thread", "macros"] }
 serde = { workspace = true, features = ["derive"] }
 chrono.workspace = true

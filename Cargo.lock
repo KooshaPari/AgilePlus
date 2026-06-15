@@ -16,6 +16,8 @@ dependencies = [
  "axum 0.8.9",
  "axum-test",
  "chrono",
+ "clap",
+ "clap-ext",
  "cucumber",
  "serde",
  "serde_json",
@@ -1508,6 +1510,18 @@ checksum = "1ddb117e43bbf7dacf0a4190fef4d345b9bad68dfc649cb349e7d17d28428e51"
 dependencies = [
  "clap_builder",
  "clap_derive",
+]
+
+[[package]]
+name = "clap-ext"
+version = "0.1.0"
+source = "git+https://github.com/KooshaPari/clap-ext?tag=v0.1.0#05f6927bfd5477fafebfdc0166a7578ff154f0bf"
+dependencies = [
+ "anyhow",
+ "clap",
+ "thiserror 2.0.18",
+ "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]
@@ -5434,8 +5448,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "pheno-ci-templates"
+version = "0.1.0"
+
+[[package]]
+name = "pheno-flags"
+version = "0.1.0"
+dependencies = [
+ "tempfile",
+ "thiserror 2.0.18",
+]
+
+[[package]]
 name = "pheno-ssot-template"
 version = "0.1.0"
+
+[[package]]
+name = "pheno-vibecoding-guard"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "syn 2.0.117",
+]
 
 [[package]]
 name = "phenotype-dep-guard"
