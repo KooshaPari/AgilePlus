@@ -61,4 +61,6 @@ jobs:
       - uses: dtolnay/rust-toolchain@5b842231ba77f5c045dba54ac5560fed2db780e2  # stable
         with:
           components: rustfmt
+      - name: Format phenoShared (path dep neighbor — must be formatted before workspace check)
+        run: cargo fmt --all --manifest-path "${{ github.workspace }}/../phenoShared/Cargo.toml"
       - run: cargo fmt --all -- --check
