@@ -227,6 +227,7 @@ async fn get_commit_message(repo_root: &std::path::Path, commit_sha: &str) -> Re
 async fn amend_commit_message(repo_root: &std::path::Path, message: &str) -> Result<String> {
     let repo_root = repo_root.to_path_buf();
     let message = message.to_string();
+    let root2 = repo_root.clone();
     let output = tokio::task::spawn_blocking(move || {
         Command::new("git")
             .args(["commit", "--amend", "-m", &message])
@@ -247,7 +248,7 @@ async fn amend_commit_message(repo_root: &std::path::Path, message: &str) -> Res
     let output = tokio::task::spawn_blocking(move || {
         Command::new("git")
             .args(["rev-parse", "HEAD"])
-            .current_dir(&repo_root)
+            .current_dir(&root2)
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .output()
@@ -300,6 +301,7 @@ async fn amend_commit_with_ssh_signature(
 
 async fn write_commit_object(repo_root: &std::path::Path, content: &str) -> Result<String> {
     let repo_root = repo_root.to_path_buf();
+    let repo_root_for_reset = repo_root.clone();
     let content = content.to_string();
     let output = tokio::task::spawn_blocking(move || {
         let mut child = Command::new("git")
@@ -331,10 +333,11 @@ async fn write_commit_object(repo_root: &std::path::Path, content: &str) -> Resu
     let sha = String::from_utf8_lossy(&output.stdout).trim().to_string();
 
     // Reset HEAD to the new commit.
+    let sha2 = sha.clone();
     let _ = tokio::task::spawn_blocking(move || {
         Command::new("git")
-            .args(["reset", "--soft", &sha])
-            .current_dir(&repo_root)
+            .args(["reset", "--soft", &sha2])
+            .current_dir(&repo_root_for_reset)
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .output()

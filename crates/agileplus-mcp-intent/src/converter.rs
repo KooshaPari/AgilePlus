@@ -69,8 +69,8 @@ pub fn convert(prompt: &str, options: &ConvertOptions) -> anyhow::Result<Convert
 
     // -- Plan node --
     let plan_id = format!("Plan#{}-plan", &slug);
-    let plan = Node::builder(&plan_id, NodeType::Plan, &format!("Plan for {}", title))
-        .description(format!("Auto-generated plan from prompt: {}", prompt))
+    let plan = Node::builder(&plan_id, NodeType::Plan, &format!("Plan for {title}"))
+        .description(format!("Auto-generated plan from prompt: {prompt}"))
         .meta(Meta {
             timestamp: Utc::now(),
             source: "agent-inference".to_string(),
@@ -135,8 +135,8 @@ pub fn convert(prompt: &str, options: &ConvertOptions) -> anyhow::Result<Convert
     // -- Story node (if small scope) --
     if features.is_empty() {
         let story_id = format!("Story#{}-story", &slug);
-        let story = Node::builder(&story_id, NodeType::Story, &format!("As a user, {}", title))
-            .description(format!("User story derived from prompt: {}", prompt))
+        let story = Node::builder(&story_id, NodeType::Story, &format!("As a user, {title}"))
+            .description(format!("User story derived from prompt: {prompt}"))
             .meta(Meta {
                 timestamp: Utc::now(),
                 source: "agent-inference".to_string(),

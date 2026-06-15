@@ -37,7 +37,7 @@ impl DockerBackend {
             match msg {
                 Ok(status) => {
                     if let Some(error) = status.error {
-                        return Err(anyhow::anyhow!("Docker pull error: {}", error));
+                        return Err(anyhow::anyhow!("Docker pull error: {error}"));
                     }
                     debug!(?status, "pull status");
                 }
@@ -75,7 +75,7 @@ impl DockerBackend {
         let env: Vec<String> = sandbox
             .env
             .iter()
-            .map(|(k, v)| format!("{}={}", k, v))
+            .map(|(k, v)| format!("{k}={v}"))
             .collect();
 
         let cmd = shell_words::split(command)?;

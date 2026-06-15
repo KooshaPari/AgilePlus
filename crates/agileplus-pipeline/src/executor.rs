@@ -77,7 +77,7 @@ impl Executor {
         let mut idx_to_uuid = HashMap::new();
         let mut uuid_to_idx = HashMap::new();
 
-        for (&id, _) in &graph.nodes {
+        for &id in graph.nodes.keys() {
             let idx = pet_graph.add_node(id);
             idx_to_uuid.insert(idx, id);
             uuid_to_idx.insert(id, idx);
@@ -98,7 +98,7 @@ impl Executor {
         }
 
         let topo = petgraph::algo::toposort(&pet_graph, None)
-            .map_err(|cycle| PipelineError::Execution(format!("Cycle detected: {:?}", cycle)))?;
+            .map_err(|cycle| PipelineError::Execution(format!("Cycle detected: {cycle:?}")))?;
 
         // Channel to notify dependents when a node finishes.
         let mut senders: HashMap<Uuid, watch::Sender<bool>> = HashMap::new();
@@ -166,7 +166,7 @@ impl Executor {
                                         attempts: 0,
                                         started_at,
                                         finished_at: Instant::now(),
-                                        last_error: Some(format!("Guard failed: {}", guard_cmd)),
+                                        last_error: Some(format!("Guard failed: {guard_cmd}")),
                                     },
                                 );
                             }
@@ -233,7 +233,7 @@ impl Executor {
                     if let Some(ref f) = stdout_file {
                         let std_file = std::fs::File::create(f.path())
                             .ok()
-                            .map(|f| std::process::Stdio::from(f));
+                            .map(std::process::Stdio::from);
                         if let Some(f) = std_file {
                             cmd.stdout(f);
                         }
@@ -241,7 +241,7 @@ impl Executor {
                     if let Some(ref f) = stderr_file {
                         let std_file = std::fs::File::create(f.path())
                             .ok()
-                            .map(|f| std::process::Stdio::from(f));
+                            .map(std::process::Stdio::from);
                         if let Some(f) = std_file {
                             cmd.stderr(f);
                         }
@@ -260,16 +260,12 @@ impl Executor {
                                 if ok {
                                     None
                                 } else {
-                                    Some(format!("Non-zero exit: {:?}", code))
+                                    Some(format!("Non-zero exit: {code:?}"))
                                 },
                             )
                         }
-                        Ok(Err(e)) => (false, None, Some(format!("Spawn error: {}", e))),
-                        Err(_) => (
-                            false,
-                            None,
-                            Some(format!("Timeout after {}s", timeout_secs)),
-                        ),
+                        Ok(Err(e)) => (false, None, Some(format!("Spawn error: {e}"))),
+                        Err(_) => (false, None, Some(format!("Timeout after {timeout_secs}s"))),
                     };
 
                     let stdout_path = stdout_file.map(|f| f.into_temp_path().to_path_buf());
@@ -319,7 +315,7 @@ impl Executor {
         for handle in handles {
             let (node_id, output) = handle
                 .await
-                .map_err(|e| PipelineError::Execution(format!("Task join error: {}", e)))?;
+                .map_err(|e| PipelineError::Execution(format!("Task join error: {e}")))?;
             if output.skipped || !output.success {
                 skipped.insert(node_id);
             } else {

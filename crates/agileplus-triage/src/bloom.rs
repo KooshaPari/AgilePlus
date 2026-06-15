@@ -225,7 +225,7 @@ mod tests {
     fn optimal_m_grows_with_n() {
         let m1 = optimal_m(100, 0.01);
         let m2 = optimal_m(10_000, 0.01);
-        assert!(m2 > m1, "m should grow with n: {} vs {}", m1, m2);
+        assert!(m2 > m1, "m should grow with n: {m1} vs {m2}");
     }
 
     #[test]
@@ -239,8 +239,8 @@ mod tests {
     fn optimal_m_is_power_of_two() {
         for (n, p) in [(100, 0.01), (10_000, 0.001), (50_000, 0.05), (1, 0.5)] {
             let m = optimal_m(n, p);
-            assert!(m > 0, "m must be positive for n={},p={}", n, p);
-            assert_eq!(m & (m - 1), 0, "m={} is not a power of two", m);
+            assert!(m > 0, "m must be positive for n={n},p={p}");
+            assert_eq!(m & (m - 1), 0, "m={m} is not a power of two");
         }
     }
 
@@ -322,9 +322,7 @@ mod tests {
         // noise on a small filter.
         assert!(
             rate < 0.03,
-            "empirical FP rate {} exceeds 3% (probes={})",
-            rate,
-            probes
+            "empirical FP rate {rate} exceeds 3% (probes={probes})"
         );
     }
 
@@ -363,7 +361,7 @@ mod tests {
             bf.insert(&rnd_bytes(i));
         }
         for i in 0..n {
-            assert!(bf.contains(&rnd_bytes(i)), "false negative at i={}", i);
+            assert!(bf.contains(&rnd_bytes(i)), "false negative at i={i}");
         }
         assert_eq!(bf.len(), n);
     }
@@ -389,11 +387,7 @@ mod tests {
         let rate = fps as f64 / probes as f64;
         assert!(
             rate < target * 3.0,
-            "empirical FP rate {} > 3x target {} (fps={}/{})",
-            rate,
-            target,
-            fps,
-            probes
+            "empirical FP rate {rate} > 3x target {target} (fps={fps}/{probes})"
         );
     }
 

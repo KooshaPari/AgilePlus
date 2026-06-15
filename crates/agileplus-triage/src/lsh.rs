@@ -169,7 +169,10 @@ mod tests {
         idx.insert("dup", &sig);
         idx.insert("dup", &sig);
         let candidates = idx.query(&sig);
-        assert_eq!(candidates.iter().filter(|id| id == "dup").count(), 1);
+        assert_eq!(
+            candidates.iter().filter(|id| id.as_str() == "dup").count(),
+            1
+        );
     }
 
     #[test]

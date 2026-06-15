@@ -95,10 +95,10 @@ pub fn parse_dot(dot: &str) -> Result<Graph, PipelineError> {
 
             let from_id = *id_map
                 .get(&from_name)
-                .ok_or_else(|| PipelineError::DotParse(format!("Unknown node: {}", from_name)))?;
+                .ok_or_else(|| PipelineError::DotParse(format!("Unknown node: {from_name}")))?;
             let to_id = *id_map
                 .get(&to_name)
-                .ok_or_else(|| PipelineError::DotParse(format!("Unknown node: {}", to_name)))?;
+                .ok_or_else(|| PipelineError::DotParse(format!("Unknown node: {to_name}")))?;
 
             let rel_type = infer_rel_type(&properties);
             let mut rel = Relationship::new(from_id, to_id, rel_type);

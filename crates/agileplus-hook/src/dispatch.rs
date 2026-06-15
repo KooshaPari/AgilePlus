@@ -3,7 +3,7 @@
 use std::process::Command;
 
 use regex::Regex;
-use tracing::{error, info, warn};
+use tracing::{info, warn};
 
 use agileplus_events::domain_event::{DomainEvent, EventEnvelope};
 use agileplus_triage::claim::Claim;
@@ -59,7 +59,7 @@ impl HookDispatcher {
                     Err(e) => {
                         results.push((
                             hook.id.clone(),
-                            DispatchResult::Failed(format!("bad regex: {}", e)),
+                            DispatchResult::Failed(format!("bad regex: {e}")),
                         ));
                         continue;
                     }
@@ -137,7 +137,7 @@ impl HookDispatcher {
                     DispatchResult::Dispatched
                 } else {
                     let stderr = String::from_utf8_lossy(&out.stderr);
-                    DispatchResult::Failed(format!("script exited: {}", stderr))
+                    DispatchResult::Failed(format!("script exited: {stderr}"))
                 }
             }
             Err(e) => DispatchResult::Failed(e.to_string()),

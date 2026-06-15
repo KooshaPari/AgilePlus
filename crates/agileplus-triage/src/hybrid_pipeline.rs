@@ -435,7 +435,7 @@ mod tests {
         ];
         let groups = run_dedup(&items, &backend, HybridConfig::default()).unwrap();
         // We expect exactly one group containing {0, 1}.
-        assert_eq!(groups.len(), 1, "groups: {:?}", groups);
+        assert_eq!(groups.len(), 1, "groups: {groups:?}");
         let g = &groups[0];
         assert!(g.members.contains(&0) && g.members.contains(&1));
         assert!(!g.members.contains(&2));
@@ -560,8 +560,7 @@ mod tests {
             assert!(
                 approx(w[0].embedding_cosine, w[1].embedding_cosine, 1e-9)
                     || w[0].embedding_cosine >= w[1].embedding_cosine,
-                "groups not sorted: {:?}",
-                groups
+                "groups not sorted: {groups:?}"
             );
         }
     }

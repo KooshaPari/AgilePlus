@@ -381,7 +381,7 @@ fn validate(dir: &Path) -> Result<()> {
             }
         }
     }
-    println!("\nResult: {} OK, {} FAIL", ok, err);
+    println!("\nResult: {ok} OK, {err} FAIL");
     if err > 0 {
         std::process::exit(1);
     }

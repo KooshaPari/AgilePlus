@@ -39,7 +39,7 @@ pub fn export(graph: &Graph) -> Result<String, PipelineError> {
             format!(" [{}]", attrs.join(", "))
         };
 
-        lines.push(format!(r#"    "{}"{};"#, label, attr_str));
+        lines.push(format!(r#"    "{label}"{attr_str};"#));
     }
 
     for rel in &graph.relationships {
@@ -67,8 +67,7 @@ pub fn export(graph: &Graph) -> Result<String, PipelineError> {
 
         let edge_op = "->";
         lines.push(format!(
-            r#"    "{}" {} "{}"{};"#,
-            from_label, edge_op, to_label, attr_str
+            r#"    "{from_label}" {edge_op} "{to_label}"{attr_str};"#
         ));
     }
 
@@ -105,7 +104,7 @@ fn properties_to_dot_attrs(properties: &serde_json::Value) -> Vec<String> {
                     value.to_string().replace('"', "\\\"").replace('\n', "\\n")
                 ),
             };
-            attrs.push(format!("{}={}", key, val));
+            attrs.push(format!("{key}={val}"));
         }
     }
     attrs

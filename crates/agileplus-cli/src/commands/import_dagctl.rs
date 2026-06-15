@@ -124,7 +124,7 @@ pub fn run(args: &ImportDagctlArgs) -> Result<()> {
     let edge_count: i64 = src
         .query_row("SELECT COUNT(*) FROM edges", [], |r| r.get(0))
         .context("counting src edges")?;
-    eprintln!("source: {} tasks, {} edges", src_count, edge_count);
+    eprintln!("source: {src_count} tasks, {edge_count} edges");
 
     if args.dry_run {
         eprintln!("dry run — not writing to {}", args.db.display());
@@ -307,9 +307,7 @@ fn derive_title(description: &str, fallback_id: &str) -> String {
         return fallback_id.to_string();
     }
     // Find first sentence boundary.
-    let cut = trimmed
-        .find(|c: char| c == '.' || c == ':' || c == '\n')
-        .unwrap_or(trimmed.len());
+    let cut = trimmed.find(['.', ':', '\n']).unwrap_or(trimmed.len());
     let first = &trimmed[..cut];
     // Collapse whitespace.
     let collapsed: String = first.split_whitespace().collect::<Vec<_>>().join(" ");
