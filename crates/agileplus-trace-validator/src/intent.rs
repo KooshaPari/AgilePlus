@@ -318,9 +318,9 @@ pub fn validate_edge_constraints(nodes: &[Node], edges: &[Edge]) -> Result<(), V
         if !is_edge_allowed(edge.relationship_type, *source_type, *target_type) {
             return Err(ValidationError::InvalidEdgeConstraint {
                 edge_id: edge.id.clone(),
-                relationship: format!("{:?}", edge.relationship_type),
-                source_type: format!("{:?}", source_type),
-                target_type: format!("{:?}", target_type),
+                relationship: format!("{edge.relationship_type:?}"),
+                source_type: format!("{source_type:?}"),
+                target_type: format!("{target_type:?}"),
             });
         }
     }
@@ -496,8 +496,8 @@ pub fn validate_dag_flow(nodes: &[Node], edges: &[Edge]) -> Result<(), Validatio
                 if target_order < source_order {
                     return Err(ValidationError::InvalidDagFlow {
                         edge_id: edge.id.clone(),
-                        source_stage: format!("{:?}", source_stage),
-                        target_stage: format!("{:?}", target_stage),
+                        source_stage: format!("{source_stage:?}"),
+                        target_stage: format!("{target_stage:?}"),
                         relationship: format!("{:?}", edge.relationship_type),
                     });
                 }
@@ -506,8 +506,8 @@ pub fn validate_dag_flow(nodes: &[Node], edges: &[Edge]) -> Result<(), Validatio
                 if target_order > source_order {
                     return Err(ValidationError::InvalidDagFlow {
                         edge_id: edge.id.clone(),
-                        source_stage: format!("{:?}", source_stage),
-                        target_stage: format!("{:?}", target_stage),
+                        source_stage: format!("{source_stage:?}"),
+                        target_stage: format!("{target_stage:?}"),
                         relationship: format!("{:?}", edge.relationship_type),
                     });
                 }
@@ -544,7 +544,7 @@ pub fn validate_canonical_map(edges: &[Edge]) -> Result<(), ValidationError> {
                 if direction != "forward" && direction != "reverse" {
                     return Err(ValidationError::InvalidCanonicalMap {
                         edge_id: edge.id.clone(),
-                        link_type: format!("invalid direction: {}", direction),
+                        link_type: format!("invalid direction: {direction}"),
                     });
                 }
             }
