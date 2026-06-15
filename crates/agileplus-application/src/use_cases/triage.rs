@@ -227,8 +227,8 @@ impl<W: WpRepository> AppState<W> {
         };
         let next_pickable = self.wp_repo.list_pickable(
             "anonymous",
-            repo.as_ref().and_then(|_| None), // lane discovery TBD
-            repo.as_ref().and_then(|_| None), // category discovery TBD
+            repo.as_ref().and(None), // lane discovery TBD
+            repo.as_ref().and(None), // category discovery TBD
             5,
         )?;
         Ok(WhereResponse {
