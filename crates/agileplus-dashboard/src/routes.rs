@@ -1004,7 +1004,7 @@ pub async fn agent_activity(State(state): State<SharedState>) -> Response {
 /// `process_detector::get_process_start_time` (e.g. "5m", "1h 20m").
 fn calculate_uptime(started_at: &Option<String>) -> String {
     match started_at {
-        Some(elapsed) => format!("running for {}", elapsed),
+        Some(elapsed) => format!("running for {elapsed}"),
         None => "uptime unknown".into(),
     }
 }
@@ -1876,11 +1876,11 @@ pub async fn patch_service_config(
 
     match config.save() {
         Ok(_) => render(ToastPartial {
-            message: format!("Service '{}' configuration saved", name),
+            message: format!("Service '{name}' configuration saved"),
             success: true,
         }),
         Err(e) => render(ToastPartial {
-            message: format!("Failed to save: {}", e),
+            message: format!("Failed to save: {e}"),
             success: false,
         }),
     }
@@ -1926,7 +1926,7 @@ pub async fn toggle_service(
             "status": "error",
             "service": name,
             "enabled": enabled,
-            "error": format!("Failed to save config: {}", err),
+            "error": format!("Failed to save config: {err}"),
         }));
     }
 
@@ -1993,7 +1993,7 @@ pub async fn test_agent_connection(
             true,
             "Local provider requires no external credentials".to_string(),
         ),
-        other => (false, format!("Unknown provider: {}", other)),
+        other => (false, format!("Unknown provider: {other}")),
     };
 
     let css = if ok { "text-green-400" } else { "text-red-400" };
@@ -2028,7 +2028,7 @@ pub async fn save_plane_settings(axum::Form(form): axum::Form<PlaneSettingsForm>
             success: true,
         }),
         Err(e) => render(ToastPartial {
-            message: format!("Failed to save settings: {}", e),
+            message: format!("Failed to save settings: {e}"),
             success: false,
         }),
     }
@@ -2058,7 +2058,7 @@ pub async fn save_agent_settings(axum::Form(form): axum::Form<AgentSettingsForm>
             success: true,
         }),
         Err(e) => render(ToastPartial {
-            message: format!("Failed to save settings: {}", e),
+            message: format!("Failed to save settings: {e}"),
             success: false,
         }),
     }
@@ -2089,7 +2089,7 @@ pub async fn save_dashboard_settings(
             success: true,
         }),
         Err(e) => render(ToastPartial {
-            message: format!("Failed to save settings: {}", e),
+            message: format!("Failed to save settings: {e}"),
             success: false,
         }),
     }
@@ -2126,7 +2126,7 @@ pub async fn save_services_settings(axum::Form(form): axum::Form<ServiceSettings
             success: true,
         }),
         Err(e) => render(ToastPartial {
-            message: format!("Failed to save settings: {}", e),
+            message: format!("Failed to save settings: {e}"),
             success: false,
         }),
     }
