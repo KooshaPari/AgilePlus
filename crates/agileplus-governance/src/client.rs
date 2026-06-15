@@ -7,6 +7,7 @@
 //! - Remote synchronization
 
 use std::sync::Arc;
+use chrono::{DateTime, Utc};
 use tokio::sync::RwLock;
 use tracing::{error, info, warn};
 
@@ -26,6 +27,7 @@ pub struct GovernanceClient {
     policy_engine: Arc<RwLock<PolicyEngine>>,
     rate_limiter: Arc<RateLimiter>,
     connection_status: Arc<RwLock<ConnectionStatus>>,
+    last_sync: Arc<RwLock<Option<DateTime<Utc>>>>,
 }
 
 impl GovernanceClient {
@@ -43,6 +45,7 @@ impl GovernanceClient {
             })),
             config,
             connection_status: Arc::new(RwLock::new(ConnectionStatus::Disabled)),
+            last_sync: Arc::new(RwLock::new(None)),
         };
 
         // Try to connect to remote governance if enabled
@@ -238,7 +241,24 @@ impl GovernanceClient {
             self.audit_logger.log(&event)?;
         }
 
-        // TODO: Sync to remote if enabled
+        // Sync to remote if enabled
+        if self.config.governance.enabled && self.config.sync.enabled {
+            let url = format!("{}/audit", self.config.governance.base_url);
+            let entry_clone = event.clone();
+            let last_sync = self.last_sync.clone();
+            tokio::spawn(async move {
+                let client = reqwest::Client::new();
+                match client.post(&url).json(&entry_clone).send().await {
+                    Ok(_resp) => {
+                        info!("Synced audit event to remote: {}", url);
+                        *last_sync.write().await = Some(chrono::Utc::now());
+                    }
+                    Err(e) => {
+                        warn!("Failed to sync audit event to remote {}: {e}", url);
+                    }
+                }
+            });
+        }
 
         Ok(())
     }
@@ -265,7 +285,7 @@ impl GovernanceClient {
             remote_enabled: self.config.governance.enabled,
             local_enabled: self.config.local.enabled,
             sync_enabled: self.config.sync.enabled,
-            last_sync: None, // TODO: Track last sync
+            last_sync: *self.last_sync.read().await,
             pending_operations: pending,
             config: GovernanceStatusConfig {
                 governance_url: self.config.governance.base_url.clone(),
