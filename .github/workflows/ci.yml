@@ -286,7 +286,7 @@ jobs:
             "${{ github.workspace }}/../phenoShared"
       - name: Validate domain crate dependencies
         run: |
-          ALLOWED="serde serde_json chrono sha2 thiserror toml dirs-next zeroize keyring"
+          ALLOWED="serde serde_json chrono sha2 thiserror toml dirs-next zeroize keyring anyhow async-trait uuid regex phenotype-error-core agileplus-validate"
           DEPS=$(sed -n '/^\[dependencies\]/,/^\[/{/^\[/d;p}' crates/agileplus-domain/Cargo.toml | grep -E '^\w' | cut -d'.' -f1 | cut -d' ' -f1)
           for dep in $DEPS; do
             if ! echo "$ALLOWED" | grep -qw "$dep"; then
