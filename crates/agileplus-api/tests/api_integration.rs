@@ -237,6 +237,18 @@ impl StoragePort for MockStorage {
         Ok(features)
     }
 
+    async fn list_features_by_label(&self, label: &str) -> Result<Vec<Feature>, DomainError> {
+        let features: Vec<Feature> = self
+            .features
+            .lock()
+            .unwrap()
+            .iter()
+            .filter(|f| f.labels.iter().any(|l| l == label))
+            .cloned()
+            .collect();
+        Ok(features)
+    }
+
     async fn create_work_package(&self, _wp: &WorkPackage) -> Result<i64, DomainError> {
         Ok(99)
     }
