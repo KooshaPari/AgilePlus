@@ -32,7 +32,7 @@ jobs:
           generateSarif: true
 
       - name: Upload SARIF
-        uses: github/codeql-action/upload-sarif@411bbbed0c9e15ee1a5f1f5d6224039d1687c25b  # v4
+        uses: github/codeql-action/upload-sarif@ff0a06e83cb2de871e5a09832bc6a81e7276941f  # v3.28.18
         if: always() && hashFiles('semgrep.sarif') != ''
         with:
           sarif_file: semgrep.sarif
