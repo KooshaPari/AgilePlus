@@ -139,6 +139,8 @@ ignored = [
 [dev-dependencies]
 axum-test = "20.1.0"
 chrono.workspace = true
+clap = { version = "4", features = ["derive"] }
+clap-ext = { git = "https://github.com/KooshaPari/clap-ext", tag = "v0.1.0" }
 cucumber = "0.23"
 sha2.workspace = true
 
