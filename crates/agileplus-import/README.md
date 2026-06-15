@@ -12,4 +12,3 @@ Manifest parsing, import pipeline support, and import reporting.
 ```bash
 cargo test -p agileplus-import
 ```
-

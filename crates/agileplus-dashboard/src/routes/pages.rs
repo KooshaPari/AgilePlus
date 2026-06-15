@@ -239,5 +239,3 @@ pub async fn time_footer() -> Html<String> {
             .to_string(),
     )
 }
-
-

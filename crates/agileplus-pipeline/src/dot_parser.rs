@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
 use regex::Regex;
-use serde_json::json;
 use uuid::Uuid;
 
 use agileplus_graph::{Node, NodeType, RelType, Relationship};
@@ -184,6 +183,7 @@ fn infer_rel_type(properties: &serde_json::Value) -> RelType {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serde_json::json;
 
     #[test]
     fn parse_simple_digraph() {

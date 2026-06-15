@@ -13,4 +13,3 @@ OpenTelemetry and tracing initialization for AgilePlus services.
 ```bash
 cargo test -p agileplus-telemetry
 ```
-
