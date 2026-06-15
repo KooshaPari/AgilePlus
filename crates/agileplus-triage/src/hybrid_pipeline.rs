@@ -16,7 +16,7 @@
 //!
 //! This mirrors the 2025 SOTA on `BigCloneBench` (MinHash-LSH candidates
 //! + embedding verification) and `pip dedupe`'s package-level
-//! strategy.
+//!   strategy.
 //!
 //! # Audit
 //!
@@ -141,11 +141,11 @@ impl HybridDedup {
             (0..cfg.bands).map(|_| HashMap::new()).collect();
         for (idx, sig) in sigs.iter().enumerate() {
             let raw = sig.as_slice();
-            for b in 0..cfg.bands {
+            for (b, table) in band_tables.iter_mut().enumerate().take(cfg.bands) {
                 let lo = b * cfg.rows;
                 let hi = lo + cfg.rows;
                 let bucket = band_hash(&raw[lo..hi], b);
-                band_tables[b].entry(bucket).or_default().push(idx);
+                table.entry(bucket).or_default().push(idx);
             }
         }
         Ok(Self {
@@ -313,7 +313,7 @@ fn band_hash(band: &[u64], band_idx: usize) -> u64 {
         let mut x = v;
         // Mix the 64-bit slot into the FNV state 8 bytes at a time.
         for _ in 0..8 {
-            h ^= (x & 0xff) as u64;
+            h ^= x & 0xff;
             h = h.wrapping_mul(FNV_PRIME);
             x >>= 8;
         }
