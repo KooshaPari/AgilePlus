@@ -5,6 +5,7 @@
 <!-- training for both agents and the human operator. -->
 ![Downloads](https://img.shields.io/github/downloads/KooshaPari/AgilePlus/total?style=flat-square&label=downloads&color=blue)
 ![GitHub release](https://img.shields.io/github/v/release/KooshaPari/AgilePlus?style=flat-square&label=release)
+![CI](https://img.shields.io/github/actions/workflow/status/KooshaPari/AgilePlus/ci.yml?branch=main&style=flat-square&label=CI)
 ![License](https://img.shields.io/github/license/KooshaPari/AgilePlus?style=flat-square)
 ![AI-Slop](https://img.shields.io/badge/AI--DD-Slop%20Expected-orange?style=flat-square)
 ![AI-Only-Maintained](https://img.shields.io/badge/Planned%20%26%20Maintained%20by-AI%20Agents%20Only-red?style=flat-square)

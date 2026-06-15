@@ -5,7 +5,7 @@
   "work_package": {
     "wp_id": "L3-024",
     "title": "Add CI autograder workflow",
-    "state": "doing",
+    "state": "done",
     "lane": "ci",
     "category": "automation",
     "dependencies": [
@@ -14,11 +14,11 @@
     "files_changed": [
       ".github/workflows/autograder.yml"
     ],
-    "commit_sha": "PENDING",
+    "commit_sha": "4cba532e6",
     "branch": "chore/l5-87-focus-repo-specs-2026-06-11",
     "test_results": [],
     "verification": {
-      "status": "pending",
+      "status": "passed",
       "commands": [
         "test -f .github/workflows/autograder.yml"
       ],

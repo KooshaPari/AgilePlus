@@ -1,34 +1,34 @@
 {
   "schema_version": "v2",
-  "generated_at": "2026-06-13T02:05:00Z",
+  "generated_at": "2026-06-13T03:10:00Z",
   "repo": "AgilePlus",
   "work_package": {
-    "wp_id": "L3-026",
-    "title": "Retire xtask-anti-patterns; consolidate anti-pattern checks",
+    "wp_id": "L3-036",
+    "title": "Add action-hygiene audit script",
     "state": "done",
-    "lane": "refactor",
-    "category": "technical_debt",
+    "lane": "ops",
+    "category": "security",
     "dependencies": [
-      "L3-023"
+      "L3-033",
+      "L3-034",
+      "L3-035"
     ],
     "files_changed": [
-      "Cargo.toml",
-      "justfile",
-      "xtask-anti-patterns/"
+      "scripts/action-hygiene-audit.sh"
     ],
-    "commit_sha": "4cba532e6",
+    "commit_sha": "eb788cb523fe800baa0efd81eb5f457316cf85c8",
     "branch": "chore/l5-87-focus-repo-specs-2026-06-11",
     "test_results": [],
     "verification": {
       "status": "passed",
       "commands": [
-        "cargo build --workspace"
+        "test -x scripts/action-hygiene-audit.sh"
       ],
-      "notes": "Audit priority #2: retire xtask-anti-patterns in favor of consolidated checks."
+      "notes": "eco-011 FR-5: Audit script checks all workflows for unpinned actions."
     },
     "topology": {
-      "layer": 5,
-      "parallel_group": "refactor-batch",
+      "layer": 9,
+      "parallel_group": "security-batch",
       "unlocks": []
     }
   },
@@ -42,7 +42,11 @@
       "L2-036",
       "L2-037",
       "L3-023",
-      "L3-026"
+      "L3-024",
+      "L3-033",
+      "L3-034",
+      "L3-035",
+      "L3-036"
     ],
     "edges": [
       ["L1-001", "L1-007"],
@@ -53,7 +57,11 @@
       ["L2-035", "L2-037"],
       ["L2-036", "L3-023"],
       ["L2-037", "L3-023"],
-      ["L3-023", "L3-026"]
+      ["L3-023", "L3-024"],
+      ["L3-024", "L3-033"],
+      ["L3-033", "L3-036"],
+      ["L3-034", "L3-036"],
+      ["L3-035", "L3-036"]
     ],
     "layers": [
       ["L1-001", "L1-006"],
@@ -62,7 +70,9 @@
       ["L2-035"],
       ["L2-036", "L2-037"],
       ["L3-023"],
-      ["L3-026"]
+      ["L3-024"],
+      ["L3-033", "L3-034", "L3-035"],
+      ["L3-036"]
     ]
   }
 }

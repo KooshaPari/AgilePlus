@@ -1,32 +1,32 @@
 {
   "schema_version": "v2",
-  "generated_at": "2026-06-13T02:05:00Z",
+  "generated_at": "2026-06-13T03:10:00Z",
   "repo": "AgilePlus",
   "work_package": {
-    "wp_id": "L3-025",
-    "title": "Stale-worktree cleanup pass",
+    "wp_id": "L3-037",
+    "title": "Add action pinning check to commit-msg hook",
     "state": "done",
-    "lane": "ops",
-    "category": "automation",
+    "lane": "security",
+    "category": "security",
     "dependencies": [
-      "L2-037"
+      "L3-034"
     ],
     "files_changed": [
-      "scripts/worktree-cleanup.sh"
+      ".githooks/commit-msg"
     ],
-    "commit_sha": "4cba532e6",
+    "commit_sha": "eb788cb523fe800baa0efd81eb5f457316cf85c8",
     "branch": "chore/l5-87-focus-repo-specs-2026-06-11",
     "test_results": [],
     "verification": {
       "status": "passed",
       "commands": [
-        "test -x scripts/worktree-cleanup.sh"
+        "test -x .githooks/commit-msg"
       ],
-      "notes": "eco-028 WP-04 T007-T008: Run cleanup against 130 stale + 14 merged candidates."
+      "notes": "eco-011 FR-4: Commit-msg hook checks if any workflow files are modified without SHA-pinned actions."
     },
     "topology": {
-      "layer": 5,
-      "parallel_group": "ops-batch",
+      "layer": 9,
+      "parallel_group": "security-batch",
       "unlocks": []
     }
   },
@@ -39,7 +39,9 @@
       "L2-035",
       "L2-036",
       "L2-037",
-      "L3-025"
+      "L3-023",
+      "L3-034",
+      "L3-037"
     ],
     "edges": [
       ["L1-001", "L1-007"],
@@ -48,7 +50,10 @@
       ["L2-034", "L2-035"],
       ["L2-035", "L2-036"],
       ["L2-035", "L2-037"],
-      ["L2-037", "L3-025"]
+      ["L2-036", "L3-023"],
+      ["L2-037", "L3-023"],
+      ["L3-023", "L3-034"],
+      ["L3-034", "L3-037"]
     ],
     "layers": [
       ["L1-001", "L1-006"],
@@ -56,7 +61,9 @@
       ["L2-034"],
       ["L2-035"],
       ["L2-036", "L2-037"],
-      ["L3-025"]
+      ["L3-023"],
+      ["L3-034"],
+      ["L3-037"]
     ]
   }
 }

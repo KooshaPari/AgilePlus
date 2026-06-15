@@ -1,34 +1,36 @@
 {
   "schema_version": "v2",
-  "generated_at": "2026-06-13T02:05:00Z",
+  "generated_at": "2026-06-13T03:00:00Z",
   "repo": "AgilePlus",
   "work_package": {
-    "wp_id": "L3-026",
-    "title": "Retire xtask-anti-patterns; consolidate anti-pattern checks",
+    "wp_id": "L3-035",
+    "title": "Pin GitHub Actions to SHA in release-plz.yml and other workflows",
     "state": "done",
-    "lane": "refactor",
-    "category": "technical_debt",
+    "lane": "ci",
+    "category": "security",
     "dependencies": [
-      "L3-023"
+      "L3-023",
+      "L3-031"
     ],
     "files_changed": [
-      "Cargo.toml",
-      "justfile",
-      "xtask-anti-patterns/"
+      ".github/workflows/release-plz.yml",
+      ".github/workflows/governance-index.yml",
+      ".github/workflows/spec-first.yml",
+      ".github/workflows/workspace-audit.yml"
     ],
-    "commit_sha": "4cba532e6",
+    "commit_sha": "7f61697c0",
     "branch": "chore/l5-87-focus-repo-specs-2026-06-11",
     "test_results": [],
     "verification": {
       "status": "passed",
       "commands": [
-        "cargo build --workspace"
+        "grep -q 'release-plz/action@d22c02a7cf6d7870bd163be7c7d9518d331aef34' .github/workflows/release-plz.yml"
       ],
-      "notes": "Audit priority #2: retire xtask-anti-patterns in favor of consolidated checks."
+      "notes": "eco-011 FR-1: Pin all actions in release-plz.yml, governance-index.yml, spec-first.yml, and workspace-audit.yml to 40-char SHA refs."
     },
     "topology": {
-      "layer": 5,
-      "parallel_group": "refactor-batch",
+      "layer": 8,
+      "parallel_group": "security-batch",
       "unlocks": []
     }
   },
@@ -42,7 +44,8 @@
       "L2-036",
       "L2-037",
       "L3-023",
-      "L3-026"
+      "L3-031",
+      "L3-035"
     ],
     "edges": [
       ["L1-001", "L1-007"],
@@ -53,7 +56,8 @@
       ["L2-035", "L2-037"],
       ["L2-036", "L3-023"],
       ["L2-037", "L3-023"],
-      ["L3-023", "L3-026"]
+      ["L3-023", "L3-031"],
+      ["L3-031", "L3-035"]
     ],
     "layers": [
       ["L1-001", "L1-006"],
@@ -62,7 +66,8 @@
       ["L2-035"],
       ["L2-036", "L2-037"],
       ["L3-023"],
-      ["L3-026"]
+      ["L3-031"],
+      ["L3-035"]
     ]
   }
 }

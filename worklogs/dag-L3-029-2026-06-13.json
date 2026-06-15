@@ -1,32 +1,33 @@
 {
   "schema_version": "v2",
-  "generated_at": "2026-06-13T02:05:00Z",
+  "generated_at": "2026-06-13T02:40:00Z",
   "repo": "AgilePlus",
   "work_package": {
-    "wp_id": "L3-025",
-    "title": "Stale-worktree cleanup pass",
+    "wp_id": "L3-029",
+    "title": "Add cargo workspace audit script",
     "state": "done",
-    "lane": "ops",
+    "lane": "ci",
     "category": "automation",
     "dependencies": [
-      "L2-037"
+      "L3-024"
     ],
     "files_changed": [
-      "scripts/worktree-cleanup.sh"
+      "scripts/workspace-audit.sh"
     ],
-    "commit_sha": "4cba532e6",
+    "commit_sha": "47429db02",
     "branch": "chore/l5-87-focus-repo-specs-2026-06-11",
     "test_results": [],
     "verification": {
       "status": "passed",
       "commands": [
-        "test -x scripts/worktree-cleanup.sh"
+        "test -x scripts/workspace-audit.sh",
+        "bash -n scripts/workspace-audit.sh"
       ],
-      "notes": "eco-028 WP-04 T007-T008: Run cleanup against 130 stale + 14 merged candidates."
+      "notes": "eco-027: Workspace audit script checks for missing path dependency targets and fails CI if any found."
     },
     "topology": {
-      "layer": 5,
-      "parallel_group": "ops-batch",
+      "layer": 6,
+      "parallel_group": "ci-batch",
       "unlocks": []
     }
   },
@@ -39,7 +40,9 @@
       "L2-035",
       "L2-036",
       "L2-037",
-      "L3-025"
+      "L3-023",
+      "L3-024",
+      "L3-029"
     ],
     "edges": [
       ["L1-001", "L1-007"],
@@ -48,7 +51,10 @@
       ["L2-034", "L2-035"],
       ["L2-035", "L2-036"],
       ["L2-035", "L2-037"],
-      ["L2-037", "L3-025"]
+      ["L2-036", "L3-023"],
+      ["L2-037", "L3-023"],
+      ["L3-023", "L3-024"],
+      ["L3-024", "L3-029"]
     ],
     "layers": [
       ["L1-001", "L1-006"],
@@ -56,7 +62,9 @@
       ["L2-034"],
       ["L2-035"],
       ["L2-036", "L2-037"],
-      ["L3-025"]
+      ["L3-023"],
+      ["L3-024"],
+      ["L3-029"]
     ]
   }
 }

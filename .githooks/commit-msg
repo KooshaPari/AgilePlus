@@ -29,4 +29,14 @@ if ! head -n1 "$COMMIT_MSG_FILE" | grep -qE "$PATTERN"; then
     exit 1
 fi
 
+# eco-011 FR-4: Check workflow files in staged changes for unpinned actions
+if git diff --cached --name-only | grep -q '^\.github/workflows/.*\.yml$'; then
+    echo "info: workflow file(s) staged — checking action pinning..."
+    if ! bash scripts/action-hygiene-audit.sh; then
+        echo "error: commit blocked — unpinned third-party actions detected in staged workflow files."
+        echo "       All third-party actions must be pinned to a 40-character SHA ref."
+        exit 1
+    fi
+fi
+
 exit 0

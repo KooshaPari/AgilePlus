@@ -1,0 +1,55 @@
+{
+  "schema_version": "1",
+  "generated_at": "2026-06-13",
+  "description": "Canonical toolchain version matrix for the Phenotype ecosystem. CI validates each repo's pinned version against this matrix.",
+  "toolchains": {
+    "rust": {
+      "canonical": "1.88.0",
+      "source": "rust-toolchain.toml",
+      "repos": {
+        "AgilePlus": "1.88.0",
+        "Tracera": "1.88.0",
+        "Planify": "1.88.0",
+        "pheno": "1.88.0",
+        "phenoAI": "1.88.0",
+        "phenoData": "1.88.0",
+        "OmniRoute": "1.88.0",
+        "NetScript": "1.88.0",
+        "MCPForge": "1.88.0",
+        "eyetracker": "1.88.0",
+        "phenoUtils": "1.88.0"
+      }
+    },
+    "node": {
+      "canonical": "22",
+      "source": "package.json engines field or .nvmrc",
+      "repos": {
+        "AgilePlus": "22",
+        "phenoDesign": "22",
+        "phenotype-landing": "22"
+      }
+    },
+    "python": {
+      "canonical": "3.12",
+      "source": "pyproject.toml or .python-version",
+      "repos": {
+        "phenoData": "3.12",
+        "phenoAI": "3.12",
+        "phenoUtils": "3.12",
+        "agileplus-mcp": "3.12"
+      }
+    },
+    "go": {
+      "canonical": "1.23",
+      "source": "go.mod",
+      "repos": {
+        "phenotype-go-sdk": "1.23",
+        "phenotype-bus": "1.23"
+      }
+    }
+  },
+  "verification": {
+    "command": "scripts/verify-toolchain.sh",
+    "ci_job": "toolchain-audit"
+  }
+}

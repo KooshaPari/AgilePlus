@@ -1,32 +1,33 @@
 {
   "schema_version": "v2",
-  "generated_at": "2026-06-13T02:05:00Z",
+  "generated_at": "2026-06-13T02:50:00Z",
   "repo": "AgilePlus",
   "work_package": {
-    "wp_id": "L3-025",
-    "title": "Stale-worktree cleanup pass",
+    "wp_id": "L3-030",
+    "title": "Add cargo-audit gate to autograder CI workflow",
     "state": "done",
-    "lane": "ops",
-    "category": "automation",
+    "lane": "ci",
+    "category": "security",
     "dependencies": [
-      "L2-037"
+      "L3-024",
+      "L3-028"
     ],
     "files_changed": [
-      "scripts/worktree-cleanup.sh"
+      ".github/workflows/autograder.yml"
     ],
-    "commit_sha": "4cba532e6",
+    "commit_sha": "37a1cf2fe",
     "branch": "chore/l5-87-focus-repo-specs-2026-06-11",
     "test_results": [],
     "verification": {
       "status": "passed",
       "commands": [
-        "test -x scripts/worktree-cleanup.sh"
+        "grep -q 'cargo audit' .github/workflows/autograder.yml"
       ],
-      "notes": "eco-028 WP-04 T007-T008: Run cleanup against 130 stale + 14 merged candidates."
+      "notes": "eco-030 FR-4: CI runs cargo audit on every PR."
     },
     "topology": {
-      "layer": 5,
-      "parallel_group": "ops-batch",
+      "layer": 7,
+      "parallel_group": "ci-security-batch",
       "unlocks": []
     }
   },
@@ -39,7 +40,10 @@
       "L2-035",
       "L2-036",
       "L2-037",
-      "L3-025"
+      "L3-023",
+      "L3-024",
+      "L3-028",
+      "L3-030"
     ],
     "edges": [
       ["L1-001", "L1-007"],
@@ -48,7 +52,12 @@
       ["L2-034", "L2-035"],
       ["L2-035", "L2-036"],
       ["L2-035", "L2-037"],
-      ["L2-037", "L3-025"]
+      ["L2-036", "L3-023"],
+      ["L2-037", "L3-023"],
+      ["L3-023", "L3-024"],
+      ["L3-023", "L3-028"],
+      ["L3-024", "L3-030"],
+      ["L3-028", "L3-030"]
     ],
     "layers": [
       ["L1-001", "L1-006"],
@@ -56,7 +65,9 @@
       ["L2-034"],
       ["L2-035"],
       ["L2-036", "L2-037"],
-      ["L3-025"]
+      ["L3-023"],
+      ["L3-024", "L3-028"],
+      ["L3-030"]
     ]
   }
 }

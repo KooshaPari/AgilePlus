@@ -1,0 +1,37 @@
+#!/bin/bash
+# Pre-commit hook for AgilePlus
+# Runs trufflehog secret-scan on staged files.
+# See eco-030-security-baseline spec, FR-5.
+
+set -euo pipefail
+
+# Check if trufflehog is installed
+if ! command -v trufflehog &> /dev/null; then
+    echo "warning: trufflehog not found in PATH. Skipping secret scan."
+    echo "         Install: brew install trufflesecurity/trufflehog/trufflehog"
+    exit 0
+fi
+
+# Get list of staged files
+staged_files=$(git diff --cached --name-only --diff-filter=ACMR)
+
+if [ -z "$staged_files" ]; then
+    echo "info: pre-commit hook — no staged files to scan."
+    exit 0
+fi
+
+echo "info: running trufflehog secret scan on staged files..."
+
+# Scan staged files only (faster than full repo scan)
+# Use --no-update to avoid network calls in pre-commit
+for file in $staged_files; do
+    if [ -f "$file" ]; then
+        if git show ":$file" | trufflehog filesystem --no-update --stdin -f json 2>/dev/null | grep -q "Found"; then
+            echo "error: trufflehog detected potential secrets in $file"
+            exit 1
+        fi
+    fi
+done
+
+echo "info: pre-commit hook passed — no secrets detected."
+exit 0

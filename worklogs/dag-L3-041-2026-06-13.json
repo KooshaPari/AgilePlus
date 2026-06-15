@@ -1,32 +1,32 @@
 {
   "schema_version": "v2",
-  "generated_at": "2026-06-13T02:05:00Z",
+  "generated_at": "2026-06-13T03:30:00Z",
   "repo": "AgilePlus",
   "work_package": {
-    "wp_id": "L3-025",
-    "title": "Stale-worktree cleanup pass",
+    "wp_id": "L3-041",
+    "title": "Normalize CHANGELOG.md with Keep a Changelog 1.1",
     "state": "done",
-    "lane": "ops",
-    "category": "automation",
+    "lane": "docs",
+    "category": "docs",
     "dependencies": [
-      "L2-037"
+      "L3-038"
     ],
     "files_changed": [
-      "scripts/worktree-cleanup.sh"
+      "CHANGELOG.md"
     ],
-    "commit_sha": "4cba532e6",
+    "commit_sha": "bac90c15a14c34f391d73af5c065adf0010172b6",
     "branch": "chore/l5-87-focus-repo-specs-2026-06-11",
     "test_results": [],
     "verification": {
       "status": "passed",
       "commands": [
-        "test -x scripts/worktree-cleanup.sh"
+        "grep -q 'Keep a Changelog' CHANGELOG.md"
       ],
-      "notes": "eco-028 WP-04 T007-T008: Run cleanup against 130 stale + 14 merged candidates."
+      "notes": "eco-032 WP-02: Normalize CHANGELOG.md with Keep a Changelog 1.1 sections."
     },
     "topology": {
-      "layer": 5,
-      "parallel_group": "ops-batch",
+      "layer": 10,
+      "parallel_group": "docs-batch",
       "unlocks": []
     }
   },
@@ -39,7 +39,10 @@
       "L2-035",
       "L2-036",
       "L2-037",
-      "L3-025"
+      "L3-023",
+      "L3-024",
+      "L3-038",
+      "L3-041"
     ],
     "edges": [
       ["L1-001", "L1-007"],
@@ -48,7 +51,11 @@
       ["L2-034", "L2-035"],
       ["L2-035", "L2-036"],
       ["L2-035", "L2-037"],
-      ["L2-037", "L3-025"]
+      ["L2-036", "L3-023"],
+      ["L2-037", "L3-023"],
+      ["L3-023", "L3-024"],
+      ["L3-024", "L3-038"],
+      ["L3-038", "L3-041"]
     ],
     "layers": [
       ["L1-001", "L1-006"],
@@ -56,7 +63,10 @@
       ["L2-034"],
       ["L2-035"],
       ["L2-036", "L2-037"],
-      ["L3-025"]
+      ["L3-023"],
+      ["L3-024"],
+      ["L3-038"],
+      ["L3-041"]
     ]
   }
 }

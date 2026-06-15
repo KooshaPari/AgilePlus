@@ -31,6 +31,18 @@ check:
 machete:
     cargo machete
 
+# Security audit: aggregates cargo audit, secret scan, and dep checks
+# eco-030 FR-6: make security-audit equivalent
+security-audit:
+    cargo audit
+    cargo deny check
+    @echo "Security audit complete. If trufflehog is installed, run: just secret-scan"
+
+# Quick secret scan on current repo (requires trufflehog CLI)
+secret-scan:
+    @which trufflehog > /dev/null || (echo "trufflehog not found. Install: brew install trufflesecurity/trufflehog/trufflehog" && exit 1)
+    trufflehog filesystem . --only-verified --no-update
+
 docs:
     cargo doc --workspace --all-features --no-deps
 
