@@ -18,8 +18,8 @@ use anyhow::Result;
 use tokio::time::{sleep, Duration};
 use tracing::{info, warn};
 
-use agileplus_git::claim_bound::{ClaimBoundWorktree, ClaimStoreBound};
-use agileplus_triage::claim::{ClaimState, ClaimStore, ClaimStoreTrait};
+use agileplus_git::claim_bound::ClaimBoundWorktree;
+use agileplus_triage::claim::{ClaimStore, ClaimStoreTrait};
 
 pub mod config;
 pub mod pr;
@@ -225,7 +225,7 @@ impl<Q: IssueQueue> Factory<Q> {
                 None => continue,
             };
 
-            let wt_path = ClaimBoundWorktree::create(
+            let _wt_path = ClaimBoundWorktree::create(
                 self.repo_root.clone(),
                 &feature_slug,
                 &wp_id,
@@ -246,11 +246,6 @@ impl<Q: IssueQueue> Factory<Q> {
             self.claim_store.release(&claim_id);
             processed += 1;
 
-            // Stash the worktree path for test assertions.
-            #[cfg(test)]
-            {
-                let _ = wt_path;
-            }
         }
 
         Ok(processed)
