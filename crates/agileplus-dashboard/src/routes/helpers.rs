@@ -13,7 +13,9 @@ use axum::{
 use crate::app_state::DashboardStore;
 use crate::templates::{FeatureView, ProjectSummaryView, ProjectView, all_feature_states};
 
+#[allow(dead_code)]
 pub(super) const DEFAULT_PLANE_API_URL: &str = "https://app.plane.so";
+#[allow(dead_code)]
 pub(super) const DEFAULT_PLANE_WEB_URL: &str = "https://app.plane.so";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -85,6 +87,7 @@ pub(super) fn build_project_summaries(store: &DashboardStore) -> Vec<ProjectSumm
         .collect()
 }
 
+#[allow(dead_code)]
 pub(super) fn env_or_none(key: &str) -> Option<String> {
     env::var(key)
         .ok()
