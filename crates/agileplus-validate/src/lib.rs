@@ -7,7 +7,7 @@ const BRANCH_PREFIXES: [&str; 6] = ["feat/", "fix/", "chore/", "ci/", "docs/", "
 /// Require a non-empty human-readable name after trimming surrounding whitespace.
 pub fn name_required(name: &str) -> Result<(), String> {
     if name.trim().is_empty() {
-        return Err("name must not be empty".to_string());
+        return Err("name must not be empty".to_owned());
     }
 
     Ok(())
@@ -16,22 +16,22 @@ pub fn name_required(name: &str) -> Result<(), String> {
 /// Require a lowercase kebab-case slug made of ASCII letters, digits, and hyphens.
 pub fn slug_format(slug: &str) -> Result<(), String> {
     if slug.is_empty() {
-        return Err("slug must not be empty".to_string());
+        return Err("slug must not be empty".to_owned());
     }
 
     if slug.starts_with('-') || slug.ends_with('-') {
-        return Err("slug must not start or end with '-'".to_string());
+        return Err("slug must not start or end with '-'".to_owned());
     }
 
     if slug.contains("--") {
-        return Err("slug must not contain consecutive hyphens".to_string());
+        return Err("slug must not contain consecutive hyphens".to_owned());
     }
 
     if !slug
         .chars()
         .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-')
     {
-        return Err("slug must contain only lowercase letters, digits, and hyphens".to_string());
+        return Err("slug must contain only lowercase letters, digits, and hyphens".to_owned());
     }
 
     Ok(())
@@ -41,14 +41,14 @@ pub fn slug_format(slug: &str) -> Result<(), String> {
 pub fn semver_format(version: &str) -> Result<(), String> {
     let parts: Vec<_> = version.split('.').collect();
     if parts.len() != 3 {
-        return Err("version must contain exactly three dot-separated numeric parts".to_string());
+        return Err("version must contain exactly three dot-separated numeric parts".to_owned());
     }
 
     if parts
         .iter()
         .any(|part| part.is_empty() || part.parse::<u64>().is_err())
     {
-        return Err("version parts must be unsigned integers".to_string());
+        return Err("version parts must be unsigned integers".to_owned());
     }
 
     Ok(())
@@ -61,22 +61,22 @@ pub fn branch_naming_convention(branch: &str) -> Result<(), String> {
         .find(|prefix| branch.starts_with(**prefix))
     else {
         return Err(
-            "branch must start with feat/, fix/, chore/, ci/, docs/, or refactor/".to_string(),
+            "branch must start with feat/, fix/, chore/, ci/, docs/, or refactor/".to_owned(),
         );
     };
 
     let suffix = &branch[prefix.len()..];
     if suffix.is_empty() {
-        return Err("branch suffix must not be empty".to_string());
+        return Err("branch suffix must not be empty".to_owned());
     }
 
     if suffix.starts_with('/') || suffix.ends_with('/') || suffix.contains("//") {
-        return Err("branch suffix must not start, end, or repeat '/'".to_string());
+        return Err("branch suffix must not start, end, or repeat '/'".to_owned());
     }
 
     for segment in suffix.split('/') {
         slug_format(segment)
-            .map_err(|_| "branch suffix segments must be lowercase kebab-case".to_string())?;
+            .map_err(|_| "branch suffix segments must be lowercase kebab-case".to_owned())?;
     }
 
     Ok(())
@@ -87,24 +87,24 @@ pub fn path_allowlist(path: &str) -> Result<(), String> {
     let path = Path::new(path);
     let mut components = path.components();
     let Some(first) = components.next() else {
-        return Err("path must not be empty".to_string());
+        return Err("path must not be empty".to_owned());
     };
 
     let Component::Normal(root) = first else {
-        return Err("path must be relative to kitty-specs/ or docs/".to_string());
+        return Err("path must be relative to kitty-specs/ or docs/".to_owned());
     };
 
     if root != "kitty-specs" && root != "docs" {
-        return Err("path must stay within kitty-specs/ or docs/".to_string());
+        return Err("path must stay within kitty-specs/ or docs/".to_owned());
     }
 
     for component in components {
         match component {
             Component::Normal(_) => {}
             Component::CurDir => {}
-            Component::ParentDir => return Err("path traversal is not allowed".to_string()),
+            Component::ParentDir => return Err("path traversal is not allowed".to_owned()),
             Component::RootDir | Component::Prefix(_) => {
-                return Err("path must be relative to kitty-specs/ or docs/".to_string());
+                return Err("path must be relative to kitty-specs/ or docs/".to_owned());
             }
         }
     }

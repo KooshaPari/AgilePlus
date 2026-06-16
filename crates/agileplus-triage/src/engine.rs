@@ -71,49 +71,49 @@ impl TriageRules {
         Self {
             rules: vec![
                 TriageRule {
-                    name: "bug-keywords".to_string(),
+                    name: "bug-keywords".to_owned(),
                     keywords: vec![
-                        "bug".to_string(),
-                        "crash".to_string(),
-                        "error".to_string(),
-                        "panic".to_string(),
-                        "broken".to_string(),
-                        "regression".to_string(),
-                        "failing".to_string(),
-                        "exception".to_string(),
-                        "segfault".to_string(),
-                        "fix".to_string(),
+                        "bug".to_owned(),
+                        "crash".to_owned(),
+                        "error".to_owned(),
+                        "panic".to_owned(),
+                        "broken".to_owned(),
+                        "regression".to_owned(),
+                        "failing".to_owned(),
+                        "exception".to_owned(),
+                        "segfault".to_owned(),
+                        "fix".to_owned(),
                     ],
                     intent: Intent::Bug,
                     priority: Some(BacklogPriority::High),
                 },
                 TriageRule {
-                    name: "docs-keywords".to_string(),
+                    name: "docs-keywords".to_owned(),
                     keywords: vec![
-                        "docs".to_string(),
-                        "documentation".to_string(),
-                        "readme".to_string(),
-                        "changelog".to_string(),
-                        "typo".to_string(),
-                        "spelling".to_string(),
-                        "document".to_string(),
-                        "guide".to_string(),
-                        "tutorial".to_string(),
-                        "wiki".to_string(),
+                        "docs".to_owned(),
+                        "documentation".to_owned(),
+                        "readme".to_owned(),
+                        "changelog".to_owned(),
+                        "typo".to_owned(),
+                        "spelling".to_owned(),
+                        "document".to_owned(),
+                        "guide".to_owned(),
+                        "tutorial".to_owned(),
+                        "wiki".to_owned(),
                     ],
                     intent: Intent::Docs,
                     priority: Some(BacklogPriority::Low),
                 },
                 TriageRule {
-                    name: "feature-keywords".to_string(),
+                    name: "feature-keywords".to_owned(),
                     keywords: vec![
-                        "feature".to_string(),
-                        "enhancement".to_string(),
-                        "implement".to_string(),
-                        "add".to_string(),
-                        "new".to_string(),
-                        "support".to_string(),
-                        "request".to_string(),
+                        "feature".to_owned(),
+                        "enhancement".to_owned(),
+                        "implement".to_owned(),
+                        "add".to_owned(),
+                        "new".to_owned(),
+                        "support".to_owned(),
+                        "request".to_owned(),
                     ],
                     intent: Intent::Feature,
                     priority: None, // defaults to Medium
@@ -122,7 +122,7 @@ impl TriageRules {
             default: TriageOutcome {
                 priority: BacklogPriority::Medium,
                 intent: Intent::Task,
-                matched_rule: "default".to_string(),
+                matched_rule: "default".to_owned(),
             },
         }
     }
@@ -142,7 +142,7 @@ impl TriageRules {
 ///
 /// let rules = TriageRules::default_rules();
 /// let item = SyncedItem {
-///     title: "App crashes on login".to_string(),
+///     title: "App crashes on login".to_owned(),
 ///     body: None,
 ///     labels: vec![],
 /// };
@@ -199,7 +199,7 @@ mod tests {
     #[test]
     fn bug_keyword_in_title_gives_high_bug() {
         let item = SyncedItem {
-            title: "App crashes on startup".to_string(),
+            title: "App crashes on startup".to_owned(),
             body: None,
             labels: vec![],
         };
@@ -213,9 +213,9 @@ mod tests {
     #[test]
     fn bug_label_gives_high_bug() {
         let item = SyncedItem {
-            title: "Something weird happening".to_string(),
+            title: "Something weird happening".to_owned(),
             body: None,
-            labels: vec!["bug".to_string()],
+            labels: vec!["bug".to_owned()],
         };
         let out = classify(&item, &rules());
         assert_eq!(out.intent, Intent::Bug);
@@ -226,8 +226,8 @@ mod tests {
     #[test]
     fn crash_keyword_in_body_gives_high_bug() {
         let item = SyncedItem {
-            title: "Issue with login".to_string(),
-            body: Some("The app has a crash when submitting the form".to_string()),
+            title: "Issue with login".to_owned(),
+            body: Some("The app has a crash when submitting the form".to_owned()),
             labels: vec![],
         };
         let out = classify(&item, &rules());
@@ -239,7 +239,7 @@ mod tests {
     #[test]
     fn docs_keyword_gives_low_docs() {
         let item = SyncedItem {
-            title: "Update the docs for the API".to_string(),
+            title: "Update the docs for the API".to_owned(),
             body: None,
             labels: vec![],
         };
@@ -253,9 +253,9 @@ mod tests {
     #[test]
     fn docs_label_gives_low_docs() {
         let item = SyncedItem {
-            title: "Improve onboarding".to_string(),
+            title: "Improve onboarding".to_owned(),
             body: None,
-            labels: vec!["documentation".to_string()],
+            labels: vec!["documentation".to_owned()],
         };
         let out = classify(&item, &rules());
         assert_eq!(out.intent, Intent::Docs);
@@ -266,8 +266,8 @@ mod tests {
     #[test]
     fn unmatched_item_gives_medium_task() {
         let item = SyncedItem {
-            title: "Quarterly review sync".to_string(),
-            body: Some("Let us meet and discuss".to_string()),
+            title: "Quarterly review sync".to_owned(),
+            body: Some("Let us meet and discuss".to_owned()),
             labels: vec![],
         };
         let out = classify(&item, &rules());
@@ -280,7 +280,7 @@ mod tests {
     #[test]
     fn rule_precedence_bug_before_docs() {
         let item = SyncedItem {
-            title: "bug in the documentation page".to_string(),
+            title: "bug in the documentation page".to_owned(),
             body: None,
             labels: vec![],
         };
@@ -305,20 +305,20 @@ mod tests {
     fn custom_rule_set_overrides_defaults() {
         let custom_rules = TriageRules {
             rules: vec![TriageRule {
-                name: "security".to_string(),
-                keywords: vec!["auth".to_string(), "token".to_string()],
+                name: "security".to_owned(),
+                keywords: vec!["auth".to_owned(), "token".to_owned()],
                 intent: Intent::Bug,
                 priority: Some(BacklogPriority::Critical),
             }],
             default: TriageOutcome {
                 priority: BacklogPriority::Low,
                 intent: Intent::Idea,
-                matched_rule: "custom-default".to_string(),
+                matched_rule: "custom-default".to_owned(),
             },
         };
 
         let item = SyncedItem {
-            title: "Auth token leaks in logs".to_string(),
+            title: "Auth token leaks in logs".to_owned(),
             body: None,
             labels: vec![],
         };
@@ -327,7 +327,7 @@ mod tests {
         assert_eq!(out.intent, Intent::Bug);
 
         let unmatched = SyncedItem {
-            title: "Random thing".to_string(),
+            title: "Random thing".to_owned(),
             ..Default::default()
         };
         let default_out = classify(&unmatched, &custom_rules);
@@ -339,9 +339,9 @@ mod tests {
     #[test]
     fn feature_keyword_gives_feature_medium() {
         let item = SyncedItem {
-            title: "Add support for dark mode".to_string(),
+            title: "Add support for dark mode".to_owned(),
             body: None,
-            labels: vec!["enhancement".to_string()],
+            labels: vec!["enhancement".to_owned()],
         };
         let out = classify(&item, &rules());
         assert_eq!(out.intent, Intent::Feature);
