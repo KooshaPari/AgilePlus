@@ -2,13 +2,15 @@
 
 use std::process::Command;
 
+use anyhow::{anyhow, Result};
 use regex::Regex;
-use tracing::{info, warn};
+use tracing::{error, info, warn};
 
 use agileplus_events::domain_event::{DomainEvent, EventEnvelope};
 use agileplus_triage::claim::Claim;
 
-use crate::{HookAction, HookRegistry, HookTrigger};
+use crate::registry::HookRegistry;
+use crate::{HookAction, HookTrigger};
 
 /// Result of a single hook dispatch.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -49,7 +51,8 @@ impl HookDispatcher {
             }
             // apply regex condition if present
             if let Some(ref pattern) = hook.condition {
-                match Regex::new(pattern) {
+                let pat = pattern.as_str();
+                match Regex::new(pat) {
                     Ok(re) => {
                         if !re.is_match(&claim.resource) {
                             results.push((hook.id.clone(), DispatchResult::Filtered));

@@ -2,9 +2,14 @@
 name = "agileplus-application"
 version.workspace = true
 edition.workspace = true
-license.workspace = true
 rust-version.workspace = true
 description = "Application / use-case layer (hexagonal — no framework deps)"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/KooshaPari/AgilePlus"
+documentation = "https://docs.rs/agileplus-application"
+keywords = ["phenotype", "agileplus", "application"]
+categories = ["data-structures"]
+authors = ["kooshapari"]
 
 [dependencies]
 agileplus-domain = { path = "../agileplus-domain" }

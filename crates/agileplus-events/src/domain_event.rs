@@ -231,6 +231,15 @@ impl DomainEvent {
         }
     }
 
+    /// Stable machine-readable wire code (e.g. for cross-repo bus routing).
+    ///
+    /// Returns a `&'static str` so it can be used directly as a routing key,
+    /// log field, or NATS subject without allocating.  The same vocabulary is
+    /// used by every consumer repo of `phenotype-error-core`.
+    pub fn wire_code(&self) -> &'static str {
+        self.event_type()
+    }
+
     /// The aggregate type this event belongs to (e.g. `"Project"`).
     pub fn aggregate_type(&self) -> &'static str {
         match self {
@@ -348,6 +357,25 @@ pub enum EventHandlerError {
     Rejected(String),
     #[error("handler encountered a transient error: {0}")]
     Transient(String),
+}
+
+impl EventHandlerError {
+    /// Project this handler error into the cross-repo wire
+    /// [`phenotype_error_core::ErrorEnvelope`] so the same payload shape
+    /// is used on the bus, in logs, and across every consumer repo.
+    pub fn to_envelope(&self) -> phenotype_error_core::ErrorEnvelope {
+        use phenotype_error_core::{ErrorCode, ErrorEnvelope};
+        match self {
+            EventHandlerError::Rejected(msg) => {
+                ErrorEnvelope::new(ErrorCode::Cancelled, format!("handler rejected: {msg}"))
+            }
+            EventHandlerError::Transient(msg) => ErrorEnvelope::new(
+                ErrorCode::Unavailable,
+                format!("handler transient error: {msg}"),
+            )
+            .with_retryable(true),
+        }
+    }
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -676,5 +704,58 @@ mod tests {
             }
             other => panic!("unexpected: {other:?}"),
         }
+    }
+
+    // ── wire_code (cross-repo error-core integration) ─────────────────────────
+
+    #[test]
+    fn wire_code_matches_event_type_for_all_variants() {
+        // wire_code() must always agree with event_type() so logs and routing
+        // keys stay in sync across repos.
+        let events = vec![
+            project_created(),
+            epic_status_changed(),
+            story_created(),
+            story_status_changed(),
+            user_added(),
+            DomainEvent::WorkPackageCreated(WorkPackageCreated {
+                wp_id: 20.into(),
+                feature_id: 3.into(),
+                title: "wp".into(),
+                sequence: 1,
+            }),
+        ];
+        for ev in events {
+            assert_eq!(ev.wire_code(), ev.event_type());
+        }
+    }
+
+    // ── EventHandlerError → ErrorEnvelope (cross-repo error-core) ─────────────
+
+    #[test]
+    fn rejected_handler_error_projects_to_cancelled_envelope() {
+        let err = EventHandlerError::Rejected("schema mismatch".into());
+        let env = err.to_envelope();
+        assert_eq!(env.code, phenotype_error_core::ErrorCode::Cancelled);
+        assert!(env.message.contains("schema mismatch"));
+        assert!(!env.fatal);
+    }
+
+    #[test]
+    fn transient_handler_error_projects_to_retryable_unavailable_envelope() {
+        let err = EventHandlerError::Transient("broker down".into());
+        let env = err.to_envelope();
+        assert_eq!(env.code, phenotype_error_core::ErrorCode::Unavailable);
+        assert_eq!(env.retryable, Some(true));
+        assert!(env.message.contains("broker down"));
+    }
+
+    #[test]
+    fn handler_error_envelope_serializes_to_wire_format() {
+        let err = EventHandlerError::Rejected("x".into());
+        let env = err.to_envelope();
+        let json = serde_json::to_value(&env).unwrap();
+        assert_eq!(json["code"], "CANCELLED");
+        assert!(json["message"].as_str().unwrap().contains("x"));
     }
 }

@@ -2,8 +2,14 @@
 name = "agileplus-fixtures"
 version.workspace = true
 edition.workspace = true
-license.workspace = true
 rust-version.workspace = true
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/KooshaPari/AgilePlus"
+description = "agileplus fixtures — Phenotype infrastructure crate (AgilePlus)"
+documentation = "https://docs.rs/agileplus-fixtures"
+keywords = ["phenotype", "agileplus", "fixture"]
+categories = ["development-tools::testing"]
+authors = ["kooshapari"]
 
 [dependencies]
 agileplus-domain = { path = "../agileplus-domain" }

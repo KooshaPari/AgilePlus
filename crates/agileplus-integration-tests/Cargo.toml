@@ -2,9 +2,15 @@
 name = "agileplus-integration-tests"
 version.workspace = true
 edition.workspace = true
-license.workspace = true
 rust-version.workspace = true
 publish = false
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/KooshaPari/AgilePlus"
+description = "agileplus integration tests — Phenotype infrastructure crate (AgilePlus)"
+documentation = "https://docs.rs/agileplus-integration-tests"
+keywords = ["phenotype", "agileplus", "test"]
+categories = ["development-tools::testing"]
+authors = ["kooshapari"]
 
 [features]
 # Enable full integration tests requiring process-compose + external services

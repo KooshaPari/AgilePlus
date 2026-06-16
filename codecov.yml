@@ -11,6 +11,11 @@ coverage:
         threshold: 1%
         flags:
           - agileplus-sqlite
+      agileplus-trace-validator:
+        target: 80%
+        threshold: 1%
+        flags:
+          - agileplus-trace-validator
 
 flags:
   agileplus-cli:
@@ -19,3 +24,6 @@ flags:
   agileplus-sqlite:
     paths:
       - crates/agileplus-sqlite/
+  agileplus-trace-validator:
+    paths:
+      - crates/agileplus-trace-validator/

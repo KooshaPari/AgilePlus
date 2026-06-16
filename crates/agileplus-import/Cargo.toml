@@ -2,8 +2,14 @@
 name = "agileplus-import"
 version.workspace = true
 edition.workspace = true
-license.workspace = true
 rust-version.workspace = true
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/KooshaPari/AgilePlus"
+description = "agileplus import — Phenotype infrastructure crate (AgilePlus)"
+documentation = "https://docs.rs/agileplus-import"
+keywords = ["phenotype", "agileplus", "port"]
+categories = ["development-tools", "data-structures"]
+authors = ["kooshapari"]
 
 [dependencies]
 anyhow.workspace = true

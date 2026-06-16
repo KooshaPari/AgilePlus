@@ -2,6 +2,13 @@
 name = "agileplus-subcmds"
 version = "0.1.0"
 edition = "2021"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/KooshaPari/AgilePlus"
+description = "agileplus subcmds — Phenotype infrastructure crate (AgilePlus)"
+documentation = "https://docs.rs/agileplus-subcmds"
+keywords = ["phenotype", "agileplus"]
+categories = ["development-tools"]
+authors = ["kooshapari"]
 
 [dependencies]
 # No deps for now - just a stub crate

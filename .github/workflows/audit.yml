@@ -50,7 +50,8 @@ jobs:
       - uses: trufflesecurity/trufflehog@ac0805e53b065e7188181fc80dce1800dfa51ab9  # was: @main
         with:
           path: ./
-          extra_args: --only-verified
+          extra_args: --only-verified --fail
+        continue-on-error: true
 
   lint-rust:
     name: Rust Lint

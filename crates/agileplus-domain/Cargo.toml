@@ -2,8 +2,14 @@
 name = "agileplus-domain"
 version.workspace = true
 edition.workspace = true
-license.workspace = true
 rust-version.workspace = true
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/KooshaPari/AgilePlus"
+description = "agileplus domain — Phenotype infrastructure crate (AgilePlus)"
+documentation = "https://docs.rs/agileplus-domain"
+keywords = ["phenotype", "agileplus", "domain"]
+categories = ["data-structures"]
+authors = ["kooshapari"]
 
 [dependencies]
 serde.workspace = true
@@ -18,6 +24,9 @@ sha2.workspace = true
 agileplus-validate.workspace = true
 uuid.workspace = true
 regex = "1"
+# Shared ecosystem crates (extracted to phenoShared 2026-06-14)
+phenotype-string.workspace = true
 
 [dev-dependencies]
 tokio.workspace = true
+phenotype-test-infra.workspace = true

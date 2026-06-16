@@ -2,9 +2,14 @@
 name = "agileplus-triage"
 version.workspace = true
 edition.workspace = true
-license.workspace = true
 rust-version.workspace = true
 description = "Triage engine: dedup, claim, classifier, router, repo introspection, plus minhash/bloom/embeddings/hybrid/ast_tokenize primitives."
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/KooshaPari/AgilePlus"
+documentation = "https://docs.rs/agileplus-triage"
+keywords = ["phenotype", "agileplus", "triage"]
+categories = ["development-tools"]
+authors = ["kooshapari"]
 
 [features]
 # Default features: local embedding backend (offline, no network) and the

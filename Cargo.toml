@@ -43,6 +43,7 @@
 #   cargo test  --workspace                    # 646 tests
 #   cargo clippy --workspace --all-targets -- -D warnings
 #   cargo run -p xtask-anti-patterns           # workspace linter
+#   just lint                                  # workspace lint checks
 #
 # See SPEC.md, FUNCTIONAL_REQUIREMENTS.md, AGENTS.md, and CONTRIBUTING.md
 # for design rationale and contributor workflow.
@@ -103,8 +104,10 @@ exclude = ["AgilePlus/rust", "rust", "crates/phenotype-config"]
 [workspace.package]
 version = "0.1.0"
 edition = "2021"
-license = "MIT"
+license = "MIT OR Apache-2.0"
 rust-version = "1.88"
+repository = "https://github.com/KooshaPari/AgilePlus"
+authors = ["kooshapari"]
 
 [workspace.metadata.tools]
 cargo-nextest = "0.9"
@@ -113,7 +116,17 @@ cargo-nextest = "0.9"
 name = "agileplus"
 version.workspace = true
 edition.workspace = true
+license = "MIT OR Apache-2.0"
+license-file = "LICENSE"
+description = "AgilePlus — Rust+TypeScript product & engineering management platform with Axum HTTP/gRPC backend, SQLite local store, Electrobun desktop app, and React/TS dashboard"
+homepage = "https://github.com/KooshaPari/AgilePlus"
+documentation = "https://docs.rs/agileplus"
+repository = "https://github.com/KooshaPari/AgilePlus"
+readme = "README.md"
 publish = false
+keywords = ["phenotype", "agileplus"]
+categories = ["development-tools"]
+authors = ["kooshapari"]
 
 [dependencies]
 serde.workspace = true
@@ -148,7 +161,7 @@ sha2.workspace = true
 [workspace.dependencies]
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1"
-tokio = { version = "1.39", features = ["full"] }
+tokio = { version = "1.46", features = ["full"] }
 thiserror = "2"
 anyhow = "1"
 tracing = "0.1"
@@ -196,6 +209,9 @@ phenotype-error-core = { git = "https://github.com/KooshaPari/phenoShared", bran
 traceability-core = { path = "crates/traceability-core" }
 indexmap = { version = "2", features = ["serde"] }
 phenotype-logging = { git = "https://github.com/KooshaPari/phenoShared", branch = "main" }
+phenotype-string = { git = "https://github.com/KooshaPari/phenoShared", branch = "main" }
+phenotype-test-infra = { git = "https://github.com/KooshaPari/phenoShared", branch = "main" }
+phenotype-event-bus = { git = "https://github.com/KooshaPari/phenoShared", branch = "main" }
 agileplus-api = { path = "crates/agileplus-api" }
 agileplus-artifacts = { path = "crates/agileplus-artifacts" }
 agileplus-cache = { path = "crates/agileplus-cache" }

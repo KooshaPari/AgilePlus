@@ -2,9 +2,14 @@
 name = "agileplus-sync"
 version.workspace = true
 edition.workspace = true
-license.workspace = true
 rust-version.workspace = true
 description = "Sync orchestrator for AgilePlus — conflict detection, resolution, and NATS integration"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/KooshaPari/AgilePlus"
+documentation = "https://docs.rs/agileplus-sync"
+keywords = ["phenotype", "agileplus"]
+categories = ["development-tools"]
+authors = ["kooshapari"]
 
 [features]
 default = []

@@ -105,3 +105,125 @@ fn validate_many_traces_with_many_links_succeeds() {
         .stdout(contains(format!("traces: {trace_count}")))
         .stdout(contains("references: 24"));
 }
+
+/// Edge case: a trace whose array fields are all *present* but *empty* should
+/// still validate successfully (the schema requires the arrays, not their
+/// contents). This guards against an off-by-one regression in `read_trace`
+/// where empty arrays might be mistaken for missing fields.
+#[test]
+fn validate_trace_with_empty_arrays_succeeds() {
+    let repo = TempDir::new().unwrap();
+    fs::create_dir(repo.path().join("traces")).unwrap();
+    fs::write(
+        repo.path().join("FUNCTIONAL_REQUIREMENTS.md"),
+        "- FR-empty-arrays",
+    )
+    .unwrap();
+    fs::write(
+        repo.path().join("traces/FR-empty-arrays.json"),
+        r##"{
+  "fr_id": "FR-empty-arrays",
+  "spec_slug": "eco-024-traceability",
+  "spec_anchor": "#fr-empty-arrays",
+  "docs_pages": [],
+  "tests": [],
+  "code_modules": [],
+  "journeys": []
+}"##,
+    )
+    .unwrap();
+
+    Command::cargo_bin("agileplus-trace-validator")
+        .unwrap()
+        .args(["validate", repo.path().to_str().unwrap()])
+        .assert()
+        .success()
+        .stdout(contains("validated 1 trace files"));
+
+    Command::cargo_bin("agileplus-trace-validator")
+        .unwrap()
+        .args(["stats", repo.path().to_str().unwrap()])
+        .assert()
+        .success()
+        .stdout(contains("traces: 1"))
+        .stdout(contains("references: 0"));
+}
+
+/// Edge case: two trace files declaring the same `fr_id` should both be
+/// counted (the validator's loaders sort and the schema check currently do
+/// not de-duplicate). This locks in the existing behavior so a future dedup
+/// change is forced to update this test deliberately rather than silently
+/// over-count or under-count.
+#[test]
+fn validate_duplicate_fr_id_counts_both() {
+    let repo = TempDir::new().unwrap();
+    fs::create_dir(repo.path().join("traces")).unwrap();
+    fs::write(
+        repo.path().join("FUNCTIONAL_REQUIREMENTS.md"),
+        "- FR-dup",
+    )
+    .unwrap();
+
+    let body = r##"{
+  "fr_id": "FR-dup",
+  "spec_slug": "eco-024-traceability",
+  "spec_anchor": "#fr-dup",
+  "docs_pages": [],
+  "tests": [],
+  "code_modules": [],
+  "journeys": []
+}"##;
+
+    fs::write(repo.path().join("traces/FR-dup.json"), body).unwrap();
+    fs::write(repo.path().join("traces/FR-dup-copy.json"), body).unwrap();
+
+    Command::cargo_bin("agileplus-trace-validator")
+        .unwrap()
+        .args(["stats", repo.path().to_str().unwrap()])
+        .assert()
+        .success()
+        .stdout(contains("traces: 2"));
+}
+
+/// Edge case: non-JSON / non-trace files (e.g. README.md, .yaml) under
+/// `traces/` should be ignored by the validator and the trace count should
+/// reflect only the valid `.json` trace files. This guards against accidental
+/// over-counting when artifacts are dropped into `traces/`.
+#[test]
+fn validate_ignores_non_trace_files() {
+    let repo = TempDir::new().unwrap();
+    fs::create_dir(repo.path().join("traces")).unwrap();
+    fs::write(
+        repo.path().join("FUNCTIONAL_REQUIREMENTS.md"),
+        "- FR-only",
+    )
+    .unwrap();
+    fs::write(
+        repo.path().join("traces/FR-only.json"),
+        r##"{
+  "fr_id": "FR-only",
+  "spec_slug": "eco-024-traceability",
+  "spec_anchor": "#fr-only",
+  "docs_pages": [],
+  "tests": [],
+  "code_modules": [],
+  "journeys": []
+}"##,
+    )
+    .unwrap();
+    // Non-trace artifacts that should be ignored.
+    fs::write(repo.path().join("traces/README.md"), "# notes").unwrap();
+    fs::write(repo.path().join("traces/notes.txt"), "notes").unwrap();
+    fs::write(
+        repo.path().join("traces/schema.yaml"),
+        "fr_id: FR-only\n",
+    )
+    .unwrap();
+
+    Command::cargo_bin("agileplus-trace-validator")
+        .unwrap()
+        .args(["stats", repo.path().to_str().unwrap()])
+        .assert()
+        .success()
+        .stdout(contains("traces: 1"));
+}

@@ -6,7 +6,7 @@ set dotenv-load
 default:
     @just --list
 
-ci: fmt lint test audit docs
+ci: fmt lint test audit deny docs
 
 # Run the full grading gate (alias of `ci`)
 [private]
@@ -19,17 +19,40 @@ grade-fast:
     cargo fmt --all --check
     cargo test --workspace
 
+# Fleet-wide grading gate (uses vendored or central grade.sh)
+grade-full:
+    @if [ -f grade.sh ]; then ./grade.sh; \
+    elif [ -f ../grade.sh ]; then bash ../grade.sh; \
+    else echo "no grade.sh found (vendored or central)"; exit 1; \
+    fi
+
+# Build workspace
+build:
+    cargo build --workspace --all-targets
+
+# Lint
 lint:
     cargo clippy --workspace --all-targets --all-features -- -D warnings
 
+# Format check
 fmt:
     cargo fmt --all --check
 
+# Apply formatter
+fmt-fix:
+    cargo fmt --all
+
+# Run tests
 test:
     cargo test --workspace --all-features
 
-audit:
+# License + advisory + ban + source checks (cargo-deny)
+deny:
     cargo deny check
+
+# Security advisories (cargo-audit)
+audit:
+    cargo audit
 
 # Consolidated anti-pattern checks (replaces xtask-anti-patterns crate)
 check:

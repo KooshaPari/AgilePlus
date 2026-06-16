@@ -70,6 +70,8 @@ enum Command {
     Intent(commands::intent::IntentArgs),
     /// Link work items to Tracera trace IDs
     Trace(commands::trace::TraceCmd),
+    /// Print a high-level project status summary
+    Status,
 }
 
 #[derive(Subcommand)]
@@ -81,18 +83,49 @@ enum FeatureCmd {
         /// Feature id
         id: i64,
     },
+    /// Count features, optionally filtered by state
+    Count {
+        /// Optional state filter (created, specified, researched, planned,
+        /// implementing, validated, shipped, retrospected)
+        #[arg(long, value_name = "STATE")]
+        state: Option<String>,
+    },
+    /// Search features by slug, name, or label substring
+    Search {
+        /// Substring to match against slug, friendly name, or labels
+        query: String,
+    },
+    /// List features whose state is `validated` (ready to ship)
+    Ready,
 }
 
 #[derive(Subcommand)]
 enum ModuleCmd {
     /// List all modules
     List,
+    /// Show detail for a module by id
+    Show {
+        /// Module id
+        id: i64,
+    },
+    /// Search modules by slug or friendly name
+    Search {
+        /// Substring to match against slug or friendly name
+        query: String,
+    },
 }
 
 #[derive(Subcommand)]
 enum CycleCmd {
     /// Show the current (active) cycle
     Current,
+    /// List all known cycles
+    List,
+    /// Print which cycle would become active if id were promoted
+    Set {
+        /// Cycle id to set as active
+        id: i64,
+    },
 }
 
 // ── in-memory mock store ─────────────────────────────────────────────────────
@@ -216,11 +249,230 @@ fn cmd_cycle_current(store: &MockStore) {
     }
 }
 
+fn cmd_cycle_list(store: &MockStore) {
+    if store.cycles.is_empty() {
+        println!("No cycles found.");
+        return;
+    }
+    println!("{:<5} {:<24} {:<12} {:<12} {:<12}", "ID", "NAME", "STATE", "START", "END");
+    println!("{}", "-".repeat(70));
+    let mut cycles: Vec<&Cycle> = store.cycles.iter().collect();
+    cycles.sort_by_key(|c| c.start_date);
+    for c in cycles {
+        println!(
+            "{:<5} {:<24} {:<12} {:<12} {:<12}",
+            c.id, truncate(&c.name, 24), c.state, c.start_date, c.end_date
+        );
+    }
+}
+
+fn cmd_cycle_set(store: &MockStore, id: i64) -> anyhow::Result<()> {
+    let target = match store.cycles.iter().find(|c| c.id == id) {
+        Some(c) => c,
+        None => {
+            anyhow::bail!("cycle {id} not found");
+        }
+    };
+    if target.state == CycleState::Active {
+        println!("Cycle {} ({}) is already active.", target.id, target.name);
+        return Ok(());
+    }
+    if !matches!(target.state, CycleState::Draft | CycleState::Review) {
+        anyhow::bail!(
+            "cycle {} is in state `{}` and cannot be activated",
+            target.id,
+            target.state
+        );
+    }
+    let active_count = store
+        .cycles
+        .iter()
+        .filter(|c| c.state == CycleState::Active)
+        .count();
+    println!(
+        "Cycle {} ({}) is eligible for activation. Currently {} active cycle(s).",
+        target.id, target.name, active_count
+    );
+    Ok(())
+}
+
+fn cmd_feature_count(store: &MockStore, state: Option<&str>) -> anyhow::Result<()> {
+    let parsed_state = match state {
+        Some(raw) => Some(
+            raw.parse::<FeatureState>()
+                .map_err(|e| anyhow::anyhow!("invalid --state `{raw}`: {e}"))?,
+        ),
+        None => None,
+    };
+    let total = store.features.len();
+    let mut by_state: std::collections::HashMap<FeatureState, usize> =
+        std::collections::HashMap::new();
+    for f in &store.features {
+        *by_state.entry(f.state).or_insert(0) += 1;
+    }
+    match parsed_state {
+        Some(s) => {
+            let n = by_state.get(&s).copied().unwrap_or(0);
+            println!("{n}");
+        }
+        None => {
+            // Stable column ordering: iterate all known states first, then
+            // any states that exist in data but not in the canonical list.
+            let mut states: Vec<FeatureState> = by_state.keys().copied().collect();
+            states.sort_by_key(|s| format!("{s}"));
+            println!("{:<14} {}", "STATE", "COUNT");
+            println!("{}", "-".repeat(22));
+            for s in &states {
+                println!("{:<14} {}", s, by_state.get(s).copied().unwrap_or(0));
+            }
+            println!("{}", "-".repeat(22));
+            println!("{:<14} {}", "TOTAL", total);
+        }
+    }
+    Ok(())
+}
+
+fn cmd_feature_search(store: &MockStore, query: &str) {
+    let needle = query.to_lowercase();
+    let matches: Vec<&Feature> = store
+        .features
+        .iter()
+        .filter(|f| {
+            f.slug.to_lowercase().contains(&needle)
+                || f.friendly_name.to_lowercase().contains(&needle)
+                || f.labels
+                    .iter()
+                    .any(|l| l.to_lowercase().contains(&needle))
+        })
+        .collect();
+    if matches.is_empty() {
+        println!("No features matched `{query}`.");
+        return;
+    }
+    println!("{:<5} {:<28} {:<14} {}", "ID", "SLUG", "STATE", "NAME");
+    println!("{}", "-".repeat(70));
+    for f in matches {
+        println!(
+            "{:<5} {:<28} {:<14} {}",
+            f.id, f.slug, f.state, f.friendly_name
+        );
+    }
+}
+
+fn cmd_feature_ready(store: &MockStore) {
+    let ready: Vec<&Feature> = store
+        .features
+        .iter()
+        .filter(|f| f.state == FeatureState::Validated)
+        .collect();
+    if ready.is_empty() {
+        println!("No features are currently in the `validated` state.");
+        return;
+    }
+    println!("{:<5} {:<28} {}", "ID", "SLUG", "NAME");
+    println!("{}", "-".repeat(50));
+    for f in ready {
+        println!("{:<5} {:<28} {}", f.id, f.slug, f.friendly_name);
+    }
+}
+
+fn cmd_module_show(store: &MockStore, id: i64) -> anyhow::Result<()> {
+    match store.modules.iter().find(|m| m.id == id) {
+        Some(m) => {
+            println!("id          : {}", m.id);
+            println!("slug        : {}", m.slug);
+            println!("name        : {}", m.friendly_name);
+            println!(
+                "description : {}",
+                m.description
+                    .clone()
+                    .unwrap_or_else(|| "\u{2014}".to_string())
+            );
+            let feature_count = store.features.iter().filter(|f| f.module_id == Some(m.id)).count();
+            println!("features    : {feature_count}");
+            println!(
+                "created_at  : {}",
+                m.created_at.format("%Y-%m-%d %H:%M:%S UTC")
+            );
+            println!(
+                "updated_at  : {}",
+                m.updated_at.format("%Y-%m-%d %H:%M:%S UTC")
+            );
+            Ok(())
+        }
+        None => anyhow::bail!("module {id} not found"),
+    }
+}
+
+fn cmd_module_search(store: &MockStore, query: &str) {
+    let needle = query.to_lowercase();
+    let matches: Vec<&Module> = store
+        .modules
+        .iter()
+        .filter(|m| {
+            m.slug.to_lowercase().contains(&needle)
+                || m.friendly_name.to_lowercase().contains(&needle)
+        })
+        .collect();
+    if matches.is_empty() {
+        println!("No modules matched `{query}`.");
+        return;
+    }
+    println!("{:<5} {:<20} {}", "ID", "SLUG", "NAME");
+    println!("{}", "-".repeat(50));
+    for m in matches {
+        println!("{:<5} {:<20} {}", m.id, m.slug, m.friendly_name);
+    }
+}
+
+fn cmd_status(store: &MockStore) {
+    let total_features = store.features.len();
+    let mut by_state: std::collections::HashMap<FeatureState, usize> =
+        std::collections::HashMap::new();
+    for f in &store.features {
+        *by_state.entry(f.state).or_insert(0) += 1;
+    }
+    let active = store
+        .cycles
+        .iter()
+        .find(|c| c.state == CycleState::Active);
+    let total_modules = store.modules.len();
+    let total_cycles = store.cycles.len();
+
+    let active_label = match active {
+        Some(c) => format!("{} ({} -> {})", c.name, c.start_date, c.end_date),
+        None => "\u{2014}".to_string(),
+    };
+
+    println!("AgilePlus project status");
+    println!("{}", "=".repeat(40));
+    println!("Modules : {total_modules}");
+    println!("Features: {total_features}");
+    println!("Cycles  : {total_cycles}");
+    println!();
+    println!("Active cycle: {active_label}");
+    println!();
+    println!("Features by state:");
+    for (s, n) in &by_state {
+        println!("  {:<14} {}", s, n);
+    }
+}
+
 fn cmd_version() {
-    println!("agileplus-cli {}", env!("CARGO_PKG_VERSION"));
+    println!("agileplus-cli v{}", env!("CARGO_PKG_VERSION"));
 }
 
 // ── helpers ──────────────────────────────────────────────────────────────────
+
+/// Truncate a string to at most `max` visible characters, appending `…` if
+/// the input was longer.
+fn truncate(s: &str, max: usize) -> String {
+    if s.chars().count() <= max {
+        return s.to_string();
+    }
+    let t: String = s.chars().take(max.saturating_sub(1)).collect();
+    format!("{t}…")
+}
 
 /// Resolve the SQLite database path from `AGILEPLUS_DB` env var or fall back
 /// to `./agileplus.db` in the current directory.
@@ -271,13 +523,21 @@ async fn main() {
             Command::Feature { sub } => match sub {
                 FeatureCmd::List => cmd_feature_list(&store),
                 FeatureCmd::Show { id } => cmd_feature_show(&store, id),
+                FeatureCmd::Count { state } => cmd_feature_count(&store, state.as_deref())?,
+                FeatureCmd::Search { query } => cmd_feature_search(&store, &query),
+                FeatureCmd::Ready => cmd_feature_ready(&store),
             },
             Command::Module { sub } => match sub {
                 ModuleCmd::List => cmd_module_list(&store),
+                ModuleCmd::Show { id } => cmd_module_show(&store, id)?,
+                ModuleCmd::Search { query } => cmd_module_search(&store, &query),
             },
             Command::Cycle { sub } => match sub {
                 CycleCmd::Current => cmd_cycle_current(&store),
+                CycleCmd::List => cmd_cycle_list(&store),
+                CycleCmd::Set { id } => cmd_cycle_set(&store, id)?,
             },
+            Command::Status => cmd_status(&store),
             Command::Version => cmd_version(),
             Command::Sync(args) => {
                 sync_cmd::run(args, None, None).await?;

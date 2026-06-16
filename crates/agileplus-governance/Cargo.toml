@@ -3,11 +3,12 @@ name = "agileplus-governance"
 version = "0.1.0"
 edition = "2021"
 description = "AgilePlus governance system for release channels, audit logging, and policy enforcement"
-license = "MIT"
-authors = ["Koosha Pari <koosha@phenotype.dev>"]
+license = "MIT OR Apache-2.0"
 repository = "https://github.com/KooshaPari/AgilePlus"
 keywords = ["governance", "release", "policy", "audit"]
 categories = ["development-tools", "governance"]
+documentation = "https://docs.rs/agileplus-governance"
+authors = ["kooshapari"]
 
 [[bin]]
 name = "agileplus-governance"

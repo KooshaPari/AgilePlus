@@ -2,8 +2,14 @@
 name = "agileplus-cache"
 version.workspace = true
 edition.workspace = true
-license.workspace = true
 rust-version.workspace = true
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/KooshaPari/AgilePlus"
+description = "agileplus cache — Phenotype infrastructure crate (AgilePlus)"
+documentation = "https://docs.rs/agileplus-cache"
+keywords = ["phenotype", "agileplus", "cache"]
+categories = ["caching"]
+authors = ["kooshapari"]
 
 [lib]
 path = "src/lib.rs"

@@ -1,9 +1,7 @@
-# EditorConfig — AgilePlus
+# EditorConfig — Phenotype org canonical
 # https://editorconfig.org
-
 root = true
 
-# Universal defaults
 [*]
 charset = utf-8
 end_of_line = lf
@@ -11,49 +9,47 @@ insert_final_newline = true
 trim_trailing_whitespace = true
 indent_style = space
 indent_size = 2
-max_line_length = 100
 
-# Rust
+# Rust — 2-space style
 [*.rs]
-indent_size = 4
+indent_size = 2
 max_line_length = 100
 
 # TOML
 [*.toml]
 indent_size = 2
+
+# Python — keep 4-space convention
+[*.{py,pyi}]
+indent_size = 4
 max_line_length = 100
 
-# Python
-[*.py]
+# Go — must use tabs
+[*.go]
+indent_style = tab
 indent_size = 4
-max_line_length = 88
+
+# TypeScript / JavaScript
+[*.{ts,tsx,js,jsx,mjs,cjs}]
+indent_size = 2
+
+# YAML / JSON
+[*.{yml,yaml,json,jsonc}]
+indent_size = 2
 
 # Shell scripts
 [*.{sh,bash,zsh}]
 indent_size = 2
-max_line_length = 100
 
-# Markdown
-[*.{md,mdx}]
+# Markdown — trailing spaces = hard line break
+[*.md]
 trim_trailing_whitespace = false
 max_line_length = 120
 
-# JSON / YAML
-[*.{json,yml,yaml}]
-indent_size = 2
-max_line_length = 100
-
-# Proto / Protobuf
-[*.proto]
-indent_size = 2
-max_line_length = 100
-
-# Justfile / Makefile
-[{Justfile,justfile,Makefile}]
+# Makefile — must use tabs
+[Makefile]
 indent_style = tab
-max_line_length = 100
 
-# GitHub Actions
-[.github/workflows/*.yml]
-indent_size = 2
-max_line_length = 100
+# Diff / patch — keep context whitespace intact
+[*.{diff,patch}]
+trim_trailing_whitespace = false

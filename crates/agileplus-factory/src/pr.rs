@@ -56,8 +56,8 @@ impl GitHubPrClient {
             .json(&body)
             .send()
             .await?;
-        if !resp.status().is_success() {
-            let status = resp.status();
+        let status = resp.status();
+        if !status.is_success() {
             let text = resp.text().await.unwrap_or_default();
             anyhow::bail!("GitHub PR API returned error: {status} — {text}");
         }

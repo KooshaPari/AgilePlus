@@ -2,9 +2,14 @@
 name = "phenotype-dep-guard"
 version.workspace = true
 edition.workspace = true
-license.workspace = true
 rust-version.workspace = true
 description = "Dependency scanning, OSV vulnerability binding, and SBOM generation for Phenotype"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/KooshaPari/AgilePlus"
+documentation = "https://docs.rs/phenotype-dep-guard"
+keywords = ["phenotype", "agileplus"]
+categories = ["development-tools"]
+authors = ["kooshapari"]
 
 [dependencies]
 serde.workspace = true
