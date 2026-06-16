@@ -9,18 +9,6 @@ rust-version.workspace = true
 path = "src/lib.rs"
 
 [dependencies]
-agileplus-config = { workspace = true }
-agileplus-domain = { path = "../agileplus-domain" }
-redis = { version = "0.27", features = ["aio", "tokio-comp"] }
-bb8 = "0.9"
-bb8-redis = "0.18"
-serde = { workspace = true }
-serde_json = { workspace = true }
-thiserror = { workspace = true }
-async-trait = "0.1"
-tokio = { workspace = true }
-chrono = { workspace = true }
-tracing = { workspace = true }
 
 [dev-dependencies]
 tokio = { workspace = true }

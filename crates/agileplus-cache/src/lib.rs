@@ -1,27 +1,13 @@
-//! AgilePlus cache layer — Dragonfly (Redis-compatible) adapter.
-//!
-//! Provides connection pooling, typed cache operations, projection caching,
-//! rate limiting, and health checks.
-//! Traceability: FR-CACHE / WP04
+//! agileplus-cache — caching layer (stub; full implementation pending)
 
-pub mod config;
-pub mod health;
-pub mod limiter;
-pub mod pool;
-pub mod projection;
-pub mod store;
+/// Placeholder cache error type
+#[derive(Debug)]
+pub struct CacheError(pub String);
 
-pub use config::CacheConfig;
-pub use health::{CacheHealth, CacheHealthChecker};
-pub use limiter::RateLimiter;
-pub use pool::CachePool;
-pub use projection::ProjectionCache;
-pub use store::{CacheError, CacheStore, InMemoryCacheStore, RedisCacheStore};
-
-#[derive(Debug, thiserror::Error)]
-pub enum Error {
-    #[error("Cache error: {0}")]
-    Cache(#[from] CacheError),
-    #[error("Config error: {0}")]
-    Config(String),
+impl std::fmt::Display for CacheError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "CacheError: {}", self.0)
+    }
 }
+
+impl std::error::Error for CacheError {}
