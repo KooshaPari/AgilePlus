@@ -52,36 +52,36 @@ fn build_feature_events(
     workpackages: &[WpView],
 ) -> Vec<crate::templates::EventView> {
     let now = Utc::now().format("%Y-%m-%d %H:%M:%S UTC").to_string();
-    let mut events = vec![crate::templates::EventView {
-        id: format!("evt-feature-{}-created", feature.id),
-        kind: "system".into(),
-        description: format!("Feature '{}' opened in dashboard", feature.slug),
-        timestamp: now.clone(),
-    }];
+    let mut events = vec![super::helpers::event_view(
+        format!("evt-feature-{}-created", feature.id),
+        "system",
+        format!("Feature '{}' opened in dashboard", feature.slug),
+        now.clone(),
+    )];
 
     if !workpackages.is_empty() {
-        events.push(crate::templates::EventView {
-            id: format!("evt-feature-{}-sync", feature.id),
-            kind: "agent_action".into(),
-            description: format!("{} work package entries synced", workpackages.len()),
-            timestamp: now.clone(),
-        });
+        events.push(super::helpers::event_view(
+            format!("evt-feature-{}-sync", feature.id),
+            "agent_action",
+            format!("{} work package entries synced", workpackages.len()),
+            now.clone(),
+        ));
 
         for wp in workpackages {
-            events.push(crate::templates::EventView {
-                id: format!("evt-feature-{}-wp-{}", feature.id, wp.id),
-                kind: "state_change".into(),
-                description: format!("Work-package {} is in state '{}'", wp.title, wp.state),
-                timestamp: now.clone(),
-            });
+            events.push(super::helpers::event_view(
+                format!("evt-feature-{}-wp-{}", feature.id, wp.id),
+                "state_change",
+                format!("Work-package {} is in state '{}'", wp.title, wp.state),
+                now.clone(),
+            ));
         }
     } else {
-        events.push(crate::templates::EventView {
-            id: format!("evt-feature-{}-no-wp", feature.id),
-            kind: "system".into(),
-            description: "No work packages linked yet".into(),
-            timestamp: now.clone(),
-        });
+        events.push(super::helpers::event_view(
+            format!("evt-feature-{}-no-wp", feature.id),
+            "system",
+            "No work packages linked yet",
+            now.clone(),
+        ));
     }
 
     events
@@ -305,18 +305,8 @@ pub async fn event_timeline(State(state): State<SharedState>) -> Response {
 
 pub async fn agent_activity(_state: State<SharedState>) -> Response {
     let agents: Vec<AgentView> = vec![
-        AgentView {
-            name: "spec-agent".into(),
-            status: "idle".into(),
-            current_task: String::new(),
-            last_action: "2m ago".into(),
-        },
-        AgentView {
-            name: "impl-agent".into(),
-            status: "running".into(),
-            current_task: "WP13 implementation".into(),
-            last_action: "just now".into(),
-        },
+        super::helpers::agent_view("spec-agent", "idle", "", "2m ago"),
+        super::helpers::agent_view("impl-agent", "running", "WP13 implementation", "just now"),
     ];
     render(AgentActivityPartial { agents })
 }

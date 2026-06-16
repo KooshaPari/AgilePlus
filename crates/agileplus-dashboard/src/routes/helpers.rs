@@ -160,26 +160,67 @@ pub(super) fn build_kanban_cards(
     cards
 }
 
+pub(super) fn event_view(
+    id: impl Into<String>,
+    kind: impl Into<String>,
+    description: impl Into<String>,
+    timestamp: impl Into<String>,
+) -> crate::templates::EventView {
+    crate::templates::EventView {
+        id: id.into(),
+        kind: kind.into(),
+        description: description.into(),
+        timestamp: timestamp.into(),
+        agent_name: None,
+        agent_link: None,
+        wp_id: None,
+        wp_link: None,
+        commit_sha: None,
+        commit_link: None,
+        ci_run_id: None,
+        ci_run_link: None,
+    }
+}
+
+pub(super) fn agent_view(
+    name: impl Into<String>,
+    status: impl Into<String>,
+    current_task: impl Into<String>,
+    last_action: impl Into<String>,
+) -> crate::templates::AgentView {
+    crate::templates::AgentView {
+        name: name.into(),
+        status: status.into(),
+        current_task: current_task.into(),
+        last_action: last_action.into(),
+        pid: None,
+        started_at: None,
+        worktree: String::new(),
+        worktree_label: String::new(),
+        is_live: false,
+    }
+}
+
 pub(super) fn sample_events() -> Vec<crate::templates::EventView> {
     vec![
-        crate::templates::EventView {
-            id: "evt-1".into(),
-            kind: "system".into(),
-            description: "Dashboard booted with native Plane surface".into(),
-            timestamp: "just now".into(),
-        },
-        crate::templates::EventView {
-            id: "evt-2".into(),
-            kind: "agent_action".into(),
-            description: "Planner synced feature ownership metadata".into(),
-            timestamp: "2m ago".into(),
-        },
-        crate::templates::EventView {
-            id: "evt-3".into(),
-            kind: "state_change".into(),
-            description: "Feature moved from researched to planned".into(),
-            timestamp: "9m ago".into(),
-        },
+        event_view(
+            "evt-1",
+            "system",
+            "Dashboard booted with native Plane surface",
+            "just now",
+        ),
+        event_view(
+            "evt-2",
+            "agent_action",
+            "Planner synced feature ownership metadata",
+            "2m ago",
+        ),
+        event_view(
+            "evt-3",
+            "state_change",
+            "Feature moved from researched to planned",
+            "9m ago",
+        ),
     ]
 }
 
