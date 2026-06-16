@@ -53,6 +53,7 @@ enum DashboardFilter {
 }
 
 /// Build Kanban cards for the dashboard, grouped by feature state.
+#[allow(dead_code)]
 fn build_kanban_cards(
     store: &crate::app_state::DashboardStore,
     _filter: DashboardFilter,

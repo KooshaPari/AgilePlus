@@ -92,6 +92,7 @@ pub(super) fn env_or_none(key: &str) -> Option<String> {
         .filter(|value| !value.is_empty())
 }
 
+#[allow(dead_code)]
 pub(super) fn parse_bool_env(key: &str, default: bool) -> bool {
     env::var(key)
         .ok()

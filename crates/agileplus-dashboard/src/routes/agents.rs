@@ -35,6 +35,7 @@ pub struct AgentInfo {
 
 // ── Form Request Types ────────────────────────────────────────────────────
 
+#[allow(dead_code)]
 #[derive(Debug, Deserialize)]
 pub struct AgentSettingsForm {
     pub pool_size: usize,
@@ -62,6 +63,7 @@ fn render<T: Template>(tpl: T) -> Response {
 }
 
 /// Extract environment variable or return None if missing/empty.
+#[allow(dead_code)]
 fn env_or_none(key: &str) -> Option<String> {
     env::var(key)
         .ok()
@@ -149,6 +151,7 @@ pub async fn agents_json(State(_state): State<SharedState>) -> impl IntoResponse
 
 /// HTML: GET /settings/agents
 /// Returns the agent settings configuration page.
+#[allow(dead_code)]
 pub async fn agent_settings_page() -> Response {
     let config = super::settings::Config::load().unwrap_or(super::settings::Config {
         plane: None,

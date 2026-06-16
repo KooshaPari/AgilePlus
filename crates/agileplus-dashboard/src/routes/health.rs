@@ -56,6 +56,7 @@ fn default_service_enabled() -> bool {
 }
 
 /// Dashboard configuration root
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
     pub plane: Option<PlaneConfig>,
@@ -65,6 +66,7 @@ pub struct Config {
 }
 
 /// Plane API configuration
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PlaneConfig {
     pub api_url: String,
@@ -74,6 +76,7 @@ pub struct PlaneConfig {
 }
 
 /// Agent configuration
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AgentConfig {
     pub pool_size: usize,
@@ -83,6 +86,7 @@ pub struct AgentConfig {
 }
 
 /// Dashboard application configuration
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DashboardConfig {
     pub theme: String,
@@ -153,14 +157,17 @@ fn render<T: Template>(tpl: T) -> Response {
     }
 }
 
+#[allow(dead_code)]
 const ALLOWED_RESTART_PROGRAMS: [&str; 4] = ["systemctl", "docker", "process-compose", "echo"];
 
 /// Check if a program name is in the approved restart command registry.
+#[allow(dead_code)]
 fn is_restart_command_allowed(program: &str) -> bool {
     ALLOWED_RESTART_PROGRAMS.contains(&program)
 }
 
 /// Validate a restart command by checking the program name against the allowlist.
+#[allow(dead_code)]
 fn validate_restart_command(cmd_line: &str) -> Result<(), String> {
     let mut parts: Vec<&str> = cmd_line.split_whitespace().collect();
     if parts.is_empty() {
@@ -178,6 +185,7 @@ fn validate_restart_command(cmd_line: &str) -> Result<(), String> {
 }
 
 /// Build a safe std::process::Command from a validated command line string.
+#[allow(dead_code)]
 fn build_restart_command(cmd_line: &str) -> Result<std::process::Command, String> {
     validate_restart_command(cmd_line)?;
 

@@ -47,6 +47,7 @@ pub struct WorkPackageJson {
     pub assignee: Option<String>,
 }
 
+#[allow(dead_code)]
 fn build_feature_events(
     feature: &FeatureView,
     workpackages: &[WpView],
@@ -87,6 +88,7 @@ fn build_feature_events(
     events
 }
 
+#[allow(dead_code)]
 fn build_feature_evidence_bundles(
     feature: &FeatureView,
     workpackages: &[WpView],
@@ -150,6 +152,7 @@ fn build_feature_evidence_bundles(
     bundles
 }
 
+#[allow(dead_code)]
 fn build_feature_media_assets(
     feature: &FeatureView,
     workpackages: &[WpView],
@@ -181,6 +184,7 @@ fn build_feature_media_assets(
     media
 }
 
+#[allow(dead_code)]
 fn build_feature_reports(
     feature: &FeatureView,
     workpackages: &[WpView],
@@ -201,6 +205,7 @@ fn build_feature_reports(
     }]
 }
 
+#[allow(dead_code)]
 pub async fn dashboard_page(
     State(state): State<SharedState>,
     Query(query): Query<HashMap<String, String>>,
@@ -243,6 +248,7 @@ pub async fn kanban_board(
     }
 }
 
+#[allow(dead_code)]
 pub async fn feature_detail(
     State(state): State<SharedState>,
     Path(id): Path<i64>,
@@ -288,6 +294,7 @@ pub async fn wp_list(State(state): State<SharedState>, Path(id): Path<i64>) -> R
     })
 }
 
+#[allow(dead_code)]
 pub async fn health_panel(State(state): State<SharedState>) -> Response {
     let store = state.read().await;
     render(HealthPanelPartial {
@@ -295,6 +302,7 @@ pub async fn health_panel(State(state): State<SharedState>) -> Response {
     })
 }
 
+#[allow(dead_code)]
 pub async fn event_timeline(State(state): State<SharedState>) -> Response {
     let _ = state.read().await;
     render(EventTimelinePartial {
@@ -303,6 +311,7 @@ pub async fn event_timeline(State(state): State<SharedState>) -> Response {
     })
 }
 
+#[allow(dead_code)]
 pub async fn agent_activity(_state: State<SharedState>) -> Response {
     let agents: Vec<AgentView> = vec![
         super::helpers::agent_view("spec-agent", "idle", "", "2m ago"),
