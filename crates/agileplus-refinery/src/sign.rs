@@ -40,7 +40,10 @@ impl Signer for GpgSigner {
                 .with_context(|| "GPG sign failed")?;
 
             // Append the signature to the commit object.
-            let signature_b64 = base64::encode(&signature);
+            let signature_b64 = {
+                use base64::Engine as _;
+                base64::engine::general_purpose::STANDARD.encode(&signature)
+            };
             let new_sha =
                 amend_commit_with_gpg_signature(repo_root, commit_sha, &signature_b64).await?;
             return Ok(new_sha);
@@ -101,7 +104,7 @@ impl Signer for SshSigner {
     async fn sign(&self, repo_root: &std::path::Path, commit_sha: &str) -> Result<String> {
         #[cfg(feature = "ssh-sign")]
         {
-            use ssh_key::PrivateKey;
+            use ssh_key::{HashAlg, LineEnding, PrivateKey};
             use std::fs;
 
             let pem = fs::read_to_string(&self.key_path)
@@ -111,12 +114,15 @@ impl Signer for SshSigner {
 
             let commit_text = get_commit_text(repo_root, commit_sha).await?;
             let sig = private_key
-                .sign(commit_text.as_bytes())
+                .sign("git", HashAlg::Sha256, commit_text.as_bytes())
                 .with_context(|| "SSH sign failed")?;
-            let signature_b64 = base64::encode(&sig.to_bytes()?);
+            // SshSig serializes to PEM-armored form which git expects for gpgsig headers.
+            let signature_pem = sig
+                .to_pem(LineEnding::LF)
+                .with_context(|| "SSH sig to PEM failed")?;
 
             let new_sha =
-                amend_commit_with_ssh_signature(repo_root, commit_sha, &signature_b64).await?;
+                amend_commit_with_ssh_signature(repo_root, commit_sha, &signature_pem).await?;
             return Ok(new_sha);
         }
 
