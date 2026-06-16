@@ -205,6 +205,8 @@ uuid = { version = "1", features = ["v4", "v5", "serde"] }
 async-nats = "0.47"
 paste = "1"
 phenotype-error-core = { git = "https://github.com/KooshaPari/phenoShared", branch = "main" }
+phenotype-string = { git = "https://github.com/KooshaPari/phenoShared", branch = "main" }
+phenotype-test-infra = { git = "https://github.com/KooshaPari/phenoShared", branch = "main" }
 traceability-core = { path = "crates/traceability-core" }
 indexmap = { version = "2", features = ["serde"] }
 phenotype-logging = { git = "https://github.com/KooshaPari/phenoShared", branch = "main" }
