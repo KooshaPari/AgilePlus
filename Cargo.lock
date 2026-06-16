@@ -118,12 +118,11 @@ dependencies = [
  "bb8",
  "bb8-redis",
  "chrono",
- "redis",
+ "redis 0.27.6",
  "serde",
  "serde_json",
  "thiserror 2.0.18",
  "tokio",
- "tracing",
 ]
 
 [[package]]
@@ -1161,6 +1160,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "backon"
+version = "1.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cffb0e931875b666fc4fcb20fee52e9bbd1ef836fd9e9e04ec21555f9f85f7ef"
+dependencies = [
+ "fastrand",
+]
+
+[[package]]
 name = "base16ct"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1195,24 +1203,25 @@ dependencies = [
 
 [[package]]
 name = "bb8"
-version = "0.9.1"
+version = "0.8.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "457d7ed3f888dfd2c7af56d4975cade43c622f74bdcddfed6d4352f57acc6310"
+checksum = "d89aabfae550a5c44b43ab941844ffcd2e993cb6900b342debf59e9ea74acdb8"
 dependencies = [
+ "async-trait",
  "futures-util",
  "parking_lot",
- "portable-atomic",
  "tokio",
 ]
 
 [[package]]
 name = "bb8-redis"
-version = "0.18.0"
+version = "0.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8416aa3639520757fd0ed659c8c12f7cd9f0ed638fa0cdd52a13d3b19946df2a"
+checksum = "0c6910977c026bb1d0a6b523508d1a893d6d4c2ba216355e9569d8181d92ccbe"
 dependencies = [
+ "async-trait",
  "bb8",
- "redis",
+ "redis 0.26.1",
 ]
 
 [[package]]
@@ -5497,6 +5506,7 @@ dependencies = [
 [[package]]
 name = "phenotype-error-core"
 version = "0.2.0"
+source = "git+https://github.com/KooshaPari/phenoShared?branch=main#95d94d5d77015368ee802130bf4feaae0b3566db"
 dependencies = [
  "anyhow",
  "serde",
@@ -5507,6 +5517,7 @@ dependencies = [
 [[package]]
 name = "phenotype-logging"
 version = "0.1.0"
+source = "git+https://github.com/KooshaPari/phenoShared?branch=main#95d94d5d77015368ee802130bf4feaae0b3566db"
 dependencies = [
  "tracing",
  "tracing-subscriber",
@@ -6079,14 +6090,37 @@ dependencies = [
 
 [[package]]
 name = "redis"
+version = "0.26.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e902a69d09078829137b4a5d9d082e0490393537badd7c91a3d69d14639e115f"
+dependencies = [
+ "arc-swap",
+ "async-trait",
+ "bytes",
+ "combine",
+ "futures-util",
+ "itoa",
+ "num-bigint",
+ "percent-encoding",
+ "pin-project-lite",
+ "ryu",
+ "tokio",
+ "tokio-util",
+ "url",
+]
+
+[[package]]
+name = "redis"
 version = "0.27.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "09d8f99a4090c89cc489a94833c901ead69bfbf3877b4867d5482e321ee875bc"
 dependencies = [
  "arc-swap",
  "async-trait",
+ "backon",
  "bytes",
  "combine",
+ "futures",
  "futures-util",
  "itertools 0.13.0",
  "itoa",
