@@ -192,6 +192,8 @@ uuid = { version = "1", features = ["v4", "serde"] }
 async-nats = "0.47"
 paste = "1"
 phenotype-error-core = { path = "../phenoShared/crates/phenotype-error-core" }
+traceability-core = { path = "../phenotype-pm-core/crates/traceability-core" }
+indexmap = { version = "2", features = ["serde"] }
 phenotype-logging = { path = "../phenoShared/crates/phenotype-logging" }
 agileplus-config = { path = "crates/agileplus-config" }
 agileplus-proto = { path = "crates/agileplus-proto" }
