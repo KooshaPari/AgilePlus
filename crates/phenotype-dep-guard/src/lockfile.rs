@@ -183,6 +183,7 @@ struct CargoLockPackage {
     version: String,
     /// `source = "registry+..."` for non-root packages. The root
     /// workspace entry is the only one without a `source` field.
+    #[allow(dead_code)]
     #[serde(default)]
     source: Option<String>,
 }
