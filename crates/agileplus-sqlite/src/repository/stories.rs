@@ -46,6 +46,7 @@ fn row_to_story(row: &rusqlite::Row<'_>) -> rusqlite::Result<Story> {
         points: points_raw.map(|p| p as u32),
         assignee_id: row.get(6)?,
         requirement_id: row.get(10).unwrap_or(None),
+        trace_ids: Vec::new(),
         created_at: parse_dt(&created_at),
         updated_at: parse_dt(&updated_at),
     })

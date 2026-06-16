@@ -1,7 +1,7 @@
 use agileplus_domain::domain::event::Event;
 use agileplus_events::{EventError, EventStore};
 
-use crate::adapter::SqliteStorageAdapter;
+use crate::SqliteStorageAdapter;
 use crate::repository::events;
 
 #[async_trait::async_trait]

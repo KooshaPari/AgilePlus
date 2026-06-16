@@ -140,6 +140,7 @@ fn row_to_wp(row: &Row<'_>) -> rusqlite::Result<WorkPackage> {
         updated_at,
         base_commit: None,
         head_commit: None,
+        trace_ids: Vec::new(),
     })
 }
 
