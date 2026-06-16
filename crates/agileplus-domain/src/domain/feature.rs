@@ -87,7 +87,7 @@ mod tests {
     fn valid_transition_updates_state() {
         let mut feature = Feature::new("auth", "Authentication", [0; 32], None);
 
-        feature.transition(FeatureState::Specified).unwrap();
+        feature.transition(FeatureState::Specified).expect("domain operation");
 
         assert_eq!(feature.state, FeatureState::Specified);
     }

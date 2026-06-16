@@ -87,7 +87,7 @@ mod tests {
             id,
             feature_id: 1,
             wp_id: None,
-            timestamp: DateTime::from_timestamp(1_000_000 + id, 0).unwrap(),
+            timestamp: DateTime::from_timestamp(1_000_000 + id, 0).expect("domain operation"),
             actor: "test-actor".to_string(),
             transition: "Draft->Active".to_string(),
             evidence_refs: vec![],

@@ -276,7 +276,7 @@ fn slugify(s: &str) -> String {
 fn is_valid_node_id(id: &str) -> bool {
     use regex::Regex;
     static RE: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
-    let re = RE.get_or_init(|| Regex::new(r"^[A-Z][a-z]+#[a-z0-9\-]+$").unwrap());
+    let re = RE.get_or_init(|| Regex::new(r"^[A-Z][a-z]+#[a-z0-9\-]+$").expect("domain operation"));
     re.is_match(id)
 }
 
@@ -300,7 +300,7 @@ mod tests {
             .title("OAuth2 Login")
             .meta(sample_meta())
             .build()
-            .unwrap();
+            .expect("domain operation");
 
         assert_eq!(node.node_type, NodeType::Feature);
         assert_eq!(node.title, "OAuth2 Login");
@@ -315,7 +315,7 @@ mod tests {
             .title("Memory leak in parser")
             .meta(sample_meta())
             .build()
-            .unwrap();
+            .expect("domain operation");
 
         assert_eq!(node.id, "Bug#memory-leak");
     }
@@ -361,7 +361,7 @@ mod tests {
             .table_ref("stories")
             .table_id("ST-42")
             .build()
-            .unwrap();
+            .expect("domain operation");
 
         assert_eq!(node.status, Status::Active);
         assert_eq!(node.tags, vec!["frontend", "ui"]);
@@ -382,7 +382,7 @@ mod tests {
         )
         .meta(sample_meta())
         .build()
-        .unwrap();
+        .expect("domain operation");
 
         assert_eq!(edge.source, "Intent#auth");
         assert_eq!(edge.target, "Feature#oauth2");
@@ -401,7 +401,7 @@ mod tests {
         .id("edge-001")
         .meta(sample_meta())
         .build()
-        .unwrap();
+        .expect("domain operation");
 
         assert_eq!(edge.id, "edge-001");
     }

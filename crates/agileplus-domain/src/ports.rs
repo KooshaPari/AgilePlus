@@ -504,7 +504,7 @@ mod tests {
             outcomes: Mutex::new(HashMap::new()),
         };
 
-        let ticket = adapter.next_ticket().await.unwrap();
+        let ticket = adapter.next_ticket().await.expect("domain operation");
 
         assert_eq!(ticket.id, "7");
         assert_eq!(ticket.intent, Intent::Bug);
@@ -518,9 +518,9 @@ mod tests {
         adapter
             .record_outcome("9", TriageOutcome::Dismissed)
             .await
-            .unwrap();
+            .expect("domain operation");
 
-        let outcomes = adapter.outcomes.lock().unwrap();
+        let outcomes = adapter.outcomes.lock().expect("domain operation");
         assert_eq!(outcomes.get("9"), Some(&TriageOutcome::Dismissed));
     }
 }
