@@ -133,7 +133,7 @@ fn parse_kind(kind: &str) -> Option<TraceDocumentKind> {
 }
 
 fn infer_kind(id: &str, path: &Path) -> Option<TraceDocumentKind> {
-    let text = format!("{} {}", id, path.display()).to_ascii_lowercase();
+    let text = format!("{id} {}", path.display()).to_ascii_lowercase();
     let patterns = [
         (r"\bfr[-_]", TraceDocumentKind::FunctionalRequirement),
         (r"\bnfr[-_]", TraceDocumentKind::NonFunctionalRequirement),
