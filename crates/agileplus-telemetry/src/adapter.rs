@@ -202,19 +202,19 @@ impl ObservabilityPort for TelemetryAdapter {
 
     fn log_info(&self, message: &str) {
         if !self.noop {
-            tracing::info!("{}", message);
+            tracing::info!("{message}");
         }
     }
 
     fn log_warn(&self, message: &str) {
         if !self.noop {
-            tracing::warn!("{}", message);
+            tracing::warn!("{message}");
         }
     }
 
     fn log_error(&self, message: &str) {
         if !self.noop {
-            tracing::error!("{}", message);
+            tracing::error!("{message}");
         }
     }
 }
