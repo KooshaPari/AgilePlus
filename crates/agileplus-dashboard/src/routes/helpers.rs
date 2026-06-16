@@ -182,3 +182,151 @@ pub(super) fn sample_events() -> Vec<crate::templates::EventView> {
         },
     ]
 }
+
+// ── HTML and URL utilities ─────────────────────────────────────────────────
+
+/// Minimal HTML entity escaping for embedding text content in HTML attributes/elements.
+pub fn html_escape(s: &str) -> String {
+    s.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&#39;")
+}
+
+/// Classify a file extension into a broad artifact type for display purposes.
+#[allow(dead_code)]
+pub fn artifact_type_for_ext(ext: &str) -> &'static str {
+    match ext {
+        "lcov" | "coverage" | "cov" => "coverage",
+        "xml" | "junit" | "tap" => "test-results",
+        "json" | "sarif" => "report",
+        "png" | "jpg" | "jpeg" | "gif" | "svg" | "webp" => "image",
+        "md" | "txt" | "log" => "text",
+        _ => "artifact",
+    }
+}
+
+/// Percent-encode path segments so they are safe to embed in URLs.
+///
+/// Only encodes characters that are not allowed unencoded in URL path segments:
+/// spaces, `#`, `?`, `%`, and `+`.
+#[allow(dead_code)]
+pub fn percent_encode_path(path: &str) -> String {
+    path.chars()
+        .flat_map(|c| match c {
+            ' ' => vec!['%', '2', '0'],
+            '#' => vec!['%', '2', '3'],
+            '?' => vec!['%', '3', 'F'],
+            '%' => vec!['%', '2', '5'],
+            '+' => vec!['%', '2', 'B'],
+            other => vec![other],
+        })
+        .collect()
+}
+
+// ── Plane configuration utilities ──────────────────────────────────────────
+
+pub(super) fn plane_api_key_hint(api_key: &Option<String>) -> String {
+    match api_key {
+        Some(key) => match (key.chars().next(), key.chars().next_back()) {
+            (Some(first), Some(last)) => format!("{first}••••••{last}"),
+            _ => "Configured".to_string(),
+        },
+        None => "Not configured".to_string(),
+    }
+}
+
+pub(super) fn plane_health_endpoints(
+    services: &[crate::app_state::ServiceHealth],
+) -> Vec<crate::templates::PlaneHealthEndpointView> {
+    services
+        .iter()
+        .filter(|service| service.name.contains("Plane") || service.name.starts_with("API"))
+        .map(|service| crate::templates::PlaneHealthEndpointView {
+            name: service.name.clone(),
+            healthy: service.healthy,
+            degraded: service.degraded,
+            latency_ms: service.latency_ms,
+            last_check_utc: service
+                .last_check
+                .format("%Y-%m-%d %H:%M:%S UTC")
+                .to_string(),
+        })
+        .collect()
+}
+
+pub(super) fn plane_sync_mode() -> String {
+    if parse_bool_env("PLANE_SYNC_BIDIRECTIONAL", false) {
+        "Bidirectional".to_string()
+    } else {
+        "One-way".to_string()
+    }
+}
+
+pub(super) fn plane_connection_checks(
+    api_key: &Option<String>,
+    workspace: &Option<String>,
+) -> (bool, String, Vec<String>) {
+    let mut warnings = Vec::new();
+    if api_key.is_none() {
+        warnings.push("Missing PLANE_API_KEY; configure a valid Plane API key".to_string());
+    }
+    if workspace.is_none() {
+        warnings.push("Missing PLANE_WORKSPACE; set workspace slug for Plane sync".to_string());
+    }
+
+    if warnings.is_empty() {
+        (true, "Connected via PLANE_API_KEY".to_string(), warnings)
+    } else if warnings.len() == 1 {
+        let status = warnings[0].clone();
+        (false, status, warnings)
+    } else {
+        (false, "Plane settings incomplete".to_string(), warnings)
+    }
+}
+
+pub(super) fn percentage_coverage(hit: usize, total: usize) -> String {
+    if total == 0 {
+        return "0/0 (0%)".to_string();
+    }
+    let ratio = (hit.saturating_mul(100)).saturating_div(total);
+    format!("{hit}/{total} ({ratio}%)")
+}
+
+// ── Service restart command validation ─────────────────────────────────────
+
+const ALLOWED_RESTART_PROGRAMS: [&str; 4] = ["systemctl", "docker", "process-compose", "echo"];
+
+pub fn is_restart_command_allowed(program: &str) -> bool {
+    ALLOWED_RESTART_PROGRAMS.contains(&program)
+}
+
+pub fn validate_restart_command(cmd_line: &str) -> Result<(), String> {
+    let mut parts: Vec<&str> = cmd_line.split_whitespace().collect();
+    if parts.is_empty() {
+        return Err("empty restart command".into());
+    }
+
+    let program = parts.remove(0);
+    if !is_restart_command_allowed(program) {
+        return Err(format!(
+            "command '{program}' is not in approved restart command registry: {ALLOWED_RESTART_PROGRAMS:?}"
+        ));
+    }
+
+    Ok(())
+}
+
+pub fn build_restart_command(cmd_line: &str) -> Result<std::process::Command, String> {
+    validate_restart_command(cmd_line)?;
+
+    let mut parts: Vec<&str> = cmd_line.split_whitespace().collect();
+    let program = parts.remove(0);
+
+    let mut cmd = std::process::Command::new(program);
+    if !parts.is_empty() {
+        cmd.args(parts);
+    }
+    Ok(cmd)
+}
