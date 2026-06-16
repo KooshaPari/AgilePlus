@@ -24,32 +24,36 @@ impl Signer for GpgSigner {
     async fn sign(&self, repo_root: &std::path::Path, commit_sha: &str) -> Result<String> {
         #[cfg(feature = "gpg")]
         {
-            use gpgme::{Context, Protocol};
-
-            // Fetch commit text BEFORE creating gpgme::Context, because
-            // gpgme::Context is not Send and cannot be held across .await points.
+            // gpgme::Context is !Send, so ALL gpgme work must be isolated inside
+            // spawn_blocking. We fetch commit_text async first (it's a String = Send),
+            // pass it into the closure by move, then await the async amend after
+            // spawn_blocking completes (gpgme::Context is fully gone by then).
             let commit_text = get_commit_text(repo_root, commit_sha).await?;
 
-            let mut ctx = Context::from_protocol(Protocol::OpenPgp)
-                .with_context(|| "failed to create GPG context")?;
-            let key = ctx
-                .get_key(&self.key_id)
-                .with_context(|| format!("GPG key not found: {}", self.key_id))?;
-            ctx.add_signer(&key)
-                .with_context(|| "failed to add signer to GPG context")?;
+            let key_id = self.key_id.clone();
+            let signature_b64 =
+                tokio::task::spawn_blocking(move || -> anyhow::Result<String> {
+                    use gpgme::{Context, Protocol};
 
-            let mut signature = Vec::new();
-            ctx.sign_detached(commit_text.into_bytes(), &mut signature)
-                .with_context(|| "GPG sign failed")?;
+                    let mut ctx = Context::from_protocol(Protocol::OpenPgp)
+                        .with_context(|| "failed to create GPG context")?;
+                    let key = ctx
+                        .get_key(&key_id)
+                        .with_context(|| format!("GPG key not found: {key_id}"))?;
+                    ctx.add_signer(&key)
+                        .with_context(|| "failed to add signer to GPG context")?;
 
-            // Drop ctx (non-Send) before any further .await points.
-            drop(ctx);
+                    let mut signature = Vec::new();
+                    ctx.sign_detached(commit_text.into_bytes(), &mut signature)
+                        .with_context(|| "GPG sign failed")?;
 
-            // Append the signature to the commit object.
-            let signature_b64 = {
-                use base64::Engine as _;
-                base64::engine::general_purpose::STANDARD.encode(&signature)
-            };
+                    use base64::Engine as _;
+                    Ok(base64::engine::general_purpose::STANDARD.encode(&signature))
+                })
+                .await
+                .context("spawn_blocking panicked")??;
+
+            // gpgme::Context is gone; safe to .await again.
             let new_sha =
                 amend_commit_with_gpg_signature(repo_root, commit_sha, &signature_b64).await?;
             return Ok(new_sha);
