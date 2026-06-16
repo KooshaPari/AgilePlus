@@ -421,6 +421,7 @@ pub struct HubPage {
 }
 
 /// Helper: build ordered kanban states list.
+#[allow(clippy::redundant_closure_for_method_calls)]
 pub fn all_feature_states() -> Vec<String> {
     vec![
         FeatureState::Created,
@@ -433,7 +434,7 @@ pub fn all_feature_states() -> Vec<String> {
         FeatureState::Retrospected,
     ]
     .into_iter()
-    .map(ToString::to_string)
+    .map(|s| s.to_string())
     .collect()
 }
 
