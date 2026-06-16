@@ -8,5 +8,5 @@
     "moduleResolution": "Bundler"
   },
   "include": ["**/*.ts", "**/*.tsx"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "crates/agileplus-dashboard", "crates/agileplus-mcp", "dist", "build", "**/*.d.ts"]
 }
