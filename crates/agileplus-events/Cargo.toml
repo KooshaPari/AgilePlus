@@ -23,8 +23,6 @@ tokio = { workspace = true }
 uuid = { workspace = true }
 # Shared ecosystem crates (extracted to phenoShared 2026-06-14)
 phenotype-error-core.workspace = true
-phenotype-string.workspace = true
 
 [dev-dependencies]
 tokio = { workspace = true }
-phenotype-test-infra.workspace = true
