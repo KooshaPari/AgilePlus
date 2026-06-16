@@ -1,0 +1,93 @@
+syntax = "proto3";
+
+package agileplus.v1;
+
+option go_package = "github.com/phenotype/agileplus-proto/gen/go/agileplus/v1;agileplusv1";
+
+// IntegrationsService — backlog triage + import operations.
+// Traceability: FR-AGP-014
+service IntegrationsService {
+  rpc CreateBacklogItem(CreateBacklogItemRequest) returns (CreateBacklogItemResponse);
+  rpc ImportBacklog(ImportBacklogRequest) returns (ImportBacklogResponse);
+  rpc GetBacklogItem(GetBacklogItemRequest) returns (GetBacklogItemResponse);
+  rpc ListBacklog(ListBacklogRequest) returns (ListBacklogResponse);
+  rpc UpdateBacklogStatus(UpdateBacklogStatusRequest) returns (UpdateBacklogStatusResponse);
+  rpc PopBacklog(PopBacklogRequest) returns (PopBacklogResponse);
+}
+
+message BacklogItemProto {
+  int64 id = 1;
+  string title = 2;
+  string description = 3;
+  string type = 4;
+  string priority = 5;
+  string status = 6;
+  string source = 7;
+  string feature_slug = 8;
+  repeated string tags = 9;
+  string created_at = 10;
+  string updated_at = 11;
+}
+
+message CreateBacklogItemRequest {
+  string title = 1;
+  string description = 2;
+  string type = 3;
+  string priority = 4;
+  string source = 5;
+  string feature_slug = 6;
+  repeated string tags = 7;
+}
+
+message CreateBacklogItemResponse {
+  BacklogItemProto item = 1;
+}
+
+message ImportBacklogRequest {
+  repeated CreateBacklogItemRequest items = 1;
+}
+
+message ImportBacklogResponse {
+  repeated BacklogItemProto items = 1;
+}
+
+message GetBacklogItemRequest {
+  int64 backlog_item_id = 1;
+}
+
+message GetBacklogItemResponse {
+  BacklogItemProto item = 1;
+}
+
+message ListBacklogRequest {
+  string type_filter = 1;
+  string state_filter = 2;
+  string priority_filter = 3;
+  string feature_slug = 4;
+  string source_filter = 5;
+  int32 limit = 6;
+  string sort = 7;
+}
+
+message ListBacklogResponse {
+  repeated BacklogItemProto items = 1;
+}
+
+message UpdateBacklogStatusRequest {
+  int64 backlog_item_id = 1;
+  string target_status = 2;
+}
+
+message UpdateBacklogStatusResponse {
+  int64 backlog_item_id = 1;
+  string from_status = 2;
+  string to_status = 3;
+}
+
+message PopBacklogRequest {
+  int32 count = 1;
+}
+
+message PopBacklogResponse {
+  repeated BacklogItemProto items = 1;
+}
