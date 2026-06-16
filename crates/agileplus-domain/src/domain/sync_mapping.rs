@@ -57,4 +57,8 @@ impl SyncMapping {
             conflict_count: 0,
         }
     }
+
+    pub fn increment_conflict(&mut self) {
+        self.conflict_count += 1;
+    }
 }

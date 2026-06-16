@@ -251,12 +251,23 @@ impl EdgeBuilder {
 /// ---------------------------------------------------------------------------
 /// Helpers
 /// ---------------------------------------------------------------------------
-/// Slugify a node title into a URL/identifier-safe form.
-///
-/// Delegates to the shared `phenotype-string` crate so every consumer repo
-/// (AgilePlus, Tracera, teamcomm, ...) uses identical slug rules.
+/// Simple slugify: lowercase, ASCII alphanumeric + hyphens, trimmed.
 fn slugify(s: &str) -> String {
-    phenotype_string::slugify(s)
+    s.trim()
+        .to_lowercase()
+        .chars()
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || c == '-' {
+                c
+            } else {
+                '-'
+            }
+        })
+        .collect::<String>()
+        .split('-')
+        .filter(|seg| !seg.is_empty())
+        .collect::<Vec<_>>()
+        .join("-")
 }
 
 fn is_valid_node_id(id: &str) -> bool {

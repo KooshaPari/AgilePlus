@@ -101,6 +101,16 @@ pub struct WpProgressSummary {
     pub blocked: u32,
 }
 
+impl CycleWithFeatures {
+    /// Returns true if every feature in this cycle is Validated or Shipped.
+    pub fn is_shippable(&self) -> bool {
+        use crate::domain::state_machine::FeatureState;
+        self.features
+            .iter()
+            .all(|f| matches!(f.state, FeatureState::Validated | FeatureState::Shipped))
+    }
+}
+
 impl Cycle {
     pub fn new(
         name: &str,

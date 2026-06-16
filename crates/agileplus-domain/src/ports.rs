@@ -14,8 +14,6 @@ pub mod plane_sync;
 pub mod storage;
 #[path = "ports/story.rs"]
 pub mod story;
-#[path = "ports/traceability_port.rs"]
-pub mod traceability_port;
 #[path = "ports/vcs.rs"]
 pub mod vcs;
 
@@ -28,7 +26,6 @@ pub use plane_sync::{
     PlaneSyncPort,
 };
 pub use story::StoryRepository;
-pub use traceability_port::TraceabilityPort;
 
 use std::path::{Path, PathBuf};
 
