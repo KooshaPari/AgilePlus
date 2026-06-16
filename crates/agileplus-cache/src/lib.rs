@@ -1,13 +1,18 @@
-//! agileplus-cache — caching layer (stub; full implementation pending)
+//! agileplus-cache — caching layer for projections and rate limiting.
 
-/// Placeholder cache error type
-#[derive(Debug)]
-pub struct CacheError(pub String);
+pub mod config;
+pub mod limiter;
+pub mod projection;
+pub mod store;
 
-impl std::fmt::Display for CacheError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "CacheError: {}", self.0)
-    }
-}
+#[cfg(feature = "redis")]
+pub mod health;
+#[cfg(feature = "redis")]
+pub mod pool;
 
-impl std::error::Error for CacheError {}
+pub use config::CacheConfig;
+pub use projection::ProjectionCache;
+pub use store::{CacheError, CacheStore, InMemoryCacheStore};
+
+#[cfg(feature = "redis")]
+pub use store::RedisCacheStore;

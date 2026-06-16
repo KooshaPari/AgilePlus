@@ -189,7 +189,7 @@ opentelemetry-otlp = { version = "0.27", features = [
 # OpenTelemetry tracing bridge — uncomment when ready to use
 tracing-opentelemetry = "0.27"
 utoipa = "4"
-uuid = { version = "1", features = ["v4", "serde"] }
+uuid = { version = "1", features = ["v4", "v5", "serde"] }
 async-nats = "0.47"
 paste = "1"
 phenotype-error-core = { git = "https://github.com/KooshaPari/phenoShared", branch = "main" }
