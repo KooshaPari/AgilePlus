@@ -23,9 +23,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::app_state::SharedState;
 use crate::templates::{
-    AgentActivityPartial, AgentView, CiLinkView, DashboardPage, EventTimelinePartial,
-    EvidenceBundleView, FeatureDetailPage, FeatureView, GitCommitView, HealthPanelPartial,
-    KanbanPartial, MediaAssetView, PrLinkView, ProjectSwitcherPartial, ProjectView,
+    AgentActivityPartial, AgentView, DashboardPage, EventTimelinePartial,
+    EvidenceBundleView, FeatureDetailPage, FeatureView, HealthPanelPartial,
+    KanbanPartial, MediaAssetView, ProjectSwitcherPartial, ProjectView,
     ReportArtifactView, WpListPartial, WpView,
 };
 
