@@ -195,10 +195,19 @@ phenotype-error-core = { path = "../phenoShared/crates/phenotype-error-core" }
 traceability-core = { path = "../phenotype-pm-core/crates/traceability-core" }
 indexmap = { version = "2", features = ["serde"] }
 phenotype-logging = { path = "../phenoShared/crates/phenotype-logging" }
+agileplus-api = { path = "crates/agileplus-api" }
+agileplus-artifacts = { path = "crates/agileplus-artifacts" }
+agileplus-cache = { path = "crates/agileplus-cache" }
 agileplus-config = { path = "crates/agileplus-config" }
+agileplus-convoy = { path = "crates/agileplus-convoy" }
+agileplus-domain = { path = "crates/agileplus-domain" }
+agileplus-events = { path = "crates/agileplus-events" }
+agileplus-graph = { path = "crates/agileplus-graph" }
+agileplus-nats = { path = "crates/agileplus-nats" }
 agileplus-proto = { path = "crates/agileplus-proto" }
 agileplus-telemetry = { path = "crates/agileplus-telemetry" }
 agileplus-validate = { path = "crates/agileplus-validate" }
+agileplus-witness = { path = "crates/agileplus-witness" }
 shared-traceability = { path = "crates/shared-traceability" }
 toml = "0.8"
 tokio-stream = { version = "0.1", features = ["net", "sync"] }
