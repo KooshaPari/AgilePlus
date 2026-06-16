@@ -68,6 +68,8 @@ enum Command {
     ImportDagctl(commands::import_dagctl::ImportDagctlArgs),
     /// Convert a natural language prompt into a structured intent graph
     Intent(commands::intent::IntentArgs),
+    /// Link work items to Tracera trace IDs
+    Trace(commands::trace::TraceCommand),
 }
 
 #[derive(Subcommand)]
@@ -312,6 +314,9 @@ async fn main() {
             }
             Command::Intent(args) => {
                 commands::intent::run(&args)?;
+            }
+            Command::Trace(cmd) => {
+                cmd.run().await?;
             }
         }
         Ok(())
