@@ -25,6 +25,11 @@ impl Signer for GpgSigner {
         #[cfg(feature = "gpg")]
         {
             use gpgme::{Context, Protocol};
+
+            // Fetch commit text BEFORE creating gpgme::Context, because
+            // gpgme::Context is not Send and cannot be held across .await points.
+            let commit_text = get_commit_text(repo_root, commit_sha).await?;
+
             let mut ctx = Context::from_protocol(Protocol::OpenPgp)
                 .with_context(|| "failed to create GPG context")?;
             let key = ctx
@@ -33,11 +38,12 @@ impl Signer for GpgSigner {
             ctx.add_signer(&key)
                 .with_context(|| "failed to add signer to GPG context")?;
 
-            // Build the commit object text to sign.
-            let commit_text = get_commit_text(repo_root, commit_sha).await?;
             let mut signature = Vec::new();
             ctx.sign_detached(commit_text.into_bytes(), &mut signature)
                 .with_context(|| "GPG sign failed")?;
+
+            // Drop ctx (non-Send) before any further .await points.
+            drop(ctx);
 
             // Append the signature to the commit object.
             let signature_b64 = {
