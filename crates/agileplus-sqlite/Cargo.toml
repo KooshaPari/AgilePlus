@@ -15,7 +15,6 @@ chrono.workspace = true
 async-trait = "0.1"
 anyhow = "1"
 tokio = { workspace = true, optional = true }
-anyhow = "1"
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["full"] }
