@@ -24,9 +24,6 @@ sha2.workspace = true
 agileplus-validate.workspace = true
 uuid.workspace = true
 regex = "1"
-# Shared ecosystem crates (extracted to phenoShared 2026-06-14)
-phenotype-string.workspace = true
 
 [dev-dependencies]
 tokio.workspace = true
-phenotype-test-infra.workspace = true

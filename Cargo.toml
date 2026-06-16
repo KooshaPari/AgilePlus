@@ -117,7 +117,6 @@ name = "agileplus"
 version.workspace = true
 edition.workspace = true
 license = "MIT OR Apache-2.0"
-license-file = "LICENSE"
 description = "AgilePlus — Rust+TypeScript product & engineering management platform with Axum HTTP/gRPC backend, SQLite local store, Electrobun desktop app, and React/TS dashboard"
 homepage = "https://github.com/KooshaPari/AgilePlus"
 documentation = "https://docs.rs/agileplus"
@@ -209,8 +208,6 @@ phenotype-error-core = { git = "https://github.com/KooshaPari/phenoShared", bran
 traceability-core = { path = "crates/traceability-core" }
 indexmap = { version = "2", features = ["serde"] }
 phenotype-logging = { git = "https://github.com/KooshaPari/phenoShared", branch = "main" }
-phenotype-string = { git = "https://github.com/KooshaPari/phenoShared", branch = "main" }
-phenotype-test-infra = { git = "https://github.com/KooshaPari/phenoShared", branch = "main" }
 phenotype-event-bus = { git = "https://github.com/KooshaPari/phenoShared", branch = "main" }
 agileplus-api = { path = "crates/agileplus-api" }
 agileplus-artifacts = { path = "crates/agileplus-artifacts" }
