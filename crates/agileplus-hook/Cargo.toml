@@ -24,5 +24,6 @@ reqwest = { version = "0.12", default-features = false, features = ["json", "rus
 tracing.workspace = true
 
 [dev-dependencies]
+chrono.workspace = true
 tokio = { workspace = true, features = ["full", "macros"] }
 tempfile.workspace = true

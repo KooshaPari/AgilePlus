@@ -10,8 +10,7 @@ mod resources;
 mod tests;
 mod transport;
 
-#[cfg(test)]
-mod mock;
+pub mod mock;
 
 use std::sync::Arc;
 
@@ -25,7 +24,6 @@ pub use self::models::{
 };
 pub use self::rate_limit::TokenBucket;
 
-#[cfg(test)]
 pub use mock::InMemoryPlaneClient;
 
 /// Plane.so API client with token bucket rate limiter.
