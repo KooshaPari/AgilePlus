@@ -241,8 +241,7 @@ mod tests {
         let stdout = String::from_utf8_lossy(&msg.stdout);
         assert!(
             stdout.contains("[signed]"),
-            "message should contain [signed]: {}",
-            stdout
+            "message should contain [signed]: {stdout}",
         );
     }
 
