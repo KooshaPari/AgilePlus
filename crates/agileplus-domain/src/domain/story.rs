@@ -86,6 +86,11 @@ pub struct Story {
     /// External requirement reference (e.g. Tracera FR/NFR catalog ID).
     /// Additive, optional — existing stories default to `None`.
     pub requirement_id: Option<String>,
+    /// Trace IDs of external traceability artifacts this story is linked to.
+    /// Each entry corresponds to a [`crate::traceability::TraceRef::trace_id`].
+    /// Additive, defaults to an empty vec — non-breaking for existing stories.
+    #[serde(default)]
+    pub trace_ids: Vec<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -120,6 +125,7 @@ impl Story {
             points,
             assignee_id: None,
             requirement_id: None,
+            trace_ids: Vec::new(),
             created_at: now,
             updated_at: now,
         })

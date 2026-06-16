@@ -51,6 +51,11 @@ pub struct WorkPackage {
     pub plane_sub_issue_id: Option<String>,
     pub base_commit: Option<String>,
     pub head_commit: Option<String>,
+    /// Trace IDs of external traceability artifacts this work package is linked to.
+    /// Each entry corresponds to a [`crate::traceability::TraceRef::trace_id`].
+    /// Additive, defaults to an empty vec — non-breaking for existing work packages.
+    #[serde(default)]
+    pub trace_ids: Vec<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -98,6 +103,7 @@ impl WorkPackage {
             plane_sub_issue_id: None,
             base_commit: None,
             head_commit: None,
+            trace_ids: Vec::new(),
             created_at: now,
             updated_at: now,
         }
