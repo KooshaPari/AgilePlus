@@ -82,6 +82,8 @@ impl From<DomainError> for ErrorCode {
 
             // validation / bad input (scope + state-machine violations are
             // invalid-argument-shaped from the caller's perspective)
+            // (InvalidClaim is claim-bound: a precondition failure, same shape
+            // as a bad argument — so it projects to ValidationError too.)
             DomainError::Validation(_)
             | DomainError::FeatureNotInModuleScope { .. }
             | DomainError::InvalidTransition { .. }
@@ -91,11 +93,6 @@ impl From<DomainError> for ErrorCode {
 
             // infrastructure / internal faults
             DomainError::Storage(_) | DomainError::LockPoisoned => Self::InternalError,
-
-            // claim-bound: from the caller's perspective this is a precondition
-            // failure — the same shape as "you handed me a bad argument" — so
-            // it projects to ValidationError.
-            DomainError::InvalidClaim(_) => Self::ValidationError,
         }
     }
 }
