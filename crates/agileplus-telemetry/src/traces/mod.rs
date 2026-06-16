@@ -36,7 +36,7 @@ pub fn init_tracer() -> Result<(), String> {
     use opentelemetry_sdk::trace::TracerProvider;
 
     let endpoint = std::env::var("OTEL_EXPORTER_OTLP_ENDPOINT")
-        .unwrap_or_else(|_| "http://localhost:4317".to_string());
+        .unwrap_or_else(|_| "http://localhost:4317".to_owned());
 
     let exporter = opentelemetry_otlp::SpanExporter::builder()
         .with_http()
@@ -83,7 +83,7 @@ where
     use opentelemetry_sdk::trace::TracerProvider;
 
     let endpoint = std::env::var("OTEL_EXPORTER_OTLP_ENDPOINT")
-        .unwrap_or_else(|_| "http://localhost:4317".to_string());
+        .unwrap_or_else(|_| "http://localhost:4317".to_owned());
 
     // Attempt to build an OTLP exporter; fall back to no-op on failure.
     let provider: TracerProvider = (|| {
@@ -253,7 +253,7 @@ mod tests {
         record_span_event(
             &span,
             "pr_created",
-            &[("wp_id".to_string(), "WP10".to_string())],
+            &[("wp_id".to_owned(), "WP10".to_owned())],
         );
     }
 }

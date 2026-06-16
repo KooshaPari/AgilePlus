@@ -39,32 +39,32 @@ where
         Ok(_) => crate::responses::ServiceHealth::healthy(t0.elapsed().as_millis() as u64),
         Err(e) => crate::responses::ServiceHealth::unavailable(e.to_string()),
     };
-    services.insert("sqlite".to_string(), sqlite_health);
+    services.insert("sqlite".to_owned(), sqlite_health);
 
     // --- Env-gated service probes (2 s timeout each) ---
     let probe_timeout = std::time::Duration::from_secs(2);
 
     // NATS — check NATS_URL, attempt TCP connect
     services.insert(
-        "nats".to_string(),
+        "nats".to_owned(),
         probe_tcp_env("NATS_URL", probe_timeout).await,
     );
 
     // Dragonfly / Redis — check DRAGONFLY_URL then REDIS_URL
     services.insert(
-        "dragonfly".to_string(),
+        "dragonfly".to_owned(),
         probe_tcp_env_multi(&["DRAGONFLY_URL", "REDIS_URL"], probe_timeout).await,
     );
 
     // Neo4j — check NEO4J_URI, attempt TCP connect to host:port
     services.insert(
-        "neo4j".to_string(),
+        "neo4j".to_owned(),
         probe_tcp_env("NEO4J_URI", probe_timeout).await,
     );
 
     // MinIO/S3 — check S3_ENDPOINT, attempt TCP connect
     services.insert(
-        "minio".to_string(),
+        "minio".to_owned(),
         probe_tcp_env("S3_ENDPOINT", probe_timeout).await,
     );
 
@@ -75,7 +75,7 @@ where
         timestamp: chrono::Utc::now().to_rfc3339(),
         services,
         api: crate::responses::ApiHealth {
-            status: "healthy".to_string(),
+            status: "healthy".to_owned(),
             uptime_seconds: 0, // uptime tracking requires a startup timestamp in AppState
         },
     })

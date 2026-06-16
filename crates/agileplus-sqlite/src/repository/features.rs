@@ -25,7 +25,7 @@ fn state_str(s: FeatureState) -> &'static str {
 }
 
 fn labels_to_json(labels: &[String]) -> String {
-    serde_json::to_string(labels).unwrap_or_else(|_| "[]".to_string())
+    serde_json::to_string(labels).unwrap_or_else(|_| "[]".to_owned())
 }
 
 fn labels_from_json(s: &str) -> Vec<String> {
@@ -44,7 +44,7 @@ fn row_to_feature(row: &Row<'_>) -> rusqlite::Result<Feature> {
     // module_id column added by migration 015 -- may be NULL.
     let module_id: Option<i64> = row.get(8).unwrap_or(None);
     // labels column added by migration 026 -- defaults to '[]'.
-    let labels_json: String = row.get(9).unwrap_or_else(|_| "[]".to_string());
+    let labels_json: String = row.get(9).unwrap_or_else(|_| "[]".to_owned());
 
     let state = state_str.parse::<FeatureState>().map_err(|e| {
         rusqlite::Error::FromSqlConversionFailure(

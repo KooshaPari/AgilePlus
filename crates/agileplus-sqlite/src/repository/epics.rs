@@ -78,7 +78,7 @@ pub fn create_epic(conn: &Connection, epic: &Epic) -> Result<i64, DomainError> {
 /// table-level constraint that ALTER TABLE cannot add.
 pub fn upsert_epic_by_requirement_id(conn: &Connection, epic: &Epic) -> Result<i64, DomainError> {
     let req_id = epic.requirement_id.as_deref().ok_or_else(|| {
-        DomainError::Validation("upsert_epic_by_requirement_id requires requirement_id".to_string())
+        DomainError::Validation("upsert_epic_by_requirement_id requires requirement_id".to_owned())
     })?;
     let now = chrono::Utc::now().to_rfc3339();
     // Check if a row with this requirement_id already exists.

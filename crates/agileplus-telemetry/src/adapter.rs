@@ -336,7 +336,7 @@ mod tests {
         let entry = LogEntry {
             level: LogLevel::Info,
             message: "test".into(),
-            fields: vec![("key".to_string(), "value".to_string())],
+            fields: vec![("key".to_owned(), "value".to_owned())],
         };
         adapter.log(&entry);
     }

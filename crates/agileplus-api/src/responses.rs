@@ -291,7 +291,7 @@ pub struct ServiceHealth {
 impl ServiceHealth {
     pub fn healthy(latency_ms: u64) -> Self {
         Self {
-            status: "healthy".to_string(),
+            status: "healthy".to_owned(),
             latency_ms: Some(latency_ms),
             error: None,
         }
@@ -299,7 +299,7 @@ impl ServiceHealth {
 
     pub fn degraded(reason: impl Into<String>) -> Self {
         Self {
-            status: "degraded".to_string(),
+            status: "degraded".to_owned(),
             latency_ms: None,
             error: Some(reason.into()),
         }
@@ -307,7 +307,7 @@ impl ServiceHealth {
 
     pub fn unavailable(reason: impl Into<String>) -> Self {
         Self {
-            status: "unavailable".to_string(),
+            status: "unavailable".to_owned(),
             latency_ms: None,
             error: Some(reason.into()),
         }
@@ -315,9 +315,9 @@ impl ServiceHealth {
 
     pub fn not_configured() -> Self {
         Self {
-            status: "not_configured".to_string(),
+            status: "not_configured".to_owned(),
             latency_ms: None,
-            error: Some("not configured in this deployment".to_string()),
+            error: Some("not configured in this deployment".to_owned()),
         }
     }
 }
@@ -347,11 +347,11 @@ impl DetailedHealthResponse {
             .collect();
 
         Self {
-            status: "healthy".to_string(),
+            status: "healthy".to_owned(),
             timestamp: chrono::Utc::now().to_rfc3339(),
             services,
             api: ApiHealth {
-                status: "healthy".to_string(),
+                status: "healthy".to_owned(),
                 uptime_seconds,
             },
         }
