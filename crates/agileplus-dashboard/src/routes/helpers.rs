@@ -268,6 +268,7 @@ pub fn percent_encode_path(path: &str) -> String {
 
 // ── Plane configuration utilities ──────────────────────────────────────────
 
+#[allow(dead_code)]
 pub(super) fn plane_api_key_hint(api_key: &Option<String>) -> String {
     match api_key {
         Some(key) => match (key.chars().next(), key.chars().next_back()) {
@@ -278,6 +279,7 @@ pub(super) fn plane_api_key_hint(api_key: &Option<String>) -> String {
     }
 }
 
+#[allow(dead_code)]
 pub(super) fn plane_health_endpoints(
     services: &[crate::app_state::ServiceHealth],
 ) -> Vec<crate::templates::PlaneHealthEndpointView> {
@@ -297,6 +299,7 @@ pub(super) fn plane_health_endpoints(
         .collect()
 }
 
+#[allow(dead_code)]
 pub(super) fn plane_sync_mode() -> String {
     if parse_bool_env("PLANE_SYNC_BIDIRECTIONAL", false) {
         "Bidirectional".to_string()
@@ -305,6 +308,7 @@ pub(super) fn plane_sync_mode() -> String {
     }
 }
 
+#[allow(dead_code)]
 pub(super) fn plane_connection_checks(
     api_key: &Option<String>,
     workspace: &Option<String>,
@@ -327,6 +331,7 @@ pub(super) fn plane_connection_checks(
     }
 }
 
+#[allow(dead_code)]
 pub(super) fn percentage_coverage(hit: usize, total: usize) -> String {
     if total == 0 {
         return "0/0 (0%)".to_string();
