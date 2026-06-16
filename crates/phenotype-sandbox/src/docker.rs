@@ -7,7 +7,7 @@ use bollard::image::CreateImageOptions;
 use bollard::models::HostConfig;
 use bollard::Docker;
 use futures::StreamExt;
-use tracing::{debug, error, info, warn};
+use tracing::{debug, info, warn};
 
 use crate::Sandbox;
 
