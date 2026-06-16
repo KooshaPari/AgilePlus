@@ -1,28 +1,19 @@
 name: Security Guard
+
+permissions:
+  contents: read
+
 on:
   workflow_dispatch:
-
-permissions:
-  contents: read
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
-
-permissions:
-  contents: read
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
-on:
   pull_request:
     types: [opened, synchronize, reopened]
   push:
     branches:
       - "**"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   guard:
     runs-on: ubuntu-24.04

@@ -89,7 +89,7 @@ mod tests {
         assert_ne!(wp, wp3);
 
         // Test Debug formatting works
-        let debug_str = format!("{:?}", wp);
+        let debug_str = format!("{wp:?}");
         assert!(debug_str.contains("WP-1"));
         assert!(debug_str.contains("Done"));
     }

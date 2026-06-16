@@ -6,7 +6,7 @@ use agileplus_convoy::bead::Bead;
 use agileplus_convoy::coordinator::Coordinator;
 use agileplus_convoy::store::ConvoyStore;
 use agileplus_convoy::Convoy;
-use agileplus_triage::claim::{ClaimKind, ClaimStore, ClaimStoreTrait};
+use agileplus_triage::claim::{ClaimKind, ClaimStore};
 
 #[tokio::test]
 async fn full_convoy_flow_commit() {
