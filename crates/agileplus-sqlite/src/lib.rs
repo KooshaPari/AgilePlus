@@ -1,8 +1,9 @@
-//! AgilePlus SQLite adapter — persistence layer.
+﻿//! AgilePlus SQLite adapter — persistence layer.
 //!
 //! Implements `StoragePort` using rusqlite with WAL mode and foreign keys.
 //! Traceability: WP06
 
+pub mod event_store;
 pub mod migrations;
 pub mod rebuild;
 pub mod repository;
@@ -33,8 +34,6 @@ use agileplus_domain::{
     ports::{ContentStoragePort, StoragePort},
 };
 
-use agileplus_domain::domain::event::Event;
-use agileplus_events::{EventError, EventStore};
 
 use crate::migrations::MigrationRunner;
 use agileplus_domain::domain::project::Project;
@@ -710,73 +709,6 @@ impl ContentStoragePort for SqliteStorageAdapter {
     async fn get_ready_wps(&self, feature_id: i64) -> Result<Vec<WorkPackage>, DomainError> {
         let conn = self.lock()?;
         work_packages::get_ready_wps(&conn, feature_id)
-    }
-}
-
-#[async_trait::async_trait]
-impl EventStore for SqliteStorageAdapter {
-    async fn append(&self, event: &Event) -> Result<i64, EventError> {
-        let conn = self
-            .lock()
-            .map_err(|e| EventError::StorageError(e.to_string()))?;
-        events::append_event(&conn, event).map_err(|e| EventError::StorageError(e.to_string()))
-    }
-
-    async fn get_events(
-        &self,
-        entity_type: &str,
-        entity_id: i64,
-    ) -> Result<Vec<Event>, EventError> {
-        let conn = self
-            .lock()
-            .map_err(|e| EventError::StorageError(e.to_string()))?;
-        events::get_events(&conn, entity_type, entity_id)
-            .map_err(|e| EventError::StorageError(e.to_string()))
-    }
-
-    async fn get_events_since(
-        &self,
-        entity_type: &str,
-        entity_id: i64,
-        sequence: i64,
-    ) -> Result<Vec<Event>, EventError> {
-        let conn = self
-            .lock()
-            .map_err(|e| EventError::StorageError(e.to_string()))?;
-        events::get_events_since(&conn, entity_type, entity_id, sequence)
-            .map_err(|e| EventError::StorageError(e.to_string()))
-    }
-
-    async fn get_events_by_range(
-        &self,
-        entity_type: &str,
-        entity_id: i64,
-        from: chrono::DateTime<chrono::Utc>,
-        to: chrono::DateTime<chrono::Utc>,
-    ) -> Result<Vec<Event>, EventError> {
-        let conn = self
-            .lock()
-            .map_err(|e| EventError::StorageError(e.to_string()))?;
-        events::get_events_by_range(
-            &conn,
-            entity_type,
-            entity_id,
-            &from.to_rfc3339(),
-            &to.to_rfc3339(),
-        )
-        .map_err(|e| EventError::StorageError(e.to_string()))
-    }
-
-    async fn get_latest_sequence(
-        &self,
-        entity_type: &str,
-        entity_id: i64,
-    ) -> Result<i64, EventError> {
-        let conn = self
-            .lock()
-            .map_err(|e| EventError::StorageError(e.to_string()))?;
-        events::get_latest_sequence(&conn, entity_type, entity_id)
-            .map_err(|e| EventError::StorageError(e.to_string()))
     }
 }
 
