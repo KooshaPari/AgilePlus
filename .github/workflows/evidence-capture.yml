@@ -1,9 +1,4 @@
 name: Evidence Capture
-on:
-  workflow_dispatch:
-
-permissions:
-  contents: read
 
 permissions:
   contents: read
@@ -13,6 +8,7 @@ concurrency:
   cancel-in-progress: true
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - "feat/**"

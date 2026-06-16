@@ -171,11 +171,7 @@ fn infer_rel_type(properties: &serde_json::Value) -> RelType {
         Some("InProject") => RelType::InProject,
         _ => {
             // Default heuristic: if it has a `guard` attribute, treat as DependsOn
-            if properties.get("guard").is_some() {
-                RelType::DependsOn
-            } else {
-                RelType::DependsOn
-            }
+            RelType::DependsOn
         }
     }
 }
