@@ -9,3 +9,6 @@
 //! - T115: agileplus-api ↔ agileplus-events (EventQuery / EventStore consumer contract)
 //!
 //! Traceability: WP20 / T112, T113, T114, T115
+
+// This is a library crate with integration tests defined in tests/contracts/*.rs
+// The lib itself serves as a dependency re-export for the integration tests.
