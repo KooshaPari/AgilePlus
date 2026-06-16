@@ -106,6 +106,12 @@ impl<S: McpServer> StdioTransport<S> {
     }
 }
 
+impl<S: McpServer> std::fmt::Debug for StdioTransport<S> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("StdioTransport").finish_non_exhaustive()
+    }
+}
+
 /// SSE transport placeholder.
 ///
 /// Will bind to an HTTP endpoint and stream MCP messages over
