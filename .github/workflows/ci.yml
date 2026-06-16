@@ -254,7 +254,7 @@ jobs:
           git clone --depth 1 \
             "https://x-access-token:${{ github.token }}@github.com/KooshaPari/phenoShared.git" \
             "${{ github.workspace }}/../phenoShared"
-      - uses: dtolnay/rust-toolchain@dd44c20b1206a46e25fba8503d5d7c9a33bd355a  # 1.86.0 (toolchain)
+      - uses: dtolnay/rust-toolchain@98e1b82157cd469e843cb7f524c1313b4ad9492c  # 1.88.0 (toolchain)
       - uses: Swatinem/rust-cache@42dc69e1aa15d09112580998cf2ef0119e2e91ae  # v2
       - uses: arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b  # v3
         with:
@@ -296,7 +296,7 @@ jobs:
             "${{ github.workspace }}/../phenoShared"
       - name: Validate domain crate dependencies
         run: |
-          ALLOWED="serde serde_json chrono sha2 thiserror toml dirs-next zeroize keyring anyhow async-trait uuid regex phenotype-error-core agileplus-validate"
+          ALLOWED="serde serde_json chrono sha2 thiserror toml dirs-next zeroize keyring anyhow async-trait uuid regex phenotype-error-core traceability-core agileplus-validate"
           DEPS=$(sed -n '/^\[dependencies\]/,/^\[/{/^\[/d;p}' crates/agileplus-domain/Cargo.toml | grep -E '^\w' | cut -d'.' -f1 | cut -d' ' -f1)
           for dep in $DEPS; do
             if ! echo "$ALLOWED" | grep -qw "$dep"; then

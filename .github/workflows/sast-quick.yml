@@ -51,7 +51,6 @@ jobs:
         with:
           path: ./
           extra_args: --only-verified
-        continue-on-error: true
 
   lint-rust:
     name: Rust Lint

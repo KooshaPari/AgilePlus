@@ -23,4 +23,3 @@ jobs:
       - uses: trufflesecurity/trufflehog@3fc0c2aa6648d54242e4af6fbfde0701796e4fb0  # v3.88.23 SHA-pinned (stable --fail behavior)
         with:
           extra_args: --only-verified
-        continue-on-error: true

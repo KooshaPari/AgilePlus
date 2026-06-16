@@ -277,6 +277,7 @@ async fn test_projection_cache_workpackage() {
     assert_eq!(cached.unwrap().workpackage.id, wp.id);
 }
 
+#[cfg(feature = "redis")]
 #[test]
 fn test_rate_limiter_error_display() {
     use agileplus_cache::limiter::LimiterError;
