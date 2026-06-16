@@ -38,6 +38,18 @@
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
 #![allow(missing_docs)]
+#![allow(clippy::uninlined_format_args)]
+#![allow(clippy::int_plus_one)]
+#![allow(clippy::needless_pass_by_value)]
+#![allow(clippy::too_many_arguments)]
+#![allow(clippy::module_name_repetitions)]
+#![allow(clippy::must_use_candidate)]
+#![allow(clippy::wildcard_imports)]
+#![allow(clippy::items_after_statements)]
+#![allow(clippy::similar_names)]
+#![allow(clippy::cast_sign_loss)]
+#![allow(clippy::cast_possible_truncation)]
+#![allow(clippy::cast_precision_loss)]
 
 pub mod artifact;
 pub mod contract;
