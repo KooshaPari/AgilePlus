@@ -46,7 +46,7 @@ use agileplus_domain::ports::{
 type BoxError = Box<dyn std::error::Error + Send + Sync>;
 
 use crate::responses::{DetailedHealthResponse, SimpleHealthResponse};
-use crate::routes::{audit, cycle, events, features, governance, module, stream, work_packages};
+use crate::routes::{audit, cycle, epics, events, features, governance, module, projects, stories, stream, users, work_packages};
 use crate::state::AppState;
 
 /// Build the axum [`Router`] with all routes, middleware, and shared state.
@@ -90,6 +90,11 @@ where
         .nest("/api/v1/events", events::routes::<S, V, O>())
         // SSE streaming
         .route("/api/v1/stream", get(stream::stream_events::<S, V, O>))
+        // Domain: projects, epics, stories, users
+        .nest("/api/v1/projects", projects::routes::<S, V, O>())
+        .nest("/api/v1/epics", epics::routes::<S, V, O>())
+        .nest("/api/v1/stories", stories::routes::<S, V, O>())
+        .nest("/api/v1/users", users::routes::<S, V, O>())
         .layer(middleware::from_fn_with_state(
             token_verifier,
             crate::middleware::auth::authorize,
