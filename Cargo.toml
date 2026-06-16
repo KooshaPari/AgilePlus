@@ -205,3 +205,4 @@ toml = "0.8"
 tokio-stream = { version = "0.1", features = ["net", "sync"] }
 sqlx = { version = "0.8", default-features = false }
 hex = "0.4"
+regex = "1"
