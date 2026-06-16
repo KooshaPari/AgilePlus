@@ -24,6 +24,14 @@ fn state_str(s: FeatureState) -> &'static str {
     }
 }
 
+fn labels_to_json(labels: &[String]) -> String {
+    serde_json::to_string(labels).unwrap_or_else(|_| "[]".to_owned())
+}
+
+fn labels_from_json(s: &str) -> Vec<String> {
+    serde_json::from_str(s).unwrap_or_default()
+}
+
 fn row_to_feature(row: &Row<'_>) -> rusqlite::Result<Feature> {
     let id: i64 = row.get(0)?;
     let slug: String = row.get(1)?;
@@ -35,6 +43,8 @@ fn row_to_feature(row: &Row<'_>) -> rusqlite::Result<Feature> {
     let updated_at_str: String = row.get(7)?;
     // module_id column added by migration 015 -- may be NULL.
     let module_id: Option<i64> = row.get(8).unwrap_or(None);
+    // labels column added by migration 026 -- defaults to '[]'.
+    let labels_json: String = row.get(9).unwrap_or_else(|_| "[]".to_owned());
 
     let state = state_str.parse::<FeatureState>().map_err(|e| {
         rusqlite::Error::FromSqlConversionFailure(
@@ -84,7 +94,7 @@ fn row_to_feature(row: &Row<'_>) -> rusqlite::Result<Feature> {
         target_branch,
         plane_issue_id: None,
         plane_state_id: None,
-        labels: Vec::new(),
+        labels: labels_from_json(&labels_json),
         module_id,
         project_id: None,
         created_at,
@@ -96,14 +106,15 @@ fn row_to_feature(row: &Row<'_>) -> rusqlite::Result<Feature> {
 
 pub fn create_feature(conn: &Connection, feature: &Feature) -> Result<i64, DomainError> {
     conn.execute(
-        "INSERT INTO features (slug, friendly_name, state, spec_hash, target_branch, created_at, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+        "INSERT INTO features (slug, friendly_name, state, spec_hash, target_branch, labels, created_at, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
         params![
             feature.slug,
             feature.friendly_name,
             state_str(feature.state),
             feature.spec_hash.as_slice(),
             feature.target_branch,
+            labels_to_json(&feature.labels),
             feature.created_at.to_rfc3339(),
             feature.updated_at.to_rfc3339(),
         ],
@@ -114,7 +125,8 @@ pub fn create_feature(conn: &Connection, feature: &Feature) -> Result<i64, Domai
 
 pub fn get_feature_by_slug(conn: &Connection, slug: &str) -> Result<Option<Feature>, DomainError> {
     conn.query_row(
-        "SELECT id, slug, friendly_name, state, spec_hash, target_branch, created_at, updated_at
+        "SELECT id, slug, friendly_name, state, spec_hash, target_branch, created_at, updated_at,
+                module_id, labels
          FROM features WHERE slug = ?1",
         params![slug],
         row_to_feature,
@@ -125,7 +137,8 @@ pub fn get_feature_by_slug(conn: &Connection, slug: &str) -> Result<Option<Featu
 
 pub fn get_feature_by_id(conn: &Connection, id: i64) -> Result<Option<Feature>, DomainError> {
     conn.query_row(
-        "SELECT id, slug, friendly_name, state, spec_hash, target_branch, created_at, updated_at
+        "SELECT id, slug, friendly_name, state, spec_hash, target_branch, created_at, updated_at,
+                module_id, labels
          FROM features WHERE id = ?1",
         params![id],
         row_to_feature,
@@ -151,11 +164,15 @@ pub fn update_feature_state(
 pub fn update_feature(conn: &Connection, feature: &Feature) -> Result<(), DomainError> {
     let now = chrono::Utc::now().to_rfc3339();
     conn.execute(
-        "UPDATE features SET slug = ?1, friendly_name = ?2, state = ?3, updated_at = ?4 WHERE id = ?5",
+        "UPDATE features SET slug = ?1, friendly_name = ?2, state = ?3, labels = ?4,
+                target_branch = ?5, spec_hash = ?6, updated_at = ?7 WHERE id = ?8",
         params![
             feature.slug,
             feature.friendly_name,
             state_str(feature.state),
+            labels_to_json(&feature.labels),
+            feature.target_branch,
+            feature.spec_hash.as_slice(),
             now,
             feature.id
         ],
@@ -170,7 +187,8 @@ pub fn list_features_by_state(
 ) -> Result<Vec<Feature>, DomainError> {
     let mut stmt = conn
         .prepare(
-            "SELECT id, slug, friendly_name, state, spec_hash, target_branch, created_at, updated_at
+            "SELECT id, slug, friendly_name, state, spec_hash, target_branch, created_at, updated_at,
+                    module_id, labels
              FROM features WHERE state = ?1 ORDER BY created_at",
         )
         .map_err(map_err)?;
@@ -185,13 +203,31 @@ pub fn list_features_by_state(
 pub fn list_all_features(conn: &Connection) -> Result<Vec<Feature>, DomainError> {
     let mut stmt = conn
         .prepare(
-            "SELECT id, slug, friendly_name, state, spec_hash, target_branch, created_at, updated_at
+            "SELECT id, slug, friendly_name, state, spec_hash, target_branch, created_at, updated_at,
+                    module_id, labels
              FROM features ORDER BY created_at DESC",
         )
         .map_err(map_err)?;
 
     let rows = stmt.query_map([], row_to_feature).map_err(map_err)?;
 
+    rows.collect::<rusqlite::Result<Vec<_>>>().map_err(map_err)
+}
+
+pub fn list_features_by_label(conn: &Connection, label: &str) -> Result<Vec<Feature>, DomainError> {
+    // labels is stored as a JSON array: ["foo","bar"]. Use json_each to filter in SQL.
+    let pattern = format!("%\"{}\"%", label.replace('"', "\\\""));
+    let mut stmt = conn
+        .prepare(
+            "SELECT id, slug, friendly_name, state, spec_hash, target_branch, created_at, updated_at,
+                    module_id, labels
+             FROM features WHERE labels LIKE ?1 ORDER BY created_at DESC",
+        )
+        .map_err(map_err)?;
+
+    let rows = stmt
+        .query_map(params![pattern], row_to_feature)
+        .map_err(map_err)?;
     rows.collect::<rusqlite::Result<Vec<_>>>().map_err(map_err)
 }
 

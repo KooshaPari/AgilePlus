@@ -199,6 +199,10 @@ impl StoragePort for MockStorage {
         Ok(())
     }
 
+    async fn update_feature(&self, _feature: &Feature) -> Result<(), DomainError> {
+        Ok(())
+    }
+
     async fn list_features_by_state(
         &self,
         state: FeatureState,
@@ -216,6 +220,18 @@ impl StoragePort for MockStorage {
 
     async fn list_all_features(&self) -> Result<Vec<Feature>, DomainError> {
         let features = self.features.lock().unwrap().clone();
+        Ok(features)
+    }
+
+    async fn list_features_by_label(&self, label: &str) -> Result<Vec<Feature>, DomainError> {
+        let features: Vec<Feature> = self
+            .features
+            .lock()
+            .unwrap()
+            .iter()
+            .filter(|f| f.labels.iter().any(|l| l == label))
+            .cloned()
+            .collect();
         Ok(features)
     }
 
@@ -725,6 +741,21 @@ impl ContentStoragePort for MockStorage {
         &self,
     ) -> Result<Vec<agileplus_domain::domain::feature::Feature>, DomainError> {
         let feats: Vec<_> = self.features.lock().unwrap().clone();
+        Ok(feats)
+    }
+
+    async fn list_features_by_label(
+        &self,
+        label: &str,
+    ) -> Result<Vec<agileplus_domain::domain::feature::Feature>, DomainError> {
+        let feats: Vec<_> = self
+            .features
+            .lock()
+            .unwrap()
+            .iter()
+            .filter(|f| f.labels.iter().any(|l| l == label))
+            .cloned()
+            .collect();
         Ok(feats)
     }
 
