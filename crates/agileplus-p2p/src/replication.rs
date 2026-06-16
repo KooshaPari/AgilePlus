@@ -522,6 +522,7 @@ mod tests {
             status: EpicStatus::Active,
             owner_id: None,
             requirement_id: None,
+            trace_ids: Vec::new(),
             created_at: updated_at,
             updated_at,
         }
@@ -538,6 +539,7 @@ mod tests {
             points: Some(3),
             assignee_id: None,
             requirement_id: None,
+            trace_ids: Vec::new(),
             created_at: updated_at,
             updated_at,
         }

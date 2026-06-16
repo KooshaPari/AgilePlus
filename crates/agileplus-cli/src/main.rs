@@ -69,7 +69,7 @@ enum Command {
     /// Convert a natural language prompt into a structured intent graph
     Intent(commands::intent::IntentArgs),
     /// Link work items to Tracera trace IDs
-    Trace(commands::trace::TraceCommand),
+    Trace(commands::trace::TraceCmd),
 }
 
 #[derive(Subcommand)]
