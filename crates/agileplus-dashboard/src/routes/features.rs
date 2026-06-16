@@ -43,6 +43,7 @@ fn render<T: Template>(tpl: T) -> Response {
 }
 
 /// Dashboard filter enumeration for grouping features by state.
+#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum DashboardFilter {
     All,
@@ -63,7 +64,8 @@ fn build_kanban_cards(
     }
     // Group active features by state after applying project and sidebar filters.
     for feature in store.features_for_active_project() {
-        let state_key = format!("{:?}", feature.state);
+        let state = &feature.state;
+        let state_key = format!("{state:?}");
         if let Some(features_in_state) = cards.get_mut(&state_key) {
             features_in_state.push(FeatureView::from_feature(feature));
         }

@@ -48,6 +48,7 @@ pub struct WpView {
 }
 
 impl WpView {
+    #[allow(clippy::uninlined_format_args)]
     pub fn from_wp(wp: &WorkPackage) -> Self {
         Self {
             id: wp.id,
@@ -432,7 +433,7 @@ pub fn all_feature_states() -> Vec<String> {
         FeatureState::Retrospected,
     ]
     .into_iter()
-    .map(|s| s.to_string())
+    .map(ToString::to_string)
     .collect()
 }
 
