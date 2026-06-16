@@ -156,6 +156,7 @@ where
         updated_at: now,
         base_commit: None,
         head_commit: None,
+        trace_ids: Vec::new(),
     };
 
     let id = app
