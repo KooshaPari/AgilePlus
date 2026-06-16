@@ -89,7 +89,7 @@ impl GovernanceClient {
                 )))
             }
             Ok(Err(e)) => {
-                error!("Failed to connect to remote governance: {}", e);
+                error!("Failed to connect to remote governance: {e}");
                 *self.connection_status.write().await = ConnectionStatus::Error;
                 Err(GovernanceError::Network(e.to_string()))
             }
@@ -250,11 +250,11 @@ impl GovernanceClient {
                 let client = reqwest::Client::new();
                 match client.post(&url).json(&entry_clone).send().await {
                     Ok(_resp) => {
-                        info!("Synced audit event to remote: {}", url);
+                        info!("Synced audit event to remote: {url}");
                         *last_sync.write().await = Some(chrono::Utc::now());
                     }
                     Err(e) => {
-                        warn!("Failed to sync audit event to remote {}: {e}", url);
+                        warn!("Failed to sync audit event to remote {url}: {e}");
                     }
                 }
             });

@@ -45,7 +45,7 @@ pub async fn store_graph(
                     .await
                     .with_context(|| format!("store feature {}", node.id))?;
                 ids.push(id);
-                tracing::info!("stored feature id={} from node {}", id, node.id);
+                tracing::info!("stored feature id={id} from node {}", node.id);
             }
             crate::types::NodeType::Story => {
                 // Stories require an epic and project.  Skip for now unless we create a default project.
