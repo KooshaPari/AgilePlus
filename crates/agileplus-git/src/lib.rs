@@ -68,7 +68,6 @@ impl GitVcsAdapter {
     /// Open the underlying libgit2 repository, walking up from
     /// `repo_root` if necessary. Maps libgit2 errors to
     /// [`DomainError::Storage`].
-
     fn open(&self) -> Result<Repository, DomainError> {
         Repository::discover(&self.repo_root).map_err(|e| {
             DomainError::Storage(format!(

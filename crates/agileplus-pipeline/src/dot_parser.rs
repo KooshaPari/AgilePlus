@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
 use regex::Regex;
-use serde_json::json;
 use uuid::Uuid;
 
 use agileplus_graph::{Node, NodeType, RelType, Relationship};
@@ -98,10 +97,10 @@ pub fn parse_dot(dot: &str) -> Result<Graph, PipelineError> {
 
             let from_id = *id_map
                 .get(&from_name)
-                .ok_or_else(|| PipelineError::DotParse(format!("Unknown node: {}", from_name)))?;
+                .ok_or_else(|| PipelineError::DotParse(format!("Unknown node: {from_name}")))?;
             let to_id = *id_map
                 .get(&to_name)
-                .ok_or_else(|| PipelineError::DotParse(format!("Unknown node: {}", to_name)))?;
+                .ok_or_else(|| PipelineError::DotParse(format!("Unknown node: {to_name}")))?;
 
             let rel_type = infer_rel_type(&properties);
             let mut rel = Relationship::new(from_id, to_id, rel_type);
@@ -170,12 +169,8 @@ fn infer_rel_type(properties: &serde_json::Value) -> RelType {
         Some("Tagged") => RelType::Tagged,
         Some("InProject") => RelType::InProject,
         _ => {
-            // Default heuristic: if it has a `guard` attribute, treat as DependsOn
-            if properties.get("guard").is_some() {
-                RelType::DependsOn
-            } else {
-                RelType::DependsOn
-            }
+            // Default heuristic: treat as DependsOn regardless of guard
+            RelType::DependsOn
         }
     }
 }

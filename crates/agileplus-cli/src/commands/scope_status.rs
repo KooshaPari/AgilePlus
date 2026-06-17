@@ -106,7 +106,7 @@ pub fn run(args: &ScopeStatusArgs) -> Result<()> {
     }
 
     println!("\nModules:");
-    println!("  {:<3}  {:<18}  {:<28}  {}", "ID", "SLUG", "NAME", "FEATURES");
+    println!("  {:<3}  {:<18}  {:<28}  FEATURES", "ID", "SLUG", "NAME");
     println!("  {}", "-".repeat(60));
     for m in &modules {
         println!(
@@ -191,8 +191,7 @@ fn load_modules_in_subtree(conn: &Connection, root_id: i64) -> Result<Vec<Module
     let mut ids = vec![root_id];
     let mut frontier = vec![root_id];
     while !frontier.is_empty() {
-        let placeholders = std::iter::repeat("?")
-            .take(frontier.len())
+        let placeholders = std::iter::repeat_n("?", frontier.len())
             .collect::<Vec<_>>()
             .join(",");
         let sql = format!(
@@ -216,8 +215,7 @@ fn load_modules_in_subtree(conn: &Connection, root_id: i64) -> Result<Vec<Module
     if ids.is_empty() {
         return Ok(Vec::new());
     }
-    let placeholders = std::iter::repeat("?")
-        .take(ids.len())
+    let placeholders = std::iter::repeat_n("?", ids.len())
         .collect::<Vec<_>>()
         .join(",");
     let sql = format!(

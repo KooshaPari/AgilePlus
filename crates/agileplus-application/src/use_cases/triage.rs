@@ -157,12 +157,9 @@ impl<W: WpRepository> AppState<W> {
             .claim_store
             .lock()
             .map_err(|_| anyhow!("claim store lock poisoned"))?
-            .lookup(ClaimKind::Worktree, &req.wp_id)
-            .or_else(|| {
-                // We can't re-lock here without re-entrancy; the next call
-                // to `release` uses the original `claim_id` from the request.
-                None
-            });
+            .lookup(ClaimKind::Worktree, &req.wp_id);
+            // We can't re-lock here without re-entrancy; the next call
+            // to `release` uses the original `claim_id` from the request.
 
         // Release the explicit claim_id from the request.
         let _ = self
@@ -227,8 +224,8 @@ impl<W: WpRepository> AppState<W> {
         };
         let next_pickable = self.wp_repo.list_pickable(
             "anonymous",
-            repo.as_ref().and_then(|_| None), // lane discovery TBD
-            repo.as_ref().and_then(|_| None), // category discovery TBD
+            None, // lane discovery TBD
+            None, // category discovery TBD
             5,
         )?;
         Ok(WhereResponse {

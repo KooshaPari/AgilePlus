@@ -17,7 +17,7 @@
 //! Sections covered:
 //! - Cargo: `[dependencies]`, `[dev-dependencies]`, `[build-dependencies]`
 //! - Npm:   `dependencies`, `devDependencies`, `optionalDependencies`,
-//!          `peerDependencies`
+//!   `peerDependencies`
 //! - PyPI:  `[project.dependencies]`, `[project.optional-dependencies.*]`
 //! - Go:    `require ...` lines and `require (...)` blocks
 

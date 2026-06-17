@@ -253,7 +253,7 @@ pub fn run_list(args: &ListArgs) -> Result<()> {
         return Ok(());
     }
 
-    println!("{:<4}  {:<22}  {:<22}  {:<14}  {}", "ID", "FROM", "TO", "LINK", "CREATED");
+    println!("{:<4}  {:<22}  {:<22}  {:<14}  CREATED", "ID", "FROM", "TO", "LINK");
     println!("{}", "-".repeat(80));
     for row in &rows {
         println!(

@@ -1,15 +1,12 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum NetworkMode {
+    #[default]
     Isolated,
     Host,
     Bridged { bridge: String },
-}
-
-impl Default for NetworkMode {
-    fn default() -> Self { NetworkMode::Isolated }
 }
 
 impl NetworkMode {

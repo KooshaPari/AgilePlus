@@ -62,7 +62,7 @@ impl GitHubPrClient {
         let status = resp.status();
         if !status.is_success() {
             let text = resp.text().await.unwrap_or_default();
-            anyhow::bail!("GitHub PR API returned error: {} — {}", status, text);
+            anyhow::bail!("GitHub PR API returned error: {status} — {text}");
         }
         let json: serde_json::Value = resp.json().await?;
         let number = json

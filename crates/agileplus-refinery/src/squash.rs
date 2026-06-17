@@ -1,6 +1,6 @@
 //! Squash source branch into target branch.
 
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::process::{Command, Stdio};
 
 use anyhow::{Context, Result};

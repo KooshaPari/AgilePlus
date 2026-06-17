@@ -153,13 +153,13 @@ fn generate_graph(prompt: &str) -> IntentGraph {
     let mut edges: Vec<Edge> = Vec::new();
 
     // ── Intent node ─────────────────────────────────────────────────────────
-    let intent_id = format!("Intent#{}", slug);
+    let intent_id = format!("Intent#{slug}");
     nodes.push(Node {
         id: intent_id.clone(),
         node_type: "Intent".to_string(),
         dag_stage: "intent".to_string(),
         title: prompt.to_string(),
-        description: Some(format!("User intent derived from prompt: {}", prompt)),
+        description: Some(format!("User intent derived from prompt: {prompt}")),
         status: "draft".to_string(),
         tags: Some(vec!["intent".to_string(), "auto-generated".to_string()]),
         meta: Meta {
@@ -174,12 +174,12 @@ fn generate_graph(prompt: &str) -> IntentGraph {
     });
 
     // ── Plan node ───────────────────────────────────────────────────────────
-    let plan_id = format!("Plan#{}-plan", slug);
+    let plan_id = format!("Plan#{slug}-plan");
     nodes.push(Node {
         id: plan_id.clone(),
         node_type: "Plan".to_string(),
         dag_stage: "plan".to_string(),
-        title: format!("Plan for {}", prompt),
+        title: format!("Plan for {prompt}"),
         description: Some("Auto-generated plan node from intent prompt.".to_string()),
         status: "draft".to_string(),
         tags: Some(vec!["plan".to_string()]),
@@ -210,7 +210,7 @@ fn generate_graph(prompt: &str) -> IntentGraph {
     // ── Feature nodes ─────────────────────────────────────────────────────────
     let feature_specs = extract_features(prompt, &slug);
     for (idx, (feat_slug, feat_title)) in feature_specs.iter().enumerate() {
-        let feat_id = format!("Feature#{}", feat_slug);
+        let feat_id = format!("Feature#{feat_slug}");
         nodes.push(Node {
             id: feat_id.clone(),
             node_type: "Feature".to_string(),
@@ -258,13 +258,13 @@ fn generate_graph(prompt: &str) -> IntentGraph {
 
         // ── Task node(s) per feature ─────────────────────────────────────────
         let task_type = TASK_TYPES[idx % TASK_TYPES.len()];
-        let task_id = format!("Task#{}-task-{}", slug, idx);
+        let task_id = format!("Task#{slug}-task-{idx}");
         nodes.push(Node {
             id: task_id.clone(),
             node_type: "Task".to_string(),
             dag_stage: "task".to_string(),
-            title: format!("{}: {}", capitalize(task_type), feat_title),
-            description: Some(format!("Task of type '{}' for feature '{}'.", task_type, feat_title)),
+            title: format!("{}: {feat_title}", capitalize(task_type)),
+            description: Some(format!("Task of type '{task_type}' for feature '{feat_title}'.")),
             status: "draft".to_string(),
             tags: Some(vec!["task".to_string(), task_type.to_string()]),
             meta: Meta {
@@ -362,7 +362,7 @@ fn extract_features(prompt: &str, base_slug: &str) -> Vec<(String, String)> {
 
     if tokens.is_empty() {
         return vec![(
-            format!("{}-feature", base_slug),
+            format!("{base_slug}-feature"),
             "General feature".to_string(),
         )];
     }
@@ -390,7 +390,7 @@ fn extract_features(prompt: &str, base_slug: &str) -> Vec<(String, String)> {
 
     if candidates.is_empty() {
         candidates.push((
-            format!("{}-feature", base_slug),
+            format!("{base_slug}-feature"),
             "General feature".to_string(),
         ));
     }

@@ -19,7 +19,7 @@
 //! ## Layout
 //!
 //! - `ci-base.yml`    — checkout + concurrency settings,
-//!                      `workflow_call`-only.
+//!   `workflow_call`-only.
 //! - `ci-rust.yml`    — adds `cargo fmt` / `clippy` / `test`.
 //! - `ci-node.yml`    — adds `pnpm install` / `tsc` / `vitest`.
 //! - `ci-python.yml`  — adds `uv sync` / `ruff` / `pytest`.

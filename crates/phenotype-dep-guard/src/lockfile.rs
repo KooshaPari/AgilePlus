@@ -36,7 +36,7 @@ pub fn parse_lockfile(path: &Path) -> Result<Vec<Dependency>> {
         ))
     })?;
     let raw = fs::read_to_string(path)?;
-    let lockfile_path = path
+    let _lockfile_path = path
         .file_name()
         .and_then(|s| s.to_str())
         .unwrap_or("lockfile")
@@ -184,6 +184,7 @@ struct CargoLockPackage {
     /// `source = "registry+..."` for non-root packages. The root
     /// workspace entry is the only one without a `source` field.
     #[serde(default)]
+    #[allow(dead_code)]
     source: Option<String>,
 }
 
