@@ -38,7 +38,8 @@ docs/research/*_export.json
 
 # Orphaned lockfiles (no matching package.json at root)
 /bun.lock
-/Cargo.lock
+# Cargo.lock IS committed: this workspace ships binaries (agileplus-cli) and
+# CI runs `cargo deny --locked`, which requires the lockfile to be present.
 
 # Nested lockfiles
 rust/Cargo.lock
