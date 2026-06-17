@@ -269,7 +269,7 @@ pub fn pop_next_backlog_item(conn: &Connection) -> Result<Option<BacklogItem>, D
     if let Some(mut item) = next {
         let id = item
             .id
-            .ok_or_else(|| DomainError::Storage("backlog item missing id".to_string()))?;
+            .ok_or_else(|| DomainError::Storage("backlog item missing id".to_owned()))?;
         update_backlog_status(conn, id, BacklogStatus::Triaged)?;
         item.status = BacklogStatus::Triaged;
         item.updated_at = chrono::Utc::now();

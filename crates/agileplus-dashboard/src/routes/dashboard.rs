@@ -1,4 +1,17 @@
+//! Dashboard route handlers for kanban, work packages, and server-sent events.
+//!
+//! This module implements the core dashboard UI handlers:
+//! - Kanban board view with state-based card grouping and filtering
+//! - Work package list views
+//! - Project switcher for multi-project filtering
+//! - SSE (Server-Sent Events) stream for real-time health/feature updates
+//! - JSON APIs for work-packages and epics/stories (used by React dashboard at port 5176)
+//!
+//! Pattern: if the request carries `HX-Request: true`, return only the relevant
+//! partial template; otherwise return the full page layout.
+
 use std::collections::HashMap;
+use std::path::PathBuf;
 
 use axum::{
     extract::{Path, Query, State},
@@ -6,60 +19,75 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use chrono::Utc;
+use serde::{Deserialize, Serialize};
 
 use crate::app_state::SharedState;
 use crate::templates::{
-    AgentActivityPartial, AgentView, CiLinkView, DashboardPage, EventTimelinePartial,
-    EvidenceBundleView, FeatureDetailPage, FeatureView, GitCommitView, HealthPanelPartial,
-    KanbanPartial, MediaAssetView, PrLinkView, ProjectSwitcherPartial, ProjectView,
-    ReportArtifactView, WpListPartial, WpView,
+    AgentActivityPartial, AgentView, DashboardPage, EventTimelinePartial, EvidenceBundleView,
+    FeatureDetailPage, FeatureView, HealthPanelPartial, KanbanPartial, MediaAssetView,
+    ProjectSwitcherPartial, ProjectView, ReportArtifactView, WpListPartial, WpView,
 };
 
 use super::helpers::{
-    DashboardFilter, build_kanban_cards, dashboard_filter_from_query, is_htmx, load_projects,
-    render,
+    build_kanban_cards, dashboard_filter_from_query, is_htmx, load_projects, render,
+    DashboardFilter,
 };
 
+// ── JSON API Response Types ────────────────────────────────────────────────
+
+/// JSON response for GET /api/dashboard/work-packages.json
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WorkPackageJson {
+    pub id: String,
+    pub feature_id: i64,
+    pub title: String,
+    pub status: String,
+    pub priority: String,
+    pub assignee: Option<String>,
+}
+
+#[allow(dead_code)]
 fn build_feature_events(
     feature: &FeatureView,
     workpackages: &[WpView],
 ) -> Vec<crate::templates::EventView> {
     let now = Utc::now().format("%Y-%m-%d %H:%M:%S UTC").to_string();
-    let mut events = vec![crate::templates::EventView {
-        id: format!("evt-feature-{}-created", feature.id),
-        kind: "system".into(),
-        description: format!("Feature '{}' opened in dashboard", feature.slug),
-        timestamp: now.clone(),
-    }];
+    let mut events = vec![super::helpers::event_view(
+        format!("evt-feature-{}-created", feature.id),
+        "system",
+        format!("Feature '{}' opened in dashboard", feature.slug),
+        now.clone(),
+    )];
 
     if !workpackages.is_empty() {
-        events.push(crate::templates::EventView {
-            id: format!("evt-feature-{}-sync", feature.id),
-            kind: "agent_action".into(),
-            description: format!("{} work package entries synced", workpackages.len()),
-            timestamp: now.clone(),
-        });
+        events.push(super::helpers::event_view(
+            format!("evt-feature-{}-sync", feature.id),
+            "agent_action",
+            format!("{} work package entries synced", workpackages.len()),
+            now.clone(),
+        ));
 
         for wp in workpackages {
-            events.push(crate::templates::EventView {
-                id: format!("evt-feature-{}-wp-{}", feature.id, wp.id),
-                kind: "state_change".into(),
-                description: format!("Work-package {} is in state '{}'", wp.title, wp.state),
-                timestamp: now.clone(),
-            });
+            events.push(super::helpers::event_view(
+                format!("evt-feature-{}-wp-{}", feature.id, wp.id),
+                "state_change",
+                format!("Work-package {} is in state '{}'", wp.title, wp.state),
+                now.clone(),
+            ));
         }
     } else {
-        events.push(crate::templates::EventView {
-            id: format!("evt-feature-{}-no-wp", feature.id),
-            kind: "system".into(),
-            description: "No work packages linked yet".into(),
-            timestamp: now.clone(),
-        });
+        events.push(super::helpers::event_view(
+            format!("evt-feature-{}-no-wp", feature.id),
+            "system",
+            "No work packages linked yet",
+            now.clone(),
+        ));
     }
 
     events
 }
 
+#[allow(dead_code)]
 fn build_feature_evidence_bundles(
     feature: &FeatureView,
     workpackages: &[WpView],
@@ -103,7 +131,12 @@ fn build_feature_evidence_bundles(
             ),
             created_at: Utc::now().format("%Y-%m-%d %H:%M:%S UTC").to_string(),
             artifact_ext: "json".into(),
-            status: if wp.progress > 0 { "accepted" } else { "generated" }.into(),
+            status: if wp.progress > 0 {
+                "accepted"
+            } else {
+                "generated"
+            }
+            .into(),
             content_preview: Some(r#"{"status":"generated","progress":0}"#.to_string()),
             is_text_artifact: true,
             is_image_artifact: false,
@@ -123,6 +156,7 @@ fn build_feature_evidence_bundles(
     bundles
 }
 
+#[allow(dead_code)]
 fn build_feature_media_assets(
     feature: &FeatureView,
     workpackages: &[WpView],
@@ -154,6 +188,7 @@ fn build_feature_media_assets(
     media
 }
 
+#[allow(dead_code)]
 fn build_feature_reports(
     feature: &FeatureView,
     workpackages: &[WpView],
@@ -174,6 +209,7 @@ fn build_feature_reports(
     }]
 }
 
+#[allow(dead_code)]
 pub async fn dashboard_page(
     State(state): State<SharedState>,
     Query(query): Query<HashMap<String, String>>,
@@ -216,6 +252,7 @@ pub async fn kanban_board(
     }
 }
 
+#[allow(dead_code)]
 pub async fn feature_detail(
     State(state): State<SharedState>,
     Path(id): Path<i64>,
@@ -261,6 +298,7 @@ pub async fn wp_list(State(state): State<SharedState>, Path(id): Path<i64>) -> R
     })
 }
 
+#[allow(dead_code)]
 pub async fn health_panel(State(state): State<SharedState>) -> Response {
     let store = state.read().await;
     render(HealthPanelPartial {
@@ -268,6 +306,7 @@ pub async fn health_panel(State(state): State<SharedState>) -> Response {
     })
 }
 
+#[allow(dead_code)]
 pub async fn event_timeline(State(state): State<SharedState>) -> Response {
     let _ = state.read().await;
     render(EventTimelinePartial {
@@ -276,20 +315,11 @@ pub async fn event_timeline(State(state): State<SharedState>) -> Response {
     })
 }
 
+#[allow(dead_code)]
 pub async fn agent_activity(_state: State<SharedState>) -> Response {
     let agents: Vec<AgentView> = vec![
-        AgentView {
-            name: "spec-agent".into(),
-            status: "idle".into(),
-            current_task: String::new(),
-            last_action: "2m ago".into(),
-        },
-        AgentView {
-            name: "impl-agent".into(),
-            status: "running".into(),
-            current_task: "WP13 implementation".into(),
-            last_action: "just now".into(),
-        },
+        super::helpers::agent_view("spec-agent", "idle", "", "2m ago"),
+        super::helpers::agent_view("impl-agent", "running", "WP13 implementation", "just now"),
     ];
     render(AgentActivityPartial { agents })
 }
@@ -316,6 +346,7 @@ pub async fn switch_project(State(state): State<SharedState>, Path(id): Path<i64
     {
         let mut store = state.write().await;
         if id == 0 {
+            // id=0 means "All Projects" -- clear the filter.
             store.active_project_id = None;
         } else if store.projects.iter().any(|p| p.id == id) {
             store.active_project_id = Some(id);
@@ -324,7 +355,173 @@ pub async fn switch_project(State(state): State<SharedState>, Path(id): Path<i64
         }
     }
 
+    // Reload the kanban board with the updated project filter.
     let store = state.read().await;
     let cards = build_kanban_cards(&store, DashboardFilter::All);
     render(KanbanPartial { cards })
+}
+
+// ── /api/time ────────────────────────────────────────────────────────────
+
+pub async fn time_footer() -> axum::response::Html<String> {
+    axum::response::Html(
+        chrono::Utc::now()
+            .format("%Y-%m-%d %H:%M:%S UTC")
+            .to_string(),
+    )
+}
+
+// ── SSE Stream /api/stream ───────────────────────────────────────────────
+
+use axum::response::sse::{Event, Sse};
+use std::convert::Infallible;
+use tokio::time::{interval, Duration};
+
+/// GET /api/stream (Server-Sent Events)
+/// Streams real-time feature and health updates to connected clients.
+/// Broadcasts heartbeat with feature count and health status every 5 seconds.
+pub async fn sse_stream(
+    State(state): State<SharedState>,
+) -> Sse<impl tokio_stream::Stream<Item = Result<Event, Infallible>>> {
+    let state = state.clone();
+    let stream = async_stream::stream! {
+        let mut ticker = interval(Duration::from_secs(5));
+        loop {
+            ticker.tick().await;
+            let store = state.read().await;
+
+            // Broadcast feature_updated event to refresh kanban
+            let feature_count = store.features.len();
+            let data = serde_json::json!({ "type": "heartbeat", "features": feature_count }).to_string();
+            yield Ok(Event::default()
+                .event("feature_updated")
+                .data(data));
+
+            // Broadcast health status
+            let healthy_count = store.health.iter().filter(|s| s.healthy).count();
+            let total_count = store.health.len();
+            let health_data = serde_json::json!({
+                "healthy": healthy_count,
+                "total": total_count,
+                "all_healthy": healthy_count == total_count
+            }).to_string();
+            yield Ok(Event::default()
+                .event("health_changed")
+                .data(health_data));
+        }
+    };
+    Sse::new(stream)
+}
+
+// ── /api/dashboard/work-packages.json ─────────────────────────────────────
+
+/// GET /api/dashboard/work-packages.json
+/// Returns all work packages across all features as a flat JSON array.
+/// Used by the React dashboard at port 5176 to populate the work-package store.
+pub async fn all_work_packages_json(State(state): State<SharedState>) -> impl IntoResponse {
+    let store = state.read().await;
+    let work_packages: Vec<WorkPackageJson> = store
+        .work_packages
+        .iter()
+        .flat_map(|(feature_id, wps)| {
+            wps.iter().map(|wp| {
+                let status = match wp.state {
+                    agileplus_domain::domain::work_package::WpState::Planned => "planned",
+                    agileplus_domain::domain::work_package::WpState::Doing => "in_progress",
+                    agileplus_domain::domain::work_package::WpState::Review => "in_progress",
+                    agileplus_domain::domain::work_package::WpState::Done => "completed",
+                    agileplus_domain::domain::work_package::WpState::Blocked => "blocked",
+                };
+                WorkPackageJson {
+                    id: wp.id.to_string(),
+                    feature_id: *feature_id,
+                    title: wp.title.clone(),
+                    status: status.to_string(),
+                    priority: "medium".to_string(),
+                    assignee: wp.agent_id.clone(),
+                }
+            })
+        })
+        .collect();
+
+    axum::Json(serde_json::json!({
+        "work_packages": work_packages,
+        "count": work_packages.len(),
+        "timestamp": chrono::Utc::now().to_rfc3339(),
+    }))
+}
+
+// ── /api/dashboard/epics-stories.json ────────────────────────────────────
+
+/// GET /api/dashboard/epics-stories.json
+/// Reads Epics + Stories directly from the SQLite database and returns them
+/// as a flat JSON payload. Used by the React dashboard at port 5176.
+pub async fn epics_stories_json() -> impl IntoResponse {
+    // Resolve db path: DATABASE_URL env → DATABASE_PATH env → default agileplus.db
+    let db_path: PathBuf = if let Ok(url) = std::env::var("DATABASE_URL") {
+        url.strip_prefix("sqlite:").unwrap_or(&url).into()
+    } else if let Ok(p) = std::env::var("DATABASE_PATH") {
+        PathBuf::from(p)
+    } else {
+        PathBuf::from("agileplus.db")
+    };
+
+    let conn = match rusqlite::Connection::open(&db_path) {
+        Ok(c) => c,
+        Err(e) => {
+            return axum::Json(serde_json::json!({
+                "epics": [],
+                "stories": [],
+                "epic_count": 0,
+                "story_count": 0,
+                "error": format!("db open failed: {e}"),
+            }));
+        }
+    };
+
+    // Query epics
+    let epics: Vec<serde_json::Value> = {
+        let mut stmt = conn
+            .prepare("SELECT id, title, status, requirement_id FROM epics ORDER BY id")
+            .unwrap_or_else(|_| conn.prepare("SELECT 1 WHERE 0").unwrap());
+        stmt.query_map([], |row| {
+            Ok(serde_json::json!({
+                "id": row.get::<_, i64>(0).unwrap_or(0),
+                "title": row.get::<_, String>(1).unwrap_or_default(),
+                "status": row.get::<_, String>(2).unwrap_or_default(),
+                "requirement_id": row.get::<_, Option<String>>(3).unwrap_or(None),
+            }))
+        })
+        .map(|rows| rows.filter_map(|r| r.ok()).collect())
+        .unwrap_or_default()
+    };
+
+    // Query stories
+    let stories: Vec<serde_json::Value> = {
+        let mut stmt = conn
+            .prepare("SELECT id, epic_id, title, status, requirement_id FROM stories ORDER BY id")
+            .unwrap_or_else(|_| conn.prepare("SELECT 1 WHERE 0").unwrap());
+        stmt.query_map([], |row| {
+            Ok(serde_json::json!({
+                "id": row.get::<_, i64>(0).unwrap_or(0),
+                "epic_id": row.get::<_, Option<i64>>(1).unwrap_or(None),
+                "title": row.get::<_, String>(2).unwrap_or_default(),
+                "status": row.get::<_, String>(3).unwrap_or_default(),
+                "requirement_id": row.get::<_, Option<String>>(4).unwrap_or(None),
+            }))
+        })
+        .map(|rows| rows.filter_map(|r| r.ok()).collect())
+        .unwrap_or_default()
+    };
+
+    let epic_count = epics.len();
+    let story_count = stories.len();
+
+    axum::Json(serde_json::json!({
+        "epics": epics,
+        "stories": stories,
+        "epic_count": epic_count,
+        "story_count": story_count,
+        "timestamp": chrono::Utc::now().to_rfc3339(),
+    }))
 }

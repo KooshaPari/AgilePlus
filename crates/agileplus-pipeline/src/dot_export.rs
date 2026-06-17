@@ -65,7 +65,14 @@ pub fn export(graph: &Graph) -> Result<String, PipelineError> {
             format!(" [{}]", attrs.join(", "))
         };
 
+<<<<<<< HEAD
         lines.push(format!(r#"    "{from_label}" -> "{to_label}"{attr_str};"#));
+=======
+        let edge_op = "->";
+        lines.push(format!(
+            r#"    "{from_label}" {edge_op} "{to_label}"{attr_str};"#
+        ));
+>>>>>>> origin/main
     }
 
     lines.push("}".to_string());

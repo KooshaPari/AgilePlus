@@ -254,6 +254,7 @@ impl EdgeBuilder {
 /// ---------------------------------------------------------------------------
 /// Helpers
 /// ---------------------------------------------------------------------------
+<<<<<<< HEAD
 /// Simple slugify: lowercase, ASCII alphanumeric + hyphens, trimmed.
 fn slugify(s: &str) -> String {
     s.trim()
@@ -271,6 +272,24 @@ fn slugify(s: &str) -> String {
         .filter(|seg| !seg.is_empty())
         .collect::<Vec<_>>()
         .join("-")
+=======
+/// Slugify a node title into a URL/identifier-safe form.
+/// Lowercases, replaces whitespace/punctuation with hyphens, and collapses
+/// consecutive hyphens, matching the canonical phenotype slug rules.
+fn slugify(s: &str) -> String {
+    let mut slug = String::with_capacity(s.len());
+    let mut prev_hyphen = false;
+    for ch in s.chars() {
+        if ch.is_alphanumeric() {
+            slug.push(ch.to_ascii_lowercase());
+            prev_hyphen = false;
+        } else if !prev_hyphen {
+            slug.push('-');
+            prev_hyphen = true;
+        }
+    }
+    slug.trim_matches('-').to_owned()
+>>>>>>> origin/main
 }
 
 /// Generate a process-unique edge id without external dependencies.
@@ -287,6 +306,7 @@ fn new_edge_id() -> String {
 
 /// Validate a node id matches `^[A-Z][a-z]+#[a-z0-9-]+$` without a regex engine.
 fn is_valid_node_id(id: &str) -> bool {
+<<<<<<< HEAD
     let Some((prefix, suffix)) = id.split_once('#') else {
         return false;
     };
@@ -309,6 +329,12 @@ fn is_valid_node_id(id: &str) -> bool {
         && suffix
             .chars()
             .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-')
+=======
+    use regex::Regex;
+    static RE: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
+    let re = RE.get_or_init(|| Regex::new(r"^[A-Z][a-z]+#[a-z0-9\-]+$").expect("domain operation"));
+    re.is_match(id)
+>>>>>>> origin/main
 }
 
 #[cfg(test)]
@@ -331,7 +357,7 @@ mod tests {
             .title("OAuth2 Login")
             .meta(sample_meta())
             .build()
-            .unwrap();
+            .expect("domain operation");
 
         assert_eq!(node.node_type, NodeType::Feature);
         assert_eq!(node.title, "OAuth2 Login");
@@ -346,7 +372,7 @@ mod tests {
             .title("Memory leak in parser")
             .meta(sample_meta())
             .build()
-            .unwrap();
+            .expect("domain operation");
 
         assert_eq!(node.id, "Bug#memory-leak");
     }
@@ -392,7 +418,7 @@ mod tests {
             .table_ref("stories")
             .table_id("ST-42")
             .build()
-            .unwrap();
+            .expect("domain operation");
 
         assert_eq!(node.status, Status::Active);
         assert_eq!(node.tags, vec!["frontend", "ui"]);
@@ -413,7 +439,7 @@ mod tests {
         )
         .meta(sample_meta())
         .build()
-        .unwrap();
+        .expect("domain operation");
 
         assert_eq!(edge.source, "Intent#auth");
         assert_eq!(edge.target, "Feature#oauth2");
@@ -432,7 +458,7 @@ mod tests {
         .id("edge-001")
         .meta(sample_meta())
         .build()
-        .unwrap();
+        .expect("domain operation");
 
         assert_eq!(edge.id, "edge-001");
     }

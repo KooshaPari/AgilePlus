@@ -190,3 +190,84 @@ pub struct BacklogFilters {
     pub sort: BacklogSort,
     pub limit: Option<usize>,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn bug_intent_defaults_to_high_priority() {
+        assert_eq!(Intent::Bug.default_priority(), BacklogPriority::High);
+    }
+
+    #[test]
+    fn feature_intent_defaults_to_medium_priority() {
+        assert_eq!(Intent::Feature.default_priority(), BacklogPriority::Medium);
+    }
+
+    #[test]
+    fn idea_intent_defaults_to_low_priority() {
+        assert_eq!(Intent::Idea.default_priority(), BacklogPriority::Low);
+    }
+
+    #[test]
+    fn docs_intent_defaults_to_low_priority() {
+        assert_eq!(Intent::Docs.default_priority(), BacklogPriority::Low);
+    }
+
+    #[test]
+    fn task_intent_defaults_to_medium_priority() {
+        assert_eq!(Intent::Task.default_priority(), BacklogPriority::Medium);
+    }
+
+    #[test]
+    fn from_triage_sets_status_new_and_derives_priority() {
+        let item = BacklogItem::from_triage(
+            "Fix crash".into(),
+            "App crashes on startup".into(),
+            Intent::Bug,
+            "github".into(),
+        );
+        assert_eq!(item.status, BacklogStatus::New);
+        assert_eq!(item.priority, BacklogPriority::High);
+        assert_eq!(item.title, "Fix crash");
+        assert!(item.id.is_none());
+        assert!(item.tags.is_empty());
+    }
+
+    #[test]
+    fn intent_from_str_roundtrips() {
+        for (s, expected) in [
+            ("bug", Intent::Bug),
+            ("feature", Intent::Feature),
+            ("idea", Intent::Idea),
+            ("task", Intent::Task),
+            ("docs", Intent::Docs),
+        ] {
+            let intent: Intent = s.parse().expect("domain operation");
+            assert_eq!(intent, expected);
+            assert_eq!(intent.to_string(), s);
+        }
+    }
+
+    #[test]
+    fn intent_from_str_rejects_unknown() {
+        assert!("wip".parse::<Intent>().is_err());
+    }
+
+    #[test]
+    fn backlog_priority_from_str_roundtrips() {
+        for s in &["critical", "high", "medium", "low"] {
+            let p: BacklogPriority = s.parse().expect("domain operation");
+            assert_eq!(p.to_string(), *s);
+        }
+    }
+
+    #[test]
+    fn backlog_status_from_str_roundtrips() {
+        for s in &["new", "triaged", "in_progress", "done", "dismissed"] {
+            let st: BacklogStatus = s.parse().expect("domain operation");
+            assert_eq!(st.to_string(), *s);
+        }
+    }
+}

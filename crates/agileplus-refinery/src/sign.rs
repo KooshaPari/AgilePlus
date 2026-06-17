@@ -24,23 +24,40 @@ impl Signer for GpgSigner {
     async fn sign(&self, repo_root: &std::path::Path, commit_sha: &str) -> Result<String> {
         #[cfg(feature = "gpg")]
         {
-            use gpgme::{Context, Protocol};
-            let mut ctx = Context::from_protocol(Protocol::OpenPgp)
-                .with_context(|| "failed to create GPG context")?;
-            let key = ctx
-                .get_key(&self.key_id)
-                .with_context(|| format!("GPG key not found: {}", self.key_id))?;
-            ctx.add_signer(&key)
-                .with_context(|| "failed to add signer to GPG context")?;
-
-            // Build the commit object text to sign.
+            // gpgme::Context is !Send, so ALL gpgme work must be isolated inside
+            // spawn_blocking. We fetch commit_text async first (it's a String = Send),
+            // pass it into the closure by move, then await the async amend after
+            // spawn_blocking completes (gpgme::Context is fully gone by then).
             let commit_text = get_commit_text(repo_root, commit_sha).await?;
-            let mut signature = Vec::new();
-            ctx.sign_detached(commit_text.into_bytes(), &mut signature)
-                .with_context(|| "GPG sign failed")?;
 
+<<<<<<< HEAD
             // Append the signature to the commit object.
             let signature_b64 = base64::encode(&signature);
+=======
+            let key_id = self.key_id.clone();
+            let signature_b64 = tokio::task::spawn_blocking(move || -> anyhow::Result<String> {
+                use gpgme::{Context, Protocol};
+
+                let mut ctx = Context::from_protocol(Protocol::OpenPgp)
+                    .with_context(|| "failed to create GPG context")?;
+                let key = ctx
+                    .get_key(&key_id)
+                    .with_context(|| format!("GPG key not found: {key_id}"))?;
+                ctx.add_signer(&key)
+                    .with_context(|| "failed to add signer to GPG context")?;
+
+                let mut signature = Vec::new();
+                ctx.sign_detached(commit_text.into_bytes(), &mut signature)
+                    .with_context(|| "GPG sign failed")?;
+
+                use base64::Engine as _;
+                Ok(base64::engine::general_purpose::STANDARD.encode(&signature))
+            })
+            .await
+            .context("spawn_blocking panicked")??;
+
+            // gpgme::Context is gone; safe to .await again.
+>>>>>>> origin/main
             let new_sha =
                 amend_commit_with_gpg_signature(repo_root, commit_sha, &signature_b64).await?;
             return Ok(new_sha);
@@ -101,7 +118,7 @@ impl Signer for SshSigner {
     async fn sign(&self, repo_root: &std::path::Path, commit_sha: &str) -> Result<String> {
         #[cfg(feature = "ssh-sign")]
         {
-            use ssh_key::PrivateKey;
+            use ssh_key::{HashAlg, LineEnding, PrivateKey};
             use std::fs;
 
             let pem = fs::read_to_string(&self.key_path)
@@ -111,12 +128,19 @@ impl Signer for SshSigner {
 
             let commit_text = get_commit_text(repo_root, commit_sha).await?;
             let sig = private_key
-                .sign(commit_text.as_bytes())
+                .sign("git", HashAlg::Sha256, commit_text.as_bytes())
                 .with_context(|| "SSH sign failed")?;
-            let signature_b64 = base64::encode(&sig.to_bytes()?);
+            // SshSig serializes to PEM-armored form which git expects for gpgsig headers.
+            let signature_pem = sig
+                .to_pem(LineEnding::LF)
+                .with_context(|| "SSH sig to PEM failed")?;
 
             let new_sha =
+<<<<<<< HEAD
                 amend_commit_with_ssh_signature(repo_root, commit_sha, &signature_b64).await?;
+=======
+                amend_commit_with_ssh_signature(repo_root, commit_sha, &signature_pem).await?;
+>>>>>>> origin/main
             return Ok(new_sha);
         }
 
@@ -227,6 +251,7 @@ async fn get_commit_message(repo_root: &std::path::Path, commit_sha: &str) -> Re
 async fn amend_commit_message(repo_root: &std::path::Path, message: &str) -> Result<String> {
     let repo_root = repo_root.to_path_buf();
     let message = message.to_string();
+    let root2 = repo_root.clone();
     let output = tokio::task::spawn_blocking({
         let message = message.clone();
         let repo_root = repo_root.clone();
@@ -251,7 +276,7 @@ async fn amend_commit_message(repo_root: &std::path::Path, message: &str) -> Res
     let output = tokio::task::spawn_blocking(move || {
         Command::new("git")
             .args(["rev-parse", "HEAD"])
-            .current_dir(&repo_root)
+            .current_dir(&root2)
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .output()
@@ -304,6 +329,7 @@ async fn amend_commit_with_ssh_signature(
 
 async fn write_commit_object(repo_root: &std::path::Path, content: &str) -> Result<String> {
     let repo_root = repo_root.to_path_buf();
+    let repo_root_for_reset = repo_root.clone();
     let content = content.to_string();
     let output = tokio::task::spawn_blocking({
         let content = content.clone();
@@ -343,7 +369,7 @@ async fn write_commit_object(repo_root: &std::path::Path, content: &str) -> Resu
     let _ = tokio::task::spawn_blocking(move || {
         Command::new("git")
             .args(["reset", "--soft", &sha_for_reset])
-            .current_dir(&repo_root)
+            .current_dir(&repo_root_for_reset)
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .output()

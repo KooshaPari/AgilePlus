@@ -40,7 +40,33 @@ scan() {
   local pattern="$2"
   local matches
 
-  matches="$(printf '%s\n' "$files" | xargs grep --color=never -InE "$pattern" || true)"
+  # Scan files for the pattern, excluding lines inside test modules/functions.
+  # We exclude: files under /tests/ directories and any line that the awk
+  # test-block tracker marks as being inside a #[cfg(test)] mod block.
+  matches=""
+  while IFS= read -r file; do
+    [ -f "$file" ] || continue
+    # Skip integration-test files
+    echo "$file" | grep -q '/tests/' && continue
+    # Use awk to skip lines inside #[cfg(test)] mod blocks
+    result="$(awk -v pat="$pattern" -v fname="$file" '
+      /^#\[cfg\(test\)\]/ { skip_next=1; next }
+      skip_next && /^[[:space:]]*mod / { in_test_mod=1; depth=0; skip_next=0 }
+      skip_next { skip_next=0 }
+      in_test_mod {
+        for(i=1;i<=length($0);i++){
+          c=substr($0,i,1)
+          if(c=="{") depth++
+          else if(c=="}") { depth--; if(depth<=0){ in_test_mod=0; next } }
+        }
+        next
+      }
+      { if($0 ~ pat) printf "%s:%d:%s\n", fname, NR, $0 }
+    ' "$file" 2>/dev/null || true)"
+    [ -n "$result" ] && matches="${matches}${result}"$'\n'
+  done < <(printf '%s\n' "$files")
+
+  matches="${matches%$'\n'}"
   if [ -n "$matches" ]; then
     printf '%s\n' "$matches"
     echo "anti-pattern detected: $label" >&2

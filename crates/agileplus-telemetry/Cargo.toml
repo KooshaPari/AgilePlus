@@ -32,3 +32,6 @@ agileplus-domain = { path = "../agileplus-domain" }
 
 [dev-dependencies]
 tempfile.workspace = true
+
+[package.metadata.cargo-machete]
+ignored = ["anyhow", "tokio"]

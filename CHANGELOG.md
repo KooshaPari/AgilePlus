@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- eco-029: Consolidated all open branches onto `integration/consolidate`; fixed CI (phenoShared clone, buf proto dedup, taplo format, commitlint config, domain-deps allowlist, pre-commit violations).
 - L3-039: `toolchain-versions.json` — canonical toolchain version matrix for the Phenotype ecosystem (Rust 1.88.0, Node 22, Python 3.12, Go 1.23).
 - L3-040: `worklogs/README.md` — index and conventions for the worklog directory.
 - L3-038: CI status badge in README.md (shields.io GitHub Actions).

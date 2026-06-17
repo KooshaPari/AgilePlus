@@ -15,7 +15,12 @@
 //!    Jaccard to break ties.
 //!
 //! This mirrors the 2025 SOTA on `BigCloneBench` (MinHash-LSH candidates
+<<<<<<< HEAD
 //! + embedding verification) and `pip dedupe`'s package-level strategy.
+=======
+//! + embedding verification) and `pip dedupe`'s package-level
+//!   strategy.
+>>>>>>> origin/main
 //!
 //! # Audit
 //!
@@ -140,11 +145,19 @@ impl HybridDedup {
             (0..cfg.bands).map(|_| HashMap::new()).collect();
         for (idx, sig) in sigs.iter().enumerate() {
             let raw = sig.as_slice();
+<<<<<<< HEAD
             for (b, band_table) in band_tables.iter_mut().enumerate() {
                 let lo = b * cfg.rows;
                 let hi = lo + cfg.rows;
                 let bucket = band_hash(&raw[lo..hi], b);
                 band_table.entry(bucket).or_default().push(idx);
+=======
+            for (b, table) in band_tables.iter_mut().enumerate().take(cfg.bands) {
+                let lo = b * cfg.rows;
+                let hi = lo + cfg.rows;
+                let bucket = band_hash(&raw[lo..hi], b);
+                table.entry(bucket).or_default().push(idx);
+>>>>>>> origin/main
             }
         }
         Ok(Self {
@@ -434,7 +447,7 @@ mod tests {
         ];
         let groups = run_dedup(&items, &backend, HybridConfig::default()).unwrap();
         // We expect exactly one group containing {0, 1}.
-        assert_eq!(groups.len(), 1, "groups: {:?}", groups);
+        assert_eq!(groups.len(), 1, "groups: {groups:?}");
         let g = &groups[0];
         assert!(g.members.contains(&0) && g.members.contains(&1));
         assert!(!g.members.contains(&2));
@@ -559,8 +572,7 @@ mod tests {
             assert!(
                 approx(w[0].embedding_cosine, w[1].embedding_cosine, 1e-9)
                     || w[0].embedding_cosine >= w[1].embedding_cosine,
-                "groups not sorted: {:?}",
-                groups
+                "groups not sorted: {groups:?}"
             );
         }
     }

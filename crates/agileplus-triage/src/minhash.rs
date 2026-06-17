@@ -181,7 +181,7 @@ mod tests {
         let a = MinHash::sign("alpha beta gamma delta", 256);
         let b = MinHash::sign("zulu yankee xray whiskey", 256);
         let j = a.jaccard(&b);
-        assert!(j < 0.1, "disjoint sets should be near 0, got {}", j);
+        assert!(j < 0.1, "disjoint sets should be near 0, got {j}");
     }
 
     #[test]
@@ -195,7 +195,7 @@ mod tests {
             256,
         );
         let j = a.jaccard(&b);
-        assert!(j > 0.8, "small edit should still be >0.8, got {}", j);
+        assert!(j > 0.8, "small edit should still be >0.8, got {j}");
     }
 
     #[test]
@@ -247,11 +247,7 @@ mod tests {
             // practice for non-tiny sets.
             assert!(
                 approx_eq(est, truth, 0.10) || (truth < 0.1 && est < 0.15),
-                "minhash={:.3} truth={:.3} for {:?} vs {:?}",
-                est,
-                truth,
-                a,
-                b
+                "minhash={est:.3} truth={truth:.3} for {a:?} vs {b:?}"
             );
         }
     }
@@ -290,8 +286,12 @@ mod tests {
         // 64 permutations with identical input should be ~1.0.
         assert!(
             j > 0.95,
+<<<<<<< HEAD
             "k-mismatch should still match on common prefix, got {}",
             j
+=======
+            "k-mismatch should still match on common prefix, got {j}"
+>>>>>>> origin/main
         );
     }
 

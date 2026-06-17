@@ -42,7 +42,11 @@ impl<S: McpServer> StdioTransport<S> {
             let resp = self.handle_request(req).await?;
             let out =
                 serde_json::to_string(&resp).map_err(|e| McpError::Internal(e.to_string()))?;
+<<<<<<< HEAD
             writeln!(stdout, "{out}").map_err(|e| McpError::Transport(e.to_string()))?;
+=======
+            writeln!(stdout, "{}", out).map_err(|e| McpError::Transport(e.to_string()))?;
+>>>>>>> origin/main
             stdout
                 .flush()
                 .map_err(|e| McpError::Transport(e.to_string()))?;
@@ -99,7 +103,12 @@ impl<S: McpServer> StdioTransport<S> {
                 Ok(serde_json::json!({ "content": content }))
             }
             _ => Err(McpError::InvalidArguments(format!(
+<<<<<<< HEAD
                 "unknown method: {method}"
+=======
+                "unknown method: {}",
+                method
+>>>>>>> origin/main
             ))),
         }
     }

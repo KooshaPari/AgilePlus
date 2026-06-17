@@ -25,7 +25,7 @@ pub fn domain_event_to_proto(e: AgentEvent) -> ProtoAgentEvent {
         payload: {
             let mut m = std::collections::HashMap::new();
             m.insert("data".to_string(), e.payload());
-            m
+            serde_json::to_string(&m).unwrap_or_else(|_| e.payload())
         },
         timestamp: chrono::Utc::now().to_rfc3339(),
     }

@@ -3,6 +3,7 @@
 //! Implements `StoragePort` using rusqlite with WAL mode and foreign keys.
 //! Traceability: WP06
 
+pub mod event_store;
 pub mod migrations;
 pub mod rebuild;
 pub mod repository;
@@ -33,16 +34,13 @@ use agileplus_domain::{
     ports::{ContentStoragePort, StoragePort},
 };
 
-use agileplus_domain::domain::event::Event;
-use agileplus_events::{EventError, EventStore};
-
 use crate::migrations::MigrationRunner;
 use agileplus_domain::domain::project::Project;
 use agileplus_domain::domain::sync_mapping::SyncMapping;
 
 use crate::repository::{
-    audit, backlog, cycles, epics, events, evidence, features, governance, metrics, modules,
-    projects, stories, sync_mappings, users, work_packages,
+    audit, backlog, cycles, epics, evidence, features, governance, metrics, modules, projects,
+    stories, sync_mappings, users, work_packages,
 };
 
 /// SQLite-backed storage adapter.
@@ -190,6 +188,38 @@ impl StoragePort for SqliteStorageAdapter {
     async fn get_ready_wps(&self, feature_id: i64) -> Result<Vec<WorkPackage>, DomainError> {
         let conn = self.lock()?;
         work_packages::get_ready_wps(&conn, feature_id)
+    }
+
+    async fn create_work_package_for_story(
+        &self,
+        story_id: i64,
+        wp: &WorkPackage,
+    ) -> Result<i64, DomainError> {
+        let conn = self.lock()?;
+        work_packages::create_work_package_for_story(&conn, story_id, wp)
+    }
+
+    async fn list_wps_by_story(&self, story_id: i64) -> Result<Vec<WorkPackage>, DomainError> {
+        let conn = self.lock()?;
+        work_packages::list_wps_by_story(&conn, story_id)
+    }
+
+    async fn list_all_work_packages(&self) -> Result<Vec<WorkPackage>, DomainError> {
+        let conn = self.lock()?;
+        work_packages::list_all_work_packages(&conn)
+    }
+
+    async fn get_next_ready_wps(
+        &self,
+        cycle: Option<i64>,
+    ) -> Result<Vec<WorkPackage>, DomainError> {
+        let conn = self.lock()?;
+        work_packages::get_next_ready_wps(&conn, cycle)
+    }
+
+    async fn add_story_to_cycle(&self, cycle_id: i64, story_id: i64) -> Result<(), DomainError> {
+        let conn = self.lock()?;
+        cycles::add_story_to_cycle(&conn, cycle_id, story_id)
     }
 
     // -- Audit CRUD --
@@ -681,73 +711,6 @@ impl ContentStoragePort for SqliteStorageAdapter {
     async fn get_ready_wps(&self, feature_id: i64) -> Result<Vec<WorkPackage>, DomainError> {
         let conn = self.lock()?;
         work_packages::get_ready_wps(&conn, feature_id)
-    }
-}
-
-#[async_trait::async_trait]
-impl EventStore for SqliteStorageAdapter {
-    async fn append(&self, event: &Event) -> Result<i64, EventError> {
-        let conn = self
-            .lock()
-            .map_err(|e| EventError::StorageError(e.to_string()))?;
-        events::append_event(&conn, event).map_err(|e| EventError::StorageError(e.to_string()))
-    }
-
-    async fn get_events(
-        &self,
-        entity_type: &str,
-        entity_id: i64,
-    ) -> Result<Vec<Event>, EventError> {
-        let conn = self
-            .lock()
-            .map_err(|e| EventError::StorageError(e.to_string()))?;
-        events::get_events(&conn, entity_type, entity_id)
-            .map_err(|e| EventError::StorageError(e.to_string()))
-    }
-
-    async fn get_events_since(
-        &self,
-        entity_type: &str,
-        entity_id: i64,
-        sequence: i64,
-    ) -> Result<Vec<Event>, EventError> {
-        let conn = self
-            .lock()
-            .map_err(|e| EventError::StorageError(e.to_string()))?;
-        events::get_events_since(&conn, entity_type, entity_id, sequence)
-            .map_err(|e| EventError::StorageError(e.to_string()))
-    }
-
-    async fn get_events_by_range(
-        &self,
-        entity_type: &str,
-        entity_id: i64,
-        from: chrono::DateTime<chrono::Utc>,
-        to: chrono::DateTime<chrono::Utc>,
-    ) -> Result<Vec<Event>, EventError> {
-        let conn = self
-            .lock()
-            .map_err(|e| EventError::StorageError(e.to_string()))?;
-        events::get_events_by_range(
-            &conn,
-            entity_type,
-            entity_id,
-            &from.to_rfc3339(),
-            &to.to_rfc3339(),
-        )
-        .map_err(|e| EventError::StorageError(e.to_string()))
-    }
-
-    async fn get_latest_sequence(
-        &self,
-        entity_type: &str,
-        entity_id: i64,
-    ) -> Result<i64, EventError> {
-        let conn = self
-            .lock()
-            .map_err(|e| EventError::StorageError(e.to_string()))?;
-        events::get_latest_sequence(&conn, entity_type, entity_id)
-            .map_err(|e| EventError::StorageError(e.to_string()))
     }
 }
 
@@ -2139,13 +2102,7 @@ mod tests {
         let db = SqliteStorageAdapter::in_memory().expect("in-memory adapter");
         let conn = db.conn_for_bench().expect("conn");
 
-        let expected: &[&str] = &[
-            "worklog_entries",
-            "trace_links",
-            "gate_results",
-            "run_records",
-            "scope_status",
-        ];
+        let expected: &[&str] = &["gate_results", "run_records", "scope_status"];
 
         let mut stmt = conn
             .prepare("SELECT name FROM sqlite_master WHERE type = 'table'")

@@ -10,12 +10,12 @@
 //! `GitHubClient` for production use.
 //!
 //! # DB-persistence follow-up
+//! # DB-persistence
 //!
-//! TODO(WP19-T114): wire `sync_repository` to `agileplus-sqlite` by having
-//! callers iterate `SyncReport::stories` and upsert each story via the
-//! `StoryRepository` port.  Keep this function free of I/O so it can stay
+//! Callers (CLI `sync_cmd::run`, gRPC `WorkItemsService::sync_repository`)
+//! persist stories via the `StoryRepository` port after receiving the
+//! `SyncReport`.  This function remains free of I/O so it can be
 //! unit-tested without a DB fixture.
-
 use async_trait::async_trait;
 
 use agileplus_domain::domain::story::Story;
@@ -62,6 +62,9 @@ pub struct SyncReport {
 ///
 /// Invariant violations (empty title, unknown state) are recorded in
 /// [`SyncReport::skipped`] rather than aborting the whole sync.
+///
+/// Callers persist stories via the `StoryRepository` port after receiving
+/// the report — see `sync_cmd::run` (CLI) and `work_items.rs` (gRPC).
 pub async fn sync_repository(
     source: &dyn GhDataSource,
     project_id: i64,

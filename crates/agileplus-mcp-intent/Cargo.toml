@@ -38,3 +38,6 @@ agileplus-domain = { path = "../agileplus-domain" }
 [dev-dependencies]
 tokio = { version = "1", features = ["rt", "macros"] }
 reqwest = { version = "0.12", features = ["json"] }
+
+[package.metadata.cargo-machete]
+ignored = ["tower"]

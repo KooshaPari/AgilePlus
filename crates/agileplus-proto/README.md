@@ -12,4 +12,3 @@ Compiled or stubbed protobuf/tonic types for the gRPC layer.
 ```bash
 cargo test -p agileplus-proto
 ```
-

@@ -132,7 +132,11 @@ fn parse_attributes(attr_str: &str) -> serde_json::Value {
             // Integer
             val.as_str()
                 .parse::<i64>()
+<<<<<<< HEAD
                 .map(|n| serde_json::Value::Number(n.into()))
+=======
+                .map(|n| serde_json::Value::Number(serde_json::Number::from(n)))
+>>>>>>> origin/main
                 .unwrap_or_else(|_| serde_json::Value::String(val.as_str().to_string()))
         } else {
             continue;
@@ -170,7 +174,11 @@ fn infer_rel_type(properties: &serde_json::Value) -> RelType {
         Some("Tagged") => RelType::Tagged,
         Some("InProject") => RelType::InProject,
         _ => {
+<<<<<<< HEAD
             // Default heuristic: treat as DependsOn regardless of guard
+=======
+            // Default heuristic: if it has a `guard` attribute, treat as DependsOn
+>>>>>>> origin/main
             RelType::DependsOn
         }
     }

@@ -179,7 +179,7 @@ pub struct AgentEvent {
     pub feature_slug: String,
     pub wp_sequence: i32,
     pub agent_id: String,
-    pub payload: HashMap<String, String>,
+    pub payload: String,
     pub timestamp: String,
 }
 

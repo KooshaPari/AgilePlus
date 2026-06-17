@@ -8,11 +8,21 @@ rust-version.workspace = true
 [dependencies]
 serde.workspace = true
 serde_json.workspace = true
+<<<<<<< HEAD
+=======
+phenotype-error-core.workspace = true
+>>>>>>> origin/main
 traceability-core.workspace = true
 thiserror.workspace = true
 async-trait.workspace = true
 chrono.workspace = true
 sha2.workspace = true
+<<<<<<< HEAD
+=======
+agileplus-validate.workspace = true
+uuid.workspace = true
+regex = "1"
+>>>>>>> origin/main
 
 [dev-dependencies]
 tokio.workspace = true

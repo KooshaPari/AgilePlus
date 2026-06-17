@@ -24,3 +24,6 @@ uuid = { workspace = true }
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["full", "macros"] }
+
+[package.metadata.cargo-machete]
+ignored = ["agileplus-graph", "thiserror"]

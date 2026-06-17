@@ -52,8 +52,8 @@ async fn feature_update_persists_mutable_fields() {
     let mut feature = Feature::new("mut-feat", "Mutable Feature", [1u8; 32], Some("main"));
     let id = StoragePort::create_feature(&db, &feature).await.unwrap();
     feature.id = id;
-    feature.friendly_name = "Renamed Feature".to_string();
-    feature.target_branch = "release/stable".to_string();
+    feature.friendly_name = "Renamed Feature".to_owned();
+    feature.target_branch = "release/stable".to_owned();
     feature.spec_hash = [2u8; 32];
     feature.module_id = None;
     feature.state = FeatureState::Validated;
@@ -177,13 +177,13 @@ async fn wp_update_persists_mutable_fields() {
     wp.file_scope = vec!["src/lib.rs".into()];
     let wp_id = StoragePort::create_work_package(&db, &wp).await.unwrap();
     wp.id = wp_id;
-    wp.title = "Updated Task".to_string();
+    wp.title = "Updated Task".to_owned();
     wp.sequence = 4;
     wp.file_scope = vec!["src/main.rs".into(), "src/lib.rs".into()];
-    wp.acceptance_criteria = "Updated criteria".to_string();
-    wp.agent_id = Some("agent-1".to_string());
-    wp.pr_url = Some("https://example.com/pr/7".to_string());
-    wp.worktree_path = Some("/tmp/worktree".to_string());
+    wp.acceptance_criteria = "Updated criteria".to_owned();
+    wp.agent_id = Some("agent-1".to_owned());
+    wp.pr_url = Some("https://example.com/pr/7".to_owned());
+    wp.worktree_path = Some("/tmp/worktree".to_owned());
     wp.state = WpState::Doing;
     wp.updated_at = chrono::Utc::now();
  

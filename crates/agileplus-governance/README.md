@@ -14,4 +14,3 @@ Governance system for release channels, audit logging, policy checks, and rate l
 ```bash
 cargo test -p agileplus-governance
 ```
-

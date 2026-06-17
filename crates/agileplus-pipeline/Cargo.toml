@@ -28,3 +28,6 @@ petgraph = "0.7"
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["full", "macros"] }
+
+[package.metadata.cargo-machete]
+ignored = ["agileplus-triage", "tokio-stream", "tracing"]

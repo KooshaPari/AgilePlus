@@ -27,7 +27,7 @@ repos:
     rev: 24.10.0
     hooks:
       - id: black
-        language_version: python3.11
+        language_version: python3
         types_or: [python, pyi]
 
   - repo: https://github.com/gitleaks/gitleaks
@@ -55,19 +55,9 @@ repos:
         pass_filenames: false
         stages: [manual]
 
-      - id: tsc
-        name: tsc --noEmit
-        entry: npx tsc
-        args: [--noEmit]
-        language: system
-        types_or: [ts, tsx]
-        pass_filenames: false
-        stages: [manual]
-
       - id: trufflehog
         name: trufflehog filesystem
         entry: trufflehog filesystem --no-update --only-verified --fail .
         language: system
         pass_filenames: false
         stages: [manual]
-

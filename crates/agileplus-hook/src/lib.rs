@@ -9,6 +9,8 @@
 pub mod dispatch;
 pub mod registry;
 
+pub use registry::HookRegistry;
+
 use serde::{Deserialize, Serialize};
 
 /// When a hook should fire.

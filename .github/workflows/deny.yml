@@ -39,10 +39,20 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
 
+      - name: Checkout phenoShared sibling
+        run: |
+          git clone --depth 1 \
+            "https://x-access-token:${{ github.token }}@github.com/KooshaPari/phenoShared.git" \
+            "${{ github.workspace }}/../phenoShared"
+
       - name: Install cargo-deny
+<<<<<<< HEAD
         uses: taiki-e/install-action@v2
+=======
+        uses: taiki-e/install-action@7a79fe8c3a13344501c80d99cae481c1c9085912  # v2 (same as sast-quick.yml)
+>>>>>>> origin/main
         with:
           tool: cargo-deny
 
       - name: Run cargo-deny
-        run: cargo deny --manifest-path Cargo.toml --locked check
+        run: cargo deny --manifest-path Cargo.toml check

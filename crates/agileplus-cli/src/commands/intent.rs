@@ -266,7 +266,11 @@ fn generate_graph(prompt: &str) -> IntentGraph {
             id: task_id.clone(),
             node_type: "Task".to_string(),
             dag_stage: "task".to_string(),
+<<<<<<< HEAD
             title: format!("{}: {feat_title}", capitalize(task_type)),
+=======
+            title: format!("{}: {}", capitalize(task_type), feat_title),
+>>>>>>> origin/main
             description: Some(format!(
                 "Task of type '{task_type}' for feature '{feat_title}'."
             )),

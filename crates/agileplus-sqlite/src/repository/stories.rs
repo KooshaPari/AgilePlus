@@ -46,6 +46,7 @@ fn row_to_story(row: &rusqlite::Row<'_>) -> rusqlite::Result<Story> {
         points: points_raw.map(|p| p as u32),
         assignee_id: row.get(6)?,
         requirement_id: row.get(10).unwrap_or(None),
+        trace_ids: Vec::new(),
         created_at: parse_dt(&created_at),
         updated_at: parse_dt(&updated_at),
     })
@@ -85,9 +86,7 @@ pub fn upsert_story_by_requirement_id(
     story: &Story,
 ) -> Result<i64, DomainError> {
     let req_id = story.requirement_id.as_deref().ok_or_else(|| {
-        DomainError::Validation(
-            "upsert_story_by_requirement_id requires requirement_id".to_string(),
-        )
+        DomainError::Validation("upsert_story_by_requirement_id requires requirement_id".to_owned())
     })?;
     let now = chrono::Utc::now().to_rfc3339();
     // Check if a row with this requirement_id already exists.

@@ -127,13 +127,44 @@ impl GitVcsAdapter {
             .map_err(|e| DomainError::Storage(format!("failed to spawn git: {e}")))?;
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr).into_owned();
+            let stdout = String::from_utf8_lossy(&output.stdout).into_owned();
+            return Err(DomainError::Storage(format!(
+                "git {} failed: {}",
+                args.join(" "),
+                if stderr.trim().is_empty() {
+                    stdout.trim()
+                } else {
+                    stderr.trim()
+                }
+            )));
+        }
+        Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
+    }
+
+    /// Run `git(1)` and return stdout even on non-zero exit (for
+    /// commands like `merge-tree` that output conflict info on stdout
+    /// and exit with non-zero).
+    fn run_git_allow_failure(&self, args: &[&str]) -> Result<String, DomainError> {
+        let output = Command::new("git")
+            .args(args)
+            .current_dir(&self.repo_root)
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .output()
+            .map_err(|e| DomainError::Storage(format!("failed to spawn git: {e}")))?;
+        let stdout = String::from_utf8_lossy(&output.stdout).into_owned();
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr).into_owned();
+            if !stdout.trim().is_empty() {
+                return Ok(stdout);
+            }
             return Err(DomainError::Storage(format!(
                 "git {} failed: {}",
                 args.join(" "),
                 stderr.trim()
             )));
         }
-        Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
+        Ok(stdout.trim().to_string())
     }
 
     /// Run `git(1)` and ignore stdout; only the exit status matters.
@@ -412,7 +443,7 @@ impl VcsPort for GitVcsAdapter {
         // line starts with `changed in both` (the 2.38+ format), we
         // parse the filename; otherwise we fall back to the diff
         // format and look for `<<<<<<<` / `=======` markers.
-        let raw = self.run_git(&["merge-tree", target, source])?;
+        let raw = self.run_git_allow_failure(&["merge-tree", target, source])?;
         if raw.is_empty() {
             return Ok(vec![]);
         }
@@ -682,8 +713,12 @@ mod tests {
             "expected wp-1 branch in worktree list, got {:?}",
             names
         );
+        // Cleanup to avoid polluting temp dir for subsequent tests
+        adapter
+            .cleanup_worktree(&wt)
+            .await
+            .expect("cleanup worktree");
     }
-
     #[tokio::test]
     async fn create_branch_lists_and_checkout() {
         let (_dir, path) = make_repo();

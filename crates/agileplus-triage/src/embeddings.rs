@@ -198,6 +198,7 @@ impl EmbeddingBackend for OaiEmbeddings {
         1536
     }
     fn embed(&self, texts: &[&str]) -> Vec<Vec<f32>> {
+        use serde::{Deserialize, Serialize};
         if texts.is_empty() {
             return Vec::new();
         }
@@ -275,6 +276,7 @@ impl EmbeddingBackend for VoyageEmbeddings {
         1024
     }
     fn embed(&self, texts: &[&str]) -> Vec<Vec<f32>> {
+        use serde::{Deserialize, Serialize};
         if texts.is_empty() {
             return Vec::new();
         }
@@ -364,7 +366,7 @@ mod tests {
         let embs = b.embed(&inputs);
         assert_eq!(embs.len(), 3);
         for (i, e) in embs.iter().enumerate() {
-            assert_eq!(e.len(), 64, "input {} has wrong dim", i);
+            assert_eq!(e.len(), 64, "input {i} has wrong dim");
         }
     }
 
@@ -379,8 +381,7 @@ mod tests {
             if sum > 0.0 {
                 assert!(
                     approx(norm as f32, 1.0, 1e-3),
-                    "vector not L2-normalized: norm={}",
-                    norm
+                    "vector not L2-normalized: norm={norm}"
                 );
             }
         }
@@ -406,9 +407,7 @@ mod tests {
         let sim_far = cosine(&embs[0], &embs[2]);
         assert!(
             sim_close > sim_far,
-            "similar texts should have higher cosine: close={} far={}",
-            sim_close,
-            sim_far
+            "similar texts should have higher cosine: close={sim_close} far={sim_far}"
         );
     }
 

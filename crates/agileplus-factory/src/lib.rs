@@ -225,8 +225,12 @@ impl<Q: IssueQueue> Factory<Q> {
                 None => continue,
             };
 
+<<<<<<< HEAD
             #[cfg(test)]
             let wt_path = ClaimBoundWorktree::create(
+=======
+            let _wt_path = ClaimBoundWorktree::create(
+>>>>>>> origin/main
                 self.repo_root.clone(),
                 &feature_slug,
                 &wp_id,
@@ -254,12 +258,6 @@ impl<Q: IssueQueue> Factory<Q> {
 
             self.claim_store.release(&claim_id);
             processed += 1;
-
-            // Stash the worktree path for test assertions.
-            #[cfg(test)]
-            {
-                let _ = wt_path;
-            }
         }
 
         Ok(processed)

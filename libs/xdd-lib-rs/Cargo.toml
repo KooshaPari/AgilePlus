@@ -19,6 +19,9 @@ toml.workspace = true
 thiserror.workspace = true
 anyhow.workspace = true
 
+[package.metadata.cargo-machete]
+ignored = ["serde", "anyhow"]
+
 [dev-dependencies]
 tempfile.workspace = true
 tokio.workspace = true

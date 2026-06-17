@@ -68,6 +68,8 @@ enum Command {
     ImportDagctl(commands::import_dagctl::ImportDagctlArgs),
     /// Convert a natural language prompt into a structured intent graph
     Intent(commands::intent::IntentArgs),
+    /// Link work items to Tracera trace IDs
+    Trace(commands::trace::TraceCmd),
     /// Print a high-level project status summary
     Status,
 }
@@ -544,7 +546,7 @@ async fn main() {
             Command::Status => cmd_status(&store),
             Command::Version => cmd_version(),
             Command::Sync(args) => {
-                sync_cmd::run(args, None).await?;
+                sync_cmd::run(args, None, None).await?;
             }
             Command::SeedRequirements(args) => {
                 commands::seed_requirements::run(&args)?;
@@ -578,6 +580,9 @@ async fn main() {
             }
             Command::Intent(args) => {
                 commands::intent::run(&args)?;
+            }
+            Command::Trace(cmd) => {
+                cmd.run().await?;
             }
         }
         Ok(())

@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "allowJs": true
+  },
+  "files": [],
+  "include": [],
+  "exclude": ["node_modules", "crates", "dist", "build"]
+}

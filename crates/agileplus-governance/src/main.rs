@@ -2,7 +2,7 @@
 //!
 //! Command-line interface for the governance system.
 
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use clap::Parser;
 use std::path::PathBuf;
 
@@ -146,7 +146,7 @@ async fn main() -> Result<()> {
                 if !result.warnings.is_empty() {
                     println!("  Warnings:");
                     for w in &result.warnings {
-                        println!("    - {}", w);
+                        println!("    - {w}");
                     }
                 }
             } else {
@@ -154,7 +154,7 @@ async fn main() -> Result<()> {
                 if !result.policy_failures.is_empty() {
                     println!("  Policy failures:");
                     for f in &result.policy_failures {
-                        println!("    - {}", f);
+                        println!("    - {f}");
                     }
                 }
             }
@@ -170,7 +170,7 @@ async fn main() -> Result<()> {
             println!("Connection: {:?}", status.connection_status);
             println!("Pending sync operations: {}", status.pending_operations);
             if let Some(last_sync) = status.last_sync {
-                println!("Last sync: {}", last_sync);
+                println!("Last sync: {last_sync}");
             }
         }
     }
@@ -184,7 +184,7 @@ fn print_policy_result(result: &agileplus_governance::PolicyResult) {
     } else {
         println!("✗ DENIED: {}", result.reason);
         if let Some(ref policy) = result.policy {
-            println!("  Policy: {}", policy);
+            println!("  Policy: {policy}");
         }
     }
 }

@@ -1,4 +1,4 @@
-//! Use-case implementations for the CLI triage subcommands.
+﻿//! Use-case implementations for the CLI triage subcommands.
 //!
 //! These orchestrate the new triage primitives (dedup, claim, repo_introspect)
 //! and the agileplus-graph dependency graph into a coherent set of
@@ -158,8 +158,11 @@ impl<W: WpRepository> AppState<W> {
             .lock()
             .map_err(|_| anyhow!("claim store lock poisoned"))?
             .lookup(ClaimKind::Worktree, &req.wp_id);
+<<<<<<< HEAD
         // We can't re-lock here without re-entrancy; the next call
         // to `release` uses the original `claim_id` from the request.
+=======
+>>>>>>> origin/main
 
         // Release the explicit claim_id from the request.
         let _ = self

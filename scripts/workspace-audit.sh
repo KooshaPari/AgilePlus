@@ -22,7 +22,7 @@ fi
 
 # Check each member exists
 while IFS= read -r line; do
-    member=$(echo "$line" | tr -d '"' | tr -d ',' | sed 's/.*= *//')
+    member=$(echo "$line" | sed 's/.*path\s*=\s*"//' | sed 's/".*//' | tr -d ',')
     member_path="$REPO_ROOT/$member"
     if [ ! -d "$member_path" ]; then
         echo "MISSING: $member (path: $member_path)"
@@ -32,8 +32,8 @@ while IFS= read -r line; do
     fi
 done <<< "$path_deps"
 
-# Also check workspace.members list
-members=$(grep -A 100 'members\s*=' "$REPO_ROOT/Cargo.toml" | grep -E '^\s*"' | tr -d '"' | tr -d ',' | sed 's/^[[:space:]]*//' || true)
+# Also check workspace.members list — extract only the members array (stop at closing ']')
+members=$(awk '/^members\s*=\s*\[/{found=1;next} found&&/^\]/{found=0} found{gsub(/[",]/,"",$0); gsub(/^[[:space:]]*/,"",$0); if($0!="")print}' "$REPO_ROOT/Cargo.toml" || true)
 
 if [ -n "$members" ]; then
     echo ""
