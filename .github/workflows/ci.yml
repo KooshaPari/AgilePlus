@@ -142,24 +142,12 @@ jobs:
         with:
           version: "28.x"
           repo-token: ${{ github.token }}
-<<<<<<< HEAD
-      # Prebuilt binaries: building these from source pulls deps whose MSRV
-      # exceeds the job toolchain (e.g. cargo-semver-checks needs rustc 1.91).
-      - uses: taiki-e/install-action@7a79fe8c3a13344501c80d99cae481c1c9085912  # v2
-        with:
-          tool: cargo-machete,cargo-semver-checks,typos-cli
-      - name: Detect unused deps
-        run: cd rust && cargo machete
-      # semver-checks needs a published baseline to diff against; absent one it
-      # cannot establish compatibility, so a clean exit there is non-fatal.
-=======
       - name: Install extras
         uses: taiki-e/install-action@7a79fe8c3a13344501c80d99cae481c1c9085912  # v2
         with:
-          tool: cargo-machete,cargo-semver-checks@0.44.0
+          tool: cargo-machete,cargo-semver-checks@0.44.0,typos-cli
       - name: Detect unused deps
         run: cargo machete
->>>>>>> origin/main
       - name: Semver compatibility check
         run: cargo semver-checks check-release || true
       - name: Typo check
@@ -187,16 +175,10 @@ jobs:
         with:
           version: "28.x"
           repo-token: ${{ github.token }}
-<<<<<<< HEAD
-      - uses: taiki-e/install-action@7a79fe8c3a13344501c80d99cae481c1c9085912  # v2
-        with:
-          tool: cargo-tarpaulin
-=======
       - name: Install tarpaulin
         uses: taiki-e/install-action@7a79fe8c3a13344501c80d99cae481c1c9085912  # v2
         with:
           tool: cargo-tarpaulin@0.31.3
->>>>>>> origin/main
       - name: Generate coverage
         run: cargo tarpaulin --workspace --out xml --output-dir coverage
       - name: Upload coverage to Codecov
@@ -320,14 +302,7 @@ jobs:
             "${{ github.workspace }}/../phenoShared"
       - name: Validate domain crate dependencies
         run: |
-<<<<<<< HEAD
-          # traceability-core = org single-source-of-truth PM library (governance/
-          # lifecycle/intent_graph); inlining would fork the SSOT. async-trait is
-          # required by the domain's hexagonal port traits (dyn-compatible async).
-          ALLOWED="serde serde_json chrono sha2 thiserror toml dirs-next zeroize keyring traceability-core async-trait"
-=======
           ALLOWED="serde serde_json chrono sha2 thiserror toml dirs-next zeroize keyring anyhow async-trait uuid regex phenotype-error-core traceability-core agileplus-validate"
->>>>>>> origin/main
           DEPS=$(sed -n '/^\[dependencies\]/,/^\[/{/^\[/d;p}' crates/agileplus-domain/Cargo.toml | grep -E '^\w' | cut -d'.' -f1 | cut -d' ' -f1)
           for dep in $DEPS; do
             if ! echo "$ALLOWED" | grep -qw "$dep"; then
