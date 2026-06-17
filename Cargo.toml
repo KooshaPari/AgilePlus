@@ -190,9 +190,9 @@ uuid = { version = "1", features = ["v4", "serde"] }
 async-nats = "0.47"
 paste = "1"
 sqlx = "0.8"
-phenotype-error-core = { git = "https://github.com/KooshaPari/phenoShared", branch = "main" }
-phenotype-logging = { git = "https://github.com/KooshaPari/phenoShared", branch = "main" }
-traceability-core = { git = "https://github.com/KooshaPari/phenotype-pm-core", branch = "master" }
+phenotype-error-core = { git = "https://github.com/KooshaPari/phenoShared", rev = "95d94d5d77015368ee802130bf4feaae0b3566db" }
+phenotype-logging = { git = "https://github.com/KooshaPari/phenoShared", rev = "95d94d5d77015368ee802130bf4feaae0b3566db" }
+traceability-core = { git = "https://github.com/KooshaPari/phenotype-pm-core", rev = "d5ceb3083e07f6a313dd842a07bf46708b70b4b5" }
 agileplus-config = { path = "crates/agileplus-config" }
 agileplus-validate = { path = "crates/agileplus-validate" }
 agileplus-proto = { path = "crates/agileplus-proto" }
