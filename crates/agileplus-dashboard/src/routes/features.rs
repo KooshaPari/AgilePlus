@@ -4,7 +4,6 @@
 //! events, and media asset galleries. Each handler follows the HTMX partial
 //! pattern: return only the changed component for AJAX requests, full page otherwise.
 
-use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 
@@ -20,12 +19,13 @@ use agileplus_domain::domain::state_machine::FeatureState;
 
 use crate::app_state::SharedState;
 use crate::templates::{
-    all_feature_states, CiLinkView, EvidenceBundleView, FeatureDetailPage, FeatureView,
-    GitCommitView, KanbanPartial, MediaAssetView, PrLinkView, ReportArtifactView,
-    EventTimelinePartial, WpView,
+    CiLinkView, EvidenceBundleView, EventTimelinePartial, FeatureDetailPage, FeatureView,
+    GitCommitView, KanbanPartial, MediaAssetView, PrLinkView, ReportArtifactView, WpView,
 };
 
 use chrono::Utc;
+
+use super::helpers::{self, DashboardFilter};
 
 // ── Helper Functions ─────────────────────────────────────────────────────────
 
@@ -40,37 +40,6 @@ fn render<T: Template>(tpl: T) -> Response {
         )
             .into_response(),
     }
-}
-
-/// Dashboard filter enumeration for grouping features by state.
-#[allow(dead_code)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum DashboardFilter {
-    All,
-    Active,
-    Blocked,
-    Shipped,
-}
-
-/// Build Kanban cards for the dashboard, grouped by feature state.
-fn build_kanban_cards(
-    store: &crate::app_state::DashboardStore,
-    _filter: DashboardFilter,
-) -> HashMap<String, Vec<FeatureView>> {
-    let states = all_feature_states();
-    let mut cards: HashMap<String, Vec<FeatureView>> = HashMap::new();
-    for s in &states {
-        cards.insert(s.clone(), vec![]);
-    }
-    // Group active features by state after applying project and sidebar filters.
-    for feature in store.features_for_active_project() {
-        let state = &feature.state;
-        let state_key = format!("{state:?}");
-        if let Some(features_in_state) = cards.get_mut(&state_key) {
-            features_in_state.push(FeatureView::from_feature(feature));
-        }
-    }
-    cards
 }
 
 /// Build feature event timeline.
@@ -561,6 +530,6 @@ pub async fn feature_transition(
 
     // Return the kanban partial so htmx can swap it
     let store = state.read().await;
-    let cards = build_kanban_cards(&store, DashboardFilter::All);
+    let cards = helpers::build_kanban_cards(&store, DashboardFilter::All);
     render(KanbanPartial { cards })
 }

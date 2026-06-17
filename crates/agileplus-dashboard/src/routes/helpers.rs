@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::env;
 
 use agileplus_domain::domain::{
     feature::Feature, state_machine::FeatureState, work_package::WpState,
@@ -12,9 +11,6 @@ use axum::{
 
 use crate::app_state::DashboardStore;
 use crate::templates::{FeatureView, ProjectSummaryView, ProjectView, all_feature_states};
-
-pub(super) const DEFAULT_PLANE_API_URL: &str = "https://app.plane.so";
-pub(super) const DEFAULT_PLANE_WEB_URL: &str = "https://app.plane.so";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) enum DashboardFilter {
@@ -83,25 +79,6 @@ pub(super) fn build_project_summaries(store: &DashboardStore) -> Vec<ProjectSumm
             }
         })
         .collect()
-}
-
-pub(super) fn env_or_none(key: &str) -> Option<String> {
-    env::var(key)
-        .ok()
-        .map(|value| value.trim().to_string())
-        .filter(|value| !value.is_empty())
-}
-
-pub(super) fn parse_bool_env(key: &str, default: bool) -> bool {
-    env::var(key)
-        .ok()
-        .map(|value| {
-            matches!(
-                value.trim().to_lowercase().as_str(),
-                "1" | "true" | "yes" | "on"
-            )
-        })
-        .unwrap_or(default)
 }
 
 pub(super) fn dashboard_filter_from_query(query: &HashMap<String, String>) -> DashboardFilter {
@@ -264,75 +241,6 @@ pub fn percent_encode_path(path: &str) -> String {
             other => vec![other],
         })
         .collect()
-}
-
-// ── Plane configuration utilities ──────────────────────────────────────────
-
-pub(super) fn plane_api_key_hint(api_key: &Option<String>) -> String {
-    match api_key {
-        Some(key) => match (key.chars().next(), key.chars().next_back()) {
-            (Some(first), Some(last)) => format!("{first}••••••{last}"),
-            _ => "Configured".to_string(),
-        },
-        None => "Not configured".to_string(),
-    }
-}
-
-pub(super) fn plane_health_endpoints(
-    services: &[crate::app_state::ServiceHealth],
-) -> Vec<crate::templates::PlaneHealthEndpointView> {
-    services
-        .iter()
-        .filter(|service| service.name.contains("Plane") || service.name.starts_with("API"))
-        .map(|service| crate::templates::PlaneHealthEndpointView {
-            name: service.name.clone(),
-            healthy: service.healthy,
-            degraded: service.degraded,
-            latency_ms: service.latency_ms,
-            last_check_utc: service
-                .last_check
-                .format("%Y-%m-%d %H:%M:%S UTC")
-                .to_string(),
-        })
-        .collect()
-}
-
-pub(super) fn plane_sync_mode() -> String {
-    if parse_bool_env("PLANE_SYNC_BIDIRECTIONAL", false) {
-        "Bidirectional".to_string()
-    } else {
-        "One-way".to_string()
-    }
-}
-
-pub(super) fn plane_connection_checks(
-    api_key: &Option<String>,
-    workspace: &Option<String>,
-) -> (bool, String, Vec<String>) {
-    let mut warnings = Vec::new();
-    if api_key.is_none() {
-        warnings.push("Missing PLANE_API_KEY; configure a valid Plane API key".to_string());
-    }
-    if workspace.is_none() {
-        warnings.push("Missing PLANE_WORKSPACE; set workspace slug for Plane sync".to_string());
-    }
-
-    if warnings.is_empty() {
-        (true, "Connected via PLANE_API_KEY".to_string(), warnings)
-    } else if warnings.len() == 1 {
-        let status = warnings[0].clone();
-        (false, status, warnings)
-    } else {
-        (false, "Plane settings incomplete".to_string(), warnings)
-    }
-}
-
-pub(super) fn percentage_coverage(hit: usize, total: usize) -> String {
-    if total == 0 {
-        return "0/0 (0%)".to_string();
-    }
-    let ratio = (hit.saturating_mul(100)).saturating_div(total);
-    format!("{hit}/{total} ({ratio}%)")
 }
 
 // ── Service restart command validation ─────────────────────────────────────
