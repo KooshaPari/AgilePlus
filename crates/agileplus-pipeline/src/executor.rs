@@ -41,10 +41,17 @@ pub struct NodeOutput {
 }
 
 /// Executor topologically sorts the graph and runs nodes in parallel where possible.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct Executor {
     /// Default timeout for nodes without an explicit timeout attribute.
+    /// Defaults to 60 seconds via [`Executor::new`] / [`Default`].
     pub default_timeout_secs: u64,
+}
+
+impl Default for Executor {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Executor {
