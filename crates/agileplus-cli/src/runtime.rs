@@ -94,7 +94,7 @@ mod tests {
 
     #[tokio::test]
     async fn version_executes_via_dyn_trait() {
-        let command = VersionArgs::default();
+        let command = VersionArgs;
         let dyn_command: &dyn SubcommandAsync = &command;
         let mut ctx = Context::new("agileplus.db");
 
