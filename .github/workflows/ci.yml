@@ -290,7 +290,10 @@ jobs:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
       - name: Validate domain crate dependencies
         run: |
-          ALLOWED="serde serde_json chrono sha2 thiserror toml dirs-next zeroize keyring"
+          # traceability-core = org single-source-of-truth PM library (governance/
+          # lifecycle/intent_graph); inlining would fork the SSOT. async-trait is
+          # required by the domain's hexagonal port traits (dyn-compatible async).
+          ALLOWED="serde serde_json chrono sha2 thiserror toml dirs-next zeroize keyring traceability-core async-trait"
           DEPS=$(sed -n '/^\[dependencies\]/,/^\[/{/^\[/d;p}' crates/agileplus-domain/Cargo.toml | grep -E '^\w' | cut -d'.' -f1 | cut -d' ' -f1)
           for dep in $DEPS; do
             if ! echo "$ALLOWED" | grep -qw "$dep"; then
