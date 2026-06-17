@@ -32,12 +32,10 @@ pub fn export(graph: &Graph) -> Result<String, PipelineError> {
             .map(|s| s.to_string())
             .unwrap_or_else(|| node.id.to_string());
 
-        let attrs = properties_to_dot_attrs(&node.properties);
-        let attr_str = if attrs.is_empty() {
-            String::new()
-        } else {
-            format!(" [{}]", attrs.join(", "))
-        };
+        let mut attrs = properties_to_dot_attrs(&node.properties);
+        // Always emit the UUID so parse_dot can restore node identity on round-trip.
+        attrs.push(format!(r#"id="{}""#, node.id));
+        let attr_str = format!(" [{}]", attrs.join(", "));
 
         lines.push(format!(r#"    "{label}"{attr_str};"#));
     }
