@@ -2,7 +2,6 @@
 
 use std::process::Command;
 
-use anyhow::{anyhow, Result};
 use regex::Regex;
 use tracing::{info, warn};
 
