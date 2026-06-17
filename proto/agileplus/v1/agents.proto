@@ -3,6 +3,9 @@ syntax = "proto3";
 package agileplus.v1;
 
 option go_package = "github.com/phenotype/agileplus-proto/gen/go/agileplus/v1;agileplusv1";
+option java_package = "com.phenotype.agileplus.v1";
+option java_outer_classname = "AgentsProto";
+option java_multiple_files = true;
 
 // Agent coordination messages — used internally by the event bus / proxy layer.
 // Traceability: WP14-T083
