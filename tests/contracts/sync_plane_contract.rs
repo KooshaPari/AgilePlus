@@ -12,7 +12,7 @@ fn make_issue(name: &str) -> PlaneWorkItem {
     PlaneWorkItem {
         id: None,
         name: name.to_string(),
-        description_html: Some(format!("<p>{}</p>", name)),
+        description_html: Some(format!("<p>{name}</p>")),
         state: Some("backlog".to_string()),
         priority: Some(3),
         parent: None,

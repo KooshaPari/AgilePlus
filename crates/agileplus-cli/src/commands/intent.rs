@@ -553,10 +553,8 @@ mod tests {
                         return false;
                     }
                     seen_lower = true;
-                } else {
-                    if !c.is_ascii_lowercase() && !c.is_ascii_digit() && c != '-' {
-                        return false;
-                    }
+                } else if !c.is_ascii_lowercase() && !c.is_ascii_digit() && c != '-' {
+                    return false;
                 }
             }
             seen_hash && seen_lower
