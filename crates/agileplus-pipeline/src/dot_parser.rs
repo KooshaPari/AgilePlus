@@ -65,13 +65,15 @@ pub fn parse_dot(dot: &str) -> Result<Graph, PipelineError> {
             let attrs = &caps[2];
             let properties = parse_attributes(attrs);
             let node_type = infer_node_type(&properties);
-            let id = *id_map.entry(name.clone()).or_insert_with(|| {
-                // If properties already contain a UUID, reuse it; otherwise generate new.
-                properties
-                    .get("id")
-                    .and_then(|v| v.as_str().and_then(|s| Uuid::parse_str(s).ok()))
-                    .unwrap_or_else(Uuid::new_v4)
-            });
+            let id = *id_map
+                .entry(name.clone())
+                .or_insert_with(|| {
+                    // If properties already contain a UUID, reuse it; otherwise generate new.
+                    properties
+                        .get("id")
+                        .and_then(|v| v.as_str().and_then(|s| Uuid::parse_str(s).ok()))
+                        .unwrap_or_else(Uuid::new_v4)
+                });
             let node = Node::with_id(id, node_type, properties);
             graph.add_node(node);
         }
@@ -112,15 +114,13 @@ pub fn parse_dot(dot: &str) -> Result<Graph, PipelineError> {
 
 fn parse_attributes(attr_str: &str) -> serde_json::Value {
     let mut map = serde_json::Map::new();
-    let re = Regex::new(
-        r#"(?x)
+    let re = Regex::new(r#"(?x)
         (\w+)\s*=\s*
         (?:
             "([^"]*)" |
             ([0-9]+)
         )
-    "#,
-    )
+    "#)
     .unwrap();
 
     for caps in re.captures_iter(attr_str) {
@@ -130,10 +130,9 @@ fn parse_attributes(attr_str: &str) -> serde_json::Value {
             serde_json::Value::String(val.as_str().to_string())
         } else if let Some(val) = caps.get(3) {
             // Integer
-            val.as_str()
-                .parse::<i64>()
-                .map(|n| serde_json::Value::Number(serde_json::Number::from(n)))
-                .unwrap_or_else(|_| serde_json::Value::String(val.as_str().to_string()))
+            val.as_str().parse::<i64>().map(|n| serde_json::Value::Number(n.into())).unwrap_or_else(|_| {
+                serde_json::Value::String(val.as_str().to_string())
+            })
         } else {
             continue;
         };
@@ -170,7 +169,7 @@ fn infer_rel_type(properties: &serde_json::Value) -> RelType {
         Some("Tagged") => RelType::Tagged,
         Some("InProject") => RelType::InProject,
         _ => {
-            // Default heuristic: if it has a `guard` attribute, treat as DependsOn
+            // Default heuristic: treat as DependsOn regardless of guard
             RelType::DependsOn
         }
     }
@@ -179,7 +178,6 @@ fn infer_rel_type(properties: &serde_json::Value) -> RelType {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use serde_json::json;
 
     #[test]
     fn parse_simple_digraph() {

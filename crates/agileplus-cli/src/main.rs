@@ -327,7 +327,7 @@ fn cmd_feature_count(store: &MockStore, state: Option<&str>) -> anyhow::Result<(
             // any states that exist in data but not in the canonical list.
             let mut states: Vec<FeatureState> = by_state.keys().copied().collect();
             states.sort_by_key(|s| format!("{s}"));
-            println!("{:<14} {}", "STATE", "COUNT");
+            println!("{:<14} COUNT", "STATE");
             println!("{}", "-".repeat(22));
             for s in &states {
                 println!("{:<14} {}", s, by_state.get(s).copied().unwrap_or(0));
@@ -354,7 +354,7 @@ fn cmd_feature_search(store: &MockStore, query: &str) {
         println!("No features matched `{query}`.");
         return;
     }
-    println!("{:<5} {:<28} {:<14} {}", "ID", "SLUG", "STATE", "NAME");
+    println!("{:<5} {:<28} {:<14} NAME", "ID", "SLUG", "STATE");
     println!("{}", "-".repeat(70));
     for f in matches {
         println!(
@@ -374,7 +374,7 @@ fn cmd_feature_ready(store: &MockStore) {
         println!("No features are currently in the `validated` state.");
         return;
     }
-    println!("{:<5} {:<28} {}", "ID", "SLUG", "NAME");
+    println!("{:<5} {:<28} NAME", "ID", "SLUG");
     println!("{}", "-".repeat(50));
     for f in ready {
         println!("{:<5} {:<28} {}", f.id, f.slug, f.friendly_name);
@@ -427,7 +427,7 @@ fn cmd_module_search(store: &MockStore, query: &str) {
         println!("No modules matched `{query}`.");
         return;
     }
-    println!("{:<5} {:<20} {}", "ID", "SLUG", "NAME");
+    println!("{:<5} {:<20} NAME", "ID", "SLUG");
     println!("{}", "-".repeat(50));
     for m in matches {
         println!("{:<5} {:<20} {}", m.id, m.slug, m.friendly_name);
@@ -460,7 +460,7 @@ fn cmd_status(store: &MockStore) {
     println!();
     println!("Features by state:");
     for (s, n) in &by_state {
-        println!("  {:<14} {}", s, n);
+        println!("  {s:<14} {n}");
     }
 }
 
