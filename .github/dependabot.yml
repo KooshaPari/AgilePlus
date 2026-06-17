@@ -212,33 +212,6 @@ updates:
     commit-message: { prefix: "chore(proto-deps)", include: "scope" }
 
   # --------------------------------------------------------------------------
-  # Python (phenotype_traceability + tests)
-  # --------------------------------------------------------------------------
-  - package-ecosystem: "pip"
-    directory: "/python"
-    schedule:
-      interval: "weekly"
-      day: "tuesday"
-      time: "06:00"
-      timezone: "UTC"
-    open-pull-requests-limit: 5
-    labels:
-      - "dependencies"
-      - "python"
-      - "agileplus"
-    groups:
-      minor-and-patch:
-        applies-to: version-updates
-        patterns:
-          - "*"
-        update-types:
-          - "minor"
-          - "patch"
-    commit-message:
-      prefix: "chore(python-deps)"
-      include: "scope"
-
-  # --------------------------------------------------------------------------
   # GitHub Actions (CI)
   # --------------------------------------------------------------------------
   - package-ecosystem: "github-actions"
