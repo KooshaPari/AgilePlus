@@ -132,7 +132,7 @@ jobs:
         with:
           tool: cargo-audit,cargo-deny
       - name: Audit advisories
-        run: cargo audit
+        run: cargo audit --audit-config .cargo/audit.toml
       - name: Check licenses, advisories, duplicates
         run: cargo deny check -c rust/deny.toml
 

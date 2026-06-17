@@ -65,7 +65,7 @@ $activeRenderer = @($resvg, $rsvg, $magick) | Where-Object { $_ } | Select-Objec
 Write-Host "Renderer: $activeRenderer"
 Write-Host "Source  : $Svg"
 
-# 1) PNGs at every size
+# 1) PNG images at every size
 $pngBySize = @{}
 foreach ($s in $sizes) {
     $dst = Join-Path $OutDir "logo-$s.png"
