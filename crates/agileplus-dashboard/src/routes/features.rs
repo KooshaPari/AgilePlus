@@ -266,7 +266,7 @@ fn build_feature_media_assets(
 /// Build feature report artifacts.
 fn build_feature_reports(
     feature: &FeatureView,
-    workpackages: &[WpView],
+    _workpackages: &[WpView],
 ) -> Vec<ReportArtifactView> {
     vec![ReportArtifactView {
         id: format!("report-{id}-coverage", id = feature.id),
