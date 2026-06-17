@@ -1,7 +1,7 @@
 # Plan: Worktree Remediation
 
 ## Retirement Summary (2026-05-05)
-Work was verified completed ops — retured as COMPLETED_OPS.
+Work was verified completed ops — retired as COMPLETED_OPS.
 
 ## Work Performed (2026-03-28/29)
 
