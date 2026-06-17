@@ -4,7 +4,7 @@ use std::process::Command;
 
 use anyhow::{anyhow, Result};
 use regex::Regex;
-use tracing::{error, info, warn};
+use tracing::{info, warn};
 
 use agileplus_events::domain_event::{DomainEvent, EventEnvelope};
 use agileplus_triage::claim::Claim;

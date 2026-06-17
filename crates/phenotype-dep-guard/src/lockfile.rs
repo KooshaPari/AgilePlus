@@ -33,7 +33,7 @@ pub fn parse_lockfile(path: &Path) -> Result<Vec<Dependency>> {
         Error::Manifest(format!("unsupported lockfile filename: {}", path.display()))
     })?;
     let raw = fs::read_to_string(path)?;
-    let lockfile_path = path
+    let _lockfile_path = path
         .file_name()
         .and_then(|s| s.to_str())
         .unwrap_or("lockfile")
