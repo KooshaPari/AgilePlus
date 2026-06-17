@@ -39,9 +39,11 @@ mod tests {
             state: "InProgress".to_string(),
             next_command: "continue".to_string(),
             blockers: vec!["blocker1".to_string()],
-            governance: Some(GovernanceSummary {
-                gate_passed: true,
-                violations_count: 0,
+            governance: Some(GovernanceStatus {
+                all_gates_passed: true,
+                total_rules: 0,
+                passed_rules: 0,
+                outstanding: vec![],
             }),
         };
         assert_eq!(state.state, "InProgress");

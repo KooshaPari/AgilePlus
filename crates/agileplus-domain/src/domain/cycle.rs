@@ -97,9 +97,10 @@ impl CycleWithFeatures {
     /// is in `Validated` or `Shipped` state (FR-C07).
     pub fn is_shippable(&self) -> bool {
         !self.features.is_empty()
-            && self.features.iter().all(|f| {
-                matches!(f.state, FeatureState::Validated | FeatureState::Shipped)
-            })
+            && self
+                .features
+                .iter()
+                .all(|f| matches!(f.state, FeatureState::Validated | FeatureState::Shipped))
     }
 }
 

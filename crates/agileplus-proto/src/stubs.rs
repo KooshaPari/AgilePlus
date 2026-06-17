@@ -15,13 +15,15 @@ pub struct FeatureState {
     pub state: String,
     pub next_command: String,
     pub blockers: Vec<String>,
-    pub governance: Option<GovernanceSummary>,
+    pub governance: Option<GovernanceStatus>,
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
-pub struct GovernanceSummary {
-    pub gate_passed: bool,
-    pub violations_count: i32,
+pub struct GovernanceStatus {
+    pub all_gates_passed: bool,
+    pub total_rules: i32,
+    pub passed_rules: i32,
+    pub outstanding: Vec<GateViolation>,
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
