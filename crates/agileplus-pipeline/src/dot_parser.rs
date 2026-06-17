@@ -41,7 +41,10 @@ pub fn parse_dot(dot: &str) -> Result<Graph, PipelineError> {
 
     let edge_re = Regex::new(
         r#"(?x)
-        ^\s*"?([^"]+)"?\s*->\s*"?([^"]+)"?\s*(?:\[\s*([^\]]*?)\s*\])?\s*;?
+        ^\s*"?([^"\s\[]+(?:\s+[^"\s\[>-][^"\s\[>-]*)*)"?\s*
+        ->\s*
+        "?([^"\s\[;]+)"?\s*
+        (?:\[\s*([^\]]*?)\s*\])?\s*;?
         "#,
     )
     .map_err(|e| PipelineError::DotParse(e.to_string()))?;
@@ -57,6 +60,10 @@ pub fn parse_dot(dot: &str) -> Result<Graph, PipelineError> {
             continue;
         }
         if line == "{" || line == "}" {
+            continue;
+        }
+        // Skip edge lines — they are parsed in Pass 2
+        if line.contains("->") {
             continue;
         }
 
