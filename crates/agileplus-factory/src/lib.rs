@@ -225,7 +225,7 @@ impl<Q: IssueQueue> Factory<Q> {
                 None => continue,
             };
 
-            let _wt_path = ClaimBoundWorktree::create(
+            let wt_path = ClaimBoundWorktree::create(
                 self.repo_root.clone(),
                 &feature_slug,
                 &wp_id,
