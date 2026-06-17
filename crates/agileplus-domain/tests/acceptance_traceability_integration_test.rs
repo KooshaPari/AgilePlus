@@ -3,7 +3,10 @@
 //! This test suite validates that acceptance criteria (from WorkPackage/Feature acceptance)
 //! can be linked to traced artifacts in Tracera, forming a bidirectional traceability bridge.
 
-use agileplus_domain::traceability::{NoopTraceAdapter, TraceRef, TraceabilityPort};
+use agileplus_domain::adapters::noop_trace_adapter::NoopTraceAdapter;
+use agileplus_domain::ports::traceability_port::TraceabilityPort;
+use agileplus_domain::traceability::TraceRef;
+use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -130,6 +133,7 @@ fn test_acceptance_contract_links_to_trace_ref() {
         trace_id: trace_id.clone(),
         artifact_type: "requirement".to_string(),
         entity_id,
+        linked_at: Utc::now(),
     };
 
     let criterion = AcceptanceCriterion::new("AC-1", "User can log in with email")
@@ -150,16 +154,19 @@ fn test_multiple_criteria_each_with_different_trace_refs() {
         trace_id: "FR-101".to_string(),
         artifact_type: "requirement".to_string(),
         entity_id,
+        linked_at: Utc::now(),
     };
     let trace_ref_2 = TraceRef {
         trace_id: "TEST-42".to_string(),
         artifact_type: "test_case".to_string(),
         entity_id,
+        linked_at: Utc::now(),
     };
     let trace_ref_3 = TraceRef {
         trace_id: "EV-7".to_string(),
         artifact_type: "evidence".to_string(),
         entity_id,
+        linked_at: Utc::now(),
     };
 
     let contract = AcceptanceContract::new(entity_id)
@@ -191,6 +198,7 @@ fn test_acceptance_contract_serializes_with_trace_refs() {
         trace_id: "FR-200".to_string(),
         artifact_type: "specification".to_string(),
         entity_id,
+        linked_at: Utc::now(),
     };
 
     let contract = AcceptanceContract::new(entity_id).add_criterion(
@@ -232,6 +240,7 @@ fn test_unverified_criterion_with_trace_ref_not_counted_as_done() {
         trace_id: "FR-300".to_string(),
         artifact_type: "requirement".to_string(),
         entity_id,
+        linked_at: Utc::now(),
     };
 
     let contract = AcceptanceContract::new(entity_id)
@@ -266,6 +275,7 @@ fn test_trace_ref_artifact_type_preserved_in_contract() {
             trace_id: format!("ART-{}", idx),
             artifact_type: artifact_type.to_string(),
             entity_id,
+            linked_at: Utc::now(),
         };
         let criterion = AcceptanceCriterion::new(&format!("AC-{}", idx), "Test criterion")
             .with_trace(trace_ref);
@@ -291,6 +301,7 @@ fn test_acceptance_contract_round_trip_serialization() {
                 trace_id: "FR-400".to_string(),
                 artifact_type: "requirement".to_string(),
                 entity_id,
+                linked_at: Utc::now(),
             }),
         )
         .add_criterion(AcceptanceCriterion::new(
@@ -302,6 +313,7 @@ fn test_acceptance_contract_round_trip_serialization() {
                 trace_id: "TEST-50".to_string(),
                 artifact_type: "test_case".to_string(),
                 entity_id,
+                linked_at: Utc::now(),
             }),
         );
 
@@ -343,6 +355,7 @@ fn test_link_nonexistent_criterion_returns_error() {
         trace_id: "FR-500".to_string(),
         artifact_type: "requirement".to_string(),
         entity_id,
+        linked_at: Utc::now(),
     };
 
     // Try to link to a criterion that doesn't exist
@@ -361,6 +374,7 @@ async fn test_verify_criterion_with_linked_trace() {
         trace_id: "FR-600".to_string(),
         artifact_type: "requirement".to_string(),
         entity_id,
+        linked_at: Utc::now(),
     };
 
     // Simulate linking the trace ref through the port
