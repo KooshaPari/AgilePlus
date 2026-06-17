@@ -210,7 +210,7 @@ pub struct DispatchCommandResponse {
 // ── integrations.proto ───────────────────────────────────────────────────────
 
 #[derive(Clone, Debug, Default, PartialEq)]
-pub struct BacklogItemProto {
+pub struct BacklogItem {
     pub id: i64,
     pub title: String,
     pub description: String,
@@ -237,7 +237,7 @@ pub struct CreateBacklogItemRequest {
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct CreateBacklogItemResponse {
-    pub item: Option<BacklogItemProto>,
+    pub item: Option<BacklogItem>,
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -247,7 +247,7 @@ pub struct ImportBacklogRequest {
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct ImportBacklogResponse {
-    pub items: Vec<BacklogItemProto>,
+    pub items: Vec<BacklogItem>,
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -257,7 +257,7 @@ pub struct GetBacklogItemRequest {
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct GetBacklogItemResponse {
-    pub item: Option<BacklogItemProto>,
+    pub item: Option<BacklogItem>,
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -273,7 +273,7 @@ pub struct ListBacklogRequest {
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct ListBacklogResponse {
-    pub items: Vec<BacklogItemProto>,
+    pub items: Vec<BacklogItem>,
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -296,7 +296,7 @@ pub struct PopBacklogRequest {
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct PopBacklogResponse {
-    pub items: Vec<BacklogItemProto>,
+    pub items: Vec<BacklogItem>,
 }
 
 // ── work_items.proto ─────────────────────────────────────────────────────────

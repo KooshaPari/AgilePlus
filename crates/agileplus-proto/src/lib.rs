@@ -133,7 +133,7 @@ mod tests {
 
         #[test]
         fn test_backlog_item_roundtrip() {
-            let item = BacklogItemProto {
+            let item = BacklogItem {
                 id: 100,
                 title: "Backlog Item".to_string(),
                 description: "Description here".to_string(),
@@ -149,7 +149,7 @@ mod tests {
 
             let mut buf = Vec::new();
             item.encode(&mut buf).expect("encoding should succeed");
-            let decoded = BacklogItemProto::decode(&buf[..]).expect("decoding should succeed");
+            let decoded = BacklogItem::decode(&buf[..]).expect("decoding should succeed");
 
             assert_eq!(item, decoded);
             assert_eq!(decoded.id, 100);
