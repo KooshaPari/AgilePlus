@@ -83,10 +83,10 @@ jobs:
       - name: Run Playwright Visual Tests
         working-directory: crates/agileplus-dashboard/web
         run: |
-          if [ -f playwright.config.ts ] || [ -f playwright.config.js ]; then
+          if [ -d e2e ] && ls e2e/*.spec.ts 2>/dev/null | grep -q .; then
             npx playwright test
           else
-            echo "No playwright.config found, skipping visual tests"
+            echo "No e2e playwright specs found, skipping visual tests"
           fi
 
   spec-traceability:

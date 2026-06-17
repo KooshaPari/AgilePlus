@@ -518,6 +518,7 @@ mod tests {
 
 // ── entry point ──────────────────────────────────────────────────────────────
 
+#[allow(clippy::items_after_test_module)]
 #[tokio::main]
 async fn main() {
     let _telemetry = agileplus_telemetry::init_subscriber().ok();
