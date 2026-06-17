@@ -5,7 +5,7 @@ use chrono::Utc;
 use agileplus_convoy::bead::Bead;
 use agileplus_convoy::coordinator::Coordinator;
 use agileplus_convoy::Convoy;
-use agileplus_triage::claim::{ClaimKind, ClaimStore, ClaimStoreTrait};
+use agileplus_triage::claim::{ClaimKind, ClaimStore};
 use agileplus_witness::evidence::Evidence;
 use agileplus_witness::verdict::Verdict;
 use agileplus_witness::verdict::VerdictEngine;
