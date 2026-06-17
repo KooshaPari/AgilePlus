@@ -110,7 +110,6 @@ name = "agileplus"
 version.workspace = true
 edition.workspace = true
 license = "MIT OR Apache-2.0"
-license-file = "LICENSE"
 description = "AgilePlus — Rust+TypeScript product & engineering management platform with Axum HTTP/gRPC backend, SQLite local store, Electrobun desktop app, and React/TS dashboard"
 homepage = "https://github.com/KooshaPari/AgilePlus"
 documentation = "https://docs.rs/agileplus"
