@@ -1,7 +1,24 @@
 //! Domain error types.
 
-use phenotype_error_core::ErrorCode;
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
+
+/// Stable, language-agnostic error classification used for cross-ecosystem
+/// reporting (logs, wire responses, observability, Rust↔TS parity).
+///
+/// This is a local, dependency-free mirror of the canonical Phenotype
+/// `ErrorCode` wire enum (only the variants produced by [`DomainError`] are
+/// retained). It is intentionally not re-exported; the domain crate stays
+/// zero-dependency.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum ErrorCode {
+    InternalError,
+    NotFound,
+    AlreadyExists,
+    NotImplemented,
+    ValidationError,
+}
 
 /// Top-level domain error.
 #[derive(Debug, Error)]

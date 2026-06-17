@@ -3,7 +3,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use agileplus_validate::slug_format;
+use crate::validate::slug_format;
 
 use super::feature::Feature;
 

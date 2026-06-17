@@ -4,6 +4,8 @@ use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 
+use crate::error::DomainError;
+
 /// Top-level application configuration.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AppConfig {
@@ -54,12 +56,14 @@ impl Default for AppConfig {
 
 impl AppConfig {
     /// Load config with environment variable overrides.
-    pub fn load_with_env_overrides() -> anyhow::Result<Self> {
+    pub fn load_with_env_overrides() -> Result<Self, DomainError> {
         let mut config = Self::default();
 
         if let Ok(port) = std::env::var("API_PORT").or_else(|_| std::env::var("AGILEPLUS_API_PORT"))
         {
-            config.api.port = port.parse()?;
+            config.api.port = port
+                .parse()
+                .map_err(|e| DomainError::Validation(format!("invalid API_PORT '{port}': {e}")))?;
         }
 
         if let Ok(db) = std::env::var("DATABASE_PATH") {

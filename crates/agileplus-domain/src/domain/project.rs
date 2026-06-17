@@ -3,7 +3,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use agileplus_validate::{name_required, slug_format};
+use crate::validate::{name_required, slug_format};
 
 use crate::error::DomainError;
 
