@@ -1,4 +1,4 @@
-﻿//! AgilePlus SQLite adapter — persistence layer.
+//! AgilePlus SQLite adapter — persistence layer.
 //!
 //! Implements `StoragePort` using rusqlite with WAL mode and foreign keys.
 //! Traceability: WP06
@@ -34,14 +34,13 @@ use agileplus_domain::{
     ports::{ContentStoragePort, StoragePort},
 };
 
-
 use crate::migrations::MigrationRunner;
 use agileplus_domain::domain::project::Project;
 use agileplus_domain::domain::sync_mapping::SyncMapping;
 
 use crate::repository::{
-    audit, backlog, cycles, epics, evidence, features, governance, metrics, modules,
-    projects, stories, sync_mappings, users, work_packages,
+    audit, backlog, cycles, epics, evidence, features, governance, metrics, modules, projects,
+    stories, sync_mappings, users, work_packages,
 };
 
 /// SQLite-backed storage adapter.

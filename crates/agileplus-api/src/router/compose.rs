@@ -41,11 +41,14 @@ use agileplus_domain::ports::{
     observability::ObservabilityPort, storage::StoragePort, vcs::VcsPort,
 };
 
-use crate::routes::{audit, cycle, epics, events, features, governance, module, projects, stories, stream, users, work_packages};
+use crate::routes::{
+    audit, cycle, epics, events, features, governance, module, projects, stories, stream, users,
+    work_packages,
+};
 use crate::state::AppState;
 
 use super::handlers::info_handler;
-use super::health::{simple_health_handler, health_handler};
+use super::health::{health_handler, simple_health_handler};
 
 type BoxError = Box<dyn std::error::Error + Send + Sync>;
 

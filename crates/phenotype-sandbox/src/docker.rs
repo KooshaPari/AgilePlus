@@ -146,7 +146,10 @@ impl DockerBackend {
             ..Default::default()
         };
 
-        let start_result = self.client.start_exec(&exec.id, Some(start_options)).await?;
+        let start_result = self
+            .client
+            .start_exec(&exec.id, Some(start_options))
+            .await?;
 
         let mut stdout: Vec<u8> = Vec::new();
         let mut stderr: Vec<u8> = Vec::new();

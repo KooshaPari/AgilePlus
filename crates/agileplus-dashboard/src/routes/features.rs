@@ -20,9 +20,9 @@ use agileplus_domain::domain::state_machine::FeatureState;
 
 use crate::app_state::SharedState;
 use crate::templates::{
-    all_feature_states, CiLinkView, EvidenceBundleView, FeatureDetailPage, FeatureView,
-    GitCommitView, KanbanPartial, MediaAssetView, PrLinkView, ReportArtifactView,
-    EventTimelinePartial, WpView,
+    all_feature_states, CiLinkView, EventTimelinePartial, EvidenceBundleView, FeatureDetailPage,
+    FeatureView, GitCommitView, KanbanPartial, MediaAssetView, PrLinkView, ReportArtifactView,
+    WpView,
 };
 
 use chrono::Utc;

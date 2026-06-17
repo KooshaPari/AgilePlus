@@ -20,12 +20,30 @@ fn cli() -> Command {
 fn status_prints_expected_sections() {
     let output = cli().arg("status").assert().success().get_output().clone();
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("AgilePlus project status"), "missing title: {stdout}");
-    assert!(stdout.contains("Modules :"), "missing modules line: {stdout}");
-    assert!(stdout.contains("Features:"), "missing features line: {stdout}");
-    assert!(stdout.contains("Cycles  :"), "missing cycles line: {stdout}");
-    assert!(stdout.contains("Active cycle:"), "missing active cycle line: {stdout}");
-    assert!(stdout.contains("Features by state:"), "missing per-state breakdown: {stdout}");
+    assert!(
+        stdout.contains("AgilePlus project status"),
+        "missing title: {stdout}"
+    );
+    assert!(
+        stdout.contains("Modules :"),
+        "missing modules line: {stdout}"
+    );
+    assert!(
+        stdout.contains("Features:"),
+        "missing features line: {stdout}"
+    );
+    assert!(
+        stdout.contains("Cycles  :"),
+        "missing cycles line: {stdout}"
+    );
+    assert!(
+        stdout.contains("Active cycle:"),
+        "missing active cycle line: {stdout}"
+    );
+    assert!(
+        stdout.contains("Features by state:"),
+        "missing per-state breakdown: {stdout}"
+    );
 }
 
 #[test]
@@ -65,7 +83,10 @@ fn feature_count_with_state_filter_is_single_number() {
         .get_output()
         .clone();
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(!stdout.contains("STATE"), "should not print table when filtered: {stdout}");
+    assert!(
+        !stdout.contains("STATE"),
+        "should not print table when filtered: {stdout}"
+    );
     let trimmed = stdout.trim();
     let n: usize = trimmed
         .parse()
@@ -152,10 +173,22 @@ fn module_show_existing_id() {
         .get_output()
         .clone();
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("id          : 1"), "missing id line: {stdout}");
-    assert!(stdout.contains("slug        :"), "missing slug line: {stdout}");
-    assert!(stdout.contains("name        :"), "missing name line: {stdout}");
-    assert!(stdout.contains("features    :"), "missing feature-count line: {stdout}");
+    assert!(
+        stdout.contains("id          : 1"),
+        "missing id line: {stdout}"
+    );
+    assert!(
+        stdout.contains("slug        :"),
+        "missing slug line: {stdout}"
+    );
+    assert!(
+        stdout.contains("name        :"),
+        "missing name line: {stdout}"
+    );
+    assert!(
+        stdout.contains("features    :"),
+        "missing feature-count line: {stdout}"
+    );
 }
 
 #[test]
@@ -197,7 +230,10 @@ fn cycle_list_contains_id_and_state_columns() {
     assert!(stdout.contains("NAME"), "header missing: {stdout}");
     assert!(stdout.contains("STATE"), "header missing: {stdout}");
     // The seeded Sprint 1 should be present.
-    assert!(stdout.contains("Sprint 1"), "Sprint 1 missing from cycle list: {stdout}");
+    assert!(
+        stdout.contains("Sprint 1"),
+        "Sprint 1 missing from cycle list: {stdout}"
+    );
 }
 
 #[test]
@@ -249,10 +285,22 @@ fn cycle_set_missing_id_fails() {
 fn top_level_help_lists_new_subcommands() {
     let output = cli().arg("--help").assert().success().get_output().clone();
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("status"), "missing `status` in help: {stdout}");
-    assert!(stdout.contains("feature"), "missing `feature` in help: {stdout}");
-    assert!(stdout.contains("module"), "missing `module` in help: {stdout}");
-    assert!(stdout.contains("cycle"), "missing `cycle` in help: {stdout}");
+    assert!(
+        stdout.contains("status"),
+        "missing `status` in help: {stdout}"
+    );
+    assert!(
+        stdout.contains("feature"),
+        "missing `feature` in help: {stdout}"
+    );
+    assert!(
+        stdout.contains("module"),
+        "missing `module` in help: {stdout}"
+    );
+    assert!(
+        stdout.contains("cycle"),
+        "missing `cycle` in help: {stdout}"
+    );
 }
 
 #[test]
@@ -264,9 +312,18 @@ fn feature_subcommand_help_lists_count_search_ready() {
         .get_output()
         .clone();
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("count"), "missing `feature count` in help: {stdout}");
-    assert!(stdout.contains("search"), "missing `feature search` in help: {stdout}");
-    assert!(stdout.contains("ready"), "missing `feature ready` in help: {stdout}");
+    assert!(
+        stdout.contains("count"),
+        "missing `feature count` in help: {stdout}"
+    );
+    assert!(
+        stdout.contains("search"),
+        "missing `feature search` in help: {stdout}"
+    );
+    assert!(
+        stdout.contains("ready"),
+        "missing `feature ready` in help: {stdout}"
+    );
 }
 
 #[test]
@@ -278,8 +335,14 @@ fn module_subcommand_help_lists_show_search() {
         .get_output()
         .clone();
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("show"), "missing `module show` in help: {stdout}");
-    assert!(stdout.contains("search"), "missing `module search` in help: {stdout}");
+    assert!(
+        stdout.contains("show"),
+        "missing `module show` in help: {stdout}"
+    );
+    assert!(
+        stdout.contains("search"),
+        "missing `module search` in help: {stdout}"
+    );
 }
 
 #[test]
@@ -291,6 +354,12 @@ fn cycle_subcommand_help_lists_list_set() {
         .get_output()
         .clone();
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("list"), "missing `cycle list` in help: {stdout}");
-    assert!(stdout.contains("set"), "missing `cycle set` in help: {stdout}");
+    assert!(
+        stdout.contains("list"),
+        "missing `cycle list` in help: {stdout}"
+    );
+    assert!(
+        stdout.contains("set"),
+        "missing `cycle set` in help: {stdout}"
+    );
 }

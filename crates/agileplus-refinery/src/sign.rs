@@ -31,27 +31,26 @@ impl Signer for GpgSigner {
             let commit_text = get_commit_text(repo_root, commit_sha).await?;
 
             let key_id = self.key_id.clone();
-            let signature_b64 =
-                tokio::task::spawn_blocking(move || -> anyhow::Result<String> {
-                    use gpgme::{Context, Protocol};
+            let signature_b64 = tokio::task::spawn_blocking(move || -> anyhow::Result<String> {
+                use gpgme::{Context, Protocol};
 
-                    let mut ctx = Context::from_protocol(Protocol::OpenPgp)
-                        .with_context(|| "failed to create GPG context")?;
-                    let key = ctx
-                        .get_key(&key_id)
-                        .with_context(|| format!("GPG key not found: {key_id}"))?;
-                    ctx.add_signer(&key)
-                        .with_context(|| "failed to add signer to GPG context")?;
+                let mut ctx = Context::from_protocol(Protocol::OpenPgp)
+                    .with_context(|| "failed to create GPG context")?;
+                let key = ctx
+                    .get_key(&key_id)
+                    .with_context(|| format!("GPG key not found: {key_id}"))?;
+                ctx.add_signer(&key)
+                    .with_context(|| "failed to add signer to GPG context")?;
 
-                    let mut signature = Vec::new();
-                    ctx.sign_detached(commit_text.into_bytes(), &mut signature)
-                        .with_context(|| "GPG sign failed")?;
+                let mut signature = Vec::new();
+                ctx.sign_detached(commit_text.into_bytes(), &mut signature)
+                    .with_context(|| "GPG sign failed")?;
 
-                    use base64::Engine as _;
-                    Ok(base64::engine::general_purpose::STANDARD.encode(&signature))
-                })
-                .await
-                .context("spawn_blocking panicked")??;
+                use base64::Engine as _;
+                Ok(base64::engine::general_purpose::STANDARD.encode(&signature))
+            })
+            .await
+            .context("spawn_blocking panicked")??;
 
             // gpgme::Context is gone; safe to .await again.
             let new_sha =
@@ -342,7 +341,9 @@ async fn write_commit_object(repo_root: &std::path::Path, content: &str) -> Resu
                 stdin.write_all(content.as_bytes())?;
                 stdin.flush()?;
             }
-            child.wait_with_output().with_context(|| "git hash-object failed")
+            child
+                .wait_with_output()
+                .with_context(|| "git hash-object failed")
         }
     })
     .await

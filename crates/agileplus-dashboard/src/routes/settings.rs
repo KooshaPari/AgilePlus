@@ -16,8 +16,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::app_state::SharedState;
 use crate::templates::{
-    PlaneHealthEndpointView, PlaneSettingsPage, ServicesSettingsPage, SettingsPage,
-    ToastPartial,
+    PlaneHealthEndpointView, PlaneSettingsPage, ServicesSettingsPage, SettingsPage, ToastPartial,
 };
 
 // ── Configuration Types ────────────────────────────────────────────────────

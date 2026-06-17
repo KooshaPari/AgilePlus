@@ -176,11 +176,14 @@ mod tests {
     #[test]
     fn valid_status_transition() {
         let mut s = Story::new(1, 10, "Login flow", None).expect("domain operation");
-        s.transition_status(StoryStatus::InProgress).expect("domain operation");
+        s.transition_status(StoryStatus::InProgress)
+            .expect("domain operation");
         assert_eq!(s.status, StoryStatus::InProgress);
-        s.transition_status(StoryStatus::Review).expect("domain operation");
+        s.transition_status(StoryStatus::Review)
+            .expect("domain operation");
         assert_eq!(s.status, StoryStatus::Review);
-        s.transition_status(StoryStatus::Done).expect("domain operation");
+        s.transition_status(StoryStatus::Done)
+            .expect("domain operation");
         assert_eq!(s.status, StoryStatus::Done);
     }
 
@@ -195,9 +198,12 @@ mod tests {
     #[test]
     fn blocked_unblocked_cycle() {
         let mut s = Story::new(2, 20, "Blocked story", Some(5)).expect("domain operation");
-        s.transition_status(StoryStatus::InProgress).expect("domain operation");
-        s.transition_status(StoryStatus::Blocked).expect("domain operation");
-        s.transition_status(StoryStatus::InProgress).expect("domain operation");
+        s.transition_status(StoryStatus::InProgress)
+            .expect("domain operation");
+        s.transition_status(StoryStatus::Blocked)
+            .expect("domain operation");
+        s.transition_status(StoryStatus::InProgress)
+            .expect("domain operation");
         assert_eq!(s.status, StoryStatus::InProgress);
     }
 }

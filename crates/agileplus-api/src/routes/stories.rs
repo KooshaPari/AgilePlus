@@ -56,7 +56,11 @@ where
         .map_err(|e| ApiError::BadRequest(e.to_string()))?;
     story.description = body.description;
 
-    let id = app.storage.create_story(&story).await.map_err(ApiError::from)?;
+    let id = app
+        .storage
+        .create_story(&story)
+        .await
+        .map_err(ApiError::from)?;
     let created = Story { id, ..story };
     Ok((StatusCode::CREATED, Json(StoryResponse::from(created))))
 }

@@ -115,7 +115,9 @@ mod tests {
     #[test]
     fn in_memory_store_rejects_wrong_key() {
         let store = InMemoryCredentialStore::new(vec!["valid-key".to_string()]);
-        assert!(!store.validate_api_key("invalid-key").expect("domain operation"));
+        assert!(!store
+            .validate_api_key("invalid-key")
+            .expect("domain operation"));
         assert!(!store.validate_api_key("").expect("domain operation"));
     }
 

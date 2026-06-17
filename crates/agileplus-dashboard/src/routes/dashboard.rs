@@ -23,15 +23,14 @@ use serde::{Deserialize, Serialize};
 
 use crate::app_state::SharedState;
 use crate::templates::{
-    AgentActivityPartial, AgentView, DashboardPage, EventTimelinePartial,
-    EvidenceBundleView, FeatureDetailPage, FeatureView, HealthPanelPartial,
-    KanbanPartial, MediaAssetView, ProjectSwitcherPartial, ProjectView,
-    ReportArtifactView, WpListPartial, WpView,
+    AgentActivityPartial, AgentView, DashboardPage, EventTimelinePartial, EvidenceBundleView,
+    FeatureDetailPage, FeatureView, HealthPanelPartial, KanbanPartial, MediaAssetView,
+    ProjectSwitcherPartial, ProjectView, ReportArtifactView, WpListPartial, WpView,
 };
 
 use super::helpers::{
-    DashboardFilter, build_kanban_cards, dashboard_filter_from_query, is_htmx, load_projects,
-    render,
+    build_kanban_cards, dashboard_filter_from_query, is_htmx, load_projects, render,
+    DashboardFilter,
 };
 
 // ── JSON API Response Types ────────────────────────────────────────────────
@@ -132,7 +131,12 @@ fn build_feature_evidence_bundles(
             ),
             created_at: Utc::now().format("%Y-%m-%d %H:%M:%S UTC").to_string(),
             artifact_ext: "json".into(),
-            status: if wp.progress > 0 { "accepted" } else { "generated" }.into(),
+            status: if wp.progress > 0 {
+                "accepted"
+            } else {
+                "generated"
+            }
+            .into(),
             content_preview: Some(r#"{"status":"generated","progress":0}"#.to_string()),
             is_text_artifact: true,
             is_image_artifact: false,

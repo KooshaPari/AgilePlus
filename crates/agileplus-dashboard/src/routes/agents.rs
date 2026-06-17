@@ -6,11 +6,11 @@
 
 use std::env;
 
+use askama::Template;
 use axum::{
     extract::State,
     response::{Html, IntoResponse, Response},
 };
-use askama::Template;
 use serde::{Deserialize, Serialize};
 
 use crate::app_state::SharedState;
@@ -160,12 +160,14 @@ pub async fn agent_settings_page() -> Response {
         dashboard: None,
     });
 
-    let agent_config = config.agents.unwrap_or_else(|| super::settings::AgentConfig {
-        pool_size: 6,
-        retry_budget: 3,
-        dispatch_mode: "balanced".to_string(),
-        default_provider: "claude".to_string(),
-    });
+    let agent_config = config
+        .agents
+        .unwrap_or_else(|| super::settings::AgentConfig {
+            pool_size: 6,
+            retry_budget: 3,
+            dispatch_mode: "balanced".to_string(),
+            default_provider: "claude".to_string(),
+        });
 
     render(AgentSettingsPage {
         agent_pool_size: agent_config.pool_size,

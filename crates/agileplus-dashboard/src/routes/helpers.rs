@@ -11,7 +11,7 @@ use axum::{
 };
 
 use crate::app_state::DashboardStore;
-use crate::templates::{FeatureView, ProjectSummaryView, ProjectView, all_feature_states};
+use crate::templates::{all_feature_states, FeatureView, ProjectSummaryView, ProjectView};
 
 #[allow(dead_code)]
 pub(super) const DEFAULT_PLANE_API_URL: &str = "https://app.plane.so";

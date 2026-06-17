@@ -158,11 +158,7 @@ fn validate_trace_with_empty_arrays_succeeds() {
 fn validate_duplicate_fr_id_counts_both() {
     let repo = TempDir::new().unwrap();
     fs::create_dir(repo.path().join("traces")).unwrap();
-    fs::write(
-        repo.path().join("FUNCTIONAL_REQUIREMENTS.md"),
-        "- FR-dup",
-    )
-    .unwrap();
+    fs::write(repo.path().join("FUNCTIONAL_REQUIREMENTS.md"), "- FR-dup").unwrap();
 
     let body = r##"{
   "fr_id": "FR-dup",
@@ -193,11 +189,7 @@ fn validate_duplicate_fr_id_counts_both() {
 fn validate_ignores_non_trace_files() {
     let repo = TempDir::new().unwrap();
     fs::create_dir(repo.path().join("traces")).unwrap();
-    fs::write(
-        repo.path().join("FUNCTIONAL_REQUIREMENTS.md"),
-        "- FR-only",
-    )
-    .unwrap();
+    fs::write(repo.path().join("FUNCTIONAL_REQUIREMENTS.md"), "- FR-only").unwrap();
     fs::write(
         repo.path().join("traces/FR-only.json"),
         r##"{
@@ -214,11 +206,7 @@ fn validate_ignores_non_trace_files() {
     // Non-trace artifacts that should be ignored.
     fs::write(repo.path().join("traces/README.md"), "# notes").unwrap();
     fs::write(repo.path().join("traces/notes.txt"), "notes").unwrap();
-    fs::write(
-        repo.path().join("traces/schema.yaml"),
-        "fr_id: FR-only\n",
-    )
-    .unwrap();
+    fs::write(repo.path().join("traces/schema.yaml"), "fr_id: FR-only\n").unwrap();
 
     Command::cargo_bin("agileplus-trace-validator")
         .unwrap()

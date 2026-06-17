@@ -34,56 +34,64 @@ pub mod settings;
 // Exported for backward compatibility with call sites like routes::feature_detail
 
 // From pages
-pub use pages::{
-    dashboard_page, events_page, features_page, home, hub_page, root, settings_page,
-};
+pub use pages::{dashboard_page, events_page, features_page, home, hub_page, root, settings_page};
 
 // From dashboard
 pub use dashboard::{
-    kanban_board, wp_list, all_work_packages_json, epics_stories_json,
-    project_switcher, switch_project, time_footer, sse_stream,
-    WorkPackageJson,
+    all_work_packages_json, epics_stories_json, kanban_board, project_switcher, sse_stream,
+    switch_project, time_footer, wp_list, WorkPackageJson,
 };
 
 // From features
 pub use features::{
-    feature_detail, feature_page, feature_transition, feature_events, feature_media,
+    feature_detail, feature_events, feature_media, feature_page, feature_transition,
     FeatureTransitionForm,
 };
 
 // From evidence
 pub use evidence::{
-    evidence_content, evidence_preview, feature_evidence_list,
-    feature_evidence_generate, feature_evidence_json,
-    EvidenceGalleryJson, EvidenceArtifactJson,
+    evidence_content, evidence_preview, feature_evidence_generate, feature_evidence_json,
+    feature_evidence_list, EvidenceArtifactJson, EvidenceGalleryJson,
 };
 
 // From agents
-pub use agents::{
-    agent_activity, agents_json, test_agent_connection,
-};
+pub use agents::{agent_activity, agents_json, test_agent_connection};
 
 // From health
 pub use health::{
-    health_panel, health_json, health_page, restart_service,
-    toggle_service, patch_service_config,
+    health_json, health_page, health_panel, patch_service_config, restart_service, toggle_service,
     HealthStatus, ServiceHealthJson,
 };
 
 // From settings
 pub use settings::{
-    plane_settings_page, agent_settings_page, services_settings_page,
-    save_plane_settings, save_agent_settings, save_dashboard_settings,
-    save_services_settings, test_service_connection, test_plane_connection,
+    agent_settings_page,
+    plane_settings_page,
+    save_agent_settings,
+    save_dashboard_settings,
+    save_plane_settings,
+    save_services_settings,
+    services_settings_page,
+    test_plane_connection,
+    test_service_connection,
+    AgentConfig,
+    AgentSettingsForm,
     // Types
-    Config, PlaneConfig, AgentConfig, ServiceConfig, DashboardConfig,
-    PlaneSettingsForm, AgentSettingsForm, ServiceSettingsForm, DashboardSettingsForm,
+    Config,
+    DashboardConfig,
+    DashboardSettingsForm,
+    PlaneConfig,
+    PlaneSettingsForm,
+    ServiceConfig,
+    ServiceSettingsForm,
     SingleServiceTestForm,
 };
 
 // ── Event Timeline Handler ─────────────────────────────────────────────
 
-pub async fn event_timeline(axum::extract::State(_state): axum::extract::State<SharedState>) -> axum::response::Response {
+pub async fn event_timeline(
+    axum::extract::State(_state): axum::extract::State<SharedState>,
+) -> axum::response::Response {
     use crate::templates::EventTimelinePartial;
     helpers::render(EventTimelinePartial {
         feature_id: 0,
@@ -265,7 +273,10 @@ mod tests {
 
     #[test]
     fn test_html_escape_quotes() {
-        assert_eq!(helpers::html_escape("say \"hello\""), "say &quot;hello&quot;");
+        assert_eq!(
+            helpers::html_escape("say \"hello\""),
+            "say &quot;hello&quot;"
+        );
         assert_eq!(helpers::html_escape("it's"), "it&#39;s");
     }
 

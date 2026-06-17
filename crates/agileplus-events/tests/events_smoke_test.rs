@@ -1,23 +1,26 @@
 //! Integration smoke tests for agileplus_events::DomainEvent and
 //! agileplus_events::EventEnvelope.
 
+use agileplus_domain::domain::epic::EpicStatus;
+use agileplus_domain::domain::state_machine::FeatureState;
+use agileplus_domain::domain::story::StoryStatus;
+use agileplus_domain::domain::user::{UserRole, UserStatus};
+use agileplus_domain::domain::work_package::WpState;
 use agileplus_events::{
     AggregateId, DomainEvent, EpicCreated, EpicStatusChanged, EventEnvelope, FeatureCreated,
     FeatureShipped, FeatureStateAdvanced, ProjectArchived, ProjectCreated, ProjectRenamed,
     StoryAssigned, StoryCreated, StoryStatusChanged, UserAdded, UserRoleChanged, UserStatusChanged,
     WorkPackageCreated, WorkPackageStateChanged,
 };
-use agileplus_domain::domain::epic::EpicStatus;
-use agileplus_domain::domain::state_machine::FeatureState;
-use agileplus_domain::domain::story::StoryStatus;
-use agileplus_domain::domain::user::{UserRole, UserStatus};
-use agileplus_domain::domain::work_package::WpState;
 use uuid::Uuid;
 
 fn assert_envelope_round_trip(original: &EventEnvelope) -> EventEnvelope {
     let json = serde_json::to_string(original).expect("serialize envelope");
     let decoded: EventEnvelope = serde_json::from_str(&json).expect("deserialize envelope");
-    assert_eq!(decoded.id, original.id, "envelope id must survive round-trip");
+    assert_eq!(
+        decoded.id, original.id,
+        "envelope id must survive round-trip"
+    );
     assert_eq!(decoded.aggregate_id, original.aggregate_id);
     assert_eq!(decoded.aggregate_type, original.aggregate_type);
     assert_eq!(decoded.occurred_at, original.occurred_at);

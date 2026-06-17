@@ -245,7 +245,6 @@ impl<Q: IssueQueue> Factory<Q> {
 
             self.claim_store.release(&claim_id);
             processed += 1;
-
         }
 
         Ok(processed)

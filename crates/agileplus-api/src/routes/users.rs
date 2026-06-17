@@ -64,17 +64,19 @@ where
     V: VcsPort + Send + Sync + 'static,
     O: ObservabilityPort + Send + Sync + 'static,
 {
-    let role: UserRole = body
-        .role
-        .as_deref()
-        .unwrap_or("member")
-        .parse()
-        .map_err(|e: agileplus_domain::error::DomainError| ApiError::BadRequest(e.to_string()))?;
+    let role: UserRole =
+        body.role.as_deref().unwrap_or("member").parse().map_err(
+            |e: agileplus_domain::error::DomainError| ApiError::BadRequest(e.to_string()),
+        )?;
 
     let user = User::new(&body.display_name, &body.email, role)
         .map_err(|e| ApiError::BadRequest(e.to_string()))?;
 
-    let id = app.storage.create_user(&user).await.map_err(ApiError::from)?;
+    let id = app
+        .storage
+        .create_user(&user)
+        .await
+        .map_err(ApiError::from)?;
     let created = User { id, ..user };
     Ok((StatusCode::CREATED, Json(UserResponse::from(created))))
 }

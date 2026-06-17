@@ -120,10 +120,7 @@ mod tests {
         async fn list_all_features(&self) -> Result<Vec<Feature>, DomainError> {
             Ok(self.store.read().await.values().cloned().collect())
         }
-        async fn list_features_by_label(
-            &self,
-            label: &str,
-        ) -> Result<Vec<Feature>, DomainError> {
+        async fn list_features_by_label(&self, label: &str) -> Result<Vec<Feature>, DomainError> {
             Ok(self
                 .store
                 .read()

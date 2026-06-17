@@ -145,9 +145,11 @@ mod tests {
     #[test]
     fn valid_status_transition() {
         let mut e = Epic::new(1, "Big Feature").expect("domain operation");
-        e.transition_status(EpicStatus::Active).expect("domain operation");
+        e.transition_status(EpicStatus::Active)
+            .expect("domain operation");
         assert_eq!(e.status, EpicStatus::Active);
-        e.transition_status(EpicStatus::Review).expect("domain operation");
+        e.transition_status(EpicStatus::Review)
+            .expect("domain operation");
         assert_eq!(e.status, EpicStatus::Review);
     }
 

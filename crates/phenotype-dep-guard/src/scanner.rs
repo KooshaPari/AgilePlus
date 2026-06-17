@@ -157,28 +157,36 @@ impl Scanner {
             .to_string();
         let mut out = Vec::new();
         for (name, ver) in manifest.dependencies {
-            out.push(Dependency::new(name, ver, Ecosystem::Cargo, &manifest_path).with_section("dependencies"));
+            out.push(
+                Dependency::new(name, ver, Ecosystem::Cargo, &manifest_path)
+                    .with_section("dependencies"),
+            );
         }
         for (name, ver) in manifest.dev_dependencies {
-            out.push(Dependency::new(name, ver, Ecosystem::Cargo, &manifest_path).with_section("dev-dependencies"));
+            out.push(
+                Dependency::new(name, ver, Ecosystem::Cargo, &manifest_path)
+                    .with_section("dev-dependencies"),
+            );
         }
         for (name, ver) in manifest.build_dependencies {
-            out.push(Dependency::new(name, ver, Ecosystem::Cargo, &manifest_path).with_section("build-dependencies"));
+            out.push(
+                Dependency::new(name, ver, Ecosystem::Cargo, &manifest_path)
+                    .with_section("build-dependencies"),
+            );
         }
         Ok(out)
     }
 
     /// Scan a slice of pre-collected dependencies. Returns a [`Report`].
     pub async fn scan(&self, deps: &[Dependency]) -> Result<Report> {
-        let client = self
-            .config
-            .osv
-            .clone()
-            .unwrap_or_default();
+        let client = self.config.osv.clone().unwrap_or_default();
         let results = client.query_batch(deps).await?;
         let findings = results
             .into_iter()
-            .map(|(dep, vulns)| Finding { dependency: dep, vulnerabilities: vulns })
+            .map(|(dep, vulns)| Finding {
+                dependency: dep,
+                vulnerabilities: vulns,
+            })
             .collect();
         Ok(Report::from_findings(findings))
     }
@@ -208,14 +216,15 @@ impl Scanner {
 
         let report = self.scan(&all_deps).await?;
         let sbom = Sbom::new(&self.config.name, &self.config.version, &all_deps);
-        Ok(ScanResult { report, sbom, per_path })
+        Ok(ScanResult {
+            report,
+            sbom,
+            per_path,
+        })
     }
 
     /// Scan a Cargo.toml manifest in one call. Returns report + SBOM.
-    pub async fn scan_cargo_manifest(
-        &self,
-        path: impl AsRef<Path>,
-    ) -> Result<(Report, Sbom)> {
+    pub async fn scan_cargo_manifest(&self, path: impl AsRef<Path>) -> Result<(Report, Sbom)> {
         let deps = Self::parse_cargo_manifest(&path)?;
         let report = self.scan(&deps).await?;
         let sbom = Sbom::new(&self.config.name, &self.config.version, &deps);

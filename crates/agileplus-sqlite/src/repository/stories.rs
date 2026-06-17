@@ -86,9 +86,7 @@ pub fn upsert_story_by_requirement_id(
     story: &Story,
 ) -> Result<i64, DomainError> {
     let req_id = story.requirement_id.as_deref().ok_or_else(|| {
-        DomainError::Validation(
-            "upsert_story_by_requirement_id requires requirement_id".to_owned(),
-        )
+        DomainError::Validation("upsert_story_by_requirement_id requires requirement_id".to_owned())
     })?;
     let now = chrono::Utc::now().to_rfc3339();
     // Check if a row with this requirement_id already exists.
