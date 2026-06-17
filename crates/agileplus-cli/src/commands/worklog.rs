@@ -724,13 +724,6 @@ fn collect_worklog_files(from: &Path, report: &mut EmitReport) -> Result<Vec<Pat
 
 /// Insert a single validated worklog entry. Returns `true` on a new insert,
 /// `false` if the row was already present and `--replace` was not set.
-<<<<<<< HEAD
-pub fn insert_entry(conn: &Connection, payload: &WorklogPayload, replace: bool) -> Result<bool> {
-    let files_changed_json =
-        serde_json::to_string(&payload.files_changed).context("serializing files_changed")?;
-    let verification_cmds_json = serde_json::to_string(&payload.verification_result.commands)
-        .context("serializing verification commands")?;
-=======
 pub fn insert_entry(
     conn: &Connection,
     payload: &WorklogPayload,
@@ -742,7 +735,6 @@ pub fn insert_entry(
         serde_json::to_string(&payload.files_changed).context("serializing files_changed")?;
     let verification_json =
         serde_json::to_string(&payload.verification_result).context("serializing verification")?;
->>>>>>> origin/main
     let ingested_at = chrono::Utc::now().to_rfc3339();
 
     if replace {
@@ -766,19 +758,11 @@ pub fn insert_entry(
                 payload.agent_id,
                 files_changed_json,
                 payload.commit_sha,
-<<<<<<< HEAD
-                payload.verification_result.status,
-                payload.verification_result.notes,
-                verification_cmds_json,
-                payload.started_at,
-                payload.completed_at,
-=======
                 verification_json,
                 payload.started_at,
                 payload.completed_at,
                 source_path,
                 raw_payload,
->>>>>>> origin/main
                 ingested_at,
             ],
         )
@@ -853,21 +837,12 @@ fn row_to_entry(row: &rusqlite::Row<'_>) -> rusqlite::Result<WorklogEntry> {
     let ingested_at: String = row.get(10)?;
 
     let files_changed: Vec<String> = serde_json::from_str(&files_changed_json).unwrap_or_default();
-<<<<<<< HEAD
-    let commands: Vec<String> = serde_json::from_str(&verification_cmds_json).unwrap_or_default();
-    let verification = VerificationResult {
-        status: verification_status,
-        commands,
-        notes: verification_notes,
-    };
-=======
     let verification: VerificationResult =
         serde_json::from_str(&verification_json).unwrap_or(VerificationResult {
             status: "not_run".into(),
             commands: vec![],
             notes: String::new(),
         });
->>>>>>> origin/main
 
     Ok(WorklogEntry {
         id,

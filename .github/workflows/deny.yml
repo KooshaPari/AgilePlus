@@ -46,11 +46,7 @@ jobs:
             "${{ github.workspace }}/../phenoShared"
 
       - name: Install cargo-deny
-<<<<<<< HEAD
-        uses: taiki-e/install-action@v2
-=======
         uses: taiki-e/install-action@7a79fe8c3a13344501c80d99cae481c1c9085912  # v2 (same as sast-quick.yml)
->>>>>>> origin/main
         with:
           tool: cargo-deny
 

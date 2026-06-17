@@ -254,25 +254,6 @@ impl EdgeBuilder {
 /// ---------------------------------------------------------------------------
 /// Helpers
 /// ---------------------------------------------------------------------------
-<<<<<<< HEAD
-/// Simple slugify: lowercase, ASCII alphanumeric + hyphens, trimmed.
-fn slugify(s: &str) -> String {
-    s.trim()
-        .to_lowercase()
-        .chars()
-        .map(|c| {
-            if c.is_ascii_alphanumeric() || c == '-' {
-                c
-            } else {
-                '-'
-            }
-        })
-        .collect::<String>()
-        .split('-')
-        .filter(|seg| !seg.is_empty())
-        .collect::<Vec<_>>()
-        .join("-")
-=======
 /// Slugify a node title into a URL/identifier-safe form.
 /// Lowercases, replaces whitespace/punctuation with hyphens, and collapses
 /// consecutive hyphens, matching the canonical phenotype slug rules.
@@ -289,7 +270,6 @@ fn slugify(s: &str) -> String {
         }
     }
     slug.trim_matches('-').to_owned()
->>>>>>> origin/main
 }
 
 /// Generate a process-unique edge id without external dependencies.
@@ -306,35 +286,10 @@ fn new_edge_id() -> String {
 
 /// Validate a node id matches `^[A-Z][a-z]+#[a-z0-9-]+$` without a regex engine.
 fn is_valid_node_id(id: &str) -> bool {
-<<<<<<< HEAD
-    let Some((prefix, suffix)) = id.split_once('#') else {
-        return false;
-    };
-    let mut chars = prefix.chars();
-    match chars.next() {
-        Some(c) if c.is_ascii_uppercase() => {}
-        _ => return false,
-    }
-    let mut has_lower = false;
-    for c in chars {
-        if !c.is_ascii_lowercase() {
-            return false;
-        }
-        has_lower = true;
-    }
-    if !has_lower {
-        return false;
-    }
-    !suffix.is_empty()
-        && suffix
-            .chars()
-            .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-')
-=======
     use regex::Regex;
     static RE: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
     let re = RE.get_or_init(|| Regex::new(r"^[A-Z][a-z]+#[a-z0-9\-]+$").expect("domain operation"));
     re.is_match(id)
->>>>>>> origin/main
 }
 
 #[cfg(test)]

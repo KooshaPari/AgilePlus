@@ -198,11 +198,6 @@ impl Executor {
                     .unwrap_or(default_timeout);
 
                 let mut attempts = 0u32;
-<<<<<<< HEAD
-                #[allow(unused_assignments)]
-                let mut last_result: Option<NodeOutput> = None;
-=======
->>>>>>> origin/main
 
                 if cmd_str.is_empty() {
                     // No command — treat as no-op success.

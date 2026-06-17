@@ -1,10 +1,7 @@
 version: v2
 modules:
-<<<<<<< HEAD
   - path: proto
-=======
   - path: agileplus-agents/proto
->>>>>>> origin/main
 lint:
   use:
     - DEFAULT

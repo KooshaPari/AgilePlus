@@ -3,10 +3,6 @@
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 
-<<<<<<< HEAD
-use agileplus_domain::ports::VcsPort;
-=======
->>>>>>> origin/main
 use agileplus_git::GitVcsAdapter;
 use anyhow::{Context, Result};
 

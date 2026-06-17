@@ -52,10 +52,7 @@
 [workspace]
 resolver = "3"
 members = [
-<<<<<<< HEAD
-=======
   "crates/agileplus-graph",
->>>>>>> origin/main
   "crates/agileplus-config",
   "crates/agileplus-cache",
   "crates/agileplus-governance",
@@ -71,10 +68,7 @@ members = [
   "crates/agileplus-grpc",
   "crates/agileplus-github",
   "crates/agileplus-plane",
-<<<<<<< HEAD
-=======
   "crates/agileplus-sync",
->>>>>>> origin/main
   "crates/agileplus-nats",
   "crates/agileplus-p2p",
   "crates/agileplus-telemetry",
@@ -82,13 +76,6 @@ members = [
   "crates/agileplus-subcmds",
   "crates/agileplus-pipeline",
   "crates/agileplus-trace-validator",
-<<<<<<< HEAD
-  "crates/agileplus-validate",
-  "crates/agileplus-proto",
-  "crates/agileplus-mcp-intent",
-  "crates/phenotype-dep-guard",
-  "crates/agileplus-artifacts",
-=======
   "crates/shared-traceability",
   "crates/traceability-core",
   "crates/agileplus-import",
@@ -97,26 +84,10 @@ members = [
   "crates/agileplus-artifacts",
   "crates/agileplus-mcp-intent",
   "crates/phenotype-dep-guard",
->>>>>>> origin/main
   "crates/agileplus-benchmarks",
   "crates/agileplus-contract-tests",
   "crates/agileplus-convoy",
   "crates/agileplus-factory",
-<<<<<<< HEAD
-  "crates/agileplus-graph",
-  "crates/agileplus-hook",
-  "crates/agileplus-import",
-  "crates/agileplus-integration-tests",
-  "crates/agileplus-refinery",
-  "crates/agileplus-sync",
-  "crates/agileplus-witness",
-  "crates/pheno-ci-templates",
-  "crates/pheno-ssot-template",
-  "crates/pheno-flags",
-  "crates/pheno-vibecoding-guard",
-  "crates/phenotype-mcp-sdk-rs",
-  "crates/phenotype-sandbox",
-=======
   "crates/agileplus-hook",
   "crates/agileplus-integration-tests",
   "crates/agileplus-refinery",
@@ -127,7 +98,6 @@ members = [
   "crates/pheno-ci-templates",
   "crates/pheno-flags",
   "crates/pheno-vibecoding-guard",
->>>>>>> origin/main
 ]
 exclude = ["AgilePlus/rust", "rust", "crates/phenotype-config"]
 
@@ -190,18 +160,7 @@ sha2.workspace = true
 [workspace.dependencies]
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1"
-<<<<<<< HEAD
-tokio = { version = "1.46", features = [
-  "rt-multi-thread",
-  "macros",
-  "sync",
-  "time",
-  "io-util",
-  "net",
-] }
-=======
 tokio = { version = "1.46", features = ["full"] }
->>>>>>> origin/main
 thiserror = "2"
 anyhow = "1"
 tracing = "0.1"
@@ -245,12 +204,6 @@ utoipa = "4"
 uuid = { version = "1", features = ["v4", "v5", "serde"] }
 async-nats = "0.47"
 paste = "1"
-<<<<<<< HEAD
-sqlx = "0.8"
-phenotype-error-core = { git = "https://github.com/KooshaPari/phenoShared", rev = "95d94d5d77015368ee802130bf4feaae0b3566db" }
-phenotype-logging = { git = "https://github.com/KooshaPari/phenoShared", rev = "95d94d5d77015368ee802130bf4feaae0b3566db" }
-traceability-core = { git = "https://github.com/KooshaPari/phenotype-pm-core", rev = "d5ceb3083e07f6a313dd842a07bf46708b70b4b5" }
-=======
 phenotype-error-core = { git = "https://github.com/KooshaPari/phenoShared", branch = "main" }
 traceability-core = { path = "crates/traceability-core" }
 indexmap = { version = "2", features = ["serde"] }
@@ -259,7 +212,6 @@ phenotype-event-bus = { git = "https://github.com/KooshaPari/phenoShared", branc
 agileplus-api = { path = "crates/agileplus-api" }
 agileplus-artifacts = { path = "crates/agileplus-artifacts" }
 agileplus-cache = { path = "crates/agileplus-cache" }
->>>>>>> origin/main
 agileplus-config = { path = "crates/agileplus-config" }
 agileplus-convoy = { path = "crates/agileplus-convoy" }
 agileplus-domain = { path = "crates/agileplus-domain" }

@@ -1,13 +1,9 @@
 [advisories]
-<<<<<<< HEAD
 db-path = "$CARGO_HOME/advisory-db"
 
 [licenses]
 version = 2
-=======
 
-[licenses]
->>>>>>> origin/main
 allow = [
     "Apache-2.0",
     "Apache-2.0 WITH LLVM-exception",
@@ -32,17 +28,10 @@ allow = [
 
 [bans]
 multiple-versions = "warn"
-<<<<<<< HEAD
 wildcards = "deny"
 
 [sources]
 unknown-git = "allow"
 unknown-registry = "warn"
 allow-registry = ["https://github.com/rust-lang/crates.io-index"]
-=======
-wildcards = "warn"
-
-[sources]
-allow-registry = ["https://github.com/rust-lang/crates.io-index"]
 allow-git = ["https://github.com/KooshaPari/clap-ext"]
->>>>>>> origin/main

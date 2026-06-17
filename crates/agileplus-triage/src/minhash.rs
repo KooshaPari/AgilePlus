@@ -286,12 +286,7 @@ mod tests {
         // 64 permutations with identical input should be ~1.0.
         assert!(
             j > 0.95,
-<<<<<<< HEAD
-            "k-mismatch should still match on common prefix, got {}",
-            j
-=======
             "k-mismatch should still match on common prefix, got {j}"
->>>>>>> origin/main
         );
     }
 

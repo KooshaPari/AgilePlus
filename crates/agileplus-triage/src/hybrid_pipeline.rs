@@ -15,12 +15,7 @@
 //!    Jaccard to break ties.
 //!
 //! This mirrors the 2025 SOTA on `BigCloneBench` (MinHash-LSH candidates
-<<<<<<< HEAD
 //! + embedding verification) and `pip dedupe`'s package-level strategy.
-=======
-//! + embedding verification) and `pip dedupe`'s package-level
-//!   strategy.
->>>>>>> origin/main
 //!
 //! # Audit
 //!
@@ -145,19 +140,11 @@ impl HybridDedup {
             (0..cfg.bands).map(|_| HashMap::new()).collect();
         for (idx, sig) in sigs.iter().enumerate() {
             let raw = sig.as_slice();
-<<<<<<< HEAD
-            for (b, band_table) in band_tables.iter_mut().enumerate() {
-                let lo = b * cfg.rows;
-                let hi = lo + cfg.rows;
-                let bucket = band_hash(&raw[lo..hi], b);
-                band_table.entry(bucket).or_default().push(idx);
-=======
             for (b, table) in band_tables.iter_mut().enumerate().take(cfg.bands) {
                 let lo = b * cfg.rows;
                 let hi = lo + cfg.rows;
                 let bucket = band_hash(&raw[lo..hi], b);
                 table.entry(bucket).or_default().push(idx);
->>>>>>> origin/main
             }
         }
         Ok(Self {

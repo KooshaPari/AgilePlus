@@ -36,11 +36,4 @@ done
 
 
 ## Acceptance Criteria
-<<<<<<< HEAD
 
-=======
-<<<<<<< HEAD
-=======
-
->>>>>>> feat/agileplus-p2p-impl
->>>>>>> origin/main

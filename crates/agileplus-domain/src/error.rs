@@ -3,7 +3,6 @@
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-<<<<<<< HEAD
 /// Stable, language-agnostic error classification used for cross-ecosystem
 /// reporting (logs, wire responses, observability, Rust↔TS parity).
 ///
@@ -20,10 +19,9 @@ pub enum ErrorCode {
     NotImplemented,
     ValidationError,
 }
-=======
+
 /// A convenience `Result` alias for domain operations.
 pub type DomainResult<T> = Result<T, DomainError>;
->>>>>>> origin/main
 
 /// Top-level domain error.
 #[derive(Debug, Error)]

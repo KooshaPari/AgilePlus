@@ -30,10 +30,6 @@ impl Signer for GpgSigner {
             // spawn_blocking completes (gpgme::Context is fully gone by then).
             let commit_text = get_commit_text(repo_root, commit_sha).await?;
 
-<<<<<<< HEAD
-            // Append the signature to the commit object.
-            let signature_b64 = base64::encode(&signature);
-=======
             let key_id = self.key_id.clone();
             let signature_b64 = tokio::task::spawn_blocking(move || -> anyhow::Result<String> {
                 use gpgme::{Context, Protocol};
@@ -57,7 +53,6 @@ impl Signer for GpgSigner {
             .context("spawn_blocking panicked")??;
 
             // gpgme::Context is gone; safe to .await again.
->>>>>>> origin/main
             let new_sha =
                 amend_commit_with_gpg_signature(repo_root, commit_sha, &signature_b64).await?;
             return Ok(new_sha);
@@ -136,11 +131,7 @@ impl Signer for SshSigner {
                 .with_context(|| "SSH sig to PEM failed")?;
 
             let new_sha =
-<<<<<<< HEAD
-                amend_commit_with_ssh_signature(repo_root, commit_sha, &signature_b64).await?;
-=======
                 amend_commit_with_ssh_signature(repo_root, commit_sha, &signature_pem).await?;
->>>>>>> origin/main
             return Ok(new_sha);
         }
 
