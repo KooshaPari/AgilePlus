@@ -82,7 +82,7 @@ BEGIN
         WHEN NEW.node_type NOT IN (
             'Intent','Plan','Feature','Story','Task',
             'Spec','Commit','Test','PR','Bug','Artifact'
-        ) THEN RAISE(ABORT, 'Invalid node_type: ' || NEW.node_type)
+        ) THEN RAISE(ABORT, 'Invalid node_type')
     END;
 END;
 
@@ -94,7 +94,7 @@ BEGIN
         WHEN NEW.status NOT IN (
             'draft','active','completed','deprecated','rejected',
             'open','in_progress','blocked','deferred','cancelled'
-        ) THEN RAISE(ABORT, 'Invalid status: ' || NEW.status)
+        ) THEN RAISE(ABORT, 'Invalid status')
     END;
 END;
 
@@ -106,7 +106,7 @@ BEGIN
         WHEN NEW.relationship_type NOT IN (
             'implements','tests','covers','traces-to',
             'derives-from','resolves','blocks','depends-on'
-        ) THEN RAISE(ABORT, 'Invalid relationship_type: ' || NEW.relationship_type)
+        ) THEN RAISE(ABORT, 'Invalid relationship_type')
     END;
 END;
 

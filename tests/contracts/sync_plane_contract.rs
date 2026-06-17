@@ -4,16 +4,15 @@
 //! the real `PlaneClient`, and that a `SyncMapping` round-trip through the
 //! store preserves identity (entity_type + entity_id ↔ plane_issue_id).
 
-use agileplus_domain::domain::sync_mapping::SyncMapping;
-use agileplus_plane::client::mock::InMemoryPlaneClient;
-use agileplus_plane::client::models::PlaneWorkItem;
+use agileplus_domain::domain::sync_mapping::{SyncDirection, SyncMapping};
+use agileplus_plane::client::{InMemoryPlaneClient, PlaneWorkItem};
 use agileplus_sqlite::SqliteStorageAdapter;
 
 fn make_issue(name: &str) -> PlaneWorkItem {
     PlaneWorkItem {
         id: None,
         name: name.to_string(),
-        description_html: Some(format!("<p>{}</p>", name)),
+        description_html: Some(format!("<p>{name}</p>")),
         state: Some("backlog".to_string()),
         priority: Some(3),
         parent: None,
@@ -65,7 +64,9 @@ async fn sync_mapping_roundtrip_by_local_and_plane_id() {
         entity_id: 42,
         plane_issue_id: "plane-issue-7".to_string(),
         last_synced_at: chrono::Utc::now(),
-        last_synced_hash: "abc123".to_string(),
+        content_hash: "abc123".to_string(),
+        sync_direction: SyncDirection::Bidirectional,
+        conflict_count: 0,
     };
 
     agileplus_domain::ports::storage::StoragePort::upsert_sync_mapping(&db, &mapping)
@@ -104,7 +105,9 @@ async fn sync_mapping_delete_clears_both_lookups() {
         entity_id: 9,
         plane_issue_id: "plane-wp-1".to_string(),
         last_synced_at: chrono::Utc::now(),
-        last_synced_hash: "deadbeef".to_string(),
+        content_hash: "deadbeef".to_string(),
+        sync_direction: SyncDirection::Bidirectional,
+        conflict_count: 0,
     };
 
     agileplus_domain::ports::storage::StoragePort::upsert_sync_mapping(&db, &mapping)
@@ -144,7 +147,9 @@ async fn sync_mapping_upsert_is_idempotent() {
         entity_id: 1,
         plane_issue_id: "plane-1".to_string(),
         last_synced_at: chrono::Utc::now(),
-        last_synced_hash: "h1".to_string(),
+        content_hash: "h1".to_string(),
+        sync_direction: SyncDirection::Bidirectional,
+        conflict_count: 0,
     };
     let m2 = SyncMapping {
         id: 0,
@@ -152,7 +157,9 @@ async fn sync_mapping_upsert_is_idempotent() {
         entity_id: 1,
         plane_issue_id: "plane-1".to_string(),
         last_synced_at: chrono::Utc::now(),
-        last_synced_hash: "h2".to_string(),
+        content_hash: "h2".to_string(),
+        sync_direction: SyncDirection::Bidirectional,
+        conflict_count: 0,
     };
 
     agileplus_domain::ports::storage::StoragePort::upsert_sync_mapping(&db, &m1)
@@ -168,7 +175,7 @@ async fn sync_mapping_upsert_is_idempotent() {
             .unwrap()
             .expect("mapping must exist");
     assert_eq!(
-        fetched.last_synced_hash, "h2",
+        fetched.content_hash, "h2",
         "upsert must update, not duplicate"
     );
 }

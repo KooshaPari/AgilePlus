@@ -2,14 +2,8 @@
 name = "agileplus-domain"
 version.workspace = true
 edition.workspace = true
+license.workspace = true
 rust-version.workspace = true
-license = "MIT OR Apache-2.0"
-repository = "https://github.com/KooshaPari/AgilePlus"
-description = "agileplus domain — Phenotype infrastructure crate (AgilePlus)"
-documentation = "https://docs.rs/agileplus-domain"
-keywords = ["phenotype", "agileplus", "domain"]
-categories = ["data-structures"]
-authors = ["kooshapari"]
 
 [dependencies]
 serde.workspace = true
@@ -17,7 +11,6 @@ serde_json.workspace = true
 phenotype-error-core.workspace = true
 traceability-core.workspace = true
 thiserror.workspace = true
-anyhow.workspace = true
 async-trait.workspace = true
 chrono.workspace = true
 sha2.workspace = true
@@ -27,3 +20,7 @@ regex = "1"
 
 [dev-dependencies]
 tokio.workspace = true
+
+[package.metadata.cargo-machete]
+# Declared for the shared-core spine; consumed transitively / via re-export, not detected by static scan.
+ignored = ["phenotype-error-core", "agileplus-validate"]

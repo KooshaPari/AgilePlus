@@ -21,7 +21,6 @@ thiserror = { workspace = true }
 async-trait = "0.1"
 tokio = { workspace = true }
 uuid = { workspace = true }
-# Shared ecosystem crates (extracted to phenoShared 2026-06-14)
 phenotype-error-core.workspace = true
 
 [dev-dependencies]

@@ -237,7 +237,7 @@ impl EdgeBuilder {
             ));
         }
 
-        let id = self.id.unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
+        let id = self.id.unwrap_or_else(new_edge_id);
 
         Ok(Edge {
             id,
@@ -272,6 +272,19 @@ fn slugify(s: &str) -> String {
     slug.trim_matches('-').to_owned()
 }
 
+/// Generate a process-unique edge id without external dependencies.
+///
+/// Combines the current UTC timestamp (nanoseconds) with a monotonic
+/// process-local counter, e.g. `edge-1718563200000000000-42`.
+fn new_edge_id() -> String {
+    use std::sync::atomic::{AtomicU64, Ordering};
+    static COUNTER: AtomicU64 = AtomicU64::new(0);
+    let n = COUNTER.fetch_add(1, Ordering::Relaxed);
+    let ts = chrono::Utc::now().timestamp_nanos_opt().unwrap_or_default();
+    format!("edge-{ts}-{n}")
+}
+
+/// Validate a node id matches `^[A-Z][a-z]+#[a-z0-9-]+$` without a regex engine.
 fn is_valid_node_id(id: &str) -> bool {
     use regex::Regex;
     static RE: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();

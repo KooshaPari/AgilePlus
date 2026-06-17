@@ -109,7 +109,10 @@ impl EventQuery {
                     }
                 }
                 if let Some(from) = self.from_sequence {
-                    if e.sequence < from {
+                    // `after_sequence` is strictly-greater-than, matching
+                    // `EventStore::get_events_since` (`sequence > from`) so the
+                    // API pagination cursor behaves like the underlying port.
+                    if e.sequence <= from {
                         return false;
                     }
                 }
@@ -184,8 +187,10 @@ mod tests {
             make_event(2, "F", "c", "a"),
             make_event(3, "F", "c", "a"),
         ];
+        // `after_sequence` is exclusive (sequence > 1), `end_sequence` inclusive
+        // (sequence <= 2), so only sequence 2 falls in the range.
         let result = EventQuery::new()
-            .after_sequence(2)
+            .after_sequence(1)
             .end_sequence(2)
             .filter(&events);
         assert_eq!(result.len(), 1);

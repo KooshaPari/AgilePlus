@@ -1,12 +1,14 @@
 use std::collections::HashMap;
+use std::sync::Mutex;
 
 pub use super::models::{PlaneIssue, PlaneWorkItem, PlaneWorkItemResponse};
 
 #[derive(Debug, Default)]
 pub struct InMemoryPlaneClient {
-    pub issues: HashMap<String, PlaneWorkItemResponse>,
-    pub created: Vec<PlaneWorkItem>,
-    pub updated: Vec<(String, PlaneWorkItem)>,
+    issues: Mutex<HashMap<String, PlaneWorkItemResponse>>,
+    created: Mutex<Vec<PlaneWorkItem>>,
+    #[allow(dead_code)]
+    updated: Mutex<Vec<(String, PlaneWorkItem)>>,
 }
 
 impl InMemoryPlaneClient {
@@ -15,43 +17,57 @@ impl InMemoryPlaneClient {
     }
 
     pub fn with_issue(mut self, id: &str, name: &str) -> Self {
-        self.issues.insert(
-            id.to_string(),
-            PlaneWorkItemResponse {
-                id: id.to_string(),
-                name: name.to_string(),
-                description_html: None,
-                state: None,
-                updated_at: None,
-            },
-        );
+        self.issues
+            .get_mut()
+            .unwrap_or_else(|e| e.into_inner())
+            .insert(
+                id.to_string(),
+                PlaneWorkItemResponse {
+                    id: id.to_string(),
+                    name: name.to_string(),
+                    description_html: None,
+                    state: None,
+                    updated_at: None,
+                },
+            );
         self
     }
 
     pub async fn create_work_item(
         &self,
-        _work_item: &PlaneWorkItem,
+        work_item: &PlaneWorkItem,
     ) -> anyhow::Result<PlaneWorkItemResponse> {
-        Ok(PlaneWorkItemResponse {
-            id: format!("issue-{}", self.created.len() + 1),
-            name: _work_item.name.clone(),
-            description_html: _work_item.description_html.clone(),
-            state: _work_item.state.clone(),
+        let mut created = self.created.lock().unwrap_or_else(|e| e.into_inner());
+        let id = format!("issue-{}", created.len() + 1);
+        created.push(work_item.clone());
+        drop(created);
+
+        let response = PlaneWorkItemResponse {
+            id: id.clone(),
+            name: work_item.name.clone(),
+            description_html: work_item.description_html.clone(),
+            state: work_item.state.clone(),
             updated_at: Some(chrono::Utc::now().to_rfc3339()),
-        })
+        };
+        self.issues
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .insert(id, response.clone());
+        Ok(response)
     }
 
     pub async fn update_work_item(
         &self,
         id: &str,
-        _work_item: &PlaneWorkItem,
+        work_item: &PlaneWorkItem,
     ) -> anyhow::Result<PlaneWorkItemResponse> {
-        if let Some(existing) = self.issues.get(id) {
+        let issues = self.issues.lock().unwrap_or_else(|e| e.into_inner());
+        if let Some(existing) = issues.get(id) {
             return Ok(PlaneWorkItemResponse {
                 id: existing.id.clone(),
-                name: _work_item.name.clone(),
-                description_html: _work_item.description_html.clone(),
-                state: _work_item.state.clone(),
+                name: work_item.name.clone(),
+                description_html: work_item.description_html.clone(),
+                state: work_item.state.clone(),
                 updated_at: Some(chrono::Utc::now().to_rfc3339()),
             });
         }
@@ -60,13 +76,21 @@ impl InMemoryPlaneClient {
 
     pub async fn get_work_item(&self, id: &str) -> anyhow::Result<PlaneWorkItemResponse> {
         self.issues
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
             .get(id)
             .cloned()
             .ok_or_else(|| anyhow::anyhow!("issue {id} not found"))
     }
 
     pub async fn list_work_items(&self) -> anyhow::Result<Vec<PlaneWorkItemResponse>> {
-        Ok(self.issues.values().cloned().collect())
+        Ok(self
+            .issues
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .values()
+            .cloned()
+            .collect())
     }
 
     pub async fn create_sub_issue(

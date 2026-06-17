@@ -15,8 +15,7 @@
 //!    Jaccard to break ties.
 //!
 //! This mirrors the 2025 SOTA on `BigCloneBench` (MinHash-LSH candidates
-//! + embedding verification) and `pip dedupe`'s package-level
-//!   strategy.
+//! + embedding verification) and `pip dedupe`'s package-level strategy.
 //!
 //! # Audit
 //!

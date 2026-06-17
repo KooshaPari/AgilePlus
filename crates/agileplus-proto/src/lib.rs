@@ -39,9 +39,11 @@ mod tests {
             state: "InProgress".to_string(),
             next_command: "continue".to_string(),
             blockers: vec!["blocker1".to_string()],
-            governance: Some(GovernanceSummary {
-                gate_passed: true,
-                violations_count: 0,
+            governance: Some(GovernanceStatus {
+                all_gates_passed: true,
+                total_rules: 0,
+                passed_rules: 0,
+                outstanding: vec![],
             }),
         };
         assert_eq!(state.state, "InProgress");
@@ -131,7 +133,7 @@ mod tests {
 
         #[test]
         fn test_backlog_item_roundtrip() {
-            let item = BacklogItemProto {
+            let item = BacklogItem {
                 id: 100,
                 title: "Backlog Item".to_string(),
                 description: "Description here".to_string(),
@@ -147,7 +149,7 @@ mod tests {
 
             let mut buf = Vec::new();
             item.encode(&mut buf).expect("encoding should succeed");
-            let decoded = BacklogItemProto::decode(&buf[..]).expect("decoding should succeed");
+            let decoded = BacklogItem::decode(&buf[..]).expect("decoding should succeed");
 
             assert_eq!(item, decoded);
             assert_eq!(decoded.id, 100);

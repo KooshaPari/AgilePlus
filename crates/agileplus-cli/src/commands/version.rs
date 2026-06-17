@@ -13,6 +13,6 @@ mod tests {
 
     #[test]
     fn version_args_is_default_constructible() {
-        let _ = VersionArgs::default();
+        let _ = VersionArgs;
     }
 }

@@ -23,9 +23,9 @@ reqwest = { version = "0.12", default-features = false, features = ["json", "rus
 tracing.workspace = true
 
 [dev-dependencies]
-tokio = { workspace = true, features = ["full", "macros"] }
-tempfile.workspace = true
-chrono.workspace = true
+tokio = { workspace = true, features = ["macros"] }
+tempfile = { workspace = true }
+chrono = { workspace = true }
 
 [package.metadata.cargo-machete]
 ignored = ["thiserror"]

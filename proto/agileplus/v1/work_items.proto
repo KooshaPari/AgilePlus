@@ -3,8 +3,6 @@ syntax = "proto3";
 package agileplus.v1;
 
 option go_package = "github.com/phenotype/agileplus-proto/gen/go/agileplus/v1;agileplusv1";
-option java_outer_classname = "WorkItemsProto";
-option java_package = "com.phenotype.agileplus.v1";
 
 // WorkItems service — read/sync operations over Projects, Epics, Stories.
 // Hexagonal: gRPC is an adapter over the same StoragePort used by REST.

@@ -181,6 +181,7 @@ struct CargoLockPackage {
     /// workspace entry is the only one without a `source` field.
     #[allow(dead_code)]
     #[serde(default)]
+    #[allow(dead_code)]
     source: Option<String>,
 }
 

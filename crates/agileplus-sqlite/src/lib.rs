@@ -58,20 +58,23 @@ impl SqliteStorageAdapter {
     pub fn new(db_path: &Path) -> Result<Self, DomainError> {
         let conn = Connection::open(db_path)
             .map_err(|e| DomainError::Storage(format!("failed to open db: {e}")))?;
-        Self::configure_and_migrate(conn)
+        Self::configure_and_migrate(conn, true)
     }
 
     /// Open an in-memory database (for tests).
     pub fn in_memory() -> Result<Self, DomainError> {
         let conn = Connection::open_in_memory()
             .map_err(|e| DomainError::Storage(format!("failed to open in-memory db: {e}")))?;
-        Self::configure_and_migrate(conn)
+        Self::configure_and_migrate(conn, false)
     }
 
-    fn configure_and_migrate(conn: Connection) -> Result<Self, DomainError> {
-        // Enable WAL mode for concurrent reads
-        conn.execute_batch("PRAGMA journal_mode=WAL;")
-            .map_err(|e| DomainError::Storage(format!("WAL pragma failed: {e}")))?;
+    fn configure_and_migrate(conn: Connection, enable_wal: bool) -> Result<Self, DomainError> {
+        // Enable WAL mode for file-backed databases (not applicable to in-memory).
+        // WAL mode doesn't work reliably with in-memory databases, so skip it for tests.
+        if enable_wal {
+            conn.execute_batch("PRAGMA journal_mode=WAL;")
+                .map_err(|e| DomainError::Storage(format!("WAL pragma failed: {e}")))?;
+        }
 
         // Enable foreign key enforcement
         conn.execute_batch("PRAGMA foreign_keys=ON;")

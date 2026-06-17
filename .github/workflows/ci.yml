@@ -129,7 +129,6 @@ jobs:
     name: Rust Extras (machete, semver, typos)
     runs-on: ubuntu-24.04
     timeout-minutes: 30
-    continue-on-error: true
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
       - name: Checkout phenoShared sibling
@@ -146,20 +145,23 @@ jobs:
       - name: Install extras
         uses: taiki-e/install-action@7a79fe8c3a13344501c80d99cae481c1c9085912  # v2
         with:
-          tool: cargo-machete,cargo-semver-checks@0.44.0
+          tool: cargo-machete,cargo-semver-checks@0.44.0,typos-cli
       - name: Detect unused deps
         run: cargo machete
       - name: Semver compatibility check
         run: cargo semver-checks check-release || true
       - name: Typo check
-        uses: crate-ci/typos@d80b8e26878e372a041833cd67163dbdb6a4336e  # v1
-        continue-on-error: true
+        run: typos
 
   # ─── Rust Coverage ────────────────────────────────────────────────
   rust-coverage:
     name: Rust Coverage
     runs-on: ubuntu-24.04
     timeout-minutes: 45
+    permissions:
+      contents: read
+      # Required for Codecov tokenless (OIDC) upload.
+      id-token: write
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
       - name: Checkout phenoShared sibling
@@ -184,7 +186,11 @@ jobs:
         with:
           files: ./coverage/cobertura.xml
           flags: rust
-          fail_ci_if_error: false
+          # Public repo → Codecov supports tokenless (OIDC) upload, so a missing
+          # CODECOV_TOKEN secret does not block the upload. Make the upload a
+          # real gate now that it can succeed without a secret.
+          fail_ci_if_error: true
+          use_oidc: true
           verbose: true
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
@@ -376,4 +382,8 @@ jobs:
           fetch-depth: 0
       - uses: wagoid/commitlint-github-action@f133a0d95090ef2609192b4a21f54e20af819ea9  # v6
         with:
-          configFile: .commitlintrc.yml
+          configFile: .commitlintrc.json
+          # PRs land via squash-merge, so only the final (squash) commit header
+          # — derived from the PR title — must satisfy the convention. Lint just
+          # the tip commit instead of every intermediate WIP commit.
+          commitDepth: 1
