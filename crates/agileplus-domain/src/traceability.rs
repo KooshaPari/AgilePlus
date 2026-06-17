@@ -26,7 +26,11 @@ pub struct TraceRef {
 
 impl TraceRef {
     /// Construct a new `TraceRef`, stamping `linked_at` to the current UTC time.
-    pub fn new(entity_id: Uuid, trace_id: impl Into<String>, artifact_type: impl Into<String>) -> Self {
+    pub fn new(
+        entity_id: Uuid,
+        trace_id: impl Into<String>,
+        artifact_type: impl Into<String>,
+    ) -> Self {
         Self {
             entity_id,
             trace_id: trace_id.into(),
