@@ -125,11 +125,14 @@ jobs:
       checks: write
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
-      - uses: rustsec/audit-check@69366f33c96575abad1ee0dba8212993eecbe998  # v2.0.0
+      # Install prebuilt binaries instead of `cargo install` from source: the
+      # source build pulls transitive deps (e.g. smol_str) whose MSRV exceeds
+      # the job toolchain, breaking compilation.
+      - uses: taiki-e/install-action@7a79fe8c3a13344501c80d99cae481c1c9085912  # v2
         with:
-          token: ${{ github.token }}
-      - name: Install cargo-deny
-        run: cargo install cargo-deny
+          tool: cargo-audit,cargo-deny
+      - name: Audit advisories
+        run: cargo audit
       - name: Check licenses, advisories, duplicates
         run: cargo deny check -c rust/deny.toml
 
@@ -137,7 +140,6 @@ jobs:
     name: Rust Extras (machete, semver, typos)
     runs-on: ubuntu-24.04
     timeout-minutes: 30
-    continue-on-error: true
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
       - uses: dtolnay/rust-toolchain@5b842231ba77f5c045dba54ac5560fed2db780e2  # nightly
@@ -149,15 +151,19 @@ jobs:
         with:
           version: "28.x"
           repo-token: ${{ github.token }}
-      - name: Install extras
-        run: cargo install cargo-machete cargo-semver-checks
+      # Prebuilt binaries: building these from source pulls deps whose MSRV
+      # exceeds the job toolchain (e.g. cargo-semver-checks needs rustc 1.91).
+      - uses: taiki-e/install-action@7a79fe8c3a13344501c80d99cae481c1c9085912  # v2
+        with:
+          tool: cargo-machete,cargo-semver-checks,typos-cli
       - name: Detect unused deps
         run: cd rust && cargo machete
+      # semver-checks needs a published baseline to diff against; absent one it
+      # cannot establish compatibility, so a clean exit there is non-fatal.
       - name: Semver compatibility check
         run: cd rust && cargo semver-checks check-release || true
       - name: Typo check
-        uses: crate-ci/typos@d80b8e26878e372a041833cd67163dbdb6a4336e  # v1
-        continue-on-error: true
+        run: typos
 
   # ─── Rust Coverage ────────────────────────────────────────────────
   rust-coverage:
@@ -175,8 +181,9 @@ jobs:
         with:
           version: "28.x"
           repo-token: ${{ github.token }}
-      - name: Install tarpaulin
-        run: cargo install cargo-tarpaulin
+      - uses: taiki-e/install-action@7a79fe8c3a13344501c80d99cae481c1c9085912  # v2
+        with:
+          tool: cargo-tarpaulin
       - name: Generate coverage
         run: cargo tarpaulin --workspace --out xml --output-dir coverage
       - name: Upload coverage to Codecov
@@ -184,7 +191,11 @@ jobs:
         with:
           files: ./coverage/cobertura.xml
           flags: rust
-          fail_ci_if_error: false
+          # Public repo → Codecov supports tokenless (OIDC) upload, so a missing
+          # CODECOV_TOKEN secret does not block the upload. Make the upload a
+          # real gate now that it can succeed without a secret.
+          fail_ci_if_error: true
+          use_oidc: true
           verbose: true
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
@@ -371,4 +382,8 @@ jobs:
           fetch-depth: 0
       - uses: wagoid/commitlint-github-action@f133a0d95090ef2609192b4a21f54e20af819ea9  # v6
         with:
-          configFile: .commitlintrc.yml
+          configFile: .commitlintrc.json
+          # PRs land via squash-merge, so only the final (squash) commit header
+          # — derived from the PR title — must satisfy the convention. Lint just
+          # the tip commit instead of every intermediate WIP commit.
+          commitDepth: 1
