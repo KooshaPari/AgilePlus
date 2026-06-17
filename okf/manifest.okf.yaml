@@ -1,0 +1,23 @@
+okf_version: "1.0"
+project:
+  id: koosha.phenotype.agileplus
+  name: AgilePlus
+  charter_ref: charter.md
+  review_ref: review.md
+artifacts:
+  - id: charter
+    path: charter.md
+    kind: governance
+    summary: "specs role boundary"
+  - id: intent-root
+    path: intent.md
+    kind: intent
+    summary: "Wave 4 genesis rollout"
+  - id: sota-root
+    path: SOTA.md
+    kind: sota
+    summary: "Mixed Rust core + TS/React edges; FR traces link to PhenoSpecs."
+dimensions:
+  technical: docs/sota/technical.md
+provenance:
+  intent_prompts: docs/intent/prompts/
