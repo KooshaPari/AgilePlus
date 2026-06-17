@@ -9,9 +9,7 @@ use reqwest::Client;
 
 use crate::dependency::Dependency;
 use crate::error::{Error, Result};
-use crate::vulnerability::{
-    OsvPackage, OsvQuery, OsvResponse, OsvVuln, Vulnerability,
-};
+use crate::vulnerability::{OsvPackage, OsvQuery, OsvResponse, OsvVuln, Vulnerability};
 
 const DEFAULT_ENDPOINT: &str = "https://api.osv.dev";
 const QUERY_PATH: &str = "/v1/query";

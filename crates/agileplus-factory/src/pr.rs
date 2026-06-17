@@ -23,10 +23,7 @@ pub struct GitHubPrClient {
 }
 
 impl GitHubPrClient {
-    pub fn new(
-        repo: impl Into<String>,
-        token: impl Into<String>,
-    ) -> Self {
+    pub fn new(repo: impl Into<String>, token: impl Into<String>) -> Self {
         let repo = repo.into();
         let (owner, repo_name) = repo.split_once('/').unwrap_or((&repo, ""));
         Self {

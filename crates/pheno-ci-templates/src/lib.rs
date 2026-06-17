@@ -49,12 +49,7 @@ pub const CI_PYTHON_PATH: &str = ".github/workflows/ci-python.yml";
 
 /// All four paths, in the order the include chain should
 /// be consumed (`ci-base` first, language-specific after).
-pub const ALL_PATHS: &[&str] = &[
-    CI_BASE_PATH,
-    CI_RUST_PATH,
-    CI_NODE_PATH,
-    CI_PYTHON_PATH,
-];
+pub const ALL_PATHS: &[&str] = &[CI_BASE_PATH, CI_RUST_PATH, CI_NODE_PATH, CI_PYTHON_PATH];
 
 /// Returns `true` if every file in [`ALL_PATHS`] is
 /// present at the path it claims. The check is

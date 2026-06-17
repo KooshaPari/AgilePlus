@@ -41,8 +41,8 @@ impl Signer for GpgSigner {
 
             // Append the signature to the commit object.
             let signature_b64 = base64::encode(&signature);
-            let new_sha = amend_commit_with_gpg_signature(repo_root, commit_sha, &signature_b64)
-                .await?;
+            let new_sha =
+                amend_commit_with_gpg_signature(repo_root, commit_sha, &signature_b64).await?;
             return Ok(new_sha);
         }
 
@@ -82,8 +82,8 @@ impl Signer for GpgSigner {
             }
 
             let signature = String::from_utf8_lossy(&output.stdout);
-            let new_sha = amend_commit_with_gpg_signature(repo_root, commit_sha, &signature)
-                .await?;
+            let new_sha =
+                amend_commit_with_gpg_signature(repo_root, commit_sha, &signature).await?;
             Ok(new_sha)
         }
     }
@@ -106,8 +106,8 @@ impl Signer for SshSigner {
 
             let pem = fs::read_to_string(&self.key_path)
                 .with_context(|| format!("read SSH key: {}", self.key_path.display()))?;
-            let private_key = PrivateKey::from_openssh(&pem)
-                .with_context(|| "parse SSH private key")?;
+            let private_key =
+                PrivateKey::from_openssh(&pem).with_context(|| "parse SSH private key")?;
 
             let commit_text = get_commit_text(repo_root, commit_sha).await?;
             let sig = private_key
@@ -115,8 +115,8 @@ impl Signer for SshSigner {
                 .with_context(|| "SSH sign failed")?;
             let signature_b64 = base64::encode(&sig.to_bytes()?);
 
-            let new_sha = amend_commit_with_ssh_signature(repo_root, commit_sha, &signature_b64)
-                .await?;
+            let new_sha =
+                amend_commit_with_ssh_signature(repo_root, commit_sha, &signature_b64).await?;
             return Ok(new_sha);
         }
 
@@ -156,8 +156,8 @@ impl Signer for SshSigner {
             }
 
             let signature = String::from_utf8_lossy(&output.stdout);
-            let new_sha = amend_commit_with_ssh_signature(repo_root, commit_sha, &signature)
-                .await?;
+            let new_sha =
+                amend_commit_with_ssh_signature(repo_root, commit_sha, &signature).await?;
             Ok(new_sha)
         }
     }
@@ -170,7 +170,10 @@ pub struct MockSigner;
 #[async_trait::async_trait]
 impl Signer for MockSigner {
     async fn sign(&self, repo_root: &std::path::Path, commit_sha: &str) -> Result<String> {
-        let new_msg = format!("{}\n\n[signed]", get_commit_message(repo_root, commit_sha).await?);
+        let new_msg = format!(
+            "{}\n\n[signed]",
+            get_commit_message(repo_root, commit_sha).await?
+        );
         amend_commit_message(repo_root, &new_msg).await
     }
 }
@@ -321,7 +324,9 @@ async fn write_commit_object(repo_root: &std::path::Path, content: &str) -> Resu
                 stdin.write_all(content.as_bytes())?;
                 stdin.flush()?;
             }
-            child.wait_with_output().with_context(|| "git hash-object failed")
+            child
+                .wait_with_output()
+                .with_context(|| "git hash-object failed")
         }
     })
     .await

@@ -21,10 +21,20 @@ pub struct SyscallRule {
 impl Default for SeccompProfile {
     fn default() -> Self {
         let default_action = "SCMP_ACT_ERRNO".to_string();
-        let architectures = vec!["SCMP_ARCH_X86_64".to_string(), "SCMP_ARCH_AARCH64".to_string()];
+        let architectures = vec![
+            "SCMP_ARCH_X86_64".to_string(),
+            "SCMP_ARCH_AARCH64".to_string(),
+        ];
 
         let allow_syscalls = vec![
-            "read", "write", "open", "close", "mmap", "brk", "exit", "exit_group",
+            "read",
+            "write",
+            "open",
+            "close",
+            "mmap",
+            "brk",
+            "exit",
+            "exit_group",
         ];
 
         let deny_syscalls = vec!["socket", "connect", "bind"];
@@ -99,7 +109,8 @@ impl SeccompProfile {
             // Remove socket/connect/bind from the deny list
             for rule in &mut self.syscalls {
                 if rule.action == "SCMP_ACT_ERRNO" {
-                    rule.names.retain(|n| n != "socket" && n != "connect" && n != "bind");
+                    rule.names
+                        .retain(|n| n != "socket" && n != "connect" && n != "bind");
                 }
             }
         }

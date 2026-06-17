@@ -160,7 +160,9 @@ fn walk_dir_files(p: &Path) -> Vec<std::path::PathBuf> {
 }
 
 fn has_source_files(p: &Path) -> bool {
-    for marker in &["src", "lib", "pkg", "cmd", "crates", "backend", "frontend", "app"] {
+    for marker in &[
+        "src", "lib", "pkg", "cmd", "crates", "backend", "frontend", "app",
+    ] {
         if p.join(marker).is_dir() {
             return true;
         }

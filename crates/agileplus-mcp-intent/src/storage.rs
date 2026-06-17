@@ -19,7 +19,10 @@ use crate::types::IntentGraph;
 ///
 /// For simplicity, only features are stored directly.  Stories require
 /// an epic which requires a project; these are created on-demand.
-pub async fn store_graph(db: &SqliteStorageAdapter, graph: &IntentGraph) -> anyhow::Result<Vec<i64>> {
+pub async fn store_graph(
+    db: &SqliteStorageAdapter,
+    graph: &IntentGraph,
+) -> anyhow::Result<Vec<i64>> {
     let mut ids = vec![];
 
     for node in &graph.nodes {
@@ -38,7 +41,8 @@ pub async fn store_graph(db: &SqliteStorageAdapter, graph: &IntentGraph) -> anyh
                         feature.labels.extend(tag_strs);
                     }
                 }
-                let id = StoragePort::create_feature(db, &feature).await
+                let id = StoragePort::create_feature(db, &feature)
+                    .await
                     .with_context(|| format!("store feature {}", node.id))?;
                 ids.push(id);
                 tracing::info!("stored feature id={} from node {}", id, node.id);

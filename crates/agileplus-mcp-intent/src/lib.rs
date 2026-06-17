@@ -31,4 +31,4 @@ pub mod validator;
 
 pub use converter::convert;
 pub use types::{ConvertOptions, ConvertRequest, ConvertResponse, IntentGraph};
-pub use validator::{validate_graph, full_validate};
+pub use validator::{full_validate, validate_graph};

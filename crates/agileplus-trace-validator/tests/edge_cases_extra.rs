@@ -10,11 +10,7 @@ use tempfile::TempDir;
 fn validate_whitespace_only_payload_fails() {
     let repo = TempDir::new().unwrap();
     fs::create_dir(repo.path().join("traces")).unwrap();
-    fs::write(
-        repo.path().join("traces/FR-whitespace.json"),
-        "   \n\t  \n",
-    )
-    .unwrap();
+    fs::write(repo.path().join("traces/FR-whitespace.json"), "   \n\t  \n").unwrap();
 
     Command::cargo_bin("agileplus-trace-validator")
         .unwrap()
@@ -69,7 +65,8 @@ fn validate_many_traces_with_many_links_succeeds() {
     let fr_ids: Vec<String> = (1..=trace_count).map(|i| format!("FR-multi-{i}")).collect();
     for fr in &fr_ids {
         fs::write(
-            repo.path().join(format!("docs/operations/journeys/{fr}.md")),
+            repo.path()
+                .join(format!("docs/operations/journeys/{fr}.md")),
             "journey",
         )
         .unwrap();
@@ -161,11 +158,7 @@ fn validate_trace_with_empty_arrays_succeeds() {
 fn validate_duplicate_fr_id_counts_both() {
     let repo = TempDir::new().unwrap();
     fs::create_dir(repo.path().join("traces")).unwrap();
-    fs::write(
-        repo.path().join("FUNCTIONAL_REQUIREMENTS.md"),
-        "- FR-dup",
-    )
-    .unwrap();
+    fs::write(repo.path().join("FUNCTIONAL_REQUIREMENTS.md"), "- FR-dup").unwrap();
 
     let body = r##"{
   "fr_id": "FR-dup",
@@ -196,11 +189,7 @@ fn validate_duplicate_fr_id_counts_both() {
 fn validate_ignores_non_trace_files() {
     let repo = TempDir::new().unwrap();
     fs::create_dir(repo.path().join("traces")).unwrap();
-    fs::write(
-        repo.path().join("FUNCTIONAL_REQUIREMENTS.md"),
-        "- FR-only",
-    )
-    .unwrap();
+    fs::write(repo.path().join("FUNCTIONAL_REQUIREMENTS.md"), "- FR-only").unwrap();
     fs::write(
         repo.path().join("traces/FR-only.json"),
         r##"{
@@ -217,11 +206,7 @@ fn validate_ignores_non_trace_files() {
     // Non-trace artifacts that should be ignored.
     fs::write(repo.path().join("traces/README.md"), "# notes").unwrap();
     fs::write(repo.path().join("traces/notes.txt"), "notes").unwrap();
-    fs::write(
-        repo.path().join("traces/schema.yaml"),
-        "fr_id: FR-only\n",
-    )
-    .unwrap();
+    fs::write(repo.path().join("traces/schema.yaml"), "fr_id: FR-only\n").unwrap();
 
     Command::cargo_bin("agileplus-trace-validator")
         .unwrap()

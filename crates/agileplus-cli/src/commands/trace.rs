@@ -253,7 +253,10 @@ pub fn run_list(args: &ListArgs) -> Result<()> {
         return Ok(());
     }
 
-    println!("{:<4}  {:<22}  {:<22}  {:<14}  CREATED", "ID", "FROM", "TO", "LINK");
+    println!(
+        "{:<4}  {:<22}  {:<22}  {:<14}  CREATED",
+        "ID", "FROM", "TO", "LINK"
+    );
     println!("{}", "-".repeat(80));
     for row in &rows {
         println!(
@@ -311,7 +314,14 @@ pub fn run_show(args: &ShowArgs) -> Result<()> {
         };
         println!(
             "  [{:>3}] {direction} {}:{} --{}--> {}:{}  (by {} @ {})",
-            r.id, r.from_kind, r.from_id, r.link_type, r.to_kind, r.to_id, r.created_by, r.created_at
+            r.id,
+            r.from_kind,
+            r.from_id,
+            r.link_type,
+            r.to_kind,
+            r.to_id,
+            r.created_by,
+            r.created_at
         );
         if !r.note.is_empty() {
             println!("        note: {}", r.note);
@@ -417,7 +427,10 @@ mod tests {
 
     #[test]
     fn truncate_shortens_long_strings() {
-        assert_eq!(truncate("2026-06-11T00:00:00.123456+00:00", 10), "2026-06-1…");
+        assert_eq!(
+            truncate("2026-06-11T00:00:00.123456+00:00", 10),
+            "2026-06-1…"
+        );
     }
 
     #[test]

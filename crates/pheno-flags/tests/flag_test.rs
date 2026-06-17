@@ -92,10 +92,7 @@ fn parse_error_carries_origin_and_raw() {
     let err = r.i64(K_PARSE_FAIL).expect_err("parse must fail");
     match err {
         FlagError::Parse {
-            name,
-            raw,
-            origin,
-            ..
+            name, raw, origin, ..
         } => {
             assert_eq!(name, K_PARSE_FAIL);
             assert_eq!(raw, "not-a-number");

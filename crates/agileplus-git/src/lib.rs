@@ -181,9 +181,7 @@ impl VcsPort for GitVcsAdapter {
         // -B <branch>` to attach the existing branch. Otherwise use
         // `-b <branch>` to create a fresh one.
         let repo = self.open()?;
-        let branch_exists = repo
-            .find_branch(&branch, git2::BranchType::Local)
-            .is_ok();
+        let branch_exists = repo.find_branch(&branch, git2::BranchType::Local).is_ok();
         let flag = if branch_exists { "-B" } else { "-b" };
 
         // Use the CLI for the worktree add — the git2 `Repository::worktree`
@@ -233,10 +231,7 @@ impl VcsPort for GitVcsAdapter {
                 head = Some(rest.to_string());
             } else if let Some(rest) = line.strip_prefix("branch ") {
                 // refs/heads/feat/login -> feat/login
-                let stripped = rest
-                    .strip_prefix("refs/heads/")
-                    .unwrap_or(rest)
-                    .to_string();
+                let stripped = rest.strip_prefix("refs/heads/").unwrap_or(rest).to_string();
                 branch = Some(stripped);
             }
         }
@@ -386,9 +381,7 @@ impl VcsPort for GitVcsAdapter {
         let stderr = String::from_utf8_lossy(&result.stderr).into_owned();
         if result.status.success() {
             // On success, capture the new HEAD commit oid.
-            let head = self
-                .run_git(&["rev-parse", "HEAD"])
-                .unwrap_or_default();
+            let head = self.run_git(&["rev-parse", "HEAD"]).unwrap_or_default();
             Ok(MergeResult {
                 success: true,
                 commit: Some(head),
@@ -521,10 +514,7 @@ impl VcsPort for GitVcsAdapter {
         // Look for the conventional artifacts at fixed names within
         // `<repo_root>/.agileplus/<feature_slug>/`. Unknown files in
         // that directory are collected under `other`.
-        let dir = self
-            .repo_root
-            .join(".agileplus")
-            .join(feature_slug);
+        let dir = self.repo_root.join(".agileplus").join(feature_slug);
         let mut out = FeatureArtifacts {
             spec: None,
             research: None,
@@ -680,7 +670,11 @@ mod tests {
             .create_worktree("login", "wp-1")
             .await
             .expect("create worktree");
-        assert!(wt.is_dir(), "worktree dir was not created: {}", wt.display());
+        assert!(
+            wt.is_dir(),
+            "worktree dir was not created: {}",
+            wt.display()
+        );
         let list = adapter.list_worktrees().await.expect("list worktrees");
         let names: Vec<&str> = list.iter().map(|w| w.branch.as_str()).collect();
         assert!(
@@ -703,10 +697,7 @@ mod tests {
             .await
             .expect("list local branches");
         assert!(locals.iter().any(|b| b.name == "feat/x"));
-        adapter
-            .checkout_branch("feat/x")
-            .await
-            .expect("checkout");
+        adapter.checkout_branch("feat/x").await.expect("checkout");
         let head = adapter
             .run_git(&["rev-parse", "--abbrev-ref", "HEAD"])
             .unwrap();
@@ -718,10 +709,7 @@ mod tests {
         let (_dir, path) = make_repo();
         let adapter = GitVcsAdapter::new(path.clone());
         // create a feature branch with a non-conflicting change
-        adapter
-            .create_branch("feat/ok", "main")
-            .await
-            .unwrap();
+        adapter.create_branch("feat/ok", "main").await.unwrap();
         adapter.checkout_branch("feat/ok").await.unwrap();
         std::fs::write(path.join("newfile.txt"), "hi").unwrap();
         StdCommand::new("git")
@@ -795,15 +783,15 @@ mod tests {
     async fn delete_local_and_remote_branch() {
         let (_dir, path) = make_repo();
         let adapter = GitVcsAdapter::new(path.clone());
-        adapter.create_branch("feat/ephemeral", "main").await.unwrap();
+        adapter
+            .create_branch("feat/ephemeral", "main")
+            .await
+            .unwrap();
         adapter
             .delete_branch("feat/ephemeral", false, None)
             .await
             .expect("delete local");
-        let locals = adapter
-            .list_branches(Some("feat/*"), false)
-            .await
-            .unwrap();
+        let locals = adapter.list_branches(Some("feat/*"), false).await.unwrap();
         assert!(locals.iter().all(|b| b.name != "feat/ephemeral"));
     }
 
@@ -820,14 +808,8 @@ mod tests {
             .await
             .expect("read");
         assert_eq!(content, "# spec\n");
-        assert!(adapter
-            .artifact_exists("login", "spec.md")
-            .await
-            .unwrap());
-        let scan = adapter
-            .scan_feature_artifacts("login")
-            .await
-            .expect("scan");
+        assert!(adapter.artifact_exists("login", "spec.md").await.unwrap());
+        let scan = adapter.scan_feature_artifacts("login").await.expect("scan");
         assert_eq!(scan.spec.as_deref(), Some("# spec\n"));
     }
 

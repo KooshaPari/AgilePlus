@@ -66,9 +66,8 @@ impl TreeSitterTokenizer {
     /// JavaScript tokenizer.
     fn js_tokenize(source: &str) -> Vec<String> {
         const JS_KEYWORDS: &[&str] = &[
-            "function", "const", "let", "var", "if", "else", "for", "while",
-            "return", "class", "import", "export", "from", "async", "await",
-            "new", "this", "try", "catch", "throw",
+            "function", "const", "let", "var", "if", "else", "for", "while", "return", "class",
+            "import", "export", "from", "async", "await", "new", "this", "try", "catch", "throw",
         ];
         Self::scan_with_keywords(source, JS_KEYWORDS)
     }
@@ -76,10 +75,33 @@ impl TreeSitterTokenizer {
     /// TypeScript tokenizer.
     fn ts_tokenize(source: &str) -> Vec<String> {
         const TS_KEYWORDS: &[&str] = &[
-            "function", "const", "let", "var", "if", "else", "for", "while",
-            "return", "class", "interface", "type", "import", "export", "from",
-            "async", "await", "new", "this", "try", "catch", "throw", "extends",
-            "implements", "enum", "namespace", "module",
+            "function",
+            "const",
+            "let",
+            "var",
+            "if",
+            "else",
+            "for",
+            "while",
+            "return",
+            "class",
+            "interface",
+            "type",
+            "import",
+            "export",
+            "from",
+            "async",
+            "await",
+            "new",
+            "this",
+            "try",
+            "catch",
+            "throw",
+            "extends",
+            "implements",
+            "enum",
+            "namespace",
+            "module",
         ];
         Self::scan_with_keywords(source, TS_KEYWORDS)
     }
@@ -87,9 +109,27 @@ impl TreeSitterTokenizer {
     /// Go tokenizer.
     fn go_tokenize(source: &str) -> Vec<String> {
         const GO_KEYWORDS: &[&str] = &[
-            "func", "package", "import", "var", "const", "type", "struct",
-            "interface", "if", "else", "for", "range", "return", "go", "chan",
-            "select", "case", "default", "defer", "panic", "recover",
+            "func",
+            "package",
+            "import",
+            "var",
+            "const",
+            "type",
+            "struct",
+            "interface",
+            "if",
+            "else",
+            "for",
+            "range",
+            "return",
+            "go",
+            "chan",
+            "select",
+            "case",
+            "default",
+            "defer",
+            "panic",
+            "recover",
         ];
         Self::scan_with_keywords(source, GO_KEYWORDS)
     }
@@ -117,7 +157,9 @@ impl TreeSitterTokenizer {
             if b.is_ascii_alphabetic() || b == b'_' || b == b'$' {
                 let start = i;
                 i += 1;
-                while i < bytes.len() && (bytes[i].is_ascii_alphanumeric() || bytes[i] == b'_' || bytes[i] == b'$') {
+                while i < bytes.len()
+                    && (bytes[i].is_ascii_alphanumeric() || bytes[i] == b'_' || bytes[i] == b'$')
+                {
                     i += 1;
                 }
                 let word = &source[start..i];
@@ -170,14 +212,18 @@ mod tests {
     fn tree_sitter_rust_fallback() {
         let src = "pub fn main() -> i32 { let x = 42; return x; }";
         let toks = TreeSitterTokenizer::tokenize(src, "rust");
-        assert!(toks.iter().any(|t| t == "pub" || t == "fn" || t == "let" || t == "return"));
+        assert!(toks
+            .iter()
+            .any(|t| t == "pub" || t == "fn" || t == "let" || t == "return"));
     }
 
     #[test]
     fn tree_sitter_python_fallback() {
         let src = "def foo(self):\n    return self.bar\n";
         let toks = TreeSitterTokenizer::tokenize(src, "python");
-        assert!(toks.iter().any(|t| t == "def" || t == "return" || t == "self"));
+        assert!(toks
+            .iter()
+            .any(|t| t == "def" || t == "return" || t == "self"));
     }
 
     #[test]
@@ -215,7 +261,9 @@ mod tests {
     fn tree_sitter_fallback_unknown_language() {
         let src = "some random text here";
         let toks = TreeSitterTokenizer::tokenize(src, "ruby");
-        assert!(toks.iter().any(|t| t == "some" || t == "random" || t == "text" || t == "here"));
+        assert!(toks
+            .iter()
+            .any(|t| t == "some" || t == "random" || t == "text" || t == "here"));
     }
 
     #[test]

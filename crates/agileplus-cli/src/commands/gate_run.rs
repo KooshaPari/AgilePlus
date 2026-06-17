@@ -62,7 +62,11 @@ pub struct GateRule {
 pub struct GateRunResult {
     pub feature_id: i64,
     pub wp_id: i64,
-    pub rules: Vec<(GateRule, bool /* passed */, Option<String> /* reason */)>,
+    pub rules: Vec<(
+        GateRule,
+        bool,           /* passed */
+        Option<String>, /* reason */
+    )>,
     pub failure_count: usize,
 }
 

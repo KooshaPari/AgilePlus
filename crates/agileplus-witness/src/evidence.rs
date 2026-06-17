@@ -13,10 +13,7 @@ pub enum Evidence {
         failed: usize,
     },
     /// Human code review.
-    CodeReview {
-        reviewer: String,
-        notes: String,
-    },
+    CodeReview { reviewer: String, notes: String },
     /// Diff summary.
     Diff {
         from: String,

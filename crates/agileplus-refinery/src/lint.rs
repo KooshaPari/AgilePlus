@@ -30,19 +30,25 @@ impl Lint {
         let mut checks = Vec::with_capacity(4);
 
         checks.push(Self::run_check("cargo check", working_dir, &["check"]).await?);
-        checks.push(Self::run_check("cargo clippy", working_dir, &["clippy", "--", "-D", "warnings"]).await?);
+        checks.push(
+            Self::run_check(
+                "cargo clippy",
+                working_dir,
+                &["clippy", "--", "-D", "warnings"],
+            )
+            .await?,
+        );
         checks.push(Self::run_check("cargo fmt", working_dir, &["fmt", "--", "--check"]).await?);
         checks.push(Self::run_check("cargo test", working_dir, &["test"]).await?);
 
         let overall_pass = checks.iter().all(|c| c.passed);
-        Ok(LintResult { checks, overall_pass })
+        Ok(LintResult {
+            checks,
+            overall_pass,
+        })
     }
 
-    async fn run_check(
-        name: &str,
-        cwd: &std::path::Path,
-        args: &[&str],
-    ) -> Result<LintCheck> {
+    async fn run_check(name: &str, cwd: &std::path::Path, args: &[&str]) -> Result<LintCheck> {
         let output = tokio::task::spawn_blocking({
             let cwd = cwd.to_path_buf();
             let args = args.iter().map(|s| s.to_string()).collect::<Vec<_>>();

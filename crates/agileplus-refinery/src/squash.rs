@@ -3,9 +3,9 @@
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 
-use anyhow::{Context, Result};
 use agileplus_domain::ports::VcsPort;
 use agileplus_git::GitVcsAdapter;
+use anyhow::{Context, Result};
 
 /// Squash helper.
 #[derive(Debug, Clone)]

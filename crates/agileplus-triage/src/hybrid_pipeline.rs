@@ -535,7 +535,11 @@ mod tests {
         let groups = run_dedup(&items, &backend, HybridConfig::default()).unwrap();
         assert_eq!(groups.len(), 1);
         let g = &groups[0];
-        assert!(g.minhash_jaccard > 0.8, "minhash_jaccard={}", g.minhash_jaccard);
+        assert!(
+            g.minhash_jaccard > 0.8,
+            "minhash_jaccard={}",
+            g.minhash_jaccard
+        );
         assert!(g.embedding_cosine > 0.5, "cosine={}", g.embedding_cosine);
         assert!(g.token_jaccard > 0.8, "token_jaccard={}", g.token_jaccard);
     }

@@ -75,10 +75,7 @@ impl ClaimBoundWorktree {
             last_heartbeat: claim.last_heartbeat,
             ttl_seconds: claim.ttl_seconds,
             state: claim.state,
-            reason: ClaimReason::Branch(format!(
-                "feat/{feature_slug}/{wp_id}:{}",
-                path.display()
-            )),
+            reason: ClaimReason::Branch(format!("feat/{feature_slug}/{wp_id}:{}", path.display())),
         };
         // Release the old claim id (best-effort; ignore the bool).
         let _ = claim_store.release(&claim.id);
@@ -113,7 +110,8 @@ impl ClaimBoundWorktree {
         match &claim.reason {
             ClaimReason::Branch(s) => {
                 // The recorded value is `feat/<feature_slug>/<wp_id>:<path>`.
-                s.split_once(':').map(|(_, path_str)| PathBuf::from(path_str))
+                s.split_once(':')
+                    .map(|(_, path_str)| PathBuf::from(path_str))
             }
             _ => None,
         }
@@ -308,14 +306,8 @@ mod tests {
                 claim.reason.clone(),
             )
             .expect("claim");
-        let wt_path = ClaimBoundWorktree::create(
-            path.clone(),
-            "login",
-            "wp-1",
-            &claim,
-            &mut store,
-        )
-        .expect("create worktree");
+        let wt_path = ClaimBoundWorktree::create(path.clone(), "login", "wp-1", &claim, &mut store)
+            .expect("create worktree");
         assert!(wt_path.is_dir(), "worktree path should exist");
         // The new claim in the store now carries a Branch reason
         // encoding the worktree path.
@@ -345,14 +337,8 @@ mod tests {
             state: ClaimState::Active,
             reason: ClaimReason::default(),
         };
-        let err = ClaimBoundWorktree::create(
-            path,
-            "login",
-            "wp-1",
-            &claim,
-            &mut store,
-        )
-        .unwrap_err();
+        let err =
+            ClaimBoundWorktree::create(path, "login", "wp-1", &claim, &mut store).unwrap_err();
         match err {
             DomainError::InvalidClaim(msg) => assert!(msg.contains("Worktree")),
             other => panic!("expected InvalidClaim, got {other:?}"),

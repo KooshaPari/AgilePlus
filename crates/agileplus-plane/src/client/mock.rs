@@ -37,10 +37,7 @@ impl InMemoryPlaneClient {
         &self,
         work_item: &PlaneWorkItem,
     ) -> anyhow::Result<PlaneWorkItemResponse> {
-        let mut created = self
-            .created
-            .lock()
-            .unwrap_or_else(|e| e.into_inner());
+        let mut created = self.created.lock().unwrap_or_else(|e| e.into_inner());
         let id = format!("issue-{}", created.len() + 1);
         created.push(work_item.clone());
         drop(created);

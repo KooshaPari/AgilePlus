@@ -13,10 +13,10 @@ use tracing::{debug, error, info, warn};
 use agileplus_events::EventStore;
 use agileplus_plane::{PlaneClient, PlaneStateMapper};
 
-use crate::conflict::{SyncConflict, detect_conflict};
+use crate::conflict::{detect_conflict, SyncConflict};
 use crate::error::SyncError;
 use crate::report::SyncReport;
-use crate::resolution::{ResolutionResult, ResolutionStrategy, apply_resolution};
+use crate::resolution::{apply_resolution, ResolutionResult, ResolutionStrategy};
 use crate::store::SyncMappingStore;
 
 pub struct SyncOrchestrator {

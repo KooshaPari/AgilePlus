@@ -13,8 +13,8 @@ pub mod validate;
 // remain in `domain::*`; lifecycle, governance, and intent graph are canonical
 // in `traceability-core` and re-exported here for backward-compatible paths.
 pub use traceability_core::governance::{
-    BuiltinPolicy, Evidence, EvidenceRequirement, EvidenceType, GovernanceContract,
-    GovernanceRule, PolicyCheck, PolicyDefinition, PolicyDomain, PolicyRule,
+    BuiltinPolicy, Evidence, EvidenceRequirement, EvidenceType, GovernanceContract, GovernanceRule,
+    PolicyCheck, PolicyDefinition, PolicyDomain, PolicyRule,
 };
 pub use traceability_core::intent_graph::{
     CanonicalLinkType, CanonicalMap, DagStage, Edge, GraphMetadata, IntentGraph, Meta, Node,

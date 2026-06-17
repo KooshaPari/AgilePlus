@@ -144,8 +144,7 @@ serde = "1.0"
     .unwrap();
 
     let scanner = Scanner::new(
-        ScannerConfig::new("x", "0.0.1")
-            .with_osv(OsvClient::with_endpoint(server.uri()).unwrap()),
+        ScannerConfig::new("x", "0.0.1").with_osv(OsvClient::with_endpoint(server.uri()).unwrap()),
     );
     let (report, sbom) = scanner.scan_cargo_manifest(&path).await.unwrap();
     assert_eq!(report.summary.total, 1);

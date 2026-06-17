@@ -3,5 +3,5 @@
 pub mod fixtures;
 pub mod harness;
 
-pub use fixtures::{TestFixtures, seed_test_data};
+pub use fixtures::{seed_test_data, TestFixtures};
 pub use harness::{HarnessError, TestHarness};

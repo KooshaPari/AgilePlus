@@ -17,12 +17,7 @@
 #[macro_export]
 macro_rules! mcp_tool {
     ($name:expr, $desc:expr, $schema:tt, $handler:expr) => {{
-        $crate::tool::Tool::new(
-            $name,
-            $desc,
-            serde_json::json!($schema),
-            $handler,
-        )
+        $crate::tool::Tool::new($name, $desc, serde_json::json!($schema), $handler)
     }};
 }
 
@@ -103,7 +98,8 @@ mod tests {
 
     #[test]
     fn mcp_tool_macro_schema_preserved() {
-        let t = mcp_tool!("greet", "Say hello", {"type": "object", "properties": {}}, |args| Ok(args));
+        let t =
+            mcp_tool!("greet", "Say hello", {"type": "object", "properties": {}}, |args| Ok(args));
         assert_eq!(t.input_schema, json!({"type": "object", "properties": {}}));
     }
 }

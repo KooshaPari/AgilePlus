@@ -70,7 +70,9 @@ impl HookDispatcher {
             let res = match &hook.action {
                 HookAction::Webhook { url } => self.dispatch_webhook(url.as_str(), claim).await,
                 HookAction::Message { topic } => self.dispatch_message(topic.as_str(), claim).await,
-                HookAction::Script { command } => self.dispatch_script(command.as_str(), claim).await,
+                HookAction::Script { command } => {
+                    self.dispatch_script(command.as_str(), claim).await
+                }
             };
             results.push((hook.id.clone(), res));
         }
@@ -78,10 +80,7 @@ impl HookDispatcher {
     }
 
     /// Dispatch an event envelope to matching hooks.
-    pub async fn dispatch_event(
-        &self,
-        envelope: &EventEnvelope,
-    ) -> Vec<(String, DispatchResult)> {
+    pub async fn dispatch_event(&self, envelope: &EventEnvelope) -> Vec<(String, DispatchResult)> {
         // For now, only handle claim-like events by inspecting the payload.
         // Future: map DomainEvent variants to HookTrigger directly.
         match &envelope.payload {
@@ -90,7 +89,10 @@ impl HookDispatcher {
                 Vec::new()
             }
             _ => {
-                warn!("no claim-specific dispatch for event: {}", envelope.payload.event_type());
+                warn!(
+                    "no claim-specific dispatch for event: {}",
+                    envelope.payload.event_type()
+                );
                 Vec::new()
             }
         }

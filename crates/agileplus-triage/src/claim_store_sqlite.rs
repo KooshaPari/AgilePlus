@@ -170,7 +170,10 @@ impl SqliteClaimStore {
             rusqlite::Error::FromSqlConversionFailure(
                 0,
                 rusqlite::types::Type::Text,
-                Box::new(std::io::Error::new(std::io::ErrorKind::Other, e.to_string())),
+                Box::new(std::io::Error::new(
+                    std::io::ErrorKind::Other,
+                    e.to_string(),
+                )),
             )
         })?;
         let agent_id: String = row.get("agent_id")?;
@@ -182,7 +185,10 @@ impl SqliteClaimStore {
             rusqlite::Error::FromSqlConversionFailure(
                 0,
                 rusqlite::types::Type::Text,
-                Box::new(std::io::Error::new(std::io::ErrorKind::Other, e.to_string())),
+                Box::new(std::io::Error::new(
+                    std::io::ErrorKind::Other,
+                    e.to_string(),
+                )),
             )
         })?;
         let reason_kind: Option<String> = row.get("reason_kind")?;
@@ -293,9 +299,10 @@ impl ClaimStoreTrait for SqliteClaimStore {
     }
 
     fn reap_expired(&mut self, now: DateTime<Utc>) -> usize {
-        let mut stmt = match self.conn.prepare(
-            "SELECT id, last_heartbeat, ttl_seconds FROM claims",
-        ) {
+        let mut stmt = match self
+            .conn
+            .prepare("SELECT id, last_heartbeat, ttl_seconds FROM claims")
+        {
             Ok(s) => s,
             Err(_) => return 0,
         };
