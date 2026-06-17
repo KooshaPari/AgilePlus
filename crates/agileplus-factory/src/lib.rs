@@ -225,7 +225,16 @@ impl<Q: IssueQueue> Factory<Q> {
                 None => continue,
             };
 
+            #[cfg(test)]
             let wt_path = ClaimBoundWorktree::create(
+                self.repo_root.clone(),
+                &feature_slug,
+                &wp_id,
+                &claim,
+                &mut self.claim_store,
+            )?;
+            #[cfg(not(test))]
+            let _ = ClaimBoundWorktree::create(
                 self.repo_root.clone(),
                 &feature_slug,
                 &wp_id,
