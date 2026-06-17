@@ -39,13 +39,7 @@ pub struct GateAddArgs {
     pub db: PathBuf,
 }
 
-const ALLOWED_DOMAINS: &[&str] = &[
-    "security",
-    "quality",
-    "compliance",
-    "performance",
-    "custom",
-];
+const ALLOWED_DOMAINS: &[&str] = &["security", "quality", "compliance", "performance", "custom"];
 
 pub fn run(args: &GateAddArgs) -> Result<()> {
     let domain = args.domain.to_lowercase();
@@ -83,12 +77,7 @@ pub fn run(args: &GateAddArgs) -> Result<()> {
 }
 
 /// Insert a policy rule and return the new id. Exposed for tests.
-pub fn insert_rule(
-    conn: &Connection,
-    domain: &str,
-    rule: &str,
-    active: bool,
-) -> Result<i64> {
+pub fn insert_rule(conn: &Connection, domain: &str, rule: &str, active: bool) -> Result<i64> {
     let now = Utc::now().format("%Y-%m-%dT%H:%M:%S").to_string();
     conn.execute(
         "INSERT INTO policy_rules (domain, rule, active, created_at, updated_at) \

@@ -12,6 +12,7 @@
 use anyhow::{bail, Result};
 use clap::Args;
 
+use agileplus_domain::ports::story::StoryRepository;
 use agileplus_github::sync::{sync_repository, GhDataSource, SyncReport};
 
 /// Arguments for the `sync` subcommand.
@@ -64,10 +65,18 @@ pub fn print_report(report: &SyncReport) {
 }
 
 /// Entry point called by `main.rs`.
+/// Entry point called by `main.rs`.
 ///
 /// Accepts an optional `source` override for dependency injection in tests.
 /// When `None`, a live `LiveGhDataSource` is constructed from `args`.
-pub async fn run(args: SyncArgs, source: Option<Box<dyn GhDataSource>>) -> Result<()> {
+///
+/// If `story_repo` is provided, synced stories are persisted via
+/// `upsert_by_requirement_id` (idempotent re-sync).
+pub async fn run(
+    args: SyncArgs,
+    source: Option<Box<dyn GhDataSource>>,
+    story_repo: Option<&dyn StoryRepository>,
+) -> Result<()> {
     let (owner, repo_name) = split_repo(&args.repo)?;
 
     let report = if let Some(src) = source {
@@ -84,10 +93,31 @@ pub async fn run(args: SyncArgs, source: Option<Box<dyn GhDataSource>>) -> Resul
         sync_repository(&live, args.project, args.epic).await?
     };
 
+    // Persist synced stories when a repository port is available.
+    if let Some(repo) = story_repo {
+        let mut persisted = 0i32;
+        let mut persist_errors: Vec<String> = Vec::new();
+        for story in &report.stories {
+            match repo.upsert_by_requirement_id(story).await {
+                Ok(_id) => persisted += 1,
+                Err(e) => persist_errors.push(format!(
+                    "{}: {e}",
+                    story.requirement_id.as_deref().unwrap_or("<no req_id>")
+                )),
+            }
+        }
+        println!("  Persisted     : {persisted}");
+        if !persist_errors.is_empty() {
+            println!("  Persist errors: {}", persist_errors.len());
+            for err in &persist_errors {
+                println!("    {err}");
+            }
+        }
+    }
+
     print_report(&report);
     Ok(())
 }
-
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 #[cfg(test)]
@@ -187,7 +217,7 @@ mod tests {
             vec![pr(10, "PR C")],
         ));
         // Should succeed: 3 stories, 0 skipped
-        let result = run(make_args("owner/repo"), Some(src)).await;
+        let result = run(make_args("owner/repo"), Some(src), None).await;
         assert!(result.is_ok(), "expected Ok, got {result:?}");
     }
 
@@ -203,7 +233,7 @@ mod tests {
             user_avatar_url: None,
         };
         let src = Box::new(FakeSource::new(vec![bad, issue(1, "Good issue")], vec![]));
-        let result = run(make_args("owner/repo"), Some(src)).await;
+        let result = run(make_args("owner/repo"), Some(src), None).await;
         assert!(result.is_ok());
     }
 
@@ -212,7 +242,7 @@ mod tests {
         let src = Box::new(FakeSource::new(vec![], vec![]));
         let args = make_args("nodash");
         // inject source so we still exercise the early bail
-        let result = run(args, Some(src)).await;
+        let result = run(args, Some(src), None).await;
         assert!(result.is_err());
         assert!(result.unwrap_err().to_string().contains("owner/repo"));
     }

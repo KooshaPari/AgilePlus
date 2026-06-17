@@ -90,17 +90,13 @@ impl Sandbox {
         backend.pull_image(&self.image).await?;
 
         // 2. Create container with seccomp + network
-        let container_id = backend
-            .create_container(self, command)
-            .await?;
+        let container_id = backend.create_container(self, command).await?;
 
         // 3. Start container
         backend.start_container(&container_id).await?;
 
         // 4. Exec command and capture output
-        let (stdout, stderr, exit_code) = backend
-            .exec_command(&container_id, command)
-            .await?;
+        let (stdout, stderr, exit_code) = backend.exec_command(&container_id, command).await?;
 
         // 5. Compute artifact SHA-256 from stdout bytes
         let artifact = Artifact::builder()

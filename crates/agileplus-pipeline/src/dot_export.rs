@@ -39,7 +39,7 @@ pub fn export(graph: &Graph) -> Result<String, PipelineError> {
             format!(" [{}]", attrs.join(", "))
         };
 
-        lines.push(format!(r#"    "{}"{};"#, label, attr_str));
+        lines.push(format!(r#"    "{label}"{attr_str};"#));
     }
 
     for rel in &graph.relationships {
@@ -66,7 +66,9 @@ pub fn export(graph: &Graph) -> Result<String, PipelineError> {
         };
 
         let edge_op = "->";
-        lines.push(format!(r#"    "{}" {} "{}"{};"#, from_label, edge_op, to_label, attr_str));
+        lines.push(format!(
+            r#"    "{from_label}" {edge_op} "{to_label}"{attr_str};"#
+        ));
     }
 
     lines.push("}".to_string());
@@ -92,12 +94,17 @@ fn properties_to_dot_attrs(properties: &serde_json::Value) -> Vec<String> {
                 continue;
             }
             let val = match value {
-                serde_json::Value::String(s) => format!("\"{}\"", s.replace('"', "\\\"").replace('\n', "\\n")),
+                serde_json::Value::String(s) => {
+                    format!("\"{}\"", s.replace('"', "\\\"").replace('\n', "\\n"))
+                }
                 serde_json::Value::Number(n) => n.to_string(),
                 serde_json::Value::Bool(b) => b.to_string(),
-                _ => format!("\"{}\"", value.to_string().replace('"', "\\\"").replace('\n', "\\n")),
+                _ => format!(
+                    "\"{}\"",
+                    value.to_string().replace('"', "\\\"").replace('\n', "\\n")
+                ),
             };
-            attrs.push(format!("{}={}", key, val));
+            attrs.push(format!("{key}={val}"));
         }
     }
     attrs
@@ -106,7 +113,7 @@ fn properties_to_dot_attrs(properties: &serde_json::Value) -> Vec<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use agileplus_graph::{Node, NodeType, Relationship, RelType};
+    use agileplus_graph::{Node, NodeType, RelType, Relationship};
     use serde_json::json;
 
     #[test]
@@ -137,14 +144,8 @@ mod tests {
     #[test]
     fn export_skips_non_relevant_types() {
         let mut graph = Graph::new();
-        let agent = Node::new(
-            NodeType::Agent,
-            json!({"slug": "agent-1"}),
-        );
-        let label = Node::new(
-            NodeType::Label,
-            json!({"slug": "label-1"}),
-        );
+        let agent = Node::new(NodeType::Agent, json!({"slug": "agent-1"}));
+        let label = Node::new(NodeType::Label, json!({"slug": "label-1"}));
         graph.add_node(agent.clone());
         graph.add_node(label.clone());
 

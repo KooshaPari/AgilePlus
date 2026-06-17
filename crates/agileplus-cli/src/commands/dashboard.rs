@@ -36,9 +36,7 @@ use std::path::{Path, PathBuf};
 
 use anyhow::Result;
 use clap::Args;
-use comfy_table::{
-    presets::UTF8_FULL, Attribute, Cell, Color, ContentArrangement, Row, Table,
-};
+use comfy_table::{presets::UTF8_FULL, Attribute, Cell, Color, ContentArrangement, Row, Table};
 use rusqlite::{params, Connection};
 use serde::Serialize;
 
@@ -298,7 +296,7 @@ fn print_ascii(snap: &DashboardSnapshot, no_color: bool) {
         truncate(&snap.generated_at, 19),
         snap.db_path
     );
-    println!("\n{}\n", title);
+    println!("\n{title}\n");
     println!("{}", "-".repeat(title.len().max(60)));
 
     render_wp_section(&snap.work_packages, no_color);
@@ -373,7 +371,12 @@ fn render_worklog_section(rows: &[WorklogEntryRow], no_color: bool) {
             colorize_status(&r.status, no_color),
             colorize_status(&r.verification_status, no_color),
             Cell::new(truncate(&r.agent_id, 20)),
-            Cell::new(r.completed_at.as_deref().map(|s| truncate(s, 19)).unwrap_or_else(|| "—".to_string())),
+            Cell::new(
+                r.completed_at
+                    .as_deref()
+                    .map(|s| truncate(s, 19))
+                    .unwrap_or_else(|| "—".to_string()),
+            ),
         ]));
     }
     println!("{table}");
@@ -410,7 +413,10 @@ fn render_events_section(rows: &[EventRow], no_color: bool) {
 }
 
 fn render_trace_links_section(rows: &[TraceLinkCount], no_color: bool) {
-    println!("\n[ Trace links by type ]  total = {}", rows.iter().map(|r| r.count).sum::<i64>());
+    println!(
+        "\n[ Trace links by type ]  total = {}",
+        rows.iter().map(|r| r.count).sum::<i64>()
+    );
     if rows.is_empty() {
         println!("    <no trace links recorded>");
         return;
@@ -419,7 +425,10 @@ fn render_trace_links_section(rows: &[TraceLinkCount], no_color: bool) {
     table
         .load_preset(UTF8_FULL)
         .set_content_arrangement(ContentArrangement::Dynamic)
-        .set_header(Row::from(vec![hcell("LINK TYPE", no_color), hcell("COUNT", no_color)]));
+        .set_header(Row::from(vec![
+            hcell("LINK TYPE", no_color),
+            hcell("COUNT", no_color),
+        ]));
     for r in rows {
         table.add_row(Row::from(vec![Cell::new(&r.link_type), Cell::new(r.count)]));
     }
@@ -661,9 +670,7 @@ mod tests {
         ];
         for (state, sql) in pairs {
             assert_eq!(
-                serde_json::to_string(&state)
-                    .unwrap()
-                    .trim_matches('"'),
+                serde_json::to_string(&state).unwrap().trim_matches('"'),
                 sql,
                 "WpState::{state:?} does not serialize to `{sql}`"
             );

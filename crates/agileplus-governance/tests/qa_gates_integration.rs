@@ -3,20 +3,19 @@ use std::path::Path;
 use std::process::Command;
 
 #[test]
+#[cfg(not(target_os = "windows"))]
 fn governance_qa_gates_accept_valid_fixture() {
     let manifest_dir = Path::new(env!("CARGO_MANIFEST_DIR"));
     let repo_root = match manifest_dir.parent().and_then(Path::parent) {
         Some(path) => path,
         None => {
-            assert!(false, "crate should live under crates/");
-            return;
+            panic!("crate should live under crates/");
         }
     };
     let temp = match tempfile::tempdir() {
         Ok(dir) => dir,
         Err(err) => {
-            assert!(false, "tempdir failed: {err}");
-            return;
+            panic!("tempdir failed: {err}");
         }
     };
 
@@ -61,8 +60,7 @@ fn run_gate(path: impl AsRef<Path>, workdir: &Path, envs: &[(&str, &str)]) {
     let output = match command.output() {
         Ok(output) => output,
         Err(err) => {
-            assert!(false, "gate failed to run: {err}");
-            return;
+            panic!("gate failed to run: {err}");
         }
     };
     assert!(

@@ -5,7 +5,7 @@ use chrono::Utc;
 use agileplus_convoy::bead::Bead;
 use agileplus_convoy::coordinator::Coordinator;
 use agileplus_convoy::Convoy;
-use agileplus_triage::claim::{ClaimKind, ClaimStore, ClaimStoreTrait};
+use agileplus_triage::claim::{ClaimKind, ClaimStore};
 use agileplus_witness::evidence::Evidence;
 use agileplus_witness::verdict::Verdict;
 use agileplus_witness::verdict::VerdictEngine;
@@ -17,10 +17,24 @@ async fn full_witness_flow_pass() {
 
     // 1. Claims and convoy
     let claim1 = claim_store
-        .claim("c1", "repo/a", ClaimKind::Repo, "agent-1", 3600, Default::default())
+        .claim(
+            "c1",
+            "repo/a",
+            ClaimKind::Repo,
+            "agent-1",
+            3600,
+            Default::default(),
+        )
         .expect("claim 1");
     let claim2 = claim_store
-        .claim("c2", "repo/b", ClaimKind::Repo, "agent-2", 3600, Default::default())
+        .claim(
+            "c2",
+            "repo/b",
+            ClaimKind::Repo,
+            "agent-2",
+            3600,
+            Default::default(),
+        )
         .expect("claim 2");
 
     let mut convoy = Convoy::new("coordinator-1", Utc::now() + chrono::Duration::hours(1));
@@ -77,7 +91,10 @@ async fn full_witness_flow_pass() {
     let engine = VerdictEngine;
     let changed = engine.evaluate(&mut convoy, &witnesses).expect("evaluate");
     assert_eq!(changed.len(), 2);
-    assert!(convoy.beads.iter().all(|b| b.state == agileplus_convoy::bead::BeadState::Completed));
+    assert!(convoy
+        .beads
+        .iter()
+        .all(|b| b.state == agileplus_convoy::bead::BeadState::Completed));
 
     // 4. Two-phase commit
     assert!(Coordinator::prepare(&convoy));
@@ -90,7 +107,14 @@ async fn full_witness_flow_fail() {
     let mut claim_store = ClaimStore::new();
 
     let claim1 = claim_store
-        .claim("c1", "repo/a", ClaimKind::Repo, "agent-1", 3600, Default::default())
+        .claim(
+            "c1",
+            "repo/a",
+            ClaimKind::Repo,
+            "agent-1",
+            3600,
+            Default::default(),
+        )
         .expect("claim 1");
 
     let mut convoy = Convoy::new("coordinator-1", Utc::now() + chrono::Duration::hours(1));
@@ -121,7 +145,10 @@ async fn full_witness_flow_fail() {
 
     let engine = VerdictEngine;
     engine.evaluate(&mut convoy, &witnesses).expect("evaluate");
-    assert_eq!(convoy.beads[0].state, agileplus_convoy::bead::BeadState::Failed);
+    assert_eq!(
+        convoy.beads[0].state,
+        agileplus_convoy::bead::BeadState::Failed
+    );
 
     Coordinator::abort(&mut convoy, &mut claim_store).expect("abort");
     assert_eq!(convoy.status, agileplus_convoy::ConvoyStatus::Aborted);

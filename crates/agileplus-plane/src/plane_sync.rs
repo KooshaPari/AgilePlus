@@ -158,6 +158,35 @@ impl PlaneClient {
         self.get_json(self.projects_url()).await
     }
 
+    /// PATCH an issue in Plane by its UUID, merging in the supplied JSON body.
+    /// Returns `Ok(())` if the API returns 2xx. Non-2xx status is logged as a
+    /// warning but not returned as an error so callers remain non-blocking.
+    pub async fn patch_issue(
+        &self,
+        project_identifier: &str,
+        issue_id: &str,
+        body: &serde_json::Value,
+    ) -> Result<()> {
+        let url = self.endpoint(&format!(
+            "api/v1/workspaces/{}/projects/{}/work-items/{}/",
+            self.workspace, project_identifier, issue_id,
+        ));
+        let response = self
+            .http
+            .patch(url)
+            .bearer_auth(&self.token)
+            .json(body)
+            .send()
+            .await
+            .context("sending PATCH request to Plane")?;
+        if !response.status().is_success() {
+            let status = response.status();
+            let text = response.text().await.unwrap_or_default();
+            tracing::warn!(issue_id, %status, body=%text, "Plane PATCH returned non-success");
+        }
+        Ok(())
+    }
+
     pub async fn sync_story_to_plane(
         &self,
         project_identifier: &str,

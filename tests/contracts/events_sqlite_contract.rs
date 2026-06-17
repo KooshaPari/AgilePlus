@@ -39,7 +39,10 @@ async fn sqlite_append_assigns_per_entity_sequence() {
         .unwrap();
 
     assert!(s1 >= 1);
-    assert!(s2 > s1, "second append on same entity must be greater: {s1} -> {s2}");
+    assert!(
+        s2 > s1,
+        "second append on same entity must be greater: {s1} -> {s2}"
+    );
     assert_eq!(s3, 1, "different entity_id must start a new sequence at 1");
 
     assert_eq!(store.get_latest_sequence("Feature", 1).await.unwrap(), s2);
@@ -68,7 +71,11 @@ async fn sqlite_get_events_scoped_and_ordered() {
     let events = store.get_events("Feature", 1).await.unwrap();
     assert_eq!(events.len(), 2);
     let seqs: Vec<i64> = events.iter().map(|e| e.sequence).collect();
-    assert_eq!(seqs, vec![1, 2], "events must be returned in ascending sequence order");
+    assert_eq!(
+        seqs,
+        vec![1, 2],
+        "events must be returned in ascending sequence order"
+    );
 
     let other = store.get_events("Feature", 2).await.unwrap();
     assert_eq!(other.len(), 1);
@@ -118,12 +125,20 @@ async fn sqlite_get_events_by_range_inclusive() {
         .unwrap();
 
     let range = store
-        .get_events_by_range("Feature", 1, mid - chrono::Duration::seconds(1), mid + chrono::Duration::seconds(1))
+        .get_events_by_range(
+            "Feature",
+            1,
+            mid - chrono::Duration::seconds(1),
+            mid + chrono::Duration::seconds(1),
+        )
         .await
         .unwrap();
     // The exact count depends on which side of `mid` each event lands on,
     // but at minimum the `updated` event must be present.
-    assert!(!range.is_empty(), "range query must return at least the post-mid event");
+    assert!(
+        !range.is_empty(),
+        "range query must return at least the post-mid event"
+    );
     assert!(range.iter().any(|e| e.event_type == "updated"));
 }
 
@@ -136,8 +151,12 @@ async fn sqlite_matches_in_memory_contract() {
 
     // Append 3 events to both stores.
     for (i, et) in ["created", "updated", "shipped"].iter().enumerate() {
-        mem.append(&make_event("Feature", 1, et, "a")).await.unwrap();
-        sql.append(&make_event("Feature", 1, et, "a")).await.unwrap();
+        mem.append(&make_event("Feature", 1, et, "a"))
+            .await
+            .unwrap();
+        sql.append(&make_event("Feature", 1, et, "a"))
+            .await
+            .unwrap();
         let _ = i;
     }
 

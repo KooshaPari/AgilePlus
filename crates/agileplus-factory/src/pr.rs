@@ -23,10 +23,7 @@ pub struct GitHubPrClient {
 }
 
 impl GitHubPrClient {
-    pub fn new(
-        repo: impl Into<String>,
-        token: impl Into<String>,
-    ) -> Self {
+    pub fn new(repo: impl Into<String>, token: impl Into<String>) -> Self {
         let repo = repo.into();
         let (owner, repo_name) = repo.split_once('/').unwrap_or((&repo, ""));
         Self {
@@ -62,7 +59,7 @@ impl GitHubPrClient {
         let status = resp.status();
         if !status.is_success() {
             let text = resp.text().await.unwrap_or_default();
-            anyhow::bail!("GitHub PR API returned error: {} — {}", status, text);
+            anyhow::bail!("GitHub PR API returned error: {status} — {text}");
         }
         let json: serde_json::Value = resp.json().await?;
         let number = json

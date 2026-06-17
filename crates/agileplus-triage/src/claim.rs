@@ -154,10 +154,7 @@ pub enum ClaimError {
     /// The caller attempted a state-sensitive operation
     /// (e.g. `claim_transfer`) on a claim owned by a different agent.
     #[error("wrong owner: expected agent {expected}, claim is held by {actual}")]
-    WrongOwner {
-        expected: String,
-        actual: String,
-    },
+    WrongOwner { expected: String, actual: String },
     /// The claim is in a state that does not permit the requested
     /// operation (e.g. transferring an already-`Draining` or
     /// `Expired` claim).
@@ -389,8 +386,7 @@ impl ClaimStore {
             reason,
         };
         self.claims.insert(to_id.to_string(), new_claim.clone());
-        self.by_resource
-            .insert((kind, resource), to_id.to_string());
+        self.by_resource.insert((kind, resource), to_id.to_string());
         // (c) return the new claim
         Ok(new_claim)
     }
@@ -503,7 +499,14 @@ mod tests {
         // the same semantics.
         let mut s: Box<dyn ClaimStoreTrait> = Box::new(ClaimStore::new());
         let c = s
-            .claim("c1", "repo:foo", ClaimKind::Repo, "agent-a", 60, ClaimReason::default())
+            .claim(
+                "c1",
+                "repo:foo",
+                ClaimKind::Repo,
+                "agent-a",
+                60,
+                ClaimReason::default(),
+            )
             .expect("claim");
         assert_eq!(c.id, "c1");
         assert!(s.heartbeat("c1"));
@@ -589,6 +592,9 @@ mod tests {
         };
         let msg = wo.to_string();
         assert!(msg.contains("a") && msg.contains("b"));
-        assert_eq!(ClaimError::WrongState.to_string(), "wrong state for operation");
+        assert_eq!(
+            ClaimError::WrongState.to_string(),
+            "wrong state for operation"
+        );
     }
 }

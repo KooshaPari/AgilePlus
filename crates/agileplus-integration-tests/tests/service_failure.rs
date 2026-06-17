@@ -13,7 +13,7 @@ use agileplus_integration_tests::common::{
 use std::time::{Duration, Instant};
 
 #[cfg(feature = "integration")]
-use agileplus_integration_tests::common::harness::{TestHarness, is_process_compose_installed};
+use agileplus_integration_tests::common::harness::{is_process_compose_installed, TestHarness};
 
 /// Helper: skip the test if services are unavailable.
 #[cfg(feature = "integration")]

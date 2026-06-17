@@ -17,7 +17,7 @@
 //! Sections covered:
 //! - Cargo: `[dependencies]`, `[dev-dependencies]`, `[build-dependencies]`
 //! - Npm:   `dependencies`, `devDependencies`, `optionalDependencies`,
-//!          `peerDependencies`
+//!   `peerDependencies`
 //! - PyPI:  `[project.dependencies]`, `[project.optional-dependencies.*]`
 //! - Go:    `require ...` lines and `require (...)` blocks
 
@@ -38,10 +38,7 @@ use crate::lockfile::split_requirements_line;
 /// parsers — they return `Vec::new()` for malformed input.)
 pub fn parse_manifest(path: &Path) -> Result<Vec<Dependency>> {
     let ecosystem = ecosystem::ecosystem_for_manifest(path).ok_or_else(|| {
-        Error::Manifest(format!(
-            "unsupported manifest filename: {}",
-            path.display()
-        ))
+        Error::Manifest(format!("unsupported manifest filename: {}", path.display()))
     })?;
     let raw = fs::read_to_string(path)?;
     let deps = match ecosystem {
@@ -75,17 +72,12 @@ pub fn parse_cargo(raw: &str) -> Vec<Dependency> {
     out
 }
 
-fn dep_from_cargo_spec(
-    name: String,
-    spec: CargoDepSpec,
-    section: &'static str,
-) -> Dependency {
+fn dep_from_cargo_spec(name: String, spec: CargoDepSpec, section: &'static str) -> Dependency {
     let version = match spec {
         CargoDepSpec::Bare(v) => v,
         CargoDepSpec::Detailed { version } => version.unwrap_or_else(|| "*".into()),
     };
-    Dependency::new(name, version, Ecosystem::Cargo, "Cargo.toml")
-        .with_section(section)
+    Dependency::new(name, version, Ecosystem::Cargo, "Cargo.toml").with_section(section)
 }
 
 /// Parse the contents of a `package.json` manifest. Returns one
@@ -215,8 +207,7 @@ pub fn parse_go(raw: &str) -> Vec<Dependency> {
         if in_require {
             if let Some((name, version)) = parse_go_require_line(trimmed) {
                 out.push(
-                    Dependency::new(name, version, Ecosystem::Go, "go.mod")
-                        .with_section("require"),
+                    Dependency::new(name, version, Ecosystem::Go, "go.mod").with_section("require"),
                 );
             }
             continue;
@@ -412,7 +403,9 @@ serde = "1"
     #[test]
     fn pypi_manifest_parses_pep508() {
         let deps = parse_pypi(PYPI);
-        assert!(deps.iter().any(|d| d.name == "requests" && d.version == ">="));
+        assert!(deps
+            .iter()
+            .any(|d| d.name == "requests" && d.version == ">="));
         assert!(deps.iter().any(|d| d.name == "click" && d.version == "*"));
         assert!(deps.iter().any(|d| d.name == "PyQt5"));
     }
@@ -421,11 +414,20 @@ serde = "1"
     fn go_manifest_parses_both_require_forms() {
         let deps = parse_go(GO);
         assert_eq!(deps.len(), 3);
-        let bar = deps.iter().find(|d| d.name == "github.com/foo/bar").unwrap();
+        let bar = deps
+            .iter()
+            .find(|d| d.name == "github.com/foo/bar")
+            .unwrap();
         assert_eq!(bar.version, "v1.2.3");
-        let qux = deps.iter().find(|d| d.name == "github.com/baz/qux").unwrap();
+        let qux = deps
+            .iter()
+            .find(|d| d.name == "github.com/baz/qux")
+            .unwrap();
         assert_eq!(qux.version, "v0.4.0");
-        let nest = deps.iter().find(|d| d.name == "github.com/deep/nest").unwrap();
+        let nest = deps
+            .iter()
+            .find(|d| d.name == "github.com/deep/nest")
+            .unwrap();
         assert_eq!(nest.version, "v2.0.1");
     }
 

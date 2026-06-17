@@ -4,12 +4,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .build_client(true)
         .compile_protos(
             &[
-                "../proto/agileplus/v1/common.proto",
-                "../proto/agileplus/v1/core.proto",
-                "../proto/agileplus/v1/agents.proto",
-                "../proto/agileplus/v1/integrations.proto",
+                "../agileplus-agents/proto/agileplus/v1/common.proto",
+                "../agileplus-agents/proto/agileplus/v1/core.proto",
+                "../agileplus-agents/proto/agileplus/v1/agents.proto",
+                "../agileplus-agents/proto/agileplus/v1/integrations.proto",
             ],
-            &["../proto"],
+            &["../agileplus-agents/proto"],
         )?;
     Ok(())
 }

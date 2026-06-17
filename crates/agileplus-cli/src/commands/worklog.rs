@@ -44,8 +44,7 @@ const CANONICAL_STATUSES: &[&str] = &[
     "failed",
     "cancelled",
 ];
-const CANONICAL_VERIFICATION_STATUSES: &[&str] =
-    &["passed", "failed", "not_run", "partial"];
+const CANONICAL_VERIFICATION_STATUSES: &[&str] = &["passed", "failed", "not_run", "partial"];
 
 // ── File-level types (L2 #25) ──────────────────────────────────────────────
 
@@ -126,7 +125,7 @@ pub struct EmitArgs {
     pub verbose: bool,
 
     /// Force re-ingest by removing any existing row with the same
-    /// `(task_id, commit_sha)` before inserting.
+    /// `(task_id, source_path)` before inserting.
     #[arg(long)]
     pub replace: bool,
 }
@@ -178,8 +177,9 @@ pub struct WorklogEntry {
     pub files_changed: Vec<String>,
     pub commit_sha: Option<String>,
     pub verification: VerificationResult,
-    pub started_at: Option<String>,
+    pub started_at: String,
     pub completed_at: Option<String>,
+    pub source_path: String,
     pub ingested_at: String,
 }
 
@@ -238,6 +238,7 @@ pub fn run(args: &WorklogArgs) -> Result<()> {
                             },
                             "started_at": e.started_at,
                             "completed_at": e.completed_at,
+                            "source_path": e.source_path,
                             "ingested_at": e.ingested_at,
                         })
                     })
@@ -302,6 +303,7 @@ pub fn run_with_db(args: &WorklogArgs, db_path: &Path) -> Result<()> {
                             },
                             "started_at": e.started_at,
                             "completed_at": e.completed_at,
+                            "source_path": e.source_path,
                             "ingested_at": e.ingested_at,
                         })
                     })
@@ -379,7 +381,7 @@ fn validate(dir: &Path) -> Result<()> {
             }
         }
     }
-    println!("\nResult: {} OK, {} FAIL", ok, err);
+    println!("\nResult: {ok} OK, {err} FAIL");
     if err > 0 {
         std::process::exit(1);
     }
@@ -529,14 +531,10 @@ pub fn validate_payload(payload: &WorklogPayload) -> Result<()> {
     }
     if let Some(ref sha) = payload.commit_sha {
         if !is_valid_sha(sha) {
-            bail!(
-                "commit_sha '{sha}' is not a 7-40 char hex string and is not null"
-            );
+            bail!("commit_sha '{sha}' is not a 7-40 char hex string and is not null");
         }
     }
-    if !CANONICAL_VERIFICATION_STATUSES
-        .contains(&payload.verification_result.status.as_str())
-    {
+    if !CANONICAL_VERIFICATION_STATUSES.contains(&payload.verification_result.status.as_str()) {
         bail!(
             "verification_result.status '{}' is invalid: expected one of {}",
             payload.verification_result.status,
@@ -546,9 +544,7 @@ pub fn validate_payload(payload: &WorklogPayload) -> Result<()> {
     if payload.verification_result.status == "not_run"
         && !payload.verification_result.commands.is_empty()
     {
-        bail!(
-            "verification_result.commands must be empty when status is 'not_run'"
-        );
+        bail!("verification_result.commands must be empty when status is 'not_run'");
     }
     for cmd in &payload.verification_result.commands {
         if cmd.trim().is_empty() {
@@ -581,7 +577,9 @@ pub fn validate_payload(payload: &WorklogPayload) -> Result<()> {
 
 fn is_valid_sha(s: &str) -> bool {
     let len = s.len();
-    (7..=40).contains(&len) && s.chars().all(|c| c.is_ascii_hexdigit() && !c.is_ascii_uppercase())
+    (7..=40).contains(&len)
+        && s.chars()
+            .all(|c| c.is_ascii_hexdigit() && !c.is_ascii_uppercase())
 }
 
 /// Lenient ISO-8601 check. We only require a `YYYY-MM-DD` prefix followed
@@ -606,7 +604,7 @@ fn is_iso8601_like(s: &str) -> bool {
 /// Open the worklog database, ensuring the schema is present.
 ///
 /// If the database does not yet exist, the table is created by running the
-/// bundled migration `023_create_worklog_entries.sql` via the regular
+/// bundled migration `022_create_worklog_entries.sql` via the regular
 /// `MigrationRunner` so it stays in sync with the rest of the schema.
 pub fn open_db(db_path: &Path) -> Result<Connection> {
     let conn = Connection::open(db_path)
@@ -676,7 +674,7 @@ pub fn run_emit(args: &EmitArgs, db_path: &Path) -> Result<EmitReport> {
             continue;
         }
 
-        let inserted = insert_entry(&conn, &payload, args.replace)?;
+        let inserted = insert_entry(&conn, &payload, &display, &raw, args.replace)?;
         if inserted {
             report.rows_inserted += 1;
         } else if args.replace {
@@ -695,10 +693,7 @@ pub fn run_emit(args: &EmitArgs, db_path: &Path) -> Result<EmitReport> {
     Ok(report)
 }
 
-fn collect_worklog_files(
-    from: &Path,
-    report: &mut EmitReport,
-) -> Result<Vec<PathBuf>> {
+fn collect_worklog_files(from: &Path, report: &mut EmitReport) -> Result<Vec<PathBuf>> {
     if !from.exists() {
         bail!("--from path does not exist: {}", from.display());
     }
@@ -706,8 +701,8 @@ fn collect_worklog_files(
         return Ok(vec![from.to_path_buf()]);
     }
     let mut out = Vec::new();
-    let entries = std::fs::read_dir(from)
-        .with_context(|| format!("reading directory {}", from.display()))?;
+    let entries =
+        std::fs::read_dir(from).with_context(|| format!("reading directory {}", from.display()))?;
     for entry in entries {
         let entry = match entry {
             Ok(e) => e,
@@ -732,43 +727,46 @@ fn collect_worklog_files(
 pub fn insert_entry(
     conn: &Connection,
     payload: &WorklogPayload,
+    source_path: &str,
+    raw_payload: &str,
     replace: bool,
 ) -> Result<bool> {
-    let files_changed_json = serde_json::to_string(&payload.files_changed)
-        .context("serializing files_changed")?;
-    let verification_cmds_json = serde_json::to_string(&payload.verification_result.commands)
-        .context("serializing verification commands")?;
+    let files_changed_json =
+        serde_json::to_string(&payload.files_changed).context("serializing files_changed")?;
+    let verification_json =
+        serde_json::to_string(&payload.verification_result).context("serializing verification")?;
     let ingested_at = chrono::Utc::now().to_rfc3339();
 
     if replace {
         conn.execute(
-            "DELETE FROM worklog_entries WHERE task_id = ?1 AND commit_sha = ?2",
-            rusqlite::params![payload.task_id, payload.commit_sha],
+            "DELETE FROM worklog_entries WHERE task_id = ?1 AND source_path = ?2",
+            rusqlite::params![payload.task_id, source_path],
         )
         .context("deleting prior worklog row")?;
     }
 
-    let rows = conn.execute(
-        "INSERT OR IGNORE INTO worklog_entries
+    let rows = conn
+        .execute(
+            "INSERT OR IGNORE INTO worklog_entries
             (status, task_id, agent_id, files_changed_json, commit_sha,
-             verification_status, verification_notes, verification_cmds,
-             started_at, completed_at, ingested_at)
+             verification_json, started_at, completed_at, source_path,
+             payload_json, ingested_at)
          VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11)",
-        rusqlite::params![
-            payload.status,
-            payload.task_id,
-            payload.agent_id,
-            files_changed_json,
-            payload.commit_sha,
-            payload.verification_result.status,
-            payload.verification_result.notes,
-            verification_cmds_json,
-            payload.started_at,
-            payload.completed_at,
-            ingested_at,
-        ],
-    )
-    .context("inserting worklog row")?;
+            rusqlite::params![
+                payload.status,
+                payload.task_id,
+                payload.agent_id,
+                files_changed_json,
+                payload.commit_sha,
+                verification_json,
+                payload.started_at,
+                payload.completed_at,
+                source_path,
+                raw_payload,
+                ingested_at,
+            ],
+        )
+        .context("inserting worklog row")?;
     Ok(rows == 1)
 }
 
@@ -784,8 +782,7 @@ pub fn run_show(args: &ShowArgs, db_path: &Path) -> Result<Vec<WorklogEntry>> {
 
     let mut sql = String::from(
         "SELECT id, status, task_id, agent_id, files_changed_json, commit_sha, \
-         verification_status, verification_notes, verification_cmds, \
-         started_at, completed_at, ingested_at \
+         verification_json, started_at, completed_at, source_path, ingested_at \
          FROM worklog_entries",
     );
     let mut clauses: Vec<String> = Vec::new();
@@ -833,22 +830,19 @@ fn row_to_entry(row: &rusqlite::Row<'_>) -> rusqlite::Result<WorklogEntry> {
     let agent_id: String = row.get(3)?;
     let files_changed_json: String = row.get(4)?;
     let commit_sha: Option<String> = row.get(5)?;
-    let verification_status: String = row.get(6)?;
-    let verification_notes: String = row.get(7)?;
-    let verification_cmds_json: String = row.get(8)?;
-    let started_at: Option<String> = row.get(9)?;
-    let completed_at: Option<String> = row.get(10)?;
-    let ingested_at: String = row.get(11)?;
+    let verification_json: String = row.get(6)?;
+    let started_at: String = row.get(7)?;
+    let completed_at: Option<String> = row.get(8)?;
+    let source_path: String = row.get(9)?;
+    let ingested_at: String = row.get(10)?;
 
-    let files_changed: Vec<String> =
-        serde_json::from_str(&files_changed_json).unwrap_or_default();
-    let commands: Vec<String> =
-        serde_json::from_str(&verification_cmds_json).unwrap_or_default();
-    let verification = VerificationResult {
-        status: verification_status,
-        commands,
-        notes: verification_notes,
-    };
+    let files_changed: Vec<String> = serde_json::from_str(&files_changed_json).unwrap_or_default();
+    let verification: VerificationResult =
+        serde_json::from_str(&verification_json).unwrap_or(VerificationResult {
+            status: "not_run".into(),
+            commands: vec![],
+            notes: String::new(),
+        });
 
     Ok(WorklogEntry {
         id,
@@ -860,6 +854,7 @@ fn row_to_entry(row: &rusqlite::Row<'_>) -> rusqlite::Result<WorklogEntry> {
         verification,
         started_at,
         completed_at,
+        source_path,
         ingested_at,
     })
 }
@@ -884,7 +879,7 @@ pub fn print_table(entries: &[WorklogEntry]) {
             truncate(&e.task_id, 10),
             truncate(&e.status, 12),
             truncate(&e.agent_id, 22),
-            truncate(e.started_at.as_deref().unwrap_or(""), 24),
+            truncate(&e.started_at, 24),
             e.commit_sha.as_deref().unwrap_or("—"),
         );
     }
@@ -997,10 +992,7 @@ mod tests {
         let mut p = good_payload();
         p.verification_result.status = "yolo".into();
         let err = validate_payload(&p).unwrap_err().to_string();
-        assert!(
-            err.contains("verification_result.status"),
-            "got: {err}"
-        );
+        assert!(err.contains("verification_result.status"), "got: {err}");
     }
 
     #[test]
@@ -1048,9 +1040,7 @@ mod tests {
         let db = temp_db_path("agileplus-worklog-open");
         let conn = open_db(&db).expect("open");
         let count: i64 = conn
-            .query_row("SELECT COUNT(*) FROM worklog_entries", [], |row| {
-                row.get(0)
-            })
+            .query_row("SELECT COUNT(*) FROM worklog_entries", [], |row| row.get(0))
             .unwrap();
         assert_eq!(count, 0);
         let _ = std::fs::remove_file(db);
@@ -1061,11 +1051,12 @@ mod tests {
         let db = temp_db_path("agileplus-worklog-idem");
         let conn = open_db(&db).unwrap();
         let p = good_payload();
-        assert!(insert_entry(&conn, &p, false).unwrap());
-        // Second insert with same (task_id, commit_sha) should be a no-op.
-        assert!(!insert_entry(&conn, &p, false).unwrap());
+        let raw = serde_json::to_string(&p).unwrap();
+        assert!(insert_entry(&conn, &p, "src/w.json", &raw, false).unwrap());
+        // Second insert with same (task_id, source_path) should be a no-op.
+        assert!(!insert_entry(&conn, &p, "src/w.json", &raw, false).unwrap());
         // With replace=true, the row should be removed and re-inserted.
-        assert!(insert_entry(&conn, &p, true).unwrap());
+        assert!(insert_entry(&conn, &p, "src/w.json", &raw, true).unwrap());
         let count: i64 = conn
             .query_row("SELECT COUNT(*) FROM worklog_entries", [], |r| r.get(0))
             .unwrap();
@@ -1091,7 +1082,10 @@ mod tests {
             "verification_result".into(),
             serde_json::json!({"status":"passed","commands":["x"],"notes":"ok"}),
         );
-        bad_map.insert("started_at".into(), serde_json::json!("2026-06-11T00:00:00Z"));
+        bad_map.insert(
+            "started_at".into(),
+            serde_json::json!("2026-06-11T00:00:00Z"),
+        );
         bad_map.insert("completed_at".into(), serde_json::json!(null));
         let bad = serde_json::to_string(&bad_map).unwrap();
         std::fs::write(&good_path, &good).unwrap();
@@ -1122,8 +1116,10 @@ mod tests {
         let mut p2 = good_payload();
         p2.task_id = "L2-99".into();
         p2.status = "running".into();
-        insert_entry(&conn, &p1, false).unwrap();
-        insert_entry(&conn, &p2, false).unwrap();
+        let raw1 = serde_json::to_string(&p1).unwrap();
+        let raw2 = serde_json::to_string(&p2).unwrap();
+        insert_entry(&conn, &p1, "a.json", &raw1, false).unwrap();
+        insert_entry(&conn, &p2, "b.json", &raw2, false).unwrap();
 
         let all = run_show(
             &ShowArgs {
@@ -1171,7 +1167,8 @@ mod tests {
         let db = temp_db_path("agileplus-worklog-roundtrip");
         let conn = open_db(&db).unwrap();
         let p = good_payload();
-        insert_entry(&conn, &p, false).unwrap();
+        let raw = serde_json::to_string(&p).unwrap();
+        insert_entry(&conn, &p, "x.json", &raw, false).unwrap();
         let entries = run_show(
             &ShowArgs {
                 task: None,

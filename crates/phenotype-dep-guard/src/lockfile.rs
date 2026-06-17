@@ -30,13 +30,10 @@ use crate::error::{Error, Result};
 /// parsers — they return `Vec::new()` for malformed input.)
 pub fn parse_lockfile(path: &Path) -> Result<Vec<Dependency>> {
     let ecosystem = ecosystem::ecosystem_for_lockfile(path).ok_or_else(|| {
-        Error::Manifest(format!(
-            "unsupported lockfile filename: {}",
-            path.display()
-        ))
+        Error::Manifest(format!("unsupported lockfile filename: {}", path.display()))
     })?;
     let raw = fs::read_to_string(path)?;
-    let lockfile_path = path
+    let _lockfile_path = path
         .file_name()
         .and_then(|s| s.to_str())
         .unwrap_or("lockfile")
@@ -159,8 +156,7 @@ pub fn parse_go_sum(raw: &str) -> Vec<Dependency> {
         }
         if seen.insert((name.clone(), version.clone())) {
             out.push(
-                Dependency::new(name, version, Ecosystem::Go, "go.sum")
-                    .with_section("go.sum"),
+                Dependency::new(name, version, Ecosystem::Go, "go.sum").with_section("go.sum"),
             );
         }
     }
@@ -183,6 +179,7 @@ struct CargoLockPackage {
     version: String,
     /// `source = "registry+..."` for non-root packages. The root
     /// workspace entry is the only one without a `source` field.
+    #[allow(dead_code)]
     #[serde(default)]
     source: Option<String>,
 }
@@ -218,11 +215,7 @@ pub(crate) fn split_requirements_line(line: &str) -> (String, String) {
     let mut split_at = line.len();
     for (i, _) in bytes.iter().enumerate() {
         // 3-char ops
-        if i + 2 < bytes.len()
-            && bytes[i] == b'='
-            && bytes[i + 1] == b'='
-            && bytes[i + 2] == b'='
-        {
+        if i + 2 < bytes.len() && bytes[i] == b'=' && bytes[i + 1] == b'=' && bytes[i + 2] == b'=' {
             split_at = i;
             break;
         }
@@ -351,7 +344,10 @@ github.com/baz/qux v0.4.0/go.mod h1:uvw=
         let deps = parse_go_sum(GO_SUM);
         // Both modules have h1 + /go.mod lines; we dedupe to one entry per pair.
         assert_eq!(deps.len(), 2);
-        let bar = deps.iter().find(|d| d.name == "github.com/foo/bar").unwrap();
+        let bar = deps
+            .iter()
+            .find(|d| d.name == "github.com/foo/bar")
+            .unwrap();
         assert_eq!(bar.version, "v1.2.3");
     }
 
@@ -366,10 +362,22 @@ github.com/baz/qux v0.4.0/go.mod h1:uvw=
 
     #[test]
     fn split_requirements_line_handles_operators() {
-        assert_eq!(split_requirements_line("a==1.0"), ("a".into(), "1.0".into()));
-        assert_eq!(split_requirements_line("a>=1.0"), ("a".into(), "1.0".into()));
-        assert_eq!(split_requirements_line("a<=1.0"), ("a".into(), "1.0".into()));
-        assert_eq!(split_requirements_line("a~=1.0"), ("a".into(), "1.0".into()));
+        assert_eq!(
+            split_requirements_line("a==1.0"),
+            ("a".into(), "1.0".into())
+        );
+        assert_eq!(
+            split_requirements_line("a>=1.0"),
+            ("a".into(), "1.0".into())
+        );
+        assert_eq!(
+            split_requirements_line("a<=1.0"),
+            ("a".into(), "1.0".into())
+        );
+        assert_eq!(
+            split_requirements_line("a~=1.0"),
+            ("a".into(), "1.0".into())
+        );
         assert_eq!(split_requirements_line("a"), ("a".into(), "".into()));
     }
 }

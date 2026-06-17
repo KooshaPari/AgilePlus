@@ -15,10 +15,9 @@ const _ONTOLOGY_SCHEMA_PATH: &str = "~/forge/prompt-corpus/agileplus-intent-onto
 pub const EMBEDDED_SCHEMA: &str = include_str!("../ontology.json");
 
 fn get_validator() -> Result<Validator, String> {
-    let schema: Value = serde_json::from_str(EMBEDDED_SCHEMA)
-        .map_err(|e| format!("schema parse failed: {e}"))?;
-    Validator::new(&schema)
-        .map_err(|e| format!("schema compile failed: {e}"))
+    let schema: Value =
+        serde_json::from_str(EMBEDDED_SCHEMA).map_err(|e| format!("schema parse failed: {e}"))?;
+    Validator::new(&schema).map_err(|e| format!("schema compile failed: {e}"))
 }
 
 /// Validate an intent graph against the ontology schema.
@@ -63,7 +62,9 @@ pub fn validate_node_id(id: &str) -> Result<(), String> {
     if re.is_match(id) {
         Ok(())
     } else {
-        Err(format!("node id '{id}' does not match pattern [A-Z][a-z]+#[a-z0-9\\-]+"))
+        Err(format!(
+            "node id '{id}' does not match pattern [A-Z][a-z]+#[a-z0-9\\-]+"
+        ))
     }
 }
 
@@ -76,7 +77,13 @@ pub fn validate_edge_meta(edge: &crate::types::Edge) -> Vec<String> {
     if edge.meta.source.is_empty() {
         errors.push(format!("edge {}: missing source", edge.id));
     }
-    if edge.meta.agent_id.as_ref().map(|s| s.is_empty()).unwrap_or(true) {
+    if edge
+        .meta
+        .agent_id
+        .as_ref()
+        .map(|s| s.is_empty())
+        .unwrap_or(true)
+    {
         errors.push(format!("edge {}: missing agent_id", edge.id));
     }
     if let Some(c) = edge.meta.confidence {

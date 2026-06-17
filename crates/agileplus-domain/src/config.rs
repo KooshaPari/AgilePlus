@@ -52,6 +52,44 @@ impl Default for AppConfig {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn default_config_has_expected_values() {
+        let cfg = AppConfig::default();
+        assert_eq!(cfg.api.port, 3030);
+        assert_eq!(cfg.core.database_path, PathBuf::from("agileplus.db"));
+        assert!(cfg.api.api_keys.is_none());
+    }
+
+    #[test]
+    fn app_config_serde_roundtrip() {
+        let cfg = AppConfig::default();
+        let json = serde_json::to_string(&cfg).expect("domain operation");
+        let back: AppConfig = serde_json::from_str(&json).expect("domain operation");
+        assert_eq!(back.api.port, cfg.api.port);
+        assert_eq!(back.core.database_path, cfg.core.database_path);
+    }
+
+    #[test]
+    fn load_with_env_overrides_reads_api_port() {
+        std::env::set_var("API_PORT", "9090");
+        let cfg = AppConfig::load_with_env_overrides().expect("domain operation");
+        assert_eq!(cfg.api.port, 9090);
+        std::env::remove_var("API_PORT");
+    }
+
+    #[test]
+    fn load_with_env_overrides_reads_database_path() {
+        std::env::set_var("DATABASE_PATH", "/tmp/test.db");
+        let cfg = AppConfig::load_with_env_overrides().expect("domain operation");
+        assert_eq!(cfg.core.database_path, PathBuf::from("/tmp/test.db"));
+        std::env::remove_var("DATABASE_PATH");
+    }
+}
+
 impl AppConfig {
     /// Load config with environment variable overrides.
     pub fn load_with_env_overrides() -> anyhow::Result<Self> {

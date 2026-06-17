@@ -3,8 +3,7 @@
 use serde_json::Value;
 
 use crate::intent_graph::{
-    CanonicalMap, DagStage, Edge, Meta, Node, NodeType, RelationshipType, Status,
-    ValidationError,
+    CanonicalMap, DagStage, Edge, Meta, Node, NodeType, RelationshipType, Status, ValidationError,
 };
 
 /// ---------------------------------------------------------------------------
@@ -124,7 +123,9 @@ impl NodeBuilder {
             .ok_or_else(|| ValidationError::MissingRequiredField("meta".to_string()))?;
 
         if meta.source.trim().is_empty() {
-            return Err(ValidationError::MissingMeta("node: source is empty".to_string()));
+            return Err(ValidationError::MissingMeta(
+                "node: source is empty".to_string(),
+            ));
         }
 
         let id = self.id.unwrap_or_else(|| {
@@ -231,7 +232,9 @@ impl EdgeBuilder {
             .ok_or_else(|| ValidationError::MissingRequiredField("meta".to_string()))?;
 
         if meta.source.trim().is_empty() {
-            return Err(ValidationError::MissingMeta("edge: source is empty".to_string()));
+            return Err(ValidationError::MissingMeta(
+                "edge: source is empty".to_string(),
+            ));
         }
 
         let id = self.id.unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
@@ -252,24 +255,34 @@ impl EdgeBuilder {
 /// Helpers
 /// ---------------------------------------------------------------------------
 /// Slugify a node title into a URL/identifier-safe form.
-///
-/// Delegates to the shared `phenotype-string` crate so every consumer repo
-/// (AgilePlus, Tracera, teamcomm, ...) uses identical slug rules.
+/// Lowercases, replaces whitespace/punctuation with hyphens, and collapses
+/// consecutive hyphens, matching the canonical phenotype slug rules.
 fn slugify(s: &str) -> String {
-    phenotype_string::slugify(s)
+    let mut slug = String::with_capacity(s.len());
+    let mut prev_hyphen = false;
+    for ch in s.chars() {
+        if ch.is_alphanumeric() {
+            slug.push(ch.to_ascii_lowercase());
+            prev_hyphen = false;
+        } else if !prev_hyphen {
+            slug.push('-');
+            prev_hyphen = true;
+        }
+    }
+    slug.trim_matches('-').to_owned()
 }
 
 fn is_valid_node_id(id: &str) -> bool {
     use regex::Regex;
     static RE: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
-    let re = RE.get_or_init(|| Regex::new(r"^[A-Z][a-z]+#[a-z0-9\-]+$").unwrap());
+    let re = RE.get_or_init(|| Regex::new(r"^[A-Z][a-z]+#[a-z0-9\-]+$").expect("domain operation"));
     re.is_match(id)
 }
 
 #[cfg(test)]
 mod tests {
-    use chrono::Utc;
     use super::*;
+    use chrono::Utc;
 
     fn sample_meta() -> Meta {
         Meta {
@@ -286,7 +299,7 @@ mod tests {
             .title("OAuth2 Login")
             .meta(sample_meta())
             .build()
-            .unwrap();
+            .expect("domain operation");
 
         assert_eq!(node.node_type, NodeType::Feature);
         assert_eq!(node.title, "OAuth2 Login");
@@ -301,7 +314,7 @@ mod tests {
             .title("Memory leak in parser")
             .meta(sample_meta())
             .build()
-            .unwrap();
+            .expect("domain operation");
 
         assert_eq!(node.id, "Bug#memory-leak");
     }
@@ -347,11 +360,14 @@ mod tests {
             .table_ref("stories")
             .table_id("ST-42")
             .build()
-            .unwrap();
+            .expect("domain operation");
 
         assert_eq!(node.status, Status::Active);
         assert_eq!(node.tags, vec!["frontend", "ui"]);
-        assert_eq!(node.description, Some("A story about the dashboard".to_string()));
+        assert_eq!(
+            node.description,
+            Some("A story about the dashboard".to_string())
+        );
         assert_eq!(node.table_ref, Some("stories".to_string()));
         assert_eq!(node.table_id, Some("ST-42".to_string()));
     }
@@ -365,7 +381,7 @@ mod tests {
         )
         .meta(sample_meta())
         .build()
-        .unwrap();
+        .expect("domain operation");
 
         assert_eq!(edge.source, "Intent#auth");
         assert_eq!(edge.target, "Feature#oauth2");
@@ -384,7 +400,7 @@ mod tests {
         .id("edge-001")
         .meta(sample_meta())
         .build()
-        .unwrap();
+        .expect("domain operation");
 
         assert_eq!(edge.id, "edge-001");
     }

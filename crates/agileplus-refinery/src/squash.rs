@@ -1,15 +1,15 @@
 //! Squash source branch into target branch.
 
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::process::{Command, Stdio};
 
-use anyhow::{Context, Result};
-use agileplus_domain::ports::VcsPort;
 use agileplus_git::GitVcsAdapter;
+use anyhow::{Context, Result};
 
 /// Squash helper.
 #[derive(Debug, Clone)]
 pub struct Squash {
+    #[allow(dead_code)]
     adapter: GitVcsAdapter,
     repo_root: PathBuf,
 }
@@ -46,16 +46,24 @@ impl Squash {
         self.run_git(&["checkout", target_branch])
             .with_context(|| format!("checkout {target_branch}"))?;
 
-        // 2. Detect conflicts before touching the index via merge --squash.
-        //    We use the adapter's conflict detector (read-only).
-        let conflicts = self
-            .adapter
-            .detect_conflicts(source_branch, target_branch)
-            .await
-            .with_context(|| "conflict detection failed")?;
-        if !conflicts.is_empty() {
-            let files: Vec<String> = conflicts.iter().map(|c| c.file_path.clone()).collect();
-            anyhow::bail!("merge conflicts detected: {}", files.join(", "));
+        // 2. Detect conflicts via git merge-tree (read-only, no index changes).
+        let root2 = self.repo_root.clone();
+        let src2 = source_branch.to_string();
+        let tgt2 = target_branch.to_string();
+        let conflict_output = tokio::task::spawn_blocking(move || {
+            Command::new("git")
+                .args(["merge-tree", "--write-tree", &tgt2, &src2])
+                .current_dir(&root2)
+                .stdout(Stdio::piped())
+                .stderr(Stdio::piped())
+                .output()
+        })
+        .await
+        .context("spawn_blocking for merge-tree failed")?
+        .with_context(|| "git merge-tree failed")?;
+        if !conflict_output.status.success() {
+            let stderr = String::from_utf8_lossy(&conflict_output.stderr);
+            anyhow::bail!("merge conflicts detected: {}", stderr.trim());
         }
 
         // 3. Merge --squash (does not create a commit yet).

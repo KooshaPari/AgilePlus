@@ -55,7 +55,7 @@ impl EmbeddingBackend for CodeBertEmbeddings {
     }
 
     fn embed(&self, texts: &[&str]) -> Vec<Vec<f32>> {
-        let prefixed: Vec<String> = texts.iter().map(|t| format!("code: {}", t)).collect();
+        let prefixed: Vec<String> = texts.iter().map(|t| format!("code: {t}")).collect();
         let refs: Vec<&str> = prefixed.iter().map(|s| s.as_str()).collect();
         self.inner.embed(&refs)
     }

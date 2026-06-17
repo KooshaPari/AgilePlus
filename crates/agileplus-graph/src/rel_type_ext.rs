@@ -78,7 +78,7 @@ mod tests {
         ] {
             let json = serde_json::to_string(&rt).unwrap();
             let back: RelType = serde_json::from_str(&json).unwrap();
-            assert_eq!(back, rt, "serde round-trip failed for {:?}", rt);
+            assert_eq!(back, rt, "serde round-trip failed for {rt:?}");
         }
     }
 

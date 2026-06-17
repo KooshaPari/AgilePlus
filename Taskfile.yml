@@ -12,6 +12,6 @@ tasks:
       - nextest run --workspace --profile default --cargo-quiet --no-fail-fast --export-junit target/nextest/junit.xml
 
   coverage:
-    desc: Measure code coverage (SSOT: see grade.sh for the canonical command).
+    desc: "Measure code coverage (SSOT: see grade.sh for the canonical command)."
     cmds:
       - cargo llvm-cov --workspace --fail-under-lines 85

@@ -7,7 +7,7 @@ use bollard::image::CreateImageOptions;
 use bollard::models::HostConfig;
 use bollard::Docker;
 use futures::StreamExt;
-use tracing::{debug, error, info, warn};
+use tracing::{debug, info, warn};
 
 use crate::Sandbox;
 
@@ -37,7 +37,7 @@ impl DockerBackend {
             match msg {
                 Ok(status) => {
                     if let Some(error) = status.error {
-                        return Err(anyhow::anyhow!("Docker pull error: {}", error));
+                        return Err(anyhow::anyhow!("Docker pull error: {error}"));
                     }
                     debug!(?status, "pull status");
                 }
@@ -75,7 +75,7 @@ impl DockerBackend {
         let env: Vec<String> = sandbox
             .env
             .iter()
-            .map(|(k, v)| format!("{}={}", k, v))
+            .map(|(k, v)| format!("{k}={v}"))
             .collect();
 
         let cmd = shell_words::split(command)?;
@@ -146,7 +146,10 @@ impl DockerBackend {
             ..Default::default()
         };
 
-        let start_result = self.client.start_exec(&exec.id, Some(start_options)).await?;
+        let start_result = self
+            .client
+            .start_exec(&exec.id, Some(start_options))
+            .await?;
 
         let mut stdout: Vec<u8> = Vec::new();
         let mut stderr: Vec<u8> = Vec::new();
@@ -188,11 +191,12 @@ impl DockerBackend {
     /// Stop a container.
     pub async fn stop_container(&self, container_id: &str) -> Result<()> {
         info!(container_id, "stopping container");
-        let options = StopContainerOptions {
-            t: 10,
-            ..Default::default()
-        };
-        if let Err(e) = self.client.stop_container(container_id, Some(options)).await {
+        let options = StopContainerOptions { t: 10 };
+        if let Err(e) = self
+            .client
+            .stop_container(container_id, Some(options))
+            .await
+        {
             warn!(error = %e, "stop container failed (container may already be stopped)");
         }
         Ok(())
@@ -205,7 +209,11 @@ impl DockerBackend {
             force: true,
             ..Default::default()
         };
-        if let Err(e) = self.client.remove_container(container_id, Some(options)).await {
+        if let Err(e) = self
+            .client
+            .remove_container(container_id, Some(options))
+            .await
+        {
             warn!(error = %e, "remove container failed (container may already be removed)");
         }
         Ok(())

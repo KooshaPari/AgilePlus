@@ -7,7 +7,7 @@
 
 use agileplus_benchmarks::helpers::{make_event, make_events_multi_entity, make_in_memory_adapter};
 use agileplus_sqlite::repository::events as event_repo;
-use criterion::{BenchmarkId, Criterion, black_box, criterion_group, criterion_main};
+use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
 
 // ---------------------------------------------------------------------------
 // Benchmark: append N events to a freshly opened in-memory store

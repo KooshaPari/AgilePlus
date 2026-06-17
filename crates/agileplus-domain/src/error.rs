@@ -3,6 +3,9 @@
 use phenotype_error_core::ErrorCode;
 use thiserror::Error;
 
+/// A convenience `Result` alias for domain operations.
+pub type DomainResult<T> = Result<T, DomainError>;
+
 /// Top-level domain error.
 #[derive(Debug, Error)]
 pub enum DomainError {
@@ -91,11 +94,6 @@ impl From<DomainError> for ErrorCode {
 
             // infrastructure / internal faults
             DomainError::Storage(_) | DomainError::LockPoisoned => Self::InternalError,
-
-            // claim-bound: from the caller's perspective this is a precondition
-            // failure — the same shape as "you handed me a bad argument" — so
-            // it projects to ValidationError.
-            DomainError::InvalidClaim(_) => Self::ValidationError,
         }
     }
 }

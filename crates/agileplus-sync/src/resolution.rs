@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use crate::conflict::{SyncConflict, hash_value};
+use crate::conflict::{hash_value, SyncConflict};
 use crate::error::SyncError;
 
 /// Specifies which side wins for a particular field in field-level resolution.

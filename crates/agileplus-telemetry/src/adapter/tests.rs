@@ -1,6 +1,5 @@
-use super::*;
+﻿use super::*;
 use agileplus_domain::ports::observability::LogEntry;
-use std::collections::HashMap;
 
 #[test]
 fn noop_adapter_does_not_panic() {
@@ -33,8 +32,7 @@ fn noop_adapter_log_entry() {
     let entry = LogEntry {
         level: LogLevel::Info,
         message: "test".into(),
-        fields: HashMap::new(),
-        span_context: None,
+        fields: vec![],
     };
     adapter.log(&entry); // must not panic
 }

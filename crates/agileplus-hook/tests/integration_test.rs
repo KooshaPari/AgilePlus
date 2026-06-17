@@ -37,7 +37,9 @@ async fn hook_dispatches_on_claim() {
     };
 
     // 4. Dispatch
-    let results = dispatcher.dispatch_claim(&claim, HookTrigger::OnClaim).await;
+    let results = dispatcher
+        .dispatch_claim(&claim, HookTrigger::OnClaim)
+        .await;
     assert_eq!(results.len(), 1);
     assert_eq!(results[0].0, "h1");
     assert_eq!(results[0].1, DispatchResult::Dispatched);
@@ -68,7 +70,9 @@ async fn hook_filters_by_regex() {
         reason: Default::default(),
     };
 
-    let results = dispatcher.dispatch_claim(&claim, HookTrigger::OnClaim).await;
+    let results = dispatcher
+        .dispatch_claim(&claim, HookTrigger::OnClaim)
+        .await;
     assert_eq!(results.len(), 1);
     assert_eq!(results[0].1, DispatchResult::Filtered);
 }

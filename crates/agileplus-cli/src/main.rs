@@ -68,6 +68,8 @@ enum Command {
     ImportDagctl(commands::import_dagctl::ImportDagctlArgs),
     /// Convert a natural language prompt into a structured intent graph
     Intent(commands::intent::IntentArgs),
+    /// Link work items to Tracera trace IDs
+    Trace(commands::trace::TraceCmd),
     /// Print a high-level project status summary
     Status,
 }
@@ -252,14 +254,21 @@ fn cmd_cycle_list(store: &MockStore) {
         println!("No cycles found.");
         return;
     }
-    println!("{:<5} {:<24} {:<12} {:<12} {:<12}", "ID", "NAME", "STATE", "START", "END");
+    println!(
+        "{:<5} {:<24} {:<12} {:<12} {:<12}",
+        "ID", "NAME", "STATE", "START", "END"
+    );
     println!("{}", "-".repeat(70));
     let mut cycles: Vec<&Cycle> = store.cycles.iter().collect();
     cycles.sort_by_key(|c| c.start_date);
     for c in cycles {
         println!(
             "{:<5} {:<24} {:<12} {:<12} {:<12}",
-            c.id, truncate(&c.name, 24), c.state, c.start_date, c.end_date
+            c.id,
+            truncate(&c.name, 24),
+            c.state,
+            c.start_date,
+            c.end_date
         );
     }
 }
@@ -338,9 +347,7 @@ fn cmd_feature_search(store: &MockStore, query: &str) {
         .filter(|f| {
             f.slug.to_lowercase().contains(&needle)
                 || f.friendly_name.to_lowercase().contains(&needle)
-                || f.labels
-                    .iter()
-                    .any(|l| l.to_lowercase().contains(&needle))
+                || f.labels.iter().any(|l| l.to_lowercase().contains(&needle))
         })
         .collect();
     if matches.is_empty() {
@@ -386,7 +393,11 @@ fn cmd_module_show(store: &MockStore, id: i64) -> anyhow::Result<()> {
                     .clone()
                     .unwrap_or_else(|| "\u{2014}".to_string())
             );
-            let feature_count = store.features.iter().filter(|f| f.module_id == Some(m.id)).count();
+            let feature_count = store
+                .features
+                .iter()
+                .filter(|f| f.module_id == Some(m.id))
+                .count();
             println!("features    : {feature_count}");
             println!(
                 "created_at  : {}",
@@ -430,10 +441,7 @@ fn cmd_status(store: &MockStore) {
     for f in &store.features {
         *by_state.entry(f.state).or_insert(0) += 1;
     }
-    let active = store
-        .cycles
-        .iter()
-        .find(|c| c.state == CycleState::Active);
+    let active = store.cycles.iter().find(|c| c.state == CycleState::Active);
     let total_modules = store.modules.len();
     let total_cycles = store.cycles.len();
 
@@ -538,7 +546,7 @@ async fn main() {
             Command::Status => cmd_status(&store),
             Command::Version => cmd_version(),
             Command::Sync(args) => {
-                sync_cmd::run(args, None).await?;
+                sync_cmd::run(args, None, None).await?;
             }
             Command::SeedRequirements(args) => {
                 commands::seed_requirements::run(&args)?;
@@ -572,6 +580,9 @@ async fn main() {
             }
             Command::Intent(args) => {
                 commands::intent::run(&args)?;
+            }
+            Command::Trace(cmd) => {
+                cmd.run().await?;
             }
         }
         Ok(())

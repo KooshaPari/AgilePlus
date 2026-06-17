@@ -118,7 +118,12 @@ mod tests {
         for f in &["Cargo.toml", "package.json", "pyproject.toml", "go.mod"] {
             assert!(is_manifest(&PathBuf::from(f)), "{f} should be a manifest");
         }
-        for f in &["Cargo.lock", "package-lock.json", "requirements.txt", "go.sum"] {
+        for f in &[
+            "Cargo.lock",
+            "package-lock.json",
+            "requirements.txt",
+            "go.sum",
+        ] {
             assert!(is_lockfile(&PathBuf::from(f)), "{f} should be a lockfile");
         }
         assert!(!is_manifest(&PathBuf::from("poetry.lock")));

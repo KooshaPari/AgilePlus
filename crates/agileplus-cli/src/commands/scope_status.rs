@@ -67,10 +67,8 @@ pub fn run(args: &ScopeStatusArgs) -> Result<()> {
 
     if args.json {
         let active_value = active.map(cycle_to_json);
-        let cycles_value: Vec<serde_json::Value> =
-            cycles.iter().map(cycle_to_json).collect();
-        let modules_value: Vec<serde_json::Value> =
-            modules.iter().map(module_to_json).collect();
+        let cycles_value: Vec<serde_json::Value> = cycles.iter().map(cycle_to_json).collect();
+        let modules_value: Vec<serde_json::Value> = modules.iter().map(module_to_json).collect();
         let payload = serde_json::json!({
             "active": active_value,
             "cycles": cycles_value,
@@ -95,7 +93,10 @@ pub fn run(args: &ScopeStatusArgs) -> Result<()> {
         None => {
             println!("No active cycle. All known cycles:");
             for c in &cycles {
-                println!("  [{}] {:<20}  {:<10}  {} → {}", c.id, c.name, c.state, c.start_date, c.end_date);
+                println!(
+                    "  [{}] {:<20}  {:<10}  {} → {}",
+                    c.id, c.name, c.state, c.start_date, c.end_date
+                );
             }
         }
     }
@@ -106,12 +107,15 @@ pub fn run(args: &ScopeStatusArgs) -> Result<()> {
     }
 
     println!("\nModules:");
-    println!("  {:<3}  {:<18}  {:<28}  {}", "ID", "SLUG", "NAME", "FEATURES");
+    println!("  {:<3}  {:<18}  {:<28}  FEATURES", "ID", "SLUG", "NAME");
     println!("  {}", "-".repeat(60));
     for m in &modules {
         println!(
             "  {:<3}  {:<18}  {:<28}  {}",
-            m.id, m.slug, truncate(&m.friendly_name, 28), m.feature_count
+            m.id,
+            m.slug,
+            truncate(&m.friendly_name, 28),
+            m.feature_count
         );
     }
 
@@ -191,14 +195,13 @@ fn load_modules_in_subtree(conn: &Connection, root_id: i64) -> Result<Vec<Module
     let mut ids = vec![root_id];
     let mut frontier = vec![root_id];
     while !frontier.is_empty() {
-        let placeholders = std::iter::repeat("?")
-            .take(frontier.len())
+        let placeholders = std::iter::repeat_n("?", frontier.len())
             .collect::<Vec<_>>()
             .join(",");
-        let sql = format!(
-            "SELECT id FROM modules WHERE parent_module_id IN ({placeholders})"
-        );
-        let mut stmt = conn.prepare(&sql).context("preparing modules child query")?;
+        let sql = format!("SELECT id FROM modules WHERE parent_module_id IN ({placeholders})");
+        let mut stmt = conn
+            .prepare(&sql)
+            .context("preparing modules child query")?;
         let params: Vec<&dyn rusqlite::ToSql> =
             frontier.iter().map(|v| v as &dyn rusqlite::ToSql).collect();
         let rows = stmt.query_map(rusqlite::params_from_iter(params), |r| r.get::<_, i64>(0))?;
@@ -216,8 +219,7 @@ fn load_modules_in_subtree(conn: &Connection, root_id: i64) -> Result<Vec<Module
     if ids.is_empty() {
         return Ok(Vec::new());
     }
-    let placeholders = std::iter::repeat("?")
-        .take(ids.len())
+    let placeholders = std::iter::repeat_n("?", ids.len())
         .collect::<Vec<_>>()
         .join(",");
     let sql = format!(
@@ -225,9 +227,10 @@ fn load_modules_in_subtree(conn: &Connection, root_id: i64) -> Result<Vec<Module
                 COALESCE((SELECT COUNT(*) FROM module_feature_tags mft WHERE mft.module_id = m.id), 0) \
          FROM modules m WHERE m.id IN ({placeholders}) ORDER BY m.id"
     );
-    let mut stmt = conn.prepare(&sql).context("preparing modules scope query")?;
-    let params: Vec<&dyn rusqlite::ToSql> =
-        ids.iter().map(|v| v as &dyn rusqlite::ToSql).collect();
+    let mut stmt = conn
+        .prepare(&sql)
+        .context("preparing modules scope query")?;
+    let params: Vec<&dyn rusqlite::ToSql> = ids.iter().map(|v| v as &dyn rusqlite::ToSql).collect();
     let rows = stmt.query_map(rusqlite::params_from_iter(params), |r| {
         Ok(ModuleInfo {
             id: r.get(0)?,

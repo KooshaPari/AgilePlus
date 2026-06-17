@@ -6,7 +6,7 @@ use agileplus_convoy::bead::Bead;
 use agileplus_convoy::coordinator::Coordinator;
 use agileplus_convoy::store::ConvoyStore;
 use agileplus_convoy::Convoy;
-use agileplus_triage::claim::{ClaimKind, ClaimStore, ClaimStoreTrait};
+use agileplus_triage::claim::{ClaimKind, ClaimStore};
 
 #[tokio::test]
 async fn full_convoy_flow_commit() {
@@ -15,10 +15,24 @@ async fn full_convoy_flow_commit() {
 
     // 1. Issue claims
     let claim1 = claim_store
-        .claim("c1", "repo/a", ClaimKind::Repo, "agent-1", 3600, Default::default())
+        .claim(
+            "c1",
+            "repo/a",
+            ClaimKind::Repo,
+            "agent-1",
+            3600,
+            Default::default(),
+        )
         .expect("claim 1");
     let claim2 = claim_store
-        .claim("c2", "repo/b", ClaimKind::Repo, "agent-2", 3600, Default::default())
+        .claim(
+            "c2",
+            "repo/b",
+            ClaimKind::Repo,
+            "agent-2",
+            3600,
+            Default::default(),
+        )
         .expect("claim 2");
 
     // 2. Create convoy and add beads
@@ -57,7 +71,14 @@ async fn full_convoy_flow_abort() {
     let mut claim_store = ClaimStore::new();
 
     let claim1 = claim_store
-        .claim("c1", "repo/a", ClaimKind::Repo, "agent-1", 3600, Default::default())
+        .claim(
+            "c1",
+            "repo/a",
+            ClaimKind::Repo,
+            "agent-1",
+            3600,
+            Default::default(),
+        )
         .expect("claim 1");
 
     let mut convoy = Convoy::new("coordinator-1", Utc::now() + chrono::Duration::hours(1));

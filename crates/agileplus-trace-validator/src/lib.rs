@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 
 pub mod intent;
 
-pub use intent::{validate_intent_graph, IntentGraph, GraphMetadata, ValidationError};
+pub use intent::{validate_intent_graph, GraphMetadata, IntentGraph, ValidationError};
 
 #[derive(Debug, Deserialize)]
 pub struct TraceEntry {

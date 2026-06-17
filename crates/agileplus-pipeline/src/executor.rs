@@ -6,7 +6,7 @@ use tokio::process::Command;
 use tokio::sync::watch;
 use uuid::Uuid;
 
-use agileplus_graph::{RelType};
+use agileplus_graph::RelType;
 
 use crate::{Graph, PipelineError, ResourceLimits};
 
@@ -77,7 +77,7 @@ impl Executor {
         let mut idx_to_uuid = HashMap::new();
         let mut uuid_to_idx = HashMap::new();
 
-        for (&id, _) in &graph.nodes {
+        for &id in graph.nodes.keys() {
             let idx = pet_graph.add_node(id);
             idx_to_uuid.insert(idx, id);
             uuid_to_idx.insert(id, idx);
@@ -88,16 +88,17 @@ impl Executor {
             if rel.rel_type == RelType::DependsOn || rel.rel_type == RelType::Blocks {
                 // dependent (from) depends on dependency (to)
                 // Edge direction in execution graph: to -> from
-                if let (Some(&from), Some(&to)) =
-                    (uuid_to_idx.get(&rel.to_node_id), uuid_to_idx.get(&rel.from_node_id))
-                {
+                if let (Some(&from), Some(&to)) = (
+                    uuid_to_idx.get(&rel.to_node_id),
+                    uuid_to_idx.get(&rel.from_node_id),
+                ) {
                     pet_graph.add_edge(from, to, ());
                 }
             }
         }
 
         let topo = petgraph::algo::toposort(&pet_graph, None)
-            .map_err(|cycle| PipelineError::Execution(format!("Cycle detected: {:?}", cycle)))?;
+            .map_err(|cycle| PipelineError::Execution(format!("Cycle detected: {cycle:?}")))?;
 
         // Channel to notify dependents when a node finishes.
         let mut senders: HashMap<Uuid, watch::Sender<bool>> = HashMap::new();
@@ -149,11 +150,7 @@ impl Executor {
                 // Evaluate guard edges: if any guard fails, skip this node.
                 for edge in &guard_edges {
                     if let Some(guard_cmd) = edge.properties.get("guard").and_then(|v| v.as_str()) {
-                        let status = Command::new("sh")
-                            .arg("-c")
-                            .arg(guard_cmd)
-                            .status()
-                            .await;
+                        let status = Command::new("sh").arg("-c").arg(guard_cmd).status().await;
                         match status {
                             Ok(s) if s.code() == Some(0) => {}
                             _ => {
@@ -169,17 +166,13 @@ impl Executor {
                                         attempts: 0,
                                         started_at,
                                         finished_at: Instant::now(),
-                                        last_error: Some(format!(
-                                            "Guard failed: {}",
-                                            guard_cmd
-                                        )),
+                                        last_error: Some(format!("Guard failed: {guard_cmd}")),
                                     },
                                 );
                             }
                         }
                     }
                 }
-
 
                 // Extract node attributes.
                 let cmd_str = node
@@ -205,7 +198,6 @@ impl Executor {
                     .unwrap_or(default_timeout);
 
                 let mut attempts = 0u32;
-                let mut last_result: Option<NodeOutput> = None;
 
                 if cmd_str.is_empty() {
                     // No command — treat as no-op success.
@@ -226,6 +218,8 @@ impl Executor {
                     );
                 }
 
+                #[allow(unused_assignments)]
+                let mut last_result: Option<NodeOutput> = None;
                 loop {
                     attempts += 1;
                     let stdout_file = tempfile::NamedTempFile::new().ok();
@@ -239,7 +233,7 @@ impl Executor {
                     if let Some(ref f) = stdout_file {
                         let std_file = std::fs::File::create(f.path())
                             .ok()
-                            .map(|f| std::process::Stdio::from(f));
+                            .map(std::process::Stdio::from);
                         if let Some(f) = std_file {
                             cmd.stdout(f);
                         }
@@ -247,17 +241,14 @@ impl Executor {
                     if let Some(ref f) = stderr_file {
                         let std_file = std::fs::File::create(f.path())
                             .ok()
-                            .map(|f| std::process::Stdio::from(f));
+                            .map(std::process::Stdio::from);
                         if let Some(f) = std_file {
                             cmd.stderr(f);
                         }
                     }
 
-                    let result = tokio::time::timeout(
-                        Duration::from_secs(timeout_secs),
-                        cmd.status(),
-                    )
-                    .await;
+                    let result =
+                        tokio::time::timeout(Duration::from_secs(timeout_secs), cmd.status()).await;
 
                     let (success, exit_code, error) = match result {
                         Ok(Ok(status)) => {
@@ -269,20 +260,12 @@ impl Executor {
                                 if ok {
                                     None
                                 } else {
-                                    Some(format!("Non-zero exit: {:?}", code))
+                                    Some(format!("Non-zero exit: {code:?}"))
                                 },
                             )
                         }
-                        Ok(Err(e)) => (
-                            false,
-                            None,
-                            Some(format!("Spawn error: {}", e)),
-                        ),
-                        Err(_) => (
-                            false,
-                            None,
-                            Some(format!("Timeout after {}s", timeout_secs)),
-                        ),
+                        Ok(Err(e)) => (false, None, Some(format!("Spawn error: {e}"))),
+                        Err(_) => (false, None, Some(format!("Timeout after {timeout_secs}s"))),
                     };
 
                     let stdout_path = stdout_file.map(|f| f.into_temp_path().to_path_buf());
@@ -330,9 +313,9 @@ impl Executor {
 
         // Wait for all tasks to finish and collect results.
         for handle in handles {
-            let (node_id, output) = handle.await.map_err(|e| {
-                PipelineError::Execution(format!("Task join error: {}", e))
-            })?;
+            let (node_id, output) = handle
+                .await
+                .map_err(|e| PipelineError::Execution(format!("Task join error: {e}")))?;
             if output.skipped || !output.success {
                 skipped.insert(node_id);
             } else {

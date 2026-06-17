@@ -31,7 +31,10 @@ fn event_response_shape_matches_dashboard_contract() {
     assert_eq!(json["event_type"], "created");
     assert_eq!(json["actor"], "alice");
     assert_eq!(json["timestamp"], "2026-06-14T12:00:00Z");
-    assert!(json["payload"].is_object(), "payload must be a JSON object for the dashboard");
+    assert!(
+        json["payload"].is_object(),
+        "payload must be a JSON object for the dashboard"
+    );
     assert_eq!(json["payload"]["transition"], "created");
 }
 
@@ -49,7 +52,9 @@ fn event_response_timestamp_is_rfc3339() {
         payload: serde_json::json!({}),
     };
     let json: Value = serde_json::to_value(&resp).unwrap();
-    let ts = json["timestamp"].as_str().expect("timestamp must be a string");
+    let ts = json["timestamp"]
+        .as_str()
+        .expect("timestamp must be a string");
     chrono::DateTime::parse_from_rfc3339(ts).expect("timestamp must be RFC-3339");
 }
 

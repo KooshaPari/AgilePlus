@@ -32,12 +32,10 @@ use anyhow::{anyhow, Result};
 use clap::{Args, Subcommand};
 
 use agileplus_application::dto::{
-    ClaimKind, ClaimReason, ClaimRequest, DedupRequest, DoneRequest, HeartbeatRequest,
-    PickRequest, ReleaseRequest, ScanRequest, TopologyRequest, WhereRequest,
+    ClaimKind, ClaimReason, ClaimRequest, DedupRequest, DoneRequest, HeartbeatRequest, PickRequest,
+    ReleaseRequest, ScanRequest, TopologyRequest, WhereRequest,
 };
-use agileplus_application::use_cases::triage::{
-    AppState, TopologyReport, WpRepository,
-};
+use agileplus_application::use_cases::triage::{AppState, TopologyReport, WpRepository};
 use agileplus_triage::dedup::{find_duplicates, hybrid_score, token_jaccard};
 
 // ── Singleton AppState ──────────────────────────────────────────────────────
@@ -345,14 +343,22 @@ async fn cmd_claim(a: ClaimArgs) -> Result<()> {
 
 async fn cmd_release(a: ReleaseArgs) -> Result<()> {
     let state = shared_state().lock().map_err(|e| anyhow!("{e}"))?;
-    let ok = state.release(&ReleaseRequest { claim_id: a.claim_id.clone() })?;
-    println!("release({}): {}", a.claim_id, if ok { "ok" } else { "not found" });
+    let ok = state.release(&ReleaseRequest {
+        claim_id: a.claim_id.clone(),
+    })?;
+    println!(
+        "release({}): {}",
+        a.claim_id,
+        if ok { "ok" } else { "not found" }
+    );
     Ok(())
 }
 
 async fn cmd_heartbeat(a: HeartbeatArgs) -> Result<()> {
     let state = shared_state().lock().map_err(|e| anyhow!("{e}"))?;
-    let ok = state.heartbeat(&HeartbeatRequest { claim_id: a.claim_id.clone() })?;
+    let ok = state.heartbeat(&HeartbeatRequest {
+        claim_id: a.claim_id.clone(),
+    })?;
     println!(
         "heartbeat({}): {}",
         a.claim_id,
@@ -376,7 +382,10 @@ async fn cmd_done(a: DoneArgs) -> Result<()> {
 async fn cmd_dedup(a: DedupArgs) -> Result<()> {
     let items = read_id_text(&a.from)?;
     let state = shared_state().lock().map_err(|e| anyhow!("{e}"))?;
-    let cands = state.dedup(&DedupRequest { items, threshold: a.threshold })?;
+    let cands = state.dedup(&DedupRequest {
+        items,
+        threshold: a.threshold,
+    })?;
     if cands.is_empty() {
         println!("(no duplicate groups @ threshold {})", a.threshold);
         return Ok(());
@@ -391,7 +400,10 @@ async fn cmd_dedup(a: DedupArgs) -> Result<()> {
 }
 
 async fn cmd_dedup_explain(a: DedupExplainArgs) -> Result<()> {
-    let pair = vec![("a".to_string(), a.a.clone()), ("b".to_string(), a.b.clone())];
+    let pair = vec![
+        ("a".to_string(), a.a.clone()),
+        ("b".to_string(), a.b.clone()),
+    ];
     let cands = find_duplicates(&pair, 0.0);
     let j = token_jaccard(&a.a, &a.b);
     let (h, _fj, _nj, _lr, sd) = hybrid_score(&a.a, &a.b);
@@ -401,14 +413,20 @@ async fn cmd_dedup_explain(a: DedupExplainArgs) -> Result<()> {
     println!("hybrid_score     = {h:.4}");
     println!("simhash_distance = {sd}");
     if let Some(c) = cands.first() {
-        println!("candidate_pair   = {} vs {} (hybrid {:.4})", c.a_id, c.b_id, c.hybrid_score);
+        println!(
+            "candidate_pair   = {} vs {} (hybrid {:.4})",
+            c.a_id, c.b_id, c.hybrid_score
+        );
     }
     Ok(())
 }
 
 async fn cmd_scan(a: ScanArgs) -> Result<()> {
     let state = shared_state().lock().map_err(|e| anyhow!("{e}"))?;
-    let infos = state.scan(&ScanRequest { roots: a.roots.clone(), max_depth: None })?;
+    let infos = state.scan(&ScanRequest {
+        roots: a.roots.clone(),
+        max_depth: None,
+    })?;
     if infos.is_empty() {
         println!("(no roots scanned)");
     }
@@ -446,7 +464,9 @@ async fn cmd_where(a: WhereArgs) -> Result<()> {
         .map(PathBuf::from)
         .unwrap_or_else(|| std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")));
     let state = shared_state().lock().map_err(|e| anyhow!("{e}"))?;
-    let _resp = state.where_am_i(&WhereRequest { cwd: cwd.display().to_string() })?;
+    let _resp = state.where_am_i(&WhereRequest {
+        cwd: cwd.display().to_string(),
+    })?;
     // The in-memory port doesn't yet implement where_am_i; fall back to a
     // direct scan if the response is empty.
     let infos = state.scan(&ScanRequest {
@@ -456,10 +476,7 @@ async fn cmd_where(a: WhereArgs) -> Result<()> {
     for info in infos {
         println!(
             "repo={}\tstate={:?}\tbranch={:?}\thygiene={}",
-            info.path,
-            info.state,
-            info.current_branch,
-            info.hygiene_score
+            info.path, info.state, info.current_branch, info.hygiene_score
         );
     }
     Ok(())
@@ -488,7 +505,11 @@ async fn cmd_add(a: AddArgs) -> Result<()> {
             dependencies: deps,
         },
     );
-    println!("added: {} ({} deps)", a.wp_id, state.wp_repo.items[&a.wp_id].dependencies.len());
+    println!(
+        "added: {} ({} deps)",
+        a.wp_id,
+        state.wp_repo.items[&a.wp_id].dependencies.len()
+    );
     Ok(())
 }
 

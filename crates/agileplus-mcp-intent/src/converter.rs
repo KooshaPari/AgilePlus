@@ -8,8 +8,8 @@ use regex::Regex;
 use uuid::Uuid;
 
 use crate::types::{
-    CanonicalLinkType, ConvertOptions, ConvertResponse, ConversionSummary, Direction,
-    IntentGraph, Meta, Node, NodeType, RelationshipType, Status, make_edge, round_confidence,
+    make_edge, round_confidence, CanonicalLinkType, ConversionSummary, ConvertOptions,
+    ConvertResponse, Direction, IntentGraph, Meta, Node, NodeType, RelationshipType, Status,
 };
 
 /// Convert a free-text prompt into a structured intent graph.
@@ -49,10 +49,19 @@ pub fn convert(prompt: &str, options: &ConvertOptions) -> anyhow::Result<Convert
         properties.insert("stakeholders".to_string(), serde_json::json!(stakeholders));
     }
     if !acceptance.is_empty() {
-        properties.insert("acceptance_criteria".to_string(), serde_json::json!(acceptance));
+        properties.insert(
+            "acceptance_criteria".to_string(),
+            serde_json::json!(acceptance),
+        );
     }
-    properties.insert("auto_decomposed".to_string(), serde_json::json!(options.auto_decompose));
-    properties.insert("max_features".to_string(), serde_json::json!(options.max_features));
+    properties.insert(
+        "auto_decomposed".to_string(),
+        serde_json::json!(options.auto_decompose),
+    );
+    properties.insert(
+        "max_features".to_string(),
+        serde_json::json!(options.max_features),
+    );
     intent = intent.properties(serde_json::Value::Object(properties));
 
     let mut nodes: Vec<Node> = vec![intent.build()];
@@ -60,8 +69,8 @@ pub fn convert(prompt: &str, options: &ConvertOptions) -> anyhow::Result<Convert
 
     // -- Plan node --
     let plan_id = format!("Plan#{}-plan", &slug);
-    let plan = Node::builder(&plan_id, NodeType::Plan, &format!("Plan for {}", title))
-        .description(format!("Auto-generated plan from prompt: {}", prompt))
+    let plan = Node::builder(&plan_id, NodeType::Plan, &format!("Plan for {title}"))
+        .description(format!("Auto-generated plan from prompt: {prompt}"))
         .meta(Meta {
             timestamp: Utc::now(),
             source: "agent-inference".to_string(),
@@ -126,8 +135,8 @@ pub fn convert(prompt: &str, options: &ConvertOptions) -> anyhow::Result<Convert
     // -- Story node (if small scope) --
     if features.is_empty() {
         let story_id = format!("Story#{}-story", &slug);
-        let story = Node::builder(&story_id, NodeType::Story, &format!("As a user, {}", title))
-            .description(format!("User story derived from prompt: {}", prompt))
+        let story = Node::builder(&story_id, NodeType::Story, &format!("As a user, {title}"))
+            .description(format!("User story derived from prompt: {prompt}"))
             .meta(Meta {
                 timestamp: Utc::now(),
                 source: "agent-inference".to_string(),
@@ -175,10 +184,21 @@ pub fn convert(prompt: &str, options: &ConvertOptions) -> anyhow::Result<Convert
     let graph = IntentGraph::new(nodes, edges);
     let node_count = graph.nodes.len();
     let edge_count = graph.edges.len();
-    let features_generated = graph.nodes.iter().filter(|n| matches!(n.node_type, NodeType::Feature)).count();
-    let plan_generated = graph.nodes.iter().any(|n| matches!(n.node_type, NodeType::Plan));
+    let features_generated = graph
+        .nodes
+        .iter()
+        .filter(|n| matches!(n.node_type, NodeType::Feature))
+        .count();
+    let plan_generated = graph
+        .nodes
+        .iter()
+        .any(|n| matches!(n.node_type, NodeType::Plan));
 
-    let avg_confidence = graph.nodes.iter().filter_map(|n| n.meta.confidence).sum::<f64>()
+    let avg_confidence = graph
+        .nodes
+        .iter()
+        .filter_map(|n| n.meta.confidence)
+        .sum::<f64>()
         / node_count.max(1) as f64;
 
     Ok(ConvertResponse {
@@ -341,7 +361,11 @@ fn title_from_prompt(prompt: &str) -> String {
 
 fn extract_priority(prompt: &str) -> String {
     let lower = prompt.to_lowercase();
-    if lower.contains("critical") || lower.contains("urgent") || lower.contains("p0") || lower.contains("blocker") {
+    if lower.contains("critical")
+        || lower.contains("urgent")
+        || lower.contains("p0")
+        || lower.contains("blocker")
+    {
         "critical".to_string()
     } else if lower.contains("high") || lower.contains("important") || lower.contains("p1") {
         "high".to_string()

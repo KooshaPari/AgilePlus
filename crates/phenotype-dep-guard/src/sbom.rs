@@ -30,8 +30,12 @@ pub struct Component {
     /// CycloneDX package URL (`pkg:cargo/<name>@<version>`).
     pub purl: String,
     /// Optional external references (registry homepage).
-    #[serde(skip_serializing_if = "Vec::is_empty", default)]
-    pub externalReferences: Vec<ExternalRef>,
+    #[serde(
+        rename = "externalReferences",
+        skip_serializing_if = "Vec::is_empty",
+        default
+    )]
+    pub external_references: Vec<ExternalRef>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -46,11 +50,14 @@ pub struct ExternalRef {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Sbom {
     /// CycloneDX spec version.
-    pub bomFormat: String,
-    pub specVersion: String,
+    #[serde(rename = "bomFormat")]
+    pub bom_format: String,
+    #[serde(rename = "specVersion")]
+    pub spec_version: String,
     pub version: u32,
     /// ISO-8601 serial timestamp.
-    pub serialNumber: String,
+    #[serde(rename = "serialNumber")]
+    pub serial_number: String,
     pub metadata: SbomMetadata,
     pub components: Vec<Component>,
 }
@@ -80,7 +87,11 @@ pub struct SbomRootComponent {
 impl Sbom {
     /// Build a new SBOM from a list of dependencies, rooted at `root_name`
     /// (typically the product name).
-    pub fn new(root_name: impl Into<String>, root_version: impl Into<String>, deps: &[Dependency]) -> Self {
+    pub fn new(
+        root_name: impl Into<String>,
+        root_version: impl Into<String>,
+        deps: &[Dependency],
+    ) -> Self {
         let components = deps
             .iter()
             .map(|d| Component {
@@ -88,14 +99,14 @@ impl Sbom {
                 name: d.name.clone(),
                 version: d.version.clone(),
                 purl: purl_for(d),
-                externalReferences: Vec::new(),
+                external_references: Vec::new(),
             })
             .collect();
         Self {
-            bomFormat: "CycloneDX".into(),
-            specVersion: "1.5".into(),
+            bom_format: "CycloneDX".into(),
+            spec_version: "1.5".into(),
             version: 1,
-            serialNumber: format!("urn:uuid:{}", Uuid::new_v4()),
+            serial_number: format!("urn:uuid:{}", Uuid::new_v4()),
             metadata: SbomMetadata {
                 timestamp: Utc::now(),
                 tools: vec![SbomTool {

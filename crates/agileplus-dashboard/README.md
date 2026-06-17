@@ -12,4 +12,3 @@ Dashboard server crate for HTML/htmx routes and dashboard health surfaces.
 ```bash
 cargo test -p agileplus-dashboard
 ```
-

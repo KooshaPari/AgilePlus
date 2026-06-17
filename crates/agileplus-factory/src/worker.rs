@@ -2,7 +2,7 @@
 
 use anyhow::Result;
 
-use agileplus_triage::claim::{ClaimStoreTrait, ClaimKind, ClaimReason};
+use agileplus_triage::claim::{ClaimKind, ClaimReason, ClaimStoreTrait};
 
 use crate::trail::Trail;
 

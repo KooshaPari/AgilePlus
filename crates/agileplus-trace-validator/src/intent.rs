@@ -167,7 +167,9 @@ pub enum ValidationError {
         target_stage: String,
         relationship: String,
     },
-    #[error("invalid canonical map: edge {edge_id} has unrecognized canonical link type '{link_type}'")]
+    #[error(
+        "invalid canonical map: edge {edge_id} has unrecognized canonical link type '{link_type}'"
+    )]
     InvalidCanonicalMap { edge_id: String, link_type: String },
     #[error("missing node: {node_id}")]
     MissingNode { node_id: String },
@@ -274,8 +276,7 @@ fn dfs_detect_cycle(
     if let Some(neighbors) = adjacency.get(node_id) {
         for neighbor in neighbors {
             if !visited.contains(neighbor) {
-                if let Some(cycle) =
-                    dfs_detect_cycle(neighbor, adjacency, visited, rec_stack, path)
+                if let Some(cycle) = dfs_detect_cycle(neighbor, adjacency, visited, rec_stack, path)
                 {
                     return Some(cycle);
                 }
@@ -297,16 +298,18 @@ pub fn validate_edge_constraints(nodes: &[Node], edges: &[Edge]) -> Result<(), V
         nodes.iter().map(|n| (n.id.clone(), n.node_type)).collect();
 
     for edge in edges {
-        let source_type = node_types.get(&edge.source).ok_or_else(|| {
-            ValidationError::MissingNode {
-                node_id: edge.source.clone(),
-            }
-        })?;
-        let target_type = node_types.get(&edge.target).ok_or_else(|| {
-            ValidationError::MissingNode {
-                node_id: edge.target.clone(),
-            }
-        })?;
+        let source_type =
+            node_types
+                .get(&edge.source)
+                .ok_or_else(|| ValidationError::MissingNode {
+                    node_id: edge.source.clone(),
+                })?;
+        let target_type =
+            node_types
+                .get(&edge.target)
+                .ok_or_else(|| ValidationError::MissingNode {
+                    node_id: edge.target.clone(),
+                })?;
 
         if edge.relationship_type == RelationshipType::TracesTo {
             continue; // wildcard allowed
@@ -316,8 +319,8 @@ pub fn validate_edge_constraints(nodes: &[Node], edges: &[Edge]) -> Result<(), V
             return Err(ValidationError::InvalidEdgeConstraint {
                 edge_id: edge.id.clone(),
                 relationship: format!("{:?}", edge.relationship_type),
-                source_type: format!("{:?}", source_type),
-                target_type: format!("{:?}", target_type),
+                source_type: format!("{source_type:?}"),
+                target_type: format!("{target_type:?}"),
             });
         }
     }
@@ -400,7 +403,10 @@ pub fn validate_node_completeness(nodes: &[Node], edges: &[Edge]) -> Result<(), 
 
     for edge in edges {
         if intent_ids.contains(&edge.source) {
-            let target_type = nodes.iter().find(|n| n.id == edge.target).map(|n| n.node_type);
+            let target_type = nodes
+                .iter()
+                .find(|n| n.id == edge.target)
+                .map(|n| n.node_type);
             if let Some(NodeType::Feature) | Some(NodeType::Story) = target_type {
                 intent_with_downstream.insert(edge.source.clone());
             }
@@ -460,16 +466,18 @@ pub fn validate_dag_flow(nodes: &[Node], edges: &[Edge]) -> Result<(), Validatio
         nodes.iter().map(|n| (n.id.clone(), n.dag_stage)).collect();
 
     for edge in edges {
-        let source_stage = stage_map.get(&edge.source).ok_or_else(|| {
-            ValidationError::MissingNode {
-                node_id: edge.source.clone(),
-            }
-        })?;
-        let target_stage = stage_map.get(&edge.target).ok_or_else(|| {
-            ValidationError::MissingNode {
-                node_id: edge.target.clone(),
-            }
-        })?;
+        let source_stage =
+            stage_map
+                .get(&edge.source)
+                .ok_or_else(|| ValidationError::MissingNode {
+                    node_id: edge.source.clone(),
+                })?;
+        let target_stage =
+            stage_map
+                .get(&edge.target)
+                .ok_or_else(|| ValidationError::MissingNode {
+                    node_id: edge.target.clone(),
+                })?;
 
         let source_order = canonical_stage_order(*source_stage);
         let target_order = canonical_stage_order(*target_stage);
@@ -488,8 +496,8 @@ pub fn validate_dag_flow(nodes: &[Node], edges: &[Edge]) -> Result<(), Validatio
                 if target_order < source_order {
                     return Err(ValidationError::InvalidDagFlow {
                         edge_id: edge.id.clone(),
-                        source_stage: format!("{:?}", source_stage),
-                        target_stage: format!("{:?}", target_stage),
+                        source_stage: format!("{source_stage:?}"),
+                        target_stage: format!("{target_stage:?}"),
                         relationship: format!("{:?}", edge.relationship_type),
                     });
                 }
@@ -498,8 +506,8 @@ pub fn validate_dag_flow(nodes: &[Node], edges: &[Edge]) -> Result<(), Validatio
                 if target_order > source_order {
                     return Err(ValidationError::InvalidDagFlow {
                         edge_id: edge.id.clone(),
-                        source_stage: format!("{:?}", source_stage),
-                        target_stage: format!("{:?}", target_stage),
+                        source_stage: format!("{source_stage:?}"),
+                        target_stage: format!("{target_stage:?}"),
                         relationship: format!("{:?}", edge.relationship_type),
                     });
                 }
@@ -536,7 +544,7 @@ pub fn validate_canonical_map(edges: &[Edge]) -> Result<(), ValidationError> {
                 if direction != "forward" && direction != "reverse" {
                     return Err(ValidationError::InvalidCanonicalMap {
                         edge_id: edge.id.clone(),
-                        link_type: format!("invalid direction: {}", direction),
+                        link_type: format!("invalid direction: {direction}"),
                     });
                 }
             }
@@ -706,7 +714,10 @@ mod tests {
         ];
         let edges = vec![make_edge("e1", "n1", "n2", RelationshipType::Implements)];
         let result = validate_edge_constraints(&nodes, &edges);
-        assert!(matches!(result, Err(ValidationError::InvalidEdgeConstraint { .. })));
+        assert!(matches!(
+            result,
+            Err(ValidationError::InvalidEdgeConstraint { .. })
+        ));
     }
 
     #[test]
@@ -724,7 +735,10 @@ mod tests {
         let nodes = vec![make_node("n1", NodeType::Intent, DagStage::Intent)];
         let edges = vec![];
         let result = validate_node_completeness(&nodes, &edges);
-        assert!(matches!(result, Err(ValidationError::IncompleteNode { .. })));
+        assert!(matches!(
+            result,
+            Err(ValidationError::IncompleteNode { .. })
+        ));
     }
 
     #[test]
@@ -767,7 +781,10 @@ mod tests {
         }];
         let edges = vec![];
         let result = validate_metadata(&nodes, &edges);
-        assert!(matches!(result, Err(ValidationError::MissingMetadata { .. })));
+        assert!(matches!(
+            result,
+            Err(ValidationError::MissingMetadata { .. })
+        ));
     }
 
     #[test]
@@ -783,7 +800,10 @@ mod tests {
         }];
         let edges = vec![];
         let result = validate_metadata(&nodes, &edges);
-        assert!(matches!(result, Err(ValidationError::InvalidConfidence { .. })));
+        assert!(matches!(
+            result,
+            Err(ValidationError::InvalidConfidence { .. })
+        ));
     }
 
     #[test]
@@ -804,7 +824,10 @@ mod tests {
         ];
         let edges = vec![make_edge("e1", "n1", "n2", RelationshipType::Implements)];
         let result = validate_dag_flow(&nodes, &edges);
-        assert!(matches!(result, Err(ValidationError::InvalidDagFlow { .. })));
+        assert!(matches!(
+            result,
+            Err(ValidationError::InvalidDagFlow { .. })
+        ));
     }
 
     #[test]
@@ -835,7 +858,10 @@ mod tests {
             direction: Some("sideways".to_string()),
         });
         let result = validate_canonical_map(&[edge]);
-        assert!(matches!(result, Err(ValidationError::InvalidCanonicalMap { .. })));
+        assert!(matches!(
+            result,
+            Err(ValidationError::InvalidCanonicalMap { .. })
+        ));
     }
 
     #[test]
@@ -846,7 +872,10 @@ mod tests {
             direction: Some("forward".to_string()),
         });
         let result = validate_canonical_map(&[edge]);
-        assert!(matches!(result, Err(ValidationError::InvalidCanonicalMap { .. })));
+        assert!(matches!(
+            result,
+            Err(ValidationError::InvalidCanonicalMap { .. })
+        ));
     }
 
     #[test]
@@ -859,12 +888,31 @@ mod tests {
             make_node("Test#unit", NodeType::Test, DagStage::Test),
         ];
         let edges = vec![
-            make_edge("e1", "Intent#auth", "Feature#oauth2", RelationshipType::Implements),
-            make_edge("e2", "Feature#oauth2", "Task#impl", RelationshipType::Implements),
-            make_edge("e3", "Task#impl", "Commit#abc123", RelationshipType::Implements),
+            make_edge(
+                "e1",
+                "Intent#auth",
+                "Feature#oauth2",
+                RelationshipType::Implements,
+            ),
+            make_edge(
+                "e2",
+                "Feature#oauth2",
+                "Task#impl",
+                RelationshipType::Implements,
+            ),
+            make_edge(
+                "e3",
+                "Task#impl",
+                "Commit#abc123",
+                RelationshipType::Implements,
+            ),
             make_edge("e4", "Commit#abc123", "Test#unit", RelationshipType::Tests),
         ];
-        let graph = IntentGraph { nodes, edges, metadata: None };
+        let graph = IntentGraph {
+            nodes,
+            edges,
+            metadata: None,
+        };
         assert!(validate_intent_graph(&graph).is_ok());
     }
 
@@ -878,7 +926,11 @@ mod tests {
             make_edge("e1", "n1", "n2", RelationshipType::DependsOn),
             make_edge("e2", "n2", "n1", RelationshipType::DependsOn),
         ];
-        let graph = IntentGraph { nodes, edges, metadata: None };
+        let graph = IntentGraph {
+            nodes,
+            edges,
+            metadata: None,
+        };
         let result = validate_intent_graph(&graph);
         assert!(matches!(result, Err(ValidationError::CycleDetected(_))));
     }

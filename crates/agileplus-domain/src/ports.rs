@@ -14,6 +14,8 @@ pub mod plane_sync;
 pub mod storage;
 #[path = "ports/story.rs"]
 pub mod story;
+#[path = "ports/traceability_port.rs"]
+pub mod traceability_port;
 #[path = "ports/vcs.rs"]
 pub mod vcs;
 
@@ -22,10 +24,11 @@ pub use epic::EpicRepository;
 pub use events::{DomainEvent, DomainEventPublisher};
 pub use observability::ObservabilityPort;
 pub use plane_sync::{
-    PlaneIssue, PlaneProject, PlaneSyncPort, plane_state_to_story_status,
-    story_status_to_plane_state,
+    plane_state_to_story_status, story_status_to_plane_state, PlaneIssue, PlaneProject,
+    PlaneSyncPort,
 };
 pub use story::StoryRepository;
+pub use traceability_port::TraceabilityPort;
 
 use std::path::{Path, PathBuf};
 
@@ -134,11 +137,13 @@ pub trait StoragePort: Send + Sync {
     async fn get_feature_by_slug(&self, slug: &str) -> Result<Option<Feature>, DomainError>;
     async fn get_feature_by_id(&self, id: i64) -> Result<Option<Feature>, DomainError>;
     async fn update_feature_state(&self, id: i64, state: FeatureState) -> Result<(), DomainError>;
+    async fn update_feature(&self, feature: &Feature) -> Result<(), DomainError>;
     async fn list_features_by_state(
         &self,
         state: FeatureState,
     ) -> Result<Vec<Feature>, DomainError>;
     async fn list_all_features(&self) -> Result<Vec<Feature>, DomainError>;
+    async fn list_features_by_label(&self, label: &str) -> Result<Vec<Feature>, DomainError>;
 
     // --- Work Packages ---
     async fn create_work_package(&self, wp: &WorkPackage) -> Result<i64, DomainError>;
@@ -148,6 +153,37 @@ pub trait StoragePort: Send + Sync {
     async fn add_wp_dependency(&self, dep: &WpDependency) -> Result<(), DomainError>;
     async fn get_wp_dependencies(&self, wp_id: i64) -> Result<Vec<WpDependency>, DomainError>;
     async fn get_ready_wps(&self, feature_id: i64) -> Result<Vec<WorkPackage>, DomainError>;
+
+    // --- MVP: story-scoped work packages ---
+    /// Create a work package and link it to a story (story_work_packages join).
+    async fn create_work_package_for_story(
+        &self,
+        _story_id: i64,
+        _wp: &WorkPackage,
+    ) -> Result<i64, DomainError> {
+        Err(DomainError::NotImplemented)
+    }
+    /// List the work packages linked to a story.
+    async fn list_wps_by_story(&self, _story_id: i64) -> Result<Vec<WorkPackage>, DomainError> {
+        Err(DomainError::NotImplemented)
+    }
+    /// List every work package across all features/stories.
+    async fn list_all_work_packages(&self) -> Result<Vec<WorkPackage>, DomainError> {
+        Err(DomainError::NotImplemented)
+    }
+    /// Return planned work packages that are ready to start: every explicit
+    /// dependency points to a Done WP AND no file in its scope overlaps a
+    /// Doing/Review WP. Optionally restricted to a cycle.
+    async fn get_next_ready_wps(
+        &self,
+        _cycle: Option<i64>,
+    ) -> Result<Vec<WorkPackage>, DomainError> {
+        Err(DomainError::NotImplemented)
+    }
+    /// Link a story to a cycle (cycle_stories join).
+    async fn add_story_to_cycle(&self, _cycle_id: i64, _story_id: i64) -> Result<(), DomainError> {
+        Err(DomainError::NotImplemented)
+    }
 
     // --- Audit ---
     async fn append_audit_entry(&self, entry: &AuditEntry) -> Result<i64, DomainError>;
@@ -332,6 +368,7 @@ pub trait ContentStoragePort: Send + Sync {
         state: FeatureState,
     ) -> Result<Vec<Feature>, DomainError>;
     async fn list_all_features(&self) -> Result<Vec<Feature>, DomainError>;
+    async fn list_features_by_label(&self, label: &str) -> Result<Vec<Feature>, DomainError>;
     // Work packages
     async fn create_work_package(&self, wp: &WorkPackage) -> Result<i64, DomainError>;
     async fn get_work_package(&self, id: i64) -> Result<Option<WorkPackage>, DomainError>;
@@ -384,11 +421,8 @@ pub trait VcsPort: Send + Sync {
         remote: Option<&str>,
     ) -> Result<(), DomainError>;
     async fn checkout_branch(&self, branch_name: &str) -> Result<(), DomainError>;
-    async fn merge_to_target(
-        &self,
-        source: &str,
-        target: &str,
-    ) -> Result<MergeResult, DomainError>;
+    async fn merge_to_target(&self, source: &str, target: &str)
+        -> Result<MergeResult, DomainError>;
     async fn detect_conflicts(
         &self,
         source: &str,
@@ -473,7 +507,7 @@ mod tests {
             outcomes: Mutex::new(HashMap::new()),
         };
 
-        let ticket = adapter.next_ticket().await.unwrap();
+        let ticket = adapter.next_ticket().await.expect("domain operation");
 
         assert_eq!(ticket.id, "7");
         assert_eq!(ticket.intent, Intent::Bug);
@@ -487,9 +521,9 @@ mod tests {
         adapter
             .record_outcome("9", TriageOutcome::Dismissed)
             .await
-            .unwrap();
+            .expect("domain operation");
 
-        let outcomes = adapter.outcomes.lock().unwrap();
+        let outcomes = adapter.outcomes.lock().expect("domain operation");
         assert_eq!(outcomes.get("9"), Some(&TriageOutcome::Dismissed));
     }
 }

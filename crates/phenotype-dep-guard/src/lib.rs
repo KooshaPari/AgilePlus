@@ -162,7 +162,9 @@ version = "1.46.0"
 "#,
         );
         assert_eq!(cargo_lock.len(), 2);
-        assert!(cargo_lock.iter().any(|d| d.name == "serde" && d.version == "1.0.0"));
+        assert!(cargo_lock
+            .iter()
+            .any(|d| d.name == "serde" && d.version == "1.0.0"));
 
         // package-lock.json
         let npm_lock = parse_npm_lock(

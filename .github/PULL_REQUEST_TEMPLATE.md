@@ -37,6 +37,11 @@ If a section does not apply, write "N/A" rather than deleting it.
 - [ ] Build / CI / tooling
 - [ ] Security fix
 
+## Related Issue / Spec
+
+<!-- Link issue/spec if applicable. Use "Closes #" when this resolves an issue. -->
+Closes #
+
 ## Testing*
 
 <!-- Describe how this was verified. Check all that apply. -->
@@ -74,6 +79,10 @@ If a section does not apply, write "N/A" rather than deleting it.
 - [ ] I have added tests that prove my fix is effective or that my feature works
 - [ ] New and existing unit tests pass locally with my changes
 - [ ] Any dependent changes have been merged and published
+- [ ] Change is focused and minimal
+- [ ] Relevant docs or examples were updated
+- [ ] Security-sensitive changes were reviewed
+- [ ] No secrets, generated artifacts, or unrelated files included
 
 ## Risk & Rollout*
 
@@ -111,4 +120,3 @@ If a section does not apply, write "N/A" rather than deleting it.
 
 <!-- Anything reviewers should pay extra attention to: tricky logic,
      concurrency, performance, security, etc. -->
-

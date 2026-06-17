@@ -13,4 +13,3 @@ Cache, projection cache, rate limiting, pooling, and health abstractions.
 ```bash
 cargo test -p agileplus-cache
 ```
-

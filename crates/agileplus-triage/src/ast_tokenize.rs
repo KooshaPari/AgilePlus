@@ -212,7 +212,7 @@ mod tests {
         let toks = t.tokenize(src);
         let set = uniq(&toks);
         for kw in ["pub", "fn", "self", "let", "return", "->"] {
-            assert!(set.contains(kw), "missing {} in {:?}", kw, toks);
+            assert!(set.contains(kw), "missing {kw} in {toks:?}");
         }
     }
 
@@ -224,7 +224,7 @@ mod tests {
         // The identifier must be present (either as the literal name
         // or the canonical `ID` token).
         let has_ident = toks.iter().any(|s| s == "foo_bar" || s == "ID");
-        assert!(has_ident, "expected identifier token in {:?}", toks);
+        assert!(has_ident, "expected identifier token in {toks:?}");
     }
 
     #[test]
@@ -259,7 +259,7 @@ mod tests {
         let toks = t.tokenize(src);
         let set = uniq(&toks);
         for kw in ["def", "self", "return"] {
-            assert!(set.contains(kw), "missing {} in {:?}", kw, toks);
+            assert!(set.contains(kw), "missing {kw} in {toks:?}");
         }
     }
 
@@ -270,7 +270,7 @@ mod tests {
         let toks = t.tokenize(src);
         let set = uniq(&toks);
         for kw in ["with", "as", "lambda"] {
-            assert!(set.contains(kw), "missing {} in {:?}", kw, toks);
+            assert!(set.contains(kw), "missing {kw} in {toks:?}");
         }
     }
 
@@ -334,10 +334,7 @@ mod tests {
         for kw in ["fn", "->", "return", "ID"] {
             assert!(
                 sa.contains(kw) && sb.contains(kw),
-                "kw={:?} sa={:?} sb={:?}",
-                kw,
-                sa,
-                sb
+                "kw={kw:?} sa={sa:?} sb={sb:?}"
             );
         }
     }

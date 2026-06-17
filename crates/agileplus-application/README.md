@@ -13,4 +13,3 @@ Hexagonal application and use-case layer with no framework or storage dependenci
 ```bash
 cargo test -p agileplus-application
 ```
-

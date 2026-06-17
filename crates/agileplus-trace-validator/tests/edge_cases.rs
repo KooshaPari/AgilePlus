@@ -138,7 +138,8 @@ fn stats_reports_multiple_traces() {
     for (i, fr) in ["FR-1", "FR-2", "FR-3"].iter().enumerate() {
         fs::write(repo.path().join("src/module.rs"), "fn x() {}").unwrap();
         fs::write(
-            repo.path().join(format!("docs/operations/journeys/{fr}.md")),
+            repo.path()
+                .join(format!("docs/operations/journeys/{fr}.md")),
             "journey",
         )
         .unwrap();

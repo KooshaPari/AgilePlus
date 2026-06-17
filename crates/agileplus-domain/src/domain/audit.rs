@@ -77,3 +77,83 @@ pub fn hash_entry(entry: &AuditEntry) -> [u8; 32] {
     hash.copy_from_slice(&result[..]);
     hash
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn make_entry(id: i64, prev_hash: [u8; 32]) -> AuditEntry {
+        let mut entry = AuditEntry {
+            id,
+            feature_id: 1,
+            wp_id: None,
+            timestamp: DateTime::from_timestamp(1_000_000 + id, 0).expect("domain operation"),
+            actor: "test-actor".to_string(),
+            transition: "Draft->Active".to_string(),
+            evidence_refs: vec![],
+            prev_hash,
+            hash: [0u8; 32],
+            event_id: None,
+            archived_to: None,
+        };
+        entry.hash = hash_entry(&entry);
+        entry
+    }
+
+    #[test]
+    fn hash_entry_is_deterministic() {
+        let e = make_entry(1, [0u8; 32]);
+        let h1 = hash_entry(&e);
+        let h2 = hash_entry(&e);
+        assert_eq!(h1, h2);
+    }
+
+    #[test]
+    fn hash_entry_changes_with_actor() {
+        let mut e = make_entry(1, [0u8; 32]);
+        let h1 = hash_entry(&e);
+        e.actor = "different-actor".to_string();
+        let h2 = hash_entry(&e);
+        assert_ne!(h1, h2);
+    }
+
+    #[test]
+    fn audit_chain_verify_valid_chain() {
+        let entry1 = make_entry(1, [0u8; 32]);
+        let entry2 = make_entry(2, entry1.hash);
+        let chain = AuditChain {
+            entries: vec![entry1, entry2],
+        };
+        assert!(chain.verify_chain().is_ok());
+    }
+
+    #[test]
+    fn audit_chain_detects_tampered_hash() {
+        let mut entry1 = make_entry(1, [0u8; 32]);
+        entry1.hash = [0xff; 32]; // tamper
+        let entry2 = make_entry(2, entry1.hash);
+        let chain = AuditChain {
+            entries: vec![entry1, entry2],
+        };
+        let result = chain.verify_chain();
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("hash mismatch"));
+    }
+
+    #[test]
+    fn audit_chain_detects_broken_link() {
+        let entry1 = make_entry(1, [0u8; 32]);
+        let entry2 = make_entry(2, [0xab; 32]); // wrong prev_hash
+        let chain = AuditChain {
+            entries: vec![entry1, entry2],
+        };
+        let result = chain.verify_chain();
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn empty_audit_chain_verifies_ok() {
+        let chain = AuditChain { entries: vec![] };
+        assert!(chain.verify_chain().is_ok());
+    }
+}

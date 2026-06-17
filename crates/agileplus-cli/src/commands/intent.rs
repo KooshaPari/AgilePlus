@@ -127,11 +127,14 @@ pub fn run(args: &IntentArgs) -> Result<()> {
 
     if args.validate {
         validate_graph(&graph)?;
-        eprintln!("Validation passed: {} node(s), {} edge(s)", graph.nodes.len(), graph.edges.len());
+        eprintln!(
+            "Validation passed: {} node(s), {} edge(s)",
+            graph.nodes.len(),
+            graph.edges.len()
+        );
     }
 
-    let json = serde_json::to_string_pretty(&graph)
-        .context("serialize intent graph to JSON")?;
+    let json = serde_json::to_string_pretty(&graph).context("serialize intent graph to JSON")?;
 
     if let Some(path) = &args.output {
         std::fs::write(path, json)
@@ -153,13 +156,13 @@ fn generate_graph(prompt: &str) -> IntentGraph {
     let mut edges: Vec<Edge> = Vec::new();
 
     // ── Intent node ─────────────────────────────────────────────────────────
-    let intent_id = format!("Intent#{}", slug);
+    let intent_id = format!("Intent#{slug}");
     nodes.push(Node {
         id: intent_id.clone(),
         node_type: "Intent".to_string(),
         dag_stage: "intent".to_string(),
         title: prompt.to_string(),
-        description: Some(format!("User intent derived from prompt: {}", prompt)),
+        description: Some(format!("User intent derived from prompt: {prompt}")),
         status: "draft".to_string(),
         tags: Some(vec!["intent".to_string(), "auto-generated".to_string()]),
         meta: Meta {
@@ -174,12 +177,12 @@ fn generate_graph(prompt: &str) -> IntentGraph {
     });
 
     // ── Plan node ───────────────────────────────────────────────────────────
-    let plan_id = format!("Plan#{}-plan", slug);
+    let plan_id = format!("Plan#{slug}-plan");
     nodes.push(Node {
         id: plan_id.clone(),
         node_type: "Plan".to_string(),
         dag_stage: "plan".to_string(),
-        title: format!("Plan for {}", prompt),
+        title: format!("Plan for {prompt}"),
         description: Some("Auto-generated plan node from intent prompt.".to_string()),
         status: "draft".to_string(),
         tags: Some(vec!["plan".to_string()]),
@@ -210,7 +213,7 @@ fn generate_graph(prompt: &str) -> IntentGraph {
     // ── Feature nodes ─────────────────────────────────────────────────────────
     let feature_specs = extract_features(prompt, &slug);
     for (idx, (feat_slug, feat_title)) in feature_specs.iter().enumerate() {
-        let feat_id = format!("Feature#{}", feat_slug);
+        let feat_id = format!("Feature#{feat_slug}");
         nodes.push(Node {
             id: feat_id.clone(),
             node_type: "Feature".to_string(),
@@ -258,13 +261,15 @@ fn generate_graph(prompt: &str) -> IntentGraph {
 
         // ── Task node(s) per feature ─────────────────────────────────────────
         let task_type = TASK_TYPES[idx % TASK_TYPES.len()];
-        let task_id = format!("Task#{}-task-{}", slug, idx);
+        let task_id = format!("Task#{slug}-task-{idx}");
         nodes.push(Node {
             id: task_id.clone(),
             node_type: "Task".to_string(),
             dag_stage: "task".to_string(),
             title: format!("{}: {}", capitalize(task_type), feat_title),
-            description: Some(format!("Task of type '{}' for feature '{}'.", task_type, feat_title)),
+            description: Some(format!(
+                "Task of type '{task_type}' for feature '{feat_title}'."
+            )),
             status: "draft".to_string(),
             tags: Some(vec!["task".to_string(), task_type.to_string()]),
             meta: Meta {
@@ -273,9 +278,7 @@ fn generate_graph(prompt: &str) -> IntentGraph {
                 timestamp: now.clone(),
                 agent_id: Some(AGENT_ID.to_string()),
             },
-            properties: Some(
-                serde_json::json!({ "type": task_type }),
-            ),
+            properties: Some(serde_json::json!({ "type": task_type })),
             table_ref: None,
             table_id: None,
         });
@@ -342,13 +345,82 @@ fn make_edge(
 fn extract_features(prompt: &str, base_slug: &str) -> Vec<(String, String)> {
     let lower = prompt.to_lowercase();
     let stop_words: std::collections::HashSet<&str> = [
-        "a", "an", "the", "and", "or", "but", "in", "on", "at", "to", "for", "of", "with",
-        "by", "from", "as", "is", "are", "was", "were", "be", "been", "being", "have", "has",
-        "had", "do", "does", "did", "will", "would", "could", "should", "may", "might", "must",
-        "can", "this", "that", "these", "those", "i", "you", "he", "she", "it", "we", "they",
-        "me", "him", "her", "us", "them", "my", "your", "his", "its", "our", "their", "add",
-        "create", "implement", "build", "make", "support", "enable", "update", "modify",
-        "change", "remove", "delete", "fix", "improve", "optimize", "refactor", "integrate",
+        "a",
+        "an",
+        "the",
+        "and",
+        "or",
+        "but",
+        "in",
+        "on",
+        "at",
+        "to",
+        "for",
+        "of",
+        "with",
+        "by",
+        "from",
+        "as",
+        "is",
+        "are",
+        "was",
+        "were",
+        "be",
+        "been",
+        "being",
+        "have",
+        "has",
+        "had",
+        "do",
+        "does",
+        "did",
+        "will",
+        "would",
+        "could",
+        "should",
+        "may",
+        "might",
+        "must",
+        "can",
+        "this",
+        "that",
+        "these",
+        "those",
+        "i",
+        "you",
+        "he",
+        "she",
+        "it",
+        "we",
+        "they",
+        "me",
+        "him",
+        "her",
+        "us",
+        "them",
+        "my",
+        "your",
+        "his",
+        "its",
+        "our",
+        "their",
+        "add",
+        "create",
+        "implement",
+        "build",
+        "make",
+        "support",
+        "enable",
+        "update",
+        "modify",
+        "change",
+        "remove",
+        "delete",
+        "fix",
+        "improve",
+        "optimize",
+        "refactor",
+        "integrate",
     ]
     .iter()
     .copied()
@@ -362,7 +434,7 @@ fn extract_features(prompt: &str, base_slug: &str) -> Vec<(String, String)> {
 
     if tokens.is_empty() {
         return vec![(
-            format!("{}-feature", base_slug),
+            format!("{base_slug}-feature"),
             "General feature".to_string(),
         )];
     }
@@ -390,7 +462,7 @@ fn extract_features(prompt: &str, base_slug: &str) -> Vec<(String, String)> {
 
     if candidates.is_empty() {
         candidates.push((
-            format!("{}-feature", base_slug),
+            format!("{base_slug}-feature"),
             "General feature".to_string(),
         ));
     }
@@ -495,22 +567,40 @@ mod tests {
 
     #[test]
     fn slugify_basic() {
-        assert_eq!(slugify("Add dark mode to settings"), "add-dark-mode-to-settings");
+        assert_eq!(
+            slugify("Add dark mode to settings"),
+            "add-dark-mode-to-settings"
+        );
         assert_eq!(slugify("Hello   World!!!"), "hello-world");
     }
 
     #[test]
     fn regex_check_valid() {
-        assert!(regex_check("Intent#dark-mode", r"^[A-Z][a-z]+#[a-z0-9\-]+$"));
-        assert!(regex_check("Feature#auth-oauth2", r"^[A-Z][a-z]+#[a-z0-9\-]+$"));
+        assert!(regex_check(
+            "Intent#dark-mode",
+            r"^[A-Z][a-z]+#[a-z0-9\-]+$"
+        ));
+        assert!(regex_check(
+            "Feature#auth-oauth2",
+            r"^[A-Z][a-z]+#[a-z0-9\-]+$"
+        ));
         assert!(regex_check("Plan#foo-plan", r"^[A-Z][a-z]+#[a-z0-9\-]+$"));
     }
 
     #[test]
     fn regex_check_invalid() {
-        assert!(!regex_check("intent#dark-mode", r"^[A-Z][a-z]+#[a-z0-9\-]+$")); // lowercase start
-        assert!(!regex_check("Intent#Dark-Mode", r"^[A-Z][a-z]+#[a-z0-9\-]+$")); // uppercase in slug
-        assert!(!regex_check("Intent_dark-mode", r"^[A-Z][a-z]+#[a-z0-9\-]+$")); // underscore
+        assert!(!regex_check(
+            "intent#dark-mode",
+            r"^[A-Z][a-z]+#[a-z0-9\-]+$"
+        )); // lowercase start
+        assert!(!regex_check(
+            "Intent#Dark-Mode",
+            r"^[A-Z][a-z]+#[a-z0-9\-]+$"
+        )); // uppercase in slug
+        assert!(!regex_check(
+            "Intent_dark-mode",
+            r"^[A-Z][a-z]+#[a-z0-9\-]+$"
+        )); // underscore
     }
 
     #[test]

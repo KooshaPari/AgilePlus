@@ -31,16 +31,26 @@ impl LshIndex {
         }
     }
 
-    pub fn num_bands(&self) -> usize { self.num_bands }
-    pub fn rows_per_band(&self) -> usize { self.rows_per_band }
-    pub fn expected_signature_len(&self) -> usize { self.num_bands * self.rows_per_band }
+    pub fn num_bands(&self) -> usize {
+        self.num_bands
+    }
+    pub fn rows_per_band(&self) -> usize {
+        self.rows_per_band
+    }
+    pub fn expected_signature_len(&self) -> usize {
+        self.num_bands * self.rows_per_band
+    }
 
     /// Insert a document ID into all band hash buckets.
     pub fn insert(&mut self, id: &str, signature: &[u64]) {
         let expected = self.expected_signature_len();
-        assert_eq!(signature.len(), expected,
+        assert_eq!(
+            signature.len(),
+            expected,
             "signature length {} does not match num_bands * rows_per_band = {}",
-            signature.len(), expected);
+            signature.len(),
+            expected
+        );
         for (band_idx, band) in self.bands.iter_mut().enumerate() {
             let band_start = band_idx * self.rows_per_band;
             let band_end = band_start + self.rows_per_band;
@@ -55,9 +65,13 @@ impl LshIndex {
     /// Query for candidate document IDs that share at least one band hash.
     pub fn query(&self, signature: &[u64]) -> Vec<String> {
         let expected = self.expected_signature_len();
-        assert_eq!(signature.len(), expected,
+        assert_eq!(
+            signature.len(),
+            expected,
             "signature length {} does not match num_bands * rows_per_band = {}",
-            signature.len(), expected);
+            signature.len(),
+            expected
+        );
         let mut seen = std::collections::HashSet::new();
         let mut out = Vec::new();
         for (band_idx, band) in self.bands.iter().enumerate() {
@@ -78,7 +92,10 @@ impl LshIndex {
     /// FNV-1a hash of a band slice.
     pub fn band_hash(signature: &[u64], band_start: usize, band_end: usize) -> u64 {
         assert!(band_start <= band_end, "band_start must be <= band_end");
-        assert!(band_end <= signature.len(), "band_end must be <= signature.len()");
+        assert!(
+            band_end <= signature.len(),
+            "band_end must be <= signature.len()"
+        );
         let mut h = FNV_OFFSET;
         for &v in &signature[band_start..band_end] {
             h ^= v;
@@ -139,7 +156,10 @@ mod tests {
         let sig_b = dummy_sig(1000, 50);
         idx.insert("doc-a", &sig_a);
         let candidates = idx.query(&sig_b);
-        assert!(candidates.is_empty(), "dissimilar signatures should not collide");
+        assert!(
+            candidates.is_empty(),
+            "dissimilar signatures should not collide"
+        );
     }
 
     #[test]
@@ -149,7 +169,10 @@ mod tests {
         idx.insert("dup", &sig);
         idx.insert("dup", &sig);
         let candidates = idx.query(&sig);
-        assert_eq!(candidates.iter().filter(|id| id == "dup").count(), 1);
+        assert_eq!(
+            candidates.iter().filter(|id| id.as_str() == "dup").count(),
+            1
+        );
     }
 
     #[test]

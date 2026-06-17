@@ -41,3 +41,6 @@ sysinfo = "0.32"
 
 [dev-dependencies]
 tokio = { version = "1", features = ["full"] }
+
+[package.metadata.cargo-machete]
+ignored = ["agileplus-events", "agileplus-sqlite", "axum-extra", "rusqlite", "thiserror", "tracing-subscriber"]

@@ -181,7 +181,7 @@ mod tests {
         let a = MinHash::sign("alpha beta gamma delta", 256);
         let b = MinHash::sign("zulu yankee xray whiskey", 256);
         let j = a.jaccard(&b);
-        assert!(j < 0.1, "disjoint sets should be near 0, got {}", j);
+        assert!(j < 0.1, "disjoint sets should be near 0, got {j}");
     }
 
     #[test]
@@ -195,7 +195,7 @@ mod tests {
             256,
         );
         let j = a.jaccard(&b);
-        assert!(j > 0.8, "small edit should still be >0.8, got {}", j);
+        assert!(j > 0.8, "small edit should still be >0.8, got {j}");
     }
 
     #[test]
@@ -219,14 +219,24 @@ mod tests {
             }
             let inter = ta.intersection(&tb).count() as f64;
             let union = ta.union(&tb).count() as f64;
-            if union == 0.0 { 0.0 } else { inter / union }
+            if union == 0.0 {
+                0.0
+            } else {
+                inter / union
+            }
         }
         let pairs = [
             ("add login button to header", "add login form to header"),
             ("refactor user service", "rewrite user service module"),
             ("fix race in cache", "fix race condition in cache layer"),
-            ("add unit tests for claim store", "add unit tests for claim store."),
-            ("unrelated content about food", "completely unrelated content"),
+            (
+                "add unit tests for claim store",
+                "add unit tests for claim store.",
+            ),
+            (
+                "unrelated content about food",
+                "completely unrelated content",
+            ),
         ];
         for (a, b) in pairs {
             let ma = MinHash::sign(a, 512);
@@ -237,11 +247,7 @@ mod tests {
             // practice for non-tiny sets.
             assert!(
                 approx_eq(est, truth, 0.10) || (truth < 0.1 && est < 0.15),
-                "minhash={:.3} truth={:.3} for {:?} vs {:?}",
-                est,
-                truth,
-                a,
-                b
+                "minhash={est:.3} truth={truth:.3} for {a:?} vs {b:?}"
             );
         }
     }
@@ -278,7 +284,10 @@ mod tests {
         let j = a.jaccard(&b);
         assert!((0.0..=1.0).contains(&j));
         // 64 permutations with identical input should be ~1.0.
-        assert!(j > 0.95, "k-mismatch should still match on common prefix, got {}", j);
+        assert!(
+            j > 0.95,
+            "k-mismatch should still match on common prefix, got {j}"
+        );
     }
 
     #[test]

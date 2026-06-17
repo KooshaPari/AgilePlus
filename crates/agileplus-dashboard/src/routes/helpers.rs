@@ -11,9 +11,11 @@ use axum::{
 };
 
 use crate::app_state::DashboardStore;
-use crate::templates::{FeatureView, ProjectSummaryView, ProjectView, all_feature_states};
+use crate::templates::{all_feature_states, FeatureView, ProjectSummaryView, ProjectView};
 
+#[allow(dead_code)]
 pub(super) const DEFAULT_PLANE_API_URL: &str = "https://app.plane.so";
+#[allow(dead_code)]
 pub(super) const DEFAULT_PLANE_WEB_URL: &str = "https://app.plane.so";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -85,6 +87,7 @@ pub(super) fn build_project_summaries(store: &DashboardStore) -> Vec<ProjectSumm
         .collect()
 }
 
+#[allow(dead_code)]
 pub(super) fn env_or_none(key: &str) -> Option<String> {
     env::var(key)
         .ok()
@@ -92,6 +95,7 @@ pub(super) fn env_or_none(key: &str) -> Option<String> {
         .filter(|value| !value.is_empty())
 }
 
+#[allow(dead_code)]
 pub(super) fn parse_bool_env(key: &str, default: bool) -> bool {
     env::var(key)
         .ok()
@@ -160,25 +164,219 @@ pub(super) fn build_kanban_cards(
     cards
 }
 
+pub(super) fn event_view(
+    id: impl Into<String>,
+    kind: impl Into<String>,
+    description: impl Into<String>,
+    timestamp: impl Into<String>,
+) -> crate::templates::EventView {
+    crate::templates::EventView {
+        id: id.into(),
+        kind: kind.into(),
+        description: description.into(),
+        timestamp: timestamp.into(),
+        agent_name: None,
+        agent_link: None,
+        wp_id: None,
+        wp_link: None,
+        commit_sha: None,
+        commit_link: None,
+        ci_run_id: None,
+        ci_run_link: None,
+    }
+}
+
+pub(super) fn agent_view(
+    name: impl Into<String>,
+    status: impl Into<String>,
+    current_task: impl Into<String>,
+    last_action: impl Into<String>,
+) -> crate::templates::AgentView {
+    crate::templates::AgentView {
+        name: name.into(),
+        status: status.into(),
+        current_task: current_task.into(),
+        last_action: last_action.into(),
+        pid: None,
+        started_at: None,
+        worktree: String::new(),
+        worktree_label: String::new(),
+        is_live: false,
+    }
+}
+
 pub(super) fn sample_events() -> Vec<crate::templates::EventView> {
     vec![
-        crate::templates::EventView {
-            id: "evt-1".into(),
-            kind: "system".into(),
-            description: "Dashboard booted with native Plane surface".into(),
-            timestamp: "just now".into(),
-        },
-        crate::templates::EventView {
-            id: "evt-2".into(),
-            kind: "agent_action".into(),
-            description: "Planner synced feature ownership metadata".into(),
-            timestamp: "2m ago".into(),
-        },
-        crate::templates::EventView {
-            id: "evt-3".into(),
-            kind: "state_change".into(),
-            description: "Feature moved from researched to planned".into(),
-            timestamp: "9m ago".into(),
-        },
+        event_view(
+            "evt-1",
+            "system",
+            "Dashboard booted with native Plane surface",
+            "just now",
+        ),
+        event_view(
+            "evt-2",
+            "agent_action",
+            "Planner synced feature ownership metadata",
+            "2m ago",
+        ),
+        event_view(
+            "evt-3",
+            "state_change",
+            "Feature moved from researched to planned",
+            "9m ago",
+        ),
     ]
+}
+
+// ── HTML and URL utilities ─────────────────────────────────────────────────
+
+/// Minimal HTML entity escaping for embedding text content in HTML attributes/elements.
+pub fn html_escape(s: &str) -> String {
+    s.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&#39;")
+}
+
+/// Classify a file extension into a broad artifact type for display purposes.
+#[allow(dead_code)]
+pub fn artifact_type_for_ext(ext: &str) -> &'static str {
+    match ext {
+        "lcov" | "coverage" | "cov" => "coverage",
+        "xml" | "junit" | "tap" => "test-results",
+        "json" | "sarif" => "report",
+        "png" | "jpg" | "jpeg" | "gif" | "svg" | "webp" => "image",
+        "md" | "txt" | "log" => "text",
+        _ => "artifact",
+    }
+}
+
+/// Percent-encode path segments so they are safe to embed in URLs.
+///
+/// Only encodes characters that are not allowed unencoded in URL path segments:
+/// spaces, `#`, `?`, `%`, and `+`.
+#[allow(dead_code)]
+pub fn percent_encode_path(path: &str) -> String {
+    path.chars()
+        .flat_map(|c| match c {
+            ' ' => vec!['%', '2', '0'],
+            '#' => vec!['%', '2', '3'],
+            '?' => vec!['%', '3', 'F'],
+            '%' => vec!['%', '2', '5'],
+            '+' => vec!['%', '2', 'B'],
+            other => vec![other],
+        })
+        .collect()
+}
+
+// ── Plane configuration utilities ──────────────────────────────────────────
+
+#[allow(dead_code)]
+pub(super) fn plane_api_key_hint(api_key: &Option<String>) -> String {
+    match api_key {
+        Some(key) => match (key.chars().next(), key.chars().next_back()) {
+            (Some(first), Some(last)) => format!("{first}••••••{last}"),
+            _ => "Configured".to_string(),
+        },
+        None => "Not configured".to_string(),
+    }
+}
+
+#[allow(dead_code)]
+pub(super) fn plane_health_endpoints(
+    services: &[crate::app_state::ServiceHealth],
+) -> Vec<crate::templates::PlaneHealthEndpointView> {
+    services
+        .iter()
+        .filter(|service| service.name.contains("Plane") || service.name.starts_with("API"))
+        .map(|service| crate::templates::PlaneHealthEndpointView {
+            name: service.name.clone(),
+            healthy: service.healthy,
+            degraded: service.degraded,
+            latency_ms: service.latency_ms,
+            last_check_utc: service
+                .last_check
+                .format("%Y-%m-%d %H:%M:%S UTC")
+                .to_string(),
+        })
+        .collect()
+}
+
+#[allow(dead_code)]
+pub(super) fn plane_sync_mode() -> String {
+    if parse_bool_env("PLANE_SYNC_BIDIRECTIONAL", false) {
+        "Bidirectional".to_string()
+    } else {
+        "One-way".to_string()
+    }
+}
+
+#[allow(dead_code)]
+pub(super) fn plane_connection_checks(
+    api_key: &Option<String>,
+    workspace: &Option<String>,
+) -> (bool, String, Vec<String>) {
+    let mut warnings = Vec::new();
+    if api_key.is_none() {
+        warnings.push("Missing PLANE_API_KEY; configure a valid Plane API key".to_string());
+    }
+    if workspace.is_none() {
+        warnings.push("Missing PLANE_WORKSPACE; set workspace slug for Plane sync".to_string());
+    }
+
+    if warnings.is_empty() {
+        (true, "Connected via PLANE_API_KEY".to_string(), warnings)
+    } else if warnings.len() == 1 {
+        let status = warnings[0].clone();
+        (false, status, warnings)
+    } else {
+        (false, "Plane settings incomplete".to_string(), warnings)
+    }
+}
+
+#[allow(dead_code)]
+pub(super) fn percentage_coverage(hit: usize, total: usize) -> String {
+    if total == 0 {
+        return "0/0 (0%)".to_string();
+    }
+    let ratio = (hit.saturating_mul(100)).saturating_div(total);
+    format!("{hit}/{total} ({ratio}%)")
+}
+
+// ── Service restart command validation ─────────────────────────────────────
+
+const ALLOWED_RESTART_PROGRAMS: [&str; 4] = ["systemctl", "docker", "process-compose", "echo"];
+
+pub fn is_restart_command_allowed(program: &str) -> bool {
+    ALLOWED_RESTART_PROGRAMS.contains(&program)
+}
+
+pub fn validate_restart_command(cmd_line: &str) -> Result<(), String> {
+    let mut parts: Vec<&str> = cmd_line.split_whitespace().collect();
+    if parts.is_empty() {
+        return Err("empty restart command".into());
+    }
+
+    let program = parts.remove(0);
+    if !is_restart_command_allowed(program) {
+        return Err(format!(
+            "command '{program}' is not in approved restart command registry: {ALLOWED_RESTART_PROGRAMS:?}"
+        ));
+    }
+
+    Ok(())
+}
+
+pub fn build_restart_command(cmd_line: &str) -> Result<std::process::Command, String> {
+    validate_restart_command(cmd_line)?;
+
+    let mut parts: Vec<&str> = cmd_line.split_whitespace().collect();
+    let program = parts.remove(0);
+
+    let mut cmd = std::process::Command::new(program);
+    if !parts.is_empty() {
+        cmd.args(parts);
+    }
+    Ok(cmd)
 }

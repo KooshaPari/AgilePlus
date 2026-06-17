@@ -10,17 +10,17 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 
 use axum::{
-    Json, Router,
     extract::State,
     http::StatusCode,
     response::{IntoResponse, Response},
     routing::{get, post},
+    Json, Router,
 };
 use tower_http::cors::CorsLayer;
 use tower_http::trace::TraceLayer;
 
 use crate::converter::convert;
-use crate::storage::{StorageSummary, open_storage, store_and_summarize};
+use crate::storage::{open_storage, store_and_summarize, StorageSummary};
 use crate::types::{ConvertRequest, ConvertResponse, ErrorResponse};
 use crate::validator::validate_and_wrap;
 
@@ -69,13 +69,12 @@ async fn convert_and_store_handler(
     let validated = validate_and_wrap(response).map_err(ApiError::from)?;
 
     let storage_summary = if req.options.store {
-        let db = state.storage.clone().or_else(|| {
-            open_storage().ok().map(Arc::new)
-        });
+        let db = state
+            .storage
+            .clone()
+            .or_else(|| open_storage().ok().map(Arc::new));
         if let Some(db) = db {
-            store_and_summarize(&db, &validated.graph)
-                .await
-                .ok()
+            store_and_summarize(&db, &validated.graph).await.ok()
         } else {
             None
         }
@@ -135,10 +134,7 @@ impl IntoResponse for ApiError {
                     details: None,
                 }),
             ),
-            ApiError::Validation(err) => (
-                StatusCode::UNPROCESSABLE_ENTITY,
-                serde_json::json!(err),
-            ),
+            ApiError::Validation(err) => (StatusCode::UNPROCESSABLE_ENTITY, serde_json::json!(err)),
             ApiError::BadRequest(msg) => (
                 StatusCode::BAD_REQUEST,
                 serde_json::json!(ErrorResponse {

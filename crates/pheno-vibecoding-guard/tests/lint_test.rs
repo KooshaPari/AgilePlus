@@ -4,13 +4,16 @@
 //! points at exactly one rule. The clean-function test
 //! lives in `lib.rs` as an inline smoke test.
 
-use pheno_vibecoding_guard::{LintConfig, lint_source};
+use pheno_vibecoding_guard::{lint_source, LintConfig};
 
 /// Helper: build a `LintConfig` with the unwrap threshold
 /// set to a specific value. Keeps the test bodies focused
 /// on the source string, not the boilerplate.
 fn cfg(max_unwraps: u32) -> LintConfig {
-    LintConfig { max_unwraps, ..LintConfig::default() }
+    LintConfig {
+        max_unwraps,
+        ..LintConfig::default()
+    }
 }
 
 #[test]

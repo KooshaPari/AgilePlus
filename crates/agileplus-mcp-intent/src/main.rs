@@ -88,19 +88,17 @@ async fn main() -> anyhow::Result<()> {
 
             if store {
                 match open_storage() {
-                    Ok(db) => {
-                        match store_and_summarize(&db, &validated.graph).await {
-                            Ok(summary) => {
-                                eprintln!("Stored {} feature(s) in database.", summary.features_stored);
-                                for id in &summary.ids {
-                                    eprintln!("  - feature id: {id}");
-                                }
-                            }
-                            Err(e) => {
-                                eprintln!("Warning: failed to store graph: {e}");
+                    Ok(db) => match store_and_summarize(&db, &validated.graph).await {
+                        Ok(summary) => {
+                            eprintln!("Stored {} feature(s) in database.", summary.features_stored);
+                            for id in &summary.ids {
+                                eprintln!("  - feature id: {id}");
                             }
                         }
-                    }
+                        Err(e) => {
+                            eprintln!("Warning: failed to store graph: {e}");
+                        }
+                    },
                     Err(e) => {
                         eprintln!("Warning: could not open database for storage: {e}");
                     }

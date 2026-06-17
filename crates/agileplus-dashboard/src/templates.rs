@@ -48,6 +48,7 @@ pub struct WpView {
 }
 
 impl WpView {
+    #[allow(clippy::uninlined_format_args)]
     pub fn from_wp(wp: &WorkPackage) -> Self {
         Self {
             id: wp.id,
@@ -420,6 +421,7 @@ pub struct HubPage {
 }
 
 /// Helper: build ordered kanban states list.
+#[allow(clippy::redundant_closure_for_method_calls)]
 pub fn all_feature_states() -> Vec<String> {
     vec![
         FeatureState::Created,

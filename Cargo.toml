@@ -36,12 +36,14 @@
 #
 #   Operations & DX:
 #     - agileplus-cli            Top-level binary `agileplus` (clap subcmds)
+#     - xtask-anti-patterns      Build-time linter catching cargo anti-patterns
 #
 # Build & verify:
 #   cargo build --workspace --all-targets      # compile everything
 #   cargo test  --workspace                    # 646 tests
 #   cargo clippy --workspace --all-targets -- -D warnings
-#   just lint                                # workspace lint checks
+#   cargo run -p xtask-anti-patterns           # workspace linter
+#   just lint                                  # workspace lint checks
 #
 # See SPEC.md, FUNCTIONAL_REQUIREMENTS.md, AGENTS.md, and CONTRIBUTING.md
 # for design rationale and contributor workflow.
@@ -50,50 +52,52 @@
 [workspace]
 resolver = "3"
 members = [
-    "crates/agileplus-config",
-    "crates/agileplus-cache",
-    "crates/agileplus-governance",
-    "crates/agileplus-application",
-    "crates/agileplus-dashboard",
-    "crates/agileplus-domain",
-    "crates/agileplus-events",
-    "crates/agileplus-fixtures",
-    "crates/agileplus-git",
-    "crates/agileplus-sqlite",
-    "crates/agileplus-cli",
-    "crates/agileplus-api",
-    "crates/agileplus-grpc",
-    "crates/agileplus-github",
-    "crates/agileplus-plane",
-    "crates/agileplus-nats",
-    "crates/agileplus-p2p",
-    "crates/agileplus-telemetry",
-    "crates/agileplus-triage",
-    "crates/agileplus-subcmds",
-    "crates/agileplus-pipeline",
-    "crates/agileplus-trace-validator",
-    "crates/agileplus-validate",
-    "crates/agileplus-proto",
-    "crates/agileplus-mcp-intent",
-    "crates/phenotype-dep-guard",
-    "crates/agileplus-artifacts",
-    "crates/agileplus-benchmarks",
-    "crates/agileplus-contract-tests",
-    "crates/agileplus-convoy",
-    "crates/agileplus-factory",
-    "crates/agileplus-graph",
-    "crates/agileplus-hook",
-    "crates/agileplus-import",
-    "crates/agileplus-integration-tests",
-    "crates/agileplus-refinery",
-    "crates/agileplus-sync",
-    "crates/agileplus-witness",
-    "crates/pheno-ci-templates",
-    "crates/pheno-ssot-template",
-    "crates/pheno-flags",
-    "crates/pheno-vibecoding-guard",
-    "crates/phenotype-mcp-sdk-rs",
-    "crates/phenotype-sandbox",
+  "crates/agileplus-graph",
+  "crates/agileplus-config",
+  "crates/agileplus-cache",
+  "crates/agileplus-governance",
+  "crates/agileplus-application",
+  "crates/agileplus-dashboard",
+  "crates/agileplus-domain",
+  "crates/agileplus-events",
+  "crates/agileplus-fixtures",
+  "crates/agileplus-git",
+  "crates/agileplus-sqlite",
+  "crates/agileplus-cli",
+  "crates/agileplus-api",
+  "crates/agileplus-grpc",
+  "crates/agileplus-github",
+  "crates/agileplus-plane",
+  "crates/agileplus-sync",
+  "crates/agileplus-nats",
+  "crates/agileplus-p2p",
+  "crates/agileplus-telemetry",
+  "crates/agileplus-triage",
+  "crates/agileplus-subcmds",
+  "crates/agileplus-pipeline",
+  "crates/agileplus-trace-validator",
+  "crates/shared-traceability",
+  "crates/traceability-core",
+  "crates/agileplus-import",
+  "crates/agileplus-proto",
+  "crates/agileplus-validate",
+  "crates/agileplus-artifacts",
+  "crates/agileplus-mcp-intent",
+  "crates/phenotype-dep-guard",
+  "crates/agileplus-benchmarks",
+  "crates/agileplus-contract-tests",
+  "crates/agileplus-convoy",
+  "crates/agileplus-factory",
+  "crates/agileplus-hook",
+  "crates/agileplus-integration-tests",
+  "crates/agileplus-refinery",
+  "crates/agileplus-witness",
+  "crates/pheno-ssot-template",
+  "crates/phenotype-mcp-sdk-rs",
+  "crates/phenotype-sandbox",
+  "crates/pheno-ci-templates",
+  "crates/pheno-flags",
+  "crates/pheno-vibecoding-guard",
 ]
 exclude = ["AgilePlus/rust", "rust", "crates/phenotype-config"]
 
@@ -105,12 +109,14 @@ rust-version = "1.88"
 repository = "https://github.com/KooshaPari/AgilePlus"
 authors = ["kooshapari"]
 
+[workspace.metadata.tools]
+cargo-nextest = "0.9"
+
 [package]
 name = "agileplus"
 version.workspace = true
 edition.workspace = true
 license = "MIT OR Apache-2.0"
-license-file = "LICENSE"
 description = "AgilePlus — Rust+TypeScript product & engineering management platform with Axum HTTP/gRPC backend, SQLite local store, Electrobun desktop app, and React/TS dashboard"
 homepage = "https://github.com/KooshaPari/AgilePlus"
 documentation = "https://docs.rs/agileplus"
@@ -120,6 +126,7 @@ publish = false
 keywords = ["phenotype", "agileplus"]
 categories = ["development-tools"]
 authors = ["kooshapari"]
+
 [dependencies]
 serde.workspace = true
 serde_json.workspace = true
@@ -130,20 +137,38 @@ tracing.workspace = true
 axum.workspace = true
 chrono.workspace = true
 
+[package.metadata.cargo-machete]
+ignored = [
+  "anyhow",
+  "axum",
+  "chrono",
+  "serde",
+  "serde_json",
+  "thiserror",
+  "tokio",
+  "tracing",
+]
+
 [dev-dependencies]
 axum-test = "20.1.0"
 chrono.workspace = true
+clap = { version = "4", features = ["derive"] }
+clap-ext = { git = "https://github.com/KooshaPari/clap-ext", tag = "v0.1.0" }
 cucumber = "0.23"
 sha2.workspace = true
 
 [workspace.dependencies]
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1"
-tokio = { version = "1.46", features = ["rt-multi-thread", "macros", "sync", "time", "io-util", "net"] }
+tokio = { version = "1.46", features = ["full"] }
 thiserror = "2"
 anyhow = "1"
 tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt", "json"] }
+tracing-subscriber = { version = "0.3", features = [
+  "env-filter",
+  "fmt",
+  "json",
+] }
 tracing-appender = "0.2"
 serde_yaml = "0.9"
 url = "2"
@@ -162,23 +187,44 @@ prost-build = "0.13"
 gix = "0.83.0"
 # OpenTelemetry - matching versions for compatibility
 opentelemetry = { version = "0.27", features = ["metrics"] }
-opentelemetry_sdk = { version = "0.27", features = ["metrics", "trace", "rt-tokio"] }
-opentelemetry-otlp = { version = "0.27", features = ["tonic", "gzip-tonic", "http-proto", "reqwest-client"] }
+opentelemetry_sdk = { version = "0.27", features = [
+  "metrics",
+  "trace",
+  "rt-tokio",
+] }
+opentelemetry-otlp = { version = "0.27", features = [
+  "tonic",
+  "gzip-tonic",
+  "http-proto",
+  "reqwest-client",
+] }
 # OpenTelemetry tracing bridge — uncomment when ready to use
 tracing-opentelemetry = "0.27"
 utoipa = "4"
-uuid = { version = "1", features = ["v4", "serde"] }
+uuid = { version = "1", features = ["v4", "v5", "serde"] }
 async-nats = "0.47"
 paste = "1"
-sqlx = "0.8"
-phenotype-error-core = { path = "../phenoShared/crates/phenotype-error-core" }
-phenotype-logging = { path = "../phenoShared/crates/phenotype-logging" }
-phenotype-string = { path = "../phenoShared/crates/phenotype-string" }
-phenotype-test-infra = { path = "../phenoShared/crates/phenotype-test-infra" }
-phenotype-event-bus = { path = "../phenoShared/crates/phenotype-event-bus" }
+phenotype-error-core = { git = "https://github.com/KooshaPari/phenoShared", branch = "main" }
+traceability-core = { path = "crates/traceability-core" }
+indexmap = { version = "2", features = ["serde"] }
+phenotype-logging = { git = "https://github.com/KooshaPari/phenoShared", branch = "main" }
+phenotype-event-bus = { git = "https://github.com/KooshaPari/phenoShared", branch = "main" }
+agileplus-api = { path = "crates/agileplus-api" }
+agileplus-artifacts = { path = "crates/agileplus-artifacts" }
+agileplus-cache = { path = "crates/agileplus-cache" }
 agileplus-config = { path = "crates/agileplus-config" }
-agileplus-validate = { path = "crates/agileplus-validate" }
+agileplus-convoy = { path = "crates/agileplus-convoy" }
+agileplus-domain = { path = "crates/agileplus-domain" }
+agileplus-events = { path = "crates/agileplus-events" }
+agileplus-graph = { path = "crates/agileplus-graph" }
+agileplus-nats = { path = "crates/agileplus-nats" }
 agileplus-proto = { path = "crates/agileplus-proto" }
 agileplus-telemetry = { path = "crates/agileplus-telemetry" }
+agileplus-validate = { path = "crates/agileplus-validate" }
+agileplus-witness = { path = "crates/agileplus-witness" }
+shared-traceability = { path = "crates/shared-traceability" }
+toml = "0.8"
 tokio-stream = { version = "0.1", features = ["net", "sync"] }
+sqlx = { version = "0.8", default-features = false }
 hex = "0.4"
+regex = "1"

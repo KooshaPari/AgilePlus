@@ -7,7 +7,13 @@
 
 use agileplus_events::{EventQuery, EventStore, InMemoryEventStore};
 
-fn make_event(seq: i64, entity_type: &str, entity_id: i64, event_type: &str, actor: &str) -> agileplus_domain::domain::event::Event {
+fn make_event(
+    seq: i64,
+    entity_type: &str,
+    entity_id: i64,
+    event_type: &str,
+    actor: &str,
+) -> agileplus_domain::domain::event::Event {
     agileplus_domain::domain::event::Event {
         id: seq,
         sequence: seq,

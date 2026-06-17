@@ -15,17 +15,15 @@ authors = ["kooshapari"]
 serde.workspace = true
 serde_json.workspace = true
 phenotype-error-core.workspace = true
+traceability-core.workspace = true
 thiserror.workspace = true
 anyhow.workspace = true
 async-trait.workspace = true
 chrono.workspace = true
 sha2.workspace = true
 agileplus-validate.workspace = true
-regex = "1"
 uuid.workspace = true
-# Shared ecosystem crates (extracted to phenoShared 2026-06-14)
-phenotype-string.workspace = true
+regex = "1"
 
 [dev-dependencies]
 tokio.workspace = true
-phenotype-test-infra.workspace = true

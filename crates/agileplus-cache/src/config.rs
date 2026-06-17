@@ -5,7 +5,7 @@ use agileplus_config::config_builder;
 config_builder! {
     #[derive(Clone, Debug)]
     pub struct CacheConfig {
-        (str)  pub host: String = "localhost".to_string(),
+        (str)  pub host: String = "localhost".to_owned(),
         (val)  pub port: u16 = 6379,
         (val)  pub pool_size: u32 = 16,
         (val)  pub default_ttl_secs: u64 = 3600,

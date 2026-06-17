@@ -1,0 +1,33 @@
+name: workspace-audit
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  workspace-audit:
+    name: Workspace Path Dependency Audit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+        with:
+          fetch-depth: 0
+
+      - name: Checkout phenoShared sibling
+        run: |
+          git clone --depth 1 \
+            "https://x-access-token:${{ github.token }}@github.com/KooshaPari/phenoShared.git" \
+            "${{ github.workspace }}/../phenoShared"
+
+      - name: Run workspace audit
+        run: |
+          chmod +x scripts/workspace-audit.sh
+          bash scripts/workspace-audit.sh
+        env:
+          RUSTFLAGS: "-D warnings"

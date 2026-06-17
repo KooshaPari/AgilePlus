@@ -10,13 +10,13 @@ pub mod tag;
 
 use std::path::PathBuf;
 
+use agileplus_git::GitVcsAdapter;
 use anyhow::{Context, Result};
 use config::RefineryConfig;
 use lint::{Lint, LintResult};
 use sign::{GpgSigner, MockSigner, Signer, SshSigner};
 use squash::Squash;
 use tag::Tagger;
-use agileplus_git::GitVcsAdapter;
 
 /// Result of a full refinery run.
 #[derive(Debug, Clone)]
@@ -49,11 +49,7 @@ impl Refinery {
     /// 3. Sign commit
     /// 4. Tag
     /// 5. Return result
-    pub async fn run(
-        &self,
-        source_branch: &str,
-        target_branch: &str,
-    ) -> Result<RefineryResult> {
+    pub async fn run(&self, source_branch: &str, target_branch: &str) -> Result<RefineryResult> {
         let adapter = GitVcsAdapter::new(self.repo_root.clone());
         let mut result = RefineryResult {
             squashed: false,
@@ -69,7 +65,11 @@ impl Refinery {
         if self.config.squash {
             let squash = Squash::with_root(adapter.clone(), self.repo_root.clone());
             let commit = squash
-                .run(source_branch, target_branch, &format!("merge {source_branch} into {target_branch}"))
+                .run(
+                    source_branch,
+                    target_branch,
+                    &format!("merge {source_branch} into {target_branch}"),
+                )
                 .await
                 .with_context(|| "squash step failed")?;
             result.squashed = true;
@@ -125,7 +125,10 @@ impl Refinery {
             let tagger = Tagger::new(self.repo_root.clone());
             let tag_name = format!("{source_branch}-refined");
             let tag = tagger
-                .create(&tag_name, &format!("Refined from {source_branch} -> {target_branch} @ {commit}"))
+                .create(
+                    &tag_name,
+                    &format!("Refined from {source_branch} -> {target_branch} @ {commit}"),
+                )
                 .await
                 .with_context(|| "tag step failed")?;
             result.tagged = true;
@@ -236,7 +239,10 @@ mod tests {
             .output()
             .expect("git log");
         let stdout = String::from_utf8_lossy(&msg.stdout);
-        assert!(stdout.contains("[signed]"), "message should contain [signed]: {}", stdout);
+        assert!(
+            stdout.contains("[signed]"),
+            "message should contain [signed]: {stdout}",
+        );
     }
 
     #[tokio::test]
