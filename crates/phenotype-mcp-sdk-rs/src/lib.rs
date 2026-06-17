@@ -87,7 +87,6 @@ pub struct ServerInfo {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use serde_json::json;
 
     #[test]
     fn mcp_error_display() {

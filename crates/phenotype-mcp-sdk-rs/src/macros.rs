@@ -53,7 +53,6 @@ macro_rules! mcp_resource {
 
 #[cfg(test)]
 mod tests {
-    use crate::tool::Tool;
     use serde_json::json;
 
     #[test]
