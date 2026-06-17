@@ -231,7 +231,6 @@ name = "agileplus-domain"
 version = "0.1.0"
 dependencies = [
  "agileplus-validate",
- "anyhow",
  "async-trait",
  "chrono",
  "phenotype-error-core",
