@@ -179,6 +179,7 @@ fn infer_rel_type(properties: &serde_json::Value) -> RelType {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serde_json::json;
 
     #[test]
     fn parse_simple_digraph() {
