@@ -108,6 +108,7 @@ impl MockStorage {
             plane_sub_issue_id: None,
             base_commit: None,
             head_commit: None,
+            trace_ids: Vec::new(),
             created_at: now,
             updated_at: now,
         });

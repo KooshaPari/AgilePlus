@@ -6,6 +6,7 @@ use std::fmt;
 use std::str::FromStr;
 
 use super::feature::Feature;
+use super::state_machine::FeatureState;
 use crate::error::DomainError;
 
 /// Lifecycle state of a cycle.
@@ -89,6 +90,17 @@ pub struct CycleWithFeatures {
     pub cycle: Cycle,
     pub features: Vec<Feature>,
     pub wp_progress: WpProgressSummary,
+}
+
+impl CycleWithFeatures {
+    /// A cycle is shippable when it has at least one feature and every feature
+    /// is in `Validated` or `Shipped` state (FR-C07).
+    pub fn is_shippable(&self) -> bool {
+        !self.features.is_empty()
+            && self.features.iter().all(|f| {
+                matches!(f.state, FeatureState::Validated | FeatureState::Shipped)
+            })
+    }
 }
 
 /// Progress summary for work packages within a cycle.

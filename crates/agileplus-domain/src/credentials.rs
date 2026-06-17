@@ -88,6 +88,18 @@ impl CredentialStore for InMemoryCredentialStore {
     }
 }
 
+/// Create the appropriate `CredentialStore` from runtime config.
+pub fn create_credential_store(config: &AppConfig) -> Arc<dyn CredentialStore> {
+    let raw = config.api.api_keys.clone().unwrap_or_default();
+    let keys: Vec<String> = raw
+        .split(',')
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(String::from)
+        .collect();
+    Arc::new(InMemoryCredentialStore::new(keys))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -149,16 +161,4 @@ mod tests {
         assert_eq!(keys::API_KEY, "api_key");
         assert_eq!(keys::API_KEYS, "api_keys");
     }
-}
-
-/// Create the appropriate `CredentialStore` from runtime config.
-pub fn create_credential_store(config: &AppConfig) -> Arc<dyn CredentialStore> {
-    let raw = config.api.api_keys.clone().unwrap_or_default();
-    let keys: Vec<String> = raw
-        .split(',')
-        .map(str::trim)
-        .filter(|s| !s.is_empty())
-        .map(String::from)
-        .collect();
-    Arc::new(InMemoryCredentialStore::new(keys))
 }

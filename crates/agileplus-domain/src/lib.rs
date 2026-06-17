@@ -9,8 +9,8 @@ pub use error::DomainResult;
 pub mod adapters;
 pub mod intent_graph;
 pub mod ports;
-pub mod validate;
 pub mod traceability;
+pub mod validate;
 
 // Shared PM/traceability spine (phenotype-pm-core). AgilePlus-local aggregates
 // remain in `domain::*`; lifecycle, governance, and intent graph are canonical
