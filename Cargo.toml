@@ -21,20 +21,6 @@ unsafe_code = "forbid"
 all = "warn"
 pedantic = "warn"
 
-[dev-dependencies]
-agileplus-domain = { path = "crates/agileplus-domain" }
-agileplus-events = { path = "crates/agileplus-events" }
-agileplus-plane = { path = "crates/agileplus-plane" }
-agileplus-sqlite = { path = "crates/agileplus-sqlite" }
-agileplus-api = { path = "crates/agileplus-api" }
-chrono = { workspace = true }
-serde_json = { workspace = true }
-tokio = { workspace = true }
-thiserror = { workspace = true }
-anyhow = { workspace = true }
-cucumber = "0.23"
-sha2 = { workspace = true }
-
 [workspace.dependencies]
 # Serialization
 serde = { version = "1.0", features = ["derive"] }
