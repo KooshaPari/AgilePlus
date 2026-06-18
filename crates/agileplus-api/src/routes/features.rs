@@ -95,16 +95,6 @@ where
             .map_err(ApiError::from)?
     };
 
-    let features: Vec<Feature> = if let Some(label_filter) = params.label {
-        features
-            .into_iter()
-            .filter(|f| f.labels.contains(&label_filter))
-            .collect()
-    } else {
-        features
-    };
-
-
     Ok(Json(
         features.into_iter().map(FeatureResponse::from).collect(),
     ))
