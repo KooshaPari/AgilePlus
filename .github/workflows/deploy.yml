@@ -18,3 +18,44 @@ jobs:
       contents: read
       pages: write
       id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Clone phenodocs
+        run: |
+          git clone --depth 1 https://github.com/KooshaPari/phenodocs.git /tmp/phenodocs
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6
+
+      - name: Setup Pages
+        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d
+
+      - name: Install dependencies
+        working-directory: docs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Link @phenotype/docs from phenodocs
+          mkdir -p docs/node_modules/@phenotype
+          ln -sf /tmp/phenodocs/packages/docs docs/node_modules/@phenotype/docs
+          # Configure npm for GitHub Packages
+          echo "@phenotype:registry=https://npm.pkg.github.com" >> ~/.npmrc
+          echo "//npm.pkg.github.com/:_authToken=\${GITHUB_TOKEN}" >> ~/.npmrc
+          bun install
+
+      - name: Build VitePress site
+        working-directory: docs
+        env:
+          GITHUB_PAGES: true
+          PHENOTYPE_CUSTOM_DOMAIN: "true"
+        run: bun run docs:build
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9
+        with:
+          path: docs/docs/.vitepress/dist
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128
