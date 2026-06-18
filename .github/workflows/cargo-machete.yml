@@ -1,4 +1,5 @@
 name: Cargo Machete
+
 permissions:
   contents: read
 
