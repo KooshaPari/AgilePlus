@@ -5,6 +5,7 @@
 # AgilePlus
 
 ![Scorecard](https://api.securityscorecards.dev/projects/github.com/KooshaPari/AgilePlus/badge)
+[![codecov](https://codecov.io/gh/KooshaPari/AgilePlus/graph/badge.svg?branch=main)](https://codecov.io/gh/KooshaPari/AgilePlus)
 
 > **Pinned references (Phenotype-org)**
 > - MSRV: see `rust-toolchain.toml`
@@ -81,6 +82,17 @@ bun install && bun run dev
 - `cargo fmt` before commit
 - Tests for new features; reproduce a bug with a failing test before fixing
 - cargo-deny advisories (`deny.toml`) + weekly cargo-audit
+- Coverage in CI is generated with `cargo-llvm-cov` and uploaded to Codecov
+
+## Coverage
+
+```bash
+cargo install cargo-llvm-cov --locked
+cargo llvm-cov --workspace --all-features --html
+```
+
+The GitHub Actions `Rust Coverage` job publishes `coverage/lcov.info` to Codecov on every push to
+`main` and on pull requests.
 
 ## License
 

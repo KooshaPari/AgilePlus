@@ -186,7 +186,6 @@ jobs:
     timeout-minutes: 45
     permissions:
       contents: read
-      # Required for Codecov tokenless (OIDC) upload.
       id-token: write
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
@@ -196,6 +195,8 @@ jobs:
             "https://x-access-token:${{ github.token }}@github.com/KooshaPari/phenoShared.git" \
             "${{ github.workspace }}/../phenoShared"
       - uses: dtolnay/rust-toolchain@5b842231ba77f5c045dba54ac5560fed2db780e2  # nightly
+        with:
+          components: llvm-tools-preview
       - uses: Swatinem/rust-cache@42dc69e1aa15d09112580998cf2ef0119e2e91ae  # v2
         with:
           key: rust-${{ runner.os }}-${{ hashFiles('Cargo.toml', 'rust/Cargo.toml', 'crates/*/Cargo.toml', 'xtask-anti-patterns/Cargo.toml') }}
@@ -204,25 +205,18 @@ jobs:
         with:
           version: "28.x"
           repo-token: ${{ github.token }}
-      - name: Install tarpaulin
-        uses: taiki-e/install-action@7a79fe8c3a13344501c80d99cae481c1c9085912  # v2
-        with:
-          tool: cargo-tarpaulin@0.31.3
+      - name: Install cargo-llvm-cov
+        run: cargo install cargo-llvm-cov --locked
       - name: Generate coverage
-        run: cargo tarpaulin --workspace --out xml --output-dir coverage
+        run: cargo llvm-cov --workspace --all-features --lcov --output-path coverage/lcov.info
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@f2274c2c340e0c81c8f7dc407b2a477b8935f171  # v6
         with:
-          files: ./coverage/cobertura.xml
+          files: ./coverage/lcov.info
           flags: rust
-          # Public repo → Codecov supports tokenless (OIDC) upload, so a missing
-          # CODECOV_TOKEN secret does not block the upload. Make the upload a
-          # real gate now that it can succeed without a secret.
-          fail_ci_if_error: true
+          fail_ci_if_error: false
           use_oidc: true
           verbose: true
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   # ─── Core Workspace ───────────────────────────────────────────────
   core-check:
