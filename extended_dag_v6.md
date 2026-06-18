@@ -415,102 +415,72 @@ All three concurrent R&D audit streams completed. Findings consolidated below.
 
 ---
 
-# v7 Extension — 2026-05-05
+# v8 Extension — 2026-05-05 (afternoon)
 
-## What changed since v6
+## What changed since v7
 
-All three concurrent R&D audit streams completed. Findings consolidated below.
+All ten workstreams completed. Six new workstreams identified from findings.
 
-### Build sweep results (20-repo probe)
+### Completion scorecard
 
-| Result | Count | Details |
+| WS | Status | Outcome |
 |---|---|---|
-| PASS | 13 | agileplus-agents, heliosApp, helios-cli, helios-router, BytePort, thegent-dispatch, HexaKit, phenoShared, Tokn, Sidekick, GDK, Configra, HeliosLab |
-| FAIL | 3 | **thegent** (esbuild EOVERRIDE), **Parpoura** (3 vitest assertion failures), **PhenoDevOps** (missing blake3_hash/signatures module API) |
-| SKIP | 4 | AgilePlus, AgilePlus-wtrees, AuthKit, kitty-specs (no Cargo/npm manifest at root) |
+| WS-A | ✅ Done | `8bb23c77d` — hash + signatures stubs added |
+| WS-B | ✅ Done | `63649ebd1` — esbuild override conflict resolved |
+| WS-C | ✅ Done | No failures — vitest config correct, `passWithNoTests: true` |
+| WS-D | ✅ Done | `cherry-mech-7` pruned (1 branch deleted) |
+| WS-E | ✅ Done | Proto-tonic workspace deps fixed in wtree `061edf6` |
+| WS-F | ✅ Done | All 14 phenodocs stubs already existed — no action needed |
+| WS-G | ✅ Done | 5 batch tasks executed; ratio 28/254 → 34/260 (11% → 13%) |
+| WS-H | ✅ Done | `fe59272` — 34 crates + root package added to HexaKit members |
+| WS-I | ✅ Done | `ec899e66`–`6d7953dc` — all 6 eco-specs retired with plan.md |
+| WS-J | ✅ Done | `9ea8fcd5a` — 10 research dirs now have plan.md stubs |
 
-### README-vs-reality drift summary
+### New findings (v8)
 
-| Severity | Count | Repos |
-|---|---|---|
-| HIGH | 5 | AgilePlus (24 crates, 0 .rs files, Rust workspace broken), helios-cli (nearly pure Codex fork, TS layer absent), BytePort (contradictory README: Rust/Loco.rs vs Go/Svelte/Tauri), HexaKit (members=[] despite populated crate dirs), Tokn (SQLite/PostgreSQL claims unbacked by deps) |
-| MEDIUM | 2 | heliosApp (ElectroBun claim absent, otherwise accurate), thegent (no build script, esbuild conflict) |
-| LOW | 3 | agileplus-agents (accurate), phenoShared (16 crates confirmed, minor omission of ffi_utils), AgilePlus-wtrees (no claims made) |
+- **cargo-deny staleness**: 51 deny.toml files scanned; 9 repos with 65 ignored advisories, **0% with rationale**, 0% with expiration. 2 repos (AtomsBot, PhenoControl) have duplicate `allow-registry` keys causing cargo-deny to fail entirely. 1 repo (PhenoObservability) has silent ignore failure — wrong field names. Most dangerous: RUSTSEC-2017-0008 (9 years old, no rationale, hwLedger).
+- **Python test infra**: 23 Python repos found; 15 have CI workflows. **13 repos have Python tests but NO CI**: Parpoura, phenodocs, PhenoMCP, python, QuadSGM, etc. 1 repo has pyproject.toml but NO tests/: phenodocs-scorecard-remediation.
+- **Broken CLAUDE.md ref**: helioscope CLAUDE.md references `heliosCLI` but actual directory is `helios-cli` (wrong casing).
+- **CI gaps fixed**: `pheno-cli/` and `phenotype-shared/` now have push/PR CI workflows.
+- **target/.gitignore**: 17 repos fixed (15 created/updated .gitignore, 4 already compliant).
 
-### Spec/FR completion gap summary
+## New workstreams (WS-K through WS-Q)
 
-- 50 kitty-specs audited; 5 critical gaps identified
-- **Critical:** 013 (cancelled, 56 orphaned unchecked tasks), eco-001–006 (all claim COMPLETED with zero evidence), 021 (only 11% done — P0 blocker), 001 (94% done but WP04 security domain model tasks are the remaining 9), 003 (120/120 done but says "Draft" —AgilePlus production code contradicts)
-- 22 specs missing plan.md; 14 missing tasks.md; 68 repo-root FR/PLAN files with no task tracking
-- TheGent docs/changes: 15 research directories, 11 at 0-18% completion, no spec artifacts
+### WS-K: Fix cargo-deny parse errors (P0)
+- AtomsBot and PhenoControl have duplicate `allow-registry` keys — cargo-deny fails entirely
+- Fix: deduplicate deny.toml entries
 
-## New workstreams identified
+### WS-L: Add CI to Python repos without tests (P1)
+- 13 repos have Python tests but zero CI: Parpoura, phenodocs, PhenoMCP, python, QuadSGM, etc.
+- Add push/PR workflows to highest-priority repos
 
-### WS-A: PhenoDevOps build repair (P0)
-- Restore missing `hash` module API (`blake3_hash`, `content_id`, `sha256_hash`, `HashAlgorithm`) and `signatures` module
-- Unblocks HexaKit which shares the same crate
-- Estimated: 1–2 files, low risk
+### WS-M: Fix PhenoObservability silent deny ignore (P1)
+- Uses wrong field names (`crate`/`advisory`/`reason`) — advisories not actually suppressed
+- Fix: correct field names per cargo-deny schema
 
-### WS-B: thegent esbuild override resolution (P1)
-- Fix `package.json` override conflict: `esbuild@^0.28.0` override conflicts with direct dependency
-- Unblocks vitest and the entire CI pipeline for thegent
-- Estimated: package.json edit, verify with `npm install`
+### WS-N: Fix helioscope CLAUDE.md casing reference (P1)
+- References `heliosCLI` but actual directory is `helios-cli`
+- Fix: one-line replacement
 
-### WS-C: Parpoura vitest failure diagnosis (P1)
-- 3 failing vitest assertions need root cause analysis
-- Could be environment issue or actual logic bug
-- Estimated: read test output, check assertions, patch or skip
+### WS-O: Batch-rationalize cargo-deny ignores (P2)
+- 65 ignored advisories across 9 repos, all lack rationale and expiration
+- Prioritize: RUSTSEC-2017-0008 (9yr, hwLedger), RUSTSEC-2023-0071 (3yr, hwLedger+phenoData)
+- 10-advisory batch in BytePort+hwLedger likely from shared transitive dep
 
-### WS-D: AgilePlus branch debt cleanup (P1)
-- 47 local branches; many 169 commits behind main
-- Identify which have unique unmerged work vs fully merged
-- Prune merged branches, push unmerged ones
-- Estimated: audit, then batch prune
+### WS-P: phenodocs-scorecard-remediation has code but no tests (P2)
+- Has pyproject.toml but no tests/ directory
 
-### WS-E: AgilePlus Rust workspace repair (P0)
-- 24 crates + 19 libs with zero `.rs` files; `rust/Cargo.toml` has `members = []` and broken `tonic` workspace dep
-- Decide: scaffold the claimed hexagonal architecture or update spec to match reality (scaffolding only)
-- Unblocks spec 003 which claims 120/120 done
-- Estimated: workspace dep fix + decision on scaffold vs spec update
+### WS-Q: BytePort cargo check recheck (P1)
+- Previously passed (5m41s) with 7 live `todo!()` stubs remaining
 
-### WS-F: phenodocs broken-link remediation — stub creation (P1)
-- 224 broken refs outside node_modules
-- Top targets: ARCHITECTURE.md, docs/api-standards.md, docs/security/requirements.md, benchmarks/README.md (5 refs each)
-- Create stub pages for 10 highest-referenced targets, then re-run link checker
-- Estimated: 10 stub .md files
-
-### WS-G: Spec 021 — polyrepo ecosystem stabilization advancement (P0)
-- Only 28/254 tasks done (11%); P0 critical path
-- Many sub-tasks are automatable (dirty-tree checks, cargo check probes, deny.toml staleness)
-- Pick the 20 most batchable unchecked tasks and execute a first-pass sweep
-- Should advance ratio to ~20%+
-
-### WS-H: HexaKit Cargo.toml members fix (P2)
-- `members = []` but populated crate directories exist with source
-- Either add actual members or remove empty crate dirs
-- Estimated: audit members vs dirs, edit Cargo.toml
-
-### WS-I: Eco-spec cleanup — remove or evidence completion (P2)
-- eco-001 through eco-006 all claim COMPLETED with zero task/plan evidence
-- Either create retrospective task evidence or change status to RETIRED
-- Estimated: 6 spec.md status updates + minimal plan.md stubs
-
-### WS-J: TheGent research spec artifact creation (P2)
-- 15 docs/changes directories, most missing spec.md/plan.md/tasks.md
-- Create minimal stub artifacts for research tracks that have >0% completion
-- Estimated: 10–15 spec stub files
-
-## Updated execution order
+## Updated execution order (v8)
 
 | Priority | WS | Action | Repos | Expected outcome |
 |---|---|---|---|---|
-| 0 | WS-A | Fix PhenoDevOps build | PhenoDevOps, HexaKit | Cargo check passes |
-| 1 | WS-E | Repair AgilePlus Rust workspace or align spec | AgilePlus | Build passes or spec matches reality |
-| 2 | WS-G | Advance spec 021 first-pass batch | kitty-specs + all repos | Ratio from 11% → ~20%+ |
-| 3 | WS-B | Fix thegent esbuild conflict | thegent | CI passes |
-| 4 | WS-C | Diagnose Parpoura failures | Parpoura | Known root cause |
-| 5 | WS-D | AgilePlus branch prune | AgilePlus | Clean branch list |
-| 6 | WS-F | Create phenodocs stub targets | phenodocs | Broken refs -20+ |
-| 7 | WS-H | Fix HexaKit members | HexaKit | Cargo.toml consistent |
-| 8 | WS-I | Eco-spec retirement/evidence | kitty-specs | Honest spec status |
-| 9 | WS-J | TheGent spec stubs | thegent | Research tracks trackable |
+| 0 | WS-K | Fix cargo-deny parse errors | AtomsBot, PhenoControl | cargo-deny passes |
+| 1 | WS-M | Fix silent deny ignores | PhenoObservability | Advisory suppression works |
+| 2 | WS-L | Add CI to Python repos | 13 repos | Test coverage in CI |
+| 3 | WS-N | Fix helioscope CLAUDE.md ref | helioscope | Accurate reference |
+| 4 | WS-O | Rationalize deny ignores | 9 repos | Auditable advisory policy |
+| 5 | WS-Q | BytePort todo!() triage | BytePort | Known implementation debt |
+| 6 | WS-P | Test infra for scorecard-remediation | phenodocs-scorecard-remediation | Consistent with reality |
