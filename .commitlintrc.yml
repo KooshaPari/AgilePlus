@@ -24,3 +24,5 @@ rules:
     - 0
   subject-empty:
     - 0
+  body-max-line-length:
+    - 0
