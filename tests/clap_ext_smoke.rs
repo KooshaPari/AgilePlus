@@ -12,7 +12,7 @@ fn clap_ext_verbosity_parses_quiet_flag() {
     }
     let p = Probe::try_parse_from(["probe", "--quiet"]).expect("parse");
     let filter = p.verbosity.to_filter();
-    assert_eq!(format!("{:?}", filter), "LevelFilter::ERROR");
+    assert_eq!(format!("{filter:?}"), "LevelFilter::ERROR");
 }
 
 #[test]
@@ -24,7 +24,7 @@ fn clap_ext_verbosity_parses_double_v() {
     }
     let p = Probe::try_parse_from(["probe", "-vv"]).expect("parse");
     let filter = p.verbosity.to_filter();
-    assert_eq!(format!("{:?}", filter), "LevelFilter::TRACE");
+    assert_eq!(format!("{filter:?}"), "LevelFilter::TRACE");
 }
 
 #[test]
