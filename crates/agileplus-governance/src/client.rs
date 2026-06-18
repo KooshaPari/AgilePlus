@@ -216,15 +216,8 @@ impl GovernanceClient {
             ));
         }
 
-        // Calculate iteration from SQLite channel_iterations table
-        let channel_id = request.to.to_string();
-        let iteration = match self.audit_logger.bump_channel_iteration(&channel_id) {
-            Ok(i) => i,
-            Err(e) => {
-                warn!("Failed to bump channel iteration for {channel_id}: {e}");
-                1 // Fallback to 1 on DB error
-            }
-        };
+        // Calculate iteration by counting prior promotions to this channel
+        let iteration = self.count_channel_promotions(&request.to).await + 1;
 
         Ok(PromotionResult::allowed(
             crate::channel::ChannelMetadata::new(
@@ -312,6 +305,30 @@ impl GovernanceClient {
     /// Get all policies
     pub async fn policies(&self) -> Vec<crate::policy::Policy> {
         self.policy_engine.read().await.policies().to_vec()
+    }
+
+    /// Count the number of prior promotions to a specific channel by querying
+    /// audit events whose action is `check_promotion`, result is `success`, and
+    /// whose metadata `to` field matches the target channel.
+    async fn count_channel_promotions(&self, channel: &crate::channel::ReleaseChannel) -> u32 {
+        let filter = AuditFilter {
+            action: Some("check_promotion".to_string()),
+            result: Some(OperationResult::Success),
+            ..AuditFilter::new()
+        };
+
+        match self.audit_logger.query(&filter) {
+            Ok(events) => events
+                .iter()
+                .filter(|e| {
+                    e.metadata
+                        .as_ref()
+                        .and_then(|m| m.get("to").and_then(|v| v.as_str()))
+                        .map_or(false, |to| to == &channel.to_string())
+                })
+                .count() as u32,
+            Err(_) => 0,
+        }
     }
 }
 
