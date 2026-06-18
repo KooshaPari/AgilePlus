@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Integration test: convoy creation → bead claiming → two-phase commit.
 
 use chrono::Utc;

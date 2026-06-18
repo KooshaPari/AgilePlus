@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Commit signing — GPG, SSH, or mock.
 
 use std::process::{Command, Stdio};
@@ -186,7 +187,9 @@ pub struct MockSigner;
 impl Signer for MockSigner {
     async fn sign(&self, repo_root: &std::path::Path, commit_sha: &str) -> Result<String> {
         let new_msg = format!(
-            "{}\n\n[signed]",
+            "{}
+
+[signed]",
             get_commit_message(repo_root, commit_sha).await?
         );
         amend_commit_message(repo_root, &new_msg).await
@@ -292,17 +295,24 @@ async fn amend_commit_with_gpg_signature(
     for line in &lines {
         if line.is_empty() && !found_gpgsig {
             new_commit.push_str("gpgsig ");
-            new_commit.push_str(&signature.replace('\n', "\n "));
-            new_commit.push('\n');
+            new_commit.push_str(&signature.replace('
+', "
+ "));
+            new_commit.push('
+');
             found_gpgsig = true;
         }
         new_commit.push_str(line);
-        new_commit.push('\n');
+        new_commit.push('
+');
     }
     if !found_gpgsig {
         new_commit.push_str("gpgsig ");
-        new_commit.push_str(&signature.replace('\n', "\n "));
-        new_commit.push('\n');
+        new_commit.push_str(&signature.replace('
+', "
+ "));
+        new_commit.push('
+');
     }
 
     write_commit_object(repo_root, &new_commit).await

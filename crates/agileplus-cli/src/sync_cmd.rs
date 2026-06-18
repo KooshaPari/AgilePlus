@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `agileplus sync <owner/repo>` — drive the GitHub sync service.
 //!
 //! Traceability: WP19-T113 (thin CLI adapter over `agileplus_github::sync`)

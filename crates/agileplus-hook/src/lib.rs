@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! agileplus-hook — MEOW hook primitive.
 //!
 //! Hooks bind claim events to actions: webhook, message, or script.

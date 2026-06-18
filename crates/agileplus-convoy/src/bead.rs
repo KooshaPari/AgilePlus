@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Bead — a single unit of work within a convoy.
 
 use chrono::{DateTime, Utc};

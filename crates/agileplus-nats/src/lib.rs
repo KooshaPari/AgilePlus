@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! agileplus-nats — NATS infrastructure adapter for AgilePlus.
 //!
 //! Provides:

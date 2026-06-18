@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! agileplus-cli worklog subcommand.
 //!
 //! Two related features share this command tree:
@@ -332,7 +333,8 @@ fn list(dir: &Path) -> Result<()> {
     for p in raw {
         println!("  {}", p.display());
     }
-    println!("\nCanonical worklogs:");
+    println!("
+Canonical worklogs:");
     for p in canonical {
         println!("  {}", p.display());
     }
@@ -381,7 +383,8 @@ fn validate(dir: &Path) -> Result<()> {
             }
         }
     }
-    println!("\nResult: {ok} OK, {err} FAIL");
+    println!("
+Result: {ok} OK, {err} FAIL");
     if err > 0 {
         std::process::exit(1);
     }
@@ -406,7 +409,8 @@ fn convert(dir: &Path, in_place: bool) -> Result<()> {
         } else {
             path_with_suffix(path, "-canonical.json")
         };
-        std::fs::write(&target, pretty + "\n")?;
+        std::fs::write(&target, pretty + "
+")?;
         println!("OK   {} -> {}", path.display(), target.display());
     }
     Ok(())

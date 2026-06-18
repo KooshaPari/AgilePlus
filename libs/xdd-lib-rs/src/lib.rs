@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Cross-dialect data conversion library for JSON, TOML, and YAML.
 //!
 //! Provides a uniform [`Dialect`] trait and implementations for the three
@@ -513,7 +514,7 @@ spec_file = "specs/001-agileplus-core/FR-CORE-001-DOMAIN-MODELS.md"
     #[test]
     fn yaml_parse_error_returns_dialect_error() {
         let yaml = YamlDialect;
-        let err = yaml.parse("\t\t: bad").unwrap_err();
+        let err = yaml.parse("		: bad").unwrap_err();
         assert!(matches!(err, DialectError::Yaml(_)));
     }
 

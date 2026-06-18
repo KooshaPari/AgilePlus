@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 use std::sync::Mutex;
 
 use agileplus_domain::domain::event::Event;
@@ -131,7 +132,8 @@ async fn import_new_events() {
     std::fs::create_dir_all(&events_dir).unwrap();
     let event = make_event("Feature", 1, 1);
     let line = serde_json::to_string(&event).unwrap();
-    std::fs::write(events_dir.join("1.jsonl"), format!("{line}\n")).unwrap();
+    std::fs::write(events_dir.join("1.jsonl"), format!("{line}
+")).unwrap();
 
     let event_store = MemEventStore::default();
     let snapshot_store = MemSnapshotStore::default();
@@ -152,7 +154,8 @@ async fn import_skips_duplicate_events() {
     let events_dir = dir.join("events/Feature");
     std::fs::create_dir_all(&events_dir).unwrap();
     let line = serde_json::to_string(&event).unwrap();
-    std::fs::write(events_dir.join("1.jsonl"), format!("{line}\n")).unwrap();
+    std::fs::write(events_dir.join("1.jsonl"), format!("{line}
+")).unwrap();
 
     let stats = import_state(dir, &event_store, &snapshot_store).await.unwrap();
     assert_eq!(stats.events_imported, 0);

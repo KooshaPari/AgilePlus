@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 use std::io::Write as _;
 use std::path::Path;
 use std::time::Instant;
@@ -79,7 +80,8 @@ async fn export_events<ES: EventStore>(
     for event in &events {
         let line = to_sorted_line(serde_json::to_value(event)?)?;
         file.write_all(line.as_bytes())?;
-        file.write_all(b"\n")?;
+        file.write_all(b"
+")?;
     }
 
     debug!(

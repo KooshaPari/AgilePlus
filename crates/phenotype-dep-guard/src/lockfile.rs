@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Lockfile parsers for the four supported ecosystems.
 //!
 //! Each parser turns a lockfile into a `Vec<Dependency>` with concrete
@@ -356,7 +357,8 @@ github.com/baz/qux v0.4.0/go.mod h1:uvw=
     fn unsupported_lockfile_filename_errors() {
         let dir = tempfile::tempdir().unwrap();
         let p = dir.path().join("poetry.lock");
-        std::fs::write(&p, "# poetry lockfile v1\n").unwrap();
+        std::fs::write(&p, "# poetry lockfile v1
+").unwrap();
         let err = parse_lockfile(&p).unwrap_err();
         assert!(err.to_string().contains("unsupported lockfile"));
     }

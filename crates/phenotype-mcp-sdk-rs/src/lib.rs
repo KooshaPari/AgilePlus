@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Rust MCP SDK — server trait, tool/resource abstractions, and transports.
 //!
 //! Provides a small, pluggable MCP server surface:

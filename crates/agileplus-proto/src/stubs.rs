@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 // Hand-written stubs for all proto-generated types used by agileplus-grpc.
 //
 // These are compiled instead of protoc output when `protoc` is not available.

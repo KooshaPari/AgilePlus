@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Action trail — every worker step logged with outcome.
 
 use chrono::{DateTime, Utc};

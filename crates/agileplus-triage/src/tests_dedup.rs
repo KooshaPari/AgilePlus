@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Integration tests for the new dedup / claim / repo_introspect modules.
 //!
 //! Run with `cargo test -p agileplus-triage`.
@@ -135,7 +136,8 @@ mod tests {
         let _ = std::fs::remove_dir_all(&tmp);
         let git = tmp.join(".git");
         std::fs::create_dir_all(git.join("refs/heads")).unwrap();
-        std::fs::write(git.join("HEAD"), "ref: refs/heads/main\n").unwrap();
+        std::fs::write(git.join("HEAD"), "ref: refs/heads/main
+").unwrap();
         let info = inspect_repo(&tmp);
         assert_eq!(info.state, RepoState::Git);
         assert_eq!(info.current_branch.as_deref(), Some("main"));

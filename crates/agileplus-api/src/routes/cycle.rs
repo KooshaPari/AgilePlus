@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Cycle route handlers.
 //!
 //! - GET /api/cycles?state=X  -> list cycles (JSON)

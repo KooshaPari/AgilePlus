@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Dashboard route handlers for kanban, work packages, and server-sent events.
 //!
 //! This module implements the core dashboard UI handlers:
@@ -102,7 +103,9 @@ fn build_feature_evidence_bundles(
         created_at: Utc::now().format("%Y-%m-%d %H:%M:%S UTC").to_string(),
         artifact_ext: "md".into(),
         status: "available".into(),
-        content_preview: Some("# Feature Summary\n\nThis feature provides...".to_string()),
+        content_preview: Some("# Feature Summary
+
+This feature provides...".to_string()),
         is_text_artifact: true,
         is_image_artifact: false,
         download_url: format!("/api/evidence/{}/summary/content", feature.id),

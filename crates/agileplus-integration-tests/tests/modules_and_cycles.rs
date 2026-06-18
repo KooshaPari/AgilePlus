@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Integration tests for Modules and Cycles domain -- T034 through T038.
 //!
 //! All tests use an in-memory SQLite adapter; no file I/O, no network calls.

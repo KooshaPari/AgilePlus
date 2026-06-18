@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Domain event types — append-only event sourcing primitives.
 
 use chrono::{DateTime, Utc};

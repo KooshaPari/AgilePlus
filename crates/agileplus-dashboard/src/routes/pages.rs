@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Page route handlers for AgilePlus dashboard.
 //!
 //! Handlers for main page views (root, home, features, events, settings, hub, health, feature details).

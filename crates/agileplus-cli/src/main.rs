@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! agileplus-cli — minimal smoke-test CLI backed by in-memory mock data.
 
 mod sync_cmd;

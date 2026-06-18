@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Authentication middleware for protected API routes.
 //!
 //! The default verifier is a shared-secret/API-key verifier that uses

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `agileplus-refinery` — post-processing pipeline: squash, lint, sign, tag.
 //!
 //! Audit rec #4.
@@ -162,7 +163,8 @@ mod tests {
             .output()
             .expect("git config name");
         // Initial commit
-        std::fs::write(dir.join("README.md"), "# init\n").unwrap();
+        std::fs::write(dir.join("README.md"), "# init
+").unwrap();
         let _ = Command::new("git")
             .args(["add", "."])
             .current_dir(dir)
@@ -203,8 +205,10 @@ mod tests {
         let dir = tmp.path();
         init_repo(dir);
         create_branch(dir, "feature");
-        commit_file(dir, "a.txt", "hello\n", "feature commit 1");
-        commit_file(dir, "b.txt", "world\n", "feature commit 2");
+        commit_file(dir, "a.txt", "hello
+", "feature commit 1");
+        commit_file(dir, "b.txt", "world
+", "feature commit 2");
 
         // Back to main so we can merge feature into it.
         let _ = Command::new("git")
@@ -251,7 +255,8 @@ mod tests {
         let dir = tmp.path();
         init_repo(dir);
         create_branch(dir, "feature");
-        commit_file(dir, "a.txt", "hello\n", "feature commit");
+        commit_file(dir, "a.txt", "hello
+", "feature commit");
         let _ = Command::new("git")
             .args(["checkout", "main"])
             .current_dir(dir)
@@ -277,17 +282,20 @@ mod tests {
         let tmp = TempDir::new().unwrap();
         let dir = tmp.path();
         init_repo(dir);
-        commit_file(dir, "shared.txt", "base\n", "base commit");
+        commit_file(dir, "shared.txt", "base
+", "base commit");
 
         create_branch(dir, "feature");
-        commit_file(dir, "shared.txt", "feature\n", "feature change");
+        commit_file(dir, "shared.txt", "feature
+", "feature change");
 
         let _ = Command::new("git")
             .args(["checkout", "main"])
             .current_dir(dir)
             .output()
             .expect("checkout main");
-        commit_file(dir, "shared.txt", "main\n", "main change");
+        commit_file(dir, "shared.txt", "main
+", "main change");
 
         let config = RefineryConfig {
             squash: true,

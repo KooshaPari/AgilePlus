@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! T108: Feature lifecycle end-to-end integration test.
 //!
 //! Verifies the complete path from API creation through state transitions

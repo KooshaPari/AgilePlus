@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Shared validation rules for AgilePlus domain and CLI inputs.
 
 use std::path::{Component, Path};

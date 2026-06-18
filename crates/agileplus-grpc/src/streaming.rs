@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Server-streaming helpers for agent event delivery.
 //!
 //! Traceability: WP14-T083

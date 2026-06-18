@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Git VCS adapter for AgilePlus.
 //!
 //! Backed by [`git2`](https://docs.rs/git2) (libgit2 FFI) for read /
@@ -450,7 +451,11 @@ impl VcsPort for GitVcsAdapter {
         let mut out = Vec::new();
         for line in raw.lines() {
             if let Some(rest) = line.strip_prefix("changed in both") {
-                // Format: "changed in both\n  base   100644 <oid> <path>\n  ours   100644 <oid>\n  theirs 100644 <oid>\n"
+                // Format: "changed in both
+  base   100644 <oid> <path>
+  ours   100644 <oid>
+  theirs 100644 <oid>
+"
                 // The path appears on the next non-empty line.
                 let path = rest
                     .split_whitespace()
@@ -667,7 +672,8 @@ mod tests {
             .current_dir(&path)
             .output()
             .unwrap();
-        std::fs::write(path.join("README.md"), "hello\n").unwrap();
+        std::fs::write(path.join("README.md"), "hello
+").unwrap();
         StdCommand::new("git")
             .args(["add", "."])
             .current_dir(&path)
@@ -775,7 +781,8 @@ mod tests {
             .await
             .unwrap();
         adapter.checkout_branch("feat/conflict").await.unwrap();
-        std::fs::write(path.join("README.md"), "from feature\n").unwrap();
+        std::fs::write(path.join("README.md"), "from feature
+").unwrap();
         StdCommand::new("git")
             .args(["add", "README.md"])
             .current_dir(&path)
@@ -788,7 +795,8 @@ mod tests {
             .unwrap();
         // edit README.md differently on main
         adapter.checkout_branch("main").await.unwrap();
-        std::fs::write(path.join("README.md"), "from main\n").unwrap();
+        std::fs::write(path.join("README.md"), "from main
+").unwrap();
         StdCommand::new("git")
             .args(["add", "README.md"])
             .current_dir(&path)
@@ -835,17 +843,20 @@ mod tests {
         let (_dir, path) = make_repo();
         let adapter = GitVcsAdapter::new(path.clone());
         adapter
-            .write_artifact("login", "spec.md", "# spec\n")
+            .write_artifact("login", "spec.md", "# spec
+")
             .await
             .expect("write");
         let content = adapter
             .read_artifact("login", "spec.md")
             .await
             .expect("read");
-        assert_eq!(content, "# spec\n");
+        assert_eq!(content, "# spec
+");
         assert!(adapter.artifact_exists("login", "spec.md").await.unwrap());
         let scan = adapter.scan_feature_artifacts("login").await.expect("scan");
-        assert_eq!(scan.spec.as_deref(), Some("# spec\n"));
+        assert_eq!(scan.spec.as_deref(), Some("# spec
+"));
     }
 
     #[tokio::test]

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Peer discovery via Tailscale local API.
 //!
 //! Connects to the Tailscale daemon's local UNIX socket and queries

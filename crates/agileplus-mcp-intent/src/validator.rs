@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Ontology schema validation.
 //!
 //! Validates generated intent graphs against the embedded JSON Schema
@@ -63,7 +64,7 @@ pub fn validate_node_id(id: &str) -> Result<(), String> {
         Ok(())
     } else {
         Err(format!(
-            "node id '{id}' does not match pattern [A-Z][a-z]+#[a-z0-9\\-]+"
+            "node id '{id}' does not match pattern [A-Z][a-z]+#[a-z0-9\-]+"
         ))
     }
 }

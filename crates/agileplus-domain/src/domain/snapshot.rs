@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Snapshot type for fast aggregate rehydration.
 
 use chrono::{DateTime, Utc};

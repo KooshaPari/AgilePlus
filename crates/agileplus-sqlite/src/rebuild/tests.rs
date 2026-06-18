@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
@@ -182,7 +183,9 @@ fn make_chain_jsonl(feature_id: i64) -> String {
         "hash": hex(e2.hash),
     });
 
-    format!("{}\n{}\n", line1, line2)
+    format!("{}
+{}
+", line1, line2)
 }
 
 #[tokio::test]

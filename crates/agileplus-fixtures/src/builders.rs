@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Builder patterns for constructing test fixtures.
 //!
 //! Provides fluent builders for creating features, work packages, and related

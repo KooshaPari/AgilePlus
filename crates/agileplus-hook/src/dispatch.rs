@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Hook dispatcher — matches claim events to registered hooks.
 
 use std::process::Command;

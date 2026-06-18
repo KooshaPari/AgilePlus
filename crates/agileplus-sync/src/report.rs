@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! SyncReport — audit summary for a single sync run.
 //!
 //! Traceability: FR-SYNC-REPORT / WP09-T057
@@ -66,7 +67,8 @@ impl fmt::Display for SyncReport {
         writeln!(f, "└{sep}┘")?;
 
         if !self.conflicts.is_empty() {
-            writeln!(f, "\nConflicts:")?;
+            writeln!(f, "
+Conflicts:")?;
             for c in &self.conflicts {
                 writeln!(
                     f,
@@ -80,7 +82,8 @@ impl fmt::Display for SyncReport {
         }
 
         if !self.errors.is_empty() {
-            writeln!(f, "\nErrors:")?;
+            writeln!(f, "
+Errors:")?;
             for e in &self.errors {
                 writeln!(f, "  • {e}")?;
             }

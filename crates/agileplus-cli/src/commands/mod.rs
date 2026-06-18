@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 // NOTE: Modules marked with `// STUB` have unresolved dependencies (missing
 // crate additions or missing domain types) and are temporarily excluded from
 // compilation until those upstream gaps are filled.  They are kept in the

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Plane.so sync logic with idempotency and conflict detection.
 //!
 //! Traceability: WP18-T105, T106, T107
@@ -61,7 +62,8 @@ impl PlaneSyncAdapter {
         title: &str,
         description: &str,
     ) -> Result<SyncOutcome> {
-        let content_hash = hash_content(&format!("{title}\n{description}"));
+        let content_hash = hash_content(&format!("{title}
+{description}"));
 
         // Check if already synced and unchanged
         if let Some(ref existing_hash) = state.content_hash {
@@ -85,7 +87,8 @@ impl PlaneSyncAdapter {
             // Check for conflicts before update
             if let Ok(remote) = self.client.get_issue(issue_id).await {
                 if let Some(ref remote_desc) = remote.description_html {
-                    let remote_hash = hash_content(&format!("{}\n{}", remote.name, remote_desc));
+                    let remote_hash = hash_content(&format!("{}
+{}", remote.name, remote_desc));
                     if let Some(ref our_hash) = state.content_hash {
                         if remote_hash != *our_hash && content_hash != remote_hash {
                             tracing::warn!(

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! API key generation and lifecycle management.
 //!
 //! On first startup, if no API key exists in the credential store, a new

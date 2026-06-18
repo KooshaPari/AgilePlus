@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Async client for OSV.dev (`https://api.osv.dev`).
 //!
 //! The production endpoint requires no auth. For tests, point

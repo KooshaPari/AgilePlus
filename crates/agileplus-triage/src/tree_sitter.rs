@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Tree-sitter backend for AST tokenization.
 //!
 //! Provides a [`TreeSitterTokenizer`] that implements [`AstTokenizer`]
@@ -219,7 +220,9 @@ mod tests {
 
     #[test]
     fn tree_sitter_python_fallback() {
-        let src = "def foo(self):\n    return self.bar\n";
+        let src = "def foo(self):
+    return self.bar
+";
         let toks = TreeSitterTokenizer::tokenize(src, "python");
         assert!(toks
             .iter()

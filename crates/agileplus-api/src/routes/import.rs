@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! HTTP import endpoints for AgilePlus bundle ingestion.
 
 use axum::extract::State;

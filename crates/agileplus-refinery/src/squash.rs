@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Squash source branch into target branch.
 
 use std::path::PathBuf;

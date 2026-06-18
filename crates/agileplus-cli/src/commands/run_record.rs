@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `ap run-record` — append a `metrics` row recording a CLI run.
 //!
 //! This is the low-level primitive behind the `gate-run` subcommand

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Manifest parsers for the four supported ecosystems.
 //!
 //! Each parser turns the raw file contents into a `Vec<Dependency>`. The

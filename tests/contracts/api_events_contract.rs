@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! T115 — `agileplus-api` ↔ `agileplus-events` `EventQuery` / `EventStore` consumer contract.
 //!
 //! Verifies that the in-memory `EventQuery` filter semantics used by the API

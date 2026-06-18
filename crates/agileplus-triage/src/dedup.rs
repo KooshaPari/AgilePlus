@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 #![allow(clippy::empty_line_after_doc_comments)]
 //! Backlog item deduplication: token-Jaccard, fuzzy ratio (Levenshtein),
 //! simhash, n-gram, and a hybrid scorer.

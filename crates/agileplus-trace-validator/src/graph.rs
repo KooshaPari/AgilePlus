@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 use crate::loaders::{TraceDocument, TraceDocumentKind};
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::PathBuf;

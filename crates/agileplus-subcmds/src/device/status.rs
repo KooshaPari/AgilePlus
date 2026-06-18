@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 use agileplus_p2p::discovery::PeerStatus;
 use agileplus_p2p::discovery::discover_peers;
 use agileplus_p2p::vector_clock::SyncVector;

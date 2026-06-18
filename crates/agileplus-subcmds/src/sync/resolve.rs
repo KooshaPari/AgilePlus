@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 use anyhow::Result;
 
 use super::{
@@ -11,7 +12,8 @@ pub fn run_sync_resolve(args: SyncResolveArgs) -> Result<()> {
     let conflict = stub_conflict(&args.entity_type, &args.entity_id);
 
     println!(
-        "Conflict in {} '{}':\n",
+        "Conflict in {} '{}':
+",
         capitalize(&conflict.entity_kind),
         conflict.entity_name
     );
@@ -55,24 +57,28 @@ pub fn run_sync_resolve(args: SyncResolveArgs) -> Result<()> {
 fn apply_resolution(resolution: ConflictResolution, conflict: &SyncConflict) -> Result<()> {
     match resolution {
         ConflictResolution::KeepLocal => {
-            println!("\nApplied: Local version wins");
+            println!("
+Applied: Local version wins");
             println!("SyncMapping updated, event logged");
             tracing::info!(entity = %conflict.entity_name, "conflict resolved: local wins");
         }
         ConflictResolution::AcceptRemote => {
-            println!("\nApplied: Remote version wins");
+            println!("
+Applied: Remote version wins");
             println!("Local state updated, SyncMapping updated, event logged");
             tracing::info!(entity = %conflict.entity_name, "conflict resolved: remote wins");
         }
         ConflictResolution::MergeManually => {
-            println!("\nManual merge required.");
+            println!("
+Manual merge required.");
             println!(
                 "Edit the entity locally then run: agileplus sync push --feature {}",
                 conflict.entity_name
             );
         }
         ConflictResolution::Cancel => {
-            println!("\nCancelled. Conflict not resolved.");
+            println!("
+Cancelled. Conflict not resolved.");
         }
     }
     Ok(())

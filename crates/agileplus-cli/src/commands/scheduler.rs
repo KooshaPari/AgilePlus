@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Dependency-aware scheduler for work package execution.
 //!
 //! Implements Kahn's topological sort to determine execution waves and

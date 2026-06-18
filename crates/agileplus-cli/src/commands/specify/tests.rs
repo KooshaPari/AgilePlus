@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 use super::*;
 
 #[test]
@@ -16,15 +17,21 @@ fn sha256_differs_on_different_input() {
 
 #[test]
 fn diff_summary_detects_changes() {
-    let old = "line1\nline2\n";
-    let new = "line1\nline3\n";
+    let old = "line1
+line2
+";
+    let new = "line1
+line3
+";
     let diff = compute_diff_summary(old, new);
     assert!(diff.contains("-line2") || diff.contains("+line3"));
 }
 
 #[test]
 fn diff_summary_no_change() {
-    let content = "line1\nline2\n";
+    let content = "line1
+line2
+";
     let diff = compute_diff_summary(content, content);
     assert!(!diff.contains('-'));
     assert!(!diff.contains('+'));

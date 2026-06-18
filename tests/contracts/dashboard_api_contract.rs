@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! T114 — `agileplus-api` ↔ `agileplus-dashboard` API response shape contract.
 //!
 //! Verifies that the `EventResponse` shape returned by the events API matches

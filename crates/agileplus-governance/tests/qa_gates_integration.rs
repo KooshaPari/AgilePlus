@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 use std::fs;
 use std::path::Path;
 use std::process::Command;
@@ -21,12 +22,17 @@ fn governance_qa_gates_accept_valid_fixture() {
 
     assert!(fs::write(
         temp.path().join("SPEC.md"),
-        "# Spec\n\nFR-001: shipped behavior\nNFR-002: operational guardrail\n",
+        "# Spec
+
+FR-001: shipped behavior
+NFR-002: operational guardrail
+",
     )
     .is_ok());
     assert!(fs::write(
         temp.path().join("lib.rs"),
-        "pub fn ok() -> Option<u8> { Some(1) }\n",
+        "pub fn ok() -> Option<u8> { Some(1) }
+",
     )
     .is_ok());
 
@@ -45,7 +51,10 @@ fn governance_qa_gates_accept_valid_fixture() {
         temp.path(),
         &[(
             "CHANGED_FILES",
-            "CHANGELOG.md\ndocs/adr/0001-governance.md\ndocs/qa-matrix.md\n",
+            "CHANGELOG.md
+docs/adr/0001-governance.md
+docs/qa-matrix.md
+",
         )],
     );
 }
@@ -65,7 +74,11 @@ fn run_gate(path: impl AsRef<Path>, workdir: &Path, envs: &[(&str, &str)]) {
     };
     assert!(
         output.status.success(),
-        "gate {:?} failed\nstdout:\n{}\nstderr:\n{}",
+        "gate {:?} failed
+stdout:
+{}
+stderr:
+{}",
         path.as_ref(),
         String::from_utf8_lossy(&output.stdout),
         String::from_utf8_lossy(&output.stderr)

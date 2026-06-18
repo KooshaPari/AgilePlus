@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! In-memory stub + unit tests for the list_projects / list_epics / list_stories
 //! subcommands (FR-AGP-016).
 //!

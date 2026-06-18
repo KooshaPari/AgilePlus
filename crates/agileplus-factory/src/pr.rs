@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! GitHub PR creation via raw reqwest (octocrab not in workspace deps).
 
 use anyhow::Result;

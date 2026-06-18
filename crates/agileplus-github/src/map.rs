@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Mapping from GitHub REST API types → agileplus-domain entities.
 //!
 //! Traceability: WP19-T115

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 use assert_cmd::Command;
 use predicates::str::contains;
 use std::fs;
@@ -161,7 +162,9 @@ fn stats_reports_multiple_traces() {
     }
     fs::write(
         repo.path().join("FUNCTIONAL_REQUIREMENTS.md"),
-        "- FR-1\n- FR-2\n- FR-3",
+        "- FR-1
+- FR-2
+- FR-3",
     )
     .unwrap();
 

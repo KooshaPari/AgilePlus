@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Governance repository — CRUD for `governance_contracts` and `policy_rules`.
 
 use rusqlite::{params, Connection, Row};

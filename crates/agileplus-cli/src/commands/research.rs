@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `agileplus research` command implementation.
 //!
 //! Supports pre-specify (codebase scan) and post-specify (feasibility analysis) modes.
@@ -260,7 +261,8 @@ async fn scan_directory_structure<V: VcsPort>(vcs: &V) -> String {
     if found.is_empty() {
         "(directory structure not available via VCS scan)".to_string()
     } else {
-        found.join("\n")
+        found.join("
+")
     }
 }
 
@@ -325,7 +327,10 @@ mod tests {
 
     #[test]
     fn count_pattern_basic() {
-        let text = "- **FR-1**: foo\n- **FR-2**: bar\n- **NFR-1**: baz\n";
+        let text = "- **FR-1**: foo
+- **FR-2**: bar
+- **NFR-1**: baz
+";
         assert_eq!(count_pattern(text, "**FR-"), 2);
         assert_eq!(count_pattern(text, "**NFR-"), 1);
     }

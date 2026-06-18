@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Domain error types.
 
 use serde::{Deserialize, Serialize};

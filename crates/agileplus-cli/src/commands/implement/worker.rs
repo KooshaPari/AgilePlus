@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 use anyhow::{Context, Result};
 use chrono::Utc;
 use std::collections::HashSet;
@@ -195,7 +196,8 @@ where
                 ctx.storage.append_audit_entry(&audit).await.ok();
 
                 eprintln!(
-                    "WARNING: WP{:02} blocked after {cycles} review cycles.\nLast feedback: {}",
+                    "WARNING: WP{:02} blocked after {cycles} review cycles.
+Last feedback: {}",
                     wp.sequence,
                     &last_feedback[..last_feedback.len().min(500)]
                 );

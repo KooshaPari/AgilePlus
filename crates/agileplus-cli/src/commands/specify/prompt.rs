@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 use std::io::{self, BufRead};
 
 use anyhow::{Context, Result};
@@ -57,7 +58,8 @@ fn read_multiline_prompt(msg: &str) -> Result<String> {
         }
         lines.push(l);
     }
-    Ok(lines.join("\n"))
+    Ok(lines.join("
+"))
 }
 
 fn run_interview() -> Result<(String, String)> {
@@ -87,7 +89,8 @@ fn run_interview() -> Result<(String, String)> {
         .enumerate()
         .map(|(i, fr)| format!("- **FR-{}**: {fr}", i + 1))
         .collect::<Vec<_>>()
-        .join("\n");
+        .join("
+");
 
     let date = Utc::now().format("%Y-%m-%d").to_string();
     let spec_content = format!(

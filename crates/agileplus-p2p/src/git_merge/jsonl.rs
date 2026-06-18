@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 use std::collections::HashSet;
 use std::path::Path;
 
@@ -54,7 +55,8 @@ pub(crate) fn resolve_jsonl_conflict(path: &Path) -> Result<bool, MergeError> {
             source: e,
         })?;
         file.write_all(line.as_bytes())?;
-        file.write_all(b"\n")?;
+        file.write_all(b"
+")?;
     }
 
     info!(

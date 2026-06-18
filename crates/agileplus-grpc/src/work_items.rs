@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! WorkItemsService — gRPC adapter for Projects, Epics, Stories, and
 //! GitHub repository sync.
 //!

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Builder patterns for constructing `Node` and `Edge` values safely.
 
 use serde_json::Value;

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 use super::jsonl::resolve_jsonl_conflict;
 use super::resolver::resolve_git_conflicts;
 use super::snapshot::resolve_snapshot_conflict;
@@ -15,7 +16,12 @@ fn make_event_line(seq: i64) -> String {
 }
 
 fn conflict_block(ours: &str, theirs: &str) -> String {
-    format!("<<<<<<< HEAD\n{ours}\n=======\n{theirs}\n>>>>>>> branch\n")
+    format!("<<<<<<< HEAD
+{ours}
+=======
+{theirs}
+>>>>>>> branch
+")
 }
 
 #[test]
@@ -29,7 +35,8 @@ fn resolve_jsonl_deduplicates() {
     let ev2 = make_event_line(2);
 
     // Both sides contain ev1; only ours has ev2.
-    let content = conflict_block(&format!("{ev1}\n{ev2}"), &ev1);
+    let content = conflict_block(&format!("{ev1}
+{ev2}"), &ev1);
     std::fs::write(&path, content).unwrap();
 
     let changed = resolve_jsonl_conflict(&path).unwrap();
@@ -121,7 +128,8 @@ fn resolve_git_conflicts_end_to_end() {
     let ev2 = make_event_line(2);
     std::fs::write(
         events_dir.join("1.jsonl"),
-        conflict_block(&format!("{ev1}\n{ev2}"), &ev1),
+        conflict_block(&format!("{ev1}
+{ev2}"), &ev1),
     )
     .unwrap();
 

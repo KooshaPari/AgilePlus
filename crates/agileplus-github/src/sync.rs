@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! GitHub repository sync — pull issues and PRs, produce domain Stories.
 //!
 //! Traceability: WP19-T113

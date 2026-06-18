@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! HTTP API server for the intent converter.
 //!
 //! Endpoints:

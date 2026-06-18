@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Rule-based triage engine for synced GitHub items.
 //!
 //! Hexagonal design: `TriageRules` is a pure data config; `classify` is a

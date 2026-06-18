@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Phenotype Dependency Guard
 //!
 //! Dependency scanning, OSV vulnerability lookup, and CycloneDX SBOM generation
@@ -129,7 +130,10 @@ serde = "1.0"
         assert_eq!(npm[0].ecosystem, Ecosystem::Npm);
 
         // requirements.txt
-        let pypi = parse_pypi("flask==2.0.0\nrequests>=2.28\n# comment\n");
+        let pypi = parse_pypi("flask==2.0.0
+requests>=2.28
+# comment
+");
         assert_eq!(pypi.len(), 2);
         assert_eq!(pypi[0].name, "flask");
         assert_eq!(pypi[0].version, "2.0.0");
@@ -137,7 +141,12 @@ serde = "1.0"
 
         // go.mod
         let go = parse_go(
-            "module example.com/demo\n\ngo 1.21\n\nrequire github.com/gin-gonic/gin v1.9.0\n",
+            "module example.com/demo
+
+go 1.21
+
+require github.com/gin-gonic/gin v1.9.0
+",
         );
         assert_eq!(go.len(), 1);
         assert_eq!(go[0].name, "github.com/gin-gonic/gin");
@@ -179,14 +188,19 @@ version = "1.46.0"
         assert_eq!(npm_lock.len(), 2);
 
         // requirements.txt (same format as manifest for PyPI)
-        let req = parse_requirements_txt("django==4.2\ncelery>=5.3\n");
+        let req = parse_requirements_txt("django==4.2
+celery>=5.3
+");
         assert_eq!(req.len(), 2);
 
         // go.sum (one line per direct + one per indirect; both should be parsed)
         let go_sum = parse_go_sum(
-            "github.com/gin-gonic/gin v1.9.0 h1:abc=\n\
-             github.com/gin-gonic/gin v1.9.0/go-mod h1:def=\n\
-             github.com/stretchr/testify v1.8.0 h1:ghi=\n",
+            "github.com/gin-gonic/gin v1.9.0 h1:abc=
+\
+             github.com/gin-gonic/gin v1.9.0/go-mod h1:def=
+\
+             github.com/stretchr/testify v1.8.0 h1:ghi=
+",
         );
         assert_eq!(go_sum.len(), 2);
     }

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `ap trace link <from> <to>` subcommand — inserts a row into the
 //! `trace_links` table to record a directed edge between two domain
 //! entities.  Also supports the inverse / list-view surface used by
@@ -277,7 +278,8 @@ pub fn run_list(args: &ListArgs) -> Result<()> {
             truncate(&row.created_at, 19)
         );
     }
-    println!("\n{} trace link(s) shown (limit={limit}).", rows.len());
+    println!("
+{} trace link(s) shown (limit={limit}).", rows.len());
 
     Ok(())
 }

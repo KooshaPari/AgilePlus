@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Embedding backends for semantic similarity.  Pluggable over a small
 //! trait so the same hybrid dedup pipeline can target OpenAI,
 //! Voyage AI, or a local deterministic mock depending on which

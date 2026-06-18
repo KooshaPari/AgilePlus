@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Configuration for the NATS event bus connection.
 
 use agileplus_config::config_builder;

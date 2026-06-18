@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Resource claim primitives with TTL and heartbeat.
 //!
 //! A claim is a record that an agent has exclusive ownership of a

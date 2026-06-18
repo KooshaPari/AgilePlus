@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `agileplus ship` command implementation.
 //!
 //! Merges all WP branches to the target branch, cleans up worktrees,
@@ -104,9 +105,12 @@ where
             })
             .collect();
         anyhow::bail!(
-            "Feature '{}' has incomplete work packages:\n  {}\nFinish all WPs before shipping.",
+            "Feature '{}' has incomplete work packages:
+  {}
+Finish all WPs before shipping.",
             slug,
-            names.join("\n  ")
+            names.join("
+  ")
         );
     }
 
@@ -169,13 +173,17 @@ where
                 .map(|c| c.path.clone())
                 .collect();
             anyhow::bail!(
-                "Merge conflict when merging {} branch '{}' into '{}'.\n\
-                Conflicting files:\n  {}\n\
+                "Merge conflict when merging {} branch '{}' into '{}'.
+\
+                Conflicting files:
+  {}
+\
                 Resolve conflicts manually and re-run `agileplus ship`.",
                 wp_label,
                 branch,
                 target_branch,
-                conflicts.join("\n  ")
+                conflicts.join("
+  ")
             );
         }
 

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Runtime configuration loaded from environment variables and TOML files.
 
 use std::path::PathBuf;

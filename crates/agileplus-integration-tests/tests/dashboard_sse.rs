@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! T109: Dashboard SSE (Server-Sent Events) integration test.
 //!
 //! Verifies that feature mutations broadcast SSE events to connected clients.
@@ -101,7 +102,9 @@ async fn dashboard_sse_integration() -> anyhow::Result<()> {
                     Some(Ok(bytes)) => {
                         buffer.push_str(&String::from_utf8_lossy(&bytes));
                         // SSE events are delimited by double newlines.
-                        while let Some(idx) = buffer.find("\n\n") {
+                        while let Some(idx) = buffer.find("
+
+") {
                             let raw_event = buffer[..idx + 2].to_string();
                             buffer = buffer[idx + 2..].to_string();
 

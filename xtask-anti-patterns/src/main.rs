@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Anti-pattern detector binary.
 //!
 //! Implements §3 of `docs/ai-dd-governance.md`. Walks Rust source files in a
@@ -164,7 +165,8 @@ fn scan_file(path: &Path, out: &mut Vec<Finding>) {
             // SAFETY: within 2 preceding lines
             let lines: Vec<&str> = content.lines().collect();
             let start = idx.saturating_sub(2);
-            let window = lines.get(start..idx).unwrap_or(&[]).join("\n");
+            let window = lines.get(start..idx).unwrap_or(&[]).join("
+");
             if !window.contains("SAFETY:") {
                 out.push(Finding {
                     file: path.display().to_string(),
@@ -183,7 +185,8 @@ fn scan_file(path: &Path, out: &mut Vec<Finding>) {
                 .skip(idx)
                 .take(2)
                 .collect::<Vec<_>>()
-                .join("\n")
+                .join("
+")
                 .chars()
                 .take(80)
                 .collect();

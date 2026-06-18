@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Claim-bound worktree creation (audit rec #11).
 //!
 //! [`ClaimBoundWorktree::create`] is the single entry point for
@@ -229,7 +230,8 @@ mod tests {
             .current_dir(&path)
             .output()
             .unwrap();
-        std::fs::write(path.join("README.md"), "hello\n").unwrap();
+        std::fs::write(path.join("README.md"), "hello
+").unwrap();
         StdCommand::new("git")
             .args(["add", "."])
             .current_dir(&path)

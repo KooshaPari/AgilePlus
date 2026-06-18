@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! agileplus-cache — caching layer for projections and rate limiting.
 
 pub mod config;

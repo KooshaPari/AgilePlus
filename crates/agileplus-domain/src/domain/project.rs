@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Project aggregate — top-level organisational unit.
 
 use chrono::{DateTime, Utc};

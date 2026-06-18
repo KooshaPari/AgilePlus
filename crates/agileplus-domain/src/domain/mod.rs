@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Domain module — all aggregate types and value objects.
 
 pub mod audit;

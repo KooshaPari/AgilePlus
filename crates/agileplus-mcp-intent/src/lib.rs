@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! agileplus-mcp-intent — MCP tool + HTTP service for converting user prompts
 //! into AgilePlus intent graphs using the ontology schema.
 //!

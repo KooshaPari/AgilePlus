@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Dark-factory loop — queue → claim → worktree → trail → PR.
 //!
 //! The `Factory` struct is the entry point. It owns a [`ClaimStoreTrait`]
@@ -165,7 +166,12 @@ impl<Q: IssueQueue> Factory<Q> {
                     branch: branch.clone(),
                     title: format!("factory: {}", issue.title),
                     body: format!(
-                        "Automated PR for issue #{}\n\nTrail:\n```json\n{}\n```",
+                        "Automated PR for issue #{}
+
+Trail:
+```json
+{}
+```",
                         issue.number,
                         worker.trail.to_json().unwrap_or_default()
                     ),

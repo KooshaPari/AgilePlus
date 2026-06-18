@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Factory configuration — autonomy levels, repo, label filter, worker limits.
 
 use serde::{Deserialize, Serialize};

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! MCP transports — stdio and SSE.
 //!
 //! Both transports are async and work with the [`McpServer`] trait.

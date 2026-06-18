@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Domain ↔ Protobuf conversion functions.
 //!
 //! Rust's orphan rule prevents implementing foreign traits on foreign types.

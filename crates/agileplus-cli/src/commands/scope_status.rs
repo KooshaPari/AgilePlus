@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `ap scope-status` — show the active cycle and the modules within
 //! its scope, plus a count of features associated with each module.
 //!
@@ -102,11 +103,13 @@ pub fn run(args: &ScopeStatusArgs) -> Result<()> {
     }
 
     if modules.is_empty() {
-        println!("\nNo modules in scope.");
+        println!("
+No modules in scope.");
         return Ok(());
     }
 
-    println!("\nModules:");
+    println!("
+Modules:");
     println!("  {:<3}  {:<18}  {:<28}  FEATURES", "ID", "SLUG", "NAME");
     println!("  {}", "-".repeat(60));
     for m in &modules {

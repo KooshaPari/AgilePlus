@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Two-phase commit coordinator for convoys.
 
 use anyhow::{anyhow, Result};

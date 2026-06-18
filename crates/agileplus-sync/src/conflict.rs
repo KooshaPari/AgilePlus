@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Conflict detection for sync operations.
 //!
 //! Traceability: FR-SYNC-CONFLICT / WP09-T054

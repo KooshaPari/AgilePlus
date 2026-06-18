@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! AgilePlus performance benchmarks.
 //!
 //! This crate contains Criterion benchmarks for all major subsystems:

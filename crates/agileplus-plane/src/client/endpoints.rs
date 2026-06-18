@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Endpoint path builders for Plane.so API URLs.
 
 /// Internal helpers for formatting Plane.so endpoint URLs.

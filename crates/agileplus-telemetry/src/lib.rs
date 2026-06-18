@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! AgilePlus OpenTelemetry telemetry crate.
 //!
 //! Provides a thin hexagonal telemetry init module with:
