@@ -60,6 +60,10 @@ pub fn parse_dot(dot: &str) -> Result<Graph, PipelineError> {
         if line == "{" || line == "}" {
             continue;
         }
+        // Skip edge lines — they are parsed in Pass 2
+        if line.contains("->") {
+            continue;
+        }
 
         if let Some(caps) = node_re.captures(line) {
             let name = caps[1].trim().to_string();
