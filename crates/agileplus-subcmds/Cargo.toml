@@ -11,8 +11,16 @@ categories = ["development-tools"]
 authors = ["kooshapari"]
 
 [dependencies]
-# No deps for now - just a stub crate
-# tracera-core = { path = "../../../Tracera/crates/tracera-core" }
+agileplus-domain = { path = "../agileplus-domain" }
+agileplus-sync = { path = "../agileplus-sync" }
+agileplus-triage = { path = "../agileplus-triage" }
+serde.workspace = true
+serde_json.workspace = true
+chrono.workspace = true
+tracing.workspace = true
+anyhow.workspace = true
+clap = { version = "4", features = ["derive"] }
+tokio.workspace = true
 
 [lib]
 name = "agileplus_subcmds"

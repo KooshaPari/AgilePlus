@@ -3,13 +3,19 @@ name = "agileplus-grpc"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
-license = "MIT OR Apache-2.0"
-repository = "https://github.com/KooshaPari/AgilePlus"
-description = "agileplus grpc — Phenotype infrastructure crate (AgilePlus)"
-documentation = "https://docs.rs/agileplus-grpc"
-keywords = ["phenotype", "agileplus", "grpc"]
-categories = ["network-programming"]
-authors = ["kooshapari"]
+
+[dependencies]
+agileplus-domain = { path = "../agileplus-domain" }
+agileplus-proto = { path = "../rust" }
+tonic = { workspace = true }
+prost = "0.13"
+tokio.workspace = true
+tokio-stream = { version = "0.1", features = ["sync"] }
+futures = "0.3"
+tracing.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+chrono.workspace = true
 
 [build-dependencies]
 tonic-build.workspace = true
