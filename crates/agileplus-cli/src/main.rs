@@ -29,6 +29,10 @@ use sync_cmd::SyncArgs;
     arg_required_else_help = true
 )]
 struct Cli {
+    /// SQLite database path. Defaults to AGILEPLUS_DB, then ./agileplus.db.
+    #[arg(long, env = "AGILEPLUS_DB", value_name = "PATH", global = true)]
+    db: Option<PathBuf>,
+
     #[command(subcommand)]
     command: Command,
 }
@@ -62,18 +66,35 @@ enum Command {
     ListEpics(commands::list_epics::ListEpicsArgs),
     /// List stories, optionally filtered by epic and/or status
     ListStories(commands::list_stories::ListStoriesArgs),
-    /// Worklog schema management (validate/convert/schema/list)
-    Worklog(commands::worklog::WorklogArgs),
-    /// DAG orchestration (pick/claim/heartbeat/done/dedup/scan/topology/where)
-    Dag(commands::dag::DagArgs),
-    /// Import a dagctl SQLite db into AgilePlus work_packages + wp_dependencies
-    ImportDagctl(commands::import_dagctl::ImportDagctlArgs),
-    /// Convert a natural language prompt into a structured intent graph
-    Intent(commands::intent::IntentArgs),
-    /// Link work items to Tracera trace IDs
-    Trace(commands::trace::TraceCmd),
-    /// Print a high-level project status summary
-    Status,
+    /// Project management (MVP)
+    Project {
+        #[command(subcommand)]
+        sub: commands::mvp::ProjectCmd,
+    },
+    /// Epic management (MVP)
+    Epic {
+        #[command(subcommand)]
+        sub: commands::mvp::EpicCmd,
+    },
+    /// Story management (MVP)
+    Story {
+        #[command(subcommand)]
+        sub: commands::mvp::StoryCmd,
+    },
+    /// Work-package management (MVP)
+    Wp {
+        #[command(subcommand)]
+        sub: commands::mvp::WpCmd,
+    },
+    /// Work-package dependency management (MVP)
+    Dep {
+        #[command(subcommand)]
+        sub: commands::mvp::DepCmd,
+    },
+    /// Transition a work-package or story to a new state (MVP)
+    Transition(commands::mvp::TransitionArgs),
+    /// List planned work packages that are ready to start (MVP)
+    NextReady(commands::mvp::NextReadyArgs),
 }
 
 #[derive(Subcommand)]
@@ -121,13 +142,10 @@ enum ModuleCmd {
 enum CycleCmd {
     /// Show the current (active) cycle
     Current,
-    /// List all known cycles
-    List,
-    /// Print which cycle would become active if id were promoted
-    Set {
-        /// Cycle id to set as active
-        id: i64,
-    },
+    /// Create a cycle
+    Create(commands::mvp::CycleCreateArgs),
+    /// Add a story (or all stories of an epic) to a cycle
+    Add(commands::mvp::CycleAddArgs),
 }
 
 // ── in-memory mock store ─────────────────────────────────────────────────────
@@ -484,10 +502,18 @@ fn truncate(s: &str, max: usize) -> String {
 
 /// Resolve the SQLite database path from `AGILEPLUS_DB` env var or fall back
 /// to `./agileplus.db` in the current directory.
-fn db_path_from_env() -> PathBuf {
-    std::env::var("AGILEPLUS_DB")
-        .map(PathBuf::from)
-        .unwrap_or_else(|_| PathBuf::from("agileplus.db"))
+fn db_path(cli: &Cli) -> PathBuf {
+    cli.db
+        .clone()
+        .unwrap_or_else(|| PathBuf::from("agileplus.db"))
+}
+
+/// Open the file-backed SQLite storage adapter at the resolved DB path.
+fn open_storage(
+    db_path: &std::path::Path,
+) -> anyhow::Result<agileplus_sqlite::SqliteStorageAdapter> {
+    agileplus_sqlite::SqliteStorageAdapter::new(db_path)
+        .map_err(|e| anyhow::anyhow!("open db: {e}"))
 }
 
 #[cfg(test)]
@@ -525,6 +551,7 @@ mod tests {
 async fn main() {
     let _telemetry = agileplus_telemetry::init_subscriber().ok();
     let cli = Cli::parse();
+    let db_path = db_path(&cli);
     let store = MockStore::seed();
 
     let result: anyhow::Result<()> = async {
@@ -543,8 +570,14 @@ async fn main() {
             },
             Command::Cycle { sub } => match sub {
                 CycleCmd::Current => cmd_cycle_current(&store),
-                CycleCmd::List => cmd_cycle_list(&store),
-                CycleCmd::Set { id } => cmd_cycle_set(&store, id)?,
+                CycleCmd::Create(args) => {
+                    let storage = open_storage(&db_path)?;
+                    commands::mvp::cycle_create(&args, &storage).await?;
+                }
+                CycleCmd::Add(args) => {
+                    let storage = open_storage(&db_path)?;
+                    commands::mvp::cycle_add(&args, &storage).await?;
+                }
             },
             Command::Status => cmd_status(&store),
             Command::Version => cmd_version(),
@@ -555,37 +588,64 @@ async fn main() {
                 commands::seed_requirements::run(&args)?;
             }
             Command::ListProjects(args) => {
-                let db_path = db_path_from_env();
-                let storage = agileplus_sqlite::SqliteStorageAdapter::new(&db_path)
-                    .map_err(|e| anyhow::anyhow!("open db: {e}"))?;
+                let storage = open_storage(&db_path)?;
                 commands::list_projects::run(&args, &storage).await?;
             }
             Command::ListEpics(args) => {
-                let db_path = db_path_from_env();
-                let storage = agileplus_sqlite::SqliteStorageAdapter::new(&db_path)
-                    .map_err(|e| anyhow::anyhow!("open db: {e}"))?;
+                let storage = open_storage(&db_path)?;
                 commands::list_epics::run(&args, &storage).await?;
             }
             Command::ListStories(args) => {
-                let db_path = db_path_from_env();
-                let storage = agileplus_sqlite::SqliteStorageAdapter::new(&db_path)
-                    .map_err(|e| anyhow::anyhow!("open db: {e}"))?;
+                let storage = open_storage(&db_path)?;
                 commands::list_stories::run(&args, &storage).await?;
             }
-            Command::Worklog(args) => {
-                commands::worklog::run(&args)?;
+            Command::Project { sub } => {
+                let storage = open_storage(&db_path)?;
+                match sub {
+                    commands::mvp::ProjectCmd::Create(args) => {
+                        commands::mvp::project_create(&args, &storage).await?;
+                    }
+                }
             }
-            Command::Dag(args) => {
-                commands::dag::run_dag(args).await?;
+            Command::Epic { sub } => {
+                let storage = open_storage(&db_path)?;
+                match sub {
+                    commands::mvp::EpicCmd::Create(args) => {
+                        commands::mvp::epic_create(&args, &storage).await?;
+                    }
+                }
             }
-            Command::ImportDagctl(args) => {
-                commands::import_dagctl::run(&args)?;
+            Command::Story { sub } => {
+                let storage = open_storage(&db_path)?;
+                match sub {
+                    commands::mvp::StoryCmd::Create(args) => {
+                        commands::mvp::story_create(&args, &storage).await?;
+                    }
+                }
             }
-            Command::Intent(args) => {
-                commands::intent::run(&args)?;
+            Command::Wp { sub } => {
+                let storage = open_storage(&db_path)?;
+                match sub {
+                    commands::mvp::WpCmd::Create(args) => {
+                        commands::mvp::wp_create(&args, &storage).await?;
+                    }
+                }
             }
-            Command::Trace(cmd) => {
-                cmd.run().await?;
+            Command::Dep { sub } => {
+                let storage = open_storage(&db_path)?;
+                match sub {
+                    commands::mvp::DepCmd::Add(args) => {
+                        commands::mvp::dep_add(&args, &storage).await?;
+                    }
+                }
+            }
+            Command::Transition(args) => {
+                let storage = open_storage(&db_path)?;
+                commands::mvp::transition(&args, &storage).await?;
+            }
+            Command::NextReady(args) => {
+                let storage = open_storage(&db_path)?;
+                commands::mvp::next_ready(&args, &storage).await?;
             }
         }
         Ok(())
