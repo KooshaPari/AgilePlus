@@ -45,7 +45,7 @@ fn envvar_wins_over_file_and_default() {
 
     let r = Resolver::empty()
         .env(K_ENV_WINS)
-        .file(format!("{K_ENV_WINS}=false\n"))
+        .file(&format!("{K_ENV_WINS}=false\n"))
         .default_bool(K_ENV_WINS, false);
 
     assert!(r.bool(K_ENV_WINS).unwrap());
@@ -60,7 +60,7 @@ fn file_wins_over_default_when_env_is_unset() {
 
     let r = Resolver::empty()
         .env(K_FILE_WINS)
-        .file(format!("{K_FILE_WINS}=1\n"))
+        .file(&format!("{K_FILE_WINS}=1\n"))
         .default_bool(K_FILE_WINS, false);
 
     assert!(
@@ -92,10 +92,7 @@ fn parse_error_carries_origin_and_raw() {
     let err = r.i64(K_PARSE_FAIL).expect_err("parse must fail");
     match err {
         FlagError::Parse {
-            name,
-            raw,
-            origin,
-            ..
+            name, raw, origin, ..
         } => {
             assert_eq!(name, K_PARSE_FAIL);
             assert_eq!(raw, "not-a-number");
