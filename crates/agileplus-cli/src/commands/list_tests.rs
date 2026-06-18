@@ -838,8 +838,19 @@ impl StoragePort for MemStore {
     async fn update_feature_state(&self, _: i64, _: FeatureState) -> Result<(), DomainError> {
         unimplemented!()
     }
-    async fn list_features_by_state(&self, _: FeatureState) -> Result<Vec<Feature>, DomainError> {
+    async fn update_feature(&self, _: &Feature) -> Result<(), DomainError> {
         unimplemented!()
+    }
+    async fn list_features_by_state(
+        &self,
+        state: FeatureState,
+    ) -> Result<Vec<Feature>, DomainError> {
+        Ok(self
+            .features
+            .iter()
+            .filter(|feature| feature.state == state)
+            .cloned()
+            .collect())
     }
     async fn list_all_features(&self) -> Result<Vec<Feature>, DomainError> {
         unimplemented!()
