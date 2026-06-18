@@ -188,7 +188,9 @@ agileplus-graph = { path = "crates/agileplus-graph" }
 agileplus-nats = { path = "crates/agileplus-nats" }
 agileplus-proto = { path = "crates/agileplus-proto" }
 agileplus-telemetry = { path = "crates/agileplus-telemetry" }
+agileplus-validate = { path = "crates/agileplus-validate" }
 shared-traceability = { path = "crates/shared-traceability" }
+toml = "0.8"
 tokio-stream = { version = "0.1", features = ["net", "sync"] }
 
 # cargo-machete false-positive ignores (dev-only / proc-macro / build-deps)
