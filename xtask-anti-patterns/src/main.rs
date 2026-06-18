@@ -55,10 +55,7 @@ fn main() -> ExitCode {
         return ExitCode::from(2);
     }
 
-    let high = findings
-        .iter()
-        .filter(|f| f.severity == Severity::High)
-        .count();
+    let high = findings.iter().filter(|f| f.severity == Severity::High).count();
     let report = Report {
         path: path.display().to_string(),
         high_count: high,
