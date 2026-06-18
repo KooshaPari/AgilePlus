@@ -11,8 +11,7 @@ members = [
 version = "0.1.0"
 edition = "2024"
 license = "MIT"
-rust-version = "1.85"
-repository = "https://github.com/phenotype/agileplus"
+rust-version = "1.88"
 
 [workspace.lints.rust]
 unsafe_code = "forbid"
@@ -102,9 +101,14 @@ keyring = "3"
 
 # OpenAPI
 utoipa = "4"
+uuid = { version = "1", features = ["v4", "serde"] }
+async-nats = "0.38"
+paste = "1"
+agileplus-config = { path = "crates/agileplus-config" }
+agileplus-proto = { path = "crates/agileplus-proto" }
+tokio-stream = { version = "0.1", features = ["net", "sync"] }
 
-# Dash (agent deps)
-dashmap = "6"
-regex = "1"
-tokio-test = "0.4"
-tempfile = "3"
+# cargo-machete false-positive ignores (dev-only / proc-macro / build-deps)
+[workspace.metadata.cargo-machete]
+ignored = ["cucumber", "axum-test", "paste", "dirs", "serde_yaml", "uuid", "async-trait", "tracing-subscriber", "tracing-appender", "tracing-opentelemetry", "futures", "futures-util", "tonic", "tonic-build", "prost", "prost-build", "utoipa", "opentelemetry", "opentelemetry_sdk", "opentelemetry-otlp", "gix", "tempfile"]
+
