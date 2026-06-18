@@ -9,7 +9,6 @@ pub mod credentials;
 pub mod domain;
 pub mod error;
 pub use error::DomainResult;
-pub mod adapters;
 pub mod intent_graph;
 pub mod ports;
 pub mod traceability;
