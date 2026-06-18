@@ -1,8 +1,5 @@
 name: Doc Links
-
-permissions:
-  contents: read
-
+permissions: read-all
 on:
   workflow_dispatch:
   push:
