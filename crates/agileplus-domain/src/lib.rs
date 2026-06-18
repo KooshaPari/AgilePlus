@@ -1,13 +1,7 @@
-//! AgilePlus domain layer — entities, FSM, governance, audit.
-//! Implements core business logic with zero I/O dependencies.
-//!
-//! Traceability: FR-DOMAIN-* / WP01-T002
+//! `agileplus-domain` — domain types for AgilePlus event sourcing.
 
-pub use error::DomainError;
-pub type DomainResult<T> = std::result::Result<T, DomainError>;
-
-pub mod config;
-pub mod credentials;
 pub mod domain;
-pub mod error;
-pub mod ports;
+
+/// Re-export all domain types at the crate root for ergonomic access.
+pub use domain::event::Event;
+pub use domain::snapshot::Snapshot;
