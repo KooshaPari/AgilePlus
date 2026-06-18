@@ -21,6 +21,7 @@ thiserror = { workspace = true }
 async-trait = "0.1"
 tokio = { workspace = true }
 uuid = { workspace = true }
+# Shared ecosystem crates (DOMAIN_ROLES owners per ADR-ECO-014; W18b repoint)
 phenotype-error-core.workspace = true
 
 [dev-dependencies]
