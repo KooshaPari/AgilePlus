@@ -247,11 +247,9 @@ pub fn run(args: &ImportDagctlArgs) -> Result<()> {
 fn ensure_feature(conn: &Connection, slug: &str, name: &str) -> Result<i64> {
     // Try to find an existing feature with this slug.
     let found: Option<i64> = conn
-        .query_row(
-            "SELECT id FROM features WHERE slug = ?",
-            [slug],
-            |r| r.get(0),
-        )
+        .query_row("SELECT id FROM features WHERE slug = ?", [slug], |r| {
+            r.get(0)
+        })
         .ok();
     if let Some(id) = found {
         return Ok(id);
@@ -264,11 +262,9 @@ fn ensure_feature(conn: &Connection, slug: &str, name: &str) -> Result<i64> {
         rusqlite::params![slug, name, vec![0u8; 32].as_slice(), now, now],
     )
     .context("inserting feature row")?;
-    let id: i64 = conn.query_row(
-        "SELECT id FROM features WHERE slug = ?",
-        [slug],
-        |r| r.get(0),
-    )?;
+    let id: i64 = conn.query_row("SELECT id FROM features WHERE slug = ?", [slug], |r| {
+        r.get(0)
+    })?;
     Ok(id)
 }
 
@@ -312,9 +308,7 @@ fn derive_title(description: &str, fallback_id: &str) -> String {
         return fallback_id.to_string();
     }
     // Find first sentence boundary.
-    let cut = trimmed
-        .find(['.', ':', '\n'])
-        .unwrap_or(trimmed.len());
+    let cut = trimmed.find(['.', ':', '\n']).unwrap_or(trimmed.len());
     let first = &trimmed[..cut];
     // Collapse whitespace.
     let collapsed: String = first.split_whitespace().collect::<Vec<_>>().join(" ");
@@ -360,8 +354,17 @@ mod tests {
         let t = derive_title(&long, "task-1");
         assert_eq!(t.chars().count(), 200);
         assert!(t.ends_with('…'));
-        assert_eq!(derive_title("First sentence. Second one.", "fb"), "First sentence");
-        assert_eq!(derive_title("Just a title without period", "fb"), "Just a title without period");
-        assert_eq!(derive_title("With colon: more text\nignored", "fb"), "With colon");
+        assert_eq!(
+            derive_title("First sentence. Second one.", "fb"),
+            "First sentence"
+        );
+        assert_eq!(
+            derive_title("Just a title without period", "fb"),
+            "Just a title without period"
+        );
+        assert_eq!(
+            derive_title("With colon: more text\nignored", "fb"),
+            "With colon"
+        );
     }
 }

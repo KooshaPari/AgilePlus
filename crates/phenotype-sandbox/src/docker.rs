@@ -147,7 +147,10 @@ impl DockerBackend {
             ..Default::default()
         };
 
-        let start_result = self.client.start_exec(&exec.id, Some(start_options)).await?;
+        let start_result = self
+            .client
+            .start_exec(&exec.id, Some(start_options))
+            .await?;
 
         let mut stdout: Vec<u8> = Vec::new();
         let mut stderr: Vec<u8> = Vec::new();
@@ -190,7 +193,11 @@ impl DockerBackend {
     pub async fn stop_container(&self, container_id: &str) -> Result<()> {
         info!(container_id, "stopping container");
         let options = StopContainerOptions { t: 10 };
-        if let Err(e) = self.client.stop_container(container_id, Some(options)).await {
+        if let Err(e) = self
+            .client
+            .stop_container(container_id, Some(options))
+            .await
+        {
             warn!(error = %e, "stop container failed (container may already be stopped)");
         }
         Ok(())
@@ -203,7 +210,11 @@ impl DockerBackend {
             force: true,
             ..Default::default()
         };
-        if let Err(e) = self.client.remove_container(container_id, Some(options)).await {
+        if let Err(e) = self
+            .client
+            .remove_container(container_id, Some(options))
+            .await
+        {
             warn!(error = %e, "remove container failed (container may already be removed)");
         }
         Ok(())
