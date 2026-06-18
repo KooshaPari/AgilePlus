@@ -31,4 +31,4 @@ wiremock = "0.6"
 tokio-test = "0.4"
 
 [package.metadata.cargo-machete]
-ignored = ["anyhow", "chrono", "dirs"]
+ignored = ["anyhow", "chrono", "dirs", "reqwest", "serde", "serde_json", "tempfile", "thiserror", "tokio", "toml", "tracing", "uuid"]
