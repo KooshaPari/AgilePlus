@@ -252,17 +252,19 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
+      - uses: actions/checkout@v6
       # Workspace path-deps resolve into the phenoShared sibling; clone it so
       # cargo check can load those manifests (see quality-gate.yml).
       - name: Checkout phenoShared sibling
         run: |
-          git clone --depth 1 \
+          git clone \
             "https://x-access-token:${{ github.token }}@github.com/KooshaPari/phenoShared.git" \
             "${{ github.workspace }}/../phenoShared"
-      - uses: dtolnay/rust-toolchain@98e1b82157cd469e843cb7f524c1313b4ad9492c  # 1.88.0 (toolchain)
-      - uses: Swatinem/rust-cache@42dc69e1aa15d09112580998cf2ef0119e2e91ae  # v2
-      - uses: arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b  # v3
+          git -C "${{ github.workspace }}/../phenoShared" \
+            checkout c3aee3361ff4888a8ced71c8861a8d54ae65fca0
+      - uses: dtolnay/rust-toolchain@1.88.0
+      - uses: Swatinem/rust-cache@v2
+      - uses: arduino/setup-protoc@v3
         with:
           version: "28.x"
           repo-token: ${{ github.token }}
