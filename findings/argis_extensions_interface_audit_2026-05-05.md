@@ -46,23 +46,10 @@ stats.MinConns undefined (type *pgxpool.Stat has no field or method MinConns)
 ```
 pgxpool.Stat doesn't have MinConns in this version. Test needs updating.
 
-## Multi-Module Structure
-
-argis-extensions has **nested Go modules**:
-- Main module: `github.com/kooshapari/bifrost-extensions`
-- Bifrost module: `github.com/kooshapari/bifrost` (at `./bifrost/core/`)
-- SLM module: `./slm-server/`
-
-Schema drift involves generated GraphQL code (`api/graphql/gen/`) and the resolvers that implement it.
-
 ## Recommended Action
 
 Priority order:
-1. **ARCHITECTURAL DECISION NEEDED** — the GraphQL schema (generated) and resolvers have drifted. Need to determine: regenerate schema from source, or update resolvers to match generated schema.
-2. The `models` field in resolvers (`ModelStore`) needs `CreateModel` method
-3. `subscriptionResolver` needs `RoutingUpdates` with updated signature: `HealthUpdates(ctx, []string)` not `HealthUpdates(ctx)`
-4. `mutationResolver` needs `UpdateModel` method
-5. `account_test.go` mock type mismatch — `*MockAccount` can't satisfy `*EnhancedAccount`
-6. `db_test.go` MinConns — pgxpool version mismatch
-
-**Do NOT attempt partial fixes** — the GraphQL schema and resolver signatures must be synchronized.
+1. Fix syntax error in `schemas.go:485` — repo won't build
+2. Align resolver signatures with GraphQL schema (Models args, add UpdateModel, add RoutingUpdates)
+3. Add CreateModel to ModelStore interface
+4. Update db_test.go MinConns assertion
