@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! # pheno-ssot-template — SSOT trait + struct-and-render pattern
 //!
 //! A [`SSOT`] value is a typed, self-describing record that knows how
