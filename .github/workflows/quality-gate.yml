@@ -13,13 +13,11 @@ jobs:
       # cargo can load those manifests during clippy/test.
       - name: Checkout phenoShared sibling
         run: |
-          git clone \
+          git clone --depth 1 \
             "https://x-access-token:${{ github.token }}@github.com/KooshaPari/phenoShared.git" \
             "${{ github.workspace }}/../phenoShared"
-          git -C "${{ github.workspace }}/../phenoShared" \
-            checkout c3aee3361ff4888a8ced71c8861a8d54ae65fca0
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: arduino/setup-protoc@v3
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8  # stable
+      - uses: arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b  # v3
         with:
           version: "28.x"
           repo-token: ${{ github.token }}
