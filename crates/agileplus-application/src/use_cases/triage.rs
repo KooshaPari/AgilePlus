@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
-﻿//! Use-case implementations for the CLI triage subcommands.
+//! Use-case implementations for the CLI triage subcommands.
 //!
 //! These orchestrate the new triage primitives (dedup, claim, repo_introspect)
 //! and the agileplus-graph dependency graph into a coherent set of
@@ -159,8 +158,8 @@ impl<W: WpRepository> AppState<W> {
             .lock()
             .map_err(|_| anyhow!("claim store lock poisoned"))?
             .lookup(ClaimKind::Worktree, &req.wp_id);
-        // We can't re-lock here without re-entrancy; the next call
-        // to `release` uses the original `claim_id` from the request.
+            // We can't re-lock here without re-entrancy; the next call
+            // to `release` uses the original `claim_id` from the request.
 
         // Release the explicit claim_id from the request.
         let _ = self
@@ -328,7 +327,10 @@ impl WpGraph {
                 cycle: Some(cycle),
             }
         } else {
-            TopoResult { order, cycle: None }
+            TopoResult {
+                order,
+                cycle: None,
+            }
         }
     }
 
@@ -355,7 +357,9 @@ impl WpGraph {
 
         // Bucket by rank.
         let max_rank = rank.values().copied().max().unwrap_or(0);
-        let mut layers: Vec<Vec<String>> = (0..=max_rank).map(|_| Vec::new()).collect();
+        let mut layers: Vec<Vec<String>> = (0..=max_rank)
+            .map(|_| Vec::new())
+            .collect();
         for n in &self.nodes {
             let r = rank.get(n.as_str()).copied().unwrap_or(0);
             if let Some(layer) = layers.get_mut(r) {

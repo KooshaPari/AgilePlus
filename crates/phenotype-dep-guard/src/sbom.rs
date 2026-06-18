@@ -31,11 +31,7 @@ pub struct Component {
     /// CycloneDX package URL (`pkg:cargo/<name>@<version>`).
     pub purl: String,
     /// Optional external references (registry homepage).
-    #[serde(
-        rename = "externalReferences",
-        skip_serializing_if = "Vec::is_empty",
-        default
-    )]
+    #[serde(rename = "externalReferences", skip_serializing_if = "Vec::is_empty", default)]
     pub external_references: Vec<ExternalRef>,
 }
 
@@ -88,11 +84,7 @@ pub struct SbomRootComponent {
 impl Sbom {
     /// Build a new SBOM from a list of dependencies, rooted at `root_name`
     /// (typically the product name).
-    pub fn new(
-        root_name: impl Into<String>,
-        root_version: impl Into<String>,
-        deps: &[Dependency],
-    ) -> Self {
+    pub fn new(root_name: impl Into<String>, root_version: impl Into<String>, deps: &[Dependency]) -> Self {
         let components = deps
             .iter()
             .map(|d| Component {
