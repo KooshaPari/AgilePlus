@@ -131,7 +131,11 @@ impl Resolver {
     /// Like [`Resolver::env`] but the envvar name is
     /// different from the flag name (e.g. flag
     /// `MAX_CONN` → envvar `PHENO_MAX_CONN`).
-    pub fn env_as(mut self, flag_name: impl Into<String>, envvar: impl Into<String>) -> Self {
+    pub fn env_as(
+        mut self,
+        flag_name: impl Into<String>,
+        envvar: impl Into<String>,
+    ) -> Self {
         // The mapping is implicit: when the caller reads
         // `flag_name`, we consult the envvar that was
         // registered. We store the envvar under the
@@ -155,20 +159,24 @@ impl Resolver {
     /// Register a `bool` default. Booleans accept
     /// `"1"`, `"true"`, `"yes"` (true) and `"0"`,
     /// `"false"`, `"no"` (false), case-insensitive.
-    pub fn default_bool(mut self, flag_name: impl Into<String>, value: bool) -> Self {
+    pub fn default_bool(
+        mut self,
+        flag_name: impl Into<String>,
+        value: bool,
+    ) -> Self {
         self.defaults.insert(
             flag_name.into(),
-            StringValue::Bool(if value {
-                "1".to_string()
-            } else {
-                "0".to_string()
-            }),
+            StringValue::Bool(if value { "1".to_string() } else { "0".to_string() }),
         );
         self
     }
 
     /// Register an `i64` default. Decimal only.
-    pub fn default_i64(mut self, flag_name: impl Into<String>, value: i64) -> Self {
+    pub fn default_i64(
+        mut self,
+        flag_name: impl Into<String>,
+        value: i64,
+    ) -> Self {
         self.defaults
             .insert(flag_name.into(), StringValue::Int(value.to_string()));
         self
