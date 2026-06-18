@@ -116,7 +116,7 @@ Useful binary outputs:
 
 | Tier          | Command                                       | Owner       | Wall-clock |
 |---------------|-----------------------------------------------|-------------|------------|
-| Unit (Rust)   | `cargo test --workspace`                      | Core team   | < 2 min    |
+| Unit (Rust)   | `just test-unit`                             | Core team   | < 2 min    |
 | Unit (Python) | `uv run pytest` (in `python/`)                | Adapter     | < 1 min    |
 | Unit (Web)    | `pnpm --filter ./dashboard test`              | UI team     | < 1 min    |
 | Integration   | `just test-integration`                       | Core team   | < 10 min   |
@@ -125,7 +125,7 @@ Useful binary outputs:
 | Fuzz          | `cargo +nightly fuzz run parser -- -max_total_time=600` | Security | 10 min |
 | E2E           | `just test-e2e`                               | Core team   | < 30 min   |
 
-CI runs unit + snapshot + integration + property on every PR. Fuzz
+CI runs `just test`, snapshot, integration, and property on every PR. Fuzz
 and E2E run nightly and on release tags.
 
 ## 6. Coding Standards

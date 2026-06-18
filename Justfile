@@ -38,16 +38,15 @@ lint:
 fmt:
     cargo fmt --all --check
 
-# Apply formatter
-fmt-fix:
-    cargo fmt --all
+test: test-unit test-integration
 
-# Run tests
-test:
+test-unit:
     cargo test --workspace --all-features
 
-# License + advisory + ban + source checks (cargo-deny)
-deny:
+test-integration:
+    cargo test -p agileplus-integration-tests --features integration -- --include-ignored
+
+audit:
     cargo deny check
 
 # Security advisories (cargo-audit)
