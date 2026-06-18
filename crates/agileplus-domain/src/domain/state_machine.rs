@@ -92,20 +92,26 @@ mod tests {
 
     #[test]
     fn valid_lifecycle_transition_succeeds() {
-        let result = FeatureState::Created.transition(FeatureState::Specified).unwrap();
+        let result = FeatureState::Created
+            .transition(FeatureState::Specified)
+            .unwrap();
         assert_eq!(result.transition.from, FeatureState::Created);
         assert_eq!(result.transition.to, FeatureState::Specified);
     }
 
     #[test]
     fn invalid_transition_returns_error() {
-        let err = FeatureState::Created.transition(FeatureState::Shipped).unwrap_err();
+        let err = FeatureState::Created
+            .transition(FeatureState::Shipped)
+            .unwrap_err();
         assert!(matches!(err, DomainError::InvalidTransition { .. }));
     }
 
     #[test]
     fn backward_transition_rejected() {
-        let err = FeatureState::Specified.transition(FeatureState::Created).unwrap_err();
+        let err = FeatureState::Specified
+            .transition(FeatureState::Created)
+            .unwrap_err();
         assert!(matches!(err, DomainError::InvalidTransition { .. }));
     }
 
@@ -123,15 +129,26 @@ mod tests {
         ];
         for window in states.windows(2) {
             let result = window[0].transition(window[1]);
-            assert!(result.is_ok(), "transition {:?} -> {:?} should succeed", window[0], window[1]);
+            assert!(
+                result.is_ok(),
+                "transition {:?} -> {:?} should succeed",
+                window[0],
+                window[1]
+            );
         }
     }
 
     #[test]
     fn feature_state_from_str_roundtrips() {
         let all_states = [
-            "created", "specified", "researched", "planned",
-            "implementing", "validated", "shipped", "retrospected",
+            "created",
+            "specified",
+            "researched",
+            "planned",
+            "implementing",
+            "validated",
+            "shipped",
+            "retrospected",
         ];
         for s in all_states {
             let state: FeatureState = s.parse().unwrap();
