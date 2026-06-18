@@ -91,3 +91,19 @@ repos:
         language: script
         pass_filenames: false
         stages: [pre-commit, pre-push]
+
+      - id: legacy-tooling-scan
+        name: Legacy Tooling Anti-Pattern Scanner
+        description: Enforces Phenotype Technology Adoption Philosophy per CLAUDE.md
+        entry: python3 tooling/legacy-enforcement/scanner/legacy_tooling_scanner.py
+        language: system
+        pass_filenames: false
+        always_run: true
+        args:
+          - --repo-root
+          - .
+          - --policy
+          - tooling/legacy-enforcement/policy/rules.yaml
+          - --fail-on-severity
+          - high
+          - --report-only
