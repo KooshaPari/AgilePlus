@@ -1195,18 +1195,15 @@ async fn auth_health_is_public_no_token_needed() {
 #[tokio::test]
 async fn otel_request_span_middleware_wraps_handler() {
     use agileplus_api::middleware::otel::opentelemetry_tracing_layer;
-    use axum::{routing::get, Json, Router};
+    use axum::{Json, Router, routing::get};
     use axum_test::TestServer;
 
     // Minimal router with the OTel layer applied — mirrors production wiring.
     let app = Router::new()
-        .route(
-            "/ping",
-            get(|| async { Json(serde_json::json!({"ok": true})) }),
-        )
+        .route("/ping", get(|| async { Json(serde_json::json!({"ok": true})) }))
         .layer(opentelemetry_tracing_layer());
 
-    let server = TestServer::new(app);
+    let server = TestServer::new(app).unwrap();
     let resp = server.get("/ping").await;
     resp.assert_status_ok();
 
@@ -1220,17 +1217,14 @@ async fn otel_request_span_middleware_wraps_handler() {
 #[tokio::test]
 async fn otel_request_span_propagates_traceparent() {
     use agileplus_api::middleware::otel::opentelemetry_tracing_layer;
-    use axum::{routing::get, Json, Router};
+    use axum::{Json, Router, routing::get};
     use axum_test::TestServer;
 
     let app = Router::new()
-        .route(
-            "/ping",
-            get(|| async { Json(serde_json::json!({"ok": true})) }),
-        )
+        .route("/ping", get(|| async { Json(serde_json::json!({"ok": true})) }))
         .layer(opentelemetry_tracing_layer());
 
-    let server = TestServer::new(app);
+    let server = TestServer::new(app).unwrap();
     let resp = server
         .get("/ping")
         .add_header(
