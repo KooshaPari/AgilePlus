@@ -4,8 +4,10 @@
 
 # AgilePlus
 
-![Scorecard](https://api.securityscorecards.dev/projects/github.com/KooshaPari/AgilePlus/badge)
-[![codecov](https://codecov.io/gh/KooshaPari/AgilePlus/graph/badge.svg?branch=main)](https://codecov.io/gh/KooshaPari/AgilePlus)
+[![CI](https://github.com/KooshaPari/AgilePlus/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/KooshaPari/AgilePlus/actions/workflows/ci.yml)
+[![crates.io](https://img.shields.io/crates/v/agileplus-domain.svg)](https://crates.io/crates/agileplus-domain)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Phenotype](https://img.shields.io/badge/Phenotype-org-blueviolet)](https://github.com/KooshaPari)
 
 > **Pinned references (Phenotype-org)**
 > - MSRV: see `rust-toolchain.toml`

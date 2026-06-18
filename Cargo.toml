@@ -72,7 +72,6 @@ members = [
     "crates/agileplus-telemetry",
     "crates/agileplus-trace-validator",
     "crates/agileplus-triage",
-    "crates/agileplus-trace-validator",
     "crates/agileplus-import",
     "crates/agileplus-proto",
     "crates/agileplus-integration-tests",
