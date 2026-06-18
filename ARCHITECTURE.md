@@ -146,36 +146,3 @@ Use this document for cross-repo boundaries. Use each repo README for local arch
 | hwLedger | [hwLedger/README.md](hwLedger/README.md) |
 | PolicyStack | [PolicyStack/README.md](PolicyStack/README.md) |
 | phenoAI | [phenoAI/README.md](phenoAI/README.md) |
-
----
-
-## Rich Media Stubs
-
-<!-- RICH-MEDIA-STUB type="annotated-screenshot" subject="AgilePlus hexagonal architecture — Rust workspace + MCP server diagram" journey="" status="PUBLISHED" -->
-```mermaid
-flowchart LR
-  subgraph driving["Driving adapters"]
-    CLI["agileplus-cli"]
-    API["agileplus-api :4000"]
-    WEB["dashboard/web React"]
-  end
-  subgraph core["Domain core"]
-    DOM["Epic · Story · WorkPackage<br/>traceability links"]
-  end
-  subgraph driven["Driven adapters"]
-    SQL["agileplus-sqlite"]
-    GH["agileplus-github"]
-    PL["agileplus-plane"]
-    MCP["agileplus-mcp"]
-  end
-  CLI --> DOM
-  API --> DOM
-  WEB --> API
-  DOM --> SQL
-  DOM --> GH
-  DOM --> PL
-  MCP --> API
-```
-
-*Hexagonal view of the Rust workspace: driving adapters (CLI, REST API, React dashboard) call into the domain core; driven adapters persist and integrate externally. Export to annotated PNG via `doc-embeds` when a static asset is required for offline docs.*
-<!-- END-RICH-MEDIA-STUB -->
