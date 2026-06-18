@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Domain error types.
 
-use serde::{Deserialize, Serialize};
+use phenotype_error_core::ErrorCode;
 use thiserror::Error;
 
 /// Stable, language-agnostic error classification used for cross-ecosystem
@@ -103,12 +103,9 @@ impl From<DomainError> for ErrorCode {
 
             // validation / bad input (scope + state-machine violations are
             // invalid-argument-shaped from the caller's perspective)
-            // (InvalidClaim is claim-bound: a precondition failure, same shape
-            // as a bad argument — so it projects to ValidationError too.)
             DomainError::Validation(_)
             | DomainError::FeatureNotInModuleScope { .. }
-            | DomainError::InvalidTransition { .. }
-            | DomainError::InvalidClaim(_) => Self::ValidationError,
+            | DomainError::InvalidTransition { .. } => Self::ValidationError,
 
             DomainError::NotImplemented => Self::NotImplemented,
 
@@ -185,12 +182,6 @@ mod code_projection_tests {
     fn not_implemented_projects_to_not_implemented() {
         let c: ErrorCode = DomainError::NotImplemented.into();
         assert_eq!(c, ErrorCode::NotImplemented);
-    }
-
-    #[test]
-    fn invalid_claim_projects_to_validation_error() {
-        let c: ErrorCode = DomainError::InvalidClaim("not active".into()).into();
-        assert_eq!(c, ErrorCode::ValidationError);
     }
 
     #[test]
