@@ -12,6 +12,9 @@ _logger = logging.getLogger("dispatch_mcp")
 _log_level = os.environ.get("LOG_LEVEL", "").upper()
 if _log_level in ("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"):
     _logger.setLevel(getattr(logging, _log_level, logging.WARNING))
+# NOTE: Do not add DEBUG-level logging of tool arguments (message, tier, payload).
+# Dispatch messages may contain sensitive context. If DEBUG is needed for
+# troubleshooting, prefer logging route and timing only, never the payload content.
 logger = _logger
 
 # Shared httpx client for OmniRoute — reuses connections across dispatch calls.
