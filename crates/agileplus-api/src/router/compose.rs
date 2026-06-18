@@ -148,14 +148,23 @@ where
     };
     services.insert("sqlite".to_string(), sqlite_health);
 
-    // For services not yet wired (NATS, Dragonfly, Neo4j, MinIO), report
-    // them as degraded with an explanatory note rather than unavailable.
-    for name in &["nats", "dragonfly", "neo4j", "minio"] {
-        services.insert(
-            name.to_string(),
-            crate::responses::ServiceHealth::degraded("not configured in this deployment"),
-        );
-    }
+    // --- Env-gated service probes (2 s timeout each) ---
+    let probe_timeout = std::time::Duration::from_secs(2);
+
+    // NATS — check NATS_URL, attempt TCP connect
+    services.insert("nats".to_string(), probe_tcp_env("NATS_URL", probe_timeout).await);
+
+    // Dragonfly / Redis — check DRAGONFLY_URL then REDIS_URL
+    services.insert(
+        "dragonfly".to_string(),
+        probe_tcp_env_multi(&["DRAGONFLY_URL", "REDIS_URL"], probe_timeout).await,
+    );
+
+    // Neo4j — check NEO4J_URI, attempt TCP connect to host:port
+    services.insert("neo4j".to_string(), probe_tcp_env("NEO4J_URI", probe_timeout).await);
+
+    // MinIO/S3 — check S3_ENDPOINT, attempt TCP connect
+    services.insert("minio".to_string(), probe_tcp_env("S3_ENDPOINT", probe_timeout).await);
 
     let overall = DetailedHealthResponse::compute_status(&services).to_string();
 
@@ -175,6 +184,64 @@ async fn info_handler() -> Json<serde_json::Value> {
         "name": "agileplus-api",
         "version": env!("CARGO_PKG_VERSION"),
     }))
+}
+
+/// Probe a single env var: if set, TCP-connect to host:port with timeout.
+/// Returns `not_configured` if the env var is absent.
+async fn probe_tcp_env(env_key: &str, timeout: std::time::Duration) -> crate::responses::ServiceHealth {
+    let url = match std::env::var(env_key) {
+        Ok(v) => v,
+        Err(_) => return crate::responses::ServiceHealth::not_configured(),
+    };
+    probe_tcp_url(&url, timeout).await
+}
+
+/// Try multiple env var names in order; return the first that is set and probed.
+/// If none are set, return `not_configured`.
+async fn probe_tcp_env_multi(
+    env_keys: &[&str],
+    timeout: std::time::Duration,
+) -> crate::responses::ServiceHealth {
+    for key in env_keys {
+        if let Ok(url) = std::env::var(key) {
+            return probe_tcp_url(&url, timeout).await;
+        }
+    }
+    crate::responses::ServiceHealth::not_configured()
+}
+
+/// Parse `host:port` from a URL string and TCP-connect with the given timeout.
+/// Accepts schemes like `http://host:port`, `nats://host:port`, or bare `host:port`.
+async fn probe_tcp_url(url: &str, timeout: std::time::Duration) -> crate::responses::ServiceHealth {
+    let addr = extract_host_port(url);
+    let t0 = Instant::now();
+    match tokio::time::timeout(timeout, tokio::net::TcpStream::connect(&addr)).await {
+        Ok(Ok(_)) => crate::responses::ServiceHealth::healthy(t0.elapsed().as_millis() as u64),
+        Ok(Err(e)) => crate::responses::ServiceHealth::unavailable(format!("{addr}: {e}")),
+        Err(_) => crate::responses::ServiceHealth::unavailable(format!("{addr}: connection timed out")),
+    }
+}
+
+/// Extract `host:port` from a URL or bare address string.
+fn extract_host_port(url: &str) -> String {
+    // Strip scheme prefix (e.g. "nats://", "http://")
+    let stripped = url
+        .strip_prefix("http://")
+        .or_else(|| url.strip_prefix("https://"))
+        .or_else(|| url.strip_prefix("nats://"))
+        .or_else(|| url.strip_prefix("bolt://"))
+        .or_else(|| url.strip_prefix("bolt+routing://"))
+        .unwrap_or(url);
+    // Strip trailing path/query
+    let host_port = stripped.split('/').next().unwrap_or(stripped);
+    // If port is missing, default to 4222 for nats-like schemes, 80 otherwise
+    if host_port.contains(':') {
+        host_port.to_string()
+    } else if url.starts_with("nats://") {
+        format!("{host_port}:4222")
+    } else {
+        format!("{host_port}:80")
+    }
 }
 
 /// Start the HTTP API server, binding to `addr`.
