@@ -49,6 +49,35 @@ dependencies = [
 ]
 
 [[package]]
+name = "agileplus-application"
+version = "0.1.0"
+dependencies = [
+ "agileplus-domain",
+ "async-trait",
+ "phenotype-error-core",
+ "thiserror 2.0.18",
+ "tokio",
+]
+
+[[package]]
+name = "agileplus-cache"
+version = "0.1.0"
+dependencies = [
+ "agileplus-config",
+ "agileplus-domain",
+ "async-trait",
+ "bb8",
+ "bb8-redis",
+ "chrono",
+ "redis",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
 name = "agileplus-cli"
 version = "0.1.0"
 dependencies = [
@@ -152,7 +181,6 @@ dependencies = [
  "async-trait",
  "chrono",
  "phenotype-error-core",
- "regex",
  "serde",
  "serde_json",
  "sha2",
@@ -5593,50 +5621,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pheno-ci-templates"
-version = "0.1.0"
-
-[[package]]
-name = "pheno-flags"
-version = "0.1.0"
-dependencies = [
- "tempfile",
- "thiserror 2.0.18",
-]
-
-[[package]]
-name = "pheno-ssot-template"
-version = "0.1.0"
-
-[[package]]
-name = "pheno-vibecoding-guard"
-version = "0.1.0"
-dependencies = [
- "proc-macro2",
- "syn 2.0.117",
-]
-
-[[package]]
-name = "phenotype-dep-guard"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "chrono",
- "dirs",
- "reqwest 0.12.28",
- "serde",
- "serde_json",
- "tempfile",
- "thiserror 2.0.18",
- "tokio",
- "tokio-test",
- "toml",
- "tracing",
- "uuid",
- "wiremock",
-]
-
-[[package]]
 name = "phenotype-error-core"
 version = "0.2.0"
 dependencies = [
@@ -5644,87 +5628,6 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror 2.0.18",
-]
-
-[[package]]
-name = "phenotype-logging"
-version = "0.1.0"
-dependencies = [
- "tracing",
- "tracing-subscriber",
-]
-
-[[package]]
-name = "phenotype-mcp-sdk-rs"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "async-trait",
- "futures",
- "serde",
- "serde_json",
- "thiserror 2.0.18",
- "tokio",
- "tracing",
-]
-
-[[package]]
-name = "phenotype-sandbox"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "bollard",
- "futures",
- "hex",
- "libc",
- "nix",
- "serde",
- "serde_json",
- "sha2",
- "shell-words",
- "tempfile",
- "tokio",
- "tokio-stream",
- "tracing",
- "uuid",
-]
-
-[[package]]
-name = "phf"
-version = "0.11.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1fd6780a80ae0c52cc120a26a1a42c1ae51b247a253e4e06113d23d2c2edd078"
-dependencies = [
- "phf_shared",
-]
-
-[[package]]
-name = "phf_codegen"
-version = "0.11.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aef8048c789fa5e851558d709946d6d79a8ff88c0440c587967f8e94bfb1216a"
-dependencies = [
- "phf_generator",
- "phf_shared",
-]
-
-[[package]]
-name = "phf_generator"
-version = "0.11.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3c80231409c20246a13fddb31776fb942c38553c51e871f8cbd687a4cfb5843d"
-dependencies = [
- "phf_shared",
- "rand 0.8.6",
-]
-
-[[package]]
-name = "phf_shared"
-version = "0.11.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "67eabc2ef2a60eb7faa00097bd1ffdb5bd28e62bf39990626a582201b7a754e5"
-dependencies = [
- "siphasher",
 ]
 
 [[package]]
@@ -8838,12 +8741,11 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1ffae5123b2d3fc086436f8834ae3ab053a283cfac8fe0a0b8eaae044768a4c4"
 
 [[package]]
-name = "wyz"
-version = "0.5.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "05f360fc0b24296329c78fda852a1e9ae82de9cf7b27dae4b7f62f118f77b9ed"
+name = "xtask-anti-patterns"
+version = "0.1.0"
 dependencies = [
- "tap",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
