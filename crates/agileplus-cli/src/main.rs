@@ -599,53 +599,9 @@ async fn main() {
                 let storage = open_storage(&db_path)?;
                 commands::list_stories::run(&args, &storage).await?;
             }
-            Command::Project { sub } => {
-                let storage = open_storage(&db_path)?;
-                match sub {
-                    commands::mvp::ProjectCmd::Create(args) => {
-                        commands::mvp::project_create(&args, &storage).await?;
-                    }
-                }
-            }
-            Command::Epic { sub } => {
-                let storage = open_storage(&db_path)?;
-                match sub {
-                    commands::mvp::EpicCmd::Create(args) => {
-                        commands::mvp::epic_create(&args, &storage).await?;
-                    }
-                }
-            }
-            Command::Story { sub } => {
-                let storage = open_storage(&db_path)?;
-                match sub {
-                    commands::mvp::StoryCmd::Create(args) => {
-                        commands::mvp::story_create(&args, &storage).await?;
-                    }
-                }
-            }
-            Command::Wp { sub } => {
-                let storage = open_storage(&db_path)?;
-                match sub {
-                    commands::mvp::WpCmd::Create(args) => {
-                        commands::mvp::wp_create(&args, &storage).await?;
-                    }
-                }
-            }
-            Command::Dep { sub } => {
-                let storage = open_storage(&db_path)?;
-                match sub {
-                    commands::mvp::DepCmd::Add(args) => {
-                        commands::mvp::dep_add(&args, &storage).await?;
-                    }
-                }
-            }
-            Command::Transition(args) => {
-                let storage = open_storage(&db_path)?;
-                commands::mvp::transition(&args, &storage).await?;
-            }
-            Command::NextReady(args) => {
-                let storage = open_storage(&db_path)?;
-                commands::mvp::next_ready(&args, &storage).await?;
+            Command::Worklog(args) => {
+                let db_path = db_path_from_env();
+                commands::worklog::run_with_db(&args, &db_path)?;
             }
         }
         Ok(())
