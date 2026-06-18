@@ -256,7 +256,7 @@ pub struct SimpleHealthResponse {
 impl SimpleHealthResponse {
     pub fn ok() -> Self {
         Self {
-            status: "healthy",
+            status: "ok",
             service: "agileplus-api",
             version: env!("CARGO_PKG_VERSION"),
         }
