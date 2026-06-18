@@ -243,10 +243,11 @@ Fixes #487
 ## 11. Release Process
 
 AgilePlus follows semver. Releases are cut from `main` by the
-release-please GitHub App configured in
-`.github/release-please-config.json`. The maintainer approves the
-release PR, which is auto-generated and bumps versions, CHANGELOG,
-and tags.
+`release-plz` workflow in `.github/workflows/release-plz.yml` and the
+repository config in `release-plz.toml`. Pushes to `main` create or
+update a release PR with version and changelog changes. When that
+release PR is merged, the publish job releases eligible crates to
+crates.io and creates the corresponding tags and GitHub releases.
 
 ## 12. Getting Help
 
