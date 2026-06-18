@@ -247,7 +247,6 @@ async fn amend_commit_message(repo_root: &std::path::Path, message: &str) -> Res
     let message = message.to_string();
     let root2 = repo_root.clone();
     let output = tokio::task::spawn_blocking({
-        let message = message.clone();
         let repo_root = repo_root.clone();
         move || {
             Command::new("git")
@@ -333,7 +332,6 @@ async fn write_commit_object(repo_root: &std::path::Path, content: &str) -> Resu
     let repo_root_for_reset = repo_root.clone();
     let content = content.to_string();
     let output = tokio::task::spawn_blocking({
-        let content = content.clone();
         let repo_root = repo_root.clone();
         move || {
             let mut child = Command::new("git")

@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Hook dispatcher — matches claim events to registered hooks.
 
+use std::collections::HashMap;
 use std::process::Command;
+use std::sync::{Mutex, OnceLock};
 
 use regex::Regex;
 use tracing::{info, warn};
@@ -11,6 +13,17 @@ use agileplus_triage::claim::Claim;
 
 use crate::registry::HookRegistry;
 use crate::{HookAction, HookTrigger};
+
+/// Process-wide cache of compiled hook condition regexes.
+///
+/// Hook patterns are typically configured once at startup and then matched
+/// against many claim events; compiling once avoids per-event overhead.
+/// Each compiled regex is leaked into a `'static` reference because hook
+/// patterns live for the entire process lifetime in practice.
+fn regex_cache() -> &'static Mutex<HashMap<String, &'static Regex>> {
+    static CACHE: OnceLock<Mutex<HashMap<String, &'static Regex>>> = OnceLock::new();
+    CACHE.get_or_init(|| Mutex::new(HashMap::new()))
+}
 
 /// Result of a single hook dispatch.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -49,23 +62,36 @@ impl HookDispatcher {
             if hook.trigger != trigger {
                 continue;
             }
-            // apply regex condition if present
+            // apply regex condition if present (cached per-pattern compile)
             if let Some(ref pattern) = hook.condition {
                 let pat = pattern.as_str();
-                match Regex::new(pat) {
-                    Ok(re) => {
-                        if !re.is_match(&claim.resource) {
-                            results.push((hook.id.clone(), DispatchResult::Filtered));
-                            continue;
+                let re: &'static Regex = {
+                    let cache = regex_cache().lock().expect("regex cache poisoned");
+                    if let Some(re) = cache.get(pat).copied() {
+                        re
+                    } else {
+                        drop(cache);
+                        match Regex::new(pat) {
+                            Ok(re) => {
+                                let leaked: &'static Regex = Box::leak(Box::new(re));
+                                let mut cache =
+                                    regex_cache().lock().expect("regex cache poisoned");
+                                cache.insert(pat.to_owned(), leaked);
+                                leaked
+                            }
+                            Err(e) => {
+                                results.push((
+                                    hook.id.clone(),
+                                    DispatchResult::Failed(format!("bad regex: {e}")),
+                                ));
+                                continue;
+                            }
                         }
                     }
-                    Err(e) => {
-                        results.push((
-                            hook.id.clone(),
-                            DispatchResult::Failed(format!("bad regex: {e}")),
-                        ));
-                        continue;
-                    }
+                };
+                if !re.is_match(&claim.resource) {
+                    results.push((hook.id.clone(), DispatchResult::Filtered));
+                    continue;
                 }
             }
             let res = match &hook.action {
