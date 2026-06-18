@@ -108,13 +108,8 @@ exclude = ["AgilePlus/rust", "rust", "crates/phenotype-config"]
 [workspace.package]
 version = "0.1.0"
 edition = "2021"
-license = "MIT OR Apache-2.0"
+license = "MIT"
 rust-version = "1.88"
-repository = "https://github.com/KooshaPari/AgilePlus"
-authors = ["kooshapari"]
-
-[workspace.metadata.tools]
-cargo-nextest = "0.9"
 
 [package]
 name = "agileplus"
@@ -229,6 +224,8 @@ agileplus-witness = { path = "crates/agileplus-witness" }
 shared-traceability = { path = "crates/shared-traceability" }
 toml = "0.8"
 tokio-stream = { version = "0.1", features = ["net", "sync"] }
-sqlx = { version = "0.8", default-features = false }
-hex = "0.4"
-regex = "1"
+
+# cargo-machete false-positive ignores (dev-only / proc-macro / build-deps)
+[workspace.metadata.cargo-machete]
+ignored = ["cucumber", "axum-test", "paste", "dirs", "serde_yaml", "uuid", "async-trait", "tracing-subscriber", "tracing-appender", "tracing-opentelemetry", "futures", "futures-util", "tonic", "tonic-build", "prost", "prost-build", "utoipa", "opentelemetry", "opentelemetry_sdk", "opentelemetry-otlp", "gix", "tempfile"]
+
