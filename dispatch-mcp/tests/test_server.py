@@ -40,6 +40,22 @@ class TestCallOmniroute:
             assert call_args[1]["json"] == {"tier": "worker", "message": "hello"}
             assert result == {"ok": True, "tier": "worker", "message": "hello"}
 
+    def test_dispatch_custom_rejects_oversized_response(self) -> None:
+        with (
+            patch.dict("os.environ", {"OMNIROUTE_URL": "http://localhost:8080"}),
+            patch("dispatch_mcp.server._client") as mock_client,
+        ):
+            mock_response = MagicMock()
+            # Response body larger than MAX_RESPONSE_LENGTH (1 MiB)
+            mock_response.content = b"x" * (1024 * 1024 + 1)
+            mock_response.raise_for_status = MagicMock()
+            mock_client.post.return_value = mock_response
+
+            from dispatch_mcp.server import dispatch_custom
+
+            with pytest.raises(RuntimeError, match="exceeds maximum allowed size"):
+                dispatch_custom("worker", "test")
+
     def test_dispatch_custom_connection_error(self) -> None:
         import httpx
 
