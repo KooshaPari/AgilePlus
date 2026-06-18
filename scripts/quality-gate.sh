@@ -11,12 +11,10 @@ case "$MODE" in
     # into external path-dependency crates (the phenoShared sibling cloned in CI),
     # whose formatting is governed by their own repo — not this gate. Restrict to
     # packages defined under this workspace root.
-    fmt_args=""
-    while IFS= read -r pkg; do
-      fmt_args="$fmt_args -p $pkg"
-    done < <(cargo metadata --no-deps --format-version 1 | jq -r '.packages[].name')
+    fmt_pkgs=$(cargo metadata --no-deps --format-version 1 \
+      | python3 -c 'import json,sys; print(" ".join(f"-p {p[\"name\"]}" for p in json.load(sys.stdin)["packages"]))')
     # shellcheck disable=SC2086
-    cargo fmt $fmt_args -- --check
+    cargo fmt $fmt_pkgs -- --check
     cargo clippy --workspace -- -D warnings
     cargo test --workspace
     # Python checks (if python/ exists and has pyproject.toml)
