@@ -45,7 +45,8 @@ const CANONICAL_STATUSES: &[&str] = &[
     "failed",
     "cancelled",
 ];
-const CANONICAL_VERIFICATION_STATUSES: &[&str] = &["passed", "failed", "not_run", "partial"];
+const CANONICAL_VERIFICATION_STATUSES: &[&str] =
+    &["passed", "failed", "not_run", "partial"];
 
 // ── File-level types (L2 #25) ──────────────────────────────────────────────
 
@@ -318,7 +319,7 @@ pub fn run_with_db(args: &WorklogArgs, db_path: &Path) -> Result<()> {
     }
 }
 
-pub fn db_path_from_env() -> PathBuf {
+fn db_path_from_env() -> PathBuf {
     std::env::var("AGILEPLUS_DB")
         .map(PathBuf::from)
         .unwrap_or_else(|_| PathBuf::from("agileplus.db"))
@@ -534,10 +535,14 @@ pub fn validate_payload(payload: &WorklogPayload) -> Result<()> {
     }
     if let Some(ref sha) = payload.commit_sha {
         if !is_valid_sha(sha) {
-            bail!("commit_sha '{sha}' is not a 7-40 char hex string and is not null");
+            bail!(
+                "commit_sha '{sha}' is not a 7-40 char hex string and is not null"
+            );
         }
     }
-    if !CANONICAL_VERIFICATION_STATUSES.contains(&payload.verification_result.status.as_str()) {
+    if !CANONICAL_VERIFICATION_STATUSES
+        .contains(&payload.verification_result.status.as_str())
+    {
         bail!(
             "verification_result.status '{}' is invalid: expected one of {}",
             payload.verification_result.status,
@@ -547,7 +552,9 @@ pub fn validate_payload(payload: &WorklogPayload) -> Result<()> {
     if payload.verification_result.status == "not_run"
         && !payload.verification_result.commands.is_empty()
     {
-        bail!("verification_result.commands must be empty when status is 'not_run'");
+        bail!(
+            "verification_result.commands must be empty when status is 'not_run'"
+        );
     }
     for cmd in &payload.verification_result.commands {
         if cmd.trim().is_empty() {
@@ -580,9 +587,7 @@ pub fn validate_payload(payload: &WorklogPayload) -> Result<()> {
 
 fn is_valid_sha(s: &str) -> bool {
     let len = s.len();
-    (7..=40).contains(&len)
-        && s.chars()
-            .all(|c| c.is_ascii_hexdigit() && !c.is_ascii_uppercase())
+    (7..=40).contains(&len) && s.chars().all(|c| c.is_ascii_hexdigit() && !c.is_ascii_uppercase())
 }
 
 /// Lenient ISO-8601 check. We only require a `YYYY-MM-DD` prefix followed
@@ -696,7 +701,10 @@ pub fn run_emit(args: &EmitArgs, db_path: &Path) -> Result<EmitReport> {
     Ok(report)
 }
 
-fn collect_worklog_files(from: &Path, report: &mut EmitReport) -> Result<Vec<PathBuf>> {
+fn collect_worklog_files(
+    from: &Path,
+    report: &mut EmitReport,
+) -> Result<Vec<PathBuf>> {
     if !from.exists() {
         bail!("--from path does not exist: {}", from.display());
     }
@@ -704,8 +712,8 @@ fn collect_worklog_files(from: &Path, report: &mut EmitReport) -> Result<Vec<Pat
         return Ok(vec![from.to_path_buf()]);
     }
     let mut out = Vec::new();
-    let entries =
-        std::fs::read_dir(from).with_context(|| format!("reading directory {}", from.display()))?;
+    let entries = std::fs::read_dir(from)
+        .with_context(|| format!("reading directory {}", from.display()))?;
     for entry in entries {
         let entry = match entry {
             Ok(e) => e,
@@ -734,10 +742,10 @@ pub fn insert_entry(
     raw_payload: &str,
     replace: bool,
 ) -> Result<bool> {
-    let files_changed_json =
-        serde_json::to_string(&payload.files_changed).context("serializing files_changed")?;
-    let verification_json =
-        serde_json::to_string(&payload.verification_result).context("serializing verification")?;
+    let files_changed_json = serde_json::to_string(&payload.files_changed)
+        .context("serializing files_changed")?;
+    let verification_json = serde_json::to_string(&payload.verification_result)
+        .context("serializing verification")?;
     let ingested_at = chrono::Utc::now().to_rfc3339();
 
     if replace {
@@ -748,28 +756,27 @@ pub fn insert_entry(
         .context("deleting prior worklog row")?;
     }
 
-    let rows = conn
-        .execute(
-            "INSERT OR IGNORE INTO worklog_entries
+    let rows = conn.execute(
+        "INSERT OR IGNORE INTO worklog_entries
             (status, task_id, agent_id, files_changed_json, commit_sha,
              verification_json, started_at, completed_at, source_path,
              payload_json, ingested_at)
          VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11)",
-            rusqlite::params![
-                payload.status,
-                payload.task_id,
-                payload.agent_id,
-                files_changed_json,
-                payload.commit_sha,
-                verification_json,
-                payload.started_at,
-                payload.completed_at,
-                source_path,
-                raw_payload,
-                ingested_at,
-            ],
-        )
-        .context("inserting worklog row")?;
+        rusqlite::params![
+            payload.status,
+            payload.task_id,
+            payload.agent_id,
+            files_changed_json,
+            payload.commit_sha,
+            verification_json,
+            payload.started_at,
+            payload.completed_at,
+            source_path,
+            raw_payload,
+            ingested_at,
+        ],
+    )
+    .context("inserting worklog row")?;
     Ok(rows == 1)
 }
 
@@ -839,9 +846,10 @@ fn row_to_entry(row: &rusqlite::Row<'_>) -> rusqlite::Result<WorklogEntry> {
     let source_path: String = row.get(9)?;
     let ingested_at: String = row.get(10)?;
 
-    let files_changed: Vec<String> = serde_json::from_str(&files_changed_json).unwrap_or_default();
-    let verification: VerificationResult =
-        serde_json::from_str(&verification_json).unwrap_or(VerificationResult {
+    let files_changed: Vec<String> =
+        serde_json::from_str(&files_changed_json).unwrap_or_default();
+    let verification: VerificationResult = serde_json::from_str(&verification_json)
+        .unwrap_or(VerificationResult {
             status: "not_run".into(),
             commands: vec![],
             notes: String::new(),
@@ -995,7 +1003,10 @@ mod tests {
         let mut p = good_payload();
         p.verification_result.status = "yolo".into();
         let err = validate_payload(&p).unwrap_err().to_string();
-        assert!(err.contains("verification_result.status"), "got: {err}");
+        assert!(
+            err.contains("verification_result.status"),
+            "got: {err}"
+        );
     }
 
     #[test]
@@ -1043,7 +1054,9 @@ mod tests {
         let db = temp_db_path("agileplus-worklog-open");
         let conn = open_db(&db).expect("open");
         let count: i64 = conn
-            .query_row("SELECT COUNT(*) FROM worklog_entries", [], |row| row.get(0))
+            .query_row("SELECT COUNT(*) FROM worklog_entries", [], |row| {
+                row.get(0)
+            })
             .unwrap();
         assert_eq!(count, 0);
         let _ = std::fs::remove_file(db);
@@ -1085,10 +1098,7 @@ mod tests {
             "verification_result".into(),
             serde_json::json!({"status":"passed","commands":["x"],"notes":"ok"}),
         );
-        bad_map.insert(
-            "started_at".into(),
-            serde_json::json!("2026-06-11T00:00:00Z"),
-        );
+        bad_map.insert("started_at".into(), serde_json::json!("2026-06-11T00:00:00Z"));
         bad_map.insert("completed_at".into(), serde_json::json!(null));
         let bad = serde_json::to_string(&bad_map).unwrap();
         std::fs::write(&good_path, &good).unwrap();
