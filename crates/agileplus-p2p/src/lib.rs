@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! agileplus-p2p — peer-to-peer discovery and event replication for AgilePlus.
 //!
 //! # Overview
@@ -101,15 +100,16 @@ impl P2pBehaviour {
     /// Create a new behaviour, starting the mDNS daemon and registering the
     /// local AgilePlus service.
     fn new(instance_name: &str, port: u16) -> Result<Self, P2pError> {
-        let daemon = ServiceDaemon::new().map_err(|e| P2pError::MdnsStart(e.to_string()))?;
+        let daemon =
+            ServiceDaemon::new().map_err(|e| P2pError::MdnsStart(e.to_string()))?;
 
         // Register this node so other peers can discover it.
-        let host_name = format!("{instance_name}.local.");
+        let host_name = format!("{}.local.", instance_name);
         let service_info = mdns_sd::ServiceInfo::new(
             SERVICE_TYPE,
             instance_name,
             &host_name,
-            (), // no specific IP — mDNS-sd resolves from the local interface
+            (),  // no specific IP — mDNS-sd resolves from the local interface
             port,
             None,
         )
@@ -182,8 +182,6 @@ impl P2pNode {
         let mut found: HashSet<PeerId> = HashSet::new();
         let local = &self.local_peer_id;
 
-        #[allow(clippy::while_let_loop)]
-        // multi-arm match in body w/ break-on-Ok(Err) / break-on-timeout
         loop {
             let remaining = match deadline.checked_duration_since(tokio::time::Instant::now()) {
                 Some(d) => d,
@@ -223,7 +221,10 @@ impl P2pNode {
 impl Drop for P2pNode {
     fn drop(&mut self) {
         // Unregister local service and shut down daemon gracefully.
-        let fullname = format!("{}.{}", self.behaviour.instance_name, SERVICE_TYPE);
+        let fullname = format!(
+            "{}.{}",
+            self.behaviour.instance_name, SERVICE_TYPE
+        );
         let _ = self.behaviour.daemon.unregister(&fullname);
         let _ = self.behaviour.daemon.shutdown();
     }
@@ -258,7 +259,9 @@ mod tests {
     /// peers are on the LAN (or in CI).
     #[tokio::test]
     async fn test_discover_peers_returns_empty_without_network() {
-        let mut node = P2pNode::new().await.expect("P2pNode::new should succeed");
+        let mut node = P2pNode::new()
+            .await
+            .expect("P2pNode::new should succeed");
         // Very short timeout so the test finishes quickly.
         let peers = node.discover_peers(Duration::from_millis(200)).await;
         // In a test environment there are no other AgilePlus nodes.
