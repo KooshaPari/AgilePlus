@@ -1,5 +1,10 @@
 name: SAST Quick Check
-permissions: read-all
+
+permissions:
+  contents: read
+  security-events: write
+  pull-requests: write
+
 on:
   pull_request:
   push:
@@ -84,4 +89,4 @@ jobs:
             "https://x-access-token:${{ github.token }}@github.com/KooshaPari/phenoShared.git" \
             "${{ github.workspace }}/../phenoShared"
       - name: Check Rust licenses
-        run: cargo deny check licenses
+        run: cargo deny check -c rust/deny.toml licenses
