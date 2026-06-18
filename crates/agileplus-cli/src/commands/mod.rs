@@ -4,12 +4,7 @@
 // compilation until those upstream gaps are filled.  They are kept in the
 // source tree for reference.
 
-pub mod dag;
 pub mod dashboard;
-pub mod gate_add;
-pub mod gate_run;
-pub mod import_dagctl;
-pub mod intent;
 pub mod list;
 pub mod list_epics;
 pub mod list_projects;
@@ -18,8 +13,6 @@ pub mod list_tests;
 pub mod mvp;
 pub mod seed_requirements;
 pub mod trace;
-pub mod triage;
-pub mod version;
 pub mod worklog;
 
 // ── stub modules (excluded until upstream deps are resolved) ──────────────────

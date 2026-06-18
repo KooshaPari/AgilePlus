@@ -34,16 +34,9 @@ rusqlite = { version = "0.32", features = ["bundled"] }
 async-trait.workspace = true
 serde.workspace = true
 serde_json.workspace = true
-uuid.workspace = true
-agileplus-trace-validator = { path = "../agileplus-trace-validator" }
 comfy-table = "7"
 
 [dev-dependencies]
 proptest = "1"
 tokio-test = "0.4"
 tempfile = "3"
-assert_cmd = "2"
-predicates = "3"
-
-[package.metadata.cargo-machete]
-ignored = ["agileplus-git", "tracing-subscriber"]

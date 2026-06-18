@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `ap dashboard` subcommand — render an in-flight DAG view of the
 //! AgilePlus SQLite database.  Aggregates:
 //!
@@ -37,7 +36,9 @@ use std::path::{Path, PathBuf};
 
 use anyhow::Result;
 use clap::Args;
-use comfy_table::{presets::UTF8_FULL, Attribute, Cell, Color, ContentArrangement, Row, Table};
+use comfy_table::{
+    presets::UTF8_FULL, Attribute, Cell, Color, ContentArrangement, Row, Table,
+};
 use rusqlite::{params, Connection};
 use serde::Serialize;
 
@@ -297,9 +298,7 @@ fn print_ascii(snap: &DashboardSnapshot, no_color: bool) {
         truncate(&snap.generated_at, 19),
         snap.db_path
     );
-    println!("
-{title}
-");
+    println!("\n{}\n", title);
     println!("{}", "-".repeat(title.len().max(60)));
 
     render_wp_section(&snap.work_packages, no_color);
@@ -311,8 +310,7 @@ fn print_ascii(snap: &DashboardSnapshot, no_color: bool) {
 }
 
 fn render_wp_section(wp: &WpStateBreakdown, no_color: bool) {
-    println!("
-[ Work packages by state ]  total = {}", wp.total);
+    println!("\n[ Work packages by state ]  total = {}", wp.total);
     let mut table = Table::new();
     table
         .load_preset(UTF8_FULL)
@@ -353,8 +351,7 @@ fn render_wp_section(wp: &WpStateBreakdown, no_color: bool) {
 }
 
 fn render_worklog_section(rows: &[WorklogEntryRow], no_color: bool) {
-    println!("
-[ Recent worklog entries ]  ({} shown)", rows.len());
+    println!("\n[ Recent worklog entries ]  ({} shown)", rows.len());
     if rows.is_empty() {
         println!("    <no worklog entries ingested yet>");
         return;
@@ -376,20 +373,14 @@ fn render_worklog_section(rows: &[WorklogEntryRow], no_color: bool) {
             colorize_status(&r.status, no_color),
             colorize_status(&r.verification_status, no_color),
             Cell::new(truncate(&r.agent_id, 20)),
-            Cell::new(
-                r.completed_at
-                    .as_deref()
-                    .map(|s| truncate(s, 19))
-                    .unwrap_or_else(|| "—".to_string()),
-            ),
+            Cell::new(r.completed_at.as_deref().map(|s| truncate(s, 19)).unwrap_or_else(|| "—".to_string())),
         ]));
     }
     println!("{table}");
 }
 
 fn render_events_section(rows: &[EventRow], no_color: bool) {
-    println!("
-[ Recent events ]  ({} shown)", rows.len());
+    println!("\n[ Recent events ]  ({} shown)", rows.len());
     if rows.is_empty() {
         println!("    <no events recorded>");
         return;
@@ -419,11 +410,7 @@ fn render_events_section(rows: &[EventRow], no_color: bool) {
 }
 
 fn render_trace_links_section(rows: &[TraceLinkCount], no_color: bool) {
-    println!(
-        "
-[ Trace links by type ]  total = {}",
-        rows.iter().map(|r| r.count).sum::<i64>()
-    );
+    println!("\n[ Trace links by type ]  total = {}", rows.iter().map(|r| r.count).sum::<i64>());
     if rows.is_empty() {
         println!("    <no trace links recorded>");
         return;
@@ -432,10 +419,7 @@ fn render_trace_links_section(rows: &[TraceLinkCount], no_color: bool) {
     table
         .load_preset(UTF8_FULL)
         .set_content_arrangement(ContentArrangement::Dynamic)
-        .set_header(Row::from(vec![
-            hcell("LINK TYPE", no_color),
-            hcell("COUNT", no_color),
-        ]));
+        .set_header(Row::from(vec![hcell("LINK TYPE", no_color), hcell("COUNT", no_color)]));
     for r in rows {
         table.add_row(Row::from(vec![Cell::new(&r.link_type), Cell::new(r.count)]));
     }
@@ -677,7 +661,9 @@ mod tests {
         ];
         for (state, sql) in pairs {
             assert_eq!(
-                serde_json::to_string(&state).unwrap().trim_matches('"'),
+                serde_json::to_string(&state)
+                    .unwrap()
+                    .trim_matches('"'),
                 sql,
                 "WpState::{state:?} does not serialize to `{sql}`"
             );
