@@ -296,7 +296,7 @@ fn print_ascii(snap: &DashboardSnapshot, no_color: bool) {
         truncate(&snap.generated_at, 19),
         snap.db_path
     );
-    println!("\n{}\n", title);
+    println!("\n{title}\n");
     println!("{}", "-".repeat(title.len().max(60)));
 
     render_wp_section(&snap.work_packages, no_color);
