@@ -37,4 +37,4 @@ jobs:
         with:
           tool: cargo-audit@0.22.2
       - name: Run cargo audit
-        run: cargo audit --config audit.toml
+        run: cargo audit -f audit.toml
