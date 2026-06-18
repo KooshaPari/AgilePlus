@@ -1,6 +1,6 @@
-//! AgilePlus HTTP API — axum router, middleware, and route handlers.
+//! agileplus-api — HTTP API server for AgilePlus project management
 //!
-//! Traceability: WP11-T064..T070
+//! Exports routes, handlers, state management, and middleware for the axum-based HTTP server.
 
 pub mod api_key;
 pub mod error;
@@ -11,5 +11,5 @@ pub mod router;
 pub mod routes;
 pub mod state;
 
-pub use router::create_router;
+pub use router::{create_router, start_api};
 pub use state::AppState;
