@@ -34,27 +34,38 @@ def _call_omniroute(route: str, payload: dict[str, Any]) -> dict[str, Any]:
             "OMNIROUTE_URL environment variable is not set. "
             "Set it to the base URL of the dispatch backend before starting the server."
         )
-    with httpx.Client(timeout=10) as client:
-        try:
-            response = client.post(
-                f"{base.rstrip('/')}/{route.lstrip('/')}", json=payload
-            )
-            response.raise_for_status()
-            return response.json()
-        except httpx.TimeoutException as e:
-            logger.error("OmniRoute timeout for route %s: %s", route, e)
-            raise
-        except httpx.HTTPStatusError as e:
-            logger.error(
-                "OmniRoute HTTP error %s for route %s: %s",
-                e.response.status_code,
-                route,
-                e,
-            )
-            raise
-        except httpx.RequestError as e:
-            logger.error("OmniRoute request error for route %s: %s", route, e)
-            raise
+    parsed = urlparse(base)
+    if parsed.scheme not in ("http", "https"):
+        raise ValueError(
+            f"OMNIROUTE_URL must use http or https scheme, got: {parsed.scheme!r}"
+        )
+    try:
+        response = _client.post(f"{base.rstrip('/')}/{route.lstrip('/')}", json=payload)
+        response.raise_for_status()
+        return _sanitize_response(response.json())
+    except httpx.TimeoutException as e:
+        logger.error("OmniRoute timeout for route %s: %s", route, e)
+        raise
+    except httpx.HTTPStatusError as e:
+        logger.error(
+            "OmniRoute HTTP error %s for route %s: %s",
+            e.response.status_code,
+            route,
+            e,
+        )
+        raise
+    except httpx.RequestError as e:
+        logger.error("OmniRoute request error for route %s: %s", route, e)
+        raise
+    except json.JSONDecodeError as e:
+        logger.error(
+            "OmniRoute returned non-JSON response for route %s: %s",
+            route,
+            e,
+        )
+        raise RuntimeError(
+            f"OmniRoute returned an invalid response for route '{route}'"
+        ) from e
 
 
 def _make_dispatch(tier: str):
@@ -95,6 +106,7 @@ def main() -> None:
     """Start the MCP server. Registers SIGTERM/SIGINT handlers that log intent;
     the event loop (mcp.run) controls its own lifecycle and does not
     guarantee immediate interruption on signal receipt."""
+
     def _handle_signal(signum: int, frame: object) -> None:
         sig_name = signal.Signals(signum).name
         logger.warning("Received %s, initiating graceful shutdown", sig_name)
