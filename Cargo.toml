@@ -197,14 +197,10 @@ utoipa = "4"
 uuid = { version = "1", features = ["v4", "v5", "serde"] }
 async-nats = "0.47"
 paste = "1"
-phenotype-error-core = { git = "https://github.com/KooshaPari/phenotype-types", branch = "main" }
-traceability-core = { path = "crates/traceability-core" }
+phenotype-error-core = { path = "../phenoShared/crates/phenotype-error-core" }
+traceability-core = { path = "../phenotype-pm-core/crates/traceability-core" }
 indexmap = { version = "2", features = ["serde"] }
-phenotype-logging = { git = "https://github.com/KooshaPari/PhenoObservability", branch = "main" }
-phenotype-event-bus = { git = "https://github.com/KooshaPari/Eventra", branch = "main" }
-agileplus-api = { path = "crates/agileplus-api" }
-agileplus-artifacts = { path = "crates/agileplus-artifacts" }
-agileplus-cache = { path = "crates/agileplus-cache" }
+phenotype-logging = { path = "../phenoShared/crates/phenotype-logging" }
 agileplus-config = { path = "crates/agileplus-config" }
 agileplus-convoy = { path = "crates/agileplus-convoy" }
 agileplus-domain = { path = "crates/agileplus-domain" }

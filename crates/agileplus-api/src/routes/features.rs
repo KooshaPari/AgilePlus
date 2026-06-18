@@ -263,7 +263,9 @@ where
         .ok_or_else(|| ApiError::NotFound(format!("Feature '{slug}' not found")))?;
 
     let target = parse_feature_state(&body.target_state)?;
-    let result = state_machine::transition(feature.state, target).map_err(ApiError::from)?;
+    let result =
+        agileplus_domain::domain::state_machine::transition(feature.state, target)
+            .map_err(ApiError::from)?;
 
     app.storage
         .update_feature_state(feature.id, target)
