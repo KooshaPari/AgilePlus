@@ -94,14 +94,12 @@ pub struct CycleWithFeatures {
 }
 
 impl CycleWithFeatures {
-    /// A cycle is shippable when it has at least one feature and every feature
-    /// is in `Validated` or `Shipped` state (FR-C07).
+    /// Check if all features in this cycle are in a shippable state.
+    /// A feature is shippable if it's Validated or Shipped.
     pub fn is_shippable(&self) -> bool {
-        !self.features.is_empty()
-            && self
-                .features
-                .iter()
-                .all(|f| matches!(f.state, FeatureState::Validated | FeatureState::Shipped))
+        self.features
+            .iter()
+            .all(|f| matches!(f.state, FeatureState::Validated | FeatureState::Shipped))
     }
 }
 
