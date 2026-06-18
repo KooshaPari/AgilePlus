@@ -534,14 +534,28 @@ WS-K through WS-Q all completed. 4 new audits surfaced new findings.
 - Remove or recreate symlinks pointing to moved files
 
 ### WS-V: Add FUNDING.yml to repos missing it (P2)
-- Findings: repo_metadata_completeness_2026-05-05.md
+- ALL canonical repos are missing FUNDING.yml — findings/repo_metadata_completeness_2026-05-05.md
+- Agent running
+
+### CI Coverage Gap (MAJOR — 37 repos need CI)
+- 34 repos missing CLAUDE.md governance
+- WS-R (BytePort) done (PR#213)
+- WS-L (Python repos) done earlier
+- Remaining 35 repos needing CI include critical Rust projects: eyetracker, bdd-integration, phenoAI, thegent-dispatch, phenotype-bus
+- See findings/repo_metadata_completeness_2026-05-05.md for full list
+
+### npm Vulnerability Fixes (running)
+- WS-W: Fix AtomsBot 34 vulnerabilities (2 critical, 20 high, 7 moderate) — updating Vite
+- WS-X: Fix thegent 7 moderate vulnerabilities (markdown-it ReDoS has no fix)
 
 ## Updated execution order (v9)
 
 | Priority | WS | Action | Repos | Expected outcome |
 |---|---|---|---|---|
-| 0 | WS-R | Add CI to BytePort | BytePort | Go test coverage in CI |
+| 0 | WS-R | Add CI to BytePort | BytePort | ✅ Done (PR#213) |
 | 1 | WS-S | Fix argis-extensions interface drift | argis-extensions | Code/schema aligned |
 | 2 | WS-T | Fix lock-copying violations | netweave-final2 | Concurrency safety |
 | 3 | WS-U | Fix broken symlinks | 8 repos | Clean working tree |
-| 4 | WS-V | Add FUNDING.yml | N repos | Open source readiness |
+| 4 | WS-V | Add FUNDING.yml | All repos | Open source readiness |
+| 5 | WS-W | Fix AtomsBot npm vulnerabilities | AtomsBot | 0 critical vulnerabilities |
+| 6 | WS-X | Fix thegent npm vulnerabilities | thegent | 0 moderate vulnerabilities |
