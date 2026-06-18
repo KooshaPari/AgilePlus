@@ -157,7 +157,7 @@ impl ObservabilityPort for TelemetryAdapter {
             .map(|(k, v)| opentelemetry::KeyValue::new(k.to_string(), v.to_string()))
             .collect();
         let meter = global::meter("agileplus");
-        let counter = meter.u64_counter(name.to_owned()).build();
+        let counter = meter.u64_counter(name.to_owned()).init();
         counter.add(value, &kv);
     }
 
@@ -170,7 +170,7 @@ impl ObservabilityPort for TelemetryAdapter {
             .map(|(k, v)| opentelemetry::KeyValue::new(k.to_string(), v.to_string()))
             .collect();
         let meter = global::meter("agileplus");
-        let hist = meter.f64_histogram(name.to_owned()).build();
+        let hist = meter.f64_histogram(name.to_owned()).init();
         hist.record(value, &kv);
     }
 
@@ -183,7 +183,7 @@ impl ObservabilityPort for TelemetryAdapter {
             .map(|(k, v)| opentelemetry::KeyValue::new(k.to_string(), v.to_string()))
             .collect();
         let meter = global::meter("agileplus");
-        let gauge = meter.f64_gauge(name.to_owned()).build();
+        let gauge = meter.f64_gauge(name.to_owned()).init();
         gauge.record(value, &kv);
     }
 
@@ -225,11 +225,10 @@ pub fn init_telemetry(config: TelemetryConfig) -> Result<TelemetryGuard, Telemet
     use opentelemetry_sdk::trace::SdkTracerProvider;
 
     let tracer_provider = if let Some(otlp) = &config.otlp {
-        match opentelemetry_otlp::SpanExporter::builder()
-            .with_http()
+        match opentelemetry_otlp::new_exporter()
+            .http()
             .with_endpoint(&otlp.endpoint)
             .with_timeout(std::time::Duration::from_millis(otlp.timeout_ms))
-            .build()
         {
             Ok(exporter) => SdkTracerProvider::builder()
                 .with_batch_exporter(exporter)
@@ -287,11 +286,10 @@ fn build_otlp_provider(
 ) -> Result<opentelemetry_sdk::trace::SdkTracerProvider, String> {
     use opentelemetry_otlp::WithExportConfig;
 
-    let exporter = opentelemetry_otlp::SpanExporter::builder()
-        .with_http()
+    let exporter = opentelemetry_otlp::new_exporter()
+        .http()
         .with_endpoint(&otlp.endpoint)
         .with_timeout(std::time::Duration::from_millis(otlp.timeout_ms))
-        .build()
         .map_err(|e| e.to_string())?;
 
     let provider = opentelemetry_sdk::trace::SdkTracerProvider::builder()

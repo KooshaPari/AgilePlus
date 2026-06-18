@@ -19,10 +19,6 @@ serde_json.workspace = true
 thiserror.workspace = true
 async-trait = "0.1"
 tracing.workspace = true
-opentelemetry = { workspace = true, features = ["trace"] }
-opentelemetry_sdk = { workspace = true, features = ["trace"] }
-tracing-opentelemetry.workspace = true
-agileplus-telemetry = { path = "../agileplus-telemetry" }
 agileplus-sqlite = { path = "../agileplus-sqlite" }
 agileplus-git = { path = "../agileplus-git" }
 anyhow = "1.0"

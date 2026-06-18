@@ -1,0 +1,22 @@
+{
+  "spec_id": "022",
+  "slug": "022-batch13-repo-remediation",
+  "title": "Batch 13 Repo Remediation",
+  "status": "specified",
+  "priority": "high",
+  "type": "feature",
+  "created_at": "2026-04-01",
+  "updated_at": "2026-05-06",
+  "notes": "Scope replaced 2026-05-06. Was: archive KaskMan/kits/packs/portage/zen + scaffold dotfiles/harnesses. Now: v11 audit findings (P0 security, P1 CI, P2 deps, P7 consolidation). 9 work packages (WP-001 to WP-009), 52 tasks (T001-T052). See spec.md + tasks.md.",
+  "work_packages": [
+    { "wp": "WP-001", "title": "Empty Landing Page Deletion", "state": "planned", "priority": "P0", "tasks": 8 },
+    { "wp": "WP-002", "title": "Near-Empty Repo Triage", "state": "planned", "priority": "P0", "tasks": 17 },
+    { "wp": "WP-003", "title": "Exposed Credential Remediation", "state": "planned", "priority": "P0", "tasks": 4 },
+    { "wp": "WP-004", "title": "Prefix Group Consolidation Planning", "state": "planned", "priority": "P1", "tasks": 7 },
+    { "wp": "WP-005", "title": "Branch Protection Audit", "state": "planned", "priority": "P1", "tasks": 3 },
+    { "wp": "WP-006", "title": "Archived Repo Visibility", "state": "planned", "priority": "P2", "tasks": 3 },
+    { "wp": "WP-007", "title": "CI Concurrency and Conflict Markers", "state": "planned", "priority": "P2", "tasks": 3 },
+    { "wp": "WP-008", "title": "Dependency Hygiene", "state": "planned", "priority": "P2", "tasks": 4 },
+    { "wp": "WP-009", "title": "Missing CHANGELOGs and Governance Files", "state": "planned", "priority": "P3", "tasks": 3 }
+  ]
+}

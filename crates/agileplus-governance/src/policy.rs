@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Policy engine for governance decisions
 //!
 //! The policy engine evaluates rules against actions and determines
@@ -338,7 +337,7 @@ impl PolicyEngine {
     /// Create with custom policies
     pub fn with_policies(policies: Vec<Policy>) -> Self {
         let mut policies = policies;
-        policies.sort_by_key(|b| std::cmp::Reverse(b.priority));
+        policies.sort_by(|a, b| b.priority.cmp(&a.priority));
 
         Self {
             policies,
@@ -355,7 +354,7 @@ impl PolicyEngine {
     /// Add a policy
     pub fn add_policy(&mut self, policy: Policy) {
         self.policies.push(policy);
-        self.policies.sort_by_key(|b| std::cmp::Reverse(b.priority));
+        self.policies.sort_by(|a, b| b.priority.cmp(&a.priority));
     }
 
     /// Check if an action is allowed
@@ -379,7 +378,7 @@ impl PolicyEngine {
                 || policy
                     .conditions
                     .iter()
-                    .all(|c| Self::evaluate_condition(c, context));
+                    .all(|c| self.evaluate_condition(c, context));
 
             if all_conditions_met {
                 let reason = policy
@@ -403,23 +402,21 @@ impl PolicyEngine {
         }
     }
 
-    /// Evaluate a single condition.
-    ///
-    /// Associated (no `&self`): condition evaluation depends only on the
-    /// condition tree and the request context, not on engine state. Keeping it
-    /// `&self`-free also satisfies `clippy::only_used_in_recursion`.
-    fn evaluate_condition(condition: &PolicyCondition, context: &PolicyContext) -> bool {
+    /// Evaluate a single condition
+    fn evaluate_condition(&self, condition: &PolicyCondition, context: &PolicyContext) -> bool {
         match condition {
-            PolicyCondition::Equals { key, value } => context.get(key).is_some_and(|v| v == *value),
+            PolicyCondition::Equals { key, value } => {
+                context.get(key).map_or(false, |v| v == *value)
+            }
             PolicyCondition::Contains { key, value } => {
-                context.get(key).is_some_and(|v| match (v, value) {
+                context.get(key).map_or(false, |v| match (v, value) {
                     (serde_json::Value::String(s), serde_json::Value::String(pattern)) => {
                         s.contains(pattern)
                     }
                     _ => false,
                 })
             }
-            PolicyCondition::Matches { key, pattern } => context.get(key).is_some_and(|v| {
+            PolicyCondition::Matches { key, pattern } => context.get(key).map_or(false, |v| {
                 if let serde_json::Value::String(s) = v {
                     regex::Regex::new(pattern)
                         .map(|r| r.is_match(s.as_str()))
@@ -438,17 +435,17 @@ impl PolicyEngine {
                         None
                     }
                 })
-                .is_some_and(|c| c >= *channel),
+                .map_or(false, |c| c >= *channel),
             PolicyCondition::Env { name, value } => {
-                std::env::var(name).ok().is_some_and(|v| v == *value)
+                std::env::var(name).ok().map_or(false, |v| v == *value)
             }
-            PolicyCondition::Not { condition } => !Self::evaluate_condition(condition, context),
+            PolicyCondition::Not { condition } => !self.evaluate_condition(condition, context),
             PolicyCondition::And { conditions } => conditions
                 .iter()
-                .all(|c| Self::evaluate_condition(c, context)),
+                .all(|c| self.evaluate_condition(c, context)),
             PolicyCondition::Or { conditions } => conditions
                 .iter()
-                .any(|c| Self::evaluate_condition(c, context)),
+                .any(|c| self.evaluate_condition(c, context)),
         }
     }
 

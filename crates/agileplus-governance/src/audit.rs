@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Audit logging for governance actions
 //!
 //! Provides complete audit trail of all governance operations,
@@ -356,17 +355,6 @@ impl AuditLogger {
             [],
         )?;
 
-        // Channel iteration tracking
-        conn.execute(
-            "CREATE TABLE IF NOT EXISTS channel_iterations (
-                channel_id TEXT NOT NULL,
-                iteration INTEGER NOT NULL DEFAULT 1,
-                updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
-                PRIMARY KEY (channel_id)
-            )",
-            [],
-        )?;
-
         Ok(())
     }
 
@@ -389,7 +377,7 @@ impl AuditLogger {
                 event.timestamp.to_rfc3339(),
                 event.level.to_string(),
                 event.action,
-                event.category.map(|c| format!("{c:?}")),
+                event.category.map(|c| format!("{:?}", c)),
                 event.message,
                 event.user_id,
                 event.client_ip,
@@ -432,7 +420,7 @@ impl AuditLogger {
 
         if let Some(ref category) = filter.category {
             sql.push_str(" AND category = ?");
-            params_vec.push(format!("{category:?}"));
+            params_vec.push(format!("{:?}", category));
         }
 
         if let Some(ref level) = filter.level {
@@ -571,8 +559,10 @@ impl AuditLogger {
             Ok((row.get::<_, String>(0)?, row.get::<_, u64>(1)?))
         })?;
 
-        for (level, count) in rows.flatten() {
-            stats.by_level.insert(level, count);
+        for row in rows {
+            if let Ok((level, count)) = row {
+                stats.by_level.insert(level, count);
+            }
         }
 
         // Get top actions
@@ -586,60 +576,13 @@ impl AuditLogger {
             })
         })?;
 
-        for action in rows.flatten() {
-            stats.top_actions.push(action);
+        for row in rows {
+            if let Ok(action) = row {
+                stats.top_actions.push(action);
+            }
         }
 
         Ok(stats)
-    }
-
-    /// Get the current iteration for a channel, inserting with default 1 if absent.
-    pub fn get_channel_iteration(&self, channel_id: &str) -> Result<u32> {
-        let conn = self
-            .conn
-            .lock()
-            .map_err(|e| GovernanceError::Database(e.to_string()))?;
-
-        // Insert default row if not present, then return the iteration
-        conn.execute(
-            "INSERT OR IGNORE INTO channel_iterations (channel_id, iteration) VALUES (?1, 1)",
-            params![channel_id],
-        )?;
-
-        let iteration: u32 = conn.query_row(
-            "SELECT iteration FROM channel_iterations WHERE channel_id = ?1",
-            params![channel_id],
-            |row| row.get(0),
-        )?;
-
-        Ok(iteration)
-    }
-
-    /// Bump the iteration for a channel and return the new value.
-    pub fn bump_channel_iteration(&self, channel_id: &str) -> Result<u32> {
-        let conn = self
-            .conn
-            .lock()
-            .map_err(|e| GovernanceError::Database(e.to_string()))?;
-
-        // Insert default row if not present
-        conn.execute(
-            "INSERT OR IGNORE INTO channel_iterations (channel_id, iteration) VALUES (?1, 1)",
-            params![channel_id],
-        )?;
-
-        conn.execute(
-            "UPDATE channel_iterations SET iteration = iteration + 1, updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now') WHERE channel_id = ?1",
-            params![channel_id],
-        )?;
-
-        let iteration: u32 = conn.query_row(
-            "SELECT iteration FROM channel_iterations WHERE channel_id = ?1",
-            params![channel_id],
-            |row| row.get(0),
-        )?;
-
-        Ok(iteration)
     }
 
     /// Mark events as synced
@@ -654,7 +597,10 @@ impl AuditLogger {
             .map_err(|e| GovernanceError::Database(e.to_string()))?;
         let now = Utc::now().to_rfc3339();
         let placeholders = ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
-        let sql = format!("UPDATE audit_events SET synced_at = ? WHERE id IN ({placeholders})");
+        let sql = format!(
+            "UPDATE audit_events SET synced_at = ? WHERE id IN ({})",
+            placeholders
+        );
 
         let mut params_vec: Vec<&dyn rusqlite::ToSql> = vec![&now];
         params_vec.extend(ids.iter().map(|s| s as &dyn rusqlite::ToSql));

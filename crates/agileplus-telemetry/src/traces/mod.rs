@@ -38,11 +38,9 @@ pub fn init_tracer() -> Result<(), String> {
     let endpoint = std::env::var("OTEL_EXPORTER_OTLP_ENDPOINT")
         .unwrap_or_else(|_| "http://localhost:4317".to_string());
 
-    let exporter = opentelemetry_otlp::SpanExporter::builder()
-        .with_http()
-        .with_endpoint(&endpoint)
-        .build()
-        .map_err(|e| e.to_string())?;
+    let exporter = opentelemetry_otlp::new_exporter()
+        .http()
+        .with_endpoint(&endpoint);
 
     let provider = SdkTracerProvider::builder()
         .with_batch_exporter(exporter)
@@ -73,7 +71,7 @@ pub fn init_tracer() -> Result<(), String> {
 /// Return a composable [`Layer`] that bridges `tracing` spans to a new OTLP
 /// exporter pointing at `OTEL_EXPORTER_OTLP_ENDPOINT`.
 ///
-/// This variant builds a fresh `SdkTracerProvider` internally so that the
+/// This variant builds a fresh `TracerProvider` internally so that the
 /// layer holds a concrete `SdkTracer` (required by `PreSampledTracer`).
 /// Call [`init_tracer`] separately if you also want the *global* provider set.
 pub fn telemetry_layer<S>() -> impl Layer<S>
@@ -88,10 +86,10 @@ where
     // Attempt to build an OTLP exporter; fall back to no-op on failure.
     let provider: SdkTracerProvider = (|| {
         use opentelemetry_otlp::WithExportConfig;
-        let exporter = opentelemetry_otlp::SpanExporter::builder()
-            .with_http()
+        let exporter = opentelemetry_otlp::new_exporter()
+            .http()
             .with_endpoint(&endpoint)
-            .build()
+            .map_err(|e| e.to_string())
             .ok()?;
         Some(
             SdkTracerProvider::builder()

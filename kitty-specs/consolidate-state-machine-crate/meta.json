@@ -1,0 +1,10 @@
+{
+  "spec_id": "consolidate-state-machine-crate",
+  "slug": "consolidate-state-machine-crate",
+  "title": "Consolidate State Machine Crate",
+  "status": "in_progress",
+  "priority": "high",
+  "created_at": "2026-05-02T00:00:00Z",
+  "source_description": "Consolidate `phenotype-state-machine` to canonical `phenoShared`",
+  "type": "consolidation"
+}

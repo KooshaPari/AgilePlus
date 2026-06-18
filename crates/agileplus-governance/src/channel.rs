@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Release channel governance for the 5-tier release model
 //!
 //! | Channel | Order | Version Suffix | Risk Profile |
@@ -45,10 +44,10 @@ impl ReleaseChannel {
     /// Get the version suffix for this channel
     pub fn version_suffix(&self, iteration: u32) -> String {
         match self {
-            ReleaseChannel::Alpha => format!("-alpha.{iteration}"),
-            ReleaseChannel::Canary => format!("-canary.{iteration}"),
-            ReleaseChannel::Beta => format!("-beta.{iteration}"),
-            ReleaseChannel::Rc => format!("-rc.{iteration}"),
+            ReleaseChannel::Alpha => format!("-alpha.{}", iteration),
+            ReleaseChannel::Canary => format!("-canary.{}", iteration),
+            ReleaseChannel::Beta => format!("-beta.{}", iteration),
+            ReleaseChannel::Rc => format!("-rc.{}", iteration),
             ReleaseChannel::Prod => String::new(), // No suffix for prod
         }
     }
@@ -56,10 +55,10 @@ impl ReleaseChannel {
     /// Get the PEP 440 compliant suffix for PyPI
     pub fn pep440_suffix(&self, iteration: u32) -> String {
         match self {
-            ReleaseChannel::Alpha => format!("a{iteration}"),
-            ReleaseChannel::Canary => format!("rc{iteration}"), // PEP 440 doesn't have canary
-            ReleaseChannel::Beta => format!("b{iteration}"),
-            ReleaseChannel::Rc => format!("rc{iteration}"),
+            ReleaseChannel::Alpha => format!("a{}", iteration),
+            ReleaseChannel::Canary => format!("rc{}", iteration), // PEP 440 doesn't have canary
+            ReleaseChannel::Beta => format!("b{}", iteration),
+            ReleaseChannel::Rc => format!("rc{}", iteration),
             ReleaseChannel::Prod => String::new(),
         }
     }
@@ -146,7 +145,7 @@ impl FromStr for ReleaseChannel {
             "beta" | "b" => Ok(ReleaseChannel::Beta),
             "rc" | "release-candidate" => Ok(ReleaseChannel::Rc),
             "prod" | "production" | "stable" | "p" => Ok(ReleaseChannel::Prod),
-            _ => Err(format!("Unknown channel: {s}")),
+            _ => Err(format!("Unknown channel: {}", s)),
         }
     }
 }

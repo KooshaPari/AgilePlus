@@ -3,12 +3,11 @@ name = "agileplus-governance"
 version = "0.1.0"
 edition = "2021"
 description = "AgilePlus governance system for release channels, audit logging, and policy enforcement"
-license = "MIT OR Apache-2.0"
+license = "MIT"
+authors = ["Koosha Pari <koosha@phenotype.dev>"]
 repository = "https://github.com/KooshaPari/AgilePlus"
 keywords = ["governance", "release", "policy", "audit"]
 categories = ["development-tools", "governance"]
-documentation = "https://docs.rs/agileplus-governance"
-authors = ["kooshapari"]
 
 [[bin]]
 name = "agileplus-governance"
@@ -16,10 +15,6 @@ path = "src/main.rs"
 required-features = ["cli"]
 
 [dependencies]
-# Config builder macro
-agileplus-config = { path = "../agileplus-config" }
-agileplus-telemetry.workspace = true
-
 # Async runtime
 tokio = { version = "1", features = ["full"] }
 
@@ -76,6 +71,3 @@ version = "1"
 optional = true
 version = "4"
 features = ["derive"]
-
-[package.metadata.cargo-machete]
-ignored = ["async-trait", "envsubst", "tracing-subscriber"]
