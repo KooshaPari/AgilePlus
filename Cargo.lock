@@ -60,6 +60,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "agileplus-api-types"
+version = "0.1.0"
+dependencies = [
+ "agileplus-error-core",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "agileplus-application"
 version = "0.1.0"
 dependencies = [
@@ -242,6 +251,15 @@ dependencies = [
  "tokio",
  "traceability-core",
  "uuid",
+]
+
+[[package]]
+name = "agileplus-error-core"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
 ]
 
 [[package]]
@@ -548,6 +566,10 @@ dependencies = [
  "tracing",
  "wiremock",
 ]
+
+[[package]]
+name = "agileplus-plugin-core"
+version = "0.1.0"
 
 [[package]]
 name = "agileplus-proto"
