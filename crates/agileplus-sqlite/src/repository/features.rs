@@ -26,7 +26,7 @@ fn state_str(s: FeatureState) -> &'static str {
 }
 
 fn labels_to_json(labels: &[String]) -> String {
-    serde_json::to_string(labels).unwrap_or_else(|_| "[]".to_owned())
+    serde_json::to_string(labels).unwrap_or_else(|_| "[]".to_string())
 }
 
 fn labels_from_json(s: &str) -> Vec<String> {
@@ -45,7 +45,7 @@ fn row_to_feature(row: &Row<'_>) -> rusqlite::Result<Feature> {
     // module_id column added by migration 015 -- may be NULL.
     let module_id: Option<i64> = row.get(8).unwrap_or(None);
     // labels column added by migration 026 -- defaults to '[]'.
-    let labels_json: String = row.get(9).unwrap_or_else(|_| "[]".to_owned());
+    let labels_json: String = row.get(9).unwrap_or_else(|_| "[]".to_string());
 
     let state = state_str.parse::<FeatureState>().map_err(|e| {
         rusqlite::Error::FromSqlConversionFailure(
@@ -217,7 +217,7 @@ pub fn list_all_features(conn: &Connection) -> Result<Vec<Feature>, DomainError>
 
 pub fn list_features_by_label(conn: &Connection, label: &str) -> Result<Vec<Feature>, DomainError> {
     // labels is stored as a JSON array: ["foo","bar"]. Use json_each to filter in SQL.
-    let pattern = format!("%\"{}\"%", label.replace('"', "\\""));
+    let pattern = format!("%\"{}\"%" , label.replace('"', "\\\""));
     let mut stmt = conn
         .prepare(
             "SELECT id, slug, friendly_name, state, spec_hash, target_branch, created_at, updated_at,
@@ -226,9 +226,7 @@ pub fn list_features_by_label(conn: &Connection, label: &str) -> Result<Vec<Feat
         )
         .map_err(map_err)?;
 
-    let rows = stmt
-        .query_map(params![pattern], row_to_feature)
-        .map_err(map_err)?;
+    let rows = stmt.query_map(params![pattern], row_to_feature).map_err(map_err)?;
     rows.collect::<rusqlite::Result<Vec<_>>>().map_err(map_err)
 }
 
