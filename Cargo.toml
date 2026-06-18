@@ -70,7 +70,9 @@ members = [
     "crates/agileplus-nats",
     "crates/agileplus-p2p",
     "crates/agileplus-telemetry",
+    "crates/agileplus-trace-validator",
     "crates/agileplus-triage",
+    "crates/agileplus-trace-validator",
     "crates/agileplus-import",
     "crates/agileplus-proto",
     "crates/agileplus-integration-tests",
@@ -148,6 +150,8 @@ tracing-subscriber = { version = "0.3", features = [
 ] }
 tracing-appender = "0.2"
 serde_yaml = "0.9"
+walkdir = "2"
+regex = "1"
 url = "2"
 dirs = "5"
 tempfile = "3"

@@ -368,11 +368,7 @@ fn validate(dir: &Path) -> Result<()> {
                         println!(
                             "FAIL {}: missing {}",
                             path.display(),
-                            missing
-                                .iter()
-                                .map(|s| **s)
-                                .collect::<Vec<_>>()
-                                .join(", ")
+                            missing.iter().map(|s| **s).collect::<Vec<_>>().join(", ")
                         );
                         err += 1;
                     }
@@ -438,7 +434,11 @@ fn to_canonical(raw: &serde_json::Value) -> CanonicalWorklog {
             .unwrap_or_default()
     };
     let verification = obj
-        .and_then(|o| o.get("verification_result").cloned().or_else(|| o.get("verification").cloned()))
+        .and_then(|o| {
+            o.get("verification_result")
+                .cloned()
+                .or_else(|| o.get("verification").cloned())
+        })
         .map(|v| {
             let status = v
                 .get("status")

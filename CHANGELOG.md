@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Governance pre-merge workflow for anti-pattern detection, SPEC reference checks, and
+  required governance document coverage.
+
 ### Changed
 
 ### Deprecated

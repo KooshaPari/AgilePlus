@@ -1,0 +1,21 @@
+coverage:
+  status:
+    project:
+      agileplus-cli:
+        target: 80%
+        threshold: 1%
+        flags:
+          - agileplus-cli
+      agileplus-sqlite:
+        target: 80%
+        threshold: 1%
+        flags:
+          - agileplus-sqlite
+
+flags:
+  agileplus-cli:
+    paths:
+      - crates/agileplus-cli/
+  agileplus-sqlite:
+    paths:
+      - crates/agileplus-sqlite/
