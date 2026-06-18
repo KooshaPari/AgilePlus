@@ -1,10 +1,5 @@
 name: SAST Quick Check
-
-permissions:
-  contents: read
-  security-events: write
-  pull-requests: write
-
+permissions: read-all
 on:
   pull_request:
   push:
