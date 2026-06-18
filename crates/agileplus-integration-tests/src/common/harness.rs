@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Service startup and teardown harness for integration tests.
 //!
 //! Traceability: WP19-T107

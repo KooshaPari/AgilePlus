@@ -2,15 +2,9 @@
 name = "agileplus-benchmarks"
 version.workspace = true
 edition.workspace = true
+license.workspace = true
 rust-version.workspace = true
-publish = false
 description = "Criterion performance benchmarks for all AgilePlus subsystems"
-license = "MIT OR Apache-2.0"
-repository = "https://github.com/KooshaPari/AgilePlus"
-documentation = "https://docs.rs/agileplus-benchmarks"
-keywords = ["phenotype", "agileplus", "bench"]
-categories = ["development-tools::profiling"]
-authors = ["kooshapari"]
 
 [dependencies]
 agileplus-domain = { path = "../agileplus-domain" }
@@ -48,6 +42,3 @@ harness = false
 [[bench]]
 name = "graph_query_perf"
 harness = false
-
-[package.metadata.cargo-machete]
-ignored = ["rusqlite"]

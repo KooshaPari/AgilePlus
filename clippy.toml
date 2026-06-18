@@ -1,11 +1,4 @@
-# AgilePlus workspace clippy config.
-#
-# Overrides the Phenotype-org parent `clippy.toml` so the MSRV matches the
-# version pinned in `rust-toolchain.toml` and `Cargo.toml`'s
-# `[workspace.package].rust-version`. Without this override, clippy emits
-# "the MSRV in `clippy.toml` and `Cargo.toml` differ" on every crate and the
-# `-D warnings` gate cannot pass cleanly.
-msrv                      = "1.88.0"
-avoid-breaking-exported-api = true
-allow-dbg-in-tests        = true
-disallowed-methods        = []
+# Clippy configuration for AgilePlus workspace.
+# The must_use_candidate lint is enabled via #![warn(clippy::must_use_candidate)]
+# in individual crate lib.rs files or via RUSTFLAGS in CI.
+avoid-breaking-exported-api = false

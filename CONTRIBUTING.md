@@ -1,30 +1,33 @@
-# Contributing
+# Contributing to AgilePlus
 
-Thanks for contributing to AgilePlus. This document captures the minimum process for changes that touch this repository.
+Thank you for your interest in contributing! This repository is part of the [Phenotype](https://github.com/KooshaPari) ecosystem.
 
-## Workflow
+## Prerequisites
 
-1. Branch from `main`: `git checkout -b <type>/<short-topic> origin/main`.
-2. Keep commits small and provenance-scoped (no omnibus commits).
-3. Before opening a PR, run the local quality gate from the repo root:
-   - `task quality` — boundaries, Vale on invariant Markdown, Ruff (`src/` + `tests/`), phenotype CLIProxy unit tests.
-   - `task quality:full` — same plus `ruff format --check`.
-4. Open a PR with a clear title (`<type>(scope): summary`) and link any related spec or worklog.
+- Rust toolchain (stable, see `rust-toolchain.toml` if present).
+- Git and a GitHub account with access to push branches.
 
-## Commit Types
+## Development Workflow
 
-`feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `perf`, `build`, `ci`.
+1. **Spec first.** All non-trivial work must be tracked in [AgilePlus](https://github.com/KooshaPari/AgilePlus). Check for an existing spec under `kitty-specs/` before implementing; otherwise create one with `agileplus specify --title "<feature>"`.
+2. **Branch.** Cut feature branches from `main` using the form `<category>/<short-slug>` (e.g. `feat/auth-rotation`, `fix/null-deref`).
+3. **Implement.** Follow the existing module layout. Match prevailing code style — do not reformat unrelated files.
+4. **Test.** Run `cargo test --all`. Add unit tests next to the code under test and integration tests under `tests/`.
+5. **Quality gates.** Run `cargo fmt --check` and `cargo clippy --all-targets -- -D warnings` before pushing.
+6. **Commit.** Use conventional-commit style (`feat:`, `fix:`, `docs:`, `chore:`, `refactor:`, `test:`). Keep commits scoped — one logical change per commit.
+7. **Pull request.** Open a PR against `main`. Reference the AgilePlus spec ID in the description. Fill the PR template if present.
 
-## Code Style
+## Code Review
 
-- Follow repo linters and formatters — do not bypass them.
-- All Markdown must be UTF-8: `agileplus validate-encoding --all --fix` (run from the AgilePlus repo root).
-- Specs and plans must not include code; write specs, acceptance criteria, and handoffs.
+- All PRs require at least one approving review.
+- CI must pass on Linux runners (macOS/Windows runners may be skipped due to org billing constraints).
+- Do not introduce new lint suppressions without inline justification.
 
 ## Reporting Issues
 
-File issues with a minimal reproduction, expected vs. actual behavior, and environment details.
+- **Bugs and feature requests:** open a GitHub issue with reproduction steps or motivation.
+- **Security vulnerabilities:** see [`SECURITY.md`](./SECURITY.md) — do **not** file public issues for security reports.
 
-## Code of Conduct
+## License
 
-By participating, you agree to abide by the project's `CODE_OF_CONDUCT.md`.
+By contributing you agree that your contributions will be licensed under this repository's license (see `LICENSE`).

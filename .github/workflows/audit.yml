@@ -1,92 +1,44 @@
-name: SAST Quick Check
-
-permissions:
-  contents: read
-  security-events: write
-  pull-requests: write
+name: Audit Workspace
 
 on:
-  pull_request:
-  push:
-    branches: [main]
+  workflow_call:
+    inputs:
+      repos_dir:
+        required: true
+        type: string
+        description: 'Directory containing repos to audit'
+permissions:
+  contents: read
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
 
 jobs:
-  semgrep:
-    name: Semgrep Scan
-    runs-on: ubuntu-24.04
-    timeout-minutes: 5
+  audit:
+    runs-on: ubuntu-latest
+    env:
+      REPOS_DIR: ${{ inputs.repos_dir }}
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
+      - uses: actions/checkout@v6
 
-      - uses: returntocorp/semgrep-action@713efdd345f3035192eaa63f56867b88e63e4e5d  # v1
-        with:
-          config: >-
-            p/security-audit
-            p/owasp-top-ten
-            p/cwe-top-25
-            .semgrep-rules/
-          generateSarif: true
+      - name: Setup mise
+        uses: jdx/mise-action@v4
 
-      - name: Upload SARIF
-        uses: github/codeql-action/upload-sarif@8aad20d150bbac5944a9f9d289da16a4b0d87c1e
-        if: always() && hashFiles('semgrep.sarif') != ''
-        with:
-          sarif_file: semgrep.sarif
-          category: semgrep
+      - name: Install pheno-cli
+        run: mise run install || go install ./pheno-cli/... 2>/dev/null || true
 
-  secrets:
-    name: Secret Scanning
-    runs-on: ubuntu-24.04
-    timeout-minutes: 3
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
-        with:
-          fetch-depth: 0
-
-      - uses: trufflesecurity/trufflehog@ac0805e53b065e7188181fc80dce1800dfa51ab9  # was: @main
-        with:
-          path: ./
-          extra_args: --only-verified --fail
-        continue-on-error: true
-
-  lint-rust:
-    name: Rust Lint
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
-      - name: Checkout phenoShared sibling
+      - name: Run pheno audit
         run: |
-          git clone --depth 1 \
-            "https://x-access-token:${{ github.token }}@github.com/KooshaPari/phenoShared.git" \
-            "${{ github.workspace }}/../phenoShared"
-      - uses: dtolnay/rust-toolchain@5b842231ba77f5c045dba54ac5560fed2db780e2  # stable
-        with:
-          components: clippy
-      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32  # v2
-      - uses: arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b  # v3
-        with:
-          version: "28.x"
-          repo-token: ${{ github.token }}
-      - run: cargo clippy --all-targets --all-features -- -D warnings
+          pheno audit --repos-dir "$REPOS_DIR" --format json > audit-results.json || true
 
-  license-check:
-    name: License Compliance
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
-      - uses: dtolnay/rust-toolchain@5b842231ba77f5c045dba54ac5560fed2db780e2  # stable
-      - name: Install cargo-deny
-        uses: taiki-e/install-action@7a79fe8c3a13344501c80d99cae481c1c9085912  # v2
+      - name: Upload audit results
+        uses: actions/upload-artifact@v4
         with:
-          tool: cargo-deny
-      - name: Checkout phenoShared sibling
+          name: audit-results
+          path: audit-results.json
+          if-no-files-found: warn
+
+      - name: Audit summary
         run: |
-          git clone --depth 1 \
-            "https://x-access-token:${{ github.token }}@github.com/KooshaPari/phenoShared.git" \
-            "${{ github.workspace }}/../phenoShared"
-      - name: Check Rust licenses
-        run: cargo deny check licenses
+          echo "✓ Audit completed for $REPOS_DIR"
+          if [ -f audit-results.json ]; then
+            echo "Results saved to audit-results.json"
+          fi

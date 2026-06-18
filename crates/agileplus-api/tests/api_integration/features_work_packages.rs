@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 use crate::support::{TEST_API_KEY, setup_test_server};
 
 #[tokio::test]

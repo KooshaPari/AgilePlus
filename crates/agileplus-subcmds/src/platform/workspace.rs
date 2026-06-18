@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Resolve the AgilePlus repo root and `process-compose.yml` so CLI commands work from any cwd.
 //!
 //! Set **`AGILEPLUS_ROOT`** to the repository root if you are outside the tree (optional).
@@ -49,8 +48,7 @@ pub(crate) fn resolve_platform_compose(config: &str) -> Result<(PathBuf, PathBuf
         .or_else(find_agileplus_root_from_walk)
         .ok_or_else(|| {
             anyhow!(
-                "Could not find AgilePlus repo root (looking for `{}`).
-\
+                "Could not find AgilePlus repo root (looking for `{}`).\n\
                  cd into the AgilePlus clone, or set AGILEPLUS_ROOT to the repo root.",
                 config
             )

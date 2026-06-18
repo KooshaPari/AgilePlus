@@ -1,10 +1,7 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Typed cache store with serde serialization.
 
-#[cfg(feature = "redis")]
 use crate::pool::CachePool;
 use async_trait::async_trait;
-#[cfg(feature = "redis")]
 use redis::AsyncCommands;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -46,13 +43,11 @@ pub trait CacheStore: Send + Sync {
 }
 
 /// Redis/Dragonfly-backed cache store.
-#[cfg(feature = "redis")]
 pub struct RedisCacheStore {
     pool: CachePool,
     default_ttl: Duration,
 }
 
-#[cfg(feature = "redis")]
 impl RedisCacheStore {
     pub fn new(pool: CachePool, default_ttl_secs: u64) -> Self {
         Self {
@@ -62,7 +57,6 @@ impl RedisCacheStore {
     }
 }
 
-#[cfg(feature = "redis")]
 #[async_trait]
 impl CacheStore for RedisCacheStore {
     async fn get<T: for<'de> Deserialize<'de> + Send>(

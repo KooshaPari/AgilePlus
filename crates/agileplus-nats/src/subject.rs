@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Hierarchical subject (topic) addressing for the event bus.
 //!
 //! Subjects follow the NATS dot-separated convention:

@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 use std::path::Path;
 
 use agileplus_domain::domain::snapshot::Snapshot;
@@ -37,10 +36,7 @@ pub(crate) fn resolve_snapshot_conflict(path: &Path) -> Result<bool, MergeError>
                     }
                 }
                 Err(e) => {
-                    warn!(
-                        "Skipping unparsable snapshot side in {}: {e}",
-                        path.display()
-                    );
+                    warn!("Skipping unparsable snapshot side in {}: {e}", path.display());
                 }
             }
         }

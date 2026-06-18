@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Server-streaming helpers for agent event delivery.
 //!
 //! Traceability: WP14-T083
@@ -6,9 +5,9 @@
 use std::pin::Pin;
 
 use tokio::sync::broadcast;
-use tokio_stream::wrappers::BroadcastStream;
 use tokio_stream::Stream;
 use tokio_stream::StreamExt as TokioStreamExt;
+use tokio_stream::wrappers::BroadcastStream;
 use tonic::Status;
 
 use agileplus_proto::agileplus::v1::AgentEvent as ProtoAgentEvent;
@@ -23,11 +22,7 @@ pub fn domain_event_to_proto(e: AgentEvent) -> ProtoAgentEvent {
         feature_slug: e.feature_slug().to_string(),
         wp_sequence: e.wp_sequence(),
         agent_id: e.agent_id().to_string(),
-        payload: {
-            let mut m = std::collections::HashMap::new();
-            m.insert("data".to_string(), e.payload());
-            serde_json::to_string(&m).unwrap_or_else(|_| e.payload())
-        },
+        payload: e.payload(),
         timestamp: chrono::Utc::now().to_rfc3339(),
     }
 }

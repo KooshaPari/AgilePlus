@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Event query builder with fluent API.
 
 use agileplus_domain::domain::event::Event;
@@ -79,48 +78,45 @@ impl EventQuery {
         events
             .iter()
             .filter(|e| {
-                if let Some(ref et) = self.entity_type {
-                    if e.entity_type != *et {
-                        return false;
-                    }
+                if let Some(ref et) = self.entity_type
+                    && e.entity_type != *et
+                {
+                    return false;
                 }
-                if let Some(id) = self.entity_id {
-                    if e.entity_id != id {
-                        return false;
-                    }
+                if let Some(id) = self.entity_id
+                    && e.entity_id != id
+                {
+                    return false;
                 }
-                if let Some(ref et) = self.event_type {
-                    if e.event_type != *et {
-                        return false;
-                    }
+                if let Some(ref et) = self.event_type
+                    && e.event_type != *et
+                {
+                    return false;
                 }
-                if let Some(ref a) = self.actor {
-                    if e.actor != *a {
-                        return false;
-                    }
+                if let Some(ref a) = self.actor
+                    && e.actor != *a
+                {
+                    return false;
                 }
-                if let Some(from) = self.from_time {
-                    if e.timestamp < from {
-                        return false;
-                    }
+                if let Some(from) = self.from_time
+                    && e.timestamp < from
+                {
+                    return false;
                 }
-                if let Some(to) = self.to_time {
-                    if e.timestamp > to {
-                        return false;
-                    }
+                if let Some(to) = self.to_time
+                    && e.timestamp > to
+                {
+                    return false;
                 }
-                if let Some(from) = self.from_sequence {
-                    // `after_sequence` is strictly-greater-than, matching
-                    // `EventStore::get_events_since` (`sequence > from`) so the
-                    // API pagination cursor behaves like the underlying port.
-                    if e.sequence <= from {
-                        return false;
-                    }
+                if let Some(from) = self.from_sequence
+                    && e.sequence < from
+                {
+                    return false;
                 }
-                if let Some(to) = self.to_sequence {
-                    if e.sequence > to {
-                        return false;
-                    }
+                if let Some(to) = self.to_sequence
+                    && e.sequence > to
+                {
+                    return false;
                 }
                 true
             })
@@ -188,10 +184,8 @@ mod tests {
             make_event(2, "F", "c", "a"),
             make_event(3, "F", "c", "a"),
         ];
-        // `after_sequence` is exclusive (sequence > 1), `end_sequence` inclusive
-        // (sequence <= 2), so only sequence 2 falls in the range.
         let result = EventQuery::new()
-            .after_sequence(1)
+            .after_sequence(2)
             .end_sequence(2)
             .filter(&events);
         assert_eq!(result.len(), 1);

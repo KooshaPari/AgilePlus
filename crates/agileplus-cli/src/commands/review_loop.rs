@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Review-fix loop orchestrator.
 //!
 //! Polls for CI and code review status, feeds review feedback to the agent,
@@ -73,9 +72,7 @@ pub async fn run_review_loop<A: AgentPort>(
                     // Feed back stderr as instruction for next cycle
                     if cycle < max_cycles {
                         let instruction = format!(
-                            "Your previous attempt failed. Please fix the following issues:
-
-{}",
+                            "Your previous attempt failed. Please fix the following issues:\n\n{}",
                             result.stderr
                         );
                         if let Err(e) = agent.send_instruction(job_id, &instruction).await {
@@ -123,15 +120,11 @@ pub fn format_feedback(comments: &[String]) -> String {
     let items: Vec<String> = comments
         .iter()
         .enumerate()
-        .map(|(i, c)| format!("{}. {c}", i + 1))
+        .map(|(i, c)| format!("{}. {}", i + 1, c))
         .collect();
     format!(
-        "Please address the following review comments:
-
-{}
-",
-        items.join("
-")
+        "Please address the following review comments:\n\n{}\n",
+        items.join("\n")
     )
 }
 

@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! T052: Sync Queue with Retry — bounded in-memory queue with exponential backoff.
 //!
 //! Traceability: WP08-T052
@@ -329,7 +328,8 @@ mod tests {
     fn queue_full_error() {
         let mut q = SyncQueue::new();
         for i in 0..QUEUE_CAPACITY {
-            q.enqueue(SyncOpKind::CreateIssue, format!("{i}")).unwrap();
+            q.enqueue(SyncOpKind::CreateIssue, format!("{}", i))
+                .unwrap();
         }
         let err = q.enqueue(SyncOpKind::CreateIssue, "overflow".into());
         assert!(matches!(err, Err(QueueError::Full(_))));

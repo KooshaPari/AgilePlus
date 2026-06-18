@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `agileplus cycle` subcommand group.
 //!
 //! Provides create, list, show, add, remove, and transition operations for Cycles.
@@ -80,9 +79,7 @@ pub(super) fn prior_state_label(target: CycleState, cycle: &Cycle) -> String {
         CycleState::Draft => "Active",
         CycleState::Review => "Active",
         CycleState::Shipped => "Review",
-        CycleState::Archived => "Shipped or Completed",
-        CycleState::Completed => "Active or Review",
-        CycleState::Cancelled => "any",
+        CycleState::Archived => "Shipped",
     };
     prior.to_string()
 }

@@ -1,7 +1,6 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Repository operations for backlog queue items.
 
-use rusqlite::{params, params_from_iter, types::Value, Connection, Row};
+use rusqlite::{Connection, Row, params, params_from_iter, types::Value};
 
 use agileplus_domain::{
     domain::backlog::{
@@ -20,7 +19,6 @@ fn intent_str(intent: Intent) -> &'static str {
         Intent::Feature => "feature",
         Intent::Idea => "idea",
         Intent::Task => "task",
-        Intent::Docs => "docs",
     }
 }
 
@@ -270,7 +268,7 @@ pub fn pop_next_backlog_item(conn: &Connection) -> Result<Option<BacklogItem>, D
     if let Some(mut item) = next {
         let id = item
             .id
-            .ok_or_else(|| DomainError::Storage("backlog item missing id".to_owned()))?;
+            .ok_or_else(|| DomainError::Storage("backlog item missing id".to_string()))?;
         update_backlog_status(conn, id, BacklogStatus::Triaged)?;
         item.status = BacklogStatus::Triaged;
         item.updated_at = chrono::Utc::now();

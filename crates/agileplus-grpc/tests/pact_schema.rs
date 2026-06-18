@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Proto contract / schema compatibility tests for the Rust provider side.
 //!
 //! Since pact-rust gRPC support is early-stage (see WP14 risks), we validate
@@ -67,10 +66,11 @@ fn wp_state_encoding_contract() {
     ];
 
     for (state, expected_str) in state_cases {
-        let encoded = format!("{state:?}").to_lowercase();
+        let encoded = format!("{:?}", state).to_lowercase();
         assert_eq!(
             encoded, expected_str,
-            "WpState::{state:?} must encode as '{expected_str}'"
+            "WpState::{:?} must encode as '{}'",
+            state, expected_str
         );
     }
 }
@@ -96,7 +96,8 @@ fn feature_state_encoding_contract() {
         let displayed = state.to_string();
         assert_eq!(
             displayed, expected_display,
-            "FeatureState::{state:?} must display as '{expected_display}'"
+            "FeatureState::{:?} must display as '{}'",
+            state, expected_display
         );
     }
 }

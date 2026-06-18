@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Counters and histograms for AgilePlus operational metrics.
 //!
 //! Instruments are stored in [`MetricsRecorder`] and exported via the
@@ -7,16 +6,16 @@
 
 use std::{
     sync::{
-        atomic::{AtomicU64, Ordering},
         Arc,
+        atomic::{AtomicU64, Ordering},
     },
     time::Duration,
 };
 
 use chrono::{DateTime, Utc};
 use opentelemetry::{
-    metrics::{Counter, Gauge, Histogram, Meter},
     KeyValue,
+    metrics::{Counter, Gauge, Histogram, Meter},
 };
 
 // ---------------------------------------------------------------------------

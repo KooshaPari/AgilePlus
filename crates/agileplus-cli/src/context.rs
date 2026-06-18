@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Command context abstraction for reducing boilerplate across CLI handlers.
 //!
 //! Encapsulates common command patterns:

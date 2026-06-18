@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 use super::*;
 use agileplus_domain::domain::cycle::{Cycle, CycleFeature, CycleState};
 use agileplus_domain::domain::module::{Module, ModuleFeatureTag};

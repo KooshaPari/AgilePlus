@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Health-check types for the event bus.
 
 /// Health status of the event bus connection.

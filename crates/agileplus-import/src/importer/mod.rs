@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 use anyhow::Result;
 
 use agileplus_domain::ports::{StoragePort, VcsPort};
@@ -26,9 +25,10 @@ where
     // Flatten features embedded within ImportProject entries, stamping project_id.
     let mut all_features: Vec<ImportFeature> = bundle.features.clone();
     for project in &bundle.projects {
-        let project_slug = project.slug.clone().unwrap_or_else(|| {
-            agileplus_domain::domain::feature::Feature::slug_from_name(&project.name)
-        });
+        let project_slug = project
+            .slug
+            .clone()
+            .unwrap_or_else(|| agileplus_domain::domain::feature::Feature::slug_from_name(&project.name));
         if let Some(&pid) = project_ids.get(&project_slug) {
             for mut feat in project.features.clone() {
                 feat.project_id = Some(pid);

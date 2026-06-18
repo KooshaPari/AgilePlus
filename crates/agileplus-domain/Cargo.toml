@@ -8,19 +8,18 @@ rust-version.workspace = true
 [dependencies]
 serde.workspace = true
 serde_json.workspace = true
-phenotype-error-core.workspace = true
-traceability-core.workspace = true
-thiserror.workspace = true
-async-trait.workspace = true
 chrono.workspace = true
 sha2.workspace = true
-agileplus-validate.workspace = true
-uuid.workspace = true
-regex = "1"
+thiserror.workspace = true
+toml = "0.8"
+dirs-next = "2"
+zeroize = { version = "1", features = ["derive"] }
+keyring = { version = "3", optional = true }
+
+[features]
+keychain = ["dep:keyring"]
 
 [dev-dependencies]
-tokio.workspace = true
-
-[package.metadata.cargo-machete]
-# Declared for the shared-core spine; consumed transitively / via re-export, not detected by static scan.
-ignored = ["phenotype-error-core", "agileplus-validate"]
+proptest = "1"
+tokio = { version = "1", features = ["full"] }
+tempfile = "3"

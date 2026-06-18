@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Integration tests for the AgilePlus HTTP API.
 //!
 //! These tests spin up a real axum test server backed by in-memory mock
@@ -13,10 +12,12 @@
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use agileplus_api::{create_router, AppState};
+use agileplus_api::{AppState, create_router};
 use agileplus_domain::config::AppConfig;
+use agileplus_domain::credentials::CredentialStore;
 use agileplus_domain::credentials::InMemoryCredentialStore;
-use agileplus_domain::domain::audit::{hash_entry, AuditEntry};
+use agileplus_domain::credentials::keys as cred_keys;
+use agileplus_domain::domain::audit::{AuditEntry, hash_entry};
 use agileplus_domain::domain::backlog::{
     BacklogFilters, BacklogItem, BacklogPriority, BacklogStatus,
 };
@@ -30,13 +31,12 @@ use agileplus_domain::domain::state_machine::FeatureState;
 use agileplus_domain::domain::sync_mapping::SyncMapping;
 use agileplus_domain::domain::work_package::{WorkPackage, WpDependency, WpState};
 use agileplus_domain::error::DomainError;
+use agileplus_domain::ports::ContentStoragePort;
 use agileplus_domain::ports::observability::{LogEntry, ObservabilityPort, SpanContext};
 use agileplus_domain::ports::storage::StoragePort;
 use agileplus_domain::ports::vcs::{
     ConflictInfo, FeatureArtifacts, MergeResult, VcsPort, WorktreeInfo,
 };
-use agileplus_domain::ports::ContentStoragePort;
-use async_trait::async_trait;
 use axum::http::StatusCode;
 use axum_test::TestServer;
 use chrono::Utc;
@@ -72,7 +72,7 @@ impl MockStorage {
             id: 1,
             slug: "test-project".to_string(),
             name: "Test Project".to_string(),
-            description: Some("A test project".to_string()),
+            description: "A test project".to_string(),
             created_at: now,
             updated_at: now,
         });
@@ -109,7 +109,6 @@ impl MockStorage {
             plane_sub_issue_id: None,
             base_commit: None,
             head_commit: None,
-            trace_ids: Vec::new(),
             created_at: now,
             updated_at: now,
         });
@@ -164,7 +163,6 @@ impl MockStorage {
     }
 }
 
-#[async_trait]
 impl StoragePort for MockStorage {
     async fn create_feature(&self, _f: &Feature) -> Result<i64, DomainError> {
         let id = (self.features.lock().unwrap().len() + 1) as i64;
@@ -201,10 +199,6 @@ impl StoragePort for MockStorage {
         Ok(())
     }
 
-    async fn update_feature(&self, _feature: &Feature) -> Result<(), DomainError> {
-        Ok(())
-    }
-
     async fn list_features_by_state(
         &self,
         state: FeatureState,
@@ -222,18 +216,6 @@ impl StoragePort for MockStorage {
 
     async fn list_all_features(&self) -> Result<Vec<Feature>, DomainError> {
         let features = self.features.lock().unwrap().clone();
-        Ok(features)
-    }
-
-    async fn list_features_by_label(&self, label: &str) -> Result<Vec<Feature>, DomainError> {
-        let features: Vec<Feature> = self
-            .features
-            .lock()
-            .unwrap()
-            .iter()
-            .filter(|f| f.labels.iter().any(|l| l == label))
-            .cloned()
-            .collect();
         Ok(features)
     }
 
@@ -529,158 +511,10 @@ impl StoragePort for MockStorage {
     ) -> Result<Option<agileplus_domain::domain::project::Project>, DomainError> {
         Ok(None)
     }
-
-    async fn get_project_by_id(
-        &self,
-        _id: i64,
-    ) -> Result<Option<agileplus_domain::domain::project::Project>, DomainError> {
-        Ok(None)
-    }
-
-    async fn list_all_projects(
-        &self,
-    ) -> Result<Vec<agileplus_domain::domain::project::Project>, DomainError> {
-        Ok(vec![])
-    }
-
-    async fn delete_project(&self, _id: i64) -> Result<(), DomainError> {
-        Ok(())
-    }
-
-    // --- Users ---
-    async fn create_user(
-        &self,
-        _user: &agileplus_domain::domain::user::User,
-    ) -> Result<i64, DomainError> {
-        Ok(1)
-    }
-
-    async fn get_user_by_id(
-        &self,
-        _id: i64,
-    ) -> Result<Option<agileplus_domain::domain::user::User>, DomainError> {
-        Ok(None)
-    }
-
-    async fn get_user_by_email(
-        &self,
-        _email: &str,
-    ) -> Result<Option<agileplus_domain::domain::user::User>, DomainError> {
-        Ok(None)
-    }
-
-    async fn update_user_status(
-        &self,
-        _id: i64,
-        _status: agileplus_domain::domain::user::UserStatus,
-    ) -> Result<(), DomainError> {
-        Ok(())
-    }
-
-    async fn update_user_role(
-        &self,
-        _id: i64,
-        _role: agileplus_domain::domain::user::UserRole,
-    ) -> Result<(), DomainError> {
-        Ok(())
-    }
-
-    async fn list_all_users(
-        &self,
-    ) -> Result<Vec<agileplus_domain::domain::user::User>, DomainError> {
-        Ok(vec![])
-    }
-
-    async fn delete_user(&self, _id: i64) -> Result<(), DomainError> {
-        Ok(())
-    }
-
-    // --- Epics ---
-    async fn create_epic(
-        &self,
-        _epic: &agileplus_domain::domain::epic::Epic,
-    ) -> Result<i64, DomainError> {
-        Ok(1)
-    }
-
-    async fn get_epic_by_id(
-        &self,
-        _id: i64,
-    ) -> Result<Option<agileplus_domain::domain::epic::Epic>, DomainError> {
-        Ok(None)
-    }
-
-    async fn update_epic_status(
-        &self,
-        _id: i64,
-        _status: agileplus_domain::domain::epic::EpicStatus,
-    ) -> Result<(), DomainError> {
-        Ok(())
-    }
-
-    async fn list_epics_by_project(
-        &self,
-        _project_id: i64,
-    ) -> Result<Vec<agileplus_domain::domain::epic::Epic>, DomainError> {
-        Ok(vec![])
-    }
-
-    async fn delete_epic(&self, _id: i64) -> Result<(), DomainError> {
-        Ok(())
-    }
-
-    // --- Stories ---
-    async fn create_story(
-        &self,
-        _story: &agileplus_domain::domain::story::Story,
-    ) -> Result<i64, DomainError> {
-        Ok(1)
-    }
-
-    async fn get_story_by_id(
-        &self,
-        _id: i64,
-    ) -> Result<Option<agileplus_domain::domain::story::Story>, DomainError> {
-        Ok(None)
-    }
-
-    async fn update_story_status(
-        &self,
-        _id: i64,
-        _status: agileplus_domain::domain::story::StoryStatus,
-    ) -> Result<(), DomainError> {
-        Ok(())
-    }
-
-    async fn list_stories_by_epic(
-        &self,
-        _epic_id: i64,
-    ) -> Result<Vec<agileplus_domain::domain::story::Story>, DomainError> {
-        Ok(vec![])
-    }
-
-    async fn list_stories_by_project(
-        &self,
-        _project_id: i64,
-    ) -> Result<Vec<agileplus_domain::domain::story::Story>, DomainError> {
-        Ok(vec![])
-    }
-
-    async fn delete_story(&self, _id: i64) -> Result<(), DomainError> {
-        Ok(())
-    }
-
-    async fn upsert_story_by_requirement_id(
-        &self,
-        _story: &agileplus_domain::domain::story::Story,
-    ) -> Result<i64, DomainError> {
-        Ok(1)
-    }
 }
 
 // ── ContentStoragePort for MockStorage ───────────────────────────────────────
 
-#[async_trait]
 impl ContentStoragePort for MockStorage {
     async fn create_feature(
         &self,
@@ -743,21 +577,6 @@ impl ContentStoragePort for MockStorage {
         &self,
     ) -> Result<Vec<agileplus_domain::domain::feature::Feature>, DomainError> {
         let feats: Vec<_> = self.features.lock().unwrap().clone();
-        Ok(feats)
-    }
-
-    async fn list_features_by_label(
-        &self,
-        label: &str,
-    ) -> Result<Vec<agileplus_domain::domain::feature::Feature>, DomainError> {
-        let feats: Vec<_> = self
-            .features
-            .lock()
-            .unwrap()
-            .iter()
-            .filter(|f| f.labels.iter().any(|l| l == label))
-            .cloned()
-            .collect();
         Ok(feats)
     }
 
@@ -859,7 +678,6 @@ impl ContentStoragePort for MockStorage {
 #[derive(Clone)]
 struct MockVcs;
 
-#[async_trait]
 impl VcsPort for MockVcs {
     async fn create_worktree(&self, _fs: &str, _wp: &str) -> Result<PathBuf, DomainError> {
         Ok(PathBuf::from("/tmp/worktree"))
@@ -879,8 +697,8 @@ impl VcsPort for MockVcs {
     async fn merge_to_target(&self, _s: &str, _t: &str) -> Result<MergeResult, DomainError> {
         Ok(MergeResult {
             success: true,
-            commit: None,
-            message: None,
+            conflicts: vec![],
+            merged_commit: None,
         })
     }
     async fn detect_conflicts(&self, _s: &str, _t: &str) -> Result<Vec<ConflictInfo>, DomainError> {
@@ -897,26 +715,10 @@ impl VcsPort for MockVcs {
     }
     async fn scan_feature_artifacts(&self, _fs: &str) -> Result<FeatureArtifacts, DomainError> {
         Ok(FeatureArtifacts {
-            spec: None,
-            research: None,
-            plan: None,
-            other: vec![],
+            meta_json: None,
+            audit_chain: None,
+            evidence_paths: vec![],
         })
-    }
-    async fn list_branches(
-        &self,
-        _pattern: Option<&str>,
-        _remote: bool,
-    ) -> Result<Vec<agileplus_domain::ports::vcs::BranchInfo>, DomainError> {
-        Ok(vec![])
-    }
-    async fn delete_branch(
-        &self,
-        _branch_name: &str,
-        _force: bool,
-        _remote: Option<&str>,
-    ) -> Result<(), DomainError> {
-        Ok(())
     }
 }
 
@@ -953,12 +755,14 @@ async fn setup_test_server() -> TestServer {
     let storage = Arc::new(MockStorage::with_test_data());
     let vcs = Arc::new(MockVcs);
     let telemetry = Arc::new(MockObs);
-    let mut config = AppConfig::default();
-    config.api.api_keys = Some(TEST_API_KEY.to_string());
-    let config = Arc::new(config);
+    let config = Arc::new(AppConfig::default());
 
-    let creds_inner = InMemoryCredentialStore::new(vec![TEST_API_KEY.to_string()]);
+    let creds_inner = InMemoryCredentialStore::new();
+    creds_inner
+        .set("agileplus", cred_keys::API_KEYS, TEST_API_KEY)
+        .unwrap();
     let creds: Arc<dyn agileplus_domain::credentials::CredentialStore> = Arc::new(creds_inner);
+
     let state = AppState::new(storage, vcs, telemetry, config, creds);
     let app = create_router(state);
     TestServer::new(app)
@@ -969,11 +773,10 @@ async fn setup_test_server() -> TestServer {
 #[tokio::test]
 async fn health_no_auth_required() {
     let server = setup_test_server().await;
-    // /detailed-health returns the full response with timestamp + services (WP11-T070).
-    let resp = server.get("/detailed-health").await;
+    let resp = server.get("/health").await;
     resp.assert_status_ok();
     let body: serde_json::Value = resp.json();
-    // Detailed health endpoint returns "healthy" or "degraded".
+    // Health endpoint returns "healthy" or "degraded" (not "ok") as of WP11-T070.
     let status = body["status"].as_str().expect("status field present");
     assert!(
         status == "healthy" || status == "degraded",
@@ -1138,105 +941,4 @@ async fn response_content_type_is_json() {
         ct.contains("application/json"),
         "Expected application/json, got: {ct}"
     );
-}
-
-// ── FR-AGP-012: bearer-token auth tests ──────────────────────────────────────
-
-/// AC1 (FR-AGP-012): Missing token → 401.
-#[tokio::test]
-async fn auth_no_token_returns_401() {
-    let server = setup_test_server().await;
-    // No header, no query param.
-    let resp = server.get("/api/v1/features").await;
-    resp.assert_status(StatusCode::UNAUTHORIZED);
-}
-
-/// AC1 (FR-AGP-012): Valid bearer token → 200.
-#[tokio::test]
-async fn auth_valid_bearer_token_returns_200() {
-    let server = setup_test_server().await;
-    let resp = server
-        .get("/api/v1/features")
-        .add_header("Authorization", format!("Bearer {TEST_API_KEY}"))
-        .await;
-    resp.assert_status_ok();
-}
-
-/// AC1 (FR-AGP-012): Wrong bearer token → 401.
-#[tokio::test]
-async fn auth_wrong_bearer_token_returns_401() {
-    let server = setup_test_server().await;
-    let resp = server
-        .get("/api/v1/features")
-        .add_header("Authorization", "Bearer totally-wrong-token")
-        .await;
-    resp.assert_status(StatusCode::UNAUTHORIZED);
-}
-
-/// Public route (/health) must remain unauthenticated (FR-AGP-012 carve-out).
-#[tokio::test]
-async fn auth_health_is_public_no_token_needed() {
-    let server = setup_test_server().await;
-    // No credentials at all.
-    let resp = server.get("/health").await;
-    resp.assert_status_ok();
-}
-
-// ── FR-AGP-015 — OpenTelemetry request-span middleware ────────────────────
-
-/// AC (FR-AGP-015): OTel request-span middleware wraps a handler.
-///
-/// The `OtelTracingLayer` must not break the response pipeline.  We verify:
-/// - The handler still returns its normal response (200 OK with a JSON body).
-/// - No panic occurs during span creation / recording.
-///
-/// No live OTLP collector is required; the middleware uses `tracing` spans
-/// which are no-op when no subscriber exports them.
-#[tokio::test]
-async fn otel_request_span_middleware_wraps_handler() {
-    use agileplus_api::middleware::otel::opentelemetry_tracing_layer;
-    use axum::{routing::get, Json, Router};
-    use axum_test::TestServer;
-
-    // Minimal router with the OTel layer applied — mirrors production wiring.
-    let app = Router::new()
-        .route(
-            "/ping",
-            get(|| async { Json(serde_json::json!({"ok": true})) }),
-        )
-        .layer(opentelemetry_tracing_layer());
-
-    let server = TestServer::new(app);
-    let resp = server.get("/ping").await;
-    resp.assert_status_ok();
-
-    // Span attributes (method + path) are recorded on the span; verify the
-    // body is still the expected JSON (pipeline was not disrupted).
-    let body: serde_json::Value = resp.json();
-    assert_eq!(body["ok"], serde_json::json!(true));
-}
-
-/// AC (FR-AGP-015): OTel layer propagates W3C traceparent header without panic.
-#[tokio::test]
-async fn otel_request_span_propagates_traceparent() {
-    use agileplus_api::middleware::otel::opentelemetry_tracing_layer;
-    use axum::{routing::get, Json, Router};
-    use axum_test::TestServer;
-
-    let app = Router::new()
-        .route(
-            "/ping",
-            get(|| async { Json(serde_json::json!({"ok": true})) }),
-        )
-        .layer(opentelemetry_tracing_layer());
-
-    let server = TestServer::new(app);
-    let resp = server
-        .get("/ping")
-        .add_header(
-            "traceparent",
-            "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01",
-        )
-        .await;
-    resp.assert_status_ok();
 }

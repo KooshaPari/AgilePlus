@@ -1,7 +1,6 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { vi } from 'vitest';
 import { Button } from './Button';
 
 /**
@@ -87,7 +86,7 @@ describe('Button Component', () => {
   });
 
   it('does not trigger onClick when disabled', async () => {
-    const onClick = vi.fn();
+    const onClick = jest.fn();
     render(
       <Button disabled onClick={onClick}>
         Disabled
@@ -102,14 +101,14 @@ describe('Button Component', () => {
   // ============================================================================
 
   it('calls onClick handler on click', async () => {
-    const onClick = vi.fn();
+    const onClick = jest.fn();
     render(<Button onClick={onClick}>Click</Button>);
     await userEvent.click(screen.getByRole('button'));
     expect(onClick).toHaveBeenCalledTimes(1);
   });
 
   it('triggers on keyboard enter', async () => {
-    const onClick = vi.fn();
+    const onClick = jest.fn();
     render(<Button onClick={onClick}>Click</Button>);
     const button = screen.getByRole('button');
     button.focus();

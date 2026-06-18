@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 use std::sync::Mutex;
 
 use agileplus_domain::domain::event::Event;
@@ -132,8 +131,7 @@ async fn import_new_events() {
     std::fs::create_dir_all(&events_dir).unwrap();
     let event = make_event("Feature", 1, 1);
     let line = serde_json::to_string(&event).unwrap();
-    std::fs::write(events_dir.join("1.jsonl"), format!("{line}
-")).unwrap();
+    std::fs::write(events_dir.join("1.jsonl"), format!("{line}\n")).unwrap();
 
     let event_store = MemEventStore::default();
     let snapshot_store = MemSnapshotStore::default();
@@ -154,8 +152,7 @@ async fn import_skips_duplicate_events() {
     let events_dir = dir.join("events/Feature");
     std::fs::create_dir_all(&events_dir).unwrap();
     let line = serde_json::to_string(&event).unwrap();
-    std::fs::write(events_dir.join("1.jsonl"), format!("{line}
-")).unwrap();
+    std::fs::write(events_dir.join("1.jsonl"), format!("{line}\n")).unwrap();
 
     let stats = import_state(dir, &event_store, &snapshot_store).await.unwrap();
     assert_eq!(stats.events_imported, 0);
@@ -212,26 +209,8 @@ async fn import_sync_mappings_counted() {
     let dir = tmp.path();
 
     let mappings = vec![
-        agileplus_domain::domain::sync_mapping::SyncMapping {
-            id: 0,
-            entity_type: "Feature".to_string(),
-            entity_id: 1,
-            plane_issue_id: "p1".to_string(),
-            content_hash: "h1".to_string(),
-            last_synced_at: chrono::Utc::now(),
-            sync_direction: agileplus_domain::domain::sync_mapping::SyncDirection::Bidirectional,
-            conflict_count: 0,
-        },
-        agileplus_domain::domain::sync_mapping::SyncMapping {
-            id: 0,
-            entity_type: "Feature".to_string(),
-            entity_id: 2,
-            plane_issue_id: "p2".to_string(),
-            content_hash: "h2".to_string(),
-            last_synced_at: chrono::Utc::now(),
-            sync_direction: agileplus_domain::domain::sync_mapping::SyncDirection::Bidirectional,
-            conflict_count: 0,
-        },
+        agileplus_domain::domain::sync_mapping::SyncMapping::new("Feature", 1, "p1", "h1"),
+        agileplus_domain::domain::sync_mapping::SyncMapping::new("Feature", 2, "p2", "h2"),
     ];
     let sync_state = serde_json::json!({ "sync_mappings": mappings, "sync_vector": {} });
     std::fs::write(

@@ -1,7 +1,6 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Governance repository — CRUD for `governance_contracts` and `policy_rules`.
 
-use rusqlite::{params, Connection, Row};
+use rusqlite::{Connection, Row, params};
 
 use agileplus_domain::{
     domain::governance::{

@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Redis-based sliding window rate limiter.
 
 use crate::pool::CachePool;

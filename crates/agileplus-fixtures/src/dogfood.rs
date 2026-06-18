@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Dogfood seed data for AgilePlus dashboard initialization.
 //!
 //! Contains all AgilePlus kitty-specs and creates placeholder work packages
@@ -92,7 +91,7 @@ pub fn seed_dogfood_features() -> (Vec<Feature>, HashMap<i64, Vec<WorkPackage>>)
         1,
         "001-spec-driven-development-engine",
         "Spec-Driven Development Engine",
-        vec!["platform".to_owned(), "infrastructure".to_owned()],
+        vec!["platform".to_string(), "infrastructure".to_string()],
         Some(1),
     ));
 
@@ -105,7 +104,7 @@ pub fn seed_dogfood_features() -> (Vec<Feature>, HashMap<i64, Vec<WorkPackage>>)
     );
     wp1_1.id = 1;
     wp1_1.state = WpState::Done;
-    wp1_1.file_scope = vec!["crates/agileplus-domain/src/domain/feature.rs".to_owned()];
+    wp1_1.file_scope = vec!["crates/agileplus-domain/src/domain/feature.rs".to_string()];
 
     let mut wp1_2 = WorkPackage::new(
         1,
@@ -115,7 +114,7 @@ pub fn seed_dogfood_features() -> (Vec<Feature>, HashMap<i64, Vec<WorkPackage>>)
     );
     wp1_2.id = 2;
     wp1_2.state = WpState::Done;
-    wp1_2.file_scope = vec!["crates/agileplus-domain/src/domain/state_machine.rs".to_owned()];
+    wp1_2.file_scope = vec!["crates/agileplus-domain/src/domain/state_machine.rs".to_string()];
 
     let mut wp1_3 = WorkPackage::new(
         1,
@@ -125,7 +124,7 @@ pub fn seed_dogfood_features() -> (Vec<Feature>, HashMap<i64, Vec<WorkPackage>>)
     );
     wp1_3.id = 3;
     wp1_3.state = WpState::Done;
-    wp1_3.file_scope = vec!["crates/agileplus-storage/src/".to_owned()];
+    wp1_3.file_scope = vec!["crates/agileplus-storage/src/".to_string()];
 
     let mut wp1_4 = WorkPackage::new(
         1,
@@ -136,8 +135,8 @@ pub fn seed_dogfood_features() -> (Vec<Feature>, HashMap<i64, Vec<WorkPackage>>)
     wp1_4.id = 4;
     wp1_4.state = WpState::Done;
     wp1_4.file_scope = vec![
-        "crates/agileplus-domain/src/domain/feature.rs".to_owned(),
-        "crates/agileplus-storage/src/".to_owned(),
+        "crates/agileplus-domain/src/domain/feature.rs".to_string(),
+        "crates/agileplus-storage/src/".to_string(),
     ];
 
     work_packages.insert(1, vec![wp1_1, wp1_2, wp1_3, wp1_4]);
@@ -147,7 +146,7 @@ pub fn seed_dogfood_features() -> (Vec<Feature>, HashMap<i64, Vec<WorkPackage>>)
         2,
         "002-org-wide-release-governance-dx-automation",
         "Org-Wide Release Governance & DX Automation",
-        vec!["governance".to_owned(), "automation".to_owned()],
+        vec!["governance".to_string(), "automation".to_string()],
         Some(1),
     ));
 
@@ -160,7 +159,7 @@ pub fn seed_dogfood_features() -> (Vec<Feature>, HashMap<i64, Vec<WorkPackage>>)
     );
     wp2_1.id = 5;
     wp2_1.state = WpState::Done;
-    wp2_1.file_scope = vec!["crates/agileplus-governance/src/".to_owned()];
+    wp2_1.file_scope = vec!["crates/agileplus-governance/src/".to_string()];
 
     let mut wp2_2 = WorkPackage::new(
         2,
@@ -171,8 +170,8 @@ pub fn seed_dogfood_features() -> (Vec<Feature>, HashMap<i64, Vec<WorkPackage>>)
     wp2_2.id = 6;
     wp2_2.state = WpState::Done;
     wp2_2.file_scope = vec![
-        "crates/agileplus-plane-sync/src/".to_owned(),
-        "crates/agileplus-domain/src/".to_owned(),
+        "crates/agileplus-plane-sync/src/".to_string(),
+        "crates/agileplus-domain/src/".to_string(),
     ];
 
     let mut wp2_3 = WorkPackage::new(
@@ -183,7 +182,7 @@ pub fn seed_dogfood_features() -> (Vec<Feature>, HashMap<i64, Vec<WorkPackage>>)
     );
     wp2_3.id = 7;
     wp2_3.state = WpState::Done;
-    wp2_3.file_scope = vec![".github/workflows/".to_owned()];
+    wp2_3.file_scope = vec![".github/workflows/".to_string()];
 
     work_packages.insert(2, vec![wp2_1, wp2_2, wp2_3]);
 
@@ -192,7 +191,7 @@ pub fn seed_dogfood_features() -> (Vec<Feature>, HashMap<i64, Vec<WorkPackage>>)
         3,
         "003-agileplus-platform-completion",
         "AgilePlus Platform Completion",
-        vec!["platform".to_owned(), "integration".to_owned()],
+        vec!["platform".to_string(), "integration".to_string()],
         Some(1),
     ));
 
@@ -206,8 +205,8 @@ pub fn seed_dogfood_features() -> (Vec<Feature>, HashMap<i64, Vec<WorkPackage>>)
     wp3_1.id = 8;
     wp3_1.state = WpState::Done;
     wp3_1.file_scope = vec![
-        "crates/agileplus-dashboard/src/templates.rs".to_owned(),
-        "crates/agileplus-dashboard/src/routes.rs".to_owned(),
+        "crates/agileplus-dashboard/src/templates.rs".to_string(),
+        "crates/agileplus-dashboard/src/routes.rs".to_string(),
     ];
 
     let mut wp3_2 = WorkPackage::new(
@@ -218,7 +217,7 @@ pub fn seed_dogfood_features() -> (Vec<Feature>, HashMap<i64, Vec<WorkPackage>>)
     );
     wp3_2.id = 9;
     wp3_2.state = WpState::Done;
-    wp3_2.file_scope = vec!["crates/agileplus-dashboard/src/routes.rs".to_owned()];
+    wp3_2.file_scope = vec!["crates/agileplus-dashboard/src/routes.rs".to_string()];
 
     let mut wp3_3 = WorkPackage::new(
         3,
@@ -228,7 +227,7 @@ pub fn seed_dogfood_features() -> (Vec<Feature>, HashMap<i64, Vec<WorkPackage>>)
     );
     wp3_3.id = 10;
     wp3_3.state = WpState::Done;
-    wp3_3.file_scope = vec!["crates/agileplus-dashboard/src/app_state.rs".to_owned()];
+    wp3_3.file_scope = vec!["crates/agileplus-dashboard/src/app_state.rs".to_string()];
 
     let mut wp3_4 = WorkPackage::new(
         3,
@@ -238,7 +237,7 @@ pub fn seed_dogfood_features() -> (Vec<Feature>, HashMap<i64, Vec<WorkPackage>>)
     );
     wp3_4.id = 11;
     wp3_4.state = WpState::Done;
-    wp3_4.file_scope = vec!["crates/agileplus-fixtures/src/dogfood.rs".to_owned()];
+    wp3_4.file_scope = vec!["crates/agileplus-fixtures/src/dogfood.rs".to_string()];
 
     work_packages.insert(3, vec![wp3_1, wp3_2, wp3_3, wp3_4]);
 
@@ -250,7 +249,7 @@ pub fn seed_dogfood_features() -> (Vec<Feature>, HashMap<i64, Vec<WorkPackage>>)
         Some("main"),
     );
     f4.id = 4;
-    f4.labels = vec!["organization".to_owned(), "planning".to_owned()];
+    f4.labels = vec!["organization".to_string(), "planning".to_string()];
     f4.project_id = Some(1);
     // Transition to Implementing (Created -> Specified -> Researched -> Planned -> Implementing)
     drive_to_state(&mut f4, FeatureState::Implementing);
@@ -274,7 +273,7 @@ pub fn seed_dogfood_features() -> (Vec<Feature>, HashMap<i64, Vec<WorkPackage>>)
     );
     wp4_2.id = 13;
     wp4_2.state = WpState::Doing;
-    wp4_2.file_scope = vec!["crates/agileplus-storage/src/".to_owned()];
+    wp4_2.file_scope = vec!["crates/agileplus-storage/src/".to_string()];
 
     let mut wp4_3 = WorkPackage::new(
         4,
@@ -284,7 +283,7 @@ pub fn seed_dogfood_features() -> (Vec<Feature>, HashMap<i64, Vec<WorkPackage>>)
     );
     wp4_3.id = 14;
     wp4_3.state = WpState::Planned;
-    wp4_3.file_scope = vec!["crates/agileplus-dashboard/src/".to_owned()];
+    wp4_3.file_scope = vec!["crates/agileplus-dashboard/src/".to_string()];
 
     work_packages.insert(4, vec![wp4_1, wp4_2, wp4_3]);
 
@@ -294,228 +293,236 @@ pub fn seed_dogfood_features() -> (Vec<Feature>, HashMap<i64, Vec<WorkPackage>>)
             5,
             "sk-001-mission-system-architecture",
             "Mission System Architecture",
-            vec!["architecture".to_owned(), "specKitty".to_owned()],
+            vec!["architecture".to_string(), "specKitty".to_string()],
         ),
         (
             6,
             "sk-002-lightweight-pypi-release",
             "Lightweight PyPI Release",
-            vec!["release".to_owned(), "specKitty".to_owned()],
+            vec!["release".to_string(), "specKitty".to_string()],
         ),
         (
             7,
             "sk-003-auto-protect-agent",
             "Auto-Protect Agent",
-            vec!["agents".to_owned(), "specKitty".to_owned()],
+            vec!["agents".to_string(), "specKitty".to_string()],
         ),
         (
             8,
             "sk-004-modular-code-refactoring",
             "Modular Code Refactoring",
-            vec!["refactoring".to_owned(), "specKitty".to_owned()],
+            vec!["refactoring".to_string(), "specKitty".to_string()],
         ),
         (
             9,
             "sk-005-refactor-mission-system",
             "Refactor Mission System",
-            vec!["architecture".to_owned(), "specKitty".to_owned()],
+            vec!["architecture".to_string(), "specKitty".to_string()],
         ),
         (
             10,
             "sk-007-frontmatter-only-lane",
             "Frontmatter-Only Lane",
-            vec!["documentation".to_owned(), "specKitty".to_owned()],
+            vec!["documentation".to_string(), "specKitty".to_string()],
         ),
         (
             11,
             "sk-008-unified-python-cli",
             "Unified Python CLI",
-            vec!["cli".to_owned(), "specKitty".to_owned()],
+            vec!["cli".to_string(), "specKitty".to_string()],
         ),
         (
             12,
             "sk-010-workspace-per-work-package",
             "Workspace Per Work Package for Parallel Development",
-            vec!["organization".to_owned(), "specKitty".to_owned()],
+            vec!["organization".to_string(), "specKitty".to_string()],
         ),
         (
             13,
             "sk-011-constitution-packaging-safety",
             "Constitution Packaging Safety and Redesign",
-            vec!["infrastructure".to_owned(), "specKitty".to_owned()],
+            vec!["infrastructure".to_string(), "specKitty".to_string()],
         ),
         (
             14,
             "sk-012-documentation-mission",
             "Documentation Mission",
-            vec!["documentation".to_owned(), "specKitty".to_owned()],
+            vec!["documentation".to_string(), "specKitty".to_string()],
         ),
         (
             15,
             "sk-013-fix-and-test-dashboard",
             "Fix and Test Dashboard",
-            vec!["testing".to_owned(), "specKitty".to_owned()],
+            vec!["testing".to_string(), "specKitty".to_string()],
         ),
         (
             16,
             "sk-014-comprehensive-end-user-documentation",
             "Comprehensive End-User Documentation",
-            vec!["documentation".to_owned(), "specKitty".to_owned()],
+            vec!["documentation".to_string(), "specKitty".to_string()],
         ),
         (
             17,
             "sk-015-first-class-jujutsu-vcs-integration",
             "First-Class Jujutsu VCS Integration",
-            vec!["vcs".to_owned(), "specKitty".to_owned()],
+            vec!["vcs".to_string(), "specKitty".to_string()],
         ),
         (
             18,
             "sk-016-jujutsu-vcs-documentation",
             "Jujutsu VCS Documentation",
             vec![
-                "documentation".to_owned(),
-                "vcs".to_owned(),
-                "specKitty".to_owned(),
+                "documentation".to_string(),
+                "vcs".to_string(),
+                "specKitty".to_string(),
             ],
         ),
         (
             19,
             "sk-017-smarter-feature-merge-with-preflight",
             "Smarter Feature Merge with Preflight",
-            vec!["vcs".to_owned(), "specKitty".to_owned()],
+            vec!["vcs".to_string(), "specKitty".to_string()],
         ),
         (
             20,
             "sk-018-merge-preflight-documentation",
             "Merge Preflight Documentation",
-            vec!["documentation".to_owned(), "specKitty".to_owned()],
+            vec!["documentation".to_string(), "specKitty".to_string()],
         ),
         (
             21,
             "sk-019-autonomous-multi-agent-orchestration-research",
             "Autonomous Multi-Agent Orchestration Research",
             vec![
-                "agents".to_owned(),
-                "research".to_owned(),
-                "specKitty".to_owned(),
+                "agents".to_string(),
+                "research".to_string(),
+                "specKitty".to_string(),
             ],
         ),
         (
             22,
             "sk-020-autonomous-multi-agent-orchestrator",
             "Autonomous Multi-Agent Orchestrator",
-            vec!["agents".to_owned(), "specKitty".to_owned()],
+            vec!["agents".to_string(), "specKitty".to_string()],
         ),
         (
             23,
             "sk-021-orchestrator-end-to-end-testing-suite",
             "Orchestrator End-to-End Testing Suite",
             vec![
-                "testing".to_owned(),
-                "agents".to_owned(),
-                "specKitty".to_owned(),
+                "testing".to_string(),
+                "agents".to_string(),
+                "specKitty".to_string(),
             ],
         ),
         (
             24,
             "sk-022-orchestrator-user-documentation",
             "Orchestrator User Documentation",
-            vec!["documentation".to_owned(), "specKitty".to_owned()],
+            vec!["documentation".to_string(), "specKitty".to_string()],
         ),
         (
             25,
             "sk-023-documentation-sprint-agent-management-cleanup",
             "Documentation Sprint Agent Management Cleanup",
             vec![
-                "documentation".to_owned(),
-                "agents".to_owned(),
-                "specKitty".to_owned(),
+                "documentation".to_string(),
+                "agents".to_string(),
+                "specKitty".to_string(),
             ],
         ),
         (
             26,
             "sk-024-adversarial-test-suite-0-13-0",
             "Adversarial Test Suite v0.13.0",
-            vec!["testing".to_owned(), "specKitty".to_owned()],
+            vec!["testing".to_string(), "specKitty".to_string()],
         ),
         (
             27,
             "sk-025-cli-event-log-integration",
             "CLI Event Log Integration",
-            vec!["cli".to_owned(), "specKitty".to_owned()],
+            vec!["cli".to_string(), "specKitty".to_string()],
         ),
         (
             28,
             "sk-026-agent-directory-centralization-architecture-research",
             "Agent Directory Centralization Architecture Research",
             vec![
-                "agents".to_owned(),
-                "architecture".to_owned(),
-                "research".to_owned(),
-                "specKitty".to_owned(),
+                "agents".to_string(),
+                "architecture".to_string(),
+                "research".to_string(),
+                "specKitty".to_string(),
             ],
         ),
         (
             29,
             "sk-027-cli-authentication-module-commands",
             "CLI Authentication Module Commands",
-            vec!["cli".to_owned(), "specKitty".to_owned()],
+            vec!["cli".to_string(), "specKitty".to_string()],
         ),
         (
             30,
             "sk-028-cli-event-emission-sync",
             "CLI Event Emission Sync",
-            vec!["cli".to_owned(), "sync".to_owned(), "specKitty".to_owned()],
+            vec![
+                "cli".to_string(),
+                "sync".to_string(),
+                "specKitty".to_string(),
+            ],
         ),
         (
             31,
             "sk-029-mission-aware-cleanup-docs-wiring",
             "Mission-Aware Cleanup Docs Wiring",
-            vec!["documentation".to_owned(), "specKitty".to_owned()],
+            vec!["documentation".to_string(), "specKitty".to_string()],
         ),
         (
             32,
             "sk-030-2x-sync-auth-docs",
             "2x Sync Auth Docs",
             vec![
-                "documentation".to_owned(),
-                "sync".to_owned(),
-                "specKitty".to_owned(),
+                "documentation".to_string(),
+                "sync".to_string(),
+                "specKitty".to_string(),
             ],
         ),
         (
             33,
             "sk-032-identity-aware-cli-event-sync",
             "Identity-Aware CLI Event Sync",
-            vec!["cli".to_owned(), "sync".to_owned(), "specKitty".to_owned()],
+            vec![
+                "cli".to_string(),
+                "sync".to_string(),
+                "specKitty".to_string(),
+            ],
         ),
         (
             34,
             "sk-038-v0-15-0-quality-bugfix-release",
             "v0.15.0 Quality Bugfix Release",
-            vec!["release".to_owned(), "specKitty".to_owned()],
+            vec!["release".to_string(), "specKitty".to_string()],
         ),
         (
             35,
             "sk-039-cli-2x-readiness",
             "CLI 2x Readiness",
-            vec!["cli".to_owned(), "specKitty".to_owned()],
+            vec!["cli".to_string(), "specKitty".to_string()],
         ),
         (
             36,
             "sk-040-mission-collaboration-cli-soft-coordination",
             "Mission Collaboration CLI Soft Coordination",
             vec![
-                "cli".to_owned(),
-                "agents".to_owned(),
-                "specKitty".to_owned(),
+                "cli".to_string(),
+                "agents".to_string(),
+                "specKitty".to_string(),
             ],
         ),
         (
             37,
             "sk-041-enable-plan-mission-runtime-support",
             "Enable Plan Mission Runtime Support",
-            vec!["agents".to_owned(), "specKitty".to_owned()],
+            vec!["agents".to_string(), "specKitty".to_string()],
         ),
     ];
 
@@ -572,7 +579,7 @@ mod tests {
         let (features, _work_packages) = seed_dogfood_features();
         for f in &features[4..] {
             assert!(
-                f.labels.contains(&"specKitty".to_owned()),
+                f.labels.contains(&"specKitty".to_string()),
                 "SpecKitty feature {} missing specKitty label",
                 f.slug
             );

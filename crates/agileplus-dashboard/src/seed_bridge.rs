@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Bridges dashboard store construction from seeded feature data.
 //! Traceability: WP12 (T074)
 
@@ -73,7 +72,7 @@ pub fn build_dashboard_store() -> DashboardStore {
         id: 1,
         slug: "agileplus-internal".to_string(),
         name: "AgilePlus Internal".to_string(),
-        description: Some("Internal AgilePlus development project".to_string()),
+        description: "Internal AgilePlus development project".to_string(),
         created_at: now,
         updated_at: now,
     }];

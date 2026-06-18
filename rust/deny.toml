@@ -1,37 +1,37 @@
+[graph]
+all-features = true
+
 [advisories]
-db-path = "$CARGO_HOME/advisory-db"
+version = 2
+ignore = [
+    "RUSTSEC-2025-0134", # rustls-pemfile unmaintained - transitive dep, no action needed
+    "RUSTSEC-2025-0140", # time non-utf8 TimeBuf::as_str - transitive dep, low impact
+    "RUSTSEC-2026-0049", # rustls-webpki CRL distribution point matching - transitive dep, low impact
+    "RUSTSEC-2024-0436", # paste unmaintained - transitive via utoipa-axum, no safe upgrade
+]
 
 [licenses]
 version = 2
-
 allow = [
+    "MIT",
     "Apache-2.0",
-    "Apache-2.0 WITH LLVM-exception",
     "BSD-2-Clause",
     "BSD-3-Clause",
-    "BSD-3-Clause-Clear",
-    "CC0-1.0",
-    "CC-BY-SA-4.0",
-    "GPL-3.0-only",
     "ISC",
-    "MIT",
-    "MPL-2.0",
     "Unicode-3.0",
     "Unicode-DFS-2016",
     "Zlib",
-    "0BSD",
+    "MPL-2.0",
     "BlueOak-1.0.0",
     "CDLA-Permissive-2.0",
-    "Unlicense",
-    "WTFPL",
+    "CC0-1.0",
 ]
 
 [bans]
 multiple-versions = "warn"
-wildcards = "deny"
+wildcards = "allow"
 
 [sources]
-unknown-git = "allow"
-unknown-registry = "warn"
+unknown-registry = "deny"
+unknown-git = "deny"
 allow-registry = ["https://github.com/rust-lang/crates.io-index"]
-allow-git = ["https://github.com/KooshaPari/clap-ext"]

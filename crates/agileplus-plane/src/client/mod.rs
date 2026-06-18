@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Plane.so REST API client with rate limiting.
 //!
 //! Traceability: WP18-T104
@@ -11,7 +10,8 @@ mod resources;
 mod tests;
 mod transport;
 
-pub mod mock;
+#[cfg(test)]
+mod mock;
 
 use std::sync::Arc;
 
@@ -25,6 +25,7 @@ pub use self::models::{
 };
 pub use self::rate_limit::TokenBucket;
 
+#[cfg(test)]
 pub use mock::InMemoryPlaneClient;
 
 /// Plane.so API client with token bucket rate limiter.

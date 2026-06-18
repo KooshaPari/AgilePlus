@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 use agileplus_p2p::discovery::PeerStatus;
 use agileplus_p2p::discovery::discover_peers;
 use agileplus_p2p::vector_clock::SyncVector;
@@ -15,7 +14,7 @@ pub async fn run_status(args: &StatusArgs) -> anyhow::Result<()> {
         .unwrap_or_else(|| "unknown".to_string());
 
     let local = LocalDeviceInfo {
-        device_id: format!("local-{hostname}"),
+        device_id: format!("local-{}", &hostname),
         hostname: hostname.clone(),
         tailscale_ip: String::from("(unavailable without Tailscale)"),
     };

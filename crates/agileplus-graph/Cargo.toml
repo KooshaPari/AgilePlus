@@ -2,14 +2,8 @@
 name = "agileplus-graph"
 version.workspace = true
 edition.workspace = true
+license.workspace = true
 rust-version.workspace = true
-license = "MIT OR Apache-2.0"
-repository = "https://github.com/KooshaPari/AgilePlus"
-description = "agileplus graph — Phenotype infrastructure crate (AgilePlus)"
-documentation = "https://docs.rs/agileplus-graph"
-keywords = ["phenotype", "agileplus", "graph"]
-categories = ["data-structures"]
-authors = ["kooshapari"]
 
 [dependencies]
 serde = { workspace = true }
@@ -19,13 +13,6 @@ tokio = { workspace = true }
 async-trait = { workspace = true }
 uuid = { version = "1", features = ["v4", "serde"] }
 tracing = { workspace = true }
-neo4rs = { version = "0.8", optional = true }
-
-[features]
-neo4j = ["neo4rs"]
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["full", "macros"] }
-
-[package.metadata.cargo-machete]
-ignored = ["tracing"]

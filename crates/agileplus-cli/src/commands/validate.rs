@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `agileplus validate` command implementation.
 //!
 //! Checks governance compliance for a feature in Implementing state.

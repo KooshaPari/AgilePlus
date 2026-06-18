@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 use std::{net::SocketAddr, sync::Arc};
 
 use agileplus_dashboard::{app_state::DashboardStore, routes};
@@ -9,8 +8,7 @@ use tracing::info;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let _telemetry = agileplus_telemetry::init_subscriber()
-        .map_err(|err| anyhow::anyhow!("failed to initialize telemetry: {err}"))?;
+    tracing_subscriber::fmt().init();
 
     let port = std::env::var("AGILEPLUS_DASHBOARD_PORT")
         .ok()

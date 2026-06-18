@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! OpenTelemetry trace spans for AgilePlus.
 //!
 //! Uses the `tracing` crate (not raw OTel spans) so that the
@@ -16,7 +15,7 @@ use std::time::Instant;
 use opentelemetry::global;
 use opentelemetry::trace::TracerProvider as _;
 use tracing::Subscriber;
-use tracing_subscriber::{registry::LookupSpan, Layer};
+use tracing_subscriber::{Layer, registry::LookupSpan};
 
 // ---------------------------------------------------------------------------
 // OTLP initialisation (T090 / T091)
@@ -34,10 +33,10 @@ use tracing_subscriber::{registry::LookupSpan, Layer};
 /// Callers may choose to fall back gracefully (e.g. no-op provider).
 pub fn init_tracer() -> Result<(), String> {
     use opentelemetry_otlp::WithExportConfig;
-    use opentelemetry_sdk::trace::TracerProvider;
+    use opentelemetry_sdk::trace::SdkTracerProvider;
 
     let endpoint = std::env::var("OTEL_EXPORTER_OTLP_ENDPOINT")
-        .unwrap_or_else(|_| "http://localhost:4317".to_owned());
+        .unwrap_or_else(|_| "http://localhost:4317".to_string());
 
     let exporter = opentelemetry_otlp::SpanExporter::builder()
         .with_http()
@@ -45,8 +44,8 @@ pub fn init_tracer() -> Result<(), String> {
         .build()
         .map_err(|e| e.to_string())?;
 
-    let provider = TracerProvider::builder()
-        .with_simple_exporter(exporter)
+    let provider = SdkTracerProvider::builder()
+        .with_batch_exporter(exporter)
         .build();
 
     global::set_tracer_provider(provider);
@@ -74,20 +73,20 @@ pub fn init_tracer() -> Result<(), String> {
 /// Return a composable [`Layer`] that bridges `tracing` spans to a new OTLP
 /// exporter pointing at `OTEL_EXPORTER_OTLP_ENDPOINT`.
 ///
-/// This variant builds a fresh `TracerProvider` internally so that the
+/// This variant builds a fresh `SdkTracerProvider` internally so that the
 /// layer holds a concrete `SdkTracer` (required by `PreSampledTracer`).
 /// Call [`init_tracer`] separately if you also want the *global* provider set.
 pub fn telemetry_layer<S>() -> impl Layer<S>
 where
     S: Subscriber + for<'a> LookupSpan<'a>,
 {
-    use opentelemetry_sdk::trace::TracerProvider;
+    use opentelemetry_sdk::trace::SdkTracerProvider;
 
     let endpoint = std::env::var("OTEL_EXPORTER_OTLP_ENDPOINT")
-        .unwrap_or_else(|_| "http://localhost:4317".to_owned());
+        .unwrap_or_else(|_| "http://localhost:4317".to_string());
 
     // Attempt to build an OTLP exporter; fall back to no-op on failure.
-    let provider: TracerProvider = (|| {
+    let provider: SdkTracerProvider = (|| {
         use opentelemetry_otlp::WithExportConfig;
         let exporter = opentelemetry_otlp::SpanExporter::builder()
             .with_http()
@@ -95,12 +94,12 @@ where
             .build()
             .ok()?;
         Some(
-            TracerProvider::builder()
-                .with_simple_exporter(exporter)
+            SdkTracerProvider::builder()
+                .with_batch_exporter(exporter)
                 .build(),
         )
     })()
-    .unwrap_or_else(TracerProvider::default);
+    .unwrap_or_else(SdkTracerProvider::default);
 
     let tracer = provider.tracer("agileplus");
     tracing_opentelemetry::layer().with_tracer(tracer)
@@ -254,7 +253,7 @@ mod tests {
         record_span_event(
             &span,
             "pr_created",
-            &[("wp_id".to_owned(), "WP10".to_owned())],
+            &[("wp_id".to_string(), "WP10".to_string())],
         );
     }
 }

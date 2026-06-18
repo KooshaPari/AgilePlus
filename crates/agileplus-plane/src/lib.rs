@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! AgilePlus Plane.so sync adapter.
 //!
 //! Bidirectional sync between AgilePlus entities and Plane.so issues.
@@ -12,31 +11,29 @@ pub mod content_hash;
 pub mod inbound;
 pub mod labels;
 pub mod outbound;
-mod plane_sync;
 pub mod runtime;
 pub mod state_mapper;
 pub mod sync;
 pub mod sync_queue;
 pub mod webhook;
 
-pub use agileplus_domain::ports::{PlaneIssue, PlaneProject, PlaneSyncPort};
+pub use client::PlaneClient;
 pub use client::{
     PlaneCreateCycleRequest, PlaneCreateModuleRequest, PlaneCycleResponse, PlaneModuleResponse,
 };
-pub use content_hash::{compute_content_hash, detect_conflict, ConflictStatus};
+pub use content_hash::{ConflictStatus, compute_content_hash, detect_conflict};
 pub use inbound::{InboundOutcome, InboundSync, LocalEntityStore};
 pub use labels::{LabelSync, PlaneLabel};
 pub use outbound::{
-    push_cycle, push_cycle_delete, push_feature_cycle_assignment, push_feature_module_assignment,
-    push_module, push_module_delete, OutboundSync,
+    OutboundSync, push_cycle, push_cycle_delete, push_feature_cycle_assignment,
+    push_feature_module_assignment, push_module, push_module_delete,
 };
-pub use plane_sync::PlaneClient;
 pub use runtime::*;
 pub use state_mapper::{PlaneStateMapper, PlaneStateMapperConfig};
 pub use sync::{PlaneSyncAdapter, SyncState};
-pub use sync_queue::{SyncOpKind, SyncQueue, SyncQueueItem, SyncQueueStore, SyncTask, MAX_RETRIES};
+pub use sync_queue::{MAX_RETRIES, SyncOpKind, SyncQueue, SyncQueueItem, SyncQueueStore, SyncTask};
 pub use webhook::{
-    handle_plane_webhook, parse_webhook, verify_hmac_signature, verify_webhook_signature,
     PlaneInboundEvent, PlaneWebhookAction, PlaneWebhookCycle, PlaneWebhookModule,
-    PlaneWebhookPayload,
+    PlaneWebhookPayload, handle_plane_webhook, parse_webhook, verify_hmac_signature,
+    verify_webhook_signature,
 };

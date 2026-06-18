@@ -2,30 +2,18 @@
 name = "agileplus-nats"
 version.workspace = true
 edition.workspace = true
+license.workspace = true
 rust-version.workspace = true
-license = "MIT OR Apache-2.0"
-repository = "https://github.com/KooshaPari/AgilePlus"
-description = "agileplus nats — Phenotype infrastructure crate (AgilePlus)"
-documentation = "https://docs.rs/agileplus-nats"
-keywords = ["phenotype", "agileplus", "nats"]
-categories = ["network-programming"]
-authors = ["kooshapari"]
 
 [dependencies]
-agileplus-config = { workspace = true }
-anyhow.workspace = true
-tokio.workspace = true
-tracing.workspace = true
-async-trait.workspace = true
-serde.workspace = true
-serde_json.workspace = true
-thiserror.workspace = true
-chrono.workspace = true
-uuid.workspace = true
-async-nats.workspace = true
-futures-util.workspace = true
-agileplus-events = { path = "../agileplus-events" }
 agileplus-domain = { path = "../agileplus-domain" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+chrono = { workspace = true }
+async-trait = "0.1"
+uuid = { version = "1", features = ["v4"] }
 
-[package.metadata.cargo-machete]
-ignored = ["anyhow"]
+[dev-dependencies]
+tokio = { workspace = true, features = ["full", "macros"] }

@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Shared test fixtures and data builders for AgilePlus.
 //!
 //! This crate provides deterministic, reusable test fixtures for use across
@@ -24,4 +23,4 @@ pub mod test_fixtures;
 pub use builders::{FeatureBuilder, WorkPackageBuilder};
 pub use dogfood::seed_dogfood_features;
 pub use payloads::{feature_create_payload, plane_webhook_payload, transition_payload};
-pub use test_fixtures::{seed_test_data, TestFixtures};
+pub use test_fixtures::{TestFixtures, seed_test_data};

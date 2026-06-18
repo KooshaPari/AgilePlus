@@ -1,0 +1,10 @@
+{
+  "spec_id": "eco-005",
+  "slug": "eco-005-xdd-quality",
+  "title": "XDD Quality",
+  "status": "retired",
+  "created_at": "2026-03-29T00:00:00Z",
+  "retired_at": "2026-05-05T00:00:00Z",
+  "retirement_reason": "NO_FORWARD_WORK",
+  "type": "operational"
+}

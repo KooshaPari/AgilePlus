@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! AgilePlus Dashboard — Askama HTML templates + htmx route handlers.
 //! Traceability: WP12 (T071–T077)
 

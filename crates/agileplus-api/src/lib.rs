@@ -1,5 +1,6 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
-//! agileplus-api — axum HTTP server library.
+//! AgilePlus HTTP API — axum router, middleware, and route handlers.
+//!
+//! Traceability: WP11-T064..T070
 
 pub mod api_key;
 pub mod error;

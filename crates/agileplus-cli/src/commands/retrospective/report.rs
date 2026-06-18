@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 use super::metrics::{
     FeatureMetrics, format_duration, generate_constitution_suggestions, generate_insights,
 };
@@ -93,6 +92,5 @@ pub(crate) fn generate_retro_markdown(
         lines.push(String::new());
     }
 
-    lines.join("
-")
+    lines.join("\n")
 }

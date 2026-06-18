@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 use anyhow::{Context, Result, anyhow};
 
 use agileplus_domain::domain::cycle::CycleFeature;
@@ -54,10 +53,8 @@ pub(super) async fn cmd_add<S: StoragePort>(args: AddArgs, storage: &S) -> Resul
             ref module_slug,
         }) => {
             anyhow::bail!(
-                "Cannot add feature '{}' to cycle '{}': the cycle is scoped to module '{}'.
-\
-                 Feature '{}' is not owned by or tagged to that module.
-\
+                "Cannot add feature '{}' to cycle '{}': the cycle is scoped to module '{}'.\n\
+                 Feature '{}' is not owned by or tagged to that module.\n\
                  Tag the feature first with `agileplus module tag --module {} --feature {}`.",
                 feature_slug,
                 args.cycle,

@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! T118 – API response time benchmarks.
 //!
 //! Rather than spinning up a full HTTP server for each iteration (which would
@@ -15,7 +14,7 @@
 use agileplus_benchmarks::helpers::{make_feature, make_in_memory_adapter};
 use agileplus_domain::domain::state_machine::FeatureState;
 use agileplus_sqlite::SqliteStorageAdapter;
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
+use criterion::{BenchmarkId, Criterion, black_box, criterion_group, criterion_main};
 
 // ---------------------------------------------------------------------------
 // Setup helpers

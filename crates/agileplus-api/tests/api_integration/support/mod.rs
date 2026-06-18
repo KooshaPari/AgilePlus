@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 #![allow(dead_code)]
 
 mod observability;
@@ -27,9 +26,7 @@ pub(crate) async fn setup_test_server_with_storage(storage: MockStorage) -> Test
     let storage = Arc::new(storage);
     let vcs = Arc::new(MockVcs);
     let telemetry = Arc::new(MockObs);
-    let mut config = AppConfig::default();
-    config.api.api_keys = Some(TEST_API_KEY.to_string());
-    let config = Arc::new(config);
+    let config = Arc::new(AppConfig::default());
 
     let creds_inner = InMemoryCredentialStore::new();
     creds_inner

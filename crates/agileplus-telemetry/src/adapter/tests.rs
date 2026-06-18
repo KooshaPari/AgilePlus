@@ -1,6 +1,6 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
-﻿use super::*;
+use super::*;
 use agileplus_domain::ports::observability::LogEntry;
+use std::collections::HashMap;
 
 #[test]
 fn noop_adapter_does_not_panic() {
@@ -33,7 +33,8 @@ fn noop_adapter_log_entry() {
     let entry = LogEntry {
         level: LogLevel::Info,
         message: "test".into(),
-        fields: vec![],
+        fields: HashMap::new(),
+        span_context: None,
     };
     adapter.log(&entry); // must not panic
 }

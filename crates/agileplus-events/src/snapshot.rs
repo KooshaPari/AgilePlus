@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Snapshot management for fast aggregate loading.
 
 use agileplus_domain::domain::event::Event;

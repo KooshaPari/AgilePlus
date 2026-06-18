@@ -2,55 +2,32 @@
 name = "agileplus-p2p"
 version.workspace = true
 edition.workspace = true
+license.workspace = true
 rust-version.workspace = true
-license = "MIT OR Apache-2.0"
-repository = "https://github.com/KooshaPari/AgilePlus"
-description = "agileplus p2p — Phenotype infrastructure crate (AgilePlus)"
-documentation = "https://docs.rs/agileplus-p2p"
-keywords = ["phenotype", "agileplus"]
-categories = ["development-tools"]
-authors = ["kooshapari"]
+description = "P2P sync via Tailscale — peer discovery and event replication with vector clocks"
 
 [dependencies]
-# workspace deps
-anyhow.workspace = true
-tokio.workspace = true
-tracing.workspace = true
-async-trait.workspace = true
-thiserror.workspace = true
-serde.workspace = true
-serde_json.workspace = true
-futures.workspace = true
-futures-util.workspace = true
-chrono.workspace = true
-
-# local crates
 agileplus-domain = { path = "../agileplus-domain" }
 agileplus-events = { path = "../agileplus-events" }
-
-# mDNS peer discovery (lightweight alternative to libp2p)
-mdns-sd = "0.13"
-
-# P2P node identity
-uuid = { version = "1.10", features = ["v4"] }
-
-# NATS replication
+agileplus-sync = { path = "../agileplus-sync" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+chrono = { workspace = true }
+tokio = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
 async-nats = "0.47"
-
-# Tailscale local-API HTTP-over-UNIX-socket client (unix-only)
-[target.'cfg(unix)'.dependencies]
-hyper = { version = "1", features = ["http1", "client"] }
+async-trait = "0.1"
+uuid = { version = "1", features = ["v4", "serde"] }
+hyper = { version = "1", features = ["client", "http1"] }
 hyper-util = { version = "0.1", features = ["tokio"] }
 http-body-util = "0.1"
 bytes = "1"
+futures-util = "0.3"
 hostname = "0.4"
-
-[target.'cfg(not(unix))'.dependencies]
-hostname = "0.4"
+tokio-retry = "0.3"
 
 [dev-dependencies]
-tokio = { workspace = true, features = ["full"] }
+tokio = { workspace = true }
+proptest = "1"
 tempfile = "3"
-
-[package.metadata.cargo-machete]
-ignored = ["anyhow", "futures"]

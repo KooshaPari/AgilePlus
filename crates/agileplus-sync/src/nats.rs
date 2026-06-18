@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! NATS pub/sub integration for sync events.
 //!
 //! Traceability: FR-SYNC-NATS / WP09-T058

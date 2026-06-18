@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 use super::helpers::{assign_feature_module_id, store_feature, store_module, test_storage};
 use agileplus_domain::{
     domain::module::{Module, ModuleFeatureTag},

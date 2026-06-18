@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! T119: Dashboard service control integration test.
 //!
 //! Verifies persisted toggle and restart behavior of dashboard API endpoints.
@@ -68,10 +67,12 @@ async fn dashboard_service_control_integration() -> anyhow::Result<()> {
     let restart_json: serde_json::Value = restart_resp.json().await?;
     assert_eq!(restart_json["status"], "ok");
     assert_eq!(restart_json["service"], "NATS");
-    assert!(restart_json["stdout"]
-        .as_str()
-        .unwrap_or_default()
-        .contains("restarted NATS"));
+    assert!(
+        restart_json["stdout"]
+            .as_str()
+            .unwrap_or_default()
+            .contains("restarted NATS")
+    );
 
     Ok(())
 }

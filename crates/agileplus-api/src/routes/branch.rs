@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Branch route handlers.
 //!
 //! - GET    /api/v1/branches         -> list

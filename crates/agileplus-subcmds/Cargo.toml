@@ -1,18 +1,12 @@
 [package]
 name = "agileplus-subcmds"
-version = "0.1.0"
-edition = "2021"
-license = "MIT OR Apache-2.0"
-repository = "https://github.com/KooshaPari/AgilePlus"
-description = "agileplus subcmds — Phenotype infrastructure crate (AgilePlus)"
-documentation = "https://docs.rs/agileplus-subcmds"
-keywords = ["phenotype", "agileplus"]
-categories = ["development-tools"]
-authors = ["kooshapari"]
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
 
 [dependencies]
 agileplus-domain = { path = "../agileplus-domain" }
-agileplus-sync = { path = "../agileplus-sync" }
 agileplus-triage = { path = "../agileplus-triage" }
 serde.workspace = true
 serde_json.workspace = true
@@ -22,6 +16,6 @@ anyhow.workspace = true
 clap = { version = "4", features = ["derive"] }
 tokio.workspace = true
 
-[lib]
-name = "agileplus_subcmds"
-path = "src/lib.rs"
+[dev-dependencies]
+tempfile = "3"
+tokio = { version = "1", features = ["rt", "macros"] }

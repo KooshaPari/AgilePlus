@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! API response types — stable JSON shapes for all endpoints.
 //!
 //! These types are separate from domain entities so internal representations
@@ -10,12 +9,8 @@ use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
 use agileplus_domain::domain::audit::AuditEntry;
-use agileplus_domain::domain::epic::Epic;
 use agileplus_domain::domain::feature::Feature;
 use agileplus_domain::domain::governance::GovernanceContract;
-use agileplus_domain::domain::project::Project;
-use agileplus_domain::domain::story::Story;
-use agileplus_domain::domain::user::User;
 use agileplus_domain::domain::work_package::WorkPackage;
 
 // ----- Features -----
@@ -126,142 +121,7 @@ impl From<AuditEntry> for AuditEntryResponse {
     }
 }
 
-// ----- Projects -----
-
-#[derive(Debug, Serialize, Deserialize, ToSchema)]
-pub struct ProjectResponse {
-    pub id: i64,
-    pub slug: String,
-    pub name: String,
-    pub description: Option<String>,
-    pub created_at: String,
-    pub updated_at: String,
-}
-
-impl From<Project> for ProjectResponse {
-    fn from(p: Project) -> Self {
-        Self {
-            id: p.id,
-            slug: p.slug,
-            name: p.name,
-            description: p.description,
-            created_at: p.created_at.to_rfc3339(),
-            updated_at: p.updated_at.to_rfc3339(),
-        }
-    }
-}
-
-// ----- Epics -----
-
-#[derive(Debug, Serialize, Deserialize, ToSchema)]
-pub struct EpicResponse {
-    pub id: i64,
-    pub project_id: i64,
-    pub title: String,
-    pub description: Option<String>,
-    pub status: String,
-    pub owner_id: Option<i64>,
-    pub created_at: String,
-    pub updated_at: String,
-}
-
-impl From<Epic> for EpicResponse {
-    fn from(e: Epic) -> Self {
-        Self {
-            id: e.id,
-            project_id: e.project_id,
-            title: e.title,
-            description: e.description,
-            status: e.status.to_string(),
-            owner_id: e.owner_id,
-            created_at: e.created_at.to_rfc3339(),
-            updated_at: e.updated_at.to_rfc3339(),
-        }
-    }
-}
-
-// ----- Stories -----
-
-#[derive(Debug, Serialize, Deserialize, ToSchema)]
-pub struct StoryResponse {
-    pub id: i64,
-    pub epic_id: i64,
-    pub project_id: i64,
-    pub title: String,
-    pub description: Option<String>,
-    pub status: String,
-    pub points: Option<u32>,
-    pub assignee_id: Option<i64>,
-    pub created_at: String,
-    pub updated_at: String,
-}
-
-impl From<Story> for StoryResponse {
-    fn from(s: Story) -> Self {
-        Self {
-            id: s.id,
-            epic_id: s.epic_id,
-            project_id: s.project_id,
-            title: s.title,
-            description: s.description,
-            status: s.status.to_string(),
-            points: s.points,
-            assignee_id: s.assignee_id,
-            created_at: s.created_at.to_rfc3339(),
-            updated_at: s.updated_at.to_rfc3339(),
-        }
-    }
-}
-
-// ----- Users -----
-
-#[derive(Debug, Serialize, Deserialize, ToSchema)]
-pub struct UserResponse {
-    pub id: i64,
-    pub display_name: String,
-    pub email: String,
-    pub role: String,
-    pub status: String,
-    pub avatar_url: Option<String>,
-    pub github_login: Option<String>,
-    pub created_at: String,
-    pub updated_at: String,
-}
-
-impl From<User> for UserResponse {
-    fn from(u: User) -> Self {
-        Self {
-            id: u.id,
-            display_name: u.display_name,
-            email: u.email,
-            role: u.role.to_string(),
-            status: u.status.to_string(),
-            avatar_url: u.avatar_url,
-            github_login: u.github_login,
-            created_at: u.created_at.to_rfc3339(),
-            updated_at: u.updated_at.to_rfc3339(),
-        }
-    }
-}
-
 // ----- Health -----
-
-#[derive(Debug, Serialize)]
-pub struct SimpleHealthResponse {
-    pub status: &'static str,
-    pub service: &'static str,
-    pub version: &'static str,
-}
-
-impl SimpleHealthResponse {
-    pub fn ok() -> Self {
-        Self {
-            status: "healthy",
-            service: "agileplus-api",
-            version: env!("CARGO_PKG_VERSION"),
-        }
-    }
-}
 
 #[derive(Debug, Serialize)]
 pub struct HealthResponse {
@@ -292,7 +152,7 @@ pub struct ServiceHealth {
 impl ServiceHealth {
     pub fn healthy(latency_ms: u64) -> Self {
         Self {
-            status: "healthy".to_owned(),
+            status: "healthy".to_string(),
             latency_ms: Some(latency_ms),
             error: None,
         }
@@ -300,7 +160,7 @@ impl ServiceHealth {
 
     pub fn degraded(reason: impl Into<String>) -> Self {
         Self {
-            status: "degraded".to_owned(),
+            status: "degraded".to_string(),
             latency_ms: None,
             error: Some(reason.into()),
         }
@@ -308,17 +168,9 @@ impl ServiceHealth {
 
     pub fn unavailable(reason: impl Into<String>) -> Self {
         Self {
-            status: "unavailable".to_owned(),
+            status: "unavailable".to_string(),
             latency_ms: None,
             error: Some(reason.into()),
-        }
-    }
-
-    pub fn not_configured() -> Self {
-        Self {
-            status: "not_configured".to_owned(),
-            latency_ms: None,
-            error: Some("not configured in this deployment".to_owned()),
         }
     }
 }
@@ -348,11 +200,11 @@ impl DetailedHealthResponse {
             .collect();
 
         Self {
-            status: "healthy".to_owned(),
+            status: "healthy".to_string(),
             timestamp: chrono::Utc::now().to_rfc3339(),
             services,
             api: ApiHealth {
-                status: "healthy".to_owned(),
+                status: "healthy".to_string(),
                 uptime_seconds,
             },
         }
@@ -362,15 +214,10 @@ impl DetailedHealthResponse {
     pub fn compute_status(
         services: &std::collections::HashMap<String, ServiceHealth>,
     ) -> &'static str {
-        // Only consider services that are actually configured.
-        let configured: Vec<_> = services
-            .values()
-            .filter(|s| s.status != "not_configured")
-            .collect();
-        if configured.iter().any(|s| s.status == "unavailable") {
+        if services.values().any(|s| s.status == "unavailable") {
             return "unavailable";
         }
-        if configured.iter().any(|s| s.status == "degraded") {
+        if services.values().any(|s| s.status == "degraded") {
             return "degraded";
         }
         "healthy"

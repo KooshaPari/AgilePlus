@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Governance checks for CLI planning commands.
 //!
 //! Loads the project constitution (if present) and validates spec consistency
@@ -145,14 +144,7 @@ mod tests {
 
     #[test]
     fn validates_required_sections() {
-        let spec = "# Spec
-## Problem Statement
-foo
-## Functional Requirements
-- **FR-1**: bar
-## Acceptance Criteria
-baz
-";
+        let spec = "# Spec\n## Problem Statement\nfoo\n## Functional Requirements\n- **FR-1**: bar\n## Acceptance Criteria\nbaz\n";
         let violations = validate_spec_consistency(spec, &dummy_constitution());
         assert!(
             violations.is_empty(),
@@ -162,8 +154,7 @@ baz
 
     #[test]
     fn detects_missing_sections() {
-        let spec = "# Spec
-no sections here";
+        let spec = "# Spec\nno sections here";
         let violations = validate_spec_consistency(spec, &dummy_constitution());
         assert!(
             violations

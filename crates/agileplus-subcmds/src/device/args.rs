@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 use clap::{Args, Subcommand, ValueEnum};
 
 /// Arguments for the `device` command group.

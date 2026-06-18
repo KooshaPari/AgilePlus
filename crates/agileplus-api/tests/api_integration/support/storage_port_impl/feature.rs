@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 use std::future::Future;
 
 use agileplus_domain::domain::feature::Feature;
@@ -105,21 +104,5 @@ pub(crate) fn list_all_features(
         .lock()
         .expect("features lock poisoned")
         .clone();
-    async move { Ok(features) }
-}
-
-pub(crate) fn list_features_by_label(
-    storage: &MockStorage,
-    label: &str,
-) -> impl Future<Output = Result<Vec<Feature>, DomainError>> + Send {
-    let label = label.to_string();
-    let features: Vec<Feature> = storage
-        .features
-        .lock()
-        .expect("features lock poisoned")
-        .iter()
-        .filter(|f| f.labels.iter().any(|l| l == label))
-        .cloned()
-        .collect();
     async move { Ok(features) }
 }

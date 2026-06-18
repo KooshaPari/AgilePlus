@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 use axum::http::StatusCode;
 
 use crate::support::{TEST_API_KEY, setup_test_server};
@@ -49,7 +48,7 @@ async fn list_features_invalid_key_returns_401() {
     let server = setup_test_server().await;
     let resp = server
         .get("/api/v1/features")
-        .add_header("Authorization", "Bearer wrong-key")
+        .add_header("X-API-Key", "wrong-key")
         .await;
     resp.assert_status(StatusCode::UNAUTHORIZED);
 }
@@ -61,7 +60,7 @@ async fn response_content_type_is_json() {
     let server = setup_test_server().await;
     let resp = server
         .get("/api/v1/features")
-        .add_header("Authorization", format!("Bearer {TEST_API_KEY}"))
+        .add_header("X-API-Key", TEST_API_KEY)
         .await;
     let ct = resp
         .headers()

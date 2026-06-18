@@ -1,10 +1,8 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Repository implementations for the SQLite adapter.
 
 pub mod audit;
 pub mod backlog;
 pub mod cycles;
-pub mod epics;
 pub mod events;
 pub mod evidence;
 pub mod features;
@@ -12,7 +10,5 @@ pub mod governance;
 pub mod metrics;
 pub mod modules;
 pub mod projects;
-pub mod stories;
 pub mod sync_mappings;
-pub mod users;
 pub mod work_packages;

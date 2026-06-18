@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `agileplus module` command group implementation.
 //!
 //! Provides CRUD and association management for Module entities.

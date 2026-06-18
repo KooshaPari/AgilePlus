@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Device management CLI commands for AgilePlus.
 //!
 //! Provides three subcommands:

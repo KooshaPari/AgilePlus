@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Worktree route handlers.
 //!
 //! - GET    /api/v1/worktrees -> list

@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 use agileplus_p2p::discovery::{PeerInfo, PeerStatus};
 use serde::Serialize;
 

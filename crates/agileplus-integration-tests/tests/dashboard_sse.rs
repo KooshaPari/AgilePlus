@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! T109: Dashboard SSE (Server-Sent Events) integration test.
 //!
 //! Verifies that feature mutations broadcast SSE events to connected clients.
@@ -11,7 +10,7 @@ use agileplus_integration_tests::common::fixtures::feature_create_payload;
 use std::time::Duration;
 
 #[cfg(feature = "integration")]
-use agileplus_integration_tests::common::harness::{is_process_compose_installed, TestHarness};
+use agileplus_integration_tests::common::harness::{TestHarness, is_process_compose_installed};
 
 /// Helper: skip the test if services are unavailable.
 #[cfg(feature = "integration")]
@@ -102,9 +101,7 @@ async fn dashboard_sse_integration() -> anyhow::Result<()> {
                     Some(Ok(bytes)) => {
                         buffer.push_str(&String::from_utf8_lossy(&bytes));
                         // SSE events are delimited by double newlines.
-                        while let Some(idx) = buffer.find("
-
-") {
+                        while let Some(idx) = buffer.find("\n\n") {
                             let raw_event = buffer[..idx + 2].to_string();
                             buffer = buffer[idx + 2..].to_string();
 

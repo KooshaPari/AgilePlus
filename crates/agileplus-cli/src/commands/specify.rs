@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `agileplus specify` command implementation.
 //!
 //! Creates a new feature spec or revises an existing one.
@@ -133,8 +132,7 @@ fn read_multiline_prompt(msg: &str) -> Result<String> {
         }
         lines.push(l);
     }
-    Ok(lines.join("
-"))
+    Ok(lines.join("\n"))
 }
 
 /// Run the interactive discovery interview on stdin/stdout.
@@ -163,10 +161,9 @@ fn run_interview() -> Result<(String, String)> {
     let fr_lines: String = frs
         .iter()
         .enumerate()
-        .map(|(i, fr)| format!("- **FR-{}**: {fr}", i + 1))
+        .map(|(i, fr)| format!("- **FR-{}**: {}", i + 1, fr))
         .collect::<Vec<_>>()
-        .join("
-");
+        .join("\n");
 
     let date = Utc::now().format("%Y-%m-%d").to_string();
     let spec_content = format!(
@@ -336,11 +333,9 @@ fn compute_diff_summary(old: &str, new: &str) -> String {
             ChangeTag::Insert => "+",
             ChangeTag::Equal => " ",
         };
-        lines.push(format!("{tag}{}", change.value().trim_end_matches('
-')));
+        lines.push(format!("{tag}{}", change.value().trim_end_matches('\n')));
     }
-    lines.join("
-")
+    lines.join("\n")
 }
 
 /// Count existing revision diff artifacts.
@@ -419,21 +414,15 @@ mod tests {
 
     #[test]
     fn diff_summary_detects_changes() {
-        let old = "line1
-line2
-";
-        let new = "line1
-line3
-";
+        let old = "line1\nline2\n";
+        let new = "line1\nline3\n";
         let diff = compute_diff_summary(old, new);
         assert!(diff.contains("-line2") || diff.contains("+line3"));
     }
 
     #[test]
     fn diff_summary_no_change() {
-        let content = "line1
-line2
-";
+        let content = "line1\nline2\n";
         let diff = compute_diff_summary(content, content);
         assert!(!diff.contains('-'));
         assert!(!diff.contains('+'));

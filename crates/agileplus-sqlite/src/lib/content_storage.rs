@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 use crate::repository::{backlog, features, work_packages};
 use crate::lib::adapter::SqliteStorageAdapter;
 use agileplus_domain::{

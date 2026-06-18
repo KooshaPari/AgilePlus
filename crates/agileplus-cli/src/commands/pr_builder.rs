@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! PR description builder for work packages.
 //!
 //! Generates structured PR descriptions with WP goal, FR references,
@@ -28,8 +27,7 @@ pub fn build_pr_description(wp: &WorkPackage, feature: &Feature, spec_content: &
             .iter()
             .map(|f| format!("- `{f}`"))
             .collect::<Vec<_>>()
-            .join("
-")
+            .join("\n")
     };
     let checklist = build_acceptance_checklist(&wp.acceptance_criteria);
 
@@ -98,8 +96,7 @@ fn extract_fr_references(text: &str, spec_content: &str) -> String {
             .unwrap_or_else(|| "(description not found in spec)".to_string());
         lines.push(format!("- **{fr_id}**: {description}"));
     }
-    lines.join("
-")
+    lines.join("\n")
 }
 
 /// Find the one-line description for an FR in spec content.
@@ -138,8 +135,7 @@ fn build_acceptance_checklist(criteria: &str) -> String {
             format!("- [ ] {stripped}")
         })
         .collect::<Vec<_>>()
-        .join("
-")
+        .join("\n")
 }
 
 #[cfg(test)]
@@ -157,8 +153,7 @@ mod tests {
             1,
             "Implement auth module",
             1,
-            "FR-001 login must work
-FR-002 logout must work",
+            "FR-001 login must work\nFR-002 logout must work",
         );
         wp.id = 9;
         wp.file_scope = vec!["src/auth.rs".into(), "src/main.rs".into()];
@@ -186,10 +181,7 @@ FR-002 logout must work",
     fn pr_description_contains_sections() {
         let feature = make_feature();
         let wp = make_wp();
-        let spec = "## Functional Requirements
-- **FR-001**: Login must work
-- **FR-002**: Logout must work
-";
+        let spec = "## Functional Requirements\n- **FR-001**: Login must work\n- **FR-002**: Logout must work\n";
         let body = build_pr_description(&wp, &feature, spec);
         assert!(body.contains("## Work Package:"));
         assert!(body.contains("### Goal"));
@@ -203,9 +195,7 @@ FR-002 logout must work",
     #[test]
     fn extract_fr_refs_found() {
         let text = "FR-001 and FR-042 must pass";
-        let spec = "- **FR-001**: Login feature
-- **FR-042**: Export feature
-";
+        let spec = "- **FR-001**: Login feature\n- **FR-042**: Export feature\n";
         let result = extract_fr_references(text, spec);
         assert!(result.contains("FR-001"));
         assert!(result.contains("FR-042"));
@@ -214,9 +204,7 @@ FR-002 logout must work",
 
     #[test]
     fn acceptance_checklist_format() {
-        let criteria = "- First criterion
-- Second criterion
-";
+        let criteria = "- First criterion\n- Second criterion\n";
         let checklist = build_acceptance_checklist(criteria);
         assert!(checklist.contains("- [ ] First criterion"));
         assert!(checklist.contains("- [ ] Second criterion"));

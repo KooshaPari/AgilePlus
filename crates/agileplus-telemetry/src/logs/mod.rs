@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Structured JSON logging via the `tracing` crate.
 //!
 //! Call [`init_logging`] exactly once from `main()` and hold the returned
@@ -9,7 +8,7 @@ use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use tracing_appender::non_blocking::WorkerGuard;
-use tracing_subscriber::{fmt::format::FmtSpan, prelude::*, EnvFilter};
+use tracing_subscriber::{EnvFilter, fmt::format::FmtSpan, prelude::*};
 
 // ---------------------------------------------------------------------------
 // Public types

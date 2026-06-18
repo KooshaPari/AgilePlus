@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Module repository -- CRUD operations for the `modules` table and `module_feature_tags`.
 //!
 //! Traces to: FR-M01, FR-M02, FR-M04, FR-M07

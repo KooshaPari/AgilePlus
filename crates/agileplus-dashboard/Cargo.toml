@@ -2,14 +2,8 @@
 name = "agileplus-dashboard"
 version.workspace = true
 edition.workspace = true
+license.workspace = true
 rust-version.workspace = true
-license = "MIT OR Apache-2.0"
-repository = "https://github.com/KooshaPari/AgilePlus"
-description = "agileplus dashboard — Phenotype infrastructure crate (AgilePlus)"
-documentation = "https://docs.rs/agileplus-dashboard"
-keywords = ["phenotype", "agileplus"]
-categories = ["development-tools"]
-authors = ["kooshapari"]
 
 [package.metadata.askama]
 dirs = ["../../templates"]
@@ -19,8 +13,6 @@ agileplus-domain = { path = "../agileplus-domain" }
 agileplus-events = { path = "../agileplus-events" }
 agileplus-sqlite = { path = "../agileplus-sqlite" }
 agileplus-fixtures = { path = "../agileplus-fixtures" }
-agileplus-telemetry.workspace = true
-rusqlite = { version = "0.32", features = ["bundled"] }
 askama = "0.12"
 axum = { version = "0.8", features = ["json", "macros", "tokio"] }
 async-stream = "0.3"
@@ -41,6 +33,3 @@ sysinfo = "0.32"
 
 [dev-dependencies]
 tokio = { version = "1", features = ["full"] }
-
-[package.metadata.cargo-machete]
-ignored = ["agileplus-events", "agileplus-sqlite", "axum-extra", "rusqlite", "thiserror", "tracing-subscriber"]

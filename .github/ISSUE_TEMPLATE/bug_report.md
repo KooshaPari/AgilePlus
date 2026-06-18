@@ -1,20 +1,32 @@
 ---
 name: Bug report
-about: Create a report to help us improve
-title: '[BUG] '
+about: Report a reproducible bug with version and release context
+title: "[bug]"
 labels: bug
-assignees: ''
 ---
 
-**Describe the bug**
-A clear description of the bug.
+## Summary
 
-**To Reproduce**
-Steps to reproduce the behavior.
+## Environment
 
-**Expected behavior**
-What you expected to happen.
+- Version:
+- Branch:
+- Commit:
+- OS:
 
-**Environment**
-- OS: [e.g. macOS]
-- Version: [e.g. 1.0.0]
+## Expected behavior
+
+## Actual behavior
+
+## Reproduction steps
+
+1.
+2.
+3.
+
+## Release / versioning context
+
+- [ ] This bug is already reflected in `CHANGELOG.md` or should be added there.
+- [ ] I checked whether it is tied to a specific release version or manifest version.
+
+## Additional context

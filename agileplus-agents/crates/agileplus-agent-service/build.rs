@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 use std::path::PathBuf;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {

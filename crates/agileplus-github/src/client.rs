@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! GitHub Issues REST API client with rate limiting.
 //!
 //! Traceability: WP19-T109
@@ -213,8 +212,7 @@ mod tests {
     fn github_payload_serialize() {
         let payload = GitHubIssuePayload {
             title: "Bug: crash on start".to_string(),
-            body: "## Description
-App crashes".to_string(),
+            body: "## Description\nApp crashes".to_string(),
             labels: vec!["bug".to_string(), "agileplus".to_string()],
         };
         let json = serde_json::to_string(&payload).unwrap();

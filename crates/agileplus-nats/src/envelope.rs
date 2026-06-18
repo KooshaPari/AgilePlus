@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Typed message envelope wrapping domain payloads.
 
 use chrono::{DateTime, Utc};

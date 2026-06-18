@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Core `EventBus` trait and in-memory implementation.
 
 use std::collections::HashMap;

@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `agileplus queue` command implementation.
 //!
 //! Manages the triage backlog: add, list, show, pop items.

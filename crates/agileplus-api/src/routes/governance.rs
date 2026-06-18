@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Governance route handlers.
 //!
 //! - GET /api/v1/features/:slug/governance
@@ -9,7 +8,7 @@
 use axum::extract::{Path, State};
 use axum::routing::{get, post};
 use axum::{Json, Router};
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 use agileplus_domain::ports::{
     observability::ObservabilityPort, storage::StoragePort, vcs::VcsPort,

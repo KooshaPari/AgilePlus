@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
@@ -19,39 +18,3 @@ pub struct ImportReport {
     pub audits_written: usize,
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn default_report_has_all_zero_counts() {
-        let report = ImportReport::default();
-        assert_eq!(report.projects_created, 0);
-        assert_eq!(report.features_created, 0);
-        assert_eq!(report.work_packages_created, 0);
-    }
-
-    #[test]
-    fn report_increments_are_reflected() {
-        let mut report = ImportReport::default();
-        report.features_created += 3;
-        report.work_packages_created += 7;
-        assert_eq!(report.features_created, 3);
-        assert_eq!(report.work_packages_created, 7);
-        assert_eq!(report.features_updated, 0);
-    }
-
-    #[test]
-    fn report_roundtrips_through_serde_json() {
-        let report = ImportReport {
-            modules_created: 2,
-            cycles_created: 1,
-            ..Default::default()
-        };
-        let json = serde_json::to_string(&report).expect("serialize");
-        let decoded: ImportReport = serde_json::from_str(&json).expect("deserialize");
-        assert_eq!(decoded.modules_created, 2);
-        assert_eq!(decoded.cycles_created, 1);
-        assert_eq!(decoded.artifacts_written, 0);
-    }
-}

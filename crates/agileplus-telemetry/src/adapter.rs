@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 use agileplus_domain::ports::observability::{LogEntry, LogLevel, ObservabilityPort, SpanContext};
 use opentelemetry::global;
 use opentelemetry::metrics::MeterProvider as _MeterProvider;
@@ -23,7 +22,7 @@ pub enum TelemetryError {
 
 pub struct TelemetryGuard {
     _log_guard: Option<WorkerGuard>,
-    _tracer_provider: opentelemetry_sdk::trace::TracerProvider,
+    _tracer_provider: opentelemetry_sdk::trace::SdkTracerProvider,
     _meter_provider: SdkMeterProvider,
 }
 
@@ -194,6 +193,7 @@ impl ObservabilityPort for TelemetryAdapter {
         }
         let fields_str = format!("{:?}", entry.fields);
         match entry.level {
+            LogLevel::Trace => tracing::trace!(message = %entry.message, fields = %fields_str),
             LogLevel::Debug => tracing::debug!(message = %entry.message, fields = %fields_str),
             LogLevel::Info => tracing::info!(message = %entry.message, fields = %fields_str),
             LogLevel::Warn => tracing::warn!(message = %entry.message, fields = %fields_str),
@@ -203,39 +203,47 @@ impl ObservabilityPort for TelemetryAdapter {
 
     fn log_info(&self, message: &str) {
         if !self.noop {
-            tracing::info!("{message}");
+            tracing::info!("{}", message);
         }
     }
 
     fn log_warn(&self, message: &str) {
         if !self.noop {
-            tracing::warn!("{message}");
+            tracing::warn!("{}", message);
         }
     }
 
     fn log_error(&self, message: &str) {
         if !self.noop {
-            tracing::error!("{message}");
+            tracing::error!("{}", message);
         }
     }
 }
 
 pub fn init_telemetry(config: TelemetryConfig) -> Result<TelemetryGuard, TelemetryError> {
-    use opentelemetry_sdk::trace::TracerProvider;
+    use opentelemetry_otlp::WithExportConfig;
+    use opentelemetry_sdk::trace::SdkTracerProvider;
 
     let tracer_provider = if let Some(otlp) = &config.otlp {
-        match build_otlp_provider(otlp) {
-            Ok(p) => p,
+        match opentelemetry_otlp::SpanExporter::builder()
+            .with_http()
+            .with_endpoint(&otlp.endpoint)
+            .with_timeout(std::time::Duration::from_millis(otlp.timeout_ms))
+            .build()
+        {
+            Ok(exporter) => SdkTracerProvider::builder()
+                .with_batch_exporter(exporter)
+                .build(),
             Err(e) => {
                 tracing::warn!(
                     "OTLP trace provider unavailable ({}): falling back to no-op exporter",
                     e
                 );
-                TracerProvider::builder().build()
+                SdkTracerProvider::builder().build()
             }
         }
     } else {
-        TracerProvider::builder().build()
+        SdkTracerProvider::builder().build()
     };
 
     global::set_tracer_provider(tracer_provider.clone());
@@ -253,7 +261,7 @@ pub fn init_telemetry(config: TelemetryConfig) -> Result<TelemetryGuard, Telemet
 }
 
 fn init_trace_provider(config: &TelemetryConfig) {
-    use opentelemetry_sdk::trace::TracerProvider;
+    use opentelemetry_sdk::trace::SdkTracerProvider;
 
     if let Some(otlp) = &config.otlp {
         match build_otlp_provider(otlp) {
@@ -270,13 +278,13 @@ fn init_trace_provider(config: &TelemetryConfig) {
         }
     }
 
-    let provider = TracerProvider::builder().build();
+    let provider = SdkTracerProvider::builder().build();
     global::set_tracer_provider(provider);
 }
 
 fn build_otlp_provider(
     otlp: &crate::config::OtlpConfig,
-) -> Result<opentelemetry_sdk::trace::TracerProvider, String> {
+) -> Result<opentelemetry_sdk::trace::SdkTracerProvider, String> {
     use opentelemetry_otlp::WithExportConfig;
 
     let exporter = opentelemetry_otlp::SpanExporter::builder()
@@ -286,8 +294,8 @@ fn build_otlp_provider(
         .build()
         .map_err(|e| e.to_string())?;
 
-    let provider = opentelemetry_sdk::trace::TracerProvider::builder()
-        .with_simple_exporter(exporter)
+    let provider = opentelemetry_sdk::trace::SdkTracerProvider::builder()
+        .with_batch_exporter(exporter)
         .build();
 
     Ok(provider)
@@ -305,6 +313,7 @@ fn noop_span_context() -> SpanContext {
 mod tests {
     use super::*;
     use agileplus_domain::ports::observability::LogEntry;
+    use std::collections::HashMap;
 
     #[test]
     fn noop_adapter_does_not_panic() {
@@ -337,7 +346,8 @@ mod tests {
         let entry = LogEntry {
             level: LogLevel::Info,
             message: "test".into(),
-            fields: vec![("key".to_owned(), "value".to_owned())],
+            fields: HashMap::new(),
+            span_context: None,
         };
         adapter.log(&entry);
     }

@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 use crate::repository::{audit, cycles, features, governance, metrics, modules, projects, sync_mappings, work_packages};
 use crate::lib::adapter::SqliteStorageAdapter;
 use agileplus_domain::{
@@ -37,11 +36,6 @@ impl StoragePort for SqliteStorageAdapter {
         features::update_feature_state(&conn, id, state)
     }
 
-    async fn update_feature(&self, feature: &Feature) -> Result<(), DomainError> {
-        let conn = self.lock()?;
-        features::update_feature(&conn, feature)
-    }
-
     async fn list_features_by_state(
         &self,
         state: FeatureState,
@@ -53,11 +47,6 @@ impl StoragePort for SqliteStorageAdapter {
     async fn list_all_features(&self) -> Result<Vec<Feature>, DomainError> {
         let conn = self.lock()?;
         features::list_all_features(&conn)
-    }
-
-    async fn list_features_by_label(&self, label: &str) -> Result<Vec<Feature>, DomainError> {
-        let conn = self.lock()?;
-        features::list_features_by_label(&conn, label)
     }
 
     async fn create_work_package(&self, wp: &WorkPackage) -> Result<i64, DomainError> {

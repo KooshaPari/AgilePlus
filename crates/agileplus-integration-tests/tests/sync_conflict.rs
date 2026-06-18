@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! T110: Sync conflict detection and resolution integration test.
 //!
 //! Verifies that concurrent local and remote modifications to a feature are
@@ -11,7 +10,7 @@ use agileplus_integration_tests::common::fixtures::plane_webhook_payload;
 #[cfg(feature = "integration")]
 use agileplus_integration_tests::common::{
     fixtures::feature_create_payload,
-    harness::{is_process_compose_installed, TestHarness},
+    harness::{TestHarness, is_process_compose_installed},
 };
 
 /// Helper: skip the test if services are unavailable.

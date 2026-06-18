@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! CLAUDE.md and AGENTS.md prompt router generation.
 //!
 //! Generates project-aware governance files from detected project config.

@@ -2,36 +2,28 @@
 name = "agileplus-telemetry"
 version.workspace = true
 edition.workspace = true
+license.workspace = true
 rust-version.workspace = true
-license = "MIT OR Apache-2.0"
-repository = "https://github.com/KooshaPari/AgilePlus"
-description = "agileplus telemetry — Phenotype infrastructure crate (AgilePlus)"
-documentation = "https://docs.rs/agileplus-telemetry"
-keywords = ["phenotype", "agileplus", "telemetry"]
-categories = ["development-tools::profiling"]
-authors = ["kooshapari"]
 
 [dependencies]
-anyhow.workspace = true
-tokio.workspace = true
-tracing.workspace = true
-tracing-subscriber.workspace = true
-tracing-appender.workspace = true
-tracing-opentelemetry = "0.28"
-phenotype-logging.workspace = true
-opentelemetry.workspace = true
-opentelemetry_sdk.workspace = true
-opentelemetry-otlp.workspace = true
-serde.workspace = true
-serde_yaml.workspace = true
-thiserror.workspace = true
-chrono.workspace = true
-url.workspace = true
-dirs.workspace = true
 agileplus-domain = { path = "../agileplus-domain" }
+tokio = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { version = "0.3", features = ["json", "env-filter"] }
+tracing-appender = "0.2"
+tracing-opentelemetry.workspace = true
+opentelemetry.workspace = true
+opentelemetry-otlp.workspace = true
+opentelemetry_sdk.workspace = true
+reqwest = { version = "0.13" }
+serde = { workspace = true, features = ["derive"] }
+serde_yaml = "0.9"
+chrono = { workspace = true }
+thiserror = { workspace = true }
+dirs = "5"
+url = "2"
 
 [dev-dependencies]
-tempfile.workspace = true
-
-[package.metadata.cargo-machete]
-ignored = ["anyhow", "tokio"]
+tokio = { workspace = true, features = ["test-util", "macros"] }
+tracing-test = "0.2"
+tempfile = "3"

@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Integration tests for the gRPC server layer.
 //!
 //! These tests verify the server handlers, error mapping, event bus,
@@ -68,11 +67,10 @@ fn invalid_transition_maps_to_failed_precondition() {
 }
 
 #[test]
-fn storage_error_maps_to_internal() {
+fn timeout_maps_to_deadline_exceeded() {
     use tonic::Code;
-    // DomainError::Timeout is not in the domain; Storage maps to Internal.
-    let s = domain_error_to_status(DomainError::Storage("connection timeout".into()));
-    assert_eq!(s.code(), Code::Internal);
+    let s = domain_error_to_status(DomainError::Timeout(30));
+    assert_eq!(s.code(), Code::DeadlineExceeded);
 }
 
 // --- Event bus tests ---

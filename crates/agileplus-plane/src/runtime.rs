@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 use std::env;
 
 use agileplus_domain::ports::StoragePort;

@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Backlog item management.
 //!
 //! Persistent backlog with CRUD operations backed by SQLite.

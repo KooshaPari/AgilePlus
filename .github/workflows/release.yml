@@ -1,68 +1,62 @@
-name: release-plz
+name: Release
 
 on:
-  push:
-    branches:
-      - main
-  pull_request:
-    types:
-      - closed
-    branches:
-      - main
   workflow_dispatch:
+    inputs:
+      version:
+        required: true
+        type: string
+        description: "Release version"
+      language:
+        required: true
+        type: string
+        description: "Programming language"
+      registry:
+        required: true
+        type: string
+        description: "Package registry"
+      channel:
+        required: false
+        type: string
+        default: stable
+        description: "Release channel (alpha, beta, canary, stable)"
+      dry_run:
+        required: false
+        type: boolean
+        default: false
+        description: "Run without publishing"
 
 permissions:
-  contents: read
-
-
+  contents: write
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-env:
-  CARGO_TERM_COLOR: always
+  group: agileplus-release-${{ inputs.version }}
+  cancel-in-progress: false
 
 jobs:
-  release-pr:
-    if: github.event_name != 'pull_request'
-    name: Open Release PR
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: write
-      pull-requests: write
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
-        with:
-          fetch-depth: 0
-      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8  # stable
-      - uses: Swatinem/rust-cache@42dc69e1aa15d09112580998cf2ef0119e2e91ae  # v2
-      - name: Create or update release PR
-        uses: release-plz/action@d22c02a7cf6d7870bd163be7c7d9518d331aef34
-        with:
-          command: release-pr
-          config: release-plz.toml
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  gate-check:
+    uses: ./.github/workflows/gate-check.yml
+    with:
+      language: ${{ inputs.language }}
+      channel: ${{ inputs.channel }}
+      risk_profile: high
+
+  changelog:
+    needs: gate-check
+    uses: ./.github/workflows/changelog.yml
+    with:
+      version: ${{ inputs.version }}
 
   publish:
-    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release-plz-')
-    name: Publish Crates
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: write
-      pull-requests: write
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
-        with:
-          fetch-depth: 0
-          ref: ${{ github.event.pull_request.merge_commit_sha }}
-      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8  # stable
-      - uses: Swatinem/rust-cache@42dc69e1aa15d09112580998cf2ef0119e2e91ae  # v2
-      - name: Publish released crates
-        uses: release-plz/action@d22c02a7cf6d7870bd163be7c7d9518d331aef34
-        with:
-          command: release
-          config: release-plz.toml
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+    needs: changelog
+    uses: ./.github/workflows/publish.yml
+    with:
+      language: ${{ inputs.language }}
+      registry: ${{ inputs.registry }}
+      version: ${{ inputs.version }}
+      channel: ${{ inputs.channel }}
+      dry_run: ${{ inputs.dry_run }}
+    secrets:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+      CARGO_TOKEN: ${{ secrets.CARGO_TOKEN }}

@@ -1,5 +1,9 @@
 name: Sync Canary
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   push:
     branches: [main]
@@ -14,10 +18,10 @@ concurrency:
 
 jobs:
   sync-canary:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -35,7 +39,7 @@ jobs:
           fi
 
       - name: Sync canary from main
-        run: git push origin main:canary
+        run: cargo run -p agileplus-cli --locked -- branch:sync --source main --target canary
 
       - name: Push canary
         run: git push origin canary

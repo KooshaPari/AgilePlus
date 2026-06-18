@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 use std::path::Path;
 use std::time::Instant;
 
@@ -7,7 +6,7 @@ use tracing::debug;
 use super::jsonl::resolve_jsonl_conflict;
 use super::snapshot::resolve_snapshot_conflict;
 use super::sync_state::resolve_sync_state_conflict;
-use super::types::{finish_resolution, ConflictResolution, MergeError};
+use super::types::{ConflictResolution, MergeError, finish_resolution};
 
 pub(crate) fn resolve_git_conflicts(repo_dir: &Path) -> Result<ConflictResolution, MergeError> {
     let started = Instant::now();
