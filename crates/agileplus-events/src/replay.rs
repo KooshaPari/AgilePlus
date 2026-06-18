@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Event replay engine with Aggregate pattern.
 
 use agileplus_domain::domain::event::Event;

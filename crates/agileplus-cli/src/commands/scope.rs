@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! File scope detection and overlap graph for WP planning.
 //!
 //! Parses WP descriptions for file path references and builds a graph of

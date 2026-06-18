@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 use anyhow::{anyhow, Context, Result};
 use serde::Deserialize;
 use std::fs;
@@ -88,7 +89,8 @@ pub fn validate_trace_path(path: impl AsRef<Path>) -> Result<TraceValidation> {
     }
 
     if !errors.is_empty() {
-        return Err(anyhow!(errors.join("\n")));
+        return Err(anyhow!(errors.join("
+")));
     }
 
     Ok(TraceValidation {
@@ -127,7 +129,7 @@ fn validate_trace_paths(repo_root: &Path, trace: &TraceEntry, errors: &mut Vec<S
         .chain(trace.journeys.iter());
 
     for path in paths {
-        if path.starts_with('/') || path.starts_with("~/") || path.contains('\\') {
+        if path.starts_with('/') || path.starts_with("~/") || path.contains('\') {
             errors.push(format!("{}: malformed path {path}", trace.fr_id));
             continue;
         }

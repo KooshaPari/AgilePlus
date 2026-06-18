@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Application-layer error type.
 //!
 //! Never leaks storage implementation details (no sqlx types, no raw DB errors).

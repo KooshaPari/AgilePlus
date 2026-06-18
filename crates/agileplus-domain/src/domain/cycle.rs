@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Cycle (sprint/iteration) aggregate.
 
 use chrono::{DateTime, NaiveDate, Utc};

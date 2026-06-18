@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Use case: Persist a batch of synced Stories via the StoryRepository port.
 //!
 //! Traceability: FR-AGP-013

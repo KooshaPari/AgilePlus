@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 use regex::Regex;
 use serde::Deserialize;
 use std::fs;
@@ -135,10 +136,10 @@ fn parse_kind(kind: &str) -> Option<TraceDocumentKind> {
 fn infer_kind(id: &str, path: &Path) -> Option<TraceDocumentKind> {
     let text = format!("{id} {}", path.display()).to_ascii_lowercase();
     let patterns = [
-        (r"\bfr[-_]", TraceDocumentKind::FunctionalRequirement),
-        (r"\bnfr[-_]", TraceDocumentKind::NonFunctionalRequirement),
-        (r"\btest[-_/]|tests?/", TraceDocumentKind::Test),
-        (r"\bcode[-_/]|src/|source/", TraceDocumentKind::Code),
+        (r"fr[-_]", TraceDocumentKind::FunctionalRequirement),
+        (r"nfr[-_]", TraceDocumentKind::NonFunctionalRequirement),
+        (r"test[-_/]|tests?/", TraceDocumentKind::Test),
+        (r"code[-_/]|src/|source/", TraceDocumentKind::Code),
     ];
 
     patterns.iter().find_map(|(pattern, kind)| {

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Event repository — CRUD for the `events` table.
 
 use rusqlite::{params, Connection, Row};

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Integration tests for the AgilePlus HTTP API.
 //!
 //! These tests spin up a real axum test server backed by in-memory mock

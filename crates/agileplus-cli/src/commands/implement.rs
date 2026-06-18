@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `agileplus implement` command implementation.
 //!
 //! Orchestrates work package implementation: creates worktrees, dispatches
@@ -372,7 +373,8 @@ where
                 storage.append_audit_entry(&audit).await.ok();
 
                 eprintln!(
-                    "WARNING: WP{:02} blocked after {cycles} review cycles.\nLast feedback: {}",
+                    "WARNING: WP{:02} blocked after {cycles} review cycles.
+Last feedback: {}",
                     wp.sequence,
                     &last_feedback[..last_feedback.len().min(500)]
                 );

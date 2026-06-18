@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Cycle repository -- CRUD operations for the `cycles` table and `cycle_features`.
 //!
 //! Traces to: FR-C01, FR-C02, FR-C03, FR-C04, FR-C05, FR-C07

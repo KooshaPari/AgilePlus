@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 use super::*;
 
 fn make_args(since: Option<&str>, event_type: Option<&str>, actor: Option<&str>) -> EventsArgs {
@@ -109,7 +110,8 @@ fn test_render_json() {
 fn test_render_jsonl() {
     let events = load_events_stub();
     let jsonl = render_jsonl(&events[..2]).unwrap();
-    let lines: Vec<&str> = jsonl.trim_end().split('\n').collect();
+    let lines: Vec<&str> = jsonl.trim_end().split('
+').collect();
     assert_eq!(lines.len(), 2);
     for line in lines {
         let v: serde_json::Value = serde_json::from_str(line).unwrap();

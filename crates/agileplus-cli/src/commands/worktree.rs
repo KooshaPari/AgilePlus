@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `agileplus worktree` command group.
 //!
 //! Provides worktree add, remove, and list operations.

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `agileplus plan` command implementation.
 //!
 //! Reads spec.md and research.md for a feature, generates work packages with
@@ -105,8 +106,11 @@ where
                 .iter()
                 .map(|fr| format!("- {} -- {}", fr.id, fr.description))
                 .collect::<Vec<_>>()
-                .join("\n");
-            let description_for_scope = format!("{title}\n{criteria}\n{research_content}");
+                .join("
+");
+            let description_for_scope = format!("{title}
+{criteria}
+{research_content}");
             let mut wp = WorkPackage::new(feature.id, &title, (i + 1) as i32, &criteria);
             wp.file_scope = detect_file_scope(&description_for_scope);
             wp
@@ -401,7 +405,8 @@ fn generate_plan_md(
     }
     lines.push(String::new());
 
-    lines.join("\n")
+    lines.join("
+")
 }
 
 /// Generate a WP prompt file.
@@ -414,7 +419,8 @@ fn generate_wp_prompt(wp: &WorkPackage, feature_name: &str, slug: &str) -> Strin
             .iter()
             .map(|f| format!("- `{f}`"))
             .collect::<Vec<_>>()
-            .join("\n")
+            .join("
+")
     };
     let mut lines = Vec::new();
     lines.push("---".to_string());
@@ -448,7 +454,8 @@ fn generate_wp_prompt(wp: &WorkPackage, feature_name: &str, slug: &str) -> Strin
     lines.push(format!(
         "`kitty-specs/{slug}/plan.md` for the implementation plan."
     ));
-    lines.join("\n")
+    lines.join("
+")
 }
 
 /// Build a governance contract for a feature's work packages.
@@ -500,7 +507,10 @@ mod tests {
 
     #[test]
     fn parse_frs_basic() {
-        let spec = "## Functional Requirements\n- **FR-001**: Login must work\n- **FR-002**: Logout must work\n";
+        let spec = "## Functional Requirements
+- **FR-001**: Login must work
+- **FR-002**: Logout must work
+";
         let frs = parse_functional_requirements(spec);
         assert_eq!(frs.len(), 2);
         assert_eq!(frs[0].id, "FR-001");

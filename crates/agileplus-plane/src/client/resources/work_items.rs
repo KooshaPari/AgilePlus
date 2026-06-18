@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 use anyhow::Context;
 use reqwest::Method;
 use serde::Deserialize;

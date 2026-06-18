@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! agileplus-grpc — tonic gRPC adapter layer.
 //!
 //! This crate wires the AgilePlus domain/application ports to gRPC services

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! OTLP and telemetry configuration loader.
 //!
 //! Reads `~/.agileplus/otel-config.yaml`. Missing file returns defaults (stdout

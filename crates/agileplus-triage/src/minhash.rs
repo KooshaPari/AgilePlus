@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! MinHash signatures for near-duplicate text detection.
 //!
 //! Implements the classic Broder (1997) MinHash estimator: a `k`-permutation

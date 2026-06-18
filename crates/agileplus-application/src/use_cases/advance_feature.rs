@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Use case: Advance a Feature to the next lifecycle state.
 
 use std::str::FromStr;

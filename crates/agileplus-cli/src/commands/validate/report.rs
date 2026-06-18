@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 use chrono::Utc;
 
 /// Result of checking a single evidence requirement.
@@ -111,7 +112,8 @@ impl ValidationReport {
         }
 
         lines.push(String::new());
-        lines.join("\n")
+        lines.join("
+")
     }
 
     pub(crate) fn to_json(&self) -> String {

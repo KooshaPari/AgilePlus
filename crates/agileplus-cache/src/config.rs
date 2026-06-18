@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Cache configuration.
 
 use agileplus_config::config_builder;

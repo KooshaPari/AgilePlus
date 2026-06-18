@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `agileplus-application` — hexagonal application / use-case layer.
 //!
 //! Each use case is a struct holding `Arc<dyn Port + Send + Sync>` deps wired

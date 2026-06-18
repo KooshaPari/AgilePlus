@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! AgilePlus protobuf/tonic generated types.
 //!
 //! When `protoc` is available at build time `build.rs` compiles the `.proto`

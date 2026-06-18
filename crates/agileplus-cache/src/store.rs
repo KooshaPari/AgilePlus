@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Typed cache store with serde serialization.
 
 #[cfg(feature = "redis")]

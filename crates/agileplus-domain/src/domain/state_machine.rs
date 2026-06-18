@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Feature lifecycle state machine — re-exported from `traceability-core`.
 
 pub use traceability_core::lifecycle::{FeatureState, Transition, TransitionResult};

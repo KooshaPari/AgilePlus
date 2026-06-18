@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Catalog parser: extracts `(fr_id, title, status)` triples from an FR/NFR markdown file.
 //!
 //! Format recognised (as used in all four catalogs):
@@ -46,7 +47,9 @@ pub fn parse_catalog(markdown: &str) -> Vec<CatalogEntry> {
         let trimmed = line.trim();
 
         // Match heading lines: `### FR-XXX-NNN — Title`
-        // Also handle `### FR-XXX-NNN\n\n**Title:** ...` (Authvault style via next line)
+        // Also handle `### FR-XXX-NNN
+
+**Title:** ...` (Authvault style via next line)
         if let Some(id_and_rest) = extract_heading_id(trimmed) {
             // Flush previous entry
             if let (Some(id), Some(title)) = (current_id.take(), current_title.take()) {
@@ -98,7 +101,8 @@ pub fn parse_catalog(markdown: &str) -> Vec<CatalogEntry> {
 
 /// Extract `(id, title)` from a heading line like:
 ///   `### FR-AGP-001 — Rich domain aggregates with enforced invariants`
-///   `### FR-AGP-001\n` (title-only variant; title = id for now, overridden later)
+///   `### FR-AGP-001
+` (title-only variant; title = id for now, overridden later)
 fn extract_heading_id(line: &str) -> Option<(String, String)> {
     // Must start with one or more '#'
     let stripped = line.trim_start_matches('#').trim();

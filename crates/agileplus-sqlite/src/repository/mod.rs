@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Repository implementations for the SQLite adapter.
 
 pub mod audit;

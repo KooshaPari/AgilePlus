@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Story aggregate — a user-facing deliverable belonging to an Epic.
 
 use chrono::{DateTime, Utc};

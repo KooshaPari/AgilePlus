@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Rule-based prompt -> intent graph conversion engine.
 //!
 //! No external LLM APIs are used.  Extraction is heuristic-driven
@@ -339,7 +340,8 @@ fn slugify(text: &str) -> String {
 
 fn extract_title(prompt: &str) -> String {
     let first = prompt.split('.').next().unwrap_or(prompt);
-    let first = first.split('\n').next().unwrap_or(first);
+    let first = first.split('
+').next().unwrap_or(first);
     let first = first.trim();
     if first.len() > 80 {
         format!("{}...", &first[..77])
@@ -350,7 +352,8 @@ fn extract_title(prompt: &str) -> String {
 
 fn title_from_prompt(prompt: &str) -> String {
     let first = prompt.split('.').next().unwrap_or(prompt);
-    let first = first.split('\n').next().unwrap_or(first);
+    let first = first.split('
+').next().unwrap_or(first);
     let first = first.trim();
     if first.len() > 60 {
         format!("{}...", &first[..57])

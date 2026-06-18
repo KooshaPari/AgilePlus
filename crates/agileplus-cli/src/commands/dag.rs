@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `agileplus dag` command implementation.
 //!
 //! Block-equivalent of `dagctl` (the greenfield sibling) backed by the
@@ -157,7 +158,7 @@ pub struct DoneArgs {
 
 #[derive(Debug, Args)]
 pub struct DedupArgs {
-    /// File of "<id>\t<description>" lines, or "-" for stdin.
+    /// File of "<id>	<description>" lines, or "-" for stdin.
     #[arg(long, default_value = "-")]
     pub from: String,
     /// Hybrid threshold (0.0 - 1.0).
@@ -307,7 +308,7 @@ async fn cmd_pick(a: PickArgs) -> Result<()> {
         println!("(no pickable items)");
     } else {
         for it in items {
-            println!("{}\t{}\t{}", it.wp_id, it.state, it.title);
+            println!("{}	{}	{}", it.wp_id, it.state, it.title);
         }
     }
     Ok(())
@@ -432,7 +433,7 @@ async fn cmd_scan(a: ScanArgs) -> Result<()> {
     }
     for info in infos {
         println!(
-            "path={}\tstate={:?}\tbranch={:?}\tbranches={}\tworktrees={}\thygiene={}",
+            "path={}	state={:?}	branch={:?}	branches={}	worktrees={}	hygiene={}",
             info.path,
             info.state,
             info.current_branch,
@@ -475,7 +476,7 @@ async fn cmd_where(a: WhereArgs) -> Result<()> {
     })?;
     for info in infos {
         println!(
-            "repo={}\tstate={:?}\tbranch={:?}\thygiene={}",
+            "repo={}	state={:?}	branch={:?}	hygiene={}",
             info.path, info.state, info.current_branch, info.hygiene_score
         );
     }
@@ -563,7 +564,7 @@ fn read_id_text(from: &str) -> Result<Vec<(String, String)>> {
         if line.trim().is_empty() || line.starts_with('#') {
             continue;
         }
-        if let Some((id, text)) = line.split_once('\t') {
+        if let Some((id, text)) = line.split_once('	') {
             out.push((id.to_string(), text.to_string()));
         } else if let Some((id, text)) = line.split_once('|') {
             out.push((id.to_string(), text.to_string()));
@@ -597,7 +598,9 @@ mod tests {
     #[test]
     fn read_id_text_handles_tsv() {
         let dir = std::env::temp_dir().join("agileplus_dedup_test.tsv");
-        std::fs::write(&dir, "wp-1\thello world\nwp-2\thello world\n").unwrap();
+        std::fs::write(&dir, "wp-1	hello world
+wp-2	hello world
+").unwrap();
         let items = read_id_text(dir.to_str().unwrap()).unwrap();
         assert_eq!(items.len(), 2);
         assert_eq!(items[0].0, "wp-1");

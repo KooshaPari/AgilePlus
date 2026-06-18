@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Epic aggregate — a large body of work scoped to a project.
 
 use chrono::{DateTime, Utc};

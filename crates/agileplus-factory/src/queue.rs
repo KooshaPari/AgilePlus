@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Issue queue abstraction + GitHub implementation.
 
 use anyhow::Result;

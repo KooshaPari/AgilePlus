@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Top-level scanner that wires dependency parsing + OSV + SBOM together.
 
 use std::path::Path;

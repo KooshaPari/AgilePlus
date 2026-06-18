@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! T117 – Event replay and snapshot rebuild benchmark.
 //!
 //! Measures:

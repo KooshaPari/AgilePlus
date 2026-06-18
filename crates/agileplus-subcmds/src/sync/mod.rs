@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! CLI sync subcommands for bidirectional Plane.so synchronisation.
 //!
 //! Provides:

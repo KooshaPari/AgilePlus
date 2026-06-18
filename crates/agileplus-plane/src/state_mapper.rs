@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! T046: State Mapping — bidirectional Plane.so state group ↔ AgilePlus FeatureState.
 //!
 //! Traceability: WP08-T046

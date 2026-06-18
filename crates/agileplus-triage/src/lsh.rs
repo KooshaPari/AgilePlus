@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! LSH (Locality-Sensitive Hashing) banding for MinHash signatures.
 //!
 //! `LshIndex` partitions a MinHash signature into `num_bands` bands of

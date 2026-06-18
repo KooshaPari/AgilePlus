@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `TokenVerifier` — hexagonal port for bearer-token / API-key validation.
 //!
 //! Any auth backend (shared-secret, JWT, Authvault, etc.) implements this

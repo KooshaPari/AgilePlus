@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 use super::helpers::{store_cycle, store_feature, test_storage, transition_feature_to};
 use agileplus_domain::{
     domain::{

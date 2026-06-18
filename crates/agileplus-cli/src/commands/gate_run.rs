@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `ap gate-run` — execute the active policy rules in the local store
 //! against a single feature + work-package pair, print the result, and
 //! return a non-zero exit code if any rule fails.
@@ -217,7 +218,7 @@ fn record_metrics(
     note: Option<&str>,
 ) -> Result<()> {
     let timestamp = Utc::now().format("%Y-%m-%dT%H:%M:%S").to_string();
-    let metadata = note.map(|n| format!("{{\"note\":\"{}\"}}", n.replace('"', "\\\"")));
+    let metadata = note.map(|n| format!("{{\"note\":\"{}\"}}", n.replace('"', "\\"")));
     conn.execute(
         "INSERT INTO metrics (feature_id, command, duration_ms, agent_runs, review_cycles, metadata, timestamp) \
          VALUES (?1, 'gate-run', 0, ?2, ?3, ?4, ?5)",

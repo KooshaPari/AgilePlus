@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Conflict resolution strategies.
 //!
 //! Traceability: FR-SYNC-RESOLUTION / WP09-T055

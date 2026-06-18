@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! AgilePlus end-to-end integration test infrastructure.
 //!
 //! Traceability: WP19-T107, T108, T109, T110, T111

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 use super::types::SyncItemOutcome;
 
 pub(super) fn outcome_icon(outcome: &SyncItemOutcome) -> &'static str {

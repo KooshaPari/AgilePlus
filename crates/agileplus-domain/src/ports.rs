@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Hexagonal-architecture ports — async traits implemented by adapters.
 
 #[path = "ports/agent.rs"]

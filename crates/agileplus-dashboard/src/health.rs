@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real health checkers for dashboard services.
 //!
 //! Replaces mock latencies with actual system checks:

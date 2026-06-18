@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! agileplus-convoy — MEOW convoy primitive.
 //!
 //! A convoy is a two-phase commit container for beads. Each bead wraps a

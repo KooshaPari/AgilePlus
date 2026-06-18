@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! MCP (Model Context Protocol) server over stdio.
 //!
 //! Implements a minimal JSON-RPC 2.0 server that exposes:

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! T050: Label Sync — bidirectional label CRUD via Plane.so API.
 //!
 //! Traceability: WP08-T050

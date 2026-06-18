@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Tool abstraction for the MCP SDK.
 //!
 //! A [`Tool`] is a named operation with a JSON schema and a boxed

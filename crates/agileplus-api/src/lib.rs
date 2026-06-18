@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! agileplus-api — axum HTTP server library.
 
 pub mod api_key;

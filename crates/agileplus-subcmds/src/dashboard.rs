@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! CLI dashboard subcommand for AgilePlus.
 //!
 //! Provides `agileplus dashboard [open|port <N>]`.
@@ -169,7 +170,9 @@ fn persist_port_config(port: u16) -> Result<()> {
     let config_dir = std::path::Path::new(".agileplus");
     if config_dir.exists() || std::fs::create_dir_all(config_dir).is_ok() {
         let config_path = config_dir.join("config.toml");
-        let content = format!("[dashboard]\nport = {port}\n");
+        let content = format!("[dashboard]
+port = {port}
+");
         std::fs::write(&config_path, content)
             .map_err(|e| anyhow!("Failed to write config: {e}"))?;
     } else {

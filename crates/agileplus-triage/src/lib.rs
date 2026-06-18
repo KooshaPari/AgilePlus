@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! agileplus-triage — rule-based triage engine for synced items.
 //!
 //! # Modules
@@ -120,9 +121,11 @@ pub async fn run(args: TriageArgs) -> Result<()> {
     }
 
     if !args.dry_run {
-        println!("\nAdded to backlog as {} item.", result.intent);
+        println!("
+Added to backlog as {} item.", result.intent);
     } else {
-        println!("\n(dry run — not added to backlog)");
+        println!("
+(dry run — not added to backlog)");
     }
 
     Ok(())

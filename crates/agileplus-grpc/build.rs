@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 // Proto compilation is handled by agileplus-proto crate.
 // This build.rs propagates the agileplus_proto_stubs cfg flag so that
 // server/mod.rs can gate the transport-dependent start_server function.

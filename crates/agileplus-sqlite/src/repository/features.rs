@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Feature repository — CRUD operations for the `features` table.
 
 use rusqlite::{params, Connection, Row};
@@ -216,7 +217,7 @@ pub fn list_all_features(conn: &Connection) -> Result<Vec<Feature>, DomainError>
 
 pub fn list_features_by_label(conn: &Connection, label: &str) -> Result<Vec<Feature>, DomainError> {
     // labels is stored as a JSON array: ["foo","bar"]. Use json_each to filter in SQL.
-    let pattern = format!("%\"{}\"%", label.replace('"', "\\\""));
+    let pattern = format!("%\"{}\"%", label.replace('"', "\\""));
     let mut stmt = conn
         .prepare(
             "SELECT id, slug, friendly_name, state, spec_hash, target_branch, created_at, updated_at,

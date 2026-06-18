@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Standalone seed binary: apply migrations + seed 4 Epics + N Stories from
 //! the embedded FR/NFR catalogs into the target SQLite database.
 //!

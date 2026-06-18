@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! EventStore trait — async append-only event storage.
 
 use agileplus_domain::domain::event::Event;

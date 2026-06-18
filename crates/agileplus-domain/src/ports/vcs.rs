@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! VCS port value objects and the `VcsPort` trait re-export.
 
 pub use super::VcsPort;

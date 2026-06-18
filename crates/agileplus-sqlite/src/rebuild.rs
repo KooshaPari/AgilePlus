@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! rebuild_from_git — reconstruct SQLite state from git artifacts (FR-017).
 
 use agileplus_domain::{
@@ -467,7 +468,9 @@ mod tests {
             "hash": hex(e2.hash),
         });
 
-        format!("{line1}\n{line2}\n")
+        format!("{line1}
+{line2}
+")
     }
 
     #[tokio::test]

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Process detection for real agent activity monitoring.
 //!
 //! Detects Claude and other AI tool processes running on the system

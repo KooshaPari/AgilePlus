@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `intent` CLI subcommand.
 //!
 //! Reads a natural-language prompt and emits a structured intent graph JSON
@@ -501,7 +502,7 @@ fn slugify(text: &str) -> String {
     }
     // Collapse multiple hyphens
     let mut collapsed = String::with_capacity(result.len());
-    let mut prev = '\0';
+    let mut prev = ' ';
     for c in result.chars() {
         if c == '-' && prev == '-' {
             continue;

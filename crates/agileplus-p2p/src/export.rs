@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Git-backed state export — serialize SQLite state to deterministic files.
 //!
 //! Writes to `.agileplus/sync/` with the layout:
@@ -148,7 +149,8 @@ where
             for event in &events {
                 let line = to_sorted_line(serde_json::to_value(event)?)?;
                 file.write_all(line.as_bytes())?;
-                file.write_all(b"\n")?;
+                file.write_all(b"
+")?;
             }
             stats.events_exported += events.len();
             debug!(

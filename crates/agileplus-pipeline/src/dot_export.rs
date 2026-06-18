@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 use agileplus_graph::{NodeType, RelType};
 
 use crate::{Graph, PipelineError};
@@ -69,7 +70,8 @@ pub fn export(graph: &Graph) -> Result<String, PipelineError> {
     }
 
     lines.push("}".to_string());
-    Ok(lines.join("\n"))
+    Ok(lines.join("
+"))
 }
 
 fn node_label(node: &agileplus_graph::Node) -> String {
@@ -92,13 +94,15 @@ fn properties_to_dot_attrs(properties: &serde_json::Value) -> Vec<String> {
             }
             let val = match value {
                 serde_json::Value::String(s) => {
-                    format!("\"{}\"", s.replace('"', "\\\"").replace('\n', "\\n"))
+                    format!("\"{}\"", s.replace('"', "\\"").replace('
+', "\n"))
                 }
                 serde_json::Value::Number(n) => n.to_string(),
                 serde_json::Value::Bool(b) => b.to_string(),
                 _ => format!(
                     "\"{}\"",
-                    value.to_string().replace('"', "\\\"").replace('\n', "\\n")
+                    value.to_string().replace('"', "\\"").replace('
+', "\n")
                 ),
             };
             attrs.push(format!("{key}={val}"));

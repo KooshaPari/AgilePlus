@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 // NOTE: triage module is currently STUB (agileplus_triage dep missing).
 // Test disabled until triage module is re-enabled.
 //

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Observability port — tracing and metrics abstraction.
 
 /// Lightweight span context passed between observability calls.

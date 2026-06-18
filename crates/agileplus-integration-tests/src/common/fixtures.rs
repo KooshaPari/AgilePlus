@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Test fixtures module — re-export from agileplus-fixtures.
 //!
 //! This module re-exports all fixture functionality from the shared agileplus-fixtures

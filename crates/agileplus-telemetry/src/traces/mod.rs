@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! OpenTelemetry trace spans for AgilePlus.
 //!
 //! Uses the `tracing` crate (not raw OTel spans) so that the

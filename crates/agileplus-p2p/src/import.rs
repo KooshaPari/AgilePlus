@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Git-backed state import — read deterministic files back into the event store.
 //!
 //! Reads from the same layout written by `export.rs`:
@@ -423,7 +424,8 @@ mod tests {
         std::fs::create_dir_all(&events_dir).unwrap();
         let ev = make_event("Feature", 1, 1);
         let line = serde_json::to_string(&ev).unwrap();
-        std::fs::write(events_dir.join("1.jsonl"), format!("{line}\n")).unwrap();
+        std::fs::write(events_dir.join("1.jsonl"), format!("{line}
+")).unwrap();
 
         let es = MemEventStore::default();
         let ss = MemSnapshotStore::default();
@@ -447,7 +449,8 @@ mod tests {
         let events_dir = dir.join("events/Feature");
         std::fs::create_dir_all(&events_dir).unwrap();
         let line = serde_json::to_string(&ev).unwrap();
-        std::fs::write(events_dir.join("1.jsonl"), format!("{line}\n")).unwrap();
+        std::fs::write(events_dir.join("1.jsonl"), format!("{line}
+")).unwrap();
 
         let stats = import_state(dir, &es, &ss).await.unwrap();
         assert_eq!(stats.events_imported, 0, "duplicate should be skipped");

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 use assert_cmd::Command;
 use predicates::str::contains;
 use std::fs;
@@ -10,7 +11,9 @@ use tempfile::TempDir;
 fn validate_whitespace_only_payload_fails() {
     let repo = TempDir::new().unwrap();
     fs::create_dir(repo.path().join("traces")).unwrap();
-    fs::write(repo.path().join("traces/FR-whitespace.json"), "   \n\t  \n").unwrap();
+    fs::write(repo.path().join("traces/FR-whitespace.json"), "   
+	  
+").unwrap();
 
     Command::cargo_bin("agileplus-trace-validator")
         .unwrap()
@@ -94,7 +97,8 @@ fn validate_many_traces_with_many_links_succeeds() {
         .iter()
         .map(|fr| format!("- {fr}"))
         .collect::<Vec<_>>()
-        .join("\n");
+        .join("
+");
     fs::write(repo.path().join("FUNCTIONAL_REQUIREMENTS.md"), reqs).unwrap();
 
     Command::cargo_bin("agileplus-trace-validator")
@@ -206,7 +210,8 @@ fn validate_ignores_non_trace_files() {
     // Non-trace artifacts that should be ignored.
     fs::write(repo.path().join("traces/README.md"), "# notes").unwrap();
     fs::write(repo.path().join("traces/notes.txt"), "notes").unwrap();
-    fs::write(repo.path().join("traces/schema.yaml"), "fr_id: FR-only\n").unwrap();
+    fs::write(repo.path().join("traces/schema.yaml"), "fr_id: FR-only
+").unwrap();
 
     Command::cargo_bin("agileplus-trace-validator")
         .unwrap()

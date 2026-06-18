@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Structured JSON logging via the `tracing` crate.
 //!
 //! Call [`init_logging`] exactly once from `main()` and hold the returned

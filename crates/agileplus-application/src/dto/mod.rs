@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Data Transfer Objects for application-layer command/query boundaries.
 //!
 //! These are plain data structs with no domain logic. They cross the use-case

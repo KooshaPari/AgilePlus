@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Work package repository — CRUD operations for `work_packages` and `wp_dependencies`.
 
 use rusqlite::{params, Connection, Row};

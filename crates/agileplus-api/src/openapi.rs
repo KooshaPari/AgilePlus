@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! OpenAPI specification generator (MVP).
 //!
 //! Traceability: #118 (OpenAPI governance), #138 (scaffold retry).

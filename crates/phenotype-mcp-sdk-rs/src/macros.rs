@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Declarative macros for the MCP SDK.
 //!
 //! [`mcp_tool!`] and [`mcp_resource!`] reduce boilerplate when registering

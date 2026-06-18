@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Re-export seed functionality from agileplus-fixtures.
 //!
 //! This module re-exports seed data functions from the agileplus-fixtures crate.

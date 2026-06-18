@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Annotated git tag creation.
 
 use std::process::{Command, Stdio};

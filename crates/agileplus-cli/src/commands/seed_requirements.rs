@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `seed-requirements` CLI subcommand.
 //!
 //! Ingests the six FR/NFR catalogs (AgilePlus, Tracera, phenotype-voxel, Authvault,
@@ -87,7 +88,8 @@ pub fn run(args: &SeedRequirementsArgs) -> anyhow::Result<()> {
     if args.verbose {
         for init in &report.initiatives {
             println!(
-                "\n  Epic [{}] id={}",
+                "
+  Epic [{}] id={}",
                 init.epic_requirement_id, init.epic_id
             );
             for s in &init.stories {

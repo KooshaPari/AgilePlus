@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Extended relationship types for multi-agent workflows.
 //!
 //! This module provides the [`is_multi_agent`] helper and re-exports

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 use std::time::Duration;
 
 use agileplus_p2p::discovery::{PeerInfo, discover_peers};
@@ -90,6 +91,7 @@ pub async fn run_discover(args: &DiscoverArgs) -> anyhow::Result<()> {
             w4 = col_widths.4,
         );
     }
-    println!("\n{} peer(s) discovered.", rows.len());
+    println!("
+{} peer(s) discovered.", rows.len());
     Ok(())
 }

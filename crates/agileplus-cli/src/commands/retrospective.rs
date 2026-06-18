@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `agileplus retrospective` command implementation.
 //!
 //! Analyzes the completed feature's development history and generates
@@ -129,12 +130,18 @@ fn generate_constitution_suggestions(metrics: &FeatureMetrics) -> Vec<String> {
 
     if metrics.avg_review_cycles_per_wp > 3.0 {
         suggestions.push(
-            "Consider adding a pre-review self-check rule to the governance constitution:\n\
-            ```toml\n\
-            [[rules]]\n\
-            name = \"pre-review-self-check\"\n\
-            description = \"Agent must verify acceptance criteria before requesting review\"\n\
-            trigger = \"doing -> review\"\n\
+            "Consider adding a pre-review self-check rule to the governance constitution:
+\
+            ```toml
+\
+            [[rules]]
+\
+            name = \"pre-review-self-check\"
+\
+            description = \"Agent must verify acceptance criteria before requesting review\"
+\
+            trigger = \"doing -> review\"
+\
             ```"
             .to_string(),
         );
@@ -142,13 +149,20 @@ fn generate_constitution_suggestions(metrics: &FeatureMetrics) -> Vec<String> {
 
     if !metrics.governance_exceptions.is_empty() {
         suggestions.push(
-            "Governance exceptions occurred. Consider adding a fast-track path:\n\
-            ```toml\n\
-            [[rules]]\n\
-            name = \"fast-track\"\n\
-            description = \"Allow expedited transitions with documented rationale\"\n\
-            allow_skip = true\n\
-            require_justification = true\n\
+            "Governance exceptions occurred. Consider adding a fast-track path:
+\
+            ```toml
+\
+            [[rules]]
+\
+            name = \"fast-track\"
+\
+            description = \"Allow expedited transitions with documented rationale\"
+\
+            allow_skip = true
+\
+            require_justification = true
+\
             ```"
             .to_string(),
         );
@@ -275,7 +289,8 @@ fn generate_retro_markdown(
         lines.push(String::new());
     }
 
-    lines.join("\n")
+    lines.join("
+")
 }
 
 /// Run the `retrospective` command.

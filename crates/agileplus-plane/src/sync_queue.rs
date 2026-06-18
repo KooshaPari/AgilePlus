@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! T052: Sync Queue with Retry — bounded in-memory queue with exponential backoff.
 //!
 //! Traceability: WP08-T052

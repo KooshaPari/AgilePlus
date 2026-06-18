@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `ap gate-add` — register a new policy rule in the `policy_rules`
 //! table. The new rule is active by default; pass `--inactive` to
 //! register it in the disabled state.

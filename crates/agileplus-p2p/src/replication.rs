@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Event replication over NATS between AgilePlus peers.
 //!
 //! This module now also hosts the in-memory delta replication protocol used by

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! CLI events subcommand for querying the AgilePlus event log.
 //!
 //! Provides `agileplus events` with filtering and output format options.
@@ -166,19 +167,23 @@ pub fn filter_events(events: &[EventRecord], args: &EventsArgs) -> Vec<EventReco
 /// Render events as a human-readable table.
 pub fn render_table(events: &[EventRecord]) -> String {
     if events.is_empty() {
-        return "No events found.\n".to_string();
+        return "No events found.
+".to_string();
     }
     let mut out = format!(
-        "{:<21} | {:<17} | {:<18} | {:<11} | {}\n",
+        "{:<21} | {:<17} | {:<18} | {:<11} | {}
+",
         "Time", "Entity", "Type", "Actor", "Summary"
     );
     out.push_str(&"─".repeat(89));
-    out.push('\n');
+    out.push('
+');
     for e in events {
         let ts = e.timestamp.format("%Y-%m-%d %H:%M:%S").to_string();
         let entity = format!("{}: {}", capitalise(&e.entity_type), e.entity_id);
         out.push_str(&format!(
-            "{:<21} | {:<17} | {:<18} | {:<11} | {}\n",
+            "{:<21} | {:<17} | {:<18} | {:<11} | {}
+",
             ts, entity, e.event_type, e.actor, e.summary,
         ));
     }
@@ -203,7 +208,8 @@ pub fn render_jsonl(events: &[EventRecord]) -> anyhow::Result<String> {
     let mut out = String::new();
     for e in events {
         out.push_str(&serde_json::to_string(e)?);
-        out.push('\n');
+        out.push('
+');
     }
     Ok(out)
 }
@@ -409,7 +415,8 @@ mod tests {
     fn test_render_jsonl() {
         let events = load_events_stub();
         let jsonl = render_jsonl(&events[..2]).unwrap();
-        let lines: Vec<&str> = jsonl.trim_end().split('\n').collect();
+        let lines: Vec<&str> = jsonl.trim_end().split('
+').collect();
         assert_eq!(lines.len(), 2);
         for line in lines {
             let v: serde_json::Value = serde_json::from_str(line).unwrap();
