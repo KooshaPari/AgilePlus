@@ -68,8 +68,7 @@ pub fn export(graph: &Graph) -> Result<String, PipelineError> {
     }
 
     lines.push("}".to_string());
-    Ok(lines.join("
-"))
+    Ok(lines.join("\n"))
 }
 
 fn node_label(node: &agileplus_graph::Node) -> String {
@@ -92,15 +91,13 @@ fn properties_to_dot_attrs(properties: &serde_json::Value) -> Vec<String> {
             }
             let val = match value {
                 serde_json::Value::String(s) => {
-                    format!("\"{}\"", s.replace('"', "\\"").replace('
-', "\n"))
+                    format!("\"{}\"", s.replace('"', "\\\"").replace('\n', "\\n"))
                 }
                 serde_json::Value::Number(n) => n.to_string(),
                 serde_json::Value::Bool(b) => b.to_string(),
                 _ => format!(
                     "\"{}\"",
-                    value.to_string().replace('"', "\\"").replace('
-', "\n")
+                    value.to_string().replace('"', "\\\"").replace('\n', "\\n")
                 ),
             };
             attrs.push(format!("{key}={val}"));

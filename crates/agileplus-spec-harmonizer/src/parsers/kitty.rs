@@ -34,6 +34,11 @@ impl Parser for KittyParser {
         let mut desc = String::new();
         let mut accs: Vec<AcceptanceCriterion> = Vec::new();
         let mut in_acc = false;
+        // Section-skip state: once we encounter a non-`Spec`, non-`Acceptance`
+        // `## ` heading (e.g. `## Notes`), subsequent non-heading lines must
+        // NOT bleed into the current spec's description. They are dropped
+        // until the next `## Spec` heading resets `skip_section = false`.
+        let mut skip_section = false;
 
         for line in text.lines() {
             if let Some(c) = spec.captures(line) {
@@ -54,6 +59,7 @@ impl Parser for KittyParser {
                     source_anchor: id,
                 });
                 in_acc = false;
+                skip_section = false;
                 desc.clear();
                 continue;
             }
@@ -63,7 +69,16 @@ impl Parser for KittyParser {
                 continue;
             }
             if line.trim_start().starts_with("## ") {
+                // Any non-Spec, non-Acceptance heading (e.g. `## Notes`) ends
+                // the current spec's content; subsequent lines must not leak
+                // into description. The flush of the current package happens
+                // at the next `## Spec` heading (handled above).
                 in_acc = false;
+                skip_section = true;
+                continue;
+            }
+            if skip_section {
+                // Inside a non-target section: drop lines until next `## Spec`.
                 continue;
             }
             if in_acc {
@@ -100,6 +115,30 @@ mod tests {
         assert_eq!(out.len(), 1);
         assert_eq!(out[0].id, "kitty-K-1");
         assert_eq!(out[0].title, "Login");
+        assert_eq!(out[0].acceptance.len(), 1);
+    }
+
+    /// Regression test for codeant-ai finding #4 (Major):
+    /// Non-`Spec` headings (e.g. `## Notes`) must not leak content into the
+    /// previous spec's description. Previously, lines under such headings
+    /// were appended to `desc` because `in_acc` was reset to `false` and the
+    /// `else` branch unconditionally appended.
+    #[test]
+    fn does_not_leak_non_spec_heading_into_description() {
+        let text = "## Spec K-1 - Login\nLine 1\n\n## Acceptance\n- bullet\n\n## Notes\nImplementation details\n\n## Spec K-2 - Logout\nClick logout.\n";
+        let out = KittyParser.parse(text).expect("parse");
+        assert_eq!(out.len(), 2);
+        assert_eq!(out[0].title, "Login");
+        assert_eq!(
+            out[0].description, "Line 1",
+            "Notes section must not leak into Login description"
+        );
+        assert!(
+            !out[0].description.contains("Implementation details"),
+            "Notes content must not appear in any description"
+        );
+        assert_eq!(out[1].title, "Logout");
+        assert_eq!(out[1].description, "Click logout.");
         assert_eq!(out[0].acceptance.len(), 1);
     }
 }

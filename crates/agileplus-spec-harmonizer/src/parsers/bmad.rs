@@ -5,13 +5,13 @@
 //! ## Story <id>: <title>
 //! As a <role>, I want <capability>, so that <outcome>.
 //!
-//! ## Criteria
+//! ## Acceptance Criteria
 //! - criterion 1
 //! - criterion 2
 //! ```
 //!
-//! Differs from OpenSpec by the `## Story` heading and the `## Criteria`
-//! (not Acceptance) block label.
+//! Both `## Acceptance Criteria` (crate-documented contract) and the legacy
+//! `## Criteria` alias are recognized as the acceptance-block boundary.
 
 use crate::parsers::Parser;
 use crate::{AcceptanceCriterion, WorkPackage};
@@ -23,7 +23,9 @@ impl Parser for BmadParser {
     fn parse(&self, text: &str) -> Result<Vec<WorkPackage>, String> {
         let story = Regex::new(r"(?m)^##\s+Story\s+([A-Za-z0-9_\-]+)\s*[:\-]\s*(.+?)\s*$")
             .map_err(|e| format!("regex: {}", e))?;
-        let crit = Regex::new(r"(?m)^##\s+Criteria\s*$")
+        // Accept both `## Acceptance Criteria` (crate-level documented contract)
+        // and the legacy `## Criteria` alias as the acceptance-block boundary.
+        let crit = Regex::new(r"(?im)^##\s+(?:Acceptance\s+)?Criteria\s*$")
             .map_err(|e| format!("regex: {}", e))?;
         let bullet = Regex::new(r"^\s*-\s+(.+?)\s*$")
             .map_err(|e| format!("regex: {}", e))?;
@@ -99,5 +101,27 @@ mod tests {
         assert_eq!(out.len(), 1);
         assert_eq!(out[0].id, "bmad-S1");
         assert_eq!(out[0].acceptance.len(), 2);
+    }
+
+    /// Regression test for codeant-ai finding #2 (Critical):
+    /// `## Acceptance Criteria` (crate-documented contract) must be recognized
+    /// as the acceptance-block boundary, not only the legacy `## Criteria`.
+    #[test]
+    fn parses_bmad_story_with_acceptance_criteria_heading() {
+        let text = "## Story S1: Signup\nAs a user, I want to sign up.\n\n## Acceptance Criteria\n- email verified\n- captcha passed\n";
+        let out = BmadParser.parse(text).expect("parse");
+        assert_eq!(out.len(), 1);
+        assert_eq!(out[0].id, "bmad-S1");
+        assert_eq!(
+            out[0].acceptance.len(),
+            2,
+            "Acceptance Criteria bullets must populate acceptance, not description"
+        );
+        assert_eq!(out[0].acceptance[0].text, "email verified");
+        assert_eq!(out[0].acceptance[1].text, "captcha passed");
+        assert!(
+            !out[0].description.contains("email verified"),
+            "acceptance bullet must not leak into description"
+        );
     }
 }
