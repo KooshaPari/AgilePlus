@@ -158,9 +158,8 @@ impl<W: WpRepository> AppState<W> {
             .claim_store
             .lock()
             .map_err(|_| anyhow!("claim store lock poisoned"))?
-            .lookup(ClaimKind::Worktree, &req.wp_id);
-        // We can't re-lock here without re-entrancy; the next call
-        // to `release` uses the original `claim_id` from the request.
+            .lookup(ClaimKind::Worktree, &req.wp_id)
+            .or(None);
 
         // Release the explicit claim_id from the request.
         let _ = self
