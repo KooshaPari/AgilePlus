@@ -77,6 +77,7 @@ members = [
   "crates/agileplus-telemetry",
   "crates/agileplus-triage",
   "crates/agileplus-subcmds",
+  "crates/agileplus-spec-harmonizer",
   "crates/agileplus-pipeline",
   "crates/agileplus-trace-validator",
   "crates/shared-traceability",

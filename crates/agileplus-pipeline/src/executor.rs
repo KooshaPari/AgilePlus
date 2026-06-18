@@ -42,10 +42,17 @@ pub struct NodeOutput {
 }
 
 /// Executor topologically sorts the graph and runs nodes in parallel where possible.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct Executor {
     /// Default timeout for nodes without an explicit timeout attribute.
+    /// Defaults to 60 seconds via [`Executor::new`] / [`Default`].
     pub default_timeout_secs: u64,
+}
+
+impl Default for Executor {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Executor {
@@ -151,6 +158,9 @@ impl Executor {
                 // Evaluate guard edges: if any guard fails, skip this node.
                 for edge in &guard_edges {
                     if let Some(guard_cmd) = edge.properties.get("guard").and_then(|v| v.as_str()) {
+                        #[cfg(target_os = "windows")]
+                        let status = Command::new("cmd").args(["/C", guard_cmd]).status().await;
+                        #[cfg(not(target_os = "windows"))]
                         let status = Command::new("sh").arg("-c").arg(guard_cmd).status().await;
                         match status {
                             Ok(s) if s.code() == Some(0) => {}
@@ -226,8 +236,18 @@ impl Executor {
                     let stdout_file = tempfile::NamedTempFile::new().ok();
                     let stderr_file = tempfile::NamedTempFile::new().ok();
 
-                    let mut cmd = Command::new("sh");
-                    cmd.arg("-c").arg(&cmd_str);
+                    #[cfg(target_os = "windows")]
+                    let mut cmd = {
+                        let mut c = Command::new("cmd");
+                        c.args(["/C", &cmd_str]);
+                        c
+                    };
+                    #[cfg(not(target_os = "windows"))]
+                    let mut cmd = {
+                        let mut c = Command::new("sh");
+                        c.arg("-c").arg(&cmd_str);
+                        c
+                    };
                     if let Some(ref dir) = working_dir {
                         cmd.current_dir(dir);
                     }
