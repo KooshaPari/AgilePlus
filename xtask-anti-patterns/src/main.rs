@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Anti-pattern detector binary.
 //!
 //! Implements §3 of `docs/ai-dd-governance.md`. Walks Rust source files in a
@@ -56,10 +55,7 @@ fn main() -> ExitCode {
         return ExitCode::from(2);
     }
 
-    let high = findings
-        .iter()
-        .filter(|f| f.severity == Severity::High)
-        .count();
+    let high = findings.iter().filter(|f| f.severity == Severity::High).count();
     let report = Report {
         path: path.display().to_string(),
         high_count: high,
@@ -165,8 +161,7 @@ fn scan_file(path: &Path, out: &mut Vec<Finding>) {
             // SAFETY: within 2 preceding lines
             let lines: Vec<&str> = content.lines().collect();
             let start = idx.saturating_sub(2);
-            let window = lines.get(start..idx).unwrap_or(&[]).join("
-");
+            let window = lines.get(start..idx).unwrap_or(&[]).join("\n");
             if !window.contains("SAFETY:") {
                 out.push(Finding {
                     file: path.display().to_string(),
@@ -185,8 +180,7 @@ fn scan_file(path: &Path, out: &mut Vec<Finding>) {
                 .skip(idx)
                 .take(2)
                 .collect::<Vec<_>>()
-                .join("
-")
+                .join("\n")
                 .chars()
                 .take(80)
                 .collect();
@@ -219,7 +213,7 @@ fn is_lib_path(p: &Path) -> bool {
 }
 
 fn strip_call<'a>(line: &'a str, fn_name: &str) -> Option<&'a str> {
-    let needle = format!(".{fn_name}");
+    let needle = format!(".{}", fn_name);
     let pos = line.find(&needle)?;
     let rest = &line[pos + needle.len()..];
     // require opening paren

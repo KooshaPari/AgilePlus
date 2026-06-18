@@ -5,7 +5,7 @@
 
 use std::error::Error;
 
-use phenotype_error_core::ErrorCode;
+use phenotype_error_core::PhenotypeErrorKind as ErrorKind;
 use thiserror::Error;
 
 use agileplus_domain::error::DomainError;
@@ -25,51 +25,42 @@ pub enum AppError {
     Storage(#[source] Box<dyn Error + Send + Sync>),
 }
 
-/// Project the application error onto the canonical Phenotype wire
-/// [`ErrorCode`].
+/// Lift the application error into the canonical Phenotype error kind.
 ///
-/// Lossy by design: `AppError`'s boxed source / messages remain the source of
-/// truth for human-facing reporting, while [`ErrorCode`] is the stable,
-/// language-agnostic code for observability and wire responses.
-impl From<AppError> for ErrorCode {
+/// `AppError::Storage` carries a boxed source; we render that into the
+/// `ErrorKind::Storage` payload so observability consumers see the cause
+/// without needing to downcast the original.
+impl From<AppError> for ErrorKind {
     fn from(err: AppError) -> Self {
         match err {
-            // `agileplus-domain` is zero-dependency, so it projects onto its own
-            // local `ErrorCode` mirror; remap that onto the canonical wire enum.
-            AppError::Domain(d) => match agileplus_domain::error::ErrorCode::from(d) {
-                agileplus_domain::error::ErrorCode::InternalError => Self::InternalError,
-                agileplus_domain::error::ErrorCode::NotFound => Self::NotFound,
-                agileplus_domain::error::ErrorCode::AlreadyExists => Self::AlreadyExists,
-                agileplus_domain::error::ErrorCode::NotImplemented => Self::NotImplemented,
-                agileplus_domain::error::ErrorCode::ValidationError => Self::ValidationError,
-            },
-            AppError::NotFound(_) => Self::NotFound,
-            AppError::Storage(_) => Self::InternalError,
+            AppError::Domain(d) => d.into(),
+            AppError::NotFound(s) => Self::NotFound(s),
+            AppError::Storage(src) => Self::Storage(src.to_string()),
         }
     }
 }
 
 #[cfg(test)]
-mod code_projection_tests {
+mod kind_lift_tests {
     use super::*;
 
     #[test]
-    fn not_found_projects_to_not_found() {
-        let c: ErrorCode = AppError::NotFound("user 1".into()).into();
-        assert_eq!(c, ErrorCode::NotFound);
+    fn not_found_lifts_to_not_found() {
+        let k: ErrorKind = AppError::NotFound("user 1".into()).into();
+        assert!(matches!(k, ErrorKind::NotFound(s) if s == "user 1"));
     }
 
     #[test]
     fn domain_validation_chains_through() {
         let app = AppError::Domain(DomainError::Validation("name required".into()));
-        let c: ErrorCode = app.into();
-        assert_eq!(c, ErrorCode::ValidationError);
+        let k: ErrorKind = app.into();
+        assert!(matches!(k, ErrorKind::Validation(s) if s == "name required"));
     }
 
     #[test]
-    fn storage_projects_to_internal_error() {
+    fn storage_lifts_to_storage_with_source_string() {
         let src: Box<dyn Error + Send + Sync> = "db down".to_string().into();
-        let c: ErrorCode = AppError::Storage(src).into();
-        assert_eq!(c, ErrorCode::InternalError);
+        let k: ErrorKind = AppError::Storage(src).into();
+        assert!(matches!(k, ErrorKind::Storage(s) if s == "db down"));
     }
 }
