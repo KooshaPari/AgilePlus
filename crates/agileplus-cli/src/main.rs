@@ -25,7 +25,12 @@ use agent_stub::StubAgentAdapter;
 
 /// Spec-driven development engine.
 #[derive(Parser)]
-#[command(name = "agileplus", version, about = "Spec-driven development engine")]
+#[command(
+    name = "agileplus",
+    about = "AgilePlus project management CLI",
+    version,
+    arg_required_else_help = true
+)]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
