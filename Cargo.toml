@@ -1,32 +1,10 @@
 [workspace]
-resolver = "3"
+resolver = "2"
+# Active members — only crates/libs with actual source files.
+# Remaining scaffolding (44 crates, 19 libs) tracked but excluded from
+# workspace until source is implemented. See: kitty-specs/003-agileplus-platform-completion.
 members = [
-  "crates/agileplus-api",
-  "crates/agileplus-artifacts",
-  "crates/agileplus-benchmarks",
-  "crates/agileplus-cache",
-  "crates/agileplus-cli",
-  "crates/agileplus-contract-tests",
-  "crates/agileplus-dashboard",
-  "crates/agileplus-domain",
-  "crates/agileplus-events",
-  "crates/agileplus-fixtures",
-  "crates/agileplus-git",
-  "crates/agileplus-github",
-  "crates/agileplus-governance",
-  "crates/agileplus-graph",
-  "crates/agileplus-grpc",
-  "crates/agileplus-import",
-  "crates/agileplus-integration-tests",
-  "crates/agileplus-nats",
-  "crates/agileplus-p2p",
-  "crates/agileplus-plane",
-  "crates/agileplus-sqlite",
-  "crates/agileplus-subcmds",
-  "crates/agileplus-sync",
-  "crates/agileplus-telemetry",
-  "crates/agileplus-triage",
-  "rust",
+    "rust",                                      # agileplus-proto: tonic/prost gRPC stubs (buf-generated)
 ]
 
 [workspace.package]
@@ -34,13 +12,14 @@ version = "0.1.0"
 edition = "2024"
 license = "MIT"
 rust-version = "1.85"
-version = "0.1.0"
+repository = "https://github.com/phenotype/agileplus"
 
-[package]
-name = "agileplus"
-version.workspace = true
-edition.workspace = true
-publish = false
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+all = "warn"
+pedantic = "warn"
 
 [dev-dependencies]
 agileplus-domain = { path = "crates/agileplus-domain" }
@@ -57,73 +36,89 @@ cucumber = "0.23"
 sha2 = { workspace = true }
 
 [workspace.dependencies]
-# Core
-serde = { version = "1", features = ["derive"] }
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
 serde_json = "1"
 serde_yaml = "0.9"
 
 # Async runtime
 tokio = { version = "1.39", features = ["full"] }
-tokio-stream = { version = "0.1", features = ["sync"] }
-tokio-test = "0.4"
-tokio-retry = "0.3"
-
-# Web frameworks
-axum = { version = "0.8", features = ["json", "macros", "tokio"] }
-axum-extra = { version = "0.10", features = ["typed-header"] }
-tower = { version = "0.5", features = ["limit", "timeout"] }
-tower-http = { version = "0.6", features = ["cors", "fs", "trace"] }
+tokio-stream = "0.1"
+tokio-util = "0.7"
+futures = "0.3"
+futures-util = "0.3"
 
 # Error handling
 thiserror = "2"
 anyhow = "1"
 
-# Tracing & telemetry
-tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
-tracing-appender = "0.2"
-tracing-test = "0.2"
-tracing-opentelemetry = "0.32"
-opentelemetry = "0.31"
-opentelemetry_sdk = "0.31"
-opentelemetry-otlp = "0.31"
+# Web / HTTP
+axum = { version = "0.8", features = ["json", "macros"] }
+axum-extra = { version = "0.10", features = ["typed-header"] }
+tower = { version = "0.5", features = ["limit", "timeout"] }
+tower-http = { version = "0.6", features = ["cors", "fs", "trace"] }
+hyper = "1"
+hyper-util = "0.1"
 
-# Time & hashing
+# Observability
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+opentelemetry = { version = "0.27", features = ["metrics"] }
+opentelemetry_sdk = { version = "0.27", features = ["metrics", "trace", "rt-tokio"] }
+opentelemetry-otlp = { version = "0.27", features = ["tonic", "gzip-tonic"] }
+tracing-opentelemetry = "0.27"
+sentry = { version = "0.34", features = ["tracing"] }
+
+# Time
 chrono = { version = "0.4", features = ["serde"] }
+
+# Crypto / hashing
 sha2 = "0.10"
+zeroize = { version = "1", features = ["derive"] }
+base64 = "0.22"
+
+# gRPC / proto (used by agileplus-proto, agileplus-grpc, plugin-grpc, agent-service)
+tonic = { version = "0.13", features = ["transport", "prost"] }
+tonic-build = "0.13"
+tonic-health = "0.13"
+prost = "0.13"
+prost-build = "0.13"
 
 # Async utilities
 async-trait = "0.1"
-async-stream = "0.3"
 
-# Database
-rusqlite = { version = "0.32", features = ["bundled"] }
+# Templating
+askama = "0.12"
 
-# Serialization
-bytes = "1"
-similar = "2"
-uuid = { version = "1.10", features = ["v4", "serde"] }
+# Git
+gix = "0.65"
+git2 = "0.19"
 
 # CLI
 clap = { version = "4", features = ["derive"] }
 
-# Redis
-redis = { version = "0.27", features = ["aio", "tokio-comp"] }
-bb8 = "0.9"
-bb8-redis = "0.18"
+# Data / storage
+rusqlite = { version = "0.32", features = ["bundled"] }
+redis = { version = "0.27", features = ["tokio-comp", "connection-manager"] }
 
-# gRPC/prost
-futures-util = "0.3"
-futures = "0.3"
-tonic = { version = "0.13", features = ["transport"] }
-tonic-build = "0.13"
-prost = "0.13"
+# HTTP client
+reqwest = { version = "0.12", features = ["json"] }
 
-# Templates
-askama = "0.12"
-utoipa = "5"
+# Benchmarks
+criterion = "0.5"
 
-# Utilities
+# Utils
+uuid = { version = "1", features = ["v4"] }
 rand = "0.8"
-base64 = "0.22"
+toml = "0.8"
+dirs-next = "2"
+keyring = "3"
+
+# OpenAPI
+utoipa = "4"
+
+# Dash (agent deps)
+dashmap = "6"
 regex = "1"
+tokio-test = "0.4"
+tempfile = "3"

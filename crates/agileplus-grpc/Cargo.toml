@@ -7,7 +7,7 @@ rust-version.workspace = true
 
 [dependencies]
 agileplus-domain = { path = "../agileplus-domain" }
-agileplus-proto = { path = "../../rust" }
+agileplus-proto = { path = "../rust" }
 tonic = { workspace = true }
 prost = "0.13"
 tokio.workspace = true
