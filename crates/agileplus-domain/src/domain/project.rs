@@ -4,8 +4,6 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::validate::{name_required, slug_format};
-
 use crate::{error::DomainError, DomainResult};
 
 /// A project that owns modules, cycles, and features.
