@@ -75,6 +75,9 @@ members = [
     "crates/shared-traceability",
     "crates/agileplus-import",
     "crates/agileplus-proto",
+    "crates/agileplus-validate",
+    "crates/agileplus-subcmds",
+    "crates/agileplus-artifacts",
     "xtask-anti-patterns",
 ]
 exclude = ["AgilePlus/rust", "rust", "crates/phenotype-config"]
