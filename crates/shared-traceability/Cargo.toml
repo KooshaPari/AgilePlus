@@ -10,4 +10,4 @@ description = "Canonical traceability models shared by Tracera and AgilePlus"
 serde = { workspace = true }  
   
 [dev-dependencies]  
-serde_json = { workspace = true }
+serde_json = { workspace = true } 
