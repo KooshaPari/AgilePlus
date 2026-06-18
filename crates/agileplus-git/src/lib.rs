@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Git VCS adapter for AgilePlus.
 //!
 //! Backed by [`git2`](https://docs.rs/git2) (libgit2 FFI) for read /

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Shared test-data helpers used by all benchmark files.
 //!
 //! All helpers are sync (return values directly) so they can be called

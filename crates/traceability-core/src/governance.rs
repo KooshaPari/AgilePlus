@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Governance types — contracts, rules, and evidence.
 //!
 //! Source: [`AgilePlus/crates/agileplus-domain/src/domain/governance.rs`](https://example.invalid/AgilePlus/crates/agileplus-domain/src/domain/governance.rs)

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `ap gate-run` — execute the active policy rules in the local store
 //! against a single feature + work-package pair, print the result, and
 //! return a non-zero exit code if any rule fails.

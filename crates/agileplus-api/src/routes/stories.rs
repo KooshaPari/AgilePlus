@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Story route handlers.
 //!
 //! - GET  /api/v1/stories/{id}            → get story

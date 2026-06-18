@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Seed runner: drives Epic + Story upserts for the 4 FR/NFR catalogs.
 //!
 //! Each initiative gets one Epic (upserted by `requirement_id = "EPIC-<slug>"`).

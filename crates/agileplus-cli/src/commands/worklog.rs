@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! agileplus-cli worklog subcommand.
 //!
 //! Two related features share this command tree:

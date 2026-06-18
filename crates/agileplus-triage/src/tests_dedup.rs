@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Integration tests for the new dedup / claim / repo_introspect modules.
 //!
 //! Run with `cargo test -p agileplus-triage`.

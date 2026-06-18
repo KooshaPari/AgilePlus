@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Public handler functions for info and metadata endpoints.
 
 use axum::Json;

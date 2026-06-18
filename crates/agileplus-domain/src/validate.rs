@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Dependency-free validation helpers.
 //!
 //! Local, zero-dependency mirror of the small subset of `agileplus-validate`

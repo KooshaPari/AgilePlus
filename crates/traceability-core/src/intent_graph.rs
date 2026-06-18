@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Intent Graph ontology — type-safe graph model for traceability of user intent
 //! through features, tasks, code, tests, PRs, and artifacts.
 //!

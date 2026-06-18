@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! PR description builder for work packages.
 //!
 //! Generates structured PR descriptions with WP goal, FR references,

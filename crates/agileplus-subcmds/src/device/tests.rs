@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 use super::*;
 use agileplus_p2p::discovery::{PeerInfo, PeerStatus};
 

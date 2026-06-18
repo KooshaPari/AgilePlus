@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `intent` CLI subcommand.
 //!
 //! Reads a natural-language prompt and emits a structured intent graph JSON

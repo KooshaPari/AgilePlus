@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `ap dashboard` subcommand — render an in-flight DAG view of the
 //! AgilePlus SQLite database.  Aggregates:
 //!

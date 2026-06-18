@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Octocrab-based GitHub read client.
 //!
 //! Provides `list_issues` and `list_prs` using the octocrab SDK.

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! agileplus-witness — MEOW witness primitive.
 //!
 //! A witness provides evidence and a verdict (Pass, Fail, Abstain) for a

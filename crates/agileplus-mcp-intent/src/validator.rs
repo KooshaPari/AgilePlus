@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Ontology schema validation.
 //!
 //! Validates generated intent graphs against the embedded JSON Schema

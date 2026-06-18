@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `ap scope-status` — show the active cycle and the modules within
 //! its scope, plus a count of features associated with each module.
 //!

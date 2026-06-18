@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Integration tests for AcceptanceContract + TraceRef cross-domain linkage.
 //!
 //! This test suite validates that acceptance criteria (from WorkPackage/Feature acceptance)

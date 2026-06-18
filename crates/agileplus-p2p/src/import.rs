@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Git-backed state import — read deterministic files back into the event store.
 //!
 //! Reads from the same layout written by `export.rs`:

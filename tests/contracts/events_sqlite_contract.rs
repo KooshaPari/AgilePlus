@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! T112 — `agileplus-events` ↔ `agileplus-sqlite` `EventStore` trait contract.
 //!
 //! Verifies that `SqliteStorageAdapter` (which implements `EventStore`)

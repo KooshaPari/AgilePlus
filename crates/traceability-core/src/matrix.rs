@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Coverage matrix operations: build, query, classify.
 //!
 //! Source: [`Tracera/crates/tracera-core/src/matrix.rs`](https://example.invalid/Tracera/crates/tracera-core/src/matrix.rs)

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! CodeBERT embedding backend.
 //!
 //! Delegates to the OpenAI embeddings API with a `code: ` prefix to

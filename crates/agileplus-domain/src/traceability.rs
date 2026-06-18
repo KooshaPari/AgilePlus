@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Traceability value objects — lightweight references to external traced artifacts.
 //!
 //! `TraceRef` is the shared value object used by the [`TraceabilityPort`](crate::ports::traceability_port::TraceabilityPort)

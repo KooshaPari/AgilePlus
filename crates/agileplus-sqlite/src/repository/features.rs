@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Feature repository — CRUD operations for the `features` table.
 
 use rusqlite::{params, Connection, Row};

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 use agileplus_domain::domain::cycle::Cycle;
 use agileplus_domain::domain::module::Module;
 use agileplus_domain::domain::sync_mapping::SyncMapping;

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Bridges dashboard store construction from seeded feature data.
 //! Traceability: WP12 (T074)
 

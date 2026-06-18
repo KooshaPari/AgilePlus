@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Smoke tests for the new CLI subcommands added in this change set.
 //!
 //! These tests shell out to the built `agileplus-cli` binary so that they

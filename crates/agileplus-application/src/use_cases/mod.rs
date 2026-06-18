@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Use-case modules — one struct per use case, holding `Arc<dyn Port>` deps.
 
 pub mod advance_feature;

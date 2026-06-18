@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! No‑op adapter for [`TraceabilityPort`].
 //!
 //! Returns `Ok(())` / `Ok(vec![])` for every call. Useful when no external traceability

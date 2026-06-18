@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Feature-specific route handlers for the dashboard.
 //!
 //! This module contains handlers for feature detail pages, state transitions,

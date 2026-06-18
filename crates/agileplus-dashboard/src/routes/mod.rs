@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Axum route handlers for the dashboard. (T077)
 //!
 //! This module provides HTTP request handlers for the AgilePlus dashboard,

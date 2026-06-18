@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Bridge between AgilePlus sub-commands and the [`tracera-core`] model.
 //!
 //! AgilePlus sub-commands need to create, serialize, and reason about

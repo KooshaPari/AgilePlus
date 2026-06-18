@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! User aggregate — a person who interacts with the system.
 
 use chrono::{DateTime, Utc};

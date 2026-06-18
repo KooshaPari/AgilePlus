@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `Requirement` — a traceable requirement artifact with status and verification method.
 //!
 //! ## Hybridisation (ADR-0001 §4)

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Claim-bound worktree creation (audit rec #11).
 //!
 //! [`ClaimBoundWorktree::create`] is the single entry point for

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT OR Apache-2.0
 #!/usr/bin/env python3
 """Phase 3 docs consolidation: merge kitty-specs/ + specs/ into docs/ tree."""
 

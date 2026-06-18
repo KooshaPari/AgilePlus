@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! SyncReport — audit summary for a single sync run.
 //!
 //! Traceability: FR-SYNC-REPORT / WP09-T057

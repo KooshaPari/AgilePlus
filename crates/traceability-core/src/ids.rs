@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Strongly-typed requirement identifiers.
 //!
 //! Source: [`Tracera/crates/tracera-core/src/ids.rs`](https://example.invalid/Tracera/crates/tracera-core/src/ids.rs)

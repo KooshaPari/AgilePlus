@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Evidence repository — CRUD for the `evidence` table.
 
 use rusqlite::{params, Connection, Row};

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Use case: Transition a Story's status (e.g. Todo -> InProgress).
 
 use std::sync::Arc;

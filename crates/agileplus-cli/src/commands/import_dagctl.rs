@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `agileplus import-dagctl` command implementation.
 //!
 //! Migrates a dagctl-style SQLite database (`MELOSVIZ_DAG.db`,

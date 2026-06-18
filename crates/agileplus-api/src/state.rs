@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Shared application state threaded through every axum handler.
 //!
 //! Traceability: WP11-T069

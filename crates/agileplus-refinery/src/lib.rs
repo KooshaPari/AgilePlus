@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `agileplus-refinery` — post-processing pipeline: squash, lint, sign, tag.
 //!
 //! Audit rec #4.

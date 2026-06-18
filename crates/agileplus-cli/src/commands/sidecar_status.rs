@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `ap sidecar-status` — print the current device-node roster with
 //! each node's last-seen timestamp, sync vector, and platform version.
 //!

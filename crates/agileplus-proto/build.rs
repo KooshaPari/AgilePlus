@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Declare the custom cfg flag so rustc doesn't warn about it.
     println!("cargo::rustc-check-cfg=cfg(agileplus_proto_stubs)");

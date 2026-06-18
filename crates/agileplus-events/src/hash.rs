@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! SHA-256 hash chain computation and verification.
 
 use agileplus_domain::domain::event::Event;

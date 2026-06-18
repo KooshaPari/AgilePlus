@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `traceability-core` — the shared PM/traceability spine for **phenotype-pm-core**.
 //!
 //! This crate is a **superset merge** of two prior domains:

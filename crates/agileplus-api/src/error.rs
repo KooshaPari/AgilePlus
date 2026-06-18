@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! API error type mapped to HTTP status codes.
 //!
 //! Traceability: WP15-T086

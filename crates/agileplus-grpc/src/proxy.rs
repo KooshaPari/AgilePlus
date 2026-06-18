@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! gRPC proxy/router — forwards agent and integration requests to downstream
 //! services when available, and falls back to stubs otherwise.
 //!

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Shared config-builder macro for AgilePlus crates.
 //!
 //! [`config_builder!`] generates a struct with a `Default` impl and ergonomic

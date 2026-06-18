@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! API response types — stable JSON shapes for all endpoints.
 //!
 //! These types are separate from domain entities so internal representations

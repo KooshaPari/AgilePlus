@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Governance client for interacting with the AgilePlus governance system
 //!
 //! The client provides a unified interface for:

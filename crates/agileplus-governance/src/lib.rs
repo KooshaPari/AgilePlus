@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! # AgilePlus Governance System
 //!
 //! A comprehensive governance system for the AgilePlus platform providing:

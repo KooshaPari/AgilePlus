@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Optional storage adapter for persisting intent graphs into the AgilePlus SQLite database.
 
 use anyhow::Context;

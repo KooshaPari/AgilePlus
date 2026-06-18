@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Module aggregate — hierarchical grouping of features.
 
 use chrono::{DateTime, Utc};

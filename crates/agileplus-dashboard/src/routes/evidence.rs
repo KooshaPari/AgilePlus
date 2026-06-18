@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Evidence artifact and bundle handling for feature verification.
 //!
 //! This module provides HTTP handlers for:

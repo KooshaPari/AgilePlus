@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Integration tests for the gRPC server layer.
 //!
 //! These tests verify the server handlers, error mapping, event bus,

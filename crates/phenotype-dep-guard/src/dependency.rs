@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Dependency model.
 //!
 //! A `Dependency` is a single line in a manifest after normalization:

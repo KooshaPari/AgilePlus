@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 use std::sync::Mutex;
 
 use agileplus_domain::domain::event::Event;

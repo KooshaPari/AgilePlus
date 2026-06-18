@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! # pheno-ci-templates — reusable GitHub Actions templates
 //!
 //! This crate is *not* a runtime library. It exists to give

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Plane.so REST API client with rate limiting.
 //!
 //! Traceability: WP18-T104

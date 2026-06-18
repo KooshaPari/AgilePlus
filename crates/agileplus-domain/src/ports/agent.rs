@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Agent port — trait + types for dispatching AI agent tasks.
 
 use async_trait::async_trait;

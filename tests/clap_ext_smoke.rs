@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Smoke tests verifying that clap-ext's Verbosity and ConfigArg work in this CLI.
 
 use clap::Parser;

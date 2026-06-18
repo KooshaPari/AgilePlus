@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `agileplus-domain` — core domain types, error, and port traits.
 
 pub mod builder;

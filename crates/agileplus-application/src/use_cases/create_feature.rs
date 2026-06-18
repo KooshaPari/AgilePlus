@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Use case: Create a new Feature aggregate and persist it.
 
 use std::sync::Arc;

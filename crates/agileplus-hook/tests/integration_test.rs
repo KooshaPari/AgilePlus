@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Integration test: hook registration → claim event → dispatch.
 
 use agileplus_hook::dispatch::{DispatchResult, HookDispatcher};

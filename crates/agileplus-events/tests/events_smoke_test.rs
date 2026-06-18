@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Integration smoke tests for agileplus_events::DomainEvent and
 //! agileplus_events::EventEnvelope.
 

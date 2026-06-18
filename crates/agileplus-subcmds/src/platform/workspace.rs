@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Resolve the AgilePlus repo root and `process-compose.yml` so CLI commands work from any cwd.
 //!
 //! Set **`AGILEPLUS_ROOT`** to the repository root if you are outside the tree (optional).

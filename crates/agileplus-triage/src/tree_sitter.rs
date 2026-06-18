@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Tree-sitter backend for AST tokenization.
 //!
 //! Provides a [`TreeSitterTokenizer`] that implements [`AstTokenizer`]

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `agileplus specify` command implementation.
 //!
 //! Creates a new feature spec or revises an existing one.

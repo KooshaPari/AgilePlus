@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! T116 – Event append throughput benchmark.
 //!
 //! Measures how fast individual domain events can be appended to the SQLite

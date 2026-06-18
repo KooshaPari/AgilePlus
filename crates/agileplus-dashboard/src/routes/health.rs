@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Service health check handlers and related types.
 //!
 //! Provides HTTP endpoints for health monitoring, service status, configuration,

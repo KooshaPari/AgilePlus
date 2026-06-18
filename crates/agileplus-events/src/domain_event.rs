@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Typed domain-event enum — every aggregate transition becomes a concrete variant.
 //!
 //! Design: the events crate defines *what happened* in the domain. It depends on

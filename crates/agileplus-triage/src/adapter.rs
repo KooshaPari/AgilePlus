@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Triage adapter — high-level orchestration service for triage and backlog.
 //
 //! Traceability: WP17-T098b

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Integration tests for `pheno-flags`.
 //!
 //! These tests exercise the three lookup paths (envvar,

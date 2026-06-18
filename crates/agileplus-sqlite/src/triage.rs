@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! SQLite-backed triage adapter built on top of the backlog repository methods.
 
 use std::path::Path;

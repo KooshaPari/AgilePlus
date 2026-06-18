@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Settings handlers for plane, agents, services, and dashboard configuration.
 //!
 //! Provides routes for displaying and persisting configuration across the dashboard.

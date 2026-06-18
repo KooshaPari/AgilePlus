@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `TraceLink` — confidence-scored directed edges in the traceability graph.
 //!
 //! Source: [`Tracera/crates/tracera-core/src/lib.rs`](https://example.invalid/Tracera/crates/tracera-core/src/lib.rs)

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! List features from storage (read-only).
 
 use std::str::FromStr;

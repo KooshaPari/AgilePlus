@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 // agileplus-subcmds: stub crate for workspace member
 // This is a placeholder that will be expanded when tracera-core is available
 

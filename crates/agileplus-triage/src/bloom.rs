@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Bloom filter for high-throughput "have I seen this before?" membership
 //! tests at the issue-intake layer.
 //!

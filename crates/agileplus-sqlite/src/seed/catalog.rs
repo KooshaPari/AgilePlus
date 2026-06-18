@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Catalog parser: extracts `(fr_id, title, status)` triples from an FR/NFR markdown file.
 //!
 //! Format recognised (as used in all four catalogs):

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Repo introspection: detect git state, mangled directories, no-git
 //! directories. Produces a `RepoInfo` snapshot suitable for triage
 //! classification of the local working tree.

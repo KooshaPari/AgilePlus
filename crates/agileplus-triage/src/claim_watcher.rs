@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Claim state change event stream.
 //!
 //! `ClaimWatcher` wraps a [`ClaimStore`] and emits [`ClaimEvent`]s

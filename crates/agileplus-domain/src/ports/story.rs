@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Story repository port.
 
 use async_trait::async_trait;

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Cross-dialect data conversion library for JSON, TOML, and YAML.
 //!
 //! Provides a uniform [`Dialect`] trait and implementations for the three

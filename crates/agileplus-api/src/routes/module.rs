@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Module route handlers.
 //!
 //! - GET /api/modules         -> list root modules (JSON)

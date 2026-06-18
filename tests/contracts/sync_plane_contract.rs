@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! T113 — `agileplus-sync` ↔ `agileplus-plane` state-mapper / client contract.
 //!
 //! Verifies that the in-memory Plane client mock exposes the same surface as

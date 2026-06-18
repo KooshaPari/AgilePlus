@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Anti-pattern detector binary.
 //!
 //! Implements §3 of `docs/ai-dd-governance.md`. Walks Rust source files in a

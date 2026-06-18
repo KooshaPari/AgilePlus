@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! rebuild_from_git — reconstruct SQLite state from git artifacts (FR-017).
 
 use agileplus_domain::{

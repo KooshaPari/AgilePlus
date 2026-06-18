@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! CLI events subcommand for querying the AgilePlus event log.
 //!
 //! Provides `agileplus events` with filtering and output format options.

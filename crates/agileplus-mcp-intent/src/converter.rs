@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Rule-based prompt -> intent graph conversion engine.
 //!
 //! No external LLM APIs are used.  Extraction is heuristic-driven

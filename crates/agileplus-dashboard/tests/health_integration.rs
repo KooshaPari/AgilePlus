@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Integration tests for `agileplus-dashboard` health checks.
 //!
 //! Traceability: `specs/002-agileplus-dashboard/FR-DASHBOARD-HEALTH-001.md`

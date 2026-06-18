@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Shared test fixtures and data builders for AgilePlus.
 //!
 //! This crate provides deterministic, reusable test fixtures for use across

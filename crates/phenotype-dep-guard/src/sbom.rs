@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! CycloneDX-style SBOM representation + JSON export.
 //!
 //! Implements the minimal CycloneDX 1.5 JSON shape that vulnerability

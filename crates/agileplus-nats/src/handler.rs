@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Subscription handler trait for processing incoming messages.
 
 use async_trait::async_trait;

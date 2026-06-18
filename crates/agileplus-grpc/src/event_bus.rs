@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Agent event bus — tokio broadcast channel for real-time events.
 //!
 //! Traceability: WP14-T083

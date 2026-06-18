@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! AgilePlus artifact storage layer.
 //!
 //! Provides artifact storage with S3/MinIO backend and an in-memory

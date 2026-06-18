@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT OR Apache-2.0
 """Check all internal markdown links in docs/ directory."""
 
 import os

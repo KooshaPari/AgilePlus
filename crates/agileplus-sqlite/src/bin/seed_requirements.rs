@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Standalone seed-requirements binary for the agileplus-sqlite crate.
 //!
 //! Ingests all 6 FR/NFR catalogs (AgilePlus, Tracera, phenotype-voxel, Authvault,

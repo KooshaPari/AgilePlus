@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Event query builder with fluent API.
 
 use agileplus_domain::domain::event::Event;

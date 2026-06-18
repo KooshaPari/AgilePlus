@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Hexagonal-architecture adapter implementations.
 //!
 //! Each sub-module provides a concrete implementation of a

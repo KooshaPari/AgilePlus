@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 use super::jsonl::resolve_jsonl_conflict;
 use super::resolver::resolve_git_conflicts;
 use super::snapshot::resolve_snapshot_conflict;

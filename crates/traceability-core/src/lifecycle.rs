@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Feature lifecycle state machine.
 //!
 //! Source: [`AgilePlus/crates/agileplus-domain/src/domain/state_machine.rs`](https://example.invalid/AgilePlus/crates/agileplus-domain/src/domain/state_machine.rs)

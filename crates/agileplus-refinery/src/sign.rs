@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Commit signing — GPG, SSH, or mock.
 
 use std::process::{Command, Stdio};

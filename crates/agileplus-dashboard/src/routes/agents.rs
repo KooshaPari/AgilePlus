@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Agent activity and configuration handlers for the dashboard.
 //!
 //! Provides real-time agent detection, JSON APIs, and configuration management

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 use agileplus_graph::{NodeType, RelType};
 
 use crate::{Graph, PipelineError};

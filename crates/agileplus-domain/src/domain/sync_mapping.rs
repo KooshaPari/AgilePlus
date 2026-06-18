@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Sync mapping — links internal entities to external plane issues.
 
 use chrono::{DateTime, Utc};

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Sync mapping repository functions.
 //!
 //! Traceability: WP06-T033

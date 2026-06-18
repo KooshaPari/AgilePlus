@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Requirements seed — parse FR/NFR catalogs and upsert Epics + Stories.
 //!
 //! Traceability: FR-AGP-001, FR-TRC-016 (AgilePlus ↔ Tracera wiring)

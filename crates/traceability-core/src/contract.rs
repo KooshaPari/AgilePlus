@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `AcceptanceContract` and `ProgressionGate` — **new** hybrid types for this crate.
 //!
 //! See `docs/adr/ADR-0001-superset-merge.md` §6 for design rationale.

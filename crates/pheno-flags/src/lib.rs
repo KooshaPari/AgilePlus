@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! # pheno-flags — typed feature-flag resolution
 //!
 //! A small, typed `Resolver` that reads a flag value in this

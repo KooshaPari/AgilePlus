@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 use regex::Regex;
 use serde::Deserialize;
 use std::fs;

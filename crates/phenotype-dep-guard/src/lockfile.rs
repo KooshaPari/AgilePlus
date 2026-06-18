@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Lockfile parsers for the four supported ecosystems.
 //!
 //! Each parser turns a lockfile into a `Vec<Dependency>` with concrete

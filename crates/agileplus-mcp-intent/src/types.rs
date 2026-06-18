@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Core types matching the AgilePlus intent graph ontology.
 //!
 //! Schema: `~/forge/prompt-corpus/agileplus-intent-ontology.json`

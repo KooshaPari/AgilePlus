@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Hexagonal adapter: implements the `AsyncEventBus` / `EventBus` ports defined
 //! in `agileplus-events` over a live `async-nats` connection.
 //!

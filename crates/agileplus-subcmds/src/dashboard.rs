@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! CLI dashboard subcommand for AgilePlus.
 //!
 //! Provides `agileplus dashboard [open|port <N>]`.

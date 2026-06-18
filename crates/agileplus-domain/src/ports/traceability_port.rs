@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Traceability port — hexagonal-architecture trait for linking domain entities to
 //! external traceability systems (e.g. Tracera).
 

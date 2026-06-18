@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! SQLite-backed [`ClaimStore`](super::ClaimStore) implementation.
 //!
 //! Enabled by the `sqlite` Cargo feature. Persists claims to a

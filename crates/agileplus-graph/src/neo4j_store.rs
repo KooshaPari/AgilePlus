@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Neo4j-backed graph store — enabled by the `neo4j` feature flag.
 //! Uses `neo4rs` to execute Cypher queries against a running Neo4j instance.
 

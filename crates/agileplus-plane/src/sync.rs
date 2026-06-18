@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Plane.so sync logic with idempotency and conflict detection.
 //!
 //! Traceability: WP18-T105, T106, T107

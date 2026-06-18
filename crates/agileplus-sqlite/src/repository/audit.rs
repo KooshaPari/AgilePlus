@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Audit repository — CRUD for the `audit_log` table.
 
 use rusqlite::{params, Connection, Row};

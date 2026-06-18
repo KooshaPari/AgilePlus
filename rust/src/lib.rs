@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Generated gRPC stubs for AgilePlus.
 //!
 //! Implements FR-053 to FR-057. See WP00.

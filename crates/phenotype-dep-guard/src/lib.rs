@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Phenotype Dependency Guard
 //!
 //! Dependency scanning, OSV vulnerability lookup, and CycloneDX SBOM generation

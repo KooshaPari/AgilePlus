@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Migration system for agileplus-sqlite.
 //!
 //! Migrations are embedded as SQL files and applied in order on startup.

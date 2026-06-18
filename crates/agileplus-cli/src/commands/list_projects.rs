@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `list projects` subcommand — read all projects from the repository port.
 
 use anyhow::{Context, Result};

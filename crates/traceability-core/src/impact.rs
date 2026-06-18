@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Impact scoring (Phase 3 of the Tracera decouple plan).
 //!
 //! Source: [`Tracera/crates/tracera-core/src/impact.rs`](https://example.invalid/Tracera/crates/tracera-core/src/impact.rs)

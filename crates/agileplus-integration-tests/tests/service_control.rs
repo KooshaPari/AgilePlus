@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! T119: Dashboard service control integration test.
 //!
 //! Verifies persisted toggle and restart behavior of dashboard API endpoints.

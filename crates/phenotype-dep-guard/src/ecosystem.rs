@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Ecosystem metadata: filename conventions, OSV strings, helpers.
 //!
 //! Re-exports the canonical [`Ecosystem`] enum from [`crate::dependency`]
