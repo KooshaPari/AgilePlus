@@ -68,7 +68,7 @@ ingestion code is the `AgilePlus` Rust workspace.
 
 ## Consequences
 
-- `AgilePlus/crates/agileplus-spec-harmonizer/` exists as a new workspace
+- `agileplus/crates/agileplus-spec-harmonizer/` exists as a new workspace
   member. It is the canonical home of the 4-format spec harmonizer.
 - The forward-looking "front of SDD pipeline" claim is **downgraded** in
   the new README to "designed for the `agileplus-subcmds` bridge, which
@@ -83,7 +83,7 @@ ingestion code is the `AgilePlus` Rust workspace.
 
 - Source repo: `KooshaPari/agileplus-spec-harmonizer` (archived 2026-06-18)
 - Source repo: `KooshaPari/agileplus-spec-harmonizer-tool` (archived 2026-06-18)
-- Target repo: `KooshaPari/AgilePlus` (`crates/agileplus-spec-harmonizer/`)
+- Target repo: `KooshaPari/AgilePlus` (`agileplus/crates/agileplus-spec-harmonizer/`)
 - Test count: 12/12 passing (`cargo test -p agileplus-spec-harmonizer`)
 - Design constraint: "no async, no cgo" preserved (no `tokio` dep added)
 - License: MIT OR Apache-2.0 (compatible with source MIT)

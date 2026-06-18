@@ -155,6 +155,40 @@ mod tests {
         assert_eq!(rel.rel_type, RelType::DependsOn);
     }
 
+    #[test]
+    fn graph_round_trip_preserves_embedded_quotes() {
+        // Integration regression: a value containing an embedded `"` must
+        // survive `dot_export -> parse_dot`. 764 already covers export-side
+        // and parse-side separately; this test exercises the full path.
+        let mut graph = Graph::new();
+        let n1 = Node::new(
+            NodeType::WorkPackage,
+            serde_json::json!({
+                "slug": "auth",
+                "command": "echo \"auth required\"",
+            }),
+        );
+        let n2 = Node::new(NodeType::WorkPackage, serde_json::json!({"slug": "deploy"}));
+        graph.add_node(n1.clone());
+        graph.add_node(n2.clone());
+        graph.add_relationship(Relationship::new(n1.id, n2.id, RelType::DependsOn));
+
+        let dot = dot_export::export(&graph).unwrap();
+        let parsed = dot_parser::parse_dot(&dot)
+            .expect("round-trip must not fail on embedded quotes");
+
+        assert!(parsed.nodes.contains_key(&n1.id));
+        assert!(parsed.nodes.contains_key(&n2.id));
+        assert_eq!(
+            parsed.nodes[&n1.id].properties["command"],
+            "echo \"auth required\""
+        );
+
+        let rel = &parsed.relationships[0];
+        assert_eq!(rel.from_node_id, n1.id);
+        assert_eq!(rel.to_node_id, n2.id);
+    }
+
     #[tokio::test]
     async fn topo_execution_on_three_node_graph() {
         let mut graph = Graph::new();

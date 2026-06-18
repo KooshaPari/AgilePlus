@@ -35,14 +35,14 @@ pub fn parse_dot(dot: &str) -> Result<Graph, PipelineError> {
 
     let node_re = Regex::new(
         r#"(?x)
-        ^\s*"?([^"]+)"?\s*\[\s*([^\]]*?)\s*\]\s*;?
+        ^\s*"?([^"\s;]+)"?\s*\[\s*([^\]]*?)\s*\]\s*;?
         "#,
     )
     .map_err(|e| PipelineError::DotParse(e.to_string()))?;
 
     let edge_re = Regex::new(
         r#"(?x)
-        ^\s*"?([^"]+)"?\s*->\s*"?([^"]+)"?\s*(?:\[\s*([^\]]*?)\s*\])?\s*;?
+        ^\s*"?([^"\s;]+)"?\s*->\s*"?([^"\s;]+)"?\s*(?:\[\s*([^\]]*?)\s*\])?\s*;?
         "#,
     )
     .map_err(|e| PipelineError::DotParse(e.to_string()))?;
@@ -60,8 +60,14 @@ pub fn parse_dot(dot: &str) -> Result<Graph, PipelineError> {
         if line == "{" || line == "}" {
             continue;
         }
-        // Skip edge lines — they are parsed in Pass 2
-        if line.contains("->") {
+        // Skip edge lines — they are parsed in Pass 2.
+        // CRITICAL: do NOT use `line.contains("->")` here. Node attributes may
+        // legitimately contain `->` inside quoted values (e.g.
+        // `command="echo a -> b"`); substring matching would silently drop
+        // those node declarations. Use the edge regex's anchored match
+        // instead, which only fires on actual DOT edge syntax at the start
+        // of the line.
+        if edge_re.is_match(line) {
             continue;
         }
 
@@ -117,11 +123,14 @@ pub fn parse_dot(dot: &str) -> Result<Graph, PipelineError> {
 
 fn parse_attributes(attr_str: &str) -> serde_json::Value {
     let mut map = serde_json::Map::new();
+    // Match a quoted string that may contain escaped chars (e.g. `\"`, `\\`).
+    // After capture, unescape `\X` -> `X` so round-trip with `dot_export` works
+    // for values containing quotes or backslashes.
     let re = Regex::new(
         r#"(?x)
         (\w+)\s*=\s*
         (?:
-            "([^"]*)" |
+            "((?:[^"\\]|\\.)*)" |
             ([0-9]+)
         )
     "#,
@@ -131,8 +140,21 @@ fn parse_attributes(attr_str: &str) -> serde_json::Value {
     for caps in re.captures_iter(attr_str) {
         let key = caps[1].to_string();
         let value = if let Some(val) = caps.get(2) {
-            // Quoted string
-            serde_json::Value::String(val.as_str().to_string())
+            // Quoted string — unescape DOT backslash-escapes
+            let raw = val.as_str();
+            let mut out = String::with_capacity(raw.len());
+            let mut chars = raw.chars();
+            while let Some(c) = chars.next() {
+                if c == '\\' {
+                    if let Some(next) = chars.next() {
+                        out.push(next);
+                    }
+                    // stray trailing backslash: drop it
+                } else {
+                    out.push(c);
+                }
+            }
+            serde_json::Value::String(out)
         } else if let Some(val) = caps.get(3) {
             // Integer
             val.as_str()
@@ -243,5 +265,35 @@ mod tests {
         assert_eq!(node.properties["working_dir"], "/tmp");
         assert_eq!(node.properties["retries"], 3);
         assert_eq!(node.properties["timeout"], 60);
+    }
+
+    /// Regression test for codeant-ai finding #7 (Major):
+    /// Node attribute values may legitimately contain `->` (e.g. a shell
+    /// command like `echo a -> b`). The previous `line.contains("->")` edge
+    /// skip was too broad and silently dropped such nodes in Pass 1.
+    /// We must use the anchored `edge_re` so node declarations survive.
+    #[test]
+    fn parses_node_with_arrow_inside_attribute_value() {
+        let dot = r#"
+            digraph {
+                "build" [command="echo a -> b", retries=1];
+                "test" [command="cargo test"];
+                build -> test;
+            }
+        "#;
+        let graph = parse_dot(dot).expect("parse must not skip node with arrow in attribute");
+        assert_eq!(
+            graph.nodes.len(),
+            2,
+            "both nodes must be present even though 'build' has -> in its command"
+        );
+        let build = graph
+            .nodes
+            .values()
+            .find(|n| n.properties.get("command") == Some(&json!("echo a -> b")))
+            .expect("build node with arrow-in-command must be present");
+        assert_eq!(build.properties["retries"], 1);
+        assert_eq!(graph.relationships.len(), 1);
+        assert_eq!(graph.relationships[0].from_node_id, build.id);
     }
 }

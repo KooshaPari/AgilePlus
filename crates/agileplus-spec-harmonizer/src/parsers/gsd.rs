@@ -26,7 +26,10 @@ impl Parser for GsdParser {
         // Match `## Task N: title` or `## Task N - title` (lenient separators)
         let heading = Regex::new(r"(?m)^##\s+Task\s+(\d+)\s*[:\-]\s*(.+?)\s*$")
             .map_err(|e| format!("regex: {}", e))?;
-        let checkbox = Regex::new(r"^\s*-\s*\[(x| )\]\s+(.+?)\s*$")
+        // Accept both lowercase `x` and uppercase `X` in checkbox markers.
+        // Apply `(?i)` at the top so the `(x| )` alternation becomes
+        // case-insensitive without restructuring the capture groups.
+        let checkbox = Regex::new(r"(?i)^\s*-\s*\[(x| )\]\s+(.+?)\s*$")
             .map_err(|e| format!("regex: {}", e))?;
         let bullet = Regex::new(r"^\s*-\s+(.+?)\s*$")
             .map_err(|e| format!("regex: {}", e))?;
@@ -140,5 +143,28 @@ mod tests {
     fn errors_when_no_heading() {
         let out = GsdParser.parse("just plain text");
         assert!(out.is_err());
+    }
+
+    /// Regression test for codeant-ai finding #3 (Major):
+    /// Uppercase `[X]` checkboxes must parse as done acceptance criteria.
+    /// Previously the checkbox regex only matched lowercase `x`, so `- [X] b`
+    /// fell through to the description branch and never created an
+    /// `AcceptanceCriterion`.
+    #[test]
+    fn parses_uppercase_x_checkbox_as_done() {
+        let text = "## Task 1: First\ndesc 1\n\n- [ ] a\n- [X] b\n- [x] c\n";
+        let out = GsdParser.parse(text).expect("parse");
+        assert_eq!(out.len(), 1);
+        assert_eq!(out[0].acceptance.len(), 3, "all three checkboxes should parse");
+        assert!(!out[0].acceptance[0].done, "[ ] should be not done");
+        assert!(out[0].acceptance[1].done, "[X] uppercase should be done");
+        assert!(out[0].acceptance[2].done, "[x] lowercase should be done");
+        assert_eq!(out[0].acceptance[0].text, "a");
+        assert_eq!(out[0].acceptance[1].text, "b");
+        assert_eq!(out[0].acceptance[2].text, "c");
+        assert!(
+            !out[0].description.contains("[X]") && !out[0].description.contains("- ["),
+            "checkbox lines must not leak into description"
+        );
     }
 }
