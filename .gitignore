@@ -5,10 +5,7 @@
 *.json
 !pyproject.toml
 
-# Agent worktrees (leaked cross-repo contamination)
-.claude/worktrees/
-.claude/scheduled_tasks.lock
-
-# Agent worktrees (leaked cross-repo contamination)
-.claude/worktrees/
-target/
+# Environment configuration
+.env
+.env.local
+.env.*.local
