@@ -1,12 +1,7 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 use anyhow::{anyhow, Context, Result};
 use serde::Deserialize;
 use std::fs;
 use std::path::{Path, PathBuf};
-
-pub mod intent;
-
-pub use intent::{validate_intent_graph, GraphMetadata, IntentGraph, ValidationError};
 
 #[derive(Debug, Deserialize)]
 pub struct TraceEntry {
@@ -89,8 +84,7 @@ pub fn validate_trace_path(path: impl AsRef<Path>) -> Result<TraceValidation> {
     }
 
     if !errors.is_empty() {
-        return Err(anyhow!(errors.join("
-")));
+        return Err(anyhow!(errors.join("\n")));
     }
 
     Ok(TraceValidation {
@@ -129,7 +123,7 @@ fn validate_trace_paths(repo_root: &Path, trace: &TraceEntry, errors: &mut Vec<S
         .chain(trace.journeys.iter());
 
     for path in paths {
-        if path.starts_with('/') || path.starts_with("~/") || path.contains('\') {
+        if path.starts_with('/') || path.starts_with("~/") || path.contains('\\') {
             errors.push(format!("{}: malformed path {path}", trace.fr_id));
             continue;
         }

@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 use crate::graph::{TraceGraph, TraceNode, TraceNodeKind};
 use std::path::PathBuf;
 

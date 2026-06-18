@@ -62,8 +62,8 @@ fn make_backlog_item(
     );
     item.priority = priority;
     item.status = status;
-    item.feature_slug = Some("feat-coverage".to_owned());
-    item.tags = vec!["coverage".to_owned(), priority.to_string()];
+    item.feature_slug = Some("feat-coverage".to_string());
+    item.tags = vec!["coverage".to_string(), priority.to_string()];
     item
 }
 
@@ -106,8 +106,8 @@ async fn backlog_create_get_list_update_and_pop() {
             intent: Some(Intent::Bug),
             status: Some(BacklogStatus::New),
             priority: Some(BacklogPriority::Critical),
-            feature_slug: Some("feat-coverage".to_owned()),
-            source: Some("inbox".to_owned()),
+            feature_slug: Some("feat-coverage".to_string()),
+            source: Some("inbox".to_string()),
             sort: BacklogSort::Priority,
             limit: Some(1),
         })
@@ -217,8 +217,8 @@ async fn sync_mapping_upsert_get_by_plane_id_and_delete() {
     assert_eq!(fetched.sync_direction, SyncDirection::Push);
     assert_eq!(fetched.conflict_count, 2);
 
-    mapping.plane_issue_id = "plane-2".to_owned();
-    mapping.content_hash = "hash-b".to_owned();
+    mapping.plane_issue_id = "plane-2".to_string();
+    mapping.content_hash = "hash-b".to_string();
     mapping.sync_direction = SyncDirection::Pull;
     adapter
         .upsert_sync_mapping(&mapping)

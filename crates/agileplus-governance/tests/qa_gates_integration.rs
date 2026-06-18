@@ -1,38 +1,33 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 use std::fs;
 use std::path::Path;
 use std::process::Command;
 
 #[test]
-#[cfg(not(target_os = "windows"))]
 fn governance_qa_gates_accept_valid_fixture() {
     let manifest_dir = Path::new(env!("CARGO_MANIFEST_DIR"));
     let repo_root = match manifest_dir.parent().and_then(Path::parent) {
         Some(path) => path,
         None => {
-            panic!("crate should live under crates/");
+            assert!(false, "crate should live under crates/");
+            return;
         }
     };
     let temp = match tempfile::tempdir() {
         Ok(dir) => dir,
         Err(err) => {
-            panic!("tempdir failed: {err}");
+            assert!(false, "tempdir failed: {err}");
+            return;
         }
     };
 
     assert!(fs::write(
         temp.path().join("SPEC.md"),
-        "# Spec
-
-FR-001: shipped behavior
-NFR-002: operational guardrail
-",
+        "# Spec\n\nFR-001: shipped behavior\nNFR-002: operational guardrail\n",
     )
     .is_ok());
     assert!(fs::write(
         temp.path().join("lib.rs"),
-        "pub fn ok() -> Option<u8> { Some(1) }
-",
+        "pub fn ok() -> Option<u8> { Some(1) }\n",
     )
     .is_ok());
 
@@ -51,10 +46,7 @@ NFR-002: operational guardrail
         temp.path(),
         &[(
             "CHANGED_FILES",
-            "CHANGELOG.md
-docs/adr/0001-governance.md
-docs/qa-matrix.md
-",
+            "CHANGELOG.md\ndocs/adr/0001-governance.md\ndocs/qa-matrix.md\n",
         )],
     );
 }
@@ -69,16 +61,13 @@ fn run_gate(path: impl AsRef<Path>, workdir: &Path, envs: &[(&str, &str)]) {
     let output = match command.output() {
         Ok(output) => output,
         Err(err) => {
-            panic!("gate failed to run: {err}");
+            assert!(false, "gate failed to run: {err}");
+            return;
         }
     };
     assert!(
         output.status.success(),
-        "gate {:?} failed
-stdout:
-{}
-stderr:
-{}",
+        "gate {:?} failed\nstdout:\n{}\nstderr:\n{}",
         path.as_ref(),
         String::from_utf8_lossy(&output.stdout),
         String::from_utf8_lossy(&output.stderr)

@@ -2,14 +2,8 @@
 name = "agileplus-trace-validator"
 version.workspace = true
 edition.workspace = true
+license.workspace = true
 rust-version.workspace = true
-license = "MIT OR Apache-2.0"
-repository = "https://github.com/KooshaPari/AgilePlus"
-description = "agileplus trace validator — Phenotype infrastructure crate (AgilePlus)"
-documentation = "https://docs.rs/agileplus-trace-validator"
-keywords = ["phenotype", "agileplus"]
-categories = ["development-tools"]
-authors = ["kooshapari"]
 
 [[bin]]
 name = "agileplus-trace-validator"
@@ -20,7 +14,6 @@ anyhow.workspace = true
 clap = { version = "4", features = ["derive"] }
 serde.workspace = true
 serde_json.workspace = true
-thiserror.workspace = true
 
 [dev-dependencies]
 assert_cmd = "2"
