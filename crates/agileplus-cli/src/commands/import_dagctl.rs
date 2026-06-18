@@ -364,8 +364,7 @@ mod tests {
             "Just a title without period"
         );
         assert_eq!(
-            derive_title("With colon: more text
-ignored", "fb"),
+            derive_title("With colon: more text\nignored", "fb"),
             "With colon"
         );
     }

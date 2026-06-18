@@ -31,29 +31,8 @@ impl Signer for GpgSigner {
             // spawn_blocking completes (gpgme::Context is fully gone by then).
             let commit_text = get_commit_text(repo_root, commit_sha).await?;
 
-            let key_id = self.key_id.clone();
-            let signature_b64 = tokio::task::spawn_blocking(move || -> anyhow::Result<String> {
-                use gpgme::{Context, Protocol};
-
-                let mut ctx = Context::from_protocol(Protocol::OpenPgp)
-                    .with_context(|| "failed to create GPG context")?;
-                let key = ctx
-                    .get_key(&key_id)
-                    .with_context(|| format!("GPG key not found: {key_id}"))?;
-                ctx.add_signer(&key)
-                    .with_context(|| "failed to add signer to GPG context")?;
-
-                let mut signature = Vec::new();
-                ctx.sign_detached(commit_text.into_bytes(), &mut signature)
-                    .with_context(|| "GPG sign failed")?;
-
-                use base64::Engine as _;
-                Ok(base64::engine::general_purpose::STANDARD.encode(&signature))
-            })
-            .await
-            .context("spawn_blocking panicked")??;
-
-            // gpgme::Context is gone; safe to .await again.
+            // Append the signature to the commit object.
+            let signature_b64 = base64::encode(&signature);
             let new_sha =
                 amend_commit_with_gpg_signature(repo_root, commit_sha, &signature_b64).await?;
             return Ok(new_sha);
@@ -132,7 +111,7 @@ impl Signer for SshSigner {
                 .with_context(|| "SSH sig to PEM failed")?;
 
             let new_sha =
-                amend_commit_with_ssh_signature(repo_root, commit_sha, &signature_pem).await?;
+                amend_commit_with_ssh_signature(repo_root, commit_sha, &signature_b64).await?;
             return Ok(new_sha);
         }
 
@@ -187,9 +166,7 @@ pub struct MockSigner;
 impl Signer for MockSigner {
     async fn sign(&self, repo_root: &std::path::Path, commit_sha: &str) -> Result<String> {
         let new_msg = format!(
-            "{}
-
-[signed]",
+            "{}\n\n[signed]",
             get_commit_message(repo_root, commit_sha).await?
         );
         amend_commit_message(repo_root, &new_msg).await
@@ -353,6 +330,9 @@ async fn write_commit_object(repo_root: &std::path::Path, content: &str) -> Resu
                 .wait_with_output()
                 .with_context(|| "git hash-object failed")
         }
+        child
+            .wait_with_output()
+            .with_context(|| "git hash-object failed")
     })
     .await
     .context("spawn_blocking failed")??;

@@ -234,11 +234,8 @@ mod tests {
         assert!(result.node_outputs[&n2.id].success, "n2 (depends on n3) should succeed");
         assert!(result.node_outputs[&n1.id].success, "n1 (depends on n2) should succeed");
 
-        // Verify final execution status reflects all nodes succeeded.
-        assert_eq!(result.final_status, executor::ExecutionStatus::Success);
-
-        // Topological ordering is enforced logically by the watch-channel barrier in
-        // the executor; wall-clock timestamps are not reliable enough to assert
-        // strict ordering on a current-thread tokio runtime with fast (echo) commands.
+        // Verify topological order: n3 finished before n2, n2 before n1
+        assert!(result.node_outputs[&n3.id].finished_at <= result.node_outputs[&n2.id].started_at);
+        assert!(result.node_outputs[&n2.id].finished_at <= result.node_outputs[&n1.id].started_at);
     }
 }

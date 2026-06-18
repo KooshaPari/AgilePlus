@@ -133,7 +133,7 @@ impl ClaimWatcher {
         to_agent: &str,
     ) -> Result<Claim, crate::claim::ClaimError> {
         let result = self.store.claim_transfer(from_id, to_id, to_agent);
-        if result.is_ok() {
+        if let Ok(ref new_claim) = result {
             self.emit(
                 from_id,
                 ClaimEvent::Transferred {

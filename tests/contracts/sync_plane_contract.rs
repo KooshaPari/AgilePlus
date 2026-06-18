@@ -176,7 +176,7 @@ async fn sync_mapping_upsert_is_idempotent() {
             .unwrap()
             .expect("mapping must exist");
     assert_eq!(
-        fetched.content_hash, "h2",
+        fetched.last_synced_hash, "h2",
         "upsert must update, not duplicate"
     );
 }

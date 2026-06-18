@@ -123,9 +123,6 @@ pub fn parse_dot(dot: &str) -> Result<Graph, PipelineError> {
 
 fn parse_attributes(attr_str: &str) -> serde_json::Value {
     let mut map = serde_json::Map::new();
-    // Match a quoted string that may contain escaped chars (e.g. `\"`, `\\`).
-    // After capture, unescape `\X` -> `X` so round-trip with `dot_export` works
-    // for values containing quotes or backslashes.
     let re = Regex::new(
         r#"(?x)
         (\w+)\s*=\s*
@@ -159,7 +156,7 @@ fn parse_attributes(attr_str: &str) -> serde_json::Value {
             // Integer
             val.as_str()
                 .parse::<i64>()
-                .map(|n| serde_json::Value::Number(serde_json::Number::from(n)))
+                .map(serde_json::Value::Number)
                 .unwrap_or_else(|_| serde_json::Value::String(val.as_str().to_string()))
         } else {
             continue;

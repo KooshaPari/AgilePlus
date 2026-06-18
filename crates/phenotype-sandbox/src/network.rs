@@ -7,9 +7,13 @@ pub enum NetworkMode {
     #[default]
     Isolated,
     Host,
-    Bridged {
-        bridge: String,
-    },
+    Bridged { bridge: String },
+}
+
+impl Default for NetworkMode {
+    fn default() -> Self {
+        NetworkMode::Isolated
+    }
 }
 
 impl NetworkMode {

@@ -851,12 +851,10 @@ mod tests {
             .read_artifact("login", "spec.md")
             .await
             .expect("read");
-        assert_eq!(content, "# spec
-");
+        assert_eq!(content, "# spec\n");
         assert!(adapter.artifact_exists("login", "spec.md").await.unwrap());
         let scan = adapter.scan_feature_artifacts("login").await.expect("scan");
-        assert_eq!(scan.spec.as_deref(), Some("# spec
-"));
+        assert_eq!(scan.spec.as_deref(), Some("# spec\n"));
     }
 
     #[tokio::test]
