@@ -1,25 +1,11 @@
 ../*
 ../.*
+*.toml
+*.yaml
+*.json
 !pyproject.toml
-# openapi.yaml is the committed API contract; do not ignore.
-!openapi.yaml
 
-# Environment configuration
-.env
-.env.local
-.env.*.local
-
-# AgilePlus runtime artifacts
-.agileplus/
-.agileplus/*.db
-.agileplus/*.db-journal
-.agileplus/*.db-wal
-.agileplus/*.db-shm
-agileplus.db
-agileplus.db-journal
-agileplus.db-wal
-agileplus.db-shm
-.worktrees/
+# Agent worktrees (leaked cross-repo contamination)
 .claude/worktrees/
 .claude/scheduled_tasks.lock
 # Agent / MCP caches — local-only
@@ -27,77 +13,6 @@ agileplus.db-shm
 .codex/
 .cursor/
 
-# Browser-history / research exports (leaked secrets risk)
-data/safari/
-docs/research/gemini_export.html
-docs/research/*_export.html
-docs/research/*_export.json
-
-# Rust build artifacts
-/target
-
-# Orphaned lockfiles (no matching package.json at root)
-/bun.lock
-# Cargo.lock IS committed: this workspace ships binaries (agileplus-cli) and
-# CI runs `cargo deny --locked`, which requires the lockfile to be present.
-
-# Nested lockfiles
-rust/Cargo.lock
-python/.venv/.lock
-agileplus-mcp/.venv/.lock
-crates/agileplus-dashboard/web/bun.lock
-
-# Large runtime artifacts
-spec_dags.json
-crates/agileplus-dashboard/web/node_modules/
-
-# --- L2 #28 hygiene baseline (added 2026-06-11) ---
+# Agent worktrees (leaked cross-repo contamination)
+.claude/worktrees/
 target/
-**/*.rs.bk
-**/*.pdb
-**/vendor/
-**/go-build/
-**/__pycache__/
-**/*.py[cod]
-**/*$py.class
-**/.venv/
-**/venv/
-**/env/
-**/.mypy_cache/
-**/.ruff_cache/
-**/.pytest_cache/
-**/htmlcov/
-**/.coverage
-**/.coverage.*
-**/*.egg-info/
-**/.eggs/
-**/dist/
-**/build/
-**/node_modules/
-**/.next/
-**/.nuxt/
-**/.output/
-**/.cache/
-**/coverage/
-**/tsconfig.tsbuildinfo
-.astro/
-_stub/bin/
-_stub/obj/
-.DS_Store
-.AppleDouble
-.LSOverride
-**/Thumbs.db
-**/desktop.ini
-.idea/
-.vscode/
-*.swp
-*.swo
-*~
-*.log
-*.tmp
-*.bak
-**/tmp/
-**/temp/
-.env.*
-!.env.example
-agileplus.db
