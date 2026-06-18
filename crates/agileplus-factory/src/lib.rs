@@ -19,8 +19,8 @@ use anyhow::Result;
 use tokio::time::{sleep, Duration};
 use tracing::{info, warn};
 
-use agileplus_git::claim_bound::{ClaimBoundWorktree, ClaimStoreBound};
-use agileplus_triage::claim::{ClaimState, ClaimStore, ClaimStoreTrait};
+use agileplus_git::claim_bound::ClaimBoundWorktree;
+use agileplus_triage::claim::{ClaimStore, ClaimStoreTrait};
 
 pub mod config;
 pub mod pr;
@@ -251,6 +251,7 @@ Trail:
 
             self.claim_store.release(&claim_id);
             processed += 1;
+
         }
 
         Ok(processed)
