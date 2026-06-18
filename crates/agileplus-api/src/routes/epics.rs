@@ -52,15 +52,11 @@ where
     V: VcsPort + Send + Sync + 'static,
     O: ObservabilityPort + Send + Sync + 'static,
 {
-    let mut epic =
-        Epic::new(body.project_id, &body.title).map_err(|e| ApiError::BadRequest(e.to_string()))?;
+    let mut epic = Epic::new(body.project_id, &body.title)
+        .map_err(|e| ApiError::BadRequest(e.to_string()))?;
     epic.description = body.description;
 
-    let id = app
-        .storage
-        .create_epic(&epic)
-        .await
-        .map_err(ApiError::from)?;
+    let id = app.storage.create_epic(&epic).await.map_err(ApiError::from)?;
     let created = Epic { id, ..epic };
     Ok((StatusCode::CREATED, Json(EpicResponse::from(created))))
 }
@@ -77,7 +73,7 @@ where
 {
     let epic = app
         .storage
-        .get_epic_by_id(id)
+        .get_epic(id)
         .await
         .map_err(ApiError::from)?
         .ok_or_else(|| ApiError::NotFound(format!("Epic {id} not found")))?;
@@ -102,7 +98,7 @@ where
 {
     let mut epic = app
         .storage
-        .get_epic_by_id(id)
+        .get_epic(id)
         .await
         .map_err(ApiError::from)?
         .ok_or_else(|| ApiError::NotFound(format!("Epic {id} not found")))?;
@@ -134,15 +130,11 @@ where
     // verify epic exists
     let _ = app
         .storage
-        .get_epic_by_id(id)
+        .get_epic(id)
         .await
         .map_err(ApiError::from)?
         .ok_or_else(|| ApiError::NotFound(format!("Epic {id} not found")))?;
 
-    let stories = app
-        .storage
-        .list_stories_by_epic(id)
-        .await
-        .map_err(ApiError::from)?;
+    let stories = app.storage.list_stories_by_epic(id).await.map_err(ApiError::from)?;
     Ok(Json(stories.into_iter().map(StoryResponse::from).collect()))
 }
