@@ -111,16 +111,7 @@ axum.workspace = true
 chrono.workspace = true
 
 [package.metadata.cargo-machete]
-ignored = [
-  "anyhow",
-  "axum",
-  "chrono",
-  "serde",
-  "serde_json",
-  "thiserror",
-  "tokio",
-  "tracing",
-]
+ignored = ["anyhow", "axum", "chrono", "serde", "serde_json", "thiserror", "tokio", "tracing"]
 
 [dev-dependencies]
 axum-test = "20.1.0"
