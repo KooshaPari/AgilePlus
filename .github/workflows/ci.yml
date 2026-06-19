@@ -143,9 +143,7 @@ jobs:
           version: "28.x"
           repo-token: ${{ github.token }}
       - name: Install extras
-        uses: taiki-e/install-action@d12e70e218c759b71f95b1b6c0a2e5e7cb1b1f49  # v2
-        with:
-          tool: cargo-machete,cargo-semver-checks@0.44.0
+        run: cargo install cargo-machete cargo-semver-checks@0.44.0
       - name: Detect unused deps
         run: cargo machete
       - name: Semver compatibility check
