@@ -174,7 +174,7 @@ impl Executor {
                                         attempts: 0,
                                         started_at,
                                         finished_at: Instant::now(),
-                                        last_error: Some(format!("Guard failed: {guard_cmd}")),
+                                        last_error: Some(format!("Guard failed: {}", guard_cmd)),
                                     },
                                 );
                             }
@@ -282,8 +282,12 @@ impl Executor {
                                 },
                             )
                         }
-                        Ok(Err(e)) => (false, None, Some(format!("Spawn error: {e}"))),
-                        Err(_) => (false, None, Some(format!("Timeout after {timeout_secs}s"))),
+                        Ok(Err(e)) => (false, None, Some(format!("Spawn error: {}", e))),
+                        Err(_) => (
+                            false,
+                            None,
+                            Some(format!("Timeout after {}s", timeout_secs)),
+                        ),
                     };
 
                     let stdout_path = stdout_file.map(|f| f.into_temp_path().to_path_buf());
@@ -333,7 +337,7 @@ impl Executor {
         for handle in handles {
             let (node_id, output) = handle
                 .await
-                .map_err(|e| PipelineError::Execution(format!("Task join error: {e}")))?;
+                .map_err(|e| PipelineError::Execution(format!("Task join error: {}", e)))?;
             if output.skipped || !output.success {
                 skipped.insert(node_id);
             } else {
