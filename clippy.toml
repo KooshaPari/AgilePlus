@@ -5,7 +5,7 @@
 # `[workspace.package].rust-version`. Without this override, clippy emits
 # "the MSRV in `clippy.toml` and `Cargo.toml` differ" on every crate and the
 # `-D warnings` gate cannot pass cleanly.
-msrv                      = "1.85.0"
+msrv                      = "1.88.0"
 avoid-breaking-exported-api = true
 allow-dbg-in-tests        = true
 disallowed-methods        = []
