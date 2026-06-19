@@ -8,7 +8,7 @@
 //! the crate is to be a stable, versioned pin for these
 //! files.
 
-use pheno_ci_templates::{all_present, ALL_PATHS};
+use pheno_ci_templates::{ALL_PATHS, all_present};
 use std::path::PathBuf;
 
 fn crate_root() -> PathBuf {
@@ -17,7 +17,8 @@ fn crate_root() -> PathBuf {
 
 fn read(path: &str) -> String {
     let p = crate_root().join(path);
-    std::fs::read_to_string(&p).unwrap_or_else(|e| panic!("failed to read {p:?}: {e}"))
+    std::fs::read_to_string(&p)
+        .unwrap_or_else(|e| panic!("failed to read {p:?}: {e}"))
 }
 
 #[test]
