@@ -152,10 +152,7 @@ where
     let probe_timeout = std::time::Duration::from_secs(2);
 
     // NATS — check NATS_URL, attempt TCP connect
-    services.insert(
-        "nats".to_string(),
-        probe_tcp_env("NATS_URL", probe_timeout).await,
-    );
+    services.insert("nats".to_string(), probe_tcp_env("NATS_URL", probe_timeout).await);
 
     // Dragonfly / Redis — check DRAGONFLY_URL then REDIS_URL
     services.insert(
@@ -164,16 +161,10 @@ where
     );
 
     // Neo4j — check NEO4J_URI, attempt TCP connect to host:port
-    services.insert(
-        "neo4j".to_string(),
-        probe_tcp_env("NEO4J_URI", probe_timeout).await,
-    );
+    services.insert("neo4j".to_string(), probe_tcp_env("NEO4J_URI", probe_timeout).await);
 
     // MinIO/S3 — check S3_ENDPOINT, attempt TCP connect
-    services.insert(
-        "minio".to_string(),
-        probe_tcp_env("S3_ENDPOINT", probe_timeout).await,
-    );
+    services.insert("minio".to_string(), probe_tcp_env("S3_ENDPOINT", probe_timeout).await);
 
     let overall = DetailedHealthResponse::compute_status(&services).to_string();
 
@@ -197,10 +188,7 @@ async fn info_handler() -> Json<serde_json::Value> {
 
 /// Probe a single env var: if set, TCP-connect to host:port with timeout.
 /// Returns `not_configured` if the env var is absent.
-async fn probe_tcp_env(
-    env_key: &str,
-    timeout: std::time::Duration,
-) -> crate::responses::ServiceHealth {
+async fn probe_tcp_env(env_key: &str, timeout: std::time::Duration) -> crate::responses::ServiceHealth {
     let url = match std::env::var(env_key) {
         Ok(v) => v,
         Err(_) => return crate::responses::ServiceHealth::not_configured(),
@@ -230,9 +218,7 @@ async fn probe_tcp_url(url: &str, timeout: std::time::Duration) -> crate::respon
     match tokio::time::timeout(timeout, tokio::net::TcpStream::connect(&addr)).await {
         Ok(Ok(_)) => crate::responses::ServiceHealth::healthy(t0.elapsed().as_millis() as u64),
         Ok(Err(e)) => crate::responses::ServiceHealth::unavailable(format!("{addr}: {e}")),
-        Err(_) => {
-            crate::responses::ServiceHealth::unavailable(format!("{addr}: connection timed out"))
-        }
+        Err(_) => crate::responses::ServiceHealth::unavailable(format!("{addr}: connection timed out")),
     }
 }
 
