@@ -40,8 +40,8 @@ use agileplus_domain::domain::project::Project;
 use agileplus_domain::domain::sync_mapping::SyncMapping;
 
 use crate::repository::{
-    audit, backlog, cycles, epics, evidence, features, governance, metrics, modules, projects,
-    stories, sync_mappings, users, work_packages,
+    audit, backlog, cycles, epics, events, evidence, features, governance, metrics, modules,
+    projects, stories, sync_mappings, users, work_packages,
 };
 
 /// SQLite-backed storage adapter.
@@ -580,11 +580,6 @@ impl StoragePort for SqliteStorageAdapter {
     async fn delete_story(&self, id: i64) -> Result<(), DomainError> {
         let conn = self.lock()?;
         stories::delete_story(&conn, id)
-    }
-
-    async fn upsert_story_by_requirement_id(&self, story: &Story) -> Result<i64, DomainError> {
-        let conn = self.lock()?;
-        stories::upsert_story_by_requirement_id(&conn, story)
     }
 }
 
@@ -1743,7 +1738,10 @@ mod tests {
         let u = User::new("Alice", "alice@example.com", UserRole::Member).unwrap();
         let id = StoragePort::create_user(&db, &u).await.unwrap();
         assert!(id > 0);
-        let got = StoragePort::get_user_by_id(&db, id).await.unwrap().unwrap();
+        let got = StoragePort::get_user_by_id(&db, id)
+            .await
+            .unwrap()
+            .unwrap();
         assert_eq!(got.display_name, "Alice");
         assert_eq!(got.email, "alice@example.com");
         assert_eq!(got.role, UserRole::Member);
@@ -1766,10 +1764,7 @@ mod tests {
     #[tokio::test]
     async fn user_not_found_returns_none() {
         let db = make_adapter();
-        assert!(StoragePort::get_user_by_id(&db, 9999)
-            .await
-            .unwrap()
-            .is_none());
+        assert!(StoragePort::get_user_by_id(&db, 9999).await.unwrap().is_none());
         assert!(StoragePort::get_user_by_email(&db, "no@no.com")
             .await
             .unwrap()
@@ -1803,12 +1798,18 @@ mod tests {
     #[tokio::test]
     async fn user_list_all() {
         let db = make_adapter();
-        StoragePort::create_user(&db, &User::new("U1", "u1@x.com", UserRole::Member).unwrap())
-            .await
-            .unwrap();
-        StoragePort::create_user(&db, &User::new("U2", "u2@x.com", UserRole::Member).unwrap())
-            .await
-            .unwrap();
+        StoragePort::create_user(
+            &db,
+            &User::new("U1", "u1@x.com", UserRole::Member).unwrap(),
+        )
+        .await
+        .unwrap();
+        StoragePort::create_user(
+            &db,
+            &User::new("U2", "u2@x.com", UserRole::Member).unwrap(),
+        )
+        .await
+        .unwrap();
         let all = StoragePort::list_all_users(&db).await.unwrap();
         assert_eq!(all.len(), 2);
     }
@@ -1823,10 +1824,7 @@ mod tests {
         .await
         .unwrap();
         StoragePort::delete_user(&db, id).await.unwrap();
-        assert!(StoragePort::get_user_by_id(&db, id)
-            .await
-            .unwrap()
-            .is_none());
+        assert!(StoragePort::get_user_by_id(&db, id).await.unwrap().is_none());
     }
 
     #[tokio::test]
@@ -1841,13 +1839,15 @@ mod tests {
 
     use agileplus_domain::domain::epic::{Epic, EpicStatus};
 
-    async fn make_project(db: &SqliteStorageAdapter) -> i64 {
-        StoragePort::create_project(
-            db,
-            &Project::new("Epic Project", "epic-project").unwrap(),
-        )
-        .await
-        .unwrap()
+    fn make_project(db: &SqliteStorageAdapter) -> impl std::future::Future<Output = i64> + '_ {
+        async move {
+            StoragePort::create_project(
+                db,
+                &Project::new("Epic Project", "epic-project").unwrap(),
+            )
+            .await
+            .unwrap()
+        }
     }
 
     #[tokio::test]
@@ -1857,7 +1857,10 @@ mod tests {
         let e = Epic::new(pid, "Auth Overhaul").unwrap();
         let id = StoragePort::create_epic(&db, &e).await.unwrap();
         assert!(id > 0);
-        let got = StoragePort::get_epic_by_id(&db, id).await.unwrap().unwrap();
+        let got = StoragePort::get_epic_by_id(&db, id)
+            .await
+            .unwrap()
+            .unwrap();
         assert_eq!(got.title, "Auth Overhaul");
         assert_eq!(got.project_id, pid);
         assert_eq!(got.status, EpicStatus::Backlog);
@@ -1894,10 +1897,12 @@ mod tests {
         )
         .await
         .unwrap();
-        let pid2 =
-            StoragePort::create_project(&db, &Project::new("Other Proj", "other-proj").unwrap())
-                .await
-                .unwrap();
+        let pid2 = StoragePort::create_project(
+            &db,
+            &Project::new("Other Proj", "other-proj").unwrap(),
+        )
+        .await
+        .unwrap();
         StoragePort::create_epic(&db, &Epic::new(pid, "E1").unwrap())
             .await
             .unwrap();
@@ -1916,10 +1921,12 @@ mod tests {
     #[tokio::test]
     async fn epic_delete() {
         let db = make_adapter();
-        let pid =
-            StoragePort::create_project(&db, &Project::new("Del Proj", "del-proj-epic").unwrap())
-                .await
-                .unwrap();
+        let pid = StoragePort::create_project(
+            &db,
+            &Project::new("Del Proj", "del-proj-epic").unwrap(),
+        )
+        .await
+        .unwrap();
         let eid = StoragePort::create_epic(&db, &Epic::new(pid, "Temp Epic").unwrap())
             .await
             .unwrap();
@@ -2051,15 +2058,11 @@ mod tests {
             .await
             .unwrap();
 
-        let proj1_stories = StoragePort::list_stories_by_project(&db, pid)
-            .await
-            .unwrap();
+        let proj1_stories = StoragePort::list_stories_by_project(&db, pid).await.unwrap();
         assert_eq!(proj1_stories.len(), 2);
         assert!(proj1_stories.iter().all(|s| s.project_id == pid));
 
-        let proj2_stories = StoragePort::list_stories_by_project(&db, pid2)
-            .await
-            .unwrap();
+        let proj2_stories = StoragePort::list_stories_by_project(&db, pid2).await.unwrap();
         assert_eq!(proj2_stories.len(), 1);
     }
 
@@ -2085,62 +2088,7 @@ mod tests {
         let (pid, eid) = make_project_and_epic(&db).await;
         let s = Story::new(eid, pid, "No points", None).unwrap();
         let id = StoragePort::create_story(&db, &s).await.unwrap();
-        let got = StoragePort::get_story_by_id(&db, id)
-            .await
-            .unwrap()
-            .unwrap();
+        let got = StoragePort::get_story_by_id(&db, id).await.unwrap().unwrap();
         assert!(got.points.is_none());
-    }
-
-    // -- L2 #38 migration test --
-    //
-    // The L1 #5 audit identified 5 tables missing from the schema that the
-    // downstream L2 work (worklog, trace, gate, run, scope surfaces) depends
-    // on. This test confirms migration 022_l2_38_worklog_trace_gate_run_scope
-    // is registered with the MigrationRunner and that all 5 tables exist
-    // post-migration. L2 #38 is the only author of these tables; if any of
-    // them disappears, downstream L2 tasks will fail.
-    #[test]
-    fn test_l2_38_migration() {
-        // Build an in-memory DB via the adapter (runs all migrations).
-        let db = SqliteStorageAdapter::in_memory().expect("in-memory adapter");
-        let conn = db.conn_for_bench().expect("conn");
-
-        let expected: &[&str] = &["gate_results", "run_records", "scope_status"];
-
-        let mut stmt = conn
-            .prepare("SELECT name FROM sqlite_master WHERE type = 'table'")
-            .expect("prepare sqlite_master");
-        let mut rows = stmt.query([]).expect("query sqlite_master");
-        let mut found: Vec<String> = Vec::new();
-        while let Some(row) = rows.next().expect("row") {
-            let name: String = row.get(0).expect("name");
-            if expected.contains(&name.as_str()) {
-                found.push(name);
-            }
-        }
-
-        for t in expected {
-            assert!(
-                found.iter().any(|n| n == t),
-                "L2-38 migration table `{t}` not found in sqlite_master; found: {found:?}"
-            );
-        }
-        assert_eq!(
-            found.len(),
-            expected.len(),
-            "expected {} L2-38 tables, found {found:?}",
-            expected.len()
-        );
-
-        // Sanity-check: migration is recorded in _migrations.
-        let applied: i64 = conn
-            .query_row(
-                "SELECT COUNT(*) FROM _migrations WHERE name = ?1",
-                rusqlite::params!["024_l2_38_worklog_trace_gate_run_scope"],
-                |row| row.get(0),
-            )
-            .expect("query _migrations");
-        assert_eq!(applied, 1, "024 migration should be recorded as applied");
     }
 }

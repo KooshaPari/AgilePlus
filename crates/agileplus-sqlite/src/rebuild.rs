@@ -288,6 +288,7 @@ mod tests {
         ports::{
             vcs::{BranchInfo, ConflictInfo, FeatureArtifacts, MergeResult, WorktreeInfo},
             StoragePort, VcsPort,
+            vcs::{BranchInfo, ConflictInfo, FeatureArtifacts, MergeResult, WorktreeInfo},
         },
     };
 
