@@ -269,8 +269,7 @@ fn generate_graph(prompt: &str) -> IntentGraph {
             dag_stage: "task".to_string(),
             title: format!("{}: {}", capitalize(task_type), feat_title),
             description: Some(format!(
-                "Task of type '{}' for feature '{}'.",
-                task_type, feat_title
+                "Task of type '{task_type}' for feature '{feat_title}'."
             )),
             status: "draft".to_string(),
             tags: Some(vec!["task".to_string(), task_type.to_string()]),
