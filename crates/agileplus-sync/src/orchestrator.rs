@@ -280,7 +280,7 @@ impl SyncOrchestrator {
         self.plane
             .patch_issue(&project_id, plane_issue_id, value)
             .await
-            .map_err(|e| SyncError::Store(e.to_string()))
+            .map_err(|e| SyncError::Transport(e.to_string()))
     }
 
     async fn apply_to_local(
@@ -289,10 +289,7 @@ impl SyncOrchestrator {
         entity_id: i64,
         value: &Value,
     ) -> Result<(), SyncError> {
-        debug!(
-            entity_type,
-            entity_id, "Applying remote change to local store"
-        );
+        debug!(entity_type, entity_id, "Applying remote change to local store");
         // Persist inbound change as a domain event so downstream subscribers can react.
         let payload = serde_json::json!({
             "entity_type": entity_type,
@@ -301,17 +298,11 @@ impl SyncOrchestrator {
             "source": "plane_sync",
         });
         use agileplus_domain::domain::event::Event;
-        let event = Event::new(
-            entity_type,
-            entity_id,
-            "plane_sync.apply",
-            payload,
-            "plane_sync",
-        );
+        let event = Event::new(entity_type, entity_id, "plane_sync.apply", payload, "plane_sync");
         self.sqlite
             .append(&event)
             .await
-            .map_err(|e| SyncError::Store(e.to_string()))?;
+            .map_err(|e| SyncError::Storage(e.to_string()))?;
         Ok(())
     }
 }
