@@ -152,7 +152,7 @@ impl DockerBackend {
             .start_exec(&exec.id, Some(start_options))
             .await?;
 
-        let mut stream = self
+        let exec_result = self
             .client
             .start_exec(&exec.id, Some(start_options))
             .await?;
