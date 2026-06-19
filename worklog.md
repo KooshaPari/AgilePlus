@@ -250,3 +250,17 @@ Historical work is documented in:
 - 001-spec-driven-development-engine: tasks.md pushed to AgilePlus (foundational spec document pipeline)
 - AgentMCP trufflehog.yml bootstrapped via Contents API
 - org-wide governance scan: 0 repos with any governance gap
+
+## Round 2026-05-02 (round 3i) — AgilePlus spec hygiene complete
+### AgilePlus Spec Expansion (all 9 specs now have tasks.md + meta.json)
+- eco-001-worktree-remediation: tasks.md ✅ (worktree vs canonical policy documented)
+- eco-002-branch-consolidation: tasks.md ✅ (branch audit + naming convention documented)
+- eco-003-circular-dep-resolution: tasks.md ✅ (zero cycles confirmed)
+- eco-004-hexagonal-migration: tasks.md ✅ (hexagonal pattern confirmed in place)
+- 001-spec-driven-development-engine: tasks.md ✅ (spec pipeline documented)
+- 002-org-wide-release-governance-dx-automation: tasks.md ✅ (release governance + DX tooling documented)
+- 003-agileplus-platform-completion: tasks.md ✅ (Plane.so + NATS + process-compose scope)
+- 004-modules-and-cycles: tasks.md ✅ (Module + Cycle domain model documented)
+- 008-temporal-deployment-workflow-migration: tasks.md ✅ (Temporal vs process-compose assessment), meta.json ✅ (was missing)
+### AgentMCP trufflehog.yml bootstrapped
+### Org-wide: 0 governance gaps across all active repos
