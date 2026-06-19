@@ -107,7 +107,9 @@ def fold_trace_into_journey(trace_path: Path) -> bool:
     ):
         if key in data:
             fm[key] = data[key]
-    journey_path.write_text(render_frontmatter(fm) + body.lstrip("\n"), encoding="utf-8")
+    journey_path.write_text(
+        render_frontmatter(fm) + body.lstrip("\n"), encoding="utf-8"
+    )
     return True
 
 
