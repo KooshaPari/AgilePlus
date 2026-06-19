@@ -147,15 +147,33 @@ impl DockerBackend {
             ..Default::default()
         };
 
-        let start_result = self
-            .client
-            .start_exec(&exec.id, Some(start_options))
-            .await?;
+        let mut stdout = Vec::new();
+        let mut stderr = Vec::new();
 
         let exec_result = self
             .client
             .start_exec(&exec.id, Some(start_options))
             .await?;
+
+        if let bollard::exec::StartExecResults::Attached { mut output, .. } = exec_result {
+            while let Some(chunk) = output.next().await {
+                match chunk {
+                    Ok(bollard::container::LogOutput::StdOut { message }) => {
+                        stdout.extend_from_slice(&message);
+                    }
+                    Ok(bollard::container::LogOutput::StdErr { message }) => {
+                        stderr.extend_from_slice(&message);
+                    }
+                    Ok(bollard::container::LogOutput::Console { message }) => {
+                        stdout.extend_from_slice(&message);
+                    }
+                    Err(e) => {
+                        error!(error = %e, "exec stream error");
+                    }
+                    _ => {}
+                }
+            }
+        }
 
         if let bollard::exec::StartExecResults::Attached { mut output, .. } = exec_result {
             while let Some(chunk) = output.next().await {
