@@ -12,7 +12,7 @@ use std::collections::HashMap;
 use crate::app_state::SharedState;
 use crate::templates::{
     DashboardPage, EventsPage, FeaturesPage, HomePage, HubPage, EcosystemProject,
-    FeatureView, ProjectSummaryView, SettingsPage,
+    FeatureView, SettingsPage,
 };
 
 use super::helpers::{self, DashboardFilter};
