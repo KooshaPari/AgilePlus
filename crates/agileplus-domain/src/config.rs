@@ -70,8 +70,8 @@ mod tests {
     #[test]
     fn app_config_serde_roundtrip() {
         let cfg = AppConfig::default();
-        let json = serde_json::to_string(&cfg).expect("domain operation");
-        let back: AppConfig = serde_json::from_str(&json).expect("domain operation");
+        let json = serde_json::to_string(&cfg).unwrap();
+        let back: AppConfig = serde_json::from_str(&json).unwrap();
         assert_eq!(back.api.port, cfg.api.port);
         assert_eq!(back.core.database_path, cfg.core.database_path);
     }
@@ -79,7 +79,7 @@ mod tests {
     #[test]
     fn load_with_env_overrides_reads_api_port() {
         std::env::set_var("API_PORT", "9090");
-        let cfg = AppConfig::load_with_env_overrides().expect("domain operation");
+        let cfg = AppConfig::load_with_env_overrides().unwrap();
         assert_eq!(cfg.api.port, 9090);
         std::env::remove_var("API_PORT");
     }
@@ -87,7 +87,7 @@ mod tests {
     #[test]
     fn load_with_env_overrides_reads_database_path() {
         std::env::set_var("DATABASE_PATH", "/tmp/test.db");
-        let cfg = AppConfig::load_with_env_overrides().expect("domain operation");
+        let cfg = AppConfig::load_with_env_overrides().unwrap();
         assert_eq!(cfg.core.database_path, PathBuf::from("/tmp/test.db"));
         std::env::remove_var("DATABASE_PATH");
     }
