@@ -17,8 +17,8 @@ utoipa.workspace = true
 async-trait.workspace = true
 tower-http = { version = "0.5", features = ["cors", "trace", "fs"] }
 
-# Domain, storage, VCS, and related crates
-agileplus-domain = { path = "../agileplus-domain" }
-agileplus-git = { path = "../agileplus-git" }
-agileplus-sqlite = { path = "../agileplus-sqlite" }
-agileplus-dashboard = { path = "../agileplus-dashboard" }
+[dev-dependencies]
+axum-test    = "20"
+
+[package.metadata.cargo-machete]
+ignored = ["tracing-subscriber"]

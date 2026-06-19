@@ -67,6 +67,7 @@ members = [
     "crates/agileplus-grpc",
     "crates/agileplus-github",
     "crates/agileplus-plane",
+    "crates/agileplus-sync",
     "crates/agileplus-nats",
     "crates/agileplus-p2p",
     "crates/agileplus-telemetry",
@@ -111,16 +112,7 @@ axum.workspace = true
 chrono.workspace = true
 
 [package.metadata.cargo-machete]
-ignored = [
-  "anyhow",
-  "axum",
-  "chrono",
-  "serde",
-  "serde_json",
-  "thiserror",
-  "tokio",
-  "tracing",
-]
+ignored = ["anyhow", "axum", "chrono", "serde", "serde_json", "thiserror", "tokio", "tracing"]
 
 [dev-dependencies]
 axum-test = "20.1.0"
