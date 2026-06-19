@@ -84,7 +84,7 @@ mod tests {
 
         let result = adapter.get_traces(entity_id).await;
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), vec![]);
+        assert_eq!(result.expect("domain operation"), vec![]);
     }
 
     #[test]

@@ -30,7 +30,7 @@ mod tests {
             agent_runs: 3,
             review_cycles: 1,
             metadata: Some(serde_json::json!({"key": "value"})),
-            timestamp: DateTime::from_timestamp(0, 0).unwrap(),
+            timestamp: DateTime::from_timestamp(0, 0).expect("domain operation"),
         }
     }
 
@@ -48,8 +48,8 @@ mod tests {
     #[test]
     fn metric_serializes_and_deserializes() {
         let m = make_metric();
-        let json = serde_json::to_string(&m).unwrap();
-        let back: Metric = serde_json::from_str(&json).unwrap();
+        let json = serde_json::to_string(&m).expect("domain operation");
+        let back: Metric = serde_json::from_str(&json).expect("domain operation");
         assert_eq!(back.id, m.id);
         assert_eq!(back.command, m.command);
         assert_eq!(back.duration_ms, m.duration_ms);
@@ -59,8 +59,8 @@ mod tests {
     fn metric_optional_feature_id_can_be_none() {
         let mut m = make_metric();
         m.feature_id = None;
-        let json = serde_json::to_string(&m).unwrap();
-        let back: Metric = serde_json::from_str(&json).unwrap();
+        let json = serde_json::to_string(&m).expect("domain operation");
+        let back: Metric = serde_json::from_str(&json).expect("domain operation");
         assert!(back.feature_id.is_none());
     }
 }

@@ -73,7 +73,7 @@ mod tests {
 
     #[test]
     fn valid_project_construction() {
-        let p = Project::new("My Project", "my-project").unwrap();
+        let p = Project::new("My Project", "my-project").expect("domain operation");
         assert_eq!(p.name, "My Project");
         assert_eq!(p.slug, "my-project");
     }

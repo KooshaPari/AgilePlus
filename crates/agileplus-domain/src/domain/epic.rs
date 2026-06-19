@@ -120,7 +120,7 @@ mod tests {
 
     #[test]
     fn valid_epic_construction() {
-        let e = Epic::new(1, "Authentication Overhaul").unwrap();
+        let e = Epic::new(1, "Authentication Overhaul").expect("domain operation");
         assert_eq!(e.title, "Authentication Overhaul");
         assert_eq!(e.project_id, 1);
         assert_eq!(e.status, EpicStatus::Backlog);
@@ -134,16 +134,16 @@ mod tests {
 
     #[test]
     fn valid_status_transition() {
-        let mut e = Epic::new(1, "Big Feature").unwrap();
-        e.transition_status(EpicStatus::Active).unwrap();
+        let mut e = Epic::new(1, "Big Feature").expect("domain operation");
+        e.transition_status(EpicStatus::Active).expect("domain operation");
         assert_eq!(e.status, EpicStatus::Active);
-        e.transition_status(EpicStatus::Review).unwrap();
+        e.transition_status(EpicStatus::Review).expect("domain operation");
         assert_eq!(e.status, EpicStatus::Review);
     }
 
     #[test]
     fn invalid_status_transition_rejected() {
-        let mut e = Epic::new(1, "Skipped Epic").unwrap();
+        let mut e = Epic::new(1, "Skipped Epic").expect("domain operation");
         // Backlog -> Done is not allowed
         let err = e.transition_status(EpicStatus::Done).unwrap_err();
         assert!(matches!(err, DomainError::InvalidTransition { .. }));
@@ -151,7 +151,7 @@ mod tests {
 
     #[test]
     fn title_trimmed_on_construction() {
-        let e = Epic::new(2, "  Trimmed  ").unwrap();
+        let e = Epic::new(2, "  Trimmed  ").expect("domain operation");
         assert_eq!(e.title, "Trimmed");
     }
 }
