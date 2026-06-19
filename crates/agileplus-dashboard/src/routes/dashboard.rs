@@ -23,10 +23,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::app_state::SharedState;
 use crate::templates::{
-    AgentActivityPartial, AgentView, DashboardPage, EventTimelinePartial,
-    EvidenceBundleView, FeatureDetailPage, FeatureView, HealthPanelPartial,
-    KanbanPartial, MediaAssetView, ProjectSwitcherPartial, ProjectView,
-    ReportArtifactView, WpListPartial, WpView,
+    AgentActivityPartial, AgentView, DashboardPage, EventTimelinePartial, EvidenceBundleView,
+    FeatureDetailPage, FeatureView, HealthPanelPartial, KanbanPartial, MediaAssetView,
+    ProjectSwitcherPartial, ProjectView, ReportArtifactView, WpListPartial, WpView,
 };
 
 use super::helpers::{
@@ -34,7 +33,7 @@ use super::helpers::{
     DashboardFilter,
 };
 
-// ── JSON API Response Types ────────────────────────────────────────────────
+// â”€â”€ JSON API Response Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /// JSON response for GET /api/dashboard/work-packages.json
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -47,6 +46,7 @@ pub struct WorkPackageJson {
     pub assignee: Option<String>,
 }
 
+#[allow(dead_code)]
 fn build_feature_events(
     feature: &FeatureView,
     workpackages: &[WpView],
@@ -102,9 +102,7 @@ fn build_feature_evidence_bundles(
         created_at: Utc::now().format("%Y-%m-%d %H:%M:%S UTC").to_string(),
         artifact_ext: "md".into(),
         status: "available".into(),
-        content_preview: Some("# Feature Summary
-
-This feature provides...".to_string()),
+        content_preview: Some("# Feature Summary\n\nThis feature provides...".to_string()),
         is_text_artifact: true,
         is_image_artifact: false,
         download_url: format!("/api/evidence/{}/summary/content", feature.id),
@@ -197,7 +195,7 @@ fn build_feature_reports(
 ) -> Vec<ReportArtifactView> {
     vec![ReportArtifactView {
         id: format!("report-{id}-coverage", id = feature.id),
-        name: format!("Feature Coverage Report — {name}", name = feature.title),
+        name: format!("Feature Coverage Report â€” {name}", name = feature.title),
         source: "coverage-engine".into(),
         status: "completed".into(),
         generated_at: Utc::now().format("%Y-%m-%d %H:%M:%S UTC").to_string(),
@@ -363,7 +361,7 @@ pub async fn switch_project(State(state): State<SharedState>, Path(id): Path<i64
     render(KanbanPartial { cards })
 }
 
-// ── /api/time ────────────────────────────────────────────────────────────
+// â”€â”€ /api/time â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 pub async fn time_footer() -> axum::response::Html<String> {
     axum::response::Html(
@@ -373,7 +371,7 @@ pub async fn time_footer() -> axum::response::Html<String> {
     )
 }
 
-// ── SSE Stream /api/stream ───────────────────────────────────────────────
+// â”€â”€ SSE Stream /api/stream â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 use axum::response::sse::{Event, Sse};
 use std::convert::Infallible;
@@ -415,7 +413,7 @@ pub async fn sse_stream(
     Sse::new(stream)
 }
 
-// ── /api/dashboard/work-packages.json ─────────────────────────────────────
+// â”€â”€ /api/dashboard/work-packages.json â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /// GET /api/dashboard/work-packages.json
 /// Returns all work packages across all features as a flat JSON array.
@@ -453,13 +451,13 @@ pub async fn all_work_packages_json(State(state): State<SharedState>) -> impl In
     }))
 }
 
-// ── /api/dashboard/epics-stories.json ────────────────────────────────────
+// â”€â”€ /api/dashboard/epics-stories.json â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /// GET /api/dashboard/epics-stories.json
 /// Reads Epics + Stories directly from the SQLite database and returns them
 /// as a flat JSON payload. Used by the React dashboard at port 5176.
 pub async fn epics_stories_json() -> impl IntoResponse {
-    // Resolve db path: DATABASE_URL env → DATABASE_PATH env → default agileplus.db
+    // Resolve db path: DATABASE_URL env â†’ DATABASE_PATH env â†’ default agileplus.db
     let db_path: PathBuf = if let Ok(url) = std::env::var("DATABASE_URL") {
         url.strip_prefix("sqlite:").unwrap_or(&url).into()
     } else if let Ok(p) = std::env::var("DATABASE_PATH") {

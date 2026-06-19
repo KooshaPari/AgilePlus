@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! rebuild_from_git — reconstruct SQLite state from git artifacts (FR-017).
+//! rebuild_from_git â€” reconstruct SQLite state from git artifacts (FR-017).
 
 use agileplus_domain::{
     domain::{
@@ -22,7 +22,7 @@ pub struct RebuildReport {
     pub evidence_restored: usize,
 }
 
-/// Git meta.json schema (minimal — matches what spec-kitty would write).
+/// Git meta.json schema (minimal â€” matches what spec-kitty would write).
 #[derive(Debug, serde::Deserialize)]
 struct MetaJson {
     slug: String,
@@ -288,7 +288,6 @@ mod tests {
         ports::{
             vcs::{BranchInfo, ConflictInfo, FeatureArtifacts, MergeResult, WorktreeInfo},
             StoragePort, VcsPort,
-            vcs::{BranchInfo, ConflictInfo, FeatureArtifacts, MergeResult, WorktreeInfo},
         },
     };
 

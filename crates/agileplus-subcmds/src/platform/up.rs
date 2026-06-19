@@ -43,7 +43,7 @@ pub fn run_platform_up(args: PlatformUpArgs) -> Result<()> {
     match health {
         Ok(h) => {
             println!();
-            println!("✓ All services healthy!");
+            println!("âœ“ All services healthy!");
             println!();
             print_status_table_up(&h.services);
             println!();

@@ -4,6 +4,8 @@
 //! agents, creates PRs, and manages the review-fix loop.
 //! Traceability: FR-004, FR-010, FR-011, FR-012 / WP12-T069, T071, T072
 
+#![cfg(feature = "full-deps")]
+
 use std::collections::{HashMap, HashSet};
 
 use anyhow::{Context, Result};

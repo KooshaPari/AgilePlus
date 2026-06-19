@@ -67,11 +67,11 @@
 //! |--------|-----------|
 //! | `tasks.description` (truncated to 200ch) | `work_packages.title` |
 //! | `tasks.description` | `work_packages.acceptance_criteria` |
-//! | `tasks.status` (`ready/in_progress/done/...`) | mapped → `planned/doing/review/done/blocked` |
+//! | `tasks.status` (`ready/in_progress/done/...`) | mapped â†’ `planned/doing/review/done/blocked` |
 //! | `tasks.id` | kept as a side-band string in `file_scope` JSON to avoid an extra migration |
 //! | `tasks.subproject` | side-band in `file_scope` |
 //! | `tasks.stage` | `sequence` (0-based stage ordinal) |
-//! | `edges.from_task → to_task` | `wp_dependencies(wp_id → depends_on, dep_type='explicit')` |
+//! | `edges.from_task â†’ to_task` | `wp_dependencies(wp_id â†’ depends_on, dep_type='explicit')` |
 //!
 //! Traceability: FR-AGP-023 (dagctl import).
 
@@ -128,7 +128,7 @@ pub fn run(args: &ImportDagctlArgs) -> Result<()> {
     eprintln!("source: {src_count} tasks, {edge_count} edges");
 
     if args.dry_run {
-        eprintln!("dry run — not writing to {}", args.db.display());
+        eprintln!("dry run â€” not writing to {}", args.db.display());
         return Ok(());
     }
 
@@ -144,7 +144,7 @@ pub fn run(args: &ImportDagctlArgs) -> Result<()> {
     let feature_id = ensure_feature(&dest, &args.feature_slug, &args.feature_name)?;
     eprintln!("feature_id = {feature_id}");
 
-    // 4. Migrate tasks → work_packages (id-mapping for the dep re-encoding).
+    // 4. Migrate tasks â†’ work_packages (id-mapping for the dep re-encoding).
     let tx = dest.unchecked_transaction()?;
     let mut id_map: HashMap<String, i64> = HashMap::new();
     let now = chrono::Utc::now().to_rfc3339();
@@ -200,15 +200,15 @@ pub fn run(args: &ImportDagctlArgs) -> Result<()> {
         id_map.insert(id, wp_id);
         imported += 1;
         if args.verbose {
-            eprintln!("  task {imported:>5}: → wp#{wp_id} ({title})");
+            eprintln!("  task {imported:>5}: â†’ wp#{wp_id} ({title})");
         }
     }
     drop(rows);
     drop(src_stmt);
     drop(stmt);
-    eprintln!("imported {imported} tasks → work_packages");
+    eprintln!("imported {imported} tasks â†’ work_packages");
 
-    // 5. Migrate edges → wp_dependencies.
+    // 5. Migrate edges â†’ wp_dependencies.
     let mut dep_stmt = tx.prepare(
         "INSERT OR IGNORE INTO wp_dependencies (wp_id, depends_on, dep_type)
          VALUES (?, ?, ?)",
@@ -224,7 +224,7 @@ pub fn run(args: &ImportDagctlArgs) -> Result<()> {
             dep_stmt.execute(params![wp_id, dep_on, "explicit"])?;
             edges += 1;
             if args.verbose {
-                eprintln!("  edge {edges:>5}: {from} → {to} = wp#{wp_id} ← wp#{dep_on}");
+                eprintln!("  edge {edges:>5}: {from} â†’ {to} = wp#{wp_id} â†� wp#{dep_on}");
             }
         } else {
             missing += 1;
@@ -233,12 +233,12 @@ pub fn run(args: &ImportDagctlArgs) -> Result<()> {
     drop(edge_rows);
     drop(edges_stmt);
     drop(dep_stmt);
-    eprintln!("imported {edges} edges → wp_dependencies ({missing} dangling skipped)");
+    eprintln!("imported {edges} edges â†’ wp_dependencies ({missing} dangling skipped)");
 
     tx.commit().context("committing transaction")?;
 
     eprintln!(
-        "✓ import-dagctl complete: {imported} work_packages + {edges} wp_dependencies into {}",
+        "âœ“ import-dagctl complete: {imported} work_packages + {edges} wp_dependencies into {}",
         args.db.display()
     );
     Ok(())
@@ -299,7 +299,7 @@ fn map_dep_type_owned(s: &str) -> String {
     map_dep_type(s).to_string()
 }
 
-/// Derive a (≤200ch) work-package title from the dagctl description.
+/// Derive a (â‰¤200ch) work-package title from the dagctl description.
 /// Strategy: take the first sentence (up to first `.`, `:` or newline),
 /// collapse whitespace, then truncate to 200 chars. Falls back to the dagctl id.
 fn derive_title(description: &str, fallback_id: &str) -> String {
@@ -316,13 +316,13 @@ fn derive_title(description: &str, fallback_id: &str) -> String {
         return fallback_id.to_string();
     }
     if collapsed.len() > 200 {
-        format!("{}…", &collapsed[..199])
+        format!("{}â€¦", &collapsed[..199])
     } else {
         collapsed
     }
 }
 
-// ── Tests ────────────────────────────────────────────────────────────────────
+// â”€â”€ Tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 #[cfg(test)]
 mod tests {
@@ -353,7 +353,7 @@ mod tests {
         let long = "x".repeat(500);
         let t = derive_title(&long, "task-1");
         assert_eq!(t.chars().count(), 200);
-        assert!(t.ends_with('…'));
+        assert!(t.ends_with('â€¦'));
         assert_eq!(
             derive_title("First sentence. Second one.", "fb"),
             "First sentence"

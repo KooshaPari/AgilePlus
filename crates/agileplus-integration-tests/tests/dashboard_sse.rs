@@ -10,7 +10,7 @@ use agileplus_integration_tests::common::fixtures::feature_create_payload;
 use std::time::Duration;
 
 #[cfg(feature = "integration")]
-use agileplus_integration_tests::common::harness::{TestHarness, is_process_compose_installed};
+use agileplus_integration_tests::common::harness::{is_process_compose_installed, TestHarness};
 
 /// Helper: skip the test if services are unavailable.
 #[cfg(feature = "integration")]
@@ -26,7 +26,7 @@ macro_rules! require_services {
     };
 }
 
-/// SSE connection lifecycle: connect → trigger event → receive message.
+/// SSE connection lifecycle: connect â†’ trigger event â†’ receive message.
 ///
 /// Requires a running service stack.
 #[tokio::test]

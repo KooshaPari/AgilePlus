@@ -220,9 +220,7 @@ mod tests {
 
     #[test]
     fn tree_sitter_python_fallback() {
-        let src = "def foo(self):
-    return self.bar
-";
+        let src = "def foo(self):\n    return self.bar\n";
         let toks = TreeSitterTokenizer::tokenize(src, "python");
         assert!(toks
             .iter()

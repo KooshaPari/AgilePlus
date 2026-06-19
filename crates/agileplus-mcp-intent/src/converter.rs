@@ -228,7 +228,7 @@ fn decompose_features(prompt: &str, _slug: &str, max: usize) -> Vec<FeatureDraft
     let lower = prompt.to_lowercase();
     let mut drafts: Vec<FeatureDraft> = vec![];
 
-    // Keyword → feature mapping
+    // Keyword â†’ feature mapping
     let mut checks: Vec<(&[&str], &str, &str, Vec<&str>)> = vec![
         (
             &["auth", "login", "sign in", "signin", "sso", "oauth"],
@@ -340,8 +340,7 @@ fn slugify(text: &str) -> String {
 
 fn extract_title(prompt: &str) -> String {
     let first = prompt.split('.').next().unwrap_or(prompt);
-    let first = first.split('
-').next().unwrap_or(first);
+    let first = first.split('\n').next().unwrap_or(first);
     let first = first.trim();
     if first.len() > 80 {
         format!("{}...", &first[..77])
@@ -352,8 +351,7 @@ fn extract_title(prompt: &str) -> String {
 
 fn title_from_prompt(prompt: &str) -> String {
     let first = prompt.split('.').next().unwrap_or(prompt);
-    let first = first.split('
-').next().unwrap_or(first);
+    let first = first.split('\n').next().unwrap_or(first);
     let first = first.trim();
     if first.len() > 60 {
         format!("{}...", &first[..57])

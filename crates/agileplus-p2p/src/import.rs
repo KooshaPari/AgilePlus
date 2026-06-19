@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! Git-backed state import — read deterministic files back into the event store.
+//! Git-backed state import â€” read deterministic files back into the event store.
 //!
 //! Reads from the same layout written by `export.rs`:
-//!   events/{entity_type}/{id}.jsonl  — JSONL, one event per line
-//!   snapshots/{entity_type}/{id}.json — latest snapshot (pretty JSON)
-//!   sync_state.json                  — SyncMapping entries and device sync vectors
+//!   events/{entity_type}/{id}.jsonl  â€” JSONL, one event per line
+//!   snapshots/{entity_type}/{id}.json â€” latest snapshot (pretty JSON)
+//!   sync_state.json                  â€” SyncMapping entries and device sync vectors
 //!
 //! Skips duplicate events by hash comparison.  All events are collected before
 //! any are applied (transaction-like semantics).
@@ -21,7 +21,7 @@ use agileplus_events::snapshot::SnapshotStore;
 use agileplus_events::store::EventStore;
 use tracing::{debug, warn};
 
-// ── Error ─────────────────────────────────────────────────────────────────────
+// â”€â”€ Error â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 #[derive(Debug, thiserror::Error)]
 pub enum ImportError {
@@ -41,7 +41,7 @@ pub enum ImportError {
     SnapshotStore(String),
 }
 
-// ── Stats ─────────────────────────────────────────────────────────────────────
+// â”€â”€ Stats â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /// Statistics returned after a successful import.
 #[derive(Debug, Default, Clone)]
@@ -52,7 +52,7 @@ pub struct ImportStats {
     pub duration_ms: u64,
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /// Read all `.jsonl` files recursively under `events_dir` and parse them into
 /// `Event` values.  Returns them grouped as a flat Vec sorted by sequence.
@@ -167,7 +167,7 @@ fn read_sync_mappings(sync_state_path: &Path) -> Result<Vec<SyncMapping>, Import
     Ok(mappings)
 }
 
-// ── Core import function ──────────────────────────────────────────────────────
+// â”€â”€ Core import function â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /// Import state from `input_dir` into the provided stores.
 ///
@@ -185,7 +185,7 @@ where
     let started = Instant::now();
     let mut stats = ImportStats::default();
 
-    // ── Collect phase ─────────────────────────────────────────────────────────
+    // â”€â”€ Collect phase â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     let all_events = read_events_from_dir(&input_dir.join("events"))?;
     let all_snapshots = read_snapshots_from_dir(&input_dir.join("snapshots"))?;
     let all_mappings = read_sync_mappings(&input_dir.join("sync_state.json"))?;
@@ -198,7 +198,7 @@ where
         input_dir.display()
     );
 
-    // ── Apply events (skip duplicates by hash) ────────────────────────────────
+    // â”€â”€ Apply events (skip duplicates by hash) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     for event in &all_events {
         // Check whether this sequence already exists for the entity stream.
         let latest_seq = event_store
@@ -233,7 +233,7 @@ where
         stats.events_imported += 1;
     }
 
-    // ── Apply snapshots (latest-wins by event_sequence) ───────────────────────
+    // â”€â”€ Apply snapshots (latest-wins by event_sequence) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     for snapshot in &all_snapshots {
         // Load existing snapshot for this entity to compare sequences.
         let existing = snapshot_store
@@ -268,7 +268,7 @@ where
     Ok(stats)
 }
 
-// ── Tests ─────────────────────────────────────────────────────────────────────
+// â”€â”€ Tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 #[cfg(test)]
 mod tests {
@@ -283,7 +283,7 @@ mod tests {
     use async_trait::async_trait;
     use chrono::Utc;
 
-    // ── Shared in-memory stores (mirrors export tests) ────────────────────────
+    // â”€â”€ Shared in-memory stores (mirrors export tests) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     #[derive(Default)]
     struct MemEventStore {
@@ -398,7 +398,7 @@ mod tests {
         }
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
+    // â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     fn make_event(entity_type: &str, entity_id: i64, sequence: i64) -> Event {
         let mut e = Event::new(
@@ -412,7 +412,7 @@ mod tests {
         e
     }
 
-    // ── Tests ─────────────────────────────────────────────────────────────────
+    // â”€â”€ Tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     #[tokio::test]
     async fn import_new_events() {

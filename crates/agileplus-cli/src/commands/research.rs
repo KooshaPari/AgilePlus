@@ -268,7 +268,7 @@ async fn scan_directory_structure<V: VcsPort>(vcs: &V) -> String {
 async fn detect_technologies<V: VcsPort>(_vcs: &V) -> String {
     // In a real implementation we'd probe for Cargo.toml, package.json, etc.
     // For now, return a static placeholder since we'd need filesystem access.
-    "(technology detection requires filesystem access — run from project root)".to_string()
+    "(technology detection requires filesystem access â€” run from project root)".to_string()
 }
 
 /// List existing spec files.
@@ -287,7 +287,7 @@ async fn list_existing_specs<V: VcsPort>(vcs: &V) -> String {
 
 /// Analyze existing code for potential conflicts.
 async fn analyze_existing_code<V: VcsPort>(_vcs: &V, _slug: &str) -> String {
-    "(static analysis not yet implemented — manual review recommended)".to_string()
+    "(static analysis not yet implemented â€” manual review recommended)".to_string()
 }
 
 /// Count occurrences of a pattern in content.

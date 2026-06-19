@@ -3,7 +3,7 @@
 //!
 //! Ingests the six FR/NFR catalogs (AgilePlus, Tracera, phenotype-voxel, Authvault,
 //! PhenoMCP, PhenoObservability) as Epics + Stories into an AgilePlus SQLite database,
-//! each cross-referencing its Tracera Requirement ID.  Idempotent — safe to run multiple times.
+//! each cross-referencing its Tracera Requirement ID.  Idempotent â€” safe to run multiple times.
 
 use std::path::PathBuf;
 
@@ -11,10 +11,10 @@ use clap::Args;
 
 use agileplus_sqlite::seed::{seed_requirements, Initiative};
 
-/// Embedded catalog markdown files — bundled at compile time.
+/// Embedded catalog markdown files â€” bundled at compile time.
 /// Paths are relative to this source file:
 ///   crates/agileplus-cli/src/commands/seed_requirements.rs
-///   → up 4 dirs → workspace root → docs/requirements/
+///   â†’ up 4 dirs â†’ workspace root â†’ docs/requirements/
 const AGILEPLUS_CATALOG: &str = include_str!("../../../../docs/requirements/agileplus-frnfr.md");
 const TRACERA_CATALOG: &str = include_str!("../../../../docs/requirements/tracera-frnfr.md");
 const PHENOTYPE_VOXEL_CATALOG: &str =
@@ -88,8 +88,7 @@ pub fn run(args: &SeedRequirementsArgs) -> anyhow::Result<()> {
     if args.verbose {
         for init in &report.initiatives {
             println!(
-                "
-  Epic [{}] id={}",
+                "\n  Epic [{}] id={}",
                 init.epic_requirement_id, init.epic_id
             );
             for s in &init.stories {

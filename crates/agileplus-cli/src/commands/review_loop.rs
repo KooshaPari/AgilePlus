@@ -120,7 +120,7 @@ pub fn format_feedback(comments: &[String]) -> String {
     let items: Vec<String> = comments
         .iter()
         .enumerate()
-        .map(|(i, c)| format!("{}. {}", i + 1, c))
+        .map(|(i, c)| format!("{}. {c}", i + 1))
         .collect();
     format!(
         "Please address the following review comments:\n\n{}\n",

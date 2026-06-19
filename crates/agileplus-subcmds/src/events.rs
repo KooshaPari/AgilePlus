@@ -172,7 +172,7 @@ pub fn render_table(events: &[EventRecord]) -> String {
         "{:<21} | {:<17} | {:<18} | {:<11} | {}\n",
         "Time", "Entity", "Type", "Actor", "Summary"
     );
-    out.push_str(&"─".repeat(89));
+    out.push_str(&"â”€".repeat(89));
     out.push('\n');
     for e in events {
         let ts = e.timestamp.format("%Y-%m-%d %H:%M:%S").to_string();
@@ -234,7 +234,7 @@ pub fn run_events(args: EventsArgs) -> anyhow::Result<()> {
     Ok(())
 }
 
-/// Stub event loader — returns a small canned dataset for tests and demos.
+/// Stub event loader â€” returns a small canned dataset for tests and demos.
 fn load_events_stub() -> Vec<EventRecord> {
     use chrono::TimeZone;
     vec![
@@ -255,7 +255,7 @@ fn load_events_stub() -> Vec<EventRecord> {
             entity_type: "work-package".to_string(),
             entity_id: 8,
             actor: "sync-oracle".to_string(),
-            summary: "database-schema: specified → implementing".to_string(),
+            summary: "database-schema: specified â†’ implementing".to_string(),
             payload: serde_json::json!({"from": "specified", "to": "implementing"}),
         },
         EventRecord {
@@ -285,7 +285,7 @@ fn load_events_stub() -> Vec<EventRecord> {
             entity_type: "feature".to_string(),
             entity_id: 3,
             actor: "system".to_string(),
-            summary: "api-design: researched → specified".to_string(),
+            summary: "api-design: researched â†’ specified".to_string(),
             payload: serde_json::json!({"from": "researched", "to": "specified"}),
         },
     ]

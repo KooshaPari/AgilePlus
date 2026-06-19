@@ -1,6 +1,6 @@
 //! Anti-pattern detector binary.
 //!
-//! Implements §3 of `docs/ai-dd-governance.md`. Walks Rust source files in a
+//! Implements Â§3 of `docs/ai-dd-governance.md`. Walks Rust source files in a
 //! target repo and emits a JSON report of detected anti-patterns. Exits
 //! non-zero if any HIGH severity findings.
 //!
@@ -216,12 +216,12 @@ fn is_lib_path(p: &Path) -> bool {
 }
 
 fn strip_call<'a>(line: &'a str, fn_name: &str) -> Option<&'a str> {
-    let needle = format!(".{}", fn_name);
+    let needle = format!(".{fn_name}");
     let pos = line.find(&needle)?;
     let rest = &line[pos + needle.len()..];
     // require opening paren
     let rest = rest.strip_prefix('(')?;
-    // find matching close paren — simplified: scan to next `)`
+    // find matching close paren â€” simplified: scan to next `)`
     let end = rest.find(')')?;
     Some(&rest[..end])
 }

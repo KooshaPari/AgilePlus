@@ -69,7 +69,7 @@ pub async fn run_sync(args: &SyncArgs) -> anyhow::Result<()> {
 
     for peer in &target_peers {
         if args.verbose {
-            println!("Syncing with {} ({}) …", peer.device_id, peer.tailscale_ip);
+            println!("Syncing with {} ({}) â€¦", peer.device_id, peer.tailscale_ip);
         }
         let t0 = Instant::now();
 
@@ -116,7 +116,7 @@ pub async fn run_sync(args: &SyncArgs) -> anyhow::Result<()> {
     for r in &reports {
         let status_str = if r.success { "OK" } else { "FAILED" };
         println!(
-            "  {} {} — sent: {}, received: {}, conflicts: {}, {}ms [{}]",
+            "  {} {} â€” sent: {}, received: {}, conflicts: {}, {}ms [{}]",
             r.device_id,
             r.hostname,
             r.events_sent,

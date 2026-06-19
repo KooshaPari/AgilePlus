@@ -1,10 +1,10 @@
-//! Git-backed state export — serialize SQLite state to deterministic files.
+//! Git-backed state export â€” serialize SQLite state to deterministic files.
 //!
 //! Writes to `.agileplus/sync/` with the layout:
-//!   events/{entity_type}/{id}.jsonl  — one JSON per line, ordered by sequence
-//!   snapshots/{entity_type}/{id}.json — latest snapshot, pretty-printed sorted keys
-//!   sync_state.json                  — SyncMapping entries and device sync vectors
-//!   device.json                      — local DeviceNode info
+//!   events/{entity_type}/{id}.jsonl  â€” one JSON per line, ordered by sequence
+//!   snapshots/{entity_type}/{id}.json â€” latest snapshot, pretty-printed sorted keys
+//!   sync_state.json                  â€” SyncMapping entries and device sync vectors
+//!   device.json                      â€” local DeviceNode info
 //!
 //! All JSON uses sorted keys, 2-space indent, UTF-8.
 //!
@@ -18,15 +18,15 @@ use std::time::Instant;
 use agileplus_domain::domain::event::Event;
 use agileplus_domain::domain::snapshot::Snapshot;
 use agileplus_domain::domain::sync_mapping::SyncMapping;
-use agileplus_events::store::EventStore;
 use agileplus_events::snapshot::SnapshotStore;
+use agileplus_events::store::EventStore;
 use serde_json::Value;
 use tracing::debug;
 
 use crate::device::{DeviceNode, DeviceStore};
 use crate::error::ConnectionError;
 
-// ── Error ─────────────────────────────────────────────────────────────────────
+// â”€â”€ Error â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 #[derive(Debug, thiserror::Error)]
 pub enum ExportError {
@@ -49,7 +49,7 @@ pub enum ExportError {
     SyncStore(String),
 }
 
-// ── Stats ─────────────────────────────────────────────────────────────────────
+// â”€â”€ Stats â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /// Statistics returned after a successful export.
 #[derive(Debug, Default, Clone)]
@@ -60,7 +60,7 @@ pub struct ExportStats {
     pub duration_ms: u64,
 }
 
-// ── Entity registry helper ────────────────────────────────────────────────────
+// â”€â”€ Entity registry helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /// Describes a single (entity_type, entity_id) pair to export.
 #[derive(Debug, Clone)]
@@ -69,7 +69,7 @@ pub struct EntityRef {
     pub entity_id: i64,
 }
 
-// ── Sorted-key serialization helper ──────────────────────────────────────────
+// â”€â”€ Sorted-key serialization helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /// Recursively convert a `serde_json::Value` so that all Object variants use
 /// `BTreeMap` (which serializes with sorted keys).
@@ -95,16 +95,16 @@ fn to_sorted_line(v: Value) -> Result<String, serde_json::Error> {
     serde_json::to_string(&sorted)
 }
 
-// ── Core export function ──────────────────────────────────────────────────────
+// â”€â”€ Core export function â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /// Export all state to `output_dir` in a deterministic, git-friendly format.
 ///
 /// Parameters:
-/// - `entities` — the set of (entity_type, entity_id) pairs to export.  In a
+/// - `entities` â€” the set of (entity_type, entity_id) pairs to export.  In a
 ///   production system this would be retrieved from a catalog; here callers
 ///   supply it to keep the function generic over `EventStore` implementations.
-/// - `sync_mappings` — pre-fetched list of `SyncMapping` rows.
-/// - `sync_vector_json` — the current device sync vector serialized to JSON.
+/// - `sync_mappings` â€” pre-fetched list of `SyncMapping` rows.
+/// - `sync_vector_json` â€” the current device sync vector serialized to JSON.
 pub async fn export_state<ES, SS>(
     event_store: &ES,
     snapshot_store: &SS,
@@ -121,7 +121,7 @@ where
     let started = Instant::now();
     let mut stats = ExportStats::default();
 
-    // ── 1. Device info ────────────────────────────────────────────────────────
+    // â”€â”€ 1. Device info â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     let device_path = output_dir.join("device.json");
     if let Some(parent) = device_path.parent() {
         std::fs::create_dir_all(parent)?;
@@ -131,7 +131,7 @@ where
     std::fs::write(&device_path, to_sorted_pretty(device_json)?.as_bytes())?;
     debug!("Wrote device.json");
 
-    // ── 2. Events + snapshots ─────────────────────────────────────────────────
+    // â”€â”€ 2. Events + snapshots â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     for entity in entities {
         // Events
         let events: Vec<Event> = event_store
@@ -140,9 +140,7 @@ where
             .map_err(|e| ExportError::EventStore(e.to_string()))?;
 
         if !events.is_empty() {
-            let events_dir = output_dir
-                .join("events")
-                .join(&entity.entity_type);
+            let events_dir = output_dir.join("events").join(&entity.entity_type);
             std::fs::create_dir_all(&events_dir)?;
             let file_path = events_dir.join(format!("{}.jsonl", entity.entity_id));
             let mut file = std::fs::File::create(&file_path)?;
@@ -168,9 +166,7 @@ where
             .map_err(|e| ExportError::SnapshotStore(e.to_string()))?;
 
         if let Some(snap) = snapshot {
-            let snap_dir = output_dir
-                .join("snapshots")
-                .join(&entity.entity_type);
+            let snap_dir = output_dir.join("snapshots").join(&entity.entity_type);
             std::fs::create_dir_all(&snap_dir)?;
             let file_path = snap_dir.join(format!("{}.json", entity.entity_id));
             let snap_json = serde_json::to_value(&snap)?;
@@ -183,30 +179,29 @@ where
         }
     }
 
-    // ── 3. sync_state.json ────────────────────────────────────────────────────
+    // â”€â”€ 3. sync_state.json â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     let sync_state = serde_json::json!({
         "sync_mappings": sync_mappings,
         "sync_vector": sync_vector_json,
     });
     let sync_state_path = output_dir.join("sync_state.json");
-    std::fs::write(
-        &sync_state_path,
-        to_sorted_pretty(sync_state)?.as_bytes(),
-    )?;
+    std::fs::write(&sync_state_path, to_sorted_pretty(sync_state)?.as_bytes())?;
     stats.sync_mappings_exported = sync_mappings.len();
-    debug!("Wrote sync_state.json with {} mappings", sync_mappings.len());
+    debug!(
+        "Wrote sync_state.json with {} mappings",
+        sync_mappings.len()
+    );
 
     stats.duration_ms = started.elapsed().as_millis() as u64;
     Ok(stats)
 }
 
-// ── Tests ─────────────────────────────────────────────────────────────────────
+// â”€â”€ Tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::collections::HashMap;
-    use std::sync::{Arc, Mutex};
+    use std::sync::Mutex;
 
     use agileplus_domain::domain::event::Event;
     use agileplus_domain::domain::snapshot::Snapshot;
@@ -218,7 +213,7 @@ mod tests {
 
     use crate::device::InMemoryDeviceStore;
 
-    // ── Minimal in-memory EventStore ──────────────────────────────────────────
+    // â”€â”€ Minimal in-memory EventStore â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     #[derive(Default)]
     struct MemEventStore {
@@ -295,7 +290,7 @@ mod tests {
         }
     }
 
-    // ── Minimal in-memory SnapshotStore ───────────────────────────────────────
+    // â”€â”€ Minimal in-memory SnapshotStore â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     #[derive(Default)]
     struct MemSnapshotStore {
@@ -341,7 +336,13 @@ mod tests {
         let ds = InMemoryDeviceStore::default();
 
         // Seed one event
-        let mut ev = Event::new("Feature", 1, "created", serde_json::json!({"title": "T1"}), "test");
+        let mut ev = Event::new(
+            "Feature",
+            1,
+            "created",
+            serde_json::json!({"title": "T1"}),
+            "test",
+        );
         ev.sequence = 1;
         es.append(&ev).await.unwrap();
 
@@ -349,8 +350,20 @@ mod tests {
         let snap = Snapshot::new("Feature", 1, serde_json::json!({"title": "T1"}), 1);
         ss.save(&snap).await.unwrap();
 
-        let mappings = vec![SyncMapping::new("Feature", 1, "plane-001", "hash-aaa")];
-        let entities = vec![EntityRef { entity_type: "Feature".into(), entity_id: 1 }];
+        let mappings = vec![SyncMapping {
+            id: 0,
+            entity_type: "Feature".to_string(),
+            entity_id: 1,
+            plane_issue_id: "plane-001".to_string(),
+            content_hash: "hash-aaa".to_string(),
+            last_synced_at: chrono::Utc::now(),
+            sync_direction: agileplus_domain::domain::sync_mapping::SyncDirection::Bidirectional,
+            conflict_count: 0,
+        }];
+        let entities = vec![EntityRef {
+            entity_type: "Feature".into(),
+            entity_id: 1,
+        }];
 
         let stats = export_state(
             &es,

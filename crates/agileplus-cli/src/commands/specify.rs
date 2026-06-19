@@ -161,7 +161,7 @@ fn run_interview() -> Result<(String, String)> {
     let fr_lines: String = frs
         .iter()
         .enumerate()
-        .map(|(i, fr)| format!("- **FR-{}**: {}", i + 1, fr))
+        .map(|(i, fr)| format!("- **FR-{}**: {fr}", i + 1))
         .collect::<Vec<_>>()
         .join("\n");
 

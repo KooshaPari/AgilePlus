@@ -139,11 +139,11 @@ pub fn run_dashboard_open(port: u16) -> Result<()> {
 
     match open_browser(&url) {
         Ok(()) => {
-            println!("✓ Dashboard opened");
+            println!("âœ“ Dashboard opened");
             Ok(())
         }
         Err(_) => {
-            eprintln!("✗ Could not open browser automatically.");
+            eprintln!("âœ— Could not open browser automatically.");
             eprintln!("Manual URL: {url}");
             Ok(()) // Not a fatal error; user can copy the URL.
         }
@@ -214,7 +214,7 @@ mod tests {
 
     #[test]
     fn test_run_dashboard_open_fails_when_api_not_running() {
-        // Port 19998 — API not running, so we expect an Err.
+        // Port 19998 â€” API not running, so we expect an Err.
         let result = run_dashboard_open(19998);
         assert!(result.is_err());
     }
