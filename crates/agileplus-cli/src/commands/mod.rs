@@ -1,18 +1,41 @@
-pub mod branch;
-pub mod cycle;
-pub mod governance;
-pub mod implement;
+// SPDX-License-Identifier: MIT OR Apache-2.0
+// NOTE: Modules marked with `// STUB` have unresolved dependencies (missing
+// crate additions or missing domain types) and are temporarily excluded from
+// compilation until those upstream gaps are filled.  They are kept in the
+// source tree for reference.
+
+pub mod dag;
+pub mod dashboard;
+pub mod gate_add;
+pub mod gate_run;
+pub mod import_dagctl;
+pub mod intent;
 pub mod list;
-pub mod module;
-pub mod plan;
-pub mod pr_builder;
-pub mod queue;
-pub mod research;
-pub mod retrospective;
-pub mod review_loop;
-pub mod scheduler;
-pub mod scope;
-pub mod ship;
-pub mod specify;
+pub mod list_epics;
+pub mod list_projects;
+pub mod list_stories;
+pub mod list_tests;
+pub mod mvp;
+pub mod seed_requirements;
+pub mod trace;
 pub mod triage;
-pub mod validate;
+pub mod version;
+pub mod worklog;
+
+// ── stub modules (excluded until upstream deps are resolved) ──────────────────
+// pub mod branch;          // STUB: agileplus_events + missing VCS types
+// pub mod cycle;           // STUB: agileplus_plane dep missing
+// pub mod governance;      // STUB: incomplete
+// pub mod implement;       // STUB: agileplus_domain::ports::agent fields mismatch
+// pub mod module;          // STUB: agileplus_plane dep missing
+// pub mod plan;            // STUB: incomplete
+// pub mod pr_builder;      // STUB: incomplete
+// pub mod queue;           // STUB: agileplus_triage dep missing
+// pub mod research;        // STUB: incomplete
+// pub mod retrospective;   // STUB: agileplus_events dep missing
+// pub mod review_loop;     // STUB: agent port field mismatch
+// pub mod scheduler;       // STUB: incomplete
+// pub mod scope;           // STUB: incomplete
+// pub mod ship;            // STUB: agileplus_events dep missing
+// pub mod specify;         // STUB: similar dep missing
+// pub mod validate;        // STUB: agileplus_events dep missing

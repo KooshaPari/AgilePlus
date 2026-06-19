@@ -1,4 +1,5 @@
 name: Testing Infrastructure
+permissions: read-all
 
 on:
   push:

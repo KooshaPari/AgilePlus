@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 use async_trait::async_trait;
 use std::collections::HashMap;
 use std::sync::Mutex;
@@ -123,6 +124,14 @@ impl GraphStore for InMemoryGraphStore {
     }
 
     async fn health_check(&self) -> Result<(), GraphError> {
+        let _guard = self
+            .nodes
+            .lock()
+            .map_err(|e| GraphError::ConnectionError(format!("node store poisoned: {e}")))?;
+        let _guard = self
+            .relationships
+            .lock()
+            .map_err(|e| GraphError::ConnectionError(format!("relationship store poisoned: {e}")))?;
         Ok(())
     }
 }

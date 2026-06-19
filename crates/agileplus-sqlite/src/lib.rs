@@ -1,11 +1,15 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! AgilePlus SQLite adapter — persistence layer.
 //!
 //! Implements `StoragePort` using rusqlite with WAL mode and foreign keys.
 //! Traceability: WP06
 
+pub mod event_store;
 pub mod migrations;
 pub mod rebuild;
 pub mod repository;
+pub mod seed;
+pub mod triage;
 
 use std::path::Path;
 use std::sync::{Arc, Mutex};
@@ -17,27 +21,27 @@ use agileplus_domain::{
         audit::AuditEntry,
         backlog::{BacklogFilters, BacklogItem, BacklogPriority, BacklogStatus},
         cycle::{Cycle, CycleFeature, CycleState, CycleWithFeatures},
+        epic::{Epic, EpicStatus},
         feature::Feature,
         governance::{Evidence, GovernanceContract, PolicyRule},
         metric::Metric,
         module::{Module, ModuleFeatureTag, ModuleWithFeatures},
         state_machine::FeatureState,
+        story::{Story, StoryStatus},
+        user::{User, UserRole, UserStatus},
         work_package::{WorkPackage, WpDependency, WpState},
     },
     error::DomainError,
     ports::{ContentStoragePort, StoragePort},
 };
 
-use agileplus_domain::domain::event::Event;
-use agileplus_events::{EventError, EventStore};
-
 use crate::migrations::MigrationRunner;
 use agileplus_domain::domain::project::Project;
 use agileplus_domain::domain::sync_mapping::SyncMapping;
 
 use crate::repository::{
-    audit, backlog, cycles, events, evidence, features, governance, metrics, modules, projects,
-    sync_mappings, work_packages,
+    audit, backlog, cycles, epics, evidence, features, governance, metrics, modules, projects,
+    stories, sync_mappings, users, work_packages,
 };
 
 /// SQLite-backed storage adapter.
@@ -48,25 +52,30 @@ pub struct SqliteStorageAdapter {
     conn: Arc<Mutex<Connection>>,
 }
 
+pub use triage::SqliteTriageAdapter;
+
 impl SqliteStorageAdapter {
     /// Open a file-backed database, enable WAL + FK pragma, and run all migrations.
     pub fn new(db_path: &Path) -> Result<Self, DomainError> {
         let conn = Connection::open(db_path)
             .map_err(|e| DomainError::Storage(format!("failed to open db: {e}")))?;
-        Self::configure_and_migrate(conn)
+        Self::configure_and_migrate(conn, true)
     }
 
     /// Open an in-memory database (for tests).
     pub fn in_memory() -> Result<Self, DomainError> {
         let conn = Connection::open_in_memory()
             .map_err(|e| DomainError::Storage(format!("failed to open in-memory db: {e}")))?;
-        Self::configure_and_migrate(conn)
+        Self::configure_and_migrate(conn, false)
     }
 
-    fn configure_and_migrate(conn: Connection) -> Result<Self, DomainError> {
-        // Enable WAL mode for concurrent reads
-        conn.execute_batch("PRAGMA journal_mode=WAL;")
-            .map_err(|e| DomainError::Storage(format!("WAL pragma failed: {e}")))?;
+    fn configure_and_migrate(conn: Connection, enable_wal: bool) -> Result<Self, DomainError> {
+        // Enable WAL mode for file-backed databases (not applicable to in-memory).
+        // WAL mode doesn't work reliably with in-memory databases, so skip it for tests.
+        if enable_wal {
+            conn.execute_batch("PRAGMA journal_mode=WAL;")
+                .map_err(|e| DomainError::Storage(format!("WAL pragma failed: {e}")))?;
+        }
 
         // Enable foreign key enforcement
         conn.execute_batch("PRAGMA foreign_keys=ON;")
@@ -98,6 +107,7 @@ impl SqliteStorageAdapter {
     }
 }
 
+#[async_trait::async_trait]
 impl StoragePort for SqliteStorageAdapter {
     // -- Feature CRUD --
 
@@ -121,6 +131,11 @@ impl StoragePort for SqliteStorageAdapter {
         features::update_feature_state(&conn, id, state)
     }
 
+    async fn update_feature(&self, feature: &Feature) -> Result<(), DomainError> {
+        let conn = self.lock()?;
+        features::update_feature(&conn, feature)
+    }
+
     async fn list_features_by_state(
         &self,
         state: FeatureState,
@@ -132,6 +147,11 @@ impl StoragePort for SqliteStorageAdapter {
     async fn list_all_features(&self) -> Result<Vec<Feature>, DomainError> {
         let conn = self.lock()?;
         features::list_all_features(&conn)
+    }
+
+    async fn list_features_by_label(&self, label: &str) -> Result<Vec<Feature>, DomainError> {
+        let conn = self.lock()?;
+        features::list_features_by_label(&conn, label)
     }
 
     // -- Work Package CRUD --
@@ -169,6 +189,38 @@ impl StoragePort for SqliteStorageAdapter {
     async fn get_ready_wps(&self, feature_id: i64) -> Result<Vec<WorkPackage>, DomainError> {
         let conn = self.lock()?;
         work_packages::get_ready_wps(&conn, feature_id)
+    }
+
+    async fn create_work_package_for_story(
+        &self,
+        story_id: i64,
+        wp: &WorkPackage,
+    ) -> Result<i64, DomainError> {
+        let conn = self.lock()?;
+        work_packages::create_work_package_for_story(&conn, story_id, wp)
+    }
+
+    async fn list_wps_by_story(&self, story_id: i64) -> Result<Vec<WorkPackage>, DomainError> {
+        let conn = self.lock()?;
+        work_packages::list_wps_by_story(&conn, story_id)
+    }
+
+    async fn list_all_work_packages(&self) -> Result<Vec<WorkPackage>, DomainError> {
+        let conn = self.lock()?;
+        work_packages::list_all_work_packages(&conn)
+    }
+
+    async fn get_next_ready_wps(
+        &self,
+        cycle: Option<i64>,
+    ) -> Result<Vec<WorkPackage>, DomainError> {
+        let conn = self.lock()?;
+        work_packages::get_next_ready_wps(&conn, cycle)
+    }
+
+    async fn add_story_to_cycle(&self, cycle_id: i64, story_id: i64) -> Result<(), DomainError> {
+        let conn = self.lock()?;
+        cycles::add_story_to_cycle(&conn, cycle_id, story_id)
     }
 
     // -- Audit CRUD --
@@ -419,59 +471,124 @@ impl StoragePort for SqliteStorageAdapter {
         projects::get_project_by_slug(&conn, slug)
     }
 
-    async fn list_all_projects(&self) -> Result<Vec<agileplus_domain::domain::project::Project>, DomainError> {
-        Err(DomainError::NotImplemented)
+    async fn get_project_by_id(&self, id: i64) -> Result<Option<Project>, DomainError> {
+        let conn = self.lock()?;
+        projects::get_project_by_id(&conn, id)
     }
 
-    async fn create_epic(&self, _epic: &agileplus_domain::domain::epic::Epic) -> Result<i64, DomainError> {
-        Err(DomainError::NotImplemented)
+    async fn list_all_projects(&self) -> Result<Vec<Project>, DomainError> {
+        let conn = self.lock()?;
+        projects::list_all_projects(&conn)
     }
 
-    async fn get_epic(&self, _id: i64) -> Result<Option<agileplus_domain::domain::epic::Epic>, DomainError> {
-        Err(DomainError::NotImplemented)
+    async fn delete_project(&self, id: i64) -> Result<(), DomainError> {
+        let conn = self.lock()?;
+        projects::delete_project(&conn, id)
     }
 
-    async fn list_epics_by_project(&self, _project_id: i64) -> Result<Vec<agileplus_domain::domain::epic::Epic>, DomainError> {
-        Err(DomainError::NotImplemented)
+    // -- User CRUD --
+
+    async fn create_user(&self, user: &User) -> Result<i64, DomainError> {
+        let conn = self.lock()?;
+        users::create_user(&conn, user)
     }
 
-    async fn update_epic_status(&self, _id: i64, _status: agileplus_domain::domain::epic::EpicStatus) -> Result<(), DomainError> {
-        Err(DomainError::NotImplemented)
+    async fn get_user_by_id(&self, id: i64) -> Result<Option<User>, DomainError> {
+        let conn = self.lock()?;
+        users::get_user_by_id(&conn, id)
     }
 
-    async fn create_story(&self, _story: &agileplus_domain::domain::story::Story) -> Result<i64, DomainError> {
-        Err(DomainError::NotImplemented)
+    async fn get_user_by_email(&self, email: &str) -> Result<Option<User>, DomainError> {
+        let conn = self.lock()?;
+        users::get_user_by_email(&conn, email)
     }
 
-    async fn get_story(&self, _id: i64) -> Result<Option<agileplus_domain::domain::story::Story>, DomainError> {
-        Err(DomainError::NotImplemented)
+    async fn update_user_status(&self, id: i64, status: UserStatus) -> Result<(), DomainError> {
+        let conn = self.lock()?;
+        users::update_user_status(&conn, id, status)
     }
 
-    async fn list_stories_by_epic(&self, _epic_id: i64) -> Result<Vec<agileplus_domain::domain::story::Story>, DomainError> {
-        Err(DomainError::NotImplemented)
+    async fn update_user_role(&self, id: i64, role: UserRole) -> Result<(), DomainError> {
+        let conn = self.lock()?;
+        users::update_user_role(&conn, id, role)
     }
 
-    async fn update_story_status(&self, _id: i64, _status: agileplus_domain::domain::story::StoryStatus) -> Result<(), DomainError> {
-        Err(DomainError::NotImplemented)
+    async fn list_all_users(&self) -> Result<Vec<User>, DomainError> {
+        let conn = self.lock()?;
+        users::list_all_users(&conn)
     }
 
-    async fn create_user(&self, _user: &agileplus_domain::domain::user::User) -> Result<i64, DomainError> {
-        Err(DomainError::NotImplemented)
+    async fn delete_user(&self, id: i64) -> Result<(), DomainError> {
+        let conn = self.lock()?;
+        users::delete_user(&conn, id)
     }
 
-    async fn get_user(&self, _id: i64) -> Result<Option<agileplus_domain::domain::user::User>, DomainError> {
-        Err(DomainError::NotImplemented)
+    // -- Epic CRUD --
+
+    async fn create_epic(&self, epic: &Epic) -> Result<i64, DomainError> {
+        let conn = self.lock()?;
+        epics::create_epic(&conn, epic)
     }
 
-    async fn get_user_by_email(&self, _email: &str) -> Result<Option<agileplus_domain::domain::user::User>, DomainError> {
-        Err(DomainError::NotImplemented)
+    async fn get_epic_by_id(&self, id: i64) -> Result<Option<Epic>, DomainError> {
+        let conn = self.lock()?;
+        epics::get_epic_by_id(&conn, id)
     }
 
-    async fn list_all_users(&self) -> Result<Vec<agileplus_domain::domain::user::User>, DomainError> {
-        Err(DomainError::NotImplemented)
+    async fn update_epic_status(&self, id: i64, status: EpicStatus) -> Result<(), DomainError> {
+        let conn = self.lock()?;
+        epics::update_epic_status(&conn, id, status)
+    }
+
+    async fn list_epics_by_project(&self, project_id: i64) -> Result<Vec<Epic>, DomainError> {
+        let conn = self.lock()?;
+        epics::list_epics_by_project(&conn, project_id)
+    }
+
+    async fn delete_epic(&self, id: i64) -> Result<(), DomainError> {
+        let conn = self.lock()?;
+        epics::delete_epic(&conn, id)
+    }
+
+    // -- Story CRUD --
+
+    async fn create_story(&self, story: &Story) -> Result<i64, DomainError> {
+        let conn = self.lock()?;
+        stories::create_story(&conn, story)
+    }
+
+    async fn get_story_by_id(&self, id: i64) -> Result<Option<Story>, DomainError> {
+        let conn = self.lock()?;
+        stories::get_story_by_id(&conn, id)
+    }
+
+    async fn update_story_status(&self, id: i64, status: StoryStatus) -> Result<(), DomainError> {
+        let conn = self.lock()?;
+        stories::update_story_status(&conn, id, status)
+    }
+
+    async fn list_stories_by_epic(&self, epic_id: i64) -> Result<Vec<Story>, DomainError> {
+        let conn = self.lock()?;
+        stories::list_stories_by_epic(&conn, epic_id)
+    }
+
+    async fn list_stories_by_project(&self, project_id: i64) -> Result<Vec<Story>, DomainError> {
+        let conn = self.lock()?;
+        stories::list_stories_by_project(&conn, project_id)
+    }
+
+    async fn delete_story(&self, id: i64) -> Result<(), DomainError> {
+        let conn = self.lock()?;
+        stories::delete_story(&conn, id)
+    }
+
+    async fn upsert_story_by_requirement_id(&self, story: &Story) -> Result<i64, DomainError> {
+        let conn = self.lock()?;
+        stories::upsert_story_by_requirement_id(&conn, story)
     }
 }
 
+#[async_trait::async_trait]
 impl ContentStoragePort for SqliteStorageAdapter {
     async fn create_feature(&self, feature: &Feature) -> Result<i64, DomainError> {
         let conn = self.lock()?;
@@ -509,6 +626,11 @@ impl ContentStoragePort for SqliteStorageAdapter {
     async fn list_all_features(&self) -> Result<Vec<Feature>, DomainError> {
         let conn = self.lock()?;
         features::list_all_features(&conn)
+    }
+
+    async fn list_features_by_label(&self, label: &str) -> Result<Vec<Feature>, DomainError> {
+        let conn = self.lock()?;
+        features::list_features_by_label(&conn, label)
     }
 
     async fn create_backlog_item(&self, item: &BacklogItem) -> Result<i64, DomainError> {
@@ -593,78 +715,11 @@ impl ContentStoragePort for SqliteStorageAdapter {
     }
 }
 
-#[async_trait::async_trait]
-impl EventStore for SqliteStorageAdapter {
-    async fn append(&self, event: &Event) -> Result<i64, EventError> {
-        let conn = self
-            .lock()
-            .map_err(|e| EventError::StorageError(e.to_string()))?;
-        events::append_event(&conn, event).map_err(|e| EventError::StorageError(e.to_string()))
-    }
-
-    async fn get_events(
-        &self,
-        entity_type: &str,
-        entity_id: i64,
-    ) -> Result<Vec<Event>, EventError> {
-        let conn = self
-            .lock()
-            .map_err(|e| EventError::StorageError(e.to_string()))?;
-        events::get_events(&conn, entity_type, entity_id)
-            .map_err(|e| EventError::StorageError(e.to_string()))
-    }
-
-    async fn get_events_since(
-        &self,
-        entity_type: &str,
-        entity_id: i64,
-        sequence: i64,
-    ) -> Result<Vec<Event>, EventError> {
-        let conn = self
-            .lock()
-            .map_err(|e| EventError::StorageError(e.to_string()))?;
-        events::get_events_since(&conn, entity_type, entity_id, sequence)
-            .map_err(|e| EventError::StorageError(e.to_string()))
-    }
-
-    async fn get_events_by_range(
-        &self,
-        entity_type: &str,
-        entity_id: i64,
-        from: chrono::DateTime<chrono::Utc>,
-        to: chrono::DateTime<chrono::Utc>,
-    ) -> Result<Vec<Event>, EventError> {
-        let conn = self
-            .lock()
-            .map_err(|e| EventError::StorageError(e.to_string()))?;
-        events::get_events_by_range(
-            &conn,
-            entity_type,
-            entity_id,
-            &from.to_rfc3339(),
-            &to.to_rfc3339(),
-        )
-        .map_err(|e| EventError::StorageError(e.to_string()))
-    }
-
-    async fn get_latest_sequence(
-        &self,
-        entity_type: &str,
-        entity_id: i64,
-    ) -> Result<i64, EventError> {
-        let conn = self
-            .lock()
-            .map_err(|e| EventError::StorageError(e.to_string()))?;
-        events::get_latest_sequence(&conn, entity_type, entity_id)
-            .map_err(|e| EventError::StorageError(e.to_string()))
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use agileplus_domain::domain::{
-        audit::{AuditEntry, hash_entry},
+        audit::{hash_entry, AuditEntry},
         feature::Feature,
         governance::{
             Evidence, EvidenceType, GovernanceContract, GovernanceRule, PolicyCheck,
@@ -678,6 +733,10 @@ mod tests {
     fn make_adapter() -> SqliteStorageAdapter {
         SqliteStorageAdapter::in_memory().expect("in-memory adapter")
     }
+
+    // MVP story-WP integration tests (story_work_packages + next-ready).
+    #[path = "../lib/tests/mvp_story_work_packages.rs"]
+    mod mvp_story_work_packages;
 
     // -- Feature tests --
 
@@ -985,12 +1044,10 @@ mod tests {
             .await
             .unwrap();
 
-        assert!(
-            StoragePort::get_latest_audit_entry(&db, fid)
-                .await
-                .unwrap()
-                .is_none()
-        );
+        assert!(StoragePort::get_latest_audit_entry(&db, fid)
+            .await
+            .unwrap()
+            .is_none());
 
         let e1 = make_audit_entry(fid, [0u8; 32]);
         StoragePort::append_audit_entry(&db, &e1).await.unwrap();
@@ -1242,12 +1299,10 @@ mod tests {
     async fn module_not_found_returns_none() {
         let db = make_adapter();
         assert!(StoragePort::get_module(&db, 9999).await.unwrap().is_none());
-        assert!(
-            StoragePort::get_module_by_slug(&db, "no-such")
-                .await
-                .unwrap()
-                .is_none()
-        );
+        assert!(StoragePort::get_module_by_slug(&db, "no-such")
+            .await
+            .unwrap()
+            .is_none());
     }
 
     #[tokio::test]
@@ -1374,12 +1429,10 @@ mod tests {
     #[tokio::test]
     async fn module_get_with_features_none_for_missing() {
         let db = make_adapter();
-        assert!(
-            StoragePort::get_module_with_features(&db, 9999)
-                .await
-                .unwrap()
-                .is_none()
-        );
+        assert!(StoragePort::get_module_with_features(&db, 9999)
+            .await
+            .unwrap()
+            .is_none());
     }
 
     // -- Cycle tests --
@@ -1538,12 +1591,10 @@ mod tests {
     #[tokio::test]
     async fn cycle_with_features_none_for_missing() {
         let db = make_adapter();
-        assert!(
-            StoragePort::get_cycle_with_features(&db, 9999)
-                .await
-                .unwrap()
-                .is_none()
-        );
+        assert!(StoragePort::get_cycle_with_features(&db, 9999)
+            .await
+            .unwrap()
+            .is_none());
     }
 
     #[tokio::test]
@@ -1630,5 +1681,470 @@ mod tests {
         assert_eq!(cwf.wp_progress.total, 2);
         assert_eq!(cwf.wp_progress.planned, 1);
         assert_eq!(cwf.wp_progress.done, 1);
+    }
+
+    // -- Project extended tests --
+
+    #[tokio::test]
+    async fn project_create_and_get_by_slug() {
+        let db = make_adapter();
+        let p = Project::new("Test Project", "test-project").unwrap();
+        let id = StoragePort::create_project(&db, &p).await.unwrap();
+        assert!(id > 0);
+        let got = StoragePort::get_project_by_slug(&db, "test-project")
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(got.id, id);
+        assert_eq!(got.name, "Test Project");
+    }
+
+    #[tokio::test]
+    async fn project_get_by_id() {
+        let db = make_adapter();
+        let p = Project::new("Id Project", "id-project").unwrap();
+        let id = StoragePort::create_project(&db, &p).await.unwrap();
+        let got = StoragePort::get_project_by_id(&db, id)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(got.slug, "id-project");
+    }
+
+    #[tokio::test]
+    async fn project_list_all() {
+        let db = make_adapter();
+        StoragePort::create_project(&db, &Project::new("P1", "p1").unwrap())
+            .await
+            .unwrap();
+        StoragePort::create_project(&db, &Project::new("P2", "p2").unwrap())
+            .await
+            .unwrap();
+        let all = StoragePort::list_all_projects(&db).await.unwrap();
+        assert_eq!(all.len(), 2);
+    }
+
+    #[tokio::test]
+    async fn project_delete() {
+        let db = make_adapter();
+        let id = StoragePort::create_project(&db, &Project::new("Tmp", "tmp-del").unwrap())
+            .await
+            .unwrap();
+        StoragePort::delete_project(&db, id).await.unwrap();
+        assert!(StoragePort::get_project_by_id(&db, id)
+            .await
+            .unwrap()
+            .is_none());
+    }
+
+    // -- User tests --
+
+    use agileplus_domain::domain::user::{User, UserRole, UserStatus};
+
+    #[tokio::test]
+    async fn user_create_and_get_by_id() {
+        let db = make_adapter();
+        let u = User::new("Alice", "alice@example.com", UserRole::Member).unwrap();
+        let id = StoragePort::create_user(&db, &u).await.unwrap();
+        assert!(id > 0);
+        let got = StoragePort::get_user_by_id(&db, id).await.unwrap().unwrap();
+        assert_eq!(got.display_name, "Alice");
+        assert_eq!(got.email, "alice@example.com");
+        assert_eq!(got.role, UserRole::Member);
+        assert_eq!(got.status, UserStatus::Active);
+    }
+
+    #[tokio::test]
+    async fn user_get_by_email() {
+        let db = make_adapter();
+        let u = User::new("Bob", "bob@example.com", UserRole::Admin).unwrap();
+        let id = StoragePort::create_user(&db, &u).await.unwrap();
+        let got = StoragePort::get_user_by_email(&db, "bob@example.com")
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(got.id, id);
+        assert_eq!(got.role, UserRole::Admin);
+    }
+
+    #[tokio::test]
+    async fn user_not_found_returns_none() {
+        let db = make_adapter();
+        assert!(StoragePort::get_user_by_id(&db, 9999)
+            .await
+            .unwrap()
+            .is_none());
+        assert!(StoragePort::get_user_by_email(&db, "no@no.com")
+            .await
+            .unwrap()
+            .is_none());
+    }
+
+    #[tokio::test]
+    async fn user_update_status() {
+        let db = make_adapter();
+        let u = User::new("Carol", "carol@example.com", UserRole::Viewer).unwrap();
+        let id = StoragePort::create_user(&db, &u).await.unwrap();
+        StoragePort::update_user_status(&db, id, UserStatus::Inactive)
+            .await
+            .unwrap();
+        let got = StoragePort::get_user_by_id(&db, id).await.unwrap().unwrap();
+        assert_eq!(got.status, UserStatus::Inactive);
+    }
+
+    #[tokio::test]
+    async fn user_update_role() {
+        let db = make_adapter();
+        let u = User::new("Dave", "dave@example.com", UserRole::Viewer).unwrap();
+        let id = StoragePort::create_user(&db, &u).await.unwrap();
+        StoragePort::update_user_role(&db, id, UserRole::Admin)
+            .await
+            .unwrap();
+        let got = StoragePort::get_user_by_id(&db, id).await.unwrap().unwrap();
+        assert_eq!(got.role, UserRole::Admin);
+    }
+
+    #[tokio::test]
+    async fn user_list_all() {
+        let db = make_adapter();
+        StoragePort::create_user(&db, &User::new("U1", "u1@x.com", UserRole::Member).unwrap())
+            .await
+            .unwrap();
+        StoragePort::create_user(&db, &User::new("U2", "u2@x.com", UserRole::Member).unwrap())
+            .await
+            .unwrap();
+        let all = StoragePort::list_all_users(&db).await.unwrap();
+        assert_eq!(all.len(), 2);
+    }
+
+    #[tokio::test]
+    async fn user_delete() {
+        let db = make_adapter();
+        let id = StoragePort::create_user(
+            &db,
+            &User::new("Tmp", "tmp@x.com", UserRole::Viewer).unwrap(),
+        )
+        .await
+        .unwrap();
+        StoragePort::delete_user(&db, id).await.unwrap();
+        assert!(StoragePort::get_user_by_id(&db, id)
+            .await
+            .unwrap()
+            .is_none());
+    }
+
+    #[tokio::test]
+    async fn user_duplicate_email_fails() {
+        let db = make_adapter();
+        let u = User::new("Dup", "dup@x.com", UserRole::Member).unwrap();
+        StoragePort::create_user(&db, &u).await.unwrap();
+        assert!(StoragePort::create_user(&db, &u).await.is_err());
+    }
+
+    // -- Epic tests --
+
+    use agileplus_domain::domain::epic::{Epic, EpicStatus};
+
+    async fn make_project(db: &SqliteStorageAdapter) -> i64 {
+        StoragePort::create_project(
+            db,
+            &Project::new("Epic Project", "epic-project").unwrap(),
+        )
+        .await
+        .unwrap()
+    }
+
+    #[tokio::test]
+    async fn epic_create_and_get_by_id() {
+        let db = make_adapter();
+        let pid = make_project(&db).await;
+        let e = Epic::new(pid, "Auth Overhaul").unwrap();
+        let id = StoragePort::create_epic(&db, &e).await.unwrap();
+        assert!(id > 0);
+        let got = StoragePort::get_epic_by_id(&db, id).await.unwrap().unwrap();
+        assert_eq!(got.title, "Auth Overhaul");
+        assert_eq!(got.project_id, pid);
+        assert_eq!(got.status, EpicStatus::Backlog);
+    }
+
+    #[tokio::test]
+    async fn epic_not_found_returns_none() {
+        let db = make_adapter();
+        assert!(StoragePort::get_epic_by_id(&db, 9999)
+            .await
+            .unwrap()
+            .is_none());
+    }
+
+    #[tokio::test]
+    async fn epic_update_status() {
+        let db = make_adapter();
+        let pid = make_project(&db).await;
+        let e = Epic::new(pid, "Billing").unwrap();
+        let id = StoragePort::create_epic(&db, &e).await.unwrap();
+        StoragePort::update_epic_status(&db, id, EpicStatus::Active)
+            .await
+            .unwrap();
+        let got = StoragePort::get_epic_by_id(&db, id).await.unwrap().unwrap();
+        assert_eq!(got.status, EpicStatus::Active);
+    }
+
+    #[tokio::test]
+    async fn epic_list_by_project() {
+        let db = make_adapter();
+        let pid = StoragePort::create_project(
+            &db,
+            &Project::new("Proj for Epics", "proj-for-epics").unwrap(),
+        )
+        .await
+        .unwrap();
+        let pid2 =
+            StoragePort::create_project(&db, &Project::new("Other Proj", "other-proj").unwrap())
+                .await
+                .unwrap();
+        StoragePort::create_epic(&db, &Epic::new(pid, "E1").unwrap())
+            .await
+            .unwrap();
+        StoragePort::create_epic(&db, &Epic::new(pid, "E2").unwrap())
+            .await
+            .unwrap();
+        StoragePort::create_epic(&db, &Epic::new(pid2, "E3").unwrap())
+            .await
+            .unwrap();
+
+        let epics = StoragePort::list_epics_by_project(&db, pid).await.unwrap();
+        assert_eq!(epics.len(), 2);
+        assert!(epics.iter().all(|e| e.project_id == pid));
+    }
+
+    #[tokio::test]
+    async fn epic_delete() {
+        let db = make_adapter();
+        let pid =
+            StoragePort::create_project(&db, &Project::new("Del Proj", "del-proj-epic").unwrap())
+                .await
+                .unwrap();
+        let eid = StoragePort::create_epic(&db, &Epic::new(pid, "Temp Epic").unwrap())
+            .await
+            .unwrap();
+        StoragePort::delete_epic(&db, eid).await.unwrap();
+        assert!(StoragePort::get_epic_by_id(&db, eid)
+            .await
+            .unwrap()
+            .is_none());
+    }
+
+    // -- Story tests --
+
+    use agileplus_domain::domain::story::{Story, StoryStatus};
+
+    async fn make_project_and_epic(db: &SqliteStorageAdapter) -> (i64, i64) {
+        let pid = StoragePort::create_project(
+            db,
+            &Project::new("Story Project", "story-project").unwrap(),
+        )
+        .await
+        .unwrap();
+        let eid = StoragePort::create_epic(db, &Epic::new(pid, "Story Epic").unwrap())
+            .await
+            .unwrap();
+        (pid, eid)
+    }
+
+    #[tokio::test]
+    async fn story_create_and_get_by_id() {
+        let db = make_adapter();
+        let (pid, eid) = make_project_and_epic(&db).await;
+        let s = Story::new(eid, pid, "User can log in", Some(3)).unwrap();
+        let id = StoragePort::create_story(&db, &s).await.unwrap();
+        assert!(id > 0);
+        let got = StoragePort::get_story_by_id(&db, id)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(got.title, "User can log in");
+        assert_eq!(got.epic_id, eid);
+        assert_eq!(got.project_id, pid);
+        assert_eq!(got.points, Some(3));
+        assert_eq!(got.status, StoryStatus::Todo);
+    }
+
+    #[tokio::test]
+    async fn story_not_found_returns_none() {
+        let db = make_adapter();
+        assert!(StoragePort::get_story_by_id(&db, 9999)
+            .await
+            .unwrap()
+            .is_none());
+    }
+
+    #[tokio::test]
+    async fn story_update_status() {
+        let db = make_adapter();
+        let (pid, eid) = make_project_and_epic(&db).await;
+        let s = Story::new(eid, pid, "Login flow", None).unwrap();
+        let id = StoragePort::create_story(&db, &s).await.unwrap();
+        StoragePort::update_story_status(&db, id, StoryStatus::InProgress)
+            .await
+            .unwrap();
+        let got = StoragePort::get_story_by_id(&db, id)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(got.status, StoryStatus::InProgress);
+    }
+
+    #[tokio::test]
+    async fn story_list_by_epic() {
+        let db = make_adapter();
+        let pid = StoragePort::create_project(
+            &db,
+            &Project::new("Multi Epic Proj", "multi-epic-proj").unwrap(),
+        )
+        .await
+        .unwrap();
+        let eid1 = StoragePort::create_epic(&db, &Epic::new(pid, "Epic One").unwrap())
+            .await
+            .unwrap();
+        let eid2 = StoragePort::create_epic(&db, &Epic::new(pid, "Epic Two").unwrap())
+            .await
+            .unwrap();
+        StoragePort::create_story(&db, &Story::new(eid1, pid, "S1", None).unwrap())
+            .await
+            .unwrap();
+        StoragePort::create_story(&db, &Story::new(eid1, pid, "S2", Some(5)).unwrap())
+            .await
+            .unwrap();
+        StoragePort::create_story(&db, &Story::new(eid2, pid, "S3", None).unwrap())
+            .await
+            .unwrap();
+
+        let stories = StoragePort::list_stories_by_epic(&db, eid1).await.unwrap();
+        assert_eq!(stories.len(), 2);
+        assert!(stories.iter().all(|s| s.epic_id == eid1));
+    }
+
+    #[tokio::test]
+    async fn story_list_by_project() {
+        let db = make_adapter();
+        let pid = StoragePort::create_project(
+            &db,
+            &Project::new("All Stories Proj", "all-stories-proj").unwrap(),
+        )
+        .await
+        .unwrap();
+        let pid2 = StoragePort::create_project(
+            &db,
+            &Project::new("Other Stories Proj", "other-stories-proj").unwrap(),
+        )
+        .await
+        .unwrap();
+        let eid1 = StoragePort::create_epic(&db, &Epic::new(pid, "E1").unwrap())
+            .await
+            .unwrap();
+        let eid2 = StoragePort::create_epic(&db, &Epic::new(pid2, "E2").unwrap())
+            .await
+            .unwrap();
+        StoragePort::create_story(&db, &Story::new(eid1, pid, "Proj1 S1", None).unwrap())
+            .await
+            .unwrap();
+        StoragePort::create_story(&db, &Story::new(eid1, pid, "Proj1 S2", None).unwrap())
+            .await
+            .unwrap();
+        StoragePort::create_story(&db, &Story::new(eid2, pid2, "Proj2 S1", None).unwrap())
+            .await
+            .unwrap();
+
+        let proj1_stories = StoragePort::list_stories_by_project(&db, pid)
+            .await
+            .unwrap();
+        assert_eq!(proj1_stories.len(), 2);
+        assert!(proj1_stories.iter().all(|s| s.project_id == pid));
+
+        let proj2_stories = StoragePort::list_stories_by_project(&db, pid2)
+            .await
+            .unwrap();
+        assert_eq!(proj2_stories.len(), 1);
+    }
+
+    #[tokio::test]
+    async fn story_delete() {
+        let db = make_adapter();
+        let (pid, eid) = make_project_and_epic(&db).await;
+        let sid = StoragePort::create_story(&db, &Story::new(eid, pid, "Temp", None).unwrap())
+            .await
+            .unwrap();
+        StoragePort::delete_story(&db, sid).await.unwrap();
+        assert!(StoragePort::get_story_by_id(&db, sid)
+            .await
+            .unwrap()
+            .is_none());
+    }
+
+    #[tokio::test]
+    async fn story_invariant_no_zero_points_roundtrip() {
+        // Domain invariant: zero points is rejected at construction; storage
+        // should never see it. Verify that a story with points=None round-trips.
+        let db = make_adapter();
+        let (pid, eid) = make_project_and_epic(&db).await;
+        let s = Story::new(eid, pid, "No points", None).unwrap();
+        let id = StoragePort::create_story(&db, &s).await.unwrap();
+        let got = StoragePort::get_story_by_id(&db, id)
+            .await
+            .unwrap()
+            .unwrap();
+        assert!(got.points.is_none());
+    }
+
+    // -- L2 #38 migration test --
+    //
+    // The L1 #5 audit identified 5 tables missing from the schema that the
+    // downstream L2 work (worklog, trace, gate, run, scope surfaces) depends
+    // on. This test confirms migration 022_l2_38_worklog_trace_gate_run_scope
+    // is registered with the MigrationRunner and that all 5 tables exist
+    // post-migration. L2 #38 is the only author of these tables; if any of
+    // them disappears, downstream L2 tasks will fail.
+    #[test]
+    fn test_l2_38_migration() {
+        // Build an in-memory DB via the adapter (runs all migrations).
+        let db = SqliteStorageAdapter::in_memory().expect("in-memory adapter");
+        let conn = db.conn_for_bench().expect("conn");
+
+        let expected: &[&str] = &["gate_results", "run_records", "scope_status"];
+
+        let mut stmt = conn
+            .prepare("SELECT name FROM sqlite_master WHERE type = 'table'")
+            .expect("prepare sqlite_master");
+        let mut rows = stmt.query([]).expect("query sqlite_master");
+        let mut found: Vec<String> = Vec::new();
+        while let Some(row) = rows.next().expect("row") {
+            let name: String = row.get(0).expect("name");
+            if expected.contains(&name.as_str()) {
+                found.push(name);
+            }
+        }
+
+        for t in expected {
+            assert!(
+                found.iter().any(|n| n == t),
+                "L2-38 migration table `{t}` not found in sqlite_master; found: {found:?}"
+            );
+        }
+        assert_eq!(
+            found.len(),
+            expected.len(),
+            "expected {} L2-38 tables, found {found:?}",
+            expected.len()
+        );
+
+        // Sanity-check: migration is recorded in _migrations.
+        let applied: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM _migrations WHERE name = ?1",
+                rusqlite::params!["024_l2_38_worklog_trace_gate_run_scope"],
+                |row| row.get(0),
+            )
+            .expect("query _migrations");
+        assert_eq!(applied, 1, "024 migration should be recorded as applied");
     }
 }
