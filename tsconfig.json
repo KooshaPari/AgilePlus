@@ -7,6 +7,5 @@
     "module": "ESNext",
     "moduleResolution": "Bundler"
   },
-  "include": ["**/*.ts", "**/*.tsx"],
-  "exclude": ["node_modules", "crates/agileplus-dashboard", "crates/agileplus-mcp", "dist", "build", "**/*.d.ts"]
+  "include": ["__no_ts_files_at_root__"]
 }
