@@ -128,18 +128,19 @@ impl S3ArtifactStore {
         secret_key: String,
         region: String,
         bucket_prefix: String,
-    ) -> Result<Self, reqwest::Error> {
+    ) -> Self {
         let client = reqwest::Client::builder()
             .timeout(std::time::Duration::from_secs(30))
-            .build()?;
-        Ok(Self {
+            .build()
+            .expect("failed to build reqwest client");
+        Self {
             endpoint,
             access_key,
             secret_key,
             region,
             bucket_prefix,
             client,
-        })
+        }
     }
 }
 
@@ -195,7 +196,10 @@ impl ArtifactStore for S3ArtifactStore {
             info!(bucket, key, status = %status, "upload succeeded");
             Ok(())
         } else {
-            let body = resp.text().await.unwrap_or_else(|_| "(unreadable)".into());
+            let body = resp
+                .text()
+                .await
+                .unwrap_or_else(|_| "(unreadable)".into());
             Err(ArtifactError::S3(format!(
                 "upload failed: status={status} body={body}"
             )))
@@ -229,7 +233,12 @@ impl ArtifactStore for S3ArtifactStore {
                 .bytes()
                 .await
                 .map_err(|e| ArtifactError::S3(format!("failed to read body: {e}")))?;
-            info!(bucket, key, size = bytes.len(), "download succeeded");
+            info!(
+                bucket,
+                key,
+                size = bytes.len(),
+                "download succeeded"
+            );
             Ok(bytes)
         } else if status == reqwest::StatusCode::NOT_FOUND {
             Err(ArtifactError::ArtifactNotFound {
@@ -237,7 +246,10 @@ impl ArtifactStore for S3ArtifactStore {
                 key: key.to_string(),
             })
         } else {
-            let body = resp.text().await.unwrap_or_else(|_| "(unreadable)".into());
+            let body = resp
+                .text()
+                .await
+                .unwrap_or_else(|_| "(unreadable)".into());
             Err(ArtifactError::S3(format!(
                 "download failed: status={status} body={body}"
             )))

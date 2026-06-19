@@ -152,7 +152,7 @@ impl DockerBackend {
             .start_exec(&exec.id, Some(start_options))
             .await?;
 
-        let exec_result = self
+        let mut stream = self
             .client
             .start_exec(&exec.id, Some(start_options))
             .await?;
@@ -190,7 +190,10 @@ impl DockerBackend {
     /// Stop a container.
     pub async fn stop_container(&self, container_id: &str) -> Result<()> {
         info!(container_id, "stopping container");
-        let options = StopContainerOptions { t: 10 };
+        let options = StopContainerOptions {
+            t: 10,
+            ..Default::default()
+        };
         if let Err(e) = self
             .client
             .stop_container(container_id, Some(options))
