@@ -309,6 +309,7 @@ fn build_feature_reports(
         } else {
             feature.labels.len() + 2
         },
+        compliant: !feature.labels.is_empty(),
     }]
 }
 
