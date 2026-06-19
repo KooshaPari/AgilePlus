@@ -827,21 +827,197 @@ impl StoragePort for MemStore {
         Ok(())
     }
 
-    async fn upsert_story_by_requirement_id(&self, story: &Story) -> Result<i64, DomainError> {
-        let mut guard = self.stories.lock().unwrap();
-        if let Some(existing) = guard
-            .iter_mut()
-            .find(|s| s.requirement_id == story.requirement_id && story.requirement_id.is_some())
-        {
-            *existing = story.clone();
-            Ok(existing.id)
-        } else {
-            let id = guard.len() as i64 + 1;
-            let mut s = story.clone();
-            s.id = id;
-            guard.push(s);
-            Ok(id)
-        }
+    // --- Everything else is unreachable in list tests ---
+    async fn create_feature(&self, _: &Feature) -> Result<i64, DomainError> {
+        unimplemented!()
+    }
+    async fn get_feature_by_slug(&self, _: &str) -> Result<Option<Feature>, DomainError> {
+        unimplemented!()
+    }
+    async fn get_feature_by_id(&self, _: i64) -> Result<Option<Feature>, DomainError> {
+        unimplemented!()
+    }
+    async fn update_feature_state(&self, _: i64, _: FeatureState) -> Result<(), DomainError> {
+        unimplemented!()
+    }
+    async fn list_features_by_state(&self, _: FeatureState) -> Result<Vec<Feature>, DomainError> {
+        unimplemented!()
+    }
+    async fn list_all_features(&self) -> Result<Vec<Feature>, DomainError> {
+        unimplemented!()
+    }
+    async fn update_feature(&self, _: &Feature) -> Result<(), DomainError> {
+        todo!()
+    }
+    async fn list_features_by_label(&self, _: &str) -> Result<Vec<Feature>, DomainError> {
+        todo!()
+    }
+    async fn create_work_package(&self, _: &WorkPackage) -> Result<i64, DomainError> {
+        unimplemented!()
+    }
+    async fn get_work_package(&self, _: i64) -> Result<Option<WorkPackage>, DomainError> {
+        unimplemented!()
+    }
+    async fn update_wp_state(&self, _: i64, _: WpState) -> Result<(), DomainError> {
+        unimplemented!()
+    }
+    async fn list_wps_by_feature(&self, _: i64) -> Result<Vec<WorkPackage>, DomainError> {
+        unimplemented!()
+    }
+    async fn add_wp_dependency(&self, _: &WpDependency) -> Result<(), DomainError> {
+        unimplemented!()
+    }
+    async fn get_wp_dependencies(&self, _: i64) -> Result<Vec<WpDependency>, DomainError> {
+        unimplemented!()
+    }
+    async fn get_ready_wps(&self, _: i64) -> Result<Vec<WorkPackage>, DomainError> {
+        unimplemented!()
+    }
+    async fn append_audit_entry(&self, _: &AuditEntry) -> Result<i64, DomainError> {
+        unimplemented!()
+    }
+    async fn get_audit_trail(&self, _: i64) -> Result<Vec<AuditEntry>, DomainError> {
+        unimplemented!()
+    }
+    async fn get_latest_audit_entry(&self, _: i64) -> Result<Option<AuditEntry>, DomainError> {
+        unimplemented!()
+    }
+    async fn create_evidence(&self, _: &Evidence) -> Result<i64, DomainError> {
+        unimplemented!()
+    }
+    async fn get_evidence_by_wp(&self, _: i64) -> Result<Vec<Evidence>, DomainError> {
+        unimplemented!()
+    }
+    async fn get_evidence_by_fr(&self, _: &str) -> Result<Vec<Evidence>, DomainError> {
+        unimplemented!()
+    }
+    async fn create_policy_rule(&self, _: &PolicyRule) -> Result<i64, DomainError> {
+        unimplemented!()
+    }
+    async fn list_active_policies(&self) -> Result<Vec<PolicyRule>, DomainError> {
+        unimplemented!()
+    }
+    async fn record_metric(&self, _: &Metric) -> Result<i64, DomainError> {
+        unimplemented!()
+    }
+    async fn get_metrics_by_feature(&self, _: i64) -> Result<Vec<Metric>, DomainError> {
+        unimplemented!()
+    }
+    async fn create_governance_contract(&self, _: &GovernanceContract) -> Result<i64, DomainError> {
+        unimplemented!()
+    }
+    async fn get_governance_contract(
+        &self,
+        _: i64,
+        _: i32,
+    ) -> Result<Option<GovernanceContract>, DomainError> {
+        unimplemented!()
+    }
+    async fn get_latest_governance_contract(
+        &self,
+        _: i64,
+    ) -> Result<Option<GovernanceContract>, DomainError> {
+        unimplemented!()
+    }
+    async fn create_module(&self, _: &Module) -> Result<i64, DomainError> {
+        unimplemented!()
+    }
+    async fn get_module(&self, _: i64) -> Result<Option<Module>, DomainError> {
+        unimplemented!()
+    }
+    async fn get_module_by_slug(&self, _: &str) -> Result<Option<Module>, DomainError> {
+        unimplemented!()
+    }
+    async fn update_module(&self, _: i64, _: &str, _: Option<&str>) -> Result<(), DomainError> {
+        unimplemented!()
+    }
+    async fn delete_module(&self, _: i64) -> Result<(), DomainError> {
+        unimplemented!()
+    }
+    async fn list_root_modules(&self) -> Result<Vec<Module>, DomainError> {
+        unimplemented!()
+    }
+    async fn list_child_modules(&self, _: i64) -> Result<Vec<Module>, DomainError> {
+        unimplemented!()
+    }
+    async fn get_module_with_features(
+        &self,
+        _: i64,
+    ) -> Result<Option<ModuleWithFeatures>, DomainError> {
+        unimplemented!()
+    }
+    async fn tag_feature_to_module(&self, _: &ModuleFeatureTag) -> Result<(), DomainError> {
+        unimplemented!()
+    }
+    async fn untag_feature_from_module(&self, _: i64, _: i64) -> Result<(), DomainError> {
+        unimplemented!()
+    }
+    async fn create_cycle(&self, _: &Cycle) -> Result<i64, DomainError> {
+        unimplemented!()
+    }
+    async fn get_cycle(&self, _: i64) -> Result<Option<Cycle>, DomainError> {
+        unimplemented!()
+    }
+    async fn update_cycle_state(&self, _: i64, _: CycleState) -> Result<(), DomainError> {
+        unimplemented!()
+    }
+    async fn list_cycles_by_state(&self, _: CycleState) -> Result<Vec<Cycle>, DomainError> {
+        unimplemented!()
+    }
+    async fn list_cycles_by_module(&self, _: i64) -> Result<Vec<Cycle>, DomainError> {
+        unimplemented!()
+    }
+    async fn list_all_cycles(&self) -> Result<Vec<Cycle>, DomainError> {
+        unimplemented!()
+    }
+    async fn get_cycle_with_features(
+        &self,
+        _: i64,
+    ) -> Result<Option<CycleWithFeatures>, DomainError> {
+        unimplemented!()
+    }
+    async fn add_feature_to_cycle(&self, _: &CycleFeature) -> Result<(), DomainError> {
+        unimplemented!()
+    }
+    async fn remove_feature_from_cycle(&self, _: i64, _: i64) -> Result<(), DomainError> {
+        unimplemented!()
+    }
+    async fn get_sync_mapping(&self, _: &str, _: i64) -> Result<Option<SyncMapping>, DomainError> {
+        unimplemented!()
+    }
+    async fn upsert_sync_mapping(&self, _: &SyncMapping) -> Result<(), DomainError> {
+        unimplemented!()
+    }
+    async fn get_sync_mapping_by_plane_id(
+        &self,
+        _: &str,
+        _: &str,
+    ) -> Result<Option<SyncMapping>, DomainError> {
+        unimplemented!()
+    }
+    async fn delete_sync_mapping(&self, _: &str, _: i64) -> Result<(), DomainError> {
+        unimplemented!()
+    }
+    async fn create_user(&self, _: &User) -> Result<i64, DomainError> {
+        unimplemented!()
+    }
+    async fn get_user_by_id(&self, _: i64) -> Result<Option<User>, DomainError> {
+        unimplemented!()
+    }
+    async fn get_user_by_email(&self, _: &str) -> Result<Option<User>, DomainError> {
+        unimplemented!()
+    }
+    async fn update_user_status(&self, _: i64, _: UserStatus) -> Result<(), DomainError> {
+        unimplemented!()
+    }
+    async fn update_user_role(&self, _: i64, _: UserRole) -> Result<(), DomainError> {
+        unimplemented!()
+    }
+    async fn list_all_users(&self) -> Result<Vec<User>, DomainError> {
+        unimplemented!()
+    }
+    async fn delete_user(&self, _: i64) -> Result<(), DomainError> {
+        unimplemented!()
     }
 }
 
