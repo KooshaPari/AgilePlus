@@ -314,29 +314,6 @@ impl GovernanceClient {
         self.policy_engine.read().await.policies().to_vec()
     }
 
-    /// Count the number of prior promotions to a specific channel by querying
-    /// audit events whose action is `check_promotion`, result is `success`, and
-    /// whose metadata `to` field matches the target channel.
-    async fn count_channel_promotions(&self, channel: &crate::channel::ReleaseChannel) -> u32 {
-        let filter = AuditFilter {
-            action: Some("check_promotion".to_string()),
-            result: Some(OperationResult::Success),
-            ..AuditFilter::new()
-        };
-
-        match self.audit_logger.query(&filter) {
-            Ok(events) => events
-                .iter()
-                .filter(|e| {
-                    e.metadata
-                        .as_ref()
-                        .and_then(|m| m.get("to").and_then(|v| v.as_str()))
-                        .map_or(false, |to| to == &channel.to_string())
-                })
-                .count() as u32,
-            Err(_) => 0,
-        }
-    }
 }
 
 /// Builder for creating a GovernanceClient
