@@ -17,7 +17,7 @@ agileplus-triage = { path = "../agileplus-triage" }
 anyhow.workspace = true
 async-trait = "0.1"
 git2 = { version = "0.20", features = ["vendored-libgit2"] }
-gix = { version = "0.82", default-features = false, features = ["worktree-stream", "revision", "sha1"] }
+gix = { version = "0.83", default-features = false, features = ["worktree-stream", "revision", "sha1"] }
 notify = "8"
 async-nats = "0.47"
 tokio = { version = "1", features = ["sync", "time", "macros"] }
