@@ -35,7 +35,7 @@ pub mod settings;
 
 // From pages
 pub use pages::{
-    dashboard_page, events_page, features_page, home, hub_page, root, settings_page,
+    root, home, events_page, features_page, settings_page,
 };
 
 // From dashboard
@@ -60,7 +60,7 @@ pub use evidence::{
 
 // From agents
 pub use agents::{
-    agent_activity, agents_json, test_agent_connection,
+    agent_activity, agents_json,
 };
 
 // From health
@@ -75,6 +75,7 @@ pub use settings::{
     plane_settings_page, agent_settings_page, services_settings_page,
     save_plane_settings, save_agent_settings, save_dashboard_settings,
     save_services_settings, test_service_connection, test_plane_connection,
+    test_agent_connection,
     // Types
     Config, PlaneConfig, AgentConfig, ServiceConfig, DashboardConfig,
     PlaneSettingsForm, AgentSettingsForm, ServiceSettingsForm, DashboardSettingsForm,
@@ -90,6 +91,12 @@ pub async fn event_timeline(axum::extract::State(_state): axum::extract::State<S
         events: vec![],
     })
 }
+
+// Dashboard page from settings module (re-export to avoid duplication)
+pub use settings::dashboard_page;
+
+// Hub page from pages module (extracted handlers don't include it so use the one from pages)
+pub use pages::hub_page;
 
 // ── Router builder ───────────────────────────────────────────────────────
 
