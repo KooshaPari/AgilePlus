@@ -1,13 +1,9 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 use super::parsing::FunctionalRequirement;
 use super::*;
 
 #[test]
 fn parse_frs_basic() {
-    let spec = "## Functional Requirements
-- **FR-001**: Login must work
-- **FR-002**: Logout must work
-";
+    let spec = "## Functional Requirements\n- **FR-001**: Login must work\n- **FR-002**: Logout must work\n";
     let frs = parse_functional_requirements(spec);
     assert_eq!(frs.len(), 2);
     assert_eq!(frs[0].id, "FR-001");

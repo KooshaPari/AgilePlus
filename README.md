@@ -1,96 +1,98 @@
-<!-- SPDX-License-Identifier: MIT OR Apache-2.0 -->
-> **Work state:** ACTIVE · **Progress:** `███████░░░ 70%`
-> AI-native spec-driven PM platform (Rust workspace + React/TS dashboard + Electrobun desktop); frontend candidate #1. Core domain/api/dashboard implemented; CI partially red. · updated 2026-06-02
-
 # AgilePlus
 
-![Scorecard](https://api.securityscorecards.dev/projects/github.com/KooshaPari/AgilePlus/badge)
+**Project management system with AI agent integration** — 24-crate Rust monorepo with hexagonal architecture, Python MCP server, and Plane.so/GitHub integration.
 
-> **Pinned references (Phenotype-org)**
-> - MSRV: see `rust-toolchain.toml`
-> - cargo-deny config: see `deny.toml`
-> - cargo-audit: `rustsec/audit-check@v2` weekly
-> - Branch protection: 1 reviewer required, no force-push
-> - Branching baseline: canonical checkout stays on `main` unless doing merge/pull
-> - Governance authority: `phenotype-org-governance/SUPERSEDED.md` when present
+## Project Overview
 
-**Local-first, AI-native, spec-driven project management for agent + human teams.**
+AgilePlus is a full-stack project management platform built with:
+- **Rust** (24 crates) — Core domain, storage, event sourcing, CLI, REST API
+- **Python** — MCP server for AI agent integration
+- **TypeScript** — pheno-cli, React components
 
-AgilePlus manages feature specs, work packages, and acceptance criteria with a hexagonal
-Rust core, optional GitHub/Plane sync, P2P merge, a web dashboard, and a desktop app. It is
-one of the Phenotype org's three project-management frontend candidates (alongside Tracera and
-Planify).
+## Key Features
 
-## Architecture
+- Domain model: Feature, WorkPackage, Cycle, Module with state machines
+- Event sourcing with audit trails and hash chains
+- SQLite storage with hexagonal adapter pattern
+- gRPC protocol definitions
+- REST API with API key authentication
+- OpenTelemetry tracing and metrics
+- Git VCS adapter integration
+- Plane.so sync (push/pull)
+- GitHub integration
 
-AgilePlus is a Cargo workspace following hexagonal (ports-and-adapters) architecture: the
-`domain` and `application` crates have no framework dependencies; everything else is an adapter.
-
-| Crate | Role |
-|-------|------|
-| `agileplus-domain` | Core entities, invariants (no framework deps) |
-| `agileplus-application` | Use-case layer (no framework deps) |
-| `agileplus-api` | HTTP API surface |
-| `agileplus-grpc` / `agileplus-proto` | gRPC layer + compiled tonic types |
-| `agileplus-cli` / `agileplus-subcmds` | `agileplus` command-line client |
-| `agileplus-dashboard` | Web dashboard (Askama + React/TS under `web/`) + Electrobun desktop |
-| `agileplus-sqlite` | SQLite persistence adapter |
-| `agileplus-events` / `agileplus-nats` | Event model + NATS transport |
-| `agileplus-sync` | Sync orchestrator — conflict detection/resolution + NATS |
-| `agileplus-p2p` | Peer-to-peer merge |
-| `agileplus-github` / `agileplus-plane` / `agileplus-import` | External integrations + import |
-| `agileplus-git` | Git integration |
-| `agileplus-governance` | Release channels, audit logging, policy enforcement |
-| `agileplus-config` | Shared config-builder macro |
-| `agileplus-cache` / `agileplus-telemetry` / `agileplus-triage` | Cache, telemetry, triage |
-| `agileplus-graph` / `agileplus-artifacts` / `agileplus-fixtures` | Graph, artifacts, fixtures |
-| `agileplus-benchmarks` | Criterion performance benchmarks |
-| `agileplus-contract-tests` / `agileplus-integration-tests` | Cross-crate test suites |
-
-The Python `agileplus-mcp/` directory is a separate FastMCP server. `python/phenotype_traceability/`
-holds the traceability package.
-
-## Getting Started
+## About this shelf
 
 ```bash
-# Build the workspace
+# Setup
+cd AgilePlus
+bun install
 cargo build --workspace
 
-# Install and run the CLI
-cargo install --path crates/agileplus-cli
-agileplus --help
+# Run CLI
+cargo run --package pheno-cli -- --help
 
-# Create a spec / feature
-agileplus specify --title "<feature>" --description "<desc>"
+# Start REST server
+cargo run --package pheno-cli -- serve
 
-# Web dashboard frontend
-cd crates/agileplus-dashboard/web
-bun install && bun run dev
+# Run tests
+cargo test --workspace
 ```
-
-## Development
-
-- `main` is protected — all changes via PR. Branch prefixes: `feat/ fix/ chore/ ci/ docs/`.
-- Keep PRs small and focused; fix all CI failures on a PR, including pre-existing ones.
-- All files UTF-8, no BOM. Never commit agent dirs (`.claude/`, `.codex/`, `.cursor/`).
-- Spec work is tracked in AgilePlus itself (`agileplus specify` / `agileplus status`).
-
-## Quality Standards
-
-- `cargo clippy --workspace -- -D warnings` (zero warnings)
-- `cargo fmt` before commit
-- Tests for new features; reproduce a bug with a failing test before fixing
-- cargo-deny advisories (`deny.toml`) + weekly cargo-audit
-
-## License
-
-See [LICENSE](LICENSE).
 
 ## Documentation
 
-This repository includes the following cross-cutting documents:
+| Document | Purpose |
+|----------|---------|
+| [PLAN.md](./PLAN.md) | Implementation phases and task tracking |
+| [PRD.md](./PRD.md) | Product requirements and user journeys |
+| [FUNCTIONAL_REQUIREMENTS.md](./FUNCTIONAL_REQUIREMENTS.md) | Detailed FR traceability |
+| [AGENTS.md](./AGENTS.md) | Agent interaction rules |
+| [GOVERNANCE.md](./GOVERNANCE.md) | Project governance |
 
-- [`AGENTS.md`](AGENTS.md) — operating instructions for AI agents and human contributors
-- [`SPEC.md`](SPEC.md) — formal specification of behavior and contracts
-- [`ARCHITECTURE.md`](ARCHITECTURE.md) — system architecture and component overview
-- [`docs/`](docs/) — design notes, ADRs, and supporting documentation (see [`docs/index.md`](docs/index.md))
+### MCP, APIs, and routing infrastructure
+
+```
+AgilePlus/
+├── crates/          # 24 Rust crates (workspace)
+├── python/          # Python MCP server
+├── pheno-cli/       # CLI tool
+├── kitty-specs/     # Feature specifications
+├── docs/            # Documentation
+└── harnesses/       # Agent harness configs
+```
+
+## Traceability
+
+1. **Identify the project** — Check `projects/INDEX.md` or ask the user
+2. **Navigate to project** — `cd <project-name>`
+3. **Read project rules** — Check for `CLAUDE.md` or `AGENTS.md` in project
+4. **Do the work** — Follow shelf rules in `AGENTS.md`
+5. **Commit & push** — Use conventional commits, open PR if needed
+
+## NOT AgilePlus
+
+This shelf contains **many projects**, of which AgilePlus is one.
+AgilePlus-specific documentation lives inside the `AgilePlus/` project directory,
+not at shelf level.
+
+The files that were previously here describing AgilePlus have been moved to
+their correct locations:
+- AgilePlus governance → `AgilePlus/GOVERNANCE.md`
+- AgilePlus agent rules → `AgilePlus/AGENTS.md`
+- AgilePlus README → `AgilePlus/README.md`
+
+## Getting Help
+
+- Shelf-level issues: Ask here
+- Project-specific issues: `cd <project>` and check that project's docs
+- Architecture decisions: `cat docs/adr/INDEX.md`
+- General questions: Check `projects/INDEX.md` first
+
+
+## Worklog schema — cross-reference (ADR-032, 2026-06-18)
+
+This repo's `WORKLOG.md` uses the **AgilePlus team-sprint schema** (`L#-#` req_ids, device/topic/branch/scope/owner/eta + per-sprint entries). It coexists with the **pheno-worklog-schema v2.0/v2.1** (`L5-###` req_ids, 10/11 columns) used by the fleet-substrate layer.
+
+Per [ADR-032](https://github.com/KooshaPari/phenotype-org-audits/blob/main/audits/2026-06-18_ADR-032-worklog-schema-both-stay.md), **both schemas stay** — they track different metadata (team-sprint vs. fleet-level), have non-colliding `req_id` prefixes, and the cost of forcing convergence is higher than the cost of divergence. The `req_id` is the join key if cross-schema audit is ever needed.
+
+To query across both schemas, use the `req_id` prefix as a discriminator: `L#-#` (this repo) vs. `L5-###` (fleet substrate).

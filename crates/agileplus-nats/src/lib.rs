@@ -1,29 +1,30 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
-//! agileplus-nats — NATS infrastructure adapter for AgilePlus.
+//! NATS-style event bus for AgilePlus.
 //!
-//! Provides:
-//! - `NatsEventBus`: hexagonal adapter implementing `agileplus_events::AsyncEventBus`
-//!   and `agileplus_events::EventBus` ports over a live async-nats connection.
-//! - `InMemoryBus`: in-process bus for unit/integration tests (no broker required).
-//! - `Subject`: validated dot-separated NATS subject addressing with wildcard helpers.
+//! Provides a trait-based event bus abstraction with typed domain events,
+//! hierarchical subject routing, and request/reply semantics. The default
+//! implementation is an in-memory bus suitable for testing; a NATS-backed
+//! implementation can be plugged in when the real broker is available.
 //!
-//! Subject scheme: `agileplus.events.<AggregateType>.<event_type>`
-//! e.g. `agileplus.events.Project.project.created`
-//!
-//! Traceability: FR-008 / WP02 (infrastructure layer)
+//! Traceability: WP06 — Event Bus
 
 pub mod bus;
 pub mod config;
 pub mod envelope;
 pub mod handler;
 pub mod health;
-pub mod nats_adapter;
 pub mod subject;
 
 pub use bus::{EventBus, EventBusError, EventBusStore, InMemoryBus};
 pub use config::NatsConfig;
 pub use envelope::Envelope;
-pub use handler::{FnHandler, Handler};
+pub use handler::Handler;
 pub use health::BusHealth;
-pub use nats_adapter::{derive_subject, NatsEventBus, NatsEventBusError};
 pub use subject::Subject;
+
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+    #[error("Event bus error: {0}")]
+    Bus(#[from] EventBusError),
+    #[error("Config error: {0}")]
+    Config(String),
+}

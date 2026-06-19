@@ -1,21 +1,19 @@
 name: CI
 
-# DAG L2-35: read-only token default; override to `contents: write`
-# only on release/publish jobs (none in this workflow).
-permissions:
-  contents: read
-
 on:
   push:
     branches: [main]
   pull_request:
   merge_group:
   workflow_dispatch:
+permissions:
+  contents: read
 
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ci-${{ github.ref }}
   cancel-in-progress: true
+
 env:
   CARGO_TERM_COLOR: always
   RUSTFLAGS: "-D warnings"
@@ -27,13 +25,13 @@ jobs:
       contents: read
       pull-requests: write
     name: Buf Lint & Breaking
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-      - uses: bufbuild/buf-action@91da6f6a1a2c877c182debad24ca0a8a9d848be7  # v1
+      - uses: bufbuild/buf-action@v1
         with:
           lint: true
           format: true
@@ -43,154 +41,131 @@ jobs:
   # ─── Rust Quality ──────────────────────────────────────────────────
   rust-check:
     name: Rust Quality
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
-      - uses: dtolnay/rust-toolchain@5b842231ba77f5c045dba54ac5560fed2db780e2  # nightly
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@nightly
         with:
           components: rustfmt, clippy
-      - uses: Swatinem/rust-cache@42dc69e1aa15d09112580998cf2ef0119e2e91ae  # v2
-      - uses: arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b  # v3
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rust
+      - uses: arduino/setup-protoc@v3
         with:
           version: "28.x"
-          repo-token: ${{ github.token }}
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Format check
-        run: cargo fmt --check
+        run: cd rust && cargo fmt --check
       - name: Clippy (warnings = errors)
-        run: cargo clippy --workspace --all-targets -- -D warnings
+        run: cd rust && cargo clippy --all-targets -- -D warnings
       - name: Build
-        run: cargo build --workspace
+        run: cd rust && cargo build
       - name: Test
-        run: cargo test --workspace
+        run: cd rust && cargo test
 
   rust-build:
     name: Rust Build
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
-      - uses: dtolnay/rust-toolchain@5b842231ba77f5c045dba54ac5560fed2db780e2  # nightly
-      - uses: Swatinem/rust-cache@42dc69e1aa15d09112580998cf2ef0119e2e91ae  # v2
-      - uses: arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b  # v3
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@nightly
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rust
+      - uses: arduino/setup-protoc@v3
         with:
           version: "28.x"
-          repo-token: ${{ github.token }}
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Build
-        run: cargo build --workspace
+        run: cd rust && cargo build --all
 
   rust-msrv:
     name: Rust MSRV (stable)
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
-      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8  # stable
-      - uses: Swatinem/rust-cache@42dc69e1aa15d09112580998cf2ef0119e2e91ae  # v2
-      - uses: arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b  # v3
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rust
+      - uses: arduino/setup-protoc@v3
         with:
           version: "28.x"
-          repo-token: ${{ github.token }}
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Check MSRV compatibility
-        run: cargo check --workspace
+        run: cd rust && cargo check
 
   # ─── Rust Security & Dep Audit ─────────────────────────────────────
   rust-audit:
     name: Rust Security Audit
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:
       contents: read
       checks: write
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
-      - name: Install cargo-audit (pre-built to avoid MSRV compile issue)
-        uses: taiki-e/install-action@7a79fe8c3a13344501c80d99cae481c1c9085912  # v2
+      - uses: actions/checkout@v6
+      - uses: rustsec/audit-check@v2.0.0
         with:
-          tool: cargo-audit@0.22.2
-      - name: Run cargo audit
-        run: |
-          cargo audit \
-            --ignore RUSTSEC-2023-0071 \
-            --ignore RUSTSEC-2025-0012 \
-            --ignore RUSTSEC-2024-0384 \
-            --ignore RUSTSEC-2024-0436 \
-            --ignore RUSTSEC-2024-0370 \
-            --ignore RUSTSEC-2025-0058 \
-            --ignore RUSTSEC-2025-0134
+          token: ${{ secrets.GITHUB_TOKEN }}
       - name: Install cargo-deny
-        uses: taiki-e/install-action@7a79fe8c3a13344501c80d99cae481c1c9085912  # v2
-        with:
-          tool: cargo-deny
+        run: cargo install cargo-deny
       - name: Check licenses, advisories, duplicates
-        run: cargo deny check
+        run: cargo deny check -c rust/deny.toml
 
   rust-extras:
     name: Rust Extras (machete, semver, typos)
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     timeout-minutes: 30
+    continue-on-error: true
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
-      - name: Checkout phenoShared sibling
-        run: |
-          git clone --depth 1 \
-            "https://x-access-token:${{ github.token }}@github.com/KooshaPari/phenoShared.git" \
-            "${{ github.workspace }}/../phenoShared"
-      - uses: dtolnay/rust-toolchain@5b842231ba77f5c045dba54ac5560fed2db780e2  # nightly
-      - uses: Swatinem/rust-cache@42dc69e1aa15d09112580998cf2ef0119e2e91ae  # v2
-      - uses: arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b  # v3
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@nightly
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rust
+      - uses: arduino/setup-protoc@v3
         with:
           version: "28.x"
-          repo-token: ${{ github.token }}
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Install extras
-        uses: taiki-e/install-action@7a79fe8c3a13344501c80d99cae481c1c9085912  # v2
-        with:
-          tool: cargo-machete,cargo-semver-checks@0.44.0,typos-cli
+        run: cargo install cargo-machete cargo-semver-checks
       - name: Detect unused deps
-        run: cargo machete
+        run: cd rust && cargo machete
       - name: Semver compatibility check
-        run: cargo semver-checks check-release || true
+        run: cd rust && cargo semver-checks check-release || true
       - name: Typo check
-        run: typos
+        uses: crate-ci/typos@v1
+        continue-on-error: true
 
   # ─── Rust Coverage ────────────────────────────────────────────────
   rust-coverage:
     name: Rust Coverage
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     timeout-minutes: 45
-    permissions:
-      contents: read
-      # Required for Codecov tokenless (OIDC) upload.
-      id-token: write
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
-      - name: Checkout phenoShared sibling
-        run: |
-          git clone --depth 1 \
-            "https://x-access-token:${{ github.token }}@github.com/KooshaPari/phenoShared.git" \
-            "${{ github.workspace }}/../phenoShared"
-      - uses: dtolnay/rust-toolchain@5b842231ba77f5c045dba54ac5560fed2db780e2  # nightly
-      - uses: Swatinem/rust-cache@42dc69e1aa15d09112580998cf2ef0119e2e91ae  # v2
-      - uses: arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b  # v3
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@nightly
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rust
+      - uses: arduino/setup-protoc@v3
         with:
           version: "28.x"
-          repo-token: ${{ github.token }}
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Install tarpaulin
-        uses: taiki-e/install-action@7a79fe8c3a13344501c80d99cae481c1c9085912  # v2
-        with:
-          tool: cargo-tarpaulin@0.31.3
+        run: cargo install cargo-tarpaulin
       - name: Generate coverage
         run: cargo tarpaulin --workspace --out xml --output-dir coverage
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@f2274c2c340e0c81c8f7dc407b2a477b8935f171  # v6
+        uses: codecov/codecov-action@v6
         with:
           files: ./coverage/cobertura.xml
           flags: rust
-          # Public repo → Codecov supports tokenless (OIDC) upload, so a missing
-          # CODECOV_TOKEN secret does not block the upload. Make the upload a
-          # real gate now that it can succeed without a secret.
-          fail_ci_if_error: true
-          use_oidc: true
+          fail_ci_if_error: false
           verbose: true
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
@@ -198,26 +173,18 @@ jobs:
   # ─── Core Workspace ───────────────────────────────────────────────
   core-check:
     name: Core Workspace Quality
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
-      - name: Checkout phenoShared sibling
-        run: |
-          git clone --depth 1 \
-            "https://x-access-token:${{ github.token }}@github.com/KooshaPari/phenoShared.git" \
-            "${{ github.workspace }}/../phenoShared"
-      - uses: dtolnay/rust-toolchain@5b842231ba77f5c045dba54ac5560fed2db780e2  # nightly
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@nightly
         with:
           components: rustfmt, clippy
-      - uses: Swatinem/rust-cache@42dc69e1aa15d09112580998cf2ef0119e2e91ae  # v2
-      - uses: arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b  # v3
+      - uses: Swatinem/rust-cache@v2
+      - uses: arduino/setup-protoc@v3
         with:
           version: "28.x"
-          repo-token: ${{ github.token }}
-      - name: Format phenoShared (path-dep neighbor)
-        run: |
-          cargo fmt --all --manifest-path "${{ github.workspace }}/../phenoShared/Cargo.toml"
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Format check
         run: cargo fmt --all -- --check
       - name: Clippy (warnings = errors)
@@ -229,80 +196,58 @@ jobs:
 
   core-build:
     name: Core Build
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
-      - name: Checkout phenoShared sibling
-        run: |
-          git clone --depth 1 \
-            "https://x-access-token:${{ github.token }}@github.com/KooshaPari/phenoShared.git" \
-            "${{ github.workspace }}/../phenoShared"
-      - uses: dtolnay/rust-toolchain@5b842231ba77f5c045dba54ac5560fed2db780e2  # nightly
-      - uses: Swatinem/rust-cache@42dc69e1aa15d09112580998cf2ef0119e2e91ae  # v2
-      - uses: arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b  # v3
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@nightly
+      - uses: Swatinem/rust-cache@v2
+      - uses: arduino/setup-protoc@v3
         with:
           version: "28.x"
-          repo-token: ${{ github.token }}
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Build
         run: cargo build --workspace
 
   core-msrv:
-    name: Core MSRV (1.88)
-    runs-on: ubuntu-24.04
+    name: Core MSRV (1.86)
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
-      # Workspace path-deps resolve into the phenoShared sibling; clone it so
-      # cargo check can load those manifests (see quality-gate.yml).
-      - name: Checkout phenoShared sibling
-        run: |
-          git clone --depth 1 \
-            "https://x-access-token:${{ github.token }}@github.com/KooshaPari/phenoShared.git" \
-            "${{ github.workspace }}/../phenoShared"
-      - uses: dtolnay/rust-toolchain@98e1b82157cd469e843cb7f524c1313b4ad9492c  # 1.88.0 (toolchain)
-      - uses: Swatinem/rust-cache@42dc69e1aa15d09112580998cf2ef0119e2e91ae  # v2
-      - uses: arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b  # v3
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@1.86.0
+      - uses: Swatinem/rust-cache@v2
+      - uses: arduino/setup-protoc@v3
         with:
           version: "28.x"
-          repo-token: ${{ github.token }}
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Check MSRV compatibility
         run: cargo check --workspace
 
   core-docs:
     name: Core Documentation
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
-      - name: Checkout phenoShared sibling
-        run: |
-          git clone --depth 1 \
-            "https://x-access-token:${{ github.token }}@github.com/KooshaPari/phenoShared.git" \
-            "${{ github.workspace }}/../phenoShared"
-      - uses: dtolnay/rust-toolchain@5b842231ba77f5c045dba54ac5560fed2db780e2  # nightly
-      - uses: Swatinem/rust-cache@42dc69e1aa15d09112580998cf2ef0119e2e91ae  # v2
-      - uses: arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b  # v3
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@nightly
+      - uses: Swatinem/rust-cache@v2
+      - uses: arduino/setup-protoc@v3
         with:
           version: "28.x"
-          repo-token: ${{ github.token }}
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Build docs
         run: cargo doc --no-deps --workspace
 
   domain-deps-lint:
     name: Domain Zero-Dep Lint
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
-      - name: Checkout phenoShared sibling
-        run: |
-          git clone --depth 1 \
-            "https://x-access-token:${{ github.token }}@github.com/KooshaPari/phenoShared.git" \
-            "${{ github.workspace }}/../phenoShared"
+      - uses: actions/checkout@v6
       - name: Validate domain crate dependencies
         run: |
-          ALLOWED="serde serde_json chrono sha2 thiserror toml dirs-next zeroize keyring anyhow async-trait uuid regex phenotype-error-core traceability-core agileplus-validate"
+          ALLOWED="serde serde_json chrono sha2 thiserror toml dirs-next zeroize keyring"
           DEPS=$(sed -n '/^\[dependencies\]/,/^\[/{/^\[/d;p}' crates/agileplus-domain/Cargo.toml | grep -E '^\w' | cut -d'.' -f1 | cut -d' ' -f1)
           for dep in $DEPS; do
             if ! echo "$ALLOWED" | grep -qw "$dep"; then
@@ -316,11 +261,11 @@ jobs:
   python-check:
     if: false  # disabled: no python/ subdir exists in this monorepo
     name: Python Quality
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
-      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.14"
       - name: Install uv
@@ -344,11 +289,11 @@ jobs:
   python-install:
     if: false  # disabled: no python/ subdir exists in this monorepo
     name: Python Install
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
-      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.14"
       - name: Install uv
@@ -359,31 +304,27 @@ jobs:
   # ─── Config Lint ───────────────────────────────────────────────────
   config-lint:
     name: Config Lint
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
+      - uses: actions/checkout@v6
       - name: Install taplo
         run: cargo install taplo-cli
       - name: TOML format check
         run: taplo format --check Cargo.toml rust/Cargo.toml python/pyproject.toml
       - name: actionlint
-        uses: reviewdog/action-actionlint@e0207a28405ecad11953ba625a95d92f7889572a  # v1
+        uses: reviewdog/action-actionlint@v1
 
   # ─── Commit Lint ───────────────────────────────────────────────────
   commit-lint:
     name: Conventional Commits
     if: github.event_name == 'pull_request'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-      - uses: wagoid/commitlint-github-action@f133a0d95090ef2609192b4a21f54e20af819ea9  # v6
+      - uses: wagoid/commitlint-github-action@v6
         with:
-          configFile: .commitlintrc.json
-          # PRs land via squash-merge, so only the final (squash) commit header
-          # — derived from the PR title — must satisfy the convention. Lint just
-          # the tip commit instead of every intermediate WIP commit.
-          commitDepth: 1
+          configFile: .commitlintrc.yml

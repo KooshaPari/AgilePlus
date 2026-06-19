@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 use crate::error::ConnectionError;
 
 #[derive(Debug, thiserror::Error)]

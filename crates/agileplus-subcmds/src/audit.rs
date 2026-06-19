@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Append-only JSONL audit log for sub-command invocations.
 //!
 //! Each invocation records pre-dispatch and post-dispatch entries.

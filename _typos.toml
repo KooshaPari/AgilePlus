@@ -1,25 +1,17 @@
-# typos (crate-ci/typos) configuration for AgilePlus.
-# Excludes generated/captured artifacts and whitelists domain terms + identifiers
-# that the spell-checker flags as typos but are intentional.
+[default.extend-words]
+# Add project-specific words that typos should not flag
+agileplus = "agileplus"
+RTO = "RTO"
+unparseable = "unparseable"
 
 [files]
 extend-exclude = [
-  # Generated audit/test capture artifacts (not source prose).
-  "audit_raw.json",
-  "test_output.txt",
-  "*.lock",
-  "**/snapshots/**",
+    "*.lock",
+    "target/",
+    "*.pyc",
+    "__pycache__/",
+    "python/src/gen/",
+    "rust/src/gen/",
+    "pheno-cli/go.mod",
+    "templates/static/*.min.js",
 ]
-
-[default.extend-words]
-# Level-of-detail (voxel/mesh) — not "load".
-lod = "lod"
-LOD = "LOD"
-# Test fixture string literal, intentionally truncated input.
-alph = "alph"
-# Substring false-positives inside longer technical identifiers/strings.
-ba = "ba"
-# "CNA" = CVE Numbering Authority (security term in SECURITY.md).
-CNA = "CNA"
-# Valid alternative spelling.
-unparseable = "unparseable"

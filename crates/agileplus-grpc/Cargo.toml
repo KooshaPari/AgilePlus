@@ -2,32 +2,24 @@
 name = "agileplus-grpc"
 version.workspace = true
 edition.workspace = true
+license.workspace = true
 rust-version.workspace = true
-license = "MIT OR Apache-2.0"
-repository = "https://github.com/KooshaPari/AgilePlus"
-description = "agileplus grpc — Phenotype infrastructure crate (AgilePlus)"
-documentation = "https://docs.rs/agileplus-grpc"
-keywords = ["phenotype", "agileplus", "grpc"]
-categories = ["network-programming"]
-authors = ["kooshapari"]
-
-[build-dependencies]
-tonic-build.workspace = true
 
 [dependencies]
-anyhow.workspace = true
+agileplus-domain = { path = "../agileplus-domain" }
+agileplus-proto = { path = "../rust" }
+tonic = { workspace = true }
+prost = "0.13"
 tokio.workspace = true
-tonic.workspace = true
-prost.workspace = true
+tokio-stream = { version = "0.1", features = ["sync"] }
+futures = "0.3"
 tracing.workspace = true
-async-trait.workspace = true
-chrono.workspace = true
 serde.workspace = true
 serde_json.workspace = true
-agileplus-domain = { path = "../agileplus-domain" }
-agileplus-github = { path = "../agileplus-github" }
-agileplus-proto = { path = "../agileplus-proto" }
-tokio-stream.workspace = true
+chrono.workspace = true
 
-[package.metadata.cargo-machete]
-ignored = ["anyhow", "async-trait", "prost"]
+[build-dependencies]
+tonic-build = { workspace = true }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["full", "test-util"] }

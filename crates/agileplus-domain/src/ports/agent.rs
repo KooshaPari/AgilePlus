@@ -1,62 +1,93 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
-//! Agent port — trait + types for dispatching AI agent tasks.
+//! Agent port — AI agent dispatch and communication abstraction.
+//!
+//! Traceability: FR-004, FR-010, FR-011, FR-012, FR-013 / WP05-T027
 
-use async_trait::async_trait;
+use std::path::PathBuf;
+
 use serde::{Deserialize, Serialize};
 
 use crate::error::DomainError;
 
-/// The kind of agent to dispatch.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+/// Supported agent backends.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum AgentKind {
-    /// A code-writing / implementation agent.
+    ClaudeCode,
     Codex,
-    /// A review / analysis agent.
-    Review,
-    /// A generic reasoning agent.
-    Generic,
 }
 
-/// Status of a running or completed agent task.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum AgentStatus {
-    Pending,
-    Running,
-    Succeeded,
-    Failed,
-    Cancelled,
-}
-
-/// Configuration for an agent task dispatch.
+/// Configuration for an agent invocation.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AgentConfig {
     pub kind: AgentKind,
-    /// Maximum wall-clock seconds to wait for the task.
+    pub max_review_cycles: u32,
     pub timeout_secs: u64,
-    /// Additional model or provider hints (opaque string).
-    pub hint: Option<String>,
+    pub extra_args: Vec<String>,
 }
 
-/// A handle to a dispatched agent task.
+/// A task to be dispatched to an agent.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AgentTask {
-    pub id: String,
-    pub status: AgentStatus,
-    /// Captured stdout / output from the agent.
-    pub output: Option<String>,
+    pub wp_id: String,
+    pub feature_slug: String,
+    pub prompt_path: PathBuf,
+    pub worktree_path: PathBuf,
+    pub context_files: Vec<PathBuf>,
 }
 
-/// Port for dispatching agent tasks and polling their status.
-#[async_trait]
+/// The result returned by an agent after completing (or failing) a task.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AgentResult {
+    pub success: bool,
+    pub pr_url: Option<String>,
+    pub commits: Vec<String>,
+    pub stdout: String,
+    pub stderr: String,
+    pub exit_code: i32,
+}
+
+/// Current status of a dispatched agent job.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum AgentStatus {
+    Pending,
+    Running { pid: u32 },
+    WaitingForReview { pr_url: String },
+    Completed { result: AgentResult },
+    Failed { error: String },
+}
+
+/// Port for AI agent dispatch and communication.
+///
+/// Abstracts agent backends so different providers (Claude Code, Codex)
+/// are interchangeable. The Agent Dispatch adapter (WP08) implements this.
 pub trait AgentPort: Send + Sync {
-    /// Dispatch an agent task with the given prompt and config.
-    async fn dispatch(&self, prompt: &str, config: &AgentConfig) -> Result<AgentTask, DomainError>;
+    /// Spawn an agent and wait for completion.
+    fn dispatch(
+        &self,
+        task: AgentTask,
+        config: &AgentConfig,
+    ) -> impl std::future::Future<Output = Result<AgentResult, DomainError>> + Send;
 
-    /// Poll the status of a previously dispatched task.
-    async fn poll(&self, task_id: &str) -> Result<AgentTask, DomainError>;
+    fn dispatch_async(
+        &self,
+        task: AgentTask,
+        config: &AgentConfig,
+    ) -> impl std::future::Future<Output = Result<String, DomainError>> + Send;
 
-    /// Cancel a running task.
-    async fn cancel(&self, task_id: &str) -> Result<(), DomainError>;
+    fn query_status(
+        &self,
+        job_id: &str,
+    ) -> impl std::future::Future<Output = Result<AgentStatus, DomainError>> + Send;
+
+    fn cancel(
+        &self,
+        job_id: &str,
+    ) -> impl std::future::Future<Output = Result<(), DomainError>> + Send;
+
+    fn send_instruction(
+        &self,
+        job_id: &str,
+        instruction: &str,
+    ) -> impl std::future::Future<Output = Result<(), DomainError>> + Send;
 }

@@ -1,7 +1,6 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Evidence repository — CRUD for the `evidence` table.
 
-use rusqlite::{params, Connection, Row};
+use rusqlite::{Connection, Row, params};
 
 use agileplus_domain::{
     domain::governance::{Evidence, EvidenceType},

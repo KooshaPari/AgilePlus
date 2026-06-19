@@ -7,24 +7,20 @@ on:
       - "docs/**"
       - ".github/workflows/deploy.yml"
   workflow_dispatch:
-permissions:
-  contents: read
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
 
 jobs:
   deploy:
-    runs-on: ubuntu-24.04
+    uses: KooshaPari/phenoShared/.github/workflows/vitepress-pages.yml@main
+    with:
+      concurrency_group: agileplus-vitepress-pages
+      custom_domain: "true"
     permissions:
       contents: read
       pages: write
       id-token: write
     steps:
       - name: Checkout
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - name: Clone phenodocs
         run: |
           git clone --depth 1 https://github.com/KooshaPari/phenodocs.git /tmp/phenodocs
@@ -38,30 +34,27 @@ jobs:
       - name: Install dependencies
         working-directory: docs
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Install consumer dependencies first so node_modules/vitepress exists
+          # Link @phenotype/docs from phenodocs
+          mkdir -p docs/node_modules/@phenotype
+          ln -sf /tmp/phenodocs/packages/docs docs/node_modules/@phenotype/docs
+          # Configure npm for GitHub Packages
+          echo "@phenotype:registry=https://npm.pkg.github.com" >> ~/.npmrc
+          echo "//npm.pkg.github.com/:_authToken=\${GITHUB_TOKEN}" >> ~/.npmrc
           bun install
-          # Link @phenotype/docs from the cloned phenodocs workspace
-          mkdir -p node_modules/@phenotype
-          ln -sf /tmp/phenodocs/packages/docs node_modules/@phenotype/docs
-          # Expose vitepress to phenodocs so its config/index.ts can resolve it
-          mkdir -p /tmp/phenodocs/node_modules
-          ln -sf "$(pwd)/node_modules/vitepress" /tmp/phenodocs/node_modules/vitepress
 
       - name: Build VitePress site
         working-directory: docs
         env:
-          GITHUB_PAGES: "true"
-          # No custom domain — site is served at kooshapari.github.io/AgilePlus/
-          # Keep PHENOTYPE_CUSTOM_DOMAIN unset so base stays /AgilePlus/
+          GITHUB_PAGES: true
+          PHENOTYPE_CUSTOM_DOMAIN: "true"
         run: bun run docs:build
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9
         with:
-          # srcDir: '.' → VitePress outputs to docs/.vitepress/dist
-          path: docs/.vitepress/dist
+          path: docs/docs/.vitepress/dist
 
       - name: Deploy to GitHub Pages
         id: deployment

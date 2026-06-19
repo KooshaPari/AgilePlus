@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Rule-based intent classifier for triage.
 //!
 //! Classifies free-text input into one of: Bug, Feature, Idea, Task.

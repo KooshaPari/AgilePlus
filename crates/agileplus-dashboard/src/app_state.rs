@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Shared application state threaded through Axum handlers.
 
 use std::collections::HashMap;

@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Conflict resolution strategies.
 //!
 //! Traceability: FR-SYNC-RESOLUTION / WP09-T055
@@ -8,7 +7,7 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use crate::conflict::{hash_value, SyncConflict};
+use crate::conflict::{SyncConflict, hash_value};
 use crate::error::SyncError;
 
 /// Specifies which side wins for a particular field in field-level resolution.

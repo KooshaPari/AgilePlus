@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! T119 – Sync round-trip benchmark.
 //!
 //! Benchmarks the serialise → transmit → deserialise hot-path for Plane.so sync
@@ -10,8 +9,8 @@
 //! - Full sync 100 features:       < 30 s
 //! - Sync with 5 conflicts:        < 10 s
 
-use agileplus_benchmarks::helpers::{make_sync_payloads, simulate_sync_roundtrip, SyncPayload};
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
+use agileplus_benchmarks::helpers::{SyncPayload, make_sync_payloads, simulate_sync_roundtrip};
+use criterion::{BenchmarkId, Criterion, black_box, criterion_group, criterion_main};
 
 // ---------------------------------------------------------------------------
 // Benchmark: single push (serialise + map to Plane schema)
@@ -126,7 +125,7 @@ criterion_main!(benches);
 #[cfg(test)]
 #[allow(unused_imports)]
 mod tests {
-    use agileplus_benchmarks::helpers::{make_sync_payloads, simulate_sync_roundtrip, SyncPayload};
+    use agileplus_benchmarks::helpers::{SyncPayload, make_sync_payloads, simulate_sync_roundtrip};
 
     #[test]
     fn push_single_smoke() {

@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! T108: Feature lifecycle end-to-end integration test.
 //!
 //! Verifies the complete path from API creation through state transitions
@@ -9,7 +8,7 @@
 use agileplus_integration_tests::common::fixtures::{feature_create_payload, transition_payload};
 
 #[cfg(feature = "integration")]
-use agileplus_integration_tests::common::harness::{is_process_compose_installed, TestHarness};
+use agileplus_integration_tests::common::harness::{TestHarness, is_process_compose_installed};
 
 /// Helper: skip the test if services are unavailable.
 #[cfg(feature = "integration")]

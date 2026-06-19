@@ -1,10 +1,9 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Sync mapping repository functions.
 //!
 //! Traceability: WP06-T033
 
 use chrono::Utc;
-use rusqlite::{params, Connection};
+use rusqlite::{Connection, params};
 
 use agileplus_domain::domain::sync_mapping::{SyncDirection, SyncMapping};
 use agileplus_domain::error::DomainError;

@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Event query route handlers.
 //!
 //! - GET /api/v1/events        → paginated, filtered list of domain events

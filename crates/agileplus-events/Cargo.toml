@@ -2,14 +2,8 @@
 name = "agileplus-events"
 version.workspace = true
 edition.workspace = true
+license.workspace = true
 rust-version.workspace = true
-license = "MIT OR Apache-2.0"
-repository = "https://github.com/KooshaPari/AgilePlus"
-description = "agileplus events — Phenotype infrastructure crate (AgilePlus)"
-documentation = "https://docs.rs/agileplus-events"
-keywords = ["phenotype", "agileplus"]
-categories = ["development-tools"]
-authors = ["kooshapari"]
 
 [dependencies]
 agileplus-domain = { path = "../agileplus-domain" }
@@ -20,9 +14,6 @@ sha2 = { workspace = true }
 thiserror = { workspace = true }
 async-trait = "0.1"
 tokio = { workspace = true }
-uuid = { workspace = true }
-# Shared ecosystem crates (DOMAIN_ROLES owners per ADR-ECO-014; W18b repoint)
-phenotype-error-core.workspace = true
 
 [dev-dependencies]
 tokio = { workspace = true }

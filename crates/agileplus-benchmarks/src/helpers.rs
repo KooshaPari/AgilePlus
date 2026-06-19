@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Shared test-data helpers used by all benchmark files.
 //!
 //! All helpers are sync (return values directly) so they can be called
@@ -125,7 +124,7 @@ pub fn make_snapshot(entity_id: i64, seq: i64) -> Snapshot {
         entity_id,
         event_sequence: seq,
         state: serde_json::json!({"events_applied": seq, "last_state": "Specified"}),
-        taken_at: Utc::now(),
+        created_at: Utc::now(),
     }
 }
 

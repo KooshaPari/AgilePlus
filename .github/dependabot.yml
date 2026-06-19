@@ -1,37 +1,9 @@
-# ============================================================================
-# AgilePlus — Dependabot configuration
-# ============================================================================
-#
-# L2 #29 (FLEET_100TASK_DAG_V3.md) — canonical dependabot baseline.
-# Ecosystems:
-#   - cargo            (root workspace + 21 individual crate sub-dirs to
-#                       surface per-crate dep delta in PRs)
-#   - pip              (python/ — phenotype_traceability + tests)
-#   - github-actions   (.github/workflows/)
-#
-# The root Cargo.toml is a single workspace covering all 21 crates, so
-# dependabot will bump Cargo.lock for the whole workspace from the root
-# entry. The per-crate entries below are intentional — they make it
-# obvious from the PR diff which crate owns a given dep, and they let
-# reviewers rebase per-crate dep PRs onto individual release branches
-# when needed.
-#
-# Schedule: weekly, staggered across the week.
-# ============================================================================
-
 version: 2
-
 updates:
-  # --------------------------------------------------------------------------
-  # Rust workspace — root (single Cargo.lock spans all 21 crates)
-  # --------------------------------------------------------------------------
-  - package-ecosystem: "cargo"
-    directory: "/"
+  - package-ecosystem: cargo
+    directory: /
     schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "06:00"
-      timezone: "UTC"
+      interval: weekly
     open-pull-requests-limit: 10
     labels:
       - "dependencies"
@@ -210,33 +182,6 @@ updates:
     labels: ["dependencies", "rust", "agileplus", "agileplus-proto"]
     groups: { proto: { patterns: ["*"] } }
     commit-message: { prefix: "chore(proto-deps)", include: "scope" }
-
-  # --------------------------------------------------------------------------
-  # Python (phenotype_traceability + tests)
-  # --------------------------------------------------------------------------
-  - package-ecosystem: "pip"
-    directory: "/python"
-    schedule:
-      interval: "weekly"
-      day: "tuesday"
-      time: "06:00"
-      timezone: "UTC"
-    open-pull-requests-limit: 5
-    labels:
-      - "dependencies"
-      - "python"
-      - "agileplus"
-    groups:
-      minor-and-patch:
-        applies-to: version-updates
-        patterns:
-          - "*"
-        update-types:
-          - "minor"
-          - "patch"
-    commit-message:
-      prefix: "chore(python-deps)"
-      include: "scope"
 
   # --------------------------------------------------------------------------
   # GitHub Actions (CI)

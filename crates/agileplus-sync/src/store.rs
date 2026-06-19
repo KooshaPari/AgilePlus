@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! SyncMappingStore trait for persistence abstraction.
 //!
 //! Traceability: FR-SYNC-STORE / WP09-T056

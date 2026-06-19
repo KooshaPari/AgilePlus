@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 use std::time::{Duration, Instant};
 
 use anyhow::{Result, anyhow};
@@ -26,7 +25,7 @@ pub(crate) fn wait_for_health(
         let pct = ((start.elapsed().as_secs_f64() / timeout.as_secs_f64()) * 100.0) as u32;
         let filled = (pct / 10) as usize;
         let bar: String = "█".repeat(filled) + &"░".repeat(10 - filled);
-        print!("[{bar}] {pct}%");
+        print!("\r[{bar}] {pct}%");
         // In real impl we'd flush stdout and actually HTTP-GET; here we stub.
         match try_health_check(&health_url) {
             Ok(h) => return Ok(h),

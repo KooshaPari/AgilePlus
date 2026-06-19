@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 use agileplus_domain::domain::state_machine::FeatureState;
 use serde::{Deserialize, Serialize};
 

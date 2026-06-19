@@ -16,8 +16,7 @@
 [90m│[39m
 [33m▲[39m  No story files found for the specified pattern: [34msrc/**/*.mdx[39m
 [90m│[39m  [43mVite[49m [36mvite v8.0.3 [32mbuilding client environment for production...[36m[39m
-[2K
-transforming...[90m│[39m
+[2Ktransforming...[90m│[39m
 [33m▲[39m  Expected '@storybook/addon-actions' (or '@storybook/addon-essentials')
 [90m│[39m  to be listed before '@storybook/addon-interactions' in main Storybook
 [90m│[39m  config.
@@ -56,3 +55,4 @@ computing gzip size...
 [90m│[39m  /var/folders/wl/z8733y815nzg28yy0_1_lh7w0000gn/T/chromatic--76407-UVP3nGJR4Py9
 [90m│[39m
 [90m└[39m  Storybook build completed successfully
+

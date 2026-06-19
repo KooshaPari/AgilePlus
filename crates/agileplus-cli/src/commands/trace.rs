@@ -36,37 +36,28 @@
 use std::path::{Path, PathBuf};
 
 use anyhow::{anyhow, bail, Context, Result};
-use clap::{Args, Subcommand};
+use clap::{Args, Parser, Subcommand};
 use rusqlite::{params, Connection};
 
 use agileplus_sqlite::migrations::MigrationRunner;
 
 // ── CLI surface ─────────────────────────────────────────────────────────────
 
-/// Top-level `trace` args struct — implements `clap::Args` so it can be
-/// embedded as a variant in the parent `Command` enum in `main.rs`.
-#[derive(Debug, Args)]
-pub struct TraceCmd {
+#[derive(Debug, Parser)]
+#[command(
+    name = "trace",
+    about = "Manage trace links between domain entities",
+    long_about = "Create, list, and inspect directed edges between AgilePlus \
+                  domain entities (work_package, feature, story, epic, ...).  \
+                  Edges are persisted in the `trace_links` table."
+)]
+pub struct TraceArgs {
     #[command(subcommand)]
-    pub sub: TraceSub,
+    pub sub: TraceCmd,
 }
-
-impl TraceCmd {
-    /// Dispatch the chosen subcommand.
-    pub async fn run(&self) -> anyhow::Result<()> {
-        match &self.sub {
-            TraceSub::Link(a) => run_link(a),
-            TraceSub::List(a) => run_list(a),
-            TraceSub::Show(a) => run_show(a),
-        }
-    }
-}
-
-/// Legacy alias kept for callers that still use `TraceArgs` directly.
-pub type TraceArgs = TraceCmd;
 
 #[derive(Debug, Subcommand)]
-pub enum TraceSub {
+pub enum TraceCmd {
     /// Insert a directed trace link between two entities.
     Link(LinkArgs),
     /// List the most-recent trace links (default 25).
@@ -149,11 +140,11 @@ const ALLOWED_LINK_TYPES: &[&str] = &[
 
 /// Dispatch the `trace` subcommand.  Each variant opens the DB itself so
 /// the caller can hand off via the `agileplus-cli` main entry point.
-pub fn run(args: &TraceCmd) -> Result<()> {
+pub fn run(args: &TraceArgs) -> Result<()> {
     match &args.sub {
-        TraceSub::Link(a) => run_link(a),
-        TraceSub::List(a) => run_list(a),
-        TraceSub::Show(a) => run_show(a),
+        TraceCmd::Link(a) => run_link(a),
+        TraceCmd::List(a) => run_list(a),
+        TraceCmd::Show(a) => run_show(a),
     }
 }
 

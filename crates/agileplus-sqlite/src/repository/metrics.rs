@@ -1,7 +1,6 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Metrics repository — CRUD for the `metrics` table.
 
-use rusqlite::{params, Connection};
+use rusqlite::{Connection, params};
 
 use agileplus_domain::{domain::metric::Metric, error::DomainError};
 

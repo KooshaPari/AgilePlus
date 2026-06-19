@@ -1,9 +1,8 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 use anyhow::Context;
 use reqwest::Method;
 use serde::Deserialize;
 
-use super::{transport, PlaneClient, PlaneIssue, PlaneWorkItem, PlaneWorkItemResponse};
+use super::{PlaneClient, PlaneIssue, PlaneWorkItem, PlaneWorkItemResponse, transport};
 
 #[derive(Debug, Clone, Deserialize)]
 struct PaginatedResponse<T> {

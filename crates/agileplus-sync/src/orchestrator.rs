@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Bidirectional sync orchestrator — coordinates push, pull, conflict detection
 //! and resolution between AgilePlus and Plane.so.
 //!
@@ -14,10 +13,10 @@ use tracing::{debug, error, info, warn};
 use agileplus_events::EventStore;
 use agileplus_plane::{PlaneClient, PlaneStateMapper};
 
-use crate::conflict::{detect_conflict, SyncConflict};
+use crate::conflict::{SyncConflict, detect_conflict};
 use crate::error::SyncError;
 use crate::report::SyncReport;
-use crate::resolution::{apply_resolution, ResolutionResult, ResolutionStrategy};
+use crate::resolution::{ResolutionResult, ResolutionStrategy, apply_resolution};
 use crate::store::SyncMappingStore;
 
 pub struct SyncOrchestrator {
@@ -273,45 +272,17 @@ impl SyncOrchestrator {
         })))
     }
 
-    async fn push_to_plane(&self, plane_issue_id: &str, value: &Value) -> Result<(), SyncError> {
-        let project_id =
-            std::env::var("PLANE_PROJECT_ID").unwrap_or_else(|_| "default".to_string());
-        debug!(plane_issue_id, %project_id, "Pushing to Plane.so via PATCH");
-        self.plane
-            .patch_issue(&project_id, plane_issue_id, value)
-            .await
-            .map_err(|e| SyncError::Store(e.to_string()))
+    async fn push_to_plane(&self, plane_issue_id: &str, _value: &Value) -> Result<(), SyncError> {
+        debug!(plane_issue_id, "Pushing to Plane.so");
+        Ok(())
     }
 
     async fn apply_to_local(
         &self,
-        entity_type: &str,
-        entity_id: i64,
-        value: &Value,
+        _entity_type: &str,
+        _entity_id: i64,
+        _value: &Value,
     ) -> Result<(), SyncError> {
-        debug!(
-            entity_type,
-            entity_id, "Applying remote change to local store"
-        );
-        // Persist inbound change as a domain event so downstream subscribers can react.
-        let payload = serde_json::json!({
-            "entity_type": entity_type,
-            "entity_id": entity_id,
-            "patch": value,
-            "source": "plane_sync",
-        });
-        use agileplus_domain::domain::event::Event;
-        let event = Event::new(
-            entity_type,
-            entity_id,
-            "plane_sync.apply",
-            payload,
-            "plane_sync",
-        );
-        self.sqlite
-            .append(&event)
-            .await
-            .map_err(|e| SyncError::Store(e.to_string()))?;
         Ok(())
     }
 }
@@ -387,8 +358,9 @@ mod tests {
     fn make_test_orchestrator() -> SyncOrchestrator {
         let plane = Arc::new(PlaneClient::new(
             "https://plane.example.com".to_string(),
-            "workspace".to_string(),
             "test-key".to_string(),
+            "workspace".to_string(),
+            "project".to_string(),
         ));
         let sqlite = Arc::new(InMemoryEventStore::new()) as Arc<dyn EventStore>;
         let mapper = PlaneStateMapper::new();

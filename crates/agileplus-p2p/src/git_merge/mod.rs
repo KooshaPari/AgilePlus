@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Git merge conflict resolution for git-backed state sync.
 //!
 //! Handles three conflict scenarios that arise when `git merge` or `git pull`

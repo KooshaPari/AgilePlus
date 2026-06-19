@@ -1,13 +1,15 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 use std::future::Future;
 
 use agileplus_domain::domain::audit::AuditEntry;
 use agileplus_domain::domain::cycle::{Cycle, CycleFeature, CycleState, CycleWithFeatures};
+use agileplus_domain::domain::epic::{Epic, EpicStatus};
 use agileplus_domain::domain::governance::{Evidence, GovernanceContract, PolicyRule};
 use agileplus_domain::domain::metric::Metric;
 use agileplus_domain::domain::module::{Module, ModuleFeatureTag, ModuleWithFeatures};
 use agileplus_domain::domain::project::Project;
+use agileplus_domain::domain::story::{Story, StoryStatus};
 use agileplus_domain::domain::sync_mapping::SyncMapping;
+use agileplus_domain::domain::user::{User, UserRole};
 use agileplus_domain::error::DomainError;
 use agileplus_domain::ports::storage::StoragePort;
 
@@ -301,4 +303,90 @@ impl StoragePort for MockStorage {
         async move { Ok(found) }
     }
 
+    fn list_all_projects(&self) -> impl Future<Output = Result<Vec<Project>, DomainError>> + Send {
+        let all = self.projects.lock().expect("projects lock poisoned").clone();
+        async move { Ok(all) }
+    }
+
+    fn create_epic(&self, epic: &Epic) -> impl Future<Output = Result<i64, DomainError>> + Send {
+        let mut epics = self.epics.lock().expect("epics lock poisoned");
+        let id = (epics.len() as i64) + 1;
+        let mut e = epic.clone();
+        e.id = id;
+        epics.push(e);
+        async move { Ok(id) }
+    }
+
+    fn get_epic(&self, id: i64) -> impl Future<Output = Result<Option<Epic>, DomainError>> + Send {
+        let found = self.epics.lock().expect("epics lock poisoned").iter().find(|e| e.id == id).cloned();
+        async move { Ok(found) }
+    }
+
+    fn list_epics_by_project(&self, project_id: i64) -> impl Future<Output = Result<Vec<Epic>, DomainError>> + Send {
+        let epics: Vec<Epic> = self.epics.lock().expect("epics lock poisoned").iter().filter(|e| e.project_id == project_id).cloned().collect();
+        async move { Ok(epics) }
+    }
+
+    fn update_epic_status(&self, id: i64, status: EpicStatus) -> impl Future<Output = Result<(), DomainError>> + Send {
+        {
+            let mut epics = self.epics.lock().expect("epics lock poisoned");
+            if let Some(e) = epics.iter_mut().find(|e| e.id == id) {
+                e.status = status;
+            }
+        }
+        async move { Ok(()) }
+    }
+
+    fn create_story(&self, story: &Story) -> impl Future<Output = Result<i64, DomainError>> + Send {
+        let mut stories = self.stories.lock().expect("stories lock poisoned");
+        let id = (stories.len() as i64) + 1;
+        let mut s = story.clone();
+        s.id = id;
+        stories.push(s);
+        async move { Ok(id) }
+    }
+
+    fn get_story(&self, id: i64) -> impl Future<Output = Result<Option<Story>, DomainError>> + Send {
+        let found = self.stories.lock().expect("stories lock poisoned").iter().find(|s| s.id == id).cloned();
+        async move { Ok(found) }
+    }
+
+    fn list_stories_by_epic(&self, epic_id: i64) -> impl Future<Output = Result<Vec<Story>, DomainError>> + Send {
+        let stories: Vec<Story> = self.stories.lock().expect("stories lock poisoned").iter().filter(|s| s.epic_id == epic_id).cloned().collect();
+        async move { Ok(stories) }
+    }
+
+    fn update_story_status(&self, id: i64, status: StoryStatus) -> impl Future<Output = Result<(), DomainError>> + Send {
+        {
+            let mut stories = self.stories.lock().expect("stories lock poisoned");
+            if let Some(s) = stories.iter_mut().find(|s| s.id == id) {
+                s.status = status;
+            }
+        }
+        async move { Ok(()) }
+    }
+
+    fn create_user(&self, user: &User) -> impl Future<Output = Result<i64, DomainError>> + Send {
+        let mut users = self.users.lock().expect("users lock poisoned");
+        let id = (users.len() as i64) + 1;
+        let mut u = user.clone();
+        u.id = id;
+        users.push(u);
+        async move { Ok(id) }
+    }
+
+    fn get_user(&self, id: i64) -> impl Future<Output = Result<Option<User>, DomainError>> + Send {
+        let found = self.users.lock().expect("users lock poisoned").iter().find(|u| u.id == id).cloned();
+        async move { Ok(found) }
+    }
+
+    fn get_user_by_email(&self, email: &str) -> impl Future<Output = Result<Option<User>, DomainError>> + Send {
+        let found = self.users.lock().expect("users lock poisoned").iter().find(|u| u.email == email).cloned();
+        async move { Ok(found) }
+    }
+
+    fn list_all_users(&self) -> impl Future<Output = Result<Vec<User>, DomainError>> + Send {
+        let all = self.users.lock().expect("users lock poisoned").clone();
+        async move { Ok(all) }
+    }
 }

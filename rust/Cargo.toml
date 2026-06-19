@@ -1,21 +1,18 @@
 [package]
 name = "agileplus-proto"
-version = "0.1.0"
-edition = "2021"
-license = "MIT OR Apache-2.0"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
 description = "Generated gRPC stubs for AgilePlus"
-repository = "https://github.com/KooshaPari/AgilePlus"
-documentation = "https://docs.rs/agileplus-proto"
-keywords = ["phenotype", "agileplus"]
-categories = ["development-tools"]
-authors = ["kooshapari"]
+publish = false
 
 [dependencies]
-prost = "0.13"
-tonic = { version = "0.13", features = ["transport", "prost"] }
+prost.workspace = true
+tonic.workspace = true
 
 [package.metadata.cargo-machete]
 ignored = ["prost"]
 
 [build-dependencies]
-tonic-build = "0.13"
+tonic-build.workspace = true

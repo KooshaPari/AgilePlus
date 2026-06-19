@@ -1,8 +1,7 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 use anyhow::{Context, Result};
 use reqwest::Method;
 
-use super::{transport, PlaneClient, PlaneCreateModuleRequest, PlaneModuleResponse};
+use super::{PlaneClient, PlaneCreateModuleRequest, PlaneModuleResponse, transport};
 
 impl PlaneClient {
     /// Create a Module in Plane.so. Returns Plane's module UUID.

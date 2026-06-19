@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 use anyhow::anyhow;
 use anyhow::{Context, Result};
 
@@ -47,14 +46,11 @@ pub(super) async fn cmd_transition<S: StoragePort>(
                 .map(|f| format!("  {} (state: {})", f.slug, f.state))
                 .collect();
             anyhow::bail!(
-                "Cannot transition cycle '{}' to Shipped: {} feature(s) are not Validated or Shipped:
-{}
-\
+                "Cannot transition cycle '{}' to Shipped: {} feature(s) are not Validated or Shipped:\n{}\n\
                  Run `agileplus validate --feature <slug>` for each blocking feature.",
                 args.cycle,
                 blocking.len(),
-                blocking.join("
-")
+                blocking.join("\n")
             );
         }
     }

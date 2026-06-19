@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! API key generation and lifecycle management.
 //!
 //! On first startup, if no API key exists in the credential store, a new
@@ -13,11 +12,11 @@
 
 use std::path::PathBuf;
 
-use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine as _};
+use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD};
 use rand::RngCore;
 use sha2::{Digest, Sha256};
 
-use agileplus_domain::credentials::{keys, CredentialStore};
+use agileplus_domain::credentials::{CredentialStore, keys};
 
 /// Prefix that identifies an AgilePlus API key.
 const KEY_PREFIX: &str = "agp_";
@@ -97,7 +96,7 @@ pub async fn ensure_api_key(
         "[key too short]".to_string()
     };
     println!("AgilePlus API initialized.");
-    println!("API Key (masked): {masked_key}");
+    println!("API Key (masked): {}", masked_key);
     println!("Store this key securely; it won't be shown again.");
     println!("(Also saved to {})", key_path.display());
 

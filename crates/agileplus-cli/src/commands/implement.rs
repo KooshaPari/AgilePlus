@@ -1,11 +1,8 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `agileplus implement` command implementation.
 //!
 //! Orchestrates work package implementation: creates worktrees, dispatches
 //! agents, creates PRs, and manages the review-fix loop.
 //! Traceability: FR-004, FR-010, FR-011, FR-012 / WP12-T069, T071, T072
-
-#![cfg(feature = "full-deps")]
 
 use std::collections::{HashMap, HashSet};
 
@@ -373,8 +370,7 @@ where
                 storage.append_audit_entry(&audit).await.ok();
 
                 eprintln!(
-                    "WARNING: WP{:02} blocked after {cycles} review cycles.
-Last feedback: {}",
+                    "WARNING: WP{:02} blocked after {cycles} review cycles.\nLast feedback: {}",
                     wp.sequence,
                     &last_feedback[..last_feedback.len().min(500)]
                 );

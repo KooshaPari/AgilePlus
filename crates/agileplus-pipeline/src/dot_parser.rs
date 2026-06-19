@@ -159,7 +159,7 @@ fn parse_attributes(attr_str: &str) -> serde_json::Value {
             // Integer
             val.as_str()
                 .parse::<i64>()
-                .map(|n| serde_json::Value::Number(serde_json::Number::from(n)))
+                .map(|n| serde_json::Value::Number(n.into()))
                 .unwrap_or_else(|_| serde_json::Value::String(val.as_str().to_string()))
         } else {
             continue;
@@ -197,7 +197,7 @@ fn infer_rel_type(properties: &serde_json::Value) -> RelType {
         Some("Tagged") => RelType::Tagged,
         Some("InProject") => RelType::InProject,
         _ => {
-            // Default heuristic: if it has a `guard` attribute, treat as DependsOn
+            // Default heuristic: treat as DependsOn regardless of guard
             RelType::DependsOn
         }
     }
@@ -206,7 +206,6 @@ fn infer_rel_type(properties: &serde_json::Value) -> RelType {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use serde_json::json;
 
     #[test]
     fn parse_simple_digraph() {

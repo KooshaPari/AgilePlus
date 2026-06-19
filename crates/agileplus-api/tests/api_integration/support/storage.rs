@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 use std::sync::{Arc, Mutex};
 
 use agileplus_domain::domain::audit::{AuditEntry, hash_entry};

@@ -158,9 +158,6 @@ impl Executor {
                 // Evaluate guard edges: if any guard fails, skip this node.
                 for edge in &guard_edges {
                     if let Some(guard_cmd) = edge.properties.get("guard").and_then(|v| v.as_str()) {
-                        #[cfg(target_os = "windows")]
-                        let status = Command::new("cmd").args(["/C", guard_cmd]).status().await;
-                        #[cfg(not(target_os = "windows"))]
                         let status = Command::new("sh").arg("-c").arg(guard_cmd).status().await;
                         match status {
                             Ok(s) if s.code() == Some(0) => {}
@@ -209,6 +206,8 @@ impl Executor {
                     .unwrap_or(default_timeout);
 
                 let mut attempts = 0u32;
+                #[allow(unused_assignments)]
+                let mut last_result: Option<NodeOutput> = None;
 
                 if cmd_str.is_empty() {
                     // No command — treat as no-op success.
@@ -229,8 +228,6 @@ impl Executor {
                     );
                 }
 
-                #[allow(unused_assignments)]
-                let mut last_result: Option<NodeOutput> = None;
                 loop {
                     attempts += 1;
                     let stdout_file = tempfile::NamedTempFile::new().ok();
@@ -239,7 +236,7 @@ impl Executor {
                     #[cfg(target_os = "windows")]
                     let mut cmd = {
                         let mut c = Command::new("cmd");
-                        c.args(["/C", &cmd_str]);
+                        c.args(["/C", cmd_str.as_str()]);
                         c
                     };
                     #[cfg(not(target_os = "windows"))]

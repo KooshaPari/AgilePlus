@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! API response types — stable JSON shapes for all endpoints.
 //!
 //! These types are separate from domain entities so internal representations
@@ -256,7 +255,7 @@ pub struct SimpleHealthResponse {
 impl SimpleHealthResponse {
     pub fn ok() -> Self {
         Self {
-            status: "healthy",
+            status: "ok",
             service: "agileplus-api",
             version: env!("CARGO_PKG_VERSION"),
         }
@@ -292,7 +291,7 @@ pub struct ServiceHealth {
 impl ServiceHealth {
     pub fn healthy(latency_ms: u64) -> Self {
         Self {
-            status: "healthy".to_owned(),
+            status: "healthy".to_string(),
             latency_ms: Some(latency_ms),
             error: None,
         }
@@ -300,7 +299,7 @@ impl ServiceHealth {
 
     pub fn degraded(reason: impl Into<String>) -> Self {
         Self {
-            status: "degraded".to_owned(),
+            status: "degraded".to_string(),
             latency_ms: None,
             error: Some(reason.into()),
         }
@@ -308,17 +307,9 @@ impl ServiceHealth {
 
     pub fn unavailable(reason: impl Into<String>) -> Self {
         Self {
-            status: "unavailable".to_owned(),
+            status: "unavailable".to_string(),
             latency_ms: None,
             error: Some(reason.into()),
-        }
-    }
-
-    pub fn not_configured() -> Self {
-        Self {
-            status: "not_configured".to_owned(),
-            latency_ms: None,
-            error: Some("not configured in this deployment".to_owned()),
         }
     }
 }
@@ -348,11 +339,11 @@ impl DetailedHealthResponse {
             .collect();
 
         Self {
-            status: "healthy".to_owned(),
+            status: "healthy".to_string(),
             timestamp: chrono::Utc::now().to_rfc3339(),
             services,
             api: ApiHealth {
-                status: "healthy".to_owned(),
+                status: "healthy".to_string(),
                 uptime_seconds,
             },
         }
@@ -362,15 +353,10 @@ impl DetailedHealthResponse {
     pub fn compute_status(
         services: &std::collections::HashMap<String, ServiceHealth>,
     ) -> &'static str {
-        // Only consider services that are actually configured.
-        let configured: Vec<_> = services
-            .values()
-            .filter(|s| s.status != "not_configured")
-            .collect();
-        if configured.iter().any(|s| s.status == "unavailable") {
+        if services.values().any(|s| s.status == "unavailable") {
             return "unavailable";
         }
-        if configured.iter().any(|s| s.status == "degraded") {
+        if services.values().any(|s| s.status == "degraded") {
             return "degraded";
         }
         "healthy"

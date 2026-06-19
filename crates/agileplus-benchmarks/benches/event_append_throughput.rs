@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! T116 – Event append throughput benchmark.
 //!
 //! Measures how fast individual domain events can be appended to the SQLite
@@ -8,7 +7,7 @@
 
 use agileplus_benchmarks::helpers::{make_event, make_events_multi_entity, make_in_memory_adapter};
 use agileplus_sqlite::repository::events as event_repo;
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
+use criterion::{BenchmarkId, Criterion, black_box, criterion_group, criterion_main};
 
 // ---------------------------------------------------------------------------
 // Benchmark: append N events to a freshly opened in-memory store

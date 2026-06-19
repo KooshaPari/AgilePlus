@@ -1,9 +1,8 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! AgilePlus Governance CLI
 //!
 //! Command-line interface for the governance system.
 
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use clap::Parser;
 use std::path::PathBuf;
 
@@ -71,9 +70,8 @@ async fn main() -> Result<()> {
 
     if cli.verbose {
         std::env::set_var("RUST_LOG", "agileplus_governance=debug");
+        tracing_subscriber::fmt::init();
     }
-    let _telemetry = agileplus_telemetry::init_subscriber()
-        .map_err(|err| anyhow!("failed to initialize telemetry: {err}"))?;
 
     match &cli.command {
         Commands::Policy {
@@ -90,7 +88,7 @@ async fn main() -> Result<()> {
                 match ch.parse::<ReleaseChannel>() {
                     Ok(channel) => context = context.with_channel(channel),
                     Err(e) => {
-                        eprintln!("Invalid channel '{ch}': {e}");
+                        eprintln!("Invalid channel '{}': {}", ch, e);
                     }
                 }
             }
@@ -115,7 +113,7 @@ async fn main() -> Result<()> {
             let from_channel = match from.parse::<ReleaseChannel>() {
                 Ok(c) => c,
                 Err(e) => {
-                    eprintln!("Invalid from channel '{from}': {e}");
+                    eprintln!("Invalid from channel '{}': {}", from, e);
                     return Ok(());
                 }
             };
@@ -123,7 +121,7 @@ async fn main() -> Result<()> {
             let to_channel = match to.parse::<ReleaseChannel>() {
                 Ok(c) => c,
                 Err(e) => {
-                    eprintln!("Invalid to channel '{to}': {e}");
+                    eprintln!("Invalid to channel '{}': {}", to, e);
                     return Ok(());
                 }
             };
@@ -147,7 +145,7 @@ async fn main() -> Result<()> {
                 if !result.warnings.is_empty() {
                     println!("  Warnings:");
                     for w in &result.warnings {
-                        println!("    - {w}");
+                        println!("    - {}", w);
                     }
                 }
             } else {
@@ -155,7 +153,7 @@ async fn main() -> Result<()> {
                 if !result.policy_failures.is_empty() {
                     println!("  Policy failures:");
                     for f in &result.policy_failures {
-                        println!("    - {f}");
+                        println!("    - {}", f);
                     }
                 }
             }
@@ -171,7 +169,7 @@ async fn main() -> Result<()> {
             println!("Connection: {:?}", status.connection_status);
             println!("Pending sync operations: {}", status.pending_operations);
             if let Some(last_sync) = status.last_sync {
-                println!("Last sync: {last_sync}");
+                println!("Last sync: {}", last_sync);
             }
         }
     }
@@ -185,7 +183,7 @@ fn print_policy_result(result: &agileplus_governance::PolicyResult) {
     } else {
         println!("✗ DENIED: {}", result.reason);
         if let Some(ref policy) = result.policy {
-            println!("  Policy: {policy}");
+            println!("  Policy: {}", policy);
         }
     }
 }

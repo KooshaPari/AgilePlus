@@ -1,104 +1,72 @@
-# .dockerignore — Phenotype org canonical (L2 #28)
-# Source of truth: phenotype-org-governance/.dockerignore
-# Ship to all focus repos as a verbatim copy.
-# Reference: https://docs.docker.com/engine/reference/builder/#dockerignore-file
-
-# Version control
 .git
 .gitignore
-.gitattributes
-.github
-
-# Documentation (build context bloat; not needed at runtime)
 *.md
-README*
-CHANGELOG*
-LICENSE*
-docs/
-**/docs/
-
+.env*
+!.env.example
 # Build artifacts
 target/
-**/target/
 dist/
 build/
-**/build/
-**/dist/
-**/.next/
-**/.nuxt/
-**/.output/
-**/coverage/
-**/.pytest_cache/
-**/__pycache__/
-**/.mypy_cache/
-**/.ruff_cache/
-**/htmlcov/
-**/.coverage
-**/.coverage.*
-
-# Node / JS
-node_modules/
-**/node_modules/
+*.o
+*.a
+*.so
+# IDE
+.vscode/
+.idea/
+*.swp
+.DS_Store
+# Test/nested
+**/node_modules
+**/target
+**/.pytest_cache
+**/__pycache__
+**/*.test
+**/tests/
+# Logs
+*.log
+**/*.log
+# Coverage reports
+coverage/
+.coverage
+*.coverage
+# Python virtual environments
+venv/
+env/
+virtualenv/
+# npm/yarn
 package-lock.json
 yarn.lock
 pnpm-lock.yaml
-bun.lock
-
-# Rust / Go
-**/Cargo.lock
+# Rust
 **/.cargo
-**/vendor/
+**/Cargo.lock
+# Go
 go.sum
-**/go-build/
-
-# Python
-**/.venv/
-**/venv/
-**/env/
-**/*.egg-info/
-**/.eggs/
-**/*.whl
-**/*.tar.gz
-**/*.pyc
-
-# IDE / editor
-.idea/
-.vscode/
-*.swp
-*.swo
-*~
-.DS_Store
-**/.DS_Store
-**/Thumbs.db
-
-# Logs / temp
-*.log
-**/*.log
-*.tmp
-**/*.tmp
-**/tmp/
-**/temp/
-
-# Local environment
-.env
-.env.*
-**/.env
-**/.env.local
-**/.env.*.local
-!.env.example
-**/.env.example
-
-# CI / workflows
-.github/workflows/
-.gitlab-ci.yml
-.circleci/
-.drone.yml
-
-# Docker
-Dockerfile.bak
+vendor/
+# Go build cache
+go-build/
+# Java
+*.class
+target/
+build/
+**/.gradle
+**/build/
+**/target/
+**/.maven/
+# Node.js
+.next/
+.nuxt/
+/.output/
+.dist/
+# TypeScript
+**/tsconfig.tsbuildinfo
+# Docker compose
 docker-compose.override.yml
-.dockerignore
-
-# Test fixtures (do not ship into image)
-**/tests/fixtures/large/
-**/snapshots/baselines/
+# Local dev files
+local.env
+.env.local
+# Temp files
+*.tmp
+*.temp
+**/temp/
+**/tmp/

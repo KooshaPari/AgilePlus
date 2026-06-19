@@ -1,24 +1,17 @@
-# release-plz configuration for the AgilePlus workspace.
-# See https://release-plz.dev/docs/config/
-
 [workspace]
 changelog_update = true
 dependencies_update = true
 git_release_enable = true
 git_tag_enable = true
-pr_name = "chore(release): v${{version}}"
+pr_name = "chore: release crates"
 pr_draft = false
-pr_labels = ["release"]
 semver_check = false
-allow_dirty = false
 
-# Workspace-level (virtual) crate - never published.
 [[package]]
 name = "agileplus"
 publish = false
 release = false
 
-# Internal / non-publishable crates.
 [[package]]
 name = "agileplus-benchmarks"
 publish = false
@@ -35,16 +28,6 @@ publish = false
 release = false
 
 [[package]]
-name = "agileplus-fixtures"
-publish = false
-release = false
-
-[[package]]
 name = "xtask-anti-patterns"
-publish = false
-release = false
-
-[[package]]
-name = "pheno-ssot-template"
 publish = false
 release = false

@@ -1,0 +1,34 @@
+# .semgrep.yml — AgilePlus SAST gate
+# Aggregates: local project rules (.semgrep-rules/) + curated community rulesets
+# for parity with CI sast-full.yml coverage.
+
+rules:
+  - id: config
+    include:
+      - .semgrep-rules/
+
+  - id: owasp-top-ten
+    include:
+      - p/owasp-top-ten
+
+  - id: cwe-top-25
+    include:
+      - p/cwe-top-25
+
+  - id: security-audit
+    include:
+      - p/security-audit
+
+exclude:
+  - tests/
+  - "**/*_test.rs"
+  - "**/__pycache__"
+  - node_modules/
+  - target/
+
+max-lines-per-finding: 10
+paths:
+  exclude:
+    - ".git/"
+    - "target/"
+    - ".archive/"

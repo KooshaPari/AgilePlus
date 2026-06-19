@@ -1,5 +1,4 @@
-# CODEOWNERS — Phenotype Shelf
-# Default fallback owner
+# CODEOWNERS
 * @KooshaPari
 
 # Rust workspace
@@ -19,39 +18,3 @@
 # Sensitive
 /SECURITY.md @KooshaPari
 /.github/workflows/ @KooshaPari
-
-# Per-crate ownership (extends /crates/ rule above for finer granularity)
-# Domain core
-/crates/agileplus-domain/ @KooshaPari
-/crates/agileplus-application/ @KooshaPari
-/crates/agileplus-contracts/ @KooshaPari
-/crates/agileplus-config/ @KooshaPari
-# Adapters
-/crates/agileplus-api/ @KooshaPari
-/crates/agileplus-cli/ @KooshaPari
-/crates/agileplus-dashboard/ @KooshaPari
-/crates/agileplus-github/ @KooshaPari
-/crates/agileplus-plane/ @KooshaPari
-/crates/agileplus-import/ @KooshaPari
-/crates/agileplus-git/ @KooshaPari
-/crates/agileplus-events/ @KooshaPari
-/crates/agileplus-nats/ @KooshaPari
-/crates/agileplus-grpc/ @KooshaPari
-/crates/agileplus-telemetry/ @KooshaPari
-# Data
-/crates/agileplus-sqlite/ @KooshaPari
-/crates/agileplus-cache/ @KooshaPari
-/crates/agileplus-graph/ @KooshaPari
-# Tests + tools
-/crates/agileplus-contract-tests/ @KooshaPari
-/crates/agileplus-integration-tests/ @KooshaPari
-/crates/agileplus-fixtures/ @KooshaPari
-/crates/agileplus-benchmarks/ @KooshaPari
-/crates/agileplus-p2p/ @KooshaPari
-/crates/agileplus-sync/ @KooshaPari
-/crates/agileplus-subcmds/ @KooshaPari
-/crates/agileplus-proto/ @KooshaPari
-/crates/agileplus-artifacts/ @KooshaPari
-# Governance
-/crates/agileplus-triage/ @KooshaPari
-/crates/agileplus-governance/ @KooshaPari

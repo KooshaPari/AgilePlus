@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! T048: Outbound Sync — push features and work packages to Plane.so.
 //!
 //! Traceability: WP08-T048, WP06-T031, WP06-T033

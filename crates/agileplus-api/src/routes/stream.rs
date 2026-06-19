@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Server-Sent Events (SSE) streaming endpoint.
 //!
 //! `GET /api/v1/stream` — real-time domain events via SSE.
@@ -9,10 +8,10 @@
 //! Traceability: WP11-T069
 
 use axum::extract::State;
-use axum::response::sse::{Event, KeepAlive, Sse};
 use axum::response::IntoResponse;
-use tokio_stream::wrappers::BroadcastStream;
+use axum::response::sse::{Event, KeepAlive, Sse};
 use tokio_stream::StreamExt as _;
+use tokio_stream::wrappers::BroadcastStream;
 
 use crate::state::AppState;
 use agileplus_domain::ports::{

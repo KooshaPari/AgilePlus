@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! T111: Service failure and recovery integration test.
 //!
 //! Verifies that the platform degrades gracefully when the cache (Dragonfly)
@@ -14,7 +13,7 @@ use agileplus_integration_tests::common::{
 use std::time::{Duration, Instant};
 
 #[cfg(feature = "integration")]
-use agileplus_integration_tests::common::harness::{is_process_compose_installed, TestHarness};
+use agileplus_integration_tests::common::harness::{TestHarness, is_process_compose_installed};
 
 /// Helper: skip the test if services are unavailable.
 #[cfg(feature = "integration")]

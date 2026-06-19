@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 use std::collections::HashMap;
 
 use anyhow::{Context, Result, anyhow};
@@ -67,7 +66,6 @@ pub(super) async fn import_work_packages<S: StoragePort>(
                 updated_at: Utc::now(),
                 base_commit: None,
                 head_commit: None,
-                trace_ids: Vec::new(),
             };
             let id = storage
                 .create_work_package(&wp)

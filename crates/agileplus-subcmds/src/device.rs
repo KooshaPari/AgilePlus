@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Device management CLI commands for AgilePlus.
 //!
 //! Provides three subcommands:
@@ -156,8 +155,7 @@ pub async fn run_discover(args: &DiscoverArgs) -> anyhow::Result<()> {
             w4 = col_widths.4,
         );
     }
-    println!("
-{} peer(s) discovered.", rows.len());
+    println!("\n{} peer(s) discovered.", rows.len());
     Ok(())
 }
 
@@ -224,12 +222,9 @@ pub async fn run_sync(args: &SyncArgs) -> anyhow::Result<()> {
     // Validate flag combinations.
     if !args.all && args.peer.is_none() {
         anyhow::bail!(
-            "No sync target specified.
-\
-             Usage:
-  \
-             agileplus device sync --all                  sync with all online peers
-  \
+            "No sync target specified.\n\
+             Usage:\n  \
+             agileplus device sync --all                  sync with all online peers\n  \
              agileplus device sync --peer <device-id>     sync with a specific peer"
         );
     }
@@ -339,8 +334,7 @@ pub async fn run_sync(args: &SyncArgs) -> anyhow::Result<()> {
     }
 
     // Print sync report.
-    println!("
-Sync Report (strategy: {})", args.strategy);
+    println!("\nSync Report (strategy: {})", args.strategy);
     println!("{}", "=".repeat(60));
     for r in &reports {
         let status_str = if r.success { "OK" } else { "FAILED" };
@@ -360,8 +354,7 @@ Sync Report (strategy: {})", args.strategy);
     }
     let ok_count = reports.iter().filter(|r| r.success).count();
     println!(
-        "
-{}/{} peer(s) synced successfully.",
+        "\n{}/{} peer(s) synced successfully.",
         ok_count,
         reports.len()
     );
@@ -427,7 +420,7 @@ pub async fn run_status(args: &StatusArgs) -> anyhow::Result<()> {
         .unwrap_or_else(|_| "unknown".to_string());
 
     let local = LocalDeviceInfo {
-        device_id: format!("local-{hostname}"),
+        device_id: format!("local-{}", &hostname),
         hostname: hostname.clone(),
         tailscale_ip: String::from("(unavailable without Tailscale)"),
     };

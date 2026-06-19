@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 /// Represents one side of a git conflict block.
 #[derive(Debug)]
 pub(crate) struct ConflictBlock {
@@ -35,10 +34,8 @@ pub(crate) fn parse_conflict_blocks(content: &str) -> Vec<ConflictBlock> {
             in_theirs = true;
         } else if line.starts_with(">>>>>>>") && in_conflict {
             blocks.push(ConflictBlock {
-                ours: ours_lines.join("
-"),
-                theirs: theirs_lines.join("
-"),
+                ours: ours_lines.join("\n"),
+                theirs: theirs_lines.join("\n"),
             });
             in_conflict = false;
             in_theirs = false;

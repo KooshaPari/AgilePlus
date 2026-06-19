@@ -64,7 +64,7 @@ Shared behavior should move into `phenoShared` or `phenotype-infrakit` before it
 | Component | Location | Ownership |
 |-----------|----------|-----------|
 | Cross-project docs | `docs/` | Engineering standards, governance, and reference material. |
-| Worklogs | `docs/worklogs/` | Architecture, governance, duplication, dependency, performance, integration, and research decisions. |
+| Worklogs | `worklogs/` | Architecture, governance, duplication, dependency, performance, integration, and research decisions. |
 | Specs | `kitty-specs/` | Shelf-level AgilePlus specs and stabilization work packages. |
 | CI templates | `.github/workflows/` and per-repo `.github/workflows/` | Security, quality, release, SBOM, and documentation checks. |
 | Web landings | `*-landing/`, `projects-landing/`, `phenokits-landing/` | Independently deployed marketing and portfolio sites. |
@@ -131,6 +131,7 @@ Use this document for cross-repo boundaries. Use each repo README for local arch
 |---------|--------|
 | AgilePlus | [AgilePlus/README.md](AgilePlus/README.md) |
 | phenoShared | [phenoShared/README.md](phenoShared/README.md) |
+| phenotype-infrakit | [phenotype-infrakit/README.md](phenotype-infrakit/README.md) |
 | pheno-cli | [pheno-cli/README.md](pheno-cli/README.md) |
 | pheno | [pheno/README.md](pheno/README.md) |
 | thegent | [thegent/README.md](thegent/README.md) |
@@ -146,36 +147,4 @@ Use this document for cross-repo boundaries. Use each repo README for local arch
 | hwLedger | [hwLedger/README.md](hwLedger/README.md) |
 | PolicyStack | [PolicyStack/README.md](PolicyStack/README.md) |
 | phenoAI | [phenoAI/README.md](phenoAI/README.md) |
-
----
-
-## Rich Media Stubs
-
-<!-- RICH-MEDIA-STUB type="annotated-screenshot" subject="AgilePlus hexagonal architecture — Rust workspace + MCP server diagram" journey="" status="PUBLISHED" -->
-```mermaid
-flowchart LR
-  subgraph driving["Driving adapters"]
-    CLI["agileplus-cli"]
-    API["agileplus-api :4000"]
-    WEB["dashboard/web React"]
-  end
-  subgraph core["Domain core"]
-    DOM["Epic · Story · WorkPackage<br/>traceability links"]
-  end
-  subgraph driven["Driven adapters"]
-    SQL["agileplus-sqlite"]
-    GH["agileplus-github"]
-    PL["agileplus-plane"]
-    MCP["agileplus-mcp"]
-  end
-  CLI --> DOM
-  API --> DOM
-  WEB --> API
-  DOM --> SQL
-  DOM --> GH
-  DOM --> PL
-  MCP --> API
-```
-
-*Hexagonal view of the Rust workspace: driving adapters (CLI, REST API, React dashboard) call into the domain core; driven adapters persist and integrate externally. Export to annotated PNG via `doc-embeds` when a static asset is required for offline docs.*
-<!-- END-RICH-MEDIA-STUB -->
+| tooling | [tooling/README.md](tooling/README.md) |

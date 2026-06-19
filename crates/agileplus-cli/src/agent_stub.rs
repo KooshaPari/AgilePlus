@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Stub AgentPort implementation for use when no real agent adapter is configured.
 //!
 //! Prints instructions for manual execution and returns a no-op job ID.
@@ -43,8 +42,7 @@ impl AgentPort for StubAgentAdapter {
             task.worktree_path.display()
         );
         println!(
-            "  To implement manually, open the worktree and run the agent with the prompt at:
-  {}",
+            "  To implement manually, open the worktree and run the agent with the prompt at:\n  {}",
             task.prompt_path.display()
         );
         // Return a synthetic job ID

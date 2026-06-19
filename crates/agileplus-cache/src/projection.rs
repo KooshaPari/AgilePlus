@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Projection cache for Feature and WorkPackage state.
 
 use crate::store::CacheStore;

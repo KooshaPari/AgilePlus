@@ -1,7 +1,6 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Event repository — CRUD for the `events` table.
 
-use rusqlite::{params, Connection, Row};
+use rusqlite::{Connection, Row, params};
 
 use agileplus_domain::domain::event::Event;
 use agileplus_domain::error::DomainError;
@@ -67,12 +66,6 @@ pub fn append_event(conn: &Connection, event: &Event) -> Result<i64, DomainError
     let payload_json = serde_json::to_string(&event.payload)
         .map_err(|e| DomainError::Storage(format!("serialize payload: {e}")))?;
 
-    // The store owns sequence assignment (mirroring `InMemoryEventStore`):
-    // `Event::new` leaves `sequence` at 0, so derive the next strictly-monotonic
-    // per-(entity_type, entity_id) sequence here instead of inserting the
-    // event's stale value, which would collide on the UNIQUE index.
-    let sequence = get_latest_sequence(conn, &event.entity_type, event.entity_id)? + 1;
-
     conn.execute(
         &format!(
             "INSERT INTO events ({SELECT_COLS}) VALUES (NULL, ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)"
@@ -86,12 +79,12 @@ pub fn append_event(conn: &Connection, event: &Event) -> Result<i64, DomainError
             event.timestamp.to_rfc3339(),
             &event.prev_hash[..],
             &event.hash[..],
-            sequence,
+            event.sequence,
         ],
     )
     .map_err(map_err)?;
 
-    Ok(sequence)
+    Ok(conn.last_insert_rowid())
 }
 
 pub fn get_events(

@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Counters and histograms for AgilePlus operational metrics.
 //!
 //! Instruments are stored in [`MetricsRecorder`] and exported via the
@@ -7,16 +6,16 @@
 
 use std::{
     sync::{
-        atomic::{AtomicU64, Ordering},
         Arc,
+        atomic::{AtomicU64, Ordering},
     },
     time::Duration,
 };
 
 use chrono::{DateTime, Utc};
 use opentelemetry::{
-    metrics::{Counter, Gauge, Histogram, Meter},
     KeyValue,
+    metrics::{Counter, Gauge, Histogram, Meter},
 };
 
 // ---------------------------------------------------------------------------
@@ -46,12 +45,12 @@ impl MetricsRecorder {
         let agent_runs = meter
             .u64_counter("agileplus.agent.runs")
             .with_description("Number of agent invocations")
-            .build();
+            .init();
 
         let review_cycles = meter
             .u64_counter("agileplus.review.cycles")
             .with_description("Number of review-fix loop iterations")
-            .build();
+            .init();
 
         let command_duration = meter
             .f64_histogram("agileplus.command.duration_ms")
@@ -59,34 +58,34 @@ impl MetricsRecorder {
             .with_boundaries(vec![
                 10.0, 50.0, 100.0, 500.0, 1_000.0, 5_000.0, 30_000.0, 60_000.0,
             ])
-            .build();
+            .init();
 
         let events_processed = meter
             .u64_counter("events_processed")
             .with_description("Total events appended to the event store")
-            .build();
+            .init();
 
         let sync_duration_ms = meter
             .f64_histogram("sync_duration_ms")
             .with_description("Duration in milliseconds for sync operations")
             .with_boundaries(vec![1.0, 5.0, 10.0, 50.0, 100.0, 500.0, 1_000.0, 5_000.0])
-            .build();
+            .init();
 
         let cache_hit_rate = meter
             .f64_gauge("cache_hit_rate")
             .with_description("Cache hit/miss ratio (0.0 to 1.0)")
-            .build();
+            .init();
 
         let api_request_duration_ms = meter
             .f64_histogram("api_request_duration_ms")
             .with_description("API request latency in milliseconds")
             .with_boundaries(vec![1.0, 5.0, 10.0, 50.0, 100.0, 250.0, 500.0, 1_000.0])
-            .build();
+            .init();
 
         let active_features = meter
             .u64_gauge("active_features")
             .with_description("Count of non-terminal features")
-            .build();
+            .init();
 
         Self {
             agent_runs,
@@ -185,11 +184,11 @@ impl MetricsRecorder {
 }
 
 pub fn init_metrics(meter: &Meter) {
-    let _ = meter.u64_counter("events_processed").build();
-    let _ = meter.f64_histogram("sync_duration_ms").build();
-    let _ = meter.f64_gauge("cache_hit_rate").build();
-    let _ = meter.f64_histogram("api_request_duration_ms").build();
-    let _ = meter.u64_gauge("active_features").build();
+    let _ = meter.u64_counter("events_processed").init();
+    let _ = meter.f64_histogram("sync_duration_ms").init();
+    let _ = meter.f64_gauge("cache_hit_rate").init();
+    let _ = meter.f64_histogram("api_request_duration_ms").init();
+    let _ = meter.u64_gauge("active_features").init();
 }
 
 // ---------------------------------------------------------------------------

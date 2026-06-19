@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Dragonfly/Redis health check.
 
 use crate::pool::CachePool;

@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Work package route handlers.
 //!
 //! - GET  /api/v1/features/:slug/work-packages      → list WPs for feature
@@ -157,7 +156,6 @@ where
         updated_at: now,
         base_commit: None,
         head_commit: None,
-        trace_ids: Vec::new(),
     };
 
     let id = app
@@ -257,7 +255,7 @@ where
     Ok(Json(WpTransitionResponse {
         wp_id: id,
         from_state,
-        to_state: format!("{target:?}").to_lowercase(),
+        to_state: format!("{:?}", target).to_lowercase(),
     }))
 }
 

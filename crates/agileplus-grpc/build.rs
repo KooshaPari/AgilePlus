@@ -1,33 +1,21 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
-// Proto compilation is handled by agileplus-proto crate.
-// This build.rs propagates the agileplus_proto_stubs cfg flag so that
-// server/mod.rs can gate the transport-dependent start_server function.
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let protos = &[
+        "../../proto/agileplus/v1/core.proto",
+        "../../proto/agileplus/v1/agents.proto",
+        "../../proto/agileplus/v1/common.proto",
+        "../../proto/agileplus/v1/integrations.proto",
+    ];
 
-fn main() {
-    println!("cargo::rustc-check-cfg=cfg(agileplus_proto_stubs)");
+    let includes = &["../../proto"];
 
-    // Mirror the protoc availability check: if protoc is absent we're in stub mode.
-    if std::env::var("SKIP_PROTO_BUILD").is_ok() || which_protoc().is_none() {
-        println!("cargo:rustc-cfg=agileplus_proto_stubs");
+    tonic_build::configure()
+        .build_server(true)
+        .build_client(true)
+        .compile_protos(protos, includes)?;
+
+    for proto in protos {
+        println!("cargo:rerun-if-changed={proto}");
     }
-}
 
-fn which_protoc() -> Option<std::path::PathBuf> {
-    if let Ok(p) = std::env::var("PROTOC") {
-        let path = std::path::PathBuf::from(p);
-        if path.exists() {
-            return Some(path);
-        }
-    }
-    let name = if cfg!(windows) {
-        "protoc.exe"
-    } else {
-        "protoc"
-    };
-    std::env::var_os("PATH").and_then(|paths| {
-        std::env::split_paths(&paths).find_map(|dir| {
-            let candidate = dir.join(name);
-            candidate.is_file().then_some(candidate)
-        })
-    })
+    Ok(())
 }

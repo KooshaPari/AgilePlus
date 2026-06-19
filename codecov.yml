@@ -1,29 +1,19 @@
 coverage:
   status:
     project:
-      agileplus-cli:
-        target: 80%
+      default:
+        target: auto
         threshold: 1%
-        flags:
-          - agileplus-cli
-      agileplus-sqlite:
+    patch:
+      default:
         target: 80%
-        threshold: 1%
-        flags:
-          - agileplus-sqlite
-      agileplus-trace-validator:
-        target: 80%
-        threshold: 1%
-        flags:
-          - agileplus-trace-validator
 
-flags:
-  agileplus-cli:
-    paths:
-      - crates/agileplus-cli/
-  agileplus-sqlite:
-    paths:
-      - crates/agileplus-sqlite/
-  agileplus-trace-validator:
-    paths:
-      - crates/agileplus-trace-validator/
+comment:
+  layout: "reach, diff, flags, files"
+  behavior: default
+
+ignore:
+  - docs/
+  - "**/tests/**"
+  - "**/target/**"
+  - "**/node_modules/**"

@@ -1,0 +1,228 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Dirty-vs-Clean Worktree Audit Matrix",
+  "description": "Regression fixture capturing known-clean and known-dirty paths across Phenotype repos. Generated from task #24 audit of repo-manifest.json cross-referenced with live git status. This file is used by task #54 diff-matrix regression tests.",
+  "meta": {
+    "fixture_id": "worktree-dirty-clean-matrix",
+    "version": "1.0.0",
+    "generated_at": "2026-05-05T00:00:00Z",
+    "source": "AgilePlus/.work-audit/repo-manifest.json + live git status --porcelain",
+    "audit_task": 24,
+    "fixture_task": 54,
+    "total_repos_in_manifest": 47,
+    "repos_checked_live": 47,
+    "repos_found_clean": 3,
+    "repos_found_dirty": 3,
+    "repos_path_not_found": 40,
+    "repos_git_timeout": 1
+  },
+  "known_clean": [
+    {
+      "name": "agentapi-plusplus",
+      "path": "/Users/kooshapari/CodeProjects/Phenotype/repos/agentapi-plusplus",
+      "canonical_name": "agentapi-plusplus",
+      "branch": "fix/sync-upstream",
+      "git_status_clean": true,
+      "manifest_uncommitted_count": 0,
+      "has_specs": false,
+      "has_agents_md": false,
+      "note": "Clean — uncommitted_count=0 in manifest, verified by git status --porcelain"
+    },
+    {
+      "name": "cliproxyapi-plusplus",
+      "path": "/Users/kooshapari/CodeProjects/Phenotype/repos/cliproxyapi-plusplus",
+      "canonical_name": "cliproxyapi-plusplus",
+      "branch": "fix/cliproxy-v6-migration-20260327",
+      "git_status_clean": true,
+      "manifest_uncommitted_count": 0,
+      "has_specs": false,
+      "has_agents_md": false,
+      "note": "Clean — uncommitted_count=0 in manifest, verified by git status --porcelain"
+    },
+    {
+      "name": "phenodocs",
+      "path": "/Users/kooshapari/CodeProjects/Phenotype/repos/.archive/phenodocs",
+      "canonical_name": ".archive/phenodocs",
+      "branch": "main",
+      "git_status_clean": true,
+      "manifest_uncommitted_count": 0,
+      "has_specs": false,
+      "has_agents_md": false,
+      "note": "Clean — archived repo, verified by git status --porcelain"
+    }
+  ],
+  "known_dirty": [
+    {
+      "name": "agent-devops-setups",
+      "path": "/Users/kooshapari/CodeProjects/Phenotype/repos/agent-devops-setups",
+      "canonical_name": "agent-devops-setups",
+      "branch": "docs-site-completion",
+      "git_status_clean": false,
+      "manifest_uncommitted_count": 0,
+      "manifest_untracked_count": 0,
+      "dirty_files": [
+        {
+          "status": "M",
+          "path": "CLAUDE.md"
+        },
+        {
+          "status": "M",
+          "path": "Taskfile.yml"
+        },
+        {
+          "status": "M",
+          "path": "docs/package.json"
+        },
+        {
+          "status": "M",
+          "path": "package.json"
+        }
+      ],
+      "dirty_patterns": [
+        "config",
+        "package"
+      ],
+      "note": "Dirty — 4 modified tracked files, no untracked files"
+    },
+    {
+      "name": "heliosApp",
+      "path": "/Users/kooshapari/CodeProjects/Phenotype/repos/heliosApp",
+      "canonical_name": "heliosApp",
+      "branch": "main",
+      "git_status_clean": false,
+      "manifest_uncommitted_count": 0,
+      "manifest_untracked_count": 0,
+      "dirty_files": [
+        {
+          "status": "D",
+          "path": ".github/workflows/compliance-check.yml.bak"
+        },
+        {
+          "status": "D",
+          "path": ".github/workflows/gca.yml.bak"
+        },
+        {
+          "status": "D",
+          "path": ".github/workflows/quality-gates.yml.bak"
+        },
+        {
+          "status": "D",
+          "path": ".github/workflows/required-checks-bridge.yml.bak"
+        },
+        {
+          "status": "D",
+          "path": ".github/workflows/self-merge-gate.yml.bak"
+        }
+      ],
+      "dirty_patterns": [
+        "workflow_backup_cleanup"
+      ],
+      "note": "Dirty — 5 deleted .bak workflow files, no other modifications"
+    },
+    {
+      "name": "thegent",
+      "path": "/Users/kooshapari/CodeProjects/Phenotype/repos/thegent",
+      "canonical_name": "thegent",
+      "branch": "main",
+      "git_status_clean": false,
+      "manifest_uncommitted_count": 0,
+      "manifest_untracked_count": 0,
+      "dirty_files": [
+        {
+          "status": "M",
+          "path": "src/thegent/dex_main/__init__.py"
+        },
+        {
+          "status": "M",
+          "path": "tests/test_unit_dex_main.py"
+        }
+      ],
+      "dirty_patterns": [
+        "dex_main",
+        "test"
+      ],
+      "note": "Dirty — 2 modified files (source + test), dex_main module work"
+    }
+  ],
+  "path_not_found": {
+    "count": 40,
+    "repos": [
+      ".archive/4sgm.20260325-082955Z",
+      "apps/AgilePlus",
+      "agent-wave",
+      "agentops-policy-federation",
+      "bifrost-extensions",
+      "civ",
+      "services/colab",
+      "phenotype-config/contracts",
+      "phenotype-config/docs",
+      "apps/helMo",
+      "heliosCLI",
+      "parpour",
+      "phench",
+      "phenotype-config",
+      "phenotype-design",
+      "phenotypeActions",
+      "governance/policy-contract",
+      "libs/portage",
+      "profiler",
+      "libs/python/phenotype-sdk",
+      "template-commons",
+      "libs/template-domain-service-api",
+      "libs/template-domain-webapp",
+      "libs/template-lang-elixir-hex",
+      "libs/template-lang-go",
+      "libs/template-lang-kotlin",
+      "libs/template-lang-mojo",
+      "libs/template-lang-python",
+      "libs/template-lang-rust",
+      "libs/template-lang-swift",
+      "libs/template-lang-typescript",
+      "libs/template-lang-zig",
+      "libs/template-program-ops",
+      "tokenledger",
+      "trace",
+      "trash-cli",
+      "phenotype-gauge",
+      "phenotype-go-kit",
+      "phenotype-nexus",
+      "phenotype-shared"
+    ],
+    "note": "These paths in the repo-manifest.json do not exist on disk. Likely renames/moves to canonical Phenotype/repos/ paths or archived worktrees."
+  },
+  "git_timeout": {
+    "count": 1,
+    "repos": [
+      "agentops-policy-federation",
+      "phenotype-shared"
+    ],
+    "note": "git status timed out (>5s) — large repos or slow filesystem"
+  },
+  "regression_assertions": {
+    "description": "Assertions that must hold for this fixture to be considered valid on re-audit",
+    "assertions": [
+      {
+        "id": "clean-repos-unmodified",
+        "type": "git_status_clean",
+        "repos": ["agentapi-plusplus", "cliproxyapi-plusplus", ".archive/phenodocs"],
+        "must_be": true
+      },
+      {
+        "id": "dirty-repos-modified",
+        "type": "git_status_dirty",
+        "repos": ["agent-devops-setups", "heliosApp", "thegent"],
+        "must_be": true
+      },
+      {
+        "id": "dirty-files-stable",
+        "type": "dirty_paths",
+        "detail": {
+          "agent-devops-setups": ["CLAUDE.md", "Taskfile.yml", "docs/package.json", "package.json"],
+          "heliosApp": [".github/workflows/compliance-check.yml.bak", ".github/workflows/gca.yml.bak", ".github/workflows/quality-gates.yml.bak", ".github/workflows/required-checks-bridge.yml.bak", ".github/workflows/self-merge-gate.yml.bak"],
+          "thegent": ["src/thegent/dex_main/__init__.py", "tests/test_unit_dex_main.py"]
+        },
+        "note": "These exact dirty paths must appear in any subsequent audit. Any new dirty path in these repos is a regression."
+      }
+    ]
+  }
+}

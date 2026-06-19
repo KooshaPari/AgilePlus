@@ -1,41 +1,37 @@
-# AgilePlus — SPEC.md
+# Specification: AgilePlus
 
-## Architecture Overview
+AgilePlus - The primary project management and workflow automation platform.
 
-AgilePlus is a real-time portfolio and asset tracking application built on a Rust-based services framework. It manages user portfolios, financial data, and provides external API integrations.
+## Overview
 
-## Stack
+Rust + TypeScript monorepo containing the core AgilePlus system including:
+project management, CLI tooling, agents, MCP integrations, and infrastructure crates.
 
-| Layer | Technology | Notes |
-|-------|-----------|-------|
-| Backend | Rust 2024 edition | Tokio + async runtime |
-| Web Framework | Axum | REST API routes |
-| Async Runtime | Tokio 1.41+ | Multi-threaded, full feature set |
-| Observability | Tracing + `tracy-client` | Async-aware profiling |
-| Data Layer | Custom SQL/JSON | Query-structured JSON for portfolio data |
-| CLI Runner | `agileplus-cli` | Standalone binary for portfolio operations |
+## Tech Stack
 
-## Key Commands
+- **Language**: Rust (edition 2021), TypeScript
+- **Build**: Cargo, Bun
+- **Testing**: Cargo test, Bun test
 
-| Command | Description |
-|---------|-------------|
-| `cargo build --release` | Build all Rust binaries |
-| `cargo test --workspace` | Run all tests |
-| `cargo clippy --workspace --all-targets` | Lint all packages |
-| `cargo fmt --all -- --check` | Check formatting |
-| `just check` | Run formatting + clippy + tests |
-| `just lint` | Run clippy only |
-| `just start` | Start the development server |
-| `cargo run -p agileplus-cli` | Run the CLI tool directly |
+## Key Components
 
-## Design Decisions
+- `agileplus/` - Core CLI application
+- `agileplus-agents/` - Agent implementations
+- `agileplus-mcp/` - MCP server integrations
+- `crates/` - Rust workspace crates
+- `libs/` - TypeScript libraries
+- `pheno-cli/` - Phenotype CLI
+- `docs/` - Documentation
+- `kitty-specs/` - Feature specifications
 
-- **Query-structured JSON for portfolio data**: Flexibility in storing heterogeneous financial instrument data without rigid schema migrations.
-- **Axum + Tokio for async I/O**: Leverages Rust's async ecosystem for high-throughput API handling with minimal latency.
-- **`tracy-client` for async profiling**: Zero-cost instrumentation that can be toggled at compile time; enables frame-level analysis of async task execution.
+## Quality Standards
 
-## Integration Points
+- All linters must pass: `cargo clippy --workspace -- -D warnings`
+- All tests must pass: `cargo test --workspace`
+- Test-First Mandate: failing test before fix
 
-- `pheno-otel` — OpenTelemetry tracing for async service handlers
-- `pheno-schema` — Zod schemas for portfolio data validation and API contracts
-- `pheno-utils` — Shared Rust utility functions for data transformation and crypto helpers
+## Links
+
+- PLAN.md - Project plan
+- PRD.md - Product requirements
+- FUNCTIONAL_REQUIREMENTS.md - Feature requirements

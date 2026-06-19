@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! T049: Inbound Sync — process Plane.so webhook events.
 //!
 //! Traceability: WP08-T049

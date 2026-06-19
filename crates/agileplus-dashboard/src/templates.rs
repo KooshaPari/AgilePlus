@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Askama template structs — one per HTML template file.
 //!
 //! The `#[template(path = "...")]` path is relative to the `templates/` dirs
@@ -19,7 +18,7 @@ pub struct ProjectView {
     pub id: i64,
     pub slug: String,
     pub name: String,
-    pub description: Option<String>,
+    pub description: String,
 }
 
 /// Project summary view model used on the homepage.
@@ -49,7 +48,6 @@ pub struct WpView {
 }
 
 impl WpView {
-    #[allow(clippy::uninlined_format_args)]
     pub fn from_wp(wp: &WorkPackage) -> Self {
         Self {
             id: wp.id,
@@ -422,7 +420,6 @@ pub struct HubPage {
 }
 
 /// Helper: build ordered kanban states list.
-#[allow(clippy::redundant_closure_for_method_calls)]
 pub fn all_feature_states() -> Vec<String> {
     vec![
         FeatureState::Created,

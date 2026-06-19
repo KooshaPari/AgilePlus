@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 use std::time::Instant;
 
 #[derive(Debug, thiserror::Error)]

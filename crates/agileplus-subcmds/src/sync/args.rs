@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 use clap::{Args, Subcommand};
 
 /// `agileplus sync` dispatcher.

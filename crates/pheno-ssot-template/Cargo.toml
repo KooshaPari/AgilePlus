@@ -2,15 +2,12 @@
 name = "pheno-ssot-template"
 version.workspace = true
 edition.workspace = true
+license.workspace = true
 rust-version.workspace = true
 description = "Single-Source-Of-Truth (SSOT) trait + struct-and-render pattern. Define a typed `SSOT` value once, render it as Markdown, JSON, or a template placeholder wherever a copy would otherwise drift."
 keywords = ["phenotype", "ssot", "single-source-of-truth", "template", "render"]
 categories = ["data-structures", "rust-patterns", "template-engine"]
 publish = false
-license = "MIT OR Apache-2.0"
-repository = "https://github.com/KooshaPari/AgilePlus"
-documentation = "https://docs.rs/pheno-ssot-template"
-authors = ["kooshapari"]
 
 [lib]
 name = "pheno_ssot_template"

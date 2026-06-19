@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 use std::time::Instant;
 
 use agileplus_p2p::discovery::{PeerInfo, PeerStatus, discover_peers};
@@ -12,12 +11,9 @@ use crate::device::types::PeerSyncReport;
 pub async fn run_sync(args: &SyncArgs) -> anyhow::Result<()> {
     if !args.all && args.peer.is_none() {
         anyhow::bail!(
-            "No sync target specified.
-\
-             Usage:
-  \
-             agileplus device sync --all                  sync with all online peers
-  \
+            "No sync target specified.\n\
+             Usage:\n  \
+             agileplus device sync --all                  sync with all online peers\n  \
              agileplus device sync --peer <device-id>     sync with a specific peer"
         );
     }
@@ -115,8 +111,7 @@ pub async fn run_sync(args: &SyncArgs) -> anyhow::Result<()> {
         }
     }
 
-    println!("
-Sync Report (strategy: {})", args.strategy);
+    println!("\nSync Report (strategy: {})", args.strategy);
     println!("{}", "=".repeat(60));
     for r in &reports {
         let status_str = if r.success { "OK" } else { "FAILED" };
@@ -136,8 +131,7 @@ Sync Report (strategy: {})", args.strategy);
     }
     let ok_count = reports.iter().filter(|r| r.success).count();
     println!(
-        "
-{}/{} peer(s) synced successfully.",
+        "\n{}/{} peer(s) synced successfully.",
         ok_count,
         reports.len()
     );

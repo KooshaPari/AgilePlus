@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! T120 – Graph query performance benchmark.
 //!
 //! Benchmarks the in-memory `InMemoryGraphStore` to measure the overhead of:
@@ -11,7 +10,7 @@
 //! A Neo4j-backed benchmark would be added in CI using the `neo4j` feature.
 
 use agileplus_graph::{GraphStore, InMemoryGraphStore, Node, NodeType, RelType, Relationship};
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
+use criterion::{BenchmarkId, Criterion, black_box, criterion_group, criterion_main};
 use tokio::runtime::Runtime;
 use uuid::Uuid;
 
@@ -63,9 +62,9 @@ fn bench_get_feature_node(c: &mut Criterion) {
                 NodeType::Feature,
                 serde_json::json!({
                     "id": i,
-                    "slug": format!("feat-{i}"),
+                    "slug": format!("feat-{}", i),
                     "state": "Created",
-                    "friendly_name": format!("Feature {i}")
+                    "friendly_name": format!("Feature {}", i)
                 }),
             );
             store.upsert_node(&node).await.unwrap();
@@ -101,9 +100,9 @@ fn bench_seed_n_features(c: &mut Criterion) {
                             NodeType::Feature,
                             serde_json::json!({
                                 "id": i,
-                                "slug": format!("feat-{i}"),
+                                "slug": format!("feat-{}", i),
                                 "state": "Created",
-                                "friendly_name": format!("Feature {i}")
+                                "friendly_name": format!("Feature {}", i)
                             }),
                         );
                         store.upsert_node(&node).await.expect("create");
@@ -172,9 +171,9 @@ fn bench_dependency_chain_query(c: &mut Criterion) {
                 NodeType::Feature,
                 serde_json::json!({
                     "id": i,
-                    "slug": format!("feat-{i}"),
+                    "slug": format!("feat-{}", i),
                     "state": "Created",
-                    "friendly_name": format!("Feature {i}")
+                    "friendly_name": format!("Feature {}", i)
                 }),
             );
             store.upsert_node(&node).await.unwrap();
@@ -234,9 +233,9 @@ mod tests {
                 NodeType::Feature,
                 serde_json::json!({
                     "id": i,
-                    "slug": format!("feat-{i}"),
+                    "slug": format!("feat-{}", i),
                     "state": "Created",
-                    "friendly_name": format!("Feature {i}")
+                    "friendly_name": format!("Feature {}", i)
                 }),
             );
             store.upsert_node(&node).await.unwrap();

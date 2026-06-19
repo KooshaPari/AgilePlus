@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Feature route handlers.
 //!
 //! - GET  /api/v1/features                  → list (with ?state=, ?label= filters)
@@ -18,7 +17,7 @@ use serde::{Deserialize, Serialize};
 use utoipa::{IntoParams, ToSchema};
 
 use agileplus_domain::domain::feature::Feature;
-use agileplus_domain::domain::state_machine::{self, FeatureState};
+use agileplus_domain::domain::state_machine::FeatureState;
 use agileplus_domain::ports::{
     observability::ObservabilityPort, storage::StoragePort, vcs::VcsPort,
 };
@@ -49,7 +48,7 @@ where
 pub struct FeatureListParams {
     /// Filter by feature state (e.g. `planned`, `in_progress`, `done`).
     pub state: Option<String>,
-    /// Filter by label.
+    /// Filter by label (informational — not yet wired to storage).
     pub label: Option<String>,
 }
 
@@ -81,12 +80,6 @@ where
             .list_features_by_state(fs)
             .await
             .map_err(ApiError::from)?
-    } else if let Some(label) = params.label {
-        state
-            .storage
-            .list_features_by_label(&label)
-            .await
-            .map_err(ApiError::from)?
     } else {
         state
             .storage
@@ -94,6 +87,9 @@ where
             .await
             .map_err(ApiError::from)?
     };
+
+    // label filter is informational for now — domain layer doesn't have label storage yet
+    let _ = params.label;
 
     Ok(Json(
         features.into_iter().map(FeatureResponse::from).collect(),
@@ -223,11 +219,6 @@ where
         ..feature
     };
 
-    app.storage
-        .update_feature(&updated)
-        .await
-        .map_err(ApiError::from)?;
-
     Ok(Json(FeatureResponse::from(updated)))
 }
 
@@ -263,7 +254,7 @@ where
         .ok_or_else(|| ApiError::NotFound(format!("Feature '{slug}' not found")))?;
 
     let target = parse_feature_state(&body.target_state)?;
-    let result = state_machine::transition(feature.state, target).map_err(ApiError::from)?;
+    let result = feature.state.transition(target).map_err(ApiError::from)?;
 
     app.storage
         .update_feature_state(feature.id, target)

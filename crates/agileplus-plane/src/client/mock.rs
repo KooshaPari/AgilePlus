@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 use std::collections::HashMap;
 use std::sync::Mutex;
 
@@ -72,7 +71,7 @@ impl InMemoryPlaneClient {
                 updated_at: Some(chrono::Utc::now().to_rfc3339()),
             });
         }
-        anyhow::bail!("issue {id} not found")
+        anyhow::bail!("issue {} not found", id)
     }
 
     pub async fn get_work_item(&self, id: &str) -> anyhow::Result<PlaneWorkItemResponse> {
@@ -81,7 +80,7 @@ impl InMemoryPlaneClient {
             .unwrap_or_else(|e| e.into_inner())
             .get(id)
             .cloned()
-            .ok_or_else(|| anyhow::anyhow!("issue {id} not found"))
+            .ok_or_else(|| anyhow::anyhow!("issue {} not found", id))
     }
 
     pub async fn list_work_items(&self) -> anyhow::Result<Vec<PlaneWorkItemResponse>> {

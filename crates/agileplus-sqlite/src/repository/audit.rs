@@ -1,7 +1,6 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Audit repository — CRUD for the `audit_log` table.
 
-use rusqlite::{params, Connection, Row};
+use rusqlite::{Connection, Row, params};
 
 use agileplus_domain::{
     domain::audit::{AuditEntry, EvidenceRef},

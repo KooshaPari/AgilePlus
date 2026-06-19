@@ -1,63 +1,109 @@
-# L2 #33 pre-commit baseline, 2026-06-11.
-# Install: pre-commit install
-# Run default hooks: pre-commit run --all-files
-# Run heavy language baselines: pre-commit run --all-files --hook-stage manual
-
 repos:
+  - repo: https://github.com/returntocorp/semgrep
+    rev: "v1.72.0"
+    hooks:
+      - id: semgrep
+        name: Semgrep
+        args: ["--config=.semgrep.yml", "--error"]
+        language: python
+        types_or: [python, rust, json, javascript, ts, tsx, yaml, go]
+        additional_dependencies: ["semgrep"]
+
+  - repo: https://github.com/trufflesecurity/trufflehog
+    rev: "v3.93.6"
+    hooks:
+      - id: trufflehog
+        name: TruffleHog
+        entry: trufflehog git file://.
+        language: golang
+        types: [text]
+        pass_filenames: false
+        stages: [pre-push]
+
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
+      - id: trailing-whitespace
       - id: end-of-file-fixer
       - id: check-yaml
-        args: [--allow-multiple-documents]
       - id: check-toml
+      - id: check-merge-conflict
       - id: check-added-large-files
-        args: [--maxkb=1000]
+        args: ["--maxkb=500"]
+      - id: detect-private-key
 
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.6.9
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v4.0.0
     hooks:
-      - id: ruff
-        args: [--fix]
-        types_or: [python, pyi]
-      - id: ruff-format
-        types_or: [python, pyi]
-
-  - repo: https://github.com/psf/black
-    rev: 24.10.0
-    hooks:
-      - id: black
-        language_version: python3
-        types_or: [python, pyi]
-
-  - repo: https://github.com/gitleaks/gitleaks
-    rev: v8.21.2
-    hooks:
-      - id: gitleaks
+      - id: conventional-pre-commit
+        stages: [commit-msg]
+        args: [feat, fix, docs, style, refactor, perf, test, chore, ci, build, revert]
 
   - repo: local
     hooks:
-      - id: cargo-clippy
-        name: cargo clippy -- -D warnings
-        entry: cargo clippy --workspace --all-targets --all-features
-        args: [--, -D, warnings]
+      - id: buf-lint
+        name: buf lint
+        entry: buf lint
         language: system
-        types: [rust]
+        files: '\.proto$'
         pass_filenames: false
-        stages: [manual]
 
-      - id: golangci-lint
-        name: golangci-lint run --timeout 5m
-        entry: golangci-lint run
-        args: [--timeout, 5m]
+      - id: rustfmt
+        name: rustfmt
+        entry: bash -c 'cd rust && cargo fmt -- --check'
         language: system
-        types: [go]
+        files: '\.rs$'
         pass_filenames: false
-        stages: [manual]
 
-      - id: trufflehog
-        name: trufflehog filesystem
-        entry: trufflehog filesystem --no-update --only-verified --fail .
+      - id: clippy
+        name: clippy
+        entry: bash -c 'cd rust && cargo clippy --all-targets -- -D warnings'
+        language: system
+        files: '\.rs$'
+        pass_filenames: false
+
+      - id: ruff-format
+        name: ruff format
+        entry: bash -c 'cd python && uvx ruff format --check .'
+        language: system
+        files: '\.py$'
+        pass_filenames: false
+
+      - id: ruff-check
+        name: ruff check
+        entry: bash -c 'cd python && uvx ruff check .'
+        language: system
+        files: '\.py$'
+        pass_filenames: false
+
+      - id: typos
+        name: typos
+        entry: typos
         language: system
         pass_filenames: false
-        stages: [manual]
+
+# Local security and fast gate hooks for pre-commit and pre-push stages
+  - repo: local
+    hooks:
+      - id: security-guard-pre-commit-pre-push
+        name: security-guard pre-commit/pre-push
+        entry: .github/scripts/security-guard.sh
+        language: script
+        pass_filenames: false
+        stages: [pre-commit, pre-push]
+
+      - id: legacy-tooling-scan
+        name: Legacy Tooling Anti-Pattern Scanner
+        description: Enforces Phenotype Technology Adoption Philosophy per CLAUDE.md
+        entry: python3 tooling/legacy-enforcement/scanner/legacy_tooling_scanner.py
+        language: system
+        pass_filenames: false
+        always_run: true
+        args:
+          - --repo-root
+          - .
+          - --policy
+          - tooling/legacy-enforcement/policy/rules.yaml
+          - --fail-on-severity
+          - high
+          - --report-only

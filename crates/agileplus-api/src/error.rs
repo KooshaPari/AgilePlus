@@ -1,11 +1,10 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! API error type mapped to HTTP status codes.
 //!
 //! Traceability: WP15-T086
 
+use axum::Json;
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
-use axum::Json;
 use serde_json::json;
 
 /// Errors returned by API handlers.
@@ -63,39 +62,6 @@ impl From<agileplus_domain::error::DomainError> for ApiError {
                 ApiError::Conflict(format!("invalid transition {from} -> {to}: {reason}"))
             }
             other => ApiError::Internal(other.to_string()),
-        }
-    }
-}
-
-/// Map application-layer `AppError` → HTTP `ApiError`.
-///
-/// - `AppError::NotFound`  → 404
-/// - `AppError::Domain`    → 422 (validation) or 409 (conflict/transition)
-/// - `AppError::Storage`   → 500
-impl From<agileplus_application::error::AppError> for ApiError {
-    fn from(e: agileplus_application::error::AppError) -> Self {
-        use agileplus_application::error::AppError;
-        use agileplus_domain::error::DomainError;
-        match e {
-            AppError::NotFound(m) => ApiError::NotFound(m),
-            AppError::Domain(DomainError::Validation(m)) => ApiError::BadRequest(m),
-            AppError::Domain(DomainError::InvalidTransition { from, to, reason }) => {
-                ApiError::Conflict(format!("invalid transition {from} -> {to}: {reason}"))
-            }
-            AppError::Domain(DomainError::Conflict(m)) => ApiError::Conflict(m),
-            // All domain not-found variants bubble up as 404.
-            AppError::Domain(
-                DomainError::NotFound(m)
-                | DomainError::FeatureNotFound(m)
-                | DomainError::WorkPackageNotFound(m)
-                | DomainError::ModuleNotFound(m)
-                | DomainError::CycleNotFound(m),
-            ) => ApiError::NotFound(m),
-            AppError::Domain(other) => ApiError::BadRequest(other.to_string()),
-            AppError::Storage(e) => {
-                tracing::error!("storage error: {e}");
-                ApiError::Internal("storage error".to_string())
-            }
         }
     }
 }

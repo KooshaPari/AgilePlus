@@ -1,16 +1,28 @@
 ---
 name: Feature request
-about: Suggest an idea for this project
-title: '[FEATURE] '
+about: Propose a new feature with clear scope and release context
+title: "[feature]"
 labels: enhancement
-assignees: ''
 ---
 
-**Is your feature request related to a problem?**
-A clear description of the problem.
+## Problem statement
 
-**Describe the solution you'd like**
-What you want to happen.
+## Proposed solution
 
-**Describe alternatives you've considered**
-Any alternative solutions.
+## Scope
+
+- What is in scope:
+- What is out of scope:
+
+## Impact
+
+- User value:
+- Risk:
+- Release impact:
+
+## Release / versioning context
+
+- [ ] This feature likely needs a changelog entry.
+- [ ] I considered whether this is a minor or major SemVer change.
+
+## Additional context

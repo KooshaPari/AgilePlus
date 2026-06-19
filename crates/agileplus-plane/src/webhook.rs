@@ -1,13 +1,12 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! T047: Webhook endpoint — axum handler for Plane.so webhook events.
 //!
 //! Traceability: WP08-T047
 
 use axum::{
+    Json,
     body::Bytes,
     http::{HeaderMap, StatusCode},
     response::IntoResponse,
-    Json,
 };
 use hmac::{Hmac, Mac};
 use serde::{Deserialize, Serialize};

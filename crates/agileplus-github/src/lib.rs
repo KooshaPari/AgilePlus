@@ -1,6 +1,13 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
-//! agileplus-github — GitHub REST API client + domain mapping + repo sync.
+//! AgilePlus GitHub sync adapter.
+//!
+//! One-way sync (AgilePlus → GitHub): bugs map to GitHub Issues
+//! with structured markdown bodies. Status polling detects
+//! external changes. Conflict detection via SHA-256 body hashing.
+//!
+//! Traceability: FR-052 / WP19
 
 pub mod client;
-pub mod map;
 pub mod sync;
+
+pub use client::GitHubClient;
+pub use sync::{GitHubSyncAdapter, GitHubSyncState};

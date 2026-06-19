@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 use agileplus_cache::{CacheConfig, CacheError, CacheStore, InMemoryCacheStore, ProjectionCache};
 use agileplus_domain::domain::feature::Feature;
 use agileplus_domain::domain::work_package::WorkPackage;
@@ -278,7 +277,6 @@ async fn test_projection_cache_workpackage() {
     assert_eq!(cached.unwrap().workpackage.id, wp.id);
 }
 
-#[cfg(feature = "redis")]
 #[test]
 fn test_rate_limiter_error_display() {
     use agileplus_cache::limiter::LimiterError;
@@ -304,6 +302,6 @@ fn test_cache_config_clone() {
 #[test]
 fn test_cache_config_debug() {
     let config = CacheConfig::default();
-    let debug_str = format!("{config:?}");
+    let debug_str = format!("{:?}", config);
     assert!(debug_str.contains("CacheConfig"));
 }

@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Native modules and cycles dashboard views.
 
 use askama::Template;

@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 

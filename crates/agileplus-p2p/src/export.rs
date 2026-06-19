@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Git-backed state export — serialize SQLite state to deterministic files.
 //!
 //! Writes to `.agileplus/sync/` with the layout:
@@ -19,8 +18,8 @@ use std::time::Instant;
 use agileplus_domain::domain::event::Event;
 use agileplus_domain::domain::snapshot::Snapshot;
 use agileplus_domain::domain::sync_mapping::SyncMapping;
-use agileplus_events::snapshot::SnapshotStore;
 use agileplus_events::store::EventStore;
+use agileplus_events::snapshot::SnapshotStore;
 use serde_json::Value;
 use tracing::debug;
 
@@ -141,7 +140,9 @@ where
             .map_err(|e| ExportError::EventStore(e.to_string()))?;
 
         if !events.is_empty() {
-            let events_dir = output_dir.join("events").join(&entity.entity_type);
+            let events_dir = output_dir
+                .join("events")
+                .join(&entity.entity_type);
             std::fs::create_dir_all(&events_dir)?;
             let file_path = events_dir.join(format!("{}.jsonl", entity.entity_id));
             let mut file = std::fs::File::create(&file_path)?;
@@ -149,8 +150,7 @@ where
             for event in &events {
                 let line = to_sorted_line(serde_json::to_value(event)?)?;
                 file.write_all(line.as_bytes())?;
-                file.write_all(b"
-")?;
+                file.write_all(b"\n")?;
             }
             stats.events_exported += events.len();
             debug!(
@@ -168,7 +168,9 @@ where
             .map_err(|e| ExportError::SnapshotStore(e.to_string()))?;
 
         if let Some(snap) = snapshot {
-            let snap_dir = output_dir.join("snapshots").join(&entity.entity_type);
+            let snap_dir = output_dir
+                .join("snapshots")
+                .join(&entity.entity_type);
             std::fs::create_dir_all(&snap_dir)?;
             let file_path = snap_dir.join(format!("{}.json", entity.entity_id));
             let snap_json = serde_json::to_value(&snap)?;
@@ -187,12 +189,12 @@ where
         "sync_vector": sync_vector_json,
     });
     let sync_state_path = output_dir.join("sync_state.json");
-    std::fs::write(&sync_state_path, to_sorted_pretty(sync_state)?.as_bytes())?;
+    std::fs::write(
+        &sync_state_path,
+        to_sorted_pretty(sync_state)?.as_bytes(),
+    )?;
     stats.sync_mappings_exported = sync_mappings.len();
-    debug!(
-        "Wrote sync_state.json with {} mappings",
-        sync_mappings.len()
-    );
+    debug!("Wrote sync_state.json with {} mappings", sync_mappings.len());
 
     stats.duration_ms = started.elapsed().as_millis() as u64;
     Ok(stats)
@@ -203,7 +205,8 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::sync::Mutex;
+    use std::collections::HashMap;
+    use std::sync::{Arc, Mutex};
 
     use agileplus_domain::domain::event::Event;
     use agileplus_domain::domain::snapshot::Snapshot;
@@ -338,13 +341,7 @@ mod tests {
         let ds = InMemoryDeviceStore::default();
 
         // Seed one event
-        let mut ev = Event::new(
-            "Feature",
-            1,
-            "created",
-            serde_json::json!({"title": "T1"}),
-            "test",
-        );
+        let mut ev = Event::new("Feature", 1, "created", serde_json::json!({"title": "T1"}), "test");
         ev.sequence = 1;
         es.append(&ev).await.unwrap();
 
@@ -352,20 +349,8 @@ mod tests {
         let snap = Snapshot::new("Feature", 1, serde_json::json!({"title": "T1"}), 1);
         ss.save(&snap).await.unwrap();
 
-        let mappings = vec![SyncMapping {
-            id: 0,
-            entity_type: "Feature".to_string(),
-            entity_id: 1,
-            plane_issue_id: "plane-001".to_string(),
-            content_hash: "hash-aaa".to_string(),
-            last_synced_at: chrono::Utc::now(),
-            sync_direction: agileplus_domain::domain::sync_mapping::SyncDirection::Bidirectional,
-            conflict_count: 0,
-        }];
-        let entities = vec![EntityRef {
-            entity_type: "Feature".into(),
-            entity_id: 1,
-        }];
+        let mappings = vec![SyncMapping::new("Feature", 1, "plane-001", "hash-aaa")];
+        let entities = vec![EntityRef { entity_type: "Feature".into(), entity_id: 1 }];
 
         let stats = export_state(
             &es,

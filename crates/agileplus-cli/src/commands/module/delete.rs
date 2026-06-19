@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 use anyhow::{Context, Result, anyhow};
 
 use agileplus_domain::error::DomainError;
@@ -23,9 +22,7 @@ pub async fn run_delete<S: StoragePort>(args: DeleteArgs, storage: &S) -> Result
         .await
         .map_err(|e| match e {
             DomainError::ModuleHasDependents(msg) => anyhow!(
-                "cannot delete module '{}': it still has children or owned features.
-  Detail: {}
-  Reassign or delete dependents first.",
+                "cannot delete module '{}': it still has children or owned features.\n  Detail: {}\n  Reassign or delete dependents first.",
                 args.slug,
                 msg
             ),

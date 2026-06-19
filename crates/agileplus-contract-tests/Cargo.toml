@@ -2,14 +2,8 @@
 name = "agileplus-contract-tests"
 version.workspace = true
 edition.workspace = true
+license.workspace = true
 rust-version.workspace = true
-license = "MIT OR Apache-2.0"
-repository = "https://github.com/KooshaPari/AgilePlus"
-description = "agileplus contract tests — Phenotype infrastructure crate (AgilePlus)"
-documentation = "https://docs.rs/agileplus-contract-tests"
-keywords = ["phenotype", "agileplus", "test"]
-categories = ["development-tools::testing", "development-tools"]
-authors = ["kooshapari"]
 
 # This crate has no library; it only exists as an integration test crate.
 [lib]
@@ -45,6 +39,3 @@ path = "../../tests/contracts/dashboard_api_contract.rs"
 [[test]]
 name = "api_events_contract"
 path = "../../tests/contracts/api_events_contract.rs"
-
-[package.metadata.cargo-machete]
-ignored = ["agileplus-api", "agileplus-domain", "agileplus-events", "agileplus-plane", "agileplus-sqlite", "anyhow", "axum", "chrono", "serde", "serde_json", "thiserror", "tokio"]

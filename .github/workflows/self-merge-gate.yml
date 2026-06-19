@@ -1,9 +1,5 @@
 name: self-merge-gate
 
-permissions:
-  contents: read
-  pull-requests: write
-
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -11,8 +7,11 @@ concurrency:
 # Delegates to phenoShared reusable workflow.
 # See: https://github.com/KooshaPari/phenoShared/blob/main/.github/workflows/self-merge-gate.yml
 
-"on": [pull_request_review]
+on: [pull_request_review]
+
+permissions:
+  contents: read
+
 jobs:
   gate:
-    uses: KooshaPari/phenoShared/.github/workflows/self-merge-gate.yml@58a298df8b37765e3d04ff975de22d3dd88bfbd9  # main
-    secrets: inherit
+    uses: KooshaPari/phenoShared/.github/workflows/self-merge-gate.yml@main

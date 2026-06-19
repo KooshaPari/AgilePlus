@@ -1,9 +1,8 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Cycle repository -- CRUD operations for the `cycles` table and `cycle_features`.
 //!
 //! Traces to: FR-C01, FR-C02, FR-C03, FR-C04, FR-C05, FR-C07
 
-use rusqlite::{params, Connection, OptionalExtension};
+use rusqlite::{Connection, OptionalExtension, params};
 
 use agileplus_domain::{
     domain::cycle::{Cycle, CycleFeature, CycleState, CycleWithFeatures},
@@ -213,34 +212,6 @@ pub fn add_feature_to_cycle(conn: &Connection, entry: &CycleFeature) -> Result<(
         "INSERT OR IGNORE INTO cycle_features (cycle_id, feature_id, added_at)
          VALUES (?1, ?2, ?3)",
         params![entry.cycle_id, entry.feature_id, now],
-    )
-    .map_err(map_err)?;
-    Ok(())
-}
-
-/// Link a story to a cycle via the `cycle_stories` join. Idempotent.
-pub fn add_story_to_cycle(
-    conn: &Connection,
-    cycle_id: i64,
-    story_id: i64,
-) -> Result<(), DomainError> {
-    let exists: Option<i64> = conn
-        .query_row(
-            "SELECT id FROM cycles WHERE id = ?1",
-            params![cycle_id],
-            |row| row.get(0),
-        )
-        .optional()
-        .map_err(map_err)?;
-    if exists.is_none() {
-        return Err(DomainError::CycleNotFound(cycle_id.to_string()));
-    }
-
-    let now = chrono::Utc::now().to_rfc3339();
-    conn.execute(
-        "INSERT OR IGNORE INTO cycle_stories (cycle_id, story_id, added_at)
-         VALUES (?1, ?2, ?3)",
-        params![cycle_id, story_id, now],
     )
     .map_err(map_err)?;
     Ok(())

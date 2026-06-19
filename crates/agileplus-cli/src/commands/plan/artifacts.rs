@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 use chrono::Utc;
 
 use agileplus_domain::domain::work_package::{WorkPackage, WpDependency};
@@ -81,8 +80,7 @@ pub(crate) fn generate_plan_md(
     }
     lines.push(String::new());
 
-    lines.join("
-")
+    lines.join("\n")
 }
 
 /// Generate a WP prompt file.
@@ -95,8 +93,7 @@ pub(crate) fn generate_wp_prompt(wp: &WorkPackage, feature_name: &str, slug: &st
             .iter()
             .map(|file| format!("- `{file}`"))
             .collect::<Vec<_>>()
-            .join("
-")
+            .join("\n")
     };
     let mut lines = Vec::new();
     lines.push("---".to_string());
@@ -130,6 +127,5 @@ pub(crate) fn generate_wp_prompt(wp: &WorkPackage, feature_name: &str, slug: &st
     lines.push(format!(
         "`agileplus/{slug}/plan.md` for the implementation plan."
     ));
-    lines.join("
-")
+    lines.join("\n")
 }

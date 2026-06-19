@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 use anyhow::{Context, Result, anyhow};
 
 use agileplus_domain::domain::module::Module;

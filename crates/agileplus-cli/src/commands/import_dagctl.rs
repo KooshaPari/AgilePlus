@@ -308,8 +308,7 @@ fn derive_title(description: &str, fallback_id: &str) -> String {
         return fallback_id.to_string();
     }
     // Find first sentence boundary.
-    let cut = trimmed.find(['.', ':', '
-']).unwrap_or(trimmed.len());
+    let cut = trimmed.find(['.', ':', '\n']).unwrap_or(trimmed.len());
     let first = &trimmed[..cut];
     // Collapse whitespace.
     let collapsed: String = first.split_whitespace().collect::<Vec<_>>().join(" ");
@@ -364,8 +363,7 @@ mod tests {
             "Just a title without period"
         );
         assert_eq!(
-            derive_title("With colon: more text
-ignored", "fb"),
+            derive_title("With colon: more text\nignored", "fb"),
             "With colon"
         );
     }

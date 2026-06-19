@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `agileplus branch` command group.
 //!
 //! Provides branch create, checkout, delete, list, and sync operations.
@@ -169,7 +168,7 @@ pub async fn run<V: VcsPort>(args: BranchArgs, vcs: &V) -> Result<()> {
                 &target,
                 result.success,
                 &output,
-                result.commit,
+                result.merged_commit,
             )?;
         }
     }

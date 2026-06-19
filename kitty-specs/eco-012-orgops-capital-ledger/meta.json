@@ -1,0 +1,10 @@
+{
+  "spec_id": "eco-012",
+  "slug": "eco-012-orgops-capital-ledger",
+  "title": "OrgOps Capital Ledger",
+  "status": "in_progress",
+  "priority": "high",
+  "created_at": "2026-05-02T00:00:00Z",
+  "source_description": "OrgOps Capital Ledger — phenotype-capital crate, consumption tracking, budget enforcement, secret lifecycle, browser profiles, git-core worktree management, and AgilePlus CLI integration",
+  "type": "operational"
+}

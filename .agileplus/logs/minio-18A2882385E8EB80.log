@@ -1,0 +1,8 @@
+{"level":"INFO","time":"2026-04-02T11:54:49.962377Z","message":"Formatting 1st pool, 1 set(s), 1 drives per set."}
+{"level":"INFO","time":"2026-04-02T11:54:49.963155Z","message":"WARNING: Host local has more than 0 drives of set. A host failure will result in data becoming unavailable."}
+{"level":"INFO","time":"2026-04-02T11:54:50.011882Z","message":"MinIO Object Storage Server"}
+{"level":"INFO","time":"2026-04-02T11:54:50.012126Z","message":"Copyright: 2015-2026 MinIO, Inc.\nLicense: GNU AGPLv3 - https://www.gnu.org/licenses/agpl-3.0.html\nVersion: RELEASE.2025-10-15T17-29-55Z (go1.25.3 darwin/arm64)\n"}
+{"level":"INFO","time":"2026-04-02T11:54:50.012249Z","message":"API: http://100.70.104.162:9001  http://100.112.14.98:9001  http://192.168.139.3:9001  http://192.168.215.0:9001  http://192.168.97.0:9001  http://127.0.0.1:9001 "}
+{"level":"INFO","time":"2026-04-02T11:54:50.012346Z","message":"WebUI: http://100.70.104.162:9002 http://100.112.14.98:9002 http://192.168.139.3:9002 http://192.168.215.0:9002 http://192.168.97.0:9002 http://127.0.0.1:9002                 "}
+{"level":"INFO","time":"2026-04-02T11:54:50.012401Z","message":"\nDocs: https://docs.min.io"}
+{"level":"INFO","time":"2026-04-02T11:57:16.573476Z","message":"Exiting on signal: TERMINATED"}

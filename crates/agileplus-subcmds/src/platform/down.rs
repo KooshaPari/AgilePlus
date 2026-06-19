@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 use std::process::Command;
 use std::time::{Duration, Instant};
 
@@ -12,8 +11,7 @@ use crate::platform::workspace::resolve_platform_compose;
 pub fn run_platform_down(args: PlatformDownArgs) -> Result<()> {
     let pc = find_process_compose().ok_or_else(|| {
         anyhow!(
-            "process-compose not found.
-Install from: https://github.com/F1bonacc1/process-compose"
+            "process-compose not found.\nInstall from: https://github.com/F1bonacc1/process-compose"
         )
     })?;
 

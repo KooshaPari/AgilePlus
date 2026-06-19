@@ -44,14 +44,8 @@ where
     V: VcsPort + Send + Sync + 'static,
     O: ObservabilityPort + Send + Sync + 'static,
 {
-    let projects = app
-        .storage
-        .list_all_projects()
-        .await
-        .map_err(ApiError::from)?;
-    Ok(Json(
-        projects.into_iter().map(ProjectResponse::from).collect(),
-    ))
+    let projects = app.storage.list_all_projects().await.map_err(ApiError::from)?;
+    Ok(Json(projects.into_iter().map(ProjectResponse::from).collect()))
 }
 
 #[derive(Debug, Deserialize)]
@@ -71,18 +65,11 @@ where
     V: VcsPort + Send + Sync + 'static,
     O: ObservabilityPort + Send + Sync + 'static,
 {
-    let slug = body
-        .slug
-        .unwrap_or_else(|| Project::slug_from_name(&body.name));
-    let mut project =
-        Project::new(&body.name, &slug).map_err(|e| ApiError::BadRequest(e.to_string()))?;
+    let slug = body.slug.unwrap_or_else(|| Project::slug_from_name(&body.name));
+    let mut project = Project::new(&body.name, &slug).map_err(|e| ApiError::BadRequest(e.to_string()))?;
     project.description = body.description;
 
-    let id = app
-        .storage
-        .create_project(&project)
-        .await
-        .map_err(ApiError::from)?;
+    let id = app.storage.create_project(&project).await.map_err(ApiError::from)?;
     let created = Project { id, ..project };
     Ok((StatusCode::CREATED, Json(ProjectResponse::from(created))))
 }
