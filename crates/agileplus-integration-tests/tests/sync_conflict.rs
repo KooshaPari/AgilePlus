@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! T110: Sync conflict detection and resolution integration test.
 //!
 //! Verifies that concurrent local and remote modifications to a feature are

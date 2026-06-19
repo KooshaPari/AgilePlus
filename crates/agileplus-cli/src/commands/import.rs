@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Import command family for populating AgilePlus from a bundle manifest.
 
 use std::io::Read;

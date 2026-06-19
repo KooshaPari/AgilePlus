@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 use std::{net::SocketAddr, sync::Arc};
 
 use agileplus_dashboard::{app_state::DashboardStore, routes};

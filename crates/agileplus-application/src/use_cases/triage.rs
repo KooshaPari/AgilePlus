@@ -1,4 +1,5 @@
-﻿//! Use-case implementations for the CLI triage subcommands.
+// SPDX-License-Identifier: MIT OR Apache-2.0
+//! Use-case implementations for the CLI triage subcommands.
 //!
 //! These orchestrate the new triage primitives (dedup, claim, repo_introspect)
 //! and the agileplus-graph dependency graph into a coherent set of
@@ -33,7 +34,7 @@ pub use crate::dto::{TopologyRequest, WhereRequest, WhereResponse};
 use anyhow::{anyhow, Result};
 use std::collections::{HashMap, HashSet, VecDeque};
 
-use agileplus_triage::claim::{Claim, ClaimKind, ClaimStore};
+use agileplus_triage::claim::{Claim, ClaimKind, ClaimReason, ClaimStore};
 use agileplus_triage::dedup::{find_duplicates, DuplicateCandidate};
 use agileplus_triage::repo_introspect::{inspect_repo, RepoInfo};
 
@@ -158,7 +159,11 @@ impl<W: WpRepository> AppState<W> {
             .lock()
             .map_err(|_| anyhow!("claim store lock poisoned"))?
             .lookup(ClaimKind::Worktree, &req.wp_id)
-            .or(None);
+            .or_else(|| {
+                // We can't re-lock here without re-entrancy; the next call
+                // to `release` uses the original `claim_id` from the request.
+                None
+            });
 
         // Release the explicit claim_id from the request.
         let _ = self
@@ -223,8 +228,8 @@ impl<W: WpRepository> AppState<W> {
         };
         let next_pickable = self.wp_repo.list_pickable(
             "anonymous",
-            repo.as_ref().and(None), // lane discovery TBD
-            repo.as_ref().and(None), // category discovery TBD
+            repo.as_ref().and_then(|_| None), // lane discovery TBD
+            repo.as_ref().and_then(|_| None), // category discovery TBD
             5,
         )?;
         Ok(WhereResponse {
@@ -326,7 +331,10 @@ impl WpGraph {
                 cycle: Some(cycle),
             }
         } else {
-            TopoResult { order, cycle: None }
+            TopoResult {
+                order,
+                cycle: None,
+            }
         }
     }
 
@@ -353,7 +361,9 @@ impl WpGraph {
 
         // Bucket by rank.
         let max_rank = rank.values().copied().max().unwrap_or(0);
-        let mut layers: Vec<Vec<String>> = (0..=max_rank).map(|_| Vec::new()).collect();
+        let mut layers: Vec<Vec<String>> = (0..=max_rank)
+            .map(|_| Vec::new())
+            .collect();
         for n in &self.nodes {
             let r = rank.get(n.as_str()).copied().unwrap_or(0);
             if let Some(layer) = layers.get_mut(r) {

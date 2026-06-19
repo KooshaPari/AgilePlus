@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Proto contract / schema compatibility tests for the Rust provider side.
 //!
 //! Since pact-rust gRPC support is early-stage (see WP14 risks), we validate

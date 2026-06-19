@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Axum route handlers for the dashboard.  (T077)
 //!
 //! Pattern: if the request carries `HX-Request: true`, return only the

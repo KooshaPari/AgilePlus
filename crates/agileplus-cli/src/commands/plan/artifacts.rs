@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 use chrono::Utc;
 
 use agileplus_domain::domain::work_package::{WorkPackage, WpDependency};

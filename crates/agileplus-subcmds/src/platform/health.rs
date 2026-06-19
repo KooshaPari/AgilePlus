@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 use std::time::{Duration, Instant};
 
 use anyhow::{Result, anyhow};

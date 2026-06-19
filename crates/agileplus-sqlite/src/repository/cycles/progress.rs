@@ -1,4 +1,5 @@
-use rusqlite::{Connection, params};
+// SPDX-License-Identifier: MIT OR Apache-2.0
+use rusqlite::{params, Connection};
 
 use agileplus_domain::{domain::cycle::WpProgressSummary, error::DomainError};
 

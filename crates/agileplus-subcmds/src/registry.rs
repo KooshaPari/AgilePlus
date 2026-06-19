@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Sub-command registry with ~25 variants across 7 categories.
 //!
 //! Traceability: WP20-T114, T115, T116, T117, T118, T119

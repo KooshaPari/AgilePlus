@@ -1,212 +1,397 @@
-//! GitHub Issues sync logic with conflict detection.
+// SPDX-License-Identifier: MIT OR Apache-2.0
+//! GitHub repository sync — pull issues and PRs, produce domain Stories.
 //!
-//! Syncs bugs to GitHub Issues with structured markdown bodies.
-//! Detects body conflicts via SHA-256 hashing to prevent overwriting.
+//! Traceability: WP19-T113
 //!
-//! Traceability: WP19-T110, T111, T112
+//! # Design
+//!
+//! `sync_repository` is intentionally **pure / in-memory**: it accepts a
+//! `GhDataSource` trait object so the function can be exercised in unit tests
+//! without hitting the network.  A thin `LiveGhDataSource` wraps the real
+//! `GitHubClient` for production use.
+//!
+//! # DB-persistence follow-up
+//!
+//! TODO(WP19-T114): wire `sync_repository` to `agileplus-sqlite` by having
+//! callers iterate `SyncReport::stories` and upsert each story via the
+//! `StoryRepository` port.  Keep this function free of I/O so it can stay
+//! unit-tested without a DB fixture.
 
-use std::collections::HashMap;
+use async_trait::async_trait;
 
-use anyhow::{Context, Result};
-use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
-use sha2::{Digest, Sha256};
+use agileplus_domain::domain::story::Story;
+use agileplus_domain::error::DomainError;
 
-use crate::client::{GitHubClient, GitHubIssuePayload};
-use agileplus_triage::BacklogItem;
+use crate::map::{issue_to_story, pr_to_story, GhIssue, GhPullRequest};
 
-/// Sync state for GitHub Issues tracking.
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
-pub struct GitHubSyncState {
-    /// Maps backlog item ID → GitHub issue number
-    pub issue_mappings: HashMap<i64, i64>,
-    /// Content hashes for conflict detection
-    pub content_hashes: HashMap<i64, String>,
-    pub last_synced_at: Option<DateTime<Utc>>,
+// ── Data-source abstraction ───────────────────────────────────────────────────
+
+/// Read-only access to GitHub issues and PRs for a single repository.
+///
+/// Implemented by `LiveGhDataSource` for production use and by test doubles
+/// for unit testing.
+#[async_trait]
+pub trait GhDataSource: Send + Sync {
+    /// Return all issues for the repository (both open and closed).
+    async fn list_issues(&self) -> Result<Vec<GhIssue>, anyhow::Error>;
+    /// Return all pull requests for the repository (both open and closed).
+    async fn list_prs(&self) -> Result<Vec<GhPullRequest>, anyhow::Error>;
 }
 
-/// GitHub sync adapter.
-#[derive(Debug)]
-pub struct GitHubSyncAdapter {
-    client: GitHubClient,
+// ── Sync report ───────────────────────────────────────────────────────────────
+
+/// Result of a `sync_repository` run.
+///
+/// Items that could not be mapped (e.g. empty title, unknown state) are
+/// collected in `skipped` rather than aborting the entire sync.
+#[derive(Debug, Default)]
+pub struct SyncReport {
+    /// Successfully mapped domain stories.
+    pub stories: Vec<Story>,
+    /// Items that could not be mapped: `(github_number, reason)`.
+    pub skipped: Vec<(u64, String)>,
 }
 
-/// Outcome of a sync operation.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum SyncOutcome {
-    Created(i64),
-    Updated(i64),
-    Skipped,
-    Conflict { issue_number: i64, reason: String },
-}
+// ── Core sync function ────────────────────────────────────────────────────────
 
-impl GitHubSyncAdapter {
-    pub fn new(client: GitHubClient) -> Self {
-        Self { client }
-    }
+/// Pull all issues and PRs from a GitHub repository and map them to domain
+/// [`Story`] values.
+///
+/// * `source`     — GitHub data source (network or test double).
+/// * `project_id` — domain project to associate stories with.
+/// * `epic_id`    — domain epic to associate stories with.
+///
+/// Invariant violations (empty title, unknown state) are recorded in
+/// [`SyncReport::skipped`] rather than aborting the whole sync.
+pub async fn sync_repository(
+    source: &dyn GhDataSource,
+    project_id: i64,
+    epic_id: i64,
+) -> Result<SyncReport, anyhow::Error> {
+    let mut report = SyncReport::default();
 
-    /// Sync a backlog bug item to GitHub Issues.
-    pub async fn sync_bug(
-        &self,
-        state: &mut GitHubSyncState,
-        item: &BacklogItem,
-    ) -> Result<SyncOutcome> {
-        let item_id = item.id.context("backlog item must have an ID")?;
-
-        let body = format_bug_body(item);
-        let body_hash = hash_content(&body);
-
-        // Check if unchanged
-        if let Some(existing_hash) = state.content_hashes.get(&item_id) {
-            if *existing_hash == body_hash {
-                return Ok(SyncOutcome::Skipped);
+    // --- issues ---------------------------------------------------------------
+    let issues = source.list_issues().await?;
+    for issue in &issues {
+        match issue_to_story(issue, epic_id, project_id) {
+            Ok(story) => report.stories.push(story),
+            Err(DomainError::Validation(msg)) => {
+                report.skipped.push((issue.number as u64, msg));
+            }
+            Err(other) => {
+                return Err(anyhow::anyhow!(
+                    "unexpected error mapping issue #{}: {other}",
+                    issue.number
+                ));
             }
         }
-
-        let labels = vec![
-            "bug".to_string(),
-            "agileplus".to_string(),
-            format!("priority:{}", item.priority),
-        ];
-
-        let payload = GitHubIssuePayload {
-            title: format!("[Bug] {}", item.title),
-            body: body.clone(),
-            labels,
-        };
-
-        let outcome = if let Some(&issue_number) = state.issue_mappings.get(&item_id) {
-            // Conflict check: fetch remote and compare hashes
-            if let Ok(remote) = self.client.get_issue(issue_number).await {
-                if let Some(ref remote_body) = remote.body {
-                    let remote_hash = hash_content(remote_body);
-                    if let Some(our_hash) = state.content_hashes.get(&item_id) {
-                        if remote_hash != *our_hash && body_hash != remote_hash {
-                            return Ok(SyncOutcome::Conflict {
-                                issue_number,
-                                reason: "Remote issue body was modified externally".to_string(),
-                            });
-                        }
-                    }
-                }
-            }
-
-            let resp = self.client.update_issue(issue_number, &payload).await?;
-            SyncOutcome::Updated(resp.number)
-        } else {
-            let resp = self.client.create_issue(&payload).await?;
-            state.issue_mappings.insert(item_id, resp.number);
-            SyncOutcome::Created(resp.number)
-        };
-
-        state.content_hashes.insert(item_id, body_hash);
-        state.last_synced_at = Some(Utc::now());
-
-        Ok(outcome)
     }
 
-    /// Poll GitHub for status changes and return items that changed.
-    pub async fn poll_status_changes(&self, state: &GitHubSyncState) -> Result<Vec<(i64, String)>> {
-        let mut changes = Vec::new();
-
-        for (&item_id, &issue_number) in &state.issue_mappings {
-            match self.client.get_issue(issue_number).await {
-                Ok(issue) => {
-                    changes.push((item_id, issue.state));
-                }
-                Err(e) => {
-                    tracing::warn!("Failed to poll GitHub issue #{}: {}", issue_number, e);
-                }
+    // --- pull requests --------------------------------------------------------
+    let prs = source.list_prs().await?;
+    for pr in &prs {
+        match pr_to_story(pr, epic_id, project_id) {
+            Ok(story) => report.stories.push(story),
+            Err(DomainError::Validation(msg)) => {
+                report.skipped.push((pr.number as u64, msg));
+            }
+            Err(other) => {
+                return Err(anyhow::anyhow!(
+                    "unexpected error mapping PR #{}: {other}",
+                    pr.number
+                ));
             }
         }
+    }
 
-        Ok(changes)
+    Ok(report)
+}
+
+// ── Production adapter ────────────────────────────────────────────────────────
+
+/// Production implementation of [`GhDataSource`] backed by the REST API.
+///
+/// Uses [`reqwest`] directly so that `GitHubClient` in `client.rs` does not
+/// need to be changed to support listing (which wasn't in the original CRUD
+/// surface).
+pub struct LiveGhDataSource {
+    base_url: String,
+    token: String,
+    owner: String,
+    repo: String,
+    client: reqwest::Client,
+}
+
+impl LiveGhDataSource {
+    /// Construct a production data source.
+    ///
+    /// `base_url` is typically `"https://api.github.com"`.
+    pub fn new(
+        base_url: impl Into<String>,
+        token: impl Into<String>,
+        owner: impl Into<String>,
+        repo: impl Into<String>,
+    ) -> Self {
+        Self {
+            base_url: base_url.into(),
+            token: token.into(),
+            owner: owner.into(),
+            repo: repo.into(),
+            client: reqwest::Client::new(),
+        }
     }
 }
 
-/// Format a backlog item as a structured GitHub issue body.
-fn format_bug_body(item: &BacklogItem) -> String {
-    let mut body = String::new();
-    body.push_str("## Description\n\n");
-    body.push_str(&item.description);
-    body.push_str("\n\n");
-    body.push_str("## Metadata\n\n");
-    body.push_str(&format!("- **Priority**: {}\n", item.priority));
-    body.push_str(&format!("- **Status**: {}\n", item.status));
-    body.push_str(&format!("- **Source**: {}\n", item.source));
-    if let Some(ref slug) = item.feature_slug {
-        body.push_str(&format!("- **Feature**: {slug}\n"));
-    }
-    body.push_str(&format!(
-        "- **Created**: {}\n",
-        item.created_at.to_rfc3339()
-    ));
-    body.push_str("\n---\n*Synced by AgilePlus*\n");
-    body
+/// Wire shape for GitHub list-issues response items.
+#[derive(serde::Deserialize)]
+struct ApiIssue {
+    number: i64,
+    title: String,
+    body: Option<String>,
+    state: String,
+    pull_request: Option<serde_json::Value>, // present iff this is a PR
+    user: Option<ApiUser>,
 }
 
-fn hash_content(content: &str) -> String {
-    let mut hasher = Sha256::new();
-    hasher.update(content.as_bytes());
-    format!("{:x}", hasher.finalize())
+/// Wire shape for GitHub list-pulls response items.
+#[derive(serde::Deserialize)]
+struct ApiPr {
+    number: i64,
+    title: String,
+    body: Option<String>,
+    state: String,
+    merged: Option<bool>,
+    user: Option<ApiUser>,
 }
+
+#[derive(serde::Deserialize)]
+struct ApiUser {
+    login: String,
+    avatar_url: Option<String>,
+}
+
+#[async_trait]
+impl GhDataSource for LiveGhDataSource {
+    async fn list_issues(&self) -> Result<Vec<GhIssue>, anyhow::Error> {
+        let url = format!(
+            "{}/repos/{}/{}/issues?state=all&per_page=100",
+            self.base_url, self.owner, self.repo
+        );
+        let items: Vec<ApiIssue> = self
+            .client
+            .get(&url)
+            .header("Authorization", format!("Bearer {}", self.token))
+            .header("Accept", "application/vnd.github+json")
+            .header("User-Agent", "agileplus")
+            .send()
+            .await?
+            .error_for_status()?
+            .json()
+            .await?;
+
+        Ok(items
+            .into_iter()
+            // GitHub includes PRs in the issues endpoint; filter them out.
+            .filter(|i| i.pull_request.is_none())
+            .map(|i| GhIssue {
+                number: i.number,
+                title: i.title,
+                body: i.body,
+                state: i.state,
+                user_login: i.user.as_ref().map(|u| u.login.clone()),
+                user_email: None,
+                user_avatar_url: i.user.as_ref().and_then(|u| u.avatar_url.clone()),
+            })
+            .collect())
+    }
+
+    async fn list_prs(&self) -> Result<Vec<GhPullRequest>, anyhow::Error> {
+        let url = format!(
+            "{}/repos/{}/{}/pulls?state=all&per_page=100",
+            self.base_url, self.owner, self.repo
+        );
+        let items: Vec<ApiPr> = self
+            .client
+            .get(&url)
+            .header("Authorization", format!("Bearer {}", self.token))
+            .header("Accept", "application/vnd.github+json")
+            .header("User-Agent", "agileplus")
+            .send()
+            .await?
+            .error_for_status()?
+            .json()
+            .await?;
+
+        Ok(items
+            .into_iter()
+            .map(|p| GhPullRequest {
+                number: p.number,
+                title: p.title,
+                body: p.body,
+                state: p.state,
+                merged: p.merged.unwrap_or(false),
+                user_login: p.user.as_ref().map(|u| u.login.clone()),
+                user_email: None,
+                user_avatar_url: p.user.as_ref().and_then(|u| u.avatar_url.clone()),
+            })
+            .collect())
+    }
+}
+
+// ── Tests ─────────────────────────────────────────────────────────────────────
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use agileplus_triage::{BacklogPriority, BacklogStatus, Intent};
 
-    fn sample_bug() -> BacklogItem {
-        BacklogItem {
-            id: Some(1),
-            title: "Login crash".to_string(),
-            description: "App crashes when clicking login".to_string(),
-            intent: Intent::Bug,
-            priority: BacklogPriority::High,
-            status: BacklogStatus::New,
-            source: "user-report".to_string(),
-            feature_slug: Some("auth".to_string()),
-            tags: Vec::new(),
-            created_at: Utc::now(),
-            updated_at: Utc::now(),
+    // ── Fake data source ──────────────────────────────────────────────────────
+
+    struct FakeSource {
+        issues: Vec<GhIssue>,
+        prs: Vec<GhPullRequest>,
+    }
+
+    impl FakeSource {
+        fn new(issues: Vec<GhIssue>, prs: Vec<GhPullRequest>) -> Self {
+            Self { issues, prs }
         }
     }
 
-    #[test]
-    fn bug_body_format() {
-        let item = sample_bug();
-        let body = format_bug_body(&item);
-        assert!(body.contains("## Description"));
-        assert!(body.contains("Login crash") || body.contains("App crashes"));
-        assert!(body.contains("Priority"));
-        assert!(body.contains("high"));
-        assert!(body.contains("Feature**: auth"));
-        assert!(body.contains("Synced by AgilePlus"));
+    #[async_trait]
+    impl GhDataSource for FakeSource {
+        async fn list_issues(&self) -> Result<Vec<GhIssue>, anyhow::Error> {
+            Ok(self.issues.clone())
+        }
+        async fn list_prs(&self) -> Result<Vec<GhPullRequest>, anyhow::Error> {
+            Ok(self.prs.clone())
+        }
     }
 
-    #[test]
-    fn hash_deterministic() {
-        assert_eq!(hash_content("abc"), hash_content("abc"));
-        assert_ne!(hash_content("abc"), hash_content("def"));
+    fn good_issue(n: i64, title: &str) -> GhIssue {
+        GhIssue {
+            number: n,
+            title: title.to_string(),
+            body: None,
+            state: "open".to_string(),
+            user_login: None,
+            user_email: None,
+            user_avatar_url: None,
+        }
     }
 
-    #[test]
-    fn sync_state_roundtrip() {
-        let mut state = GitHubSyncState::default();
-        state.issue_mappings.insert(1, 42);
-        state.content_hashes.insert(1, "abc123".to_string());
-
-        let json = serde_json::to_string(&state).unwrap();
-        let restored: GitHubSyncState = serde_json::from_str(&json).unwrap();
-        assert_eq!(restored.issue_mappings[&1], 42);
+    fn good_pr(n: i64, title: &str) -> GhPullRequest {
+        GhPullRequest {
+            number: n,
+            title: title.to_string(),
+            body: None,
+            state: "open".to_string(),
+            merged: false,
+            user_login: None,
+            user_email: None,
+            user_avatar_url: None,
+        }
     }
 
-    #[test]
-    fn skipped_when_unchanged() {
-        // Test that content hash matching would signal skip
-        let body = format_bug_body(&sample_bug());
-        let h1 = hash_content(&body);
-        let h2 = hash_content(&body);
-        assert_eq!(h1, h2); // Same content → same hash → skip
+    fn bad_issue(n: i64) -> GhIssue {
+        // Empty title triggers DomainError::Validation
+        GhIssue {
+            number: n,
+            title: "   ".to_string(),
+            body: None,
+            state: "open".to_string(),
+            user_login: None,
+            user_email: None,
+            user_avatar_url: None,
+        }
+    }
+
+    // ── Test: all-mappable repo ───────────────────────────────────────────────
+
+    /// All issues and PRs are valid → all stories mapped, nothing skipped.
+    #[tokio::test]
+    async fn all_mappable_produces_stories_and_no_skipped() {
+        let source = FakeSource::new(
+            vec![
+                good_issue(1, "Fix login crash"),
+                good_issue(2, "Add dark mode"),
+                good_issue(3, "Improve performance"),
+            ],
+            vec![
+                good_pr(10, "feat: dark mode impl"),
+                good_pr(11, "fix: null deref"),
+            ],
+        );
+
+        let report = sync_repository(&source, 42, 7).await.unwrap();
+
+        // 3 issues + 2 PRs = 5 stories
+        assert_eq!(report.stories.len(), 5, "expected 5 stories");
+        assert_eq!(report.skipped.len(), 0, "expected 0 skipped");
+
+        // All stories carry correct project_id / epic_id
+        for story in &report.stories {
+            assert_eq!(story.project_id, 42);
+            assert_eq!(story.epic_id, 7);
+        }
+    }
+
+    // ── Test: one bad issue doesn't abort sync ────────────────────────────────
+
+    /// One issue with an empty title triggers a validation error that should
+    /// be collected in `skipped`, not abort the sync.
+    #[tokio::test]
+    async fn bad_issue_is_skipped_not_aborted() {
+        let source = FakeSource::new(
+            vec![
+                good_issue(1, "Valid issue"),
+                bad_issue(2), // <── should be skipped
+                good_issue(3, "Another valid issue"),
+            ],
+            vec![good_pr(10, "Valid PR")],
+        );
+
+        let report = sync_repository(&source, 1, 1).await.unwrap();
+
+        // 2 good issues + 1 good PR = 3 stories; 1 bad issue = 1 skipped
+        assert_eq!(report.stories.len(), 3, "expected 3 stories");
+        assert_eq!(report.skipped.len(), 1, "expected 1 skipped");
+        assert_eq!(report.skipped[0].0, 2u64, "skipped item should be issue #2");
+    }
+
+    // ── Test: bad PR is also gracefully skipped ───────────────────────────────
+
+    #[tokio::test]
+    async fn bad_pr_is_skipped_not_aborted() {
+        let bad_pr = GhPullRequest {
+            number: 99,
+            title: "   ".to_string(), // empty title
+            body: None,
+            state: "open".to_string(),
+            merged: false,
+            user_login: None,
+            user_email: None,
+            user_avatar_url: None,
+        };
+
+        let source = FakeSource::new(
+            vec![good_issue(1, "Fine issue")],
+            vec![bad_pr, good_pr(100, "Good PR")],
+        );
+
+        let report = sync_repository(&source, 5, 5).await.unwrap();
+
+        assert_eq!(report.stories.len(), 2);
+        assert_eq!(report.skipped.len(), 1);
+        assert_eq!(report.skipped[0].0, 99u64);
+    }
+
+    // ── Test: empty repo ──────────────────────────────────────────────────────
+
+    #[tokio::test]
+    async fn empty_repo_produces_empty_report() {
+        let source = FakeSource::new(vec![], vec![]);
+        let report = sync_repository(&source, 1, 1).await.unwrap();
+        assert_eq!(report.stories.len(), 0);
+        assert_eq!(report.skipped.len(), 0);
     }
 }

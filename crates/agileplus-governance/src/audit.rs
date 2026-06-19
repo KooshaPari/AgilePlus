@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Audit logging for governance actions
 //!
 //! Provides complete audit trail of all governance operations,

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Stub AgentPort implementation for use when no real agent adapter is configured.
 //!
 //! Prints instructions for manual execution and returns a no-op job ID.

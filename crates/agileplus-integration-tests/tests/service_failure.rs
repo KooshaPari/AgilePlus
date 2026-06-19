@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! T111: Service failure and recovery integration test.
 //!
 //! Verifies that the platform degrades gracefully when the cache (Dragonfly)

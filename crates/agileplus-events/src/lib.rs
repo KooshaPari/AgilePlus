@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Event sourcing engine for AgilePlus.
 //!
 //! Provides append-only event storage with SHA-256 hash chain verification,

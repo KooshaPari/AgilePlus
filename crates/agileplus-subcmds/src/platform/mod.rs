@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! CLI platform subcommands for AgilePlus platform management.
 //!
 //! Provides:

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Core test fixtures for feature and work package data.
 //!
 //! Traceability: WP19-T107

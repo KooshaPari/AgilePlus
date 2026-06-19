@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Counters and histograms for AgilePlus operational metrics.
 //!
 //! Instruments are stored in [`MetricsRecorder`] and exported via the

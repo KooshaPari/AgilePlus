@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! T119 – Sync round-trip benchmark.
 //!
 //! Benchmarks the serialise → transmit → deserialise hot-path for Plane.so sync

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Server-Sent Events (SSE) streaming endpoint.
 //!
 //! `GET /api/v1/stream` — real-time domain events via SSE.

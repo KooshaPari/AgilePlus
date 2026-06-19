@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `agileplus plan` command implementation.
 //!
 //! Reads spec.md and research.md for a feature, generates work packages with

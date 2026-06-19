@@ -1,13 +1,6 @@
-//! agileplus-github — GitHub integration via octocrab (read layer)
-//! and raw reqwest (sync/write layer).
-//!
-//! # Modules
-//! - `client` — rate-limited reqwest client for create/update/get issues
-//! - `sync`   — conflict-aware sync adapter for backlog items
-//! - `octo`   — octocrab-based read client (`list_issues`, `list_prs`)
+// SPDX-License-Identifier: MIT OR Apache-2.0
+//! agileplus-github — GitHub REST API client + domain mapping + repo sync.
 
 pub mod client;
-pub mod octo;
+pub mod map;
 pub mod sync;
-
-pub use octo::{Error, GitHubClient};

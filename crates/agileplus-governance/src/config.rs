@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Configuration for the AgilePlus governance system
 //!
 //! Configuration can be loaded from:

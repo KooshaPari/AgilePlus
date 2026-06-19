@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Common integration test utilities — harness, fixtures, HTTP client helpers.
 
 pub mod fixtures;

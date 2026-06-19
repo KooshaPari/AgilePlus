@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Device registration — persistent identity for the local AgilePlus instance.
 //!
 //! On first startup a UUID v4 `device_id` is generated and the local

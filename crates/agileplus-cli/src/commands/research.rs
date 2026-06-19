@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `agileplus research` command implementation.
 //!
 //! Supports pre-specify (codebase scan) and post-specify (feasibility analysis) modes.

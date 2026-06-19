@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `agileplus retrospective` command implementation.
 //!
 //! Analyzes the completed feature's development history and generates

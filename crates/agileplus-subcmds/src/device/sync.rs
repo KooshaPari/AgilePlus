@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 use std::time::Instant;
 
 use agileplus_p2p::discovery::{PeerInfo, PeerStatus, discover_peers};

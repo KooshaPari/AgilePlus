@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! AgilePlus contract tests — trait-based contract verification across crate boundaries.
 //!
 //! This crate houses contract tests verifying that provider implementations

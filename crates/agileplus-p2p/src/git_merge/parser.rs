@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 /// Represents one side of a git conflict block.
 #[derive(Debug)]
 pub(crate) struct ConflictBlock {

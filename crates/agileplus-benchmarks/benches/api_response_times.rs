@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! T118 – API response time benchmarks.
 //!
 //! Rather than spinning up a full HTTP server for each iteration (which would

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Askama template structs — one per HTML template file.
 //!
 //! The `#[template(path = "...")]` path is relative to the `templates/` dirs

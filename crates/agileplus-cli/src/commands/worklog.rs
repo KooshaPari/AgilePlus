@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! agileplus-cli worklog subcommand.
 //!
 //! Provides `agileplus worklog {validate,convert,schema,list}` for

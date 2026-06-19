@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! tonic gRPC server implementing AgilePlusCoreService.
 //!
 //! Traceability: WP14-T079, T080

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Release channel governance for the 5-tier release model
 //!
 //! | Channel | Order | Version Suffix | Risk Profile |

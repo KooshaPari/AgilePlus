@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Vector-clock-based synchronisation between AgilePlus devices.
 //!
 //! Each device maintains a `SyncVector` — a map from `(entity_type, entity_id)`

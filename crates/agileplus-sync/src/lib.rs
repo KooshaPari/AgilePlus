@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! AgilePlus sync orchestrator — conflict detection, resolution, and NATS integration.
 //!
 //! Traceability: FR-SYNC-* / WP09

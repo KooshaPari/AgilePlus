@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! T109: Dashboard SSE (Server-Sent Events) integration test.
 //!
 //! Verifies that feature mutations broadcast SSE events to connected clients.

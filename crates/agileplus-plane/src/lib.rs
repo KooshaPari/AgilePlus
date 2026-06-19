@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! AgilePlus Plane.so sync adapter.
 //!
 //! Bidirectional sync between AgilePlus entities and Plane.so issues.

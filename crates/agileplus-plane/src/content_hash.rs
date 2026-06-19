@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! T051: Content Hash Tracking — SHA-256 of (title + description + state + labels).
 //!
 //! Traceability: WP08-T051

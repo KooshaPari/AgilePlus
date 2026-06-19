@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! API payload builders for testing HTTP handlers.
 //!
 //! Provides canonical JSON payloads for feature creation, state transitions,

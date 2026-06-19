@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! T120 – Graph query performance benchmark.
 //!
 //! Benchmarks the in-memory `InMemoryGraphStore` to measure the overhead of:

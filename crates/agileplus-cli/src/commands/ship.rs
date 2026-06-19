@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `agileplus ship` command implementation.
 //!
 //! Merges all WP branches to the target branch, cleans up worktrees,

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 // Integration test for seed module
 use agileplus_dashboard::seed::seed_dogfood_features;
 use agileplus_domain::domain::state_machine::FeatureState;

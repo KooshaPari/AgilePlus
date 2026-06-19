@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `ap trace link <from> <to>` subcommand — inserts a row into the
 //! `trace_links` table to record a directed edge between two domain
 //! entities.  Also supports the inverse / list-view surface used by

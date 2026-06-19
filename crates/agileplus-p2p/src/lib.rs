@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! agileplus-p2p — peer-to-peer discovery and event replication for AgilePlus.
 //!
 //! # Overview

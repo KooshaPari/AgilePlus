@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 #[derive(Debug, Clone)]
 pub(crate) struct FunctionalRequirement {
     pub(crate) id: String,
