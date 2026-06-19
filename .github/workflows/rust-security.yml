@@ -1,9 +1,5 @@
 name: Rust Security
-
-permissions:
-  contents: read
-  security-events: write
-
+permissions: read-all
 on:
   push:
     branches: [main]
