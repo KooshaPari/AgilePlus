@@ -195,10 +195,7 @@ impl ArtifactStore for S3ArtifactStore {
             info!(bucket, key, status = %status, "upload succeeded");
             Ok(())
         } else {
-            let body = resp
-                .text()
-                .await
-                .unwrap_or_else(|_| "(unreadable)".into());
+            let body = resp.text().await.unwrap_or_else(|_| "(unreadable)".into());
             Err(ArtifactError::S3(format!(
                 "upload failed: status={status} body={body}"
             )))
@@ -232,12 +229,7 @@ impl ArtifactStore for S3ArtifactStore {
                 .bytes()
                 .await
                 .map_err(|e| ArtifactError::S3(format!("failed to read body: {e}")))?;
-            info!(
-                bucket,
-                key,
-                size = bytes.len(),
-                "download succeeded"
-            );
+            info!(bucket, key, size = bytes.len(), "download succeeded");
             Ok(bytes)
         } else if status == reqwest::StatusCode::NOT_FOUND {
             Err(ArtifactError::ArtifactNotFound {
@@ -245,10 +237,7 @@ impl ArtifactStore for S3ArtifactStore {
                 key: key.to_string(),
             })
         } else {
-            let body = resp
-                .text()
-                .await
-                .unwrap_or_else(|_| "(unreadable)".into());
+            let body = resp.text().await.unwrap_or_else(|_| "(unreadable)".into());
             Err(ArtifactError::S3(format!(
                 "download failed: status={status} body={body}"
             )))

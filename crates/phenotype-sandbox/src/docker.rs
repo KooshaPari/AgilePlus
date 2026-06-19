@@ -150,7 +150,7 @@ impl DockerBackend {
         let mut stdout = Vec::new();
         let mut stderr = Vec::new();
 
-        let exec_result = self
+        let mut stream = self
             .client
             .start_exec(&exec.id, Some(start_options))
             .await?;
