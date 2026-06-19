@@ -654,9 +654,7 @@ impl AuditLogger {
             .map_err(|e| GovernanceError::Database(e.to_string()))?;
         let now = Utc::now().to_rfc3339();
         let placeholders = ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
-        let sql = format!(
-            "UPDATE audit_events SET synced_at = ? WHERE id IN ({placeholders})"
-        );
+        let sql = format!("UPDATE audit_events SET synced_at = ? WHERE id IN ({placeholders})");
 
         let mut params_vec: Vec<&dyn rusqlite::ToSql> = vec![&now];
         params_vec.extend(ids.iter().map(|s| s as &dyn rusqlite::ToSql));
