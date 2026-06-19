@@ -318,7 +318,7 @@ pub fn run_with_db(args: &WorklogArgs, db_path: &Path) -> Result<()> {
     }
 }
 
-fn db_path_from_env() -> PathBuf {
+pub fn db_path_from_env() -> PathBuf {
     std::env::var("AGILEPLUS_DB")
         .map(PathBuf::from)
         .unwrap_or_else(|_| PathBuf::from("agileplus.db"))
@@ -383,8 +383,7 @@ fn validate(dir: &Path) -> Result<()> {
             }
         }
     }
-    println!("
-Result: {ok} OK, {err} FAIL");
+    println!("\nResult: {ok} OK, {err} FAIL");
     if err > 0 {
         std::process::exit(1);
     }

@@ -20,9 +20,9 @@ use agileplus_domain::domain::state_machine::FeatureState;
 
 use crate::app_state::SharedState;
 use crate::templates::{
-    all_feature_states, CiLinkView, EventTimelinePartial, EvidenceBundleView, FeatureDetailPage,
-    FeatureView, GitCommitView, KanbanPartial, MediaAssetView, PrLinkView, ReportArtifactView,
-    WpView,
+    all_feature_states, CiLinkView, EvidenceBundleView, FeatureDetailPage, FeatureView,
+    GitCommitView, KanbanPartial, MediaAssetView, PrLinkView, ReportArtifactView,
+    EventTimelinePartial, WpView,
 };
 
 use chrono::Utc;
@@ -53,7 +53,6 @@ enum DashboardFilter {
 }
 
 /// Build Kanban cards for the dashboard, grouped by feature state.
-#[allow(dead_code)]
 fn build_kanban_cards(
     store: &crate::app_state::DashboardStore,
     _filter: DashboardFilter,
@@ -298,7 +297,7 @@ fn build_feature_media_assets(
 /// Build feature report artifacts.
 fn build_feature_reports(
     feature: &FeatureView,
-    _workpackages: &[WpView],
+    workpackages: &[WpView],
 ) -> Vec<ReportArtifactView> {
     vec![ReportArtifactView {
         id: format!("report-{id}-coverage", id = feature.id),

@@ -1,10 +1,9 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! User repository functions.
 //!
 //! Traceability: FR-STORE-USER
 
 use chrono::DateTime;
-use rusqlite::{params, Connection};
+use rusqlite::{Connection, params};
 
 use agileplus_domain::domain::user::{User, UserRole, UserStatus};
 use agileplus_domain::error::DomainError;
@@ -91,11 +90,7 @@ pub fn get_user_by_email(conn: &Connection, email: &str) -> Result<Option<User>,
 }
 
 /// Update the status of a user.
-pub fn update_user_status(
-    conn: &Connection,
-    id: i64,
-    status: UserStatus,
-) -> Result<(), DomainError> {
+pub fn update_user_status(conn: &Connection, id: i64, status: UserStatus) -> Result<(), DomainError> {
     let now = chrono::Utc::now().to_rfc3339();
     let rows = conn
         .execute(

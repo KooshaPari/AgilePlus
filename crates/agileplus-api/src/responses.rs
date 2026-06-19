@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! API response types — stable JSON shapes for all endpoints.
 //!
 //! These types are separate from domain entities so internal representations
@@ -291,7 +292,7 @@ pub struct ServiceHealth {
 impl ServiceHealth {
     pub fn healthy(latency_ms: u64) -> Self {
         Self {
-            status: "healthy".to_string(),
+            status: "healthy".to_owned(),
             latency_ms: Some(latency_ms),
             error: None,
         }
@@ -299,7 +300,7 @@ impl ServiceHealth {
 
     pub fn degraded(reason: impl Into<String>) -> Self {
         Self {
-            status: "degraded".to_string(),
+            status: "degraded".to_owned(),
             latency_ms: None,
             error: Some(reason.into()),
         }
@@ -307,9 +308,17 @@ impl ServiceHealth {
 
     pub fn unavailable(reason: impl Into<String>) -> Self {
         Self {
-            status: "unavailable".to_string(),
+            status: "unavailable".to_owned(),
             latency_ms: None,
             error: Some(reason.into()),
+        }
+    }
+
+    pub fn not_configured() -> Self {
+        Self {
+            status: "not_configured".to_string(),
+            latency_ms: None,
+            error: Some("not configured in this deployment".to_string()),
         }
     }
 }
@@ -339,11 +348,11 @@ impl DetailedHealthResponse {
             .collect();
 
         Self {
-            status: "healthy".to_string(),
+            status: "healthy".to_owned(),
             timestamp: chrono::Utc::now().to_rfc3339(),
             services,
             api: ApiHealth {
-                status: "healthy".to_string(),
+                status: "healthy".to_owned(),
                 uptime_seconds,
             },
         }
@@ -353,10 +362,15 @@ impl DetailedHealthResponse {
     pub fn compute_status(
         services: &std::collections::HashMap<String, ServiceHealth>,
     ) -> &'static str {
-        if services.values().any(|s| s.status == "unavailable") {
+        // Only consider services that are actually configured.
+        let configured: Vec<_> = services
+            .values()
+            .filter(|s| s.status != "not_configured")
+            .collect();
+        if configured.iter().any(|s| s.status == "unavailable") {
             return "unavailable";
         }
-        if services.values().any(|s| s.status == "degraded") {
+        if configured.iter().any(|s| s.status == "degraded") {
             return "degraded";
         }
         "healthy"

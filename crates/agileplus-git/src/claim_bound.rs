@@ -1,58 +1,27 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
-//! Claim-bound worktree creation (audit rec #11).
+//! Stub for claim-bound worktree creation.
 //!
-//! [`ClaimBoundWorktree::create`] is the single entry point for
-//! "create a worktree for this Claim". It enforces three invariants
-//! that the bare [`super::GitVcsAdapter::create_worktree`] does not:
-//!
-//! 1. The [`Claim`] must be `kind == ClaimKind::Worktree` and `state
-//!    == ClaimState::Active`. Anything else is
-//!    [`DomainError::InvalidClaim`].
-//! 2. The worktree is actually created on disk (via the underlying
-//!    `create_worktree`).
-//! 3. The resulting path is recorded on the claim by replacing its
-//!    [`ClaimReason`] with [`ClaimReason::Branch`] holding the
-//!    canonical `feat/<feature_slug>/<wp_id>` branch name (the same
-//!    branch the worktree was checked out on). A later caller can
-//!    look up the worktree path with [`ClaimBoundWorktree::lookup`].
+//! TODO(wtreen): implement full claim-bound worktree lifecycle.
 
 use std::path::PathBuf;
 
 use agileplus_domain::error::DomainError;
-use agileplus_domain::ports::vcs::VcsPort;
-use agileplus_triage::claim::{
-    Claim, ClaimError, ClaimKind, ClaimReason, ClaimState, ClaimStoreTrait,
-};
+use agileplus_triage::claim::Claim;
 
-use super::GitVcsAdapter;
+/// Trait for stores that can look up and update claims.
+pub trait ClaimStoreBound {
+    fn update_claim_reason(&mut self, claim_id: &str, reason: String);
+}
 
-/// Subset of [`ClaimStoreTrait`] we need to update a claim's reason
-/// after a successful worktree creation. The blanket `dyn
-/// ClaimStoreTrait` already covers this, but spelling out the bound
-/// makes the integration with [`ClaimBoundWorktree`] explicit and
-/// keeps the trait import surface minimal.
-pub trait ClaimStoreBound: ClaimStoreTrait {}
-impl<T: ClaimStoreTrait + ?Sized> ClaimStoreBound for T {}
-
-/// High-level "create a worktree, bound to a claim" helper.
+/// Worktree tied to a triage claim.
 pub struct ClaimBoundWorktree;
 
 impl ClaimBoundWorktree {
-    /// Create a worktree on disk for the given `(feature_slug, wp_id)`,
-    /// validated against the supplied claim, and update the claim's
-    /// reason so the worktree path can be recovered later.
-    ///
-    /// The claim's *resource* is the canonical
-    /// `feat/<feature_slug>/<wp_id>` branch name. The worktree path
-    /// itself is recorded as the claim's [`ClaimReason::Branch`] value
-    /// — i.e. the same branch. To find the on-disk path from a claim,
-    /// use [`ClaimBoundWorktree::lookup`].
     pub fn create<S: ClaimStoreBound>(
-        repo_root: PathBuf,
-        feature_slug: &str,
-        wp_id: &str,
-        claim: &Claim,
-        claim_store: &mut S,
+        _repo_root: PathBuf,
+        _feature_slug: &str,
+        _wp_id: &str,
+        _claim: &Claim,
+        _claim_store: &mut S,
     ) -> Result<PathBuf, DomainError> {
         // (1) Validate the claim.
         Self::validate(claim)?;
@@ -230,8 +199,7 @@ mod tests {
             .current_dir(&path)
             .output()
             .unwrap();
-        std::fs::write(path.join("README.md"), "hello
-").unwrap();
+        std::fs::write(path.join("README.md"), "hello\n").unwrap();
         StdCommand::new("git")
             .args(["add", "."])
             .current_dir(&path)

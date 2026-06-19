@@ -2,29 +2,37 @@
 name = "agileplus-api"
 version.workspace = true
 edition.workspace = true
-license.workspace = true
 rust-version.workspace = true
 
 [dependencies]
+# workspace crates
+agileplus-domain       = { path = "../agileplus-domain" }
+agileplus-application  = { path = "../agileplus-application" }
+agileplus-git          = { path = "../agileplus-git" }
+agileplus-sqlite       = { path = "../agileplus-sqlite" }
+agileplus-dashboard    = { path = "../agileplus-dashboard" }
+# workspace-managed external deps
 anyhow.workspace = true
 tokio.workspace = true
 axum.workspace = true
-axum-extra = { version = "0.10", features = ["typed-header"] }
-tower = { version = "0.5", features = ["limit", "timeout"] }
-tower-http = { version = "0.6", features = ["cors", "fs", "trace"] }
-tokio.workspace = true
-tokio-stream = { version = "0.1", features = ["sync"] }
 serde.workspace = true
 serde_json.workspace = true
 serde_yaml = "0.9"
 tracing.workspace = true
 chrono.workspace = true
 utoipa.workspace = true
-async-trait.workspace = true
-tower-http = { version = "0.5", features = ["cors", "trace", "fs"] }
+thiserror.workspace = true
+# non-workspace external deps
+tower        = "0.5"
+tower-http   = { version = "0.6", features = ["cors", "trace", "fs"] }
+tokio-stream = { version = "0.1", features = ["sync"] }
+askama       = "0.12"
+rand         = "0.8"
+base64       = "0.22"
+async-trait  = "0.1"
 
-# Domain, storage, VCS, and related crates
-agileplus-domain = { path = "../agileplus-domain" }
-agileplus-git = { path = "../agileplus-git" }
-agileplus-sqlite = { path = "../agileplus-sqlite" }
-agileplus-dashboard = { path = "../agileplus-dashboard" }
+[dev-dependencies]
+axum-test    = "20"
+
+[package.metadata.cargo-machete]
+ignored = ["tracing-subscriber", "agileplus-telemetry"]

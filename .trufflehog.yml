@@ -6,6 +6,9 @@ exclude:
     - "*.sum"
     - "*.lock"
     - "dist/**"
+    - ".github/workflows/**"
+    - "**/*.yml"
+    - "**/*.yaml"
 include:
   files:
     - "**/*"

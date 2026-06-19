@@ -6,11 +6,11 @@
 
 use std::env;
 
-use askama::Template;
 use axum::{
     extract::State,
     response::{Html, IntoResponse, Response},
 };
+use askama::Template;
 use serde::{Deserialize, Serialize};
 
 use crate::app_state::SharedState;
@@ -35,7 +35,6 @@ pub struct AgentInfo {
 
 // ── Form Request Types ────────────────────────────────────────────────────
 
-#[allow(dead_code)]
 #[derive(Debug, Deserialize)]
 pub struct AgentSettingsForm {
     pub pool_size: usize,
@@ -63,7 +62,6 @@ fn render<T: Template>(tpl: T) -> Response {
 }
 
 /// Extract environment variable or return None if missing/empty.
-#[allow(dead_code)]
 fn env_or_none(key: &str) -> Option<String> {
     env::var(key)
         .ok()
@@ -151,7 +149,6 @@ pub async fn agents_json(State(_state): State<SharedState>) -> impl IntoResponse
 
 /// HTML: GET /settings/agents
 /// Returns the agent settings configuration page.
-#[allow(dead_code)]
 pub async fn agent_settings_page() -> Response {
     let config = super::settings::Config::load().unwrap_or(super::settings::Config {
         plane: None,
@@ -160,14 +157,12 @@ pub async fn agent_settings_page() -> Response {
         dashboard: None,
     });
 
-    let agent_config = config
-        .agents
-        .unwrap_or_else(|| super::settings::AgentConfig {
-            pool_size: 6,
-            retry_budget: 3,
-            dispatch_mode: "balanced".to_string(),
-            default_provider: "claude".to_string(),
-        });
+    let agent_config = config.agents.unwrap_or_else(|| super::settings::AgentConfig {
+        pool_size: 6,
+        retry_budget: 3,
+        dispatch_mode: "balanced".to_string(),
+        default_provider: "claude".to_string(),
+    });
 
     render(AgentSettingsPage {
         agent_pool_size: agent_config.pool_size,

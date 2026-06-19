@@ -26,3 +26,6 @@ tracing.workspace = true
 tokio = { workspace = true, features = ["full", "macros"] }
 tempfile.workspace = true
 chrono.workspace = true
+
+[package.metadata.cargo-machete]
+ignored = ["thiserror"]

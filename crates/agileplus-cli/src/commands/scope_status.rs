@@ -108,8 +108,7 @@ No modules in scope.");
         return Ok(());
     }
 
-    println!("
-Modules:");
+    println!("\nModules:");
     println!("  {:<3}  {:<18}  {:<28}  FEATURES", "ID", "SLUG", "NAME");
     println!("  {}", "-".repeat(60));
     for m in &modules {

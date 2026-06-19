@@ -1,6 +1,14 @@
 name: Testing Infrastructure
 permissions: read-all
 
+permissions:
+  contents: read
+  actions: read
+
+permissions:
+  contents: read
+  actions: read
+
 on:
   push:
     branches: [main, feat/**]

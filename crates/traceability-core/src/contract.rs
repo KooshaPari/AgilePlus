@@ -420,7 +420,10 @@ mod tests {
             has_test_links: false,
             ..Default::default()
         };
-        assert_eq!(gate.evaluate(&ctx_no_test), Err(GateReason::MissingTest));
+        assert_eq!(
+            gate.evaluate(&ctx_no_test),
+            Err(GateReason::MissingTest)
+        );
     }
 
     #[test]

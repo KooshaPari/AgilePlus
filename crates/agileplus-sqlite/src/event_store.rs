@@ -1,8 +1,10 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 use agileplus_domain::domain::event::Event;
 use agileplus_events::{EventError, EventStore};
 
-use crate::adapter::SqliteStorageAdapter;
+use crate::SqliteStorageAdapter;
 use crate::repository::events;
+use crate::SqliteStorageAdapter;
 
 #[async_trait::async_trait]
 impl EventStore for SqliteStorageAdapter {

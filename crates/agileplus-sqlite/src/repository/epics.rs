@@ -1,26 +1,12 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Epic repository functions.
 //!
 //! Traceability: FR-STORE-EPIC
 
 use chrono::DateTime;
-use rusqlite::{params, Connection};
+use rusqlite::{Connection, params};
 
 use agileplus_domain::domain::epic::{Epic, EpicStatus};
 use agileplus_domain::error::DomainError;
-
-trait OptionalExt<T> {
-    fn optional(self) -> rusqlite::Result<Option<T>>;
-}
-impl<T> OptionalExt<T> for rusqlite::Result<T> {
-    fn optional(self) -> rusqlite::Result<Option<T>> {
-        match self {
-            Ok(v) => Ok(Some(v)),
-            Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
-            Err(e) => Err(e),
-        }
-    }
-}
 
 fn map_err(e: rusqlite::Error) -> DomainError {
     DomainError::Storage(e.to_string())
@@ -43,8 +29,6 @@ fn row_to_epic(row: &rusqlite::Row<'_>) -> rusqlite::Result<Epic> {
         description: row.get(3)?,
         status: status_str.parse().unwrap_or(EpicStatus::Backlog),
         owner_id: row.get(5)?,
-        requirement_id: row.get(8).unwrap_or(None),
-        trace_ids: Vec::new(),
         created_at: parse_dt(&created_at),
         updated_at: parse_dt(&updated_at),
     })
@@ -54,15 +38,14 @@ fn row_to_epic(row: &rusqlite::Row<'_>) -> rusqlite::Result<Epic> {
 pub fn create_epic(conn: &Connection, epic: &Epic) -> Result<i64, DomainError> {
     let now = chrono::Utc::now().to_rfc3339();
     conn.execute(
-        "INSERT INTO epics (project_id, title, description, status, owner_id, requirement_id, created_at, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+        "INSERT INTO epics (project_id, title, description, status, owner_id, created_at, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
         params![
             epic.project_id,
             epic.title,
             epic.description,
             epic.status.to_string(),
             epic.owner_id,
-            epic.requirement_id,
             now,
             now,
         ],
@@ -71,69 +54,11 @@ pub fn create_epic(conn: &Connection, epic: &Epic) -> Result<i64, DomainError> {
     Ok(conn.last_insert_rowid())
 }
 
-/// Upsert an epic by `requirement_id` — creates if absent, updates title/description/status if present.
-/// Returns the row ID (new or existing).
-///
-/// Uses manual get-then-insert/update because `requirement_id` is added via ALTER TABLE
-/// (no inline UNIQUE constraint); SQLite upsert `ON CONFLICT(col)` requires a declared
-/// table-level constraint that ALTER TABLE cannot add.
-pub fn upsert_epic_by_requirement_id(conn: &Connection, epic: &Epic) -> Result<i64, DomainError> {
-    let req_id = epic.requirement_id.as_deref().ok_or_else(|| {
-        DomainError::Validation("upsert_epic_by_requirement_id requires requirement_id".to_owned())
-    })?;
-    let now = chrono::Utc::now().to_rfc3339();
-    // Check if a row with this requirement_id already exists.
-    let existing_id: Option<i64> = conn
-        .query_row(
-            "SELECT id FROM epics WHERE requirement_id = ?1",
-            params![req_id],
-            |r| r.get(0),
-        )
-        .optional()
-        .map_err(map_err)?;
-
-    if let Some(id) = existing_id {
-        // Update title, description, status.
-        conn.execute(
-            "UPDATE epics SET title = ?1, description = ?2, status = ?3, updated_at = ?4 WHERE id = ?5",
-            params![
-                epic.title,
-                epic.description,
-                epic.status.to_string(),
-                now,
-                id,
-            ],
-        )
-        .map_err(map_err)?;
-        Ok(id)
-    } else {
-        create_epic(conn, epic)
-    }
-}
-
-/// Look up an epic by `requirement_id`. Returns `None` if not found.
-pub fn get_epic_by_requirement_id(
-    conn: &Connection,
-    req_id: &str,
-) -> Result<Option<Epic>, DomainError> {
-    let mut stmt = conn
-        .prepare(
-            "SELECT id, project_id, title, description, status, owner_id, created_at, updated_at, requirement_id \
-             FROM epics WHERE requirement_id = ?1",
-        )
-        .map_err(map_err)?;
-    match stmt.query_row(params![req_id], row_to_epic) {
-        Ok(e) => Ok(Some(e)),
-        Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
-        Err(e) => Err(map_err(e)),
-    }
-}
-
 /// Look up an epic by ID. Returns `None` if not found.
 pub fn get_epic_by_id(conn: &Connection, id: i64) -> Result<Option<Epic>, DomainError> {
     let mut stmt = conn
         .prepare(
-            "SELECT id, project_id, title, description, status, owner_id, created_at, updated_at, requirement_id \
+            "SELECT id, project_id, title, description, status, owner_id, created_at, updated_at \
              FROM epics WHERE id = ?1",
         )
         .map_err(map_err)?;
@@ -146,11 +71,7 @@ pub fn get_epic_by_id(conn: &Connection, id: i64) -> Result<Option<Epic>, Domain
 }
 
 /// Update the status of an epic.
-pub fn update_epic_status(
-    conn: &Connection,
-    id: i64,
-    status: EpicStatus,
-) -> Result<(), DomainError> {
+pub fn update_epic_status(conn: &Connection, id: i64, status: EpicStatus) -> Result<(), DomainError> {
     let now = chrono::Utc::now().to_rfc3339();
     let rows = conn
         .execute(
@@ -168,7 +89,7 @@ pub fn update_epic_status(
 pub fn list_epics_by_project(conn: &Connection, project_id: i64) -> Result<Vec<Epic>, DomainError> {
     let mut stmt = conn
         .prepare(
-            "SELECT id, project_id, title, description, status, owner_id, created_at, updated_at, requirement_id \
+            "SELECT id, project_id, title, description, status, owner_id, created_at, updated_at \
              FROM epics WHERE project_id = ?1 ORDER BY created_at ASC",
         )
         .map_err(map_err)?;

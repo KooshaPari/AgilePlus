@@ -251,6 +251,7 @@ Trail:
 
             self.claim_store.release(&claim_id);
             processed += 1;
+
         }
 
         Ok(processed)

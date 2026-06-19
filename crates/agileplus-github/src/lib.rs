@@ -1,13 +1,13 @@
-//! AgilePlus GitHub sync adapter.
+//! agileplus-github — GitHub integration via octocrab (read layer)
+//! and raw reqwest (sync/write layer).
 //!
-//! One-way sync (AgilePlus → GitHub): bugs map to GitHub Issues
-//! with structured markdown bodies. Status polling detects
-//! external changes. Conflict detection via SHA-256 body hashing.
-//!
-//! Traceability: FR-052 / WP19
+//! # Modules
+//! - `client` — rate-limited reqwest client for create/update/get issues
+//! - `sync`   — conflict-aware sync adapter for backlog items
+//! - `octo`   — octocrab-based read client (`list_issues`, `list_prs`)
 
 pub mod client;
+pub mod octo;
 pub mod sync;
 
-pub use client::GitHubClient;
-pub use sync::{GitHubSyncAdapter, GitHubSyncState};
+pub use octo::{Error, GitHubClient};

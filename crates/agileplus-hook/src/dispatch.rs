@@ -88,10 +88,13 @@ impl HookDispatcher {
                             }
                         }
                     }
-                };
-                if !re.is_match(&claim.resource) {
-                    results.push((hook.id.clone(), DispatchResult::Filtered));
-                    continue;
+                    Err(e) => {
+                        results.push((
+                            hook.id.clone(),
+                            DispatchResult::Failed(format!("bad regex: {e}")),
+                        ));
+                        continue;
+                    }
                 }
             }
             let res = match &hook.action {

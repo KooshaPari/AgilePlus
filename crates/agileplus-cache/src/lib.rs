@@ -1,27 +1,19 @@
-//! AgilePlus cache layer — Dragonfly (Redis-compatible) adapter.
-//!
-//! Provides connection pooling, typed cache operations, projection caching,
-//! rate limiting, and health checks.
-//! Traceability: FR-CACHE / WP04
+//! agileplus-cache — caching layer for projections and rate limiting.
 
 pub mod config;
-pub mod health;
+#[cfg(feature = "redis")]
 pub mod limiter;
-pub mod pool;
 pub mod projection;
 pub mod store;
 
-pub use config::CacheConfig;
-pub use health::{CacheHealth, CacheHealthChecker};
-pub use limiter::RateLimiter;
-pub use pool::CachePool;
-pub use projection::ProjectionCache;
-pub use store::{CacheError, CacheStore, InMemoryCacheStore, RedisCacheStore};
+#[cfg(feature = "redis")]
+pub mod health;
+#[cfg(feature = "redis")]
+pub mod pool;
 
-#[derive(Debug, thiserror::Error)]
-pub enum Error {
-    #[error("Cache error: {0}")]
-    Cache(#[from] CacheError),
-    #[error("Config error: {0}")]
-    Config(String),
-}
+pub use config::CacheConfig;
+pub use projection::ProjectionCache;
+pub use store::{CacheError, CacheStore, InMemoryCacheStore};
+
+#[cfg(feature = "redis")]
+pub use store::RedisCacheStore;

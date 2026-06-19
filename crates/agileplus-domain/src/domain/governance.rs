@@ -1,62 +1,55 @@
-//! Governance domain types — contracts, rules, evidence, and policies.
-//!
-//! Traceability: FR-GOVERN-* / WP04
+//! Governance types — re-exported from `traceability-core`.
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-/// The kind of evidence that satisfies a governance requirement.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum EvidenceType {
-    TestResult,
-    CiOutput,
-    ReviewApproval,
-    SecurityScan,
-    LintResult,
-    ManualAttestation,
+/// Policy domain category.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum PolicyDomain {
+    Security,
+    Quality,
+    Compliance,
+    Performance,
+    Custom,
 }
 
-impl EvidenceType {
-    /// Stable storage/reporting key for this evidence type.
+impl PolicyDomain {
     pub fn as_str(self) -> &'static str {
         match self {
-            Self::TestResult => "test_result",
-            Self::CiOutput => "ci_output",
-            Self::ReviewApproval => "review_approval",
-            Self::SecurityScan => "security_scan",
-            Self::LintResult => "lint_result",
-            Self::ManualAttestation => "manual_attestation",
-        }
-    }
-
-    /// Stable short slug used in generated governance policy references.
-    pub fn policy_ref_slug(self) -> &'static str {
-        match self {
-            Self::TestResult => "test-result",
-            Self::CiOutput => "ci",
-            Self::ReviewApproval => "review",
-            Self::SecurityScan => "security-scan",
-            Self::LintResult => "lint",
-            Self::ManualAttestation => "manual-attestation",
+            PolicyDomain::Security => "security",
+            PolicyDomain::Quality => "quality",
+            PolicyDomain::Compliance => "compliance",
+            PolicyDomain::Performance => "performance",
+            PolicyDomain::Custom => "custom",
         }
     }
 }
 
-/// A single evidence requirement attached to a governance rule.
+/// The definition of a policy rule (stored as JSON blob).
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct EvidenceRequirement {
-    pub fr_id: String,
-    pub evidence_type: EvidenceType,
-    pub threshold: Option<serde_json::Value>,
+pub struct PolicyDefinition {
+    pub description: String,
+    pub check: PolicyCheck,
 }
 
-/// A governance rule controlling a specific state transition.
+/// An active policy rule in the registry.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PolicyRule {
+    pub id: i64,
+    pub domain: PolicyDomain,
+    pub rule: PolicyDefinition,
+    pub active: bool,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+/// A governance rule captured inside a contract.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GovernanceRule {
     pub transition: String,
-    pub required_evidence: Vec<EvidenceRequirement>,
-    pub policy_refs: Vec<String>,
+    pub required_evidence: Vec<String>,
+    pub policy_refs: Vec<i64>,
 }
 
 /// A versioned governance contract bound to a feature.
@@ -69,7 +62,32 @@ pub struct GovernanceContract {
     pub bound_at: DateTime<Utc>,
 }
 
-/// A piece of evidence collected during work-package execution.
+/// Type of evidence artifact.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum EvidenceType {
+    TestResult,
+    CiOutput,
+    ReviewApproval,
+    SecurityScan,
+    LintResult,
+    ManualAttestation,
+}
+
+impl EvidenceType {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            EvidenceType::TestResult => "test_result",
+            EvidenceType::CiOutput => "ci_output",
+            EvidenceType::ReviewApproval => "review_approval",
+            EvidenceType::SecurityScan => "security_scan",
+            EvidenceType::LintResult => "lint_result",
+            EvidenceType::ManualAttestation => "manual_attestation",
+        }
+    }
+}
+
+/// An evidence artifact attached to a work package.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Evidence {
     pub id: i64,
@@ -81,149 +99,305 @@ pub struct Evidence {
     pub created_at: DateTime<Utc>,
 }
 
-/// The domain a policy rule applies to.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum PolicyDomain {
-    Security,
-    Quality,
-    Compliance,
-    Performance,
-    Custom,
-}
-
-impl PolicyDomain {
-    /// Stable storage/reporting key for this policy domain.
-    pub fn as_str(self) -> &'static str {
-        match self {
-            Self::Security => "security",
-            Self::Quality => "quality",
-            Self::Compliance => "compliance",
-            Self::Performance => "performance",
-            Self::Custom => "custom",
-        }
-    }
-}
-
-/// The definition body of a policy rule.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PolicyDefinition {
-    pub description: String,
-    pub check: PolicyCheck,
-}
-
-/// How a policy is evaluated.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
+/// The result of a policy check.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum PolicyCheck {
-    EvidencePresent { evidence_type: EvidenceType },
-    ThresholdMet { metric: String, min: f64 },
     ManualApproval,
-    Custom { script: String },
+    Automated,
 }
 
-impl PolicyCheck {
-    /// Evidence type required by checks that can be satisfied with stored evidence.
-    pub fn required_evidence_type(&self) -> Option<EvidenceType> {
-        match self {
-            Self::EvidencePresent { evidence_type } => Some(*evidence_type),
-            Self::ManualApproval => Some(EvidenceType::ManualAttestation),
-            Self::ThresholdMet { .. } | Self::Custom { .. } => None,
-        }
-    }
-}
-
-/// Outcome of evaluating a policy rule.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum PolicyResult {
-    Pass,
-    Fail { reason: String },
-    Skipped { reason: String },
-}
-
-/// A reusable policy rule stored in the system.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PolicyRule {
-    pub id: i64,
-    pub domain: PolicyDomain,
-    pub rule: PolicyDefinition,
-    pub active: bool,
-    pub created_at: DateTime<Utc>,
-    pub updated_at: DateTime<Utc>,
-}
-
-/// A built-in policy reference emitted by generated governance contracts.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// A well-known built-in policy that maps a short reference key to a
+/// `PolicyDomain` + `EvidenceType` pair.  Used by the `validate` command to
+/// resolve policy references without requiring a database lookup.
+#[derive(Debug, Clone, Copy)]
 pub struct BuiltinPolicy {
+    /// Short human-readable label (e.g. "Unit tests passing").
     pub label: &'static str,
+    /// Governance domain for grouping.
     pub domain: PolicyDomain,
+    /// Required evidence kind.
     pub evidence_type: EvidenceType,
 }
 
 impl BuiltinPolicy {
-    pub fn from_ref(policy_ref: &str) -> Option<Self> {
-        let (label, domain, evidence_type) = match policy_ref {
-            "policy:ci-required" => (
-                "CI evidence required",
-                PolicyDomain::Quality,
-                EvidenceType::CiOutput,
-            ),
-            "policy:review-required" => (
-                "Review approval required",
-                PolicyDomain::Quality,
-                EvidenceType::ReviewApproval,
-            ),
-            "policy:security-scan-required" => (
-                "Security scan evidence required",
-                PolicyDomain::Security,
-                EvidenceType::SecurityScan,
-            ),
-            "policy:lint-required" => (
-                "Lint evidence required",
-                PolicyDomain::Quality,
-                EvidenceType::LintResult,
-            ),
-            "policy:test-result-required" => (
-                "Test result evidence required",
-                PolicyDomain::Quality,
-                EvidenceType::TestResult,
-            ),
-            "policy:manual-attestation-required" => (
-                "Manual attestation required",
-                PolicyDomain::Compliance,
-                EvidenceType::ManualAttestation,
-            ),
-            _ => return None,
-        };
-        Some(Self {
-            label,
-            domain,
-            evidence_type,
-        })
+    /// Well-known built-in policies keyed by their reference string.
+    const KNOWN: &'static [(&'static str, BuiltinPolicy)] = &[
+        (
+            "tests-pass",
+            BuiltinPolicy {
+                label: "Unit tests passing",
+                domain: PolicyDomain::Quality,
+                evidence_type: EvidenceType::TestResult,
+            },
+        ),
+        (
+            "ci-green",
+            BuiltinPolicy {
+                label: "CI pipeline green",
+                domain: PolicyDomain::Quality,
+                evidence_type: EvidenceType::CiOutput,
+            },
+        ),
+        (
+            "review-approved",
+            BuiltinPolicy {
+                label: "Peer review approved",
+                domain: PolicyDomain::Quality,
+                evidence_type: EvidenceType::ReviewApproval,
+            },
+        ),
+        (
+            "security-scan",
+            BuiltinPolicy {
+                label: "Security scan clean",
+                domain: PolicyDomain::Security,
+                evidence_type: EvidenceType::SecurityScan,
+            },
+        ),
+        (
+            "lint-pass",
+            BuiltinPolicy {
+                label: "Lint checks pass",
+                domain: PolicyDomain::Quality,
+                evidence_type: EvidenceType::LintResult,
+            },
+        ),
+    ];
+
+    /// Look up a built-in policy by its reference key.
+    /// Returns `None` for unknown (custom) policy references.
+    pub fn from_ref(policy_ref: &str) -> Option<&'static BuiltinPolicy> {
+        Self::KNOWN
+            .iter()
+            .find(|(key, _)| *key == policy_ref)
+            .map(|(_, bp)| bp)
     }
 }
 
-impl PolicyRule {
-    /// Stable references that can bind governance contract policy refs to this rule.
-    pub fn reference_keys(&self) -> Vec<String> {
-        let mut keys = vec![
-            format!("policy:{}", self.id),
-            format!("policy:{}", self.domain.as_str()),
-        ];
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-        if let Some(evidence_type) = self.rule.check.required_evidence_type() {
-            keys.push(format!(
-                "policy:{}-required",
-                evidence_type.policy_ref_slug()
-            ));
-        }
-
-        keys
+    #[test]
+    fn policy_domain_as_str() {
+        assert_eq!(PolicyDomain::Security.as_str(), "security");
+        assert_eq!(PolicyDomain::Quality.as_str(), "quality");
+        assert_eq!(PolicyDomain::Compliance.as_str(), "compliance");
+        assert_eq!(PolicyDomain::Performance.as_str(), "performance");
+        assert_eq!(PolicyDomain::Custom.as_str(), "custom");
     }
 
-    /// Whether a governance contract policy ref targets this rule.
-    pub fn matches_reference(&self, policy_ref: &str) -> bool {
-        self.reference_keys().iter().any(|key| key == policy_ref)
+    #[test]
+    fn evidence_type_as_str() {
+        assert_eq!(EvidenceType::TestResult.as_str(), "test_result");
+        assert_eq!(EvidenceType::CiOutput.as_str(), "ci_output");
+        assert_eq!(EvidenceType::ReviewApproval.as_str(), "review_approval");
+        assert_eq!(EvidenceType::SecurityScan.as_str(), "security_scan");
+        assert_eq!(EvidenceType::LintResult.as_str(), "lint_result");
+        assert_eq!(
+            EvidenceType::ManualAttestation.as_str(),
+            "manual_attestation"
+        );
+    }
+
+    #[test]
+    fn builtin_policy_known_refs_resolve() {
+        let tests_pass = BuiltinPolicy::from_ref("tests-pass").unwrap();
+        assert_eq!(tests_pass.domain, PolicyDomain::Quality);
+        assert_eq!(tests_pass.evidence_type, EvidenceType::TestResult);
+
+        let security = BuiltinPolicy::from_ref("security-scan").unwrap();
+        assert_eq!(security.domain, PolicyDomain::Security);
+    }
+
+    #[test]
+    fn builtin_policy_unknown_ref_returns_none() {
+        assert!(BuiltinPolicy::from_ref("nonexistent-policy").is_none());
+        assert!(BuiltinPolicy::from_ref("").is_none());
+    }
+
+    #[test]
+    fn policy_domain_serde_roundtrip() {
+        let json = serde_json::to_string(&PolicyDomain::Security).unwrap();
+        let back: PolicyDomain = serde_json::from_str(&json).unwrap();
+        assert_eq!(back, PolicyDomain::Security);
+    }
+
+    #[test]
+    fn evidence_type_serde_snake_case() {
+        let json = serde_json::to_string(&EvidenceType::TestResult).unwrap();
+        assert_eq!(json, "\"test_result\"");
+    }
+
+    #[test]
+    fn policy_definition_construction_and_serde() {
+        let def = PolicyDefinition {
+            description: "All tests must pass".to_string(),
+            check: PolicyCheck::Automated,
+        };
+        assert_eq!(def.description, "All tests must pass");
+        assert_eq!(def.check, PolicyCheck::Automated);
+
+        let json = serde_json::to_string(&def).unwrap();
+        let back: PolicyDefinition = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.description, def.description);
+        assert_eq!(back.check, def.check);
+    }
+
+    #[test]
+    fn policy_rule_construction_and_serde() {
+        let now = Utc::now();
+        let rule = PolicyRule {
+            id: 1,
+            domain: PolicyDomain::Quality,
+            rule: PolicyDefinition {
+                description: "Test rule".to_string(),
+                check: PolicyCheck::ManualApproval,
+            },
+            active: true,
+            created_at: now,
+            updated_at: now,
+        };
+        assert_eq!(rule.id, 1);
+        assert_eq!(rule.domain, PolicyDomain::Quality);
+        assert!(rule.active);
+
+        let json = serde_json::to_string(&rule).unwrap();
+        let back: PolicyRule = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.id, rule.id);
+        assert_eq!(back.domain, rule.domain);
+        assert_eq!(back.active, rule.active);
+        assert_eq!(back.rule.description, rule.rule.description);
+        assert_eq!(back.rule.check, rule.rule.check);
+    }
+
+    #[test]
+    fn evidence_requirement_construction_and_serde() {
+        let req = EvidenceRequirement {
+            fr_id: "FR-001".to_string(),
+            evidence_type: EvidenceType::TestResult,
+        };
+        assert_eq!(req.fr_id, "FR-001");
+        assert_eq!(req.evidence_type, EvidenceType::TestResult);
+
+        let json = serde_json::to_string(&req).unwrap();
+        let back: EvidenceRequirement = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.fr_id, req.fr_id);
+        assert_eq!(back.evidence_type, req.evidence_type);
+    }
+
+    #[test]
+    fn governance_rule_construction_and_serde() {
+        let rule = GovernanceRule {
+            transition: "Draft->Active".to_string(),
+            required_evidence: vec![
+                EvidenceRequirement {
+                    fr_id: "FR-001".to_string(),
+                    evidence_type: EvidenceType::TestResult,
+                },
+                EvidenceRequirement {
+                    fr_id: "FR-002".to_string(),
+                    evidence_type: EvidenceType::ReviewApproval,
+                },
+            ],
+            policy_refs: vec![1, 2, 3],
+        };
+        assert_eq!(rule.transition, "Draft->Active");
+        assert_eq!(rule.required_evidence.len(), 2);
+        assert_eq!(rule.policy_refs, vec![1, 2, 3]);
+
+        let json = serde_json::to_string(&rule).unwrap();
+        let back: GovernanceRule = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.transition, rule.transition);
+        assert_eq!(back.required_evidence.len(), rule.required_evidence.len());
+        assert_eq!(back.policy_refs, rule.policy_refs);
+    }
+
+    #[test]
+    fn governance_contract_construction_and_serde() {
+        let now = Utc::now();
+        let contract = GovernanceContract {
+            id: 42,
+            feature_id: 100,
+            version: 3,
+            rules: vec![GovernanceRule {
+                transition: "Active->Done".to_string(),
+                required_evidence: vec![],
+                policy_refs: vec![1],
+            }],
+            bound_at: now,
+        };
+        assert_eq!(contract.id, 42);
+        assert_eq!(contract.feature_id, 100);
+        assert_eq!(contract.version, 3);
+        assert_eq!(contract.rules.len(), 1);
+
+        let json = serde_json::to_string(&contract).unwrap();
+        let back: GovernanceContract = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.id, contract.id);
+        assert_eq!(back.feature_id, contract.feature_id);
+        assert_eq!(back.version, contract.version);
+        assert_eq!(back.rules.len(), contract.rules.len());
+    }
+
+    #[test]
+    fn evidence_construction_and_serde() {
+        let now = Utc::now();
+        let evidence = Evidence {
+            id: 1,
+            wp_id: 5,
+            fr_id: "FR-001".to_string(),
+            evidence_type: EvidenceType::SecurityScan,
+            artifact_path: "/path/to/scan.json".to_string(),
+            metadata: Some(serde_json::json!({"scanner": "trivy"})),
+            created_at: now,
+        };
+        assert_eq!(evidence.id, 1);
+        assert_eq!(evidence.wp_id, 5);
+        assert_eq!(evidence.fr_id, "FR-001");
+        assert_eq!(evidence.evidence_type, EvidenceType::SecurityScan);
+        assert_eq!(evidence.artifact_path, "/path/to/scan.json");
+        assert!(evidence.metadata.is_some());
+
+        let json = serde_json::to_string(&evidence).unwrap();
+        let back: Evidence = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.id, evidence.id);
+        assert_eq!(back.wp_id, evidence.wp_id);
+        assert_eq!(back.fr_id, evidence.fr_id);
+        assert_eq!(back.evidence_type, evidence.evidence_type);
+        assert_eq!(back.artifact_path, evidence.artifact_path);
+        assert_eq!(back.metadata, evidence.metadata);
+    }
+
+    #[test]
+    fn evidence_without_metadata_serde() {
+        let now = Utc::now();
+        let evidence = Evidence {
+            id: 2,
+            wp_id: 6,
+            fr_id: "FR-002".to_string(),
+            evidence_type: EvidenceType::LintResult,
+            artifact_path: "/path/to/lint.json".to_string(),
+            metadata: None,
+            created_at: now,
+        };
+        let json = serde_json::to_string(&evidence).unwrap();
+        let back: Evidence = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.metadata, None);
+    }
+
+    #[test]
+    fn policy_check_serde() {
+        let manual = PolicyCheck::ManualApproval;
+        let automated = PolicyCheck::Automated;
+
+        let json_manual = serde_json::to_string(&manual).unwrap();
+        let json_auto = serde_json::to_string(&automated).unwrap();
+
+        let back_manual: PolicyCheck = serde_json::from_str(&json_manual).unwrap();
+        let back_auto: PolicyCheck = serde_json::from_str(&json_auto).unwrap();
+
+        assert_eq!(back_manual, PolicyCheck::ManualApproval);
+        assert_eq!(back_auto, PolicyCheck::Automated);
     }
 }
