@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 use super::jsonl::resolve_jsonl_conflict;
 use super::resolver::resolve_git_conflicts;
 use super::snapshot::resolve_snapshot_conflict;
@@ -14,8 +15,9 @@ fn make_event_line(seq: i64) -> String {
     serde_json::to_string(&e).unwrap()
 }
 
+#[allow(clippy::uninlined_format_args)]
 fn conflict_block(ours: &str, theirs: &str) -> String {
-    format!("<<<<<<< HEAD\n{}\n=======\n{}\n>>>>>>> branch\n", ours, theirs)
+    format!("<<<<<<< HEAD\n{ours}\n=======\n{theirs}\n>>>>>>> branch\n",)
 }
 
 #[test]
@@ -29,7 +31,8 @@ fn resolve_jsonl_deduplicates() {
     let ev2 = make_event_line(2);
 
     // Both sides contain ev1; only ours has ev2.
-    let content = conflict_block(&format!("{}\n{}", ev1, ev2), &ev1);
+    let content = conflict_block(&format!("{ev1}
+{ev2}"), &ev1);
     std::fs::write(&path, content).unwrap();
 
     let changed = resolve_jsonl_conflict(&path).unwrap();
@@ -91,7 +94,8 @@ fn merge_sync_state_takes_max_per_entity() {
 
     let merged = merge_sync_state(&ours, &theirs);
 
-    let mappings: Vec<SyncMapping> = serde_json::from_value(merged["sync_mappings"].clone()).unwrap();
+    let mappings: Vec<SyncMapping> =
+        serde_json::from_value(merged["sync_mappings"].clone()).unwrap();
     assert_eq!(mappings.len(), 1);
     assert_eq!(mappings[0].conflict_count, 2);
 
@@ -120,7 +124,8 @@ fn resolve_git_conflicts_end_to_end() {
     let ev2 = make_event_line(2);
     std::fs::write(
         events_dir.join("1.jsonl"),
-        conflict_block(&format!("{}\n{}", ev1, ev2), &ev1),
+        conflict_block(&format!("{ev1}
+{ev2}"), &ev1),
     )
     .unwrap();
 

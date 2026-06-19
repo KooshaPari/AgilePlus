@@ -1,8 +1,9 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! rebuild_from_git — reconstruct SQLite state from git artifacts (FR-017).
 
 use agileplus_domain::{
     domain::{
-        audit::{AuditEntry, EvidenceRef, hash_entry},
+        audit::{hash_entry, AuditEntry, EvidenceRef},
         feature::Feature,
         state_machine::FeatureState,
     },
@@ -285,8 +286,8 @@ mod tests {
         domain::audit::hash_entry,
         error::DomainError,
         ports::{
+            vcs::{BranchInfo, ConflictInfo, FeatureArtifacts, MergeResult, WorktreeInfo},
             StoragePort, VcsPort,
-            vcs::{ConflictInfo, FeatureArtifacts, MergeResult, WorktreeInfo},
         },
     };
 
@@ -311,6 +312,7 @@ mod tests {
         }
     }
 
+    #[async_trait::async_trait]
     impl VcsPort for MockVcs {
         async fn create_worktree(
             &self,
@@ -329,6 +331,23 @@ mod tests {
         }
 
         async fn create_branch(&self, _branch_name: &str, _base: &str) -> Result<(), DomainError> {
+            Err(DomainError::NotImplemented)
+        }
+
+        async fn list_branches(
+            &self,
+            _pattern: Option<&str>,
+            _remote: bool,
+        ) -> Result<Vec<BranchInfo>, DomainError> {
+            Err(DomainError::NotImplemented)
+        }
+
+        async fn delete_branch(
+            &self,
+            _branch_name: &str,
+            _force: bool,
+            _remote: Option<&str>,
+        ) -> Result<(), DomainError> {
             Err(DomainError::NotImplemented)
         }
 
@@ -449,7 +468,7 @@ mod tests {
             "hash": hex(e2.hash),
         });
 
-        format!("{}\n{}\n", line1, line2)
+        format!("{line1}\n{line2}\n")
     }
 
     #[tokio::test]

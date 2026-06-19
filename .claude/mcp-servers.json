@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "dispatch-mcp": {
+      "command": "dispatch-mcp",
+      "cwd": "${workspaceFolder}/dispatch-mcp",
+      "disabled": false,
+      "alwaysAllow": [
+        "dispatch",
+        "healthcheck",
+        "route"
+      ]
+    }
+  }
+}

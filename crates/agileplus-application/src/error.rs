@@ -34,15 +34,7 @@ pub enum AppError {
 impl From<AppError> for ErrorCode {
     fn from(err: AppError) -> Self {
         match err {
-            // `agileplus-domain` is zero-dependency, so it projects onto its own
-            // local `ErrorCode` mirror; remap that onto the canonical wire enum.
-            AppError::Domain(d) => match agileplus_domain::error::ErrorCode::from(d) {
-                agileplus_domain::error::ErrorCode::InternalError => Self::InternalError,
-                agileplus_domain::error::ErrorCode::NotFound => Self::NotFound,
-                agileplus_domain::error::ErrorCode::AlreadyExists => Self::AlreadyExists,
-                agileplus_domain::error::ErrorCode::NotImplemented => Self::NotImplemented,
-                agileplus_domain::error::ErrorCode::ValidationError => Self::ValidationError,
-            },
+            AppError::Domain(d) => d.into(),
             AppError::NotFound(_) => Self::NotFound,
             AppError::Storage(_) => Self::InternalError,
         }
