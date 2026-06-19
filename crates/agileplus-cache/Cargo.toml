@@ -35,7 +35,22 @@ redis = ["dep:redis", "dep:bb8", "dep:bb8-redis"]
 [lib]
 path = "src/lib.rs"
 
+[features]
+default = []
+redis = ["dep:redis", "dep:bb8", "dep:bb8-redis"]
+
 [dependencies]
+agileplus-config = { workspace = true }
+agileplus-domain = { workspace = true }
+async-trait = { workspace = true }
+chrono = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+redis = { version = "0.27", features = ["tokio-comp"], optional = true }
+bb8 = { version = "0.8", optional = true }
+bb8-redis = { version = "0.17", optional = true }
 
 [dev-dependencies]
 agileplus-domain = { workspace = true }
