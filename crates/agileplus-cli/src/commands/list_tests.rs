@@ -821,6 +821,12 @@ impl StoragePort for MemStore {
     async fn list_features_by_label(&self, _: &str) -> Result<Vec<Feature>, DomainError> {
         panic!("MemStore stub: list_features_by_label not used in list_tests")
     }
+    async fn update_feature(&self, _: &Feature) -> Result<(), DomainError> {
+        todo!()
+    }
+    async fn list_features_by_label(&self, _: &str) -> Result<Vec<Feature>, DomainError> {
+        todo!()
+    }
     async fn create_work_package(&self, _: &WorkPackage) -> Result<i64, DomainError> {
         panic!("MemStore stub: create_work_package not used in list_tests")
     }
