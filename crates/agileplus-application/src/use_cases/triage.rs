@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 ﻿//! Use-case implementations for the CLI triage subcommands.
 //!
 //! These orchestrate the new triage primitives (dedup, claim, repo_introspect)
@@ -158,8 +157,7 @@ impl<W: WpRepository> AppState<W> {
             .claim_store
             .lock()
             .map_err(|_| anyhow!("claim store lock poisoned"))?
-            .lookup(ClaimKind::Worktree, &req.wp_id)
-            .or(None);
+            .lookup(ClaimKind::Worktree, &req.wp_id);
 
         // Release the explicit claim_id from the request.
         let _ = self
@@ -224,8 +222,8 @@ impl<W: WpRepository> AppState<W> {
         };
         let next_pickable = self.wp_repo.list_pickable(
             "anonymous",
-            repo.as_ref().and(None), // lane discovery TBD
-            repo.as_ref().and(None), // category discovery TBD
+            None, // lane discovery TBD
+            None, // category discovery TBD
             5,
         )?;
         Ok(WhereResponse {

@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
-//! AgilePlus SQLite adapter — persistence layer.
+﻿//! AgilePlus SQLite adapter — persistence layer.
 //!
 //! Implements `StoragePort` using rusqlite with WAL mode and foreign keys.
 //! Traceability: WP06
@@ -34,6 +33,7 @@ use agileplus_domain::{
     error::DomainError,
     ports::{ContentStoragePort, StoragePort},
 };
+
 
 use crate::migrations::MigrationRunner;
 use agileplus_domain::domain::project::Project;
