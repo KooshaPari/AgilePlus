@@ -128,9 +128,10 @@ impl GraphStore for InMemoryGraphStore {
             .nodes
             .lock()
             .map_err(|e| GraphError::ConnectionError(format!("node store poisoned: {e}")))?;
-        let _guard = self.relationships.lock().map_err(|e| {
-            GraphError::ConnectionError(format!("relationship store poisoned: {e}"))
-        })?;
+        let _guard = self
+            .relationships
+            .lock()
+            .map_err(|e| GraphError::ConnectionError(format!("relationship store poisoned: {e}")))?;
         Ok(())
     }
 }
