@@ -303,3 +303,33 @@ mod tests {
         assert_ne!(SyncDirection::Push, SyncDirection::Pull);
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn sync_mapping_defaults() {
+        let m = SyncMapping::new("feature", 1, "plane-123", "abc");
+        assert_eq!(m.id, 0);
+        assert_eq!(m.entity_type, "feature");
+        assert_eq!(m.entity_id, 1);
+        assert_eq!(m.plane_issue_id, "plane-123");
+        assert_eq!(m.content_hash, "abc");
+        assert_eq!(m.sync_direction, SyncDirection::Bidirectional);
+        assert_eq!(m.conflict_count, 0);
+    }
+
+    #[test]
+    fn sync_direction_display() {
+        assert_eq!(SyncDirection::Push.to_string(), "push");
+        assert_eq!(SyncDirection::Pull.to_string(), "pull");
+        assert_eq!(SyncDirection::Bidirectional.to_string(), "bidirectional");
+    }
+
+    #[test]
+    fn sync_direction_equality() {
+        assert_eq!(SyncDirection::Push, SyncDirection::Push);
+        assert_ne!(SyncDirection::Push, SyncDirection::Pull);
+    }
+}
