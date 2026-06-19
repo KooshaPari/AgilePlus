@@ -3,9 +3,6 @@ name: cargo-audit
 permissions:
   contents: read
 
-permissions:
-  contents: read
-
 on:
   push:
     branches: [main]
