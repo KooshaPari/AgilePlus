@@ -56,11 +56,7 @@ where
         .map_err(|e| ApiError::BadRequest(e.to_string()))?;
     story.description = body.description;
 
-    let id = app
-        .storage
-        .create_story(&story)
-        .await
-        .map_err(ApiError::from)?;
+    let id = app.storage.create_story(&story).await.map_err(ApiError::from)?;
     let created = Story { id, ..story };
     Ok((StatusCode::CREATED, Json(StoryResponse::from(created))))
 }
@@ -77,7 +73,7 @@ where
 {
     let story = app
         .storage
-        .get_story_by_id(id)
+        .get_story(id)
         .await
         .map_err(ApiError::from)?
         .ok_or_else(|| ApiError::NotFound(format!("Story {id} not found")))?;
@@ -102,7 +98,7 @@ where
 {
     let mut story = app
         .storage
-        .get_story_by_id(id)
+        .get_story(id)
         .await
         .map_err(ApiError::from)?
         .ok_or_else(|| ApiError::NotFound(format!("Story {id} not found")))?;

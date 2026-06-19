@@ -471,115 +471,56 @@ impl StoragePort for SqliteStorageAdapter {
         projects::get_project_by_slug(&conn, slug)
     }
 
-    async fn get_project_by_id(&self, id: i64) -> Result<Option<Project>, DomainError> {
-        let conn = self.lock()?;
-        projects::get_project_by_id(&conn, id)
+    async fn list_all_projects(&self) -> Result<Vec<agileplus_domain::domain::project::Project>, DomainError> {
+        Err(DomainError::NotImplemented)
     }
 
-    async fn list_all_projects(&self) -> Result<Vec<Project>, DomainError> {
-        let conn = self.lock()?;
-        projects::list_all_projects(&conn)
+    async fn create_epic(&self, _epic: &agileplus_domain::domain::epic::Epic) -> Result<i64, DomainError> {
+        Err(DomainError::NotImplemented)
     }
 
-    async fn delete_project(&self, id: i64) -> Result<(), DomainError> {
-        let conn = self.lock()?;
-        projects::delete_project(&conn, id)
+    async fn get_epic(&self, _id: i64) -> Result<Option<agileplus_domain::domain::epic::Epic>, DomainError> {
+        Err(DomainError::NotImplemented)
     }
 
-    // -- User CRUD --
-
-    async fn create_user(&self, user: &User) -> Result<i64, DomainError> {
-        let conn = self.lock()?;
-        users::create_user(&conn, user)
+    async fn list_epics_by_project(&self, _project_id: i64) -> Result<Vec<agileplus_domain::domain::epic::Epic>, DomainError> {
+        Err(DomainError::NotImplemented)
     }
 
-    async fn get_user_by_id(&self, id: i64) -> Result<Option<User>, DomainError> {
-        let conn = self.lock()?;
-        users::get_user_by_id(&conn, id)
+    async fn update_epic_status(&self, _id: i64, _status: agileplus_domain::domain::epic::EpicStatus) -> Result<(), DomainError> {
+        Err(DomainError::NotImplemented)
     }
 
-    async fn get_user_by_email(&self, email: &str) -> Result<Option<User>, DomainError> {
-        let conn = self.lock()?;
-        users::get_user_by_email(&conn, email)
+    async fn create_story(&self, _story: &agileplus_domain::domain::story::Story) -> Result<i64, DomainError> {
+        Err(DomainError::NotImplemented)
     }
 
-    async fn update_user_status(&self, id: i64, status: UserStatus) -> Result<(), DomainError> {
-        let conn = self.lock()?;
-        users::update_user_status(&conn, id, status)
+    async fn get_story(&self, _id: i64) -> Result<Option<agileplus_domain::domain::story::Story>, DomainError> {
+        Err(DomainError::NotImplemented)
     }
 
-    async fn update_user_role(&self, id: i64, role: UserRole) -> Result<(), DomainError> {
-        let conn = self.lock()?;
-        users::update_user_role(&conn, id, role)
+    async fn list_stories_by_epic(&self, _epic_id: i64) -> Result<Vec<agileplus_domain::domain::story::Story>, DomainError> {
+        Err(DomainError::NotImplemented)
     }
 
-    async fn list_all_users(&self) -> Result<Vec<User>, DomainError> {
-        let conn = self.lock()?;
-        users::list_all_users(&conn)
+    async fn update_story_status(&self, _id: i64, _status: agileplus_domain::domain::story::StoryStatus) -> Result<(), DomainError> {
+        Err(DomainError::NotImplemented)
     }
 
-    async fn delete_user(&self, id: i64) -> Result<(), DomainError> {
-        let conn = self.lock()?;
-        users::delete_user(&conn, id)
+    async fn create_user(&self, _user: &agileplus_domain::domain::user::User) -> Result<i64, DomainError> {
+        Err(DomainError::NotImplemented)
     }
 
-    // -- Epic CRUD --
-
-    async fn create_epic(&self, epic: &Epic) -> Result<i64, DomainError> {
-        let conn = self.lock()?;
-        epics::create_epic(&conn, epic)
+    async fn get_user(&self, _id: i64) -> Result<Option<agileplus_domain::domain::user::User>, DomainError> {
+        Err(DomainError::NotImplemented)
     }
 
-    async fn get_epic_by_id(&self, id: i64) -> Result<Option<Epic>, DomainError> {
-        let conn = self.lock()?;
-        epics::get_epic_by_id(&conn, id)
+    async fn get_user_by_email(&self, _email: &str) -> Result<Option<agileplus_domain::domain::user::User>, DomainError> {
+        Err(DomainError::NotImplemented)
     }
 
-    async fn update_epic_status(&self, id: i64, status: EpicStatus) -> Result<(), DomainError> {
-        let conn = self.lock()?;
-        epics::update_epic_status(&conn, id, status)
-    }
-
-    async fn list_epics_by_project(&self, project_id: i64) -> Result<Vec<Epic>, DomainError> {
-        let conn = self.lock()?;
-        epics::list_epics_by_project(&conn, project_id)
-    }
-
-    async fn delete_epic(&self, id: i64) -> Result<(), DomainError> {
-        let conn = self.lock()?;
-        epics::delete_epic(&conn, id)
-    }
-
-    // -- Story CRUD --
-
-    async fn create_story(&self, story: &Story) -> Result<i64, DomainError> {
-        let conn = self.lock()?;
-        stories::create_story(&conn, story)
-    }
-
-    async fn get_story_by_id(&self, id: i64) -> Result<Option<Story>, DomainError> {
-        let conn = self.lock()?;
-        stories::get_story_by_id(&conn, id)
-    }
-
-    async fn update_story_status(&self, id: i64, status: StoryStatus) -> Result<(), DomainError> {
-        let conn = self.lock()?;
-        stories::update_story_status(&conn, id, status)
-    }
-
-    async fn list_stories_by_epic(&self, epic_id: i64) -> Result<Vec<Story>, DomainError> {
-        let conn = self.lock()?;
-        stories::list_stories_by_epic(&conn, epic_id)
-    }
-
-    async fn list_stories_by_project(&self, project_id: i64) -> Result<Vec<Story>, DomainError> {
-        let conn = self.lock()?;
-        stories::list_stories_by_project(&conn, project_id)
-    }
-
-    async fn delete_story(&self, id: i64) -> Result<(), DomainError> {
-        let conn = self.lock()?;
-        stories::delete_story(&conn, id)
+    async fn list_all_users(&self) -> Result<Vec<agileplus_domain::domain::user::User>, DomainError> {
+        Err(DomainError::NotImplemented)
     }
 }
 

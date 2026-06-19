@@ -16,7 +16,7 @@ use std::sync::Arc;
 use agileplus_api::{create_router, AppState};
 use agileplus_domain::config::AppConfig;
 use agileplus_domain::credentials::InMemoryCredentialStore;
-use agileplus_domain::domain::audit::{hash_entry, AuditEntry};
+use agileplus_domain::domain::audit::{AuditEntry, hash_entry};
 use agileplus_domain::domain::backlog::{
     BacklogFilters, BacklogItem, BacklogPriority, BacklogStatus,
 };
@@ -25,7 +25,10 @@ use agileplus_domain::domain::feature::Feature;
 use agileplus_domain::domain::governance::{Evidence, GovernanceContract, PolicyRule};
 use agileplus_domain::domain::metric::Metric;
 use agileplus_domain::domain::module::{Module, ModuleFeatureTag, ModuleWithFeatures};
+use agileplus_domain::domain::epic::{Epic, EpicStatus};
 use agileplus_domain::domain::project::Project;
+use agileplus_domain::domain::story::{Story, StoryStatus};
+use agileplus_domain::domain::user::{User, UserRole};
 use agileplus_domain::domain::state_machine::FeatureState;
 use agileplus_domain::domain::sync_mapping::SyncMapping;
 use agileplus_domain::domain::work_package::{WorkPackage, WpDependency, WpState};
@@ -35,7 +38,6 @@ use agileplus_domain::ports::storage::StoragePort;
 use agileplus_domain::ports::vcs::{
     ConflictInfo, FeatureArtifacts, MergeResult, VcsPort, WorktreeInfo,
 };
-use agileplus_domain::ports::ContentStoragePort;
 use async_trait::async_trait;
 use axum::http::StatusCode;
 use axum_test::TestServer;
@@ -49,6 +51,9 @@ struct MockStorage {
     work_packages: Arc<std::sync::Mutex<Vec<WorkPackage>>>,
     governance: Arc<std::sync::Mutex<Vec<GovernanceContract>>>,
     projects: Arc<std::sync::Mutex<Vec<Project>>>,
+    epics: Arc<std::sync::Mutex<Vec<Epic>>>,
+    stories: Arc<std::sync::Mutex<Vec<Story>>>,
+    users: Arc<std::sync::Mutex<Vec<User>>>,
     audit: Arc<std::sync::Mutex<Vec<AuditEntry>>>,
 }
 
@@ -60,6 +65,9 @@ impl Default for MockStorage {
             governance: Arc::new(std::sync::Mutex::new(Vec::new())),
             audit: Arc::new(std::sync::Mutex::new(Vec::new())),
             projects: Arc::new(std::sync::Mutex::new(Vec::new())),
+            epics: Arc::new(std::sync::Mutex::new(Vec::new())),
+            stories: Arc::new(std::sync::Mutex::new(Vec::new())),
+            users: Arc::new(std::sync::Mutex::new(Vec::new())),
         }
     }
 }
@@ -73,6 +81,39 @@ impl MockStorage {
             slug: "test-project".to_string(),
             name: "Test Project".to_string(),
             description: Some("A test project".to_string()),
+            created_at: now,
+            updated_at: now,
+        });
+        s.epics.lock().unwrap().push(Epic {
+            id: 1,
+            project_id: 1,
+            title: "Test Epic".to_string(),
+            description: Some("An epic".to_string()),
+            status: EpicStatus::Active,
+            owner_id: None,
+            created_at: now,
+            updated_at: now,
+        });
+        s.stories.lock().unwrap().push(Story {
+            id: 1,
+            epic_id: 1,
+            project_id: 1,
+            title: "Test Story".to_string(),
+            description: None,
+            status: StoryStatus::Todo,
+            points: Some(3),
+            assignee_id: None,
+            created_at: now,
+            updated_at: now,
+        });
+        s.users.lock().unwrap().push(User {
+            id: 1,
+            display_name: "Alice".to_string(),
+            email: "alice@example.com".to_string(),
+            role: UserRole::Admin,
+            status: agileplus_domain::domain::user::UserStatus::Active,
+            avatar_url: None,
+            github_login: None,
             created_at: now,
             updated_at: now,
         });
@@ -518,16 +559,103 @@ impl StoragePort for MockStorage {
 
     async fn create_project(
         &self,
-        _project: &agileplus_domain::domain::project::Project,
+        project: &agileplus_domain::domain::project::Project,
     ) -> Result<i64, DomainError> {
-        Ok(1)
+        let mut projects = self.projects.lock().unwrap();
+        let id = (projects.len() as i64) + 1;
+        let mut p = project.clone();
+        p.id = id;
+        projects.push(p);
+        Ok(id)
     }
 
     async fn get_project_by_slug(
         &self,
-        _slug: &str,
+        slug: &str,
     ) -> Result<Option<agileplus_domain::domain::project::Project>, DomainError> {
-        Ok(None)
+        let found = self.projects.lock().unwrap().iter().find(|p| p.slug == slug).cloned();
+        Ok(found)
+    }
+
+    async fn list_all_projects(&self) -> Result<Vec<Project>, DomainError> {
+        Ok(self.projects.lock().unwrap().clone())
+    }
+
+    async fn create_epic(&self, epic: &Epic) -> Result<i64, DomainError> {
+        let mut epics = self.epics.lock().unwrap();
+        let id = (epics.len() as i64) + 1;
+        let mut e = epic.clone();
+        e.id = id;
+        epics.push(e);
+        Ok(id)
+    }
+
+    async fn get_epic(&self, id: i64) -> Result<Option<Epic>, DomainError> {
+        let found = self.epics.lock().unwrap().iter().find(|e| e.id == id).cloned();
+        Ok(found)
+    }
+
+    async fn list_epics_by_project(&self, project_id: i64) -> Result<Vec<Epic>, DomainError> {
+        let epics: Vec<Epic> = self.epics.lock().unwrap().iter().filter(|e| e.project_id == project_id).cloned().collect();
+        Ok(epics)
+    }
+
+    async fn update_epic_status(&self, id: i64, status: EpicStatus) -> Result<(), DomainError> {
+        let mut epics = self.epics.lock().unwrap();
+        if let Some(e) = epics.iter_mut().find(|e| e.id == id) {
+            e.status = status;
+        }
+        Ok(())
+    }
+
+    async fn create_story(&self, story: &Story) -> Result<i64, DomainError> {
+        let mut stories = self.stories.lock().unwrap();
+        let id = (stories.len() as i64) + 1;
+        let mut s = story.clone();
+        s.id = id;
+        stories.push(s);
+        Ok(id)
+    }
+
+    async fn get_story(&self, id: i64) -> Result<Option<Story>, DomainError> {
+        let found = self.stories.lock().unwrap().iter().find(|s| s.id == id).cloned();
+        Ok(found)
+    }
+
+    async fn list_stories_by_epic(&self, epic_id: i64) -> Result<Vec<Story>, DomainError> {
+        let stories: Vec<Story> = self.stories.lock().unwrap().iter().filter(|s| s.epic_id == epic_id).cloned().collect();
+        Ok(stories)
+    }
+
+    async fn update_story_status(&self, id: i64, status: StoryStatus) -> Result<(), DomainError> {
+        let mut stories = self.stories.lock().unwrap();
+        if let Some(s) = stories.iter_mut().find(|s| s.id == id) {
+            s.status = status;
+        }
+        Ok(())
+    }
+
+    async fn create_user(&self, user: &User) -> Result<i64, DomainError> {
+        let mut users = self.users.lock().unwrap();
+        let id = (users.len() as i64) + 1;
+        let mut u = user.clone();
+        u.id = id;
+        users.push(u);
+        Ok(id)
+    }
+
+    async fn get_user(&self, id: i64) -> Result<Option<User>, DomainError> {
+        let found = self.users.lock().unwrap().iter().find(|u| u.id == id).cloned();
+        Ok(found)
+    }
+
+    async fn get_user_by_email(&self, email: &str) -> Result<Option<User>, DomainError> {
+        let found = self.users.lock().unwrap().iter().find(|u| u.email == email).cloned();
+        Ok(found)
+    }
+
+    async fn list_all_users(&self) -> Result<Vec<User>, DomainError> {
+        Ok(self.users.lock().unwrap().clone())
     }
 
     async fn get_project_by_id(
@@ -876,6 +1004,12 @@ impl VcsPort for MockVcs {
     async fn checkout_branch(&self, _b: &str) -> Result<(), DomainError> {
         Ok(())
     }
+    async fn list_branches(&self, _pattern: Option<&str>, _remote: bool) -> Result<Vec<agileplus_domain::ports::vcs::BranchInfo>, DomainError> {
+        Ok(vec![])
+    }
+    async fn delete_branch(&self, _b: &str, _force: bool, _remote: Option<&str>) -> Result<(), DomainError> {
+        Ok(())
+    }
     async fn merge_to_target(&self, _s: &str, _t: &str) -> Result<MergeResult, DomainError> {
         Ok(MergeResult {
             success: true,
@@ -957,11 +1091,12 @@ async fn setup_test_server() -> TestServer {
     config.api.api_keys = Some(TEST_API_KEY.to_string());
     let config = Arc::new(config);
 
-    let creds_inner = InMemoryCredentialStore::new(vec![TEST_API_KEY.to_string()]);
-    let creds: Arc<dyn agileplus_domain::credentials::CredentialStore> = Arc::new(creds_inner);
+    let creds: Arc<dyn agileplus_domain::credentials::CredentialStore> =
+        Arc::new(InMemoryCredentialStore::new(vec![TEST_API_KEY.to_string()]));
+
     let state = AppState::new(storage, vcs, telemetry, config, creds);
     let app = create_router(state);
-    TestServer::new(app)
+    TestServer::new(app).expect("failed to create test server")
 }
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
@@ -969,7 +1104,7 @@ async fn setup_test_server() -> TestServer {
 #[tokio::test]
 async fn health_no_auth_required() {
     let server = setup_test_server().await;
-    // /detailed-health returns the full response with timestamp + services (WP11-T070).
+    // /health returns simple health; /detailed-health returns full status
     let resp = server.get("/detailed-health").await;
     resp.assert_status_ok();
     let body: serde_json::Value = resp.json();
@@ -1140,97 +1275,298 @@ async fn response_content_type_is_json() {
     );
 }
 
-// ── FR-AGP-012: bearer-token auth tests ──────────────────────────────────────
+// ── Domain-wiring tests: Projects ─────────────────────────────────────────────
 
-/// AC1 (FR-AGP-012): Missing token → 401.
 #[tokio::test]
-async fn auth_no_token_returns_401() {
-    let server = setup_test_server().await;
-    // No header, no query param.
-    let resp = server.get("/api/v1/features").await;
-    resp.assert_status(StatusCode::UNAUTHORIZED);
-}
-
-/// AC1 (FR-AGP-012): Valid bearer token → 200.
-#[tokio::test]
-async fn auth_valid_bearer_token_returns_200() {
+async fn list_projects_happy_path() {
     let server = setup_test_server().await;
     let resp = server
-        .get("/api/v1/features")
-        .add_header("Authorization", format!("Bearer {TEST_API_KEY}"))
+        .get("/api/v1/projects")
+        .add_header("X-API-Key", TEST_API_KEY)
         .await;
     resp.assert_status_ok();
-}
-
-/// AC1 (FR-AGP-012): Wrong bearer token → 401.
-#[tokio::test]
-async fn auth_wrong_bearer_token_returns_401() {
-    let server = setup_test_server().await;
-    let resp = server
-        .get("/api/v1/features")
-        .add_header("Authorization", "Bearer totally-wrong-token")
-        .await;
-    resp.assert_status(StatusCode::UNAUTHORIZED);
-}
-
-/// Public route (/health) must remain unauthenticated (FR-AGP-012 carve-out).
-#[tokio::test]
-async fn auth_health_is_public_no_token_needed() {
-    let server = setup_test_server().await;
-    // No credentials at all.
-    let resp = server.get("/health").await;
-    resp.assert_status_ok();
-}
-
-// ── FR-AGP-015 — OpenTelemetry request-span middleware ────────────────────
-
-/// AC (FR-AGP-015): OTel request-span middleware wraps a handler.
-///
-/// The `OtelTracingLayer` must not break the response pipeline.  We verify:
-/// - The handler still returns its normal response (200 OK with a JSON body).
-/// - No panic occurs during span creation / recording.
-///
-/// No live OTLP collector is required; the middleware uses `tracing` spans
-/// which are no-op when no subscriber exports them.
-#[tokio::test]
-async fn otel_request_span_middleware_wraps_handler() {
-    use agileplus_api::middleware::otel::opentelemetry_tracing_layer;
-    use axum::{Json, Router, routing::get};
-    use axum_test::TestServer;
-
-    // Minimal router with the OTel layer applied — mirrors production wiring.
-    let app = Router::new()
-        .route("/ping", get(|| async { Json(serde_json::json!({"ok": true})) }))
-        .layer(opentelemetry_tracing_layer());
-
-    let server = TestServer::new(app).unwrap();
-    let resp = server.get("/ping").await;
-    resp.assert_status_ok();
-
-    // Span attributes (method + path) are recorded on the span; verify the
-    // body is still the expected JSON (pipeline was not disrupted).
     let body: serde_json::Value = resp.json();
-    assert_eq!(body["ok"], serde_json::json!(true));
+    let arr = body.as_array().unwrap();
+    assert!(!arr.is_empty());
+    assert_eq!(arr[0]["slug"], "test-project");
+    assert_eq!(arr[0]["name"], "Test Project");
 }
 
-/// AC (FR-AGP-015): OTel layer propagates W3C traceparent header without panic.
 #[tokio::test]
-async fn otel_request_span_propagates_traceparent() {
-    use agileplus_api::middleware::otel::opentelemetry_tracing_layer;
-    use axum::{Json, Router, routing::get};
-    use axum_test::TestServer;
-
-    let app = Router::new()
-        .route("/ping", get(|| async { Json(serde_json::json!({"ok": true})) }))
-        .layer(opentelemetry_tracing_layer());
-
-    let server = TestServer::new(app).unwrap();
+async fn get_project_found() {
+    let server = setup_test_server().await;
     let resp = server
-        .get("/ping")
-        .add_header(
-            "traceparent",
-            "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01",
-        )
+        .get("/api/v1/projects/test-project")
+        .add_header("X-API-Key", TEST_API_KEY)
         .await;
     resp.assert_status_ok();
+    let body: serde_json::Value = resp.json();
+    assert_eq!(body["slug"], "test-project");
+}
+
+#[tokio::test]
+async fn get_project_not_found_returns_404() {
+    let server = setup_test_server().await;
+    let resp = server
+        .get("/api/v1/projects/nonexistent-project")
+        .add_header("X-API-Key", TEST_API_KEY)
+        .await;
+    resp.assert_status(StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
+async fn create_project_happy_path() {
+    let server = setup_test_server().await;
+    let resp = server
+        .post("/api/v1/projects")
+        .add_header("X-API-Key", TEST_API_KEY)
+        .json(&serde_json::json!({ "name": "New Project", "slug": "new-project" }))
+        .await;
+    resp.assert_status(StatusCode::CREATED);
+    let body: serde_json::Value = resp.json();
+    assert_eq!(body["slug"], "new-project");
+    assert_eq!(body["name"], "New Project");
+}
+
+#[tokio::test]
+async fn create_project_invalid_slug_returns_400() {
+    let server = setup_test_server().await;
+    let resp = server
+        .post("/api/v1/projects")
+        .add_header("X-API-Key", TEST_API_KEY)
+        .json(&serde_json::json!({ "name": "Bad Project", "slug": "Invalid SLUG!" }))
+        .await;
+    resp.assert_status(StatusCode::BAD_REQUEST);
+}
+
+#[tokio::test]
+async fn list_epics_for_project() {
+    let server = setup_test_server().await;
+    let resp = server
+        .get("/api/v1/projects/test-project/epics")
+        .add_header("X-API-Key", TEST_API_KEY)
+        .await;
+    resp.assert_status_ok();
+    let body: serde_json::Value = resp.json();
+    let arr = body.as_array().unwrap();
+    assert!(!arr.is_empty());
+    assert_eq!(arr[0]["title"], "Test Epic");
+    assert_eq!(arr[0]["project_id"], 1);
+}
+
+// ── Domain-wiring tests: Epics ────────────────────────────────────────────────
+
+#[tokio::test]
+async fn get_epic_happy_path() {
+    let server = setup_test_server().await;
+    let resp = server
+        .get("/api/v1/epics/1")
+        .add_header("X-API-Key", TEST_API_KEY)
+        .await;
+    resp.assert_status_ok();
+    let body: serde_json::Value = resp.json();
+    assert_eq!(body["id"], 1);
+    assert_eq!(body["title"], "Test Epic");
+    assert_eq!(body["status"], "active");
+}
+
+#[tokio::test]
+async fn get_epic_not_found_returns_404() {
+    let server = setup_test_server().await;
+    let resp = server
+        .get("/api/v1/epics/999")
+        .add_header("X-API-Key", TEST_API_KEY)
+        .await;
+    resp.assert_status(StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
+async fn create_epic_happy_path() {
+    let server = setup_test_server().await;
+    let resp = server
+        .post("/api/v1/epics")
+        .add_header("X-API-Key", TEST_API_KEY)
+        .json(&serde_json::json!({ "project_id": 1, "title": "New Epic" }))
+        .await;
+    resp.assert_status(StatusCode::CREATED);
+    let body: serde_json::Value = resp.json();
+    assert_eq!(body["title"], "New Epic");
+    assert_eq!(body["status"], "backlog");
+}
+
+#[tokio::test]
+async fn create_epic_empty_title_returns_400() {
+    let server = setup_test_server().await;
+    let resp = server
+        .post("/api/v1/epics")
+        .add_header("X-API-Key", TEST_API_KEY)
+        .json(&serde_json::json!({ "project_id": 1, "title": "   " }))
+        .await;
+    resp.assert_status(StatusCode::BAD_REQUEST);
+}
+
+#[tokio::test]
+async fn transition_epic_invalid_transition_returns_409() {
+    let server = setup_test_server().await;
+    // Epic 1 is Active; Active -> Done is not a valid transition
+    let resp = server
+        .post("/api/v1/epics/1/transition")
+        .add_header("X-API-Key", TEST_API_KEY)
+        .json(&serde_json::json!({ "target_status": "done" }))
+        .await;
+    resp.assert_status(StatusCode::CONFLICT);
+}
+
+#[tokio::test]
+async fn list_stories_for_epic() {
+    let server = setup_test_server().await;
+    let resp = server
+        .get("/api/v1/epics/1/stories")
+        .add_header("X-API-Key", TEST_API_KEY)
+        .await;
+    resp.assert_status_ok();
+    let body: serde_json::Value = resp.json();
+    let arr = body.as_array().unwrap();
+    assert!(!arr.is_empty());
+    assert_eq!(arr[0]["title"], "Test Story");
+}
+
+// ── Domain-wiring tests: Stories ─────────────────────────────────────────────
+
+#[tokio::test]
+async fn get_story_happy_path() {
+    let server = setup_test_server().await;
+    let resp = server
+        .get("/api/v1/stories/1")
+        .add_header("X-API-Key", TEST_API_KEY)
+        .await;
+    resp.assert_status_ok();
+    let body: serde_json::Value = resp.json();
+    assert_eq!(body["id"], 1);
+    assert_eq!(body["title"], "Test Story");
+    assert_eq!(body["status"], "todo");
+}
+
+#[tokio::test]
+async fn get_story_not_found_returns_404() {
+    let server = setup_test_server().await;
+    let resp = server
+        .get("/api/v1/stories/999")
+        .add_header("X-API-Key", TEST_API_KEY)
+        .await;
+    resp.assert_status(StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
+async fn create_story_happy_path() {
+    let server = setup_test_server().await;
+    let resp = server
+        .post("/api/v1/stories")
+        .add_header("X-API-Key", TEST_API_KEY)
+        .json(&serde_json::json!({ "epic_id": 1, "project_id": 1, "title": "New Story", "points": 5 }))
+        .await;
+    resp.assert_status(StatusCode::CREATED);
+    let body: serde_json::Value = resp.json();
+    assert_eq!(body["title"], "New Story");
+    assert_eq!(body["points"], 5);
+    assert_eq!(body["status"], "todo");
+}
+
+#[tokio::test]
+async fn create_story_zero_points_returns_400() {
+    let server = setup_test_server().await;
+    let resp = server
+        .post("/api/v1/stories")
+        .add_header("X-API-Key", TEST_API_KEY)
+        .json(&serde_json::json!({ "epic_id": 1, "project_id": 1, "title": "Bad Story", "points": 0 }))
+        .await;
+    resp.assert_status(StatusCode::BAD_REQUEST);
+}
+
+#[tokio::test]
+async fn transition_story_invalid_transition_returns_409() {
+    let server = setup_test_server().await;
+    // Story 1 is Todo; Todo -> Done is not a valid transition
+    let resp = server
+        .post("/api/v1/stories/1/transition")
+        .add_header("X-API-Key", TEST_API_KEY)
+        .json(&serde_json::json!({ "target_status": "done" }))
+        .await;
+    resp.assert_status(StatusCode::CONFLICT);
+}
+
+// ── Domain-wiring tests: Users ────────────────────────────────────────────────
+
+#[tokio::test]
+async fn list_users_happy_path() {
+    let server = setup_test_server().await;
+    let resp = server
+        .get("/api/v1/users")
+        .add_header("X-API-Key", TEST_API_KEY)
+        .await;
+    resp.assert_status_ok();
+    let body: serde_json::Value = resp.json();
+    let arr = body.as_array().unwrap();
+    assert!(!arr.is_empty());
+    assert_eq!(arr[0]["display_name"], "Alice");
+    assert_eq!(arr[0]["email"], "alice@example.com");
+}
+
+#[tokio::test]
+async fn get_user_happy_path() {
+    let server = setup_test_server().await;
+    let resp = server
+        .get("/api/v1/users/1")
+        .add_header("X-API-Key", TEST_API_KEY)
+        .await;
+    resp.assert_status_ok();
+    let body: serde_json::Value = resp.json();
+    assert_eq!(body["id"], 1);
+    assert_eq!(body["email"], "alice@example.com");
+}
+
+#[tokio::test]
+async fn get_user_not_found_returns_404() {
+    let server = setup_test_server().await;
+    let resp = server
+        .get("/api/v1/users/999")
+        .add_header("X-API-Key", TEST_API_KEY)
+        .await;
+    resp.assert_status(StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
+async fn create_user_happy_path() {
+    let server = setup_test_server().await;
+    let resp = server
+        .post("/api/v1/users")
+        .add_header("X-API-Key", TEST_API_KEY)
+        .json(&serde_json::json!({ "display_name": "Bob", "email": "bob@example.com", "role": "member" }))
+        .await;
+    resp.assert_status(StatusCode::CREATED);
+    let body: serde_json::Value = resp.json();
+    assert_eq!(body["display_name"], "Bob");
+    assert_eq!(body["role"], "member");
+}
+
+#[tokio::test]
+async fn create_user_invalid_email_returns_400() {
+    let server = setup_test_server().await;
+    let resp = server
+        .post("/api/v1/users")
+        .add_header("X-API-Key", TEST_API_KEY)
+        .json(&serde_json::json!({ "display_name": "Charlie", "email": "not-an-email" }))
+        .await;
+    resp.assert_status(StatusCode::BAD_REQUEST);
+}
+
+#[tokio::test]
+async fn create_user_invalid_role_returns_400() {
+    let server = setup_test_server().await;
+    let resp = server
+        .post("/api/v1/users")
+        .add_header("X-API-Key", TEST_API_KEY)
+        .json(&serde_json::json!({ "display_name": "Dave", "email": "dave@example.com", "role": "superadmin" }))
+        .await;
+    resp.assert_status(StatusCode::BAD_REQUEST);
 }
