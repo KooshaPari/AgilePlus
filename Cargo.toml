@@ -197,10 +197,10 @@ utoipa = "4"
 uuid = { version = "1", features = ["v4", "v5", "serde"] }
 async-nats = "0.47"
 paste = "1"
-phenotype-error-core = { path = "../phenoShared/crates/phenotype-error-core" }
+phenotype-error-core = { git = "https://github.com/KooshaPari/phenoShared", branch = "main" }
 traceability-core = { path = "../phenotype-pm-core/crates/traceability-core" }
 indexmap = { version = "2", features = ["serde"] }
-phenotype-logging = { path = "../phenoShared/crates/phenotype-logging" }
+phenotype-logging = { git = "https://github.com/KooshaPari/phenoShared", branch = "main" }
 agileplus-config = { path = "crates/agileplus-config" }
 agileplus-convoy = { path = "crates/agileplus-convoy" }
 agileplus-domain = { path = "crates/agileplus-domain" }
