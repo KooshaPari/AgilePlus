@@ -242,3 +242,11 @@ Historical work is documented in:
 ### Org-wide status (verified)
 - deny.toml: 0 Rust repos missing ✅
 - All governance files (CLAUDE, AGENTS, FUNDING, SECURITY, trufflehog): 0 missing ✅
+
+## Round 2026-05-02 (round 3h) — AgilePlus spec expansion
+### Completed
+- eco-003-circular-dep-resolution: tasks.md pushed to AgilePlus
+- eco-004-hexagonal-migration: tasks.md pushed to AgilePlus (hexagonal pattern confirmed in place)
+- 001-spec-driven-development-engine: tasks.md pushed to AgilePlus (foundational spec document pipeline)
+- AgentMCP trufflehog.yml bootstrapped via Contents API
+- org-wide governance scan: 0 repos with any governance gap
