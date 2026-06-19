@@ -16,3 +16,17 @@ rules:
       - chore
       - revert
       - land
+      - brand
+      - WIP
+  type-case:
+    - 0
+  type-empty:
+    - 0
+  subject-empty:
+    - 0
+  body-max-line-length:
+    - 0
+  subject-case:
+    - 0
+  header-max-length:
+    - 0
