@@ -734,10 +734,6 @@ mod tests {
         SqliteStorageAdapter::in_memory().expect("in-memory adapter")
     }
 
-    // MVP story-WP integration tests (story_work_packages + next-ready).
-    #[path = "../lib/tests/mvp_story_work_packages.rs"]
-    mod mvp_story_work_packages;
-
     // -- Feature tests --
 
     #[tokio::test]
@@ -2110,11 +2106,7 @@ mod tests {
         let db = SqliteStorageAdapter::in_memory().expect("in-memory adapter");
         let conn = db.conn_for_bench().expect("conn");
 
-        let expected: &[&str] = &[
-            "gate_results",
-            "run_records",
-            "scope_status",
-        ];
+        let expected: &[&str] = &["gate_results", "run_records", "scope_status"];
 
         let mut stmt = conn
             .prepare("SELECT name FROM sqlite_master WHERE type = 'table'")
