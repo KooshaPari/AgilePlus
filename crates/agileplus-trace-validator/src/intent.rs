@@ -319,7 +319,7 @@ pub fn validate_edge_constraints(nodes: &[Node], edges: &[Edge]) -> Result<(), V
         if !is_edge_allowed(edge.relationship_type, *source_type, *target_type) {
             return Err(ValidationError::InvalidEdgeConstraint {
                 edge_id: edge.id.clone(),
-                relationship: format!("{:?}", edge.relationship_type),
+                relationship: format!("{edge.relationship_type:?}"),
                 source_type: format!("{source_type:?}"),
                 target_type: format!("{target_type:?}"),
             });
