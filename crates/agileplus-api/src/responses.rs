@@ -363,10 +363,7 @@ impl DetailedHealthResponse {
         services: &std::collections::HashMap<String, ServiceHealth>,
     ) -> &'static str {
         // Only consider services that are actually configured.
-        let configured: Vec<_> = services
-            .values()
-            .filter(|s| s.status != "not_configured")
-            .collect();
+        let configured: Vec<_> = services.values().filter(|s| s.status != "not_configured").collect();
         if configured.iter().any(|s| s.status == "unavailable") {
             return "unavailable";
         }
