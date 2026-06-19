@@ -554,7 +554,10 @@ async fn main() {
             Command::Status => cmd_status(&store),
             Command::Version => cmd_version(),
             Command::Sync(args) => {
-                sync_cmd::run(args, None, None).await?;
+                let db_path = db_path_from_env();
+                let storage = agileplus_sqlite::SqliteStorageAdapter::new(&db_path)
+                    .map_err(|e| anyhow::anyhow!("open db: {e}"))?;
+                sync_cmd::run(args, None, Some(&storage)).await?;
             }
             Command::SeedRequirements(args) => {
                 commands::seed_requirements::run(&args)?;
