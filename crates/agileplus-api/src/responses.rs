@@ -316,9 +316,9 @@ impl ServiceHealth {
 
     pub fn not_configured() -> Self {
         Self {
-            status: "not_configured".to_owned(),
+            status: "not_configured".to_string(),
             latency_ms: None,
-            error: Some("not configured in this deployment".to_owned()),
+            error: Some("not configured in this deployment".to_string()),
         }
     }
 }
@@ -363,10 +363,7 @@ impl DetailedHealthResponse {
         services: &std::collections::HashMap<String, ServiceHealth>,
     ) -> &'static str {
         // Only consider services that are actually configured.
-        let configured: Vec<_> = services
-            .values()
-            .filter(|s| s.status != "not_configured")
-            .collect();
+        let configured: Vec<_> = services.values().filter(|s| s.status != "not_configured").collect();
         if configured.iter().any(|s| s.status == "unavailable") {
             return "unavailable";
         }
