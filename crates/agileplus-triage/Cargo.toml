@@ -43,19 +43,5 @@ tokio.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 tracing.workspace = true
-thiserror.workspace = true
-clap = { version = "4", features = ["derive"] }
-sqlx.workspace = true
-# Optional deps — feature-gated to keep the default build offline and
-# dependency-light.  `bitvec` is used by `bloom.rs`; `ureq` is used by the
-# `oai` and `voyage` embedding backends; `rusqlite` powers the optional
-# SQLite claim store.
-bitvec = { version = "1.0", optional = true, default-features = false, features = ["alloc"] }
-ureq = { version = "2", optional = true, default-features = false, features = ["tls", "json"] }
-rusqlite = { version = "0.32", optional = true, default-features = false, features = ["bundled"] }
-
-[dev-dependencies]
-tempfile = "3"
-
-[package.metadata.cargo-machete]
-ignored = ["sqlx"]
+chrono.workspace = true
+agileplus-domain = { path = "../agileplus-domain" }
