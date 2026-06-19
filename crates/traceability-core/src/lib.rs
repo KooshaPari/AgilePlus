@@ -37,19 +37,6 @@
 
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
-#![allow(missing_docs)]
-#![allow(clippy::uninlined_format_args)]
-#![allow(clippy::int_plus_one)]
-#![allow(clippy::needless_pass_by_value)]
-#![allow(clippy::too_many_arguments)]
-#![allow(clippy::module_name_repetitions)]
-#![allow(clippy::must_use_candidate)]
-#![allow(clippy::wildcard_imports)]
-#![allow(clippy::items_after_statements)]
-#![allow(clippy::similar_names)]
-#![allow(clippy::cast_sign_loss)]
-#![allow(clippy::cast_possible_truncation)]
-#![allow(clippy::cast_precision_loss)]
 
 pub mod artifact;
 pub mod contract;
@@ -69,22 +56,18 @@ pub use governance::{
     PolicyCheck, PolicyDefinition, PolicyDomain, PolicyRule,
 };
 pub use ids::{NfrId, RequirementId};
-pub use impact::{
-    compute_impact, conflicts_only, top_affected, BlastNode, ImpactConfig, ImpactReport,
-};
+pub use impact::{BlastNode, ImpactConfig, ImpactReport, compute_impact, conflicts_only, top_affected};
 pub use intent_graph::{
     CanonicalLinkType, DagStage, Edge, GraphMetadata, IntentGraph, Meta, Node, NodeType,
     RelationshipType, Status as NodeStatus, ValidationError,
 };
 pub use lifecycle::{FeatureState, Transition, TransitionResult};
 pub use matrix::{
-    build_from_pairs, build_matrix, classify_cell, neighbors, BuildResult, MatrixCell,
+    BuildResult, MatrixCell, build_from_pairs, build_matrix, classify_cell, neighbors,
 };
-pub use requirement::{is_core_link_type, Requirement, RequirementStatus, VerificationMethod};
-pub use tracelink::{
-    Neo4jSchema, TraceLink, TraceLinkType, CORE_TRACE_LINK_TYPES, NEO4J_NODE_LABELS,
-    NEO4J_RELATIONSHIP_TYPES,
-};
+pub use requirement::{Requirement, RequirementStatus, VerificationMethod, is_core_link_type};
+pub use tracelink::{CORE_TRACE_LINK_TYPES, NEO4J_NODE_LABELS, NEO4J_RELATIONSHIP_TYPES,
+                    Neo4jSchema, TraceLink, TraceLinkType};
 
 // CoverageState is re-exported from the matrix module so the lib-level
 // `pub use` list stays compact.
