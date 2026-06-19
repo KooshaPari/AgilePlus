@@ -1,4 +1,5 @@
 name: Testing Infrastructure
+permissions: read-all
 
 permissions:
   contents: read
