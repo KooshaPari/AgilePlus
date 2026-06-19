@@ -1,7 +1,4 @@
 name: self-merge-gate
-on:
-  workflow_dispatch:
-  pull_request_review:
 
 permissions:
   contents: read

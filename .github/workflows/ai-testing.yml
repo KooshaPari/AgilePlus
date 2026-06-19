@@ -1,5 +1,8 @@
 name: Testing Infrastructure
-permissions: read-all
+
+permissions:
+  contents: read
+  actions: read
 
 permissions:
   contents: read
@@ -21,9 +24,9 @@ on:
   schedule:
     - cron: '0 3 * * *'  # Weekly test run
 
-permissions:
-  contents: read
-  actions: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   bdd-tests:
