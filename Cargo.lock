@@ -6779,8 +6779,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "pheno-ci-templates"
+version = "0.1.0"
+
+[[package]]
+name = "pheno-flags"
+version = "0.1.0"
+dependencies = [
+ "tempfile",
+ "thiserror 2.0.18",
+]
+
+[[package]]
 name = "pheno-ssot-template"
 version = "0.1.0"
+
+[[package]]
+name = "pheno-vibecoding-guard"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "syn 2.0.117",
+]
 
 [[package]]
 name = "phenotype-dep-guard"
