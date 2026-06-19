@@ -541,6 +541,7 @@ dependencies = [
  "agileplus-git",
  "agileplus-triage",
  "anyhow",
+ "async-trait",
  "chrono",
  "gpgme",
  "serde",
