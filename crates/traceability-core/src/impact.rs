@@ -265,12 +265,12 @@ fn artifact_key(a: &ArtifactRef) -> String {
     match a {
         ArtifactRef::Requirement { id } => id.as_str().to_string(),
         ArtifactRef::NonFunctionalRequirement { id } => id.as_str().to_string(),
-        ArtifactRef::Test { id } => format!("test:{}", id),
-        ArtifactRef::CodeEntity { id, .. } => format!("code:{}", id),
-        ArtifactRef::Journey { id } => format!("journey:{}", id),
-        ArtifactRef::AgentRun { id } => format!("agent:{}", id),
-        ArtifactRef::Evidence { id, .. } => format!("evidence:{}", id),
-        ArtifactRef::Document { id, .. } => format!("document:{}", id),
+        ArtifactRef::Test { id } => format!("test:{id}"),
+        ArtifactRef::CodeEntity { id, .. } => format!("code:{id}"),
+        ArtifactRef::Journey { id } => format!("journey:{id}"),
+        ArtifactRef::AgentRun { id } => format!("agent:{id}"),
+        ArtifactRef::Evidence { id, .. } => format!("evidence:{id}"),
+        ArtifactRef::Document { id, .. } => format!("document:{id}"),
     }
 }
 
