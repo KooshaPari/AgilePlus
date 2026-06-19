@@ -237,3 +237,60 @@ mod tests {
         assert!("running".parse::<CycleState>().is_err());
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn date(y: i32, m: u32, d: u32) -> NaiveDate {
+        NaiveDate::from_ymd_opt(y, m, d).unwrap()
+    }
+
+    #[test]
+    fn valid_cycle_construction() {
+        let c = Cycle::new("Sprint 1", date(2026, 1, 1), date(2026, 1, 14), None).unwrap();
+        assert_eq!(c.name, "Sprint 1");
+        assert_eq!(c.state, CycleState::Draft);
+        assert_eq!(c.start_date, date(2026, 1, 1));
+        assert_eq!(c.end_date, date(2026, 1, 14));
+        assert!(c.module_scope_id.is_none());
+    }
+
+    #[test]
+    fn cycle_with_module_scope() {
+        let c = Cycle::new("Sprint 2", date(2026, 2, 1), date(2026, 2, 14), Some(42)).unwrap();
+        assert_eq!(c.module_scope_id, Some(42));
+    }
+
+    #[test]
+    fn rejects_end_before_start() {
+        let err = Cycle::new("Bad", date(2026, 3, 10), date(2026, 3, 1), None).unwrap_err();
+        assert!(err.contains("end date must be on or after start date"));
+    }
+
+    #[test]
+    fn same_start_end_date_is_allowed() {
+        let c = Cycle::new("One-Day", date(2026, 6, 15), date(2026, 6, 15), None).unwrap();
+        assert_eq!(c.start_date, c.end_date);
+    }
+
+    #[test]
+    fn cycle_feature_new() {
+        let cf = CycleFeature::new(10, 20);
+        assert_eq!(cf.cycle_id, 10);
+        assert_eq!(cf.feature_id, 20);
+    }
+
+    #[test]
+    fn cycle_state_from_str_roundtrips() {
+        for s in &["draft", "active", "review", "completed", "cancelled", "shipped", "archived"] {
+            let state: CycleState = s.parse().unwrap();
+            assert_eq!(state.to_string(), *s);
+        }
+    }
+
+    #[test]
+    fn cycle_state_from_str_rejects_unknown() {
+        assert!("running".parse::<CycleState>().is_err());
+    }
+}
