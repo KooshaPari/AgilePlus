@@ -17,3 +17,10 @@ rules:
       - revert
       - land
       - brand
+      - WIP
+  type-case:
+    - 0
+  type-empty:
+    - 0
+  subject-empty:
+    - 0
