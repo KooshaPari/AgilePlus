@@ -100,9 +100,7 @@ impl HookDispatcher {
             let res = match &hook.action {
                 HookAction::Webhook { url } => self.dispatch_webhook(url.as_str(), claim).await,
                 HookAction::Message { topic } => self.dispatch_message(topic.as_str(), claim).await,
-                HookAction::Script { command } => {
-                    self.dispatch_script(command.as_str(), claim).await
-                }
+                HookAction::Script { command } => self.dispatch_script(command.as_str(), claim).await,
             };
             results.push((hook.id.clone(), res));
         }

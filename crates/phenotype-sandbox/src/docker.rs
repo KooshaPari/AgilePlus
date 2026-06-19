@@ -3,6 +3,7 @@ use anyhow::{Context, Result};
 use bollard::container::{
     Config, CreateContainerOptions, RemoveContainerOptions, StopContainerOptions,
 };
+use bollard::models::HostConfig;
 use bollard::exec::{CreateExecOptions, StartExecOptions};
 use bollard::image::CreateImageOptions;
 use bollard::models::HostConfig;
