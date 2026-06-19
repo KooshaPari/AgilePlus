@@ -156,7 +156,7 @@ fn parse_attributes(attr_str: &str) -> serde_json::Value {
             // Integer
             val.as_str()
                 .parse::<i64>()
-                .map(serde_json::Value::Number)
+                .map(|n| serde_json::Value::Number(serde_json::Number::from(n)))
                 .unwrap_or_else(|_| serde_json::Value::String(val.as_str().to_string()))
         } else {
             continue;
