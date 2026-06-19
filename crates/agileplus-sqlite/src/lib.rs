@@ -2034,4 +2034,60 @@ mod tests {
         let got = StoragePort::get_story_by_id(&db, id).await.unwrap().unwrap();
         assert!(got.points.is_none());
     }
+
+    // -- L2 #38 migration test --
+    //
+    // The L1 #5 audit identified 5 tables missing from the schema that the
+    // downstream L2 work (worklog, trace, gate, run, scope surfaces) depends
+    // on. This test confirms migration 022_l2_38_worklog_trace_gate_run_scope
+    // is registered with the MigrationRunner and that all 5 tables exist
+    // post-migration. L2 #38 is the only author of these tables; if any of
+    // them disappears, downstream L2 tasks will fail.
+    #[test]
+    fn test_l2_38_migration() {
+        // Build an in-memory DB via the adapter (runs all migrations).
+        let db = SqliteStorageAdapter::in_memory().expect("in-memory adapter");
+        let conn = db.conn_for_bench().expect("conn");
+
+        let expected: &[&str] = &[
+            "gate_results",
+            "run_records",
+            "scope_status",
+        ];
+
+        let mut stmt = conn
+            .prepare("SELECT name FROM sqlite_master WHERE type = 'table'")
+            .expect("prepare sqlite_master");
+        let mut rows = stmt.query([]).expect("query sqlite_master");
+        let mut found: Vec<String> = Vec::new();
+        while let Some(row) = rows.next().expect("row") {
+            let name: String = row.get(0).expect("name");
+            if expected.contains(&name.as_str()) {
+                found.push(name);
+            }
+        }
+
+        for t in expected {
+            assert!(
+                found.iter().any(|n| n == t),
+                "L2-38 migration table `{t}` not found in sqlite_master; found: {found:?}"
+            );
+        }
+        assert_eq!(
+            found.len(),
+            expected.len(),
+            "expected {} L2-38 tables, found {found:?}",
+            expected.len()
+        );
+
+        // Sanity-check: migration is recorded in _migrations.
+        let applied: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM _migrations WHERE name = ?1",
+                rusqlite::params!["024_l2_38_worklog_trace_gate_run_scope"],
+                |row| row.get(0),
+            )
+            .expect("query _migrations");
+        assert_eq!(applied, 1, "024 migration should be recorded as applied");
+    }
 }
