@@ -18,7 +18,6 @@ agileplus-graph = { path = "../agileplus-graph" }
 serde = { workspace = true, features = ["derive"] }
 anyhow = "1.0"
 async-trait.workspace = true
-serde_json.workspace = true
 phenotype-error-core.workspace = true
 thiserror.workspace = true
 tokio = { workspace = true, features = ["full"] }
