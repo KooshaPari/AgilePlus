@@ -232,3 +232,13 @@ Historical work is documented in:
 - Phantom repo audit: phenotype-automation, phenotype-docs-hub, phenotype-agent-sdk, phenotype-iac, phenotype-templates confirmed as NOT on disk (stale references)
 - phenotype-org-audits: trufflehog.yml bootstrapped
 - Org-wide: FUNDING=0 missing, SECURITY=0 missing, TRUFF=0 missing, CLAUDE=0 missing, AGENTS=0 missing
+
+## Round 2026-05-02 (round 3g) — Final stale item cleanup
+### Completed
+- AgentMCP trufflehog.yml bootstrapped via Contents API
+- OmniRoute trufflehog.yml: ALREADY EXISTS (was stale)
+- cliproxyapi-plusplus deny.toml: ALREADY EXISTS (was stale)
+- AgentMCP deny.toml: ALREADY EXISTS (was stale)
+### Org-wide status (verified)
+- deny.toml: 0 Rust repos missing ✅
+- All governance files (CLAUDE, AGENTS, FUNDING, SECURITY, trufflehog): 0 missing ✅
