@@ -256,7 +256,7 @@ mod tests {
             ("task", Intent::Task),
             ("docs", Intent::Docs),
         ] {
-            let intent: Intent = s.parse().expect("domain operation");
+            let intent: Intent = s.parse().unwrap();
             assert_eq!(intent, expected);
             assert_eq!(intent.to_string(), s);
         }
@@ -270,7 +270,7 @@ mod tests {
     #[test]
     fn backlog_priority_from_str_roundtrips() {
         for s in &["critical", "high", "medium", "low"] {
-            let p: BacklogPriority = s.parse().expect("domain operation");
+            let p: BacklogPriority = s.parse().unwrap();
             assert_eq!(p.to_string(), *s);
         }
     }
@@ -278,7 +278,7 @@ mod tests {
     #[test]
     fn backlog_status_from_str_roundtrips() {
         for s in &["new", "triaged", "in_progress", "done", "dismissed"] {
-            let st: BacklogStatus = s.parse().expect("domain operation");
+            let st: BacklogStatus = s.parse().unwrap();
             assert_eq!(st.to_string(), *s);
         }
     }
