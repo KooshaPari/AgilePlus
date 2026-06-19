@@ -11,5 +11,5 @@ pub mod router;
 pub mod routes;
 pub mod state;
 
-pub use router::create_router;
+pub use router::{create_router, start_api};
 pub use state::AppState;
