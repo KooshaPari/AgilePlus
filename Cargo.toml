@@ -66,6 +66,7 @@ members = [
     "crates/agileplus-grpc",
     "crates/agileplus-github",
     "crates/agileplus-plane",
+    "crates/agileplus-sync",
     "crates/agileplus-nats",
     "crates/agileplus-p2p",
     "crates/agileplus-telemetry",
