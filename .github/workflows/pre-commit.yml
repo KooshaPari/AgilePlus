@@ -29,6 +29,12 @@ jobs:
           git clone --depth 1 \
             "https://x-access-token:${{ github.token }}@github.com/KooshaPari/phenoShared.git" \
             "${{ github.workspace }}/../phenoShared"
+      - name: Install Node.js for tsc hook
+        uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a  # v4.2.0
+        with:
+          node-version: '20'
+      - name: Install TypeScript for tsc hook
+        run: npm install -g typescript
       - name: Run pre-commit (auto + manual stages)
         uses: pre-commit/action@2c7b3805fd2a0fd8c1884dcaebf91fc102a13ecd  # v3.0.1
         with:
