@@ -1,5 +1,3 @@
-[advisories]
-
 [licenses]
 allow = [
     "Apache-2.0",
@@ -23,10 +21,13 @@ allow = [
     "WTFPL",
 ]
 
-[bans]
-multiple-versions = "warn"
-wildcards = "warn"
-
 [sources]
-allow-registry = ["https://github.com/rust-lang/crates.io-index"]
-allow-git = ["https://github.com/KooshaPari/clap-ext"]
+unknown-git = "deny"
+
+[advisories]
+ignore = [
+    # No safe upgrade available - rustls-pemfile deprecated, migration requires async-nats update
+    { id = "RUSTSEC-2025-0134", reason = "No safe upgrade available. rustls-pemfile deprecated, migration requires async-nats update." },
+    # No safe upgrade available - gix = "0.71" pinned in Cargo.toml, requires major version bump
+    { id = "RUSTSEC-2025-0140", reason = "No safe upgrade available. gix = 0.71 pinned in Cargo.toml, requires breaking API change." },
+]
