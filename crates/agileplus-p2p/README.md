@@ -12,3 +12,4 @@ Peer discovery and event replication for brokerless or hybrid AgilePlus sync.
 ```bash
 cargo test -p agileplus-p2p
 ```
+

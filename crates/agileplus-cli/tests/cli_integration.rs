@@ -8,9 +8,13 @@ use assert_cmd::Command;
 use tempfile::TempDir;
 
 fn fixtures_dir() -> PathBuf {
+<<<<<<< HEAD
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("tests")
         .join("fixtures")
+=======
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests").join("fixtures")
+>>>>>>> pr-769
 }
 
 /// Initialize a temporary git repo for testing.
@@ -116,6 +120,7 @@ fn specify_creates_spec_artifact() {
         .success();
 
     // Verify the spec.md was written
+<<<<<<< HEAD
     let spec_file = repo_dir
         .path()
         .join("kitty-specs")
@@ -126,6 +131,134 @@ fn specify_creates_spec_artifact() {
         "spec.md should have been created at {}",
         spec_file.display()
     );
+=======
+    let spec_file = repo_dir.path().join("kitty-specs").join("my-feature").join("spec.md");
+    assert!(spec_file.exists(), "spec.md should have been created at {}", spec_file.display());
+}
+
+#[test]
+fn specs_audit_json_reports_legacy_gap() {
+    let repo_dir = init_temp_git_repo();
+    let db_path = repo_dir.path().join(".agileplus").join("agileplus.db");
+    let spec_path = fixtures_dir().join("sample-spec.md");
+
+    Command::cargo_bin("agileplus")
+        .unwrap()
+        .args([
+            "--db",
+            db_path.to_str().unwrap(),
+            "specify",
+            "--feature",
+            "legacy-only",
+            "--from-file",
+            spec_path.to_str().unwrap(),
+        ])
+        .current_dir(repo_dir.path())
+        .assert()
+        .success();
+
+    let output = Command::cargo_bin("agileplus")
+        .unwrap()
+        .args(["--db", db_path.to_str().unwrap(), "specs", "audit", "--json"])
+        .current_dir(repo_dir.path())
+        .assert()
+        .success()
+        .get_output()
+        .stdout
+        .clone();
+    let report: serde_json::Value = serde_json::from_slice(&output).expect("json report");
+
+    assert_eq!(report["feature_count"], 1);
+    assert_eq!(report["canonical_spec_count"], 0);
+    assert_eq!(report["missing_canonical_specs"][0], "legacy-only");
+    assert_eq!(report["legacy_matches"][0]["slug"], "legacy-only");
+}
+
+#[test]
+fn specs_audit_strict_fails_on_gap_and_passes_when_clean() {
+    let repo_dir = init_temp_git_repo();
+    let db_path = repo_dir.path().join(".agileplus").join("agileplus.db");
+    let spec_path = fixtures_dir().join("sample-spec.md");
+
+    Command::cargo_bin("agileplus")
+        .unwrap()
+        .args([
+            "--db",
+            db_path.to_str().unwrap(),
+            "specify",
+            "--feature",
+            "strict-feature",
+            "--from-file",
+            spec_path.to_str().unwrap(),
+        ])
+        .current_dir(repo_dir.path())
+        .assert()
+        .success();
+
+    Command::cargo_bin("agileplus")
+        .unwrap()
+        .args(["--db", db_path.to_str().unwrap(), "specs", "audit", "--strict"])
+        .current_dir(repo_dir.path())
+        .assert()
+        .failure()
+        .stderr(predicates::str::contains("spec audit failed"));
+
+    let canonical = repo_dir.path().join(".agileplus").join("specs").join("strict-feature");
+    std::fs::create_dir_all(&canonical).expect("canonical spec dir");
+    std::fs::copy(
+        repo_dir.path().join("kitty-specs/strict-feature/spec.md"),
+        canonical.join("spec.md"),
+    )
+    .expect("copy canonical spec");
+
+    Command::cargo_bin("agileplus")
+        .unwrap()
+        .args(["--db", db_path.to_str().unwrap(), "specs", "audit", "--strict"])
+        .current_dir(repo_dir.path())
+        .assert()
+        .success();
+}
+
+#[test]
+fn frontend_audit_strict_accepts_active_and_marked_scaffold_surfaces() {
+    let repo_dir = init_temp_git_repo();
+    let docs = repo_dir.path().join("docs");
+    std::fs::create_dir_all(&docs).expect("docs dir");
+    std::fs::write(docs.join("package.json"), "{}\n").expect("docs package manifest");
+
+    let web = repo_dir.path().join("crates").join("agileplus-dashboard").join("web");
+    std::fs::create_dir_all(&web).expect("web scaffold dir");
+    std::fs::write(web.join("FRONTEND_STATUS.md"), "Status: scaffold\n")
+        .expect("frontend status marker");
+
+    Command::cargo_bin("agileplus")
+        .unwrap()
+        .args(["frontend", "audit", "--strict", "--json"])
+        .current_dir(repo_dir.path())
+        .assert()
+        .success()
+        .stdout(predicates::str::contains("\"status\": \"active\""))
+        .stdout(predicates::str::contains("\"status\": \"scaffold\""))
+        .stdout(predicates::str::contains("npm --prefix docs run docs:build"));
+}
+
+#[test]
+fn frontend_audit_strict_fails_on_unmarked_scaffold() {
+    let repo_dir = init_temp_git_repo();
+    let docs = repo_dir.path().join("docs");
+    std::fs::create_dir_all(&docs).expect("docs dir");
+    std::fs::write(docs.join("package.json"), "{}\n").expect("docs package manifest");
+    std::fs::create_dir_all(repo_dir.path().join("crates").join("agileplus-dashboard").join("web"))
+        .expect("web scaffold dir");
+
+    Command::cargo_bin("agileplus")
+        .unwrap()
+        .args(["frontend", "audit", "--strict"])
+        .current_dir(repo_dir.path())
+        .assert()
+        .failure()
+        .stderr(predicates::str::contains("frontend topology audit failed"));
+>>>>>>> pr-769
 }
 
 #[test]
@@ -135,6 +268,7 @@ fn research_on_nonexistent_feature_runs_pre_specify_mode() {
 
     Command::cargo_bin("agileplus")
         .unwrap()
+<<<<<<< HEAD
         .args([
             "--db",
             db_path.to_str().unwrap(),
@@ -142,6 +276,9 @@ fn research_on_nonexistent_feature_runs_pre_specify_mode() {
             "--feature",
             "nonexistent-feature",
         ])
+=======
+        .args(["--db", db_path.to_str().unwrap(), "research", "--feature", "nonexistent-feature"])
+>>>>>>> pr-769
         .current_dir(repo_dir.path())
         .assert()
         .success()
@@ -173,6 +310,7 @@ fn research_after_specify_transitions_to_researched() {
     // Then research
     Command::cargo_bin("agileplus")
         .unwrap()
+<<<<<<< HEAD
         .args([
             "--db",
             db_path.to_str().unwrap(),
@@ -180,6 +318,9 @@ fn research_after_specify_transitions_to_researched() {
             "--feature",
             "feat-research",
         ])
+=======
+        .args(["--db", db_path.to_str().unwrap(), "research", "--feature", "feat-research"])
+>>>>>>> pr-769
         .current_dir(repo_dir.path())
         .assert()
         .success()
@@ -187,6 +328,47 @@ fn research_after_specify_transitions_to_researched() {
 }
 
 #[test]
+<<<<<<< HEAD
+=======
+fn plan_requires_researched_state_unless_forced() {
+    let repo_dir = init_temp_git_repo();
+    let db_path = repo_dir.path().join(".agileplus").join("agileplus.db");
+    let spec_path = fixtures_dir().join("sample-spec.md");
+
+    Command::cargo_bin("agileplus")
+        .unwrap()
+        .args([
+            "--db",
+            db_path.to_str().unwrap(),
+            "specify",
+            "--feature",
+            "force-plan",
+            "--from-file",
+            spec_path.to_str().unwrap(),
+        ])
+        .current_dir(repo_dir.path())
+        .assert()
+        .success();
+
+    Command::cargo_bin("agileplus")
+        .unwrap()
+        .args(["--db", db_path.to_str().unwrap(), "plan", "--feature", "force-plan"])
+        .current_dir(repo_dir.path())
+        .assert()
+        .failure()
+        .stderr(predicates::str::contains("Expected 'Researched'"));
+
+    Command::cargo_bin("agileplus")
+        .unwrap()
+        .args(["--db", db_path.to_str().unwrap(), "plan", "--feature", "force-plan", "--force"])
+        .current_dir(repo_dir.path())
+        .assert()
+        .success()
+        .stdout(predicates::str::contains("Feature 'force-plan' planned"));
+}
+
+#[test]
+>>>>>>> pr-769
 fn specify_refinement_detects_no_changes() {
     let repo_dir = init_temp_git_repo();
     let db_path = repo_dir.path().join(".agileplus").join("agileplus.db");

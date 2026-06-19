@@ -45,26 +45,7 @@ cargo build --workspace --all-targets
 cargo test --workspace
 cargo clippy --workspace --all-targets -- -D warnings
 cargo run -p xtask-anti-patterns
-cargo build --profile pgo
 ```
 
 Run crate-specific tests with `cargo test -p <crate-name>`.
 
-## PGO Release Profile
-
-The workspace exposes a dedicated `pgo` profile that inherits from `release`
-and tightens code generation for profile-guided optimization workflows:
-
-- `codegen-units = 1`
-- `lto = "fat"`
-- `panic = "abort"`
-- `strip = "debuginfo"`
-
-Use it with:
-
-```bash
-cargo build --profile pgo
-```
-
-Current Cargo rejects `--release --profile pgo`; `--profile pgo` is the
-release-grade invocation because the profile inherits from `release`.

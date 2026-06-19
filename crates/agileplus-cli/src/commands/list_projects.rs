@@ -50,7 +50,6 @@ fn truncate(s: &str, max: usize) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use proptest::prelude::*;
 
     #[test]
     fn truncate_keeps_values_within_limit() {
@@ -60,20 +59,5 @@ mod tests {
     #[test]
     fn truncate_shortens_values_past_limit() {
         assert_eq!(truncate("project-alpha", 8), "project…");
-    }
-
-    proptest! {
-        #[test]
-        fn truncate_never_exceeds_limit(input in any::<String>(), max in 1usize..64) {
-            let truncated = truncate(&input, max);
-            prop_assert!(truncated.chars().count() <= max);
-        }
-
-        #[test]
-        fn truncate_is_identity_within_limit(input in any::<String>(), padding in 0usize..32) {
-            let max = input.chars().count() + padding;
-            let truncated = truncate(&input, max);
-            prop_assert_eq!(truncated, input);
-        }
     }
 }

@@ -105,6 +105,7 @@ cargo build -p agileplus-governance --features cli
     --to beta
 ```
 
+<<<<<<< HEAD
 ## Configuration
 
 | Environment Variable | Default | Description |
@@ -135,3 +136,5 @@ cargo build -p agileplus-governance --features cli
 ## License
 
 MIT
+=======
+>>>>>>> pr-769

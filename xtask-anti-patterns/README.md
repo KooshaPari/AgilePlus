@@ -12,3 +12,4 @@ Workspace linter for Cargo and repository anti-patterns.
 ```bash
 cargo test -p xtask-anti-patterns
 ```
+
