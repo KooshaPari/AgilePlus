@@ -97,8 +97,6 @@ where
         credentials: Arc<dyn CredentialStore>,
         event_tx: broadcast::Sender<serde_json::Value>,
     ) -> Self {
-        let token_verifier = shared_secret_verifier_from_config(&config);
-
         // Composition root: wire use-cases with no-op publisher by default.
         // Production callers can swap in a NATS publisher by constructing the
         // use-cases manually before calling `with_event_tx`.
@@ -128,21 +126,6 @@ where
             transition_story_uc,
             create_epic_uc,
         }
-    }
-}
-
-fn shared_secret_verifier_from_config(config: &AppConfig) -> DynTokenVerifier {
-    match config.api.api_keys.clone() {
-        Some(raw) if !raw.trim().is_empty() => {
-            let tokens = raw
-                .split(',')
-                .map(str::trim)
-                .filter(|token| !token.is_empty())
-                .map(String::from)
-                .collect::<Vec<_>>();
-            Arc::new(SharedSecretVerifier::new(tokens))
-        }
-        _ => Arc::new(SharedSecretVerifier::from_env()),
     }
 }
 
