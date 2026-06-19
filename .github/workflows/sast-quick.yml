@@ -1,4 +1,8 @@
 name: SAST Quick Check
+on:
+  pull_request:
+  push:
+    branches: [main]
 
 permissions:
   contents: read

@@ -1,4 +1,9 @@
 name: Evidence Capture
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 permissions:
   contents: read
