@@ -76,6 +76,7 @@ members = [
   "crates/agileplus-pipeline",
   "crates/agileplus-trace-validator",
   "crates/shared-traceability",
+  "crates/traceability-core",
   "crates/agileplus-import",
   "crates/agileplus-proto",
   "crates/agileplus-validate",
@@ -198,7 +199,7 @@ uuid = { version = "1", features = ["v4", "v5", "serde"] }
 async-nats = "0.47"
 paste = "1"
 phenotype-error-core = { git = "https://github.com/KooshaPari/phenoShared", branch = "main" }
-traceability-core = { path = "../phenotype-pm-core/crates/traceability-core" }
+traceability-core = { path = "crates/traceability-core" }
 indexmap = { version = "2", features = ["serde"] }
 phenotype-logging = { git = "https://github.com/KooshaPari/phenoShared", branch = "main" }
 agileplus-config = { path = "crates/agileplus-config" }
