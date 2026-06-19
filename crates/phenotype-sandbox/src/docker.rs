@@ -3,7 +3,6 @@ use anyhow::{Context, Result};
 use bollard::container::{
     Config, CreateContainerOptions, RemoveContainerOptions, StopContainerOptions,
 };
-use bollard::models::HostConfig;
 use bollard::exec::{CreateExecOptions, StartExecOptions};
 use bollard::image::CreateImageOptions;
 use bollard::models::HostConfig;
@@ -151,7 +150,7 @@ impl DockerBackend {
         let mut stdout = Vec::new();
         let mut stderr = Vec::new();
 
-        let mut stream = self
+        let exec_result = self
             .client
             .start_exec(&exec.id, Some(start_options))
             .await?;
