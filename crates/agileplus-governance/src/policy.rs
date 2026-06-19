@@ -410,7 +410,7 @@ impl PolicyEngine {
     /// `&self`-free also satisfies `clippy::only_used_in_recursion`.
     fn evaluate_condition(condition: &PolicyCondition, context: &PolicyContext) -> bool {
         match condition {
-            PolicyCondition::Equals { key, value } => context.get(key).is_none_or(|v| v == *value),
+            PolicyCondition::Equals { key, value } => context.get(key).is_some_and(|v| v == *value),
             PolicyCondition::Contains { key, value } => {
                 context.get(key).is_some_and(|v| match (v, value) {
                     (serde_json::Value::String(s), serde_json::Value::String(pattern)) => {
