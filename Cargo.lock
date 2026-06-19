@@ -82,6 +82,12 @@ name = "agileplus-cli"
 version = "0.1.0"
 dependencies = [
  "agileplus-domain",
+ "agileplus-git",
+ "agileplus-github",
+ "agileplus-plane",
+ "agileplus-sqlite",
+ "agileplus-telemetry",
+ "agileplus-triage",
  "anyhow",
  "chrono",
  "clap",
@@ -448,6 +454,26 @@ dependencies = [
 [[package]]
 name = "agileplus-subcmds"
 version = "0.1.0"
+
+[[package]]
+name = "agileplus-sync"
+version = "0.1.0"
+dependencies = [
+ "agileplus-domain",
+ "agileplus-events",
+ "agileplus-plane",
+ "async-nats",
+ "async-trait",
+ "chrono",
+ "futures-util",
+ "proptest",
+ "serde",
+ "serde_json",
+ "sha2",
+ "thiserror 2.0.18",
+ "tokio",
+ "tracing",
+]
 
 [[package]]
 name = "agileplus-sync"
