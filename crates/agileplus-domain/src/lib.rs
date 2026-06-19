@@ -11,7 +11,6 @@ pub mod error;
 pub use error::DomainResult;
 pub mod intent_graph;
 pub mod ports;
-pub mod adapters;
 pub mod traceability;
 
 // Shared PM/traceability spine (phenotype-pm-core). AgilePlus-local aggregates
