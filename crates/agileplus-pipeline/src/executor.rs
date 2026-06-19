@@ -226,6 +226,7 @@ impl Executor {
                     );
                 }
 
+                #[allow(unused_assignments)]
                 let mut last_result: Option<NodeOutput> = None;
                 loop {
                     attempts += 1;
