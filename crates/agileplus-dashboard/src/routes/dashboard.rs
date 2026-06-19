@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Dashboard route handlers for kanban, work packages, and server-sent events.
 //!
 //! This module implements the core dashboard UI handlers:
@@ -47,7 +46,6 @@ pub struct WorkPackageJson {
     pub assignee: Option<String>,
 }
 
-#[allow(dead_code)]
 fn build_feature_events(
     feature: &FeatureView,
     workpackages: &[WpView],
