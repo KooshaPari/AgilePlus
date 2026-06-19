@@ -132,10 +132,12 @@ jobs:
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
       - name: Checkout phenoShared sibling
-        run: |
-          git clone --depth 1 \
-            "https://x-access-token:${{ github.token }}@github.com/KooshaPari/phenoShared.git" \
-            "${{ github.workspace }}/../phenoShared"
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+        with:
+          repository: KooshaPari/phenoShared
+          path: ../phenoShared
+          fetch-depth: 1
+          sparse-checkout: crates/
       - uses: dtolnay/rust-toolchain@5b842231ba77f5c045dba54ac5560fed2db780e2  # nightly
       - uses: Swatinem/rust-cache@42dc69e1aa15d09112580998cf2ef0119e2e91ae  # v2
       - uses: arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b  # v3
@@ -165,10 +167,12 @@ jobs:
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
       - name: Checkout phenoShared sibling
-        run: |
-          git clone --depth 1 \
-            "https://x-access-token:${{ github.token }}@github.com/KooshaPari/phenoShared.git" \
-            "${{ github.workspace }}/../phenoShared"
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+        with:
+          repository: KooshaPari/phenoShared
+          path: ../phenoShared
+          fetch-depth: 1
+          sparse-checkout: crates/
       - uses: dtolnay/rust-toolchain@5b842231ba77f5c045dba54ac5560fed2db780e2  # nightly
       - uses: Swatinem/rust-cache@42dc69e1aa15d09112580998cf2ef0119e2e91ae  # v2
       - uses: arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b  # v3
@@ -203,10 +207,12 @@ jobs:
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
       - name: Checkout phenoShared sibling
-        run: |
-          git clone --depth 1 \
-            "https://x-access-token:${{ github.token }}@github.com/KooshaPari/phenoShared.git" \
-            "${{ github.workspace }}/../phenoShared"
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+        with:
+          repository: KooshaPari/phenoShared
+          path: ../phenoShared
+          fetch-depth: 1
+          sparse-checkout: crates/
       - uses: dtolnay/rust-toolchain@5b842231ba77f5c045dba54ac5560fed2db780e2  # nightly
         with:
           components: rustfmt, clippy
@@ -234,10 +240,12 @@ jobs:
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
       - name: Checkout phenoShared sibling
-        run: |
-          git clone --depth 1 \
-            "https://x-access-token:${{ github.token }}@github.com/KooshaPari/phenoShared.git" \
-            "${{ github.workspace }}/../phenoShared"
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+        with:
+          repository: KooshaPari/phenoShared
+          path: ../phenoShared
+          fetch-depth: 1
+          sparse-checkout: crates/
       - uses: dtolnay/rust-toolchain@5b842231ba77f5c045dba54ac5560fed2db780e2  # nightly
       - uses: Swatinem/rust-cache@42dc69e1aa15d09112580998cf2ef0119e2e91ae  # v2
       - uses: arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b  # v3
@@ -278,10 +286,12 @@ jobs:
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
       - name: Checkout phenoShared sibling
-        run: |
-          git clone --depth 1 \
-            "https://x-access-token:${{ github.token }}@github.com/KooshaPari/phenoShared.git" \
-            "${{ github.workspace }}/../phenoShared"
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+        with:
+          repository: KooshaPari/phenoShared
+          path: ../phenoShared
+          fetch-depth: 1
+          sparse-checkout: crates/
       - uses: dtolnay/rust-toolchain@5b842231ba77f5c045dba54ac5560fed2db780e2  # nightly
       - uses: Swatinem/rust-cache@42dc69e1aa15d09112580998cf2ef0119e2e91ae  # v2
       - uses: arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b  # v3
@@ -298,10 +308,12 @@ jobs:
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
       - name: Checkout phenoShared sibling
-        run: |
-          git clone --depth 1 \
-            "https://x-access-token:${{ github.token }}@github.com/KooshaPari/phenoShared.git" \
-            "${{ github.workspace }}/../phenoShared"
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+        with:
+          repository: KooshaPari/phenoShared
+          path: ../phenoShared
+          fetch-depth: 1
+          sparse-checkout: crates/
       - name: Validate domain crate dependencies
         run: |
           ALLOWED="serde serde_json chrono sha2 thiserror toml dirs-next zeroize keyring anyhow async-trait uuid regex phenotype-error-core agileplus-validate"
