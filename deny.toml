@@ -25,7 +25,10 @@ allow = [
 
 [bans]
 multiple-versions = "warn"
-wildcards = "warn"
+wildcards = "deny"
+skip = [
+    { name = "clap-ext" },
+]
 
 [sources]
 allow-registry = ["https://github.com/rust-lang/crates.io-index"]
