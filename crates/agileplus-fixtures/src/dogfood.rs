@@ -465,7 +465,11 @@ pub fn seed_dogfood_features() -> (Vec<Feature>, HashMap<i64, Vec<WorkPackage>>)
             30,
             "sk-028-cli-event-emission-sync",
             "CLI Event Emission Sync",
-            vec!["cli".to_owned(), "sync".to_owned(), "specKitty".to_owned()],
+            vec![
+                "cli".to_owned(),
+                "sync".to_owned(),
+                "specKitty".to_owned(),
+            ],
         ),
         (
             31,
@@ -487,7 +491,11 @@ pub fn seed_dogfood_features() -> (Vec<Feature>, HashMap<i64, Vec<WorkPackage>>)
             33,
             "sk-032-identity-aware-cli-event-sync",
             "Identity-Aware CLI Event Sync",
-            vec!["cli".to_owned(), "sync".to_owned(), "specKitty".to_owned()],
+            vec![
+                "cli".to_owned(),
+                "sync".to_owned(),
+                "specKitty".to_owned(),
+            ],
         ),
         (
             34,
