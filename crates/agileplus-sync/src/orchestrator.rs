@@ -280,7 +280,7 @@ impl SyncOrchestrator {
         self.plane
             .patch_issue(&project_id, plane_issue_id, value)
             .await
-            .map_err(|e| SyncError::Store(e.to_string()))
+            .map_err(|e| SyncError::Transport(e.to_string()))
     }
 
     async fn apply_to_local(
@@ -302,7 +302,7 @@ impl SyncOrchestrator {
         self.sqlite
             .append(&event)
             .await
-            .map_err(|e| SyncError::Store(e.to_string()))?;
+            .map_err(|e| SyncError::Storage(e.to_string()))?;
         Ok(())
     }
 }
