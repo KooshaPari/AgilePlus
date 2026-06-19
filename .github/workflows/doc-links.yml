@@ -1,19 +1,11 @@
 name: Doc Links
-
-permissions:
-  contents: read
-
 on:
   workflow_dispatch:
   push:
-    branches: [main]
-    paths:
-      - "docs/**"
-      - ".github/workflows/doc-links.yml"
   pull_request:
-    paths:
-      - "docs/**"
-      - ".github/workflows/doc-links.yml"
+
+permissions:
+  contents: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

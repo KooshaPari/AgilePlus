@@ -1,4 +1,7 @@
 name: self-merge-gate
+on:
+  workflow_dispatch:
+  pull_request_review:
 
 permissions:
   contents: read
@@ -11,7 +14,6 @@ concurrency:
 # Delegates to phenoShared reusable workflow.
 # See: https://github.com/KooshaPari/phenoShared/blob/main/.github/workflows/self-merge-gate.yml
 
-"on": [pull_request_review]
 jobs:
   gate:
     uses: KooshaPari/phenoShared/.github/workflows/self-merge-gate.yml@438e2e71e448c9f1f47f184d3ca4acbb28928677  # main
