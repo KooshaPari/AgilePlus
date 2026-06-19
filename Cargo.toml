@@ -93,6 +93,8 @@ members = [
   "crates/pheno-ssot-template",
   "crates/phenotype-mcp-sdk-rs",
   "crates/phenotype-sandbox",
+  "crates/pheno-ci-templates",
+  "crates/pheno-flags",
 ]
 exclude = ["AgilePlus/rust", "rust", "crates/phenotype-config"]
 
