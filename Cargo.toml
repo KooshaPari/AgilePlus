@@ -202,27 +202,24 @@ opentelemetry-otlp = { version = "0.27", features = [
   "http-proto",
   "reqwest-client",
 ] }
-# OpenTelemetry tracing bridge — uncomment when ready to use
-tracing-opentelemetry = "0.27"
-utoipa = "4"
-uuid = { version = "1", features = ["v4", "v5", "serde"] }
-async-nats = "0.47"
-paste = "1"
-phenotype-error-core = { path = "../phenoShared/crates/phenotype-error-core" }
-phenotype-logging = { path = "../phenoShared/crates/phenotype-logging" }
-agileplus-config = { path = "crates/agileplus-config" }
-agileplus-convoy = { path = "crates/agileplus-convoy" }
-agileplus-domain = { path = "crates/agileplus-domain" }
-agileplus-events = { path = "crates/agileplus-events" }
-agileplus-graph = { path = "crates/agileplus-graph" }
-agileplus-nats = { path = "crates/agileplus-nats" }
-agileplus-proto = { path = "crates/agileplus-proto" }
-agileplus-telemetry = { path = "crates/agileplus-telemetry" }
-agileplus-validate = { path = "crates/agileplus-validate" }
-agileplus-witness = { path = "crates/agileplus-witness" }
-shared-traceability = { path = "crates/shared-traceability" }
-toml = "0.8"
-tokio-stream = { version = "0.1", features = ["net", "sync"] }
-sqlx = { version = "0.8", default-features = false }
-hex = "0.4"
-regex = "1"
+opentelemetry_sdk = { version = "0.31", features = [
+  "trace",
+  "metrics",
+  "rt-tokio",
+] }
+criterion = { version = "0.5", features = ["async_tokio", "html_reports"] }
+time = ">=0.3.49"
+trait-variant = "0.1"
+async-trait = "0.1"
+sentry = { version = "0.33", features = ["backtrace", "contexts", "debug-images"] }
+agileplus-error-core = { path = "crates/agileplus-error-core" }
+
+# Plugin core interface
+agileplus-plugin-core = { path = "libs/agileplus-plugin-core" }
+
+# Git operations
+gix = "0.71"
+git2 = "0.20"
+
+# Database
+rusqlite = { version = "0.33", features = ["bundled"] }
