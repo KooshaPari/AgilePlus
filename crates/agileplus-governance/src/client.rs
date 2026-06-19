@@ -313,6 +313,7 @@ impl GovernanceClient {
     pub async fn policies(&self) -> Vec<crate::policy::Policy> {
         self.policy_engine.read().await.policies().to_vec()
     }
+
 }
 
 /// Builder for creating a GovernanceClient
