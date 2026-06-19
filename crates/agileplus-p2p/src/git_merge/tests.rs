@@ -18,8 +18,7 @@ fn make_event_line(seq: i64) -> String {
 #[allow(clippy::uninlined_format_args)]
 fn conflict_block(ours: &str, theirs: &str) -> String {
     format!(
-        "<<<<<<< HEAD\n{}\n=======\n{}\n>>>>>>> branch\n",
-        ours, theirs
+        "<<<<<<< HEAD\n{ours}\n=======\n{theirs}\n>>>>>>> branch\n"
     )
 }
 
