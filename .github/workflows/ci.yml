@@ -178,7 +178,7 @@ jobs:
           version: "28.x"
           repo-token: ${{ github.token }}
       - name: Install tarpaulin
-        uses: taiki-e/install-action@7a79fe8c3a13344501c80d99cae481c1c9085912  # v2
+        uses: taiki-e/install-action@d12e70e218c759b71f95b1b6c0a2e5e7cb1b1f49  # v2
         with:
           tool: cargo-tarpaulin@0.31.3
       - name: Generate coverage
