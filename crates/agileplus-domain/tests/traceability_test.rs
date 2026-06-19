@@ -9,7 +9,6 @@ use uuid::Uuid;
 
 fn make_trace_ref(trace_id: &str, artifact_type: &str) -> TraceRef {
     TraceRef {
-        entity_id: Uuid::nil(),
         trace_id: trace_id.to_string(),
         artifact_type: artifact_type.to_string(),
         linked_at: Utc::now(),
@@ -28,13 +27,11 @@ fn trace_ref_serialize_roundtrip() {
 fn trace_ref_partial_eq_by_value() {
     let ts = Utc::now();
     let a = TraceRef {
-        entity_id: Uuid::nil(),
         trace_id: "FR-002".into(),
         artifact_type: "evidence".into(),
         linked_at: ts,
     };
     let b = TraceRef {
-        entity_id: Uuid::nil(),
         trace_id: "FR-002".into(),
         artifact_type: "evidence".into(),
         linked_at: ts,

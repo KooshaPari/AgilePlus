@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
-//! AgilePlus SQLite adapter — persistence layer.
+﻿//! AgilePlus SQLite adapter — persistence layer.
 //!
 //! Implements `StoragePort` using rusqlite with WAL mode and foreign keys.
 //! Traceability: WP06
@@ -35,13 +34,14 @@ use agileplus_domain::{
     ports::{ContentStoragePort, StoragePort},
 };
 
+
 use crate::migrations::MigrationRunner;
 use agileplus_domain::domain::project::Project;
 use agileplus_domain::domain::sync_mapping::SyncMapping;
 
 use crate::repository::{
-    audit, backlog, cycles, epics, evidence, features, governance, metrics, modules, projects,
-    stories, sync_mappings, users, work_packages,
+    audit, backlog, cycles, epics, events, evidence, features, governance, metrics, modules,
+    projects, stories, sync_mappings, users, work_packages,
 };
 
 /// SQLite-backed storage adapter.
@@ -471,120 +471,56 @@ impl StoragePort for SqliteStorageAdapter {
         projects::get_project_by_slug(&conn, slug)
     }
 
-    async fn get_project_by_id(&self, id: i64) -> Result<Option<Project>, DomainError> {
-        let conn = self.lock()?;
-        projects::get_project_by_id(&conn, id)
+    async fn list_all_projects(&self) -> Result<Vec<agileplus_domain::domain::project::Project>, DomainError> {
+        Err(DomainError::NotImplemented)
     }
 
-    async fn list_all_projects(&self) -> Result<Vec<Project>, DomainError> {
-        let conn = self.lock()?;
-        projects::list_all_projects(&conn)
+    async fn create_epic(&self, _epic: &agileplus_domain::domain::epic::Epic) -> Result<i64, DomainError> {
+        Err(DomainError::NotImplemented)
     }
 
-    async fn delete_project(&self, id: i64) -> Result<(), DomainError> {
-        let conn = self.lock()?;
-        projects::delete_project(&conn, id)
+    async fn get_epic(&self, _id: i64) -> Result<Option<agileplus_domain::domain::epic::Epic>, DomainError> {
+        Err(DomainError::NotImplemented)
     }
 
-    // -- User CRUD --
-
-    async fn create_user(&self, user: &User) -> Result<i64, DomainError> {
-        let conn = self.lock()?;
-        users::create_user(&conn, user)
+    async fn list_epics_by_project(&self, _project_id: i64) -> Result<Vec<agileplus_domain::domain::epic::Epic>, DomainError> {
+        Err(DomainError::NotImplemented)
     }
 
-    async fn get_user_by_id(&self, id: i64) -> Result<Option<User>, DomainError> {
-        let conn = self.lock()?;
-        users::get_user_by_id(&conn, id)
+    async fn update_epic_status(&self, _id: i64, _status: agileplus_domain::domain::epic::EpicStatus) -> Result<(), DomainError> {
+        Err(DomainError::NotImplemented)
     }
 
-    async fn get_user_by_email(&self, email: &str) -> Result<Option<User>, DomainError> {
-        let conn = self.lock()?;
-        users::get_user_by_email(&conn, email)
+    async fn create_story(&self, _story: &agileplus_domain::domain::story::Story) -> Result<i64, DomainError> {
+        Err(DomainError::NotImplemented)
     }
 
-    async fn update_user_status(&self, id: i64, status: UserStatus) -> Result<(), DomainError> {
-        let conn = self.lock()?;
-        users::update_user_status(&conn, id, status)
+    async fn get_story(&self, _id: i64) -> Result<Option<agileplus_domain::domain::story::Story>, DomainError> {
+        Err(DomainError::NotImplemented)
     }
 
-    async fn update_user_role(&self, id: i64, role: UserRole) -> Result<(), DomainError> {
-        let conn = self.lock()?;
-        users::update_user_role(&conn, id, role)
+    async fn list_stories_by_epic(&self, _epic_id: i64) -> Result<Vec<agileplus_domain::domain::story::Story>, DomainError> {
+        Err(DomainError::NotImplemented)
     }
 
-    async fn list_all_users(&self) -> Result<Vec<User>, DomainError> {
-        let conn = self.lock()?;
-        users::list_all_users(&conn)
+    async fn update_story_status(&self, _id: i64, _status: agileplus_domain::domain::story::StoryStatus) -> Result<(), DomainError> {
+        Err(DomainError::NotImplemented)
     }
 
-    async fn delete_user(&self, id: i64) -> Result<(), DomainError> {
-        let conn = self.lock()?;
-        users::delete_user(&conn, id)
+    async fn create_user(&self, _user: &agileplus_domain::domain::user::User) -> Result<i64, DomainError> {
+        Err(DomainError::NotImplemented)
     }
 
-    // -- Epic CRUD --
-
-    async fn create_epic(&self, epic: &Epic) -> Result<i64, DomainError> {
-        let conn = self.lock()?;
-        epics::create_epic(&conn, epic)
+    async fn get_user(&self, _id: i64) -> Result<Option<agileplus_domain::domain::user::User>, DomainError> {
+        Err(DomainError::NotImplemented)
     }
 
-    async fn get_epic_by_id(&self, id: i64) -> Result<Option<Epic>, DomainError> {
-        let conn = self.lock()?;
-        epics::get_epic_by_id(&conn, id)
+    async fn get_user_by_email(&self, _email: &str) -> Result<Option<agileplus_domain::domain::user::User>, DomainError> {
+        Err(DomainError::NotImplemented)
     }
 
-    async fn update_epic_status(&self, id: i64, status: EpicStatus) -> Result<(), DomainError> {
-        let conn = self.lock()?;
-        epics::update_epic_status(&conn, id, status)
-    }
-
-    async fn list_epics_by_project(&self, project_id: i64) -> Result<Vec<Epic>, DomainError> {
-        let conn = self.lock()?;
-        epics::list_epics_by_project(&conn, project_id)
-    }
-
-    async fn delete_epic(&self, id: i64) -> Result<(), DomainError> {
-        let conn = self.lock()?;
-        epics::delete_epic(&conn, id)
-    }
-
-    // -- Story CRUD --
-
-    async fn create_story(&self, story: &Story) -> Result<i64, DomainError> {
-        let conn = self.lock()?;
-        stories::create_story(&conn, story)
-    }
-
-    async fn get_story_by_id(&self, id: i64) -> Result<Option<Story>, DomainError> {
-        let conn = self.lock()?;
-        stories::get_story_by_id(&conn, id)
-    }
-
-    async fn update_story_status(&self, id: i64, status: StoryStatus) -> Result<(), DomainError> {
-        let conn = self.lock()?;
-        stories::update_story_status(&conn, id, status)
-    }
-
-    async fn list_stories_by_epic(&self, epic_id: i64) -> Result<Vec<Story>, DomainError> {
-        let conn = self.lock()?;
-        stories::list_stories_by_epic(&conn, epic_id)
-    }
-
-    async fn list_stories_by_project(&self, project_id: i64) -> Result<Vec<Story>, DomainError> {
-        let conn = self.lock()?;
-        stories::list_stories_by_project(&conn, project_id)
-    }
-
-    async fn delete_story(&self, id: i64) -> Result<(), DomainError> {
-        let conn = self.lock()?;
-        stories::delete_story(&conn, id)
-    }
-
-    async fn upsert_story_by_requirement_id(&self, story: &Story) -> Result<i64, DomainError> {
-        let conn = self.lock()?;
-        stories::upsert_story_by_requirement_id(&conn, story)
+    async fn list_all_users(&self) -> Result<Vec<agileplus_domain::domain::user::User>, DomainError> {
+        Err(DomainError::NotImplemented)
     }
 }
 
@@ -1747,7 +1683,10 @@ mod tests {
         let u = User::new("Alice", "alice@example.com", UserRole::Member).unwrap();
         let id = StoragePort::create_user(&db, &u).await.unwrap();
         assert!(id > 0);
-        let got = StoragePort::get_user_by_id(&db, id).await.unwrap().unwrap();
+        let got = StoragePort::get_user_by_id(&db, id)
+            .await
+            .unwrap()
+            .unwrap();
         assert_eq!(got.display_name, "Alice");
         assert_eq!(got.email, "alice@example.com");
         assert_eq!(got.role, UserRole::Member);
@@ -1770,10 +1709,7 @@ mod tests {
     #[tokio::test]
     async fn user_not_found_returns_none() {
         let db = make_adapter();
-        assert!(StoragePort::get_user_by_id(&db, 9999)
-            .await
-            .unwrap()
-            .is_none());
+        assert!(StoragePort::get_user_by_id(&db, 9999).await.unwrap().is_none());
         assert!(StoragePort::get_user_by_email(&db, "no@no.com")
             .await
             .unwrap()
@@ -1807,12 +1743,18 @@ mod tests {
     #[tokio::test]
     async fn user_list_all() {
         let db = make_adapter();
-        StoragePort::create_user(&db, &User::new("U1", "u1@x.com", UserRole::Member).unwrap())
-            .await
-            .unwrap();
-        StoragePort::create_user(&db, &User::new("U2", "u2@x.com", UserRole::Member).unwrap())
-            .await
-            .unwrap();
+        StoragePort::create_user(
+            &db,
+            &User::new("U1", "u1@x.com", UserRole::Member).unwrap(),
+        )
+        .await
+        .unwrap();
+        StoragePort::create_user(
+            &db,
+            &User::new("U2", "u2@x.com", UserRole::Member).unwrap(),
+        )
+        .await
+        .unwrap();
         let all = StoragePort::list_all_users(&db).await.unwrap();
         assert_eq!(all.len(), 2);
     }
@@ -1827,10 +1769,7 @@ mod tests {
         .await
         .unwrap();
         StoragePort::delete_user(&db, id).await.unwrap();
-        assert!(StoragePort::get_user_by_id(&db, id)
-            .await
-            .unwrap()
-            .is_none());
+        assert!(StoragePort::get_user_by_id(&db, id).await.unwrap().is_none());
     }
 
     #[tokio::test]
@@ -1861,7 +1800,10 @@ mod tests {
         let e = Epic::new(pid, "Auth Overhaul").unwrap();
         let id = StoragePort::create_epic(&db, &e).await.unwrap();
         assert!(id > 0);
-        let got = StoragePort::get_epic_by_id(&db, id).await.unwrap().unwrap();
+        let got = StoragePort::get_epic_by_id(&db, id)
+            .await
+            .unwrap()
+            .unwrap();
         assert_eq!(got.title, "Auth Overhaul");
         assert_eq!(got.project_id, pid);
         assert_eq!(got.status, EpicStatus::Backlog);
@@ -1898,10 +1840,12 @@ mod tests {
         )
         .await
         .unwrap();
-        let pid2 =
-            StoragePort::create_project(&db, &Project::new("Other Proj", "other-proj").unwrap())
-                .await
-                .unwrap();
+        let pid2 = StoragePort::create_project(
+            &db,
+            &Project::new("Other Proj", "other-proj").unwrap(),
+        )
+        .await
+        .unwrap();
         StoragePort::create_epic(&db, &Epic::new(pid, "E1").unwrap())
             .await
             .unwrap();
@@ -1920,10 +1864,12 @@ mod tests {
     #[tokio::test]
     async fn epic_delete() {
         let db = make_adapter();
-        let pid =
-            StoragePort::create_project(&db, &Project::new("Del Proj", "del-proj-epic").unwrap())
-                .await
-                .unwrap();
+        let pid = StoragePort::create_project(
+            &db,
+            &Project::new("Del Proj", "del-proj-epic").unwrap(),
+        )
+        .await
+        .unwrap();
         let eid = StoragePort::create_epic(&db, &Epic::new(pid, "Temp Epic").unwrap())
             .await
             .unwrap();
@@ -2055,15 +2001,11 @@ mod tests {
             .await
             .unwrap();
 
-        let proj1_stories = StoragePort::list_stories_by_project(&db, pid)
-            .await
-            .unwrap();
+        let proj1_stories = StoragePort::list_stories_by_project(&db, pid).await.unwrap();
         assert_eq!(proj1_stories.len(), 2);
         assert!(proj1_stories.iter().all(|s| s.project_id == pid));
 
-        let proj2_stories = StoragePort::list_stories_by_project(&db, pid2)
-            .await
-            .unwrap();
+        let proj2_stories = StoragePort::list_stories_by_project(&db, pid2).await.unwrap();
         assert_eq!(proj2_stories.len(), 1);
     }
 
@@ -2089,10 +2031,7 @@ mod tests {
         let (pid, eid) = make_project_and_epic(&db).await;
         let s = Story::new(eid, pid, "No points", None).unwrap();
         let id = StoragePort::create_story(&db, &s).await.unwrap();
-        let got = StoragePort::get_story_by_id(&db, id)
-            .await
-            .unwrap()
-            .unwrap();
+        let got = StoragePort::get_story_by_id(&db, id).await.unwrap().unwrap();
         assert!(got.points.is_none());
     }
 

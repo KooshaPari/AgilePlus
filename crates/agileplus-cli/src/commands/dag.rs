@@ -476,7 +476,7 @@ async fn cmd_where(a: WhereArgs) -> Result<()> {
     })?;
     for info in infos {
         println!(
-            "repo={}	state={:?}	branch={:?}	hygiene={}",
+            "repo={}\tstate={:?}\tbranch={:?}\thygiene={}",
             info.path, info.state, info.current_branch, info.hygiene_score
         );
     }

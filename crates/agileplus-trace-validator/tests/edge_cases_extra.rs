@@ -11,9 +11,7 @@ use tempfile::TempDir;
 fn validate_whitespace_only_payload_fails() {
     let repo = TempDir::new().unwrap();
     fs::create_dir(repo.path().join("traces")).unwrap();
-    fs::write(repo.path().join("traces/FR-whitespace.json"), "   
-	  
-").unwrap();
+    fs::write(repo.path().join("traces/FR-whitespace.json"), "   \n\t  \n").unwrap();
 
     Command::cargo_bin("agileplus-trace-validator")
         .unwrap()

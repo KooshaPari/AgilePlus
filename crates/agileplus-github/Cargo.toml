@@ -2,22 +2,28 @@
 name = "agileplus-github"
 version.workspace = true
 edition.workspace = true
-license.workspace = true
 rust-version.workspace = true
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/KooshaPari/AgilePlus"
+description = "agileplus github — Phenotype infrastructure crate (AgilePlus)"
+documentation = "https://docs.rs/agileplus-github"
+keywords = ["phenotype", "agileplus", "git"]
+categories = ["development-tools::version-control"]
+authors = ["kooshapari"]
 
 [dependencies]
-agileplus-domain = { path = "../agileplus-domain" }
-agileplus-triage = { path = "../agileplus-triage" }
+anyhow.workspace = true
+tokio.workspace = true
 serde.workspace = true
 serde_json.workspace = true
-chrono.workspace = true
+thiserror.workspace = true
 tracing.workspace = true
-anyhow.workspace = true
-sha2.workspace = true
-tokio.workspace = true
+async-trait.workspace = true
+octocrab = "0.42"
 reqwest = { version = "0.12", features = ["json"] }
+sha2.workspace = true
+chrono.workspace = true
+agileplus-domain = { path = "../agileplus-domain" }
 
-[dev-dependencies]
-tempfile = "3"
-tokio = { version = "1", features = ["rt", "macros"] }
-wiremock = "0.6"
+[package.metadata.cargo-machete]
+ignored = ["chrono", "tracing"]

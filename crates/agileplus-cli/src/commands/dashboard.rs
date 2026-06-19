@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `ap dashboard` subcommand — render an in-flight DAG view of the
 //! AgilePlus SQLite database.  Aggregates:
 //!
@@ -297,9 +296,7 @@ fn print_ascii(snap: &DashboardSnapshot, no_color: bool) {
         truncate(&snap.generated_at, 19),
         snap.db_path
     );
-    println!("
-{title}
-");
+    println!("\n{title}\n");
     println!("{}", "-".repeat(title.len().max(60)));
 
     render_wp_section(&snap.work_packages, no_color);
@@ -311,8 +308,7 @@ fn print_ascii(snap: &DashboardSnapshot, no_color: bool) {
 }
 
 fn render_wp_section(wp: &WpStateBreakdown, no_color: bool) {
-    println!("
-[ Work packages by state ]  total = {}", wp.total);
+    println!("\n[ Work packages by state ]  total = {}", wp.total);
     let mut table = Table::new();
     table
         .load_preset(UTF8_FULL)
@@ -353,8 +349,7 @@ fn render_wp_section(wp: &WpStateBreakdown, no_color: bool) {
 }
 
 fn render_worklog_section(rows: &[WorklogEntryRow], no_color: bool) {
-    println!("
-[ Recent worklog entries ]  ({} shown)", rows.len());
+    println!("\n[ Recent worklog entries ]  ({} shown)", rows.len());
     if rows.is_empty() {
         println!("    <no worklog entries ingested yet>");
         return;
@@ -388,8 +383,7 @@ fn render_worklog_section(rows: &[WorklogEntryRow], no_color: bool) {
 }
 
 fn render_events_section(rows: &[EventRow], no_color: bool) {
-    println!("
-[ Recent events ]  ({} shown)", rows.len());
+    println!("\n[ Recent events ]  ({} shown)", rows.len());
     if rows.is_empty() {
         println!("    <no events recorded>");
         return;
@@ -420,8 +414,7 @@ fn render_events_section(rows: &[EventRow], no_color: bool) {
 
 fn render_trace_links_section(rows: &[TraceLinkCount], no_color: bool) {
     println!(
-        "
-[ Trace links by type ]  total = {}",
+        "\n[ Trace links by type ]  total = {}",
         rows.iter().map(|r| r.count).sum::<i64>()
     );
     if rows.is_empty() {

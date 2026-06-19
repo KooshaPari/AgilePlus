@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Integration tests for the AgilePlus HTTP API.
 //!
 //! These tests spin up a real axum test server backed by in-memory mock
@@ -12,9 +13,8 @@
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use agileplus_api::{AppState, create_router};
+use agileplus_api::{create_router, AppState};
 use agileplus_domain::config::AppConfig;
-use agileplus_domain::credentials::CredentialStore;
 use agileplus_domain::credentials::InMemoryCredentialStore;
 use agileplus_domain::domain::audit::{AuditEntry, hash_entry};
 use agileplus_domain::domain::backlog::{
@@ -33,7 +33,6 @@ use agileplus_domain::domain::state_machine::FeatureState;
 use agileplus_domain::domain::sync_mapping::SyncMapping;
 use agileplus_domain::domain::work_package::{WorkPackage, WpDependency, WpState};
 use agileplus_domain::error::DomainError;
-use agileplus_domain::ports::ContentStoragePort;
 use agileplus_domain::ports::observability::{LogEntry, ObservabilityPort, SpanContext};
 use agileplus_domain::ports::storage::StoragePort;
 use agileplus_domain::ports::vcs::{
@@ -151,6 +150,7 @@ impl MockStorage {
             plane_sub_issue_id: None,
             base_commit: None,
             head_commit: None,
+            trace_ids: Vec::new(),
             created_at: now,
             updated_at: now,
         });
@@ -242,6 +242,10 @@ impl StoragePort for MockStorage {
         Ok(())
     }
 
+    async fn update_feature(&self, _feature: &Feature) -> Result<(), DomainError> {
+        Ok(())
+    }
+
     async fn list_features_by_state(
         &self,
         state: FeatureState,
@@ -259,6 +263,18 @@ impl StoragePort for MockStorage {
 
     async fn list_all_features(&self) -> Result<Vec<Feature>, DomainError> {
         let features = self.features.lock().unwrap().clone();
+        Ok(features)
+    }
+
+    async fn list_features_by_label(&self, label: &str) -> Result<Vec<Feature>, DomainError> {
+        let features: Vec<Feature> = self
+            .features
+            .lock()
+            .unwrap()
+            .iter()
+            .filter(|f| f.labels.iter().any(|l| l == label))
+            .cloned()
+            .collect();
         Ok(features)
     }
 
@@ -641,6 +657,121 @@ impl StoragePort for MockStorage {
     async fn list_all_users(&self) -> Result<Vec<User>, DomainError> {
         Ok(self.users.lock().unwrap().clone())
     }
+
+    async fn get_user_by_email(
+        &self,
+        _email: &str,
+    ) -> Result<Option<agileplus_domain::domain::user::User>, DomainError> {
+        Ok(None)
+    }
+
+    async fn update_user_status(
+        &self,
+        _id: i64,
+        _status: agileplus_domain::domain::user::UserStatus,
+    ) -> Result<(), DomainError> {
+        Ok(())
+    }
+
+    async fn update_user_role(
+        &self,
+        _id: i64,
+        _role: agileplus_domain::domain::user::UserRole,
+    ) -> Result<(), DomainError> {
+        Ok(())
+    }
+
+    async fn list_all_users(
+        &self,
+    ) -> Result<Vec<agileplus_domain::domain::user::User>, DomainError> {
+        Ok(vec![])
+    }
+
+    async fn delete_user(&self, _id: i64) -> Result<(), DomainError> {
+        Ok(())
+    }
+
+    // --- Epics ---
+    async fn create_epic(
+        &self,
+        _epic: &agileplus_domain::domain::epic::Epic,
+    ) -> Result<i64, DomainError> {
+        Ok(1)
+    }
+
+    async fn get_epic_by_id(
+        &self,
+        _id: i64,
+    ) -> Result<Option<agileplus_domain::domain::epic::Epic>, DomainError> {
+        Ok(None)
+    }
+
+    async fn update_epic_status(
+        &self,
+        _id: i64,
+        _status: agileplus_domain::domain::epic::EpicStatus,
+    ) -> Result<(), DomainError> {
+        Ok(())
+    }
+
+    async fn list_epics_by_project(
+        &self,
+        _project_id: i64,
+    ) -> Result<Vec<agileplus_domain::domain::epic::Epic>, DomainError> {
+        Ok(vec![])
+    }
+
+    async fn delete_epic(&self, _id: i64) -> Result<(), DomainError> {
+        Ok(())
+    }
+
+    // --- Stories ---
+    async fn create_story(
+        &self,
+        _story: &agileplus_domain::domain::story::Story,
+    ) -> Result<i64, DomainError> {
+        Ok(1)
+    }
+
+    async fn get_story_by_id(
+        &self,
+        _id: i64,
+    ) -> Result<Option<agileplus_domain::domain::story::Story>, DomainError> {
+        Ok(None)
+    }
+
+    async fn update_story_status(
+        &self,
+        _id: i64,
+        _status: agileplus_domain::domain::story::StoryStatus,
+    ) -> Result<(), DomainError> {
+        Ok(())
+    }
+
+    async fn list_stories_by_epic(
+        &self,
+        _epic_id: i64,
+    ) -> Result<Vec<agileplus_domain::domain::story::Story>, DomainError> {
+        Ok(vec![])
+    }
+
+    async fn list_stories_by_project(
+        &self,
+        _project_id: i64,
+    ) -> Result<Vec<agileplus_domain::domain::story::Story>, DomainError> {
+        Ok(vec![])
+    }
+
+    async fn delete_story(&self, _id: i64) -> Result<(), DomainError> {
+        Ok(())
+    }
+
+    async fn upsert_story_by_requirement_id(
+        &self,
+        _story: &agileplus_domain::domain::story::Story,
+    ) -> Result<i64, DomainError> {
+        Ok(1)
+    }
 }
 
 // ── ContentStoragePort for MockStorage ───────────────────────────────────────
@@ -708,6 +839,21 @@ impl ContentStoragePort for MockStorage {
         &self,
     ) -> Result<Vec<agileplus_domain::domain::feature::Feature>, DomainError> {
         let feats: Vec<_> = self.features.lock().unwrap().clone();
+        Ok(feats)
+    }
+
+    async fn list_features_by_label(
+        &self,
+        label: &str,
+    ) -> Result<Vec<agileplus_domain::domain::feature::Feature>, DomainError> {
+        let feats: Vec<_> = self
+            .features
+            .lock()
+            .unwrap()
+            .iter()
+            .filter(|f| f.labels.iter().any(|l| l == label))
+            .cloned()
+            .collect();
         Ok(feats)
     }
 
@@ -859,6 +1005,21 @@ impl VcsPort for MockVcs {
             other: vec![],
         })
     }
+    async fn list_branches(
+        &self,
+        _pattern: Option<&str>,
+        _remote: bool,
+    ) -> Result<Vec<agileplus_domain::ports::vcs::BranchInfo>, DomainError> {
+        Ok(vec![])
+    }
+    async fn delete_branch(
+        &self,
+        _branch_name: &str,
+        _force: bool,
+        _remote: Option<&str>,
+    ) -> Result<(), DomainError> {
+        Ok(())
+    }
 }
 
 // ── Mock Observability ────────────────────────────────────────────────────────
@@ -894,7 +1055,9 @@ async fn setup_test_server() -> TestServer {
     let storage = Arc::new(MockStorage::with_test_data());
     let vcs = Arc::new(MockVcs);
     let telemetry = Arc::new(MockObs);
-    let config = Arc::new(AppConfig::default());
+    let mut config = AppConfig::default();
+    config.api.api_keys = Some(TEST_API_KEY.to_string());
+    let config = Arc::new(config);
 
     let creds: Arc<dyn agileplus_domain::credentials::CredentialStore> =
         Arc::new(InMemoryCredentialStore::new(vec![TEST_API_KEY.to_string()]));
@@ -913,7 +1076,7 @@ async fn health_no_auth_required() {
     let resp = server.get("/detailed-health").await;
     resp.assert_status_ok();
     let body: serde_json::Value = resp.json();
-    // Health endpoint returns "healthy" or "degraded" (not "ok") as of WP11-T070.
+    // Detailed health endpoint returns "healthy" or "degraded".
     let status = body["status"].as_str().expect("status field present");
     assert!(
         status == "healthy" || status == "degraded",
@@ -1374,4 +1537,57 @@ async fn create_user_invalid_role_returns_400() {
         .json(&serde_json::json!({ "display_name": "Dave", "email": "dave@example.com", "role": "superadmin" }))
         .await;
     resp.assert_status(StatusCode::BAD_REQUEST);
+}
+
+// ── FR-AGP-015 — OpenTelemetry request-span middleware ────────────────────
+
+/// AC (FR-AGP-015): OTel request-span middleware wraps a handler.
+///
+/// The `OtelTracingLayer` must not break the response pipeline.  We verify:
+/// - The handler still returns its normal response (200 OK with a JSON body).
+/// - No panic occurs during span creation / recording.
+///
+/// No live OTLP collector is required; the middleware uses `tracing` spans
+/// which are no-op when no subscriber exports them.
+#[tokio::test]
+async fn otel_request_span_middleware_wraps_handler() {
+    use agileplus_api::middleware::otel::opentelemetry_tracing_layer;
+    use axum::{Json, Router, routing::get};
+    use axum_test::TestServer;
+
+    // Minimal router with the OTel layer applied — mirrors production wiring.
+    let app = Router::new()
+        .route("/ping", get(|| async { Json(serde_json::json!({"ok": true})) }))
+        .layer(opentelemetry_tracing_layer());
+
+    let server = TestServer::new(app).unwrap();
+    let resp = server.get("/ping").await;
+    resp.assert_status_ok();
+
+    // Span attributes (method + path) are recorded on the span; verify the
+    // body is still the expected JSON (pipeline was not disrupted).
+    let body: serde_json::Value = resp.json();
+    assert_eq!(body["ok"], serde_json::json!(true));
+}
+
+/// AC (FR-AGP-015): OTel layer propagates W3C traceparent header without panic.
+#[tokio::test]
+async fn otel_request_span_propagates_traceparent() {
+    use agileplus_api::middleware::otel::opentelemetry_tracing_layer;
+    use axum::{Json, Router, routing::get};
+    use axum_test::TestServer;
+
+    let app = Router::new()
+        .route("/ping", get(|| async { Json(serde_json::json!({"ok": true})) }))
+        .layer(opentelemetry_tracing_layer());
+
+    let server = TestServer::new(app).unwrap();
+    let resp = server
+        .get("/ping")
+        .add_header(
+            "traceparent",
+            "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01",
+        )
+        .await;
+    resp.assert_status_ok();
 }

@@ -1,56 +1,65 @@
-use std::str::FromStr;
+// SPDX-License-Identifier: MIT OR Apache-2.0
+//! Backlog queue types.
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use std::fmt;
+use std::str::FromStr;
 
-/// Intent classification for queued work.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+/// The intent/category of a backlog item.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Intent {
     Bug,
     Feature,
     Idea,
     Task,
+    /// Documentation work item (low priority by default).
+    Docs,
 }
 
-impl std::fmt::Display for Intent {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Bug => write!(f, "bug"),
-            Self::Feature => write!(f, "feature"),
-            Self::Idea => write!(f, "idea"),
-            Self::Task => write!(f, "task"),
-        }
+impl fmt::Display for Intent {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let s = match self {
+            Intent::Bug => "bug",
+            Intent::Feature => "feature",
+            Intent::Idea => "idea",
+            Intent::Task => "task",
+            Intent::Docs => "docs",
+        };
+        write!(f, "{s}")
     }
 }
 
 impl FromStr for Intent {
     type Err = String;
-
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s.to_lowercase().as_str() {
-            "bug" => Ok(Self::Bug),
-            "feature" => Ok(Self::Feature),
-            "idea" => Ok(Self::Idea),
-            "task" => Ok(Self::Task),
-            other => Err(format!("unknown intent '{other}'")),
+        match s {
+            "bug" => Ok(Intent::Bug),
+            "feature" => Ok(Intent::Feature),
+            "idea" => Ok(Intent::Idea),
+            "task" => Ok(Intent::Task),
+            "docs" => Ok(Intent::Docs),
+            _ => Err(format!("unknown Intent: {s}")),
         }
     }
 }
 
 impl Intent {
+    /// Returns the default `BacklogPriority` for this intent category.
     pub fn default_priority(self) -> BacklogPriority {
         match self {
-            Self::Bug => BacklogPriority::High,
-            Self::Feature => BacklogPriority::Medium,
-            Self::Idea => BacklogPriority::Low,
-            Self::Task => BacklogPriority::Medium,
+            Intent::Bug => BacklogPriority::High,
+            Intent::Feature => BacklogPriority::Medium,
+            Intent::Task => BacklogPriority::Medium,
+            Intent::Idea => BacklogPriority::Low,
+            Intent::Docs => BacklogPriority::Low,
         }
     }
 }
 
-/// Priority levels for backlog items.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+/// Priority of a backlog item.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum BacklogPriority {
     Critical,
@@ -59,47 +68,35 @@ pub enum BacklogPriority {
     Low,
 }
 
-impl std::fmt::Display for BacklogPriority {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Critical => write!(f, "critical"),
-            Self::High => write!(f, "high"),
-            Self::Medium => write!(f, "medium"),
-            Self::Low => write!(f, "low"),
-        }
+impl fmt::Display for BacklogPriority {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let s = match self {
+            BacklogPriority::Critical => "critical",
+            BacklogPriority::High => "high",
+            BacklogPriority::Medium => "medium",
+            BacklogPriority::Low => "low",
+        };
+        write!(f, "{s}")
     }
 }
 
 impl FromStr for BacklogPriority {
     type Err = String;
-
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s.to_lowercase().as_str() {
-            "critical" => Ok(Self::Critical),
-            "high" => Ok(Self::High),
-            "medium" => Ok(Self::Medium),
-            "low" => Ok(Self::Low),
-            other => Err(format!("unknown backlog priority '{other}'")),
+        match s {
+            "critical" => Ok(BacklogPriority::Critical),
+            "high" => Ok(BacklogPriority::High),
+            "medium" => Ok(BacklogPriority::Medium),
+            "low" => Ok(BacklogPriority::Low),
+            _ => Err(format!("unknown BacklogPriority: {s}")),
         }
     }
 }
 
-impl BacklogPriority {
-    pub fn rank(self) -> u8 {
-        match self {
-            Self::Critical => 0,
-            Self::High => 1,
-            Self::Medium => 2,
-            Self::Low => 3,
-        }
-    }
-}
-
-/// Queue lifecycle state.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
+/// Workflow status of a backlog item.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum BacklogStatus {
-    #[default]
     New,
     Triaged,
     InProgress,
@@ -107,92 +104,44 @@ pub enum BacklogStatus {
     Dismissed,
 }
 
-impl std::fmt::Display for BacklogStatus {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::New => write!(f, "new"),
-            Self::Triaged => write!(f, "triaged"),
-            Self::InProgress => write!(f, "in_progress"),
-            Self::Done => write!(f, "done"),
-            Self::Dismissed => write!(f, "dismissed"),
-        }
+impl fmt::Display for BacklogStatus {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let s = match self {
+            BacklogStatus::New => "new",
+            BacklogStatus::Triaged => "triaged",
+            BacklogStatus::InProgress => "in_progress",
+            BacklogStatus::Done => "done",
+            BacklogStatus::Dismissed => "dismissed",
+        };
+        write!(f, "{s}")
     }
 }
 
 impl FromStr for BacklogStatus {
     type Err = String;
-
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s.to_lowercase().as_str() {
-            "new" => Ok(Self::New),
-            "triaged" => Ok(Self::Triaged),
-            "in_progress" | "in-progress" => Ok(Self::InProgress),
-            "done" => Ok(Self::Done),
-            "dismissed" => Ok(Self::Dismissed),
-            other => Err(format!("unknown backlog status '{other}'")),
+        match s {
+            "new" => Ok(BacklogStatus::New),
+            "triaged" => Ok(BacklogStatus::Triaged),
+            "in_progress" => Ok(BacklogStatus::InProgress),
+            "done" => Ok(BacklogStatus::Done),
+            "dismissed" => Ok(BacklogStatus::Dismissed),
+            _ => Err(format!("unknown BacklogStatus: {s}")),
         }
     }
 }
 
-impl BacklogStatus {
-    pub fn is_open(self) -> bool {
-        matches!(self, Self::New | Self::Triaged | Self::InProgress)
-    }
-}
-
-/// Sorting modes for backlog queries.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+/// Sort order for backlog queries.
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum BacklogSort {
     #[default]
-    Priority,
     Age,
+    Priority,
     Impact,
 }
 
-impl std::fmt::Display for BacklogSort {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Priority => write!(f, "priority"),
-            Self::Age => write!(f, "age"),
-            Self::Impact => write!(f, "impact"),
-        }
-    }
-}
-
-impl FromStr for BacklogSort {
-    type Err = String;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s.to_lowercase().as_str() {
-            "priority" => Ok(Self::Priority),
-            "age" => Ok(Self::Age),
-            "impact" => Ok(Self::Impact),
-            other => Err(format!("unknown backlog sort '{other}'")),
-        }
-    }
-}
-
-/// Backlog query filters shared by CLI, API, and storage adapters.
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
-pub struct BacklogFilters {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub intent: Option<Intent>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub status: Option<BacklogStatus>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub priority: Option<BacklogPriority>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub feature_slug: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub source: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub limit: Option<usize>,
-    #[serde(default)]
-    pub sort: BacklogSort,
-}
-
-/// A queued backlog item.
+/// A single backlog item.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BacklogItem {
     pub id: Option<i64>,
@@ -202,23 +151,36 @@ pub struct BacklogItem {
     pub priority: BacklogPriority,
     pub status: BacklogStatus,
     pub source: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub feature_slug: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tags: Vec<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
 
+impl Intent {
+    /// Default priority assigned to a newly triaged item based on its intent.
+    pub fn default_priority(self) -> BacklogPriority {
+        match self {
+            Intent::Bug => BacklogPriority::High,
+            Intent::Feature => BacklogPriority::Medium,
+            Intent::Idea => BacklogPriority::Low,
+            Intent::Task => BacklogPriority::Medium,
+        }
+    }
+}
+
 impl BacklogItem {
+    /// Construct a new `BacklogItem` from a triage classification.
+    ///
+    /// Sets `priority` to the intent's default and `status` to `New`.
     pub fn from_triage(title: String, description: String, intent: Intent, source: String) -> Self {
-        let now = Utc::now();
+        let now = chrono::Utc::now();
         Self {
             id: None,
             title,
             description,
-            intent,
             priority: intent.default_priority(),
+            intent,
             status: BacklogStatus::New,
             source,
             feature_slug: None,
@@ -227,24 +189,97 @@ impl BacklogItem {
             updated_at: now,
         }
     }
+}
 
-    pub fn with_priority(mut self, priority: BacklogPriority) -> Self {
-        self.priority = priority;
-        self
+/// Filter parameters for backlog list queries.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct BacklogFilters {
+    pub intent: Option<Intent>,
+    pub status: Option<BacklogStatus>,
+    pub priority: Option<BacklogPriority>,
+    pub feature_slug: Option<String>,
+    pub source: Option<String>,
+    pub sort: BacklogSort,
+    pub limit: Option<usize>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn bug_intent_defaults_to_high_priority() {
+        assert_eq!(Intent::Bug.default_priority(), BacklogPriority::High);
     }
 
-    pub fn with_status(mut self, status: BacklogStatus) -> Self {
-        self.status = status;
-        self
+    #[test]
+    fn feature_intent_defaults_to_medium_priority() {
+        assert_eq!(Intent::Feature.default_priority(), BacklogPriority::Medium);
     }
 
-    pub fn with_feature_slug(mut self, feature_slug: Option<String>) -> Self {
-        self.feature_slug = feature_slug;
-        self
+    #[test]
+    fn idea_intent_defaults_to_low_priority() {
+        assert_eq!(Intent::Idea.default_priority(), BacklogPriority::Low);
     }
 
-    pub fn with_tags(mut self, tags: Vec<String>) -> Self {
-        self.tags = tags;
-        self
+    #[test]
+    fn docs_intent_defaults_to_low_priority() {
+        assert_eq!(Intent::Docs.default_priority(), BacklogPriority::Low);
+    }
+
+    #[test]
+    fn task_intent_defaults_to_medium_priority() {
+        assert_eq!(Intent::Task.default_priority(), BacklogPriority::Medium);
+    }
+
+    #[test]
+    fn from_triage_sets_status_new_and_derives_priority() {
+        let item = BacklogItem::from_triage(
+            "Fix crash".into(),
+            "App crashes on startup".into(),
+            Intent::Bug,
+            "github".into(),
+        );
+        assert_eq!(item.status, BacklogStatus::New);
+        assert_eq!(item.priority, BacklogPriority::High);
+        assert_eq!(item.title, "Fix crash");
+        assert!(item.id.is_none());
+        assert!(item.tags.is_empty());
+    }
+
+    #[test]
+    fn intent_from_str_roundtrips() {
+        for (s, expected) in [
+            ("bug", Intent::Bug),
+            ("feature", Intent::Feature),
+            ("idea", Intent::Idea),
+            ("task", Intent::Task),
+            ("docs", Intent::Docs),
+        ] {
+            let intent: Intent = s.parse().unwrap();
+            assert_eq!(intent, expected);
+            assert_eq!(intent.to_string(), s);
+        }
+    }
+
+    #[test]
+    fn intent_from_str_rejects_unknown() {
+        assert!("wip".parse::<Intent>().is_err());
+    }
+
+    #[test]
+    fn backlog_priority_from_str_roundtrips() {
+        for s in &["critical", "high", "medium", "low"] {
+            let p: BacklogPriority = s.parse().unwrap();
+            assert_eq!(p.to_string(), *s);
+        }
+    }
+
+    #[test]
+    fn backlog_status_from_str_roundtrips() {
+        for s in &["new", "triaged", "in_progress", "done", "dismissed"] {
+            let st: BacklogStatus = s.parse().unwrap();
+            assert_eq!(st.to_string(), *s);
+        }
     }
 }

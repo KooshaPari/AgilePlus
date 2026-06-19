@@ -1,27 +1,12 @@
-//! Port trait re-exports and application context.
-//!
-//! Traceability: WP05-T030
+//! Hexagonal-architecture ports — async traits implemented by adapters.
 
-pub mod agent;
-pub mod content;
 pub mod observability;
-pub mod review;
 pub mod storage;
 pub mod vcs;
 
-// -- Trait re-exports --
-pub use agent::AgentPort;
-pub use content::ContentStoragePort;
-pub use observability::ObservabilityPort;
-pub use review::ReviewPort;
-pub use storage::StoragePort;
-pub use vcs::VcsPort;
+use std::path::{Path, PathBuf};
 
-// -- Supporting type re-exports --
-pub use agent::{AgentConfig, AgentKind, AgentResult, AgentStatus, AgentTask};
-pub use observability::{LogEntry, LogLevel, MetricValue, SpanContext};
-pub use review::{CiStatus, CommentSeverity, PrInfo, ReviewComment, ReviewStatus};
-pub use vcs::{ConflictInfo, FeatureArtifacts, MergeResult, WorktreeInfo};
+use async_trait::async_trait;
 
 use crate::domain::{
     audit::AuditEntry,
@@ -62,6 +47,37 @@ pub trait StoragePort: Send + Sync {
     async fn add_wp_dependency(&self, dep: &WpDependency) -> Result<(), DomainError>;
     async fn get_wp_dependencies(&self, wp_id: i64) -> Result<Vec<WpDependency>, DomainError>;
     async fn get_ready_wps(&self, feature_id: i64) -> Result<Vec<WorkPackage>, DomainError>;
+
+    // --- MVP: story-scoped work packages ---
+    /// Create a work package and link it to a story (story_work_packages join).
+    async fn create_work_package_for_story(
+        &self,
+        _story_id: i64,
+        _wp: &WorkPackage,
+    ) -> Result<i64, DomainError> {
+        Err(DomainError::NotImplemented)
+    }
+    /// List the work packages linked to a story.
+    async fn list_wps_by_story(&self, _story_id: i64) -> Result<Vec<WorkPackage>, DomainError> {
+        Err(DomainError::NotImplemented)
+    }
+    /// List every work package across all features/stories.
+    async fn list_all_work_packages(&self) -> Result<Vec<WorkPackage>, DomainError> {
+        Err(DomainError::NotImplemented)
+    }
+    /// Return planned work packages that are ready to start: every explicit
+    /// dependency points to a Done WP AND no file in its scope overlaps a
+    /// Doing/Review WP. Optionally restricted to a cycle.
+    async fn get_next_ready_wps(
+        &self,
+        _cycle: Option<i64>,
+    ) -> Result<Vec<WorkPackage>, DomainError> {
+        Err(DomainError::NotImplemented)
+    }
+    /// Link a story to a cycle (cycle_stories join).
+    async fn add_story_to_cycle(&self, _cycle_id: i64, _story_id: i64) -> Result<(), DomainError> {
+        Err(DomainError::NotImplemented)
+    }
 
     // --- Audit ---
     async fn append_audit_entry(&self, entry: &AuditEntry) -> Result<i64, DomainError>;
@@ -133,6 +149,44 @@ pub trait StoragePort: Send + Sync {
     async fn get_user(&self, id: i64) -> Result<Option<User>, DomainError>;
     async fn get_user_by_email(&self, email: &str) -> Result<Option<User>, DomainError>;
     async fn list_all_users(&self) -> Result<Vec<User>, DomainError>;
+}
+
+// ── Blanket impls ─────────────────────────────────────────────────────────────
+//
+// Any type that implements `StoragePort` automatically satisfies the focused
+// repository sub-ports.  This lets `AppState<S, …>` pass `Arc<S>` directly
+// to use-cases that only depend on the narrower port trait.
+
+#[async_trait]
+impl<T: StoragePort> StoryRepository for T {
+    async fn create(&self, story: &Story) -> Result<i64, DomainError> {
+        self.create_story(story).await
+    }
+    async fn get_by_id(&self, id: i64) -> Result<Option<Story>, DomainError> {
+        self.get_story_by_id(id).await
+    }
+    async fn update_status(&self, id: i64, status: StoryStatus) -> Result<(), DomainError> {
+        self.update_story_status(id, status).await
+    }
+    async fn list_by_epic(&self, epic_id: i64) -> Result<Vec<Story>, DomainError> {
+        self.list_stories_by_epic(epic_id).await
+    }
+}
+
+#[async_trait]
+impl<T: StoragePort> EpicRepository for T {
+    async fn create(&self, epic: &Epic) -> Result<i64, DomainError> {
+        self.create_epic(epic).await
+    }
+    async fn get_by_id(&self, id: i64) -> Result<Option<Epic>, DomainError> {
+        self.get_epic_by_id(id).await
+    }
+    async fn update_status(&self, id: i64, status: EpicStatus) -> Result<(), DomainError> {
+        self.update_epic_status(id, status).await
+    }
+    async fn list_by_project(&self, project_id: i64) -> Result<Vec<Epic>, DomainError> {
+        self.list_epics_by_project(project_id).await
+    }
 }
 
 /// Content storage port — subset used by the dashboard/content layer.

@@ -1,26 +1,12 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Story repository functions.
 //!
 //! Traceability: FR-STORE-STORY
 
 use chrono::DateTime;
-use rusqlite::{params, Connection};
+use rusqlite::{Connection, params};
 
 use agileplus_domain::domain::story::{Story, StoryStatus};
 use agileplus_domain::error::DomainError;
-
-trait OptionalExt<T> {
-    fn optional(self) -> rusqlite::Result<Option<T>>;
-}
-impl<T> OptionalExt<T> for rusqlite::Result<T> {
-    fn optional(self) -> rusqlite::Result<Option<T>> {
-        match self {
-            Ok(v) => Ok(Some(v)),
-            Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
-            Err(e) => Err(e),
-        }
-    }
-}
 
 fn map_err(e: rusqlite::Error) -> DomainError {
     DomainError::Storage(e.to_string())
@@ -46,8 +32,6 @@ fn row_to_story(row: &rusqlite::Row<'_>) -> rusqlite::Result<Story> {
         status: status_str.parse().unwrap_or(StoryStatus::Todo),
         points: points_raw.map(|p| p as u32),
         assignee_id: row.get(6)?,
-        requirement_id: row.get(10).unwrap_or(None),
-        trace_ids: Vec::new(),
         created_at: parse_dt(&created_at),
         updated_at: parse_dt(&updated_at),
     })
@@ -57,8 +41,8 @@ fn row_to_story(row: &rusqlite::Row<'_>) -> rusqlite::Result<Story> {
 pub fn create_story(conn: &Connection, story: &Story) -> Result<i64, DomainError> {
     let now = chrono::Utc::now().to_rfc3339();
     conn.execute(
-        "INSERT INTO stories (epic_id, project_id, title, description, status, points, assignee_id, requirement_id, created_at, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+        "INSERT INTO stories (epic_id, project_id, title, description, status, points, assignee_id, created_at, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
         params![
             story.epic_id,
             story.project_id,
@@ -67,7 +51,6 @@ pub fn create_story(conn: &Connection, story: &Story) -> Result<i64, DomainError
             story.status.to_string(),
             story.points.map(|p| p as i64),
             story.assignee_id,
-            story.requirement_id,
             now,
             now,
         ],
@@ -76,72 +59,11 @@ pub fn create_story(conn: &Connection, story: &Story) -> Result<i64, DomainError
     Ok(conn.last_insert_rowid())
 }
 
-/// Upsert a story by `requirement_id` — creates if absent, updates title/description/status if present.
-/// Returns the row ID (new or existing).
-///
-/// Uses manual get-then-insert/update because `requirement_id` is added via ALTER TABLE
-/// (no inline UNIQUE constraint); SQLite upsert `ON CONFLICT(col)` requires a declared
-/// table-level constraint that ALTER TABLE cannot add.
-pub fn upsert_story_by_requirement_id(
-    conn: &Connection,
-    story: &Story,
-) -> Result<i64, DomainError> {
-    let req_id = story.requirement_id.as_deref().ok_or_else(|| {
-        DomainError::Validation("upsert_story_by_requirement_id requires requirement_id".to_owned())
-    })?;
-    let now = chrono::Utc::now().to_rfc3339();
-    // Check if a row with this requirement_id already exists.
-    let existing_id: Option<i64> = conn
-        .query_row(
-            "SELECT id FROM stories WHERE requirement_id = ?1",
-            params![req_id],
-            |r| r.get(0),
-        )
-        .optional()
-        .map_err(map_err)?;
-
-    if let Some(id) = existing_id {
-        conn.execute(
-            "UPDATE stories SET epic_id = ?1, title = ?2, description = ?3, status = ?4, updated_at = ?5 WHERE id = ?6",
-            params![
-                story.epic_id,
-                story.title,
-                story.description,
-                story.status.to_string(),
-                now,
-                id,
-            ],
-        )
-        .map_err(map_err)?;
-        Ok(id)
-    } else {
-        create_story(conn, story)
-    }
-}
-
-/// Look up a story by `requirement_id`. Returns `None` if not found.
-pub fn get_story_by_requirement_id(
-    conn: &Connection,
-    req_id: &str,
-) -> Result<Option<Story>, DomainError> {
-    let mut stmt = conn
-        .prepare(
-            "SELECT id, epic_id, project_id, title, status, points, assignee_id, created_at, updated_at, description, requirement_id \
-             FROM stories WHERE requirement_id = ?1",
-        )
-        .map_err(map_err)?;
-    match stmt.query_row(params![req_id], row_to_story) {
-        Ok(s) => Ok(Some(s)),
-        Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
-        Err(e) => Err(map_err(e)),
-    }
-}
-
 /// Look up a story by ID. Returns `None` if not found.
 pub fn get_story_by_id(conn: &Connection, id: i64) -> Result<Option<Story>, DomainError> {
     let mut stmt = conn
         .prepare(
-            "SELECT id, epic_id, project_id, title, status, points, assignee_id, created_at, updated_at, description, requirement_id \
+            "SELECT id, epic_id, project_id, title, status, points, assignee_id, created_at, updated_at, description \
              FROM stories WHERE id = ?1",
         )
         .map_err(map_err)?;
@@ -154,11 +76,7 @@ pub fn get_story_by_id(conn: &Connection, id: i64) -> Result<Option<Story>, Doma
 }
 
 /// Update the status of a story.
-pub fn update_story_status(
-    conn: &Connection,
-    id: i64,
-    status: StoryStatus,
-) -> Result<(), DomainError> {
+pub fn update_story_status(conn: &Connection, id: i64, status: StoryStatus) -> Result<(), DomainError> {
     let now = chrono::Utc::now().to_rfc3339();
     let rows = conn
         .execute(
@@ -176,7 +94,7 @@ pub fn update_story_status(
 pub fn list_stories_by_epic(conn: &Connection, epic_id: i64) -> Result<Vec<Story>, DomainError> {
     let mut stmt = conn
         .prepare(
-            "SELECT id, epic_id, project_id, title, status, points, assignee_id, created_at, updated_at, description, requirement_id \
+            "SELECT id, epic_id, project_id, title, status, points, assignee_id, created_at, updated_at, description \
              FROM stories WHERE epic_id = ?1 ORDER BY created_at ASC",
         )
         .map_err(map_err)?;
@@ -190,13 +108,10 @@ pub fn list_stories_by_epic(conn: &Connection, epic_id: i64) -> Result<Vec<Story
 }
 
 /// List all stories for a given project, ordered by creation time.
-pub fn list_stories_by_project(
-    conn: &Connection,
-    project_id: i64,
-) -> Result<Vec<Story>, DomainError> {
+pub fn list_stories_by_project(conn: &Connection, project_id: i64) -> Result<Vec<Story>, DomainError> {
     let mut stmt = conn
         .prepare(
-            "SELECT id, epic_id, project_id, title, status, points, assignee_id, created_at, updated_at, description, requirement_id \
+            "SELECT id, epic_id, project_id, title, status, points, assignee_id, created_at, updated_at, description \
              FROM stories WHERE project_id = ?1 ORDER BY created_at ASC",
         )
         .map_err(map_err)?;
