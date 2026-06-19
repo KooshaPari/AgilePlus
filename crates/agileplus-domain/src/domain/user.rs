@@ -59,6 +59,18 @@ impl fmt::Display for UserStatus {
     }
 }
 
+impl FromStr for UserStatus {
+    type Err = DomainError;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "active" => Ok(UserStatus::Active),
+            "inactive" => Ok(UserStatus::Inactive),
+            "suspended" => Ok(UserStatus::Suspended),
+            _ => Err(DomainError::Validation(format!("unknown UserStatus: {s}"))),
+        }
+    }
+}
+
 impl UserStatus {
     /// Returns `true` if a transition from `self` to `target` is allowed.
     pub fn can_transition_to(self, target: UserStatus) -> bool {
