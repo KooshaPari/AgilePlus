@@ -214,8 +214,6 @@ agileplus-validate = { path = "crates/agileplus-validate" }
 shared-traceability = { path = "crates/shared-traceability" }
 toml = "0.8"
 tokio-stream = { version = "0.1", features = ["net", "sync"] }
-
-# cargo-machete false-positive ignores (dev-only / proc-macro / build-deps)
-[workspace.metadata.cargo-machete]
-ignored = ["cucumber", "axum-test", "paste", "dirs", "serde_yaml", "uuid", "async-trait", "tracing-subscriber", "tracing-appender", "tracing-opentelemetry", "futures", "futures-util", "tonic", "tonic-build", "prost", "prost-build", "utoipa", "opentelemetry", "opentelemetry_sdk", "opentelemetry-otlp", "gix", "tempfile"]
-
+sqlx = { version = "0.8", default-features = false }
+hex = "0.4"
+regex = "1"
