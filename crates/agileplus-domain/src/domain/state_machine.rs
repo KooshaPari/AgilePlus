@@ -22,26 +22,20 @@ mod tests {
 
     #[test]
     fn valid_lifecycle_transition_succeeds() {
-        let result = FeatureState::Created
-            .transition(FeatureState::Specified)
-            .unwrap();
+        let result = transition(FeatureState::Created, FeatureState::Specified).unwrap();
         assert_eq!(result.transition.from, FeatureState::Created);
         assert_eq!(result.transition.to, FeatureState::Specified);
     }
 
     #[test]
     fn invalid_transition_returns_error() {
-        let err = FeatureState::Created
-            .transition(FeatureState::Shipped)
-            .unwrap_err();
+        let err = transition(FeatureState::Created, FeatureState::Shipped).unwrap_err();
         assert!(matches!(err, DomainError::InvalidTransition { .. }));
     }
 
     #[test]
     fn backward_transition_rejected() {
-        let err = FeatureState::Specified
-            .transition(FeatureState::Created)
-            .unwrap_err();
+        let err = transition(FeatureState::Specified, FeatureState::Created).unwrap_err();
         assert!(matches!(err, DomainError::InvalidTransition { .. }));
     }
 
@@ -58,7 +52,7 @@ mod tests {
             FeatureState::Retrospected,
         ];
         for window in states.windows(2) {
-            let result = window[0].transition(window[1]);
+            let result = transition(window[0], window[1]);
             assert!(
                 result.is_ok(),
                 "transition {:?} -> {:?} should succeed",
