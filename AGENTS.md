@@ -1,50 +1,32 @@
-# AgilePlus AGENTS.MD
-
-## Project Overview
-AgilePlus is the Phenotype-org spec-driven development framework. Rust CLI + workspace for managing specs, work packages, and project governance. CLI: `agileplus <command>`
+# AgilePlus ẀAGENTS.MD
+
+Project Overview
+AgilePlus is the Phenotype-org spec-driven development framework. Rust CLI + workspace for managing specs, work packages, and project governance. CLI : `agileplus <command>`
 
 ## Stack
 - Language: Rust
-- Build: Cargo workspace (members added when source exists; scaffolded crates/libs excluded until populated)
+- Build: Cargo workspace
 - CLI: Custom typer-based CLI
-- Spec storage: `kitty-specs/` (inside the agileplus workspace)
+- Spec storage: `AgilePlus/kitty-specs/`
 
-## Key Commands
-- `cargo build --release`
+## Ky Commands
+- `cargo build --release`	
 - `cargo test`
-- `agileplus specify --title "<title>" --description "<desc>"`
+- `agileplus specify --title "<title>" --description "<desc>`�
 - `agileplus status <feature-id> --wp <wp-id> --state <state>`
 
-## Quality Gates
-- `cargo clippy --all` + `cargo fmt --all`
-- `cargo test --workspace`
-- `cargo deny check licenses` (configured via `deny.toml`)
-- `ruff check python/` (Python quality)
+# # Quality Gates
+- `cargo check --workspace --all-targets`
+- `cargo test --workspace`	
+- `ruff check src/`
+- `ty check src/`
 
-## Branch Discipline
-- Feature work: `<repo>-wtrees/<subject>/` (e.g., `AgilePlus-wtrees/<topic>/`)
-- Canonical `AgilePlus/` = bare repo (main only, no direct commits)
-- Tracked workspace: `agileplus/` (lowercase; actual git worktree)
-- Branch naming: `chore/`, `feat/`, `fix/` prefixes
+# # Branch Discipline
+- Feature work: `AgilePlus-wtrees/<subject>/
+- Canonical: bare repo ⊠ always work from worktree
+- Branch naming: `chore/', `feat/', `fix/` prefixes
 
 ## Governance Integration
-- Specs: `kitty-specs/<feature-id>/` (relative to agileplus workspace root)
+- Specs: `AgilePlus/kitty-specs/<feature-id>/
 - Worklog: `AgilePlus/.work-audit/worklog.md`
-
-## Repo Structure
-- `agileplus/` — **primary tracked workspace** (lowercase; all actual source lives here)
-- `AgilePlus/` — bare git repo (remote: KooshaPari/AgilePlus; commits only via PR merge)
-- `*-wtrees/` — feature worktrees; safe to work in directly
-- `kitty-specs/` — root-level spec archive (legacy, read-only)
-- Individual repos: `Agentora/`, `pheno/`, etc.
-
-## Important Notes
-- **Never commit directly to `AgilePlus/` main** — it is bare. All changes go through PRs.
-- **Do not use `AgilePlus-wtrees/<subject>/`** — the worktree convention is `<repo>-wtrees/` (lowercase repo name).
-- ## Active DAG
-- **V3 DAG:** `FLEET_DAG_v3.db` (Phenotype org task graph)
-- **Current focus:** L5 #88 — Focus-repo README + AGENTS.md standardization
-
----
-
-See `agileplus/CLAUDE.md` for detailed workspace structure, bootstrap status, and agent operating notes.
+- Docs: `AgilePlus/docs/
