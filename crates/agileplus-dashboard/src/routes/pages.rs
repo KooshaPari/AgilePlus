@@ -1,7 +1,6 @@
-use axum::{
-    extract::State,
-    response::{Html, Response},
-};
+//! Page route handlers for AgilePlus dashboard.
+//!
+//! Handlers for main page views (root, home, features, events, settings, hub, health, feature details).
 
 use axum::{
     extract::{Path, Query, State},
@@ -13,7 +12,7 @@ use std::collections::HashMap;
 use crate::app_state::SharedState;
 use crate::templates::{
     DashboardPage, EventsPage, FeaturesPage, HomePage, HubPage, EcosystemProject,
-    FeatureView, SettingsPage,
+    FeatureView, ProjectSummaryView, SettingsPage,
 };
 
 use super::helpers::{self, DashboardFilter};
@@ -188,17 +187,8 @@ pub async fn hub_page() -> Response {
     helpers::render(HubPage { projects })
 }
 
-pub async fn services_settings_page(State(state): State<SharedState>) -> Response {
-    let store = state.read().await;
-    render(ServicesSettingsPage {
-        services: store.health.clone(),
-    })
-}
-
-pub async fn time_footer() -> Html<String> {
-    Html(
-        chrono::Utc::now()
-            .format("%Y-%m-%d %H:%M:%S UTC")
-            .to_string(),
-    )
+/// GET /features/:id
+/// Feature detail page (full HTML page)
+pub async fn feature_page(State(state): State<SharedState>, Path(id): Path<i64>) -> Response {
+    features::feature_detail(State(state), Path(id), HeaderMap::new()).await
 }
