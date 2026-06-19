@@ -164,7 +164,10 @@ sha2.workspace = true
 [workspace.dependencies]
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1"
-tokio = { version = "1.46", features = ["full"] }
+toml = "0.8"
+chrono = { version = "0.4", features = ["serde"] }
+sha2 = "0.10"
+tokio = { version = "1.39", features = ["full"] }
 thiserror = "2"
 anyhow = "1"
 tracing = "0.1"
