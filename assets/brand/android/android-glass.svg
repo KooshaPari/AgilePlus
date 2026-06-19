@@ -1,103 +1,143 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="AgilePlus Android Glass">
   <title>AgilePlus</title>
-  <desc>AI-coded SVG: phenotype design-system android-glass recipe. Neo/geisty glass: blur(16px) saturate(1.1), fill 72%, white border 45%/8%, inset specular ring 30%/6%, radius 16. Teal #7ebab5 on midnight #090a0c.</desc>
+  <desc>AI-coded SVG v3: Android adaptive icon — circle silhouette clipped to squircle outer. VIVID teal-to-slate backdrop (the glass needs something to refract!). Frosted foreground panel: heavy blur(16), fill 68%, thick white rim light, colored bloom. Distinct from macOS/Windows: adaptive circle-inside-squircle, translucent frost, glowing rim.</desc>
   <defs>
-    <!-- Android-glass blur: 16px, saturate 1.1 -->
-    <filter id="ag-glass-blur" x="-5%" y="-5%" width="110%" height="110%">
-      <feGaussianBlur in="SourceGraphic" stdDeviation="6.4" result="blur"/>
-      <feColorMatrix in="blur" type="saturate" values="1.1" result="saturated"/>
+    <!-- === ANDROID ADAPTIVE ICON: squircle outer, circle inner mask === -->
+    <clipPath id="ag-squircle-clip">
+      <!-- Squircle outer shape (adaptive icon background layer) -->
+      <rect x="0" y="0" width="512" height="512" rx="120" ry="120"/>
+    </clipPath>
+    <clipPath id="ag-circle-clip">
+      <!-- Circle foreground layer (the frosted glass disc) -->
+      <circle cx="256" cy="256" r="200"/>
+    </clipPath>
+
+    <!-- === BACKDROP SCENE === teal-to-midnight gradient + bright blobs -->
+    <linearGradient id="ag-backdrop" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1a3530"/>
+      <stop offset="40%" stop-color="#0d1e1c"/>
+      <stop offset="100%" stop-color="#090a0c"/>
+    </linearGradient>
+
+    <!-- Accent blob gradient: vivid teal center -->
+    <radialGradient id="ag-blob1" cx="38%" cy="32%" r="42%">
+      <stop offset="0%" stop-color="#7ebab5" stop-opacity="1.0"/>
+      <stop offset="40%" stop-color="#569691" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#090a0c" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="ag-blob2" cx="72%" cy="68%" r="35%">
+      <stop offset="0%" stop-color="#95ccc8" stop-opacity="0.8"/>
+      <stop offset="60%" stop-color="#353a40" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#090a0c" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="ag-blob3" cx="60%" cy="20%" r="30%">
+      <stop offset="0%" stop-color="#f6f5f5" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#090a0c" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- === FROSTED GLASS DISC OVERLAYS === -->
+    <!-- Frost: blur the backdrop through the circle -->
+    <filter id="ag-frost-blur" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="18" result="blurred"/>
     </filter>
 
-    <!-- Specular highlight for inset ring 30%/6% -->
-    <filter id="ag-specular" x="0%" y="0%" width="100%" height="100%">
-      <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="blur"/>
-      <feSpecularLighting in="blur" surfaceScale="4" specularConstant="0.5" specularExponent="20" result="spec" lighting-color="white">
-        <fePointLight x="160" y="80" z="200"/>
+    <!-- Disc glass fill: semi-transparent teal-white -->
+    <radialGradient id="ag-disc-fill" cx="45%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#95ccc8" stop-opacity="0.52"/>
+      <stop offset="50%" stop-color="#7ebab5" stop-opacity="0.38"/>
+      <stop offset="100%" stop-color="#090a0c" stop-opacity="0.55"/>
+    </radialGradient>
+
+    <!-- WHITE RIM LIGHT: thick, bright, frosted-glass edge -->
+    <filter id="ag-rim-glow" x="-5%" y="-5%" width="110%" height="110%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="glow"/>
+      <feBlend in="SourceGraphic" in2="glow" mode="screen"/>
+    </filter>
+
+    <!-- Specular point light on disc -->
+    <filter id="ag-disc-spec" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="ablur"/>
+      <feSpecularLighting in="ablur" surfaceScale="5" specularConstant="1.2" specularExponent="40" result="spec" lighting-color="white">
+        <fePointLight x="160" y="100" z="180"/>
       </feSpecularLighting>
       <feComposite in="spec" in2="SourceAlpha" operator="in" result="specMasked"/>
       <feBlend in="SourceGraphic" in2="specMasked" mode="screen"/>
     </filter>
 
-    <!-- Teal glass fill gradient (72% opacity = the glass body) -->
-    <linearGradient id="ag-bg-fill" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#7ebab5" stop-opacity="0.38"/>
-      <stop offset="100%" stop-color="#090a0c" stop-opacity="0.82"/>
-    </linearGradient>
+    <!-- Bloom glow filter for icon elements -->
+    <filter id="ag-bloom" x="-15%" y="-15%" width="130%" height="130%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="bloom"/>
+      <feBlend in="SourceGraphic" in2="bloom" mode="screen"/>
+    </filter>
 
-    <!-- Top specular edge gradient for the glass rim -->
-    <linearGradient id="ag-specular-edge" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.55"/>
-      <stop offset="18%" stop-color="#ffffff" stop-opacity="0.18"/>
-      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
-    </linearGradient>
-
-    <!-- Inset ring gradient: 30% opacity white, 6% width -->
-    <radialGradient id="ag-ring-glow" cx="50%" cy="35%" r="50%">
-      <stop offset="0%" stop-color="#7ebab5" stop-opacity="0.55"/>
-      <stop offset="60%" stop-color="#7ebab5" stop-opacity="0.18"/>
-      <stop offset="100%" stop-color="#090a0c" stop-opacity="0"/>
+    <!-- Top specular cap on glass disc -->
+    <radialGradient id="ag-disc-topspec" cx="40%" cy="12%" r="50%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.80"/>
+      <stop offset="35%" stop-color="#ffffff" stop-opacity="0.30"/>
+      <stop offset="70%" stop-color="#ffffff" stop-opacity="0"/>
     </radialGradient>
 
-    <!-- Sprint loop gradient: teal accent -->
-    <linearGradient id="ag-loop" x1="96" y1="96" x2="416" y2="416" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#7ebab5"/>
-      <stop offset="100%" stop-color="#95ccc8"/>
-    </linearGradient>
-
-    <!-- Velocity bars gradient -->
-    <linearGradient id="ag-bars" x1="176" y1="336" x2="336" y2="176" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#569691"/>
+    <!-- Sprint loop gradient -->
+    <linearGradient id="ag-loop" x1="0" y1="0" x2="1" y2="1" gradientUnits="objectBoundingBox">
+      <stop offset="0%" stop-color="#95ccc8"/>
       <stop offset="100%" stop-color="#7ebab5"/>
     </linearGradient>
-
-    <clipPath id="ag-tile-clip">
-      <rect x="24" y="24" width="464" height="464" rx="16" ry="16"/>
-    </clipPath>
+    <linearGradient id="ag-bars" x1="0" y1="1" x2="0" y2="0" gradientUnits="objectBoundingBox">
+      <stop offset="0%" stop-color="#569691"/>
+      <stop offset="100%" stop-color="#95ccc8"/>
+    </linearGradient>
   </defs>
 
-  <!-- === GLASS BACKGROUND STACK === -->
-  <!-- 1. Midnight base -->
-  <rect x="24" y="24" width="464" height="464" rx="16" ry="16" fill="#090a0c"/>
-
-  <!-- 2. Teal ambient backdrop (blurred, 72% fill — simulated via layered rects) -->
-  <g clip-path="url(#ag-tile-clip)">
-    <!-- Soft teal bloom behind content -->
-    <ellipse cx="256" cy="200" rx="200" ry="160" fill="#7ebab5" opacity="0.22" filter="url(#ag-glass-blur)"/>
-    <ellipse cx="320" cy="340" rx="120" ry="100" fill="#569691" opacity="0.14" filter="url(#ag-glass-blur)"/>
-
-    <!-- 3. Main glass fill layer: 72% opacity -->
-    <rect x="24" y="24" width="464" height="464" rx="16" ry="16" fill="url(#ag-bg-fill)" opacity="0.72"/>
-
-    <!-- 4. Inset specular ring: 30% white, 6% stroke width (≈28px on 464px tile) -->
-    <rect x="24" y="24" width="464" height="464" rx="16" ry="16" fill="none"
-          stroke="white" stroke-width="28" stroke-opacity="0.30" clip-path="url(#ag-tile-clip)"/>
-
-    <!-- 5. Top-edge specular gradient (neo/geisty style) -->
-    <rect x="24" y="24" width="464" height="464" rx="16" ry="16" fill="url(#ag-specular-edge)"/>
-
-    <!-- 6. Radial inner glow -->
-    <rect x="24" y="24" width="464" height="464" rx="16" ry="16" fill="url(#ag-ring-glow)"/>
+  <!-- ====== ANDROID ADAPTIVE ICON ====== -->
+  <!-- LAYER 1: Squircle adaptive background — vivid gradient -->
+  <g clip-path="url(#ag-squircle-clip)">
+    <rect width="512" height="512" fill="url(#ag-backdrop)"/>
+    <!-- Vivid backdrop blobs — these are what the glass will refract/frost -->
+    <rect width="512" height="512" fill="url(#ag-blob1)"/>
+    <rect width="512" height="512" fill="url(#ag-blob2)"/>
+    <rect width="512" height="512" fill="url(#ag-blob3)"/>
   </g>
 
-  <!-- 7. White border: 45% opacity, 8% stroke (≈37px → use 2px crisp border instead, per icon convention) -->
-  <rect x="24" y="24" width="464" height="464" rx="16" ry="16" fill="none"
-        stroke="white" stroke-width="2" stroke-opacity="0.45"/>
+  <!-- LAYER 2: Frosted glass disc (foreground, clipped to circle) -->
+  <g clip-path="url(#ag-circle-clip)">
+    <!-- Frosted blur of backdrop through disc -->
+    <rect width="512" height="512" fill="url(#ag-backdrop)" filter="url(#ag-frost-blur)" opacity="0.85"/>
+    <rect width="512" height="512" fill="url(#ag-blob1)" filter="url(#ag-frost-blur)" opacity="0.6"/>
 
-  <!-- === ICON CONTENT: sprint loop + velocity bars + plus === -->
-  <!-- Sprint / iteration loop -->
-  <path d="M 300 130 A 138 138 0 1 1 196 142"
-        fill="none" stroke="url(#ag-loop)" stroke-width="30" stroke-linecap="round"/>
-  <!-- Arrowhead -->
-  <path d="M 282 100 L 318 130 L 282 160 Z" fill="#7ebab5"/>
+    <!-- Main glass fill over frost -->
+    <circle cx="256" cy="256" r="200" fill="url(#ag-disc-fill)"/>
 
-  <!-- Velocity bars -->
-  <rect x="196" y="300" width="32" height="52" rx="10" fill="url(#ag-bars)" opacity="0.95"/>
-  <rect x="238" y="266" width="32" height="86" rx="10" fill="url(#ag-bars)" opacity="0.95"/>
-  <rect x="280" y="224" width="32" height="128" rx="10" fill="url(#ag-bars)" opacity="0.95"/>
-
-  <!-- Plus accent -->
-  <g fill="#f6f5f5" opacity="0.95">
-    <rect x="350" y="158" width="52" height="16" rx="8"/>
-    <rect x="368" y="140" width="16" height="52" rx="8"/>
+    <!-- Top specular highlight cap -->
+    <circle cx="256" cy="256" r="200" fill="url(#ag-disc-topspec)"/>
   </g>
+
+  <!-- LAYER 3: Thick white rim light on the glass disc -->
+  <circle cx="256" cy="256" r="200" fill="none"
+    stroke="white" stroke-width="14" stroke-opacity="0.70"
+    filter="url(#ag-rim-glow)"/>
+  <!-- Inner rim: thinner teal bloom -->
+  <circle cx="256" cy="256" r="194" fill="none"
+    stroke="#95ccc8" stroke-width="4" stroke-opacity="0.55"/>
+
+  <!-- LAYER 4: Icon content inside disc with bloom -->
+  <g clip-path="url(#ag-circle-clip)" filter="url(#ag-bloom)">
+    <!-- Sprint loop ring -->
+    <path d="M 300 148 A 110 110 0 1 1 200 158"
+          fill="none" stroke="url(#ag-loop)" stroke-width="24" stroke-linecap="round"/>
+    <!-- Arrow head -->
+    <polygon points="284,118 318,148 284,178" fill="#95ccc8"/>
+
+    <!-- Velocity bars — ascending left to right -->
+    <rect x="186" y="308" width="28" height="48" rx="8" fill="url(#ag-bars)" opacity="0.98"/>
+    <rect x="226" y="274" width="28" height="82" rx="8" fill="url(#ag-bars)" opacity="0.98"/>
+    <rect x="266" y="232" width="28" height="124" rx="8" fill="url(#ag-bars)" opacity="0.98"/>
+
+    <!-- Plus sign -->
+    <rect x="328" y="172" width="48" height="14" rx="7" fill="#f6f5f5" opacity="0.96"/>
+    <rect x="345" y="155" width="14" height="48" rx="7" fill="#f6f5f5" opacity="0.96"/>
+  </g>
+
+  <!-- LAYER 5: Squircle outer border -->
+  <rect x="0" y="0" width="512" height="512" rx="120" ry="120" fill="none"
+    stroke="white" stroke-width="2" stroke-opacity="0.20"/>
 </svg>
