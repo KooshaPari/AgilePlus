@@ -72,14 +72,6 @@ pub struct Epic {
     pub status: EpicStatus,
     /// Optional owner (user id).
     pub owner_id: Option<i64>,
-    /// External requirement reference (e.g. Tracera FR/NFR catalog ID).
-    /// Additive, optional — existing epics default to `None`.
-    pub requirement_id: Option<String>,
-    /// Trace IDs of external traceability artifacts this epic is linked to.
-    /// Each entry corresponds to a [`crate::traceability::TraceRef::trace_id`].
-    /// Additive, defaults to an empty vec — non-breaking for existing epics.
-    #[serde(default)]
-    pub trace_ids: Vec<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -101,8 +93,6 @@ impl Epic {
             description: None,
             status: EpicStatus::Backlog,
             owner_id: None,
-            requirement_id: None,
-            trace_ids: Vec::new(),
             created_at: now,
             updated_at: now,
         })
@@ -130,7 +120,7 @@ mod tests {
 
     #[test]
     fn valid_epic_construction() {
-        let e = Epic::new(1, "Authentication Overhaul").expect("domain operation");
+        let e = Epic::new(1, "Authentication Overhaul").unwrap();
         assert_eq!(e.title, "Authentication Overhaul");
         assert_eq!(e.project_id, 1);
         assert_eq!(e.status, EpicStatus::Backlog);
@@ -144,16 +134,16 @@ mod tests {
 
     #[test]
     fn valid_status_transition() {
-        let mut e = Epic::new(1, "Big Feature").expect("domain operation");
-        e.transition_status(EpicStatus::Active).expect("domain operation");
+        let mut e = Epic::new(1, "Big Feature").unwrap();
+        e.transition_status(EpicStatus::Active).unwrap();
         assert_eq!(e.status, EpicStatus::Active);
-        e.transition_status(EpicStatus::Review).expect("domain operation");
+        e.transition_status(EpicStatus::Review).unwrap();
         assert_eq!(e.status, EpicStatus::Review);
     }
 
     #[test]
     fn invalid_status_transition_rejected() {
-        let mut e = Epic::new(1, "Skipped Epic").expect("domain operation");
+        let mut e = Epic::new(1, "Skipped Epic").unwrap();
         // Backlog -> Done is not allowed
         let err = e.transition_status(EpicStatus::Done).unwrap_err();
         assert!(matches!(err, DomainError::InvalidTransition { .. }));
@@ -161,7 +151,7 @@ mod tests {
 
     #[test]
     fn title_trimmed_on_construction() {
-        let e = Epic::new(2, "  Trimmed  ").expect("domain operation");
+        let e = Epic::new(2, "  Trimmed  ").unwrap();
         assert_eq!(e.title, "Trimmed");
     }
 }
