@@ -105,7 +105,7 @@ jobs:
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
       - name: Install cargo-audit (pre-built to avoid MSRV compile issue)
-        uses: taiki-e/install-action@d12e70e218c759b71f95b1b6c0a2e5e7cb1b1f49  # v2
+        uses: taiki-e/install-action@7a79fe8c3a13344501c80d99cae481c1c9085912  # v2
         with:
           tool: cargo-audit@0.22.2
       - name: Run cargo audit
@@ -119,7 +119,7 @@ jobs:
             --ignore RUSTSEC-2025-0058 \
             --ignore RUSTSEC-2025-0134
       - name: Install cargo-deny
-        uses: taiki-e/install-action@d12e70e218c759b71f95b1b6c0a2e5e7cb1b1f49  # v2
+        uses: taiki-e/install-action@7a79fe8c3a13344501c80d99cae481c1c9085912  # v2
         with:
           tool: cargo-deny
       - name: Check licenses, advisories, duplicates
@@ -143,7 +143,9 @@ jobs:
           version: "28.x"
           repo-token: ${{ github.token }}
       - name: Install extras
-        run: cargo install cargo-machete cargo-semver-checks@0.44.0
+        uses: taiki-e/install-action@7a79fe8c3a13344501c80d99cae481c1c9085912  # v2
+        with:
+          tool: cargo-machete,cargo-semver-checks@0.44.0
       - name: Detect unused deps
         run: cargo machete
       - name: Semver compatibility check
