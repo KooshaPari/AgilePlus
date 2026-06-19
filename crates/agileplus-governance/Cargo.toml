@@ -19,12 +19,12 @@ required-features = ["cli"]
 tokio = { version = "1", features = ["full"] }
 
 # HTTP client
-reqwest = { version = "0.12", features = ["json"] }
+reqwest = { version = "0.13", features = ["json"] }
 
 # Serialization
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-toml = "0.8"
+toml = "1.1"
 
 # Logging
 tracing = "0.1"
@@ -37,13 +37,13 @@ chrono = { version = "0.4", features = ["serde"] }
 uuid = { version = "1", features = ["v4", "serde"] }
 
 # Database (SQLite for local governance)
-rusqlite = { version = "0.32", features = ["bundled"] }
+rusqlite = { version = "0.40", features = ["bundled"] }
 
 # Configuration
-config = "0.14"
+config = "0.15"
 
 # Error handling
-thiserror = "1"
+thiserror = "2"
 anyhow = "1"
 
 # Async traits
@@ -65,7 +65,7 @@ cli = ["clap", "whoami"]
 
 [dependencies.whoami]
 optional = true
-version = "1"
+version = "2"
 
 [dependencies.clap]
 optional = true
