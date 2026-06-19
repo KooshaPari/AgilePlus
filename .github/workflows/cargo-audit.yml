@@ -1,5 +1,7 @@
 name: cargo-audit
-permissions: read-all
+
+permissions:
+  contents: read
 
 permissions:
   contents: read
@@ -16,13 +18,6 @@ on:
   schedule:
     - cron: '37 5 * * 3'  # weekly Wednesday
   workflow_dispatch:
-permissions:
-  contents: read
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

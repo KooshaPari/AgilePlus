@@ -1,19 +1,15 @@
 name: Rust Security
-permissions: read-all
+
+permissions:
+  contents: read
+  security-events: write
+
 on:
   push:
     branches: [main]
     paths: ["Cargo.toml", "Cargo.lock", "crates/**", "src/**", "rust/**"]
   pull_request:
     paths: ["Cargo.toml", "Cargo.lock", "crates/**", "src/**", "rust/**"]
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
