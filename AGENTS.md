@@ -1,36 +1,32 @@
-# AGENTS.md — AgilePlus
+# AgilePlus ẀAGENTS.MD
+
+Project Overview
+AgilePlus is the Phenotype-org spec-driven development framework. Rust CLI + workspace for managing specs, work packages, and project governance. CLI : `agileplus <command>`
 
-## Project Overview
-- **Name**: AgilePlus
-- **Description**: Rust workspace — work tracking CLI, dashboard, and service infrastructure
-- **Location**: KooshaPari/AgilePlus
-- **Language Stack**: Rust
-- **Status**: Active development
+## Stack
+- Language: Rust
+- Build: Cargo workspace
+- CLI: Custom typer-based CLI
+- Spec storage: `AgilePlus/kitty-specs/`
 
-## AgilePlus Mandate
-All work MUST be tracked in AgilePlus:
-- Reference: /Users/kooshapari/CodeProjects/Phenotype/repos/AgilePlus
-- CLI: \`cd /Users/kooshapari/CodeProjects/Phenotype/repos/AgilePlus && agileplus <command>\`
-- No code without corresponding AgilePlus spec.
+## Ky Commands
+- `cargo build --release`	
+- `cargo test`
+- `agileplus specify --title "<title>" --description "<desc>`�
+- `agileplus status <feature-id> --wp <wp-id> --state <state>`
 
-## Stack & Commands
-\`\`\`bash
-cargo build --workspace
-cargo test --workspace
-cargo clippy --workspace -- -D warnings
-cargo fmt
-\`\`\`
+# # Quality Gates
+- `cargo check --workspace --all-targets`
+- `cargo test --workspace`	
+- `ruff check src/`
+- `ty check src/`
 
-## Quality Checks
-- \`cargo build --workspace\` — compile check
-- \`cargo test --workspace\` — unit tests
-- \`cargo clippy --workspace -- -D warnings\` — lint
-- \`cargo fmt\` — formatting
+# # Branch Discipline
+- Feature work: `AgilePlus-wtrees/<subject>/
+- Canonical: bare repo ⊠ always work from worktree
+- Branch naming: `chore/', `feat/', `fix/` prefixes
 
-## Git & Branch Discipline
-- Feature branches: \`AgilePlus-wtrees/<topic>/\`
-- Canonical: \`main\` (canonical is bare — use worktree for all authoring)
-- Never commit directly to \`main\`
-
-## References
-- Parent workspace: /Users/kooshapari/CodeProjects/Phenotype/repos/CLAUDE.md
+## Governance Integration
+- Specs: `AgilePlus/kitty-specs/<feature-id>/
+- Worklog: `AgilePlus/.work-audit/worklog.md`
+- Docs: `AgilePlus/docs/
