@@ -9,6 +9,7 @@
 
 use chrono::{DateTime, Utc};
 use std::sync::Arc;
+use chrono::{DateTime, Utc};
 use tokio::sync::RwLock;
 use tracing::{error, info, warn};
 
@@ -251,11 +252,11 @@ impl GovernanceClient {
                 let client = reqwest::Client::new();
                 match client.post(&url).json(&entry_clone).send().await {
                     Ok(_resp) => {
-                        info!("Synced audit event to remote: {url}");
+                        info!("Synced audit event to remote: {}", url);
                         *last_sync.write().await = Some(chrono::Utc::now());
                     }
                     Err(e) => {
-                        warn!("Failed to sync audit event to remote {url}: {e}");
+                        warn!("Failed to sync audit event to remote {}: {e}", url);
                     }
                 }
             });
