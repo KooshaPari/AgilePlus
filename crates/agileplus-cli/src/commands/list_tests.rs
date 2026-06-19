@@ -36,6 +36,7 @@ use agileplus_domain::{
 
 #[derive(Default)]
 pub struct MemStore {
+<<<<<<< HEAD
     pub features: Mutex<Vec<Feature>>,
     pub projects: Mutex<Vec<Project>>,
     pub epics: Mutex<Vec<Epic>>,
@@ -53,6 +54,12 @@ pub struct MemStore {
     pub cycle_features: Mutex<Vec<CycleFeature>>,
     pub sync_mappings: Mutex<Vec<SyncMapping>>,
     pub users: Mutex<Vec<User>>,
+=======
+    pub features: Vec<Feature>,
+    pub projects: Vec<Project>,
+    pub epics: Vec<Epic>,
+    pub stories: Vec<Story>,
+>>>>>>> pr-769
 }
 
 #[async_trait]
@@ -839,6 +846,7 @@ impl StoragePort for MemStore {
     async fn update_feature_state(&self, _: i64, _: FeatureState) -> Result<(), DomainError> {
         unimplemented!()
     }
+<<<<<<< HEAD
     async fn list_features_by_state(&self, _: FeatureState) -> Result<Vec<Feature>, DomainError> {
         unimplemented!()
     }
@@ -850,6 +858,21 @@ impl StoragePort for MemStore {
     }
     async fn list_features_by_label(&self, _: &str) -> Result<Vec<Feature>, DomainError> {
         todo!()
+=======
+    async fn list_features_by_state(
+        &self,
+        state: FeatureState,
+    ) -> Result<Vec<Feature>, DomainError> {
+        Ok(self
+            .features
+            .iter()
+            .filter(|feature| feature.state == state)
+            .cloned()
+            .collect())
+    }
+    async fn list_all_features(&self) -> Result<Vec<Feature>, DomainError> {
+        Ok(self.features.clone())
+>>>>>>> pr-769
     }
     async fn create_work_package(&self, _: &WorkPackage) -> Result<i64, DomainError> {
         unimplemented!()
@@ -1028,6 +1051,13 @@ fn make_project(id: i64, slug: &str, name: &str) -> Project {
     p
 }
 
+fn make_feature(id: i64, slug: &str, title: &str, state: FeatureState) -> Feature {
+    let mut feature = Feature::new(slug, title, [id as u8; 32], None);
+    feature.id = id;
+    feature.state = state;
+    feature
+}
+
 fn make_epic(id: i64, project_id: i64, title: &str, status: EpicStatus) -> Epic {
     let mut e = Epic::new(project_id, title).unwrap();
     e.id = id;
@@ -1046,7 +1076,16 @@ fn make_story(id: i64, epic_id: i64, project_id: i64, title: &str, status: Story
 
 #[tokio::test]
 async fn list_projects_returns_ok_for_empty_store() {
+<<<<<<< HEAD
     let store = MemStore::default();
+=======
+    let store = MemStore {
+        features: vec![],
+        projects: vec![],
+        epics: vec![],
+        stories: vec![],
+    };
+>>>>>>> pr-769
     let args = crate::commands::list_projects::ListProjectsArgs { json: false };
     crate::commands::list_projects::run(&args, &store)
         .await
@@ -1056,7 +1095,12 @@ async fn list_projects_returns_ok_for_empty_store() {
 #[tokio::test]
 async fn list_projects_returns_ok_with_data() {
     let store = MemStore {
+<<<<<<< HEAD
         projects: Mutex::new(vec![
+=======
+        features: vec![],
+        projects: vec![
+>>>>>>> pr-769
             make_project(1, "alpha", "Alpha"),
             make_project(2, "beta", "Beta"),
         ]),
@@ -1071,8 +1115,15 @@ async fn list_projects_returns_ok_with_data() {
 #[tokio::test]
 async fn list_projects_json_flag_returns_ok() {
     let store = MemStore {
+<<<<<<< HEAD
         projects: Mutex::new(vec![make_project(1, "alpha", "Alpha")]),
         ..MemStore::default()
+=======
+        features: vec![],
+        projects: vec![make_project(1, "alpha", "Alpha")],
+        epics: vec![],
+        stories: vec![],
+>>>>>>> pr-769
     };
     let args = crate::commands::list_projects::ListProjectsArgs { json: true };
     crate::commands::list_projects::run(&args, &store)
@@ -1085,9 +1136,16 @@ async fn list_projects_json_flag_returns_ok() {
 #[tokio::test]
 async fn list_epics_no_filter_returns_ok() {
     let store = MemStore {
+<<<<<<< HEAD
         projects: Mutex::new(vec![make_project(1, "alpha", "Alpha")]),
         epics: Mutex::new(vec![make_epic(1, 1, "Epic One", EpicStatus::Active)]),
         ..MemStore::default()
+=======
+        features: vec![],
+        projects: vec![make_project(1, "alpha", "Alpha")],
+        epics: vec![make_epic(1, 1, "Epic One", EpicStatus::Active)],
+        stories: vec![],
+>>>>>>> pr-769
     };
     let args = crate::commands::list_epics::ListEpicsArgs {
         project: None,
@@ -1101,7 +1159,12 @@ async fn list_epics_no_filter_returns_ok() {
 #[tokio::test]
 async fn list_epics_with_project_filter_returns_only_matching() {
     let store = MemStore {
+<<<<<<< HEAD
         projects: Mutex::new(vec![
+=======
+        features: vec![],
+        projects: vec![
+>>>>>>> pr-769
             make_project(1, "alpha", "Alpha"),
             make_project(2, "beta", "Beta"),
         ]),
@@ -1124,9 +1187,16 @@ async fn list_epics_with_project_filter_returns_only_matching() {
 #[tokio::test]
 async fn list_epics_json_flag_returns_ok() {
     let store = MemStore {
+<<<<<<< HEAD
         projects: Mutex::new(vec![make_project(1, "alpha", "Alpha")]),
         epics: Mutex::new(vec![make_epic(1, 1, "Epic One", EpicStatus::Done)]),
         ..MemStore::default()
+=======
+        features: vec![],
+        projects: vec![make_project(1, "alpha", "Alpha")],
+        epics: vec![make_epic(1, 1, "Epic One", EpicStatus::Done)],
+        stories: vec![],
+>>>>>>> pr-769
     };
     let args = crate::commands::list_epics::ListEpicsArgs {
         project: Some(1),
@@ -1142,9 +1212,16 @@ async fn list_epics_json_flag_returns_ok() {
 #[tokio::test]
 async fn list_stories_no_filter_returns_ok() {
     let store = MemStore {
+<<<<<<< HEAD
         projects: Mutex::new(vec![make_project(1, "alpha", "Alpha")]),
         stories: Mutex::new(vec![make_story(1, 10, 1, "Story One", StoryStatus::Todo)]),
         ..MemStore::default()
+=======
+        features: vec![],
+        projects: vec![make_project(1, "alpha", "Alpha")],
+        epics: vec![],
+        stories: vec![make_story(1, 10, 1, "Story One", StoryStatus::Todo)],
+>>>>>>> pr-769
     };
     let args = crate::commands::list_stories::ListStoriesArgs {
         epic: None,
@@ -1159,7 +1236,14 @@ async fn list_stories_no_filter_returns_ok() {
 #[tokio::test]
 async fn list_stories_epic_filter_returns_only_matching() {
     let store = MemStore {
+<<<<<<< HEAD
         stories: Mutex::new(vec![
+=======
+        features: vec![],
+        projects: vec![],
+        epics: vec![],
+        stories: vec![
+>>>>>>> pr-769
             make_story(1, 10, 1, "Story A", StoryStatus::Todo),
             make_story(2, 20, 1, "Story B", StoryStatus::Done),
         ]),
@@ -1178,8 +1262,15 @@ async fn list_stories_epic_filter_returns_only_matching() {
 #[tokio::test]
 async fn list_stories_status_filter_returns_only_matching() {
     let store = MemStore {
+<<<<<<< HEAD
         projects: Mutex::new(vec![make_project(1, "alpha", "Alpha")]),
         stories: Mutex::new(vec![
+=======
+        features: vec![],
+        projects: vec![make_project(1, "alpha", "Alpha")],
+        epics: vec![],
+        stories: vec![
+>>>>>>> pr-769
             make_story(1, 10, 1, "Story A", StoryStatus::Todo),
             make_story(2, 10, 1, "Story B", StoryStatus::Done),
             make_story(3, 10, 1, "Story C", StoryStatus::InProgress),
@@ -1199,7 +1290,16 @@ async fn list_stories_status_filter_returns_only_matching() {
 
 #[tokio::test]
 async fn list_stories_invalid_status_returns_err() {
+<<<<<<< HEAD
     let store = MemStore::default();
+=======
+    let store = MemStore {
+        features: vec![],
+        projects: vec![],
+        epics: vec![],
+        stories: vec![],
+    };
+>>>>>>> pr-769
     let args = crate::commands::list_stories::ListStoriesArgs {
         epic: None,
         status: Some("not_a_status".to_string()),
@@ -1213,9 +1313,16 @@ async fn list_stories_invalid_status_returns_err() {
 #[tokio::test]
 async fn list_stories_json_flag_returns_ok() {
     let store = MemStore {
+<<<<<<< HEAD
         projects: Mutex::new(vec![make_project(1, "alpha", "Alpha")]),
         stories: Mutex::new(vec![make_story(1, 10, 1, "Story One", StoryStatus::Review)]),
         ..MemStore::default()
+=======
+        features: vec![],
+        projects: vec![make_project(1, "alpha", "Alpha")],
+        epics: vec![],
+        stories: vec![make_story(1, 10, 1, "Story One", StoryStatus::Review)],
+>>>>>>> pr-769
     };
     let args = crate::commands::list_stories::ListStoriesArgs {
         epic: Some(10),
@@ -1231,7 +1338,16 @@ async fn list_stories_json_flag_returns_ok() {
 
 #[tokio::test]
 async fn list_features_returns_ok_for_empty_store() {
+<<<<<<< HEAD
     let store = MemStore::default();
+=======
+    let store = MemStore {
+        features: vec![],
+        projects: vec![],
+        epics: vec![],
+        stories: vec![],
+    };
+>>>>>>> pr-769
     let args = crate::commands::list::ListArgs { state: None };
 
     crate::commands::list::run(args, &store).await.unwrap();
@@ -1240,11 +1356,21 @@ async fn list_features_returns_ok_for_empty_store() {
 #[tokio::test]
 async fn list_features_returns_all_features() {
     let store = MemStore {
+<<<<<<< HEAD
         features: Mutex::new(vec![
             make_feature(1, "feat-alpha", "Alpha", FeatureState::Created),
             make_feature(2, "feat-beta", "Beta", FeatureState::Planned),
         ]),
         ..MemStore::default()
+=======
+        features: vec![
+            make_feature(1, "feat-alpha", "Alpha", FeatureState::Created),
+            make_feature(2, "feat-beta", "Beta", FeatureState::Planned),
+        ],
+        projects: vec![],
+        epics: vec![],
+        stories: vec![],
+>>>>>>> pr-769
     };
     let args = crate::commands::list::ListArgs { state: None };
 
@@ -1254,11 +1380,21 @@ async fn list_features_returns_all_features() {
 #[tokio::test]
 async fn list_features_filters_by_state() {
     let store = MemStore {
+<<<<<<< HEAD
         features: Mutex::new(vec![
             make_feature(1, "feat-alpha", "Alpha", FeatureState::Created),
             make_feature(2, "feat-beta", "Beta", FeatureState::Planned),
         ]),
         ..MemStore::default()
+=======
+        features: vec![
+            make_feature(1, "feat-alpha", "Alpha", FeatureState::Created),
+            make_feature(2, "feat-beta", "Beta", FeatureState::Planned),
+        ],
+        projects: vec![],
+        epics: vec![],
+        stories: vec![],
+>>>>>>> pr-769
     };
     let args = crate::commands::list::ListArgs {
         state: Some("planned".to_string()),
@@ -1269,7 +1405,16 @@ async fn list_features_filters_by_state() {
 
 #[tokio::test]
 async fn list_features_rejects_invalid_state() {
+<<<<<<< HEAD
     let store = MemStore::default();
+=======
+    let store = MemStore {
+        features: vec![],
+        projects: vec![],
+        epics: vec![],
+        stories: vec![],
+    };
+>>>>>>> pr-769
     let args = crate::commands::list::ListArgs {
         state: Some("not-a-state".to_string()),
     };

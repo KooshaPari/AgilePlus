@@ -12,3 +12,4 @@ Core domain types, errors, configuration, credentials, and port traits.
 ```bash
 cargo test -p agileplus-domain
 ```
+

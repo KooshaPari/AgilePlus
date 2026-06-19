@@ -18,7 +18,11 @@ agileplus-graph = { path = "../agileplus-graph" }
 serde = { workspace = true, features = ["derive"] }
 anyhow = "1.0"
 async-trait.workspace = true
+<<<<<<< HEAD
 phenotype-error-core = { path = "../../../phenoShared/crates/phenotype-error-core" }
+=======
+phenotype-error-core.workspace = true
+>>>>>>> pr-769
 thiserror.workspace = true
 tokio = { workspace = true, features = ["full"] }
 tracing.workspace = true

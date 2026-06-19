@@ -13,3 +13,4 @@ NATS infrastructure adapter and in-process event bus for tests.
 ```bash
 cargo test -p agileplus-nats
 ```
+
