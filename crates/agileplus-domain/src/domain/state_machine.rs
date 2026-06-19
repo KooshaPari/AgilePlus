@@ -22,7 +22,7 @@ mod tests {
 
     #[test]
     fn valid_lifecycle_transition_succeeds() {
-        let result = transition(FeatureState::Created, FeatureState::Specified).unwrap();
+        let result = transition(FeatureState::Created, FeatureState::Specified).expect("domain operation");
         assert_eq!(result.transition.from, FeatureState::Created);
         assert_eq!(result.transition.to, FeatureState::Specified);
     }
@@ -75,7 +75,7 @@ mod tests {
             "retrospected",
         ];
         for s in all_states {
-            let state: FeatureState = s.parse().unwrap();
+            let state: FeatureState = s.parse().expect("domain operation");
             assert_eq!(state.to_string(), s);
         }
     }
