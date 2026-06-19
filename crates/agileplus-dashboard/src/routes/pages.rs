@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Page route handlers for AgilePlus dashboard.
 //!
 //! Handlers for main page views (root, home, features, events, settings, hub, health, feature details).
@@ -12,12 +11,12 @@ use std::collections::HashMap;
 
 use crate::app_state::SharedState;
 use crate::templates::{
-    DashboardPage, EcosystemProject, EventsPage, FeatureView, FeaturesPage, HomePage, HubPage,
-    SettingsPage,
+    DashboardPage, EventsPage, FeaturesPage, HomePage, HubPage, EcosystemProject,
+    FeatureView, ProjectSummaryView, SettingsPage,
 };
 
+use super::helpers::{self, DashboardFilter};
 use super::features;
-use super::helpers;
 
 /// GET /
 /// Home page with project summary statistics
