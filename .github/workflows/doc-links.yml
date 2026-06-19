@@ -1,12 +1,11 @@
 name: Doc Links
-
-permissions:
-  contents: read
-
 on:
   workflow_dispatch:
   push:
   pull_request:
+
+permissions:
+  contents: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
