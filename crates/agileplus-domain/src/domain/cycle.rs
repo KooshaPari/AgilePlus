@@ -175,9 +175,9 @@ impl CycleWithFeatures {
     /// (the "shipped gate" required before a cycle can be moved to Shipped).
     pub fn is_shippable(&self) -> bool {
         use crate::domain::state_machine::FeatureState;
-        self.features.iter().all(|f| {
-            matches!(f.state, FeatureState::Validated | FeatureState::Shipped)
-        })
+        self.features
+            .iter()
+            .all(|f| matches!(f.state, FeatureState::Validated | FeatureState::Shipped))
     }
 }
 
@@ -226,7 +226,15 @@ mod tests {
 
     #[test]
     fn cycle_state_from_str_roundtrips() {
-        for s in &["draft", "active", "review", "completed", "cancelled", "shipped", "archived"] {
+        for s in &[
+            "draft",
+            "active",
+            "review",
+            "completed",
+            "cancelled",
+            "shipped",
+            "archived",
+        ] {
             let state: CycleState = s.parse().unwrap();
             assert_eq!(state.to_string(), *s);
         }
