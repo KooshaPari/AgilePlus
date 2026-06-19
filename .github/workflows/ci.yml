@@ -257,14 +257,12 @@ jobs:
       # cargo check can load those manifests (see quality-gate.yml).
       - name: Checkout phenoShared sibling
         run: |
-          git clone \
+          git clone --depth 1 \
             "https://x-access-token:${{ github.token }}@github.com/KooshaPari/phenoShared.git" \
             "${{ github.workspace }}/../phenoShared"
-          git -C "${{ github.workspace }}/../phenoShared" \
-            checkout c3aee3361ff4888a8ced71c8861a8d54ae65fca0
-      - uses: dtolnay/rust-toolchain@1.88.0
-      - uses: Swatinem/rust-cache@v2
-      - uses: arduino/setup-protoc@v3
+      - uses: dtolnay/rust-toolchain@dd44c20b1206a46e25fba8503d5d7c9a33bd355a  # 1.86.0 (toolchain)
+      - uses: Swatinem/rust-cache@42dc69e1aa15d09112580998cf2ef0119e2e91ae  # v2
+      - uses: arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b  # v3
         with:
           version: "28.x"
           repo-token: ${{ github.token }}
