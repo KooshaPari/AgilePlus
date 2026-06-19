@@ -89,4 +89,4 @@ jobs:
             "https://x-access-token:${{ github.token }}@github.com/KooshaPari/phenoShared.git" \
             "${{ github.workspace }}/../phenoShared"
       - name: Check Rust licenses
-        run: cargo deny check licenses
+        run: cargo deny check -c rust/deny.toml licenses
