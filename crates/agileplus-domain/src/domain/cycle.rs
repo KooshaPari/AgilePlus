@@ -180,3 +180,44 @@ impl CycleWithFeatures {
         })
     }
 }
+
+    /// Validate and apply a state transition for this cycle.
+    /// Allowed edges: Draft→Active, Active→Review, Review→Shipped,
+    /// any→Cancelled, Shipped→Archived.
+    pub fn transition(&mut self, target: CycleState) -> Result<(), DomainError> {
+        let allowed = match self.state {
+            CycleState::Draft => matches!(target, CycleState::Active | CycleState::Cancelled),
+            CycleState::Active => matches!(
+                target,
+                CycleState::Review | CycleState::Shipped | CycleState::Cancelled
+            ),
+            CycleState::Review => {
+                matches!(target, CycleState::Shipped | CycleState::Cancelled)
+            }
+            CycleState::Shipped => matches!(target, CycleState::Archived),
+            CycleState::Completed => matches!(target, CycleState::Archived | CycleState::Cancelled),
+            CycleState::Cancelled | CycleState::Archived => false,
+        };
+        if allowed {
+            self.state = target;
+            Ok(())
+        } else {
+            Err(DomainError::InvalidTransition {
+                from: format!("{:?}", self.state),
+                to: format!("{:?}", target),
+                reason: "edge not permitted by cycle state machine".to_string(),
+            })
+        }
+    }
+}
+
+impl CycleWithFeatures {
+    /// Returns true if every feature in this cycle is Validated or Shipped
+    /// (the "shipped gate" required before a cycle can be moved to Shipped).
+    pub fn is_shippable(&self) -> bool {
+        use crate::domain::state_machine::FeatureState;
+        self.features.iter().all(|f| {
+            matches!(f.state, FeatureState::Validated | FeatureState::Shipped)
+        })
+    }
+}

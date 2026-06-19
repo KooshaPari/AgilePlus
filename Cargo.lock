@@ -500,6 +500,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "agileplus-sync"
+version = "0.1.0"
+dependencies = [
+ "agileplus-domain",
+ "agileplus-events",
+ "agileplus-plane",
+ "async-nats",
+ "async-trait",
+ "chrono",
+ "futures-util",
+ "proptest",
+ "serde",
+ "serde_json",
+ "sha2",
+ "thiserror 2.0.18",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
 name = "agileplus-telemetry"
 version = "0.1.0"
 dependencies = [
