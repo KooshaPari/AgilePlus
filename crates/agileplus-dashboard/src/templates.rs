@@ -435,7 +435,7 @@ pub fn all_feature_states() -> Vec<String> {
         FeatureState::Retrospected,
     ]
     .into_iter()
-    .map(ToString::to_string)
+    .map(|s| s.to_string())
     .collect()
 }
 
