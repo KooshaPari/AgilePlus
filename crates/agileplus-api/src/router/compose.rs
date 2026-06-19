@@ -41,10 +41,7 @@ use agileplus_domain::ports::{
     observability::ObservabilityPort, storage::StoragePort, vcs::VcsPort,
 };
 
-type BoxError = Box<dyn std::error::Error + Send + Sync>;
-
-use crate::responses::{DetailedHealthResponse, SimpleHealthResponse};
-use crate::routes::{audit, cycle, events, features, governance, module, stream, work_packages};
+use crate::routes::{audit, cycle, epics, events, features, governance, module, projects, stories, stream, users, work_packages};
 use crate::state::AppState;
 
 use super::handlers::info_handler;
@@ -120,61 +117,6 @@ where
         .nest_service("/static", ServeDir::new("templates/static"))
         .layer(TraceLayer::new_for_http())
         .layer(CorsLayer::permissive())
-}
-
-/// `GET /health` — simple health check, no auth required.
-async fn simple_health_handler() -> Json<SimpleHealthResponse> {
-    Json(SimpleHealthResponse::ok())
-}
-
-/// `GET /detailed-health` — aggregated health check, no auth required (T070).
-async fn health_handler<S, V, O>(
-    axum::extract::State(app): axum::extract::State<AppState<S, V, O>>,
-) -> Json<DetailedHealthResponse>
-where
-    S: StoragePort + Send + Sync + 'static,
-    V: VcsPort + Send + Sync + 'static,
-    O: ObservabilityPort + Send + Sync + 'static,
-{
-    use std::collections::HashMap;
-
-    // Probe storage with a lightweight call.
-    let mut services: HashMap<String, crate::responses::ServiceHealth> = HashMap::new();
-
-    let t0 = Instant::now();
-    let sqlite_health = match app.storage.list_all_features().await {
-        Ok(_) => crate::responses::ServiceHealth::healthy(t0.elapsed().as_millis() as u64),
-        Err(e) => crate::responses::ServiceHealth::unavailable(e.to_string()),
-    };
-    services.insert("sqlite".to_string(), sqlite_health);
-
-    // For services not yet wired (NATS, Dragonfly, Neo4j, MinIO), report
-    // them as degraded with an explanatory note rather than unavailable.
-    for name in &["nats", "dragonfly", "neo4j", "minio"] {
-        services.insert(
-            name.to_string(),
-            crate::responses::ServiceHealth::degraded("not configured in this deployment"),
-        );
-    }
-
-    let overall = DetailedHealthResponse::compute_status(&services).to_string();
-
-    Json(DetailedHealthResponse {
-        status: overall,
-        timestamp: chrono::Utc::now().to_rfc3339(),
-        services,
-        api: crate::responses::ApiHealth {
-            status: "healthy".to_string(),
-            uptime_seconds: 0, // uptime tracking requires a startup timestamp in AppState
-        },
-    })
-}
-
-async fn info_handler() -> Json<serde_json::Value> {
-    Json(serde_json::json!({
-        "name": "agileplus-api",
-        "version": env!("CARGO_PKG_VERSION"),
-    }))
 }
 
 /// Start the HTTP API server, binding to `addr`.
