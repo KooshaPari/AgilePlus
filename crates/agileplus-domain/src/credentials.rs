@@ -96,51 +96,46 @@ mod tests {
 
     fn make_config(keys: Option<&str>) -> AppConfig {
         AppConfig {
-            core: CoreConfig {
-                database_path: "test.db".into(),
-            },
-            api: ApiConfig {
-                port: 3030,
-                api_keys: keys.map(String::from),
-            },
+            core: CoreConfig { database_path: "test.db".into() },
+            api: ApiConfig { port: 3030, api_keys: keys.map(String::from) },
         }
     }
 
     #[test]
     fn in_memory_store_validates_correct_key() {
         let store = InMemoryCredentialStore::new(vec!["key1".to_string(), "key2".to_string()]);
-        assert!(store.validate_api_key("key1").expect("domain operation"));
-        assert!(store.validate_api_key("key2").expect("domain operation"));
+        assert!(store.validate_api_key("key1").unwrap());
+        assert!(store.validate_api_key("key2").unwrap());
     }
 
     #[test]
     fn in_memory_store_rejects_wrong_key() {
         let store = InMemoryCredentialStore::new(vec!["valid-key".to_string()]);
-        assert!(!store.validate_api_key("invalid-key").expect("domain operation"));
-        assert!(!store.validate_api_key("").expect("domain operation"));
+        assert!(!store.validate_api_key("invalid-key").unwrap());
+        assert!(!store.validate_api_key("").unwrap());
     }
 
     #[test]
     fn in_memory_store_get_returns_empty() {
         let store = InMemoryCredentialStore::new(vec![]);
-        assert_eq!(store.get("ns", "k").expect("domain operation"), "");
+        assert_eq!(store.get("ns", "k").unwrap(), "");
     }
 
     #[test]
     fn create_credential_store_parses_comma_separated_keys() {
         let cfg = make_config(Some("key-a, key-b , key-c"));
         let store = create_credential_store(&cfg);
-        assert!(store.validate_api_key("key-a").expect("domain operation"));
-        assert!(store.validate_api_key("key-b").expect("domain operation"));
-        assert!(store.validate_api_key("key-c").expect("domain operation"));
-        assert!(!store.validate_api_key("key-d").expect("domain operation"));
+        assert!(store.validate_api_key("key-a").unwrap());
+        assert!(store.validate_api_key("key-b").unwrap());
+        assert!(store.validate_api_key("key-c").unwrap());
+        assert!(!store.validate_api_key("key-d").unwrap());
     }
 
     #[test]
     fn create_credential_store_empty_config_rejects_all() {
         let cfg = make_config(None);
         let store = create_credential_store(&cfg);
-        assert!(!store.validate_api_key("any").expect("domain operation"));
+        assert!(!store.validate_api_key("any").unwrap());
     }
 
     #[test]
