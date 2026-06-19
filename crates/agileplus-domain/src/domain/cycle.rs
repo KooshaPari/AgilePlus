@@ -226,7 +226,15 @@ mod tests {
 
     #[test]
     fn cycle_state_from_str_roundtrips() {
-        for s in &["draft", "active", "review", "completed", "cancelled", "shipped", "archived"] {
+        for s in &[
+            "draft",
+            "active",
+            "review",
+            "completed",
+            "cancelled",
+            "shipped",
+            "archived",
+        ] {
             let state: CycleState = s.parse().unwrap();
             assert_eq!(state.to_string(), *s);
         }
