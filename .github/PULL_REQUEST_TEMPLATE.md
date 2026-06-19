@@ -40,6 +40,7 @@ If a section does not apply, write "N/A" rather than deleting it.
 ## Related Issue / Spec
 
 <!-- Link issue/spec if applicable. Use "Closes #" when this resolves an issue. -->
+spec: eco-000-example
 Closes #
 
 ## Testing*
