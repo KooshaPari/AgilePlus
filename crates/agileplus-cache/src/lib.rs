@@ -1,6 +1,7 @@
 //! agileplus-cache — caching layer for projections and rate limiting.
 
 pub mod config;
+#[cfg(feature = "redis")]
 pub mod limiter;
 pub mod projection;
 pub mod store;

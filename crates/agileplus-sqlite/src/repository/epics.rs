@@ -29,6 +29,8 @@ fn row_to_epic(row: &rusqlite::Row<'_>) -> rusqlite::Result<Epic> {
         description: row.get(3)?,
         status: status_str.parse().unwrap_or(EpicStatus::Backlog),
         owner_id: row.get(5)?,
+        requirement_id: row.get(8).unwrap_or(None),
+        trace_ids: Vec::new(),
         created_at: parse_dt(&created_at),
         updated_at: parse_dt(&updated_at),
     })
