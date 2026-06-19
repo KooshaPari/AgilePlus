@@ -8,8 +8,7 @@
 
 #![cfg(test)]
 
-use std::sync::Mutex;
-
+use async_trait::async_trait;
 #[allow(unused_imports)] // Backlog* types used in fixture/seed data
 use agileplus_domain::{
     domain::{
@@ -31,7 +30,6 @@ use agileplus_domain::{
     error::DomainError,
     ports::StoragePort,
 };
-use async_trait::async_trait;
 
 // ── In-memory test double ─────────────────────────────────────────────────────
 
