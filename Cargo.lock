@@ -86,6 +86,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "agileplus-benchmarks"
+version = "0.1.0"
+dependencies = [
+ "agileplus-domain",
+ "agileplus-events",
+ "agileplus-graph",
+ "agileplus-sqlite",
+ "async-trait",
+ "chrono",
+ "criterion",
+ "rusqlite",
+ "serde_json",
+ "tokio",
+ "uuid",
+]
+
+[[package]]
 name = "agileplus-cache"
 version = "0.1.0"
 dependencies = [
