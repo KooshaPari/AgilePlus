@@ -17,7 +17,9 @@ from pathlib import Path
 TOOL_TIMEOUT = 30  # seconds per tool invocation
 
 
-def run_tool(cmd: list[str], cwd: str | None = None, env: dict | None = None) -> tuple[int, str, str]:
+def run_tool(
+    cmd: list[str], cwd: str | None = None, env: dict | None = None
+) -> tuple[int, str, str]:
     """Run a command, return (returncode, stdout, stderr). Graceful on missing tool."""
     try:
         result = subprocess.run(
@@ -32,21 +34,31 @@ def run_tool(cmd: list[str], cwd: str | None = None, env: dict | None = None) ->
     except FileNotFoundError:
         return 127, "", f"[drift-check] tool not found: {cmd[0]}"
     except subprocess.TimeoutExpired:
-        return 124, "", f"[drift-check] timed out after {TOOL_TIMEOUT}s: {' '.join(cmd)}"
+        return (
+            124,
+            "",
+            f"[drift-check] timed out after {TOOL_TIMEOUT}s: {' '.join(cmd)}",
+        )
     except Exception as exc:
         return 1, "", f"[drift-check] error running {' '.join(cmd)}: {exc}"
 
 
 def check_file_is_newer_than(file_path: Path, marker: Path) -> bool:
     """Return True if file_path exists and is newer than marker, or marker doesn't exist."""
-    return file_path.exists() and (not marker.exists() or file_path.stat().st_mtime > marker.stat().st_mtime)
+    return file_path.exists() and (
+        not marker.exists() or file_path.stat().st_mtime > marker.stat().st_mtime
+    )
 
 
 def rust_check(file_path: Path, repo_root: Path, findings: list) -> None:
     """Run rustfmt --check and cargo check on a .rs file."""
     lock = repo_root / "Cargo.lock"
     toolchain = repo_root / "rust-toolchain.toml"
-    marker = max((lock, toolchain), key=lambda p: p.stat().st_mtime) if lock.exists() or toolchain.exists() else repo_root
+    marker = (
+        max((lock, toolchain), key=lambda p: p.stat().st_mtime)
+        if lock.exists() or toolchain.exists()
+        else repo_root
+    )
 
     # rustfmt --check
     rc, stdout, stderr = run_tool(["rustfmt", "--check", str(file_path)], cwd=repo_root)
@@ -58,12 +70,14 @@ def rust_check(file_path: Path, repo_root: Path, findings: list) -> None:
             if not line:
                 continue
             severity = "HIGH" if "error" in line.lower() else "MEDIUM"
-            findings.append({
-                "file": str(file_path.relative_to(repo_root)),
-                "tool": "rustfmt",
-                "severity": severity,
-                "message": line,
-            })
+            findings.append(
+                {
+                    "file": str(file_path.relative_to(repo_root)),
+                    "tool": "rustfmt",
+                    "severity": severity,
+                    "message": line,
+                }
+            )
 
     # cargo check — only if workspace present
     cargo_toml = repo_root / "Cargo.toml"
@@ -79,12 +93,14 @@ def rust_check(file_path: Path, repo_root: Path, findings: list) -> None:
     if rc == 127:
         pass
     elif rc not in (0, 101):  # 101 = compilation errors
-        findings.append({
-            "file": str(file_path.relative_to(repo_root)),
-            "tool": "cargo-check",
-            "severity": "HIGH",
-            "message": f"cargo check failed (exit {rc})",
-        })
+        findings.append(
+            {
+                "file": str(file_path.relative_to(repo_root)),
+                "tool": "cargo-check",
+                "severity": "HIGH",
+                "message": f"cargo check failed (exit {rc})",
+            }
+        )
     elif rc == 101:
         # Parse JSON diagnostics from cargo
         for line in stdout.splitlines():
@@ -99,12 +115,14 @@ def rust_check(file_path: Path, repo_root: Path, findings: list) -> None:
                         fn = span.get("file_name", "")
                         if fn and (repo_root / fn).resolve() == file_path.resolve():
                             severity = "HIGH" if lvl == "error" else "MEDIUM"
-                            findings.append({
-                                "file": str(file_path.relative_to(repo_root)),
-                                "tool": "cargo-check",
-                                "severity": severity,
-                                "message": f"{fn}:{span.get('line_start', '?')} — {rendered[:200]}",
-                            })
+                            findings.append(
+                                {
+                                    "file": str(file_path.relative_to(repo_root)),
+                                    "tool": "cargo-check",
+                                    "severity": severity,
+                                    "message": f"{fn}:{span.get('line_start', '?')} — {rendered[:200]}",
+                                }
+                            )
             except json.JSONDecodeError:
                 pass
 
@@ -120,13 +138,19 @@ def python_check(file_path: Path, repo_root: Path, findings: list) -> None:
             line = line.strip()
             if not line:
                 continue
-            severity = "HIGH" if "error" in line.lower() or "failure" in line.lower() else "MEDIUM"
-            findings.append({
-                "file": str(file_path.relative_to(repo_root)),
-                "tool": "ruff",
-                "severity": severity,
-                "message": line,
-            })
+            severity = (
+                "HIGH"
+                if "error" in line.lower() or "failure" in line.lower()
+                else "MEDIUM"
+            )
+            findings.append(
+                {
+                    "file": str(file_path.relative_to(repo_root)),
+                    "tool": "ruff",
+                    "severity": severity,
+                    "message": line,
+                }
+            )
 
     # mypy --strict
     rc, stdout, stderr = run_tool(["mypy", "--strict", str(file_path)], cwd=repo_root)
@@ -138,12 +162,14 @@ def python_check(file_path: Path, repo_root: Path, findings: list) -> None:
             if not line:
                 continue
             severity = "HIGH" if "error" in line.lower() else "MEDIUM"
-            findings.append({
-                "file": str(file_path.relative_to(repo_root)),
-                "tool": "mypy",
-                "severity": severity,
-                "message": line,
-            })
+            findings.append(
+                {
+                    "file": str(file_path.relative_to(repo_root)),
+                    "tool": "mypy",
+                    "severity": severity,
+                    "message": line,
+                }
+            )
 
 
 def yaml_check(file_path: Path, repo_root: Path, findings: list) -> None:
@@ -157,12 +183,14 @@ def yaml_check(file_path: Path, repo_root: Path, findings: list) -> None:
             if not line:
                 continue
             severity = "HIGH" if "error" in line.lower() else "MEDIUM"
-            findings.append({
-                "file": str(file_path.relative_to(repo_root)),
-                "tool": "actionlint",
-                "severity": severity,
-                "message": line,
-            })
+            findings.append(
+                {
+                    "file": str(file_path.relative_to(repo_root)),
+                    "tool": "actionlint",
+                    "severity": severity,
+                    "message": line,
+                }
+            )
 
 
 def typescript_check(file_path: Path, repo_root: Path, findings: list) -> None:
@@ -179,28 +207,34 @@ def typescript_check(file_path: Path, repo_root: Path, findings: list) -> None:
             if not line:
                 continue
             severity = "HIGH" if "error" in line.lower() else "MEDIUM"
-            findings.append({
-                "file": str(file_path.relative_to(repo_root)),
-                "tool": "eslint",
-                "severity": severity,
-                "message": line,
-            })
+            findings.append(
+                {
+                    "file": str(file_path.relative_to(repo_root)),
+                    "tool": "eslint",
+                    "severity": severity,
+                    "message": line,
+                }
+            )
     elif rc == 1:
         for line in stdout.splitlines():
             line = line.strip()
             if not line:
                 continue
-            findings.append({
-                "file": str(file_path.relative_to(repo_root)),
-                "tool": "eslint",
-                "severity": "MEDIUM",
-                "message": line,
-            })
+            findings.append(
+                {
+                    "file": str(file_path.relative_to(repo_root)),
+                    "tool": "eslint",
+                    "severity": "MEDIUM",
+                    "message": line,
+                }
+            )
 
 
 def markdown_check(file_path: Path, repo_root: Path, findings: list) -> None:
     """Run markdownlint on a .md file if markdownlint is installed."""
-    rc, stdout, stderr = run_tool(["npx", "markdownlint", str(file_path)], cwd=repo_root)
+    rc, stdout, stderr = run_tool(
+        ["npx", "markdownlint", str(file_path)], cwd=repo_root
+    )
     if rc == 127:
         pass
     elif rc != 0:
@@ -209,12 +243,14 @@ def markdown_check(file_path: Path, repo_root: Path, findings: list) -> None:
             if not line:
                 continue
             severity = "HIGH" if "error" in line.lower() else "MEDIUM"
-            findings.append({
-                "file": str(file_path.relative_to(repo_root)),
-                "tool": "markdownlint",
-                "severity": severity,
-                "message": line,
-            })
+            findings.append(
+                {
+                    "file": str(file_path.relative_to(repo_root)),
+                    "tool": "markdownlint",
+                    "severity": severity,
+                    "message": line,
+                }
+            )
 
 
 def main() -> int:
@@ -254,13 +290,17 @@ def main() -> int:
         cwd=repo_root,
     )
     if rc != 0:
-        print(json.dumps({
-            "commit_from": commit_from,
-            "commit_to": commit_to,
-            "files_checked": 0,
-            "findings": [],
-            "error": f"git diff failed: {stderr.strip()}",
-        }))
+        print(
+            json.dumps(
+                {
+                    "commit_from": commit_from,
+                    "commit_to": commit_to,
+                    "files_checked": 0,
+                    "findings": [],
+                    "error": f"git diff failed: {stderr.strip()}",
+                }
+            )
+        )
         return 0  # graceful — don't block on diff failure
 
     changed_files = [f.strip() for f in stdout.splitlines() if f.strip()]
