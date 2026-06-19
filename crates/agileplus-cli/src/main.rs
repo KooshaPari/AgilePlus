@@ -66,12 +66,35 @@ enum Command {
     ListEpics(commands::list_epics::ListEpicsArgs),
     /// List stories, optionally filtered by epic and/or status
     ListStories(commands::list_stories::ListStoriesArgs),
-    /// Manage directed trace links between domain entities (L2 #40)
-    Trace(commands::trace::TraceArgs),
-    /// Render an in-flight DAG view of the SQLite database (L2 #40)
-    Dashboard(commands::dashboard::DashboardArgs),
-    /// Worklog schema management (validate/convert/schema/list)
-    Worklog(commands::worklog::WorklogArgs),
+    /// Project management (MVP)
+    Project {
+        #[command(subcommand)]
+        sub: commands::mvp::ProjectCmd,
+    },
+    /// Epic management (MVP)
+    Epic {
+        #[command(subcommand)]
+        sub: commands::mvp::EpicCmd,
+    },
+    /// Story management (MVP)
+    Story {
+        #[command(subcommand)]
+        sub: commands::mvp::StoryCmd,
+    },
+    /// Work-package management (MVP)
+    Wp {
+        #[command(subcommand)]
+        sub: commands::mvp::WpCmd,
+    },
+    /// Work-package dependency management (MVP)
+    Dep {
+        #[command(subcommand)]
+        sub: commands::mvp::DepCmd,
+    },
+    /// Transition a work-package or story to a new state (MVP)
+    Transition(commands::mvp::TransitionArgs),
+    /// List planned work packages that are ready to start (MVP)
+    NextReady(commands::mvp::NextReadyArgs),
 }
 
 #[derive(Subcommand)]
@@ -493,35 +516,6 @@ fn open_storage(
         .map_err(|e| anyhow::anyhow!("open db: {e}"))
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::commands::worklog::db_path_from_env;
-
-    #[test]
-    fn mock_store_seed_contains_cli_fixtures() {
-        let store = MockStore::seed();
-
-        assert_eq!(store.features.len(), 3);
-        assert_eq!(store.modules.len(), 2);
-        assert_eq!(store.cycles.len(), 1);
-        assert_eq!(store.cycles[0].state, CycleState::Active);
-    }
-
-    #[test]
-    fn db_path_defaults_when_env_missing() {
-        std::env::remove_var("AGILEPLUS_DB");
-        assert_eq!(db_path_from_env(), PathBuf::from("agileplus.db"));
-    }
-
-    #[test]
-    fn db_path_uses_env_override() {
-        std::env::set_var("AGILEPLUS_DB", "/tmp/agileplus-test.db");
-        assert_eq!(db_path_from_env(), PathBuf::from("/tmp/agileplus-test.db"));
-        std::env::remove_var("AGILEPLUS_DB");
-    }
-}
-
 // ── entry point ──────────────────────────────────────────────────────────────
 
 #[allow(clippy::items_after_test_module)]
@@ -580,15 +574,53 @@ async fn main() {
                 let storage = open_storage(&db_path)?;
                 commands::list_stories::run(&args, &storage).await?;
             }
-            Command::Trace(args) => {
-                commands::trace::run(&args)?;
+            Command::Project { sub } => {
+                let storage = open_storage(&db_path)?;
+                match sub {
+                    commands::mvp::ProjectCmd::Create(args) => {
+                        commands::mvp::project_create(&args, &storage).await?;
+                    }
+                }
             }
-            Command::Dashboard(args) => {
-                commands::dashboard::run(&args)?;
+            Command::Epic { sub } => {
+                let storage = open_storage(&db_path)?;
+                match sub {
+                    commands::mvp::EpicCmd::Create(args) => {
+                        commands::mvp::epic_create(&args, &storage).await?;
+                    }
+                }
             }
-            Command::Worklog(args) => {
-                let db_path = db_path_from_env();
-                commands::worklog::run_with_db(&args, &db_path)?;
+            Command::Story { sub } => {
+                let storage = open_storage(&db_path)?;
+                match sub {
+                    commands::mvp::StoryCmd::Create(args) => {
+                        commands::mvp::story_create(&args, &storage).await?;
+                    }
+                }
+            }
+            Command::Wp { sub } => {
+                let storage = open_storage(&db_path)?;
+                match sub {
+                    commands::mvp::WpCmd::Create(args) => {
+                        commands::mvp::wp_create(&args, &storage).await?;
+                    }
+                }
+            }
+            Command::Dep { sub } => {
+                let storage = open_storage(&db_path)?;
+                match sub {
+                    commands::mvp::DepCmd::Add(args) => {
+                        commands::mvp::dep_add(&args, &storage).await?;
+                    }
+                }
+            }
+            Command::Transition(args) => {
+                let storage = open_storage(&db_path)?;
+                commands::mvp::transition(&args, &storage).await?;
+            }
+            Command::NextReady(args) => {
+                let storage = open_storage(&db_path)?;
+                commands::mvp::next_ready(&args, &storage).await?;
             }
         }
         Ok(())
