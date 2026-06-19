@@ -2110,7 +2110,11 @@ mod tests {
         let db = SqliteStorageAdapter::in_memory().expect("in-memory adapter");
         let conn = db.conn_for_bench().expect("conn");
 
-        let expected: &[&str] = &["gate_results", "run_records", "scope_status"];
+        let expected: &[&str] = &[
+            "gate_results",
+            "run_records",
+            "scope_status",
+        ];
 
         let mut stmt = conn
             .prepare("SELECT name FROM sqlite_master WHERE type = 'table'")
