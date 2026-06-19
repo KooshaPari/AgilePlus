@@ -171,10 +171,7 @@ impl SqliteClaimStore {
             rusqlite::Error::FromSqlConversionFailure(
                 0,
                 rusqlite::types::Type::Text,
-                Box::new(std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    e.to_string(),
-                )),
+                Box::new(std::io::Error::other(e.to_string())),
             )
         })?;
         let agent_id: String = row.get("agent_id")?;
@@ -186,10 +183,7 @@ impl SqliteClaimStore {
             rusqlite::Error::FromSqlConversionFailure(
                 0,
                 rusqlite::types::Type::Text,
-                Box::new(std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    e.to_string(),
-                )),
+                Box::new(std::io::Error::other(e.to_string())),
             )
         })?;
         let reason_kind: Option<String> = row.get("reason_kind")?;
