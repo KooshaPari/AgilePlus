@@ -63,16 +63,6 @@ enum Command {
     ListStories(commands::list_stories::ListStoriesArgs),
     /// Worklog schema management (validate/convert/schema/list)
     Worklog(commands::worklog::WorklogArgs),
-    /// DAG orchestration (pick/claim/heartbeat/done/dedup/scan/topology/where)
-    Dag(commands::dag::DagArgs),
-    /// Import a dagctl SQLite db into AgilePlus work_packages + wp_dependencies
-    ImportDagctl(commands::import_dagctl::ImportDagctlArgs),
-    /// Convert a natural language prompt into a structured intent graph
-    Intent(commands::intent::IntentArgs),
-    /// Link work items to Tracera trace IDs
-    Trace(commands::trace::TraceCmd),
-    /// Print a high-level project status summary
-    Status,
 }
 
 #[derive(Subcommand)]
@@ -573,18 +563,6 @@ async fn main() {
             }
             Command::Worklog(args) => {
                 commands::worklog::run(&args)?;
-            }
-            Command::Dag(args) => {
-                commands::dag::run_dag(args).await?;
-            }
-            Command::ImportDagctl(args) => {
-                commands::import_dagctl::run(&args)?;
-            }
-            Command::Intent(args) => {
-                commands::intent::run(&args)?;
-            }
-            Command::Trace(cmd) => {
-                cmd.run().await?;
             }
         }
         Ok(())
