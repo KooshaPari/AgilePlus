@@ -424,8 +424,7 @@ mod tests {
         std::fs::create_dir_all(&events_dir).unwrap();
         let ev = make_event("Feature", 1, 1);
         let line = serde_json::to_string(&ev).unwrap();
-        std::fs::write(events_dir.join("1.jsonl"), format!("{line}
-")).unwrap();
+        std::fs::write(events_dir.join("1.jsonl"), format!("{line}\n")).unwrap();
 
         let es = MemEventStore::default();
         let ss = MemSnapshotStore::default();
@@ -449,8 +448,7 @@ mod tests {
         let events_dir = dir.join("events/Feature");
         std::fs::create_dir_all(&events_dir).unwrap();
         let line = serde_json::to_string(&ev).unwrap();
-        std::fs::write(events_dir.join("1.jsonl"), format!("{line}
-")).unwrap();
+        std::fs::write(events_dir.join("1.jsonl"), format!("{line}\n")).unwrap();
 
         let stats = import_state(dir, &es, &ss).await.unwrap();
         assert_eq!(stats.events_imported, 0, "duplicate should be skipped");

@@ -213,7 +213,7 @@ fn is_lib_path(p: &Path) -> bool {
 }
 
 fn strip_call<'a>(line: &'a str, fn_name: &str) -> Option<&'a str> {
-    let needle = format!(".{}", fn_name);
+    let needle = format!(".{fn_name}");
     let pos = line.find(&needle)?;
     let rest = &line[pos + needle.len()..];
     // require opening paren

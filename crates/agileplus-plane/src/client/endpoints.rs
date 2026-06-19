@@ -6,11 +6,15 @@ pub(super) struct ClientEndpoints;
 
 impl ClientEndpoints {
     pub(super) fn work_items_url(base_url: &str, workspace_slug: &str, project_id: &str) -> String {
-        format!("{base_url}/api/v1/workspaces/{workspace_slug}/projects/{project_id}/work-items/")
+        format!(
+            "{base_url}/api/v1/workspaces/{workspace_slug}/projects/{project_id}/work-items/"
+        )
     }
 
     pub(super) fn modules_url(base_url: &str, workspace_slug: &str, project_id: &str) -> String {
-        format!("{base_url}/api/v1/workspaces/{workspace_slug}/projects/{project_id}/modules/")
+        format!(
+            "{base_url}/api/v1/workspaces/{workspace_slug}/projects/{project_id}/modules/"
+        )
     }
 
     pub(super) fn module_url(
@@ -48,7 +52,9 @@ impl ClientEndpoints {
     }
 
     pub(super) fn cycles_url(base_url: &str, workspace_slug: &str, project_id: &str) -> String {
-        format!("{base_url}/api/v1/workspaces/{workspace_slug}/projects/{project_id}/cycles/")
+        format!(
+            "{base_url}/api/v1/workspaces/{workspace_slug}/projects/{project_id}/cycles/"
+        )
     }
 
     pub(super) fn cycle_url(
@@ -97,6 +103,8 @@ impl ClientEndpoints {
     }
 
     pub(super) fn labels_url(base_url: &str, workspace_slug: &str, project_id: &str) -> String {
-        format!("{base_url}/api/v1/workspaces/{workspace_slug}/projects/{project_id}/labels/")
+        format!(
+            "{base_url}/api/v1/workspaces/{workspace_slug}/projects/{project_id}/labels/"
+        )
     }
 }
