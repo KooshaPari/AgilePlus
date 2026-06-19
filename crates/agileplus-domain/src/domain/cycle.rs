@@ -163,7 +163,7 @@ impl Cycle {
         } else {
             Err(DomainError::InvalidTransition {
                 from: format!("{:?}", self.state),
-                to: format!("{:?}", target),
+                to: format!("{target:?}"),
                 reason: "edge not permitted by cycle state machine".to_string(),
             })
         }
