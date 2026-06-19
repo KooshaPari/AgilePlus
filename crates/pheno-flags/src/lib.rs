@@ -159,9 +159,9 @@ impl Resolver {
         self.defaults.insert(
             flag_name.into(),
             StringValue::Bool(if value {
-                "1".to_string()
+                "1".to_owned()
             } else {
-                "0".to_string()
+                "0".to_owned()
             }),
         );
         self

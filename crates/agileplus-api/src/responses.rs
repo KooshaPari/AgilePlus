@@ -316,9 +316,9 @@ impl ServiceHealth {
 
     pub fn not_configured() -> Self {
         Self {
-            status: "not_configured".to_string(),
+            status: "not_configured".to_owned(),
             latency_ms: None,
-            error: Some("not configured in this deployment".to_string()),
+            error: Some("not configured in this deployment".to_owned()),
         }
     }
 }

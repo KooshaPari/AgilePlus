@@ -56,6 +56,64 @@ pub fn create_epic(conn: &Connection, epic: &Epic) -> Result<i64, DomainError> {
     Ok(conn.last_insert_rowid())
 }
 
+/// Upsert an epic by `requirement_id` — creates if absent, updates title/description/status if present.
+/// Returns the row ID (new or existing).
+///
+/// Uses manual get-then-insert/update because `requirement_id` is added via ALTER TABLE
+/// (no inline UNIQUE constraint); SQLite upsert `ON CONFLICT(col)` requires a declared
+/// table-level constraint that ALTER TABLE cannot add.
+pub fn upsert_epic_by_requirement_id(conn: &Connection, epic: &Epic) -> Result<i64, DomainError> {
+    let req_id = epic.requirement_id.as_deref().ok_or_else(|| {
+        DomainError::Validation("upsert_epic_by_requirement_id requires requirement_id".to_owned())
+    })?;
+    let now = chrono::Utc::now().to_rfc3339();
+    // Check if a row with this requirement_id already exists.
+    let existing_id: Option<i64> = conn
+        .query_row(
+            "SELECT id FROM epics WHERE requirement_id = ?1",
+            params![req_id],
+            |r| r.get(0),
+        )
+        .optional()
+        .map_err(map_err)?;
+
+    if let Some(id) = existing_id {
+        // Update title, description, status.
+        conn.execute(
+            "UPDATE epics SET title = ?1, description = ?2, status = ?3, updated_at = ?4 WHERE id = ?5",
+            params![
+                epic.title,
+                epic.description,
+                epic.status.to_string(),
+                now,
+                id,
+            ],
+        )
+        .map_err(map_err)?;
+        Ok(id)
+    } else {
+        create_epic(conn, epic)
+    }
+}
+
+/// Look up an epic by `requirement_id`. Returns `None` if not found.
+pub fn get_epic_by_requirement_id(
+    conn: &Connection,
+    req_id: &str,
+) -> Result<Option<Epic>, DomainError> {
+    let mut stmt = conn
+        .prepare(
+            "SELECT id, project_id, title, description, status, owner_id, created_at, updated_at, requirement_id \
+             FROM epics WHERE requirement_id = ?1",
+        )
+        .map_err(map_err)?;
+    match stmt.query_row(params![req_id], row_to_epic) {
+        Ok(e) => Ok(Some(e)),
+        Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
+        Err(e) => Err(map_err(e)),
+    }
+}
+
 /// Look up an epic by ID. Returns `None` if not found.
 pub fn get_epic_by_id(conn: &Connection, id: i64) -> Result<Option<Epic>, DomainError> {
     let mut stmt = conn
