@@ -178,15 +178,13 @@ impl<'c> LintVisitor<'c> {
         let block_span = item_fn.block.span();
         let start = block_span.start();
         let end = block_span.end();
-        let line_count = u32::try_from(end.line.saturating_sub(start.line) + 1)
-            .unwrap_or(u32::MAX);
+        let line_count = u32::try_from(end.line.saturating_sub(start.line) + 1).unwrap_or(u32::MAX);
         if line_count > self.config.max_function_lines {
             self.findings.push(Finding::at(
                 "LongFunctionBody",
                 format!(
                     "function `{}` body is {line_count} lines (max {})",
-                    item_fn.sig.ident,
-                    self.config.max_function_lines,
+                    item_fn.sig.ident, self.config.max_function_lines,
                 ),
                 item_fn.sig.ident.span(),
             ));
@@ -197,19 +195,14 @@ impl<'c> LintVisitor<'c> {
     /// `if`/`for`/`while`/`match` nesting depth exceeds
     /// `max_nesting_depth`.
     fn check_deep_nesting(&mut self, item_fn: &ItemFn) {
-        let mut counter = DepthCounter {
-            depth: 0,
-            max: 0,
-        };
+        let mut counter = DepthCounter { depth: 0, max: 0 };
         counter.visit_block(&item_fn.block);
         if counter.max > self.config.max_nesting_depth {
             self.findings.push(Finding::at(
                 "DeepNesting",
                 format!(
                     "function `{}` reaches nesting depth {} (max {})",
-                    item_fn.sig.ident,
-                    counter.max,
-                    self.config.max_nesting_depth,
+                    item_fn.sig.ident, counter.max, self.config.max_nesting_depth,
                 ),
                 item_fn.sig.ident.span(),
             ));
@@ -288,9 +281,7 @@ impl<'c> LintVisitor<'c> {
                 "ExcessiveUnwrap",
                 format!(
                     "function `{}` has {} `.unwrap()` calls (max {})",
-                    item_fn.sig.ident,
-                    counter.count,
-                    self.config.max_unwraps,
+                    item_fn.sig.ident, counter.count, self.config.max_unwraps,
                 ),
                 item_fn.sig.ident.span(),
             ));

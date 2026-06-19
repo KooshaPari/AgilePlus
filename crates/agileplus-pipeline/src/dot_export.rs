@@ -66,8 +66,7 @@ pub fn export(graph: &Graph) -> Result<String, PipelineError> {
 
         let edge_op = "->";
         lines.push(format!(
-            r#"    "{}" {} "{}"{};"#,
-            from_label, edge_op, to_label, attr_str
+            r#"    "{from_label}" {edge_op} "{to_label}"{attr_str};"#
         ));
     }
 
