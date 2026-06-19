@@ -143,7 +143,7 @@ mod tests {
 
     #[test]
     fn valid_story_construction() {
-        let s = Story::new(1, 10, "User can log in", Some(3)).expect("domain operation");
+        let s = Story::new(1, 10, "User can log in", Some(3)).unwrap();
         assert_eq!(s.title, "User can log in");
         assert_eq!(s.epic_id, 1);
         assert_eq!(s.project_id, 10);
@@ -165,18 +165,18 @@ mod tests {
 
     #[test]
     fn valid_status_transition() {
-        let mut s = Story::new(1, 10, "Login flow", None).expect("domain operation");
-        s.transition_status(StoryStatus::InProgress).expect("domain operation");
+        let mut s = Story::new(1, 10, "Login flow", None).unwrap();
+        s.transition_status(StoryStatus::InProgress).unwrap();
         assert_eq!(s.status, StoryStatus::InProgress);
-        s.transition_status(StoryStatus::Review).expect("domain operation");
+        s.transition_status(StoryStatus::Review).unwrap();
         assert_eq!(s.status, StoryStatus::Review);
-        s.transition_status(StoryStatus::Done).expect("domain operation");
+        s.transition_status(StoryStatus::Done).unwrap();
         assert_eq!(s.status, StoryStatus::Done);
     }
 
     #[test]
     fn invalid_status_transition_rejected() {
-        let mut s = Story::new(1, 10, "Skip ahead", None).expect("domain operation");
+        let mut s = Story::new(1, 10, "Skip ahead", None).unwrap();
         // Todo -> Done is not allowed
         let err = s.transition_status(StoryStatus::Done).unwrap_err();
         assert!(matches!(err, DomainError::InvalidTransition { .. }));
@@ -184,10 +184,10 @@ mod tests {
 
     #[test]
     fn blocked_unblocked_cycle() {
-        let mut s = Story::new(2, 20, "Blocked story", Some(5)).expect("domain operation");
-        s.transition_status(StoryStatus::InProgress).expect("domain operation");
-        s.transition_status(StoryStatus::Blocked).expect("domain operation");
-        s.transition_status(StoryStatus::InProgress).expect("domain operation");
+        let mut s = Story::new(2, 20, "Blocked story", Some(5)).unwrap();
+        s.transition_status(StoryStatus::InProgress).unwrap();
+        s.transition_status(StoryStatus::Blocked).unwrap();
+        s.transition_status(StoryStatus::InProgress).unwrap();
         assert_eq!(s.status, StoryStatus::InProgress);
     }
 }
