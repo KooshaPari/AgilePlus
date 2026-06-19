@@ -4,7 +4,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::{error::DomainError, DomainResult};
+use crate::error::DomainError;
 
 /// A project that owns modules, cycles, and features.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -22,7 +22,7 @@ pub struct Project {
 impl Project {
     /// Construct a new `Project`. `name` must be non-empty; `slug` must be
     /// non-empty and consist only of lowercase ASCII alphanumerics and hyphens.
-    pub fn new(name: &str, slug: &str) -> DomainResult<Self> {
+    pub fn new(name: &str, slug: &str) -> Result<Self, DomainError> {
         let name = name.trim();
         if name.is_empty() {
             return Err(DomainError::Validation(
