@@ -72,6 +72,14 @@ enum Command {
     Dashboard(commands::dashboard::DashboardArgs),
     /// Worklog schema management (validate/convert/schema/list)
     Worklog(commands::worklog::WorklogArgs),
+    /// DAG orchestration (pick/claim/heartbeat/done/dedup/scan/topology/where)
+    Dag(commands::dag::DagArgs),
+    /// Import a dagctl SQLite db into AgilePlus work_packages + wp_dependencies
+    ImportDagctl(commands::import_dagctl::ImportDagctlArgs),
+    /// Convert a natural language prompt into a structured intent graph
+    Intent(commands::intent::IntentArgs),
+    /// Link work items to Tracera trace IDs
+    Trace(commands::trace::TraceCommand),
 }
 
 #[derive(Subcommand)]
@@ -586,6 +594,9 @@ async fn main() {
             Command::Worklog(args) => {
                 let db_path = db_path_from_env();
                 commands::worklog::run_with_db(&args, &db_path)?;
+            }
+            Command::Trace(cmd) => {
+                cmd.run().await?;
             }
         }
         Ok(())
