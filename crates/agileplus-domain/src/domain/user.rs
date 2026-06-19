@@ -141,7 +141,7 @@ mod tests {
 
     #[test]
     fn valid_user_construction() {
-        let u = User::new("Alice", "alice@example.com", UserRole::Member).expect("domain operation");
+        let u = User::new("Alice", "alice@example.com", UserRole::Member).unwrap();
         assert_eq!(u.display_name, "Alice");
         assert_eq!(u.email, "alice@example.com");
         assert_eq!(u.status, UserStatus::Active);
@@ -162,16 +162,16 @@ mod tests {
 
     #[test]
     fn valid_status_transition() {
-        let mut u = User::new("Carol", "carol@x.com", UserRole::Admin).expect("domain operation");
-        u.transition_status(UserStatus::Inactive).expect("domain operation");
+        let mut u = User::new("Carol", "carol@x.com", UserRole::Admin).unwrap();
+        u.transition_status(UserStatus::Inactive).unwrap();
         assert_eq!(u.status, UserStatus::Inactive);
     }
 
     #[test]
     fn invalid_status_transition_rejected() {
-        let mut u = User::new("Dave", "dave@x.com", UserRole::Member).expect("domain operation");
+        let mut u = User::new("Dave", "dave@x.com", UserRole::Member).unwrap();
         // Active -> Suspended is allowed; Suspended -> Inactive is NOT
-        u.transition_status(UserStatus::Suspended).expect("domain operation");
+        u.transition_status(UserStatus::Suspended).unwrap();
         let err = u.transition_status(UserStatus::Inactive).unwrap_err();
         assert!(matches!(err, DomainError::InvalidTransition { .. }));
     }
