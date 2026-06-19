@@ -44,6 +44,7 @@ def check_file_is_newer_than(file_path: Path, marker: Path) -> bool:
 
 def rust_check(file_path: Path, repo_root: Path, findings: list) -> None:
     """Run rustfmt --check and cargo check on a .rs file."""
+    dir_path = file_path.parent.resolve()
     lock = repo_root / "Cargo.lock"
     toolchain = repo_root / "rust-toolchain.toml"
     marker = max((lock, toolchain), key=lambda p: p.stat().st_mtime) if lock.exists() or toolchain.exists() else repo_root
