@@ -49,4 +49,4 @@ name = "graph_query_perf"
 harness = false
 
 [package.metadata.cargo-machete]
-ignored = ["rusqlite"]
+ignored = []
