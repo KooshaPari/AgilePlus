@@ -24,9 +24,9 @@ on:
   schedule:
     - cron: '0 3 * * *'  # Weekly test run
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+permissions:
+  contents: read
+  actions: read
 
 jobs:
   bdd-tests:
