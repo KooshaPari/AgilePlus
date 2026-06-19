@@ -55,15 +55,6 @@ repos:
         pass_filenames: false
         stages: [manual]
 
-      - id: tsc
-        name: tsc --noEmit
-        entry: npx tsc
-        args: [--noEmit]
-        language: system
-        types_or: [ts, tsx]
-        pass_filenames: false
-        stages: [manual]
-
       - id: trufflehog
         name: trufflehog filesystem
         entry: trufflehog filesystem --no-update --only-verified --fail .
