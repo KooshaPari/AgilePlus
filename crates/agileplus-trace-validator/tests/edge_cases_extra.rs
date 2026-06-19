@@ -95,8 +95,7 @@ fn validate_many_traces_with_many_links_succeeds() {
         .iter()
         .map(|fr| format!("- {fr}"))
         .collect::<Vec<_>>()
-        .join("
-");
+        .join("\n");
     fs::write(repo.path().join("FUNCTIONAL_REQUIREMENTS.md"), reqs).unwrap();
 
     Command::cargo_bin("agileplus-trace-validator")
@@ -208,8 +207,7 @@ fn validate_ignores_non_trace_files() {
     // Non-trace artifacts that should be ignored.
     fs::write(repo.path().join("traces/README.md"), "# notes").unwrap();
     fs::write(repo.path().join("traces/notes.txt"), "notes").unwrap();
-    fs::write(repo.path().join("traces/schema.yaml"), "fr_id: FR-only
-").unwrap();
+    fs::write(repo.path().join("traces/schema.yaml"), "fr_id: FR-only\n").unwrap();
 
     Command::cargo_bin("agileplus-trace-validator")
         .unwrap()

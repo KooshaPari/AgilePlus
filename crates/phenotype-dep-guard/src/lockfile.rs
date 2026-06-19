@@ -28,7 +28,7 @@ use crate::error::{Error, Result};
 ///
 /// Returns [`Error::Manifest`] for an unsupported filename and propagates
 /// IO errors verbatim. (Parse errors are swallowed by the per-ecosystem
-/// parsers — they return `Vec::new()` for malformed input.)
+/// parsers â€” they return `Vec::new()` for malformed input.)
 pub fn parse_lockfile(path: &Path) -> Result<Vec<Dependency>> {
     let ecosystem = ecosystem::ecosystem_for_lockfile(path).ok_or_else(|| {
         Error::Manifest(format!("unsupported lockfile filename: {}", path.display()))
@@ -132,7 +132,7 @@ pub fn parse_requirements_txt(raw: &str) -> Vec<Dependency> {
 }
 
 /// Parse the contents of a `go.sum` file. Deduplicates by
-/// `(module, version)` — each pair appears twice in `go.sum` (once
+/// `(module, version)` â€” each pair appears twice in `go.sum` (once
 /// for `h1:...` and once for `/go.mod h1:...`) and we only want one
 /// record per pair.
 pub fn parse_go_sum(raw: &str) -> Vec<Dependency> {
@@ -357,8 +357,7 @@ github.com/baz/qux v0.4.0/go.mod h1:uvw=
     fn unsupported_lockfile_filename_errors() {
         let dir = tempfile::tempdir().unwrap();
         let p = dir.path().join("poetry.lock");
-        std::fs::write(&p, "# poetry lockfile v1
-").unwrap();
+        std::fs::write(&p, "# poetry lockfile v1\n").unwrap();
         let err = parse_lockfile(&p).unwrap_err();
         assert!(err.to_string().contains("unsupported lockfile"));
     }

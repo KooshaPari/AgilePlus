@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use uuid::Uuid;
 
-// ── Constants ───────────────────────────────────────────────────────────────
+// â”€â”€ Constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const ONTOLOGY_VERSION: &str = "1.0.0";
 const SCHEMA_URI: &str = "https://phenotype.dev/schemas/agileplus-intent-ontology/v1.json";
@@ -31,7 +31,7 @@ const TASK_TYPES: &[&str] = &[
     "review",
 ];
 
-// ── CLI Args ────────────────────────────────────────────────────────────────
+// â”€â”€ CLI Args â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /// Arguments for the `intent` subcommand.
 #[derive(Args, Debug)]
@@ -49,7 +49,7 @@ pub struct IntentArgs {
     pub validate: bool,
 }
 
-// ── Graph Types ─────────────────────────────────────────────────────────────
+// â”€â”€ Graph Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Meta {
@@ -121,7 +121,7 @@ struct IntentGraph {
     metadata: GraphMetadata,
 }
 
-// ── Public Entry Point ──────────────────────────────────────────────────────
+// â”€â”€ Public Entry Point â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 pub fn run(args: &IntentArgs) -> Result<()> {
     let graph = generate_graph(&args.prompt);
@@ -147,7 +147,7 @@ pub fn run(args: &IntentArgs) -> Result<()> {
     Ok(())
 }
 
-// ── Graph Generation ──────────────────────────────────────────────────────────
+// â”€â”€ Graph Generation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 fn generate_graph(prompt: &str) -> IntentGraph {
     let slug = slugify(prompt);
@@ -156,7 +156,7 @@ fn generate_graph(prompt: &str) -> IntentGraph {
     let mut nodes: Vec<Node> = Vec::new();
     let mut edges: Vec<Edge> = Vec::new();
 
-    // ── Intent node ─────────────────────────────────────────────────────────
+    // â”€â”€ Intent node â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     let intent_id = format!("Intent#{slug}");
     nodes.push(Node {
         id: intent_id.clone(),
@@ -177,7 +177,7 @@ fn generate_graph(prompt: &str) -> IntentGraph {
         table_id: None,
     });
 
-    // ── Plan node ───────────────────────────────────────────────────────────
+    // â”€â”€ Plan node â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     let plan_id = format!("Plan#{slug}-plan");
     nodes.push(Node {
         id: plan_id.clone(),
@@ -211,7 +211,7 @@ fn generate_graph(prompt: &str) -> IntentGraph {
         &now,
     ));
 
-    // ── Feature nodes ─────────────────────────────────────────────────────────
+    // â”€â”€ Feature nodes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     let feature_specs = extract_features(prompt, &slug);
     for (idx, (feat_slug, feat_title)) in feature_specs.iter().enumerate() {
         let feat_id = format!("Feature#{feat_slug}");
@@ -260,14 +260,14 @@ fn generate_graph(prompt: &str) -> IntentGraph {
             &now,
         ));
 
-        // ── Task node(s) per feature ─────────────────────────────────────────
+        // â”€â”€ Task node(s) per feature â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         let task_type = TASK_TYPES[idx % TASK_TYPES.len()];
         let task_id = format!("Task#{slug}-task-{idx}");
         nodes.push(Node {
             id: task_id.clone(),
             node_type: "Task".to_string(),
             dag_stage: "task".to_string(),
-            title: format!("{}: {feat_title}", capitalize(task_type)),
+            title: format!("{}: {}", capitalize(task_type), feat_title),
             description: Some(format!(
                 "Task of type '{task_type}' for feature '{feat_title}'."
             )),
@@ -341,7 +341,7 @@ fn make_edge(
     }
 }
 
-// ── Heuristic Feature Extraction ────────────────────────────────────────────
+// â”€â”€ Heuristic Feature Extraction â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 fn extract_features(prompt: &str, base_slug: &str) -> Vec<(String, String)> {
     let lower = prompt.to_lowercase();
@@ -471,7 +471,7 @@ fn extract_features(prompt: &str, base_slug: &str) -> Vec<(String, String)> {
     candidates
 }
 
-// ── Validation ────────────────────────────────────────────────────────────────
+// â”€â”€ Validation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 fn validate_graph(graph: &IntentGraph) -> Result<()> {
     // Round-trip through JSON to use the typed validator from agileplus-trace-validator.
@@ -483,7 +483,7 @@ fn validate_graph(graph: &IntentGraph) -> Result<()> {
     Ok(())
 }
 
-// ── Utilities ─────────────────────────────────────────────────────────────────
+// â”€â”€ Utilities â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 fn slugify(text: &str) -> String {
     let mut result = String::with_capacity(text.len());
@@ -502,7 +502,7 @@ fn slugify(text: &str) -> String {
     }
     // Collapse multiple hyphens
     let mut collapsed = String::with_capacity(result.len());
-    let mut prev = ' ';
+    let mut prev = '\0';
     for c in result.chars() {
         if c == '-' && prev == '-' {
             continue;
@@ -525,7 +525,7 @@ fn capitalize(s: &str) -> String {
     }
 }
 
-// ── Tests ─────────────────────────────────────────────────────────────────────
+// â”€â”€ Tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 #[cfg(test)]
 mod tests {

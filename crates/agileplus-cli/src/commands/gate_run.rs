@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! `ap gate-run` — execute the active policy rules in the local store
+//! `ap gate-run` â€” execute the active policy rules in the local store
 //! against a single feature + work-package pair, print the result, and
 //! return a non-zero exit code if any rule fails.
 //!
 //! This is a deliberately-simple gate runner: it does not actually
-//! interpret each rule's DSL — it records the run, prints the active
+//! interpret each rule's DSL â€” it records the run, prints the active
 //! rules, and writes a `metrics` row whose command is `gate-run` and
 //! whose `review_cycles` increments by 1 for any failing rule.
 //!
@@ -155,7 +155,7 @@ pub fn execute(conn: &Connection, feature_id: i64, wp_id: i64) -> Result<GateRun
             continue;
         }
         // Run the actual gate. We do a simple domain-specific check
-        // here — if the rule's domain is `compliance`, we require at
+        // here â€” if the rule's domain is `compliance`, we require at
         // least one evidence row to exist for the work package; for
         // other domains, the rule passes by default.
         let (passed, reason) = if rule.domain == "compliance" {
@@ -218,7 +218,7 @@ fn record_metrics(
     note: Option<&str>,
 ) -> Result<()> {
     let timestamp = Utc::now().format("%Y-%m-%dT%H:%M:%S").to_string();
-    let metadata = note.map(|n| format!("{{\"note\":\"{}\"}}", n.replace('"', "\\"")));
+    let metadata = note.map(|n| format!("{{\"note\":\"{}\"}}", n.replace('"', "\\\"")));
     conn.execute(
         "INSERT INTO metrics (feature_id, command, duration_ms, agent_runs, review_cycles, metadata, timestamp) \
          VALUES (?1, 'gate-run', 0, ?2, ?3, ?4, ?5)",

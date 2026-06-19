@@ -67,17 +67,17 @@ pub type DepGuardError = Error;
 
 /// Parse a manifest at `path` into a stream of [`Dependency`] records.
 ///
-/// Dispatches on file name (e.g. `Cargo.toml` → Cargo parser, `package.json`
-/// → Npm parser). See [`manifest`] for per-ecosystem details.
+/// Dispatches on file name (e.g. `Cargo.toml` â†’ Cargo parser, `package.json`
+/// â†’ Npm parser). See [`manifest`] for per-ecosystem details.
 pub fn parse_manifest(path: &std::path::Path) -> Result<Vec<Dependency>> {
     manifest::parse_manifest(path)
 }
 
 /// Parse a lockfile at `path` into a stream of [`Dependency`] records.
 ///
-/// Dispatches on file name (e.g. `Cargo.lock` → Cargo parser,
-/// `package-lock.json` → Npm parser, `requirements.txt` → PyPI parser,
-/// `go.sum` → Go parser). See [`lockfile`] for per-ecosystem details.
+/// Dispatches on file name (e.g. `Cargo.lock` â†’ Cargo parser,
+/// `package-lock.json` â†’ Npm parser, `requirements.txt` â†’ PyPI parser,
+/// `go.sum` â†’ Go parser). See [`lockfile`] for per-ecosystem details.
 pub fn parse_lockfile(path: &std::path::Path) -> Result<Vec<Dependency>> {
     lockfile::parse_lockfile(path)
 }
@@ -130,10 +130,7 @@ serde = "1.0"
         assert_eq!(npm[0].ecosystem, Ecosystem::Npm);
 
         // requirements.txt
-        let pypi = parse_pypi("flask==2.0.0
-requests>=2.28
-# comment
-");
+        let pypi = parse_pypi("flask==2.0.0\nrequests>=2.28\n# comment\n");
         assert_eq!(pypi.len(), 2);
         assert_eq!(pypi[0].name, "flask");
         assert_eq!(pypi[0].version, "2.0.0");
@@ -141,12 +138,7 @@ requests>=2.28
 
         // go.mod
         let go = parse_go(
-            "module example.com/demo
-
-go 1.21
-
-require github.com/gin-gonic/gin v1.9.0
-",
+            "module example.com/demo\n\ngo 1.21\n\nrequire github.com/gin-gonic/gin v1.9.0\n",
         );
         assert_eq!(go.len(), 1);
         assert_eq!(go[0].name, "github.com/gin-gonic/gin");
@@ -188,19 +180,14 @@ version = "1.46.0"
         assert_eq!(npm_lock.len(), 2);
 
         // requirements.txt (same format as manifest for PyPI)
-        let req = parse_requirements_txt("django==4.2
-celery>=5.3
-");
+        let req = parse_requirements_txt("django==4.2\ncelery>=5.3\n");
         assert_eq!(req.len(), 2);
 
         // go.sum (one line per direct + one per indirect; both should be parsed)
         let go_sum = parse_go_sum(
-            "github.com/gin-gonic/gin v1.9.0 h1:abc=
-\
-             github.com/gin-gonic/gin v1.9.0/go-mod h1:def=
-\
-             github.com/stretchr/testify v1.8.0 h1:ghi=
-",
+            "github.com/gin-gonic/gin v1.9.0 h1:abc=\n\
+             github.com/gin-gonic/gin v1.9.0/go-mod h1:def=\n\
+             github.com/stretchr/testify v1.8.0 h1:ghi=\n",
         );
         assert_eq!(go_sum.len(), 2);
     }

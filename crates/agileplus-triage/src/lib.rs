@@ -1,6 +1,36 @@
-//! agileplus-triage — rule-based classifier, backlog store, and sync adapter.
+//! agileplus-triage â€” rule-based triage engine for synced items.
+//!
+//! # Modules
+//! - `engine`: hexagonal classify port â€” pure `classify(item, rules) -> TriageOutcome`
+//! - `classifier`: free-text keyword classifier (legacy / internal use)
+//! - `backlog`: in-memory backlog store
+//! - `adapter`: high-level orchestration combining classifier + store
+//! - `router`: governance file (CLAUDE.md / AGENTS.md) generator
+//! - `dedup`: token-Jaccard, fuzzy ratio, simhash, n-gram, hybrid dedup scorer
+//! - `claim`: resource claim primitives (repo/branch/worktree) with TTL + heartbeat,
+//!   structured `ClaimReason`, in-memory `ClaimStore` + `ClaimStoreTrait`
+//! - `claim_store_sqlite`: SQLite-backed `ClaimStoreTrait` impl (feature `sqlite`)
+//! - `repo_introspect`: git / mangled / no-git repo classification
+//! - `minhash`: Broder MinHash signatures with k-permutation FNV-1a
+//! - `bloom`: feature `bloom` â€” bitvec-backed Bloom filter for membership tests
+//! - `embeddings`: `EmbeddingBackend` trait + `LocalMockEmbeddings`; feature `oai` adds
+//!   `OaiEmbeddings` (api.openai.com), feature `voyage` adds `VoyageEmbeddings`
+//! - `hybrid_pipeline`: MinHash-LSH candidate generation + embedding cosine
+//!   verification + Jaccard tiebreak (`HybridDedup::build / find / run_dedup`)
+//! - `ast_tokenize`: regex-based AST-aware tokenization for Rust and Python
+//!
+//! Traceability: FR-AGP-017, FR-AGP-018 (triage dedup primitives),
+//! audit recs #1-#5 from `AUDIT_BLOC_VS_2026_SOTA.md`, and audit recs
+//! #6 (structured `ClaimReason`), #7 (`claim_transfer`), #8 (SQLite
+//! store behind `sqlite` feature).
+
+use std::str::FromStr;
+
+use anyhow::Result;
+use clap::Args;
 
 pub mod adapter;
+pub mod ast_tokenize;
 pub mod backlog;
 pub mod bloom;
 pub mod claim;
@@ -92,7 +122,7 @@ pub async fn run(args: TriageArgs) -> Result<()> {
     if !args.dry_run {
         println!("\nAdded to backlog as {} item.", result.intent);
     } else {
-        println!("\n(dry run — not added to backlog)");
+        println!("\n(dry run â€” not added to backlog)");
     }
 
     Ok(())

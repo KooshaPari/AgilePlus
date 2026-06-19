@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! `ap scope-status` — show the active cycle and the modules within
+//! `ap scope-status` â€” show the active cycle and the modules within
 //! its scope, plus a count of features associated with each module.
 //!
 //! Scope status is the high-level "where are we working right now?"
@@ -13,7 +13,7 @@
 //!
 //! ```text
 //! $ ap scope-status
-//! Active cycle: Sprint 1 (2026-05-26 → 2026-06-09) — module scope id=1
+//! Active cycle: Sprint 1 (2026-05-26 â†’ 2026-06-09) â€” module scope id=1
 //! Modules in scope:
 //!  ID  SLUG             NAME                  FEATURES
 //!   1  core-platform    Core Platform              2
@@ -82,12 +82,12 @@ pub fn run(args: &ScopeStatusArgs) -> Result<()> {
     match active {
         Some(c) => {
             println!(
-                "Active cycle: {} ({} → {}){}",
+                "Active cycle: {} ({} â†’ {}){}",
                 c.name,
                 c.start_date,
                 c.end_date,
                 c.module_scope_id
-                    .map(|id| format!(" — module scope id={id}"))
+                    .map(|id| format!(" â€” module scope id={id}"))
                     .unwrap_or_default()
             );
         }
@@ -95,7 +95,7 @@ pub fn run(args: &ScopeStatusArgs) -> Result<()> {
             println!("No active cycle. All known cycles:");
             for c in &cycles {
                 println!(
-                    "  [{}] {:<20}  {:<10}  {} → {}",
+                    "  [{}] {:<20}  {:<10}  {} â†’ {}",
                     c.id, c.name, c.state, c.start_date, c.end_date
                 );
             }
@@ -103,8 +103,7 @@ pub fn run(args: &ScopeStatusArgs) -> Result<()> {
     }
 
     if modules.is_empty() {
-        println!("
-No modules in scope.");
+        println!("\nNo modules in scope.");
         return Ok(());
     }
 
@@ -253,7 +252,7 @@ fn truncate(s: &str, max: usize) -> String {
         return s.to_string();
     }
     let t: String = s.chars().take(max.saturating_sub(1)).collect();
-    format!("{t}…")
+    format!("{t}â€¦")
 }
 
 #[cfg(test)]
@@ -385,7 +384,7 @@ mod tests {
     fn truncate_shortens_long_strings() {
         // The helper caps the result at `max` visible characters:
         // `max - 1` original characters plus the ellipsis.
-        assert_eq!(truncate("Persistence", 5), "Pers…");
+        assert_eq!(truncate("Persistence", 5), "Persâ€¦");
     }
 
     #[test]

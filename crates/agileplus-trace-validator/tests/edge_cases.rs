@@ -25,7 +25,7 @@ fn validate_empty_traces_directory_succeeds() {
 fn validate_malformed_json_trace_fails() {
     let repo = TempDir::new().unwrap();
     fs::create_dir(repo.path().join("traces")).unwrap();
-    // Truncated JSON — not valid syntax and missing required fields.
+    // Truncated JSON â€” not valid syntax and missing required fields.
     fs::write(
         repo.path().join("traces/FR-broken.json"),
         r##"{ "fr_id": "FR-broken", "spec_slug": "##,
@@ -162,9 +162,7 @@ fn stats_reports_multiple_traces() {
     }
     fs::write(
         repo.path().join("FUNCTIONAL_REQUIREMENTS.md"),
-        "- FR-1
-- FR-2
-- FR-3",
+        "- FR-1\n- FR-2\n- FR-3",
     )
     .unwrap();
 

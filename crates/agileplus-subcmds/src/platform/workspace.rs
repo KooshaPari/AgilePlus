@@ -17,7 +17,7 @@ pub(crate) fn find_agileplus_root_from_walk() -> Option<PathBuf> {
     }
 }
 
-/// Returns `(workdir, compose_file_path_for -f)` — both canonical for `process-compose`.
+/// Returns `(workdir, compose_file_path_for -f)` â€” both canonical for `process-compose`.
 ///
 /// - If `config` is absolute, workdir is its parent.
 /// - Otherwise resolves via **`AGILEPLUS_ROOT`** env or walking up from cwd to find `process-compose.yml`.

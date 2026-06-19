@@ -1,9 +1,9 @@
 //! Device management CLI commands for AgilePlus.
 //!
 //! Provides three subcommands:
-//!   - `agileplus device discover` — enumerate peers on the Tailscale network
-//!   - `agileplus device sync`     — replicate events with one or more peers
-//!   - `agileplus device status`   — show local device identity and sync state
+//!   - `agileplus device discover` â€” enumerate peers on the Tailscale network
+//!   - `agileplus device sync`     â€” replicate events with one or more peers
+//!   - `agileplus device status`   â€” show local device identity and sync state
 //!
 //! Traceability: WP18 / T104, T105, T106
 
@@ -18,7 +18,7 @@ use agileplus_p2p::vector_clock::SyncVector;
 use clap::{Args, Subcommand};
 use serde::Serialize;
 
-// ── Top-level arg struct ──────────────────────────────────────────────────────
+// â”€â”€ Top-level arg struct â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /// Arguments for the `device` command group.
 #[derive(Debug, Args)]
@@ -38,7 +38,7 @@ pub enum DeviceSubcommand {
     Status(StatusArgs),
 }
 
-// ── T104: discover ────────────────────────────────────────────────────────────
+// â”€â”€ T104: discover â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /// Arguments for `agileplus device discover`.
 #[derive(Debug, Args)]
@@ -159,14 +159,14 @@ pub async fn run_discover(args: &DiscoverArgs) -> anyhow::Result<()> {
     Ok(())
 }
 
-// ── T105: sync ────────────────────────────────────────────────────────────────
+// â”€â”€ T105: sync â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /// Conflict-resolution strategy for the sync operation.
 #[derive(Debug, Clone, clap::ValueEnum)]
 pub enum SyncStrategy {
     /// Last-write wins (default).
     LastWriteWins,
-    /// Manual conflict resolution — flag conflicts for review.
+    /// Manual conflict resolution â€” flag conflicts for review.
     Manual,
 }
 
@@ -284,7 +284,7 @@ pub async fn run_sync(args: &SyncArgs) -> anyhow::Result<()> {
 
     for peer in &target_peers {
         if args.verbose {
-            println!("Syncing with {} ({}) …", peer.device_id, peer.tailscale_ip);
+            println!("Syncing with {} ({}) â€¦", peer.device_id, peer.tailscale_ip);
         }
         let t0 = Instant::now();
 
@@ -339,7 +339,7 @@ pub async fn run_sync(args: &SyncArgs) -> anyhow::Result<()> {
     for r in &reports {
         let status_str = if r.success { "OK" } else { "FAILED" };
         println!(
-            "  {} {} — sent: {}, received: {}, conflicts: {}, {}ms [{}]",
+            "  {} {} â€” sent: {}, received: {}, conflicts: {}, {}ms [{}]",
             r.device_id,
             r.hostname,
             r.events_sent,
@@ -361,7 +361,7 @@ pub async fn run_sync(args: &SyncArgs) -> anyhow::Result<()> {
     Ok(())
 }
 
-// ── T106: status ──────────────────────────────────────────────────────────────
+// â”€â”€ T106: status â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /// Arguments for `agileplus device status`.
 #[derive(Debug, Args)]
@@ -420,7 +420,7 @@ pub async fn run_status(args: &StatusArgs) -> anyhow::Result<()> {
         .unwrap_or_else(|_| "unknown".to_string());
 
     let local = LocalDeviceInfo {
-        device_id: format!("local-{}", &hostname),
+        device_id: format!("local-{hostname}"),
         hostname: hostname.clone(),
         tailscale_ip: String::from("(unavailable without Tailscale)"),
     };
@@ -485,11 +485,11 @@ pub async fn run_status(args: &StatusArgs) -> anyhow::Result<()> {
         // Sync vector section.
         println!("Sync Vector ({} entities)", report.sync_vector.len());
         if report.sync_vector.is_empty() {
-            println!("  (empty — no events synced yet)");
+            println!("  (empty â€” no events synced yet)");
         } else {
             for v in &report.sync_vector {
                 println!(
-                    "  {}/{} → seq {}",
+                    "  {}/{} â†’ seq {}",
                     v.entity_type, v.entity_id, v.last_sequence
                 );
             }
@@ -503,11 +503,11 @@ pub async fn run_status(args: &StatusArgs) -> anyhow::Result<()> {
         // Known peers section.
         println!("Known Peers ({} total)", report.known_peers.len());
         if report.known_peers.is_empty() {
-            println!("  (none — run `agileplus device discover` to find peers)");
+            println!("  (none â€” run `agileplus device discover` to find peers)");
         } else {
             for p in &report.known_peers {
                 println!(
-                    "  {} {} [{}] — last sync: {}",
+                    "  {} {} [{}] â€” last sync: {}",
                     p.device_id, p.hostname, p.status, p.last_sync
                 );
             }
@@ -517,7 +517,7 @@ pub async fn run_status(args: &StatusArgs) -> anyhow::Result<()> {
     Ok(())
 }
 
-// ── Dispatch ──────────────────────────────────────────────────────────────────
+// â”€â”€ Dispatch â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /// Dispatch a `DeviceArgs` to the appropriate handler.
 #[cfg(unix)]
@@ -535,13 +535,13 @@ pub async fn run(_args: &DeviceArgs) -> anyhow::Result<()> {
     anyhow::bail!("Device commands require Unix (Tailscale UNIX socket)")
 }
 
-// ── Tests ─────────────────────────────────────────────────────────────────────
+// â”€â”€ Tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    // ── DiscoverArgs defaults ────────────────────────────────────────────────
+    // â”€â”€ DiscoverArgs defaults â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     #[test]
     fn discover_args_defaults() {
@@ -555,7 +555,7 @@ mod tests {
         assert!(!args.json);
     }
 
-    // ── PeerRow conversion ───────────────────────────────────────────────────
+    // â”€â”€ PeerRow conversion â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     #[test]
     fn peer_row_from_online_peer() {
@@ -594,7 +594,7 @@ mod tests {
         assert_eq!(row.status, "unknown");
     }
 
-    // ── PeerRow serialisation ────────────────────────────────────────────────
+    // â”€â”€ PeerRow serialisation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     #[test]
     fn peer_row_serialises_to_json() {
@@ -610,7 +610,7 @@ mod tests {
         assert!(json.contains("online"));
     }
 
-    // ── SyncArgs validation helpers ──────────────────────────────────────────
+    // â”€â”€ SyncArgs validation helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     #[test]
     fn sync_strategy_display() {
@@ -618,7 +618,7 @@ mod tests {
         assert_eq!(SyncStrategy::Manual.to_string(), "manual");
     }
 
-    // ── StatusArgs flags ─────────────────────────────────────────────────────
+    // â”€â”€ StatusArgs flags â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     #[test]
     fn status_args_default_shows_all() {
@@ -632,7 +632,7 @@ mod tests {
         assert!(!args.vectors_only);
     }
 
-    // ── DeviceStatusReport serialisation ─────────────────────────────────────
+    // â”€â”€ DeviceStatusReport serialisation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     #[test]
     fn device_status_report_serialises() {
@@ -663,7 +663,7 @@ mod tests {
         assert!(json.contains("3"));
     }
 
-    // ── PeerSyncReport serialisation ─────────────────────────────────────────
+    // â”€â”€ PeerSyncReport serialisation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     #[test]
     fn peer_sync_report_serialises() {

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! Commit signing — GPG, SSH, or mock.
+//! Commit signing â€” GPG, SSH, or mock.
 
 use std::process::{Command, Stdio};
 
@@ -13,7 +13,7 @@ pub trait Signer: Send + Sync {
     async fn sign(&self, repo_root: &std::path::Path, commit_sha: &str) -> Result<String>;
 }
 
-/// GPG signer — uses `gpgme` when the `gpg` feature is enabled,
+/// GPG signer â€” uses `gpgme` when the `gpg` feature is enabled,
 /// otherwise shells out to the `gpg` binary.
 #[derive(Debug, Clone)]
 pub struct GpgSigner {
@@ -31,8 +31,29 @@ impl Signer for GpgSigner {
             // spawn_blocking completes (gpgme::Context is fully gone by then).
             let commit_text = get_commit_text(repo_root, commit_sha).await?;
 
-            // Append the signature to the commit object.
-            let signature_b64 = base64::encode(&signature);
+            let key_id = self.key_id.clone();
+            let signature_b64 = tokio::task::spawn_blocking(move || -> anyhow::Result<String> {
+                use gpgme::{Context, Protocol};
+
+                let mut ctx = Context::from_protocol(Protocol::OpenPgp)
+                    .with_context(|| "failed to create GPG context")?;
+                let key = ctx
+                    .get_key(&key_id)
+                    .with_context(|| format!("GPG key not found: {key_id}"))?;
+                ctx.add_signer(&key)
+                    .with_context(|| "failed to add signer to GPG context")?;
+
+                let mut signature = Vec::new();
+                ctx.sign_detached(commit_text.into_bytes(), &mut signature)
+                    .with_context(|| "GPG sign failed")?;
+
+                use base64::Engine as _;
+                Ok(base64::engine::general_purpose::STANDARD.encode(&signature))
+            })
+            .await
+            .context("spawn_blocking panicked")??;
+
+            // gpgme::Context is gone; safe to .await again.
             let new_sha =
                 amend_commit_with_gpg_signature(repo_root, commit_sha, &signature_b64).await?;
             return Ok(new_sha);
@@ -81,7 +102,7 @@ impl Signer for GpgSigner {
     }
 }
 
-/// SSH signer — uses `ssh-key` crate when the `ssh-sign` feature is enabled,
+/// SSH signer â€” uses `ssh-key` crate when the `ssh-sign` feature is enabled,
 /// otherwise shells out to `ssh-keygen -Y sign`.
 #[derive(Debug, Clone)]
 pub struct SshSigner {
@@ -111,7 +132,7 @@ impl Signer for SshSigner {
                 .with_context(|| "SSH sig to PEM failed")?;
 
             let new_sha =
-                amend_commit_with_ssh_signature(repo_root, commit_sha, &signature_b64).await?;
+                amend_commit_with_ssh_signature(repo_root, commit_sha, &signature_pem).await?;
             return Ok(new_sha);
         }
 
@@ -158,7 +179,7 @@ impl Signer for SshSigner {
     }
 }
 
-/// Mock signer for tests — appends `[signed]` to the commit message.
+/// Mock signer for tests â€” appends `[signed]` to the commit message.
 #[derive(Debug, Clone, Default)]
 pub struct MockSigner;
 
@@ -223,14 +244,18 @@ async fn amend_commit_message(repo_root: &std::path::Path, message: &str) -> Res
     let repo_root = repo_root.to_path_buf();
     let message = message.to_string();
     let root2 = repo_root.clone();
-    let output = tokio::task::spawn_blocking(move || {
-        Command::new("git")
-            .args(["commit", "--amend", "-m", &message])
-            .current_dir(&repo_root)
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .output()
-            .with_context(|| "git commit --amend")
+    let output = tokio::task::spawn_blocking({
+        let message = message.clone();
+        let repo_root = repo_root.clone();
+        move || {
+            Command::new("git")
+                .args(["commit", "--amend", "-m", &message])
+                .current_dir(&repo_root)
+                .stdout(Stdio::piped())
+                .stderr(Stdio::piped())
+                .output()
+                .with_context(|| "git commit --amend")
+        }
     })
     .await
     .context("spawn_blocking failed")??;
@@ -268,24 +293,17 @@ async fn amend_commit_with_gpg_signature(
     for line in &lines {
         if line.is_empty() && !found_gpgsig {
             new_commit.push_str("gpgsig ");
-            new_commit.push_str(&signature.replace('
-', "
- "));
-            new_commit.push('
-');
+            new_commit.push_str(&signature.replace('\n', "\n "));
+            new_commit.push('\n');
             found_gpgsig = true;
         }
         new_commit.push_str(line);
-        new_commit.push('
-');
+        new_commit.push('\n');
     }
     if !found_gpgsig {
         new_commit.push_str("gpgsig ");
-        new_commit.push_str(&signature.replace('
-', "
- "));
-        new_commit.push('
-');
+        new_commit.push_str(&signature.replace('\n', "\n "));
+        new_commit.push('\n');
     }
 
     write_commit_object(repo_root, &new_commit).await
@@ -306,6 +324,7 @@ async fn write_commit_object(repo_root: &std::path::Path, content: &str) -> Resu
     let repo_root_for_reset = repo_root.clone();
     let content = content.to_string();
     let output = tokio::task::spawn_blocking({
+        let content = content.clone();
         let repo_root = repo_root.clone();
         move || {
             let mut child = Command::new("git")
@@ -327,9 +346,6 @@ async fn write_commit_object(repo_root: &std::path::Path, content: &str) -> Resu
                 .wait_with_output()
                 .with_context(|| "git hash-object failed")
         }
-        child
-            .wait_with_output()
-            .with_context(|| "git hash-object failed")
     })
     .await
     .context("spawn_blocking failed")??;
@@ -341,10 +357,10 @@ async fn write_commit_object(repo_root: &std::path::Path, content: &str) -> Resu
     let sha = String::from_utf8_lossy(&output.stdout).trim().to_string();
 
     // Reset HEAD to the new commit.
-    let sha2 = sha.clone();
+    let sha_for_reset = sha.clone();
     let _ = tokio::task::spawn_blocking(move || {
         Command::new("git")
-            .args(["reset", "--soft", &sha2])
+            .args(["reset", "--soft", &sha_for_reset])
             .current_dir(&repo_root_for_reset)
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())

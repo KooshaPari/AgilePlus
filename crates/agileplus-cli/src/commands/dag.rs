@@ -9,17 +9,17 @@
 //! `agileplus-sqlite` in a follow-up workflow.
 //!
 //! Subcommands
-//! ────────────
-//!   pick         — list pickable work packages for an agent
-//!   claim        — claim a resource (repo/branch/worktree/subproject)
-//!   release      — release a claim by id
-//!   heartbeat    — refresh a claim's last_heartbeat
-//!   done         — mark a work package done and release its claim
-//!   dedup        — find duplicate WP candidates above a threshold
-//!   dedup-explain — explain a single pair's similarity breakdown
-//!   scan         — inspect a directory tree and classify repos
-//!   topology     — print topo order + parallel layers
-//!   where        — context snapshot for the current working directory
+//! â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//!   pick         â€” list pickable work packages for an agent
+//!   claim        â€” claim a resource (repo/branch/worktree/subproject)
+//!   release      â€” release a claim by id
+//!   heartbeat    â€” refresh a claim's last_heartbeat
+//!   done         â€” mark a work package done and release its claim
+//!   dedup        â€” find duplicate WP candidates above a threshold
+//!   dedup-explain â€” explain a single pair's similarity breakdown
+//!   scan         â€” inspect a directory tree and classify repos
+//!   topology     â€” print topo order + parallel layers
+//!   where        â€” context snapshot for the current working directory
 //!
 //! Traceability: FR-AGP-018 (dedup), FR-AGP-019 (claim),
 //! FR-AGP-020 (repo_introspect), FR-AGP-021 (graph topology),
@@ -39,7 +39,7 @@ use agileplus_application::dto::{
 use agileplus_application::use_cases::triage::{AppState, TopologyReport, WpRepository};
 use agileplus_triage::dedup::{find_duplicates, hybrid_score, token_jaccard};
 
-// ── Singleton AppState ──────────────────────────────────────────────────────
+// â”€â”€ Singleton AppState â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 //
 // We back the CLI with a static in-memory `AppState` so all subcommands
 // share claims. A more durable wiring (sqlite-backed `WpRepository` +
@@ -52,7 +52,7 @@ fn shared_state() -> &'static Mutex<AppState<InMemoryWpRepo>> {
     STATE.get_or_init(|| Mutex::new(AppState::new(InMemoryWpRepo::default())))
 }
 
-// ── Subcommand tree ─────────────────────────────────────────────────────────
+// â”€â”€ Subcommand tree â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 #[derive(Debug, Args)]
 pub struct DagArgs {
@@ -86,7 +86,7 @@ pub enum DagCmd {
     Add(AddArgs),
 }
 
-// ── Arg structs ─────────────────────────────────────────────────────────────
+// â”€â”€ Arg structs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 #[derive(Debug, Args)]
 pub struct PickArgs {
@@ -158,7 +158,7 @@ pub struct DoneArgs {
 
 #[derive(Debug, Args)]
 pub struct DedupArgs {
-    /// File of "<id>	<description>" lines, or "-" for stdin.
+    /// File of "<id>\t<description>" lines, or "-" for stdin.
     #[arg(long, default_value = "-")]
     pub from: String,
     /// Hybrid threshold (0.0 - 1.0).
@@ -212,7 +212,7 @@ pub struct AddArgs {
     pub depends: String,
 }
 
-// ── In-memory WpRepository ──────────────────────────────────────────────────
+// â”€â”€ In-memory WpRepository â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 #[derive(Default)]
 pub struct InMemoryWpRepo {
@@ -275,7 +275,7 @@ impl WpRepository for InMemoryWpRepo {
     }
 }
 
-// ── Dispatcher ──────────────────────────────────────────────────────────────
+// â”€â”€ Dispatcher â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 pub async fn run_dag(args: DagArgs) -> Result<()> {
     match args.cmd {
@@ -293,7 +293,7 @@ pub async fn run_dag(args: DagArgs) -> Result<()> {
     }
 }
 
-// ── Subcommand impls ────────────────────────────────────────────────────────
+// â”€â”€ Subcommand impls â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 async fn cmd_pick(a: PickArgs) -> Result<()> {
     let state = shared_state().lock().map_err(|e| anyhow!("{e}"))?;
@@ -308,7 +308,7 @@ async fn cmd_pick(a: PickArgs) -> Result<()> {
         println!("(no pickable items)");
     } else {
         for it in items {
-            println!("{}	{}	{}", it.wp_id, it.state, it.title);
+            println!("{}\t{}\t{}", it.wp_id, it.state, it.title);
         }
     }
     Ok(())
@@ -433,7 +433,7 @@ async fn cmd_scan(a: ScanArgs) -> Result<()> {
     }
     for info in infos {
         println!(
-            "path={}	state={:?}	branch={:?}	branches={}	worktrees={}	hygiene={}",
+            "path={}\tstate={:?}\tbranch={:?}\tbranches={}\tworktrees={}\thygiene={}",
             info.path,
             info.state,
             info.current_branch,
@@ -514,7 +514,7 @@ async fn cmd_add(a: AddArgs) -> Result<()> {
     Ok(())
 }
 
-// ── Helpers ─────────────────────────────────────────────────────────────────
+// â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 fn parse_claim_kind(s: &str) -> Result<ClaimKind> {
     match s.to_ascii_lowercase().as_str() {
@@ -564,7 +564,7 @@ fn read_id_text(from: &str) -> Result<Vec<(String, String)>> {
         if line.trim().is_empty() || line.starts_with('#') {
             continue;
         }
-        if let Some((id, text)) = line.split_once('	') {
+        if let Some((id, text)) = line.split_once('\t') {
             out.push((id.to_string(), text.to_string()));
         } else if let Some((id, text)) = line.split_once('|') {
             out.push((id.to_string(), text.to_string()));
@@ -576,7 +576,7 @@ fn read_id_text(from: &str) -> Result<Vec<(String, String)>> {
     Ok(out)
 }
 
-// ── Tests ───────────────────────────────────────────────────────────────────
+// â”€â”€ Tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 #[cfg(test)]
 mod tests {
@@ -598,9 +598,7 @@ mod tests {
     #[test]
     fn read_id_text_handles_tsv() {
         let dir = std::env::temp_dir().join("agileplus_dedup_test.tsv");
-        std::fs::write(&dir, "wp-1	hello world
-wp-2	hello world
-").unwrap();
+        std::fs::write(&dir, "wp-1\thello world\nwp-2\thello world\n").unwrap();
         let items = read_id_text(dir.to_str().unwrap()).unwrap();
         assert_eq!(items.len(), 2);
         assert_eq!(items[0].0, "wp-1");

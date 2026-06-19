@@ -28,15 +28,15 @@ pub fn run_platform_down(args: PlatformDownArgs) -> Result<()> {
         .map_err(|e| anyhow!("Failed to run process-compose down: {e}"))?;
 
     if status.success() {
-        println!("✓ process-compose stopped");
-        println!("✓ All services shut down gracefully");
+        println!("âœ“ process-compose stopped");
+        println!("âœ“ All services shut down gracefully");
         println!("Platform down.");
         Ok(())
     } else {
         // Attempt forceful wait up to timeout.
         let _ = wait_for_shutdown(args.timeout);
-        println!("✓ process-compose stopped");
-        println!("✓ All services shut down gracefully");
+        println!("âœ“ process-compose stopped");
+        println!("âœ“ All services shut down gracefully");
         println!("Platform down.");
         Ok(())
     }

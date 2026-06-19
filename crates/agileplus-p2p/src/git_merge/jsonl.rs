@@ -58,7 +58,7 @@ pub(crate) fn resolve_jsonl_conflict(path: &Path) -> Result<bool, MergeError> {
     }
 
     info!(
-        "Resolved JSONL conflict in {} — {} unique events",
+        "Resolved JSONL conflict in {} â€” {} unique events",
         path.display(),
         events.len()
     );

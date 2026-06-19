@@ -24,7 +24,7 @@ pub(crate) fn wait_for_health(
         attempts += 1;
         let pct = ((start.elapsed().as_secs_f64() / timeout.as_secs_f64()) * 100.0) as u32;
         let filled = (pct / 10) as usize;
-        let bar: String = "█".repeat(filled) + &"░".repeat(10 - filled);
+        let bar: String = "â–ˆ".repeat(filled) + &"â–‘".repeat(10 - filled);
         print!("\r[{bar}] {pct}%");
         // In real impl we'd flush stdout and actually HTTP-GET; here we stub.
         match try_health_check(&health_url) {
@@ -129,7 +129,7 @@ pub(crate) fn synthetic_platform_health() -> PlatformHealth {
 
 pub(crate) fn print_status_table_up(services: &[ServiceHealth]) {
     println!("{:<14} {:<9} {:<9} Port", "Service", "Status", "Uptime");
-    println!("{}", "─".repeat(45));
+    println!("{}", "â”€".repeat(45));
     for svc in services {
         let port_str = svc
             .port
@@ -151,7 +151,7 @@ pub(crate) fn print_status_table(services: &[ServiceHealth]) {
         "{:<14} {:<11} {:<10} {:<12} Last Check",
         "Service", "Status", "Latency", "Uptime"
     );
-    println!("{}", "─".repeat(63));
+    println!("{}", "â”€".repeat(63));
     for svc in services {
         let latency = match svc.latency_ms {
             Some(ms) => format!("{ms}ms"),
@@ -160,8 +160,8 @@ pub(crate) fn print_status_table(services: &[ServiceHealth]) {
         let uptime = svc.uptime.as_deref().unwrap_or("--");
         let last_check = svc.last_check.as_deref().unwrap_or("--");
         let indicator = match svc.status {
-            ServiceStatus::Degraded => " ⚠",
-            ServiceStatus::Unhealthy => " ✗",
+            ServiceStatus::Degraded => " âš ",
+            ServiceStatus::Unhealthy => " âœ—",
             _ => "",
         };
         println!(

@@ -3,7 +3,7 @@
 //!
 //! Hand-rolled single-pass scanner over Rust and Python source.  We
 //! deliberately do *not* use a full parser (`syn`, `tree-sitter`,
-//! `rustpython-parser`) — those crates are heavy and overkill for the
+//! `rustpython-parser`) â€” those crates are heavy and overkill for the
 //! downstream dedup pipeline.  Instead we extract the *significant
 //! token classes* (control-flow keywords, type-defining keywords, and
 //! the `->` arrow / `::` separators) that are stable across reformatting
@@ -33,7 +33,7 @@ enum Class {
     Ident,
     /// A digit run `[0-9]+`.
     Number,
-    /// Whitespace / comments — to be skipped.
+    /// Whitespace / comments â€” to be skipped.
     Junk,
     /// Any other single character that we still want to surface as a
     /// token (e.g. `,`, `(`, `)`).
@@ -134,7 +134,7 @@ where
                 i += 1;
             }
             Class::Junk => {
-                // Whitespace, comments, etc. — skip one byte at a time
+                // Whitespace, comments, etc. â€” skip one byte at a time
                 // (good enough; comment handling is language-specific
                 // and not required for the dedup signal).
                 i += 1;
@@ -243,8 +243,7 @@ mod tests {
     #[test]
     fn rust_tokenizer_drops_comments() {
         let t = RustTokenizer;
-        let src = "// this is a comment
-fn main() { /* block */ }";
+        let src = "// this is a comment\nfn main() { /* block */ }";
         let toks = t.tokenize(src);
         assert!(toks.contains(&"fn".to_string()));
         assert!(toks.contains(&"main".to_string()) || toks.contains(&"ID".to_string()));
@@ -257,9 +256,7 @@ fn main() { /* block */ }";
     #[test]
     fn python_extracts_keywords_and_identifiers() {
         let t = PythonTokenizer;
-        let src = "def add(self, other):
-    return self + other
-";
+        let src = "def add(self, other):\n    return self + other\n";
         let toks = t.tokenize(src);
         let set = uniq(&toks);
         for kw in ["def", "self", "return"] {
@@ -281,10 +278,7 @@ fn main() { /* block */ }";
     #[test]
     fn python_tokenizer_handles_class_definition() {
         let t = PythonTokenizer;
-        let src = "class Foo:
-    def bar(self):
-        return 1
-";
+        let src = "class Foo:\n    def bar(self):\n        return 1\n";
         let toks = t.tokenize(src);
         let set = uniq(&toks);
         assert!(set.contains("class"));
@@ -298,9 +292,7 @@ fn main() { /* block */ }";
         let p = PythonTokenizer;
         let src = "fn main() { let x = 1; }";
         assert_eq!(r.tokenize(src), r.tokenize(src));
-        let py = "def main():
-    x = 1
-";
+        let py = "def main():\n    x = 1\n";
         assert_eq!(p.tokenize(py), p.tokenize(py));
     }
 
@@ -318,18 +310,14 @@ fn main() { /* block */ }";
     fn rust_tokenizer_handles_empty_input() {
         let t = RustTokenizer;
         assert!(t.tokenize("").is_empty());
-        assert!(t.tokenize("   
-	  ").is_empty());
+        assert!(t.tokenize("   \n\t  ").is_empty());
     }
 
     #[test]
     fn python_tokenizer_handles_empty_input() {
         let t = PythonTokenizer;
         assert!(t.tokenize("").is_empty());
-        assert!(t.tokenize("
-
-
-").is_empty());
+        assert!(t.tokenize("\n\n\n").is_empty());
     }
 
     #[test]

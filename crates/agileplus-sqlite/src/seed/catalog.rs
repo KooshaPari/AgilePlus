@@ -2,7 +2,7 @@
 //! Catalog parser: extracts `(fr_id, title, status)` triples from an FR/NFR markdown file.
 //!
 //! Format recognised (as used in all four catalogs):
-//!   ### FR-XXX-NNN — Title text
+//!   ### FR-XXX-NNN â€” Title text
 //!   ...
 //!   | **Status** | SHIPPED |   (optional; AgilePlus / Authvault catalogs)
 //!   | **Status** | PLANNED |
@@ -26,7 +26,7 @@ pub enum CatalogStatus {
 pub struct CatalogEntry {
     /// The canonical requirement ID, e.g. "FR-AGP-001".
     pub id: String,
-    /// Human-readable title (everything after the " — " separator).
+    /// Human-readable title (everything after the " â€” " separator).
     pub title: String,
     /// Derived status.
     pub status: CatalogStatus,
@@ -46,10 +46,8 @@ pub fn parse_catalog(markdown: &str) -> Vec<CatalogEntry> {
     for line in markdown.lines() {
         let trimmed = line.trim();
 
-        // Match heading lines: `### FR-XXX-NNN — Title`
-        // Also handle `### FR-XXX-NNN
-
-**Title:** ...` (Authvault style via next line)
+        // Match heading lines: `### FR-XXX-NNN â€” Title`
+        // Also handle `### FR-XXX-NNN\n\n**Title:** ...` (Authvault style via next line)
         if let Some(id_and_rest) = extract_heading_id(trimmed) {
             // Flush previous entry
             if let (Some(id), Some(title)) = (current_id.take(), current_title.take()) {
@@ -68,7 +66,7 @@ pub fn parse_catalog(markdown: &str) -> Vec<CatalogEntry> {
             continue;
         }
 
-        // Inside an entry — look for **Title:** line (Authvault style)
+        // Inside an entry â€” look for **Title:** line (Authvault style)
         if current_id.is_some() && current_title.as_deref().map(str::is_empty).unwrap_or(false) {
             if let Some(t) = extract_title_field(trimmed) {
                 current_title = Some(t);
@@ -100,16 +98,15 @@ pub fn parse_catalog(markdown: &str) -> Vec<CatalogEntry> {
 }
 
 /// Extract `(id, title)` from a heading line like:
-///   `### FR-AGP-001 — Rich domain aggregates with enforced invariants`
-///   `### FR-AGP-001
-` (title-only variant; title = id for now, overridden later)
+///   `### FR-AGP-001 â€” Rich domain aggregates with enforced invariants`
+///   `### FR-AGP-001\n` (title-only variant; title = id for now, overridden later)
 fn extract_heading_id(line: &str) -> Option<(String, String)> {
     // Must start with one or more '#'
     let stripped = line.trim_start_matches('#').trim();
     // Must look like an ID: starts with two uppercase words separated by '-'
     // Pattern: WORD-WORD-NNN (e.g. FR-AGP-001, NFR-TRC-002, FR-VOXEL-003)
     let (id_part, title_part) = if let Some(pos) = stripped.find(" \u{2014} ") {
-        // " — " separator (em-dash)
+        // " â€” " separator (em-dash)
         (
             &stripped[..pos],
             stripped[pos + " \u{2014} ".len()..].trim(),
@@ -118,7 +115,7 @@ fn extract_heading_id(line: &str) -> Option<(String, String)> {
         // Plain hyphen separator fallback
         (&stripped[..pos], stripped[pos + 3..].trim())
     } else {
-        // No separator — the whole thing is the id; title will be filled later
+        // No separator â€” the whole thing is the id; title will be filled later
         (stripped, "")
     };
 
@@ -162,7 +159,7 @@ fn extract_title_field(line: &str) -> Option<String> {
 /// Extract status from lines like:
 ///   `| **Status** | SHIPPED |`
 ///   `| **Status** | PLANNED |`
-///   `| **Status** | PARTIAL — ... |`
+///   `| **Status** | PARTIAL â€” ... |`
 fn extract_status_cell(line: &str) -> Option<CatalogStatus> {
     if !line.contains("**Status**") && !line.to_lowercase().contains("status") {
         return None;
@@ -213,7 +210,7 @@ mod tests {
 
 ## Functional Requirements
 
-### FR-TEST-001 — Rich domain model
+### FR-TEST-001 â€” Rich domain model
 
 | Field | Value |
 |---|---|
@@ -223,7 +220,7 @@ mod tests {
 
 ---
 
-### FR-TEST-002 — Planned feature
+### FR-TEST-002 â€” Planned feature
 
 | Field | Value |
 |---|---|
@@ -233,7 +230,7 @@ mod tests {
 
 ---
 
-### NFR-TEST-001 — Performance
+### NFR-TEST-001 â€” Performance
 
 No status field here; should default to Shipped.
 
@@ -281,11 +278,11 @@ No status field here; should default to Shipped.
     fn gap_section_id_treated_as_planned() {
         let entries = parse_catalog(SAMPLE_CATALOG);
         let e = entries.iter().find(|e| e.id == "FR-TEST-003");
-        // FR-TEST-003 only appears in gaps table, not as a heading — so it may
+        // FR-TEST-003 only appears in gaps table, not as a heading â€” so it may
         // not be parsed as a full entry but its ID is collected as planned.
         // The planned_ids collection is used to override status for entries
         // that DO have headings.
-        // NFR-TEST-001 has no status cell → should default to Shipped (not in gap section).
+        // NFR-TEST-001 has no status cell â†’ should default to Shipped (not in gap section).
         let nfr = entries.iter().find(|e| e.id == "NFR-TEST-001").unwrap();
         assert_eq!(nfr.status, CatalogStatus::Shipped);
         // FR-TEST-003 won't appear because it has no heading

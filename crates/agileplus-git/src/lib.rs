@@ -5,7 +5,7 @@
 //! write operations that have a clean `git2` API (worktree add, branch
 //! create / delete, ref resolution, branch listing), and by the
 //! `git(1)` CLI for operations that libgit2 either does not expose or
-//! exposes in a way that is brittle across versions — namely
+//! exposes in a way that is brittle across versions â€” namely
 //!
 //! - `git worktree remove --force <path>` (more reliable than
 //!   `Worktree::prune`, which silently no-ops on dirty worktrees),
@@ -55,7 +55,7 @@ impl GitVcsAdapter {
     }
 
     /// Create an adapter rooted at an explicit path. The path does not
-    /// need to be the repo root — it may be a subdirectory; we
+    /// need to be the repo root â€” it may be a subdirectory; we
     /// `discover()` the actual root on each call.
     pub fn new(repo_root: PathBuf) -> Self {
         Self { repo_root }
@@ -216,7 +216,7 @@ impl VcsPort for GitVcsAdapter {
         let branch_exists = repo.find_branch(&branch, git2::BranchType::Local).is_ok();
         let flag = if branch_exists { "-B" } else { "-b" };
 
-        // Use the CLI for the worktree add — the git2 `Repository::worktree`
+        // Use the CLI for the worktree add â€” the git2 `Repository::worktree`
         // builder can produce a worktree in the wrong state on some
         // libgit2 versions, while `git worktree add` is the canonical,
         // well-tested path.
@@ -375,7 +375,7 @@ impl VcsPort for GitVcsAdapter {
     }
 
     async fn checkout_branch(&self, branch: &str) -> Result<(), DomainError> {
-        // The CLI is the most reliable checkout path — it updates the
+        // The CLI is the most reliable checkout path â€” it updates the
         // index, working tree, and HEAD ref in one go, and matches
         // what users see in their terminal.
         self.run_git_status(&["checkout", branch])?;
@@ -451,11 +451,7 @@ impl VcsPort for GitVcsAdapter {
         let mut out = Vec::new();
         for line in raw.lines() {
             if let Some(rest) = line.strip_prefix("changed in both") {
-                // Format: "changed in both
-  base   100644 <oid> <path>
-  ours   100644 <oid>
-  theirs 100644 <oid>
-"
+                // Format: "changed in both\n  base   100644 <oid> <path>\n  ours   100644 <oid>\n  theirs 100644 <oid>\n"
                 // The path appears on the next non-empty line.
                 let path = rest
                     .split_whitespace()
@@ -672,8 +668,7 @@ mod tests {
             .current_dir(&path)
             .output()
             .unwrap();
-        std::fs::write(path.join("README.md"), "hello
-").unwrap();
+        std::fs::write(path.join("README.md"), "hello\n").unwrap();
         StdCommand::new("git")
             .args(["add", "."])
             .current_dir(&path)
@@ -781,8 +776,7 @@ mod tests {
             .await
             .unwrap();
         adapter.checkout_branch("feat/conflict").await.unwrap();
-        std::fs::write(path.join("README.md"), "from feature
-").unwrap();
+        std::fs::write(path.join("README.md"), "from feature\n").unwrap();
         StdCommand::new("git")
             .args(["add", "README.md"])
             .current_dir(&path)
@@ -795,8 +789,7 @@ mod tests {
             .unwrap();
         // edit README.md differently on main
         adapter.checkout_branch("main").await.unwrap();
-        std::fs::write(path.join("README.md"), "from main
-").unwrap();
+        std::fs::write(path.join("README.md"), "from main\n").unwrap();
         StdCommand::new("git")
             .args(["add", "README.md"])
             .current_dir(&path)
@@ -843,8 +836,7 @@ mod tests {
         let (_dir, path) = make_repo();
         let adapter = GitVcsAdapter::new(path.clone());
         adapter
-            .write_artifact("login", "spec.md", "# spec
-")
+            .write_artifact("login", "spec.md", "# spec\n")
             .await
             .expect("write");
         let content = adapter

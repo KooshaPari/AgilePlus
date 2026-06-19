@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! Dark-factory loop — queue → claim → worktree → trail → PR.
+//! Dark-factory loop â€” queue â†’ claim â†’ worktree â†’ trail â†’ PR.
 //!
 //! The `Factory` struct is the entry point. It owns a [`ClaimStoreTrait`]
 //! implementation, polls an [`IssueQueue`], and for each issue:
@@ -10,7 +10,7 @@
 //! 4. Opens a PR via [`GitHubPrClient`] (or logs it in Suggest mode).
 //! 5. Releases the claim.
 //!
-//! The real agent loop (read code → plan edits → LLM calls) is a future phase.
+//! The real agent loop (read code â†’ plan edits â†’ LLM calls) is a future phase.
 //! This crate only scaffolds the pipeline with real Git/Claim primitives.
 
 use std::path::PathBuf;
@@ -37,7 +37,7 @@ pub use worker::Worker;
 /// The dark factory.
 ///
 /// Owns a [`ClaimStore`] (in-memory) and orchestrates the
-/// queue → claim → worktree → worker → PR loop.
+/// queue â†’ claim â†’ worktree â†’ worker â†’ PR loop.
 ///
 /// For multi-process deployments, swap the `ClaimStore` for a
 /// [`SqliteClaimStore`](agileplus_triage::claim_store_sqlite::SqliteClaimStore)
@@ -166,12 +166,7 @@ impl<Q: IssueQueue> Factory<Q> {
                     branch: branch.clone(),
                     title: format!("factory: {}", issue.title),
                     body: format!(
-                        "Automated PR for issue #{}
-
-Trail:
-```json
-{}
-```",
+                        "Automated PR for issue #{}\n\nTrail:\n```json\n{}\n```",
                         issue.number,
                         worker.trail.to_json().unwrap_or_default()
                     ),
@@ -251,7 +246,6 @@ Trail:
 
             self.claim_store.release(&claim_id);
             processed += 1;
-
         }
 
         Ok(processed)

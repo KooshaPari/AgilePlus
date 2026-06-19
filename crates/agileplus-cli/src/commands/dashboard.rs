@@ -1,17 +1,17 @@
-//! `ap dashboard` subcommand — render an in-flight DAG view of the
+//! `ap dashboard` subcommand â€” render an in-flight DAG view of the
 //! AgilePlus SQLite database.  Aggregates:
 //!
 //!   1. **Work package state counts** (planned / doing / review /
-//!      done / blocked) — kanban-style summary, rendered with a
+//!      done / blocked) â€” kanban-style summary, rendered with a
 //!      [`comfy_table::Table`] for visual alignment and a unicode
-//!      `█` bar to convey relative weight at a glance.
-//!   2. **Recent worklog entries** — most-recent N rows from the
+//!      `â–ˆ` bar to convey relative weight at a glance.
+//!   2. **Recent worklog entries** â€” most-recent N rows from the
 //!      `worklog_entries` table (L2 #39 ingest target), showing
 //!      task id, status, agent, and completion timestamp.
-//!   3. **Recent events** — most-recent N rows from the
+//!   3. **Recent events** â€” most-recent N rows from the
 //!      `events` table, showing entity, event_type, actor, and
 //!      timestamp.
-//!   4. **Trace link summary** — count of edges in
+//!   4. **Trace link summary** â€” count of edges in
 //!      `trace_links` (L2 #40 surface), grouped by link_type.
 //!
 //! Traceability: L2 #40 (V3 DAG layer 2).
@@ -47,7 +47,7 @@ use agileplus_sqlite::migrations::MigrationRunner;
 
 use crate::commands::trace::{open_db, resolve_db_path};
 
-// ── CLI surface ─────────────────────────────────────────────────────────────
+// â”€â”€ CLI surface â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 #[derive(Debug, Args)]
 pub struct DashboardArgs {
@@ -68,7 +68,7 @@ pub struct DashboardArgs {
     pub no_color: bool,
 }
 
-// ── Aggregated view model ───────────────────────────────────────────────────
+// â”€â”€ Aggregated view model â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /// Aggregated, in-flight DAG view.  All counts are computed in a single
 /// pass over the SQLite database.
@@ -119,7 +119,7 @@ pub struct TraceLinkCount {
     pub count: i64,
 }
 
-// ── Public entry point ─────────────────────────────────────────────────────
+// â”€â”€ Public entry point â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 pub fn run(args: &DashboardArgs) -> Result<()> {
     let db_path = resolve_db_path(args.db.as_deref());
@@ -160,7 +160,7 @@ pub fn collect_snapshot(
     })
 }
 
-// ── Aggregation queries ────────────────────────────────────────────────────
+// â”€â”€ Aggregation queries â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 pub(crate) fn load_wp_breakdown(conn: &Connection) -> Result<WpStateBreakdown> {
     // work_packages.state is a TEXT column with a CHECK constraint
@@ -288,11 +288,11 @@ pub(crate) fn load_trace_link_counts(conn: &Connection) -> Result<Vec<TraceLinkC
     Ok(rows)
 }
 
-// ── ASCII rendering ────────────────────────────────────────────────────────
+// â”€â”€ ASCII rendering â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 fn print_ascii(snap: &DashboardSnapshot, no_color: bool) {
     let title = format!(
-        "agileplus dashboard — generated {} — db: {}",
+        "agileplus dashboard â€” generated {} â€” db: {}",
         truncate(&snap.generated_at, 19),
         snap.db_path
     );
@@ -375,7 +375,7 @@ fn render_worklog_section(rows: &[WorklogEntryRow], no_color: bool) {
                 r.completed_at
                     .as_deref()
                     .map(|s| truncate(s, 19))
-                    .unwrap_or_else(|| "—".to_string()),
+                    .unwrap_or_else(|| "â€”".to_string()),
             ),
         ]));
     }
@@ -484,10 +484,10 @@ fn truncate(s: &str, max: usize) -> String {
         return s.to_string();
     }
     let t: String = s.chars().take(max.saturating_sub(1)).collect();
-    format!("{t}…")
+    format!("{t}â€¦")
 }
 
-// ── Unit tests ─────────────────────────────────────────────────────────────
+// â”€â”€ Unit tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 #[cfg(test)]
 mod tests {
@@ -653,7 +653,7 @@ mod tests {
 
     #[test]
     fn truncate_shortens_long_strings() {
-        assert_eq!(truncate("abcdefgh", 5), "abcd…");
+        assert_eq!(truncate("abcdefgh", 5), "abcdâ€¦");
     }
 
     #[test]
