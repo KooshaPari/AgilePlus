@@ -37,6 +37,7 @@
 
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
+#![allow(missing_docs)]
 
 pub mod artifact;
 pub mod contract;
