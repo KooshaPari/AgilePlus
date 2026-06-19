@@ -51,6 +51,7 @@
 [workspace]
 resolver = "3"
 members = [
+    "crates/agileplus-graph",
     "crates/agileplus-config",
     "crates/agileplus-cache",
     "crates/agileplus-governance",
