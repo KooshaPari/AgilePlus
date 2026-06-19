@@ -1,6 +1,7 @@
-//! Page route handlers for AgilePlus dashboard.
-//!
-//! Handlers for main page views (root, home, features, events, settings, hub, health, feature details).
+use axum::{
+    extract::State,
+    response::{Html, Response},
+};
 
 use axum::{
     extract::{Path, Query, State},
@@ -187,8 +188,19 @@ pub async fn hub_page() -> Response {
     helpers::render(HubPage { projects })
 }
 
-/// GET /features/:id
-/// Feature detail page (full HTML page)
-pub async fn feature_page(State(state): State<SharedState>, Path(id): Path<i64>) -> Response {
-    features::feature_detail(State(state), Path(id), HeaderMap::new()).await
+pub async fn services_settings_page(State(state): State<SharedState>) -> Response {
+    let store = state.read().await;
+    render(ServicesSettingsPage {
+        services: store.health.clone(),
+    })
 }
+
+pub async fn time_footer() -> Html<String> {
+    Html(
+        chrono::Utc::now()
+            .format("%Y-%m-%d %H:%M:%S UTC")
+            .to_string(),
+    )
+}
+
+
