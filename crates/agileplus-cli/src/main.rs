@@ -66,35 +66,12 @@ enum Command {
     ListEpics(commands::list_epics::ListEpicsArgs),
     /// List stories, optionally filtered by epic and/or status
     ListStories(commands::list_stories::ListStoriesArgs),
-    /// Project management (MVP)
-    Project {
-        #[command(subcommand)]
-        sub: commands::mvp::ProjectCmd,
-    },
-    /// Epic management (MVP)
-    Epic {
-        #[command(subcommand)]
-        sub: commands::mvp::EpicCmd,
-    },
-    /// Story management (MVP)
-    Story {
-        #[command(subcommand)]
-        sub: commands::mvp::StoryCmd,
-    },
-    /// Work-package management (MVP)
-    Wp {
-        #[command(subcommand)]
-        sub: commands::mvp::WpCmd,
-    },
-    /// Work-package dependency management (MVP)
-    Dep {
-        #[command(subcommand)]
-        sub: commands::mvp::DepCmd,
-    },
-    /// Transition a work-package or story to a new state (MVP)
-    Transition(commands::mvp::TransitionArgs),
-    /// List planned work packages that are ready to start (MVP)
-    NextReady(commands::mvp::NextReadyArgs),
+    /// Manage directed trace links between domain entities (L2 #40)
+    Trace(commands::trace::TraceArgs),
+    /// Render an in-flight DAG view of the SQLite database (L2 #40)
+    Dashboard(commands::dashboard::DashboardArgs),
+    /// Worklog schema management (validate/convert/schema/list)
+    Worklog(commands::worklog::WorklogArgs),
 }
 
 #[derive(Subcommand)]
@@ -570,6 +547,12 @@ async fn main() {
             Command::ListStories(args) => {
                 let storage = open_storage(&db_path)?;
                 commands::list_stories::run(&args, &storage).await?;
+            }
+            Command::Trace(args) => {
+                commands::trace::run(&args)?;
+            }
+            Command::Dashboard(args) => {
+                commands::dashboard::run(&args)?;
             }
             Command::Worklog(args) => {
                 let db_path = db_path_from_env();
