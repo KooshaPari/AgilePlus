@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: returntocorp/semgrep-action@713efdd345f3035192eaa63f56867b88e63e4e5d  # v1
         with:
@@ -43,11 +43,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - uses: trufflesecurity/trufflehog@3fc0c2aa6648d54242e4af6fbfde0701796e4fb0  # was: @main
+      - uses: trufflesecurity/trufflehog@9b6b5326bfe25dbd856eccc8a8275eb5dea7bd52  # was: @main
         with:
           path: ./
           extra_args: --only-verified --fail
@@ -57,7 +57,7 @@ jobs:
     name: Rust Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
@@ -72,7 +72,7 @@ jobs:
     name: License Compliance
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - name: Install cargo-deny
         uses: taiki-e/install-action@v2

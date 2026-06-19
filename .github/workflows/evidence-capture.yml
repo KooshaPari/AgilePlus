@@ -28,7 +28,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -108,7 +108,7 @@ jobs:
           BUNDLE_EOF
 
       - name: Upload evidence bundle as artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: evidence-bundle-${{ github.run_number }}
           path: .agileplus/evidence/ci-run/
