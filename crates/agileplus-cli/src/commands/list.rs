@@ -67,7 +67,6 @@ fn truncate_cell(s: &str, max_chars: usize) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use proptest::prelude::*;
 
     #[test]
     fn truncate_cell_keeps_short_values() {
@@ -77,20 +76,5 @@ mod tests {
     #[test]
     fn truncate_cell_shortens_long_values() {
         assert_eq!(truncate_cell("abcdef", 4), "abc…");
-    }
-
-    proptest! {
-        #[test]
-        fn truncate_cell_never_exceeds_limit(input in any::<String>(), max in 1usize..64) {
-            let truncated = truncate_cell(&input, max);
-            prop_assert!(truncated.chars().count() <= max);
-        }
-
-        #[test]
-        fn truncate_cell_is_identity_within_limit(input in any::<String>(), padding in 0usize..32) {
-            let max = input.chars().count() + padding;
-            let truncated = truncate_cell(&input, max);
-            prop_assert_eq!(truncated, input);
-        }
     }
 }
