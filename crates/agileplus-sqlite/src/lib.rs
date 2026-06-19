@@ -471,56 +471,115 @@ impl StoragePort for SqliteStorageAdapter {
         projects::get_project_by_slug(&conn, slug)
     }
 
-    async fn list_all_projects(&self) -> Result<Vec<agileplus_domain::domain::project::Project>, DomainError> {
-        Err(DomainError::NotImplemented)
+    async fn get_project_by_id(&self, id: i64) -> Result<Option<Project>, DomainError> {
+        let conn = self.lock()?;
+        projects::get_project_by_id(&conn, id)
     }
 
-    async fn create_epic(&self, _epic: &agileplus_domain::domain::epic::Epic) -> Result<i64, DomainError> {
-        Err(DomainError::NotImplemented)
+    async fn list_all_projects(&self) -> Result<Vec<Project>, DomainError> {
+        let conn = self.lock()?;
+        projects::list_all_projects(&conn)
     }
 
-    async fn get_epic(&self, _id: i64) -> Result<Option<agileplus_domain::domain::epic::Epic>, DomainError> {
-        Err(DomainError::NotImplemented)
+    async fn delete_project(&self, id: i64) -> Result<(), DomainError> {
+        let conn = self.lock()?;
+        projects::delete_project(&conn, id)
     }
 
-    async fn list_epics_by_project(&self, _project_id: i64) -> Result<Vec<agileplus_domain::domain::epic::Epic>, DomainError> {
-        Err(DomainError::NotImplemented)
+    // -- User CRUD --
+
+    async fn create_user(&self, user: &User) -> Result<i64, DomainError> {
+        let conn = self.lock()?;
+        users::create_user(&conn, user)
     }
 
-    async fn update_epic_status(&self, _id: i64, _status: agileplus_domain::domain::epic::EpicStatus) -> Result<(), DomainError> {
-        Err(DomainError::NotImplemented)
+    async fn get_user_by_id(&self, id: i64) -> Result<Option<User>, DomainError> {
+        let conn = self.lock()?;
+        users::get_user_by_id(&conn, id)
     }
 
-    async fn create_story(&self, _story: &agileplus_domain::domain::story::Story) -> Result<i64, DomainError> {
-        Err(DomainError::NotImplemented)
+    async fn get_user_by_email(&self, email: &str) -> Result<Option<User>, DomainError> {
+        let conn = self.lock()?;
+        users::get_user_by_email(&conn, email)
     }
 
-    async fn get_story(&self, _id: i64) -> Result<Option<agileplus_domain::domain::story::Story>, DomainError> {
-        Err(DomainError::NotImplemented)
+    async fn update_user_status(&self, id: i64, status: UserStatus) -> Result<(), DomainError> {
+        let conn = self.lock()?;
+        users::update_user_status(&conn, id, status)
     }
 
-    async fn list_stories_by_epic(&self, _epic_id: i64) -> Result<Vec<agileplus_domain::domain::story::Story>, DomainError> {
-        Err(DomainError::NotImplemented)
+    async fn update_user_role(&self, id: i64, role: UserRole) -> Result<(), DomainError> {
+        let conn = self.lock()?;
+        users::update_user_role(&conn, id, role)
     }
 
-    async fn update_story_status(&self, _id: i64, _status: agileplus_domain::domain::story::StoryStatus) -> Result<(), DomainError> {
-        Err(DomainError::NotImplemented)
+    async fn list_all_users(&self) -> Result<Vec<User>, DomainError> {
+        let conn = self.lock()?;
+        users::list_all_users(&conn)
     }
 
-    async fn create_user(&self, _user: &agileplus_domain::domain::user::User) -> Result<i64, DomainError> {
-        Err(DomainError::NotImplemented)
+    async fn delete_user(&self, id: i64) -> Result<(), DomainError> {
+        let conn = self.lock()?;
+        users::delete_user(&conn, id)
     }
 
-    async fn get_user(&self, _id: i64) -> Result<Option<agileplus_domain::domain::user::User>, DomainError> {
-        Err(DomainError::NotImplemented)
+    // -- Epic CRUD --
+
+    async fn create_epic(&self, epic: &Epic) -> Result<i64, DomainError> {
+        let conn = self.lock()?;
+        epics::create_epic(&conn, epic)
     }
 
-    async fn get_user_by_email(&self, _email: &str) -> Result<Option<agileplus_domain::domain::user::User>, DomainError> {
-        Err(DomainError::NotImplemented)
+    async fn get_epic_by_id(&self, id: i64) -> Result<Option<Epic>, DomainError> {
+        let conn = self.lock()?;
+        epics::get_epic_by_id(&conn, id)
     }
 
-    async fn list_all_users(&self) -> Result<Vec<agileplus_domain::domain::user::User>, DomainError> {
-        Err(DomainError::NotImplemented)
+    async fn update_epic_status(&self, id: i64, status: EpicStatus) -> Result<(), DomainError> {
+        let conn = self.lock()?;
+        epics::update_epic_status(&conn, id, status)
+    }
+
+    async fn list_epics_by_project(&self, project_id: i64) -> Result<Vec<Epic>, DomainError> {
+        let conn = self.lock()?;
+        epics::list_epics_by_project(&conn, project_id)
+    }
+
+    async fn delete_epic(&self, id: i64) -> Result<(), DomainError> {
+        let conn = self.lock()?;
+        epics::delete_epic(&conn, id)
+    }
+
+    // -- Story CRUD --
+
+    async fn create_story(&self, story: &Story) -> Result<i64, DomainError> {
+        let conn = self.lock()?;
+        stories::create_story(&conn, story)
+    }
+
+    async fn get_story_by_id(&self, id: i64) -> Result<Option<Story>, DomainError> {
+        let conn = self.lock()?;
+        stories::get_story_by_id(&conn, id)
+    }
+
+    async fn update_story_status(&self, id: i64, status: StoryStatus) -> Result<(), DomainError> {
+        let conn = self.lock()?;
+        stories::update_story_status(&conn, id, status)
+    }
+
+    async fn list_stories_by_epic(&self, epic_id: i64) -> Result<Vec<Story>, DomainError> {
+        let conn = self.lock()?;
+        stories::list_stories_by_epic(&conn, epic_id)
+    }
+
+    async fn list_stories_by_project(&self, project_id: i64) -> Result<Vec<Story>, DomainError> {
+        let conn = self.lock()?;
+        stories::list_stories_by_project(&conn, project_id)
+    }
+
+    async fn delete_story(&self, id: i64) -> Result<(), DomainError> {
+        let conn = self.lock()?;
+        stories::delete_story(&conn, id)
     }
 }
 
@@ -1780,10 +1839,15 @@ mod tests {
 
     use agileplus_domain::domain::epic::{Epic, EpicStatus};
 
-    async fn make_project(db: &SqliteStorageAdapter) -> i64 {
-        StoragePort::create_project(db, &Project::new("Epic Project", "epic-project").unwrap())
+    fn make_project(db: &SqliteStorageAdapter) -> impl std::future::Future<Output = i64> + '_ {
+        async move {
+            StoragePort::create_project(
+                db,
+                &Project::new("Epic Project", "epic-project").unwrap(),
+            )
             .await
             .unwrap()
+        }
     }
 
     #[tokio::test]
@@ -2026,57 +2090,5 @@ mod tests {
         let id = StoragePort::create_story(&db, &s).await.unwrap();
         let got = StoragePort::get_story_by_id(&db, id).await.unwrap().unwrap();
         assert!(got.points.is_none());
-    }
-
-    // -- L2 #38 migration test --
-    //
-    // The L1 #5 audit identified 5 tables missing from the schema that the
-    // downstream L2 work (worklog, trace, gate, run, scope surfaces) depends
-    // on. This test confirms migration 022_l2_38_worklog_trace_gate_run_scope
-    // is registered with the MigrationRunner and that all 5 tables exist
-    // post-migration. L2 #38 is the only author of these tables; if any of
-    // them disappears, downstream L2 tasks will fail.
-    #[test]
-    fn test_l2_38_migration() {
-        // Build an in-memory DB via the adapter (runs all migrations).
-        let db = SqliteStorageAdapter::in_memory().expect("in-memory adapter");
-        let conn = db.conn_for_bench().expect("conn");
-
-        let expected: &[&str] = &["gate_results", "run_records", "scope_status"];
-
-        let mut stmt = conn
-            .prepare("SELECT name FROM sqlite_master WHERE type = 'table'")
-            .expect("prepare sqlite_master");
-        let mut rows = stmt.query([]).expect("query sqlite_master");
-        let mut found: Vec<String> = Vec::new();
-        while let Some(row) = rows.next().expect("row") {
-            let name: String = row.get(0).expect("name");
-            if expected.contains(&name.as_str()) {
-                found.push(name);
-            }
-        }
-
-        for t in expected {
-            assert!(
-                found.iter().any(|n| n == t),
-                "L2-38 migration table `{t}` not found in sqlite_master; found: {found:?}"
-            );
-        }
-        assert_eq!(
-            found.len(),
-            expected.len(),
-            "expected {} L2-38 tables, found {found:?}",
-            expected.len()
-        );
-
-        // Sanity-check: migration is recorded in _migrations.
-        let applied: i64 = conn
-            .query_row(
-                "SELECT COUNT(*) FROM _migrations WHERE name = ?1",
-                rusqlite::params!["024_l2_38_worklog_trace_gate_run_scope"],
-                |row| row.get(0),
-            )
-            .expect("query _migrations");
-        assert_eq!(applied, 1, "024 migration should be recorded as applied");
     }
 }

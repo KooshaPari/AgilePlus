@@ -32,8 +32,6 @@ fn row_to_story(row: &rusqlite::Row<'_>) -> rusqlite::Result<Story> {
         status: status_str.parse().unwrap_or(StoryStatus::Todo),
         points: points_raw.map(|p| p as u32),
         assignee_id: row.get(6)?,
-        requirement_id: row.get(10).unwrap_or(None),
-        trace_ids: Vec::new(),
         created_at: parse_dt(&created_at),
         updated_at: parse_dt(&updated_at),
     })
@@ -59,69 +57,6 @@ pub fn create_story(conn: &Connection, story: &Story) -> Result<i64, DomainError
     )
     .map_err(map_err)?;
     Ok(conn.last_insert_rowid())
-}
-
-/// Upsert a story by `requirement_id` — creates if absent, updates title/description/status if present.
-/// Returns the row ID (new or existing).
-///
-/// Uses manual get-then-insert/update because `requirement_id` is added via ALTER TABLE
-/// (no inline UNIQUE constraint); SQLite upsert `ON CONFLICT(col)` requires a declared
-/// table-level constraint that ALTER TABLE cannot add.
-pub fn upsert_story_by_requirement_id(
-    conn: &Connection,
-    story: &Story,
-) -> Result<i64, DomainError> {
-    let req_id = story.requirement_id.as_deref().ok_or_else(|| {
-        DomainError::Validation(
-            "upsert_story_by_requirement_id requires requirement_id".to_owned(),
-        )
-    })?;
-    let now = chrono::Utc::now().to_rfc3339();
-    // Check if a row with this requirement_id already exists.
-    let existing_id: Option<i64> = conn
-        .query_row(
-            "SELECT id FROM stories WHERE requirement_id = ?1",
-            params![req_id],
-            |r| r.get(0),
-        )
-        .optional()
-        .map_err(map_err)?;
-
-    if let Some(id) = existing_id {
-        conn.execute(
-            "UPDATE stories SET epic_id = ?1, title = ?2, description = ?3, status = ?4, updated_at = ?5 WHERE id = ?6",
-            params![
-                story.epic_id,
-                story.title,
-                story.description,
-                story.status.to_string(),
-                now,
-                id,
-            ],
-        )
-        .map_err(map_err)?;
-        Ok(id)
-    } else {
-        create_story(conn, story)
-    }
-}
-
-/// Look up a story by `requirement_id`. Returns `None` if not found.
-pub fn get_story_by_requirement_id(
-    conn: &Connection,
-    req_id: &str,
-) -> Result<Option<Story>, DomainError> {
-    let mut stmt = conn
-        .prepare(
-            "SELECT id, epic_id, project_id, title, status, points, assignee_id, created_at, updated_at, description, requirement_id \
-             FROM stories WHERE requirement_id = ?1",
-        )
-        .map_err(map_err)?;
-    match stmt.query_row(params![req_id], row_to_story) {
-        Ok(s) => Ok(Some(s)),
-        Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
-        Err(e) => Err(map_err(e)),
-    }
 }
 
 /// Look up a story by ID. Returns `None` if not found.

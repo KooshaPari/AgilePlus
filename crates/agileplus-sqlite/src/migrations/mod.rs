@@ -29,10 +29,6 @@ const MIGRATION_017: &str = include_str!("017_create_projects.sql");
 const MIGRATION_018: &str = include_str!("018_create_users.sql");
 const MIGRATION_019: &str = include_str!("019_create_epics.sql");
 const MIGRATION_020: &str = include_str!("020_create_stories.sql");
-const MIGRATION_021: &str = include_str!("021_add_requirement_id.sql");
-const MIGRATION_022: &str = include_str!("022_create_trace_links.sql");
-const MIGRATION_023: &str = include_str!("023_create_worklog_entries.sql");
-const MIGRATION_025: &str = include_str!("025_governance_channel_iteration.sql");
 
 /// All migrations in order: (name, up_sql, down_sql)
 const MIGRATIONS: &[(&str, &str)] = &[
@@ -56,10 +52,6 @@ const MIGRATIONS: &[(&str, &str)] = &[
     ("018_create_users", MIGRATION_018),
     ("019_create_epics", MIGRATION_019),
     ("020_create_stories", MIGRATION_020),
-    ("021_add_requirement_id", MIGRATION_021),
-    ("022_create_trace_links", MIGRATION_022),
-    ("023_create_worklog_entries", MIGRATION_023),
-    ("025_governance_channel_iteration", MIGRATION_025),
 ];
 
 /// Parse the UP section from a migration SQL file.
