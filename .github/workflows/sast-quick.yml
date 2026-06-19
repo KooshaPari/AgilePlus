@@ -61,8 +61,13 @@ jobs:
     name: Rust Lint
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v6
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
+      - name: Checkout phenoShared sibling
+        run: |
+          git clone --depth 1 \
+            "https://x-access-token:${{ github.token }}@github.com/KooshaPari/phenoShared.git" \
+            "${{ github.workspace }}/../phenoShared"
+      - uses: dtolnay/rust-toolchain@5b842231ba77f5c045dba54ac5560fed2db780e2  # stable
         with:
           components: clippy
       - uses: Swatinem/rust-cache@v2
