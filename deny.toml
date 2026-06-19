@@ -23,5 +23,13 @@ allow = [
     "WTFPL",
 ]
 
+[bans]
+multiple-versions = "warn"
+wildcards = "deny"
+skip = [
+    { name = "clap-ext" },
+]
+
 [sources]
 allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+allow-git = ["https://github.com/KooshaPari/clap-ext"]
