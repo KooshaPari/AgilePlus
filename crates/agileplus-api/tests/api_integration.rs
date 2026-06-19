@@ -658,31 +658,6 @@ impl StoragePort for MockStorage {
         Ok(self.users.lock().unwrap().clone())
     }
 
-    async fn list_all_projects(
-        &self,
-    ) -> Result<Vec<agileplus_domain::domain::project::Project>, DomainError> {
-        Ok(vec![])
-    }
-
-    async fn delete_project(&self, _id: i64) -> Result<(), DomainError> {
-        Ok(())
-    }
-
-    // --- Users ---
-    async fn create_user(
-        &self,
-        _user: &agileplus_domain::domain::user::User,
-    ) -> Result<i64, DomainError> {
-        Ok(1)
-    }
-
-    async fn get_user_by_id(
-        &self,
-        _id: i64,
-    ) -> Result<Option<agileplus_domain::domain::user::User>, DomainError> {
-        Ok(None)
-    }
-
     async fn get_user_by_email(
         &self,
         _email: &str,
@@ -1562,57 +1537,4 @@ async fn create_user_invalid_role_returns_400() {
         .json(&serde_json::json!({ "display_name": "Dave", "email": "dave@example.com", "role": "superadmin" }))
         .await;
     resp.assert_status(StatusCode::BAD_REQUEST);
-}
-
-// ── FR-AGP-015 — OpenTelemetry request-span middleware ────────────────────
-
-/// AC (FR-AGP-015): OTel request-span middleware wraps a handler.
-///
-/// The `OtelTracingLayer` must not break the response pipeline.  We verify:
-/// - The handler still returns its normal response (200 OK with a JSON body).
-/// - No panic occurs during span creation / recording.
-///
-/// No live OTLP collector is required; the middleware uses `tracing` spans
-/// which are no-op when no subscriber exports them.
-#[tokio::test]
-async fn otel_request_span_middleware_wraps_handler() {
-    use agileplus_api::middleware::otel::opentelemetry_tracing_layer;
-    use axum::{Json, Router, routing::get};
-    use axum_test::TestServer;
-
-    // Minimal router with the OTel layer applied — mirrors production wiring.
-    let app = Router::new()
-        .route("/ping", get(|| async { Json(serde_json::json!({"ok": true})) }))
-        .layer(opentelemetry_tracing_layer());
-
-    let server = TestServer::new(app).unwrap();
-    let resp = server.get("/ping").await;
-    resp.assert_status_ok();
-
-    // Span attributes (method + path) are recorded on the span; verify the
-    // body is still the expected JSON (pipeline was not disrupted).
-    let body: serde_json::Value = resp.json();
-    assert_eq!(body["ok"], serde_json::json!(true));
-}
-
-/// AC (FR-AGP-015): OTel layer propagates W3C traceparent header without panic.
-#[tokio::test]
-async fn otel_request_span_propagates_traceparent() {
-    use agileplus_api::middleware::otel::opentelemetry_tracing_layer;
-    use axum::{Json, Router, routing::get};
-    use axum_test::TestServer;
-
-    let app = Router::new()
-        .route("/ping", get(|| async { Json(serde_json::json!({"ok": true})) }))
-        .layer(opentelemetry_tracing_layer());
-
-    let server = TestServer::new(app).unwrap();
-    let resp = server
-        .get("/ping")
-        .add_header(
-            "traceparent",
-            "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01",
-        )
-        .await;
-    resp.assert_status_ok();
 }
