@@ -4,7 +4,7 @@ resolver = "2"
 # Remaining scaffolding (44 crates, 19 libs) tracked but excluded from
 # workspace until source is implemented. See: kitty-specs/003-agileplus-platform-completion.
 members = [
-    "rust",                                      # agileplus-proto: tonic/prost gRPC stubs (buf-generated)
+  "rust", # agileplus-proto: tonic/prost gRPC stubs (buf-generated)
 ]
 
 [workspace.package]
@@ -15,7 +15,13 @@ rust-version = "1.88"
 description = "AgilePlus — Phenotype org spec-driven development framework"
 repository = "https://github.com/KooshaPari/AgilePlus"
 documentation = "https://github.com/KooshaPari/AgilePlus"
-keywords = ["agileplus", "phenotype", "spec-driven-development", "project-management", "governance"]
+keywords = [
+  "agileplus",
+  "phenotype",
+  "spec-driven-development",
+  "project-management",
+  "governance",
+]
 categories = ["development-tools", "project-management"]
 authors = ["KooshaPari"]
 
@@ -55,7 +61,11 @@ hyper-util = "0.1"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 opentelemetry = { version = "0.27", features = ["metrics"] }
-opentelemetry_sdk = { version = "0.27", features = ["metrics", "trace", "rt-tokio"] }
+opentelemetry_sdk = { version = "0.27", features = [
+  "metrics",
+  "trace",
+  "rt-tokio",
+] }
 opentelemetry-otlp = { version = "0.27", features = ["tonic", "gzip-tonic"] }
 tracing-opentelemetry = "0.27"
 sentry = { version = "0.34", features = ["tracing"] }
@@ -114,5 +124,27 @@ agileplus-proto = { path = "crates/agileplus-proto" }
 
 # cargo-machete false-positive ignores (dev-only / proc-macro / build-deps)
 [workspace.metadata.cargo-machete]
-ignored = ["cucumber", "axum-test", "paste", "dirs", "serde_yaml", "uuid", "async-trait", "tracing-subscriber", "tracing-appender", "tracing-opentelemetry", "futures", "futures-util", "tonic", "tonic-build", "prost", "prost-build", "utoipa", "opentelemetry", "opentelemetry_sdk", "opentelemetry-otlp", "gix", "tempfile"]
-
+ignored = [
+  "cucumber",
+  "axum-test",
+  "paste",
+  "dirs",
+  "serde_yaml",
+  "uuid",
+  "async-trait",
+  "tracing-subscriber",
+  "tracing-appender",
+  "tracing-opentelemetry",
+  "futures",
+  "futures-util",
+  "tonic",
+  "tonic-build",
+  "prost",
+  "prost-build",
+  "utoipa",
+  "opentelemetry",
+  "opentelemetry_sdk",
+  "opentelemetry-otlp",
+  "gix",
+  "tempfile",
+]

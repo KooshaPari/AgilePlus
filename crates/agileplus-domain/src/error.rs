@@ -1,8 +1,17 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Domain error types.
 
-use phenotype_error_core::ErrorCode;
 use thiserror::Error;
+
+/// Minimal domain-local projection for cross-ecosystem error mapping.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ErrorCode {
+    NotFound,
+    AlreadyExists,
+    ValidationError,
+    NotImplemented,
+    InternalError,
+}
 
 /// A convenience `Result` alias for domain operations.
 pub type DomainResult<T> = Result<T, DomainError>;
