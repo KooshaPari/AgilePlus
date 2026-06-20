@@ -5,6 +5,7 @@ resolver = "2"
 # workspace until source is implemented. See: kitty-specs/003-agileplus-platform-completion.
 members = [
     "rust",                                      # agileplus-proto: tonic/prost gRPC stubs (buf-generated)
+    "crates/agileplus-spec-harmonizer",          # Spec format harmonizer (GSD, OpenSpec, BMAD, Kitty)
 ]
 
 [workspace.package]
