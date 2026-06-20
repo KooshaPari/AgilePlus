@@ -12,6 +12,12 @@ version = "0.1.0"
 edition = "2024"
 license = "MIT"
 rust-version = "1.88"
+description = "AgilePlus — Phenotype org spec-driven development framework"
+repository = "https://github.com/KooshaPari/AgilePlus"
+documentation = "https://github.com/KooshaPari/AgilePlus"
+keywords = ["agileplus", "phenotype", "spec-driven-development", "project-management", "governance"]
+categories = ["development-tools", "project-management"]
+authors = ["KooshaPari"]
 
 [workspace.lints.rust]
 unsafe_code = "forbid"
