@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! OpenTelemetry tracing middleware for axum.
 //!
 //! Provides [`opentelemetry_tracing_layer`] — a Tower layer that:

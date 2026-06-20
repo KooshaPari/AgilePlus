@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Work package route handlers.
 //!
 //! - GET  /api/v1/features/:slug/work-packages      → list WPs for feature

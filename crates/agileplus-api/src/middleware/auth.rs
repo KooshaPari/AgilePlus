@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! API key authentication middleware.
 //!
 //! Protected endpoints require the `X-API-Key` header or `?api_key=` query param.

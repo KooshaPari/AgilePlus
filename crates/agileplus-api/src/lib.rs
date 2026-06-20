@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! agileplus-api — HTTP API server for AgilePlus project management
 //!
 //! Exports routes, handlers, state management, and middleware for the axum-based HTTP server.

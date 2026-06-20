@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! axum router factory and HTTP server startup.
 //!
 //! Route layout:
