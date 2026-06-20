@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "AgilePlus MCP Service - FastMCP 3.0 bridge to Rust core"
 requires-python = ">=3.12"
 dependencies = [
-    "fastmcp>=3.0",
+    "fastmcp>=3.4.2",
     "grpcio>=1.68",
     "grpcio-tools>=1.68",
     "protobuf>=5.29",
