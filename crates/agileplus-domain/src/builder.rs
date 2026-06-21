@@ -287,10 +287,14 @@ fn new_edge_id() -> String {
 
 /// Validate a node id matches `^[A-Z][a-z]+#[a-z0-9-]+$` without a regex engine.
 fn is_valid_node_id(id: &str) -> bool {
-    use regex::Regex;
-    static RE: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
-    let re = RE.get_or_init(|| Regex::new(r"^[A-Z][a-z]+#[a-z0-9\-]+$").expect("domain operation"));
-    re.is_match(id)
+    let parts: Vec<&str> = id.split('#').collect();
+    if parts.len() != 2 { return false; }
+    let (prefix, suffix) = (parts[0], parts[1]);
+    if prefix.is_empty() || suffix.is_empty() { return false; }
+    if !prefix.chars().next().map_or(false, |c| c.is_ascii_uppercase()) { return false; }
+    if prefix.len() == 1 { return false; }
+    if !prefix[1..].chars().all(|c| c.is_ascii_lowercase()) { return false; }
+    suffix.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-')
 }
 
 #[cfg(test)]
