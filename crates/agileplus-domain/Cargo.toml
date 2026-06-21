@@ -8,17 +8,13 @@ rust-version.workspace = true
 [dependencies]
 serde.workspace = true
 serde_json.workspace = true
-<<<<<<< HEAD
-phenotype-error-core = { path = "../../../phenoShared/crates/phenotype-error-core" }
-=======
-phenotype-error-core.workspace = true
->>>>>>> pr-769
 thiserror.workspace = true
 async-trait.workspace = true
 chrono.workspace = true
 sha2.workspace = true
 agileplus-validate.workspace = true
 uuid.workspace = true
+phenotype-error-core = { path = "../../../phenoShared/crates/phenotype-error-core" }
 regex = "1"
 
 [dev-dependencies]
@@ -26,4 +22,4 @@ tokio.workspace = true
 
 [package.metadata.cargo-machete]
 # Declared for the shared-core spine; consumed transitively / via re-export, not detected by static scan.
-ignored = ["phenotype-error-core", "agileplus-validate"]
+ignored = ["agileplus-validate"]
