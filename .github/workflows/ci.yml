@@ -311,7 +311,7 @@ jobs:
       - name: Install taplo
         run: cargo install taplo-cli
       - name: TOML format check
-        run: taplo format --check Cargo.toml rust/Cargo.toml python/pyproject.toml
+        run: taplo format --check Cargo.toml rust/Cargo.toml pyproject.toml
       - name: actionlint
         uses: reviewdog/action-actionlint@v1
 

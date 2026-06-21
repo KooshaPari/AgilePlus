@@ -14,8 +14,6 @@ chrono.workspace = true
 sha2.workspace = true
 agileplus-validate.workspace = true
 uuid.workspace = true
-phenotype-error-core = { path = "../../../phenoShared/crates/phenotype-error-core" }
-regex = "1"
 
 [dev-dependencies]
 tokio.workspace = true
