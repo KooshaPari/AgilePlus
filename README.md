@@ -1,3 +1,6 @@
+<!-- work-state: 🔴 in-progress | ████████░░ 80% -->
+**Quality Gate:** 71-pillar | ARS: C (bootstrapping) | Tier-1 CI: 🔴 in progress
+
 # AgilePlus
 
 **Project management system with AI agent integration** — 24-crate Rust monorepo with hexagonal architecture, Python MCP server, and Plane.so/GitHub integration.
