@@ -9,11 +9,9 @@ rust-version.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
-async-trait.workspace = true
 chrono.workspace = true
 sha2.workspace = true
 agileplus-validate.workspace = true
-uuid.workspace = true
 
 [dev-dependencies]
 tokio.workspace = true

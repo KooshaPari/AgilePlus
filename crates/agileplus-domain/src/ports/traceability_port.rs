@@ -2,7 +2,6 @@
 //! external traceability systems (e.g. Tracera).
 
 use async_trait::async_trait;
-use uuid::Uuid;
 
 use crate::error::DomainError;
 use crate::traceability::TraceRef;
@@ -14,9 +13,9 @@ use crate::traceability::TraceRef;
 #[async_trait]
 pub trait TraceabilityPort: Send + Sync {
     /// Create or update a link from a domain entity to a traced artifact.
-    async fn link_trace(&self, entity_id: Uuid, trace_ref: TraceRef) -> Result<(), DomainError>;
+    async fn link_trace(&self, entity_id: String, trace_ref: TraceRef) -> Result<(), DomainError>;
 
     /// Retrieve all trace links for a given domain entity.
     /// Returns an empty `Vec` when no traces exist (not an error).
-    async fn get_traces(&self, entity_id: Uuid) -> Result<Vec<TraceRef>, DomainError>;
+    async fn get_traces(&self, entity_id: String) -> Result<Vec<TraceRef>, DomainError>;
 }

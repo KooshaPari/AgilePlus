@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Domain event publisher port.
 
-use async_trait::async_trait;
-
 use crate::error::DomainError;
 
 /// Application-level domain events emitted AFTER persistence.
@@ -35,7 +33,6 @@ pub enum DomainEvent {
 }
 
 /// Output port for publishing domain events to an event bus / message broker.
-#[async_trait]
 pub trait DomainEventPublisher: Send + Sync {
-    async fn publish(&self, event: DomainEvent) -> Result<(), DomainError>;
+    fn publish(&self, event: DomainEvent) -> Result<(), DomainError>;
 }
