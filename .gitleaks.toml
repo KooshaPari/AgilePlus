@@ -1,0 +1,6 @@
+[extend]
+useDefault = true
+
+[[rules.allowlist]]
+description = "Cargo.lock checksums"
+paths = ["Cargo.lock"]
