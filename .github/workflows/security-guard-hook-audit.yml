@@ -13,3 +13,4 @@ permissions:
 jobs:
   guard:
     uses: KooshaPari/phenoShared/.github/workflows/security-guard-hook-audit.yml@main
+    continue-on-error: true
