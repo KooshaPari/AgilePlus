@@ -1,0 +1,68 @@
+# BLOCK A 71-Pillar Quality Gate
+# Tier 1 = CI red (blocks merge), Tier 2 = quality yellow (blocks trace-gate), Tier 3 = agent-ready green
+schema_version = "1.0.0"
+
+[thresholds]
+line_coverage_min = 80
+branch_coverage_min = 70
+domain_line_coverage_min = 90
+cyclomatic_complexity_max = 10
+max_god_module_loc = 500
+mutation_score_min = 60
+scorecard_min = 7.0
+sonar_gate = "A"
+agent_readiness_min = "B"
+
+[domain_purity]
+# Crates whose deps must be subset of allowed_deps
+enforced_crates = ["agileplus-domain"]
+allowed_deps = [
+  "serde",
+  "serde_json",
+  "chrono",
+  "sha2",
+  "thiserror",
+  "toml",
+  "dirs-next",
+  "zeroize",
+  "keyring",
+]
+
+[traceability]
+require_fr_decorator = true        # all public fns must have #[trace_fr] or // FR: comment
+stale_links_max = 0
+conflict_links_max = 0
+partial_coverage_max_pct = 5
+min_adr_count = 1
+bdd_features_required = true
+
+[acceptance_contracts]
+require_progression_gates = true
+require_bdd_per_fr = true
+require_evidence_ref = true
+allow_pending_ac_on_merge = false
+
+[agent_readiness]
+# Grading rubric for ARS (Agent Readiness Score)
+# A=90-100, B=75-89, C=60-74, D=40-59, F=<40
+pillars = [
+  { id = 61, name = "context_density",         weight = 10, check = "claude_md_exists" },
+  { id = 62, name = "task_decomposition",       weight = 10, check = "issues_have_ac_pct >= 80" },
+  { id = 63, name = "reproducible_build",       weight = 15, check = "build_succeeds_clean" },
+  { id = 64, name = "test_harness_self_sufficient", weight = 15, check = "tests_run_zero_setup" },
+  { id = 65, name = "lint_auto_fixable",        weight = 10, check = "lint_zero_residual" },
+  { id = 66, name = "branch_strategy_clear",    weight = 5,  check = "contributing_md_exists" },
+  { id = 67, name = "fr_code_traceability",     weight = 15, check = "fr_grep_pct >= 80" },
+  { id = 68, name = "no_magic_globals",         weight = 5,  check = "no_undoc_global_state" },
+  { id = 69, name = "deterministic_seeds",      weight = 5,  check = "seeded_rng_in_tests" },
+  { id = 70, name = "ci_is_oracle",             weight = 5,  check = "ci_green_on_branch_push" },
+  { id = 71, name = "prompt_ready_spec",        weight = 5,  check = "issues_self_contained_pct >= 60" },
+]
+
+[grading_scale]
+# Applies across all non-binary pillars
+A = { min = 90, label = "Exemplary — agent can self-drive unattended" }
+B = { min = 75, label = "Proficient — agent needs occasional clarification" }
+C = { min = 60, label = "Developing — agent produces drafts, human review needed" }
+D = { min = 40, label = "Emerging — significant rework after agent output" }
+F = { min = 0,  label = "Insufficient — agent cannot make meaningful progress" }
