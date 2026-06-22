@@ -62,7 +62,7 @@ jobs:
       security-events: write
     strategy:
       matrix:
-        language: [cpp, python]
+        language: [python]        # cpp removed: not in repo
     steps:
       - uses: actions/checkout@v7
       - uses: github/codeql-action/init@v4

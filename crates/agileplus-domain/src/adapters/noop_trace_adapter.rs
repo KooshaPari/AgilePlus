@@ -4,7 +4,6 @@
 //! system is connected, in integration tests, or as a default/fallback implementation.
 
 use async_trait::async_trait;
-use uuid::Uuid;
 
 use crate::error::DomainError;
 use crate::ports::traceability_port::TraceabilityPort;
@@ -19,11 +18,10 @@ use crate::traceability::TraceRef;
 /// use agileplus_domain::ports::traceability_port::TraceabilityPort;
 /// use agileplus_domain::traceability::TraceRef;
 /// use chrono::Utc;
-/// use uuid::Uuid;
 ///
 /// # tokio_test::block_on(async {
 /// let adapter = NoopTraceAdapter;
-/// let entity_id = Uuid::new_v4();
+/// let entity_id = format!("trace-{}", chrono::Utc::now().timestamp_nanos_opt().unwrap_or(0));
 /// let trace_ref = TraceRef {
 ///     trace_id: "FR-001".into(),
 ///     artifact_type: "requirement".into(),
@@ -42,11 +40,11 @@ pub struct NoopTraceAdapter;
 
 #[async_trait]
 impl TraceabilityPort for NoopTraceAdapter {
-    async fn link_trace(&self, _entity_id: Uuid, _trace_ref: TraceRef) -> Result<(), DomainError> {
+    async fn link_trace(&self, _entity_id: String, _trace_ref: TraceRef) -> Result<(), DomainError> {
         Ok(())
     }
 
-    async fn get_traces(&self, _entity_id: Uuid) -> Result<Vec<TraceRef>, DomainError> {
+    async fn get_traces(&self, _entity_id: String) -> Result<Vec<TraceRef>, DomainError> {
         Ok(vec![])
     }
 }

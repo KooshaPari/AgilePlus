@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Plane.so sync port.
 
-use async_trait::async_trait;
-
 use crate::domain::story::{Story, StoryStatus};
 use crate::error::DomainError;
 
@@ -43,17 +41,16 @@ impl PlaneIssue {
 }
 
 /// Hexagonal port for Plane.so synchronization.
-#[async_trait]
 pub trait PlaneSyncPort: Send + Sync {
-    async fn list_projects(&self) -> Result<Vec<PlaneProject>, DomainError>;
+    fn list_projects(&self) -> Result<Vec<PlaneProject>, DomainError>;
 
-    async fn sync_story_to_plane(
+    fn sync_story_to_plane(
         &self,
         project_identifier: &str,
         story: &Story,
     ) -> Result<PlaneIssue, DomainError>;
 
-    async fn sync_from_plane(
+    fn sync_from_plane(
         &self,
         project_id: i64,
         epic_id: i64,
