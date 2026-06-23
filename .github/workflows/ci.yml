@@ -309,7 +309,9 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Install taplo
-        run: cargo install taplo-cli
+        uses: taiki-e/install-action@v2
+        with:
+          tool: taplo
       - name: TOML format check
         run: taplo format --check Cargo.toml rust/Cargo.toml pyproject.toml
       - name: actionlint
