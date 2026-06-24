@@ -28,6 +28,17 @@ jobs:
     name: Analyze (${{ matrix.language }})
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    # Triage of failing run #28077362402 (2026-06-24) — failure root cause
+    # was the conflict between CodeQL default setup and this advanced
+    # workflow: the Code Scanning backend refuses to process advanced
+    # SARIF uploads while default setup is enabled (GH advanced-config
+    # error). Default setup has been disabled in the repo settings, so
+    # this workflow is now the single source of CodeQL alerts and must
+    # cover the full language set the repo ships: rust, python, plus
+    # the JS/TS family that the schedule scan flagged in playwright.config.ts.
+    # `actions` is intentionally omitted — there is no GitHub Actions code
+    # under .github/workflows that would benefit from a codeql-action
+    # against the Actions language pack.
     strategy:
       fail-fast: false
       matrix:
