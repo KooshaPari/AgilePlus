@@ -313,7 +313,9 @@ jobs:
         with:
           tool: taplo
       - name: TOML format check
-        run: taplo format --check Cargo.toml rust/Cargo.toml pyproject.toml
+        # pyproject.toml is intentionally absent (no python/ subdir in this monorepo).
+        # Only the two TOML files that exist on main are checked.
+        run: taplo format --check Cargo.toml rust/Cargo.toml
       - name: actionlint
         uses: reviewdog/action-actionlint@v1
 
