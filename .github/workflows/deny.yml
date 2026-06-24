@@ -40,6 +40,10 @@ jobs:
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
 
       - name: Checkout phenoShared sibling
+        # phenoShared is an optional sibling workspace. If the repo is not
+        # accessible (private, renamed, or not yet provisioned), we still
+        # want the cargo-deny run itself to proceed against the main crate.
+        continue-on-error: true
         run: |
           git clone --depth 1 \
             "https://x-access-token:${{ github.token }}@github.com/KooshaPari/phenoShared.git" \

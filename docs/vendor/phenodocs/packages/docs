@@ -1,1 +1,17 @@
-/Users/kooshapari/CodeProjects/Phenotype/repos/libs/crates/phenodocs/packages/docs
+# phenodocs vendor placeholder
+
+This file replaces a previously-committed absolute symlink
+(`docs/vendor/phenodocs/packages/docs` -> `/Users/kooshapari/CodeProjects/Phenotype/repos/libs/crates/phenodocs/packages/docs`)
+that was a local development path on a single contributor's machine and broke
+the `release-plz` workflow on every CI run:
+
+    ERROR cannot copy directory "<repo-root>" to Utf8TempDir
+    Caused by:
+        0: cannot strip prefix "<repo-root>" from
+           "/Users/kooshapari/CodeProjects/Phenotype/repos/libs/crates/phenodocs/packages/docs"
+        1: prefix not found
+
+Submodule `phenodocs` (path `phenodocs`) is the upstream source of those docs;
+this placeholder preserves the `docs/vendor/phenodocs/packages/` tree shape so
+historical references and existing build steps that look for it keep working
+without depending on a contributor-local absolute path.
