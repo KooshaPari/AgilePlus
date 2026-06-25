@@ -1,0 +1,8 @@
+{
+  "spec_id": "eco-047",
+  "slug": "eco-047-toml-codeql-hygiene",
+  "title": "TOML CodeQL Hygiene",
+  "status": "active",
+  "created_at": "2026-06-25T00:00:00Z",
+  "type": "operational"
+}
