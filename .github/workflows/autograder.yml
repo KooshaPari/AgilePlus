@@ -60,11 +60,9 @@ jobs:
           RUSTFLAGS: "-D warnings"
 
       - name: Gate 5 — Cargo audit
-        run: |
-          cargo install --locked cargo-audit
-          cargo audit
-        env:
-          RUSTFLAGS: "-D warnings"
+        uses: rustsec/audit-check@v2.0.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Gate 6 — Cargo machete
         run: |
