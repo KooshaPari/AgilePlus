@@ -34,4 +34,4 @@ jobs:
         env:
           SKIP: legacy-tooling-scan
         with:
-          extra_args: --hook-stage pre-commit --config .pre-commit-config.yaml --show-diff-on-failure
+          extra_args: --hook-stage pre-commit --config .pre-commit-config.yaml --show-diff-on-failure --skip legacy-tooling-scan
