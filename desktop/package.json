@@ -1,0 +1,23 @@
+{
+  "name": "agileplus-desktop",
+  "version": "0.1.0",
+  "description": "AgilePlus desktop client (Electrobun, step-1). Offline-first, operates on local repo state. End-state native: WinUI-rs + SwiftUI + Linux-native per ADR.",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "electrobun dev",
+    "build": "electrobun build",
+    "start": "electrobun start"
+  },
+  "dependencies": {
+    "electrobun": "^0.10.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "@types/node": "^20.11.0"
+  },
+  "engines": {
+    "node": ">=18.18.0"
+  }
+}
