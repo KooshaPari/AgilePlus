@@ -1,8 +1,8 @@
 [workspace]
 members = [
-    "crates/agileplus-agent-dispatch",
-    "crates/agileplus-agent-review",
-    "crates/agileplus-agent-service",
+  "crates/agileplus-agent-dispatch",
+  "crates/agileplus-agent-review",
+  "crates/agileplus-agent-service",
 ]
 resolver = "2"
 

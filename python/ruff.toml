@@ -1,25 +1,23 @@
 target-version = "py314"
 line-length = 100
-exclude = [
-    "src/agileplus_proto/gen/**",
-]
+exclude = ["src/agileplus_proto/gen/**"]
 
 [lint]
 select = [
-    "E",    # pycodestyle errors
-    "W",    # pycodestyle warnings
-    "F",    # pyflakes
-    "I",    # isort
-    "N",    # pep8-naming
-    "UP",   # pyupgrade
-    "B",    # flake8-bugbear
-    "A",    # flake8-builtins
-    "S",    # flake8-bandit (security)
-    "T20",  # flake8-print
-    "RUF",  # ruff-specific rules
+  "E",   # pycodestyle errors
+  "W",   # pycodestyle warnings
+  "F",   # pyflakes
+  "I",   # isort
+  "N",   # pep8-naming
+  "UP",  # pyupgrade
+  "B",   # flake8-bugbear
+  "A",   # flake8-builtins
+  "S",   # flake8-bandit (security)
+  "T20", # flake8-print
+  "RUF", # ruff-specific rules
 ]
 ignore = [
-    "S101",  # assert used (ok in tests)
+  "S101", # assert used (ok in tests)
 ]
 
 [lint.per-file-ignores]

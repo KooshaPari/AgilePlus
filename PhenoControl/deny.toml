@@ -1,9 +1,9 @@
 [advisories]
 ignore = [
-    # RUSTSEC-2020-0036: failure crate unmaintained, not used in codebase
-    { crate = "RUSTSEC-2020-0036", reason = "failure not referenced in any dependency tree" },
-    # RUSTSEC-2025-0119: number_prefix crate unmaintained, not used in codebase
-    { crate = "RUSTSEC-2025-0119", reason = "number_prefix not referenced in any dependency tree" },
+  # RUSTSEC-2020-0036: failure crate unmaintained, not used in codebase
+  { crate = "RUSTSEC-2020-0036", reason = "failure not referenced in any dependency tree" },
+  # RUSTSEC-2025-0119: number_prefix crate unmaintained, not used in codebase
+  { crate = "RUSTSEC-2025-0119", reason = "number_prefix not referenced in any dependency tree" },
 ]
 
 [licenses]

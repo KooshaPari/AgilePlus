@@ -1,17 +1,17 @@
 [advisories]
 ignore = [
-    # rsa: Marvin Attack — no fix available upstream yet, low risk in our usage
-    "RUSTSEC-2023-0071",
-    # paste: unmaintained — no security impact, only used in proc-macro context
-    "RUSTSEC-2025-0012",
-    # derivative: unmaintained — only used in derive macros, no security impact
-    "RUSTSEC-2024-0384",
-    # idna: unicode normalization issue — no fix available in current dep tree
-    "RUSTSEC-2024-0436",
-    # openssl: informational, no vulnerability
-    "RUSTSEC-2024-0370",
-    # tonic/prost: informational advisory
-    "RUSTSEC-2025-0058",
-    # instant: unmaintained, no security impact
-    "RUSTSEC-2025-0134",
+  # rsa: Marvin Attack — no fix available upstream yet, low risk in our usage
+  "RUSTSEC-2023-0071",
+  # paste: unmaintained — no security impact, only used in proc-macro context
+  "RUSTSEC-2025-0012",
+  # derivative: unmaintained — only used in derive macros, no security impact
+  "RUSTSEC-2024-0384",
+  # idna: unicode normalization issue — no fix available in current dep tree
+  "RUSTSEC-2024-0436",
+  # openssl: informational, no vulnerability
+  "RUSTSEC-2024-0370",
+  # tonic/prost: informational advisory
+  "RUSTSEC-2025-0058",
+  # instant: unmaintained, no security impact
+  "RUSTSEC-2025-0134",
 ]
