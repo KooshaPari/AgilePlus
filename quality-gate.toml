@@ -29,7 +29,7 @@ allowed_deps = [
 ]
 
 [traceability]
-require_fr_decorator = true        # all public fns must have #[trace_fr] or // FR: comment
+require_fr_decorator = true  # all public fns must have #[trace_fr] or // FR: comment
 stale_links_max = 0
 conflict_links_max = 0
 partial_coverage_max_pct = 5
@@ -46,17 +46,17 @@ allow_pending_ac_on_merge = false
 # Grading rubric for ARS (Agent Readiness Score)
 # A=90-100, B=75-89, C=60-74, D=40-59, F=<40
 pillars = [
-  { id = 61, name = "context_density",         weight = 10, check = "claude_md_exists" },
-  { id = 62, name = "task_decomposition",       weight = 10, check = "issues_have_ac_pct >= 80" },
-  { id = 63, name = "reproducible_build",       weight = 15, check = "build_succeeds_clean" },
+  { id = 61, name = "context_density", weight = 10, check = "claude_md_exists" },
+  { id = 62, name = "task_decomposition", weight = 10, check = "issues_have_ac_pct >= 80" },
+  { id = 63, name = "reproducible_build", weight = 15, check = "build_succeeds_clean" },
   { id = 64, name = "test_harness_self_sufficient", weight = 15, check = "tests_run_zero_setup" },
-  { id = 65, name = "lint_auto_fixable",        weight = 10, check = "lint_zero_residual" },
-  { id = 66, name = "branch_strategy_clear",    weight = 5,  check = "contributing_md_exists" },
-  { id = 67, name = "fr_code_traceability",     weight = 15, check = "fr_grep_pct >= 80" },
-  { id = 68, name = "no_magic_globals",         weight = 5,  check = "no_undoc_global_state" },
-  { id = 69, name = "deterministic_seeds",      weight = 5,  check = "seeded_rng_in_tests" },
-  { id = 70, name = "ci_is_oracle",             weight = 5,  check = "ci_green_on_branch_push" },
-  { id = 71, name = "prompt_ready_spec",        weight = 5,  check = "issues_self_contained_pct >= 60" },
+  { id = 65, name = "lint_auto_fixable", weight = 10, check = "lint_zero_residual" },
+  { id = 66, name = "branch_strategy_clear", weight = 5, check = "contributing_md_exists" },
+  { id = 67, name = "fr_code_traceability", weight = 15, check = "fr_grep_pct >= 80" },
+  { id = 68, name = "no_magic_globals", weight = 5, check = "no_undoc_global_state" },
+  { id = 69, name = "deterministic_seeds", weight = 5, check = "seeded_rng_in_tests" },
+  { id = 70, name = "ci_is_oracle", weight = 5, check = "ci_green_on_branch_push" },
+  { id = 71, name = "prompt_ready_spec", weight = 5, check = "issues_self_contained_pct >= 60" },
 ]
 
 [grading_scale]
@@ -65,4 +65,4 @@ A = { min = 90, label = "Exemplary — agent can self-drive unattended" }
 B = { min = 75, label = "Proficient — agent needs occasional clarification" }
 C = { min = 60, label = "Developing — agent produces drafts, human review needed" }
 D = { min = 40, label = "Emerging — significant rework after agent output" }
-F = { min = 0,  label = "Insufficient — agent cannot make meaningful progress" }
+F = { min = 0, label = "Insufficient — agent cannot make meaningful progress" }

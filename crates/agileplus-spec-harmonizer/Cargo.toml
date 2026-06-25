@@ -7,7 +7,17 @@ license.workspace = true
 repository.workspace = true
 description = "Harmonizes GSD, OpenSpec, BMAD-Method, and Spec-Kitty spec formats into a single normalized WorkPackage shape"
 documentation = "https://docs.rs/agileplus-spec-harmonizer"
-keywords = ["phenotype", "agileplus", "spec", "harmonizer", "gsd", "openspec", "bmad", "kitty", "traceability"]
+keywords = [
+  "phenotype",
+  "agileplus",
+  "spec",
+  "harmonizer",
+  "gsd",
+  "openspec",
+  "bmad",
+  "kitty",
+  "traceability",
+]
 categories = ["development-tools", "parser-implementations", "data-structures"]
 authors = ["kooshapari"]
 
