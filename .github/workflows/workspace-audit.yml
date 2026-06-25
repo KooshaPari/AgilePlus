@@ -19,12 +19,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Checkout phenoShared sibling
-        run: |
-          git clone --depth 1 \
-            "https://x-access-token:${{ github.token }}@github.com/KooshaPari/phenoShared.git" \
-            "${{ github.workspace }}/../phenoShared"
-
       - name: Run workspace audit
         run: |
           chmod +x scripts/workspace-audit.sh

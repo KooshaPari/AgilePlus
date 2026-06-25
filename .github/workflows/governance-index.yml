@@ -4,6 +4,9 @@ on:
   push:
     branches: [main]
   pull_request:
+    paths:
+      - "kitty-specs/**"
+      - "tooling/governance_index.py"
   workflow_dispatch:
 
 permissions:
@@ -17,4 +20,11 @@ jobs:
       - name: Regenerate governance index
         run: python3 tooling/governance_index.py
       - name: Verify committed index
-        run: git diff --exit-code -- kitty-specs/INDEX.md
+        run: |
+          if git diff --quiet -- kitty-specs/INDEX.md; then
+            echo "kitty-specs/INDEX.md is up to date."
+          else
+            echo "kitty-specs/INDEX.md is out of date. Run: python3 tooling/governance_index.py"
+            git diff -- kitty-specs/INDEX.md
+            exit 1
+          fi
