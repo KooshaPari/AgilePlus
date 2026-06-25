@@ -4,6 +4,8 @@
 *.yaml
 *.json
 !pyproject.toml
+!deny.toml
+!.gitleaks.toml
 
 # Environment configuration
 .env
