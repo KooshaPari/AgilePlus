@@ -329,6 +329,42 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - uses: wagoid/commitlint-github-action@v6
+      # Empirical fix (eco-044-gate-triage): wagoid/commitlint-github-action
+      # lints every commit in the PR diff range, including the synthetic merge
+      # commit ("Merge <head> into <base>"). That commit lacks a conventional
+      # subject (e.g. "feat: ...") and fails [subject-empty]/[type-empty].
+      # We replace the action with an explicit setup + run that:
+      #   1. Installs commitlint + config-conventional
+      #   2. Lints only non-merge commits in the PR range
+      - name: Set up Node
+        uses: actions/setup-node@v6
         with:
-          configFile: .commitlintrc.yml
+          node-version: "20"
+      - name: Install commitlint
+        run: |
+          npm install --no-save \
+            commitlint@^19 \
+            @commitlint/config-conventional@^19
+      - name: Lint PR commit messages (skip merges)
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          # List non-merge commits introduced by the PR.
+          COMMITS=$(git log --no-merges --pretty=format:%H "${BASE_SHA}..${HEAD_SHA}")
+          if [ -z "$COMMITS" ]; then
+            echo "No non-merge commits to lint (PR contains only merges)."
+            exit 0
+          fi
+          FAIL=0
+          for sha in $COMMITS; do
+            MSG=$(git log -1 --pretty=format:%B "$sha")
+            echo "── Linting ${sha:0:12} ──"
+            echo "$MSG" | npx commitlint --config .commitlintrc.yml || FAIL=1
+          done
+          if [ "$FAIL" -ne 0 ]; then
+            echo "::error::Conventional Commits gate failed."
+            exit 1
+          fi
+          echo "All non-merge PR commits conform to Conventional Commits."
