@@ -15,7 +15,7 @@ permissions:
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  GITLEAKS_CONFIG: .gitleaks.toml
+  GITLEAKS_CONFIG: gitleaks.toml
 
 jobs:
   scan:
@@ -28,7 +28,7 @@ jobs:
           fetch-depth: 0
 
       - name: Run gitleaks
-        uses: gitleaks/gitleaks-action@1c4d3b6c8e2a8e3a8e3a8e3a8e3a8e3a8e3a8e3a # v2.1.6
+        uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ env.GITHUB_TOKEN }}
           GITLEAKS_CONFIG: ${{ env.GITLEAKS_CONFIG }}

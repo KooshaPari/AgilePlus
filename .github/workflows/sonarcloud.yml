@@ -19,6 +19,10 @@ jobs:
           fetch-depth: 0
       - name: SonarCloud Scan
         uses: SonarSource/sonarqube-scan-action@45f27363d4ff7d6b16baa0516490f10c52bdd5fc
+        with:
+          args: >
+            -Dsonar.projectKey=KooshaPari_AgilePlus
+            -Dsonar.organization=kooshapari
         env:
           GITHUB_TOKEN: ${{ github.token }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
