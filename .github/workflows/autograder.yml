@@ -29,6 +29,14 @@ jobs:
         with:
           shared-key: "autograder"
 
+      - name: Install protoc (agileplus-proto build script)
+        # Empirical fix (eco-044-gate-triage): prost-build expects `protoc` on PATH.
+        # Rust 24.04 runner image does not ship protobuf-compiler.
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y protobuf-compiler
+          protoc --version
+
       - name: Gate 1 — Workspace build
         run: cargo build --workspace
         env:

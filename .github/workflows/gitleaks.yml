@@ -28,7 +28,10 @@ jobs:
           fetch-depth: 0
 
       - name: Run gitleaks
-        uses: gitleaks/gitleaks-action@v2
+        # Empirical fix (eco-044-gate-triage): pin to a real SHA. Floating `@v2`
+        # was resolving to a placeholder SHA in some runner contexts and failing
+        # with "Unable to resolve action gitleaks/gitleaks-action@1c4d3b6...".
+        uses: gitleaks/gitleaks-action@1938557f6a58837331b99822ab17b8e536e7bef9 # v2.3.0
         env:
           GITHUB_TOKEN: ${{ env.GITHUB_TOKEN }}
           GITLEAKS_CONFIG: ${{ env.GITLEAKS_CONFIG }}

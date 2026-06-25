@@ -23,6 +23,11 @@ jobs:
           args: >
             -Dsonar.projectKey=KooshaPari_AgilePlus
             -Dsonar.organization=kooshapari
+            # Empirical fix (eco-044-gate-triage): sonar fails with
+            # "You are running CI analysis while Automatic Analysis is enabled.
+            # Please consider disabling one or the other." Disable auto-analysis
+            # explicitly so the explicit CI scan is the only analysis path.
+            -Dsonar.autoAnalysis.disable=true
         env:
           GITHUB_TOKEN: ${{ github.token }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

@@ -19,15 +19,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Bootstrap legacy tooling scanner
-        run: |
-          mkdir -p tooling/legacy-enforcement/scanner tooling/legacy-enforcement/policy
-          curl -fsSL \
-            https://raw.githubusercontent.com/phenotype/repos/main/tooling/legacy-enforcement/scanner/legacy_tooling_scanner.py \
-            -o tooling/legacy-enforcement/scanner/legacy_tooling_scanner.py
-          curl -fsSL \
-            https://raw.githubusercontent.com/phenotype/repos/main/tooling/legacy-enforcement/policy/rules.yaml \
-            -o tooling/legacy-enforcement/policy/rules.yaml
+      # Empirical fix (eco-044-gate-triage): the bootstrap step tried to curl
+      # tooling/legacy-enforcement files from `phenotype/repos`, but that
+      # org/repo returns 404. The scanner lives in-repo; no bootstrap needed.
+      # Removed curl download — pre-commit will pick up files from the repo.
 
       - name: Run pre-commit guard checks
         uses: pre-commit/action@2c7b3805fd2a0fd8c1884dcaebf91fc102a13ecd  # v3.0.1
