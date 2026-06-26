@@ -10,7 +10,7 @@ RUST_LOG = "info,agileplus=debug"
 
 [tasks.lint]
 description = "Run the Rust linter"
-run = "cargo clippy --all-targets --all-features -- -D warnings"
+run = "cargo clippy --workspace --all-targets -- -D warnings"
 
 [tasks.test]
 description = "Run the Rust test suite"
