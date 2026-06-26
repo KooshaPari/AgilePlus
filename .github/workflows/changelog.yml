@@ -27,12 +27,7 @@ jobs:
 
       - name: Generate changelog
         run: |
-          git-cliff --tag "$VERSION" > CHANGELOG.md || printf "# Changelog
-
-## %s
-
-_Generated release notes unavailable (cliff template); see commit history._
-" "$VERSION" > CHANGELOG.md
+          git-cliff --tag "$VERSION" > CHANGELOG.md || echo "# Changelog ($VERSION) — release notes unavailable; see commit history" > CHANGELOG.md
 
       - name: Commit and push changelog
         run: |
