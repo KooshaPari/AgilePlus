@@ -43,6 +43,7 @@ jobs:
 
   changelog:
     needs: gate-check
+    continue-on-error: true
     uses: ./.github/workflows/changelog.yml
     with:
       version: ${{ inputs.version }}
