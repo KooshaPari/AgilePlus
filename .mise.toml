@@ -7,3 +7,19 @@ python = "3.12"
 [env]
 AGILEPLUS_ENV = "development"
 RUST_LOG = "info,agileplus=debug"
+
+[tasks.lint]
+description = "Run the Rust linter"
+run = "cargo clippy --all-targets --all-features -- -D warnings"
+
+[tasks.test]
+description = "Run the Rust test suite"
+run = "cargo test --workspace"
+
+[tasks.audit]
+description = "Run the Rust security audit"
+run = "cargo audit"
+
+[tasks.build]
+description = "Build release binaries"
+run = "cargo build --release"
