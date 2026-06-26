@@ -45,6 +45,8 @@ jobs:
         run: mise run test
         continue-on-error: false
 
+      - name: Install cargo-audit
+        run: cargo install cargo-audit --locked || true
       - name: Run security audit
         if: ${{ inputs.channel == 'beta' || inputs.channel == 'stable' || inputs.risk_profile == 'high' }}
         run: mise run audit
