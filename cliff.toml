@@ -12,7 +12,7 @@ body = """
 ## {{ group }}
 
 {%- for commit in commits %}
-- {% if commit.breaking %}**BREAKING** {% endif %}{{ commit.message | upper_first }} ([`{{ commit.id | truncate(length=7, end="") }}`]({{ commit.link }}))
+- {% if commit.breaking %}**BREAKING** {% endif %}{{ commit.message | upper_first }} ([`{{ commit.id | truncate(length=7, end="") }}`](https://github.com/KooshaPari/AgilePlus/commit/{{ commit.id }}))
 {%- endfor %}
 {%- endfor %}
 """
