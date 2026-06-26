@@ -1,25 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import { useAgilePlusStore } from './stores/agileplus';
+import { useDashboardData } from './hooks/useDashboardData';
+import { useWorkPackages } from './hooks/useWorkPackages';
 import { Button, Badge, Card, Pill, Modal, Toast } from './components';
+import type { ApiEpic, ApiStory } from './types/api';
 import './styles/globals.css';
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-interface Epic {
-  id: number;
-  title: string;
-  status: string;
-  requirement_id: string | null;
-}
-
-interface Story {
-  id: number;
-  epic_id: number | null;
-  title: string;
-  status: string;
-  requirement_id: string | null;
-}
 
 type View = 'dashboard' | 'epics' | 'stories' | 'evidence';
 
@@ -39,7 +23,7 @@ function epicBadgeVariant(status: string): 'success' | 'warning' | 'error' | 'in
 
 // ─── Seed / demo data (used when API is unreachable) ─────────────────────────
 
-const SEED_EPICS: Epic[] = [
+const SEED_EPICS: ApiEpic[] = [
   { id: 1, title: 'Core domain entities', status: 'Done', requirement_id: 'FR-AGP-001' },
   { id: 2, title: 'SQLite persistence layer', status: 'Done', requirement_id: 'FR-AGP-002' },
   { id: 3, title: 'Axum REST API', status: 'In Progress', requirement_id: 'FR-AGP-003' },
@@ -48,7 +32,7 @@ const SEED_EPICS: Epic[] = [
   { id: 6, title: 'Plane.so integration', status: 'Planned', requirement_id: 'FR-AGP-018' },
 ];
 
-const SEED_STORIES: Story[] = [
+const SEED_STORIES: ApiStory[] = [
   { id: 1, epic_id: 1, title: 'Define Epic/Story/WorkPackage value objects', status: 'Done', requirement_id: null },
   { id: 2, epic_id: 1, title: 'Add requirement traceability links', status: 'Done', requirement_id: null },
   { id: 3, epic_id: 2, title: 'SQLite migrations for all domain tables', status: 'Done', requirement_id: null },
@@ -98,7 +82,7 @@ function Nav({ activeView, onNav }: NavProps) {
 
 // ─── Dashboard view ────────────────────────────────────────────────────────────
 
-function DashboardView({ epics, stories }: { epics: Epic[]; stories: Story[] }) {
+function DashboardView({ epics, stories }: { epics: ApiEpic[]; stories: ApiStory[] }) {
   const done = epics.filter((e) => e.status.toLowerCase() === 'done').length;
   const inProgress = epics.filter((e) => ['in_progress', 'in progress'].includes(e.status.toLowerCase())).length;
   const planned = epics.filter((e) => e.status.toLowerCase() === 'planned').length;
@@ -153,8 +137,8 @@ function DashboardView({ epics, stories }: { epics: Epic[]; stories: Story[] }) 
 
 // ─── Epics view ────────────────────────────────────────────────────────────────
 
-function EpicsView({ epics, stories }: { epics: Epic[]; stories: Story[] }) {
-  const [selectedEpic, setSelectedEpic] = useState<Epic | null>(null);
+function EpicsView({ epics, stories }: { epics: ApiEpic[]; stories: ApiStory[] }) {
+  const [selectedEpic, setSelectedEpic] = useState<ApiEpic | null>(null);
 
   return (
     <div>
@@ -241,7 +225,7 @@ function EpicsView({ epics, stories }: { epics: Epic[]; stories: Story[] }) {
 
 // ─── Stories view ──────────────────────────────────────────────────────────────
 
-function StoriesView({ epics, stories }: { epics: Epic[]; stories: Story[] }) {
+function StoriesView({ epics, stories }: { epics: ApiEpic[]; stories: ApiStory[] }) {
   const [filterEpic, setFilterEpic] = useState<number | 'all'>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
 
@@ -347,57 +331,21 @@ function EvidenceGalleryView() {
 // ─── Root App ─────────────────────────────────────────────────────────────────
 
 export function App() {
-  const setWorkPackages = useAgilePlusStore((state) => state.setWorkPackages);
-  const setLoading = useAgilePlusStore((state) => state.setLoading);
+  const { epics: apiEpics, stories: apiStories, loading, error } = useDashboardData();
+  useWorkPackages();
 
   const [view, setView] = useState<View>('dashboard');
-  const [epics, setEpics] = useState<Epic[]>([]);
-  const [stories, setStories] = useState<Story[]>([]);
-  const [dataReady, setDataReady] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
-  // Try live API, fall back to seed data
-  useEffect(() => {
-    setLoading(true);
-    axios
-      .get('/api/dashboard/epics-stories.json', { timeout: 3000 })
-      .then((res) => {
-        const data = res.data as { epics: Epic[]; stories: Story[] };
-        if (data.epics?.length) {
-          setEpics(data.epics);
-          setStories(data.stories ?? []);
-        } else {
-          setEpics(SEED_EPICS);
-          setStories(SEED_STORIES);
-        }
-      })
-      .catch(() => {
-        setEpics(SEED_EPICS);
-        setStories(SEED_STORIES);
-        setToastMsg('API offline — showing seed data');
-      })
-      .finally(() => {
-        setLoading(false);
-        setDataReady(true);
-      });
+  const epics = apiEpics.length > 0 ? apiEpics : loading ? [] : SEED_EPICS;
+  const stories = apiStories.length > 0 ? apiStories : loading ? [] : SEED_STORIES;
+  const dataReady = !loading;
 
-    // Also try the work-packages endpoint for the Zustand store
-    axios
-      .get('/api/dashboard/work-packages.json', { timeout: 3000 })
-      .then((res) => {
-        const data = res.data as { work_packages: any[] };
-        setWorkPackages(
-          (data.work_packages ?? []).map((wp: any) => ({
-            id: String(wp.id),
-            title: wp.title ?? '(untitled)',
-            status: wp.status ?? 'planned',
-            priority: wp.priority ?? 'medium',
-            assignee: wp.assignee ?? undefined,
-          }))
-        );
-      })
-      .catch(() => {/* no-op */});
-  }, [setWorkPackages, setLoading]);
+  useEffect(() => {
+    if (!loading && error && apiEpics.length === 0) {
+      setToastMsg('API offline — showing seed data');
+    }
+  }, [loading, error, apiEpics.length]);
 
   return (
     <div className="min-h-screen bg-gray-50">

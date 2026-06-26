@@ -18,5 +18,5 @@
     "types": ["vite/client"]
   },
   "include": ["src"],
-  "references": [{ "path": "./tsconfig.node.json" }]
+  "exclude": ["src/**/*.test.tsx", "src/**/*.stories.tsx", "src/test/**"]
 }

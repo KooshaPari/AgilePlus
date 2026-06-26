@@ -1,25 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import ReactDOM from 'react-dom/client';
-import axios from 'axios';
-import { useAgilePlusStore } from './stores/agileplus';
+import { useDashboardData } from './hooks/useDashboardData';
+import { useWorkPackages } from './hooks/useWorkPackages';
+import type { ApiEpic, ApiStory } from './types/api';
 import './styles/globals.css';
-
-// ── Types ──────────────────────────────────────────────────────────────────
-
-interface Epic {
-  id: number;
-  title: string;
-  status: string;
-  requirement_id: string | null;
-}
-
-interface Story {
-  id: number;
-  epic_id: number | null;
-  title: string;
-  status: string;
-  requirement_id: string | null;
-}
 
 // ── Styles ─────────────────────────────────────────────────────────────────
 
@@ -113,8 +97,8 @@ function DashboardView({
   workPackageCount,
   loading,
 }: {
-  epics: Epic[];
-  stories: Story[];
+  epics: ApiEpic[];
+  stories: ApiStory[];
   workPackageCount: number;
   loading: boolean;
 }) {
@@ -173,7 +157,7 @@ function DashboardView({
   );
 }
 
-function EpicsView({ epics, stories, loading }: { epics: Epic[]; stories: Story[]; loading: boolean }) {
+function EpicsView({ epics, stories, loading }: { epics: ApiEpic[]; stories: ApiStory[]; loading: boolean }) {
   if (loading) return <p style={{ color: '#64748b' }}>Loading epics…</p>;
   return (
     <div>
@@ -182,7 +166,7 @@ function EpicsView({ epics, stories, loading }: { epics: Epic[]; stories: Story[
       </h2>
       {epics.length === 0 && (
         <div style={CARD}>
-          <p style={{ margin: 0, color: '#94a3b8' }}>No epics found. Make sure the backend API is running on :4000.</p>
+          <p style={{ margin: 0, color: '#94a3b8' }}>No epics found. Make sure agileplus-api is running (default :3000).</p>
         </div>
       )}
       {epics.map((epic) => {
@@ -212,7 +196,7 @@ function EpicsView({ epics, stories, loading }: { epics: Epic[]; stories: Story[
   );
 }
 
-function StoriesView({ epics, stories, loading }: { epics: Epic[]; stories: Story[]; loading: boolean }) {
+function StoriesView({ epics, stories, loading }: { epics: ApiEpic[]; stories: ApiStory[]; loading: boolean }) {
   const [filterEpic, setFilterEpic] = useState<number | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>('');
 
@@ -285,7 +269,7 @@ function StoriesView({ epics, stories, loading }: { epics: Epic[]; stories: Stor
   );
 }
 
-function EvidenceView({ epics, stories }: { epics: Epic[]; stories: Story[] }) {
+function EvidenceView({ epics, stories }: { epics: ApiEpic[]; stories: ApiStory[] }) {
   const tracedEpics = epics.filter((e) => e.requirement_id);
   const tracedStories = stories.filter((s) => s.requirement_id);
   const coverage = stories.length > 0 ? Math.round((tracedStories.length / stories.length) * 100) : 0;
@@ -337,55 +321,9 @@ function EvidenceView({ epics, stories }: { epics: Epic[]; stories: Story[] }) {
 type View = 'dashboard' | 'epics' | 'stories' | 'evidence';
 
 function App() {
-  const workPackages = useAgilePlusStore((state) => state.workPackages);
-  const loading = useAgilePlusStore((state) => state.loading);
-  const setWorkPackages = useAgilePlusStore((state) => state.setWorkPackages);
-  const setLoading = useAgilePlusStore((state) => state.setLoading);
-
-  const [epics, setEpics] = useState<Epic[]>([]);
-  const [stories, setStories] = useState<Story[]>([]);
-  const [epicStoriesLoading, setEpicStoriesLoading] = useState(true);
+  const { workPackages } = useWorkPackages();
+  const { epics, stories, loading: epicStoriesLoading, error: apiError } = useDashboardData();
   const [view, setView] = useState<View>('dashboard');
-  const [apiError, setApiError] = useState<string | null>(null);
-
-  // Fetch work packages
-  useEffect(() => {
-    setLoading(true);
-    axios
-      .get('/api/dashboard/work-packages.json')
-      .then((res) => {
-        const data = res.data as { work_packages: any[] };
-        setWorkPackages(
-          (data.work_packages ?? []).map((wp: any) => ({
-            id: String(wp.id),
-            title: wp.title ?? '(untitled)',
-            status: wp.status ?? 'planned',
-            priority: wp.priority ?? 'medium',
-            assignee: wp.assignee ?? undefined,
-          })),
-        );
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, [setWorkPackages, setLoading]);
-
-  // Fetch epics + stories
-  useEffect(() => {
-    setEpicStoriesLoading(true);
-    setApiError(null);
-    axios
-      .get('/api/dashboard/epics-stories.json')
-      .then((res) => {
-        const data = res.data as { epics: Epic[]; stories: Story[]; error?: string };
-        if (data.error) setApiError(data.error);
-        setEpics(data.epics ?? []);
-        setStories(data.stories ?? []);
-      })
-      .catch((err) => {
-        setApiError(`API unavailable: ${err.message}. Start backend with API_PORT=4000 DATABASE_PATH=agileplus.db`);
-      })
-      .finally(() => setEpicStoriesLoading(false));
-  }, []);
 
   const views: { id: View; label: string }[] = [
     { id: 'dashboard', label: 'Dashboard' },

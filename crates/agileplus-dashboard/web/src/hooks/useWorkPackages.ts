@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import axios from 'axios';
+import { fetchDashboardWorkPackages } from '../lib/api/client';
 import { useAgilePlusStore } from '../stores/agileplus';
 import type { WorkPackage } from '../types';
 
@@ -10,6 +10,22 @@ import type { WorkPackage } from '../types';
 
 interface UseWorkPackagesOptions {
   skip?: boolean;
+}
+
+function toWorkPackage(wp: {
+  id: string;
+  title?: string;
+  status?: string;
+  priority?: string;
+  assignee?: string | null;
+}): WorkPackage {
+  return {
+    id: String(wp.id),
+    title: wp.title ?? '(untitled)',
+    status: (wp.status ?? 'planned') as WorkPackage['status'],
+    priority: (wp.priority ?? 'medium') as WorkPackage['priority'],
+    assignee: wp.assignee ?? undefined,
+  };
 }
 
 /**
@@ -26,19 +42,27 @@ export function useWorkPackages(options: UseWorkPackagesOptions = {}) {
   useEffect(() => {
     if (skip) return;
 
-    const fetchWorkPackages = async () => {
+    let cancelled = false;
+
+    const load = async () => {
       setLoading(true);
       try {
-        const response = await axios.get<WorkPackage[]>('/api/work-packages');
-        setWorkPackages(response.data);
+        const data = await fetchDashboardWorkPackages();
+        if (cancelled) return;
+        setWorkPackages((data.work_packages ?? []).map(toWorkPackage));
       } catch (error) {
-        console.error('Failed to fetch work packages:', error);
+        if (!cancelled) {
+          console.error('Failed to fetch work packages:', error);
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
-    fetchWorkPackages();
+    void load();
+    return () => {
+      cancelled = true;
+    };
   }, [skip, setWorkPackages, setLoading]);
 
   return {
