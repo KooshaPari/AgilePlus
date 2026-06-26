@@ -32,6 +32,9 @@ jobs:
       - name: Setup mise
         uses: jdx/mise-action@v4
 
+      - name: Install clippy
+        run: rustup component add clippy --toolchain "$RUSTUP_TOOLCHAIN"
+
       - name: Run lint
         run: mise run lint
         continue-on-error: false
