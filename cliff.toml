@@ -20,7 +20,7 @@ body = """
 footer = """
 ---
 
-**Release Date:** {{ now | date(format="%Y-%m-%d") }}
+**Release Date:** (generated)
 """
 
 trim = true
