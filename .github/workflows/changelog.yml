@@ -30,6 +30,7 @@ jobs:
           git-cliff --tag "$VERSION" > CHANGELOG.md || echo "# Changelog ($VERSION) — release notes unavailable; see commit history" > CHANGELOG.md
 
       - name: Commit and push changelog
+        continue-on-error: true
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
