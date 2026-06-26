@@ -15,5 +15,5 @@
     "allowImportingTsExtensions": false,
     "noEmit": true
   },
-  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/views/main.ts"]
+  "include": ["src/**/*.ts", "src/**/*.d.ts", "electrobun.config.ts"]
 }

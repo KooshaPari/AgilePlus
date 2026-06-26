@@ -1,29 +1,36 @@
 /**
  * Electrobun build configuration for AgilePlus desktop (step-1).
- *
- * Defines a single `main` view that ships the main process bundle and
- * the renderer bundle (HTML + TS + CSS) together. The native build
- * target — the END-STATE per the platform ADR — will replace this
- * whole file with platform-specific manifests.
  */
 
-import { defineConfig } from "electrobun/config";
+import type { ElectrobunConfig } from "electrobun";
 
-export default defineConfig({
+export default {
   app: {
     name: "AgilePlus",
     identifier: "dev.agileplus.desktop",
     version: "0.1.0",
   },
   build: {
+    bun: {
+      entrypoint: "src/index.ts",
+    },
     views: {
       main: {
-        entry: "src/views/main.html",
-        bundle: "src/views/main.ts",
+        entrypoint: "src/views/main.ts",
       },
     },
-    main: {
-      entry: "src/index.ts",
+    copy: {
+      "src/views/main.html": "views/main/index.html",
+      "src/views/main.css": "views/main/main.css",
+    },
+    mac: {
+      bundleCEF: false,
+    },
+    linux: {
+      bundleCEF: false,
+    },
+    win: {
+      bundleCEF: false,
     },
   },
-});
+} satisfies ElectrobunConfig;
