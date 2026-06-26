@@ -60,3 +60,10 @@ jobs:
       NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
       PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
       CARGO_TOKEN: ${{ secrets.CARGO_TOKEN }}
+
+  binaries:
+    needs: gate-check
+    uses: ./.github/workflows/binaries.yml
+    with:
+      version: ${{ inputs.version }}
+      dry_run: ${{ inputs.dry_run }}
