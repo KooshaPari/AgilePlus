@@ -42,3 +42,7 @@ commit_parsers = [
 tag_pattern = "v[0-9].*"
 skip_tags = ""
 sort_commits = "newest"
+
+[remote.github]
+owner = "KooshaPari"
+repo = "AgilePlus"
