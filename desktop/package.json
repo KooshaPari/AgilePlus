@@ -11,7 +11,7 @@
     "start": "electrobun start"
   },
   "dependencies": {
-    "electrobun": "^0.10.0"
+    "electrobun": "^1.18.1"
   },
   "devDependencies": {
     "typescript": "^5.4.0",

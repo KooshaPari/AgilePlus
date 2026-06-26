@@ -1,22 +1,52 @@
 /**
- * Renderer-side bootstrap for the main view. All data flows from the
- * main process via Electrobun RPC; the renderer just paints lists.
- *
- * Offline-first: no fetch() to anywhere. The selected repo's filesystem
- * is the single source of truth.
+ * Renderer-side bootstrap for the main view.
  */
 
-import { electrobun } from "electrobun";
+import Electrobun, { Electroview } from "electrobun/view";
 
-interface SpecRow { id: string; title: string; state: string; path: string }
-interface AdrRow  { id: string; title: string; status: string; path: string }
-interface TraceRow { id: string; kind: string; path: string }
+interface SpecRow {
+  id: string;
+  title: string;
+  state: string;
+  path: string;
+}
+interface AdrRow {
+  id: string;
+  title: string;
+  status: string;
+  path: string;
+}
+interface TraceRow {
+  id: string;
+  kind: string;
+  path: string;
+}
 interface RepoState {
   repoRoot: string;
   specs: SpecRow[];
   adrs: AdrRow[];
   traces: TraceRow[];
 }
+
+type RepoRPC = {
+  bun: {
+    requests: {
+      getRepoState: { params: Record<string, never>; response: RepoState };
+    };
+    messages: Record<string, never>;
+  };
+  webview: {
+    requests: Record<string, never>;
+    messages: Record<string, never>;
+  };
+};
+
+const rpc = Electroview.defineRPC<RepoRPC>({
+  maxRequestTime: 5000,
+  handlers: { requests: {}, messages: {} },
+});
+
+const electrobun = new Electrobun.Electroview({ rpc });
 
 const $ = <T extends HTMLElement = HTMLElement>(sel: string) =>
   document.querySelector(sel) as T;
@@ -77,8 +107,7 @@ function wireTabs(): void {
 
 async function bootstrap(): Promise<void> {
   wireTabs();
-  // Step-1: ask the main process for the current repo state.
-  const state = (await electrobun.rpc.request("getRepoState", {})) as RepoState;
+  const state = await electrobun.rpc!.request.getRepoState({});
   setRepoRoot(state.repoRoot);
   renderSpecs(state.specs);
   renderAdrs(state.adrs);
