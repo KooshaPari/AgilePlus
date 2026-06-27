@@ -1,0 +1,22 @@
+{
+  "version": 2,
+  "name": "agileplus",
+  "buildCommand": "(cd apps/landing && bun install && bun run build)",
+  "outputDirectory": "apps/landing/dist",
+  "framework": "vite",
+  "installCommand": "bun install",
+  "devCommand": "(cd apps/landing && bun run dev)",
+  "regions": ["iad1"],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Cache-Control", "value": "no-store" }
+      ]
+    }
+  ],
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}

@@ -1,0 +1,19 @@
+name = "agileplus-edge"
+main = "src/worker.ts"
+compatibility_date = "2025-04-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+ENVIRONMENT = "production"
+AGILEPLUS_API = "https://agileplus.kooshapari.dev"
+
+[[kv_namespaces]]
+binding = "AGILEPLUS_KV"
+id = "to-be-set-on-first-deploy"
+
+[[r2_buckets]]
+binding = "AGILEPLUS_R2"
+bucket_name = "agileplus-builds"
+
+[observability]
+enabled = true
