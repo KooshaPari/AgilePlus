@@ -1,0 +1,81 @@
+{
+  "name": "AgilePlus — Phenotype Workbench",
+  "short_name": "AgilePlus",
+  "description": "Phenotype workbench — Tracera + BytePort + Benchora + AtomsBot + Civis orchestrator. One desktop-class PWA, multiple backends.",
+  "id": "/?source=pwa",
+  "scope": "/",
+  "start_url": "/?source=pwa",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"],
+  "orientation": "any",
+  "background_color": "#0a0d14",
+  "theme_color": "#0a0d14",
+  "categories": ["developer", "productivity", "utilities"],
+  "lang": "en-US",
+  "dir": "ltr",
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "icons/agileplus-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/agileplus-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/agileplus-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Open Civis Workbench",
+      "short_name": "Civis",
+      "url": "/civis?source=pwa",
+      "icons": [{ "src": "icons/agileplus-icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Open Tracera Replay",
+      "short_name": "Tracera",
+      "url": "/tracera?source=pwa",
+      "icons": [{ "src": "icons/agileplus-icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Spawn Stack",
+      "short_name": "Stack",
+      "url": "/stack?source=pwa",
+      "icons": [{ "src": "icons/agileplus-icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "share_target": {
+    "action": "/ingest",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "files": [
+        { "name": "artifact", "accept": ["application/json", "application/octet-stream", ".json", ".zip", ".tar"] }
+      ]
+    }
+  },
+  "screenshots": [
+    {
+      "src": "screenshots/agileplus-home.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide"
+    },
+    {
+      "src": "screenshots/agileplus-home-mobile.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ]
+}

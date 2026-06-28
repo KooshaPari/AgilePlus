@@ -1,0 +1,89 @@
+{{- /*
+Tracera deployment — Rust/axum native server.
+Runs as a single replica unless replicas > 1 in values.yaml.
+*/ -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "phase-finish-stack.fullname" . }}-tracera
+  labels:
+    app.kubernetes.io/name: tracera
+    app.kubernetes.io/part-of: phase-finish-stack
+    app.kubernetes.io/component: backend
+spec:
+  {{- if not .Values.tracera.autoscaling.enabled }}
+  replicas: {{ .Values.tracera.replicaCount | default 1 }}
+  {{- end }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: tracera
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: tracera
+        app.kubernetes.io/part-of: phase-finish-stack
+    spec:
+      containers:
+        - name: tracera-server
+          image: "{{ .Values.tracera.image.repository }}:{{ .Values.tracera.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.tracera.image.pullPolicy | default "IfNotPresent" }}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: RUST_LOG
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "phase-finish-stack.fullname" . }}-env
+                  key: RUST_LOG
+            - name: TRACE_LOG_LEVEL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "phase-finish-stack.fullname" . }}-env
+                  key: TRACE_LOG_LEVEL
+            - name: TRACERA_BACKEND_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "phase-finish-stack.fullname" . }}-env
+                  key: TRACERA_BACKEND_URL
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "phase-finish-stack.fullname" . }}-env
+                  key: OTEL_EXPORTER_OTLP_ENDPOINT
+          envFrom:
+            - secretRef:
+                name: {{ include "phase-finish-stack.fullname" . }}-secrets
+          livenessProbe:
+            httpGet: { path: /health, port: http }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet: { path: /health/ready, port: http }
+            initialDelaySeconds: 2
+            periodSeconds: 5
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.tracera.resources | nindent 12 }}
+      {{- with .Values.tracera.nodeSelector }}
+      nodeSelector: {{ toYaml . | nindent 8 }}
+      {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "phase-finish-stack.fullname" . }}-tracera
+  labels:
+    app.kubernetes.io/name: tracera
+    app.kubernetes.io/part-of: phase-finish-stack
+spec:
+  type: {{ .Values.tracera.service.type | default "ClusterIP" }}
+  ports:
+    - name: http
+      port: {{ .Values.tracera.service.port | default 8080 }}
+      targetPort: http
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: tracera
