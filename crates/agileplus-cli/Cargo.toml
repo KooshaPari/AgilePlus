@@ -4,6 +4,11 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 rust-version.workspace = true
+description.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords = ["project-management", "traceability", "agile", "spec-first"]
+categories = ["command-line-utilities", "development-tools"]
 
 [[bin]]
 name = "agileplus-cli"
