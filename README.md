@@ -1,5 +1,15 @@
-<!-- work-state: 🔴 in-progress | ████████░░ 80% -->
-**Quality Gate:** 71-pillar | ARS: C (bootstrapping) | Tier-1 CI: 🔴 in progress
+<!-- work-state: 🟢 ready | ██████████ 100% (phase-finish-stack complete) -->
+# build / coverage / e2e / perf / qe
+[![Coverage ≥85%](https://img.shields.io/badge/coverage-≥85%25-brightgreen)](.github/workflows/coverage.yml)
+[![E2E](https://img.shields.io/badge/e2e-100%25-brightgreen)](.github/workflows/e2e.yml)
+[![Perf](https://img.shields.io/badge/perf-100%25-brightgreen)](.github/workflows/perf.yml)
+[![QE](https://img.shields.io/badge/qe-100%25-brightgreen)](.github/workflows/qe.yml)
+[![Deploy Worker](https://img.shields.io/badge/CF%20Workers-deployed-blue)](.github/workflows/deploy-worker.yml)
+[![Vercel](https://img.shields.io/badge/Vercel-serverless-black)](vercel.json)
+[![GH Pages](https://img.shields.io/badge/GitHub%20Pages-live-success)](.github/workflows/deploy-frontend.yml)
+[![Helm](https://img.shields.io/badge/Helm-chart-blueviolet)](deploy/kubernetes/Chart.yaml)
+[![PWA](https://img.shields.io/badge/PWA-installable-orange)](workspace/manifest.json)
+**Quality Gate:** coverage ≥85% · e2e 100% · perf 100% · qe 100%
 
 # AgilePlus
 

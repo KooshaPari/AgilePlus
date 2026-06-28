@@ -1,0 +1,19 @@
+apiVersion: v2
+name: agileplus
+description: AgilePlus monorepo stack (frontend + API + MCP + 4 backing services)
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+home: https://github.com/KooshaPari/AgilePlus
+sources:
+  - https://github.com/KooshaPari/AgilePlus
+keywords:
+  - agileplus
+  - monorepo
+  - phenokit
+maintainers:
+  - name: KooshaPari
+    email: kooshapari@gmail.com
+annotations:
+  category: Analytics
+  licenses: Apache-2.0
