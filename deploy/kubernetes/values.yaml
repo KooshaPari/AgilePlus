@@ -1,32 +1,75 @@
 # -- AgilePlus stack Helm values (default; override per environment) --
 
-# Frontend (public-facing)
+# Frontend (public-facing Next.js / Vue PWA host)
 frontend:
+  enabled: true
   replicaCount: 1
   image:
-    repository: ghcr.io/kooshapari/agileplus-frontend
+    repository: kooshapari/agileplus-frontend
+    tag: ""
     pullPolicy: IfNotPresent
-    tag: "latest"
   service:
-    type: LoadBalancer
-    port: 8080
-    targetPort: 8080
-    nodePort: 30080
+    type: ClusterIP
+    port: 3000
   resources:
-    limits:
-      cpu: 500m
-      memory: 512Mi
     requests:
-      cpu: 100m
-      memory: 128Mi
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 300m
+      memory: 256Mi
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 3
+    targetCPUUtilizationPercentage: 80
+  persistence:
+    enabled: false
+    storageClass: ""
+    size: 1Gi
   env:
     - name: API_URL
       value: http://api:8081
     - name: MCP_URL
       value: http://mcp:8082
 
+# Tracera (co-located native-exe server, exposed via the frontend's same ingress)
+tracera:
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 80
+  image:
+    repository: kooshapari/tracera
+    tag: ""
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  nodeSelector: {}
+  service:
+    type: ClusterIP
+    port: 38123
+  ingress:
+    enabled: false
+    className: ""
+    hosts: []
+  persistence:
+    enabled: true
+    storageClass: ""
+    size: 8Gi
+    accessModes:
+      - ReadWriteOnce
+
 # API service
 api:
+  enabled: true
   replicaCount: 2
   image:
     repository: ghcr.io/kooshapari/agileplus-api
@@ -56,6 +99,7 @@ api:
           key: redis-url
 
 mcp:
+  enabled: true
   replicaCount: 1
   image:
     repository: ghcr.io/kooshapari/agileplus-mcp
@@ -73,8 +117,11 @@ nats:
   enabled: true
   replicas: 3
   image:
-    repository: nats:2.10-alpine
-    tag: "2.10"
+    repository: nats
+    tag: "2.10-alpine"
+  service:
+    type: ClusterIP
+    port: 4222
   auth:
     enabled: true
   persistence:
@@ -85,14 +132,22 @@ dragonfly:
   image:
     repository: docker.dragonflydb.dragonfly.io/dragonflydb/dragonfly
     tag: "v1.13"
+  replicaCount: 1
+  service:
+    type: ClusterIP
+    port: 6379
   persistence:
     size: 5Gi
 
 neo4j:
   enabled: true
   image:
-    repository: neo4j:5.20-community
-    tag: "5.20"
+    repository: neo4j
+    tag: "5.20-community"
+  replicaCount: 1
+  service:
+    type: ClusterIP
+    port: 7687
   persistence:
     size: 10Gi
   auth:
@@ -103,6 +158,10 @@ minio:
   image:
     repository: minio/minio
     tag: "RELEASE.2024-08-17T01-24-54Z"
+  replicaCount: 1
+  service:
+    type: ClusterIP
+    port: 9000
   persistence:
     size: 20Gi
 

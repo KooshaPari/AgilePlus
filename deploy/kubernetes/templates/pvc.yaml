@@ -4,11 +4,13 @@ metadata:
   name: {{ include "phase-finish-stack.fullname" . }}-data
   labels:
     app.kubernetes.io/part-of: phase-finish-stack
+    app.kubernetes.io/component: data
 spec:
-  accessModes: ["ReadWriteOnce"]
-  {{- if .Values.persistence.data.storageClass }}
-  storageClassName: {{ .Values.persistence.data.storageClass }}
-  {{- end }}
+  accessModes:
+    - {{ .Values.tracera.persistence.accessModes | default "ReadWriteOnce" }}
   resources:
     requests:
-      storage: {{ .Values.persistence.data.size | default "50Gi" }}
+      storage: {{ .Values.tracera.persistence.size | default "10Gi" }}
+  {{- with .Values.tracera.persistence.storageClass }}
+  storageClassName: {{ . | quote }}
+  {{- end }}
