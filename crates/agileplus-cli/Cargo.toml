@@ -4,11 +4,12 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/KooshaPari/AgilePlus"
-description = "agileplus cli — Phenotype infrastructure crate (AgilePlus)"
+repository.workspace = true
+homepage.workspace = true
+description.workspace = true
 documentation = "https://docs.rs/agileplus-cli"
-keywords = ["phenotype", "agileplus", "cli"]
-categories = ["command-line-utilities"]
+keywords = ["project-management", "traceability", "agile", "spec-first"]
+categories = ["command-line-utilities", "development-tools"]
 authors = ["kooshapari"]
 
 [[bin]]

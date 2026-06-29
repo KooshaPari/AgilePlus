@@ -12,6 +12,9 @@ version = "0.1.0"
 edition = "2024"
 license = "MIT"
 rust-version = "1.88"
+repository = "https://github.com/KooshaPari/AgilePlus"
+homepage = "https://phenotype.space/agileplus"
+description = "AgilePlus — spec-first project management CLI (FR/NFR traceability)"
 
 [workspace.lints.rust]
 unsafe_code = "forbid"
@@ -19,6 +22,14 @@ unsafe_code = "forbid"
 [workspace.lints.clippy]
 all = "warn"
 pedantic = "warn"
+
+[workspace.metadata.dist]
+cargo-dist-version = "0.28.0"
+ci = ["github"]
+installers = ["shell", "powershell", "msi"]
+targets = ["x86_64-pc-windows-msvc", "x86_64-unknown-linux-gnu", "aarch64-apple-darwin", "x86_64-apple-darwin"]
+install-path = "CARGO_HOME"
+pr-run-mode = "plan"
 
 [workspace.dependencies]
 # Serialization
