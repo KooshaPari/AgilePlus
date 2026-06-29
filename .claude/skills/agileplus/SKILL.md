@@ -1,59 +1,58 @@
-name: agileplus
-description: Use for AgilePlus workspace engineering tasks, including CLI-based feature flow, workspace health checks, spec/task package validation, and local MCP helpers.
+---
+name: agileplus-ops
+description: Use for AgilePlus project-management and project-ops tasks that need the AgilePlus CLI: seeding requirements, listing projects/epics/stories, inspecting features, syncing a repository, or working against the local SQLite database.
+---
 
-# AgilePlus dev loop
+# AgilePlus Ops
 
-## When to invoke
-- Task explicitly names `spec`, `feature`, `work package`, `worktree`, `quality gate`, `dispatch-mcp`, `CLI`.
-- You need to edit or audit `crates/` crates, `kitty-specs/`, or quality checks in the root workspace.
-- You are troubleshooting workspace-level build/test failures across Rust and Python helpers.
+Use the released CLI at `E:/agileplus-target/release/agileplus-cli.exe` for operational work.
+Prefer the seeded database at `./agileplus.db` unless the user explicitly points at another database.
 
-## Repo facts
-- **Project path:** `C:/Users/koosh/Dev/AgilePlus`
-- **Workspace type:** Rust Cargo workspace with Python helper MCP + sibling CLI tooling.
-- **Core commands:** `cargo build --release`, `cargo test`, `agileplus specify`, `agileplus status`.
-- **Quality gate:** `cargo fmt --all`, `cargo clippy --all`, `cargo test --workspace`, `ruff check python/`.
-- **MCP helper:** `dispatch-mcp` (Python entrypoint) for dispatch/delegation flows.
+## Core commands
 
-## Fast workflow
+Seed the requirement catalogs into SQLite:
 
-### New spec-to-track path
-1. Create/update the spec in `kitty-specs/<feature-id>/`.
-2. Run:
-```pwsh
-agileplus specify --title "<title>" --description "<description>"
-```
-3. Run:
-```pwsh
-/ap-specs <feature-id>
+```powershell
+E:/agileplus-target/release/agileplus-cli.exe seed-requirements --db ./agileplus.db
 ```
 
-### Daily engineering loop
-1. Run fast checks:
-```pwsh
-cargo build --workspace
-cargo test --workspace
-```
-2. For deeper hygiene:
-```pwsh
-/ap-quality
-```
-3. Update or verify spec status:
-```pwsh
-/ap-status <feature-id> --wp <wp-id> --state in_progress
+List projects from the local database:
+
+```powershell
+E:/agileplus-target/release/agileplus-cli.exe list-projects
 ```
 
-## Commands from this skill set
-- `ap-specify`
-- `ap-status`
-- `ap-build`
-- `ap-quality`
-- `ap-specs`
-- `ap-worktree`
-- `ap-mcp`
+List epics, optionally scoped to a project:
 
-## Quality and diagnostics
-- If builds fail, check `.cargo` lockfile drift and crate `Cargo.toml` feature mismatches first.
-- If MCP tooling fails, validate entrypoint with `dispatch-mcp --version` and environment variable requirements (`OMNIROUTE_URL` when dispatching tiers).
-- Keep work in this project’s branch (or worktree) and avoid touching unrelated directories unless explicitly requested.
+```powershell
+E:/agileplus-target/release/agileplus-cli.exe list-epics
+E:/agileplus-target/release/agileplus-cli.exe list-epics --project <project-id>
+```
 
+List stories, optionally scoped to an epic and/or status:
+
+```powershell
+E:/agileplus-target/release/agileplus-cli.exe list-stories
+E:/agileplus-target/release/agileplus-cli.exe list-stories --epic <epic-id>
+E:/agileplus-target/release/agileplus-cli.exe list-stories --status <todo|in_progress|review|done|blocked|cancelled>
+```
+
+Inspect features from the in-memory feature surface:
+
+```powershell
+E:/agileplus-target/release/agileplus-cli.exe feature list
+E:/agileplus-target/release/agileplus-cli.exe feature show <feature-id>
+```
+
+Sync a GitHub repository into AgilePlus:
+
+```powershell
+E:/agileplus-target/release/agileplus-cli.exe sync <owner/repo> --project <project-id> --epic <epic-id> --token <github-token>
+```
+
+## Operational rules
+
+- Use `seed-requirements --db ./agileplus.db` before listing project data when the database may be empty.
+- Use `list-projects` first to discover project IDs, then `list-epics --project <id>`, then `list-stories --epic <id>` when narrowing scope.
+- Use `feature list` and `feature show <id>` for the mock feature surface exposed by the CLI.
+- Use `sync` only when you have a valid GitHub repository, project ID, epic ID, and token.
