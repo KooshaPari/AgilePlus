@@ -1,0 +1,24 @@
+{
+  "epic": "epic_F",
+  "title": "DAG foundation + automation",
+  "description": "Foundation DAG epic covering DAG unit execution pipeline, manifest reading, and work-package generation for the compute/infra epic. Units are executed in topological order with validation and reporting.",
+  "phase": "Phase 1 - Foundation",
+  "units": [
+    {
+      "unit_id": "F1",
+      "title": "DAG manifest schema and validator",
+      "type": "automation",
+      "description": "Define and implement the DAG manifest JSON schema with validation for unit_ids, dependencies, and metadata. Includes schema documentation and unit tests.",
+      "dependencies": [],
+      "subtasks": ["T001", "T002", "T003"]
+    },
+    {
+      "unit_id": "F2",
+      "title": "Wire DAG executor to agileplus",
+      "type": "automation",
+      "description": "Create run_dag_units.py that reads a DAG manifest, generates spec.md and work-package files following AgilePlus conventions, and validates no duplicate unit_ids.",
+      "dependencies": ["F1"],
+      "subtasks": ["T004", "T005", "T006"]
+    }
+  ]
+}
