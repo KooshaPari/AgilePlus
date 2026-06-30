@@ -9,8 +9,10 @@ permissions:
 
 jobs:
   release-drafter:
-    uses: KooshaPari/phenoShared/.github/workflows/reusable-release-drafter.yml@main
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
       pull-requests: write
-    continue-on-error: true
+    steps:
+      - name: Release drafter skipped - phenoShared deprecated
+        run: echo "Release drafter workflow disabled due to phenoShared deprecation. TODO: Re-implement if needed."

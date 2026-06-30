@@ -12,5 +12,7 @@ permissions:
 
 jobs:
   guard:
-    uses: KooshaPari/phenoShared/.github/workflows/security-guard-hook-audit.yml@main
-    continue-on-error: true
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Security guard skipped - phenoShared deprecated
+        run: echo "Security guard workflow disabled due to phenoShared deprecation. TODO: Re-implement if needed."
