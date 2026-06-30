@@ -5,7 +5,21 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use super::feature::hex_bytes;
+/// Serde module for hex serialization of byte arrays
+mod hex_bytes {
+    use serde::{Serializer, Deserializer};
+
+    pub fn serialize<S: Serializer>(bytes: &[u8; 32], s: S) -> Result<S::Ok, S::Error> {
+        s.serialize_str(&hex::encode(bytes))
+    }
+
+    pub fn deserialize<'de, D: Deserializer<'de>>(d: D) -> Result<[u8; 32], D::Error> {
+        let hex_str = String::deserialize(d)?;
+        let mut bytes = [0u8; 32];
+        hex::decode_to_slice(&hex_str, &mut bytes).map_err(serde::de::Error::custom)?;
+        Ok(bytes)
+    }
+}
 
 /// An API key for authenticating requests to the AgilePlus API and dashboard.
 ///

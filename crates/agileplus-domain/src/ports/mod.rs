@@ -1,7 +1,15 @@
 //! Hexagonal-architecture ports — async traits implemented by adapters.
 
+pub mod agent;
+pub mod content;
+pub mod epic;
+pub mod events;
 pub mod observability;
+pub mod plane_sync;
+pub mod review;
 pub mod storage;
+pub mod story;
+pub mod traceability_port;
 pub mod vcs;
 
 use std::path::{Path, PathBuf};
@@ -27,6 +35,8 @@ use crate::domain::{
 use crate::error::DomainError;
 
 use self::vcs::{BranchInfo, ConflictInfo, FeatureArtifacts, MergeResult, WorktreeInfo};
+use self::story::StoryRepository;
+use self::epic::EpicRepository;
 
 /// Primary storage port — full CRUD across all domain aggregates.
 #[async_trait]

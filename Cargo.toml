@@ -98,6 +98,12 @@ git2 = "0.19"
 # CLI
 clap = { version = "4", features = ["derive"] }
 
+# Text processing
+regex = "1"
+
+# Collections
+indexmap = { version = "2", features = ["serde"] }
+
 # Data / storage
 rusqlite = { version = "0.32", features = ["bundled"] }
 redis = { version = "0.27", features = ["tokio-comp", "connection-manager"] }
@@ -109,11 +115,13 @@ reqwest = { version = "0.12", features = ["json"] }
 criterion = "0.5"
 
 # Utils
-uuid = { version = "1", features = ["v4"] }
+uuid = { version = "1", features = ["v3", "v4", "v5", "serde"] }
+hex = "0.4"
 rand = "0.8"
 toml = "0.8"
 dirs-next = "2"
 keyring = "3"
+proptest = "1"
 
 # OpenAPI
 utoipa = "4"

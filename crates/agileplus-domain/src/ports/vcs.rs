@@ -41,6 +41,14 @@ pub struct FeatureArtifacts {
     pub evidence_paths: Vec<String>,
 }
 
+/// Information about a git branch.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BranchInfo {
+    pub name: String,
+    pub is_local: bool,
+    pub commit_sha: Option<String>,
+}
+
 /// Port for version control system operations.
 ///
 /// Abstracts git so tests can use an in-memory mock.
