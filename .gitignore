@@ -11,3 +11,8 @@
 .env
 .env.local
 .env.*.local
+
+# Git worktrees (Claude Code artifact directories)
+.worktrees/
+.claude/worktrees/
+worktrees/
