@@ -4,6 +4,7 @@ resolver = "2"
 # Remaining scaffolding (44 crates, 19 libs) tracked but excluded from
 # workspace until source is implemented. See: kitty-specs/003-agileplus-platform-completion.
 members = [
+    "crates/agileplus-dashboard",
   "rust", # agileplus-proto: tonic/prost gRPC stubs (buf-generated)
 ]
 
