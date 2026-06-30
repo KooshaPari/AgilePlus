@@ -1,11 +1,11 @@
 {
   "version": 2,
   "name": "agileplus",
-  "buildCommand": "(cd apps/landing && bun install && bun run build)",
-  "outputDirectory": "apps/landing/dist",
+  "buildCommand": "(cd crates/agileplus-dashboard/web && bun install && bun run build)",
+  "outputDirectory": "crates/agileplus-dashboard/web/dist",
   "framework": "vite",
   "installCommand": "bun install",
-  "devCommand": "(cd apps/landing && bun run dev)",
+  "devCommand": "(cd crates/agileplus-dashboard/web && bun run dev)",
   "regions": ["iad1"],
   "headers": [
     {
