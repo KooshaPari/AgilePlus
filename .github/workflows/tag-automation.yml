@@ -4,9 +4,6 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-# Delegates to phenoShared reusable workflow.
-# See: https://github.com/KooshaPari/phenoShared/blob/main/.github/workflows/tag-automation.yml
-
 on:
   push:
     tags:
@@ -14,6 +11,9 @@ on:
 
 jobs:
   tag:
-    uses: KooshaPari/phenoShared/.github/workflows/tag-automation.yml@main
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
+    steps:
+      - name: Tag automation skipped - phenoShared deprecated
+        run: echo "Tag automation workflow disabled due to phenoShared deprecation. TODO: Re-implement if needed."
