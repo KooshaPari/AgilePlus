@@ -1,0 +1,35 @@
+# Journey manifest for FR-024-1: Per-FR trace.json mandatory
+# Schema: AgilePlus journey-manifest v1
+# See docs/journeys/README.md for the canonical layout.
+schema_version: 1
+journey_id: FR-024-1
+title: "Per-FR trace.json mandatory"
+spec_anchor: "FUNCTIONAL_REQUIREMENTS.md#fr-1"
+spec_slug: eco-024-traceability
+status: proposed          # proposed | active | deprecated
+fr_ids:
+  - FR-024-1
+
+# Acceptance contract — all steps must pass for status to advance to active.
+steps:
+  - id: setup
+    description: "Workspace contains at least one spec file with an FR anchor."
+    assertion: "find . -name '*.md' | xargs grep -l '#fr-' | wc -l | awk '$1 > 0'"
+
+  - id: trace_required
+    description: "trace-validator emits a non-zero exit when a trace.json is missing."
+    assertion: "cargo run -p trace-validator -- --check 2>&1 | grep -q 'missing trace'"
+
+  - id: trace_present
+    description: "trace-validator exits 0 when trace.json exists and references FR-024-1."
+    assertion: "test -f tooling/trace-validator/tests/fixtures/FR-024-1/trace.json"
+
+rich_media:
+  stubs:
+    - path: docs/journeys/assets/stubs/FR-024-1/frame-001.png
+      kind: screenshot
+      caption: "trace-validator output for FR-024-1 — capture pending"
+
+eval_notes: >
+  Capture pending: run `phenotype-journey capture FR-024-1` once
+  trace-validator reaches integration-test milestone.

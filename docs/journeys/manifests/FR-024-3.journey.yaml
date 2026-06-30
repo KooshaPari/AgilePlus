@@ -1,0 +1,31 @@
+# Journey manifest for FR-024-3: trace-validator binary
+# Schema: AgilePlus journey-manifest v1
+# See docs/journeys/README.md for the canonical layout.
+schema_version: 1
+journey_id: FR-024-3
+title: "trace-validator binary"
+spec_anchor: "FUNCTIONAL_REQUIREMENTS.md#fr-3"
+spec_slug: eco-024-traceability
+status: proposed          # proposed | active | deprecated
+fr_ids:
+  - FR-024-3
+
+# Acceptance contract — all steps must pass for status to advance to active.
+steps:
+  - id: setup
+    description: "Preconditions for FR-024-3 are met in the workspace."
+    assertion: "echo 'preconditions-check-pending'"
+
+  - id: primary
+    description: "trace-validator binary is published and runnable from the CLI."
+    assertion: "echo 'assertion-pending'"
+
+rich_media:
+  stubs:
+    - path: docs/journeys/assets/stubs/FR-024-3/frame-001.png
+      kind: screenshot
+      caption: "trace-validator binary — capture pending"
+
+eval_notes: >
+  Capture pending: run `phenotype-journey capture FR-024-3` once the
+  relevant milestone is implemented.
