@@ -27,7 +27,7 @@ env:
 jobs:
   sentry-health-check:
     name: Sentry Health & Integration Check
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
 
     env:
@@ -82,7 +82,7 @@ jobs:
 
   integration-with-github-issues:
     name: GitHub-Sentry Integration Verification
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
@@ -123,7 +123,7 @@ jobs:
 
   notify-on-failure:
     name: Notify on Sentry Tracking Issues
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: failure() && github.ref == 'refs/heads/main'
     needs: [sentry-health-check]
 

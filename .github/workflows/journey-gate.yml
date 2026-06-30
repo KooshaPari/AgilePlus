@@ -19,7 +19,7 @@ concurrency:
 jobs:
   journey-docs-exist:
     name: Journey docs present
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -50,7 +50,7 @@ jobs:
 
   journey-docs-validate:
     name: Journey docs valid
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: journey-docs-exist
     steps:
       - name: Checkout
@@ -84,7 +84,7 @@ jobs:
 
   markdown-lint:
     name: Markdown lint
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: journey-docs-exist
     steps:
       - name: Checkout
@@ -106,7 +106,7 @@ jobs:
 
   iconography-assets:
     name: Iconography assets present
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v7

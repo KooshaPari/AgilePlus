@@ -19,7 +19,7 @@ concurrency:
 jobs:
   perf-proc:
     name: perf (k6 → 95p budget)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
@@ -83,7 +83,7 @@ jobs:
   perf-qe-gate:
     name: perf-qe-gate (100% green)
     needs: [perf-proc]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: always()
     steps:
       - uses: actions/checkout@v4

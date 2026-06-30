@@ -1,0 +1,31 @@
+# Journey manifest for FR-024-6: Journey stubs under docs/operations/journeys
+# Schema: AgilePlus journey-manifest v1
+# See docs/journeys/README.md for the canonical layout.
+schema_version: 1
+journey_id: FR-024-6
+title: "Journey stubs under docs/operations/journeys"
+spec_anchor: "FUNCTIONAL_REQUIREMENTS.md#fr-6"
+spec_slug: eco-024-traceability
+status: proposed          # proposed | active | deprecated
+fr_ids:
+  - FR-024-6
+
+# Acceptance contract — all steps must pass for status to advance to active.
+steps:
+  - id: setup
+    description: "Preconditions for FR-024-6 are met in the workspace."
+    assertion: "echo 'preconditions-check-pending'"
+
+  - id: primary
+    description: "Journey stub files exist for all documented flows."
+    assertion: "echo 'assertion-pending'"
+
+rich_media:
+  stubs:
+    - path: docs/journeys/assets/stubs/FR-024-6/frame-001.png
+      kind: screenshot
+      caption: "Journey stubs under docs/operations/journeys — capture pending"
+
+eval_notes: >
+  Capture pending: run `phenotype-journey capture FR-024-6` once the
+  relevant milestone is implemented.

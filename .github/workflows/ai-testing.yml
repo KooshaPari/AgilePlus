@@ -28,7 +28,7 @@ on:
 jobs:
   bdd-tests:
     name: BDD Feature Tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
 
@@ -45,7 +45,7 @@ jobs:
 
   vitest-tests:
     name: Vitest Unit Tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
 
@@ -62,7 +62,7 @@ jobs:
 
   playwright-tests:
     name: Playwright Visual Tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
 
@@ -79,7 +79,7 @@ jobs:
 
   spec-traceability:
     name: FR Traceability Validation
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
 

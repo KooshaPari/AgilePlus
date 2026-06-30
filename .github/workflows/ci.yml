@@ -25,7 +25,7 @@ jobs:
       contents: read
       pull-requests: write
     name: Buf Lint & Breaking
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
@@ -41,7 +41,7 @@ jobs:
   # ─── Rust Quality ──────────────────────────────────────────────────
   rust-check:
     name: Rust Quality
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v7
@@ -66,7 +66,7 @@ jobs:
 
   rust-build:
     name: Rust Build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v7
@@ -83,7 +83,7 @@ jobs:
 
   rust-msrv:
     name: Rust MSRV (stable)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v7
@@ -101,7 +101,7 @@ jobs:
   # ─── Rust Security & Dep Audit ─────────────────────────────────────
   rust-audit:
     name: Rust Security Audit
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     permissions:
       contents: read
@@ -118,7 +118,7 @@ jobs:
 
   rust-extras:
     name: Rust Extras (machete, semver, typos)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     continue-on-error: true
     steps:
@@ -144,7 +144,7 @@ jobs:
   # ─── Rust Coverage ────────────────────────────────────────────────
   rust-coverage:
     name: Rust Coverage
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v7
@@ -159,7 +159,7 @@ jobs:
       - name: Install tarpaulin
         run: cargo install cargo-tarpaulin
       - name: Generate coverage
-        run: cargo tarpaulin --workspace --out xml --output-dir coverage
+        run: cargo tarpaulin --workspace --out xml --output-dir coverage --fail-under 60
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v7
         with:
@@ -173,7 +173,7 @@ jobs:
   # ─── Core Workspace ───────────────────────────────────────────────
   core-check:
     name: Core Workspace Quality
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v7
@@ -196,7 +196,7 @@ jobs:
 
   core-build:
     name: Core Build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
@@ -211,7 +211,7 @@ jobs:
 
   core-msrv:
     name: Core MSRV (1.86)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
@@ -226,7 +226,7 @@ jobs:
 
   core-docs:
     name: Core Documentation
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
@@ -241,7 +241,7 @@ jobs:
 
   domain-deps-lint:
     name: Domain Zero-Dep Lint
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
@@ -261,7 +261,7 @@ jobs:
   python-check:
     if: false  # disabled: no python/ subdir exists in this monorepo
     name: Python Quality
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
@@ -289,7 +289,7 @@ jobs:
   python-install:
     if: false  # disabled: no python/ subdir exists in this monorepo
     name: Python Install
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
@@ -304,7 +304,7 @@ jobs:
   # ─── Config Lint ───────────────────────────────────────────────────
   config-lint:
     name: Config Lint
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
@@ -323,7 +323,7 @@ jobs:
   commit-lint:
     name: Conventional Commits
     if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
