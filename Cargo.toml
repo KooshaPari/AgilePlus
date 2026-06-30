@@ -79,9 +79,9 @@ base64 = "0.22"
 
 # gRPC / proto (used by agileplus-proto, agileplus-grpc, plugin-grpc, agent-service)
 tonic = { version = "0.13", features = ["transport", "prost"] }
-tonic-build = "0.13"
+tonic-build = "0.14"
 tonic-health = "0.13"
-prost = "0.13"
+prost = "0.14"
 prost-build = "0.13"
 
 # Async utilities
