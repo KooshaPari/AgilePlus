@@ -22,7 +22,7 @@ env:
 jobs:
   coverage-python:
     name: python-coverage (uv)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 
@@ -62,7 +62,7 @@ jobs:
 
   coverage-rust:
     name: rust-coverage (cargo-llvm-cov)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 
@@ -91,7 +91,7 @@ jobs:
 
   coverage-go:
     name: go-coverage (go test -cover)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 
@@ -120,7 +120,7 @@ jobs:
   coverage-gate:
     name: coverage-gate (>=85% lines)
     needs: [coverage-python, coverage-rust, coverage-go]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: Verify all coverage artifacts

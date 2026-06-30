@@ -30,7 +30,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-latest
+          - os: ubuntu-24.04
             target: x86_64-unknown-linux-gnu
             archive: tar.gz
             asset_name: agileplus-linux-x86_64
@@ -95,7 +95,7 @@ jobs:
   github-release:
     name: Publish GitHub Release
     needs: build-matrix
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
@@ -116,7 +116,7 @@ jobs:
   publish-crates:
     name: Publish to crates.io
     needs: build-matrix
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v7

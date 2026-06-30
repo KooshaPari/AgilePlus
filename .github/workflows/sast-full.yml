@@ -12,7 +12,7 @@ permissions:
 jobs:
   codeql:
     name: CodeQL Analysis
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     # Triage of failing run #28079096506 (2026-06-24) — the previous matrix
     # listed both `python` and `javascript`. The CodeQL SARIF upload failed
@@ -37,7 +37,7 @@ jobs:
 
   trivy-repo:
     name: Trivy Repository Scan
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
       - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25  # was: @master
@@ -57,7 +57,7 @@ jobs:
 
   full-semgrep:
     name: Full Semgrep Analysis
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
@@ -80,7 +80,7 @@ jobs:
 
   full-secrets:
     name: Full Secret Scan
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
         with:

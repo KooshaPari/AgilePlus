@@ -26,7 +26,7 @@ permissions:
 jobs:
   analyze:
     name: Analyze (${{ matrix.language }})
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     # Triage of failing run #28077362402 (2026-06-24) — failure root cause
     # was the conflict between CodeQL default setup and this advanced

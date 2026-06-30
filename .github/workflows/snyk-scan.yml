@@ -20,7 +20,7 @@ permissions:
 jobs:
   snyk-test:
     name: Snyk Vulnerability Test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
     steps:
@@ -87,7 +87,7 @@ jobs:
 
   snyk-monitor:
     name: Snyk Monitor
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     env:
       SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}

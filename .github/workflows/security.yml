@@ -19,7 +19,7 @@ jobs:
   # ─── Cargo Audit ──────────────────────────────────────────────────────
   cargo-audit:
     name: Cargo Audit
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       checks: write
@@ -32,7 +32,7 @@ jobs:
   # ─── Cargo Deny ───────────────────────────────────────────────────────
   cargo-deny:
     name: Cargo Deny
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
@@ -44,7 +44,7 @@ jobs:
   # ─── Gitleaks Secret Detection ────────────────────────────────────────
   gitleaks:
     name: Gitleaks
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
         with:
@@ -56,7 +56,7 @@ jobs:
   # ─── CodeQL SAST ──────────────────────────────────────────────────────
   codeql:
     name: CodeQL
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       security-events: write
@@ -73,7 +73,7 @@ jobs:
   # ─── Python Security (bandit) ─────────────────────────────────────────
   python-security:
     name: Python Security
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
@@ -88,7 +88,7 @@ jobs:
   # ─── OSV-Scanner (Rust lockfile; repo does not commit Cargo.lock) ───────
   osv-scanner:
     name: OSV Scanner (Cargo.lock)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       security-events: write
