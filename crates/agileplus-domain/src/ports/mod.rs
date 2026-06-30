@@ -173,7 +173,7 @@ impl<T: StoragePort> StoryRepository for T {
         self.create_story(story).await
     }
     async fn get_by_id(&self, id: i64) -> Result<Option<Story>, DomainError> {
-        self.get_story_by_id(id).await
+        self.get_story(id).await
     }
     async fn update_status(&self, id: i64, status: StoryStatus) -> Result<(), DomainError> {
         self.update_story_status(id, status).await
@@ -189,7 +189,7 @@ impl<T: StoragePort> EpicRepository for T {
         self.create_epic(epic).await
     }
     async fn get_by_id(&self, id: i64) -> Result<Option<Epic>, DomainError> {
-        self.get_epic_by_id(id).await
+        self.get_epic(id).await
     }
     async fn update_status(&self, id: i64, status: EpicStatus) -> Result<(), DomainError> {
         self.update_epic_status(id, status).await

@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 
 /// Serde module for hex serialization of byte arrays
 mod hex_bytes {
-    use serde::{Serializer, Deserializer};
+    use serde::{Serializer, Deserializer, Deserialize};
 
     pub fn serialize<S: Serializer>(bytes: &[u8; 32], s: S) -> Result<S::Ok, S::Error> {
         s.serialize_str(&hex::encode(bytes))
