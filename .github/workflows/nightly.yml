@@ -87,7 +87,7 @@ jobs:
           fi
           ls -la nightly-upload/
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: nightly-${{ matrix.label }}-${{ github.run_id }}
           path: nightly-upload/*
