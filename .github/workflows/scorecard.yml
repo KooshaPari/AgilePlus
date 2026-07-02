@@ -22,19 +22,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-
-      - name: Fix submodule configuration
-        run: |
-          # Remove stale submodule entries that are not in .gitmodules
-          if [ -d .git/modules ]; then
-            for module_path in .git/modules/*/; do
-              module_name=$(basename "$module_path")
-              if ! git config -f .gitmodules --get "submodule.$module_name.path" > /dev/null 2>&1; then
-                rm -rf "$module_path"
-                git config --unset "submodule.$module_name.url" || true
-              fi
-            done
-          fi
+          fetch-depth: 0
 
       - uses: ossf/scorecard-action@v2.4.3
         with:
