@@ -10,6 +10,7 @@ members = [
   "crates/agileplus-domain",
   "crates/agileplus-git",
   "crates/agileplus-github",
+  "crates/agileplus-graph",
   "crates/agileplus-plane",
   "crates/agileplus-sqlite",
   "crates/agileplus-triage",
