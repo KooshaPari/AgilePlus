@@ -2,7 +2,6 @@
 //! `agileplus-domain` — core domain types, error, and port traits.
 
 pub use error::{DomainError, ErrorCode, ErrorEnvelope, DomainResult};
-pub type DomainResult<T> = std::result::Result<T, DomainError>;
 
 pub mod config;
 pub mod credentials;
