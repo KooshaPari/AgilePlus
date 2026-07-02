@@ -307,3 +307,7 @@
 [submodule "vibeproxy-monitoring-unified"]
 	path = vibeproxy-monitoring-unified
 	url = https://github.com/KooshaPari/vibeproxy-monitoring-unified.git
+
+[submodule "AgilePlus-wtr/fix-hooks-canonical"]
+	path = AgilePlus-wtr/fix-hooks-canonical
+	url = https://github.com/KooshaPari/AgilePlus-wtr-fix-hooks-canonical.git
