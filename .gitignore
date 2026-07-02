@@ -6,6 +6,10 @@
 !pyproject.toml
 !deny.toml
 !.gitleaks.toml
+!package.json
+!vercel.json
+!.commitlintrc.json
+!.coderabbit.yaml
 
 # Environment configuration
 .env
