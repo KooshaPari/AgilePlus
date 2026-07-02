@@ -22,7 +22,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-          submodules: false
+          fetch-depth: 0
 
       - uses: ossf/scorecard-action@v2.4.3
         with:
