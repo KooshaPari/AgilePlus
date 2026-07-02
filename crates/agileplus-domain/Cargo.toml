@@ -6,11 +6,13 @@ license.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-serde.workspace = true
+serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
 thiserror.workspace = true
 chrono.workspace = true
 sha2.workspace = true
+regex = "1"
+async-trait.workspace = true
 
 [dev-dependencies]
 tokio.workspace = true

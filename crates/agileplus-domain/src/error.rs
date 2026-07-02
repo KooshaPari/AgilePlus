@@ -1,8 +1,80 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Domain error types.
 
-pub use phenotype_error_core::ErrorCode;
 use thiserror::Error;
+
+/// Canonical error code for cross-ecosystem observability and wire responses.
+/// Maps AgilePlus domain and application errors to stable, language-agnostic codes.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[repr(u32)]
+pub enum ErrorCode {
+    /// Request succeeded; used as default OK status.
+    Ok = 0,
+    /// Request cancelled by client or service.
+    Cancelled = 1,
+    /// Unknown error (unmapped or internal).
+    Unknown = 2,
+    /// Client provided invalid argument(s).
+    InvalidArgument = 3,
+    /// Deadline exceeded (timeout).
+    DeadlineExceeded = 4,
+    /// Resource not found.
+    NotFound = 5,
+    /// Resource already exists.
+    AlreadyExists = 6,
+    /// Caller lacks permission.
+    PermissionDenied = 7,
+    /// Resource exhausted (quota, limits).
+    ResourceExhausted = 8,
+    /// Precondition failed.
+    FailedPrecondition = 9,
+    /// Request aborted.
+    Aborted = 10,
+    /// Operation out of order or invalid state.
+    OutOfRange = 11,
+    /// Operation not implemented.
+    NotImplemented = 12,
+    /// Internal server error.
+    InternalError = 13,
+    /// Service unavailable.
+    Unavailable = 14,
+    /// Data loss or corruption.
+    DataLoss = 15,
+    /// Authentication failed.
+    Unauthenticated = 16,
+    /// Validation failed (domain invariant, schema, business rules).
+    ValidationError = 100,
+}
+
+/// Wire envelope for errors — used in event bus, API responses, and cross-repo communication.
+/// Provides a stable, language-agnostic payload for error reporting and observability.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct ErrorEnvelope {
+    /// Machine-readable error code.
+    pub code: ErrorCode,
+    /// Human-readable error message.
+    pub message: String,
+    /// Whether this error is transient and safe to retry.
+    #[serde(default)]
+    pub retryable: bool,
+}
+
+impl ErrorEnvelope {
+    /// Create a new error envelope.
+    pub fn new(code: ErrorCode, message: impl Into<String>) -> Self {
+        Self {
+            code,
+            message: message.into(),
+            retryable: false,
+        }
+    }
+
+    /// Mark this error as retryable.
+    pub fn with_retryable(mut self, retryable: bool) -> Self {
+        self.retryable = retryable;
+        self
+    }
+}
 
 /// A convenience `Result` alias for domain operations.
 pub type DomainResult<T> = Result<T, DomainError>;

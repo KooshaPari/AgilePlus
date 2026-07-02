@@ -362,10 +362,10 @@ pub enum EventHandlerError {
 
 impl EventHandlerError {
     /// Project this handler error into the cross-repo wire
-    /// [`phenotype_error_core::ErrorEnvelope`] so the same payload shape
+    /// [`agileplus_domain::ErrorEnvelope`] so the same payload shape
     /// is used on the bus, in logs, and across every consumer repo.
-    pub fn to_envelope(&self) -> phenotype_error_core::ErrorEnvelope {
-        use phenotype_error_core::{ErrorCode, ErrorEnvelope};
+    pub fn to_envelope(&self) -> agileplus_domain::ErrorEnvelope {
+        use agileplus_domain::{ErrorCode, ErrorEnvelope};
         match self {
             EventHandlerError::Rejected(msg) => {
                 ErrorEnvelope::new(ErrorCode::Cancelled, format!("handler rejected: {msg}"))
@@ -737,17 +737,17 @@ mod tests {
     fn rejected_handler_error_projects_to_cancelled_envelope() {
         let err = EventHandlerError::Rejected("schema mismatch".into());
         let env = err.to_envelope();
-        assert_eq!(env.code, phenotype_error_core::ErrorCode::Cancelled);
+        assert_eq!(env.code, agileplus_domain::ErrorCode::Cancelled);
         assert!(env.message.contains("schema mismatch"));
-        assert!(!env.fatal);
+        assert!(!env.retryable);
     }
 
     #[test]
     fn transient_handler_error_projects_to_retryable_unavailable_envelope() {
         let err = EventHandlerError::Transient("broker down".into());
         let env = err.to_envelope();
-        assert_eq!(env.code, phenotype_error_core::ErrorCode::Unavailable);
-        assert_eq!(env.retryable, Some(true));
+        assert_eq!(env.code, agileplus_domain::ErrorCode::Unavailable);
+        assert_eq!(env.retryable, true);
         assert!(env.message.contains("broker down"));
     }
 
