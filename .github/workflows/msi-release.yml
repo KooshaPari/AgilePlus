@@ -1,0 +1,124 @@
+name: MSI Release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'agileplus-cli-v*'
+
+env:
+  RUST_BACKTRACE: 1
+
+jobs:
+  build-msi:
+    name: Build and Package MSI
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Install cargo-wix
+        run: cargo install cargo-wix
+
+      - name: Download WiX 3.14 toolset
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/wixtoolset/wix3/releases/download/wix3141rtm/wix314.exe" -OutFile "wix314.exe"
+          .\wix314.exe /install /quiet /norestart
+          Add-Content $env:GITHUB_PATH "C:\Program Files (x86)\WiX Toolset v3.14\bin"
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo index
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Build agileplus-cli from crates.io
+        run: |
+          cargo install agileplus-cli@0.3.0 --root ./agileplus-release
+
+      - name: Create temporary Cargo project for WiX packaging
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path temp-msi-pkg/src -Force | Out-Null
+          New-Item -ItemType Directory -Path temp-msi-pkg/wix -Force | Out-Null
+
+          $cargoToml = @"
+          [package]
+          name = "agileplus-cli"
+          version = "0.3.0"
+          edition = "2021"
+          description = "AgilePlus - Spec-first project management CLI"
+          authors = ["KooshaPari"]
+
+          [package.metadata.wix]
+          upgrade-guid = "12345678-1234-1234-1234-123456789ABC"
+          license-agreement-rtf = "wix/License.rtf"
+          eula-agreement-rtf = "wix/License.rtf"
+          "@
+          Set-Content -Path temp-msi-pkg/Cargo.toml -Value $cargoToml
+
+          Set-Content -Path temp-msi-pkg/src/main.rs -Value 'fn main() {}'
+
+          $license = @"
+          {\rtf1\ansi\ansicpg1252\deff0\nouicompat\deflang1033{\fonttbl{\f0\fnil\fcharset0 Calibri;}}{\colortbl;\red0\green0\blue0;}{\*\expandedcolortbl;}\margl1440\margr1440\margtsxn1440\margbsxn1440\ltrpara\ltrch\frtlch \fbidis\fcs1 \af0\ltrch\loch {\*\fldinst HYPERLINK "https://github.com/KooshaPari/AgilePlus"}{\fldrslt AgilePlus on GitHub}}\par AgilePlus CLI - Spec-first project management\par Dual licensed under MIT OR Apache-2.0\par
+          "@
+          Set-Content -Path temp-msi-pkg/wix/License.rtf -Value $license
+
+      - name: Copy binary for packaging
+        shell: pwsh
+        run: |
+          $releaseTarget = "temp-msi-pkg/target/release"
+          New-Item -ItemType Directory -Path "$releaseTarget" -Force | Out-Null
+          Copy-Item -Path "agileplus-release/bin/agileplus-cli.exe" -Destination "$releaseTarget/agileplus-cli.exe" -Force
+
+      - name: Generate and build MSI with cargo-wix
+        working-directory: temp-msi-pkg
+        run: |
+          cargo wix init
+          cargo wix build
+
+      - name: Locate generated MSI
+        id: msi-path
+        shell: pwsh
+        run: |
+          $msiFiles = Get-ChildItem -Path "temp-msi-pkg/target/wix" -Filter "*.msi" -Recurse
+          if ($msiFiles) {
+            $msi = $msiFiles[0]
+            echo "msi_file=$($msi.FullName)" >> $env:GITHUB_OUTPUT
+            echo "msi_name=$($msi.Name)" >> $env:GITHUB_OUTPUT
+            Write-Host "Found MSI: $($msi.FullName)"
+            Write-Host "Size: $(($msi.Length / 1MB).ToString('F2')) MB"
+          } else {
+            Write-Host "ERROR: No MSI found in temp-msi-pkg/target/wix"
+            exit 1
+          }
+
+      - name: Create Release and Upload MSI
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: ${{ steps.msi-path.outputs.msi_file }}
+          body: |
+            # AgilePlus CLI ${{ github.ref_name }}
+
+            Windows MSI installer for AgilePlus CLI (Spec-first project management).
+
+            ## Installation
+            Download the `.msi` file and run it to install AgilePlus CLI on Windows.
+
+            ## Links
+            - [Documentation](https://docs.rs/agileplus-cli)
+            - [GitHub Repository](https://github.com/KooshaPari/AgilePlus)
+            - [Crates.io](https://crates.io/crates/agileplus-cli)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
