@@ -1,3 +1,309 @@
-[submodule "vendor/phenodocs"]
-	path = vendor/phenodocs
+[submodule "AppGen"]
+	path = AppGen
+	url = https://github.com/KooshaPari/AppGen.git
+[submodule "AtomsBot"]
+	path = AtomsBot
+	url = https://github.com/KooshaPari/AtomsBot.git
+[submodule "AuthKit"]
+	path = AuthKit
+	url = https://github.com/KooshaPari/AuthKit.git
+[submodule "Benchora"]
+	path = Benchora
+	url = https://github.com/KooshaPari/Benchora.git
+[submodule "BytePort"]
+	path = BytePort
+	url = https://github.com/KooshaPari/BytePort.git
+[submodule "Civis"]
+	path = Civis
+	url = https://github.com/KooshaPari/Civis.git
+[submodule "Configra"]
+	path = Configra
+	url = https://github.com/KooshaPari/Configra.git
+[submodule "Conft"]
+	path = Conft
+	url = https://github.com/KooshaPari/Conft.git
+[submodule "DINOForge-UnityDoorstop"]
+	path = DINOForge-UnityDoorstop
+	url = https://github.com/KooshaPari/DINOForge-UnityDoorstop.git
+[submodule "DataKit"]
+	path = DataKit
+	url = https://github.com/KooshaPari/DataKit.git
+[submodule "Dino"]
+	path = Dino
+	url = https://github.com/KooshaPari/Dino.git
+[submodule "Eidolon"]
+	path = Eidolon
+	url = https://github.com/KooshaPari/Eidolon.git
+[submodule "FocalPoint"]
+	path = FocalPoint
+	url = https://github.com/KooshaPari/FocalPoint.git
+[submodule "GDK"]
+	path = GDK
+	url = https://github.com/KooshaPari/GDK.git
+[submodule "HeliosLab"]
+	path = HeliosLab
+	url = https://github.com/KooshaPari/HeliosLab.git
+[submodule "HexaKit"]
+	path = HexaKit
+	url = https://github.com/KooshaPari/HexaKit.git
+[submodule "Httpora"]
+	path = Httpora
+	url = https://github.com/KooshaPari/Httpora.git
+[submodule "KDesktopVirt"]
+	path = KDesktopVirt
+	url = https://github.com/KooshaPari/KDesktopVirt.git
+[submodule "KlipDot"]
+	path = KlipDot
+	url = https://github.com/KooshaPari/KlipDot.git
+[submodule "MCPForge"]
+	path = MCPForge
+	url = https://github.com/KooshaPari/MCPForge.git
+[submodule "McpKit"]
+	path = McpKit
+	url = https://github.com/KooshaPari/McpKit.git
+[submodule "Metron"]
+	path = Metron
+	url = https://github.com/KooshaPari/Metron.git
+[submodule "ObservabilityKit"]
+	path = ObservabilityKit
+	url = https://github.com/KooshaPari/ObservabilityKit.git
+[submodule "Paginary"]
+	path = Paginary
+	url = https://github.com/KooshaPari/Paginary.git
+[submodule "Parpoura"]
+	path = Parpoura
+	url = https://github.com/KooshaPari/Parpoura.git
+[submodule "PhenoAgent"]
+	path = PhenoAgent
+	url = https://github.com/KooshaPari/PhenoAgent.git
+[submodule "PhenoCompose"]
+	path = PhenoCompose
+	url = https://github.com/KooshaPari/PhenoCompose.git
+[submodule "PhenoDevOps"]
+	path = PhenoDevOps
+	url = https://github.com/KooshaPari/PhenoDevOps.git
+[submodule "PhenoHandbook"]
+	path = PhenoHandbook
+	url = https://github.com/KooshaPari/PhenoHandbook.git
+[submodule "PhenoKits"]
+	path = PhenoKits
+	url = https://github.com/KooshaPari/PhenoKits.git
+[submodule "PhenoLang"]
+	path = PhenoLang
+	url = https://github.com/KooshaPari/PhenoLang.git
+[submodule "PhenoMCP"]
+	path = PhenoMCP
+	url = https://github.com/KooshaPari/PhenoMCP.git
+[submodule "PhenoObservability"]
+	path = PhenoObservability
+	url = https://github.com/KooshaPari/PhenoObservability.git
+[submodule "PhenoPlugins"]
+	path = PhenoPlugins
+	url = https://github.com/KooshaPari/PhenoPlugins.git
+[submodule "PhenoProc"]
+	path = PhenoProc
+	url = https://github.com/KooshaPari/PhenoProc.git
+[submodule "PhenoProject"]
+	path = PhenoProject
+	url = https://github.com/KooshaPari/PhenoProject.git
+[submodule "PhenoRuntime"]
+	path = PhenoRuntime
+	url = https://github.com/KooshaPari/PhenoRuntime.git
+[submodule "PhenoSpecs"]
+	path = PhenoSpecs
+	url = https://github.com/KooshaPari/PhenoSpecs.git
+[submodule "PhenoVCS"]
+	path = PhenoVCS
+	url = https://github.com/KooshaPari/PhenoVCS.git
+[submodule "Pine"]
+	path = Pine
+	url = https://github.com/KooshaPari/Pine.git
+[submodule "Planify"]
+	path = Planify
+	url = https://github.com/KooshaPari/Planify.git
+[submodule "PlatformKit"]
+	path = PlatformKit
+	url = https://github.com/KooshaPari/PlatformKit.git
+[submodule "PlayCua"]
+	path = PlayCua
+	url = https://github.com/KooshaPari/PlayCua.git
+[submodule "PolicyStack"]
+	path = PolicyStack
+	url = https://github.com/KooshaPari/PolicyStack.git
+[submodule "QuadSGM"]
+	path = QuadSGM
+	url = https://github.com/KooshaPari/QuadSGM.git
+[submodule "ResilienceKit"]
+	path = ResilienceKit
+	url = https://github.com/KooshaPari/ResilienceKit.git
+[submodule "Sidekick"]
+	path = Sidekick
+	url = https://github.com/KooshaPari/Sidekick.git
+[submodule "Tasken"]
+	path = Tasken
+	url = https://github.com/KooshaPari/Tasken.git
+[submodule "TestingKit"]
+	path = TestingKit
+	url = https://github.com/KooshaPari/TestingKit.git
+[submodule "Tokn"]
+	path = Tokn
+	url = https://github.com/KooshaPari/Tokn.git
+[submodule "Tracely"]
+	path = Tracely
+	url = https://github.com/KooshaPari/Tracely.git
+[submodule "Tracera"]
+	path = Tracera
+	url = https://github.com/KooshaPari/Tracera.git
+[submodule "agent-user-status"]
+	path = agent-user-status
+	url = https://github.com/KooshaPari/agent-user-status.git
+[submodule "agileplus-landing"]
+	path = agileplus-landing
+	url = https://github.com/KooshaPari/agileplus-landing.git
+[submodule "argis-extensions"]
+	path = argis-extensions
+	url = https://github.com/KooshaPari/argis-extensions.git
+[submodule "bare-cua"]
+	path = bare-cua
+	url = https://github.com/KooshaPari/bare-cua.git
+[submodule "byteport-landing"]
+	path = byteport-landing
+	url = https://github.com/KooshaPari/byteport-landing.git
+[submodule "chatta"]
+	path = chatta
+	url = https://github.com/KooshaPari/chatta.git
+[submodule "cheap-llm-mcp"]
+	path = cheap-llm-mcp
+	url = https://github.com/KooshaPari/cheap-llm-mcp.git
+[submodule "dinoforge-packs"]
+	path = dinoforge-packs
+	url = https://github.com/KooshaPari/dinoforge-packs.git
+[submodule "eyetracker"]
+	path = eyetracker
+	url = https://github.com/KooshaPari/eyetracker.git
+[submodule "foqos-private"]
+	path = foqos-private
+	url = https://github.com/KooshaPari/foqos-private.git
+[submodule "helios-cli"]
+	path = helios-cli
+	url = https://github.com/KooshaPari/helios-cli.git
+[submodule "helios-router"]
+	path = helios-router
+	url = https://github.com/KooshaPari/helios-router.git
+[submodule "heliosBench"]
+	path = heliosBench
+	url = https://github.com/KooshaPari/heliosBench.git
+[submodule "helioscope"]
+	path = helioscope
+	url = https://github.com/KooshaPari/helioscope.git
+[submodule "hwLedger"]
+	path = hwLedger
+	url = https://github.com/KooshaPari/hwLedger.git
+[submodule "hwledger-landing"]
+	path = hwledger-landing
+	url = https://github.com/KooshaPari/hwledger-landing.git
+[submodule "kwality"]
+	path = kwality
+	url = https://github.com/KooshaPari/kwality.git
+[submodule "localbase3"]
+	path = localbase3
+	url = https://github.com/KooshaPari/localbase3.git
+[submodule "nanovms"]
+	path = nanovms
+	url = https://github.com/KooshaPari/nanovms.git
+[submodule "netweave-final2"]
+	path = netweave-final2
+	url = https://github.com/KooshaPari/netweave-final2.git
+[submodule "pheno"]
+	path = pheno
+	url = https://github.com/KooshaPari/pheno.git
+[submodule "phenoAI"]
+	path = phenoAI
+	url = https://github.com/KooshaPari/phenoAI.git
+[submodule "phenoData"]
+	path = phenoData
+	url = https://github.com/KooshaPari/phenoData.git
+[submodule "phenoDesign"]
+	path = phenoDesign
+	url = https://github.com/KooshaPari/phenoDesign.git
+[submodule "phenoForge"]
+	path = phenoForge
+	url = https://github.com/KooshaPari/phenoForge.git
+[submodule "phenoResearchEngine"]
+	path = phenoResearchEngine
+	url = https://github.com/KooshaPari/phenoResearchEngine.git
+[submodule "phenoShared"]
+	path = phenoShared
+	url = https://github.com/KooshaPari/phenoShared.git
+[submodule "phenoUtils"]
+	path = phenoUtils
+	url = https://github.com/KooshaPari/phenoUtils.git
+[submodule "phenoXdd"]
+	path = phenoXdd
+	url = https://github.com/KooshaPari/phenoXdd.git
+[submodule "phenodocs"]
+	path = phenodocs
 	url = https://github.com/KooshaPari/phenodocs.git
+[submodule "phenodocs-scorecard-remediation"]
+	path = phenodocs-scorecard-remediation
+	url = https://github.com/KooshaPari/phenodocs-scorecard-remediation.git
+[submodule "phenokits-landing"]
+	path = phenokits-landing
+	url = https://github.com/KooshaPari/phenokits-landing.git
+[submodule "phenotype-auth-ts"]
+	path = phenotype-auth-ts
+	url = https://github.com/KooshaPari/phenotype-auth-ts.git
+[submodule "phenotype-bus"]
+	path = phenotype-bus
+	url = https://github.com/KooshaPari/phenotype-bus.git
+[submodule "phenotype-hub"]
+	path = phenotype-hub
+	url = https://github.com/KooshaPari/phenotype-hub.git
+[submodule "phenotype-infra"]
+	path = phenotype-infra
+	url = https://github.com/KooshaPari/phenotype-infra.git
+[submodule "phenotype-journeys"]
+	path = phenotype-journeys
+	url = https://github.com/KooshaPari/phenotype-journeys.git
+[submodule "phenotype-omlx"]
+	path = phenotype-omlx
+	url = https://github.com/KooshaPari/phenotype-omlx.git
+[submodule "phenotype-ops-mcp"]
+	path = phenotype-ops-mcp
+	url = https://github.com/KooshaPari/phenotype-ops-mcp.git
+[submodule "phenotype-org-audits"]
+	path = phenotype-org-audits
+	url = https://github.com/KooshaPari/phenotype-org-audits.git
+[submodule "phenotype-registry"]
+	path = phenotype-registry
+	url = https://github.com/KooshaPari/phenotype-registry.git
+[submodule "phenotype-tooling"]
+	path = phenotype-tooling
+	url = https://github.com/KooshaPari/phenotype-tooling.git
+[submodule "portage"]
+	path = portage
+	url = https://github.com/KooshaPari/portage.git
+[submodule "projects-landing"]
+	path = projects-landing
+	url = https://github.com/KooshaPari/projects-landing.git
+[submodule "rich-cli-kit"]
+	path = rich-cli-kit
+	url = https://github.com/KooshaPari/rich-cli-kit.git
+[submodule "thegent"]
+	path = thegent
+	url = https://github.com/KooshaPari/thegent.git
+[submodule "thegent-dispatch"]
+	path = thegent-dispatch
+	url = https://github.com/KooshaPari/thegent-dispatch.git
+[submodule "thegent-landing"]
+	path = thegent-landing
+	url = https://github.com/KooshaPari/thegent-landing.git
+[submodule "thegent-workspace"]
+	path = thegent-workspace
+	url = https://github.com/KooshaPari/thegent-workspace.git
+[submodule "vibeproxy"]
+	path = vibeproxy
+	url = https://github.com/KooshaPari/vibeproxy.git
+[submodule "vibeproxy-monitoring-unified"]
+	path = vibeproxy-monitoring-unified
+	url = https://github.com/KooshaPari/vibeproxy-monitoring-unified.git
