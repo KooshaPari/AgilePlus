@@ -12,6 +12,8 @@ thiserror.workspace = true
 chrono.workspace = true
 sha2.workspace = true
 regex = "1"
+toml.workspace = true
+dirs-next.workspace = true
 async-trait.workspace = true
 
 [dev-dependencies]
