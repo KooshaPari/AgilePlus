@@ -1,0 +1,8 @@
+[package]
+name = "agileplus-wix"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "WiX MSI installer configuration for AgilePlus CLI"
+
+[dependencies]

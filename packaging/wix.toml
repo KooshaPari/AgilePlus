@@ -1,0 +1,17 @@
+# WiX Toolset configuration for cargo-wix
+# See: https://volante.codes/cargo-wix
+
+[package]
+name = "agileplus-cli"
+product-name = "AgilePlus CLI"
+license = true
+eula = false
+
+[directories]
+# These paths are relative to this wix.toml's location
+license = "../LICENSE"
+
+[signing]
+# Optional: Set this to the path of a code signing certificate
+# certificate_path = "..."
+# password = "..."
