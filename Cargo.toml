@@ -5,6 +5,15 @@ resolver = "2"
 # workspace until source is implemented. See: kitty-specs/003-agileplus-platform-completion.
 members = [
   "rust", # agileplus-proto: tonic/prost gRPC stubs (buf-generated)
+  "crates/agileplus-cli", # agileplus: spec-first CLI binary
+  "crates/agileplus-application",
+  "crates/agileplus-domain",
+  "crates/agileplus-git",
+  "crates/agileplus-github",
+  "crates/agileplus-plane",
+  "crates/agileplus-sqlite",
+  "crates/agileplus-triage",
+  "crates/agileplus-telemetry",
 ]
 
 [workspace.package]
