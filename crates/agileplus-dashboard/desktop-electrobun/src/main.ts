@@ -1,77 +1,34 @@
 /**
- * phenotype-desktop Electrobun shell — main process template
+ * AgilePlus Desktop Shell — Electrobun main process
  *
- * Features out of the box:
- *  - One-click service boot: runs `process-compose up -d` if SERVICES_COMPOSE_FILE is set
- *  - Loads renderer from RENDERER_URL env or falls back to bundled views://app/index.html
- *  - Standard window with hiddenInset title bar, 1400x900 default
- *  - Minimal app menu wired to webview JS dispatch
+ * When launched from agileplus-launch.ps1:
+ * - The daemon (agileplus-dashboard) is already running via the launcher
+ * - RENDERER_URL is set to http://localhost:$AGILEPLUS_DASHBOARD_PORT
+ * - This window simply displays the running dashboard
+ *
+ * Features:
+ *  - Loads renderer from RENDERER_URL env (set by launcher)
+ *  - Fallback to bundled views://app/index.html if unreachable
+ *  - Standard window with hiddenInset title bar (macOS), 1400x900
+ *  - Minimal app menu
  */
 import { BrowserWindow, ApplicationMenu } from "electrobun/bun";
-import { $ } from "bun";
 import { join } from "node:path";
 
 // ── Config ────────────────────────────────────────────────────────────────────
 const APP_NAME = process.env.APP_NAME ?? "AgilePlus";
-// Bundled fallback page (polls + redirects to the live dev server).
-const RENDERER_URL = "views://app/index.html";
-// Live vite dev server (HMR) the window navigates to once reachable.
-const DEV_URL = process.env.RENDERER_URL ?? "http://localhost:5173";
-// Repo root, four levels up from crates/agileplus-dashboard/desktop-electrobun/src.
-const REPO_ROOT = join(import.meta.dir, "..", "..", "..", "..");
-const API_CRATE = process.env.AGILEPLUS_API_CRATE ?? "agileplus-api";
-const BOOT_API = (process.env.BOOT_API ?? "1") !== "0";
 
-/**
- * Path to process-compose.yml (absolute or relative to CWD).
- * Set SERVICES_COMPOSE_FILE env var, e.g.:
- *   SERVICES_COMPOSE_FILE=/path/to/repo/process-compose.yml
- * Leave unset to skip service boot.
- */
-const SERVICES_COMPOSE_FILE = process.env.SERVICES_COMPOSE_FILE;
+// Fallback page (shown while waiting for renderer to be reachable)
+const RENDERER_FALLBACK = "views://app/index.html";
 
-// ── Backend boot (cargo run -p agileplus-api :4000) ───────────────────────────
-function bootBackend(): void {
-  if (!BOOT_API) {
-    console.log(`[${APP_NAME}] BOOT_API=0 — skipping backend boot`);
-    return;
-  }
-  try {
-    Bun.spawn(["cargo", "run", "-p", API_CRATE], {
-      cwd: REPO_ROOT,
-      stdout: "inherit",
-      stderr: "inherit",
-      env: { ...process.env },
-    });
-    console.log(`[${APP_NAME}] Backend: cargo run -p ${API_CRATE} (cwd ${REPO_ROOT})`);
-  } catch (err) {
-    console.warn(`[${APP_NAME}] backend boot skipped:`, (err as Error).message);
-  }
-}
+// Live renderer URL (set by launcher via RENDERER_URL=http://localhost:$PORT)
+const RENDERER_URL = process.env.RENDERER_URL ?? "http://localhost:8770";
 
-// ── Service boot ─────────────────────────────────────────────────────────────
-async function bootServices(): Promise<void> {
-  if (!SERVICES_COMPOSE_FILE) {
-    console.log(`[${APP_NAME}] SERVICES_COMPOSE_FILE not set — skipping service boot`);
-    return;
-  }
-  console.log(`[${APP_NAME}] Booting services: process-compose up -d`);
-  try {
-    const result = await $`process-compose up -d --config ${SERVICES_COMPOSE_FILE}`.quiet();
-    console.log(`[${APP_NAME}] Services:`, result.text().trim());
-  } catch (err) {
-    console.warn(
-      `[${APP_NAME}] process-compose boot skipped (not found or services already running):`,
-      (err as Error).message
-    );
-  }
-}
-
-// ── Window ───────────────────────────────────────────────────────────────────
+// ── Window ────────────────────────────────────────────────────────────────────
 function createMainWindow(): BrowserWindow {
   const win = new BrowserWindow({
     title: APP_NAME,
-    url: RENDERER_URL,
+    url: RENDERER_FALLBACK,
     frame: {
       x: 0,
       y: 0,
@@ -80,16 +37,18 @@ function createMainWindow(): BrowserWindow {
     },
     titleBarStyle: "hiddenInset",
   });
-  // Tell the bundled fallback page which dev server to poll + redirect to.
+
+  // Tell the fallback page which renderer URL to poll and navigate to
   try {
-    win.webview.executeJavascript(`window.__RENDERER_URL__ = ${JSON.stringify(DEV_URL)};`);
+    win.webview.executeJavascript(`window.__RENDERER_URL__ = ${JSON.stringify(RENDERER_URL)};`);
   } catch {
-    /* webview not ready yet — fallback page defaults to localhost:5173 */
+    // Webview not ready yet; fallback page will use its default
   }
+
   return win;
 }
 
-// ── Menu ─────────────────────────────────────────────────────────────────────
+// ── Menu ──────────────────────────────────────────────────────────────────────
 function setupMenu(win: BrowserWindow): void {
   ApplicationMenu.setApplicationMenu([
     {
@@ -128,28 +87,14 @@ function setupMenu(win: BrowserWindow): void {
         { role: "togglefullscreen" },
       ],
     },
-    // Add app-specific menus below this line
-    // Example — dispatch to webview via executeJavaScript:
-    // {
-    //   label: "File",
-    //   submenu: [
-    //     {
-    //       label: "New",
-    //       accelerator: "CmdOrCtrl+N",
-    //       click: () => win.webview.executeJavaScript("window.__app?.onNew?.()"),
-    //     },
-    //   ],
-    // },
   ]);
 }
 
-// ── Bootstrap ────────────────────────────────────────────────────────────────
+// ── Bootstrap ─────────────────────────────────────────────────────────────────
 async function main(): Promise<void> {
-  bootBackend();
-  await bootServices();
   const win = createMainWindow();
   setupMenu(win);
-  console.log(`[${APP_NAME}] Launched → ${DEV_URL} (fallback ${RENDERER_URL})`);
+  console.log(`[${APP_NAME}] Desktop shell launched → ${RENDERER_URL} (fallback: ${RENDERER_FALLBACK})`);
 }
 
 main().catch((err) => {

@@ -1,11 +1,12 @@
-# AgilePlus Dashboard Launcher
+# AgilePlus Dashboard Launcher + Electrobun Desktop Shell
 # Idempotent daemon launcher that:
 # 1. Checks if AGILEPLUS_DASHBOARD_PORT is free
 # 2. If free → starts agileplus-dashboard as hidden daemon
 # 3. If occupied → health-checks http://localhost:$PORT/health
 #    - Healthy → reuse existing instance
 #    - Unhealthy/foreign → kill + start fresh
-# 4. Opens native Electrobun window or fallback to browser
+# 4. Builds Electrobun desktop shell (if needed)
+# 5. Launches Electrobun app window pointing at the daemon
 
 $ErrorActionPreference = "SilentlyContinue"
 
@@ -16,6 +17,8 @@ if (-not $DashboardPort -or $DashboardPort -le 0) { $DashboardPort = 8770 }
 $HealthCheckUrl = "http://127.0.0.1:$DashboardPort/health"
 $DashboardUrl = "http://127.0.0.1:$DashboardPort"
 $RepoPath = "E:\Dev\AgilePlus"
+$ElectrobunDir = "$RepoPath\crates\agileplus-dashboard\desktop-electrobun"
+$ElectrobunBinary = "$ElectrobunDir\build\AgilePlus.exe"  # Post-build artifact
 
 # Validate binary exists
 if (-not (Test-Path $DashboardBinary)) {
@@ -65,21 +68,67 @@ function Kill-ProcessOnPort {
     }
 }
 
-# Main logic
-Write-Host "[AgilePlus Dashboard Launcher]" -ForegroundColor Cyan
+# Helper: Build Electrobun app (if needed)
+function Build-ElectrobunApp {
+    if (-not (Test-Path $ElectrobunDir)) {
+        Write-Host "[ERROR] Electrobun directory not found: $ElectrobunDir" -ForegroundColor Red
+        return $false
+    }
 
-# Check if port is in use
+    # Check if build artifact exists and is recent
+    $buildCacheValid = $false
+    if (Test-Path $ElectrobunBinary) {
+        $binaryAge = (Get-Date) - (Get-Item $ElectrobunBinary).LastWriteTime
+        if ($binaryAge.TotalHours -lt 24) {
+            Write-Host "[OK] Electrobun build is recent (< 24h). Skipping rebuild." -ForegroundColor Green
+            $buildCacheValid = $true
+        }
+    }
+
+    if (-not $buildCacheValid) {
+        Write-Host "[INFO] Building Electrobun app..." -ForegroundColor Blue
+        Push-Location $ElectrobunDir
+        try {
+            # Ensure Bun dependencies are installed
+            bunx bun install 2>&1 | Out-Null
+
+            # Build Electrobun app
+            bunx electrobun build --release 2>&1 | Out-Null
+
+            # Verify build succeeded
+            if (Test-Path $ElectrobunBinary) {
+                Write-Host "[OK] Electrobun build succeeded: $ElectrobunBinary" -ForegroundColor Green
+                return $true
+            } else {
+                Write-Host "[ERROR] Electrobun build failed. Binary not found at: $ElectrobunBinary" -ForegroundColor Red
+                return $false
+            }
+        } catch {
+            Write-Host "[ERROR] Failed to build Electrobun: $_" -ForegroundColor Red
+            return $false
+        } finally {
+            Pop-Location
+        }
+    }
+
+    return $true
+}
+
+# Main logic
+Write-Host "[AgilePlus Dashboard Launcher + Electrobun Desktop Shell]" -ForegroundColor Cyan
+
+# ── Step 1: Ensure dashboard daemon is running ────────────────────────────────
+Write-Host "[INFO] Checking dashboard daemon..." -ForegroundColor Blue
+
 $portInUse = Test-PortInUse $DashboardPort
 
 if ($portInUse) {
     Write-Host "[INFO] Port $DashboardPort is occupied. Health-checking..." -ForegroundColor Blue
     if (Test-DashboardHealth $HealthCheckUrl) {
         Write-Host "[OK] Healthy dashboard found on port $DashboardPort. Reusing." -ForegroundColor Green
-        # Proceed to open the URL
     } else {
         Write-Host "[WARN] Port $DashboardPort occupied by unhealthy service. Freeing & restarting..." -ForegroundColor Yellow
         Kill-ProcessOnPort $DashboardPort
-        # Start fresh below
         $portInUse = $false
     }
 }
@@ -88,8 +137,7 @@ if (-not $portInUse) {
     Write-Host "[INFO] Starting agileplus-dashboard on port $DashboardPort..." -ForegroundColor Blue
     Push-Location $RepoPath
     try {
-        $env:AGILEPLUS_DASHBOARD_PORT = $DashboardPort
-        # Start as hidden, detached daemon (no console window)
+        # Start as hidden, detached daemon
         $proc = Start-Process -FilePath $DashboardBinary `
             -NoNewWindow `
             -WindowStyle Hidden `
@@ -108,25 +156,37 @@ if (-not $portInUse) {
     }
 }
 
-# Now open the dashboard URL
-Write-Host "[INFO] Opening dashboard at $DashboardUrl" -ForegroundColor Blue
-
-# Try Electrobun first (native app container)
-# NOTE: Electrobun wiring for AgilePlus is the end-state target; for now, fallback to browser
-$electronBunPath = "C:\Users\koosh\AppData\Local\Apps\Electrobun\Electrobun.exe"
-$electrobunAgilePlusApp = "E:\Dev\AgilePlus\packaging\electrobun-app.exe"  # Hypothetical final artifact
-
-if (Test-Path $electrobunAgilePlusApp) {
-    Write-Host "[INFO] Opening via Electrobun (AgilePlus native app)" -ForegroundColor Cyan
-    Start-Process -FilePath $electrobunAgilePlusApp
-} elseif (Test-Path $electronBunPath) {
-    Write-Host "[INFO] Electrobun found but AgilePlus app not yet wired. (Target: native Electrobun app)" -ForegroundColor DarkYellow
-    Write-Host "[INTERIM] Opening in default browser..." -ForegroundColor DarkYellow
+# ── Step 2: Build Electrobun app (if needed) ───────────────────────────────────
+Write-Host "[INFO] Preparing Electrobun desktop shell..." -ForegroundColor Blue
+if (-not (Build-ElectrobunApp)) {
+    Write-Host "[ERROR] Failed to build Electrobun app. Falling back to browser." -ForegroundColor Red
     Start-Process $DashboardUrl
-} else {
-    Write-Host "[INTERIM] Opening in default browser (Electrobun not set up yet)" -ForegroundColor DarkYellow
+    exit 0
+}
+
+# ── Step 3: Launch Electrobun app window ───────────────────────────────────────
+Write-Host "[INFO] Launching Electrobun app window..." -ForegroundColor Blue
+
+# Pass the dashboard port to Electrobun via RENDERER_URL environment variable
+$env:RENDERER_URL = $DashboardUrl
+$env:APP_NAME = "AgilePlus"
+$env:WINDOW_WIDTH = "1400"
+$env:WINDOW_HEIGHT = "900"
+
+try {
+    Start-Process -FilePath $ElectrobunBinary `
+        -EnvironmentVariables @{
+            "RENDERER_URL" = $DashboardUrl
+            "APP_NAME" = "AgilePlus"
+            "WINDOW_WIDTH" = "1400"
+            "WINDOW_HEIGHT" = "900"
+        }
+    Write-Host "[OK] Electrobun app launched" -ForegroundColor Green
+} catch {
+    Write-Host "[ERROR] Failed to launch Electrobun app: $_" -ForegroundColor Red
+    Write-Host "[INTERIM] Opening in default browser..." -ForegroundColor DarkYellow
     Start-Process $DashboardUrl
 }
 
-Write-Host "[OK] Done. Dashboard dashboard is live at $DashboardUrl" -ForegroundColor Green
+Write-Host "[OK] Done. Dashboard is live at $DashboardUrl" -ForegroundColor Green
 exit 0
