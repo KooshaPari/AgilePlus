@@ -5,10 +5,9 @@
 
 use std::error::Error;
 
-use phenotype_error_core::ErrorCode;
 use thiserror::Error;
 
-use agileplus_domain::error::DomainError;
+use agileplus_domain::error::{DomainError, ErrorCode};
 
 #[derive(Debug, Error)]
 pub enum AppError {
