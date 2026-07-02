@@ -19,22 +19,22 @@ jobs:
       actions: read
 
     steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: actions/checkout@d632683dd7b4114ad314bca15559c51a265e5bde
         with:
           persist-credentials: false
 
-      - uses: ossf/scorecard-action@62b2cac7ed8198af16f6602b2b56d0190aee38f0
+      - uses: ossf/scorecard-action@sebdbf1c91165e231d69b212d33e7a1cac050479
         with:
           results_file: results.sarif
           results_format: sarif
           publish_results: true
 
-      - uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a
+      - uses: actions/upload-artifact@65462800fd760ebe89d21e646d4645c4a39ce18b
         with:
           name: SARIF file
           path: results.sarif
           retention-days: 5
 
-      - uses: github/codeql-action/upload-sarif@762d46a573614644010b235c22e7fd3a9b58aada
+      - uses: github/codeql-action/upload-sarif@662472033e021d55d3e11a421db8326578c3f2d9
         with:
           sarif_file: results.sarif
