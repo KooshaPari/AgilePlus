@@ -1,8 +1,23 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Domain error types.
 
-pub use phenotype_error_core::ErrorCode;
 use thiserror::Error;
+
+/// Canonical error code for cross-ecosystem error reporting.
+/// Stable, language-agnostic codes used in observability and wire responses.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub enum ErrorCode {
+    /// Entity not found by id, slug, or query.
+    NotFound,
+    /// Resource or state already exists (conflict, uniqueness violation).
+    AlreadyExists,
+    /// Invalid input, validation failure, or invariant violation.
+    ValidationError,
+    /// Not yet implemented.
+    NotImplemented,
+    /// Internal server error (storage, lock, or system failure).
+    InternalError,
+}
 
 /// A convenience `Result` alias for domain operations.
 pub type DomainResult<T> = Result<T, DomainError>;
