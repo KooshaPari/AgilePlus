@@ -584,12 +584,8 @@ async fn main() {
                 commands::dashboard::run(&args)?;
             }
             Command::Worklog(args) => {
-<<<<<<< HEAD
-                let db_path = db_path_from_env();
+                let db_path = commands::worklog::db_path_from_env();
                 commands::worklog::run_with_db(&args, &db_path)?;
-=======
-                commands::worklog::run(&args)?;
->>>>>>> pr-769
             }
         }
         Ok(())
