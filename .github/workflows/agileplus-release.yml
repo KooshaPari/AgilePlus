@@ -49,19 +49,16 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: dtolnay/rust-toolchain@nightly
+      - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
 
       - uses: Swatinem/rust-cache@v2
 
-      - uses: arduino/setup-protoc@v3
-        with:
-          version: "28.x"
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build release binary
-        run: cargo build --release --locked -p ${{ env.PACKAGE }} --target ${{ matrix.target }}
+      - name: Install release binary from crates.io
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          cargo install "${{ env.PACKAGE }}@${version}" --root "./install" --target ${{ matrix.target }}
 
       - name: Stage artifact
         shell: bash
@@ -71,9 +68,9 @@ jobs:
           staging="dist/${{ matrix.asset_name }}"
           mkdir -p "$staging"
           if [ "${{ matrix.archive }}" = "zip" ]; then
-            cp "target/${{ matrix.target }}/release/${{ env.BIN_NAME }}.exe" "$staging/"
+            cp "install/bin/${{ env.BIN_NAME }}.exe" "$staging/" || cp "install/bin/${{ env.BIN_NAME }}" "$staging/"
           else
-            cp "target/${{ matrix.target }}/release/${{ env.BIN_NAME }}" "$staging/"
+            cp "install/bin/${{ env.BIN_NAME }}" "$staging/"
           fi
           cp LICENSE "$staging/" 2>/dev/null || cp LICENSE.md "$staging/" 2>/dev/null || true
           cp docs/INSTALL.md "$staging/" 2>/dev/null || true
