@@ -40,13 +40,15 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Link @phenotype/docs from phenodocs
-          mkdir -p docs/node_modules/@phenotype
-          ln -sf /tmp/phenodocs/packages/docs docs/node_modules/@phenotype/docs
           # Configure npm for GitHub Packages
           echo "@phenotype:registry=https://npm.pkg.github.com" >> ~/.npmrc
           echo "//npm.pkg.github.com/:_authToken=\${GITHUB_TOKEN}" >> ~/.npmrc
           bun install
+          # Link @phenotype/docs from phenodocs (after install so bun doesn't
+          # clobber the unmanaged symlink; path is relative to this
+          # working-directory, i.e. docs/node_modules/@phenotype/docs)
+          mkdir -p node_modules/@phenotype
+          ln -sf /tmp/phenodocs/packages/docs node_modules/@phenotype/docs
 
       - name: Build VitePress site
         working-directory: docs
