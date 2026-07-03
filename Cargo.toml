@@ -74,14 +74,14 @@ hyper-util = "0.1"
 # Observability
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-opentelemetry = { version = "0.27", features = ["metrics"] }
-opentelemetry_sdk = { version = "0.27", features = [
+opentelemetry = { version = "0.32", features = ["metrics"] }
+opentelemetry_sdk = { version = "0.32.1", features = [
   "metrics",
   "trace",
   "rt-tokio",
 ] }
-opentelemetry-otlp = { version = "0.27", features = ["tonic", "gzip-tonic"] }
-tracing-opentelemetry = "0.27"
+opentelemetry-otlp = { version = "0.32", features = ["tonic", "gzip-tonic"] }
+tracing-opentelemetry = "0.33"
 sentry = { version = "0.34", features = ["tracing"] }
 
 # Time
