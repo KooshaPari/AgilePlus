@@ -11,18 +11,9 @@ pub mod domain;
 pub mod error;
 pub mod intent_graph;
 pub mod ports;
-pub mod adapters;
-pub mod traceability;
+pub mod builder;
+pub mod validate;
 
-// Shared PM/traceability spine (phenotype-pm-core). AgilePlus-local aggregates
-// remain in `domain::*`; lifecycle, governance, and intent graph are canonical
-// in `traceability-core` and re-exported here for backward-compatible paths.
-pub use traceability_core::governance::{
-    BuiltinPolicy, Evidence, EvidenceRequirement, EvidenceType, GovernanceContract,
-    GovernanceRule, PolicyCheck, PolicyDefinition, PolicyDomain, PolicyRule,
-};
-pub use traceability_core::intent_graph::{
-    CanonicalLinkType, CanonicalMap, DagStage, Edge, GraphMetadata, IntentGraph, Meta, Node,
-    NodeType, RelationshipType, Status as NodeStatus, ValidationError,
-};
-pub use traceability_core::lifecycle::{FeatureState, Transition, TransitionResult};
+// TODO: Re-enable when traceability_core crate is available
+// pub mod adapters;
+// pub mod traceability;
