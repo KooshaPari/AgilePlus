@@ -42,5 +42,17 @@ export default {
         entrypoint: VIEWS_ENTRYPOINT,
       },
     ],
+    win: {
+      // Windows installer/taskbar icon (multi-size .ico from E:/gfx_pipeline/AgilePlus)
+      icon: "assets/icon.ico",
+    },
+    linux: {
+      // Desktop entry / taskbar icon (256x256 PNG)
+      icon: "assets/icon.png",
+    },
+    // mac.icons intentionally left at Electrobun default (icon.iconset) — no
+    // .iconset bundle has been generated yet for AgilePlus; only .ico/.png
+    // exist at E:/gfx_pipeline/AgilePlus. Generate a .iconset before wiring
+    // mac branding.
   },
 } satisfies ElectrobunConfig;
