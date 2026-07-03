@@ -49,6 +49,13 @@ jobs:
           # working-directory, i.e. docs/node_modules/@phenotype/docs)
           mkdir -p node_modules/@phenotype
           ln -sf /tmp/phenodocs/packages/docs node_modules/@phenotype/docs
+          # phenodocs/packages/docs imports `vitepress` itself (for
+          # defineConfig). Node resolves imports relative to the real file
+          # location, not the symlink, so give phenodocs its own
+          # node_modules pointing back at this project's install --
+          # otherwise `import { defineConfig } from 'vitepress'` in
+          # phenodocs fails with ERR_MODULE_NOT_FOUND during config load.
+          ln -sf "$(pwd)/node_modules" /tmp/phenodocs/packages/docs/node_modules
 
       - name: Build VitePress site
         working-directory: docs
