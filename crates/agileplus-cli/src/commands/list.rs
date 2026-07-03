@@ -62,8 +62,6 @@ fn truncate_cell(s: &str, max_chars: usize) -> String {
     let shortened: String = s.chars().take(max_chars.saturating_sub(1)).collect();
     format!("{shortened}…")
 }
-<<<<<<< HEAD
-=======
 
 #[cfg(test)]
 mod tests {
@@ -79,4 +77,3 @@ mod tests {
         assert_eq!(truncate_cell("abcdef", 4), "abc…");
     }
 }
->>>>>>> pr-769
