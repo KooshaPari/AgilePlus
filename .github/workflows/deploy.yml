@@ -49,6 +49,19 @@ jobs:
           # working-directory, i.e. docs/node_modules/@phenotype/docs)
           mkdir -p node_modules/@phenotype
           ln -sf /tmp/phenodocs/packages/docs node_modules/@phenotype/docs
+          # Node's ESM resolver follows the symlink to its real path
+          # (/tmp/phenodocs/packages/docs) and walks up ITS OWN node_modules
+          # chain (/tmp/phenodocs/packages/docs/node_modules,
+          # /tmp/phenodocs/packages/node_modules, /tmp/phenodocs/node_modules,
+          # /tmp/node_modules) to resolve bare imports like "vitepress" -
+          # none of which exist, since /tmp/phenodocs was only git-cloned,
+          # never installed. vitepress is correctly declared as a
+          # peerDependency in @phenotype/docs (not a bug there), so give the
+          # phenodocs real path its own node_modules with vitepress resolvable
+          # by symlinking back to the copy already installed here.
+          mkdir -p /tmp/phenodocs/node_modules
+          ln -sf "$(pwd)/node_modules/vitepress" /tmp/phenodocs/node_modules/vitepress
+          ln -sf "$(pwd)/node_modules/vue" /tmp/phenodocs/node_modules/vue
 
       - name: Build VitePress site
         working-directory: docs
