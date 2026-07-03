@@ -55,10 +55,10 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
 
-      - name: Install release binary from crates.io
+      - name: Build release binary (crate-only, bypass broken workspace)
         run: |
-          version="${GITHUB_REF_NAME#v}"
-          cargo install "${{ env.PACKAGE }}@${version}" --root "./install" --target ${{ matrix.target }}
+          cargo build --release --locked -p ${{ env.PACKAGE }} --target ${{ matrix.target }} \
+            --manifest-path crates/${{ env.PACKAGE }}/Cargo.toml
 
       - name: Stage artifact
         shell: bash
@@ -68,9 +68,9 @@ jobs:
           staging="dist/${{ matrix.asset_name }}"
           mkdir -p "$staging"
           if [ "${{ matrix.archive }}" = "zip" ]; then
-            cp "install/bin/${{ env.BIN_NAME }}.exe" "$staging/" || cp "install/bin/${{ env.BIN_NAME }}" "$staging/"
+            cp "target/${{ matrix.target }}/release/${{ env.BIN_NAME }}.exe" "$staging/"
           else
-            cp "install/bin/${{ env.BIN_NAME }}" "$staging/"
+            cp "target/${{ matrix.target }}/release/${{ env.BIN_NAME }}" "$staging/"
           fi
           cp LICENSE "$staging/" 2>/dev/null || cp LICENSE.md "$staging/" 2>/dev/null || true
           cp docs/INSTALL.md "$staging/" 2>/dev/null || true
