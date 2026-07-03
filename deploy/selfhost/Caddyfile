@@ -1,4 +1,4 @@
-{$HOSTNAME} {
+{$HOSTNAME:localhost} {
 	header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
 	header X-Content-Type-Options "nosniff"
 	header X-Frame-Options "DENY"
@@ -16,6 +16,7 @@
 	}
 
 	handle {
+		header Content-Type text/html
 		respond `<!DOCTYPE html>
 <html>
 <head><title>AgilePlus Self-Hosted</title></head>
@@ -25,9 +26,7 @@
 <p><strong>Database location:</strong> /data/agileplus.db</p>
 <p>Mount the agileplus-data volume or run: docker compose exec agileplus-cli agileplus --help</p>
 </body>
-</html>` 200 {
-			header Content-Type text/html
-		}
+</html>` 200
 	}
 
 	log {
