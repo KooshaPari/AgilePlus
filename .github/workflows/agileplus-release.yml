@@ -97,7 +97,10 @@ jobs:
           cp docs/INSTALL.md "$staging/" 2>/dev/null || true
           mkdir -p release-upload
           if [ "${{ matrix.archive }}" = "zip" ]; then
-            (cd dist && zip -r "../release-upload/agileplus-${version}-${{ matrix.asset_name }}.zip" "${{ matrix.asset_name }}")
+            # windows-latest's Git Bash does not ship a `zip` binary on PATH
+            # (only tar/gzip are guaranteed); use PowerShell's native
+            # Compress-Archive instead of depending on an external tool.
+            pwsh -NoLogo -NoProfile -Command "Compress-Archive -Path 'dist/${{ matrix.asset_name }}' -DestinationPath 'release-upload/agileplus-${version}-${{ matrix.asset_name }}.zip' -Force"
           else
             tar -C dist -czf "release-upload/agileplus-${version}-${{ matrix.asset_name }}.tar.gz" "${{ matrix.asset_name }}"
           fi
