@@ -3,8 +3,7 @@ on:
   branch_protection_rule:
   schedule:
     - cron: '17 3 * * 6'
-  push:
-    branches: [main]
+  workflow_dispatch:
 
 permissions: read-all
 

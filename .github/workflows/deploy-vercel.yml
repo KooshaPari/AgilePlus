@@ -3,8 +3,20 @@ name: Deploy AgilePlus to Vercel
 on:
   push:
     branches: [main]
+    paths:
+      - "apps/**"
+      - "package.json"
+      - "bun.lockb"
+      - "vercel.json"
+      - ".github/workflows/deploy-vercel.yml"
   pull_request:
     branches: [main]
+    paths:
+      - "apps/**"
+      - "package.json"
+      - "bun.lockb"
+      - "vercel.json"
+      - ".github/workflows/deploy-vercel.yml"
   workflow_dispatch:
 
 jobs:
