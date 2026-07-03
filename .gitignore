@@ -20,3 +20,6 @@
 .worktrees/
 .claude/worktrees/
 worktrees/
+
+# Vercel
+.vercel
