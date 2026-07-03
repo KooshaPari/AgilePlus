@@ -53,23 +53,45 @@ jobs:
         with:
           targets: ${{ matrix.target }}
 
-      - name: Download pre-built binary from crates.io
+      # NOTE: agileplus-cli depends on agileplus-domain, which has incomplete
+      # scaffolding in the workspace and cannot currently be compiled from the
+      # git source tree (tracked separately; do not "fix" domain here).
+      # Until domain compiles, distribute the last-known-good published crate
+      # (crates.io) rather than tying the archive version to the git tag.
+      - name: Install published agileplus-cli binary
         run: |
-          version=$(echo "${{ github.ref_name }}" | sed 's/^v//')
-          cargo binstall -y "${{ env.PACKAGE }}@${version}" --target ${{ matrix.target }} --root ./install 2>/dev/null || \
-          cargo install "${{ env.PACKAGE }}" --version "${version}" --root ./install --target ${{ matrix.target }}
+          cargo install "${{ env.PACKAGE }}" --root ./install --target ${{ matrix.target }}
 
       - name: Stage artifact
         shell: bash
         run: |
           set -euo pipefail
+          # Use the tag-driven version for the archive filename (release version),
+          # even though the binary itself is the latest published crates.io build.
           version="${GITHUB_REF_NAME#v}"
           staging="dist/${{ matrix.asset_name }}"
           mkdir -p "$staging"
+          # The published crate's binary is named `agileplus-cli`; newer source
+          # renames the [[bin]] target to `agileplus`. Accept either.
+          src_bin=""
+          for candidate in "${{ env.BIN_NAME }}" "${{ env.PACKAGE }}"; do
+            for ext in "" ".exe"; do
+              if [ -f "install/bin/${candidate}${ext}" ]; then
+                src_bin="install/bin/${candidate}${ext}"
+                break 2
+              fi
+            done
+          done
+          if [ -z "$src_bin" ]; then
+            echo "ERROR: could not find installed binary under install/bin/" >&2
+            ls -la install/bin/ >&2
+            exit 1
+          fi
+          dest_name="${{ env.BIN_NAME }}"
           if [ "${{ matrix.archive }}" = "zip" ]; then
-            cp "install/bin/${{ env.BIN_NAME }}.exe" "$staging/" 2>/dev/null || cp "install/bin/${{ env.BIN_NAME }}" "$staging/"
+            cp "$src_bin" "$staging/${dest_name}.exe"
           else
-            cp "install/bin/${{ env.BIN_NAME }}" "$staging/"
+            cp "$src_bin" "$staging/${dest_name}"
           fi
           cp LICENSE "$staging/" 2>/dev/null || cp LICENSE.md "$staging/" 2>/dev/null || true
           cp docs/INSTALL.md "$staging/" 2>/dev/null || true
