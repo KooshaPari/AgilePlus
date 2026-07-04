@@ -8,6 +8,7 @@ members = [
   "crates/agileplus-cli", # agileplus: spec-first CLI binary
   "crates/agileplus-application",
   "crates/agileplus-domain",
+  "crates/agileplus-governance", # SpecKitty scorecard enforcement (rubric + scoring)
   "crates/agileplus-git",
   "crates/agileplus-github",
   "crates/agileplus-graph",

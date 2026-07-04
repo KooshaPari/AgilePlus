@@ -36,8 +36,9 @@ chrono = { version = "0.4", features = ["serde"] }
 # UUID generation
 uuid = { version = "1", features = ["v4", "serde"] }
 
-# Database (SQLite for local governance)
-rusqlite = { version = "0.40", features = ["bundled"] }
+# Database (SQLite for local governance) — pinned to the workspace version to
+# avoid a `links = "sqlite3"` native-lib conflict with agileplus-cli/-sqlite (0.32).
+rusqlite = { workspace = true }
 
 # Configuration
 config = "0.15"
