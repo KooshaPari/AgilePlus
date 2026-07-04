@@ -1,5 +1,6 @@
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
+import { readdirSync, statSync } from 'node:fs'
 import { generateSidebar } from '@phenotype/docs/utils'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -18,12 +19,45 @@ const SECTIONS = [
   { prefix: 'workflow', text: 'Workflow' },
 ]
 
+// None of these sections ship an index.md, so a nav link to `/${prefix}/`
+// would 404 (VitePress has no page to serve at the bare directory route).
+// Find the first real markdown file in each section (same alphabetical/
+// index-first order generateSidebar uses) and link there instead.
+function findFirstDoc(dir, linkPrefix) {
+  let entries
+  try {
+    entries = readdirSync(dir).sort()
+  } catch {
+    return null
+  }
+  if (entries.includes('index.md')) return `${linkPrefix}/`
+  for (const entry of entries) {
+    const full = join(dir, entry)
+    const stat = statSync(full)
+    if (stat.isDirectory()) {
+      const found = findFirstDoc(full, `${linkPrefix}/${entry}`)
+      if (found) return found
+    } else if (entry.endsWith('.md')) {
+      const name = entry.slice(0, -3)
+      return `${linkPrefix}/${name}`
+    }
+  }
+  return null
+}
+
 function buildSidebar() {
   const sidebar = {}
   for (const { prefix } of SECTIONS) {
     sidebar[`/${prefix}/`] = generateSidebar({ srcDir: docsSrcDir, prefix })
   }
   return sidebar
+}
+
+function buildSectionNav() {
+  return SECTIONS.map(({ prefix, text }) => ({
+    text,
+    link: findFirstDoc(join(docsSrcDir, prefix), `/${prefix}`) || `/${prefix}/`,
+  }))
 }
 
 export function createSiteMeta({ base = '/' } = {}) {
@@ -73,7 +107,7 @@ export function createSiteMeta({ base = '/' } = {}) {
       siteTitle: 'AgilePlus',
       nav: [
         { text: 'Home', link: resolvedBase || '/' },
-        ...SECTIONS.map(({ prefix, text }) => ({ text, link: `/${prefix}/` })),
+        ...buildSectionNav(),
       ],
       socialLinks: [
         { icon: 'github', link: 'https://github.com/KooshaPari/AgilePlus' },
