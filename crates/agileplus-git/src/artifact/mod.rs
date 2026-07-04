@@ -125,6 +125,10 @@ pub(crate) fn scan_feature_artifacts(
     let evidence_paths = collect_evidence(&base.join("evidence"))?;
 
     Ok(FeatureArtifacts {
+        spec: None,
+        research: None,
+        plan: None,
+        other: vec![],
         meta_json,
         audit_chain,
         evidence_paths,

@@ -38,9 +38,11 @@ pub fn init_tracer() -> Result<(), String> {
     let endpoint = std::env::var("OTEL_EXPORTER_OTLP_ENDPOINT")
         .unwrap_or_else(|_| "http://localhost:4317".to_string());
 
-    let exporter = opentelemetry_otlp::new_exporter()
-        .http()
-        .with_endpoint(&endpoint);
+    let exporter = opentelemetry_otlp::SpanExporter::builder()
+        .with_tonic()
+        .with_endpoint(&endpoint)
+        .build()
+        .map_err(|e| e.to_string())?;
 
     let provider = SdkTracerProvider::builder()
         .with_batch_exporter(exporter)
@@ -86,9 +88,10 @@ where
     // Attempt to build an OTLP exporter; fall back to no-op on failure.
     let provider: SdkTracerProvider = (|| {
         use opentelemetry_otlp::WithExportConfig;
-        let exporter = opentelemetry_otlp::new_exporter()
-            .http()
+        let exporter = opentelemetry_otlp::SpanExporter::builder()
+            .with_tonic()
             .with_endpoint(&endpoint)
+            .build()
             .map_err(|e| e.to_string())
             .ok()?;
         Some(

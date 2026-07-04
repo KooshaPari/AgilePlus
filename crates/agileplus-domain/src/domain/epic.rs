@@ -72,6 +72,9 @@ pub struct Epic {
     pub status: EpicStatus,
     /// Optional owner (user id).
     pub owner_id: Option<i64>,
+    /// Epic/requirement id this epic maps to.
+    #[serde(default)]
+    pub requirement_id: Option<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -93,6 +96,7 @@ impl Epic {
             description: None,
             status: EpicStatus::Backlog,
             owner_id: None,
+            requirement_id: None,
             created_at: now,
             updated_at: now,
         })

@@ -54,6 +54,8 @@ enum Command {
         #[command(subcommand)]
         sub: CycleCmd,
     },
+    /// Print summary status for the local mock store
+    Status,
     /// Print CLI version information
     Version,
     /// Sync a GitHub repository with an AgilePlus project
@@ -527,7 +529,8 @@ mod tests {
 #[allow(clippy::items_after_test_module)]
 #[tokio::main]
 async fn main() {
-    let _telemetry = agileplus_telemetry::init_subscriber().ok();
+    let _telemetry =
+        agileplus_telemetry::init_telemetry(agileplus_telemetry::TelemetryConfig::default()).ok();
     let cli = Cli::parse();
     let db_path = db_path(&cli);
     let store = MockStore::seed();

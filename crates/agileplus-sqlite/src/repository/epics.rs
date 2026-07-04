@@ -29,6 +29,7 @@ fn row_to_epic(row: &rusqlite::Row<'_>) -> rusqlite::Result<Epic> {
         description: row.get(3)?,
         status: status_str.parse().unwrap_or(EpicStatus::Backlog),
         owner_id: row.get(5)?,
+        requirement_id: None,
         created_at: parse_dt(&created_at),
         updated_at: parse_dt(&updated_at),
     })
@@ -52,6 +53,39 @@ pub fn create_epic(conn: &Connection, epic: &Epic) -> Result<i64, DomainError> {
     )
     .map_err(map_err)?;
     Ok(conn.last_insert_rowid())
+}
+
+pub fn get_epic_by_requirement_id(
+    conn: &Connection,
+    requirement_id: &str,
+) -> Result<Option<Epic>, DomainError> {
+    let mut stmt = conn
+        .prepare(
+            "SELECT id, project_id, title, description, status, owner_id, created_at, updated_at \
+             FROM epics WHERE requirement_id = ?1",
+        )
+        .map_err(map_err)?;
+
+    match stmt.query_row(params![requirement_id], row_to_epic) {
+        Ok(mut epic) => {
+            epic.requirement_id = Some(requirement_id.to_string());
+            Ok(Some(epic))
+        }
+        Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
+        Err(e) => Err(map_err(e)),
+    }
+}
+
+pub fn upsert_epic_by_requirement_id(conn: &Connection, epic: &Epic) -> Result<i64, DomainError> {
+    let Some(requirement_id) = epic.requirement_id.as_deref() else {
+        return create_epic(conn, epic);
+    };
+
+    if let Some(existing) = get_epic_by_requirement_id(conn, requirement_id)? {
+        return Ok(existing.id);
+    }
+
+    create_epic(conn, epic)
 }
 
 /// Look up an epic by ID. Returns `None` if not found.

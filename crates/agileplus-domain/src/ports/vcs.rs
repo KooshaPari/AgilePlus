@@ -4,6 +4,7 @@
 
 use std::path::{Path, PathBuf};
 
+use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 
 use crate::error::DomainError;
@@ -12,6 +13,7 @@ use crate::error::DomainError;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WorktreeInfo {
     pub path: PathBuf,
+    pub commit: String,
     pub branch: String,
     pub feature_slug: String,
     pub wp_id: String,
@@ -31,12 +33,16 @@ pub struct MergeResult {
     pub success: bool,
     pub conflicts: Vec<ConflictInfo>,
     pub merged_commit: Option<String>,
+    pub commit: Option<String>,
+    pub message: Option<String>,
 }
 
 /// Description of a merge conflict in a single file.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConflictInfo {
     pub path: String,
+    pub file_path: String,
+    pub conflict_type: String,
     pub ours: Option<String>,
     pub theirs: Option<String>,
 }
@@ -44,6 +50,10 @@ pub struct ConflictInfo {
 /// Collected feature artifacts discovered in the repository.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FeatureArtifacts {
+    pub spec: Option<String>,
+    pub research: Option<String>,
+    pub plan: Option<String>,
+    pub other: Vec<String>,
     pub meta_json: Option<String>,
     pub audit_chain: Option<String>,
     pub evidence_paths: Vec<String>,
@@ -53,69 +63,69 @@ pub struct FeatureArtifacts {
 ///
 /// Abstracts git so tests can use an in-memory mock.
 /// The Git adapter (WP07) implements this with `git2`.
+#[async_trait]
 pub trait VcsPort: Send + Sync {
     // -- Worktree operations (FR-010) --
 
     /// Create a worktree for a feature work package, returning its absolute path.
-    fn create_worktree(
+    async fn create_worktree(
         &self,
         feature_slug: &str,
         wp_id: &str,
-    ) -> impl std::future::Future<Output = Result<PathBuf, DomainError>> + Send;
+    ) -> Result<PathBuf, DomainError>;
 
-    fn list_worktrees(
+    async fn list_worktrees(&self) -> Result<Vec<WorktreeInfo>, DomainError>;
+
+    async fn cleanup_worktree(&self, worktree_path: &Path) -> Result<(), DomainError>;
+
+    async fn create_branch(&self, branch_name: &str, base: &str) -> Result<(), DomainError>;
+
+    async fn list_branches(
         &self,
-    ) -> impl std::future::Future<Output = Result<Vec<WorktreeInfo>, DomainError>> + Send;
+        pattern: Option<&str>,
+        remote: bool,
+    ) -> Result<Vec<BranchInfo>, DomainError>;
 
-    fn cleanup_worktree(
-        &self,
-        worktree_path: &Path,
-    ) -> impl std::future::Future<Output = Result<(), DomainError>> + Send;
-
-    fn create_branch(
-        &self,
-        branch_name: &str,
-        base: &str,
-    ) -> impl std::future::Future<Output = Result<(), DomainError>> + Send;
-
-    fn checkout_branch(
+    async fn delete_branch(
         &self,
         branch_name: &str,
-    ) -> impl std::future::Future<Output = Result<(), DomainError>> + Send;
+        force: bool,
+        remote: Option<&str>,
+    ) -> Result<(), DomainError>;
 
-    fn merge_to_target(
+    async fn checkout_branch(&self, branch_name: &str) -> Result<(), DomainError>;
+
+    async fn merge_to_target(
         &self,
         source: &str,
         target: &str,
-    ) -> impl std::future::Future<Output = Result<MergeResult, DomainError>> + Send;
+    ) -> Result<MergeResult, DomainError>;
 
-    fn detect_conflicts(
+    async fn detect_conflicts(
         &self,
         source: &str,
         target: &str,
-    ) -> impl std::future::Future<Output = Result<Vec<ConflictInfo>, DomainError>> + Send;
+    ) -> Result<Vec<ConflictInfo>, DomainError>;
 
-    fn read_artifact(
+    async fn read_artifact(
         &self,
         feature_slug: &str,
         relative_path: &str,
-    ) -> impl std::future::Future<Output = Result<String, DomainError>> + Send;
+    ) -> Result<String, DomainError>;
 
-    fn write_artifact(
+    async fn write_artifact(
         &self,
         feature_slug: &str,
         relative_path: &str,
         content: &str,
-    ) -> impl std::future::Future<Output = Result<(), DomainError>> + Send;
+    ) -> Result<(), DomainError>;
 
-    fn artifact_exists(
+    async fn artifact_exists(
         &self,
         feature_slug: &str,
         relative_path: &str,
-    ) -> impl std::future::Future<Output = Result<bool, DomainError>> + Send;
+    ) -> Result<bool, DomainError>;
 
-    fn scan_feature_artifacts(
-        &self,
-        feature_slug: &str,
-    ) -> impl std::future::Future<Output = Result<FeatureArtifacts, DomainError>> + Send;
+    async fn scan_feature_artifacts(&self, feature_slug: &str)
+        -> Result<FeatureArtifacts, DomainError>;
 }

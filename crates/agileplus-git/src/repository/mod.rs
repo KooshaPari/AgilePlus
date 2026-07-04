@@ -76,6 +76,8 @@ pub(crate) fn merge_to_target(
             success: true,
             conflicts: vec![],
             merged_commit: Some(head_oid.to_string()),
+            commit: Some(head_oid.to_string()),
+            message: None,
         });
     }
 
@@ -95,6 +97,8 @@ pub(crate) fn merge_to_target(
             success: true,
             conflicts: vec![],
             merged_commit: Some(source_oid.to_string()),
+            commit: Some(source_oid.to_string()),
+            message: None,
         });
     }
 
@@ -118,6 +122,8 @@ pub(crate) fn merge_to_target(
             success: false,
             conflicts,
             merged_commit: None,
+            commit: None,
+            message: None,
         });
     }
 
@@ -152,6 +158,8 @@ pub(crate) fn merge_to_target(
         success: true,
         conflicts: vec![],
         merged_commit: Some(merge_oid.to_string()),
+        commit: Some(merge_oid.to_string()),
+        message: None,
     })
 }
 
@@ -213,7 +221,9 @@ fn collect_conflicts(index: &git2::Index) -> Result<Vec<ConflictInfo>, DomainErr
             .and_then(|e| std::str::from_utf8(&e.path).ok().map(|s| s.to_string()))
             .unwrap_or_default();
         conflicts.push(ConflictInfo {
-            path,
+            path: path.clone(),
+            file_path: path,
+            conflict_type: "content".to_string(),
             ours: c.our.map(|e| format!("{:?}", e.id)),
             theirs: c.their.map(|e| format!("{:?}", e.id)),
         });

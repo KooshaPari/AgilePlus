@@ -87,7 +87,7 @@ opentelemetry_sdk = { version = "0.32.1", features = [
   "trace",
   "rt-tokio",
 ] }
-opentelemetry-otlp = { version = "0.32", features = ["tonic", "gzip-tonic"] }
+opentelemetry-otlp = { version = "0.32", features = ["grpc-tonic", "gzip-tonic"] }
 tracing-opentelemetry = "0.33"
 sentry = { version = "0.34", features = ["tracing"] }
 
