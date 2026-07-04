@@ -32,8 +32,7 @@ impl CreateStory {
                 id,
                 epic_id: story.epic_id,
                 title: story.title.clone(),
-            })
-            .await?;
+            })?;
 
         let mut persisted = story;
         persisted.id = id;

@@ -47,8 +47,7 @@ impl AdvanceFeature {
                 id: cmd.feature_id,
                 from,
                 to: feature.state.to_string(),
-            })
-            .await?;
+            })?;
 
         Ok(())
     }

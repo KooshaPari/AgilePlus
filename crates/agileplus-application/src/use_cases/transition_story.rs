@@ -39,8 +39,7 @@ impl TransitionStory {
                 id: cmd.story_id,
                 from,
                 to: story.status.to_string(),
-            })
-            .await?;
+            })?;
 
         Ok(())
     }
