@@ -157,18 +157,6 @@ pub struct BacklogItem {
     pub updated_at: DateTime<Utc>,
 }
 
-impl Intent {
-    /// Default priority assigned to a newly triaged item based on its intent.
-    pub fn default_priority(self) -> BacklogPriority {
-        match self {
-            Intent::Bug => BacklogPriority::High,
-            Intent::Feature => BacklogPriority::Medium,
-            Intent::Idea => BacklogPriority::Low,
-            Intent::Task => BacklogPriority::Medium,
-        }
-    }
-}
-
 impl BacklogItem {
     /// Construct a new `BacklogItem` from a triage classification.
     ///
