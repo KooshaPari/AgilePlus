@@ -41,6 +41,7 @@
 pub mod audit;
 pub mod channel;
 pub mod client;
+pub mod code_scanner;
 pub mod config;
 pub mod error;
 pub mod policy;
@@ -55,6 +56,7 @@ pub use config::GovernanceConfig;
 pub use error::{GovernanceError, Result};
 pub use policy::{PolicyCheck, PolicyContext, PolicyEngine, PolicyResult};
 pub use rate_limiter::RateLimiter;
+pub use code_scanner::{scan_repo, EvidenceItem, RepoScan};
 pub use rubric::{Pillar, RubricCatalog, ScoringSpec, SubPillar};
 pub use types::*;
 
