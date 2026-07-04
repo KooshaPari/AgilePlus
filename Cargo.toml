@@ -9,6 +9,7 @@ members = [
   "crates/agileplus-application",
   "crates/agileplus-domain",
   "crates/agileplus-governance", # SpecKitty scorecard enforcement (rubric + scoring)
+  "crates/traceability-core", # unified PM/traceability spine (un-park 2026-07-04)
   "crates/agileplus-git",
   "crates/agileplus-github",
   "crates/agileplus-graph",
@@ -63,6 +64,11 @@ futures-util = "0.3"
 # Error handling
 thiserror = "2"
 anyhow = "1"
+
+# Domain / traceability-core support (un-park 2026-07-04)
+# (toml/dirs-next/zeroize/async-trait already declared below.)
+indexmap = { version = "2", features = ["serde"] }
+regex = "1"
 
 # Web / HTTP
 axum = { version = "0.8", features = ["json", "macros"] }
