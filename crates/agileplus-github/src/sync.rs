@@ -27,7 +27,7 @@ pub trait GhDataSource: Send + Sync {
 #[derive(Debug, Clone, Default)]
 pub struct SyncReport {
     pub stories: Vec<Story>,
-    pub skipped: Vec<(i64, String)>,
+    pub skipped: Vec<(u64, String)>,
 }
 
 pub struct LiveGhDataSource {
@@ -69,14 +69,14 @@ pub async fn sync_repository(
     for issue in source.list_issues().await? {
         match issue_to_story(&issue, epic_id, project_id) {
             Ok(story) => report.stories.push(story),
-            Err(error) => report.skipped.push((issue.number, error.to_string())),
+            Err(error) => report.skipped.push((issue.number.try_into().unwrap(), error.to_string())),
         }
     }
 
     for pr in source.list_prs().await? {
         match pr_to_story(&pr, epic_id, project_id) {
             Ok(story) => report.stories.push(story),
-            Err(error) => report.skipped.push((pr.number, error.to_string())),
+            Err(error) => report.skipped.push((pr.number.try_into().unwrap(), error.to_string())),
         }
     }
 
@@ -222,7 +222,8 @@ fn hash_content(content: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use agileplus_triage::{BacklogPriority, BacklogStatus, Intent};
+    use agileplus_domain::domain::backlog::{BacklogPriority, BacklogStatus};
+    use agileplus_triage::Intent;
 
     fn sample_bug() -> BacklogItem {
         BacklogItem {
@@ -346,6 +347,6 @@ mod tests {
         let report = sync_repository(&source, 10, 20).await.unwrap();
 
         assert_eq!(report.stories.len(), 0);
-        assert_eq!(report.skipped, vec![(7_u64, "story title cannot be empty".to_string())]);
+        assert_eq!(report.skipped, vec![(7_u64, "story title must not be empty".to_string())]);
     }
 }

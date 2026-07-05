@@ -130,11 +130,15 @@ reqwest = { version = "0.12", features = ["json"] }
 criterion = "0.5"
 
 # Utils
-uuid = { version = "1", features = ["v4"] }
+uuid = { version = "1", features = ["v4", "serde"] }
 rand = "0.8"
 toml = "0.8"
 dirs-next = "2"
 keyring = "3"
+# Test-only deps used by legacy/obsolete test files (traceability integration tests).
+tempfile = "3"
+proptest = "1"
+tokio-test = "0.4"
 
 # OpenAPI
 utoipa = "4"

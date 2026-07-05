@@ -59,14 +59,18 @@ dependencies = [
  "chrono",
  "dirs-next",
  "indexmap",
+ "proptest",
  "regex",
  "serde",
  "serde_json",
  "sha2",
+ "tempfile",
  "thiserror 2.0.18",
  "tokio",
+ "tokio-test",
  "toml 0.8.23",
  "traceability-core",
+ "uuid",
  "zeroize",
 ]
 
@@ -201,6 +205,7 @@ version = "0.1.0"
 dependencies = [
  "agileplus-domain",
  "agileplus-events",
+ "anyhow",
  "async-trait",
  "chrono",
  "rusqlite",

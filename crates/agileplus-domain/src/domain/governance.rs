@@ -177,6 +177,9 @@ impl BuiltinPolicy {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use traceability_core::governance::{
+        EvidenceRequirement, EvidenceType as TcEvidenceType, GovernanceRule as TcGovernanceRule,
+    };
 
     #[test]
     fn policy_domain_as_str() {
@@ -275,10 +278,10 @@ mod tests {
     fn evidence_requirement_construction_and_serde() {
         let req = EvidenceRequirement {
             fr_id: "FR-001".to_string(),
-            evidence_type: EvidenceType::TestResult,
+            evidence_type: TcEvidenceType::TestResult,
         };
         assert_eq!(req.fr_id, "FR-001");
-        assert_eq!(req.evidence_type, EvidenceType::TestResult);
+        assert_eq!(req.evidence_type, TcEvidenceType::TestResult);
 
         let json = serde_json::to_string(&req).unwrap();
         let back: EvidenceRequirement = serde_json::from_str(&json).unwrap();
@@ -288,16 +291,16 @@ mod tests {
 
     #[test]
     fn governance_rule_construction_and_serde() {
-        let rule = GovernanceRule {
+        let rule = TcGovernanceRule {
             transition: "Draft->Active".to_string(),
             required_evidence: vec![
                 EvidenceRequirement {
                     fr_id: "FR-001".to_string(),
-                    evidence_type: EvidenceType::TestResult,
+                    evidence_type: TcEvidenceType::TestResult,
                 },
                 EvidenceRequirement {
                     fr_id: "FR-002".to_string(),
-                    evidence_type: EvidenceType::ReviewApproval,
+                    evidence_type: TcEvidenceType::ReviewApproval,
                 },
             ],
             policy_refs: vec![1, 2, 3],
@@ -307,7 +310,7 @@ mod tests {
         assert_eq!(rule.policy_refs, vec![1, 2, 3]);
 
         let json = serde_json::to_string(&rule).unwrap();
-        let back: GovernanceRule = serde_json::from_str(&json).unwrap();
+        let back: TcGovernanceRule = serde_json::from_str(&json).unwrap();
         assert_eq!(back.transition, rule.transition);
         assert_eq!(back.required_evidence.len(), rule.required_evidence.len());
         assert_eq!(back.policy_refs, rule.policy_refs);

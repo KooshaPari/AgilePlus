@@ -64,7 +64,7 @@ fn noop_transition() {
     for s in states {
         let result = s.transition(s);
         assert!(
-            matches!(result, Err(DomainError::NoOpTransition(_))),
+            matches!(result, Err(DomainError::NoOpTransition)),
             "expected NoOpTransition for {s} -> {s}"
         );
     }
