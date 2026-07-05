@@ -119,8 +119,12 @@ enum ModuleCmd {
 
 #[derive(Subcommand)]
 enum CycleCmd {
+    /// List cycles
+    List,
     /// Show the current (active) cycle
     Current,
+    /// Set the active cycle by id
+    Set { id: i64 },
     /// Create a cycle
     Create(commands::mvp::CycleCreateArgs),
     /// Add a story (or all stories of an epic) to a cycle
@@ -553,7 +557,9 @@ async fn main() {
                 ModuleCmd::Search { query } => cmd_module_search(&store, &query),
             },
             Command::Cycle { sub } => match sub {
+                CycleCmd::List => cmd_cycle_list(&store),
                 CycleCmd::Current => cmd_cycle_current(&store),
+                CycleCmd::Set { id } => cmd_cycle_set(&store, id)?,
                 CycleCmd::Create(args) => {
                     let storage = open_storage(&db_path)?;
                     commands::mvp::cycle_create(&args, &storage).await?;

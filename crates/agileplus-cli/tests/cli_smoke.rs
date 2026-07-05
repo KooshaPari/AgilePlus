@@ -11,7 +11,7 @@ use assert_cmd::Command;
 
 /// Helper: build a `Command` for the in-tree binary.
 fn cli() -> Command {
-    Command::cargo_bin("agileplus-cli").expect("agileplus-cli binary should be built")
+    Command::cargo_bin("agileplus").expect("agileplus binary should be built")
 }
 
 // ── top-level status ─────────────────────────────────────────────────────────
