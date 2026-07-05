@@ -1,33 +1,24 @@
 ---
-description: Perform structured code review and kanban transitions for completed task prompt files
+description: DEPRECATED — use `ap review-loop` instead. See docs/design/SPECKITTY-MIGRATION.md.
 ---
 
+> ⚠️ **Deprecated cursor shim.** SpecKitty is being migrated to `agileplus-cli` (`ap`).
+> Use the canonical `ap` command below. See `docs/design/SPECKITTY-MIGRATION.md`.
 
-**IMPORTANT**: After running the command below, you'll see a LONG work package prompt (~1000+ lines).
+## Migration
 
-**You MUST scroll to the BOTTOM** to see the completion commands!
-
-Run this command to get the work package prompt and review instructions:
+| SpecKitty | AgilePlus (`ap`) |
+|-----------|-------------------|
+| `/spec-kitty.review` | `ap review-loop <feature-id>` |
 
 ```bash
-spec-kitty agent workflow review $ARGUMENTS --agent <your-name>
+ap review-loop <feature-id>
 ```
 
-**CRITICAL**: You MUST provide `--agent <your-name>` to track who is reviewing!
+## What it does
 
-If no WP ID is provided, it will automatically find the first work package with `lane: "for_review"` and move it to "doing" for you.
+Drives the PR review cycle: dispatch reviewer agents, collect feedback, route to implementer.
 
-## Dependency checks (required)
+## Backward compat
 
-- dependency_check: If the WP frontmatter lists `dependencies`, confirm each dependency WP is merged to main before you review this WP.
-- dependent_check: Identify any WPs that list this WP as a dependency and note their current lanes.
-- rebase_warning: If you request changes AND any dependents exist, warn those agents to rebase and provide a concrete command (example: `cd .worktrees/FEATURE-WP02 && git rebase FEATURE-WP01`).
-- verify_instruction: Confirm dependency declarations match actual code coupling (imports, shared modules, API contracts).
-
-**After reviewing, scroll to the bottom and run ONE of these commands**:
-- ✅ Approve: `spec-kitty agent tasks move-task WP## --to done --note "Review passed: <summary>"`
-- ❌ Reject: Write feedback to the temp file path shown in the prompt, then run `spec-kitty agent tasks move-task WP## --to planned --review-feedback-file <temp-file-path>`
-
-**The prompt will provide a unique temp file path for feedback - use that exact path to avoid conflicts with other agents!**
-
-**The Python script handles all file updates automatically - no manual editing required!**
+The cursor command remains for legacy callers; new agents should use `ap review-loop <feature-id>`. The `ap` command is owned by [crates/agileplus-cli/src/commands/](crates/agileplus-cli/src/commands/) and is the canonical entrypoint.

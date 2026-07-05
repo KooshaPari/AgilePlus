@@ -1,37 +1,24 @@
 ---
-description: Open the Spec Kitty dashboard in your browser.
+description: DEPRECATED — use `ap dashboard` instead. See docs/design/SPECKITTY-MIGRATION.md.
 ---
 
+> ⚠️ **Deprecated cursor shim.** SpecKitty is being migrated to `agileplus-cli` (`ap`).
+> Use the canonical `ap` command below. See `docs/design/SPECKITTY-MIGRATION.md`.
 
-## Dashboard Access
+## Migration
 
-This command launches the Spec Kitty dashboard in your browser using the spec-kitty CLI.
-
-## What to do
-
-Simply run the `spec-kitty dashboard` command to:
-- Start the dashboard if it's not already running
-- Open it in your default web browser
-- Display the dashboard URL
-
-If you need to stop the dashboard, you can use `spec-kitty dashboard --kill`.
-
-## Implementation
-
-Execute the following terminal command:
+| SpecKitty | AgilePlus (`ap`) |
+|-----------|-------------------|
+| `/spec-kitty.dashboard` | `ap dashboard` |
 
 ```bash
-spec-kitty dashboard
+ap dashboard
 ```
 
-## Additional Options
+## What it does
 
-- To specify a preferred port: `spec-kitty dashboard --port 8080`
-- To stop the dashboard: `spec-kitty dashboard --kill`
+Opens the in-flight work visualization (Dioxus web/desktop viewer per memory: project_session_delivery).
 
-## Success Criteria
+## Backward compat
 
-- User sees the dashboard URL clearly displayed
-- Browser opens automatically to the dashboard
-- If browser doesn't open, user gets clear instructions
-- Error messages are helpful and actionable
+The cursor command remains for legacy callers; new agents should use `ap dashboard`. The `ap` command is owned by [crates/agileplus-cli/src/commands/](crates/agileplus-cli/src/commands/) and is the canonical entrypoint.

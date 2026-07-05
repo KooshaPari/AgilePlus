@@ -11,6 +11,7 @@ pub mod list_projects;
 pub mod list_stories;
 pub mod list_tests;
 pub mod mvp;
+pub mod rubric;
 pub mod seed_requirements;
 pub mod trace;
 pub mod worklog;

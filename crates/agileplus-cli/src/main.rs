@@ -74,6 +74,8 @@ enum Command {
     Dashboard(commands::dashboard::DashboardArgs),
     /// Worklog schema management (validate/convert/schema/list)
     Worklog(commands::worklog::WorklogArgs),
+    /// Score a repo against the SpecKitty rubric catalog (SpecKitty migration)
+    Rubric(commands::rubric::RubricArgs),
 }
 
 #[derive(Subcommand)]
@@ -598,6 +600,9 @@ async fn main() {
             Command::Worklog(args) => {
                 let db_path = commands::worklog::db_path_from_env();
                 commands::worklog::run_with_db(&args, &db_path)?;
+            }
+            Command::Rubric(args) => {
+                commands::rubric::run(&args)?;
             }
         }
         Ok(())
