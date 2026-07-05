@@ -32,6 +32,11 @@ const MIGRATION_020: &str = include_str!("020_create_stories.sql");
 const MIGRATION_021: &str = include_str!("021_add_requirement_id.sql");
 const MIGRATION_022: &str = include_str!("022_create_trace_links.sql");
 const MIGRATION_023: &str = include_str!("023_create_worklog_entries.sql");
+const MIGRATION_024: &str = include_str!("024_l2_38_worklog_trace_gate_run_scope.sql");
+const MIGRATION_025: &str = include_str!("025_create_intent_graph.sql");
+const MIGRATION_025_GOV: &str = include_str!("025_governance_channel_iteration.sql");
+const MIGRATION_025_VIEWS: &str = include_str!("025_intent_graph_views.sql");
+const MIGRATION_026: &str = include_str!("026_feature_labels.sql");
 
 /// All migrations in order: (name, up_sql, down_sql)
 const MIGRATIONS: &[(&str, &str)] = &[
@@ -58,21 +63,53 @@ const MIGRATIONS: &[(&str, &str)] = &[
     ("021_add_requirement_id", MIGRATION_021),
     ("022_create_trace_links", MIGRATION_022),
     ("023_create_worklog_entries", MIGRATION_023),
+    ("024_l2_38_worklog_trace_gate_run_scope", MIGRATION_024),
+    ("025_create_intent_graph", MIGRATION_025),
+    ("025_governance_channel_iteration", MIGRATION_025_GOV),
+    ("025_intent_graph_views", MIGRATION_025_VIEWS),
+    ("026_feature_labels", MIGRATION_026),
 ];
+
+/// Find the byte offset where the UP body starts, given a `-- UP` marker
+/// (the `UP` token may be followed by `:`, whitespace, or anything). Returns
+/// `None` if no UP marker is present.
+fn find_up_body_start(sql: &str) -> Option<usize> {
+    // Look for `-- UP` not followed by a lowercase letter (avoids matching
+    // `-- UPGRADE` etc); allows `-- UP`, `-- UP:`, `-- UP --` ...
+    let bytes = sql.as_bytes();
+    let mut i = 0;
+    while i + 5 <= bytes.len() {
+        if &bytes[i..i + 5] == b"-- UP"
+            && (i + 5 == bytes.len()
+                || !bytes[i + 5].is_ascii_lowercase())
+        {
+            // Skip the marker + any trailing `:`, whitespace, or `--` (line comment).
+            let mut j = i + 5;
+            // Single trailing ':'
+            if j < bytes.len() && bytes[j] == b':' { j += 1; }
+            // Skip rest of the line (the marker comment)
+            while j < bytes.len() && bytes[j] != b'\n' { j += 1; }
+            // Skip the newline
+            if j < bytes.len() { j += 1; }
+            return Some(j);
+        }
+        i += 1;
+    }
+    None
+}
 
 /// Parse the UP section from a migration SQL file.
 fn parse_up(sql: &str) -> &str {
     // Format is:
-    //   -- UP
+    //   -- UP [-- up to text]
     //   <sql>
     //   -- DOWN
     //   <sql>
-    if let Some(up_start) = sql.find("-- UP") {
-        let after_up = &sql[up_start + 5..];
-        if let Some(down_start) = after_up.find("-- DOWN") {
-            return after_up[..down_start].trim();
+    if let Some(up_start) = find_up_body_start(sql) {
+        if let Some(down_start) = sql[up_start..].find("-- DOWN") {
+            return sql[up_start..up_start + down_start].trim();
         }
-        return after_up.trim();
+        return sql[up_start..].trim();
     }
     sql.trim()
 }
