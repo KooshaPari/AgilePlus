@@ -7,6 +7,7 @@
 //! - `octo`   — octocrab-based read client (`list_issues`, `list_prs`)
 
 pub mod client;
+pub mod map;
 pub mod octo;
 pub mod sync;
 

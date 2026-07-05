@@ -3,9 +3,20 @@
 //! This test suite validates that acceptance criteria (from WorkPackage/Feature acceptance)
 //! can be linked to traced artifacts in Tracera, forming a bidirectional traceability bridge.
 
-use agileplus_domain::traceability::{NoopTraceAdapter, TraceRef, TraceabilityPort};
+use agileplus_domain::adapters::noop_trace_adapter::NoopTraceAdapter;
+use agileplus_domain::ports::traceability_port::TraceabilityPort;
+use agileplus_domain::traceability::TraceRef;
+use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+
+fn make_trace_ref(trace_id: &str, artifact_type: &str) -> TraceRef {
+    TraceRef {
+        trace_id: trace_id.to_string(),
+        artifact_type: artifact_type.to_string(),
+        linked_at: Utc::now(),
+    }
+}
 
 /// An acceptance criterion — a single, verifiable condition that must be met for a feature/story to be done.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -124,13 +135,8 @@ impl AcceptanceContract {
 
 #[test]
 fn test_acceptance_contract_links_to_trace_ref() {
-    let entity_id = Uuid::new_v4();
     let trace_id = "FR-100".to_string();
-    let trace_ref = TraceRef {
-        trace_id: trace_id.clone(),
-        artifact_type: "requirement".to_string(),
-        entity_id,
-    };
+    let trace_ref = make_trace_ref(&trace_id, "requirement");
 
     let criterion = AcceptanceCriterion::new("AC-1", "User can log in with email")
         .with_trace(trace_ref.clone());
@@ -146,21 +152,9 @@ fn test_acceptance_contract_links_to_trace_ref() {
 fn test_multiple_criteria_each_with_different_trace_refs() {
     let entity_id = Uuid::new_v4();
 
-    let trace_ref_1 = TraceRef {
-        trace_id: "FR-101".to_string(),
-        artifact_type: "requirement".to_string(),
-        entity_id,
-    };
-    let trace_ref_2 = TraceRef {
-        trace_id: "TEST-42".to_string(),
-        artifact_type: "test_case".to_string(),
-        entity_id,
-    };
-    let trace_ref_3 = TraceRef {
-        trace_id: "EV-7".to_string(),
-        artifact_type: "evidence".to_string(),
-        entity_id,
-    };
+    let trace_ref_1 = make_trace_ref("FR-101", "requirement");
+    let trace_ref_2 = make_trace_ref("TEST-42", "test_case");
+    let trace_ref_3 = make_trace_ref("EV-7", "evidence");
 
     let contract = AcceptanceContract::new(entity_id)
         .add_criterion(
@@ -188,11 +182,7 @@ fn test_multiple_criteria_each_with_different_trace_refs() {
 #[test]
 fn test_acceptance_contract_serializes_with_trace_refs() {
     let entity_id = Uuid::new_v4();
-    let trace_ref = TraceRef {
-        trace_id: "FR-200".to_string(),
-        artifact_type: "specification".to_string(),
-        entity_id,
-    };
+    let trace_ref = make_trace_ref("FR-200", "specification");
 
     let contract = AcceptanceContract::new(entity_id).add_criterion(
         AcceptanceCriterion::new("AC-1", "Form validation works")
@@ -222,11 +212,7 @@ fn test_acceptance_contract_serializes_with_trace_refs() {
 #[test]
 fn test_unverified_criterion_with_trace_ref_not_counted_as_done() {
     let entity_id = Uuid::new_v4();
-    let trace_ref = TraceRef {
-        trace_id: "FR-300".to_string(),
-        artifact_type: "requirement".to_string(),
-        entity_id,
-    };
+    let trace_ref = make_trace_ref("FR-300", "requirement");
 
     let contract = AcceptanceContract::new(entity_id)
         .add_criterion(
@@ -258,11 +244,7 @@ fn test_trace_ref_artifact_type_preserved_in_contract() {
     let mut contract = AcceptanceContract::new(entity_id);
 
     for (idx, artifact_type) in artifact_types.iter().enumerate() {
-        let trace_ref = TraceRef {
-            trace_id: format!("ART-{}", idx),
-            artifact_type: artifact_type.to_string(),
-            entity_id,
-        };
+        let trace_ref = make_trace_ref(&format!("ART-{}", idx), artifact_type);
         let criterion = AcceptanceCriterion::new(&format!("AC-{}", idx), "Test criterion")
             .with_trace(trace_ref);
         contract = contract.add_criterion(criterion);
@@ -283,22 +265,14 @@ fn test_acceptance_contract_round_trip_serialization() {
     // Build a contract with mixed verified/unverified and with/without trace refs
     let mut contract = AcceptanceContract::new(entity_id)
         .add_criterion(
-            AcceptanceCriterion::new("AC-1", "With trace, unverified").with_trace(TraceRef {
-                trace_id: "FR-400".to_string(),
-                artifact_type: "requirement".to_string(),
-                entity_id,
-            }),
+            AcceptanceCriterion::new("AC-1", "With trace, unverified").with_trace(make_trace_ref("FR-400", "requirement")),
         )
         .add_criterion(AcceptanceCriterion::new(
             "AC-2",
             "Without trace, unverified",
         ))
         .add_criterion(
-            AcceptanceCriterion::new("AC-3", "With trace, verified").with_trace(TraceRef {
-                trace_id: "TEST-50".to_string(),
-                artifact_type: "test_case".to_string(),
-                entity_id,
-            }),
+            AcceptanceCriterion::new("AC-3", "With trace, verified").with_trace(make_trace_ref("TEST-50", "test_case")),
         );
 
     // Verify AC-3
@@ -335,11 +309,7 @@ fn test_link_nonexistent_criterion_returns_error() {
     let entity_id = Uuid::new_v4();
     let mut contract = AcceptanceContract::new(entity_id);
 
-    let trace_ref = TraceRef {
-        trace_id: "FR-500".to_string(),
-        artifact_type: "requirement".to_string(),
-        entity_id,
-    };
+    let trace_ref = make_trace_ref("FR-500", "requirement");
 
     // Try to link to a criterion that doesn't exist
     let result = contract.link_criterion_to_trace("AC-NONEXISTENT", trace_ref);
@@ -353,14 +323,10 @@ async fn test_verify_criterion_with_linked_trace() {
     let entity_id = Uuid::new_v4();
     let adapter = NoopTraceAdapter;
 
-    let trace_ref = TraceRef {
-        trace_id: "FR-600".to_string(),
-        artifact_type: "requirement".to_string(),
-        entity_id,
-    };
+    let trace_ref = make_trace_ref("FR-600", "requirement");
 
     // Simulate linking the trace ref through the port
-    let link_result = adapter.link_trace(entity_id, trace_ref.clone()).await;
+    let link_result = adapter.link_trace(entity_id.to_string(), trace_ref.clone()).await;
     assert!(link_result.is_ok());
 
     // Build contract with linked criterion
@@ -384,7 +350,7 @@ async fn test_verify_criterion_with_linked_trace() {
     );
 
     // Retrieve traces back from the port (will be empty with noop, but validates the API flow)
-    let retrieved_traces = adapter.get_traces(entity_id).await.expect("get traces");
+    let retrieved_traces = adapter.get_traces(entity_id.to_string()).await.expect("get traces");
     assert_eq!(retrieved_traces.len(), 0); // NoopTraceAdapter returns empty
 }
 

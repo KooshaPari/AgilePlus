@@ -240,6 +240,77 @@ pub fn list_wps_by_feature(
     rows.collect::<rusqlite::Result<Vec<_>>>().map_err(map_err)
 }
 
+pub fn create_work_package_for_story(
+    conn: &Connection,
+    story_id: i64,
+    wp: &WorkPackage,
+) -> Result<i64, DomainError> {
+    let wp_id = create_work_package(conn, wp)?;
+    conn.execute(
+        "INSERT OR IGNORE INTO story_work_packages (story_id, work_package_id) VALUES (?1, ?2)",
+        params![story_id, wp_id],
+    )
+    .map_err(map_err)?;
+    Ok(wp_id)
+}
+
+pub fn list_wps_by_story(
+    conn: &Connection,
+    story_id: i64,
+) -> Result<Vec<WorkPackage>, DomainError> {
+    let mut stmt = conn
+        .prepare(
+            "SELECT wp.id,wp.feature_id,wp.title,wp.state,wp.sequence,wp.file_scope,
+                    wp.acceptance_criteria,wp.agent_id,wp.pr_url,wp.pr_state,
+                    wp.worktree_path,wp.created_at,wp.updated_at
+             FROM work_packages wp
+             JOIN story_work_packages swp ON swp.work_package_id = wp.id
+             WHERE swp.story_id = ?1
+             ORDER BY wp.sequence",
+        )
+        .map_err(map_err)?;
+
+    let rows = stmt.query_map(params![story_id], row_to_wp).map_err(map_err)?;
+    rows.collect::<rusqlite::Result<Vec<_>>>().map_err(map_err)
+}
+
+pub fn list_all_work_packages(conn: &Connection) -> Result<Vec<WorkPackage>, DomainError> {
+    let mut stmt = conn
+        .prepare(
+            "SELECT id,feature_id,title,state,sequence,file_scope,acceptance_criteria,
+                    agent_id,pr_url,pr_state,worktree_path,created_at,updated_at
+             FROM work_packages ORDER BY feature_id, sequence",
+        )
+        .map_err(map_err)?;
+
+    let rows = stmt.query_map([], row_to_wp).map_err(map_err)?;
+    rows.collect::<rusqlite::Result<Vec<_>>>().map_err(map_err)
+}
+
+pub fn get_next_ready_wps(
+    conn: &Connection,
+    _cycle: Option<i64>,
+) -> Result<Vec<WorkPackage>, DomainError> {
+    let mut stmt = conn
+        .prepare(
+            "SELECT wp.id,wp.feature_id,wp.title,wp.state,wp.sequence,wp.file_scope,
+                    wp.acceptance_criteria,wp.agent_id,wp.pr_url,wp.pr_state,
+                    wp.worktree_path,wp.created_at,wp.updated_at
+             FROM work_packages wp
+             WHERE wp.state = 'planned'
+               AND NOT EXISTS (
+                   SELECT 1 FROM wp_dependencies d
+                   JOIN work_packages dep ON dep.id = d.depends_on
+                   WHERE d.wp_id = wp.id AND dep.state != 'done'
+               )
+             ORDER BY wp.sequence",
+        )
+        .map_err(map_err)?;
+
+    let rows = stmt.query_map([], row_to_wp).map_err(map_err)?;
+    rows.collect::<rusqlite::Result<Vec<_>>>().map_err(map_err)
+}
+
 pub fn add_wp_dependency(conn: &Connection, dep: &WpDependency) -> Result<(), DomainError> {
     conn.execute(
         "INSERT OR IGNORE INTO wp_dependencies (wp_id, depends_on, dep_type)

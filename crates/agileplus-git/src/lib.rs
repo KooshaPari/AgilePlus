@@ -246,9 +246,11 @@ impl VcsPort for GitVcsAdapter {
             if line.is_empty() {
                 if let (Some(p), Some(h)) = (path.take(), head.take()) {
                     out.push(WorktreeInfo {
-                        path: p,
+                        path: p.into(),
                         commit: h,
                         branch: branch.take().unwrap_or_default(),
+                        feature_slug: String::new(),
+                        wp_id: String::new(),
                     });
                 } else {
                     path = None;
@@ -270,9 +272,11 @@ impl VcsPort for GitVcsAdapter {
         // Flush the last stanza (no trailing blank line).
         if let (Some(p), Some(h)) = (path, head) {
             out.push(WorktreeInfo {
-                path: p,
+                path: p.into(),
                 commit: h,
                 branch: branch.unwrap_or_default(),
+                feature_slug: String::new(),
+                wp_id: String::new(),
             });
         }
         Ok(out)
@@ -416,6 +420,8 @@ impl VcsPort for GitVcsAdapter {
             let head = self.run_git(&["rev-parse", "HEAD"]).unwrap_or_default();
             Ok(MergeResult {
                 success: true,
+                conflicts: vec![],
+                merged_commit: Some(head.clone()),
                 commit: Some(head),
                 message: Some(if stdout.is_empty() { stderr } else { stdout }),
             })
@@ -425,6 +431,8 @@ impl VcsPort for GitVcsAdapter {
             // decide whether to run `detect_conflicts` next.
             Ok(MergeResult {
                 success: false,
+                conflicts: vec![],
+                merged_commit: None,
                 commit: None,
                 message: Some(if stderr.is_empty() { stdout } else { stderr }),
             })
@@ -460,8 +468,11 @@ impl VcsPort for GitVcsAdapter {
                     .to_string();
                 if !path.is_empty() {
                     out.push(ConflictInfo {
+                        path: path.clone(),
                         file_path: path,
                         conflict_type: "content".to_string(),
+                        ours: None,
+                        theirs: None,
                     });
                 }
             }
@@ -483,8 +494,11 @@ impl VcsPort for GitVcsAdapter {
                 {
                     if let Some(p) = current_path.clone() {
                         out.push(ConflictInfo {
+                            path: p.clone(),
                             file_path: p,
                             conflict_type: "content".to_string(),
+                            ours: None,
+                            theirs: None,
                         });
                         // Avoid duplicate entries for the same file.
                         current_path = None;
@@ -552,6 +566,9 @@ impl VcsPort for GitVcsAdapter {
             research: None,
             plan: None,
             other: vec![],
+            meta_json: None,
+            audit_chain: None,
+            evidence_paths: vec![],
         };
         if !dir.is_dir() {
             return Ok(out);

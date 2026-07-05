@@ -76,6 +76,14 @@ pub enum DomainError {
     /// missing a required reason / agent binding).
     #[error("Invalid claim: {0}")]
     InvalidClaim(String),
+
+    /// A requested state transition would be a no-op (target == current state).
+    #[error("No-op transition: already in the requested state")]
+    NoOpTransition,
+
+    /// Catch-all for errors that do not map to a more specific variant.
+    #[error("{0}")]
+    Other(String),
 }
 
 /// Project the AgilePlus domain error onto the canonical Phenotype wire
@@ -103,7 +111,11 @@ impl From<DomainError> for ErrorCode {
 
             DomainError::NotImplemented => Self::NotImplemented,
 
-            DomainError::Storage(_) | DomainError::LockPoisoned => Self::InternalError,
+            DomainError::NoOpTransition => Self::ValidationError,
+
+            DomainError::Storage(_) | DomainError::LockPoisoned | DomainError::Other(_) => {
+                Self::InternalError
+            }
         }
     }
 }

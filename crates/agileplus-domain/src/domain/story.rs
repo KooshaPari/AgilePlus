@@ -83,6 +83,10 @@ pub struct Story {
     pub points: Option<u32>,
     /// Assignee (user id).
     pub assignee_id: Option<i64>,
+    /// FR/requirement id this story satisfies — the traceability key used by
+    /// `upsert_by_requirement_id`. `None` for ad-hoc stories.
+    #[serde(default)]
+    pub requirement_id: Option<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -116,6 +120,7 @@ impl Story {
             status: StoryStatus::Todo,
             points,
             assignee_id: None,
+            requirement_id: None,
             created_at: now,
             updated_at: now,
         })

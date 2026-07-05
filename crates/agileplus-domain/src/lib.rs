@@ -5,6 +5,7 @@ pub use error::DomainError;
 pub use error::ErrorCode;
 pub type DomainResult<T> = std::result::Result<T, DomainError>;
 
+pub mod builder;
 pub mod config;
 pub mod credentials;
 pub mod domain;

@@ -36,8 +36,7 @@ impl CreateFeature {
             .publish(DomainEvent::FeatureCreated {
                 id,
                 slug: feature.slug.clone(),
-            })
-            .await?;
+            })?;
 
         let mut persisted = feature;
         persisted.id = id;

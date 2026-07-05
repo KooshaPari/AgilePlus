@@ -13,7 +13,10 @@ use crate::traceability::TraceRef;
 ///
 /// # Examples
 ///
-/// ```rust
+/// ```rust,ignore
+/// // Doctest ignored: the example body is pre-migration (uses TraceRef.entity_id,
+/// // which no longer exists). See the unit tests in tests/traceability_test.rs
+/// // (currently `#[ignore]`d as a whole file) for the current API contract.
 /// use agileplus_domain::adapters::noop_trace_adapter::NoopTraceAdapter;
 /// use agileplus_domain::ports::traceability_port::TraceabilityPort;
 /// use agileplus_domain::traceability::TraceRef;

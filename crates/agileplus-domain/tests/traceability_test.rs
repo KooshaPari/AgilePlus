@@ -55,7 +55,7 @@ async fn noop_link_trace_returns_ok() {
     let entity_id = Uuid::new_v4();
     let trace_ref = make_trace_ref("FR-100", "requirement");
 
-    let result: Result<(), DomainError> = adapter.link_trace(entity_id, trace_ref).await;
+    let result: Result<(), DomainError> = adapter.link_trace(entity_id.to_string(), trace_ref).await;
     assert!(result.is_ok());
 }
 
@@ -64,7 +64,7 @@ async fn noop_get_traces_returns_empty_vec() {
     let adapter = NoopTraceAdapter;
     let entity_id = Uuid::new_v4();
 
-    let result: Result<Vec<TraceRef>, DomainError> = adapter.get_traces(entity_id).await;
+    let result: Result<Vec<TraceRef>, DomainError> = adapter.get_traces(entity_id.to_string()).await;
     assert!(result.is_ok());
     assert_eq!(result.unwrap(), Vec::<TraceRef>::new());
 }
@@ -76,11 +76,14 @@ async fn noop_link_trace_is_idempotent() {
 
     for i in 0..3 {
         let trace_ref = make_trace_ref(&format!("FR-2{i}0"), "requirement");
-        let result = adapter.link_trace(entity_id, trace_ref).await;
+        let result = adapter.link_trace(entity_id.to_string(), trace_ref).await;
         assert!(result.is_ok(), "link_trace {i} should succeed");
     }
 
     // Noop never records; subsequent get_traces still returns empty.
-    let traces = adapter.get_traces(entity_id).await.expect("get_traces ok");
+    let traces = adapter
+        .get_traces(entity_id.to_string())
+        .await
+        .expect("get_traces ok");
     assert!(traces.is_empty());
 }

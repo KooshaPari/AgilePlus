@@ -31,8 +31,7 @@ impl CreateEpic {
                 id,
                 project_id: epic.project_id,
                 title: epic.title.clone(),
-            })
-            .await?;
+            })?;
 
         Ok(EpicCreatedOutput { id })
     }

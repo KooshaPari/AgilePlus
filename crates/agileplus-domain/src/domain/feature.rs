@@ -6,6 +6,50 @@ use serde::{Deserialize, Serialize};
 
 use super::state_machine::FeatureState;
 
+pub(crate) mod hex_bytes {
+    use serde::{Deserialize, Deserializer, Serializer};
+
+    pub fn serialize<S>(bytes: &[u8; 32], serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        const HEX: &[u8; 16] = b"0123456789abcdef";
+        let mut out = String::with_capacity(64);
+        for byte in bytes {
+            out.push(HEX[(byte >> 4) as usize] as char);
+            out.push(HEX[(byte & 0x0f) as usize] as char);
+        }
+        serializer.serialize_str(&out)
+    }
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<[u8; 32], D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let value = String::deserialize(deserializer)?;
+        if value.len() != 64 {
+            return Err(serde::de::Error::invalid_length(value.len(), &"64 hex chars"));
+        }
+
+        let mut bytes = [0_u8; 32];
+        for (index, chunk) in value.as_bytes().chunks_exact(2).enumerate() {
+            let high = hex_value(chunk[0]).map_err(serde::de::Error::custom)?;
+            let low = hex_value(chunk[1]).map_err(serde::de::Error::custom)?;
+            bytes[index] = (high << 4) | low;
+        }
+        Ok(bytes)
+    }
+
+    fn hex_value(byte: u8) -> Result<u8, &'static str> {
+        match byte {
+            b'0'..=b'9' => Ok(byte - b'0'),
+            b'a'..=b'f' => Ok(byte - b'a' + 10),
+            b'A'..=b'F' => Ok(byte - b'A' + 10),
+            _ => Err("invalid hex digit"),
+        }
+    }
+}
+
 /// A software feature tracked through the planning lifecycle.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Feature {

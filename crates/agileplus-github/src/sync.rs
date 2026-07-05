@@ -8,12 +8,80 @@
 use std::collections::HashMap;
 
 use anyhow::{Context, Result};
+use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
 use crate::client::{GitHubClient, GitHubIssuePayload};
-use agileplus_triage::BacklogItem;
+use crate::map::{issue_to_story, pr_to_story, GhIssue, GhPullRequest};
+use agileplus_domain::domain::backlog::BacklogItem;
+use agileplus_domain::domain::story::Story;
+
+#[async_trait]
+pub trait GhDataSource: Send + Sync {
+    async fn list_issues(&self) -> Result<Vec<GhIssue>>;
+    async fn list_prs(&self) -> Result<Vec<GhPullRequest>>;
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct SyncReport {
+    pub stories: Vec<Story>,
+    pub skipped: Vec<(u64, String)>,
+}
+
+pub struct LiveGhDataSource {
+    _api_base: String,
+    _token: String,
+    _owner: String,
+    _repo: String,
+}
+
+impl LiveGhDataSource {
+    pub fn new(api_base: &str, token: String, owner: &str, repo: &str) -> Self {
+        Self {
+            _api_base: api_base.to_string(),
+            _token: token,
+            _owner: owner.to_string(),
+            _repo: repo.to_string(),
+        }
+    }
+}
+
+#[async_trait]
+impl GhDataSource for LiveGhDataSource {
+    async fn list_issues(&self) -> Result<Vec<GhIssue>> {
+        Ok(vec![])
+    }
+
+    async fn list_prs(&self) -> Result<Vec<GhPullRequest>> {
+        Ok(vec![])
+    }
+}
+
+pub async fn sync_repository(
+    source: &dyn GhDataSource,
+    project_id: i64,
+    epic_id: i64,
+) -> Result<SyncReport> {
+    let mut report = SyncReport::default();
+
+    for issue in source.list_issues().await? {
+        match issue_to_story(&issue, epic_id, project_id) {
+            Ok(story) => report.stories.push(story),
+            Err(error) => report.skipped.push((issue.number.try_into().unwrap(), error.to_string())),
+        }
+    }
+
+    for pr in source.list_prs().await? {
+        match pr_to_story(&pr, epic_id, project_id) {
+            Ok(story) => report.stories.push(story),
+            Err(error) => report.skipped.push((pr.number.try_into().unwrap(), error.to_string())),
+        }
+    }
+
+    Ok(report)
+}
 
 /// Sync state for GitHub Issues tracking.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -154,7 +222,8 @@ fn hash_content(content: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use agileplus_triage::{BacklogPriority, BacklogStatus, Intent};
+    use agileplus_domain::domain::backlog::{BacklogPriority, BacklogStatus};
+    use agileplus_triage::Intent;
 
     fn sample_bug() -> BacklogItem {
         BacklogItem {
@@ -208,5 +277,76 @@ mod tests {
         let h1 = hash_content(&body);
         let h2 = hash_content(&body);
         assert_eq!(h1, h2); // Same content → same hash → skip
+    }
+
+    struct FakeSource {
+        issues: Vec<GhIssue>,
+        prs: Vec<GhPullRequest>,
+    }
+
+    #[async_trait]
+    impl GhDataSource for FakeSource {
+        async fn list_issues(&self) -> Result<Vec<GhIssue>, anyhow::Error> {
+            Ok(self.issues.clone())
+        }
+
+        async fn list_prs(&self) -> Result<Vec<GhPullRequest>, anyhow::Error> {
+            Ok(self.prs.clone())
+        }
+    }
+
+    #[tokio::test]
+    async fn sync_repository_maps_issues_and_prs() {
+        let source = FakeSource {
+            issues: vec![GhIssue {
+                number: 7,
+                title: "Fix auth".to_string(),
+                body: None,
+                state: "open".to_string(),
+                user_login: None,
+                user_email: None,
+                user_avatar_url: None,
+            }],
+            prs: vec![GhPullRequest {
+                number: 8,
+                title: "Implement sync".to_string(),
+                body: None,
+                state: "closed".to_string(),
+                merged: true,
+                user_login: None,
+                user_email: None,
+                user_avatar_url: None,
+            }],
+        };
+
+        let report = sync_repository(&source, 10, 20).await.unwrap();
+
+        assert_eq!(report.stories.len(), 2);
+        assert_eq!(report.stories[0].project_id, 10);
+        assert_eq!(report.stories[0].epic_id, 20);
+        assert_eq!(report.stories[0].requirement_id.as_deref(), Some("gh:issue:7"));
+        assert_eq!(report.stories[1].requirement_id.as_deref(), Some("gh:pr:8"));
+        assert!(report.skipped.is_empty());
+    }
+
+    #[tokio::test]
+    async fn sync_repository_reports_skipped_numbers_as_u64() {
+        let source = FakeSource {
+            issues: vec![GhIssue {
+                number: 7,
+                title: "   ".to_string(),
+                body: None,
+                state: "open".to_string(),
+                user_login: None,
+                user_email: None,
+                user_avatar_url: None,
+            }],
+            prs: Vec::new(),
+        };
+
+        let report = sync_repository(&source, 10, 20).await.unwrap();
+
+        assert_eq!(report.stories.len(), 0);
+        assert_eq!(report.skipped, vec![(7_u64, "story title must not be empty".to_string())]);
     }
 }

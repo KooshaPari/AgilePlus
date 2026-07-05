@@ -51,6 +51,10 @@ pub enum GovernanceError {
     /// Internal error
     #[error("Internal error: {0}")]
     Internal(String),
+
+    /// Rubric catalog parse or validation error
+    #[error("Rubric error: {0}")]
+    Rubric(String),
 }
 
 impl GovernanceError {
@@ -81,6 +85,7 @@ impl GovernanceError {
             GovernanceError::NotAllowed(_) => 403,
             GovernanceError::Sync(_) => 500,
             GovernanceError::Internal(_) => 500,
+            GovernanceError::Rubric(_) => 422,
         }
     }
 }

@@ -10,5 +10,8 @@ pub mod governance;
 pub mod metrics;
 pub mod modules;
 pub mod projects;
+pub mod epics;
 pub mod sync_mappings;
+pub mod stories;
+pub mod users;
 pub mod work_packages;

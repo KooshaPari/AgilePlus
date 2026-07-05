@@ -20,7 +20,11 @@ pub mod logs;
 pub mod metrics;
 pub mod traces;
 
-pub use adapter::{TelemetryAdapter, TelemetryError, TelemetryGuard};
+pub use adapter::{init_telemetry, TelemetryAdapter, TelemetryError, TelemetryGuard};
 pub use config::TelemetryConfig;
 pub use metrics::{AgilePlusMetrics, MetricsRecorder};
 pub use traces::{telemetry_layer, trace_layer};
+
+pub fn init_subscriber() -> Result<TelemetryGuard, TelemetryError> {
+    init_telemetry(TelemetryConfig::default())
+}

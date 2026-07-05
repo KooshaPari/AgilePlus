@@ -68,7 +68,7 @@ impl CycleState {
     /// and `Err(InvalidTransition)` for all other pairs.
     pub fn transition(self, target: CycleState) -> Result<(), DomainError> {
         if self == target {
-            return Err(DomainError::NoOpTransition(self.to_string()));
+            return Err(DomainError::NoOpTransition);
         }
         let allowed = matches!(
             (self, target),

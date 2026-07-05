@@ -32,6 +32,7 @@ fn row_to_story(row: &rusqlite::Row<'_>) -> rusqlite::Result<Story> {
         status: status_str.parse().unwrap_or(StoryStatus::Todo),
         points: points_raw.map(|p| p as u32),
         assignee_id: row.get(6)?,
+        requirement_id: None,
         created_at: parse_dt(&created_at),
         updated_at: parse_dt(&updated_at),
     })
@@ -57,6 +58,42 @@ pub fn create_story(conn: &Connection, story: &Story) -> Result<i64, DomainError
     )
     .map_err(map_err)?;
     Ok(conn.last_insert_rowid())
+}
+
+pub fn get_story_by_requirement_id(
+    conn: &Connection,
+    requirement_id: &str,
+) -> Result<Option<Story>, DomainError> {
+    let mut stmt = conn
+        .prepare(
+            "SELECT id, epic_id, project_id, title, status, points, assignee_id, created_at, updated_at, description \
+             FROM stories WHERE requirement_id = ?1",
+        )
+        .map_err(map_err)?;
+
+    match stmt.query_row(params![requirement_id], row_to_story) {
+        Ok(mut story) => {
+            story.requirement_id = Some(requirement_id.to_string());
+            Ok(Some(story))
+        }
+        Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
+        Err(e) => Err(map_err(e)),
+    }
+}
+
+pub fn upsert_story_by_requirement_id(
+    conn: &Connection,
+    story: &Story,
+) -> Result<i64, DomainError> {
+    let Some(requirement_id) = story.requirement_id.as_deref() else {
+        return create_story(conn, story);
+    };
+
+    if let Some(existing) = get_story_by_requirement_id(conn, requirement_id)? {
+        return Ok(existing.id);
+    }
+
+    create_story(conn, story)
 }
 
 /// Look up a story by ID. Returns `None` if not found.
