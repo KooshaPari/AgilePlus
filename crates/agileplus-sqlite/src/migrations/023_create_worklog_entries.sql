@@ -17,10 +17,13 @@ CREATE TABLE IF NOT EXISTS worklog_entries (
                             'passed','failed','not_run','partial')) DEFAULT 'not_run',
     verification_notes  TEXT    NOT NULL DEFAULT '',
     verification_cmds   TEXT    NOT NULL DEFAULT '[]', -- JSON array
+    verification_json   TEXT    NOT NULL DEFAULT '{"status":"not_run","commands":[],"notes":""}',
     started_at          TEXT,                          -- nullable (ISO-8601)
     completed_at        TEXT,                          -- nullable (ISO-8601)
+    source_path         TEXT    NOT NULL DEFAULT '',
+    payload_json        TEXT    NOT NULL DEFAULT '{}',
     ingested_at         TEXT    NOT NULL,
-    UNIQUE(task_id, commit_sha)
+    UNIQUE(task_id, source_path)
 );
 
 CREATE INDEX IF NOT EXISTS idx_worklog_entries_task

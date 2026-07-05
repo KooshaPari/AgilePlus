@@ -119,8 +119,12 @@ enum ModuleCmd {
 
 #[derive(Subcommand)]
 enum CycleCmd {
+    /// List cycles
+    List,
     /// Show the current (active) cycle
     Current,
+    /// Set the active cycle by id
+    Set { id: i64 },
     /// Create a cycle
     Create(commands::mvp::CycleCreateArgs),
     /// Add a story (or all stories of an epic) to a cycle
@@ -512,15 +516,18 @@ mod tests {
 
     #[test]
     fn db_path_defaults_when_env_missing() {
-        std::env::remove_var("AGILEPLUS_DB");
+        // SAFETY: this unit test mutates process env before any threads are spawned or observed.
+        unsafe { std::env::remove_var("AGILEPLUS_DB") };
         assert_eq!(db_path_from_env(), PathBuf::from("agileplus.db"));
     }
 
     #[test]
     fn db_path_uses_env_override() {
-        std::env::set_var("AGILEPLUS_DB", "/tmp/agileplus-test.db");
+        // SAFETY: this unit test mutates process env before any threads are spawned or observed.
+        unsafe { std::env::set_var("AGILEPLUS_DB", "/tmp/agileplus-test.db") };
         assert_eq!(db_path_from_env(), PathBuf::from("/tmp/agileplus-test.db"));
-        std::env::remove_var("AGILEPLUS_DB");
+        // SAFETY: this unit test mutates process env before any threads are spawned or observed.
+        unsafe { std::env::remove_var("AGILEPLUS_DB") };
     }
 }
 
@@ -550,7 +557,9 @@ async fn main() {
                 ModuleCmd::Search { query } => cmd_module_search(&store, &query),
             },
             Command::Cycle { sub } => match sub {
+                CycleCmd::List => cmd_cycle_list(&store),
                 CycleCmd::Current => cmd_cycle_current(&store),
+                CycleCmd::Set { id } => cmd_cycle_set(&store, id)?,
                 CycleCmd::Create(args) => {
                     let storage = open_storage(&db_path)?;
                     commands::mvp::cycle_create(&args, &storage).await?;
