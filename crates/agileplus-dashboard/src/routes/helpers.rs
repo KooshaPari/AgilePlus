@@ -54,14 +54,14 @@ pub(super) fn load_projects(store: &DashboardStore) -> (Vec<ProjectView>, Option
             id: p.id,
             slug: p.slug.clone(),
             name: p.name.clone(),
-            description: p.description.clone(),
+            description: p.description.clone().unwrap_or_default(),
         })
         .collect();
     let active_project = store.active_project().map(|p| ProjectView {
         id: p.id,
         slug: p.slug.clone(),
         name: p.name.clone(),
-        description: p.description.clone(),
+        description: p.description.clone().unwrap_or_default(),
     });
     (projects, active_project)
 }
@@ -78,7 +78,7 @@ pub(super) fn build_project_summaries(store: &DashboardStore) -> Vec<ProjectSumm
                     id: project.id,
                     slug: project.slug.clone(),
                     name: project.name.clone(),
-                    description: project.description.clone(),
+                    description: project.description.clone().unwrap_or_default(),
                 },
                 feature_count,
                 active_count,
