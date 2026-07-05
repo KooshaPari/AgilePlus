@@ -63,7 +63,7 @@ def parse_new(md_path: Path):
 
 def main():
     cat_dir = Path(sys.argv[1])
-    defs_dir = Path(sys.argv[2])
+    # sys.argv[2] (defs_dir) accepted for forward-compat but currently unused (all L0-L80 clusters use `defs_ref` strings in CLUSTERS, not a directory scan).
     pillars = []
     total_subs = 0
     for cid, prange, category, kind, src in CLUSTERS:

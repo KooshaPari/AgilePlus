@@ -1,5 +1,3 @@
-// pre-migration traceability API was removed in the un-park (see PRs #893/a983a7a/6752e65); tests below reference TraceRef.entity_id + NoopTraceAdapter + TraceabilityPort which no longer exist. Ignored until rewritten against the current TraceRef + traceability_core API. DO NOT DELETE without a rewrite plan.
-// ignored block — see header
 //! Integration tests for AcceptanceContract + TraceRef cross-domain linkage.
 //!
 //! This test suite validates that acceptance criteria (from WorkPackage/Feature acceptance)
@@ -136,7 +134,6 @@ impl AcceptanceContract {
 // ============================================================================
 
 #[test]
-#[ignore = "pre-migration traceability API removed — see file header"]
 fn test_acceptance_contract_links_to_trace_ref() {
     let trace_id = "FR-100".to_string();
     let trace_ref = make_trace_ref(&trace_id, "requirement");
@@ -152,7 +149,6 @@ fn test_acceptance_contract_links_to_trace_ref() {
 }
 
 #[test]
-#[ignore = "pre-migration traceability API removed — see file header"]
 fn test_multiple_criteria_each_with_different_trace_refs() {
     let entity_id = Uuid::new_v4();
 
@@ -184,7 +180,6 @@ fn test_multiple_criteria_each_with_different_trace_refs() {
 }
 
 #[test]
-#[ignore = "pre-migration traceability API removed — see file header"]
 fn test_acceptance_contract_serializes_with_trace_refs() {
     let entity_id = Uuid::new_v4();
     let trace_ref = make_trace_ref("FR-200", "specification");
@@ -215,7 +210,6 @@ fn test_acceptance_contract_serializes_with_trace_refs() {
 }
 
 #[test]
-#[ignore = "pre-migration traceability API removed — see file header"]
 fn test_unverified_criterion_with_trace_ref_not_counted_as_done() {
     let entity_id = Uuid::new_v4();
     let trace_ref = make_trace_ref("FR-300", "requirement");
@@ -236,7 +230,6 @@ fn test_unverified_criterion_with_trace_ref_not_counted_as_done() {
 }
 
 #[test]
-#[ignore = "pre-migration traceability API removed — see file header"]
 fn test_trace_ref_artifact_type_preserved_in_contract() {
     let entity_id = Uuid::new_v4();
 
@@ -266,7 +259,6 @@ fn test_trace_ref_artifact_type_preserved_in_contract() {
 }
 
 #[test]
-#[ignore = "pre-migration traceability API removed — see file header"]
 fn test_acceptance_contract_round_trip_serialization() {
     let entity_id = Uuid::new_v4();
 
@@ -313,7 +305,6 @@ fn test_acceptance_contract_round_trip_serialization() {
 }
 
 #[test]
-#[ignore = "pre-migration traceability API removed — see file header"]
 fn test_link_nonexistent_criterion_returns_error() {
     let entity_id = Uuid::new_v4();
     let mut contract = AcceptanceContract::new(entity_id);
@@ -328,7 +319,6 @@ fn test_link_nonexistent_criterion_returns_error() {
 }
 
 #[tokio::test]
-#[ignore = "pre-migration traceability API removed — see file header"]
 async fn test_verify_criterion_with_linked_trace() {
     let entity_id = Uuid::new_v4();
     let adapter = NoopTraceAdapter;
@@ -365,7 +355,6 @@ async fn test_verify_criterion_with_linked_trace() {
 }
 
 #[test]
-#[ignore = "pre-migration traceability API removed — see file header"]
 fn test_criterion_verification_state_tracking() {
     let entity_id = Uuid::new_v4();
 

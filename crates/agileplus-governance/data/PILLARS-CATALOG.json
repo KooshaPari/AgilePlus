@@ -356,7 +356,7 @@
           "evidence_pattern": "file:line"
         },
         {
-          "id": "L81.3",
+          "id": "L82.1",
           "title": "Keyboard Navigation & Focus Management",
           "name": "All interactive functionality is fully operable via keyboard alone, with a visible and logical focus indicator.",
           "acceptance": "Every interactive element (buttons, links, inputs, modals, dropdowns) is reachable and operable via Tab/Shift-Tab/Enter/Space/Arrow keys without a mouse. Focus is never trapped unintentionally outside modal/dialog. Focus returns to the trigger element when a modal closes. Focus indicator is visible (WCAG 2.4.11 Focus Appearance AA: ≥2px outline, ≥3:1 contrast).",
@@ -364,7 +364,7 @@
           "evidence_pattern": "file:line"
         },
         {
-          "id": "L81.4",
+          "id": "L83.1",
           "title": "Screen-Reader Compatibility",
           "name": "All content and interactive controls are comprehensible and operable via a screen reader (NVDA, JAWS, VoiceOver, Orca).",
           "acceptance": "All images have non-empty `alt` text or `aria-hidden=\"true\"`. All form inputs have an associated `<label>` or `aria-label`. All icon-only buttons have `aria-label`. Live regions (`aria-live`) announce dynamic content updates. Decorative SVGs use `aria-hidden=\"true\"`. For CLI/TUI: semantic output is line-structured; machine-readable JSON/structured output mode available.",
@@ -372,7 +372,7 @@
           "evidence_pattern": "file:line"
         },
         {
-          "id": "L81.5",
+          "id": "L84.1",
           "title": "ARIA Correctness & Landmark Structure",
           "name": "ARIA roles, landmarks, and attributes are used correctly — not as cosmetic decoration.",
           "acceptance": "Main page regions use semantic landmarks (`<main>`, `<nav>`, `<header>`, `<footer>`, `role=\"banner\"`, `role=\"contentinfo\"`). No `role` attribute that misuses semantics (e.g. `role=\"button\"` on a div when a `<button>` suffices). No orphaned `aria-labelledby` pointing to a non-existent `id`. All `aria-expanded`, `aria-selected`, `aria-checked` values are dynamically updated when state changes.",
@@ -380,7 +380,7 @@
           "evidence_pattern": "file:line"
         },
         {
-          "id": "L81.6",
+          "id": "L85.1",
           "title": "Error Prevention & Recovery (Nielsen H5, H9)",
           "name": "The UI prevents errors where possible, and guides users to recovery when errors occur.",
           "acceptance": "Destructive actions require confirmation (WCAG 3.3.4; Nielsen H3 user control). Error messages are written in plain language (not internal error codes), identify what went wrong, and suggest a corrective action. Input validation happens before submission, not only after. All form errors are associated with the specific input that caused them (WCAG 3.3.1 Error Identification).",
@@ -388,7 +388,7 @@
           "evidence_pattern": "file:line"
         },
         {
-          "id": "L81.7",
+          "id": "L86.1",
           "title": "System Status Visibility (Nielsen H1)",
           "name": "The system always informs users about what is happening, with appropriate feedback within a reasonable time.",
           "acceptance": "Operations taking >1s display a loading indicator. Operations taking >10s display a progress indicator with estimated time or step count. Background operations (sync, compile, fetch) have visible status. For CLI: long operations emit progress to stderr or use a progress bar library. No \"silent work\" — every user-initiated action acknowledges receipt within 100ms.",
@@ -396,7 +396,7 @@
           "evidence_pattern": "file:line"
         },
         {
-          "id": "L81.8",
+          "id": "L87.1",
           "title": "Consistency & Standards (Nielsen H4)",
           "name": "The interface follows platform conventions and is internally consistent in terminology, layout, and interaction patterns.",
           "acceptance": "All like elements use the same component (no one-off button implementations); terminology is consistent (no \"delete\" in one place and \"remove\" in another for the same action); keyboard shortcuts match platform conventions (Cmd+S on macOS, Ctrl+S on Windows); TUI uses consistent keybinding patterns across screens. A design system or component library is the single source for all UI elements.",
@@ -404,7 +404,7 @@
           "evidence_pattern": "file:line"
         },
         {
-          "id": "L81.9",
+          "id": "L88.1",
           "title": "User Control & Emergency Exits (Nielsen H3)",
           "name": "Users can always undo, cancel, or escape out of any state without data loss.",
           "acceptance": "Every multi-step form or wizard has a \"Back\" and \"Cancel\" button. Every destructive action has an undo mechanism (trash/archive with restore, or confirmation before permanent delete). CLI commands that take >5s support Ctrl+C with a clean shutdown that does not corrupt partial state. Modal dialogs close on Escape key.",
@@ -412,7 +412,7 @@
           "evidence_pattern": "file:line"
         },
         {
-          "id": "L81.10",
+          "id": "L89.1",
           "title": "Inclusive Language & Cognitive Accessibility",
           "name": "All user-visible text uses inclusive, plain language accessible to non-expert users.",
           "acceptance": "No ableist language (e.g. \"blindly\", \"crippled\", \"dumb terminal\" without a recognized technical term exemption) in user-visible strings. Reading level of user-facing help text ≤ 8th grade Flesch-Kincaid. Error messages avoid jargon. Labels and placeholders are plain nouns/verbs, not abbreviated codes. For CLI: `--help` output is formatted, structured, and uses consistent option naming.",
@@ -420,7 +420,7 @@
           "evidence_pattern": "file:line"
         },
         {
-          "id": "L81.11",
+          "id": "L90.1",
           "title": "Responsive & Adaptive Layout",
           "name": "The UI renders correctly across the supported viewport/terminal size range without loss of content or function.",
           "acceptance": "For web UI: responsive breakpoints tested at mobile (375px), tablet (768px), and desktop (1280px) widths; no horizontal scrollbar at any breakpoint; touch targets ≥ 44×44px (WCAG 2.5.5). For TUI/CLI: output wraps or truncates gracefully at 80-column terminals; works at 40-column minimum. For desktop: window resize does not break layout or lose data.",
@@ -428,7 +428,7 @@
           "evidence_pattern": "file:line"
         },
         {
-          "id": "L81.12",
+          "id": "L91.1",
           "title": "Recognition Over Recall (Nielsen H6)",
           "name": "The UI makes options, actions, and objects visible — users are not required to remember information from one step to the next.",
           "acceptance": "Navigation menus are persistent or discoverable without memorizing paths. Form fields show current values when editing (not blank). Wizards show a breadcrumb or step indicator. CLI: subcommands listed in `--help`; recent commands visible in history or `--list` output. Error messages repeat the invalid input value.",
@@ -436,7 +436,7 @@
           "evidence_pattern": "file:line"
         },
         {
-          "id": "L81.13",
+          "id": "L92.1",
           "title": "Help & Documentation Accessibility (Nielsen H10)",
           "name": "Help content is discoverable, contextual, and written for the actual user — not the implementer.",
           "acceptance": "Every major feature/view has a contextual help link, tooltip, or inline explanation. `--help` for CLI is complete (all flags documented). `docs/` or in-app help covers the top-3 user journeys end-to-end. Help content does not require reading source code to understand the feature. A `CONTRIBUTING.md` or `docs/faq.md` covers the top-5 user questions.",
@@ -444,7 +444,7 @@
           "evidence_pattern": "file:line"
         },
         {
-          "id": "L81.14",
+          "id": "L93.1",
           "title": "Flexibility & Efficiency (Nielsen H7)",
           "name": "Power users can complete tasks faster via shortcuts, aliases, and accelerators, without degrading the novice experience.",
           "acceptance": "Web/desktop UI: keyboard shortcuts documented and discoverable (keyboard shortcut overlay via `?` or `Cmd+K`). CLI: command aliases and tab-completion supported. API: a batch endpoint or bulk-operation mode exists alongside the single-item endpoint. TUI: vim-style keybindings or configurable keybindings supported.",
@@ -452,7 +452,7 @@
           "evidence_pattern": "file:line"
         },
         {
-          "id": "L81.15",
+          "id": "L94.1",
           "title": "Aesthetic & Minimalist Design (Nielsen H8)",
           "name": "Every piece of information and every UI element present has a clear purpose — no decorative clutter that obscures primary functions.",
           "acceptance": "Primary actions are visually prominent (sufficient contrast, size, position). Secondary and tertiary actions are visually de-emphasized. Error and warning states are color-coded AND use an icon or text label (not color alone, per WCAG 1.4.1). No information overload on primary views — complex data is progressively disclosed or paginated. CLI output has a structured, scannable format with aligned columns.",
