@@ -85,7 +85,9 @@ pub fn upsert_story_by_requirement_id(
     conn: &Connection,
     story: &Story,
 ) -> Result<i64, DomainError> {
-    let Some(requirement_id) = story.requirement_id.as_deref() else {
+    let now = chrono::Utc::now().to_rfc3339();
+    let req_id_owned = story.requirement_id.clone();
+    let Some(requirement_id) = req_id_owned.as_deref() else {
         return create_story(conn, story);
     };
 
@@ -93,7 +95,27 @@ pub fn upsert_story_by_requirement_id(
         return Ok(existing.id);
     }
 
-    create_story(conn, story)
+    // Insert path: create_story ignores requirement_id (same pre-existing bug as
+    // upsert_epic_by_requirement_id). Insert here directly so the row is keyed on
+    // requirement_id and get-by-requirement-id can find it on the next call.
+    conn.execute(
+        "INSERT INTO stories (epic_id, project_id, title, description, status, points, assignee_id, requirement_id, created_at, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+        rusqlite::params![
+            story.epic_id,
+            story.project_id,
+            story.title,
+            story.description,
+            story.status.to_string(),
+            story.points.map(|p| p as i64),
+            story.assignee_id,
+            requirement_id,
+            &now,
+            &now,
+        ],
+    )
+    .map_err(map_err)?;
+    Ok(conn.last_insert_rowid())
 }
 
 /// Look up a story by ID. Returns `None` if not found.

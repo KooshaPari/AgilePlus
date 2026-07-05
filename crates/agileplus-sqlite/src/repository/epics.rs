@@ -77,7 +77,9 @@ pub fn get_epic_by_requirement_id(
 }
 
 pub fn upsert_epic_by_requirement_id(conn: &Connection, epic: &Epic) -> Result<i64, DomainError> {
-    let Some(requirement_id) = epic.requirement_id.as_deref() else {
+    let now = chrono::Utc::now().to_rfc3339();
+    let req_id_owned = epic.requirement_id.clone();
+    let Some(requirement_id) = req_id_owned.as_deref() else {
         return create_epic(conn, epic);
     };
 
@@ -85,7 +87,25 @@ pub fn upsert_epic_by_requirement_id(conn: &Connection, epic: &Epic) -> Result<i
         return Ok(existing.id);
     }
 
-    create_epic(conn, epic)
+    // Insert path: create_epic ignores requirement_id (a pre-existing bug). Insert
+    // here directly so the row is keyed on requirement_id and get-by-requirement-id
+    // can find it on the next call.
+    conn.execute(
+        "INSERT INTO epics (project_id, title, description, status, owner_id, requirement_id, created_at, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+        rusqlite::params![
+            epic.project_id,
+            epic.title,
+            epic.description,
+            epic.status.to_string(),
+            epic.owner_id,
+            requirement_id,
+            &now,
+            &now,
+        ],
+    )
+    .map_err(map_err)?;
+    Ok(conn.last_insert_rowid())
 }
 
 /// Look up an epic by ID. Returns `None` if not found.
