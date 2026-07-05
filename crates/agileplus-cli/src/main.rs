@@ -512,15 +512,18 @@ mod tests {
 
     #[test]
     fn db_path_defaults_when_env_missing() {
-        std::env::remove_var("AGILEPLUS_DB");
+        // SAFETY: this unit test mutates process env before any threads are spawned or observed.
+        unsafe { std::env::remove_var("AGILEPLUS_DB") };
         assert_eq!(db_path_from_env(), PathBuf::from("agileplus.db"));
     }
 
     #[test]
     fn db_path_uses_env_override() {
-        std::env::set_var("AGILEPLUS_DB", "/tmp/agileplus-test.db");
+        // SAFETY: this unit test mutates process env before any threads are spawned or observed.
+        unsafe { std::env::set_var("AGILEPLUS_DB", "/tmp/agileplus-test.db") };
         assert_eq!(db_path_from_env(), PathBuf::from("/tmp/agileplus-test.db"));
-        std::env::remove_var("AGILEPLUS_DB");
+        // SAFETY: this unit test mutates process env before any threads are spawned or observed.
+        unsafe { std::env::remove_var("AGILEPLUS_DB") };
     }
 }
 

@@ -14,6 +14,16 @@ fn help_prints_usage() {
         .stdout(predicates::str::contains("Spec-driven development engine"));
 }
 
+#[test]
+fn version_flag_prints_package_version() {
+    Command::cargo_bin("agileplus")
+        .unwrap()
+        .arg("--version")
+        .assert()
+        .success()
+        .stdout(predicates::str::contains(env!("CARGO_PKG_VERSION")));
+}
+
 // NOTE: The tests below (specify/research/specs/frontend/plan subcommand
 // coverage) were removed here. They were merged in verbatim from a stale
 // `pr-769` branch that assumed CLI subcommands — `specify`, `research`,
