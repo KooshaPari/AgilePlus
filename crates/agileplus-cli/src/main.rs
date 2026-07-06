@@ -76,6 +76,8 @@ enum Command {
     Worklog(commands::worklog::WorklogArgs),
     /// Score a repo against the SpecKitty rubric catalog (SpecKitty migration)
     Rubric(commands::rubric::RubricArgs),
+    /// Publish rubric scores to the cockpit NDJSON log (local-first dashboard)
+    Cockpit(commands::cockpit::CockpitArgs),
 }
 
 #[derive(Subcommand)]
@@ -603,6 +605,9 @@ async fn main() {
             }
             Command::Rubric(args) => {
                 commands::rubric::run(&args)?;
+            }
+            Command::Cockpit(args) => {
+                commands::cockpit::run(&args)?;
             }
         }
         Ok(())

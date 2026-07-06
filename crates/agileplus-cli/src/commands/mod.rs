@@ -4,6 +4,7 @@
 // compilation until those upstream gaps are filled.  They are kept in the
 // source tree for reference.
 
+pub mod cockpit;
 pub mod dashboard;
 pub mod list;
 pub mod list_epics;
