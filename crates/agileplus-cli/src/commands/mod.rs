@@ -6,6 +6,7 @@
 
 pub mod cockpit;
 pub mod dashboard;
+pub mod fix_list;
 pub mod list;
 pub mod list_epics;
 pub mod list_projects;

@@ -57,6 +57,9 @@ pub enum RubricSubcommand {
         #[arg(long, value_name = "MODE", default_value = "auto")]
         probes: ProbeMode,
     },
+
+    /// Emit a prioritized Markdown fix list from a repo's v38 scorecard.
+    FixList(super::fix_list::FixListArgs),
 }
 
 /// CLI-facing probe mode. `auto` runs the built-in catalog; `none`
@@ -148,6 +151,9 @@ pub fn run(args: &RubricArgs) -> Result<()> {
 
             Ok(())
         }
+        RubricSubcommand::FixList(args) => {
+            super::fix_list::run(args)
+        }
     }
 }
 
@@ -159,17 +165,15 @@ pub fn run(args: &RubricArgs) -> Result<()> {
 /// (relative to `cwd`) when no ancestor owns the file — this matches the
 /// cargo workspace convention.
 fn resolve_default_catalog() -> Result<PathBuf> {
-    resolve_default_catalog_from(&std::env::current_dir().context("reading current working directory")?)
+    let cwd = std::env::current_dir().context("reading current working directory")?;
+    resolve_default_catalog_from(&cwd)
 }
 
-/// Public alias for use by sibling commands (e.g. `ap cockpit publish`).
-/// Same algorithm as the private helper, parameterized on `cwd` so tests
-/// and other commands can reuse the resolution logic without going
-/// through `std::env::current_dir`.
-pub fn resolve_default_catalog_for_cockpit() -> Result<PathBuf> {
-    resolve_default_catalog_from(
-        &std::env::current_dir().context("reading current working directory")?,
-    )
+/// Public alias for use by sibling commands (e.g. `ap cockpit publish`,
+/// `ap rubric fix-list`). Resolves the bundled catalog without forcing
+/// callers to thread a `cwd` through their own argument surface.
+pub(crate) fn resolve_default_catalog_for_siblings() -> Result<PathBuf> {
+    resolve_default_catalog()
 }
 
 fn resolve_default_catalog_from(cwd: &Path) -> Result<PathBuf> {
