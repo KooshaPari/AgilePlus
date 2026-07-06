@@ -113,7 +113,7 @@ pub fn run(args: &CockpitArgs) -> Result<()> {
 
             let catalog_path = match catalog {
                 Some(p) => p.clone(),
-                None => super::rubric::resolve_default_catalog_for_cockpit()?,
+                None => super::rubric::resolve_default_catalog_for_siblings()?,
             };
             if !catalog_path.exists() {
                 bail!(
