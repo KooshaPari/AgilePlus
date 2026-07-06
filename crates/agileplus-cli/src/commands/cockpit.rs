@@ -20,11 +20,13 @@ use std::io::{BufWriter, Write as _};
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result, bail};
 use clap::{Args, Subcommand};
 use serde::Serialize;
 
-use agileplus_governance::scoring_engine::{evaluate, ClusterScore, ScoreReport};
+use super::cockpit_read::{CockpitReadArgs, run as read_run};
+
+use agileplus_governance::scoring_engine::{ClusterScore, ScoreReport, evaluate};
 
 /// Default NDJSON log path per the spec. Override with `--output`.
 fn default_log_path() -> Result<PathBuf> {
@@ -62,6 +64,8 @@ pub struct CockpitArgs {
 
 #[derive(Debug, Subcommand)]
 pub enum CockpitSubcommand {
+    /// Read the cockpit NDJSON log as a per-repo × per-cluster grade table.
+    Read(CockpitReadArgs),
     /// Score a repo against the rubric catalog and append results to the cockpit log.
     Publish {
         /// Path to the repo root to scan.
@@ -92,6 +96,7 @@ pub enum CockpitSubcommand {
 /// Top-level dispatch for the `ap cockpit` subcommand group.
 pub fn run(args: &CockpitArgs) -> Result<()> {
     match &args.sub {
+        CockpitSubcommand::Read(read_args) => read_run(read_args),
         CockpitSubcommand::Path => {
             let p = default_log_path()?;
             println!("{}", p.display());
@@ -148,7 +153,10 @@ pub fn run(args: &CockpitArgs) -> Result<()> {
                 log_path.display()
             );
             for r in &records {
-                println!("  {}\t{}\t{}/{} {}", r.cluster, r.repo, r.score, r.max, r.grade);
+                println!(
+                    "  {}\t{}\t{}/{} {}",
+                    r.cluster, r.repo, r.score, r.max, r.grade
+                );
             }
             Ok(())
         }
@@ -225,8 +233,7 @@ fn append_ndjson(path: &Path, records: &[CockpitRecord]) -> Result<()> {
         .with_context(|| format!("opening cockpit log {}", path.display()))?;
     let mut w = BufWriter::new(f);
     for r in records {
-        let line = serde_json::to_string(r)
-            .context("serializing cockpit record")?;
+        let line = serde_json::to_string(r).context("serializing cockpit record")?;
         writeln!(w, "{line}").context("writing cockpit record")?;
     }
     w.flush().context("flushing cockpit log")
@@ -251,7 +258,10 @@ mod tests {
                         title: "L21 — FR/NFR".into(),
                         score: 2,
                         glyph: "△",
-                        evidence: vec!["AGENTS.md:1".into(), "probe:3 match(es) in this cluster".into()],
+                        evidence: vec![
+                            "AGENTS.md:1".into(),
+                            "probe:3 match(es) in this cluster".into(),
+                        ],
                         gaps: vec![],
                         soft_goal_delta: "partial".into(),
                     }],

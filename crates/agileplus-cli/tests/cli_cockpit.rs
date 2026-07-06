@@ -45,8 +45,8 @@ fn cockpit_publish_writes_ndjson_with_one_record_per_cluster() {
     // every line must be valid JSON with the expected shape.
     assert!(lines.len() >= 2, "expected ≥2 records, got {}", lines.len());
     for line in &lines {
-        let v: serde_json::Value = serde_json::from_str(line)
-            .unwrap_or_else(|e| panic!("invalid JSON line: {e}\n{line}"));
+        let v: serde_json::Value =
+            serde_json::from_str(line).unwrap_or_else(|e| panic!("invalid JSON line: {e}\n{line}"));
         assert!(v.get("ts").is_some());
         assert!(v.get("repo").is_some());
         assert!(v.get("cluster").is_some());
@@ -113,6 +113,163 @@ fn cockpit_publish_help_lists_required_flags() {
         .clone();
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(stdout.contains("--repo"), "missing --repo flag: {stdout}");
-    assert!(stdout.contains("--output"), "missing --output flag: {stdout}");
-    assert!(stdout.contains("--clusters"), "missing --clusters flag: {stdout}");
+    assert!(
+        stdout.contains("--output"),
+        "missing --output flag: {stdout}"
+    );
+    assert!(
+        stdout.contains("--clusters"),
+        "missing --clusters flag: {stdout}"
+    );
+}
+
+// ── `ap cockpit read` reader tests ───────────────────────────────────────────
+
+fn write_log(path: &std::path::Path, body: &str) {
+    std::fs::write(path, body).expect("write ndjson");
+}
+
+fn empty_record() -> String {
+    // JSON record that satisfies CockpitRecord's required `repo` and
+    // `cluster` fields, with sensible defaults for the rest.
+    "{\"ts\":\"epoch:0\",\"repo\":\"AgilePlus\",\"cluster\":\"C00\",\"score\":0,\"max\":0,\"grade\":\"F\",\"probes\":0}".to_string()
+}
+
+#[test]
+fn cockpit_read_with_empty_log_prints_no_scores_yet_and_exits_zero() {
+    let tmp = tempfile::tempdir().expect("tempdir");
+    let log = tmp.path().join("cockpit.ndjson");
+    // File intentionally not created — missing path = cold-start state.
+
+    let assert = cli()
+        .args(["cockpit", "read", "--input", log.to_str().unwrap()])
+        .assert()
+        .success();
+    let stdout = String::from_utf8_lossy(&assert.get_output().stdout);
+    assert!(
+        stdout.contains("no scores yet"),
+        "expected 'no scores yet' in stdout, got: {stdout}"
+    );
+}
+
+#[test]
+fn cockpit_read_with_present_log_renders_table_with_grade_letters() {
+    let tmp = tempfile::tempdir().expect("tempdir");
+    let log = tmp.path().join("cockpit.ndjson");
+    // One repo, two clusters. Counts toward test #2 in the spec.
+    let body = format!(
+        "{}\n{}\n",
+        r#"{"ts":"epoch:1","repo":"AgilePlus","cluster":"C00","score":0,"max":3,"grade":"F","probes":0}"#,
+        r#"{"ts":"epoch:2","repo":"AgilePlus","cluster":"C01","score":3,"max":3,"grade":"A","probes":2}"#,
+    );
+    write_log(&log, &body);
+
+    let assert = cli()
+        .args(["cockpit", "read", "--input", log.to_str().unwrap()])
+        .assert()
+        .success();
+    let stdout = String::from_utf8_lossy(&assert.get_output().stdout);
+    // Header present.
+    assert!(stdout.contains("REPO"), "missing REPO header: {stdout}");
+    assert!(stdout.contains("GRADE"), "missing GRADE header: {stdout}");
+    // Repo row present.
+    assert!(stdout.contains("AgilePlus"), "missing repo row: {stdout}");
+    // Both cluster columns present (C00, C01).
+    assert!(stdout.contains("C00"), "missing C00 column: {stdout}");
+    assert!(stdout.contains("C01"), "missing C01 column: {stdout}");
+    // Grade letters appear in table (F and A for this fixture).
+    assert!(
+        stdout.contains('F') && stdout.contains('A'),
+        "missing grade letters: {stdout}"
+    );
+}
+
+#[test]
+fn cockpit_read_repo_filter_omits_other_repos() {
+    let tmp = tempfile::tempdir().expect("tempdir");
+    let log = tmp.path().join("cockpit.ndjson");
+    // Two repos: AgilePlus + Tracera. --repo AgilePlus must show only the AgilePlus row.
+    let body = format!(
+        "{}\n{}\n{}\n",
+        r#"{"ts":"epoch:1","repo":"AgilePlus","cluster":"C00","score":3,"max":3,"grade":"A","probes":0}"#,
+        r#"{"ts":"epoch:2","repo":"Tracera","cluster":"C00","score":1,"max":3,"grade":"D","probes":0}"#,
+        empty_record(),
+    );
+    write_log(&log, &body);
+
+    let assert = cli()
+        .args([
+            "cockpit",
+            "read",
+            "--repo",
+            "AgilePlus",
+            "--input",
+            log.to_str().unwrap(),
+        ])
+        .assert()
+        .success();
+    let stdout = String::from_utf8_lossy(&assert.get_output().stdout);
+    assert!(
+        stdout.contains("AgilePlus"),
+        "AgilePlus row missing: {stdout}"
+    );
+    // Tracera must be filtered OUT — it should not appear in the table body.
+    // Use a strict substring check on the line that follows "AgilePlus"
+    // (other rows would contain "Tracera" elsewhere on its own line).
+    let mut agileplus_line_seen = false;
+    for line in stdout.lines() {
+        if line.contains("AgilePlus") {
+            agileplus_line_seen = true;
+        }
+        if line.contains("Tracera") {
+            panic!("Tracera row should be filtered out, found line: {line}");
+        }
+    }
+    assert!(
+        agileplus_line_seen,
+        "AgilePlus row not present in stdout: {stdout}"
+    );
+}
+
+#[test]
+fn cockpit_read_with_malformed_line_skips_and_counts_without_crashing() {
+    let tmp = tempfile::tempdir().expect("tempdir");
+    let log = tmp.path().join("cockpit.ndjson");
+    // Mix: 1 valid record + 2 malformed lines + 1 valid record.
+    let body = format!(
+        "{}\nnot json at all\n{{\n{}\n",
+        r#"{"ts":"epoch:1","repo":"AgilePlus","cluster":"C00","score":2,"max":3,"grade":"C","probes":0}"#,
+        r#"{"ts":"epoch:2","repo":"AgilePlus","cluster":"C01","score":3,"max":3,"grade":"A","probes":1}"#,
+    );
+    write_log(&log, &body);
+
+    let assert = cli()
+        .args(["cockpit", "read", "--input", log.to_str().unwrap()])
+        .assert()
+        .success();
+    let stdout = String::from_utf8_lossy(&assert.get_output().stdout);
+    // Footer counter for skipped lines.
+    assert!(
+        stdout.contains("skipped 2 malformed"),
+        "expected skipped counter in footer, got: {stdout}"
+    );
+    // Repo row still rendered despite malformed lines.
+    assert!(
+        stdout.contains("AgilePlus"),
+        "AgilePlus row missing: {stdout}"
+    );
+}
+
+#[test]
+fn cockpit_read_help_lists_filters_and_watch_flag() {
+    let output = cli()
+        .args(["cockpit", "read", "--help"])
+        .assert()
+        .success()
+        .get_output()
+        .clone();
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("--repo"), "missing --repo flag: {stdout}");
+    assert!(stdout.contains("--input"), "missing --input flag: {stdout}");
+    assert!(stdout.contains("--watch"), "missing --watch flag: {stdout}");
 }
