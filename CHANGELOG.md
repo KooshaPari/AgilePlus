@@ -1,7 +1,19 @@
 # Changelog
 
-All notable changes to thegent are documented here.
+All notable changes to AgilePlus are documented here.
 Format: [CalVer](https://calver.org) -- `YEAR.MONTH(WAVE).PATCH`
+
+## [2026.07A.0] - 2026-07-05
+
+### SpecKitty → AgilePlus migration (CLOSED)
+
+- Migrate SpecKitty cursor commands + scoring engine into owned `agileplus-cli` (`ap rubric score`) — supersedes `.cursor/commands/spec-kitty.*.md` with 2-line redirect stubs. (#901) ([eef51a8](https://github.com/KooshaPari/AgilePlus/commit/eef51a8))
+- Extend scoring engine with content-probe rule registry (`SCORING_PROBES`, 7 built-in probes across C01/C04/C05/C08/C11). New `evaluate_with_probes` orchestrator entry; `--probes {auto,none,all}` CLI flag. Backwards-compat with v1 `evaluate`. (+12 tests) (#902) ([3fcad6b](https://github.com/KooshaPari/AgilePlus/commit/3fcad6b))
+- Add `ap cockpit {publish, path}` — score a repo and append one NDJSON record per cluster to `~/.agileplus/cockpit.ndjson`. Schema `{ts, repo, cluster, score, max, grade, probes}`. (+9 tests) (#903) ([b55ad98](https://github.com/KooshaPari/AgilePlus/commit/b55ad98))
+
+### Documentation
+
+- Generate `docs/reports/SPECKITTY-MIGRATION-COMPLETE.md` — handoff doc covering PRs #901/#902/#903, local-verifiable gate, cursor-side decommissioning recipe, cross-domain handoffs, deferred follow-ons.
 
 ## [2026.03B.0] - 2026-03-29
 
