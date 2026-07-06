@@ -136,8 +136,21 @@ pub fn run(args: &RubricArgs) -> Result<()> {
 /// (relative to `cwd`) when no ancestor owns the file — this matches the
 /// cargo workspace convention.
 fn resolve_default_catalog() -> Result<PathBuf> {
-    let cwd = std::env::current_dir().context("reading current working directory")?;
-    let mut cursor: Option<&Path> = Some(cwd.as_path());
+    resolve_default_catalog_from(&std::env::current_dir().context("reading current working directory")?)
+}
+
+/// Public alias for use by sibling commands (e.g. `ap cockpit publish`).
+/// Same algorithm as the private helper, parameterized on `cwd` so tests
+/// and other commands can reuse the resolution logic without going
+/// through `std::env::current_dir`.
+pub fn resolve_default_catalog_for_cockpit() -> Result<PathBuf> {
+    resolve_default_catalog_from(
+        &std::env::current_dir().context("reading current working directory")?,
+    )
+}
+
+fn resolve_default_catalog_from(cwd: &Path) -> Result<PathBuf> {
+    let mut cursor: Option<&Path> = Some(cwd);
     while let Some(dir) = cursor {
         let candidate = dir.join(DEFAULT_CATALOG_REL);
         if candidate.is_file() {
