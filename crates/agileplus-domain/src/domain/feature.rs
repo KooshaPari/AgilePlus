@@ -6,6 +6,31 @@ use serde::{Deserialize, Serialize};
 
 use super::state_machine::FeatureState;
 
+pub(crate) mod hex_bytes {
+    use serde::{de::Error as _, Deserialize, Deserializer, Serializer};
+
+    pub fn serialize<S>(bytes: &[u8; 32], serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(&hex::encode(bytes))
+    }
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<[u8; 32], D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let bytes = hex::decode(&s).map_err(D::Error::custom)?;
+        if bytes.len() != 32 {
+            return Err(D::Error::custom("expected 32 bytes"));
+        }
+        let mut out = [0u8; 32];
+        out.copy_from_slice(&bytes);
+        Ok(out)
+    }
+}
+
 /// A software feature tracked through the planning lifecycle.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Feature {

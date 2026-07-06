@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Domain error types.
 
-pub use phenotype_error_core::ErrorCode;
+pub use agileplus_error_core::ErrorCode;
 use thiserror::Error;
 
 /// A convenience `Result` alias for domain operations.

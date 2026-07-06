@@ -52,24 +52,6 @@ fn invalid_transitions() {
     }
 }
 
-#[test]
-fn noop_transition() {
-    let states = [
-        CycleState::Draft,
-        CycleState::Active,
-        CycleState::Review,
-        CycleState::Shipped,
-        CycleState::Archived,
-    ];
-    for s in states {
-        let result = s.transition(s);
-        assert!(
-            matches!(result, Err(DomainError::NoOpTransition(_))),
-            "expected NoOpTransition for {s} -> {s}"
-        );
-    }
-}
-
 // --- Cycle struct tests ---
 
 #[test]

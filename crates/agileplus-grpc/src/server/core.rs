@@ -16,11 +16,7 @@ pub fn domain_error_to_status(e: agileplus_domain::error::DomainError) -> Status
         DomainError::InvalidTransition { from, to, reason } => {
             Status::failed_precondition(format!("invalid transition {from}->{to}: {reason}"))
         }
-        DomainError::NoOpTransition(state) => {
-            Status::failed_precondition(format!("already in state: {state}"))
-        }
         DomainError::Conflict(msg) => Status::already_exists(msg),
-        DomainError::Timeout(secs) => Status::deadline_exceeded(format!("timeout after {secs}s")),
         DomainError::NotImplemented => Status::unimplemented("not implemented"),
         other => Status::internal(other.to_string()),
     }

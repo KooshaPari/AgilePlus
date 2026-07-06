@@ -64,12 +64,8 @@ impl FromStr for CycleState {
 impl CycleState {
     /// Validate a transition from `self` to `target`.
     ///
-    /// Returns `Ok(())` for allowed edges, `Err(NoOpTransition)` for self-to-self,
-    /// and `Err(InvalidTransition)` for all other pairs.
+    /// Returns `Ok(())` for allowed edges and `Err(InvalidTransition)` for all other pairs.
     pub fn transition(self, target: CycleState) -> Result<(), DomainError> {
-        if self == target {
-            return Err(DomainError::NoOpTransition(self.to_string()));
-        }
         let allowed = matches!(
             (self, target),
             (CycleState::Draft, CycleState::Active)

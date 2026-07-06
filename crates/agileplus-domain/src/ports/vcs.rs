@@ -17,6 +17,14 @@ pub struct WorktreeInfo {
     pub wp_id: String,
 }
 
+/// Description of a branch in a repository.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BranchInfo {
+    pub name: String,
+    pub is_remote: bool,
+    pub target: Option<String>,
+}
+
 /// Result of a merge operation.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MergeResult {

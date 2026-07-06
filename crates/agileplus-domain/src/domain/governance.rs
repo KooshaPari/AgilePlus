@@ -272,33 +272,12 @@ mod tests {
     }
 
     #[test]
-    fn evidence_requirement_construction_and_serde() {
-        let req = EvidenceRequirement {
-            fr_id: "FR-001".to_string(),
-            evidence_type: EvidenceType::TestResult,
-        };
-        assert_eq!(req.fr_id, "FR-001");
-        assert_eq!(req.evidence_type, EvidenceType::TestResult);
-
-        let json = serde_json::to_string(&req).unwrap();
-        let back: EvidenceRequirement = serde_json::from_str(&json).unwrap();
-        assert_eq!(back.fr_id, req.fr_id);
-        assert_eq!(back.evidence_type, req.evidence_type);
-    }
-
-    #[test]
     fn governance_rule_construction_and_serde() {
         let rule = GovernanceRule {
             transition: "Draft->Active".to_string(),
             required_evidence: vec![
-                EvidenceRequirement {
-                    fr_id: "FR-001".to_string(),
-                    evidence_type: EvidenceType::TestResult,
-                },
-                EvidenceRequirement {
-                    fr_id: "FR-002".to_string(),
-                    evidence_type: EvidenceType::ReviewApproval,
-                },
+                "FR-001".to_string(),
+                "FR-002".to_string(),
             ],
             policy_refs: vec![1, 2, 3],
         };
