@@ -20,6 +20,7 @@ on a dark rounded app tile.
 | `logo.png` | Canonical 512px PNG |
 | `logo.jpg` | 512px, white matte |
 | `app.ico` | Multi-resolution Windows icon (16/32/48/256) — feeds the Start-Menu / desktop shortcut |
+| `logo-animated.svg` | L101 motion variant — SMIL rotating sprint-loop + sequential velocity bars (no JS) |
 
 ## Regenerating
 
@@ -41,3 +42,16 @@ The standing backlog per-OS icon pipeline lives at
 TODO: `assets/brand/source/icon.svg` is only a placeholder. Replace it with the
 approved AgilePlus icon design before treating the generated `.ico`, `.icns`, or
 `.png` assets in `assets/brand/generated/icons/` as release-ready.
+
+## Motion variant (L101)
+
+`logo-animated.svg` ships a 4-second loop:
+
+- The agile-sprint loop (blue→purple ring + arrowhead) rotates clockwise 360° per 8s (half the
+  loop period — visually pairs with the bars).
+- The three velocity bars pulse upward in sequence (0s / 0.3s / 0.6s offsets), reading as a
+  burnup burndown.
+- Loop is seamless: last frame == first frame.
+
+All animation is SVG-native SMIL — no JavaScript, no external CSS. Safe to inline in HTML, SVG
+`<img src>`, README previews, and the splash banner.
