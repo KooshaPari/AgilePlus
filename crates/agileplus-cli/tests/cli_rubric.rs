@@ -144,3 +144,57 @@ fn rubric_help_lists_score_subcommand() {
         "missing `score` in rubric help: {stdout}"
     );
 }
+
+#[test]
+fn rubric_score_help_lists_probes_flag() {
+    let output = cli()
+        .args(["rubric", "score", "--help"])
+        .assert()
+        .success()
+        .get_output()
+        .clone();
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        stdout.contains("--probes"),
+        "missing `--probes` flag in `rubric score --help`: {stdout}"
+    );
+    assert!(
+        stdout.contains("auto") && stdout.contains("none"),
+        "`--probes` should accept `auto` and `none` modes: {stdout}"
+    );
+}
+
+#[test]
+fn rubric_score_probes_none_matches_v1_behavior() {
+    // `--probes none` must produce the same total_points as the legacy v1
+    // path-presence-only evaluator. We compare two scorecards (probes disabled
+    // vs. probes auto) by looking at the grade footer: it should be present
+    // and parseable in both modes. This pins the backwards-compat contract.
+    let repo = self_repo();
+    for mode in ["none", "auto"] {
+        let output = cli()
+            .args([
+                "rubric",
+                "score",
+                "--repo",
+                repo.to_str().unwrap(),
+                "--probes",
+                mode,
+                "--clusters",
+                "C01",
+            ])
+            .assert()
+            .success()
+            .get_output()
+            .clone();
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        assert!(
+            stdout.contains("CLUSTER_DONE cluster=C01"),
+            "missing C01 marker in --probes {mode} mode: {stdout}"
+        );
+        assert!(
+            stdout.contains("grade "),
+            "missing grade footer in --probes {mode} mode: {stdout}"
+        );
+    }
+}

@@ -12,9 +12,9 @@
 use std::path::{Path, PathBuf};
 
 use anyhow::{bail, Context, Result};
-use clap::{Args, Subcommand};
+use clap::{Args, Subcommand, ValueEnum};
 
-use agileplus_governance::scoring_engine::{evaluate, render_markdown};
+use agileplus_governance::scoring_engine::{evaluate, evaluate_with_probes, render_markdown};
 
 /// Default catalog path relative to the cargo workspace root.
 const DEFAULT_CATALOG_REL: &str = "crates/agileplus-governance/data/PILLARS-CATALOG.json";
@@ -50,7 +50,23 @@ pub enum RubricSubcommand {
         /// Write the scorecard to this file instead of stdout.
         #[arg(long, value_name = "PATH")]
         output: Option<PathBuf>,
+
+        /// Probe mode for the v2 content-probe rule registry. `auto` (default)
+        /// runs the built-in [`agileplus_governance::scoring_engine::SCORING_PROBES`]
+        /// catalog; `none` disables probes (v1 path-presence-only behavior).
+        #[arg(long, value_name = "MODE", default_value = "auto")]
+        probes: ProbeMode,
     },
+}
+
+/// CLI-facing probe mode. `auto` runs the built-in catalog; `none`
+/// disables probes entirely (v1 behavior); `all` is reserved for future
+/// use when user-supplied probe catalogs are supported.
+#[derive(Debug, Clone, Copy, ValueEnum, PartialEq, Eq)]
+pub enum ProbeMode {
+    Auto,
+    None,
+    All,
 }
 
 // ── Public dispatch ──────────────────────────────────────────────────────────
@@ -69,6 +85,7 @@ pub fn run(args: &RubricArgs) -> Result<()> {
             catalog,
             clusters,
             output,
+            probes,
         } => {
             if !repo.exists() {
                 bail!("--repo path does not exist: {}", repo.display());
@@ -89,8 +106,14 @@ pub fn run(args: &RubricArgs) -> Result<()> {
             }
 
             let cluster_filter: Vec<String> = clusters.clone().unwrap_or_default();
-            let report = evaluate(repo, &catalog_path, &cluster_filter)
-                .with_context(|| format!("scoring {}", repo.display()))?;
+            let report = match probes {
+                ProbeMode::None => evaluate(repo, &catalog_path, &cluster_filter)
+                    .with_context(|| format!("scoring {}", repo.display()))?,
+                ProbeMode::Auto | ProbeMode::All => {
+                    evaluate_with_probes(repo, &catalog_path, &cluster_filter, None)
+                        .with_context(|| format!("scoring {} (probes=enabled)", repo.display()))?
+                }
+            };
             let markdown = render_markdown(&report);
 
             match output {
