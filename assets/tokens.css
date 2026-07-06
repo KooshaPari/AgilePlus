@@ -35,13 +35,15 @@
 
   /* ────────────────────────────────────────────────────────────
    * LAB-COAT — SessionLedger (R&D family)
-   * Decision: vision-pillar proposed, 2026-07-06 (pending melosviz-3d ack)
+   * Decision: vision-pillar proposed, 2026-07-06 (meloSviz-3d ack 2026-07-06)
    * Domain: session-bundle compiler + Dioxus viewer
+   * Hex revision: amber-orange #f59e0b → orange-500 #f97316 on 2026-07-06
+   *   to avoid MelosViz --mv-warn hex collision (different semantics).
    * ──────────────────────────────────────────────────────────── */
   --lc-lab-white:        #f6f8fa;  /* primary background (lab-coat) */
   --lc-slate:            #1f2937;  /* panel/text base */
   --lc-cobalt:           #2563eb;  /* primary accent — slide-stain blue */
-  --lc-amber-orange:     #f59e0b;  /* hot-warning — lit Bunsen burner */
+  --lc-orange:           #f97316;  /* live-session — lit Bunsen burner */
   --lc-teal:             #14b8a6;  /* secondary — growth-medium teal */
 
   /* ────────────────────────────────────────────────────────────
@@ -97,7 +99,7 @@
   --bg-panel: var(--lc-slate);
   --accent-primary: var(--lc-cobalt);
   --accent-secondary: var(--lc-teal);
-  --accent-warning: var(--lc-amber-orange);
+  --accent-warning: var(--lc-orange);
 }
 
 .family-terminal-forge {
@@ -125,5 +127,5 @@
  * Each cell: accent primary → secondary → warning.
  */
 :root {
-  --family-matrix: "Backbone-2(pulse-green → sync-violet → warm-amber) | Lab-Coat(cobalt → teal → amber-orange) | Terminal-Forge(amber-crt → synthwave → mint-prompt) | Tracera(teal → indigo → accent-light) | MelosViz(violet → pink → amber)";
+  --family-matrix: "Backbone-2(pulse-green → sync-violet → warm-amber) | Lab-Coat(cobalt → teal → orange-500) | Terminal-Forge(amber-crt → synthwave → mint-prompt) | Tracera(teal → indigo → accent-light) | MelosViz(violet → pink → amber)";
 }
