@@ -78,6 +78,8 @@ enum Command {
     Rubric(commands::rubric::RubricArgs),
     /// Publish rubric scores to the cockpit NDJSON log (local-first dashboard)
     Cockpit(commands::cockpit::CockpitArgs),
+    /// Validate, summarize, or merge OKF v1.0 documents (SessionLedger raw artifacts)
+    Okf(commands::okf::OkfArgs),
 }
 
 #[derive(Subcommand)]
@@ -608,6 +610,12 @@ async fn main() {
             }
             Command::Cockpit(args) => {
                 commands::cockpit::run(&args)?;
+            }
+            Command::Okf(args) => {
+                let code = commands::okf::run(&args)?;
+                if code != 0 {
+                    std::process::exit(code);
+                }
             }
         }
         Ok(())
