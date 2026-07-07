@@ -17,6 +17,7 @@ members = [
   "crates/agileplus-sqlite",
   "crates/agileplus-triage",
   "crates/agileplus-telemetry",
+  "crates/agileplus-dashboard",
 ]
 
 [workspace.package]
