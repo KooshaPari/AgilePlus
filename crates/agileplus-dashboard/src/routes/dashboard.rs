@@ -333,7 +333,7 @@ pub async fn project_switcher(State(state): State<SharedState>) -> Response {
             id: p.id,
             slug: p.slug.clone(),
             name: p.name.clone(),
-            description: p.description.clone(),
+            description: p.description.clone().unwrap_or_default(),
         })
         .collect();
     render(ProjectSwitcherPartial {

@@ -5,7 +5,7 @@
 use axum::{
     extract::{Path, Query, State},
     http::HeaderMap,
-    response::Response,
+    response::{Html, Response},
 };
 use std::collections::HashMap;
 
