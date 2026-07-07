@@ -15,7 +15,7 @@
   <a href="assets/brand/logo.svg"><img src="assets/brand/logo.svg" alt="AgilePlus" width="160" height="160"></a>
 </p>
 <p align="center"><em>AI-native project management with hexagonal Rust core, Plane.so / GitHub integration, and an AI-agent MCP surface.</em></p>
-<p align="center"><sub><a href="assets/brand/README.md">Brand assets &amp; palette</a></sub></p>
+<p align="center"><sub><a href="assets/brand/README.md">Brand assets &amp; palette</a> · <a href="docs/assets/identity/">visual identity demo</a></sub></p>
 
 ---
 
