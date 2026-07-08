@@ -25,3 +25,7 @@ export { default as EmptyState } from './layout/EmptyState';
 export * from './onboarding';
 export { default as OnboardingOverlay } from './onboarding/OnboardingOverlay';
 export { default as OnboardingTour } from './onboarding/OnboardingTour';
+
+// Settings Components
+export * from './settings';
+export { default as SettingsView } from './settings/SettingsView';

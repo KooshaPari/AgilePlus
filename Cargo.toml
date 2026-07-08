@@ -116,6 +116,7 @@ paste = "1"
 agileplus-config = { path = "crates/agileplus-config" }
 agileplus-error-core = { path = "crates/agileplus-error-core" }
 agileplus-proto = { path = "crates/agileplus-proto" }
+agileplus-telemetry = { path = "crates/agileplus-telemetry" }
 
 # cargo-machete false-positive ignores (dev-only / proc-macro / build-deps)
 [workspace.metadata.cargo-machete]

@@ -10,6 +10,9 @@
 import { BrowserWindow, ApplicationMenu } from "electrobun/bun";
 import { $ } from "bun";
 import { join } from "node:path";
+import { setupTray, setWindowVisible, updateBadge } from "./tray";
+import { setupNotifications } from "./notifications";
+import { setupIpc } from "./ipc";
 
 // ── Config ────────────────────────────────────────────────────────────────────
 const APP_NAME = process.env.APP_NAME ?? "AgilePlus";
@@ -149,7 +152,31 @@ async function main(): Promise<void> {
   await bootServices();
   const win = createMainWindow();
   setupMenu(win);
-  console.log(`[${APP_NAME}] Launched → ${DEV_URL} (fallback ${RENDERER_URL})`);
+
+  // ── Desktop integrations ─────────────────────────────────────────────────
+  // Notification HTTP server (dynamic port assigned by OS)
+  const notifModule = setupNotifications(win);
+  const NOTIF_PORT = notifModule.port;
+
+  // System tray
+  const tray = setupTray(win);
+
+  // IPC bridge (webview ↔ native)
+  const ipc = setupIpc(win, NOTIF_PORT);
+
+  // Track window visibility for tray menu label
+  win.on("focus", () => {
+    setWindowVisible(true);
+    updateBadge(0);
+  });
+  win.on("blur", () => {
+    setWindowVisible(false);
+  });
+
+  console.log(
+    `[${APP_NAME}] Launched → ${DEV_URL} (fallback ${RENDERER_URL})` +
+      ` | tray=✓ notifications=:${NOTIF_PORT} ipc=✓`,
+  );
 }
 
 main().catch((err) => {

@@ -12,10 +12,8 @@ pub mod list_stories;
 pub mod list_tests;
 pub mod mvp;
 pub mod seed_requirements;
-<<<<<<< HEAD
 pub mod trace;
-=======
->>>>>>> pr-769
+pub mod update;
 pub mod worklog;
 
 // ── stub modules (excluded until upstream deps are resolved) ──────────────────

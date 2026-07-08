@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useAgilePlusStore } from './stores/agileplus';
-import { Button, Badge, Card, Pill, Modal, Toast, EmptyState, Skeleton, OnboardingTour } from './components';
+import { Button, Badge, Card, Pill, Modal, Toast, EmptyState, Skeleton, OnboardingTour, SettingsView } from './components';
 import type { OnboardingTourStep } from './types';
 import './styles/globals.css';
 import { ThemeProvider, useTheme } from './theme';
+import { LocaleProvider } from './i18n';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -23,7 +24,7 @@ interface Story {
   requirement_id: string | null;
 }
 
-type View = 'dashboard' | 'epics' | 'stories' | 'evidence';
+type View = 'dashboard' | 'epics' | 'stories' | 'evidence' | 'settings';
 
 // ─── Status helpers ────────────────────────────────────────────────────────────
 
@@ -128,6 +129,7 @@ const NAV_ITEMS: { label: string; view: View }[] = [
   { label: 'Epics', view: 'epics' },
   { label: 'Stories', view: 'stories' },
   { label: 'Evidence Gallery', view: 'evidence' },
+  { label: 'Settings', view: 'settings' },
 ];
 
 function Nav({ activeView, onNav }: NavProps) {
@@ -447,9 +449,22 @@ function EvidenceGalleryView({ loading }: { loading?: boolean }) {
 // ─── Root App ─────────────────────────────────────────────────────────────────
 
 export function App() {
+  // Read persisted locale from localStorage
+  let storedLocale = 'en';
+  try {
+    const stored = localStorage.getItem('agileplus_locale');
+    if (stored === 'en' || stored === 'de') {
+      storedLocale = stored;
+    }
+  } catch {
+    // localStorage unavailable
+  }
+
   return (
     <ThemeProvider>
-      <AppContent />
+      <LocaleProvider defaultLocale={storedLocale}>
+        <AppContent />
+      </LocaleProvider>
     </ThemeProvider>
   );
 }
@@ -541,6 +556,7 @@ function AppContent() {
             {view === 'epics' && <EpicsView epics={epics} stories={stories} />}
             {view === 'stories' && <StoriesView epics={epics} stories={stories} />}
             {view === 'evidence' && <EvidenceGalleryView />}
+            {view === 'settings' && <SettingsView />}
           </>
         )}
       </main>

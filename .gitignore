@@ -11,3 +11,6 @@
 .env
 .env.local
 .env.*.local
+
+# Agent / audit artifacts
+.claude/

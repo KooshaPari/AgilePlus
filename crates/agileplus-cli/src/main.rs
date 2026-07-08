@@ -72,6 +72,8 @@ enum Command {
     Dashboard(commands::dashboard::DashboardArgs),
     /// Worklog schema management (validate/convert/schema/list)
     Worklog(commands::worklog::WorklogArgs),
+    /// Check for updates and self-update the CLI binary
+    Update(commands::update::UpdateArgs),
 }
 
 #[derive(Subcommand)]
@@ -496,7 +498,6 @@ fn open_storage(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::commands::worklog::db_path_from_env;
 
     #[test]
     fn mock_store_seed_contains_cli_fixtures() {
@@ -506,19 +507,6 @@ mod tests {
         assert_eq!(store.modules.len(), 2);
         assert_eq!(store.cycles.len(), 1);
         assert_eq!(store.cycles[0].state, CycleState::Active);
-    }
-
-    #[test]
-    fn db_path_defaults_when_env_missing() {
-        std::env::remove_var("AGILEPLUS_DB");
-        assert_eq!(db_path_from_env(), PathBuf::from("agileplus.db"));
-    }
-
-    #[test]
-    fn db_path_uses_env_override() {
-        std::env::set_var("AGILEPLUS_DB", "/tmp/agileplus-test.db");
-        assert_eq!(db_path_from_env(), PathBuf::from("/tmp/agileplus-test.db"));
-        std::env::remove_var("AGILEPLUS_DB");
     }
 }
 
@@ -583,13 +571,11 @@ async fn main() {
             Command::Dashboard(args) => {
                 commands::dashboard::run(&args)?;
             }
+            Command::Update(args) => {
+                commands::update::run(&args).await?;
+            }
             Command::Worklog(args) => {
-<<<<<<< HEAD
-                let db_path = db_path_from_env();
-                commands::worklog::run_with_db(&args, &db_path)?;
-=======
                 commands::worklog::run(&args)?;
->>>>>>> pr-769
             }
         }
         Ok(())
