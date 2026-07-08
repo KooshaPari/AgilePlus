@@ -280,3 +280,33 @@ export interface EvidenceGalleryProps {
   onItemSelect?: (item: EvidenceItem) => void;
   loading?: boolean;
 }
+
+// ============================================================================
+// Onboarding / Tour Types
+// ============================================================================
+
+export interface OnboardingTourStep {
+  /** Unique identifier for this step */
+  id: string;
+  /** Short heading shown in the tour card */
+  title: string;
+  /** Descriptive body text explaining the UI area */
+  description: string;
+  /** CSS selector for the element to spotlight. Omit for full-page (centered) steps. */
+  targetSelector?: string;
+  /** Preferred tooltip placement relative to the target element */
+  placement?: 'top' | 'bottom' | 'left' | 'right' | 'center';
+}
+
+export interface OnboardingProps {
+  /** Whether the tour is visible */
+  isOpen: boolean;
+  /** Called when the user dismisses the tour */
+  onClose: () => void;
+  /** Ordered array of tour steps */
+  steps: OnboardingTourStep[];
+  /** Called after the final step is completed */
+  onComplete?: () => void;
+  /** Override the localStorage key used to track completion (default: 'onboarding_complete') */
+  storageKey?: string;
+}

@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useAgilePlusStore } from './stores/agileplus';
-import { Button, Badge, Card, Pill, Modal, Toast, EmptyState, Skeleton } from './components';
+import { Button, Badge, Card, Pill, Modal, Toast, EmptyState, Skeleton, OnboardingTour } from './components';
+import type { OnboardingTourStep } from './types';
 import './styles/globals.css';
 import { ThemeProvider, useTheme } from './theme';
 
@@ -62,6 +63,49 @@ const SEED_STORIES: Story[] = [
   { id: 10, epic_id: 4, title: 'Evidence Gallery view (PHASE2)', status: 'Planned', requirement_id: null },
   { id: 11, epic_id: 5, title: 'GitHub webhook listener', status: 'Planned', requirement_id: null },
   { id: 12, epic_id: 6, title: 'Plane API client + sync job', status: 'Planned', requirement_id: null },
+];
+
+// ─── Onboarding tour steps ─────────────────────────────────────────────────
+
+const TOUR_STEPS: OnboardingTourStep[] = [
+  {
+    id: 'welcome',
+    title: 'Welcome to AgilePlus',
+    description:
+      "Let's take a quick tour of your project management dashboard. We'll highlight the key areas so you can hit the ground running.",
+    placement: 'center',
+  },
+  {
+    id: 'navigation',
+    title: 'Navigation Bar',
+    description:
+      'Navigate between Dashboard, Epics, Stories, and Evidence Gallery views using these tabs. Each view provides a different perspective on your project data.',
+    targetSelector: 'nav',
+    placement: 'bottom',
+  },
+  {
+    id: 'content-area',
+    title: 'Content Area',
+    description:
+      'The main panel adapts to your current view. The Dashboard shows overview stats, Epics lists all epics with progress bars, Stories provides filtering, and Evidence Gallery displays test artifacts.',
+    targetSelector: 'main',
+    placement: 'top',
+  },
+  {
+    id: 'theme-toggle',
+    title: 'Theme Switcher',
+    description:
+      'Toggle between light, dark, and system themes using the icon button in the top-right corner of the navigation bar.',
+    targetSelector: '[aria-label^="Switch theme"]',
+    placement: 'left',
+  },
+  {
+    id: 'complete',
+    title: "You're All Set!",
+    description:
+      'You now know the key areas of AgilePlus. Use the navigation bar to explore and manage your project work items. You can restart this tour anytime from the settings.',
+    placement: 'center',
+  },
 ];
 
 // ─── Nav ──────────────────────────────────────────────────────────────────────
@@ -419,6 +463,20 @@ function AppContent() {
   const [stories, setStories] = useState<Story[]>([]);
   const [dataReady, setDataReady] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  // Check localStorage for onboarding completion on mount
+  useEffect(() => {
+    try {
+      const completed = localStorage.getItem('onboarding_complete');
+      if (completed !== 'true') {
+        setShowOnboarding(true);
+      }
+    } catch {
+      // localStorage unavailable (private browsing, quota exceeded) — show tour anyway
+      setShowOnboarding(true);
+    }
+  }, []);
 
   // Try live API, fall back to seed data
   useEffect(() => {
@@ -497,6 +555,12 @@ function AppContent() {
           />
         </div>
       )}
+
+      <OnboardingTour
+        isOpen={showOnboarding}
+        onClose={() => setShowOnboarding(false)}
+        steps={TOUR_STEPS}
+      />
     </div>
   );
 }

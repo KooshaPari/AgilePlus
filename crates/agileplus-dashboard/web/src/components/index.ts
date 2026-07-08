@@ -20,3 +20,8 @@ export { default as Toast } from './layout/Toast';
 export { default as Badge } from './layout/Badge';
 export { default as Pill } from './layout/Pill';
 export { default as EmptyState } from './layout/EmptyState';
+
+// Onboarding Components
+export * from './onboarding';
+export { default as OnboardingOverlay } from './onboarding/OnboardingOverlay';
+export { default as OnboardingTour } from './onboarding/OnboardingTour';
