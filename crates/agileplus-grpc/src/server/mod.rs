@@ -53,15 +53,15 @@ where
     O: ObservabilityPort + 'static,
 {
     storage: Arc<S>,
-    #[allow(dead_code)]
+    #[allow(dead_code)] // reserved - injected for future downstream service calls
     vcs: Arc<V>,
-    #[allow(dead_code)]
+    #[allow(dead_code)] // reserved - injected for future downstream service calls
     agents: Arc<A>,
-    #[allow(dead_code)]
+    #[allow(dead_code)] // reserved - injected for future downstream service calls
     review: Arc<R>,
-    #[allow(dead_code)]
+    #[allow(dead_code)] // reserved - injected for future downstream service calls
     telemetry: Arc<O>,
-    #[allow(dead_code)]
+    #[allow(dead_code)] // reserved - injected for future event bus integration
     event_bus: Arc<EventBus>,
     proxy: Arc<ProxyRouter>,
 }

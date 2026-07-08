@@ -18,7 +18,7 @@ use crate::validator::validate_and_wrap;
 
 /// JSON-RPC request envelope.
 #[derive(Debug, Deserialize)]
-#[allow(dead_code)]
+#[allow(dead_code)] // serde-deserialized field - consumed by downstream JSON-RPC dispatch
 struct JsonRpcRequest {
     jsonrpc: String,
     id: Option<Value>,

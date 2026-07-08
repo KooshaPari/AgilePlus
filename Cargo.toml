@@ -5,6 +5,7 @@ resolver = "2"
 # workspace until source is implemented. See: kitty-specs/003-agileplus-platform-completion.
 members = [
   "crates/agileplus-grpc",
+  "libs/plugin-registry",
 ]
 
 [workspace.package]
@@ -12,6 +13,10 @@ version = "0.1.0"
 edition = "2024"
 license = "MIT"
 rust-version = "1.88"
+authors = ["AgilePlus Contributors"]
+repository = "https://github.com/KooshaPari/AgilePlus"
+keywords = ["agile", "project-management", "plugin"]
+categories = ["development-tools", "project-management"]
 
 [workspace.lints.rust]
 unsafe_code = "forbid"

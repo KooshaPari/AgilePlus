@@ -62,7 +62,7 @@ pub trait EventBus: Send + Sync {
 /// The primary event bus store wrapping a backend implementation.
 pub struct EventBusStore {
     backend: Box<dyn EventBus>,
-    #[allow(dead_code)]
+    #[allow(dead_code)] // reserved - NatsConfig used for future dynamic reconnection
     config: NatsConfig,
 }
 

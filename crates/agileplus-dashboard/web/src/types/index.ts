@@ -81,6 +81,15 @@ export interface ToggleProps {
   ariaPressed?: boolean;
 }
 
+export interface SkeletonProps {
+  width?: string | number;
+  height?: string | number;
+  variant?: 'text' | 'circular' | 'rectangular';
+  className?: string;
+  count?: number;
+  animate?: boolean;
+}
+
 // ============================================================================
 // Layout Component Types
 // ============================================================================
@@ -138,6 +147,18 @@ export interface PillProps {
   variant?: 'default' | 'primary' | 'secondary';
   className?: string;
   ariaLabel?: string;
+}
+
+export interface EmptyStateProps {
+  /** Optional illustration or icon node displayed above the title */
+  illustration?: React.ReactNode;
+  /** Primary heading text */
+  title: string;
+  /** Supporting description text */
+  description?: string;
+  /** Optional action button rendered below the description */
+  action?: React.ReactNode;
+  className?: string;
 }
 
 // ============================================================================

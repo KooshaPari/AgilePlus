@@ -3,6 +3,7 @@ rust = "latest"
 node = "22"
 bun = "latest"
 python = "3.12"
+cargo-mutants = "latest"
 
 [env]
 AGILEPLUS_ENV = "development"
@@ -19,6 +20,10 @@ run = "cargo test --workspace"
 [tasks.audit]
 description = "Run the Rust security audit"
 run = "cargo audit"
+
+[tasks.depcheck]
+description = "Check for unused Rust dependencies"
+run = "cargo machete"
 
 [tasks.build]
 description = "Build release binaries"

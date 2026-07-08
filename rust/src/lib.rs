@@ -5,7 +5,7 @@
 
 // Module declarations for generated code will be added when sources are generated.
 
-#[allow(dead_code)]
+#[allow(dead_code)] // placeholder until buf generate populates crate
 pub const PLACEHOLDER: &str = "agileplus-proto";
 
 #[cfg(test)]

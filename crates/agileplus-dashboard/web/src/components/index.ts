@@ -19,3 +19,4 @@ export { default as Modal } from './layout/Modal';
 export { default as Toast } from './layout/Toast';
 export { default as Badge } from './layout/Badge';
 export { default as Pill } from './layout/Pill';
+export { default as EmptyState } from './layout/EmptyState';

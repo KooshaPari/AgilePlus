@@ -245,5 +245,5 @@ struct CargoManifest {
     build_dependencies: std::collections::BTreeMap<String, String>,
 }
 
-#[allow(dead_code)]
+#[allow(dead_code)] // suppresses unused_variables warning for Error match arm - used by macro-generated code
 fn _suppress_unused_error(_: Error) {}

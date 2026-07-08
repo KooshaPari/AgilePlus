@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useAgilePlusStore } from './stores/agileplus';
-import { Button, Badge, Card, Pill, Modal, Toast } from './components';
+import { Button, Badge, Card, Pill, Modal, Toast, EmptyState, Skeleton } from './components';
 import './styles/globals.css';
+import { ThemeProvider, useTheme } from './theme';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -70,6 +71,14 @@ interface NavProps {
   onNav: (v: View) => void;
 }
 
+const THEME_LABELS: Record<string, string> = {
+  light: '☀️',
+  dark: '🌙',
+  system: '🖥',
+};
+
+const THEME_CYCLE: Array<'light' | 'dark' | 'system'> = ['light', 'dark', 'system'];
+
 const NAV_ITEMS: { label: string; view: View }[] = [
   { label: 'Dashboard', view: 'dashboard' },
   { label: 'Epics', view: 'epics' },
@@ -78,6 +87,14 @@ const NAV_ITEMS: { label: string; view: View }[] = [
 ];
 
 function Nav({ activeView, onNav }: NavProps) {
+  const { theme, setTheme } = useTheme();
+
+  const cycleTheme = () => {
+    const idx = THEME_CYCLE.indexOf(theme);
+    const next = THEME_CYCLE[(idx + 1) % THEME_CYCLE.length];
+    setTheme(next);
+  };
+
   return (
     <nav className="bg-gray-900 text-white px-6 py-3 flex items-center gap-6">
       <span className="font-bold text-cyan-400 mr-4 text-lg">AgilePlus</span>
@@ -92,13 +109,24 @@ function Nav({ activeView, onNav }: NavProps) {
           {label}
         </button>
       ))}
+
+      <div className="ml-auto">
+        <button
+          onClick={cycleTheme}
+          className="text-sm px-2.5 py-1.5 rounded transition-colors hover:bg-gray-700 text-gray-300"
+          aria-label={`Switch theme (currently ${theme})`}
+          title={`Theme: ${theme}`}
+        >
+          {THEME_LABELS[theme]}
+        </button>
+      </div>
     </nav>
   );
 }
 
 // ─── Dashboard view ────────────────────────────────────────────────────────────
 
-function DashboardView({ epics, stories }: { epics: Epic[]; stories: Story[] }) {
+function DashboardView({ epics, stories, loading }: { epics: Epic[]; stories: Story[]; loading?: boolean }) {
   const done = epics.filter((e) => e.status.toLowerCase() === 'done').length;
   const inProgress = epics.filter((e) => ['in_progress', 'in progress'].includes(e.status.toLowerCase())).length;
   const planned = epics.filter((e) => e.status.toLowerCase() === 'planned').length;
@@ -117,12 +145,19 @@ function DashboardView({ epics, stories }: { epics: Epic[]; stories: Story[] }) 
     <div>
       <h2 className="text-xl font-bold mb-4">Overview</h2>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-        {stats.map(({ label, value, variant }) => (
-          <Card key={label} variant="elevated" className="text-center">
-            <div className="text-3xl font-bold mb-1">{value}</div>
-            <Badge label={label} variant={variant} />
-          </Card>
-        ))}
+        {loading
+          ? Array.from({ length: 6 }).map((_, i) => (
+              <Card key={`skel-${i}`} variant="elevated" className="text-center">
+                <Skeleton variant="rectangular" height={80} className="mb-2" />
+                <Skeleton variant="text" width="60%" className="mx-auto" />
+              </Card>
+            ))
+          : stats.map(({ label, value, variant }) => (
+              <Card key={label} variant="elevated" className="text-center">
+                <div className="text-3xl font-bold mb-1">{value}</div>
+                <Badge label={label} variant={variant} />
+              </Card>
+            ))}
       </div>
 
       <h2 className="text-xl font-bold mb-3">Recent Epics</h2>
@@ -311,7 +346,10 @@ function StoriesView({ epics, stories }: { epics: Epic[]; stories: Story[] }) {
           );
         })}
         {filtered.length === 0 && (
-          <div className="text-center py-8 text-gray-400">No stories match current filters.</div>
+          <EmptyState
+            title="No stories match your filters"
+            description="Try adjusting your filter criteria to see more results."
+          />
         )}
       </div>
     </div>
@@ -320,7 +358,25 @@ function StoriesView({ epics, stories }: { epics: Epic[]; stories: Story[] }) {
 
 // ─── Evidence Gallery view (PHASE2 stub) ──────────────────────────────────────
 
-function EvidenceGalleryView() {
+function EvidenceGalleryView({ loading }: { loading?: boolean }) {
+  if (loading) {
+    return (
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <Skeleton variant="rectangular" width={200} height={28} />
+          <Skeleton variant="rectangular" width={80} height={24} />
+        </div>
+        <Card variant="outlined" className="py-12">
+          <div className="flex flex-col items-center gap-3">
+            <Skeleton variant="circular" width={64} height={64} />
+            <Skeleton variant="text" width="60%" />
+            <Skeleton variant="text" count={2} width="80%" />
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
@@ -347,6 +403,14 @@ function EvidenceGalleryView() {
 // ─── Root App ─────────────────────────────────────────────────────────────────
 
 export function App() {
+  return (
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
+  );
+}
+
+function AppContent() {
   const setWorkPackages = useAgilePlusStore((state) => state.setWorkPackages);
   const setLoading = useAgilePlusStore((state) => state.setLoading);
 
@@ -404,10 +468,18 @@ export function App() {
       <Nav activeView={view} onNav={setView} />
       <main className="container mx-auto px-4 py-6 max-w-5xl">
         {!dataReady ? (
-          <div className="flex items-center justify-center py-24 text-gray-400">Loading…</div>
+          <div className="py-12">
+            <Skeleton variant="rectangular" height={24} className="mb-6 max-w-xs" />
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <Skeleton key={`load-${i}`} variant="rectangular" height={96} />
+              ))}
+            </div>
+            <Skeleton variant="text" count={4} />
+          </div>
         ) : (
           <>
-            {view === 'dashboard' && <DashboardView epics={epics} stories={stories} />}
+            {view === 'dashboard' && <DashboardView epics={epics} stories={stories} loading={false} />}
             {view === 'epics' && <EpicsView epics={epics} stories={stories} />}
             {view === 'stories' && <StoriesView epics={epics} stories={stories} />}
             {view === 'evidence' && <EvidenceGalleryView />}
