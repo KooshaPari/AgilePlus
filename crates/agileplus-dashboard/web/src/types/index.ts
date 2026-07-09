@@ -310,3 +310,33 @@ export interface OnboardingProps {
   /** Override the localStorage key used to track completion (default: 'onboarding_complete') */
   storageKey?: string;
 }
+
+// ============================================================================
+// Demo / Onboarding Checklist Types
+// ============================================================================
+
+export interface DemoTask {
+  /** Unique identifier for this task (e.g. "create-epic") */
+  id: string;
+  /** Human-readable label shown in the checklist */
+  label: string;
+  /** Optional view name to navigate to when the task is activated */
+  actionView?: string;
+}
+
+export interface DemoContextType {
+  /** Whether demo mode (sample data) is currently active */
+  isDemoMode: boolean;
+  /** Toggle demo mode on/off */
+  setDemoMode: (mode: boolean) => void;
+  /** Array of completed task IDs */
+  completedTasks: string[];
+  /** Mark a task as completed by ID */
+  completeTask: (taskId: string) => void;
+  /** Completion percentage (0–100) */
+  taskProgress: number;
+  /** Whether the checklist has been permanently dismissed */
+  isChecklistDismissed: boolean;
+  /** Permanently dismiss the checklist (all tasks done) */
+  dismissChecklist: () => void;
+}

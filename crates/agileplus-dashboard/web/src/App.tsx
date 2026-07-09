@@ -1,7 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import { useAgilePlusStore } from './stores/agileplus';
-import { Button, Badge, Card, Pill, Modal, Toast, EmptyState, Skeleton, OnboardingTour, SettingsView } from './components';
+import {
+  Button, Badge, Card, Pill, Modal, Toast, EmptyState, Skeleton,
+  OnboardingTour, SettingsView, DemoMode, TaskChecklist,
+} from './components';
+import { DemoProvider, useDemoMode } from './components/onboarding/DemoContext';
 import type { OnboardingTourStep } from './types';
 import './styles/globals.css';
 import { ThemeProvider, useTheme } from './theme';
@@ -134,6 +138,7 @@ const NAV_ITEMS: { label: string; view: View }[] = [
 
 function Nav({ activeView, onNav }: NavProps) {
   const { theme, setTheme } = useTheme();
+  const { isDemoMode, setDemoMode } = useDemoMode();
 
   const cycleTheme = () => {
     const idx = THEME_CYCLE.indexOf(theme);
@@ -156,7 +161,8 @@ function Nav({ activeView, onNav }: NavProps) {
         </button>
       ))}
 
-      <div className="ml-auto">
+      <div className="ml-auto flex items-center gap-2">
+        <DemoMode />
         <button
           onClick={cycleTheme}
           className="text-sm px-2.5 py-1.5 rounded transition-colors hover:bg-gray-700 text-gray-300"
@@ -463,7 +469,9 @@ export function App() {
   return (
     <ThemeProvider>
       <LocaleProvider defaultLocale={storedLocale}>
-        <AppContent />
+        <DemoProvider>
+          <AppContent />
+        </DemoProvider>
       </LocaleProvider>
     </ThemeProvider>
   );

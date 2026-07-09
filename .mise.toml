@@ -28,3 +28,7 @@ run = "cargo machete"
 [tasks.build]
 description = "Build release binaries"
 run = "cargo build --release"
+
+[tasks.memory]
+description = "Run memory profiling tests with dhat heap profiler on agileplus-domain"
+run = "cargo test --features dhat-heap --manifest-path crates/agileplus-domain/Cargo.toml -- -Z unstable-options --report-time"

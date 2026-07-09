@@ -7,9 +7,12 @@ on:
     branches: [main]
   workflow_dispatch:
 
-# Fuzz targets live in crates/agileplus-domain/fuzz/ (2 targets):
+# Fuzz targets live in crates/agileplus-domain/fuzz/ (5 targets):
 #   parse_domain_config  — TOML/JSON AppConfig deserialization
 #   parse_requirement_id — FromStr + constructor + JSON for domain types
+#   api_types_deser      — JSON deserialization of API DTO types
+#   sql_fragments        — Mock SQL sanitizer / tokenizer
+#   state_machine        — FeatureState state machine transitions
 # Run locally: cd crates/agileplus-domain && cargo +nightly fuzz run <target>
 
 permissions:
@@ -89,5 +92,5 @@ jobs:
           tool: cargo-fuzz
 
       - name: Build fuzz targets (agileplus-domain)
-        run: cargo fuzz build
+        run: cargo +nightly fuzz build
         working-directory: crates/agileplus-domain

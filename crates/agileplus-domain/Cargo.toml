@@ -18,9 +18,11 @@ dirs-next.workspace = true
 agileplus-error-core = { path = "../agileplus-error-core" }
 hex = "0.4"
 zeroize.workspace = true
+dhat = { version = "0.3", optional = true }
 
 [features]
 keychain = []
+dhat-heap = ["dep:dhat"]
 
 [dev-dependencies]
 tokio.workspace = true
