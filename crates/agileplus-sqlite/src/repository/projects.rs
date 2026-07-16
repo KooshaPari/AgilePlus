@@ -4,7 +4,7 @@
 //! Traceability: FR-STORE-PROJECT
 
 use chrono::DateTime;
-use rusqlite::{params, Connection};
+use rusqlite::{Connection, params};
 
 use agileplus_domain::domain::project::Project;
 use agileplus_domain::error::DomainError;
@@ -27,7 +27,11 @@ fn row_to_project(row: &rusqlite::Row<'_>) -> rusqlite::Result<Project> {
         id: row.get(0)?,
         slug: row.get(1)?,
         name: row.get(2)?,
-        description: if description.is_empty() { None } else { Some(description) },
+        description: if description.is_empty() {
+            None
+        } else {
+            Some(description)
+        },
         created_at: parse_dt(&created_at),
         updated_at: parse_dt(&updated_at),
     })

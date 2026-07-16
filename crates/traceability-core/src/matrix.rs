@@ -177,10 +177,10 @@ pub fn changed<'a>(
 ) -> Vec<(&'a MatrixCell, &'a MatrixCell)> {
     let mut out = Vec::new();
     for (k, n) in &new.cells {
-        if let Some(o) = old.cells.get(k) {
-            if o.coverage != n.coverage || o.trace_links != n.trace_links {
-                out.push((o, n));
-            }
+        if let Some(o) = old.cells.get(k)
+            && (o.coverage != n.coverage || o.trace_links != n.trace_links)
+        {
+            out.push((o, n));
         }
     }
     out

@@ -84,6 +84,9 @@ mod tests {
         // Verifies the builder accepts any non-empty token string without
         // making a network call.
         let result = GitHubClient::new("dummy-token-for-test");
-        assert!(result.is_ok(), "GitHubClient::new should succeed with a dummy token");
+        assert!(
+            result.is_ok(),
+            "GitHubClient::new should succeed with a dummy token"
+        );
     }
 }

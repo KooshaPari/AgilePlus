@@ -130,7 +130,7 @@ pub async fn run(args: TriageArgs) -> Result<()> {
 
 // Re-export the main engine surface so consumers can do:
 //   use agileplus_triage::{SyncedItem, TriageRules, TriageOutcome, classify};
-pub use engine::{classify, SyncedItem, TriageOutcome, TriageRule, TriageRules};
+pub use engine::{SyncedItem, TriageOutcome, TriageRule, TriageRules, classify};
 
 // Re-export BacklogStoreOps trait (used by adapter consumers)
 pub use adapter::BacklogStoreOps;

@@ -20,7 +20,7 @@ pub mod logs;
 pub mod metrics;
 pub mod traces;
 
-pub use adapter::{init_telemetry, TelemetryAdapter, TelemetryError, TelemetryGuard};
+pub use adapter::{TelemetryAdapter, TelemetryError, TelemetryGuard, init_telemetry};
 pub use config::TelemetryConfig;
 pub use metrics::{AgilePlusMetrics, MetricsRecorder};
 pub use traces::{telemetry_layer, trace_layer};

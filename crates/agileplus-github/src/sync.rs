@@ -14,7 +14,7 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
 use crate::client::{GitHubClient, GitHubIssuePayload};
-use crate::map::{issue_to_story, pr_to_story, GhIssue, GhPullRequest};
+use crate::map::{GhIssue, GhPullRequest, issue_to_story, pr_to_story};
 use agileplus_domain::domain::backlog::BacklogItem;
 use agileplus_domain::domain::story::Story;
 
@@ -69,14 +69,18 @@ pub async fn sync_repository(
     for issue in source.list_issues().await? {
         match issue_to_story(&issue, epic_id, project_id) {
             Ok(story) => report.stories.push(story),
-            Err(error) => report.skipped.push((issue.number.try_into().unwrap(), error.to_string())),
+            Err(error) => report
+                .skipped
+                .push((issue.number.try_into().unwrap(), error.to_string())),
         }
     }
 
     for pr in source.list_prs().await? {
         match pr_to_story(&pr, epic_id, project_id) {
             Ok(story) => report.stories.push(story),
-            Err(error) => report.skipped.push((pr.number.try_into().unwrap(), error.to_string())),
+            Err(error) => report
+                .skipped
+                .push((pr.number.try_into().unwrap(), error.to_string())),
         }
     }
 
@@ -324,7 +328,10 @@ mod tests {
         assert_eq!(report.stories.len(), 2);
         assert_eq!(report.stories[0].project_id, 10);
         assert_eq!(report.stories[0].epic_id, 20);
-        assert_eq!(report.stories[0].requirement_id.as_deref(), Some("gh:issue:7"));
+        assert_eq!(
+            report.stories[0].requirement_id.as_deref(),
+            Some("gh:issue:7")
+        );
         assert_eq!(report.stories[1].requirement_id.as_deref(), Some("gh:pr:8"));
         assert!(report.skipped.is_empty());
     }
@@ -347,6 +354,9 @@ mod tests {
         let report = sync_repository(&source, 10, 20).await.unwrap();
 
         assert_eq!(report.stories.len(), 0);
-        assert_eq!(report.skipped, vec![(7_u64, "story title must not be empty".to_string())]);
+        assert_eq!(
+            report.skipped,
+            vec![(7_u64, "story title must not be empty".to_string())]
+        );
     }
 }

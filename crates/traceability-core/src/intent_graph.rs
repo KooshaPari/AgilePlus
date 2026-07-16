@@ -605,10 +605,10 @@ impl IntentGraph {
                     node.id
                 )));
             }
-            if let Some(c) = node.meta.confidence {
-                if !(0.0..=1.0).contains(&c) {
-                    errors.push(ValidationError::ConfidenceOutOfRange(c));
-                }
+            if let Some(c) = node.meta.confidence
+                && !(0.0..=1.0).contains(&c)
+            {
+                errors.push(ValidationError::ConfidenceOutOfRange(c));
             }
         }
 
@@ -743,10 +743,10 @@ impl IntentGraph {
         }
 
         // confidence range
-        if let Some(c) = edge.meta.confidence {
-            if !(0.0..=1.0).contains(&c) {
-                return Some(ValidationError::ConfidenceOutOfRange(c));
-            }
+        if let Some(c) = edge.meta.confidence
+            && !(0.0..=1.0).contains(&c)
+        {
+            return Some(ValidationError::ConfidenceOutOfRange(c));
         }
 
         // edge constraints
@@ -932,9 +932,10 @@ mod tests {
             },
         };
         let err = graph.validate().unwrap_err();
-        assert!(err
-            .iter()
-            .any(|e| matches!(e, ValidationError::DuplicateNodeId(_))));
+        assert!(
+            err.iter()
+                .any(|e| matches!(e, ValidationError::DuplicateNodeId(_)))
+        );
     }
 
     #[test]
@@ -959,9 +960,10 @@ mod tests {
             },
         };
         let err = graph.validate().unwrap_err();
-        assert!(err
-            .iter()
-            .any(|e| matches!(e, ValidationError::InvalidNodeId(_))));
+        assert!(
+            err.iter()
+                .any(|e| matches!(e, ValidationError::InvalidNodeId(_)))
+        );
     }
 
     #[test]
@@ -1107,9 +1109,10 @@ mod tests {
         };
         graph.nodes[0].meta.source = "   ".to_string();
         let err = graph.validate().unwrap_err();
-        assert!(err
-            .iter()
-            .any(|e| matches!(e, ValidationError::MissingMeta(_))));
+        assert!(
+            err.iter()
+                .any(|e| matches!(e, ValidationError::MissingMeta(_)))
+        );
     }
 
     #[test]
@@ -1135,8 +1138,9 @@ mod tests {
         };
         graph.nodes[0].meta.confidence = Some(1.5);
         let err = graph.validate().unwrap_err();
-        assert!(err
-            .iter()
-            .any(|e| matches!(e, ValidationError::ConfidenceOutOfRange(_))));
+        assert!(
+            err.iter()
+                .any(|e| matches!(e, ValidationError::ConfidenceOutOfRange(_)))
+        );
     }
 }

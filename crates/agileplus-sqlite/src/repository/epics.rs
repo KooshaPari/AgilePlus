@@ -125,7 +125,11 @@ pub fn get_epic_by_id(conn: &Connection, id: i64) -> Result<Option<Epic>, Domain
 }
 
 /// Update the status of an epic.
-pub fn update_epic_status(conn: &Connection, id: i64, status: EpicStatus) -> Result<(), DomainError> {
+pub fn update_epic_status(
+    conn: &Connection,
+    id: i64,
+    status: EpicStatus,
+) -> Result<(), DomainError> {
     let now = chrono::Utc::now().to_rfc3339();
     let rows = conn
         .execute(

@@ -9,7 +9,7 @@ use std::path::PathBuf;
 
 use agileplus_sqlite::{
     migrations::MigrationRunner,
-    seed::{seed_requirements, Initiative},
+    seed::{Initiative, seed_requirements},
 };
 
 const AGILEPLUS_CATALOG: &str = include_str!("../../../../docs/requirements/agileplus-frnfr.md");

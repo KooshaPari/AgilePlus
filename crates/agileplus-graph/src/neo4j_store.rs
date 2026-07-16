@@ -5,7 +5,7 @@
 mod inner {
     use std::sync::Arc;
 
-    use neo4rs::{query, Graph as Neo4jGraph};
+    use neo4rs::{Graph as Neo4jGraph, query};
     use uuid::Uuid;
 
     use crate::{

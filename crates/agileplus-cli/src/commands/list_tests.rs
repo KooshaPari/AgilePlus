@@ -89,11 +89,7 @@ impl StoragePort for MemStore {
             .cloned())
     }
 
-    async fn update_feature_state(
-        &self,
-        id: i64,
-        state: FeatureState,
-    ) -> Result<(), DomainError> {
+    async fn update_feature_state(&self, id: i64, state: FeatureState) -> Result<(), DomainError> {
         let mut guard = self.features.lock().unwrap();
         if let Some(f) = guard.iter_mut().find(|f| f.id == id) {
             f.state = state;
@@ -160,10 +156,7 @@ impl StoragePort for MemStore {
         Ok(())
     }
 
-    async fn list_wps_by_feature(
-        &self,
-        feature_id: i64,
-    ) -> Result<Vec<WorkPackage>, DomainError> {
+    async fn list_wps_by_feature(&self, feature_id: i64) -> Result<Vec<WorkPackage>, DomainError> {
         Ok(self
             .work_packages
             .lock()
@@ -296,10 +289,7 @@ impl StoragePort for MemStore {
         Ok(id)
     }
 
-    async fn get_metrics_by_feature(
-        &self,
-        feature_id: i64,
-    ) -> Result<Vec<Metric>, DomainError> {
+    async fn get_metrics_by_feature(&self, feature_id: i64) -> Result<Vec<Metric>, DomainError> {
         Ok(self
             .metrics
             .lock()
@@ -741,11 +731,7 @@ impl StoragePort for MemStore {
             .cloned())
     }
 
-    async fn update_epic_status(
-        &self,
-        id: i64,
-        status: EpicStatus,
-    ) -> Result<(), DomainError> {
+    async fn update_epic_status(&self, id: i64, status: EpicStatus) -> Result<(), DomainError> {
         let mut guard = self.epics.lock().unwrap();
         if let Some(epic) = guard.iter_mut().find(|e| e.id == id) {
             epic.status = status;
@@ -789,11 +775,7 @@ impl StoragePort for MemStore {
             .cloned())
     }
 
-    async fn update_story_status(
-        &self,
-        id: i64,
-        status: StoryStatus,
-    ) -> Result<(), DomainError> {
+    async fn update_story_status(&self, id: i64, status: StoryStatus) -> Result<(), DomainError> {
         let mut guard = self.stories.lock().unwrap();
         if let Some(story) = guard.iter_mut().find(|s| s.id == id) {
             story.status = status;
@@ -1025,9 +1007,11 @@ async fn list_stories_invalid_status_returns_err() {
         status: Some("not_a_status".to_string()),
         json: false,
     };
-    assert!(crate::commands::list_stories::run(&args, &store)
-        .await
-        .is_err());
+    assert!(
+        crate::commands::list_stories::run(&args, &store)
+            .await
+            .is_err()
+    );
 }
 
 #[tokio::test]

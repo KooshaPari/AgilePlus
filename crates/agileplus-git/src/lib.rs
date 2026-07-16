@@ -579,7 +579,7 @@ impl VcsPort for GitVcsAdapter {
                 return Err(DomainError::Storage(format!(
                     "scan artifacts {}: {e}",
                     dir.display()
-                )))
+                )));
             }
         };
         for entry in entries.flatten() {

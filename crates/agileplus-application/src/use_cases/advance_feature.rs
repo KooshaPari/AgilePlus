@@ -5,8 +5,8 @@ use std::str::FromStr;
 use std::sync::Arc;
 
 use agileplus_domain::domain::state_machine::FeatureState;
-use agileplus_domain::ports::events::{DomainEvent, DomainEventPublisher};
 use agileplus_domain::ports::StoragePort;
+use agileplus_domain::ports::events::{DomainEvent, DomainEventPublisher};
 
 use crate::dto::AdvanceFeatureCmd;
 use crate::error::AppError;
@@ -42,12 +42,11 @@ impl AdvanceFeature {
             .update_feature_state(cmd.feature_id, feature.state)
             .await?;
 
-        self.publisher
-            .publish(DomainEvent::FeatureStateAdvanced {
-                id: cmd.feature_id,
-                from,
-                to: feature.state.to_string(),
-            })?;
+        self.publisher.publish(DomainEvent::FeatureStateAdvanced {
+            id: cmd.feature_id,
+            from,
+            to: feature.state.to_string(),
+        })?;
 
         Ok(())
     }

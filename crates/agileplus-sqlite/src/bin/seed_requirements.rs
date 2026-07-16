@@ -42,7 +42,7 @@ fn main() -> anyhow::Result<()> {
     let runner = agileplus_sqlite::migrations::MigrationRunner::new(&conn);
     runner.run_all().map_err(|e| anyhow::anyhow!("{e}"))?;
 
-    use agileplus_sqlite::seed::{seed_requirements, Initiative};
+    use agileplus_sqlite::seed::{Initiative, seed_requirements};
 
     let initiatives = vec![
         Initiative {

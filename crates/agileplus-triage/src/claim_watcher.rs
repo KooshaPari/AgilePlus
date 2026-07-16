@@ -357,9 +357,11 @@ mod tests {
             60,
             ClaimReason::default(),
         );
-        assert!(watcher
-            .store()
-            .lookup(ClaimKind::Repo, "repo:foo")
-            .is_some());
+        assert!(
+            watcher
+                .store()
+                .lookup(ClaimKind::Repo, "repo:foo")
+                .is_some()
+        );
     }
 }
