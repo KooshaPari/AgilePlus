@@ -16,6 +16,7 @@ from typing import Any
 from fastmcp import FastMCP
 
 from agileplus_mcp.grpc_client import AgilePlusCoreClient
+from agileplus_mcp.validation import validate_slug, validate_transition
 
 
 def register_tools(mcp: FastMCP, client: AgilePlusCoreClient) -> None:
@@ -35,6 +36,7 @@ def register_tools(mcp: FastMCP, client: AgilePlusCoreClient) -> None:
         Returns:
             dict with keys ``status`` and ``message``.
         """
+        validate_slug(feature_slug, "feature_slug")
         kwargs: dict[str, str] = {}
         if skip_policies:
             kwargs["skip_policies"] = "true"
@@ -55,6 +57,8 @@ def register_tools(mcp: FastMCP, client: AgilePlusCoreClient) -> None:
         Returns:
             dict with keys ``passed`` (bool) and ``violations`` (list of dicts).
         """
+        validate_slug(feature_slug, "feature_slug")
+        validate_transition(transition)
         return await client.check_governance_gate(feature_slug, transition)
 
     @mcp.tool(name="agileplus_get_audit_trail")
@@ -71,6 +75,7 @@ def register_tools(mcp: FastMCP, client: AgilePlusCoreClient) -> None:
         Returns:
             dict with keys ``entries`` (list) and optionally ``verification`` (dict).
         """
+        validate_slug(feature_slug, "feature_slug")
         trail = await client.get_audit_trail(feature_slug, after_id=after_id)
         result: dict[str, Any] = {"entries": trail}
         if verify:
@@ -89,4 +94,5 @@ def register_tools(mcp: FastMCP, client: AgilePlusCoreClient) -> None:
             dict with keys ``valid``, ``entries_verified``, ``first_invalid_id``,
             and ``error_message``.
         """
+        validate_slug(feature_slug, "feature_slug")
         return await client.verify_audit_chain(feature_slug)

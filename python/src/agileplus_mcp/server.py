@@ -25,6 +25,7 @@ from agileplus_mcp.sampling import SamplingHandler
 from agileplus_mcp.tools import features as features_module
 from agileplus_mcp.tools import governance as governance_module
 from agileplus_mcp.tools import status as status_module
+from agileplus_mcp.validation import validate_slug, validate_text
 
 logger = logging.getLogger(__name__)
 
@@ -69,6 +70,11 @@ async def get_workspace_roots() -> dict[str, Any]:
 
     for feature in features:
         slug = feature["slug"]
+        try:
+            validate_slug(slug, "feature slug")
+        except ValueError:
+            logger.warning("Skipping feature with invalid slug: %r", slug)
+            continue
         roots.append(
             {
                 "uri": f"file://kitty-specs/{slug}/",
@@ -110,6 +116,9 @@ async def elicit_feature(
     """
     import hashlib
     import time
+
+    validate_text(feature_name, "feature_name", max_length=256)
+    validate_text(target_branch, "target_branch", max_length=256)
 
     session_id = hashlib.sha256(f"{feature_name}{time.time()}".encode()).hexdigest()[:8]
 
@@ -165,6 +174,7 @@ async def elicit_clarify(feature_slug: str) -> dict[str, Any]:
     Returns:
         dict with ``questions`` and current ``feature`` snapshot.
     """
+    validate_slug(feature_slug, "feature_slug")
     client = _get_client()
     feature = await client.get_feature(feature_slug)
     state = await client.get_feature_state(feature_slug)
@@ -216,6 +226,8 @@ async def sample_triage(feature_slug: str, agent_output: str) -> dict[str, Any]:
     Returns:
         Triage result with ``severity``, ``category``, and ``remediation``.
     """
+    validate_slug(feature_slug, "feature_slug")
+    validate_text(agent_output, "agent_output", max_length=1_000_000)
     sampling = _sampling
     if sampling is None:
         raise RuntimeError("Sampling handler not initialised")
@@ -233,6 +245,8 @@ async def sample_governance_check(feature_slug: str, planned_transition: str) ->
     Returns:
         dict with ``ready`` bool and ``blockers`` list.
     """
+    validate_slug(feature_slug, "feature_slug")
+    validate_text(planned_transition, "planned_transition", max_length=256)
     sampling = _sampling
     if sampling is None:
         raise RuntimeError("Sampling handler not initialised")
@@ -249,6 +263,7 @@ async def sample_retrospective(feature_slug: str) -> dict[str, Any]:
     Returns:
         Retrospective summary with highlights, issues, and metrics.
     """
+    validate_slug(feature_slug, "feature_slug")
     sampling = _sampling
     if sampling is None:
         raise RuntimeError("Sampling handler not initialised")
