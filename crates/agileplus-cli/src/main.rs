@@ -80,6 +80,8 @@ enum Command {
     Cockpit(commands::cockpit::CockpitArgs),
     /// Validate, summarize, or merge OKF v1.0 documents (SessionLedger raw artifacts)
     Okf(commands::okf::OkfArgs),
+    /// Interactive SQL REPL over the project database (read-only)
+    Repl,
 }
 
 #[derive(Subcommand)]
@@ -616,6 +618,9 @@ async fn main() {
                 if code != 0 {
                     std::process::exit(code);
                 }
+            }
+            Command::Repl => {
+                commands::repl::run(db_path.clone())?;
             }
         }
         Ok(())

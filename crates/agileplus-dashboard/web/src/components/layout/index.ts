@@ -8,9 +8,11 @@ export { Modal, default as ModalDefault } from './Modal';
 export { Toast, default as ToastDefault } from './Toast';
 export { Badge, default as BadgeDefault } from './Badge';
 export { Pill, default as PillDefault } from './Pill';
+export { EmptyState, default as EmptyStateDefault } from './EmptyState';
 
 export type { CardProps } from '../../types';
 export type { ModalProps } from '../../types';
 export type { ToastProps, Toast as ToastType, ToastContextType } from '../../types';
 export type { BadgeProps } from '../../types';
 export type { PillProps } from '../../types';
+export type { EmptyStateProps } from './EmptyState';

@@ -9,10 +9,14 @@ export { Select, default as SelectDefault } from './Select';
 export { Checkbox, default as CheckboxDefault } from './Checkbox';
 export { Radio, default as RadioDefault } from './Radio';
 export { Toggle, default as ToggleDefault } from './Toggle';
+export { SplashScreen, default as SplashScreenDefault } from './SplashScreen';
+export { Skeleton, default as SkeletonDefault } from './Skeleton';
 
-export type { ButtonProps } from '../../types';
+export type { SplashScreenProps, SplashStep } from './SplashScreen';
+export type { SkeletonProps } from './Skeleton';
 export type { InputProps } from '../../types';
 export type { SelectProps, SelectOption } from '../../types';
 export type { CheckboxProps } from '../../types';
 export type { RadioProps } from '../../types';
 export type { ToggleProps } from '../../types';
+export type { SplashScreenProps, SplashStep } from './SplashScreen';

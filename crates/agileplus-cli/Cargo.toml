@@ -37,6 +37,7 @@ async-trait.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 comfy-table = "7"
+colored = "2"
 
 [dev-dependencies]
 assert_cmd.workspace = true

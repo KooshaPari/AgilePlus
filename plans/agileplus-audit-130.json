@@ -1,0 +1,26 @@
+{
+  "schema_version": "2.0",
+  "audit_date": "2026-07-08",
+  "auditor": "forge / 130-pillar scorecard",
+  "repository": "KooshaPari/AgilePlus",
+  "branch": "feat/audit-phase-2b",
+  "summary": {
+    "previous_score": 0.3829,
+    "current_score": 0.4201,
+    "delta": 0.0372,
+    "pillars_improved": 4,
+    "commits_added": [
+      "84a8266 — Phase 0 (theme/i18n/skeleton)",
+      "c5ce465 — Phase 1 (fuzzing, onboarding)",
+      "6e16d3f — Phase 1 (CLI update, settings)",
+      "71f7e085 — Phase 2b (REPL, splash, a11y CI, infra CI)"
+    ]
+  },
+  "pillar_changes": {
+    "L51_splash_screen": { "from": 5, "to": 30, "delta": 25, "evidence": ["crates/agileplus-dashboard/web/src/components/foundation/SplashScreen.tsx", "crates/agileplus-dashboard/web/src/components/foundation/Skeleton.tsx", "crates/agileplus-dashboard/web/src/components/layout/EmptyState.tsx"] },
+    "L63_debug_tools": { "from": 35, "to": 55, "delta": 20, "evidence": ["crates/agileplus-cli/src/commands/repl.rs (read-only SQLite REPL, .tables/.schema/.count, quote/comment-aware parsing, identifier validation)", "registered in main.rs and commands/mod.rs"] },
+    "L76_accessibility": { "from": 40, "to": 70, "delta": 30, "evidence": [".github/workflows/accessibility.yml (axe-core via Playwright)", "scripts/axe-audit.mjs (multi-page audit, WCAG 2.0/2.1 AA)", "eslint jsx-a11y lint job with --max-warnings 0"] },
+    "L27_infrastructure_ci": { "from": 55, "to": 70, "delta": 15, "evidence": [".github/workflows/infra.yml (flaky-test mgmt, bench thresholds, green-button)", "scripts/ci/detect_flakes.py", "scripts/ci/check_bench_regressions.py", ".bench-baseline.json"] }
+  },
+  "push_status": "BLOCKED — KooshaPari/AgilePlus is archived and read-only on GitHub. Local commit 71f7e085 on branch feat/audit-phase-2b is ready to push once the repo is unarchived or migrated."
+}
