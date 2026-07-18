@@ -36,7 +36,7 @@ pub async fn start_http(addr: SocketAddr) -> anyhow::Result<()> {
     let state = HttpState { storage: None };
     let app = router(state);
     let listener = tokio::net::TcpListener::bind(addr).await?;
-    tracing::info!("HTTP API listening on {addr}");
+    tracing::info!(%addr, "HTTP API listening");
     axum::serve(listener, app).await?;
     Ok(())
 }

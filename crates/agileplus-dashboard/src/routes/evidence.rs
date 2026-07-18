@@ -242,7 +242,7 @@ pub async fn feature_evidence_list(
     match tmpl.render() {
         Ok(html) => Html(html).into_response(),
         Err(e) => {
-            tracing::error!("Template render error: {e}");
+            tracing::error!(error = %e, template = "evidence", "askama template render failed");
             StatusCode::INTERNAL_SERVER_ERROR.into_response()
         }
     }
@@ -282,14 +282,14 @@ pub async fn feature_evidence_generate(
             .await;
         match out {
             Ok(o) if o.status.success() => {
-                tracing::info!("Evidence bundle generated for feature {fid}");
+                tracing::info!(feature_id = %fid, bundle_path = %bundle_path, "evidence bundle generated");
             }
             Ok(o) => {
                 let stderr = String::from_utf8_lossy(&o.stderr);
-                tracing::warn!("Evidence generation failed for {fid}: {stderr}");
+                tracing::warn!(feature_id = %fid, stderr = %stderr, "evidence generation failed");
             }
             Err(e) => {
-                tracing::error!("Failed to run generate-evidence.sh for {fid}: {e}");
+                tracing::error!(feature_id = %fid, error = %e, "failed to spawn generate-evidence.sh");
             }
         }
     });

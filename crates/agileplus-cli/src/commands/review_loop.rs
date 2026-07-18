@@ -95,7 +95,7 @@ pub async fn run_review_loop<A: AgentPort>(
                 tracing::debug!(pid = pid, "agent still running");
             }
             AgentStatus::Pending => {
-                tracing::debug!("agent pending");
+                tracing::debug!(job_id = %job_id, "agent pending");
             }
         }
 
