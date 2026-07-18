@@ -10,6 +10,7 @@
 !vercel.json
 !.commitlintrc.json
 !.coderabbit.yaml
+!crates/agileplus-domain/fuzz/Cargo.toml
 
 # Environment configuration
 .env
@@ -23,3 +24,10 @@ worktrees/
 
 # Vercel
 .vercel
+
+# Rust build artifacts
+/target/
+**/target/
+**/target-*/
+*.profraw
+*.profdata
