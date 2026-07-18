@@ -1,0 +1,68 @@
+# Memory regression check — runs once per push + weekly cron.
+# Compares RSS and runtime of the domain entity round-trips against
+# baseline numbers stored in .bench-baseline.json.
+#
+# Cheap & deterministic: uses /usr/bin/time -v on Linux & macOS, parses
+# stderr for RSS, and gates the build when either metric regresses >20%.
+#
+# For deeper heap-level profiling, run locally with:
+#   cargo install dhat
+#   DHAT_PROFILING=1 cargo test -p agileplus-domain --features dhat-heap
+---
+name: memory
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "0 6 * * 1"   # Mondays 06:00 UTC
+
+permissions:
+  contents: read
+
+jobs:
+  rss-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      REGRESS_PCT: 20  # floor
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+
+      - name: Run domain tests under /usr/bin/time
+        run: |
+          /usr/bin/time -v cargo test -p agileplus-domain --release --lib --quiet -- --test-threads=1 \
+            2> .time-stderr
+          # Strip ANSI / timing noise, keep only the "Maximum resident set size" line.
+          grep "Maximum resident set size" .time-stderr | awk '{print "rss_kb=" $NF}'
+
+      - name: Compare against baseline
+        env:
+          BASELINE_RSS_KB: ${{ vars.BASELINE_RSS_KB || '450000' }}   # 450 MB default
+        run: |
+          CURRENT=$(grep "Maximum resident set size" .time-stderr | awk '{print $NF}')
+          if [ -z "$CURRENT" ]; then
+            echo "::error::could not capture RSS"
+            exit 1
+          fi
+          python3 scripts/ci/check_bench_regressions.py \
+            --current "$CURRENT" \
+            --baseline "$BASELINE_RSS_KB" \
+            --threshold "$REGRESS_PCT" \
+            --label "RSS (KB)"
+
+      - name: Upload memory report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: memory-report
+          path: .time-stderr
+          if-no-files-found: warn

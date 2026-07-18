@@ -15,8 +15,9 @@
     "pillars_below_70": 13,
     "pillar_changes_this_sprint": [
       "L22 Fuzzing 10 -> 75 (+65): cargo-fuzz harness with 9 targets, builds clean",
-      "L19 Memory 35 -> 35 (no change: dhat not yet wired)",
-      "L26 Event Driven 37 -> 37 (no change: event bus not yet wired)"
+      "L21 Testing 42 -> 52 (+10): 4 proptest properties (2048+ random inputs)",
+      "L10 Type Safety 50 -> 60 (+10): 17 newtype ID wrappers added",
+      "L19 Memory 35 -> 45 (+10): memory.yml CI workflow (RSS regression gate)"
     ],
     "commits_added": [
       "84a8266 — Phase 0 (theme, i18n, skeleton/empty-state, CI)",
@@ -24,8 +25,11 @@
       "6e16d3f — Phase 1 (CLI update, Electrobun shell, settings UI)",
       "b288ac6 — Phase 2 (fuzzing targets, memory, demo mode)",
       "a54e9779 — Phase 2b (REPL, splash, a11y/infra CI)",
-      "cff0debb — Phase 2c (cargo-fuzz harness + roadmap-to-95 doc)"
-    ]
+      "cff0debb — Phase 2c (cargo-fuzz harness + roadmap-to-95 doc)",
+      "0eb215ea — Phase 3 (17 newtype IDs, 5 unit tests pass)",
+      "b598e4f3 — Phase 3b (4 proptest properties for state machine)",
+      "b69aae48 — Phase 3c (memory.yml CI with RSS gate)"
+    ] 
   },
   "pillar_changes": {
     "L1_architecture": { "score": 80, "evidence": ["crates/agileplus-domain/src/ports (hexagonal)", "crates/agileplus-domain/src/adapters (hexagonal)"] },
@@ -37,7 +41,7 @@
     "L7_extensibility": { "score": 46, "evidence": ["Many pub traits, but no plugin registry finalized"] },
     "L8_compliance": { "score": 50, "evidence": ["SPDX-License-Identifier on some files"] },
     "L9_complexity": { "score": 70, "evidence": ["max_fn length < 200 across repo"] },
-    "L10_type_safety": { "score": 50, "evidence": ["Many newtypes exist, but FeatureId/ModuleId still String"] },
+    "L10_type_safety": { "score": 60, "evidence": ["+17 newtype ID wrappers in crates/agileplus-domain/src/ids.rs (FeatureId, ModuleId, UserId, CommitSha + 13 more); 5 unit tests pass"] },
     "L11_dependencies": { "score": 65, "evidence": ["Cargo.lock present", "deny.toml missing"] },
     "L12_error_handling": { "score": 70, "evidence": ["thiserror used extensively"] },
     "L13_logging": { "score": 40, "evidence": ["tracing used but few structured fields"] },
@@ -46,9 +50,9 @@
     "L16_frontend": { "score": 70, "evidence": ["SplashScreen.tsx + Skeleton + EmptyState + Theme"] },
     "L17_i18n_a11y": { "score": 50, "evidence": ["i18n scaffolding present, accessibility.yml CI"] },
     "L18_concurrency": { "score": 75, "evidence": ["Many async fns using tokio"] },
-    "L19_memory": { "score": 35, "evidence": ["dhat not wired, .instruments.yml present"] },
+    "L19_memory": { "score": 45, "evidence": ["memory.yml CI workflow with RSS regression gate"] },
     "L20_config": { "score": 75, "evidence": ["std::env::var used widely"] },
-    "L21_testing_depth": { "score": 42, "evidence": ["1,446 test fns but proptest minimal, mutation.yml absent"] },
+    "L21_testing_depth": { "score": 52, "evidence": ["1,446 test fns + 4 proptest properties (2048+ random inputs); mutation.yml still missing"] },
     "L22_fuzzing": { "score": 75, "evidence": ["9 cargo-fuzz targets in crates/agileplus-domain/fuzz/, all build clean"] },
     "L23_release": { "score": 65, "evidence": ["CHANGELOG.md, no dist workflow"] },
     "L24_migration": { "score": 55, "evidence": ["Many migrations/*.sql, no refinery wrapper"] },
