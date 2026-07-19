@@ -84,6 +84,14 @@ pub enum DomainError {
     /// Catch-all for errors that do not map to a more specific variant.
     #[error("{0}")]
     Other(String),
+
+    /// Agent dispatch / execution failure.
+    #[error("Agent error: {0}")]
+    Agent(String),
+
+    /// Operation timed out after the given number of seconds.
+    #[error("Timed out after {0} seconds")]
+    Timeout(u64),
 }
 
 /// Project the AgilePlus domain error onto the canonical Phenotype wire
@@ -113,9 +121,11 @@ impl From<DomainError> for ErrorCode {
 
             DomainError::NoOpTransition => Self::ValidationError,
 
-            DomainError::Storage(_) | DomainError::LockPoisoned | DomainError::Other(_) => {
-                Self::InternalError
-            }
+            DomainError::Storage(_)
+            | DomainError::LockPoisoned
+            | DomainError::Other(_)
+            | DomainError::Agent(_)
+            | DomainError::Timeout(_) => Self::InternalError,
         }
     }
 }

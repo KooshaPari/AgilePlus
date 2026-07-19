@@ -4,7 +4,7 @@
 //! Platform health uses real HTTP/TCP probes via `agileplus-subcmds`.
 //! Traceability: WP11-T060, T065 / WP12-T072 / WP14-T084..T087
 
-mod agent_stub;
+mod agent_adapter;
 
 use std::path::PathBuf;
 use std::process;
@@ -12,7 +12,7 @@ use std::process;
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 
-use agent_stub::StubAgentAdapter;
+use agent_adapter::RealAgentAdapter;
 use agileplus_cli::commands::{
     cycle::CycleArgs, dashboard::DashboardArgs, list::ListArgs, module::ModuleArgs,
     queue::QueueArgs, specify::SpecifyArgs,
@@ -177,7 +177,7 @@ async fn run(cli: Cli) -> Result<()> {
             let storage = SqliteStorageAdapter::new(&cli.db)
                 .with_context(|| format!("opening database at {}", cli.db.display()))?;
             let vcs = open_vcs(&cli.repo)?;
-            let agent = StubAgentAdapter;
+            let agent = RealAgentAdapter::new();
             agileplus_cli::commands::implement::run_implement(args, &storage, &vcs, &agent).await
         }
         #[cfg(feature = "full-deps")]
