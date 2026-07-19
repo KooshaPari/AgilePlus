@@ -7,6 +7,12 @@ from typing import Any
 from fastmcp import FastMCP
 
 from agileplus_mcp.grpc_client import AgilePlusCoreClient
+from agileplus_mcp.validation import (
+    validate_batch_size,
+    validate_item_type,
+    validate_slug,
+    validate_text,
+)
 
 
 def register_tools(mcp: FastMCP, client: AgilePlusCoreClient) -> None:
@@ -22,6 +28,11 @@ def register_tools(mcp: FastMCP, client: AgilePlusCoreClient) -> None:
         feature_slug: str = "",
         tags: list[str] | None = None,
     ) -> dict[str, Any]:
+        validate_text(title, "title", max_length=512)
+        validate_text(description, "description")
+        validate_item_type(item_type)
+        if feature_slug:
+            validate_slug(feature_slug, "feature_slug")
         item = await client.create_backlog_item(
             item_type=item_type,
             title=title,
@@ -70,7 +81,8 @@ def register_tools(mcp: FastMCP, client: AgilePlusCoreClient) -> None:
 
     @mcp.tool(name="agileplus_queue_import")
     async def queue_import(items: list[dict[str, Any]]) -> dict[str, Any]:
-        """Import backlog items in a single batch."""
+        """Import backlog items in a single batch (max 100 items)."""
+        validate_batch_size(items)
         for item in items:
             title = item.get("title")
             if not title:

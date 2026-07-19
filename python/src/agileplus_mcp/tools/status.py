@@ -17,6 +17,7 @@ from typing import Any
 from fastmcp import FastMCP
 
 from agileplus_mcp.grpc_client import AgilePlusCoreClient
+from agileplus_mcp.validation import validate_slug, validate_text
 
 
 def register_tools(mcp: FastMCP, client: AgilePlusCoreClient) -> None:
@@ -37,6 +38,8 @@ def register_tools(mcp: FastMCP, client: AgilePlusCoreClient) -> None:
         Returns:
             Status dict; shape depends on which arguments were provided.
         """
+        if feature_slug:
+            validate_slug(feature_slug, "feature_slug")
         if feature_slug and wp_sequence:
             wp = await client.get_work_package_status(feature_slug, wp_sequence)
             return {"work_package": wp}
@@ -61,6 +64,8 @@ def register_tools(mcp: FastMCP, client: AgilePlusCoreClient) -> None:
         Returns:
             dict with keys ``status`` and ``message``.
         """
+        validate_slug(feature_slug, "feature_slug")
+        validate_text(target_branch, "target_branch", max_length=256)
         result = await client.run_command(
             "ship", feature_slug=feature_slug, target_branch=target_branch
         )
@@ -81,6 +86,7 @@ def register_tools(mcp: FastMCP, client: AgilePlusCoreClient) -> None:
         Returns:
             dict with keys ``status`` and ``message``.
         """
+        validate_slug(feature_slug, "feature_slug")
         result = await client.run_command("retrospective", feature_slug=feature_slug)
         return {
             "status": "success" if result["success"] else "error",
@@ -101,5 +107,6 @@ def register_tools(mcp: FastMCP, client: AgilePlusCoreClient) -> None:
             Event dicts with keys: event_type, feature_slug, wp_sequence,
             agent_id, payload, timestamp.
         """
+        validate_slug(feature_slug, "feature_slug")
         async for event in client.stream_agent_events(feature_slug):
             yield event

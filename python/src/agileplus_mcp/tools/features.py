@@ -16,9 +16,7 @@ from typing import Any
 from fastmcp import FastMCP
 
 from agileplus_mcp.grpc_client import AgilePlusCoreClient
-
-# Tools are registered onto the shared FastMCP instance passed in at startup.
-# Module-level registration happens via register_tools().
+from agileplus_mcp.validation import validate_file_path, validate_slug, validate_text
 
 
 def register_tools(mcp: FastMCP, client: AgilePlusCoreClient) -> None:
@@ -35,15 +33,17 @@ def register_tools(mcp: FastMCP, client: AgilePlusCoreClient) -> None:
 
         Args:
             feature_slug: Kebab-case feature identifier.
-            from_file: Optional path to a pre-written spec file.
+            from_file: Optional path to a pre-written spec file (must be under kitty-specs/).
             target_branch: Target branch for eventual merge (default: main).
 
         Returns:
             dict with keys ``status`` and ``message``.
         """
+        validate_slug(feature_slug, "feature_slug")
+        validate_text(target_branch, "target_branch", max_length=256)
         kwargs: dict[str, str] = {"target_branch": target_branch}
         if from_file:
-            kwargs["from_file"] = from_file
+            kwargs["from_file"] = validate_file_path(from_file)
         result = await client.run_command("specify", feature_slug=feature_slug, **kwargs)
         return {
             "status": "success" if result["success"] else "error",
@@ -62,6 +62,7 @@ def register_tools(mcp: FastMCP, client: AgilePlusCoreClient) -> None:
         Returns:
             dict with keys ``status`` and ``message``.
         """
+        validate_slug(feature_slug, "feature_slug")
         result = await client.run_command("research", feature_slug=feature_slug)
         return {
             "status": "success" if result["success"] else "error",
@@ -81,6 +82,7 @@ def register_tools(mcp: FastMCP, client: AgilePlusCoreClient) -> None:
         Returns:
             dict with keys ``status`` and ``message``.
         """
+        validate_slug(feature_slug, "feature_slug")
         result = await client.run_command("plan", feature_slug=feature_slug)
         return {
             "status": "success" if result["success"] else "error",
@@ -101,8 +103,10 @@ def register_tools(mcp: FastMCP, client: AgilePlusCoreClient) -> None:
         Returns:
             dict with keys ``status`` and ``message``.
         """
+        validate_slug(feature_slug, "feature_slug")
         kwargs: dict[str, str] = {}
         if wp_id:
+            validate_text(wp_id, "wp_id", max_length=32)
             kwargs["wp"] = wp_id
         result = await client.run_command("implement", feature_slug=feature_slug, **kwargs)
         return {
