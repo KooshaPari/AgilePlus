@@ -196,6 +196,107 @@ impl GitVcsAdapter {
     ) -> Result<PathBuf, DomainError> {
         ClaimBoundWorktree::create(repo_root, feature_slug, wp_id, claim, claim_store)
     }
+
+    /// True when `git checkout` failed because the branch is already
+    /// checked out in a different worktree.
+    fn checkout_blocked_by_other_worktree(err: &DomainError) -> bool {
+        let msg = err.to_string().to_lowercase();
+        msg.contains("already used by worktree")
+            || msg.contains("is already checked out")
+            || (msg.contains("checkout") && msg.contains("worktree"))
+    }
+
+    /// Run `git merge --no-ff` of `source` into the current HEAD of `dir`.
+    fn merge_in_dir(
+        &self,
+        dir: &Path,
+        source: &str,
+        target: &str,
+    ) -> Result<MergeResult, DomainError> {
+        let result = Command::new("git")
+            .args([
+                "merge",
+                "--no-ff",
+                "--autostash",
+                "-m",
+                &format!("Merge branch '{source}' into {target}"),
+                source,
+            ])
+            .current_dir(dir)
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .output()
+            .map_err(|e| DomainError::Storage(format!("failed to spawn git merge: {e}")))?;
+        let stdout = String::from_utf8_lossy(&result.stdout).into_owned();
+        let stderr = String::from_utf8_lossy(&result.stderr).into_owned();
+        if result.status.success() {
+            let head_out = Command::new("git")
+                .args(["rev-parse", "HEAD"])
+                .current_dir(dir)
+                .stdout(Stdio::piped())
+                .stderr(Stdio::piped())
+                .output()
+                .ok();
+            let head = head_out
+                .and_then(|o| {
+                    if o.status.success() {
+                        Some(String::from_utf8_lossy(&o.stdout).trim().to_string())
+                    } else {
+                        None
+                    }
+                })
+                .unwrap_or_default();
+            Ok(MergeResult {
+                success: true,
+                conflicts: vec![],
+                merged_commit: Some(head.clone()),
+                commit: Some(head),
+                message: Some(if stdout.is_empty() { stderr } else { stdout }),
+            })
+        } else {
+            Ok(MergeResult {
+                success: false,
+                conflicts: vec![],
+                merged_commit: None,
+                commit: None,
+                message: Some(if stderr.is_empty() { stdout } else { stderr }),
+            })
+        }
+    }
+
+    /// Merge `source` into `target` inside a throwaway worktree, so we
+    /// never need to check out `target` in the caller's worktree.
+    fn merge_via_temp_worktree(
+        &self,
+        source: &str,
+        target: &str,
+    ) -> Result<MergeResult, DomainError> {
+        let stamp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_millis())
+            .unwrap_or(0);
+        let tmp = std::env::temp_dir().join(format!(
+            "agileplus-ship-{}-{}-{}",
+            target.replace('/', "_"),
+            std::process::id(),
+            stamp
+        ));
+        if tmp.exists() {
+            let _ = std::fs::remove_dir_all(&tmp);
+        }
+        let tmp_str = tmp.to_string_lossy().into_owned();
+        self.run_git_status(&["worktree", "add", "--force", &tmp_str, target])?;
+        let merge_result = self.merge_in_dir(&tmp, source, target);
+        if let Err(e) = self.run_git(&["worktree", "remove", "--force", &tmp_str]) {
+            tracing::warn!(
+                path = %tmp_str,
+                error = %e,
+                "failed to remove temporary ship worktree; attempting filesystem cleanup"
+            );
+            let _ = std::fs::remove_dir_all(&tmp);
+        }
+        merge_result
+    }
 }
 
 #[async_trait::async_trait]
@@ -391,51 +492,21 @@ impl VcsPort for GitVcsAdapter {
         source: &str,
         target: &str,
     ) -> Result<MergeResult, DomainError> {
-        // Step 1: switch to target. (We do this via the CLI so the
-        // index, working tree, and HEAD all align with what a user
-        // would see.)
-        self.run_git_status(&["checkout", target])?;
-        // Step 2: merge source as a no-ff merge with autostash. The
-        // autostash flag is critical: if the user has local uncommitted
-        // edits, autostash stashes them, performs the merge, and
-        // unstashes automatically.
-        let result = Command::new("git")
-            .args([
-                "merge",
-                "--no-ff",
-                "--autostash",
-                "-m",
-                &format!("Merge branch '{source}' into {target}"),
-                source,
-            ])
-            .current_dir(&self.repo_root)
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .output()
-            .map_err(|e| DomainError::Storage(format!("failed to spawn git merge: {e}")))?;
-        let stdout = String::from_utf8_lossy(&result.stdout).into_owned();
-        let stderr = String::from_utf8_lossy(&result.stderr).into_owned();
-        if result.status.success() {
-            // On success, capture the new HEAD commit oid.
-            let head = self.run_git(&["rev-parse", "HEAD"]).unwrap_or_default();
-            Ok(MergeResult {
-                success: true,
-                conflicts: vec![],
-                merged_commit: Some(head.clone()),
-                commit: Some(head),
-                message: Some(if stdout.is_empty() { stderr } else { stdout }),
-            })
-        } else {
-            // A non-zero exit from `git merge` means there were
-            // conflicts. Surface that explicitly so the caller can
-            // decide whether to run `detect_conflicts` next.
-            Ok(MergeResult {
-                success: false,
-                conflicts: vec![],
-                merged_commit: None,
-                commit: None,
-                message: Some(if stderr.is_empty() { stdout } else { stderr }),
-            })
+        // Prefer an in-place merge when `target` is free to check out in
+        // this worktree. When another worktree already has `target`
+        // checked out (common: canonical `main` + feature worktree),
+        // fall back to a temporary worktree so ship still succeeds.
+        match self.run_git(&["checkout", target]) {
+            Ok(_) => self.merge_in_dir(&self.repo_root, source, target),
+            Err(e) if Self::checkout_blocked_by_other_worktree(&e) => {
+                tracing::info!(
+                    target = %target,
+                    source = %source,
+                    "target branch checked out elsewhere; merging via temporary worktree"
+                );
+                self.merge_via_temp_worktree(source, target)
+            }
+            Err(e) => Err(e),
         }
     }
 
@@ -781,6 +852,56 @@ mod tests {
             .expect("merge");
         assert!(res.success, "merge should succeed: {:?}", res.message);
         assert!(res.commit.is_some());
+    }
+
+    #[tokio::test]
+    // Traces to: FR-006 / ship worktree-aware merge
+    async fn merge_when_target_checked_out_elsewhere() {
+        let (_dir, path) = make_repo();
+        let adapter = GitVcsAdapter::new(path.clone());
+        adapter.create_branch("feat/ok", "main").await.unwrap();
+        adapter.checkout_branch("feat/ok").await.unwrap();
+        std::fs::write(path.join("newfile.txt"), "hi").unwrap();
+        StdCommand::new("git")
+            .args(["add", "newfile.txt"])
+            .current_dir(&path)
+            .output()
+            .unwrap();
+        StdCommand::new("git")
+            .args(["commit", "-q", "-m", "add newfile"])
+            .current_dir(&path)
+            .output()
+            .unwrap();
+
+        // Lock `main` in a sibling worktree (canonical-style conflict).
+        let lock_wt = path.parent().unwrap().join("lock-main-wt");
+        StdCommand::new("git")
+            .args([
+                "worktree",
+                "add",
+                &lock_wt.to_string_lossy(),
+                "main",
+            ])
+            .current_dir(&path)
+            .output()
+            .expect("lock main in sibling worktree");
+
+        let res = adapter
+            .merge_to_target("feat/ok", "main")
+            .await
+            .expect("merge via temp worktree");
+        assert!(
+            res.success,
+            "merge should succeed when main is locked elsewhere: {:?}",
+            res.message
+        );
+        assert!(res.commit.is_some());
+
+        // Cleanup locked worktree
+        let _ = StdCommand::new("git")
+            .args(["worktree", "remove", "--force", &lock_wt.to_string_lossy()])
+            .current_dir(&path)
+            .output();
     }
 
     #[tokio::test]
