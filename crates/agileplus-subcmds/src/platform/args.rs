@@ -1,14 +1,14 @@
 use clap::{Args, Subcommand};
 
 /// `agileplus platform` subcommand dispatcher.
-#[derive(Debug, Args)]
+#[derive(Debug, Clone, Args)]
 pub struct PlatformArgs {
     #[command(subcommand)]
     pub subcommand: PlatformSubcommand,
 }
 
 /// Available platform subcommands.
-#[derive(Debug, Subcommand)]
+#[derive(Debug, Clone, Subcommand)]
 pub enum PlatformSubcommand {
     /// Start the platform and all services.
     Up(PlatformUpArgs),
@@ -21,7 +21,7 @@ pub enum PlatformSubcommand {
 }
 
 /// Arguments for `platform up`.
-#[derive(Debug, Args)]
+#[derive(Debug, Clone, Args)]
 pub struct PlatformUpArgs {
     /// Path to process-compose config file.
     #[arg(long, default_value = "process-compose.yml")]
@@ -35,7 +35,7 @@ pub struct PlatformUpArgs {
 }
 
 /// Arguments for `platform down`.
-#[derive(Debug, Args)]
+#[derive(Debug, Clone, Args)]
 pub struct PlatformDownArgs {
     /// Path to process-compose config file (resolved from repo root or `AGILEPLUS_ROOT`).
     #[arg(long, default_value = "process-compose.yml")]
@@ -46,15 +46,15 @@ pub struct PlatformDownArgs {
 }
 
 /// Arguments for `platform status`.
-#[derive(Debug, Args)]
+#[derive(Debug, Clone, Args)]
 pub struct PlatformStatusArgs {
-    /// Health endpoint base URL.
-    #[arg(long, default_value = "http://localhost:3000")]
+    /// Health endpoint base URL (IPv4 default — API often binds IPv4-only).
+    #[arg(long, default_value = "http://127.0.0.1:3000")]
     pub api_url: String,
 }
 
 /// Arguments for `platform logs`.
-#[derive(Debug, Args)]
+#[derive(Debug, Clone, Args)]
 pub struct PlatformLogsArgs {
     /// Path to process-compose config file (resolved from repo root or `AGILEPLUS_ROOT`).
     #[arg(long, default_value = "process-compose.yml")]

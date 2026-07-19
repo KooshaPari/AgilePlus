@@ -13,7 +13,8 @@ use sha2::{Digest, Sha256};
 use agileplus_domain::domain::audit::{AuditEntry, hash_entry};
 use agileplus_domain::domain::feature::Feature;
 use agileplus_domain::domain::state_machine::FeatureState;
-use agileplus_domain::ports::{StoragePort, VcsPort};
+use agileplus_domain::ports::StoragePort;
+use agileplus_domain::ports::VcsPort;
 
 use super::governance::{enforce_governance, load_constitution, validate_spec_consistency};
 
@@ -214,7 +215,9 @@ async fn run_create<S: StoragePort, V: VcsPort>(
     let spec_hash = sha256_bytes(spec_content);
 
     let mut feature = Feature::new(slug, friendly_name, spec_hash, Some(target_branch));
-    feature.transition(FeatureState::Specified)?;
+    feature
+        .transition(FeatureState::Specified)
+        .map_err(|e| anyhow::anyhow!(e))?;
 
     // Persist feature
     let feature_id = storage

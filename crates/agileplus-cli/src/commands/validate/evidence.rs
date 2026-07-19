@@ -3,11 +3,29 @@ use std::collections::BTreeSet;
 use anyhow::{Context, Result};
 
 use agileplus_domain::domain::governance::{
-    BuiltinPolicy, Evidence, EvidenceRequirement, EvidenceType, GovernanceContract, PolicyCheck,
+    BuiltinPolicy, Evidence, EvidenceType, GovernanceContract, PolicyCheck,
 };
 use agileplus_domain::ports::StoragePort;
 
 use super::{EvidenceCheck, PolicyEvalResult};
+
+/// Parse `FR-ID` or `FR-ID:evidence_type` contract evidence keys.
+fn parse_requirement(raw: &str) -> (String, Option<EvidenceType>) {
+    if let Some((fr, ty)) = raw.split_once(':') {
+        let evidence_type = match ty {
+            "test_result" => Some(EvidenceType::TestResult),
+            "ci_output" => Some(EvidenceType::CiOutput),
+            "review_approval" => Some(EvidenceType::ReviewApproval),
+            "security_scan" => Some(EvidenceType::SecurityScan),
+            "lint_result" => Some(EvidenceType::LintResult),
+            "manual_attestation" => Some(EvidenceType::ManualAttestation),
+            _ => None,
+        };
+        (fr.to_string(), evidence_type)
+    } else {
+        (raw.to_string(), None)
+    }
+}
 
 /// Evaluate governance evidence requirements against stored evidence.
 pub(crate) async fn evaluate_evidence<S: StoragePort>(
@@ -20,33 +38,35 @@ pub(crate) async fn evaluate_evidence<S: StoragePort>(
     let feature_evidence = load_feature_evidence(storage, feature_id).await?;
 
     for rule in &contract.rules {
-        for req in &rule.required_evidence {
-            let relevant = feature_evidence.evidence_for(req.fr_id.as_str(), req.evidence_type);
-            let found = !relevant.is_empty();
-
-            let threshold_met = if let (true, Some(threshold)) = (found, &req.threshold) {
-                evaluate_threshold(relevant.as_slice(), threshold)
-            } else {
-                found
+        for raw in &rule.required_evidence {
+            let (fr_id, expected_type) = parse_requirement(raw);
+            let relevant = match expected_type {
+                Some(ty) => feature_evidence.evidence_for(fr_id.as_str(), ty),
+                None => feature_evidence.evidence_for_fr(fr_id.as_str()),
             };
-
-            let message = if !found {
-                format!("No evidence found for FR `{}`", req.fr_id)
-            } else if !threshold_met {
-                format!("Threshold not met for FR `{}`", req.fr_id)
-            } else {
+            let found = !relevant.is_empty();
+            let message = if found {
                 "OK".to_string()
+            } else {
+                format!("No evidence found for FR `{fr_id}`")
             };
 
             if !found {
-                missing.push((req.fr_id.clone(), format!("{:?}", req.evidence_type)));
+                missing.push((
+                    fr_id.clone(),
+                    expected_type
+                        .map(|t| format!("{t:?}"))
+                        .unwrap_or_else(|| "any".to_string()),
+                ));
             }
 
             results.push(EvidenceCheck {
-                fr_id: req.fr_id.clone(),
-                evidence_type: format!("{:?}", req.evidence_type),
+                fr_id,
+                evidence_type: expected_type
+                    .map(|t| format!("{t:?}"))
+                    .unwrap_or_else(|| "Any".to_string()),
                 found,
-                threshold_met,
+                threshold_met: found,
                 message,
             });
         }
@@ -55,7 +75,7 @@ pub(crate) async fn evaluate_evidence<S: StoragePort>(
     Ok((results, missing))
 }
 
-/// Check if evidence meets a threshold defined in the governance contract.
+/// Check if evidence meets a threshold defined in metadata.
 pub(crate) fn evaluate_threshold(evidence: &[&Evidence], threshold: &serde_json::Value) -> bool {
     if let Some(min_cov) = threshold.get("min_coverage").and_then(|v| v.as_f64()) {
         for ev in evidence {
@@ -95,7 +115,7 @@ pub(crate) async fn evaluate_policies<S: StoragePort>(
     let referenced: BTreeSet<String> = contract
         .rules
         .iter()
-        .flat_map(|r| r.policy_refs.iter().cloned())
+        .flat_map(|r| r.policy_refs.iter().map(std::string::ToString::to_string))
         .collect();
 
     if referenced.is_empty() {
@@ -123,7 +143,7 @@ pub(crate) async fn evaluate_policies<S: StoragePort>(
             PolicyCheck::ThresholdMet { metric, min } => {
                 evaluate_metric_policy(storage, feature_id, metric, *min).await?
             }
-            PolicyCheck::ManualApproval => evaluate_evidence_policy(
+            PolicyCheck::ManualApproval | PolicyCheck::Automated => evaluate_evidence_policy(
                 contract,
                 &feature_evidence,
                 EvidenceType::ManualAttestation,
@@ -181,67 +201,58 @@ fn evaluate_evidence_policy(
 ) -> (bool, String) {
     let requirements = requirements_for_evidence_type(contract, evidence_type);
     if requirements.is_empty() {
-        return (
-            false,
-            format!(
-                "No governance contract requirement declares {} evidence",
-                evidence_type.as_str()
-            ),
-        );
+        // Fall back: any evidence of this type satisfies the policy.
+        let any = feature_evidence
+            .evidence
+            .iter()
+            .any(|e| e.evidence_type == evidence_type);
+        return if any {
+            (
+                true,
+                format!("{} evidence present", evidence_type.as_str()),
+            )
+        } else {
+            (
+                false,
+                format!(
+                    "No governance contract requirement declares {} evidence",
+                    evidence_type.as_str()
+                ),
+            )
+        };
     }
 
     let mut satisfied = 0usize;
     let mut missing = Vec::new();
-    let mut below_threshold = Vec::new();
 
-    for req in &requirements {
-        let relevant = feature_evidence.evidence_for(req.fr_id.as_str(), evidence_type);
-
+    for fr_id in &requirements {
+        let relevant = feature_evidence.evidence_for(fr_id, evidence_type);
         if relevant.is_empty() {
-            missing.push(req.fr_id.clone());
-            continue;
+            missing.push(fr_id.clone());
+        } else {
+            satisfied += 1;
         }
-
-        if let Some(threshold) = &req.threshold {
-            if !evaluate_threshold(&relevant, threshold) {
-                below_threshold.push(req.fr_id.clone());
-                continue;
-            }
-        }
-
-        satisfied += 1;
     }
 
-    if missing.is_empty() && below_threshold.is_empty() {
-        return (
+    if missing.is_empty() {
+        (
             true,
             format!(
                 "{} evidence satisfied for {satisfied}/{} requirement(s)",
                 evidence_type.as_str(),
                 requirements.len()
             ),
-        );
+        )
+    } else {
+        (
+            false,
+            format!(
+                "{} evidence failed: missing evidence for {}",
+                evidence_type.as_str(),
+                missing.join(", ")
+            ),
+        )
     }
-
-    let mut failures = Vec::new();
-    if !missing.is_empty() {
-        failures.push(format!("missing evidence for {}", missing.join(", ")));
-    }
-    if !below_threshold.is_empty() {
-        failures.push(format!(
-            "threshold not met for {}",
-            below_threshold.join(", ")
-        ));
-    }
-
-    (
-        false,
-        format!(
-            "{} evidence failed: {}",
-            evidence_type.as_str(),
-            failures.join("; ")
-        ),
-    )
 }
 
 struct FeatureEvidence {
@@ -252,8 +263,12 @@ impl FeatureEvidence {
     fn evidence_for(&self, fr_id: &str, evidence_type: EvidenceType) -> Vec<&Evidence> {
         self.evidence
             .iter()
-            .filter(|ev| ev.fr_id == fr_id && ev.evidence_type == evidence_type)
+            .filter(|e| e.fr_id == fr_id && e.evidence_type == evidence_type)
             .collect()
+    }
+
+    fn evidence_for_fr(&self, fr_id: &str) -> Vec<&Evidence> {
+        self.evidence.iter().filter(|e| e.fr_id == fr_id).collect()
     }
 }
 
@@ -264,17 +279,15 @@ async fn load_feature_evidence<S: StoragePort>(
     let wps = storage
         .list_wps_by_feature(feature_id)
         .await
-        .with_context(|| format!("loading work packages for feature {feature_id}"))?;
+        .context("listing work packages for evidence")?;
     let mut evidence = Vec::new();
-
     for wp in wps {
-        let mut wp_evidence = storage
+        let mut items = storage
             .get_evidence_by_wp(wp.id)
             .await
-            .with_context(|| format!("loading evidence for work package {}", wp.id))?;
-        evidence.append(&mut wp_evidence);
+            .with_context(|| format!("listing evidence for WP {}", wp.id))?;
+        evidence.append(&mut items);
     }
-
     Ok(FeatureEvidence { evidence })
 }
 
@@ -287,15 +300,9 @@ async fn evaluate_metric_policy<S: StoragePort>(
     let metrics = storage
         .get_metrics_by_feature(feature_id)
         .await
-        .context("loading metrics for policy evaluation")?;
-    let best = metrics
-        .iter()
-        .filter_map(|m| metric_value(m, metric))
-        .fold(None, |best: Option<f64>, value| {
-            Some(best.map_or(value, |current| current.max(value)))
-        });
-
-    Ok(match best {
+        .context("listing metrics for policy evaluation")?;
+    let value = metrics.iter().find_map(|m| metric_value(m, metric));
+    Ok(match value {
         Some(value) if value >= min => (
             true,
             format!("Metric '{metric}' value {value} satisfies minimum {min}"),
@@ -314,12 +321,19 @@ async fn evaluate_metric_policy<S: StoragePort>(
 fn requirements_for_evidence_type(
     contract: &GovernanceContract,
     evidence_type: EvidenceType,
-) -> Vec<&EvidenceRequirement> {
+) -> Vec<String> {
     contract
         .rules
         .iter()
         .flat_map(|rule| rule.required_evidence.iter())
-        .filter(|req| req.evidence_type == evidence_type)
+        .filter_map(|raw| {
+            let (fr, ty) = parse_requirement(raw);
+            match ty {
+                Some(t) if t == evidence_type => Some(fr),
+                None => Some(fr),
+                _ => None,
+            }
+        })
         .collect()
 }
 
@@ -339,6 +353,6 @@ fn metric_value(metric: &agileplus_domain::domain::metric::Metric, name: &str) -
     metric
         .metadata
         .as_ref()
-        .and_then(|metadata| metadata.get(name))
-        .and_then(|value| value.as_f64().or_else(|| value.as_i64().map(|v| v as f64)))
+        .and_then(|meta| meta.get(name))
+        .and_then(|v| v.as_f64())
 }

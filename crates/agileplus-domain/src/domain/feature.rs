@@ -71,6 +71,23 @@ pub struct Feature {
 }
 
 impl Feature {
+    /// Derive a kebab-case slug from a display name.
+    pub fn slug_from_name(name: &str) -> String {
+        name.chars()
+            .map(|c| {
+                if c.is_alphanumeric() {
+                    c.to_ascii_lowercase()
+                } else {
+                    '-'
+                }
+            })
+            .collect::<String>()
+            .split('-')
+            .filter(|s| !s.is_empty())
+            .collect::<Vec<_>>()
+            .join("-")
+    }
+
     /// Attempt a state transition. Returns an error string if the transition is not allowed.
     pub fn transition(&mut self, target: FeatureState) -> Result<(), String> {
         use FeatureState::*;

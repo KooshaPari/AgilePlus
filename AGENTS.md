@@ -12,8 +12,10 @@ AgilePlus is the Phenotype-org spec-driven development framework. Rust CLI + wor
 ## Key Commands
 - `cargo build --release`
 - `cargo test`
-- `agileplus specify --title "<title>" --description "<desc>"`
-- `agileplus status <feature-id> --wp <wp-id> --state <state>`
+- `agileplus specify [--feature <slug>] [--from-file <path>] [--force]` — create/revise a feature spec (no `--title` / `--description` flags)
+- `agileplus list [--state <state>]` — list features in SQLite (there is no top-level `agileplus status` for WP/product status)
+- `agileplus platform status` — service health via PATH wrapper (`.agileplus/platform-status.sh`); Neo4j optional
+- There is no `agileplus init` command; SDD starts with `specify` in a git repo
 
 ## Quality Gates
 - `cargo clippy --all` + `cargo fmt --all`

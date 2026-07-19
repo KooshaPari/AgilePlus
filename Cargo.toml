@@ -6,6 +6,8 @@ resolver = "2"
 members = [
   "rust", # agileplus-proto: tonic/prost gRPC stubs (buf-generated)
   "crates/agileplus-cli", # agileplus: spec-first CLI binary
+  "crates/agileplus-subcmds", # platform/dashboard CLI subcommands (platform health)
+  "crates/agileplus-api", # HTTP API binary (default port 3000)
   "crates/agileplus-application",
   "crates/agileplus-domain",
   "crates/agileplus-governance", # SpecKitty scorecard enforcement (rubric + scoring)
@@ -18,10 +20,11 @@ members = [
   "crates/agileplus-triage",
   "crates/agileplus-telemetry",
   "crates/agileplus-dashboard",
+  "crates/agileplus-events",
 ]
 
 [workspace.package]
-version = "0.1.0"
+version = "0.2.1"
 edition = "2024"
 license = "MIT"
 rust-version = "1.88"

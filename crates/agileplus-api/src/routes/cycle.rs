@@ -15,9 +15,8 @@ use axum::{Json, Router};
 use serde::Deserialize;
 
 use agileplus_domain::domain::cycle::{Cycle, CycleState, CycleWithFeatures};
-use agileplus_domain::ports::{
-    observability::ObservabilityPort, storage::StoragePort, vcs::VcsPort,
-};
+use agileplus_domain::ports::{ObservabilityPort, StoragePort};
+use agileplus_domain::ports::vcs::VcsPort;
 
 use crate::error::ApiError;
 use crate::state::AppState;

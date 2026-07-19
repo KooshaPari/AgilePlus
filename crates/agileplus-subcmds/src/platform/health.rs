@@ -1,3 +1,5 @@
+use std::io::{Read, Write};
+use std::net::{SocketAddr, TcpStream, ToSocketAddrs};
 use std::time::{Duration, Instant};
 
 use anyhow::{Result, anyhow};
@@ -5,7 +7,9 @@ use anyhow::{Result, anyhow};
 use crate::platform::types::{OverallStatus, PlatformHealth, ServiceHealth, ServiceStatus};
 
 pub(crate) const DEFAULT_API_PORT: u16 = 3000;
-pub(crate) const DEFAULT_API_URL: &str = "http://localhost:3000";
+pub(crate) const DEFAULT_API_URL: &str = "http://127.0.0.1:3000";
+
+const PROBE_TIMEOUT: Duration = Duration::from_millis(800);
 
 /// Poll the health endpoint until healthy or timeout.
 pub(crate) fn wait_for_health(
@@ -15,58 +19,209 @@ pub(crate) fn wait_for_health(
 ) -> Result<PlatformHealth> {
     let start = Instant::now();
     let health_url = format!("{api_url}/health");
-    let mut attempts: u32 = 0;
 
     loop {
         if start.elapsed() >= timeout {
             return Err(anyhow!("Timed out after {}s", timeout.as_secs()));
         }
-        attempts += 1;
         let pct = ((start.elapsed().as_secs_f64() / timeout.as_secs_f64()) * 100.0) as u32;
         let filled = (pct / 10) as usize;
-        let bar: String = "â–ˆ".repeat(filled) + &"â–‘".repeat(10 - filled);
+        let bar: String = "█".repeat(filled.min(10)) + &"░".repeat(10usize.saturating_sub(filled));
         print!("\r[{bar}] {pct}%");
-        // In real impl we'd flush stdout and actually HTTP-GET; here we stub.
         match try_health_check(&health_url) {
-            Ok(h) => return Ok(h),
+            Ok(h) => {
+                println!();
+                return Ok(h);
+            }
             Err(_) => {
                 std::thread::sleep(poll_interval);
-                if attempts > 3 {
-                    // For test/stub purposes, return synthetic health after several attempts.
-                    return Ok(synthetic_platform_health());
-                }
             }
         }
     }
 }
 
 /// Attempt a single HTTP GET to the health endpoint.
-fn try_health_check(_url: &str) -> Result<PlatformHealth> {
-    // Real implementation would use reqwest or ureq.
-    // Stub: always return Err so tests exercise the timeout path.
-    Err(anyhow!("not connected"))
+fn try_health_check(url: &str) -> Result<PlatformHealth> {
+    let started = Instant::now();
+    let body = http_get(url)?;
+    let latency_ms = started.elapsed().as_millis() as u64;
+
+    let ok = body.contains("\"status\":\"ok\"")
+        || body.contains("\"status\": \"ok\"")
+        || body.contains("\"status\":\"healthy\"")
+        || body.to_lowercase().contains("ok");
+
+    if !ok {
+        return Err(anyhow!("unexpected health body: {body}"));
+    }
+
+    Ok(PlatformHealth {
+        services: vec![ServiceHealth {
+            name: "API".to_string(),
+            status: ServiceStatus::Healthy,
+            latency_ms: Some(latency_ms),
+            uptime: None,
+            port: Some(DEFAULT_API_PORT),
+            last_check: Some("just now".to_string()),
+        }],
+        overall: OverallStatus::Healthy,
+    })
 }
 
-/// Fetch platform health from API or fall back to direct pings.
+/// Fetch platform health from API, then enrich with direct dependency probes.
 pub(crate) fn fetch_platform_health(api_url: &str) -> PlatformHealth {
-    match try_health_check(&format!("{api_url}/health")) {
-        Ok(h) => h,
-        Err(_) => {
-            // API not running; return unknown state.
-            let services = vec![ServiceHealth {
-                name: "API".to_string(),
-                status: ServiceStatus::Unknown,
-                latency_ms: None,
-                uptime: None,
-                port: Some(DEFAULT_API_PORT),
-                last_check: None,
-            }];
-            PlatformHealth {
-                services,
-                overall: OverallStatus::Down,
-            }
+    let api = match try_health_check(&format!("{api_url}/health")) {
+        Ok(h) => h.services.into_iter().next().unwrap_or(ServiceHealth {
+            name: "API".to_string(),
+            status: ServiceStatus::Unknown,
+            latency_ms: None,
+            uptime: None,
+            port: Some(DEFAULT_API_PORT),
+            last_check: None,
+        }),
+        Err(_) => ServiceHealth {
+            name: "API".to_string(),
+            status: ServiceStatus::Unknown,
+            latency_ms: None,
+            uptime: None,
+            port: Some(DEFAULT_API_PORT),
+            last_check: None,
+        },
+    };
+
+    let mut services = vec![
+        api,
+        probe_http("NATS", 8222, "http://127.0.0.1:8222/healthz"),
+        probe_tcp("Dragonfly", 6379),
+        probe_tcp("Neo4j", 7687),
+        probe_http("MinIO", 9000, "http://127.0.0.1:9000/minio/health/live"),
+    ];
+
+    // Prefer Ready when TCP is up but we have no richer signal.
+    for svc in &mut services {
+        if svc.name == "Dragonfly" && svc.status == ServiceStatus::Healthy {
+            svc.status = ServiceStatus::Ready;
         }
     }
+
+    let overall = overall_from(&services);
+    PlatformHealth { services, overall }
+}
+
+fn overall_from(services: &[ServiceHealth]) -> OverallStatus {
+    let any_down = services.iter().any(|s| {
+        matches!(
+            s.status,
+            ServiceStatus::Unknown | ServiceStatus::Unhealthy
+        )
+    });
+    let any_degraded = services
+        .iter()
+        .any(|s| matches!(s.status, ServiceStatus::Degraded));
+    if any_down {
+        // API-up with optional deps down is degraded, not fully down.
+        let api_up = services
+            .iter()
+            .any(|s| s.name == "API" && s.status == ServiceStatus::Healthy);
+        if api_up {
+            OverallStatus::Degraded
+        } else {
+            OverallStatus::Down
+        }
+    } else if any_degraded {
+        OverallStatus::Degraded
+    } else {
+        OverallStatus::Healthy
+    }
+}
+
+fn probe_http(name: &str, port: u16, url: &str) -> ServiceHealth {
+    let started = Instant::now();
+    match http_get(url) {
+        Ok(_) => ServiceHealth {
+            name: name.to_string(),
+            status: ServiceStatus::Healthy,
+            latency_ms: Some(started.elapsed().as_millis() as u64),
+            uptime: None,
+            port: Some(port),
+            last_check: Some("just now".to_string()),
+        },
+        Err(_) => ServiceHealth {
+            name: name.to_string(),
+            status: ServiceStatus::Unknown,
+            latency_ms: None,
+            uptime: None,
+            port: Some(port),
+            last_check: None,
+        },
+    }
+}
+
+fn probe_tcp(name: &str, port: u16) -> ServiceHealth {
+    let started = Instant::now();
+    let addr = SocketAddr::from(([127, 0, 0, 1], port));
+    match TcpStream::connect_timeout(&addr, PROBE_TIMEOUT) {
+        Ok(_) => ServiceHealth {
+            name: name.to_string(),
+            status: ServiceStatus::Healthy,
+            latency_ms: Some(started.elapsed().as_millis() as u64),
+            uptime: None,
+            port: Some(port),
+            last_check: Some("just now".to_string()),
+        },
+        Err(_) => ServiceHealth {
+            name: name.to_string(),
+            status: ServiceStatus::Unknown,
+            latency_ms: None,
+            uptime: None,
+            port: Some(port),
+            last_check: None,
+        },
+    }
+}
+
+fn http_get(url: &str) -> Result<String> {
+    let url = url.strip_prefix("http://").ok_or_else(|| anyhow!("only http supported: {url}"))?;
+    let (host_port, path) = match url.split_once('/') {
+        Some((hp, rest)) => (hp, format!("/{rest}")),
+        None => (url, "/".to_string()),
+    };
+    let host = host_port
+        .split(':')
+        .next()
+        .ok_or_else(|| anyhow!("bad host"))?;
+    // Prefer IPv4 for localhost to avoid ::1 failures when API binds IPv4-only.
+    let addr = if host == "localhost" {
+        let port: u16 = host_port
+            .split(':')
+            .nth(1)
+            .unwrap_or("80")
+            .parse()
+            .unwrap_or(80);
+        SocketAddr::from(([127, 0, 0, 1], port))
+    } else {
+        host_port
+            .to_socket_addrs()?
+            .find(|a| a.is_ipv4())
+            .or_else(|| host_port.to_socket_addrs().ok().and_then(|mut i| i.next()))
+            .ok_or_else(|| anyhow!("dns failed for {host_port}"))?
+    };
+
+    let mut stream = TcpStream::connect_timeout(&addr, PROBE_TIMEOUT)?;
+    stream.set_read_timeout(Some(PROBE_TIMEOUT))?;
+    stream.set_write_timeout(Some(PROBE_TIMEOUT))?;
+    let req = format!(
+        "GET {path} HTTP/1.1\r\nHost: {host_port}\r\nConnection: close\r\nAccept: */*\r\n\r\n"
+    );
+    stream.write_all(req.as_bytes())?;
+    let mut buf = Vec::new();
+    stream.read_to_end(&mut buf)?;
+    let text = String::from_utf8_lossy(&buf);
+    let (header, body) = text.split_once("\r\n\r\n").unwrap_or((&text, ""));
+    if !header.contains("200") {
+        return Err(anyhow!("non-200 response: {}", header.lines().next().unwrap_or("")));
+    }
+    Ok(body.to_string())
 }
 
 /// Synthetic healthy state used when the real HTTP stack is unavailable.
@@ -129,7 +284,7 @@ pub(crate) fn synthetic_platform_health() -> PlatformHealth {
 
 pub(crate) fn print_status_table_up(services: &[ServiceHealth]) {
     println!("{:<14} {:<9} {:<9} Port", "Service", "Status", "Uptime");
-    println!("{}", "â”€".repeat(45));
+    println!("{}", "─".repeat(45));
     for svc in services {
         let port_str = svc
             .port
@@ -151,7 +306,7 @@ pub(crate) fn print_status_table(services: &[ServiceHealth]) {
         "{:<14} {:<11} {:<10} {:<12} Last Check",
         "Service", "Status", "Latency", "Uptime"
     );
-    println!("{}", "â”€".repeat(63));
+    println!("{}", "─".repeat(63));
     for svc in services {
         let latency = match svc.latency_ms {
             Some(ms) => format!("{ms}ms"),
@@ -160,8 +315,8 @@ pub(crate) fn print_status_table(services: &[ServiceHealth]) {
         let uptime = svc.uptime.as_deref().unwrap_or("--");
         let last_check = svc.last_check.as_deref().unwrap_or("--");
         let indicator = match svc.status {
-            ServiceStatus::Degraded => " âš ",
-            ServiceStatus::Unhealthy => " âœ—",
+            ServiceStatus::Degraded => " ⚠",
+            ServiceStatus::Unhealthy => " ✗",
             _ => "",
         };
         println!(

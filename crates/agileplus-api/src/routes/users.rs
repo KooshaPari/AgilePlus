@@ -13,9 +13,8 @@ use axum::{Json, Router};
 use serde::Deserialize;
 
 use agileplus_domain::domain::user::{User, UserRole};
-use agileplus_domain::ports::{
-    observability::ObservabilityPort, storage::StoragePort, vcs::VcsPort,
-};
+use agileplus_domain::ports::{ObservabilityPort, StoragePort};
+use agileplus_domain::ports::vcs::VcsPort;
 
 use crate::error::ApiError;
 use crate::responses::UserResponse;
@@ -91,7 +90,7 @@ where
 {
     let user = app
         .storage
-        .get_user(id)
+        .get_user_by_id(id)
         .await
         .map_err(ApiError::from)?
         .ok_or_else(|| ApiError::NotFound(format!("User {id} not found")))?;

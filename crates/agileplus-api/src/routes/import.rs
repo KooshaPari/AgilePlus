@@ -4,9 +4,8 @@ use axum::extract::State;
 use axum::routing::post;
 use axum::{Json, Router};
 
-use agileplus_domain::ports::{
-    observability::ObservabilityPort, storage::StoragePort, vcs::VcsPort,
-};
+use agileplus_domain::ports::{ObservabilityPort, StoragePort};
+use agileplus_domain::ports::vcs::VcsPort;
 use agileplus_import::{ImportBundle, ImportProject, ImportReport, import_bundle};
 
 use crate::error::ApiError;

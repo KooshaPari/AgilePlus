@@ -85,12 +85,22 @@ agileplus --help
 
 ## Quick project bootstrap
 
+No `agileplus init` command exists. In a git repo, create or revise a feature spec with the SDD CLI (interactive interview, or `--from-file`):
+
 ```bash
 cd my-project
-agileplus init
-agileplus specify --title "My Feature" --description "Short summary"
-agileplus status
+agileplus specify --feature my-feature
+# or: agileplus specify --feature my-feature --from-file ./draft-spec.md
+agileplus list
 ```
+
+Platform health is **not** a top-level `agileplus status` (that is not a product feature command). Use:
+
+```bash
+agileplus platform status
+```
+
+On this machine, the PATH `agileplus` wrapper routes `platform status` to `.agileplus/platform-status.sh` (real HTTP probes). Neo4j is optional — status does not require it.
 
 ## CI release system
 
@@ -98,7 +108,7 @@ agileplus status
 |----------|---------|---------|
 | `.github/workflows/agileplus-release.yml` | Tag `v*` | Matrix binaries + GitHub Release + crates.io publish |
 | `.github/workflows/nightly.yml` | Hourly `0 * * * *` + daily `0 6 * * *` | Build, test, upload nightly artifacts |
-| `.github/workflows/e2e.yml` | PR/push (CLI paths) | Installed CLI init → specify → status round-trip |
+| `.github/workflows/e2e.yml` | PR/push (CLI paths) | Installed CLI specify / list round-trip (no `init` / top-level `status`) |
 
 E2E harnesses:
 

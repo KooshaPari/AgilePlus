@@ -20,30 +20,34 @@ pub mod seed_requirements;
 pub mod trace;
 pub mod worklog;
 
-// ── stub modules (excluded until upstream deps are resolved) ──────────────────
+// ── SDD core modules (wired into the CLI binary) ──────────────────────────────
 pub mod branch; // OK: VcsPort only
-pub mod cycle; // STUB: agileplus_plane dep missing
+pub mod cycle;
 pub mod governance; // OK: VcsPort read_artifact only
+pub mod module;
+pub mod queue;
+pub mod specify;
+
+// ── full-deps SDD modules ─────────────────────────────────────────────────────
 #[cfg(feature = "full-deps")]
-pub mod implement; // STUB: agileplus_domain::ports::agent fields mismatch
-// pub mod module;        // STUB: agileplus_plane dep missing
-#[cfg(all(feature = "events", feature = "plane", feature = "triage"))]
-pub mod plan; // STUB: incomplete
-#[cfg(all(feature = "events", feature = "plane", feature = "triage"))]
-pub mod pr_builder; // STUB: incomplete
-// pub mod queue;         // STUB: agileplus_triage dep missing
-#[cfg(all(feature = "events", feature = "plane", feature = "triage"))]
-pub mod research; // STUB: incomplete
-// pub mod retrospective; // STUB: agileplus_events dep missing
-#[cfg(all(feature = "events", feature = "plane", feature = "triage"))]
-pub mod review_loop; // STUB: agent port field mismatch
-#[cfg(all(feature = "events", feature = "plane", feature = "triage"))]
-pub mod scheduler; // STUB: incomplete
-#[cfg(all(feature = "events", feature = "plane", feature = "triage"))]
-pub mod scope; // STUB: incomplete
-#[cfg(all(feature = "events", feature = "plane", feature = "triage"))]
-pub mod ship; // STUB: agileplus_events dep missing
-#[cfg(all(feature = "events", feature = "plane", feature = "triage"))]
-pub mod specify; // STUB: similar dep missing
-#[cfg(all(feature = "events", feature = "plane", feature = "triage"))]
-pub mod validate; // STUB: agileplus_events dep missing
+pub mod implement;
+#[cfg(feature = "full-deps")]
+pub mod plan;
+#[cfg(feature = "full-deps")]
+pub mod pr_builder;
+#[cfg(feature = "full-deps")]
+pub mod research;
+#[cfg(feature = "full-deps")]
+pub mod retrospective;
+#[cfg(feature = "full-deps")]
+pub mod review_loop;
+#[cfg(feature = "full-deps")]
+pub mod scheduler;
+#[cfg(feature = "full-deps")]
+pub mod scope;
+#[cfg(feature = "full-deps")]
+pub mod ship;
+#[cfg(feature = "full-deps")]
+pub mod triage;
+#[cfg(feature = "full-deps")]
+pub mod validate;
