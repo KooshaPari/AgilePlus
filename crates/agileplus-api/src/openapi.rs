@@ -34,7 +34,7 @@ use crate::routes::features::CreateFeatureRequest;
 #[openapi(
     info(
         title = "AgilePlus REST API",
-        version = "0.1.1",
+        version = "0.2.1",
         description = "MVP OpenAPI scaffold — 5 representative endpoints. \
                        Full coverage of all 36 handlers is tracked as a follow-up.",
         license(name = "MIT"),
