@@ -14,7 +14,8 @@ use clap::{Parser, Subcommand};
 
 use agent_stub::StubAgentAdapter;
 use agileplus_cli::commands::{
-    cycle::CycleArgs, list::ListArgs, module::ModuleArgs, queue::QueueArgs, specify::SpecifyArgs,
+    cycle::CycleArgs, dashboard::DashboardArgs, list::ListArgs, module::ModuleArgs,
+    queue::QueueArgs, specify::SpecifyArgs,
 };
 #[cfg(feature = "full-deps")]
 use agileplus_cli::commands::{
@@ -80,8 +81,8 @@ enum Commands {
     /// Classify and route incoming items to the backlog.
     #[cfg(feature = "full-deps")]
     Triage(TriageArgs),
-    /// Open or configure the web dashboard.
-    Dashboard,
+    /// Render an in-flight DAG / status dashboard from SQLite.
+    Dashboard(DashboardArgs),
 }
 
 #[tokio::main]
@@ -124,12 +125,12 @@ async fn run(cli: Cli) -> Result<()> {
 
     match cli.command {
         Commands::Platform(args) => run_platform(args),
-        Commands::Dashboard => {
-            eprintln!(
-                "Error: `agileplus dashboard` is not wired in this build yet.\n\
-                 Use the API + dashboard crates, or `agileplus platform status`."
-            );
-            process::exit(2);
+        Commands::Dashboard(mut args) => {
+            // Prefer global --db when the subcommand did not set its own path.
+            if args.db.is_none() {
+                args.db = Some(cli.db.clone());
+            }
+            agileplus_cli::commands::dashboard::run(&args)
         }
         Commands::Module(args) => {
             let storage = SqliteStorageAdapter::new(&cli.db)
