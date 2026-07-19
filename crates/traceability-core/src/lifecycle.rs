@@ -128,6 +128,20 @@ impl FeatureState {
             FeatureState::Retrospected,
         ]
     }
+
+    /// Monotonic ordinal for lifecycle comparisons.
+    pub fn ordinal(self) -> u8 {
+        match self {
+            FeatureState::Created => 0,
+            FeatureState::Specified => 1,
+            FeatureState::Researched => 2,
+            FeatureState::Planned => 3,
+            FeatureState::Implementing => 4,
+            FeatureState::Validated => 5,
+            FeatureState::Shipped => 6,
+            FeatureState::Retrospected => 7,
+        }
+    }
 }
 
 #[cfg(test)]

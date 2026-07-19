@@ -44,6 +44,13 @@ pub struct PolicyRule {
     pub updated_at: DateTime<Utc>,
 }
 
+impl PolicyRule {
+    /// Whether this policy matches a contract policy-reference string.
+    pub fn matches_reference(&self, policy_ref: &str) -> bool {
+        self.id.to_string() == policy_ref || format!("policy:{}", self.id) == policy_ref
+    }
+}
+
 /// A governance rule captured inside a contract.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GovernanceRule {
@@ -100,10 +107,21 @@ pub struct Evidence {
 }
 
 /// The result of a policy check.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum PolicyCheck {
     ManualApproval,
     Automated,
+    EvidencePresent {
+        evidence_type: EvidenceType,
+    },
+    ThresholdMet {
+        metric: String,
+        min: f64,
+    },
+    Custom {
+        script: String,
+    },
 }
 
 /// A well-known built-in policy that maps a short reference key to a

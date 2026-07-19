@@ -10,27 +10,54 @@ pub fn run_platform_status(args: PlatformStatusArgs) -> Result<()> {
     print_status_table(&health.services);
     println!();
 
-    let degraded_count = health
+    let api_up = health
+        .services
+        .iter()
+        .any(|s| s.name == "API" && s.status == ServiceStatus::Healthy);
+    let down_names: Vec<&str> = health
+        .services
+        .iter()
+        .filter(|s| {
+            matches!(
+                s.status,
+                ServiceStatus::Unknown | ServiceStatus::Unhealthy
+            )
+        })
+        .map(|s| s.name.as_str())
+        .collect();
+    let degraded_names: Vec<&str> = health
         .services
         .iter()
         .filter(|s| s.status == ServiceStatus::Degraded)
-        .count();
-    let down_count = health
-        .services
-        .iter()
-        .filter(|s| s.status == ServiceStatus::Unhealthy)
-        .count();
+        .map(|s| s.name.as_str())
+        .collect();
 
     let overall_msg = match &health.overall {
         OverallStatus::Healthy => "HEALTHY".to_string(),
-        OverallStatus::Degraded => format!(
-            "DEGRADED ({} service{} slow, {} service{} down)",
-            degraded_count,
-            if degraded_count == 1 { "" } else { "s" },
-            down_count,
-            if down_count == 1 { "" } else { "s" },
-        ),
-        OverallStatus::Down => "DOWN".to_string(),
+        OverallStatus::Degraded => {
+            let mut parts = Vec::new();
+            if api_up {
+                parts.push("API up".to_string());
+            }
+            if !degraded_names.is_empty() {
+                parts.push(format!("slow: {}", degraded_names.join(", ")));
+            }
+            if !down_names.is_empty() {
+                parts.push(format!("down: {}", down_names.join(", ")));
+            }
+            if parts.is_empty() {
+                "DEGRADED".to_string()
+            } else {
+                format!("DEGRADED ({})", parts.join("; "))
+            }
+        }
+        OverallStatus::Down => {
+            if down_names.is_empty() {
+                "DOWN".to_string()
+            } else {
+                format!("DOWN ({})", down_names.join(", "))
+            }
+        }
     };
     println!("Overall Status: {overall_msg}");
     Ok(())

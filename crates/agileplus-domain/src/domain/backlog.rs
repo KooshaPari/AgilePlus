@@ -141,6 +141,18 @@ pub enum BacklogSort {
     Impact,
 }
 
+impl FromStr for BacklogSort {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_ascii_lowercase().as_str() {
+            "age" => Ok(BacklogSort::Age),
+            "priority" => Ok(BacklogSort::Priority),
+            "impact" => Ok(BacklogSort::Impact),
+            _ => Err(format!("unknown BacklogSort: {s}")),
+        }
+    }
+}
+
 /// A single backlog item.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BacklogItem {
@@ -176,6 +188,18 @@ impl BacklogItem {
             created_at: now,
             updated_at: now,
         }
+    }
+
+    /// Attach tags (builder-style).
+    pub fn with_tags(mut self, tags: Vec<String>) -> Self {
+        self.tags = tags;
+        self
+    }
+
+    /// Attach an optional feature slug (builder-style).
+    pub fn with_feature_slug(mut self, feature_slug: Option<String>) -> Self {
+        self.feature_slug = feature_slug;
+        self
     }
 }
 

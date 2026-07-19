@@ -81,7 +81,7 @@ processes:
     readiness_probe:
       http_get:
         host: localhost
-        port: 8080
+        port: 3000
         path: /health
     availability:
       restart: on_failure
@@ -89,6 +89,7 @@ processes:
     log_location: .agileplus/logs/agileplus-api.log
     environment:
       - RUST_LOG=info
+      - AGILEPLUS_API_PORT=3000
       - NATS_URL=nats://localhost:4222
       - DRAGONFLY_URL=redis://localhost:6379
       - NEO4J_URI=bolt://localhost:7687
@@ -112,4 +113,4 @@ processes:
       backoff_seconds: 2
     log_location: .agileplus/logs/agileplus-mcp.log
     environment:
-      - AGILEPLUS_API_URL=http://localhost:8080
+      - AGILEPLUS_API_URL=http://localhost:3000

@@ -16,9 +16,8 @@ use serde::Serialize;
 
 use agileplus_domain::domain::module::{Module, ModuleWithFeatures};
 use agileplus_domain::error::DomainError;
-use agileplus_domain::ports::{
-    observability::ObservabilityPort, storage::StoragePort, vcs::VcsPort,
-};
+use agileplus_domain::ports::{ObservabilityPort, StoragePort};
+use agileplus_domain::ports::vcs::VcsPort;
 
 use crate::error::ApiError;
 use crate::state::AppState;

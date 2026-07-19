@@ -9,9 +9,7 @@ use anyhow::{Context, Result};
 use chrono::Utc;
 
 use agileplus_domain::domain::audit::{AuditEntry, hash_entry};
-use agileplus_domain::domain::governance::{
-    EvidenceRequirement, EvidenceType, GovernanceContract, GovernanceRule,
-};
+use agileplus_domain::domain::governance::{EvidenceType, GovernanceContract, GovernanceRule};
 use agileplus_domain::domain::state_machine::FeatureState;
 use agileplus_domain::domain::work_package::{DependencyType, WorkPackage, WpDependency};
 use agileplus_domain::ports::{StoragePort, VcsPort};
@@ -459,21 +457,16 @@ fn build_governance_contract(feature_id: i64, wps: &[WorkPackage]) -> Governance
     for wp in wps {
         rules.push(GovernanceRule {
             transition: format!("WP{:02}: Doing -> Review", wp.sequence),
-            required_evidence: vec![EvidenceRequirement {
-                fr_id: "FR-CI".to_string(),
-                evidence_type: EvidenceType::CiOutput,
-                threshold: None,
-            }],
-            policy_refs: vec!["policy:ci-required".to_string()],
+            required_evidence: vec![format!("FR-CI:{}", EvidenceType::CiOutput.as_str())],
+            policy_refs: vec![],
         });
         rules.push(GovernanceRule {
             transition: format!("WP{:02}: Review -> Done", wp.sequence),
-            required_evidence: vec![EvidenceRequirement {
-                fr_id: "FR-REVIEW".to_string(),
-                evidence_type: EvidenceType::ReviewApproval,
-                threshold: None,
-            }],
-            policy_refs: vec!["policy:review-required".to_string()],
+            required_evidence: vec![format!(
+                "FR-REVIEW:{}",
+                EvidenceType::ReviewApproval.as_str()
+            )],
+            policy_refs: vec![],
         });
     }
 

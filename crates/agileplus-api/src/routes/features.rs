@@ -19,9 +19,8 @@ use utoipa::{IntoParams, ToSchema};
 
 use agileplus_domain::domain::feature::Feature;
 use agileplus_domain::domain::state_machine::{self, FeatureState};
-use agileplus_domain::ports::{
-    observability::ObservabilityPort, storage::StoragePort, vcs::VcsPort,
-};
+use agileplus_domain::ports::{ObservabilityPort, StoragePort};
+use agileplus_domain::ports::vcs::VcsPort;
 
 use crate::error::ApiError;
 use crate::responses::FeatureResponse;
@@ -74,17 +73,17 @@ where
     V: VcsPort + Send + Sync + 'static,
     O: ObservabilityPort + Send + Sync + 'static,
 {
-    let features = if let Some(state_filter) = params.state {
-        let fs = parse_feature_state(&state_filter)?;
+    let features = if let Some(state_filter) = &params.state {
+        let fs = parse_feature_state(state_filter)?;
         state
             .storage
             .list_features_by_state(fs)
             .await
             .map_err(ApiError::from)?
-    } else if let Some(label) = params.label {
+    } else if let Some(label) = &params.label {
         state
             .storage
-            .list_features_by_label(&label)
+            .list_features_by_label(label)
             .await
             .map_err(ApiError::from)?
     } else {
@@ -95,10 +94,10 @@ where
             .map_err(ApiError::from)?
     };
 
-    let features: Vec<Feature> = if let Some(label_filter) = params.label {
+    let features: Vec<Feature> = if let Some(label_filter) = &params.label {
         features
             .into_iter()
-            .filter(|f| f.labels.contains(&label_filter))
+            .filter(|f| f.labels.contains(label_filter))
             .collect()
     } else {
         features

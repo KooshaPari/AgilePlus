@@ -10,9 +10,8 @@ use axum::routing::{get, post};
 use axum::{Json, Router};
 use serde_json::{Value, json};
 
-use agileplus_domain::ports::{
-    observability::ObservabilityPort, storage::StoragePort, vcs::VcsPort,
-};
+use agileplus_domain::ports::{ObservabilityPort, StoragePort};
+use agileplus_domain::ports::vcs::VcsPort;
 
 use crate::error::ApiError;
 use crate::responses::GovernanceResponse;
@@ -111,22 +110,37 @@ where
     let mut total_rules = 0usize;
     let mut satisfied_rules = 0usize;
 
+    let wp_ids: std::collections::HashSet<i64> = wps.iter().map(|w| w.id).collect();
+
     for rule in &contract.rules {
         total_rules += 1;
-        // Check if at least one piece of evidence satisfies each required evidence type
-        let mut rule_satisfied = rule.required_evidence.is_empty();
+        // `required_evidence` entries are FR ids and/or evidence-type labels.
+        let mut rule_satisfied = true;
         for req in &rule.required_evidence {
-            let evidence = state
+            let by_fr = state
                 .storage
-                .get_evidence_by_fr(&req.fr_id)
+                .get_evidence_by_fr(req)
                 .await
                 .map_err(ApiError::from)?;
-            let wp_ids: std::collections::HashSet<i64> = wps.iter().map(|w| w.id).collect();
-            if evidence
-                .iter()
-                .any(|e| wp_ids.contains(&e.wp_id) && e.evidence_type == req.evidence_type)
-            {
-                rule_satisfied = true;
+            let mut found = by_fr.iter().any(|e| wp_ids.contains(&e.wp_id));
+            if !found {
+                for wp in &wps {
+                    let ev = state
+                        .storage
+                        .get_evidence_by_wp(wp.id)
+                        .await
+                        .map_err(ApiError::from)?;
+                    if ev.iter().any(|e| {
+                        e.fr_id == *req || e.evidence_type.as_str() == req.as_str()
+                    }) {
+                        found = true;
+                        break;
+                    }
+                }
+            }
+            if !found {
+                rule_satisfied = false;
+                break;
             }
         }
         if rule_satisfied {

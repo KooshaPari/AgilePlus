@@ -239,3 +239,32 @@ impl<T> OptionalExt<T> for SqlResult<T> {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn migrations_include_016_create_backlog_items() {
+        assert!(
+            MIGRATIONS
+                .iter()
+                .any(|(name, _)| *name == "016_create_backlog_items"),
+            "016_create_backlog_items must stay registered so default DBs heal on open"
+        );
+    }
+
+    #[test]
+    fn run_all_creates_backlog_items_table() {
+        let conn = Connection::open_in_memory().expect("in-memory");
+        MigrationRunner::new(&conn).run_all().expect("migrate");
+        let count: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'backlog_items'",
+                [],
+                |row| row.get(0),
+            )
+            .expect("query");
+        assert_eq!(count, 1, "backlog_items must exist after run_all");
+    }
+}
