@@ -458,13 +458,13 @@ pub async fn save_plane_settings(axum::Form(form): axum::Form<PlaneSettingsForm>
         }
     };
     let mut config = match Config::load() {
-        Ok(c) => c,
-        Err(_) => Config {
-            plane: None,
-            agents: None,
-            services: None,
-            dashboard: None,
-        },
+        Ok(config) => config,
+        Err(error) => {
+            return render(ToastPartial {
+                message: format!("Failed to load settings safely: {error}"),
+                success: false,
+            });
+        }
     };
     if let Err(error) = config.migrate_legacy_plane_key(credentials.as_ref()) {
         return render(ToastPartial {
