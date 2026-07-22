@@ -19,9 +19,12 @@ subprocesses and probes.
 
 ### Lane B: credentials
 
-Consolidate `crates/agileplus-domain/src/credentials/` around one production keychain
-factory. Remove production selection of `file.rs`; add a test-only memory fixture. Thread
-credential references, never values, through integration configuration and audit events.
+Consolidate `crates/agileplus-domain/src/credentials/` around a keychain-first factory.
+When the keychain is unavailable, select only a versioned AES-256-GCM file format whose
+encryption key is derived with Argon2id and whose invalid/missing cryptographic material
+fails closed. Remove any plaintext-file production path; keep a test-only memory fixture.
+Apply the same policy to API keys at rest. Thread credential/API-key references, never
+values, through integration configuration and audit events.
 
 ### Lane C: events, artifacts, and streaming
 

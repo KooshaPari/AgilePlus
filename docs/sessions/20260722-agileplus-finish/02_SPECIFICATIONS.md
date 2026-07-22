@@ -21,12 +21,16 @@ mandatory release evidence.
 
 ### R3 — Credential protection
 
-Production credential writes and reads use the OS keychain through an explicit
-`CredentialStore` implementation. No plaintext file fallback exists in production.
-Development-only fixtures use clearly named ephemeral in-memory stores. Logs, audit
-events, errors, exports, and diagnostics expose stable credential references but never
-secret values. Rotation, deletion, unavailable-keychain, and unauthorized-read outcomes
-are explicit, audited, and tested.
+Credential and API-key writes and reads use the OS keychain through an explicit
+`CredentialStore` implementation when it is available. When the keychain is unavailable,
+the only persistent fallback is a file encrypted with AES-256-GCM using a key derived by
+Argon2id from supplied secret material and a unique stored salt. The fallback must fail
+closed for absent/invalid derivation material, malformed ciphertext, authentication-tag
+failure, unsupported version, or unsafe permissions; it may never downgrade to plaintext
+or a weaker algorithm. Development-only fixtures use clearly named ephemeral in-memory
+stores. Logs, audit events, errors, exports, and diagnostics expose stable credential or
+API-key references but never secret values. Rotation, deletion, unavailable-keychain,
+fallback decrypt failure, and unauthorized-read outcomes are explicit, audited, and tested.
 
 ### R4 — Durable events and query
 

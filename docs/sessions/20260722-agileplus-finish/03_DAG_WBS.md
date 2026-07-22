@@ -21,7 +21,7 @@
 | B0 | Clean reproducible release build | none | `cargo build --release` generates services; no runnable stub fallback; workspace tests pass. |
 | R1 | One runtime resolver and endpoint contract | B0 | unit tests for precedence/conflicts; launcher and status report identical endpoints. |
 | R2 | Real API/gRPC launch lifecycle | R1 | process start, health, gRPC read, graceful shutdown, failure-log tests. |
-| R3 | Keychain-only production credential store | B0 | secret scan/redaction tests; store/read/rotate/delete and unavailable-keychain tests. |
+| R3 | Keychain-first, encrypted fail-closed credential and API-key store | B0 | secret scan/redaction; keychain and AES-256-GCM/Argon2id fallback store/read/rotate/delete; unavailable/decrypt-failure tests. |
 | R4 | Persistent event repository/query/cursor | R2,R3 | restart persistence; type/filter/page/cursor and chain verification tests. |
 | R5 | MinIO artifact adapter | R1 | isolated MinIO put/get/digest/authorization/failure tests. |
 | R6 | Authenticated API/MCP stream | R2,R4 | live stream, resume/no-duplicate, heartbeat, authorization tests. |

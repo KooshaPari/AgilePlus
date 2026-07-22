@@ -23,7 +23,8 @@ documentation; implementation work must begin in separate, focused worktrees.
 1. A clean build produces runnable API and MCP deliverables, rather than proto stubs.
 2. One resolved runtime configuration drives launcher, compose, API, gRPC, MCP, and
    health probes without port collisions.
-3. Credentials never persist plaintext; the OS keychain is required in production.
+3. Credentials and API keys never persist plaintext: use the OS keychain when
+   available, otherwise an encrypted, fail-closed AES-256-GCM/Argon2id file store.
 4. Events, artifacts, stream cursors, usage, traces, and governance decisions are
    durable, queryable, and attributable to one project/feature/work-package run.
 5. Tracera passes the complete consumer journey; Grapheon passes it after merge-conflict
@@ -34,3 +35,9 @@ documentation; implementation work must begin in separate, focused worktrees.
 This session does not change product code, start shared services, or claim a rollout
 has passed. It specifies the implementation and validation required to make those
 claims valid.
+
+## Snapshot policy
+
+An Airlock snapshot preserves committed `HEAD` only. Every meaningful edit batch must
+therefore be committed before its snapshot is requested; a snapshot is not evidence that
+uncommitted changes were preserved.
