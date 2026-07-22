@@ -159,14 +159,28 @@ impl FileCredentialStore {
         std::fs::create_dir_all(parent)?;
         let encrypted =
             self.encrypt(&self.cache.read().expect("credential cache lock poisoned"))?;
-        let temporary = self.path.with_extension("enc.tmp");
-        std::fs::write(&temporary, encrypted)?;
+        let mut suffix = [0u8; 16];
+        OsRng.fill_bytes(&mut suffix);
+        let temporary = parent.join(format!(
+            ".credentials-{}.tmp",
+            STANDARD_NO_PAD.encode(suffix)
+        ));
+        let mut file = std::fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&temporary)?;
+        use std::io::Write as _;
+        file.write_all(&encrypted)?;
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;
             std::fs::set_permissions(&temporary, std::fs::Permissions::from_mode(0o600))?;
         }
+        file.sync_all()?;
+        drop(file);
         std::fs::rename(&temporary, &self.path)?;
+        #[cfg(unix)]
+        std::fs::File::open(parent)?.sync_all()?;
         Ok(())
     }
 }

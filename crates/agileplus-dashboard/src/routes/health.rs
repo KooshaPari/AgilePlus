@@ -68,7 +68,9 @@ pub struct Config {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PlaneConfig {
     pub api_url: String,
-    pub api_key: String,
+    pub api_key_ref: String,
+    #[serde(default, skip_serializing)]
+    pub api_key: Option<String>,
     pub workspace_slug: String,
     pub project_slug: String,
 }

@@ -6,7 +6,8 @@
 
 use std::env;
 
-use agileplus_domain::credentials::{CredentialStore, FileCredentialStore, PLANESO_KEY};
+use agileplus_domain::config::AppConfig;
+use agileplus_domain::credentials::{CredentialStore, PLANESO_KEY, create_credential_store};
 use askama::Template;
 use axum::{
     extract::State,
@@ -28,6 +29,8 @@ pub struct PlaneConfig {
     pub api_url: String,
     /// Reference to the credential-store entry; never a secret value.
     pub api_key_ref: String,
+    #[serde(default, skip_serializing)]
+    pub api_key: Option<String>,
     pub workspace_slug: String,
     pub project_slug: String,
 }
@@ -410,10 +413,7 @@ pub async fn save_plane_settings(axum::Form(form): axum::Form<PlaneSettingsForm>
             success: false,
         });
     }
-    let credential_path = dirs_next::home_dir()
-        .unwrap_or_else(|| std::path::PathBuf::from("."))
-        .join(".agileplus/credentials.enc");
-    let credentials = match FileCredentialStore::new(&credential_path).and_then(|store| {
+    let credentials = match create_credential_store(&AppConfig::default()).and_then(|store| {
         store.set("agileplus", PLANESO_KEY, api_key)?;
         Ok(store)
     }) {
@@ -438,6 +438,7 @@ pub async fn save_plane_settings(axum::Form(form): axum::Form<PlaneSettingsForm>
     config.plane = Some(PlaneConfig {
         api_url: form.api_url.trim().to_string(),
         api_key_ref: PLANESO_KEY.to_string(),
+        api_key: None,
         workspace_slug: form.workspace_slug.trim().to_string(),
         project_slug: form.project_slug.trim().to_string(),
     });
@@ -464,6 +465,7 @@ mod tests {
             plane: Some(PlaneConfig {
                 api_url: "https://plane.example".to_string(),
                 api_key_ref: PLANESO_KEY.to_string(),
+                api_key: None,
                 workspace_slug: "workspace".to_string(),
                 project_slug: "project".to_string(),
             }),

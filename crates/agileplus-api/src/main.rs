@@ -36,9 +36,9 @@ async fn main() -> Result<()> {
     let vcs = Arc::new(GitVcsAdapter::from_current_dir()?);
     let telemetry = Arc::new(NoOpObservability);
     let credentials = Arc::from(create_credential_store(&config)?);
-    if let Ok(api_key) = env::var("AGILEPLUS_API_KEY") {
-        import_api_key(credentials.as_ref(), &api_key)?;
-    }
+    let api_key = env::var("AGILEPLUS_API_KEY")
+        .context("AGILEPLUS_API_KEY is required; retain it in the operator secret manager")?;
+    import_api_key(credentials.as_ref(), &api_key)?;
     let state = AppState::new(storage, vcs, telemetry, Arc::new(config), credentials);
 
     agileplus_api::router::start_api(addr, state)
