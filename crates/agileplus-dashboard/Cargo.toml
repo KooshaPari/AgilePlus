@@ -31,6 +31,7 @@ tracing-subscriber.workspace = true
 chrono = { version = "0.4", features = ["serde"] }
 sysinfo = "0.32"
 rusqlite = { workspace = true }
+dirs-next.workspace = true
 
 [dev-dependencies]
 tokio = { version = "1", features = ["full"] }

@@ -34,6 +34,13 @@ pub trait CredentialStore: Send + Sync {
             Err(e) => return Err(e),
         };
         let provided_hash = format_api_key_hash(provided_key);
+        if stored
+            .split(',')
+            .map(str::trim)
+            .any(|key| !key.is_empty() && !key.starts_with(API_KEY_HASH_PREFIX))
+        {
+            return Err(CredentialError::LegacyPlaintextApiKey);
+        }
         let valid = stored
             .split(',')
             .map(str::trim)

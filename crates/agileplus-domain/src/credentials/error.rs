@@ -13,4 +13,6 @@ pub enum CredentialError {
     Encryption(String),
     #[error("credential encryption key is required for file-backed credentials")]
     MissingEncryptionKey,
+    #[error("legacy plaintext API key detected; rotate it with AGILEPLUS_API_KEY before starting")]
+    LegacyPlaintextApiKey,
 }

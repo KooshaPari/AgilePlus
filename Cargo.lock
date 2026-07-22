@@ -140,6 +140,7 @@ dependencies = [
  "axum",
  "axum-extra",
  "chrono",
+ "dirs-next",
  "rusqlite",
  "serde",
  "serde_json",

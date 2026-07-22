@@ -13,7 +13,7 @@
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use agileplus_api::{create_router, AppState};
+use agileplus_api::{AppState, create_router};
 use agileplus_domain::config::AppConfig;
 use agileplus_domain::credentials::InMemoryCredentialStore;
 use agileplus_domain::domain::audit::{AuditEntry, hash_entry};
@@ -21,16 +21,16 @@ use agileplus_domain::domain::backlog::{
     BacklogFilters, BacklogItem, BacklogPriority, BacklogStatus,
 };
 use agileplus_domain::domain::cycle::{Cycle, CycleFeature, CycleState, CycleWithFeatures};
+use agileplus_domain::domain::epic::{Epic, EpicStatus};
 use agileplus_domain::domain::feature::Feature;
 use agileplus_domain::domain::governance::{Evidence, GovernanceContract, PolicyRule};
 use agileplus_domain::domain::metric::Metric;
 use agileplus_domain::domain::module::{Module, ModuleFeatureTag, ModuleWithFeatures};
-use agileplus_domain::domain::epic::{Epic, EpicStatus};
 use agileplus_domain::domain::project::Project;
-use agileplus_domain::domain::story::{Story, StoryStatus};
-use agileplus_domain::domain::user::{User, UserRole};
 use agileplus_domain::domain::state_machine::FeatureState;
+use agileplus_domain::domain::story::{Story, StoryStatus};
 use agileplus_domain::domain::sync_mapping::SyncMapping;
+use agileplus_domain::domain::user::{User, UserRole};
 use agileplus_domain::domain::work_package::{WorkPackage, WpDependency, WpState};
 use agileplus_domain::error::DomainError;
 use agileplus_domain::ports::observability::{LogEntry, ObservabilityPort, SpanContext};
@@ -573,7 +573,13 @@ impl StoragePort for MockStorage {
         &self,
         slug: &str,
     ) -> Result<Option<agileplus_domain::domain::project::Project>, DomainError> {
-        let found = self.projects.lock().unwrap().iter().find(|p| p.slug == slug).cloned();
+        let found = self
+            .projects
+            .lock()
+            .unwrap()
+            .iter()
+            .find(|p| p.slug == slug)
+            .cloned();
         Ok(found)
     }
 
@@ -591,12 +597,25 @@ impl StoragePort for MockStorage {
     }
 
     async fn get_epic(&self, id: i64) -> Result<Option<Epic>, DomainError> {
-        let found = self.epics.lock().unwrap().iter().find(|e| e.id == id).cloned();
+        let found = self
+            .epics
+            .lock()
+            .unwrap()
+            .iter()
+            .find(|e| e.id == id)
+            .cloned();
         Ok(found)
     }
 
     async fn list_epics_by_project(&self, project_id: i64) -> Result<Vec<Epic>, DomainError> {
-        let epics: Vec<Epic> = self.epics.lock().unwrap().iter().filter(|e| e.project_id == project_id).cloned().collect();
+        let epics: Vec<Epic> = self
+            .epics
+            .lock()
+            .unwrap()
+            .iter()
+            .filter(|e| e.project_id == project_id)
+            .cloned()
+            .collect();
         Ok(epics)
     }
 
@@ -618,12 +637,25 @@ impl StoragePort for MockStorage {
     }
 
     async fn get_story(&self, id: i64) -> Result<Option<Story>, DomainError> {
-        let found = self.stories.lock().unwrap().iter().find(|s| s.id == id).cloned();
+        let found = self
+            .stories
+            .lock()
+            .unwrap()
+            .iter()
+            .find(|s| s.id == id)
+            .cloned();
         Ok(found)
     }
 
     async fn list_stories_by_epic(&self, epic_id: i64) -> Result<Vec<Story>, DomainError> {
-        let stories: Vec<Story> = self.stories.lock().unwrap().iter().filter(|s| s.epic_id == epic_id).cloned().collect();
+        let stories: Vec<Story> = self
+            .stories
+            .lock()
+            .unwrap()
+            .iter()
+            .filter(|s| s.epic_id == epic_id)
+            .cloned()
+            .collect();
         Ok(stories)
     }
 
@@ -645,12 +677,24 @@ impl StoragePort for MockStorage {
     }
 
     async fn get_user(&self, id: i64) -> Result<Option<User>, DomainError> {
-        let found = self.users.lock().unwrap().iter().find(|u| u.id == id).cloned();
+        let found = self
+            .users
+            .lock()
+            .unwrap()
+            .iter()
+            .find(|u| u.id == id)
+            .cloned();
         Ok(found)
     }
 
     async fn get_user_by_email(&self, email: &str) -> Result<Option<User>, DomainError> {
-        let found = self.users.lock().unwrap().iter().find(|u| u.email == email).cloned();
+        let found = self
+            .users
+            .lock()
+            .unwrap()
+            .iter()
+            .find(|u| u.email == email)
+            .cloned();
         Ok(found)
     }
 
@@ -972,10 +1016,19 @@ impl VcsPort for MockVcs {
     async fn checkout_branch(&self, _b: &str) -> Result<(), DomainError> {
         Ok(())
     }
-    async fn list_branches(&self, _pattern: Option<&str>, _remote: bool) -> Result<Vec<agileplus_domain::ports::vcs::BranchInfo>, DomainError> {
+    async fn list_branches(
+        &self,
+        _pattern: Option<&str>,
+        _remote: bool,
+    ) -> Result<Vec<agileplus_domain::ports::vcs::BranchInfo>, DomainError> {
         Ok(vec![])
     }
-    async fn delete_branch(&self, _b: &str, _force: bool, _remote: Option<&str>) -> Result<(), DomainError> {
+    async fn delete_branch(
+        &self,
+        _b: &str,
+        _force: bool,
+        _remote: Option<&str>,
+    ) -> Result<(), DomainError> {
         Ok(())
     }
     async fn merge_to_target(&self, _s: &str, _t: &str) -> Result<MergeResult, DomainError> {
@@ -1056,11 +1109,15 @@ async fn setup_test_server() -> TestServer {
     let vcs = Arc::new(MockVcs);
     let telemetry = Arc::new(MockObs);
     let mut config = AppConfig::default();
-    config.api.api_keys = Some(TEST_API_KEY.to_string());
+    config.api.api_keys = Some(agileplus_domain::credentials::format_api_key_hash(
+        TEST_API_KEY,
+    ));
     let config = Arc::new(config);
 
     let creds: Arc<dyn agileplus_domain::credentials::CredentialStore> =
-        Arc::new(InMemoryCredentialStore::new(vec![TEST_API_KEY.to_string()]));
+        Arc::new(InMemoryCredentialStore::new(vec![
+            agileplus_domain::credentials::format_api_key_hash(TEST_API_KEY),
+        ]));
 
     let state = AppState::new(storage, vcs, telemetry, config, creds);
     let app = create_router(state);
@@ -1557,7 +1614,10 @@ async fn otel_request_span_middleware_wraps_handler() {
 
     // Minimal router with the OTel layer applied — mirrors production wiring.
     let app = Router::new()
-        .route("/ping", get(|| async { Json(serde_json::json!({"ok": true})) }))
+        .route(
+            "/ping",
+            get(|| async { Json(serde_json::json!({"ok": true})) }),
+        )
         .layer(opentelemetry_tracing_layer());
 
     let server = TestServer::new(app).unwrap();
@@ -1578,7 +1638,10 @@ async fn otel_request_span_propagates_traceparent() {
     use axum_test::TestServer;
 
     let app = Router::new()
-        .route("/ping", get(|| async { Json(serde_json::json!({"ok": true})) }))
+        .route(
+            "/ping",
+            get(|| async { Json(serde_json::json!({"ok": true})) }),
+        )
         .layer(opentelemetry_tracing_layer());
 
     let server = TestServer::new(app).unwrap();

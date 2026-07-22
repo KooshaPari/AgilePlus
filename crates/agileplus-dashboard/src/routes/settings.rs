@@ -6,6 +6,7 @@
 
 use std::env;
 
+use agileplus_domain::credentials::{CredentialStore, FileCredentialStore, PLANESO_KEY};
 use askama::Template;
 use axum::{
     extract::State,
@@ -16,8 +17,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::app_state::SharedState;
 use crate::templates::{
-    PlaneHealthEndpointView, PlaneSettingsPage, ServicesSettingsPage, SettingsPage,
-    ToastPartial,
+    PlaneHealthEndpointView, PlaneSettingsPage, ServicesSettingsPage, SettingsPage, ToastPartial,
 };
 
 // ── Configuration Types ────────────────────────────────────────────────────
@@ -26,7 +26,8 @@ use crate::templates::{
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PlaneConfig {
     pub api_url: String,
-    pub api_key: String,
+    /// Reference to the credential-store entry; never a secret value.
+    pub api_key_ref: String,
     pub workspace_slug: String,
     pub project_slug: String,
 }
@@ -402,6 +403,28 @@ pub async fn services_settings_page(State(state): State<SharedState>) -> Respons
 /// POST /api/settings/plane
 /// Persists plane sync configuration to the local config file.
 pub async fn save_plane_settings(axum::Form(form): axum::Form<PlaneSettingsForm>) -> Response {
+    let api_key = form.api_key.trim();
+    if api_key.is_empty() {
+        return render(ToastPartial {
+            message: "Plane API key is required".to_string(),
+            success: false,
+        });
+    }
+    let credential_path = dirs_next::home_dir()
+        .unwrap_or_else(|| std::path::PathBuf::from("."))
+        .join(".agileplus/credentials.enc");
+    let credentials = match FileCredentialStore::new(&credential_path).and_then(|store| {
+        store.set("agileplus", PLANESO_KEY, api_key)?;
+        Ok(store)
+    }) {
+        Ok(_) => (),
+        Err(error) => {
+            return render(ToastPartial {
+                message: format!("Failed to securely store Plane credential: {error}"),
+                success: false,
+            });
+        }
+    };
     let mut config = match Config::load() {
         Ok(c) => c,
         Err(_) => Config {
@@ -414,7 +437,7 @@ pub async fn save_plane_settings(axum::Form(form): axum::Form<PlaneSettingsForm>
 
     config.plane = Some(PlaneConfig {
         api_url: form.api_url.trim().to_string(),
-        api_key: form.api_key.trim().to_string(),
+        api_key_ref: PLANESO_KEY.to_string(),
         workspace_slug: form.workspace_slug.trim().to_string(),
         project_slug: form.project_slug.trim().to_string(),
     });
@@ -428,6 +451,30 @@ pub async fn save_plane_settings(axum::Form(form): axum::Form<PlaneSettingsForm>
             message: format!("Failed to save settings: {e}"),
             success: false,
         }),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn plane_config_serialization_never_contains_api_key_value() {
+        let config = Config {
+            plane: Some(PlaneConfig {
+                api_url: "https://plane.example".to_string(),
+                api_key_ref: PLANESO_KEY.to_string(),
+                workspace_slug: "workspace".to_string(),
+                project_slug: "project".to_string(),
+            }),
+            agents: None,
+            services: None,
+            dashboard: None,
+        };
+        let serialized = toml::to_string(&config).unwrap();
+        assert!(serialized.contains("api_key_ref"));
+        assert!(!serialized.contains("plane-secret-value"));
+        assert!(!serialized.contains("api_key ="));
     }
 }
 

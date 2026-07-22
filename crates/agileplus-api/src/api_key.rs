@@ -32,6 +32,20 @@ pub fn hash_key(plaintext: &str) -> [u8; 32] {
     hasher.finalize().into()
 }
 
+/// Import an operator-supplied key, replacing any legacy plaintext entry with
+/// its non-reversible representation. Operators retain the source key in their
+/// secret manager; AgilePlus never persists or reprints it.
+pub fn import_api_key(
+    creds: &dyn CredentialStore,
+    plaintext: &str,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    if plaintext.trim().is_empty() {
+        return Err("AGILEPLUS_API_KEY must not be empty".into());
+    }
+    creds.set("agileplus", keys::API_KEYS, &format_api_key_hash(plaintext))?;
+    Ok(())
+}
+
 /// Ensure an API key exists in the credential store.
 ///
 /// If no key is found, generates a new one and stores only its hash. The

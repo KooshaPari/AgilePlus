@@ -74,7 +74,7 @@ impl CredentialStore for KeychainThenEncryptedFile {
         self.keychain
             .get(service, key)
             .or_else(|error| match error {
-                CredentialError::NotFound(_) | CredentialError::BackendError(_) => {
+                CredentialError::BackendError(_) => {
                     self.with_fallback(|file| file.get(service, key))
                 }
                 other => Err(other),
@@ -96,7 +96,7 @@ impl CredentialStore for KeychainThenEncryptedFile {
         self.keychain
             .delete(service, key)
             .or_else(|error| match error {
-                CredentialError::NotFound(_) | CredentialError::BackendError(_) => {
+                CredentialError::BackendError(_) => {
                     self.with_fallback(|file| file.delete(service, key))
                 }
                 other => Err(other),
