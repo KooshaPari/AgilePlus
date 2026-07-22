@@ -79,6 +79,23 @@ pub struct Config {
 }
 
 impl Config {
+    /// Move a legacy inline Plane key into the configured credential backend.
+    /// The source field is scrubbed only after storage succeeds.
+    pub fn migrate_legacy_plane_key(
+        &mut self,
+        credentials: &dyn CredentialStore,
+    ) -> Result<bool, Box<dyn std::error::Error>> {
+        let Some(plane) = self.plane.as_mut() else {
+            return Ok(false);
+        };
+        let Some(legacy_key) = plane.api_key.as_deref().filter(|key| !key.is_empty()) else {
+            return Ok(false);
+        };
+        credentials.set("agileplus", PLANESO_KEY, legacy_key)?;
+        plane.api_key = None;
+        plane.api_key_ref = PLANESO_KEY.to_string();
+        Ok(true)
+    }
     pub fn load() -> Result<Self, Box<dyn std::error::Error>> {
         let config_path = Self::config_path();
         if config_path.exists() {
@@ -417,7 +434,7 @@ pub async fn save_plane_settings(axum::Form(form): axum::Form<PlaneSettingsForm>
         store.set("agileplus", PLANESO_KEY, api_key)?;
         Ok(store)
     }) {
-        Ok(_) => (),
+        Ok(store) => store,
         Err(error) => {
             return render(ToastPartial {
                 message: format!("Failed to securely store Plane credential: {error}"),
@@ -434,6 +451,18 @@ pub async fn save_plane_settings(axum::Form(form): axum::Form<PlaneSettingsForm>
             dashboard: None,
         },
     };
+    if let Err(error) = config.migrate_legacy_plane_key(credentials.as_ref()) {
+        return render(ToastPartial {
+            message: format!("Failed to migrate legacy Plane credential: {error}"),
+            success: false,
+        });
+    }
+    if let Err(error) = credentials.set("agileplus", PLANESO_KEY, api_key) {
+        return render(ToastPartial {
+            message: format!("Failed to securely store Plane credential: {error}"),
+            success: false,
+        });
+    }
 
     config.plane = Some(PlaneConfig {
         api_url: form.api_url.trim().to_string(),
@@ -477,6 +506,30 @@ mod tests {
         assert!(serialized.contains("api_key_ref"));
         assert!(!serialized.contains("plane-secret-value"));
         assert!(!serialized.contains("api_key ="));
+    }
+
+    #[test]
+    fn legacy_plane_key_is_moved_then_scrubbed() {
+        let store = agileplus_domain::credentials::InMemoryCredentialStore::new();
+        let mut config = Config {
+            plane: Some(PlaneConfig {
+                api_url: "https://plane.example".into(),
+                api_key_ref: String::new(),
+                api_key: Some("legacy-plane-secret".into()),
+                workspace_slug: "workspace".into(),
+                project_slug: "project".into(),
+            }),
+            agents: None,
+            services: None,
+            dashboard: None,
+        };
+        assert!(config.migrate_legacy_plane_key(&store).unwrap());
+        assert_eq!(
+            store.get("agileplus", PLANESO_KEY).unwrap(),
+            "legacy-plane-secret"
+        );
+        let serialized = toml::to_string(&config).unwrap();
+        assert!(!serialized.contains("legacy-plane-secret"));
     }
 }
 

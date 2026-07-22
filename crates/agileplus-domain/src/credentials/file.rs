@@ -294,4 +294,30 @@ mod tests {
             Err(CredentialError::MissingEncryptionKey)
         ));
     }
+
+    #[cfg(unix)]
+    #[test]
+    fn atomic_persist_leaves_no_temp_file_and_restricts_permissions() {
+        use std::os::unix::fs::PermissionsExt;
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("credentials.enc");
+        let store =
+            FileCredentialStore::with_passphrase(&path, "test encryption key".to_string()).unwrap();
+        store.set("plane", "api-key", "secret").unwrap();
+        assert_eq!(
+            std::fs::metadata(&path).unwrap().permissions().mode() & 0o777,
+            0o600
+        );
+        let temp_count = std::fs::read_dir(directory.path())
+            .unwrap()
+            .filter_map(Result::ok)
+            .filter(|entry| {
+                entry
+                    .file_name()
+                    .to_string_lossy()
+                    .starts_with(".credentials-")
+            })
+            .count();
+        assert_eq!(temp_count, 0);
+    }
 }
