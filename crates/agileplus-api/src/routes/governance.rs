@@ -124,7 +124,7 @@ where
             let wp_ids: std::collections::HashSet<i64> = wps.iter().map(|w| w.id).collect();
             if evidence
                 .iter()
-                .any(|e| wp_ids.contains(&e.wp_id) && e.evidence_type == req.evidence_type)
+                .any(|e| wp_ids.contains(&e.wp_id) && e.evidence_type.as_str() == req.evidence_type.as_str())
             {
                 rule_satisfied = true;
             }

@@ -74,6 +74,7 @@ where
     V: VcsPort + Send + Sync + 'static,
     O: ObservabilityPort + Send + Sync + 'static,
 {
+    let label_filter = params.label.clone();
     let features = if let Some(state_filter) = params.state {
         let fs = parse_feature_state(&state_filter)?;
         state
@@ -81,10 +82,10 @@ where
             .list_features_by_state(fs)
             .await
             .map_err(ApiError::from)?
-    } else if let Some(label) = params.label {
+    } else if let Some(label) = label_filter.as_ref() {
         state
             .storage
-            .list_features_by_label(&label)
+            .list_features_by_label(label)
             .await
             .map_err(ApiError::from)?
     } else {
@@ -95,7 +96,7 @@ where
             .map_err(ApiError::from)?
     };
 
-    let features: Vec<Feature> = if let Some(label_filter) = params.label {
+    let features: Vec<Feature> = if let Some(label_filter) = label_filter {
         features
             .into_iter()
             .filter(|f| f.labels.contains(&label_filter))

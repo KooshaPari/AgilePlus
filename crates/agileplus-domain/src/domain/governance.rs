@@ -44,11 +44,14 @@ pub struct PolicyRule {
     pub updated_at: DateTime<Utc>,
 }
 
+/// A required-evidence entry inside a governance rule.
+pub use traceability_core::governance::EvidenceRequirement;
+
 /// A governance rule captured inside a contract.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GovernanceRule {
     pub transition: String,
-    pub required_evidence: Vec<String>,
+    pub required_evidence: Vec<EvidenceRequirement>,
     pub policy_refs: Vec<i64>,
 }
 
