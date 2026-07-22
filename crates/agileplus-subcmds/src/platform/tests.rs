@@ -35,6 +35,14 @@ fn test_platform_status_down_when_api_unreachable() {
 }
 
 #[test]
+fn platform_status_uses_the_resolved_health_url_when_no_flag_is_supplied() {
+    assert_eq!(
+        status::resolved_health_url("http://127.0.0.1:3000", Some("http://127.0.0.1:3014")),
+        "http://127.0.0.1:3014"
+    );
+}
+
+#[test]
 fn test_print_status_table_does_not_panic() {
     let health = health::synthetic_platform_health();
     // Should not panic — just print.

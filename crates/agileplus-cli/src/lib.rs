@@ -2,3 +2,4 @@
 
 pub mod commands;
 pub mod context;
+pub mod runtime_contract;

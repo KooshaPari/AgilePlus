@@ -6,7 +6,11 @@ use crate::platform::types::{OverallStatus, ServiceStatus};
 
 /// Display platform service health.
 pub fn run_platform_status(args: PlatformStatusArgs) -> Result<()> {
-    let health = fetch_platform_health(&args.api_url);
+    let api_url = resolved_health_url(
+        &args.api_url,
+        std::env::var("AGILEPLUS_API_URL").ok().as_deref(),
+    );
+    let health = fetch_platform_health(&api_url);
     print_status_table(&health.services);
     println!();
 
@@ -61,4 +65,15 @@ pub fn run_platform_status(args: PlatformStatusArgs) -> Result<()> {
     };
     println!("Overall Status: {overall_msg}");
     Ok(())
+}
+
+/// Keep the explicit CLI flag authoritative, but let the local runtime resolver
+/// provide the status endpoint when the user did not supply one.
+pub(crate) fn resolved_health_url(explicit_url: &str, runtime_url: Option<&str>) -> String {
+    if explicit_url == "http://127.0.0.1:3000" {
+        if let Some(runtime_url) = runtime_url.filter(|url| !url.trim().is_empty()) {
+            return runtime_url.to_owned();
+        }
+    }
+    explicit_url.to_owned()
 }
