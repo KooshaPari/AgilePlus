@@ -29,16 +29,41 @@ fn test_synthetic_platform_health() {
 
 #[test]
 fn test_platform_status_down_when_api_unreachable() {
-    let health = health::fetch_platform_health("http://127.0.0.1:19999");
+    let health = health::fetch_platform_health("http://127.0.0.1:19999/health");
     assert_eq!(health.overall, OverallStatus::Down);
     assert_eq!(health.services[0].status, ServiceStatus::Unknown);
 }
 
 #[test]
 fn platform_status_uses_the_resolved_health_url_when_no_flag_is_supplied() {
+    let args = PlatformStatusArgs {
+        api_url: "http://127.0.0.1:3000".to_string(),
+    };
+
     assert_eq!(
-        status::resolved_health_url("http://127.0.0.1:3000", Some("http://127.0.0.1:3014")),
-        "http://127.0.0.1:3014"
+        status::status_probe_target(&args, Some("http://127.0.0.1:3014"), None)
+            .expect("resolved target"),
+        "http://127.0.0.1:3014/health"
+    );
+}
+
+#[test]
+fn platform_status_loads_the_persisted_runtime_health_target() {
+    let runtime_dir = tempfile::tempdir().expect("temporary runtime directory");
+    let runtime_file = runtime_dir.path().join("local-ports.env");
+    std::fs::write(
+        &runtime_file,
+        "AGILEPLUS_API_PORT=3014\nAGILEPLUS_GRPC_PORT=5014\nAGILEPLUS_API_URL=http://127.0.0.1:3014\nAGILEPLUS_API_HEALTH_URL=http://127.0.0.1:3014/health\n",
+    )
+    .expect("write persisted runtime");
+    let args = PlatformStatusArgs {
+        api_url: "http://127.0.0.1:3000".to_string(),
+    };
+
+    assert_eq!(
+        status::status_probe_target(&args, None, Some(runtime_file.as_path()))
+            .expect("resolved target"),
+        "http://127.0.0.1:3014/health"
     );
 }
 

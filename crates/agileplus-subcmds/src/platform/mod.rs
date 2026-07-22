@@ -17,6 +17,7 @@ mod down;
 mod health;
 mod logs;
 mod process_compose;
+mod runtime;
 mod status;
 mod types;
 mod up;

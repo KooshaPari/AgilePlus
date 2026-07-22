@@ -69,8 +69,8 @@ fn try_health_check(url: &str) -> Result<PlatformHealth> {
 }
 
 /// Fetch platform health from API, then enrich with direct dependency probes.
-pub(crate) fn fetch_platform_health(api_url: &str) -> PlatformHealth {
-    let api = match try_health_check(&format!("{api_url}/health")) {
+pub(crate) fn fetch_platform_health(health_url: &str) -> PlatformHealth {
+    let api = match try_health_check(health_url) {
         Ok(h) => h.services.into_iter().next().unwrap_or(ServiceHealth {
             name: "API".to_string(),
             status: ServiceStatus::Unknown,
