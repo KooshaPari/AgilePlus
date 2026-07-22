@@ -28,11 +28,16 @@ use crate::templates::{
 pub struct PlaneConfig {
     pub api_url: String,
     /// Reference to the credential-store entry; never a secret value.
+    #[serde(default = "default_plane_api_key_ref")]
     pub api_key_ref: String,
     #[serde(default, skip_serializing)]
     pub api_key: Option<String>,
     pub workspace_slug: String,
     pub project_slug: String,
+}
+
+fn default_plane_api_key_ref() -> String {
+    PLANESO_KEY.to_string()
 }
 
 /// Agent pool configuration (size, retry budget, dispatch strategy, LLM provider).
@@ -100,7 +105,17 @@ impl Config {
         let config_path = Self::config_path();
         if config_path.exists() {
             let content = std::fs::read_to_string(&config_path)?;
-            let config = toml::from_str(&content)?;
+            let mut config: Config = toml::from_str(&content)?;
+            if config
+                .plane
+                .as_ref()
+                .and_then(|plane| plane.api_key.as_deref())
+                .is_some_and(|key| !key.is_empty())
+            {
+                let store = create_credential_store(&AppConfig::default())?;
+                config.migrate_legacy_plane_key(store.as_ref())?;
+                config.save()?;
+            }
             Ok(config)
         } else {
             Ok(Config {
@@ -530,6 +545,17 @@ mod tests {
         );
         let serialized = toml::to_string(&config).unwrap();
         assert!(!serialized.contains("legacy-plane-secret"));
+    }
+
+    #[test]
+    fn legacy_plane_toml_deserializes_with_default_reference() {
+        let config: Config = toml::from_str(
+            "[plane]\napi_url = 'https://plane.example'\napi_key = 'legacy-secret'\nworkspace_slug = 'workspace'\nproject_slug = 'project'\n",
+        )
+        .unwrap();
+        let plane = config.plane.unwrap();
+        assert_eq!(plane.api_key_ref, PLANESO_KEY);
+        assert_eq!(plane.api_key.as_deref(), Some("legacy-secret"));
     }
 }
 

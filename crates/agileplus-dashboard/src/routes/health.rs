@@ -68,11 +68,16 @@ pub struct Config {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PlaneConfig {
     pub api_url: String,
+    #[serde(default = "default_plane_api_key_ref")]
     pub api_key_ref: String,
     #[serde(default, skip_serializing)]
     pub api_key: Option<String>,
     pub workspace_slug: String,
     pub project_slug: String,
+}
+
+fn default_plane_api_key_ref() -> String {
+    "planeso-key".to_string()
 }
 
 /// Agent configuration
