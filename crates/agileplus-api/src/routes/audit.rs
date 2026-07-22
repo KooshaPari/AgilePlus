@@ -12,7 +12,7 @@ use serde_json::{Value, json};
 
 use agileplus_domain::domain::audit::AuditChain;
 use agileplus_domain::ports::{
-    observability::ObservabilityPort, storage::StoragePort, vcs::VcsPort,
+    observability::ObservabilityPort, StoragePort, vcs::VcsPort,
 };
 
 use crate::error::ApiError;

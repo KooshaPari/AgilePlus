@@ -13,7 +13,7 @@ use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
 
 use agileplus_domain::ports::{
-    BranchInfo, observability::ObservabilityPort, storage::StoragePort, vcs::VcsPort,
+    BranchInfo, observability::ObservabilityPort, StoragePort, vcs::VcsPort,
 };
 
 use crate::error::ApiError;

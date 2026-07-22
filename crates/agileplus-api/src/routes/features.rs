@@ -20,7 +20,7 @@ use utoipa::{IntoParams, ToSchema};
 use agileplus_domain::domain::feature::Feature;
 use agileplus_domain::domain::state_machine::{self, FeatureState};
 use agileplus_domain::ports::{
-    observability::ObservabilityPort, storage::StoragePort, vcs::VcsPort,
+    observability::ObservabilityPort, StoragePort, vcs::VcsPort,
 };
 
 use crate::error::ApiError;

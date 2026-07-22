@@ -12,7 +12,7 @@ use agileplus_domain::domain::backlog::{
     BacklogFilters, BacklogItem, BacklogPriority, BacklogSort, BacklogStatus, Intent,
 };
 use agileplus_domain::ports::{
-    observability::ObservabilityPort, storage::StoragePort, vcs::VcsPort,
+    observability::ObservabilityPort, StoragePort, vcs::VcsPort,
 };
 
 use crate::error::ApiError;

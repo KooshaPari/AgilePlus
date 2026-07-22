@@ -15,7 +15,7 @@ use tokio_stream::wrappers::BroadcastStream;
 
 use crate::state::AppState;
 use agileplus_domain::ports::{
-    observability::ObservabilityPort, storage::StoragePort, vcs::VcsPort,
+    observability::ObservabilityPort, StoragePort, vcs::VcsPort,
 };
 
 /// `GET /api/v1/stream`

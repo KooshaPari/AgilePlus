@@ -3,7 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "node src/server.js"
+    "start": "node src/server.js",
+    "fixture": "node fixture-server.js"
   },
   "dependencies": {
     "cors": "^2.8.5",

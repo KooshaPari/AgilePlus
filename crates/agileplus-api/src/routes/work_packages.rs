@@ -17,7 +17,7 @@ use serde::{Deserialize, Serialize};
 
 use agileplus_domain::domain::work_package::{WorkPackage, WpState};
 use agileplus_domain::ports::{
-    observability::ObservabilityPort, storage::StoragePort, vcs::VcsPort,
+    observability::ObservabilityPort, StoragePort, vcs::VcsPort,
 };
 
 use crate::error::ApiError;

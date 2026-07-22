@@ -14,7 +14,7 @@ use serde::Deserialize;
 
 use agileplus_domain::domain::user::{User, UserRole};
 use agileplus_domain::ports::{
-    observability::ObservabilityPort, storage::StoragePort, vcs::VcsPort,
+    observability::ObservabilityPort, StoragePort, vcs::VcsPort,
 };
 
 use crate::error::ApiError;

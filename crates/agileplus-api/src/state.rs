@@ -12,7 +12,7 @@ use agileplus_application::use_cases::{
 use agileplus_domain::config::AppConfig;
 use agileplus_domain::credentials::CredentialStore;
 use agileplus_domain::ports::{
-    observability::ObservabilityPort, storage::StoragePort, vcs::VcsPort,
+    observability::ObservabilityPort, StoragePort, vcs::VcsPort,
 };
 use tokio::sync::broadcast;
 
@@ -103,6 +103,8 @@ where
         let publisher: Arc<dyn agileplus_domain::ports::events::DomainEventPublisher> =
             Arc::new(NoOpPublisher);
 
+        let token_verifier: DynTokenVerifier = Arc::new(SharedSecretVerifier::from_env());
+
         let create_feature_uc = Arc::new(CreateFeature::new(storage.clone(), publisher.clone()));
         let advance_feature_uc = Arc::new(AdvanceFeature::new(storage.clone(), publisher.clone()));
         // CreateStory / TransitionStory require a StoryRepository; StoragePort
@@ -134,9 +136,8 @@ where
 /// Used when NATS is not configured. Events are silently dropped.
 struct NoOpPublisher;
 
-#[async_trait::async_trait]
 impl agileplus_domain::ports::events::DomainEventPublisher for NoOpPublisher {
-    async fn publish(
+    fn publish(
         &self,
         _event: agileplus_domain::ports::events::DomainEvent,
     ) -> Result<(), agileplus_domain::error::DomainError> {
