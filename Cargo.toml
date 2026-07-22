@@ -102,6 +102,8 @@ chrono = { version = "0.4", features = ["serde"] }
 sha2 = "0.10"
 zeroize = { version = "1", features = ["derive"] }
 base64 = "0.22"
+aes-gcm = "0.10"
+argon2 = "0.5"
 
 # gRPC / proto (used by agileplus-proto, agileplus-grpc, plugin-grpc, agent-service)
 tonic = { version = "0.13", features = ["transport", "prost"] }

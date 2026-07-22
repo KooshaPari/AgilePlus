@@ -2,21 +2,16 @@
 //!
 //! On first startup, if no API key exists in the credential store, a new
 //! 32-byte random key is generated, base64url-encoded as the plaintext key,
-//! and its SHA-256 hash is stored for validation.
-//!
-//! The plaintext key is:
-//!   - written to `~/.config/agileplus/api-key` with 0600 permissions
-//!   - printed to stdout once so the operator can record it
+//! and only its SHA-256 hash is stored for validation. The plaintext key is
+//! never persisted by AgilePlus.
 //!
 //! Traceability: WP11-T064
-
-use std::path::PathBuf;
 
 use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD};
 use rand::RngCore;
 use sha2::{Digest, Sha256};
 
-use agileplus_domain::credentials::{CredentialStore, keys};
+use agileplus_domain::credentials::{CredentialStore, format_api_key_hash, keys};
 
 /// Prefix that identifies an AgilePlus API key.
 const KEY_PREFIX: &str = "agp_";
@@ -37,19 +32,10 @@ pub fn hash_key(plaintext: &str) -> [u8; 32] {
     hasher.finalize().into()
 }
 
-/// Default path for storing the plaintext API key.
-pub fn default_key_file_path() -> PathBuf {
-    let home = std::env::var("HOME").unwrap_or_else(|_| "/tmp".to_string());
-    PathBuf::from(home)
-        .join(".config")
-        .join("agileplus")
-        .join("api-key")
-}
-
 /// Ensure an API key exists in the credential store.
 ///
-/// If no key is found, generates a new one, stores its hash, writes the
-/// plaintext to `~/.config/agileplus/api-key`, and prints it to stdout.
+/// If no key is found, generates a new one and stores only its hash. The
+/// generated plaintext is deliberately never written to disk.
 ///
 /// Returns `true` if a new key was generated, `false` if one already existed.
 pub async fn ensure_api_key(
@@ -66,29 +52,14 @@ pub async fn ensure_api_key(
     // Generate new key.
     let plaintext = generate_plaintext_key();
 
-    // Store the plaintext directly in the credential store for validation
-    // (the default InMemoryCredentialStore / FileCredentialStore validate
-    // against comma-separated plaintext keys — see credentials.rs).
-    creds.set("agileplus", keys::API_KEYS, &plaintext)?;
-
-    // Write plaintext to config file with 0600 permissions.
-    let key_path = default_key_file_path();
-    if let Some(parent) = key_path.parent() {
-        std::fs::create_dir_all(parent)?;
-    }
-    std::fs::write(&key_path, &plaintext)?;
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt;
-        let perms = std::fs::Permissions::from_mode(0o600);
-        std::fs::set_permissions(&key_path, perms)?;
-    }
+    creds.set(
+        "agileplus",
+        keys::API_KEYS,
+        &format_api_key_hash(&plaintext),
+    )?;
 
     // Log key metadata securely (never log the actual key)
-    tracing::info!(
-        "AgilePlus API initialized. Key saved to {}",
-        key_path.display()
-    );
+    tracing::info!("AgilePlus API initialized with a non-reversible API key hash");
     // Show only first 8 chars + "..." for operator confirmation
     let masked_key = if plaintext.len() > 8 {
         format!("{}...", &plaintext[..8])
@@ -97,8 +68,7 @@ pub async fn ensure_api_key(
     };
     println!("AgilePlus API initialized.");
     println!("API Key (masked): {}", masked_key);
-    println!("Store this key securely; it won't be shown again.");
-    println!("(Also saved to {})", key_path.display());
+    println!("Provide an operator-managed API key through secure deployment configuration.");
 
     Ok(true)
 }
@@ -106,6 +76,7 @@ pub async fn ensure_api_key(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use agileplus_domain::credentials::{InMemoryCredentialStore, format_api_key_hash};
 
     #[test]
     fn generated_key_has_prefix() {
@@ -133,5 +104,25 @@ mod tests {
         let h1 = hash_key("agp_key_one");
         let h2 = hash_key("agp_key_two");
         assert_ne!(h1, h2);
+    }
+
+    #[tokio::test]
+    async fn initialization_stores_only_a_non_reversible_key_hash() {
+        let store = InMemoryCredentialStore::new();
+        assert!(ensure_api_key(&store).await.unwrap());
+        let stored = store.get("agileplus", keys::API_KEYS).unwrap();
+        assert!(stored.starts_with("sha256:"));
+        assert!(!stored.starts_with(KEY_PREFIX));
+    }
+
+    #[test]
+    fn stored_key_hash_validates_without_persisting_plaintext() {
+        let store = InMemoryCredentialStore::new();
+        let plaintext = "agp_test_secret";
+        store
+            .set("agileplus", keys::API_KEYS, &format_api_key_hash(plaintext))
+            .unwrap();
+        assert!(store.validate_api_key(plaintext).unwrap());
+        assert!(!store.validate_api_key("agp_wrong_secret").unwrap());
     }
 }

@@ -1,5 +1,8 @@
 use super::error::CredentialError;
 use super::keys;
+use sha2::{Digest, Sha256};
+
+const API_KEY_HASH_PREFIX: &str = "sha256:";
 
 /// Port for storing and retrieving credentials.
 ///
@@ -21,7 +24,7 @@ pub trait CredentialStore: Send + Sync {
     /// List all stored keys for a service.
     fn list_keys(&self, service: &str) -> Result<Vec<String>, CredentialError>;
 
-    /// Validate whether a raw API key matches any stored API key.
+    /// Validate whether a raw API key matches any stored API key hash.
     ///
     /// Uses constant-time comparison to prevent timing attacks.
     fn validate_api_key(&self, provided_key: &str) -> Result<bool, CredentialError> {
@@ -30,13 +33,26 @@ pub trait CredentialStore: Send + Sync {
             Err(CredentialError::NotFound(_)) => return Ok(false),
             Err(e) => return Err(e),
         };
+        let provided_hash = format_api_key_hash(provided_key);
         let valid = stored
             .split(',')
             .map(str::trim)
             .filter(|k| !k.is_empty())
-            .any(|stored_key| constant_time_eq(provided_key.as_bytes(), stored_key.as_bytes()));
+            .any(|stored_key| constant_time_eq(provided_hash.as_bytes(), stored_key.as_bytes()));
         Ok(valid)
     }
+}
+
+/// Produce the canonical non-reversible representation of an API key.
+pub fn format_api_key_hash(api_key: &str) -> String {
+    let digest = Sha256::digest(api_key.as_bytes());
+    let mut result = String::with_capacity(API_KEY_HASH_PREFIX.len() + digest.len() * 2);
+    result.push_str(API_KEY_HASH_PREFIX);
+    for byte in digest {
+        use std::fmt::Write as _;
+        write!(&mut result, "{byte:02x}").expect("writing to a String cannot fail");
+    }
+    result
 }
 
 /// Constant-time byte comparison to prevent timing-based key extraction.

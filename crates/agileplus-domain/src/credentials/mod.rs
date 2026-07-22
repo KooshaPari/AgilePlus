@@ -17,4 +17,4 @@ pub use file::FileCredentialStore;
 pub use keychain::KeychainCredentialStore;
 pub use keys::*;
 pub use memory::InMemoryCredentialStore;
-pub use store::CredentialStore;
+pub use store::{CredentialStore, format_api_key_hash};

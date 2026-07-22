@@ -11,4 +11,6 @@ pub enum CredentialError {
     Serialization(String),
     #[error("encryption error: {0}")]
     Encryption(String),
+    #[error("credential encryption key is required for file-backed credentials")]
+    MissingEncryptionKey,
 }

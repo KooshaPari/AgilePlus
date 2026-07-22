@@ -1,24 +1,116 @@
 use crate::config::{AppConfig, CredentialBackend};
 
+use std::path::PathBuf;
+
+use super::error::CredentialError;
 use super::file::FileCredentialStore;
 #[cfg(feature = "keychain")]
 use super::keychain::KeychainCredentialStore;
 use super::store::CredentialStore;
 
 /// Create the appropriate credential store based on the app configuration.
-pub fn create_credential_store(config: &AppConfig) -> Box<dyn CredentialStore> {
+pub fn create_credential_store(
+    config: &AppConfig,
+) -> Result<Box<dyn CredentialStore>, CredentialError> {
     match config.credentials.backend {
         #[cfg(feature = "keychain")]
-        CredentialBackend::Keychain => Box::new(KeychainCredentialStore::new()),
-        CredentialBackend::File => {
-            Box::new(FileCredentialStore::new(&config.credentials.file_path))
-        }
+        CredentialBackend::Keychain => Ok(Box::new(KeychainCredentialStore::new())),
+        CredentialBackend::File => Ok(Box::new(FileCredentialStore::new(
+            &config.credentials.file_path,
+        )?)),
         CredentialBackend::Auto => {
-            Box::new(FileCredentialStore::new(&config.credentials.file_path))
+            #[cfg(feature = "keychain")]
+            {
+                Ok(Box::new(KeychainThenEncryptedFile::new(
+                    config.credentials.file_path.clone(),
+                )))
+            }
+            #[cfg(not(feature = "keychain"))]
+            {
+                Ok(Box::new(FileCredentialStore::new(
+                    &config.credentials.file_path,
+                )?))
+            }
         }
         #[cfg(not(feature = "keychain"))]
-        CredentialBackend::Keychain => {
-            Box::new(FileCredentialStore::new(&config.credentials.file_path))
+        CredentialBackend::Keychain => Err(CredentialError::BackendError(
+            "keychain backend is not compiled into this build".to_string(),
+        )),
+    }
+}
+
+/// Uses the OS keychain whenever it works and lazily opens the encrypted file
+/// only when the keychain is unavailable. The file cannot silently downgrade to
+/// plaintext because opening it requires `AGILEPLUS_CREDENTIAL_KEY`.
+#[cfg(feature = "keychain")]
+struct KeychainThenEncryptedFile {
+    keychain: KeychainCredentialStore,
+    file_path: PathBuf,
+}
+
+#[cfg(feature = "keychain")]
+impl KeychainThenEncryptedFile {
+    fn new(file_path: PathBuf) -> Self {
+        Self {
+            keychain: KeychainCredentialStore::new(),
+            file_path,
         }
+    }
+
+    fn with_fallback<T>(
+        &self,
+        operation: impl FnOnce(&FileCredentialStore) -> Result<T, CredentialError>,
+    ) -> Result<T, CredentialError> {
+        // Construct on demand so a healthy keychain never requires an
+        // encryption key. The file store reloads its encrypted state on each
+        // fallback operation, keeping this adapter stateless and fail-closed.
+        operation(&FileCredentialStore::new(&self.file_path)?)
+    }
+}
+
+#[cfg(feature = "keychain")]
+impl CredentialStore for KeychainThenEncryptedFile {
+    fn get(&self, service: &str, key: &str) -> Result<String, CredentialError> {
+        self.keychain
+            .get(service, key)
+            .or_else(|error| match error {
+                CredentialError::NotFound(_) | CredentialError::BackendError(_) => {
+                    self.with_fallback(|file| file.get(service, key))
+                }
+                other => Err(other),
+            })
+    }
+
+    fn set(&self, service: &str, key: &str, value: &str) -> Result<(), CredentialError> {
+        self.keychain
+            .set(service, key, value)
+            .or_else(|error| match error {
+                CredentialError::BackendError(_) => {
+                    self.with_fallback(|file| file.set(service, key, value))
+                }
+                other => Err(other),
+            })
+    }
+
+    fn delete(&self, service: &str, key: &str) -> Result<(), CredentialError> {
+        self.keychain
+            .delete(service, key)
+            .or_else(|error| match error {
+                CredentialError::NotFound(_) | CredentialError::BackendError(_) => {
+                    self.with_fallback(|file| file.delete(service, key))
+                }
+                other => Err(other),
+            })
+    }
+
+    fn list_keys(&self, service: &str) -> Result<Vec<String>, CredentialError> {
+        self.keychain
+            .list_keys(service)
+            .or_else(|error| match error {
+                CredentialError::BackendError(_) => {
+                    self.with_fallback(|file| file.list_keys(service))
+                }
+                other => Err(other),
+            })
     }
 }
