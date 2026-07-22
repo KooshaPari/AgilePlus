@@ -2,36 +2,26 @@
 
 ## Dependency graph
 
-`B0 clean build` -> `R1 runtime contract` -> `R2 launcher/live API` -> `R6 MCP/API stream`
+`T1 generated build + resolved runtime` -> `T3 durable events` -> `T4 artifacts + API/gRPC/MCP cursor stream` -> `T5 AgilePlus evidence` -> `T6 Tracera` -> `T7 Grapheon` -> portfolio.
 
-`B0 clean build` -> `R3 credential protection`
+`T1` -> `T2 encrypted credentials/API keys` -> `T3`; `T1` -> `T4`. T2 can run in parallel with the runtime part of T1, but its reference-only data contract must land before T3 and T5.
 
-`R1 runtime contract` -> `R5 MinIO artifact adapter`
+## Work packages and gates
 
-`R2 live API` + `R3 credentials` -> `R4 persistent events/query`
+| ID | Owner lane | Depends on | Definition of done | Required proof |
+|---|---|---|---|---|
+| T1 | runtime | none | generated proto only; one port resolver; real API/gRPC lifecycle | locked package tests, live health/gRPC/shutdown transcript |
+| T2 | security | build baseline | keychain-first encrypted fallback and API-key redaction | crypto/tamper/rotation tests plus secret scan |
+| T3 | events | T1,T2 | SQLite query + stable cursor + audit chain | restart/filter/cursor/chain contract tests |
+| T4 | evidence transport | T1,T3 | MinIO digest store and single resumable authenticated stream source | MinIO authorization/digest tests and live SSE/gRPC/MCP transcript |
+| T5 | AgilePlus dogfood | T2-T4 | verifier accepts only complete self-dogfood manifest | real commands, trace, usage, artifact, audit, manifest verification |
+| T6 | Tracera dogfood | T5 | full consuming-project evidence pack | project-scoped integration test and verifier pass |
+| T7 | Grapheon recovery/dogfood | T6 | no conflict markers, clean build, consuming-project evidence pack | conflict scan, build/test, verifier pass |
+| T8 | portfolio | T7 | one independently verifiable go/no-go record per project | per-project manifest and command transcript |
 
-`R4 events` + `R5 artifacts` + `R6 streaming` -> `D1 AgilePlus evidence journey`
+## Parallelization and checkpoints
 
-`D1` -> `D2 Tracera dogfood` -> `D3 Grapheon recovery and dogfood` -> `D4 portfolio rollout`
-
-## Work packages
-
-| ID | Outcome | Depends on | Acceptance evidence |
-|---|---|---|---|
-| B0 | Clean reproducible release build | none | `cargo build --release` generates services; no runnable stub fallback; workspace tests pass. |
-| R1 | One runtime resolver and endpoint contract | B0 | unit tests for precedence/conflicts; launcher and status report identical endpoints. |
-| R2 | Real API/gRPC launch lifecycle | R1 | process start, health, gRPC read, graceful shutdown, failure-log tests. |
-| R3 | Keychain-first, encrypted fail-closed credential and API-key store | B0 | secret scan/redaction; keychain and AES-256-GCM/Argon2id fallback store/read/rotate/delete; unavailable/decrypt-failure tests. |
-| R4 | Persistent event repository/query/cursor | R2,R3 | restart persistence; type/filter/page/cursor and chain verification tests. |
-| R5 | MinIO artifact adapter | R1 | isolated MinIO put/get/digest/authorization/failure tests. |
-| R6 | Authenticated API/MCP stream | R2,R4 | live stream, resume/no-duplicate, heartbeat, authorization tests. |
-| D1 | AgilePlus self-dogfood evidence pack | R3-R6 | immutable manifest verifies every required evidence reference. |
-| D2 | Tracera dogfood | D1 | full journey and project-scoped evidence pack pass. |
-| D3 | Grapheon recovery plus dogfood | D2 | no conflict markers, clean build/test, full journey evidence pack. |
-| D4 | Remaining portfolio | D3 | one evidence pack and explicit go/no-go record per project. |
-
-## Parallelization boundary
-
-R3 can proceed independently after B0. R1 must finish before R2/R5. R4 and R5 can run
-in parallel after their listed prerequisites. R6 begins only after a real R2 server and
-R4 cursor contract exist. Dogfood never begins until R1-R6 are green.
+- Begin T1 and T2 on separate branches. Do not merge T3 until both contracts are reviewed.
+- Begin T4 only after T3 exposes a tested cursor. T5 begins only with T2-T4 green.
+- Each task owns its new tests and commits a focused slice. The integrator runs `cargo test --workspace --locked` after T5, T6, and T7.
+- Before each external consumer runtime test: inspect port ownership; use isolated compose resources and development-only credentials. Before every completion claim: run the evidence verifier.
