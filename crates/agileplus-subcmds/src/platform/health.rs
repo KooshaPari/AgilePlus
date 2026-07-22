@@ -2,7 +2,7 @@ use std::io::{Read, Write};
 use std::net::{SocketAddr, TcpStream, ToSocketAddrs};
 use std::time::{Duration, Instant};
 
-use anyhow::{Result, anyhow};
+use anyhow::{anyhow, Result};
 
 use crate::platform::types::{OverallStatus, PlatformHealth, ServiceHealth, ServiceStatus};
 
@@ -43,6 +43,7 @@ pub(crate) fn wait_for_health(
 /// Attempt a single HTTP GET to the health endpoint.
 fn try_health_check(url: &str) -> Result<PlatformHealth> {
     let started = Instant::now();
+    let api_port = http_url_port(url)?;
     let body = http_get(url)?;
     let latency_ms = started.elapsed().as_millis() as u64;
 
@@ -61,22 +62,38 @@ fn try_health_check(url: &str) -> Result<PlatformHealth> {
             status: ServiceStatus::Healthy,
             latency_ms: Some(latency_ms),
             uptime: None,
-            port: Some(DEFAULT_API_PORT),
+            port: Some(api_port),
             last_check: Some("just now".to_string()),
         }],
         overall: OverallStatus::Healthy,
     })
 }
 
+fn http_url_port(url: &str) -> Result<u16> {
+    let authority = url
+        .strip_prefix("http://")
+        .ok_or_else(|| anyhow!("only http supported: {url}"))?
+        .split('/')
+        .next()
+        .ok_or_else(|| anyhow!("missing HTTP authority"))?;
+    match authority.rsplit_once(':') {
+        Some((_, port)) => port
+            .parse()
+            .map_err(|_| anyhow!("invalid HTTP port in {url}")),
+        None => Ok(80),
+    }
+}
+
 /// Fetch platform health from API, then enrich with direct dependency probes.
 pub(crate) fn fetch_platform_health(health_url: &str) -> PlatformHealth {
+    let api_port = http_url_port(health_url).unwrap_or(DEFAULT_API_PORT);
     let api = match try_health_check(health_url) {
         Ok(h) => h.services.into_iter().next().unwrap_or(ServiceHealth {
             name: "API".to_string(),
             status: ServiceStatus::Unknown,
             latency_ms: None,
             uptime: None,
-            port: Some(DEFAULT_API_PORT),
+            port: Some(api_port),
             last_check: None,
         }),
         Err(_) => ServiceHealth {
@@ -84,7 +101,7 @@ pub(crate) fn fetch_platform_health(health_url: &str) -> PlatformHealth {
             status: ServiceStatus::Unknown,
             latency_ms: None,
             uptime: None,
-            port: Some(DEFAULT_API_PORT),
+            port: Some(api_port),
             last_check: None,
         },
     };
@@ -109,12 +126,9 @@ pub(crate) fn fetch_platform_health(health_url: &str) -> PlatformHealth {
 }
 
 fn overall_from(services: &[ServiceHealth]) -> OverallStatus {
-    let any_down = services.iter().any(|s| {
-        matches!(
-            s.status,
-            ServiceStatus::Unknown | ServiceStatus::Unhealthy
-        )
-    });
+    let any_down = services
+        .iter()
+        .any(|s| matches!(s.status, ServiceStatus::Unknown | ServiceStatus::Unhealthy));
     let any_degraded = services
         .iter()
         .any(|s| matches!(s.status, ServiceStatus::Degraded));
@@ -181,7 +195,9 @@ fn probe_tcp(name: &str, port: u16) -> ServiceHealth {
 }
 
 fn http_get(url: &str) -> Result<String> {
-    let url = url.strip_prefix("http://").ok_or_else(|| anyhow!("only http supported: {url}"))?;
+    let url = url
+        .strip_prefix("http://")
+        .ok_or_else(|| anyhow!("only http supported: {url}"))?;
     let (host_port, path) = match url.split_once('/') {
         Some((hp, rest)) => (hp, format!("/{rest}")),
         None => (url, "/".to_string()),
@@ -219,7 +235,10 @@ fn http_get(url: &str) -> Result<String> {
     let text = String::from_utf8_lossy(&buf);
     let (header, body) = text.split_once("\r\n\r\n").unwrap_or((&text, ""));
     if !header.contains("200") {
-        return Err(anyhow!("non-200 response: {}", header.lines().next().unwrap_or("")));
+        return Err(anyhow!(
+            "non-200 response: {}",
+            header.lines().next().unwrap_or("")
+        ));
     }
     Ok(body.to_string())
 }

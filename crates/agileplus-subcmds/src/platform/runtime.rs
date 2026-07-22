@@ -2,7 +2,7 @@
 
 use std::collections::BTreeMap;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use anyhow::{anyhow, Result};
 
@@ -44,7 +44,7 @@ impl ResolvedRuntime {
         let environment_base = std::env::var("AGILEPLUS_API_URL").ok();
         Self::load_from_sources(
             environment_base.as_deref(),
-            Some(Path::new(RUNTIME_PORTS_FILE)),
+            runtime_file_from_repo_root().as_deref(),
         )
     }
 
@@ -58,11 +58,11 @@ impl ResolvedRuntime {
 
         if let Some(runtime_file) = runtime_file.filter(|path| path.is_file()) {
             let values = parse_runtime_file(runtime_file)?;
-            if let (Some(api_base), Some(health_url)) = (
-                values.get("AGILEPLUS_API_URL"),
-                values.get("AGILEPLUS_API_HEALTH_URL"),
-            ) {
-                return Self::new(api_base, health_url);
+            if let Some(api_base) = values.get("AGILEPLUS_API_URL") {
+                if let Some(health_url) = values.get("AGILEPLUS_API_HEALTH_URL") {
+                    return Self::new(api_base, health_url);
+                }
+                return Self::from_api_base(api_base);
             }
         }
 
@@ -72,6 +72,14 @@ impl ResolvedRuntime {
     pub(crate) fn health_url(&self) -> &str {
         &self.health_url
     }
+}
+
+fn runtime_file_from_repo_root() -> Option<PathBuf> {
+    let root = std::env::var("AGILEPLUS_ROOT")
+        .ok()
+        .map(PathBuf::from)
+        .or_else(crate::platform::workspace::find_agileplus_root_from_walk)?;
+    Some(root.join(RUNTIME_PORTS_FILE))
 }
 
 fn parse_runtime_file(path: &Path) -> Result<BTreeMap<String, String>> {
