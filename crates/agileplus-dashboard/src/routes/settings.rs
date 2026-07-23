@@ -151,8 +151,16 @@ impl Config {
             // Do not rewrite the config until the secure store accepts the
             // secret. A failed migration leaves the raw legacy document intact.
             let credentials = credential_factory()?;
+            let previous_credential = match credentials.get("agileplus", PLANESO_KEY) {
+                Ok(value) => Some(value),
+                Err(agileplus_domain::credentials::CredentialError::NotFound(_)) => None,
+                Err(error) => return Err(Box::new(error)),
+            };
             config.migrate_legacy_plane_key(credentials.as_ref())?;
-            config.save_to_path(config_path)?;
+            if let Err(error) = config.save_to_path(config_path) {
+                restore_credential(credentials.as_ref(), previous_credential.as_deref())?;
+                return Err(error);
+            }
         }
         Ok(config)
     }
@@ -179,6 +187,22 @@ impl Config {
             .map(|home| std::path::PathBuf::from(home).join(".agileplus/config.toml"))
             .unwrap_or_else(|| std::path::PathBuf::from(".agileplus/config.toml"))
     }
+}
+
+/// Restore a credential after a later config write fails. This keeps a failed
+/// migration or settings save from changing the effective credential state.
+fn restore_credential(
+    credentials: &dyn CredentialStore,
+    previous: Option<&str>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    match previous {
+        Some(value) => credentials.set("agileplus", PLANESO_KEY, value)?,
+        None => match credentials.delete("agileplus", PLANESO_KEY) {
+            Ok(()) | Err(agileplus_domain::credentials::CredentialError::NotFound(_)) => {}
+            Err(error) => return Err(Box::new(error)),
+        },
+    }
+    Ok(())
 }
 
 // ── Form Request Types ────────────────────────────────────────────────────
@@ -486,10 +510,7 @@ pub async fn save_plane_settings(axum::Form(form): axum::Form<PlaneSettingsForm>
             agileplus_domain::credentials::CredentialError::BackendError(error.to_string())
         })
         .and_then(|app_config| create_credential_store(&app_config))
-        .and_then(|store| {
-            store.set("agileplus", PLANESO_KEY, api_key)?;
-            Ok(store)
-        }) {
+    {
         Ok(store) => store,
         Err(error) => {
             return render(ToastPartial {
@@ -498,27 +519,37 @@ pub async fn save_plane_settings(axum::Form(form): axum::Form<PlaneSettingsForm>
             });
         }
     };
-    let mut config = match Config::load() {
-        Ok(config) => config,
-        Err(error) => {
-            return render(ToastPartial {
-                message: format!("Failed to load settings safely: {error}"),
-                success: false,
-            });
-        }
+    match persist_plane_settings(&form, &Config::config_path(), credentials.as_ref()) {
+        Ok(()) => render(ToastPartial {
+            message: "Plane settings saved successfully".to_string(),
+            success: true,
+        }),
+        Err(error) => render(ToastPartial {
+            message: format!("Failed to save settings: {error}"),
+            success: false,
+        }),
+    }
+}
+
+fn persist_plane_settings(
+    form: &PlaneSettingsForm,
+    config_path: &Path,
+    credentials: &dyn CredentialStore,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let mut config = if config_path.exists() {
+        Config::read_from_path(config_path)?
+    } else {
+        Config::empty()
     };
-    if let Err(error) = config.migrate_legacy_plane_key(credentials.as_ref()) {
-        return render(ToastPartial {
-            message: format!("Failed to migrate legacy Plane credential: {error}"),
-            success: false,
-        });
+    let previous_credential = match credentials.get("agileplus", PLANESO_KEY) {
+        Ok(value) => Some(value),
+        Err(agileplus_domain::credentials::CredentialError::NotFound(_)) => None,
+        Err(error) => return Err(Box::new(error)),
+    };
+    if let Err(error) = config.migrate_legacy_plane_key(credentials) {
+        return Err(error);
     }
-    if let Err(error) = credentials.set("agileplus", PLANESO_KEY, api_key) {
-        return render(ToastPartial {
-            message: format!("Failed to securely store Plane credential: {error}"),
-            success: false,
-        });
-    }
+    credentials.set("agileplus", PLANESO_KEY, form.api_key.trim())?;
 
     config.plane = Some(PlaneConfig {
         api_url: form.api_url.trim().to_string(),
@@ -528,16 +559,11 @@ pub async fn save_plane_settings(axum::Form(form): axum::Form<PlaneSettingsForm>
         project_slug: form.project_slug.trim().to_string(),
     });
 
-    match config.save() {
-        Ok(_) => render(ToastPartial {
-            message: "Plane settings saved successfully".to_string(),
-            success: true,
-        }),
-        Err(e) => render(ToastPartial {
-            message: format!("Failed to save settings: {e}"),
-            success: false,
-        }),
+    if let Err(error) = config.save_to_path(config_path) {
+        restore_credential(credentials, previous_credential.as_deref())?;
+        return Err(error);
     }
+    Ok(())
 }
 
 #[cfg(test)]
@@ -680,6 +706,51 @@ mod tests {
         assert_eq!(std::fs::read_to_string(&config_path).unwrap(), fixture);
         std::fs::remove_dir_all(config_path.ancestors().nth(2).unwrap()).unwrap();
     }
+
+    #[test]
+    fn malformed_config_fails_closed_without_replacing_source_bytes() {
+        let config_path = temporary_config_path();
+        let malformed = "[plane\napi_url = 'not valid toml'\n";
+        std::fs::create_dir_all(config_path.parent().unwrap()).unwrap();
+        std::fs::write(&config_path, malformed).unwrap();
+        let store = agileplus_domain::credentials::InMemoryCredentialStore::new();
+        let form = PlaneSettingsForm {
+            api_url: "https://plane.example".into(),
+            api_key: "new-secret".into(),
+            workspace_slug: "workspace".into(),
+            project_slug: "project".into(),
+        };
+
+        assert!(persist_plane_settings(&form, &config_path, &store).is_err());
+        assert_eq!(std::fs::read_to_string(&config_path).unwrap(), malformed);
+        assert!(matches!(
+            store.get("agileplus", PLANESO_KEY),
+            Err(CredentialError::NotFound(_))
+        ));
+        std::fs::remove_dir_all(config_path.ancestors().nth(2).unwrap()).unwrap();
+    }
+
+    #[test]
+    fn failed_plane_config_write_does_not_mutate_credential() {
+        let root = std::env::temp_dir().join("agileplus-dashboard-save-failure");
+        let parent_file = root.join("not-a-directory");
+        let config_path = parent_file.join("config.toml");
+        std::fs::create_dir_all(&root).unwrap();
+        std::fs::write(&parent_file, "sentinel").unwrap();
+        let store = agileplus_domain::credentials::InMemoryCredentialStore::new();
+        store.set("agileplus", PLANESO_KEY, "old-secret").unwrap();
+        let form = PlaneSettingsForm {
+            api_url: "https://plane.example".into(),
+            api_key: "new-secret".into(),
+            workspace_slug: "workspace".into(),
+            project_slug: "project".into(),
+        };
+
+        assert!(persist_plane_settings(&form, &config_path, &store).is_err());
+        assert_eq!(store.get("agileplus", PLANESO_KEY).unwrap(), "old-secret");
+        assert_eq!(std::fs::read_to_string(&parent_file).unwrap(), "sentinel");
+        std::fs::remove_dir_all(root).unwrap();
+    }
 }
 
 /// POST /api/settings/agents
@@ -687,12 +758,12 @@ mod tests {
 pub async fn save_agent_settings(axum::Form(form): axum::Form<AgentSettingsForm>) -> Response {
     let mut config = match Config::load() {
         Ok(c) => c,
-        Err(_) => Config {
-            plane: None,
-            agents: None,
-            services: None,
-            dashboard: None,
-        },
+        Err(error) => {
+            return render(ToastPartial {
+                message: format!("Failed to load settings safely: {error}"),
+                success: false,
+            });
+        }
     };
 
     config.agents = Some(AgentConfig {
@@ -721,12 +792,12 @@ pub async fn save_dashboard_settings(
 ) -> Response {
     let mut config = match Config::load() {
         Ok(c) => c,
-        Err(_) => Config {
-            plane: None,
-            agents: None,
-            services: None,
-            dashboard: None,
-        },
+        Err(error) => {
+            return render(ToastPartial {
+                message: format!("Failed to load settings safely: {error}"),
+                success: false,
+            });
+        }
     };
 
     config.dashboard = Some(DashboardConfig {
@@ -752,12 +823,12 @@ pub async fn save_dashboard_settings(
 pub async fn save_services_settings(axum::Form(form): axum::Form<ServiceSettingsForm>) -> Response {
     let mut config = match Config::load() {
         Ok(c) => c,
-        Err(_) => Config {
-            plane: None,
-            agents: None,
-            services: None,
-            dashboard: None,
-        },
+        Err(error) => {
+            return render(ToastPartial {
+                message: format!("Failed to load settings safely: {error}"),
+                success: false,
+            });
+        }
     };
 
     let mut services = Vec::new();
