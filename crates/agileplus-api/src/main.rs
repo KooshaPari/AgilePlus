@@ -7,7 +7,7 @@ use std::sync::Arc;
 use agileplus_api::AppState;
 use agileplus_api::api_key::import_api_key;
 use agileplus_domain::config::AppConfig;
-use agileplus_domain::credentials::create_credential_store;
+use agileplus_domain::credentials::{create_credential_store, CredentialStore};
 use agileplus_domain::ports::observability::{LogEntry, ObservabilityPort, SpanContext};
 use agileplus_git::GitVcsAdapter;
 use agileplus_sqlite::SqliteStorageAdapter;
@@ -35,10 +35,10 @@ async fn main() -> Result<()> {
     let storage = Arc::new(SqliteStorageAdapter::new(&config.core.database_path)?);
     let vcs = Arc::new(GitVcsAdapter::from_current_dir()?);
     let telemetry = Arc::new(NoOpObservability);
-    let credentials = Arc::from(create_credential_store(&config)?);
+    let credentials: Arc<dyn CredentialStore> = Arc::from(create_credential_store(&config)?);
     let api_key = env::var("AGILEPLUS_API_KEY")
         .context("AGILEPLUS_API_KEY is required; retain it in the operator secret manager")?;
-    import_api_key(credentials.as_ref(), &api_key)?;
+    import_api_key(credentials.as_ref(), &api_key).map_err(|err| anyhow!(err.to_string()))?;
     let state = AppState::new(storage, vcs, telemetry, Arc::new(config), credentials);
 
     agileplus_api::router::start_api(addr, state)
