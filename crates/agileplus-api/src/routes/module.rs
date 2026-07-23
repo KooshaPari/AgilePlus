@@ -16,8 +16,8 @@ use serde::Serialize;
 
 use agileplus_domain::domain::module::{Module, ModuleWithFeatures};
 use agileplus_domain::error::DomainError;
-use agileplus_domain::ports::{ObservabilityPort, StoragePort};
 use agileplus_domain::ports::vcs::VcsPort;
+use agileplus_domain::ports::{ObservabilityPort, StoragePort};
 
 use crate::error::ApiError;
 use crate::state::AppState;
@@ -47,8 +47,65 @@ where
 {
     Router::new()
         .route("/", get(list_modules::<S, V, O>))
-        .route("/{id}", get(get_module::<S, V, O>))
+        .route(
+            "/{id}",
+            get(get_module::<S, V, O>)
+                .patch(update_module::<S, V, O>)
+                .delete(delete_module::<S, V, O>),
+        )
         .route("/{id}/tree", get(get_module_tree::<S, V, O>))
+}
+
+#[derive(Debug, serde::Deserialize)]
+pub struct UpdateModuleRequest {
+    pub friendly_name: String,
+    pub description: Option<String>,
+}
+
+async fn update_module<S, V, O>(
+    State(app): State<AppState<S, V, O>>,
+    Path(id): Path<i64>,
+    Json(body): Json<UpdateModuleRequest>,
+) -> Result<Json<Module>, ApiError>
+where
+    S: StoragePort + Send + Sync + 'static,
+    V: VcsPort + Send + Sync + 'static,
+    O: ObservabilityPort + Send + Sync + 'static,
+{
+    let mut module = app
+        .storage
+        .get_module(id)
+        .await
+        .map_err(ApiError::from)?
+        .ok_or_else(|| ApiError::NotFound(format!("module {id} not found")))?;
+    module.update_name(&body.friendly_name);
+    module.description = body.description;
+    app.storage
+        .update_module(id, &module.friendly_name, module.description.as_deref())
+        .await
+        .map_err(ApiError::from)?;
+    Ok(Json(module))
+}
+
+async fn delete_module<S, V, O>(
+    State(app): State<AppState<S, V, O>>,
+    Path(id): Path<i64>,
+) -> Result<axum::http::StatusCode, ApiError>
+where
+    S: StoragePort + Send + Sync + 'static,
+    V: VcsPort + Send + Sync + 'static,
+    O: ObservabilityPort + Send + Sync + 'static,
+{
+    app.storage
+        .get_module(id)
+        .await
+        .map_err(ApiError::from)?
+        .ok_or_else(|| ApiError::NotFound(format!("module {id} not found")))?;
+    app.storage
+        .delete_module(id)
+        .await
+        .map_err(ApiError::from)?;
+    Ok(axum::http::StatusCode::NO_CONTENT)
 }
 
 /// `GET /api/modules` - list all root modules.

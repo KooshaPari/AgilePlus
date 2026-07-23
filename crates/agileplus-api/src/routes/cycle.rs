@@ -10,13 +10,13 @@
 use askama::Template;
 use axum::extract::{Path, Query, State};
 use axum::response::Html;
-use axum::routing::get;
+use axum::routing::{get, post};
 use axum::{Json, Router};
 use serde::Deserialize;
 
 use agileplus_domain::domain::cycle::{Cycle, CycleState, CycleWithFeatures};
-use agileplus_domain::ports::{ObservabilityPort, StoragePort};
 use agileplus_domain::ports::vcs::VcsPort;
+use agileplus_domain::ports::{ObservabilityPort, StoragePort};
 
 use crate::error::ApiError;
 use crate::state::AppState;
@@ -63,6 +63,66 @@ where
     Router::new()
         .route("/", get(list_cycles::<S, V, O>))
         .route("/{id}", get(get_cycle::<S, V, O>))
+        .route("/{id}/transition", post(transition_cycle::<S, V, O>))
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CycleTransitionRequest {
+    pub state: String,
+}
+
+async fn transition_cycle<S, V, O>(
+    State(app): State<AppState<S, V, O>>,
+    Path(id): Path<i64>,
+    Json(body): Json<CycleTransitionRequest>,
+) -> Result<Json<Cycle>, ApiError>
+where
+    S: StoragePort + Send + Sync + 'static,
+    V: VcsPort + Send + Sync + 'static,
+    O: ObservabilityPort + Send + Sync + 'static,
+{
+    let cycle = app
+        .storage
+        .get_cycle(id)
+        .await
+        .map_err(ApiError::from)?
+        .ok_or_else(|| ApiError::NotFound(format!("cycle {id} not found")))?;
+    let target: CycleState = body
+        .state
+        .parse()
+        .map_err(|e: agileplus_domain::error::DomainError| ApiError::BadRequest(e.to_string()))?;
+    cycle.state.transition(target).map_err(|e| {
+        if target == CycleState::Shipped {
+            ApiError::Conflict(e.to_string())
+        } else {
+            ApiError::BadRequest(e.to_string())
+        }
+    })?;
+    if target == CycleState::Shipped {
+        let view = app
+            .storage
+            .get_cycle_with_features(id)
+            .await
+            .map_err(ApiError::from)?
+            .ok_or_else(|| ApiError::NotFound(format!("cycle {id} not found")))?;
+        if view
+            .features
+            .iter()
+            .any(|f| f.state != agileplus_domain::domain::state_machine::FeatureState::Validated)
+        {
+            return Err(ApiError::Conflict(
+                "all cycle features must be validated before shipping".to_string(),
+            ));
+        }
+    }
+    app.storage
+        .update_cycle_state(id, target)
+        .await
+        .map_err(ApiError::from)?;
+    let mut updated = cycle;
+    updated.state = target;
+    updated.updated_at = chrono::Utc::now();
+    Ok(Json(updated))
 }
 
 /// `GET /api/cycles[?state=Draft|Active|...]`
