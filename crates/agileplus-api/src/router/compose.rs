@@ -37,8 +37,8 @@ use tower_http::cors::CorsLayer;
 use tower_http::services::ServeDir;
 use tower_http::trace::TraceLayer;
 
-use agileplus_domain::ports::{ObservabilityPort, StoragePort};
 use agileplus_domain::ports::vcs::VcsPort;
+use agileplus_domain::ports::{ObservabilityPort, StoragePort};
 
 use crate::routes::{
     audit, cycle, epics, events, features, governance, module, projects, stories, stream, users,
@@ -58,7 +58,7 @@ where
     V: VcsPort + Send + Sync + 'static,
     O: ObservabilityPort + Send + Sync + 'static,
 {
-    let token_verifier = Arc::clone(&state.token_verifier);
+    let credentials = Arc::clone(&state.credentials);
 
     // Public routes -- no auth middleware.
     let public = Router::new()
@@ -98,8 +98,8 @@ where
         .nest("/api/v1/stories", stories::routes::<S, V, O>())
         .nest("/api/v1/users", users::routes::<S, V, O>())
         .layer(middleware::from_fn_with_state(
-            token_verifier,
-            crate::middleware::auth::authorize,
+            credentials,
+            crate::middleware::auth::validate_api_key,
         ))
         .with_state(state);
 
