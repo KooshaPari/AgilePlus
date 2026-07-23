@@ -23,3 +23,14 @@ worktrees/
 
 # Vercel
 .vercel
+
+# Local DBs
+*.db
+*.sqlite
+*.sqlite3
+
+# Lockfiles inside vendored sub-shells
+crates/agileplus-dashboard/desktop-electrobun/bun.lock
+
+# Separate sibling checkouts (worktrees of other repos)
+PhenoObservability/

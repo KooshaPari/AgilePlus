@@ -116,6 +116,11 @@ async-trait = "0.1"
 # Templating
 askama = "0.12"
 
+# Plugin crates (external from separate repos) — disabled for standalone build
+# agileplus-plugin-core = { git = "https://github.com/KooshaPari/agileplus-plugin-core" }
+# agileplus-plugin-git = { git = "https://github.com/KooshaPari/agileplus-plugin-git" }
+# agileplus-plugin-sqlite = { git = "https://github.com/KooshaPari/agileplus-plugin-sqlite" }
+
 # Git
 gix = "0.83"
 git2 = "0.19"
