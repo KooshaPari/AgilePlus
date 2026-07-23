@@ -21,6 +21,7 @@ members = [
   "crates/agileplus-telemetry",
   "crates/agileplus-dashboard",
   "crates/agileplus-events",
+  "crates/clap-ext/crates/clap-ext",
 ]
 
 [workspace.package]
