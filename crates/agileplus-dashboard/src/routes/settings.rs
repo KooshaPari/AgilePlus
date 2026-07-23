@@ -105,7 +105,10 @@ impl Config {
     pub fn load() -> Result<Self, Box<dyn std::error::Error>> {
         let config_path = Self::config_path();
         Self::load_from_path_with_credential_factory(&config_path, || {
-            create_credential_store(&AppConfig::default())
+            let app_config = AppConfig::load().map_err(|error| {
+                agileplus_domain::credentials::CredentialError::BackendError(error.to_string())
+            })?;
+            create_credential_store(&app_config)
         })
     }
 
@@ -478,10 +481,15 @@ pub async fn save_plane_settings(axum::Form(form): axum::Form<PlaneSettingsForm>
             success: false,
         });
     }
-    let credentials = match create_credential_store(&AppConfig::default()).and_then(|store| {
-        store.set("agileplus", PLANESO_KEY, api_key)?;
-        Ok(store)
-    }) {
+    let credentials = match AppConfig::load()
+        .map_err(|error| {
+            agileplus_domain::credentials::CredentialError::BackendError(error.to_string())
+        })
+        .and_then(|app_config| create_credential_store(&app_config))
+        .and_then(|store| {
+            store.set("agileplus", PLANESO_KEY, api_key)?;
+            Ok(store)
+        }) {
         Ok(store) => store,
         Err(error) => {
             return render(ToastPartial {

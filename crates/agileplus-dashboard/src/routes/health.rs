@@ -288,7 +288,11 @@ pub async fn patch_service_config(
 ) -> impl IntoResponse {
     match load_migrate_mutate_save(
         &Config::config_path(),
-        || create_credential_store(&AppConfig::default()),
+        || {
+            let app_config = AppConfig::load()
+                .map_err(|error| CredentialError::BackendError(error.to_string()))?;
+            create_credential_store(&app_config)
+        },
         |config| {
             apply_service_config(
                 config,
@@ -324,7 +328,11 @@ pub async fn toggle_service(
     // Persist state in config file
     if let Err(error) = load_migrate_mutate_save(
         &Config::config_path(),
-        || create_credential_store(&AppConfig::default()),
+        || {
+            let app_config = AppConfig::load()
+                .map_err(|error| CredentialError::BackendError(error.to_string()))?;
+            create_credential_store(&app_config)
+        },
         |config| {
             let services = config.services.get_or_insert_with(Vec::new);
             if let Some(entry) = services.iter_mut().find(|service| service.name == name) {
