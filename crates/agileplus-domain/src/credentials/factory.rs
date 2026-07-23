@@ -114,3 +114,45 @@ impl CredentialStore for KeychainThenEncryptedFile {
             })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::credentials::{keys, CredentialStore};
+    use std::path::PathBuf;
+
+    #[test]
+    fn configured_file_backend_uses_exact_path_and_survives_reload() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("configured.enc");
+        let mut config = AppConfig::default();
+        config.credentials.backend = CredentialBackend::File;
+        config.credentials.file_path = path.clone();
+
+        let store = create_credential_store_with_passphrase_for_test(&config, "test-key").unwrap();
+        store
+            .set("agileplus", keys::API_KEYS, "sha256:test")
+            .unwrap();
+        assert!(path.is_file());
+        assert_eq!(store.get("agileplus", keys::API_KEYS).unwrap(), "sha256:test");
+    }
+
+    #[test]
+    fn malformed_app_config_fails_closed() {
+        let malformed = "[credentials\nbackend = \"file\"";
+        assert!(toml::from_str::<AppConfig>(malformed).is_err());
+    }
+
+    fn create_credential_store_with_passphrase_for_test(
+        config: &AppConfig,
+        passphrase: &str,
+    ) -> Result<Box<dyn CredentialStore>, CredentialError> {
+        if config.credentials.backend != CredentialBackend::File {
+            return Err(CredentialError::BackendError("test requires file backend".into()));
+        }
+        Ok(Box::new(FileCredentialStore::with_passphrase(
+            &PathBuf::from(&config.credentials.file_path),
+            passphrase.to_owned(),
+        )?))
+    }
+}

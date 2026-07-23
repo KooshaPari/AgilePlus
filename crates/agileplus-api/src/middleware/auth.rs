@@ -129,6 +129,8 @@ fn validate_api_key_value(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use axum::{Router, routing::get, middleware};
+    use axum_test::TestServer;
     use agileplus_domain::credentials::{InMemoryCredentialStore, format_api_key_hash, keys};
 
     #[test]
@@ -143,5 +145,40 @@ mod tests {
             .unwrap();
         assert!(!validate_api_key_value(&credentials, "old-key").unwrap());
         assert!(validate_api_key_value(&credentials, "new-key").unwrap());
+    }
+
+    #[tokio::test]
+    async fn protected_axum_router_observes_in_place_rotation() {
+        let credentials = std::sync::Arc::new(InMemoryCredentialStore::new());
+        credentials
+            .set("agileplus", keys::API_KEYS, &format_api_key_hash("old-key"))
+            .unwrap();
+        let shared: std::sync::Arc<dyn CredentialStore> = credentials.clone();
+        let app = Router::new()
+            .route("/protected", get(|| async { "ok" }))
+            .layer(middleware::from_fn_with_state(
+                shared,
+                validate_api_key,
+            ));
+        let server = TestServer::new(app);
+
+        server
+            .get("/protected")
+            .add_header("X-API-Key", "old-key")
+            .await
+            .assert_status_ok();
+        credentials
+            .set("agileplus", keys::API_KEYS, &format_api_key_hash("new-key"))
+            .unwrap();
+        server
+            .get("/protected")
+            .add_header("X-API-Key", "old-key")
+            .await
+            .assert_status(axum::http::StatusCode::UNAUTHORIZED);
+        server
+            .get("/protected")
+            .add_header("X-API-Key", "new-key")
+            .await
+            .assert_status_ok();
     }
 }
