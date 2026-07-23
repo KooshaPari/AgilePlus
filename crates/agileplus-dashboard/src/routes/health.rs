@@ -283,12 +283,15 @@ pub async fn patch_service_config(
     Path(name): Path<String>,
     axum::Form(form): axum::Form<ServiceConfigForm>,
 ) -> impl IntoResponse {
-    let mut config = Config::load().unwrap_or(Config {
-        plane: None,
-        agents: None,
-        services: None,
-        dashboard: None,
-    });
+    let mut config = match Config::load() {
+        Ok(config) => config,
+        Err(error) => {
+            return render(ToastPartial {
+                message: format!("Failed to load settings safely: {error}"),
+                success: false,
+            });
+        }
+    };
 
     apply_service_config(
         &mut config,
@@ -320,12 +323,17 @@ pub async fn toggle_service(
     let enabled = body.enabled.unwrap_or(true);
 
     // Persist state in config file
-    let mut config = Config::load().unwrap_or(Config {
-        plane: None,
-        agents: None,
-        services: None,
-        dashboard: None,
-    });
+    let mut config = match Config::load() {
+        Ok(config) => config,
+        Err(error) => {
+            return axum::Json(serde_json::json!({
+                "status": "error",
+                "service": name,
+                "enabled": enabled,
+                "error": format!("Failed to load config safely: {error}"),
+            }));
+        }
+    };
 
     let services = config.services.get_or_insert_with(Vec::new);
     if let Some(entry) = services.iter_mut().find(|s| s.name == name) {
@@ -377,7 +385,7 @@ pub async fn toggle_service(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use agileplus_domain::credentials::{InMemoryCredentialStore, PLANESO_KEY};
+    use agileplus_domain::credentials::{CredentialError, InMemoryCredentialStore, PLANESO_KEY};
     use std::sync::atomic::{AtomicU64, Ordering};
 
     #[test]
@@ -422,6 +430,54 @@ mod tests {
         assert!(persisted.contains("https://plane.example"));
         assert!(persisted.contains("workspace"));
         assert!(persisted.contains("endpoint_url = \"http://127.0.0.1:3000\""));
+        std::fs::remove_dir_all(directory).unwrap();
+    }
+
+    struct RejectingCredentialStore;
+
+    impl CredentialStore for RejectingCredentialStore {
+        fn get(&self, _service: &str, _key: &str) -> Result<String, CredentialError> {
+            Err(CredentialError::BackendError("unavailable".to_string()))
+        }
+
+        fn set(&self, _service: &str, _key: &str, _value: &str) -> Result<(), CredentialError> {
+            Err(CredentialError::BackendError("unavailable".to_string()))
+        }
+
+        fn delete(&self, _service: &str, _key: &str) -> Result<(), CredentialError> {
+            Err(CredentialError::BackendError("unavailable".to_string()))
+        }
+
+        fn list_keys(&self, _service: &str) -> Result<Vec<String>, CredentialError> {
+            Err(CredentialError::BackendError("unavailable".to_string()))
+        }
+    }
+
+    #[test]
+    fn health_style_save_returns_error_and_preserves_legacy_config_on_migration_failure() {
+        let directory = std::env::temp_dir().join("agileplus-health-rejecting-store");
+        let config_path = directory.join(".agileplus/config.toml");
+        std::fs::create_dir_all(config_path.parent().unwrap()).unwrap();
+        let legacy = concat!(
+            "[plane]\n",
+            "api_url = 'https://plane.example'\n",
+            "api_key = 'health-route-rejected-secret'\n",
+            "workspace_slug = 'workspace'\n",
+            "project_slug = 'project'\n"
+        );
+        std::fs::write(&config_path, legacy).unwrap();
+
+        let error = save_service_config_at_path_with_credentials(
+            &config_path,
+            &RejectingCredentialStore,
+            "API",
+            Some("http://127.0.0.1:3000".to_string()),
+            None,
+            None,
+        )
+        .unwrap_err();
+        assert!(error.to_string().contains("unavailable"));
+        assert_eq!(std::fs::read_to_string(&config_path).unwrap(), legacy);
         std::fs::remove_dir_all(directory).unwrap();
     }
 }
