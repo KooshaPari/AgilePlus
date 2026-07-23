@@ -3,9 +3,9 @@
 //! Provides HTTP endpoints for health monitoring, service status, configuration,
 //! and restart operations. Includes both HTML (partial + full page) and JSON responses.
 
-use std::fs;
-use std::path::PathBuf;
+use std::path::Path as FilePath;
 
+use agileplus_domain::credentials::CredentialStore;
 use askama::Template;
 use axum::{
     extract::{Path, State},
@@ -13,6 +13,7 @@ use axum::{
     response::{Html, IntoResponse, Response},
 };
 
+use super::settings::{Config, ServiceConfig, default_service_enabled};
 use crate::app_state::{ServiceHealth, SharedState};
 use crate::templates::{HealthPage, HealthPanelPartial, ServiceHealthView, ToastPartial};
 
@@ -38,100 +39,6 @@ pub struct ServiceHealthJson {
     pub last_check: String,
 }
 
-/// Service configuration stored in `.agileplus/config.toml`
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ServiceConfig {
-    pub name: String,
-    pub endpoint_url: String,
-    #[serde(default = "default_service_enabled")]
-    pub enabled: bool,
-    #[serde(default)]
-    pub timeout_ms: Option<u64>,
-    #[serde(default)]
-    pub max_retries: Option<u32>,
-}
-
-fn default_service_enabled() -> bool {
-    true
-}
-
-/// Dashboard configuration root
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Config {
-    pub plane: Option<PlaneConfig>,
-    pub agents: Option<AgentConfig>,
-    pub services: Option<Vec<ServiceConfig>>,
-    pub dashboard: Option<DashboardConfig>,
-}
-
-/// Plane API configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PlaneConfig {
-    pub api_url: String,
-    #[serde(default = "default_plane_api_key_ref")]
-    pub api_key_ref: String,
-    #[serde(default, skip_serializing)]
-    pub api_key: Option<String>,
-    pub workspace_slug: String,
-    pub project_slug: String,
-}
-
-fn default_plane_api_key_ref() -> String {
-    "planeso-key".to_string()
-}
-
-/// Agent configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct AgentConfig {
-    pub pool_size: usize,
-    pub retry_budget: usize,
-    pub dispatch_mode: String,
-    pub default_provider: String,
-}
-
-/// Dashboard application configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct DashboardConfig {
-    pub theme: String,
-    pub log_level: String,
-    pub data_directory: String,
-}
-
-impl Config {
-    pub fn load() -> Result<Self, Box<dyn std::error::Error>> {
-        let config_path = Self::config_path();
-        if config_path.exists() {
-            let content = fs::read_to_string(&config_path)?;
-            let config = toml::from_str(&content)?;
-            Ok(config)
-        } else {
-            Ok(Config {
-                plane: None,
-                agents: None,
-                services: None,
-                dashboard: None,
-            })
-        }
-    }
-
-    pub fn save(&self) -> Result<(), Box<dyn std::error::Error>> {
-        let config_path = Self::config_path();
-        if let Some(parent) = config_path.parent() {
-            fs::create_dir_all(parent)?;
-        }
-        let content = toml::to_string_pretty(self)?;
-        fs::write(config_path, content)?;
-        Ok(())
-    }
-
-    fn config_path() -> PathBuf {
-        std::env::var("HOME")
-            .ok()
-            .map(|home| PathBuf::from(home).join(".agileplus/config.toml"))
-            .unwrap_or_else(|| PathBuf::from(".agileplus/config.toml"))
-    }
-}
-
 /// Form submission for PATCH /api/dashboard/services/:name/config
 #[derive(Debug, Deserialize)]
 pub struct ServiceConfigForm {
@@ -144,6 +51,44 @@ pub struct ServiceConfigForm {
 #[derive(Debug, Deserialize)]
 pub struct ServiceToggleBody {
     pub enabled: Option<bool>,
+}
+
+fn apply_service_config(
+    config: &mut Config,
+    name: &str,
+    endpoint_url: Option<String>,
+    timeout_ms: Option<u64>,
+    max_retries: Option<u32>,
+) {
+    let services = config.services.get_or_insert_with(Vec::new);
+    if let Some(entry) = services.iter_mut().find(|service| service.name == name) {
+        if let Some(url) = endpoint_url.filter(|url| !url.trim().is_empty()) {
+            entry.endpoint_url = url;
+        }
+    } else if let Some(url) = endpoint_url.filter(|url| !url.trim().is_empty()) {
+        services.push(ServiceConfig {
+            name: name.to_string(),
+            endpoint_url: url,
+            enabled: default_service_enabled(),
+            timeout_ms,
+            max_retries,
+        });
+    }
+}
+
+/// Testable health-route persistence path. Its config load is the canonical
+/// settings loader, so legacy Plane secrets are secured before a health save.
+fn save_service_config_at_path_with_credentials(
+    config_path: &FilePath,
+    credentials: &dyn CredentialStore,
+    name: &str,
+    endpoint_url: Option<String>,
+    timeout_ms: Option<u64>,
+    max_retries: Option<u32>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let mut config = Config::load_from_path_with_credentials(config_path, credentials)?;
+    apply_service_config(&mut config, name, endpoint_url, timeout_ms, max_retries);
+    config.save_to_path(config_path)
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -345,20 +290,13 @@ pub async fn patch_service_config(
         dashboard: None,
     });
 
-    let services = config.services.get_or_insert_with(Vec::new);
-    if let Some(entry) = services.iter_mut().find(|s| s.name == name) {
-        if let Some(url) = form.endpoint_url.filter(|u| !u.trim().is_empty()) {
-            entry.endpoint_url = url;
-        }
-    } else if let Some(url) = form.endpoint_url.filter(|u| !u.trim().is_empty()) {
-        services.push(ServiceConfig {
-            name: name.clone(),
-            endpoint_url: url,
-            enabled: default_service_enabled(),
-            timeout_ms: form.timeout_ms,
-            max_retries: form.max_retries,
-        });
-    }
+    apply_service_config(
+        &mut config,
+        &name,
+        form.endpoint_url,
+        form.timeout_ms,
+        form.max_retries,
+    );
 
     match config.save() {
         Ok(_) => render(ToastPartial {
@@ -434,4 +372,56 @@ pub async fn toggle_service(
         "service": name,
         "enabled": enabled,
     }))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use agileplus_domain::credentials::{InMemoryCredentialStore, PLANESO_KEY};
+    use std::sync::atomic::{AtomicU64, Ordering};
+
+    #[test]
+    fn health_style_save_migrates_and_scrubs_legacy_plane_credential() {
+        static SEQUENCE: AtomicU64 = AtomicU64::new(0);
+        let directory = std::env::temp_dir().join(format!(
+            "agileplus-health-config-{}",
+            SEQUENCE.fetch_add(1, Ordering::Relaxed)
+        ));
+        let config_path = directory.join(".agileplus/config.toml");
+        std::fs::create_dir_all(config_path.parent().unwrap()).unwrap();
+        std::fs::write(
+            &config_path,
+            concat!(
+                "[plane]\n",
+                "api_url = 'https://plane.example'\n",
+                "api_key = 'health-route-legacy-secret'\n",
+                "workspace_slug = 'workspace'\n",
+                "project_slug = 'project'\n"
+            ),
+        )
+        .unwrap();
+        let credentials = InMemoryCredentialStore::new();
+
+        save_service_config_at_path_with_credentials(
+            &config_path,
+            &credentials,
+            "API",
+            Some("http://127.0.0.1:3000".to_string()),
+            Some(1_000),
+            Some(2),
+        )
+        .unwrap();
+
+        assert_eq!(
+            credentials.get("agileplus", PLANESO_KEY).unwrap(),
+            "health-route-legacy-secret"
+        );
+        let persisted = std::fs::read_to_string(config_path).unwrap();
+        assert!(persisted.contains("api_key_ref"));
+        assert!(!persisted.contains("health-route-legacy-secret"));
+        assert!(persisted.contains("https://plane.example"));
+        assert!(persisted.contains("workspace"));
+        assert!(persisted.contains("endpoint_url = \"http://127.0.0.1:3000\""));
+        std::fs::remove_dir_all(directory).unwrap();
+    }
 }

@@ -138,7 +138,7 @@ impl Config {
             .is_some_and(|key| !key.is_empty())
     }
 
-    fn load_from_path_with_credentials(
+    pub(crate) fn load_from_path_with_credentials(
         config_path: &Path,
         credentials: &dyn CredentialStore,
     ) -> Result<Self, Box<dyn std::error::Error>> {
@@ -152,7 +152,10 @@ impl Config {
         Ok(config)
     }
 
-    fn save_to_path(&self, config_path: &Path) -> Result<(), Box<dyn std::error::Error>> {
+    pub(crate) fn save_to_path(
+        &self,
+        config_path: &Path,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         if let Some(parent) = config_path.parent() {
             std::fs::create_dir_all(parent)?;
         }
