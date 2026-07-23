@@ -105,9 +105,7 @@ pub async fn validate_api_key(
 
     let api_key = extract_token(&headers, &request)?;
 
-    let valid = creds
-        .validate_api_key(&api_key)
-        .map_err(|e| ApiError::Internal(format!("credential store error: {e}")))?;
+    let valid = validate_api_key_value(creds.as_ref(), &api_key)?;
 
     if !valid {
         // Log only a truncated hint for identification — never the raw key.
@@ -117,4 +115,33 @@ pub async fn validate_api_key(
     }
 
     Ok(next.run(request).await)
+}
+
+fn validate_api_key_value(
+    credentials: &dyn CredentialStore,
+    api_key: &str,
+) -> Result<bool, ApiError> {
+    credentials
+        .validate_api_key(api_key)
+        .map_err(|error| ApiError::Internal(format!("credential store error: {error}")))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use agileplus_domain::credentials::{InMemoryCredentialStore, format_api_key_hash, keys};
+
+    #[test]
+    fn protected_auth_reads_rotated_key_from_credential_store() {
+        let credentials = InMemoryCredentialStore::new();
+        credentials
+            .set("agileplus", keys::API_KEYS, &format_api_key_hash("old-key"))
+            .unwrap();
+        assert!(validate_api_key_value(&credentials, "old-key").unwrap());
+        credentials
+            .set("agileplus", keys::API_KEYS, &format_api_key_hash("new-key"))
+            .unwrap();
+        assert!(!validate_api_key_value(&credentials, "old-key").unwrap());
+        assert!(validate_api_key_value(&credentials, "new-key").unwrap());
+    }
 }
