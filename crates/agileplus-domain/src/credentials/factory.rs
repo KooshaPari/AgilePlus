@@ -118,41 +118,52 @@ impl CredentialStore for KeychainThenEncryptedFile {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::credentials::{keys, CredentialStore};
-    use std::path::PathBuf;
+    use crate::credentials::keys;
 
     #[test]
     fn configured_file_backend_uses_exact_path_and_survives_reload() {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("configured.enc");
-        let mut config = AppConfig::default();
-        config.credentials.backend = CredentialBackend::File;
-        config.credentials.file_path = path.clone();
-
-        let store = create_credential_store_with_passphrase_for_test(&config, "test-key").unwrap();
+        let home = dir.path().join("home");
+        std::fs::create_dir_all(home.join(".agileplus")).unwrap();
+        std::fs::write(
+            home.join(".agileplus/config.toml"),
+            format!(
+                "[credentials]\nbackend = \"file\"\nfile_path = \"{}\"\n",
+                path.display()
+            ),
+        )
+        .unwrap();
+        let previous_home = std::env::var_os("HOME");
+        unsafe { std::env::set_var("HOME", &home) };
+        unsafe { std::env::set_var("AGILEPLUS_CREDENTIAL_KEY", "test-key") };
+        let config = AppConfig::load().unwrap();
+        let store = create_credential_store(&config).unwrap();
         store
             .set("agileplus", keys::API_KEYS, "sha256:test")
             .unwrap();
         assert!(path.is_file());
         assert_eq!(store.get("agileplus", keys::API_KEYS).unwrap(), "sha256:test");
+        unsafe { std::env::remove_var("AGILEPLUS_CREDENTIAL_KEY") };
+        match previous_home {
+            Some(value) => unsafe { std::env::set_var("HOME", value) },
+            None => unsafe { std::env::remove_var("HOME") },
+        }
     }
 
     #[test]
     fn malformed_app_config_fails_closed() {
-        let malformed = "[credentials\nbackend = \"file\"";
-        assert!(toml::from_str::<AppConfig>(malformed).is_err());
-    }
-
-    fn create_credential_store_with_passphrase_for_test(
-        config: &AppConfig,
-        passphrase: &str,
-    ) -> Result<Box<dyn CredentialStore>, CredentialError> {
-        if config.credentials.backend != CredentialBackend::File {
-            return Err(CredentialError::BackendError("test requires file backend".into()));
+        let dir = tempfile::tempdir().unwrap();
+        let home = dir.path().join("home");
+        std::fs::create_dir_all(home.join(".agileplus")).unwrap();
+        std::fs::write(home.join(".agileplus/config.toml"), "[credentials\nbackend = \"file\"")
+            .unwrap();
+        let previous_home = std::env::var_os("HOME");
+        unsafe { std::env::set_var("HOME", &home) };
+        assert!(AppConfig::load().is_err());
+        match previous_home {
+            Some(value) => unsafe { std::env::set_var("HOME", value) },
+            None => unsafe { std::env::remove_var("HOME") },
         }
-        Ok(Box::new(FileCredentialStore::with_passphrase(
-            &PathBuf::from(&config.credentials.file_path),
-            passphrase.to_owned(),
-        )?))
     }
 }
