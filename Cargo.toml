@@ -21,7 +21,7 @@ members = [
   "crates/agileplus-telemetry",
   "crates/agileplus-dashboard",
   "crates/agileplus-events",
-  "crates/clap-ext/crates/clap-ext",
+  # NOTE: clap-ext temporarily excluded — incompatible clap version constraint (4.3.x vs 4.6.x). Tracked in PR #924.
 ]
 
 [workspace.package]
