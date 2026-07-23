@@ -5,7 +5,10 @@ use std::sync::RwLock;
 use aes_gcm::aead::{Aead, KeyInit};
 use aes_gcm::{Aes256Gcm, Nonce};
 use argon2::{Algorithm, Argon2, Params, Version};
-use base64::{Engine as _, engine::general_purpose::STANDARD_NO_PAD};
+use base64::{
+    Engine as _,
+    engine::general_purpose::{STANDARD_NO_PAD, URL_SAFE_NO_PAD},
+};
 use rand::{RngCore, rngs::OsRng};
 use serde::{Deserialize, Serialize};
 use zeroize::Zeroizing;
@@ -161,10 +164,7 @@ impl FileCredentialStore {
             self.encrypt(&self.cache.read().expect("credential cache lock poisoned"))?;
         let mut suffix = [0u8; 16];
         OsRng.fill_bytes(&mut suffix);
-        let temporary = parent.join(format!(
-            ".credentials-{}.tmp",
-            STANDARD_NO_PAD.encode(suffix)
-        ));
+        let temporary = temporary_path(parent, &suffix);
         let mut file = std::fs::OpenOptions::new()
             .write(true)
             .create_new(true)
@@ -183,6 +183,17 @@ impl FileCredentialStore {
         std::fs::File::open(parent)?.sync_all()?;
         Ok(())
     }
+}
+
+/// Generate a single path component for the atomic-write staging file.
+///
+/// The random suffix must use the URL-safe alphabet: standard Base64 permits
+/// `/`, which would accidentally create a nested path and break atomic writes.
+fn temporary_path(parent: &Path, suffix: &[u8; 16]) -> PathBuf {
+    parent.join(format!(
+        ".credentials-{}.tmp",
+        URL_SAFE_NO_PAD.encode(suffix)
+    ))
 }
 
 fn decode_field(
@@ -319,5 +330,16 @@ mod tests {
             })
             .count();
         assert_eq!(temp_count, 0);
+    }
+
+    #[test]
+    fn atomic_temp_path_never_contains_a_separator_from_random_bytes() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = temporary_path(directory.path(), &[0xff; 16]);
+        assert_eq!(path.parent(), Some(directory.path()));
+        let name = path.file_name().unwrap().to_string_lossy();
+        assert!(name.starts_with(".credentials-"));
+        assert!(name.ends_with(".tmp"));
+        assert!(!name.contains(['/', '\\']));
     }
 }

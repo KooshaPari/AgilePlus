@@ -5,6 +5,7 @@
 //! preferences. Each handler validates inputs before persisting to the local config file.
 
 use std::env;
+use std::path::Path;
 
 use agileplus_domain::config::AppConfig;
 use agileplus_domain::credentials::{CredentialStore, PLANESO_KEY, create_credential_store};
@@ -103,38 +104,65 @@ impl Config {
     }
     pub fn load() -> Result<Self, Box<dyn std::error::Error>> {
         let config_path = Self::config_path();
-        if config_path.exists() {
-            let content = std::fs::read_to_string(&config_path)?;
-            let mut config: Config = toml::from_str(&content)?;
-            if config
-                .plane
-                .as_ref()
-                .and_then(|plane| plane.api_key.as_deref())
-                .is_some_and(|key| !key.is_empty())
-            {
-                let store = create_credential_store(&AppConfig::default())?;
-                config.migrate_legacy_plane_key(store.as_ref())?;
-                config.save()?;
-            }
-            Ok(config)
-        } else {
-            Ok(Config {
-                plane: None,
-                agents: None,
-                services: None,
-                dashboard: None,
-            })
+        if !config_path.exists() {
+            return Ok(Self::empty());
+        }
+
+        let mut config = Self::read_from_path(&config_path)?;
+        if config.has_legacy_plane_key() {
+            let store = create_credential_store(&AppConfig::default())?;
+            config.migrate_legacy_plane_key(store.as_ref())?;
+            config.save_to_path(&config_path)?;
+        }
+        Ok(config)
+    }
+
+    fn empty() -> Self {
+        Self {
+            plane: None,
+            agents: None,
+            services: None,
+            dashboard: None,
         }
     }
 
-    pub fn save(&self) -> Result<(), Box<dyn std::error::Error>> {
-        let config_path = Self::config_path();
+    fn read_from_path(config_path: &Path) -> Result<Self, Box<dyn std::error::Error>> {
+        let content = std::fs::read_to_string(config_path)?;
+        Ok(toml::from_str(&content)?)
+    }
+
+    fn has_legacy_plane_key(&self) -> bool {
+        self.plane
+            .as_ref()
+            .and_then(|plane| plane.api_key.as_deref())
+            .is_some_and(|key| !key.is_empty())
+    }
+
+    fn load_from_path_with_credentials(
+        config_path: &Path,
+        credentials: &dyn CredentialStore,
+    ) -> Result<Self, Box<dyn std::error::Error>> {
+        let mut config = Self::read_from_path(config_path)?;
+        if config.has_legacy_plane_key() {
+            // Do not rewrite the config until the secure store accepts the
+            // secret. A failed migration leaves the raw legacy document intact.
+            config.migrate_legacy_plane_key(credentials)?;
+            config.save_to_path(config_path)?;
+        }
+        Ok(config)
+    }
+
+    fn save_to_path(&self, config_path: &Path) -> Result<(), Box<dyn std::error::Error>> {
         if let Some(parent) = config_path.parent() {
             std::fs::create_dir_all(parent)?;
         }
         let content = toml::to_string_pretty(self)?;
         std::fs::write(config_path, content)?;
         Ok(())
+    }
+
+    pub fn save(&self) -> Result<(), Box<dyn std::error::Error>> {
+        self.save_to_path(&Self::config_path())
     }
 
     fn config_path() -> std::path::PathBuf {
@@ -502,6 +530,51 @@ pub async fn save_plane_settings(axum::Form(form): axum::Form<PlaneSettingsForm>
 #[cfg(test)]
 mod tests {
     use super::*;
+    use agileplus_domain::credentials::CredentialError;
+    use std::sync::atomic::{AtomicU64, Ordering};
+
+    fn temporary_config_path() -> std::path::PathBuf {
+        static SEQUENCE: AtomicU64 = AtomicU64::new(0);
+        let id = SEQUENCE.fetch_add(1, Ordering::Relaxed);
+        std::env::temp_dir()
+            .join(format!("agileplus-dashboard-settings-{id}"))
+            .join(".agileplus")
+            .join("config.toml")
+    }
+
+    fn write_legacy_fixture(path: &Path) -> String {
+        let fixture = concat!(
+            "[plane]\n",
+            "api_url = 'https://plane.example'\n",
+            "api_key = 'raw-legacy-plane-secret'\n",
+            "workspace_slug = 'workspace'\n",
+            "project_slug = 'project'\n"
+        )
+        .to_string();
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        std::fs::write(path, &fixture).unwrap();
+        fixture
+    }
+
+    struct RejectingCredentialStore;
+
+    impl CredentialStore for RejectingCredentialStore {
+        fn get(&self, _service: &str, _key: &str) -> Result<String, CredentialError> {
+            Err(CredentialError::BackendError("unavailable".to_string()))
+        }
+
+        fn set(&self, _service: &str, _key: &str, _value: &str) -> Result<(), CredentialError> {
+            Err(CredentialError::BackendError("unavailable".to_string()))
+        }
+
+        fn delete(&self, _service: &str, _key: &str) -> Result<(), CredentialError> {
+            Err(CredentialError::BackendError("unavailable".to_string()))
+        }
+
+        fn list_keys(&self, _service: &str) -> Result<Vec<String>, CredentialError> {
+            Err(CredentialError::BackendError("unavailable".to_string()))
+        }
+    }
 
     #[test]
     fn plane_config_serialization_never_contains_api_key_value() {
@@ -556,6 +629,42 @@ mod tests {
         let plane = config.plane.unwrap();
         assert_eq!(plane.api_key_ref, PLANESO_KEY);
         assert_eq!(plane.api_key.as_deref(), Some("legacy-secret"));
+    }
+
+    #[test]
+    fn raw_legacy_fixture_loads_migrates_and_scrubs_without_losing_config() {
+        let config_path = temporary_config_path();
+        let store = agileplus_domain::credentials::InMemoryCredentialStore::new();
+        write_legacy_fixture(&config_path);
+
+        let config = Config::load_from_path_with_credentials(&config_path, &store).unwrap();
+        let plane = config.plane.unwrap();
+        assert_eq!(plane.api_url, "https://plane.example");
+        assert_eq!(plane.workspace_slug, "workspace");
+        assert_eq!(plane.project_slug, "project");
+        assert_eq!(plane.api_key, None);
+        assert_eq!(
+            store.get("agileplus", PLANESO_KEY).unwrap(),
+            "raw-legacy-plane-secret"
+        );
+
+        let persisted = std::fs::read_to_string(&config_path).unwrap();
+        assert!(persisted.contains("api_key_ref"));
+        assert!(!persisted.contains("raw-legacy-plane-secret"));
+        std::fs::remove_dir_all(config_path.ancestors().nth(2).unwrap()).unwrap();
+    }
+
+    #[test]
+    fn failed_load_time_migration_preserves_raw_legacy_fixture() {
+        let config_path = temporary_config_path();
+        let fixture = write_legacy_fixture(&config_path);
+
+        assert!(
+            Config::load_from_path_with_credentials(&config_path, &RejectingCredentialStore)
+                .is_err()
+        );
+        assert_eq!(std::fs::read_to_string(&config_path).unwrap(), fixture);
+        std::fs::remove_dir_all(config_path.ancestors().nth(2).unwrap()).unwrap();
     }
 }
 
