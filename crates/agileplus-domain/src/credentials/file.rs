@@ -155,13 +155,15 @@ impl FileCredentialStore {
         Ok(())
     }
 
-    fn persist(&self) -> Result<(), CredentialError> {
+    fn persist_candidate(
+        &self,
+        credentials: &HashMap<String, HashMap<String, String>>,
+    ) -> Result<(), CredentialError> {
         let parent = self.path.parent().ok_or_else(|| {
             CredentialError::Io(std::io::Error::other("credential file path has no parent"))
         })?;
         std::fs::create_dir_all(parent)?;
-        let encrypted =
-            self.encrypt(&self.cache.read().expect("credential cache lock poisoned"))?;
+        let encrypted = self.encrypt(credentials)?;
         let mut suffix = [0u8; 16];
         OsRng.fill_bytes(&mut suffix);
         let temporary = temporary_path(parent, &suffix);
@@ -226,27 +228,36 @@ impl CredentialStore for FileCredentialStore {
 
     fn set(&self, service: &str, key: &str, value: &str) -> Result<(), CredentialError> {
         self.ensure_loaded()?;
-        self.cache
-            .write()
+        let mut candidate = self
+            .cache
+            .read()
             .expect("credential cache lock poisoned")
+            .clone();
+        candidate
             .entry(service.to_string())
             .or_default()
             .insert(key.to_string(), value.to_string());
-        self.persist()
+        self.persist_candidate(&candidate)?;
+        *self.cache.write().expect("credential cache lock poisoned") = candidate;
+        Ok(())
     }
 
     fn delete(&self, service: &str, key: &str) -> Result<(), CredentialError> {
         self.ensure_loaded()?;
-        let removed = self
+        let mut candidate = self
             .cache
-            .write()
+            .read()
             .expect("credential cache lock poisoned")
+            .clone();
+        let removed = candidate
             .get_mut(service)
             .and_then(|service| service.remove(key));
         if removed.is_none() {
             return Err(CredentialError::NotFound(key.to_string()));
         }
-        self.persist()
+        self.persist_candidate(&candidate)?;
+        *self.cache.write().expect("credential cache lock poisoned") = candidate;
+        Ok(())
     }
 
     fn list_keys(&self, service: &str) -> Result<Vec<String>, CredentialError> {
@@ -341,5 +352,31 @@ mod tests {
         assert!(name.starts_with(".credentials-"));
         assert!(name.ends_with(".tmp"));
         assert!(!name.contains(['/', '\\']));
+    }
+
+    #[test]
+    fn failed_set_keeps_previous_cached_value() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("credentials.enc");
+        let store = FileCredentialStore::with_passphrase(&path, "test key".to_string()).unwrap();
+        store.set("plane", "api-key", "old").unwrap();
+        std::fs::remove_dir_all(directory.path()).unwrap();
+        std::fs::write(directory.path(), "not a directory").unwrap();
+
+        assert!(store.set("plane", "api-key", "new").is_err());
+        assert_eq!(store.get("plane", "api-key").unwrap(), "old");
+    }
+
+    #[test]
+    fn failed_delete_keeps_previous_cached_value() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("credentials.enc");
+        let store = FileCredentialStore::with_passphrase(&path, "test key".to_string()).unwrap();
+        store.set("plane", "api-key", "old").unwrap();
+        std::fs::remove_dir_all(directory.path()).unwrap();
+        std::fs::write(directory.path(), "not a directory").unwrap();
+
+        assert!(store.delete("plane", "api-key").is_err());
+        assert_eq!(store.get("plane", "api-key").unwrap(), "old");
     }
 }
