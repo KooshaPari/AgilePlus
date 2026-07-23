@@ -11,6 +11,7 @@ serde_json.workspace = true
 thiserror.workspace = true
 chrono.workspace = true
 sha2.workspace = true
+
 # Un-park 2026-07-04: shared PM/traceability spine + deps the domain code uses.
 traceability-core = { path = "../traceability-core" }
 toml.workspace = true
@@ -20,10 +21,12 @@ regex.workspace = true
 async-trait.workspace = true
 indexmap.workspace = true
 keyring = { workspace = true, optional = true }
+# agileplus-plugin-core = { git = "https://github.com/KooshaPari/agileplus-plugin-core", optional = true }
 
 [features]
 default = []
 keychain = ["dep:keyring"]
+# plugins = ["agileplus-plugin-core"]  # disabled for standalone build
 
 [dev-dependencies]
 tokio.workspace = true

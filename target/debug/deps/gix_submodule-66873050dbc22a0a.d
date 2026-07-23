@@ -1,0 +1,10 @@
+/Users/kooshapari/CodeProjects/Phenotype/repos/AgilePlus/target/debug/deps/gix_submodule-66873050dbc22a0a.d: /Users/kooshapari/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/gix-submodule-0.30.0/src/lib.rs /Users/kooshapari/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/gix-submodule-0.30.0/src/access.rs /Users/kooshapari/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/gix-submodule-0.30.0/src/config.rs /Users/kooshapari/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/gix-submodule-0.30.0/src/is_active_platform.rs
+
+/Users/kooshapari/CodeProjects/Phenotype/repos/AgilePlus/target/debug/deps/libgix_submodule-66873050dbc22a0a.rlib: /Users/kooshapari/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/gix-submodule-0.30.0/src/lib.rs /Users/kooshapari/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/gix-submodule-0.30.0/src/access.rs /Users/kooshapari/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/gix-submodule-0.30.0/src/config.rs /Users/kooshapari/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/gix-submodule-0.30.0/src/is_active_platform.rs
+
+/Users/kooshapari/CodeProjects/Phenotype/repos/AgilePlus/target/debug/deps/libgix_submodule-66873050dbc22a0a.rmeta: /Users/kooshapari/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/gix-submodule-0.30.0/src/lib.rs /Users/kooshapari/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/gix-submodule-0.30.0/src/access.rs /Users/kooshapari/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/gix-submodule-0.30.0/src/config.rs /Users/kooshapari/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/gix-submodule-0.30.0/src/is_active_platform.rs
+
+/Users/kooshapari/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/gix-submodule-0.30.0/src/lib.rs:
+/Users/kooshapari/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/gix-submodule-0.30.0/src/access.rs:
+/Users/kooshapari/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/gix-submodule-0.30.0/src/config.rs:
+/Users/kooshapari/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/gix-submodule-0.30.0/src/is_active_platform.rs:
