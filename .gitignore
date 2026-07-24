@@ -34,3 +34,4 @@ crates/agileplus-dashboard/desktop-electrobun/bun.lock
 
 # Separate sibling checkouts (worktrees of other repos)
 PhenoObservability/
+target/
