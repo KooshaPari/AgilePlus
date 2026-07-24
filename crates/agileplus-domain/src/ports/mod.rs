@@ -9,7 +9,9 @@ pub mod storage;
 pub mod traceability_port;
 pub mod vcs;
 
+pub use agent::AgentPort;
 pub use epic::EpicRepository;
+pub use observability::ObservabilityPort;
 pub use story::StoryRepository;
 
 use std::path::{Path, PathBuf};

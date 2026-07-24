@@ -272,6 +272,7 @@ pub async fn feature_evidence_generate(
 
     let bundle_path = format!(".agileplus/evidence/{feature_id}/bundle.json");
     let fid = feature_id.clone();
+    let bp = bundle_path.clone();
 
     // Spawn async so the HTTP response returns immediately.
     tokio::spawn(async move {
@@ -282,7 +283,7 @@ pub async fn feature_evidence_generate(
             .await;
         match out {
             Ok(o) if o.status.success() => {
-                tracing::info!(feature_id = %fid, bundle_path = %bundle_path, "evidence bundle generated");
+                tracing::info!(feature_id = %fid, bundle_path = %bp, "evidence bundle generated");
             }
             Ok(o) => {
                 let stderr = String::from_utf8_lossy(&o.stderr);
