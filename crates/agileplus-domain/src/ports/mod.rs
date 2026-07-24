@@ -1,14 +1,16 @@
 //! Hexagonal-architecture ports — async traits implemented by adapters.
 
+pub mod agent;
 pub mod epic;
+pub mod events;
 pub mod observability;
 pub mod story;
 pub mod storage;
 pub mod traceability_port;
 pub mod vcs;
 
-use self::epic::EpicRepository;
-use self::story::StoryRepository;
+pub use epic::EpicRepository;
+pub use story::StoryRepository;
 
 use std::path::{Path, PathBuf};
 
@@ -16,7 +18,7 @@ use async_trait::async_trait;
 
 use crate::domain::{
     audit::AuditEntry,
-    backlog::{BacklogFilters, BacklogItem, BacklogPriority, BacklogStatus},
+    backlog::{BacklogFilters, BacklogItem, BacklogPriority, BacklogStatus, Intent},
     cycle::{Cycle, CycleFeature, CycleWithFeatures, CycleState},
     epic::{Epic, EpicStatus},
     feature::Feature,
@@ -224,6 +226,10 @@ pub trait ContentStoragePort: Send + Sync {
     async fn update_feature(&self, feature: &Feature) -> Result<(), DomainError>;
     async fn list_features_by_state(&self, state: FeatureState) -> Result<Vec<Feature>, DomainError>;
     async fn list_all_features(&self) -> Result<Vec<Feature>, DomainError>;
+    async fn list_features_by_label(&self, label: &str) -> Result<Vec<Feature>, DomainError> {
+        let _ = label;
+        Err(DomainError::NotImplemented)
+    }
     async fn create_work_package(&self, wp: &WorkPackage) -> Result<i64, DomainError>;
     async fn get_work_package(&self, id: i64) -> Result<Option<WorkPackage>, DomainError>;
     async fn update_wp_state(&self, id: i64, state: WpState) -> Result<(), DomainError>;
@@ -256,4 +262,72 @@ pub trait VcsPort: Send + Sync {
     async fn write_artifact(&self, feature_slug: &str, relative_path: &str, content: &str) -> Result<(), DomainError>;
     async fn artifact_exists(&self, feature_slug: &str, relative_path: &str) -> Result<bool, DomainError>;
     async fn scan_feature_artifacts(&self, feature_slug: &str) -> Result<FeatureArtifacts, DomainError>;
+}
+
+/// Outcome recorded after a ticket has been reviewed in triage.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum TriageOutcome {
+    Accepted,
+    Dismissed,
+}
+
+/// Ticket surfaced to a triage consumer.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct TriageTicket {
+    pub id: String,
+    pub title: String,
+    pub description: String,
+    pub intent: Intent,
+    pub priority: BacklogPriority,
+    pub status: BacklogStatus,
+    pub source: String,
+    pub feature_slug: Option<String>,
+    pub tags: Vec<String>,
+}
+
+impl From<BacklogItem> for TriageTicket {
+    fn from(item: BacklogItem) -> Self {
+        Self {
+            id: item.id.unwrap_or_default().to_string(),
+            title: item.title,
+            description: item.description,
+            intent: item.intent,
+            priority: item.priority,
+            status: item.status,
+            source: item.source,
+            feature_slug: item.feature_slug,
+            tags: item.tags,
+        }
+    }
+}
+
+/// Focused triage port for fetching the next ticket and recording a disposition.
+#[async_trait]
+pub trait TriagePort: Send + Sync {
+    async fn next_ticket(&self) -> Result<TriageTicket, TriageError>;
+    async fn record_outcome(&self, id: &str, outcome: TriageOutcome) -> Result<(), TriageError>;
+}
+
+/// Triaging-specific error surface decoupled from any storage implementation.
+#[derive(Debug, thiserror::Error, PartialEq, Eq)]
+pub enum TriageError {
+    #[error("no triage ticket available")]
+    NoTicketAvailable,
+    #[error("invalid triage ticket id: {0}")]
+    InvalidTicketId(String),
+    #[error("triage ticket not found: {0}")]
+    TicketNotFound(String),
+    #[error("triage storage error: {0}")]
+    Storage(String),
+}
+
+impl From<DomainError> for TriageError {
+    fn from(value: DomainError) -> Self {
+        match value {
+            DomainError::NotFound(message) => Self::TicketNotFound(message),
+            DomainError::Storage(message) => Self::Storage(message),
+            other => Self::Storage(other.to_string()),
+        }
+    }
 }
