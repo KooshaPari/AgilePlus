@@ -261,6 +261,14 @@ impl SimpleHealthResponse {
             version: env!("CARGO_PKG_VERSION"),
         }
     }
+
+    pub fn healthy() -> Self {
+        Self {
+            status: "healthy",
+            service: "agileplus-api",
+            version: env!("CARGO_PKG_VERSION"),
+        }
+    }
 }
 
 #[derive(Debug, Serialize)]

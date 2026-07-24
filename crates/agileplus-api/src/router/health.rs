@@ -11,12 +11,12 @@ use axum::Json;
 
 use crate::responses::{DetailedHealthResponse, SimpleHealthResponse};
 use crate::state::AppState;
-use agileplus_domain::ports::{ObservabilityPort, StoragePort};
 use agileplus_domain::ports::vcs::VcsPort;
+use agileplus_domain::ports::{ObservabilityPort, StoragePort};
 
 /// `GET /health` — simple health check, no auth required.
 pub async fn simple_health_handler() -> Json<SimpleHealthResponse> {
-    Json(SimpleHealthResponse::ok())
+    Json(SimpleHealthResponse::healthy())
 }
 
 /// `GET /detailed-health` — aggregated health check, no auth required (T070).

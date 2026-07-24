@@ -3,9 +3,10 @@
 //! Provides HTTP endpoints for health monitoring, service status, configuration,
 //! and restart operations. Includes both HTML (partial + full page) and JSON responses.
 
-use std::fs;
-use std::path::PathBuf;
+use std::path::Path as FilePath;
 
+use agileplus_domain::config::AppConfig;
+use agileplus_domain::credentials::{CredentialError, CredentialStore, create_credential_store};
 use askama::Template;
 use axum::{
     extract::{Path, State},
@@ -13,6 +14,7 @@ use axum::{
     response::{Html, IntoResponse, Response},
 };
 
+use super::settings::{Config, ServiceConfig, default_service_enabled};
 use crate::app_state::{ServiceHealth, SharedState};
 use crate::templates::{HealthPage, HealthPanelPartial, ServiceHealthView, ToastPartial};
 
@@ -38,93 +40,6 @@ pub struct ServiceHealthJson {
     pub last_check: String,
 }
 
-/// Service configuration stored in `.agileplus/config.toml`
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ServiceConfig {
-    pub name: String,
-    pub endpoint_url: String,
-    #[serde(default = "default_service_enabled")]
-    pub enabled: bool,
-    #[serde(default)]
-    pub timeout_ms: Option<u64>,
-    #[serde(default)]
-    pub max_retries: Option<u32>,
-}
-
-fn default_service_enabled() -> bool {
-    true
-}
-
-/// Dashboard configuration root
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Config {
-    pub plane: Option<PlaneConfig>,
-    pub agents: Option<AgentConfig>,
-    pub services: Option<Vec<ServiceConfig>>,
-    pub dashboard: Option<DashboardConfig>,
-}
-
-/// Plane API configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PlaneConfig {
-    pub api_url: String,
-    pub api_key: String,
-    pub workspace_slug: String,
-    pub project_slug: String,
-}
-
-/// Agent configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct AgentConfig {
-    pub pool_size: usize,
-    pub retry_budget: usize,
-    pub dispatch_mode: String,
-    pub default_provider: String,
-}
-
-/// Dashboard application configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct DashboardConfig {
-    pub theme: String,
-    pub log_level: String,
-    pub data_directory: String,
-}
-
-impl Config {
-    pub fn load() -> Result<Self, Box<dyn std::error::Error>> {
-        let config_path = Self::config_path();
-        if config_path.exists() {
-            let content = fs::read_to_string(&config_path)?;
-            let config = toml::from_str(&content)?;
-            Ok(config)
-        } else {
-            Ok(Config {
-                plane: None,
-                agents: None,
-                services: None,
-                dashboard: None,
-            })
-        }
-    }
-
-    pub fn save(&self) -> Result<(), Box<dyn std::error::Error>> {
-        let config_path = Self::config_path();
-        if let Some(parent) = config_path.parent() {
-            fs::create_dir_all(parent)?;
-        }
-        let content = toml::to_string_pretty(self)?;
-        fs::write(config_path, content)?;
-        Ok(())
-    }
-
-    fn config_path() -> PathBuf {
-        std::env::var("HOME")
-            .ok()
-            .map(|home| PathBuf::from(home).join(".agileplus/config.toml"))
-            .unwrap_or_else(|| PathBuf::from(".agileplus/config.toml"))
-    }
-}
-
 /// Form submission for PATCH /api/dashboard/services/:name/config
 #[derive(Debug, Deserialize)]
 pub struct ServiceConfigForm {
@@ -137,6 +52,46 @@ pub struct ServiceConfigForm {
 #[derive(Debug, Deserialize)]
 pub struct ServiceToggleBody {
     pub enabled: Option<bool>,
+}
+
+fn apply_service_config(
+    config: &mut Config,
+    name: &str,
+    endpoint_url: Option<String>,
+    timeout_ms: Option<u64>,
+    max_retries: Option<u32>,
+) {
+    let services = config.services.get_or_insert_with(Vec::new);
+    if let Some(entry) = services.iter_mut().find(|service| service.name == name) {
+        if let Some(url) = endpoint_url.filter(|url| !url.trim().is_empty()) {
+            entry.endpoint_url = url;
+        }
+    } else if let Some(url) = endpoint_url.filter(|url| !url.trim().is_empty()) {
+        services.push(ServiceConfig {
+            name: name.to_string(),
+            endpoint_url: url,
+            enabled: default_service_enabled(),
+            timeout_ms,
+            max_retries,
+        });
+    }
+}
+
+/// Testable health-route persistence path. Its config load is the canonical
+/// settings loader, so legacy Plane secrets are secured before a health save.
+fn load_migrate_mutate_save<F, M>(
+    config_path: &FilePath,
+    credential_factory: F,
+    mutate: M,
+) -> Result<(), Box<dyn std::error::Error>>
+where
+    F: FnOnce() -> Result<Box<dyn CredentialStore>, CredentialError>,
+    M: FnOnce(&mut Config),
+{
+    let mut config =
+        Config::load_from_path_with_credential_factory(config_path, credential_factory)?;
+    mutate(&mut config);
+    config.save_to_path(config_path)
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -331,37 +286,33 @@ pub async fn patch_service_config(
     Path(name): Path<String>,
     axum::Form(form): axum::Form<ServiceConfigForm>,
 ) -> impl IntoResponse {
-    let mut config = Config::load().unwrap_or(Config {
-        plane: None,
-        agents: None,
-        services: None,
-        dashboard: None,
-    });
-
-    let services = config.services.get_or_insert_with(Vec::new);
-    if let Some(entry) = services.iter_mut().find(|s| s.name == name) {
-        if let Some(url) = form.endpoint_url.filter(|u| !u.trim().is_empty()) {
-            entry.endpoint_url = url;
-        }
-    } else if let Some(url) = form.endpoint_url.filter(|u| !u.trim().is_empty()) {
-        services.push(ServiceConfig {
-            name: name.clone(),
-            endpoint_url: url,
-            enabled: default_service_enabled(),
-            timeout_ms: form.timeout_ms,
-            max_retries: form.max_retries,
-        });
-    }
-
-    match config.save() {
-        Ok(_) => render(ToastPartial {
+    match load_migrate_mutate_save(
+        &Config::config_path(),
+        || {
+            let app_config = AppConfig::load()
+                .map_err(|error| CredentialError::BackendError(error.to_string()))?;
+            create_credential_store(&app_config)
+        },
+        |config| {
+            apply_service_config(
+                config,
+                &name,
+                form.endpoint_url,
+                form.timeout_ms,
+                form.max_retries,
+            )
+        },
+    ) {
+        Ok(()) => render(ToastPartial {
             message: format!("Service '{name}' configuration saved"),
             success: true,
         }),
-        Err(e) => render(ToastPartial {
-            message: format!("Failed to save: {e}"),
-            success: false,
-        }),
+        Err(error) => {
+            return render(ToastPartial {
+                message: format!("Failed to load settings safely: {error}"),
+                success: false,
+            });
+        }
     }
 }
 
@@ -375,32 +326,33 @@ pub async fn toggle_service(
     let enabled = body.enabled.unwrap_or(true);
 
     // Persist state in config file
-    let mut config = Config::load().unwrap_or(Config {
-        plane: None,
-        agents: None,
-        services: None,
-        dashboard: None,
-    });
-
-    let services = config.services.get_or_insert_with(Vec::new);
-    if let Some(entry) = services.iter_mut().find(|s| s.name == name) {
-        entry.enabled = enabled;
-    } else {
-        services.push(ServiceConfig {
-            name: name.clone(),
-            endpoint_url: String::new(),
-            enabled,
-            timeout_ms: None,
-            max_retries: None,
-        });
-    }
-
-    if let Err(err) = config.save() {
+    if let Err(error) = load_migrate_mutate_save(
+        &Config::config_path(),
+        || {
+            let app_config = AppConfig::load()
+                .map_err(|error| CredentialError::BackendError(error.to_string()))?;
+            create_credential_store(&app_config)
+        },
+        |config| {
+            let services = config.services.get_or_insert_with(Vec::new);
+            if let Some(entry) = services.iter_mut().find(|service| service.name == name) {
+                entry.enabled = enabled;
+            } else {
+                services.push(ServiceConfig {
+                    name: name.clone(),
+                    endpoint_url: String::new(),
+                    enabled,
+                    timeout_ms: None,
+                    max_retries: None,
+                });
+            }
+        },
+    ) {
         return axum::Json(serde_json::json!({
             "status": "error",
             "service": name,
             "enabled": enabled,
-            "error": format!("Failed to save config: {err}"),
+            "error": format!("Failed to load config safely: {error}"),
         }));
     }
 
@@ -427,4 +379,110 @@ pub async fn toggle_service(
         "service": name,
         "enabled": enabled,
     }))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use agileplus_domain::credentials::{CredentialError, InMemoryCredentialStore};
+    use std::sync::atomic::{AtomicU64, Ordering};
+
+    #[test]
+    fn health_style_save_migrates_and_scrubs_legacy_plane_credential() {
+        static SEQUENCE: AtomicU64 = AtomicU64::new(0);
+        let directory = std::env::temp_dir().join(format!(
+            "agileplus-health-config-{}",
+            SEQUENCE.fetch_add(1, Ordering::Relaxed)
+        ));
+        let config_path = directory.join(".agileplus/config.toml");
+        std::fs::create_dir_all(config_path.parent().unwrap()).unwrap();
+        std::fs::write(
+            &config_path,
+            concat!(
+                "[plane]\n",
+                "api_url = 'https://plane.example'\n",
+                "api_key = 'health-route-legacy-secret'\n",
+                "workspace_slug = 'workspace'\n",
+                "project_slug = 'project'\n"
+            ),
+        )
+        .unwrap();
+        let credentials = InMemoryCredentialStore::new();
+
+        load_migrate_mutate_save(
+            &config_path,
+            || Ok(Box::new(credentials)),
+            |config| {
+                apply_service_config(
+                    config,
+                    "API",
+                    Some("http://127.0.0.1:3000".to_string()),
+                    Some(1_000),
+                    Some(2),
+                )
+            },
+        )
+        .unwrap();
+
+        let persisted = std::fs::read_to_string(config_path).unwrap();
+        assert!(persisted.contains("api_key_ref"));
+        assert!(!persisted.contains("health-route-legacy-secret"));
+        assert!(persisted.contains("https://plane.example"));
+        assert!(persisted.contains("workspace"));
+        assert!(persisted.contains("endpoint_url = \"http://127.0.0.1:3000\""));
+        std::fs::remove_dir_all(directory).unwrap();
+    }
+
+    struct RejectingCredentialStore;
+
+    impl CredentialStore for RejectingCredentialStore {
+        fn get(&self, _service: &str, _key: &str) -> Result<String, CredentialError> {
+            Err(CredentialError::BackendError("unavailable".to_string()))
+        }
+
+        fn set(&self, _service: &str, _key: &str, _value: &str) -> Result<(), CredentialError> {
+            Err(CredentialError::BackendError("unavailable".to_string()))
+        }
+
+        fn delete(&self, _service: &str, _key: &str) -> Result<(), CredentialError> {
+            Err(CredentialError::BackendError("unavailable".to_string()))
+        }
+
+        fn list_keys(&self, _service: &str) -> Result<Vec<String>, CredentialError> {
+            Err(CredentialError::BackendError("unavailable".to_string()))
+        }
+    }
+
+    #[test]
+    fn health_style_save_returns_error_and_preserves_legacy_config_on_migration_failure() {
+        let directory = std::env::temp_dir().join("agileplus-health-rejecting-store");
+        let config_path = directory.join(".agileplus/config.toml");
+        std::fs::create_dir_all(config_path.parent().unwrap()).unwrap();
+        let legacy = concat!(
+            "[plane]\n",
+            "api_url = 'https://plane.example'\n",
+            "api_key = 'health-route-rejected-secret'\n",
+            "workspace_slug = 'workspace'\n",
+            "project_slug = 'project'\n"
+        );
+        std::fs::write(&config_path, legacy).unwrap();
+
+        let error = load_migrate_mutate_save(
+            &config_path,
+            || Ok(Box::new(RejectingCredentialStore)),
+            |config| {
+                apply_service_config(
+                    config,
+                    "API",
+                    Some("http://127.0.0.1:3000".to_string()),
+                    None,
+                    None,
+                )
+            },
+        )
+        .unwrap_err();
+        assert!(error.to_string().contains("unavailable"));
+        assert_eq!(std::fs::read_to_string(&config_path).unwrap(), legacy);
+        std::fs::remove_dir_all(directory).unwrap();
+    }
 }

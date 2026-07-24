@@ -68,6 +68,7 @@ where
         .unwrap_or("")
         .to_string();
     let worktree = WorktreeInfo {
+        commit: String::new(),
         path,
         branch,
         feature_slug: body.feature_slug,
