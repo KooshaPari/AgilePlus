@@ -81,6 +81,15 @@ export interface ToggleProps {
   ariaPressed?: boolean;
 }
 
+export interface SkeletonProps {
+  width?: string | number;
+  height?: string | number;
+  variant?: 'text' | 'circular' | 'rectangular';
+  className?: string;
+  count?: number;
+  animate?: boolean;
+}
+
 // ============================================================================
 // Layout Component Types
 // ============================================================================
@@ -138,6 +147,18 @@ export interface PillProps {
   variant?: 'default' | 'primary' | 'secondary';
   className?: string;
   ariaLabel?: string;
+}
+
+export interface EmptyStateProps {
+  /** Optional illustration or icon node displayed above the title */
+  illustration?: React.ReactNode;
+  /** Primary heading text */
+  title: string;
+  /** Supporting description text */
+  description?: string;
+  /** Optional action button rendered below the description */
+  action?: React.ReactNode;
+  className?: string;
 }
 
 // ============================================================================
@@ -258,4 +279,64 @@ export interface EvidenceGalleryProps {
   items: EvidenceItem[];
   onItemSelect?: (item: EvidenceItem) => void;
   loading?: boolean;
+}
+
+// ============================================================================
+// Onboarding / Tour Types
+// ============================================================================
+
+export interface OnboardingTourStep {
+  /** Unique identifier for this step */
+  id: string;
+  /** Short heading shown in the tour card */
+  title: string;
+  /** Descriptive body text explaining the UI area */
+  description: string;
+  /** CSS selector for the element to spotlight. Omit for full-page (centered) steps. */
+  targetSelector?: string;
+  /** Preferred tooltip placement relative to the target element */
+  placement?: 'top' | 'bottom' | 'left' | 'right' | 'center';
+}
+
+export interface OnboardingProps {
+  /** Whether the tour is visible */
+  isOpen: boolean;
+  /** Called when the user dismisses the tour */
+  onClose: () => void;
+  /** Ordered array of tour steps */
+  steps: OnboardingTourStep[];
+  /** Called after the final step is completed */
+  onComplete?: () => void;
+  /** Override the localStorage key used to track completion (default: 'onboarding_complete') */
+  storageKey?: string;
+}
+
+// ============================================================================
+// Demo / Onboarding Checklist Types
+// ============================================================================
+
+export interface DemoTask {
+  /** Unique identifier for this task (e.g. "create-epic") */
+  id: string;
+  /** Human-readable label shown in the checklist */
+  label: string;
+  /** Optional view name to navigate to when the task is activated */
+  actionView?: string;
+}
+
+export interface DemoContextType {
+  /** Whether demo mode (sample data) is currently active */
+  isDemoMode: boolean;
+  /** Toggle demo mode on/off */
+  setDemoMode: (mode: boolean) => void;
+  /** Array of completed task IDs */
+  completedTasks: string[];
+  /** Mark a task as completed by ID */
+  completeTask: (taskId: string) => void;
+  /** Completion percentage (0–100) */
+  taskProgress: number;
+  /** Whether the checklist has been permanently dismissed */
+  isChecklistDismissed: boolean;
+  /** Permanently dismiss the checklist (all tasks done) */
+  dismissChecklist: () => void;
 }

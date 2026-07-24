@@ -14,9 +14,9 @@ use axum::{
 use crate::app_state::DashboardStore;
 use crate::templates::{all_feature_states, FeatureView, ProjectSummaryView, ProjectView};
 
-#[allow(dead_code)]
+#[allow(dead_code)] // reserved for Plane.so API integration
 pub(super) const DEFAULT_PLANE_API_URL: &str = "https://app.plane.so";
-#[allow(dead_code)]
+#[allow(dead_code)] // reserved for Plane.so API integration
 pub(super) const DEFAULT_PLANE_WEB_URL: &str = "https://app.plane.so";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -88,7 +88,7 @@ pub(super) fn build_project_summaries(store: &DashboardStore) -> Vec<ProjectSumm
         .collect()
 }
 
-#[allow(dead_code)]
+#[allow(dead_code)] // utility - reserved for future env-based configuration
 pub(super) fn env_or_none(key: &str) -> Option<String> {
     env::var(key)
         .ok()
@@ -96,7 +96,7 @@ pub(super) fn env_or_none(key: &str) -> Option<String> {
         .filter(|value| !value.is_empty())
 }
 
-#[allow(dead_code)]
+#[allow(dead_code)] // utility - reserved for future env-based configuration
 pub(super) fn parse_bool_env(key: &str, default: bool) -> bool {
     env::var(key)
         .ok()
@@ -241,7 +241,7 @@ pub fn html_escape(s: &str) -> String {
 }
 
 /// Classify a file extension into a broad artifact type for display purposes.
-#[allow(dead_code)]
+#[allow(dead_code)] // utility - reserved for future artifact display features
 pub fn artifact_type_for_ext(ext: &str) -> &'static str {
     match ext {
         "lcov" | "coverage" | "cov" => "coverage",
@@ -257,7 +257,7 @@ pub fn artifact_type_for_ext(ext: &str) -> &'static str {
 ///
 /// Only encodes characters that are not allowed unencoded in URL path segments:
 /// spaces, `#`, `?`, `%`, and `+`.
-#[allow(dead_code)]
+#[allow(dead_code)] // utility - reserved for future artifact display features
 pub fn percent_encode_path(path: &str) -> String {
     path.chars()
         .flat_map(|c| match c {

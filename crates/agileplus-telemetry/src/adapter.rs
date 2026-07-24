@@ -27,7 +27,7 @@ pub struct TelemetryGuard {
 }
 
 pub struct TelemetryAdapter {
-    #[allow(dead_code)]
+    #[allow(dead_code)] // reserved - tracer available for future manual span creation
     tracer: opentelemetry::global::BoxedTracer,
     metrics: MetricsRecorder,
     config: TelemetryConfig,

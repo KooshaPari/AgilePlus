@@ -9,6 +9,8 @@ export { Select, default as SelectDefault } from './Select';
 export { Checkbox, default as CheckboxDefault } from './Checkbox';
 export { Radio, default as RadioDefault } from './Radio';
 export { Toggle, default as ToggleDefault } from './Toggle';
+export { Skeleton, default as SkeletonDefault } from './Skeleton';
+export { LoadingOverlay, default as LoadingOverlayDefault } from './LoadingOverlay';
 
 export type { ButtonProps } from '../../types';
 export type { InputProps } from '../../types';

@@ -42,7 +42,7 @@ fn default_branch() -> String {
 /// A line from audit/chain.jsonl.
 #[derive(Debug, serde::Deserialize)]
 struct AuditLine {
-    #[allow(dead_code)]
+    #[allow(dead_code)] // serde-deserialized from audit/chain.jsonl - reserved for rebuild filtering
     feature_id: i64,
     wp_id: Option<i64>,
     timestamp: String,

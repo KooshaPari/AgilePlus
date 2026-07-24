@@ -10,7 +10,7 @@ use super::metrics::{
 use super::report::generate_retro_markdown;
 use agileplus_domain::domain::audit::hash_entry;
 
-#[allow(dead_code)]
+#[allow(dead_code)] // test helper - used by multiple #[test] functions
 fn make_contract(feature_id: i64) -> GovernanceContract {
     GovernanceContract {
         id: 1,

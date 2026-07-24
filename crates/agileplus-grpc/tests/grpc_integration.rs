@@ -66,13 +66,6 @@ fn invalid_transition_maps_to_failed_precondition() {
     assert_eq!(s.code(), Code::FailedPrecondition);
 }
 
-#[test]
-fn timeout_maps_to_deadline_exceeded() {
-    use tonic::Code;
-    let s = domain_error_to_status(DomainError::Timeout(30));
-    assert_eq!(s.code(), Code::DeadlineExceeded);
-}
-
 // --- Event bus tests ---
 
 #[tokio::test]

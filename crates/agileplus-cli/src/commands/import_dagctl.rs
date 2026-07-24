@@ -285,7 +285,7 @@ fn map_state_owned(s: &str) -> String {
 
 /// Allowed values for `wp_dependencies.dep_type` per `008_create_wp_dependencies.sql`.
 /// Kept here for future use (e.g. when the dagctl edge format adds `dep_type`).
-#[allow(dead_code)]
+#[allow(dead_code)] // reserved - dep_type mapping for when dagctl adds dep_type field
 fn map_dep_type(s: &str) -> &'static str {
     match s {
         "file_overlap" => "file_overlap",
@@ -294,7 +294,7 @@ fn map_dep_type(s: &str) -> &'static str {
     }
 }
 
-#[allow(dead_code)]
+#[allow(dead_code)] // reserved - dep_type mapping for when dagctl adds dep_type field
 fn map_dep_type_owned(s: &str) -> String {
     map_dep_type(s).to_string()
 }

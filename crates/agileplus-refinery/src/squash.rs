@@ -10,7 +10,7 @@ use anyhow::{Context, Result};
 /// Squash helper.
 #[derive(Debug, Clone)]
 pub struct Squash {
-    #[allow(dead_code)]
+    #[allow(dead_code)] // reserved - GitVcsAdapter will be used in future squash operations
     adapter: GitVcsAdapter,
     repo_root: PathBuf,
 }

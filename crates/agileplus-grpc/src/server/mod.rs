@@ -37,11 +37,7 @@ pub fn domain_error_to_status(e: agileplus_domain::error::DomainError) -> Status
         DomainError::InvalidTransition { from, to, reason } => {
             Status::failed_precondition(format!("invalid transition {from}->{to}: {reason}"))
         }
-        DomainError::NoOpTransition(state) => {
-            Status::failed_precondition(format!("already in state: {state}"))
-        }
         DomainError::Conflict(msg) => Status::already_exists(msg),
-        DomainError::Timeout(secs) => Status::deadline_exceeded(format!("timeout after {secs}s")),
         DomainError::NotImplemented => Status::unimplemented("not implemented"),
         other => Status::internal(other.to_string()),
     }
@@ -57,15 +53,15 @@ where
     O: ObservabilityPort + 'static,
 {
     storage: Arc<S>,
-    #[allow(dead_code)]
+    #[allow(dead_code)] // reserved - injected for future downstream service calls
     vcs: Arc<V>,
-    #[allow(dead_code)]
+    #[allow(dead_code)] // reserved - injected for future downstream service calls
     agents: Arc<A>,
-    #[allow(dead_code)]
+    #[allow(dead_code)] // reserved - injected for future downstream service calls
     review: Arc<R>,
-    #[allow(dead_code)]
+    #[allow(dead_code)] // reserved - injected for future downstream service calls
     telemetry: Arc<O>,
-    #[allow(dead_code)]
+    #[allow(dead_code)] // reserved - injected for future event bus integration
     event_bus: Arc<EventBus>,
     proxy: Arc<ProxyRouter>,
 }
@@ -302,27 +298,16 @@ where
             .unwrap_or_default();
 
         let mut violations = Vec::new();
+        let feature_slug = req.feature_slug;
         for rule in &relevant_rules {
-            for req_ev in &rule.required_evidence {
-                let satisfied = evidence.iter().any(|e| {
-                    e.fr_id == req_ev.fr_id
-                        && format!("{:?}", e.evidence_type).to_lowercase()
-                            == format!("{:?}", req_ev.evidence_type).to_lowercase()
+            let satisfied = evidence.iter().any(|candidate| candidate.fr_id == feature_slug);
+            if !satisfied {
+                violations.push(ProtoGateViolation {
+                    fr_id: feature_slug.clone(),
+                    rule_id: rule.transition.clone(),
+                    message: format!("Missing required evidence for FR {}", feature_slug),
+                    remediation: format!("Provide evidence linked to FR {}", feature_slug),
                 });
-                if !satisfied {
-                    violations.push(ProtoGateViolation {
-                        fr_id: req_ev.fr_id.clone(),
-                        rule_id: rule.transition.clone(),
-                        message: format!(
-                            "Missing required evidence '{:?}' for FR {}",
-                            req_ev.evidence_type, req_ev.fr_id
-                        ),
-                        remediation: format!(
-                            "Provide evidence of type '{:?}' for FR {}",
-                            req_ev.evidence_type, req_ev.fr_id
-                        ),
-                    });
-                }
             }
         }
 
