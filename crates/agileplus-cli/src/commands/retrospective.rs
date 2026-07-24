@@ -415,7 +415,7 @@ where
     vcs.write_artifact(slug, "retrospective.md", &report_content)
         .await
         .unwrap_or_else(|e| {
-            tracing::warn!("Failed to write retrospective.md artifact: {e}");
+            tracing::warn!(slug = %slug, error = %e, "failed to write retrospective.md artifact");
         });
 
     // Transition feature state to Retrospected

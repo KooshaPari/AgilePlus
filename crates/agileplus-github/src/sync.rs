@@ -183,7 +183,7 @@ impl GitHubSyncAdapter {
                     changes.push((item_id, issue.state));
                 }
                 Err(e) => {
-                    tracing::warn!("Failed to poll GitHub issue #{}: {}", issue_number, e);
+                    tracing::warn!(issue_number = issue_number, error = %e, "github issue poll failed");
                 }
             }
         }

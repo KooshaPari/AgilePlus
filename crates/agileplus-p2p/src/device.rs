@@ -81,7 +81,7 @@ async fn query_local_tailscale() -> Result<(String, String), PeerDiscoveryError>
 
     tokio::spawn(async move {
         if let Err(e) = conn.await {
-            tracing::warn!("Tailscale local API connection error: {e}");
+            tracing::warn!(error = %e, kind = "tailscale_connection", "tailscale local api connection error");
         }
     });
 
@@ -129,7 +129,7 @@ pub async fn register_device(store: &dyn DeviceStore) -> Result<DeviceNode, Conn
     let (hostname, tailscale_ip) = match query_local_tailscale().await {
         Ok(pair) => pair,
         Err(e) => {
-            tracing::warn!("Tailscale query failed during registration, using fallbacks: {e}");
+            tracing::warn!(error = %e, kind = "tailscale_query", fallback = "hostname", "tailscale query failed during registration");
             let h = hostname::get()
                 .map(|s| s.to_string_lossy().into_owned())
                 .unwrap_or_else(|_| "unknown".to_string());

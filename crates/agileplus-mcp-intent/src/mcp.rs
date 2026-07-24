@@ -59,7 +59,7 @@ pub fn run_stdio_server() -> anyhow::Result<()> {
     let mut stdout = io::stdout();
     let mut lines = stdin.lock().lines();
 
-    tracing::info!("agileplus-mcp-intent stdio server started");
+    tracing::info!(name = "agileplus-mcp-intent", transport = "stdio", "MCP stdio server started");
 
     while let Some(Ok(line)) = lines.next() {
         if line.trim().is_empty() {

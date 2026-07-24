@@ -35,14 +35,14 @@ impl IntoResponse for ApiError {
             ApiError::Unauthorized(m) => (StatusCode::UNAUTHORIZED, m.clone()),
             ApiError::Conflict(m) => (StatusCode::CONFLICT, m.clone()),
             ApiError::Template(m) => {
-                tracing::error!("template render error: {m}");
+                tracing::error!(error.message = %m, kind = "template_render", "template render failed");
                 (
                     StatusCode::INTERNAL_SERVER_ERROR,
                     "template render error".to_string(),
                 )
             }
             ApiError::Internal(m) => {
-                tracing::error!("internal API error: {m}");
+                tracing::error!(error.message = %m, kind = "internal", "internal api error");
                 (
                     StatusCode::INTERNAL_SERVER_ERROR,
                     "internal server error".to_string(),

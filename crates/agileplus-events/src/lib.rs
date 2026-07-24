@@ -4,11 +4,14 @@
 //! snapshot management, aggregate replay, and query filtering.
 //! Traceability: FR-008 / WP02
 
+pub mod bus;
 pub mod hash;
 pub mod query;
 pub mod replay;
 pub mod snapshot;
 pub mod store;
+
+pub use bus::{DomainEvent, EventBus, EventSubscriber};
 
 pub use hash::{HashError, compute_hash, verify_chain};
 pub use query::{EventQuery, QueryError};

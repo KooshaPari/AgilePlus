@@ -132,7 +132,7 @@ where
 {
     let app = create_router(state);
     let listener = tokio::net::TcpListener::bind(addr).await?;
-    tracing::info!("HTTP API listening on {addr}");
+    tracing::info!(%addr, "HTTP API listening");
     axum::serve(listener, app).await?;
     Ok(())
 }
