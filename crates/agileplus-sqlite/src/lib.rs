@@ -491,7 +491,7 @@ impl StoragePort for SqliteStorageAdapter {
         users::create_user(&conn, user)
     }
 
-    async fn get_user_by_id(&self, id: i64) -> Result<Option<User>, DomainError> {
+    async fn get_user(&self, id: i64) -> Result<Option<User>, DomainError> {
         let conn = self.lock()?;
         users::get_user_by_id(&conn, id)
     }
@@ -526,7 +526,7 @@ impl StoragePort for SqliteStorageAdapter {
         epics::create_epic(&conn, epic)
     }
 
-    async fn get_epic_by_id(&self, id: i64) -> Result<Option<Epic>, DomainError> {
+    async fn get_epic(&self, id: i64) -> Result<Option<Epic>, DomainError> {
         let conn = self.lock()?;
         epics::get_epic_by_id(&conn, id)
     }
@@ -551,7 +551,7 @@ impl StoragePort for SqliteStorageAdapter {
         stories::create_story(&conn, story)
     }
 
-    async fn get_story_by_id(&self, id: i64) -> Result<Option<Story>, DomainError> {
+    async fn get_story(&self, id: i64) -> Result<Option<Story>, DomainError> {
         let conn = self.lock()?;
         stories::get_story_by_id(&conn, id)
     }
