@@ -676,7 +676,7 @@ impl StoragePort for MemStore {
         Ok(id)
     }
 
-    async fn get_user_by_id(&self, id: i64) -> Result<Option<User>, DomainError> {
+    async fn get_user(&self, id: i64) -> Result<Option<User>, DomainError> {
         Ok(self
             .users
             .lock()
@@ -731,7 +731,7 @@ impl StoragePort for MemStore {
         Ok(id)
     }
 
-    async fn get_epic_by_id(&self, id: i64) -> Result<Option<Epic>, DomainError> {
+    async fn get_epic(&self, id: i64) -> Result<Option<Epic>, DomainError> {
         Ok(self
             .epics
             .lock()
@@ -779,7 +779,7 @@ impl StoragePort for MemStore {
         Ok(id)
     }
 
-    async fn get_story_by_id(&self, id: i64) -> Result<Option<Story>, DomainError> {
+    async fn get_story(&self, id: i64) -> Result<Option<Story>, DomainError> {
         Ok(self
             .stories
             .lock()

@@ -419,7 +419,7 @@ mod tests {
         ) -> Result<i64, DomainError> {
             Ok(0)
         }
-        async fn get_user_by_id(
+        async fn get_user(
             &self,
             _: i64,
         ) -> Result<Option<agileplus_domain::domain::user::User>, DomainError> {

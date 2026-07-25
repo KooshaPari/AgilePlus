@@ -72,7 +72,7 @@ where
 {
     let epic = app
         .storage
-        .get_epic_by_id(id)
+        .get_epic(id)
         .await
         .map_err(ApiError::from)?
         .ok_or_else(|| ApiError::NotFound(format!("Epic {id} not found")))?;
@@ -97,7 +97,7 @@ where
 {
     let mut epic = app
         .storage
-        .get_epic_by_id(id)
+        .get_epic(id)
         .await
         .map_err(ApiError::from)?
         .ok_or_else(|| ApiError::NotFound(format!("Epic {id} not found")))?;
@@ -129,7 +129,7 @@ where
     // verify epic exists
     let _ = app
         .storage
-        .get_epic_by_id(id)
+        .get_epic(id)
         .await
         .map_err(ApiError::from)?
         .ok_or_else(|| ApiError::NotFound(format!("Epic {id} not found")))?;

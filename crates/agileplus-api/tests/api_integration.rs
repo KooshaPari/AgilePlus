@@ -743,7 +743,7 @@ impl StoragePort for MockStorage {
         Ok(1)
     }
 
-    async fn get_epic_by_id(
+    async fn get_epic(
         &self,
         _id: i64,
     ) -> Result<Option<agileplus_domain::domain::epic::Epic>, DomainError> {
@@ -777,7 +777,7 @@ impl StoragePort for MockStorage {
         Ok(1)
     }
 
-    async fn get_story_by_id(
+    async fn get_story(
         &self,
         _id: i64,
     ) -> Result<Option<agileplus_domain::domain::story::Story>, DomainError> {

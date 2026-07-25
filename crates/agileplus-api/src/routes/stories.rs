@@ -72,7 +72,7 @@ where
 {
     let story = app
         .storage
-        .get_story_by_id(id)
+        .get_story(id)
         .await
         .map_err(ApiError::from)?
         .ok_or_else(|| ApiError::NotFound(format!("Story {id} not found")))?;
@@ -97,7 +97,7 @@ where
 {
     let mut story = app
         .storage
-        .get_story_by_id(id)
+        .get_story(id)
         .await
         .map_err(ApiError::from)?
         .ok_or_else(|| ApiError::NotFound(format!("Story {id} not found")))?;

@@ -1736,7 +1736,7 @@ mod tests {
         let u = User::new("Alice", "alice@example.com", UserRole::Member).unwrap();
         let id = StoragePort::create_user(&db, &u).await.unwrap();
         assert!(id > 0);
-        let got = StoragePort::get_user_by_id(&db, id)
+        let got = StoragePort::get_user(&db, id)
             .await
             .unwrap()
             .unwrap();
@@ -1762,7 +1762,7 @@ mod tests {
     #[tokio::test]
     async fn user_not_found_returns_none() {
         let db = make_adapter();
-        assert!(StoragePort::get_user_by_id(&db, 9999).await.unwrap().is_none());
+        assert!(StoragePort::get_user(&db, 9999).await.unwrap().is_none());
         assert!(StoragePort::get_user_by_email(&db, "no@no.com")
             .await
             .unwrap()
@@ -1777,7 +1777,7 @@ mod tests {
         StoragePort::update_user_status(&db, id, UserStatus::Inactive)
             .await
             .unwrap();
-        let got = StoragePort::get_user_by_id(&db, id).await.unwrap().unwrap();
+        let got = StoragePort::get_user(&db, id).await.unwrap().unwrap();
         assert_eq!(got.status, UserStatus::Inactive);
     }
 
@@ -1789,7 +1789,7 @@ mod tests {
         StoragePort::update_user_role(&db, id, UserRole::Admin)
             .await
             .unwrap();
-        let got = StoragePort::get_user_by_id(&db, id).await.unwrap().unwrap();
+        let got = StoragePort::get_user(&db, id).await.unwrap().unwrap();
         assert_eq!(got.role, UserRole::Admin);
     }
 
@@ -1822,7 +1822,7 @@ mod tests {
         .await
         .unwrap();
         StoragePort::delete_user(&db, id).await.unwrap();
-        assert!(StoragePort::get_user_by_id(&db, id).await.unwrap().is_none());
+        assert!(StoragePort::get_user(&db, id).await.unwrap().is_none());
     }
 
     #[tokio::test]
@@ -1853,7 +1853,7 @@ mod tests {
         let e = Epic::new(pid, "Auth Overhaul").unwrap();
         let id = StoragePort::create_epic(&db, &e).await.unwrap();
         assert!(id > 0);
-        let got = StoragePort::get_epic_by_id(&db, id)
+        let got = StoragePort::get_epic(&db, id)
             .await
             .unwrap()
             .unwrap();
@@ -1865,7 +1865,7 @@ mod tests {
     #[tokio::test]
     async fn epic_not_found_returns_none() {
         let db = make_adapter();
-        assert!(StoragePort::get_epic_by_id(&db, 9999)
+        assert!(StoragePort::get_epic(&db, 9999)
             .await
             .unwrap()
             .is_none());
@@ -1880,7 +1880,7 @@ mod tests {
         StoragePort::update_epic_status(&db, id, EpicStatus::Active)
             .await
             .unwrap();
-        let got = StoragePort::get_epic_by_id(&db, id).await.unwrap().unwrap();
+        let got = StoragePort::get_epic(&db, id).await.unwrap().unwrap();
         assert_eq!(got.status, EpicStatus::Active);
     }
 
@@ -1927,7 +1927,7 @@ mod tests {
             .await
             .unwrap();
         StoragePort::delete_epic(&db, eid).await.unwrap();
-        assert!(StoragePort::get_epic_by_id(&db, eid)
+        assert!(StoragePort::get_epic(&db, eid)
             .await
             .unwrap()
             .is_none());
@@ -1957,7 +1957,7 @@ mod tests {
         let s = Story::new(eid, pid, "User can log in", Some(3)).unwrap();
         let id = StoragePort::create_story(&db, &s).await.unwrap();
         assert!(id > 0);
-        let got = StoragePort::get_story_by_id(&db, id)
+        let got = StoragePort::get_story(&db, id)
             .await
             .unwrap()
             .unwrap();
@@ -1971,7 +1971,7 @@ mod tests {
     #[tokio::test]
     async fn story_not_found_returns_none() {
         let db = make_adapter();
-        assert!(StoragePort::get_story_by_id(&db, 9999)
+        assert!(StoragePort::get_story(&db, 9999)
             .await
             .unwrap()
             .is_none());
@@ -1986,7 +1986,7 @@ mod tests {
         StoragePort::update_story_status(&db, id, StoryStatus::InProgress)
             .await
             .unwrap();
-        let got = StoragePort::get_story_by_id(&db, id)
+        let got = StoragePort::get_story(&db, id)
             .await
             .unwrap()
             .unwrap();
@@ -2070,7 +2070,7 @@ mod tests {
             .await
             .unwrap();
         StoragePort::delete_story(&db, sid).await.unwrap();
-        assert!(StoragePort::get_story_by_id(&db, sid)
+        assert!(StoragePort::get_story(&db, sid)
             .await
             .unwrap()
             .is_none());
@@ -2084,7 +2084,7 @@ mod tests {
         let (pid, eid) = make_project_and_epic(&db).await;
         let s = Story::new(eid, pid, "No points", None).unwrap();
         let id = StoragePort::create_story(&db, &s).await.unwrap();
-        let got = StoragePort::get_story_by_id(&db, id).await.unwrap().unwrap();
+        let got = StoragePort::get_story(&db, id).await.unwrap().unwrap();
         assert!(got.points.is_none());
     }
 

@@ -13,6 +13,7 @@ pub use agent::AgentPort;
 pub use epic::EpicRepository;
 pub use observability::ObservabilityPort;
 pub use story::StoryRepository;
+pub use vcs::{BranchInfo, ConflictInfo, FeatureArtifacts, MergeResult, VcsPort, WorktreeInfo};
 
 use std::path::{Path, PathBuf};
 
@@ -35,8 +36,6 @@ use crate::domain::{
     work_package::{WorkPackage, WpDependency, WpState},
 };
 use crate::error::DomainError;
-
-use self::vcs::{BranchInfo, ConflictInfo, FeatureArtifacts, MergeResult, WorktreeInfo};
 
 /// Primary storage port — full CRUD across all domain aggregates.
 #[async_trait]
@@ -246,24 +245,6 @@ pub trait ContentStoragePort: Send + Sync {
     async fn update_backlog_status(&self, id: i64, status: BacklogStatus) -> Result<(), DomainError>;
     async fn update_backlog_priority(&self, id: i64, priority: BacklogPriority) -> Result<(), DomainError>;
     async fn pop_next_backlog_item(&self) -> Result<Option<BacklogItem>, DomainError>;
-}
-
-/// VCS port — git operations needed by the domain.
-#[async_trait]
-pub trait VcsPort: Send + Sync {
-    async fn create_worktree(&self, feature_slug: &str, wp_id: &str) -> Result<PathBuf, DomainError>;
-    async fn list_worktrees(&self) -> Result<Vec<WorktreeInfo>, DomainError>;
-    async fn cleanup_worktree(&self, worktree_path: &Path) -> Result<(), DomainError>;
-    async fn create_branch(&self, branch_name: &str, base: &str) -> Result<(), DomainError>;
-    async fn list_branches(&self, pattern: Option<&str>, remote: bool) -> Result<Vec<BranchInfo>, DomainError>;
-    async fn delete_branch(&self, branch_name: &str, force: bool, remote: Option<&str>) -> Result<(), DomainError>;
-    async fn checkout_branch(&self, branch_name: &str) -> Result<(), DomainError>;
-    async fn merge_to_target(&self, source: &str, target: &str) -> Result<MergeResult, DomainError>;
-    async fn detect_conflicts(&self, source: &str, target: &str) -> Result<Vec<ConflictInfo>, DomainError>;
-    async fn read_artifact(&self, feature_slug: &str, relative_path: &str) -> Result<String, DomainError>;
-    async fn write_artifact(&self, feature_slug: &str, relative_path: &str, content: &str) -> Result<(), DomainError>;
-    async fn artifact_exists(&self, feature_slug: &str, relative_path: &str) -> Result<bool, DomainError>;
-    async fn scan_feature_artifacts(&self, feature_slug: &str) -> Result<FeatureArtifacts, DomainError>;
 }
 
 /// Outcome recorded after a ticket has been reviewed in triage.
