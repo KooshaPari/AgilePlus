@@ -7,6 +7,6 @@ publish = false
 
 [dependencies]
 clap-ext = { path = "../../crates/clap-ext" }
-clap = { version = ">=4.3, <4.4", features = ["derive"] }
+clap = { version = "4.5", features = ["derive", "env", "string"] }
 anyhow = "1.0"
 tracing = "0.1"
