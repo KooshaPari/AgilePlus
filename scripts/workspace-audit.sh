@@ -12,8 +12,15 @@ EXIT_CODE=0
 echo "=== Workspace Path Dependency Audit ==="
 echo "Scanning: $REPO_ROOT/Cargo.toml"
 
-# Extract path dependencies from workspace Cargo.toml
-path_deps=$(grep -E 'path\s*=' "$REPO_ROOT/Cargo.toml" 2>/dev/null || true)
+# Extract path dependencies only from the workspace.dependencies table.
+# Cargo metadata tables (for example workspace.metadata.dist's
+# `install-path`) also contain the substring `path =`, but are not dependency
+# declarations and must never be interpreted as filesystem paths.
+path_deps=$(awk '
+    /^\[workspace\.dependencies\][[:space:]]*$/ { in_deps=1; next }
+    /^\[/ { in_deps=0 }
+    in_deps && $0 ~ /path[[:space:]]*=/ { print }
+' "$REPO_ROOT/Cargo.toml" 2>/dev/null || true)
 
 if [ -z "$path_deps" ]; then
     echo "No path dependencies found in workspace."
@@ -22,7 +29,8 @@ fi
 
 # Check each member exists
 while IFS= read -r line; do
-    member=$(echo "$line" | sed 's/.*path\s*=\s*"//' | sed 's/".*//' | tr -d ',')
+    member=$(printf '%s\n' "$line" | sed -n 's/.*path[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p')
+    [ -z "$member" ] && continue
     member_path="$REPO_ROOT/$member"
     if [ ! -d "$member_path" ]; then
         echo "MISSING: $member (path: $member_path)"

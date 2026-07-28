@@ -191,7 +191,7 @@ where
     vcs.write_artifact(slug, "validation-report.md", &report_md)
         .await
         .unwrap_or_else(|e| {
-            tracing::warn!("Failed to write validation-report.md artifact: {e}");
+            tracing::warn!(slug = %slug, error = %e, "failed to write validation-report.md artifact");
         });
 
     let elapsed_ms = start.elapsed().as_millis();

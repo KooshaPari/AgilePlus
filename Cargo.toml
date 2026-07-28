@@ -21,7 +21,7 @@ members = [
   "crates/agileplus-telemetry",
   "crates/agileplus-dashboard",
   "crates/agileplus-events",
-  "crates/clap-ext/crates/clap-ext",
+  # NOTE: clap-ext temporarily excluded — incompatible clap version constraint (4.3.x vs 4.6.x). Tracked in PR #924.
 ]
 
 [workspace.package]
@@ -104,11 +104,15 @@ chrono = { version = "0.4", features = ["serde"] }
 sha2 = "0.10"
 zeroize = { version = "1", features = ["derive"] }
 base64 = "0.22"
+aes-gcm = "0.10"
+argon2 = "0.5"
 
 # gRPC / proto (used by agileplus-proto, agileplus-grpc, plugin-grpc, agent-service)
-tonic = { version = "0.13", features = ["transport", "prost"] }
+tonic = { version = "0.14", features = ["transport"] }
 tonic-build = "0.14"
-tonic-health = "0.13"
+tonic-prost = "0.14"
+tonic-prost-build = "0.14"
+tonic-health = "0.14"
 prost = "0.14"
 prost-build = "0.13"
 
@@ -117,6 +121,11 @@ async-trait = "0.1"
 
 # Templating
 askama = "0.12"
+
+# Plugin crates (external from separate repos) — disabled for standalone build
+# agileplus-plugin-core = { git = "https://github.com/KooshaPari/agileplus-plugin-core" }
+# agileplus-plugin-git = { git = "https://github.com/KooshaPari/agileplus-plugin-git" }
+# agileplus-plugin-sqlite = { git = "https://github.com/KooshaPari/agileplus-plugin-sqlite" }
 
 # Git
 gix = "0.83"

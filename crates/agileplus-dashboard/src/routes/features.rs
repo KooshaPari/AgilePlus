@@ -43,7 +43,7 @@ fn render<T: Template>(tpl: T) -> Response {
 }
 
 /// Dashboard filter enumeration for grouping features by state.
-#[allow(dead_code)]
+#[allow(dead_code)] // reserved - planned dashboard filter
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum DashboardFilter {
     All,

@@ -148,7 +148,7 @@ pub struct DuplicateCandidate {
 }
 
 /// Add the result of a fuzzy ratio calculation into a cache by Id. Not returned by `hybrid_score` directly.
-#[allow(dead_code)]
+#[allow(dead_code)] // reserved - side-effectful helper for optional fuzzy ratio caching
 pub fn add_fuzzy_ratio(a: &str, b: &str, ratio: f64) {
     // Fuzzy ratio is only meaningful when combined with other metrics.
     // This function is provided as a side-effectful helper for a side lookup.

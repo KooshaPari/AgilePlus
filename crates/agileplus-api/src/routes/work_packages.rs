@@ -16,8 +16,8 @@ use chrono::Utc;
 use serde::{Deserialize, Serialize};
 
 use agileplus_domain::domain::work_package::{WorkPackage, WpState};
-use agileplus_domain::ports::{ObservabilityPort, StoragePort};
 use agileplus_domain::ports::vcs::VcsPort;
+use agileplus_domain::ports::{ContentStoragePort, ObservabilityPort, StoragePort};
 
 use crate::error::ApiError;
 use crate::responses::WorkPackageResponse;
@@ -25,7 +25,7 @@ use crate::state::AppState;
 
 pub fn routes<S, V, O>() -> Router<AppState<S, V, O>>
 where
-    S: StoragePort + Send + Sync + 'static,
+    S: StoragePort + ContentStoragePort + Send + Sync + 'static,
     V: VcsPort + Send + Sync + 'static,
     O: ObservabilityPort + Send + Sync + 'static,
 {
@@ -183,13 +183,11 @@ pub async fn update_work_package<S, V, O>(
     Json(body): Json<UpdateWpRequest>,
 ) -> Result<Json<WorkPackageResponse>, ApiError>
 where
-    S: StoragePort + Send + Sync + 'static,
+    S: StoragePort + ContentStoragePort + Send + Sync + 'static,
     V: VcsPort + Send + Sync + 'static,
     O: ObservabilityPort + Send + Sync + 'static,
 {
-    let wp = app
-        .storage
-        .get_work_package(id)
+    let wp = StoragePort::get_work_package(app.storage.as_ref(), id)
         .await
         .map_err(ApiError::from)?
         .ok_or_else(|| ApiError::NotFound(format!("WorkPackage {id} not found")))?;
@@ -203,6 +201,10 @@ where
         updated_at: Utc::now(),
         ..wp
     };
+
+    ContentStoragePort::update_work_package(app.storage.as_ref(), &updated)
+        .await
+        .map_err(ApiError::from)?;
 
     Ok(Json(WorkPackageResponse::from(updated)))
 }

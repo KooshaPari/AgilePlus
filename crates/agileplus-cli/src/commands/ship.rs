@@ -209,7 +209,7 @@ where
     vcs.write_artifact(slug, "meta.json", &meta_json)
         .await
         .unwrap_or_else(|e| {
-            tracing::warn!("Failed to write meta.json: {e}");
+            tracing::warn!(slug = %slug, error = %e, "failed to write meta.json artifact");
         });
 
     // Transition feature state to Shipped

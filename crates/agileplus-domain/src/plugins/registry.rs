@@ -29,7 +29,7 @@ pub struct DomainPluginRegistry {
 
 impl DomainPluginRegistry {
     /// Create a new domain plugin registry.
-    #[allow(dead_code)]
+    #[allow(dead_code)] // reserved - domain plugin registry API for VCS/storage adapters
     pub fn new() -> Self {
         Self {
             vcs_registry: PluginRegistry::new("vcs"),
@@ -38,37 +38,37 @@ impl DomainPluginRegistry {
     }
 
     /// Register a VCS plugin instance.
-    #[allow(dead_code)]
+    #[allow(dead_code)] // reserved - domain plugin registry API for VCS/storage adapters
     pub fn register_vcs_plugin(&mut self, name: &str, plugin: Arc<dyn VcsPlugin>) {
         self.vcs_registry.register(name, plugin);
     }
 
     /// Register a storage plugin instance.
-    #[allow(dead_code)]
+    #[allow(dead_code)] // reserved - domain plugin registry API for VCS/storage adapters
     pub fn register_storage_plugin(&mut self, name: &str, plugin: Arc<dyn StoragePlugin>) {
         self.storage_registry.register(name, plugin);
     }
 
     /// Get a VCS adapter by name.
-    #[allow(dead_code)]
+    #[allow(dead_code)] // reserved - domain plugin registry API for VCS/storage adapters
     pub fn get_vcs_adapter(&self, name: &str) -> Option<Arc<dyn VcsPlugin>> {
         self.vcs_registry.get(name)
     }
 
     /// Get a storage adapter by name.
-    #[allow(dead_code)]
+    #[allow(dead_code)] // reserved - domain plugin registry API for VCS/storage adapters
     pub fn get_storage_adapter(&self, name: &str) -> Option<Arc<dyn StoragePlugin>> {
         self.storage_registry.get(name)
     }
 
     /// List all registered VCS adapter names.
-    #[allow(dead_code)]
+    #[allow(dead_code)] // reserved - domain plugin registry API for VCS/storage adapters
     pub fn list_vcs_adapters(&self) -> Vec<String> {
         self.vcs_registry.list_plugins()
     }
 
     /// List all registered storage adapter names.
-    #[allow(dead_code)]
+    #[allow(dead_code)] // reserved - domain plugin registry API for VCS/storage adapters
     pub fn list_storage_adapters(&self) -> Vec<String> {
         self.storage_registry.list_plugins()
     }

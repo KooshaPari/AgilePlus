@@ -6,11 +6,11 @@
 
 use std::env;
 
+use askama::Template;
 use axum::{
     extract::State,
     response::{Html, IntoResponse, Response},
 };
-use askama::Template;
 use serde::{Deserialize, Serialize};
 
 use crate::app_state::SharedState;
@@ -157,12 +157,14 @@ pub async fn agent_settings_page() -> Response {
         dashboard: None,
     });
 
-    let agent_config = config.agents.unwrap_or_else(|| super::settings::AgentConfig {
-        pool_size: 6,
-        retry_budget: 3,
-        dispatch_mode: "balanced".to_string(),
-        default_provider: "claude".to_string(),
-    });
+    let agent_config = config
+        .agents
+        .unwrap_or_else(|| super::settings::AgentConfig {
+            pool_size: 6,
+            retry_budget: 3,
+            dispatch_mode: "balanced".to_string(),
+            default_provider: "claude".to_string(),
+        });
 
     render(AgentSettingsPage {
         agent_pool_size: agent_config.pool_size,
@@ -217,12 +219,12 @@ pub async fn test_agent_connection(
 pub async fn save_agent_settings(axum::Form(form): axum::Form<AgentSettingsForm>) -> Response {
     let mut config = match super::settings::Config::load() {
         Ok(c) => c,
-        Err(_) => super::settings::Config {
-            plane: None,
-            agents: None,
-            services: None,
-            dashboard: None,
-        },
+        Err(error) => {
+            return render(ToastPartial {
+                message: format!("Failed to load settings safely: {error}"),
+                success: false,
+            });
+        }
     };
 
     config.agents = Some(super::settings::AgentConfig {
@@ -241,5 +243,26 @@ pub async fn save_agent_settings(axum::Form(form): axum::Form<AgentSettingsForm>
             message: format!("Failed to save settings: {e}"),
             success: false,
         }),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::super::settings::Config;
+
+    #[test]
+    fn malformed_config_is_not_replaced_by_agent_settings_defaults() {
+        let config_path = std::env::temp_dir().join("agileplus-agent-malformed.toml");
+        let malformed = "[agents\npool_size = 'not-an-integer'\n";
+        std::fs::write(&config_path, malformed).unwrap();
+
+        assert!(
+            Config::load_from_path_with_credential_factory(&config_path, || {
+                unreachable!("malformed config must fail before credential loading")
+            })
+            .is_err()
+        );
+        assert_eq!(std::fs::read_to_string(&config_path).unwrap(), malformed);
+        std::fs::remove_file(config_path).unwrap();
     }
 }

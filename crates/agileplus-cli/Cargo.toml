@@ -44,6 +44,7 @@ similar = "2"
 dashmap = "6"
 uuid = { workspace = true }
 regex = { workspace = true }
+colored = "2"
 
 [dev-dependencies]
 assert_cmd.workspace = true

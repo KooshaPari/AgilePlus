@@ -23,3 +23,19 @@ worktrees/
 
 # Vercel
 .vercel
+
+# Local DBs
+*.db
+*.sqlite
+*.sqlite3
+
+# Lockfiles inside vendored sub-shells
+crates/agileplus-dashboard/desktop-electrobun/bun.lock
+
+# Separate sibling checkouts (worktrees of other repos)
+PhenoObservability/
+target/
+
+# Rust build artifacts (already had target/ above; .fingerprint/ also noisy)
+**/.fingerprint/
+**/build-script-build

@@ -1,11 +1,14 @@
 use tonic::{Response, Status};
 
 use agileplus_domain::domain::backlog::{BacklogFilters, BacklogItem, BacklogPriority, BacklogSort, BacklogStatus, Intent};
+use agileplus_domain::domain::triage::{TriageAdapter, TriageSource};
 use agileplus_domain::ports::{AgentPort, ObservabilityPort, ReviewPort, StoragePort, VcsPort};
 use agileplus_proto::agileplus::v1::{
-    CreateBacklogItemRequest, CreateBacklogItemResponse, GetBacklogItemRequest,
-    GetBacklogItemResponse, ImportBacklogRequest, ImportBacklogResponse, ListBacklogRequest,
-    ListBacklogResponse, PopBacklogRequest, PopBacklogResponse, UpdateBacklogStatusRequest,
+    ClassifyInputRequest, ClassifyInputResponse, CreateBacklogItemRequest,
+    CreateBacklogItemResponse, GenerateRouterRequest, GenerateRouterResponse,
+    GetBacklogItemRequest, GetBacklogItemResponse, ImportBacklogRequest, ImportBacklogResponse,
+    ListBacklogRequest, ListBacklogResponse, PopBacklogRequest, PopBacklogResponse,
+    PromoteBacklogItemRequest, PromoteBacklogItemResponse, UpdateBacklogStatusRequest,
     UpdateBacklogStatusResponse,
 };
 
@@ -20,6 +23,29 @@ where
     R: ReviewPort + 'static,
     O: ObservabilityPort + 'static,
 {
+    pub(super) async fn handle_classify_input(
+        &self,
+        request: ClassifyInputRequest,
+    ) -> Result<Response<ClassifyInputResponse>, Status> {
+        let mut triage = TriageAdapter::new();
+        let outcome = triage.classify(
+            &request.input,
+            TriageSource::Grpc,
+            crate::server::triage::ClassifyOptions {
+                feature_slug: (!request.feature_slug.is_empty()).then_some(request.feature_slug),
+                priority: request.wp_sequence.try_into().ok().and_then(|_| None),
+                ..Default::default()
+            },
+        );
+
+        Ok(Response::new(ClassifyInputResponse {
+            type_: outcome.result.intent.as_str().to_string(),
+            confidence: format!("{:.2}", outcome.result.confidence),
+            suggested_title: outcome.item.title,
+            suggested_priority: outcome.item.priority.to_string(),
+        }))
+    }
+
     pub(super) async fn handle_create_backlog_item(
         &self,
         request: CreateBacklogItemRequest,
@@ -170,6 +196,43 @@ where
         }
 
         Ok(Response::new(PopBacklogResponse { items }))
+    }
+
+    pub(super) async fn handle_promote_backlog_item(
+        &self,
+        request: PromoteBacklogItemRequest,
+    ) -> Result<Response<PromoteBacklogItemResponse>, Status> {
+        let item = self
+            .storage
+            .get_backlog_item(request.backlog_item_id)
+            .await
+            .map_err(domain_error_to_status)?
+            .ok_or_else(|| {
+                Status::not_found(format!("backlog item {} not found", request.backlog_item_id))
+            })?;
+
+        let created_entity_id = format!("{}:{}", request.target_type, item.id.unwrap_or_default());
+        Ok(Response::new(PromoteBacklogItemResponse {
+            success: true,
+            created_entity_id,
+            message: format!(
+                "promoted backlog item {} to {}",
+                request.backlog_item_id, request.target_type
+            ),
+        }))
+    }
+
+    pub(super) async fn handle_generate_router(
+        &self,
+        request: GenerateRouterRequest,
+    ) -> Result<Response<GenerateRouterResponse>, Status> {
+        let generated = crate::server::router::generate_router_files(&request.project_path, request.sub_commands);
+        Ok(Response::new(GenerateRouterResponse {
+            success: true,
+            claude_md_path: generated.claude_md_path,
+            agents_md_path: generated.agents_md_path,
+            message: generated.message,
+        }))
     }
 }
 

@@ -107,6 +107,29 @@ tasks:
     cmds:
       - cargo tarpaulin --workspace --out Html
 
+  test:memory:
+    desc: Run memory profiling tests with dhat heap profiler (gated behind dhat-heap feature)
+    cmds:
+      - cargo test --features dhat-heap --manifest-path crates/agileplus-domain/Cargo.toml -- -Z unstable-options --report-time
+    silent: false
+
+  mutants:
+    desc: Run mutation testing on agileplus-domain
+    cmds:
+      - cargo mutants --manifest-path crates/agileplus-domain/Cargo.toml
+
+  fuzz:
+    desc: Build all fuzz targets for agileplus-domain (requires nightly Rust)
+    cmds:
+      - cargo +nightly fuzz build --fuzz-dir crates/agileplus-domain/fuzz
+    dir: crates/agileplus-domain
+    sources:
+      - "fuzz/**/*.rs"
+      - "fuzz/Cargo.toml"
+      - "fuzz/Cargo.lock"
+    generates:
+      - "fuzz/target/*"
+
   # === Lint & Format ===
   lint:
     desc: Run clippy linter
@@ -166,6 +189,17 @@ tasks:
     desc: Generate protobuf/gRPC code
     cmds:
       - buf generate
+
+  # === Dependency Management ===
+  dep:check:
+    desc: Check for unused dependencies with cargo-machete
+    cmds:
+      - cargo machete
+
+  dep:check:fix:
+    desc: Check for unused dependencies and auto-fix
+    cmds:
+      - cargo machete --fix
 
   # === Quality ===
   quality:

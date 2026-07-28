@@ -196,7 +196,7 @@ pub async fn epic_create<S: StoragePort>(args: &EpicCreateArgs, storage: &S) -> 
 
 pub async fn story_create<S: StoragePort>(args: &StoryCreateArgs, storage: &S) -> Result<()> {
     let epic = storage
-        .get_epic_by_id(args.epic)
+        .get_epic(args.epic)
         .await
         .context("loading epic")?
         .ok_or_else(|| anyhow!("epic {} not found", args.epic))?;
@@ -313,7 +313,7 @@ pub async fn transition<S: StoragePort>(args: &TransitionArgs, storage: &S) -> R
         (None, Some(story_id)) => {
             let target = StoryStatus::from_str(&args.to)?;
             let mut story = storage
-                .get_story_by_id(story_id)
+                .get_story(story_id)
                 .await
                 .context("loading story")?
                 .ok_or_else(|| anyhow!("story {story_id} not found"))?;

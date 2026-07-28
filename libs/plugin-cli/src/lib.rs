@@ -9,7 +9,7 @@ use plugin_registry::{Plugin, PluginConfig, PluginMetadata, Result};
 
 /// CLI plugin that registers AgilePlus subcommands.
 pub struct CliPlugin {
-    #[allow(dead_code)]
+    #[allow(dead_code)] // reserved - state tracking for future command registration
     commands_registered: bool,
 }
 

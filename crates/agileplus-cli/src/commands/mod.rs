@@ -15,6 +15,7 @@ pub mod list_stories;
 pub mod list_tests;
 pub mod mvp;
 pub mod okf;
+pub mod repl;
 pub mod rubric;
 pub mod seed_requirements;
 pub mod trace;

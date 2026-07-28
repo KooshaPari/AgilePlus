@@ -16,11 +16,7 @@ pub fn domain_error_to_status(e: agileplus_domain::error::DomainError) -> Status
         DomainError::InvalidTransition { from, to, reason } => {
             Status::failed_precondition(format!("invalid transition {from}->{to}: {reason}"))
         }
-        DomainError::NoOpTransition(state) => {
-            Status::failed_precondition(format!("already in state: {state}"))
-        }
         DomainError::Conflict(msg) => Status::already_exists(msg),
-        DomainError::Timeout(secs) => Status::deadline_exceeded(format!("timeout after {secs}s")),
         DomainError::NotImplemented => Status::unimplemented("not implemented"),
         other => Status::internal(other.to_string()),
     }
@@ -37,13 +33,13 @@ where
     O: ObservabilityPort + 'static,
 {
     pub(super) storage: Arc<S>,
-    #[allow(dead_code)]
+    #[allow(dead_code)] // reserved - injected for future downstream service calls
     pub(super) vcs: Arc<V>,
-    #[allow(dead_code)]
+    #[allow(dead_code)] // reserved - injected for future downstream service calls
     pub(super) agents: Arc<A>,
-    #[allow(dead_code)]
+    #[allow(dead_code)] // reserved - injected for future downstream service calls
     pub(super) review: Arc<R>,
-    #[allow(dead_code)]
+    #[allow(dead_code)] // reserved - injected for future downstream service calls
     pub(super) telemetry: Arc<O>,
     pub(super) event_bus: Arc<EventBus>,
     pub(super) proxy: Arc<ProxyRouter>,

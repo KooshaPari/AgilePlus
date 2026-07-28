@@ -9,7 +9,7 @@ use agileplus_domain::ports::StoragePort;
 use agileplus_sqlite::SqliteStorageAdapter;
 use chrono::Utc;
 
-#[allow(dead_code)]
+#[allow(dead_code)] // test helper - used by multiple #[test] functions
 fn make_contract(feature_id: i64) -> GovernanceContract {
     GovernanceContract {
         id: 1,

@@ -219,7 +219,7 @@ impl CliAppBuilder {
 pub struct CliAppImpl {
     name: String,
     version: String,
-    #[allow(dead_code)]
+    #[allow(dead_code)] // reserved - CLI description for future help generation
     description: String,
     commands: Vec<Command>,
 }

@@ -24,3 +24,6 @@ pub mod story;
 pub mod sync_mapping;
 pub mod user;
 pub mod work_package;
+
+#[cfg(test)]
+mod proptest_enums;

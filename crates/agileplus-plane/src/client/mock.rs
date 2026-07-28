@@ -7,7 +7,7 @@ pub use super::models::{PlaneIssue, PlaneWorkItem, PlaneWorkItemResponse};
 pub struct InMemoryPlaneClient {
     issues: Mutex<HashMap<String, PlaneWorkItemResponse>>,
     created: Mutex<Vec<PlaneWorkItem>>,
-    #[allow(dead_code)]
+    #[allow(dead_code)] // reserved - tracks updates for test assertions
     updated: Mutex<Vec<(String, PlaneWorkItem)>>,
 }
 

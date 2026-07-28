@@ -11,11 +11,9 @@ use agileplus_application::use_cases::{
 };
 use agileplus_domain::config::AppConfig;
 use agileplus_domain::credentials::CredentialStore;
-use agileplus_domain::ports::{ObservabilityPort, StoragePort};
 use agileplus_domain::ports::vcs::VcsPort;
+use agileplus_domain::ports::{ObservabilityPort, StoragePort};
 use tokio::sync::broadcast;
-
-use crate::middleware::token_verifier::{DynTokenVerifier, SharedSecretVerifier};
 
 /// Broadcast channel capacity for SSE event streaming.
 const EVENT_CHANNEL_CAPACITY: usize = 256;
@@ -32,7 +30,6 @@ where
     pub telemetry: Arc<O>,
     pub config: Arc<AppConfig>,
     pub credentials: Arc<dyn CredentialStore>,
-    pub token_verifier: DynTokenVerifier,
     /// Broadcast sender for real-time SSE event streaming (T069).
     /// Publish JSON objects with `event_type` and `data` keys.
     pub event_tx: broadcast::Sender<serde_json::Value>,
@@ -58,7 +55,6 @@ where
             telemetry: Arc::clone(&self.telemetry),
             config: Arc::clone(&self.config),
             credentials: Arc::clone(&self.credentials),
-            token_verifier: Arc::clone(&self.token_verifier),
             event_tx: self.event_tx.clone(),
             create_feature_uc: Arc::clone(&self.create_feature_uc),
             advance_feature_uc: Arc::clone(&self.advance_feature_uc),
@@ -111,15 +107,12 @@ where
             Arc::new(TransitionStory::new(storage.clone(), publisher.clone()));
         let create_epic_uc = Arc::new(CreateEpic::new(storage.clone(), publisher.clone()));
 
-        let token_verifier: DynTokenVerifier = Arc::new(SharedSecretVerifier::from_env());
-
         Self {
             storage,
             vcs,
             telemetry,
             config,
             credentials,
-            token_verifier,
             event_tx,
             create_feature_uc,
             advance_feature_uc,

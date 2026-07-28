@@ -10,6 +10,7 @@ pub mod config;
 pub mod credentials;
 pub mod domain;
 pub mod error;
+pub mod ids;
 pub mod intent_graph;
 pub mod ports;
 pub mod adapters;

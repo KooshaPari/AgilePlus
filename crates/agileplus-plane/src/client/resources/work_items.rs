@@ -8,7 +8,7 @@ use super::{PlaneClient, PlaneIssue, PlaneWorkItem, PlaneWorkItemResponse, trans
 struct PaginatedResponse<T> {
     results: Vec<T>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    #[allow(dead_code)]
+    #[allow(dead_code)] // serde-deserialized - used for cursor-based pagination
     next: Option<String>,
 }
 

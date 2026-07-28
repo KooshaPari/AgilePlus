@@ -20,10 +20,10 @@ use crate::resolution::{ResolutionResult, ResolutionStrategy, apply_resolution};
 use crate::store::SyncMappingStore;
 
 pub struct SyncOrchestrator {
-    #[allow(dead_code)]
+    #[allow(dead_code)] // reserved - PlaneClient used in future sync topology
     plane: Arc<PlaneClient>,
     sqlite: Arc<dyn EventStore>,
-    #[allow(dead_code)]
+    #[allow(dead_code)] // reserved - mapper used in future sync topology
     mapper: PlaneStateMapper,
     mapping_store: Arc<dyn SyncMappingStore>,
 }

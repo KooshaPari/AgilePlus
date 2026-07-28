@@ -217,11 +217,11 @@ pub async fn handle_plane_webhook(
 ) -> impl IntoResponse {
     match parse_webhook(&secret, &headers, &body) {
         Ok(event) => {
-            tracing::info!("Received Plane.so webhook event: {:?}", event);
+            tracing::info!(event = ?event, kind = "plane_webhook", "received plane webhook event");
             (StatusCode::OK, Json(serde_json::json!({"status": "ok"}))).into_response()
         }
         Err((code, msg)) => {
-            tracing::warn!("Plane.so webhook error {}: {}", code, msg);
+            tracing::warn!(status = code.as_u16(), error = %msg, kind = "plane_webhook", "plane webhook validation error");
             (code, Json(serde_json::json!({"error": msg}))).into_response()
         }
     }

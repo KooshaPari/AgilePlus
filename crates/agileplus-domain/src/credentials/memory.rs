@@ -94,7 +94,13 @@ mod tests {
     #[test]
     fn validate_api_key_single() {
         let store = InMemoryCredentialStore::new();
-        store.set("agileplus", API_KEYS, "secret-key-abc").unwrap();
+        store
+            .set(
+                "agileplus",
+                API_KEYS,
+                &store::format_api_key_hash("secret-key-abc"),
+            )
+            .unwrap();
         assert!(store.validate_api_key("secret-key-abc").unwrap());
         assert!(!store.validate_api_key("wrong-key").unwrap());
     }
@@ -103,7 +109,16 @@ mod tests {
     fn validate_api_key_multiple() {
         let store = InMemoryCredentialStore::new();
         store
-            .set("agileplus", API_KEYS, "key-one, key-two, key-three")
+            .set(
+                "agileplus",
+                API_KEYS,
+                &format!(
+                    "{}, {}, {}",
+                    store::format_api_key_hash("key-one"),
+                    store::format_api_key_hash("key-two"),
+                    store::format_api_key_hash("key-three")
+                ),
+            )
             .unwrap();
         assert!(store.validate_api_key("key-two").unwrap());
         assert!(!store.validate_api_key("key-four").unwrap());
@@ -119,7 +134,8 @@ mod tests {
     fn file_store_set_get() {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("creds.json");
-        let store = FileCredentialStore::new(&path);
+        let store =
+            FileCredentialStore::with_passphrase(&path, "test encryption key".to_string()).unwrap();
         store.set("svc", "tok", "abc123").unwrap();
         assert!(path.exists());
         assert_eq!(store.get("svc", "tok").unwrap(), "abc123");

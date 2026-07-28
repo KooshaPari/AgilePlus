@@ -30,7 +30,11 @@ pub(crate) async fn setup_test_server_with_storage(storage: MockStorage) -> Test
 
     let creds_inner = InMemoryCredentialStore::new();
     creds_inner
-        .set("agileplus", cred_keys::API_KEYS, TEST_API_KEY)
+        .set(
+            "agileplus",
+            cred_keys::API_KEYS,
+            &agileplus_domain::credentials::format_api_key_hash(TEST_API_KEY),
+        )
         .expect("setting test API key should succeed");
     let creds: Arc<dyn CredentialStore> = Arc::new(creds_inner);
 

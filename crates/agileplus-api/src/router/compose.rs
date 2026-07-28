@@ -37,12 +37,12 @@ use tower_http::cors::CorsLayer;
 use tower_http::services::ServeDir;
 use tower_http::trace::TraceLayer;
 
-use agileplus_domain::ports::{ObservabilityPort, StoragePort};
 use agileplus_domain::ports::vcs::VcsPort;
+use agileplus_domain::ports::{ContentStoragePort, ObservabilityPort, StoragePort};
 
 use crate::routes::{
-    audit, cycle, epics, events, features, governance, module, projects, stories, stream, users,
-    work_packages,
+    audit, branch, cycle, epics, events, features, governance, module, projects, stories, stream,
+    users, work_packages, worktree,
 };
 use crate::state::AppState;
 
@@ -54,11 +54,11 @@ type BoxError = Box<dyn std::error::Error + Send + Sync>;
 /// Build the axum [`Router`] with all routes, middleware, and shared state.
 pub fn create_router<S, V, O>(state: AppState<S, V, O>) -> Router
 where
-    S: StoragePort + Send + Sync + 'static,
+    S: StoragePort + ContentStoragePort + Send + Sync + 'static,
     V: VcsPort + Send + Sync + 'static,
     O: ObservabilityPort + Send + Sync + 'static,
 {
-    let token_verifier = Arc::clone(&state.token_verifier);
+    let credentials = Arc::clone(&state.credentials);
 
     // Public routes -- no auth middleware.
     let public = Router::new()
@@ -88,6 +88,8 @@ where
         // Module and Cycle API routes
         .nest("/api/modules", module::routes::<S, V, O>())
         .nest("/api/cycles", cycle::routes::<S, V, O>())
+        .nest("/api/v1/branches", branch::routes::<S, V, O>())
+        .nest("/api/v1/worktrees", worktree::routes::<S, V, O>())
         // Event query endpoints
         .nest("/api/v1/events", events::routes::<S, V, O>())
         // SSE streaming
@@ -98,8 +100,8 @@ where
         .nest("/api/v1/stories", stories::routes::<S, V, O>())
         .nest("/api/v1/users", users::routes::<S, V, O>())
         .layer(middleware::from_fn_with_state(
-            token_verifier,
-            crate::middleware::auth::authorize,
+            credentials,
+            crate::middleware::auth::validate_api_key,
         ))
         .with_state(state);
 
@@ -124,13 +126,13 @@ where
 /// Start the HTTP API server, binding to `addr`.
 pub async fn start_api<S, V, O>(addr: SocketAddr, state: AppState<S, V, O>) -> Result<(), BoxError>
 where
-    S: StoragePort + Send + Sync + 'static,
+    S: StoragePort + ContentStoragePort + Send + Sync + 'static,
     V: VcsPort + Send + Sync + 'static,
     O: ObservabilityPort + Send + Sync + 'static,
 {
     let app = create_router(state);
     let listener = tokio::net::TcpListener::bind(addr).await?;
-    tracing::info!("HTTP API listening on {addr}");
+    tracing::info!(%addr, "HTTP API listening");
     axum::serve(listener, app).await?;
     Ok(())
 }

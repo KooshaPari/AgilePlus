@@ -90,7 +90,7 @@ where
 {
     let user = app
         .storage
-        .get_user_by_id(id)
+        .get_user(id)
         .await
         .map_err(ApiError::from)?
         .ok_or_else(|| ApiError::NotFound(format!("User {id} not found")))?;

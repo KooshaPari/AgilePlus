@@ -63,27 +63,21 @@ where
         let mut violations = Vec::new();
 
         for rule in &relevant_rules {
-            for required_evidence in &rule.required_evidence {
-                let satisfied = evidence.iter().any(|candidate| {
-                    candidate.fr_id == required_evidence.fr_id
-                        && format!("{:?}", candidate.evidence_type).to_lowercase()
-                            == format!("{:?}", required_evidence.evidence_type).to_lowercase()
-                });
+            let satisfied = evidence.iter().any(|candidate| candidate.fr_id == request.feature_slug);
 
-                if !satisfied {
-                    violations.push(ProtoGateViolation {
-                        fr_id: required_evidence.fr_id.clone(),
-                        rule_id: rule.transition.clone(),
-                        message: format!(
-                            "Missing required evidence '{:?}' for FR {}",
-                            required_evidence.evidence_type, required_evidence.fr_id
-                        ),
-                        remediation: format!(
-                            "Provide evidence of type '{:?}' for FR {}",
-                            required_evidence.evidence_type, required_evidence.fr_id
-                        ),
-                    });
-                }
+            if !satisfied {
+                violations.push(ProtoGateViolation {
+                    fr_id: request.feature_slug.clone(),
+                    rule_id: rule.transition.clone(),
+                    message: format!(
+                        "Missing required evidence for FR {}",
+                        request.feature_slug
+                    ),
+                    remediation: format!(
+                        "Provide evidence linked to FR {}",
+                        request.feature_slug
+                    ),
+                });
             }
         }
 

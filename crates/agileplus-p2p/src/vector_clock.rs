@@ -145,7 +145,7 @@ pub async fn sync_with_peer_vectors(
         crate::replication::replicate_events(local_device_id, peer, events_to_send.clone())
             .await
             .unwrap_or_else(|e| {
-                tracing::warn!("Replication failed for peer {}: {e}", peer.device_id);
+                tracing::warn!(peer.device_id = %peer.device_id, error = %e, event_count = events_to_send.len(), "peer replication failed");
                 crate::replication::ReplicationResult::default()
             });
 
