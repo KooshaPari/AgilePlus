@@ -39,3 +39,4 @@ target/
 # Rust build artifacts (already had target/ above; .fingerprint/ also noisy)
 **/.fingerprint/
 **/build-script-build
+.agileplus/
