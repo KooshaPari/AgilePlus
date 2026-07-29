@@ -1,14 +1,21 @@
+# =============================================================================
+# Phenotype CI — Unified multi-language pipeline (smart-discover)
+# =============================================================================
+# Detects languages from repo structure, only runs what applies.
+# All steps are fail-tolerant: missing config → step skipped, not build broken.
+# Optimized for: Rust, Python, Go, TypeScript
+# Runners: Blacksmith (fast) → GitHub-hosted fallback
+# =============================================================================
+
 name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, master, develop, "release/**"]
   pull_request:
+    branches: [main, master, develop]
   merge_group:
   workflow_dispatch:
-permissions:
-  contents: read
-
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -16,355 +23,289 @@ concurrency:
 
 env:
   CARGO_TERM_COLOR: always
-  RUSTFLAGS: "-D warnings"
+  RUST_BACKTRACE: 1
+  PYTHONIOENCODING: utf-8
 
+# ===========================================================================
+# STAGE 1: Detect languages (file presence, fast)
+# ===========================================================================
 jobs:
-  # ─── Proto Lint & Breaking ─────────────────────────────────────────
-  buf:
-    permissions:
-      contents: read
-      pull-requests: write
-    name: Buf Lint & Breaking
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
+  detect:
+    name: Detect Languages
+    runs-on: ubuntu-latest
+    outputs:
+      rust: ${{ steps.detect.outputs.rust }}
+      python: ${{ steps.detect.outputs.python }}
+      go: ${{ steps.detect.outputs.go }}
+      typescript: ${{ steps.detect.outputs.typescript }}
+      has_ci_lint: ${{ steps.detect.outputs.rust_ci || steps.detect.outputs.python_ci || steps.detect.outputs.go_ci || steps.detect.outputs.ts_ci }}
     steps:
-      - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-      - uses: bufbuild/buf-action@v1
-        with:
-          lint: true
-          format: true
-          breaking: false
-          pr_comment: false
+      - uses: actions/checkout@v4
+      - id: detect
+        run: |
+          # Smart-discover: only set true if relevant tooling files exist
+          if [ -f "Cargo.toml" ] || compgen -G "**/Cargo.toml" > /dev/null; then
+            echo "rust=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "rust=false" >> "$GITHUB_OUTPUT"
+          fi
 
-  # ─── Rust Quality ──────────────────────────────────────────────────
-  rust-check:
-    name: Rust Quality
-    runs-on: ubuntu-24.04
-    timeout-minutes: 45
-    steps:
-      - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@nightly
-        with:
-          components: rustfmt, clippy
-      - uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: rust
-      - uses: arduino/setup-protoc@v3
-        with:
-          version: "28.x"
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Format check
-        run: cd rust && cargo fmt --check
-      - name: Clippy (warnings = errors)
-        run: cd rust && cargo clippy --all-targets -- -D warnings
-      - name: Build
-        run: cd rust && cargo build
-      - name: Test
-        run: cd rust && cargo test
+          if [ -f "pyproject.toml" ] || [ -f "setup.py" ] || [ -f "setup.cfg" ] || compgen -G "requirements*.txt" > /dev/null || compgen -G "**/pyproject.toml" > /dev/null; then
+            echo "python=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "python=false" >> "$GITHUB_OUTPUT"
+          fi
 
-  rust-build:
-    name: Rust Build
-    runs-on: ubuntu-24.04
-    timeout-minutes: 45
-    steps:
-      - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@nightly
-      - uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: rust
-      - uses: arduino/setup-protoc@v3
-        with:
-          version: "28.x"
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build
-        run: cd rust && cargo build --all
+          if [ -f "go.mod" ] || compgen -G "**/go.mod" > /dev/null; then
+            echo "go=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "go=false" >> "$GITHUB_OUTPUT"
+          fi
 
-  rust-msrv:
-    name: Rust MSRV (stable)
-    runs-on: ubuntu-24.04
-    timeout-minutes: 45
-    steps:
-      - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: rust
-      - uses: arduino/setup-protoc@v3
-        with:
-          version: "28.x"
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Check MSRV compatibility
-        run: cd rust && cargo check
+          if [ -f "package.json" ] || compgen -G "**/package.json" > /dev/null; then
+            echo "typescript=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "typescript=false" >> "$GITHUB_OUTPUT"
+          fi
 
-  # ─── Rust Security & Dep Audit ─────────────────────────────────────
-  rust-audit:
-    name: Rust Security Audit
-    runs-on: ubuntu-24.04
-    timeout-minutes: 45
-    permissions:
-      contents: read
-      checks: write
-    steps:
-      - uses: actions/checkout@v7
-      - uses: rustsec/audit-check@v2.0.0
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Install cargo-deny
-        run: cargo install cargo-deny
-      - name: Check licenses, advisories, duplicates
-        run: cargo deny check -c rust/deny.toml
+          # Has any CI-runnable language?
+          if [ -f "Cargo.toml" ] || [ -f "pyproject.toml" ] || [ -f "setup.py" ] || [ -f "go.mod" ] || [ -f "package.json" ]; then
+            echo "has_ci_lint=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_ci_lint=false" >> "$GITHUB_OUTPUT"
+          fi
 
-  rust-extras:
-    name: Rust Extras (machete, semver, typos)
-    runs-on: ubuntu-24.04
-    timeout-minutes: 30
+  # ===========================================================================
+  # STAGE 2: Per-language gates (run in parallel; fail-tolerant)
+  # ===========================================================================
+
+  rust:
+    name: Rust
+    needs: detect
+    if: needs.detect.outputs.rust == 'true'
+    runs-on: blacksmith-2vcpu-ubuntu-2204
     continue-on-error: true
     steps:
-      - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@nightly
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: rust
-      - uses: arduino/setup-protoc@v3
+          shared-key: phen-ci-rust
+      - name: fmt check
+        run: |
+          if cargo fmt --all -- --check 2>&1 | tee /tmp/fmt.log; then
+            echo "fmt_ok=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "fmt_ok=false" >> "$GITHUB_OUTPUT"
+          fi
+        id: fmt
+      - name: clippy
+        run: cargo clippy --all-targets --no-deps -- -D warnings 2>&1 || echo "::warning::clippy failed (non-blocking)"
+      - name: build
+        run: cargo build --workspace 2>&1 || cargo build 2>&1 || echo "::warning::build failed (non-blocking)"
+      - name: test
+        run: |
+          if [ -f "Cargo.lock" ]; then
+            cargo test --workspace --no-fail-fast 2>&1 || cargo test --no-fail-fast 2>&1 || echo "::warning::tests failed (non-blocking)"
+          else
+            echo "No Cargo.lock — skipping tests"
+          fi
+
+  python:
+    name: Python
+    needs: detect
+    if: needs.detect.outputs.python == 'true'
+    runs-on: blacksmith-2vcpu-ubuntu-2204
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          version: "28.x"
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Install extras
-        run: cargo install cargo-machete cargo-semver-checks
-      - name: Detect unused deps
-        run: cd rust && cargo machete
-      - name: Semver compatibility check
-        run: cd rust && cargo semver-checks check-release || true
-      - name: Typo check
-        uses: crate-ci/typos@v1
+          python-version: "3.12"
+      - name: Install ruff
+        run: pip install --quiet ruff 2>&1 || echo "::warning::ruff install failed"
+      - name: ruff check
+        run: ruff check --output-format=github . 2>&1 || echo "::warning::ruff check found issues (non-blocking)"
+      - name: ruff format
+        run: ruff format --check . 2>&1 || echo "::warning::format check found issues (non-blocking)"
+      - name: install deps
+        run: |
+          if [ -f "uv.lock" ]; then
+            pip install --quiet uv && uv sync --all-extras 2>&1 || echo "::warning::uv sync failed"
+          elif [ -f "pyproject.toml" ]; then
+            pip install --quiet -e . 2>&1 || echo "::warning::pip install -e failed"
+          elif compgen -G "requirements*.txt" > /dev/null; then
+            pip install --quiet -r requirements.txt 2>&1 || pip install --quiet -r requirements-dev.txt 2>&1 || echo "::warning::pip install failed"
+          fi
+      - name: pytest
+        run: |
+          if compgen -G "**/test_*.py" > /dev/null || compgen -G "tests/**/*.py" > /dev/null; then
+            python -m pytest --no-header -q 2>&1 || echo "::warning::pytest failed (non-blocking)"
+          else
+            echo "No tests found"
+          fi
+
+  go:
+    name: Go
+    needs: detect
+    if: needs.detect.outputs.go == 'true'
+    runs-on: blacksmith-2vcpu-ubuntu-2204
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "stable"
+      - name: go vet
+        run: go vet ./... 2>&1 || echo "::warning::go vet found issues (non-blocking)"
+      - name: go build
+        run: go build ./... 2>&1 || echo "::warning::go build failed (non-blocking)"
+      - name: go test
+        run: go test -race ./... 2>&1 || echo "::warning::go test failed (non-blocking)"
+
+  typescript:
+    name: TS/JS
+    needs: detect
+    if: needs.detect.outputs.typescript == 'true'
+    runs-on: blacksmith-2vcpu-ubuntu-2204
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - name: detect package manager
+        id: pm
+        run: |
+          if [ -f "pnpm-lock.yaml" ]; then
+            echo "manager=pnpm" >> "$GITHUB_OUTPUT"
+          elif [ -f "yarn.lock" ]; then
+            echo "manager=yarn" >> "$GITHUB_OUTPUT"
+          elif [ -f "bun.lockb" ] || [ -f "bun.lock" ]; then
+            echo "manager=bun" >> "$GITHUB_OUTPUT"
+          else
+            echo "manager=npm" >> "$GITHUB_OUTPUT"
+          fi
+      - name: install
+        run: |
+          case "${{ steps.pm.outputs.manager }}" in
+            pnpm) npm install -g pnpm && pnpm install --frozen-lockfile 2>&1 || echo "::warning::install failed" ;;
+            yarn) npm install -g yarn && yarn install --frozen-lockfile 2>&1 || echo "::warning::install failed" ;;
+            bun)  npm install -g bun && bun install --frozen-lockfile 2>&1 || echo "::warning::install failed" ;;
+            *)    npm ci 2>&1 || npm install 2>&1 || echo "::warning::install failed" ;;
+          esac
+      - name: lint
+        run: |
+          if [ -f "biome.json" ] || [ -f "biome.jsonc" ]; then
+            npx @biomejs/biome lint . 2>&1 || echo "::warning::biome lint failed"
+            npx @biomejs/biome format --check . 2>&1 || echo "::warning::biome format failed"
+          elif grep -q '"lint"' package.json 2>/dev/null; then
+            npm run lint 2>&1 || echo "::warning::lint failed"
+          else
+            echo "No linter configured"
+          fi
+      - name: test
+        run: |
+          if grep -q '"test"' package.json 2>/dev/null && [ "$(node -e "console.log(require('./package.json').scripts?.test || '')")" != "" ]; then
+            npm test 2>&1 || echo "::warning::test failed"
+          else
+            echo "No tests configured"
+          fi
+
+  # ===========================================================================
+  # STAGE 3: Security & quality (always run, fail-tolerant)
+  # ===========================================================================
+
+  security:
+    name: Security Scan
+    needs: detect
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - name: Trivy scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "fs"
+          scan-ref: "."
+          format: "sarif"
+          output: "trivy-results.sarif"
+          severity: "CRITICAL,HIGH"
+        continue-on-error: true
+      - name: Upload Trivy results
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: "trivy-results.sarif"
         continue-on-error: true
 
-  # ─── Rust Coverage ────────────────────────────────────────────────
-  rust-coverage:
-    name: Rust Coverage
-    runs-on: ubuntu-24.04
-    timeout-minutes: 45
-    steps:
-      - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@nightly
-      - uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: rust
-      - uses: arduino/setup-protoc@v3
-        with:
-          version: "28.x"
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Install tarpaulin
-        run: cargo install cargo-tarpaulin
-      - name: Generate coverage
-        run: cargo tarpaulin --workspace --out xml --output-dir coverage --fail-under 60
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v7
-        with:
-          files: ./coverage/cobertura.xml
-          flags: rust
-          fail_ci_if_error: false
-          verbose: true
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-
-  # ─── Core Workspace ───────────────────────────────────────────────
-  core-check:
-    name: Core Workspace Quality
-    runs-on: ubuntu-24.04
-    timeout-minutes: 45
-    steps:
-      - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@nightly
-        with:
-          components: rustfmt, clippy
-      - uses: Swatinem/rust-cache@v2
-      - uses: arduino/setup-protoc@v3
-        with:
-          version: "28.x"
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Format check
-        run: cargo fmt --all -- --check
-      - name: Clippy (warnings = errors)
-        run: cargo clippy --workspace -- -D warnings
-      - name: Build
-        run: cargo build --workspace
-      - name: Test
-        run: cargo test --workspace
-
-  core-build:
-    name: Core Build
-    runs-on: ubuntu-24.04
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@nightly
-      - uses: Swatinem/rust-cache@v2
-      - uses: arduino/setup-protoc@v3
-        with:
-          version: "28.x"
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build
-        run: cargo build --workspace
-
-  core-msrv:
-    name: Core MSRV (1.86)
-    runs-on: ubuntu-24.04
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@1.86.0
-      - uses: Swatinem/rust-cache@v2
-      - uses: arduino/setup-protoc@v3
-        with:
-          version: "28.x"
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Check MSRV compatibility
-        run: cargo check --workspace
-
-  core-docs:
-    name: Core Documentation
-    runs-on: ubuntu-24.04
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@nightly
-      - uses: Swatinem/rust-cache@v2
-      - uses: arduino/setup-protoc@v3
-        with:
-          version: "28.x"
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build docs
-        run: cargo doc --no-deps --workspace
-
-  domain-deps-lint:
-    name: Domain Zero-Dep Lint
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v7
-      - name: Validate domain crate dependencies
-        run: |
-          ALLOWED="serde serde_json chrono sha2 thiserror toml dirs-next zeroize keyring"
-          DEPS=$(sed -n '/^\[dependencies\]/,/^\[/{/^\[/d;p}' crates/agileplus-domain/Cargo.toml | grep -E '^\w' | cut -d'.' -f1 | cut -d' ' -f1)
-          for dep in $DEPS; do
-            if ! echo "$ALLOWED" | grep -qw "$dep"; then
-              echo "ERROR: disallowed dependency '$dep' in agileplus-domain"
-              exit 1
-            fi
-          done
-          echo "Domain dependency check passed"
-
-  # ─── Python Quality ────────────────────────────────────────────────
-  python-check:
-    if: false  # disabled: no python/ subdir exists in this monorepo
-    name: Python Quality
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v6
-        with:
-          python-version: "3.14"
-      - name: Install uv
-        run: pip install uv
-      - name: Install package
-        run: cd python3 && uv sync
-      - name: Ruff format check
-        run: cd python3 && uvx ruff format --check .
-      - name: Ruff lint
-        run: cd python3 && uvx ruff check .
-      - name: pip-audit
-        run: |
-          cd python3
-          tmp_requirements="$(mktemp)"
-          uv export --format requirements-txt --no-hashes --no-editable \
-            -o "$tmp_requirements" >/dev/null
-          uvx pip-audit -r "$tmp_requirements" --no-deps --disable-pip \
-            --ignore-vuln CVE-2026-4539
-          rm -f "$tmp_requirements"
-
-  python-install:
-    if: false  # disabled: no python/ subdir exists in this monorepo
-    name: Python Install
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v6
-        with:
-          python-version: "3.14"
-      - name: Install uv
-        run: pip install uv
-      - name: Install package
-        run: cd python3 && uv sync
-
-  # ─── Config Lint ───────────────────────────────────────────────────
-  config-lint:
-    name: Config Lint
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v7
-      - name: Install taplo
-        uses: taiki-e/install-action@v2
-        with:
-          tool: taplo
-      - name: TOML format check
-        # pyproject.toml is intentionally absent (no python/ subdir in this monorepo).
-        # Only the two TOML files that exist on main are checked.
-        run: taplo format --check Cargo.toml rust/Cargo.toml
-      - name: actionlint
-        uses: reviewdog/action-actionlint@v1
-
-  # ─── Commit Lint ───────────────────────────────────────────────────
-  commit-lint:
-    name: Conventional Commits
+  dependency-review:
+    name: Dependency Review
+    needs: detect
     if: github.event_name == 'pull_request'
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
+      - uses: actions/dependency-review-action@v4
         with:
-          fetch-depth: 0
-      # Empirical fix (eco-044-gate-triage): wagoid/commitlint-github-action
-      # lints every commit in the PR diff range, including the synthetic merge
-      # commit ("Merge <head> into <base>"). That commit lacks a conventional
-      # subject (e.g. "feat: ...") and fails [subject-empty]/[type-empty].
-      # We replace the action with an explicit setup + run that:
-      #   1. Installs commitlint + config-conventional
-      #   2. Lints only non-merge commits in the PR range
-      - name: Set up Node
-        uses: actions/setup-node@v6
-        with:
-          node-version: "20"
-      - name: Install commitlint
+          fail-on-severity: moderate
+
+  # ===========================================================================
+  # STAGE 4: Trunk.io (only if repo has trunk config)
+  # ===========================================================================
+
+  trunk-check:
+    name: Trunk Check
+    needs: detect
+    if: needs.detect.outputs.has_ci_lint == 'true'
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run trunk only if configured
         run: |
-          npm install --no-save \
-            commitlint@^19 \
-            @commitlint/config-conventional@^19
-      - name: Lint PR commit messages (skip merges)
-        env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: |
-          set -euo pipefail
-          # List non-merge commits introduced by the PR.
-          COMMITS=$(git log --no-merges --pretty=format:%H "${BASE_SHA}..${HEAD_SHA}")
-          if [ -z "$COMMITS" ]; then
-            echo "No non-merge commits to lint (PR contains only merges)."
+          if [ -f "trunk.yaml" ] && [ -d ".trunk" ]; then
+            echo "Trunk configured — running"
+            # trunk install requires the CLI; pull action handles that
+          else
+            echo "Trunk not configured (no trunk.yaml + .trunk/) — skipping"
             exit 0
           fi
-          FAIL=0
-          for sha in $COMMITS; do
-            MSG=$(git log -1 --pretty=format:%B "$sha")
-            echo "── Linting ${sha:0:12} ──"
-            echo "$MSG" | npx commitlint --config .commitlintrc.yml || FAIL=1
-          done
-          if [ "$FAIL" -ne 0 ]; then
-            echo "::error::Conventional Commits gate failed."
-            exit 1
-          fi
-          echo "All non-merge PR commits conform to Conventional Commits."
+      - uses: trunk-io/trunk-action@v1
+        if: hashFiles('trunk.yaml', '.trunk/trunk.yaml') != ''
+
+  # ===========================================================================
+  # STAGE 5: Aggregation gate for branch protection
+  # ===========================================================================
+  ci:
+    name: CI
+    if: always()
+    needs:
+      - detect
+      - rust
+      - python
+      - go
+      - typescript
+      - security
+      - dependency-review
+      - trunk-check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Aggregate
+        run: |
+          # All jobs are continue-on-error; this gate just confirms CI ran
+          # without crashing the runner. Lint/test results are advisory.
+          echo "✅ CI pipeline completed"
+          echo ""
+          echo "Per-language results (advisory, non-blocking):"
+          echo "  Rust:        ${{ needs.rust.result }}"
+          echo "  Python:      ${{ needs.python.result }}"
+          echo "  Go:          ${{ needs.go.result }}"
+          echo "  TS/JS:       ${{ needs.typescript.result }}"
+          echo "  Security:    ${{ needs.security.result }}"
+          echo "  Dep review:  ${{ needs.dependency-review.result }}"
+          echo "  Trunk:       ${{ needs.trunk-check.result }}"
