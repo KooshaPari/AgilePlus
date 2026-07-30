@@ -1,8 +1,0 @@
-[profile.default]
-test-threads = "num-cpus"
-test-timeout = "60s"
-slow-timeout = { period = "30s", terminate-after = 3 }
-failure-output = "immediate-final"
-
-[profile.default.junit]
-path = "target/nextest/junit.xml"
