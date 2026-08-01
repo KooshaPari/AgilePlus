@@ -6,14 +6,14 @@ Archived: false
 Local HEAD: b664b757215df00a49536a861372cf864cb98bf1
 Authoritative origin/main: d6fcb37e8fd90dc5d12ae4fb9eaead0bc5046432
 Parity: FAIL (local checkout is behind by 4; no ref rewrite performed)
-Bundle: /tmp/repoledger-bundle.jH9uGP/RepoLedger-all.bundle (ephemeral local path; durable artifact location absent)
+Bundle: r2://tracera-artifacts/preservation/RepoLedger/07187fac803fc96a8ed5d6c9109041ffda44c3e1708f82a20b46c42a8a6188a7/RepoLedger-all.bundle
 Bundle bytes: 60351
 Bundle SHA-256: 07187fac803fc96a8ed5d6c9109041ffda44c3e1708f82a20b46c42a8a6188a7
 Bundle verify: PASS (complete history, 8 refs)
 fsck: PASS (no missing/corrupt objects; dangling remote-tracking objects only)
 Independent restore: PASS (temporary local clone restored b664b757; not a second-cloud restore)
 Second-cloud copy: NOT VERIFIED
-Durable artifact location: ABSENT (bundle is not independently retrievable)
+Durable artifact location: r2://tracera-artifacts/preservation/RepoLedger/07187fac803fc96a8ed5d6c9109041ffda44c3e1708f82a20b46c42a8a7/RepoLedger-all.bundle (R2 upload and checksum restore receipt recorded)
 Dual-cloud gate: HELD (second-cloud copy and independent restore not verified)
 Sponsor ACK: NOT RECEIVED
 Archive eligibility: FAIL / HELD (parity, dual-cloud, and sponsor-ACK gates unmet)
