@@ -134,6 +134,8 @@ dependencies = [
  "agileplus-domain",
  "agileplus-events",
  "agileplus-fixtures",
+ "agileplus-governance",
+ "agileplus-plane",
  "agileplus-sqlite",
  "anyhow",
  "askama",
