@@ -605,10 +605,10 @@ impl IntentGraph {
                     node.id
                 )));
             }
-            if let Some(c) = node.meta.confidence {
-                if !(0.0..=1.0).contains(&c) {
-                    errors.push(ValidationError::ConfidenceOutOfRange(c));
-                }
+            if let Some(c) = node.meta.confidence
+                && !(0.0..=1.0).contains(&c)
+            {
+                errors.push(ValidationError::ConfidenceOutOfRange(c));
             }
         }
 
@@ -743,10 +743,10 @@ impl IntentGraph {
         }
 
         // confidence range
-        if let Some(c) = edge.meta.confidence {
-            if !(0.0..=1.0).contains(&c) {
-                return Some(ValidationError::ConfidenceOutOfRange(c));
-            }
+        if let Some(c) = edge.meta.confidence
+            && !(0.0..=1.0).contains(&c)
+        {
+            return Some(ValidationError::ConfidenceOutOfRange(c));
         }
 
         // edge constraints

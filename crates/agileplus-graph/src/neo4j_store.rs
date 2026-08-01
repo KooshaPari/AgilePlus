@@ -5,12 +5,13 @@
 mod inner {
     use std::sync::Arc;
 
+    use async_trait::async_trait;
     use neo4rs::{query, Graph as Neo4jGraph};
     use uuid::Uuid;
 
     use crate::{
         graph_store::{GraphError, GraphStore},
-        types::{Node, NodeType, RelType, Relationship},
+        types::{Node, Relationship},
     };
 
     pub struct Neo4jGraphStore {
@@ -21,13 +22,14 @@ mod inner {
         pub async fn connect(uri: &str, user: &str, password: &str) -> Result<Self, GraphError> {
             let graph = Neo4jGraph::new(uri, user, password)
                 .await
-                .map_err(|e| GraphError::Other(e.to_string()))?;
+                .map_err(|e| GraphError::ConnectionError(e.to_string()))?;
             Ok(Self {
                 graph: Arc::new(graph),
             })
         }
     }
 
+    #[async_trait]
     impl GraphStore for Neo4jGraphStore {
         async fn upsert_node(&self, node: &Node) -> Result<(), GraphError> {
             let kind = format!("{:?}", node.node_type);
@@ -43,7 +45,7 @@ mod inner {
                     .param("props", props),
                 )
                 .await
-                .map_err(|e| GraphError::Other(e.to_string()))
+                .map_err(|e| GraphError::QueryError(e.to_string()))
         }
 
         async fn create_relationship(&self, rel: &Relationship) -> Result<(), GraphError> {
@@ -60,7 +62,7 @@ mod inner {
                     .param("kind", kind),
                 )
                 .await
-                .map_err(|e| GraphError::Other(e.to_string()))
+                .map_err(|e| GraphError::QueryError(e.to_string()))
         }
 
         async fn delete_relationship(&self, relationship_id: Uuid) -> Result<(), GraphError> {
@@ -70,7 +72,7 @@ mod inner {
                         .param("id", relationship_id.to_string()),
                 )
                 .await
-                .map_err(|e| GraphError::Other(e.to_string()))
+                .map_err(|e| GraphError::QueryError(e.to_string()))
         }
 
         async fn get_dependencies(&self, node_id: Uuid) -> Result<Vec<Uuid>, GraphError> {
@@ -84,14 +86,14 @@ mod inner {
                     .param("id", node_id.to_string()),
                 )
                 .await
-                .map_err(|e| GraphError::Other(e.to_string()))?;
+                .map_err(|e| GraphError::QueryError(e.to_string()))?;
 
             let mut ids = Vec::new();
             while let Ok(Some(row)) = result.next().await {
-                if let Ok(id_str) = row.get::<String>("dep_id") {
-                    if let Ok(uid) = Uuid::parse_str(&id_str) {
-                        ids.push(uid);
-                    }
+                if let Ok(id_str) = row.get::<String>("dep_id")
+                    && let Ok(uid) = Uuid::parse_str(&id_str)
+                {
+                    ids.push(uid);
                 }
             }
             Ok(ids)
@@ -109,14 +111,14 @@ mod inner {
                     .param("id", node_id.to_string()),
                 )
                 .await
-                .map_err(|e| GraphError::Other(e.to_string()))?;
+                .map_err(|e| GraphError::QueryError(e.to_string()))?;
 
             let mut ids = Vec::new();
             while let Ok(Some(row)) = result.next().await {
-                if let Ok(id_str) = row.get::<String>("blocker_id") {
-                    if let Ok(uid) = Uuid::parse_str(&id_str) {
-                        ids.push(uid);
-                    }
+                if let Ok(id_str) = row.get::<String>("blocker_id")
+                    && let Ok(uid) = Uuid::parse_str(&id_str)
+                {
+                    ids.push(uid);
                 }
             }
             Ok(ids)
@@ -126,7 +128,7 @@ mod inner {
             self.graph
                 .run(query("RETURN 1"))
                 .await
-                .map_err(|e| GraphError::Other(e.to_string()))
+                .map_err(|e| GraphError::QueryError(e.to_string()))
         }
     }
 }

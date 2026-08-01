@@ -177,10 +177,10 @@ pub fn changed<'a>(
 ) -> Vec<(&'a MatrixCell, &'a MatrixCell)> {
     let mut out = Vec::new();
     for (k, n) in &new.cells {
-        if let Some(o) = old.cells.get(k) {
-            if o.coverage != n.coverage || o.trace_links != n.trace_links {
-                out.push((o, n));
-            }
+        if let Some(o) = old.cells.get(k)
+            && (o.coverage != n.coverage || o.trace_links != n.trace_links)
+        {
+            out.push((o, n));
         }
     }
     out
@@ -299,7 +299,7 @@ mod tests {
     fn added_removed_changed_diff() {
         let a = make_link(TraceLinkType::Verifies, 0.95, 1);
         let b = make_link(TraceLinkType::Verifies, 0.95, 1);
-        let old = build_matrix(&[a.clone()]).matrix;
+        let old = build_matrix(std::slice::from_ref(&a)).matrix;
         let new = build_matrix(&[a, b]).matrix;
         assert_eq!(added(&old, &new).len(), 1);
         assert_eq!(removed(&old, &new).len(), 0);
