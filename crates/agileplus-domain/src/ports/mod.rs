@@ -15,8 +15,6 @@ pub use observability::ObservabilityPort;
 pub use story::StoryRepository;
 pub use vcs::{BranchInfo, ConflictInfo, FeatureArtifacts, MergeResult, VcsPort, WorktreeInfo};
 
-use std::path::{Path, PathBuf};
-
 use async_trait::async_trait;
 
 use crate::domain::{

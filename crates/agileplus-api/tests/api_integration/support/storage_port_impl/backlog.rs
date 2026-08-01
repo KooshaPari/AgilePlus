@@ -7,6 +7,19 @@ use agileplus_domain::error::DomainError;
 
 use super::MockStorage;
 
+fn priority_rank(priority: BacklogPriority) -> u8 {
+    match priority {
+        BacklogPriority::Critical => 0,
+        BacklogPriority::High => 1,
+        BacklogPriority::Medium => 2,
+        BacklogPriority::Low => 3,
+    }
+}
+
+fn is_open(status: BacklogStatus) -> bool {
+    matches!(status, BacklogStatus::New | BacklogStatus::Triaged | BacklogStatus::InProgress)
+}
+
 pub(crate) fn get_backlog_item(
     storage: &MockStorage,
     id: i64,
@@ -50,7 +63,8 @@ pub(crate) fn list_backlog_items(
     match filters.sort {
         BacklogSort::Age => items.sort_by(|a, b| a.created_at.cmp(&b.created_at)),
         BacklogSort::Priority | BacklogSort::Impact => items.sort_by(|a, b| {
-            (a.priority.rank(), a.created_at).cmp(&(b.priority.rank(), b.created_at))
+            (priority_rank(a.priority), a.created_at)
+                .cmp(&(priority_rank(b.priority), b.created_at))
         }),
     }
 
@@ -111,8 +125,11 @@ pub(crate) fn pop_next_backlog_item(
     let mut backlog = storage.backlog.lock().expect("backlog lock poisoned");
     let next = backlog
         .iter()
-        .filter(|item| item.status.is_open())
-        .min_by(|a, b| (a.priority.rank(), a.created_at).cmp(&(b.priority.rank(), b.created_at)))
+        .filter(|item| is_open(item.status))
+        .min_by(|a, b| {
+            (priority_rank(a.priority), a.created_at)
+                .cmp(&(priority_rank(b.priority), b.created_at))
+        })
         .cloned();
 
     if let Some(item) = next.clone() {

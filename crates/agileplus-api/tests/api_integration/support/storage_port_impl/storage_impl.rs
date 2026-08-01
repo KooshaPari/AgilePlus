@@ -9,7 +9,7 @@ use agileplus_domain::domain::project::Project;
 use agileplus_domain::domain::state_machine::FeatureState;
 use agileplus_domain::domain::story::{Story, StoryStatus};
 use agileplus_domain::domain::sync_mapping::SyncMapping;
-use agileplus_domain::domain::user::{User, UserRole, UserStatus};
+use agileplus_domain::domain::user::User;
 use agileplus_domain::domain::work_package::{WorkPackage, WpDependency, WpState};
 use agileplus_domain::error::DomainError;
 use agileplus_domain::ports::StoragePort;
@@ -155,7 +155,7 @@ impl StoragePort for MockStorage {
         &self,
         _c: &GovernanceContract,
     ) -> Result<i64, DomainError> {
-        async move { Ok(1) }
+        Ok(1)
     }
 
     async fn get_governance_contract(

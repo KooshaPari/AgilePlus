@@ -1,7 +1,7 @@
 use std::sync::{Arc, Mutex};
 
 use agileplus_domain::domain::audit::{AuditEntry, hash_entry};
-use agileplus_domain::domain::epic::Epic;
+use agileplus_domain::domain::epic::{Epic, EpicStatus};
 use agileplus_domain::domain::project::Project;
 use agileplus_domain::domain::backlog::BacklogItem;
 use agileplus_domain::domain::cycle::{Cycle, CycleFeature};
@@ -9,8 +9,8 @@ use agileplus_domain::domain::feature::Feature;
 use agileplus_domain::domain::governance::GovernanceContract;
 use agileplus_domain::domain::module::{Module, ModuleFeatureTag};
 use agileplus_domain::domain::state_machine::FeatureState;
-use agileplus_domain::domain::story::Story;
-use agileplus_domain::domain::user::User;
+use agileplus_domain::domain::story::{Story, StoryStatus};
+use agileplus_domain::domain::user::{User, UserRole, UserStatus};
 use agileplus_domain::domain::work_package::{WorkPackage, WpState};
 use chrono::Utc;
 
@@ -51,6 +51,8 @@ impl MockStorage {
                 labels: vec![],
                 module_id: None,
                 project_id: None,
+                created_at_commit: None,
+                last_modified_commit: None,
                 created_at: now,
                 updated_at: now,
             });
@@ -71,6 +73,8 @@ impl MockStorage {
                 pr_state: None,
                 worktree_path: None,
                 plane_sub_issue_id: None,
+                base_commit: None,
+                head_commit: None,
                 created_at: now,
                 updated_at: now,
             });
@@ -127,6 +131,65 @@ impl MockStorage {
                 version: 1,
                 rules: vec![],
                 bound_at: now,
+            });
+
+        s.projects
+            .lock()
+            .expect("projects lock poisoned")
+            .push(Project {
+                id: 1,
+                slug: "test-project".to_string(),
+                name: "Test Project".to_string(),
+                description: None,
+                created_at: now,
+                updated_at: now,
+            });
+
+        s.epics
+            .lock()
+            .expect("epics lock poisoned")
+            .push(Epic {
+                id: 1,
+                project_id: 1,
+                title: "Test Epic".to_string(),
+                description: None,
+                status: EpicStatus::Active,
+                owner_id: None,
+                requirement_id: None,
+                created_at: now,
+                updated_at: now,
+            });
+
+        s.stories
+            .lock()
+            .expect("stories lock poisoned")
+            .push(Story {
+                id: 1,
+                epic_id: 1,
+                project_id: 1,
+                title: "Test Story".to_string(),
+                description: None,
+                status: StoryStatus::Todo,
+                points: Some(3),
+                assignee_id: None,
+                requirement_id: None,
+                created_at: now,
+                updated_at: now,
+            });
+
+        s.users
+            .lock()
+            .expect("users lock poisoned")
+            .push(User {
+                id: 1,
+                display_name: "Alice".to_string(),
+                email: "alice@example.com".to_string(),
+                role: UserRole::Member,
+                status: UserStatus::Active,
+                avatar_url: None,
+                github_login: None,
+                created_at: now,
+                updated_at: now,
             });
 
         s

@@ -7,6 +7,8 @@ use agileplus_domain::domain::{
     cycle::Cycle, feature::Feature, module::Module, project::Project, state_machine::FeatureState,
     work_package::WorkPackage,
 };
+use agileplus_governance::client::GovernanceClient;
+use agileplus_plane::client::PlaneClient;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
@@ -33,6 +35,10 @@ pub struct DashboardStore {
     pub health: Vec<ServiceHealth>,
     pub projects: Vec<Project>,
     pub active_project_id: Option<i64>,
+    /// Optional live governance service client (for /api/dashboard/governance/*).
+    pub governance_client: Option<Arc<GovernanceClient>>,
+    /// Optional live plane.so sync client (for /api/dashboard/plane/*).
+    pub plane_client: Option<Arc<PlaneClient>>,
 }
 
 pub type SharedState = Arc<RwLock<DashboardStore>>;
