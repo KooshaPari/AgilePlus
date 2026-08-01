@@ -15,11 +15,16 @@
 //! relevant partial; otherwise return the full page layout.
 
 use axum::{
+    extract::State,
     routing::{get, post},
+    Json,
     Router,
 };
 
-use crate::app_state::SharedState;
+use std::sync::Arc;
+use tokio::sync::RwLock;
+
+use crate::app_state::{DashboardStore, SharedState};
 
 pub mod agents;
 pub mod dashboard;
@@ -178,7 +183,53 @@ pub fn router(state: SharedState) -> Router {
             get(feature_evidence_json),
         )
         .route("/api/features/{id}/transition", post(feature_transition))
+        .route("/api/dashboard/governance/status", get(governance_status))
+        .route("/api/dashboard/plane/sync", get(plane_sync_status))
+
         .with_state(state)
+}
+
+
+// === Live governance status (reads from GovernanceClient) ===
+async fn governance_status(
+    State(state): State<Arc<RwLock<DashboardStore>>>,
+) -> Json<serde_json::Value> {
+    let store = state.read().await;
+    match store.governance_client.as_ref() {
+        Some(client) => match client.status().await {
+            Ok(status) => Json(serde_json::json!({
+                "available": true,
+                "connection": format!("{:?}", status.connection),
+                "policies": status.policies.len(),
+                "audits": status.stats.audit_count,
+                "score": status.stats.avg_score,
+            })),
+            Err(e) => Json(serde_json::json!({"available": true, "error": format!("{}", e)})),
+        },
+        None => Json(serde_json::json!({"available": false, "reason": "not_initialized"})),
+    }
+}
+
+// === Live Plane.so sync status (reads from PlaneClient) ===
+async fn plane_sync_status(
+    State(state): State<Arc<RwLock<DashboardStore>>>,
+) -> Json<serde_json::Value> {
+    let store = state.read().await;
+    match store.plane_client.as_ref() {
+        Some(client) => {
+            // Try to get the workspace summary (cheap read)
+            let workspaces = client.workspaces.list().await;
+            match workspaces {
+                Ok(list) => Json(serde_json::json!({
+                    "available": true,
+                    "workspaces": list.len(),
+                    "synced_at": chrono::Utc::now().to_rfc3339(),
+                })),
+                Err(e) => Json(serde_json::json!({"available": true, "error": format!("{}", e)})),
+            }
+        },
+        None => Json(serde_json::json!({"available": false, "reason": "not_initialized"})),
+    }
 }
 
 #[cfg(test)]
