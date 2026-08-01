@@ -1,119 +1,117 @@
-use std::future::Future;
 use std::path::{Path, PathBuf};
 
 use agileplus_domain::error::DomainError;
 use agileplus_domain::ports::vcs::{
     BranchInfo, ConflictInfo, FeatureArtifacts, MergeResult, VcsPort, WorktreeInfo,
 };
+use async_trait::async_trait;
 
 #[derive(Clone)]
 pub(crate) struct MockVcs;
 
+#[async_trait]
 impl VcsPort for MockVcs {
-    fn create_worktree(
+    async fn create_worktree(
         &self,
         _fs: &str,
         _wp: &str,
-    ) -> impl Future<Output = Result<PathBuf, DomainError>> + Send {
-        async move { Ok(PathBuf::from("/tmp/worktree")) }
+    ) -> Result<PathBuf, DomainError> {
+        Ok(PathBuf::from("/tmp/worktree"))
     }
 
-    fn list_worktrees(
-        &self,
-    ) -> impl Future<Output = Result<Vec<WorktreeInfo>, DomainError>> + Send {
-        async move { Ok(vec![]) }
+    async fn list_worktrees(&self) -> Result<Vec<WorktreeInfo>, DomainError> {
+        Ok(vec![])
     }
 
-    fn cleanup_worktree(&self, _p: &Path) -> impl Future<Output = Result<(), DomainError>> + Send {
-        async move { Ok(()) }
+    async fn cleanup_worktree(&self, _p: &Path) -> Result<(), DomainError> {
+        Ok(())
     }
 
-    fn create_branch(
+    async fn create_branch(
         &self,
         _b: &str,
         _base: &str,
-    ) -> impl Future<Output = Result<(), DomainError>> + Send {
-        async move { Ok(()) }
+    ) -> Result<(), DomainError> {
+        Ok(())
     }
 
-    fn list_branches(
+    async fn list_branches(
         &self,
         _pattern: Option<&str>,
         _remote: bool,
-    ) -> impl Future<Output = Result<Vec<BranchInfo>, DomainError>> + Send {
-        async move { Ok(vec![]) }
+    ) -> Result<Vec<BranchInfo>, DomainError> {
+        Ok(vec![])
     }
 
-    fn delete_branch(
+    async fn delete_branch(
         &self,
         _branch_name: &str,
         _force: bool,
         _remote: Option<&str>,
-    ) -> impl Future<Output = Result<(), DomainError>> + Send {
-        async move { Ok(()) }
+    ) -> Result<(), DomainError> {
+        Ok(())
     }
 
-    fn checkout_branch(&self, _b: &str) -> impl Future<Output = Result<(), DomainError>> + Send {
-        async move { Ok(()) }
+    async fn checkout_branch(&self, _b: &str) -> Result<(), DomainError> {
+        Ok(())
     }
 
-    fn merge_to_target(
+    async fn merge_to_target(
         &self,
         _s: &str,
         _t: &str,
-    ) -> impl Future<Output = Result<MergeResult, DomainError>> + Send {
-        async move {
-            Ok(MergeResult {
-                success: true,
-                conflicts: vec![],
-                merged_commit: None,
-            })
-        }
+    ) -> Result<MergeResult, DomainError> {
+        Ok(MergeResult {
+            success: true,
+            conflicts: vec![],
+            merged_commit: None,
+            commit: None,
+            message: None,
+        })
     }
 
-    fn detect_conflicts(
+    async fn detect_conflicts(
         &self,
         _s: &str,
         _t: &str,
-    ) -> impl Future<Output = Result<Vec<ConflictInfo>, DomainError>> + Send {
-        async move { Ok(vec![]) }
+    ) -> Result<Vec<ConflictInfo>, DomainError> {
+        Ok(vec![])
     }
 
-    fn read_artifact(
+    async fn read_artifact(
         &self,
         _fs: &str,
         _p: &str,
-    ) -> impl Future<Output = Result<String, DomainError>> + Send {
-        async move { Ok(String::new()) }
+    ) -> Result<String, DomainError> {
+        Ok(String::new())
     }
 
-    fn write_artifact(
+    async fn write_artifact(
         &self,
         _fs: &str,
         _p: &str,
         _c: &str,
-    ) -> impl Future<Output = Result<(), DomainError>> + Send {
-        async move { Ok(()) }
+    ) -> Result<(), DomainError> {
+        Ok(())
     }
 
-    fn artifact_exists(
+    async fn artifact_exists(
         &self,
         _fs: &str,
         _p: &str,
-    ) -> impl Future<Output = Result<bool, DomainError>> + Send {
-        async move { Ok(false) }
+    ) -> Result<bool, DomainError> {
+        Ok(false)
     }
 
-    fn scan_feature_artifacts(
-        &self,
-        _fs: &str,
-    ) -> impl Future<Output = Result<FeatureArtifacts, DomainError>> + Send {
-        async move {
-            Ok(FeatureArtifacts {
-                meta_json: None,
-                audit_chain: None,
-                evidence_paths: vec![],
-            })
-        }
+    async fn scan_feature_artifacts(&self, _fs: &str) -> Result<FeatureArtifacts, DomainError> {
+        Ok(FeatureArtifacts {
+            spec: None,
+            research: None,
+            plan: None,
+            other: vec![],
+            meta_json: None,
+            audit_chain: None,
+            evidence_paths: vec![],
+        })
     }
 }
