@@ -15,8 +15,8 @@ Disposition: KEEP DISTINCT; integrate with phenotype-registry by explicit contra
 Fork: false
 Archived: false
 Local HEAD: b664b757215df00a49536a861372cf864cb98bf1
-Authoritative origin/main: d6fcb37e8fd90dc5d12ae4fb9eaead0bc5046432
-Parity: FAIL (local checkout is behind by 4; no ref rewrite performed)
+Preservation snapshot origin/main: d6fcb37e8fd90dc5d12ae4fb9eaead0bc5046432 (captured 2026-07-29; bundle/parity evidence below refers to this snapshot)
+Parity: FAIL (2026-07-29 preservation snapshot local checkout was behind by 4; current origin/main inventory `b2af7482a7e61d58b5a2da84ccd43d7a672a2a38` captured 2026-08-02; no ref rewrite performed)
 Bundle: r2://tracera-artifacts/preservation/RepoLedger/07187fac803fc96a8ed5d6c9109041ffda44c3e1708f82a20b46c42a8a6188a7/RepoLedger-all.bundle
 Bundle bytes: 60351
 Bundle SHA-256: 07187fac803fc96a8ed5d6c9109041ffda44c3e1708f82a20b46c42a8a6188a7
@@ -25,7 +25,7 @@ fsck: PASS (no missing/corrupt objects; dangling remote-tracking objects only)
 Independent restore: PASS (temporary local clone restored b664b757; not a second-cloud restore)
 Second-cloud copy: NOT VERIFIED
 Durable artifact location: r2://tracera-artifacts/preservation/RepoLedger/07187fac803fc96a8ed5d6c9109041ffda44c3e1708f82a20b46c42a8a7/RepoLedger-all.bundle (R2 upload and checksum restore receipt recorded)
-Dual-cloud gate: HELD (second-cloud copy and independent restore not verified)
+Dual-cloud gate: HELD (second-cloud copy and second-cloud restore not verified; temporary local restore verified)
 Sponsor ACK: NOT RECEIVED
 Archive eligibility: FAIL / HELD (parity, dual-cloud, and sponsor-ACK gates unmet)
 License note: GitHub license metadata absent; no LICENSE file detected
