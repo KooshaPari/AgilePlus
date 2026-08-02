@@ -1,5 +1,27 @@
 Repository: KooshaPari/Planify2
 Captured: 2026-07-29
+HEAD metadata: checkout branch `feat/dual-harness-fixture-path-fix`; tip `e6b8e23511e6e43ac5466543b57ab4d192ddb50d`; committed `2026-07-23T02:53:25-07:00`; subject `fix(dual-harness): make fixture path resolution robust across repo root & worktrees`
+Branch inventory captured: 2026-08-02T04:19:30Z
+Branch inventory source: 16 local `refs/heads/*` plus cached `refs/remotes/origin/*` branch refs (17 rows; symbolic `origin/HEAD` omitted). `git ls-remote origin` returned `Repository not found`, so the remote rows are cached provenance only.
+Novel-count baseline: local `main` (`e6b8e23511e6e43ac5466543b57ab4d192ddb50d`). Counts are reachable-graph counts; this checkout retains 25 shallow boundaries, so counts are lower bounds where a branch crosses an unavailable parent.
+Branch inventory (sorted; scope | branch | novel commits vs baseline | tip OID | committed | subject):
+local | `chore/dual-harness-baseline-20260722` | 0 (reachable graph) | `c3ad6008b133511b7fe98858747aa1b3fb2d5af2` | `2026-07-08T17:15:12-07:00` | `feat: add upstream sync workflow, ADR-0005, and CI badges`
+local | `consolidate/agileplus-from-planify2` | 2 (reachable graph) | `f4df500df94923a9cf6d986cec896a1d8fcaef74` | `2026-07-23T02:51:48-07:00` | `feat(consolidation): merge Planify2 provenance + landing into Planify (canonical)`
+local | `feat/dual-harness-fixture-adapter` | 1 (lower bound; shallow history) | `6d35ba6c7ba84dc36162b7c9f8df0efd1304f7d7` | `2026-07-22T20:25:44-07:00` | `feat(dual-harness): Planify2 shared-3task.v1 adapter (FR-DH-001)`
+local | `feat/dual-harness-fixture-path-fix` | 0 (reachable graph) | `e6b8e23511e6e43ac5466543b57ab4d192ddb50d` | `2026-07-23T02:53:25-07:00` | `fix(dual-harness): make fixture path resolution robust across repo root & worktrees`
+local | `frontend/legacy-forge-snapshot` | 1765 (reachable graph) | `3e2ea97e4745c42338087977444cf50bd263ec2d` | `2026-07-15T19:50:01-07:00` | `feat(agileplus): capture forge/AgilePlus WIP 2026-07-15`
+local | `frontend/legacy-forge-wip` | 1765 (reachable graph) | `3e2ea97e4745c42338087977444cf50bd263ec2d` | `2026-07-15T19:50:01-07:00` | `feat(agileplus): capture forge/AgilePlus WIP 2026-07-15`
+local | `frontend/plane-integration-adapter` | 1767 (reachable graph) | `d4dcd098245c5e850725c875f225a642f58a61c9` | `2026-07-22T04:04:52-07:00` | `fix(api): compile agileplus-api against current domain ports`
+local | `frontend/planify-candidate-1` | 1585 (reachable graph) | `f84140634a644012426777f8dd30188bed0d8c5e` | `2026-07-17T04:27:48-07:00` | `recovery: preserve meaningful local work (20260717-0410)`
+local | `frontend/planify-eval-doc` | 1359 (reachable graph) | `07f151cdbb6e596cd24627d85e49088357ede9bc` | `2026-05-30T21:17:38-07:00` | `docs: add Planify frontend candidate #1 evaluation (#629)`
+local | `frontend/planify-recovery-preserve` | 1585 (reachable graph) | `f84140634a644012426777f8dd30188bed0d8c5e` | `2026-07-17T04:27:48-07:00` | `recovery: preserve meaningful local work (20260717-0410)`
+local | `frontend/planify-rest-shim` | 1365 (reachable graph) | `87daa898f1148cea9ffe0ed5911466ac1a6f476e` | `2026-05-31T16:27:45-07:00` | `feat: Planify<->AgilePlus REST shim adapter (frontend candidate #1 wiring) (#630)`
+local | `frontend/planify-shim-workspace` | 1767 (reachable graph) | `d4dcd098245c5e850725c875f225a642f58a61c9` | `2026-07-22T04:04:52-07:00` | `fix(api): compile agileplus-api against current domain ports`
+local | `frontend/recovery-isolated` | 1765 (reachable graph) | `0aafdf9692c11abb6e426f36857aeec7bb6cd942` | `2026-07-14T21:39:01-07:00` | `docs(recovery): establish isolated recovery boundary`
+local | `frontend/recovery-isolated-20260714` | 1765 (reachable graph) | `0aafdf9692c11abb6e426f36857aeec7bb6cd942` | `2026-07-14T21:39:01-07:00` | `docs(recovery): establish isolated recovery boundary`
+local | `main` | 0 (reachable graph) | `e6b8e23511e6e43ac5466543b57ab4d192ddb50d` | `2026-07-23T02:53:25-07:00` | `fix(dual-harness): make fixture path resolution robust across repo root & worktrees`
+remote | `origin/main` | 2 (cached reachable graph) | `d5088392caead6f851052e93de688b677735a672` | `2026-07-29T00:01:59-07:00` | `ci: add .github/workflows/ci.yml (smart-discover template)`
+local | `wip/20260801T0904-18c7a309f413de78` | 0 (reachable graph) | `e6b8e23511e6e43ac5466543b57ab4d192ddb50d` | `2026-07-23T02:53:25-07:00` | `fix(dual-harness): make fixture path resolution robust across repo root & worktrees`
 Disposition: KEEP DISTINCT; Planify is the frontend parent candidate
 Fork: false
 Archived: false
@@ -11,7 +33,7 @@ Bundle bytes: 860738272
 Bundle SHA-256: 683b563f4e47f1dde173df5a645945d93784b70b094d3a26763fa10ec58ccdf7
 Bundle verify: PASS (complete history, 72 refs)
 fsck: PASS (no missing/corrupt objects; dangling objects only)
-Independent restore: PASS (local temporary restore)
+Independent restore: PASS (local temporary restore only; not a second-cloud restore)
 Second-cloud copy: NOT VERIFIED
 Durable artifact location: r2://tracera-artifacts/preservation/Planify2/683b563f4e47f1dde173df5a645945d93784b70b094d3a26763fa10ec58ccdf7/chunks-v3/ (chunk upload receipts present; per-object GET/reconstruction pending)
 Dual-cloud gate: HELD (second-cloud copy and independent restore not verified)

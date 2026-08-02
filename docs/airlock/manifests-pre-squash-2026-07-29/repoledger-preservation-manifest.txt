@@ -1,5 +1,16 @@
 Repository: KooshaPari/RepoLedger
 Captured: 2026-07-29
+HEAD metadata: checkout branch `main`; tip `b664b757215df00a49536a861372cf864cb98bf1`; committed `2026-07-22T05:55:56-07:00`; subject `build(deps): Bump golang.org/x/net (#2)`
+Branch inventory captured: 2026-08-02T04:19:30Z
+Branch inventory source: 3 local `refs/heads/*` plus current `refs/remotes/origin/*` branch refs (6 rows; symbolic `origin/HEAD` omitted). `origin` was fetched before capture; current remote heads are represented.
+Novel-count baseline: authoritative `origin/main` (`b2af7482a7e61d58b5a2da84ccd43d7a672a2a38`). Counts use the complete fetched graph.
+Branch inventory (sorted; scope | branch | novel commits vs baseline | tip OID | committed | subject):
+local | `feat/ts7-toolchain-upgrade-monorepo` | 1 | `5c0b8fbf82198839c49ec405a953d21ffc666af8` | `2026-07-21T20:13:04-07:00` | `feat(ops): add Bun as side-by-side runner for the pnpm monorepo`
+local | `main` | 0 | `b664b757215df00a49536a861372cf864cb98bf1` | `2026-07-22T05:55:56-07:00` | `build(deps): Bump golang.org/x/net (#2)`
+remote | `origin/dependabot/go_modules/apps/ecosystem-console/server/go_modules-57bd245098` | 1 | `316f7ab60e4d4ad2809e7ddcf9dc3cb1a4299e9b` | `2026-07-22T08:15:45Z` | `build(deps): Bump golang.org/x/net`
+remote | `origin/main` | 0 | `b2af7482a7e61d58b5a2da84ccd43d7a672a2a38` | `2026-08-01T19:01:42-07:00` | `ci: update workflow with stable lint/test gate names`
+remote | `origin/wip/20260722T1300-18c49e2a97a9b680` | 0 | `b664b757215df00a49536a861372cf864cb98bf1` | `2026-07-22T05:55:56-07:00` | `build(deps): Bump golang.org/x/net (#2)`
+local | `wip/20260722T1300-18c49e2a97a9b680` | 0 | `b664b757215df00a49536a861372cf864cb98bf1` | `2026-07-22T05:55:56-07:00` | `build(deps): Bump golang.org/x/net (#2)`
 Disposition: KEEP DISTINCT; integrate with phenotype-registry by explicit contracts
 Fork: false
 Archived: false
