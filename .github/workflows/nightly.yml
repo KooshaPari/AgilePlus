@@ -1,4 +1,16 @@
 # Hourly + nightly (06:00 UTC) build/test with artifact upload.
+#
+# NOTE: This workflow does NOT build/test the full cargo workspace from
+# source. `agileplus-domain` (a required, direct dependency of the shipping
+# `agileplus-cli` binary — see crates/agileplus-cli/Cargo.toml) is deliberately
+# parked scaffolding debt (missing dirs_next/toml deps, undeclared `keychain`
+# feature, ~41 compile errors) per PR#878's explicit decision NOT to fix it
+# same-day. Since `agileplus-cli` cannot compile from source right now
+# (verified: `cargo build -p agileplus-cli` fails with the same domain-crate
+# errors), excluding `agileplus-domain` from `--workspace` would not unblock
+# a real from-source CLI build anyway. The actual shipping artifact is the
+# crates.io-published binary (`cargo install agileplus-cli`), which is what
+# this workflow validates via install + smoke test instead.
 name: AgilePlus Nightly
 
 on:
