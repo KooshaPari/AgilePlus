@@ -190,44 +190,60 @@ pub fn router(state: SharedState) -> Router {
 }
 
 
-// === Live governance status (reads from GovernanceClient) ===
+// ============================================================================
+// LIVE STATUS HANDLERS — read from real clients in DashboardStore state
+// ============================================================================
+
+/// GET /api/dashboard/governance/status — live audit stats from GovernanceClient
 async fn governance_status(
-    State(state): State<Arc<RwLock<DashboardStore>>>,
+    State(state): State<SharedState>,
 ) -> Json<serde_json::Value> {
-    let store = state.read().await;
-    match store.governance_client.as_ref() {
-        Some(client) => match client.status().await {
-            Ok(status) => Json(serde_json::json!({
+    let guard = state.read().await;
+    match guard.governance_client.as_ref() {
+        Some(client) => {
+            // status() returns GovernanceStatus directly (not Result)
+            let status = client.status().await;
+            Json(serde_json::json!({
                 "available": true,
-                "connection": format!("{:?}", status.connection),
-                "policies": status.policies.len(),
-                "audits": status.stats.audit_count,
-                "score": status.stats.avg_score,
-            })),
-            Err(e) => Json(serde_json::json!({"available": true, "error": format!("{}", e)})),
-        },
+                "initialized": status.initialized,
+                "connection_status": format!("{:?}", status.connection_status),
+                "remote_enabled": status.remote_enabled,
+                "local_enabled": status.local_enabled,
+                "sync_enabled": status.sync_enabled,
+                "last_sync": status.last_sync,
+                "pending_operations": status.pending_operations,
+                "audits_total": status.stats.total,
+                "audits_today": status.stats.today,
+                "audit_errors": status.stats.errors,
+            }))
+        }
         None => Json(serde_json::json!({"available": false, "reason": "not_initialized"})),
     }
 }
 
-// === Live Plane.so sync status (reads from PlaneClient) ===
+/// GET /api/dashboard/plane/sync — live work-item count from PlaneClient
 async fn plane_sync_status(
-    State(state): State<Arc<RwLock<DashboardStore>>>,
+    State(state): State<SharedState>,
 ) -> Json<serde_json::Value> {
-    let store = state.read().await;
-    match store.plane_client.as_ref() {
+    let guard = state.read().await;
+    match guard.plane_client.as_ref() {
         Some(client) => {
-            // Try to get the workspace summary (cheap read)
-            let workspaces = client.workspaces.list().await;
-            match workspaces {
-                Ok(list) => Json(serde_json::json!({
+            // list_work_items returns anyhow::Result<Vec<PlaneWorkItemResponse>>
+            let work_items = client.list_work_items().await;
+            let synced_at = chrono::Utc::now().to_rfc3339();
+            match work_items {
+                Ok(items) => Json(serde_json::json!({
                     "available": true,
-                    "workspaces": list.len(),
-                    "synced_at": chrono::Utc::now().to_rfc3339(),
+                    "work_items": items.len(),
+                    "synced_at": synced_at,
                 })),
-                Err(e) => Json(serde_json::json!({"available": true, "error": format!("{}", e)})),
+                Err(e) => Json(serde_json::json!({
+                    "available": true,
+                    "error": format!("{}", e),
+                    "synced_at": synced_at,
+                })),
             }
-        },
+        }
         None => Json(serde_json::json!({"available": false, "reason": "not_initialized"})),
     }
 }
