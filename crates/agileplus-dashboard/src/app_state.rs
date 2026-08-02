@@ -172,6 +172,20 @@ impl DashboardStore {
     }
 }
 
+impl DashboardStore {
+    /// Install the live governance client (after with_defaults())
+    pub fn with_governance(mut self, client: agileplus_governance::GovernanceClient) -> Self {
+        self.governance_client = Some(std::sync::Arc::new(client));
+        self
+    }
+
+    /// Install the live plane client (after PlaneClient::new)
+    pub fn with_plane(mut self, client: agileplus_plane::PlaneClient) -> Self {
+        self.plane_client = Some(std::sync::Arc::new(client));
+        self
+    }
+}
+
 pub fn default_health() -> Vec<ServiceHealth> {
     let now = Utc::now();
     vec![
