@@ -302,7 +302,7 @@ async fn plane_daemon_status(
             let cfg = daemon.config();
             Json(serde_json::json!({
                 "available": true,
-                "interval_secs": cfg.interval_secs,
+                "interval_secs": cfg.interval,
                 "batch_size": cfg.batch_size,
                 "dry_run": cfg.dry_run,
             }))

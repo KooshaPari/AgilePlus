@@ -90,6 +90,7 @@ pub fn build_dashboard_store() -> DashboardStore {
         projects,
         active_project_id: Some(1),
         governance_client: None,
+        plane_daemon: None,
         plane_client: None,
     }
 }

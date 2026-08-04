@@ -96,6 +96,7 @@ pub struct PlaneSyncDaemon {
     state: Arc<Mutex<SyncState>>,
     cancel: tokio::sync::watch::Sender<bool>,
     join: Mutex<Option<JoinHandle<()>>>,
+    config: PlaneDaemonConfig,
 }
 
 impl PlaneSyncDaemon {
@@ -143,6 +144,7 @@ impl PlaneSyncDaemon {
             state,
             cancel: cancel_tx,
             join: Mutex::new(Some(join)),
+            config,
         }
     }
 
@@ -177,6 +179,21 @@ impl PlaneSyncDaemon {
         if let Some(handle) = self.join.lock().await.take() {
             let _ = handle.await;
         }
+    }
+
+    /// Get a snapshot of the current configuration (useful for status endpoint).
+    pub fn config(&self) -> PlaneDaemonConfig {
+        PlaneDaemonConfig {
+            interval: self.config.interval,
+            batch_size: self.config.batch_size,
+            dry_run: self.config.dry_run,
+        }
+    }
+
+    /// Start (or no-op resume) the sync loop. Safe to call when already running.
+    pub async fn start(&self) {
+        // spawn() at construction time already started the loop.
+        // This method exists for the API contract; future: could implement pause/resume.
     }
 }
 
