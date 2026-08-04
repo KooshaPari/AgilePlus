@@ -28,11 +28,14 @@ pub(crate) mod hex_bytes {
     {
         let value = String::deserialize(deserializer)?;
         if value.len() != 64 {
-            return Err(serde::de::Error::invalid_length(value.len(), &"64 hex chars"));
+            return Err(serde::de::Error::invalid_length(
+                value.len(),
+                &"64 hex chars",
+            ));
         }
 
         let mut bytes = [0_u8; 32];
-        for (index, chunk) in value.as_bytes().chunks_exact(2).enumerate() {
+        for (index, chunk) in value.as_bytes().as_chunks::<2>().0.iter().enumerate() {
             let high = hex_value(chunk[0]).map_err(serde::de::Error::custom)?;
             let low = hex_value(chunk[1]).map_err(serde::de::Error::custom)?;
             bytes[index] = (high << 4) | low;
@@ -149,7 +152,9 @@ mod tests {
     fn valid_transition_updates_state() {
         let mut feature = Feature::new("auth", "Authentication", [0; 32], None);
 
-        feature.transition(FeatureState::Specified).expect("domain operation");
+        feature
+            .transition(FeatureState::Specified)
+            .expect("domain operation");
 
         assert_eq!(feature.state, FeatureState::Specified);
     }
