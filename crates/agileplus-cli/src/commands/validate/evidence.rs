@@ -207,10 +207,7 @@ fn evaluate_evidence_policy(
             .iter()
             .any(|e| e.evidence_type == evidence_type);
         return if any {
-            (
-                true,
-                format!("{} evidence present", evidence_type.as_str()),
-            )
+            (true, format!("{} evidence present", evidence_type.as_str()))
         } else {
             (
                 false,

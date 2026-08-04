@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Feature repository â€” CRUD operations for the `features` table.
 
-use rusqlite::{params, Connection, Row};
+use rusqlite::{Connection, Row, params};
 
 use agileplus_domain::{
     domain::{feature::Feature, state_machine::FeatureState},

@@ -253,16 +253,15 @@ impl ClaimStore {
         reason: ClaimReason,
     ) -> Option<Claim> {
         let resource_key = (kind, resource.to_string());
-        if let Some(existing_id) = self.by_resource.get(&resource_key) {
-            if existing_id != id
-                && self
-                    .claims
-                    .get(existing_id)
-                    .map(|c| c.state == ClaimState::Active)
-                    .unwrap_or(false)
-            {
-                return None;
-            }
+        if let Some(existing_id) = self.by_resource.get(&resource_key)
+            && existing_id != id
+            && self
+                .claims
+                .get(existing_id)
+                .map(|c| c.state == ClaimState::Active)
+                .unwrap_or(false)
+        {
+            return None;
         }
         let now = Utc::now();
         let c = Claim {

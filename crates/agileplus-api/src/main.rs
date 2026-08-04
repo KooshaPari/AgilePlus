@@ -7,7 +7,7 @@ use std::sync::Arc;
 use agileplus_api::AppState;
 use agileplus_api::api_key::import_api_key;
 use agileplus_domain::config::AppConfig;
-use agileplus_domain::credentials::{create_credential_store, CredentialStore};
+use agileplus_domain::credentials::{CredentialStore, create_credential_store};
 use agileplus_domain::ports::observability::{LogEntry, ObservabilityPort, SpanContext};
 use agileplus_git::GitVcsAdapter;
 use agileplus_sqlite::SqliteStorageAdapter;

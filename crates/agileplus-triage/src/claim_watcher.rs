@@ -179,10 +179,10 @@ impl ClaimWatcher {
                 .push(event.clone());
         }
         // Broadcast to active listeners.
-        if let Ok(mut listeners) = self.listeners.lock() {
-            if let Some(senders) = listeners.get_mut(claim_id) {
-                senders.retain(|tx| tx.send(event.clone()).is_ok());
-            }
+        if let Ok(mut listeners) = self.listeners.lock()
+            && let Some(senders) = listeners.get_mut(claim_id)
+        {
+            senders.retain(|tx| tx.send(event.clone()).is_ok());
         }
     }
 }
@@ -357,9 +357,11 @@ mod tests {
             60,
             ClaimReason::default(),
         );
-        assert!(watcher
-            .store()
-            .lookup(ClaimKind::Repo, "repo:foo")
-            .is_some());
+        assert!(
+            watcher
+                .store()
+                .lookup(ClaimKind::Repo, "repo:foo")
+                .is_some()
+        );
     }
 }

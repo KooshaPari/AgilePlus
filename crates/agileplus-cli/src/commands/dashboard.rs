@@ -36,8 +36,8 @@ use std::path::{Path, PathBuf};
 
 use anyhow::Result;
 use clap::Args;
-use comfy_table::{presets::UTF8_FULL, Attribute, Cell, Color, ContentArrangement, Row, Table};
-use rusqlite::{params, Connection};
+use comfy_table::{Attribute, Cell, Color, ContentArrangement, Row, Table, presets::UTF8_FULL};
+use rusqlite::{Connection, params};
 use serde::Serialize;
 
 #[cfg_attr(not(test), allow(unused_imports))]

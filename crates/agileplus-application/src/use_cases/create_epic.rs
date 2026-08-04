@@ -26,12 +26,11 @@ impl CreateEpic {
 
         let id = self.repo.create(&epic).await?;
 
-        self.publisher
-            .publish(DomainEvent::EpicCreated {
-                id,
-                project_id: epic.project_id,
-                title: epic.title.clone(),
-            })?;
+        self.publisher.publish(DomainEvent::EpicCreated {
+            id,
+            project_id: epic.project_id,
+            title: epic.title.clone(),
+        })?;
 
         Ok(EpicCreatedOutput { id })
     }

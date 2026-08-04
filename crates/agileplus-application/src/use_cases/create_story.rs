@@ -4,8 +4,8 @@
 use std::sync::Arc;
 
 use agileplus_domain::domain::story::Story;
-use agileplus_domain::ports::events::{DomainEvent, DomainEventPublisher};
 use agileplus_domain::ports::StoryRepository;
+use agileplus_domain::ports::events::{DomainEvent, DomainEventPublisher};
 
 use crate::dto::{CreateStoryCmd, StoryCreatedOutput};
 use crate::error::AppError;
@@ -27,12 +27,11 @@ impl CreateStory {
 
         let id = self.repo.create(&story).await?;
 
-        self.publisher
-            .publish(DomainEvent::StoryCreated {
-                id,
-                epic_id: story.epic_id,
-                title: story.title.clone(),
-            })?;
+        self.publisher.publish(DomainEvent::StoryCreated {
+            id,
+            epic_id: story.epic_id,
+            title: story.title.clone(),
+        })?;
 
         let mut persisted = story;
         persisted.id = id;

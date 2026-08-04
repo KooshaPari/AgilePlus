@@ -33,7 +33,10 @@ fn rubric_fix_list_emits_top_table_with_priority_ordering() {
         .clone();
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(stdout.contains("# Fix list"), "missing header: {stdout}");
-    assert!(stdout.contains("Cluster"), "missing Cluster column: {stdout}");
+    assert!(
+        stdout.contains("Cluster"),
+        "missing Cluster column: {stdout}"
+    );
     assert!(stdout.contains("Score"), "missing Score column: {stdout}");
     assert!(stdout.contains("Effort"), "missing Effort column: {stdout}");
     assert!(
@@ -82,12 +85,7 @@ fn rubric_fix_list_help_lists_required_flags() {
 #[test]
 fn rubric_fix_list_rejects_missing_repo() {
     cli()
-        .args([
-            "rubric",
-            "fix-list",
-            "--repo",
-            "/nonexistent/path/xyzzy",
-        ])
+        .args(["rubric", "fix-list", "--repo", "/nonexistent/path/xyzzy"])
         .assert()
         .failure()
         .stderr(predicates::str::contains("does not exist"));

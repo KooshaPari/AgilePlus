@@ -650,7 +650,7 @@ impl VcsPort for GitVcsAdapter {
                 return Err(DomainError::Storage(format!(
                     "scan artifacts {}: {e}",
                     dir.display()
-                )))
+                )));
             }
         };
         for entry in entries.flatten() {
@@ -876,12 +876,7 @@ mod tests {
         // Lock `main` in a sibling worktree (canonical-style conflict).
         let lock_wt = path.parent().unwrap().join("lock-main-wt");
         StdCommand::new("git")
-            .args([
-                "worktree",
-                "add",
-                &lock_wt.to_string_lossy(),
-                "main",
-            ])
+            .args(["worktree", "add", &lock_wt.to_string_lossy(), "main"])
             .current_dir(&path)
             .output()
             .expect("lock main in sibling worktree");

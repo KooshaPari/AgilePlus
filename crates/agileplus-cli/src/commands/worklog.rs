@@ -18,7 +18,7 @@
 
 use std::path::{Path, PathBuf};
 
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result, bail};
 use clap::{Args, Subcommand};
 use rusqlite::Connection;
 use serde::{Deserialize, Serialize};
@@ -471,11 +471,7 @@ fn to_canonical(raw: &serde_json::Value) -> CanonicalWorklog {
         agent_id: get_str("agent_id").unwrap_or_else(|| "codex-exec".to_string()),
         files_changed: {
             let v: Vec<String> = get_arr("files_changed");
-            if v.is_empty() {
-                get_arr("files")
-            } else {
-                v
-            }
+            if v.is_empty() { get_arr("files") } else { v }
         },
         commit_sha: get_str("commit_sha")
             .or_else(|| get_str("branch"))

@@ -16,7 +16,7 @@ mod support;
 use axum::http::StatusCode;
 use serde_json;
 
-use support::{setup_test_server, TEST_API_KEY};
+use support::{TEST_API_KEY, setup_test_server};
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 #[tokio::test]

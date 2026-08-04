@@ -18,7 +18,7 @@
 //!
 //! Traces to: FR-X01 (debugging), pillar L63 (Debug Tools)
 
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result, bail};
 use colored::Colorize;
 use rusqlite::Connection;
 use std::io::{BufRead, Write};

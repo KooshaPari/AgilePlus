@@ -11,11 +11,7 @@ pub(crate) struct MockVcs;
 
 #[async_trait]
 impl VcsPort for MockVcs {
-    async fn create_worktree(
-        &self,
-        _fs: &str,
-        _wp: &str,
-    ) -> Result<PathBuf, DomainError> {
+    async fn create_worktree(&self, _fs: &str, _wp: &str) -> Result<PathBuf, DomainError> {
         Ok(PathBuf::from("/tmp/worktree"))
     }
 
@@ -27,11 +23,7 @@ impl VcsPort for MockVcs {
         Ok(())
     }
 
-    async fn create_branch(
-        &self,
-        _b: &str,
-        _base: &str,
-    ) -> Result<(), DomainError> {
+    async fn create_branch(&self, _b: &str, _base: &str) -> Result<(), DomainError> {
         Ok(())
     }
 
@@ -56,11 +48,7 @@ impl VcsPort for MockVcs {
         Ok(())
     }
 
-    async fn merge_to_target(
-        &self,
-        _s: &str,
-        _t: &str,
-    ) -> Result<MergeResult, DomainError> {
+    async fn merge_to_target(&self, _s: &str, _t: &str) -> Result<MergeResult, DomainError> {
         Ok(MergeResult {
             success: true,
             conflicts: vec![],
@@ -70,36 +58,19 @@ impl VcsPort for MockVcs {
         })
     }
 
-    async fn detect_conflicts(
-        &self,
-        _s: &str,
-        _t: &str,
-    ) -> Result<Vec<ConflictInfo>, DomainError> {
+    async fn detect_conflicts(&self, _s: &str, _t: &str) -> Result<Vec<ConflictInfo>, DomainError> {
         Ok(vec![])
     }
 
-    async fn read_artifact(
-        &self,
-        _fs: &str,
-        _p: &str,
-    ) -> Result<String, DomainError> {
+    async fn read_artifact(&self, _fs: &str, _p: &str) -> Result<String, DomainError> {
         Ok(String::new())
     }
 
-    async fn write_artifact(
-        &self,
-        _fs: &str,
-        _p: &str,
-        _c: &str,
-    ) -> Result<(), DomainError> {
+    async fn write_artifact(&self, _fs: &str, _p: &str, _c: &str) -> Result<(), DomainError> {
         Ok(())
     }
 
-    async fn artifact_exists(
-        &self,
-        _fs: &str,
-        _p: &str,
-    ) -> Result<bool, DomainError> {
+    async fn artifact_exists(&self, _fs: &str, _p: &str) -> Result<bool, DomainError> {
         Ok(false)
     }
 

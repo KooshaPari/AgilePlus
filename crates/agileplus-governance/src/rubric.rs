@@ -213,7 +213,10 @@ mod tests {
 
     #[test]
     fn rejects_enumerated_count_mismatch() {
-        let bad = minimal_json().replace("\"sub_pillars_enumerated\": 1", "\"sub_pillars_enumerated\": 9");
+        let bad = minimal_json().replace(
+            "\"sub_pillars_enumerated\": 1",
+            "\"sub_pillars_enumerated\": 9",
+        );
         let err = RubricCatalog::from_json(&bad).unwrap_err();
         assert!(matches!(err, GovernanceError::Rubric(_)));
     }
@@ -228,6 +231,10 @@ mod tests {
         let c = RubricCatalog::from_json(minimal_json()).unwrap();
         let sp = &c.cluster("C03").unwrap().sub_pillars[0];
         assert_eq!(sp.id, "L30.1");
-        assert!(sp.acceptance.as_ref().unwrap().contains("functional_requirements"));
+        assert!(sp
+            .acceptance
+            .as_ref()
+            .unwrap()
+            .contains("functional_requirements"));
     }
 }
