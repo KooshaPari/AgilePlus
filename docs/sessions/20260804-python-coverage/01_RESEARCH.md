@@ -14,3 +14,7 @@
   integrations proto, and it plus its duplicate error, serialization, and
   streaming helper modules had no imports. These disconnected helpers were
   removed rather than hidden from coverage.
+- Hosted CI initially used uv 0.5.31, which selected CPython 3.14.0a5 and then
+  failed `uv sync` because the project requires stable `>=3.14`. The coverage
+  workflow pins uv 0.11.29, the stable toolchain used for the passing local
+  CPython 3.14.6 validation.
