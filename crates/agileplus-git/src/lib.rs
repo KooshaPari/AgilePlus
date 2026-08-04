@@ -98,21 +98,17 @@ impl GitVcsAdapter {
         format!("feat/{feature_slug}/{wp_id}")
     }
 
-    /// Build the canonical worktree directory name (sibling of
-    /// `repo_root`).
+    /// Build the canonical worktree directory name.
     fn worktree_dirname(feature_slug: &str, wp_id: &str) -> String {
         format!("{feature_slug}-{wp_id}")
     }
 
     /// Compute the absolute worktree path for a `(feature_slug,
-    /// wp_id)` pair: `<repo_root>/../<feature_slug>-<wp_id>`.
+    /// wp_id)` pair: `<repo_root>/.worktrees/<feature_slug>-<wp_id>`.
     pub fn worktree_path(&self, feature_slug: &str, wp_id: &str) -> PathBuf {
-        let parent = self
-            .repo_root
-            .parent()
-            .map(Path::to_path_buf)
-            .unwrap_or_else(|| PathBuf::from("."));
-        parent.join(Self::worktree_dirname(feature_slug, wp_id))
+        self.repo_root
+            .join(".worktrees")
+            .join(Self::worktree_dirname(feature_slug, wp_id))
     }
 
     /// Run `git(1)` with the given args inside `repo_root` and return
@@ -254,12 +250,13 @@ impl GitVcsAdapter {
                 message: Some(if stdout.is_empty() { stderr } else { stdout }),
             })
         } else {
+            let output = if stderr.is_empty() { &stdout } else { &stderr };
             Ok(MergeResult {
                 success: false,
-                conflicts: vec![],
+                conflicts: conflict_infos_from_output(output),
                 merged_commit: None,
                 commit: None,
-                message: Some(if stderr.is_empty() { stdout } else { stderr }),
+                message: Some(output.to_string()),
             })
         }
     }
@@ -309,6 +306,9 @@ impl VcsPort for GitVcsAdapter {
         let branch = Self::worktree_branch(feature_slug, wp_id);
         let path = self.worktree_path(feature_slug, wp_id);
         let path_str = path.to_string_lossy().into_owned();
+
+        std::fs::create_dir_all(self.repo_root.join(".worktrees"))
+            .map_err(|e| DomainError::Storage(format!("create .worktrees directory: {e}")))?;
 
         // If the branch already exists, use `git worktree add <path>
         // -B <branch>` to attach the existing branch. Otherwise use
@@ -384,6 +384,17 @@ impl VcsPort for GitVcsAdapter {
     }
 
     async fn cleanup_worktree(&self, worktree_path: &Path) -> Result<(), DomainError> {
+        let worktrees_dir = self.repo_root.join(".worktrees");
+        let canonical_path =
+            std::fs::canonicalize(worktree_path).unwrap_or_else(|_| worktree_path.to_path_buf());
+        let canonical_worktrees_dir =
+            std::fs::canonicalize(&worktrees_dir).unwrap_or(worktrees_dir);
+        if !canonical_path.starts_with(&canonical_worktrees_dir) {
+            return Err(DomainError::Storage(format!(
+                "worktree path {} is outside .worktrees",
+                worktree_path.display()
+            )));
+        }
         // `--force` ignores uncommitted / unmerged changes in the
         // worktree, which is what we want during teardown of an
         // abandoned / errored worktree.
@@ -528,6 +539,7 @@ impl VcsPort for GitVcsAdapter {
             return Ok(vec![]);
         }
         let mut out = Vec::new();
+        out.extend(conflict_infos_from_output(&raw));
         for line in raw.lines() {
             if let Some(rest) = line.strip_prefix("changed in both") {
                 // Format: "changed in both\n  base   100644 <oid> <path>\n  ours   100644 <oid>\n  theirs 100644 <oid>\n"
@@ -690,6 +702,31 @@ impl GitVcsAdapter {
             .join(feature_slug)
             .join(relative_path)
     }
+}
+
+fn conflict_infos_from_output(output: &str) -> Vec<ConflictInfo> {
+    let mut conflicts = Vec::new();
+    for line in output.lines() {
+        let Some(path) = line.split("Merge conflict in ").nth(1) else {
+            continue;
+        };
+        let path = path.trim().trim_end_matches('.');
+        if path.is_empty()
+            || conflicts
+                .iter()
+                .any(|conflict: &ConflictInfo| conflict.path == path)
+        {
+            continue;
+        }
+        conflicts.push(ConflictInfo {
+            path: path.to_string(),
+            file_path: path.to_string(),
+            conflict_type: "content".to_string(),
+            ours: None,
+            theirs: None,
+        });
+    }
+    conflicts
 }
 
 /// Tiny glob matcher that supports `*` and a literal suffix. Used for
