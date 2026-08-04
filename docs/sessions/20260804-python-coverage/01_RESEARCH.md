@@ -18,3 +18,6 @@
   failed `uv sync` because the project requires stable `>=3.14`. The coverage
   workflow pins uv 0.11.29, the stable toolchain used for the passing local
   CPython 3.14.6 validation.
+- The setup action is pinned to the immutable v8.1.0 commit documented by
+  astral-sh/setup-uv. Its major-version tag is not published, so using `@v8`
+  fails before the job starts.
