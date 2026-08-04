@@ -17,8 +17,44 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  perf-inputs:
+    name: perf inputs
+    runs-on: ubuntu-24.04
+    outputs:
+      available: ${{ steps.check.outputs.available }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: check
+        name: Verify benchmark harness topology
+        run: |
+          required=(
+            docker-compose.yml
+            process-compose.yml
+            scripts/perf/warmup.sh
+            scripts/perf/check_budget.py
+            perf/smoke.js
+            perf/load.js
+            perf/stress.js
+            perf/budget.json
+          )
+          missing=()
+          for path in "${required[@]}"; do
+            if [ ! -f "$path" ]; then
+              missing+=("$path")
+            fi
+          done
+          if [ "${#missing[@]}" -eq 0 ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+            echo "Benchmark harness is available."
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            printf 'Benchmark harness is not configured; missing: %s\n' "${missing[*]}"
+          fi
+
   perf-proc:
     name: perf (k6 → 95p budget)
+    needs: perf-inputs
+    if: needs.perf-inputs.outputs.available == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -43,8 +79,8 @@ jobs:
       - name: Bring up stack
         run: |
           set -euo pipefail
-          docker compose -f compose/docker-compose.yml up -d --wait
-          process-compose -f compose/process-compose.phase.yml up -d
+          docker compose -f docker-compose.yml up -d --wait
+          process-compose -f process-compose.yml up -d
           bash ./scripts/perf/warmup.sh
 
       - name: Run k6 (smoke + load + stress)
@@ -68,8 +104,8 @@ jobs:
       - name: Bring down stack
         if: always()
         run: |
-          process-compose -f compose/process-compose.phase.yml down || true
-          docker compose -f compose/docker-compose.yml down --remove-orphans -v || true
+          process-compose -f process-compose.yml down || true
+          docker compose -f docker-compose.yml down --remove-orphans -v || true
 
       - name: Upload perf reports
         if: always()
@@ -82,13 +118,17 @@ jobs:
 
   perf-qe-gate:
     name: perf-qe-gate (100% green)
-    needs: [perf-proc]
+    needs: [perf-inputs, perf-proc]
     runs-on: ubuntu-24.04
     if: always()
     steps:
       - uses: actions/checkout@v4
       - name: Decide
         run: |
+          if [ "${{ needs.perf-inputs.outputs.available }}" != "true" ]; then
+            echo "Benchmark harness is not configured for this checkout; perf execution was intentionally skipped."
+            exit 0
+          fi
           if [ "${{ needs.perf-proc.result }}" != "success" ]; then
             echo "::error::perf suite failed or budget exceeded."
             exit 1

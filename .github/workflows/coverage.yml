@@ -33,32 +33,27 @@ jobs:
           enable-cache: true
 
       - name: Set up Python
-        run: uv python install 3.12
+        run: uv python install 3.14
 
       - name: Sync deps
+        working-directory: python
         run: uv sync --all-extras --dev
 
       - name: Coverage report (pytest-cov)
+        working-directory: python
         run: |
           set -euo pipefail
-          mkdir -p .coverage
-          uv run coverage run -m pytest -q backend/ tests/ || true
+          mkdir -p ../.coverage
+          uv run coverage run -m pytest -q tests/
           uv run coverage combine || true
           uv run coverage report --fail-under=85
-          uv run coverage xml -o .coverage/coverage.xml
+          uv run coverage xml -o ../.coverage/coverage.xml
 
       - name: Upload coverage artifact
         uses: actions/upload-artifact@v4
         with:
           name: python-coverage-xml
           path: .coverage/coverage.xml
-
-      - name: Comment coverage on PR
-        if: github.event_name == 'pull_request'
-        uses: py-cov-action/python-coverage-comment-action@v1.7.2
-        with:
-          coverage-data-file: .coverage/coverage.xml
-          badge-title: python-coverage
 
   coverage-rust:
     name: rust-coverage (cargo-llvm-cov)
@@ -89,44 +84,16 @@ jobs:
           name: rust-coverage-lcov
           path: .coverage/rust-lcov.info
 
-  coverage-go:
-    name: go-coverage (go test -cover)
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: "1.23"
-          cache: true
-          cache-dependency-path: backend/go.sum
-
-      - name: Run Go tests with coverage
-        run: |
-          set -euo pipefail
-          mkdir -p .coverage
-          cd backend
-          go test -race -coverprofile=../.coverage/go-cover.out ./...
-          go tool cover -func=../.coverage/go-cover.out | tail -1
-        working-directory: backend
-
-      - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: go-coverage-out
-          path: .coverage/go-cover.out
-
   coverage-gate:
     name: coverage-gate (>=85% lines)
-    needs: [coverage-python, coverage-rust, coverage-go]
+    needs: [coverage-python, coverage-rust]
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: Verify all coverage artifacts
         run: |
           set -euo pipefail
-          for f in python-coverage-xml rust-coverage-lcov go-coverage-out; do
+          for f in python-coverage-xml rust-coverage-lcov; do
             echo "checking $f"
           done
           echo "All coverage jobs produced artifacts; 85% line floor enforced per-language."

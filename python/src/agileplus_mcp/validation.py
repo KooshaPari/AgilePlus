@@ -33,7 +33,7 @@ def validate_slug(value: str, field_name: str = "slug") -> str:
     if not _SLUG_RE.match(value):
         raise InputValidationError(
             f"{field_name} must be kebab-case (lowercase alphanumeric and hyphens), "
-            f"1–{MAX_SLUG_LENGTH} characters; got {value!r}"
+            f"1-{MAX_SLUG_LENGTH} characters; got {value!r}"
         )
     return value
 

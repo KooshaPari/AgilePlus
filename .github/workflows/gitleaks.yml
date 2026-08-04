@@ -13,10 +13,6 @@ permissions:
   pull-requests: read
   security-events: write
 
-env:
-  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  GITLEAKS_CONFIG: gitleaks.toml
-
 jobs:
   scan:
     name: gitleaks scan
@@ -33,5 +29,4 @@ jobs:
         # with "Unable to resolve action gitleaks/gitleaks-action@1c4d3b6...".
         uses: gitleaks/gitleaks-action@1938557f6a58837331b99822ab17b8e536e7bef9 # v2.3.0
         env:
-          GITHUB_TOKEN: ${{ env.GITHUB_TOKEN }}
-          GITLEAKS_CONFIG: ${{ env.GITLEAKS_CONFIG }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

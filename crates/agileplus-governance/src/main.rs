@@ -130,7 +130,9 @@ async fn main() -> Result<()> {
                 package: crate_name.clone(),
                 from: from_channel,
                 to: to_channel,
-                requested_by: whoami::username(),
+                requested_by: whoami::username().map_err(|error| {
+                    anyhow::anyhow!("unable to determine promotion requester: {error}")
+                })?,
                 version: "0.1.0".to_string(),
                 metadata: None,
             };
