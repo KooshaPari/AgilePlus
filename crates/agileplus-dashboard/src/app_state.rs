@@ -9,6 +9,7 @@ use agileplus_domain::domain::{
 };
 use agileplus_governance::client::GovernanceClient;
 use agileplus_plane::client::PlaneClient;
+use agileplus_plane::daemon::{PlaneDaemonConfig, PlaneSyncDaemon};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
@@ -39,6 +40,8 @@ pub struct DashboardStore {
     pub governance_client: Option<Arc<GovernanceClient>>,
     /// Optional live plane.so sync client (for /api/dashboard/plane/*).
     pub plane_client: Option<Arc<PlaneClient>>,
+    /// Optional plane.so sync daemon (background loop pulling from plane.so).
+    pub plane_daemon: Option<Arc<PlaneSyncDaemon>>,
 }
 
 pub type SharedState = Arc<RwLock<DashboardStore>>;
@@ -183,6 +186,17 @@ impl DashboardStore {
     pub fn with_plane(mut self, client: agileplus_plane::PlaneClient) -> Self {
         self.plane_client = Some(std::sync::Arc::new(client));
         self
+    }
+
+    /// Install the plane.so sync daemon handle (after daemon.spawn).
+    pub fn with_plane_daemon(mut self, daemon: PlaneSyncDaemon) -> Self {
+        self.plane_daemon = Some(std::sync::Arc::new(daemon));
+        self
+    }
+
+    /// Build a default daemon config from env vars.
+    pub fn default_plane_daemon_config() -> PlaneDaemonConfig {
+        PlaneDaemonConfig::from_env()
     }
 }
 

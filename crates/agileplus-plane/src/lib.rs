@@ -15,6 +15,7 @@ pub mod runtime;
 pub mod state_mapper;
 pub mod sync;
 pub mod sync_queue;
+pub mod daemon;
 pub mod webhook;
 
 pub use client::PlaneClient;

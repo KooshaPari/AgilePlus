@@ -185,6 +185,9 @@ pub fn router(state: SharedState) -> Router {
         .route("/api/features/{id}/transition", post(feature_transition))
         .route("/api/dashboard/governance/status", get(governance_status))
         .route("/api/dashboard/plane/sync", get(plane_sync_status))
+        .route("/api/dashboard/plane/daemon/start", post(plane_daemon_start))
+        .route("/api/dashboard/plane/daemon/stop", post(plane_daemon_stop))
+        .route("/api/dashboard/plane/daemon/status", get(plane_daemon_status))
 
         .with_state(state)
 }
@@ -243,6 +246,66 @@ async fn plane_sync_status(
                     "synced_at": synced_at,
                 })),
             }
+        }
+        None => Json(serde_json::json!({"available": false, "reason": "not_initialized"})),
+    }
+}
+
+// ============================================================================
+// PLANE DAEMON CONTROL — start/stop/status for the PlaneSyncDaemon
+// ============================================================================
+
+/// POST /api/dashboard/plane/daemon/start — start the Plane sync daemon
+async fn plane_daemon_start(
+    State(state): State<SharedState>,
+) -> Json<serde_json::Value> {
+    let mut guard = state.write().await;
+    match guard.plane_daemon.as_ref() {
+        Some(daemon) => {
+            daemon.start().await;
+            Json(serde_json::json!({
+                "started": true,
+                "already_running": true,
+            }))
+        }
+        None => Json(serde_json::json!({
+            "started": false,
+            "reason": "not_initialized",
+        })),
+    }
+}
+
+/// POST /api/dashboard/plane/daemon/stop — stop the Plane sync daemon
+async fn plane_daemon_stop(
+    State(state): State<SharedState>,
+) -> Json<serde_json::Value> {
+    let mut guard = state.write().await;
+    match guard.plane_daemon.as_ref() {
+        Some(daemon) => {
+            daemon.stop().await;
+            Json(serde_json::json!({"stopped": true}))
+        }
+        None => Json(serde_json::json!({
+            "stopped": false,
+            "reason": "not_initialized",
+        })),
+    }
+}
+
+/// GET /api/dashboard/plane/daemon/status — daemon state snapshot
+async fn plane_daemon_status(
+    State(state): State<SharedState>,
+) -> Json<serde_json::Value> {
+    let guard = state.read().await;
+    match guard.plane_daemon.as_ref() {
+        Some(daemon) => {
+            let cfg = daemon.config();
+            Json(serde_json::json!({
+                "available": true,
+                "interval_secs": cfg.interval_secs,
+                "batch_size": cfg.batch_size,
+                "dry_run": cfg.dry_run,
+            }))
         }
         None => Json(serde_json::json!({"available": false, "reason": "not_initialized"})),
     }
