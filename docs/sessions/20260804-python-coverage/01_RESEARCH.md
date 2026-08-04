@@ -21,3 +21,11 @@
 - The setup action is pinned to the immutable v8.1.0 commit documented by
   astral-sh/setup-uv. Its major-version tag is not published, so using `@v8`
   fails before the job starts.
+- The hosted Rust coverage build compiles the non-test library under
+  `-D warnings`; `synthetic_platform_health` is consumed only by the platform
+  test module, so it is correctly compiled under `cfg(test)` rather than
+  retained as dead production code.
+- The `agileplus-events` integration smoke test targeted an unexported,
+  dormant envelope model. It now exercises the supported public in-process
+  event bus, including serialization and subscriber fan-out; the bus doctest
+  uses its asynchronous publishing API.

@@ -244,6 +244,7 @@ fn http_get(url: &str) -> Result<String> {
 }
 
 /// Synthetic healthy state used when the real HTTP stack is unavailable.
+#[cfg(test)]
 pub(crate) fn synthetic_platform_health() -> PlatformHealth {
     let services = vec![
         ServiceHealth {

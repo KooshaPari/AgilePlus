@@ -17,7 +17,7 @@
 //!         eprintln!("got: {ev:?}");
 //!     }
 //! });
-//! bus.publish(DomainEvent::FeatureCreated { id: 1 }).await.unwrap();
+//! bus.publish_async(DomainEvent::FeatureCreated { id: 1 }).await.unwrap();
 //! # }
 //! ```
 
