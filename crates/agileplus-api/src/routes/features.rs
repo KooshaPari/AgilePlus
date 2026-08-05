@@ -18,7 +18,7 @@ use serde::{Deserialize, Serialize};
 use utoipa::{IntoParams, ToSchema};
 
 use agileplus_domain::domain::feature::Feature;
-use agileplus_domain::domain::state_machine::{self, FeatureState};
+use agileplus_domain::domain::state_machine::FeatureState;
 use agileplus_domain::ports::vcs::VcsPort;
 use agileplus_domain::ports::{ObservabilityPort, StoragePort};
 
