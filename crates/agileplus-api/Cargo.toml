@@ -10,7 +10,6 @@ agileplus-domain = { path = "../agileplus-domain" }
 agileplus-application = { path = "../agileplus-application" }
 agileplus-git = { path = "../agileplus-git" }
 agileplus-sqlite = { path = "../agileplus-sqlite" }
-agileplus-dashboard = { path = "../agileplus-dashboard" }
 # workspace-managed external deps
 anyhow.workspace = true
 tokio.workspace = true

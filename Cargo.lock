@@ -48,7 +48,6 @@ name = "agileplus-api"
 version = "0.2.1"
 dependencies = [
  "agileplus-application",
- "agileplus-dashboard",
  "agileplus-domain",
  "agileplus-git",
  "agileplus-sqlite",
@@ -131,6 +130,7 @@ dependencies = [
 name = "agileplus-dashboard"
 version = "0.2.1"
 dependencies = [
+ "agileplus-api",
  "agileplus-domain",
  "agileplus-events",
  "agileplus-fixtures",

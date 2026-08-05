@@ -105,16 +105,9 @@ where
         ))
         .with_state(state);
 
-    // Dashboard UI routes (no auth, seeded with dogfood data).
-    let dashboard_state = std::sync::Arc::new(tokio::sync::RwLock::new(
-        agileplus_dashboard::app_state::DashboardStore::seeded(),
-    ));
-    let dashboard = agileplus_dashboard::routes::router(dashboard_state);
-
     Router::new()
         .merge(public)
         .merge(protected)
-        .merge(dashboard)
         // NOTE: "templates/static" is relative to the process CWD, which must
         // be the workspace root (where the `templates/` directory lives).
         // A future improvement could use a compile-time or env-based path.
