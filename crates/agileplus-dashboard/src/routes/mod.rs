@@ -20,15 +20,14 @@ use axum::{
     routing::{get, post},
 };
 
-use std::sync::Arc;
-use tokio::sync::RwLock;
-
-use crate::app_state::{DashboardStore, SharedState};
+use crate::app_state::SharedState;
 
 pub mod agents;
 pub mod dashboard;
+mod dashboard_api;
 pub mod evidence;
 pub mod features;
+mod feature_handlers;
 pub mod health;
 pub mod helpers;
 pub mod pages;
@@ -41,13 +40,15 @@ pub mod settings;
 pub use pages::{dashboard_page, events_page, features_page, home, hub_page, root, settings_page};
 
 // From dashboard
-pub use dashboard::{
-    WorkPackageJson, all_work_packages_json, epics_stories_json, kanban_board, project_switcher,
-    sse_stream, switch_project, time_footer, wp_list,
+pub use dashboard::{kanban_board, project_switcher, switch_project, time_footer, wp_list};
+
+// From dashboard API
+pub use dashboard_api::{
+    WorkPackageJson, all_work_packages_json, epics_stories_json, sse_stream,
 };
 
-// From features
-pub use features::{
+// From feature handlers
+pub use feature_handlers::{
     FeatureTransitionForm, feature_detail, feature_events, feature_media, feature_page,
     feature_transition,
 };

@@ -15,8 +15,8 @@ use crate::templates::{
     SettingsPage,
 };
 
-use super::features;
-use super::helpers::{self, DashboardFilter};
+use super::feature_handlers;
+use super::helpers;
 
 /// GET /
 /// Home page with project summary statistics
@@ -190,7 +190,7 @@ pub async fn hub_page() -> Response {
 /// GET /features/:id
 /// Feature detail page (full HTML page)
 pub async fn feature_page(State(state): State<SharedState>, Path(id): Path<i64>) -> Response {
-    features::feature_detail(State(state), Path(id), HeaderMap::new()).await
+    feature_handlers::feature_detail(State(state), Path(id), HeaderMap::new()).await
 }
 
 pub async fn time_footer() -> Html<String> {

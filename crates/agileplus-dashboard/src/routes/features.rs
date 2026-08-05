@@ -10,18 +10,12 @@ use std::path::PathBuf;
 
 use askama::Template;
 use axum::{
-    extract::{Path, State},
-    http::{HeaderMap, StatusCode},
+    http::StatusCode,
     response::{Html, IntoResponse, Response},
 };
-use serde::Deserialize;
-
-use agileplus_domain::domain::state_machine::FeatureState;
-
-use crate::app_state::SharedState;
 use crate::templates::{
-    CiLinkView, EventTimelinePartial, EvidenceBundleView, FeatureDetailPage, FeatureView,
-    GitCommitView, KanbanPartial, MediaAssetView, PrLinkView, ReportArtifactView, WpView,
+    CiLinkView, EvidenceBundleView, FeatureView, GitCommitView, MediaAssetView, PrLinkView,
+    ReportArtifactView, WpView,
     all_feature_states,
 };
 
@@ -31,7 +25,7 @@ use chrono::Utc;
 
 /// Render an Askama template to an HTML response.
 /// Returns 500 Internal Server Error if template rendering fails.
-fn render<T: Template>(tpl: T) -> Response {
+pub(super) fn render<T: Template>(tpl: T) -> Response {
     match tpl.render() {
         Ok(html) => Html(html).into_response(),
         Err(e) => (
@@ -45,7 +39,7 @@ fn render<T: Template>(tpl: T) -> Response {
 /// Dashboard filter enumeration for grouping features by state.
 #[allow(dead_code)] // reserved - planned dashboard filter
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum DashboardFilter {
+pub(super) enum DashboardFilter {
     All,
     Active,
     Blocked,
@@ -53,7 +47,7 @@ enum DashboardFilter {
 }
 
 /// Build Kanban cards for the dashboard, grouped by feature state.
-fn build_kanban_cards(
+pub(super) fn build_kanban_cards(
     store: &crate::app_state::DashboardStore,
     _filter: DashboardFilter,
 ) -> HashMap<String, Vec<FeatureView>> {
@@ -75,7 +69,7 @@ fn build_kanban_cards(
 
 /// Build feature event timeline.
 /// Synthesizes a sequence of events for a feature: creation, sync, work-package state changes.
-fn build_feature_events(
+pub(super) fn build_feature_events(
     feature: &FeatureView,
     workpackages: &[WpView],
 ) -> Vec<crate::templates::EventView> {
@@ -186,7 +180,7 @@ fn build_feature_events(
 
 /// Build evidence bundle artifacts for a feature.
 /// Attempts to load real bundles from disk first; falls back to stub bundles.
-fn build_feature_evidence_bundles(
+pub(super) fn build_feature_evidence_bundles(
     feature: &FeatureView,
     workpackages: &[WpView],
 ) -> Vec<EvidenceBundleView> {
@@ -263,7 +257,7 @@ fn build_feature_evidence_bundles(
 
 /// Build media asset gallery for a feature.
 /// Includes a cover image and per-work-package screenshots.
-fn build_feature_media_assets(
+pub(super) fn build_feature_media_assets(
     feature: &FeatureView,
     workpackages: &[WpView],
 ) -> Vec<MediaAssetView> {
@@ -295,10 +289,7 @@ fn build_feature_media_assets(
 }
 
 /// Build feature report artifacts.
-fn build_feature_reports(
-    feature: &FeatureView,
-    workpackages: &[WpView],
-) -> Vec<ReportArtifactView> {
+pub(super) fn build_feature_reports(feature: &FeatureView) -> Vec<ReportArtifactView> {
     vec![ReportArtifactView {
         id: format!("report-{id}-coverage", id = feature.id),
         name: format!("Feature Coverage Report — {name}", name = feature.title),
@@ -418,149 +409,4 @@ fn load_evidence_bundles_from_disk(feature_id: &str) -> Vec<EvidenceBundleView> 
         git_commits,
         pr_links,
     }]
-}
-
-// ── Route Handlers ───────────────────────────────────────────────────────────
-
-/// GET /api/dashboard/features/:id
-/// Returns the full feature detail page with all associated data:
-/// events, evidence bundles, media assets, and reports.
-pub async fn feature_detail(
-    State(state): State<SharedState>,
-    Path(id): Path<i64>,
-    _headers: HeaderMap,
-) -> Response {
-    let store = state.read().await;
-    let feature = match store.features.iter().find(|f| f.id == id) {
-        Some(f) => FeatureView::from_feature(f),
-        None => return (StatusCode::NOT_FOUND, "Feature not found").into_response(),
-    };
-    let fid = feature.id;
-    let wps: Vec<WpView> = store
-        .work_packages
-        .get(&id)
-        .map(|v| v.iter().map(WpView::from_wp).collect())
-        .unwrap_or_default();
-    let events = build_feature_events(&feature, &wps);
-    let evidence_bundles = build_feature_evidence_bundles(&feature, &wps);
-    let media_assets = build_feature_media_assets(&feature, &wps);
-    let reports = build_feature_reports(&feature, &wps);
-
-    render(FeatureDetailPage {
-        feature,
-        feature_id: fid,
-        workpackages: wps,
-        events,
-        evidence_bundles,
-        media_assets,
-        reports,
-    })
-}
-
-/// GET /features/:id
-/// Alias for feature_detail; renders the full page layout.
-pub async fn feature_page(State(state): State<SharedState>, Path(id): Path<i64>) -> Response {
-    feature_detail(State(state), Path(id), HeaderMap::new()).await
-}
-
-/// GET /api/dashboard/features/:id/events
-/// Returns the event timeline partial for a feature (HTMX).
-pub async fn feature_events(
-    State(state): State<SharedState>,
-    Path(feature_id): Path<i64>,
-) -> Response {
-    let store = state.read().await;
-    let feature = match store.features.iter().find(|f| f.id == feature_id) {
-        Some(f) => FeatureView::from_feature(f),
-        None => return (StatusCode::NOT_FOUND, "Feature not found").into_response(),
-    };
-    let wps: Vec<WpView> = store
-        .work_packages
-        .get(&feature_id)
-        .map(|v| v.iter().map(WpView::from_wp).collect())
-        .unwrap_or_default();
-    let events = build_feature_events(&feature, &wps);
-
-    render(EventTimelinePartial { feature_id, events })
-}
-
-/// GET /api/dashboard/features/:id/media
-/// Returns the media gallery partial for a feature (HTMX).
-/// Renders as a 2-column grid of media assets.
-pub async fn feature_media(
-    State(state): State<SharedState>,
-    Path(feature_id): Path<i64>,
-) -> Response {
-    let store = state.read().await;
-    let feature = match store.features.iter().find(|f| f.id == feature_id) {
-        Some(f) => FeatureView::from_feature(f),
-        None => return (StatusCode::NOT_FOUND, "Feature not found").into_response(),
-    };
-    let wps: Vec<WpView> = store
-        .work_packages
-        .get(&feature_id)
-        .map(|v| v.iter().map(WpView::from_wp).collect())
-        .unwrap_or_default();
-    let media = build_feature_media_assets(&feature, &wps);
-
-    // Return media assets as a simple HTML partial
-    let html = media
-        .iter()
-        .map(|m| {
-            format!(
-                r#"<div class="media-asset border rounded p-3 bg-zinc-800">
-                <img src="{}" alt="{}" class="w-full rounded"/>
-                <p class="text-xs text-zinc-400 mt-2">{}</p>
-              </div>"#,
-                m.url_or_path, m.name, m.name
-            )
-        })
-        .collect::<Vec<_>>()
-        .join("\n");
-
-    Html(format!(
-        r#"<div class="grid grid-cols-2 gap-3 media-gallery">{html}</div>"#
-    ))
-    .into_response()
-}
-
-/// POST /api/features/:id/transition
-/// Form data: `target_state` (feature state enum)
-/// Transitions a feature to a new state and returns the updated Kanban cards.
-#[derive(Debug, Deserialize)]
-pub struct FeatureTransitionForm {
-    #[serde(rename = "target_state")]
-    pub new_state: String,
-}
-
-pub async fn feature_transition(
-    State(state): State<SharedState>,
-    Path(id): Path<i64>,
-    axum::Form(form): axum::Form<FeatureTransitionForm>,
-) -> Response {
-    let new_state = match form.new_state.parse::<FeatureState>() {
-        Ok(s) => s,
-        Err(_) => return (StatusCode::BAD_REQUEST, "Invalid feature state").into_response(),
-    };
-
-    let feature_name = {
-        let store = state.read().await;
-        match store.features.iter().find(|f| f.id == id) {
-            Some(f) => f.slug.clone(),
-            None => return (StatusCode::NOT_FOUND, "Feature not found").into_response(),
-        }
-    };
-
-    // Broadcast the update so SSE clients refresh
-    // (In a real app, persist the state change here)
-    tracing::info!(
-        "Feature {} transitioned to {:?} (SSE broadcast triggers UI refresh)",
-        feature_name,
-        new_state
-    );
-
-    // Return the kanban partial so htmx can swap it
-    let store = state.read().await;
-    let cards = build_kanban_cards(&store, DashboardFilter::All);
-    render(KanbanPartial { cards })
 }
