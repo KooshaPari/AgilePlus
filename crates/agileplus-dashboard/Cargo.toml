@@ -16,7 +16,10 @@ agileplus-fixtures = { path = "../agileplus-fixtures" }
 agileplus-governance = { path = "../agileplus-governance" }
 agileplus-plane = { path = "../agileplus-plane" }
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 agileplus-api = { path = "../agileplus-api" }
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
 askama = "0.12"
