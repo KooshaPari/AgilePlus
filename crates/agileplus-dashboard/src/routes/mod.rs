@@ -15,10 +15,9 @@
 //! relevant partial; otherwise return the full page layout.
 
 use axum::{
+    Json, Router,
     extract::State,
     routing::{get, post},
-    Json,
-    Router,
 };
 
 use crate::app_state::{DashboardStore, SharedState};
@@ -36,56 +35,64 @@ pub mod settings;
 // Exported for backward compatibility with call sites like routes::feature_detail
 
 // From pages
-pub use pages::{
-    dashboard_page, events_page, features_page, home, hub_page, root, settings_page,
-};
+pub use pages::{dashboard_page, events_page, features_page, home, hub_page, root, settings_page};
 
 // From dashboard
 pub use dashboard::{
-    kanban_board, wp_list, all_work_packages_json, epics_stories_json,
-    project_switcher, switch_project, time_footer, sse_stream,
-    WorkPackageJson,
+    WorkPackageJson, all_work_packages_json, epics_stories_json, kanban_board, project_switcher,
+    sse_stream, switch_project, time_footer, wp_list,
 };
 
 // From features
 pub use features::{
-    feature_detail, feature_page, feature_transition, feature_events, feature_media,
-    FeatureTransitionForm,
+    FeatureTransitionForm, feature_detail, feature_events, feature_media, feature_page,
+    feature_transition,
 };
 
 // From evidence
 pub use evidence::{
-    evidence_content, evidence_preview, feature_evidence_list,
-    feature_evidence_generate, feature_evidence_json,
-    EvidenceGalleryJson, EvidenceArtifactJson,
+    EvidenceArtifactJson, EvidenceGalleryJson, evidence_content, evidence_preview,
+    feature_evidence_generate, feature_evidence_json, feature_evidence_list,
 };
 
 // From agents
-pub use agents::{
-    agent_activity, agents_json, test_agent_connection,
-};
+pub use agents::{agent_activity, agents_json, test_agent_connection};
 
 // From health
 pub use health::{
-    health_panel, health_json, health_page, restart_service,
-    toggle_service, patch_service_config,
-    HealthStatus, ServiceHealthJson,
+    HealthStatus, ServiceHealthJson, health_json, health_page, health_panel, patch_service_config,
+    restart_service, toggle_service,
 };
 
 // From settings
 pub use settings::{
-    plane_settings_page, agent_settings_page, services_settings_page,
-    save_plane_settings, save_agent_settings, save_dashboard_settings,
-    save_services_settings, test_service_connection, test_plane_connection,
+    AgentConfig,
+    AgentSettingsForm,
     // Types
-    Config, PlaneConfig, AgentConfig, ServiceConfig, DashboardConfig,
-    PlaneSettingsForm, AgentSettingsForm, ServiceSettingsForm, DashboardSettingsForm,
+    Config,
+    DashboardConfig,
+    DashboardSettingsForm,
+    PlaneConfig,
+    PlaneSettingsForm,
+    ServiceConfig,
+    ServiceSettingsForm,
     SingleServiceTestForm,
+    agent_settings_page,
+    plane_settings_page,
+    save_agent_settings,
+    save_dashboard_settings,
+    save_plane_settings,
+    save_services_settings,
+    services_settings_page,
+    test_plane_connection,
+    test_service_connection,
 };
 
 // ── Event Timeline Handler ─────────────────────────────────────────────
 
-pub async fn event_timeline(axum::extract::State(_state): axum::extract::State<SharedState>) -> axum::response::Response {
+pub async fn event_timeline(
+    axum::extract::State(_state): axum::extract::State<SharedState>,
+) -> axum::response::Response {
     use crate::templates::EventTimelinePartial;
     helpers::render(EventTimelinePartial {
         feature_id: 0,
@@ -182,22 +189,24 @@ pub fn router(state: SharedState) -> Router {
         .route("/api/features/{id}/transition", post(feature_transition))
         .route("/api/dashboard/governance/status", get(governance_status))
         .route("/api/dashboard/plane/sync", get(plane_sync_status))
-        .route("/api/dashboard/plane/daemon/start", post(plane_daemon_start))
+        .route(
+            "/api/dashboard/plane/daemon/start",
+            post(plane_daemon_start),
+        )
         .route("/api/dashboard/plane/daemon/stop", post(plane_daemon_stop))
-        .route("/api/dashboard/plane/daemon/status", get(plane_daemon_status))
-
+        .route(
+            "/api/dashboard/plane/daemon/status",
+            get(plane_daemon_status),
+        )
         .with_state(state)
 }
-
 
 // ============================================================================
 // LIVE STATUS HANDLERS — read from real clients in DashboardStore state
 // ============================================================================
 
 /// GET /api/dashboard/governance/status — live audit stats from GovernanceClient
-async fn governance_status(
-    State(state): State<SharedState>,
-) -> Json<serde_json::Value> {
+async fn governance_status(State(state): State<SharedState>) -> Json<serde_json::Value> {
     let guard = state.read().await;
     match guard.governance_client.as_ref() {
         Some(client) => {
@@ -222,9 +231,7 @@ async fn governance_status(
 }
 
 /// GET /api/dashboard/plane/sync — live work-item count from PlaneClient
-async fn plane_sync_status(
-    State(state): State<SharedState>,
-) -> Json<serde_json::Value> {
+async fn plane_sync_status(State(state): State<SharedState>) -> Json<serde_json::Value> {
     let guard = state.read().await;
     match guard.plane_client.as_ref() {
         Some(client) => {
@@ -253,9 +260,7 @@ async fn plane_sync_status(
 // ============================================================================
 
 /// POST /api/dashboard/plane/daemon/start — start the Plane sync daemon
-async fn plane_daemon_start(
-    State(state): State<SharedState>,
-) -> Json<serde_json::Value> {
+async fn plane_daemon_start(State(state): State<SharedState>) -> Json<serde_json::Value> {
     let mut guard = state.write().await;
     match guard.plane_daemon.as_ref() {
         Some(daemon) => {
@@ -273,9 +278,7 @@ async fn plane_daemon_start(
 }
 
 /// POST /api/dashboard/plane/daemon/stop — stop the Plane sync daemon
-async fn plane_daemon_stop(
-    State(state): State<SharedState>,
-) -> Json<serde_json::Value> {
+async fn plane_daemon_stop(State(state): State<SharedState>) -> Json<serde_json::Value> {
     let mut guard = state.write().await;
     match guard.plane_daemon.as_ref() {
         Some(daemon) => {
@@ -290,9 +293,7 @@ async fn plane_daemon_stop(
 }
 
 /// GET /api/dashboard/plane/daemon/status — daemon state snapshot
-async fn plane_daemon_status(
-    State(state): State<SharedState>,
-) -> Json<serde_json::Value> {
+async fn plane_daemon_status(State(state): State<SharedState>) -> Json<serde_json::Value> {
     let guard = state.read().await;
     match guard.plane_daemon.as_ref() {
         Some(daemon) => {
@@ -311,7 +312,7 @@ async fn plane_daemon_status(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::app_state::{default_health, DashboardStore};
+    use crate::app_state::{DashboardStore, default_health};
     use std::sync::Arc;
     use tokio::sync::RwLock;
     use tower::util::ServiceExt;
@@ -392,7 +393,10 @@ mod tests {
 
     #[test]
     fn test_html_escape_quotes() {
-        assert_eq!(helpers::html_escape("say \"hello\""), "say &quot;hello&quot;");
+        assert_eq!(
+            helpers::html_escape("say \"hello\""),
+            "say &quot;hello&quot;"
+        );
         assert_eq!(helpers::html_escape("it's"), "it&#39;s");
     }
 

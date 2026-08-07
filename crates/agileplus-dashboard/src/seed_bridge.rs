@@ -31,8 +31,7 @@ const API_TIMEOUT_SECS: u64 = 3;
 /// into `store`. On any failure (no server, timeout, parse error, missing fields),
 /// `store` is returned unchanged — the hardcoded seed is the fallback.
 pub async fn try_merge_from_api(mut store: DashboardStore) -> DashboardStore {
-    let base = std::env::var("AGILEPLUS_API_BASE")
-        .unwrap_or_else(|_| API_BASE_DEFAULT.to_string());
+    let base = std::env::var("AGILEPLUS_API_BASE").unwrap_or_else(|_| API_BASE_DEFAULT.to_string());
 
     // Public endpoints first — no auth required.
     if let Some(modules) = fetch_json::<Vec<Module>>(&format!("{}/api/modules", base)).await {
@@ -61,9 +60,11 @@ pub async fn try_merge_from_api(mut store: DashboardStore) -> DashboardStore {
     // Protected — needs AGILEPLUS_API_KEY.
     if let Ok(api_key) = std::env::var("AGILEPLUS_API_KEY") {
         if !api_key.is_empty() {
-            if let Some(projects) =
-                fetch_json_with_header::<Vec<Project>>(&format!("{}/api/v1/projects", base), &api_key)
-                    .await
+            if let Some(projects) = fetch_json_with_header::<Vec<Project>>(
+                &format!("{}/api/v1/projects", base),
+                &api_key,
+            )
+            .await
             {
                 if !projects.is_empty() {
                     // If the api returned projects, prefer them over the hardcoded seed.
