@@ -15,7 +15,7 @@ use crate::templates::{
     FeatureView, SettingsPage,
 };
 
-use super::helpers::{self, DashboardFilter};
+use super::helpers;
 use super::features;
 
 /// GET /

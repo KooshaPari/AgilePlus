@@ -21,9 +21,6 @@ use axum::{
     Router,
 };
 
-use std::sync::Arc;
-use tokio::sync::RwLock;
-
 use crate::app_state::{DashboardStore, SharedState};
 
 pub mod agents;
