@@ -1,7 +1,7 @@
-use std::sync::Arc;
-use std::net::SocketAddr;
-use agileplus_dashboard::routes::router;
 use agileplus_dashboard::app_state::DashboardStore;
+use agileplus_dashboard::routes::router;
+use std::net::SocketAddr;
+use std::sync::Arc;
 
 #[tokio::main]
 async fn main() {
@@ -40,7 +40,9 @@ async fn main() {
             ))
         }
         _ => {
-            tracing::info!("PLANE_API_KEY/PLANE_WORKSPACE/PLANE_PROJECT not set; /api/dashboard/plane/sync will return not_initialized");
+            tracing::info!(
+                "PLANE_API_KEY/PLANE_WORKSPACE/PLANE_PROJECT not set; /api/dashboard/plane/sync will return not_initialized"
+            );
             store
         }
     };

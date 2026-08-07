@@ -10,8 +10,8 @@
 
 use agileplus_dashboard::app_state::ServiceHealth;
 use agileplus_dashboard::health::{
-    run_health_checks, BuildInfoChecker, HealthChecker, MemoryStoreChecker, ProcessChecker,
-    SqliteChecker,
+    BuildInfoChecker, HealthChecker, MemoryStoreChecker, ProcessChecker, SqliteChecker,
+    run_health_checks,
 };
 use chrono::Utc;
 
