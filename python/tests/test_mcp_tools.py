@@ -145,8 +145,7 @@ async def test_status_tools_cover_feature_work_package_and_streaming_paths() -> 
     core.get_work_package_status.assert_awaited_once_with("feature-one", 1)
     core.run_command.assert_any_await("ship", feature_slug="feature-one", target_branch="release")
     core.run_command.assert_any_await("retrospective", feature_slug="feature-one")
-    assert core.stream_agent_events.call_count == 2
-    core.stream_agent_events.assert_called_with("feature-one")
+    core.stream_agent_events.assert_called_once_with("feature-one")
 
 
 @pytest.mark.asyncio
