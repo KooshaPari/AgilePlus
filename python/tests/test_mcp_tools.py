@@ -9,11 +9,12 @@ import pytest
 from fastmcp import Client, FastMCP
 from fastmcp.exceptions import ToolError
 
+from agileplus_mcp.grpc_client import AgilePlusCoreClient
 from agileplus_mcp.tools import features, governance, queue, status
 
 
 def _client() -> MagicMock:
-    client = MagicMock()
+    client = MagicMock(spec=AgilePlusCoreClient)
     client.run_command = AsyncMock(return_value={"success": True, "message": "done", "outputs": {}})
     client.get_feature = AsyncMock(return_value={"slug": "feature-one", "state": "planned"})
     client.list_features = AsyncMock(return_value=[{"slug": "feature-one"}])
@@ -51,7 +52,9 @@ async def test_feature_and_governance_tools_invoke_validated_client_operations()
     governance.register_tools(mcp, core)
 
     async with Client(mcp) as protocol:
-        assert (await _call(protocol, "agileplus_specify", {"feature_slug": "feature-one"}))["status"] == "success"
+        assert (
+            await _call(protocol, "agileplus_specify", {"feature_slug": "feature-one"})
+        )["status"] == "success"
         await _call(
             protocol,
             "agileplus_specify",
@@ -142,7 +145,8 @@ async def test_status_tools_cover_feature_work_package_and_streaming_paths() -> 
     core.get_work_package_status.assert_awaited_once_with("feature-one", 1)
     core.run_command.assert_any_await("ship", feature_slug="feature-one", target_branch="release")
     core.run_command.assert_any_await("retrospective", feature_slug="feature-one")
-    core.stream_agent_events.assert_called_once_with("feature-one")
+    assert core.stream_agent_events.call_count == 2
+    core.stream_agent_events.assert_called_with("feature-one")
 
 
 @pytest.mark.asyncio
@@ -161,9 +165,13 @@ async def test_queue_tools_cover_success_empty_and_not_found_paths() -> None:
         assert (
             await _call(protocol, "agileplus_queue_list", {"item_type": "task", "limit": 1})
         )["items"] == [{"id": 2}]
-        assert (await _call(protocol, "agileplus_queue_show", {"item_id": 2}))["status"] == "success"
+        assert (
+            await _call(protocol, "agileplus_queue_show", {"item_id": 2})
+        )["status"] == "success"
         core.get_backlog_item.return_value = None
-        assert (await _call(protocol, "agileplus_queue_show", {"item_id": 99}))["status"] == "not_found"
+        assert (
+            await _call(protocol, "agileplus_queue_show", {"item_id": 99})
+        )["status"] == "not_found"
         assert (await _call(protocol, "agileplus_queue_pop", {"count": 1}))["status"] == "success"
         core.pop_backlog_items.return_value = []
         assert (await _call(protocol, "agileplus_queue_pop"))["status"] == "empty"
@@ -196,3 +204,29 @@ async def test_queue_tools_cover_success_empty_and_not_found_paths() -> None:
     assert core.pop_backlog_items.await_count == 2
     core.pop_backlog_items.assert_awaited_with(count=1)
     core.import_backlog_items.assert_awaited_once_with([{"title": "Imported"}])
+
+
+@pytest.mark.asyncio
+async def test_server_startup_registers_queue_tools(monkeypatch: pytest.MonkeyPatch) -> None:
+    from agileplus_mcp import server
+
+    class FakeCoreClient:
+        def __init__(self, _: str) -> None:
+            pass
+
+        async def connect(self) -> None:
+            return None
+
+        async def close(self) -> None:
+            return None
+
+    monkeypatch.setattr(server, "AgilePlusCoreClient", FakeCoreClient)
+    await server.startup("localhost:50051")
+    try:
+        assert await server.mcp.get_tool("agileplus_queue_add")
+        assert await server.mcp.get_tool("agileplus_queue_list")
+        assert await server.mcp.get_tool("agileplus_queue_show")
+        assert await server.mcp.get_tool("agileplus_queue_pop")
+        assert await server.mcp.get_tool("agileplus_queue_import")
+    finally:
+        await server.shutdown()

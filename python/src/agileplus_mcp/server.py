@@ -24,6 +24,7 @@ from agileplus_mcp.grpc_client import AgilePlusCoreClient, GrpcConnectionError
 from agileplus_mcp.sampling import SamplingHandler
 from agileplus_mcp.tools import features as features_module
 from agileplus_mcp.tools import governance as governance_module
+from agileplus_mcp.tools import queue as queue_module
 from agileplus_mcp.tools import status as status_module
 from agileplus_mcp.validation import validate_slug, validate_text
 
@@ -295,6 +296,7 @@ async def startup(grpc_address: str = GRPC_ADDRESS) -> None:
     # Register domain tool modules
     features_module.register_tools(mcp, client)
     governance_module.register_tools(mcp, client)
+    queue_module.register_tools(mcp, client)
     status_module.register_tools(mcp, client)
 
     logger.info("AgilePlus MCP server ready (gRPC: %s)", grpc_address)
