@@ -45,7 +45,7 @@ fi
 
 if command -v gitleaks >/dev/null 2>&1; then
     run_check "gitleaks detect" \
-        gitleaks detect --source . --config gitleaks.toml --no-color 2>/dev/null || true
+        gitleaks detect --source . --config .gitleaks.toml --no-color 2>/dev/null || true
 fi
 
 # ── Stage 2: Dependency audit ─────────────────────────────────────────
