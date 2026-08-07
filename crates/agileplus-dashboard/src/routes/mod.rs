@@ -20,7 +20,7 @@ use axum::{
     routing::{get, post},
 };
 
-use crate::app_state::{DashboardStore, SharedState};
+use crate::app_state::SharedState;
 
 pub mod agents;
 pub mod dashboard;
@@ -261,7 +261,7 @@ async fn plane_sync_status(State(state): State<SharedState>) -> Json<serde_json:
 
 /// POST /api/dashboard/plane/daemon/start — start the Plane sync daemon
 async fn plane_daemon_start(State(state): State<SharedState>) -> Json<serde_json::Value> {
-    let mut guard = state.write().await;
+    let guard = state.write().await;
     match guard.plane_daemon.as_ref() {
         Some(daemon) => {
             daemon.start().await;
@@ -279,7 +279,7 @@ async fn plane_daemon_start(State(state): State<SharedState>) -> Json<serde_json
 
 /// POST /api/dashboard/plane/daemon/stop — stop the Plane sync daemon
 async fn plane_daemon_stop(State(state): State<SharedState>) -> Json<serde_json::Value> {
-    let mut guard = state.write().await;
+    let guard = state.write().await;
     match guard.plane_daemon.as_ref() {
         Some(daemon) => {
             daemon.stop().await;

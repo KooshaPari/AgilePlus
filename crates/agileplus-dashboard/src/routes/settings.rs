@@ -546,9 +546,7 @@ fn persist_plane_settings(
         Err(agileplus_domain::credentials::CredentialError::NotFound(_)) => None,
         Err(error) => return Err(Box::new(error)),
     };
-    if let Err(error) = config.migrate_legacy_plane_key(credentials) {
-        return Err(error);
-    }
+    config.migrate_legacy_plane_key(credentials)?;
     credentials.set("agileplus", PLANESO_KEY, form.api_key.trim())?;
 
     config.plane = Some(PlaneConfig {

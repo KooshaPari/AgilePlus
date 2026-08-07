@@ -16,7 +16,7 @@ use crate::templates::{
 };
 
 use super::features;
-use super::helpers::{self, DashboardFilter};
+use super::helpers::{self};
 
 /// GET /
 /// Home page with project summary statistics

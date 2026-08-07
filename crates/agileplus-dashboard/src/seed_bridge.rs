@@ -34,13 +34,12 @@ pub async fn try_merge_from_api(mut store: DashboardStore) -> DashboardStore {
     let base = std::env::var("AGILEPLUS_API_BASE").unwrap_or_else(|_| API_BASE_DEFAULT.to_string());
 
     // Public endpoints first — no auth required.
-    if let Some(modules) = fetch_json::<Vec<Module>>(&format!("{}/api/modules", base)).await {
-        if !modules.is_empty() {
+    if let Some(modules) = fetch_json::<Vec<Module>>(&format!("{}/api/modules", base)).await
+        && !modules.is_empty() {
             store.modules = modules;
         }
-    }
-    if let Some(cycles) = fetch_json::<Vec<Cycle>>(&format!("{}/api/cycles", base)).await {
-        if !cycles.is_empty() {
+    if let Some(cycles) = fetch_json::<Vec<Cycle>>(&format!("{}/api/cycles", base)).await
+        && !cycles.is_empty() {
             // Rebuild the cycle -> features index from whatever features are in the store.
             store.cycles = cycles;
             store.cycle_features.clear();
@@ -55,18 +54,16 @@ pub async fn try_merge_from_api(mut store: DashboardStore) -> DashboardStore {
                 store.cycle_features.insert(cycle.id, fids);
             }
         }
-    }
 
     // Protected — needs AGILEPLUS_API_KEY.
-    if let Ok(api_key) = std::env::var("AGILEPLUS_API_KEY") {
-        if !api_key.is_empty() {
-            if let Some(projects) = fetch_json_with_header::<Vec<Project>>(
+    if let Ok(api_key) = std::env::var("AGILEPLUS_API_KEY")
+        && !api_key.is_empty()
+            && let Some(projects) = fetch_json_with_header::<Vec<Project>>(
                 &format!("{}/api/v1/projects", base),
                 &api_key,
             )
             .await
-            {
-                if !projects.is_empty() {
+                && !projects.is_empty() {
                     // If the api returned projects, prefer them over the hardcoded seed.
                     // Active project stays at the seed's default (Some(1)) so dashboard pages
                     // don't break when api and seed IDs diverge.
@@ -77,9 +74,6 @@ pub async fn try_merge_from_api(mut store: DashboardStore) -> DashboardStore {
                         }
                     }
                 }
-            }
-        }
-    }
 
     store
 }
