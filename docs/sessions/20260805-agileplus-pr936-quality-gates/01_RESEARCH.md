@@ -10,3 +10,7 @@
   `agileplus-proto` build script uses `prost-build`/`tonic-build`, which requires
   `protoc` for this full-featured path. Existing `autograder.yml` and
   `gate-check.yml` install Ubuntu's `protobuf-compiler` package.
+- `agileplus-dashboard` has no Rust import or path use for its declared `agileplus-api`
+  dependency; removing it does not alter dashboard behavior.
+- The locked FastMCP 3.4.2 environment supports `Client(FastMCP)` and
+  `Client.call_tool(name, arguments)`, returning decoded data via `CallToolResult.data`.
