@@ -24,7 +24,7 @@ pub mod use_cases;
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
-    use std::sync::Arc;
+    use std::sync::{Arc, Mutex};
 
     use async_trait::async_trait;
     use tokio::sync::RwLock;
@@ -616,20 +616,19 @@ mod tests {
     /// Spy publisher — records emitted events.
     #[derive(Default)]
     struct SpyPublisher {
-        events: RwLock<Vec<DomainEvent>>,
+        events: Mutex<Vec<DomainEvent>>,
     }
 
-    #[async_trait]
     impl DomainEventPublisher for SpyPublisher {
-        async fn publish(&self, event: DomainEvent) -> Result<(), DomainError> {
-            self.events.write().await.push(event);
+        fn publish(&self, event: DomainEvent) -> Result<(), DomainError> {
+            self.events.lock().expect("spy publisher lock").push(event);
             Ok(())
         }
     }
 
     impl SpyPublisher {
-        async fn emitted(&self) -> Vec<DomainEvent> {
-            self.events.read().await.clone()
+        fn emitted(&self) -> Vec<DomainEvent> {
+            self.events.lock().expect("spy publisher lock").clone()
         }
     }
 
@@ -656,7 +655,7 @@ mod tests {
         assert_eq!(out.id, 1);
         assert_eq!(out.feature.slug, "auth");
 
-        let events = pub_.emitted().await;
+        let events = pub_.emitted();
         assert_eq!(events.len(), 1);
         assert!(matches!(&events[0], DomainEvent::FeatureCreated { slug, .. } if slug == "auth"));
     }
@@ -680,7 +679,7 @@ mod tests {
         assert_eq!(out.feature.target_branch, "main");
         assert_eq!(out.feature.spec_hash, [0u8; 32]);
 
-        let events = pub_.emitted().await;
+        let events = pub_.emitted();
         assert_eq!(events.len(), 1);
         assert!(matches!(
             &events[0],
@@ -708,7 +707,7 @@ mod tests {
         assert_eq!(out.feature.target_branch, "feature/login");
         assert_eq!(out.feature.spec_hash, spec_hash);
 
-        let events = pub_.emitted().await;
+        let events = pub_.emitted();
         assert_eq!(events.len(), 1);
         assert!(matches!(
             &events[0],
@@ -746,7 +745,7 @@ mod tests {
         let feature = repo.get_feature_by_id(out.id).await.unwrap().unwrap();
         assert_eq!(feature.state, FeatureState::Specified);
 
-        let events = pub_.emitted().await;
+        let events = pub_.emitted();
         // created + advanced
         assert_eq!(events.len(), 2);
         assert!(
@@ -822,7 +821,7 @@ mod tests {
         assert_eq!(out.id, 1);
         assert_eq!(out.story.title, "User can log in");
 
-        let events = pub_.emitted().await;
+        let events = pub_.emitted();
         assert_eq!(events.len(), 1);
         assert!(matches!(
             &events[0],
@@ -901,7 +900,7 @@ mod tests {
         let story = repo.get_by_id(out.id).await.unwrap().unwrap();
         assert_eq!(story.status, StoryStatus::InProgress);
 
-        let events = pub_.emitted().await;
+        let events = pub_.emitted();
         assert_eq!(events.len(), 2);
         assert!(
             matches!(&events[1], DomainEvent::StoryStatusChanged { from, to, .. }
@@ -973,7 +972,7 @@ mod tests {
 
         assert_eq!(out.id, 1);
 
-        let events = pub_.emitted().await;
+        let events = pub_.emitted();
         assert_eq!(events.len(), 1);
         assert!(matches!(
             &events[0],
@@ -1017,7 +1016,7 @@ mod tests {
         let stored = repo.get_by_id(1).await.unwrap().unwrap();
         assert_eq!(stored.title, "API hardening");
 
-        let events = pub_.emitted().await;
+        let events = pub_.emitted();
         assert_eq!(events.len(), 1);
         assert!(matches!(
             &events[0],
