@@ -44,10 +44,10 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p ../.coverage
-          uv run coverage run -m pytest -q || true
-          uv run coverage combine || true
-          uv run coverage report --fail-under=85
-          uv run --locked --no-sync --no-build coverage xml -o ../.coverage/coverage.xml
+          uv run --with coverage coverage run -m pytest -q || true
+          uv run --with coverage coverage combine || true
+          uv run --with coverage coverage report --fail-under=85
+          uv run --with coverage --locked --no-sync --no-build coverage xml -o ../.coverage/coverage.xml
         working-directory: python
 
       - name: Upload coverage artifact
