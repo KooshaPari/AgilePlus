@@ -71,7 +71,7 @@ fn test_adapter_new_valid_repo() {
 }
 
 #[tokio::test]
-async fn test_adapter_invalid_dir_fails_on_repository_operation() {
+async fn test_read_artifact_missing_dir_returns_error() {
     let dir = tempfile::tempdir().unwrap();
     let adapter = GitVcsAdapter::new(dir.path().to_path_buf());
     let result = adapter.read_artifact("feature", "spec.md").await;
@@ -179,6 +179,33 @@ async fn test_scan_feature_artifacts() {
     assert_eq!(artifacts.spec.as_deref(), Some("# Spec\n"));
     assert_eq!(artifacts.research.as_deref(), Some("# Research\n"));
     assert_eq!(artifacts.plan.as_deref(), Some("# Plan\n"));
+    drop(dir);
+}
+
+#[tokio::test]
+async fn test_scan_feature_artifacts_omits_missing_artifacts() {
+    let (dir, adapter) = setup_test_repo();
+
+    adapter
+        .write_artifact("partial", "spec.md", "# Spec\n")
+        .await
+        .unwrap();
+
+    let artifacts = adapter.scan_feature_artifacts("partial").await.unwrap();
+    assert_eq!(artifacts.spec.as_deref(), Some("# Spec\n"));
+    assert!(artifacts.research.is_none());
+    assert!(artifacts.plan.is_none());
+    drop(dir);
+}
+
+#[tokio::test]
+async fn test_list_branches_reports_initial_commit() {
+    let (dir, adapter) = setup_test_repo();
+
+    let branches = adapter.list_branches(None, false).await.unwrap();
+    assert!(!branches.is_empty(), "initial branch should be listed");
+    assert!(branches.iter().all(|branch| !branch.is_remote));
+    assert!(branches.iter().all(|branch| !branch.commit.is_empty()));
     drop(dir);
 }
 
