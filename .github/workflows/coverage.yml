@@ -34,7 +34,7 @@ jobs:
           cache-dependency-path: python/uv.lock
 
       - name: Set up Python
-        run: uv python install 3.14
+        run: uv python install 3.12
 
       - name: Sync deps
         run: uv sync --all-extras --dev
@@ -65,6 +65,8 @@ jobs:
   coverage-rust:
     name: rust-coverage (cargo-llvm-cov)
     runs-on: ubuntu-24.04
+    env:
+      RUSTFLAGS: "-D warnings -A unexpected_cfgs"
     steps:
       - uses: actions/checkout@v4
 
