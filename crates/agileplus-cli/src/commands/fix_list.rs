@@ -27,7 +27,7 @@ use anyhow::{bail, Context, Result};
 use clap::Args;
 use comfy_table::{Cell, Row, Table};
 
-use agileplus_governance::scoring_engine::{evaluate, ClusterScore, ScoreReport};
+use agileplus_governance::scoring_engine::{evaluate, ScoreReport};
 
 use crate::commands::rubric::resolve_default_catalog_for_siblings;
 
