@@ -254,9 +254,10 @@ impl GitVcsAdapter {
                 message: Some(if stdout.is_empty() { stderr } else { stdout }),
             })
         } else {
+            let conflicts = parse_merge_conflicts(&format!("{stdout}\n{stderr}"));
             Ok(MergeResult {
                 success: false,
-                conflicts: vec![],
+                conflicts,
                 merged_commit: None,
                 commit: None,
                 message: Some(if stderr.is_empty() { stdout } else { stderr }),
@@ -517,67 +518,12 @@ impl VcsPort for GitVcsAdapter {
     ) -> Result<Vec<ConflictInfo>, DomainError> {
         // `git merge-tree <target> <source>` is the read-only,
         // in-memory 3-way merge that does not touch the index or
-        // working tree. In git 2.38+ it produces structured output
-        // (one line per conflicted file); in older versions it
-        // produces a unified diff. We handle both shapes: if any
-        // line starts with `changed in both` (the 2.38+ format), we
-        // parse the filename; otherwise we fall back to the diff
-        // format and look for `<<<<<<<` / `=======` markers.
+        // working tree. Its human-readable output varies by Git
+        // version: older releases emit a unified diff, while macOS
+        // Git emits unmerged stage rows plus `CONFLICT (...)` lines.
+        // Keep interpretation in one parser shared with merge failures.
         let raw = self.run_git_allow_failure(&["merge-tree", target, source])?;
-        if raw.is_empty() {
-            return Ok(vec![]);
-        }
-        let mut out = Vec::new();
-        for line in raw.lines() {
-            if let Some(rest) = line.strip_prefix("changed in both") {
-                // Format: "changed in both\n  base   100644 <oid> <path>\n  ours   100644 <oid>\n  theirs 100644 <oid>\n"
-                // The path appears on the next non-empty line.
-                let path = rest
-                    .split_whitespace()
-                    .next()
-                    .unwrap_or("<unknown>")
-                    .to_string();
-                if !path.is_empty() {
-                    out.push(ConflictInfo {
-                        path: path.clone(),
-                        file_path: path,
-                        conflict_type: "content".to_string(),
-                        ours: None,
-                        theirs: None,
-                    });
-                }
-            }
-        }
-        // Fallback: extract any path that has a conflict marker in
-        // the diff body.
-        if out.is_empty() {
-            let mut current_path: Option<String> = None;
-            for line in raw.lines() {
-                if line.starts_with("diff --git ") {
-                    // `diff --git a/<path> b/<path>`
-                    let parts: Vec<&str> = line.split_whitespace().collect();
-                    if let Some(b) = parts.get(3) {
-                        current_path = Some(b.trim_start_matches("b/").to_string());
-                    }
-                } else if line.starts_with("<<<<<<<")
-                    || line.starts_with("=======")
-                    || line.starts_with(">>>>>>>")
-                {
-                    if let Some(p) = current_path.clone() {
-                        out.push(ConflictInfo {
-                            path: p.clone(),
-                            file_path: p,
-                            conflict_type: "content".to_string(),
-                            ours: None,
-                            theirs: None,
-                        });
-                        // Avoid duplicate entries for the same file.
-                        current_path = None;
-                    }
-                }
-            }
-        }
-        Ok(out)
+        Ok(parse_merge_conflicts(&raw))
     }
 
     async fn read_artifact(
@@ -692,6 +638,116 @@ impl GitVcsAdapter {
     }
 }
 
+/// Parse the conflict-bearing forms emitted by `git merge-tree` and `git merge`.
+///
+/// Git does not promise one stable human-readable conflict format. In
+/// particular, current macOS Git prints index stage rows and `CONFLICT (...)`
+/// diagnostics, while older versions can emit `changed in both` blocks or a
+/// unified diff with conflict markers. All formats are normalized into the
+/// domain's per-file conflict record.
+fn parse_merge_conflicts(raw: &str) -> Vec<ConflictInfo> {
+    let mut conflicts = Vec::new();
+    let mut legacy_conflict = false;
+    let mut diff_path: Option<String> = None;
+
+    for line in raw.lines() {
+        if line == "changed in both" {
+            legacy_conflict = true;
+            continue;
+        }
+
+        if legacy_conflict {
+            if let Some(path) = parse_legacy_merge_tree_path(line) {
+                add_conflict(&mut conflicts, path, "content");
+                legacy_conflict = false;
+            } else if !line.trim().is_empty() && !line.starts_with(' ') {
+                legacy_conflict = false;
+            }
+        }
+
+        if let Some(path) = parse_merge_tree_stage_path(line) {
+            add_conflict(&mut conflicts, path, "content");
+        }
+
+        if let Some((path, conflict_type)) = parse_conflict_diagnostic(line) {
+            add_conflict(&mut conflicts, path, conflict_type);
+        }
+
+        if let Some(path) = parse_diff_path(line) {
+            diff_path = Some(path);
+        } else if (line.starts_with("<<<<<<<")
+            || line.starts_with("=======")
+            || line.starts_with(">>>>>>>"))
+            && let Some(path) = diff_path.take()
+        {
+            add_conflict(&mut conflicts, &path, "content");
+        }
+    }
+
+    conflicts
+}
+
+fn add_conflict(conflicts: &mut Vec<ConflictInfo>, path: &str, conflict_type: &str) {
+    if path.is_empty() {
+        return;
+    }
+    if let Some(existing) = conflicts.iter_mut().find(|conflict| conflict.path == path) {
+        existing.conflict_type = conflict_type.to_string();
+        return;
+    }
+    conflicts.push(ConflictInfo {
+        path: path.to_string(),
+        file_path: path.to_string(),
+        conflict_type: conflict_type.to_string(),
+        ours: None,
+        theirs: None,
+    });
+}
+
+/// Split a Git metadata row into its first whitespace-delimited field and
+/// the untouched remainder, retaining paths containing spaces.
+fn split_git_field(value: &str) -> Option<(&str, &str)> {
+    let value = value.trim_start();
+    let end = value.find(char::is_whitespace)?;
+    Some((&value[..end], value[end..].trim_start()))
+}
+
+/// Extract a path from `100644 <oid> <stage>\t<path>` merge-tree rows.
+fn parse_merge_tree_stage_path(line: &str) -> Option<&str> {
+    let (mode, rest) = split_git_field(line)?;
+    if mode.len() != 6 || !mode.bytes().all(|byte| byte.is_ascii_digit()) {
+        return None;
+    }
+    let (_, rest) = split_git_field(rest)?;
+    let (stage, path) = split_git_field(rest)?;
+    matches!(stage, "1" | "2" | "3").then_some(path.trim())
+}
+
+/// Extract the path from the `base` row following an older `changed in both`
+/// merge-tree heading.
+fn parse_legacy_merge_tree_path(line: &str) -> Option<&str> {
+    let rest = line.trim_start().strip_prefix("base")?;
+    let (_, rest) = split_git_field(rest)?;
+    let (_, path) = split_git_field(rest)?;
+    Some(path.trim())
+}
+
+/// Extract `CONFLICT (kind): ... in <path>` diagnostics, preserving the
+/// conflict kind supplied by Git where possible.
+fn parse_conflict_diagnostic(line: &str) -> Option<(&str, &str)> {
+    let rest = line.strip_prefix("CONFLICT (")?;
+    let (conflict_type, message) = rest.split_once("):")?;
+    let (_, path) = message.trim().rsplit_once(" in ")?;
+    Some((path.trim(), conflict_type.trim()))
+}
+
+/// Extract the right-side path from a conventional `diff --git` header.
+fn parse_diff_path(line: &str) -> Option<String> {
+    let rest = line.strip_prefix("diff --git a/")?;
+    let (_, path) = rest.rsplit_once(" b/")?;
+    Some(path.to_string())
+}
+
 /// Tiny glob matcher that supports `*` and a literal suffix. Used for
 /// the `list_branches` `pattern` argument. `*` matches any number of
 /// characters (including none). Anchored at both ends.
@@ -780,6 +836,24 @@ mod tests {
         assert!(!glob_match("feat/*/wp-1", "feat/login/wp-2"));
         assert!(glob_match("literal", "literal"));
         assert!(!glob_match("literal", "other"));
+    }
+
+    #[test]
+    fn parses_stage_rows_and_conflict_diagnostic_from_merge_tree() {
+        // macOS Git emits stage rows followed by a human diagnostic instead
+        // of the older `changed in both` or unified-diff forms.
+        let raw = "100644 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa 1\tshared file.txt\n\
+100644 bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb 2\tshared file.txt\n\
+100644 cccccccccccccccccccccccccccccccccccccccc 3\tshared file.txt\n\
+\n\
+CONFLICT (content): Merge conflict in shared file.txt\n";
+
+        let conflicts = parse_merge_conflicts(raw);
+
+        assert_eq!(conflicts.len(), 1);
+        assert_eq!(conflicts[0].path, "shared file.txt");
+        assert_eq!(conflicts[0].file_path, "shared file.txt");
+        assert_eq!(conflicts[0].conflict_type, "content");
     }
 
     #[tokio::test]
@@ -943,6 +1017,11 @@ mod tests {
             .await
             .expect("merge attempted");
         assert!(!res.success, "merge should have conflicted");
+        assert!(
+            res.conflicts.iter().any(|c| c.file_path == "README.md"),
+            "failed merge should report the conflicted path: {:?}",
+            res.conflicts
+        );
         // abort so the test repo is in a clean state for other tests
         let _ = adapter.run_git_status(&["merge", "--abort"]);
         let conflicts = adapter
