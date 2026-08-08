@@ -1,9 +1,9 @@
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 
 use anyhow::{Context, Result};
 
 use agileplus_domain::domain::governance::{
-    BuiltinPolicy, Evidence, EvidenceType, GovernanceContract, PolicyCheck,
+    Evidence, EvidenceType, GovernanceContract, PolicyCheck,
 };
 use agileplus_domain::ports::StoragePort;
 
@@ -102,7 +102,7 @@ pub(crate) fn evaluate_threshold(evidence: &[&Evidence], threshold: &serde_json:
     true
 }
 
-/// Evaluate active policy rules and built-in contract policy refs against stored evidence.
+/// Evaluate active policy rules referenced by persisted contract policy IDs.
 pub(crate) async fn evaluate_policies<S: StoragePort>(
     storage: &S,
     contract: &GovernanceContract,
@@ -113,10 +113,10 @@ pub(crate) async fn evaluate_policies<S: StoragePort>(
         .await
         .context("loading active policies")?;
 
-    let referenced: BTreeSet<String> = contract
+    let referenced: BTreeSet<i64> = contract
         .rules
         .iter()
-        .flat_map(|r| r.policy_refs.iter().map(std::string::ToString::to_string))
+        .flat_map(|rule| rule.policy_refs.iter().copied())
         .collect();
 
     if referenced.is_empty() {
@@ -124,18 +124,22 @@ pub(crate) async fn evaluate_policies<S: StoragePort>(
     }
 
     let feature_evidence = load_feature_evidence(storage, feature_id).await?;
-    let mut results = Vec::new();
-    let mut handled_refs = BTreeSet::new();
+    let active_by_id: BTreeMap<i64, _> = active_policies
+        .iter()
+        .map(|policy| (policy.id, policy))
+        .collect();
+    let mut results = Vec::with_capacity(referenced.len());
 
-    for policy in &active_policies {
-        let matched_refs: Vec<&String> = referenced
-            .iter()
-            .filter(|policy_ref| policy.matches_reference(policy_ref))
-            .collect();
-
-        if matched_refs.is_empty() {
+    for policy_id in referenced {
+        let Some(policy) = active_by_id.get(&policy_id) else {
+            results.push(PolicyEvalResult {
+                policy_id,
+                domain: "unknown".to_string(),
+                passed: false,
+                message: format!("Referenced policy ID {policy_id} is missing or inactive"),
+            });
             continue;
-        }
+        };
 
         let (passed, message) = match &policy.rule.check {
             PolicyCheck::EvidencePresent { evidence_type } => {
@@ -158,38 +162,12 @@ pub(crate) async fn evaluate_policies<S: StoragePort>(
             ),
         };
 
-        for policy_ref in matched_refs {
-            handled_refs.insert(policy_ref.clone());
-        }
-
         results.push(PolicyEvalResult {
             policy_id: policy.id,
             domain: policy.domain.as_str().to_string(),
             passed,
             message,
         });
-    }
-
-    for policy_ref in referenced.difference(&handled_refs) {
-        if let Some(builtin) = BuiltinPolicy::from_ref(policy_ref) {
-            let (passed, message) =
-                evaluate_evidence_policy(contract, &feature_evidence, builtin.evidence_type);
-            results.push(PolicyEvalResult {
-                policy_id: 0,
-                domain: builtin.domain.as_str().to_string(),
-                passed,
-                message: format!("{}: {message}", builtin.label),
-            });
-        } else {
-            results.push(PolicyEvalResult {
-                policy_id: 0,
-                domain: "custom".to_string(),
-                passed: false,
-                message: format!(
-                    "Policy ref '{policy_ref}' has no active policy rule or built-in evaluator"
-                ),
-            });
-        }
     }
 
     Ok(results)
@@ -208,10 +186,7 @@ fn evaluate_evidence_policy(
             .iter()
             .any(|e| e.evidence_type == evidence_type);
         return if any {
-            (
-                true,
-                format!("{} evidence present", evidence_type.as_str()),
-            )
+            (true, format!("{} evidence present", evidence_type.as_str()))
         } else {
             (
                 false,

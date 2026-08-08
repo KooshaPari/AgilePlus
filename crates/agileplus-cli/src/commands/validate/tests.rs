@@ -1,8 +1,8 @@
 use super::*;
 use agileplus_domain::domain::feature::Feature;
 use agileplus_domain::domain::governance::{
-    Evidence, EvidenceType, GovernanceContract, GovernanceRule, PolicyCheck,
-    PolicyDefinition, PolicyDomain, PolicyRule,
+    Evidence, EvidenceType, GovernanceContract, GovernanceRule, PolicyCheck, PolicyDefinition,
+    PolicyDomain, PolicyRule,
 };
 use agileplus_domain::domain::work_package::WorkPackage;
 use agileplus_domain::ports::StoragePort;
@@ -154,12 +154,7 @@ async fn stored_ci_policy_fails_without_matching_evidence() {
     let db = SqliteStorageAdapter::in_memory().unwrap();
     let feature_id = create_feature_with_wp(&db).await.0;
     let policy_id = create_ci_evidence_policy(&db).await;
-    let contract = contract_with_policy(
-        feature_id,
-        EvidenceType::CiOutput,
-        "FR-CI",
-        policy_id,
-    );
+    let contract = contract_with_policy(feature_id, EvidenceType::CiOutput, "FR-CI", policy_id);
 
     let results = super::evidence::evaluate_policies(&db, &contract, feature_id)
         .await
@@ -175,12 +170,7 @@ async fn stored_ci_policy_ignores_wrong_evidence_type() {
     let db = SqliteStorageAdapter::in_memory().unwrap();
     let (feature_id, wp_id) = create_feature_with_wp(&db).await;
     let policy_id = create_ci_evidence_policy(&db).await;
-    let contract = contract_with_policy(
-        feature_id,
-        EvidenceType::CiOutput,
-        "FR-CI",
-        policy_id,
-    );
+    let contract = contract_with_policy(feature_id, EvidenceType::CiOutput, "FR-CI", policy_id);
     create_evidence(&db, wp_id, "FR-CI", EvidenceType::ReviewApproval).await;
 
     let results = super::evidence::evaluate_policies(&db, &contract, feature_id)
@@ -197,12 +187,7 @@ async fn stored_ci_policy_passes_with_matching_evidence() {
     let db = SqliteStorageAdapter::in_memory().unwrap();
     let (feature_id, wp_id) = create_feature_with_wp(&db).await;
     let policy_id = create_ci_evidence_policy(&db).await;
-    let contract = contract_with_policy(
-        feature_id,
-        EvidenceType::CiOutput,
-        "FR-CI",
-        policy_id,
-    );
+    let contract = contract_with_policy(feature_id, EvidenceType::CiOutput, "FR-CI", policy_id);
     create_evidence(&db, wp_id, "FR-CI", EvidenceType::CiOutput).await;
 
     let results = super::evidence::evaluate_policies(&db, &contract, feature_id)
@@ -226,12 +211,7 @@ async fn active_policy_matches_generated_ci_ref() {
         },
     )
     .await;
-    let contract = contract_with_policy(
-        feature_id,
-        EvidenceType::CiOutput,
-        "FR-CI",
-        policy_id,
-    );
+    let contract = contract_with_policy(feature_id, EvidenceType::CiOutput, "FR-CI", policy_id);
     create_evidence(&db, wp_id, "FR-CI", EvidenceType::CiOutput).await;
 
     let results = super::evidence::evaluate_policies(&db, &contract, feature_id)
@@ -241,6 +221,60 @@ async fn active_policy_matches_generated_ci_ref() {
     assert_eq!(results.len(), 1);
     assert_eq!(results[0].policy_id, policy_id);
     assert!(results[0].passed);
+}
+
+#[tokio::test]
+async fn missing_referenced_policy_fails_with_its_persisted_id() {
+    let db = SqliteStorageAdapter::in_memory().unwrap();
+    let feature_id = create_feature_with_wp(&db).await.0;
+    let missing_policy_id = 999;
+    let contract = contract_with_policy(
+        feature_id,
+        EvidenceType::CiOutput,
+        "FR-CI",
+        missing_policy_id,
+    );
+
+    let results = super::evidence::evaluate_policies(&db, &contract, feature_id)
+        .await
+        .unwrap();
+
+    assert_eq!(results.len(), 1);
+    assert_eq!(results[0].policy_id, missing_policy_id);
+    assert!(!results[0].passed);
+    assert_eq!(results[0].domain, "unknown");
+    assert!(results[0].message.contains("missing or inactive"));
+}
+
+#[tokio::test]
+async fn inactive_referenced_policy_fails_with_its_persisted_id() {
+    let db = SqliteStorageAdapter::in_memory().unwrap();
+    let feature_id = create_feature_with_wp(&db).await.0;
+    let inactive_policy_id = create_policy_rule_with_active(
+        &db,
+        PolicyDomain::Quality,
+        PolicyCheck::EvidencePresent {
+            evidence_type: EvidenceType::CiOutput,
+        },
+        false,
+    )
+    .await;
+    let contract = contract_with_policy(
+        feature_id,
+        EvidenceType::CiOutput,
+        "FR-CI",
+        inactive_policy_id,
+    );
+
+    let results = super::evidence::evaluate_policies(&db, &contract, feature_id)
+        .await
+        .unwrap();
+
+    assert_eq!(results.len(), 1);
+    assert_eq!(results[0].policy_id, inactive_policy_id);
+    assert!(!results[0].passed);
+    assert_eq!(results[0].domain, "unknown");
+    assert!(results[0].message.contains("missing or inactive"));
 }
 
 #[tokio::test]
@@ -299,6 +333,15 @@ async fn create_policy_rule(
     domain: PolicyDomain,
     check: PolicyCheck,
 ) -> i64 {
+    create_policy_rule_with_active(db, domain, check, true).await
+}
+
+async fn create_policy_rule_with_active(
+    db: &SqliteStorageAdapter,
+    domain: PolicyDomain,
+    check: PolicyCheck,
+    active: bool,
+) -> i64 {
     let now = Utc::now();
     let rule = PolicyRule {
         id: 0,
@@ -307,7 +350,7 @@ async fn create_policy_rule(
             description: "test policy".to_string(),
             check,
         },
-        active: true,
+        active,
         created_at: now,
         updated_at: now,
     };
