@@ -40,7 +40,7 @@ jobs:
         run: uv python install 3.14
 
       - name: Sync deps
-        run: uv sync --locked --no-build --all-extras --dev
+        run: uv sync --locked --all-extras --dev
         working-directory: python
 
       - name: Coverage report (pytest-cov)
