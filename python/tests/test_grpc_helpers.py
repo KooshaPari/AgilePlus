@@ -3,10 +3,14 @@
 from __future__ import annotations
 
 from types import SimpleNamespace
+from unittest.mock import AsyncMock, MagicMock
+
+import pytest
 
 from agileplus_mcp.grpc_backlog import AgilePlusBacklogGrpcMixin
 from agileplus_mcp.grpc_errors import GrpcCallError, GrpcConnectionError
 from agileplus_mcp.grpc_serialization import AgilePlusGrpcSerializationMixin
+from agileplus_mcp.grpc_streaming import AgilePlusGrpcStreamingMixin
 
 
 def test_grpc_errors_preserve_code_and_message() -> None:
@@ -90,3 +94,119 @@ def test_backlog_item_conversion_returns_plain_dict() -> None:
         "created_at": "created",
         "updated_at": "updated",
     }
+
+
+@pytest.mark.asyncio
+async def test_streaming_helper_maps_terminal_event() -> None:
+    class Client(AgilePlusGrpcStreamingMixin):
+        def _require_stub(self) -> MagicMock:
+            return self.stub
+
+    client = Client()
+    client.stub = MagicMock()
+
+    async def events(_request):
+        yield SimpleNamespace(
+            event_type="updated",
+            feature_slug="feature-one",
+            wp_sequence=2,
+            agent_id="agent-1",
+            payload="{}",
+            timestamp="now",
+        )
+
+    client.stub.StreamAgentEvents = events
+    actual = [item async for item in client.stream_agent_events("feature-one")]
+
+    assert actual[0]["event_type"] == "updated"
+    assert actual[0]["wp_sequence"] == 2
+
+
+@pytest.mark.asyncio
+async def test_streaming_helper_retries_unavailable(monkeypatch) -> None:
+    import grpc
+
+    import agileplus_mcp.grpc_streaming as streaming
+
+    class Client(AgilePlusGrpcStreamingMixin):
+        def _require_stub(self) -> MagicMock:
+            return self.stub
+
+    client = Client()
+    client.stub = MagicMock()
+    client.connect = AsyncMock()
+    attempts = 0
+
+    async def events(_request):
+        nonlocal attempts
+        attempts += 1
+        if attempts == 1:
+            raise grpc.aio.AioRpcError(
+                grpc.StatusCode.UNAVAILABLE,
+                initial_metadata=grpc.aio.Metadata(),
+                trailing_metadata=grpc.aio.Metadata(),
+                details="retry",
+            )
+        yield SimpleNamespace(
+            event_type="updated",
+            feature_slug="feature-one",
+            wp_sequence=1,
+            agent_id="agent-1",
+            payload="{}",
+            timestamp="now",
+        )
+
+    client.stub.StreamAgentEvents = events
+    monkeypatch.setattr(streaming.asyncio, "sleep", AsyncMock())
+    actual = [item async for item in client.stream_agent_events("feature-one")]
+
+    assert attempts == 2
+    client.connect.assert_awaited_once()
+    assert actual[0]["feature_slug"] == "feature-one"
+
+
+@pytest.mark.asyncio
+async def test_streaming_helper_maps_terminal_rpc_error() -> None:
+    import grpc
+
+    class Client(AgilePlusGrpcStreamingMixin):
+        def _require_stub(self) -> MagicMock:
+            return self.stub
+
+    client = Client()
+
+    async def events(_request):
+        raise grpc.aio.AioRpcError(
+            grpc.StatusCode.INVALID_ARGUMENT,
+            initial_metadata=grpc.aio.Metadata(),
+            trailing_metadata=grpc.aio.Metadata(),
+            details="bad request",
+        )
+        yield  # pragma: no cover
+
+    client.stub = MagicMock()
+    client.stub.StreamAgentEvents = events
+
+    with pytest.raises(GrpcCallError, match="bad request"):
+        _ = [item async for item in client.stream_agent_events("feature-one")]
+
+
+@pytest.mark.asyncio
+async def test_server_startup_registers_client_and_shutdown_closes(monkeypatch) -> None:
+    import agileplus_mcp.server as server
+
+    client = MagicMock()
+    client.connect = AsyncMock()
+    client.close = AsyncMock()
+
+    monkeypatch.setattr(server, "AgilePlusCoreClient", MagicMock(return_value=client))
+    monkeypatch.setattr(server.features_module, "register_tools", MagicMock())
+    monkeypatch.setattr(server.governance_module, "register_tools", MagicMock())
+    monkeypatch.setattr(server.status_module, "register_tools", MagicMock())
+
+    await server.startup("localhost:50051")
+    await server.shutdown()
+
+    client.connect.assert_awaited_once()
+    client.close.assert_awaited_once()
+    assert server._client is None
