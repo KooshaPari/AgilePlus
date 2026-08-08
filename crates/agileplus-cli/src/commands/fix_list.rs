@@ -300,7 +300,7 @@ fn score_glyph(score: u32) -> &'static str {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use agileplus_governance::scoring_engine::{PillarScore, ScoreReport};
+    use agileplus_governance::scoring_engine::{ClusterScore, PillarScore, ScoreReport};
 
     fn sample_report() -> ScoreReport {
         ScoreReport {

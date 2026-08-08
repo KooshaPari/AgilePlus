@@ -1,7 +1,7 @@
 use super::*;
 use agileplus_domain::domain::feature::Feature;
 use agileplus_domain::domain::governance::{
-    Evidence, EvidenceRequirement, EvidenceType, GovernanceContract, GovernanceRule, PolicyCheck,
+    Evidence, EvidenceType, GovernanceContract, GovernanceRule, PolicyCheck,
     PolicyDefinition, PolicyDomain, PolicyRule,
 };
 use agileplus_domain::domain::work_package::WorkPackage;
@@ -17,11 +17,7 @@ fn make_contract(feature_id: i64) -> GovernanceContract {
         version: 1,
         rules: vec![GovernanceRule {
             transition: "Implementing -> Validated".to_string(),
-            required_evidence: vec![EvidenceRequirement {
-                fr_id: "FR-001".to_string(),
-                evidence_type: EvidenceType::CiOutput,
-                threshold: None,
-            }],
+            required_evidence: vec!["FR-001:ci_output".to_string()],
             policy_refs: vec![],
         }],
         bound_at: Utc::now(),
@@ -327,12 +323,8 @@ fn contract_with_policy(
         version: 1,
         rules: vec![GovernanceRule {
             transition: "Implementing -> Validated".to_string(),
-            required_evidence: vec![EvidenceRequirement {
-                fr_id: fr_id.to_string(),
-                evidence_type,
-                threshold: None,
-            }],
-            policy_refs: vec![policy_ref.to_string()],
+            required_evidence: vec![format!("{fr_id}:{}", evidence_type.as_str())],
+            policy_refs: vec![policy_ref.parse().expect("numeric policy reference")],
         }],
         bound_at: Utc::now(),
     }
