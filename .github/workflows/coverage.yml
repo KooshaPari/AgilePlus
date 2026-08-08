@@ -31,21 +31,24 @@ jobs:
         with:
           version: "0.5.x"
           enable-cache: true
+          cache-dependency-path: python/uv.lock
 
       - name: Set up Python
-        run: uv python install 3.12
+        run: uv python install 3.14
 
       - name: Sync deps
         run: uv sync --all-extras --dev
+        working-directory: python
 
       - name: Coverage report (pytest-cov)
         run: |
           set -euo pipefail
-          mkdir -p .coverage
-          uv run coverage run -m pytest -q backend/ tests/ || true
+          mkdir -p ../.coverage
+          uv run coverage run -m pytest -q || true
           uv run coverage combine || true
           uv run coverage report --fail-under=85
-          uv run --locked --no-sync --no-build coverage xml -o .coverage/coverage.xml
+          uv run --locked --no-sync --no-build coverage xml -o ../.coverage/coverage.xml
+        working-directory: python
 
       - name: Upload coverage artifact
         uses: actions/upload-artifact@v4
