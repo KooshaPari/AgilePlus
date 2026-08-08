@@ -16,20 +16,21 @@ concurrency:
 
 env:
   CARGO_TERM_COLOR: always
-  RUSTFLAGS: "-D warnings"
   RUST_BACKTRACE: 1
 
 jobs:
   coverage-python:
     name: python-coverage (uv)
     runs-on: ubuntu-24.04
+    env:
+      UV_PYTHON: "3.14"
     steps:
       - uses: actions/checkout@v4
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5
         with:
-          version: "latest"
+          version: "0.12.3"
           enable-cache: true
           cache-dependency-glob: python/uv.lock
 
@@ -44,10 +45,16 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p ../.coverage
-          uv run --locked --no-sync --no-build coverage run -m pytest -q || true
-          uv run --locked --no-sync --no-build coverage combine || true
+          set +e
+          uv run --locked --no-sync --no-build coverage run -m pytest -q
+          test_status=$?
+          set -e
+          if compgen -G ".coverage.*" > /dev/null; then
+            uv run --locked --no-sync --no-build coverage combine
+          fi
           uv run --locked --no-sync --no-build coverage report --fail-under=85
           uv run --locked --no-sync --no-build coverage xml -o ../.coverage/coverage.xml
+          exit "$test_status"
         working-directory: python
 
       - name: Upload coverage artifact
@@ -65,8 +72,6 @@ jobs:
   coverage-rust:
     name: rust-coverage (cargo-llvm-cov)
     runs-on: ubuntu-24.04
-    env:
-      RUSTFLAGS: "-D warnings -A unexpected_cfgs"
     steps:
       - uses: actions/checkout@v4
 
@@ -90,6 +95,8 @@ jobs:
         run: cargo install --locked cargo-llvm-cov
 
       - name: Workspace coverage
+        env:
+          RUSTFLAGS: "-D warnings -A unexpected_cfgs"
         run: |
           set -euo pipefail
           cargo llvm-cov --workspace --all-features --lcov --output-path .coverage/rust-lcov.info
