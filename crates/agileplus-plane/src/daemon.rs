@@ -268,6 +268,7 @@ async fn run_tick<S: StoragePort>(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use agileplus_sqlite::SqliteStorageAdapter;
 
     #[test]
     fn config_default_is_reasonable() {
@@ -277,4 +278,35 @@ mod tests {
         assert!(cfg.interval >= Duration::from_secs(60));
     }
 
+    #[tokio::test]
+    async fn dry_run_skips_tick() {
+        let state = Arc::new(Mutex::new(SyncState::default()));
+        let cfg = PlaneDaemonConfig {
+            dry_run: true,
+            ..Default::default()
+        };
+
+        let storage = SqliteStorageAdapter::in_memory().expect("in-memory adapter");
+        let result = run_tick(&storage, &cfg, &state).await;
+        assert!(
+            result.is_ok(),
+            "dry_run tick should succeed without calling storage"
+        );
+    }
+
+    #[tokio::test]
+    async fn daemon_pause_stops_loop() {
+        let storage = Arc::new(SqliteStorageAdapter::in_memory().expect("in-memory adapter"));
+        let cfg = PlaneDaemonConfig {
+            interval: Duration::from_millis(50),
+            batch_size: 25,
+            dry_run: true,
+        };
+        let daemon = PlaneSyncDaemon::spawn(storage, cfg);
+        sleep(Duration::from_millis(75)).await;
+        daemon.pause().await;
+        daemon.stop().await;
+        let s = daemon.state().await;
+        assert!(!s.running, "daemon should be stopped");
+    }
 }
