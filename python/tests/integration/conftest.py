@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+from pathlib import Path
 
 import pytest
 
@@ -15,8 +16,10 @@ def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
         return
 
     skip_marker = pytest.mark.skip(reason=SKIP_REASON)
+    integration_root = Path(__file__).parent.resolve()
     for item in items:
-        item.add_marker(skip_marker)
+        if Path(item.path).is_relative_to(integration_root):
+            item.add_marker(skip_marker)
 
 
 @pytest.fixture
