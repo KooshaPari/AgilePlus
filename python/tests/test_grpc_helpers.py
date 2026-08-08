@@ -199,6 +199,8 @@ async def test_server_startup_registers_client_and_shutdown_closes(monkeypatch) 
     client.connect = AsyncMock()
     client.close = AsyncMock()
 
+    monkeypatch.setattr(server, "_client", None)
+    monkeypatch.setattr(server, "_sampling", None)
     monkeypatch.setattr(server, "AgilePlusCoreClient", MagicMock(return_value=client))
     monkeypatch.setattr(server.features_module, "register_tools", MagicMock())
     monkeypatch.setattr(server.governance_module, "register_tools", MagicMock())
