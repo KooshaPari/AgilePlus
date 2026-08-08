@@ -145,22 +145,9 @@ impl ProbeEvidence {
         }
         Self { matches }
     }
-
-    /// Number of matches for the given cluster id.
-    pub fn matches_for_cluster(&self, cluster: &str) -> usize {
-        self.matches
-            .iter()
-            .filter(|(_, _, _)| {
-                // We don't have the cluster id directly on the tuple;
-                // tests can use the richer `matches_with_cluster` API.
-                false
-            })
-            .count()
-    }
 }
 
-/// Like [`ProbeEvidence::matches_for_cluster`] but returns the full
-/// triple (cluster_id, rule_text, target_file, evidence_line). The
+/// Returns the full `(cluster_id, rule_text, target_file, evidence_line)` tuple. The
 /// collector tags each match with its source cluster so callers can
 /// bucket evidence cleanly.
 #[derive(Debug, Clone)]
@@ -322,11 +309,6 @@ fn rules_for(cluster: &str) -> Vec<(&'static str, &'static str, &'static [&'stat
         .copied()
         .filter(|(c, _, _)| *c == cluster)
         .collect()
-}
-
-/// Score one cluster against the scan evidence.
-fn score_cluster(pillar: &Pillar, scan: &RepoScan, _repo: &Path) -> ClusterScore {
-    score_cluster_with_probes(pillar, scan, _repo, &TaggedProbeEvidence { matches: vec![] })
 }
 
 /// Score one cluster against path-presence rules + content-probe evidence.
