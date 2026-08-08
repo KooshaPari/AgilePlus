@@ -31,7 +31,7 @@ fn setup_test_repo() -> (TempDir, GitVcsAdapter) {
         "Initial commit",
     );
 
-    let adapter = GitVcsAdapter::new(dir.path().to_path_buf()).expect("adapter");
+    let adapter = GitVcsAdapter::new(dir.path().to_path_buf());
     (dir, adapter)
 }
 
@@ -70,10 +70,11 @@ fn test_adapter_new_valid_repo() {
     drop(dir);
 }
 
-#[test]
-fn test_adapter_new_invalid_dir() {
+#[tokio::test]
+async fn test_adapter_invalid_dir_fails_on_repository_operation() {
     let dir = tempfile::tempdir().unwrap();
-    let result = GitVcsAdapter::new(dir.path().to_path_buf());
+    let adapter = GitVcsAdapter::new(dir.path().to_path_buf());
+    let result = adapter.read_artifact("feature", "spec.md").await;
     assert!(result.is_err(), "should fail on non-git dir");
 }
 
@@ -161,61 +162,23 @@ async fn test_scan_feature_artifacts() {
     let slug = "my-feature";
 
     adapter
-        .write_artifact(slug, "meta.json", r#"{"slug":"my-feature"}"#)
+        .write_artifact(slug, "spec.md", "# Spec\n")
         .await
         .unwrap();
     adapter
-        .write_artifact(slug, "audit/chain.jsonl", r#"{"event":"created"}"#)
+        .write_artifact(slug, "research.md", "# Research\n")
         .await
         .unwrap();
     adapter
-        .write_artifact(slug, "evidence/screenshot.png", "binary-ish")
+        .write_artifact(slug, "plan.md", "# Plan\n")
         .await
         .unwrap();
 
     let artifacts = adapter.scan_feature_artifacts(slug).await.unwrap();
 
-    assert!(artifacts.meta_json.is_some(), "meta.json should be present");
-    assert!(
-        artifacts.audit_chain.is_some(),
-        "chain.jsonl should be present"
-    );
-    assert!(
-        !artifacts.evidence_paths.is_empty(),
-        "evidence should be found"
-    );
-    drop(dir);
-}
-
-// ---- Scanner tests ----
-
-#[test]
-fn test_scan_all_features_finds_two_features() {
-    let (dir, adapter) = setup_test_repo();
-
-    // Create two feature dirs with meta.json.
-    for slug in &["feature-a", "feature-b"] {
-        let path = dir.path().join("kitty-specs").join(slug).join("meta.json");
-        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
-        std::fs::write(&path, r#"{"slug":"x"}"#).unwrap();
-    }
-    // Create a dir WITHOUT meta.json (should be excluded).
-    std::fs::create_dir_all(dir.path().join("kitty-specs").join("no-meta")).unwrap();
-
-    let slugs = agileplus_git::scan_all_features(&adapter).unwrap();
-    assert_eq!(slugs.len(), 2);
-    assert!(slugs.contains(&"feature-a".to_string()));
-    assert!(slugs.contains(&"feature-b".to_string()));
-    drop(dir);
-}
-
-#[test]
-fn test_scan_excludes_dirs_without_meta() {
-    let (dir, adapter) = setup_test_repo();
-
-    std::fs::create_dir_all(dir.path().join("kitty-specs").join("no-meta")).unwrap();
-    let slugs = agileplus_git::scan_all_features(&adapter).unwrap();
-    assert!(slugs.is_empty());
+    assert_eq!(artifacts.spec.as_deref(), Some("# Spec\n"));
+    assert_eq!(artifacts.research.as_deref(), Some("# Research\n"));
+    assert_eq!(artifacts.plan.as_deref(), Some("# Plan\n"));
     drop(dir);
 }
 
@@ -465,38 +428,6 @@ async fn test_cleanup_worktree_safety_check() {
         "should not allow cleanup outside .worktrees/"
     );
     drop(dir);
-}
-
-// ---- History scanning ----
-
-#[test]
-fn test_get_feature_history() {
-    let (dir, adapter) = setup_test_repo();
-    let repo = Repository::open(dir.path()).unwrap();
-
-    // Add commit touching a feature dir.
-    make_commit(
-        &repo,
-        dir.path(),
-        "kitty-specs/my-feature/spec.md",
-        "# Spec\n",
-        "Add spec for my-feature",
-    );
-    make_commit(
-        &repo,
-        dir.path(),
-        "other-file.txt",
-        "unrelated\n",
-        "Unrelated commit",
-    );
-    drop(repo);
-
-    let history = agileplus_git::get_feature_history(&adapter, "my-feature").unwrap();
-    assert!(!history.is_empty(), "should find commits for my-feature");
-    assert!(
-        history.iter().any(|c| c.message.contains("my-feature")),
-        "feature commit should appear in history"
-    );
 }
 
 // ---- Helpers ----
