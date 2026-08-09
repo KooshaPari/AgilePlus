@@ -856,6 +856,42 @@ CONFLICT (content): Merge conflict in shared file.txt\n";
         assert_eq!(conflicts[0].conflict_type, "content");
     }
 
+    #[test]
+    fn parses_legacy_changed_in_both_merge_tree_output() {
+        let raw = "changed in both\n\
+  base   100644 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa docs/shared file.txt\n\
+  our    100644 bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb docs/shared file.txt\n\
+  their  100644 cccccccccccccccccccccccccccccccccccccccc docs/shared file.txt\n";
+
+        let conflicts = parse_merge_conflicts(raw);
+
+        assert_eq!(conflicts.len(), 1);
+        assert_eq!(conflicts[0].path, "docs/shared file.txt");
+        assert_eq!(conflicts[0].file_path, "docs/shared file.txt");
+        assert_eq!(conflicts[0].conflict_type, "content");
+    }
+
+    #[test]
+    fn parses_conflict_markers_in_unified_diff_output() {
+        let raw = "diff --git a/docs/shared file.txt b/docs/shared file.txt\n\
+index aaaaaaa..bbbbbbb 100644\n\
+--- a/docs/shared file.txt\n\
++++ b/docs/shared file.txt\n\
+@@ -1 +1,5 @@\n\
+\u{003c}\u{003c}\u{003c}\u{003c}\u{003c}\u{003c}\u{003c} ours\n\
+from target\n\
+=======\n\
+from source\n\
+\u{003e}\u{003e}\u{003e}\u{003e}\u{003e}\u{003e}\u{003e} theirs\n";
+
+        let conflicts = parse_merge_conflicts(raw);
+
+        assert_eq!(conflicts.len(), 1);
+        assert_eq!(conflicts[0].path, "docs/shared file.txt");
+        assert_eq!(conflicts[0].file_path, "docs/shared file.txt");
+        assert_eq!(conflicts[0].conflict_type, "content");
+    }
+
     #[tokio::test]
     async fn create_and_list_worktree() {
         let (_dir, path) = make_repo();
