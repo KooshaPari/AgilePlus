@@ -75,3 +75,30 @@ async fn event_bus_delivers_each_public_event_variant() {
         assert_eq!(subscriber.recv().await.expect("receive event"), event);
     }
 }
+
+#[tokio::test]
+async fn event_bus_fans_out_to_each_subscriber() {
+    let bus = EventBus::new(4);
+    let mut first = bus.subscribe();
+    let mut second = bus.subscribe();
+    let event = DomainEvent::FeatureCreated { id: 42 };
+
+    assert_eq!(bus.publish(event.clone()).expect("publish event"), 2);
+    assert_eq!(first.recv().await.expect("first subscriber event"), event);
+    assert_eq!(second.recv().await.expect("second subscriber event"), event);
+}
+
+#[tokio::test]
+async fn event_bus_async_publish_preserves_payload() {
+    let bus = EventBus::new(1);
+    let mut subscriber = bus.subscribe();
+    let event = DomainEvent::PlaneWebhookReceived {
+        issue_id: "issue-42".into(),
+        action: "created".into(),
+    };
+
+    bus.publish_async(event.clone())
+        .await
+        .expect("publish event");
+    assert_eq!(subscriber.recv().await.expect("subscriber event"), event);
+}
