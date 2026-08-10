@@ -78,3 +78,14 @@ branch = true
 
 [tool.coverage.report]
 fail_under = 80
+
+[tool.mypy]
+mypy_path = "tests/stubs"
+files = ["src", "tests"]
+ignore_missing_imports = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+strict_optional = true
+no_implicit_optional = true
+check_untyped_defs = true
+exclude = ["src/agileplus_proto/"]
