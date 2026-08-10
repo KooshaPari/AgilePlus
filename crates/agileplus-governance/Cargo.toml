@@ -62,11 +62,7 @@ tokio-test = "0.4"
 
 [features]
 default = []
-cli = ["clap", "whoami"]
-
-[dependencies.whoami]
-optional = true
-version = "2"
+cli = ["clap"]
 
 [dependencies.clap]
 optional = true

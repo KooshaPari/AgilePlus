@@ -13,7 +13,7 @@ use tokio::sync::RwLock;
 use tracing::{error, info, warn};
 
 use crate::audit::{AuditEvent, AuditFilter, AuditLogger};
-use crate::channel::{PromotionRequest, PromotionResult};
+use crate::channel::{PromotionRequest, PromotionResult, VerifiedPrincipal};
 use crate::config::GovernanceConfig;
 use crate::error::{GovernanceError, Result};
 #[allow(unused_imports)] // PolicyContext is used in tests
@@ -172,7 +172,11 @@ impl GovernanceClient {
     }
 
     /// Check if a release channel promotion is allowed
-    pub async fn check_promotion(&self, request: PromotionRequest) -> Result<PromotionResult> {
+    pub async fn check_promotion(
+        &self,
+        principal: &VerifiedPrincipal,
+        request: PromotionRequest,
+    ) -> Result<PromotionResult> {
         // Validate channel transition
         if !request.is_valid_transition() {
             return Ok(PromotionResult::denied(
@@ -185,7 +189,11 @@ impl GovernanceClient {
         }
 
         // Run policy checks
-        let policy_result = self.policy_engine.read().await.check_promotion(&request);
+        let policy_result = self
+            .policy_engine
+            .read()
+            .await
+            .check_promotion(principal, &request);
 
         // Log the promotion check
         self.log_audit(
@@ -198,7 +206,7 @@ impl GovernanceClient {
                     OperationResult::Failure
                 },
             )
-            .with_user(&request.requested_by)
+            .with_user(principal.subject())
             .with_resource("release", Some(request.package.clone()))
             .with_message(&policy_result.reason)
             .with_metadata(serde_json::json!({
@@ -223,7 +231,7 @@ impl GovernanceClient {
             crate::channel::ChannelMetadata::new(
                 request.to,
                 request.version,
-                request.requested_by,
+                principal.subject().to_string(),
                 iteration,
             ),
         ))
@@ -376,6 +384,7 @@ impl Default for GovernanceClientBuilder {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::channel::VerifiedPrincipal;
 
     #[tokio::test]
     async fn test_client_creation() {
@@ -408,5 +417,31 @@ mod tests {
         let result = client.check_policy(check).await;
         // Should not error
         assert!(result.is_ok() || result.is_err()); // Accept any result
+    }
+
+    #[tokio::test]
+    async fn promotion_derives_audit_and_channel_actors_from_verified_principal() {
+        let temp = tempfile::tempdir().unwrap();
+        let mut config = GovernanceConfig::default();
+        config.local.db_path = temp.path().join("governance.db").display().to_string();
+        config.sync.enabled = false;
+        let client = GovernanceClient::new(config).await.unwrap();
+        let principal = VerifiedPrincipal::for_test("verified-user");
+        let request = PromotionRequest::new(
+            "test-crate".to_string(),
+            crate::channel::ReleaseChannel::Alpha,
+            crate::channel::ReleaseChannel::Beta,
+            "0.1.0".to_string(),
+        );
+
+        let result = client.check_promotion(&principal, request).await.unwrap();
+        assert_eq!(result.channel_metadata.unwrap().set_by, "verified-user");
+
+        let events = client
+            .audit_logger
+            .query(&AuditFilter::new().action("check_promotion"))
+            .unwrap();
+        assert_eq!(events.len(), 1);
+        assert_eq!(events[0].user_id.as_deref(), Some("verified-user"));
     }
 }

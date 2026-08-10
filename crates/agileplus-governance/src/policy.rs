@@ -7,7 +7,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-use crate::channel::{PromotionRequest, ReleaseChannel};
+use crate::channel::{PromotionRequest, ReleaseChannel, VerifiedPrincipal};
 
 /// Policy check identifier
 pub type PolicyCheckId = String;
@@ -410,9 +410,7 @@ impl PolicyEngine {
     /// `&self`-free also satisfies `clippy::only_used_in_recursion`.
     fn evaluate_condition(condition: &PolicyCondition, context: &PolicyContext) -> bool {
         match condition {
-            PolicyCondition::Equals { key, value } => {
-                context.get(key).is_none_or(|v| v == *value)
-            }
+            PolicyCondition::Equals { key, value } => context.get(key).is_none_or(|v| v == *value),
             PolicyCondition::Contains { key, value } => {
                 context.get(key).is_some_and(|v| match (v, value) {
                     (serde_json::Value::String(s), serde_json::Value::String(pattern)) => {
@@ -455,11 +453,15 @@ impl PolicyEngine {
     }
 
     /// Check a promotion request
-    pub fn check_promotion(&self, request: &PromotionRequest) -> PolicyResult {
+    pub fn check_promotion(
+        &self,
+        principal: &VerifiedPrincipal,
+        request: &PromotionRequest,
+    ) -> PolicyResult {
         let mut context = PolicyContext::new();
         context.package = Some(request.package.clone());
         context.channel = Some(request.from);
-        context.user_id = Some(request.requested_by.clone());
+        context.user_id = Some(principal.subject().to_string());
         context.version = Some(request.version.clone());
 
         // Add promotion-specific metadata
@@ -506,18 +508,40 @@ mod tests {
     #[test]
     fn test_channel_promotion() {
         let engine = PolicyEngine::new();
+        let principal = VerifiedPrincipal::for_test("test_user");
 
         let request = PromotionRequest::new(
             "test-crate".to_string(),
             ReleaseChannel::Alpha,
             ReleaseChannel::Beta,
-            "test_user".to_string(),
             "0.1.0".to_string(),
         );
 
-        let result = engine.check_promotion(&request);
+        let result = engine.check_promotion(&principal, &request);
         // Alpha to Beta should be allowed (no conditions met for denial)
         assert!(result.allowed);
+    }
+
+    #[test]
+    fn promotion_policy_actor_comes_from_the_verified_principal() {
+        let mut engine = PolicyEngine::new();
+        engine.add_policy(
+            Policy::new("release", "promote", PolicyEffect::Deny).with_condition(
+                PolicyCondition::Equals {
+                    key: "user_id".to_string(),
+                    value: serde_json::json!("verified-user"),
+                },
+            ),
+        );
+        let principal = VerifiedPrincipal::for_test("verified-user");
+        let request = PromotionRequest::new(
+            "test-crate".to_string(),
+            ReleaseChannel::Alpha,
+            ReleaseChannel::Beta,
+            "0.1.0".to_string(),
+        );
+
+        assert!(!engine.check_promotion(&principal, &request).allowed);
     }
 
     #[test]

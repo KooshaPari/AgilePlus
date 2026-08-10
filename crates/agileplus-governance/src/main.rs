@@ -8,6 +8,7 @@ use std::path::PathBuf;
 
 use agileplus_governance::{
     GovernanceClient, PolicyCheck, PolicyContext, PromotionRequest, ReleaseChannel,
+    VerifiedPrincipal,
 };
 
 /// AgilePlus Governance CLI
@@ -108,6 +109,7 @@ async fn main() -> Result<()> {
             from,
             to,
         } => {
+            let principal = VerifiedPrincipal::from_authenticated_runtime()?;
             let client = GovernanceClient::with_defaults().await?;
 
             let from_channel = match from.parse::<ReleaseChannel>() {
@@ -130,12 +132,11 @@ async fn main() -> Result<()> {
                 package: crate_name.clone(),
                 from: from_channel,
                 to: to_channel,
-                requested_by: whoami::username(),
                 version: "0.1.0".to_string(),
                 metadata: None,
             };
 
-            let result = client.check_promotion(request).await?;
+            let result = client.check_promotion(&principal, request).await?;
             if result.allowed {
                 println!("✓ ALLOWED: {}", result.reason);
                 if let Some(ref metadata) = result.channel_metadata {

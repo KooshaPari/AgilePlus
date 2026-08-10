@@ -13,6 +13,38 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::str::FromStr;
 
+use crate::error::{GovernanceError, Result};
+
+/// An authenticated actor that a trusted identity verifier has attested.
+///
+/// The subject is intentionally opaque to callers: promotion intent must never
+/// provide its own policy, audit, or channel actor.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct VerifiedPrincipal {
+    subject: String,
+}
+
+impl VerifiedPrincipal {
+    /// Fail closed until the CLI is wired to an authenticated identity verifier.
+    pub fn from_authenticated_runtime() -> Result<Self> {
+        Err(GovernanceError::Auth(
+            "an authenticated principal is required for promotion; no identity verifier is configured"
+                .to_string(),
+        ))
+    }
+
+    pub(crate) fn subject(&self) -> &str {
+        &self.subject
+    }
+
+    #[cfg(test)]
+    pub(crate) fn for_test(subject: impl Into<String>) -> Self {
+        Self {
+            subject: subject.into(),
+        }
+    }
+}
+
 /// 5-tier release channel
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -203,8 +235,6 @@ pub struct PromotionRequest {
     pub from: ReleaseChannel,
     /// Target channel
     pub to: ReleaseChannel,
-    /// Requested by
-    pub requested_by: String,
     /// Version to promote
     pub version: String,
     /// Optional metadata
@@ -213,18 +243,11 @@ pub struct PromotionRequest {
 
 impl PromotionRequest {
     /// Create a new promotion request
-    pub fn new(
-        package: String,
-        from: ReleaseChannel,
-        to: ReleaseChannel,
-        requested_by: String,
-        version: String,
-    ) -> Self {
+    pub fn new(package: String, from: ReleaseChannel, to: ReleaseChannel, version: String) -> Self {
         Self {
             package,
             from,
             to,
-            requested_by,
             version,
             metadata: None,
         }
@@ -347,11 +370,17 @@ mod tests {
             "my-crate".to_string(),
             ReleaseChannel::Alpha,
             ReleaseChannel::Beta,
-            "dev".to_string(),
             "0.1.0".to_string(),
         );
 
         assert!(req.is_valid_transition());
         assert_eq!(req.skips_channels(), vec![ReleaseChannel::Canary]);
+    }
+
+    #[test]
+    fn runtime_principal_construction_fails_closed_without_an_authenticator() {
+        let error = VerifiedPrincipal::from_authenticated_runtime().unwrap_err();
+
+        assert!(matches!(error, crate::error::GovernanceError::Auth(_)));
     }
 }
