@@ -526,12 +526,12 @@ mod tests {
     fn promotion_policy_actor_comes_from_the_verified_principal() {
         let mut engine = PolicyEngine::new();
         engine.add_policy(
-            Policy::new("release", "promote", PolicyEffect::Deny).with_condition(
-                PolicyCondition::Equals {
+            Policy::new("release", "promote", PolicyEffect::Deny)
+                .with_priority(100)
+                .with_condition(PolicyCondition::Equals {
                     key: "user_id".to_string(),
                     value: serde_json::json!("verified-user"),
-                },
-            ),
+                }),
         );
         let principal = VerifiedPrincipal::for_test("verified-user");
         let request = PromotionRequest::new(

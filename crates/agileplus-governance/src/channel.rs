@@ -170,7 +170,7 @@ impl fmt::Display for ReleaseChannel {
 impl FromStr for ReleaseChannel {
     type Err = String;
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
             "alpha" | "a" => Ok(ReleaseChannel::Alpha),
             "canary" | "c" => Ok(ReleaseChannel::Canary),
