@@ -15,7 +15,7 @@ use clap::{Parser, Subcommand};
 use agent_adapter::RealAgentAdapter;
 use agileplus_cli::commands::{
     cockpit::CockpitArgs, cycle::CycleArgs, dashboard::DashboardArgs, list::ListArgs,
-    module::ModuleArgs, queue::QueueArgs, specify::SpecifyArgs,
+    module::ModuleArgs, queue::QueueArgs, rubric::RubricArgs, specify::SpecifyArgs,
 };
 #[cfg(feature = "full-deps")]
 use agileplus_cli::commands::{
@@ -85,6 +85,8 @@ enum Commands {
     Dashboard(DashboardArgs),
     /// Publish or read local cockpit scorecards.
     Cockpit(CockpitArgs),
+    /// Score a repository and emit a prioritized rubric fix list.
+    Rubric(RubricArgs),
 }
 
 #[tokio::main]
@@ -130,6 +132,7 @@ async fn run(cli: Cli) -> Result<()> {
         Commands::Cockpit(args) => {
             agileplus_cli::commands::cockpit::run(&args, cli.repo.as_deref())
         }
+        Commands::Rubric(args) => agileplus_cli::commands::rubric::run(&args),
         Commands::Dashboard(mut args) => {
             // Prefer global --db when the subcommand did not set its own path.
             if args.db.is_none() {
