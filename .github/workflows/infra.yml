@@ -51,6 +51,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
+      - name: Install protoc
+        # agileplus-proto uses prost-build, which requires protoc on PATH.
+        uses: arduino/setup-protoc@v3
+        with:
+          version: "28.x"
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
       - uses: Swatinem/rust-cache@v2
       - name: Run tests with rerun-on-flake
         run: |
