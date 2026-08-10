@@ -94,7 +94,24 @@ pub enum CockpitSubcommand {
 }
 
 /// Top-level dispatch for the `ap cockpit` subcommand group.
-pub fn run(args: &CockpitArgs) -> Result<()> {
+///
+/// Cockpit readers operate on one shared score log. A global repository path
+/// cannot identify a record without overloading its meaning, so readers use
+/// the exact-match `--filter-repo` option instead. The publisher retains its
+/// own required `--repo <PATH>` argument.
+pub fn run(args: &CockpitArgs, global_repo: Option<&Path>) -> Result<()> {
+    if global_repo.is_some() {
+        match &args.sub {
+            CockpitSubcommand::Read(_) => bail!(
+                "`cockpit read` does not accept global `--repo <PATH>`; use `--filter-repo <NAME>` to filter cockpit records"
+            ),
+            CockpitSubcommand::Path => bail!(
+                "`cockpit path` does not accept global `--repo <PATH>`; use `cockpit read --filter-repo <NAME>` to filter cockpit records"
+            ),
+            CockpitSubcommand::Publish { .. } => {}
+        }
+    }
+
     match &args.sub {
         CockpitSubcommand::Read(read_args) => read_run(read_args),
         CockpitSubcommand::Path => {
