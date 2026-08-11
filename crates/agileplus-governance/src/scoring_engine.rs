@@ -145,7 +145,6 @@ impl ProbeEvidence {
         }
         Self { matches }
     }
-
 }
 
 /// Tagged probe evidence returns the full
