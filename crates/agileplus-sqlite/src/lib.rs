@@ -40,7 +40,7 @@ use agileplus_domain::domain::project::Project;
 use agileplus_domain::domain::sync_mapping::SyncMapping;
 
 use crate::repository::{
-    audit, backlog, cycles, epics, events, evidence, features, governance, metrics, modules,
+    audit, backlog, cycles, epics, evidence, features, governance, metrics, modules,
     projects, stories, sync_mappings, users, work_packages,
 };
 
