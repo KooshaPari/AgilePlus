@@ -40,7 +40,7 @@ else
 fi
 
 echo "==> agileplus specify"
-"$AGILEPLUS" --db "$DB" specify \
+"$AGILEPLUS" --repo "$REPO" --db "$DB" specify \
   --feature "$FEATURE" \
   --from-file "$SPEC_FILE"
 
@@ -56,10 +56,10 @@ if [ ! -f "$DB" ]; then
 fi
 
 echo "==> agileplus status"
-if "$AGILEPLUS" --db "$DB" status --feature "$FEATURE" --wp WP01 --state specified 2>/dev/null; then
+if "$AGILEPLUS" --repo "$REPO" --db "$DB" status --feature "$FEATURE" --wp WP01 --state specified 2>/dev/null; then
   echo "status with work-package args succeeded"
 else
-  "$AGILEPLUS" --db "$DB" status
+  "$AGILEPLUS" --repo "$REPO" --db "$DB" status
 fi
 
 echo "E2E round-trip OK (feature=$FEATURE, repo=$REPO)"
