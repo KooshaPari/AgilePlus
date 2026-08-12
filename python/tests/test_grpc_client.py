@@ -58,7 +58,7 @@ def _make_mock_stub() -> MagicMock:
 
     # Governance
     gate_response = MagicMock()
-    gate_response.passed = True
+    gate_response.passed = False
     gate_response.violations = []
     stub.CheckGovernanceGate = AsyncMock(return_value=gate_response)
 
@@ -185,9 +185,9 @@ async def test_run_command_preserves_stringified_arguments(client_with_stub):
 
 
 @pytest.mark.asyncio
-async def test_check_governance_gate_passed(client_with_stub):
+async def test_check_governance_gate_serializes_blocking_violations(client_with_stub):
     result = await client_with_stub.check_governance_gate("test-feat", "specified->planned")
-    assert result["passed"] is True
+    assert result["passed"] is False
     assert result["violations"] == [
         {
             "fr_id": "FR-042",
