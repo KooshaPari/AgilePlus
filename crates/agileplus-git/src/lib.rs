@@ -629,9 +629,9 @@ impl VcsPort for GitVcsAdapter {
         feature_slug: &str,
     ) -> Result<FeatureArtifacts, DomainError> {
         // Look for the conventional artifacts at fixed names within
-        // `<repo_root>/.agileplus/<feature_slug>/`. Unknown files in
+        // `<repo_root>/kitty-specs/<feature_slug>/`. Unknown files in
         // that directory are collected under `other`.
-        let dir = self.repo_root.join(".agileplus").join(feature_slug);
+        let dir = self.repo_root.join("kitty-specs").join(feature_slug);
         let mut out = FeatureArtifacts {
             spec: None,
             research: None,
@@ -683,10 +683,10 @@ impl VcsPort for GitVcsAdapter {
 
 impl GitVcsAdapter {
     /// Resolve the absolute path of a feature artifact on disk.
-    /// Path: `<repo_root>/.agileplus/<feature_slug>/<relative_path>`.
+    /// Path: `<repo_root>/kitty-specs/<feature_slug>/<relative_path>`.
     fn artifact_path(&self, feature_slug: &str, relative_path: &str) -> PathBuf {
         self.repo_root
-            .join(".agileplus")
+            .join("kitty-specs")
             .join(feature_slug)
             .join(relative_path)
     }

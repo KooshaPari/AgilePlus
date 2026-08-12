@@ -95,6 +95,14 @@ async fn test_write_and_read_artifact() {
         .expect("read_artifact");
 
     assert_eq!(read_back, content);
+    assert!(
+        dir.path()
+            .join("kitty-specs")
+            .join("my-feature")
+            .join("spec.md")
+            .is_file(),
+        "artifact should be written under kitty-specs/<feature>/"
+    );
     drop(dir);
 }
 
