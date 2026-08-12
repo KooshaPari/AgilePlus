@@ -52,8 +52,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - name: Install protoc
-        # agileplus-proto uses prost-build, which requires protoc on PATH.
-        uses: arduino/setup-protoc@v3
+        # Pinned v3 commit; agileplus-proto uses prost-build and requires protoc on PATH.
+        uses: arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b # v3
         with:
           version: "28.x"
           repo-token: ${{ secrets.GITHUB_TOKEN }}
