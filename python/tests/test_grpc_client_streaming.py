@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 from types import SimpleNamespace
+from unittest.mock import AsyncMock
 
 import pytest
 
-from agileplus_mcp.grpc_client import AgilePlusCoreClient
+from agileplus_mcp.grpc_client import AgilePlusCoreClient, GrpcConnectionError
 
 
 class _StreamingStub:
@@ -32,6 +33,33 @@ class _StreamingStub:
         )
 
 
+class _UnavailableThenCleanStreamingStub:
+    """Models a reconnectable generated server-streaming RPC."""
+
+    def __init__(self, grpc) -> None:
+        self._grpc = grpc
+        self.calls = 0
+
+    def StreamAgentEvents(self, _request):  # noqa: N802 - generated RPC naming
+        self.calls += 1
+        if self.calls == 1:
+            return self._unavailable()
+        return self._clean_end()
+
+    async def _unavailable(self):
+        raise self._grpc.aio.AioRpcError(
+            self._grpc.StatusCode.UNAVAILABLE,
+            initial_metadata=self._grpc.aio.Metadata(),
+            trailing_metadata=self._grpc.aio.Metadata(),
+            details="stream interrupted",
+        )
+        yield  # pragma: no cover - preserves async-generator type
+
+    async def _clean_end(self):
+        if False:  # pragma: no cover - preserves async-generator type
+            yield None
+
+
 @pytest.mark.asyncio
 async def test_stream_agent_events_unwraps_generated_response_event() -> None:
     """The generated response wraps the agent event in its ``event`` field."""
@@ -52,3 +80,35 @@ async def test_stream_agent_events_unwraps_generated_response_event() -> None:
         }
     ]
     assert stub.request.feature_slug == "coverage-gate"
+
+
+@pytest.mark.asyncio
+async def test_stream_agent_events_reconnects_after_unavailable(monkeypatch) -> None:
+    import grpc
+
+    client = AgilePlusCoreClient()
+    stub = _UnavailableThenCleanStreamingStub(grpc)
+    client._stub = stub
+    client.connect = AsyncMock()
+    monkeypatch.setattr("agileplus_mcp.grpc_client.asyncio.sleep", AsyncMock())
+
+    received = [event async for event in client.stream_agent_events("coverage-gate")]
+
+    assert received == []
+    assert stub.calls == 2
+    client.connect.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_stream_agent_events_stops_when_reconnect_fails(monkeypatch) -> None:
+    import grpc
+
+    client = AgilePlusCoreClient()
+    client._stub = _UnavailableThenCleanStreamingStub(grpc)
+    client.connect = AsyncMock(side_effect=GrpcConnectionError("core still down"))
+    monkeypatch.setattr("agileplus_mcp.grpc_client.asyncio.sleep", AsyncMock())
+
+    received = [event async for event in client.stream_agent_events("coverage-gate")]
+
+    assert received == []
+    client.connect.assert_awaited_once()
