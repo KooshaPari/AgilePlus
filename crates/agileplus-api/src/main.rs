@@ -12,7 +12,6 @@ use agileplus_domain::ports::observability::{LogEntry, ObservabilityPort, SpanCo
 use agileplus_git::GitVcsAdapter;
 use agileplus_sqlite::SqliteStorageAdapter;
 use anyhow::{Context, Result, anyhow};
-use tracing::warn;
 
 #[tokio::main]
 async fn main() -> Result<()> {
