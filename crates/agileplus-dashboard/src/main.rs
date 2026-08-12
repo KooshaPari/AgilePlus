@@ -1,4 +1,5 @@
 use agileplus_dashboard::app_state::DashboardStore;
+use agileplus_dashboard::resolve_dashboard_host;
 use agileplus_dashboard::routes::router;
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -59,16 +60,8 @@ async fn main() {
     // toggle_service, patch_service_config, feature_transition, plane_daemon_*, etc.)
     // behind no authentication for any reachable host on the network. Set
     // DASHBOARD_HOST=0.0.0.0 to explicitly opt-in to a network-exposed deployment.
-    let host: [u8; 4] = match std::env::var("DASHBOARD_HOST")
-        .unwrap_or_else(|_| "127.0.0.1".to_string())
-        .as_str()
-    {
-        "0.0.0.0" => [0, 0, 0, 0],
-        s => s
-            .parse::<std::net::Ipv4Addr>()
-            .map(|ip| ip.octets())
-            .unwrap_or([127, 0, 0, 1]),
-    };
+    let dashboard_host = std::env::var("DASHBOARD_HOST");
+    let host = resolve_dashboard_host(dashboard_host.ok().as_deref());
     let addr = SocketAddr::from((host, port));
     tracing::info!(%addr, "agileplus-dashboard listening");
 
