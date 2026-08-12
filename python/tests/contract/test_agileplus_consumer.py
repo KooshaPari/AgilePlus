@@ -29,6 +29,31 @@ import pytest
 class TestGetFeatureContract:
     """GetFeature RPC consumer contract."""
 
+    def test_generated_get_feature_messages_round_trip(self):
+        """Generated request and response preserve the consumer feature shape."""
+        from agileplus_proto.gen.agileplus.v1 import common_pb2, core_pb2
+
+        request = core_pb2.GetFeatureRequest(slug="contract-feature")
+        serialized_request = request.SerializeToString()
+        parsed_request = core_pb2.GetFeatureRequest.FromString(serialized_request)
+
+        response = core_pb2.GetFeatureResponse(
+            feature=common_pb2.Feature(
+                id=42,
+                slug="contract-feature",
+                friendly_name="Contract Feature",
+                state="created",
+                target_branch="main",
+            )
+        )
+        parsed_response = core_pb2.GetFeatureResponse.FromString(response.SerializeToString())
+
+        assert parsed_request.slug == "contract-feature"
+        assert parsed_response.feature.id == 42
+        assert parsed_response.feature.slug == "contract-feature"
+        assert parsed_response.feature.friendly_name == "Contract Feature"
+        assert parsed_response.feature.state == "created"
+
     @pytest.mark.asyncio
     async def test_get_feature_request_uses_slug_field(self):
         """Consumer must send a GetFeatureRequest with a 'slug' field."""
