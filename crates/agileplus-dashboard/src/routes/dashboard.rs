@@ -466,7 +466,11 @@ pub async fn epics_stories_json() -> impl IntoResponse {
         PathBuf::from("agileplus.db")
     };
 
-    let conn = match rusqlite::Connection::open(&db_path) {
+    epics_stories_json_for_path(&db_path)
+}
+
+fn epics_stories_json_for_path(db_path: &std::path::Path) -> axum::Json<serde_json::Value> {
+    let conn = match rusqlite::Connection::open(db_path) {
         Ok(c) => c,
         Err(e) => {
             return axum::Json(serde_json::json!({
@@ -479,39 +483,47 @@ pub async fn epics_stories_json() -> impl IntoResponse {
         }
     };
 
-    // Query epics
-    let epics: Vec<serde_json::Value> = {
-        let mut stmt = conn
-            .prepare("SELECT id, title, status, requirement_id FROM epics ORDER BY id")
-            .unwrap_or_else(|_| conn.prepare("SELECT 1 WHERE 0").unwrap());
-        stmt.query_map([], |row| {
+    let mut epics_statement = match conn
+        .prepare("SELECT id, title, status, requirement_id FROM epics ORDER BY id")
+    {
+        Ok(statement) => statement,
+        Err(e) => return epics_stories_error("epics query failed", e),
+    };
+    let epics = match epics_statement
+        .query_map([], |row| {
             Ok(serde_json::json!({
-                "id": row.get::<_, i64>(0).unwrap_or(0),
-                "title": row.get::<_, String>(1).unwrap_or_default(),
-                "status": row.get::<_, String>(2).unwrap_or_default(),
-                "requirement_id": row.get::<_, Option<String>>(3).unwrap_or(None),
+                "id": row.get::<_, i64>(0)?,
+                "title": row.get::<_, String>(1)?,
+                "status": row.get::<_, String>(2)?,
+                "requirement_id": row.get::<_, Option<String>>(3)?,
             }))
         })
-        .map(|rows| rows.filter_map(|r| r.ok()).collect())
-        .unwrap_or_default()
+        .and_then(Iterator::collect::<Result<Vec<_>, _>>)
+    {
+        Ok(rows) => rows,
+        Err(e) => return epics_stories_error("epics query failed", e),
     };
 
-    // Query stories
-    let stories: Vec<serde_json::Value> = {
-        let mut stmt = conn
-            .prepare("SELECT id, epic_id, title, status, requirement_id FROM stories ORDER BY id")
-            .unwrap_or_else(|_| conn.prepare("SELECT 1 WHERE 0").unwrap());
-        stmt.query_map([], |row| {
+    let mut stories_statement = match conn
+        .prepare("SELECT id, epic_id, title, status, requirement_id FROM stories ORDER BY id")
+    {
+        Ok(statement) => statement,
+        Err(e) => return epics_stories_error("stories query failed", e),
+    };
+    let stories = match stories_statement
+        .query_map([], |row| {
             Ok(serde_json::json!({
-                "id": row.get::<_, i64>(0).unwrap_or(0),
-                "epic_id": row.get::<_, Option<i64>>(1).unwrap_or(None),
-                "title": row.get::<_, String>(2).unwrap_or_default(),
-                "status": row.get::<_, String>(3).unwrap_or_default(),
-                "requirement_id": row.get::<_, Option<String>>(4).unwrap_or(None),
+                "id": row.get::<_, i64>(0)?,
+                "epic_id": row.get::<_, Option<i64>>(1)?,
+                "title": row.get::<_, String>(2)?,
+                "status": row.get::<_, String>(3)?,
+                "requirement_id": row.get::<_, Option<String>>(4)?,
             }))
         })
-        .map(|rows| rows.filter_map(|r| r.ok()).collect())
-        .unwrap_or_default()
+        .and_then(Iterator::collect::<Result<Vec<_>, _>>)
+    {
+        Ok(rows) => rows,
+        Err(e) => return epics_stories_error("stories query failed", e),
     };
 
     let epic_count = epics.len();
@@ -524,4 +536,69 @@ pub async fn epics_stories_json() -> impl IntoResponse {
         "story_count": story_count,
         "timestamp": chrono::Utc::now().to_rfc3339(),
     }))
+}
+
+fn epics_stories_error(context: &str, error: rusqlite::Error) -> axum::Json<serde_json::Value> {
+    axum::Json(serde_json::json!({
+        "epics": [],
+        "stories": [],
+        "epic_count": 0,
+        "story_count": 0,
+        "error": format!("{context}: {error}"),
+    }))
+}
+
+#[cfg(test)]
+mod epics_stories_json_tests {
+    use super::*;
+
+    fn temporary_database_path(name: &str) -> PathBuf {
+        std::env::temp_dir().join(format!(
+            "agileplus-dashboard-{name}-{}-{}.db",
+            std::process::id(),
+            Utc::now().timestamp_nanos_opt().expect("timestamp is representable"),
+        ))
+    }
+
+    #[test]
+    fn schema_failure_is_visible_to_dashboard_clients() {
+        let path = temporary_database_path("missing-schema");
+        let connection = rusqlite::Connection::open(&path).expect("temporary database opens");
+        drop(connection);
+
+        let response = epics_stories_json_for_path(&path).0;
+
+        assert_eq!(response["epics"], serde_json::json!([]));
+        assert_eq!(response["stories"], serde_json::json!([]));
+        assert_eq!(response["epic_count"], 0);
+        assert_eq!(response["story_count"], 0);
+        assert!(response["error"]
+            .as_str()
+            .is_some_and(|error| error.contains("epics query failed")));
+
+        std::fs::remove_file(path).expect("temporary database is removed");
+    }
+
+    #[test]
+    fn valid_empty_schema_is_not_reported_as_an_error() {
+        let path = temporary_database_path("empty-schema");
+        let connection = rusqlite::Connection::open(&path).expect("temporary database opens");
+        connection
+            .execute_batch(
+                "CREATE TABLE epics (id INTEGER, title TEXT, status TEXT, requirement_id TEXT);\
+                 CREATE TABLE stories (id INTEGER, epic_id INTEGER, title TEXT, status TEXT, requirement_id TEXT);",
+            )
+            .expect("dashboard schema is created");
+        drop(connection);
+
+        let response = epics_stories_json_for_path(&path).0;
+
+        assert_eq!(response["epics"], serde_json::json!([]));
+        assert_eq!(response["stories"], serde_json::json!([]));
+        assert_eq!(response["epic_count"], 0);
+        assert_eq!(response["story_count"], 0);
+        assert!(response.get("error").is_none());
+
+        std::fs::remove_file(path).expect("temporary database is removed");
+    }
 }
