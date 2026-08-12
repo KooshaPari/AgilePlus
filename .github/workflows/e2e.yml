@@ -57,6 +57,7 @@ jobs:
 
       - name: Install built CLI to PATH
         run: |
+          mkdir -p "$HOME/.local/bin"
           install -m 0755 "target/release/${{ env.BIN_NAME }}" "$HOME/.local/bin/${{ env.BIN_NAME }}"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
           agileplus --version
