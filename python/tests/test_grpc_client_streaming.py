@@ -60,6 +60,25 @@ class _UnavailableThenCleanStreamingStub:
             yield None
 
 
+class _DeniedStreamingStub:
+    """Models a terminal permission failure from the core stream."""
+
+    def __init__(self, grpc) -> None:
+        self._grpc = grpc
+
+    def StreamAgentEvents(self, _request):  # noqa: N802 - generated RPC naming
+        return self._denied()
+
+    async def _denied(self):
+        raise self._grpc.aio.AioRpcError(
+            self._grpc.StatusCode.PERMISSION_DENIED,
+            initial_metadata=self._grpc.aio.Metadata(),
+            trailing_metadata=self._grpc.aio.Metadata(),
+            details="subscription denied",
+        )
+        yield  # pragma: no cover - preserves async-generator type
+
+
 @pytest.mark.asyncio
 async def test_stream_agent_events_unwraps_generated_response_event() -> None:
     """The generated response wraps the agent event in its ``event`` field."""
@@ -112,3 +131,19 @@ async def test_stream_agent_events_stops_when_reconnect_fails(monkeypatch) -> No
 
     assert received == []
     client.connect.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_stream_agent_events_maps_non_transient_rpc_failure() -> None:
+    """The consumer receives the stable client error rather than gRPC internals."""
+    import grpc
+
+    from agileplus_mcp.grpc_client import GrpcCallError
+
+    client = AgilePlusCoreClient()
+    client._stub = _DeniedStreamingStub(grpc)
+
+    with pytest.raises(GrpcCallError, match="PERMISSION_DENIED") as error:
+        _ = [event async for event in client.stream_agent_events("coverage-gate")]
+
+    assert error.value.code == grpc.StatusCode.PERMISSION_DENIED

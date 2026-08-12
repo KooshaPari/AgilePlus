@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import runpy
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -120,3 +121,29 @@ async def test_shutdown_closes_client_and_clears_global_state(monkeypatch) -> No
 
     client.close.assert_awaited_once()
     assert server._client is None
+
+
+def test_main_runs_startup_mcp_and_shutdown_in_order(monkeypatch) -> None:
+    """The installed MCP command owns the full server lifecycle."""
+    startup = AsyncMock()
+    run_mcp = AsyncMock()
+    shutdown = AsyncMock()
+    monkeypatch.setattr(server, "startup", startup)
+    monkeypatch.setattr(server.mcp, "run_async", run_mcp)
+    monkeypatch.setattr(server, "shutdown", shutdown)
+
+    server.main()
+
+    startup.assert_awaited_once()
+    run_mcp.assert_awaited_once()
+    shutdown.assert_awaited_once()
+
+
+def test_module_entrypoint_delegates_to_server_main(monkeypatch) -> None:
+    """`python -m agileplus_mcp` uses the same lifecycle as the console script."""
+    main = MagicMock()
+    monkeypatch.setattr(server, "main", main)
+
+    runpy.run_module("agileplus_mcp", run_name="__main__")
+
+    main.assert_called_once()

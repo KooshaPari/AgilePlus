@@ -51,6 +51,8 @@ def test_validate_file_path_normalizes_in_root_and_rejects_traversal() -> None:
         validate_file_path("kitty-specs/../../outside.md")
     with pytest.raises(InputValidationError, match="must be under"):
         validate_file_path("other/spec.md")
+    with pytest.raises(InputValidationError, match="must not be empty"):
+        validate_file_path("")
 
 
 def test_validate_batch_and_item_type_enforce_boundaries() -> None:

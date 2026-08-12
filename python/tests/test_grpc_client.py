@@ -291,6 +291,47 @@ async def test_connect_client_closes_client_after_context_exit(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_connect_builds_stub_after_the_channel_is_ready(monkeypatch):
+    """A successful connection must not publish a stub before readiness."""
+    import grpc
+
+    from agileplus_proto.gen.agileplus.v1 import core_pb2_grpc
+
+    client = AgilePlusCoreClient("core.example:50051")
+    channel = MagicMock()
+    channel.channel_ready = AsyncMock()
+    stub = MagicMock()
+    channel_factory = MagicMock(return_value=channel)
+    stub_factory = MagicMock(return_value=stub)
+    monkeypatch.setattr(grpc.aio, "insecure_channel", channel_factory)
+    monkeypatch.setattr(core_pb2_grpc, "AgilePlusCoreServiceStub", stub_factory)
+
+    await client.connect()
+
+    channel_factory.assert_called_once_with("core.example:50051")
+    channel.channel_ready.assert_awaited_once()
+    stub_factory.assert_called_once_with(channel)
+    assert client._channel is channel
+    assert client._stub is stub
+
+
+@pytest.mark.asyncio
+async def test_connect_maps_channel_creation_failure_to_connection_error(monkeypatch):
+    """Transport construction failures remain actionable public client errors."""
+    import grpc
+
+    client = AgilePlusCoreClient("core.example:50051")
+    monkeypatch.setattr(
+        grpc.aio,
+        "insecure_channel",
+        MagicMock(side_effect=RuntimeError("resolver unavailable")),
+    )
+
+    with pytest.raises(GrpcConnectionError, match=r"Failed to connect to core\.example:50051"):
+        await client.connect()
+
+
+@pytest.mark.asyncio
 async def test_retry_on_unavailable(client_with_stub):
     """Verify that transient UNAVAILABLE errors are retried."""
     try:
