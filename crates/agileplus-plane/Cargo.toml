@@ -23,6 +23,7 @@ async-trait = "0.1"
 rusqlite = { version = "0.32", features = ["bundled"] }
 
 [dev-dependencies]
+agileplus-sqlite = { path = "../agileplus-sqlite" }
 tempfile = "3"
 tokio = { version = "1", features = ["rt", "macros"] }
 wiremock = "0.6"

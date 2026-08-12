@@ -268,6 +268,7 @@ async fn run_tick<S: StoragePort>(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use agileplus_sqlite::SqliteStorageAdapter;
 
     #[test]
     fn config_default_is_reasonable() {
@@ -279,41 +280,20 @@ mod tests {
 
     #[tokio::test]
     async fn dry_run_skips_tick() {
-        // EmptyStorage is overkill — but we don't even reach it because dry_run short-circuits.
-        // Use a mock that would fail if touched; verify dry_run doesn't touch it.
         let state = Arc::new(Mutex::new(SyncState::default()));
         let cfg = PlaneDaemonConfig {
             dry_run: true,
             ..Default::default()
         };
 
-        // We don't need a real StoragePort for this test — the daemon short-circuits before
-        // calling any storage methods when dry_run is true. A dummy Arc<dyn StoragePort> that
-        // would panic if called confirms this.
-        struct PanicStorage;
-        #[agileplus_domain::async_trait]
-        impl StoragePort for PanicStorage {
-            async fn list_root_modules(&self) -> Result<Vec<agileplus_domain::Module>, agileplus_domain::DomainError> {
-                panic!("dry_run should not call list_root_modules")
-            }
-            async fn list_all_cycles(&self) -> Result<Vec<agileplus_domain::Cycle>, agileplus_domain::DomainError> {
-                panic!("dry_run should not call list_all_cycles")
-            }
-        }
-        let storage: Arc<dyn StoragePort> = Arc::new(PanicStorage);
+        let storage = SqliteStorageAdapter::in_memory().expect("in-memory storage");
         let result = run_tick(&storage, &cfg, &state).await;
         assert!(result.is_ok(), "dry_run tick should succeed without calling storage");
     }
 
     #[tokio::test]
     async fn daemon_pause_stops_loop() {
-        struct EmptyStorage;
-        #[agileplus_domain::async_trait]
-        impl StoragePort for EmptyStorage {
-            async fn list_root_modules(&self) -> Result<Vec<agileplus_domain::Module>, agileplus_domain::DomainError> { Ok(vec![]) }
-            async fn list_all_cycles(&self) -> Result<Vec<agileplus_domain::Cycle>, agileplus_domain::DomainError> { Ok(vec![]) }
-        }
-        let storage: Arc<dyn StoragePort> = Arc::new(EmptyStorage);
+        let storage = Arc::new(SqliteStorageAdapter::in_memory().expect("in-memory storage"));
         let cfg = PlaneDaemonConfig {
             interval: Duration::from_millis(50),
             batch_size: 25,

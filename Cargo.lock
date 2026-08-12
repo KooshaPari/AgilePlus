@@ -295,6 +295,7 @@ name = "agileplus-plane"
 version = "0.2.1"
 dependencies = [
  "agileplus-domain",
+ "agileplus-sqlite",
  "anyhow",
  "async-trait",
  "axum",
