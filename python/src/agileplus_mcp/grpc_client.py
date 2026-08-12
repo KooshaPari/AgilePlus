@@ -285,7 +285,8 @@ class AgilePlusCoreClient:
 
         while True:
             try:
-                async for event in stub.StreamAgentEvents(request):
+                async for response in stub.StreamAgentEvents(request):
+                    event = response.event
                     yield {
                         "event_type": event.event_type,
                         "feature_slug": event.feature_slug,
