@@ -131,16 +131,17 @@ impl ProbeEvidence {
             };
             if let Some(m) = compiled.find(&text) {
                 let line_no = text[..m.start()].matches('\n').count() + 1;
-                let line_start = text[..m.start()]
-                    .rfind('\n')
-                    .map(|i| i + 1)
-                    .unwrap_or(0);
+                let line_start = text[..m.start()].rfind('\n').map(|i| i + 1).unwrap_or(0);
                 let line_end_rel = text[m.start()..]
                     .find('\n')
                     .unwrap_or(text.len() - m.start());
                 let line_end = m.start() + line_end_rel;
                 let excerpt = text[line_start..line_end].trim().to_string();
-                matches.push((probe.rule_text, probe.target_file, format!("{path:?}:{line_no} {excerpt}")));
+                matches.push((
+                    probe.rule_text,
+                    probe.target_file,
+                    format!("{path:?}:{line_no} {excerpt}"),
+                ));
             }
         }
         Self { matches }
@@ -170,10 +171,7 @@ impl TaggedProbeEvidence {
             };
             if let Some(m) = compiled.find(&text) {
                 let line_no = text[..m.start()].matches('\n').count() + 1;
-                let line_start = text[..m.start()]
-                    .rfind('\n')
-                    .map(|i| i + 1)
-                    .unwrap_or(0);
+                let line_start = text[..m.start()].rfind('\n').map(|i| i + 1).unwrap_or(0);
                 let line_end_rel = text[m.start()..]
                     .find('\n')
                     .unwrap_or(text.len() - m.start());
@@ -345,7 +343,9 @@ fn score_cluster_with_probes(
     if let Some(first) = pillar_scores.first_mut() {
         first.score = (first.score + probe_bonus).min(3);
         if probe_bonus > 0 {
-            first.evidence.push(format!("probe:{} match(es) in this cluster", probe_hits));
+            first
+                .evidence
+                .push(format!("probe:{} match(es) in this cluster", probe_hits));
         }
     }
 
@@ -377,10 +377,7 @@ fn score_sub_pillar(
             continue;
         }
         // Coarse heuristic: count present evidence signals; map 0..=rule_presence.len() to 0..=3.
-        let present = rule_presence
-            .iter()
-            .filter(|rel| scan.has(rel))
-            .count();
+        let present = rule_presence.iter().filter(|rel| scan.has(rel)).count();
         let total = rule_presence.len();
         let rule_score = match (present, total) {
             (0, _) => 0,
@@ -397,10 +394,7 @@ fn score_sub_pillar(
                 }
             }
         } else {
-            gaps.push(format!(
-                "{} — effort: S",
-                rule_text
-            ));
+            gaps.push(format!("{} — effort: S", rule_text));
         }
     }
 
@@ -429,15 +423,10 @@ fn score_pillar_aggregate(
     rules: &[(&str, &str, &[&str])],
 ) -> PillarScore {
     // Pick the first rule that matches the pillar range label.
-    let (_rule_id, rule_text, rule_presence) = rules
-        .first()
-        .copied()
-        .unwrap_or(("", "no rule", &[][..]));
+    let (_rule_id, rule_text, rule_presence) =
+        rules.first().copied().unwrap_or(("", "no rule", &[][..]));
 
-    let present = rule_presence
-        .iter()
-        .filter(|rel| scan.has(rel))
-        .count();
+    let present = rule_presence.iter().filter(|rel| scan.has(rel)).count();
     let total = rule_presence.len();
     let score = match (present, total) {
         (0, _) => 0,
@@ -465,7 +454,11 @@ fn score_pillar_aggregate(
         glyph: glyph_for(score, &pillar.scoring),
         evidence,
         gaps,
-        soft_goal_delta: if score >= 2 { "complete".into() } else { "partial".into() },
+        soft_goal_delta: if score >= 2 {
+            "complete".into()
+        } else {
+            "partial".into()
+        },
     }
 }
 
@@ -566,11 +559,9 @@ pub fn render_markdown(report: &ScoreReport) -> String {
             }
             let _ = writeln!(s, "soft_goal_delta: {}\n", pillar.soft_goal_delta);
         }
-        let pct = if cluster.max_points == 0 {
-            0
-        } else {
-            (cluster.total_points * 100) / cluster.max_points
-        };
+        let pct = (cluster.total_points * 100)
+            .checked_div(cluster.max_points)
+            .unwrap_or(0);
         let grade = grade_for(pct);
         let _ = writeln!(
             s,
@@ -675,11 +666,7 @@ const SCORING_RULES: &[(&str, &str, &[&str])] = &[
     (
         "C07",
         "DX / QEng / Portability: devcontainer + task runner + editorconfig",
-        &[
-            ".devcontainer",
-            "Taskfile.yml",
-            ".editorconfig",
-        ],
+        &[".devcontainer", "Taskfile.yml", ".editorconfig"],
     ),
     (
         "C08",
@@ -707,18 +694,19 @@ const SCORING_RULES: &[(&str, &str, &[&str])] = &[
     (
         "C11",
         "Packaging + Distribution: installers + signing + OCI",
-        &[
-            "release.yml",
-            "Containerfile",
-            ".devcontainer",
-        ],
+        &["release.yml", "Containerfile", ".devcontainer"],
     ),
 ];
 
 /// Loads a PILLARS-CATALOG.json + scans + reports — used by both the
 /// `ap rubric score` CLI subcommand and the standalone `agileplus-score`
 /// governance binary.
-pub fn run(repo: &Path, catalog: &Path, filter: &[String], _date_override: Option<&str>) -> Result<ScoreReport> {
+pub fn run(
+    repo: &Path,
+    catalog: &Path,
+    filter: &[String],
+    _date_override: Option<&str>,
+) -> Result<ScoreReport> {
     evaluate(repo, catalog, filter)
 }
 
@@ -860,17 +848,19 @@ mod tests {
     fn probe_compiles_for_every_rule() {
         // Build-time invariant: every probe in the catalog must compile.
         for p in SCORING_PROBES {
-            p.compiled().unwrap_or_else(|e| panic!("probe {}: {e}", p.rule_text));
+            p.compiled()
+                .unwrap_or_else(|e| panic!("probe {}: {e}", p.rule_text));
         }
     }
 
     #[test]
     fn probe_collects_match_with_line_number_and_excerpt() {
-        let tmp = write_repo(&[
-            ("deny.toml", r#"[advisories]
+        let tmp = write_repo(&[(
+            "deny.toml",
+            r#"[advisories]
 db-path = "/tmp"
-"#),
-        ]);
+"#,
+        )]);
         let probes = &[ProbeRule {
             cluster: "C01",
             rule_text: "Has cargo-deny configured",
@@ -883,8 +873,14 @@ db-path = "/tmp"
         assert_eq!(*cluster, "C01");
         assert_eq!(*rule, "Has cargo-deny configured");
         assert_eq!(*target, "deny.toml");
-        assert!(line.contains("deny.toml:1"), "expected file:line in evidence, got {line}");
-        assert!(line.contains("[advisories]"), "expected excerpt in evidence, got {line}");
+        assert!(
+            line.contains("deny.toml:1"),
+            "expected file:line in evidence, got {line}"
+        );
+        assert!(
+            line.contains("[advisories]"),
+            "expected excerpt in evidence, got {line}"
+        );
     }
 
     #[test]
@@ -961,7 +957,9 @@ db-path = "/tmp"
             let res = evaluate_with_probes(&crate_root, &catalog, &[], None)
                 .expect("v2 eval w/ default probes");
             let has_citation = res.clusters.iter().any(|c| {
-                c.pillars.iter().any(|p| p.evidence.iter().any(|e| e.starts_with("probe:")))
+                c.pillars
+                    .iter()
+                    .any(|p| p.evidence.iter().any(|e| e.starts_with("probe:")))
             });
             // Either probes matched (citation present) or none did for this
             // crate — both are valid; the test guards against crash only.

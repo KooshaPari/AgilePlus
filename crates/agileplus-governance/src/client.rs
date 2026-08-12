@@ -317,6 +317,7 @@ impl GovernanceClient {
             ..AuditFilter::new()
         };
 
+        let channel = channel.to_string();
         match self.audit_logger.query(&filter) {
             Ok(events) => events
                 .iter()
@@ -324,7 +325,7 @@ impl GovernanceClient {
                     e.metadata
                         .as_ref()
                         .and_then(|m| m.get("to").and_then(|v| v.as_str()))
-                        .map_or(false, |to| to == &channel.to_string())
+                        .is_some_and(|to| to == channel)
                 })
                 .count() as u32,
             Err(_) => 0,
