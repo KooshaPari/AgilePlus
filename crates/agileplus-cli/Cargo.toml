@@ -24,16 +24,16 @@ tracing-subscriber.workspace = true
 clap = { version = "4", features = ["derive", "env"] }
 chrono.workspace = true
 sha2.workspace = true
-agileplus-application = { path = "../agileplus-application" }
-agileplus-domain = { path = "../agileplus-domain" }
-agileplus-git = { path = "../agileplus-git" }
-agileplus-github = { path = "../agileplus-github" }
-agileplus-governance = { path = "../agileplus-governance" }
-agileplus-plane = { path = "../agileplus-plane" }
-agileplus-sqlite = { path = "../agileplus-sqlite" }
-agileplus-subcmds = { path = "../agileplus-subcmds", default-features = true }
-agileplus-triage = { path = "../agileplus-triage" }
-agileplus-events = { path = "../agileplus-events", optional = true }
+agileplus-application = { version = "0.2.1", path = "../agileplus-application" }
+agileplus-domain = { version = "0.2.1", path = "../agileplus-domain" }
+agileplus-git = { version = "0.2.1", path = "../agileplus-git" }
+agileplus-github = { version = "0.2.1", path = "../agileplus-github" }
+agileplus-governance = { version = "0.1.0", path = "../agileplus-governance" }
+agileplus-plane = { version = "0.2.1", path = "../agileplus-plane" }
+agileplus-sqlite = { version = "0.2.1", path = "../agileplus-sqlite" }
+agileplus-subcmds = { version = "0.2.1", path = "../agileplus-subcmds", default-features = true }
+agileplus-triage = { version = "0.2.1", path = "../agileplus-triage" }
+agileplus-events = { version = "0.2.1", path = "../agileplus-events", optional = true }
 agileplus-telemetry.workspace = true
 rusqlite = { version = "0.32", features = ["bundled"] }
 async-trait.workspace = true
