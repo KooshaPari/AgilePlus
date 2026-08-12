@@ -155,6 +155,20 @@ async def test_auto_triage_no_issues():
 
 
 @pytest.mark.asyncio
+async def test_auto_triage_classifies_warning_without_escalating_to_error():
+    from agileplus_mcp.sampling import SamplingHandler
+
+    handler = SamplingHandler(_mock_client())
+
+    result = await handler.auto_triage("my-feat", "warning: cache is cold\nfinished")
+
+    assert result["severity"] == "warning"
+    assert result["category"] == "lint_warning"
+    assert result["remediation"] == ""
+    assert result["raw_lines"] == 2
+
+
+@pytest.mark.asyncio
 async def test_governance_pre_check():
     from agileplus_mcp.sampling import SamplingHandler
 
@@ -163,6 +177,22 @@ async def test_governance_pre_check():
     result = await handler.governance_pre_check("my-feat", "implementing->validated")
     assert result["ready"] is True
     assert result["blockers"] == []
+
+
+@pytest.mark.asyncio
+async def test_governance_pre_check_surfaces_each_violation_message():
+    from agileplus_mcp.sampling import SamplingHandler
+
+    client = _mock_client()
+    client.check_governance_gate.return_value = {
+        "passed": False,
+        "violations": [{"message": "evidence missing"}, {"message": "review pending"}],
+    }
+
+    result = await SamplingHandler(client).governance_pre_check("my-feat", "planned->validated")
+
+    assert result["ready"] is False
+    assert result["blockers"] == ["evidence missing", "review pending"]
 
 
 @pytest.mark.asyncio
@@ -181,3 +211,23 @@ async def test_generate_retrospective():
     result = await handler.generate_retrospective("my-feat")
     assert result["feature_slug"] == "my-feat"
     assert result["audit_valid"] is True
+
+
+@pytest.mark.asyncio
+async def test_generate_retrospective_reports_invalid_audit_chain():
+    from agileplus_mcp.sampling import SamplingHandler
+
+    client = _mock_client()
+    client.get_audit_trail = AsyncMock(
+        return_value={
+            "entries": [{"id": 1}, {"id": 2}],
+            "verification": {"valid": False, "entries_verified": 1},
+        }
+    )
+
+    result = await SamplingHandler(client).generate_retrospective("my-feat")
+
+    assert result["audit_valid"] is False
+    assert result["total_transitions"] == 2
+    assert result["issues"] == ["Audit chain integrity failure"]
+    assert result["metrics"] == {"entries_verified": 1}
