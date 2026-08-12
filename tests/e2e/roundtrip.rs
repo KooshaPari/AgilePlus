@@ -1,4 +1,4 @@
-//! Installed-CLI round-trip: init -> specify -> status in a temporary git repo.
+//! Installed-CLI round-trip: init -> specify -> list in a temporary git repo.
 //!
 //! Set `AGILEPLUS_BIN` to the built or installed `agileplus` executable path.
 
@@ -53,7 +53,7 @@ fn init_git_repo(dir: &Path) {
 }
 
 #[test]
-fn roundtrip_init_specify_status_writes_state_files() {
+fn roundtrip_init_specify_list_writes_state_files() {
     let bin = agileplus_bin();
     let spec = spec_fixture();
     assert!(spec.is_file(), "missing fixture {}", spec.display());
@@ -93,28 +93,16 @@ fn roundtrip_init_specify_status_writes_state_files() {
     assert!(spec_file.is_file(), "spec artifact missing at {}", spec_file.display());
     assert!(db.is_file(), "sqlite db missing at {}", db.display());
 
-    let status = Command::new(&bin)
+    Command::new(&bin)
         .args([
             "--db",
             db.to_str().expect("db path utf8"),
-            "status",
-            "--feature",
-            feature,
-            "--wp",
-            "WP01",
+            "list",
             "--state",
             "specified",
         ])
         .current_dir(repo.path())
-        .output()
-        .expect("status spawn");
-
-    if !status.status.success() {
-        Command::new(&bin)
-            .args(["--db", db.to_str().expect("db path utf8"), "status"])
-            .current_dir(repo.path())
-            .assert()
-            .success()
-            .stdout(predicates::str::contains("AgilePlus"));
-    }
+        .assert()
+        .success()
+        .stdout(predicates::str::contains(feature));
 }

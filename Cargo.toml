@@ -4,6 +4,7 @@ resolver = "2"
 # Remaining scaffolding (44 crates, 19 libs) tracked but excluded from
 # workspace until source is implemented. See: kitty-specs/003-agileplus-platform-completion.
 members = [
+  "tests/e2e", # installed-CLI round-trip; workflow runs this crate from its manifest directory
   "rust", # agileplus-proto: tonic/prost gRPC stubs (buf-generated)
   "crates/agileplus-cli", # agileplus: spec-first CLI binary
   "crates/agileplus-subcmds", # platform/dashboard CLI subcommands (platform health)
