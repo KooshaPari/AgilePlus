@@ -27,7 +27,7 @@ use anyhow::{bail, Context, Result};
 use clap::Args;
 use comfy_table::{Cell, Row, Table};
 
-use agileplus_governance::scoring_engine::{evaluate, ClusterScore, ScoreReport};
+use agileplus_governance::scoring_engine::{evaluate, ScoreReport};
 
 use crate::commands::rubric::resolve_default_catalog_for_siblings;
 
@@ -300,7 +300,7 @@ fn score_glyph(score: u32) -> &'static str {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use agileplus_governance::scoring_engine::{PillarScore, ScoreReport};
+    use agileplus_governance::scoring_engine::{ClusterScore, PillarScore, ScoreReport};
 
     fn sample_report() -> ScoreReport {
         ScoreReport {
