@@ -521,6 +521,31 @@ mod tests {
     }
 
     #[test]
+    fn promotion_policy_actor_comes_from_request_requested_by() {
+        let engine = PolicyEngine::with_policies(vec![
+            Policy::new("release", "promote", PolicyEffect::Allow)
+                .with_condition(PolicyCondition::Equals {
+                    key: "user_id".to_string(),
+                    value: serde_json::json!("verified-user"),
+                })
+                .with_priority(100),
+        ])
+        .with_default_action(PolicyEffect::Deny);
+
+        let request = PromotionRequest::new(
+            "test-crate".to_string(),
+            ReleaseChannel::Alpha,
+            ReleaseChannel::Beta,
+            "verified-user".to_string(),
+            "0.1.0".to_string(),
+        );
+
+        let result = engine.check_promotion(&request);
+
+        assert!(result.allowed);
+    }
+
+    #[test]
     fn test_custom_policy() {
         let mut engine = PolicyEngine::new();
 

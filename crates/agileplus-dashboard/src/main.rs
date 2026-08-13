@@ -1,4 +1,5 @@
 use agileplus_dashboard::app_state::DashboardStore;
+use agileplus_dashboard::resolve_dashboard_host;
 use agileplus_dashboard::routes::router;
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -54,7 +55,14 @@ async fn main() {
         .ok()
         .and_then(|p| p.parse().ok())
         .unwrap_or(8770);
-    let addr = SocketAddr::from(([0, 0, 0, 0], port));
+    // SECURITY (AGILE-100 C-1): bind to loopback by default. Previously bound
+    // 0.0.0.0 with no auth — that placed every dashboard mutation (restart_service,
+    // toggle_service, patch_service_config, feature_transition, plane_daemon_*, etc.)
+    // behind no authentication for any reachable host on the network. Set
+    // DASHBOARD_HOST=0.0.0.0 to explicitly opt-in to a network-exposed deployment.
+    let dashboard_host = std::env::var("DASHBOARD_HOST");
+    let host = resolve_dashboard_host(dashboard_host.ok().as_deref());
+    let addr = SocketAddr::from((host, port));
     tracing::info!(%addr, "agileplus-dashboard listening");
 
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
