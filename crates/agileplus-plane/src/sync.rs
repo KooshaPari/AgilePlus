@@ -64,11 +64,13 @@ impl PlaneSyncAdapter {
         let content_hash = hash_content(&format!("{title}\n{description}"));
 
         // Check if already synced and unchanged
-        if let Some(ref existing_hash) = state.content_hash {
-            if *existing_hash == content_hash {
-                tracing::debug!("Feature {} unchanged, skipping sync", state.feature_slug);
-                return Ok(SyncOutcome::Skipped);
-            }
+        if state
+            .content_hash
+            .as_ref()
+            .is_some_and(|existing_hash| existing_hash == &content_hash)
+        {
+            tracing::debug!("Feature {} unchanged, skipping sync", state.feature_slug);
+            return Ok(SyncOutcome::Skipped);
         }
 
         let issue = PlaneIssue {
@@ -81,30 +83,39 @@ impl PlaneSyncAdapter {
             labels: vec!["agileplus".to_string(), "feature".to_string()],
         };
 
-        let outcome = if let Some(ref issue_id) = state.plane_issue_id {
-            // Check for conflicts before update
-            if let Ok(remote) = self.client.get_issue(issue_id).await {
-                if let Some(ref remote_desc) = remote.description_html {
-                    let remote_hash = hash_content(&format!("{}\n{}", remote.name, remote_desc));
-                    if let Some(ref our_hash) = state.content_hash {
-                        if remote_hash != *our_hash && content_hash != remote_hash {
-                            tracing::warn!(
-                                "Conflict detected on Plane issue {}: remote was modified",
-                                issue_id
-                            );
-                            return Ok(SyncOutcome::Conflict(issue_id.clone()));
-                        }
+        let outcome =
+            if let Some(ref issue_id) = state.plane_issue_id {
+                // Check for conflicts before update
+                if let Some((remote_name, remote_desc)) = self
+                    .client
+                    .get_issue(issue_id)
+                    .await
+                    .ok()
+                    .and_then(|remote| {
+                        remote
+                            .description_html
+                            .map(|description| (remote.name, description))
+                    })
+                {
+                    let remote_hash = hash_content(&format!("{remote_name}\n{remote_desc}"));
+                    if state.content_hash.as_ref().is_some_and(|our_hash| {
+                        remote_hash != *our_hash && content_hash != remote_hash
+                    }) {
+                        tracing::warn!(
+                            "Conflict detected on Plane issue {}: remote was modified",
+                            issue_id
+                        );
+                        return Ok(SyncOutcome::Conflict(issue_id.clone()));
                     }
                 }
-            }
 
-            let resp = self.client.update_issue(issue_id, &issue).await?;
-            SyncOutcome::Updated(resp.id)
-        } else {
-            let resp = self.client.create_issue(&issue).await?;
-            state.plane_issue_id = Some(resp.id.clone());
-            SyncOutcome::Created(resp.id)
-        };
+                let resp = self.client.update_issue(issue_id, &issue).await?;
+                SyncOutcome::Updated(resp.id)
+            } else {
+                let resp = self.client.create_issue(&issue).await?;
+                state.plane_issue_id = Some(resp.id.clone());
+                SyncOutcome::Created(resp.id)
+            };
 
         state.content_hash = Some(content_hash);
         state.last_synced_at = Some(Utc::now());

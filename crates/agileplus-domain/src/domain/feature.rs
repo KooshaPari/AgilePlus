@@ -32,7 +32,7 @@ pub(crate) mod hex_bytes {
         }
 
         let mut bytes = [0_u8; 32];
-        for (index, chunk) in value.as_bytes().chunks_exact(2).enumerate() {
+        for (index, chunk) in value.as_bytes().as_chunks::<2>().0.iter().enumerate() {
             let high = hex_value(chunk[0]).map_err(serde::de::Error::custom)?;
             let low = hex_value(chunk[1]).map_err(serde::de::Error::custom)?;
             bytes[index] = (high << 4) | low;
