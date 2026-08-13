@@ -25,6 +25,7 @@
 //! Audit traceability: recs #10, #11 from
 //! `AUDIT_BLOC_VS_2026_SOTA.md`.
 
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
@@ -206,6 +207,128 @@ impl GitVcsAdapter {
             || (msg.contains("checkout") && msg.contains("worktree"))
     }
 
+    /// Extract conflicts from the human-readable output emitted by Git's
+    /// merge machinery.  `merge-tree` differs across Git versions: Apple
+    /// Git 2.54 writes unmerged index rows (`mode oid stage<TAB>path`) plus
+    /// `CONFLICT (...)` diagnostics, while older versions can emit a patch.
+    fn parse_conflicts(raw: &str) -> Vec<ConflictInfo> {
+        let mut paths = BTreeMap::<String, String>::new();
+        let mut current_diff_path: Option<String> = None;
+
+        for line in raw.lines() {
+            if let Some((metadata, path)) = line.split_once('\t') {
+                let fields: Vec<_> = metadata.split_whitespace().collect();
+                if fields.len() == 3
+                    && fields[0].chars().all(|c| c.is_ascii_digit())
+                    && fields[2].chars().all(|c| c.is_ascii_digit())
+                    && !path.is_empty()
+                {
+                    paths
+                        .entry(path.to_string())
+                        .or_insert_with(|| "content".to_string());
+                    continue;
+                }
+            }
+
+            if let Some(rest) = line.strip_prefix("CONFLICT (") {
+                if let Some((kind, description)) = rest.split_once("): ") {
+                    if let Some(path) = Self::conflict_diagnostic_path(description) {
+                        paths.insert(path.to_string(), kind.to_string());
+                    }
+                }
+                continue;
+            }
+
+            if let Some(path) = line.strip_prefix("changed in both ") {
+                if !path.is_empty() {
+                    paths
+                        .entry(path.to_string())
+                        .or_insert_with(|| "content".to_string());
+                }
+                continue;
+            }
+
+            if line.starts_with("diff --git ") {
+                let parts: Vec<_> = line.split_whitespace().collect();
+                current_diff_path = parts
+                    .get(3)
+                    .map(|path| path.trim_start_matches("b/").to_string());
+            } else if (line.starts_with("<<<<<<<")
+                || line.starts_with("=======")
+                || line.starts_with(">>>>>>>"))
+                && current_diff_path.is_some()
+            {
+                let path = current_diff_path.take().expect("checked above");
+                paths.entry(path).or_insert_with(|| "content".to_string());
+            }
+        }
+
+        paths
+            .into_iter()
+            .map(|(path, conflict_type)| ConflictInfo {
+                path: path.clone(),
+                file_path: path,
+                conflict_type,
+                ours: None,
+                theirs: None,
+            })
+            .collect()
+    }
+
+    /// Extract a path only from merge-tree diagnostic forms whose path
+    /// position is defined by Git.  In particular, do not split arbitrary
+    /// prose on ` in `: branch names and diagnostic prose can contain that
+    /// phrase and are not file paths.
+    fn conflict_diagnostic_path(description: &str) -> Option<&str> {
+        if let Some(path) = description.strip_prefix("Merge conflict in ") {
+            return (!path.is_empty()).then_some(path);
+        }
+
+        // e.g. "foo.rs deleted in HEAD and modified in topic".
+        if let Some((path, _)) = description.split_once(" deleted in ") {
+            return (!path.is_empty()).then_some(path);
+        }
+
+        // e.g. "foo.rs renamed to bar.rs in HEAD and renamed to baz.rs in topic".
+        // The path follows the fixed ` renamed to ` token and ends at the
+        // immediately following fixed ` in ` token.
+        let (_, renamed) = description.split_once(" renamed to ")?;
+        let (path, _) = renamed.split_once(" in ")?;
+        (!path.is_empty()).then_some(path)
+    }
+
+    /// Return unresolved paths from a merge worktree.  This is authoritative
+    /// after `git merge` fails because it reads Git's unmerged index directly.
+    fn unresolved_conflicts_in(dir: &Path) -> Vec<ConflictInfo> {
+        let output = Command::new("git")
+            .args(["diff", "--name-only", "--diff-filter=U", "-z"])
+            .current_dir(dir)
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .output();
+        let Ok(output) = output else {
+            return vec![];
+        };
+        if !output.status.success() {
+            return vec![];
+        }
+        output
+            .stdout
+            .split(|byte| *byte == b'\0')
+            .filter(|path| !path.is_empty())
+            .map(|path| {
+                let path = String::from_utf8_lossy(path).into_owned();
+                ConflictInfo {
+                    path: path.clone(),
+                    file_path: path,
+                    conflict_type: "content".to_string(),
+                    ours: None,
+                    theirs: None,
+                }
+            })
+            .collect()
+    }
+
     /// Run `git merge --no-ff` of `source` into the current HEAD of `dir`.
     fn merge_in_dir(
         &self,
@@ -254,9 +377,15 @@ impl GitVcsAdapter {
                 message: Some(if stdout.is_empty() { stderr } else { stdout }),
             })
         } else {
+            let conflicts = Self::unresolved_conflicts_in(dir);
+            let conflicts = if conflicts.is_empty() {
+                Self::parse_conflicts(&format!("{stdout}\n{stderr}"))
+            } else {
+                conflicts
+            };
             Ok(MergeResult {
                 success: false,
-                conflicts: vec![],
+                conflicts,
                 merged_commit: None,
                 commit: None,
                 message: Some(if stderr.is_empty() { stdout } else { stderr }),
@@ -517,67 +646,11 @@ impl VcsPort for GitVcsAdapter {
     ) -> Result<Vec<ConflictInfo>, DomainError> {
         // `git merge-tree <target> <source>` is the read-only,
         // in-memory 3-way merge that does not touch the index or
-        // working tree. In git 2.38+ it produces structured output
-        // (one line per conflicted file); in older versions it
-        // produces a unified diff. We handle both shapes: if any
-        // line starts with `changed in both` (the 2.38+ format), we
-        // parse the filename; otherwise we fall back to the diff
-        // format and look for `<<<<<<<` / `=======` markers.
+        // working tree. Its output shape differs across Git versions;
+        // `parse_conflicts` handles structured stage rows, diagnostics,
+        // and the historical diff-marker fallback.
         let raw = self.run_git_allow_failure(&["merge-tree", target, source])?;
-        if raw.is_empty() {
-            return Ok(vec![]);
-        }
-        let mut out = Vec::new();
-        for line in raw.lines() {
-            if let Some(rest) = line.strip_prefix("changed in both") {
-                // Format: "changed in both\n  base   100644 <oid> <path>\n  ours   100644 <oid>\n  theirs 100644 <oid>\n"
-                // The path appears on the next non-empty line.
-                let path = rest
-                    .split_whitespace()
-                    .next()
-                    .unwrap_or("<unknown>")
-                    .to_string();
-                if !path.is_empty() {
-                    out.push(ConflictInfo {
-                        path: path.clone(),
-                        file_path: path,
-                        conflict_type: "content".to_string(),
-                        ours: None,
-                        theirs: None,
-                    });
-                }
-            }
-        }
-        // Fallback: extract any path that has a conflict marker in
-        // the diff body.
-        if out.is_empty() {
-            let mut current_path: Option<String> = None;
-            for line in raw.lines() {
-                if line.starts_with("diff --git ") {
-                    // `diff --git a/<path> b/<path>`
-                    let parts: Vec<&str> = line.split_whitespace().collect();
-                    if let Some(b) = parts.get(3) {
-                        current_path = Some(b.trim_start_matches("b/").to_string());
-                    }
-                } else if line.starts_with("<<<<<<<")
-                    || line.starts_with("=======")
-                    || line.starts_with(">>>>>>>")
-                {
-                    if let Some(p) = current_path.clone() {
-                        out.push(ConflictInfo {
-                            path: p.clone(),
-                            file_path: p,
-                            conflict_type: "content".to_string(),
-                            ours: None,
-                            theirs: None,
-                        });
-                        // Avoid duplicate entries for the same file.
-                        current_path = None;
-                    }
-                }
-            }
-        }
-        Ok(out)
+        Ok(Self::parse_conflicts(&raw))
     }
 
     async fn read_artifact(
