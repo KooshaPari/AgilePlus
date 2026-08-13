@@ -148,8 +148,8 @@ impl ProbeEvidence {
 
 }
 
-/// Like [`ProbeEvidence::matches_for_cluster`] but returns the full
-/// triple (cluster_id, rule_text, target_file, evidence_line). The
+/// Tagged probe evidence returns the full
+/// `(cluster_id, rule_text, target_file, evidence_line)` tuple. The
 /// collector tags each match with its source cluster so callers can
 /// bucket evidence cleanly.
 #[derive(Debug, Clone)]

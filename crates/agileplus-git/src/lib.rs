@@ -677,6 +677,25 @@ impl VcsPort for GitVcsAdapter {
                 }
             }
         }
+
+        let meta_path = dir.join("meta.json");
+        if meta_path.is_file() {
+            out.meta_json = Some(std::fs::read_to_string(&meta_path).map_err(|e| {
+                DomainError::Storage(format!("read artifact {}: {e}", meta_path.display()))
+            })?);
+        }
+
+        let audit_path = dir.join("audit").join("chain.jsonl");
+        if audit_path.is_file() {
+            out.audit_chain = Some(std::fs::read_to_string(&audit_path).map_err(|e| {
+                DomainError::Storage(format!("read artifact {}: {e}", audit_path.display()))
+            })?);
+        }
+
+        let evidence_dir = dir.join("evidence");
+        if evidence_dir.is_dir() {
+            collect_evidence_paths(&evidence_dir, &mut out.evidence_paths)?;
+        }
         Ok(out)
     }
 }
@@ -690,6 +709,23 @@ impl GitVcsAdapter {
             .join(feature_slug)
             .join(relative_path)
     }
+}
+
+fn collect_evidence_paths(dir: &Path, paths: &mut Vec<String>) -> Result<(), DomainError> {
+    for entry in std::fs::read_dir(dir)
+        .map_err(|e| DomainError::Storage(format!("scan evidence {}: {e}", dir.display())))?
+    {
+        let entry = entry.map_err(|e| {
+            DomainError::Storage(format!("scan evidence {}: {e}", dir.display()))
+        })?;
+        let path = entry.path();
+        if path.is_dir() {
+            collect_evidence_paths(&path, paths)?;
+        } else {
+            paths.push(path.to_string_lossy().into_owned());
+        }
+    }
+    Ok(())
 }
 
 /// Tiny glob matcher that supports `*` and a literal suffix. Used for
@@ -983,8 +1019,25 @@ mod tests {
             .expect("read");
         assert_eq!(content, "# spec\n");
         assert!(adapter.artifact_exists("login", "spec.md").await.unwrap());
+
+        adapter
+            .write_artifact("login", "meta.json", r#"{"slug":"login"}"#)
+            .await
+            .expect("write metadata");
+        adapter
+            .write_artifact("login", "audit/chain.jsonl", r#"{"event":"created"}"#)
+            .await
+            .expect("write audit chain");
+        adapter
+            .write_artifact("login", "evidence/run/result.json", r#"{"ok":true}"#)
+            .await
+            .expect("write nested evidence");
+
         let scan = adapter.scan_feature_artifacts("login").await.expect("scan");
         assert_eq!(scan.spec.as_deref(), Some("# spec\n"));
+        assert_eq!(scan.meta_json.as_deref(), Some(r#"{"slug":"login"}"#));
+        assert_eq!(scan.audit_chain.as_deref(), Some(r#"{"event":"created"}"#));
+        assert_eq!(scan.evidence_paths.len(), 1);
     }
 
     #[tokio::test]
