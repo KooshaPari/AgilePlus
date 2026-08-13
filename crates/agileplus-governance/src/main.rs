@@ -2,7 +2,7 @@
 //!
 //! Command-line interface for the governance system.
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use clap::Parser;
 use std::path::PathBuf;
 
@@ -130,7 +130,7 @@ async fn main() -> Result<()> {
                 package: crate_name.clone(),
                 from: from_channel,
                 to: to_channel,
-                requested_by: whoami::username(),
+                requested_by: resolve_promotion_requester(whoami::username())?,
                 version: "0.1.0".to_string(),
                 metadata: None,
             };
@@ -185,5 +185,38 @@ fn print_policy_result(result: &agileplus_governance::PolicyResult) {
         if let Some(ref policy) = result.policy {
             println!("  Policy: {}", policy);
         }
+    }
+}
+
+fn resolve_promotion_requester<E>(username: std::result::Result<String, E>) -> Result<String>
+where
+    E: std::error::Error + Send + Sync + 'static,
+{
+    username.context("resolving promotion requester username")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::resolve_promotion_requester;
+
+    #[test]
+    fn resolve_promotion_requester_returns_username() {
+        assert_eq!(
+            resolve_promotion_requester::<std::io::Error>(Ok("release-agent".to_string()))
+                .unwrap(),
+            "release-agent"
+        );
+    }
+
+    #[test]
+    fn resolve_promotion_requester_contextualizes_lookup_failure() {
+        let error = resolve_promotion_requester::<std::io::Error>(Err(std::io::Error::other(
+            "user lookup unavailable",
+        )))
+        .unwrap_err();
+
+        assert!(error
+            .to_string()
+            .contains("resolving promotion requester username"));
     }
 }

@@ -16,7 +16,7 @@ agileplus-domain = { path = "../agileplus-domain" }
 agileplus-triage = { path = "../agileplus-triage" }
 anyhow.workspace = true
 async-trait = "0.1"
-git2 = { version = "0.20", features = ["vendored-libgit2"] }
+git2 = { version = "0.21", features = ["vendored-libgit2"] }
 gix = { version = "0.83", default-features = false, features = [
   "worktree-stream",
   "revision",

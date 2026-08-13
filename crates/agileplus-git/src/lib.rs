@@ -629,9 +629,9 @@ impl VcsPort for GitVcsAdapter {
         feature_slug: &str,
     ) -> Result<FeatureArtifacts, DomainError> {
         // Look for the conventional artifacts at fixed names within
-        // `<repo_root>/.agileplus/<feature_slug>/`. Unknown files in
+        // `<repo_root>/kitty-specs/<feature_slug>/`. Unknown files in
         // that directory are collected under `other`.
-        let dir = self.repo_root.join(".agileplus").join(feature_slug);
+        let dir = self.repo_root.join("kitty-specs").join(feature_slug);
         let mut out = FeatureArtifacts {
             spec: None,
             research: None,
@@ -677,19 +677,55 @@ impl VcsPort for GitVcsAdapter {
                 }
             }
         }
+
+        let meta_path = dir.join("meta.json");
+        if meta_path.is_file() {
+            out.meta_json = Some(std::fs::read_to_string(&meta_path).map_err(|e| {
+                DomainError::Storage(format!("read artifact {}: {e}", meta_path.display()))
+            })?);
+        }
+
+        let audit_path = dir.join("audit").join("chain.jsonl");
+        if audit_path.is_file() {
+            out.audit_chain = Some(std::fs::read_to_string(&audit_path).map_err(|e| {
+                DomainError::Storage(format!("read artifact {}: {e}", audit_path.display()))
+            })?);
+        }
+
+        let evidence_dir = dir.join("evidence");
+        if evidence_dir.is_dir() {
+            collect_evidence_paths(&evidence_dir, &mut out.evidence_paths)?;
+        }
         Ok(out)
     }
 }
 
 impl GitVcsAdapter {
     /// Resolve the absolute path of a feature artifact on disk.
-    /// Path: `<repo_root>/.agileplus/<feature_slug>/<relative_path>`.
+    /// Path: `<repo_root>/kitty-specs/<feature_slug>/<relative_path>`.
     fn artifact_path(&self, feature_slug: &str, relative_path: &str) -> PathBuf {
         self.repo_root
-            .join(".agileplus")
+            .join("kitty-specs")
             .join(feature_slug)
             .join(relative_path)
     }
+}
+
+fn collect_evidence_paths(dir: &Path, paths: &mut Vec<String>) -> Result<(), DomainError> {
+    for entry in std::fs::read_dir(dir)
+        .map_err(|e| DomainError::Storage(format!("scan evidence {}: {e}", dir.display())))?
+    {
+        let entry = entry.map_err(|e| {
+            DomainError::Storage(format!("scan evidence {}: {e}", dir.display()))
+        })?;
+        let path = entry.path();
+        if path.is_dir() {
+            collect_evidence_paths(&path, paths)?;
+        } else {
+            paths.push(path.to_string_lossy().into_owned());
+        }
+    }
+    Ok(())
 }
 
 /// Tiny glob matcher that supports `*` and a literal suffix. Used for
@@ -983,8 +1019,25 @@ mod tests {
             .expect("read");
         assert_eq!(content, "# spec\n");
         assert!(adapter.artifact_exists("login", "spec.md").await.unwrap());
+
+        adapter
+            .write_artifact("login", "meta.json", r#"{"slug":"login"}"#)
+            .await
+            .expect("write metadata");
+        adapter
+            .write_artifact("login", "audit/chain.jsonl", r#"{"event":"created"}"#)
+            .await
+            .expect("write audit chain");
+        adapter
+            .write_artifact("login", "evidence/run/result.json", r#"{"ok":true}"#)
+            .await
+            .expect("write nested evidence");
+
         let scan = adapter.scan_feature_artifacts("login").await.expect("scan");
         assert_eq!(scan.spec.as_deref(), Some("# spec\n"));
+        assert_eq!(scan.meta_json.as_deref(), Some(r#"{"slug":"login"}"#));
+        assert_eq!(scan.audit_chain.as_deref(), Some(r#"{"event":"created"}"#));
+        assert_eq!(scan.evidence_paths.len(), 1);
     }
 
     #[tokio::test]

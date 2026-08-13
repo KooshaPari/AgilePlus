@@ -146,21 +146,10 @@ impl ProbeEvidence {
         Self { matches }
     }
 
-    /// Number of matches for the given cluster id.
-    pub fn matches_for_cluster(&self, cluster: &str) -> usize {
-        self.matches
-            .iter()
-            .filter(|(_, _, _)| {
-                // We don't have the cluster id directly on the tuple;
-                // tests can use the richer `matches_with_cluster` API.
-                false
-            })
-            .count()
-    }
 }
 
-/// Like [`ProbeEvidence::matches_for_cluster`] but returns the full
-/// triple (cluster_id, rule_text, target_file, evidence_line). The
+/// Tagged probe evidence returns the full
+/// `(cluster_id, rule_text, target_file, evidence_line)` tuple. The
 /// collector tags each match with its source cluster so callers can
 /// bucket evidence cleanly.
 #[derive(Debug, Clone)]
@@ -324,16 +313,10 @@ fn rules_for(cluster: &str) -> Vec<(&'static str, &'static str, &'static [&'stat
         .collect()
 }
 
-/// Score one cluster against the scan evidence.
-fn score_cluster(pillar: &Pillar, scan: &RepoScan, _repo: &Path) -> ClusterScore {
-    score_cluster_with_probes(pillar, scan, _repo, &TaggedProbeEvidence { matches: vec![] })
-}
-
 /// Score one cluster against path-presence rules + content-probe evidence.
 ///
-/// Backwards-compat: when `probe_evidence` is empty (e.g. probes disabled
-/// by passing `Some(&[])` or the default [`score_cluster`] call), the
-/// behavior is identical to the v1 path-presence scoring.
+/// When `probe_evidence` is empty (e.g. probes disabled by passing
+/// `Some(&[])`), behavior is identical to the v1 path-presence scoring.
 fn score_cluster_with_probes(
     pillar: &Pillar,
     scan: &RepoScan,
