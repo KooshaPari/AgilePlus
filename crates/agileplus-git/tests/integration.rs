@@ -31,7 +31,7 @@ fn setup_test_repo() -> (TempDir, GitVcsAdapter) {
         "Initial commit",
     );
 
-    let adapter = GitVcsAdapter::new(dir.path().to_path_buf()).expect("adapter");
+    let adapter = GitVcsAdapter::new(dir.path().to_path_buf());
     (dir, adapter)
 }
 
@@ -70,11 +70,16 @@ fn test_adapter_new_valid_repo() {
     drop(dir);
 }
 
-#[test]
-fn test_adapter_new_invalid_dir() {
+#[tokio::test]
+async fn test_adapter_defers_invalid_repo_error_until_operation() {
     let dir = tempfile::tempdir().unwrap();
-    let result = GitVcsAdapter::new(dir.path().to_path_buf());
-    assert!(result.is_err(), "should fail on non-git dir");
+    let adapter = GitVcsAdapter::new(dir.path().to_path_buf());
+
+    let result = adapter.list_branches(None, false).await;
+    assert!(
+        result.is_err(),
+        "git operations should fail for a non-git directory"
+    );
 }
 
 // ---- Artifact tests ----
@@ -125,17 +130,18 @@ async fn test_artifact_exists_before_and_after() {
 async fn test_read_missing_artifact_returns_not_found() {
     let (dir, adapter) = setup_test_repo();
     let result = adapter.read_artifact("nonexistent", "spec.md").await;
-    assert!(result.is_err());
-    let err_str = result.unwrap_err().to_string();
     assert!(
-        err_str.contains("not found") || err_str.contains("NotFound"),
-        "expected NotFound error, got: {err_str}"
+        matches!(
+            result,
+            Err(agileplus_domain::error::DomainError::NotFound(_))
+        ),
+        "missing artifacts must retain the NotFound domain error"
     );
     drop(dir);
 }
 
 #[tokio::test]
-async fn test_write_artifact_stages_in_index() {
+async fn test_write_artifact_persists_to_the_feature_artifact_path() {
     let (dir, adapter) = setup_test_repo();
 
     adapter
@@ -143,15 +149,10 @@ async fn test_write_artifact_stages_in_index() {
         .await
         .unwrap();
 
-    // Verify the file is staged in the git index.
-    let repo = Repository::open(dir.path()).unwrap();
-    let index = repo.index().unwrap();
-    let found = index.iter().any(|e| {
-        std::str::from_utf8(&e.path)
-            .map(|p| p.contains("feat-x/plan.md"))
-            .unwrap_or(false)
-    });
-    assert!(found, "artifact should be staged in index");
+    assert_eq!(
+        std::fs::read_to_string(dir.path().join(".agileplus/feat-x/plan.md")).unwrap(),
+        "# Plan\n"
+    );
     drop(dir);
 }
 
@@ -161,61 +162,64 @@ async fn test_scan_feature_artifacts() {
     let slug = "my-feature";
 
     adapter
-        .write_artifact(slug, "meta.json", r#"{"slug":"my-feature"}"#)
+        .write_artifact(slug, "spec.md", "# Feature spec\n")
         .await
         .unwrap();
     adapter
-        .write_artifact(slug, "audit/chain.jsonl", r#"{"event":"created"}"#)
+        .write_artifact(slug, "research.md", "# Research\n")
         .await
         .unwrap();
     adapter
-        .write_artifact(slug, "evidence/screenshot.png", "binary-ish")
+        .write_artifact(slug, "plan.md", "# Plan\n")
+        .await
+        .unwrap();
+    adapter
+        .write_artifact(slug, "notes.txt", "operator notes")
         .await
         .unwrap();
 
     let artifacts = adapter.scan_feature_artifacts(slug).await.unwrap();
 
-    assert!(artifacts.meta_json.is_some(), "meta.json should be present");
-    assert!(
-        artifacts.audit_chain.is_some(),
-        "chain.jsonl should be present"
-    );
-    assert!(
-        !artifacts.evidence_paths.is_empty(),
-        "evidence should be found"
-    );
+    assert_eq!(artifacts.spec.as_deref(), Some("# Feature spec\n"));
+    assert_eq!(artifacts.research.as_deref(), Some("# Research\n"));
+    assert_eq!(artifacts.plan.as_deref(), Some("# Plan\n"));
+    assert_eq!(artifacts.other, vec!["notes.txt"]);
     drop(dir);
 }
 
 // ---- Scanner tests ----
 
-#[test]
-fn test_scan_all_features_finds_two_features() {
+#[tokio::test]
+async fn test_scan_feature_artifacts_is_scoped_to_the_requested_feature() {
     let (dir, adapter) = setup_test_repo();
 
-    // Create two feature dirs with meta.json.
-    for slug in &["feature-a", "feature-b"] {
-        let path = dir.path().join("kitty-specs").join(slug).join("meta.json");
-        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
-        std::fs::write(&path, r#"{"slug":"x"}"#).unwrap();
-    }
-    // Create a dir WITHOUT meta.json (should be excluded).
-    std::fs::create_dir_all(dir.path().join("kitty-specs").join("no-meta")).unwrap();
+    adapter
+        .write_artifact("feature-a", "spec.md", "# A\n")
+        .await
+        .unwrap();
+    adapter
+        .write_artifact("feature-b", "spec.md", "# B\n")
+        .await
+        .unwrap();
 
-    let slugs = agileplus_git::scan_all_features(&adapter).unwrap();
-    assert_eq!(slugs.len(), 2);
-    assert!(slugs.contains(&"feature-a".to_string()));
-    assert!(slugs.contains(&"feature-b".to_string()));
+    let artifacts = adapter.scan_feature_artifacts("feature-a").await.unwrap();
+    assert_eq!(artifacts.spec.as_deref(), Some("# A\n"));
+    assert!(artifacts.research.is_none());
     drop(dir);
 }
 
-#[test]
-fn test_scan_excludes_dirs_without_meta() {
+#[tokio::test]
+async fn test_scan_missing_feature_returns_empty_artifacts() {
     let (dir, adapter) = setup_test_repo();
 
-    std::fs::create_dir_all(dir.path().join("kitty-specs").join("no-meta")).unwrap();
-    let slugs = agileplus_git::scan_all_features(&adapter).unwrap();
-    assert!(slugs.is_empty());
+    let artifacts = adapter
+        .scan_feature_artifacts("no-such-feature")
+        .await
+        .unwrap();
+    assert!(artifacts.spec.is_none());
+    assert!(artifacts.research.is_none());
+    assert!(artifacts.plan.is_none());
+    assert!(artifacts.other.is_empty());
     drop(dir);
 }
 
@@ -337,6 +341,13 @@ async fn test_merge_with_conflict() {
             !result.conflicts.is_empty(),
             "conflicts should be non-empty on failure"
         );
+        assert!(
+            result
+                .conflicts
+                .iter()
+                .any(|conflict| conflict.file_path == "conflict.txt"),
+            "merge conflict diagnostics must propagate the conflicted path: {result:?}"
+        );
     }
     drop(dir);
 }
@@ -420,9 +431,16 @@ async fn test_detect_conflicts_no_conflict() {
 #[tokio::test]
 async fn test_create_and_list_worktree() {
     let (dir, adapter) = setup_test_repo();
+    let feature_slug = format!(
+        "my-feat-{}",
+        dir.path()
+            .file_name()
+            .and_then(|name| name.to_str())
+            .expect("temporary repository directory name")
+    );
 
     let path = adapter
-        .create_worktree("my-feat", "WP01")
+        .create_worktree(&feature_slug, "WP01")
         .await
         .expect("create_worktree");
 
@@ -430,8 +448,12 @@ async fn test_create_and_list_worktree() {
     assert!(path.join(".git").exists(), "worktree should have .git file");
 
     let worktrees = adapter.list_worktrees().await.unwrap();
-    let found = worktrees.iter().any(|wt| wt.path == path);
-    assert!(found, "new worktree should appear in list_worktrees");
+    let canonical_path = std::fs::canonicalize(&path).expect("canonical worktree path");
+    let found = worktrees.iter().any(|wt| wt.path == canonical_path);
+    assert!(
+        found,
+        "new worktree should appear in list_worktrees; got {worktrees:?}"
+    );
     drop(dir);
 }
 
@@ -467,36 +489,30 @@ async fn test_cleanup_worktree_safety_check() {
     drop(dir);
 }
 
-// ---- History scanning ----
+// ---- Branch listing ----
 
-#[test]
-fn test_get_feature_history() {
+#[tokio::test]
+async fn test_list_branches_filters_feature_branches() {
     let (dir, adapter) = setup_test_repo();
-    let repo = Repository::open(dir.path()).unwrap();
+    adapter
+        .create_branch("feat/my-feature", "HEAD")
+        .await
+        .unwrap();
+    adapter.create_branch("fix/other", "HEAD").await.unwrap();
 
-    // Add commit touching a feature dir.
-    make_commit(
-        &repo,
-        dir.path(),
-        "kitty-specs/my-feature/spec.md",
-        "# Spec\n",
-        "Add spec for my-feature",
-    );
-    make_commit(
-        &repo,
-        dir.path(),
-        "other-file.txt",
-        "unrelated\n",
-        "Unrelated commit",
-    );
-    drop(repo);
-
-    let history = agileplus_git::get_feature_history(&adapter, "my-feature").unwrap();
-    assert!(!history.is_empty(), "should find commits for my-feature");
+    let branches = adapter.list_branches(Some("feat/*"), false).await.unwrap();
     assert!(
-        history.iter().any(|c| c.message.contains("my-feature")),
-        "feature commit should appear in history"
+        branches
+            .iter()
+            .any(|branch| branch.name == "feat/my-feature"),
+        "feature branch should be listed"
     );
+    assert!(
+        branches
+            .iter()
+            .all(|branch| branch.name.starts_with("feat/"))
+    );
+    drop(dir);
 }
 
 // ---- Helpers ----
