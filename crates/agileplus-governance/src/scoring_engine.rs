@@ -108,59 +108,7 @@ pub const SCORING_PROBES: &[ProbeRule] = &[
     },
 ];
 
-/// Result of probing one repo against all enabled probes.
-#[derive(Debug, Clone)]
-pub struct ProbeEvidence {
-    /// `(rule_text, target_file, matched_line_excerpt)`.
-    pub matches: Vec<(&'static str, &'static str, String)>,
-}
-
-impl ProbeEvidence {
-    /// Walk the probe catalog and produce evidence. Missing or
-    /// unreadable files silently count as "not matched" — probes are
-    /// strictly additive over path-presence rules.
-    pub fn collect(repo_root: &Path, probes: &[ProbeRule]) -> Self {
-        let mut matches = Vec::new();
-        for probe in probes {
-            let Ok(compiled) = probe.compiled() else {
-                continue;
-            };
-            let path = repo_root.join(probe.target_file);
-            let Ok(text) = std::fs::read_to_string(&path) else {
-                continue;
-            };
-            if let Some(m) = compiled.find(&text) {
-                let line_no = text[..m.start()].matches('\n').count() + 1;
-                let line_start = text[..m.start()]
-                    .rfind('\n')
-                    .map(|i| i + 1)
-                    .unwrap_or(0);
-                let line_end_rel = text[m.start()..]
-                    .find('\n')
-                    .unwrap_or(text.len() - m.start());
-                let line_end = m.start() + line_end_rel;
-                let excerpt = text[line_start..line_end].trim().to_string();
-                matches.push((probe.rule_text, probe.target_file, format!("{path:?}:{line_no} {excerpt}")));
-            }
-        }
-        Self { matches }
-    }
-
-    /// Number of matches for the given cluster id.
-    pub fn matches_for_cluster(&self, cluster: &str) -> usize {
-        self.matches
-            .iter()
-            .filter(|(_, _, _)| {
-                // We don't have the cluster id directly on the tuple;
-                // tests can use the richer `matches_with_cluster` API.
-                false
-            })
-            .count()
-    }
-}
-
-/// Like [`ProbeEvidence::matches_for_cluster`] but returns the full
-/// triple (cluster_id, rule_text, target_file, evidence_line). The
+/// Evidence tagged with its source cluster so callers can bucket probes.
 /// collector tags each match with its source cluster so callers can
 /// bucket evidence cleanly.
 #[derive(Debug, Clone)]
@@ -324,15 +272,10 @@ fn rules_for(cluster: &str) -> Vec<(&'static str, &'static str, &'static [&'stat
         .collect()
 }
 
-/// Score one cluster against the scan evidence.
-fn score_cluster(pillar: &Pillar, scan: &RepoScan, _repo: &Path) -> ClusterScore {
-    score_cluster_with_probes(pillar, scan, _repo, &TaggedProbeEvidence { matches: vec![] })
-}
-
 /// Score one cluster against path-presence rules + content-probe evidence.
 ///
 /// Backwards-compat: when `probe_evidence` is empty (e.g. probes disabled
-/// by passing `Some(&[])` or the default [`score_cluster`] call), the
+/// by passing `Some(&[])`), the
 /// behavior is identical to the v1 path-presence scoring.
 fn score_cluster_with_probes(
     pillar: &Pillar,
