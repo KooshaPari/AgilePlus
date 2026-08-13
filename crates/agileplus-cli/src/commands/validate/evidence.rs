@@ -76,6 +76,7 @@ pub(crate) async fn evaluate_evidence<S: StoragePort>(
 }
 
 /// Check if evidence meets a threshold defined in metadata.
+#[cfg(test)]
 pub(crate) fn evaluate_threshold(evidence: &[&Evidence], threshold: &serde_json::Value) -> bool {
     if let Some(min_cov) = threshold.get("min_coverage").and_then(|v| v.as_f64()) {
         for ev in evidence {
