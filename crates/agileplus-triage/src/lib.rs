@@ -32,6 +32,7 @@ use clap::Args;
 pub mod adapter;
 pub mod ast_tokenize;
 pub mod backlog;
+#[cfg(feature = "bloom")]
 pub mod bloom;
 pub mod claim;
 #[cfg(feature = "sqlite")]

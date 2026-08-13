@@ -483,9 +483,11 @@ fn epics_stories_json_for_path(db_path: &std::path::Path) -> axum::Json<serde_js
         }
     };
 
-    let mut epics_statement = match conn
-        .prepare("SELECT id, title, status, requirement_id FROM epics ORDER BY id")
-    {
+    let epics_requirement_id = column_expression(&conn, "epics", "requirement_id");
+    let epics_query = format!(
+        "SELECT id, title, status, {epics_requirement_id} AS requirement_id FROM epics ORDER BY id"
+    );
+    let mut epics_statement = match conn.prepare(&epics_query) {
         Ok(statement) => statement,
         Err(e) => return epics_stories_error("epics query failed", e),
     };
@@ -504,9 +506,12 @@ fn epics_stories_json_for_path(db_path: &std::path::Path) -> axum::Json<serde_js
         Err(e) => return epics_stories_error("epics query failed", e),
     };
 
-    let mut stories_statement = match conn
-        .prepare("SELECT id, epic_id, title, status, requirement_id FROM stories ORDER BY id")
-    {
+    let stories_requirement_id = column_expression(&conn, "stories", "requirement_id");
+    let stories_query = format!(
+        "SELECT id, epic_id, title, status, {stories_requirement_id} AS requirement_id \
+         FROM stories ORDER BY id"
+    );
+    let mut stories_statement = match conn.prepare(&stories_query) {
         Ok(statement) => statement,
         Err(e) => return epics_stories_error("stories query failed", e),
     };
@@ -538,6 +543,17 @@ fn epics_stories_json_for_path(db_path: &std::path::Path) -> axum::Json<serde_js
     }))
 }
 
+fn column_expression(conn: &rusqlite::Connection, table: &str, column: &str) -> String {
+    let has_column = conn
+        .prepare(&format!("SELECT {column} FROM {table} LIMIT 0"))
+        .is_ok();
+    if has_column {
+        column.to_owned()
+    } else {
+        "NULL".to_owned()
+    }
+}
+
 fn epics_stories_error(context: &str, error: rusqlite::Error) -> axum::Json<serde_json::Value> {
     axum::Json(serde_json::json!({
         "epics": [],
@@ -556,7 +572,9 @@ mod epics_stories_json_tests {
         std::env::temp_dir().join(format!(
             "agileplus-dashboard-{name}-{}-{}.db",
             std::process::id(),
-            Utc::now().timestamp_nanos_opt().expect("timestamp is representable"),
+            Utc::now()
+                .timestamp_nanos_opt()
+                .expect("timestamp is representable"),
         ))
     }
 
@@ -572,9 +590,11 @@ mod epics_stories_json_tests {
         assert_eq!(response["stories"], serde_json::json!([]));
         assert_eq!(response["epic_count"], 0);
         assert_eq!(response["story_count"], 0);
-        assert!(response["error"]
-            .as_str()
-            .is_some_and(|error| error.contains("epics query failed")));
+        assert!(
+            response["error"]
+                .as_str()
+                .is_some_and(|error| error.contains("epics query failed"))
+        );
 
         std::fs::remove_file(path).expect("temporary database is removed");
     }
@@ -597,6 +617,37 @@ mod epics_stories_json_tests {
         assert_eq!(response["stories"], serde_json::json!([]));
         assert_eq!(response["epic_count"], 0);
         assert_eq!(response["story_count"], 0);
+        assert!(response.get("error").is_none());
+
+        std::fs::remove_file(path).expect("temporary database is removed");
+    }
+
+    #[test]
+    fn legacy_schema_keeps_existing_epics_and_stories_visible() {
+        let path = temporary_database_path("legacy-schema");
+        let connection = rusqlite::Connection::open(&path).expect("temporary database opens");
+        connection
+            .execute_batch(
+                "CREATE TABLE epics (id INTEGER, title TEXT, status TEXT);\
+                 CREATE TABLE stories (id INTEGER, epic_id INTEGER, title TEXT, status TEXT);\
+                 INSERT INTO epics VALUES (7, 'Legacy epic', 'active');\
+                 INSERT INTO stories VALUES (11, 7, 'Legacy story', 'todo');",
+            )
+            .expect("legacy dashboard schema is created");
+        drop(connection);
+
+        let response = epics_stories_json_for_path(&path).0;
+
+        assert_eq!(response["epic_count"], 1);
+        assert_eq!(response["story_count"], 1);
+        assert_eq!(
+            response["epics"][0]["requirement_id"],
+            serde_json::Value::Null
+        );
+        assert_eq!(
+            response["stories"][0]["requirement_id"],
+            serde_json::Value::Null
+        );
         assert!(response.get("error").is_none());
 
         std::fs::remove_file(path).expect("temporary database is removed");

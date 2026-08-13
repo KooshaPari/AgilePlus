@@ -274,9 +274,9 @@ fn rules_for(cluster: &str) -> Vec<(&'static str, &'static str, &'static [&'stat
 
 /// Score one cluster against path-presence rules + content-probe evidence.
 ///
-/// Backwards-compat: when `probe_evidence` is empty (e.g. probes disabled
-/// by passing `Some(&[])`), the
-/// behavior is identical to the v1 path-presence scoring.
+/// Backwards-compat: `evaluate_with_probes` converts `Some(&[])` to empty
+/// `TaggedProbeEvidence`; with that empty value, behavior is identical to the
+/// v1 path-presence scoring.
 fn score_cluster_with_probes(
     pillar: &Pillar,
     scan: &RepoScan,
