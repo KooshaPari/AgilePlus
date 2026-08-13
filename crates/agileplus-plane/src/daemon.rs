@@ -125,7 +125,6 @@ impl PlaneSyncDaemon {
                     break;
                 }
 
-                let started = Instant::now();
                 if let Err(e) = run_tick(storage.as_ref(), &cfg, &state_for_task).await {
                     tracing::warn!(error = %e, "plane sync tick failed");
                     let mut s = state_for_task.lock().await;
