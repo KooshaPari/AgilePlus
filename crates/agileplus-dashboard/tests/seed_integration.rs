@@ -99,7 +99,13 @@ fn seed_creates_seeded_dashboard_store() {
 
     let store = DashboardStore::seeded();
     assert_eq!(store.features.len(), 37);
-    assert!(!store.health.is_empty());
+    assert_eq!(store.modules.len(), 3);
+    assert_eq!(store.cycles.len(), 1);
+    assert_eq!(store.cycle_features.get(&1).map(Vec::len), Some(37));
+    assert_eq!(store.projects.len(), 1);
+    assert_eq!(store.active_project_id, Some(1));
+    assert_eq!(store.health.len(), 8);
+    assert_eq!(store.work_packages.len(), 37);
     assert!(store.work_packages.contains_key(&1));
     assert!(store.work_packages.contains_key(&37));
 }
