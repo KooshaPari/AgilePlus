@@ -188,6 +188,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "agileplus-e2e-roundtrip"
+version = "0.1.0"
+dependencies = [
+ "assert_cmd",
+ "predicates",
+ "tempfile",
+]
+
+[[package]]
 name = "agileplus-events"
 version = "0.2.1"
 dependencies = [
