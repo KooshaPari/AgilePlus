@@ -10,7 +10,7 @@
 //! ```bash
 //! cargo test --features dhat-heap \
 //!   --manifest-path crates/agileplus-domain/Cargo.toml \
-//!   -- --test-threads=1 -Z unstable-options --report-time
+//!   -- --test-threads=1
 //! ```
 //!
 //! Heap profiles are written to `dhat-heap*.json` files in the workspace

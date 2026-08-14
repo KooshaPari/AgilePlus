@@ -52,21 +52,24 @@ jobs:
       - name: Run dhat heap profiling tests
         id: profile
         run: |
+          set +e
           cargo test \
             --features dhat-heap \
             --manifest-path crates/agileplus-domain/Cargo.toml \
-            -- -Z unstable-options --report-time \
+            -- --test-threads=1 \
             2>&1 | tee memory-profile-output.txt
-          echo "exit_code=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+          exit_code=${PIPESTATUS[0]}
+          echo "exit_code=${exit_code}" >> "$GITHUB_OUTPUT"
+          exit "$exit_code"
 
       - name: List dhat heap profile artifacts
         id: artifacts
         if: always()
         run: |
           echo "=== dhat heap profiles ==="
-          ls -lh dhat-heap*.json 2>/dev/null || echo "No dhat-heap*.json files found"
+          find . -maxdepth 1 -type f -name 'dhat-heap*.json' -print
           # Count how many profiles were generated
-          count=$(ls dhat-heap*.json 2>/dev/null | wc -l | tr -d ' ')
+          count=$(find . -maxdepth 1 -type f -name 'dhat-heap*.json' -print | wc -l | tr -d ' ')
           echo "profile_count=${count:-0}" >> "$GITHUB_OUTPUT"
 
       - name: Upload dhat heap profiles
