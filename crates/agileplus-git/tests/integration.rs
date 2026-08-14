@@ -158,7 +158,7 @@ async fn test_write_artifact_persists_to_the_feature_artifact_path() {
         .unwrap();
 
     assert_eq!(
-        std::fs::read_to_string(dir.path().join(".agileplus/feat-x/plan.md")).unwrap(),
+        std::fs::read_to_string(dir.path().join("kitty-specs/feat-x/plan.md")).unwrap(),
         "# Plan\n"
     );
     drop(dir);
@@ -527,7 +527,7 @@ async fn test_list_branches_filters_feature_branches() {
 
 fn get_default_branch(repo: &Repository) -> String {
     if let Ok(head) = repo.head() {
-        if let Some(name) = head.shorthand() {
+        if let Ok(name) = head.shorthand() {
             return name.to_string();
         }
     }
