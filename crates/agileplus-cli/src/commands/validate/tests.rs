@@ -1,7 +1,7 @@
 use super::*;
 use agileplus_domain::domain::feature::Feature;
 use agileplus_domain::domain::governance::{
-    Evidence, EvidenceRequirement, EvidenceType, GovernanceContract, GovernanceRule, PolicyCheck,
+    Evidence, EvidenceType, GovernanceContract, GovernanceRule, PolicyCheck,
     PolicyDefinition, PolicyDomain, PolicyRule,
 };
 use agileplus_domain::domain::work_package::WorkPackage;
@@ -17,11 +17,7 @@ fn make_contract(feature_id: i64) -> GovernanceContract {
         version: 1,
         rules: vec![GovernanceRule {
             transition: "Implementing -> Validated".to_string(),
-            required_evidence: vec![EvidenceRequirement {
-                fr_id: "FR-001".to_string(),
-                evidence_type: EvidenceType::CiOutput,
-                threshold: None,
-            }],
+            required_evidence: vec!["FR-001:ci_output".to_string()],
             policy_refs: vec![],
         }],
         bound_at: Utc::now(),
@@ -154,14 +150,15 @@ fn evaluate_threshold_max_critical_fail() {
 }
 
 #[tokio::test]
-async fn builtin_ci_policy_fails_without_matching_evidence() {
+async fn stored_ci_policy_fails_without_matching_evidence() {
     let db = SqliteStorageAdapter::in_memory().unwrap();
     let feature_id = create_feature_with_wp(&db).await.0;
+    let policy_id = create_ci_evidence_policy(&db).await;
     let contract = contract_with_policy(
         feature_id,
         EvidenceType::CiOutput,
         "FR-CI",
-        "policy:ci-required",
+        policy_id,
     );
 
     let results = super::evidence::evaluate_policies(&db, &contract, feature_id)
@@ -174,14 +171,15 @@ async fn builtin_ci_policy_fails_without_matching_evidence() {
 }
 
 #[tokio::test]
-async fn builtin_ci_policy_ignores_wrong_evidence_type() {
+async fn stored_ci_policy_ignores_wrong_evidence_type() {
     let db = SqliteStorageAdapter::in_memory().unwrap();
     let (feature_id, wp_id) = create_feature_with_wp(&db).await;
+    let policy_id = create_ci_evidence_policy(&db).await;
     let contract = contract_with_policy(
         feature_id,
         EvidenceType::CiOutput,
         "FR-CI",
-        "policy:ci-required",
+        policy_id,
     );
     create_evidence(&db, wp_id, "FR-CI", EvidenceType::ReviewApproval).await;
 
@@ -195,14 +193,15 @@ async fn builtin_ci_policy_ignores_wrong_evidence_type() {
 }
 
 #[tokio::test]
-async fn builtin_ci_policy_passes_with_matching_evidence() {
+async fn stored_ci_policy_passes_with_matching_evidence() {
     let db = SqliteStorageAdapter::in_memory().unwrap();
     let (feature_id, wp_id) = create_feature_with_wp(&db).await;
+    let policy_id = create_ci_evidence_policy(&db).await;
     let contract = contract_with_policy(
         feature_id,
         EvidenceType::CiOutput,
         "FR-CI",
-        "policy:ci-required",
+        policy_id,
     );
     create_evidence(&db, wp_id, "FR-CI", EvidenceType::CiOutput).await;
 
@@ -231,7 +230,7 @@ async fn active_policy_matches_generated_ci_ref() {
         feature_id,
         EvidenceType::CiOutput,
         "FR-CI",
-        "policy:ci-required",
+        policy_id,
     );
     create_evidence(&db, wp_id, "FR-CI", EvidenceType::CiOutput).await;
 
@@ -315,11 +314,22 @@ async fn create_policy_rule(
     StoragePort::create_policy_rule(db, &rule).await.unwrap()
 }
 
+async fn create_ci_evidence_policy(db: &SqliteStorageAdapter) -> i64 {
+    create_policy_rule(
+        db,
+        PolicyDomain::Quality,
+        PolicyCheck::EvidencePresent {
+            evidence_type: EvidenceType::CiOutput,
+        },
+    )
+    .await
+}
+
 fn contract_with_policy(
     feature_id: i64,
     evidence_type: EvidenceType,
     fr_id: &str,
-    policy_ref: &str,
+    policy_id: i64,
 ) -> GovernanceContract {
     GovernanceContract {
         id: 1,
@@ -327,12 +337,8 @@ fn contract_with_policy(
         version: 1,
         rules: vec![GovernanceRule {
             transition: "Implementing -> Validated".to_string(),
-            required_evidence: vec![EvidenceRequirement {
-                fr_id: fr_id.to_string(),
-                evidence_type,
-                threshold: None,
-            }],
-            policy_refs: vec![policy_ref.to_string()],
+            required_evidence: vec![format!("{fr_id}:{}", evidence_type.as_str())],
+            policy_refs: vec![policy_id],
         }],
         bound_at: Utc::now(),
     }

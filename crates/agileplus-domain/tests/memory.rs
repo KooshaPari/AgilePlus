@@ -10,7 +10,7 @@
 //! ```bash
 //! cargo test --features dhat-heap \
 //!   --manifest-path crates/agileplus-domain/Cargo.toml \
-//!   -- -Z unstable-options --report-time
+//!   -- --test-threads=1
 //! ```
 //!
 //! Heap profiles are written to `dhat-heap*.json` files in the workspace
@@ -39,7 +39,7 @@
 
 #![cfg(feature = "dhat-heap")]
 
-use dhat::{Alloc, Heap};
+use dhat::{Alloc, Profiler};
 
 #[global_allocator]
 static ALLOC: Alloc = Alloc;
@@ -61,7 +61,7 @@ use chrono::Utc;
 /// large batch of [`Feature`] aggregates.
 #[test]
 fn memory_profile_feature_lifecycle() {
-    let _profiler = Heap::new();
+    let _profiler = Profiler::new_heap();
 
     let mut features: Vec<Feature> = (0..10_000)
         .map(|i| {
@@ -97,7 +97,7 @@ fn memory_profile_feature_lifecycle() {
 /// of [`WorkPackage`] values.
 #[test]
 fn memory_profile_work_package_operations() {
-    let _profiler = Heap::new();
+    let _profiler = Profiler::new_heap();
 
     let mut work_packages: Vec<WorkPackage> = (0..10_000)
         .map(|i| {
@@ -132,7 +132,7 @@ fn memory_profile_work_package_operations() {
 /// Profile heap usage during trace-ref linking across many artifacts.
 #[test]
 fn memory_profile_traceability_bridge() {
-    let _profiler = Heap::new();
+    let _profiler = Profiler::new_heap();
     let adapter = NoopTraceAdapter;
 
     let entries: Vec<(TraceRef, String)> = (0..500)
@@ -172,7 +172,7 @@ fn memory_profile_traceability_bridge() {
 /// object graph — a common bottleneck in REST/gRPC handlers.
 #[test]
 fn memory_profile_json_serialization_stress() {
-    let _profiler = Heap::new();
+    let _profiler = Profiler::new_heap();
 
     let features: Vec<Feature> = (0..5_000)
         .map(|i| {
