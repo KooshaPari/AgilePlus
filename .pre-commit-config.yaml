@@ -36,8 +36,7 @@ repos:
         args: [--ignore-missing-imports, --no-strict-optional]
         additional_dependencies: [types-requests, types-PyYAML]
         pass_filenames: false
-        entry: mypy src/
-        language: system
+        entry: mypy python/src/
 
   # ── Rust ──
   - repo: https://github.com/rust-lang/rust-clippy
