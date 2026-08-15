@@ -36,20 +36,23 @@ repos:
         args: [--ignore-missing-imports, --no-strict-optional]
         additional_dependencies: [types-requests, types-PyYAML]
         pass_filenames: false
-        entry: mypy src/
-        language: system
+        entry: mypy python/src/
 
   # ── Rust ──
-  - repo: https://github.com/rust-lang/rust-clippy
-    rev: nightly-2025-07-15
+  - repo: local
     hooks:
-      - id: clippy
-        args: [--all-targets, --all-features, --, -D, warnings]
-
-  - repo: https://github.com/rust-lang/rustfmt
-    rev: nightly-2025-07-15
-    hooks:
-      - id: rustfmt
+      - id: cargo-fmt
+        name: cargo fmt
+        entry: cargo fmt --all -- --check
+        language: system
+        pass_filenames: false
+        types: [rust]
+      - id: cargo-clippy
+        name: cargo clippy
+        entry: cargo clippy --all-targets --all-features -- -D warnings
+        language: system
+        pass_filenames: false
+        types: [rust]
 
   # ── JavaScript/TypeScript (biome = fast lint+format) ──
   - repo: https://github.com/biomejs/pre-commit
