@@ -35,16 +35,16 @@ agileplus-subcmds = { version = "0.2.1", path = "../agileplus-subcmds", default-
 agileplus-triage = { version = "0.2.1", path = "../agileplus-triage" }
 agileplus-events = { version = "0.2.1", path = "../agileplus-events", optional = true }
 agileplus-telemetry.workspace = true
-rusqlite = { version = "0.32", features = ["bundled"] }
+rusqlite = { version = "0.40", features = ["bundled"] }
 async-trait.workspace = true
 serde.workspace = true
 serde_json.workspace = true
-comfy-table = "7"
-similar = "2"
+comfy-table = "8"
+similar = "3"
 dashmap = "6"
 uuid = { workspace = true }
 regex = { workspace = true }
-colored = "2"
+colored = "3"
 
 [dev-dependencies]
 assert_cmd.workspace = true

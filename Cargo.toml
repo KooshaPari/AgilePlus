@@ -79,9 +79,9 @@ regex = "1"
 
 # Web / HTTP
 axum = { version = "0.8", features = ["json", "macros"] }
-axum-extra = { version = "0.10", features = ["typed-header"] }
+axum-extra = { version = "0.12", features = ["typed-header"] }
 tower = { version = "0.5", features = ["limit", "timeout"] }
-tower-http = { version = "0.6", features = ["cors", "fs", "trace"] }
+tower-http = { version = "0.7", features = ["cors", "fs", "trace"] }
 hyper = "1"
 hyper-util = "0.1"
 
@@ -102,10 +102,10 @@ sentry = { version = "0.34", features = ["tracing"] }
 chrono = { version = "0.4", features = ["serde"] }
 
 # Crypto / hashing
-sha2 = "0.10"
+sha2 = "0.11"
 zeroize = { version = "1", features = ["derive"] }
-base64 = "0.22"
-aes-gcm = "0.10"
+base64 = "0.23"
+aes-gcm = "0.11"
 argon2 = "0.5"
 
 # gRPC / proto (used by agileplus-proto, agileplus-grpc, plugin-grpc, agent-service)
@@ -121,7 +121,7 @@ prost-build = "0.13"
 async-trait = "0.1"
 
 # Templating
-askama = "0.12"
+askama = "0.16"
 
 # Plugin crates (external from separate repos) — disabled for standalone build
 # agileplus-plugin-core = { git = "https://github.com/KooshaPari/agileplus-plugin-core" }
@@ -129,7 +129,7 @@ askama = "0.12"
 # agileplus-plugin-sqlite = { git = "https://github.com/KooshaPari/agileplus-plugin-sqlite" }
 
 # Git
-gix = "0.83"
+gix = "0.86"
 git2 = "0.19"
 
 # CLI
@@ -138,7 +138,7 @@ assert_cmd = "2"
 predicates = "3"
 
 # Data / storage
-rusqlite = { version = "0.32", features = ["bundled"] }
+rusqlite = { version = "0.40", features = ["bundled"] }
 redis = { version = "0.27", features = ["tokio-comp", "connection-manager"] }
 
 # HTTP client
@@ -149,10 +149,10 @@ criterion = "0.5"
 
 # Utils
 uuid = { version = "1", features = ["v4", "serde"] }
-rand = "0.8"
-toml = "0.8"
+rand = "0.10"
+toml = "1.1"
 dirs-next = "2"
-keyring = "3"
+keyring = "4"
 # Test-only deps used by legacy/obsolete test files (traceability integration tests).
 tempfile = "3"
 proptest = "1"
