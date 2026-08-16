@@ -38,10 +38,12 @@ embedded manifest digest must equal the canonical JSON digest.
   sizes. Rendering must be reproducible from those bytes without changing their meaning.
 - **FR-PFAM-005:** The feature must reject secret-bearing fields and must not enable a
   destructive operation.
-- **FR-PFAM-006:** Completion evidence must use the supported governance contract schema
-  and record CI, review approval, and audit-chain attestation without asserting a runtime
-  feature binding before the spec engine registers one; it must use an injected UTC clock and
-  explicit maximum-age policy to deny stale evidence.
+- **FR-PFAM-006:** Before runtime registration, this packet must be schema-validated and
+  record CI, review approval, and audit-chain attestation, but it must not be submitted to
+  transition evaluation or represented as an active binding. After the spec engine creates the
+  feature and persists its contract with an assigned feature ID, completion evaluation must use
+  an injected UTC clock and deny final-completion evidence more than 24 hours after its recorded
+  timestamp.
 
 ## Acceptance Criteria
 

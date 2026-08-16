@@ -40,8 +40,9 @@ completion transitions.
   fsck` before accepting WP03 review evidence.
 - Final completion requires CI output, approval, valid audit-chain verification, and a
   no-secret check.
-- Missing, stale, or failed evidence blocks the affected transition; freshness is evaluated
-  from a recorded evidence timestamp, an injected UTC clock, and an explicit maximum age.
+- Missing, stale, or failed evidence blocks the affected transition. For final completion,
+  freshness is evaluated from each recorded evidence timestamp against an injected UTC clock;
+  CI, approval, audit-chain, and no-secret evidence older than 24 hours is denied.
 - Audit events are append-only, SHA-256 hash-chained, and verified for integrity before final
   completion; no generated HTML or contract JSON bypasses that persistence requirement.
 - CI validates packet JSON and the focused domain, dashboard, and governance tests.
