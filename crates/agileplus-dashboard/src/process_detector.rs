@@ -4,19 +4,108 @@
 //! and extracts agent metadata from process information.
 
 use std::path::PathBuf;
-use std::time::{SystemTime, UNIX_EPOCH};
-use sysinfo::System;
+use std::collections::BTreeMap;
+use std::path::Path;
 
-/// Agent process information extracted from system processes.
-#[derive(Debug, Clone)]
-pub struct DetectedAgent {
+use serde::Serialize;
+
+/// Normalize a CLI family name from a raw process name.
+pub fn cli_family(name: &str) -> String {
+    let lower = name.to_ascii_lowercase();
+    for token in [
+        "codex", "claude", "droid", "gemini", "elicit", "elicit-mcp", "agileplus", "fabric",
+        "cursor", "windsurf", "aider", "cline", "elicitate",
+    ] {
+        if lower.contains(token) {
+            return token.to_string();
+        }
+    }
+    lower
+}
+
+/// Truncate a worktree path to the last 2 segments for display.
+pub fn shorten_worktree(p: &str) -> String {
+    if p.is_empty() {
+        return String::new();
+    }
+    let path = Path::new(p);
+    let parts: Vec<String> = path
+        .iter()
+        .filter_map(|c| c.to_str().map(|s| s.to_string()))
+        .collect();
+    let n = parts.len();
+    if n == 0 {
+        return String::new();
+    }
+    if n <= 2 {
+        parts.join("/")
+    } else {
+        format!("…/{}/{}", parts[n - 2], parts[n - 1])
+    }
+}
+
+/// Dedup reduces N near-identical processes into one session row per (cli_family, worktree).
+/// All PIDs in the group are listed under `worker_pids`.
+#[derive(Debug, Clone, Serialize)]
+pub struct AgentSession {
     pub name: String,
-    pub pid: u32,
-    pub process_name: String,
-    pub worktree: Option<String>,
-    pub started_at: Option<String>,
     pub status: String,
+    pub worktree: String,
+    pub worker_count: usize,
+    pub worker_pids: Vec<i32>,
+    pub earliest_started_at: String,
+    pub latest_uptime: String,
     pub current_task: String,
+}
+
+/// Raw agent row from the process scan, before dedup.
+#[derive(Debug, Clone, Serialize)]
+pub struct RawAgent {
+    pub name: String,
+    pub pid: i32,
+    pub status: String,
+    pub started_at: String,
+    pub uptime: String,
+    pub worktree: String,
+    pub current_task: String,
+}
+
+pub fn group_detected_agents(raw_agents: &[RawAgent]) -> Vec<AgentSession> {
+    let mut groups: BTreeMap<(String, String), AgentSession> = BTreeMap::new();
+
+    for raw in raw_agents {
+        let family = cli_family(&raw.name);
+        let worktree = shorten_worktree(&raw.worktree);
+        let key = (family.clone(), worktree.clone());
+
+        let entry = groups.entry(key).or_insert_with(|| AgentSession {
+            name: family.clone(),
+            status: raw.status.clone(),
+            worktree: worktree.clone(),
+            worker_count: 0,
+            worker_pids: Vec::new(),
+            earliest_started_at: raw.started_at.clone(),
+            latest_uptime: raw.uptime.clone(),
+            current_task: raw.current_task.clone(),
+        });
+
+        entry.worker_count += 1;
+        entry.worker_pids.push(raw.pid);
+        if raw.started_at < entry.earliest_started_at {
+            entry.earliest_started_at = raw.started_at.clone();
+        }
+        if raw.uptime > entry.latest_uptime {
+            entry.latest_uptime = raw.uptime.clone();
+        }
+        if !raw.current_task.is_empty() && entry.current_task.is_empty() {
+            entry.current_task = raw.current_task.clone();
+        }
+        if raw.status == "active" {
+            entry.status = "active".to_string();
+        }
+    }
+
+    groups.into_values().collect()
 }
 
 /// Detect all running agent processes on the system.
