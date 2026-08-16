@@ -24,6 +24,8 @@ repository content referenced by a custody manifest.
 - `docs/artifacts/recovery-evidence.schema.json`
 - `tests/fixtures/artifacts/recovery-evidence.valid.json`
 - `tests/fixtures/artifacts/recovery-evidence.ref-parity-failed.json`
+- `tests/fixtures/artifacts/recovery-evidence.restore-failed.json`
+- `tests/fixtures/artifacts/recovery-evidence.fsck-missing.json`
 
 ## Dependencies
 
@@ -37,17 +39,20 @@ repository content referenced by a custody manifest.
   `git fsck`; an omitted or failed value is not upgraded to success.
 - The verifier compares preserved and restored refs without mutating either repository.
 - The verification record links to the relevant canonical manifest digest.
+- Every accepted recovery record stores independent actor, restore timestamp, and canonical
+  manifest digest linkage in an append-only SHA-256 hash-chained audit event.
 - Fixtures and logs contain no secrets.
 
 ## Test-First Commands
 
-1. Add the failed-ref-parity fixture and a test that asserts it cannot produce a successful
-   recovery result.
+1. Add failed/absent restore, ref-parity, and `git fsck` fixtures and tests that assert each
+   cannot produce a successful recovery result.
 2. Run: `cargo test -p agileplus-domain recovery_evidence_rejects_failed_ref_parity -- --exact`
    Expected before implementation: fail because recovery-evidence evaluation is absent.
 3. Add the minimal non-mutating recovery-evidence evaluator.
 4. Run: `cargo test -p agileplus-domain recovery_evidence -- --nocapture`
-   Expected after implementation: valid recovery and failed-parity cases pass.
+   Expected after implementation: valid recovery, failed/absent restore, failed/absent parity,
+   and failed/absent `git fsck` denial cases pass with audit-chain linkage checks.
 5. Run: `python3 -m json.tool docs/artifacts/recovery-evidence.schema.json >/dev/null`
 
 ## Preserve-First Prohibitions

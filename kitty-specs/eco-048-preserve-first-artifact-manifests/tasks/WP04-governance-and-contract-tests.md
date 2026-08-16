@@ -40,19 +40,24 @@ completion transitions.
   fsck` before accepting WP03 review evidence.
 - Final completion requires CI output, approval, valid audit-chain verification, and a
   no-secret check.
-- Missing, stale, or failed evidence blocks the affected transition.
+- Missing, stale, or failed evidence blocks the affected transition; freshness is evaluated
+  from a recorded evidence timestamp, an injected UTC clock, and an explicit maximum age.
+- Audit events are append-only, SHA-256 hash-chained, and verified for integrity before final
+  completion; no generated HTML or contract JSON bypasses that persistence requirement.
 - CI validates packet JSON and the focused domain, dashboard, and governance tests.
 
 ## Test-First Commands
 
-1. Add a contract test with missing audit-chain evidence that expects the final transition
-   to be denied.
+1. Add contract tests with missing audit-chain evidence and stale timestamp evidence that each
+   expect the final transition to be denied.
 2. Run: `cargo test -p agileplus-governance preserve_first_artifacts_denies_missing_audit_chain -- --exact`
    Expected before implementation: fail because this contract evaluator is absent.
 3. Add the minimal evaluator that consumes `governance-v1.json` and fails closed.
 4. Run: `cargo test -p agileplus-governance preserve_first_artifacts -- --nocapture`
-   Expected after implementation: required-evidence and denial cases pass.
+   Expected after implementation: required-evidence, freshness, immutable-audit-chain, and
+   denial cases pass.
 5. Run: `python3 -m json.tool kitty-specs/eco-048-preserve-first-artifact-manifests/contracts/governance-v1.json >/dev/null`
+6. Run: `python3 tooling/governance_index.py && test "$(find kitty-specs/eco-048-preserve-first-artifact-manifests -type f | wc -l | tr -d ' ')" = 9 && git diff --check`
 
 ## Preserve-First Prohibitions
 

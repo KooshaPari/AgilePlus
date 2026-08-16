@@ -39,17 +39,22 @@ bind it to that exact JSON digest.
 - Re-rendering unchanged JSON yields byte-identical HTML.
 - Independently edited or stale HTML fails validation through a byte comparison with a
   deterministic re-render, even if its embedded canonical-JSON digest is unchanged.
+- Every text and attribute interpolation is context-escaped; generated links allow only
+  `https` and `file` schemes, and metacharacter or disallowed-scheme fixtures are safely
+  rendered or rejected.
+- Tests compare the complete render with `custody-manifest.expected.html` and assert the
+  required provenance, artifact, retention, and recovery fields are present.
 
 ## Test-First Commands
 
-1. Add a byte-integrity test for an HTML fixture whose visible provenance is changed while
-   its embedded canonical-JSON digest is left unchanged.
+1. Add byte-integrity, expected-fixture, and metacharacter tests, including an HTML fixture
+   whose visible provenance is changed while its embedded canonical-JSON digest is unchanged.
 2. Run: `cargo test -p agileplus-dashboard custody_html_rejects_digest_mismatch -- --exact`
    Expected before implementation: fail because no renderer/parity validator exists.
 3. Add the smallest renderer and parity validator that consume WP01 JSON.
 4. Run: `cargo test -p agileplus-dashboard custody_html -- --nocapture`
    Expected after implementation: deterministic-render, digest-mismatch, and independently
-   edited-HTML rejection cases pass.
+   edited-HTML rejection, expected-fixture, and context-escaping cases pass.
 5. Run: `cargo fmt --check -p agileplus-dashboard`
 
 ## Preserve-First Prohibitions

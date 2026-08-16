@@ -23,6 +23,7 @@ The schema is the sole evidence authority; no source-code archive or mutation is
 - `docs/artifacts/custody-manifest.schema.json`
 - `tests/fixtures/artifacts/custody-manifest.valid.json`
 - `tests/fixtures/artifacts/custody-manifest.missing-producer.json`
+- `tests/fixtures/artifacts/custody-manifest.synthetic-secret.json`
 
 ## Dependencies
 
@@ -37,16 +38,20 @@ None.
 - The schema permits recovery evidence for restore, ref parity, and `git fsck` without
   treating their absence as a successful preservation claim.
 - Agent emission rejects credential-bearing fields and values; fixtures use no secrets.
-- The emitted JSON has deterministic field ordering before its digest is calculated.
+- The emitted JSON has the exact canonical serialization defined by FR-PFAM-004 before its
+  digest is calculated, and a stable manifest identity makes repeat ingestion idempotent.
+- Synthetic, non-reusable token, password, and private-key-shaped free-text inputs are rejected
+  before digest generation or audit-event emission.
 
 ## Test-First Commands
 
-1. Add the invalid missing-producer fixture and a test that asserts validation failure.
+1. Add invalid missing-producer and synthetic-secret fixtures plus tests that assert rejection.
 2. Run: `cargo test -p agileplus-domain custody_manifest_rejects_missing_producer -- --exact`
    Expected before implementation: fail because the custody-manifest validator is absent.
 3. Add the minimal schema and emitter implementation.
 4. Run: `cargo test -p agileplus-domain custody_manifest -- --nocapture`
-   Expected after implementation: passing valid, missing-field, digest, and secret-safety cases.
+   Expected after implementation: passing valid, missing-field, idempotent-ingestion, digest,
+   and synthetic-secret rejection cases.
 5. Run: `python3 -m json.tool docs/artifacts/custody-manifest.schema.json >/dev/null`
 
 ## Preserve-First Prohibitions
