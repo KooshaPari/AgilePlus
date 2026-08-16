@@ -15,7 +15,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::app_state::SharedState;
 use crate::process_detector;
-use crate::templates::{AgentActivityPartial, AgentSettingsPage, AgentView, ToastPartial};
+use crate::process_detector::{AgentSession, AgentView};
+use crate::templates::{AgentActivityPartial, AgentSettingsPage, ToastPartial};
 
 // ── JSON API Response Types ────────────────────────────────────────────────
 
@@ -120,22 +121,26 @@ pub async fn agent_activity(State(state): State<SharedState>) -> Response {
 /// JSON API: GET /api/dashboard/agents
 /// Returns detected agent processes as JSON (polls every 5s from dashboard templates).
 pub async fn agents_json(State(_state): State<SharedState>) -> impl IntoResponse {
-    // Detect real agent processes
-    let detected = process_detector::detect_agents();
+    // Use the grouped-session dedup so 18 codex workers become 1 row.
+    let sessions = process_detector::group_detected_agents();
 
-    // Convert detected agents to JSON response
-    let agents: Vec<AgentInfo> = detected
+    let agents: Vec<AgentInfo> = sessions
         .into_iter()
-        .map(|agent| {
-            let uptime = calculate_uptime(&agent.started_at);
+        .map(|s| {
+            let name = if s.worker_count > 1 {
+                format!("{} (\u00d7 {})", s.family, s.worker_count)
+            } else {
+                s.family.clone()
+            };
+            let status = if s.healthy { "running" } else { "degraded" }.to_string();
             AgentInfo {
-                name: agent.name,
-                status: agent.status.clone(),
-                current_task: agent.current_task,
-                pid: Some(agent.pid),
-                started_at: agent.started_at,
-                worktree: agent.worktree.unwrap_or_default(),
-                uptime,
+                name,
+                status,
+                current_task: s.last_task,
+                pid: s.pids.first().copied(),
+                started_at: Some(s.started_at),
+                worktree: s.worktree,
+                uptime: calculate_uptime(&Some(s.started_at)),
             }
         })
         .collect();
