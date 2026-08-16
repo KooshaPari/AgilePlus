@@ -1,102 +1,40 @@
 {
-  "id": 48,
-  "feature_id": 48,
+  "id": 0,
+  "feature_id": 0,
   "version": 1,
   "rules": [
     {
       "transition": "WP01: Doing -> Review",
       "required_evidence": [
-        {
-          "fr_id": "FR-PFAM-001",
-          "evidence_type": "schema_validation",
-          "threshold": "all required custody fields present"
-        },
-        {
-          "fr_id": "FR-PFAM-002",
-          "evidence_type": "fixture_validation",
-          "threshold": "digest, size, MIME, producer, provenance, and retention validated"
-        }
+        "FR-PFAM-001:test_result",
+        "FR-PFAM-002:test_result"
       ],
-      "policy_refs": [
-        "policy:spec-required",
-        "policy:non-destructive",
-        "policy:secrets-prohibited"
-      ]
+      "policy_refs": []
     },
     {
       "transition": "WP02: Doing -> Review",
       "required_evidence": [
-        {
-          "fr_id": "FR-PFAM-004",
-          "evidence_type": "digest_parity_test",
-          "threshold": "embedded HTML digest equals canonical JSON SHA-256"
-        },
-        {
-          "fr_id": "FR-PFAM-004",
-          "evidence_type": "deterministic_render_test",
-          "threshold": "identical canonical JSON produces identical HTML"
-        }
+        "FR-PFAM-004:test_result"
       ],
-      "policy_refs": [
-        "policy:canonical-json-authority",
-        "policy:non-destructive"
-      ]
+      "policy_refs": []
     },
     {
       "transition": "WP03: Doing -> Review",
       "required_evidence": [
-        {
-          "fr_id": "FR-PFAM-003",
-          "evidence_type": "independent_restore_result",
-          "threshold": "successful restore recorded"
-        },
-        {
-          "fr_id": "FR-PFAM-003",
-          "evidence_type": "ref_parity_result",
-          "threshold": "preserved and restored refs match"
-        },
-        {
-          "fr_id": "FR-PFAM-003",
-          "evidence_type": "git_fsck_result",
-          "threshold": "fsck exits successfully"
-        }
+        "FR-PFAM-003:test_result",
+        "FR-PFAM-003:manual_attestation"
       ],
-      "policy_refs": [
-        "policy:preserve-first",
-        "policy:no-archive-delete-or-ref-rewrite",
-        "policy:secrets-prohibited"
-      ]
+      "policy_refs": []
     },
     {
       "transition": "WP04: Review -> Done",
       "required_evidence": [
-        {
-          "fr_id": "FR-PFAM-005",
-          "evidence_type": "secret_safety_check",
-          "threshold": "no credential-bearing field or fixture value"
-        },
-        {
-          "fr_id": "FR-PFAM-001",
-          "evidence_type": "ci_output",
-          "threshold": "all packet validation commands pass"
-        },
-        {
-          "fr_id": "FR-PFAM-004",
-          "evidence_type": "review_approval",
-          "threshold": "approved"
-        },
-        {
-          "fr_id": "FR-PFAM-003",
-          "evidence_type": "audit_chain_verification",
-          "threshold": "valid"
-        }
+        "FR-PFAM-005:security_scan",
+        "FR-PFAM-006:ci_output",
+        "FR-PFAM-006:review_approval",
+        "FR-PFAM-006:manual_attestation"
       ],
-      "policy_refs": [
-        "policy:ci-required",
-        "policy:review-required",
-        "policy:audit-chain-required",
-        "policy:preserve-first"
-      ]
+      "policy_refs": []
     }
   ],
   "bound_at": "2026-08-16T01:51:48Z"

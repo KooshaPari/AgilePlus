@@ -34,11 +34,15 @@ embedded manifest digest must equal the canonical JSON digest.
   reproducible from the canonical JSON without changing its meaning.
 - **FR-PFAM-005:** The feature must reject secret-bearing fields and must not enable a
   destructive operation.
+- **FR-PFAM-006:** Completion evidence must use the supported governance contract schema
+  and record CI, review approval, and audit-chain attestation without asserting a runtime
+  feature binding before the spec engine registers one.
 
 ## Acceptance Criteria
 
 - A schema and representative fixture validate all required custody fields.
-- A digest-parity check fails for stale or independently edited HTML.
+- A deterministic-render check byte-compares the expected and observed HTML, so stale or
+  independently edited HTML fails even when its embedded JSON digest is unchanged.
 - Validation records no source archive, deletion, or ref-mutation action.
 - The evidence contract requires review, CI, audit-chain validity, and independent
   recovery proof before final completion.

@@ -37,16 +37,19 @@ bind it to that exact JSON digest.
 - The renderer embeds the SHA-256 of the canonical JSON bytes in a machine-readable HTML
   attribute or metadata element.
 - Re-rendering unchanged JSON yields byte-identical HTML.
-- Independently edited or stale HTML fails digest-parity validation.
+- Independently edited or stale HTML fails validation through a byte comparison with a
+  deterministic re-render, even if its embedded canonical-JSON digest is unchanged.
 
 ## Test-First Commands
 
-1. Add a digest-parity test for an HTML fixture with an intentionally incorrect digest.
+1. Add a byte-integrity test for an HTML fixture whose visible provenance is changed while
+   its embedded canonical-JSON digest is left unchanged.
 2. Run: `cargo test -p agileplus-dashboard custody_html_rejects_digest_mismatch -- --exact`
    Expected before implementation: fail because no renderer/parity validator exists.
 3. Add the smallest renderer and parity validator that consume WP01 JSON.
 4. Run: `cargo test -p agileplus-dashboard custody_html -- --nocapture`
-   Expected after implementation: deterministic-render and mismatch-rejection cases pass.
+   Expected after implementation: deterministic-render, digest-mismatch, and independently
+   edited-HTML rejection cases pass.
 5. Run: `cargo fmt --check -p agileplus-dashboard`
 
 ## Preserve-First Prohibitions
