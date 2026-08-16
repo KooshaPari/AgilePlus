@@ -1,6 +1,10 @@
 {
+  "spec_id": "eco-048",
   "feature_number": "048",
-  "slug": "preserve-first-artifact-manifests",
+  "slug": "eco-048-preserve-first-artifact-manifests",
+  "title": "Preserve-First Artifact Manifests",
+  "status": "active",
+  "type": "operational",
   "friendly_name": "Preserve-First Artifact Manifests",
   "mission": "governance-and-evidence",
   "source_description": "Define custody manifests for agent and cockpit HTML artifacts. Canonical JSON is the authority; HTML is a digest-linked derived view. The feature records provenance and recovery evidence without authorizing source archival, deletion, ref rewrites, or secret capture.",

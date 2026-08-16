@@ -2,7 +2,7 @@
 work_package_id: WP01
 title: Manifest Schema and Agent Emission
 feature: Preserve-First Artifact Manifests
-feature_slug: preserve-first-artifact-manifests
+feature_slug: eco-048-preserve-first-artifact-manifests
 sequence: 1
 state: planned
 created_at: 2026-08-16T01:51:48Z

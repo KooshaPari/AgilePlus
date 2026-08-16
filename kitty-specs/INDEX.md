@@ -46,3 +46,4 @@
 | eco-045 | eco-045-gitleaks-baseline | active | 2026-06-25T00:00:00Z | - | - | [eco-045-gitleaks-baseline](eco-045-gitleaks-baseline/spec.md) |
 | eco-046 | eco-046-pr-governance-compliance | active | 2026-06-25T00:00:00Z | - | - | [eco-046-pr-governance-compliance](eco-046-pr-governance-compliance/spec.md) |
 | eco-047 | eco-047-toml-codeql-hygiene | active | 2026-06-25T00:00:00Z | - | - | [eco-047-toml-codeql-hygiene](eco-047-toml-codeql-hygiene/spec.md) |
+| eco-048 | eco-048-preserve-first-artifact-manifests | active | 2026-08-15T14:33:00Z | - | - | [eco-048-preserve-first-artifact-manifests](eco-048-preserve-first-artifact-manifests/spec.md) |

@@ -2,7 +2,7 @@
 work_package_id: WP04
 title: Governance and Contract Tests
 feature: Preserve-First Artifact Manifests
-feature_slug: preserve-first-artifact-manifests
+feature_slug: eco-048-preserve-first-artifact-manifests
 sequence: 4
 state: planned
 created_at: 2026-08-16T01:51:48Z
@@ -21,7 +21,7 @@ completion transitions.
 
 ## File Scope
 
-- `kitty-specs/preserve-first-artifact-manifests/contracts/governance-v1.json`
+- `kitty-specs/eco-048-preserve-first-artifact-manifests/contracts/governance-v1.json`
 - `crates/agileplus-governance/src/contracts/preserve_first_artifacts.rs`
 - `crates/agileplus-governance/tests/preserve_first_artifacts_contract_test.rs`
 - `.github/workflows/preserve-first-artifact-manifest.yml`
@@ -52,7 +52,7 @@ completion transitions.
 3. Add the minimal evaluator that consumes `governance-v1.json` and fails closed.
 4. Run: `cargo test -p agileplus-governance preserve_first_artifacts -- --nocapture`
    Expected after implementation: required-evidence and denial cases pass.
-5. Run: `python3 -m json.tool kitty-specs/preserve-first-artifact-manifests/contracts/governance-v1.json >/dev/null`
+5. Run: `python3 -m json.tool kitty-specs/eco-048-preserve-first-artifact-manifests/contracts/governance-v1.json >/dev/null`
 
 ## Preserve-First Prohibitions
 
