@@ -40,9 +40,3 @@ target/
 **/.fingerprint/
 **/build-script-build
 .agileplus/
-
-# python test cache
-**/__pycache__/
-*.pyc
-*.pyo
-**/*.pyc
