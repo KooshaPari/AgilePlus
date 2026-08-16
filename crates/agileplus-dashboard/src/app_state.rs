@@ -38,6 +38,13 @@ pub struct DashboardStore {
 pub type SharedState = Arc<RwLock<DashboardStore>>;
 
 impl DashboardStore {
+    /// Load the store from the on-box governance DB (wsm3d.db), falling back
+    /// to the dogfood seed when no live DB is available. This is the store
+    /// construction used by the server binary.
+    pub fn load() -> Self {
+        crate::live::load_live_store().unwrap_or_else(Self::seeded)
+    }
+
     /// Create a new DashboardStore seeded with all AgilePlus dogfood features.
     ///
     /// Populates the store with:

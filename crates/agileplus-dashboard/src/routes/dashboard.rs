@@ -457,11 +457,14 @@ pub async fn all_work_packages_json(State(state): State<SharedState>) -> impl In
 /// Reads Epics + Stories directly from the SQLite database and returns them
 /// as a flat JSON payload. Used by the React dashboard at port 5176.
 pub async fn epics_stories_json() -> impl IntoResponse {
-    // Resolve db path: DATABASE_URL env â†’ DATABASE_PATH env â†’ default agileplus.db
+    // Resolve db path: DATABASE_URL env → DATABASE_PATH env → on-box
+    // governance store (wsm3d.db) → default agileplus.db
     let db_path: PathBuf = if let Ok(url) = std::env::var("DATABASE_URL") {
         url.strip_prefix("sqlite:").unwrap_or(&url).into()
     } else if let Ok(p) = std::env::var("DATABASE_PATH") {
         PathBuf::from(p)
+    } else if let Some(live) = crate::live::resolve_db_path() {
+        live
     } else {
         PathBuf::from("agileplus.db")
     };

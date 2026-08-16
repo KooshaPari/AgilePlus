@@ -14,7 +14,7 @@ async fn main() -> anyhow::Result<()> {
         .ok()
         .and_then(|value| value.parse::<u16>().ok())
         .unwrap_or(3000);
-    let state = Arc::new(tokio::sync::RwLock::new(DashboardStore::seeded()));
+    let state = Arc::new(tokio::sync::RwLock::new(DashboardStore::load()));
 
     let app: Router = routes::router(state)
         .nest_service("/static", ServeDir::new("templates/static"))

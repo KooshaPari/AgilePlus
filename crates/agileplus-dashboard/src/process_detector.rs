@@ -26,6 +26,8 @@ pub fn detect_agents() -> Vec<DetectedAgent> {
 
     let agent_patterns = [
         "claude", "gemini", "codex", "cursor", "windsurf", "aider", "cline",
+        // On-box agent sessions this box actually runs (pheno lab):
+        "droid", "unsloth", "forge", "watchdog",
     ];
 
     let mut agents = Vec::new();

@@ -3,6 +3,7 @@
 
 pub mod app_state;
 pub mod health;
+pub mod live;
 pub mod process_detector;
 pub mod routes;
 pub mod seed;
