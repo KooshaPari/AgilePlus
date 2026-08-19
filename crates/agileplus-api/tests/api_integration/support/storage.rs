@@ -1,13 +1,13 @@
 use std::sync::{Arc, Mutex};
 
 use agileplus_domain::domain::audit::{AuditEntry, hash_entry};
-use agileplus_domain::domain::epic::{Epic, EpicStatus};
-use agileplus_domain::domain::project::Project;
 use agileplus_domain::domain::backlog::BacklogItem;
 use agileplus_domain::domain::cycle::{Cycle, CycleFeature};
+use agileplus_domain::domain::epic::{Epic, EpicStatus};
 use agileplus_domain::domain::feature::Feature;
 use agileplus_domain::domain::governance::GovernanceContract;
 use agileplus_domain::domain::module::{Module, ModuleFeatureTag};
+use agileplus_domain::domain::project::Project;
 use agileplus_domain::domain::state_machine::FeatureState;
 use agileplus_domain::domain::story::{Story, StoryStatus};
 use agileplus_domain::domain::user::{User, UserRole, UserStatus};
@@ -145,20 +145,17 @@ impl MockStorage {
                 updated_at: now,
             });
 
-        s.epics
-            .lock()
-            .expect("epics lock poisoned")
-            .push(Epic {
-                id: 1,
-                project_id: 1,
-                title: "Test Epic".to_string(),
-                description: None,
-                status: EpicStatus::Active,
-                owner_id: None,
-                requirement_id: None,
-                created_at: now,
-                updated_at: now,
-            });
+        s.epics.lock().expect("epics lock poisoned").push(Epic {
+            id: 1,
+            project_id: 1,
+            title: "Test Epic".to_string(),
+            description: None,
+            status: EpicStatus::Active,
+            owner_id: None,
+            requirement_id: None,
+            created_at: now,
+            updated_at: now,
+        });
 
         s.stories
             .lock()
@@ -177,20 +174,17 @@ impl MockStorage {
                 updated_at: now,
             });
 
-        s.users
-            .lock()
-            .expect("users lock poisoned")
-            .push(User {
-                id: 1,
-                display_name: "Alice".to_string(),
-                email: "alice@example.com".to_string(),
-                role: UserRole::Member,
-                status: UserStatus::Active,
-                avatar_url: None,
-                github_login: None,
-                created_at: now,
-                updated_at: now,
-            });
+        s.users.lock().expect("users lock poisoned").push(User {
+            id: 1,
+            display_name: "Alice".to_string(),
+            email: "alice@example.com".to_string(),
+            role: UserRole::Member,
+            status: UserStatus::Active,
+            avatar_url: None,
+            github_login: None,
+            created_at: now,
+            updated_at: now,
+        });
 
         s
     }

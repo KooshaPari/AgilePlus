@@ -59,11 +59,16 @@ impl PlaneDaemonConfig {
     /// Recognizes: PLANE_DAEMON_INTERVAL_SECS, PLANE_DAEMON_BATCH_SIZE, PLANE_DAEMON_DRY_RUN.
     pub fn from_env() -> Self {
         let interval_secs: u64 = std::env::var("PLANE_DAEMON_INTERVAL_SECS")
-            .ok().and_then(|s| s.parse().ok()).unwrap_or(5 * 60);
+            .ok()
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(5 * 60);
         let batch_size: usize = std::env::var("PLANE_DAEMON_BATCH_SIZE")
-            .ok().and_then(|s| s.parse().ok()).unwrap_or(25);
+            .ok()
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(25);
         let dry_run: bool = std::env::var("PLANE_DAEMON_DRY_RUN")
-            .map(|v| v == "1" || v.to_lowercase() == "true").unwrap_or(false);
+            .map(|v| v == "1" || v.to_lowercase() == "true")
+            .unwrap_or(false);
         Self {
             interval: Duration::from_secs(interval_secs),
             batch_size,
@@ -276,5 +281,4 @@ mod tests {
         assert!(!cfg.dry_run);
         assert!(cfg.interval >= Duration::from_secs(60));
     }
-
 }

@@ -21,7 +21,7 @@ use agileplus_domain::{
 
 use crate::{
     repository::{epics, projects, stories},
-    seed::catalog::{parse_catalog, CatalogEntry, CatalogStatus},
+    seed::catalog::{CatalogEntry, CatalogStatus, parse_catalog},
 };
 
 /// Describes one initiative to seed.

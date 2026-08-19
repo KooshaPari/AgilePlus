@@ -3,8 +3,8 @@
 
 use std::sync::Arc;
 
-use agileplus_domain::ports::events::{DomainEvent, DomainEventPublisher};
 use agileplus_domain::ports::StoryRepository;
+use agileplus_domain::ports::events::{DomainEvent, DomainEventPublisher};
 
 use crate::dto::TransitionStoryCmd;
 use crate::error::AppError;
@@ -34,12 +34,11 @@ impl TransitionStory {
 
         self.repo.update_status(cmd.story_id, story.status).await?;
 
-        self.publisher
-            .publish(DomainEvent::StoryStatusChanged {
-                id: cmd.story_id,
-                from,
-                to: story.status.to_string(),
-            })?;
+        self.publisher.publish(DomainEvent::StoryStatusChanged {
+            id: cmd.story_id,
+            from,
+            to: story.status.to_string(),
+        })?;
 
         Ok(())
     }

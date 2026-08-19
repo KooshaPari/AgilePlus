@@ -1,4 +1,4 @@
-﻿//! Use-case implementations for the CLI triage subcommands.
+//! Use-case implementations for the CLI triage subcommands.
 //!
 //! These orchestrate the new triage primitives (dedup, claim, repo_introspect)
 //! and the agileplus-graph dependency graph into a coherent set of
@@ -30,12 +30,12 @@
 
 pub use crate::dto::{TopologyRequest, WhereRequest, WhereResponse};
 
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use std::collections::{HashMap, HashSet, VecDeque};
 
 use agileplus_triage::claim::{Claim, ClaimKind, ClaimStore};
-use agileplus_triage::dedup::{find_duplicates, DuplicateCandidate};
-use agileplus_triage::repo_introspect::{inspect_repo, RepoInfo};
+use agileplus_triage::dedup::{DuplicateCandidate, find_duplicates};
+use agileplus_triage::repo_introspect::{RepoInfo, inspect_repo};
 
 use crate::dto::*;
 

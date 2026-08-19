@@ -174,8 +174,7 @@ fn okf_validate_fails_on_entity_missing_id() {
         .failure();
     let stderr = String::from_utf8_lossy(&assert.get_output().stderr);
     assert!(
-        stderr.contains("entity with empty `id`")
-            || stderr.contains("missing field `id`"),
+        stderr.contains("entity with empty `id`") || stderr.contains("missing field `id`"),
         "expected id-citation in stderr, got: {stderr}"
     );
 }
@@ -211,14 +210,21 @@ fn okf_summarize_emits_entity_count_rows() {
     // The Tracera fixture has 7 distinct entity types: intent, acceptance,
     // constraint, resource, state, criteria, gate — all 7 must appear in
     // the "by type" table.
-    let rows = ["intent", "acceptance", "constraint", "resource", "state", "criteria", "gate"]
-        .iter()
-        .filter(|name| {
-            // Each row appears as `  <name>  <count>` (single space-aligned).
-            out.contains(&format!("\n  {}\n", name))
-                || out.contains(&format!("{:>1}", name))
-        })
-        .count();
+    let rows = [
+        "intent",
+        "acceptance",
+        "constraint",
+        "resource",
+        "state",
+        "criteria",
+        "gate",
+    ]
+    .iter()
+    .filter(|name| {
+        // Each row appears as `  <name>  <count>` (single space-aligned).
+        out.contains(&format!("\n  {}\n", name)) || out.contains(&format!("{:>1}", name))
+    })
+    .count();
     assert!(
         rows >= 6,
         "expected at least 6 entity-type rows in summary, got {rows}. Output:\n{out}"
@@ -252,12 +258,18 @@ fn okf_merge_concatenates_two_docs_into_one() {
         .assert()
         .success();
     let stdout = String::from_utf8_lossy(&assert.get_output().stdout);
-    assert!(stdout.contains("merge ok"), "missing merge-ok marker: {stdout}");
+    assert!(
+        stdout.contains("merge ok"),
+        "missing merge-ok marker: {stdout}"
+    );
 
     let merged_text = std::fs::read_to_string(&out_path).expect("read merged");
     let v: serde_json::Value = serde_json::from_str(&merged_text).expect("merged is JSON");
 
-    let entities = v.get("entities").and_then(|e| e.as_array()).expect("entities array");
+    let entities = v
+        .get("entities")
+        .and_then(|e| e.as_array())
+        .expect("entities array");
     // GOOD_DOC has 4 entities, SECOND_GOOD_DOC has 2 → merged = 6.
     assert_eq!(
         entities.len(),
@@ -272,14 +284,29 @@ fn okf_merge_concatenates_two_docs_into_one() {
         .iter()
         .filter_map(|e| e.get("id").and_then(|i| i.as_str()))
         .collect();
-    assert_eq!(ids.len(), 6, "expected 6 unique ids, saw duplicates: {:?}", ids);
+    assert_eq!(
+        ids.len(),
+        6,
+        "expected 6 unique ids, saw duplicates: {:?}",
+        ids
+    );
 
     // Both intent-0 ids should be present (under different prefixes).
-    let has_first = ids.iter().any(|id| id.ends_with("forge-fixture-good::intent-0"));
-    let has_second = ids.iter().any(|id| id.ends_with("codex-fixture-second::intent-0"));
-    assert!(has_first && has_second, "missing namespaced intent-0 ids: {ids:?}");
+    let has_first = ids
+        .iter()
+        .any(|id| id.ends_with("forge-fixture-good::intent-0"));
+    let has_second = ids
+        .iter()
+        .any(|id| id.ends_with("codex-fixture-second::intent-0"));
+    assert!(
+        has_first && has_second,
+        "missing namespaced intent-0 ids: {ids:?}"
+    );
 
-    let relations = v.get("relations").and_then(|r| r.as_array()).expect("relations array");
+    let relations = v
+        .get("relations")
+        .and_then(|r| r.as_array())
+        .expect("relations array");
     // GOOD_DOC has 3 relations, SECOND has 1 → merged = 4.
     assert_eq!(
         relations.len(),

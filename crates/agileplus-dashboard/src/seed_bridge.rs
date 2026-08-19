@@ -35,45 +35,46 @@ pub async fn try_merge_from_api(mut store: DashboardStore) -> DashboardStore {
 
     // Public endpoints first — no auth required.
     if let Some(modules) = fetch_json::<Vec<Module>>(&format!("{}/api/modules", base)).await
-        && !modules.is_empty() {
-            store.modules = modules;
-        }
+        && !modules.is_empty()
+    {
+        store.modules = modules;
+    }
     if let Some(cycles) = fetch_json::<Vec<Cycle>>(&format!("{}/api/cycles", base)).await
-        && !cycles.is_empty() {
-            // Rebuild the cycle -> features index from whatever features are in the store.
-            store.cycles = cycles;
-            store.cycle_features.clear();
-            for cycle in &store.cycles {
-                // features in this cycle are those matching the cycle_id (best effort).
-                let fids: Vec<i64> = store
-                    .features
-                    .iter()
-                    .filter(|f| f.module_id == Some(cycle.id))
-                    .map(|f| f.id)
-                    .collect();
-                store.cycle_features.insert(cycle.id, fids);
-            }
+        && !cycles.is_empty()
+    {
+        // Rebuild the cycle -> features index from whatever features are in the store.
+        store.cycles = cycles;
+        store.cycle_features.clear();
+        for cycle in &store.cycles {
+            // features in this cycle are those matching the cycle_id (best effort).
+            let fids: Vec<i64> = store
+                .features
+                .iter()
+                .filter(|f| f.module_id == Some(cycle.id))
+                .map(|f| f.id)
+                .collect();
+            store.cycle_features.insert(cycle.id, fids);
         }
+    }
 
     // Protected — needs AGILEPLUS_API_KEY.
     if let Ok(api_key) = std::env::var("AGILEPLUS_API_KEY")
         && !api_key.is_empty()
-            && let Some(projects) = fetch_json_with_header::<Vec<Project>>(
-                &format!("{}/api/v1/projects", base),
-                &api_key,
-            )
-            .await
-                && !projects.is_empty() {
-                    // If the api returned projects, prefer them over the hardcoded seed.
-                    // Active project stays at the seed's default (Some(1)) so dashboard pages
-                    // don't break when api and seed IDs diverge.
-                    if let Some(first) = projects.first().cloned() {
-                        store.projects = projects;
-                        if store.active_project_id.is_none() {
-                            store.active_project_id = Some(first.id);
-                        }
-                    }
-                }
+        && let Some(projects) =
+            fetch_json_with_header::<Vec<Project>>(&format!("{}/api/v1/projects", base), &api_key)
+                .await
+        && !projects.is_empty()
+    {
+        // If the api returned projects, prefer them over the hardcoded seed.
+        // Active project stays at the seed's default (Some(1)) so dashboard pages
+        // don't break when api and seed IDs diverge.
+        if let Some(first) = projects.first().cloned() {
+            store.projects = projects;
+            if store.active_project_id.is_none() {
+                store.active_project_id = Some(first.id);
+            }
+        }
+    }
 
     store
 }

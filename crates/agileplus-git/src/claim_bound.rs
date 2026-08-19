@@ -205,7 +205,7 @@ pub fn map_claim_err(e: ClaimError) -> DomainError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::claim_bound::{make_worktree_claim, ClaimBoundWorktree};
+    use crate::claim_bound::{ClaimBoundWorktree, make_worktree_claim};
     use agileplus_triage::claim::ClaimStore;
     use std::process::Command as StdCommand;
     use tempfile::tempdir;

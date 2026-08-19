@@ -10,8 +10,8 @@ use axum::routing::{get, post};
 use axum::{Json, Router};
 use serde_json::{Value, json};
 
-use agileplus_domain::ports::{ObservabilityPort, StoragePort};
 use agileplus_domain::ports::vcs::VcsPort;
+use agileplus_domain::ports::{ObservabilityPort, StoragePort};
 
 use crate::error::ApiError;
 use crate::responses::GovernanceResponse;
@@ -130,9 +130,10 @@ where
                         .get_evidence_by_wp(wp.id)
                         .await
                         .map_err(ApiError::from)?;
-                    if ev.iter().any(|e| {
-                        e.fr_id == *req || e.evidence_type.as_str() == req.as_str()
-                    }) {
+                    if ev
+                        .iter()
+                        .any(|e| e.fr_id == *req || e.evidence_type.as_str() == req.as_str())
+                    {
                         found = true;
                         break;
                     }

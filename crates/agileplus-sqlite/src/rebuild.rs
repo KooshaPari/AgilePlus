@@ -3,7 +3,7 @@
 
 use agileplus_domain::{
     domain::{
-        audit::{hash_entry, AuditEntry, EvidenceRef},
+        audit::{AuditEntry, EvidenceRef, hash_entry},
         feature::Feature,
         state_machine::FeatureState,
     },
@@ -42,7 +42,8 @@ fn default_branch() -> String {
 /// A line from audit/chain.jsonl.
 #[derive(Debug, serde::Deserialize)]
 struct AuditLine {
-    #[allow(dead_code)] // serde-deserialized from audit/chain.jsonl - reserved for rebuild filtering
+    #[allow(dead_code)]
+    // serde-deserialized from audit/chain.jsonl - reserved for rebuild filtering
     feature_id: i64,
     wp_id: Option<i64>,
     timestamp: String,
@@ -286,8 +287,8 @@ mod tests {
         domain::audit::hash_entry,
         error::DomainError,
         ports::{
-            vcs::{BranchInfo, ConflictInfo, FeatureArtifacts, MergeResult, WorktreeInfo},
             StoragePort, VcsPort,
+            vcs::{BranchInfo, ConflictInfo, FeatureArtifacts, MergeResult, WorktreeInfo},
         },
     };
 

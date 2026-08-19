@@ -16,8 +16,8 @@ use chrono::{DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
 use utoipa::{IntoParams, ToSchema};
 
-use agileplus_domain::ports::{ObservabilityPort, StoragePort};
 use agileplus_domain::ports::vcs::VcsPort;
+use agileplus_domain::ports::{ObservabilityPort, StoragePort};
 
 use crate::error::ApiError;
 use crate::state::AppState;

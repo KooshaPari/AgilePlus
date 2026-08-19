@@ -158,8 +158,7 @@ fn test_multiple_criteria_each_with_different_trace_refs() {
 
     let contract = AcceptanceContract::new(entity_id)
         .add_criterion(
-            AcceptanceCriterion::new("AC-1", "Valid email format check")
-                .with_trace(trace_ref_1),
+            AcceptanceCriterion::new("AC-1", "Valid email format check").with_trace(trace_ref_1),
         )
         .add_criterion(
             AcceptanceCriterion::new("AC-2", "Password strength validation")
@@ -185,8 +184,7 @@ fn test_acceptance_contract_serializes_with_trace_refs() {
     let trace_ref = make_trace_ref("FR-200", "specification");
 
     let contract = AcceptanceContract::new(entity_id).add_criterion(
-        AcceptanceCriterion::new("AC-1", "Form validation works")
-            .with_trace(trace_ref.clone()),
+        AcceptanceCriterion::new("AC-1", "Form validation works").with_trace(trace_ref.clone()),
     );
 
     // Serialize to JSON
@@ -200,11 +198,19 @@ fn test_acceptance_contract_serializes_with_trace_refs() {
     assert_eq!(deserialized.entity_id, entity_id);
     assert_eq!(deserialized.criteria.len(), 1);
     assert_eq!(
-        deserialized.criteria[0].trace_ref.as_ref().unwrap().trace_id,
+        deserialized.criteria[0]
+            .trace_ref
+            .as_ref()
+            .unwrap()
+            .trace_id,
         "FR-200"
     );
     assert_eq!(
-        deserialized.criteria[0].trace_ref.as_ref().unwrap().artifact_type,
+        deserialized.criteria[0]
+            .trace_ref
+            .as_ref()
+            .unwrap()
+            .artifact_type,
         "specification"
     );
 }
@@ -215,9 +221,7 @@ fn test_unverified_criterion_with_trace_ref_not_counted_as_done() {
     let trace_ref = make_trace_ref("FR-300", "requirement");
 
     let contract = AcceptanceContract::new(entity_id)
-        .add_criterion(
-            AcceptanceCriterion::new("AC-1", "Email validation").with_trace(trace_ref),
-        )
+        .add_criterion(AcceptanceCriterion::new("AC-1", "Email validation").with_trace(trace_ref))
         .add_criterion(AcceptanceCriterion::new("AC-2", "Password validation"));
 
     // Neither criterion is verified yet
@@ -265,14 +269,16 @@ fn test_acceptance_contract_round_trip_serialization() {
     // Build a contract with mixed verified/unverified and with/without trace refs
     let mut contract = AcceptanceContract::new(entity_id)
         .add_criterion(
-            AcceptanceCriterion::new("AC-1", "With trace, unverified").with_trace(make_trace_ref("FR-400", "requirement")),
+            AcceptanceCriterion::new("AC-1", "With trace, unverified")
+                .with_trace(make_trace_ref("FR-400", "requirement")),
         )
         .add_criterion(AcceptanceCriterion::new(
             "AC-2",
             "Without trace, unverified",
         ))
         .add_criterion(
-            AcceptanceCriterion::new("AC-3", "With trace, verified").with_trace(make_trace_ref("TEST-50", "test_case")),
+            AcceptanceCriterion::new("AC-3", "With trace, verified")
+                .with_trace(make_trace_ref("TEST-50", "test_case")),
         );
 
     // Verify AC-3
@@ -326,15 +332,16 @@ async fn test_verify_criterion_with_linked_trace() {
     let trace_ref = make_trace_ref("FR-600", "requirement");
 
     // Simulate linking the trace ref through the port
-    let link_result = adapter.link_trace(entity_id.to_string(), trace_ref.clone()).await;
+    let link_result = adapter
+        .link_trace(entity_id.to_string(), trace_ref.clone())
+        .await;
     assert!(link_result.is_ok());
 
     // Build contract with linked criterion
-    let mut contract = AcceptanceContract::new(entity_id)
-        .add_criterion(
-            AcceptanceCriterion::new("AC-1", "Feature requirement satisfied")
-                .with_trace(trace_ref.clone()),
-        );
+    let mut contract = AcceptanceContract::new(entity_id).add_criterion(
+        AcceptanceCriterion::new("AC-1", "Feature requirement satisfied")
+            .with_trace(trace_ref.clone()),
+    );
 
     // Verify the criterion
     let verify_result = contract.verify_criterion("AC-1");
@@ -350,7 +357,10 @@ async fn test_verify_criterion_with_linked_trace() {
     );
 
     // Retrieve traces back from the port (will be empty with noop, but validates the API flow)
-    let retrieved_traces = adapter.get_traces(entity_id.to_string()).await.expect("get traces");
+    let retrieved_traces = adapter
+        .get_traces(entity_id.to_string())
+        .await
+        .expect("get traces");
     assert_eq!(retrieved_traces.len(), 0); // NoopTraceAdapter returns empty
 }
 
