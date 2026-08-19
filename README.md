@@ -17,6 +17,17 @@
 <p align="center"><em>AI-native project management with hexagonal Rust core, Plane.so / GitHub integration, and an AI-agent MCP surface.</em></p>
 <p align="center"><sub><a href="assets/brand/README.md">Brand assets &amp; palette</a> · <a href="docs/assets/identity/">visual identity demo</a></sub></p>
 
+
+## DINOForge Integration
+
+**DINOForge** (`Dino/`) — mod operating system for Diplomacy is Not an Option.
+- 12K+ files, .NET + Rust + Python + Go + Zig polyglot
+- 52 CI workflows, 21 releases (v1.1.0), 3,613+ tests
+- Pack system (YAML-first declarative content)
+- Game automation framework (headless testing)
+- **Scorecard**: C (61/100) — see `.forge/dino-quality-gate.md`
+- **Spec**: `specs/dino-agileplus-integration.md`
+
 ---
 
 # AgilePlus
