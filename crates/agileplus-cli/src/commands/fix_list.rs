@@ -23,11 +23,11 @@
 use std::fmt::Write as _;
 use std::path::PathBuf;
 
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result, bail};
 use clap::Args;
 use comfy_table::{Cell, Row, Table};
 
-use agileplus_governance::scoring_engine::{evaluate, ScoreReport};
+use agileplus_governance::scoring_engine::{ScoreReport, evaluate};
 
 #[cfg(test)]
 use agileplus_governance::scoring_engine::ClusterScore;

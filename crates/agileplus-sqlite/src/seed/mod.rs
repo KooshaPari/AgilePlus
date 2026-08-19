@@ -11,4 +11,4 @@
 pub mod catalog;
 pub mod runner;
 
-pub use runner::{seed_requirements, Initiative, SeedReport};
+pub use runner::{Initiative, SeedReport, seed_requirements};

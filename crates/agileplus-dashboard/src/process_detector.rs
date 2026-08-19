@@ -118,10 +118,11 @@ fn extract_task_context(cmdline: &str) -> String {
 
     // Look for feature references
     if let Some(pos) = cmdline.find("feature")
-        && let Some(next_space) = cmdline[pos..].find(' ') {
-            let context = &cmdline[pos..pos + next_space];
-            return context.to_string();
-        }
+        && let Some(next_space) = cmdline[pos..].find(' ')
+    {
+        let context = &cmdline[pos..pos + next_space];
+        return context.to_string();
+    }
 
     String::new()
 }
@@ -193,13 +194,15 @@ pub fn read_agent_state_files(base_path: &str) -> Vec<DetectedAgent> {
         for entry in entries.flatten() {
             if let Ok(metadata) = entry.metadata()
                 && metadata.is_file()
-                    && let Ok(content) = std::fs::read_to_string(entry.path()) {
-                        // Try to parse as JSON and extract agent info
-                        if let Ok(json) = serde_json::from_str::<serde_json::Value>(&content)
-                            && let Some(agent) = parse_agent_state(&json) {
-                                agents.push(agent);
-                            }
-                    }
+                && let Ok(content) = std::fs::read_to_string(entry.path())
+            {
+                // Try to parse as JSON and extract agent info
+                if let Ok(json) = serde_json::from_str::<serde_json::Value>(&content)
+                    && let Some(agent) = parse_agent_state(&json)
+                {
+                    agents.push(agent);
+                }
+            }
         }
     }
 

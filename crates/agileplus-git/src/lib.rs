@@ -650,7 +650,7 @@ impl VcsPort for GitVcsAdapter {
                 return Err(DomainError::Storage(format!(
                     "scan artifacts {}: {e}",
                     dir.display()
-                )))
+                )));
             }
         };
         for entry in entries.flatten() {
@@ -715,9 +715,8 @@ fn collect_evidence_paths(dir: &Path, paths: &mut Vec<String>) -> Result<(), Dom
     for entry in std::fs::read_dir(dir)
         .map_err(|e| DomainError::Storage(format!("scan evidence {}: {e}", dir.display())))?
     {
-        let entry = entry.map_err(|e| {
-            DomainError::Storage(format!("scan evidence {}: {e}", dir.display()))
-        })?;
+        let entry = entry
+            .map_err(|e| DomainError::Storage(format!("scan evidence {}: {e}", dir.display())))?;
         let path = entry.path();
         if path.is_dir() {
             collect_evidence_paths(&path, paths)?;
@@ -912,12 +911,7 @@ mod tests {
         // Lock `main` in a sibling worktree (canonical-style conflict).
         let lock_wt = path.parent().unwrap().join("lock-main-wt");
         StdCommand::new("git")
-            .args([
-                "worktree",
-                "add",
-                &lock_wt.to_string_lossy(),
-                "main",
-            ])
+            .args(["worktree", "add", &lock_wt.to_string_lossy(), "main"])
             .current_dir(&path)
             .output()
             .expect("lock main in sibling worktree");

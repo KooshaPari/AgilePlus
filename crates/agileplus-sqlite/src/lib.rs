@@ -1,4 +1,4 @@
-﻿//! AgilePlus SQLite adapter — persistence layer.
+//! AgilePlus SQLite adapter — persistence layer.
 //!
 //! Implements `StoragePort` using rusqlite with WAL mode and foreign keys.
 //! Traceability: WP06
@@ -34,14 +34,13 @@ use agileplus_domain::{
     ports::{ContentStoragePort, StoragePort},
 };
 
-
 use crate::migrations::MigrationRunner;
 use agileplus_domain::domain::project::Project;
 use agileplus_domain::domain::sync_mapping::SyncMapping;
 
 use crate::repository::{
-    audit, backlog, cycles, epics, evidence, features, governance, metrics, modules,
-    projects, stories, sync_mappings, users, work_packages,
+    audit, backlog, cycles, epics, evidence, features, governance, metrics, modules, projects,
+    stories, sync_mappings, users, work_packages,
 };
 
 /// SQLite-backed storage adapter.
@@ -712,7 +711,7 @@ impl ContentStoragePort for SqliteStorageAdapter {
 mod tests {
     use super::*;
     use agileplus_domain::domain::{
-        audit::{hash_entry, AuditEntry},
+        audit::{AuditEntry, hash_entry},
         feature::Feature,
         governance::{
             Evidence, EvidenceType, GovernanceContract, GovernanceRule, PolicyCheck,
@@ -1033,10 +1032,12 @@ mod tests {
             .await
             .unwrap();
 
-        assert!(StoragePort::get_latest_audit_entry(&db, fid)
-            .await
-            .unwrap()
-            .is_none());
+        assert!(
+            StoragePort::get_latest_audit_entry(&db, fid)
+                .await
+                .unwrap()
+                .is_none()
+        );
 
         let e1 = make_audit_entry(fid, [0u8; 32]);
         StoragePort::append_audit_entry(&db, &e1).await.unwrap();
@@ -1288,10 +1289,12 @@ mod tests {
     async fn module_not_found_returns_none() {
         let db = make_adapter();
         assert!(StoragePort::get_module(&db, 9999).await.unwrap().is_none());
-        assert!(StoragePort::get_module_by_slug(&db, "no-such")
-            .await
-            .unwrap()
-            .is_none());
+        assert!(
+            StoragePort::get_module_by_slug(&db, "no-such")
+                .await
+                .unwrap()
+                .is_none()
+        );
     }
 
     #[tokio::test]
@@ -1418,10 +1421,12 @@ mod tests {
     #[tokio::test]
     async fn module_get_with_features_none_for_missing() {
         let db = make_adapter();
-        assert!(StoragePort::get_module_with_features(&db, 9999)
-            .await
-            .unwrap()
-            .is_none());
+        assert!(
+            StoragePort::get_module_with_features(&db, 9999)
+                .await
+                .unwrap()
+                .is_none()
+        );
     }
 
     // -- Cycle tests --
@@ -1580,10 +1585,12 @@ mod tests {
     #[tokio::test]
     async fn cycle_with_features_none_for_missing() {
         let db = make_adapter();
-        assert!(StoragePort::get_cycle_with_features(&db, 9999)
-            .await
-            .unwrap()
-            .is_none());
+        assert!(
+            StoragePort::get_cycle_with_features(&db, 9999)
+                .await
+                .unwrap()
+                .is_none()
+        );
     }
 
     #[tokio::test]
@@ -1720,10 +1727,12 @@ mod tests {
             .await
             .unwrap();
         StoragePort::delete_project(&db, id).await.unwrap();
-        assert!(StoragePort::get_project_by_id(&db, id)
-            .await
-            .unwrap()
-            .is_none());
+        assert!(
+            StoragePort::get_project_by_id(&db, id)
+                .await
+                .unwrap()
+                .is_none()
+        );
     }
 
     // -- User tests --
@@ -1736,10 +1745,7 @@ mod tests {
         let u = User::new("Alice", "alice@example.com", UserRole::Member).unwrap();
         let id = StoragePort::create_user(&db, &u).await.unwrap();
         assert!(id > 0);
-        let got = StoragePort::get_user(&db, id)
-            .await
-            .unwrap()
-            .unwrap();
+        let got = StoragePort::get_user(&db, id).await.unwrap().unwrap();
         assert_eq!(got.display_name, "Alice");
         assert_eq!(got.email, "alice@example.com");
         assert_eq!(got.role, UserRole::Member);
@@ -1763,10 +1769,12 @@ mod tests {
     async fn user_not_found_returns_none() {
         let db = make_adapter();
         assert!(StoragePort::get_user(&db, 9999).await.unwrap().is_none());
-        assert!(StoragePort::get_user_by_email(&db, "no@no.com")
-            .await
-            .unwrap()
-            .is_none());
+        assert!(
+            StoragePort::get_user_by_email(&db, "no@no.com")
+                .await
+                .unwrap()
+                .is_none()
+        );
     }
 
     #[tokio::test]
@@ -1796,18 +1804,12 @@ mod tests {
     #[tokio::test]
     async fn user_list_all() {
         let db = make_adapter();
-        StoragePort::create_user(
-            &db,
-            &User::new("U1", "u1@x.com", UserRole::Member).unwrap(),
-        )
-        .await
-        .unwrap();
-        StoragePort::create_user(
-            &db,
-            &User::new("U2", "u2@x.com", UserRole::Member).unwrap(),
-        )
-        .await
-        .unwrap();
+        StoragePort::create_user(&db, &User::new("U1", "u1@x.com", UserRole::Member).unwrap())
+            .await
+            .unwrap();
+        StoragePort::create_user(&db, &User::new("U2", "u2@x.com", UserRole::Member).unwrap())
+            .await
+            .unwrap();
         let all = StoragePort::list_all_users(&db).await.unwrap();
         assert_eq!(all.len(), 2);
     }
@@ -1838,12 +1840,9 @@ mod tests {
     use agileplus_domain::domain::epic::{Epic, EpicStatus};
 
     async fn make_project(db: &SqliteStorageAdapter) -> i64 {
-        StoragePort::create_project(
-            db,
-            &Project::new("Epic Project", "epic-project").unwrap(),
-        )
-        .await
-        .unwrap()
+        StoragePort::create_project(db, &Project::new("Epic Project", "epic-project").unwrap())
+            .await
+            .unwrap()
     }
 
     #[tokio::test]
@@ -1853,10 +1852,7 @@ mod tests {
         let e = Epic::new(pid, "Auth Overhaul").unwrap();
         let id = StoragePort::create_epic(&db, &e).await.unwrap();
         assert!(id > 0);
-        let got = StoragePort::get_epic(&db, id)
-            .await
-            .unwrap()
-            .unwrap();
+        let got = StoragePort::get_epic(&db, id).await.unwrap().unwrap();
         assert_eq!(got.title, "Auth Overhaul");
         assert_eq!(got.project_id, pid);
         assert_eq!(got.status, EpicStatus::Backlog);
@@ -1865,10 +1861,7 @@ mod tests {
     #[tokio::test]
     async fn epic_not_found_returns_none() {
         let db = make_adapter();
-        assert!(StoragePort::get_epic(&db, 9999)
-            .await
-            .unwrap()
-            .is_none());
+        assert!(StoragePort::get_epic(&db, 9999).await.unwrap().is_none());
     }
 
     #[tokio::test]
@@ -1893,12 +1886,10 @@ mod tests {
         )
         .await
         .unwrap();
-        let pid2 = StoragePort::create_project(
-            &db,
-            &Project::new("Other Proj", "other-proj").unwrap(),
-        )
-        .await
-        .unwrap();
+        let pid2 =
+            StoragePort::create_project(&db, &Project::new("Other Proj", "other-proj").unwrap())
+                .await
+                .unwrap();
         StoragePort::create_epic(&db, &Epic::new(pid, "E1").unwrap())
             .await
             .unwrap();
@@ -1917,20 +1908,15 @@ mod tests {
     #[tokio::test]
     async fn epic_delete() {
         let db = make_adapter();
-        let pid = StoragePort::create_project(
-            &db,
-            &Project::new("Del Proj", "del-proj-epic").unwrap(),
-        )
-        .await
-        .unwrap();
+        let pid =
+            StoragePort::create_project(&db, &Project::new("Del Proj", "del-proj-epic").unwrap())
+                .await
+                .unwrap();
         let eid = StoragePort::create_epic(&db, &Epic::new(pid, "Temp Epic").unwrap())
             .await
             .unwrap();
         StoragePort::delete_epic(&db, eid).await.unwrap();
-        assert!(StoragePort::get_epic(&db, eid)
-            .await
-            .unwrap()
-            .is_none());
+        assert!(StoragePort::get_epic(&db, eid).await.unwrap().is_none());
     }
 
     // -- Story tests --
@@ -1957,10 +1943,7 @@ mod tests {
         let s = Story::new(eid, pid, "User can log in", Some(3)).unwrap();
         let id = StoragePort::create_story(&db, &s).await.unwrap();
         assert!(id > 0);
-        let got = StoragePort::get_story(&db, id)
-            .await
-            .unwrap()
-            .unwrap();
+        let got = StoragePort::get_story(&db, id).await.unwrap().unwrap();
         assert_eq!(got.title, "User can log in");
         assert_eq!(got.epic_id, eid);
         assert_eq!(got.project_id, pid);
@@ -1971,10 +1954,7 @@ mod tests {
     #[tokio::test]
     async fn story_not_found_returns_none() {
         let db = make_adapter();
-        assert!(StoragePort::get_story(&db, 9999)
-            .await
-            .unwrap()
-            .is_none());
+        assert!(StoragePort::get_story(&db, 9999).await.unwrap().is_none());
     }
 
     #[tokio::test]
@@ -1986,10 +1966,7 @@ mod tests {
         StoragePort::update_story_status(&db, id, StoryStatus::InProgress)
             .await
             .unwrap();
-        let got = StoragePort::get_story(&db, id)
-            .await
-            .unwrap()
-            .unwrap();
+        let got = StoragePort::get_story(&db, id).await.unwrap().unwrap();
         assert_eq!(got.status, StoryStatus::InProgress);
     }
 
@@ -2054,11 +2031,15 @@ mod tests {
             .await
             .unwrap();
 
-        let proj1_stories = StoragePort::list_stories_by_project(&db, pid).await.unwrap();
+        let proj1_stories = StoragePort::list_stories_by_project(&db, pid)
+            .await
+            .unwrap();
         assert_eq!(proj1_stories.len(), 2);
         assert!(proj1_stories.iter().all(|s| s.project_id == pid));
 
-        let proj2_stories = StoragePort::list_stories_by_project(&db, pid2).await.unwrap();
+        let proj2_stories = StoragePort::list_stories_by_project(&db, pid2)
+            .await
+            .unwrap();
         assert_eq!(proj2_stories.len(), 1);
     }
 
@@ -2070,10 +2051,7 @@ mod tests {
             .await
             .unwrap();
         StoragePort::delete_story(&db, sid).await.unwrap();
-        assert!(StoragePort::get_story(&db, sid)
-            .await
-            .unwrap()
-            .is_none());
+        assert!(StoragePort::get_story(&db, sid).await.unwrap().is_none());
     }
 
     #[tokio::test]

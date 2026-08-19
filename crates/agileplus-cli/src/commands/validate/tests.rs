@@ -1,8 +1,8 @@
 use super::*;
 use agileplus_domain::domain::feature::Feature;
 use agileplus_domain::domain::governance::{
-    Evidence, EvidenceType, GovernanceContract, GovernanceRule, PolicyCheck,
-    PolicyDefinition, PolicyDomain, PolicyRule,
+    Evidence, EvidenceType, GovernanceContract, GovernanceRule, PolicyCheck, PolicyDefinition,
+    PolicyDomain, PolicyRule,
 };
 use agileplus_domain::domain::work_package::WorkPackage;
 use agileplus_domain::ports::StoragePort;
@@ -154,12 +154,7 @@ async fn stored_ci_policy_fails_without_matching_evidence() {
     let db = SqliteStorageAdapter::in_memory().unwrap();
     let feature_id = create_feature_with_wp(&db).await.0;
     let policy_id = create_ci_evidence_policy(&db).await;
-    let contract = contract_with_policy(
-        feature_id,
-        EvidenceType::CiOutput,
-        "FR-CI",
-        policy_id,
-    );
+    let contract = contract_with_policy(feature_id, EvidenceType::CiOutput, "FR-CI", policy_id);
 
     let results = super::evidence::evaluate_policies(&db, &contract, feature_id)
         .await
@@ -175,12 +170,7 @@ async fn stored_ci_policy_ignores_wrong_evidence_type() {
     let db = SqliteStorageAdapter::in_memory().unwrap();
     let (feature_id, wp_id) = create_feature_with_wp(&db).await;
     let policy_id = create_ci_evidence_policy(&db).await;
-    let contract = contract_with_policy(
-        feature_id,
-        EvidenceType::CiOutput,
-        "FR-CI",
-        policy_id,
-    );
+    let contract = contract_with_policy(feature_id, EvidenceType::CiOutput, "FR-CI", policy_id);
     create_evidence(&db, wp_id, "FR-CI", EvidenceType::ReviewApproval).await;
 
     let results = super::evidence::evaluate_policies(&db, &contract, feature_id)
@@ -197,12 +187,7 @@ async fn stored_ci_policy_passes_with_matching_evidence() {
     let db = SqliteStorageAdapter::in_memory().unwrap();
     let (feature_id, wp_id) = create_feature_with_wp(&db).await;
     let policy_id = create_ci_evidence_policy(&db).await;
-    let contract = contract_with_policy(
-        feature_id,
-        EvidenceType::CiOutput,
-        "FR-CI",
-        policy_id,
-    );
+    let contract = contract_with_policy(feature_id, EvidenceType::CiOutput, "FR-CI", policy_id);
     create_evidence(&db, wp_id, "FR-CI", EvidenceType::CiOutput).await;
 
     let results = super::evidence::evaluate_policies(&db, &contract, feature_id)
@@ -226,12 +211,7 @@ async fn active_policy_matches_generated_ci_ref() {
         },
     )
     .await;
-    let contract = contract_with_policy(
-        feature_id,
-        EvidenceType::CiOutput,
-        "FR-CI",
-        policy_id,
-    );
+    let contract = contract_with_policy(feature_id, EvidenceType::CiOutput, "FR-CI", policy_id);
     create_evidence(&db, wp_id, "FR-CI", EvidenceType::CiOutput).await;
 
     let results = super::evidence::evaluate_policies(&db, &contract, feature_id)

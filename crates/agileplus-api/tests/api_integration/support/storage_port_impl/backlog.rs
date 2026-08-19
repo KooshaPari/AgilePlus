@@ -17,7 +17,10 @@ fn priority_rank(priority: BacklogPriority) -> u8 {
 }
 
 fn is_open(status: BacklogStatus) -> bool {
-    matches!(status, BacklogStatus::New | BacklogStatus::Triaged | BacklogStatus::InProgress)
+    matches!(
+        status,
+        BacklogStatus::New | BacklogStatus::Triaged | BacklogStatus::InProgress
+    )
 }
 
 pub(crate) fn get_backlog_item(

@@ -2,7 +2,7 @@
 
 use std::str::FromStr;
 
-use anyhow::{anyhow, bail, Context, Result};
+use anyhow::{Context, Result, anyhow, bail};
 use chrono::NaiveDate;
 use clap::{Args, Subcommand, ValueEnum};
 

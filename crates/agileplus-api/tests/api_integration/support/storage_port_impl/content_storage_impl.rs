@@ -17,32 +17,19 @@ impl ContentStoragePort for MockStorage {
         feature::create_feature(self, f).await
     }
 
-    async fn get_feature_by_slug(
-        &self,
-        slug: &str,
-    ) -> Result<Option<Feature>, DomainError> {
+    async fn get_feature_by_slug(&self, slug: &str) -> Result<Option<Feature>, DomainError> {
         feature::get_feature_by_slug(self, slug).await
     }
 
-    async fn get_feature_by_id(
-        &self,
-        id: i64,
-    ) -> Result<Option<Feature>, DomainError> {
+    async fn get_feature_by_id(&self, id: i64) -> Result<Option<Feature>, DomainError> {
         feature::get_feature_by_id(self, id).await
     }
 
-    async fn update_feature_state(
-        &self,
-        id: i64,
-        state: FeatureState,
-    ) -> Result<(), DomainError> {
+    async fn update_feature_state(&self, id: i64, state: FeatureState) -> Result<(), DomainError> {
         feature::update_feature_state(self, id, state).await
     }
 
-    async fn update_feature(
-        &self,
-        feature: &Feature,
-    ) -> Result<(), DomainError> {
+    async fn update_feature(&self, feature: &Feature) -> Result<(), DomainError> {
         feature::update_feature(self, feature).await
     }
 
@@ -57,10 +44,7 @@ impl ContentStoragePort for MockStorage {
         feature::list_all_features(self).await
     }
 
-    async fn get_backlog_item(
-        &self,
-        id: i64,
-    ) -> Result<Option<BacklogItem>, DomainError> {
+    async fn get_backlog_item(&self, id: i64) -> Result<Option<BacklogItem>, DomainError> {
         backlog::get_backlog_item(self, id).await
     }
 
@@ -71,10 +55,7 @@ impl ContentStoragePort for MockStorage {
         backlog::list_backlog_items(self, filters).await
     }
 
-    async fn create_backlog_item(
-        &self,
-        item: &BacklogItem,
-    ) -> Result<i64, DomainError> {
+    async fn create_backlog_item(&self, item: &BacklogItem) -> Result<i64, DomainError> {
         backlog::create_backlog_item(self, item).await
     }
 
@@ -94,66 +75,39 @@ impl ContentStoragePort for MockStorage {
         backlog::update_backlog_priority(self, id, priority).await
     }
 
-    async fn pop_next_backlog_item(
-        &self,
-    ) -> Result<Option<BacklogItem>, DomainError> {
+    async fn pop_next_backlog_item(&self) -> Result<Option<BacklogItem>, DomainError> {
         backlog::pop_next_backlog_item(self).await
     }
 
-    async fn create_work_package(
-        &self,
-        wp: &WorkPackage,
-    ) -> Result<i64, DomainError> {
+    async fn create_work_package(&self, wp: &WorkPackage) -> Result<i64, DomainError> {
         work_package::create_work_package(self, wp).await
     }
 
-    async fn get_work_package(
-        &self,
-        id: i64,
-    ) -> Result<Option<WorkPackage>, DomainError> {
+    async fn get_work_package(&self, id: i64) -> Result<Option<WorkPackage>, DomainError> {
         work_package::get_work_package(self, id).await
     }
 
-    async fn update_wp_state(
-        &self,
-        id: i64,
-        state: WpState,
-    ) -> Result<(), DomainError> {
+    async fn update_wp_state(&self, id: i64, state: WpState) -> Result<(), DomainError> {
         work_package::update_wp_state(self, id, state).await
     }
 
-    async fn update_work_package(
-        &self,
-        wp: &WorkPackage,
-    ) -> Result<(), DomainError> {
+    async fn update_work_package(&self, wp: &WorkPackage) -> Result<(), DomainError> {
         work_package::update_work_package(self, wp).await
     }
 
-    async fn list_wps_by_feature(
-        &self,
-        feature_id: i64,
-    ) -> Result<Vec<WorkPackage>, DomainError> {
+    async fn list_wps_by_feature(&self, feature_id: i64) -> Result<Vec<WorkPackage>, DomainError> {
         work_package::list_wps_by_feature(self, feature_id).await
     }
 
-    async fn add_wp_dependency(
-        &self,
-        dep: &WpDependency,
-    ) -> Result<(), DomainError> {
+    async fn add_wp_dependency(&self, dep: &WpDependency) -> Result<(), DomainError> {
         work_package::add_wp_dependency(self, dep).await
     }
 
-    async fn get_wp_dependencies(
-        &self,
-        wp_id: i64,
-    ) -> Result<Vec<WpDependency>, DomainError> {
+    async fn get_wp_dependencies(&self, wp_id: i64) -> Result<Vec<WpDependency>, DomainError> {
         work_package::get_wp_dependencies(self, wp_id).await
     }
 
-    async fn get_ready_wps(
-        &self,
-        feature_id: i64,
-    ) -> Result<Vec<WorkPackage>, DomainError> {
+    async fn get_ready_wps(&self, feature_id: i64) -> Result<Vec<WorkPackage>, DomainError> {
         work_package::get_ready_wps(self, feature_id).await
     }
 }

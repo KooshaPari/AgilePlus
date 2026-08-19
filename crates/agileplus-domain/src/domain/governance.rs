@@ -112,16 +112,9 @@ pub struct Evidence {
 pub enum PolicyCheck {
     ManualApproval,
     Automated,
-    EvidencePresent {
-        evidence_type: EvidenceType,
-    },
-    ThresholdMet {
-        metric: String,
-        min: f64,
-    },
-    Custom {
-        script: String,
-    },
+    EvidencePresent { evidence_type: EvidenceType },
+    ThresholdMet { metric: String, min: f64 },
+    Custom { script: String },
 }
 
 /// A well-known built-in policy that maps a short reference key to a

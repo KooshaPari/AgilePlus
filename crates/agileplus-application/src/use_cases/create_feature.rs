@@ -4,8 +4,8 @@
 use std::sync::Arc;
 
 use agileplus_domain::domain::feature::Feature;
-use agileplus_domain::ports::events::{DomainEvent, DomainEventPublisher};
 use agileplus_domain::ports::StoragePort;
+use agileplus_domain::ports::events::{DomainEvent, DomainEventPublisher};
 
 use crate::dto::{CreateFeatureCmd, FeatureCreatedOutput};
 use crate::error::AppError;
@@ -32,11 +32,10 @@ impl CreateFeature {
 
         let id = self.repo.create_feature(&feature).await?;
 
-        self.publisher
-            .publish(DomainEvent::FeatureCreated {
-                id,
-                slug: feature.slug.clone(),
-            })?;
+        self.publisher.publish(DomainEvent::FeatureCreated {
+            id,
+            slug: feature.slug.clone(),
+        })?;
 
         let mut persisted = feature;
         persisted.id = id;

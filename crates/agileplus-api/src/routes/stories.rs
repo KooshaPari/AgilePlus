@@ -13,8 +13,8 @@ use axum::{Json, Router};
 use serde::Deserialize;
 
 use agileplus_domain::domain::story::{Story, StoryStatus};
-use agileplus_domain::ports::{ObservabilityPort, StoragePort};
 use agileplus_domain::ports::vcs::VcsPort;
+use agileplus_domain::ports::{ObservabilityPort, StoragePort};
 
 use crate::error::ApiError;
 use crate::responses::StoryResponse;
@@ -55,7 +55,11 @@ where
         .map_err(|e| ApiError::BadRequest(e.to_string()))?;
     story.description = body.description;
 
-    let id = app.storage.create_story(&story).await.map_err(ApiError::from)?;
+    let id = app
+        .storage
+        .create_story(&story)
+        .await
+        .map_err(ApiError::from)?;
     let created = Story { id, ..story };
     Ok((StatusCode::CREATED, Json(StoryResponse::from(created))))
 }

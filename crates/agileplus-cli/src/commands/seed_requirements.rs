@@ -9,7 +9,7 @@ use std::path::PathBuf;
 
 use clap::Args;
 
-use agileplus_sqlite::seed::{seed_requirements, Initiative};
+use agileplus_sqlite::seed::{Initiative, seed_requirements};
 
 /// Embedded catalog markdown files â€” bundled at compile time.
 /// Paths are relative to this source file:

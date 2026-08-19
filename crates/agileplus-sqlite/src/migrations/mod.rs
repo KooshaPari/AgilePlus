@@ -80,17 +80,22 @@ fn find_up_body_start(sql: &str) -> Option<usize> {
     let mut i = 0;
     while i + 5 <= bytes.len() {
         if &bytes[i..i + 5] == b"-- UP"
-            && (i + 5 == bytes.len()
-                || !bytes[i + 5].is_ascii_lowercase())
+            && (i + 5 == bytes.len() || !bytes[i + 5].is_ascii_lowercase())
         {
             // Skip the marker + any trailing `:`, whitespace, or `--` (line comment).
             let mut j = i + 5;
             // Single trailing ':'
-            if j < bytes.len() && bytes[j] == b':' { j += 1; }
+            if j < bytes.len() && bytes[j] == b':' {
+                j += 1;
+            }
             // Skip rest of the line (the marker comment)
-            while j < bytes.len() && bytes[j] != b'\n' { j += 1; }
+            while j < bytes.len() && bytes[j] != b'\n' {
+                j += 1;
+            }
             // Skip the newline
-            if j < bytes.len() { j += 1; }
+            if j < bytes.len() {
+                j += 1;
+            }
             return Some(j);
         }
         i += 1;

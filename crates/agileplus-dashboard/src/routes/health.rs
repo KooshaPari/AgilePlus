@@ -307,12 +307,10 @@ pub async fn patch_service_config(
             message: format!("Service '{name}' configuration saved"),
             success: true,
         }),
-        Err(error) => {
-            render(ToastPartial {
-                message: format!("Failed to load settings safely: {error}"),
-                success: false,
-            })
-        }
+        Err(error) => render(ToastPartial {
+            message: format!("Failed to load settings safely: {error}"),
+            success: false,
+        }),
     }
 }
 
