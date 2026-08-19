@@ -37,7 +37,7 @@
 //! Traceability: audit rec #8 from `AUDIT_BLOC_VS_2026_SOTA.md`.
 
 use chrono::{DateTime, TimeZone, Utc};
-use rusqlite::{params, Connection, OptionalExtension, Row};
+use rusqlite::{Connection, OptionalExtension, Row, params};
 
 use crate::claim::{Claim, ClaimError, ClaimKind, ClaimReason, ClaimState, ClaimStoreTrait};
 
@@ -457,8 +457,8 @@ mod tests {
     #[test]
     fn sqlite_store_conflict_on_active() {
         let mut s = SqliteClaimStore::open_in_memory().unwrap();
-        assert!(s
-            .claim(
+        assert!(
+            s.claim(
                 "c1",
                 "repo:foo",
                 ClaimKind::Repo,
@@ -466,9 +466,10 @@ mod tests {
                 60,
                 ClaimReason::default()
             )
-            .is_some());
-        assert!(s
-            .claim(
+            .is_some()
+        );
+        assert!(
+            s.claim(
                 "c2",
                 "repo:foo",
                 ClaimKind::Repo,
@@ -476,7 +477,8 @@ mod tests {
                 60,
                 ClaimReason::default()
             )
-            .is_none());
+            .is_none()
+        );
     }
 
     #[test]

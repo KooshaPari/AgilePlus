@@ -32,19 +32,20 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 
 use axum::routing::get;
-use axum::{middleware, Router};
+use axum::{Router, middleware};
 use tower_http::cors::CorsLayer;
 use tower_http::services::ServeDir;
 use tower_http::trace::TraceLayer;
 
-use agileplus_domain::ports::{
-    observability::ObservabilityPort, StoragePort, vcs::VcsPort,
-};
+use agileplus_domain::ports::{StoragePort, observability::ObservabilityPort, vcs::VcsPort};
 
 type BoxError = Box<dyn std::error::Error + Send + Sync>;
 
 use crate::responses::SimpleHealthResponse;
-use crate::routes::{audit, cycle, epics, events, features, governance, module, projects, stories, stream, users, work_packages};
+use crate::routes::{
+    audit, cycle, epics, events, features, governance, module, projects, stories, stream, users,
+    work_packages,
+};
 use crate::state::AppState;
 
 use super::handlers::info_handler;

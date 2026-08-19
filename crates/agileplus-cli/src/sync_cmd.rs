@@ -10,11 +10,11 @@
 //! A `GhDataSource` trait-object is injected so the command can be unit-
 //! tested without touching the network.
 
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 use clap::Args;
 
 use agileplus_domain::ports::story::StoryRepository;
-use agileplus_github::sync::{sync_repository, GhDataSource, SyncReport};
+use agileplus_github::sync::{GhDataSource, SyncReport, sync_repository};
 
 /// Arguments for the `sync` subcommand.
 #[derive(Debug, Args)]

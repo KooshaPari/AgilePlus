@@ -29,8 +29,8 @@ use crate::templates::{
 };
 
 use super::helpers::{
-    build_kanban_cards, dashboard_filter_from_query, is_htmx, load_projects, render,
-    DashboardFilter,
+    DashboardFilter, build_kanban_cards, dashboard_filter_from_query, is_htmx, load_projects,
+    render,
 };
 
 // â”€â”€ JSON API Response Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -375,7 +375,7 @@ pub async fn time_footer() -> axum::response::Html<String> {
 
 use axum::response::sse::{Event, Sse};
 use std::convert::Infallible;
-use tokio::time::{interval, Duration};
+use tokio::time::{Duration, interval};
 
 /// GET /api/stream (Server-Sent Events)
 /// Streams real-time feature and health updates to connected clients.

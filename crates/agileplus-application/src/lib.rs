@@ -34,10 +34,10 @@ mod tests {
     use agileplus_domain::domain::state_machine::FeatureState;
     use agileplus_domain::domain::story::{Story, StoryStatus};
     use agileplus_domain::error::DomainError;
+    use agileplus_domain::ports::StoragePort;
     use agileplus_domain::ports::epic::EpicRepository;
     use agileplus_domain::ports::events::{DomainEvent, DomainEventPublisher};
     use agileplus_domain::ports::story::StoryRepository;
-    use agileplus_domain::ports::StoragePort;
 
     use crate::dto::*;
     use crate::error::AppError;
@@ -121,10 +121,7 @@ mod tests {
         async fn list_all_features(&self) -> Result<Vec<Feature>, DomainError> {
             Ok(self.store.read().await.values().cloned().collect())
         }
-        async fn list_features_by_label(
-            &self,
-            label: &str,
-        ) -> Result<Vec<Feature>, DomainError> {
+        async fn list_features_by_label(&self, label: &str) -> Result<Vec<Feature>, DomainError> {
             Ok(self
                 .store
                 .read()

@@ -19,9 +19,7 @@ use utoipa::{IntoParams, ToSchema};
 
 use agileplus_domain::domain::feature::Feature;
 use agileplus_domain::domain::state_machine::{self, FeatureState};
-use agileplus_domain::ports::{
-    observability::ObservabilityPort, StoragePort, vcs::VcsPort,
-};
+use agileplus_domain::ports::{StoragePort, observability::ObservabilityPort, vcs::VcsPort};
 
 use crate::error::ApiError;
 use crate::responses::FeatureResponse;
@@ -273,9 +271,8 @@ where
         .ok_or_else(|| ApiError::NotFound(format!("Feature '{slug}' not found")))?;
 
     let target = parse_feature_state(&body.target_state)?;
-    let result =
-        agileplus_domain::domain::state_machine::transition(feature.state, target)
-            .map_err(ApiError::from)?;
+    let result = agileplus_domain::domain::state_machine::transition(feature.state, target)
+        .map_err(ApiError::from)?;
 
     app.storage
         .update_feature_state(feature.id, target)

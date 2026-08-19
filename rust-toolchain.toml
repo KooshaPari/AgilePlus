@@ -1,3 +1,7 @@
 [toolchain]
-channel = "nightly"
+# Pinned dated nightly to keep rustfmt/clippy deterministic across the
+# workspace and CI. The floating `nightly` channel caused the default rustfmt
+# rules to drift (breaking `cargo fmt --all -- --check`) every time the
+# rolling nightly was updated.
+channel = "nightly-2026-07-31"
 components = ["rustfmt", "clippy", "rust-docs"]

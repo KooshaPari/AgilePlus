@@ -14,9 +14,7 @@ use axum::{Json, Router};
 use serde::Deserialize;
 
 use agileplus_domain::domain::epic::{Epic, EpicStatus};
-use agileplus_domain::ports::{
-    observability::ObservabilityPort, StoragePort, vcs::VcsPort,
-};
+use agileplus_domain::ports::{StoragePort, observability::ObservabilityPort, vcs::VcsPort};
 
 use crate::error::ApiError;
 use crate::responses::{EpicResponse, StoryResponse};
@@ -52,11 +50,15 @@ where
     V: VcsPort + Send + Sync + 'static,
     O: ObservabilityPort + Send + Sync + 'static,
 {
-    let mut epic = Epic::new(body.project_id, &body.title)
-        .map_err(|e| ApiError::BadRequest(e.to_string()))?;
+    let mut epic =
+        Epic::new(body.project_id, &body.title).map_err(|e| ApiError::BadRequest(e.to_string()))?;
     epic.description = body.description;
 
-    let id = app.storage.create_epic(&epic).await.map_err(ApiError::from)?;
+    let id = app
+        .storage
+        .create_epic(&epic)
+        .await
+        .map_err(ApiError::from)?;
     let created = Epic { id, ..epic };
     Ok((StatusCode::CREATED, Json(EpicResponse::from(created))))
 }
@@ -135,6 +137,10 @@ where
         .map_err(ApiError::from)?
         .ok_or_else(|| ApiError::NotFound(format!("Epic {id} not found")))?;
 
-    let stories = app.storage.list_stories_by_epic(id).await.map_err(ApiError::from)?;
+    let stories = app
+        .storage
+        .list_stories_by_epic(id)
+        .await
+        .map_err(ApiError::from)?;
     Ok(Json(stories.into_iter().map(StoryResponse::from).collect()))
 }

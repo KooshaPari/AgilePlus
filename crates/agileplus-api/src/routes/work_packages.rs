@@ -16,9 +16,7 @@ use chrono::Utc;
 use serde::{Deserialize, Serialize};
 
 use agileplus_domain::domain::work_package::{WorkPackage, WpState};
-use agileplus_domain::ports::{
-    observability::ObservabilityPort, StoragePort, vcs::VcsPort,
-};
+use agileplus_domain::ports::{StoragePort, observability::ObservabilityPort, vcs::VcsPort};
 
 use crate::error::ApiError;
 use crate::responses::WorkPackageResponse;

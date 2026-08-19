@@ -11,12 +11,12 @@ use std::collections::HashMap;
 
 use crate::app_state::SharedState;
 use crate::templates::{
-    DashboardPage, EventsPage, FeaturesPage, HomePage, HubPage, EcosystemProject,
-    FeatureView, SettingsPage,
+    DashboardPage, EcosystemProject, EventsPage, FeatureView, FeaturesPage, HomePage, HubPage,
+    SettingsPage,
 };
 
-use super::helpers::{self, DashboardFilter};
 use super::features;
+use super::helpers::{self, DashboardFilter};
 
 /// GET /
 /// Home page with project summary statistics

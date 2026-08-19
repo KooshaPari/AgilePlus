@@ -11,9 +11,7 @@ use agileplus_application::use_cases::{
 };
 use agileplus_domain::config::AppConfig;
 use agileplus_domain::credentials::CredentialStore;
-use agileplus_domain::ports::{
-    observability::ObservabilityPort, StoragePort, vcs::VcsPort,
-};
+use agileplus_domain::ports::{StoragePort, observability::ObservabilityPort, vcs::VcsPort};
 use tokio::sync::broadcast;
 
 use crate::middleware::token_verifier::{DynTokenVerifier, SharedSecretVerifier};

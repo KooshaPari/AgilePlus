@@ -103,7 +103,9 @@ fn load_features(conn: &Connection) -> Vec<Feature> {
                 id: row.get(0)?,
                 slug: row.get(1)?,
                 friendly_name: row.get(2)?,
-                state: state.parse::<FeatureState>().unwrap_or(FeatureState::Created),
+                state: state
+                    .parse::<FeatureState>()
+                    .unwrap_or(FeatureState::Created),
                 spec_hash,
                 target_branch: row.get(5)?,
                 plane_issue_id: None,
@@ -131,8 +133,7 @@ fn load_work_packages(conn: &Connection) -> HashMap<i64, Vec<WorkPackage>> {
     if let Ok(mut stmt) = conn.prepare(sql) {
         if let Ok(rows) = stmt.query_map([], |row| {
             let file_scope_raw: String = row.get(5).unwrap_or_default();
-            let file_scope: Vec<String> =
-                serde_json::from_str(&file_scope_raw).unwrap_or_default();
+            let file_scope: Vec<String> = serde_json::from_str(&file_scope_raw).unwrap_or_default();
             Ok(WorkPackage {
                 id: row.get(0)?,
                 feature_id: row.get(1)?,
@@ -162,7 +163,8 @@ fn load_work_packages(conn: &Connection) -> HashMap<i64, Vec<WorkPackage>> {
 
 fn load_projects(conn: &Connection) -> Vec<Project> {
     let mut out = Vec::new();
-    let sql = "SELECT id, slug, name, description, created_at, updated_at FROM projects ORDER BY id";
+    let sql =
+        "SELECT id, slug, name, description, created_at, updated_at FROM projects ORDER BY id";
     if let Ok(mut stmt) = conn.prepare(sql) {
         if let Ok(rows) = stmt.query_map([], |row| {
             Ok(Project {
@@ -198,8 +200,7 @@ pub fn load_store_from_path(path: &Path) -> Option<DashboardStore> {
     }
     let conn = Connection::open_with_flags(
         path,
-        rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY
-            | rusqlite::OpenFlags::SQLITE_OPEN_NO_MUTEX,
+        rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY | rusqlite::OpenFlags::SQLITE_OPEN_NO_MUTEX,
     )
     .ok()?;
 
@@ -339,7 +340,10 @@ mod tests {
         )
         .unwrap();
         drop(conn);
-        assert!(load_store_from_path(&path).is_none(), "empty features -> None");
+        assert!(
+            load_store_from_path(&path).is_none(),
+            "empty features -> None"
+        );
 
         fs::remove_dir_all(&dir).ok();
     }

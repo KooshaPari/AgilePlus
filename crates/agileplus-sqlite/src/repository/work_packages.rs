@@ -270,7 +270,9 @@ pub fn list_wps_by_story(
         )
         .map_err(map_err)?;
 
-    let rows = stmt.query_map(params![story_id], row_to_wp).map_err(map_err)?;
+    let rows = stmt
+        .query_map(params![story_id], row_to_wp)
+        .map_err(map_err)?;
     rows.collect::<rusqlite::Result<Vec<_>>>().map_err(map_err)
 }
 

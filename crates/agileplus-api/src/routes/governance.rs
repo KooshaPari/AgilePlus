@@ -10,9 +10,7 @@ use axum::routing::{get, post};
 use axum::{Json, Router};
 use serde_json::{Value, json};
 
-use agileplus_domain::ports::{
-    observability::ObservabilityPort, StoragePort, vcs::VcsPort,
-};
+use agileplus_domain::ports::{StoragePort, observability::ObservabilityPort, vcs::VcsPort};
 
 use crate::error::ApiError;
 use crate::responses::GovernanceResponse;
@@ -122,10 +120,9 @@ where
                 .await
                 .map_err(ApiError::from)?;
             let wp_ids: std::collections::HashSet<i64> = wps.iter().map(|w| w.id).collect();
-            if evidence
-                .iter()
-                .any(|e| wp_ids.contains(&e.wp_id) && e.evidence_type.as_str() == req.evidence_type.as_str())
-            {
+            if evidence.iter().any(|e| {
+                wp_ids.contains(&e.wp_id) && e.evidence_type.as_str() == req.evidence_type.as_str()
+            }) {
                 rule_satisfied = true;
             }
         }

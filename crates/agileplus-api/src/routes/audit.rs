@@ -11,9 +11,7 @@ use axum::{Json, Router};
 use serde_json::{Value, json};
 
 use agileplus_domain::domain::audit::AuditChain;
-use agileplus_domain::ports::{
-    observability::ObservabilityPort, StoragePort, vcs::VcsPort,
-};
+use agileplus_domain::ports::{StoragePort, observability::ObservabilityPort, vcs::VcsPort};
 
 use crate::error::ApiError;
 use crate::responses::AuditEntryResponse;

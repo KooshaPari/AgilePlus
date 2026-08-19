@@ -19,7 +19,7 @@ use std::fs::File;
 use std::io::{BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
 
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result, bail};
 use clap::{Args, Subcommand};
 use serde::{Deserialize, Serialize};
 
@@ -35,15 +35,14 @@ const SUPPORTED_ENTITY_TYPES: &[&str] = &[
     "criteria",
     "gate",
 ];
-const SUPPORTED_RELATION_TYPES: &[&str] =
-    &["verified_by", "bounded_by", "grounds", "requires", "asserts"];
-const SUPPORTED_CORPORA: &[&str] = &[
-    "forge",
-    "codex",
-    "claude-code",
-    "cursor",
-    "factory-droid",
+const SUPPORTED_RELATION_TYPES: &[&str] = &[
+    "verified_by",
+    "bounded_by",
+    "grounds",
+    "requires",
+    "asserts",
 ];
+const SUPPORTED_CORPORA: &[&str] = &["forge", "codex", "claude-code", "cursor", "factory-droid"];
 
 /// OKF provenance record (§6).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -146,8 +145,8 @@ pub fn run(args: &OkfArgs) -> Result<i32> {
 /// first non-empty line is treated as the document; later lines are rejected
 /// so we never silently drop data).
 fn load_document(path: &Path) -> Result<OkfDocument> {
-    let text = std::fs::read_to_string(path)
-        .with_context(|| format!("reading `{}`", path.display()))?;
+    let text =
+        std::fs::read_to_string(path).with_context(|| format!("reading `{}`", path.display()))?;
     if text.trim().is_empty() {
         bail!("empty file: `{}`", path.display());
     }
@@ -181,8 +180,7 @@ fn load_document(path: &Path) -> Result<OkfDocument> {
             )
         })?
     } else {
-        serde_json::from_str(&text)
-            .with_context(|| format!("parsing `{}`", path.display()))?
+        serde_json::from_str(&text).with_context(|| format!("parsing `{}`", path.display()))?
     };
     Ok(doc)
 }
@@ -256,10 +254,7 @@ fn validate_cmd(path: &Path) -> Result<i32> {
             ));
         }
         if !SUPPORTED_RELATION_TYPES.contains(&rel.r#type.as_str()) {
-            errors.push(format!(
-                "relation[{idx}] has unknown type `{}`",
-                rel.r#type
-            ));
+            errors.push(format!("relation[{idx}] has unknown type `{}`", rel.r#type));
         }
         if !SUPPORTED_CORPORA.contains(&rel.provenance.corpus.as_str()) {
             errors.push(format!(
@@ -275,7 +270,12 @@ fn validate_cmd(path: &Path) -> Result<i32> {
     }
 
     if errors.is_empty() {
-        println!("valid: `{}` ({} entities, {} relations)", path.display(), doc.entities.len(), doc.relations.len());
+        println!(
+            "valid: `{}` ({} entities, {} relations)",
+            path.display(),
+            doc.entities.len(),
+            doc.relations.len()
+        );
         Ok(0)
     } else {
         eprintln!("error: `{}` failed validation:", path.display());
@@ -344,7 +344,12 @@ fn summarize_cmd(path: &Path, top: usize) -> Result<i32> {
     if top > 0 {
         println!("\ntop {top} longest entity labels:");
         for (i, e) in longest.iter().take(top).enumerate() {
-            println!("  {:>2}. [{:>10}] {}", i + 1, e.r#type, truncate(&e.label, 80));
+            println!(
+                "  {:>2}. [{:>10}] {}",
+                i + 1,
+                e.r#type,
+                truncate(&e.label, 80)
+            );
         }
     }
 
@@ -416,7 +421,10 @@ fn merge_cmd(paths: &[PathBuf], output: Option<&Path>) -> Result<i32> {
         let sep = "::";
         for e in &doc.entities {
             let new_id = format!("{tag}{sep}{}", e.id);
-            id_rewrite.insert((doc.provenance.source_id.clone(), e.id.clone()), new_id.clone());
+            id_rewrite.insert(
+                (doc.provenance.source_id.clone(), e.id.clone()),
+                new_id.clone(),
+            );
             merged.entities.push(OkfEntity {
                 id: new_id,
                 r#type: e.r#type.clone(),
@@ -452,17 +460,23 @@ fn merge_cmd(paths: &[PathBuf], output: Option<&Path>) -> Result<i32> {
         bail!("merged document has no entities — refusing to emit");
     }
 
-    let serialized = serde_json::to_string_pretty(&merged)
-        .context("serialising merged OKF document")?;
+    let serialized =
+        serde_json::to_string_pretty(&merged).context("serialising merged OKF document")?;
     match output {
         Some(p) => {
-            std::fs::write(p, &serialized)
-                .with_context(|| format!("writing `{}`", p.display()))?;
-            eprintln!("wrote {} bytes ({} entities, {} relations) to `{}`", serialized.len(), merged.entities.len(), merged.relations.len(), p.display());
+            std::fs::write(p, &serialized).with_context(|| format!("writing `{}`", p.display()))?;
+            eprintln!(
+                "wrote {} bytes ({} entities, {} relations) to `{}`",
+                serialized.len(),
+                merged.entities.len(),
+                merged.relations.len(),
+                p.display()
+            );
         }
         None => {
             let mut out = std::io::stdout().lock();
-            out.write_all(serialized.as_bytes()).context("writing to stdout")?;
+            out.write_all(serialized.as_bytes())
+                .context("writing to stdout")?;
             out.write_all(b"\n").ok();
         }
     }
@@ -560,7 +574,18 @@ mod tests {
 
     #[test]
     fn sanitize_tag_starts_with_alnum() {
-        assert!(sanitize_tag("codex", "-weird").chars().nth("codex::".len()).unwrap().is_ascii_alphanumeric() || sanitize_tag("codex", "-weird").chars().nth("codex::".len()).unwrap() == '_');
+        assert!(
+            sanitize_tag("codex", "-weird")
+                .chars()
+                .nth("codex::".len())
+                .unwrap()
+                .is_ascii_alphanumeric()
+                || sanitize_tag("codex", "-weird")
+                    .chars()
+                    .nth("codex::".len())
+                    .unwrap()
+                    == '_'
+        );
     }
 
     #[test]

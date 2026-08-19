@@ -51,18 +51,31 @@ impl EvidenceItem {
 
     /// Read `present` as bool (defaults false).
     pub fn present(&self) -> bool {
-        self.metadata.get("present").map(|v| v == "true").unwrap_or(false)
+        self.metadata
+            .get("present")
+            .map(|v| v == "true")
+            .unwrap_or(false)
     }
 
     /// Read `count` as usize (defaults 0).
     pub fn count_value(&self) -> usize {
-        self.metadata.get("count").and_then(|v| v.parse().ok()).unwrap_or(0)
+        self.metadata
+            .get("count")
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(0)
     }
 }
 
 /// Directory names skipped during the walk (build output, VCS, deps).
 const SKIP_DIRS: &[&str] = &[
-    ".git", "target", "node_modules", ".claude", "dist", "build", ".venv", "vendor",
+    ".git",
+    "target",
+    "node_modules",
+    ".claude",
+    "dist",
+    "build",
+    ".venv",
+    "vendor",
 ];
 
 /// Repo-root files whose presence is a scored signal.
@@ -96,7 +109,9 @@ impl RepoScan {
 
     /// True if a scored presence-file exists.
     pub fn has(&self, repo_relative: &str) -> bool {
-        self.get(&format!("file:{repo_relative}")).map(|i| i.present()).unwrap_or(false)
+        self.get(&format!("file:{repo_relative}"))
+            .map(|i| i.present())
+            .unwrap_or(false)
     }
 }
 
@@ -129,12 +144,19 @@ pub fn scan_repo(repo_root: impl AsRef<Path>) -> Result<RepoScan> {
 
     // Workspace crate count (Cargo.toml files below root).
     let crate_manifests = collect_named(root, "Cargo.toml").len();
-    items.push(EvidenceItem::count("count:cargo_manifests", crate_manifests));
+    items.push(EvidenceItem::count(
+        "count:cargo_manifests",
+        crate_manifests,
+    ));
 
     // CI workflow presence.
     let ci = root.join(".github/workflows").is_dir()
         && collect_files(&root.join(".github/workflows"), "yml").len() > 0;
-    items.push(EvidenceItem::presence("dir:.github/workflows", ".github/workflows", ci));
+    items.push(EvidenceItem::presence(
+        "dir:.github/workflows",
+        ".github/workflows",
+        ci,
+    ));
 
     Ok(RepoScan { items })
 }

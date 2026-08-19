@@ -25,11 +25,7 @@ pub fn token_jaccard(a: &str, b: &str) -> f64 {
     }
     let inter = ta.intersection(&tb).count() as f64;
     let union = ta.union(&tb).count() as f64;
-    if union == 0.0 {
-        0.0
-    } else {
-        inter / union
-    }
+    if union == 0.0 { 0.0 } else { inter / union }
 }
 
 /// Levenshtein edit distance between two byte strings.
@@ -91,11 +87,7 @@ pub fn ngram_jaccard(a: &str, b: &str, n: usize) -> f64 {
     }
     let inter = na.intersection(&nb).count() as f64;
     let union = na.union(&nb).count() as f64;
-    if union == 0.0 {
-        0.0
-    } else {
-        inter / union
-    }
+    if union == 0.0 { 0.0 } else { inter / union }
 }
 
 /// 64-bit simhash for short text. Hash each n-gram (n=3) with FNV-1a and

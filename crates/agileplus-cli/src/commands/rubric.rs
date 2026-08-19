@@ -11,7 +11,7 @@
 
 use std::path::{Path, PathBuf};
 
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result, bail};
 use clap::{Args, Subcommand, ValueEnum};
 
 use agileplus_governance::scoring_engine::{evaluate, evaluate_with_probes, render_markdown};
@@ -151,9 +151,7 @@ pub fn run(args: &RubricArgs) -> Result<()> {
 
             Ok(())
         }
-        RubricSubcommand::FixList(args) => {
-            super::fix_list::run(args)
-        }
+        RubricSubcommand::FixList(args) => super::fix_list::run(args),
     }
 }
 
