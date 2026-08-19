@@ -34,9 +34,9 @@
 
 use std::path::{Path, PathBuf};
 
-use anyhow::{anyhow, bail, Context, Result};
+use anyhow::{Context, Result, anyhow, bail};
 use clap::{Args, Subcommand};
-use rusqlite::{params, Connection};
+use rusqlite::{Connection, params};
 
 use agileplus_sqlite::migrations::MigrationRunner;
 

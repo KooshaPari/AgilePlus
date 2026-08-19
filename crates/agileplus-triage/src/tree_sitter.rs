@@ -213,18 +213,20 @@ mod tests {
     fn tree_sitter_rust_fallback() {
         let src = "pub fn main() -> i32 { let x = 42; return x; }";
         let toks = TreeSitterTokenizer::tokenize(src, "rust");
-        assert!(toks
-            .iter()
-            .any(|t| t == "pub" || t == "fn" || t == "let" || t == "return"));
+        assert!(
+            toks.iter()
+                .any(|t| t == "pub" || t == "fn" || t == "let" || t == "return")
+        );
     }
 
     #[test]
     fn tree_sitter_python_fallback() {
         let src = "def foo(self):\n    return self.bar\n";
         let toks = TreeSitterTokenizer::tokenize(src, "python");
-        assert!(toks
-            .iter()
-            .any(|t| t == "def" || t == "return" || t == "self"));
+        assert!(
+            toks.iter()
+                .any(|t| t == "def" || t == "return" || t == "self")
+        );
     }
 
     #[test]
@@ -262,9 +264,10 @@ mod tests {
     fn tree_sitter_fallback_unknown_language() {
         let src = "some random text here";
         let toks = TreeSitterTokenizer::tokenize(src, "ruby");
-        assert!(toks
-            .iter()
-            .any(|t| t == "some" || t == "random" || t == "text" || t == "here"));
+        assert!(
+            toks.iter()
+                .any(|t| t == "some" || t == "random" || t == "text" || t == "here")
+        );
     }
 
     #[test]

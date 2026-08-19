@@ -202,8 +202,7 @@ mod tests {
     #[test]
     fn resolve_promotion_requester_returns_username() {
         assert_eq!(
-            resolve_promotion_requester::<std::io::Error>(Ok("release-agent".to_string()))
-                .unwrap(),
+            resolve_promotion_requester::<std::io::Error>(Ok("release-agent".to_string())).unwrap(),
             "release-agent"
         );
     }

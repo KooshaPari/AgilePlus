@@ -129,9 +129,9 @@ fn validate_api_key_value(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use axum::{Router, routing::get, middleware};
-    use axum_test::TestServer;
     use agileplus_domain::credentials::{InMemoryCredentialStore, format_api_key_hash, keys};
+    use axum::{Router, middleware, routing::get};
+    use axum_test::TestServer;
 
     #[test]
     fn protected_auth_reads_rotated_key_from_credential_store() {
@@ -156,10 +156,7 @@ mod tests {
         let shared: std::sync::Arc<dyn CredentialStore> = credentials.clone();
         let app = Router::new()
             .route("/protected", get(|| async { "ok" }))
-            .layer(middleware::from_fn_with_state(
-                shared,
-                validate_api_key,
-            ));
+            .layer(middleware::from_fn_with_state(shared, validate_api_key));
         let server = TestServer::new(app);
 
         server

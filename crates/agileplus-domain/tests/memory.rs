@@ -83,8 +83,7 @@ fn memory_profile_feature_lifecycle() {
 
     // Serialize + deserialize round-trip.
     let json = serde_json::to_string(&features).expect("serialize features");
-    let _round_tripped: Vec<Feature> =
-        serde_json::from_str(&json).expect("deserialize features");
+    let _round_tripped: Vec<Feature> = serde_json::from_str(&json).expect("deserialize features");
 
     // profiler drops here → writes dhat-heap.json
 }
@@ -121,8 +120,7 @@ fn memory_profile_work_package_operations() {
 
     // JSON round-trip.
     let json = serde_json::to_string(&work_packages).expect("serialize WPs");
-    let _round_tripped: Vec<WorkPackage> =
-        serde_json::from_str(&json).expect("deserialize WPs");
+    let _round_tripped: Vec<WorkPackage> = serde_json::from_str(&json).expect("deserialize WPs");
 }
 
 // ──────────────────────────────────────────────

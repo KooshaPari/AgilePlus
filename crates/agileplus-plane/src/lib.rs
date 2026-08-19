@@ -8,6 +8,7 @@
 
 pub mod client;
 pub mod content_hash;
+pub mod daemon;
 pub mod inbound;
 pub mod labels;
 pub mod outbound;
@@ -15,7 +16,6 @@ pub mod runtime;
 pub mod state_mapper;
 pub mod sync;
 pub mod sync_queue;
-pub mod daemon;
 pub mod webhook;
 
 pub use client::PlaneClient;

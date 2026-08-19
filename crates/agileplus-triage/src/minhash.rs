@@ -220,11 +220,7 @@ mod tests {
             }
             let inter = ta.intersection(&tb).count() as f64;
             let union = ta.union(&tb).count() as f64;
-            if union == 0.0 {
-                0.0
-            } else {
-                inter / union
-            }
+            if union == 0.0 { 0.0 } else { inter / union }
         }
         let pairs = [
             ("add login button to header", "add login form to header"),

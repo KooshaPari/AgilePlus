@@ -410,9 +410,7 @@ impl PolicyEngine {
     /// `&self`-free also satisfies `clippy::only_used_in_recursion`.
     fn evaluate_condition(condition: &PolicyCondition, context: &PolicyContext) -> bool {
         match condition {
-            PolicyCondition::Equals { key, value } => {
-                context.get(key).is_none_or(|v| v == *value)
-            }
+            PolicyCondition::Equals { key, value } => context.get(key).is_none_or(|v| v == *value),
             PolicyCondition::Contains { key, value } => {
                 context.get(key).is_some_and(|v| match (v, value) {
                     (serde_json::Value::String(s), serde_json::Value::String(pattern)) => {
@@ -522,14 +520,16 @@ mod tests {
 
     #[test]
     fn promotion_policy_actor_comes_from_request_requested_by() {
-        let engine = PolicyEngine::with_policies(vec![
-            Policy::new("release", "promote", PolicyEffect::Allow)
-                .with_condition(PolicyCondition::Equals {
-                    key: "user_id".to_string(),
-                    value: serde_json::json!("verified-user"),
-                })
-                .with_priority(100),
-        ])
+        let engine = PolicyEngine::with_policies(vec![Policy::new(
+            "release",
+            "promote",
+            PolicyEffect::Allow,
+        )
+        .with_condition(PolicyCondition::Equals {
+            key: "user_id".to_string(),
+            value: serde_json::json!("verified-user"),
+        })
+        .with_priority(100)])
         .with_default_action(PolicyEffect::Deny);
 
         let request = PromotionRequest::new(

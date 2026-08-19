@@ -41,8 +41,10 @@ fn init_git_repo(dir: &Path) {
         });
     assert!(init.status.success(), "git init failed");
 
-    for (key, value) in [("user.email", "e2e@agileplus.example"), ("user.name", "AgilePlus E2E")]
-    {
+    for (key, value) in [
+        ("user.email", "e2e@agileplus.example"),
+        ("user.name", "AgilePlus E2E"),
+    ] {
         let status = StdCommand::new("git")
             .args(["config", key, value])
             .current_dir(dir)
@@ -89,8 +91,16 @@ fn roundtrip_init_specify_list_writes_state_files() {
         .assert()
         .success();
 
-    let spec_file = repo.path().join("kitty-specs").join(feature).join("spec.md");
-    assert!(spec_file.is_file(), "spec artifact missing at {}", spec_file.display());
+    let spec_file = repo
+        .path()
+        .join("kitty-specs")
+        .join(feature)
+        .join("spec.md");
+    assert!(
+        spec_file.is_file(),
+        "spec artifact missing at {}",
+        spec_file.display()
+    );
     assert!(db.is_file(), "sqlite db missing at {}", db.display());
 
     Command::new(&bin)

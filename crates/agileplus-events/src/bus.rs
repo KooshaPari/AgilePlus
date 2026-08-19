@@ -100,10 +100,7 @@ impl EventBus {
     }
 
     /// Async convenience wrapper around [`Self::publish`].
-    pub async fn publish_async(
-        &self,
-        event: DomainEvent,
-    ) -> Result<usize, SendError<DomainEvent>> {
+    pub async fn publish_async(&self, event: DomainEvent) -> Result<usize, SendError<DomainEvent>> {
         self.publish(event)
     }
 

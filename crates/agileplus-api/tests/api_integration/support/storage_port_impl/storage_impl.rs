@@ -1,8 +1,8 @@
 use agileplus_domain::domain::audit::AuditEntry;
 use agileplus_domain::domain::cycle::{Cycle, CycleFeature, CycleState, CycleWithFeatures};
 use agileplus_domain::domain::epic::{Epic, EpicStatus};
-use agileplus_domain::domain::governance::{Evidence, GovernanceContract, PolicyRule};
 use agileplus_domain::domain::feature::Feature;
+use agileplus_domain::domain::governance::{Evidence, GovernanceContract, PolicyRule};
 use agileplus_domain::domain::metric::Metric;
 use agileplus_domain::domain::module::{Module, ModuleFeatureTag, ModuleWithFeatures};
 use agileplus_domain::domain::project::Project;
@@ -16,14 +16,11 @@ use agileplus_domain::ports::StoragePort;
 use async_trait::async_trait;
 
 use super::super::storage::MockStorage;
-use super::{feature, audit, cycle, evidence, metrics, module, policy, sync_mapping};
+use super::{audit, cycle, evidence, feature, metrics, module, policy, sync_mapping};
 
 #[async_trait]
 impl StoragePort for MockStorage {
-    async fn create_feature(
-        &self,
-        f: &Feature,
-    ) -> Result<i64, DomainError> {
+    async fn create_feature(&self, f: &Feature) -> Result<i64, DomainError> {
         feature::create_feature(self, f).await
     }
 
@@ -35,11 +32,7 @@ impl StoragePort for MockStorage {
         feature::get_feature_by_id(self, id).await
     }
 
-    async fn update_feature_state(
-        &self,
-        id: i64,
-        state: FeatureState,
-    ) -> Result<(), DomainError> {
+    async fn update_feature_state(&self, id: i64, state: FeatureState) -> Result<(), DomainError> {
         feature::update_feature_state(self, id, state).await
     }
 
@@ -85,17 +78,11 @@ impl StoragePort for MockStorage {
         super::work_package::get_ready_wps(self, feature_id).await
     }
 
-    async fn append_audit_entry(
-        &self,
-        entry: &AuditEntry,
-    ) -> Result<i64, DomainError> {
+    async fn append_audit_entry(&self, entry: &AuditEntry) -> Result<i64, DomainError> {
         audit::append_audit_entry(self, entry).await
     }
 
-    async fn get_audit_trail(
-        &self,
-        feature_id: i64,
-    ) -> Result<Vec<AuditEntry>, DomainError> {
+    async fn get_audit_trail(&self, feature_id: i64) -> Result<Vec<AuditEntry>, DomainError> {
         audit::get_audit_trail(self, feature_id).await
     }
 
@@ -106,37 +93,23 @@ impl StoragePort for MockStorage {
         audit::get_latest_audit_entry(self, feature_id).await
     }
 
-    async fn create_evidence(
-        &self,
-        e: &Evidence,
-    ) -> Result<i64, DomainError> {
+    async fn create_evidence(&self, e: &Evidence) -> Result<i64, DomainError> {
         evidence::create_evidence(self, e).await
     }
 
-    async fn get_evidence_by_wp(
-        &self,
-        wp_id: i64,
-    ) -> Result<Vec<Evidence>, DomainError> {
+    async fn get_evidence_by_wp(&self, wp_id: i64) -> Result<Vec<Evidence>, DomainError> {
         evidence::get_evidence_by_wp(self, wp_id).await
     }
 
-    async fn get_evidence_by_fr(
-        &self,
-        fr_id: &str,
-    ) -> Result<Vec<Evidence>, DomainError> {
+    async fn get_evidence_by_fr(&self, fr_id: &str) -> Result<Vec<Evidence>, DomainError> {
         evidence::get_evidence_by_fr(self, fr_id).await
     }
 
-    async fn create_policy_rule(
-        &self,
-        r: &PolicyRule,
-    ) -> Result<i64, DomainError> {
+    async fn create_policy_rule(&self, r: &PolicyRule) -> Result<i64, DomainError> {
         policy::create_policy_rule(self, r).await
     }
 
-    async fn list_active_policies(
-        &self,
-    ) -> Result<Vec<PolicyRule>, DomainError> {
+    async fn list_active_policies(&self) -> Result<Vec<PolicyRule>, DomainError> {
         policy::list_active_policies(self).await
     }
 
@@ -144,10 +117,7 @@ impl StoragePort for MockStorage {
         metrics::record_metric(self, m).await
     }
 
-    async fn get_metrics_by_feature(
-        &self,
-        feature_id: i64,
-    ) -> Result<Vec<Metric>, DomainError> {
+    async fn get_metrics_by_feature(&self, feature_id: i64) -> Result<Vec<Metric>, DomainError> {
         metrics::get_metrics_by_feature(self, feature_id).await
     }
 
@@ -188,24 +158,15 @@ impl StoragePort for MockStorage {
         Ok(found)
     }
 
-    async fn create_module(
-        &self,
-        module: &Module,
-    ) -> Result<i64, DomainError> {
+    async fn create_module(&self, module: &Module) -> Result<i64, DomainError> {
         module::create_module(self, module).await
     }
 
-    async fn get_module(
-        &self,
-        id: i64,
-    ) -> Result<Option<Module>, DomainError> {
+    async fn get_module(&self, id: i64) -> Result<Option<Module>, DomainError> {
         module::get_module(self, id).await
     }
 
-    async fn get_module_by_slug(
-        &self,
-        slug: &str,
-    ) -> Result<Option<Module>, DomainError> {
+    async fn get_module_by_slug(&self, slug: &str) -> Result<Option<Module>, DomainError> {
         module::get_module_by_slug(self, slug).await
     }
 
@@ -226,10 +187,7 @@ impl StoragePort for MockStorage {
         module::list_root_modules(self).await
     }
 
-    async fn list_child_modules(
-        &self,
-        parent_id: i64,
-    ) -> Result<Vec<Module>, DomainError> {
+    async fn list_child_modules(&self, parent_id: i64) -> Result<Vec<Module>, DomainError> {
         module::list_child_modules(self, parent_id).await
     }
 
@@ -244,32 +202,19 @@ impl StoragePort for MockStorage {
         cycle::create_cycle(self, cycle).await
     }
 
-    async fn get_cycle(
-        &self,
-        id: i64,
-    ) -> Result<Option<Cycle>, DomainError> {
+    async fn get_cycle(&self, id: i64) -> Result<Option<Cycle>, DomainError> {
         cycle::get_cycle(self, id).await
     }
 
-    async fn update_cycle_state(
-        &self,
-        id: i64,
-        state: CycleState,
-    ) -> Result<(), DomainError> {
+    async fn update_cycle_state(&self, id: i64, state: CycleState) -> Result<(), DomainError> {
         cycle::update_cycle_state(self, id, state).await
     }
 
-    async fn list_cycles_by_state(
-        &self,
-        state: CycleState,
-    ) -> Result<Vec<Cycle>, DomainError> {
+    async fn list_cycles_by_state(&self, state: CycleState) -> Result<Vec<Cycle>, DomainError> {
         cycle::list_cycles_by_state(self, state).await
     }
 
-    async fn list_cycles_by_module(
-        &self,
-        module_id: i64,
-    ) -> Result<Vec<Cycle>, DomainError> {
+    async fn list_cycles_by_module(&self, module_id: i64) -> Result<Vec<Cycle>, DomainError> {
         cycle::list_cycles_by_module(self, module_id).await
     }
 
@@ -284,10 +229,7 @@ impl StoragePort for MockStorage {
         cycle::get_cycle_with_features(self, id).await
     }
 
-    async fn tag_feature_to_module(
-        &self,
-        tag: &ModuleFeatureTag,
-    ) -> Result<(), DomainError> {
+    async fn tag_feature_to_module(&self, tag: &ModuleFeatureTag) -> Result<(), DomainError> {
         cycle::tag_feature_to_module(self, tag).await
     }
 
@@ -299,10 +241,7 @@ impl StoragePort for MockStorage {
         cycle::untag_feature_from_module(self, module_id, feature_id).await
     }
 
-    async fn add_feature_to_cycle(
-        &self,
-        entry: &CycleFeature,
-    ) -> Result<(), DomainError> {
+    async fn add_feature_to_cycle(&self, entry: &CycleFeature) -> Result<(), DomainError> {
         cycle::add_feature_to_cycle(self, entry).await
     }
 
@@ -322,10 +261,7 @@ impl StoragePort for MockStorage {
         sync_mapping::get_sync_mapping(self, entity_type, entity_id).await
     }
 
-    async fn upsert_sync_mapping(
-        &self,
-        mapping: &SyncMapping,
-    ) -> Result<(), DomainError> {
+    async fn upsert_sync_mapping(&self, mapping: &SyncMapping) -> Result<(), DomainError> {
         sync_mapping::upsert_sync_mapping(self, mapping).await
     }
 
@@ -345,10 +281,7 @@ impl StoragePort for MockStorage {
         sync_mapping::delete_sync_mapping(self, entity_type, entity_id).await
     }
 
-    async fn create_project(
-        &self,
-        project: &Project,
-    ) -> Result<i64, DomainError> {
+    async fn create_project(&self, project: &Project) -> Result<i64, DomainError> {
         let mut projects = self.projects.lock().expect("projects lock poisoned");
         let id = (projects.len() as i64) + 1;
         let mut p = project.clone();
@@ -357,10 +290,7 @@ impl StoragePort for MockStorage {
         Ok(id)
     }
 
-    async fn get_project_by_slug(
-        &self,
-        slug: &str,
-    ) -> Result<Option<Project>, DomainError> {
+    async fn get_project_by_slug(&self, slug: &str) -> Result<Option<Project>, DomainError> {
         let found = self
             .projects
             .lock()
@@ -372,7 +302,11 @@ impl StoragePort for MockStorage {
     }
 
     async fn list_all_projects(&self) -> Result<Vec<Project>, DomainError> {
-        let all = self.projects.lock().expect("projects lock poisoned").clone();
+        let all = self
+            .projects
+            .lock()
+            .expect("projects lock poisoned")
+            .clone();
         Ok(all)
     }
 
@@ -386,15 +320,25 @@ impl StoragePort for MockStorage {
     }
 
     async fn get_epic(&self, id: i64) -> Result<Option<Epic>, DomainError> {
-        let found = self.epics.lock().expect("epics lock poisoned").iter().find(|e| e.id == id).cloned();
+        let found = self
+            .epics
+            .lock()
+            .expect("epics lock poisoned")
+            .iter()
+            .find(|e| e.id == id)
+            .cloned();
         Ok(found)
     }
 
-    async fn list_epics_by_project(
-        &self,
-        project_id: i64,
-    ) -> Result<Vec<Epic>, DomainError> {
-        let epics: Vec<Epic> = self.epics.lock().expect("epics lock poisoned").iter().filter(|e| e.project_id == project_id).cloned().collect();
+    async fn list_epics_by_project(&self, project_id: i64) -> Result<Vec<Epic>, DomainError> {
+        let epics: Vec<Epic> = self
+            .epics
+            .lock()
+            .expect("epics lock poisoned")
+            .iter()
+            .filter(|e| e.project_id == project_id)
+            .cloned()
+            .collect();
         Ok(epics)
     }
 
@@ -418,12 +362,25 @@ impl StoragePort for MockStorage {
     }
 
     async fn get_story(&self, id: i64) -> Result<Option<Story>, DomainError> {
-        let found = self.stories.lock().expect("stories lock poisoned").iter().find(|s| s.id == id).cloned();
+        let found = self
+            .stories
+            .lock()
+            .expect("stories lock poisoned")
+            .iter()
+            .find(|s| s.id == id)
+            .cloned();
         Ok(found)
     }
 
     async fn list_stories_by_epic(&self, epic_id: i64) -> Result<Vec<Story>, DomainError> {
-        let stories: Vec<Story> = self.stories.lock().expect("stories lock poisoned").iter().filter(|s| s.epic_id == epic_id).cloned().collect();
+        let stories: Vec<Story> = self
+            .stories
+            .lock()
+            .expect("stories lock poisoned")
+            .iter()
+            .filter(|s| s.epic_id == epic_id)
+            .cloned()
+            .collect();
         Ok(stories)
     }
 
@@ -447,12 +404,24 @@ impl StoragePort for MockStorage {
     }
 
     async fn get_user(&self, id: i64) -> Result<Option<User>, DomainError> {
-        let found = self.users.lock().expect("users lock poisoned").iter().find(|u| u.id == id).cloned();
+        let found = self
+            .users
+            .lock()
+            .expect("users lock poisoned")
+            .iter()
+            .find(|u| u.id == id)
+            .cloned();
         Ok(found)
     }
 
     async fn get_user_by_email(&self, email: &str) -> Result<Option<User>, DomainError> {
-        let found = self.users.lock().expect("users lock poisoned").iter().find(|u| u.email == email).cloned();
+        let found = self
+            .users
+            .lock()
+            .expect("users lock poisoned")
+            .iter()
+            .find(|u| u.email == email)
+            .cloned();
         Ok(found)
     }
 

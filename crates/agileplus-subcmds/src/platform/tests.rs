@@ -82,10 +82,11 @@ fn test_synthetic_platform_health() {
     let h = health::synthetic_platform_health();
     assert_eq!(h.services.len(), 6);
     assert_eq!(h.overall, OverallStatus::Healthy);
-    assert!(h
-        .services
-        .iter()
-        .all(|s| s.status == ServiceStatus::Healthy || s.status == ServiceStatus::Ready));
+    assert!(
+        h.services
+            .iter()
+            .all(|s| s.status == ServiceStatus::Healthy || s.status == ServiceStatus::Ready)
+    );
 }
 
 #[test]
