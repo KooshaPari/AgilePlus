@@ -75,3 +75,22 @@ This repo documents architecture decisions in two locations:
 | --- | Task Runner Selection | Accepted | [`docs/adr/001-task-runner-selection.md`](docs/adr/001-task-runner-selection.md) |
 | --- | Registry Adapter Architecture | Accepted | [`docs/adr/002-registry-adapter-architecture.md`](docs/adr/002-registry-adapter-architecture.md) |
 | ADR-012 | Plugin Architecture (docs/adr copy) | Accepted | [`docs/adr/ADR-012-plugin-architecture.md`](docs/adr/ADR-012-plugin-architecture.md) |
+
+## DINO Integration
+
+DINOForge (`Dino/`) is a mod platform for Diplomacy is Not an Option, tracked as an AgilePlus submodule.
+
+- **Submodule**: `Dino/` (pinned SHA via AgilePlus worktree convention)
+- **Spec**: `specs/dino-agileplus-integration.md` (PR#972)
+- **Quality Gate**: `.forge/dino-quality-gate.md`
+- **CI**: 52 workflows in Dino repo (fuzz, benchmarks, game-launch, pack-validation, etc.)
+- **Current Grade**: C (61/100) per 30-pillar audit
+
+### Dino Worktree Convention
+- Feature work: `Dino-wtrees/<topic>/` (same as other submodules)
+- The `dinoforge-packs` and `dinoforge-packs-wtrees/journey-impl` submodule references are **archived** (repos absorbed into Dino via PR#377)
+- Do NOT re-create separate dinoforge-packs submodule
+
+### Important
+- Dino has its own CI pipeline — do not duplicate workflows in AgilePlus
+- Dependabot PRs in Dino are auto-merged (patch/minor) via `agent-merge-on-bot-approve.yml`
