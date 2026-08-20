@@ -766,7 +766,6 @@ fn glob_match(pattern: &str, name: &str) -> bool {
     true
 }
 
-
 /// Scan the kitty-specs directory for all feature slugs.
 pub fn scan_all_features(adapter: &GitVcsAdapter) -> Result<Vec<String>, DomainError> {
     let specs_dir = adapter.repo_root.join("kitty-specs");
