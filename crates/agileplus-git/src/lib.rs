@@ -782,52 +782,6 @@ pub fn scan_all_features(adapter: &GitVcsAdapter) -> Result<Vec<String>, DomainE
     Ok(slugs)
 }
 
-/// Minimal commit information returned by history scans.
-#[derive(Debug, Clone)]
-pub struct CommitInfo {
-    pub oid: String,
-    pub message: String,
-}
-    feature_slug: &str,
-) -> Result<Vec<CommitInfo>, DomainError> {
-    let repo = adapter.open()?;
-    let feature_prefix = format!("kitty-specs/{feature_slug}/");
-    let mut revwalk = repo
-        .revwalk()
-        .map_err(|e| DomainError::Storage(format!("failed to create revwalk: {e}")))?;
-    revwalk
-        .push_head()
-        .map_err(|e| DomainError::Storage(format!("failed to push head: {e}")))?;
-    let mut commits = Vec::new();
-    for oid in revwalk.flatten() {
-        if let Ok(commit) = repo.find_commit(oid) {
-            if let Ok(tree) = commit.tree() {
-                let mut touches_feature = false;
-                let _ = tree.walk(git2::TreeWalkMode::PreOrder, &mut |root: &str, entry: &git2::TreeEntry| {
-                    if let Some(name) = entry.name() {
-                        let full = format!("{root}{name}");
-                        if full.starts_with(&feature_prefix) {
-                            touches_feature = true;
-                        }
-                    }
-                    Ok(())
-                });
-                if touches_feature {
-                    let msg = match commit.summary() {
-                        Ok(Some(s)) => s.to_string(),
-                        _ => String::new(),
-                    };
-                    commits.push(CommitInfo {
-                        oid: oid.to_string(),
-                        message: msg,
-                    });
-                }
-            }
-        }
-    }
-    Ok(commits)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
