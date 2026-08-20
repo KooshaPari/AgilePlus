@@ -361,7 +361,6 @@ pub enum EventHandlerError {
 }
 
 impl EventHandlerError {
-    /// Project this handler error into the cross-repo wire
     // to_envelope removed
 
 }
@@ -718,7 +717,6 @@ mod tests {
         }
     }
 
-    // ── EventHandlerError → ErrorEnvelope (cross-repo error-core) ─────────────
 
 
 
