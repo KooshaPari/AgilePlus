@@ -788,10 +788,6 @@ pub struct CommitInfo {
     pub oid: String,
     pub message: String,
 }
-
-/// Get git history for commits that touched a specific feature's directory.
-pub fn get_feature_history(
-    adapter: &GitVcsAdapter,
     feature_slug: &str,
 ) -> Result<Vec<CommitInfo>, DomainError> {
     let repo = adapter.open()?;
