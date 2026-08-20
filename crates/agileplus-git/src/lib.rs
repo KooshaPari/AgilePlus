@@ -818,8 +818,8 @@ pub fn get_feature_history(
                 });
                 if touches_feature {
                     let msg = match commit.summary() {
-                        Some(s) => s.to_string(),
-                        None => String::new(),
+                        Ok(Some(s)) => s.to_string(),
+                        _ => String::new(),
                     };
                     commits.push(CommitInfo {
                         oid: oid.to_string(),
