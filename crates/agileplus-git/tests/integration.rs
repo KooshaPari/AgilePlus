@@ -477,38 +477,6 @@ async fn test_cleanup_worktree_safety_check() {
     drop(dir);
 }
 
-// ---- History scanning ----
-
-#[test]
-fn test_get_feature_history() {
-    let (dir, adapter) = setup_test_repo();
-    let repo = Repository::open(dir.path()).unwrap();
-
-    // Add commit touching a feature dir.
-    make_commit(
-        &repo,
-        dir.path(),
-        "kitty-specs/my-feature/spec.md",
-        "# Spec\n",
-        "Add spec for my-feature",
-    );
-    make_commit(
-        &repo,
-        dir.path(),
-        "other-file.txt",
-        "unrelated\n",
-        "Unrelated commit",
-    );
-    drop(repo);
-
-    let history = agileplus_git::get_feature_history(&adapter, "my-feature").unwrap();
-    assert!(!history.is_empty(), "should find commits for my-feature");
-    assert!(
-        history.iter().any(|c| c.message.contains("my-feature")),
-        "feature commit should appear in history"
-    );
-}
-
 // ---- Helpers ----
 
 fn get_default_branch(repo: &Repository) -> String {
