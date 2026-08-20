@@ -5,6 +5,7 @@
 //! Traceability: FR-008 / WP02
 
 pub mod bus;
+pub mod domain_event;
 pub mod hash;
 pub mod query;
 pub mod replay;
@@ -12,6 +13,8 @@ pub mod snapshot;
 pub mod store;
 
 pub use bus::{DomainEvent, EventBus, EventSubscriber};
+
+pub use domain_event::{AggregateId, AsyncEventHandler, AsyncEventBus, EventHandler, EventHandlerError, EventEnvelope, EpicCreated, EpicStatusChanged, FeatureCreated, FeatureShipped, FeatureStateAdvanced, ProjectArchived, ProjectCreated, ProjectRenamed, StoryAssigned, StoryCreated, StoryStatusChanged, UserAdded, UserRoleChanged, UserStatusChanged, WorkPackageCreated, WorkPackageStateChanged};
 
 pub use hash::{HashError, compute_hash, verify_chain};
 pub use query::{EventQuery, QueryError};
