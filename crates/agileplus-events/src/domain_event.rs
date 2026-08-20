@@ -361,8 +361,7 @@ pub enum EventHandlerError {
 }
 
 impl EventHandlerError {
-    /// Project this handler error into the cross-repo wire
-    // to_envelope removed
+    // to_envelope removed: phenotype-error-core not in workspace
 
 }
 
