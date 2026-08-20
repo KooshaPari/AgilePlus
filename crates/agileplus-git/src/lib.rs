@@ -807,7 +807,7 @@ pub fn get_feature_history(
         if let Ok(commit) = repo.find_commit(oid) {
             if let Ok(tree) = commit.tree() {
                 let mut touches_feature = false;
-                let _ = tree.walk(git2::TreeWalkMode::PreOrder, &mut |root, entry| {
+                let _ = tree.walk(git2::TreeWalkMode::PreOrder, &mut |root: &str, entry: &git2::TreeEntry| {
                     if let Some(name) = entry.name() {
                         let full = format!("{root}{name}");
                         if full.starts_with(&feature_prefix) {
