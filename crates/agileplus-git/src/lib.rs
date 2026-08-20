@@ -797,12 +797,12 @@ pub fn get_feature_history(
 ) -> Result<Vec<CommitInfo>, DomainError> {
     let repo = adapter.open()?;
     let feature_prefix = format!("kitty-specs/{feature_slug}/");
-    let mut revwalk = repo.revwalk().map_err(|e| {
-        DomainError::Storage(format!("failed to create revwalk: {e}"))
-    })?;
-    revwalk.push_head().map_err(|e| {
-        DomainError::Storage(format!("failed to push head: {e}"))
-    })?;
+    let mut revwalk = repo
+        .revwalk()
+        .map_err(|e| DomainError::Storage(format!("failed to create revwalk: {e}")))?;
+    revwalk
+        .push_head()
+        .map_err(|e| DomainError::Storage(format!("failed to push head: {e}")))?;
     let mut commits = Vec::new();
     for oid in revwalk.flatten() {
         if let Ok(commit) = repo.find_commit(oid) {
