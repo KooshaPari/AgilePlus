@@ -66,10 +66,10 @@ jobs:
               continue-on-error: true
 
             - name: Test
-              run: cargo test --workspace --locked
+              run: cargo test --workspace
 
             - name: Build release binary
-              run: cargo build --release --locked -p ${{ env.PACKAGE }} --target ${{ matrix.target }}
+              run: cargo build --release -p ${{ env.PACKAGE }} --target ${{ matrix.target }}
 
             - name: Package nightly artifact
               shell: bash
