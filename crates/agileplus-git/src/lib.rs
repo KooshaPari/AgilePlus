@@ -766,6 +766,72 @@ fn glob_match(pattern: &str, name: &str) -> bool {
     true
 }
 
+
+/// Scan the kitty-specs directory for all feature slugs.
+pub fn scan_all_features(adapter: &GitVcsAdapter) -> Result<Vec<String>, DomainError> {
+    let specs_dir = adapter.repo_root.join("kitty-specs");
+    if !specs_dir.exists() {
+        return Ok(vec![]);
+    }
+    let mut slugs: Vec<String> = std::fs::read_dir(&specs_dir)
+        .map_err(|e| DomainError::Storage(format!("failed to read kitty-specs dir: {e}")))?
+        .filter_map(|entry| entry.ok())
+        .filter(|e| e.path().is_dir())
+        .filter_map(|e| e.file_name().into_string().ok())
+        .collect();
+    slugs.sort();
+    Ok(slugs)
+}
+
+/// Minimal commit information returned by history scans.
+#[derive(Debug, Clone)]
+pub struct CommitInfo {
+    pub oid: String,
+    pub message: String,
+}
+
+/// Get git history for commits that touched a specific feature's directory.
+pub fn get_feature_history(
+    adapter: &GitVcsAdapter,
+    feature_slug: &str,
+) -> Result<Vec<CommitInfo>, DomainError> {
+    let repo = adapter.open()?;
+    let feature_prefix = format!("kitty-specs/{feature_slug}/");
+    let mut revwalk = repo.revwalk().map_err(|e| {
+        DomainError::Storage(format!("failed to create revwalk: {e}"))
+    })?;
+    revwalk.push_head().map_err(|e| {
+        DomainError::Storage(format!("failed to push head: {e}"))
+    })?;
+    let mut commits = Vec::new();
+    for oid in revwalk.flatten() {
+        if let Ok(commit) = repo.find_commit(oid) {
+            if let Ok(tree) = commit.tree() {
+                let mut touches_feature = false;
+                {
+                    let mut walk = tree.walk(git2::TreeWalkMode::PreOrder);
+                    let _ = walk.walk(|root, entry| {
+                        if let Some(name) = entry.name() {
+                            let full = format!("{root}{name}");
+                            if full.starts_with(&feature_prefix) {
+                                touches_feature = true;
+                            }
+                        }
+                        Ok(())
+                    });
+                }
+                if touches_feature {
+                    commits.push(CommitInfo {
+                        oid: oid.to_string(),
+                        message: commit.summary().unwrap_or("").to_string(),
+                    });
+                }
+            }
+        }
+    }
+    Ok(commits)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
