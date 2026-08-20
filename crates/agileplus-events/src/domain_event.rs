@@ -362,21 +362,8 @@ pub enum EventHandlerError {
 
 impl EventHandlerError {
     /// Project this handler error into the cross-repo wire
-    /// [`phenotype_error_core::ErrorEnvelope`] so the same payload shape
-    /// is used on the bus, in logs, and across every consumer repo.
-    pub fn to_envelope(&self) -> phenotype_error_core::ErrorEnvelope {
-        use phenotype_error_core::{ErrorCode, ErrorEnvelope};
-        match self {
-            EventHandlerError::Rejected(msg) => {
-                ErrorEnvelope::new(ErrorCode::Cancelled, format!("handler rejected: {msg}"))
-            }
-            EventHandlerError::Transient(msg) => ErrorEnvelope::new(
-                ErrorCode::Unavailable,
-                format!("handler transient error: {msg}"),
-            )
-            .with_retryable(true),
-        }
-    }
+    // to_envelope removed
+
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -733,30 +720,9 @@ mod tests {
 
     // ── EventHandlerError → ErrorEnvelope (cross-repo error-core) ─────────────
 
-    #[test]
-    fn rejected_handler_error_projects_to_cancelled_envelope() {
-        let err = EventHandlerError::Rejected("schema mismatch".into());
-        let env = err.to_envelope();
-        assert_eq!(env.code, phenotype_error_core::ErrorCode::Cancelled);
-        assert!(env.message.contains("schema mismatch"));
-        assert!(!env.fatal);
-    }
 
-    #[test]
-    fn transient_handler_error_projects_to_retryable_unavailable_envelope() {
-        let err = EventHandlerError::Transient("broker down".into());
-        let env = err.to_envelope();
-        assert_eq!(env.code, phenotype_error_core::ErrorCode::Unavailable);
-        assert_eq!(env.retryable, Some(true));
-        assert!(env.message.contains("broker down"));
-    }
 
-    #[test]
-    fn handler_error_envelope_serializes_to_wire_format() {
-        let err = EventHandlerError::Rejected("x".into());
-        let env = err.to_envelope();
-        let json = serde_json::to_value(&env).unwrap();
-        assert_eq!(json["code"], "CANCELLED");
-        assert!(json["message"].as_str().unwrap().contains("x"));
-    }
+
+
+
 }
