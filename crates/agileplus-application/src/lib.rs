@@ -27,7 +27,7 @@ mod tests {
     use std::sync::Arc;
 
     use async_trait::async_trait;
-    use tokio::sync::RwLock;
+    use std::sync::RwLock;
 
     use agileplus_domain::domain::epic::{Epic, EpicStatus};
     use agileplus_domain::domain::feature::Feature;
