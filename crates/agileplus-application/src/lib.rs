@@ -619,7 +619,7 @@ mod tests {
     #[async_trait]
     impl DomainEventPublisher for SpyPublisher {
         fn publish(&self, event: DomainEvent) -> Result<(), DomainError> {
-            self.events.write().await.push(event);
+            self.events.write().push(event);
             Ok(())
         }
     }
