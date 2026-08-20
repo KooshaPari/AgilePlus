@@ -817,7 +817,7 @@ pub fn get_feature_history(
                     Ok(())
                 });
                 if touches_feature {
-                    let msg = commit.summary().unwrap_or("").to_string();
+                    let msg = commit.summary().map_or(String::new(), |s| s.to_string());
                     commits.push(CommitInfo {
                         oid: oid.to_string(),
                         message: msg,
