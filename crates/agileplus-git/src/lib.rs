@@ -808,22 +808,20 @@ pub fn get_feature_history(
         if let Ok(commit) = repo.find_commit(oid) {
             if let Ok(tree) = commit.tree() {
                 let mut touches_feature = false;
-                {
-                    let mut walk = tree.walk(git2::TreeWalkMode::PreOrder);
-                    let _ = walk.walk(|root, entry| {
-                        if let Some(name) = entry.name() {
-                            let full = format!("{root}{name}");
-                            if full.starts_with(&feature_prefix) {
-                                touches_feature = true;
-                            }
+                let _ = tree.walk(git2::TreeWalkMode::PreOrder, &mut |root, entry| {
+                    if let Some(name) = entry.name() {
+                        let full = format!("{root}{name}");
+                        if full.starts_with(&feature_prefix) {
+                            touches_feature = true;
                         }
-                        Ok(())
-                    });
-                }
+                    }
+                    Ok(())
+                });
                 if touches_feature {
+                    let msg = commit.summary().unwrap_or("").to_string();
                     commits.push(CommitInfo {
                         oid: oid.to_string(),
-                        message: commit.summary().unwrap_or("").to_string(),
+                        message: msg,
                     });
                 }
             }
