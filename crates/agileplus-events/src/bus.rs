@@ -5,8 +5,6 @@
 //! append-only `EventStore` in this crate handles durability + replay;
 //! the `EventBus` handles live fan-out.
 
-use std::sync::Arc;
-
 use serde::{Deserialize, Serialize};
 use tokio::sync::broadcast;
 use tokio::sync::broadcast::error::SendError;
