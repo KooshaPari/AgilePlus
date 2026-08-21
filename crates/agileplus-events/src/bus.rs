@@ -59,6 +59,47 @@ pub enum DomainEvent {
         issue_id: String,
         action: String,
     },
+    FeatureShipped {
+        id: i64,
+        slug: String,
+    },
+    FeatureStateAdvanced {
+        id: i64,
+        from: String,
+        to: String,
+    },
+    ProjectCreated {
+        id: i64,
+        name: String,
+    },
+    ProjectRenamed {
+        id: i64,
+        old_name: String,
+        new_name: String,
+    },
+    ProjectArchived {
+        id: i64,
+    },
+    EpicCreated {
+        id: i64,
+        project_id: i64,
+        title: String,
+    },
+    EpicStatusChanged {
+        id: i64,
+        from: String,
+        to: String,
+    },
+    StoryCreated {
+        id: i64,
+        epic_id: i64,
+        title: String,
+    },
+    StoryStatusChanged {
+        id: i64,
+        from: String,
+        to: String,
+    },
     Custom {
         name: String,
         payload: serde_json::Value,
