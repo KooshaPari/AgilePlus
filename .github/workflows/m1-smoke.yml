@@ -1,0 +1,85 @@
+# M1 Smoke Test — end-to-end CLI validation.
+# Builds the agileplus binary, runs every top-level subcommand, and
+# exercises rubric/cockpit/dashboard flows against the repo itself.
+name: M1 Smoke
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: m1-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  PACKAGE: agileplus-cli
+  BIN_NAME: agileplus
+
+jobs:
+  smoke:
+    name: CLI smoke (ubuntu)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dtolnay/rust-toolchain@nightly
+
+      - uses: Swatinem/rust-cache@v2
+
+      - uses: arduino/setup-protoc@v3
+        with:
+          version: "28.x"
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      # ── 1. Build ──────────────────────────────────────────────────────────
+      - name: Build release CLI
+        run: cargo build --release --locked -p ${{ env.PACKAGE }}
+
+      - name: Install built CLI to PATH
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          install -m 0755 "target/release/${{ env.BIN_NAME }}" "$HOME/.local/bin/${{ env.BIN_NAME }}"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          agileplus --version
+
+      # ── 2. Verify all subcommands via --help ──────────────────────────────
+      - name: Verify --help lists all subcommands
+        run: |
+          echo "::group::agileplus --help"
+          agileplus --help
+          echo "::endgroup::"
+
+          # Every expected top-level subcommand must appear in help output
+          for cmd in cycle list specify queue module platform \
+                     research plan implement validate ship retrospective \
+                     triage dashboard cockpit rubric; do
+            if ! agileplus --help | grep -qw "$cmd"; then
+              echo "::error::subcommand '$cmd' missing from --help output"
+              exit 1
+            fi
+            echo "  present: $cmd"
+          done
+
+      # ── 3. Rubric score ───────────────────────────────────────────────────
+      - name: agileplus rubric score --repo .
+        run: agileplus rubric score --repo .
+
+      # ── 4. Cockpit publish ────────────────────────────────────────────────
+      - name: agileplus cockpit publish --repo .
+        run: agileplus cockpit publish --repo .
+
+      # ── 5. Dashboard --json ───────────────────────────────────────────────
+      - name: agileplus dashboard --json
+        run: |
+          output=$(agileplus dashboard --json)
+          echo "$output" | jq .
+          # Verify key fields are present
+          echo "$output" | jq -e '.generated_at' > /dev/null
+          echo "$output" | jq -e '.work_packages' > /dev/null
+          echo "Dashboard JSON rendered successfully"

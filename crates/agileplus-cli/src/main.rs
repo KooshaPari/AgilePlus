@@ -15,7 +15,7 @@ use clap::{Parser, Subcommand};
 use agent_adapter::RealAgentAdapter;
 use agileplus_cli::commands::{
     cockpit::CockpitArgs, cycle::CycleArgs, dashboard::DashboardArgs, list::ListArgs,
-    module::ModuleArgs, queue::QueueArgs, specify::SpecifyArgs,
+    module::ModuleArgs, queue::QueueArgs, rubric::RubricArgs, specify::SpecifyArgs,
 };
 #[cfg(feature = "full-deps")]
 use agileplus_cli::commands::{
@@ -81,6 +81,8 @@ enum Commands {
     /// Classify and route incoming items to the backlog.
     #[cfg(feature = "full-deps")]
     Triage(TriageArgs),
+    /// Score a repo against the governance rubric catalog.
+    Rubric(RubricArgs),
     /// Render an in-flight DAG / status dashboard from SQLite.
     Dashboard(DashboardArgs),
     /// Publish or read local cockpit scorecards.
@@ -127,6 +129,7 @@ async fn run(cli: Cli) -> Result<()> {
 
     match cli.command {
         Commands::Platform(args) => run_platform(args),
+        Commands::Rubric(args) => agileplus_cli::commands::rubric::run(&args),
         Commands::Cockpit(args) => {
             agileplus_cli::commands::cockpit::run(&args, cli.repo.as_deref())
         }
