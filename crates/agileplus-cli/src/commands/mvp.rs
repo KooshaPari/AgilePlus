@@ -6,6 +6,52 @@ use anyhow::{Context, Result, anyhow, bail};
 use chrono::NaiveDate;
 use clap::{Args, Subcommand, ValueEnum};
 
+// ── Top-level Mvp command surface ────────────────────────────────────────────
+
+/// MVP project/epic/story/work-package management.
+#[derive(Debug, Args)]
+pub struct MvpArgs {
+    #[command(subcommand)]
+    pub cmd: MvpCmd,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum MvpCmd {
+    /// Create a project.
+    Project(ProjectCmd),
+    /// Create an epic.
+    Epic(EpicCmd),
+    /// Create a story.
+    Story(StoryCmd),
+    /// Create a work package.
+    Wp(WpCmd),
+    /// Manage work-package dependencies.
+    Dep(DepCmd),
+    /// Create a cycle.
+    CycleCreate(CycleCreateArgs),
+    /// Add an epic or story to a cycle.
+    CycleAdd(CycleAddArgs),
+    /// Transition the state of a work package or story.
+    Transition(TransitionArgs),
+    /// List the next-ready work packages.
+    NextReady(NextReadyArgs),
+}
+
+/// Top-level entry point for `ap mvp`.
+pub async fn run_mvp<S: StoragePort>(args: MvpArgs, storage: &S) -> Result<()> {
+    match args.cmd {
+        MvpCmd::Project(ProjectCmd::Create(a)) => project_create(&a, storage).await,
+        MvpCmd::Epic(EpicCmd::Create(a)) => epic_create(&a, storage).await,
+        MvpCmd::Story(StoryCmd::Create(a)) => story_create(&a, storage).await,
+        MvpCmd::Wp(WpCmd::Create(a)) => wp_create(&a, storage).await,
+        MvpCmd::Dep(DepCmd::Add(a)) => dep_add(&a, storage).await,
+        MvpCmd::CycleCreate(a) => cycle_create(&a, storage).await,
+        MvpCmd::CycleAdd(a) => cycle_add(&a, storage).await,
+        MvpCmd::Transition(a) => transition(&a, storage).await,
+        MvpCmd::NextReady(a) => next_ready(&a, storage).await,
+    }
+}
+
 use agileplus_domain::{
     domain::{
         cycle::{Cycle, CycleFeature},
