@@ -15,7 +15,7 @@ pub mod store;
 pub use bus::{DomainEvent, EventBus, EventSubscriber};
 
 pub use domain_event::{
-    AggregateId, AsyncEventHandler, AsyncEventBus, EpicCreated, EpicStatusChanged,
+    AggregateId, AsyncEventBus, AsyncEventHandler, EpicCreated, EpicStatusChanged,
     EventHandler, EventHandlerError, EventEnvelope, FeatureCreated, FeatureShipped,
     FeatureStateAdvanced, ProjectArchived, ProjectCreated, ProjectRenamed,
     StoryAssigned, StoryCreated, StoryStatusChanged, UserAdded, UserRoleChanged,
