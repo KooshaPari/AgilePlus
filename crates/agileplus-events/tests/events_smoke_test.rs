@@ -6,8 +6,9 @@ use agileplus_domain::domain::state_machine::FeatureState;
 use agileplus_domain::domain::story::StoryStatus;
 use agileplus_domain::domain::user::{UserRole, UserStatus};
 use agileplus_domain::domain::work_package::WpState;
+use agileplus_events::domain_event::DomainEvent;
 use agileplus_events::{
-    AggregateId, DomainEvent, EpicCreated, EpicStatusChanged, EventEnvelope, FeatureCreated,
+    AggregateId, EpicCreated, EpicStatusChanged, EventEnvelope, FeatureCreated,
     FeatureShipped, FeatureStateAdvanced, ProjectArchived, ProjectCreated, ProjectRenamed,
     StoryAssigned, StoryCreated, StoryStatusChanged, UserAdded, UserRoleChanged, UserStatusChanged,
     WorkPackageCreated, WorkPackageStateChanged,
