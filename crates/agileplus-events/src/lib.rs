@@ -15,8 +15,11 @@ pub mod store;
 pub use bus::{DomainEvent, EventBus, EventSubscriber};
 
 pub use domain_event::{
-    EventHandler, EventHandlerError, FeatureCreated, FeatureShipped, FeatureStateAdvanced,
-    ProjectCreated, ProjectRenamed,
+    AggregateId, AsyncEventHandler, AsyncEventBus, EpicCreated, EpicStatusChanged,
+    EventHandler, EventHandlerError, EventEnvelope, FeatureCreated, FeatureShipped,
+    FeatureStateAdvanced, ProjectArchived, ProjectCreated, ProjectRenamed,
+    StoryAssigned, StoryCreated, StoryStatusChanged, UserAdded, UserRoleChanged,
+    UserStatusChanged, WorkPackageCreated, WorkPackageStateChanged,
 };
 
 pub use hash::{HashError, compute_hash, verify_chain};
