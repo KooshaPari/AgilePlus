@@ -16,6 +16,7 @@ use agent_adapter::RealAgentAdapter;
 use agileplus_cli::commands::{
     cockpit::CockpitArgs, cycle::CycleArgs, dashboard::DashboardArgs, list::ListArgs,
     module::ModuleArgs, queue::QueueArgs, rubric::RubricArgs, specify::SpecifyArgs,
+    dag::DagArgs, okf::OkfArgs, mvp::MvpArgs,
 };
 #[cfg(feature = "full-deps")]
 use agileplus_cli::commands::{
@@ -83,6 +84,12 @@ enum Commands {
     Triage(TriageArgs),
     /// Score a repo against the governance rubric catalog.
     Rubric(RubricArgs),
+    /// Manage the DAG of work packages (pick, claim, release, dedup, scan).
+    Dag(DagArgs),
+    /// Validate, summarize, and merge OKF v1.0 documents.
+    Okf(OkfArgs),
+    /// MVP project/epic/story/work-package management.
+    Mvp(MvpArgs),
     /// Render an in-flight DAG / status dashboard from SQLite.
     Dashboard(DashboardArgs),
     /// Publish or read local cockpit scorecards.
@@ -130,8 +137,18 @@ async fn run(cli: Cli) -> Result<()> {
     match cli.command {
         Commands::Platform(args) => run_platform(args),
         Commands::Rubric(args) => agileplus_cli::commands::rubric::run(&args),
-        Commands::Cockpit(args) => {
-            agileplus_cli::commands::cockpit::run(&args, cli.repo.as_deref())
+        Commands::Dag(args) => agileplus_cli::commands::dag::run_dag(args).await,
+        Commands::Okf(args) => {
+            let code = agileplus_cli::commands::okf::run(&args)?;
+            if code != 0 {
+                process::exit(code);
+            }
+            Ok(())
+        }
+        Commands::Mvp(args) => {
+            let storage = SqliteStorageAdapter::new(&cli.db)
+                .with_context(|| format!("opening database at {}", cli.db.display()))?;
+            agileplus_cli::commands::mvp::run_mvp(args, &storage).await
         }
         Commands::Dashboard(mut args) => {
             // Prefer global --db when the subcommand did not set its own path.
