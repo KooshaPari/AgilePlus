@@ -361,7 +361,7 @@ pub enum EventHandlerError {
 }
 
 impl EventHandlerError {
-    // to_envelope removed: phenotype-error-core not in workspace
+
 
 }
 
@@ -717,7 +717,7 @@ mod tests {
         }
     }
 
-    // ── EventHandlerError → ErrorEnvelope (cross-repo error-core) ─────────────
+
 
 
 
