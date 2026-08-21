@@ -362,7 +362,6 @@ pub enum EventHandlerError {
 
 impl EventHandlerError {
 
-
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -716,12 +715,5 @@ mod tests {
             assert_eq!(ev.wire_code(), ev.event_type());
         }
     }
-
-
-
-
-
-
-
 
 }

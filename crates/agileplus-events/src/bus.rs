@@ -198,7 +198,8 @@ mod tests {
         let bus = EventBus::new(8);
         let mut sub = bus.subscribe();
 
-        bus.publish(DomainEvent::FeatureCreatedLegacy { id: 42 }).unwrap();
+        bus.publish(DomainEvent::FeatureCreatedLegacy { id: 42 })
+            .unwrap();
 
         let ev = tokio::time::timeout(Duration::from_millis(100), sub.recv())
             .await
