@@ -37,7 +37,7 @@ impl From<i64> for AggregateId {
 // ──────────────────────────────────────────────────────────────────────────────
 
 /// Project created.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct ProjectCreated {
     pub project_id: AggregateId,
     pub slug: String,
@@ -45,7 +45,7 @@ pub struct ProjectCreated {
 }
 
 /// Project renamed.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct ProjectRenamed {
     pub project_id: AggregateId,
     pub old_name: String,
@@ -53,13 +53,13 @@ pub struct ProjectRenamed {
 }
 
 /// Project archived (soft-delete).
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct ProjectArchived {
     pub project_id: AggregateId,
 }
 
 /// Epic created under a project.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct EpicCreated {
     pub epic_id: AggregateId,
     pub project_id: AggregateId,
@@ -67,7 +67,7 @@ pub struct EpicCreated {
 }
 
 /// Epic status changed (e.g. Backlog → Active).
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct EpicStatusChanged {
     pub epic_id: AggregateId,
     pub project_id: AggregateId,
@@ -76,7 +76,7 @@ pub struct EpicStatusChanged {
 }
 
 /// Story created under an epic.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct StoryCreated {
     pub story_id: AggregateId,
     pub epic_id: AggregateId,
@@ -86,7 +86,7 @@ pub struct StoryCreated {
 }
 
 /// Story status changed.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct StoryStatusChanged {
     pub story_id: AggregateId,
     pub epic_id: AggregateId,
@@ -95,14 +95,14 @@ pub struct StoryStatusChanged {
 }
 
 /// Story assigned to a user (or unassigned).
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct StoryAssigned {
     pub story_id: AggregateId,
     pub assignee_id: Option<AggregateId>,
 }
 
 /// User added to the platform.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct UserAdded {
     pub user_id: AggregateId,
     pub display_name: String,
@@ -111,7 +111,7 @@ pub struct UserAdded {
 }
 
 /// User role changed.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct UserRoleChanged {
     pub user_id: AggregateId,
     pub old_role: UserRole,
@@ -119,7 +119,7 @@ pub struct UserRoleChanged {
 }
 
 /// User status changed (active / inactive / suspended).
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct UserStatusChanged {
     pub user_id: AggregateId,
     pub from: UserStatus,
@@ -127,7 +127,7 @@ pub struct UserStatusChanged {
 }
 
 /// Feature created.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct FeatureCreated {
     pub feature_id: AggregateId,
     pub slug: String,
@@ -136,7 +136,7 @@ pub struct FeatureCreated {
 }
 
 /// Feature state advanced (e.g. Created → Specified).
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct FeatureStateAdvanced {
     pub feature_id: AggregateId,
     pub from: FeatureState,
@@ -144,14 +144,14 @@ pub struct FeatureStateAdvanced {
 }
 
 /// Feature shipped (terminal state reached).
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct FeatureShipped {
     pub feature_id: AggregateId,
     pub slug: String,
 }
 
 /// Work-package created under a feature.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct WorkPackageCreated {
     pub wp_id: AggregateId,
     pub feature_id: AggregateId,
@@ -160,7 +160,7 @@ pub struct WorkPackageCreated {
 }
 
 /// Work-package state changed.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct WorkPackageStateChanged {
     pub wp_id: AggregateId,
     pub feature_id: AggregateId,
@@ -177,7 +177,7 @@ pub struct WorkPackageStateChanged {
 /// Add a variant here when a new aggregate is introduced or an existing one
 /// gains a new observable transition.  Variants are `#[non_exhaustive]` to
 /// allow downstream crates to match without breaking on future additions.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum DomainEvent {
     // --- Project ---
@@ -278,7 +278,7 @@ impl DomainEvent {
 /// The envelope carries the metadata needed by infrastructure (bus routing,
 /// idempotency checks, audit log) without leaking those concerns into the
 /// domain payload.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct EventEnvelope {
     /// Globally unique identifier for this envelope instance.
     pub id: Uuid,
