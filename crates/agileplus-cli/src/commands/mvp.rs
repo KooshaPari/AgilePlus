@@ -18,16 +18,25 @@ pub struct MvpArgs {
 #[derive(Debug, Subcommand)]
 pub enum MvpCmd {
     /// Create a project.
+    /// Manage projects (CRUD).
+    #[command(subcommand)]
     Project(ProjectCmd),
-    /// Create an epic.
+
+    /// Manage epics (CRUD).
+    #[command(subcommand)]
     Epic(EpicCmd),
-    /// Create a story.
+
+    /// Manage stories (CRUD).
+    #[command(subcommand)]
     Story(StoryCmd),
-    /// Create a work package.
+
+    /// Manage work packages (CRUD).
+    #[command(subcommand)]
     Wp(WpCmd),
-    /// Manage work-package dependencies.
+
+    /// Manage dependencies.
+    #[command(subcommand)]
     Dep(DepCmd),
-    /// Create a cycle.
     CycleCreate(CycleCreateArgs),
     /// Add an epic or story to a cycle.
     CycleAdd(CycleAddArgs),
@@ -63,7 +72,7 @@ use agileplus_domain::{
     ports::StoragePort,
 };
 
-#[derive(Debug, Args)]
+#[derive(Debug, Subcommand)]
 pub enum ProjectCmd {
     /// Create a project.
     Create(ProjectCreateArgs),
@@ -81,7 +90,7 @@ pub struct ProjectCreateArgs {
     pub description: Option<String>,
 }
 
-#[derive(Debug, Args)]
+#[derive(Debug, Subcommand)]
 pub enum EpicCmd {
     /// Create an epic.
     Create(EpicCreateArgs),
@@ -102,7 +111,7 @@ pub struct EpicCreateArgs {
     pub requirement: Option<String>,
 }
 
-#[derive(Debug, Args)]
+#[derive(Debug, Subcommand)]
 pub enum StoryCmd {
     /// Create a story.
     Create(StoryCreateArgs),
@@ -126,7 +135,7 @@ pub struct StoryCreateArgs {
     pub requirement: Option<String>,
 }
 
-#[derive(Debug, Args)]
+#[derive(Debug, Subcommand)]
 pub enum WpCmd {
     /// Create a work package for a story.
     Create(WpCreateArgs),
@@ -150,7 +159,7 @@ pub struct WpCreateArgs {
     pub seq: Option<i32>,
 }
 
-#[derive(Debug, Args)]
+#[derive(Debug, Subcommand)]
 pub enum DepCmd {
     /// Add a work-package dependency.
     Add(DepAddArgs),

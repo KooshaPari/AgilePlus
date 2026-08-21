@@ -228,5 +228,9 @@ async fn run(cli: Cli) -> Result<()> {
         }
         #[cfg(feature = "full-deps")]
         Commands::Triage(args) => agileplus_cli::commands::triage::run_triage(args).await,
+        Commands::Cockpit(args) => {
+            let global_repo = cli.repo.as_deref();
+            agileplus_cli::commands::cockpit::run(&args, global_repo)
+        }
     }
 }
