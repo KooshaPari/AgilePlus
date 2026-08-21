@@ -6,6 +6,7 @@
 
 pub mod cockpit;
 pub mod cockpit_read;
+pub mod dag;
 pub mod dashboard;
 pub mod fix_list;
 pub mod list;
