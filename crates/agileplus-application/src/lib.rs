@@ -613,20 +613,20 @@ mod tests {
     /// Spy publisher — records emitted events.
     #[derive(Default)]
     struct SpyPublisher {
-        events: Mutex<Vec<DomainEvent>>,
+        events: RwLock<Vec<DomainEvent>>,
     }
 
     #[async_trait]
     impl DomainEventPublisher for SpyPublisher {
         fn publish(&self, event: DomainEvent) -> Result<(), DomainError> {
-            self.events.lock().unwrap().push(event);
+            self.events.write().push(event);
             Ok(())
         }
     }
 
     impl SpyPublisher {
         async fn emitted(&self) -> Vec<DomainEvent> {
-            self.events.lock().unwrap().clone()
+            self.events.read().await.clone()
         }
     }
 
