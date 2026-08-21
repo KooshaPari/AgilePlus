@@ -34,7 +34,7 @@ impl fmt::Display for Intent {
 impl FromStr for Intent {
     type Err = String;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
+        match s.to_lowercase().as_str() {
             "bug" => Ok(Intent::Bug),
             "feature" => Ok(Intent::Feature),
             "idea" => Ok(Intent::Idea),
@@ -83,7 +83,7 @@ impl fmt::Display for BacklogPriority {
 impl FromStr for BacklogPriority {
     type Err = String;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
+        match s.to_lowercase().as_str() {
             "critical" => Ok(BacklogPriority::Critical),
             "high" => Ok(BacklogPriority::High),
             "medium" => Ok(BacklogPriority::Medium),
@@ -120,7 +120,7 @@ impl fmt::Display for BacklogStatus {
 impl FromStr for BacklogStatus {
     type Err = String;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
+        match s.to_lowercase().as_str() {
             "new" => Ok(BacklogStatus::New),
             "triaged" => Ok(BacklogStatus::Triaged),
             "in_progress" => Ok(BacklogStatus::InProgress),
