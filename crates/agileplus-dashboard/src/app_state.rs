@@ -3,10 +3,11 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use agileplus_domain::domain::{
+pub use agileplus_domain::domain::{
     cycle::Cycle, feature::Feature, module::Module, project::Project, state_machine::FeatureState,
     work_package::WorkPackage,
 };
+pub use agileplus_domain::domain::work_package::WpState;
 use agileplus_governance::client::GovernanceClient;
 use agileplus_plane::client::PlaneClient;
 use agileplus_plane::daemon::{PlaneDaemonConfig, PlaneSyncDaemon};
