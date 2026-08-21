@@ -28,7 +28,7 @@ mod tests {
 
     use async_trait::async_trait;
     use tokio::sync::RwLock;
-#[cfg(test)]
+    #[cfg(test)]
     use std::sync::Mutex;
 
     use agileplus_domain::domain::epic::{Epic, EpicStatus};
