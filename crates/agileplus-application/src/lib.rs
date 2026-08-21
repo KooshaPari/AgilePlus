@@ -28,6 +28,7 @@ mod tests {
 
     use async_trait::async_trait;
     use tokio::sync::RwLock;
+#[cfg(test)] use std::sync::Mutex;
 
     use agileplus_domain::domain::epic::{Epic, EpicStatus};
     use agileplus_domain::domain::feature::Feature;
@@ -613,20 +614,20 @@ mod tests {
     /// Spy publisher — records emitted events.
     #[derive(Default)]
     struct SpyPublisher {
-        events: RwLock<Vec<DomainEvent>>,
+        events: Mutex<Vec<DomainEvent>>,
     }
 
     #[async_trait]
     impl DomainEventPublisher for SpyPublisher {
         fn publish(&self, event: DomainEvent) -> Result<(), DomainError> {
-            self.events.write().push(event);
+            self.events.lock().unwrap().push(event);
             Ok(())
         }
     }
 
     impl SpyPublisher {
         async fn emitted(&self) -> Vec<DomainEvent> {
-            self.events.read().await.clone()
+            self.events.lock().unwrap().clone()
         }
     }
 
