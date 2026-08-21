@@ -4,22 +4,6 @@
 //! real time (e.g. webhook fan-out, cockpit updates, plane sync). The
 //! append-only `EventStore` in this crate handles durability + replay;
 //! the `EventBus` handles live fan-out.
-//!
-//! # Example
-//!
-//! ```no_run
-//! use agileplus_events::bus::{EventBus, DomainEvent};
-//! # async fn run() {
-//! let bus = EventBus::new(64);
-//! let mut sub = bus.subscribe();
-//! tokio::spawn(async move {
-//!     while let Ok(ev) = sub.recv().await {
-//!         eprintln!("got: {ev:?}");
-//!     }
-//! });
-//! bus.publish(DomainEvent::FeatureCreated { id: 1 }).await.unwrap();
-//! # }
-//! ```
 
 use std::sync::Arc;
 
@@ -27,13 +11,21 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::broadcast;
 use tokio::sync::broadcast::error::SendError;
 
-/// Domain event variants that flow through the bus. Keep this small and
-/// stable — every consumer has to be able to decode every variant, so
-/// prefer a flat hierarchy of clear, simple payloads.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+use super::domain_event::{
+    EpicCreated, EpicStatusChanged, FeatureCreated, FeatureShipped, FeatureStateAdvanced,
+    ProjectArchived, ProjectCreated, ProjectRenamed, StoryAssigned, StoryCreated,
+    StoryStatusChanged, UserAdded, UserRoleChanged, UserStatusChanged, WorkPackageCreated,
+    WorkPackageStateChanged,
+};
+
+/// Domain event variants that flow through the bus. Each variant wraps a
+/// typed struct from `domain_event.rs` so that downstream consumers get
+/// strong typing and serde round-trip safety.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum DomainEvent {
-    FeatureCreated {
+    // --- Existing bus-level events ---
+    FeatureCreatedLegacy {
         id: i64,
     },
     FeatureStateChanged {
@@ -59,102 +51,114 @@ pub enum DomainEvent {
         issue_id: String,
         action: String,
     },
-    FeatureShipped {
-        id: i64,
-        slug: String,
-    },
-    FeatureStateAdvanced {
-        id: i64,
-        from: String,
-        to: String,
-    },
-    ProjectCreated {
-        id: i64,
-        name: String,
-    },
-    ProjectRenamed {
-        id: i64,
-        old_name: String,
-        new_name: String,
-    },
-    ProjectArchived {
-        id: i64,
-    },
-    EpicCreated {
-        id: i64,
-        project_id: i64,
-        title: String,
-    },
-    EpicStatusChanged {
-        id: i64,
-        from: String,
-        to: String,
-    },
-    StoryCreated {
-        id: i64,
-        epic_id: i64,
-        title: String,
-    },
-    StoryStatusChanged {
-        id: i64,
-        from: String,
-        to: String,
-    },
-    Custom {
-        name: String,
-        payload: serde_json::Value,
-    },
+    // --- Typed variants wrapping domain_event structs ---
+    ProjectCreated(ProjectCreated),
+    ProjectRenamed(ProjectRenamed),
+    ProjectArchived(ProjectArchived),
+    EpicCreated(EpicCreated),
+    EpicStatusChanged(EpicStatusChanged),
+    StoryCreated(StoryCreated),
+    StoryStatusChanged(StoryStatusChanged),
+    StoryAssigned(StoryAssigned),
+    UserAdded(UserAdded),
+    UserRoleChanged(UserRoleChanged),
+    UserStatusChanged(UserStatusChanged),
+    FeatureCreated(FeatureCreated),
+    FeatureStateAdvanced(FeatureStateAdvanced),
+    FeatureShipped(FeatureShipped),
+    WorkPackageCreated(WorkPackageCreated),
+    WorkPackageStateChanged(WorkPackageStateChanged),
 }
 
-/// Multi-producer, multi-consumer in-process event bus.
-///
-/// Cheap to clone (wraps an `Arc`) and safe to share across tasks.
-#[derive(Clone)]
-pub struct EventBus {
-    inner: Arc<broadcast::Sender<DomainEvent>>,
-}
-
-impl std::fmt::Debug for EventBus {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("EventBus")
-            .field("receiver_count", &self.inner.receiver_count())
-            .finish()
+impl DomainEvent {
+    /// A short machine-readable tag like `"project.created"`.
+    pub fn event_type(&self) -> &'static str {
+        match self {
+            Self::FeatureCreatedLegacy { .. } => "feature.created",
+            Self::FeatureStateChanged { .. } => "feature.state_changed",
+            Self::CycleStarted { .. } => "cycle.started",
+            Self::CycleEnded { .. } => "cycle.ended",
+            Self::WorkPackageLinked { .. } => "work_package.linked",
+            Self::UserLoggedIn { .. } => "user.logged_in",
+            Self::PlaneWebhookReceived { .. } => "plane.webhook_received",
+            Self::ProjectCreated(_) => "project.created",
+            Self::ProjectRenamed(_) => "project.renamed",
+            Self::ProjectArchived(_) => "project.archived",
+            Self::EpicCreated(_) => "epic.created",
+            Self::EpicStatusChanged(_) => "epic.status_changed",
+            Self::StoryCreated(_) => "story.created",
+            Self::StoryStatusChanged(_) => "story.status_changed",
+            Self::StoryAssigned(_) => "story.assigned",
+            Self::UserAdded(_) => "user.added",
+            Self::UserRoleChanged(_) => "user.role_changed",
+            Self::UserStatusChanged(_) => "user.status_changed",
+            Self::FeatureCreated(_) => "feature.created",
+            Self::FeatureStateAdvanced(_) => "feature.state_advanced",
+            Self::FeatureShipped(_) => "feature.shipped",
+            Self::WorkPackageCreated(_) => "work_package.created",
+            Self::WorkPackageStateChanged(_) => "work_package.state_changed",
+        }
     }
+
+    /// The aggregate root type (e.g. `"Project"`, `"Feature"`).
+    pub fn aggregate_type(&self) -> &'static str {
+        match self {
+            Self::FeatureCreatedLegacy { .. } => "Feature",
+            Self::FeatureStateChanged { .. } => "Feature",
+            Self::CycleStarted { .. } => "Cycle",
+            Self::CycleEnded { .. } => "Cycle",
+            Self::WorkPackageLinked { .. } => "WorkPackage",
+            Self::UserLoggedIn { .. } => "User",
+            Self::PlaneWebhookReceived { .. } => "Plane",
+            Self::ProjectCreated(_) => "Project",
+            Self::ProjectRenamed(_) => "Project",
+            Self::ProjectArchived(_) => "Project",
+            Self::EpicCreated(_) => "Epic",
+            Self::EpicStatusChanged(_) => "Epic",
+            Self::StoryCreated(_) => "Story",
+            Self::StoryStatusChanged(_) => "Story",
+            Self::StoryAssigned(_) => "Story",
+            Self::UserAdded(_) => "User",
+            Self::UserRoleChanged(_) => "User",
+            Self::UserStatusChanged(_) => "User",
+            Self::FeatureCreated(_) => "Feature",
+            Self::FeatureStateAdvanced(_) => "Feature",
+            Self::FeatureShipped(_) => "Feature",
+            Self::WorkPackageCreated(_) => "WorkPackage",
+            Self::WorkPackageStateChanged(_) => "WorkPackage",
+        }
+    }
+}
+
+/// In-process event bus. Publish an event and every active subscriber
+/// receives a copy.
+pub struct EventBus {
+    tx: broadcast::Sender<DomainEvent>,
 }
 
 impl EventBus {
-    /// Create a bus with the given per-subscriber buffer size. A subscriber
-    /// that falls behind by more than `capacity` messages will see
-    /// `RecvError::Lagged` and skip ahead.
+    /// Create a new bus with the given channel capacity.
     pub fn new(capacity: usize) -> Self {
-        let (tx, _rx) = broadcast::channel(capacity.max(1));
-        Self {
-            inner: Arc::new(tx),
-        }
+        let (tx, _) = broadcast::channel(capacity);
+        Self { tx }
     }
 
-    /// Publish an event to every subscriber. Returns the number of
-    /// receivers that accepted it. Slow subscribers cause lagged events
-    /// to be dropped, never blocking the publisher.
-    pub fn publish(&self, event: DomainEvent) -> Result<usize, SendError<DomainEvent>> {
-        self.inner.send(event)
+    /// Publish an event to all subscribers. Returns `Err(event)` if there
+    /// are no active subscribers.
+    pub fn publish(&self, event: DomainEvent) -> Result<(), SendError<DomainEvent>> {
+        self.tx.send(event).map(|_| ())
     }
 
-    /// Async convenience wrapper around [`Self::publish`].
-    pub async fn publish_async(&self, event: DomainEvent) -> Result<usize, SendError<DomainEvent>> {
-        self.publish(event)
-    }
-
-    /// Get a new subscription handle.
+    /// Create a new subscriber handle.
     pub fn subscribe(&self) -> EventSubscriber {
         EventSubscriber {
-            inner: self.inner.subscribe(),
+            inner: self.tx.subscribe(),
         }
     }
 
-    /// Current number of active subscribers.
+    /// Number of active subscriber handles.
     pub fn subscriber_count(&self) -> usize {
-        self.inner.receiver_count()
+        self.tx.receiver_count()
     }
 }
 
@@ -167,18 +171,11 @@ pub struct EventSubscriber {
 
 impl EventSubscriber {
     /// Receive the next event, awaiting if necessary.
-    ///
-    /// Returns:
-    /// - `Ok(event)` for a normal event
-    /// - `Err(RecvError::Lagged(skipped))` if the subscriber fell behind
-    ///   and skipped events
-    /// - `Err(RecvError::Closed)` if the bus has been dropped
     pub async fn recv(&mut self) -> Result<DomainEvent, broadcast::error::RecvError> {
         self.inner.recv().await
     }
 
-    /// Non-blocking variant. Returns `None` if no event is currently
-    /// buffered.
+    /// Non-blocking variant. Returns `None` if no event is currently buffered.
     pub fn try_recv(&mut self) -> Option<Result<DomainEvent, broadcast::error::RecvError>> {
         match self.inner.try_recv() {
             Ok(ev) => Some(Ok(ev)),
@@ -203,13 +200,13 @@ mod tests {
         let bus = EventBus::new(8);
         let mut sub = bus.subscribe();
 
-        bus.publish(DomainEvent::FeatureCreated { id: 42 }).unwrap();
+        bus.publish(DomainEvent::FeatureCreatedLegacy { id: 42 }).unwrap();
 
         let ev = tokio::time::timeout(Duration::from_millis(100), sub.recv())
             .await
             .expect("no timeout")
             .expect("no recv error");
-        assert_eq!(ev, DomainEvent::FeatureCreated { id: 42 });
+        assert_eq!(ev, DomainEvent::FeatureCreatedLegacy { id: 42 });
     }
 
     #[tokio::test]
