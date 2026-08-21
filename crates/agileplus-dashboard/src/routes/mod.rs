@@ -158,6 +158,18 @@ pub fn router(state: SharedState) -> Router {
             get(all_work_packages_json),
         )
         .route("/api/dashboard/epics-stories.json", get(epics_stories_json))
+        // New DB-derived JSON endpoints
+        .route("/api/dashboard/features.json", get(all_features_json))
+        .route("/api/dashboard/summary.json", get(summary_json))
+        .route("/api/dashboard/toasts.json", get(toast_stream))
+        // Static assets
+        .nest_service(
+            "/static",
+            tower_http::services::ServeDir::new(resolve_static_dir())
+                .append_index_html_on_directories(false),
+        )
+        .route("/favicon.ico", get(favicon_route))
+        .route("/avatar.svg", get(avatar_svg))
         .route("/api/dashboard/projects", get(project_switcher))
         .route(
             "/api/dashboard/projects/{id}/activate",
@@ -307,6 +319,85 @@ async fn plane_daemon_status(State(state): State<SharedState>) -> Json<serde_jso
         }
         None => Json(serde_json::json!({"available": false, "reason": "not_initialized"})),
     }
+}
+
+// ============================================================================
+// HANDLERS: features.json, summary.json, toasts.json, static/favicon/avatar
+// ============================================================================
+
+use std::collections::BTreeMap;
+use axum::http::{header::CONTENT_TYPE, HeaderMap};
+
+async fn all_features_json(
+    State(state): State<SharedState>,
+) -> axum::Json<serde_json::Value> {
+    let store = state.read().await;
+    let mut state_counts: BTreeMap<String, usize> = BTreeMap::new();
+    for f in &store.features {
+        *state_counts.entry(format!("{}", f.state)).or_insert(0) += 1;
+    }
+    let features: Vec<serde_json::Value> = store
+        .features
+        .iter()
+        .map(|f| {
+            let wp_count = store.work_packages.get(&f.id).map_or(0, |v| v.len());
+            serde_json::json!({
+                "id": f.id,
+                "slug": f.slug,
+                "title": f.friendly_name,
+                "state": format!("{}", f.state),
+                "wp_count": wp_count,
+                "target_branch": f.target_branch,
+            })
+        })
+        .collect();
+    axum::Json(serde_json::json!({
+        "features": features,
+        "count": store.features.len(),
+        "state_counts": state_counts,
+    }))
+}
+
+async fn summary_json(
+    State(state): State<SharedState>,
+) -> axum::Json<serde_json::Value> {
+    let store = state.read().await;
+    let mut by_state: BTreeMap<String, usize> = BTreeMap::new();
+    for f in &store.features {
+        *by_state.entry(format!("{}", f.state)).or_insert(0) += 1;
+    }
+    let total_wps: usize = store.work_packages.values().map(|v| v.len()).sum();
+    axum::Json(serde_json::json!({
+        "total_features": store.features.len(),
+        "total_work_packages": total_wps,
+        "total_projects": store.projects.len(),
+        "feature_state_counts": by_state,
+        "server_version": env!("CARGO_PKG_VERSION"),
+    }))
+}
+
+async fn toast_stream() -> axum::Json<serde_json::Value> {
+    axum::Json(serde_json::json!({"active_toasts": []}))
+}
+
+async fn favicon_inline() -> (HeaderMap, &'static [u8]) {
+    let mut headers = HeaderMap::new();
+    headers.insert(CONTENT_TYPE, "image/x-icon".parse().unwrap());
+    (headers, include_bytes!("../../../templates/static/favicon.ico"))
+}
+
+async fn avatar_svg(
+    axum::extract::Query(params): axum::extract::Query<std::collections::HashMap<String, String>>,
+) -> axum::Json<serde_json::Value> {
+    let letter = params.get("letter").cloned().unwrap_or_else(|| "A".to_string()).to_uppercase();
+    let color = params.get("color").cloned().unwrap_or_else(|| "#1e40af".to_string());
+    axum::Json(serde_json::json!({
+        "svg": format!(
+            r#"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><rect width="200" height="200" fill="{color}" rx="20"/><text x="100" y="130" font-size="120" fill="white" text-anchor="middle" font-family="-apple-system, sans-serif" font-weight="700">{letter}</text></svg>"#,
+            color = color,
+            letter = letter.chars().take(3).collect::<String>()
+        )
+    }))
 }
 
 #[cfg(test)]
