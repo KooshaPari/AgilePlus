@@ -72,7 +72,7 @@ use agileplus_domain::{
     ports::StoragePort,
 };
 
-#[derive(Debug, Subcommand)]
+#[derive(Debug, Args)]
 pub enum ProjectCmd {
     /// Create a project.
     Create(ProjectCreateArgs),
@@ -90,7 +90,7 @@ pub struct ProjectCreateArgs {
     pub description: Option<String>,
 }
 
-#[derive(Debug, Subcommand)]
+#[derive(Debug, Args)]
 pub enum EpicCmd {
     /// Create an epic.
     Create(EpicCreateArgs),
@@ -111,7 +111,7 @@ pub struct EpicCreateArgs {
     pub requirement: Option<String>,
 }
 
-#[derive(Debug, Subcommand)]
+#[derive(Debug, Args)]
 pub enum StoryCmd {
     /// Create a story.
     Create(StoryCreateArgs),
@@ -135,7 +135,7 @@ pub struct StoryCreateArgs {
     pub requirement: Option<String>,
 }
 
-#[derive(Debug, Subcommand)]
+#[derive(Debug, Args)]
 pub enum WpCmd {
     /// Create a work package for a story.
     Create(WpCreateArgs),
@@ -159,7 +159,7 @@ pub struct WpCreateArgs {
     pub seq: Option<i32>,
 }
 
-#[derive(Debug, Subcommand)]
+#[derive(Debug, Args)]
 pub enum DepCmd {
     /// Add a work-package dependency.
     Add(DepAddArgs),
