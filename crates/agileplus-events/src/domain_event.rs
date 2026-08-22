@@ -360,9 +360,7 @@ pub enum EventHandlerError {
     Transient(String),
 }
 
-impl EventHandlerError {
-
-}
+impl EventHandlerError {}
 
 // ──────────────────────────────────────────────────────────────────────────────
 // EventBus port — dispatches to registered handlers (no concrete impl here)
@@ -715,5 +713,4 @@ mod tests {
             assert_eq!(ev.wire_code(), ev.event_type());
         }
     }
-
 }
