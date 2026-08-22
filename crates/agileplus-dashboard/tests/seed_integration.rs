@@ -96,10 +96,21 @@ fn seed_speckitty_features_tagged() {
 #[test]
 fn seed_creates_seeded_dashboard_store() {
     use agileplus_dashboard::app_state::DashboardStore;
+    use chrono::Duration;
 
     let store = DashboardStore::seeded();
     assert_eq!(store.features.len(), 37);
+    assert_eq!(store.modules.len(), 3);
+    assert_eq!(store.cycles.len(), 1);
+    let cycle = &store.cycles[0];
+    assert_eq!(cycle.name, "Sprint 1");
+    assert_eq!(cycle.state, agileplus_domain::domain::cycle::CycleState::Active);
+    assert_eq!(cycle.module_scope_id, None);
+    assert_eq!(cycle.end_date.signed_duration_since(cycle.start_date), Duration::days(14));
     assert!(!store.health.is_empty());
+    assert_eq!(store.projects.len(), 1);
+    assert_eq!(store.active_project_id, Some(1));
+    assert_eq!(store.cycle_features.get(&1).map(Vec::len), Some(37));
     assert!(store.work_packages.contains_key(&1));
     assert!(store.work_packages.contains_key(&37));
 }

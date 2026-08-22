@@ -69,7 +69,7 @@ async fn cycles_page_renders() {
     let bytes = to_bytes(body, usize::MAX).await.unwrap();
     let html = String::from_utf8(bytes.to_vec()).unwrap();
     assert!(html.contains("Delivery Cycles"));
-    assert!(html.contains("Foundation Sprint"));
+    assert!(html.contains("Sprint 1"));
 }
 
 #[tokio::test]

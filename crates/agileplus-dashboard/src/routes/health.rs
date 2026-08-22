@@ -38,6 +38,10 @@ pub struct ServiceHealthJson {
     pub degraded: bool,
     pub latency_ms: Option<u64>,
     pub last_check: String,
+    /// "service" (live probe), "agent" (process introspection), or "build_info".
+    pub category: String,
+    /// True when this is a no-formal-contract agent-class entry.
+    pub simulated: bool,
 }
 
 /// Form submission for PATCH /api/dashboard/services/:name/config
@@ -178,6 +182,8 @@ pub async fn health_json(State(state): State<SharedState>) -> impl IntoResponse 
                 .last_check
                 .format("%Y-%m-%d %H:%M:%S UTC")
                 .to_string(),
+            category: format!("{:?}", service.category).to_lowercase(),
+            simulated: service.simulated,
         })
         .collect();
 
@@ -368,6 +374,8 @@ pub async fn toggle_service(
                 degraded: !enabled,
                 latency_ms: None,
                 last_check: Utc::now(),
+                category: crate::app_state::HealthCategory::Agent,
+                simulated: true,
             });
         }
     }

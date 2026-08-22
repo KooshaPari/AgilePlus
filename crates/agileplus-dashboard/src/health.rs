@@ -116,6 +116,8 @@ pub fn run_health_checks() -> Vec<ServiceHealth> {
                 degraded: false,
                 latency_ms,
                 last_check: now,
+                category: crate::app_state::HealthCategory::Agent,
+                simulated: true,
             }
         })
         .collect()

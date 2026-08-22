@@ -162,13 +162,11 @@ pub fn router(state: SharedState) -> Router {
         .route("/api/dashboard/features.json", get(all_features_json))
         .route("/api/dashboard/summary.json", get(summary_json))
         .route("/api/dashboard/toasts.json", get(toast_stream))
-        // Static assets
-        .nest_service(
-            "/static",
-            tower_http::services::ServeDir::new(resolve_static_dir())
-                .append_index_html_on_directories(false),
-        )
-        .route("/favicon.ico", get(favicon_route))
+        // Static assets (fallback to empty if dir missing)
+        .fallback_service(tower_http::services::ServeDir::new(
+            resolve_static_dir().unwrap_or_else(|| std::path::PathBuf::from("."))
+        ).append_index_html_on_directories(false))
+        .route("/favicon.ico", get(favicon_inline))
         .route("/avatar.svg", get(avatar_svg))
         .route("/api/dashboard/projects", get(project_switcher))
         .route(
@@ -328,6 +326,18 @@ async fn plane_daemon_status(State(state): State<SharedState>) -> Json<serde_jso
 use std::collections::BTreeMap;
 use axum::http::{header::CONTENT_TYPE, HeaderMap};
 
+fn resolve_static_dir() -> Option<std::path::PathBuf> {
+    if let Ok(p) = std::env::var("AGILEPLUS_STATIC_DIR") {
+        let path = std::path::PathBuf::from(p);
+        if path.is_dir() { return Some(path); }
+    }
+    let default = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .parent().unwrap()
+        .parent().unwrap()
+        .join("templates").join("static");
+    if default.is_dir() { Some(default) } else { None }
+}
+
 async fn all_features_json(
     State(state): State<SharedState>,
 ) -> axum::Json<serde_json::Value> {
@@ -383,7 +393,7 @@ async fn toast_stream() -> axum::Json<serde_json::Value> {
 async fn favicon_inline() -> (HeaderMap, &'static [u8]) {
     let mut headers = HeaderMap::new();
     headers.insert(CONTENT_TYPE, "image/x-icon".parse().unwrap());
-    (headers, include_bytes!("../../../templates/static/favicon.ico"))
+    (headers, include_bytes!("../../static/favicon.ico"))
 }
 
 async fn avatar_svg(

@@ -23,6 +23,22 @@ pub struct ServiceHealth {
     pub degraded: bool,
     pub latency_ms: Option<u64>,
     pub last_check: DateTime<Utc>,
+    /// "service" (live network/disk probe), "agent" (process introspection), or "build_info".
+    pub category: HealthCategory,
+    /// True when this is a no-formal-contract agent-class entry.
+    pub simulated: bool,
+}
+
+/// HealthCategory — distinguishes live probes from agent introspection.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum HealthCategory {
+    /// Live network/disk probe (e.g., SQLite, NATS, Plane).
+    Service,
+    /// Process introspection / build metadata — no formal health contract.
+    Agent,
+    /// Deterministic metadata about the build itself.
+    BuildInfo,
 }
 
 /// In-memory store used by dashboard handlers.
@@ -78,7 +94,7 @@ impl DashboardStore {
             Some(pid) => self
                 .features
                 .iter()
-                .filter(|f| f.project_id == Some(pid))
+                .filter(|f| f.project_id == Some(pid) || f.project_id.is_none())
                 .collect(),
             None => self.features.iter().collect(),
         }
@@ -94,7 +110,7 @@ impl DashboardStore {
         let features: Vec<&Feature> = self
             .features
             .iter()
-            .filter(|f| f.project_id == Some(project_id))
+            .filter(|f| f.project_id == Some(project_id) || f.project_id.is_none())
             .collect();
         let total = features.len();
         let active = features
@@ -112,7 +128,7 @@ impl DashboardStore {
         let features: Vec<&Feature> = self
             .features
             .iter()
-            .filter(|feature| feature.module_id == Some(module_id))
+            .filter(|feature| feature.module_id == Some(module_id) || feature.module_id.is_none())
             .collect();
         let total = features.len();
         let active = features
@@ -210,6 +226,8 @@ pub fn default_health() -> Vec<ServiceHealth> {
             degraded: false,
             latency_ms: Some(2),
             last_check: now,
+            category: HealthCategory::Service,
+            simulated: false,
         },
         ServiceHealth {
             name: "Dragonfly".into(),
@@ -217,6 +235,8 @@ pub fn default_health() -> Vec<ServiceHealth> {
             degraded: false,
             latency_ms: Some(1),
             last_check: now,
+            category: HealthCategory::Service,
+            simulated: false,
         },
         ServiceHealth {
             name: "Neo4j".into(),
@@ -224,6 +244,8 @@ pub fn default_health() -> Vec<ServiceHealth> {
             degraded: false,
             latency_ms: Some(8),
             last_check: now,
+            category: HealthCategory::Service,
+            simulated: false,
         },
         ServiceHealth {
             name: "MinIO".into(),
@@ -231,6 +253,8 @@ pub fn default_health() -> Vec<ServiceHealth> {
             degraded: false,
             latency_ms: Some(5),
             last_check: now,
+            category: HealthCategory::Service,
+            simulated: false,
         },
         ServiceHealth {
             name: "SQLite".into(),
@@ -238,6 +262,8 @@ pub fn default_health() -> Vec<ServiceHealth> {
             degraded: false,
             latency_ms: Some(0),
             last_check: now,
+            category: HealthCategory::Service,
+            simulated: false,
         },
         ServiceHealth {
             name: "API".into(),
@@ -245,6 +271,8 @@ pub fn default_health() -> Vec<ServiceHealth> {
             degraded: false,
             latency_ms: Some(3),
             last_check: now,
+            category: HealthCategory::Service,
+            simulated: false,
         },
         ServiceHealth {
             name: "Plane API".into(),
@@ -252,6 +280,8 @@ pub fn default_health() -> Vec<ServiceHealth> {
             degraded: false,
             latency_ms: Some(12),
             last_check: now,
+            category: HealthCategory::Service,
+            simulated: false,
         },
         ServiceHealth {
             name: "Plane Web".into(),
@@ -259,6 +289,8 @@ pub fn default_health() -> Vec<ServiceHealth> {
             degraded: false,
             latency_ms: Some(8),
             last_check: now,
+            category: HealthCategory::Service,
+            simulated: false,
         },
     ]
 }
