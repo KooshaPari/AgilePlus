@@ -20,7 +20,7 @@ serde = { workspace = true, features = ["derive"] }
 serde_yaml = "0.9"
 chrono = { workspace = true }
 thiserror = { workspace = true }
-dirs = "5"
+dirs = "6"
 url = "2"
 
 [dev-dependencies]
