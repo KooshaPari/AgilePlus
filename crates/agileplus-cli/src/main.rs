@@ -14,9 +14,9 @@ use clap::{Parser, Subcommand};
 
 use agent_adapter::RealAgentAdapter;
 use agileplus_cli::commands::{
-    cockpit::CockpitArgs, cycle::CycleArgs, dashboard::DashboardArgs, list::ListArgs,
-    module::ModuleArgs, queue::QueueArgs, rubric::RubricArgs, specify::SpecifyArgs,
-    dag::DagArgs, okf::OkfArgs, mvp::MvpArgs,
+    cockpit::CockpitArgs, cycle::CycleArgs, dag::DagArgs, dashboard::DashboardArgs, list::ListArgs,
+    module::ModuleArgs, mvp::MvpArgs, okf::OkfArgs, queue::QueueArgs, rubric::RubricArgs,
+    specify::SpecifyArgs,
 };
 #[cfg(feature = "full-deps")]
 use agileplus_cli::commands::{

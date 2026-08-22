@@ -29,7 +29,7 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Mutex;
 
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use clap::{Args, Subcommand};
 
 use agileplus_application::dto::{
@@ -490,11 +490,7 @@ async fn cmd_add(a: AddArgs) -> Result<()> {
         .split(',')
         .filter_map(|s| {
             let t = s.trim().to_string();
-            if t.is_empty() {
-                None
-            } else {
-                Some(t)
-            }
+            if t.is_empty() { None } else { Some(t) }
         })
         .collect();
     state.wp_repo.items.insert(
