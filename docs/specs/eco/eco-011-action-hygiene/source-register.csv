@@ -1,0 +1,5 @@
+source_id,source_type,title_or_path,url_or_path,accessed_utc,relevance
+SRC-EXT-001,web,GitHub Actions Security Hardening,https://docs.github.com/en/actions/security-for-github-actions/security-guides/security-hardening-for-github-actions,2026-06-05T00:00:00Z,high
+SRC-EXT-002,web,GitHub Actions Pinning to SHA,https://docs.github.com/en/actions/security-for-github-actions/security-guides/security-hardening-for-github-actions#using-third-party-actions,2026-06-05T00:00:00Z,high
+SRC-EXT-003,worklog,action-pin-audit-20260605.json,worklogs/action-pin-audit-20260605.json,2026-06-05T00:00:00Z,high
+SRC-INT-001,config,phenotype CI workflows,.github/workflows/,2026-06-05T00:00:00Z,high

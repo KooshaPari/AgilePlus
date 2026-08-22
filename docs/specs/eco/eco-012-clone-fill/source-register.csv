@@ -1,0 +1,6 @@
+source_id,source_type,title_or_path,url_or_path,accessed_utc,relevance
+SRC-EXT-001,web,GitHub CLI repo clone docs,https://cli.github.com/manual/gh_repo_clone,2026-06-05T00:00:00Z,high
+SRC-EXT-002,web,GitHub REST API Repos,https://docs.github.com/en/rest/repos,2026-06-05T00:00:00Z,medium
+SRC-EXT-003,worklog,oldest-kooshapari-20260605.json,worklogs/oldest-kooshapari-20260605.json,2026-06-05T00:00:00Z,high
+SRC-INT-001,config,canonical-fleet baseline,docs/governance/canonical_fleet.md,2026-06-05T00:00:00Z,high
+SRC-INT-002,config,disk-budget policy,docs/governance/target_budget_policy.md,2026-06-05T00:00:00Z,medium
