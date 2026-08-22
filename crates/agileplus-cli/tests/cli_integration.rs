@@ -12,7 +12,7 @@ fn help_prints_usage() {
         .assert()
         .success()
         .stdout(predicates::str::contains(
-            "AgilePlus project management CLI",
+            "Spec-driven",
         ));
 }
 
