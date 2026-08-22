@@ -14,3 +14,8 @@
 - Full formatter: blocked by preserved formatter-only lane #1028.
 - Full crate test: blocked by leaked global temporary worktree path.
 - Clippy: blocked by existing warnings outside `agileplus-git`.
+- Hosted core `ci / test`, `ci / lint`, coverage, and Snyk passed on PR #1030;
+  broader quality gates remain separate baseline blockers and are not waived.
+- The PR body declares `spec: eco-048-git-conflict-contract-recovery` and all
+  required governance sections; the next synchronize event is the first one
+  whose `spec-first` payload contains that updated metadata.
