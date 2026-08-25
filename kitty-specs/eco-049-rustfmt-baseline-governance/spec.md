@@ -16,6 +16,8 @@ dependencies, or workflow policy.
 
 - `cargo fmt --all -- --check` succeeds on the linked branch.
 - The source diff contains only formatter-normalized Rust layout and imports.
+- Regenerating `kitty-specs/INDEX.md` produces output accepted by the repository
+  Prettier check.
 - `git diff --check` succeeds.
 - The linked PR carries `spec: eco-049-rustfmt-baseline-governance` and the
   required governance body sections.
