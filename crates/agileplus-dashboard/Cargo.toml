@@ -16,23 +16,23 @@ agileplus-fixtures = { path = "../agileplus-fixtures" }
 agileplus-governance = { path = "../agileplus-governance" }
 agileplus-plane = { path = "../agileplus-plane" }
 agileplus-api = { path = "../agileplus-api" }
-askama = "0.12"
+askama = "0.16"
 axum = { version = "0.8", features = ["json", "macros", "tokio"] }
 async-stream = "0.3"
 tokio-stream = "0.1"
-axum-extra = { version = "0.10", features = ["typed-header"] }
+axum-extra = { version = "0.12", features = ["typed-header"] }
 tower = { version = "0.5" }
-tower-http = { version = "0.6", features = ["cors", "trace", "fs"] }
+tower-http = { version = "0.7", features = ["cors", "trace", "fs"] }
 tokio.workspace = true
 serde.workspace = true
 serde_json.workspace = true
-toml = "0.8"
+toml = "1.1"
 thiserror.workspace = true
 anyhow.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
 chrono = { version = "0.4", features = ["serde"] }
-sysinfo = "0.32"
+sysinfo = "0.39"
 rusqlite = { workspace = true }
 reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
 dirs-next.workspace = true
