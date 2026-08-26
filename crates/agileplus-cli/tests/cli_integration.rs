@@ -11,9 +11,7 @@ fn help_prints_usage() {
         .arg("--help")
         .assert()
         .success()
-        .stdout(predicates::str::contains(
-            "Spec-driven",
-        ));
+        .stdout(predicates::str::contains("Spec-driven"));
 }
 
 #[test]
