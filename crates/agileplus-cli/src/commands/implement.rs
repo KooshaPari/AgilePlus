@@ -449,7 +449,10 @@ fn find_resume_worktree(
 ) -> Option<PathBuf> {
     worktrees
         .iter()
-        .find(|worktree| worktree.feature_slug == feature_slug && worktree.wp_id == wp_id)
+        .find(|worktree| {
+            (worktree.feature_slug == feature_slug && worktree.wp_id == wp_id)
+                || worktree.branch == format!("feat/{feature_slug}/{wp_id}")
+        })
         .map(|worktree| worktree.path.clone())
 }
 
