@@ -6,8 +6,8 @@ use aes_gcm::aead::{Aead, KeyInit};
 use aes_gcm::{Aes256Gcm, Nonce};
 use argon2::{Algorithm, Argon2, Params, Version};
 use base64::{
-    Engine as _,
     engine::general_purpose::{STANDARD_NO_PAD, URL_SAFE_NO_PAD},
+    Engine as _,
 };
 use serde::{Deserialize, Serialize};
 use zeroize::Zeroizing;
