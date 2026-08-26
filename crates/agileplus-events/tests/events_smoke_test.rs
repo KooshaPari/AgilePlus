@@ -9,8 +9,8 @@ use agileplus_domain::domain::work_package::WpState;
 use agileplus_events::domain_event::DomainEvent;
 use agileplus_events::{
     AggregateId, EpicCreated, EpicStatusChanged, EventEnvelope, FeatureCreated, FeatureShipped,
-    FeatureStateAdvanced, ProjectArchived, ProjectCreated, ProjectRenamed,
-    StoryAssigned, StoryCreated, StoryStatusChanged, UserAdded, UserRoleChanged, UserStatusChanged,
+    FeatureStateAdvanced, ProjectArchived, ProjectCreated, ProjectRenamed, StoryAssigned,
+    StoryCreated, StoryStatusChanged, UserAdded, UserRoleChanged, UserStatusChanged,
     WorkPackageCreated, WorkPackageStateChanged,
 };
 use uuid::Uuid;
