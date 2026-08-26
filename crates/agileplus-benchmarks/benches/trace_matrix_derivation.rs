@@ -28,6 +28,7 @@ struct TraceLayer {
 struct TraceFile {
     fr_id: String,
     spec_slug: String,
+    spec_anchor: String,
     docs_pages: Vec<TraceLayer>,
     tests: Vec<TraceLayer>,
     code_modules: Vec<TraceLayer>,
@@ -58,7 +59,7 @@ fn parse_fr_list(markdown: &str) -> Vec<String> {
 
 fn make_trace_json(fr_id: &str) -> String {
     format!(
-        r#"{{
+    r##"{{
   "fr_id": "{fr_id}",
   "spec_slug": "eco-024",
   "spec_anchor": "#anchor",
@@ -66,7 +67,7 @@ fn make_trace_json(fr_id: &str) -> String {
   "tests": [{{"path": "crates/foo/tests/bar.rs"}}],
   "code_modules": [{{"path": "crates/foo/src/lib.rs"}}],
   "journeys": [{{"path": "docs/operations/journeys/{fr_id}.md"}}]
-}}"#
+}}"##
     )
 }
 

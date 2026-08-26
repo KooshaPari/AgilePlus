@@ -83,7 +83,17 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - name: Run benchmarks
         run: |
-          cargo bench -p agileplus-benchmarks -- --output-format bencher | tee bench.txt
+          : > bench.txt
+          for bench in \
+            event_append_throughput \
+            event_replay \
+            api_response_times \
+            sync_roundtrip \
+            graph_query_perf \
+            claim_engine_perf \
+            trace_matrix_derivation; do
+            cargo bench -p agileplus-benchmarks --bench "$bench" | tee -a bench.txt
+          done
       - name: Compare to baseline
         run: |
           python3 scripts/ci/check_bench_regressions.py bench.txt .bench-baseline.json --max-regress 15

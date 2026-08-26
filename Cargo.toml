@@ -22,6 +22,7 @@ members = [
   "crates/agileplus-telemetry",
   "crates/agileplus-dashboard",
   "crates/agileplus-events",
+  "crates/agileplus-benchmarks",
   # NOTE: clap-ext temporarily excluded — incompatible clap version constraint (4.3.x vs 4.6.x). Tracked in PR #924.
 ]
 

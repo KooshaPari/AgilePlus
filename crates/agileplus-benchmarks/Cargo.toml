@@ -11,17 +11,19 @@ agileplus-domain = { path = "../agileplus-domain" }
 agileplus-events = { path = "../agileplus-events" }
 agileplus-sqlite = { path = "../agileplus-sqlite" }
 agileplus-graph = { path = "../agileplus-graph" }
+agileplus-triage = { path = "../agileplus-triage" }
+serde.workspace = true
 serde_json.workspace = true
 chrono.workspace = true
 tokio.workspace = true
 async-trait = "0.1"
-rusqlite = { version = "0.32", features = ["bundled"] }
+rusqlite.workspace = true
 uuid = { version = "1.10", features = ["v4", "serde"] }
 
 [dev-dependencies]
 criterion = { version = "0.5", features = ["async_tokio", "html_reports"] }
 tokio = { workspace = true, features = ["full"] }
-rusqlite = { version = "0.32", features = ["bundled"] }
+rusqlite.workspace = true
 
 [[bench]]
 name = "event_append_throughput"
@@ -41,4 +43,12 @@ harness = false
 
 [[bench]]
 name = "graph_query_perf"
+harness = false
+
+[[bench]]
+name = "claim_engine_perf"
+harness = false
+
+[[bench]]
+name = "trace_matrix_derivation"
 harness = false

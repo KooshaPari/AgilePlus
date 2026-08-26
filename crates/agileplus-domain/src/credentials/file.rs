@@ -9,7 +9,6 @@ use base64::{
     Engine as _,
     engine::general_purpose::{STANDARD_NO_PAD, URL_SAFE_NO_PAD},
 };
-use rand::{RngCore, rngs::OsRng};
 use serde::{Deserialize, Serialize};
 use zeroize::Zeroizing;
 
@@ -118,8 +117,8 @@ impl FileCredentialStore {
             .map_err(|error| CredentialError::Serialization(error.to_string()))?;
         let mut salt = [0u8; SALT_LENGTH];
         let mut nonce = [0u8; NONCE_LENGTH];
-        OsRng.fill_bytes(&mut salt);
-        OsRng.fill_bytes(&mut nonce);
+        rand::fill(&mut salt);
+        rand::fill(&mut nonce);
         let key = self.derive_key(&salt)?;
         let cipher = Aes256Gcm::new_from_slice(key.as_ref())
             .map_err(|error| CredentialError::Encryption(error.to_string()))?;
@@ -165,7 +164,7 @@ impl FileCredentialStore {
         std::fs::create_dir_all(parent)?;
         let encrypted = self.encrypt(credentials)?;
         let mut suffix = [0u8; 16];
-        OsRng.fill_bytes(&mut suffix);
+        rand::fill(&mut suffix);
         let temporary = temporary_path(parent, &suffix);
         let mut file = std::fs::OpenOptions::new()
             .write(true)

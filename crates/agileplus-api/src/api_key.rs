@@ -8,7 +8,6 @@
 //! Traceability: WP11-T064
 
 use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD};
-use rand::RngCore;
 use sha2::{Digest, Sha256};
 
 use agileplus_domain::credentials::{CredentialStore, format_api_key_hash, keys};
@@ -21,7 +20,7 @@ const KEY_PREFIX: &str = "agp_";
 /// Returns the plaintext key (to be shown to the user once).
 pub fn generate_plaintext_key() -> String {
     let mut bytes = [0u8; 32];
-    rand::thread_rng().fill_bytes(&mut bytes);
+    rand::fill(&mut bytes);
     format!("{}{}", KEY_PREFIX, URL_SAFE_NO_PAD.encode(bytes))
 }
 
