@@ -3,6 +3,79 @@
 All notable changes to AgilePlus are documented here.
 Format: [CalVer](https://calver.org) -- `YEAR.MONTH(WAVE).PATCH`
 
+## [2026.08A.0] - 2026-08-26
+
+### Features
+
+- **install**: Add irm|iex install/uninstall scripts and INSTALL.md for AgilePlus ([a34b6d2](https://github.com/KooshaPari/AgilePlus/commit/a34b6d26))
+- **dino**: Complete AgilePlus governance wiring for DINOForge ([6be8bf8](https://github.com/KooshaPari/AgilePlus/commit/6be8bf80))
+- **agileplus**: Shard triage (#956) + governance-dashboard (#954) onto main ([3a348c6](https://github.com/KooshaPari/AgilePlus/commit/3a348c6f))
+- **events**: Rewrite DomainEvent as tuple variants wrapping domain_event structs; add PartialEq+Eq derives; add EventBus pub/sub + proptest for 6 domain enums ([a7e2085](https://github.com/KooshaPari/AgilePlus/commit/a7e2085c))
+- **domain**: Add newtype ID wrappers for compile-time type safety; add 4 proptest properties for FeatureState transitions ([0eb215e](https://github.com/KooshaPari/AgilePlus/commit/0eb215ea))
+- **fuzz**: Add cargo-fuzz harness with 9 targets for domain parsing and sql_fragments tokenization safety ([4238993](https://github.com/KooshaPari/AgilePlus/commit/42389939))
+- **observability**: Convert 12 unstructured tracing sites to structured fields ([ee98894](https://github.com/KooshaPari/AgilePlus/commit/ee988949))
+- **dashboard**: Wire PlaneSyncDaemon into API; wire live governance + plane status endpoints; wire Plane.so settings, agent sessions, and absorbed frontend attempts ([6213277](https://github.com/KooshaPari/AgilePlus/commit/62132774))
+- **dashboard**: Route /governance/:endpoint + seed_bridge toggle; wire seed_bridge to agileplus-api HTTP calls ([9b4727a](https://github.com/KooshaPari/AgilePlus/commit/9b4727a4))
+- **brand**: tokens.css 5-family sync + palette-overlap drift guard; animated SVG variant ([53f343e](https://github.com/KooshaPari/AgilePlus/commit/53f343ec))
+- **cli**: Wire cockpit reader filter; ap cockpit read TUI table; ap okf validate/summarize/merge (OKF v1.0); ap rubric fix-list; wire RealAgentAdapter for implement dispatch; wire dashboard subcommand to SQLite DAG view; wire full-deps SDD surface ([b323767](https://github.com/KooshaPari/AgilePlus/commit/b3237672))
+- **governance**: Rubric v2 content-probe rules + --probes CLI flag; SpecKitty to AgilePlus migration scoring engine ([6db93ce](https://github.com/KooshaPari/AgilePlus/commit/6db93ce8))
+- **planify**: Add fixture-server.js for npm start support ([4b74a6f](https://github.com/KooshaPari/AgilePlus/commit/4b74a6f2))
+- **credentials**: Encrypt persisted secrets; harden migration durability; migrate legacy Plane secrets safely ([5c5f818](https://github.com/KooshaPari/AgilePlus/commit/5c5f818b))
+- **ci(m1)**: Add end-to-end smoke test workflow + wire rubric subcommand ([0a4f8d8](https://github.com/KooshaPari/AgilePlus/commit/0a4f8d89))
+
+### Bug Fixes
+
+- **ci**: Remove RUSTFLAGS -D warnings from release workflow; nightly installs from crates.io instead of building from source ([d01bc10](https://github.com/KooshaPari/AgilePlus/commit/d01bc103))
+- **cli**: Wire orphaned dag, okf, and mvp commands; restore strict build coverage path ([d7a602c](https://github.com/KooshaPari/AgilePlus/commit/d7a602cf))
+- **nightly**: Format all modified files for nightly rustfmt compliance; pin toolchain to nightly-2026-07-31 ([50e28b6](https://github.com/KooshaPari/AgilePlus/commit/50e28b63))
+- **test**: Case-insensitive Intent parsing; import DomainEvent from domain_event module ([b36b16e](https://github.com/KooshaPari/AgilePlus/commit/b36b16ed))
+- **events**: Format all files, add full exports, remove unused Arc; add missing DomainEvent variants and make SpyPublisher::emitted() sync; remove async from SpyPublisher::publish to match non-async trait ([9d59bc1](https://github.com/KooshaPari/AgilePlus/commit/9d59bc18))
+- **test**: Use std::sync::Mutex for SpyPublisher; use tokio::sync::RwLock for async test code; remove .await from non-async publish fn body ([a0b37b3](https://github.com/KooshaPari/AgilePlus/commit/a0b37b30))
+- **git**: Handle Result from head.shorthand() for git2 0.21; add type annotations to tree.walk closure; handle Result from commit.summary(); fix get_feature_history for git2 0.21 API; ship merge via temp worktree when target is locked ([efadfdea](https://github.com/KooshaPari/AgilePlus/commit/efadfdea))
+- **nightly**: Remove --locked (uuid dep changes lockfile); use dtolnay/rust-toolchain@nightly with toolchain input ([138f81d](https://github.com/KooshaPari/AgilePlus/commit/138f81db))
+- **ci**: Replace broken trunk-action with deterministic prettier-scoped check; restore AgilePlus quality gates; point gitleaks at tracked config ([193477e8](https://github.com/KooshaPari/AgilePlus/commit/193477e8))
+- **dashboard**: Remove manifest conflict markers; fail closed on agent config load; fail closed on config save failures; load deployed credential configuration ([7b19337](https://github.com/KooshaPari/AgilePlus/commit/7b193376))
+- **workspace**: Temporarily exclude clap-ext subcrate (incompatible clap version constraint) ([8e2bfde](https://github.com/KooshaPari/AgilePlus/commit/8e2bfde6))
+- **platform**: Honor resolved runtime endpoint; load resolved runtime health target ([e353f50](https://github.com/KooshaPari/AgilePlus/commit/e353f508))
+- **governance**: Scope workspace path audit to dependencies ([0108324](https://github.com/KooshaPari/AgilePlus/commit/01083249))
+- **runtime**: Enforce generated proto and resolved endpoint contract ([b2820c9](https://github.com/KooshaPari/AgilePlus/commit/b2820c94))
+- **api**: Mount and complete production readiness routes; type credential store and map import errors; authenticate protected routes from credential store ([ff6eb86](https://github.com/KooshaPari/AgilePlus/commit/ff6eb865))
+- **credentials**: Prevent dashboard secret persistence; require secure operator key lifecycle; commit file mutations transactionally ([ec2c696](https://github.com/KooshaPari/AgilePlus/commit/ec2c6963))
+- **sqlite**: Register migrations 024-026 + harden parse_up + fix upsert_requirement_id ([ba1169e](https://github.com/KooshaPari/AgilePlus/commit/ba1169ec))
+- **types**: v0.11 lane F3 -- behave stubs in AgilePlus (3 type-ignores removed) ([91fb82c](https://github.com/KooshaPari/AgilePlus/commit/91fb82c9))
+
+### Refactoring
+
+- **api/dashboard**: Break workspace cycle -- api no longer depends on dashboard ([559ca8a](https://github.com/KooshaPari/AgilePlus/commit/559ca8a8))
+- Remove 324 mode-160000 gitlinks (consolidation absorbed 35 small, 5 medium, 24 large, 2 protected-pattern, and 247 more) ([5a250299](https://github.com/KooshaPari/AgilePlus/commit/5a250299))
+
+### CI/CD
+
+- Add Infisical integration workflow; add memory.yml workflow (RSS regression check) ([bd6e6e0](https://github.com/KooshaPari/AgilePlus/commit/bd6e6e0e))
+- Repair coverage action and Go module paths ([658a0bc](https://github.com/KooshaPari/AgilePlus/commit/658a0bcb))
+
+### Security
+
+- Encrypt persisted secrets; harden credential migration durability; migrate legacy Plane secrets safely; prevent dashboard secret persistence ([5c5f818](https://github.com/KooshaPari/AgilePlus/commit/5c5f818b))
+
+### Chores
+
+- Add .mailmap canonicalizing bot identities to KooshaPari ([e8db364](https://github.com/KooshaPari/AgilePlus/commit/e8db3646))
+- Untrack __pycache__/*.pyc from index + gitignore ([bb7e413](https://github.com/KooshaPari/AgilePlus/commit/bb7e4139))
+- **deps**: Bump tokio, regex, uv group ([328f2ef](https://github.com/KooshaPari/AgilePlus/commit/328f2efa))
+
+### Documentation
+
+- Security audit of dashboard, API, desktop, and edge layers ([815ded4](https://github.com/KooshaPari/AgilePlus/commit/815ded4d))
+- Add Planify2 and RepoLedger preservation manifests; add airlock preservation branch inventories ([4de6380](https://github.com/KooshaPari/AgilePlus/commit/4de63809))
+- Add AgilePlus finish execution plan; add agileplus credential specification; specify agileplus control-plane finish ([14a6000a](https://github.com/KooshaPari/AgilePlus/commit/14a6000a))
+- Add AgilePlus integration spec for DINOForge ([16322bd](https://github.com/KooshaPari/AgilePlus/commit/16322bd6))
+
+### Testing
+
+- Remove orphaned cli_smoke, fix help_prints_usage text ([9614ea2](https://github.com/KooshaPari/AgilePlus/commit/9614ea2a))
+- Cover production factory and config loader; prove router rotation and configured file backend ([61f3ec2](https://github.com/KooshaPari/AgilePlus/commit/61f3ec22))
+
 ## [2026.07A.0] - 2026-07-05
 
 ### SpecKitty → AgilePlus migration (CLOSED)
