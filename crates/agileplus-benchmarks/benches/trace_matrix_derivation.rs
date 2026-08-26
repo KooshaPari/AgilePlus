@@ -59,7 +59,7 @@ fn parse_fr_list(markdown: &str) -> Vec<String> {
 
 fn make_trace_json(fr_id: &str) -> String {
     format!(
-        r##"{{
+    r##"{{
   "fr_id": "{fr_id}",
   "spec_slug": "eco-024",
   "spec_anchor": "#anchor",
@@ -76,7 +76,8 @@ fn derive_matrix(fr_ids: &[String]) -> Vec<MatrixRow> {
         .iter()
         .map(|fr_id| {
             let json = make_trace_json(fr_id);
-            let trace: TraceFile = serde_json::from_str(&json).expect("synthetic trace must parse");
+            let trace: TraceFile =
+                serde_json::from_str(&json).expect("synthetic trace must parse");
             MatrixRow {
                 fr_id: trace.fr_id,
                 docs_ok: !trace.docs_pages.is_empty(),
