@@ -8,7 +8,7 @@
 
 use std::collections::{HashMap, HashSet};
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
 use chrono::Utc;
@@ -233,14 +233,27 @@ where
             );
         }
 
-        // Create worktree
         let wp_id_str = format!("WP{:02}", wp.sequence);
-        let worktree_path = vcs
-            .create_worktree(slug, &wp_id_str)
-            .await
-            .context(format!("creating worktree for {wp_id_str}"))?;
-
-        println!("  Worktree created at: {}", worktree_path.display());
+        let existing_worktree = if args.resume && wp.state == WpState::Doing {
+            let worktrees = vcs.list_worktrees().await.unwrap_or_default();
+            find_resume_worktree(&worktrees, slug, &wp_id_str)
+        } else {
+            None
+        };
+        let worktree_path = match existing_worktree {
+            Some(path) => {
+                println!("  Reusing worktree at: {}", path.display());
+                path
+            }
+            None => {
+                let path = vcs
+                    .create_worktree(slug, &wp_id_str)
+                    .await
+                    .context(format!("creating worktree for {wp_id_str}"))?;
+                println!("  Worktree created at: {}", path.display());
+                path
+            }
+        };
 
         // Plan artifacts are stored in the canonical checkout. Materialize the
         // spec, plan, and WP prompt into the new worktree before dispatch so
@@ -260,10 +273,12 @@ where
         }
 
         // Transition WP to Doing
-        storage
-            .update_wp_state(wp.id, WpState::Doing)
-            .await
-            .context("transitioning WP to Doing")?;
+        if wp.state != WpState::Doing {
+            storage
+                .update_wp_state(wp.id, WpState::Doing)
+                .await
+                .context("transitioning WP to Doing")?;
+        }
 
         // Build prompt path
         let prompt_path = worktree_path.join(format!("kitty-specs/{slug}/{prompt_relative}"));
@@ -427,6 +442,17 @@ fn materialize_artifact(worktree_root: &Path, relative_path: &str, content: &str
     Ok(())
 }
 
+fn find_resume_worktree(
+    worktrees: &[agileplus_domain::ports::WorktreeInfo],
+    feature_slug: &str,
+    wp_id: &str,
+) -> Option<PathBuf> {
+    worktrees
+        .iter()
+        .find(|worktree| worktree.feature_slug == feature_slug && worktree.wp_id == wp_id)
+        .map(|worktree| worktree.path.clone())
+}
+
 fn slugify(s: &str) -> String {
     s.chars()
         .map(|c| {
@@ -476,6 +502,21 @@ mod tests {
             fs::read_to_string(root.path().join("kitty-specs/demo/tasks/WP01-task.md"))
                 .expect("prompt readable"),
             "prompt"
+        );
+    }
+
+    #[test]
+    fn finds_existing_resume_worktree_for_wp() {
+        let worktrees = vec![agileplus_domain::ports::WorktreeInfo {
+            path: "/tmp/wp01".into(),
+            commit: "abc".into(),
+            branch: "feat/demo/WP01".into(),
+            feature_slug: "demo".into(),
+            wp_id: "WP01".into(),
+        }];
+        assert_eq!(
+            find_resume_worktree(&worktrees, "demo", "WP01"),
+            Some(PathBuf::from("/tmp/wp01"))
         );
     }
 }
