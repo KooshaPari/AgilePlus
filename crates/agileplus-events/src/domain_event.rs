@@ -360,8 +360,6 @@ pub enum EventHandlerError {
     Transient(String),
 }
 
-impl EventHandlerError {}
-
 // ──────────────────────────────────────────────────────────────────────────────
 // EventBus port — dispatches to registered handlers (no concrete impl here)
 // ──────────────────────────────────────────────────────────────────────────────
