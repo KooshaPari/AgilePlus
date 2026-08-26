@@ -1,0 +1,8 @@
+{
+  "spec_id": "eco-051",
+  "slug": "eco-051-sqlite-clippy-baseline",
+  "title": "SQLite Clippy Baseline",
+  "status": "active",
+  "created_at": "2026-08-26T00:00:00Z",
+  "type": "operational"
+}

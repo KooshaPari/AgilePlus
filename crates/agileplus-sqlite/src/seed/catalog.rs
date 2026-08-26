@@ -67,18 +67,20 @@ pub fn parse_catalog(markdown: &str) -> Vec<CatalogEntry> {
         }
 
         // Inside an entry — look for **Title:** line (Authvault style)
-        if current_id.is_some() && current_title.as_deref().map(str::is_empty).unwrap_or(false) {
-            if let Some(t) = extract_title_field(trimmed) {
-                current_title = Some(t);
-                continue;
-            }
+        if current_id.is_some()
+            && current_title.as_deref().map(str::is_empty).unwrap_or(false)
+            && let Some(t) = extract_title_field(trimmed)
+        {
+            current_title = Some(t);
+            continue;
         }
 
         // Look for Status table cell
-        if current_id.is_some() && current_status.is_none() {
-            if let Some(s) = extract_status_cell(trimmed) {
-                current_status = Some(s);
-            }
+        if current_id.is_some()
+            && current_status.is_none()
+            && let Some(s) = extract_status_cell(trimmed)
+        {
+            current_status = Some(s);
         }
     }
 
