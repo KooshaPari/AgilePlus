@@ -339,15 +339,17 @@ async fn test_merge_with_conflict() {
         .await
         .unwrap();
 
-    // May be a conflict OR a successful fast-forward in some edge cases depending on git state.
-    // Either way, result should not panic. Conflicts should be detected.
-    // Since both branches divergently edited conflict.txt from same base, we expect conflicts.
-    if !result.success {
-        assert!(
-            !result.conflicts.is_empty(),
-            "conflicts should be non-empty on failure"
-        );
-    }
+    assert!(
+        !result.success,
+        "divergent edits must not merge successfully"
+    );
+    assert!(
+        result
+            .conflicts
+            .iter()
+            .any(|conflict| conflict.file_path == "conflict.txt"),
+        "merge conflict diagnostics must propagate the conflicted path: {result:?}"
+    );
     drop(dir);
 }
 
