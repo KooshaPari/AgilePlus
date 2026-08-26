@@ -1,0 +1,97 @@
+{
+  "name": "agileplus",
+  "description": "OpenSpec/SpecKit-like spec management tool. Create, version, and track feature specifications with governance validation and traceability.",
+  "tools": [
+    {
+      "name": "create_spec",
+      "description": "Create a new feature specification",
+      "parameters": {
+        "title": {"type": "string", "description": "Feature title"},
+        "description": {"type": "string", "description": "Feature description"},
+        "requirements": {"type": "array", "description": "Functional requirements", "items": {"type": "string"}},
+        "acceptance_criteria": {"type": "array", "description": "Acceptance criteria", "items": {"type": "string"}}
+      }
+    },
+    {
+      "name": "list_specs",
+      "description": "List feature specifications",
+      "parameters": {
+        "state": {"type": "string", "description": "Filter by state (draft, in-progress, implemented, shipped)"},
+        "format": {"type": "string", "enum": ["text", "json"], "description": "Output format", "default": "text"}
+      }
+    },
+    {
+      "name": "get_spec",
+      "description": "Get details of a specific spec",
+      "parameters": {
+        "feature": {"type": "string", "description": "Feature slug"}
+      }
+    },
+    {
+      "name": "update_spec",
+      "description": "Update an existing spec",
+      "parameters": {
+        "feature": {"type": "string", "description": "Feature slug"},
+        "title": {"type": "string", "description": "Updated title"},
+        "description": {"type": "string", "description": "Updated description"},
+        "requirements": {"type": "array", "description": "Updated requirements", "items": {"type": "string"}}
+      }
+    },
+    {
+      "name": "update_spec_state",
+      "description": "Transition spec to a new state",
+      "parameters": {
+        "feature": {"type": "string", "description": "Feature slug"},
+        "state": {"type": "string", "enum": ["draft", "in-progress", "implemented", "shipped"], "description": "Target state"}
+      }
+    },
+    {
+      "name": "create_cycle",
+      "description": "Create a new delivery cycle (sprint)",
+      "parameters": {
+        "name": {"type": "string", "description": "Cycle name"},
+        "duration": {"type": "string", "description": "Duration (e.g., 14d, 2w)"}
+      }
+    },
+    {
+      "name": "list_cycles",
+      "description": "List delivery cycles",
+      "parameters": {}
+    },
+    {
+      "name": "add_to_queue",
+      "description": "Add item to triage backlog",
+      "parameters": {
+        "title": {"type": "string", "description": "Item title"},
+        "description": {"type": "string", "description": "Item description"},
+        "priority": {"type": "string", "enum": ["critical", "high", "medium", "low"], "description": "Priority"}
+      }
+    },
+    {
+      "name": "list_queue",
+      "description": "List triage backlog items",
+      "parameters": {}
+    },
+    {
+      "name": "dashboard",
+      "description": "Show project dashboard with DAG status",
+      "parameters": {
+        "format": {"type": "string", "enum": ["text", "json"], "description": "Output format", "default": "text"}
+      }
+    },
+    {
+      "name": "governance_check",
+      "description": "Check governance compliance for specs",
+      "parameters": {
+        "feature": {"type": "string", "description": "Feature slug to check"}
+      }
+    },
+    {
+      "name": "rubric_score",
+      "description": "Score a repo against governance rubric",
+      "parameters": {
+        "path": {"type": "string", "description": "Repository path"}
+      }
+    }
+  ]
+}

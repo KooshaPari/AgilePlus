@@ -17,10 +17,10 @@ tokio.workspace = true
 thiserror.workspace = true
 reqwest = { version = "0.13", features = ["json"] }
 axum.workspace = true
-hmac = "0.12"
+hmac = "0.13"
 hex = "0.4"
 async-trait = "0.1"
-rusqlite = { version = "0.32", features = ["bundled"] }
+rusqlite = { version = "0.40", features = ["bundled"] }
 
 [dev-dependencies]
 tempfile = "3"

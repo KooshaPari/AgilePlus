@@ -58,13 +58,15 @@ jobs:
 
             - name: Format check
               if: matrix.os == 'ubuntu-24.04'
-              run: cargo fmt --all -- --check
+              run: |
+                rustup run stable cargo fmt --all -- --check
 
             - name: Test
               run: cargo test --workspace
               continue-on-error: true
 
             - name: Install published binary from crates.io
+              shell: bash
               run: |
                   cargo install "${{ env.PACKAGE }}" --root ./install --target ${{ matrix.target }}
                   # The published crate may name the binary 'agileplus-cli'; accept either.

@@ -132,14 +132,14 @@ fn read_remotes(git_dir: &Path) -> Vec<RemoteInfo> {
             if !name.is_empty() {
                 current_name = Some(name);
             }
-        } else if let Some(name) = &current_name {
-            if let Some(url) = trimmed.strip_prefix("url = ") {
-                out.push(RemoteInfo {
-                    name: name.clone(),
-                    url: url.to_string(),
-                });
-                current_name = None;
-            }
+        } else if let Some(name) = &current_name
+            && let Some(url) = trimmed.strip_prefix("url = ")
+        {
+            out.push(RemoteInfo {
+                name: name.clone(),
+                url: url.to_string(),
+            });
+            current_name = None;
         }
     }
     out
