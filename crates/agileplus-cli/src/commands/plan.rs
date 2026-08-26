@@ -123,15 +123,21 @@ where
         wps.push(wp);
     }
 
-    // Persist WPs to get IDs
-    let mut persisted_wps: Vec<WorkPackage> = Vec::with_capacity(wps.len());
-    for mut wp in wps {
-        let id = storage
-            .create_work_package(&wp)
-            .await
-            .context("creating work package")?;
-        wp.id = id;
-        persisted_wps.push(wp);
+    // Reconcile persisted WPs before inserting. Planning is retry-safe: a
+    // matching sequence reuses its stable row; a mismatch is an explicit
+    // conflict instead of silently creating a second logical plan.
+    let existing_wps = storage
+        .list_wps_by_feature(feature.id)
+        .await
+        .context("listing existing work packages")?;
+    let mut persisted_wps = reconcile_work_packages(wps, existing_wps)?;
+    for wp in &mut persisted_wps {
+        if wp.id == 0 {
+            wp.id = storage
+                .create_work_package(wp)
+                .await
+                .context("creating work package")?;
+        }
     }
 
     // Build overlap graph and add file-overlap dependencies
@@ -188,16 +194,25 @@ where
     vcs.write_artifact(slug, "contracts/governance-v1.json", &contract_json)
         .await
         .context("writing governance contract artifact")?;
-    storage
-        .create_governance_contract(&contract)
+    if storage
+        .get_latest_governance_contract(feature.id)
         .await
-        .context("persisting governance contract")?;
+        .context("checking existing governance contract")?
+        .is_none()
+    {
+        storage
+            .create_governance_contract(&contract)
+            .await
+            .context("persisting governance contract")?;
+    }
 
     // Transition feature state: Researched -> Planned
-    storage
-        .update_feature_state(feature.id, FeatureState::Planned)
-        .await
-        .context("transitioning feature to Planned")?;
+    if feature.state == FeatureState::Researched {
+        storage
+            .update_feature_state(feature.id, FeatureState::Planned)
+            .await
+            .context("transitioning feature to Planned")?;
+    }
 
     // Append audit entry
     let prev_hash = get_latest_hash(storage, feature.id).await;
@@ -215,10 +230,12 @@ where
         archived_to: None,
     };
     audit.hash = hash_entry(&audit);
-    storage
-        .append_audit_entry(&audit)
-        .await
-        .context("appending audit entry")?;
+    if feature.state == FeatureState::Researched {
+        storage
+            .append_audit_entry(&audit)
+            .await
+            .context("appending audit entry")?;
+    }
 
     let elapsed_ms = start.elapsed().as_millis();
     tracing::info!(command = "plan", slug = %slug, wp_count = persisted_wps.len(), elapsed_ms = %elapsed_ms, "plan completed");
@@ -341,6 +358,36 @@ fn slugify(s: &str) -> String {
         .chars()
         .take(40)
         .collect()
+}
+
+fn reconcile_work_packages(
+    expected: Vec<WorkPackage>,
+    existing: Vec<WorkPackage>,
+) -> Result<Vec<WorkPackage>> {
+    let mut reconciled = Vec::with_capacity(expected.len());
+    for generated in expected {
+        let matches: Vec<&WorkPackage> = existing
+            .iter()
+            .filter(|wp| wp.sequence == generated.sequence)
+            .collect();
+        let Some(existing_wp) = matches.first() else {
+            reconciled.push(generated);
+            continue;
+        };
+        if existing_wp.title != generated.title
+            || existing_wp.acceptance_criteria != generated.acceptance_criteria
+        {
+            anyhow::bail!(
+                "existing work package for sequence {} does not match generated plan; explicit replan required",
+                generated.sequence
+            );
+        }
+        let mut reused = generated;
+        reused.id = existing_wp.id;
+        reused.state = existing_wp.state;
+        reconciled.push(reused);
+    }
+    Ok(reconciled)
 }
 
 /// Generate plan.md content.
@@ -490,6 +537,24 @@ async fn get_latest_hash<S: StoragePort>(storage: &S, feature_id: i64) -> [u8; 3
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn reconcile_reuses_existing_work_packages_by_sequence() {
+        let mut expected = WorkPackage::new(7, "Build API (WP01)", 1, "- FR-001 -- API");
+        expected.file_scope = vec!["src/api.rs".into()];
+        let mut existing = expected.clone();
+        existing.id = 42;
+        let reconciled = reconcile_work_packages(vec![expected], vec![existing]).unwrap();
+        assert_eq!(reconciled[0].id, 42);
+    }
+
+    #[test]
+    fn reconcile_rejects_mismatched_existing_work_package() {
+        let expected = WorkPackage::new(7, "Build API (WP01)", 1, "- FR-001 -- API");
+        let existing = WorkPackage::new(7, "Old API (WP01)", 1, "- FR-001 -- API");
+        let err = reconcile_work_packages(vec![expected], vec![existing]).unwrap_err();
+        assert!(err.to_string().contains("sequence 1"));
+    }
 
     #[test]
     fn parse_frs_basic() {

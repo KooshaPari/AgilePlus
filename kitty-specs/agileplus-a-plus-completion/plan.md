@@ -4,7 +4,7 @@
 ## Work Packages
 
 ### WP01: Initial Implementation
-**ID**: 2 | **Dependencies**: none
+**ID**: 1 | **Dependencies**: none
 
 **Acceptance Criteria:**
   - Implement the feature as specified.
@@ -19,4 +19,4 @@
 
 ## Execution Waves
 
-- **Wave 0** (parallel): WPs [2]
+- **Wave 0** (parallel): WPs [1]
