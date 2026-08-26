@@ -6,8 +6,8 @@ use aes_gcm::aead::{Aead, KeyInit};
 use aes_gcm::{Aes256Gcm, Nonce};
 use argon2::{Algorithm, Argon2, Params, Version};
 use base64::{
-    Engine as _,
     engine::general_purpose::{STANDARD_NO_PAD, URL_SAFE_NO_PAD},
+    Engine as _,
 };
 use serde::{Deserialize, Serialize};
 use zeroize::Zeroizing;
@@ -100,11 +100,11 @@ impl FileCredentialStore {
         let key = self.derive_key(&salt)?;
         let cipher = Aes256Gcm::new_from_slice(key.as_ref())
             .map_err(|error| CredentialError::Encryption(error.to_string()))?;
-        let plaintext = cipher
-            .decrypt(Nonce::from_slice(&nonce), ciphertext.as_ref())
-            .map_err(|_| {
-                CredentialError::Encryption("credential file authentication failed".to_string())
-            })?;
+        let nonce = Nonce::try_from(nonce.as_slice())
+            .map_err(|_| CredentialError::Encryption("invalid credential nonce".to_string()))?;
+        let plaintext = cipher.decrypt(&nonce, ciphertext.as_ref()).map_err(|_| {
+            CredentialError::Encryption("credential file authentication failed".to_string())
+        })?;
         serde_json::from_slice(&plaintext)
             .map_err(|error| CredentialError::Serialization(error.to_string()))
     }
@@ -122,8 +122,10 @@ impl FileCredentialStore {
         let key = self.derive_key(&salt)?;
         let cipher = Aes256Gcm::new_from_slice(key.as_ref())
             .map_err(|error| CredentialError::Encryption(error.to_string()))?;
+        let nonce = Nonce::try_from(nonce.as_slice())
+            .map_err(|_| CredentialError::Encryption("invalid credential nonce".to_string()))?;
         let ciphertext = cipher
-            .encrypt(Nonce::from_slice(&nonce), plaintext.as_ref())
+            .encrypt(&nonce, plaintext.as_ref())
             .map_err(|_| CredentialError::Encryption("credential encryption failed".to_string()))?;
         let envelope = EncryptedEnvelope {
             version: ENVELOPE_VERSION,
