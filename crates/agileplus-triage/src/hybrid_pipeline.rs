@@ -401,7 +401,6 @@ mod tests {
             rows: 4,
             cosine_threshold: 0.80,
             cosine_reject: 0.40,
-            ..Default::default()
         };
         assert!(ok.clone().validated().is_ok());
         let bad = HybridConfig {
