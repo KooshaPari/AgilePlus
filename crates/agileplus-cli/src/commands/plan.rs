@@ -405,12 +405,19 @@ fn reconcile_work_packages(
             .iter()
             .filter(|wp| wp.sequence == generated.sequence)
             .collect();
+        if matches.len() > 1 {
+            anyhow::bail!(
+                "multiple existing work packages for sequence {}; explicit replan required",
+                generated.sequence
+            );
+        }
         let Some(existing_wp) = matches.first() else {
             reconciled.push(generated);
             continue;
         };
         if existing_wp.title != generated.title
             || existing_wp.acceptance_criteria != generated.acceptance_criteria
+            || existing_wp.file_scope != generated.file_scope
         {
             anyhow::bail!(
                 "existing work package for sequence {} does not match generated plan; explicit replan required",
@@ -607,6 +614,26 @@ mod tests {
     fn reconcile_rejects_mismatched_existing_work_package() {
         let expected = WorkPackage::new(7, "Build API (WP01)", 1, "- FR-001 -- API");
         let existing = WorkPackage::new(7, "Old API (WP01)", 1, "- FR-001 -- API");
+        let err = reconcile_work_packages(vec![expected], vec![existing]).unwrap_err();
+        assert!(err.to_string().contains("sequence 1"));
+    }
+
+    #[test]
+    fn reconcile_rejects_duplicate_existing_sequences() {
+        let expected = WorkPackage::new(7, "Build API (WP01)", 1, "- FR-001 -- API");
+        let duplicate = expected.clone();
+        let err =
+            reconcile_work_packages(vec![expected.clone()], vec![duplicate, expected]).unwrap_err();
+        assert!(err.to_string().contains("multiple existing work packages"));
+    }
+
+    #[test]
+    fn reconcile_rejects_file_scope_mismatch() {
+        let mut expected = WorkPackage::new(7, "Build API (WP01)", 1, "- FR-001 -- API");
+        expected.file_scope = vec!["src/new.rs".into()];
+        let mut existing = expected.clone();
+        existing.id = 42;
+        existing.file_scope = vec!["src/old.rs".into()];
         let err = reconcile_work_packages(vec![expected], vec![existing]).unwrap_err();
         assert!(err.to_string().contains("sequence 1"));
     }
