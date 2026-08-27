@@ -187,24 +187,28 @@ where
             .context("writing WP prompt file")?;
     }
 
-    // Create governance contract
-    let contract = build_governance_contract(feature.id, &persisted_wps);
+    // Reuse the persisted governance contract on retries so the artifact and
+    // database remain byte-for-byte aligned. Only the first planning run
+    // creates and persists a new contract.
+    let contract = if let Some(existing) = storage
+        .get_latest_governance_contract(feature.id)
+        .await
+        .context("checking existing governance contract")?
+    {
+        existing
+    } else {
+        let contract = build_governance_contract(feature.id, &persisted_wps);
+        storage
+            .create_governance_contract(&contract)
+            .await
+            .context("persisting governance contract")?;
+        contract
+    };
     let contract_json =
         serde_json::to_string_pretty(&contract).context("serializing governance contract")?;
     vcs.write_artifact(slug, "contracts/governance-v1.json", &contract_json)
         .await
         .context("writing governance contract artifact")?;
-    if storage
-        .get_latest_governance_contract(feature.id)
-        .await
-        .context("checking existing governance contract")?
-        .is_none()
-    {
-        storage
-            .create_governance_contract(&contract)
-            .await
-            .context("persisting governance contract")?;
-    }
 
     // Transition feature state: Researched -> Planned
     if feature.state == FeatureState::Researched {
@@ -273,12 +277,25 @@ where
     println!();
     println!("  Plan written to: kitty-specs/{slug}/plan.md");
     println!("  Governance contract: kitty-specs/{slug}/contracts/governance-v1.json");
-    println!("  State: Researched -> Planned");
+    println!("  State: {}", plan_state_summary(feature.state));
 
     Ok(())
 }
 
 // --- helpers ---
+
+fn plan_state_summary(state: FeatureState) -> &'static str {
+    match state {
+        FeatureState::Researched => "Researched -> Planned",
+        FeatureState::Planned => "Planned (preserved)",
+        FeatureState::Implementing => "Implementing (preserved)",
+        FeatureState::Validated => "Validated (preserved)",
+        FeatureState::Shipped => "Shipped (preserved)",
+        FeatureState::Retrospected => "Retrospected (preserved)",
+        FeatureState::Created => "Created (preserved)",
+        FeatureState::Specified => "Specified (preserved)",
+    }
+}
 
 /// Parse `FR-NNN: description` lines from spec content.
 fn parse_functional_requirements(spec: &str) -> Vec<FunctionalRequirement> {
@@ -537,6 +554,18 @@ async fn get_latest_hash<S: StoragePort>(storage: &S, feature_id: i64) -> [u8; 3
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn plan_state_summary_reports_preserved_non_researched_states() {
+        assert_eq!(
+            plan_state_summary(FeatureState::Implementing),
+            "Implementing (preserved)"
+        );
+        assert_eq!(
+            plan_state_summary(FeatureState::Validated),
+            "Validated (preserved)"
+        );
+    }
 
     #[test]
     fn reconcile_reuses_existing_work_packages_by_sequence() {
