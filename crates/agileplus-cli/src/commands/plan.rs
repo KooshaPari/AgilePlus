@@ -130,6 +130,13 @@ where
         .list_wps_by_feature(feature.id)
         .await
         .context("listing existing work packages")?;
+    for sequence in duplicate_sequences(&existing_wps) {
+        tracing::warn!(
+            feature_id = feature.id,
+            sequence,
+            "duplicate persisted work-package sequence; preserving records"
+        );
+    }
     let mut persisted_wps = reconcile_work_packages(wps, existing_wps)?;
     for wp in &mut persisted_wps {
         if wp.id == 0 {
@@ -283,6 +290,17 @@ where
 }
 
 // --- helpers ---
+
+fn duplicate_sequences(wps: &[WorkPackage]) -> Vec<i32> {
+    let mut counts = std::collections::BTreeMap::new();
+    for wp in wps {
+        *counts.entry(wp.sequence).or_insert(0usize) += 1;
+    }
+    counts
+        .into_iter()
+        .filter_map(|(sequence, count)| (count > 1).then_some(sequence))
+        .collect()
+}
 
 fn plan_state_summary(state: FeatureState) -> &'static str {
     match state {
@@ -554,6 +572,14 @@ async fn get_latest_hash<S: StoragePort>(storage: &S, feature_id: i64) -> [u8; 3
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn duplicate_sequences_are_reported_without_mutating_records() {
+        let first = WorkPackage::new(7, "Build API (WP01)", 1, "- FR-001 -- API");
+        let second = WorkPackage::new(7, "Build API (WP01)", 1, "- FR-001 -- API");
+        let duplicates = duplicate_sequences(&[first, second]);
+        assert_eq!(duplicates, vec![1]);
+    }
 
     #[test]
     fn plan_state_summary_reports_preserved_non_researched_states() {
