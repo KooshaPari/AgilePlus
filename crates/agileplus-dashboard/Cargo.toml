@@ -9,13 +9,13 @@ rust-version.workspace = true
 dirs = ["../../templates"]
 
 [dependencies]
-agileplus-domain = { path = "../agileplus-domain" }
-agileplus-events = { path = "../agileplus-events" }
-agileplus-sqlite = { path = "../agileplus-sqlite" }
-agileplus-fixtures = { path = "../agileplus-fixtures" }
-agileplus-governance = { path = "../agileplus-governance" }
-agileplus-plane = { path = "../agileplus-plane" }
-agileplus-api = { path = "../agileplus-api" }
+agileplus-domain = { version = "0.2.1", path = "../agileplus-domain" }
+agileplus-events = { version = "0.2.1", path = "../agileplus-events" }
+agileplus-sqlite = { version = "0.2.1", path = "../agileplus-sqlite" }
+agileplus-fixtures = { version = "0.2.1", path = "../agileplus-fixtures" }
+agileplus-governance = { version = "0.1.0", path = "../agileplus-governance" }
+agileplus-plane = { version = "0.2.1", path = "../agileplus-plane" }
+agileplus-api = { version = "0.2.1", path = "../agileplus-api" }
 askama = "0.16"
 axum = { version = "0.8", features = ["json", "macros", "tokio"] }
 async-stream = "0.3"
