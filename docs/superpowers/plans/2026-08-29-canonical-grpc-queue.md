@@ -1,5 +1,11 @@
 # Canonical gRPC Queue Implementation Plan
 
+> **SUPERSEDED (2026-08-29):** The core-runtime repair established
+> `crates/agileplus-proto` as the active canonical generated package and removed
+> the duplicate `rust/` workspace member. Do not execute this plan as written;
+> its proto-ownership assumptions would reverse the repaired workspace boundary.
+> Any remaining queue work must be replanned against `crates/agileplus-proto`.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use subagent-driven-development or executing-plans task-by-task. Steps use checkbox syntax.
 
 **Goal:** Serve canonical queue CreateBacklogItem, ListBacklog, and PromoteBacklogItem RPCs from one buildable AgilePlus gRPC core.
@@ -162,4 +168,3 @@ Expected: Python MCP queue operations reach the real canonical core.
 - One generated proto package and three canonical queue methods only.
 - Explicitly excluded: old queue RPCs, unresolved pop semantics, feature/WP metadata schema changes, and public network binding.
 - Every implementation task has a red proof, green proof, and narrow command.
-
