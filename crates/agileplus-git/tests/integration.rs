@@ -482,10 +482,10 @@ async fn test_cleanup_worktree_safety_check() {
 // ---- Helpers ----
 
 fn get_default_branch(repo: &Repository) -> String {
-    if let Ok(head) = repo.head() {
-        if let Ok(name) = head.shorthand() {
-            return name.to_string();
-        }
+    if let Ok(head) = repo.head()
+        && let Ok(name) = head.shorthand()
+    {
+        return name.to_string();
     }
     "main".to_string()
 }

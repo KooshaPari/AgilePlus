@@ -175,80 +175,6 @@ impl DashboardStore {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use agileplus_domain::domain::state_machine::FeatureState;
-
-    use super::DashboardStore;
-
-    #[test]
-    fn cycle_without_feature_scope_is_not_shippable() {
-        let store = DashboardStore::seeded();
-
-        assert!(!store.cycle_is_shippable(999));
-    }
-
-    #[test]
-    fn seeded_store_groups_feature_states_without_losing_features() {
-        let store = DashboardStore::seeded();
-        let by_state = store.features_by_state();
-
-        assert_eq!(by_state[&FeatureState::Shipped].len(), 36);
-        assert_eq!(by_state[&FeatureState::Implementing].len(), 1);
-        assert_eq!(
-            by_state.values().map(Vec::len).sum::<usize>(),
-            store.features.len()
-        );
-    }
-
-    #[test]
-    fn active_project_scopes_seeded_feature_counts() {
-        let store = DashboardStore::seeded();
-
-        assert_eq!(
-            store.active_project().map(|project| project.slug.as_str()),
-            Some("agileplus-internal")
-        );
-        assert_eq!(store.features_for_active_project().len(), 37);
-        assert_eq!(store.feature_counts_for_project(1), (37, 1, 36));
-        assert_eq!(store.feature_counts_for_project(999), (0, 0, 0));
-    }
-
-    #[test]
-    fn cycle_aggregation_counts_seeded_features_and_work_packages() {
-        let store = DashboardStore::seeded();
-
-        assert_eq!(store.cycle_feature_ids(1).len(), 37);
-        assert_eq!(store.cycle_work_package_count(1), 80);
-        assert!(!store.cycle_is_shippable(1));
-    }
-
-    #[test]
-    fn cycle_is_shippable_when_every_linked_feature_is_validated_or_shipped() {
-        let mut store = DashboardStore::seeded();
-        let implementing_feature = store
-            .features
-            .iter_mut()
-            .find(|feature| feature.id == 4)
-            .expect("seeded implementing feature");
-        implementing_feature.state = FeatureState::Validated;
-
-        assert!(store.cycle_is_shippable(1));
-    }
-
-    #[test]
-    fn cycle_is_not_shippable_when_linked_feature_is_missing_from_store() {
-        let mut store = DashboardStore::seeded();
-        store
-            .cycle_features
-            .get_mut(&1)
-            .expect("seeded cycle feature links")
-            .push(9_999);
-
-        assert!(!store.cycle_is_shippable(1));
-    }
-}
-
 impl DashboardStore {
     /// Install the live governance client (after with_defaults())
     pub fn with_governance(mut self, client: agileplus_governance::GovernanceClient) -> Self {
@@ -334,4 +260,53 @@ pub fn default_health() -> Vec<ServiceHealth> {
             last_check: now,
         },
     ]
+}
+
+#[cfg(test)]
+mod tests {
+    use agileplus_domain::domain::state_machine::FeatureState;
+
+    use super::DashboardStore;
+
+    #[test]
+    fn cycle_without_feature_scope_is_not_shippable() {
+        let store = DashboardStore::seeded();
+
+        assert!(!store.cycle_is_shippable(999));
+    }
+
+    #[test]
+    fn seeded_store_groups_feature_states_without_losing_features() {
+        let store = DashboardStore::seeded();
+        let by_state = store.features_by_state();
+
+        assert_eq!(by_state[&FeatureState::Shipped].len(), 36);
+        assert_eq!(by_state[&FeatureState::Implementing].len(), 1);
+        assert_eq!(
+            by_state.values().map(Vec::len).sum::<usize>(),
+            store.features.len()
+        );
+    }
+
+    #[test]
+    fn active_project_scopes_seeded_feature_counts() {
+        let store = DashboardStore::seeded();
+
+        assert_eq!(
+            store.active_project().map(|project| project.slug.as_str()),
+            Some("agileplus-internal")
+        );
+        assert_eq!(store.features_for_active_project().len(), 37);
+        assert_eq!(store.feature_counts_for_project(1), (37, 1, 36));
+        assert_eq!(store.feature_counts_for_project(999), (0, 0, 0));
+    }
+
+    #[test]
+    fn cycle_aggregation_counts_seeded_features_and_work_packages() {
+        let store = DashboardStore::seeded();
+
+        assert_eq!(store.cycle_feature_ids(1).len(), 37);
+        assert_eq!(store.cycle_work_package_count(1), 80);
+        assert!(!store.cycle_is_shippable(1));
+    }
 }

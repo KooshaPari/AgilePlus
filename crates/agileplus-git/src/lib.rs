@@ -250,10 +250,10 @@ impl GitVcsAdapter {
             }
 
             if let Some(rest) = line.strip_prefix("CONFLICT (") {
-                if let Some((kind, description)) = rest.split_once("): ") {
-                    if let Some(path) = Self::conflict_diagnostic_path(description) {
-                        paths.insert(path.to_string(), kind.to_string());
-                    }
+                if let Some((kind, description)) = rest.split_once("): ")
+                    && let Some(path) = Self::conflict_diagnostic_path(description)
+                {
+                    paths.insert(path.to_string(), kind.to_string());
                 }
                 continue;
             }
