@@ -2,7 +2,16 @@
 
 from __future__ import annotations
 
-from typing import Any
+from collections.abc import Awaitable, Callable
+from typing import Any, Protocol, cast
+
+
+class _BacklogGrpcHost(Protocol):
+    """Host operations supplied by ``AgilePlusCoreClient``."""
+
+    def _require_integrations_stub(self) -> Any: ...
+
+    async def _call_with_retry(self, coro_factory: Callable[[], Awaitable[Any]]) -> Any: ...
 
 
 class AgilePlusBacklogGrpcMixin:
@@ -21,7 +30,8 @@ class AgilePlusBacklogGrpcMixin:
         """Create a backlog item via the integrations service."""
         from agileplus_proto.gen.agileplus.v1 import integrations_pb2  # type: ignore[import]
 
-        stub = self._require_integrations_stub()
+        host = cast(_BacklogGrpcHost, self)
+        stub = host._require_integrations_stub()
         request = integrations_pb2.CreateBacklogItemRequest(
             type=item_type,
             title=title,
@@ -31,7 +41,7 @@ class AgilePlusBacklogGrpcMixin:
             wp_id=wp_id,
             triaged_by=triaged_by,
         )
-        response = await self._call_with_retry(lambda: stub.CreateBacklogItem(request))
+        response = await host._call_with_retry(lambda: stub.CreateBacklogItem(request))
         return self._backlog_item_to_dict(response.item)
 
     async def list_backlog(
@@ -43,24 +53,26 @@ class AgilePlusBacklogGrpcMixin:
         """List backlog items via the integrations service."""
         from agileplus_proto.gen.agileplus.v1 import integrations_pb2  # type: ignore[import]
 
-        stub = self._require_integrations_stub()
+        host = cast(_BacklogGrpcHost, self)
+        stub = host._require_integrations_stub()
         request = integrations_pb2.ListBacklogRequest(
             type_filter=type_filter or "",
             state_filter=state_filter or "",
             feature_slug=feature_slug or "",
         )
-        response = await self._call_with_retry(lambda: stub.ListBacklog(request))
+        response = await host._call_with_retry(lambda: stub.ListBacklog(request))
         return [self._backlog_item_to_dict(item) for item in response.items]
 
     async def promote_backlog_item(self, backlog_item_id: int, target_type: str) -> dict[str, Any]:
         """Promote one triaged item using the canonical integrations RPC."""
         from agileplus_proto.gen.agileplus.v1 import integrations_pb2  # type: ignore[import]
 
-        stub = self._require_integrations_stub()
+        host = cast(_BacklogGrpcHost, self)
+        stub = host._require_integrations_stub()
         request = integrations_pb2.PromoteBacklogItemRequest(
             backlog_item_id=backlog_item_id, target_type=target_type
         )
-        response = await self._call_with_retry(lambda: stub.PromoteBacklogItem(request))
+        response = await host._call_with_retry(lambda: stub.PromoteBacklogItem(request))
         return {
             "success": response.success,
             "created_entity_id": response.created_entity_id,
