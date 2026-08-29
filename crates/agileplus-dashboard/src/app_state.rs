@@ -158,9 +158,9 @@ impl DashboardStore {
     }
 
     pub fn cycle_is_shippable(&self, cycle_id: i64) -> bool {
-        self.cycle_feature_ids(cycle_id)
-            .into_iter()
-            .all(|feature_id| {
+        let feature_ids = self.cycle_feature_ids(cycle_id);
+        !feature_ids.is_empty()
+            && feature_ids.into_iter().all(|feature_id| {
                 self.features
                     .iter()
                     .find(|feature| feature.id == feature_id)
@@ -172,6 +172,18 @@ impl DashboardStore {
                     })
                     .unwrap_or(false)
             })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::DashboardStore;
+
+    #[test]
+    fn cycle_without_feature_scope_is_not_shippable() {
+        let store = DashboardStore::seeded();
+
+        assert!(!store.cycle_is_shippable(999));
     }
 }
 
