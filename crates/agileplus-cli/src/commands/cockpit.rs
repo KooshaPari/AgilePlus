@@ -154,7 +154,7 @@ pub fn run(args: &CockpitArgs, global_repo: Option<&Path>) -> Result<()> {
             let report = evaluate(repo, &catalog_path, &cluster_filter)
                 .with_context(|| format!("scoring {}", repo.display()))?;
 
-            let log_path = output.clone().map(PathBuf::from).unwrap_or_else(|| {
+            let log_path = output.clone().unwrap_or_else(|| {
                 // SAFETY: default_log_path() only errors on home-dir failure;
                 // the cockpit subcommand runs after we've already exercised
                 // dirs via the rubric CLI, so this is essentially infallible.
@@ -237,11 +237,11 @@ fn iso8601_now() -> String {
 }
 
 fn append_ndjson(path: &Path, records: &[CockpitRecord]) -> Result<()> {
-    if let Some(parent) = path.parent() {
-        if !parent.exists() {
-            std::fs::create_dir_all(parent)
-                .with_context(|| format!("creating log directory {}", parent.display()))?;
-        }
+    if let Some(parent) = path.parent()
+        && !parent.exists()
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating log directory {}", parent.display()))?;
     }
     let f = OpenOptions::new()
         .create(true)

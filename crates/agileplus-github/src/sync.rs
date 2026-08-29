@@ -142,10 +142,10 @@ impl GitHubSyncAdapter {
         let body_hash = hash_content(&body);
 
         // Check if unchanged
-        if let Some(existing_hash) = state.content_hashes.get(&item_id) {
-            if *existing_hash == body_hash {
-                return Ok(SyncOutcome::Skipped);
-            }
+        if let Some(existing_hash) = state.content_hashes.get(&item_id)
+            && *existing_hash == body_hash
+        {
+            return Ok(SyncOutcome::Skipped);
         }
 
         let labels = vec![
@@ -162,17 +162,18 @@ impl GitHubSyncAdapter {
 
         let outcome = if let Some(&issue_number) = state.issue_mappings.get(&item_id) {
             // Conflict check: fetch remote and compare hashes
-            if let Ok(remote) = self.client.get_issue(issue_number).await {
-                if let Some(ref remote_body) = remote.body {
-                    let remote_hash = hash_content(remote_body);
-                    if let Some(our_hash) = state.content_hashes.get(&item_id) {
-                        if remote_hash != *our_hash && body_hash != remote_hash {
-                            return Ok(SyncOutcome::Conflict {
-                                issue_number,
-                                reason: "Remote issue body was modified externally".to_string(),
-                            });
-                        }
-                    }
+            if let Ok(remote) = self.client.get_issue(issue_number).await
+                && let Some(ref remote_body) = remote.body
+            {
+                let remote_hash = hash_content(remote_body);
+                if let Some(our_hash) = state.content_hashes.get(&item_id)
+                    && remote_hash != *our_hash
+                    && body_hash != remote_hash
+                {
+                    return Ok(SyncOutcome::Conflict {
+                        issue_number,
+                        reason: "Remote issue body was modified externally".to_string(),
+                    });
                 }
             }
 

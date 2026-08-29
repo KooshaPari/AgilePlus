@@ -525,10 +525,10 @@ pub fn validate_payload(payload: &WorklogPayload) -> Result<()> {
     if payload.agent_id.trim().is_empty() {
         bail!("agent_id must be a non-empty string");
     }
-    if let Some(ref sha) = payload.commit_sha {
-        if !is_valid_sha(sha) {
-            bail!("commit_sha '{sha}' is not a 7-40 char hex string and is not null");
-        }
+    if let Some(ref sha) = payload.commit_sha
+        && !is_valid_sha(sha)
+    {
+        bail!("commit_sha '{sha}' is not a 7-40 char hex string and is not null");
     }
     if !CANONICAL_VERIFICATION_STATUSES.contains(&payload.verification_result.status.as_str()) {
         bail!(
@@ -553,10 +553,10 @@ pub fn validate_payload(payload: &WorklogPayload) -> Result<()> {
             s = payload.started_at
         );
     }
-    if let Some(ref c) = payload.completed_at {
-        if !is_iso8601_like(c) {
-            bail!("completed_at '{c}' is not an ISO-8601-like string");
-        }
+    if let Some(ref c) = payload.completed_at
+        && !is_iso8601_like(c)
+    {
+        bail!("completed_at '{c}' is not an ISO-8601-like string");
     }
     // files_changed: unique, non-empty
     let mut seen = std::collections::HashSet::new();

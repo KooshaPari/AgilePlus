@@ -127,11 +127,12 @@ fn open_vcs(repo: &Option<PathBuf>) -> Result<GitVcsAdapter> {
 
 async fn run(cli: Cli) -> Result<()> {
     // Ensure DB directory exists for storage-backed commands
-    if let Some(parent) = cli.db.parent() {
-        if !parent.as_os_str().is_empty() && !parent.exists() {
-            std::fs::create_dir_all(parent)
-                .with_context(|| format!("creating directory {}", parent.display()))?;
-        }
+    if let Some(parent) = cli.db.parent()
+        && !parent.as_os_str().is_empty()
+        && !parent.exists()
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating directory {}", parent.display()))?;
     }
 
     match cli.command {

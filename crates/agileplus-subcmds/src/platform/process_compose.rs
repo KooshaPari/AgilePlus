@@ -12,12 +12,12 @@ pub(crate) fn find_process_compose() -> Option<PathBuf> {
 fn which_process_compose() -> Option<PathBuf> {
     // Try `which` / `where` via std
     let output = Command::new("which").arg("process-compose").output();
-    if let Ok(out) = output {
-        if out.status.success() {
-            let path_str = String::from_utf8_lossy(&out.stdout).trim().to_string();
-            if !path_str.is_empty() {
-                return Some(PathBuf::from(path_str));
-            }
+    if let Ok(out) = output
+        && out.status.success()
+    {
+        let path_str = String::from_utf8_lossy(&out.stdout).trim().to_string();
+        if !path_str.is_empty() {
+            return Some(PathBuf::from(path_str));
         }
     }
     // Fallback: check PATH entries manually
