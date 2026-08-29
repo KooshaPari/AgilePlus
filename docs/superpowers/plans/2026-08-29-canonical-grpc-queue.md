@@ -10,7 +10,7 @@
 
 **Goal:** Serve canonical queue CreateBacklogItem, ListBacklog, and PromoteBacklogItem RPCs from one buildable AgilePlus gRPC core.
 
-**Architecture:** rust/ remains the only agileplus-proto package and generates agileplus.v1 from proto/agileplus/v1/*.proto. The legacy gRPC server must use those generated types; it must not revive obsolete RPCs or fields. The first proof is a real tonic client plus in-memory SQLite storage, before any supervised process is added.
+**Architecture:** rust/ remains the only agileplus-proto package and generates agileplus.v1 from proto/agileplus/v1/\*.proto. The legacy gRPC server must use those generated types; it must not revive obsolete RPCs or fields. The first proof is a real tonic client plus in-memory SQLite storage, before any supervised process is added.
 
 **Tech Stack:** Rust, tonic 0.14, prost, Tokio, StoragePort, SqliteStorageAdapter, Python MCP.
 
@@ -18,27 +18,28 @@
 
 ## Fixed contract
 
-| Canonical input | Domain mapping |
-| --- | --- |
+| Canonical input                         | Domain mapping                                                     |
+| --------------------------------------- | ------------------------------------------------------------------ |
 | type, title, body, priority, triaged_by | Intent, BacklogItem::from_triage, optional BacklogPriority, source |
-| feature_id, wp_id | not persisted until a schema contract is approved |
-| type_filter, state_filter, feature_slug | BacklogFilters |
-| backlog_item_id, target_type | existing item lookup and promotion acknowledgement |
+| feature_id, wp_id                       | not persisted until a schema contract is approved                  |
+| type_filter, state_filter, feature_slug | BacklogFilters                                                     |
+| backlog_item_id, target_type            | existing item lookup and promotion acknowledgement                 |
 
 ### Task 1: Select one generated proto package
 
 **Files:**
+
 - Modify: Cargo.toml
 - Modify: crates/agileplus-grpc/Cargo.toml
-- Do not modify: crates/agileplus-proto/** or proto/agileplus/v1/integrations.proto
+- Do not modify: crates/agileplus-proto/\*\* or proto/agileplus/v1/integrations.proto
 
 - [ ] **Step 1: Verify the current red boundary**
 
 Run:
 
-~~~
+```
 cargo check --manifest-path crates/agileplus-grpc/Cargo.toml --locked
-~~~
+```
 
 Expected: it fails because the legacy server is outside the active workspace and uses the obsolete proto package.
 
@@ -46,15 +47,15 @@ Expected: it fails because the legacy server is outside the active workspace and
 
 Add crates/agileplus-grpc to root workspace members. In crates/agileplus-grpc/Cargo.toml replace:
 
-~~~
+```
 agileplus-proto = { path = "../agileplus-proto" }
-~~~
+```
 
 with:
 
-~~~
+```
 agileplus-proto = { path = "../../rust" }
-~~~
+```
 
 Update the root agileplus-proto workspace dependency to the same rust path. Do not add crates/agileplus-proto to workspace members because it duplicates the canonical package name.
 
@@ -62,15 +63,16 @@ Update the root agileplus-proto workspace dependency to the same rust path. Do n
 
 Run:
 
-~~~
+```
 cargo check -p agileplus-grpc --locked
-~~~
+```
 
 Expected: only removed request fields and obsolete generated RPC symbols fail in server/integrations.rs.
 
 ### Task 2: Implement the three canonical queue RPCs
 
 **Files:**
+
 - Modify: crates/agileplus-grpc/src/server/integrations.rs
 - Modify: crates/agileplus-grpc/src/conversions.rs
 - Create: crates/agileplus-grpc/tests/backlog_contract.rs
@@ -81,9 +83,9 @@ Use SqliteStorageAdapter::in_memory and a tonic IntegrationsServiceClient. Creat
 
 Run:
 
-~~~
+```
 cargo test -p agileplus-grpc --test backlog_contract canonical_queue_round_trip -- --nocapture
-~~~
+```
 
 Expected: FAIL because IntegrationsService is not implemented against canonical generated types.
 
@@ -95,7 +97,7 @@ Delete imports and handlers for GetBacklogItem, ImportBacklog, PopBacklog, and U
 
 Create a domain item with:
 
-~~~
+```
 let mut item = BacklogItem::from_triage(
     request.title,
     request.body,
@@ -105,7 +107,7 @@ let mut item = BacklogItem::from_triage(
 if !request.priority.is_empty() {
     item.priority = parse_priority(&request.priority)?;
 }
-~~~
+```
 
 Map domain intent, description, priority, status, source, and created_at into the canonical BacklogItem. Do not invent storage for feature_id or wp_id.
 
@@ -117,17 +119,18 @@ Implement IntegrationsService for AgilePlusCoreServer with exactly create_backlo
 
 Run:
 
-~~~
+```
 cargo test -p agileplus-grpc --test backlog_contract canonical_queue_round_trip -- --nocapture
 cargo test -p agileplus-grpc --locked
 cargo fmt --check
-~~~
+```
 
 Expected: PASS using generated client calls and real in-memory SQLite storage.
 
 ### Task 3: Add a supervised loopback process after contract green
 
 **Files:**
+
 - Create: crates/agileplus-grpc/src/bin/agileplus-grpc.rs
 - Modify: process-compose.yml
 - Test: python/tests/test_grpc_backlog_contract.py
@@ -144,9 +147,9 @@ Build SqliteStorageAdapter from the supplied database path, construct production
 
 Add one agileplus-grpc process with readiness:
 
-~~~
+```
 grpcurl -plaintext 127.0.0.1:<port> list agileplus.v1.IntegrationsService
-~~~
+```
 
 Do not change HTTP MCP transport or start MinIO in this task.
 
@@ -154,12 +157,12 @@ Do not change HTTP MCP transport or start MinIO in this task.
 
 Run:
 
-~~~
+```
 cargo check --workspace --locked
 cargo test -p agileplus-proto -p agileplus-grpc --locked
 uv run pytest -q python/tests/test_grpc_backlog_contract.py
 process-compose -p 8081 process list
-~~~
+```
 
 Expected: Python MCP queue operations reach the real canonical core.
 
