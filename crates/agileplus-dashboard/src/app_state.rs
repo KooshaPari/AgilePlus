@@ -175,18 +175,6 @@ impl DashboardStore {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::DashboardStore;
-
-    #[test]
-    fn cycle_without_feature_scope_is_not_shippable() {
-        let store = DashboardStore::seeded();
-
-        assert!(!store.cycle_is_shippable(999));
-    }
-}
-
 impl DashboardStore {
     /// Install the live governance client (after with_defaults())
     pub fn with_governance(mut self, client: agileplus_governance::GovernanceClient) -> Self {
@@ -272,4 +260,16 @@ pub fn default_health() -> Vec<ServiceHealth> {
             last_check: now,
         },
     ]
+}
+
+#[cfg(test)]
+mod tests {
+    use super::DashboardStore;
+
+    #[test]
+    fn cycle_without_feature_scope_is_not_shippable() {
+        let store = DashboardStore::seeded();
+
+        assert!(!store.cycle_is_shippable(999));
+    }
 }

@@ -64,7 +64,7 @@ pub(crate) fn list_backlog_items(
     }
 
     match filters.sort {
-        BacklogSort::Age => items.sort_by(|a, b| a.created_at.cmp(&b.created_at)),
+        BacklogSort::Age => items.sort_by_key(|a| a.created_at),
         BacklogSort::Priority | BacklogSort::Impact => items.sort_by(|a, b| {
             (priority_rank(a.priority), a.created_at)
                 .cmp(&(priority_rank(b.priority), b.created_at))
@@ -135,13 +135,12 @@ pub(crate) fn pop_next_backlog_item(
         })
         .cloned();
 
-    if let Some(item) = next.clone() {
-        if let Some(id) = item.id {
-            if let Some(existing) = backlog.iter_mut().find(|entry| entry.id == Some(id)) {
-                existing.status = BacklogStatus::Triaged;
-                existing.updated_at = chrono::Utc::now();
-            }
-        }
+    if let Some(item) = next.clone()
+        && let Some(id) = item.id
+        && let Some(existing) = backlog.iter_mut().find(|entry| entry.id == Some(id))
+    {
+        existing.status = BacklogStatus::Triaged;
+        existing.updated_at = chrono::Utc::now();
     }
 
     async move { Ok(next) }

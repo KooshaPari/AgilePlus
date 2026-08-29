@@ -89,8 +89,8 @@ mod tests {
 
         async fn update_feature(&self, feature: &Feature) -> Result<(), DomainError> {
             let mut store = self.store.write().await;
-            if store.contains_key(&feature.id) {
-                store.insert(feature.id, feature.clone());
+            if let std::collections::hash_map::Entry::Occupied(mut e) = store.entry(feature.id) {
+                e.insert(feature.clone());
                 Ok(())
             } else {
                 Err(DomainError::FeatureNotFound(feature.id.to_string()))

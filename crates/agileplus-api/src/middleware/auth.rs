@@ -26,15 +26,14 @@ const PUBLIC_PATHS: &[&str] = &["/health", "/info", "/webhooks"];
 
 /// Extract a candidate token from `Authorization: Bearer`, `X-API-Key`, or `?api_key=`.
 fn extract_token(headers: &HeaderMap, request: &Request) -> Result<String, ApiError> {
-    if let Some(auth) = headers.get("Authorization").and_then(|v| v.to_str().ok()) {
-        if let Some(token) = auth
+    if let Some(auth) = headers.get("Authorization").and_then(|v| v.to_str().ok())
+        && let Some(token) = auth
             .strip_prefix("Bearer ")
             .or_else(|| auth.strip_prefix("bearer "))
-        {
-            let token = token.trim();
-            if !token.is_empty() {
-                return Ok(token.to_string());
-            }
+    {
+        let token = token.trim();
+        if !token.is_empty() {
+            return Ok(token.to_string());
         }
     }
 
@@ -42,13 +41,13 @@ fn extract_token(headers: &HeaderMap, request: &Request) -> Result<String, ApiEr
         return Ok(header_val.to_string());
     }
 
-    if let Some(query) = request.uri().query() {
-        if let Some(v) = query.split('&').find_map(|pair| {
+    if let Some(query) = request.uri().query()
+        && let Some(v) = query.split('&').find_map(|pair| {
             let (k, v) = pair.split_once('=')?;
             (k == "api_key").then(|| v.to_string())
-        }) {
-            return Ok(v);
-        }
+        })
+    {
+        return Ok(v);
     }
 
     Err(ApiError::Unauthorized(

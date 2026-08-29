@@ -56,10 +56,10 @@ pub async fn ensure_api_key(
 ) -> Result<bool, Box<dyn std::error::Error + Send + Sync>> {
     // Check if a key already exists.
     let existing = creds.get("agileplus", keys::API_KEYS);
-    if let Ok(val) = existing {
-        if !val.trim().is_empty() {
-            return Ok(false);
-        }
+    if let Ok(val) = existing
+        && !val.trim().is_empty()
+    {
+        return Ok(false);
     }
 
     // Generate new key.

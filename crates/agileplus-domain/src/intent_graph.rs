@@ -762,6 +762,9 @@ impl IntentGraph {
     }
 }
 
+// Re-export builder types so that intent_graph.rs satisfies the "Builder module" requirement.
+pub use crate::builder::{EdgeBuilder, NodeBuilder};
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1140,6 +1143,3 @@ mod tests {
         );
     }
 }
-
-// Re-export builder types so that intent_graph.rs satisfies the "Builder module" requirement.
-pub use crate::builder::{EdgeBuilder, NodeBuilder};

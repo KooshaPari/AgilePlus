@@ -151,39 +151,37 @@ where
     let filtered: Vec<EventResponse> = events
         .into_iter()
         .filter(|e| {
-            if let Some(et) = &params.entity_type {
-                if &e.entity_type != et {
-                    return false;
-                }
+            if let Some(et) = &params.entity_type
+                && &e.entity_type != et
+            {
+                return false;
             }
-            if let Some(eid) = params.entity_id {
-                if e.entity_id != eid {
-                    return false;
-                }
+            if let Some(eid) = params.entity_id
+                && e.entity_id != eid
+            {
+                return false;
             }
-            if let Some(ev_type) = &params.event_type {
-                if &e.event_type != ev_type {
-                    return false;
-                }
+            if let Some(ev_type) = &params.event_type
+                && &e.event_type != ev_type
+            {
+                return false;
             }
-            if let Some(actor) = &params.actor {
-                if &e.actor != actor {
-                    return false;
-                }
+            if let Some(actor) = &params.actor
+                && &e.actor != actor
+            {
+                return false;
             }
-            if let Some(since) = since_dt {
-                if let Ok(ts) = e.timestamp.parse::<DateTime<Utc>>() {
-                    if ts < since {
-                        return false;
-                    }
-                }
+            if let Some(since) = since_dt
+                && let Ok(ts) = e.timestamp.parse::<DateTime<Utc>>()
+                && ts < since
+            {
+                return false;
             }
-            if let Some(until) = until_dt {
-                if let Ok(ts) = e.timestamp.parse::<DateTime<Utc>>() {
-                    if ts > until {
-                        return false;
-                    }
-                }
+            if let Some(until) = until_dt
+                && let Ok(ts) = e.timestamp.parse::<DateTime<Utc>>()
+                && ts > until
+            {
+                return false;
             }
             true
         })

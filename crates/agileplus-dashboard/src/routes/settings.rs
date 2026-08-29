@@ -564,6 +564,155 @@ fn persist_plane_settings(
     Ok(())
 }
 
+/// POST /api/settings/agents
+/// Persists agent configuration (pool_size, retry_budget, dispatch_mode, default_provider).
+pub async fn save_agent_settings(axum::Form(form): axum::Form<AgentSettingsForm>) -> Response {
+    let mut config = match Config::load() {
+        Ok(c) => c,
+        Err(error) => {
+            return render(ToastPartial {
+                message: format!("Failed to load settings safely: {error}"),
+                success: false,
+            });
+        }
+    };
+
+    config.agents = Some(AgentConfig {
+        pool_size: form.pool_size,
+        retry_budget: form.retry_budget,
+        dispatch_mode: form.dispatch_mode.trim().to_string(),
+        default_provider: form.default_provider.trim().to_string(),
+    });
+
+    match config.save() {
+        Ok(_) => render(ToastPartial {
+            message: "Agent settings saved successfully".to_string(),
+            success: true,
+        }),
+        Err(e) => render(ToastPartial {
+            message: format!("Failed to save settings: {e}"),
+            success: false,
+        }),
+    }
+}
+
+/// POST /api/settings/dashboard
+/// Persists dashboard UI configuration (theme, log_level, data_directory).
+pub async fn save_dashboard_settings(
+    axum::Form(form): axum::Form<DashboardSettingsForm>,
+) -> Response {
+    let mut config = match Config::load() {
+        Ok(c) => c,
+        Err(error) => {
+            return render(ToastPartial {
+                message: format!("Failed to load settings safely: {error}"),
+                success: false,
+            });
+        }
+    };
+
+    config.dashboard = Some(DashboardConfig {
+        theme: form.theme.trim().to_string(),
+        log_level: form.log_level.trim().to_string(),
+        data_directory: form.data_directory.trim().to_string(),
+    });
+
+    match config.save() {
+        Ok(_) => render(ToastPartial {
+            message: "Dashboard settings saved successfully".to_string(),
+            success: true,
+        }),
+        Err(e) => render(ToastPartial {
+            message: format!("Failed to save settings: {e}"),
+            success: false,
+        }),
+    }
+}
+
+/// POST /api/settings/services
+/// Persists custom service endpoint configuration.
+pub async fn save_services_settings(axum::Form(form): axum::Form<ServiceSettingsForm>) -> Response {
+    let mut config = match Config::load() {
+        Ok(c) => c,
+        Err(error) => {
+            return render(ToastPartial {
+                message: format!("Failed to load settings safely: {error}"),
+                success: false,
+            });
+        }
+    };
+
+    let mut services = Vec::new();
+    for (name, url) in form.names.into_iter().zip(form.endpoint_urls) {
+        if !name.trim().is_empty() {
+            services.push(ServiceConfig {
+                name: name.trim().to_string(),
+                endpoint_url: url.trim().to_string(),
+                enabled: default_service_enabled(),
+                timeout_ms: None,
+                max_retries: None,
+            });
+        }
+    }
+    config.services = Some(services);
+
+    match config.save() {
+        Ok(_) => render(ToastPartial {
+            message: "Service settings saved successfully".to_string(),
+            success: true,
+        }),
+        Err(e) => render(ToastPartial {
+            message: format!("Failed to save settings: {e}"),
+            success: false,
+        }),
+    }
+}
+
+// ── Connection Testing Handlers ────────────────────────────────────────────
+
+/// POST /api/settings/services/test
+/// Validates a single service endpoint (basic URL format check).
+pub async fn test_service_connection(
+    axum::Form(form): axum::Form<SingleServiceTestForm>,
+) -> Response {
+    let is_valid = !form.endpoint_url.trim().is_empty() && form.endpoint_url.starts_with("http");
+
+    if is_valid {
+        render(ToastPartial {
+            message: format!("Connection to {} successful (mock)", form.name),
+            success: true,
+        })
+    } else {
+        render(ToastPartial {
+            message: format!("Invalid endpoint for {}: {}", form.name, form.endpoint_url),
+            success: false,
+        })
+    }
+}
+
+/// POST /api/settings/plane/test
+/// Validates plane connection (checks required fields and URL format).
+pub async fn test_plane_connection(axum::Form(form): axum::Form<PlaneSettingsForm>) -> Response {
+    // Simple validation: check that required fields are filled and api_url looks like a URL
+    let is_valid = !form.api_url.trim().is_empty()
+        && !form.api_key.trim().is_empty()
+        && !form.workspace_slug.trim().is_empty()
+        && form.api_url.starts_with("http");
+
+    if is_valid {
+        // In a real implementation, you would make an HTTP request to verify connectivity
+        render(ToastPartial {
+            message: "Plane connection test passed (mock)".to_string(),
+            success: true,
+        })
+    } else {
+        render(ToastPartial {
+            message: "Plane settings are incomplete or invalid".to_string(),
+            success: false,
+        })
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -748,154 +897,5 @@ mod tests {
         assert_eq!(store.get("agileplus", PLANESO_KEY).unwrap(), "old-secret");
         assert_eq!(std::fs::read_to_string(&parent_file).unwrap(), "sentinel");
         std::fs::remove_dir_all(root).unwrap();
-    }
-}
-
-/// POST /api/settings/agents
-/// Persists agent configuration (pool_size, retry_budget, dispatch_mode, default_provider).
-pub async fn save_agent_settings(axum::Form(form): axum::Form<AgentSettingsForm>) -> Response {
-    let mut config = match Config::load() {
-        Ok(c) => c,
-        Err(error) => {
-            return render(ToastPartial {
-                message: format!("Failed to load settings safely: {error}"),
-                success: false,
-            });
-        }
-    };
-
-    config.agents = Some(AgentConfig {
-        pool_size: form.pool_size,
-        retry_budget: form.retry_budget,
-        dispatch_mode: form.dispatch_mode.trim().to_string(),
-        default_provider: form.default_provider.trim().to_string(),
-    });
-
-    match config.save() {
-        Ok(_) => render(ToastPartial {
-            message: "Agent settings saved successfully".to_string(),
-            success: true,
-        }),
-        Err(e) => render(ToastPartial {
-            message: format!("Failed to save settings: {e}"),
-            success: false,
-        }),
-    }
-}
-
-/// POST /api/settings/dashboard
-/// Persists dashboard UI configuration (theme, log_level, data_directory).
-pub async fn save_dashboard_settings(
-    axum::Form(form): axum::Form<DashboardSettingsForm>,
-) -> Response {
-    let mut config = match Config::load() {
-        Ok(c) => c,
-        Err(error) => {
-            return render(ToastPartial {
-                message: format!("Failed to load settings safely: {error}"),
-                success: false,
-            });
-        }
-    };
-
-    config.dashboard = Some(DashboardConfig {
-        theme: form.theme.trim().to_string(),
-        log_level: form.log_level.trim().to_string(),
-        data_directory: form.data_directory.trim().to_string(),
-    });
-
-    match config.save() {
-        Ok(_) => render(ToastPartial {
-            message: "Dashboard settings saved successfully".to_string(),
-            success: true,
-        }),
-        Err(e) => render(ToastPartial {
-            message: format!("Failed to save settings: {e}"),
-            success: false,
-        }),
-    }
-}
-
-/// POST /api/settings/services
-/// Persists custom service endpoint configuration.
-pub async fn save_services_settings(axum::Form(form): axum::Form<ServiceSettingsForm>) -> Response {
-    let mut config = match Config::load() {
-        Ok(c) => c,
-        Err(error) => {
-            return render(ToastPartial {
-                message: format!("Failed to load settings safely: {error}"),
-                success: false,
-            });
-        }
-    };
-
-    let mut services = Vec::new();
-    for (name, url) in form.names.into_iter().zip(form.endpoint_urls) {
-        if !name.trim().is_empty() {
-            services.push(ServiceConfig {
-                name: name.trim().to_string(),
-                endpoint_url: url.trim().to_string(),
-                enabled: default_service_enabled(),
-                timeout_ms: None,
-                max_retries: None,
-            });
-        }
-    }
-    config.services = Some(services);
-
-    match config.save() {
-        Ok(_) => render(ToastPartial {
-            message: "Service settings saved successfully".to_string(),
-            success: true,
-        }),
-        Err(e) => render(ToastPartial {
-            message: format!("Failed to save settings: {e}"),
-            success: false,
-        }),
-    }
-}
-
-// ── Connection Testing Handlers ────────────────────────────────────────────
-
-/// POST /api/settings/services/test
-/// Validates a single service endpoint (basic URL format check).
-pub async fn test_service_connection(
-    axum::Form(form): axum::Form<SingleServiceTestForm>,
-) -> Response {
-    let is_valid = !form.endpoint_url.trim().is_empty() && form.endpoint_url.starts_with("http");
-
-    if is_valid {
-        render(ToastPartial {
-            message: format!("Connection to {} successful (mock)", form.name),
-            success: true,
-        })
-    } else {
-        render(ToastPartial {
-            message: format!("Invalid endpoint for {}: {}", form.name, form.endpoint_url),
-            success: false,
-        })
-    }
-}
-
-/// POST /api/settings/plane/test
-/// Validates plane connection (checks required fields and URL format).
-pub async fn test_plane_connection(axum::Form(form): axum::Form<PlaneSettingsForm>) -> Response {
-    // Simple validation: check that required fields are filled and api_url looks like a URL
-    let is_valid = !form.api_url.trim().is_empty()
-        && !form.api_key.trim().is_empty()
-        && !form.workspace_slug.trim().is_empty()
-        && form.api_url.starts_with("http");
-
-    if is_valid {
-        // In a real implementation, you would make an HTTP request to verify connectivity
-        render(ToastPartial {
-            message: "Plane connection test passed (mock)".to_string(),
-            success: true,
-        })
-    } else {
-        render(ToastPartial {
-            message: "Plane settings are incomplete or invalid".to_string(),
-            success: false,
-        })
     }
 }

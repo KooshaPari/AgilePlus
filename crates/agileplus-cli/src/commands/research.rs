@@ -90,11 +90,11 @@ where
 
             // Governance checks before transition
             let constitution = load_constitution(vcs).await;
-            if let Some(ref c) = constitution {
-                if let Ok(spec) = vcs.read_artifact(slug, "spec.md").await {
-                    let violations = validate_spec_consistency(&spec, c);
-                    enforce_governance(&violations)?;
-                }
+            if let Some(ref c) = constitution
+                && let Ok(spec) = vcs.read_artifact(slug, "spec.md").await
+            {
+                let violations = validate_spec_consistency(&spec, c);
+                enforce_governance(&violations)?;
             }
 
             research_post_specify(feature, slug, storage, vcs).await?;

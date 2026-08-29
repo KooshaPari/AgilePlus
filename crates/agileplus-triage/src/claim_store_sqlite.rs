@@ -226,10 +226,11 @@ impl ClaimStoreTrait for SqliteClaimStore {
     ) -> Option<Claim> {
         // Honour the in-memory semantics: if there is already an
         // Active claim for (kind, resource) by a *different* id, refuse.
-        if let Some(existing) = self.lookup(kind, resource) {
-            if existing.id != id && existing.state == ClaimState::Active {
-                return None;
-            }
+        if let Some(existing) = self.lookup(kind, resource)
+            && existing.id != id
+            && existing.state == ClaimState::Active
+        {
+            return None;
         }
         let now = Utc::now();
         let c = Claim {

@@ -111,7 +111,7 @@ fn memory_profile_work_package_operations() {
             WorkPackage::new(
                 i as i64 % 100,
                 &format!("WP-{i}"),
-                i as i32,
+                i,
                 "User can perform the specified operation successfully",
             )
         })
