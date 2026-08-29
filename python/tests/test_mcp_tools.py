@@ -8,6 +8,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from fastmcp import FastMCP
 
+from agileplus_mcp import server
 from agileplus_mcp.tools import features, governance, queue, status
 
 
@@ -113,3 +114,85 @@ async def test_queue_tools_use_the_canonical_create_list_and_promote_contract() 
     client.list_backlog.assert_awaited_once_with(
         type_filter="task", state_filter="triaged", feature_slug=None
     )
+
+
+@pytest.mark.asyncio
+async def test_canonical_compatibility_tools_round_trip_to_the_grpc_client() -> None:
+    mcp = FastMCP("compatibility-tools")
+    client = _client()
+    client.list_features = AsyncMock(
+        return_value=[
+            {"slug": "feature-one", "state": "planned"},
+            {"slug": "feature-two", "state": "planned"},
+            {"slug": "feature-three"},
+        ]
+    )
+    client.list_work_packages = AsyncMock(return_value=[{"sequence": 1, "state": "doing"}])
+    client.get_audit_trail = AsyncMock(
+        return_value=[{"id": 1, "timestamp": "2026-08-29T01:00:00Z"}]
+    )
+    server.register_compatibility_tools(mcp, client)
+
+    assert (await (await _tool(mcp, "health_check"))())["grpc_core"] == "ok"
+    assert len(await (await _tool(mcp, "list_features"))("planned")) == 3
+    assert (await (await _tool(mcp, "get_feature"))("feature-one"))["slug"] == "feature-one"
+    assert await (await _tool(mcp, "get_work_packages"))("feature-one") == [
+        {"sequence": 1, "state": "doing"}
+    ]
+    assert (await (await _tool(mcp, "get_work_package"))("feature-one", "WP01"))["sequence"] == 1
+    assert (await (await _tool(mcp, "get_tasks"))("feature-one"))["error"] == "not_implemented"
+    assert (await (await _tool(mcp, "get_metrics"))())["capability"] == "metrics"
+    assert (await (await _tool(mcp, "get_governance_rules"))())["capability"] == (
+        "governance_rules"
+    )
+    assert (await (await _tool(mcp, "check_governance"))("feature-one"))["passed"]
+    assert await (await _tool(mcp, "get_audit_trail"))("feature-one", 1) == [
+        {"id": 1, "timestamp": "2026-08-29T01:00:00Z"}
+    ]
+    assert (await (await _tool(mcp, "verify_audit_chain"))("feature-one"))["valid"]
+    dashboard = await (await _tool(mcp, "get_dashboard"))()
+    assert dashboard["feature_counts"] == {"planned": 2, "unknown": 1}
+    assert len(dashboard["active_work_packages"]) == 3
+    assert len(dashboard["recent_audit_entries"]) == 3
+
+
+@pytest.mark.asyncio
+async def test_canonical_health_reports_grpc_failures() -> None:
+    mcp = FastMCP("unhealthy-compatibility-tools")
+    client = _client()
+    client.list_features = AsyncMock(side_effect=RuntimeError("core offline"))
+    server.register_compatibility_tools(mcp, client)
+
+    health = await (await _tool(mcp, "health_check"))()
+
+    assert health["status"] == "unhealthy"
+    assert health["grpc_core"] == "unreachable"
+    assert health["error"] == "core offline"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("wp_id", ["1", "WP", "WP0", "wp01", "WP-1"])
+async def test_canonical_get_work_package_rejects_invalid_ids(wp_id: str) -> None:
+    mcp = FastMCP("invalid-work-package-id")
+    client = _client()
+    server.register_compatibility_tools(mcp, client)
+
+    with pytest.raises(ValueError, match="wp_id"):
+        await (await _tool(mcp, "get_work_package"))("feature-one", wp_id)
+
+    client.get_work_package_status.assert_not_awaited()
+
+
+def test_http_transport_requires_loopback(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("AGILEPLUS_MCP_HOST", "0.0.0.0")  # noqa: S104 - rejection fixture
+    with pytest.raises(ValueError, match="loopback"):
+        server._transport_kwargs("http")
+
+    monkeypatch.setenv("AGILEPLUS_MCP_HOST", "127.0.0.1")
+    monkeypatch.setenv("AGILEPLUS_MCP_PORT", "9876")
+    assert server._transport_kwargs("http") == {
+        "host": "127.0.0.1",
+        "port": 9876,
+        "path": "/mcp",
+    }
+    assert server._transport_kwargs("stdio") == {}

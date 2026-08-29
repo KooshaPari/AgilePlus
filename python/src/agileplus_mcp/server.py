@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import logging
 import os
+from ipaddress import ip_address
 from typing import Any
 
 from fastmcp import FastMCP
@@ -276,6 +277,97 @@ async def sample_retrospective(feature_slug: str) -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 
+def register_compatibility_tools(app: FastMCP, client: AgilePlusCoreClient) -> None:
+    """Register the canonical Codex-facing AgilePlus tool names."""
+
+    @app.tool(name="health_check")
+    async def health_check() -> dict[str, str]:
+        try:
+            await client.list_features()
+        except Exception as exc:
+            return {
+                "status": "unhealthy",
+                "mcp_server": "ok",
+                "grpc_core": "unreachable",
+                "version": "0.1.0",
+                "error": str(exc),
+            }
+        return {"status": "healthy", "mcp_server": "ok", "grpc_core": "ok", "version": "0.1.0"}
+
+    @app.tool(name="list_features")
+    async def list_features(state: str | None = None) -> list[dict[str, Any]]:
+        return await client.list_features(state)
+
+    @app.tool(name="get_feature")
+    async def get_feature(slug: str) -> dict[str, Any]:
+        return await client.get_feature(slug)
+
+    @app.tool(name="get_work_packages")
+    async def get_work_packages(feature_slug: str) -> list[dict[str, Any]]:
+        return await client.list_work_packages(feature_slug)
+
+    @app.tool(name="get_work_package")
+    async def get_work_package(feature_slug: str, wp_id: str) -> dict[str, Any]:
+        if not wp_id.startswith("WP") or not wp_id[2:].isdigit():
+            raise ValueError("wp_id must use the canonical WP<positive integer> form")
+        sequence = int(wp_id[2:])
+        if sequence < 1:
+            raise ValueError("wp_id sequence must be positive")
+        return await client.get_work_package_status(feature_slug, sequence)
+
+    @app.tool(name="get_tasks")
+    async def get_tasks(feature_slug: str, wp_id: str | None = None) -> dict[str, str]:
+        del feature_slug, wp_id
+        return {"error": "not_implemented", "capability": "tasks"}
+
+    @app.tool(name="get_metrics")
+    async def get_metrics(feature_slug: str | None = None) -> dict[str, str]:
+        del feature_slug
+        return {"error": "not_implemented", "capability": "metrics"}
+
+    @app.tool(name="get_governance_rules")
+    async def get_governance_rules(feature_slug: str | None = None) -> dict[str, str]:
+        del feature_slug
+        return {"error": "not_implemented", "capability": "governance_rules"}
+
+    @app.tool(name="check_governance")
+    async def check_governance(feature_slug: str) -> dict[str, Any]:
+        return await client.check_governance_gate(feature_slug, "")
+
+    @app.tool(name="get_audit_trail")
+    async def get_audit_trail(feature_slug: str, limit: int = 50) -> list[dict[str, Any]]:
+        return (await client.get_audit_trail(feature_slug))[:limit]
+
+    @app.tool(name="verify_audit_chain")
+    async def verify_audit_chain(feature_slug: str) -> dict[str, Any]:
+        return await client.verify_audit_chain(feature_slug)
+
+    @app.tool(name="get_dashboard")
+    async def get_dashboard() -> dict[str, Any]:
+        features = await client.list_features()
+        counts: dict[str, int] = {}
+        active_work_packages: list[dict[str, Any]] = []
+        recent_audit_entries: list[dict[str, Any]] = []
+        for feature in features:
+            state = str(feature.get("state", "unknown"))
+            counts[state] = counts.get(state, 0) + 1
+            slug = str(feature.get("slug", ""))
+            work_packages = await client.list_work_packages(slug)
+            active_work_packages.extend(
+                work_package
+                for work_package in work_packages
+                if str(work_package.get("state", "")).lower() in {"doing", "in_progress", "blocked"}
+            )
+            recent_audit_entries.extend(await client.get_audit_trail(slug))
+        recent_audit_entries.sort(key=lambda entry: str(entry.get("timestamp", "")), reverse=True)
+        return {
+            "feature_counts": counts,
+            "active_work_packages": active_work_packages,
+            "recent_audit_entries": recent_audit_entries[:10],
+            "health": "healthy",
+        }
+
+
 async def startup(grpc_address: str = GRPC_ADDRESS) -> None:
     """Initialise the gRPC client and register all tools."""
     global _client, _sampling
@@ -293,52 +385,11 @@ async def startup(grpc_address: str = GRPC_ADDRESS) -> None:
     _client = client
     _sampling = SamplingHandler(client)
 
-    # Register domain tool modules
     features_module.register_tools(mcp, client)
     governance_module.register_tools(mcp, client)
     queue_module.register_tools(mcp, client)
     status_module.register_tools(mcp, client)
-
-    @mcp.tool(name="health_check")
-    async def health_check() -> dict[str, str]:
-        try:
-            await client.list_features()
-        except Exception as exc:
-            return {"status": "unhealthy", "mcp_server": "ok", "grpc_core": "unreachable", "version": "0.1.0", "error": str(exc)}
-        return {"status": "healthy", "mcp_server": "ok", "grpc_core": "ok", "version": "0.1.0"}
-
-    @mcp.tool(name="list_features")
-    async def list_features(state: str | None = None) -> list[dict[str, Any]]:
-        return await client.list_features(state)
-
-    @mcp.tool(name="get_feature")
-    async def get_feature(slug: str) -> dict[str, Any]:
-        return await client.get_feature(slug)
-
-    @mcp.tool(name="get_work_packages")
-    async def get_work_packages(feature_slug: str) -> list[dict[str, Any]]:
-        return await client.list_work_packages(feature_slug)
-
-    @mcp.tool(name="check_governance")
-    async def check_governance(feature_slug: str) -> dict[str, Any]:
-        return await client.check_governance_gate(feature_slug, "")
-
-    @mcp.tool(name="get_audit_trail")
-    async def get_audit_trail(feature_slug: str, limit: int = 50) -> list[dict[str, Any]]:
-        return (await client.get_audit_trail(feature_slug))[:limit]
-
-    @mcp.tool(name="verify_audit_chain")
-    async def verify_audit_chain(feature_slug: str) -> dict[str, Any]:
-        return await client.verify_audit_chain(feature_slug)
-
-    @mcp.tool(name="get_dashboard")
-    async def get_dashboard() -> dict[str, Any]:
-        features = await client.list_features()
-        counts: dict[str, int] = {}
-        for feature in features:
-            state = str(feature.get("state", "unknown"))
-            counts[state] = counts.get(state, 0) + 1
-        return {"feature_counts": counts, "active_work_packages": [], "recent_audit_entries": [], "health": "healthy"}
+    register_compatibility_tools(mcp, client)
 
     logger.info("AgilePlus MCP server ready (gRPC: %s)", grpc_address)
 
@@ -359,18 +410,32 @@ def main() -> None:
 
     async def _run() -> None:
         await startup()
-        transport = os.environ.get("AGILEPLUS_MCP_TRANSPORT", "stdio")
-        kwargs: dict[str, Any] = {}
-        if transport == "http":
-            kwargs = {
-                "host": os.environ.get("AGILEPLUS_MCP_HOST", "127.0.0.1"),
-                "port": int(os.environ.get("AGILEPLUS_MCP_PORT", "8765")),
-                "path": os.environ.get("AGILEPLUS_MCP_PATH", "/mcp"),
-            }
-        await mcp.run_async(transport=transport, show_banner=False, **kwargs)
-        await shutdown()
+        try:
+            transport = os.environ.get("AGILEPLUS_MCP_TRANSPORT", "stdio")
+            kwargs = _transport_kwargs(transport)
+            await mcp.run_async(transport=transport, show_banner=False, **kwargs)
+        finally:
+            await shutdown()
 
     asyncio.run(_run())
+
+
+def _transport_kwargs(transport: str) -> dict[str, Any]:
+    if transport != "http":
+        return {}
+    host = os.environ.get("AGILEPLUS_MCP_HOST", "127.0.0.1")
+    if host != "localhost":
+        try:
+            is_loopback = ip_address(host).is_loopback
+        except ValueError:
+            is_loopback = False
+        if not is_loopback:
+            raise ValueError("plaintext AgilePlus MCP must bind to a loopback address")
+    return {
+        "host": host,
+        "port": int(os.environ.get("AGILEPLUS_MCP_PORT", "8765")),
+        "path": os.environ.get("AGILEPLUS_MCP_PATH", "/mcp"),
+    }
 
 
 if __name__ == "__main__":
