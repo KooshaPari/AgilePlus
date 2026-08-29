@@ -5,5 +5,6 @@
 pub mod conversions;
 pub mod event_bus;
 pub mod proxy;
+pub mod runtime;
 pub mod server;
 pub mod streaming;

@@ -299,6 +299,47 @@ async def startup(grpc_address: str = GRPC_ADDRESS) -> None:
     queue_module.register_tools(mcp, client)
     status_module.register_tools(mcp, client)
 
+    @mcp.tool(name="health_check")
+    async def health_check() -> dict[str, str]:
+        try:
+            await client.list_features()
+        except Exception as exc:
+            return {"status": "unhealthy", "mcp_server": "ok", "grpc_core": "unreachable", "version": "0.1.0", "error": str(exc)}
+        return {"status": "healthy", "mcp_server": "ok", "grpc_core": "ok", "version": "0.1.0"}
+
+    @mcp.tool(name="list_features")
+    async def list_features(state: str | None = None) -> list[dict[str, Any]]:
+        return await client.list_features(state)
+
+    @mcp.tool(name="get_feature")
+    async def get_feature(slug: str) -> dict[str, Any]:
+        return await client.get_feature(slug)
+
+    @mcp.tool(name="get_work_packages")
+    async def get_work_packages(feature_slug: str) -> list[dict[str, Any]]:
+        return await client.list_work_packages(feature_slug)
+
+    @mcp.tool(name="check_governance")
+    async def check_governance(feature_slug: str) -> dict[str, Any]:
+        return await client.check_governance_gate(feature_slug, "")
+
+    @mcp.tool(name="get_audit_trail")
+    async def get_audit_trail(feature_slug: str, limit: int = 50) -> list[dict[str, Any]]:
+        return (await client.get_audit_trail(feature_slug))[:limit]
+
+    @mcp.tool(name="verify_audit_chain")
+    async def verify_audit_chain(feature_slug: str) -> dict[str, Any]:
+        return await client.verify_audit_chain(feature_slug)
+
+    @mcp.tool(name="get_dashboard")
+    async def get_dashboard() -> dict[str, Any]:
+        features = await client.list_features()
+        counts: dict[str, int] = {}
+        for feature in features:
+            state = str(feature.get("state", "unknown"))
+            counts[state] = counts.get(state, 0) + 1
+        return {"feature_counts": counts, "active_work_packages": [], "recent_audit_entries": [], "health": "healthy"}
+
     logger.info("AgilePlus MCP server ready (gRPC: %s)", grpc_address)
 
 
@@ -318,7 +359,15 @@ def main() -> None:
 
     async def _run() -> None:
         await startup()
-        await mcp.run_async()
+        transport = os.environ.get("AGILEPLUS_MCP_TRANSPORT", "stdio")
+        kwargs: dict[str, Any] = {}
+        if transport == "http":
+            kwargs = {
+                "host": os.environ.get("AGILEPLUS_MCP_HOST", "127.0.0.1"),
+                "port": int(os.environ.get("AGILEPLUS_MCP_PORT", "8765")),
+                "path": os.environ.get("AGILEPLUS_MCP_PATH", "/mcp"),
+            }
+        await mcp.run_async(transport=transport, show_banner=False, **kwargs)
         await shutdown()
 
     asyncio.run(_run())
