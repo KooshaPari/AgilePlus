@@ -8,6 +8,8 @@ rust-version.workspace = true
 [dependencies]
 agileplus-domain = { version = "0.2.1", path = "../agileplus-domain" }
 agileplus-proto = { version = "0.2.1", path = "../../rust" }
+agileplus-git = { version = "0.2.1", path = "../agileplus-git" }
+agileplus-sqlite = { version = "0.2.1", path = "../agileplus-sqlite" }
 tonic = { workspace = true }
 prost.workspace = true
 tokio.workspace = true
@@ -17,6 +19,7 @@ tracing.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 chrono.workspace = true
+tracing-subscriber.workspace = true
 
 [build-dependencies]
 tonic-prost-build = { workspace = true }
