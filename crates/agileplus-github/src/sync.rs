@@ -7,7 +7,7 @@
 
 use std::collections::HashMap;
 
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, anyhow};
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -17,6 +17,7 @@ use crate::client::{GitHubClient, GitHubIssuePayload};
 use crate::map::{GhIssue, GhPullRequest, issue_to_story, pr_to_story};
 use agileplus_domain::domain::backlog::BacklogItem;
 use agileplus_domain::domain::story::Story;
+use agileplus_domain::error::DomainError;
 
 #[async_trait]
 pub trait GhDataSource: Send + Sync {
@@ -69,18 +70,30 @@ pub async fn sync_repository(
     for issue in source.list_issues().await? {
         match issue_to_story(&issue, epic_id, project_id) {
             Ok(story) => report.stories.push(story),
-            Err(error) => report
+            Err(DomainError::Validation(message)) => report
                 .skipped
-                .push((issue.number.try_into().unwrap(), error.to_string())),
+                .push((issue.number.try_into().unwrap(), message)),
+            Err(error) => {
+                return Err(anyhow!(
+                    "unexpected error mapping issue #{}: {error}",
+                    issue.number
+                ));
+            }
         }
     }
 
     for pr in source.list_prs().await? {
         match pr_to_story(&pr, epic_id, project_id) {
             Ok(story) => report.stories.push(story),
-            Err(error) => report
+            Err(DomainError::Validation(message)) => report
                 .skipped
-                .push((pr.number.try_into().unwrap(), error.to_string())),
+                .push((pr.number.try_into().unwrap(), message)),
+            Err(error) => {
+                return Err(anyhow!(
+                    "unexpected error mapping PR #{}: {error}",
+                    pr.number
+                ));
+            }
         }
     }
 
