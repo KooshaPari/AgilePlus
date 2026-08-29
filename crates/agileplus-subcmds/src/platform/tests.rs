@@ -471,3 +471,20 @@ fn test_find_process_compose_returns_path_in_test_cfg() {
     let result = process_compose::find_process_compose();
     assert!(result.is_some());
 }
+
+#[test]
+fn find_process_compose_honors_explicit_test_binary_override() {
+    let _guard = environment_lock().lock().expect("lock environment");
+    let temporary = tempfile::tempdir().expect("temporary binary directory");
+    let override_path = temporary.path().join("process-compose-test-double");
+    let prior_binary = std::env::var_os("AGILEPLUS_PROCESS_COMPOSE_BIN");
+    set_environment("AGILEPLUS_PROCESS_COMPOSE_BIN", &override_path);
+
+    let resolved = process_compose::find_process_compose();
+
+    match prior_binary {
+        Some(value) => set_environment("AGILEPLUS_PROCESS_COMPOSE_BIN", value),
+        None => remove_environment("AGILEPLUS_PROCESS_COMPOSE_BIN"),
+    }
+    assert_eq!(resolved.as_deref(), Some(override_path.as_path()));
+}
