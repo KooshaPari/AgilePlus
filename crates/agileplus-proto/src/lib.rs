@@ -40,9 +40,11 @@ mod tests {
             state: "InProgress".to_string(),
             next_command: "continue".to_string(),
             blockers: vec!["blocker1".to_string()],
-            governance: Some(GovernanceSummary {
-                gate_passed: true,
-                violations_count: 0,
+            governance: Some(GovernanceStatus {
+                all_gates_passed: true,
+                total_rules: 0,
+                passed_rules: 0,
+                outstanding: Vec::new(),
             }),
         };
         assert_eq!(state.state, "InProgress");
@@ -132,27 +134,24 @@ mod tests {
 
         #[test]
         fn test_backlog_item_roundtrip() {
-            let item = BacklogItemProto {
+            let item = BacklogItem {
                 id: 100,
-                title: "Backlog Item".to_string(),
-                description: "Description here".to_string(),
                 r#type: "Story".to_string(),
+                title: "Backlog Item".to_string(),
+                body: "Description here".to_string(),
                 priority: "High".to_string(),
-                status: "Open".to_string(),
-                source: "github".to_string(),
-                feature_slug: "feature-x".to_string(),
-                tags: vec!["tag1".to_string(), "tag2".to_string()],
+                state: "Open".to_string(),
+                external_ref: "github:100".to_string(),
                 created_at: "2024-01-01T00:00:00Z".to_string(),
-                updated_at: "2024-01-01T00:00:00Z".to_string(),
             };
 
             let mut buf = Vec::new();
             item.encode(&mut buf).expect("encoding should succeed");
-            let decoded = BacklogItemProto::decode(&buf[..]).expect("decoding should succeed");
+            let decoded = BacklogItem::decode(&buf[..]).expect("decoding should succeed");
 
             assert_eq!(item, decoded);
             assert_eq!(decoded.id, 100);
-            assert_eq!(decoded.tags.len(), 2);
+            assert_eq!(decoded.external_ref, "github:100");
         }
 
         #[test]
