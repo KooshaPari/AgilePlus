@@ -98,7 +98,7 @@ jobs:
           # switches tests to its isolated instrumentation target.
           cargo build --locked -p agileplus-cli --bin agileplus
           cargo llvm-cov --workspace --all-features --lcov --output-path .coverage/rust-lcov.info
-          cargo llvm-cov report --summary --fail-under-lines 85
+          cargo llvm-cov report --fail-under-lines 85
 
       - name: Upload coverage artifact
         uses: actions/upload-artifact@v4
