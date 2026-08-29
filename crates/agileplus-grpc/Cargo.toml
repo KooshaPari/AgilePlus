@@ -6,10 +6,10 @@ license.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-agileplus-domain = { path = "../agileplus-domain" }
-agileplus-git = { path = "../agileplus-git" }
-agileplus-proto = { path = "../agileplus-proto" }
-agileplus-sqlite = { path = "../agileplus-sqlite" }
+agileplus-domain = { version = "0.2.1", path = "../agileplus-domain" }
+agileplus-git = { version = "0.2.1", path = "../agileplus-git" }
+agileplus-proto = { version = "0.2.1", path = "../agileplus-proto" }
+agileplus-sqlite = { version = "0.2.1", path = "../agileplus-sqlite" }
 tonic = { workspace = true }
 prost.workspace = true
 tokio.workspace = true
