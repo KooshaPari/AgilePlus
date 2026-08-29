@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import os
+from pathlib import Path
 
 import pytest
 
 SKIP_REASON = "AGILEPLUS_GRPC_URL not set; skipped outside Docker Compose environment"
+INTEGRATION_TEST_DIR = Path(__file__).parent
 
 
 def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
@@ -16,7 +18,8 @@ def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
 
     skip_marker = pytest.mark.skip(reason=SKIP_REASON)
     for item in items:
-        item.add_marker(skip_marker)
+        if item.path.is_relative_to(INTEGRATION_TEST_DIR):
+            item.add_marker(skip_marker)
 
 
 @pytest.fixture
