@@ -83,11 +83,4 @@ mod tests {
             .with_base_url("https://staging.example.com");
         assert_eq!(b.name(), "codebert");
     }
-
-    #[test]
-    fn codebert_feature_gate_compiles() {
-        // If the `codebert` feature is off, this module still compiles
-        // but the struct is unavailable.  We just verify the module exists.
-        assert!(true);
-    }
 }

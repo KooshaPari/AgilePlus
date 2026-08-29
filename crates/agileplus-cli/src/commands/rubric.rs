@@ -134,11 +134,7 @@ pub fn run(args: &RubricArgs) -> Result<()> {
             let total_points: u32 = report.clusters.iter().map(|c| c.total_points).sum();
             let max_points: u32 = report.clusters.iter().map(|c| c.max_points).sum();
             let pillars: usize = report.clusters.iter().map(|c| c.pillars.len()).sum();
-            let pct: u32 = if max_points == 0 {
-                0
-            } else {
-                (total_points * 100) / max_points
-            };
+            let pct = percentage(total_points, max_points);
             let grade = grade_for_pct(pct);
             println!(
                 "scored {} clusters across {} pillars (total {}/{}, grade {})",
@@ -198,6 +194,13 @@ fn grade_for_pct(pct: u32) -> &'static str {
     }
 }
 
+fn percentage(points: u32, maximum: u32) -> u32 {
+    if maximum == 0 {
+        return 0;
+    }
+    u32::try_from(u64::from(points) * 100 / u64::from(maximum)).unwrap_or(u32::MAX)
+}
+
 // ── Tests ────────────────────────────────────────────────────────────────────
 
 #[cfg(test)]
@@ -213,6 +216,14 @@ mod tests {
         assert_eq!(grade_for_pct(60), "C");
         assert_eq!(grade_for_pct(40), "D");
         assert_eq!(grade_for_pct(0), "F");
+    }
+
+    #[test]
+    fn percentage_handles_zero_and_large_values() {
+        assert_eq!(percentage(50, 100), 50);
+        assert_eq!(percentage(1, 0), 0);
+        assert_eq!(percentage(u32::MAX, u32::MAX), 100);
+        assert_eq!(percentage(u32::MAX, 1), u32::MAX);
     }
 
     #[test]

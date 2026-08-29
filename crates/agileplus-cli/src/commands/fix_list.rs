@@ -189,9 +189,7 @@ fn parse_effort(gap: &str) -> (String, char) {
     let lower = gap.to_ascii_lowercase();
     let needle = "effort:";
     if let Some(idx) = lower.rfind(needle) {
-        let head = gap[..idx]
-            .trim_end_matches(|c: char| c == '—' || c == '-' || c == ' ')
-            .trim();
+        let head = gap[..idx].trim_end_matches(['—', '-', ' ']).trim();
         let tail = &gap[idx + needle.len()..];
         let ch = tail
             .trim()

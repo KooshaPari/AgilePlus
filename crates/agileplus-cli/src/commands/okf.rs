@@ -339,7 +339,7 @@ fn summarize_cmd(path: &Path, top: usize) -> Result<i32> {
     // longest entity labels (per spec, operators often ask: "what's the
     // longest acceptance signal / constraint in this bundle?")
     let mut longest: Vec<&OkfEntity> = doc.entities.iter().collect();
-    longest.sort_by(|a, b| b.label.len().cmp(&a.label.len()));
+    longest.sort_by_key(|entity| std::cmp::Reverse(entity.label.len()));
     let top = top.min(longest.len());
     if top > 0 {
         println!("\ntop {top} longest entity labels:");
