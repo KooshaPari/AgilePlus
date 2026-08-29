@@ -300,7 +300,9 @@ where
         let mut violations = Vec::new();
         let feature_slug = req.feature_slug;
         for rule in &relevant_rules {
-            let satisfied = evidence.iter().any(|candidate| candidate.fr_id == feature_slug);
+            let satisfied = evidence
+                .iter()
+                .any(|candidate| candidate.fr_id == feature_slug);
             if !satisfied {
                 violations.push(ProtoGateViolation {
                     fr_id: feature_slug.clone(),
