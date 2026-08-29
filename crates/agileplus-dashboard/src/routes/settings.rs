@@ -547,7 +547,10 @@ fn persist_plane_settings(
         Err(error) => return Err(Box::new(error)),
     };
     config.migrate_legacy_plane_key(credentials)?;
-    credentials.set("agileplus", PLANESO_KEY, form.api_key.trim())?;
+    if let Err(error) = credentials.set("agileplus", PLANESO_KEY, form.api_key.trim()) {
+        restore_credential(credentials, previous_credential.as_deref())?;
+        return Err(Box::new(error));
+    }
 
     config.plane = Some(PlaneConfig {
         api_url: form.api_url.trim().to_string(),
@@ -717,7 +720,8 @@ pub async fn test_plane_connection(axum::Form(form): axum::Form<PlaneSettingsFor
 mod tests {
     use super::*;
     use agileplus_domain::credentials::CredentialError;
-    use std::sync::atomic::{AtomicU64, Ordering};
+    use std::sync::Mutex;
+    use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 
     fn temporary_config_path() -> std::path::PathBuf {
         static SEQUENCE: AtomicU64 = AtomicU64::new(0);
@@ -759,6 +763,34 @@ mod tests {
 
         fn list_keys(&self, _service: &str) -> Result<Vec<String>, CredentialError> {
             Err(CredentialError::BackendError("unavailable".to_string()))
+        }
+    }
+
+    struct FailOnSecondSetStore {
+        value: Mutex<String>,
+        set_calls: AtomicUsize,
+    }
+
+    impl CredentialStore for FailOnSecondSetStore {
+        fn get(&self, _service: &str, _key: &str) -> Result<String, CredentialError> {
+            Ok(self.value.lock().unwrap().clone())
+        }
+
+        fn set(&self, _service: &str, _key: &str, value: &str) -> Result<(), CredentialError> {
+            if self.set_calls.fetch_add(1, Ordering::SeqCst) == 1 {
+                Err(CredentialError::BackendError("write rejected".to_string()))
+            } else {
+                *self.value.lock().unwrap() = value.to_string();
+                Ok(())
+            }
+        }
+
+        fn delete(&self, _service: &str, _key: &str) -> Result<(), CredentialError> {
+            Err(CredentialError::BackendError("delete rejected".to_string()))
+        }
+
+        fn list_keys(&self, _service: &str) -> Result<Vec<String>, CredentialError> {
+            Ok(vec![PLANESO_KEY.to_string()])
         }
     }
 
@@ -897,5 +929,25 @@ mod tests {
         assert_eq!(store.get("agileplus", PLANESO_KEY).unwrap(), "old-secret");
         assert_eq!(std::fs::read_to_string(&parent_file).unwrap(), "sentinel");
         std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn failed_new_plane_credential_write_restores_pre_migration_credential() {
+        let config_path = temporary_config_path();
+        write_legacy_fixture(&config_path);
+        let store = FailOnSecondSetStore {
+            value: Mutex::new("old-secret".to_string()),
+            set_calls: AtomicUsize::new(0),
+        };
+        let form = PlaneSettingsForm {
+            api_url: "https://plane.example".into(),
+            api_key: "new-secret".into(),
+            workspace_slug: "workspace".into(),
+            project_slug: "project".into(),
+        };
+
+        assert!(persist_plane_settings(&form, &config_path, &store).is_err());
+        assert_eq!(store.get("agileplus", PLANESO_KEY).unwrap(), "old-secret");
+        std::fs::remove_dir_all(config_path.ancestors().nth(2).unwrap()).unwrap();
     }
 }

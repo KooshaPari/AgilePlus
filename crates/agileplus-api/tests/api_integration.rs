@@ -135,6 +135,42 @@ async fn get_audit_trail() {
 }
 
 #[tokio::test]
+async fn list_events_filters_audit_events_by_actor() {
+    let server = setup_test_server().await;
+    let resp = server
+        .get("/api/v1/events?entity_type=feature&actor=agent&limit=1")
+        .add_header("X-API-Key", TEST_API_KEY)
+        .await;
+    resp.assert_status_ok();
+
+    let body: serde_json::Value = resp.json();
+    let events = body.as_array().expect("event response should be an array");
+    assert_eq!(events.len(), 1);
+    assert_eq!(events[0]["id"], 2);
+    assert_eq!(events[0]["entity_type"], "feature");
+    assert_eq!(events[0]["actor"], "agent");
+    assert_eq!(events[0]["event_type"], "specified");
+}
+
+#[tokio::test]
+async fn list_events_rejects_an_invalid_since_filter() {
+    let server = setup_test_server().await;
+    let resp = server
+        .get("/api/v1/events?since=not-a-timestamp")
+        .add_header("X-API-Key", TEST_API_KEY)
+        .await;
+    resp.assert_status(StatusCode::BAD_REQUEST);
+
+    let body: serde_json::Value = resp.json();
+    assert!(
+        body["error"]
+            .as_str()
+            .expect("error response should include a message")
+            .contains("invalid since")
+    );
+}
+
+#[tokio::test]
 async fn verify_audit_chain_valid() {
     let server = setup_test_server().await;
     let resp = server

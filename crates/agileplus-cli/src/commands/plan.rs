@@ -399,6 +399,17 @@ fn reconcile_work_packages(
     expected: Vec<WorkPackage>,
     existing: Vec<WorkPackage>,
 ) -> Result<Vec<WorkPackage>> {
+    let expected_sequences: std::collections::BTreeSet<i32> =
+        expected.iter().map(|wp| wp.sequence).collect();
+    for existing_wp in &existing {
+        if !expected_sequences.contains(&existing_wp.sequence) {
+            anyhow::bail!(
+                "existing work package for sequence {} is absent from generated plan; explicit replan required",
+                existing_wp.sequence
+            );
+        }
+    }
+
     let mut reconciled = Vec::with_capacity(expected.len());
     for generated in expected {
         let matches: Vec<&WorkPackage> = existing
@@ -625,6 +636,17 @@ mod tests {
         let err =
             reconcile_work_packages(vec![expected.clone()], vec![duplicate, expected]).unwrap_err();
         assert!(err.to_string().contains("multiple existing work packages"));
+    }
+
+    #[test]
+    fn reconcile_rejects_persisted_sequences_absent_from_generated_plan() {
+        let expected = WorkPackage::new(7, "Build API (WP01)", 1, "- FR-001 -- API");
+        let stale = WorkPackage::new(7, "Retired UI (WP02)", 2, "- FR-002 -- UI");
+
+        let err = reconcile_work_packages(vec![expected], vec![stale]).unwrap_err();
+
+        assert!(err.to_string().contains("sequence 2"));
+        assert!(err.to_string().contains("explicit replan required"));
     }
 
     #[test]
