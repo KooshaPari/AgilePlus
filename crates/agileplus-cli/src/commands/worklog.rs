@@ -491,7 +491,7 @@ fn find_worklogs(dir: &Path, canonical_only: bool) -> Result<Vec<PathBuf>> {
         let name_str = name.to_string_lossy();
         let is_worklog = name_str.starts_with("worklog-") && name_str.ends_with(".json");
         let is_canonical = name_str.contains("-canonical.json");
-        if is_worklog && (canonical_only == is_canonical || (!canonical_only && is_canonical)) {
+        if is_worklog && canonical_only == is_canonical {
             out.push(entry.path());
         }
     }
@@ -1101,6 +1101,21 @@ mod tests {
         assert_eq!(report.validation_errors.len(), 1);
 
         let _ = std::fs::remove_file(&db);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn find_worklogs_separates_raw_and_canonical_files() {
+        let dir = tempdir_root("agileplus-worklog-file-selection");
+        std::fs::create_dir_all(&dir).unwrap();
+        let raw = dir.join("worklog-L2-39.json");
+        let canonical = dir.join("worklog-L2-39-canonical.json");
+        std::fs::write(&raw, "{}").unwrap();
+        std::fs::write(&canonical, "{}").unwrap();
+
+        assert_eq!(find_worklogs(&dir, false).unwrap(), vec![raw]);
+        assert_eq!(find_worklogs(&dir, true).unwrap(), vec![canonical]);
+
         let _ = std::fs::remove_dir_all(&dir);
     }
 
