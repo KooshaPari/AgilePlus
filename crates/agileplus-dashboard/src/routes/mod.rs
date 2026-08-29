@@ -326,6 +326,43 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn project_activation_clears_the_filter_and_rejects_unknown_projects() {
+        let state = Arc::new(RwLock::new(DashboardStore::seeded()));
+
+        let unknown_response = router(state.clone())
+            .oneshot(
+                axum::http::Request::builder()
+                    .method("POST")
+                    .uri("/api/dashboard/projects/999/activate")
+                    .body(axum::body::Body::empty())
+                    .expect("unknown-project request"),
+            )
+            .await
+            .expect("unknown-project response");
+        assert_eq!(unknown_response.status(), axum::http::StatusCode::NOT_FOUND);
+        assert_eq!(state.read().await.active_project_id, Some(1));
+
+        let clear_response = router(state.clone())
+            .oneshot(
+                axum::http::Request::builder()
+                    .method("POST")
+                    .uri("/api/dashboard/projects/0/activate")
+                    .body(axum::body::Body::empty())
+                    .expect("clear-project request"),
+            )
+            .await
+            .expect("clear-project response");
+        assert_eq!(clear_response.status(), axum::http::StatusCode::OK);
+        assert!(
+            axum::body::to_bytes(clear_response.into_body(), usize::MAX)
+                .await
+                .expect("kanban response body")
+                .starts_with(b"<")
+        );
+        assert_eq!(state.read().await.active_project_id, None);
+    }
+
+    #[tokio::test]
     async fn toggle_service_updates_store_and_responds() {
         let state = make_state();
         let app = router(state.clone());
