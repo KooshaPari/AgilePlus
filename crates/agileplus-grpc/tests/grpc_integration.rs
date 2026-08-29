@@ -137,7 +137,7 @@ async fn proxy_router_stub_mode() {
     let result = router
         .dispatch_agent_command("implement", "test-feat", &Default::default())
         .await;
-    assert!(result.is_success());
+    assert!(!result.is_success());
     assert!(result.message().contains("stub"));
 }
 
@@ -153,5 +153,5 @@ async fn proxy_router_unreachable_address_falls_back_to_stub() {
     let result = router
         .dispatch_agent_command("implement", "feat-x", &Default::default())
         .await;
-    assert!(result.is_success()); // Stubs always succeed
+    assert!(!result.is_success());
 }

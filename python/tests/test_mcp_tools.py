@@ -146,6 +146,16 @@ async def test_canonical_compatibility_tools_round_trip_to_the_grpc_client() -> 
         "governance_rules"
     )
     assert (await (await _tool(mcp, "check_governance"))("feature-one"))["passed"]
+    assert (
+        await (await _tool(mcp, "check_governance"))(
+            "feature-one", transition="planned->implementing"
+        )
+    )["passed"]
+    assert client.check_governance_gate.await_args_list[-2].args == ("feature-one", "")
+    assert client.check_governance_gate.await_args_list[-1].args == (
+        "feature-one",
+        "planned->implementing",
+    )
     assert await (await _tool(mcp, "get_audit_trail"))("feature-one", 1) == [
         {"id": 1, "timestamp": "2026-08-29T01:00:00Z"}
     ]
@@ -196,3 +206,41 @@ def test_http_transport_requires_loopback(monkeypatch: pytest.MonkeyPatch) -> No
         "path": "/mcp",
     }
     assert server._transport_kwargs("stdio") == {}
+
+
+@pytest.mark.asyncio
+async def test_canonical_governance_rejects_ambiguous_transition() -> None:
+    mcp = FastMCP("governance-transition-validation")
+    client = _client()
+    server.register_compatibility_tools(mcp, client)
+
+    with pytest.raises(ValueError, match="from->to"):
+        await (await _tool(mcp, "check_governance"))("feature-one", transition="implementing")
+
+    client.check_governance_gate.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_repeated_startup_replaces_client_used_by_registered_tools(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    app = FastMCP("repeated-startup")
+    first = _client()
+    second = _client()
+    clients = iter((first, second))
+
+    monkeypatch.setattr(server, "mcp", app)
+    monkeypatch.setattr(server, "AgilePlusCoreClient", lambda _address: next(clients))
+    first.connect = AsyncMock()
+    first.close = AsyncMock()
+    second.connect = AsyncMock()
+    second.close = AsyncMock()
+
+    await server.startup("127.0.0.1:50051")
+    await server.startup("127.0.0.1:50051")
+    await (await _tool(app, "get_feature"))("feature-one")
+
+    first.close.assert_awaited_once()
+    first.get_feature.assert_not_awaited()
+    second.get_feature.assert_awaited_once_with("feature-one")
+    await server.shutdown()
