@@ -26,9 +26,7 @@ def _client() -> MagicMock:
     client.verify_audit_chain = AsyncMock(return_value={"valid": True})
     client.create_backlog_item = AsyncMock(return_value={"id": 2, "title": "Queue item"})
     client.list_backlog = AsyncMock(return_value=[{"id": 2}])
-    client.get_backlog_item = AsyncMock(return_value={"id": 2})
-    client.pop_backlog_items = AsyncMock(return_value=[{"id": 2}])
-    client.import_backlog_items = AsyncMock(return_value=[{"id": 2}])
+    client.promote_backlog_item = AsyncMock(return_value={"success": True, "message": "promoted"})
 
     async def events(_: str) -> AsyncIterator[dict[str, str]]:
         yield {"event_type": "updated"}
@@ -90,27 +88,28 @@ async def test_status_tools_cover_feature_work_package_and_streaming_paths() -> 
 
 
 @pytest.mark.asyncio
-async def test_queue_tools_cover_success_empty_and_not_found_paths() -> None:
+async def test_queue_tools_use_the_canonical_create_list_and_promote_contract() -> None:
     mcp = FastMCP("queue-tools")
     client = _client()
     queue.register_tools(mcp, client)
 
     added = await (await _tool(mcp, "agileplus_queue_add"))(
-        "Queue item", feature_slug="feature-one", tags=["coverage"]
+        "Queue item", body="Canonical body", feature_id="feature-one", wp_id="WP14"
     )
     assert added["item"]["id"] == 2
-    assert (await (await _tool(mcp, "agileplus_queue_list"))(item_type="task", limit=1))[
+    assert (await (await _tool(mcp, "agileplus_queue_list"))(item_type="task", state="triaged"))[
         "items"
     ] == [{"id": 2}]
-    assert (await (await _tool(mcp, "agileplus_queue_show"))(2))["status"] == "success"
-    client.get_backlog_item.return_value = None
-    assert (await (await _tool(mcp, "agileplus_queue_show"))(99))["status"] == "not_found"
-    assert (await (await _tool(mcp, "agileplus_queue_pop"))(count=1))["status"] == "success"
-    client.pop_backlog_items.return_value = []
-    assert (await (await _tool(mcp, "agileplus_queue_pop"))())["status"] == "empty"
-    assert (await (await _tool(mcp, "agileplus_queue_import"))([{"title": "Imported"}]))[
-        "status"
-    ] == "success"
-    import_tool = await _tool(mcp, "agileplus_queue_import")
-    with pytest.raises(ValueError, match="requires a title"):
-        await import_tool([{}])
+    assert (await (await _tool(mcp, "agileplus_queue_promote"))(2, "feature"))["success"]
+    client.create_backlog_item.assert_awaited_once_with(
+        item_type="task",
+        title="Queue item",
+        body="Canonical body",
+        priority="",
+        feature_id="feature-one",
+        wp_id="WP14",
+        triaged_by="mcp",
+    )
+    client.list_backlog.assert_awaited_once_with(
+        type_filter="task", state_filter="triaged", feature_slug=None
+    )
