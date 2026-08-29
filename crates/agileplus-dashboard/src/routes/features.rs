@@ -544,15 +544,19 @@ pub async fn feature_transition(
     };
 
     let feature_name = {
-        let store = state.read().await;
-        match store.features.iter().find(|f| f.id == id) {
-            Some(f) => f.slug.clone(),
+        let mut store = state.write().await;
+        match store.features.iter_mut().find(|f| f.id == id) {
+            Some(feature) => {
+                if let Err(error) = feature.transition(new_state) {
+                    return (StatusCode::BAD_REQUEST, error).into_response();
+                }
+                feature.slug.clone()
+            }
             None => return (StatusCode::NOT_FOUND, "Feature not found").into_response(),
         }
     };
 
     // Broadcast the update so SSE clients refresh
-    // (In a real app, persist the state change here)
     tracing::info!(
         "Feature {} transitioned to {:?} (SSE broadcast triggers UI refresh)",
         feature_name,
@@ -563,4 +567,41 @@ pub async fn feature_transition(
     let store = state.read().await;
     let cards = build_kanban_cards(&store, DashboardFilter::All);
     render(KanbanPartial { cards })
+}
+
+#[cfg(test)]
+mod tests {
+    use std::sync::Arc;
+
+    use agileplus_domain::domain::state_machine::FeatureState;
+    use axum::{
+        Form,
+        extract::{Path, State},
+    };
+    use tokio::sync::RwLock;
+
+    use super::{FeatureTransitionForm, feature_transition};
+    use crate::app_state::DashboardStore;
+
+    #[tokio::test]
+    async fn feature_transition_persists_an_allowed_lifecycle_step() {
+        let state = Arc::new(RwLock::new(DashboardStore::seeded()));
+
+        let _response = feature_transition(
+            State(state.clone()),
+            Path(4),
+            Form(FeatureTransitionForm {
+                new_state: "validated".to_string(),
+            }),
+        )
+        .await;
+
+        let store = state.read().await;
+        let feature = store
+            .features
+            .iter()
+            .find(|feature| feature.id == 4)
+            .expect("seeded feature 4");
+        assert_eq!(feature.state, FeatureState::Validated);
+    }
 }
