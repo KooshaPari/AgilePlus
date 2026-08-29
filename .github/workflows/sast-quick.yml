@@ -79,4 +79,4 @@ jobs:
         with:
           tool: cargo-deny
       - name: Check Rust licenses
-        run: cargo deny check -c rust/deny.toml licenses
+        run: cargo deny check --config rust/deny.toml licenses
