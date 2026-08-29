@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 from ipaddress import ip_address
 from typing import Any
 
@@ -40,6 +41,8 @@ GRPC_ADDRESS = os.environ.get("AGILEPLUS_GRPC_ADDRESS", "localhost:50051")
 mcp: FastMCP = FastMCP("AgilePlus")
 _client: AgilePlusCoreClient | None = None
 _sampling: SamplingHandler | None = None
+_registered_app: FastMCP | None = None
+_runtime_tool_names: set[str] = set()
 
 
 def _get_client() -> AgilePlusCoreClient:
@@ -331,8 +334,19 @@ def register_compatibility_tools(app: FastMCP, client: AgilePlusCoreClient) -> N
         return {"error": "not_implemented", "capability": "governance_rules"}
 
     @app.tool(name="check_governance")
-    async def check_governance(feature_slug: str) -> dict[str, Any]:
-        return await client.check_governance_gate(feature_slug, "")
+    async def check_governance(feature_slug: str, transition: str | None = None) -> dict[str, Any]:
+        """Check governance rules for one transition.
+
+        When ``transition`` is omitted, the core evaluates only rules that
+        apply globally (rules whose transition is empty). An explicit value
+        must use the canonical ``from->to`` form.
+        """
+        if (
+            transition is not None
+            and re.fullmatch(r"[a-z][a-z0-9_-]*->[a-z][a-z0-9_-]*", transition) is None
+        ):
+            raise ValueError("transition must use the canonical from->to form")
+        return await client.check_governance_gate(feature_slug, transition or "")
 
     @app.tool(name="get_audit_trail")
     async def get_audit_trail(feature_slug: str, limit: int = 50) -> list[dict[str, Any]]:
@@ -370,7 +384,18 @@ def register_compatibility_tools(app: FastMCP, client: AgilePlusCoreClient) -> N
 
 async def startup(grpc_address: str = GRPC_ADDRESS) -> None:
     """Initialise the gRPC client and register all tools."""
-    global _client, _sampling
+    global _client, _registered_app, _runtime_tool_names, _sampling
+
+    if _client is not None:
+        await _client.close()
+
+    if _registered_app is mcp:
+        for tool_name in _runtime_tool_names:
+            mcp.local_provider.remove_tool(tool_name)
+    else:
+        _runtime_tool_names = set()
+
+    existing_tool_names = {tool.name for tool in await mcp.list_tools()}
 
     client = AgilePlusCoreClient(grpc_address)
     try:
@@ -390,16 +415,21 @@ async def startup(grpc_address: str = GRPC_ADDRESS) -> None:
     queue_module.register_tools(mcp, client)
     status_module.register_tools(mcp, client)
     register_compatibility_tools(mcp, client)
+    _runtime_tool_names = {
+        tool.name for tool in await mcp.list_tools() if tool.name not in existing_tool_names
+    }
+    _registered_app = mcp
 
     logger.info("AgilePlus MCP server ready (gRPC: %s)", grpc_address)
 
 
 async def shutdown() -> None:
     """Close the gRPC connection."""
-    global _client
+    global _client, _sampling
     if _client is not None:
         await _client.close()
         _client = None
+    _sampling = None
 
 
 def main() -> None:

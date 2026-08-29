@@ -1,5 +1,5 @@
 //! gRPC proxy/router — forwards agent and integration requests to downstream
-//! services when available, and falls back to stubs otherwise.
+//! services when available, and reports explicit unavailability otherwise.
 //!
 //! Traceability: WP14-T080b
 
@@ -82,7 +82,7 @@ impl ProxyRouter {
     /// Dispatch an agent-related command.
     ///
     /// If `agileplus-agents` is reachable, the request is forwarded; otherwise
-    /// a stub response is returned indicating the service is unavailable.
+    /// an unsuccessful response is returned indicating the service is unavailable.
     pub async fn dispatch_agent_command(
         &self,
         command: &str,
@@ -147,7 +147,10 @@ impl ProxyResult {
     pub fn is_success(&self) -> bool {
         match self {
             ProxyResult::Forwarded { success, .. } => *success,
-            ProxyResult::Stub { .. } => true, // Stubs succeed for development purposes
+            // A stub proves only that no downstream service handled the request.  It
+            // must never acknowledge a mutating command (notably `implement`) as
+            // successful.
+            ProxyResult::Stub { .. } => false,
         }
     }
 
@@ -171,12 +174,12 @@ mod tests {
     use super::*;
 
     #[tokio::test]
-    async fn proxy_stub_mode_succeeds() {
+    async fn proxy_stub_mode_rejects_mutating_command() {
         let router = ProxyRouter::new(None, None).await;
         let result = router
             .dispatch_agent_command("implement", "feat-a", &Default::default())
             .await;
-        assert!(result.is_success());
+        assert!(!result.is_success());
         assert!(result.message().contains("stub"));
     }
 

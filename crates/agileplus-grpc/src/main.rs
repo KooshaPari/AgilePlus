@@ -108,10 +108,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     agileplus_grpc::server::start_server(
         config.bind,
         storage,
-        vcs,
-        Arc::new(UnavailableAgent),
-        Arc::new(UnavailableReview),
-        Arc::new(LogOnlyObservability),
         Arc::new(EventBus::new(256)),
         proxy,
     )
