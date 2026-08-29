@@ -17,9 +17,10 @@ pub fn run_platform_logs(args: PlatformLogsArgs) -> Result<()> {
     })?;
 
     // Validate repo / compose file exists (same project as `platform up`).
-    let (_workdir, _compose) = resolve_platform_compose(&args.config)?;
+    let (workdir, _compose) = resolve_platform_compose(&args.config)?;
 
     let mut cmd = Command::new(&pc);
+    cmd.current_dir(workdir);
     cmd.args(["process", "logs"]);
     if let Some(ref svc) = args.service {
         cmd.arg(svc);

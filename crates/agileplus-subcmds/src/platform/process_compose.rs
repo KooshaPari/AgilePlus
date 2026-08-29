@@ -34,6 +34,9 @@ fn which_process_compose() -> Option<PathBuf> {
 
 #[cfg(test)]
 fn which_process_compose() -> Option<PathBuf> {
+    if let Some(path) = std::env::var_os("AGILEPLUS_PROCESS_COMPOSE_BIN") {
+        return Some(PathBuf::from(path));
+    }
     // In tests, pretend process-compose is available so we can exercise code paths.
     Some(PathBuf::from("/usr/local/bin/process-compose"))
 }
