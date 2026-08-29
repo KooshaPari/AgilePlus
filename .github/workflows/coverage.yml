@@ -92,6 +92,10 @@ jobs:
       - name: Workspace coverage
         run: |
           set -euo pipefail
+          # The external round-trip crate invokes the CLI as a process. Build
+          # that executable in the default target directory before llvm-cov
+          # switches tests to its isolated instrumentation target.
+          cargo build --locked -p agileplus-cli --bin agileplus
           cargo llvm-cov --workspace --all-features --lcov --output-path .coverage/rust-lcov.info
           cargo llvm-cov report --summary --fail-under-lines 85
 
