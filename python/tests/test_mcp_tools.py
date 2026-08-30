@@ -200,6 +200,30 @@ async def test_dashboard_counts_malformed_features_without_empty_slug_rpcs() -> 
 
 
 @pytest.mark.asyncio
+async def test_dashboard_orders_offset_timestamps_by_instant() -> None:
+    mcp = FastMCP("dashboard-offset-timestamps")
+    client = _client()
+    client.list_features = AsyncMock(
+        return_value=[
+            {"slug": "feature-one", "state": "planned"},
+            {"slug": "feature-two", "state": "planned"},
+        ]
+    )
+    client.list_work_packages = AsyncMock(return_value=[])
+    client.get_audit_trail = AsyncMock(
+        side_effect=lambda slug, **_kwargs: {
+            "feature-one": [{"id": 1, "timestamp": "2026-01-01T00:00:00+00:00"}],
+            "feature-two": [{"id": 2, "timestamp": "2025-12-31T23:30:00-01:00"}],
+        }[slug]
+    )
+    server.register_compatibility_tools(mcp, client)
+
+    dashboard = await (await _tool(mcp, "get_dashboard"))()
+
+    assert [entry["id"] for entry in dashboard["recent_audit_entries"]] == [2, 1]
+
+
+@pytest.mark.asyncio
 async def test_canonical_health_reports_grpc_failures() -> None:
     mcp = FastMCP("unhealthy-compatibility-tools")
     client = _client()

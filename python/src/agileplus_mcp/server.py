@@ -17,6 +17,7 @@ from __future__ import annotations
 import logging
 import os
 import socket
+from datetime import UTC, datetime
 from ipaddress import ip_address
 from typing import Any
 
@@ -42,6 +43,22 @@ mcp: FastMCP = FastMCP("AgilePlus")
 _client: AgilePlusCoreClient | None = None
 _sampling: SamplingHandler | None = None
 _runtime_tool_names_by_app: dict[int, set[str]] = {}
+
+
+def _audit_timestamp_key(entry: dict[str, Any]) -> datetime:
+    """Return a UTC instant for ordering audit entries without trusting string order."""
+    timestamp = entry.get("timestamp")
+    if isinstance(timestamp, str):
+        try:
+            parsed = datetime.fromisoformat(
+                f"{timestamp[:-1]}+00:00" if timestamp.endswith("Z") else timestamp
+            )
+            if parsed.tzinfo is not None:
+                return parsed.astimezone(UTC)
+        except ValueError:
+            pass
+    logger.warning("Audit entry has an invalid timestamp for dashboard ordering: %r", timestamp)
+    return datetime.min.replace(tzinfo=UTC)
 
 
 def _get_client() -> AgilePlusCoreClient:
@@ -396,7 +413,7 @@ def register_compatibility_tools(app: FastMCP, client: AgilePlusCoreClient) -> N
                 if str(work_package.get("state", "")).lower() in {"doing", "in_progress", "blocked"}
             )
             recent_audit_entries.extend(await client.get_audit_trail(slug, limit=10))
-        recent_audit_entries.sort(key=lambda entry: str(entry.get("timestamp", "")), reverse=True)
+        recent_audit_entries.sort(key=_audit_timestamp_key, reverse=True)
         return {
             "feature_counts": counts,
             "active_work_packages": active_work_packages,
