@@ -13,7 +13,7 @@ use tracing::info;
 
 use agileplus_domain::domain::audit::AuditChain;
 use agileplus_domain::domain::state_machine::FeatureState;
-use agileplus_domain::ports::{AgentPort, ObservabilityPort, ReviewPort, StoragePort, VcsPort};
+use agileplus_domain::ports::{ContentStoragePort, StoragePort};
 use agileplus_proto::agileplus::v1::{
     CheckGovernanceGateRequest, CheckGovernanceGateResponse, CommandResponse,
     DispatchCommandRequest, DispatchCommandResponse, GateViolation as ProtoGateViolation,
@@ -28,6 +28,8 @@ use agileplus_proto::agileplus::v1::{
 use crate::conversions::{audit_entry_to_proto, feature_to_proto, wp_to_proto};
 use crate::event_bus::EventBus;
 use crate::proxy::ProxyRouter;
+
+pub mod integrations;
 
 /// Map domain errors to gRPC Status codes consistently.
 pub fn domain_error_to_status(e: agileplus_domain::error::DomainError) -> Status {
@@ -44,51 +46,36 @@ pub fn domain_error_to_status(e: agileplus_domain::error::DomainError) -> Status
 }
 
 /// gRPC server struct holding references to all port implementations.
-pub struct AgilePlusCoreServer<S, V, A, R, O>
+pub struct AgilePlusCoreServer<S>
 where
     S: StoragePort + 'static,
-    V: VcsPort + 'static,
-    A: AgentPort + 'static,
-    R: ReviewPort + 'static,
-    O: ObservabilityPort + 'static,
 {
     storage: Arc<S>,
-    #[allow(dead_code)] // reserved - injected for future downstream service calls
-    vcs: Arc<V>,
-    #[allow(dead_code)] // reserved - injected for future downstream service calls
-    agents: Arc<A>,
-    #[allow(dead_code)] // reserved - injected for future downstream service calls
-    review: Arc<R>,
-    #[allow(dead_code)] // reserved - injected for future downstream service calls
-    telemetry: Arc<O>,
     #[allow(dead_code)] // reserved - injected for future event bus integration
     event_bus: Arc<EventBus>,
     proxy: Arc<ProxyRouter>,
 }
 
-impl<S, V, A, R, O> AgilePlusCoreServer<S, V, A, R, O>
+impl<S> Clone for AgilePlusCoreServer<S>
 where
     S: StoragePort + 'static,
-    V: VcsPort + 'static,
-    A: AgentPort + 'static,
-    R: ReviewPort + 'static,
-    O: ObservabilityPort + 'static,
 {
-    pub fn new(
-        storage: Arc<S>,
-        vcs: Arc<V>,
-        agents: Arc<A>,
-        review: Arc<R>,
-        telemetry: Arc<O>,
-        event_bus: Arc<EventBus>,
-        proxy: Arc<ProxyRouter>,
-    ) -> Self {
+    fn clone(&self) -> Self {
+        Self {
+            storage: Arc::clone(&self.storage),
+            event_bus: Arc::clone(&self.event_bus),
+            proxy: Arc::clone(&self.proxy),
+        }
+    }
+}
+
+impl<S> AgilePlusCoreServer<S>
+where
+    S: StoragePort + 'static,
+{
+    pub fn new(storage: Arc<S>, event_bus: Arc<EventBus>, proxy: Arc<ProxyRouter>) -> Self {
         Self {
             storage,
-            vcs,
-            agents,
-            review,
-            telemetry,
             event_bus,
             proxy,
         }
@@ -96,13 +83,9 @@ where
 }
 
 #[tonic::async_trait]
-impl<S, V, A, R, O> AgilePlusCoreService for AgilePlusCoreServer<S, V, A, R, O>
+impl<S> AgilePlusCoreService for AgilePlusCoreServer<S>
 where
     S: StoragePort + 'static,
-    V: VcsPort + 'static,
-    A: AgentPort + 'static,
-    R: ReviewPort + 'static,
-    O: ObservabilityPort + 'static,
 {
     // -------------------------------------------------------------------------
     // Feature RPCs
@@ -471,13 +454,9 @@ where
     }
 }
 
-impl<S, V, A, R, O> AgilePlusCoreServer<S, V, A, R, O>
+impl<S> AgilePlusCoreServer<S>
 where
     S: StoragePort + 'static,
-    V: VcsPort + 'static,
-    A: AgentPort + 'static,
-    R: ReviewPort + 'static,
-    O: ObservabilityPort + 'static,
 {
     /// Dispatch core (non-agent) commands.
     async fn dispatch_core_command(
@@ -498,31 +477,26 @@ where
 }
 
 /// Start the gRPC server, binding to the given address.
-#[allow(clippy::too_many_arguments)] // Server bootstrap requires all service ports
-pub async fn start_server<S, V, A, R, O>(
+pub async fn start_server<S>(
     addr: SocketAddr,
     storage: Arc<S>,
-    vcs: Arc<V>,
-    agents: Arc<A>,
-    review: Arc<R>,
-    telemetry: Arc<O>,
     event_bus: Arc<EventBus>,
     proxy: Arc<ProxyRouter>,
 ) -> Result<(), Box<dyn std::error::Error>>
 where
-    S: StoragePort + 'static,
-    V: VcsPort + 'static,
-    A: AgentPort + 'static,
-    R: ReviewPort + 'static,
-    O: ObservabilityPort + 'static,
+    S: StoragePort + ContentStoragePort + 'static,
 {
-    let service =
-        AgilePlusCoreServer::new(storage, vcs, agents, review, telemetry, event_bus, proxy);
+    let service = AgilePlusCoreServer::new(storage, event_bus, proxy);
 
     info!(%addr, "starting AgilePlus gRPC server");
 
     Server::builder()
-        .add_service(AgilePlusCoreServiceServer::new(service))
+        .add_service(AgilePlusCoreServiceServer::new(service.clone()))
+        .add_service(
+            agileplus_proto::agileplus::v1::integrations_service_server::IntegrationsServiceServer::new(
+                service,
+            ),
+        )
         .serve_with_shutdown(addr, shutdown_signal())
         .await?;
 
