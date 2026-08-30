@@ -1058,6 +1058,33 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn audit_page_after_cursor_returns_the_next_entries_without_gaps() {
+        let db = make_adapter();
+        let fid = StoragePort::create_feature(
+            &db,
+            &Feature::new("audit-cursor", "Audit cursor", [0u8; 32], None),
+        )
+        .await
+        .unwrap();
+        let mut previous_hash = [0u8; 32];
+        for _ in 0..5 {
+            let entry = make_audit_entry(fid, previous_hash);
+            previous_hash = entry.hash;
+            StoragePort::append_audit_entry(&db, &entry).await.unwrap();
+        }
+
+        let full = StoragePort::get_audit_trail(&db, fid).await.unwrap();
+        let page = StoragePort::get_audit_trail_page(&db, fid, full[0].id, Some(2))
+            .await
+            .unwrap();
+
+        assert_eq!(
+            page.iter().map(|entry| entry.id).collect::<Vec<_>>(),
+            full[1..3].iter().map(|entry| entry.id).collect::<Vec<_>>()
+        );
+    }
+
+    #[tokio::test]
     async fn audit_wrong_prev_hash_rejected() {
         let db = make_adapter();
         let fid = StoragePort::create_feature(&db, &Feature::new("afc", "AFC", [0u8; 32], None))
