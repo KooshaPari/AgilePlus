@@ -1,0 +1,27 @@
+{
+  "id": 0,
+  "feature_id": 1,
+  "version": 1,
+  "rules": [
+    {
+      "transition": "WP01: Planned -> Doing",
+      "required_evidence": [],
+      "policy_refs": ["policy:work-package-state-transition", "policy:file-scope-ownership"]
+    },
+    {
+      "transition": "WP01: Doing -> Review",
+      "required_evidence": [
+        "FR-CI:ci_output"
+      ],
+      "policy_refs": ["policy:review-required", "policy:ci-evidence"]
+    },
+    {
+      "transition": "WP01: Review -> Done",
+      "required_evidence": [
+        "FR-REVIEW:review_approval"
+      ],
+      "policy_refs": ["policy:review-required", "policy:acceptance-criteria"]
+    }
+  ],
+  "bound_at": "2026-08-26T11:17:35.939301Z"
+}

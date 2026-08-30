@@ -22,93 +22,103 @@
 name: infra
 
 on:
-  workflow_run:
-    workflows: ['ci']
-    types: [completed]
-  workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - 'crates/agileplus-benchmarks/**'
-      - '.github/workflows/infra.yml'
-      - '.bench-baseline.json'
+    workflow_run:
+        workflows: ["ci"]
+        types: [completed]
+    workflow_dispatch:
+    push:
+        branches: [main]
+        paths:
+            - "crates/agileplus-benchmarks/**"
+            - ".github/workflows/infra.yml"
+            - ".bench-baseline.json"
 
 permissions:
-  contents: read
-  pull-requests: write
-  checks: write
-  actions: read
+    contents: read
+    pull-requests: write
+    checks: write
+    actions: read
 
 concurrency:
-  group: infra-${{ github.ref }}
-  cancel-in-progress: true
+    group: infra-${{ github.ref }}
+    cancel-in-progress: true
 
 jobs:
-  flaky-tests:
-    name: flaky-test detection
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
-      - name: Run tests with rerun-on-flake
-        run: |
-          cargo test --workspace --quiet -- --test-threads=4
-          set -e
-          # Re-run any failing tests once. cargo-nextest would be ideal but
-          # the workspace already uses the built-in runner. We tag flaked
-          # tests in junit output.
-          cargo test --workspace --quiet --no-fail-fast -- --test-threads=4 > /tmp/cargo-test.log 2>&1 || true
-          grep -E '^test .+ \.\.\. FAILED' /tmp/cargo-test.log | awk '{print $2}' > /tmp/failed.txt || true
-          if [ -s /tmp/failed.txt ]; then
-            echo "Re-running $(wc -l < /tmp/failed.txt) failing tests…"
-            cargo test --workspace --quiet --no-fail-fast -- --test-threads=1 > /tmp/rerun.log 2>&1 || true
-          fi
-          python3 scripts/ci/detect_flakes.py /tmp/cargo-test.log /tmp/rerun.log > flaky-tests.json
-          cat flaky-tests.json
-      - uses: actions/upload-artifact@v4
-        with:
-          name: flaky-tests
-          path: flaky-tests.json
-          if-no-files-found: warn
+    flaky-tests:
+        name: flaky-test detection
+        runs-on: ubuntu-latest
+        timeout-minutes: 30
+        steps:
+            - uses: actions/checkout@v4
+            - uses: dtolnay/rust-toolchain@stable
+            - uses: Swatinem/rust-cache@v2
+            - name: Run tests with rerun-on-flake
+              run: |
+                  cargo test --workspace --quiet -- --test-threads=4
+                  set -e
+                  # Re-run any failing tests once. cargo-nextest would be ideal but
+                  # the workspace already uses the built-in runner. We tag flaked
+                  # tests in junit output.
+                  cargo test --workspace --quiet --no-fail-fast -- --test-threads=4 > /tmp/cargo-test.log 2>&1 || true
+                  grep -E '^test .+ \.\.\. FAILED' /tmp/cargo-test.log | awk '{print $2}' > /tmp/failed.txt || true
+                  if [ -s /tmp/failed.txt ]; then
+                    echo "Re-running $(wc -l < /tmp/failed.txt) failing tests…"
+                    cargo test --workspace --quiet --no-fail-fast -- --test-threads=1 > /tmp/rerun.log 2>&1 || true
+                  fi
+                  python3 scripts/ci/detect_flakes.py /tmp/cargo-test.log /tmp/rerun.log > flaky-tests.json
+                  cat flaky-tests.json
+            - uses: actions/upload-artifact@v4
+              with:
+                  name: flaky-tests
+                  path: flaky-tests.json
+                  if-no-files-found: warn
 
-  bench-thresholds:
-    name: benchmark thresholds
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
-      - name: Run benchmarks
-        run: |
-          cargo bench -p agileplus-benchmarks -- --output-format bencher | tee bench.txt
-      - name: Compare to baseline
-        run: |
-          python3 scripts/ci/check_bench_regressions.py bench.txt .bench-baseline.json --max-regress 15
-      - uses: actions/upload-artifact@v4
-        with:
-          name: bench-results
-          path: bench.txt
-          if-no-files-found: warn
+    bench-thresholds:
+        name: benchmark thresholds
+        runs-on: ubuntu-latest
+        timeout-minutes: 60
+        steps:
+            - uses: actions/checkout@v4
+            - uses: dtolnay/rust-toolchain@stable
+            - uses: Swatinem/rust-cache@v2
+            - name: Run benchmarks
+              run: |
+                  : > bench.txt
+                  for bench in \
+                    event_append_throughput \
+                    event_replay \
+                    api_response_times \
+                    sync_roundtrip \
+                    graph_query_perf \
+                    claim_engine_perf \
+                    trace_matrix_derivation; do
+                    cargo bench -p agileplus-benchmarks --bench "$bench" | tee -a bench.txt
+                  done
+            - name: Compare to baseline
+              run: |
+                  python3 scripts/ci/check_bench_regressions.py bench.txt .bench-baseline.json --max-regress 15
+            - uses: actions/upload-artifact@v4
+              with:
+                  name: bench-results
+                  path: bench.txt
+                  if-no-files-found: warn
 
-  green-button:
-    name: green-button summary
-    needs: [flaky-tests, bench-thresholds]
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-    steps:
-      - uses: actions/checkout@v4
-      - name: Compute summary
-        id: summary
-        run: |
-          echo "status=green" >> "$GITHUB_OUTPUT"
-      - name: Comment on PR
-        uses: marocchino/sticky-pull-request-comment@v2
-        with:
-          header: green-button
-          message: |
-            ✅ **All infrastructure checks green.**
-            - flaky-tests: passed
-            - bench-thresholds: passed (≤15 % regression)
+    green-button:
+        name: green-button summary
+        needs: [flaky-tests, bench-thresholds]
+        runs-on: ubuntu-latest
+        if: github.event_name == 'pull_request'
+        steps:
+            - uses: actions/checkout@v4
+            - name: Compute summary
+              id: summary
+              run: |
+                  echo "status=green" >> "$GITHUB_OUTPUT"
+            - name: Comment on PR
+              uses: marocchino/sticky-pull-request-comment@v2
+              with:
+                  header: green-button
+                  message: |
+                      ✅ **All infrastructure checks green.**
+                      - flaky-tests: passed
+                      - bench-thresholds: passed (≤15 % regression)

@@ -250,10 +250,10 @@ impl GitVcsAdapter {
             }
 
             if let Some(rest) = line.strip_prefix("CONFLICT (") {
-                if let Some((kind, description)) = rest.split_once("): ") {
-                    if let Some(path) = Self::conflict_diagnostic_path(description) {
-                        paths.insert(path.to_string(), kind.to_string());
-                    }
+                if let Some((kind, description)) = rest.split_once("): ")
+                    && let Some(path) = Self::conflict_diagnostic_path(description)
+                {
+                    paths.insert(path.to_string(), kind.to_string());
                 }
                 continue;
             }
@@ -536,7 +536,9 @@ impl VcsPort for GitVcsAdapter {
         // libgit2 versions, while `git worktree add` is the canonical,
         // well-tested path.
         self.run_git_status(&["worktree", "add", &path_str, flag, &branch])?;
-        Ok(path)
+        std::fs::canonicalize(&path).map_err(|e| {
+            DomainError::Storage(format!("canonicalize worktree {}: {e}", path.display()))
+        })
     }
 
     async fn list_worktrees(&self) -> Result<Vec<WorktreeInfo>, DomainError> {
@@ -771,7 +773,21 @@ impl VcsPort for GitVcsAdapter {
             })?;
         }
         std::fs::write(&p, content)
-            .map_err(|e| DomainError::Storage(format!("write artifact {}: {e}", p.display())))
+            .map_err(|e| DomainError::Storage(format!("write artifact {}: {e}", p.display())))?;
+
+        let relative_path = p.strip_prefix(&self.repo_root).map_err(|e| {
+            DomainError::Storage(format!("resolve artifact path {}: {e}", p.display()))
+        })?;
+        let repo = self.open()?;
+        let mut index = repo
+            .index()
+            .map_err(|e| DomainError::Storage(format!("open git index: {e}")))?;
+        index
+            .add_path(relative_path)
+            .map_err(|e| DomainError::Storage(format!("stage artifact {}: {e}", p.display())))?;
+        index
+            .write()
+            .map_err(|e| DomainError::Storage(format!("write git index: {e}")))
     }
 
     async fn artifact_exists(
@@ -934,6 +950,7 @@ pub fn scan_all_features(adapter: &GitVcsAdapter) -> Result<Vec<String>, DomainE
         .map_err(|e| DomainError::Storage(format!("failed to read kitty-specs dir: {e}")))?
         .filter_map(|entry| entry.ok())
         .filter(|e| e.path().is_dir())
+        .filter(|e| e.path().join("meta.json").is_file())
         .filter_map(|e| e.file_name().into_string().ok())
         .collect();
     slugs.sort();
@@ -1052,7 +1069,7 @@ mod tests {
         let (_dir, path) = make_repo();
         let adapter = GitVcsAdapter::new(path.clone());
         let wt = adapter
-            .create_worktree("login", "wp-1")
+            .create_worktree("adapter-login", "wp-1")
             .await
             .expect("create worktree");
         assert!(

@@ -20,7 +20,7 @@ use utoipa::{IntoParams, ToSchema};
 use agileplus_domain::domain::feature::Feature;
 use agileplus_domain::domain::state_machine::FeatureState;
 use agileplus_domain::ports::vcs::VcsPort;
-use agileplus_domain::ports::{ObservabilityPort, StoragePort};
+use agileplus_domain::ports::{ContentStoragePort, ObservabilityPort, StoragePort};
 
 use crate::error::ApiError;
 use crate::responses::FeatureResponse;
@@ -28,7 +28,7 @@ use crate::state::AppState;
 
 pub fn routes<S, V, O>() -> Router<AppState<S, V, O>>
 where
-    S: StoragePort + Send + Sync + 'static,
+    S: StoragePort + ContentStoragePort + Send + Sync + 'static,
     V: VcsPort + Send + Sync + 'static,
     O: ObservabilityPort + Send + Sync + 'static,
 {
@@ -212,13 +212,11 @@ pub async fn update_feature<S, V, O>(
     Json(body): Json<UpdateFeatureRequest>,
 ) -> Result<Json<FeatureResponse>, ApiError>
 where
-    S: StoragePort + Send + Sync + 'static,
+    S: StoragePort + ContentStoragePort + Send + Sync + 'static,
     V: VcsPort + Send + Sync + 'static,
     O: ObservabilityPort + Send + Sync + 'static,
 {
-    let feature = app
-        .storage
-        .get_feature_by_slug(&slug)
+    let feature = StoragePort::get_feature_by_slug(app.storage.as_ref(), &slug)
         .await
         .map_err(ApiError::from)?
         .ok_or_else(|| ApiError::NotFound(format!("Feature '{slug}' not found")))?;
@@ -231,8 +229,7 @@ where
         ..feature
     };
 
-    app.storage
-        .update_feature(&updated)
+    ContentStoragePort::update_feature(app.storage.as_ref(), &updated)
         .await
         .map_err(ApiError::from)?;
 

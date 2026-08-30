@@ -1,6 +1,8 @@
 use super::*;
 use std::io::{Read, Write};
 use std::net::TcpListener;
+use std::os::unix::fs::PermissionsExt;
+use std::path::Path;
 use std::sync::{Mutex, OnceLock};
 use std::time::Duration;
 
@@ -60,6 +62,53 @@ fn set_environment(key: &str, value: impl AsRef<std::ffi::OsStr>) {
 fn remove_environment(key: &str) {
     // Tests hold `environment_lock` while mutating process-global environment state.
     unsafe { std::env::remove_var(key) };
+}
+
+fn fake_process_compose(directory: &Path, record: &Path) -> std::path::PathBuf {
+    let executable = directory.join("process-compose");
+    std::fs::write(
+        &executable,
+        format!(
+            "#!/bin/sh\nprintf '%s\\n' \"$PWD\" > '{}'\nprintf '%s\\n' \"$@\" >> '{}'\n",
+            record.display(),
+            record.display(),
+        ),
+    )
+    .expect("write fake process-compose");
+    let mut permissions = std::fs::metadata(&executable)
+        .expect("read fake process-compose permissions")
+        .permissions();
+    permissions.set_mode(0o755);
+    std::fs::set_permissions(&executable, permissions)
+        .expect("make fake process-compose executable");
+    executable
+}
+
+fn failing_process_compose(directory: &Path) -> std::path::PathBuf {
+    let executable = directory.join("process-compose-fail");
+    std::fs::write(&executable, "#!/bin/sh\nexit 23\n").expect("write failing process-compose");
+    let mut permissions = std::fs::metadata(&executable)
+        .expect("read failing process-compose permissions")
+        .permissions();
+    permissions.set_mode(0o755);
+    std::fs::set_permissions(&executable, permissions)
+        .expect("make failing process-compose executable");
+    executable
+}
+
+fn read_invocation(record: &Path) -> String {
+    let deadline = std::time::Instant::now() + Duration::from_secs(1);
+    loop {
+        if let Ok(contents) = std::fs::read_to_string(record) {
+            return contents;
+        }
+        assert!(
+            std::time::Instant::now() < deadline,
+            "fake process-compose did not write {}",
+            record.display()
+        );
+        std::thread::sleep(Duration::from_millis(10));
+    }
 }
 
 #[test]
@@ -230,8 +279,297 @@ fn test_platform_logs_args() {
 }
 
 #[test]
+fn platform_logs_uses_the_resolved_compose_workspace_and_supported_flags() {
+    let _guard = environment_lock().lock().expect("lock environment");
+    let root = tempfile::tempdir().expect("temporary AgilePlus root");
+    let executable_dir = tempfile::tempdir().expect("temporary executable directory");
+    let record = root.path().join("process-compose-invocation.txt");
+    let executable = fake_process_compose(executable_dir.path(), &record);
+    let compose = root.path().join("process-compose.yml");
+    std::fs::write(&compose, "version: '0.5'\nprocesses: {}\n").expect("write compose file");
+
+    let prior_binary = std::env::var("AGILEPLUS_PROCESS_COMPOSE_BIN").ok();
+    let prior_root = std::env::var("AGILEPLUS_ROOT").ok();
+    set_environment("AGILEPLUS_PROCESS_COMPOSE_BIN", &executable);
+    set_environment("AGILEPLUS_ROOT", root.path());
+
+    let result = run_platform_logs(PlatformLogsArgs {
+        config: "process-compose.yml".to_string(),
+        service: Some("nats".to_string()),
+        follow: true,
+        lines: 25,
+        since: None,
+    });
+
+    match prior_binary {
+        Some(value) => set_environment("AGILEPLUS_PROCESS_COMPOSE_BIN", value),
+        None => remove_environment("AGILEPLUS_PROCESS_COMPOSE_BIN"),
+    }
+    match prior_root {
+        Some(value) => set_environment("AGILEPLUS_ROOT", value),
+        None => remove_environment("AGILEPLUS_ROOT"),
+    }
+
+    assert!(
+        result.is_ok(),
+        "logs command should run through the fake binary: {result:?}"
+    );
+    assert_eq!(
+        read_invocation(&record),
+        format!(
+            "{}\nprocess\nlogs\nnats\n--follow\n-n\n25\n",
+            root.path()
+                .canonicalize()
+                .expect("canonical root")
+                .display()
+        ),
+    );
+}
+
+#[test]
+fn platform_down_uses_the_resolved_compose_workspace() {
+    let _guard = environment_lock().lock().expect("lock environment");
+    let root = tempfile::tempdir().expect("temporary AgilePlus root");
+    let executable_dir = tempfile::tempdir().expect("temporary executable directory");
+    let record = root.path().join("process-compose-invocation.txt");
+    let executable = fake_process_compose(executable_dir.path(), &record);
+    std::fs::write(root.path().join("process-compose.yml"), "processes: {}\n")
+        .expect("write compose file");
+
+    let prior_binary = std::env::var("AGILEPLUS_PROCESS_COMPOSE_BIN").ok();
+    let prior_root = std::env::var("AGILEPLUS_ROOT").ok();
+    set_environment("AGILEPLUS_PROCESS_COMPOSE_BIN", &executable);
+    set_environment("AGILEPLUS_ROOT", root.path());
+
+    let result = run_platform_down(PlatformDownArgs {
+        config: "process-compose.yml".to_string(),
+        timeout: 0,
+    });
+
+    match prior_binary {
+        Some(value) => set_environment("AGILEPLUS_PROCESS_COMPOSE_BIN", value),
+        None => remove_environment("AGILEPLUS_PROCESS_COMPOSE_BIN"),
+    }
+    match prior_root {
+        Some(value) => set_environment("AGILEPLUS_ROOT", value),
+        None => remove_environment("AGILEPLUS_ROOT"),
+    }
+
+    assert!(
+        result.is_ok(),
+        "down command should run through the fake binary: {result:?}"
+    );
+    assert_eq!(
+        read_invocation(&record),
+        format!(
+            "{}\ndown\n",
+            root.path()
+                .canonicalize()
+                .expect("canonical root")
+                .display()
+        ),
+    );
+}
+
+#[test]
+fn platform_down_propagates_process_compose_failure() {
+    let _guard = environment_lock().lock().expect("lock environment");
+    let root = tempfile::tempdir().expect("temporary AgilePlus root");
+    let executable_dir = tempfile::tempdir().expect("temporary executable directory");
+    let executable = failing_process_compose(executable_dir.path());
+    std::fs::write(root.path().join("process-compose.yml"), "processes: {}\n")
+        .expect("write compose file");
+
+    let prior_binary = std::env::var("AGILEPLUS_PROCESS_COMPOSE_BIN").ok();
+    let prior_root = std::env::var("AGILEPLUS_ROOT").ok();
+    set_environment("AGILEPLUS_PROCESS_COMPOSE_BIN", &executable);
+    set_environment("AGILEPLUS_ROOT", root.path());
+
+    let result = run_platform_down(PlatformDownArgs {
+        config: "process-compose.yml".to_string(),
+        timeout: 0,
+    });
+
+    match prior_binary {
+        Some(value) => set_environment("AGILEPLUS_PROCESS_COMPOSE_BIN", value),
+        None => remove_environment("AGILEPLUS_PROCESS_COMPOSE_BIN"),
+    }
+    match prior_root {
+        Some(value) => set_environment("AGILEPLUS_ROOT", value),
+        None => remove_environment("AGILEPLUS_ROOT"),
+    }
+
+    assert!(
+        result.is_err(),
+        "down must not report success after a command failure"
+    );
+}
+
+#[test]
+fn platform_up_waits_on_the_persisted_runtime_api_endpoint() {
+    let _guard = environment_lock().lock().expect("lock environment");
+    let root = tempfile::tempdir().expect("temporary AgilePlus root");
+    let executable_dir = tempfile::tempdir().expect("temporary executable directory");
+    let record = root.path().join("process-compose-invocation.txt");
+    let executable = fake_process_compose(executable_dir.path(), &record);
+    std::fs::write(root.path().join("process-compose.yml"), "processes: {}\n")
+        .expect("write compose file");
+    let ports_dir = root.path().join(".agileplus/runtime");
+    std::fs::create_dir_all(&ports_dir).expect("create runtime directory");
+    let (api_url, listener) = health_listener();
+    std::fs::write(
+        ports_dir.join("local-ports.env"),
+        format!("AGILEPLUS_API_URL={api_url}\n"),
+    )
+    .expect("write persisted runtime endpoint");
+
+    let prior_binary = std::env::var("AGILEPLUS_PROCESS_COMPOSE_BIN").ok();
+    let prior_root = std::env::var("AGILEPLUS_ROOT").ok();
+    set_environment("AGILEPLUS_PROCESS_COMPOSE_BIN", &executable);
+    set_environment("AGILEPLUS_ROOT", root.path());
+
+    let result = run_platform_up(PlatformUpArgs {
+        config: "process-compose.yml".to_string(),
+        poll_interval: 1,
+        timeout: 1,
+    });
+
+    match prior_binary {
+        Some(value) => set_environment("AGILEPLUS_PROCESS_COMPOSE_BIN", value),
+        None => remove_environment("AGILEPLUS_PROCESS_COMPOSE_BIN"),
+    }
+    match prior_root {
+        Some(value) => set_environment("AGILEPLUS_ROOT", value),
+        None => remove_environment("AGILEPLUS_ROOT"),
+    }
+
+    assert!(
+        result.is_ok(),
+        "up should use the persisted runtime endpoint: {result:?}"
+    );
+    assert_eq!(listener.join().expect("health listener thread"), "/health");
+    assert_eq!(
+        read_invocation(&record),
+        format!(
+            "{}\nup\n-f\n{}\n",
+            root.path()
+                .canonicalize()
+                .expect("canonical root")
+                .display(),
+            root.path()
+                .join("process-compose.yml")
+                .canonicalize()
+                .expect("canonical compose")
+                .display()
+        ),
+    );
+}
+
+#[test]
 fn test_find_process_compose_returns_path_in_test_cfg() {
     // In test cfg, which_process_compose always returns Some.
     let result = process_compose::find_process_compose();
     assert!(result.is_some());
+}
+
+#[test]
+fn find_process_compose_honors_explicit_test_binary_override() {
+    let _guard = environment_lock().lock().expect("lock environment");
+    let temporary = tempfile::tempdir().expect("temporary binary directory");
+    let override_path = temporary.path().join("process-compose-test-double");
+    let prior_binary = std::env::var_os("AGILEPLUS_PROCESS_COMPOSE_BIN");
+    set_environment("AGILEPLUS_PROCESS_COMPOSE_BIN", &override_path);
+
+    let resolved = process_compose::find_process_compose();
+
+    match prior_binary {
+        Some(value) => set_environment("AGILEPLUS_PROCESS_COMPOSE_BIN", value),
+        None => remove_environment("AGILEPLUS_PROCESS_COMPOSE_BIN"),
+    }
+    assert_eq!(resolved.as_deref(), Some(override_path.as_path()));
+}
+
+#[test]
+fn resolve_platform_compose_accepts_an_existing_absolute_file() {
+    let root = tempfile::tempdir().expect("temporary AgilePlus root");
+    let compose = root.path().join("process-compose.yml");
+    std::fs::write(&compose, "processes: {}\n").expect("write compose file");
+
+    let (workdir, resolved) = workspace::resolve_platform_compose(
+        compose.to_str().expect("temporary path is valid UTF-8"),
+    )
+    .expect("absolute compose file resolves");
+
+    assert_eq!(workdir, root.path());
+    assert_eq!(resolved, compose);
+}
+
+#[test]
+fn resolve_platform_compose_rejects_missing_files_and_directories() {
+    let root = tempfile::tempdir().expect("temporary AgilePlus root");
+    let missing = root.path().join("missing.yml");
+
+    let missing_error = workspace::resolve_platform_compose(
+        missing.to_str().expect("temporary path is valid UTF-8"),
+    )
+    .expect_err("missing compose file must fail");
+    assert!(missing_error.to_string().contains("compose file"));
+
+    let directory_error = workspace::resolve_platform_compose(
+        root.path().to_str().expect("temporary path is valid UTF-8"),
+    )
+    .expect_err("compose directory must fail");
+    assert!(directory_error.to_string().contains("does not exist"));
+}
+
+#[test]
+fn resolve_platform_compose_uses_agileplus_root_for_relative_config() {
+    let _guard = environment_lock().lock().expect("lock environment");
+    let root = tempfile::tempdir().expect("temporary AgilePlus root");
+    let compose = root.path().join("process-compose.yml");
+    std::fs::write(&compose, "processes: {}\n").expect("write compose file");
+    let prior_root = std::env::var_os("AGILEPLUS_ROOT");
+    set_environment("AGILEPLUS_ROOT", root.path());
+
+    let result = workspace::resolve_platform_compose("process-compose.yml");
+
+    match prior_root {
+        Some(value) => set_environment("AGILEPLUS_ROOT", value),
+        None => remove_environment("AGILEPLUS_ROOT"),
+    }
+
+    let (workdir, resolved) = result.expect("relative compose resolves from AGILEPLUS_ROOT");
+    assert_eq!(
+        workdir,
+        root.path().canonicalize().expect("canonical root path")
+    );
+    assert_eq!(
+        resolved,
+        compose.canonicalize().expect("canonical compose path")
+    );
+}
+
+#[test]
+fn resolve_platform_compose_reports_missing_root() {
+    let _guard = environment_lock().lock().expect("lock environment");
+    let root = tempfile::tempdir().expect("temporary directory without compose file");
+    let prior_root = std::env::var_os("AGILEPLUS_ROOT");
+    let prior_cwd = std::env::current_dir().expect("current directory");
+    remove_environment("AGILEPLUS_ROOT");
+    std::env::set_current_dir(root.path()).expect("switch to compose-free directory");
+
+    let result = workspace::resolve_platform_compose("process-compose.yml");
+
+    std::env::set_current_dir(&prior_cwd).expect("restore current directory");
+    match prior_root {
+        Some(value) => set_environment("AGILEPLUS_ROOT", value),
+        None => remove_environment("AGILEPLUS_ROOT"),
+    }
+
+    let error = result.expect_err("missing AgilePlus root must fail");
+    assert!(
+        error
+            .to_string()
+            .contains("Could not find AgilePlus repo root")
+    );
 }

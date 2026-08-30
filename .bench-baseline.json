@@ -1,0 +1,154 @@
+{
+  "api_list_features/list_features/10": {
+    "median_ns": 12606,
+    "stddev_ns": 0
+  },
+  "api_list_features/list_features/100": {
+    "median_ns": 92080,
+    "stddev_ns": 0
+  },
+  "append_1000_events_100_entities": {
+    "median_ns": 10628000,
+    "stddev_ns": 0
+  },
+  "append_single_event": {
+    "median_ns": 9003,
+    "stddev_ns": 0
+  },
+  "apply_1000_events_in_memory": {
+    "median_ns": 43167,
+    "stddev_ns": 0
+  },
+  "claim_engine_issue/sequential/100": {
+    "median_ns": 35526,
+    "stddev_ns": 0
+  },
+  "claim_engine_issue/sequential/1000": {
+    "median_ns": 425930,
+    "stddev_ns": 0
+  },
+  "claim_engine_issue/sequential/10000": {
+    "median_ns": 4492200,
+    "stddev_ns": 0
+  },
+  "claim_engine_lookup/lookup_existing_10k": {
+    "median_ns": 176390,
+    "stddev_ns": 0
+  },
+  "claim_engine_reap/expired_sweep/100": {
+    "median_ns": 44238,
+    "stddev_ns": 0
+  },
+  "claim_engine_reap/expired_sweep/1000": {
+    "median_ns": 510150,
+    "stddev_ns": 0
+  },
+  "claim_engine_reap/expired_sweep/10000": {
+    "median_ns": 5390000,
+    "stddev_ns": 0
+  },
+  "event_append_throughput/sequential_events/100": {
+    "median_ns": 3590400,
+    "stddev_ns": 0
+  },
+  "event_append_throughput/sequential_events/1000": {
+    "median_ns": 11265000,
+    "stddev_ns": 0
+  },
+  "event_append_throughput/sequential_events/5000": {
+    "median_ns": 44657000,
+    "stddev_ns": 0
+  },
+  "feature_state_transition": {
+    "median_ns": 11070,
+    "stddev_ns": 0
+  },
+  "full_replay_1000_events": {
+    "median_ns": 772790,
+    "stddev_ns": 0
+  },
+  "get_feature_by_id": {
+    "median_ns": 3533,
+    "stddev_ns": 0
+  },
+  "graph_create_feature_node": {
+    "median_ns": 1413,
+    "stddev_ns": 0
+  },
+  "graph_create_owns_relationship": {
+    "median_ns": 3458,
+    "stddev_ns": 0
+  },
+  "graph_dependency_chain_query": {
+    "median_ns": 62,
+    "stddev_ns": 0
+  },
+  "graph_get_feature_node": {
+    "median_ns": 194,
+    "stddev_ns": 0
+  },
+  "graph_seed_features/seed_features/10": {
+    "median_ns": 14123,
+    "stddev_ns": 0
+  },
+  "graph_seed_features/seed_features/100": {
+    "median_ns": 139140,
+    "stddev_ns": 0
+  },
+  "graph_seed_features/seed_features/50": {
+    "median_ns": 70801,
+    "stddev_ns": 0
+  },
+  "health_check_db_ping": {
+    "median_ns": 443,
+    "stddev_ns": 0
+  },
+  "heartbeat_1000_rounds": {
+    "median_ns": 52071,
+    "stddev_ns": 0
+  },
+  "parse_fr_list_200": {
+    "median_ns": 8283,
+    "stddev_ns": 0
+  },
+  "pull_single_feature": {
+    "median_ns": 334,
+    "stddev_ns": 0
+  },
+  "push_single_feature": {
+    "median_ns": 581,
+    "stddev_ns": 0
+  },
+  "snapshot_replay_900_plus_100": {
+    "median_ns": 97270,
+    "stddev_ns": 0
+  },
+  "sync_100_features_5_conflicts": {
+    "median_ns": 102770,
+    "stddev_ns": 0
+  },
+  "sync_roundtrip_n_features/sync_n_features_no_conflicts/1": {
+    "median_ns": 1028,
+    "stddev_ns": 0
+  },
+  "sync_roundtrip_n_features/sync_n_features_no_conflicts/10": {
+    "median_ns": 10223,
+    "stddev_ns": 0
+  },
+  "sync_roundtrip_n_features/sync_n_features_no_conflicts/100": {
+    "median_ns": 104860,
+    "stddev_ns": 0
+  },
+  "trace_matrix_derivation/cold_derive/200": {
+    "median_ns": 123300,
+    "stddev_ns": 0
+  },
+  "trace_matrix_derivation/cold_derive/50": {
+    "median_ns": 30199,
+    "stddev_ns": 0
+  },
+  "trace_matrix_derivation/cold_derive/500": {
+    "median_ns": 303240,
+    "stddev_ns": 0
+  }
+}

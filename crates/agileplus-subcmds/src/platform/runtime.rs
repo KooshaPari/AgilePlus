@@ -72,6 +72,10 @@ impl ResolvedRuntime {
     pub(crate) fn health_url(&self) -> &str {
         &self.health_url
     }
+
+    pub(crate) fn api_base(&self) -> &str {
+        &self.api_base
+    }
 }
 
 fn runtime_file_from_repo_root() -> Option<PathBuf> {

@@ -2,18 +2,23 @@
 //!
 //! Traceability: WP14-T079, T080
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::net::SocketAddr;
 use std::pin::Pin;
 use std::sync::Arc;
 
+#[cfg(not(agileplus_proto_stubs))]
 use tonic::transport::Server;
 use tonic::{Request, Response, Status};
+#[cfg(not(agileplus_proto_stubs))]
 use tracing::info;
 
 use agileplus_domain::domain::audit::AuditChain;
+use agileplus_domain::domain::governance::{Evidence, EvidenceType, GovernanceRule};
 use agileplus_domain::domain::state_machine::FeatureState;
-use agileplus_domain::ports::{AgentPort, ObservabilityPort, ReviewPort, StoragePort, VcsPort};
+use agileplus_domain::ports::{ContentStoragePort, StoragePort};
+#[cfg(not(agileplus_proto_stubs))]
+use agileplus_proto::agileplus::v1::agile_plus_core_service_server::AgilePlusCoreServiceServer;
 use agileplus_proto::agileplus::v1::{
     CheckGovernanceGateRequest, CheckGovernanceGateResponse, CommandResponse,
     DispatchCommandRequest, DispatchCommandResponse, GateViolation as ProtoGateViolation,
@@ -21,13 +26,14 @@ use agileplus_proto::agileplus::v1::{
     GetFeatureStateRequest, GetFeatureStateResponse, GetWorkPackageStatusRequest,
     GetWorkPackageStatusResponse, ListFeaturesRequest, ListFeaturesResponse,
     ListWorkPackagesRequest, ListWorkPackagesResponse, VerifyAuditChainRequest,
-    VerifyAuditChainResponse,
-    agile_plus_core_service_server::{AgilePlusCoreService, AgilePlusCoreServiceServer},
+    VerifyAuditChainResponse, agile_plus_core_service_server::AgilePlusCoreService,
 };
 
 use crate::conversions::{audit_entry_to_proto, feature_to_proto, wp_to_proto};
 use crate::event_bus::EventBus;
 use crate::proxy::ProxyRouter;
+
+pub mod integrations;
 
 /// Map domain errors to gRPC Status codes consistently.
 pub fn domain_error_to_status(e: agileplus_domain::error::DomainError) -> Status {
@@ -43,52 +49,105 @@ pub fn domain_error_to_status(e: agileplus_domain::error::DomainError) -> Status
     }
 }
 
+/// Parse the contract representation `FR-ID` or `FR-ID:evidence_type`.
+fn parse_evidence_requirement(raw: &str) -> (&str, Option<EvidenceType>, bool) {
+    let (fr_id, evidence_type) = raw
+        .split_once(':')
+        .map_or((raw, None), |(fr_id, kind)| (fr_id, Some(kind)));
+    let had_type = evidence_type.is_some();
+    let evidence_type = evidence_type.and_then(|kind| match kind {
+        "test_result" => Some(EvidenceType::TestResult),
+        "ci_output" => Some(EvidenceType::CiOutput),
+        "review_approval" => Some(EvidenceType::ReviewApproval),
+        "security_scan" => Some(EvidenceType::SecurityScan),
+        "lint_result" => Some(EvidenceType::LintResult),
+        "manual_attestation" => Some(EvidenceType::ManualAttestation),
+        _ => None,
+    });
+    let recognized = !had_type || evidence_type.is_some();
+    (fr_id, evidence_type, recognized)
+}
+
+fn evidence_satisfies_requirement(
+    evidence: &[Evidence],
+    feature_wp_ids: &HashSet<i64>,
+    fr_id: &str,
+    expected_type: Option<EvidenceType>,
+) -> bool {
+    evidence.iter().any(|candidate| {
+        candidate.fr_id == fr_id
+            && feature_wp_ids.contains(&candidate.wp_id)
+            && expected_type.is_none_or(|kind| candidate.evidence_type == kind)
+    })
+}
+
+fn missing_evidence_violation(
+    rule: &GovernanceRule,
+    fr_id: &str,
+    requirement: &str,
+) -> ProtoGateViolation {
+    ProtoGateViolation {
+        fr_id: fr_id.to_owned(),
+        rule_id: rule.transition.clone(),
+        message: format!("Missing required evidence for {requirement}"),
+        remediation: format!("Provide evidence linked to {requirement}"),
+    }
+}
+
+/// Compare transition identifiers while tolerating presentation-only spacing
+/// around the planner's `->` separator. The WP prefix and state spelling stay
+/// significant so a rule for one work package cannot match another.
+fn governance_transition_matches(rule: &str, requested: &str) -> bool {
+    fn normalized(value: &str) -> Option<(&str, &str)> {
+        let (from, to) = value.split_once("->")?;
+        let from = from.trim();
+        let to = to.trim();
+        (!from.is_empty() && !to.is_empty() && !to.contains("->")).then_some((from, to))
+    }
+
+    matches!(
+        (normalized(rule), normalized(requested)),
+        (Some(rule), Some(requested)) if rule == requested
+    )
+}
+
+fn unsupported_core_command(command: &str) -> Status {
+    Status::unimplemented(format!(
+        "command '{command}' is not executable through the gRPC core"
+    ))
+}
+
 /// gRPC server struct holding references to all port implementations.
-pub struct AgilePlusCoreServer<S, V, A, R, O>
+pub struct AgilePlusCoreServer<S>
 where
     S: StoragePort + 'static,
-    V: VcsPort + 'static,
-    A: AgentPort + 'static,
-    R: ReviewPort + 'static,
-    O: ObservabilityPort + 'static,
 {
     storage: Arc<S>,
-    #[allow(dead_code)] // reserved - injected for future downstream service calls
-    vcs: Arc<V>,
-    #[allow(dead_code)] // reserved - injected for future downstream service calls
-    agents: Arc<A>,
-    #[allow(dead_code)] // reserved - injected for future downstream service calls
-    review: Arc<R>,
-    #[allow(dead_code)] // reserved - injected for future downstream service calls
-    telemetry: Arc<O>,
     #[allow(dead_code)] // reserved - injected for future event bus integration
     event_bus: Arc<EventBus>,
     proxy: Arc<ProxyRouter>,
 }
 
-impl<S, V, A, R, O> AgilePlusCoreServer<S, V, A, R, O>
+impl<S> Clone for AgilePlusCoreServer<S>
 where
     S: StoragePort + 'static,
-    V: VcsPort + 'static,
-    A: AgentPort + 'static,
-    R: ReviewPort + 'static,
-    O: ObservabilityPort + 'static,
 {
-    pub fn new(
-        storage: Arc<S>,
-        vcs: Arc<V>,
-        agents: Arc<A>,
-        review: Arc<R>,
-        telemetry: Arc<O>,
-        event_bus: Arc<EventBus>,
-        proxy: Arc<ProxyRouter>,
-    ) -> Self {
+    fn clone(&self) -> Self {
+        Self {
+            storage: Arc::clone(&self.storage),
+            event_bus: Arc::clone(&self.event_bus),
+            proxy: Arc::clone(&self.proxy),
+        }
+    }
+}
+
+impl<S> AgilePlusCoreServer<S>
+where
+    S: StoragePort + 'static,
+{
+    pub fn new(storage: Arc<S>, event_bus: Arc<EventBus>, proxy: Arc<ProxyRouter>) -> Self {
         Self {
             storage,
-            vcs,
-            agents,
-            review,
-            telemetry,
             event_bus,
             proxy,
         }
@@ -96,13 +155,9 @@ where
 }
 
 #[tonic::async_trait]
-impl<S, V, A, R, O> AgilePlusCoreService for AgilePlusCoreServer<S, V, A, R, O>
+impl<S> AgilePlusCoreService for AgilePlusCoreServer<S>
 where
     S: StoragePort + 'static,
-    V: VcsPort + 'static,
-    A: AgentPort + 'static,
-    R: ReviewPort + 'static,
-    O: ObservabilityPort + 'static,
 {
     // -------------------------------------------------------------------------
     // Feature RPCs
@@ -287,27 +342,41 @@ where
         let relevant_rules: Vec<_> = contract
             .rules
             .iter()
-            .filter(|r| r.transition.is_empty() || r.transition == req.transition)
+            .filter(|r| {
+                r.transition.is_empty()
+                    || governance_transition_matches(&r.transition, &req.transition)
+            })
             .collect();
 
-        // Collect evidence — a production impl would filter by feature/rule
-        let evidence = self
-            .storage
-            .get_evidence_by_fr("")
-            .await
-            .unwrap_or_default();
-
         let mut violations = Vec::new();
-        let feature_slug = req.feature_slug;
+        let feature_wp_ids: HashSet<i64> = self
+            .storage
+            .list_wps_by_feature(feature.id)
+            .await
+            .map_err(domain_error_to_status)?
+            .into_iter()
+            .map(|wp| wp.id)
+            .collect();
+
         for rule in &relevant_rules {
-            let satisfied = evidence.iter().any(|candidate| candidate.fr_id == feature_slug);
-            if !satisfied {
-                violations.push(ProtoGateViolation {
-                    fr_id: feature_slug.clone(),
-                    rule_id: rule.transition.clone(),
-                    message: format!("Missing required evidence for FR {}", feature_slug),
-                    remediation: format!("Provide evidence linked to FR {}", feature_slug),
-                });
+            for raw_requirement in &rule.required_evidence {
+                let (fr_id, expected_type, recognized) =
+                    parse_evidence_requirement(raw_requirement);
+                let evidence = self
+                    .storage
+                    .get_evidence_by_fr(fr_id)
+                    .await
+                    .map_err(domain_error_to_status)?;
+                if !recognized
+                    || !evidence_satisfies_requirement(
+                        &evidence,
+                        &feature_wp_ids,
+                        fr_id,
+                        expected_type,
+                    )
+                {
+                    violations.push(missing_evidence_violation(rule, fr_id, raw_requirement));
+                }
             }
         }
 
@@ -327,6 +396,9 @@ where
         request: Request<GetAuditTrailRequest>,
     ) -> Result<Response<Self::GetAuditTrailStream>, Status> {
         let req = request.into_inner();
+        if req.limit < 0 {
+            return Err(Status::invalid_argument("limit must be non-negative"));
+        }
         let feature = self
             .storage
             .get_feature_by_slug(&req.feature_slug)
@@ -338,15 +410,17 @@ where
 
         let entries = self
             .storage
-            .get_audit_trail(feature.id)
+            .get_audit_trail_page(
+                feature.id,
+                req.after_id,
+                (req.limit > 0).then_some(req.limit as usize),
+            )
             .await
             .map_err(domain_error_to_status)?;
 
         let slug = req.feature_slug.clone();
-        let after_id = req.after_id;
-        let filtered: Vec<_> = entries.into_iter().filter(|e| e.id > after_id).collect();
 
-        let stream = tokio_stream::iter(filtered.into_iter().map(move |entry| {
+        let stream = tokio_stream::iter(entries.into_iter().map(move |entry| {
             let mut proto = audit_entry_to_proto(entry);
             proto.feature_slug = slug.clone();
             Ok(GetAuditTrailResponse {
@@ -469,26 +543,20 @@ where
     }
 }
 
-impl<S, V, A, R, O> AgilePlusCoreServer<S, V, A, R, O>
+impl<S> AgilePlusCoreServer<S>
 where
     S: StoragePort + 'static,
-    V: VcsPort + 'static,
-    A: AgentPort + 'static,
-    R: ReviewPort + 'static,
-    O: ObservabilityPort + 'static,
 {
     /// Dispatch core (non-agent) commands.
     async fn dispatch_core_command(
         &self,
         command: &str,
-        feature_slug: &str,
-        args: &HashMap<String, String>,
+        _feature_slug: &str,
+        _args: &HashMap<String, String>,
     ) -> Result<(String, HashMap<String, String>), Status> {
         match command {
             "specify" | "research" | "plan" | "validate" | "ship" | "retrospective" => {
-                let msg = format!("command '{command}' queued for feature '{feature_slug}'");
-                info!(command, feature_slug, "core command dispatched via gRPC");
-                Ok((msg, args.clone()))
+                Err(unsupported_core_command(command))
             }
             other => Err(Status::unimplemented(format!("unknown command: '{other}'"))),
         }
@@ -496,31 +564,27 @@ where
 }
 
 /// Start the gRPC server, binding to the given address.
-#[allow(clippy::too_many_arguments)] // Server bootstrap requires all service ports
-pub async fn start_server<S, V, A, R, O>(
+#[cfg(not(agileplus_proto_stubs))]
+pub async fn start_server<S>(
     addr: SocketAddr,
     storage: Arc<S>,
-    vcs: Arc<V>,
-    agents: Arc<A>,
-    review: Arc<R>,
-    telemetry: Arc<O>,
     event_bus: Arc<EventBus>,
     proxy: Arc<ProxyRouter>,
 ) -> Result<(), Box<dyn std::error::Error>>
 where
-    S: StoragePort + 'static,
-    V: VcsPort + 'static,
-    A: AgentPort + 'static,
-    R: ReviewPort + 'static,
-    O: ObservabilityPort + 'static,
+    S: StoragePort + ContentStoragePort + 'static,
 {
-    let service =
-        AgilePlusCoreServer::new(storage, vcs, agents, review, telemetry, event_bus, proxy);
+    let service = AgilePlusCoreServer::new(storage, event_bus, proxy);
 
     info!(%addr, "starting AgilePlus gRPC server");
 
     Server::builder()
-        .add_service(AgilePlusCoreServiceServer::new(service))
+        .add_service(AgilePlusCoreServiceServer::new(service.clone()))
+        .add_service(
+            agileplus_proto::agileplus::v1::integrations_service_server::IntegrationsServiceServer::new(
+                service,
+            ),
+        )
         .serve_with_shutdown(addr, shutdown_signal())
         .await?;
 
@@ -528,7 +592,25 @@ where
     Ok(())
 }
 
+/// Report a clear runtime error when the crate was built without generated tonic services.
+#[cfg(agileplus_proto_stubs)]
+pub async fn start_server<S>(
+    _addr: SocketAddr,
+    _storage: Arc<S>,
+    _event_bus: Arc<EventBus>,
+    _proxy: Arc<ProxyRouter>,
+) -> Result<(), Box<dyn std::error::Error>>
+where
+    S: StoragePort + ContentStoragePort + 'static,
+{
+    Err(
+        "AgilePlus gRPC network server is unavailable because protobuf generation was skipped"
+            .into(),
+    )
+}
+
 /// Listens for SIGTERM / SIGINT and resolves when either is received.
+#[cfg(not(agileplus_proto_stubs))]
 async fn shutdown_signal() {
     use tokio::signal;
 
@@ -560,6 +642,14 @@ async fn shutdown_signal() {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use agileplus_domain::domain::{
+        audit::{AuditEntry, hash_entry},
+        feature::Feature,
+    };
+    use agileplus_proto::agileplus::v1::CommandRequest;
+    use agileplus_sqlite::SqliteStorageAdapter;
+    use chrono::Utc;
+    use tokio_stream::StreamExt;
 
     #[test]
     fn domain_error_mapping() {
@@ -576,5 +666,206 @@ mod tests {
 
         let s = domain_error_to_status(DomainError::Conflict("x".into()));
         assert_eq!(s.code(), tonic::Code::AlreadyExists);
+    }
+
+    #[test]
+    fn governance_requirement_uses_fr_id_and_optional_type() {
+        assert_eq!(
+            parse_evidence_requirement("FR-053:ci_output"),
+            ("FR-053", Some(EvidenceType::CiOutput), true)
+        );
+        assert_eq!(parse_evidence_requirement("FR-054"), ("FR-054", None, true));
+        assert_eq!(
+            parse_evidence_requirement("FR-055:unknown"),
+            ("FR-055", None, false)
+        );
+    }
+
+    #[test]
+    fn governance_transition_comparison_normalizes_arrow_spacing_only() {
+        assert!(governance_transition_matches(
+            "WP01: Doing -> Review",
+            "WP01: Doing->Review"
+        ));
+        assert!(!governance_transition_matches(
+            "WP01: Doing -> Review",
+            "WP02: Doing -> Review"
+        ));
+        assert!(!governance_transition_matches(
+            "WP01: Doing -> Review",
+            "WP01: doing -> review"
+        ));
+        assert!(!governance_transition_matches(
+            "malformed",
+            "also malformed"
+        ));
+    }
+
+    #[test]
+    fn lifecycle_commands_are_explicitly_unsupported() {
+        for command in [
+            "specify",
+            "research",
+            "plan",
+            "validate",
+            "ship",
+            "retrospective",
+        ] {
+            let status = unsupported_core_command(command);
+            assert_eq!(status.code(), tonic::Code::Unimplemented);
+            assert!(status.message().contains(command));
+            assert!(!status.message().contains("queued"));
+        }
+    }
+
+    #[tokio::test]
+    async fn dispatch_command_rejects_unimplemented_lifecycle_command() {
+        let storage =
+            Arc::new(SqliteStorageAdapter::new(std::path::Path::new(":memory:")).unwrap());
+        let service = AgilePlusCoreServer::new(
+            storage,
+            Arc::new(EventBus::new(8)),
+            Arc::new(ProxyRouter::new(None, None).await),
+        );
+        let error = service
+            .dispatch_command(Request::new(DispatchCommandRequest {
+                command: Some(CommandRequest {
+                    command: "specify".to_owned(),
+                    feature_slug: "feature-one".to_owned(),
+                    args: HashMap::new(),
+                }),
+            }))
+            .await
+            .unwrap_err();
+
+        assert_eq!(error.code(), tonic::Code::Unimplemented);
+        assert!(!error.message().contains("queued"));
+    }
+
+    async fn test_service(
+        storage: Arc<SqliteStorageAdapter>,
+    ) -> AgilePlusCoreServer<SqliteStorageAdapter> {
+        AgilePlusCoreServer::new(
+            storage,
+            Arc::new(EventBus::new(8)),
+            Arc::new(ProxyRouter::new(None, None).await),
+        )
+    }
+
+    #[tokio::test]
+    async fn audit_trail_rejects_negative_limit() {
+        let storage = Arc::new(SqliteStorageAdapter::in_memory().unwrap());
+        let result = test_service(storage)
+            .await
+            .get_audit_trail(Request::new(GetAuditTrailRequest {
+                feature_slug: "feature-one".into(),
+                after_id: 0,
+                limit: -1,
+            }))
+            .await;
+        let error = match result {
+            Ok(_) => panic!("negative audit limit must be rejected"),
+            Err(error) => error,
+        };
+        assert_eq!(error.code(), tonic::Code::InvalidArgument);
+    }
+
+    #[tokio::test]
+    async fn audit_trail_applies_after_id_and_latest_limit() {
+        let storage = Arc::new(SqliteStorageAdapter::in_memory().unwrap());
+        let feature_id = StoragePort::create_feature(
+            storage.as_ref(),
+            &Feature::new("audit-page", "Audit page", [0; 32], None),
+        )
+        .await
+        .unwrap();
+        let mut previous = [0; 32];
+        let mut ids = Vec::new();
+        for _ in 0..3 {
+            let mut entry = AuditEntry {
+                id: 0,
+                feature_id,
+                wp_id: None,
+                timestamp: Utc::now(),
+                actor: "test".into(),
+                transition: "test".into(),
+                evidence_refs: Vec::new(),
+                prev_hash: previous,
+                hash: [0; 32],
+                event_id: None,
+                archived_to: None,
+            };
+            entry.hash = hash_entry(&entry);
+            previous = entry.hash;
+            ids.push(storage.append_audit_entry(&entry).await.unwrap());
+        }
+        let response = test_service(storage)
+            .await
+            .get_audit_trail(Request::new(GetAuditTrailRequest {
+                feature_slug: "audit-page".into(),
+                after_id: ids[0],
+                limit: 1,
+            }))
+            .await
+            .unwrap();
+        let entries = response.into_inner().collect::<Vec<_>>().await;
+        assert_eq!(entries.len(), 1);
+        assert_eq!(
+            entries[0]
+                .as_ref()
+                .unwrap()
+                .audit_entry
+                .as_ref()
+                .unwrap()
+                .id,
+            ids[2]
+        );
+    }
+
+    #[test]
+    fn governance_evidence_must_belong_to_feature_and_match_type() {
+        let evidence = vec![Evidence {
+            id: 1,
+            wp_id: 7,
+            fr_id: "FR-053".to_owned(),
+            evidence_type: EvidenceType::CiOutput,
+            artifact_path: "ci://run/1".to_owned(),
+            metadata: None,
+            created_at: Utc::now(),
+        }];
+
+        assert!(evidence_satisfies_requirement(
+            &evidence,
+            &HashSet::from([7]),
+            "FR-053",
+            Some(EvidenceType::CiOutput),
+        ));
+        assert!(!evidence_satisfies_requirement(
+            &evidence,
+            &HashSet::from([8]),
+            "FR-053",
+            Some(EvidenceType::CiOutput),
+        ));
+        assert!(!evidence_satisfies_requirement(
+            &evidence,
+            &HashSet::from([7]),
+            "FR-053",
+            Some(EvidenceType::SecurityScan),
+        ));
+    }
+
+    #[test]
+    fn governance_violation_reports_requirement_not_feature_slug() {
+        let rule = GovernanceRule {
+            transition: "validate".to_owned(),
+            required_evidence: vec!["FR-053:ci_output".to_owned()],
+            policy_refs: Vec::new(),
+        };
+        let violation = missing_evidence_violation(&rule, "FR-053", "FR-053:ci_output");
+
+        assert_eq!(violation.fr_id, "FR-053");
+        assert_eq!(violation.rule_id, "validate");
+        assert!(violation.message.contains("FR-053:ci_output"));
+        assert!(!violation.message.contains("feature"));
     }
 }

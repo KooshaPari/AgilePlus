@@ -7,7 +7,7 @@
 
 use std::collections::HashMap;
 
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, anyhow};
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -17,6 +17,7 @@ use crate::client::{GitHubClient, GitHubIssuePayload};
 use crate::map::{GhIssue, GhPullRequest, issue_to_story, pr_to_story};
 use agileplus_domain::domain::backlog::BacklogItem;
 use agileplus_domain::domain::story::Story;
+use agileplus_domain::error::DomainError;
 
 #[async_trait]
 pub trait GhDataSource: Send + Sync {
@@ -69,18 +70,30 @@ pub async fn sync_repository(
     for issue in source.list_issues().await? {
         match issue_to_story(&issue, epic_id, project_id) {
             Ok(story) => report.stories.push(story),
-            Err(error) => report
+            Err(DomainError::Validation(message)) => report
                 .skipped
-                .push((issue.number.try_into().unwrap(), error.to_string())),
+                .push((issue.number.try_into().unwrap(), message)),
+            Err(error) => {
+                return Err(anyhow!(
+                    "unexpected error mapping issue #{}: {error}",
+                    issue.number
+                ));
+            }
         }
     }
 
     for pr in source.list_prs().await? {
         match pr_to_story(&pr, epic_id, project_id) {
             Ok(story) => report.stories.push(story),
-            Err(error) => report
+            Err(DomainError::Validation(message)) => report
                 .skipped
-                .push((pr.number.try_into().unwrap(), error.to_string())),
+                .push((pr.number.try_into().unwrap(), message)),
+            Err(error) => {
+                return Err(anyhow!(
+                    "unexpected error mapping PR #{}: {error}",
+                    pr.number
+                ));
+            }
         }
     }
 
@@ -128,11 +141,21 @@ impl GitHubSyncAdapter {
         let body = format_bug_body(item);
         let body_hash = hash_content(&body);
 
-        // Check if unchanged
-        if let Some(existing_hash) = state.content_hashes.get(&item_id) {
-            if *existing_hash == body_hash {
-                return Ok(SyncOutcome::Skipped);
-            }
+        // Local content is unchanged, but the remote may have been edited
+        // since our last successful sync. Verify it before skipping.
+        if let (Some(existing_hash), Some(&issue_number)) = (
+            state.content_hashes.get(&item_id),
+            state.issue_mappings.get(&item_id),
+        ) && *existing_hash == body_hash
+        {
+            let remote = self.client.get_issue(issue_number).await?;
+            return Ok(classify_existing_sync(
+                issue_number,
+                Some(existing_hash),
+                &body_hash,
+                remote.body.as_deref().unwrap_or_default(),
+            )
+            .into());
         }
 
         let labels = vec![
@@ -149,18 +172,16 @@ impl GitHubSyncAdapter {
 
         let outcome = if let Some(&issue_number) = state.issue_mappings.get(&item_id) {
             // Conflict check: fetch remote and compare hashes
-            if let Ok(remote) = self.client.get_issue(issue_number).await {
-                if let Some(ref remote_body) = remote.body {
-                    let remote_hash = hash_content(remote_body);
-                    if let Some(our_hash) = state.content_hashes.get(&item_id) {
-                        if remote_hash != *our_hash && body_hash != remote_hash {
-                            return Ok(SyncOutcome::Conflict {
-                                issue_number,
-                                reason: "Remote issue body was modified externally".to_string(),
-                            });
-                        }
-                    }
-                }
+            let remote = self.client.get_issue(issue_number).await?;
+            let remote_hash = hash_content(remote.body.as_deref().unwrap_or_default());
+            if let Some(our_hash) = state.content_hashes.get(&item_id)
+                && remote_hash != *our_hash
+                && body_hash != remote_hash
+            {
+                return Ok(SyncOutcome::Conflict {
+                    issue_number,
+                    reason: "Remote issue body was modified externally".to_string(),
+                });
             }
 
             let resp = self.client.update_issue(issue_number, &payload).await?;
@@ -220,7 +241,39 @@ fn format_bug_body(item: &BacklogItem) -> String {
 fn hash_content(content: &str) -> String {
     let mut hasher = Sha256::new();
     hasher.update(content.as_bytes());
-    format!("{:x}", hasher.finalize())
+    hex::encode(hasher.finalize())
+}
+
+fn classify_existing_sync(
+    issue_number: i64,
+    previous_hash: Option<&String>,
+    local_hash: &str,
+    remote_body: &str,
+) -> ExistingSyncDecision {
+    let remote_hash = hash_content(remote_body);
+    if previous_hash.is_some_and(|previous| previous != &remote_hash) && local_hash != remote_hash {
+        ExistingSyncDecision::Conflict { issue_number }
+    } else {
+        ExistingSyncDecision::Skipped
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ExistingSyncDecision {
+    Skipped,
+    Conflict { issue_number: i64 },
+}
+
+impl From<ExistingSyncDecision> for SyncOutcome {
+    fn from(decision: ExistingSyncDecision) -> Self {
+        match decision {
+            ExistingSyncDecision::Skipped => Self::Skipped,
+            ExistingSyncDecision::Conflict { issue_number } => Self::Conflict {
+                issue_number,
+                reason: "Remote issue body was modified externally".to_string(),
+            },
+        }
+    }
 }
 
 #[cfg(test)]
@@ -228,6 +281,48 @@ mod tests {
     use super::*;
     use agileplus_domain::domain::backlog::{BacklogPriority, BacklogStatus};
     use agileplus_triage::Intent;
+    use std::sync::Arc;
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+    use tokio::net::TcpListener;
+    use tokio::sync::Mutex;
+
+    async fn spawn_issue_server(
+        status: &str,
+        body: &str,
+    ) -> (
+        std::net::SocketAddr,
+        Arc<Mutex<Vec<String>>>,
+        tokio::task::JoinHandle<()>,
+    ) {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let requests = Arc::new(Mutex::new(Vec::new()));
+        let recorded_requests = Arc::clone(&requests);
+        let status = status.to_string();
+        let body = body.to_string();
+        let server = tokio::spawn(async move {
+            let (mut stream, _) = listener.accept().await.unwrap();
+            let mut request = Vec::new();
+            let mut buffer = [0_u8; 1024];
+            while !request.windows(4).any(|window| window == b"\r\n\r\n") {
+                let bytes_read = stream.read(&mut buffer).await.unwrap();
+                assert_ne!(bytes_read, 0, "connection closed before request headers");
+                request.extend_from_slice(&buffer[..bytes_read]);
+            }
+            let request = String::from_utf8_lossy(&request);
+            recorded_requests
+                .lock()
+                .await
+                .push(request.lines().next().unwrap().to_string());
+            let response = format!(
+                "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                body.len(),
+                body
+            );
+            stream.write_all(response.as_bytes()).await.unwrap();
+        });
+        (address, requests, server)
+    }
 
     fn sample_bug() -> BacklogItem {
         BacklogItem {
@@ -281,6 +376,104 @@ mod tests {
         let h1 = hash_content(&body);
         let h2 = hash_content(&body);
         assert_eq!(h1, h2); // Same content → same hash → skip
+    }
+
+    #[test]
+    fn unchanged_local_content_still_detects_a_remote_edit() {
+        let item = sample_bug();
+        let local_hash = hash_content(&format_bug_body(&item));
+
+        assert!(matches!(
+            classify_existing_sync(42, Some(&local_hash), &local_hash, "edited remotely"),
+            ExistingSyncDecision::Conflict { issue_number: 42 }
+        ));
+    }
+
+    #[tokio::test]
+    async fn unchanged_local_content_fetches_remote_once_and_reports_remote_edit() {
+        let body = r#"{"number":42,"title":"Login crash","body":"edited remotely","state":"open","labels":[],"updated_at":"2026-08-30T00:00:00Z"}"#;
+        let (address, requests, server) = spawn_issue_server("200 OK", body).await;
+
+        let item = sample_bug();
+        let local_hash = hash_content(&format_bug_body(&item));
+        let mut state = GitHubSyncState::default();
+        state.issue_mappings.insert(item.id.unwrap(), 42);
+        state.content_hashes.insert(item.id.unwrap(), local_hash);
+        let adapter = GitHubSyncAdapter::new(GitHubClient::new(
+            format!("http://{address}"),
+            "test-token".to_string(),
+            "owner".to_string(),
+            "repo".to_string(),
+        ));
+
+        let outcome = adapter.sync_bug(&mut state, &item).await.unwrap();
+        server.await.unwrap();
+
+        assert!(matches!(
+            outcome,
+            SyncOutcome::Conflict {
+                issue_number: 42,
+                ..
+            }
+        ));
+        assert_eq!(
+            requests.lock().await.as_slice(),
+            ["GET /repos/owner/repo/issues/42 HTTP/1.1"]
+        );
+    }
+
+    #[tokio::test]
+    async fn changed_local_content_propagates_remote_fetch_failure() {
+        let (address, requests, server) =
+            spawn_issue_server("500 Internal Server Error", "boom").await;
+        let mut item = sample_bug();
+        let previous_hash = hash_content(&format_bug_body(&item));
+        item.description.push_str(" changed locally");
+        let mut state = GitHubSyncState::default();
+        state.issue_mappings.insert(item.id.unwrap(), 42);
+        state.content_hashes.insert(item.id.unwrap(), previous_hash);
+        let adapter = GitHubSyncAdapter::new(GitHubClient::new(
+            format!("http://{address}"),
+            "token".into(),
+            "owner".into(),
+            "repo".into(),
+        ));
+
+        let error = adapter.sync_bug(&mut state, &item).await.unwrap_err();
+        server.await.unwrap();
+
+        assert!(error.to_string().contains("GitHub API error 500"));
+        assert_eq!(requests.lock().await.len(), 1);
+    }
+
+    #[tokio::test]
+    async fn changed_local_content_treats_missing_remote_body_as_empty_for_conflicts() {
+        let body = r#"{"number":42,"title":"Login crash","body":null,"state":"open","labels":[],"updated_at":"2026-08-30T00:00:00Z"}"#;
+        let (address, requests, server) = spawn_issue_server("200 OK", body).await;
+        let mut item = sample_bug();
+        let previous_hash = hash_content(&format_bug_body(&item));
+        item.description.push_str(" changed locally");
+        let mut state = GitHubSyncState::default();
+        state.issue_mappings.insert(item.id.unwrap(), 42);
+        state.content_hashes.insert(item.id.unwrap(), previous_hash);
+        let adapter = GitHubSyncAdapter::new(GitHubClient::new(
+            format!("http://{address}"),
+            "token".into(),
+            "owner".into(),
+            "repo".into(),
+        ));
+
+        let outcome = adapter.sync_bug(&mut state, &item).await.unwrap();
+        server.await.unwrap();
+
+        assert!(matches!(
+            outcome,
+            SyncOutcome::Conflict {
+                issue_number: 42,
+                ..
+            }
+        ));
+        assert_eq!(requests.lock().await.len(), 1);
     }
 
     struct FakeSource {

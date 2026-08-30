@@ -16,6 +16,8 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Any
 
+from agileplus_mcp.grpc_backlog import AgilePlusBacklogGrpcMixin
+
 logger = logging.getLogger(__name__)
 
 
@@ -31,7 +33,7 @@ class GrpcCallError(Exception):
         super().__init__(f"gRPC error {code}: {message}")
 
 
-class AgilePlusCoreClient:
+class AgilePlusCoreClient(AgilePlusBacklogGrpcMixin):
     """Async gRPC client for AgilePlusCoreService.
 
     Wraps the generated grpcio stubs with a Pythonic async interface.
@@ -42,6 +44,7 @@ class AgilePlusCoreClient:
         self._address = address
         self._channel: Any | None = None
         self._stub: Any | None = None
+        self._integrations_stub: Any | None = None
         self._max_retries = 3
         self._retry_delay = 0.5  # seconds, doubles on each attempt
 
@@ -54,11 +57,15 @@ class AgilePlusCoreClient:
         try:
             import grpc
 
-            from agileplus_proto.gen.agileplus.v1 import core_pb2_grpc  # type: ignore[import]
+            from agileplus_proto.gen.agileplus.v1 import (  # type: ignore[import]
+                core_pb2_grpc,
+                integrations_pb2_grpc,
+            )
 
             self._channel = grpc.aio.insecure_channel(self._address)
             await asyncio.wait_for(self._channel.channel_ready(), timeout=5.0)
             self._stub = core_pb2_grpc.AgilePlusCoreServiceStub(self._channel)
+            self._integrations_stub = integrations_pb2_grpc.IntegrationsServiceStub(self._channel)
             logger.info("Connected to AgilePlus gRPC server at %s", self._address)
         except (ImportError, ModuleNotFoundError) as exc:
             raise GrpcConnectionError(
@@ -73,12 +80,18 @@ class AgilePlusCoreClient:
             await self._channel.close()
             self._channel = None
             self._stub = None
+            self._integrations_stub = None
             logger.info("gRPC channel closed")
 
     def _require_stub(self) -> Any:
         if self._stub is None:
             raise GrpcConnectionError("Not connected — call connect() first")
         return self._stub
+
+    def _require_integrations_stub(self) -> Any:
+        if self._integrations_stub is None:
+            raise GrpcConnectionError("Not connected — call connect() first")
+        return self._integrations_stub
 
     # ------------------------------------------------------------------
     # Retry helper
@@ -207,12 +220,16 @@ class AgilePlusCoreClient:
             ],
         }
 
-    async def get_audit_trail(self, feature_slug: str, after_id: int = 0) -> list[dict[str, Any]]:
+    async def get_audit_trail(
+        self, feature_slug: str, after_id: int = 0, limit: int = 0
+    ) -> list[dict[str, Any]]:
         """Retrieve audit trail entries for a feature."""
         from agileplus_proto.gen.agileplus.v1 import core_pb2  # type: ignore[import]
 
         stub = self._require_stub()
-        request = core_pb2.GetAuditTrailRequest(feature_slug=feature_slug, after_id=after_id)
+        request = core_pb2.GetAuditTrailRequest(
+            feature_slug=feature_slug, after_id=after_id, limit=limit
+        )
         entries = []
         async for response in stub.GetAuditTrail(request):
             entries.append(self._audit_entry_to_dict(response.audit_entry))

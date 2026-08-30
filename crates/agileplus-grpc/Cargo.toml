@@ -6,20 +6,24 @@ license.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-agileplus-domain = { path = "../agileplus-domain" }
-agileplus-proto = { path = "../agileplus-proto" }
+agileplus-domain = { version = "0.2.1", path = "../agileplus-domain" }
+agileplus-proto = { version = "0.2.1", path = "../../rust" }
+agileplus-sqlite = { version = "0.2.1", path = "../agileplus-sqlite" }
 tonic = { workspace = true }
-prost = "0.13"
+prost.workspace = true
 tokio.workspace = true
-tokio-stream = { version = "0.1", features = ["sync"] }
+tokio-stream = { version = "0.1", features = ["sync", "net"] }
 futures = "0.3"
 tracing.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 chrono.workspace = true
+tracing-subscriber.workspace = true
 
 [build-dependencies]
-tonic-build = { workspace = true }
+tonic-prost-build = { workspace = true }
 
 [dev-dependencies]
+agileplus-sqlite = { version = "0.2.1", path = "../agileplus-sqlite" }
 tokio = { version = "1", features = ["full", "test-util"] }
+tonic-prost-build = { workspace = true }

@@ -1,10 +1,15 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
+mod protoc;
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Declare the custom cfg flag so rustc doesn't warn about it.
     println!("cargo::rustc-check-cfg=cfg(agileplus_proto_stubs)");
 
     // Skip proto compilation when protoc is unavailable (e.g. CI check-only runs).
-    if std::env::var("SKIP_PROTO_BUILD").is_ok() || which_protoc().is_none() {
+    println!("cargo:rerun-if-env-changed=SKIP_PROTO_BUILD");
+    println!("cargo:rerun-if-env-changed=PROTOC");
+    println!("cargo:rerun-if-env-changed=PATH");
+    if std::env::var("SKIP_PROTO_BUILD").is_ok() || protoc::which_protoc().is_none() {
         if std::env::var("SKIP_PROTO_BUILD").is_ok() {
             println!("cargo:warning=SKIP_PROTO_BUILD set — skipping protoc codegen");
         } else {
@@ -27,7 +32,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     ];
     let includes = &["../../agileplus-agents/proto"];
 
-    tonic_build::configure()
+    tonic_prost_build::configure()
         .build_server(true)
         .build_client(true)
         .compile_protos(protos, includes)?;
@@ -37,24 +42,4 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     Ok(())
-}
-
-fn which_protoc() -> Option<std::path::PathBuf> {
-    if let Ok(p) = std::env::var("PROTOC") {
-        let path = std::path::PathBuf::from(p);
-        if path.exists() {
-            return Some(path);
-        }
-    }
-    let name = if cfg!(windows) {
-        "protoc.exe"
-    } else {
-        "protoc"
-    };
-    std::env::var_os("PATH").and_then(|paths| {
-        std::env::split_paths(&paths).find_map(|dir| {
-            let candidate = dir.join(name);
-            candidate.is_file().then_some(candidate)
-        })
-    })
 }

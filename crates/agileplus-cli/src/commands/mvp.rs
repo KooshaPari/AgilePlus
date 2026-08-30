@@ -400,7 +400,7 @@ pub async fn next_ready<S: StoragePort>(args: &NextReadyArgs, storage: &S) -> Re
         return Ok(());
     }
 
-    println!("{:<6}  {:<8}  {:<8}  {}", "ID", "FEATURE", "STATE", "TITLE");
+    println!("{:<6}  {:<8}  {:<8}  TITLE", "ID", "FEATURE", "STATE");
     println!("{}", "-".repeat(70));
     for wp in &wps {
         println!(

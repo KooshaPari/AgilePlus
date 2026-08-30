@@ -15,4 +15,4 @@ jobs:
       pull-requests: write
     steps:
       - name: Release drafter skipped - phenoShared deprecated
-        run: echo "Release drafter workflow disabled due to phenoShared deprecation. TODO: Re-implement if needed."
+        run: 'echo "Release drafter workflow disabled due to phenoShared deprecation. TODO: Re-implement if needed."'

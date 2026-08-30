@@ -43,6 +43,7 @@ target/
 
 # python test cache
 **/__pycache__/
+**/.coverage
 *.pyc
 *.pyo
 **/*.pyc

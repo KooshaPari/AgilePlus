@@ -260,7 +260,7 @@ impl SyncQueueStore {
             self.conn.execute(
                 "INSERT INTO sync_queue (id, kind, payload, attempt, next_attempt_at, created_at) VALUES (?1,?2,?3,?4,?5,?6)",
                 rusqlite::params![
-                    item.id,
+                    item.id as i64,
                     serde_json::to_string(&item.kind)?,
                     item.payload,
                     item.attempt,

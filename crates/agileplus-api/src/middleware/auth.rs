@@ -26,15 +26,14 @@ const PUBLIC_PATHS: &[&str] = &["/health", "/info", "/webhooks"];
 
 /// Extract a candidate token from `Authorization: Bearer`, `X-API-Key`, or `?api_key=`.
 fn extract_token(headers: &HeaderMap, request: &Request) -> Result<String, ApiError> {
-    if let Some(auth) = headers.get("Authorization").and_then(|v| v.to_str().ok()) {
-        if let Some(token) = auth
+    if let Some(auth) = headers.get("Authorization").and_then(|v| v.to_str().ok())
+        && let Some(token) = auth
             .strip_prefix("Bearer ")
             .or_else(|| auth.strip_prefix("bearer "))
-        {
-            let token = token.trim();
-            if !token.is_empty() {
-                return Ok(token.to_string());
-            }
+    {
+        let token = token.trim();
+        if !token.is_empty() {
+            return Ok(token.to_string());
         }
     }
 
@@ -42,19 +41,50 @@ fn extract_token(headers: &HeaderMap, request: &Request) -> Result<String, ApiEr
         return Ok(header_val.to_string());
     }
 
-    if let Some(query) = request.uri().query() {
-        if let Some(v) = query.split('&').find_map(|pair| {
+    if let Some(query) = request.uri().query()
+        && let Some(v) = query.split('&').find_map(|pair| {
             let (k, v) = pair.split_once('=')?;
             (k == "api_key").then(|| v.to_string())
-        }) {
-            return Ok(v);
-        }
+        })
+    {
+        return decode_query_component(&v).ok_or_else(|| {
+            ApiError::Unauthorized("Malformed percent encoding in API key".to_string())
+        });
     }
 
     Err(ApiError::Unauthorized(
         "Missing API key (Authorization Bearer, X-API-Key header, or ?api_key= param required)"
             .to_string(),
     ))
+}
+
+fn decode_query_component(value: &str) -> Option<String> {
+    let bytes = value.as_bytes();
+    let mut decoded = Vec::with_capacity(bytes.len());
+    let mut index = 0;
+    while index < bytes.len() {
+        match bytes[index] {
+            b'+' => decoded.push(b' '),
+            b'%' => {
+                let high = *bytes.get(index + 1)?;
+                let low = *bytes.get(index + 2)?;
+                decoded.push((hex_value(high)? << 4) | hex_value(low)?);
+                index += 2;
+            }
+            byte => decoded.push(byte),
+        }
+        index += 1;
+    }
+    String::from_utf8(decoded).ok()
+}
+
+fn hex_value(byte: u8) -> Option<u8> {
+    match byte {
+        b'0'..=b'9' => Some(byte - b'0'),
+        b'a'..=b'f' => Some(byte - b'a' + 10),
+        b'A'..=b'F' => Some(byte - b'A' + 10),
+        _ => None,
+    }
 }
 
 /// axum middleware that validates a bearer token / API key via [`DynTokenVerifier`].
@@ -132,6 +162,32 @@ mod tests {
     use agileplus_domain::credentials::{InMemoryCredentialStore, format_api_key_hash, keys};
     use axum::{Router, middleware, routing::get};
     use axum_test::TestServer;
+
+    #[test]
+    fn query_api_key_is_percent_decoded() {
+        let request = Request::builder()
+            .uri("/protected?api_key=key%2Bwith+spaces")
+            .body(axum::body::Body::empty())
+            .unwrap();
+
+        assert_eq!(
+            extract_token(&HeaderMap::new(), &request).unwrap(),
+            "key+with spaces"
+        );
+    }
+
+    #[test]
+    fn malformed_percent_encoded_query_api_key_is_rejected() {
+        let request = Request::builder()
+            .uri("/protected?api_key=broken%2")
+            .body(axum::body::Body::empty())
+            .unwrap();
+
+        assert!(matches!(
+            extract_token(&HeaderMap::new(), &request),
+            Err(ApiError::Unauthorized(_))
+        ));
+    }
 
     #[test]
     fn protected_auth_reads_rotated_key_from_credential_store() {

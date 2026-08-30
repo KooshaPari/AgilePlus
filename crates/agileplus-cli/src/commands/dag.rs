@@ -602,6 +602,51 @@ mod tests {
     }
 
     #[test]
+    fn read_id_text_skips_comments_and_accepts_pipe_and_unkeyed_rows() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("candidates.txt");
+        std::fs::write(&path, "# ignored\n\nwp-1|pipe text\nplain text\n").unwrap();
+
+        let items = read_id_text(path.to_str().unwrap()).unwrap();
+
+        assert_eq!(
+            items,
+            vec![
+                ("wp-1".to_string(), "pipe text".to_string()),
+                ("row2".to_string(), "plain text".to_string()),
+            ]
+        );
+    }
+
+    #[test]
+    fn pickable_repository_returns_only_ready_items_up_to_limit() {
+        let mut repo = InMemoryWpRepo::default();
+        repo.items.insert(
+            "ready-1".to_string(),
+            agileplus_application::dto::PickedItem {
+                wp_id: "ready-1".to_string(),
+                title: "Ready one".to_string(),
+                state: "ready".to_string(),
+                dependencies: vec![],
+            },
+        );
+        repo.items.insert(
+            "done-1".to_string(),
+            agileplus_application::dto::PickedItem {
+                wp_id: "done-1".to_string(),
+                title: "Done one".to_string(),
+                state: "done".to_string(),
+                dependencies: vec![],
+            },
+        );
+
+        let items = repo.list_pickable("agent-a", None, None, 1).unwrap();
+
+        assert_eq!(items.len(), 1);
+        assert_eq!(items[0].state, "ready");
+    }
+
+    #[test]
     fn dedup_explain_pair_hybrid_matches_helper() {
         let a = "audit fastapi routes";
         let b = "audit fastapi endpoints";

@@ -527,8 +527,9 @@ impl AuditLogger {
             .lock()
             .map_err(|e| GovernanceError::Database(e.to_string()))?;
 
-        let total: u64 =
-            conn.query_row("SELECT COUNT(*) FROM audit_events", [], |row| row.get(0))?;
+        let total: u64 = conn.query_row("SELECT COUNT(*) FROM audit_events", [], |row| {
+            row.get::<_, i64>(0)
+        })? as u64;
 
         let today = Utc::now().date_naive();
         let today_start = today.and_hms_opt(0, 0, 0).unwrap();
@@ -537,14 +538,14 @@ impl AuditLogger {
         let today_count: u64 = conn.query_row(
             "SELECT COUNT(*) FROM audit_events WHERE timestamp >= ?",
             [today_start.to_rfc3339()],
-            |row| row.get(0),
-        )?;
+            |row| row.get::<_, i64>(0),
+        )? as u64;
 
         let errors: u64 = conn.query_row(
             "SELECT COUNT(*) FROM audit_events WHERE result = 'failure'",
             [],
-            |row| row.get(0),
-        )?;
+            |row| row.get::<_, i64>(0),
+        )? as u64;
 
         let mut stats = GovernanceStats {
             total,
@@ -556,7 +557,7 @@ impl AuditLogger {
         // Get by level
         let mut stmt = conn.prepare("SELECT level, COUNT(*) FROM audit_events GROUP BY level")?;
         let rows = stmt.query_map([], |row| {
-            Ok((row.get::<_, String>(0)?, row.get::<_, u64>(1)?))
+            Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)? as u64))
         })?;
 
         for (level, count) in rows.flatten() {
@@ -570,7 +571,7 @@ impl AuditLogger {
         let rows = stmt.query_map([], |row| {
             Ok(TopAction {
                 action: row.get(0)?,
-                count: row.get(1)?,
+                count: row.get::<_, i64>(1)? as u64,
             })
         })?;
 
@@ -627,8 +628,8 @@ impl AuditLogger {
         let count: u64 = conn.query_row(
             "SELECT COUNT(*) FROM audit_events WHERE synced_at IS NULL",
             [],
-            |row| row.get(0),
-        )?;
+            |row| row.get::<_, i64>(0),
+        )? as u64;
         Ok(count)
     }
 }

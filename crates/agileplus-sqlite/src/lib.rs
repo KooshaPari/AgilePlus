@@ -234,6 +234,24 @@ impl StoragePort for SqliteStorageAdapter {
         audit::get_audit_trail(&conn, feature_id)
     }
 
+    async fn get_audit_trail_page(
+        &self,
+        feature_id: i64,
+        after_id: i64,
+        limit: Option<usize>,
+    ) -> Result<Vec<AuditEntry>, DomainError> {
+        let conn = self.lock()?;
+        match limit {
+            Some(limit) => audit::get_audit_trail_page(&conn, feature_id, after_id, limit),
+            None => audit::get_audit_trail(&conn, feature_id).map(|entries| {
+                entries
+                    .into_iter()
+                    .filter(|entry| entry.id > after_id)
+                    .collect()
+            }),
+        }
+    }
+
     async fn get_latest_audit_entry(
         &self,
         feature_id: i64,
@@ -1007,6 +1025,36 @@ mod tests {
         // Ordered chronologically
         assert!(trail[0].id <= trail[1].id);
         assert!(trail[1].id <= trail[2].id);
+    }
+
+    #[tokio::test]
+    async fn audit_page_returns_only_the_latest_requested_entries() {
+        let db = make_adapter();
+        let fid = StoragePort::create_feature(
+            &db,
+            &Feature::new("audit-page", "Audit page", [0u8; 32], None),
+        )
+        .await
+        .unwrap();
+        let mut previous_hash = [0u8; 32];
+        for _ in 0..4 {
+            let entry = make_audit_entry(fid, previous_hash);
+            previous_hash = entry.hash;
+            StoragePort::append_audit_entry(&db, &entry).await.unwrap();
+        }
+
+        let full = StoragePort::get_audit_trail(&db, fid).await.unwrap();
+        let page = StoragePort::get_audit_trail_page(&db, fid, 0, Some(2))
+            .await
+            .unwrap();
+
+        assert_eq!(
+            page.iter().map(|entry| entry.id).collect::<Vec<_>>(),
+            full[full.len() - 2..]
+                .iter()
+                .map(|entry| entry.id)
+                .collect::<Vec<_>>()
+        );
     }
 
     #[tokio::test]
@@ -2118,3 +2166,7 @@ mod tests {
         assert_eq!(applied, 1, "024 migration should be recorded as applied");
     }
 }
+
+#[cfg(test)]
+#[path = "lib/tests/backlog.rs"]
+mod backlog_tests;

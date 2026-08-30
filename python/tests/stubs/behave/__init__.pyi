@@ -5,10 +5,10 @@ Mirrors pheno-harness/Pheno-HexaKit F1/F2 stubs.
 
 from __future__ import annotations
 
-from typing import Any, Callable, TypeVar
+from collections.abc import Callable
+from typing import Any, TypeVar
 
 F = TypeVar("F", bound=Callable[..., Any])
-
 
 class Context:
     """Stub for behave.runner.Context."""
@@ -16,29 +16,24 @@ class Context:
     def __getattr__(self, name: str) -> Any: ...
     def __setattr__(self, name: str, value: Any) -> None: ...
 
-
 def given(step_text: str, **kwargs: Any) -> Callable[[F], F]:
     def decorator(func: F) -> F:
         return func
     return decorator
-
 
 def when(step_text: str, **kwargs: Any) -> Callable[[F], F]:
     def decorator(func: F) -> F:
         return func
     return decorator
 
-
 def then(step_text: str, **kwargs: Any) -> Callable[[F], F]:
     def decorator(func: F) -> F:
         return func
     return decorator
-
 
 def step(step_text: str, **kwargs: Any) -> Callable[[F], F]:
     def decorator(func: F) -> F:
         return func
     return decorator
 
-
-__all__ = ["Context", "given", "when", "then", "step"]
+__all__ = ["Context", "given", "step", "then", "when"]

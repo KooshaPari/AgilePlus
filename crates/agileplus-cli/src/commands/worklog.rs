@@ -491,7 +491,7 @@ fn find_worklogs(dir: &Path, canonical_only: bool) -> Result<Vec<PathBuf>> {
         let name_str = name.to_string_lossy();
         let is_worklog = name_str.starts_with("worklog-") && name_str.ends_with(".json");
         let is_canonical = name_str.contains("-canonical.json");
-        if is_worklog && (canonical_only == is_canonical || (!canonical_only && is_canonical)) {
+        if is_worklog && canonical_only == is_canonical {
             out.push(entry.path());
         }
     }
@@ -525,10 +525,10 @@ pub fn validate_payload(payload: &WorklogPayload) -> Result<()> {
     if payload.agent_id.trim().is_empty() {
         bail!("agent_id must be a non-empty string");
     }
-    if let Some(ref sha) = payload.commit_sha {
-        if !is_valid_sha(sha) {
-            bail!("commit_sha '{sha}' is not a 7-40 char hex string and is not null");
-        }
+    if let Some(ref sha) = payload.commit_sha
+        && !is_valid_sha(sha)
+    {
+        bail!("commit_sha '{sha}' is not a 7-40 char hex string and is not null");
     }
     if !CANONICAL_VERIFICATION_STATUSES.contains(&payload.verification_result.status.as_str()) {
         bail!(
@@ -553,10 +553,10 @@ pub fn validate_payload(payload: &WorklogPayload) -> Result<()> {
             s = payload.started_at
         );
     }
-    if let Some(ref c) = payload.completed_at {
-        if !is_iso8601_like(c) {
-            bail!("completed_at '{c}' is not an ISO-8601-like string");
-        }
+    if let Some(ref c) = payload.completed_at
+        && !is_iso8601_like(c)
+    {
+        bail!("completed_at '{c}' is not an ISO-8601-like string");
     }
     // files_changed: unique, non-empty
     let mut seen = std::collections::HashSet::new();
@@ -1101,6 +1101,21 @@ mod tests {
         assert_eq!(report.validation_errors.len(), 1);
 
         let _ = std::fs::remove_file(&db);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn find_worklogs_separates_raw_and_canonical_files() {
+        let dir = tempdir_root("agileplus-worklog-file-selection");
+        std::fs::create_dir_all(&dir).unwrap();
+        let raw = dir.join("worklog-L2-39.json");
+        let canonical = dir.join("worklog-L2-39-canonical.json");
+        std::fs::write(&raw, "{}").unwrap();
+        std::fs::write(&canonical, "{}").unwrap();
+
+        assert_eq!(find_worklogs(&dir, false).unwrap(), vec![raw]);
+        assert_eq!(find_worklogs(&dir, true).unwrap(), vec![canonical]);
+
         let _ = std::fs::remove_dir_all(&dir);
     }
 

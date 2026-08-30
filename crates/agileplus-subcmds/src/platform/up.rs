@@ -4,8 +4,9 @@ use std::time::Duration;
 use anyhow::{Result, anyhow};
 
 use crate::platform::args::PlatformUpArgs;
-use crate::platform::health::{DEFAULT_API_URL, print_status_table_up, wait_for_health};
+use crate::platform::health::{print_status_table_up, wait_for_health};
 use crate::platform::process_compose::find_process_compose;
+use crate::platform::runtime::ResolvedRuntime;
 use crate::platform::workspace::resolve_platform_compose;
 
 /// Start the platform.
@@ -33,9 +34,11 @@ pub fn run_platform_up(args: PlatformUpArgs) -> Result<()> {
     println!();
     println!("Waiting for services to be ready...");
 
+    let runtime = ResolvedRuntime::load()?;
+
     // Poll /health until all pass or timeout.
     let health = wait_for_health(
-        DEFAULT_API_URL,
+        runtime.api_base(),
         Duration::from_secs(args.poll_interval),
         Duration::from_secs(args.timeout),
     );
@@ -47,7 +50,10 @@ pub fn run_platform_up(args: PlatformUpArgs) -> Result<()> {
             println!();
             print_status_table_up(&h.services);
             println!();
-            println!("Platform ready. Dashboard: {DEFAULT_API_URL}/dashboard");
+            println!(
+                "Platform ready. Dashboard: {}/dashboard",
+                runtime.api_base()
+            );
             Ok(())
         }
         Err(e) => Err(anyhow!("Platform did not become healthy: {e}")),
