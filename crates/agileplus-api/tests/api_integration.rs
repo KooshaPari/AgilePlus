@@ -12,6 +12,8 @@
 
 #[path = "api_integration/branch.rs"]
 mod branch;
+#[path = "api_integration/features_work_packages.rs"]
+mod features_work_packages;
 #[path = "api_integration/module_cycle.rs"]
 mod module_cycle;
 #[path = "api_integration/support/mod.rs"]
