@@ -374,7 +374,19 @@ def register_compatibility_tools(app: FastMCP, client: AgilePlusCoreClient) -> N
         for feature in features:
             state = str(feature.get("state", "unknown"))
             counts[state] = counts.get(state, 0) + 1
-            slug = str(feature.get("slug", ""))
+            slug = feature.get("slug")
+            if not isinstance(slug, str):
+                logger.warning(
+                    "Skipping dashboard enrichment for feature with invalid slug: %r", slug
+                )
+                continue
+            try:
+                validate_slug(slug, "feature slug")
+            except ValueError:
+                logger.warning(
+                    "Skipping dashboard enrichment for feature with invalid slug: %r", slug
+                )
+                continue
             work_packages = await client.list_work_packages(slug)
             active_work_packages.extend(
                 work_package

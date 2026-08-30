@@ -173,6 +173,31 @@ async def test_canonical_compatibility_tools_round_trip_to_the_grpc_client() -> 
 
 
 @pytest.mark.asyncio
+async def test_dashboard_counts_malformed_features_without_empty_slug_rpcs() -> None:
+    mcp = FastMCP("dashboard-malformed-features")
+    client = _client()
+    client.list_features = AsyncMock(
+        return_value=[
+            {"slug": "feature-one", "state": "planned"},
+            {"slug": "", "state": "planned"},
+            {"state": "unknown"},
+            {"slug": "Invalid_Slug", "state": "planned"},
+            {"slug": " padded-slug ", "state": "unknown"},
+            {"slug": "a" * 129, "state": "planned"},
+        ]
+    )
+    client.list_work_packages = AsyncMock(return_value=[])
+    client.get_audit_trail = AsyncMock(return_value=[])
+    server.register_compatibility_tools(mcp, client)
+
+    dashboard = await (await _tool(mcp, "get_dashboard"))()
+
+    assert dashboard["feature_counts"] == {"planned": 4, "unknown": 2}
+    client.list_work_packages.assert_awaited_once_with("feature-one")
+    client.get_audit_trail.assert_awaited_once_with("feature-one")
+
+
+@pytest.mark.asyncio
 async def test_canonical_health_reports_grpc_failures() -> None:
     mcp = FastMCP("unhealthy-compatibility-tools")
     client = _client()
