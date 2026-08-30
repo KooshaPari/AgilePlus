@@ -793,4 +793,87 @@ mod tests {
             assert_eq!(missing_response.status(), StatusCode::NOT_FOUND);
         }
     }
+
+    #[tokio::test]
+    async fn feature_page_alias_renders_detail_and_preserves_not_found_status() {
+        let app = router(Arc::new(RwLock::new(DashboardStore::seeded())));
+
+        let found_response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/features/4")
+                    .body(axum::body::Body::empty())
+                    .expect("feature page request"),
+            )
+            .await
+            .expect("feature page response");
+        assert_eq!(found_response.status(), StatusCode::OK);
+        let found_body = response_text(found_response).await;
+        assert!(found_body.contains("Modules and Cycles"));
+        assert!(found_body.contains("wp-list-4"));
+
+        let missing_response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/features/999")
+                    .body(axum::body::Body::empty())
+                    .expect("missing feature page request"),
+            )
+            .await
+            .expect("missing feature page response");
+        assert_eq!(missing_response.status(), StatusCode::NOT_FOUND);
+        assert_eq!(response_text(missing_response).await, "Feature not found");
+    }
+
+    #[tokio::test]
+    async fn feature_events_route_renders_the_empty_work_package_timeline_branch() {
+        let state = Arc::new(RwLock::new(DashboardStore::seeded()));
+        state.write().await.work_packages.remove(&4);
+        let app = router(state);
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/dashboard/features/4/events")
+                    .body(axum::body::Body::empty())
+                    .expect("empty timeline request"),
+            )
+            .await
+            .expect("empty timeline response");
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = response_text(response).await;
+        assert!(body.contains("No work packages linked yet"));
+        assert!(!body.contains("work package entries synced"));
+    }
+
+    #[tokio::test]
+    async fn feature_transition_route_rejects_disallowed_lifecycle_steps_without_mutation() {
+        let state = Arc::new(RwLock::new(DashboardStore::seeded()));
+        let app = router(state.clone());
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/api/features/4/transition")
+                    .header("content-type", "application/x-www-form-urlencoded")
+                    .body(axum::body::Body::from("target_state=shipped"))
+                    .expect("disallowed transition request"),
+            )
+            .await
+            .expect("disallowed transition response");
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+        assert_eq!(
+            state
+                .read()
+                .await
+                .features
+                .iter()
+                .find(|feature| feature.id == 4)
+                .expect("seeded feature 4")
+                .state,
+            FeatureState::Implementing
+        );
+    }
 }
