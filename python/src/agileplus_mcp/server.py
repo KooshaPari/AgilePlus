@@ -359,7 +359,7 @@ def register_compatibility_tools(app: FastMCP, client: AgilePlusCoreClient) -> N
         if limit < 0:
             raise ValueError("limit must be non-negative")
         if limit == 0:
-            return await client.get_audit_trail(feature_slug, limit=0)
+            return []
         return (await client.get_audit_trail(feature_slug, limit=limit))[:limit]
 
     @app.tool(name="verify_audit_chain")
@@ -469,7 +469,7 @@ def main() -> None:
 
 
 def _transport_kwargs(transport: str) -> dict[str, Any]:
-    if transport != "http":
+    if transport not in {"http", "sse", "streamable-http"}:
         return {}
     host = os.environ.get("AGILEPLUS_MCP_HOST", "127.0.0.1")
     if host == "localhost":

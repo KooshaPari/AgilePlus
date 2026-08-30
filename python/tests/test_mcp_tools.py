@@ -224,14 +224,17 @@ async def test_canonical_get_work_package_rejects_invalid_ids(wp_id: str) -> Non
     client.get_work_package_status.assert_not_awaited()
 
 
-def test_http_transport_requires_loopback(monkeypatch: pytest.MonkeyPatch) -> None:
+@pytest.mark.parametrize("transport", ["http", "sse", "streamable-http"])
+def test_http_transports_require_loopback(
+    monkeypatch: pytest.MonkeyPatch, transport: str
+) -> None:
     monkeypatch.setenv("AGILEPLUS_MCP_HOST", "0.0.0.0")  # noqa: S104 - rejection fixture
     with pytest.raises(ValueError, match="loopback"):
-        server._transport_kwargs("http")
+        server._transport_kwargs(transport)
 
     monkeypatch.setenv("AGILEPLUS_MCP_HOST", "127.0.0.1")
     monkeypatch.setenv("AGILEPLUS_MCP_PORT", "9876")
-    assert server._transport_kwargs("http") == {
+    assert server._transport_kwargs(transport) == {
         "host": "127.0.0.1",
         "port": 9876,
         "path": "/mcp",
@@ -282,16 +285,14 @@ async def test_canonical_audit_rejects_negative_limit_before_rpc() -> None:
 
 
 @pytest.mark.asyncio
-async def test_canonical_audit_zero_limit_preserves_unbounded_rpc_behavior() -> None:
+async def test_canonical_audit_zero_limit_returns_no_entries() -> None:
     mcp = FastMCP("audit-zero-limit")
     client = _client()
     server.register_compatibility_tools(mcp, client)
-    expected = [{"id": 1}]
-
     result = await (await _tool(mcp, "get_audit_trail"))("feature-one", 0)
 
-    assert result == expected
-    client.get_audit_trail.assert_awaited_once_with("feature-one", limit=0)
+    assert result == []
+    client.get_audit_trail.assert_not_awaited()
 
 
 def test_http_transport_rejects_localhost_with_non_loopback_resolution(
