@@ -646,91 +646,10 @@ mod tests {
         audit::{AuditEntry, hash_entry},
         feature::Feature,
     };
-    use agileplus_domain::error::DomainError;
-    use agileplus_domain::ports::agent::{AgentConfig, AgentResult, AgentStatus, AgentTask};
-    use agileplus_domain::ports::observability::{LogEntry, SpanContext};
-    use agileplus_domain::ports::review::{CiStatus, PrInfo, ReviewComment, ReviewStatus};
-    use agileplus_git::GitVcsAdapter;
     use agileplus_proto::agileplus::v1::CommandRequest;
     use agileplus_sqlite::SqliteStorageAdapter;
     use chrono::Utc;
     use tokio_stream::StreamExt;
-
-    #[derive(Debug)]
-    struct Unavailable;
-
-    impl AgentPort for Unavailable {
-        async fn dispatch(
-            &self,
-            _: AgentTask,
-            _: &AgentConfig,
-        ) -> Result<AgentResult, DomainError> {
-            Err(DomainError::NotImplemented)
-        }
-        async fn dispatch_async(
-            &self,
-            _: AgentTask,
-            _: &AgentConfig,
-        ) -> Result<String, DomainError> {
-            Err(DomainError::NotImplemented)
-        }
-        async fn query_status(&self, _: &str) -> Result<AgentStatus, DomainError> {
-            Err(DomainError::NotImplemented)
-        }
-        async fn cancel(&self, _: &str) -> Result<(), DomainError> {
-            Err(DomainError::NotImplemented)
-        }
-        async fn send_instruction(&self, _: &str, _: &str) -> Result<(), DomainError> {
-            Err(DomainError::NotImplemented)
-        }
-    }
-
-    impl ReviewPort for Unavailable {
-        async fn get_review_status(&self, _: &str) -> Result<ReviewStatus, DomainError> {
-            Err(DomainError::NotImplemented)
-        }
-        async fn get_review_comments(&self, _: &str) -> Result<Vec<ReviewComment>, DomainError> {
-            Err(DomainError::NotImplemented)
-        }
-        async fn get_actionable_comments(
-            &self,
-            _: &str,
-        ) -> Result<Vec<ReviewComment>, DomainError> {
-            Err(DomainError::NotImplemented)
-        }
-        async fn get_ci_status(&self, _: &str) -> Result<CiStatus, DomainError> {
-            Err(DomainError::NotImplemented)
-        }
-        async fn get_pr_info(&self, _: &str) -> Result<PrInfo, DomainError> {
-            Err(DomainError::NotImplemented)
-        }
-        async fn await_review(&self, _: &str, _: u64) -> Result<ReviewStatus, DomainError> {
-            Err(DomainError::NotImplemented)
-        }
-        async fn await_ci(&self, _: &str, _: u64) -> Result<CiStatus, DomainError> {
-            Err(DomainError::NotImplemented)
-        }
-    }
-
-    impl ObservabilityPort for Unavailable {
-        fn start_span(&self, _: &str, _: Option<&SpanContext>) -> SpanContext {
-            SpanContext {
-                trace_id: String::new(),
-                span_id: String::new(),
-                parent_span_id: None,
-            }
-        }
-        fn end_span(&self, _: &SpanContext) {}
-        fn add_span_event(&self, _: &SpanContext, _: &str, _: &[(&str, &str)]) {}
-        fn set_span_error(&self, _: &SpanContext, _: &str) {}
-        fn record_counter(&self, _: &str, _: u64, _: &[(&str, &str)]) {}
-        fn record_histogram(&self, _: &str, _: f64, _: &[(&str, &str)]) {}
-        fn record_gauge(&self, _: &str, _: f64, _: &[(&str, &str)]) {}
-        fn log(&self, _: &LogEntry) {}
-        fn log_info(&self, _: &str) {}
-        fn log_warn(&self, _: &str) {}
-        fn log_error(&self, _: &str) {}
-    }
 
     #[test]
     fn domain_error_mapping() {
@@ -805,10 +724,6 @@ mod tests {
             Arc::new(SqliteStorageAdapter::new(std::path::Path::new(":memory:")).unwrap());
         let service = AgilePlusCoreServer::new(
             storage,
-            Arc::new(GitVcsAdapter::from_current_dir().unwrap()),
-            Arc::new(Unavailable),
-            Arc::new(Unavailable),
-            Arc::new(Unavailable),
             Arc::new(EventBus::new(8)),
             Arc::new(ProxyRouter::new(None, None).await),
         );
@@ -829,19 +744,9 @@ mod tests {
 
     async fn test_service(
         storage: Arc<SqliteStorageAdapter>,
-    ) -> AgilePlusCoreServer<
-        SqliteStorageAdapter,
-        GitVcsAdapter,
-        Unavailable,
-        Unavailable,
-        Unavailable,
-    > {
+    ) -> AgilePlusCoreServer<SqliteStorageAdapter> {
         AgilePlusCoreServer::new(
             storage,
-            Arc::new(GitVcsAdapter::from_current_dir().unwrap()),
-            Arc::new(Unavailable),
-            Arc::new(Unavailable),
-            Arc::new(Unavailable),
             Arc::new(EventBus::new(8)),
             Arc::new(ProxyRouter::new(None, None).await),
         )
@@ -868,10 +773,12 @@ mod tests {
     #[tokio::test]
     async fn audit_trail_applies_after_id_and_latest_limit() {
         let storage = Arc::new(SqliteStorageAdapter::in_memory().unwrap());
-        let feature_id = storage
-            .create_feature(&Feature::new("audit-page", "Audit page", [0; 32], None))
-            .await
-            .unwrap();
+        let feature_id = StoragePort::create_feature(
+            storage.as_ref(),
+            &Feature::new("audit-page", "Audit page", [0; 32], None),
+        )
+        .await
+        .unwrap();
         let mut previous = [0; 32];
         let mut ids = Vec::new();
         for _ in 0..3 {
