@@ -64,6 +64,8 @@ fn seeded_shipping_gate_storage() -> MockStorage {
             labels: vec![],
             module_id: None,
             project_id: None,
+            created_at_commit: None,
+            last_modified_commit: None,
             created_at: now,
             updated_at: now,
         });
@@ -170,6 +172,37 @@ async fn list_cycles_invalid_state_returns_400() {
 }
 
 #[tokio::test]
+async fn list_cycles_filters_by_state() {
+    let server = setup_mutation_server().await;
+    let resp = server
+        .get("/api/cycles?state=Draft")
+        .add_header("X-API-Key", TEST_API_KEY)
+        .await;
+    resp.assert_status_ok();
+
+    let body: serde_json::Value = resp.json();
+    let cycles = body.as_array().expect("cycles response should be an array");
+    assert_eq!(cycles.len(), 1);
+    assert_eq!(cycles[0]["id"], 1);
+    assert_eq!(cycles[0]["state"], "Draft");
+}
+
+#[tokio::test]
+async fn get_cycle_detail_includes_assigned_features() {
+    let server = setup_shipping_gate_server().await;
+    let resp = server
+        .get("/api/cycles/1")
+        .add_header("X-API-Key", TEST_API_KEY)
+        .await;
+    resp.assert_status_ok();
+
+    let body: serde_json::Value = resp.json();
+    assert_eq!(body["cycle"]["name"], "Q2");
+    assert_eq!(body["cycle"]["state"], "Review");
+    assert_eq!(body["features"][0]["slug"], "blocking-feature");
+}
+
+#[tokio::test]
 async fn patch_module_persists_mutations() {
     let server = setup_mutation_server().await;
     let resp = server
@@ -227,6 +260,34 @@ async fn transition_cycle_persists_mutation() {
 }
 
 #[tokio::test]
+async fn transition_cycle_rejects_invalid_state_transition() {
+    let server = setup_mutation_server().await;
+    let resp = server
+        .post("/api/cycles/1/transition")
+        .add_header("X-API-Key", TEST_API_KEY)
+        .json(&serde_json::json!({
+            "state": "Review"
+        }))
+        .await;
+
+    resp.assert_status(StatusCode::BAD_REQUEST);
+}
+
+#[tokio::test]
+async fn transition_cycle_missing_id_returns_404() {
+    let server = setup_mutation_server().await;
+    let resp = server
+        .post("/api/cycles/999/transition")
+        .add_header("X-API-Key", TEST_API_KEY)
+        .json(&serde_json::json!({
+            "state": "Active"
+        }))
+        .await;
+
+    resp.assert_status(StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
 async fn transition_cycle_to_shipped_blocks_unvalidated_features() {
     let server = setup_shipping_gate_server().await;
     let resp = server
@@ -237,4 +298,22 @@ async fn transition_cycle_to_shipped_blocks_unvalidated_features() {
         }))
         .await;
     resp.assert_status(StatusCode::CONFLICT);
+}
+
+#[tokio::test]
+async fn transition_cycle_to_shipped_accepts_validated_features() {
+    let storage = seeded_shipping_gate_storage();
+    storage.features.lock().expect("features lock poisoned")[0].state = FeatureState::Validated;
+    let server = setup_test_server_with_storage(storage).await;
+
+    let resp = server
+        .post("/api/cycles/1/transition")
+        .add_header("X-API-Key", TEST_API_KEY)
+        .json(&serde_json::json!({
+            "state": "Shipped"
+        }))
+        .await;
+    resp.assert_status_ok();
+    let body: serde_json::Value = resp.json();
+    assert_eq!(body["state"], "Shipped");
 }

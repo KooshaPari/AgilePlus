@@ -586,6 +586,16 @@ mod tests {
     use crate::app_state::DashboardStore;
     use crate::routes::router;
 
+    async fn response_text(response: axum::response::Response) -> String {
+        String::from_utf8(
+            axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .expect("response body")
+                .to_vec(),
+        )
+        .expect("response body is UTF-8")
+    }
+
     #[tokio::test]
     async fn feature_transition_persists_an_allowed_lifecycle_step() {
         let state = Arc::new(RwLock::new(DashboardStore::seeded()));
@@ -714,5 +724,73 @@ mod tests {
             .await
             .expect("missing feature response");
         assert_eq!(missing_response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn feature_asset_routes_render_seeded_content_and_reject_missing_features() {
+        let state = Arc::new(RwLock::new(DashboardStore::seeded()));
+        let app = router(state);
+
+        let detail_response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/api/dashboard/features/4")
+                    .body(axum::body::Body::empty())
+                    .expect("feature detail request"),
+            )
+            .await
+            .expect("feature detail response");
+        assert_eq!(detail_response.status(), StatusCode::OK);
+        let detail_body = response_text(detail_response).await;
+        assert!(detail_body.contains("Modules and Cycles"));
+        assert!(detail_body.contains("feature-events-4"));
+
+        let work_packages_response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/api/dashboard/features/4/work-packages")
+                    .body(axum::body::Body::empty())
+                    .expect("work package request"),
+            )
+            .await
+            .expect("work package response");
+        assert_eq!(work_packages_response.status(), StatusCode::OK);
+        let work_packages_body = response_text(work_packages_response).await;
+        assert!(work_packages_body.contains("wp-list-4"));
+        assert!(work_packages_body.contains("Design module ownership model"));
+
+        let media_response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/api/dashboard/features/4/media")
+                    .body(axum::body::Body::empty())
+                    .expect("media request"),
+            )
+            .await
+            .expect("media response");
+        assert_eq!(media_response.status(), StatusCode::OK);
+        let media_body = response_text(media_response).await;
+        assert!(media_body.contains("media-gallery"));
+        assert!(media_body.contains("004-modules-and-cycles-hero.png"));
+
+        for missing_path in [
+            "/api/dashboard/features/999",
+            "/api/dashboard/features/999/media",
+        ] {
+            let missing_response = app
+                .clone()
+                .oneshot(
+                    Request::builder()
+                        .uri(missing_path)
+                        .body(axum::body::Body::empty())
+                        .expect("missing feature request"),
+                )
+                .await
+                .expect("missing feature response");
+            assert_eq!(missing_response.status(), StatusCode::NOT_FOUND);
+        }
     }
 }
