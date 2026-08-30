@@ -676,4 +676,43 @@ mod tests {
             .expect("missing feature response");
         assert_eq!(missing_response.status(), StatusCode::NOT_FOUND);
     }
+
+    #[tokio::test]
+    async fn feature_events_route_renders_seeded_work_package_timeline_and_not_found() {
+        let state = Arc::new(RwLock::new(DashboardStore::seeded()));
+        let app = router(state);
+
+        let timeline_response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/api/dashboard/features/4/events")
+                    .body(axum::body::Body::empty())
+                    .expect("timeline request"),
+            )
+            .await
+            .expect("timeline response");
+        assert_eq!(timeline_response.status(), StatusCode::OK);
+        let timeline_body = String::from_utf8(
+            axum::body::to_bytes(timeline_response.into_body(), usize::MAX)
+                .await
+                .expect("timeline body")
+                .to_vec(),
+        )
+        .expect("timeline body is UTF-8");
+        assert!(timeline_body.contains("event-timeline-4"));
+        assert!(timeline_body.contains("3 work package entries synced"));
+        assert!(timeline_body.contains("Design module ownership model"));
+
+        let missing_response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/dashboard/features/999/events")
+                    .body(axum::body::Body::empty())
+                    .expect("missing feature request"),
+            )
+            .await
+            .expect("missing feature response");
+        assert_eq!(missing_response.status(), StatusCode::NOT_FOUND);
+    }
 }
