@@ -80,9 +80,9 @@ async fn canonical_queue_round_trip() {
             target_type: "story".to_string(),
         })
         .await
-        .expect("promote queue item")
-        .into_inner();
-    assert!(promotion.success);
+        .expect_err("promotion must not report success before it mutates storage");
+    assert_eq!(promotion.code(), tonic::Code::Unimplemented);
+    assert!(promotion.message().contains("atomic"));
 
     let invalid_target = client
         .promote_backlog_item(PromoteBacklogItemRequest {

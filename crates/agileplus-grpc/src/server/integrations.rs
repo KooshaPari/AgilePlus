@@ -151,24 +151,9 @@ where
             return Err(Status::invalid_argument("target_type must not be empty"));
         }
 
-        let item = self
-            .storage
-            .get_backlog_item(request.backlog_item_id)
-            .await
-            .map_err(domain_error_to_status)?
-            .ok_or_else(|| {
-                Status::not_found(format!(
-                    "backlog item {} not found",
-                    request.backlog_item_id
-                ))
-            })?;
-        let id = item.id.unwrap_or(request.backlog_item_id);
-
-        Ok(Response::new(PromoteBacklogItemResponse {
-            success: true,
-            created_entity_id: format!("{target_type}:{id}"),
-            message: format!("promoted backlog item {id} to {target_type}"),
-        }))
+        Err(Status::unimplemented(
+            "backlog promotion requires atomic target creation and backlog transition",
+        ))
     }
 
     async fn generate_router(
