@@ -138,7 +138,7 @@ async fn proxy_router_stub_mode() {
         .dispatch_agent_command("implement", "test-feat", &Default::default())
         .await;
     assert!(!result.is_success());
-    assert!(result.message().contains("stub"));
+    assert!(result.message().contains("unsupported"));
 }
 
 #[tokio::test]
