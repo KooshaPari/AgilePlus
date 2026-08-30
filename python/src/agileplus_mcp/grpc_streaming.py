@@ -12,9 +12,11 @@ from agileplus_mcp.grpc_errors import GrpcCallError, GrpcConnectionError
 class _StreamingGrpcHost(Protocol):
     """Host operations supplied by the concrete gRPC client."""
 
-    def _require_stub(self) -> Any: ...
+    def _require_stub(self) -> Any:
+        raise NotImplementedError
 
-    async def connect(self) -> None: ...
+    async def connect(self) -> None:
+        raise NotImplementedError
 
 
 class AgilePlusGrpcStreamingMixin:

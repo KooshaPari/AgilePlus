@@ -41,8 +41,7 @@ GRPC_ADDRESS = os.environ.get("AGILEPLUS_GRPC_ADDRESS", "localhost:50051")
 mcp: FastMCP = FastMCP("AgilePlus")
 _client: AgilePlusCoreClient | None = None
 _sampling: SamplingHandler | None = None
-_registered_app: FastMCP | None = None
-_runtime_tool_names: set[str] = set()
+_runtime_tool_names_by_app: dict[int, set[str]] = {}
 
 
 def _get_client() -> AgilePlusCoreClient:
@@ -407,16 +406,13 @@ def register_compatibility_tools(app: FastMCP, client: AgilePlusCoreClient) -> N
 
 async def startup(grpc_address: str = GRPC_ADDRESS) -> None:
     """Initialise the gRPC client and register all tools."""
-    global _client, _registered_app, _runtime_tool_names, _sampling
+    global _client, _sampling
 
     if _client is not None:
         await _client.close()
 
-    if _registered_app is mcp:
-        for tool_name in _runtime_tool_names:
-            mcp.local_provider.remove_tool(tool_name)
-    else:
-        _runtime_tool_names = set()
+    for tool_name in _runtime_tool_names_by_app.pop(id(mcp), set()):
+        mcp.local_provider.remove_tool(tool_name)
 
     existing_tool_names = {tool.name for tool in await mcp.list_tools()}
 
@@ -438,10 +434,9 @@ async def startup(grpc_address: str = GRPC_ADDRESS) -> None:
     queue_module.register_tools(mcp, client)
     status_module.register_tools(mcp, client)
     register_compatibility_tools(mcp, client)
-    _runtime_tool_names = {
+    _runtime_tool_names_by_app[id(mcp)] = {
         tool.name for tool in await mcp.list_tools() if tool.name not in existing_tool_names
     }
-    _registered_app = mcp
 
     logger.info("AgilePlus MCP server ready (gRPC: %s)", grpc_address)
 
