@@ -771,7 +771,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn audit_trail_applies_after_id_and_latest_limit() {
+    async fn audit_trail_returns_next_entry_after_cursor() {
         let storage = Arc::new(SqliteStorageAdapter::in_memory().unwrap());
         let feature_id = StoragePort::create_feature(
             storage.as_ref(),
@@ -818,7 +818,7 @@ mod tests {
                 .as_ref()
                 .unwrap()
                 .id,
-            ids[2]
+            ids[1]
         );
     }
 
