@@ -310,7 +310,7 @@ def register_compatibility_tools(app: FastMCP, client: AgilePlusCoreClient) -> N
 
     @app.tool(name="get_work_package")
     async def get_work_package(feature_slug: str, wp_id: str) -> dict[str, Any]:
-        if not wp_id.startswith("WP") or not wp_id[2:].isdigit():
+        if not wp_id.startswith("WP") or not wp_id[2:].isascii() or not wp_id[2:].isdecimal():
             raise ValueError("wp_id must use the canonical WP<positive integer> form")
         sequence = int(wp_id[2:])
         if sequence < 1:
@@ -341,6 +341,7 @@ def register_compatibility_tools(app: FastMCP, client: AgilePlusCoreClient) -> N
         is forwarded verbatim and must contain a ``source -> destination``
         transition, including planner forms such as ``WP01: Doing -> Review``.
         """
+        transition = transition or None
         if transition is not None:
             source, separator, destination = transition.partition("->")
             if (

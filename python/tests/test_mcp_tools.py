@@ -156,6 +156,8 @@ async def test_canonical_compatibility_tools_round_trip_to_the_grpc_client() -> 
         "feature-one",
         "planned->implementing",
     )
+    assert (await (await _tool(mcp, "check_governance"))("feature-one", transition=""))["passed"]
+    assert client.check_governance_gate.await_args_list[-1].args == ("feature-one", "")
     stored_transition = "WP01: Doing -> Review"
     await (await _tool(mcp, "check_governance"))("feature-one", transition=stored_transition)
     assert client.check_governance_gate.await_args_list[-1].args == (
@@ -212,7 +214,7 @@ async def test_canonical_health_reports_grpc_failures() -> None:
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("wp_id", ["1", "WP", "WP0", "wp01", "WP-1"])
+@pytest.mark.parametrize("wp_id", ["1", "WP", "WP0", "wp01", "WP-1", "WP²"])
 async def test_canonical_get_work_package_rejects_invalid_ids(wp_id: str) -> None:
     mcp = FastMCP("invalid-work-package-id")
     client = _client()
