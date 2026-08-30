@@ -60,6 +60,23 @@ async fn canonical_queue_round_trip() {
         .item
         .expect("created item");
 
+    let defaulted = client
+        .create_backlog_item(CreateBacklogItemRequest {
+            r#type: String::new(),
+            title: "legacy default queue".to_string(),
+            body: String::new(),
+            priority: String::new(),
+            feature_id: String::new(),
+            wp_id: String::new(),
+            triaged_by: "grpc-contract".to_string(),
+        })
+        .await
+        .expect("empty type preserves the legacy task default")
+        .into_inner()
+        .item
+        .expect("defaulted item");
+    assert_eq!(defaulted.r#type, "task");
+
     let listed = client
         .list_backlog(ListBacklogRequest {
             type_filter: "task".to_string(),
@@ -70,7 +87,7 @@ async fn canonical_queue_round_trip() {
         .expect("list queue items")
         .into_inner()
         .items;
-    assert_eq!(listed.len(), 1);
+    assert_eq!(listed.len(), 2);
     assert_eq!(listed[0].id, created.id);
     assert_eq!(listed[0].body, "persist this");
 

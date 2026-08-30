@@ -94,7 +94,11 @@ where
         let mut item = BacklogItem::from_triage(
             request.title,
             request.body,
-            parse_intent(&request.r#type)?,
+            parse_intent(if request.r#type.is_empty() {
+                "task"
+            } else {
+                &request.r#type
+            })?,
             if request.triaged_by.is_empty() {
                 "grpc".to_string()
             } else {
