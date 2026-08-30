@@ -104,6 +104,14 @@ where
         if !request.priority.is_empty() {
             item.priority = parse_priority(&request.priority)?;
         }
+        if !request.wp_id.trim().is_empty() {
+            return Err(Status::invalid_argument(
+                "wp_id backlog association is not supported by the canonical queue model",
+            ));
+        }
+        if !request.feature_id.trim().is_empty() {
+            item.feature_slug = Some(request.feature_id);
+        }
 
         let id = self
             .storage

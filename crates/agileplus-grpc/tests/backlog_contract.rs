@@ -50,8 +50,8 @@ async fn canonical_queue_round_trip() {
             title: "canonical queue".to_string(),
             body: "persist this".to_string(),
             priority: "high".to_string(),
-            feature_id: "ignored-feature".to_string(),
-            wp_id: "ignored-wp".to_string(),
+            feature_id: "associated-feature".to_string(),
+            wp_id: String::new(),
             triaged_by: "grpc-contract".to_string(),
         })
         .await
@@ -64,7 +64,7 @@ async fn canonical_queue_round_trip() {
         .list_backlog(ListBacklogRequest {
             type_filter: "task".to_string(),
             state_filter: String::new(),
-            feature_slug: String::new(),
+            feature_slug: "associated-feature".to_string(),
         })
         .await
         .expect("list queue items")
@@ -73,6 +73,21 @@ async fn canonical_queue_round_trip() {
     assert_eq!(listed.len(), 1);
     assert_eq!(listed[0].id, created.id);
     assert_eq!(listed[0].body, "persist this");
+
+    let unsupported_wp = client
+        .create_backlog_item(CreateBacklogItemRequest {
+            r#type: "task".to_string(),
+            title: "unsupported association".to_string(),
+            body: String::new(),
+            priority: String::new(),
+            feature_id: String::new(),
+            wp_id: "WP01".to_string(),
+            triaged_by: "grpc-contract".to_string(),
+        })
+        .await
+        .expect_err("wp_id must not be silently discarded");
+    assert_eq!(unsupported_wp.code(), tonic::Code::InvalidArgument);
+    assert!(unsupported_wp.message().contains("wp_id"));
 
     let promotion = client
         .promote_backlog_item(PromoteBacklogItemRequest {
