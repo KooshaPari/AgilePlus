@@ -30,11 +30,11 @@ class AgilePlusBacklogGrpcMixin:
         """Create a backlog item via the integrations service."""
         import grpc
 
-        from agileplus_proto.gen.agileplus.v1 import integrations_pb2  # type: ignore[import]
+        from agileplus_proto.gen.agileplus.v1 import integrations_pb2
 
         host = cast(_BacklogGrpcHost, self)
         stub = host._require_integrations_stub()
-        request = integrations_pb2.CreateBacklogItemRequest(
+        request = integrations_pb2.CreateBacklogItemRequest(  # type: ignore[attr-defined]
             type=item_type,
             title=title,
             body=body,
@@ -66,11 +66,11 @@ class AgilePlusBacklogGrpcMixin:
         feature_slug: str | None = None,
     ) -> list[dict[str, Any]]:
         """List backlog items via the integrations service."""
-        from agileplus_proto.gen.agileplus.v1 import integrations_pb2  # type: ignore[import]
+        from agileplus_proto.gen.agileplus.v1 import integrations_pb2
 
         host = cast(_BacklogGrpcHost, self)
         stub = host._require_integrations_stub()
-        request = integrations_pb2.ListBacklogRequest(
+        request = integrations_pb2.ListBacklogRequest(  # type: ignore[attr-defined]
             type_filter=type_filter or "",
             state_filter=state_filter or "",
             feature_slug=feature_slug or "",
@@ -80,11 +80,11 @@ class AgilePlusBacklogGrpcMixin:
 
     async def promote_backlog_item(self, backlog_item_id: int, target_type: str) -> dict[str, Any]:
         """Promote one triaged item using the canonical integrations RPC."""
-        from agileplus_proto.gen.agileplus.v1 import integrations_pb2  # type: ignore[import]
+        from agileplus_proto.gen.agileplus.v1 import integrations_pb2
 
         host = cast(_BacklogGrpcHost, self)
         stub = host._require_integrations_stub()
-        request = integrations_pb2.PromoteBacklogItemRequest(
+        request = integrations_pb2.PromoteBacklogItemRequest(  # type: ignore[attr-defined]
             backlog_item_id=backlog_item_id, target_type=target_type
         )
         response = await host._call_with_retry(lambda: stub.PromoteBacklogItem(request))

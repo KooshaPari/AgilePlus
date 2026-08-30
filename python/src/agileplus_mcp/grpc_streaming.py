@@ -24,11 +24,13 @@ class AgilePlusGrpcStreamingMixin:
         """Stream agent status events from the Rust core."""
         import grpc
 
-        from agileplus_proto.gen.agileplus.v1 import core_pb2  # type: ignore[import]
+        from agileplus_proto.gen.agileplus.v1 import core_pb2
 
         host = cast(_StreamingGrpcHost, self)
         stub = host._require_stub()
-        request = core_pb2.StreamAgentEventsRequest(feature_slug=feature_slug)
+        request = core_pb2.StreamAgentEventsRequest(  # type: ignore[attr-defined]
+            feature_slug=feature_slug
+        )
 
         while True:
             try:
