@@ -62,6 +62,15 @@ impl ReviewPort for UnavailableReview {
 #[derive(Debug, Default)]
 struct LogOnlyObservability;
 
+fn ensure_database_parent(database: &std::path::Path) -> std::io::Result<()> {
+    if let Some(parent) = database.parent()
+        && !parent.as_os_str().is_empty()
+    {
+        std::fs::create_dir_all(parent)?;
+    }
+    Ok(())
+}
+
 impl ObservabilityPort for LogOnlyObservability {
     fn start_span(&self, _: &str, _: Option<&SpanContext>) -> SpanContext {
         SpanContext {
@@ -96,9 +105,7 @@ impl ObservabilityPort for LogOnlyObservability {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::fmt::init();
     let config = CoreConfig::from_env()?;
-    if let Some(parent) = config.database.parent() {
-        std::fs::create_dir_all(parent)?;
-    }
+    ensure_database_parent(&config.database)?;
 
     let storage = Arc::new(SqliteStorageAdapter::new(&config.database)?);
     let vcs = Arc::new(GitVcsAdapter::from_current_dir()?);
@@ -112,4 +119,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         proxy,
     )
     .await
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn filename_only_database_path_has_no_parent_directory_to_create() {
+        super::ensure_database_parent(std::path::Path::new("agileplus.db")).unwrap();
+    }
 }

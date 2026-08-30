@@ -9,11 +9,13 @@
 
 use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD};
 use sha2::{Digest, Sha256};
+use std::sync::Mutex;
 
 use agileplus_domain::credentials::{CredentialStore, format_api_key_hash, keys};
 
 /// Prefix that identifies an AgilePlus API key.
 const KEY_PREFIX: &str = "agp_";
+static API_KEY_INITIALIZATION: Mutex<()> = Mutex::new(());
 
 /// Generate a new API key: 32 random bytes → base64url-encoded plaintext.
 ///
@@ -54,6 +56,9 @@ pub fn import_api_key(
 pub async fn ensure_api_key(
     creds: &dyn CredentialStore,
 ) -> Result<bool, Box<dyn std::error::Error + Send + Sync>> {
+    let _initialization = API_KEY_INITIALIZATION
+        .lock()
+        .map_err(|_| "API key initialization lock poisoned")?;
     // Check if a key already exists.
     let existing = creds.get("agileplus", keys::API_KEYS);
     if let Ok(val) = existing
@@ -89,7 +94,31 @@ pub async fn ensure_api_key(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use agileplus_domain::credentials::{InMemoryCredentialStore, format_api_key_hash};
+    use agileplus_domain::credentials::{
+        CredentialError, InMemoryCredentialStore, format_api_key_hash,
+    };
+    use std::sync::{Arc, Barrier};
+
+    struct SlowCredentialStore(InMemoryCredentialStore);
+
+    impl CredentialStore for SlowCredentialStore {
+        fn get(&self, service: &str, key: &str) -> Result<String, CredentialError> {
+            std::thread::sleep(std::time::Duration::from_millis(20));
+            self.0.get(service, key)
+        }
+
+        fn set(&self, service: &str, key: &str, value: &str) -> Result<(), CredentialError> {
+            self.0.set(service, key, value)
+        }
+
+        fn delete(&self, service: &str, key: &str) -> Result<(), CredentialError> {
+            self.0.delete(service, key)
+        }
+
+        fn list_keys(&self, service: &str) -> Result<Vec<String>, CredentialError> {
+            self.0.list_keys(service)
+        }
+    }
 
     #[test]
     fn generated_key_has_prefix() {
@@ -137,5 +166,35 @@ mod tests {
             .unwrap();
         assert!(store.validate_api_key(plaintext).unwrap());
         assert!(!store.validate_api_key("agp_wrong_secret").unwrap());
+    }
+
+    #[test]
+    fn concurrent_initialization_creates_one_stable_key() {
+        const CALLERS: usize = 8;
+        let store = Arc::new(SlowCredentialStore(InMemoryCredentialStore::new()));
+        let start = Arc::new(Barrier::new(CALLERS));
+        let callers: Vec<_> = (0..CALLERS)
+            .map(|_| {
+                let store = Arc::clone(&store);
+                let start = Arc::clone(&start);
+                std::thread::spawn(move || {
+                    start.wait();
+                    tokio::runtime::Builder::new_current_thread()
+                        .build()
+                        .unwrap()
+                        .block_on(ensure_api_key(store.as_ref()))
+                        .unwrap()
+                })
+            })
+            .collect();
+        let generated = callers
+            .into_iter()
+            .map(|caller| caller.join().unwrap())
+            .filter(|generated| *generated)
+            .count();
+
+        assert_eq!(generated, 1);
+        let stored = store.get("agileplus", keys::API_KEYS).unwrap();
+        assert!(stored.starts_with("sha256:"));
     }
 }

@@ -396,6 +396,9 @@ where
         request: Request<GetAuditTrailRequest>,
     ) -> Result<Response<Self::GetAuditTrailStream>, Status> {
         let req = request.into_inner();
+        if req.limit < 0 {
+            return Err(Status::invalid_argument("limit must be non-negative"));
+        }
         let feature = self
             .storage
             .get_feature_by_slug(&req.feature_slug)
@@ -407,15 +410,17 @@ where
 
         let entries = self
             .storage
-            .get_audit_trail(feature.id)
+            .get_audit_trail_page(
+                feature.id,
+                req.after_id,
+                (req.limit > 0).then_some(req.limit as usize),
+            )
             .await
             .map_err(domain_error_to_status)?;
 
         let slug = req.feature_slug.clone();
-        let after_id = req.after_id;
-        let filtered: Vec<_> = entries.into_iter().filter(|e| e.id > after_id).collect();
 
-        let stream = tokio_stream::iter(filtered.into_iter().map(move |entry| {
+        let stream = tokio_stream::iter(entries.into_iter().map(move |entry| {
             let mut proto = audit_entry_to_proto(entry);
             proto.feature_slug = slug.clone();
             Ok(GetAuditTrailResponse {
@@ -637,6 +642,10 @@ async fn shutdown_signal() {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use agileplus_domain::domain::{
+        audit::{AuditEntry, hash_entry},
+        feature::Feature,
+    };
     use agileplus_domain::error::DomainError;
     use agileplus_domain::ports::agent::{AgentConfig, AgentResult, AgentStatus, AgentTask};
     use agileplus_domain::ports::observability::{LogEntry, SpanContext};
@@ -645,6 +654,7 @@ mod tests {
     use agileplus_proto::agileplus::v1::CommandRequest;
     use agileplus_sqlite::SqliteStorageAdapter;
     use chrono::Utc;
+    use tokio_stream::StreamExt;
 
     #[derive(Debug)]
     struct Unavailable;
@@ -815,6 +825,94 @@ mod tests {
 
         assert_eq!(error.code(), tonic::Code::Unimplemented);
         assert!(!error.message().contains("queued"));
+    }
+
+    async fn test_service(
+        storage: Arc<SqliteStorageAdapter>,
+    ) -> AgilePlusCoreServer<
+        SqliteStorageAdapter,
+        GitVcsAdapter,
+        Unavailable,
+        Unavailable,
+        Unavailable,
+    > {
+        AgilePlusCoreServer::new(
+            storage,
+            Arc::new(GitVcsAdapter::from_current_dir().unwrap()),
+            Arc::new(Unavailable),
+            Arc::new(Unavailable),
+            Arc::new(Unavailable),
+            Arc::new(EventBus::new(8)),
+            Arc::new(ProxyRouter::new(None, None).await),
+        )
+    }
+
+    #[tokio::test]
+    async fn audit_trail_rejects_negative_limit() {
+        let storage = Arc::new(SqliteStorageAdapter::in_memory().unwrap());
+        let result = test_service(storage)
+            .await
+            .get_audit_trail(Request::new(GetAuditTrailRequest {
+                feature_slug: "feature-one".into(),
+                after_id: 0,
+                limit: -1,
+            }))
+            .await;
+        let error = match result {
+            Ok(_) => panic!("negative audit limit must be rejected"),
+            Err(error) => error,
+        };
+        assert_eq!(error.code(), tonic::Code::InvalidArgument);
+    }
+
+    #[tokio::test]
+    async fn audit_trail_applies_after_id_and_latest_limit() {
+        let storage = Arc::new(SqliteStorageAdapter::in_memory().unwrap());
+        let feature_id = storage
+            .create_feature(&Feature::new("audit-page", "Audit page", [0; 32], None))
+            .await
+            .unwrap();
+        let mut previous = [0; 32];
+        let mut ids = Vec::new();
+        for _ in 0..3 {
+            let mut entry = AuditEntry {
+                id: 0,
+                feature_id,
+                wp_id: None,
+                timestamp: Utc::now(),
+                actor: "test".into(),
+                transition: "test".into(),
+                evidence_refs: Vec::new(),
+                prev_hash: previous,
+                hash: [0; 32],
+                event_id: None,
+                archived_to: None,
+            };
+            entry.hash = hash_entry(&entry);
+            previous = entry.hash;
+            ids.push(storage.append_audit_entry(&entry).await.unwrap());
+        }
+        let response = test_service(storage)
+            .await
+            .get_audit_trail(Request::new(GetAuditTrailRequest {
+                feature_slug: "audit-page".into(),
+                after_id: ids[0],
+                limit: 1,
+            }))
+            .await
+            .unwrap();
+        let entries = response.into_inner().collect::<Vec<_>>().await;
+        assert_eq!(entries.len(), 1);
+        assert_eq!(
+            entries[0]
+                .as_ref()
+                .unwrap()
+                .audit_entry
+                .as_ref()
+                .unwrap()
+                .id,
+            ids[2]
+        );
     }
 
     #[test]

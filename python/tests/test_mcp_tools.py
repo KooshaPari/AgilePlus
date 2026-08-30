@@ -194,7 +194,7 @@ async def test_dashboard_counts_malformed_features_without_empty_slug_rpcs() -> 
 
     assert dashboard["feature_counts"] == {"planned": 4, "unknown": 2}
     client.list_work_packages.assert_awaited_once_with("feature-one")
-    client.get_audit_trail.assert_awaited_once_with("feature-one")
+    client.get_audit_trail.assert_awaited_once_with("feature-one", limit=10)
 
 
 @pytest.mark.asyncio
@@ -282,15 +282,16 @@ async def test_canonical_audit_rejects_negative_limit_before_rpc() -> None:
 
 
 @pytest.mark.asyncio
-async def test_canonical_audit_zero_limit_returns_empty_after_one_rpc() -> None:
+async def test_canonical_audit_zero_limit_preserves_unbounded_rpc_behavior() -> None:
     mcp = FastMCP("audit-zero-limit")
     client = _client()
     server.register_compatibility_tools(mcp, client)
+    expected = [{"id": 1}]
 
     result = await (await _tool(mcp, "get_audit_trail"))("feature-one", 0)
 
-    assert result == []
-    client.get_audit_trail.assert_awaited_once_with("feature-one")
+    assert result == expected
+    client.get_audit_trail.assert_awaited_once_with("feature-one", limit=0)
 
 
 def test_http_transport_rejects_localhost_with_non_loopback_resolution(

@@ -220,12 +220,16 @@ class AgilePlusCoreClient(AgilePlusBacklogGrpcMixin):
             ],
         }
 
-    async def get_audit_trail(self, feature_slug: str, after_id: int = 0) -> list[dict[str, Any]]:
+    async def get_audit_trail(
+        self, feature_slug: str, after_id: int = 0, limit: int = 0
+    ) -> list[dict[str, Any]]:
         """Retrieve audit trail entries for a feature."""
         from agileplus_proto.gen.agileplus.v1 import core_pb2  # type: ignore[import]
 
         stub = self._require_stub()
-        request = core_pb2.GetAuditTrailRequest(feature_slug=feature_slug, after_id=after_id)
+        request = core_pb2.GetAuditTrailRequest(
+            feature_slug=feature_slug, after_id=after_id, limit=limit
+        )
         entries = []
         async for response in stub.GetAuditTrail(request):
             entries.append(self._audit_entry_to_dict(response.audit_entry))

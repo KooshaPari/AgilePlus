@@ -120,6 +120,29 @@ pub fn get_audit_trail(conn: &Connection, feature_id: i64) -> Result<Vec<AuditEn
     rows.collect::<rusqlite::Result<Vec<_>>>().map_err(map_err)
 }
 
+pub fn get_audit_trail_page(
+    conn: &Connection,
+    feature_id: i64,
+    after_id: i64,
+    limit: usize,
+) -> Result<Vec<AuditEntry>, DomainError> {
+    let limit = i64::try_from(limit)
+        .map_err(|_| DomainError::Storage("audit trail limit exceeds SQLite range".into()))?;
+    let mut stmt = conn
+        .prepare(
+            "SELECT id,feature_id,wp_id,timestamp,actor,transition,evidence_refs,prev_hash,hash
+             FROM (
+               SELECT id,feature_id,wp_id,timestamp,actor,transition,evidence_refs,prev_hash,hash
+               FROM audit_log WHERE feature_id = ?1 AND id > ?2 ORDER BY id DESC LIMIT ?3
+             ) ORDER BY id ASC",
+        )
+        .map_err(map_err)?;
+    let rows = stmt
+        .query_map(params![feature_id, after_id, limit], row_to_audit_entry)
+        .map_err(map_err)?;
+    rows.collect::<rusqlite::Result<Vec<_>>>().map_err(map_err)
+}
+
 pub fn get_latest_audit_entry(
     conn: &Connection,
     feature_id: i64,

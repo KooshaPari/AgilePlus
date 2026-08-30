@@ -359,7 +359,9 @@ def register_compatibility_tools(app: FastMCP, client: AgilePlusCoreClient) -> N
     async def get_audit_trail(feature_slug: str, limit: int = 50) -> list[dict[str, Any]]:
         if limit < 0:
             raise ValueError("limit must be non-negative")
-        return (await client.get_audit_trail(feature_slug))[:limit]
+        if limit == 0:
+            return await client.get_audit_trail(feature_slug, limit=0)
+        return (await client.get_audit_trail(feature_slug, limit=limit))[:limit]
 
     @app.tool(name="verify_audit_chain")
     async def verify_audit_chain(feature_slug: str) -> dict[str, Any]:
@@ -393,7 +395,7 @@ def register_compatibility_tools(app: FastMCP, client: AgilePlusCoreClient) -> N
                 for work_package in work_packages
                 if str(work_package.get("state", "")).lower() in {"doing", "in_progress", "blocked"}
             )
-            recent_audit_entries.extend(await client.get_audit_trail(slug))
+            recent_audit_entries.extend(await client.get_audit_trail(slug, limit=10))
         recent_audit_entries.sort(key=lambda entry: str(entry.get("timestamp", "")), reverse=True)
         return {
             "feature_counts": counts,

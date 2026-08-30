@@ -76,7 +76,7 @@ async def test_audit_trail_adapter_streams_canonical_entries() -> None:
     client, stub = _client_with_stub()
     stub.GetAuditTrail.side_effect = lambda _request: _audit_responses()
 
-    entries = await client.get_audit_trail("engine", after_id=7)
+    entries = await client.get_audit_trail("engine", after_id=7, limit=10)
 
     assert entries == [
         {
@@ -92,7 +92,7 @@ async def test_audit_trail_adapter_streams_canonical_entries() -> None:
         }
     ]
     request = stub.GetAuditTrail.call_args.args[0]
-    assert (request.feature_slug, request.after_id) == ("engine", 7)
+    assert (request.feature_slug, request.after_id, request.limit) == ("engine", 7, 10)
 
 
 @pytest.mark.asyncio

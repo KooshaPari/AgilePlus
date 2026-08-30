@@ -83,6 +83,15 @@ pub trait StoragePort: Send + Sync {
 
     async fn append_audit_entry(&self, entry: &AuditEntry) -> Result<i64, DomainError>;
     async fn get_audit_trail(&self, feature_id: i64) -> Result<Vec<AuditEntry>, DomainError>;
+    async fn get_audit_trail_page(
+        &self,
+        feature_id: i64,
+        after_id: i64,
+        limit: Option<usize>,
+    ) -> Result<Vec<AuditEntry>, DomainError> {
+        let entries = self.get_audit_trail(feature_id).await?;
+        Ok(page_audit_entries(entries, after_id, limit))
+    }
     async fn get_latest_audit_entry(
         &self,
         feature_id: i64,
@@ -229,6 +238,56 @@ pub trait StoragePort: Send + Sync {
     async fn delete_user(&self, id: i64) -> Result<(), DomainError> {
         let _ = id;
         Err(DomainError::NotImplemented)
+    }
+}
+
+fn page_audit_entries(
+    mut entries: Vec<AuditEntry>,
+    after_id: i64,
+    limit: Option<usize>,
+) -> Vec<AuditEntry> {
+    entries.sort_unstable_by_key(|entry| entry.id);
+    entries.retain(|entry| entry.id > after_id);
+    if let Some(limit) = limit
+        && entries.len() > limit
+    {
+        entries.drain(..entries.len() - limit);
+    }
+    entries
+}
+
+#[cfg(test)]
+mod audit_page_tests {
+    use super::*;
+    use chrono::Utc;
+
+    fn entry(id: i64) -> AuditEntry {
+        AuditEntry {
+            id,
+            feature_id: 1,
+            wp_id: None,
+            timestamp: Utc::now(),
+            actor: String::new(),
+            transition: String::new(),
+            evidence_refs: Vec::new(),
+            prev_hash: [0; 32],
+            hash: [0; 32],
+            event_id: None,
+            archived_to: None,
+        }
+    }
+
+    #[test]
+    fn default_audit_page_sorts_before_after_id_and_latest_limit() {
+        let page = page_audit_entries(
+            vec![entry(9), entry(7), entry(8), entry(6), entry(5)],
+            5,
+            Some(3),
+        );
+        assert_eq!(
+            page.iter().map(|entry| entry.id).collect::<Vec<_>>(),
+            [7, 8, 9]
+        );
     }
 }
 

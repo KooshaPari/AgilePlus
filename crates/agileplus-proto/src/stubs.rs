@@ -138,6 +138,7 @@ pub struct CheckGovernanceGateResponse {
 pub struct GetAuditTrailRequest {
     pub feature_slug: String,
     pub after_id: i64,
+    pub limit: i32,
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
