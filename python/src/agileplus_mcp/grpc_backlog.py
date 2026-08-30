@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import Awaitable, Callable
 from typing import Any, Protocol, cast
 
 
 class _BacklogGrpcHost(Protocol):
     """Host operations supplied by ``AgilePlusCoreClient``."""
+
+    _rpc_timeout_seconds: float
 
     def _require_integrations_stub(self) -> Any:
         raise NotImplementedError
@@ -47,13 +50,19 @@ class AgilePlusBacklogGrpcMixin:
         )
         # Create has no idempotency key. Retrying after an ambiguous transport
         # failure could duplicate an item that the server already committed.
-        try:
-            response = await stub.CreateBacklogItem(request)
-        except grpc.aio.AioRpcError as exc:
-            # Import lazily to avoid a module cycle while grpc_client defines
-            # the public exceptions after importing this mixin.
-            from agileplus_mcp.grpc_client import GrpcCallError, GrpcConnectionError
+        # Import lazily to avoid a module cycle while grpc_client defines the
+        # public exceptions after importing this mixin.
+        from agileplus_mcp.grpc_client import GrpcCallError, GrpcConnectionError
 
+        try:
+            response = await asyncio.wait_for(
+                stub.CreateBacklogItem(request), timeout=host._rpc_timeout_seconds
+            )
+        except TimeoutError as exc:
+            raise GrpcConnectionError(
+                "CreateBacklogItem timed out; outcome is ambiguous and was not retried"
+            ) from exc
+        except grpc.aio.AioRpcError as exc:
             if exc.code() in (grpc.StatusCode.UNAVAILABLE, grpc.StatusCode.DEADLINE_EXCEEDED):
                 raise GrpcConnectionError(
                     f"CreateBacklogItem outcome is ambiguous: {exc.details()}"

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from unittest.mock import AsyncMock, MagicMock
 
 import grpc
@@ -73,6 +74,26 @@ async def test_backlog_create_does_not_retry_an_ambiguous_write() -> None:
 
     with pytest.raises(GrpcConnectionError, match="ambiguous write"):
         await client.create_backlog_item(item_type="task", title="One write")
+
+    integrations.CreateBacklogItem.assert_awaited_once()
+    client._call_with_retry.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_backlog_create_bounds_an_unresponsive_write_without_retry() -> None:
+    client, integrations = _client_with_integrations_stub()
+    client._rpc_timeout_seconds = 0.01
+
+    async def never_returns(*_args: object, **_kwargs: object) -> None:
+        await asyncio.Event().wait()
+
+    integrations.CreateBacklogItem = AsyncMock(side_effect=never_returns)
+    client._call_with_retry = AsyncMock(side_effect=AssertionError("create must not retry"))
+
+    with pytest.raises(GrpcConnectionError, match="outcome is ambiguous"):
+        await asyncio.wait_for(
+            client.create_backlog_item(item_type="task", title="One bounded write"), timeout=0.1
+        )
 
     integrations.CreateBacklogItem.assert_awaited_once()
     client._call_with_retry.assert_not_awaited()
