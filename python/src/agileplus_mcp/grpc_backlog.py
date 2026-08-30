@@ -28,6 +28,8 @@ class AgilePlusBacklogGrpcMixin:
         triaged_by: str = "mcp",
     ) -> dict[str, Any]:
         """Create a backlog item via the integrations service."""
+        import grpc
+
         from agileplus_proto.gen.agileplus.v1 import integrations_pb2  # type: ignore[import]
 
         host = cast(_BacklogGrpcHost, self)
@@ -41,7 +43,20 @@ class AgilePlusBacklogGrpcMixin:
             wp_id=wp_id,
             triaged_by=triaged_by,
         )
-        response = await host._call_with_retry(lambda: stub.CreateBacklogItem(request))
+        # Create has no idempotency key. Retrying after an ambiguous transport
+        # failure could duplicate an item that the server already committed.
+        try:
+            response = await stub.CreateBacklogItem(request)
+        except grpc.aio.AioRpcError as exc:
+            # Import lazily to avoid a module cycle while grpc_client defines
+            # the public exceptions after importing this mixin.
+            from agileplus_mcp.grpc_client import GrpcCallError, GrpcConnectionError
+
+            if exc.code() in (grpc.StatusCode.UNAVAILABLE, grpc.StatusCode.DEADLINE_EXCEEDED):
+                raise GrpcConnectionError(
+                    f"CreateBacklogItem outcome is ambiguous: {exc.details()}"
+                ) from exc
+            raise GrpcCallError(exc.code(), exc.details()) from exc
         return self._backlog_item_to_dict(response.item)
 
     async def list_backlog(

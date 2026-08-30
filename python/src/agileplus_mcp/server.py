@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import logging
 import os
-import re
+import socket
 from ipaddress import ip_address
 from typing import Any
 
@@ -339,17 +339,26 @@ def register_compatibility_tools(app: FastMCP, client: AgilePlusCoreClient) -> N
 
         When ``transition`` is omitted, the core evaluates only rules that
         apply globally (rules whose transition is empty). An explicit value
-        must use the canonical ``from->to`` form.
+        is forwarded verbatim and must contain a ``source -> destination``
+        transition, including planner forms such as ``WP01: Doing -> Review``.
         """
-        if (
-            transition is not None
-            and re.fullmatch(r"[a-z][a-z0-9_-]*->[a-z][a-z0-9_-]*", transition) is None
-        ):
-            raise ValueError("transition must use the canonical from->to form")
+        if transition is not None:
+            source, separator, destination = transition.partition("->")
+            if (
+                transition.count("->") != 1
+                or not separator
+                or not source.strip()
+                or not destination.strip()
+                or "\r" in transition
+                or "\n" in transition
+            ):
+                raise ValueError("transition must contain source -> destination")
         return await client.check_governance_gate(feature_slug, transition or "")
 
     @app.tool(name="get_audit_trail")
     async def get_audit_trail(feature_slug: str, limit: int = 50) -> list[dict[str, Any]]:
+        if limit < 0:
+            raise ValueError("limit must be non-negative")
         return (await client.get_audit_trail(feature_slug))[:limit]
 
     @app.tool(name="verify_audit_chain")
@@ -454,13 +463,24 @@ def _transport_kwargs(transport: str) -> dict[str, Any]:
     if transport != "http":
         return {}
     host = os.environ.get("AGILEPLUS_MCP_HOST", "127.0.0.1")
-    if host != "localhost":
+    if host == "localhost":
+        try:
+            resolved_addresses = {
+                ip_address(address[4][0])
+                for address in socket.getaddrinfo(host, None, type=socket.SOCK_STREAM)
+            }
+        except (OSError, ValueError) as exc:
+            raise ValueError("plaintext AgilePlus MCP host must resolve to loopback") from exc
+        is_loopback = bool(resolved_addresses) and all(
+            address.is_loopback for address in resolved_addresses
+        )
+    else:
         try:
             is_loopback = ip_address(host).is_loopback
         except ValueError:
             is_loopback = False
-        if not is_loopback:
-            raise ValueError("plaintext AgilePlus MCP must bind to a loopback address")
+    if not is_loopback:
+        raise ValueError("plaintext AgilePlus MCP must bind to a loopback address")
     return {
         "host": host,
         "port": int(os.environ.get("AGILEPLUS_MCP_PORT", "8765")),
