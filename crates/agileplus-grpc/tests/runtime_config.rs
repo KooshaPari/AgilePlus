@@ -30,6 +30,7 @@ fn rejects_empty_or_whitespace_database_paths() {
 fn canonical_database_environment_value_takes_precedence() {
     let config = CoreConfig::from_env_values(
         None,
+        None,
         Some("/canonical/agileplus.db"),
         Some("/legacy/agileplus.db"),
     )
@@ -40,8 +41,19 @@ fn canonical_database_environment_value_takes_precedence() {
 
 #[test]
 fn legacy_database_environment_value_remains_a_fallback() {
-    let config = CoreConfig::from_env_values(None, None, Some("/legacy/agileplus.db"))
+    let config = CoreConfig::from_env_values(None, None, None, Some("/legacy/agileplus.db"))
         .expect("legacy database config");
 
     assert_eq!(config.database.to_string_lossy(), "/legacy/agileplus.db");
+}
+
+#[test]
+fn resolved_port_binds_to_loopback_unless_an_explicit_bind_is_set() {
+    let resolved =
+        CoreConfig::from_env_values(None, Some("51234"), None, None).expect("resolved port config");
+    assert_eq!(resolved.bind, "127.0.0.1:51234".parse().unwrap());
+
+    let explicit = CoreConfig::from_env_values(Some("[::1]:52345"), Some("51234"), None, None)
+        .expect("explicit bind config");
+    assert_eq!(explicit.bind, "[::1]:52345".parse().unwrap());
 }
