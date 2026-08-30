@@ -9,9 +9,11 @@ from typing import Any, Protocol, cast
 class _BacklogGrpcHost(Protocol):
     """Host operations supplied by ``AgilePlusCoreClient``."""
 
-    def _require_integrations_stub(self) -> Any: ...
+    def _require_integrations_stub(self) -> Any:
+        raise NotImplementedError
 
-    async def _call_with_retry(self, coro_factory: Callable[[], Awaitable[Any]]) -> Any: ...
+    async def _call_with_retry(self, coro_factory: Callable[[], Awaitable[Any]]) -> Any:
+        raise NotImplementedError
 
 
 class AgilePlusBacklogGrpcMixin:
