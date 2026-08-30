@@ -653,3 +653,65 @@ mod epics_stories_json_tests {
         std::fs::remove_file(path).expect("temporary database is removed");
     }
 }
+
+#[cfg(test)]
+mod kanban_router_tests {
+    use std::sync::Arc;
+
+    use axum::http::{Request, StatusCode};
+    use tokio::sync::RwLock;
+    use tower::util::ServiceExt;
+
+    use crate::app_state::DashboardStore;
+    use crate::routes::router;
+
+    async fn response_text(response: axum::response::Response) -> String {
+        String::from_utf8(
+            axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .expect("response body")
+                .to_vec(),
+        )
+        .expect("response body is UTF-8")
+    }
+
+    #[tokio::test]
+    async fn kanban_route_returns_full_dashboard_or_hx_partial_by_request_header() {
+        let state = Arc::new(RwLock::new(DashboardStore::seeded()));
+        let app = router(state);
+
+        let full_response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/api/dashboard/kanban")
+                    .body(axum::body::Body::empty())
+                    .expect("full dashboard request"),
+            )
+            .await
+            .expect("full dashboard response");
+        assert_eq!(full_response.status(), StatusCode::OK);
+        let full_body = response_text(full_response).await;
+        assert!(full_body.contains("Feature Kanban Board"));
+        assert!(full_body.contains("Service Health"));
+        assert!(full_body.contains("Modules and Cycles"));
+
+        let hx_response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/dashboard/kanban")
+                    .header("HX-Request", "true")
+                    .body(axum::body::Body::empty())
+                    .expect("HTMX dashboard request"),
+            )
+            .await
+            .expect("HTMX dashboard response");
+        assert_eq!(hx_response.status(), StatusCode::OK);
+        let hx_body = response_text(hx_response).await;
+        assert!(hx_body.contains("id=\"kanban-board\""));
+        assert!(hx_body.contains("data-state=\"implementing\""));
+        assert!(hx_body.contains("Modules and Cycles"));
+        assert!(!hx_body.contains("Feature Kanban Board"));
+        assert!(!hx_body.contains("Service Health"));
+    }
+}

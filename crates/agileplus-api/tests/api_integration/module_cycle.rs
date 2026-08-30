@@ -44,6 +44,25 @@ async fn setup_mutation_server() -> axum_test::TestServer {
     setup_test_server_with_storage(seeded_mutation_storage()).await
 }
 
+fn seeded_module_tree_storage() -> MockStorage {
+    let storage = seeded_mutation_storage();
+    let now = chrono::Utc::now();
+    storage
+        .modules
+        .lock()
+        .expect("modules lock poisoned")
+        .push(Module {
+            id: 2,
+            slug: "platform-api".to_string(),
+            friendly_name: "Platform API".to_string(),
+            description: Some("Child module".to_string()),
+            parent_module_id: Some(1),
+            created_at: now,
+            updated_at: now,
+        });
+    storage
+}
+
 fn seeded_shipping_gate_storage() -> MockStorage {
     let storage = MockStorage::default();
     let now = chrono::Utc::now();
@@ -122,6 +141,24 @@ async fn list_modules_with_valid_key_returns_empty_array() {
 }
 
 #[tokio::test]
+async fn list_modules_returns_populated_roots_only() {
+    let server = setup_test_server_with_storage(seeded_module_tree_storage()).await;
+    let resp = server
+        .get("/api/modules")
+        .add_header("X-API-Key", TEST_API_KEY)
+        .await;
+    resp.assert_status_ok();
+
+    let body: serde_json::Value = resp.json();
+    let modules = body
+        .as_array()
+        .expect("modules response should be an array");
+    assert_eq!(modules.len(), 1);
+    assert_eq!(modules[0]["id"], 1);
+    assert_eq!(modules[0]["slug"], "platform");
+}
+
+#[tokio::test]
 async fn get_module_not_found_returns_404() {
     let server = setup_test_server().await;
     let resp = server
@@ -129,6 +166,34 @@ async fn get_module_not_found_returns_404() {
         .add_header("X-API-Key", TEST_API_KEY)
         .await;
     resp.assert_status(StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
+async fn get_module_detail_and_tree_include_child_module() {
+    let server = setup_test_server_with_storage(seeded_module_tree_storage()).await;
+    let detail = server
+        .get("/api/modules/1")
+        .add_header("X-API-Key", TEST_API_KEY)
+        .await;
+    detail.assert_status_ok();
+    let detail_body: serde_json::Value = detail.json();
+    assert_eq!(detail_body["module"]["friendly_name"], "Platform");
+    assert_eq!(detail_body["child_modules"][0]["slug"], "platform-api");
+
+    let tree = server
+        .get("/api/modules/1/tree")
+        .add_header("X-API-Key", TEST_API_KEY)
+        .await;
+    tree.assert_status_ok();
+    let tree_body: serde_json::Value = tree.json();
+    assert_eq!(
+        tree_body.as_array().expect("tree should be an array").len(),
+        2
+    );
+    assert_eq!(tree_body[0]["module"]["id"], 1);
+    assert_eq!(tree_body[0]["depth"], 0);
+    assert_eq!(tree_body[1]["module"]["id"], 2);
+    assert_eq!(tree_body[1]["depth"], 1);
 }
 
 #[tokio::test]
@@ -221,6 +286,18 @@ async fn patch_module_persists_mutations() {
 }
 
 #[tokio::test]
+async fn patch_module_missing_required_name_returns_422() {
+    let server = setup_mutation_server().await;
+    let resp = server
+        .patch("/api/modules/1")
+        .add_header("X-API-Key", TEST_API_KEY)
+        .json(&serde_json::json!({"description": "Missing name"}))
+        .await;
+
+    resp.assert_status(StatusCode::UNPROCESSABLE_ENTITY);
+}
+
+#[tokio::test]
 async fn delete_module_removes_record() {
     let server = setup_mutation_server().await;
     let resp = server
@@ -234,6 +311,17 @@ async fn delete_module_removes_record() {
         .add_header("X-API-Key", TEST_API_KEY)
         .await;
     follow_up.assert_status(StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
+async fn delete_missing_module_returns_404() {
+    let server = setup_mutation_server().await;
+    let resp = server
+        .delete("/api/modules/999")
+        .add_header("X-API-Key", TEST_API_KEY)
+        .await;
+
+    resp.assert_status(StatusCode::NOT_FOUND);
 }
 
 #[tokio::test]
