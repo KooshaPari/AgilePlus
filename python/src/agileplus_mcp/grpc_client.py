@@ -47,6 +47,7 @@ class AgilePlusCoreClient(AgilePlusBacklogGrpcMixin):
         self._integrations_stub: Any | None = None
         self._max_retries = 3
         self._retry_delay = 0.5  # seconds, doubles on each attempt
+        self._rpc_timeout_seconds = 5.0
 
     # ------------------------------------------------------------------
     # Connection lifecycle
@@ -109,7 +110,16 @@ class AgilePlusCoreClient(AgilePlusBacklogGrpcMixin):
 
         for attempt in range(self._max_retries):
             try:
-                return await coro_factory()
+                return await asyncio.wait_for(
+                    coro_factory(), timeout=self._rpc_timeout_seconds
+                )
+            except TimeoutError as exc:
+                logger.warning(
+                    "gRPC request timed out (attempt %d/%d)",
+                    attempt + 1,
+                    self._max_retries,
+                )
+                last_exc = exc
             except grpc.aio.AioRpcError as exc:
                 code = exc.code()
                 # UNAVAILABLE and DEADLINE_EXCEEDED are transient
@@ -121,13 +131,15 @@ class AgilePlusCoreClient(AgilePlusBacklogGrpcMixin):
                         exc.details(),
                     )
                     last_exc = exc
-                    await asyncio.sleep(delay)
-                    delay *= 2
                 else:
                     raise GrpcCallError(code, exc.details()) from exc
 
+            if attempt + 1 < self._max_retries:
+                await asyncio.sleep(delay)
+                delay *= 2
+
         raise GrpcConnectionError(
-            f"gRPC call failed after {self._max_retries} retries"
+            f"gRPC call timed out or failed after {self._max_retries} retries"
         ) from last_exc
 
     # ------------------------------------------------------------------

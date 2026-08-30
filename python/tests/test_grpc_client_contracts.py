@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import AsyncIterator
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from agileplus_mcp.grpc_client import AgilePlusCoreClient
+from agileplus_mcp.grpc_client import AgilePlusCoreClient, GrpcConnectionError
 from agileplus_proto.gen.agileplus.v1 import common_pb2, core_pb2
 
 
@@ -125,3 +126,19 @@ async def test_governance_adapter_preserves_failed_violation_details() -> None:
             }
         ],
     }
+
+
+@pytest.mark.asyncio
+async def test_retry_helper_bounds_an_unresponsive_rpc() -> None:
+    import grpc
+
+    assert grpc.aio is not None
+    client = AgilePlusCoreClient()
+    client._max_retries = 1
+    client._rpc_timeout_seconds = 0.01
+
+    async def never_returns() -> None:
+        await asyncio.Event().wait()
+
+    with pytest.raises(GrpcConnectionError, match="timed out"):
+        await asyncio.wait_for(client._call_with_retry(never_returns), timeout=0.1)
