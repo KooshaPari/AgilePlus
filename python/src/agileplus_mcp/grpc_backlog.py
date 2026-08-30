@@ -6,6 +6,8 @@ import asyncio
 from collections.abc import Awaitable, Callable
 from typing import Any, Protocol, cast
 
+from agileplus_mcp.grpc_errors import GrpcCallError, GrpcConnectionError
+
 
 class _BacklogGrpcHost(Protocol):
     """Host operations supplied by ``AgilePlusCoreClient``."""
@@ -50,10 +52,6 @@ class AgilePlusBacklogGrpcMixin:
         )
         # Create has no idempotency key. Retrying after an ambiguous transport
         # failure could duplicate an item that the server already committed.
-        # Import lazily to avoid a module cycle while grpc_client defines the
-        # public exceptions after importing this mixin.
-        from agileplus_mcp.grpc_client import GrpcCallError, GrpcConnectionError
-
         try:
             response = await asyncio.wait_for(
                 stub.CreateBacklogItem(request), timeout=host._rpc_timeout_seconds
