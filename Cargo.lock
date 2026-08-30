@@ -389,6 +389,7 @@ name = "agileplus-proto"
 version = "0.2.1"
 dependencies = [
  "prost",
+ "tokio-stream",
  "tonic",
  "tonic-build",
  "tonic-prost",
