@@ -714,4 +714,80 @@ mod kanban_router_tests {
         assert!(!hx_body.contains("Feature Kanban Board"));
         assert!(!hx_body.contains("Service Health"));
     }
+
+    #[tokio::test]
+    async fn work_package_list_route_renders_seeded_or_empty_feature_data() {
+        let app = router(Arc::new(RwLock::new(DashboardStore::seeded())));
+
+        let seeded_response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/api/dashboard/features/4/work-packages")
+                    .body(axum::body::Body::empty())
+                    .expect("seeded work-package request"),
+            )
+            .await
+            .expect("seeded work-package response");
+        assert_eq!(seeded_response.status(), StatusCode::OK);
+        let seeded_body = response_text(seeded_response).await;
+        assert!(seeded_body.contains("wp-list-4"));
+        assert!(seeded_body.contains("Design module ownership model"));
+
+        let empty_response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/dashboard/features/999/work-packages")
+                    .body(axum::body::Body::empty())
+                    .expect("empty work-package request"),
+            )
+            .await
+            .expect("empty work-package response");
+        assert_eq!(empty_response.status(), StatusCode::OK);
+        assert!(
+            response_text(empty_response)
+                .await
+                .contains("No work packages.")
+        );
+    }
+
+    #[tokio::test]
+    async fn project_switcher_route_marks_the_seeded_active_project() {
+        let app = router(Arc::new(RwLock::new(DashboardStore::seeded())));
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/dashboard/projects")
+                    .body(axum::body::Body::empty())
+                    .expect("project switcher request"),
+            )
+            .await
+            .expect("project switcher response");
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = response_text(response).await;
+        assert!(body.contains("id=\"project-switcher\""));
+        assert!(body.contains("AgilePlus Internal"));
+        assert!(body.contains("option value=\"1\" selected"));
+        assert!(!body.contains("option value=\"0\" selected"));
+    }
+
+    #[tokio::test]
+    async fn time_footer_route_returns_a_parseable_utc_timestamp() {
+        let app = router(Arc::new(RwLock::new(DashboardStore::seeded())));
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/time")
+                    .body(axum::body::Body::empty())
+                    .expect("time footer request"),
+            )
+            .await
+            .expect("time footer response");
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = response_text(response).await;
+        chrono::NaiveDateTime::parse_from_str(&body, "%Y-%m-%d %H:%M:%S UTC")
+            .expect("UTC timestamp response");
+    }
 }

@@ -10,6 +10,8 @@
 
 #![allow(dead_code)]
 
+#[path = "api_integration/branch.rs"]
+mod branch;
 #[path = "api_integration/module_cycle.rs"]
 mod module_cycle;
 #[path = "api_integration/support/mod.rs"]
