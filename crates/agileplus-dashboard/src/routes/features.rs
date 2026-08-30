@@ -577,11 +577,14 @@ mod tests {
     use axum::{
         Form,
         extract::{Path, State},
+        http::{Request, StatusCode},
     };
     use tokio::sync::RwLock;
+    use tower::util::ServiceExt;
 
     use super::{FeatureTransitionForm, feature_transition};
     use crate::app_state::DashboardStore;
+    use crate::routes::router;
 
     #[tokio::test]
     async fn feature_transition_persists_an_allowed_lifecycle_step() {
@@ -603,5 +606,74 @@ mod tests {
             .find(|feature| feature.id == 4)
             .expect("seeded feature 4");
         assert_eq!(feature.state, FeatureState::Validated);
+    }
+
+    #[tokio::test]
+    async fn feature_transition_route_validates_form_state_and_missing_features() {
+        let state = Arc::new(RwLock::new(DashboardStore::seeded()));
+        let app = router(state.clone());
+
+        let valid_response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/api/features/4/transition")
+                    .header("content-type", "application/x-www-form-urlencoded")
+                    .body(axum::body::Body::from("target_state=validated"))
+                    .expect("valid transition request"),
+            )
+            .await
+            .expect("valid transition response");
+        assert_eq!(valid_response.status(), StatusCode::OK);
+        assert_eq!(
+            state
+                .read()
+                .await
+                .features
+                .iter()
+                .find(|feature| feature.id == 4)
+                .expect("seeded feature 4")
+                .state,
+            FeatureState::Validated
+        );
+
+        let malformed_response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/api/features/4/transition")
+                    .header("content-type", "application/x-www-form-urlencoded")
+                    .body(axum::body::Body::from("target_state=not-a-state"))
+                    .expect("malformed transition request"),
+            )
+            .await
+            .expect("malformed transition response");
+        assert_eq!(malformed_response.status(), StatusCode::BAD_REQUEST);
+        assert_eq!(
+            state
+                .read()
+                .await
+                .features
+                .iter()
+                .find(|feature| feature.id == 4)
+                .expect("seeded feature 4")
+                .state,
+            FeatureState::Validated
+        );
+
+        let missing_response = app
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/api/features/999/transition")
+                    .header("content-type", "application/x-www-form-urlencoded")
+                    .body(axum::body::Body::from("target_state=validated"))
+                    .expect("missing feature request"),
+            )
+            .await
+            .expect("missing feature response");
+        assert_eq!(missing_response.status(), StatusCode::NOT_FOUND);
     }
 }
