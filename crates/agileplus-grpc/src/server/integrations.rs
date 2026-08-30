@@ -108,6 +108,8 @@ where
         if !request.priority.is_empty() {
             item.priority = parse_priority(&request.priority)?;
         }
+        item =
+            item.with_feature_slug((!request.feature_id.is_empty()).then_some(request.feature_id));
 
         let id = self
             .storage

@@ -50,7 +50,7 @@ async fn canonical_queue_round_trip() {
             title: "canonical queue".to_string(),
             body: "persist this".to_string(),
             priority: "high".to_string(),
-            feature_id: "ignored-feature".to_string(),
+            feature_id: "canonical-grpc".to_string(),
             wp_id: "ignored-wp".to_string(),
             triaged_by: "grpc-contract".to_string(),
         })
@@ -81,13 +81,13 @@ async fn canonical_queue_round_trip() {
         .list_backlog(ListBacklogRequest {
             type_filter: "task".to_string(),
             state_filter: String::new(),
-            feature_slug: String::new(),
+            feature_slug: "canonical-grpc".to_string(),
         })
         .await
         .expect("list queue items")
         .into_inner()
         .items;
-    assert_eq!(listed.len(), 2);
+    assert_eq!(listed.len(), 1);
     assert_eq!(listed[0].id, created.id);
     assert_eq!(listed[0].body, "persist this");
 
