@@ -6,10 +6,10 @@ license.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-agileplus-domain = { path = "../agileplus-domain" }
-agileplus-proto = { path = "../../rust" }
+agileplus-domain = { version = "0.2.1", path = "../agileplus-domain" }
+agileplus-proto = { version = "0.2.1", path = "../../rust" }
 tonic = { workspace = true }
-prost = "0.13"
+prost.workspace = true
 tokio.workspace = true
 tokio-stream = { version = "0.1", features = ["sync"] }
 futures = "0.3"
