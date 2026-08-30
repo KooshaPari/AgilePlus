@@ -225,11 +225,15 @@ pub fn update_backlog_status(
     status: BacklogStatus,
 ) -> Result<(), DomainError> {
     let now = chrono::Utc::now().to_rfc3339();
-    conn.execute(
-        "UPDATE backlog_items SET status = ?1, updated_at = ?2 WHERE id = ?3",
-        params![status_str(status), now, id],
-    )
-    .map_err(map_err)?;
+    let changed = conn
+        .execute(
+            "UPDATE backlog_items SET status = ?1, updated_at = ?2 WHERE id = ?3",
+            params![status_str(status), now, id],
+        )
+        .map_err(map_err)?;
+    if changed == 0 {
+        return Err(DomainError::NotFound(format!("backlog item {id}")));
+    }
     Ok(())
 }
 
@@ -239,11 +243,15 @@ pub fn update_backlog_priority(
     priority: BacklogPriority,
 ) -> Result<(), DomainError> {
     let now = chrono::Utc::now().to_rfc3339();
-    conn.execute(
-        "UPDATE backlog_items SET priority = ?1, updated_at = ?2 WHERE id = ?3",
-        params![priority_str(priority), now, id],
-    )
-    .map_err(map_err)?;
+    let changed = conn
+        .execute(
+            "UPDATE backlog_items SET priority = ?1, updated_at = ?2 WHERE id = ?3",
+            params![priority_str(priority), now, id],
+        )
+        .map_err(map_err)?;
+    if changed == 0 {
+        return Err(DomainError::NotFound(format!("backlog item {id}")));
+    }
     Ok(())
 }
 

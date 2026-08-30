@@ -2118,3 +2118,7 @@ mod tests {
         assert_eq!(applied, 1, "024 migration should be recorded as applied");
     }
 }
+
+#[cfg(test)]
+#[path = "lib/tests/backlog.rs"]
+mod backlog_tests;
