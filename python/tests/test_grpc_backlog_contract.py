@@ -4,9 +4,10 @@ from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock
 
+import grpc
 import pytest
 
-from agileplus_mcp.grpc_client import AgilePlusCoreClient
+from agileplus_mcp.grpc_client import AgilePlusCoreClient, GrpcCallError, GrpcConnectionError
 from agileplus_proto.gen.agileplus.v1 import integrations_pb2
 
 
@@ -55,6 +56,47 @@ async def test_backlog_create_uses_the_generated_integrations_request_shape() ->
     }
     request = integrations.CreateBacklogItem.call_args.args[0]
     assert (request.feature_id, request.wp_id, request.triaged_by) == ("001", "WP14", "mcp")
+
+
+@pytest.mark.asyncio
+async def test_backlog_create_does_not_retry_an_ambiguous_write() -> None:
+    client, integrations = _client_with_integrations_stub()
+    integrations.CreateBacklogItem = AsyncMock(
+        side_effect=grpc.aio.AioRpcError(
+            grpc.StatusCode.UNAVAILABLE,
+            initial_metadata=grpc.aio.Metadata(),
+            trailing_metadata=grpc.aio.Metadata(),
+            details="connection lost after ambiguous write",
+        )
+    )
+    client._call_with_retry = AsyncMock(side_effect=AssertionError("create must not retry"))
+
+    with pytest.raises(GrpcConnectionError, match="ambiguous write"):
+        await client.create_backlog_item(item_type="task", title="One write")
+
+    integrations.CreateBacklogItem.assert_awaited_once()
+    client._call_with_retry.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_backlog_create_maps_non_retryable_error_without_retry() -> None:
+    client, integrations = _client_with_integrations_stub()
+    integrations.CreateBacklogItem = AsyncMock(
+        side_effect=grpc.aio.AioRpcError(
+            grpc.StatusCode.INVALID_ARGUMENT,
+            initial_metadata=grpc.aio.Metadata(),
+            trailing_metadata=grpc.aio.Metadata(),
+            details="invalid backlog item",
+        )
+    )
+    client._call_with_retry = AsyncMock(side_effect=AssertionError("create must not retry"))
+
+    with pytest.raises(GrpcCallError, match="invalid backlog item") as caught:
+        await client.create_backlog_item(item_type="task", title="Invalid")
+
+    assert caught.value.code == grpc.StatusCode.INVALID_ARGUMENT
+    integrations.CreateBacklogItem.assert_awaited_once()
+    client._call_with_retry.assert_not_awaited()
 
 
 @pytest.mark.asyncio

@@ -156,6 +156,12 @@ async def test_canonical_compatibility_tools_round_trip_to_the_grpc_client() -> 
         "feature-one",
         "planned->implementing",
     )
+    stored_transition = "WP01: Doing -> Review"
+    await (await _tool(mcp, "check_governance"))("feature-one", transition=stored_transition)
+    assert client.check_governance_gate.await_args_list[-1].args == (
+        "feature-one",
+        stored_transition,
+    )
     assert await (await _tool(mcp, "get_audit_trail"))("feature-one", 1) == [
         {"id": 1, "timestamp": "2026-08-29T01:00:00Z"}
     ]
@@ -214,10 +220,95 @@ async def test_canonical_governance_rejects_ambiguous_transition() -> None:
     client = _client()
     server.register_compatibility_tools(mcp, client)
 
-    with pytest.raises(ValueError, match="from->to"):
+    with pytest.raises(ValueError, match="source -> destination"):
         await (await _tool(mcp, "check_governance"))("feature-one", transition="implementing")
 
     client.check_governance_gate.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "transition",
+    [" -> Review", "Doing -> ", "Doing\r->Review", "Doing->\nReview", "A -> B -> C"],
+)
+async def test_canonical_governance_rejects_blank_or_multiline_transition(
+    transition: str,
+) -> None:
+    mcp = FastMCP("governance-transition-boundaries")
+    client = _client()
+    server.register_compatibility_tools(mcp, client)
+
+    with pytest.raises(ValueError, match="source -> destination"):
+        await (await _tool(mcp, "check_governance"))("feature-one", transition=transition)
+
+    client.check_governance_gate.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_canonical_audit_rejects_negative_limit_before_rpc() -> None:
+    mcp = FastMCP("audit-limit-validation")
+    client = _client()
+    server.register_compatibility_tools(mcp, client)
+
+    with pytest.raises(ValueError, match="limit"):
+        await (await _tool(mcp, "get_audit_trail"))("feature-one", -1)
+
+    client.get_audit_trail.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_canonical_audit_zero_limit_returns_empty_after_one_rpc() -> None:
+    mcp = FastMCP("audit-zero-limit")
+    client = _client()
+    server.register_compatibility_tools(mcp, client)
+
+    result = await (await _tool(mcp, "get_audit_trail"))("feature-one", 0)
+
+    assert result == []
+    client.get_audit_trail.assert_awaited_once_with("feature-one")
+
+
+def test_http_transport_rejects_localhost_with_non_loopback_resolution(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("AGILEPLUS_MCP_HOST", "localhost")
+    monkeypatch.setattr(
+        server.socket,
+        "getaddrinfo",
+        lambda *_args, **_kwargs: [
+            (server.socket.AF_INET, server.socket.SOCK_STREAM, 6, "", ("127.0.0.1", 0)),
+            (server.socket.AF_INET, server.socket.SOCK_STREAM, 6, "", ("192.0.2.10", 0)),
+        ],
+    )
+
+    with pytest.raises(ValueError, match="loopback"):
+        server._transport_kwargs("http")
+
+
+def test_http_transport_accepts_localhost_when_all_resolutions_are_loopback(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("AGILEPLUS_MCP_HOST", "localhost")
+    monkeypatch.setattr(
+        server.socket,
+        "getaddrinfo",
+        lambda *_args, **_kwargs: [
+            (server.socket.AF_INET, server.socket.SOCK_STREAM, 6, "", ("127.0.0.1", 0)),
+            (server.socket.AF_INET6, server.socket.SOCK_STREAM, 6, "", ("::1", 0, 0, 0)),
+        ],
+    )
+
+    assert server._transport_kwargs("http")["host"] == "localhost"
+
+
+def test_http_transport_rejects_localhost_with_no_resolved_addresses(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("AGILEPLUS_MCP_HOST", "localhost")
+    monkeypatch.setattr(server.socket, "getaddrinfo", lambda *_args, **_kwargs: [])
+
+    with pytest.raises(ValueError, match="loopback"):
+        server._transport_kwargs("http")
 
 
 @pytest.mark.asyncio
