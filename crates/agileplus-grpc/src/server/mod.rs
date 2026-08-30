@@ -10,6 +10,7 @@ use std::sync::Arc;
 #[cfg(not(agileplus_proto_stubs))]
 use tonic::transport::Server;
 use tonic::{Request, Response, Status};
+#[cfg(not(agileplus_proto_stubs))]
 use tracing::info;
 
 use agileplus_domain::domain::audit::AuditChain;
@@ -91,6 +92,29 @@ fn missing_evidence_violation(
         message: format!("Missing required evidence for {requirement}"),
         remediation: format!("Provide evidence linked to {requirement}"),
     }
+}
+
+/// Compare transition identifiers while tolerating presentation-only spacing
+/// around the planner's `->` separator. The WP prefix and state spelling stay
+/// significant so a rule for one work package cannot match another.
+fn governance_transition_matches(rule: &str, requested: &str) -> bool {
+    fn normalized(value: &str) -> Option<(&str, &str)> {
+        let (from, to) = value.split_once("->")?;
+        let from = from.trim();
+        let to = to.trim();
+        (!from.is_empty() && !to.is_empty() && !to.contains("->")).then_some((from, to))
+    }
+
+    matches!(
+        (normalized(rule), normalized(requested)),
+        (Some(rule), Some(requested)) if rule == requested
+    )
+}
+
+fn unsupported_core_command(command: &str) -> Status {
+    Status::unimplemented(format!(
+        "command '{command}' is not executable through the gRPC core"
+    ))
 }
 
 /// gRPC server struct holding references to all port implementations.
@@ -318,7 +342,10 @@ where
         let relevant_rules: Vec<_> = contract
             .rules
             .iter()
-            .filter(|r| r.transition.is_empty() || r.transition == req.transition)
+            .filter(|r| {
+                r.transition.is_empty()
+                    || governance_transition_matches(&r.transition, &req.transition)
+            })
             .collect();
 
         let mut violations = Vec::new();
@@ -519,14 +546,12 @@ where
     async fn dispatch_core_command(
         &self,
         command: &str,
-        feature_slug: &str,
-        args: &HashMap<String, String>,
+        _feature_slug: &str,
+        _args: &HashMap<String, String>,
     ) -> Result<(String, HashMap<String, String>), Status> {
         match command {
             "specify" | "research" | "plan" | "validate" | "ship" | "retrospective" => {
-                let msg = format!("command '{command}' queued for feature '{feature_slug}'");
-                info!(command, feature_slug, "core command dispatched via gRPC");
-                Ok((msg, args.clone()))
+                Err(unsupported_core_command(command))
             }
             other => Err(Status::unimplemented(format!("unknown command: '{other}'"))),
         }
@@ -612,7 +637,90 @@ async fn shutdown_signal() {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use agileplus_domain::error::DomainError;
+    use agileplus_domain::ports::agent::{AgentConfig, AgentResult, AgentStatus, AgentTask};
+    use agileplus_domain::ports::observability::{LogEntry, SpanContext};
+    use agileplus_domain::ports::review::{CiStatus, PrInfo, ReviewComment, ReviewStatus};
+    use agileplus_git::GitVcsAdapter;
+    use agileplus_proto::agileplus::v1::CommandRequest;
+    use agileplus_sqlite::SqliteStorageAdapter;
     use chrono::Utc;
+
+    #[derive(Debug)]
+    struct Unavailable;
+
+    impl AgentPort for Unavailable {
+        async fn dispatch(
+            &self,
+            _: AgentTask,
+            _: &AgentConfig,
+        ) -> Result<AgentResult, DomainError> {
+            Err(DomainError::NotImplemented)
+        }
+        async fn dispatch_async(
+            &self,
+            _: AgentTask,
+            _: &AgentConfig,
+        ) -> Result<String, DomainError> {
+            Err(DomainError::NotImplemented)
+        }
+        async fn query_status(&self, _: &str) -> Result<AgentStatus, DomainError> {
+            Err(DomainError::NotImplemented)
+        }
+        async fn cancel(&self, _: &str) -> Result<(), DomainError> {
+            Err(DomainError::NotImplemented)
+        }
+        async fn send_instruction(&self, _: &str, _: &str) -> Result<(), DomainError> {
+            Err(DomainError::NotImplemented)
+        }
+    }
+
+    impl ReviewPort for Unavailable {
+        async fn get_review_status(&self, _: &str) -> Result<ReviewStatus, DomainError> {
+            Err(DomainError::NotImplemented)
+        }
+        async fn get_review_comments(&self, _: &str) -> Result<Vec<ReviewComment>, DomainError> {
+            Err(DomainError::NotImplemented)
+        }
+        async fn get_actionable_comments(
+            &self,
+            _: &str,
+        ) -> Result<Vec<ReviewComment>, DomainError> {
+            Err(DomainError::NotImplemented)
+        }
+        async fn get_ci_status(&self, _: &str) -> Result<CiStatus, DomainError> {
+            Err(DomainError::NotImplemented)
+        }
+        async fn get_pr_info(&self, _: &str) -> Result<PrInfo, DomainError> {
+            Err(DomainError::NotImplemented)
+        }
+        async fn await_review(&self, _: &str, _: u64) -> Result<ReviewStatus, DomainError> {
+            Err(DomainError::NotImplemented)
+        }
+        async fn await_ci(&self, _: &str, _: u64) -> Result<CiStatus, DomainError> {
+            Err(DomainError::NotImplemented)
+        }
+    }
+
+    impl ObservabilityPort for Unavailable {
+        fn start_span(&self, _: &str, _: Option<&SpanContext>) -> SpanContext {
+            SpanContext {
+                trace_id: String::new(),
+                span_id: String::new(),
+                parent_span_id: None,
+            }
+        }
+        fn end_span(&self, _: &SpanContext) {}
+        fn add_span_event(&self, _: &SpanContext, _: &str, _: &[(&str, &str)]) {}
+        fn set_span_error(&self, _: &SpanContext, _: &str) {}
+        fn record_counter(&self, _: &str, _: u64, _: &[(&str, &str)]) {}
+        fn record_histogram(&self, _: &str, _: f64, _: &[(&str, &str)]) {}
+        fn record_gauge(&self, _: &str, _: f64, _: &[(&str, &str)]) {}
+        fn log(&self, _: &LogEntry) {}
+        fn log_info(&self, _: &str) {}
+        fn log_warn(&self, _: &str) {}
+        fn log_error(&self, _: &str) {}
+    }
 
     #[test]
     fn domain_error_mapping() {
@@ -642,6 +750,71 @@ mod tests {
             parse_evidence_requirement("FR-055:unknown"),
             ("FR-055", None, false)
         );
+    }
+
+    #[test]
+    fn governance_transition_comparison_normalizes_arrow_spacing_only() {
+        assert!(governance_transition_matches(
+            "WP01: Doing -> Review",
+            "WP01: Doing->Review"
+        ));
+        assert!(!governance_transition_matches(
+            "WP01: Doing -> Review",
+            "WP02: Doing -> Review"
+        ));
+        assert!(!governance_transition_matches(
+            "WP01: Doing -> Review",
+            "WP01: doing -> review"
+        ));
+        assert!(!governance_transition_matches(
+            "malformed",
+            "also malformed"
+        ));
+    }
+
+    #[test]
+    fn lifecycle_commands_are_explicitly_unsupported() {
+        for command in [
+            "specify",
+            "research",
+            "plan",
+            "validate",
+            "ship",
+            "retrospective",
+        ] {
+            let status = unsupported_core_command(command);
+            assert_eq!(status.code(), tonic::Code::Unimplemented);
+            assert!(status.message().contains(command));
+            assert!(!status.message().contains("queued"));
+        }
+    }
+
+    #[tokio::test]
+    async fn dispatch_command_rejects_unimplemented_lifecycle_command() {
+        let storage =
+            Arc::new(SqliteStorageAdapter::new(std::path::Path::new(":memory:")).unwrap());
+        let service = AgilePlusCoreServer::new(
+            storage,
+            Arc::new(GitVcsAdapter::from_current_dir().unwrap()),
+            Arc::new(Unavailable),
+            Arc::new(Unavailable),
+            Arc::new(Unavailable),
+            Arc::new(EventBus::new(8)),
+            Arc::new(ProxyRouter::new(None, None).await),
+        );
+        let error = service
+            .dispatch_command(Request::new(DispatchCommandRequest {
+                command: Some(CommandRequest {
+                    command: "specify".to_owned(),
+                    feature_slug: "feature-one".to_owned(),
+                    args: HashMap::new(),
+                }),
+            }))
+            .await
+            .unwrap_err();
+
+        assert_eq!(error.code(), tonic::Code::Unimplemented);
+        assert!(!error.message().contains("queued"));
     }
 
     #[test]
