@@ -295,7 +295,7 @@ mod tests {
     fn create_records_path_in_claim_reason() {
         let (_dir, path) = make_repo();
         let mut store = ClaimStore::new();
-        let claim = make_worktree_claim("c1", "feat/login/wp-1", "agent-a", 60);
+        let claim = make_worktree_claim("c1", "feat/claim-login/wp-1", "agent-a", 60);
         store
             .claim(
                 &claim.id,
@@ -306,8 +306,9 @@ mod tests {
                 claim.reason.clone(),
             )
             .expect("claim");
-        let wt_path = ClaimBoundWorktree::create(path.clone(), "login", "wp-1", &claim, &mut store)
-            .expect("create worktree");
+        let wt_path =
+            ClaimBoundWorktree::create(path.clone(), "claim-login", "wp-1", &claim, &mut store)
+                .expect("create worktree");
         assert!(wt_path.is_dir(), "worktree path should exist");
         // The new claim in the store now carries a Branch reason
         // encoding the worktree path.
@@ -319,7 +320,9 @@ mod tests {
             other => panic!("expected Branch reason, got {other:?}"),
         }
         // And `lookup` can recover the path.
-        assert_eq!(ClaimBoundWorktree::lookup(&stored), Some(wt_path));
+        assert_eq!(ClaimBoundWorktree::lookup(&stored), Some(wt_path.clone()));
+        let adapter = GitVcsAdapter::new(path);
+        block_on_sync(adapter.cleanup_worktree(&wt_path)).expect("cleanup worktree");
     }
 
     #[test]

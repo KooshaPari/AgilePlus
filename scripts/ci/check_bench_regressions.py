@@ -4,8 +4,9 @@
 Usage:
     check_bench_regressions.py <bench.txt> <baseline.json> [--max-regress N]
 
-Reads cargo bench's `--output-format bencher` output and compares the
-median ns/iter for each benchmark against the JSON baseline:
+Reads Criterion's human-readable `cargo bench` output (including its
+two-line benchmark-name format) and compares the median ns/iter for each
+benchmark against the JSON baseline:
 
     {
       "name::bench_name": {"median_ns": 12345, "stddev_ns": 678},
@@ -27,11 +28,18 @@ from pathlib import Path
 
 
 BENCH_RE = re.compile(
-    r"^(?P<name>[^\s]+)\s+time:\s+\[(?P<low>[\d.]+)\s+(?P<unit>\w+)\s+(?P<high>[\d.]+)\s+(?P<unit2>\w+)\]"
+    r"^(?P<name>[^\s]+)\s+time:\s+\[(?P<low>[\d.]+)\s+(?P<unit>[A-Za-zµ]+)\s+"
+    r"(?P<median>[\d.]+)\s+(?P<unit2>[A-Za-zµ]+)\s+(?P<high>[\d.]+)\s+(?P<unit3>[A-Za-zµ]+)\]"
+)
+TIME_RE = re.compile(
+    r"^time:\s+\[(?P<low>[\d.]+)\s+(?P<unit>[A-Za-zµ]+)\s+"
+    r"(?P<median>[\d.]+)\s+(?P<unit2>[A-Za-zµ]+)\s+(?P<high>[\d.]+)\s+(?P<unit3>[A-Za-zµ]+)\]"
 )
 NS_PER_UNIT = {
     "ns": 1,
     "us": 1_000,
+    "µs": 1_000,
+    "μs": 1_000,
     "ms": 1_000_000,
     "s": 1_000_000_000,
 }
@@ -43,12 +51,21 @@ def to_ns(value: float, unit: str) -> int:
 
 def parse_bench(path: Path) -> dict[str, int]:
     out: dict[str, int] = {}
+    pending_name: str | None = None
     for line in path.read_text(errors="ignore").splitlines():
-        m = BENCH_RE.match(line.strip())
-        if not m:
+        stripped = line.strip()
+        m = BENCH_RE.match(stripped)
+        if m:
+            pending_name = m["name"]
+        else:
+            if re.fullmatch(r"[^\s]+", stripped):
+                pending_name = stripped
+            m = TIME_RE.match(stripped)
+        if not m or not pending_name:
             continue
-        ns = to_ns((float(m["low"]) + float(m["high"])) / 2, m["unit"])
-        out[m["name"]] = ns
+        ns = to_ns(float(m["median"]), m["unit2"])
+        out[pending_name] = ns
+        pending_name = None
     return out
 
 

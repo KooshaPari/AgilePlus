@@ -13,4 +13,4 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Alert sync skipped - phenoShared deprecated
-        run: echo "Alert sync workflow disabled due to phenoShared deprecation. TODO: Implement custom alert sync if needed."
+        run: 'echo "Alert sync workflow disabled due to phenoShared deprecation. TODO: Implement custom alert sync if needed."'

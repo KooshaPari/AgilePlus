@@ -65,24 +65,25 @@ jobs:
       - name: Extract benchmark summary
         id: summary
         run: |
-          echo "### Benchmark Results" > benchmark-summary.md
-          echo "" >> benchmark-summary.md
-          echo "**Commit:** \`${{ github.sha }}\`" >> benchmark-summary.md
-          echo "**Branch:** \`${{ github.ref_name }}\`" >> benchmark-summary.md
-          echo "" >> benchmark-summary.md
+          {
+            echo "### Benchmark Results"
+            echo ""
+            echo "**Commit:** \`${{ github.sha }}\`"
+            echo "**Branch:** \`${{ github.ref_name }}\`"
+            echo ""
 
-          if grep -q "Benchmarking" benchmark-output.txt; then
-            echo '```' >> benchmark-summary.md
-            grep -E "(Benchmarking|Found [0-9]+|change:|saving|estimates|time:)" benchmark-output.txt \
-              >> benchmark-summary.md 2>/dev/null || true
-            echo '```' >> benchmark-summary.md
-          else
-            echo "_Raw benchmark output captured (no structured summary parsed)._ " >> benchmark-summary.md
-          fi
+            if grep -q "Benchmarking" benchmark-output.txt; then
+              echo '```'
+              grep -E "(Benchmarking|Found [0-9]+|change:|saving|estimates|time:)" benchmark-output.txt 2>/dev/null || true
+              echo '```'
+            else
+              echo "_Raw benchmark output captured (no structured summary parsed)._ "
+            fi
 
-          echo "" >> benchmark-summary.md
-          echo "---" >> benchmark-summary.md
-          echo "_Run \`cargo bench --manifest-path crates/agileplus-benchmarks/Cargo.toml\` locally for full details._" >> benchmark-summary.md
+            echo ""
+            echo "---"
+            echo "_Run \`cargo bench --manifest-path crates/agileplus-benchmarks/Cargo.toml\` locally for full details._"
+          } > benchmark-summary.md
 
       # ── Upload benchmark artifacts ──────────────────────────────────
       - name: Upload benchmark report
@@ -134,7 +135,7 @@ jobs:
               name: 'Benchmark Summary',
               head_sha: context.sha,
               status: 'completed',
-              conclusion: '${{ steps.bench.outputs.bench_exit == 0 && steps.baseline-check.outputs.baseline_found && always() && "success" || "neutral" }}',
+              conclusion: '${{ steps.bench.outputs.bench_exit == 0 && steps.baseline-check.outputs.baseline_found && 'success' || 'neutral' }}',
               output: {
                 title: 'Criterion Benchmarks',
                 summary: summary

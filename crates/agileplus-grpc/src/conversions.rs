@@ -6,10 +6,12 @@
 //! Traceability: WP14-T080
 
 use agileplus_domain::domain::audit::AuditEntry as DomainAuditEntry;
+use agileplus_domain::domain::backlog::BacklogItem as DomainBacklogItem;
 use agileplus_domain::domain::feature::Feature as DomainFeature;
 use agileplus_domain::domain::work_package::WorkPackage as DomainWorkPackage;
 use agileplus_proto::agileplus::v1::{
-    AuditEntry as ProtoAuditEntry, Feature as ProtoFeature, WorkPackageStatus as ProtoWpStatus,
+    AuditEntry as ProtoAuditEntry, BacklogItem as ProtoBacklogItem, Feature as ProtoFeature,
+    WorkPackageStatus as ProtoWpStatus,
 };
 
 /// Convert a domain Feature to its Protobuf representation.
@@ -59,6 +61,20 @@ pub fn audit_entry_to_proto(e: DomainAuditEntry) -> ProtoAuditEntry {
         evidence_refs: e.evidence_refs.iter().map(|r| r.fr_id.clone()).collect(),
         prev_hash: e.prev_hash.to_vec(),
         hash: e.hash.to_vec(),
+    }
+}
+
+/// Convert a domain backlog item to the canonical queue protobuf contract.
+pub fn backlog_item_to_proto(item: DomainBacklogItem) -> ProtoBacklogItem {
+    ProtoBacklogItem {
+        id: item.id.unwrap_or_default(),
+        r#type: item.intent.to_string(),
+        title: item.title,
+        body: item.description,
+        priority: item.priority.to_string(),
+        state: item.status.to_string(),
+        external_ref: item.source,
+        created_at: item.created_at.to_rfc3339(),
     }
 }
 

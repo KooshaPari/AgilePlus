@@ -183,14 +183,22 @@ pub async fn evidence_content(
 
     // Validate artifact_id to prevent path traversal attacks
     if artifact_id.contains("..") || artifact_id.starts_with('/') || artifact_id.contains('\0') {
-        return Html("# Forbidden\n\nInvalid artifact ID.".to_string()).into_response();
+        return (
+            StatusCode::FORBIDDEN,
+            Html("# Forbidden\n\nInvalid artifact ID.".to_string()),
+        )
+            .into_response();
     }
 
     let artifact_path = base_path.join(&artifact_id);
 
     // Ensure the resolved path is within the base directory (security check)
     if !artifact_path.starts_with(&base_path) {
-        return Html("# Forbidden\n\nPath traversal detected.".to_string()).into_response();
+        return (
+            StatusCode::FORBIDDEN,
+            Html("# Forbidden\n\nPath traversal detected.".to_string()),
+        )
+            .into_response();
     }
 
     if let Ok(content) = fs::read_to_string(&artifact_path) {
@@ -340,7 +348,29 @@ pub async fn feature_evidence_json(
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
+
+    use axum::http::{Request, StatusCode};
+    use tokio::sync::RwLock;
+    use tower::util::ServiceExt;
+
     use super::*;
+    use crate::app_state::DashboardStore;
+    use crate::routes::router;
+
+    #[tokio::test]
+    async fn evidence_content_rejects_encoded_path_traversal_with_forbidden_status() {
+        let state = Arc::new(RwLock::new(DashboardStore::seeded()));
+        let app = router(state);
+        let request = Request::builder()
+            .uri("/api/evidence/4/%2E%2E/content")
+            .body(axum::body::Body::empty())
+            .expect("request");
+
+        let response = app.oneshot(request).await.expect("router response");
+
+        assert_eq!(response.status(), StatusCode::FORBIDDEN);
+    }
 
     #[test]
     fn test_html_escape_ampersand() {

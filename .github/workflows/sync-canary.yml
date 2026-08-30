@@ -12,10 +12,6 @@ on:
 permissions:
   contents: write
 
-concurrency:
-  group: agileplus-sync-canary
-  cancel-in-progress: false
-
 jobs:
   sync-canary:
     runs-on: ubuntu-24.04

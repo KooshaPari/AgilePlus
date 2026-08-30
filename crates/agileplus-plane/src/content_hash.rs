@@ -28,7 +28,7 @@ pub fn compute_content_hash(
         hasher.update(label.as_bytes());
         hasher.update(b"\x00");
     }
-    format!("{:x}", hasher.finalize())
+    hex::encode(hasher.finalize())
 }
 
 /// Detect whether a content conflict exists.

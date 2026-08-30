@@ -8,10 +8,10 @@ repository.workspace = true
 
 [dependencies]
 # workspace crates
-agileplus-domain = { path = "../agileplus-domain" }
-agileplus-application = { path = "../agileplus-application" }
-agileplus-git = { path = "../agileplus-git" }
-agileplus-sqlite = { path = "../agileplus-sqlite" }
+agileplus-domain = { version = "0.2.1", path = "../agileplus-domain" }
+agileplus-application = { version = "0.2.1", path = "../agileplus-application" }
+agileplus-git = { version = "0.2.1", path = "../agileplus-git" }
+agileplus-sqlite = { version = "0.2.1", path = "../agileplus-sqlite" }
 # workspace-managed external deps
 anyhow.workspace = true
 tokio.workspace = true

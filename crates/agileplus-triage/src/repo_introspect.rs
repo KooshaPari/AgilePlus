@@ -6,7 +6,7 @@
 //! Traceability: FR-AGP-020 (repo introspection)
 
 use serde::{Deserialize, Serialize};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 /// State of a directory as a candidate repository.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -44,8 +44,8 @@ pub struct RepoInfo {
 /// Inspect a directory and produce a `RepoInfo` snapshot.
 pub fn inspect_repo(path: &Path) -> RepoInfo {
     let path_str = path.to_string_lossy().into_owned();
-    let git_dir = path.join(".git");
-    if !git_dir.exists() {
+    let git_entry = path.join(".git");
+    if !git_entry.exists() {
         let hygiene = if has_source_files(path) { 70 } else { 30 };
         return RepoInfo {
             path: path_str,
@@ -57,6 +57,17 @@ pub fn inspect_repo(path: &Path) -> RepoInfo {
             hygiene_score: hygiene,
         };
     }
+    let Some(git_dir) = resolve_git_dir(&git_entry) else {
+        return RepoInfo {
+            path: path_str,
+            state: RepoState::MangledGit,
+            hygiene_score: 50,
+            current_branch: None,
+            branches: vec![],
+            worktrees: vec![],
+            remotes: vec![],
+        };
+    };
     let head = git_dir.join("HEAD");
     if !head.exists() {
         return RepoInfo {
@@ -87,6 +98,22 @@ pub fn inspect_repo(path: &Path) -> RepoInfo {
         worktrees,
         remotes,
     }
+}
+
+fn resolve_git_dir(git_entry: &Path) -> Option<PathBuf> {
+    if git_entry.is_dir() {
+        return Some(git_entry.to_path_buf());
+    }
+
+    let raw = std::fs::read_to_string(git_entry).ok()?;
+    let target = raw.trim().strip_prefix("gitdir: ")?;
+    let target = PathBuf::from(target);
+    let target = if target.is_absolute() {
+        target
+    } else {
+        git_entry.parent()?.join(target)
+    };
+    target.is_dir().then_some(target)
 }
 
 fn read_branches(git_dir: &Path) -> Vec<String> {

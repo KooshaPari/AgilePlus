@@ -123,15 +123,28 @@ where
         wps.push(wp);
     }
 
-    // Persist WPs to get IDs
-    let mut persisted_wps: Vec<WorkPackage> = Vec::with_capacity(wps.len());
-    for mut wp in wps {
-        let id = storage
-            .create_work_package(&wp)
-            .await
-            .context("creating work package")?;
-        wp.id = id;
-        persisted_wps.push(wp);
+    // Reconcile persisted WPs before inserting. Planning is retry-safe: a
+    // matching sequence reuses its stable row; a mismatch is an explicit
+    // conflict instead of silently creating a second logical plan.
+    let existing_wps = storage
+        .list_wps_by_feature(feature.id)
+        .await
+        .context("listing existing work packages")?;
+    for sequence in duplicate_sequences(&existing_wps) {
+        tracing::warn!(
+            feature_id = feature.id,
+            sequence,
+            "duplicate persisted work-package sequence; preserving records"
+        );
+    }
+    let mut persisted_wps = reconcile_work_packages(wps, existing_wps)?;
+    for wp in &mut persisted_wps {
+        if wp.id == 0 {
+            wp.id = storage
+                .create_work_package(wp)
+                .await
+                .context("creating work package")?;
+        }
     }
 
     // Build overlap graph and add file-overlap dependencies
@@ -181,23 +194,36 @@ where
             .context("writing WP prompt file")?;
     }
 
-    // Create governance contract
-    let contract = build_governance_contract(feature.id, &persisted_wps);
+    // Reuse the persisted governance contract on retries so the artifact and
+    // database remain byte-for-byte aligned. Only the first planning run
+    // creates and persists a new contract.
+    let contract = if let Some(existing) = storage
+        .get_latest_governance_contract(feature.id)
+        .await
+        .context("checking existing governance contract")?
+    {
+        existing
+    } else {
+        let contract = build_governance_contract(feature.id, &persisted_wps);
+        storage
+            .create_governance_contract(&contract)
+            .await
+            .context("persisting governance contract")?;
+        contract
+    };
     let contract_json =
         serde_json::to_string_pretty(&contract).context("serializing governance contract")?;
     vcs.write_artifact(slug, "contracts/governance-v1.json", &contract_json)
         .await
         .context("writing governance contract artifact")?;
-    storage
-        .create_governance_contract(&contract)
-        .await
-        .context("persisting governance contract")?;
 
     // Transition feature state: Researched -> Planned
-    storage
-        .update_feature_state(feature.id, FeatureState::Planned)
-        .await
-        .context("transitioning feature to Planned")?;
+    if feature.state == FeatureState::Researched {
+        storage
+            .update_feature_state(feature.id, FeatureState::Planned)
+            .await
+            .context("transitioning feature to Planned")?;
+    }
 
     // Append audit entry
     let prev_hash = get_latest_hash(storage, feature.id).await;
@@ -215,10 +241,12 @@ where
         archived_to: None,
     };
     audit.hash = hash_entry(&audit);
-    storage
-        .append_audit_entry(&audit)
-        .await
-        .context("appending audit entry")?;
+    if feature.state == FeatureState::Researched {
+        storage
+            .append_audit_entry(&audit)
+            .await
+            .context("appending audit entry")?;
+    }
 
     let elapsed_ms = start.elapsed().as_millis();
     tracing::info!(command = "plan", slug = %slug, wp_count = persisted_wps.len(), elapsed_ms = %elapsed_ms, "plan completed");
@@ -256,12 +284,36 @@ where
     println!();
     println!("  Plan written to: kitty-specs/{slug}/plan.md");
     println!("  Governance contract: kitty-specs/{slug}/contracts/governance-v1.json");
-    println!("  State: Researched -> Planned");
+    println!("  State: {}", plan_state_summary(feature.state));
 
     Ok(())
 }
 
 // --- helpers ---
+
+fn duplicate_sequences(wps: &[WorkPackage]) -> Vec<i32> {
+    let mut counts = std::collections::BTreeMap::new();
+    for wp in wps {
+        *counts.entry(wp.sequence).or_insert(0usize) += 1;
+    }
+    counts
+        .into_iter()
+        .filter_map(|(sequence, count)| (count > 1).then_some(sequence))
+        .collect()
+}
+
+fn plan_state_summary(state: FeatureState) -> &'static str {
+    match state {
+        FeatureState::Researched => "Researched -> Planned",
+        FeatureState::Planned => "Planned (preserved)",
+        FeatureState::Implementing => "Implementing (preserved)",
+        FeatureState::Validated => "Validated (preserved)",
+        FeatureState::Shipped => "Shipped (preserved)",
+        FeatureState::Retrospected => "Retrospected (preserved)",
+        FeatureState::Created => "Created (preserved)",
+        FeatureState::Specified => "Specified (preserved)",
+    }
+}
 
 /// Parse `FR-NNN: description` lines from spec content.
 fn parse_functional_requirements(spec: &str) -> Vec<FunctionalRequirement> {
@@ -341,6 +393,54 @@ fn slugify(s: &str) -> String {
         .chars()
         .take(40)
         .collect()
+}
+
+fn reconcile_work_packages(
+    expected: Vec<WorkPackage>,
+    existing: Vec<WorkPackage>,
+) -> Result<Vec<WorkPackage>> {
+    let expected_sequences: std::collections::BTreeSet<i32> =
+        expected.iter().map(|wp| wp.sequence).collect();
+    for existing_wp in &existing {
+        if !expected_sequences.contains(&existing_wp.sequence) {
+            anyhow::bail!(
+                "existing work package for sequence {} is absent from generated plan; explicit replan required",
+                existing_wp.sequence
+            );
+        }
+    }
+
+    let mut reconciled = Vec::with_capacity(expected.len());
+    for generated in expected {
+        let matches: Vec<&WorkPackage> = existing
+            .iter()
+            .filter(|wp| wp.sequence == generated.sequence)
+            .collect();
+        if matches.len() > 1 {
+            anyhow::bail!(
+                "multiple existing work packages for sequence {}; explicit replan required",
+                generated.sequence
+            );
+        }
+        let Some(existing_wp) = matches.first() else {
+            reconciled.push(generated);
+            continue;
+        };
+        if existing_wp.title != generated.title
+            || existing_wp.acceptance_criteria != generated.acceptance_criteria
+            || existing_wp.file_scope != generated.file_scope
+        {
+            anyhow::bail!(
+                "existing work package for sequence {} does not match generated plan; explicit replan required",
+                generated.sequence
+            );
+        }
+        let mut reused = generated;
+        reused.id = existing_wp.id;
+        reused.state = existing_wp.state;
+        reconciled.push(reused);
+    }
+    Ok(reconciled)
 }
 
 /// Generate plan.md content.
@@ -490,6 +590,75 @@ async fn get_latest_hash<S: StoragePort>(storage: &S, feature_id: i64) -> [u8; 3
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn duplicate_sequences_are_reported_without_mutating_records() {
+        let first = WorkPackage::new(7, "Build API (WP01)", 1, "- FR-001 -- API");
+        let second = WorkPackage::new(7, "Build API (WP01)", 1, "- FR-001 -- API");
+        let duplicates = duplicate_sequences(&[first, second]);
+        assert_eq!(duplicates, vec![1]);
+    }
+
+    #[test]
+    fn plan_state_summary_reports_preserved_non_researched_states() {
+        assert_eq!(
+            plan_state_summary(FeatureState::Implementing),
+            "Implementing (preserved)"
+        );
+        assert_eq!(
+            plan_state_summary(FeatureState::Validated),
+            "Validated (preserved)"
+        );
+    }
+
+    #[test]
+    fn reconcile_reuses_existing_work_packages_by_sequence() {
+        let mut expected = WorkPackage::new(7, "Build API (WP01)", 1, "- FR-001 -- API");
+        expected.file_scope = vec!["src/api.rs".into()];
+        let mut existing = expected.clone();
+        existing.id = 42;
+        let reconciled = reconcile_work_packages(vec![expected], vec![existing]).unwrap();
+        assert_eq!(reconciled[0].id, 42);
+    }
+
+    #[test]
+    fn reconcile_rejects_mismatched_existing_work_package() {
+        let expected = WorkPackage::new(7, "Build API (WP01)", 1, "- FR-001 -- API");
+        let existing = WorkPackage::new(7, "Old API (WP01)", 1, "- FR-001 -- API");
+        let err = reconcile_work_packages(vec![expected], vec![existing]).unwrap_err();
+        assert!(err.to_string().contains("sequence 1"));
+    }
+
+    #[test]
+    fn reconcile_rejects_duplicate_existing_sequences() {
+        let expected = WorkPackage::new(7, "Build API (WP01)", 1, "- FR-001 -- API");
+        let duplicate = expected.clone();
+        let err =
+            reconcile_work_packages(vec![expected.clone()], vec![duplicate, expected]).unwrap_err();
+        assert!(err.to_string().contains("multiple existing work packages"));
+    }
+
+    #[test]
+    fn reconcile_rejects_persisted_sequences_absent_from_generated_plan() {
+        let expected = WorkPackage::new(7, "Build API (WP01)", 1, "- FR-001 -- API");
+        let stale = WorkPackage::new(7, "Retired UI (WP02)", 2, "- FR-002 -- UI");
+
+        let err = reconcile_work_packages(vec![expected], vec![stale]).unwrap_err();
+
+        assert!(err.to_string().contains("sequence 2"));
+        assert!(err.to_string().contains("explicit replan required"));
+    }
+
+    #[test]
+    fn reconcile_rejects_file_scope_mismatch() {
+        let mut expected = WorkPackage::new(7, "Build API (WP01)", 1, "- FR-001 -- API");
+        expected.file_scope = vec!["src/new.rs".into()];
+        let mut existing = expected.clone();
+        existing.id = 42;
+        existing.file_scope = vec!["src/old.rs".into()];
+        let err = reconcile_work_packages(vec![expected], vec![existing]).unwrap_err();
+        assert!(err.to_string().contains("sequence 1"));
+    }
 
     #[test]
     fn parse_frs_basic() {

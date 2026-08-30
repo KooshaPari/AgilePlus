@@ -90,20 +90,26 @@ pub fn parse_since(since: &str) -> Option<DateTime<Utc>> {
     let now = Utc::now();
     let s = since.trim();
     // Try duration shorthand.
-    if let Some(rest) = s.strip_suffix('m') {
-        if let Ok(mins) = rest.parse::<i64>() {
-            return Some(now - chrono::Duration::minutes(mins));
-        }
+    if let Some(rest) = s.strip_suffix('m')
+        && let Ok(mins) = rest.parse::<i64>()
+        && mins >= 0
+    {
+        return chrono::Duration::try_minutes(mins)
+            .and_then(|duration| now.checked_sub_signed(duration));
     }
-    if let Some(rest) = s.strip_suffix('h') {
-        if let Ok(hours) = rest.parse::<i64>() {
-            return Some(now - chrono::Duration::hours(hours));
-        }
+    if let Some(rest) = s.strip_suffix('h')
+        && let Ok(hours) = rest.parse::<i64>()
+        && hours >= 0
+    {
+        return chrono::Duration::try_hours(hours)
+            .and_then(|duration| now.checked_sub_signed(duration));
     }
-    if let Some(rest) = s.strip_suffix('d') {
-        if let Ok(days) = rest.parse::<i64>() {
-            return Some(now - chrono::Duration::days(days));
-        }
+    if let Some(rest) = s.strip_suffix('d')
+        && let Ok(days) = rest.parse::<i64>()
+        && days >= 0
+    {
+        return chrono::Duration::try_days(days)
+            .and_then(|duration| now.checked_sub_signed(duration));
     }
     // Try ISO date.
     if let Ok(dt) = chrono::NaiveDate::parse_from_str(s, "%Y-%m-%d") {
@@ -121,25 +127,25 @@ pub fn filter_events(events: &[EventRecord], args: &EventsArgs) -> Vec<EventReco
     events
         .iter()
         .filter(|e| {
-            if let Some(ref cutoff_dt) = cutoff {
-                if e.timestamp < *cutoff_dt {
-                    return false;
-                }
+            if let Some(ref cutoff_dt) = cutoff
+                && e.timestamp < *cutoff_dt
+            {
+                return false;
             }
-            if let Some(ref et) = args.event_type {
-                if &e.event_type != et {
-                    return false;
-                }
+            if let Some(ref et) = args.event_type
+                && &e.event_type != et
+            {
+                return false;
             }
-            if let Some(ref actor) = args.actor {
-                if &e.actor != actor {
-                    return false;
-                }
+            if let Some(ref actor) = args.actor
+                && &e.actor != actor
+            {
+                return false;
             }
-            if let Some(ref ent) = args.entity_type {
-                if &e.entity_type != ent {
-                    return false;
-                }
+            if let Some(ref ent) = args.entity_type
+                && &e.entity_type != ent
+            {
+                return false;
             }
             if let Some(ref feat) = args.feature {
                 // Match entity_type == "feature" and entity_id or summary containing slug.
@@ -344,6 +350,24 @@ mod tests {
     #[test]
     fn test_parse_since_invalid() {
         assert!(parse_since("bogus").is_none());
+    }
+
+    #[test]
+    fn test_parse_since_rejects_negative_durations() {
+        for since in ["-1m", "-2h", "-3d"] {
+            assert!(parse_since(since).is_none(), "accepted {since}");
+        }
+    }
+
+    #[test]
+    fn test_parse_since_rejects_overflowing_durations() {
+        for since in [
+            format!("{}m", i64::MAX),
+            format!("{}h", i64::MAX),
+            format!("{}d", i64::MAX),
+        ] {
+            assert!(parse_since(&since).is_none(), "accepted {since}");
+        }
     }
 
     #[test]

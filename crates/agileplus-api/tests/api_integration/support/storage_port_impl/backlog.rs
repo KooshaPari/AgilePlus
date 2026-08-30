@@ -64,7 +64,7 @@ pub(crate) fn list_backlog_items(
     }
 
     match filters.sort {
-        BacklogSort::Age => items.sort_by(|a, b| a.created_at.cmp(&b.created_at)),
+        BacklogSort::Age => items.sort_by_key(|a| a.created_at),
         BacklogSort::Priority | BacklogSort::Impact => items.sort_by(|a, b| {
             (priority_rank(a.priority), a.created_at)
                 .cmp(&(priority_rank(b.priority), b.created_at))
@@ -126,7 +126,7 @@ pub(crate) fn pop_next_backlog_item(
     storage: &MockStorage,
 ) -> impl Future<Output = Result<Option<BacklogItem>, DomainError>> + Send {
     let mut backlog = storage.backlog.lock().expect("backlog lock poisoned");
-    let next = backlog
+    let mut next = backlog
         .iter()
         .filter(|item| is_open(item.status))
         .min_by(|a, b| {
@@ -135,14 +135,49 @@ pub(crate) fn pop_next_backlog_item(
         })
         .cloned();
 
-    if let Some(item) = next.clone() {
-        if let Some(id) = item.id {
-            if let Some(existing) = backlog.iter_mut().find(|entry| entry.id == Some(id)) {
-                existing.status = BacklogStatus::Triaged;
-                existing.updated_at = chrono::Utc::now();
-            }
-        }
+    if let Some(item) = next.as_mut()
+        && let Some(id) = item.id
+        && let Some(existing) = backlog.iter_mut().find(|entry| entry.id == Some(id))
+    {
+        existing.status = BacklogStatus::Triaged;
+        existing.updated_at = chrono::Utc::now();
+        item.status = existing.status;
+        item.updated_at = existing.updated_at;
     }
 
     async move { Ok(next) }
+}
+
+#[cfg(test)]
+mod tests {
+    use agileplus_domain::domain::backlog::{BacklogItem, BacklogPriority, BacklogStatus, Intent};
+    use chrono::Utc;
+
+    use super::*;
+
+    #[tokio::test]
+    async fn popped_item_reports_the_post_triage_state() {
+        let storage = MockStorage::default();
+        storage.backlog.lock().unwrap().push(BacklogItem {
+            id: Some(1),
+            title: "Investigate".to_string(),
+            description: String::new(),
+            intent: Intent::Task,
+            priority: BacklogPriority::High,
+            status: BacklogStatus::New,
+            source: "test".to_string(),
+            feature_slug: None,
+            tags: vec![],
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+        });
+
+        let popped = pop_next_backlog_item(&storage).await.unwrap().unwrap();
+
+        assert_eq!(popped.status, BacklogStatus::Triaged);
+        assert_eq!(
+            storage.backlog.lock().unwrap()[0].status,
+            BacklogStatus::Triaged
+        );
+    }
 }

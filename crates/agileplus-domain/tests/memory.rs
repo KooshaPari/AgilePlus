@@ -52,6 +52,12 @@ use agileplus_domain::domain::work_package::WpState;
 use agileplus_domain::ports::traceability_port::TraceabilityPort;
 use agileplus_domain::traceability::TraceRef;
 use chrono::Utc;
+use std::sync::Mutex;
+
+// `dhat` owns one process-global profiler. The Rust test harness executes
+// these independent tests concurrently by default, so each profile must hold
+// the lock for its complete lifetime rather than merely while constructing it.
+static HEAP_PROFILER_LOCK: Mutex<()> = Mutex::new(());
 
 // ──────────────────────────────────────────────
 //  Profile: Feature lifecycle (creation + state transitions)
@@ -61,6 +67,7 @@ use chrono::Utc;
 /// large batch of [`Feature`] aggregates.
 #[test]
 fn memory_profile_feature_lifecycle() {
+    let _profile_lock = HEAP_PROFILER_LOCK.lock().expect("heap profiler lock");
     let _profiler = Profiler::new_heap();
 
     let mut features: Vec<Feature> = (0..10_000)
@@ -96,6 +103,7 @@ fn memory_profile_feature_lifecycle() {
 /// of [`WorkPackage`] values.
 #[test]
 fn memory_profile_work_package_operations() {
+    let _profile_lock = HEAP_PROFILER_LOCK.lock().expect("heap profiler lock");
     let _profiler = Profiler::new_heap();
 
     let mut work_packages: Vec<WorkPackage> = (0..10_000)
@@ -103,7 +111,7 @@ fn memory_profile_work_package_operations() {
             WorkPackage::new(
                 i as i64 % 100,
                 &format!("WP-{i}"),
-                i as i32,
+                i,
                 "User can perform the specified operation successfully",
             )
         })
@@ -130,6 +138,7 @@ fn memory_profile_work_package_operations() {
 /// Profile heap usage during trace-ref linking across many artifacts.
 #[test]
 fn memory_profile_traceability_bridge() {
+    let _profile_lock = HEAP_PROFILER_LOCK.lock().expect("heap profiler lock");
     let _profiler = Profiler::new_heap();
     let adapter = NoopTraceAdapter;
 
@@ -170,6 +179,7 @@ fn memory_profile_traceability_bridge() {
 /// object graph — a common bottleneck in REST/gRPC handlers.
 #[test]
 fn memory_profile_json_serialization_stress() {
+    let _profile_lock = HEAP_PROFILER_LOCK.lock().expect("heap profiler lock");
     let _profiler = Profiler::new_heap();
 
     let features: Vec<Feature> = (0..5_000)

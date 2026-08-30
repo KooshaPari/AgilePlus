@@ -7,6 +7,8 @@
 #![cfg(feature = "full-deps")]
 
 use std::collections::{HashMap, HashSet};
+use std::fs;
+use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
 use chrono::Utc;
@@ -231,28 +233,58 @@ where
             );
         }
 
-        // Create worktree
         let wp_id_str = format!("WP{:02}", wp.sequence);
-        let worktree_path = vcs
-            .create_worktree(slug, &wp_id_str)
-            .await
-            .context(format!("creating worktree for {wp_id_str}"))?;
+        let existing_worktree = if args.resume && wp.state == WpState::Doing {
+            let worktrees = vcs
+                .list_worktrees()
+                .await
+                .context("listing worktrees for resume")?;
+            find_resume_worktree(&worktrees, slug, &wp_id_str)
+        } else {
+            None
+        };
+        let worktree_path = match existing_worktree {
+            Some(path) => {
+                println!("  Reusing worktree at: {}", path.display());
+                path
+            }
+            None => {
+                let path = vcs
+                    .create_worktree(slug, &wp_id_str)
+                    .await
+                    .context(format!("creating worktree for {wp_id_str}"))?;
+                println!("  Worktree created at: {}", path.display());
+                path
+            }
+        };
 
-        println!("  Worktree created at: {}", worktree_path.display());
+        // Plan artifacts are stored in the canonical checkout. Materialize the
+        // spec, plan, and WP prompt into the new worktree before dispatch so
+        // agents have a self-contained, readable context.
+        let prompt_relative = format!("tasks/WP{:02}-{}.md", wp.sequence, slugify(&wp.title));
+        for relative in ["spec.md", "plan.md", prompt_relative.as_str()] {
+            let content = vcs
+                .read_artifact(slug, relative)
+                .await
+                .context(format!("reading artifact {relative}"))?;
+            materialize_artifact(
+                &worktree_path,
+                &format!("kitty-specs/{slug}/{relative}"),
+                &content,
+            )
+            .context(format!("materializing artifact {relative}"))?;
+        }
 
         // Transition WP to Doing
-        storage
-            .update_wp_state(wp.id, WpState::Doing)
-            .await
-            .context("transitioning WP to Doing")?;
+        if wp.state != WpState::Doing {
+            storage
+                .update_wp_state(wp.id, WpState::Doing)
+                .await
+                .context("transitioning WP to Doing")?;
+        }
 
         // Build prompt path
-        let prompt_path = worktree_path.join(format!(
-            "kitty-specs/{}/tasks/WP{:02}-{}.md",
-            slug,
-            wp.sequence,
-            slugify(&wp.title)
-        ));
+        let prompt_path = worktree_path.join(format!("kitty-specs/{slug}/{prompt_relative}"));
 
         // Build context files
         let context_files = vec![
@@ -404,6 +436,29 @@ where
     Ok(())
 }
 
+fn materialize_artifact(worktree_root: &Path, relative_path: &str, content: &str) -> Result<()> {
+    let destination = worktree_root.join(relative_path);
+    if let Some(parent) = destination.parent() {
+        fs::create_dir_all(parent).context("creating artifact directory")?;
+    }
+    fs::write(destination, content).context("writing artifact")?;
+    Ok(())
+}
+
+fn find_resume_worktree(
+    worktrees: &[agileplus_domain::ports::WorktreeInfo],
+    feature_slug: &str,
+    wp_id: &str,
+) -> Option<PathBuf> {
+    worktrees
+        .iter()
+        .find(|worktree| {
+            (worktree.feature_slug == feature_slug && worktree.wp_id == wp_id)
+                || worktree.branch == format!("feat/{feature_slug}/{wp_id}")
+        })
+        .map(|worktree| worktree.path.clone())
+}
+
 fn slugify(s: &str) -> String {
     s.chars()
         .map(|c| {
@@ -434,12 +489,40 @@ async fn get_latest_hash<S: StoragePort>(storage: &S, feature_id: i64) -> [u8; 3
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::fs;
 
     #[test]
     fn slugify_basic() {
         assert_eq!(
             slugify("Implement Auth Module (WP01)"),
             "implement-auth-module-wp01"
+        );
+    }
+
+    #[test]
+    fn materializes_artifact_into_worktree_layout() {
+        let root = tempfile::tempdir().expect("tempdir");
+        materialize_artifact(root.path(), "kitty-specs/demo/tasks/WP01-task.md", "prompt")
+            .expect("artifact materialized");
+        assert_eq!(
+            fs::read_to_string(root.path().join("kitty-specs/demo/tasks/WP01-task.md"))
+                .expect("prompt readable"),
+            "prompt"
+        );
+    }
+
+    #[test]
+    fn finds_existing_resume_worktree_for_wp() {
+        let worktrees = vec![agileplus_domain::ports::WorktreeInfo {
+            path: "/tmp/wp01".into(),
+            commit: "abc".into(),
+            branch: "feat/demo/WP01".into(),
+            feature_slug: "demo".into(),
+            wp_id: "WP01".into(),
+        }];
+        assert_eq!(
+            find_resume_worktree(&worktrees, "demo", "WP01"),
+            Some(PathBuf::from("/tmp/wp01"))
         );
     }
 }

@@ -3,7 +3,7 @@
 //!
 //! Traceability: WP07-T043
 
-use agileplus_domain::ports::VcsPort;
+use agileplus_domain::{error::DomainError, ports::VcsPort};
 use agileplus_git::GitVcsAdapter;
 use git2::{Repository, Signature};
 use std::path::Path;
@@ -135,12 +135,7 @@ async fn test_artifact_exists_before_and_after() {
 async fn test_read_missing_artifact_returns_not_found() {
     let (dir, adapter) = setup_test_repo();
     let result = adapter.read_artifact("nonexistent", "spec.md").await;
-    assert!(result.is_err());
-    let err_str = result.unwrap_err().to_string();
-    assert!(
-        err_str.contains("not found") || err_str.contains("NotFound"),
-        "expected NotFound error, got: {err_str}"
-    );
+    assert!(matches!(result, Err(DomainError::NotFound(_))));
     drop(dir);
 }
 
@@ -432,9 +427,10 @@ async fn test_detect_conflicts_no_conflict() {
 #[tokio::test]
 async fn test_create_and_list_worktree() {
     let (dir, adapter) = setup_test_repo();
+    let feature_slug = format!("my-feat-{}", std::process::id());
 
     let path = adapter
-        .create_worktree("my-feat", "WP01")
+        .create_worktree(&feature_slug, "WP01")
         .await
         .expect("create_worktree");
 
@@ -444,6 +440,10 @@ async fn test_create_and_list_worktree() {
     let worktrees = adapter.list_worktrees().await.unwrap();
     let found = worktrees.iter().any(|wt| wt.path == path);
     assert!(found, "new worktree should appear in list_worktrees");
+    adapter
+        .cleanup_worktree(&path)
+        .await
+        .expect("cleanup_worktree");
     drop(dir);
 }
 
@@ -482,10 +482,10 @@ async fn test_cleanup_worktree_safety_check() {
 // ---- Helpers ----
 
 fn get_default_branch(repo: &Repository) -> String {
-    if let Ok(head) = repo.head() {
-        if let Ok(name) = head.shorthand() {
-            return name.to_string();
-        }
+    if let Ok(head) = repo.head()
+        && let Ok(name) = head.shorthand()
+    {
+        return name.to_string();
     }
     "main".to_string()
 }

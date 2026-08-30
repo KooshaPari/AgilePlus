@@ -16,4 +16,4 @@ jobs:
       contents: write
     steps:
       - name: Tag automation skipped - phenoShared deprecated
-        run: echo "Tag automation workflow disabled due to phenoShared deprecation. TODO: Re-implement if needed."
+        run: 'echo "Tag automation workflow disabled due to phenoShared deprecation. TODO: Re-implement if needed."'
