@@ -46,11 +46,13 @@ jobs:
               with:
                   node-version: "20"
 
-            - name: Install dependencies
-              run: npm install vitest @vitest/coverage-v8
+            - name: Install dashboard dependencies
+              working-directory: crates/agileplus-dashboard/web
+              run: npm install
 
             - name: Run Vitest
-              run: npx vitest run --reporter=json
+              working-directory: crates/agileplus-dashboard/web
+              run: npx vitest run --config vitest.config.ts --reporter=json
 
     playwright-tests:
         name: Playwright Visual Tests
