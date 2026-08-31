@@ -33,7 +33,7 @@ jobs:
               run: npm install @cucumber/cucumber
 
             - name: Run BDD Tests
-              run: npx cucumber run tests/bdd/*.feature
+              run: cargo test --manifest-path tests/bdd/Cargo.toml --test bdd
 
     vitest-tests:
         name: Vitest Unit Tests

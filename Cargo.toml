@@ -5,6 +5,7 @@ resolver = "2"
 # workspace until source is implemented. See: kitty-specs/003-agileplus-platform-completion.
 members = [
   "tests/e2e", # installed-CLI round-trip; workflow runs this crate from its manifest directory
+  "tests/bdd", # cucumber-rs acceptance suite
   "rust", # agileplus-proto: tonic/prost gRPC stubs (buf-generated)
   "crates/agileplus-cli", # agileplus: spec-first CLI binary
   "crates/agileplus-subcmds", # platform/dashboard CLI subcommands (platform health)
