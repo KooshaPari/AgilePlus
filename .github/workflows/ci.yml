@@ -106,10 +106,12 @@ jobs:
         steps:
             - uses: actions/checkout@v4
             - uses: dtolnay/rust-toolchain@stable
-            - name: cargo-deny check
-              uses: EmbarkStudios/cargo-deny-action@v1
+            - name: Install cargo-deny
+              uses: taiki-e/install-action@7a79fe8c3a13344501c80d99cae481c1c9085912  # v2
               with:
-                  arguments: --all-features
+                  tool: cargo-deny
+            - name: cargo-deny check
+              run: cargo deny --manifest-path Cargo.toml --all-features check
 
     python:
         name: Python
