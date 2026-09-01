@@ -237,7 +237,7 @@ fn test_unverified_criterion_with_trace_ref_not_counted_as_done() {
 fn test_trace_ref_artifact_type_preserved_in_contract() {
     let entity_id = Uuid::new_v4();
 
-    let artifact_types = vec![
+    let artifact_types = [
         "requirement",
         "test_case",
         "evidence",

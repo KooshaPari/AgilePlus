@@ -12,6 +12,12 @@ fn agileplus_bin() -> PathBuf {
     if let Ok(path) = std::env::var("AGILEPLUS_BIN") {
         return PathBuf::from(path);
     }
+
+    let workspace_binary = repo_root().join("target/debug/agileplus");
+    if workspace_binary.is_file() {
+        return workspace_binary;
+    }
+
     PathBuf::from("agileplus")
 }
 

@@ -1,5 +1,4 @@
 use std::process::Command;
-use std::time::{Duration, Instant};
 
 use anyhow::{Result, anyhow};
 
@@ -33,20 +32,9 @@ pub fn run_platform_down(args: PlatformDownArgs) -> Result<()> {
         println!("Platform down.");
         Ok(())
     } else {
-        // Attempt forceful wait up to timeout.
-        let _ = wait_for_shutdown(args.timeout);
-        println!("âœ“ process-compose stopped");
-        println!("âœ“ All services shut down gracefully");
-        println!("Platform down.");
-        Ok(())
+        Err(anyhow!(
+            "process-compose down exited with status: {}",
+            status
+        ))
     }
-}
-
-fn wait_for_shutdown(timeout_secs: u64) -> Result<()> {
-    let start = Instant::now();
-    let limit = Duration::from_secs(timeout_secs);
-    while start.elapsed() < limit {
-        std::thread::sleep(Duration::from_secs(1));
-    }
-    Ok(())
 }

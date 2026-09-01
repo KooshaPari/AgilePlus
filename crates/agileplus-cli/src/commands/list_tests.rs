@@ -222,8 +222,7 @@ impl StoragePort for MemStore {
             .lock()
             .unwrap()
             .iter()
-            .filter(|e| e.feature_id == feature_id)
-            .last()
+            .rfind(|e| e.feature_id == feature_id)
             .cloned())
     }
 

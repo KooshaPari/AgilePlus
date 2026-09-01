@@ -6,7 +6,7 @@ license.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-agileplus-domain = { path = "../agileplus-domain" }
+agileplus-domain = { version = "0.2.1", path = "../agileplus-domain" }
 serde.workspace = true
 serde_json.workspace = true
 chrono.workspace = true

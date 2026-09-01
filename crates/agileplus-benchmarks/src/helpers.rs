@@ -119,12 +119,10 @@ use agileplus_domain::domain::snapshot::Snapshot;
 /// Build a `Snapshot` representing the aggregate state at `seq`.
 pub fn make_snapshot(entity_id: i64, seq: i64) -> Snapshot {
     Snapshot {
-        id: 0,
         entity_type: "Feature".to_string(),
         entity_id,
         event_sequence: seq,
         state: serde_json::json!({"events_applied": seq, "last_state": "Specified"}),
-        created_at: Utc::now(),
     }
 }
 

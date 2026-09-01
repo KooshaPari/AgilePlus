@@ -1,5 +1,5 @@
 //! gRPC proxy/router — forwards agent and integration requests to downstream
-//! services when available, and falls back to stubs otherwise.
+//! services when available, and reports explicit unavailability otherwise.
 //!
 //! Traceability: WP14-T080b
 
@@ -81,28 +81,19 @@ impl ProxyRouter {
 
     /// Dispatch an agent-related command.
     ///
-    /// If `agileplus-agents` is reachable, the request is forwarded; otherwise
-    /// a stub response is returned indicating the service is unavailable.
+    /// Reachability is reported by [`Self::health`], but dispatch remains
+    /// unsupported until an actual downstream RPC client is wired.
     pub async fn dispatch_agent_command(
         &self,
         command: &str,
         feature_slug: &str,
         args: &std::collections::HashMap<String, String>,
     ) -> ProxyResult {
-        if self.health.agents_reachable {
-            // Real forwarding would be implemented here once the agents service
-            // proto contract stabilises (WP15+).
-            ProxyResult::Forwarded {
-                success: true,
-                message: format!("forwarded '{command}' for '{feature_slug}' to agents service"),
-                outputs: args.clone(),
-            }
-        } else {
-            ProxyResult::Stub {
-                message: format!(
-                    "agents service unavailable — stub response for '{command}' on '{feature_slug}'"
-                ),
-            }
+        let _ = args;
+        ProxyResult::Stub {
+            message: format!(
+                "agents forwarding unsupported for '{command}' on '{feature_slug}'; no RPC client is configured"
+            ),
         }
     }
 
@@ -112,20 +103,10 @@ impl ProxyRouter {
         command: &str,
         feature_slug: &str,
     ) -> ProxyResult {
-        if self.health.integrations_reachable {
-            ProxyResult::Forwarded {
-                success: true,
-                message: format!(
-                    "forwarded '{command}' for '{feature_slug}' to integrations service"
-                ),
-                outputs: Default::default(),
-            }
-        } else {
-            ProxyResult::Stub {
-                message: format!(
-                    "integrations service unavailable — stub response for '{command}' on '{feature_slug}'"
-                ),
-            }
+        ProxyResult::Stub {
+            message: format!(
+                "integrations forwarding unsupported for '{command}' on '{feature_slug}'; no RPC client is configured"
+            ),
         }
     }
 }
@@ -147,7 +128,10 @@ impl ProxyResult {
     pub fn is_success(&self) -> bool {
         match self {
             ProxyResult::Forwarded { success, .. } => *success,
-            ProxyResult::Stub { .. } => true, // Stubs succeed for development purposes
+            // A stub proves only that no downstream service handled the request.  It
+            // must never acknowledge a mutating command (notably `implement`) as
+            // successful.
+            ProxyResult::Stub { .. } => false,
         }
     }
 
@@ -171,13 +155,13 @@ mod tests {
     use super::*;
 
     #[tokio::test]
-    async fn proxy_stub_mode_succeeds() {
+    async fn proxy_stub_mode_rejects_mutating_command() {
         let router = ProxyRouter::new(None, None).await;
         let result = router
             .dispatch_agent_command("implement", "feat-a", &Default::default())
             .await;
-        assert!(result.is_success());
-        assert!(result.message().contains("stub"));
+        assert!(!result.is_success());
+        assert!(result.message().contains("unsupported"));
     }
 
     #[tokio::test]
@@ -185,5 +169,25 @@ mod tests {
         let router = ProxyRouter::new(None, None).await;
         assert!(!router.health().agents_reachable);
         assert!(!router.health().integrations_reachable);
+    }
+
+    #[tokio::test]
+    async fn reachable_ports_do_not_imply_forwarding_success() {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap().to_string();
+        let router = ProxyRouter::new(Some(address.clone()), Some(address)).await;
+
+        assert!(router.health().agents_reachable);
+        assert!(router.health().integrations_reachable);
+
+        let agent = router
+            .dispatch_agent_command("implement", "feat-a", &Default::default())
+            .await;
+        assert!(!agent.is_success());
+        assert!(agent.message().contains("unsupported"));
+
+        let integration = router.dispatch_integration_command("sync", "feat-a").await;
+        assert!(!integration.is_success());
+        assert!(integration.message().contains("unsupported"));
     }
 }

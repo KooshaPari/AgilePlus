@@ -12,12 +12,12 @@ pub(crate) fn find_process_compose() -> Option<PathBuf> {
 fn which_process_compose() -> Option<PathBuf> {
     // Try `which` / `where` via std
     let output = Command::new("which").arg("process-compose").output();
-    if let Ok(out) = output {
-        if out.status.success() {
-            let path_str = String::from_utf8_lossy(&out.stdout).trim().to_string();
-            if !path_str.is_empty() {
-                return Some(PathBuf::from(path_str));
-            }
+    if let Ok(out) = output
+        && out.status.success()
+    {
+        let path_str = String::from_utf8_lossy(&out.stdout).trim().to_string();
+        if !path_str.is_empty() {
+            return Some(PathBuf::from(path_str));
         }
     }
     // Fallback: check PATH entries manually
@@ -34,6 +34,9 @@ fn which_process_compose() -> Option<PathBuf> {
 
 #[cfg(test)]
 fn which_process_compose() -> Option<PathBuf> {
+    if let Some(path) = std::env::var_os("AGILEPLUS_PROCESS_COMPOSE_BIN") {
+        return Some(PathBuf::from(path));
+    }
     // In tests, pretend process-compose is available so we can exercise code paths.
     Some(PathBuf::from("/usr/local/bin/process-compose"))
 }

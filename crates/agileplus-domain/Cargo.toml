@@ -11,7 +11,7 @@ serde_json.workspace = true
 thiserror.workspace = true
 chrono.workspace = true
 sha2.workspace = true
-traceability-core = { path = "../traceability-core" }
+traceability-core = { version = "0.2.1", path = "../traceability-core" }
 toml.workspace = true
 dirs-next.workspace = true
 zeroize.workspace = true

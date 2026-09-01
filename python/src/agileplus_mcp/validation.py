@@ -15,7 +15,8 @@ MAX_SLUG_LENGTH = 128
 MAX_TEXT_LENGTH = 4096
 MAX_BATCH_IMPORT_SIZE = 100
 
-VALID_ITEM_TYPES = frozenset({"task", "bug", "story", "epic", "spike", "chore"})
+# Canonical backlog intents accepted by the Rust domain parser.
+VALID_ITEM_TYPES = frozenset({"bug", "feature", "idea", "task", "docs"})
 
 
 class InputValidationError(ValueError):
@@ -33,7 +34,7 @@ def validate_slug(value: str, field_name: str = "slug") -> str:
     if not _SLUG_RE.match(value):
         raise InputValidationError(
             f"{field_name} must be kebab-case (lowercase alphanumeric and hyphens), "
-            f"1–{MAX_SLUG_LENGTH} characters; got {value!r}"
+            f"1-{MAX_SLUG_LENGTH} characters; got {value!r}"
         )
     return value
 
@@ -41,9 +42,7 @@ def validate_slug(value: str, field_name: str = "slug") -> str:
 def validate_transition(value: str) -> str:
     """Validate a state transition string like ``specified->planned``."""
     if not _TRANSITION_RE.match(value):
-        raise InputValidationError(
-            f"transition must match 'state->state' pattern; got {value!r}"
-        )
+        raise InputValidationError(f"transition must match 'state->state' pattern; got {value!r}")
     return value
 
 
@@ -70,25 +69,19 @@ def validate_file_path(path: str, allowed_roots: tuple[str, ...] = ("kitty-specs
     normalised = os.path.normpath(path)
 
     if ".." in normalised.split(os.sep):
-        raise InputValidationError(
-            f"file path must not contain '..' components; got {path!r}"
-        )
+        raise InputValidationError(f"file path must not contain '..' components; got {path!r}")
 
     for root in allowed_roots:
         if normalised == root or normalised.startswith(root + os.sep):
             return normalised
 
-    raise InputValidationError(
-        f"file path must be under one of {allowed_roots}; got {path!r}"
-    )
+    raise InputValidationError(f"file path must be under one of {allowed_roots}; got {path!r}")
 
 
 def validate_batch_size(items: list, max_size: int = MAX_BATCH_IMPORT_SIZE) -> list:
     """Validate that a batch does not exceed the maximum size."""
     if len(items) > max_size:
-        raise InputValidationError(
-            f"batch size {len(items)} exceeds maximum of {max_size}"
-        )
+        raise InputValidationError(f"batch size {len(items)} exceeds maximum of {max_size}")
     return items
 
 

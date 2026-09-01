@@ -547,7 +547,10 @@ fn persist_plane_settings(
         Err(error) => return Err(Box::new(error)),
     };
     config.migrate_legacy_plane_key(credentials)?;
-    credentials.set("agileplus", PLANESO_KEY, form.api_key.trim())?;
+    if let Err(error) = credentials.set("agileplus", PLANESO_KEY, form.api_key.trim()) {
+        restore_credential(credentials, previous_credential.as_deref())?;
+        return Err(Box::new(error));
+    }
 
     config.plane = Some(PlaneConfig {
         api_url: form.api_url.trim().to_string(),
@@ -562,193 +565,6 @@ fn persist_plane_settings(
         return Err(error);
     }
     Ok(())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use agileplus_domain::credentials::CredentialError;
-    use std::sync::atomic::{AtomicU64, Ordering};
-
-    fn temporary_config_path() -> std::path::PathBuf {
-        static SEQUENCE: AtomicU64 = AtomicU64::new(0);
-        let id = SEQUENCE.fetch_add(1, Ordering::Relaxed);
-        std::env::temp_dir()
-            .join(format!("agileplus-dashboard-settings-{id}"))
-            .join(".agileplus")
-            .join("config.toml")
-    }
-
-    fn write_legacy_fixture(path: &Path) -> String {
-        let fixture = concat!(
-            "[plane]\n",
-            "api_url = 'https://plane.example'\n",
-            "api_key = 'raw-legacy-plane-secret'\n",
-            "workspace_slug = 'workspace'\n",
-            "project_slug = 'project'\n"
-        )
-        .to_string();
-        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
-        std::fs::write(path, &fixture).unwrap();
-        fixture
-    }
-
-    struct RejectingCredentialStore;
-
-    impl CredentialStore for RejectingCredentialStore {
-        fn get(&self, _service: &str, _key: &str) -> Result<String, CredentialError> {
-            Err(CredentialError::BackendError("unavailable".to_string()))
-        }
-
-        fn set(&self, _service: &str, _key: &str, _value: &str) -> Result<(), CredentialError> {
-            Err(CredentialError::BackendError("unavailable".to_string()))
-        }
-
-        fn delete(&self, _service: &str, _key: &str) -> Result<(), CredentialError> {
-            Err(CredentialError::BackendError("unavailable".to_string()))
-        }
-
-        fn list_keys(&self, _service: &str) -> Result<Vec<String>, CredentialError> {
-            Err(CredentialError::BackendError("unavailable".to_string()))
-        }
-    }
-
-    #[test]
-    fn plane_config_serialization_never_contains_api_key_value() {
-        let config = Config {
-            plane: Some(PlaneConfig {
-                api_url: "https://plane.example".to_string(),
-                api_key_ref: PLANESO_KEY.to_string(),
-                api_key: None,
-                workspace_slug: "workspace".to_string(),
-                project_slug: "project".to_string(),
-            }),
-            agents: None,
-            services: None,
-            dashboard: None,
-        };
-        let serialized = toml::to_string(&config).unwrap();
-        assert!(serialized.contains("api_key_ref"));
-        assert!(!serialized.contains("plane-secret-value"));
-        assert!(!serialized.contains("api_key ="));
-    }
-
-    #[test]
-    fn legacy_plane_key_is_moved_then_scrubbed() {
-        let store = agileplus_domain::credentials::InMemoryCredentialStore::new();
-        let mut config = Config {
-            plane: Some(PlaneConfig {
-                api_url: "https://plane.example".into(),
-                api_key_ref: String::new(),
-                api_key: Some("legacy-plane-secret".into()),
-                workspace_slug: "workspace".into(),
-                project_slug: "project".into(),
-            }),
-            agents: None,
-            services: None,
-            dashboard: None,
-        };
-        assert!(config.migrate_legacy_plane_key(&store).unwrap());
-        assert_eq!(
-            store.get("agileplus", PLANESO_KEY).unwrap(),
-            "legacy-plane-secret"
-        );
-        let serialized = toml::to_string(&config).unwrap();
-        assert!(!serialized.contains("legacy-plane-secret"));
-    }
-
-    #[test]
-    fn legacy_plane_toml_deserializes_with_default_reference() {
-        let config: Config = toml::from_str(
-            "[plane]\napi_url = 'https://plane.example'\napi_key = 'legacy-secret'\nworkspace_slug = 'workspace'\nproject_slug = 'project'\n",
-        )
-        .unwrap();
-        let plane = config.plane.unwrap();
-        assert_eq!(plane.api_key_ref, PLANESO_KEY);
-        assert_eq!(plane.api_key.as_deref(), Some("legacy-secret"));
-    }
-
-    #[test]
-    fn raw_legacy_fixture_loads_migrates_and_scrubs_without_losing_config() {
-        let config_path = temporary_config_path();
-        write_legacy_fixture(&config_path);
-
-        let config = Config::load_from_path_with_credential_factory(&config_path, || {
-            Ok(Box::new(
-                agileplus_domain::credentials::InMemoryCredentialStore::new(),
-            ))
-        })
-        .unwrap();
-        let plane = config.plane.unwrap();
-        assert_eq!(plane.api_url, "https://plane.example");
-        assert_eq!(plane.workspace_slug, "workspace");
-        assert_eq!(plane.project_slug, "project");
-        assert_eq!(plane.api_key, None);
-        let persisted = std::fs::read_to_string(&config_path).unwrap();
-        assert!(persisted.contains("api_key_ref"));
-        assert!(!persisted.contains("raw-legacy-plane-secret"));
-        std::fs::remove_dir_all(config_path.ancestors().nth(2).unwrap()).unwrap();
-    }
-
-    #[test]
-    fn failed_load_time_migration_preserves_raw_legacy_fixture() {
-        let config_path = temporary_config_path();
-        let fixture = write_legacy_fixture(&config_path);
-
-        assert!(
-            Config::load_from_path_with_credential_factory(&config_path, || {
-                Ok(Box::new(RejectingCredentialStore))
-            })
-            .is_err()
-        );
-        assert_eq!(std::fs::read_to_string(&config_path).unwrap(), fixture);
-        std::fs::remove_dir_all(config_path.ancestors().nth(2).unwrap()).unwrap();
-    }
-
-    #[test]
-    fn malformed_config_fails_closed_without_replacing_source_bytes() {
-        let config_path = temporary_config_path();
-        let malformed = "[plane\napi_url = 'not valid toml'\n";
-        std::fs::create_dir_all(config_path.parent().unwrap()).unwrap();
-        std::fs::write(&config_path, malformed).unwrap();
-        let store = agileplus_domain::credentials::InMemoryCredentialStore::new();
-        let form = PlaneSettingsForm {
-            api_url: "https://plane.example".into(),
-            api_key: "new-secret".into(),
-            workspace_slug: "workspace".into(),
-            project_slug: "project".into(),
-        };
-
-        assert!(persist_plane_settings(&form, &config_path, &store).is_err());
-        assert_eq!(std::fs::read_to_string(&config_path).unwrap(), malformed);
-        assert!(matches!(
-            store.get("agileplus", PLANESO_KEY),
-            Err(CredentialError::NotFound(_))
-        ));
-        std::fs::remove_dir_all(config_path.ancestors().nth(2).unwrap()).unwrap();
-    }
-
-    #[test]
-    fn failed_plane_config_write_does_not_mutate_credential() {
-        let root = std::env::temp_dir().join("agileplus-dashboard-save-failure");
-        let parent_file = root.join("not-a-directory");
-        let config_path = parent_file.join("config.toml");
-        std::fs::create_dir_all(&root).unwrap();
-        std::fs::write(&parent_file, "sentinel").unwrap();
-        let store = agileplus_domain::credentials::InMemoryCredentialStore::new();
-        store.set("agileplus", PLANESO_KEY, "old-secret").unwrap();
-        let form = PlaneSettingsForm {
-            api_url: "https://plane.example".into(),
-            api_key: "new-secret".into(),
-            workspace_slug: "workspace".into(),
-            project_slug: "project".into(),
-        };
-
-        assert!(persist_plane_settings(&form, &config_path, &store).is_err());
-        assert_eq!(store.get("agileplus", PLANESO_KEY).unwrap(), "old-secret");
-        assert_eq!(std::fs::read_to_string(&parent_file).unwrap(), "sentinel");
-        std::fs::remove_dir_all(root).unwrap();
-    }
 }
 
 /// POST /api/settings/agents
@@ -897,5 +713,241 @@ pub async fn test_plane_connection(axum::Form(form): axum::Form<PlaneSettingsFor
             message: "Plane settings are incomplete or invalid".to_string(),
             success: false,
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use agileplus_domain::credentials::CredentialError;
+    use std::sync::Mutex;
+    use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
+
+    fn temporary_config_path() -> std::path::PathBuf {
+        static SEQUENCE: AtomicU64 = AtomicU64::new(0);
+        let id = SEQUENCE.fetch_add(1, Ordering::Relaxed);
+        std::env::temp_dir()
+            .join(format!("agileplus-dashboard-settings-{id}"))
+            .join(".agileplus")
+            .join("config.toml")
+    }
+
+    fn write_legacy_fixture(path: &Path) -> String {
+        let fixture = concat!(
+            "[plane]\n",
+            "api_url = 'https://plane.example'\n",
+            "api_key = 'raw-legacy-plane-secret'\n",
+            "workspace_slug = 'workspace'\n",
+            "project_slug = 'project'\n"
+        )
+        .to_string();
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        std::fs::write(path, &fixture).unwrap();
+        fixture
+    }
+
+    struct RejectingCredentialStore;
+
+    impl CredentialStore for RejectingCredentialStore {
+        fn get(&self, _service: &str, _key: &str) -> Result<String, CredentialError> {
+            Err(CredentialError::BackendError("unavailable".to_string()))
+        }
+
+        fn set(&self, _service: &str, _key: &str, _value: &str) -> Result<(), CredentialError> {
+            Err(CredentialError::BackendError("unavailable".to_string()))
+        }
+
+        fn delete(&self, _service: &str, _key: &str) -> Result<(), CredentialError> {
+            Err(CredentialError::BackendError("unavailable".to_string()))
+        }
+
+        fn list_keys(&self, _service: &str) -> Result<Vec<String>, CredentialError> {
+            Err(CredentialError::BackendError("unavailable".to_string()))
+        }
+    }
+
+    struct FailOnSecondSetStore {
+        value: Mutex<String>,
+        set_calls: AtomicUsize,
+    }
+
+    impl CredentialStore for FailOnSecondSetStore {
+        fn get(&self, _service: &str, _key: &str) -> Result<String, CredentialError> {
+            Ok(self.value.lock().unwrap().clone())
+        }
+
+        fn set(&self, _service: &str, _key: &str, value: &str) -> Result<(), CredentialError> {
+            if self.set_calls.fetch_add(1, Ordering::SeqCst) == 1 {
+                Err(CredentialError::BackendError("write rejected".to_string()))
+            } else {
+                *self.value.lock().unwrap() = value.to_string();
+                Ok(())
+            }
+        }
+
+        fn delete(&self, _service: &str, _key: &str) -> Result<(), CredentialError> {
+            Err(CredentialError::BackendError("delete rejected".to_string()))
+        }
+
+        fn list_keys(&self, _service: &str) -> Result<Vec<String>, CredentialError> {
+            Ok(vec![PLANESO_KEY.to_string()])
+        }
+    }
+
+    #[test]
+    fn plane_config_serialization_never_contains_api_key_value() {
+        let config = Config {
+            plane: Some(PlaneConfig {
+                api_url: "https://plane.example".to_string(),
+                api_key_ref: PLANESO_KEY.to_string(),
+                api_key: None,
+                workspace_slug: "workspace".to_string(),
+                project_slug: "project".to_string(),
+            }),
+            agents: None,
+            services: None,
+            dashboard: None,
+        };
+        let serialized = toml::to_string(&config).unwrap();
+        assert!(serialized.contains("api_key_ref"));
+        assert!(!serialized.contains("plane-secret-value"));
+        assert!(!serialized.contains("api_key ="));
+    }
+
+    #[test]
+    fn legacy_plane_key_is_moved_then_scrubbed() {
+        let store = agileplus_domain::credentials::InMemoryCredentialStore::new();
+        let mut config = Config {
+            plane: Some(PlaneConfig {
+                api_url: "https://plane.example".into(),
+                api_key_ref: String::new(),
+                api_key: Some("legacy-plane-secret".into()),
+                workspace_slug: "workspace".into(),
+                project_slug: "project".into(),
+            }),
+            agents: None,
+            services: None,
+            dashboard: None,
+        };
+        assert!(config.migrate_legacy_plane_key(&store).unwrap());
+        assert_eq!(
+            store.get("agileplus", PLANESO_KEY).unwrap(),
+            "legacy-plane-secret"
+        );
+        let serialized = toml::to_string(&config).unwrap();
+        assert!(!serialized.contains("legacy-plane-secret"));
+    }
+
+    #[test]
+    fn legacy_plane_toml_deserializes_with_default_reference() {
+        let config: Config = toml::from_str(
+            "[plane]\napi_url = 'https://plane.example'\napi_key = 'legacy-secret'\nworkspace_slug = 'workspace'\nproject_slug = 'project'\n",
+        )
+        .unwrap();
+        let plane = config.plane.unwrap();
+        assert_eq!(plane.api_key_ref, PLANESO_KEY);
+        assert_eq!(plane.api_key.as_deref(), Some("legacy-secret"));
+    }
+
+    #[test]
+    fn raw_legacy_fixture_loads_migrates_and_scrubs_without_losing_config() {
+        let config_path = temporary_config_path();
+        write_legacy_fixture(&config_path);
+
+        let config = Config::load_from_path_with_credential_factory(&config_path, || {
+            Ok(Box::new(
+                agileplus_domain::credentials::InMemoryCredentialStore::new(),
+            ))
+        })
+        .unwrap();
+        let plane = config.plane.unwrap();
+        assert_eq!(plane.api_url, "https://plane.example");
+        assert_eq!(plane.workspace_slug, "workspace");
+        assert_eq!(plane.project_slug, "project");
+        assert_eq!(plane.api_key, None);
+        let persisted = std::fs::read_to_string(&config_path).unwrap();
+        assert!(persisted.contains("api_key_ref"));
+        assert!(!persisted.contains("raw-legacy-plane-secret"));
+        std::fs::remove_dir_all(config_path.ancestors().nth(2).unwrap()).unwrap();
+    }
+
+    #[test]
+    fn failed_load_time_migration_preserves_raw_legacy_fixture() {
+        let config_path = temporary_config_path();
+        let fixture = write_legacy_fixture(&config_path);
+
+        assert!(
+            Config::load_from_path_with_credential_factory(&config_path, || {
+                Ok(Box::new(RejectingCredentialStore))
+            })
+            .is_err()
+        );
+        assert_eq!(std::fs::read_to_string(&config_path).unwrap(), fixture);
+        std::fs::remove_dir_all(config_path.ancestors().nth(2).unwrap()).unwrap();
+    }
+
+    #[test]
+    fn malformed_config_fails_closed_without_replacing_source_bytes() {
+        let config_path = temporary_config_path();
+        let malformed = "[plane\napi_url = 'not valid toml'\n";
+        std::fs::create_dir_all(config_path.parent().unwrap()).unwrap();
+        std::fs::write(&config_path, malformed).unwrap();
+        let store = agileplus_domain::credentials::InMemoryCredentialStore::new();
+        let form = PlaneSettingsForm {
+            api_url: "https://plane.example".into(),
+            api_key: "new-secret".into(),
+            workspace_slug: "workspace".into(),
+            project_slug: "project".into(),
+        };
+
+        assert!(persist_plane_settings(&form, &config_path, &store).is_err());
+        assert_eq!(std::fs::read_to_string(&config_path).unwrap(), malformed);
+        assert!(matches!(
+            store.get("agileplus", PLANESO_KEY),
+            Err(CredentialError::NotFound(_))
+        ));
+        std::fs::remove_dir_all(config_path.ancestors().nth(2).unwrap()).unwrap();
+    }
+
+    #[test]
+    fn failed_plane_config_write_does_not_mutate_credential() {
+        let root = std::env::temp_dir().join("agileplus-dashboard-save-failure");
+        let parent_file = root.join("not-a-directory");
+        let config_path = parent_file.join("config.toml");
+        std::fs::create_dir_all(&root).unwrap();
+        std::fs::write(&parent_file, "sentinel").unwrap();
+        let store = agileplus_domain::credentials::InMemoryCredentialStore::new();
+        store.set("agileplus", PLANESO_KEY, "old-secret").unwrap();
+        let form = PlaneSettingsForm {
+            api_url: "https://plane.example".into(),
+            api_key: "new-secret".into(),
+            workspace_slug: "workspace".into(),
+            project_slug: "project".into(),
+        };
+
+        assert!(persist_plane_settings(&form, &config_path, &store).is_err());
+        assert_eq!(store.get("agileplus", PLANESO_KEY).unwrap(), "old-secret");
+        assert_eq!(std::fs::read_to_string(&parent_file).unwrap(), "sentinel");
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn failed_new_plane_credential_write_restores_pre_migration_credential() {
+        let config_path = temporary_config_path();
+        write_legacy_fixture(&config_path);
+        let store = FailOnSecondSetStore {
+            value: Mutex::new("old-secret".to_string()),
+            set_calls: AtomicUsize::new(0),
+        };
+        let form = PlaneSettingsForm {
+            api_url: "https://plane.example".into(),
+            api_key: "new-secret".into(),
+            workspace_slug: "workspace".into(),
+            project_slug: "project".into(),
+        };
+
+        assert!(persist_plane_settings(&form, &config_path, &store).is_err());
+        assert_eq!(store.get("agileplus", PLANESO_KEY).unwrap(), "old-secret");
+        std::fs::remove_dir_all(config_path.ancestors().nth(2).unwrap()).unwrap();
     }
 }

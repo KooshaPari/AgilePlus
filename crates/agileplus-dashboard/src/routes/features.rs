@@ -544,15 +544,19 @@ pub async fn feature_transition(
     };
 
     let feature_name = {
-        let store = state.read().await;
-        match store.features.iter().find(|f| f.id == id) {
-            Some(f) => f.slug.clone(),
+        let mut store = state.write().await;
+        match store.features.iter_mut().find(|f| f.id == id) {
+            Some(feature) => {
+                if let Err(error) = feature.transition(new_state) {
+                    return (StatusCode::BAD_REQUEST, error).into_response();
+                }
+                feature.slug.clone()
+            }
             None => return (StatusCode::NOT_FOUND, "Feature not found").into_response(),
         }
     };
 
     // Broadcast the update so SSE clients refresh
-    // (In a real app, persist the state change here)
     tracing::info!(
         "Feature {} transitioned to {:?} (SSE broadcast triggers UI refresh)",
         feature_name,
@@ -563,4 +567,313 @@ pub async fn feature_transition(
     let store = state.read().await;
     let cards = build_kanban_cards(&store, DashboardFilter::All);
     render(KanbanPartial { cards })
+}
+
+#[cfg(test)]
+mod tests {
+    use std::sync::Arc;
+
+    use agileplus_domain::domain::state_machine::FeatureState;
+    use axum::{
+        Form,
+        extract::{Path, State},
+        http::{Request, StatusCode},
+    };
+    use tokio::sync::RwLock;
+    use tower::util::ServiceExt;
+
+    use super::{FeatureTransitionForm, feature_transition};
+    use crate::app_state::DashboardStore;
+    use crate::routes::router;
+
+    async fn response_text(response: axum::response::Response) -> String {
+        String::from_utf8(
+            axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .expect("response body")
+                .to_vec(),
+        )
+        .expect("response body is UTF-8")
+    }
+
+    #[tokio::test]
+    async fn feature_transition_persists_an_allowed_lifecycle_step() {
+        let state = Arc::new(RwLock::new(DashboardStore::seeded()));
+
+        let _response = feature_transition(
+            State(state.clone()),
+            Path(4),
+            Form(FeatureTransitionForm {
+                new_state: "validated".to_string(),
+            }),
+        )
+        .await;
+
+        let store = state.read().await;
+        let feature = store
+            .features
+            .iter()
+            .find(|feature| feature.id == 4)
+            .expect("seeded feature 4");
+        assert_eq!(feature.state, FeatureState::Validated);
+    }
+
+    #[tokio::test]
+    async fn feature_transition_route_validates_form_state_and_missing_features() {
+        let state = Arc::new(RwLock::new(DashboardStore::seeded()));
+        let app = router(state.clone());
+
+        let valid_response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/api/features/4/transition")
+                    .header("content-type", "application/x-www-form-urlencoded")
+                    .body(axum::body::Body::from("target_state=validated"))
+                    .expect("valid transition request"),
+            )
+            .await
+            .expect("valid transition response");
+        assert_eq!(valid_response.status(), StatusCode::OK);
+        assert_eq!(
+            state
+                .read()
+                .await
+                .features
+                .iter()
+                .find(|feature| feature.id == 4)
+                .expect("seeded feature 4")
+                .state,
+            FeatureState::Validated
+        );
+
+        let malformed_response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/api/features/4/transition")
+                    .header("content-type", "application/x-www-form-urlencoded")
+                    .body(axum::body::Body::from("target_state=not-a-state"))
+                    .expect("malformed transition request"),
+            )
+            .await
+            .expect("malformed transition response");
+        assert_eq!(malformed_response.status(), StatusCode::BAD_REQUEST);
+        assert_eq!(
+            state
+                .read()
+                .await
+                .features
+                .iter()
+                .find(|feature| feature.id == 4)
+                .expect("seeded feature 4")
+                .state,
+            FeatureState::Validated
+        );
+
+        let missing_response = app
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/api/features/999/transition")
+                    .header("content-type", "application/x-www-form-urlencoded")
+                    .body(axum::body::Body::from("target_state=validated"))
+                    .expect("missing feature request"),
+            )
+            .await
+            .expect("missing feature response");
+        assert_eq!(missing_response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn feature_events_route_renders_seeded_work_package_timeline_and_not_found() {
+        let state = Arc::new(RwLock::new(DashboardStore::seeded()));
+        let app = router(state);
+
+        let timeline_response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/api/dashboard/features/4/events")
+                    .body(axum::body::Body::empty())
+                    .expect("timeline request"),
+            )
+            .await
+            .expect("timeline response");
+        assert_eq!(timeline_response.status(), StatusCode::OK);
+        let timeline_body = String::from_utf8(
+            axum::body::to_bytes(timeline_response.into_body(), usize::MAX)
+                .await
+                .expect("timeline body")
+                .to_vec(),
+        )
+        .expect("timeline body is UTF-8");
+        assert!(timeline_body.contains("event-timeline-4"));
+        assert!(timeline_body.contains("3 work package entries synced"));
+        assert!(timeline_body.contains("Design module ownership model"));
+
+        let missing_response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/dashboard/features/999/events")
+                    .body(axum::body::Body::empty())
+                    .expect("missing feature request"),
+            )
+            .await
+            .expect("missing feature response");
+        assert_eq!(missing_response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn feature_asset_routes_render_seeded_content_and_reject_missing_features() {
+        let state = Arc::new(RwLock::new(DashboardStore::seeded()));
+        let app = router(state);
+
+        let detail_response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/api/dashboard/features/4")
+                    .body(axum::body::Body::empty())
+                    .expect("feature detail request"),
+            )
+            .await
+            .expect("feature detail response");
+        assert_eq!(detail_response.status(), StatusCode::OK);
+        let detail_body = response_text(detail_response).await;
+        assert!(detail_body.contains("Modules and Cycles"));
+        assert!(detail_body.contains("feature-events-4"));
+
+        let work_packages_response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/api/dashboard/features/4/work-packages")
+                    .body(axum::body::Body::empty())
+                    .expect("work package request"),
+            )
+            .await
+            .expect("work package response");
+        assert_eq!(work_packages_response.status(), StatusCode::OK);
+        let work_packages_body = response_text(work_packages_response).await;
+        assert!(work_packages_body.contains("wp-list-4"));
+        assert!(work_packages_body.contains("Design module ownership model"));
+
+        let media_response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/api/dashboard/features/4/media")
+                    .body(axum::body::Body::empty())
+                    .expect("media request"),
+            )
+            .await
+            .expect("media response");
+        assert_eq!(media_response.status(), StatusCode::OK);
+        let media_body = response_text(media_response).await;
+        assert!(media_body.contains("media-gallery"));
+        assert!(media_body.contains("004-modules-and-cycles-hero.png"));
+
+        for missing_path in [
+            "/api/dashboard/features/999",
+            "/api/dashboard/features/999/media",
+        ] {
+            let missing_response = app
+                .clone()
+                .oneshot(
+                    Request::builder()
+                        .uri(missing_path)
+                        .body(axum::body::Body::empty())
+                        .expect("missing feature request"),
+                )
+                .await
+                .expect("missing feature response");
+            assert_eq!(missing_response.status(), StatusCode::NOT_FOUND);
+        }
+    }
+
+    #[tokio::test]
+    async fn feature_page_alias_renders_detail_and_preserves_not_found_status() {
+        let app = router(Arc::new(RwLock::new(DashboardStore::seeded())));
+
+        let found_response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/features/4")
+                    .body(axum::body::Body::empty())
+                    .expect("feature page request"),
+            )
+            .await
+            .expect("feature page response");
+        assert_eq!(found_response.status(), StatusCode::OK);
+        let found_body = response_text(found_response).await;
+        assert!(found_body.contains("Modules and Cycles"));
+        assert!(found_body.contains("wp-list-4"));
+
+        let missing_response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/features/999")
+                    .body(axum::body::Body::empty())
+                    .expect("missing feature page request"),
+            )
+            .await
+            .expect("missing feature page response");
+        assert_eq!(missing_response.status(), StatusCode::NOT_FOUND);
+        assert_eq!(response_text(missing_response).await, "Feature not found");
+    }
+
+    #[tokio::test]
+    async fn feature_events_route_renders_the_empty_work_package_timeline_branch() {
+        let state = Arc::new(RwLock::new(DashboardStore::seeded()));
+        state.write().await.work_packages.remove(&4);
+        let app = router(state);
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/dashboard/features/4/events")
+                    .body(axum::body::Body::empty())
+                    .expect("empty timeline request"),
+            )
+            .await
+            .expect("empty timeline response");
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = response_text(response).await;
+        assert!(body.contains("No work packages linked yet"));
+        assert!(!body.contains("work package entries synced"));
+    }
+
+    #[tokio::test]
+    async fn feature_transition_route_rejects_disallowed_lifecycle_steps_without_mutation() {
+        let state = Arc::new(RwLock::new(DashboardStore::seeded()));
+        let app = router(state.clone());
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/api/features/4/transition")
+                    .header("content-type", "application/x-www-form-urlencoded")
+                    .body(axum::body::Body::from("target_state=shipped"))
+                    .expect("disallowed transition request"),
+            )
+            .await
+            .expect("disallowed transition response");
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+        assert_eq!(
+            state
+                .read()
+                .await
+                .features
+                .iter()
+                .find(|feature| feature.id == 4)
+                .expect("seeded feature 4")
+                .state,
+            FeatureState::Implementing
+        );
+    }
 }

@@ -159,3 +159,111 @@ pub fn get_latest_sequence(
 
     Ok(result.unwrap_or(0))
 }
+
+#[cfg(test)]
+mod tests {
+    use chrono::{TimeZone, Utc};
+    use serde_json::json;
+
+    use super::{
+        append_event, get_events, get_events_by_range, get_events_since, get_latest_sequence,
+    };
+    use crate::SqliteStorageAdapter;
+    use agileplus_domain::domain::event::Event;
+
+    fn event(
+        entity_type: &str,
+        entity_id: i64,
+        sequence: i64,
+        timestamp: chrono::DateTime<Utc>,
+    ) -> Event {
+        Event {
+            id: 0,
+            entity_type: entity_type.to_owned(),
+            entity_id,
+            event_type: "transitioned".to_owned(),
+            payload: json!({"state": "validated", "sequence": sequence}),
+            actor: "dashboard-agent".to_owned(),
+            timestamp,
+            prev_hash: [sequence as u8; 32],
+            hash: [(sequence + 1) as u8; 32],
+            sequence,
+        }
+    }
+
+    #[test]
+    fn append_and_get_events_preserves_payload_hashes_and_stream_order() {
+        let adapter = SqliteStorageAdapter::in_memory().expect("in-memory storage");
+        let conn = adapter.conn_for_bench().expect("database connection");
+        let first_at = Utc
+            .with_ymd_and_hms(2026, 8, 29, 10, 0, 0)
+            .single()
+            .unwrap();
+        let second_at = Utc
+            .with_ymd_and_hms(2026, 8, 29, 10, 1, 0)
+            .single()
+            .unwrap();
+
+        append_event(&conn, &event("Feature", 42, 2, second_at)).expect("append second event");
+        append_event(&conn, &event("Feature", 42, 1, first_at)).expect("append first event");
+        append_event(&conn, &event("Feature", 99, 1, first_at)).expect("append other stream");
+
+        let events = get_events(&conn, "Feature", 42).expect("read event stream");
+        assert_eq!(
+            events
+                .iter()
+                .map(|event| event.sequence)
+                .collect::<Vec<_>>(),
+            [1, 2]
+        );
+        assert_eq!(
+            events[0].payload,
+            json!({"state": "validated", "sequence": 1})
+        );
+        assert_eq!(events[1].prev_hash, [2; 32]);
+        assert_eq!(events[1].hash, [3; 32]);
+        assert_eq!(get_latest_sequence(&conn, "Feature", 42).unwrap(), 2);
+    }
+
+    #[test]
+    fn since_and_range_queries_use_exclusive_sequence_and_inclusive_timestamps() {
+        let adapter = SqliteStorageAdapter::in_memory().expect("in-memory storage");
+        let conn = adapter.conn_for_bench().expect("database connection");
+        let first_at = Utc
+            .with_ymd_and_hms(2026, 8, 29, 10, 0, 0)
+            .single()
+            .unwrap();
+        let second_at = Utc
+            .with_ymd_and_hms(2026, 8, 29, 10, 1, 0)
+            .single()
+            .unwrap();
+        let third_at = Utc
+            .with_ymd_and_hms(2026, 8, 29, 10, 2, 0)
+            .single()
+            .unwrap();
+
+        for (sequence, timestamp) in [(1, first_at), (2, second_at), (3, third_at)] {
+            append_event(&conn, &event("WorkPackage", 7, sequence, timestamp))
+                .expect("append event");
+        }
+
+        let since = get_events_since(&conn, "WorkPackage", 7, 1).expect("read newer events");
+        assert_eq!(
+            since.iter().map(|event| event.sequence).collect::<Vec<_>>(),
+            [2, 3]
+        );
+
+        let range = get_events_by_range(
+            &conn,
+            "WorkPackage",
+            7,
+            &second_at.to_rfc3339(),
+            &third_at.to_rfc3339(),
+        )
+        .expect("read time range");
+        assert_eq!(
+            range.iter().map(|event| event.sequence).collect::<Vec<_>>(),
+            [2, 3]
+        );
+    }
+}

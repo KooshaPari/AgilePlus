@@ -6,7 +6,7 @@ license.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-agileplus-domain = { path = "../agileplus-domain" }
+agileplus-domain = { version = "0.2.1", path = "../agileplus-domain" }
 tokio = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { version = "0.3", features = ["json", "env-filter"] }
