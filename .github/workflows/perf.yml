@@ -54,7 +54,7 @@ jobs:
               run: |
                   set -euo pipefail
                   docker compose -f docker-compose.yml up -d --wait
-                  process-compose -f process-compose.yml up -d
+                  process-compose --use-uds --unix-socket /tmp/agileplus-perf-process-compose.sock up -f process-compose.yml --detached
                   bash ./scripts/perf/warmup.sh
 
             - name: Run k6 (smoke + load + stress)
@@ -78,7 +78,7 @@ jobs:
             - name: Bring down stack
               if: always()
               run: |
-                  process-compose -f process-compose.yml down || true
+                  process-compose --use-uds --unix-socket /tmp/agileplus-perf-process-compose.sock down || true
                   docker compose -f docker-compose.yml down --remove-orphans -v || true
 
             - name: Upload perf reports
