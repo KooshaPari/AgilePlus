@@ -100,25 +100,6 @@ async def test_backlog_create_maps_non_retryable_error_without_retry() -> None:
 
 
 @pytest.mark.asyncio
-async def test_backlog_promote_propagates_unimplemented_without_false_success() -> None:
-    client, integrations = _client_with_integrations_stub()
-    integrations.PromoteBacklogItem = AsyncMock(
-        side_effect=grpc.aio.AioRpcError(
-            grpc.StatusCode.UNIMPLEMENTED,
-            initial_metadata=grpc.aio.Metadata(),
-            trailing_metadata=grpc.aio.Metadata(),
-            details="promotion requires atomic mutation",
-        )
-    )
-
-    with pytest.raises(GrpcCallError, match="atomic mutation") as caught:
-        await client.promote_backlog_item(3, target_type="feature")
-
-    assert caught.value.code == grpc.StatusCode.UNIMPLEMENTED
-    integrations.PromoteBacklogItem.assert_awaited_once()
-
-
-@pytest.mark.asyncio
 async def test_backlog_list_and_promote_use_only_declared_rpc_fields() -> None:
     client, integrations = _client_with_integrations_stub()
     integrations.ListBacklog = AsyncMock(

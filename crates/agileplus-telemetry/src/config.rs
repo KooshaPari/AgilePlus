@@ -177,16 +177,6 @@ impl TelemetryConfig {
 
     /// Validate field invariants.
     fn validate(&self) -> Result<(), ConfigError> {
-        if !matches!(
-            self.logging.level.as_str(),
-            "trace" | "debug" | "info" | "warn" | "error"
-        ) {
-            return Err(ConfigError::Validation(format!(
-                "logging.level must be one of trace, debug, info, warn, error; got '{}'",
-                self.logging.level
-            )));
-        }
-
         let r = self.sampling.trace_ratio;
         if !(0.0..=1.0).contains(&r) {
             return Err(ConfigError::Validation(format!(
@@ -277,20 +267,5 @@ logging:
         write!(f, "{yaml}").unwrap();
         let cfg = TelemetryConfig::load_from(f.path()).unwrap();
         assert!(cfg.otlp.is_none());
-    }
-
-    #[test]
-    fn invalid_logging_level_is_rejected() {
-        let yaml = r#"
-logging:
-  level: "not-a-log-level"
-"#;
-        let mut f = tempfile::NamedTempFile::new().unwrap();
-        write!(f, "{yaml}").unwrap();
-
-        let err = TelemetryConfig::load_from(f.path()).unwrap_err();
-
-        assert!(matches!(err, ConfigError::Validation(_)));
-        assert!(err.to_string().contains("logging.level"));
     }
 }

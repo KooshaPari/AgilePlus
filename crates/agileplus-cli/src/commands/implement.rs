@@ -235,7 +235,10 @@ where
 
         let wp_id_str = format!("WP{:02}", wp.sequence);
         let existing_worktree = if args.resume && wp.state == WpState::Doing {
-            let worktrees = vcs.list_worktrees().await.unwrap_or_default();
+            let worktrees = vcs
+                .list_worktrees()
+                .await
+                .context("listing worktrees for resume")?;
             find_resume_worktree(&worktrees, slug, &wp_id_str)
         } else {
             None

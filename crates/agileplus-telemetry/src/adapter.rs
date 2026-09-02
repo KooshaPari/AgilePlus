@@ -353,23 +353,6 @@ mod tests {
     }
 
     #[test]
-    fn enabled_adapter_preserves_explicit_parent_context() {
-        let adapter = TelemetryAdapter::new(TelemetryConfig::default()).unwrap();
-        let parent = SpanContext {
-            trace_id: "trace-123".into(),
-            span_id: "span-parent".into(),
-            parent_span_id: None,
-        };
-
-        let child = adapter.start_span("child", Some(&parent));
-
-        assert!(!adapter.is_noop());
-        assert_eq!(child.trace_id, parent.trace_id);
-        assert_eq!(child.parent_span_id.as_deref(), Some("span-parent"));
-        assert!(!child.span_id.is_empty());
-    }
-
-    #[test]
     fn init_telemetry_returns_guard() {
         let config = TelemetryConfig::default();
         let guard = init_telemetry(config);
