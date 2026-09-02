@@ -4,7 +4,6 @@ RUN apt-get update && apt-get install -y \
     protobuf-compiler \
     build-essential \
     pkg-config \
-    libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /workspace
@@ -13,9 +12,5 @@ COPY Cargo.toml Cargo.lock* ./
 COPY crates/ crates/
 COPY rust/ rust/
 COPY proto/ proto/
-COPY docs/requirements/ docs/requirements/
-COPY templates/ templates/
-COPY tests/e2e/ tests/e2e/
-COPY tests/bdd/ tests/bdd/
 
-RUN cargo build --workspace --release --locked
+RUN cargo build --workspace --release

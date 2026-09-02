@@ -4,11 +4,7 @@
 
 pub mod agileplus {
     pub mod v1 {
-        #[cfg(not(agileplus_proto_stubs))]
         tonic::include_proto!("agileplus.v1");
-
-        #[cfg(agileplus_proto_stubs)]
-        include!("generated_fallback.rs");
     }
 }
 

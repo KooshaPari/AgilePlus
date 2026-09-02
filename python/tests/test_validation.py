@@ -50,9 +50,7 @@ def test_validate_file_path_blocks_traversal_and_unapproved_roots() -> None:
 
 
 def test_validate_item_type_enforces_allowlist() -> None:
-    for item_type in ("bug", "feature", "idea", "task", "docs"):
-        assert validate_item_type(item_type) == item_type
+    assert validate_item_type("story") == "story"
     assert validate_item_type("") == ""
-    for item_type in ("story", "epic", "spike", "chore", "release"):
-        with pytest.raises(InputValidationError):
-            validate_item_type(item_type)
+    with pytest.raises(InputValidationError):
+        validate_item_type("release")

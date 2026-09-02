@@ -12,11 +12,9 @@ from agileplus_mcp.grpc_errors import GrpcCallError, GrpcConnectionError
 class _StreamingGrpcHost(Protocol):
     """Host operations supplied by the concrete gRPC client."""
 
-    def _require_stub(self) -> Any:
-        raise NotImplementedError
+    def _require_stub(self) -> Any: ...
 
-    async def connect(self) -> None:
-        raise NotImplementedError
+    async def connect(self) -> None: ...
 
 
 class AgilePlusGrpcStreamingMixin:
@@ -26,13 +24,11 @@ class AgilePlusGrpcStreamingMixin:
         """Stream agent status events from the Rust core."""
         import grpc
 
-        from agileplus_proto.gen.agileplus.v1 import core_pb2
+        from agileplus_proto.gen.agileplus.v1 import core_pb2  # type: ignore[import]
 
         host = cast(_StreamingGrpcHost, self)
         stub = host._require_stub()
-        request = core_pb2.StreamAgentEventsRequest(  # type: ignore[attr-defined]
-            feature_slug=feature_slug
-        )
+        request = core_pb2.StreamAgentEventsRequest(feature_slug=feature_slug)
 
         while True:
             try:

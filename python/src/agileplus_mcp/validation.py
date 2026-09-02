@@ -15,8 +15,7 @@ MAX_SLUG_LENGTH = 128
 MAX_TEXT_LENGTH = 4096
 MAX_BATCH_IMPORT_SIZE = 100
 
-# Canonical backlog intents accepted by the Rust domain parser.
-VALID_ITEM_TYPES = frozenset({"bug", "feature", "idea", "task", "docs"})
+VALID_ITEM_TYPES = frozenset({"task", "bug", "story", "epic", "spike", "chore"})
 
 
 class InputValidationError(ValueError):

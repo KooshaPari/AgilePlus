@@ -57,7 +57,7 @@ class AgilePlusCoreClient(AgilePlusBacklogGrpcMixin):
         try:
             import grpc
 
-            from agileplus_proto.gen.agileplus.v1 import (
+            from agileplus_proto.gen.agileplus.v1 import (  # type: ignore[import]
                 core_pb2_grpc,
                 integrations_pb2_grpc,
             )
@@ -102,7 +102,7 @@ class AgilePlusCoreClient(AgilePlusBacklogGrpcMixin):
         try:
             import grpc
         except ImportError:
-            import grpc
+            import grpc  # type: ignore
 
         delay = self._retry_delay
         last_exc: Exception | None = None
@@ -136,32 +136,28 @@ class AgilePlusCoreClient(AgilePlusBacklogGrpcMixin):
 
     async def get_feature(self, slug: str) -> dict[str, Any]:
         """Retrieve a single feature by slug."""
-        from agileplus_proto.gen.agileplus.v1 import core_pb2
+        from agileplus_proto.gen.agileplus.v1 import core_pb2  # type: ignore[import]
 
         stub = self._require_stub()
-        request = core_pb2.GetFeatureRequest(slug=slug)  # type: ignore[attr-defined]
+        request = core_pb2.GetFeatureRequest(slug=slug)
         response = await self._call_with_retry(lambda: stub.GetFeature(request))
         return self._feature_to_dict(response.feature)
 
     async def list_features(self, state: str | None = None) -> list[dict[str, Any]]:
         """List all features, optionally filtered by state."""
-        from agileplus_proto.gen.agileplus.v1 import core_pb2
+        from agileplus_proto.gen.agileplus.v1 import core_pb2  # type: ignore[import]
 
         stub = self._require_stub()
-        request = core_pb2.ListFeaturesRequest(  # type: ignore[attr-defined]
-            state_filter=state or ""
-        )
+        request = core_pb2.ListFeaturesRequest(state_filter=state or "")
         response = await self._call_with_retry(lambda: stub.ListFeatures(request))
         return [self._feature_to_dict(f) for f in response.features]
 
     async def get_feature_state(self, slug: str) -> dict[str, Any]:
         """Get state and next suggested command for a feature."""
-        from agileplus_proto.gen.agileplus.v1 import core_pb2
+        from agileplus_proto.gen.agileplus.v1 import core_pb2  # type: ignore[import]
 
         stub = self._require_stub()
-        request = core_pb2.GetFeatureStateRequest(  # type: ignore[attr-defined]
-            slug=slug
-        )
+        request = core_pb2.GetFeatureStateRequest(slug=slug)
         response = await self._call_with_retry(lambda: stub.GetFeatureState(request))
         fs = response.feature_state
         return {
@@ -178,10 +174,10 @@ class AgilePlusCoreClient(AgilePlusBacklogGrpcMixin):
         self, feature_slug: str, state: str | None = None
     ) -> list[dict[str, Any]]:
         """List work packages for a feature."""
-        from agileplus_proto.gen.agileplus.v1 import core_pb2
+        from agileplus_proto.gen.agileplus.v1 import core_pb2  # type: ignore[import]
 
         stub = self._require_stub()
-        request = core_pb2.ListWorkPackagesRequest(  # type: ignore[attr-defined]
+        request = core_pb2.ListWorkPackagesRequest(
             feature_slug=feature_slug, state_filter=state or ""
         )
         response = await self._call_with_retry(lambda: stub.ListWorkPackages(request))
@@ -189,10 +185,10 @@ class AgilePlusCoreClient(AgilePlusBacklogGrpcMixin):
 
     async def get_work_package_status(self, feature_slug: str, wp_sequence: int) -> dict[str, Any]:
         """Get status of a specific work package."""
-        from agileplus_proto.gen.agileplus.v1 import core_pb2
+        from agileplus_proto.gen.agileplus.v1 import core_pb2  # type: ignore[import]
 
         stub = self._require_stub()
-        request = core_pb2.GetWorkPackageStatusRequest(  # type: ignore[attr-defined]
+        request = core_pb2.GetWorkPackageStatusRequest(
             feature_slug=feature_slug, wp_sequence=wp_sequence
         )
         response = await self._call_with_retry(lambda: stub.GetWorkPackageStatus(request))
@@ -204,10 +200,10 @@ class AgilePlusCoreClient(AgilePlusBacklogGrpcMixin):
 
     async def check_governance_gate(self, feature_slug: str, transition: str) -> dict[str, Any]:
         """Check whether a governance gate passes for a state transition."""
-        from agileplus_proto.gen.agileplus.v1 import core_pb2
+        from agileplus_proto.gen.agileplus.v1 import core_pb2  # type: ignore[import]
 
         stub = self._require_stub()
-        request = core_pb2.CheckGovernanceGateRequest(  # type: ignore[attr-defined]
+        request = core_pb2.CheckGovernanceGateRequest(
             feature_slug=feature_slug, transition=transition
         )
         response = await self._call_with_retry(lambda: stub.CheckGovernanceGate(request))
@@ -224,16 +220,12 @@ class AgilePlusCoreClient(AgilePlusBacklogGrpcMixin):
             ],
         }
 
-    async def get_audit_trail(
-        self, feature_slug: str, after_id: int = 0, limit: int = 0
-    ) -> list[dict[str, Any]]:
+    async def get_audit_trail(self, feature_slug: str, after_id: int = 0) -> list[dict[str, Any]]:
         """Retrieve audit trail entries for a feature."""
-        from agileplus_proto.gen.agileplus.v1 import core_pb2
+        from agileplus_proto.gen.agileplus.v1 import core_pb2  # type: ignore[import]
 
         stub = self._require_stub()
-        request = core_pb2.GetAuditTrailRequest(  # type: ignore[attr-defined]
-            feature_slug=feature_slug, after_id=after_id, limit=limit
-        )
+        request = core_pb2.GetAuditTrailRequest(feature_slug=feature_slug, after_id=after_id)
         entries = []
         async for response in stub.GetAuditTrail(request):
             entries.append(self._audit_entry_to_dict(response.audit_entry))
@@ -241,12 +233,10 @@ class AgilePlusCoreClient(AgilePlusBacklogGrpcMixin):
 
     async def verify_audit_chain(self, feature_slug: str) -> dict[str, Any]:
         """Verify the integrity of the audit hash chain."""
-        from agileplus_proto.gen.agileplus.v1 import core_pb2
+        from agileplus_proto.gen.agileplus.v1 import core_pb2  # type: ignore[import]
 
         stub = self._require_stub()
-        request = core_pb2.VerifyAuditChainRequest(  # type: ignore[attr-defined]
-            feature_slug=feature_slug
-        )
+        request = core_pb2.VerifyAuditChainRequest(feature_slug=feature_slug)
         response = await self._call_with_retry(lambda: stub.VerifyAuditChain(request))
         return {
             "valid": response.valid,
@@ -270,17 +260,15 @@ class AgilePlusCoreClient(AgilePlusBacklogGrpcMixin):
             feature_slug: Target feature slug.
             **kwargs: Additional string-valued arguments passed in the args map.
         """
-        from agileplus_proto.gen.agileplus.v1 import common_pb2, core_pb2
+        from agileplus_proto.gen.agileplus.v1 import common_pb2, core_pb2  # type: ignore[import]
 
         stub = self._require_stub()
-        cmd_request = common_pb2.CommandRequest(  # type: ignore[attr-defined]
+        cmd_request = common_pb2.CommandRequest(
             command=command,
             feature_slug=feature_slug,
             args={k: str(v) for k, v in kwargs.items()},
         )
-        request = core_pb2.DispatchCommandRequest(  # type: ignore[attr-defined]
-            command=cmd_request
-        )
+        request = core_pb2.DispatchCommandRequest(command=cmd_request)
         response = await self._call_with_retry(lambda: stub.DispatchCommand(request))
         result = response.result
         return {
@@ -303,12 +291,10 @@ class AgilePlusCoreClient(AgilePlusBacklogGrpcMixin):
         """
         import grpc
 
-        from agileplus_proto.gen.agileplus.v1 import core_pb2
+        from agileplus_proto.gen.agileplus.v1 import core_pb2  # type: ignore[import]
 
         stub = self._require_stub()
-        request = core_pb2.StreamAgentEventsRequest(  # type: ignore[attr-defined]
-            feature_slug=feature_slug
-        )
+        request = core_pb2.StreamAgentEventsRequest(feature_slug=feature_slug)
 
         while True:
             try:
