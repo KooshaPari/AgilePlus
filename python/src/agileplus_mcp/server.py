@@ -41,7 +41,8 @@ GRPC_ADDRESS = os.environ.get("AGILEPLUS_GRPC_ADDRESS", "localhost:50051")
 mcp: FastMCP = FastMCP("AgilePlus")
 _client: AgilePlusCoreClient | None = None
 _sampling: SamplingHandler | None = None
-_runtime_tool_names_by_app: dict[int, set[str]] = {}
+_registered_app: FastMCP | None = None
+_runtime_tool_names: set[str] = set()
 
 
 def _get_client() -> AgilePlusCoreClient:
@@ -358,9 +359,7 @@ def register_compatibility_tools(app: FastMCP, client: AgilePlusCoreClient) -> N
     async def get_audit_trail(feature_slug: str, limit: int = 50) -> list[dict[str, Any]]:
         if limit < 0:
             raise ValueError("limit must be non-negative")
-        if limit == 0:
-            return await client.get_audit_trail(feature_slug, limit=0)
-        return (await client.get_audit_trail(feature_slug, limit=limit))[:limit]
+        return (await client.get_audit_trail(feature_slug))[:limit]
 
     @app.tool(name="verify_audit_chain")
     async def verify_audit_chain(feature_slug: str) -> dict[str, Any]:
@@ -375,26 +374,14 @@ def register_compatibility_tools(app: FastMCP, client: AgilePlusCoreClient) -> N
         for feature in features:
             state = str(feature.get("state", "unknown"))
             counts[state] = counts.get(state, 0) + 1
-            slug = feature.get("slug")
-            if not isinstance(slug, str):
-                logger.warning(
-                    "Skipping dashboard enrichment for feature with invalid slug: %r", slug
-                )
-                continue
-            try:
-                validate_slug(slug, "feature slug")
-            except ValueError:
-                logger.warning(
-                    "Skipping dashboard enrichment for feature with invalid slug: %r", slug
-                )
-                continue
+            slug = str(feature.get("slug", ""))
             work_packages = await client.list_work_packages(slug)
             active_work_packages.extend(
                 work_package
                 for work_package in work_packages
                 if str(work_package.get("state", "")).lower() in {"doing", "in_progress", "blocked"}
             )
-            recent_audit_entries.extend(await client.get_audit_trail(slug, limit=10))
+            recent_audit_entries.extend(await client.get_audit_trail(slug))
         recent_audit_entries.sort(key=lambda entry: str(entry.get("timestamp", "")), reverse=True)
         return {
             "feature_counts": counts,
@@ -406,13 +393,16 @@ def register_compatibility_tools(app: FastMCP, client: AgilePlusCoreClient) -> N
 
 async def startup(grpc_address: str = GRPC_ADDRESS) -> None:
     """Initialise the gRPC client and register all tools."""
-    global _client, _sampling
+    global _client, _registered_app, _runtime_tool_names, _sampling
 
     if _client is not None:
         await _client.close()
 
-    for tool_name in _runtime_tool_names_by_app.pop(id(mcp), set()):
-        mcp.local_provider.remove_tool(tool_name)
+    if _registered_app is mcp:
+        for tool_name in _runtime_tool_names:
+            mcp.local_provider.remove_tool(tool_name)
+    else:
+        _runtime_tool_names = set()
 
     existing_tool_names = {tool.name for tool in await mcp.list_tools()}
 
@@ -434,9 +424,10 @@ async def startup(grpc_address: str = GRPC_ADDRESS) -> None:
     queue_module.register_tools(mcp, client)
     status_module.register_tools(mcp, client)
     register_compatibility_tools(mcp, client)
-    _runtime_tool_names_by_app[id(mcp)] = {
+    _runtime_tool_names = {
         tool.name for tool in await mcp.list_tools() if tool.name not in existing_tool_names
     }
+    _registered_app = mcp
 
     logger.info("AgilePlus MCP server ready (gRPC: %s)", grpc_address)
 

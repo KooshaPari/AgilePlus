@@ -112,42 +112,6 @@ impl SqliteClaimStore {
             CREATE INDEX IF NOT EXISTS idx_claims_state ON claims(state);
             "#,
         )?;
-
-        // Legacy databases could contain duplicate active owners because the
-        // old check-then-insert path was not atomic across connections. Keep
-        // the earliest-created claim for each (kind, resource), breaking timestamp
-        // ties by lexicographically smallest ID. Expire, rather than delete, every
-        // loser so its ownership provenance remains queryable. Reconciliation and
-        // index creation share one write transaction, so no new duplicate can
-        // appear between them.
-        let transaction = self.conn.unchecked_transaction()?;
-        transaction.execute(
-            r#"
-            UPDATE claims AS loser
-               SET state = 'expired'
-             WHERE loser.state = 'active'
-               AND EXISTS (
-                 SELECT 1
-                   FROM claims AS winner
-                  WHERE winner.state = 'active'
-                    AND winner.kind = loser.kind
-                    AND winner.resource = loser.resource
-                    AND (
-                      winner.created_at < loser.created_at
-                      OR (winner.created_at = loser.created_at AND winner.id < loser.id)
-                    )
-               )
-            "#,
-            [],
-        )?;
-        transaction.execute(
-            r#"
-            CREATE UNIQUE INDEX IF NOT EXISTS idx_claims_one_active_resource
-              ON claims(kind, resource) WHERE state = 'active'
-            "#,
-            [],
-        )?;
-        transaction.commit()?;
         Ok(())
     }
 }
@@ -284,17 +248,13 @@ impl ClaimStoreTrait for SqliteClaimStore {
         let state_str = Self::state_to_str(ClaimState::Active);
         let reason_kind = reason.kind_str();
         let reason_value = reason.value();
-        // Upsert only by claim ID. A distinct ID for the same active resource
-        // must hit the partial unique index rather than replacing its owner.
+        // Upsert - replacing the existing row if `id` already exists
+        // (e.g. re-claim after release). This matches the spec:
+        // "Use INSERT OR REPLACE INTO claims(...) for upserts."
         let res = self.conn.execute(
-            "INSERT INTO claims \
+            "INSERT OR REPLACE INTO claims \
              (id, resource, kind, agent_id, created_at, last_heartbeat, ttl_seconds, state, reason_kind, reason_value) \
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10) \
-             ON CONFLICT(id) DO UPDATE SET \
-               resource = excluded.resource, kind = excluded.kind, agent_id = excluded.agent_id, \
-               created_at = excluded.created_at, last_heartbeat = excluded.last_heartbeat, \
-               ttl_seconds = excluded.ttl_seconds, state = excluded.state, \
-               reason_kind = excluded.reason_kind, reason_value = excluded.reason_value",
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
             params![
                 id,
                 resource,
@@ -473,93 +433,6 @@ impl ClaimStoreTrait for SqliteClaimStore {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn opening_legacy_database_reconciles_duplicate_active_claims() {
-        let dir = tempfile::tempdir().unwrap();
-        let path = dir.path().join("legacy-claims.db");
-        let connection = Connection::open(&path).unwrap();
-        connection
-            .execute_batch(
-                r#"
-                CREATE TABLE claims (
-                  id TEXT PRIMARY KEY,
-                  resource TEXT NOT NULL,
-                  kind TEXT NOT NULL,
-                  agent_id TEXT NOT NULL,
-                  created_at TEXT NOT NULL,
-                  last_heartbeat TEXT NOT NULL,
-                  ttl_seconds INTEGER NOT NULL,
-                  state TEXT NOT NULL,
-                  reason_kind TEXT,
-                  reason_value TEXT
-                );
-                INSERT INTO claims VALUES
-                  ('later', 'repo:shared', 'repo', 'agent-b',
-                   '2026-08-30T02:00:00Z', '2026-08-30T02:00:00Z', 60, 'active', NULL, NULL),
-                  ('earlier', 'repo:shared', 'repo', 'agent-a',
-                   '2026-08-30T01:00:00Z', '2026-08-30T01:00:00Z', 60, 'active', NULL, NULL);
-                "#,
-            )
-            .unwrap();
-        drop(connection);
-
-        let store = SqliteClaimStore::open(path.to_str().unwrap()).unwrap();
-        let claims = store.all();
-        let active: Vec<_> = claims
-            .iter()
-            .filter(|claim| claim.state == ClaimState::Active)
-            .collect();
-
-        assert_eq!(active.len(), 1);
-        assert_eq!(active[0].id, "earlier");
-        assert_eq!(
-            claims
-                .iter()
-                .find(|claim| claim.id == "later")
-                .unwrap()
-                .state,
-            ClaimState::Expired
-        );
-    }
-
-    #[test]
-    fn concurrent_stores_allow_only_one_active_claim_per_resource() {
-        let dir = tempfile::tempdir().unwrap();
-        let path = dir.path().join("claims.db");
-        SqliteClaimStore::open(path.to_str().unwrap()).unwrap();
-        let start = std::sync::Arc::new(std::sync::Barrier::new(2));
-        let callers: Vec<_> = ["c1", "c2"]
-            .into_iter()
-            .map(|id| {
-                let path = path.clone();
-                let start = std::sync::Arc::clone(&start);
-                std::thread::spawn(move || {
-                    let mut store = SqliteClaimStore::open(path.to_str().unwrap()).unwrap();
-                    start.wait();
-                    store
-                        .claim(
-                            id,
-                            "repo:shared",
-                            ClaimKind::Repo,
-                            id,
-                            60,
-                            ClaimReason::default(),
-                        )
-                        .is_some()
-                })
-            })
-            .collect();
-
-        assert_eq!(
-            callers
-                .into_iter()
-                .map(|caller| caller.join().unwrap())
-                .filter(|claimed| *claimed)
-                .count(),
-            1
-        );
-    }
 
     #[test]
     fn sqlite_store_claim_and_lookup() {

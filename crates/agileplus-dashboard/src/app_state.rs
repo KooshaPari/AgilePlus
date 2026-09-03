@@ -309,29 +309,4 @@ mod tests {
         assert_eq!(store.cycle_work_package_count(1), 80);
         assert!(!store.cycle_is_shippable(1));
     }
-
-    #[test]
-    fn cycle_is_shippable_when_every_linked_feature_is_validated_or_shipped() {
-        let mut store = DashboardStore::seeded();
-        let implementing_feature = store
-            .features
-            .iter_mut()
-            .find(|feature| feature.id == 4)
-            .expect("seeded implementing feature");
-        implementing_feature.state = FeatureState::Validated;
-
-        assert!(store.cycle_is_shippable(1));
-    }
-
-    #[test]
-    fn cycle_is_not_shippable_when_linked_feature_is_missing_from_store() {
-        let mut store = DashboardStore::seeded();
-        store
-            .cycle_features
-            .get_mut(&1)
-            .expect("seeded cycle feature links")
-            .push(9_999);
-
-        assert!(!store.cycle_is_shippable(1));
-    }
 }

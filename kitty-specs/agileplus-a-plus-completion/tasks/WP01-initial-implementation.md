@@ -11,11 +11,9 @@ created_at: 2026-08-26T00:00:00Z
 # Work Package: Initial Implementation
 
 ## Feature
-
 # AgilePlus A+ / SOTA completion (`agileplus-a-plus-completion`)
 
 ## Acceptance Criteria
-
 - Single SSOT DB with migrations applied (backlog_items present on default path)
 - Workspace CLI matches PATH SDD engine (specify/plan/ship/queue/module/platform)
 - Platform stack UP with agileplus-api health
@@ -25,7 +23,6 @@ created_at: 2026-08-26T00:00:00Z
 - Quality: local task lint/test/quality green
 
 ## File Scope
-
 - `/`
 - `CLI/DB/platform/dashboard/publish`
 - `Publish/install`
@@ -34,7 +31,6 @@ created_at: 2026-08-26T00:00:00Z
 - `specify/plan/ship/queue/module/platform`
 
 ## Instructions
-
 Implement this work package according to the acceptance criteria above.
 Refer to `kitty-specs/agileplus-a-plus-completion/spec.md` for the full specification and
 `kitty-specs/agileplus-a-plus-completion/plan.md` for the implementation plan.

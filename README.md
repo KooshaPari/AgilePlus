@@ -11,8 +11,6 @@
 [![PWA](https://img.shields.io/badge/PWA-installable-orange)](workspace/manifest.json)
 **Quality Gate:** coverage ≥85% · e2e 100% · perf 100% · qe 100%
 
-[![AI slop inside](https://sladge.net/badge.svg)](https://sladge.net) [![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/KooshaPari/AgilePlus/total)](https://github.com/KooshaPari/AgilePlus/releases)
-
 <p align="center">
   <a href="assets/brand/logo.svg"><img src="assets/brand/logo.svg" alt="AgilePlus" width="160" height="160"></a>
 </p>

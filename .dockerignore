@@ -1,9 +1,6 @@
 .git
 .gitignore
 *.md
-!docs/
-!docs/requirements/
-!docs/requirements/*.md
 .env*
 !.env.example
 # Build artifacts
@@ -25,11 +22,6 @@ build/
 **/__pycache__
 **/*.test
 **/tests/
-# The Docker Rust build compiles the full workspace, which includes these
-# test-only members and their explicit test targets.
-!tests/
-!tests/e2e/**
-!tests/bdd/**
 # Logs
 *.log
 **/*.log
@@ -48,7 +40,6 @@ pnpm-lock.yaml
 # Rust
 **/.cargo
 **/Cargo.lock
-!Cargo.lock
 # Go
 go.sum
 vendor/

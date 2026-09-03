@@ -30,30 +30,15 @@ impl CoreConfig {
 
     pub fn from_env_values(
         bind: Option<&str>,
-        port: Option<&str>,
         core_database: Option<&str>,
         legacy_database: Option<&str>,
     ) -> Result<Self, String> {
-        let resolved_bind;
-        let bind = if let Some(bind) = bind {
-            Some(bind)
-        } else if let Some(port) = port {
-            let port = port
-                .parse::<u16>()
-                .map_err(|error| format!("invalid AgilePlus gRPC port: {error}"))?;
-            resolved_bind = format!("127.0.0.1:{port}");
-            Some(resolved_bind.as_str())
-        } else {
-            None
-        };
-
         Self::from_values(bind, core_database.or(legacy_database))
     }
 
     pub fn from_env() -> Result<Self, String> {
         Self::from_env_values(
             std::env::var("AGILEPLUS_GRPC_BIND").ok().as_deref(),
-            std::env::var("AGILEPLUS_GRPC_PORT").ok().as_deref(),
             std::env::var("AGILEPLUS_CORE_DATABASE_PATH")
                 .ok()
                 .as_deref(),

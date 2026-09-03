@@ -91,9 +91,6 @@ where
         &self,
         request: GetAuditTrailRequest,
     ) -> Result<Response<GetAuditTrailStream>, Status> {
-        if request.limit < 0 {
-            return Err(Status::invalid_argument("limit must be non-negative"));
-        }
         let feature = self
             .storage
             .get_feature_by_slug(&request.feature_slug)
@@ -105,16 +102,15 @@ where
 
         let entries = self
             .storage
-            .get_audit_trail_page(
-                feature.id,
-                request.after_id,
-                (request.limit > 0).then_some(request.limit as usize),
-            )
+            .get_audit_trail(feature.id)
             .await
             .map_err(domain_error_to_status)?;
 
         let slug = request.feature_slug;
-        let stream = tokio_stream::iter(entries.into_iter().map(move |entry| {
+        let after_id = request.after_id;
+        let filtered = entries.into_iter().filter(|entry| entry.id > after_id);
+
+        let stream = tokio_stream::iter(filtered.map(move |entry| {
             let mut proto = audit_entry_to_proto(entry);
             proto.feature_slug = slug.clone();
             Ok(GetAuditTrailResponse {

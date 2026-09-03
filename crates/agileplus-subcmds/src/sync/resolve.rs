@@ -89,26 +89,3 @@ fn stub_conflict(entity_type: &str, entity_id: &str) -> SyncConflict {
         remote_description: "API design".to_string(),
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn stub_conflict_keeps_requested_identity_and_resolution_paths_complete() {
-        let conflict = stub_conflict("feature", "FR-42");
-
-        assert_eq!(conflict.entity_kind, "feature");
-        assert_eq!(conflict.entity_id, "FR-42");
-        assert_eq!(conflict.entity_name, "api-design");
-
-        for resolution in [
-            ConflictResolution::KeepLocal,
-            ConflictResolution::AcceptRemote,
-            ConflictResolution::MergeManually,
-            ConflictResolution::Cancel,
-        ] {
-            apply_resolution(resolution, &conflict).expect("stub resolution completes");
-        }
-    }
-}

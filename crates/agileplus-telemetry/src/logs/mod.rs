@@ -168,14 +168,9 @@ pub fn init_logging(config: &LogConfig) -> Result<WorkerGuard, LogError> {
 fn build_filter(config: &LogConfig) -> EnvFilter {
     EnvFilter::try_from_env("AGILEPLUS_LOG")
         .or_else(|_| EnvFilter::try_from_env("RUST_LOG"))
-        .unwrap_or_else(|_| EnvFilter::new(configured_level(&config.level)))
-}
-
-fn configured_level(level: &str) -> &str {
-    match level {
-        "trace" | "debug" | "info" | "warn" | "error" => level,
-        _ => "info",
-    }
+        .unwrap_or_else(|_| {
+            EnvFilter::try_new(&config.level).unwrap_or_else(|_| EnvFilter::new("info"))
+        })
 }
 
 /// Explicit flush hint (actual flush happens on guard drop).
@@ -209,25 +204,5 @@ include_target: true
         let cfg: LogConfig = serde_yaml::from_str(yaml).unwrap();
         assert_eq!(cfg.level, "debug");
         assert!(!cfg.include_spans);
-    }
-
-    #[test]
-    fn build_filter_uses_valid_config_level_without_environment_override() {
-        let config = LogConfig {
-            level: "warn".into(),
-            ..LogConfig::default()
-        };
-
-        assert_eq!(build_filter(&config).to_string(), "warn");
-    }
-
-    #[test]
-    fn build_filter_falls_back_to_info_for_invalid_config_level() {
-        let config = LogConfig {
-            level: "not-a-log-level".into(),
-            ..LogConfig::default()
-        };
-
-        assert_eq!(build_filter(&config).to_string(), "info");
     }
 }

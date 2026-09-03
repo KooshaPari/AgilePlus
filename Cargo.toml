@@ -5,8 +5,8 @@ resolver = "2"
 # workspace until source is implemented. See: kitty-specs/003-agileplus-platform-completion.
 members = [
   "tests/e2e", # installed-CLI round-trip; workflow runs this crate from its manifest directory
-  "tests/bdd", # cucumber-rs acceptance suite
-  "rust", # agileplus-proto: tonic/prost gRPC stubs (buf-generated)
+  "crates/agileplus-proto", # canonical tonic/prost gRPC contract
+  "crates/agileplus-grpc", # loopback Rust core consumed by the MCP bridge
   "crates/agileplus-cli", # agileplus: spec-first CLI binary
   "crates/agileplus-subcmds", # platform/dashboard CLI subcommands (platform health)
   "crates/agileplus-api", # HTTP API binary (default port 3000)
@@ -22,7 +22,6 @@ members = [
   "crates/agileplus-triage",
   "crates/agileplus-telemetry",
   "crates/agileplus-dashboard",
-  "crates/agileplus-grpc",
   "crates/agileplus-events",
   "crates/agileplus-benchmarks",
   # NOTE: clap-ext temporarily excluded — incompatible clap version constraint (4.3.x vs 4.6.x). Tracked in PR #924.
@@ -132,7 +131,7 @@ askama = "0.16"
 # agileplus-plugin-sqlite = { git = "https://github.com/KooshaPari/agileplus-plugin-sqlite" }
 
 # Git
-gix = "0.87"
+gix = "0.86"
 git2 = "0.19"
 
 # CLI
@@ -166,7 +165,7 @@ utoipa = "5"
 async-nats = "0.38"
 paste = "1"
 agileplus-config = { path = "crates/agileplus-config" }
-agileplus-proto = { path = "rust" }
+agileplus-proto = { path = "crates/agileplus-proto" }
 agileplus-telemetry = { version = "0.2.1", path = "crates/agileplus-telemetry" }
 
 # cargo-machete false-positive ignores (dev-only / proc-macro / build-deps)
