@@ -21,6 +21,10 @@ jobs:
     name: QE suite (100% green)
     runs-on: ubuntu-24.04
     timeout-minutes: 30
+    env:
+      PYTHONPATH: python/src
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTEST_ADDOPTS: --ignore-glob=*__pycache__*
     steps:
       - uses: actions/checkout@v4
 
