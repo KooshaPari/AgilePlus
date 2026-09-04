@@ -92,5 +92,6 @@ jobs:
           tool: cargo-fuzz
 
       - name: Build fuzz targets (agileplus-domain)
-        run: cargo +nightly fuzz build
+        run: >-
+          cargo +nightly fuzz build --target "$(rustc +nightly -vV | sed -n 's/^host: //p')"
         working-directory: crates/agileplus-domain
