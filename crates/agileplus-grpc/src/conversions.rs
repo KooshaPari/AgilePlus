@@ -7,13 +7,34 @@
 
 use agileplus_domain::domain::audit::AuditEntry as DomainAuditEntry;
 use agileplus_domain::domain::feature::Feature as DomainFeature;
-use agileplus_domain::domain::work_package::WorkPackage as DomainWorkPackage;
+use agileplus_domain::domain::work_package::{WorkPackage as DomainWorkPackage, WpState};
 use agileplus_proto::agileplus::v1::{
     AuditEntry as ProtoAuditEntry, Feature as ProtoFeature, WorkPackageStatus as ProtoWpStatus,
 };
 
 /// Convert a domain Feature to its Protobuf representation.
+///
+/// This conversion has no storage context, so it is retained for callers that
+/// only need the feature's intrinsic fields. RPC handlers should use
+/// [`feature_to_proto_with_wps`] so the count fields reflect persisted state.
 pub fn feature_to_proto(f: DomainFeature) -> ProtoFeature {
+    feature_to_proto_with_wps(f, &[])
+}
+
+/// Convert a domain Feature and its work packages to Protobuf.
+pub fn feature_to_proto_with_wps(
+    f: DomainFeature,
+    work_packages: &[DomainWorkPackage],
+) -> ProtoFeature {
+    let wp_count = work_packages.len();
+    let wp_done = work_packages
+        .iter()
+        .filter(|wp| wp.state == WpState::Done)
+        .count();
+    feature_to_proto_with_counts(f, wp_count, wp_done)
+}
+
+fn feature_to_proto_with_counts(f: DomainFeature, wp_count: usize, wp_done: usize) -> ProtoFeature {
     ProtoFeature {
         id: f.id,
         slug: f.slug,
@@ -22,8 +43,11 @@ pub fn feature_to_proto(f: DomainFeature) -> ProtoFeature {
         target_branch: f.target_branch,
         created_at: f.created_at.to_rfc3339(),
         updated_at: f.updated_at.to_rfc3339(),
-        wp_count: 0, // Populated separately when needed
-        wp_done: 0,
+        // Protobuf uses int32 for these fields. Saturating conversion keeps a
+        // malformed or extremely large store from wrapping into a negative
+        // count on the wire.
+        wp_count: i32::try_from(wp_count).unwrap_or(i32::MAX),
+        wp_done: i32::try_from(wp_done).unwrap_or(i32::MAX),
     }
 }
 
@@ -66,7 +90,7 @@ pub fn audit_entry_to_proto(e: DomainAuditEntry) -> ProtoAuditEntry {
 mod tests {
     use super::*;
     use agileplus_domain::domain::feature::Feature;
-    use agileplus_domain::domain::work_package::WorkPackage;
+    use agileplus_domain::domain::work_package::{WorkPackage, WpState};
 
     #[test]
     fn feature_conversion() {
@@ -76,6 +100,19 @@ mod tests {
         assert_eq!(proto.friendly_name, "My Feature");
         assert_eq!(proto.state, "created");
         assert_eq!(proto.target_branch, "main");
+    }
+
+    #[test]
+    fn feature_conversion_reports_work_package_counts() {
+        let feature = Feature::new("counted-feature", "Counted Feature", [0u8; 32], None);
+        let mut done = WorkPackage::new(feature.id, "Done WP", 1, "done");
+        done.state = WpState::Done;
+        let planned = WorkPackage::new(feature.id, "Planned WP", 2, "planned");
+
+        let proto = feature_to_proto_with_wps(feature, &[done, planned]);
+
+        assert_eq!(proto.wp_count, 2);
+        assert_eq!(proto.wp_done, 1);
     }
 
     #[test]

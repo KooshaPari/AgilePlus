@@ -28,7 +28,9 @@ use agileplus_proto::agileplus::v1::{
     VerifyAuditChainResponse, agile_plus_core_service_server::AgilePlusCoreService,
 };
 
-use crate::conversions::{audit_entry_to_proto, feature_to_proto, wp_to_proto};
+use crate::conversions::{
+    audit_entry_to_proto, feature_to_proto, feature_to_proto_with_wps, wp_to_proto,
+};
 use crate::event_bus::EventBus;
 use crate::proxy::ProxyRouter;
 
@@ -162,9 +164,16 @@ where
     ) -> Result<Response<GetFeatureResponse>, Status> {
         let slug = request.into_inner().slug;
         match self.storage.get_feature_by_slug(&slug).await {
-            Ok(Some(feature)) => Ok(Response::new(GetFeatureResponse {
-                feature: Some(feature_to_proto(feature)),
-            })),
+            Ok(Some(feature)) => {
+                let wps = self
+                    .storage
+                    .list_wps_by_feature(feature.id)
+                    .await
+                    .map_err(domain_error_to_status)?;
+                Ok(Response::new(GetFeatureResponse {
+                    feature: Some(feature_to_proto_with_wps(feature, &wps)),
+                }))
+            }
             Ok(None) => Err(Status::not_found(format!("feature '{slug}' not found"))),
             Err(e) => Err(domain_error_to_status(e)),
         }
