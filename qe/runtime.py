@@ -14,6 +14,10 @@ from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 from threading import Lock, Thread
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from agileplus_mcp.grpc_client import AgilePlusCoreClient
 
 
 class WaitTimeout(TimeoutError):
@@ -320,3 +324,124 @@ def stop_process(process: ManagedProcess, grace: float = 5.0) -> None:
     except ProcessLookupError:
         return
     process.process.wait()
+
+
+class RuntimeHarness:
+    """Own an ephemeral Rust core process and its readiness client.
+
+    The harness deliberately accepts a prebuilt binary.  Compilation belongs to
+    the caller (and to CI), so a test can identify the exact candidate binary
+    that it exercised.  Every address and database path is instance-local.
+    """
+
+    def __init__(
+        self,
+        *,
+        core_binary: Path,
+        database: Path,
+        logs_dir: Path,
+        startup_timeout: float = 15.0,
+        bind_attempts: int = 3,
+    ) -> None:
+        if startup_timeout <= 0:
+            raise ValueError("startup_timeout must be positive")
+        if bind_attempts < 1:
+            raise ValueError("bind_attempts must be at least one")
+        self.core_binary = Path(core_binary)
+        self.database = Path(database)
+        self.logs_dir = Path(logs_dir)
+        self.startup_timeout = startup_timeout
+        self.bind_attempts = bind_attempts
+        self.core_process: ManagedProcess | None = None
+        self.core_address: str | None = None
+        self._closed = False
+
+    def start_core(self) -> ManagedProcess:
+        """Start the core immediately on a newly reserved loopback port."""
+        if self._closed:
+            raise RuntimeError("cannot start a closed runtime harness")
+        if not self.core_binary.is_file():
+            raise FileNotFoundError(f"core binary does not exist: {self.core_binary}")
+        if self.core_process is not None and self.core_process.process.poll() is None:
+            return self.core_process
+
+        self.database.parent.mkdir(parents=True, exist_ok=True)
+        port = reserve_loopback_port()
+        address = f"127.0.0.1:{port}"
+        environment = build_core_environment(address, self.database)
+        process = start_process(
+            "agileplus-grpc",
+            [str(self.core_binary)],
+            environment,
+            self.logs_dir,
+        )
+        self.core_address = address
+        self.core_process = process
+        return process
+
+    async def wait_for_core(self) -> AgilePlusCoreClient:
+        """Connect and perform a real ``ListFeatures`` readiness probe.
+
+        A listening socket is insufficient: readiness requires a successful
+        gRPC channel and unary response.  The deadline covers channel setup,
+        each RPC, and all retries.  A short-lived process is treated as a
+        possible ephemeral-port bind race and retried a bounded number of
+        times.
+        """
+        if self._closed:
+            raise RuntimeError("cannot wait on a closed runtime harness")
+        from agileplus_mcp.grpc_client import AgilePlusCoreClient
+
+        deadline = time.monotonic() + self.startup_timeout
+        last_error: Exception | None = None
+        for attempt in range(self.bind_attempts):
+            if self.core_process is None or self.core_process.process.poll() is not None:
+                self.start_core()
+            assert self.core_process is not None
+            assert self.core_address is not None
+            client = AgilePlusCoreClient(self.core_address)
+            try:
+                while True:
+                    remaining = deadline - time.monotonic()
+                    if remaining <= 0:
+                        break
+                    try:
+                        probe_timeout = min(remaining, 2.0)
+                        await asyncio.wait_for(client.connect(), timeout=probe_timeout)
+                        await asyncio.wait_for(client.list_features(), timeout=probe_timeout)
+                        return client
+                    except Exception as exc:
+                        last_error = exc
+                        if self.core_process.process.poll() is not None:
+                            break
+                        remaining = deadline - time.monotonic()
+                        if remaining <= 0:
+                            break
+                        await asyncio.sleep(min(0.05, remaining))
+            finally:
+                if client._channel is not None and last_error is not None:
+                    await client.close()
+
+            stop_process(self.core_process)
+            self.core_process = None
+            if time.monotonic() >= deadline:
+                break
+            if attempt + 1 < self.bind_attempts:
+                continue
+        detail = f"; last probe error: {last_error}" if last_error else ""
+        process = self.core_process
+        diagnostics = f"\n{_diagnostics(process)}" if process is not None else ""
+        raise WaitTimeout(
+            f"core gRPC readiness timed out after {self.startup_timeout:.3f}s"
+            f" after {self.bind_attempts} bind attempts{detail}{diagnostics}"
+        )
+
+    def cleanup(self) -> None:
+        """Stop the owned core process; safe to call repeatedly."""
+        if self._closed and self.core_process is None:
+            return
+        process = self.core_process
+        self.core_process = None
+        self._closed = True
+        if process is not None:
+            stop_process(process)

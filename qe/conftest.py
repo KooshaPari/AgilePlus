@@ -1,13 +1,24 @@
 from __future__ import annotations
 
+import os
+import sys
 from pathlib import Path
 
 import pytest
 
 
+os.environ.setdefault("PYTHONDONTWRITEBYTECODE", "1")
+sys.dont_write_bytecode = True
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+PYTHON_SRC = REPO_ROOT / "python" / "src"
+if str(PYTHON_SRC) not in sys.path:
+    sys.path.insert(0, str(PYTHON_SRC))
+
+
 @pytest.fixture(scope="session")
 def repo_root() -> Path:
-    return Path(__file__).resolve().parents[1]
+    return REPO_ROOT
 
 
 @pytest.fixture(scope="session")

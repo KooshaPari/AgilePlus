@@ -225,6 +225,19 @@ async def test_wait_until_timeout_includes_name_and_log_tails(tmp_path: Path) ->
         logs_dir=tmp_path,
     )
 
+    # Synchronize on the child output before exercising the timeout path.  The
+    # assertion is about diagnostic retention, so a scheduler-dependent race
+    # must not decide whether the child has flushed its deliberately emitted
+    # failure line.
+    deadline = time.monotonic() + 5
+    while "core failure" not in process.stderr_path.read_text(
+        encoding="utf-8", errors="replace"
+    ) and time.monotonic() < deadline:
+        time.sleep(0.01)
+    assert "core failure" in process.stderr_path.read_text(
+        encoding="utf-8", errors="replace"
+    )
+
     async def unavailable() -> None:
         raise ConnectionError("not ready")
 
