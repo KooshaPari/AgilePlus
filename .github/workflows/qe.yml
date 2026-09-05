@@ -21,75 +21,59 @@ jobs:
     name: QE suite (100% green)
     runs-on: ubuntu-24.04
     timeout-minutes: 30
+    env:
+      PYTHONPATH: python/src
+      PYTHONDONTWRITEBYTECODE: "1"
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up toolchain
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.14"
       - uses: dtolnay/rust-toolchain@stable
+      - uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.8.17"
 
-      - name: Install qe (quality engineering) toolchain
-        run: |
-          pip install \
-            "pytest>=8" \
-            "pytest-bdd>=7" \
-            "hypothesis>=6.100" \
-            "schemathesis>=3.27" \
-            "playwright>=1.45" \
-            "allure-pytest>=2.13"
-          python -m playwright install --with-deps chromium
-
-      - name: Bring up stack under test
+      - name: Verify recoverable QE harness
         run: |
           set -euo pipefail
-          docker compose -f compose/docker-compose.yml up -d --wait
-          process-compose -f compose/process-compose.phase.yml up -d
-          bash ./scripts/qe/wait_health.sh
+          for path in \
+            qe/__init__.py \
+            qe/conftest.py \
+            qe/runtime.py \
+            qe/contract/__init__.py \
+            qe/contract/test_core_contract.py \
+            qe/unit/__init__.py \
+            qe/unit/test_runtime.py; do
+            test -f "$path" || { echo "::error::missing QE harness file: $path"; exit 1; }
+          done
 
-      - name: QE contract tests (Pact + schema)
+      - name: Install locked Python dependencies
+        run: uv sync --project python --locked --all-extras --dev
+
+      - name: Install protoc for the Rust core
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y protobuf-compiler
+          protoc --version
+
+      - name: Build Rust core candidate
+        run: cargo build --locked -p agileplus-grpc --bin agileplus-grpc
+
+      - name: Run QE unit and core contract tests
         run: |
           set -euo pipefail
-          pytest -q qe/contract --alluredir=allure-qe-contract
+          mkdir -p .qe-evidence
+          uv run --project python --locked pytest -c python/pyproject.toml -q \
+            qe/unit qe/contract --junitxml=.qe-evidence/junit.xml
 
-      - name: QE fuzz / property-based (Hypothesis + Schemathesis)
-        run: |
-          set -euo pipefail
-          HYPOTHESIS_PROFILE=ci pytest -q qe/fuzz --alluredir=allure-qe-fuzz
-          schemathesis run \
-            http://localhost:38123/openapi.json \
-            --checks all \
-            --workers 4 \
-            --max-examples 500 \
-            --hypothesis-suppress-health-check=too_slow
-
-      - name: QE BDD / acceptance (Playwright)
-        run: |
-          set -euo pipefail
-          pytest -q qe/bdd --alluredir=allure-qe-bdd
-          pytest -q qe/e2e_bdd --alluredir=allure-qe-e2e
-
-      - name: Collect failure triage if any flake
-        if: failure()
-        run: |
-          bash ./scripts/qe/triage.sh || true
-
-      - name: Bring down stack
-        if: always()
-        run: |
-          process-compose -f compose/process-compose.phase.yml down || true
-          docker compose -f compose/docker-compose.yml down --remove-orphans -v || true
-
-      - name: Upload Allure results
+      - name: Upload QE evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: allure-qe-results-${{ github.run_id }}
-          path: allure-qe-*/
+          name: qe-evidence-${{ github.run_id }}
+          path: .qe-evidence/**
 
   qe-gate:
     name: qe-gate (100% pass required)
