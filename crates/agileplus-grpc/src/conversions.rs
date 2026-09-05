@@ -6,10 +6,12 @@
 //! Traceability: WP14-T080
 
 use agileplus_domain::domain::audit::AuditEntry as DomainAuditEntry;
+use agileplus_domain::domain::backlog::BacklogItem as DomainBacklogItem;
 use agileplus_domain::domain::feature::Feature as DomainFeature;
 use agileplus_domain::domain::work_package::WorkPackage as DomainWorkPackage;
 use agileplus_proto::agileplus::v1::{
-    AuditEntry as ProtoAuditEntry, Feature as ProtoFeature, WorkPackageStatus as ProtoWpStatus,
+    AuditEntry as ProtoAuditEntry, BacklogItem as ProtoBacklogItem, Feature as ProtoFeature,
+    WorkPackageStatus as ProtoWpStatus,
 };
 
 /// Convert a domain Feature to its Protobuf representation.
@@ -42,6 +44,20 @@ pub fn wp_to_proto(wp: DomainWorkPackage) -> ProtoWpStatus {
             .unwrap_or_default(),
         depends_on: Vec::new(), // Populated separately when needed
         file_scope: wp.file_scope,
+    }
+}
+
+/// Convert a domain backlog item to the current integrations protobuf shape.
+pub fn backlog_item_to_proto(item: DomainBacklogItem) -> ProtoBacklogItem {
+    ProtoBacklogItem {
+        id: item.id.unwrap_or_default(),
+        r#type: item.intent.to_string(),
+        title: item.title,
+        body: item.description,
+        priority: item.priority.to_string(),
+        state: item.status.to_string(),
+        external_ref: item.source,
+        created_at: item.created_at.to_rfc3339(),
     }
 }
 
@@ -85,5 +101,24 @@ mod tests {
         assert_eq!(proto.title, "Test WP");
         assert_eq!(proto.state, "planned");
         assert_eq!(proto.sequence, 1);
+    }
+
+    #[test]
+    fn backlog_conversion_uses_current_proto_fields() {
+        use agileplus_domain::domain::backlog::{BacklogItem, Intent};
+
+        let item = BacklogItem::from_triage(
+            "Repair backlog bridge".to_string(),
+            "Persist through SQLite".to_string(),
+            Intent::Task,
+            "qe".to_string(),
+        );
+        let proto = backlog_item_to_proto(item);
+
+        assert_eq!(proto.r#type, "task");
+        assert_eq!(proto.title, "Repair backlog bridge");
+        assert_eq!(proto.body, "Persist through SQLite");
+        assert_eq!(proto.external_ref, "qe");
+        assert!(!proto.created_at.is_empty());
     }
 }
