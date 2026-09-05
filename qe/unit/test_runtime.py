@@ -80,7 +80,9 @@ def test_binary_sha256_hashes_file_bytes(tmp_path: Path) -> None:
     assert binary_sha256(binary) == hashlib.sha256(binary.read_bytes()).hexdigest()
 
 
-def test_core_environment_contains_only_allowlisted_parent_values(tmp_path: Path) -> None:
+def test_core_environment_contains_only_allowlisted_parent_values(
+    tmp_path: Path,
+) -> None:
     parent = {
         "PATH": "/test/bin",
         "RUST_LOG": "warn",
@@ -131,8 +133,10 @@ def test_managed_process_uses_own_session_and_captures_logs(tmp_path: Path) -> N
         [
             sys.executable,
             "-c",
-            "import os, sys, time; print(os.getpid(), flush=True); "
-            "print('err', file=sys.stderr, flush=True); time.sleep(0.2)",
+            (
+                "import os, sys, time; print(os.getpid(), flush=True); "
+                + "print('err', file=sys.stderr, flush=True); time.sleep(0.2)"
+            ),
         ],
         env={"PATH": os.environ["PATH"]},
         logs_dir=tmp_path,
@@ -145,7 +149,9 @@ def test_managed_process_uses_own_session_and_captures_logs(tmp_path: Path) -> N
     stop_process(process)
 
 
-def test_managed_process_stop_terminates_its_owned_process_group(tmp_path: Path) -> None:
+def test_managed_process_stop_terminates_its_owned_process_group(
+    tmp_path: Path,
+) -> None:
     child_pid_path = tmp_path / "child.pid"
     script = (
         "import pathlib, subprocess, sys, time; "
@@ -190,7 +196,9 @@ def test_stop_process_rejects_forged_unowned_handle(tmp_path: Path) -> None:
 
 
 @pytest.mark.asyncio
-async def test_wait_until_returns_after_awaitable_probe_succeeds(tmp_path: Path) -> None:
+async def test_wait_until_returns_after_awaitable_probe_succeeds(
+    tmp_path: Path,
+) -> None:
     process = start_process(
         "ready",
         [sys.executable, "-c", "import time; time.sleep(60)"],
@@ -230,9 +238,11 @@ async def test_wait_until_timeout_includes_name_and_log_tails(tmp_path: Path) ->
     # must not decide whether the child has flushed its deliberately emitted
     # failure line.
     deadline = time.monotonic() + 5
-    while "core failure" not in process.stderr_path.read_text(
-        encoding="utf-8", errors="replace"
-    ) and time.monotonic() < deadline:
+    while (
+        "core failure"
+        not in process.stderr_path.read_text(encoding="utf-8", errors="replace")
+        and time.monotonic() < deadline
+    ):
         time.sleep(0.01)
     assert "core failure" in process.stderr_path.read_text(
         encoding="utf-8", errors="replace"
