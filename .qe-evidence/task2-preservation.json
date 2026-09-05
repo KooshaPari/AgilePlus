@@ -1,0 +1,85 @@
+{
+  "schema": "agileplus.qe.task2-preservation.v1",
+  "captured_at": "2026-09-05T03:34:01Z",
+  "repository": "KooshaPari/AgilePlus",
+  "worktree": "/Users/kooshapari/CodeProjects/Phenotype/repos/agileplus-recovery-wtrees/core-mcp-qe-perf-harness-task2-20260904",
+  "head": "4104639fd376fdd432455ebe6e4d55f16fab9214",
+  "branch": "fix/qe-core-integration-20260905",
+  "base_head": "4104639fd376fdd432455ebe6e4d55f16fab9214",
+  "ref_state": "local branch; unpushed",
+  "mutation_policy": "preserve canonical checkout and all refs; no push or merge",
+  "assigned_files": {
+    "qe/__init__.py": {
+      "sha256": "7f8d3eb7165203db15b72c78b3d18288a1603e93acb7f49fb6bee004c4b73936",
+      "lines": 1
+    },
+    "qe/conftest.py": {
+      "sha256": "8c3d702f63f31afb12d05eeac6fc984c3e94ef24db01a1e810e2286c28594396",
+      "lines": 29
+    },
+    "qe/contract/__init__.py": {
+      "sha256": "1fa336d0de134445ee87e992624234b3d9456c6551bb7e4487a4aecfc3b4eb5d",
+      "lines": 1
+    },
+    "qe/contract/test_core_contract.py": {
+      "sha256": "a6db3c9ada774206632cd8c497695bb0199d3976b8ad82cdbcb9ddda24958c4a",
+      "lines": 103
+    },
+    "qe/runtime.py": {
+      "sha256": "bc7b5560d9f28dfa54e8d33a1438838db02c12094fcd6745a8d521da7385c7f8",
+      "lines": 447
+    },
+    "qe/unit/__init__.py": {
+      "sha256": "97aa4856f5ea0c4e9e3baa2afa6a02d5edccdd27cd5d5b9df2f9b05d6ec6fd27",
+      "lines": 1
+    },
+    "qe/unit/test_runtime.py": {
+      "sha256": "27ff18557d53d71058c98bdc4f15539f37b011fc01fc2f91ac5f4794c6c10293",
+      "lines": 327
+    }
+  },
+  "candidate_binary": {
+    "path": "target/debug/agileplus-grpc",
+      "sha256": "8e42b805d32b6f6d26e32bf5150df2d7ac6dfff528c06a32442a0c756d9deda8"
+  },
+  "implementation_files": {
+    "crates/agileplus-grpc/src/conversions.rs": "f107bca19879433a8943ab539dc9e959040ad1ad775d3c801fb214ffd984f3be",
+    "crates/agileplus-grpc/src/server/integrations.rs": "bb5fd13d2bc990b2b32ee754a9964c6cda76dc32b3998adc2aba87c98fd52a81",
+    "crates/agileplus-grpc/src/server/mod.rs": "a03eb6b43f802b19fa55ac1db44f21d6d76cba989dafc7784b62561e9cc723b1",
+    ".qe-evidence/integrations-compatibility-map.md": "37eb7209a1da38a51eb2534251d08c6c287fa04d3e61f9f0220a683d59992d4c"
+  },
+  "verification": {
+    "red": {
+      "command": "uv run --project python --locked pytest -c python/pyproject.toml -q qe/contract/test_core_contract.py",
+      "result": "collection ImportError: cannot import name RuntimeHarness"
+    },
+    "build": {
+      "command": "cargo build --locked -p agileplus-grpc --bin agileplus-grpc --quiet",
+      "result": "exit 0"
+    },
+    "core_contract": {
+      "command": "uv run --project python --locked pytest -c python/pyproject.toml -q qe/contract/test_core_contract.py",
+      "result": "3 passed"
+    },
+    "runtime_unit": {
+      "command": "uv run --project python --locked pytest -c python/pyproject.toml -q qe/unit/test_runtime.py",
+      "result": "15 passed"
+    },
+    "lint": {
+      "command": "uv run --project python --locked ruff check qe",
+      "result": "All checks passed; no qe __pycache__ or .pyc artifacts remain"
+    },
+    "cargo_check": {
+      "command": "cargo check --locked -p agileplus-grpc --bin agileplus-grpc",
+      "result": "exit 0"
+    },
+    "cargo_build": {
+      "command": "cargo build --locked -p agileplus-grpc --bin agileplus-grpc",
+      "result": "exit 0"
+    },
+    "cargo_conversion_test": {
+      "command": "cargo test --locked -p agileplus-grpc conversions::tests::backlog_conversion_uses_current_proto_fields",
+      "result": "1 passed"
+    }
+  }
+}

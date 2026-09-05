@@ -1,0 +1,44 @@
+{
+  "schema": "agileplus.qe.runtime-dogfood.v1",
+  "captured_at": "2026-09-05T05:17:05Z",
+  "repository": "KooshaPari/AgilePlus",
+  "branch": "fix/qe-core-integration-20260905",
+  "commit": "825419da6182e411574b750a7023744ca777860d",
+  "pull_request": {
+    "number": 1070,
+    "state": "OPEN",
+    "head": "825419da6182e411574b750a7023744ca777860d",
+    "url": "https://github.com/KooshaPari/AgilePlus/pull/1070"
+  },
+  "candidate": {
+    "path": "target/debug/agileplus-grpc",
+    "sha256": "8528be58c650e42f18e31c8603f0bd6fb7f9f6d8ba35c44fd7df08f1637c0ca0"
+  },
+  "local_verification": [
+    {
+      "command": "cargo fmt --all -- --check",
+      "result": "pass"
+    },
+    {
+      "command": "cargo build --locked -p agileplus-grpc --bin agileplus-grpc --quiet",
+      "result": "pass"
+    },
+    {
+      "command": "uv run --project python --locked pytest -c python/pyproject.toml qe/unit qe/contract -q",
+      "result": "17 passed"
+    }
+  ],
+  "hosted_runtime_status": {
+    "workflow": ".github/workflows/perf.yml",
+    "run": 33945541360,
+    "job": "perf (k6 -> 95p budget)",
+    "result": "failure_before_runtime",
+    "error": "open /home/runner/work/AgilePlus/AgilePlus/compose/docker-compose.yml: no such file or directory",
+    "details": "https://github.com/KooshaPari/AgilePlus/actions/runs/33945541360/job/101250821093",
+    "scope": "workflow infrastructure blocker; no hosted performance measurement produced"
+  },
+  "immutability": {
+    "manifest_sha256": "recorded externally after writing",
+    "policy": "bind evidence to commit and candidate binary; do not claim hosted runtime success"
+  }
+}
