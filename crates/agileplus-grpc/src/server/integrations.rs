@@ -1,290 +1,86 @@
 use tonic::{Response, Status};
 
-use agileplus_domain::domain::backlog::{BacklogFilters, BacklogItem, BacklogPriority, BacklogSort, BacklogStatus, Intent};
-use agileplus_domain::domain::triage::{TriageAdapter, TriageSource};
-use agileplus_domain::ports::{AgentPort, ObservabilityPort, ReviewPort, StoragePort, VcsPort};
+use agileplus_domain::domain::backlog::{BacklogFilters, BacklogItem};
+use agileplus_domain::ports::{AgentPort, ContentStoragePort, ObservabilityPort, ReviewPort, StoragePort, VcsPort};
 use agileplus_proto::agileplus::v1::{
-    ClassifyInputRequest, ClassifyInputResponse, CreateBacklogItemRequest,
-    CreateBacklogItemResponse, GenerateRouterRequest, GenerateRouterResponse,
-    GetBacklogItemRequest, GetBacklogItemResponse, ImportBacklogRequest, ImportBacklogResponse,
-    ListBacklogRequest, ListBacklogResponse, PopBacklogRequest, PopBacklogResponse,
-    PromoteBacklogItemRequest, PromoteBacklogItemResponse, UpdateBacklogStatusRequest,
-    UpdateBacklogStatusResponse,
+    integrations_service_server::IntegrationsService, ClassifyInputRequest, ClassifyInputResponse,
+    CreateBacklogItemRequest, CreateBacklogItemResponse, DetectGitHubConflictsRequest,
+    DetectGitHubConflictsResponse, DetectPlaneConflictsRequest, DetectPlaneConflictsResponse,
+    GenerateRouterRequest, GenerateRouterResponse, ListBacklogRequest, ListBacklogResponse,
+    PromoteBacklogItemRequest, PromoteBacklogItemResponse, SyncBugToGitHubRequest,
+    SyncBugToGitHubResponse, SyncFeatureToPlaneRequest, SyncFeatureToPlaneResponse,
+    SyncIssueStatusRequest, SyncIssueStatusResponse, SyncWpToPlaneRequest, SyncWpToPlaneResponse,
 };
 
-use super::{domain_error_to_status, AgilePlusCoreServer};
+use super::AgilePlusCoreServer;
 use crate::conversions::backlog_item_to_proto;
 
 impl<S, V, A, R, O> AgilePlusCoreServer<S, V, A, R, O>
 where
-    S: StoragePort + 'static,
+    S: StoragePort + ContentStoragePort + 'static,
     V: VcsPort + 'static,
     A: AgentPort + 'static,
     R: ReviewPort + 'static,
     O: ObservabilityPort + 'static,
 {
-    pub(super) async fn handle_classify_input(
-        &self,
-        request: ClassifyInputRequest,
-    ) -> Result<Response<ClassifyInputResponse>, Status> {
-        let mut triage = TriageAdapter::new();
-        let outcome = triage.classify(
-            &request.input,
-            TriageSource::Grpc,
-            crate::server::triage::ClassifyOptions {
-                feature_slug: (!request.feature_slug.is_empty()).then_some(request.feature_slug),
-                priority: request.wp_sequence.try_into().ok().and_then(|_| None),
-                ..Default::default()
-            },
-        );
-
-        Ok(Response::new(ClassifyInputResponse {
-            type_: outcome.result.intent.as_str().to_string(),
-            confidence: format!("{:.2}", outcome.result.confidence),
-            suggested_title: outcome.item.title,
-            suggested_priority: outcome.item.priority.to_string(),
-        }))
-    }
-
-    pub(super) async fn handle_create_backlog_item(
+    async fn create_backlog_item_impl(
         &self,
         request: CreateBacklogItemRequest,
     ) -> Result<Response<CreateBacklogItemResponse>, Status> {
-        let intent = parse_intent(&request.r#type)?;
+        if !request.wp_id.is_empty() {
+            return Err(Status::invalid_argument(
+                "wp_id associations are unsupported by the core backlog contract",
+            ));
+        }
+        let intent = request.r#type.parse().map_err(Status::invalid_argument)?;
         let mut item = BacklogItem::from_triage(
             request.title,
-            request.description,
+            request.body,
             intent,
-            if request.source.is_empty() {
-                "grpc".to_string()
-            } else {
-                request.source
-            },
+            if request.triaged_by.is_empty() { "grpc".into() } else { request.triaged_by },
         )
-        .with_feature_slug((!request.feature_slug.is_empty()).then_some(request.feature_slug))
-        .with_tags(request.tags);
-
+        .with_feature_slug((!request.feature_id.is_empty()).then_some(request.feature_id));
         if !request.priority.is_empty() {
-            item.priority = parse_priority(&request.priority)?;
+            item.priority = request.priority.parse().map_err(Status::invalid_argument)?;
         }
-
-        let id = self
-            .storage
-            .create_backlog_item(&item)
-            .await
-            .map_err(domain_error_to_status)?;
-
-        let created = BacklogItem {
-            id: Some(id),
-            ..item
-        };
-
-        Ok(Response::new(CreateBacklogItemResponse {
-            item: Some(backlog_item_to_proto(created)),
-        }))
+        let id = self.storage.create_backlog_item(&item).await.map_err(super::domain_error_to_status)?;
+        item.id = Some(id);
+        Ok(Response::new(CreateBacklogItemResponse { item: Some(backlog_item_to_proto(item)) }))
     }
 
-    pub(super) async fn handle_import_backlog(
-        &self,
-        request: ImportBacklogRequest,
-    ) -> Result<Response<ImportBacklogResponse>, Status> {
-        let mut imported = Vec::with_capacity(request.items.len());
-
-        for item in request.items {
-            let created = self
-                .handle_create_backlog_item(item)
-                .await?
-                .into_inner()
-                .item
-                .ok_or_else(|| Status::internal("backlog item missing in create response"))?;
-            imported.push(created);
-        }
-
-        Ok(Response::new(ImportBacklogResponse { items: imported }))
-    }
-
-    pub(super) async fn handle_get_backlog_item(
-        &self,
-        request: GetBacklogItemRequest,
-    ) -> Result<Response<GetBacklogItemResponse>, Status> {
-        let item = self
-            .storage
-            .get_backlog_item(request.backlog_item_id)
-            .await
-            .map_err(domain_error_to_status)?
-            .ok_or_else(|| {
-                Status::not_found(format!("backlog item {} not found", request.backlog_item_id))
-            })?;
-
-        Ok(Response::new(GetBacklogItemResponse {
-            item: Some(backlog_item_to_proto(item)),
-        }))
-    }
-
-    pub(super) async fn handle_list_backlog(
+    async fn list_backlog_items_impl(
         &self,
         request: ListBacklogRequest,
     ) -> Result<Response<ListBacklogResponse>, Status> {
         let filters = BacklogFilters {
-            intent: parse_intent_opt(request.r#type_filter.as_str())?,
-            status: parse_status_opt(request.state_filter.as_str())?,
-            priority: parse_priority_opt(request.priority_filter.as_str())?,
+            intent: (!request.type_filter.is_empty()).then(|| request.type_filter.parse()).transpose().map_err(Status::invalid_argument)?,
+            status: (!request.state_filter.is_empty()).then(|| request.state_filter.parse()).transpose().map_err(Status::invalid_argument)?,
             feature_slug: (!request.feature_slug.is_empty()).then_some(request.feature_slug),
-            source: (!request.source_filter.is_empty()).then_some(request.source_filter),
-            limit: (request.limit > 0).then_some(request.limit as usize),
-            sort: parse_sort_opt(request.sort.as_str())?,
+            ..Default::default()
         };
-
-        let items = self
-            .storage
-            .list_backlog_items(&filters)
-            .await
-            .map_err(domain_error_to_status)?;
-
-        Ok(Response::new(ListBacklogResponse {
-            items: items.into_iter().map(backlog_item_to_proto).collect(),
-        }))
-    }
-
-    pub(super) async fn handle_update_backlog_status(
-        &self,
-        request: UpdateBacklogStatusRequest,
-    ) -> Result<Response<UpdateBacklogStatusResponse>, Status> {
-        let item = self
-            .storage
-            .get_backlog_item(request.backlog_item_id)
-            .await
-            .map_err(domain_error_to_status)?
-            .ok_or_else(|| {
-                Status::not_found(format!("backlog item {} not found", request.backlog_item_id))
-            })?;
-
-        let target = parse_status(&request.target_status)?;
-        self.storage
-            .update_backlog_status(request.backlog_item_id, target)
-            .await
-            .map_err(domain_error_to_status)?;
-
-        Ok(Response::new(UpdateBacklogStatusResponse {
-            backlog_item_id: request.backlog_item_id,
-            from_status: item.status.to_string(),
-            to_status: target.to_string(),
-        }))
-    }
-
-    pub(super) async fn handle_pop_backlog(
-        &self,
-        request: PopBacklogRequest,
-    ) -> Result<Response<PopBacklogResponse>, Status> {
-        let mut items = Vec::new();
-        let count = request.count;
-
-        if count == 0 {
-            return Ok(Response::new(PopBacklogResponse { items }));
-        }
-
-        for _ in 0..count {
-            match self
-                .storage
-                .pop_next_backlog_item()
-                .await
-                .map_err(domain_error_to_status)?
-            {
-                Some(item) => items.push(backlog_item_to_proto(item)),
-                None => break,
-            }
-        }
-
-        Ok(Response::new(PopBacklogResponse { items }))
-    }
-
-    pub(super) async fn handle_promote_backlog_item(
-        &self,
-        request: PromoteBacklogItemRequest,
-    ) -> Result<Response<PromoteBacklogItemResponse>, Status> {
-        let item = self
-            .storage
-            .get_backlog_item(request.backlog_item_id)
-            .await
-            .map_err(domain_error_to_status)?
-            .ok_or_else(|| {
-                Status::not_found(format!("backlog item {} not found", request.backlog_item_id))
-            })?;
-
-        let created_entity_id = format!("{}:{}", request.target_type, item.id.unwrap_or_default());
-        Ok(Response::new(PromoteBacklogItemResponse {
-            success: true,
-            created_entity_id,
-            message: format!(
-                "promoted backlog item {} to {}",
-                request.backlog_item_id, request.target_type
-            ),
-        }))
-    }
-
-    pub(super) async fn handle_generate_router(
-        &self,
-        request: GenerateRouterRequest,
-    ) -> Result<Response<GenerateRouterResponse>, Status> {
-        let generated = crate::server::router::generate_router_files(&request.project_path, request.sub_commands);
-        Ok(Response::new(GenerateRouterResponse {
-            success: true,
-            claude_md_path: generated.claude_md_path,
-            agents_md_path: generated.agents_md_path,
-            message: generated.message,
-        }))
+        let items = self.storage.list_backlog_items(&filters).await.map_err(super::domain_error_to_status)?;
+        Ok(Response::new(ListBacklogResponse { items: items.into_iter().map(backlog_item_to_proto).collect() }))
     }
 }
 
-fn parse_intent(value: &str) -> Result<Intent, Status> {
-    let value = if value.is_empty() { "task" } else { value };
-    value
-        .parse::<Intent>()
-        .map_err(Status::invalid_argument)
-}
-
-fn parse_intent_opt(value: &str) -> Result<Option<Intent>, Status> {
-    if value.is_empty() {
-        Ok(None)
-    } else {
-        parse_intent(value).map(Some)
-    }
-}
-
-fn parse_priority(value: &str) -> Result<BacklogPriority, Status> {
-    value
-        .parse::<BacklogPriority>()
-        .map_err(Status::invalid_argument)
-}
-
-fn parse_priority_opt(value: &str) -> Result<Option<BacklogPriority>, Status> {
-    if value.is_empty() {
-        Ok(None)
-    } else {
-        parse_priority(value).map(Some)
-    }
-}
-
-fn parse_status(value: &str) -> Result<BacklogStatus, Status> {
-    value
-        .parse::<BacklogStatus>()
-        .map_err(Status::invalid_argument)
-}
-
-fn parse_status_opt(value: &str) -> Result<Option<BacklogStatus>, Status> {
-    if value.is_empty() {
-        Ok(None)
-    } else {
-        parse_status(value).map(Some)
-    }
-}
-
-fn parse_sort_opt(value: &str) -> Result<BacklogSort, Status> {
-    if value.is_empty() {
-        Ok(BacklogSort::default())
-    } else {
-        value
-            .parse::<BacklogSort>()
-            .map_err(Status::invalid_argument)
-    }
+#[tonic::async_trait]
+impl<S, V, A, R, O> IntegrationsService for AgilePlusCoreServer<S, V, A, R, O>
+where
+    S: StoragePort + ContentStoragePort + 'static,
+    V: VcsPort + 'static,
+    A: AgentPort + 'static,
+    R: ReviewPort + 'static,
+    O: ObservabilityPort + 'static,
+{
+    async fn sync_feature_to_plane(&self, _: tonic::Request<SyncFeatureToPlaneRequest>) -> Result<Response<SyncFeatureToPlaneResponse>, Status> { Err(Status::unimplemented("Plane sync is not implemented by the core")) }
+    async fn sync_wp_to_plane(&self, _: tonic::Request<SyncWpToPlaneRequest>) -> Result<Response<SyncWpToPlaneResponse>, Status> { Err(Status::unimplemented("Plane sync is not implemented by the core")) }
+    async fn detect_plane_conflicts(&self, _: tonic::Request<DetectPlaneConflictsRequest>) -> Result<Response<DetectPlaneConflictsResponse>, Status> { Err(Status::unimplemented("Plane sync is not implemented by the core")) }
+    async fn sync_bug_to_git_hub(&self, _: tonic::Request<SyncBugToGitHubRequest>) -> Result<Response<SyncBugToGitHubResponse>, Status> { Err(Status::unimplemented("GitHub sync is not implemented by the core")) }
+    async fn sync_issue_status(&self, _: tonic::Request<SyncIssueStatusRequest>) -> Result<Response<SyncIssueStatusResponse>, Status> { Err(Status::unimplemented("GitHub sync is not implemented by the core")) }
+    async fn detect_git_hub_conflicts(&self, _: tonic::Request<DetectGitHubConflictsRequest>) -> Result<Response<DetectGitHubConflictsResponse>, Status> { Err(Status::unimplemented("GitHub sync is not implemented by the core")) }
+    async fn classify_input(&self, _: tonic::Request<ClassifyInputRequest>) -> Result<Response<ClassifyInputResponse>, Status> { Err(Status::unimplemented("input classification is not implemented by the core")) }
+    async fn create_backlog_item(&self, request: tonic::Request<CreateBacklogItemRequest>) -> Result<Response<CreateBacklogItemResponse>, Status> { self.create_backlog_item_impl(request.into_inner()).await }
+    async fn list_backlog(&self, request: tonic::Request<ListBacklogRequest>) -> Result<Response<ListBacklogResponse>, Status> { self.list_backlog_items_impl(request.into_inner()).await }
+    async fn promote_backlog_item(&self, _: tonic::Request<PromoteBacklogItemRequest>) -> Result<Response<PromoteBacklogItemResponse>, Status> { Err(Status::unimplemented("backlog promotion is not implemented by the core")) }
+    async fn generate_router(&self, _: tonic::Request<GenerateRouterRequest>) -> Result<Response<GenerateRouterResponse>, Status> { Err(Status::unimplemented("router generation is not implemented by the core")) }
 }

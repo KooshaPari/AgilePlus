@@ -16,6 +16,7 @@ use agileplus_domain::domain::audit::AuditChain;
 use agileplus_domain::domain::governance::{Evidence, EvidenceType, GovernanceRule};
 use agileplus_domain::domain::state_machine::FeatureState;
 use agileplus_domain::ports::{AgentPort, ObservabilityPort, ReviewPort, StoragePort, VcsPort};
+use agileplus_domain::ports::ContentStoragePort;
 #[cfg(not(agileplus_proto_stubs))]
 use agileplus_proto::agileplus::v1::agile_plus_core_service_server::AgilePlusCoreServiceServer;
 use agileplus_proto::agileplus::v1::{
@@ -27,10 +28,14 @@ use agileplus_proto::agileplus::v1::{
     ListWorkPackagesRequest, ListWorkPackagesResponse, VerifyAuditChainRequest,
     VerifyAuditChainResponse, agile_plus_core_service_server::AgilePlusCoreService,
 };
+#[cfg(not(agileplus_proto_stubs))]
+use agileplus_proto::agileplus::v1::integrations_service_server::IntegrationsServiceServer;
 
 use crate::conversions::{audit_entry_to_proto, feature_to_proto, wp_to_proto};
 use crate::event_bus::EventBus;
 use crate::proxy::ProxyRouter;
+
+mod integrations;
 
 /// Map domain errors to gRPC Status codes consistently.
 pub fn domain_error_to_status(e: agileplus_domain::error::DomainError) -> Status {
@@ -112,6 +117,27 @@ where
     #[allow(dead_code)] // reserved - injected for future event bus integration
     event_bus: Arc<EventBus>,
     proxy: Arc<ProxyRouter>,
+}
+
+impl<S, V, A, R, O> Clone for AgilePlusCoreServer<S, V, A, R, O>
+where
+    S: StoragePort + 'static,
+    V: VcsPort + 'static,
+    A: AgentPort + 'static,
+    R: ReviewPort + 'static,
+    O: ObservabilityPort + 'static,
+{
+    fn clone(&self) -> Self {
+        Self {
+            storage: Arc::clone(&self.storage),
+            vcs: Arc::clone(&self.vcs),
+            agents: Arc::clone(&self.agents),
+            review: Arc::clone(&self.review),
+            telemetry: Arc::clone(&self.telemetry),
+            event_bus: Arc::clone(&self.event_bus),
+            proxy: Arc::clone(&self.proxy),
+        }
+    }
 }
 
 impl<S, V, A, R, O> AgilePlusCoreServer<S, V, A, R, O>
@@ -568,7 +594,7 @@ pub async fn start_server<S, V, A, R, O>(
     proxy: Arc<ProxyRouter>,
 ) -> Result<(), Box<dyn std::error::Error>>
 where
-    S: StoragePort + 'static,
+    S: StoragePort + ContentStoragePort + 'static,
     V: VcsPort + 'static,
     A: AgentPort + 'static,
     R: ReviewPort + 'static,
@@ -580,7 +606,8 @@ where
     info!(%addr, "starting AgilePlus gRPC server");
 
     Server::builder()
-        .add_service(AgilePlusCoreServiceServer::new(service))
+        .add_service(AgilePlusCoreServiceServer::new(service.clone()))
+        .add_service(IntegrationsServiceServer::new(service))
         .serve_with_shutdown(addr, shutdown_signal())
         .await?;
 
