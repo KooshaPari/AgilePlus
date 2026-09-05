@@ -84,7 +84,13 @@ fn sample_governance_parses() {
     let rules = raw["rules"].as_array().expect("rules must be an array");
     for rule in rules {
         assert!(rule["required_evidence"].is_array());
-        assert!(rule["policy_refs"].as_array().unwrap().iter().all(serde_json::Value::is_i64));
+        assert!(
+            rule["policy_refs"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .all(serde_json::Value::is_i64)
+        );
     }
 }
 
