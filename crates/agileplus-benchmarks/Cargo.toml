@@ -21,7 +21,7 @@ rusqlite.workspace = true
 uuid = { version = "1.10", features = ["v4", "serde"] }
 
 [dev-dependencies]
-criterion = { version = "0.5", features = ["async_tokio", "html_reports"] }
+criterion = { version = "0.8", features = ["async_tokio", "html_reports"] }
 tokio = { workspace = true, features = ["full"] }
 rusqlite.workspace = true
 
