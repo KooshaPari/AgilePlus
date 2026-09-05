@@ -15,10 +15,12 @@ use tracing::info;
 use agileplus_domain::domain::audit::AuditChain;
 use agileplus_domain::domain::governance::{Evidence, EvidenceType, GovernanceRule};
 use agileplus_domain::domain::state_machine::FeatureState;
-use agileplus_domain::ports::{AgentPort, ObservabilityPort, ReviewPort, StoragePort, VcsPort};
 use agileplus_domain::ports::ContentStoragePort;
+use agileplus_domain::ports::{AgentPort, ObservabilityPort, ReviewPort, StoragePort, VcsPort};
 #[cfg(not(agileplus_proto_stubs))]
 use agileplus_proto::agileplus::v1::agile_plus_core_service_server::AgilePlusCoreServiceServer;
+#[cfg(not(agileplus_proto_stubs))]
+use agileplus_proto::agileplus::v1::integrations_service_server::IntegrationsServiceServer;
 use agileplus_proto::agileplus::v1::{
     CheckGovernanceGateRequest, CheckGovernanceGateResponse, CommandResponse,
     DispatchCommandRequest, DispatchCommandResponse, GateViolation as ProtoGateViolation,
@@ -28,8 +30,6 @@ use agileplus_proto::agileplus::v1::{
     ListWorkPackagesRequest, ListWorkPackagesResponse, VerifyAuditChainRequest,
     VerifyAuditChainResponse, agile_plus_core_service_server::AgilePlusCoreService,
 };
-#[cfg(not(agileplus_proto_stubs))]
-use agileplus_proto::agileplus::v1::integrations_service_server::IntegrationsServiceServer;
 
 use crate::conversions::{audit_entry_to_proto, feature_to_proto, wp_to_proto};
 use crate::event_bus::EventBus;
