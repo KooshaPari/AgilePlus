@@ -17,7 +17,7 @@ agileplus-triage = { version = "0.2.1", path = "../agileplus-triage" }
 anyhow.workspace = true
 async-trait = "0.1"
 git2 = { version = "0.21", features = ["vendored-libgit2"] }
-gix = { version = "0.86", default-features = false, features = [
+gix = { version = "0.87", default-features = false, features = [
   "worktree-stream",
   "revision",
   "sha1",
