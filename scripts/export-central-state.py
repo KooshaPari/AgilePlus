@@ -6,9 +6,11 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import shutil
 import sqlite3
 import sys
 import tempfile
+from datetime import datetime, timezone
 from pathlib import Path
 
 
@@ -19,6 +21,17 @@ def parse_arguments() -> argparse.Namespace:
         type=Path,
         required=True,
         help="explicit SQLite database to inspect without write access",
+    )
+    parser.add_argument(
+        "--export-dir",
+        type=Path,
+        default=None,
+        help=(
+            "directory to copy the snapshot artifact to before exit; "
+            "defaults to the parent directory of --db. The snapshot is "
+            "kept under a subdirectory named with the current UTC "
+            "timestamp so concurrent exports do not clobber each other."
+        ),
     )
     return parser.parse_args()
 
@@ -64,18 +77,35 @@ def main() -> int:
 
     # Capture an immutable snapshot before hashing or introspecting so
     # the audit digest and the schema_version read reflect the same
-    # logical state even when the source uses WAL mode.
+    # logical state even when the source uses WAL mode. The snapshot
+    # is staged in a TemporaryDirectory first, then copied to a
+    # durable location before the TemporaryDirectory is cleaned up so
+    # the artifact survives process exit and can be diffed by humans.
     with tempfile.TemporaryDirectory(prefix="agileplus-export-") as staging:
         snapshot_path = Path(staging) / "snapshot.db"
         snapshot_database(database_path, snapshot_path)
         snapshot_sha256 = sha256_file(snapshot_path)
         schema_version = inspect_read_only_database(snapshot_path)
 
+        export_dir = (
+            arguments.export_dir.expanduser().resolve()
+            if arguments.export_dir is not None
+            else database_path.parent
+        )
+        durable_export_dir = export_dir / (
+            f"agileplus-export-{database_path.stem}-"
+            f"{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}"
+        )
+        durable_export_dir.mkdir(parents=True, exist_ok=False)
+        durable_snapshot_path = durable_export_dir / "snapshot.db"
+        shutil.copy2(snapshot_path, durable_snapshot_path)
+
     export = {
         "source_db": str(database_path),
         "source_db_sha256": sha256_file(database_path),
         "snapshot_db_sha256": snapshot_sha256,
         "snapshot_algorithm": "online-backup",
+        "snapshot_db_path": str(durable_snapshot_path),
         "sqlite_schema_version": schema_version,
     }
     print(json.dumps(export, sort_keys=True))
