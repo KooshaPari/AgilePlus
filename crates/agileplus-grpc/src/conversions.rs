@@ -7,7 +7,9 @@
 
 use agileplus_domain::domain::audit::AuditEntry as DomainAuditEntry;
 use agileplus_domain::domain::feature::Feature as DomainFeature;
-use agileplus_domain::domain::work_package::{WorkPackage as DomainWorkPackage, WpState};
+use agileplus_domain::domain::work_package::{
+    WorkPackage as DomainWorkPackage, WpDependency, WpState,
+};
 use agileplus_proto::agileplus::v1::{
     AuditEntry as ProtoAuditEntry, Feature as ProtoFeature, WorkPackageStatus as ProtoWpStatus,
 };
@@ -53,6 +55,14 @@ fn feature_to_proto_with_counts(f: DomainFeature, wp_count: usize, wp_done: usiz
 
 /// Convert a domain WorkPackage to its Protobuf representation.
 pub fn wp_to_proto(wp: DomainWorkPackage) -> ProtoWpStatus {
+    wp_to_proto_with_dependencies(wp, &[])
+}
+
+/// Convert a domain WorkPackage and its persisted dependency edges to Protobuf.
+pub fn wp_to_proto_with_dependencies(
+    wp: DomainWorkPackage,
+    dependencies: &[WpDependency],
+) -> ProtoWpStatus {
     ProtoWpStatus {
         id: wp.id,
         title: wp.title,
@@ -64,7 +74,10 @@ pub fn wp_to_proto(wp: DomainWorkPackage) -> ProtoWpStatus {
             .pr_state
             .map(|ps| format!("{:?}", ps).to_lowercase())
             .unwrap_or_default(),
-        depends_on: Vec::new(), // Populated separately when needed
+        depends_on: dependencies
+            .iter()
+            .map(|dependency| dependency.depends_on as i32)
+            .collect(),
         file_scope: wp.file_scope,
     }
 }
@@ -90,7 +103,7 @@ pub fn audit_entry_to_proto(e: DomainAuditEntry) -> ProtoAuditEntry {
 mod tests {
     use super::*;
     use agileplus_domain::domain::feature::Feature;
-    use agileplus_domain::domain::work_package::{WorkPackage, WpState};
+    use agileplus_domain::domain::work_package::{DependencyType, WorkPackage, WpState};
 
     #[test]
     fn feature_conversion() {
@@ -122,5 +135,20 @@ mod tests {
         assert_eq!(proto.title, "Test WP");
         assert_eq!(proto.state, "planned");
         assert_eq!(proto.sequence, 1);
+    }
+
+    #[test]
+    fn wp_conversion_reports_dependency_ids() {
+        let mut wp = WorkPackage::new(1, "Dependent WP", 2, "done");
+        wp.id = 20;
+        let dependency = WpDependency {
+            wp_id: 20,
+            depends_on: 10,
+            dep_type: DependencyType::Explicit,
+        };
+
+        let proto = wp_to_proto_with_dependencies(wp, &[dependency]);
+
+        assert_eq!(proto.depends_on, vec![10]);
     }
 }
