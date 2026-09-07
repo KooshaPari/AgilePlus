@@ -115,11 +115,19 @@ fn test_scan_all_features_finds_two_features() {
     let (dir, adapter) = setup_test_repo();
 
     for slug in &["feature-a", "feature-b"] {
-        let path = dir.path().join("agileplus").join(slug).join("meta.json");
+        let path = dir
+            .path()
+            .join("docs")
+            .join("agileplus")
+            .join(slug)
+            .join("meta.json");
         std::fs::create_dir_all(path.parent().unwrap()).unwrap();
         std::fs::write(&path, r#"{"slug":"x"}"#).unwrap();
     }
-    std::fs::create_dir_all(dir.path().join("agileplus").join("no-meta")).unwrap();
+    std::fs::create_dir_all(
+        dir.path().join("docs").join("agileplus").join("no-meta"),
+    )
+    .unwrap();
 
     let slugs = agileplus_git::scan_all_features(&adapter).unwrap();
     assert_eq!(slugs.len(), 2);
@@ -132,7 +140,10 @@ fn test_scan_all_features_finds_two_features() {
 fn test_scan_excludes_dirs_without_meta() {
     let (dir, adapter) = setup_test_repo();
 
-    std::fs::create_dir_all(dir.path().join("agileplus").join("no-meta")).unwrap();
+    std::fs::create_dir_all(
+        dir.path().join("docs").join("agileplus").join("no-meta"),
+    )
+    .unwrap();
     let slugs = agileplus_git::scan_all_features(&adapter).unwrap();
     assert!(slugs.is_empty());
     drop(dir);
