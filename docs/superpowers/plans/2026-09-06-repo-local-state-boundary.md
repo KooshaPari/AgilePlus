@@ -299,7 +299,7 @@ Expected: PASS.
 - [ ] **Step 5: Commit.**
 
 ```bash
-git add scripts/export-central-state.py scripts/import-repo-state.py scripts/seed-projects.sh tests/migration docs/agileplus
+git add scripts/export-central-state.py scripts/import-repo-state.py scripts/seed-projects.sh python/tests/migration docs/agileplus
 git commit -m "feat(migration): require reviewed repository ownership"
 ```
 

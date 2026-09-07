@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Iterator
 from contextlib import asynccontextmanager, contextmanager
 from contextvars import ContextVar
 from pathlib import Path
@@ -26,7 +26,7 @@ _session_project_root: ContextVar[str | None] = ContextVar("session_project_root
 
 
 @contextmanager
-def bind_session_project_root(project_root: str):
+def bind_session_project_root(project_root: str) -> Iterator[None]:
     """Bind one MCP session's canonical root to the current request only."""
     token = _session_project_root.set(project_root)
     try:
@@ -407,15 +407,19 @@ class AgilePlusCoreClient(AgilePlusBacklogGrpcMixin):
 @asynccontextmanager
 async def connect_client(
     address: str = "localhost:50051",
+    project_root: Path | str | None = None,
 ) -> AsyncIterator[AgilePlusCoreClient]:
     """Async context manager for a connected gRPC client.
 
     Usage::
 
-        async with connect_client() as client:
+        async with connect_client(project_root="/abs/path/to/repo") as client:
             feature = await client.get_feature("my-feature")
+
+    If ``project_root`` is provided, the client is configured with the canonical
+    repo root so every stateful RPC injects ``ProjectScope``.
     """
-    client = AgilePlusCoreClient(address)
+    client = AgilePlusCoreClient(address, project_root=project_root)
     await client.connect()
     try:
         yield client

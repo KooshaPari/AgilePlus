@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import pathlib
 import re
 import subprocess
 from unittest.mock import AsyncMock, MagicMock
@@ -39,7 +40,7 @@ def reset_server_state(monkeypatch: pytest.MonkeyPatch) -> None:
 @pytest.mark.asyncio
 async def test_workspace_roots_include_valid_feature_scopes_and_skip_invalid_slugs(
     monkeypatch: pytest.MonkeyPatch,
-    tmp_path,
+    tmp_path: pathlib.Path,
 ) -> None:
     repo = tmp_path / "project"
     _make_git_repo(repo)
@@ -67,7 +68,7 @@ async def test_workspace_roots_include_valid_feature_scopes_and_skip_invalid_slu
 
 @pytest.mark.asyncio
 async def test_workspace_roots_use_the_session_project_root(
-    monkeypatch: pytest.MonkeyPatch, tmp_path
+    monkeypatch: pytest.MonkeyPatch, tmp_path: pathlib.Path
 ) -> None:
     repo = tmp_path / "project"
     _make_git_repo(repo)
@@ -87,7 +88,7 @@ async def test_workspace_roots_use_the_session_project_root(
 
 
 @pytest.mark.asyncio
-async def test_client_root_scope_requires_exactly_one_git_worktree(tmp_path) -> None:
+async def test_client_root_scope_requires_exactly_one_git_worktree(tmp_path: pathlib.Path) -> None:
     repo = tmp_path / "project"
     _make_git_repo(repo)
 
@@ -109,7 +110,9 @@ async def test_client_root_scope_requires_exactly_one_git_worktree(tmp_path) -> 
 
 
 @pytest.mark.asyncio
-async def test_middleware_binds_validated_client_root_to_the_current_request(tmp_path) -> None:
+async def test_middleware_binds_validated_client_root_to_current_request(
+    tmp_path: pathlib.Path,
+) -> None:
     repo = tmp_path / "project"
     _make_git_repo(repo)
     fastmcp_context = MagicMock()
