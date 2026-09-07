@@ -150,6 +150,7 @@ where
     R: ReviewPort + 'static,
     O: ObservabilityPort + 'static,
 {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         canonical_repo_root: PathBuf,
         storage: Arc<S>,
@@ -589,6 +590,7 @@ where
     // Command dispatch RPC
     // -------------------------------------------------------------------------
 
+    #[allow(clippy::too_many_arguments)]
     async fn dispatch_command(
         &self,
         request: Request<DispatchCommandRequest>,
