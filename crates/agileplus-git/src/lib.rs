@@ -39,6 +39,10 @@ use agileplus_domain::ports::vcs::{
 use crate::claim_bound::ClaimBoundWorktree;
 
 pub mod claim_bound;
+pub mod materialize;
+pub mod project_context;
+
+pub use project_context::ProjectContext;
 
 /// Git-backed VCS adapter. Cheap to clone (the heavy state lives in
 /// libgit2's on-disk cache).
@@ -803,9 +807,13 @@ impl VcsPort for GitVcsAdapter {
         feature_slug: &str,
     ) -> Result<FeatureArtifacts, DomainError> {
         // Look for the conventional artifacts at fixed names within
-        // `<repo_root>/kitty-specs/<feature_slug>/`. Unknown files in
+        // `<repo_root>/docs/agileplus/<feature_slug>/`. Unknown files in
         // that directory are collected under `other`.
-        let dir = self.repo_root.join("kitty-specs").join(feature_slug);
+        let dir = self
+            .repo_root
+            .join("docs")
+            .join("agileplus")
+            .join(feature_slug);
         let mut out = FeatureArtifacts {
             spec: None,
             research: None,
@@ -876,10 +884,11 @@ impl VcsPort for GitVcsAdapter {
 
 impl GitVcsAdapter {
     /// Resolve the absolute path of a feature artifact on disk.
-    /// Path: `<repo_root>/kitty-specs/<feature_slug>/<relative_path>`.
+    /// Path: `<repo_root>/docs/agileplus/<feature_slug>/<relative_path>`.
     fn artifact_path(&self, feature_slug: &str, relative_path: &str) -> PathBuf {
         self.repo_root
-            .join("kitty-specs")
+            .join("docs")
+            .join("agileplus")
             .join(feature_slug)
             .join(relative_path)
     }
@@ -940,14 +949,14 @@ fn glob_match(pattern: &str, name: &str) -> bool {
     true
 }
 
-/// Scan the kitty-specs directory for all feature slugs.
+/// Scan the docs/agileplus directory for all feature slugs.
 pub fn scan_all_features(adapter: &GitVcsAdapter) -> Result<Vec<String>, DomainError> {
-    let specs_dir = adapter.repo_root.join("kitty-specs");
+    let specs_dir = adapter.repo_root.join("docs").join("agileplus");
     if !specs_dir.exists() {
         return Ok(vec![]);
     }
     let mut slugs: Vec<String> = std::fs::read_dir(&specs_dir)
-        .map_err(|e| DomainError::Storage(format!("failed to read kitty-specs dir: {e}")))?
+        .map_err(|e| DomainError::Storage(format!("failed to read docs/agileplus dir: {e}")))?
         .filter_map(|entry| entry.ok())
         .filter(|e| e.path().is_dir())
         .filter(|e| e.path().join("meta.json").is_file())

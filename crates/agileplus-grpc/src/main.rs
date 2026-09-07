@@ -96,17 +96,20 @@ impl ObservabilityPort for LogOnlyObservability {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::fmt::init();
     let config = CoreConfig::from_env()?;
-    if let Some(parent) = config.database.parent() {
+    let context = config.context()?;
+    let database = context.database_path();
+    if let Some(parent) = database.parent() {
         std::fs::create_dir_all(parent)?;
     }
 
-    let storage = Arc::new(SqliteStorageAdapter::new(&config.database)?);
-    let vcs = Arc::new(GitVcsAdapter::from_current_dir()?);
+    let storage = Arc::new(SqliteStorageAdapter::new(&database)?);
+    let vcs = Arc::new(GitVcsAdapter::new(context.repo_root().to_path_buf()));
     let proxy = Arc::new(ProxyRouter::new(None, None).await);
-    tracing::info!(bind = %config.bind, database = %config.database.display(), "starting AgilePlus core");
+    tracing::info!(bind = %config.bind, database = %database.display(), "starting AgilePlus core");
 
     agileplus_grpc::server::start_server(
         config.bind,
+        context.repo_root().to_path_buf(),
         storage,
         vcs,
         Arc::new(UnavailableAgent),

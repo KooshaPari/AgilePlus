@@ -2,13 +2,32 @@
 
 from __future__ import annotations
 
+import pathlib
 import re
+import subprocess
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from mcp.types import Root
 
 from agileplus_mcp import server
+from agileplus_mcp.grpc_client import AgilePlusCoreClient
 from agileplus_mcp.validation import InputValidationError
+
+
+def _make_git_repo(path) -> None:
+    """Initialise a real (non-bare) git worktree at ``path``.
+
+    The middleware uses ``git rev-parse --show-toplevel`` to validate
+    project roots, so tests must construct real repositories rather than
+    fake ``.git`` directories.
+    """
+    path.mkdir(parents=True, exist_ok=True)
+    subprocess.run(
+        ["git", "init", "--quiet", str(path)],
+        check=True,
+        capture_output=True,
+    )
 
 
 @pytest.fixture(autouse=True)
@@ -21,24 +40,96 @@ def reset_server_state(monkeypatch: pytest.MonkeyPatch) -> None:
 @pytest.mark.asyncio
 async def test_workspace_roots_include_valid_feature_scopes_and_skip_invalid_slugs(
     monkeypatch: pytest.MonkeyPatch,
+    tmp_path: pathlib.Path,
 ) -> None:
+    repo = tmp_path / "project"
+    _make_git_repo(repo)
     client = MagicMock()
     client.list_features = AsyncMock(
         return_value=[{"slug": "valid-feature"}, {"slug": "Invalid_Feature"}]
     )
     monkeypatch.setattr(server, "_client", client)
+    monkeypatch.setattr(server, "_session_project_root", repo)
 
     result = await server.get_workspace_roots()
 
     assert result == {
         "roots": [
-            {"uri": "file:///", "name": "project-root"},
-            {"uri": "file://.agileplus/", "name": "agileplus-data"},
-            {"uri": "file://kitty-specs/valid-feature/", "name": "feature-spec-valid-feature"},
-            {"uri": "file://.worktrees/valid-feature/", "name": "feature-worktree-valid-feature"},
+            {"uri": repo.as_uri(), "name": "project-root"},
+            {"uri": (repo / ".agileplus").as_uri(), "name": "agileplus-data"},
+            {
+                "uri": (repo / "docs" / "agileplus" / "valid-feature").as_uri(),
+                "name": "feature-spec-valid-feature",
+            },
         ]
     }
     client.list_features.assert_awaited_once_with()
+
+
+@pytest.mark.asyncio
+async def test_workspace_roots_use_the_session_project_root(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: pathlib.Path
+) -> None:
+    repo = tmp_path / "project"
+    _make_git_repo(repo)
+    client = MagicMock()
+    client.list_features = AsyncMock(return_value=[])
+    context = MagicMock()
+    context.get_state = AsyncMock(return_value=str(repo))
+    monkeypatch.setattr(server, "_client", client)
+
+    result = await server.get_workspace_roots(context)
+
+    assert result["roots"][:2] == [
+        {"uri": repo.as_uri(), "name": "project-root"},
+        {"uri": (repo / ".agileplus").as_uri(), "name": "agileplus-data"},
+    ]
+    context.get_state.assert_awaited_once_with("agileplus.project_root")
+
+
+@pytest.mark.asyncio
+async def test_client_root_scope_requires_exactly_one_git_worktree(tmp_path: pathlib.Path) -> None:
+    repo = tmp_path / "project"
+    _make_git_repo(repo)
+
+    assert await server.resolve_client_project_root(
+        [Root(uri=repo.as_uri(), name="project")]
+    ) == repo.resolve()
+
+    with pytest.raises(ValueError, match="exactly one file root"):
+        await server.resolve_client_project_root([])
+    with pytest.raises(ValueError, match="exactly one file root"):
+        await server.resolve_client_project_root(
+            [Root(uri=repo.as_uri()), Root(uri=repo.as_uri())]
+        )
+
+    non_repo = tmp_path / "not-a-repo"
+    non_repo.mkdir()
+    with pytest.raises(ValueError, match="Git worktree"):
+        await server.resolve_client_project_root([Root(uri=non_repo.as_uri())])
+
+
+@pytest.mark.asyncio
+async def test_middleware_binds_validated_client_root_to_current_request(
+    tmp_path: pathlib.Path,
+) -> None:
+    repo = tmp_path / "project"
+    _make_git_repo(repo)
+    fastmcp_context = MagicMock()
+    fastmcp_context.get_state = AsyncMock(return_value=None)
+    fastmcp_context.list_roots = AsyncMock(return_value=[Root(uri=repo.as_uri())])
+    fastmcp_context.set_state = AsyncMock()
+    context = MagicMock(fastmcp_context=fastmcp_context)
+
+    async def call_next(_context):
+        return AgilePlusCoreClient()._project_scope().canonical_repo_root
+
+    result = await server.ProjectRootMiddleware().on_call_tool(context, call_next)
+
+    assert result == str(repo.resolve())
+    fastmcp_context.set_state.assert_awaited_once_with(
+        "agileplus.project_root", str(repo.resolve())
+    )
 
 
 @pytest.mark.asyncio

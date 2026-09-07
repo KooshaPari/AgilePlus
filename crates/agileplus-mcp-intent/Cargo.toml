@@ -34,6 +34,7 @@ clap = { version = "4", features = ["derive"] }
 tracing-subscriber.workspace = true
 agileplus-sqlite = { path = "../agileplus-sqlite" }
 agileplus-domain = { path = "../agileplus-domain" }
+agileplus-git = { path = "../agileplus-git" }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["rt", "macros"] }

@@ -1,14 +1,14 @@
 //! Document materialization: renders domain entities as git-tracked files.
 //! One-way sync: SSOT -> git. Direct edits to materialized files are overwritten.
 //!
-//! Writes the following layout under `kitty-specs/<slug>/`:
+//! Writes the following layout under `docs/agileplus/<slug>/`:
 //!
 //! ```text
-//! kitty-specs/<slug>/
+//! docs/agileplus/<slug>/
 //!   meta.json        -- Feature metadata (slug, name, state, git provenance)
 //!   status.md        -- Human-readable status with WP table
 //!   audit.jsonl      -- Append-only materialization audit log
-//!   wp/
+//!   work-packages/
 //!     <wp_id>.json   -- One file per WorkPackage
 //! ```
 //!
@@ -27,6 +27,23 @@ use chrono::Utc;
 use serde_json::{Value, json};
 
 use crate::GitVcsAdapter;
+
+fn open_repo(adapter: &GitVcsAdapter) -> Result<(git2::Repository, PathBuf), DomainError> {
+    let repo = git2::Repository::discover(adapter.repo_root()).map_err(|e| {
+        DomainError::Storage(format!(
+            "failed to open git repository at {}: {e}",
+            adapter.repo_root().display()
+        ))
+    })?;
+    let repo_root = repo.workdir().map(Path::to_path_buf).ok_or_else(|| {
+        DomainError::Storage("materialization requires a non-bare worktree".into())
+    })?;
+    Ok((repo, repo_root))
+}
+
+fn git_error(error: git2::Error) -> DomainError {
+    DomainError::Storage(error.to_string())
+}
 
 // ---------------------------------------------------------------------------
 // Pure rendering functions (no I/O, easily testable)
@@ -148,20 +165,20 @@ fn write_and_stage(
 ) -> Result<(), DomainError> {
     if let Some(parent) = full_path.parent() {
         std::fs::create_dir_all(parent).map_err(|e| {
-            DomainError::Vcs(format!("create dirs for {}: {e}", full_path.display()))
+            DomainError::Storage(format!("create dirs for {}: {e}", full_path.display()))
         })?;
     }
 
     std::fs::write(full_path, content)
-        .map_err(|e| DomainError::Vcs(format!("write {}: {e}", full_path.display())))?;
+        .map_err(|e| DomainError::Storage(format!("write {}: {e}", full_path.display())))?;
 
     let relative = full_path
         .strip_prefix(repo_root)
-        .map_err(|_| DomainError::Vcs("materialized file outside repo root".into()))?;
+        .map_err(|_| DomainError::Storage("materialized file outside repo root".into()))?;
 
-    let mut index = repo.index().map_err(crate::git_err)?;
-    index.add_path(relative).map_err(crate::git_err)?;
-    index.write().map_err(crate::git_err)?;
+    let mut index = repo.index().map_err(git_error)?;
+    index.add_path(relative).map_err(git_error)?;
+    index.write().map_err(git_error)?;
 
     Ok(())
 }
@@ -177,7 +194,7 @@ fn append_and_stage(
 ) -> Result<(), DomainError> {
     if let Some(parent) = full_path.parent() {
         std::fs::create_dir_all(parent).map_err(|e| {
-            DomainError::Vcs(format!("create dirs for {}: {e}", full_path.display()))
+            DomainError::Storage(format!("create dirs for {}: {e}", full_path.display()))
         })?;
     }
 
@@ -185,17 +202,18 @@ fn append_and_stage(
         .create(true)
         .append(true)
         .open(full_path)
-        .map_err(|e| DomainError::Vcs(format!("open audit file: {e}")))?;
+        .map_err(|e| DomainError::Storage(format!("open audit file: {e}")))?;
 
-    writeln!(file, "{line}").map_err(|e| DomainError::Vcs(format!("append audit line: {e}")))?;
+    writeln!(file, "{line}")
+        .map_err(|e| DomainError::Storage(format!("append audit line: {e}")))?;
 
     let relative = full_path
         .strip_prefix(repo_root)
-        .map_err(|_| DomainError::Vcs("audit file outside repo root".into()))?;
+        .map_err(|_| DomainError::Storage("audit file outside repo root".into()))?;
 
-    let mut index = repo.index().map_err(crate::git_err)?;
-    index.add_path(relative).map_err(crate::git_err)?;
-    index.write().map_err(crate::git_err)?;
+    let mut index = repo.index().map_err(git_error)?;
+    index.add_path(relative).map_err(git_error)?;
+    index.write().map_err(git_error)?;
 
     Ok(())
 }
@@ -207,24 +225,23 @@ fn append_and_stage(
 /// Materialize a feature and its work packages as git-tracked files.
 ///
 /// Writes `meta.json`, `status.md`, and appends a line to `audit.jsonl` under
-/// `kitty-specs/<slug>/`, staging all modified files in the git index.
+/// `docs/agileplus/<slug>/`, staging all modified files in the git index.
 ///
-/// Returns the feature directory path (`kitty-specs/<slug>/`).
+/// Returns the feature directory path (`docs/agileplus/<slug>/`).
 pub fn materialize_feature(
     adapter: &GitVcsAdapter,
     feature: &Feature,
     work_packages: &[WorkPackage],
 ) -> Result<PathBuf, DomainError> {
-    let repo = adapter.open_repo()?;
-    let repo_root = adapter.repo_path();
-    let feature_dir = repo_root.join("kitty-specs").join(&feature.slug);
+    let (repo, repo_root) = open_repo(adapter)?;
+    let feature_dir = repo_root.join("docs").join("agileplus").join(&feature.slug);
 
     // meta.json (overwrite every time -- SSOT wins)
     let meta_content = serde_json::to_string_pretty(&render_meta_json(feature))
-        .map_err(|e| DomainError::Vcs(format!("serialize meta.json: {e}")))?;
+        .map_err(|e| DomainError::Storage(format!("serialize meta.json: {e}")))?;
     write_and_stage(
         &repo,
-        repo_root,
+        &repo_root,
         &feature_dir.join("meta.json"),
         meta_content.as_bytes(),
     )?;
@@ -233,7 +250,7 @@ pub fn materialize_feature(
     let status_content = render_status_md(feature, work_packages);
     write_and_stage(
         &repo,
-        repo_root,
+        &repo_root,
         &feature_dir.join("status.md"),
         status_content.as_bytes(),
     )?;
@@ -242,7 +259,7 @@ pub fn materialize_feature(
     let audit_line = render_audit_line(feature, feature.last_modified_commit.as_deref());
     append_and_stage(
         &repo,
-        repo_root,
+        &repo_root,
         &feature_dir.join("audit.jsonl"),
         &audit_line,
     )?;
@@ -252,24 +269,24 @@ pub fn materialize_feature(
 
 /// Materialize a single work package as a git-tracked JSON file.
 ///
-/// Writes `kitty-specs/<feature_slug>/wp/<wp_id>.json` and stages it.
+/// Writes `docs/agileplus/<feature_slug>/work-packages/<wp_id>.json` and stages it.
 pub fn materialize_work_package(
     adapter: &GitVcsAdapter,
     feature_slug: &str,
     wp: &WorkPackage,
 ) -> Result<(), DomainError> {
-    let repo = adapter.open_repo()?;
-    let repo_root = adapter.repo_path();
+    let (repo, repo_root) = open_repo(adapter)?;
     let wp_path = repo_root
-        .join("kitty-specs")
+        .join("docs")
+        .join("agileplus")
         .join(feature_slug)
-        .join("wp")
+        .join("work-packages")
         .join(format!("{}.json", wp.id));
 
     let content = serde_json::to_string_pretty(&render_wp_json(wp))
-        .map_err(|e| DomainError::Vcs(format!("serialize wp {}: {e}", wp.id)))?;
+        .map_err(|e| DomainError::Storage(format!("serialize wp {}: {e}", wp.id)))?;
 
-    write_and_stage(&repo, repo_root, &wp_path, content.as_bytes())?;
+    write_and_stage(&repo, &repo_root, &wp_path, content.as_bytes())?;
 
     Ok(())
 }
@@ -285,7 +302,7 @@ pub fn commit_materialization(
     feature_slug: &str,
     message: Option<&str>,
 ) -> Result<String, DomainError> {
-    let repo = adapter.open_repo()?;
+    let (repo, _) = open_repo(adapter)?;
 
     let default_msg = format!("chore(specs): materialize {feature_slug} artifacts");
     let commit_msg = message.unwrap_or(&default_msg);
@@ -297,27 +314,27 @@ pub fn commit_materialization(
     });
 
     // Write the current index to a tree.
-    let mut index = repo.index().map_err(crate::git_err)?;
-    let tree_oid = index.write_tree().map_err(crate::git_err)?;
-    let tree = repo.find_tree(tree_oid).map_err(crate::git_err)?;
+    let mut index = repo.index().map_err(git_error)?;
+    let tree_oid = index.write_tree().map_err(git_error)?;
+    let tree = repo.find_tree(tree_oid).map_err(git_error)?;
 
     // Determine parent commit (HEAD), if any.
     let parent_commit = match repo.head() {
         Ok(head_ref) => {
             let head_oid = head_ref
                 .target()
-                .ok_or_else(|| DomainError::Vcs("HEAD reference has no target OID".into()))?;
-            Some(repo.find_commit(head_oid).map_err(crate::git_err)?)
+                .ok_or_else(|| DomainError::Storage("HEAD reference has no target OID".into()))?;
+            Some(repo.find_commit(head_oid).map_err(git_error)?)
         }
         Err(e) if e.code() == git2::ErrorCode::UnbornBranch => None,
-        Err(e) => return Err(crate::git_err(e)),
+        Err(e) => return Err(git_error(e)),
     };
 
     let parents: Vec<&git2::Commit<'_>> = parent_commit.iter().collect();
 
     let commit_oid = repo
         .commit(Some("HEAD"), &sig, &sig, commit_msg, &tree, &parents)
-        .map_err(crate::git_err)?;
+        .map_err(git_error)?;
 
     Ok(commit_oid.to_string())
 }
@@ -547,40 +564,46 @@ mod tests {
     }
 
     #[test]
-    fn materialize_feature_creates_files() {
+    fn materialize_feature_creates_human_artifacts_under_docs_agileplus() {
         let tmp = tempfile::TempDir::new().unwrap();
         {
             let repo = git2::Repository::init(tmp.path()).unwrap();
             make_initial_commit(&repo);
         }
 
-        let adapter = GitVcsAdapter::new(tmp.path().to_path_buf()).unwrap();
+        let adapter = GitVcsAdapter::new(tmp.path().to_path_buf());
         let feature = make_feature();
         let wp = make_wp(1, "WP1");
 
         let dir = materialize_feature(&adapter, &feature, &[wp]).unwrap();
+        assert_eq!(
+            dir,
+            std::fs::canonicalize(tmp.path().join("docs").join("agileplus").join("my-feature"),)
+                .unwrap()
+        );
         assert!(dir.join("meta.json").exists());
         assert!(dir.join("status.md").exists());
         assert!(dir.join("audit.jsonl").exists());
     }
 
     #[test]
-    fn materialize_work_package_creates_file() {
+    fn materialize_work_package_creates_file_under_feature_work_packages_directory() {
         let tmp = tempfile::TempDir::new().unwrap();
         {
             let repo = git2::Repository::init(tmp.path()).unwrap();
             make_initial_commit(&repo);
         }
 
-        let adapter = GitVcsAdapter::new(tmp.path().to_path_buf()).unwrap();
+        let adapter = GitVcsAdapter::new(tmp.path().to_path_buf());
         let wp = make_wp(7, "My WP");
         materialize_work_package(&adapter, "my-feature", &wp).unwrap();
 
         let wp_path = tmp
             .path()
-            .join("kitty-specs")
+            .join("docs")
+            .join("agileplus")
             .join("my-feature")
-            .join("wp")
+            .join("work-packages")
             .join("7.json");
         assert!(wp_path.exists());
 
@@ -597,7 +620,7 @@ mod tests {
             make_initial_commit(&repo);
         }
 
-        let adapter = GitVcsAdapter::new(tmp.path().to_path_buf()).unwrap();
+        let adapter = GitVcsAdapter::new(tmp.path().to_path_buf());
         let feature = make_feature();
         let wp = make_wp(1, "WP1");
 
@@ -615,7 +638,7 @@ mod tests {
             make_initial_commit(&repo);
         }
 
-        let adapter = GitVcsAdapter::new(tmp.path().to_path_buf()).unwrap();
+        let adapter = GitVcsAdapter::new(tmp.path().to_path_buf());
         let feature = make_feature();
 
         materialize_feature(&adapter, &feature, &[]).unwrap();
@@ -623,7 +646,8 @@ mod tests {
 
         let audit_path = tmp
             .path()
-            .join("kitty-specs")
+            .join("docs")
+            .join("agileplus")
             .join("my-feature")
             .join("audit.jsonl");
         let content = std::fs::read_to_string(&audit_path).unwrap();

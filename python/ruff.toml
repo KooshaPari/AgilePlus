@@ -18,6 +18,8 @@ select = [
 ]
 ignore = [
   "S101", # assert used (ok in tests)
+  "S603", # subprocess call without shell=True; we never use shell=True; rule is noisy
+  "S607", # partial executable path; we deliberately use canonical PATH lookup
 ]
 
 [lint.per-file-ignores]
