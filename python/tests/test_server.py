@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+import subprocess
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -11,6 +12,21 @@ from mcp.types import Root
 from agileplus_mcp import server
 from agileplus_mcp.grpc_client import AgilePlusCoreClient
 from agileplus_mcp.validation import InputValidationError
+
+
+def _make_git_repo(path) -> None:
+    """Initialise a real (non-bare) git worktree at ``path``.
+
+    The middleware uses ``git rev-parse --show-toplevel`` to validate
+    project roots, so tests must construct real repositories rather than
+    fake ``.git`` directories.
+    """
+    path.mkdir(parents=True, exist_ok=True)
+    subprocess.run(
+        ["git", "init", "--quiet", str(path)],
+        check=True,
+        capture_output=True,
+    )
 
 
 @pytest.fixture(autouse=True)
@@ -26,7 +42,7 @@ async def test_workspace_roots_include_valid_feature_scopes_and_skip_invalid_slu
     tmp_path,
 ) -> None:
     repo = tmp_path / "project"
-    (repo / ".git").mkdir(parents=True)
+    _make_git_repo(repo)
     client = MagicMock()
     client.list_features = AsyncMock(
         return_value=[{"slug": "valid-feature"}, {"slug": "Invalid_Feature"}]
@@ -54,7 +70,7 @@ async def test_workspace_roots_use_the_session_project_root(
     monkeypatch: pytest.MonkeyPatch, tmp_path
 ) -> None:
     repo = tmp_path / "project"
-    (repo / ".git").mkdir(parents=True)
+    _make_git_repo(repo)
     client = MagicMock()
     client.list_features = AsyncMock(return_value=[])
     context = MagicMock()
@@ -73,7 +89,7 @@ async def test_workspace_roots_use_the_session_project_root(
 @pytest.mark.asyncio
 async def test_client_root_scope_requires_exactly_one_git_worktree(tmp_path) -> None:
     repo = tmp_path / "project"
-    (repo / ".git").mkdir(parents=True)
+    _make_git_repo(repo)
 
     assert await server.resolve_client_project_root(
         [Root(uri=repo.as_uri(), name="project")]
@@ -95,7 +111,7 @@ async def test_client_root_scope_requires_exactly_one_git_worktree(tmp_path) -> 
 @pytest.mark.asyncio
 async def test_middleware_binds_validated_client_root_to_the_current_request(tmp_path) -> None:
     repo = tmp_path / "project"
-    (repo / ".git").mkdir(parents=True)
+    _make_git_repo(repo)
     fastmcp_context = MagicMock()
     fastmcp_context.get_state = AsyncMock(return_value=None)
     fastmcp_context.list_roots = AsyncMock(return_value=[Root(uri=repo.as_uri())])

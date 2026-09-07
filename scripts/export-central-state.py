@@ -8,6 +8,7 @@ import hashlib
 import json
 import sqlite3
 import sys
+import tempfile
 from pathlib import Path
 
 
@@ -30,6 +31,22 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+def snapshot_database(path: Path, snapshot: Path) -> None:
+    """Capture an immutable, consistent snapshot of a SQLite database.
+
+    Uses the ``online backup`` API so WAL checkpoints and sidecar files
+    (``.db-wal``, ``.db-shm``) are merged into the destination. The
+    snapshot is what we hash and inspect, not the live ``--db`` file,
+    which keeps mutating and may not yet contain WAL-committed rows.
+    """
+    source = sqlite3.connect(str(path))
+    try:
+        with sqlite3.connect(str(snapshot)) as destination:
+            source.backup(destination)
+    finally:
+        source.close()
+
+
 def inspect_read_only_database(path: Path) -> int:
     connection = sqlite3.connect(f"{path.as_uri()}?mode=ro", uri=True)
     try:
@@ -45,10 +62,21 @@ def main() -> int:
     if not database_path.is_file():
         raise ValueError(f"database is not a regular file: {database_path}")
 
+    # Capture an immutable snapshot before hashing or introspecting so
+    # the audit digest and the schema_version read reflect the same
+    # logical state even when the source uses WAL mode.
+    with tempfile.TemporaryDirectory(prefix="agileplus-export-") as staging:
+        snapshot_path = Path(staging) / "snapshot.db"
+        snapshot_database(database_path, snapshot_path)
+        snapshot_sha256 = sha256_file(snapshot_path)
+        schema_version = inspect_read_only_database(snapshot_path)
+
     export = {
         "source_db": str(database_path),
         "source_db_sha256": sha256_file(database_path),
-        "sqlite_schema_version": inspect_read_only_database(database_path),
+        "snapshot_db_sha256": snapshot_sha256,
+        "snapshot_algorithm": "online-backup",
+        "sqlite_schema_version": schema_version,
     }
     print(json.dumps(export, sort_keys=True))
     return 0

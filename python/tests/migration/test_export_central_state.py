@@ -22,7 +22,7 @@ def test_export_records_source_database_sha256_without_modifying_source(tmp_path
     connection.close()
 
     expected_digest = hashlib.sha256(database_path.read_bytes()).hexdigest()
-    result = subprocess.run(  # noqa: S603 -- fixed interpreter and repository script
+    result = subprocess.run(
         [sys.executable, str(EXPORT_SCRIPT), "--db", str(database_path)],
         check=False,
         capture_output=True,
@@ -34,4 +34,8 @@ def test_export_records_source_database_sha256_without_modifying_source(tmp_path
     assert export["source_db_sha256"] == expected_digest
     assert export["source_db"] == str(database_path.resolve())
     assert export["sqlite_schema_version"] >= 0
+    # The script hashes an immutable online-backup snapshot so WAL-only
+    # writes do not desynchronise the digest and the schema_version read.
+    assert export["snapshot_algorithm"] == "online-backup"
+    assert len(export["snapshot_db_sha256"]) == 64
     assert hashlib.sha256(database_path.read_bytes()).hexdigest() == expected_digest

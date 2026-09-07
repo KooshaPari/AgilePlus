@@ -192,7 +192,12 @@ fn run_link_in_project_context(args: &LinkArgs, context: &ProjectContext) -> Res
         bail!("refusing to create a self-link `{from_kind}:{from_id}` -> `{to_kind}:{to_id}`");
     }
 
-    let db_path = context.database_path();
+    // Honor an explicit --db override so scripts and tests can target a
+    // specific file without having to chdir into the Git worktree first.
+    let db_path = args
+        .db
+        .clone()
+        .unwrap_or_else(|| context.database_path());
     if let Some(parent) = db_path.parent() {
         std::fs::create_dir_all(parent).with_context(|| {
             format!("creating AgilePlus state directory at {}", parent.display())
@@ -379,7 +384,15 @@ pub(crate) fn open_db(path: &Path) -> Result<Connection> {
     Ok(conn)
 }
 
-pub(crate) fn resolve_db_path(_override_path: Option<&Path>) -> PathBuf {
+/// Resolve the SQLite database path for the trace subcommands.
+///
+/// Priority:
+///   1. Explicit `--db <PATH>` override (used by scripts and tests).
+///   2. Repository-local `.agileplus/agileplus.db` discovered from CWD.
+pub(crate) fn resolve_db_path(override_path: Option<&Path>) -> PathBuf {
+    if let Some(p) = override_path {
+        return p.to_path_buf();
+    }
     let current_dir = std::env::current_dir()
         .expect("reading current directory for repository-local AgilePlus state");
     ProjectContext::discover(&current_dir)

@@ -17,6 +17,7 @@ from __future__ import annotations
 import logging
 import os
 import socket
+import subprocess
 from ipaddress import ip_address
 from pathlib import Path
 from typing import Any
@@ -61,7 +62,12 @@ def _get_client() -> AgilePlusCoreClient:
 
 
 async def resolve_client_project_root(roots: list[Root]) -> Path:
-    """Validate one absolute client-advertised Git worktree URI."""
+    """Validate one absolute client-advertised Git worktree URI.
+
+    Uses Git discovery so linked worktrees (``.git`` is a file) and main
+    worktrees (``.git`` is a directory) are both accepted, while any
+    directory containing a fake ``.git`` is rejected.
+    """
     if len(roots) != 1:
         raise ValueError("exactly one file root is required for an AgilePlus session")
     parsed = urlparse(str(roots[0].uri))
@@ -74,23 +80,61 @@ async def resolve_client_project_root(roots: list[Root]) -> Path:
         root = path.resolve(strict=True)
     except FileNotFoundError as exc:
         raise ValueError("the project root does not exist") from exc
-    if not root.is_dir() or not (root / ".git").exists():
+    if not root.is_dir():
         raise ValueError("the project root must be a Git worktree")
+    try:
+        completed = subprocess.run(
+            ["git", "-C", str(root), "rev-parse", "--show-toplevel", "--git-common-dir"],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise ValueError("the project root must be a Git worktree") from exc
+    if completed.returncode != 0:
+        raise ValueError("the project root must be a Git worktree")
+    lines = [line.strip() for line in completed.stdout.splitlines() if line.strip()]
+    if len(lines) != 2:
+        raise ValueError("the project root must be a Git worktree")
+    toplevel = Path(lines[0]).resolve()
+    if toplevel != root:
+        raise ValueError(
+            f"the advertised project root {root} resolves to git worktree {toplevel}"
+        )
     return root
 
 
+async def _ensure_session_project_root(fastmcp_context: Any) -> str:
+    """Return the session-bound project root, resolving from Roots if missing.
+
+    Resource requests and tool requests both go through this helper so
+    that ``on_read_resource`` gets the same binding as ``on_call_tool``.
+    """
+    project_root = await fastmcp_context.get_state("agileplus.project_root")
+    if project_root is None:
+        root = await resolve_client_project_root(await fastmcp_context.list_roots())
+        project_root = str(root)
+        await fastmcp_context.set_state("agileplus.project_root", project_root)
+    return project_root
+
+
 class ProjectRootMiddleware(Middleware):
-    """Bind each tool request to one client-approved repository root."""
+    """Bind each tool/resource request to one client-approved repository root."""
 
     async def on_call_tool(self, context: Any, call_next: Any) -> Any:
         fastmcp_context = context.fastmcp_context
         if fastmcp_context is None:
             raise RuntimeError("MCP session context is unavailable")
-        project_root = await fastmcp_context.get_state("agileplus.project_root")
-        if project_root is None:
-            root = await resolve_client_project_root(await fastmcp_context.list_roots())
-            project_root = str(root)
-            await fastmcp_context.set_state("agileplus.project_root", project_root)
+        project_root = await _ensure_session_project_root(fastmcp_context)
+        with bind_session_project_root(project_root):
+            return await call_next(context)
+
+    async def on_read_resource(self, context: Any, call_next: Any) -> Any:
+        fastmcp_context = context.fastmcp_context
+        if fastmcp_context is None:
+            raise RuntimeError("MCP session context is unavailable")
+        project_root = await _ensure_session_project_root(fastmcp_context)
         with bind_session_project_root(project_root):
             return await call_next(context)
 
@@ -111,15 +155,23 @@ async def get_workspace_roots(ctx: Context | None = None) -> dict[str, Any]:
     the MCP client to scope file operations correctly.
 
     Roots update dynamically as features are created.
-    """
-    client = _get_client()
-    features = await client.list_features()
 
-    project_root = (
-        await ctx.get_state("agileplus.project_root") if ctx is not None else _session_project_root
-    )
-    if project_root is None:
+    Note: the ``on_read_resource`` middleware is responsible for binding
+    the session project root before this resource handler runs, so the
+    ``list_features`` call below already carries a valid ``ProjectScope``.
+    The local ``_ensure_session_project_root`` call here covers callers
+    that bypass middleware (e.g. direct in-process unit tests).
+    """
+    if ctx is not None:
+        project_root = await _ensure_session_project_root(ctx)
+    elif _session_project_root is None:
         raise RuntimeError("project root is not bound to this MCP session")
+    else:
+        project_root = str(_session_project_root)
+    with bind_session_project_root(project_root):
+        client = _get_client()
+        features = await client.list_features()
+
     root = Path(project_root).resolve()
     roots = [
         {"uri": root.as_uri(), "name": "project-root"},
