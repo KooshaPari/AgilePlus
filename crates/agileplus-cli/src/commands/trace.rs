@@ -194,10 +194,7 @@ fn run_link_in_project_context(args: &LinkArgs, context: &ProjectContext) -> Res
 
     // Honor an explicit --db override so scripts and tests can target a
     // specific file without having to chdir into the Git worktree first.
-    let db_path = args
-        .db
-        .clone()
-        .unwrap_or_else(|| context.database_path());
+    let db_path = args.db.clone().unwrap_or_else(|| context.database_path());
     if let Some(parent) = db_path.parent() {
         std::fs::create_dir_all(parent).with_context(|| {
             format!("creating AgilePlus state directory at {}", parent.display())
