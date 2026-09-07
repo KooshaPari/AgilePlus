@@ -4,6 +4,7 @@
 
 use std::collections::{HashMap, HashSet};
 use std::net::SocketAddr;
+use std::path::PathBuf;
 use std::pin::Pin;
 use std::sync::Arc;
 
@@ -44,6 +45,31 @@ pub fn domain_error_to_status(e: agileplus_domain::error::DomainError) -> Status
         DomainError::NotImplemented => Status::unimplemented("not implemented"),
         other => Status::internal(other.to_string()),
     }
+}
+
+/// Reject stateful requests that do not identify the repository bound to the core.
+///
+/// Request handlers pass the `canonical_repo_root` value from their optional
+/// `ProjectScope`; keeping this helper string-based allows the generated proto
+/// field to remain at the transport boundary.
+fn validate_project_scope(
+    canonical_repo_root: Option<&str>,
+    expected_repo_root: &str,
+) -> Result<(), Status> {
+    let canonical_repo_root = canonical_repo_root
+        .map(str::trim)
+        .filter(|root| !root.is_empty())
+        .ok_or_else(|| {
+            Status::invalid_argument("missing project scope canonical repository root")
+        })?;
+
+    if canonical_repo_root != expected_repo_root {
+        return Err(Status::permission_denied(
+            "project scope does not match this core server repository",
+        ));
+    }
+
+    Ok(())
 }
 
 /// Parse the contract representation `FR-ID` or `FR-ID:evidence_type`.
@@ -100,6 +126,8 @@ where
     R: ReviewPort + 'static,
     O: ObservabilityPort + 'static,
 {
+    #[allow(dead_code)] // consumed by request scope enforcement
+    canonical_repo_root: PathBuf,
     storage: Arc<S>,
     #[allow(dead_code)] // reserved - injected for future downstream service calls
     vcs: Arc<V>,
@@ -123,6 +151,7 @@ where
     O: ObservabilityPort + 'static,
 {
     pub fn new(
+        canonical_repo_root: PathBuf,
         storage: Arc<S>,
         vcs: Arc<V>,
         agents: Arc<A>,
@@ -132,6 +161,7 @@ where
         proxy: Arc<ProxyRouter>,
     ) -> Self {
         Self {
+            canonical_repo_root,
             storage,
             vcs,
             agents,
@@ -160,7 +190,16 @@ where
         &self,
         request: Request<GetFeatureRequest>,
     ) -> Result<Response<GetFeatureResponse>, Status> {
-        let slug = request.into_inner().slug;
+        let req = request.into_inner();
+        validate_project_scope(
+            req.project_scope
+                .as_ref()
+                .map(|scope| scope.canonical_repo_root.as_str()),
+            self.canonical_repo_root
+                .to_str()
+                .ok_or_else(|| Status::internal("core repository root is not valid UTF-8"))?,
+        )?;
+        let slug = req.slug;
         match self.storage.get_feature_by_slug(&slug).await {
             Ok(Some(feature)) => Ok(Response::new(GetFeatureResponse {
                 feature: Some(feature_to_proto(feature)),
@@ -174,7 +213,16 @@ where
         &self,
         request: Request<ListFeaturesRequest>,
     ) -> Result<Response<ListFeaturesResponse>, Status> {
-        let state_filter = request.into_inner().state_filter;
+        let req = request.into_inner();
+        validate_project_scope(
+            req.project_scope
+                .as_ref()
+                .map(|scope| scope.canonical_repo_root.as_str()),
+            self.canonical_repo_root
+                .to_str()
+                .ok_or_else(|| Status::internal("core repository root is not valid UTF-8"))?,
+        )?;
+        let state_filter = req.state_filter;
         let features = if state_filter.is_empty() {
             self.storage
                 .list_all_features()
@@ -199,7 +247,16 @@ where
         &self,
         request: Request<GetFeatureStateRequest>,
     ) -> Result<Response<GetFeatureStateResponse>, Status> {
-        let slug = request.into_inner().slug;
+        let req = request.into_inner();
+        validate_project_scope(
+            req.project_scope
+                .as_ref()
+                .map(|scope| scope.canonical_repo_root.as_str()),
+            self.canonical_repo_root
+                .to_str()
+                .ok_or_else(|| Status::internal("core repository root is not valid UTF-8"))?,
+        )?;
+        let slug = req.slug;
         let feature = self
             .storage
             .get_feature_by_slug(&slug)
@@ -238,6 +295,14 @@ where
         request: Request<ListWorkPackagesRequest>,
     ) -> Result<Response<ListWorkPackagesResponse>, Status> {
         let req = request.into_inner();
+        validate_project_scope(
+            req.project_scope
+                .as_ref()
+                .map(|scope| scope.canonical_repo_root.as_str()),
+            self.canonical_repo_root
+                .to_str()
+                .ok_or_else(|| Status::internal("core repository root is not valid UTF-8"))?,
+        )?;
         let feature = self
             .storage
             .get_feature_by_slug(&req.feature_slug)
@@ -273,6 +338,14 @@ where
         request: Request<GetWorkPackageStatusRequest>,
     ) -> Result<Response<GetWorkPackageStatusResponse>, Status> {
         let req = request.into_inner();
+        validate_project_scope(
+            req.project_scope
+                .as_ref()
+                .map(|scope| scope.canonical_repo_root.as_str()),
+            self.canonical_repo_root
+                .to_str()
+                .ok_or_else(|| Status::internal("core repository root is not valid UTF-8"))?,
+        )?;
         let feature = self
             .storage
             .get_feature_by_slug(&req.feature_slug)
@@ -309,6 +382,14 @@ where
         request: Request<CheckGovernanceGateRequest>,
     ) -> Result<Response<CheckGovernanceGateResponse>, Status> {
         let req = request.into_inner();
+        validate_project_scope(
+            req.project_scope
+                .as_ref()
+                .map(|scope| scope.canonical_repo_root.as_str()),
+            self.canonical_repo_root
+                .to_str()
+                .ok_or_else(|| Status::internal("core repository root is not valid UTF-8"))?,
+        )?;
         let feature = self
             .storage
             .get_feature_by_slug(&req.feature_slug)
@@ -386,6 +467,14 @@ where
         request: Request<GetAuditTrailRequest>,
     ) -> Result<Response<Self::GetAuditTrailStream>, Status> {
         let req = request.into_inner();
+        validate_project_scope(
+            req.project_scope
+                .as_ref()
+                .map(|scope| scope.canonical_repo_root.as_str()),
+            self.canonical_repo_root
+                .to_str()
+                .ok_or_else(|| Status::internal("core repository root is not valid UTF-8"))?,
+        )?;
         let feature = self
             .storage
             .get_feature_by_slug(&req.feature_slug)
@@ -420,7 +509,16 @@ where
         &self,
         request: Request<VerifyAuditChainRequest>,
     ) -> Result<Response<VerifyAuditChainResponse>, Status> {
-        let slug = request.into_inner().feature_slug;
+        let req = request.into_inner();
+        validate_project_scope(
+            req.project_scope
+                .as_ref()
+                .map(|scope| scope.canonical_repo_root.as_str()),
+            self.canonical_repo_root
+                .to_str()
+                .ok_or_else(|| Status::internal("core repository root is not valid UTF-8"))?,
+        )?;
+        let slug = req.feature_slug;
         let feature = self
             .storage
             .get_feature_by_slug(&slug)
@@ -472,7 +570,16 @@ where
         &self,
         request: Request<agileplus_proto::agileplus::v1::StreamAgentEventsRequest>,
     ) -> Result<Response<Self::StreamAgentEventsStream>, Status> {
-        let feature_slug = request.into_inner().feature_slug;
+        let req = request.into_inner();
+        validate_project_scope(
+            req.project_scope
+                .as_ref()
+                .map(|scope| scope.canonical_repo_root.as_str()),
+            self.canonical_repo_root
+                .to_str()
+                .ok_or_else(|| Status::internal("core repository root is not valid UTF-8"))?,
+        )?;
+        let feature_slug = req.feature_slug;
         let rx = self.event_bus.subscribe();
         let stream = crate::streaming::agent_event_stream(rx, feature_slug);
         Ok(Response::new(stream))
@@ -487,6 +594,14 @@ where
         request: Request<DispatchCommandRequest>,
     ) -> Result<Response<DispatchCommandResponse>, Status> {
         let req = request.into_inner();
+        validate_project_scope(
+            req.project_scope
+                .as_ref()
+                .map(|scope| scope.canonical_repo_root.as_str()),
+            self.canonical_repo_root
+                .to_str()
+                .ok_or_else(|| Status::internal("core repository root is not valid UTF-8"))?,
+        )?;
         let cmd_req = req
             .command
             .ok_or_else(|| Status::invalid_argument("missing command field"))?;
@@ -559,6 +674,7 @@ where
 #[allow(clippy::too_many_arguments)] // Server bootstrap requires all service ports
 pub async fn start_server<S, V, A, R, O>(
     addr: SocketAddr,
+    canonical_repo_root: PathBuf,
     storage: Arc<S>,
     vcs: Arc<V>,
     agents: Arc<A>,
@@ -574,8 +690,16 @@ where
     R: ReviewPort + 'static,
     O: ObservabilityPort + 'static,
 {
-    let service =
-        AgilePlusCoreServer::new(storage, vcs, agents, review, telemetry, event_bus, proxy);
+    let service = AgilePlusCoreServer::new(
+        canonical_repo_root,
+        storage,
+        vcs,
+        agents,
+        review,
+        telemetry,
+        event_bus,
+        proxy,
+    );
 
     info!(%addr, "starting AgilePlus gRPC server");
 
@@ -593,6 +717,7 @@ where
 #[allow(clippy::too_many_arguments)]
 pub async fn start_server<S, V, A, R, O>(
     _addr: SocketAddr,
+    _canonical_repo_root: PathBuf,
     _storage: Arc<S>,
     _vcs: Arc<V>,
     _agents: Arc<A>,
@@ -664,6 +789,25 @@ mod tests {
 
         let s = domain_error_to_status(DomainError::Conflict("x".into()));
         assert_eq!(s.code(), tonic::Code::AlreadyExists);
+    }
+
+    #[test]
+    fn project_scope_validator_rejects_missing_or_empty_scope() {
+        for scope in [None, Some("")] {
+            let error = validate_project_scope(scope, "/repo/a").unwrap_err();
+            assert_eq!(error.code(), tonic::Code::InvalidArgument);
+        }
+    }
+
+    #[test]
+    fn project_scope_validator_rejects_mismatched_scope() {
+        let error = validate_project_scope(Some("/repo/b"), "/repo/a").unwrap_err();
+        assert_eq!(error.code(), tonic::Code::PermissionDenied);
+    }
+
+    #[test]
+    fn project_scope_validator_accepts_matching_scope() {
+        assert!(validate_project_scope(Some("/repo/a"), "/repo/a").is_ok());
     }
 
     #[test]
