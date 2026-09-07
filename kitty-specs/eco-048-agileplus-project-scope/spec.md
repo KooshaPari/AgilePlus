@@ -1,4 +1,4 @@
-# feat-024: AgilePlus ProjectScope per-session repo-root binding
+# eco-048: AgilePlus ProjectScope per-session repo-root binding
 
 ## Goal
 
@@ -12,7 +12,7 @@ Bundle this with a coordinated move of AgilePlus state from
 ## Acceptance Criteria
 
 - Kitty-spec registered and indexed.
-- Linked PR references `spec: feat-024-agileplus-project-scope`.
+- Linked PR references `spec: eco-048-agileplus-project-scope`.
 - Governance gates (policy-gate, pr-governance-gate, spec-first) satisfied
   after merge to `main`.
 - `ProjectScope { canonical_repo_root }` defined in `proto/agileplus/v1/common.proto`

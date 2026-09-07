@@ -1,4 +1,4 @@
-# feat-024: Plan
+# eco-048: Plan
 
 ## Atomic Commit Plan
 
@@ -22,7 +22,7 @@ Plus post-landing follow-up commits on the same branch:
 |---|---------|--------|
 | C9 | `chore(agileplus-cli): remove deprecated --db flag from cli_integration and e2e roundtrip tests` | Breaks the Autograder / e2e gate; needs C5 follow-up |
 | C10 | `fix(agileplus-grpc): allow too_many_arguments on AgilePlusCoreServer::new` | Clippy `-D warnings` regression from C6's added arg |
-| C11 | `docs(agileplus): register feat-024 kitty-spec for spec-first gate` | spec-first gate requires `kitty-specs/feat-024-.../` |
+| C11 | `docs(agileplus): register eco-048 kitty-spec for spec-first gate` | spec-first gate requires `kitty-specs/eco-048-.../` |
 
 ## Merge Strategy
 

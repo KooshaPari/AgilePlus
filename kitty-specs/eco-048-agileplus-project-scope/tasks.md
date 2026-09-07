@@ -1,4 +1,4 @@
-# feat-024: Tasks
+# eco-048: Tasks
 
 - [x] **C1** — Add `ProjectScope` to `proto/agileplus/v1/common.proto` and mirror
   to `agileplus-agents/proto/agileplus/v1/common.proto`; add `project_scope` to
@@ -28,6 +28,6 @@
   the Autograder and CLI round-trip gates green).
 - [x] **C10** — Add `#[allow(clippy::too_many_arguments)]` to
   `AgilePlusCoreServer::new` to keep Clippy `-D warnings` clean.
-- [x] **C11** — Register `kitty-specs/feat-024-agileplus-project-scope/`
+- [x] **C11** — Register `kitty-specs/eco-048-agileplus-project-scope/`
   with `meta.json`, `spec.md`, `plan.md`, `tasks.md` for the spec-first gate.
 - [ ] **Merge** — Once all gates green, Mergify merge queue.
