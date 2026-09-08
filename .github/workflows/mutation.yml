@@ -80,6 +80,8 @@ jobs:
 
       - name: Install Rust (nightly)
         uses: dtolnay/rust-toolchain@nightly
+        with:
+          targets: x86_64-unknown-linux-musl
 
       - uses: Swatinem/rust-cache@v2
         with:
@@ -94,3 +96,6 @@ jobs:
       - name: Build fuzz targets (agileplus-domain)
         run: cargo +nightly fuzz build
         working-directory: crates/agileplus-domain
+        env:
+          # AddressSanitizer cannot run with musl's statically linked libc.
+          RUSTFLAGS: "-C target-feature=-crt-static"
