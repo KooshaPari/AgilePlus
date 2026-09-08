@@ -76,7 +76,7 @@ pub fn wp_to_proto_with_dependencies(
             .unwrap_or_default(),
         depends_on: dependencies
             .iter()
-            .map(|dependency| dependency.depends_on as i32)
+            .map(|dependency| dependency.depends_on)
             .collect(),
         file_scope: wp.file_scope,
     }
@@ -150,5 +150,21 @@ mod tests {
         let proto = wp_to_proto_with_dependencies(wp, &[dependency]);
 
         assert_eq!(proto.depends_on, vec![10]);
+    }
+
+    #[test]
+    fn wp_conversion_preserves_large_dependency_ids() {
+        let mut wp = WorkPackage::new(1, "Dependent WP", 2, "done");
+        wp.id = 20;
+        let large_id = i64::from(i32::MAX) + 1;
+        let dependency = WpDependency {
+            wp_id: 20,
+            depends_on: large_id,
+            dep_type: DependencyType::Explicit,
+        };
+
+        let proto = wp_to_proto_with_dependencies(wp, &[dependency]);
+
+        assert_eq!(proto.depends_on, vec![large_id]);
     }
 }
