@@ -75,10 +75,18 @@ where
         args: &HashMap<String, String>,
     ) -> Result<(String, HashMap<String, String>), Status> {
         match command {
+            // Commands that are fully implemented in the CLI and can be dispatched
+            // through the gRPC core. Each handler lives in the application layer
+            // and operates on repository-local SQLite state.
             "specify" | "research" | "plan" | "validate" | "ship" | "retrospective" => {
-                let message = format!("command '{command}' queued for feature '{feature_slug}'");
                 info!(command, feature_slug, "core command dispatched via gRPC");
-                Ok((message, args.clone()))
+                // NOTE: these commands are handled by the CLI binary, not the gRPC
+                // daemon. Return unimplemented so callers know the gRPC surface
+                // does not yet replicate CLI lifecycle handling.
+                Err(Status::unimplemented(format!(
+                    "command '{command}' is not yet implemented over gRPC; \
+                     use the CLI binary 'agileplus {command}' instead"
+                )))
             }
             other => Err(Status::unimplemented(format!("unknown command: '{other}'"))),
         }

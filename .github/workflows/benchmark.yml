@@ -134,7 +134,7 @@ jobs:
               name: 'Benchmark Summary',
               head_sha: context.sha,
               status: 'completed',
-              conclusion: '${{ steps.bench.outputs.bench_exit == 0 && steps.baseline-check.outputs.baseline_found && always() && "success" || "neutral" }}',
+              conclusion: '${{ steps.bench.outputs.bench_exit == 0 && steps.baseline-check.outputs.baseline_found == 'true' && 'success' || 'neutral' }}',
               output: {
                 title: 'Criterion Benchmarks',
                 summary: summary

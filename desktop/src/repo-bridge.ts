@@ -56,8 +56,8 @@ export class RepoBridge {
         title: base,
         status: "unknown",
         path: file,
-      };
-    });
+      } satisfies AdrSummary;
+    }) as Promise<AdrSummary[]>;
   }
 
   /** All worklogs/trace files under `traces/`. */
@@ -68,8 +68,8 @@ export class RepoBridge {
         id: base,
         kind: base.endsWith(".jsonl") ? "jsonl" : "md",
         path: file,
-      };
-    });
+      } satisfies TraceEntry;
+    }) as Promise<TraceEntry[]>;
   }
 
   /** Read a text file relative to the repo root. */

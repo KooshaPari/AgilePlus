@@ -4,7 +4,7 @@ title: Initial Implementation
 feature: # AgilePlus A+ / SOTA completion
 feature_slug: agileplus-a-plus-completion
 sequence: 1
-state: planned
+state: shipped
 created_at: 2026-08-26T00:00:00Z
 ---
 

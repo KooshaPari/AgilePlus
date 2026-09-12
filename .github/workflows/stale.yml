@@ -1,5 +1,4 @@
 name: 'Close Stale Issues / PRs'
-description: 'Mark issues and PRs as stale after 30 days of inactivity, close them 7 days later. Exempts security, pinned, and in-progress items.'
 
 on:
   schedule:

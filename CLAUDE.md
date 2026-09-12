@@ -2,13 +2,12 @@
 
 ## Overview
 
-AgilePlus is an AI-native project management platform. The Rust workspace is currently scaffolding (no `.rs` files yet). The primary implementation lives in TypeScript/Go layers.
+AgilePlus is an AI-native project management platform. The Rust workspace contains 21 active crates with domain models, SQLite storage, gRPC server, CLI binary, and REST API. The Python layer provides the MCP server for AI agent integration.
 
 ## Architecture
 
-- **Rust workspace**: Root `Cargo.toml` with `[workspace]` + `[package]` (placeholder). Members added as Rust code is created. 26 scaffolded crate dirs and 21 scaffolded lib dirs exist but are excluded from the workspace until they have source files.
-- **TypeScript/Go**: Primary application layers (see root directory structure).
-- **Python**: `python/phenotype_traceability/` package; `agileplus-mcp/` is a separate Python MCP server repo.
+- **Rust workspace**: Root `Cargo.toml` with 21 active members (domain, storage, CLI, API, gRPC, governance, etc.). 44 scaffolded crate dirs excluded until source is implemented.
+- **Python**: `python/` package for MCP server; `agileplus-mcp/` entry point.
 
 ## Branch Discipline
 

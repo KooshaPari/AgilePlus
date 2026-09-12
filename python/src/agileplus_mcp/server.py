@@ -99,9 +99,7 @@ async def resolve_client_project_root(roots: list[Root]) -> Path:
         raise ValueError("the project root must be a Git worktree")
     toplevel = Path(lines[0]).resolve()
     if toplevel != root:
-        raise ValueError(
-            f"the advertised project root {root} resolves to git worktree {toplevel}"
-        )
+        raise ValueError(f"the advertised project root {root} resolves to git worktree {toplevel}")
     return root
 
 

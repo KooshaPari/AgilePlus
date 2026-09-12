@@ -92,16 +92,15 @@ async def test_client_root_scope_requires_exactly_one_git_worktree(tmp_path: pat
     repo = tmp_path / "project"
     _make_git_repo(repo)
 
-    assert await server.resolve_client_project_root(
-        [Root(uri=repo.as_uri(), name="project")]
-    ) == repo.resolve()
+    assert (
+        await server.resolve_client_project_root([Root(uri=repo.as_uri(), name="project")])
+        == repo.resolve()
+    )
 
     with pytest.raises(ValueError, match="exactly one file root"):
         await server.resolve_client_project_root([])
     with pytest.raises(ValueError, match="exactly one file root"):
-        await server.resolve_client_project_root(
-            [Root(uri=repo.as_uri()), Root(uri=repo.as_uri())]
-        )
+        await server.resolve_client_project_root([Root(uri=repo.as_uri()), Root(uri=repo.as_uri())])
 
     non_repo = tmp_path / "not-a-repo"
     non_repo.mkdir()

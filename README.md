@@ -34,14 +34,14 @@
 
 # AgilePlus
 
-**Project management system with AI agent integration** — 24-crate Rust monorepo with hexagonal architecture, Python MCP server, and Plane.so/GitHub integration.
+**Project management system with AI agent integration** — 21-crate Rust workspace with hexagonal architecture, Python MCP server, and Plane.so/GitHub integration.
 
 ## Project Overview
 
 AgilePlus is a full-stack project management platform built with:
-- **Rust** (24 crates) — Core domain, storage, event sourcing, CLI, REST API
+- **Rust** (21 active crates) — Core domain, storage, event sourcing, CLI, REST API
 - **Python** — MCP server for AI agent integration
-- **TypeScript** — pheno-cli, React components
+- **TypeScript** — Electrobun desktop shell
 
 ## Key Features
 
@@ -64,10 +64,10 @@ bun install
 cargo build --workspace
 
 # Run CLI
-cargo run --package pheno-cli -- --help
+cargo run --package agileplus-cli -- --help
 
 # Start REST server
-cargo run --package pheno-cli -- serve
+cargo run --package agileplus-api
 
 # Run tests
 cargo test --workspace
@@ -87,9 +87,9 @@ cargo test --workspace
 
 ```
 AgilePlus/
-├── crates/          # 24 Rust crates (workspace)
+├── crates/          # 21 active Rust crates (workspace)
 ├── python/          # Python MCP server
-├── pheno-cli/       # CLI tool
+├── desktop/         # Electrobun desktop shell
 ├── kitty-specs/     # Feature specifications
 ├── docs/            # Documentation
 └── harnesses/       # Agent harness configs

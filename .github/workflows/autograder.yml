@@ -75,14 +75,17 @@ jobs:
           RUSTFLAGS: "-D warnings"
 
       - name: Emit autograde report
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+          EVENT_NUMBER: ${{ github.event.number }}
         run: |
           TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
           mkdir -p worklogs
           jq -n \
             --arg timestamp "$TIMESTAMP" \
             --arg repo "AgilePlus" \
-            --arg branch "${{ github.head_ref }}" \
-            --arg pr "${{ github.event.number }}" \
+            --arg branch "$HEAD_REF" \
+            --arg pr "$EVENT_NUMBER" \
             '{
               generated_at: $timestamp,
               repo: $repo,
