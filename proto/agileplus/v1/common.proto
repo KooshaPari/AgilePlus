@@ -45,7 +45,7 @@ message WorkPackageStatus {
   string agent_id = 5;
   string pr_url = 6;
   string pr_state = 7;
-  repeated int32 depends_on = 8;
+  repeated int64 depends_on = 8;
   repeated string file_scope = 9;
 }
 

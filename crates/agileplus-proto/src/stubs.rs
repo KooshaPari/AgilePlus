@@ -96,7 +96,7 @@ pub struct WorkPackageStatus {
     pub agent_id: String,
     pub pr_url: String,
     pub pr_state: String,
-    pub depends_on: Vec<i32>,
+    pub depends_on: Vec<i64>,
     pub file_scope: Vec<String>,
 }
 

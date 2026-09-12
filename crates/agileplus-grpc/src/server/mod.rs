@@ -29,7 +29,9 @@ use agileplus_proto::agileplus::v1::{
     VerifyAuditChainResponse, agile_plus_core_service_server::AgilePlusCoreService,
 };
 
-use crate::conversions::{audit_entry_to_proto, feature_to_proto, wp_to_proto};
+use crate::conversions::{
+    audit_entry_to_proto, feature_to_proto_with_wps, wp_to_proto_with_dependencies,
+};
 use crate::event_bus::EventBus;
 use crate::proxy::ProxyRouter;
 
@@ -202,9 +204,16 @@ where
         )?;
         let slug = req.slug;
         match self.storage.get_feature_by_slug(&slug).await {
-            Ok(Some(feature)) => Ok(Response::new(GetFeatureResponse {
-                feature: Some(feature_to_proto(feature)),
-            })),
+            Ok(Some(feature)) => {
+                let wps = self
+                    .storage
+                    .list_wps_by_feature(feature.id)
+                    .await
+                    .map_err(domain_error_to_status)?;
+                Ok(Response::new(GetFeatureResponse {
+                    feature: Some(feature_to_proto_with_wps(feature, &wps)),
+                }))
+            }
             Ok(None) => Err(Status::not_found(format!("feature '{slug}' not found"))),
             Err(e) => Err(domain_error_to_status(e)),
         }
@@ -238,7 +247,15 @@ where
                 .await
                 .map_err(domain_error_to_status)?
         };
-        let proto_features = features.into_iter().map(feature_to_proto).collect();
+        let mut proto_features = Vec::with_capacity(features.len());
+        for feature in features {
+            let work_packages = self
+                .storage
+                .list_wps_by_feature(feature.id)
+                .await
+                .map_err(domain_error_to_status)?;
+            proto_features.push(feature_to_proto_with_wps(feature, &work_packages));
+        }
         Ok(Response::new(ListFeaturesResponse {
             features: proto_features,
         }))
@@ -329,9 +346,17 @@ where
                 .collect()
         };
 
-        Ok(Response::new(ListWorkPackagesResponse {
-            packages: filtered.into_iter().map(wp_to_proto).collect(),
-        }))
+        let mut packages = Vec::with_capacity(filtered.len());
+        for wp in filtered {
+            let dependencies = self
+                .storage
+                .get_wp_dependencies(wp.id)
+                .await
+                .map_err(domain_error_to_status)?;
+            packages.push(wp_to_proto_with_dependencies(wp, &dependencies));
+        }
+
+        Ok(Response::new(ListWorkPackagesResponse { packages }))
     }
 
     async fn get_work_package_status(
@@ -369,8 +394,14 @@ where
                 Status::not_found(format!("WP sequence {} not found", req.wp_sequence))
             })?;
 
+        let dependencies = self
+            .storage
+            .get_wp_dependencies(wp.id)
+            .await
+            .map_err(domain_error_to_status)?;
+
         Ok(Response::new(GetWorkPackageStatusResponse {
-            work_package_status: Some(wp_to_proto(wp)),
+            work_package_status: Some(wp_to_proto_with_dependencies(wp, &dependencies)),
         }))
     }
 
