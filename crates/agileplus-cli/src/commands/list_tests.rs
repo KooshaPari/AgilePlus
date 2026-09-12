@@ -1035,7 +1035,7 @@ async fn list_stories_json_flag_returns_ok() {
 #[tokio::test]
 async fn list_features_returns_ok_for_empty_store() {
     let store = MemStore::default();
-    let args = crate::commands::list::ListArgs { state: None };
+    let args = crate::commands::list::ListArgs { state: None, json: false };
 
     crate::commands::list::run(args, &store).await.unwrap();
 }
@@ -1049,7 +1049,7 @@ async fn list_features_returns_all_features() {
         ]),
         ..MemStore::default()
     };
-    let args = crate::commands::list::ListArgs { state: None };
+    let args = crate::commands::list::ListArgs { state: None, json: false };
 
     crate::commands::list::run(args, &store).await.unwrap();
 }
@@ -1065,6 +1065,7 @@ async fn list_features_filters_by_state() {
     };
     let args = crate::commands::list::ListArgs {
         state: Some("planned".to_string()),
+        json: false,
     };
 
     crate::commands::list::run(args, &store).await.unwrap();
@@ -1075,6 +1076,7 @@ async fn list_features_rejects_invalid_state() {
     let store = MemStore::default();
     let args = crate::commands::list::ListArgs {
         state: Some("not-a-state".to_string()),
+        json: false,
     };
 
     assert!(crate::commands::list::run(args, &store).await.is_err());

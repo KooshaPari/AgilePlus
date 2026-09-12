@@ -606,6 +606,7 @@ pub fn scan_all_features(adapter: &GitVcsAdapter) -> Result<Vec<String>, DomainE
 #[cfg(test)]
 mod tests {
     use super::*;
+    use agileplus_domain::ports::VcsPort;
     use std::process::Command as StdCommand;
     use tempfile::tempdir;
 
