@@ -17,7 +17,7 @@ path = "fixtures_test.rs"
 
 [dependencies]
 agileplus-domain = { version = "0.2.1", path = "../../crates/agileplus-domain" }
-cucumber = "0.21"
+cucumber = "0.23"
 tokio.workspace = true
 chrono.workspace = true
 sha2.workspace = true
