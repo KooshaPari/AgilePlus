@@ -23,7 +23,7 @@ use agileplus_cli::commands::{
     implement::ImplementArgs, plan::PlanArgs, research::ResearchArgs,
     retrospective::RetrospectiveArgs, ship::ShipArgs, triage::TriageArgs, validate::ValidateArgs,
 };
-use agileplus_git::GitVcsAdapter;
+use agileplus_git::{GitVcsAdapter, ProjectContext};
 use agileplus_sqlite::SqliteStorageAdapter;
 use agileplus_subcmds::{PlatformArgs, run_platform};
 
@@ -38,9 +38,9 @@ struct Cli {
     #[arg(short, long, action = clap::ArgAction::Count, global = true)]
     verbose: u8,
 
-    /// Path to SQLite database
-    #[arg(long, global = true, default_value = ".agileplus/agileplus.db")]
-    db: PathBuf,
+    /// Deprecated: state is always derived from the repository root.
+    #[arg(long, global = true, hide = true)]
+    db: Option<PathBuf>,
 
     /// Path to git repository root (defaults to current directory)
     #[arg(long, global = true)]
@@ -125,14 +125,28 @@ fn open_vcs(repo: &Option<PathBuf>) -> Result<GitVcsAdapter> {
     }
 }
 
-async fn run(cli: Cli) -> Result<()> {
-    // Ensure DB directory exists for storage-backed commands
-    if let Some(parent) = cli.db.parent()
-        && !parent.as_os_str().is_empty()
-        && !parent.exists()
-    {
+fn project_context(repo: &Option<PathBuf>) -> Result<ProjectContext> {
+    let start = match repo {
+        Some(path) => path.clone(),
+        None => std::env::current_dir().context("reading current directory")?,
+    };
+    ProjectContext::discover(&start)
+        .map_err(anyhow::Error::msg)
+        .context("Not inside a git repository. Run agileplus from your project root.")
+}
+
+fn repository_database(repo: &Option<PathBuf>) -> Result<PathBuf> {
+    let database = project_context(repo)?.database_path();
+    if let Some(parent) = database.parent() {
         std::fs::create_dir_all(parent)
-            .with_context(|| format!("creating directory {}", parent.display()))?;
+            .with_context(|| format!("creating repository state directory {}", parent.display()))?;
+    }
+    Ok(database)
+}
+
+async fn run(cli: Cli) -> Result<()> {
+    if cli.db.is_some() {
+        anyhow::bail!("--db is no longer supported; AgilePlus state is repository-local");
     }
 
     match cli.command {
@@ -147,83 +161,95 @@ async fn run(cli: Cli) -> Result<()> {
             Ok(())
         }
         Commands::Mvp(args) => {
-            let storage = SqliteStorageAdapter::new(&cli.db)
-                .with_context(|| format!("opening database at {}", cli.db.display()))?;
+            let db = repository_database(&cli.repo)?;
+            let storage = SqliteStorageAdapter::new(&db)
+                .with_context(|| format!("opening database at {}", db.display()))?;
             agileplus_cli::commands::mvp::run_mvp(args, &storage).await
         }
         Commands::Dashboard(mut args) => {
             // Prefer global --db when the subcommand did not set its own path.
             if args.db.is_none() {
-                args.db = Some(cli.db.clone());
+                args.db = Some(repository_database(&cli.repo)?);
             }
             agileplus_cli::commands::dashboard::run(&args)
         }
         Commands::Module(args) => {
-            let storage = SqliteStorageAdapter::new(&cli.db)
-                .with_context(|| format!("opening database at {}", cli.db.display()))?;
+            let db = repository_database(&cli.repo)?;
+            let storage = SqliteStorageAdapter::new(&db)
+                .with_context(|| format!("opening database at {}", db.display()))?;
             agileplus_cli::commands::module::run(args, &storage).await
         }
         Commands::Cycle(args) => {
-            let storage = SqliteStorageAdapter::new(&cli.db)
-                .with_context(|| format!("opening database at {}", cli.db.display()))?;
+            let db = repository_database(&cli.repo)?;
+            let storage = SqliteStorageAdapter::new(&db)
+                .with_context(|| format!("opening database at {}", db.display()))?;
             agileplus_cli::commands::cycle::run(args, &storage).await
         }
         Commands::Queue(args) => {
-            let storage = SqliteStorageAdapter::new(&cli.db)
-                .with_context(|| format!("opening database at {}", cli.db.display()))?;
+            let db = repository_database(&cli.repo)?;
+            let storage = SqliteStorageAdapter::new(&db)
+                .with_context(|| format!("opening database at {}", db.display()))?;
             agileplus_cli::commands::queue::run_queue(args, &storage).await
         }
         Commands::List(args) => {
-            let storage = SqliteStorageAdapter::new(&cli.db)
-                .with_context(|| format!("opening database at {}", cli.db.display()))?;
+            let db = repository_database(&cli.repo)?;
+            let storage = SqliteStorageAdapter::new(&db)
+                .with_context(|| format!("opening database at {}", db.display()))?;
             agileplus_cli::commands::list::run(args, &storage).await
         }
         Commands::Specify(args) => {
-            let storage = SqliteStorageAdapter::new(&cli.db)
-                .with_context(|| format!("opening database at {}", cli.db.display()))?;
+            let db = repository_database(&cli.repo)?;
+            let storage = SqliteStorageAdapter::new(&db)
+                .with_context(|| format!("opening database at {}", db.display()))?;
             let vcs = open_vcs(&cli.repo)?;
             agileplus_cli::commands::specify::run_specify(args, &storage, &vcs).await
         }
         #[cfg(feature = "full-deps")]
         Commands::Research(args) => {
-            let storage = SqliteStorageAdapter::new(&cli.db)
-                .with_context(|| format!("opening database at {}", cli.db.display()))?;
+            let db = repository_database(&cli.repo)?;
+            let storage = SqliteStorageAdapter::new(&db)
+                .with_context(|| format!("opening database at {}", db.display()))?;
             let vcs = open_vcs(&cli.repo)?;
             agileplus_cli::commands::research::run_research(args, &storage, &vcs).await
         }
         #[cfg(feature = "full-deps")]
         Commands::Plan(args) => {
-            let storage = SqliteStorageAdapter::new(&cli.db)
-                .with_context(|| format!("opening database at {}", cli.db.display()))?;
+            let db = repository_database(&cli.repo)?;
+            let storage = SqliteStorageAdapter::new(&db)
+                .with_context(|| format!("opening database at {}", db.display()))?;
             let vcs = open_vcs(&cli.repo)?;
             agileplus_cli::commands::plan::run_plan(args, &storage, &vcs).await
         }
         #[cfg(feature = "full-deps")]
         Commands::Implement(args) => {
-            let storage = SqliteStorageAdapter::new(&cli.db)
-                .with_context(|| format!("opening database at {}", cli.db.display()))?;
+            let db = repository_database(&cli.repo)?;
+            let storage = SqliteStorageAdapter::new(&db)
+                .with_context(|| format!("opening database at {}", db.display()))?;
             let vcs = open_vcs(&cli.repo)?;
             let agent = RealAgentAdapter::new();
             agileplus_cli::commands::implement::run_implement(args, &storage, &vcs, &agent).await
         }
         #[cfg(feature = "full-deps")]
         Commands::Validate(args) => {
-            let storage = SqliteStorageAdapter::new(&cli.db)
-                .with_context(|| format!("opening database at {}", cli.db.display()))?;
+            let db = repository_database(&cli.repo)?;
+            let storage = SqliteStorageAdapter::new(&db)
+                .with_context(|| format!("opening database at {}", db.display()))?;
             let vcs = open_vcs(&cli.repo)?;
             agileplus_cli::commands::validate::run_validate(args, &storage, &vcs).await
         }
         #[cfg(feature = "full-deps")]
         Commands::Ship(args) => {
-            let storage = SqliteStorageAdapter::new(&cli.db)
-                .with_context(|| format!("opening database at {}", cli.db.display()))?;
+            let db = repository_database(&cli.repo)?;
+            let storage = SqliteStorageAdapter::new(&db)
+                .with_context(|| format!("opening database at {}", db.display()))?;
             let vcs = open_vcs(&cli.repo)?;
             agileplus_cli::commands::ship::run_ship(args, &storage, &vcs).await
         }
         #[cfg(feature = "full-deps")]
         Commands::Retrospective(args) => {
-            let storage = SqliteStorageAdapter::new(&cli.db)
-                .with_context(|| format!("opening database at {}", cli.db.display()))?;
+            let db = repository_database(&cli.repo)?;
+            let storage = SqliteStorageAdapter::new(&db)
+                .with_context(|| format!("opening database at {}", db.display()))?;
             let vcs = open_vcs(&cli.repo)?;
             agileplus_cli::commands::retrospective::run_retrospective(args, &storage, &vcs).await
         }

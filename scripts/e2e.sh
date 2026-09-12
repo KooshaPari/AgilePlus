@@ -40,11 +40,11 @@ else
 fi
 
 echo "==> agileplus specify"
-"$AGILEPLUS" --repo "$REPO" --db "$DB" specify \
+"$AGILEPLUS" --repo "$REPO" specify \
   --feature "$FEATURE" \
   --from-file "$SPEC_FILE"
 
-SPEC_ARTIFACT="kitty-specs/${FEATURE}/spec.md"
+SPEC_ARTIFACT="docs/agileplus/${FEATURE}/spec.md"
 if [ ! -f "$SPEC_ARTIFACT" ]; then
   echo "error: expected spec artifact at $SPEC_ARTIFACT" >&2
   exit 1
@@ -56,7 +56,7 @@ if [ ! -f "$DB" ]; then
 fi
 
 echo "==> agileplus list (specified feature)"
-"$AGILEPLUS" --repo "$REPO" --db "$DB" list --state specified \
+"$AGILEPLUS" --repo "$REPO" list --state specified \
   | grep -F "$FEATURE" >/dev/null
 
 echo "E2E round-trip OK (feature=$FEATURE, repo=$REPO)"

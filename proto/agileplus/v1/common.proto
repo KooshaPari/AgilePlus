@@ -8,6 +8,12 @@ option java_package = "com.phenotype.agileplus.v1";
 
 // Shared message types used across all AgilePlus services.
 
+// Repository identity supplied by a client for every stateful core request.
+// The core validates this canonical worktree root before opening state.
+message ProjectScope {
+  string canonical_repo_root = 1;
+}
+
 // --- Feature ---
 
 message Feature {
@@ -39,7 +45,7 @@ message WorkPackageStatus {
   string agent_id = 5;
   string pr_url = 6;
   string pr_state = 7;
-  repeated int32 depends_on = 8;
+  repeated int64 depends_on = 8;
   repeated string file_scope = 9;
 }
 

@@ -42,14 +42,11 @@ fn specify_from_file_creates_feature_and_spec_artifact() {
         "# Specification: Smoke Feature\n\n## Problem Statement\nA CLI smoke test.\n\n## Functional Requirements\n- **FR-001**: The command works.\n\n## Acceptance Criteria\n- The feature is persisted.\n",
     )
     .unwrap();
-    let db = repo.path().join(".agileplus/test.db");
 
     Command::cargo_bin("agileplus")
         .unwrap()
         .current_dir(repo.path())
         .args([
-            "--db",
-            db.to_str().unwrap(),
             "--repo",
             repo.path().to_str().unwrap(),
             "specify",
@@ -66,7 +63,7 @@ fn specify_from_file_creates_feature_and_spec_artifact() {
 
     assert!(
         repo.path()
-            .join("kitty-specs/smoke-feature/spec.md")
+            .join("docs/agileplus/smoke-feature/spec.md")
             .is_file()
     );
 }

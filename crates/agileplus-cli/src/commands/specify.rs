@@ -244,7 +244,7 @@ async fn run_create<S: StoragePort, V: VcsPort>(
         .context("appending audit entry")?;
 
     println!("Feature '{slug}' specified.");
-    println!("  Spec written to: kitty-specs/{slug}/spec.md");
+    println!("  Spec written to: docs/agileplus/{slug}/spec.md");
     println!("  State: Created -> Specified");
     Ok(())
 }

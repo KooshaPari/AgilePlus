@@ -38,6 +38,7 @@ use anyhow::{Context, Result, anyhow, bail};
 use clap::{Args, Subcommand};
 use rusqlite::{Connection, params};
 
+use agileplus_git::ProjectContext;
 use agileplus_sqlite::migrations::MigrationRunner;
 
 // â”€â”€ CLI surface â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -157,6 +158,14 @@ pub fn run(args: &TraceCmd) -> Result<()> {
 }
 
 pub fn run_link(args: &LinkArgs) -> Result<()> {
+    let current_dir =
+        std::env::current_dir().context("reading current directory for project context")?;
+    let context =
+        ProjectContext::discover(&current_dir).context("trace link requires a Git repository")?;
+    run_link_in_project_context(args, &context)
+}
+
+fn run_link_in_project_context(args: &LinkArgs, context: &ProjectContext) -> Result<()> {
     let (from_kind, from_id) = parse_ref(&args.from, "from")?;
     let (to_kind, to_id) = parse_ref(&args.to, "to")?;
 
@@ -183,7 +192,14 @@ pub fn run_link(args: &LinkArgs) -> Result<()> {
         bail!("refusing to create a self-link `{from_kind}:{from_id}` -> `{to_kind}:{to_id}`");
     }
 
-    let db_path = resolve_db_path(args.db.as_deref());
+    // Honor an explicit --db override so scripts and tests can target a
+    // specific file without having to chdir into the Git worktree first.
+    let db_path = args.db.clone().unwrap_or_else(|| context.database_path());
+    if let Some(parent) = db_path.parent() {
+        std::fs::create_dir_all(parent).with_context(|| {
+            format!("creating AgilePlus state directory at {}", parent.display())
+        })?;
+    }
     let conn = open_db(&db_path)?;
     let actor = args
         .by
@@ -365,11 +381,20 @@ pub(crate) fn open_db(path: &Path) -> Result<Connection> {
     Ok(conn)
 }
 
+/// Resolve the SQLite database path for the trace subcommands.
+///
+/// Priority:
+///   1. Explicit `--db <PATH>` override (used by scripts and tests).
+///   2. Repository-local `.agileplus/agileplus.db` discovered from CWD.
 pub(crate) fn resolve_db_path(override_path: Option<&Path>) -> PathBuf {
-    override_path
-        .map(|p| p.to_path_buf())
-        .or_else(|| std::env::var("AGILEPLUS_DB").ok().map(PathBuf::from))
-        .unwrap_or_else(|| PathBuf::from("agileplus.db"))
+    if let Some(p) = override_path {
+        return p.to_path_buf();
+    }
+    let current_dir = std::env::current_dir()
+        .expect("reading current directory for repository-local AgilePlus state");
+    ProjectContext::discover(&current_dir)
+        .expect("trace commands require a Git repository")
+        .database_path()
 }
 
 pub(crate) fn truncate(s: &str, max: usize) -> String {
@@ -506,18 +531,24 @@ mod tests {
     }
 
     #[test]
-    fn run_link_writes_a_row_to_disk() {
+    fn run_link_in_project_context_writes_a_row_to_disk() {
         let dir = tempfile::tempdir().unwrap();
-        let db = dir.path().join("run-link.db");
+        let status = std::process::Command::new("git")
+            .args(["init", "--quiet", dir.path().to_str().unwrap()])
+            .status()
+            .expect("initialize test repository");
+        assert!(status.success(), "test repository initialized");
+        let context = ProjectContext::discover(dir.path()).unwrap();
+        let db = context.database_path();
         let args = LinkArgs {
             from: "work_package:99".to_string(),
             to: "feature:5".to_string(),
             link_type: "implements".to_string(),
             note: "unit test".to_string(),
             by: Some("test-suite".to_string()),
-            db: Some(db.clone()),
+            db: None,
         };
-        run_link(&args).unwrap();
+        run_link_in_project_context(&args, &context).unwrap();
 
         let conn = open_db(&db).unwrap();
         let note: String = conn

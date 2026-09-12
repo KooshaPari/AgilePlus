@@ -11,8 +11,8 @@ from agileplus_mcp.grpc_client import AgilePlusCoreClient
 from agileplus_proto.gen.agileplus.v1 import common_pb2, core_pb2
 
 
-def _client_with_stub() -> tuple[AgilePlusCoreClient, MagicMock]:
-    client = AgilePlusCoreClient()
+def _client_with_stub(project_root: str | None = None) -> tuple[AgilePlusCoreClient, MagicMock]:
+    client = AgilePlusCoreClient(project_root=project_root)
     stub = MagicMock()
     client._stub = stub
     return client, stub
@@ -34,7 +34,7 @@ def _work_package() -> common_pb2.WorkPackageStatus:
 
 @pytest.mark.asyncio
 async def test_work_package_adapters_preserve_request_filters_and_fields() -> None:
-    client, stub = _client_with_stub()
+    client, stub = _client_with_stub("/workspace/project")
     package = _work_package()
     stub.ListWorkPackages = AsyncMock(
         return_value=core_pb2.ListWorkPackagesResponse(packages=[package])
@@ -53,6 +53,8 @@ async def test_work_package_adapters_preserve_request_filters_and_fields() -> No
     status_request = stub.GetWorkPackageStatus.call_args.args[0]
     assert (list_request.feature_slug, list_request.state_filter) == ("engine", "doing")
     assert (status_request.feature_slug, status_request.wp_sequence) == ("engine", 2)
+    assert list_request.project_scope.canonical_repo_root == "/workspace/project"
+    assert status_request.project_scope.canonical_repo_root == "/workspace/project"
 
 
 async def _audit_responses() -> AsyncIterator[core_pb2.GetAuditTrailResponse]:

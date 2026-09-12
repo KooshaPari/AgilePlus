@@ -69,7 +69,29 @@ fn sample_audit_chain_verifies() {
 fn sample_governance_parses() {
     let contract = sample_governance();
     assert_eq!(contract.version, 1);
-    assert!(!contract.rules.is_empty());
+    assert_eq!(contract.rules.len(), 2);
+    assert_eq!(contract.rules[0].transition, "implementing -> validated");
+    assert_eq!(contract.rules[0].required_evidence, ["FR-001", "FR-002"]);
+    assert_eq!(contract.rules[0].policy_refs, [1, 2]);
+    assert_eq!(contract.rules[1].transition, "validated -> shipped");
+    assert_eq!(contract.rules[1].required_evidence, ["FR-001"]);
+    assert_eq!(contract.rules[1].policy_refs, [3]);
+
+    // Keep the fixture's wire shape explicit: governance references are
+    // arrays of strings and numeric policy IDs, not legacy object/string refs.
+    let raw: serde_json::Value = serde_json::from_str(&load_fixture("sample-governance.json"))
+        .expect("sample-governance.json must be valid JSON");
+    let rules = raw["rules"].as_array().expect("rules must be an array");
+    for rule in rules {
+        assert!(rule["required_evidence"].is_array());
+        assert!(
+            rule["policy_refs"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .all(serde_json::Value::is_i64)
+        );
+    }
 }
 
 #[test]

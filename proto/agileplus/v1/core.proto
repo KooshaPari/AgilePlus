@@ -36,6 +36,7 @@ service AgilePlusCoreService {
 
 message GetFeatureRequest {
   string slug = 1;
+  ProjectScope project_scope = 2;
 }
 
 message GetFeatureResponse {
@@ -44,6 +45,7 @@ message GetFeatureResponse {
 
 message ListFeaturesRequest {
   string state_filter = 1;
+  ProjectScope project_scope = 2;
 }
 
 message ListFeaturesResponse {
@@ -52,6 +54,7 @@ message ListFeaturesResponse {
 
 message GetFeatureStateRequest {
   string slug = 1;
+  ProjectScope project_scope = 2;
 }
 
 message GetFeatureStateResponse {
@@ -61,6 +64,7 @@ message GetFeatureStateResponse {
 message ListWorkPackagesRequest {
   string feature_slug = 1;
   string state_filter = 2;
+  ProjectScope project_scope = 3;
 }
 
 message ListWorkPackagesResponse {
@@ -70,6 +74,7 @@ message ListWorkPackagesResponse {
 message GetWorkPackageStatusRequest {
   string feature_slug = 1;
   int32 wp_sequence = 2;
+  ProjectScope project_scope = 3;
 }
 
 message GetWorkPackageStatusResponse {
@@ -79,6 +84,7 @@ message GetWorkPackageStatusResponse {
 message CheckGovernanceGateRequest {
   string feature_slug = 1;
   string transition = 2;
+  ProjectScope project_scope = 3;
 }
 
 message CheckGovernanceGateResponse {
@@ -89,6 +95,7 @@ message CheckGovernanceGateResponse {
 message GetAuditTrailRequest {
   string feature_slug = 1;
   int64 after_id = 2;
+  ProjectScope project_scope = 3;
 }
 
 message GetAuditTrailResponse {
@@ -97,6 +104,7 @@ message GetAuditTrailResponse {
 
 message VerifyAuditChainRequest {
   string feature_slug = 1;
+  ProjectScope project_scope = 2;
 }
 
 message VerifyAuditChainResponse {
@@ -108,6 +116,7 @@ message VerifyAuditChainResponse {
 
 message DispatchCommandRequest {
   CommandRequest command = 1;
+  ProjectScope project_scope = 2;
 }
 
 message DispatchCommandResponse {
@@ -116,6 +125,7 @@ message DispatchCommandResponse {
 
 message StreamAgentEventsRequest {
   string feature_slug = 1;
+  ProjectScope project_scope = 2;
 }
 
 message StreamAgentEventsResponse {

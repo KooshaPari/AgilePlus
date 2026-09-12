@@ -63,6 +63,9 @@ jobs:
         uses: rustsec/audit-check@v2.0.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          # Keep rustsec's advisory checkout isolated from runner/cache residue.
+          CARGO_HOME: ${{ runner.temp }}/cargo-audit
 
       - name: Gate 6 — Cargo machete
         run: |

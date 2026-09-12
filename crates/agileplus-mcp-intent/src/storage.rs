@@ -6,6 +6,7 @@ use serde_json::Value;
 
 use agileplus_domain::domain::feature::Feature;
 use agileplus_domain::ports::storage::StoragePort;
+use agileplus_git::ProjectContext;
 use agileplus_sqlite::SqliteStorageAdapter;
 
 use crate::types::IntentGraph;
@@ -61,11 +62,13 @@ pub async fn store_graph(
     Ok(ids)
 }
 
-/// Open a SQLite storage adapter from the `AGILEPLUS_DB` env or default path.
+/// Open a SQLite storage adapter rooted in the current Git worktree.
 pub fn open_storage() -> anyhow::Result<SqliteStorageAdapter> {
-    let db_path = std::env::var("AGILEPLUS_DB")
-        .map(std::path::PathBuf::from)
-        .unwrap_or_else(|_| std::path::PathBuf::from("agileplus.db"));
+    let current_dir = std::env::current_dir().context("reading current directory")?;
+    let db_path = ProjectContext::discover(&current_dir)
+        .map_err(anyhow::Error::msg)
+        .context("intent storage requires a Git repository")?
+        .database_path();
     SqliteStorageAdapter::new(&db_path)
         .with_context(|| format!("open SQLite storage at {db_path:?}"))
 }
