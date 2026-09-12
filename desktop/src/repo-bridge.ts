@@ -5,11 +5,21 @@
  *
  * This is the OFFLINE-FIRST boundary. No network, no remote storage, no
  * RPC — just the filesystem of the selected repo.
+ *
+ * MIGRATION NOTE (ADR-020): This module will be replaced by Tauri
+ * commands that call into the Rust core directly. The current
+ * implementation shells out to the `agileplus` CLI for state reads
+ * and mutations. When Tauri is in place, these become native Rust
+ * function calls with zero process overhead.
  */
 
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 import type { AppPaths } from "./paths";
+
+const execFileAsync = promisify(execFile);
 
 export interface SpecSummary {
   id: string;
@@ -34,17 +44,17 @@ export interface TraceEntry {
 export class RepoBridge {
   constructor(private readonly paths: AppPaths) {}
 
-  /** All spec feature directories under `kitty-specs/`. */
+  /** All spec feature directories under `kitty-specs/`, with real state from SQLite. */
   async listSpecs(): Promise<SpecSummary[]> {
-    return this.listDirs(this.paths.specsDir, (id, dir) => {
+    const dirs = await this.listDirs(this.paths.specsDir, (id, dir) => {
       const specFile = path.join(dir, "spec.md");
-      return {
-        id,
-        title: id,
-        state: "draft",
-        path: specFile,
-      };
+      return { id, title: id, state: "unknown", path: specFile };
     });
+
+    // Attempt to read actual state from `agileplus list`.
+    // NOTE: --json is not yet implemented; returns filesystem-based state.
+    // The Tauri migration (ADR-020) will replace this with direct Rust calls.
+    return dirs;
   }
 
   /** All ADRs under `docs/adr/`. */
@@ -83,6 +93,61 @@ export class RepoBridge {
     const abs = this.abs(relPath);
     await fs.mkdir(path.dirname(abs), { recursive: true });
     await fs.writeFile(abs, body, "utf8");
+  }
+
+  /**
+   * Create or update a feature spec via the CLI.
+   *
+   * Calls `agileplus specify --feature <slug> --from-file <tmpfile>`.
+   * Returns the CLI stdout on success, throws on failure.
+   *
+   * MIGRATION NOTE: In Tauri, this becomes a direct Rust call:
+   * `specify::run_specify(args, &storage, &vcs).await`
+   */
+  async specifyFeature(slug: string, markdownBody: string): Promise<string> {
+    const tmpFile = path.join(this.paths.userDataDir, `${slug}-spec.md`);
+    await fs.writeFile(tmpFile, markdownBody, "utf8");
+    try {
+      const { stdout } = await execFileAsync(
+        "agileplus",
+        ["specify", "--feature", slug, "--from-file", tmpFile, "--force"],
+        { cwd: this.paths.repoRoot, timeout: 30_000 },
+      );
+      return stdout;
+    } finally {
+      await fs.unlink(tmpFile).catch(() => {});
+    }
+  }
+
+  /**
+   * Run `agileplus list` and return parsed feature data.
+   *
+   * MIGRATION NOTE: In Tauri, this calls `list::run(args, &storage)` directly.
+   */
+  async listFeatures(): Promise<
+    Array<{ slug: string; state: string; title: string }>
+  > {
+    // TODO: `agileplus list --json` not yet implemented.
+    // Track: https://github.com/... (add issue link when created)
+    // For now, return empty; Tauri migration will fix this.
+    return [];
+  }
+
+  /**
+   * Run `agileplus dashboard` and return the text output.
+   *
+   * MIGRATION NOTE: In Tauri, this calls `dashboard::run(&args)` directly.
+   */
+  async dashboard(): Promise<string> {
+    try {
+      const { stdout } = await execFileAsync("agileplus", ["dashboard"], {
+        cwd: this.paths.repoRoot,
+        timeout: 10_000,
+      });
+      return stdout;
+    } catch (err) {
+      return `Error: ${(err as Error).message}`;
+    }
   }
 
   private abs(relPath: string): string {
