@@ -16,6 +16,7 @@ use std::env;
 use agileplus_domain::error::DomainError;
 use agileplus_domain::ports::agent::{AgentConfig, AgentPort, AgentResult, AgentStatus, AgentTask};
 use dashmap::DashMap;
+use tokio::io::AsyncReadExt;
 use tokio::process::Child;
 use uuid::Uuid;
 
@@ -108,7 +109,7 @@ impl AgentPort for RealAgentAdapter {
         match self.backend {
             AgentBackend::Stub => backends::dispatch_stub(&task, config).await,
             _ => {
-                let (mut child, _tx) = self.spawn_backend(&task, config).await?;
+                let (child, _tx) = self.spawn_backend(&task, config).await?;
                 let output = tokio::time::timeout(
                     std::time::Duration::from_secs(config.timeout_secs),
                     child.wait_with_output(),
@@ -144,6 +145,7 @@ impl AgentPort for RealAgentAdapter {
             _ => {
                 let (child, stdin_tx) = self.spawn_backend(&task, config).await?;
                 let pid = child.id().unwrap_or(0);
+                let backend_name = format!("{:?}", self.backend);
 
                 self.jobs.insert(
                     job_id.clone(),
@@ -156,7 +158,6 @@ impl AgentPort for RealAgentAdapter {
                 let jobs = self.jobs.clone();
                 let bj_id = job_id.clone();
                 let timeout = config.timeout_secs;
-                let backend_name = format!("{:?}", self.backend);
 
                 tokio::spawn(async move {
                     let child_handle = jobs.get(&bj_id).and_then(|s| match &*s {
@@ -164,17 +165,30 @@ impl AgentPort for RealAgentAdapter {
                         _ => None,
                     });
 
-                    let Some(mut child) = child_handle else {
+                    let Some(child_handle) = child_handle else {
                         return;
                     };
+                    let mut child = child_handle;
 
-                    let output = match tokio::time::timeout(
+                    // Take stdout/stderr before entering the timeout so we
+                    // can still kill the child on timeout (wait_with_output
+                    // would consume it).
+                    let mut stdout_buf = Vec::new();
+                    let mut stderr_buf = Vec::new();
+                    if let Some(ref mut out) = child.stdout {
+                        let _ = out.read_to_end(&mut stdout_buf).await;
+                    }
+                    if let Some(ref mut err) = child.stderr {
+                        let _ = err.read_to_end(&mut stderr_buf).await;
+                    }
+
+                    let exit_status = match tokio::time::timeout(
                         std::time::Duration::from_secs(timeout),
-                        child.wait_with_output(),
+                        child.wait(),
                     )
                     .await
                     {
-                        Ok(Ok(o)) => o,
+                        Ok(Ok(status)) => status,
                         Ok(Err(e)) => {
                             tracing::error!("agent process error: {e}");
                             if let Some(mut s) = jobs.get_mut(&bj_id) {
@@ -194,6 +208,12 @@ impl AgentPort for RealAgentAdapter {
                             }
                             return;
                         }
+                    };
+
+                    let output = std::process::Output {
+                        status: exit_status,
+                        stdout: stdout_buf,
+                        stderr: stderr_buf,
                     };
 
                     let result = match backends::build_result(output) {
@@ -247,10 +267,13 @@ impl AgentPort for RealAgentAdapter {
 
         match &mut *entry {
             JobState::Running { child, .. } => {
-                if let Some(mut cp) = child.lock().unwrap().take() {
-                    let _ = cp.kill().await;
+                // Take child out and drop the MutexGuard BEFORE the .await
+                let mut cp = child.lock().unwrap().take();
+                if let Some(ref mut proc) = cp {
+                    let _ = proc.kill().await;
                     tracing::info!(job_id, "killed agent process");
                 }
+                drop(cp);
                 *entry = JobState::Finished(AgentStatus::Failed {
                     error: "cancelled by user".to_string(),
                 });
