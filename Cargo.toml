@@ -108,7 +108,7 @@ sha2 = "0.11"
 zeroize = { version = "1", features = ["derive"] }
 base64 = "0.23"
 aes-gcm = "0.11"
-argon2 = "0.5"
+argon2 = "0.6"
 
 # gRPC / proto (used by agileplus-proto, agileplus-grpc, plugin-grpc, agent-service)
 tonic = { version = "0.14", features = ["transport"] }
@@ -117,7 +117,7 @@ tonic-prost = "0.14"
 tonic-prost-build = "0.14"
 tonic-health = "0.14"
 prost = "0.14"
-prost-build = "0.13"
+prost-build = "0.14"
 
 # Async utilities
 async-trait = "0.1"
@@ -131,7 +131,7 @@ askama = "0.16"
 # agileplus-plugin-sqlite = { git = "https://github.com/KooshaPari/agileplus-plugin-sqlite" }
 
 # Git
-gix = "0.86"
+gix = "0.87"
 git2 = "0.19"
 
 # CLI
@@ -147,7 +147,7 @@ redis = { version = "0.27", features = ["tokio-comp", "connection-manager"] }
 reqwest = { version = "0.12", features = ["json"] }
 
 # Benchmarks
-criterion = "0.5"
+criterion = "0.8"
 
 # Utils
 uuid = { version = "1", features = ["v4", "serde"] }
