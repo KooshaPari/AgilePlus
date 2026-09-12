@@ -51,9 +51,24 @@ export class RepoBridge {
       return { id, title: id, state: "unknown", path: specFile };
     });
 
-    // Attempt to read actual state from `agileplus list`.
-    // NOTE: --json is not yet implemented; returns filesystem-based state.
-    // The Tauri migration (ADR-020) will replace this with direct Rust calls.
+    // Enrich with real state from `agileplus list --json`.
+    try {
+      const { stdout } = await execFileAsync(
+        "agileplus",
+        ["list", "--json"],
+        { cwd: this.paths.repoRoot, timeout: 10_000 },
+      );
+      const features: Array<{ slug: string; state: string }> =
+        JSON.parse(stdout);
+      const stateBySlug = new Map(features.map((f) => [f.slug, f.state]));
+      for (const spec of dirs) {
+        const realState = stateBySlug.get(spec.id);
+        if (realState) spec.state = realState;
+      }
+    } catch {
+      // CLI unavailable — keep "unknown" state.
+    }
+
     return dirs;
   }
 
@@ -127,10 +142,27 @@ export class RepoBridge {
   async listFeatures(): Promise<
     Array<{ slug: string; state: string; title: string }>
   > {
-    // TODO: `agileplus list --json` not yet implemented.
-    // Track: https://github.com/... (add issue link when created)
-    // For now, return empty; Tauri migration will fix this.
-    return [];
+    try {
+      const { stdout } = await execFileAsync(
+        "agileplus",
+        ["list", "--json"],
+        { cwd: this.paths.repoRoot, timeout: 10_000 },
+      );
+      const parsed: Array<{
+        id: number;
+        slug: string;
+        name: string;
+        state: string;
+        created_at: string;
+      }> = JSON.parse(stdout);
+      return parsed.map((f) => ({
+        slug: f.slug,
+        state: f.state,
+        title: f.name,
+      }));
+    } catch {
+      return [];
+    }
   }
 
   /**

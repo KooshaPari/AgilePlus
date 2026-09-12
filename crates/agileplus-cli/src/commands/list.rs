@@ -4,6 +4,7 @@ use std::str::FromStr;
 
 use anyhow::{Context, Result, anyhow};
 use clap::Args;
+use serde::Serialize;
 
 use agileplus_domain::domain::state_machine::FeatureState;
 use agileplus_domain::ports::StoragePort;
@@ -14,6 +15,20 @@ pub struct ListArgs {
     /// implementing, validated, shipped, retrospected).
     #[arg(long)]
     pub state: Option<String>,
+
+    /// Output results as JSON instead of a table.
+    #[arg(long)]
+    pub json: bool,
+}
+
+/// Compact JSON representation of a feature for `--json` output.
+#[derive(Serialize)]
+struct FeatureJson {
+    id: i64,
+    slug: String,
+    name: String,
+    state: String,
+    created_at: String,
 }
 
 pub async fn run<S: StoragePort>(args: ListArgs, storage: &S) -> Result<()> {
@@ -29,6 +44,21 @@ pub async fn run<S: StoragePort>(args: ListArgs, storage: &S) -> Result<()> {
             .await
             .context("listing features")?
     };
+
+    if args.json {
+        let json_features: Vec<FeatureJson> = features
+            .into_iter()
+            .map(|f| FeatureJson {
+                id: f.id,
+                slug: f.slug,
+                name: f.friendly_name,
+                state: f.state.to_string(),
+                created_at: f.created_at.to_rfc3339(),
+            })
+            .collect();
+        println!("{}", serde_json::to_string_pretty(&json_features)?);
+        return Ok(());
+    }
 
     if features.is_empty() {
         println!("No features found.");

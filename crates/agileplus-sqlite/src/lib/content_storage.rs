@@ -1,5 +1,5 @@
 use crate::repository::{backlog, features, work_packages};
-use crate::lib::adapter::SqliteStorageAdapter;
+use super::SqliteStorageAdapter;
 use agileplus_domain::{
     domain::{
         backlog::{BacklogFilters, BacklogItem, BacklogPriority, BacklogStatus},
@@ -11,6 +11,7 @@ use agileplus_domain::{
     ports::ContentStoragePort,
 };
 
+#[async_trait::async_trait]
 impl ContentStoragePort for SqliteStorageAdapter {
     async fn create_feature(&self, feature: &Feature) -> Result<i64, DomainError> {
         let conn = self.lock()?;
