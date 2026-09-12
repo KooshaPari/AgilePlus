@@ -31,7 +31,6 @@ agileplus-github = { version = "0.2.1", path = "../agileplus-github" }
 agileplus-governance = { version = "0.1.0", path = "../agileplus-governance" }
 agileplus-plane = { version = "0.2.1", path = "../agileplus-plane" }
 agileplus-sqlite = { version = "0.2.1", path = "../agileplus-sqlite" }
-agileplus-subcmds = { version = "0.2.1", path = "../agileplus-subcmds", default-features = true }
 agileplus-triage = { version = "0.2.1", path = "../agileplus-triage" }
 agileplus-events = { version = "0.2.1", path = "../agileplus-events", optional = true }
 agileplus-telemetry.workspace = true

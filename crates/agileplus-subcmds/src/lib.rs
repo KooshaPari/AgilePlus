@@ -1,7 +1,7 @@
 //! AgilePlus CLI sub-commands.
 //!
-//! Default build exports **platform** only (real health probes). Enable the
-//! `full` feature for dashboard/events/sync/audit/registry when those deps
+//! Default build exports no platform commands (removed per ADR-018). Enable
+//! the `full` feature for dashboard/events/sync/audit/registry when those deps
 //! are available in the workspace.
 //!
 //! Traceability: FR-048, FR-049 / WP14 / WP20
@@ -12,8 +12,6 @@ pub mod audit;
 pub mod dashboard;
 #[cfg(feature = "events")]
 pub mod events;
-#[cfg(feature = "platform")]
-pub mod platform;
 #[cfg(feature = "registry")]
 pub mod registry;
 #[cfg(feature = "sync")]
@@ -30,12 +28,6 @@ pub use dashboard::{
 pub use events::{
     EventOutputFormat, EventQueryResult, EventRecord, EventsArgs, filter_events, parse_since,
     render_json, render_jsonl, render_table, run_events,
-};
-#[cfg(feature = "platform")]
-pub use platform::{
-    OverallStatus, PlatformArgs, PlatformDownArgs, PlatformHealth, PlatformLogsArgs,
-    PlatformStatusArgs, PlatformSubcommand, PlatformUpArgs, ServiceHealth, ServiceStatus,
-    run_platform, run_platform_down, run_platform_logs, run_platform_status, run_platform_up,
 };
 #[cfg(feature = "registry")]
 pub use registry::{SubCommand, SubCommandCategory, SubCommandRegistry};

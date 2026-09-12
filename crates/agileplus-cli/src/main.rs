@@ -1,7 +1,7 @@
 //! AgilePlus CLI entry point — spec-driven development surface.
 //!
 //! Parses CLI arguments, initialises adapters, and routes to command handlers.
-//! Platform health uses real HTTP/TCP probes via `agileplus-subcmds`.
+//! CLI for the AgilePlus spec-driven development engine.
 //! Traceability: WP11-T060, T065 / WP12-T072 / WP14-T084..T087
 
 mod agent_adapter;
@@ -25,7 +25,6 @@ use agileplus_cli::commands::{
 };
 use agileplus_git::{GitVcsAdapter, ProjectContext};
 use agileplus_sqlite::SqliteStorageAdapter;
-use agileplus_subcmds::{PlatformArgs, run_platform};
 
 /// Spec-driven development engine.
 #[derive(Parser)]
@@ -59,8 +58,6 @@ enum Commands {
     Queue(QueueArgs),
     /// Manage modules (product-area groupings of features).
     Module(ModuleArgs),
-    /// Manage platform services (up, down, status, logs).
-    Platform(PlatformArgs),
     /// Research a feature (codebase scan / feasibility).
     #[cfg(feature = "full-deps")]
     Research(ResearchArgs),
@@ -150,7 +147,6 @@ async fn run(cli: Cli) -> Result<()> {
     }
 
     match cli.command {
-        Commands::Platform(args) => run_platform(args),
         Commands::Rubric(args) => agileplus_cli::commands::rubric::run(&args),
         Commands::Dag(args) => agileplus_cli::commands::dag::run_dag(args).await,
         Commands::Okf(args) => {

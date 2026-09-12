@@ -13,10 +13,9 @@ categories = ["development-tools", "command-line-utilities"]
 authors = ["kooshapari"]
 
 [features]
-default = ["platform"]
+default = []
 # Full subcommand surface (needs extra crates that may be parked).
 full = ["dashboard", "events", "sync", "audit", "registry"]
-platform = []
 dashboard = []
 events = []
 sync = []
