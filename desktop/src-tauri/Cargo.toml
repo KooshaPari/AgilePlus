@@ -32,3 +32,4 @@ agileplus-application = { path = "../../crates/agileplus-application" }
 rusqlite = { version = "0.40", features = ["bundled"] }
 uuid = { version = "1.0", features = ["v4"] }
 chrono = { version = "0.4", features = ["serde"] }
+dirs-next = "2"

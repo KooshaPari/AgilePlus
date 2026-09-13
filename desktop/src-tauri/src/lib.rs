@@ -7,6 +7,7 @@ use tauri::{
 mod adrs;
 mod cli_bridge;
 mod commands;
+mod crashes;
 mod db;
 mod evidence;
 mod traces;
@@ -18,6 +19,51 @@ pub use db::{AppState, DatabaseState};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // Set up panic handler for crash reporting
+    std::panic::set_hook(Box::new(|info| {
+        let thread = std::thread::current();
+        let thread_name = thread.name().unwrap_or("unknown");
+
+        let payload = if let Some(s) = info.payload().downcast_ref::<&str>() {
+            s.to_string()
+        } else if let Some(s) = info.payload().downcast_ref::<String>() {
+            s.clone()
+        } else {
+            "Box<dyn Any>".to_string()
+        };
+
+        let location = info
+            .location()
+            .map(|l| format!("{}:{}:{}", l.file(), l.line(), l.column()))
+            .unwrap_or_else(|| "unknown".to_string());
+
+        let crash_report = format!(
+            "=== CRASH REPORT ===\n\
+             Thread: {thread_name}\n\
+             Time: {}\n\
+             Payload: {payload}\n\
+             Location: {location}\n\
+             ====================\n",
+            chrono::Utc::now().to_rfc3339()
+        );
+
+        // Write to crash log file
+        if let Some(data_dir) = dirs_next::data_dir() {
+            let crash_dir = data_dir
+                .join("com.phenotype.agileplus-desktop")
+                .join("crashes");
+            let _ = std::fs::create_dir_all(&crash_dir);
+            let filename = format!(
+                "crash-{}.log",
+                chrono::Utc::now().format("%Y%m%d-%H%M%S")
+            );
+            let _ = std::fs::write(crash_dir.join(filename), &crash_report);
+        }
+
+        // Also log to stderr for development
+        eprintln!("{crash_report}");
+    }));
+
     tauri::Builder::default()
         .plugin(tauri_plugin_log::Builder::default().build())
         .plugin(tauri_plugin_shell::init())
@@ -153,6 +199,9 @@ pub fn run() {
             // CLI bridge
             cli_bridge::run_cli_read,
             cli_bridge::run_cli_lifecycle,
+            // Crash reporting
+            crashes::list_crash_logs,
+            crashes::clear_crash_logs,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
