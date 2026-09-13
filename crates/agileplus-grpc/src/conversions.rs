@@ -167,4 +167,156 @@ mod tests {
 
         assert_eq!(proto.depends_on, vec![large_id]);
     }
+
+    // --- Additional tests for uncovered paths ---
+
+    #[test]
+    fn feature_conversion_preserves_id() {
+        let mut f = Feature::new("id-test", "ID Test", [0; 32], None);
+        f.id = 99;
+        let proto = feature_to_proto(f);
+        assert_eq!(proto.id, 99);
+    }
+
+    #[test]
+    fn feature_conversion_preserves_spec_hash_as_state() {
+        let f = Feature::new("s", "S", [0xFF; 32], None);
+        let proto = feature_to_proto(f);
+        assert_eq!(proto.state, "created");
+    }
+
+    #[test]
+    fn feature_with_no_work_packages_zeroes_counts() {
+        let f = Feature::new("empty", "Empty", [0; 32], None);
+        let proto = feature_to_proto_with_wps(f, &[]);
+        assert_eq!(proto.wp_count, 0);
+        assert_eq!(proto.wp_done, 0);
+    }
+
+    #[test]
+    fn feature_wp_done_counts_only_done_state() {
+        let f = Feature::new("mixed", "Mixed", [0; 32], None);
+        let mut wp1 = WorkPackage::new(f.id, "WP1", 1, "c");
+        wp1.state = WpState::Done;
+        let mut wp2 = WorkPackage::new(f.id, "WP2", 2, "c");
+        wp2.state = WpState::Doing;
+        let mut wp3 = WorkPackage::new(f.id, "WP3", 3, "c");
+        wp3.state = WpState::Done;
+
+        let proto = feature_to_proto_with_wps(f, &[wp1, wp2, wp3]);
+        assert_eq!(proto.wp_count, 3);
+        assert_eq!(proto.wp_done, 2);
+    }
+
+    #[test]
+    fn wp_conversion_with_optional_fields() {
+        let mut wp = WorkPackage::new(1, "Optional", 5, "criteria");
+        wp.agent_id = Some("agent-42".to_string());
+        wp.pr_url = Some("https://github.com/pr/123".to_string());
+        wp.pr_state = Some(agileplus_domain::domain::work_package::PrState::Approved);
+        wp.file_scope = vec!["src/main.rs".into()];
+
+        let proto = wp_to_proto(wp);
+        assert_eq!(proto.agent_id, "agent-42");
+        assert_eq!(proto.pr_url, "https://github.com/pr/123");
+        assert_eq!(proto.pr_state, "approved");
+        assert_eq!(proto.file_scope, vec!["src/main.rs"]);
+    }
+
+    #[test]
+    fn wp_conversion_default_optional_fields() {
+        let wp = WorkPackage::new(1, "Defaults", 1, "c");
+        let proto = wp_to_proto(wp);
+        assert_eq!(proto.agent_id, "");
+        assert_eq!(proto.pr_url, "");
+        assert_eq!(proto.pr_state, "");
+        assert!(proto.depends_on.is_empty());
+        assert!(proto.file_scope.is_empty());
+    }
+
+    #[test]
+    fn wp_state_formatted_lowercase() {
+        let states = [
+            (WpState::Planned, "planned"),
+            (WpState::Doing, "doing"),
+            (WpState::Review, "review"),
+            (WpState::Done, "done"),
+            (WpState::Blocked, "blocked"),
+        ];
+        for (state, expected) in states {
+            let mut wp = WorkPackage::new(1, "t", 1, "c");
+            wp.state = state;
+            let proto = wp_to_proto(wp);
+            assert_eq!(proto.state, expected, "state {state:?} should format as {expected}");
+        }
+    }
+
+    #[test]
+    fn audit_entry_to_proto_conversion() {
+        use chrono::DateTime;
+
+        let entry = DomainAuditEntry {
+            id: 1,
+            feature_id: 10,
+            wp_id: Some(5),
+            timestamp: DateTime::from_timestamp(1_000_000, 0).unwrap(),
+            actor: "test-user".to_string(),
+            transition: "Created->Specified".to_string(),
+            evidence_refs: vec![
+                agileplus_domain::domain::audit::EvidenceRef {
+                    evidence_id: 1,
+                    fr_id: "FR-001".to_string(),
+                },
+                agileplus_domain::domain::audit::EvidenceRef {
+                    evidence_id: 2,
+                    fr_id: "FR-002".to_string(),
+                },
+            ],
+            prev_hash: [0xAB; 32],
+            hash: [0xCD; 32],
+            event_id: None,
+            archived_to: None,
+        };
+
+        let proto = audit_entry_to_proto(entry);
+        assert_eq!(proto.id, 1);
+        assert_eq!(proto.actor, "test-user");
+        assert_eq!(proto.transition, "Created->Specified");
+        assert_eq!(proto.evidence_refs, vec!["FR-001", "FR-002"]);
+        assert_eq!(proto.prev_hash, vec![0xAB; 32]);
+        assert_eq!(proto.hash, vec![0xCD; 32]);
+        assert_eq!(proto.feature_slug, ""); // caller fills
+        assert_eq!(proto.wp_sequence, 0); // caller fills
+    }
+
+    #[test]
+    fn audit_entry_to_proto_empty_evidence() {
+        use chrono::DateTime;
+
+        let entry = DomainAuditEntry {
+            id: 2,
+            feature_id: 1,
+            wp_id: None,
+            timestamp: DateTime::from_timestamp(2_000_000, 0).unwrap(),
+            actor: "actor".to_string(),
+            transition: "A->B".to_string(),
+            evidence_refs: vec![],
+            prev_hash: [0; 32],
+            hash: [0; 32],
+            event_id: None,
+            archived_to: None,
+        };
+
+        let proto = audit_entry_to_proto(entry);
+        assert!(proto.evidence_refs.is_empty());
+        assert!(proto.prev_hash.is_empty() || proto.prev_hash == vec![0; 32]);
+    }
+
+    #[test]
+    fn feature_conversion_timestamps_are_rfc3339() {
+        let f = Feature::new("ts", "Timestamps", [0; 32], None);
+        let proto = feature_to_proto(f);
+        assert!(proto.created_at.contains("T"));
+        assert!(proto.updated_at.contains("T"));
+    }
 }

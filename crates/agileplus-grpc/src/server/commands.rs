@@ -1,16 +1,19 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::pin::Pin;
 
+use chrono::Utc;
 use tonic::{Response, Status};
 use tracing::info;
 
+use agileplus_domain::domain::governance::{GovernanceContract, GovernanceRule};
+use agileplus_domain::domain::state_machine::FeatureState;
 use agileplus_domain::ports::{AgentPort, ObservabilityPort, ReviewPort, StoragePort, VcsPort};
 use agileplus_proto::agileplus::v1::{
     CommandResponse, DispatchCommandRequest, DispatchCommandResponse, StreamAgentEventsRequest,
     StreamAgentEventsResponse,
 };
 
-use super::AgilePlusCoreServer;
+use super::{domain_error_to_status, parse_evidence_requirement, evidence_satisfies_requirement, AgilePlusCoreServer};
 
 pub(super) type StreamAgentEventsStream =
     Pin<Box<dyn tokio_stream::Stream<Item = Result<StreamAgentEventsResponse, Status>> + Send>>;

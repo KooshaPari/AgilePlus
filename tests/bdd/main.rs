@@ -8,9 +8,9 @@
 use std::collections::HashMap;
 
 use agileplus_domain::domain::{
-    audit::{AuditChain, AuditChainError, AuditEntry, hash_entry},
+    audit::{AuditChain, AuditEntry, hash_entry},
     feature::Feature,
-    governance::{Evidence, EvidenceRequirement, EvidenceType, GovernanceContract, GovernanceRule},
+    governance::{Evidence, EvidenceType, GovernanceContract, GovernanceRule},
     state_machine::FeatureState,
     work_package::{WorkPackage, WpState},
 };
@@ -269,12 +269,8 @@ async fn governance_requires_evidence(world: &mut AgilePlusWorld, fr_id: String)
 
     contract.rules.push(GovernanceRule {
         transition: "implementing -> validated".to_string(),
-        required_evidence: vec![EvidenceRequirement {
-            fr_id: fr_id.clone(),
-            evidence_type: EvidenceType::TestResult,
-            threshold: None,
-        }],
-        policy_refs: vec!["POL-001".to_string()],
+        required_evidence: vec![fr_id.clone()],
+        policy_refs: vec![1_i64],
     });
 }
 
@@ -302,11 +298,7 @@ async fn governance_requires_review_evidence(world: &mut AgilePlusWorld, fr_id: 
 
     contract.rules.push(GovernanceRule {
         transition: "implementing -> validated".to_string(),
-        required_evidence: vec![EvidenceRequirement {
-            fr_id: fr_id.clone(),
-            evidence_type: EvidenceType::ReviewApproval,
-            threshold: None,
-        }],
+        required_evidence: vec![fr_id.clone()],
         policy_refs: vec![],
     });
 }
@@ -524,12 +516,8 @@ async fn run_plan(world: &mut AgilePlusWorld, slug: String) {
                 version: 1,
                 rules: vec![GovernanceRule {
                     transition: "implementing -> validated".to_string(),
-                    required_evidence: vec![EvidenceRequirement {
-                        fr_id: "FR-001".to_string(),
-                        evidence_type: EvidenceType::TestResult,
-                        threshold: None,
-                    }],
-                    policy_refs: vec!["POL-001".to_string()],
+                    required_evidence: vec!["FR-001".to_string()],
+                    policy_refs: vec![1_i64],
                 }],
                 bound_at: Utc::now(),
             };
@@ -569,10 +557,10 @@ async fn run_validate(world: &mut AgilePlusWorld, slug: String) {
                     if rule.transition == "implementing -> validated" {
                         for req in &rule.required_evidence {
                             let found = collected_evidence.iter().any(|e| {
-                                e.fr_id == req.fr_id && e.evidence_type == req.evidence_type
+                                e.fr_id == *req
                             });
                             if !found {
-                                missing.push(req.fr_id.clone());
+                                missing.push(req.clone());
                             }
                         }
                     }
@@ -628,14 +616,8 @@ async fn verify_audit_chain(world: &mut AgilePlusWorld, slug: String) {
                         .unwrap_or(0);
                     world.last_result = Some(Ok(format!("valid:{count}")));
                 }
-                Err(AuditChainError::EmptyChain) => {
-                    world.last_result = Some(Err("EmptyChain".to_string()));
-                }
-                Err(AuditChainError::HashMismatch { index, .. }) => {
-                    world.last_result = Some(Err(format!("HashMismatch:{index}")));
-                }
-                Err(AuditChainError::PrevHashMismatch { index }) => {
-                    world.last_result = Some(Err(format!("PrevHashMismatch:{index}")));
+                Err(msg) => {
+                    world.last_result = Some(Err(msg));
                 }
             }
         }
@@ -865,8 +847,8 @@ async fn verification_fails_at_entry(world: &mut AgilePlusWorld, index: usize) {
     // Index is 0-based in the error, BDD spec uses 1-based
     let zero_based = index - 1;
     assert!(
-        err.contains(&format!("HashMismatch:{zero_based}"))
-            || err.contains(&format!("PrevHashMismatch:{zero_based}")),
+        err.contains(&format!("hash mismatch at entry index {zero_based}"))
+            || err.contains(&format!("chain break between entries")),
         "Expected failure at entry {index} (0-based {zero_based}), got: {err}"
     );
 }
@@ -876,7 +858,7 @@ async fn error_identifies_hash_mismatch(world: &mut AgilePlusWorld) {
     let result = world.last_result.as_ref().expect("No result");
     let err = result.as_ref().unwrap_err();
     assert!(
-        err.contains("HashMismatch") || err.contains("PrevHashMismatch"),
+        err.contains("hash mismatch") || err.contains("chain break"),
         "Expected hash mismatch error, got: {err}"
     );
 }
@@ -916,7 +898,7 @@ async fn first_entry_has_transition(world: &mut AgilePlusWorld, transition: Stri
 async fn verification_fails_empty_chain(world: &mut AgilePlusWorld) {
     let result = world.last_result.as_ref().expect("No result");
     let err = result.as_ref().unwrap_err();
-    assert_eq!(err, "EmptyChain", "Expected EmptyChain error, got: {err}");
+    assert!(err.contains("empty audit chain"), "Expected 'empty audit chain' error, got: {err}");
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

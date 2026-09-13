@@ -210,4 +210,183 @@ mod code_projection_tests {
         let msg = e.to_string();
         assert!(msg.contains("draft") && msg.contains("done") && msg.contains("missing review"));
     }
+
+    // --- Display tests for each DomainError variant ---
+
+    #[test]
+    fn display_feature_not_in_module_scope() {
+        let e = DomainError::FeatureNotInModuleScope {
+            feature_slug: "auth".into(),
+            module_slug: "core".into(),
+        };
+        let msg = e.to_string();
+        assert!(msg.contains("auth"));
+        assert!(msg.contains("core"));
+        assert!(msg.contains("not in module"));
+    }
+
+    #[test]
+    fn display_module_has_dependents() {
+        let e = DomainError::ModuleHasDependents("m-1".into());
+        assert_eq!(e.to_string(), "Module has dependents: m-1");
+    }
+
+    #[test]
+    fn display_cycle_not_found() {
+        let e = DomainError::CycleNotFound("c-1".into());
+        assert_eq!(e.to_string(), "Cycle not found: c-1");
+    }
+
+    #[test]
+    fn display_module_not_found() {
+        let e = DomainError::ModuleNotFound("m-1".into());
+        assert_eq!(e.to_string(), "Module not found: m-1");
+    }
+
+    #[test]
+    fn display_feature_not_found() {
+        let e = DomainError::FeatureNotFound("f-1".into());
+        assert_eq!(e.to_string(), "Feature not found: f-1");
+    }
+
+    #[test]
+    fn display_work_package_not_found() {
+        let e = DomainError::WorkPackageNotFound("wp-1".into());
+        assert_eq!(e.to_string(), "Work package not found: wp-1");
+    }
+
+    #[test]
+    fn display_not_found() {
+        let e = DomainError::NotFound("thing".into());
+        assert_eq!(e.to_string(), "Not found: thing");
+    }
+
+    #[test]
+    fn display_not_implemented() {
+        let e = DomainError::NotImplemented;
+        assert_eq!(e.to_string(), "Not implemented");
+    }
+
+    #[test]
+    fn display_storage() {
+        let e = DomainError::Storage("disk full".into());
+        assert_eq!(e.to_string(), "Storage error: disk full");
+    }
+
+    #[test]
+    fn display_validation() {
+        let e = DomainError::Validation("bad name".into());
+        assert_eq!(e.to_string(), "Validation error: bad name");
+    }
+
+    #[test]
+    fn display_conflict() {
+        let e = DomainError::Conflict("slug taken".into());
+        assert_eq!(e.to_string(), "Conflict: slug taken");
+    }
+
+    #[test]
+    fn display_invalid_transition() {
+        let e = DomainError::InvalidTransition {
+            from: "A".into(),
+            to: "B".into(),
+            reason: "blocked".into(),
+        };
+        let msg = e.to_string();
+        assert!(msg.contains("A") && msg.contains("B") && msg.contains("blocked"));
+    }
+
+    #[test]
+    fn display_lock_poisoned() {
+        let e = DomainError::LockPoisoned;
+        assert_eq!(e.to_string(), "Lock poisoned");
+    }
+
+    #[test]
+    fn display_invalid_claim() {
+        let e = DomainError::InvalidClaim("expired".into());
+        assert_eq!(e.to_string(), "Invalid claim: expired");
+    }
+
+    #[test]
+    fn display_no_op_transition() {
+        let e = DomainError::NoOpTransition;
+        assert!(e.to_string().contains("already in the requested state"));
+    }
+
+    #[test]
+    fn display_other() {
+        let e = DomainError::Other("something weird".into());
+        assert_eq!(e.to_string(), "something weird");
+    }
+
+    #[test]
+    fn display_agent() {
+        let e = DomainError::Agent("dispatch failed".into());
+        assert_eq!(e.to_string(), "Agent error: dispatch failed");
+    }
+
+    #[test]
+    fn display_timeout() {
+        let e = DomainError::Timeout(30);
+        assert_eq!(e.to_string(), "Timed out after 30 seconds");
+    }
+
+    // --- Remaining ErrorCode projections ---
+
+    #[test]
+    fn noop_transition_projects_to_validation_error() {
+        let c: ErrorCode = DomainError::NoOpTransition.into();
+        assert_eq!(c, ErrorCode::ValidationError);
+    }
+
+    #[test]
+    fn other_projects_to_internal_error() {
+        let c: ErrorCode = DomainError::Other("misc".into()).into();
+        assert_eq!(c, ErrorCode::InternalError);
+    }
+
+    #[test]
+    fn agent_projects_to_internal_error() {
+        let c: ErrorCode = DomainError::Agent("err".into()).into();
+        assert_eq!(c, ErrorCode::InternalError);
+    }
+
+    #[test]
+    fn timeout_projects_to_internal_error() {
+        let c: ErrorCode = DomainError::Timeout(5).into();
+        assert_eq!(c, ErrorCode::InternalError);
+    }
+
+    // --- ErrorCode serde ---
+
+    #[test]
+    fn error_code_serde_roundtrip() {
+        let codes = [
+            ErrorCode::NotFound,
+            ErrorCode::AlreadyExists,
+            ErrorCode::ValidationError,
+            ErrorCode::NotImplemented,
+            ErrorCode::InternalError,
+        ];
+        for code in codes {
+            let json = serde_json::to_string(&code).unwrap();
+            let back: ErrorCode = serde_json::from_str(&json).unwrap();
+            assert_eq!(back, code);
+        }
+    }
+
+    // --- DomainResult alias ---
+
+    #[test]
+    fn domain_result_ok_variant() {
+        let r: DomainResult<i32> = Ok(42);
+        assert_eq!(r.unwrap(), 42);
+    }
+
+    #[test]
+    fn domain_result_err_variant() {
+        let r: DomainResult<i32> = Err(DomainError::NotImplemented);
+        assert!(r.is_err());
+    }
 }

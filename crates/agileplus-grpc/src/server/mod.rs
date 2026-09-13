@@ -11,10 +11,13 @@ use std::sync::Arc;
 #[cfg(not(agileplus_proto_stubs))]
 use tonic::transport::Server;
 use tonic::{Request, Response, Status};
+use chrono::Utc;
 use tracing::info;
 
 use agileplus_domain::domain::audit::AuditChain;
-use agileplus_domain::domain::governance::{Evidence, EvidenceType, GovernanceRule};
+use agileplus_domain::domain::governance::{
+    Evidence, EvidenceType, GovernanceContract, GovernanceRule,
+};
 use agileplus_domain::domain::state_machine::FeatureState;
 use agileplus_domain::ports::{AgentPort, ObservabilityPort, ReviewPort, StoragePort, VcsPort};
 #[cfg(not(agileplus_proto_stubs))]
@@ -684,21 +687,135 @@ where
     R: ReviewPort + 'static,
     O: ObservabilityPort + 'static,
 {
-    /// Dispatch core (non-agent) commands.
+    /// Dispatch core (non-agent) commands with real state transitions.
+    ///
+    /// Each command looks up the feature by slug, validates the state transition
+    /// via the domain model, persists the change, and returns the new state.
     async fn dispatch_core_command(
         &self,
         command: &str,
         feature_slug: &str,
         args: &HashMap<String, String>,
     ) -> Result<(String, HashMap<String, String>), Status> {
-        match command {
-            "specify" | "research" | "plan" | "validate" | "ship" | "retrospective" => {
-                let msg = format!("command '{command}' queued for feature '{feature_slug}'");
-                info!(command, feature_slug, "core command dispatched via gRPC");
-                Ok((msg, args.clone()))
+        info!(command, feature_slug, "core command dispatched via gRPC");
+
+        // Determine the target state for this command.
+        let target_state = match command {
+            "specify" => FeatureState::Specified,
+            "research" => FeatureState::Researched,
+            "plan" => FeatureState::Planned,
+            "validate" => FeatureState::Validated,
+            "ship" => FeatureState::Shipped,
+            "retrospective" => FeatureState::Retrospected,
+            other => {
+                return Err(Status::unimplemented(format!(
+                    "unknown command: '{other}'"
+                )));
             }
-            other => Err(Status::unimplemented(format!("unknown command: '{other}'"))),
+        };
+
+        // Look up the feature by slug.
+        let mut feature = self
+            .storage
+            .get_feature_by_slug(feature_slug)
+            .await
+            .map_err(domain_error_to_status)?
+            .ok_or_else(|| Status::not_found(format!("feature '{feature_slug}' not found")))?;
+
+        // Validate and apply the state transition via the domain model.
+        feature
+            .transition(target_state)
+            .map_err(|e| Status::failed_precondition(e))?;
+
+        // Persist the new state.
+        self.storage
+            .update_feature_state(feature.id, feature.state)
+            .await
+            .map_err(domain_error_to_status)?;
+
+        // Command-specific post-transition logic.
+        match command {
+            "plan" => {
+                // Create a default governance contract for the planned feature.
+                let contract = GovernanceContract {
+                    id: 0,
+                    feature_id: feature.id,
+                    version: 1,
+                    rules: vec![GovernanceRule {
+                        transition: String::new(),
+                        required_evidence: Vec::new(),
+                        policy_refs: Vec::new(),
+                    }],
+                    bound_at: Utc::now(),
+                };
+                if let Err(e) = self
+                    .storage
+                    .create_governance_contract(&contract)
+                    .await
+                {
+                    info!(
+                        feature_slug,
+                        error = %e,
+                        "governance contract creation skipped (storage may not support it)"
+                    );
+                }
+            }
+            "validate" => {
+                // Check governance evidence requirements if a contract exists.
+                if let Ok(Some(contract)) =
+                    self.storage.get_latest_governance_contract(feature.id).await
+                {
+                    let feature_wp_ids: HashSet<i64> = self
+                        .storage
+                        .list_wps_by_feature(feature.id)
+                        .await
+                        .map_err(domain_error_to_status)?
+                        .into_iter()
+                        .map(|wp| wp.id)
+                        .collect();
+
+                    let relevant_rules: Vec<_> = contract
+                        .rules
+                        .iter()
+                        .filter(|r| r.transition.is_empty() || r.transition == "validate")
+                        .collect();
+
+                    for rule in &relevant_rules {
+                        for raw_requirement in &rule.required_evidence {
+                            let (fr_id, expected_type, recognized) =
+                                parse_evidence_requirement(raw_requirement);
+                            let evidence = self
+                                .storage
+                                .get_evidence_by_fr(fr_id)
+                                .await
+                                .map_err(domain_error_to_status)?;
+                            if !recognized
+                                || !evidence_satisfies_requirement(
+                                    &evidence,
+                                    &feature_wp_ids,
+                                    fr_id,
+                                    expected_type,
+                                )
+                            {
+                                return Err(Status::failed_precondition(format!(
+                                    "governance violation: missing evidence for {raw_requirement}"
+                                )));
+                            }
+                        }
+                    }
+                }
+            }
+            _ => {}
         }
+
+        let new_state = feature.state.to_string();
+        let mut outputs = args.clone();
+        outputs.insert("state".to_string(), new_state.clone());
+
+        let msg = format!(
+            "command '{command}' applied to feature '{feature_slug}': {new_state}"
+        );
+        Ok((msg, outputs))
     }
 }
 

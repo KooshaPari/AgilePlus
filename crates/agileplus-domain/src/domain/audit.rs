@@ -37,6 +37,9 @@ impl AuditChain {
     /// Verify the hash chain is intact.  Returns `Err` with a description of
     /// the first broken link, or `Ok(())` if all hashes are consistent.
     pub fn verify_chain(&self) -> Result<(), String> {
+        if self.entries.is_empty() {
+            return Err("empty audit chain".to_string());
+        }
         for (i, entry) in self.entries.iter().enumerate() {
             let computed = hash_entry(entry);
             if computed != entry.hash {
@@ -153,8 +156,106 @@ mod tests {
     }
 
     #[test]
-    fn empty_audit_chain_verifies_ok() {
+    fn empty_audit_chain_returns_error() {
         let chain = AuditChain { entries: vec![] };
+        assert_eq!(chain.verify_chain().unwrap_err(), "empty audit chain");
+    }
+
+    #[test]
+    fn hash_changes_when_transition_differs() {
+        let mut e1 = make_entry(1, [0u8; 32]);
+        e1.transition = "A->B".to_string();
+        let h1 = hash_entry(&e1);
+        e1.transition = "B->C".to_string();
+        let h2 = hash_entry(&e1);
+        assert_ne!(h1, h2);
+    }
+
+    #[test]
+    fn hash_changes_with_wp_id_present() {
+        let mut e1 = make_entry(1, [0u8; 32]);
+        e1.wp_id = None;
+        let h_no = hash_entry(&e1);
+        e1.wp_id = Some(42);
+        let h_yes = hash_entry(&e1);
+        assert_ne!(h_no, h_yes);
+    }
+
+    #[test]
+    fn hash_changes_with_prev_hash() {
+        let e1 = make_entry(1, [0u8; 32]);
+        let e2 = make_entry(1, [0xff; 32]);
+        // Same entry fields but different prev_hash => different hash.
+        assert_ne!(hash_entry(&e1), hash_entry(&e2));
+    }
+
+    #[test]
+    fn hash_changes_with_feature_id() {
+        let mut e1 = make_entry(1, [0u8; 32]);
+        e1.feature_id = 1;
+        let h1 = hash_entry(&e1);
+        e1.feature_id = 999;
+        let h2 = hash_entry(&e1);
+        assert_ne!(h1, h2);
+    }
+
+    #[test]
+    fn hash_changes_with_timestamp() {
+        let mut e1 = make_entry(1, [0u8; 32]);
+        e1.timestamp = DateTime::from_timestamp(1, 0).unwrap();
+        let h1 = hash_entry(&e1);
+        e1.timestamp = DateTime::from_timestamp(2, 0).unwrap();
+        let h2 = hash_entry(&e1);
+        assert_ne!(h1, h2);
+    }
+
+    #[test]
+    fn three_entry_chain_verifies() {
+        let e1 = make_entry(1, [0u8; 32]);
+        let e2 = make_entry(2, e1.hash);
+        let e3 = make_entry(3, e2.hash);
+        let chain = AuditChain {
+            entries: vec![e1, e2, e3],
+        };
+        assert!(chain.verify_chain().is_ok());
+    }
+
+    #[test]
+    fn three_entry_chain_break_at_middle() {
+        let e1 = make_entry(1, [0u8; 32]);
+        let mut e2 = make_entry(2, e1.hash);
+        e2.hash = [0xaa; 32]; // tamper middle entry's hash
+        let e3 = make_entry(3, e2.hash);
+        let chain = AuditChain {
+            entries: vec![e1, e2, e3],
+        };
+        // First entry fails hash check.
+        let err = chain.verify_chain().unwrap_err();
+        assert!(err.contains("hash mismatch"));
+    }
+
+    #[test]
+    fn evidence_ref_fields() {
+        let refs = vec![
+            EvidenceRef {
+                evidence_id: 1,
+                fr_id: "FR-001".to_string(),
+            },
+            EvidenceRef {
+                evidence_id: 2,
+                fr_id: "FR-002".to_string(),
+            },
+        ];
+        assert_eq!(refs[0].evidence_id, 1);
+        assert_eq!(refs[1].fr_id, "FR-002");
+    }
+
+    #[test]
+    fn single_entry_chain_verifies() {
+        let e = make_entry(1, [0u8; 32]);
+        let chain = AuditChain {
+            entries: vec![e],
+        };
         assert!(chain.verify_chain().is_ok());
     }
 }

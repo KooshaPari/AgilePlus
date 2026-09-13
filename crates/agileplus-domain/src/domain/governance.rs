@@ -414,4 +414,177 @@ mod tests {
         assert_eq!(back_manual, PolicyCheck::ManualApproval);
         assert_eq!(back_auto, PolicyCheck::Automated);
     }
+
+    // --- Additional tests for uncovered paths ---
+
+    #[test]
+    fn evidence_type_serde_roundtrip_all_variants() {
+        let variants = [
+            EvidenceType::TestResult,
+            EvidenceType::CiOutput,
+            EvidenceType::ReviewApproval,
+            EvidenceType::SecurityScan,
+            EvidenceType::LintResult,
+            EvidenceType::ManualAttestation,
+        ];
+        for variant in variants {
+            let json = serde_json::to_string(&variant).unwrap();
+            let back: EvidenceType = serde_json::from_str(&json).unwrap();
+            assert_eq!(back, variant);
+        }
+    }
+
+    #[test]
+    fn evidence_type_serde_snake_case_all() {
+        assert_eq!(
+            serde_json::to_string(&EvidenceType::CiOutput).unwrap(),
+            "\"ci_output\""
+        );
+        assert_eq!(
+            serde_json::to_string(&EvidenceType::ReviewApproval).unwrap(),
+            "\"review_approval\""
+        );
+        assert_eq!(
+            serde_json::to_string(&EvidenceType::SecurityScan).unwrap(),
+            "\"security_scan\""
+        );
+        assert_eq!(
+            serde_json::to_string(&EvidenceType::LintResult).unwrap(),
+            "\"lint_result\""
+        );
+        assert_eq!(
+            serde_json::to_string(&EvidenceType::ManualAttestation).unwrap(),
+            "\"manual_attestation\""
+        );
+    }
+
+    #[test]
+    fn policy_domain_serde_roundtrip_all_variants() {
+        let variants = [
+            PolicyDomain::Security,
+            PolicyDomain::Quality,
+            PolicyDomain::Compliance,
+            PolicyDomain::Performance,
+            PolicyDomain::Custom,
+        ];
+        for variant in variants {
+            let json = serde_json::to_string(&variant).unwrap();
+            let back: PolicyDomain = serde_json::from_str(&json).unwrap();
+            assert_eq!(back, variant);
+        }
+    }
+
+    #[test]
+    fn policy_domain_serde_snake_case_all() {
+        assert_eq!(
+            serde_json::to_string(&PolicyDomain::Compliance).unwrap(),
+            "\"compliance\""
+        );
+        assert_eq!(
+            serde_json::to_string(&PolicyDomain::Performance).unwrap(),
+            "\"performance\""
+        );
+        assert_eq!(
+            serde_json::to_string(&PolicyDomain::Custom).unwrap(),
+            "\"custom\""
+        );
+    }
+
+    #[test]
+    fn policy_check_complex_variants_serde() {
+        // EvidencePresent
+        let ep = PolicyCheck::EvidencePresent {
+            evidence_type: EvidenceType::TestResult,
+        };
+        let json = serde_json::to_string(&ep).unwrap();
+        let back: PolicyCheck = serde_json::from_str(&json).unwrap();
+        assert_eq!(back, ep);
+
+        // ThresholdMet
+        let tm = PolicyCheck::ThresholdMet {
+            metric: "coverage".to_string(),
+            min: 80.0,
+        };
+        let json = serde_json::to_string(&tm).unwrap();
+        let back: PolicyCheck = serde_json::from_str(&json).unwrap();
+        assert_eq!(back, tm);
+
+        // Custom
+        let c = PolicyCheck::Custom {
+            script: "check.sh".to_string(),
+        };
+        let json = serde_json::to_string(&c).unwrap();
+        let back: PolicyCheck = serde_json::from_str(&json).unwrap();
+        assert_eq!(back, c);
+    }
+
+    #[test]
+    fn policy_rule_matches_reference() {
+        let rule = PolicyRule {
+            id: 42,
+            domain: PolicyDomain::Quality,
+            rule: PolicyDefinition {
+                description: "Test".to_string(),
+                check: PolicyCheck::Automated,
+            },
+            active: true,
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+        };
+        assert!(rule.matches_reference("42"));
+        assert!(rule.matches_reference("policy:42"));
+        assert!(!rule.matches_reference("43"));
+        assert!(!rule.matches_reference("policy:43"));
+        assert!(!rule.matches_reference(""));
+        assert!(!rule.matches_reference("policy:"));
+    }
+
+    #[test]
+    fn builtin_policy_all_known_refs_resolve() {
+        let known = ["tests-pass", "ci-green", "review-approved", "security-scan", "lint-pass"];
+        for key in known {
+            assert!(
+                BuiltinPolicy::from_ref(key).is_some(),
+                "expected known ref: {key}"
+            );
+        }
+    }
+
+    #[test]
+    fn builtin_policy_labels_are_nonempty() {
+        let known = ["tests-pass", "ci-green", "review-approved", "security-scan", "lint-pass"];
+        for key in known {
+            let bp = BuiltinPolicy::from_ref(key).unwrap();
+            assert!(!bp.label.is_empty(), "label should not be empty for {key}");
+        }
+    }
+
+    #[test]
+    fn governance_rule_serde_empty_evidence() {
+        let rule = GovernanceRule {
+            transition: "A->B".to_string(),
+            required_evidence: vec![],
+            policy_refs: vec![],
+        };
+        let json = serde_json::to_string(&rule).unwrap();
+        let back: GovernanceRule = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.required_evidence.len(), 0);
+        assert_eq!(back.policy_refs.len(), 0);
+    }
+
+    #[test]
+    fn evidence_serde_null_metadata() {
+        let evidence = Evidence {
+            id: 10,
+            wp_id: 1,
+            fr_id: "FR-10".to_string(),
+            evidence_type: EvidenceType::CiOutput,
+            artifact_path: "/ci/output.json".to_string(),
+            metadata: None,
+            created_at: Utc::now(),
+        };
+        let json = serde_json::to_string(&evidence).unwrap();
+        let back: Evidence = serde_json::from_str(&json).unwrap();
+        assert!(back.metadata.is_none());
+    }
 }

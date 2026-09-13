@@ -168,4 +168,194 @@ mod tests {
         assert_eq!(feature.state, FeatureState::Created);
         assert!(err.contains("invalid transition Created -> Shipped"));
     }
+
+    #[test]
+    fn full_happy_path_transition_chain() {
+        let mut feature = Feature::new("feat", "Feature", [0; 32], None);
+        let chain = [
+            FeatureState::Specified,
+            FeatureState::Researched,
+            FeatureState::Planned,
+            FeatureState::Implementing,
+            FeatureState::Validated,
+            FeatureState::Shipped,
+            FeatureState::Retrospected,
+        ];
+        for target in chain {
+            feature.transition(target).unwrap();
+        }
+        assert_eq!(feature.state, FeatureState::Retrospected);
+    }
+
+    #[test]
+    fn retrospected_cannot_transition() {
+        let mut feature = Feature::new("done", "Done", [0; 32], None);
+        feature.transition(FeatureState::Specified).unwrap();
+        feature.transition(FeatureState::Researched).unwrap();
+        feature.transition(FeatureState::Planned).unwrap();
+        feature.transition(FeatureState::Implementing).unwrap();
+        feature.transition(FeatureState::Validated).unwrap();
+        feature.transition(FeatureState::Shipped).unwrap();
+        feature.transition(FeatureState::Retrospected).unwrap();
+
+        // Retrospected is a terminal state; no outgoing transitions.
+        assert!(feature.transition(FeatureState::Created).is_err());
+        assert!(feature.transition(FeatureState::Shipped).is_err());
+        assert_eq!(feature.state, FeatureState::Retrospected);
+    }
+
+    #[test]
+    fn all_invalid_transitions_from_created() {
+        let invalid_targets = [
+            FeatureState::Created,
+            FeatureState::Researched,
+            FeatureState::Planned,
+            FeatureState::Implementing,
+            FeatureState::Validated,
+            FeatureState::Shipped,
+            FeatureState::Retrospected,
+        ];
+        for target in invalid_targets {
+            let mut feature = Feature::new("x", "X", [0; 32], None);
+            assert!(
+                feature.transition(target).is_err(),
+                "Created -> {target:?} should be invalid"
+            );
+        }
+    }
+
+    #[test]
+    fn transition_updates_timestamp() {
+        let mut feature = Feature::new("ts", "Timestamp", [0; 32], None);
+        let before = feature.updated_at;
+        std::thread::sleep(std::time::Duration::from_millis(10));
+        feature.transition(FeatureState::Specified).unwrap();
+        assert!(feature.updated_at >= before);
+    }
+
+    #[test]
+    fn feature_new_defaults() {
+        let f = Feature::new("my-slug", "My Name", [42; 32], None);
+        assert_eq!(f.id, 0);
+        assert_eq!(f.slug, "my-slug");
+        assert_eq!(f.friendly_name, "My Name");
+        assert_eq!(f.state, FeatureState::Created);
+        assert_eq!(f.spec_hash, [42; 32]);
+        assert_eq!(f.target_branch, "main");
+        assert!(f.plane_issue_id.is_none());
+        assert!(f.plane_state_id.is_none());
+        assert!(f.labels.is_empty());
+        assert!(f.module_id.is_none());
+        assert!(f.project_id.is_none());
+        assert!(f.created_at_commit.is_none());
+        assert!(f.last_modified_commit.is_none());
+    }
+
+    #[test]
+    fn feature_new_custom_branch() {
+        let f = Feature::new("s", "S", [0; 32], Some("develop"));
+        assert_eq!(f.target_branch, "develop");
+    }
+
+    // --- slug_from_name tests ---
+
+    #[test]
+    fn slug_from_name_simple() {
+        assert_eq!(Feature::slug_from_name("Hello World"), "hello-world");
+    }
+
+    #[test]
+    fn slug_from_name_empty() {
+        assert_eq!(Feature::slug_from_name(""), "");
+    }
+
+    #[test]
+    fn slug_from_name_unicode() {
+        // Unicode alphanumeric chars are kept; non-alnum become dashes.
+        let slug = Feature::slug_from_name("功能 Design");
+        assert_eq!(slug, "功能-design");
+    }
+
+    #[test]
+    fn slug_from_name_special_chars() {
+        assert_eq!(
+            Feature::slug_from_name("foo@bar!baz#qux"),
+            "foo-bar-baz-qux"
+        );
+    }
+
+    #[test]
+    fn slug_from_name_consecutive_dashes_collapsed() {
+        assert_eq!(Feature::slug_from_name("a   b"), "a-b");
+        assert_eq!(Feature::slug_from_name("--x--y--"), "x-y");
+    }
+
+    #[test]
+    fn slug_from_name_all_special() {
+        assert_eq!(Feature::slug_from_name("---"), "");
+    }
+
+    #[test]
+    fn slug_from_name_leading_trailing_dashes_collapsed() {
+        assert_eq!(Feature::slug_from_name(" test "), "test");
+    }
+
+    #[test]
+    fn slug_from_name_numbers() {
+        assert_eq!(Feature::slug_from_name("v2 release"), "v2-release");
+    }
+
+    // --- hex_bytes serde tests ---
+
+    #[test]
+    fn hex_bytes_roundtrip() {
+        let original = [0x42_u8; 32];
+        let hex_str: String = original
+            .iter()
+            .flat_map(|b| {
+                format!("{:02x}", b).into_bytes()
+            })
+            .map(|b| b as char)
+            .collect();
+        assert_eq!(hex_str.len(), 64);
+        assert_eq!(hex_str, "42".repeat(32));
+    }
+
+    #[test]
+    fn hex_bytes_roundtrip_via_json() {
+        // Simulate what the Feature JSON serde does with spec_hash.
+        let original = Feature::new("t", "T", [0xAB; 32], None);
+        let json = serde_json::to_string(&original).unwrap();
+        let restored: Feature = serde_json::from_str(&json).unwrap();
+        assert_eq!(restored.spec_hash, [0xAB; 32]);
+    }
+
+    #[test]
+    fn hex_bytes_invalid_length_rejected() {
+        // A JSON string that is not 64 hex chars should fail to deserialize
+        // as a Feature spec_hash via the hex_bytes serde helper.
+        let json = r#"{"id":0,"slug":"s","friendly_name":"S","state":"created",
+            "spec_hash":"abc","target_branch":"main",
+            "created_at":"2025-01-01T00:00:00Z","updated_at":"2025-01-01T00:00:00Z",
+            "labels":[],"plane_issue_id":null,"plane_state_id":null,
+            "module_id":null,"project_id":null,
+            "created_at_commit":null,"last_modified_commit":null}"#;
+        let result = serde_json::from_str::<Feature>(json);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn hex_bytes_invalid_hex_digit_rejected() {
+        let bad_hex = "g".repeat(64);
+        let json = format!(
+            r#"{{"id":0,"slug":"s","friendly_name":"S","state":"created",
+            "spec_hash":"{bad_hex}","target_branch":"main",
+            "created_at":"2025-01-01T00:00:00Z","updated_at":"2025-01-01T00:00:00Z",
+            "labels":[],"plane_issue_id":null,"plane_state_id":null,
+            "module_id":null,"project_id":null,
+            "created_at_commit":null,"last_modified_commit":null}}"#
+        );
+        let result = serde_json::from_str::<Feature>(&json);
+        assert!(result.is_err());
+    }
 }
