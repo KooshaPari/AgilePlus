@@ -1,32 +1,16 @@
 {
   "name": "agileplus-desktop",
   "version": "0.1.0",
-  "description": "AgilePlus desktop client (Electrobun, step-1). Offline-first, operates on local repo state. End-state native: WinUI-rs + SwiftUI + Linux-native per ADR.",
   "private": true,
   "type": "module",
-  "main": "src/index.ts",
-  "author": {
-    "name": "Phenotype",
-    "email": "kooshapari@gmail.com"
-  },
   "scripts": {
-    "dev": "electrobun dev",
-    "build": "electrobun build",
-    "build:release": "electrobun build --env=production",
-    "start": "electrobun start",
-    "dist:win": "electron-builder --win nsis --x64",
-    "dist:mac": "electron-builder --mac dmg --arm64",
-    "dist:linux": "electron-builder --linux AppImage deb",
-    "dist:all": "electron-builder -mwl",
-    "postbuild": "node scripts/prepare-bundle.mjs"
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "build:release": "tauri build --release",
+    "start": "tauri dev"
   },
+  "dependencies": {},
   "devDependencies": {
-    "@types/node": "^20.11.0",
-    "electrobun": "^2.0.1",
-    "electron-builder": "^25.1.8",
-    "typescript": "^5.4.0"
-  },
-  "engines": {
-    "node": ">=18.18.0"
+    "@tauri-apps/cli": "^2.0.0"
   }
 }
