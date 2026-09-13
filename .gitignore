@@ -48,4 +48,4 @@ target/
 *.pyc
 *.pyo
 **/*.pyc
-"node_modules/"  
+node_modules/
