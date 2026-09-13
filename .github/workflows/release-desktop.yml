@@ -143,7 +143,7 @@ jobs:
         if: runner.os == 'Windows' && env.CERT_PATH != ''
         shell: pwsh
         run: |
-          $files = Get-ChildItem -Path "desktop/src-tauri/target/${{ matrix.target }}/release/bundle" -Recurse -Include *.exe,*.msi
+          $files = Get-ChildItem -Path "target/${{ matrix.target }}/release/bundle" -Recurse -Include *.exe,*.msi
           foreach ($file in $files) {
             Write-Host "Signing: $($file.FullName)"
             signtool sign /f $env:CERT_PATH /p $env:WINDOWS_CERTIFICATE_PASSWORD /tr http://timestamp.digicert.com /td sha256 /fd sha256 /d "AgilePlus Desktop" $file.FullName
@@ -154,7 +154,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          bundle_dir="desktop/src-tauri/target/${{ matrix.target }}/release/bundle"
+          bundle_dir="target/${{ matrix.target }}/release/bundle"
           staging="release-upload"
           mkdir -p "$staging"
 
