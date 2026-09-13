@@ -1,0 +1,62 @@
+# ADR-020: Rust Core + Electrobun Desktop as Primary Interface
+
+## Status
+Proposed
+
+## Context
+AgilePlus has multiple interfaces competing for primacy:
+- CLI (`./target/release/agileplus`) — current primary, works today
+- MCP server (`agileplus-mcp`) — enables Codex/AI tooling, gRPC core currently blocked by platform deps
+- Desktop client (`desktop/`, Electrobun) — step-1 exists, offline-first, incomplete
+- REST API (`agileplus-api`) — requires external services, should be optional
+
+The user has confirmed: "AgilePlus is a CLI, a semantic process, an app, a tray app and much more." And that the desktop client is the intended user-facing interface, with CLI as the semantic process layer and MCP as the agent-facing protocol.
+
+Electrobun (Electron + Bun) is the right choice for the desktop client:
+- Cross-platform (Windows, macOS, Linux) — matches VSCode model
+- Fast startup (Bun runtime)
+- Node/TypeScript ecosystem for UI
+- Local file access for `.agileplus/`
+- Tray app support (system notification area)
+
+## Decision
+1. **CLI** remains the **semantic process engine** — the "git of spec-driven dev"
+2. **Desktop (Electrobun)** is the **primary user interface** — tray + app window
+3. **MCP** is the **agent-facing protocol** — how AI tools interact with AgilePlus
+4. **API** is **optional/standalone** — if a REST layer is needed, it's a separate deployable, not core
+
+### Interface responsibilities:
+| Interface | Role | Protocol |
+|-----------|------|----------|
+| CLI (`agileplus`) | Semantic process, scripting, CI | Rust binary, `--db` flag |
+| Desktop (Electrobun) | User-facing app, tray, UI | Bun/Electron, local `.agileplus/` |
+| MCP (`agileplus-mcp`) | Agent-facing, tool calls | stdio/SSE, MCP protocol |
+| API (optional) | Remote access, server mode | HTTP REST, standalone deployable |
+
+## Consequences
+
+### Positive
+- ✅ Clear separation of concerns
+- ✅ CLI remains scriptable and CI-friendly
+- ✅ Desktop provides the VSCode-like UX users expect
+- ✅ MCP enables AI tooling without coupling to platform services
+- ✅ API can be extracted to a separate crate/repo if needed
+- ✅ Rust core stays clean (no web framework deps)
+
+### Negative
+- ❌ Desktop completion requires significant TS/Electron work
+- ❌ MCP rewrite needed to remove service dependencies
+- ❌ Multiple distribution channels (cargo, npm, binary releases)
+- ❌ Testing across interfaces adds complexity
+
+## Implementation Plan
+1. **MCP rewrite**: Remove gRPC service dependencies, use SQLite directly
+2. **Desktop completion**: Build out remaining Electrobun views (list, specify, dashboard, audit)
+3. **Tray app**: System notification area integration for activity
+4. **CLI enhancements**: `agileplus desktop` command to launch Electrobun
+5. **State protocol**: Define the `.agileplus/` read/write contract between all interfaces
+
+## Related
+- `desktop/` — existing Electrobun client (commit 5062716a)
+- `crates/agileplus-mcp/` — MCP server to rewrite
+- `crates/agileplus-cli/` — CLI, the semantic process engine

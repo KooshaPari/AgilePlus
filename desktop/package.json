@@ -20,13 +20,11 @@
     "dist:all": "electron-builder -mwl",
     "postbuild": "node scripts/prepare-bundle.mjs"
   },
-  "dependencies": {
-    "electrobun": "^1.18.1"
-  },
   "devDependencies": {
-    "typescript": "^5.4.0",
     "@types/node": "^20.11.0",
-    "electron-builder": "^25.1.8"
+    "electrobun": "^2.0.1",
+    "electron-builder": "^25.1.8",
+    "typescript": "^5.4.0"
   },
   "engines": {
     "node": ">=18.18.0"
