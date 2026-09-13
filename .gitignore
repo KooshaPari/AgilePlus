@@ -49,3 +49,4 @@ target/
 *.pyo
 **/*.pyc
 node_modules/
+.tauri/
