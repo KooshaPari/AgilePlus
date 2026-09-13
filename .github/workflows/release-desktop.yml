@@ -1,0 +1,161 @@
+# Tag-triggered release workflow for AgilePlus Desktop (Tauri 2).
+# Builds platform bundles and uploads them to a GitHub Release.
+name: Release Desktop
+
+on:
+  push:
+    tags: ["v*"]
+    paths:
+      - "desktop/**"
+      - "crates/agileplus-domain/**"
+      - "crates/agileplus-sqlite/**"
+      - "crates/agileplus-application/**"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-desktop-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-desktop:
+    name: Build (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            artifact_name: agileplus-desktop-macos-aarch64
+          - os: macos-15-intel
+            target: x86_64-apple-darwin
+            artifact_name: agileplus-desktop-macos-x86_64
+          - os: ubuntu-24.04
+            target: x86_64-unknown-linux-gnu
+            artifact_name: agileplus-desktop-linux-x86_64
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            artifact_name: agileplus-desktop-windows-x86_64
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: desktop/src-tauri
+          shared-key: desktop-${{ matrix.target }}
+
+      # ── Linux system dependencies ──────────────────────────────────
+      - name: Install dependencies (Ubuntu)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf
+
+      # ── Frontend toolchain ─────────────────────────────────────────
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install frontend dependencies
+        working-directory: desktop
+        run: pnpm install --frozen-lockfile
+
+      # ── Tauri build ────────────────────────────────────────────────
+      - name: Build Tauri app
+        working-directory: desktop
+        run: pnpm tauri build --target ${{ matrix.target }}
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+
+      # ── Stage artifacts ────────────────────────────────────────────
+      - name: Collect artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          bundle_dir="desktop/src-tauri/target/${{ matrix.target }}/release/bundle"
+          staging="release-upload"
+          mkdir -p "$staging"
+
+          count=0
+          for pattern in \
+            "$bundle_dir"/dmg/*.dmg \
+            "$bundle_dir"/macos/*.app.tar.gz \
+            "$bundle_dir"/deb/*.deb \
+            "$bundle_dir"/rpm/*.rpm \
+            "$bundle_dir"/appimage/*.AppImage \
+            "$bundle_dir"/nsis/*.exe \
+            "$bundle_dir"/msi/*.msi \
+            ; do
+            for f in $pattern; do
+              [ -f "$f" ] || continue
+              cp "$f" "$staging/"
+              echo "  + $(basename "$f")"
+              count=$((count + 1))
+            done
+          done
+
+          if [ "$count" -eq 0 ]; then
+            echo "::error::No bundle artifacts found under $bundle_dir"
+            echo "Directory listing:"
+            find "$bundle_dir" -type f 2>/dev/null | head -40 || true
+            exit 1
+          fi
+
+          echo ""
+          echo "Staged $count artifact(s) for upload:"
+          ls -lh "$staging/"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: release-upload/*
+          if-no-files-found: error
+          retention-days: 14
+
+  github-release:
+    name: Publish GitHub Release
+    needs: build-desktop
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          merge-multiple: true
+
+      - name: Verify release assets
+        run: |
+          echo "Release assets:"
+          ls -lh release-assets/
+          echo ""
+          echo "Total files: $(find release-assets -type f | wc -l)"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release-assets/*
+          generate_release_notes: true
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-') }}
