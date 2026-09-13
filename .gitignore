@@ -10,6 +10,7 @@
 !vercel.json
 !.commitlintrc.json
 !.coderabbit.yaml
+!desktop/pnpm-lock.yaml
 !tauri.conf.json
 
 # Environment configuration
