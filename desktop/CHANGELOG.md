@@ -20,6 +20,6 @@ First release of the Tauri desktop client.
 
 ### Notes
 
-- Icons are placeholder Tauri logos; branded icons to follow
+- 5 Dependabot alerts are transitive/lockfile issues (glib via Tauri tray-icon, vitest/npm, cryptography/pip) - not directly fixable, need upstream updates
 - Auto-update not yet configured
 - macOS code signing notarization not yet set up
