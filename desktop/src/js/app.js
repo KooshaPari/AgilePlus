@@ -6,6 +6,8 @@
 import * as dashboard from './views/dashboard.js';
 import * as features from './views/features.js';
 import * as featureDetail from './views/feature-detail.js';
+import * as adrs from './views/adrs.js';
+import * as traces from './views/traces.js';
 
 const NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', hash: '#dashboard' },
@@ -62,16 +64,10 @@ async function route() {
       await featureDetail.render(content, param);
       break;
     case 'adrs':
-      content.innerHTML = (
-        `<div class="view-header"><h2 class="view-title">ADRs</h2></div>` +
-        `<div class="empty-state">ADR browsing coming soon. Requires filesystem command.</div>`
-      );
+      await adrs.render(content);
       break;
     case 'traces':
-      content.innerHTML = (
-        `<div class="view-header"><h2 class="view-title">Traces</h2></div>` +
-        `<div class="empty-state">Trace browsing coming soon. Requires filesystem command.</div>`
-      );
+      await traces.render(content);
       break;
     default:
       await dashboard.render(content);
