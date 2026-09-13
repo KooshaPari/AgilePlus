@@ -5,6 +5,7 @@ resolver = "2"
 # workspace until source is implemented. See: kitty-specs/003-agileplus-platform-completion.
 members = [
   "tests/e2e", # installed-CLI round-trip; workflow runs this crate from its manifest directory
+  "tests/e2e-desktop", # E2E tests for the Tauri desktop app (DB, CLI bridge, tray, config)
   "tests/bdd", # fixture and Cucumber acceptance tests
   "crates/agileplus-proto", # canonical tonic/prost gRPC contract
   "crates/agileplus-grpc", # loopback Rust core consumed by the MCP bridge
@@ -46,18 +47,22 @@ unsafe_code = "forbid"
 all = "warn"
 pedantic = "warn"
 
+# Config for 'dist'
 [workspace.metadata.dist]
-cargo-dist-version = "0.28.0"
-ci = ["github"]
+# The preferred dist version to use in CI (Cargo.toml SemVer syntax)
+cargo-dist-version = "0.33.0"
+# CI backends to support
+ci = "github"
+# The installers to generate for each app
 installers = ["shell", "powershell", "msi"]
-targets = [
-  "x86_64-pc-windows-msvc",
-  "x86_64-unknown-linux-gnu",
-  "aarch64-apple-darwin",
-  "x86_64-apple-darwin",
-]
+# Target platforms to build apps for (Rust target-triple syntax)
+targets = ["aarch64-apple-darwin", "x86_64-apple-darwin", "x86_64-unknown-linux-gnu", "x86_64-pc-windows-msvc"]
+# Path that installers should place binaries in
 install-path = "CARGO_HOME"
+# Which actions to run on pull requests
 pr-run-mode = "plan"
+# Whether to install an updater program
+install-updater = false
 
 [workspace.dependencies]
 # Serialization
@@ -169,6 +174,11 @@ paste = "1"
 agileplus-config = { path = "crates/agileplus-config" }
 agileplus-proto = { path = "crates/agileplus-proto" }
 agileplus-telemetry = { version = "0.2.1", path = "crates/agileplus-telemetry" }
+
+# The profile that 'dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"
 
 # cargo-machete false-positive ignores (dev-only / proc-macro / build-deps)
 [workspace.metadata.cargo-machete]
