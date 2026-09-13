@@ -124,6 +124,30 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          WINDOWS_CERTIFICATE: ${{ secrets.WINDOWS_CERTIFICATE }}
+          WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+
+      # ── Windows code signing ──────────────────────────────────────
+      - name: Import Windows Certificate
+        if: runner.os == 'Windows' && env.WINDOWS_CERTIFICATE != ''
+        env:
+          WINDOWS_CERTIFICATE: ${{ secrets.WINDOWS_CERTIFICATE }}
+          WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+        shell: pwsh
+        run: |
+          $certPath = Join-Path $env:RUNNER_TEMP "certificate.pfx"
+          [System.IO.File]::WriteAllBytes($certPath, [System.Convert]::FromBase64String($env:WINDOWS_CERTIFICATE))
+          echo "CERT_PATH=$certPath" >> $env:GITHUB_ENV
+
+      - name: Sign Windows Executable
+        if: runner.os == 'Windows' && env.CERT_PATH != ''
+        shell: pwsh
+        run: |
+          $files = Get-ChildItem -Path "desktop/src-tauri/target/${{ matrix.target }}/release/bundle" -Recurse -Include *.exe,*.msi
+          foreach ($file in $files) {
+            Write-Host "Signing: $($file.FullName)"
+            signtool sign /f $env:CERT_PATH /p $env:WINDOWS_CERTIFICATE_PASSWORD /tr http://timestamp.digicert.com /td sha256 /fd sha256 /d "AgilePlus Desktop" $file.FullName
+          }
 
       # ── Stage artifacts ────────────────────────────────────────────
       - name: Collect artifacts

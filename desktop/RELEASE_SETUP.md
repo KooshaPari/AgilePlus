@@ -66,3 +66,13 @@ The `release-desktop.yml` workflow will automatically:
 
 The desktop app checks for updates on startup via the GitHub Releases endpoint.
 The `latest.json` manifest is generated automatically by Tauri during the build.
+
+### Windows Code Signing (Optional)
+
+| Secret | Description | How to get |
+|--------|-------------|------------|
+| `WINDOWS_CERTIFICATE` | Base64-encoded .pfx certificate | Export from Windows certificate store |
+| `WINDOWS_CERTIFICATE_PASSWORD` | Password for the .pfx export | Your export password |
+
+**Note:** Windows code signing is optional for development. For production distribution,
+you'll need a code signing certificate from a Certificate Authority (e.g., DigiCert, Sectigo).
