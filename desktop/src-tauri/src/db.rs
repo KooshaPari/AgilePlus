@@ -9,6 +9,48 @@ impl Default for DatabaseState {
     }
 }
 
+/// Application state combining the database connection and the active repo path.
+pub struct AppState {
+    pub db: DatabaseState,
+    repo_path: Mutex<String>,
+}
+
+impl Default for AppState {
+    fn default() -> Self {
+        Self {
+            db: DatabaseState::default(),
+            repo_path: Mutex::new(String::new()),
+        }
+    }
+}
+
+impl AppState {
+    pub fn new(db: DatabaseState, repo_path: String) -> Self {
+        Self {
+            db,
+            repo_path: Mutex::new(repo_path),
+        }
+    }
+
+    /// Return a clone of the current repo path.
+    pub fn repo_path(&self) -> String {
+        self.repo_path.lock().map(|p| p.clone()).unwrap_or_default()
+    }
+
+    /// Set the repo path at runtime (e.g. when user selects a new repo).
+    pub fn set_repo_path(&self, path: String) {
+        if let Ok(mut guard) = self.repo_path.lock() {
+            *guard = path;
+        }
+    }
+
+    /// Acquire a lock on the database connection.
+    /// Returns a MutexGuard that the caller uses to query via `as_ref()`.
+    pub fn db_connection(&self) -> Result<std::sync::MutexGuard<'_, Option<Connection>>, String> {
+        self.db.0.lock().map_err(|e| e.to_string())
+    }
+}
+
 pub fn initialize_database(conn: &Connection) -> Result<(), rusqlite::Error> {
     conn.execute_batch(
         "
