@@ -8,6 +8,12 @@ rust-version.workspace = true
 [package.metadata.askama]
 dirs = ["../../templates"]
 
+[package.metadata.wix]
+upgrade-guid = "3A05231A-F3D9-4075-AC28-D1FDFB225B0A"
+path-guid = "4D5707DF-283C-470A-9491-23F53B818A1A"
+license = false
+eula = false
+
 [dependencies]
 agileplus-domain = { version = "0.2.1", path = "../agileplus-domain" }
 agileplus-events = { version = "0.2.1", path = "../agileplus-events" }

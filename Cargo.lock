@@ -250,6 +250,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "agileplus-e2e-desktop"
+version = "0.1.0"
+dependencies = [
+ "assert_cmd",
+ "predicates",
+ "rusqlite",
+ "serde_json",
+ "tempfile",
+ "tokio",
+]
+
+[[package]]
 name = "agileplus-e2e-roundtrip"
 version = "0.1.0"
 dependencies = [
