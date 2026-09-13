@@ -45,6 +45,14 @@ AgilePlus is the Phenotype-org spec-driven development framework. Rust CLI + wor
 - **Do not use `AgilePlus-wtrees/<subject>/`** — the worktree convention is `<repo>-wtrees/` (lowercase repo name).
 - See `agileplus/CLAUDE.md` for detailed workspace structure, bootstrap status, and agent operating notes.
 
+## Desktop & OS Safety (CRITICAL)
+
+- **NEVER** blind-test on the user's main OS
+- **NEVER** take screenshots of the user's live desktop for testing
+- Use process lists (`ps aux`), window lists (`list_windows`), and log output to verify app state
+- For visual verification, use sandboxed environments: Docker, Apple Container, ephemeral user sessions, or CI runners
+- Desktop apps should be verified via `cargo check`, process enumeration, and window enumeration only
+
 ## Architecture Decision Records
 
 This repo documents architecture decisions in two locations:
