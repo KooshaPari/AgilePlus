@@ -5,7 +5,7 @@ use agileplus_domain::ports::vcs::{
     BranchInfo, ConflictInfo, FeatureArtifacts, MergeResult, VcsPort, WorktreeInfo,
 };
 
-use super::{GitVcsAdapter, glob_match, collect_evidence_paths};
+use super::{GitVcsAdapter, collect_evidence_paths, glob_match};
 
 #[async_trait::async_trait]
 impl VcsPort for GitVcsAdapter {
@@ -371,4 +371,3 @@ impl VcsPort for GitVcsAdapter {
         Ok(out)
     }
 }
-

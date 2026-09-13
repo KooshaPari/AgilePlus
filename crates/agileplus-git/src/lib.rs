@@ -224,9 +224,11 @@ impl GitVcsAdapter {
     }
 }
 
-
 /// Collect file paths recursively from a directory.
-pub(crate) fn collect_evidence_paths(dir: &Path, paths: &mut Vec<String>) -> Result<(), DomainError> {
+pub(crate) fn collect_evidence_paths(
+    dir: &Path,
+    paths: &mut Vec<String>,
+) -> Result<(), DomainError> {
     for entry in std::fs::read_dir(dir)
         .map_err(|e| DomainError::Storage(format!("scan evidence {}: {e}", dir.display())))?
     {

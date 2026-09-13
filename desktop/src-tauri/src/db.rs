@@ -1,5 +1,5 @@
-use std::sync::Mutex;
 use rusqlite::Connection;
+use std::sync::Mutex;
 
 pub struct DatabaseState(pub Mutex<Option<Connection>>);
 
@@ -42,7 +42,7 @@ pub fn initialize_database(conn: &Connection) -> Result<(), rusqlite::Error> {
             FOREIGN KEY (feature_id) REFERENCES features(id),
             FOREIGN KEY (work_package_id) REFERENCES work_packages(id)
         );
-        "
+        ",
     )?;
     Ok(())
 }

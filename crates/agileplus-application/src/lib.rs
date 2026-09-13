@@ -22,6 +22,6 @@ pub mod events;
 pub mod use_cases;
 
 #[cfg(test)]
-pub mod test_mocks;
-#[cfg(test)]
 mod test_cases;
+#[cfg(test)]
+pub mod test_mocks;

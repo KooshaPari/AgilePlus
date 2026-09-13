@@ -73,7 +73,10 @@ impl StoragePort for InMemoryFeatureRepo {
             .find(|f| f.slug == slug)
             .cloned())
     }
-    async fn list_features_by_state(&self, state: FeatureState) -> Result<Vec<Feature>, DomainError> {
+    async fn list_features_by_state(
+        &self,
+        state: FeatureState,
+    ) -> Result<Vec<Feature>, DomainError> {
         Ok(self
             .store
             .read()
@@ -223,10 +226,16 @@ impl StoragePort for InMemoryFeatureRepo {
     ) -> Result<i64, DomainError> {
         Ok(0)
     }
-    async fn get_module(&self, _: i64) -> Result<Option<agileplus_domain::domain::module::Module>, DomainError> {
+    async fn get_module(
+        &self,
+        _: i64,
+    ) -> Result<Option<agileplus_domain::domain::module::Module>, DomainError> {
         Ok(None)
     }
-    async fn get_module_by_slug(&self, _: &str) -> Result<Option<agileplus_domain::domain::module::Module>, DomainError> {
+    async fn get_module_by_slug(
+        &self,
+        _: &str,
+    ) -> Result<Option<agileplus_domain::domain::module::Module>, DomainError> {
         Ok(None)
     }
     async fn update_module(&self, _: i64, _: &str, _: Option<&str>) -> Result<(), DomainError> {
@@ -235,130 +244,238 @@ impl StoragePort for InMemoryFeatureRepo {
     async fn delete_module(&self, _: i64) -> Result<(), DomainError> {
         Ok(())
     }
-    async fn list_root_modules(&self) -> Result<Vec<agileplus_domain::domain::module::Module>, DomainError> {
+    async fn list_root_modules(
+        &self,
+    ) -> Result<Vec<agileplus_domain::domain::module::Module>, DomainError> {
         Ok(vec![])
     }
-    async fn list_child_modules(&self, _: i64) -> Result<Vec<agileplus_domain::domain::module::Module>, DomainError> {
+    async fn list_child_modules(
+        &self,
+        _: i64,
+    ) -> Result<Vec<agileplus_domain::domain::module::Module>, DomainError> {
         Ok(vec![])
     }
-    async fn get_module_with_features(&self, _: i64) -> Result<Option<agileplus_domain::domain::module::ModuleWithFeatures>, DomainError> {
+    async fn get_module_with_features(
+        &self,
+        _: i64,
+    ) -> Result<Option<agileplus_domain::domain::module::ModuleWithFeatures>, DomainError> {
         Ok(None)
     }
-    async fn tag_feature_to_module(&self, _: &agileplus_domain::domain::module::ModuleFeatureTag) -> Result<(), DomainError> {
+    async fn tag_feature_to_module(
+        &self,
+        _: &agileplus_domain::domain::module::ModuleFeatureTag,
+    ) -> Result<(), DomainError> {
         Ok(())
     }
     async fn untag_feature_from_module(&self, _: i64, _: i64) -> Result<(), DomainError> {
         Ok(())
     }
-    async fn create_cycle(&self, _: &agileplus_domain::domain::cycle::Cycle) -> Result<i64, DomainError> {
+    async fn create_cycle(
+        &self,
+        _: &agileplus_domain::domain::cycle::Cycle,
+    ) -> Result<i64, DomainError> {
         Ok(0)
     }
-    async fn get_cycle(&self, _: i64) -> Result<Option<agileplus_domain::domain::cycle::Cycle>, DomainError> {
+    async fn get_cycle(
+        &self,
+        _: i64,
+    ) -> Result<Option<agileplus_domain::domain::cycle::Cycle>, DomainError> {
         Ok(None)
     }
-    async fn update_cycle_state(&self, _: i64, _: agileplus_domain::domain::cycle::CycleState) -> Result<(), DomainError> {
+    async fn update_cycle_state(
+        &self,
+        _: i64,
+        _: agileplus_domain::domain::cycle::CycleState,
+    ) -> Result<(), DomainError> {
         Ok(())
     }
-    async fn list_cycles_by_state(&self, _: agileplus_domain::domain::cycle::CycleState) -> Result<Vec<agileplus_domain::domain::cycle::Cycle>, DomainError> {
+    async fn list_cycles_by_state(
+        &self,
+        _: agileplus_domain::domain::cycle::CycleState,
+    ) -> Result<Vec<agileplus_domain::domain::cycle::Cycle>, DomainError> {
         Ok(vec![])
     }
-    async fn list_cycles_by_module(&self, _: i64) -> Result<Vec<agileplus_domain::domain::cycle::Cycle>, DomainError> {
+    async fn list_cycles_by_module(
+        &self,
+        _: i64,
+    ) -> Result<Vec<agileplus_domain::domain::cycle::Cycle>, DomainError> {
         Ok(vec![])
     }
-    async fn list_all_cycles(&self) -> Result<Vec<agileplus_domain::domain::cycle::Cycle>, DomainError> {
+    async fn list_all_cycles(
+        &self,
+    ) -> Result<Vec<agileplus_domain::domain::cycle::Cycle>, DomainError> {
         Ok(vec![])
     }
-    async fn get_cycle_with_features(&self, _: i64) -> Result<Option<agileplus_domain::domain::cycle::CycleWithFeatures>, DomainError> {
+    async fn get_cycle_with_features(
+        &self,
+        _: i64,
+    ) -> Result<Option<agileplus_domain::domain::cycle::CycleWithFeatures>, DomainError> {
         Ok(None)
     }
-    async fn add_feature_to_cycle(&self, _: &agileplus_domain::domain::cycle::CycleFeature) -> Result<(), DomainError> {
+    async fn add_feature_to_cycle(
+        &self,
+        _: &agileplus_domain::domain::cycle::CycleFeature,
+    ) -> Result<(), DomainError> {
         Ok(())
     }
     async fn remove_feature_from_cycle(&self, _: i64, _: i64) -> Result<(), DomainError> {
         Ok(())
     }
-    async fn get_sync_mapping(&self, _: &str, _: i64) -> Result<Option<agileplus_domain::domain::sync_mapping::SyncMapping>, DomainError> {
+    async fn get_sync_mapping(
+        &self,
+        _: &str,
+        _: i64,
+    ) -> Result<Option<agileplus_domain::domain::sync_mapping::SyncMapping>, DomainError> {
         Ok(None)
     }
-    async fn upsert_sync_mapping(&self, _: &agileplus_domain::domain::sync_mapping::SyncMapping) -> Result<(), DomainError> {
+    async fn upsert_sync_mapping(
+        &self,
+        _: &agileplus_domain::domain::sync_mapping::SyncMapping,
+    ) -> Result<(), DomainError> {
         Ok(())
     }
-    async fn get_sync_mapping_by_plane_id(&self, _: &str, _: &str) -> Result<Option<agileplus_domain::domain::sync_mapping::SyncMapping>, DomainError> {
+    async fn get_sync_mapping_by_plane_id(
+        &self,
+        _: &str,
+        _: &str,
+    ) -> Result<Option<agileplus_domain::domain::sync_mapping::SyncMapping>, DomainError> {
         Ok(None)
     }
     async fn delete_sync_mapping(&self, _: &str, _: i64) -> Result<(), DomainError> {
         Ok(())
     }
-    async fn create_project(&self, _: &agileplus_domain::domain::project::Project) -> Result<i64, DomainError> {
+    async fn create_project(
+        &self,
+        _: &agileplus_domain::domain::project::Project,
+    ) -> Result<i64, DomainError> {
         Ok(0)
     }
-    async fn get_project_by_slug(&self, _: &str) -> Result<Option<agileplus_domain::domain::project::Project>, DomainError> {
+    async fn get_project_by_slug(
+        &self,
+        _: &str,
+    ) -> Result<Option<agileplus_domain::domain::project::Project>, DomainError> {
         Ok(None)
     }
-    async fn get_project_by_id(&self, _: i64) -> Result<Option<agileplus_domain::domain::project::Project>, DomainError> {
+    async fn get_project_by_id(
+        &self,
+        _: i64,
+    ) -> Result<Option<agileplus_domain::domain::project::Project>, DomainError> {
         Ok(None)
     }
-    async fn list_all_projects(&self) -> Result<Vec<agileplus_domain::domain::project::Project>, DomainError> {
+    async fn list_all_projects(
+        &self,
+    ) -> Result<Vec<agileplus_domain::domain::project::Project>, DomainError> {
         Ok(vec![])
     }
     async fn delete_project(&self, _: i64) -> Result<(), DomainError> {
         Ok(())
     }
-    async fn create_user(&self, _: &agileplus_domain::domain::user::User) -> Result<i64, DomainError> {
+    async fn create_user(
+        &self,
+        _: &agileplus_domain::domain::user::User,
+    ) -> Result<i64, DomainError> {
         Ok(0)
     }
-    async fn get_user(&self, _: i64) -> Result<Option<agileplus_domain::domain::user::User>, DomainError> {
+    async fn get_user(
+        &self,
+        _: i64,
+    ) -> Result<Option<agileplus_domain::domain::user::User>, DomainError> {
         Ok(None)
     }
-    async fn get_user_by_email(&self, _: &str) -> Result<Option<agileplus_domain::domain::user::User>, DomainError> {
+    async fn get_user_by_email(
+        &self,
+        _: &str,
+    ) -> Result<Option<agileplus_domain::domain::user::User>, DomainError> {
         Ok(None)
     }
-    async fn update_user_status(&self, _: i64, _: agileplus_domain::domain::user::UserStatus) -> Result<(), DomainError> {
+    async fn update_user_status(
+        &self,
+        _: i64,
+        _: agileplus_domain::domain::user::UserStatus,
+    ) -> Result<(), DomainError> {
         Ok(())
     }
-    async fn update_user_role(&self, _: i64, _: agileplus_domain::domain::user::UserRole) -> Result<(), DomainError> {
+    async fn update_user_role(
+        &self,
+        _: i64,
+        _: agileplus_domain::domain::user::UserRole,
+    ) -> Result<(), DomainError> {
         Ok(())
     }
-    async fn list_all_users(&self) -> Result<Vec<agileplus_domain::domain::user::User>, DomainError> {
+    async fn list_all_users(
+        &self,
+    ) -> Result<Vec<agileplus_domain::domain::user::User>, DomainError> {
         Ok(vec![])
     }
     async fn delete_user(&self, _: i64) -> Result<(), DomainError> {
         Ok(())
     }
-    async fn create_epic(&self, _: &agileplus_domain::domain::epic::Epic) -> Result<i64, DomainError> {
+    async fn create_epic(
+        &self,
+        _: &agileplus_domain::domain::epic::Epic,
+    ) -> Result<i64, DomainError> {
         Ok(0)
     }
-    async fn get_epic(&self, _: i64) -> Result<Option<agileplus_domain::domain::epic::Epic>, DomainError> {
+    async fn get_epic(
+        &self,
+        _: i64,
+    ) -> Result<Option<agileplus_domain::domain::epic::Epic>, DomainError> {
         Ok(None)
     }
-    async fn update_epic_status(&self, _: i64, _: agileplus_domain::domain::epic::EpicStatus) -> Result<(), DomainError> {
+    async fn update_epic_status(
+        &self,
+        _: i64,
+        _: agileplus_domain::domain::epic::EpicStatus,
+    ) -> Result<(), DomainError> {
         Ok(())
     }
-    async fn list_epics_by_project(&self, _: i64) -> Result<Vec<agileplus_domain::domain::epic::Epic>, DomainError> {
+    async fn list_epics_by_project(
+        &self,
+        _: i64,
+    ) -> Result<Vec<agileplus_domain::domain::epic::Epic>, DomainError> {
         Ok(vec![])
     }
     async fn delete_epic(&self, _: i64) -> Result<(), DomainError> {
         Ok(())
     }
-    async fn create_story(&self, _: &agileplus_domain::domain::story::Story) -> Result<i64, DomainError> {
+    async fn create_story(
+        &self,
+        _: &agileplus_domain::domain::story::Story,
+    ) -> Result<i64, DomainError> {
         Ok(0)
     }
-    async fn get_story(&self, _: i64) -> Result<Option<agileplus_domain::domain::story::Story>, DomainError> {
+    async fn get_story(
+        &self,
+        _: i64,
+    ) -> Result<Option<agileplus_domain::domain::story::Story>, DomainError> {
         Ok(None)
     }
-    async fn update_story_status(&self, _: i64, _: agileplus_domain::domain::story::StoryStatus) -> Result<(), DomainError> {
+    async fn update_story_status(
+        &self,
+        _: i64,
+        _: agileplus_domain::domain::story::StoryStatus,
+    ) -> Result<(), DomainError> {
         Ok(())
     }
-    async fn list_stories_by_epic(&self, _: i64) -> Result<Vec<agileplus_domain::domain::story::Story>, DomainError> {
+    async fn list_stories_by_epic(
+        &self,
+        _: i64,
+    ) -> Result<Vec<agileplus_domain::domain::story::Story>, DomainError> {
         Ok(vec![])
     }
-    async fn list_stories_by_project(&self, _: i64) -> Result<Vec<agileplus_domain::domain::story::Story>, DomainError> {
+    async fn list_stories_by_project(
+        &self,
+        _: i64,
+    ) -> Result<Vec<agileplus_domain::domain::story::Story>, DomainError> {
         Ok(vec![])
     }
     async fn delete_story(&self, _: i64) -> Result<(), DomainError> {
         Ok(())
     }
-    async fn upsert_story_by_requirement_id(&self, _: &agileplus_domain::domain::story::Story) -> Result<i64, DomainError> {
+    async fn upsert_story_by_requirement_id(
+        &self,
+        _: &agileplus_domain::domain::story::Story,
+    ) -> Result<i64, DomainError> {
         Ok(0)
     }
 }

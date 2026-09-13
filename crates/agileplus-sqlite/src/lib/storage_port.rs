@@ -1,5 +1,8 @@
-use crate::repository::{audit, cycles, epics, evidence, features, governance, metrics, modules, projects, stories, sync_mappings, users, work_packages};
 use super::SqliteStorageAdapter;
+use crate::repository::{
+    audit, cycles, epics, evidence, features, governance, metrics, modules, projects, stories,
+    sync_mappings, users, work_packages,
+};
 use agileplus_domain::{
     domain::{
         audit::AuditEntry,

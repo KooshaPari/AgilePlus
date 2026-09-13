@@ -3,8 +3,8 @@ use agileplus_domain::domain::{
     audit::{AuditEntry, hash_entry},
     feature::Feature,
     governance::{
-        Evidence, EvidenceType, GovernanceContract, GovernanceRule, PolicyCheck,
-        PolicyDefinition, PolicyDomain, PolicyRule,
+        Evidence, EvidenceType, GovernanceContract, GovernanceRule, PolicyCheck, PolicyDefinition,
+        PolicyDomain, PolicyRule,
     },
     metric::Metric,
     project::Project,
@@ -937,10 +937,9 @@ async fn cycle_wp_progress_summary() {
     )
     .unwrap();
     let cid = StoragePort::create_cycle(&db, &c).await.unwrap();
-    let fid =
-        StoragePort::create_feature(&db, &Feature::new("prog-feat", "Prog", [0u8; 32], None))
-            .await
-            .unwrap();
+    let fid = StoragePort::create_feature(&db, &Feature::new("prog-feat", "Prog", [0u8; 32], None))
+        .await
+        .unwrap();
     StoragePort::add_feature_to_cycle(&db, &CycleFeature::new(cid, fid))
         .await
         .unwrap();
@@ -1176,10 +1175,9 @@ async fn epic_list_by_project() {
     )
     .await
     .unwrap();
-    let pid2 =
-        StoragePort::create_project(&db, &Project::new("Other Proj", "other-proj").unwrap())
-            .await
-            .unwrap();
+    let pid2 = StoragePort::create_project(&db, &Project::new("Other Proj", "other-proj").unwrap())
+        .await
+        .unwrap();
     StoragePort::create_epic(&db, &Epic::new(pid, "E1").unwrap())
         .await
         .unwrap();
@@ -1198,10 +1196,9 @@ async fn epic_list_by_project() {
 #[tokio::test]
 async fn epic_delete() {
     let db = make_adapter();
-    let pid =
-        StoragePort::create_project(&db, &Project::new("Del Proj", "del-proj-epic").unwrap())
-            .await
-            .unwrap();
+    let pid = StoragePort::create_project(&db, &Project::new("Del Proj", "del-proj-epic").unwrap())
+        .await
+        .unwrap();
     let eid = StoragePort::create_epic(&db, &Epic::new(pid, "Temp Epic").unwrap())
         .await
         .unwrap();
@@ -1214,12 +1211,10 @@ async fn epic_delete() {
 use agileplus_domain::domain::story::{Story, StoryStatus};
 
 async fn make_project_and_epic(db: &SqliteStorageAdapter) -> (i64, i64) {
-    let pid = StoragePort::create_project(
-        db,
-        &Project::new("Story Project", "story-project").unwrap(),
-    )
-    .await
-    .unwrap();
+    let pid =
+        StoragePort::create_project(db, &Project::new("Story Project", "story-project").unwrap())
+            .await
+            .unwrap();
     let eid = StoragePort::create_epic(db, &Epic::new(pid, "Story Epic").unwrap())
         .await
         .unwrap();

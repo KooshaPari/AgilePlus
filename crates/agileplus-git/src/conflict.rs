@@ -128,17 +128,14 @@ impl GitVcsAdapter {
     fn git_path_token(input: &str) -> Option<(String, &str)> {
         if !input.starts_with('"') {
             let end = input.find(char::is_whitespace).unwrap_or(input.len());
-            return (!input[..end].is_empty())
-                .then(|| (input[..end].to_string(), &input[end..]));
+            return (!input[..end].is_empty()).then(|| (input[..end].to_string(), &input[end..]));
         }
 
         let mut decoded = Vec::new();
         let mut chars = input[1..].chars();
         while let Some(character) = chars.next() {
             match character {
-                '"' => {
-                    return Some((String::from_utf8(decoded).ok()?, chars.as_str()))
-                }
+                '"' => return Some((String::from_utf8(decoded).ok()?, chars.as_str())),
                 '\\' => {
                     let escaped = chars.next()?;
                     match escaped {
@@ -149,22 +146,19 @@ impl GitVcsAdapter {
                         '0'..='7' => {
                             let second = chars.next()?;
                             let third = chars.next()?;
-                            let octal =
-                                [escaped, second, third].iter().collect::<String>();
+                            let octal = [escaped, second, third].iter().collect::<String>();
                             let byte = u8::from_str_radix(&octal, 8).ok()?;
                             decoded.push(byte);
                         }
                         other => {
                             let mut buffer = [0; 4];
-                            decoded
-                                .extend_from_slice(other.encode_utf8(&mut buffer).as_bytes());
+                            decoded.extend_from_slice(other.encode_utf8(&mut buffer).as_bytes());
                         }
                     }
                 }
                 other => {
                     let mut buffer = [0; 4];
-                    decoded
-                        .extend_from_slice(other.encode_utf8(&mut buffer).as_bytes());
+                    decoded.extend_from_slice(other.encode_utf8(&mut buffer).as_bytes());
                 }
             }
         }
@@ -195,9 +189,7 @@ impl GitVcsAdapter {
 
     /// Return unresolved paths from a merge worktree.  This is authoritative
     /// after `git merge` fails because it reads Git's unmerged index directly.
-    pub(crate) fn unresolved_conflicts_in(
-        dir: &std::path::Path,
-    ) -> Vec<ConflictInfo> {
+    pub(crate) fn unresolved_conflicts_in(dir: &std::path::Path) -> Vec<ConflictInfo> {
         use std::process::{Command, Stdio};
 
         let output = Command::new("git")

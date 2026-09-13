@@ -48,14 +48,12 @@ impl AgentBackend {
 
     fn binary_and_args(&self) -> Option<(&'static str, Vec<&'static str>)> {
         match self {
-            AgentBackend::ClaudeCli => Some((
-                "claude",
-                vec!["--print", "--dangerously-skip-permissions"],
-            )),
-            AgentBackend::CheapLlmMcp => Some((
-                "cheap-llm-mcp",
-                vec!["dispatch", "--model", "minimax"],
-            )),
+            AgentBackend::ClaudeCli => {
+                Some(("claude", vec!["--print", "--dangerously-skip-permissions"]))
+            }
+            AgentBackend::CheapLlmMcp => {
+                Some(("cheap-llm-mcp", vec!["dispatch", "--model", "minimax"]))
+            }
             AgentBackend::Stub => None,
         }
     }
@@ -139,8 +137,7 @@ impl AgentPort for RealAgentAdapter {
                         error: result.stderr.clone(),
                     }
                 };
-                self.jobs
-                    .insert(job_id.clone(), JobState::Finished(status));
+                self.jobs.insert(job_id.clone(), JobState::Finished(status));
             }
             _ => {
                 let (child, stdin_tx) = self.spawn_backend(&task, config).await?;
@@ -298,21 +295,17 @@ impl AgentPort for RealAgentAdapter {
             } => {
                 let data = format!("{instruction}\n").into_bytes();
                 tx.send(data).await.map_err(|_| {
-                    DomainError::Agent(format!(
-                        "stdin closed; cannot send instruction to {job_id}"
-                    ))
+                    DomainError::Agent(format!("stdin closed; cannot send instruction to {job_id}"))
                 })?;
                 tracing::info!(job_id, instruction = %instruction, "sent instruction");
                 Ok(())
             }
-            JobState::Running {
-                stdin_tx: None, ..
-            } => Err(DomainError::Agent(format!(
-                "no stdin channel for {job_id}"
-            ))),
-            JobState::Finished(_) => Err(DomainError::Agent(format!(
-                "job {job_id} already finished"
-            ))),
+            JobState::Running { stdin_tx: None, .. } => {
+                Err(DomainError::Agent(format!("no stdin channel for {job_id}")))
+            }
+            JobState::Finished(_) => {
+                Err(DomainError::Agent(format!("job {job_id} already finished")))
+            }
         }
     }
 }

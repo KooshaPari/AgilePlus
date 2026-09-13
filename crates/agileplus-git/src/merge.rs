@@ -34,9 +34,7 @@ impl GitVcsAdapter {
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .output()
-            .map_err(|e| {
-                DomainError::Storage(format!("failed to spawn git merge: {e}"))
-            })?;
+            .map_err(|e| DomainError::Storage(format!("failed to spawn git merge: {e}")))?;
         let stdout = String::from_utf8_lossy(&result.stdout).into_owned();
         let stderr = String::from_utf8_lossy(&result.stderr).into_owned();
         if result.status.success() {
@@ -50,11 +48,7 @@ impl GitVcsAdapter {
             let head = head_out
                 .and_then(|o| {
                     if o.status.success() {
-                        Some(
-                            String::from_utf8_lossy(&o.stdout)
-                                .trim()
-                                .to_string(),
-                        )
+                        Some(String::from_utf8_lossy(&o.stdout).trim().to_string())
                     } else {
                         None
                     }
@@ -107,9 +101,7 @@ impl GitVcsAdapter {
         let tmp_str = tmp.to_string_lossy().into_owned();
         self.run_git_status(&["worktree", "add", "--force", &tmp_str, target])?;
         let merge_result = self.merge_in_dir(&tmp, source, target);
-        if let Err(e) =
-            self.run_git(&["worktree", "remove", "--force", &tmp_str])
-        {
+        if let Err(e) = self.run_git(&["worktree", "remove", "--force", &tmp_str]) {
             tracing::warn!(
                 path = %tmp_str,
                 error = %e,

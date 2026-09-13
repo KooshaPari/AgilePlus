@@ -3,6 +3,8 @@
 //! Implements `StoragePort` using rusqlite with WAL mode and foreign keys.
 //! Traceability: WP06
 
+#[path = "lib/content_storage.rs"]
+mod content_storage;
 pub mod event_store;
 pub mod migrations;
 pub mod rebuild;
@@ -10,8 +12,6 @@ pub mod repository;
 pub mod seed;
 #[path = "lib/storage_port.rs"]
 mod storage_port;
-#[path = "lib/content_storage.rs"]
-mod content_storage;
 pub mod triage;
 
 use std::path::Path;
