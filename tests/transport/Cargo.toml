@@ -27,3 +27,11 @@ path = "cli_transport.rs"
 [[test]]
 name = "desktop_ipc"
 path = "desktop_ipc.rs"
+
+[[test]]
+name = "e2e_workflow"
+path = "e2e_workflow.rs"
+
+[dev-dependencies]
+assert_cmd = "2"
+predicates = "3"
