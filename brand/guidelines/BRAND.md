@@ -140,30 +140,6 @@ Follows Phenotype org iconography standard:
 
 ---
 
-## Asset Manifest
-
-```
-brand/
-  icon/
-    agileplus-logo.svg          # Full color logo (512x512)
-    agileplus-logo-white.svg    # White variant
-    agileplus-logo-dark.svg     # Dark variant
-    agileplus-favicon.svg       # Favicon
-  splash/
-    splash-1920x1080.html       # Splash screen artwork
-  panel-art/
-    panel-dashboard-hero.html   # Dashboard background
-    panel-feature-detail.html   # Feature detail background
-    panel-about.html            # About window background
-    opengraph-card.html         # Social media card
-  animations/
-    loading-spinner.html        # Loading animation
-  guidelines/
-    BRAND.md                    # This document
-```
-
----
-
 ## Design Principles
 
 1. **Dark-first** — all UI designed for dark mode first
