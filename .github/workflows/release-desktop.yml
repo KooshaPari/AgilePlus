@@ -216,26 +216,30 @@ jobs:
         run: |
           set -euo pipefail
 
-          # ── Extract .app bundles from the .app.tar.gz archives ──────
-          mkdir -p arm64-app x86_64-app
+          ARM64_DMG=$(find macos-arm64 -name '*.dmg' | head -1)
+          X86_64_DMG=$(find macos-x86_64 -name '*.dmg' | head -1)
 
-          ARM64_TAR=$(find macos-arm64 -name '*.app.tar.gz' | head -1)
-          X86_64_TAR=$(find macos-x86_64 -name '*.app.tar.gz' | head -1)
-
-          if [ -z "$ARM64_TAR" ] || [ -z "$X86_64_TAR" ]; then
-            echo "::error::Could not find .app.tar.gz in both macOS artifacts"
+          if [ -z "$ARM64_DMG" ] || [ -z "$X86_64_DMG" ]; then
+            echo "::error::Could not find .dmg in both macOS artifacts"
             echo "arm64 files:   $(ls -R macos-arm64/)"
             echo "x86_64 files:  $(ls -R macos-x86_64/)"
             exit 1
           fi
 
-          echo "ARM64 archive: $ARM64_TAR"
-          echo "X86_64 archive: $X86_64_TAR"
+          echo "ARM64 DMG: $ARM64_DMG"
+          echo "X86_64 DMG: $X86_64_DMG"
 
-          tar -xzf "$ARM64_TAR"  -C arm64-app
-          tar -xzf "$X86_64_TAR" -C x86_64-app
+          # ── Extract .app bundles from DMGs ──────────────────────────
+          mkdir -p arm64-app x86_64-app
 
-          # Locate the .app bundles
+          hdiutil attach "$ARM64_DMG" -nobrowse -mountpoint /tmp/arm64-dmg
+          cp -R /tmp/arm64-dmg/*.app arm64-app/
+          hdiutil detach /tmp/arm64-dmg || true
+
+          hdiutil attach "$X86_64_DMG" -nobrowse -mountpoint /tmp/x86_64-dmg
+          cp -R /tmp/x86_64-dmg/*.app x86_64-app/
+          hdiutil detach /tmp/x86_64-dmg || true
+
           ARM64_APP=$(find arm64-app -maxdepth 1 -name '*.app' -type d | head -1)
           X86_64_APP=$(find x86_64-app -maxdepth 1 -name '*.app' -type d | head -1)
 
@@ -271,15 +275,8 @@ jobs:
             esac
           done
 
-          codesign --force --deep --sign - "$UNIVERSAL_APP" 2>/dev/null || true
-
           # ── Create universal DMG ─────────────────────────────────────
-          # Collect existing per-arch DMGs for the release assets
-          ARM64_DMG=$(find macos-arm64 -name '*.dmg' | head -1)
-          X86_64_DMG=$(find macos-x86_64 -name '*.dmg' | head -1)
-
           DMG_FINAL="AgilePlus Desktop-universal.dmg"
-
           hdiutil create \
             -volname "AgilePlus Desktop" \
             -srcfolder "$UNIVERSAL_APP" \
@@ -289,12 +286,11 @@ jobs:
 
           echo "Universal DMG: $DMG_FINAL"
 
-          # Stage all artifacts for upload
+          # Stage all artifacts
           mkdir -p universal-output
           cp "$DMG_FINAL" universal-output/
-          # Also include the per-architecture DMGs
-          [ -n "${ARM64_DMG:-}" ]  && cp "$ARM64_DMG"  universal-output/ || true
-          [ -n "${X86_64_DMG:-}" ] && cp "$X86_64_DMG" universal-output/ || true
+          cp "$ARM64_DMG" universal-output/
+          cp "$X86_64_DMG" universal-output/
 
           echo "Staged artifacts:"
           ls -lh universal-output/
