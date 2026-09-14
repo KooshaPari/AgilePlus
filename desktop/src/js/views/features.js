@@ -1,8 +1,6 @@
 import { invoke } from '../services/tauri-bridge.js';
 import { renderFeatureListItem } from '../components/feature-list-item.js';
 import { renderStateBadge, getNextStates } from '../components/state-badge.js';
-import { showModal } from '../components/modal.js';
-import { showToast } from '../components/toast.js';
 
 const ALL_STATES = [
   'created', 'specified', 'researched', 'planned',
@@ -37,7 +35,6 @@ function renderList(container, features) {
           `<option value="">All States</option>` +
           `${filterOptions}` +
         `</select>` +
-        `<button class="btn btn-primary" id="feat-create-btn">+ Create Feature</button>` +
       `</div>` +
     `</div>` +
     `<div class="list-container">` +
@@ -68,9 +65,6 @@ function renderList(container, features) {
     renderFiltered(e.target.value);
   });
 
-  document.getElementById('feat-create-btn').addEventListener('click', () => {
-    openCreateModal();
-  });
 }
 
 function wireClicks(listEl) {
@@ -83,38 +77,3 @@ function wireClicks(listEl) {
   });
 }
 
-function openCreateModal() {
-  const formHtml = (
-    `<div class="form-group">` +
-      `<label class="form-label" for="feat-name">Feature Name</label>` +
-      `<input class="form-input" type="text" id="feat-name" placeholder="Enter feature name" maxlength="255" />` +
-    `</div>` +
-    `<div class="form-group">` +
-      `<label class="form-label" for="feat-desc">Description (optional)</label>` +
-      `<textarea class="form-textarea" id="feat-desc" rows="3" placeholder="Describe the feature..."></textarea>` +
-    `</div>`
-  );
-
-  showModal({
-    title: 'Create Feature',
-    content: formHtml,
-    onConfirm: async () => {
-      const name = document.getElementById('feat-name').value.trim();
-      const description = document.getElementById('feat-desc').value.trim() || null;
-      if (!name) {
-        showToast({ message: 'Feature name is required', type: 'error' });
-        return;
-      }
-      try {
-        await invoke('create_feature', { name, description });
-        showToast({ message: `Feature "${name}" created`, type: 'success' });
-        // Re-render the list
-        const features = await invoke('list_features');
-        const container = document.getElementById('content');
-        renderList(container, features);
-      } catch (err) {
-        showToast({ message: `Failed to create feature: ${err}`, type: 'error' });
-      }
-    },
-  });
-}

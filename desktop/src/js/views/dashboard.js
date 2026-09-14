@@ -1,8 +1,6 @@
 import { invoke } from '../services/tauri-bridge.js';
 import { renderStatCard } from '../components/stat-card.js';
 import { renderFeatureListItem } from '../components/feature-list-item.js';
-import { showModal } from '../components/modal.js';
-import { showToast } from '../components/toast.js';
 
 /**
  * Dashboard view: stats cards + recent features + create button.
@@ -12,6 +10,38 @@ export async function render(container) {
   container.innerHTML = '<div class="loading">Loading dashboard...</div>';
 
   try {
+    // Check if a project is loaded
+    let repoPath = '';
+    try {
+      repoPath = await invoke('get_repo_path');
+    } catch (_e) { /* ignore */ }
+
+    if (!repoPath) {
+      container.innerHTML = (
+        `<div class="view-header">` +
+          `<h2 class="view-title">AgilePlus Desktop</h2>` +
+        `</div>` +
+        `<div class="empty-state" style="padding: 4rem; text-align: center;">` +
+          `<h3>No project open</h3>` +
+          `<p>Open a project directory to get started.</p>` +
+          `<button class="btn btn-primary" id="dash-open-btn">Open Project</button>` +
+        `</div>`
+      );
+      document.getElementById('dash-open-btn')?.addEventListener('click', async () => {
+        const path = prompt('Enter project directory path:', '');
+        if (path) {
+          try {
+            await invoke('open_project', { path });
+            window.location.hash = '#dashboard';
+            window.location.reload();
+          } catch (e) {
+            alert(`Failed: ${e}`);
+          }
+        }
+      });
+      return;
+    }
+
     const [stats, features] = await Promise.all([
       invoke('get_dashboard_stats'),
       invoke('list_features'),
@@ -28,7 +58,9 @@ export async function render(container) {
     container.innerHTML = (
       `<div class="view-header">` +
         `<h2 class="view-title">Dashboard</h2>` +
-        `<button class="btn btn-primary" id="dash-create-btn">+ Create Feature</button>` +
+        `<div>` +
+          `<button class="btn btn-secondary" id="dash-open-btn" title="Open a different project">Open Project</button>` +
+        `</div>` +
       `</div>` +
       `<div class="stats-grid">` +
         `${renderStatCard({ title: 'Total Features', value: stats.total_features, color: 'var(--accent)' })}` +
@@ -49,9 +81,18 @@ export async function render(container) {
       `</div>`
     );
 
-    // Wire create button
-    document.getElementById('dash-create-btn').addEventListener('click', () => {
-      openCreateModal();
+    // Wire open project button
+    document.getElementById('dash-open-btn')?.addEventListener('click', async () => {
+      const path = prompt('Enter project directory path:', '');
+      if (path) {
+        try {
+          await invoke('open_project', { path });
+          window.location.hash = '#dashboard';
+          window.location.reload();
+        } catch (e) {
+          alert(`Failed: ${e}`);
+        }
+      }
     });
 
     // Wire feature item clicks
@@ -68,35 +109,4 @@ export async function render(container) {
   }
 }
 
-function openCreateModal() {
-  const formHtml = (
-    `<div class="form-group">` +
-      `<label class="form-label" for="feat-name">Feature Name</label>` +
-      `<input class="form-input" type="text" id="feat-name" placeholder="Enter feature name" maxlength="255" />` +
-    `</div>` +
-    `<div class="form-group">` +
-      `<label class="form-label" for="feat-desc">Description (optional)</label>` +
-      `<textarea class="form-textarea" id="feat-desc" rows="3" placeholder="Describe the feature..."></textarea>` +
-    `</div>`
-  );
 
-  showModal({
-    title: 'Create Feature',
-    content: formHtml,
-    onConfirm: async () => {
-      const name = document.getElementById('feat-name').value.trim();
-      const description = document.getElementById('feat-desc').value.trim() || null;
-      if (!name) {
-        showToast({ message: 'Feature name is required', type: 'error' });
-        return;
-      }
-      try {
-        await invoke('create_feature', { name, description });
-        showToast({ message: `Feature "${name}" created`, type: 'success' });
-        window.location.hash = '#features';
-      } catch (err) {
-        showToast({ message: `Failed to create feature: ${err}`, type: 'error' });
-      }
-    },
-  });
-}

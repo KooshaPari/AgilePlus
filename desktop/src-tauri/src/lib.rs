@@ -60,19 +60,18 @@ pub fn run() {
             let _ = std::fs::write(crash_dir.join(filename), &crash_report);
         }
 
-        // Also log to stderr for development
         eprintln!("{crash_report}");
     }));
 
     tauri::Builder::default()
         .plugin(tauri_plugin_log::Builder::default().build())
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_dialog::init())
         .manage(AppState::default())
         .setup(|app| {
             // Build dynamic tray menu from DB state
             let menu = tray::menu::build_tray_menu(app.handle()).unwrap_or_else(|e| {
                 log::warn!("Failed to build tray menu: {e}");
-                // Fallback: minimal menu
                 let show =
                     MenuItem::with_id(app, "show", "Show Window", true, None::<&str>).unwrap();
                 let quit = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>).unwrap();
@@ -150,26 +149,38 @@ pub fn run() {
                 })
                 .build(app)?;
 
-            // Initialize database
+            // ── Auto-discover project database ──────────────────────────
             let state = app.state::<AppState>();
-            let db_path = app
-                .path()
-                .app_data_dir()
-                .expect("failed to get app data dir")
-                .join("agileplus.db");
 
-            // Ensure parent directory exists
-            if let Some(parent) = db_path.parent() {
-                std::fs::create_dir_all(parent).ok();
+            // Try to find .agileplus/agileplus.db starting from CWD
+            let cwd = std::env::current_dir().unwrap_or_default();
+            if let Some(project_root) = db::find_project_root(&cwd) {
+                match db::open_project_db(&project_root) {
+                    Ok(conn) => {
+                        *state.db.0.lock().unwrap() = Some(conn);
+                        *state.repo_path.lock().unwrap() =
+                            project_root.to_string_lossy().to_string();
+                        log::info!(
+                            "Connected to project: {}",
+                            project_root.display()
+                        );
+                    }
+                    Err(e) => {
+                        log::warn!("Found project but failed to open DB: {e}");
+                    }
+                }
+            } else {
+                log::info!(
+                    "No .agileplus project found in {}. User can open one via the UI.",
+                    cwd.display()
+                );
             }
 
-            // Initialize SQLite connection
-            let conn = rusqlite::Connection::open(&db_path).expect("failed to open database");
-
-            // Run migrations
-            db::initialize_database(&conn).expect("failed to initialize database");
-
-            *state.db.0.lock().unwrap() = Some(conn);
+            // Show the main window (was invisible by default)
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.show();
+                let _ = window.set_focus();
+            }
 
             Ok(())
         })
@@ -178,11 +189,10 @@ pub fn run() {
             commands::list_features,
             commands::get_feature,
             commands::get_feature_with_details,
-            commands::create_feature,
-            commands::update_feature_state,
             commands::get_dashboard_stats,
             commands::set_repo_path,
             commands::get_repo_path,
+            commands::open_project,
             // ADR filesystem commands
             adrs::list_adrs,
             adrs::read_adr,

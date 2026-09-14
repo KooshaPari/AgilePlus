@@ -22,6 +22,7 @@ log = "0.4"
 tauri = { version = "2.11.2", features = ["tray-icon"] }
 tauri-plugin-log = "2"
 tauri-plugin-shell = "2"
+tauri-plugin-dialog = "2"
 
 # AgilePlus core crates
 agileplus-domain = { path = "../../crates/agileplus-domain" }
@@ -30,6 +31,5 @@ agileplus-application = { path = "../../crates/agileplus-application" }
 
 # Database
 rusqlite = { version = "0.40", features = ["bundled"] }
-uuid = { version = "1.0", features = ["v4"] }
 chrono = { version = "0.4", features = ["serde"] }
 dirs-next = "2"

@@ -8,8 +8,8 @@ import { renderStateBadge } from './state-badge.js';
  */
 export function renderFeatureListItem({ feature, onClick }) {
   const id = escapeHtml(feature.id);
-  const name = escapeHtml(feature.name);
-  const desc = escapeHtml(feature.description || 'No description');
+  const name = escapeHtml(feature.friendly_name || feature.slug);
+  const desc = escapeHtml(feature.slug || '');
   const date = escapeHtml(new Date(feature.updated_at).toLocaleDateString());
   return (
     `<li class="list-item feature-item" data-feature-id="${id}">` +

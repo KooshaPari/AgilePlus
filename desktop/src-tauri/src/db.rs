@@ -1,4 +1,5 @@
 use rusqlite::Connection;
+use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
 pub struct DatabaseState(pub Mutex<Option<Connection>>);
@@ -12,7 +13,7 @@ impl Default for DatabaseState {
 /// Application state combining the database connection and the active repo path.
 pub struct AppState {
     pub db: DatabaseState,
-    repo_path: Mutex<String>,
+    pub repo_path: Mutex<String>,
 }
 
 impl Default for AppState {
@@ -45,46 +46,46 @@ impl AppState {
     }
 
     /// Acquire a lock on the database connection.
-    /// Returns a MutexGuard that the caller uses to query via `as_ref()`.
     pub fn db_connection(&self) -> Result<std::sync::MutexGuard<'_, Option<Connection>>, String> {
         self.db.0.lock().map_err(|e| e.to_string())
     }
 }
 
-pub fn initialize_database(conn: &Connection) -> Result<(), rusqlite::Error> {
-    conn.execute_batch(
-        "
-        CREATE TABLE IF NOT EXISTS features (
-            id TEXT PRIMARY KEY,
-            name TEXT NOT NULL,
-            description TEXT,
-            state TEXT NOT NULL DEFAULT 'created',
-            created_at TEXT NOT NULL DEFAULT (datetime('now')),
-            updated_at TEXT NOT NULL DEFAULT (datetime('now'))
-        );
+/// Walk up from `start` looking for `.agileplus/agileplus.db`.
+/// Returns the path to the project root if found.
+pub fn find_project_root(start: &Path) -> Option<PathBuf> {
+    let mut current = start.to_path_buf();
+    loop {
+        let db_candidate = current.join(".agileplus").join("agileplus.db");
+        if db_candidate.exists() {
+            return Some(current);
+        }
+        if !current.pop() {
+            break;
+        }
+    }
+    None
+}
 
-        CREATE TABLE IF NOT EXISTS work_packages (
-            id TEXT PRIMARY KEY,
-            feature_id TEXT NOT NULL,
-            name TEXT NOT NULL,
-            description TEXT,
-            state TEXT NOT NULL DEFAULT 'pending',
-            created_at TEXT NOT NULL DEFAULT (datetime('now')),
-            updated_at TEXT NOT NULL DEFAULT (datetime('now')),
-            FOREIGN KEY (feature_id) REFERENCES features(id)
-        );
+/// Open the CLI's .agileplus/agileplus.db (read-only safe, WAL mode for writes).
+pub fn open_project_db(project_root: &Path) -> Result<Connection, String> {
+    let db_path = project_root.join(".agileplus").join("agileplus.db");
+    if !db_path.exists() {
+        return Err(format!(
+            "No .agileplus/agileplus.db found in {}",
+            project_root.display()
+        ));
+    }
+    let conn =
+        Connection::open(&db_path).map_err(|e| format!("Failed to open database: {e}"))?;
 
-        CREATE TABLE IF NOT EXISTS evidence (
-            id TEXT PRIMARY KEY,
-            feature_id TEXT NOT NULL,
-            work_package_id TEXT,
-            evidence_type TEXT NOT NULL,
-            content TEXT,
-            created_at TEXT NOT NULL DEFAULT (datetime('now')),
-            FOREIGN KEY (feature_id) REFERENCES features(id),
-            FOREIGN KEY (work_package_id) REFERENCES work_packages(id)
-        );
-        ",
-    )?;
-    Ok(())
+    // Enable WAL mode for concurrent reads
+    conn.execute_batch("PRAGMA journal_mode=WAL;")
+        .map_err(|e| format!("WAL pragma failed: {e}"))?;
+
+    // Enable foreign keys
+    conn.execute_batch("PRAGMA foreign_keys=ON;")
+        .map_err(|e| format!("FK pragma failed: {e}"))?;
+
+    Ok(conn)
 }

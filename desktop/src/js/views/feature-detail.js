@@ -12,7 +12,7 @@ export async function render(container, featureId) {
   container.innerHTML = '<div class="loading">Loading feature...</div>';
 
   try {
-    const feature = await invoke('get_feature', { id: featureId });
+    const feature = await invoke('get_feature', { id: Number(featureId) });
     if (!feature) {
       container.innerHTML = '<div class="error-state">Feature not found.</div>';
       return;
@@ -24,8 +24,8 @@ export async function render(container, featureId) {
 }
 
 function renderDetail(container, feature) {
-  const name = escapeHtml(feature.name);
-  const desc = escapeHtml(feature.description || 'No description');
+  const name = escapeHtml(feature.friendly_name || feature.slug);
+  const desc = escapeHtml(feature.slug || 'No description');
   const created = escapeHtml(new Date(feature.created_at).toLocaleString());
   const updated = escapeHtml(new Date(feature.updated_at).toLocaleString());
   const nextState = getNextState(feature.state);
@@ -104,7 +104,8 @@ function renderTab(tabContent, feature) {
     tabContent.innerHTML = (
       `<div class="tab-panel">` +
         `<h3>Description</h3>` +
-        `<p class="detail-description">${escapeHtml(feature.description || 'No description provided.')}</p>` +
+        `<p class="detail-description">Branch: ${escapeHtml(feature.target_branch || 'main')}</p>` +
+        `<p class="detail-description">Slug: ${escapeHtml(feature.slug)}</p>` +
         `<h3>State Progression</h3>` +
         `${renderStateMachine(feature.state)}` +
       `</div>`
@@ -119,7 +120,7 @@ function renderTab(tabContent, feature) {
 async function renderWorkPackagesTab(tabContent, feature) {
   tabContent.innerHTML = '<div class="loading">Loading work packages...</div>';
   try {
-    const wp = await invoke('list_work_packages', { feature_id: feature.id });
+    const wp = await invoke('list_work_packages', { feature_id: Number(feature.id) });
     if (wp.length === 0) {
       tabContent.innerHTML = '<div class="empty-state">No work packages yet.</div>';
       return;
@@ -129,8 +130,8 @@ async function renderWorkPackagesTab(tabContent, feature) {
         wp.map(w => (
           `<li class="list-item wp-item">` +
             `<div class="wp-main">` +
-              `<span class="wp-name">${escapeHtml(w.name)}</span>` +
-              `<span class="wp-desc">${escapeHtml(w.description || '')}</span>` +
+              `<span class="wp-name">${escapeHtml(w.title)}</span>` +
+              `<span class="wp-desc">${escapeHtml(w.acceptance_criteria || '')}</span>` +
             `</div>` +
             `<div class="wp-meta">` +
               `${renderStateBadge(w.state)}` +
@@ -147,7 +148,7 @@ async function renderWorkPackagesTab(tabContent, feature) {
 async function renderEvidenceTab(tabContent, feature) {
   tabContent.innerHTML = '<div class="loading">Loading evidence...</div>';
   try {
-    const evidence = await invoke('list_evidence', { feature_id: feature.id });
+    const evidence = await invoke('list_evidence', { feature_id: Number(feature.id) });
     if (evidence.length === 0) {
       tabContent.innerHTML = '<div class="empty-state">No evidence collected yet.</div>';
       return;
@@ -158,7 +159,7 @@ async function renderEvidenceTab(tabContent, feature) {
           `<li class="list-item evidence-item">` +
             `<div class="evidence-main">` +
               `<span class="evidence-type">${escapeHtml(e.evidence_type)}</span>` +
-              `<span class="evidence-content">${escapeHtml(e.content)}</span>` +
+              `<span class="evidence-content">${escapeHtml(e.artifact_path)}</span>` +
             `</div>` +
             `<span class="evidence-date">${escapeHtml(new Date(e.created_at).toLocaleDateString())}</span>` +
           `</li>`
