@@ -18,3 +18,7 @@ tempfile.workspace = true
 [[test]]
 name = "grpc_transport"
 path = "grpc_transport.rs"
+
+[[test]]
+name = "cli_transport"
+path = "cli_transport.rs"
