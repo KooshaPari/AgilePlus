@@ -11,6 +11,7 @@ agileplus-domain = { version = "0.2.1", path = "../../crates/agileplus-domain" }
 agileplus-grpc = { version = "0.2.1", path = "../../crates/agileplus-grpc" }
 agileplus-proto = { version = "0.2.1", path = "../../crates/agileplus-proto" }
 agileplus-sqlite = { version = "0.2.1", path = "../../crates/agileplus-sqlite" }
+rusqlite = { version = "0.40", features = ["bundled"] }
 tonic.workspace = true
 tokio.workspace = true
 tempfile.workspace = true
@@ -22,3 +23,7 @@ path = "grpc_transport.rs"
 [[test]]
 name = "cli_transport"
 path = "cli_transport.rs"
+
+[[test]]
+name = "desktop_ipc"
+path = "desktop_ipc.rs"
