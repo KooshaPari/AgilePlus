@@ -162,7 +162,7 @@ fn test_tauri_config_valid() {
         serde_json::from_str(&content).expect("Should be valid JSON");
 
     assert_eq!(config["productName"], "AgilePlus Desktop");
-    assert_eq!(config["version"], "0.1.0");
+    assert_eq!(config["version"], "0.2.0");
     assert!(
         config["app"]["trayIcon"].is_object(),
         "Tray icon config should exist"
