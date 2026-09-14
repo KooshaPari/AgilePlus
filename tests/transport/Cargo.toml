@@ -1,0 +1,20 @@
+[package]
+name = "agileplus-transport-tests"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+description = "Transport-layer integration tests (gRPC helpers, CLI, SQLite round-trip)"
+
+[dependencies]
+agileplus-domain = { version = "0.2.1", path = "../../crates/agileplus-domain" }
+agileplus-grpc = { version = "0.2.1", path = "../../crates/agileplus-grpc" }
+agileplus-proto = { version = "0.2.1", path = "../../crates/agileplus-proto" }
+agileplus-sqlite = { version = "0.2.1", path = "../../crates/agileplus-sqlite" }
+tonic.workspace = true
+tokio.workspace = true
+tempfile.workspace = true
+
+[[test]]
+name = "grpc_transport"
+path = "grpc_transport.rs"

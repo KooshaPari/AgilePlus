@@ -78,7 +78,7 @@ fn validate_project_scope(
 }
 
 /// Parse the contract representation `FR-ID` or `FR-ID:evidence_type`.
-fn parse_evidence_requirement(raw: &str) -> (&str, Option<EvidenceType>, bool) {
+pub fn parse_evidence_requirement(raw: &str) -> (&str, Option<EvidenceType>, bool) {
     let (fr_id, evidence_type) = raw
         .split_once(':')
         .map_or((raw, None), |(fr_id, kind)| (fr_id, Some(kind)));

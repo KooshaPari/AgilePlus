@@ -203,7 +203,7 @@ dependencies = [
 
 [[package]]
 name = "agileplus-desktop"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "agileplus-application",
  "agileplus-domain",
@@ -482,6 +482,19 @@ dependencies = [
  "tracing-subscriber",
  "tracing-test",
  "url",
+]
+
+[[package]]
+name = "agileplus-transport-tests"
+version = "0.2.1"
+dependencies = [
+ "agileplus-domain",
+ "agileplus-grpc",
+ "agileplus-proto",
+ "agileplus-sqlite",
+ "tempfile",
+ "tokio",
+ "tonic",
 ]
 
 [[package]]

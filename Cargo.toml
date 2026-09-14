@@ -6,6 +6,7 @@ resolver = "2"
 members = [
   "tests/e2e", # installed-CLI round-trip; workflow runs this crate from its manifest directory
   "tests/e2e-desktop", # E2E tests for the Tauri desktop app (DB, CLI bridge, tray, config)
+  "tests/transport", # Transport-layer integration tests (gRPC, CLI, IPC)
   "tests/bdd", # fixture and Cucumber acceptance tests
   "crates/agileplus-proto", # canonical tonic/prost gRPC contract
   "crates/agileplus-grpc", # loopback Rust core consumed by the MCP bridge
