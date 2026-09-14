@@ -5,11 +5,6 @@ name: Release Desktop
 on:
   push:
     tags: ["v*"]
-    paths:
-      - "desktop/**"
-      - "crates/agileplus-domain/**"
-      - "crates/agileplus-sqlite/**"
-      - "crates/agileplus-application/**"
 
 permissions:
   contents: write
