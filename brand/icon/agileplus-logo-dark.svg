@@ -1,0 +1,16 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Dark variant for use on light backgrounds -->
+  <!-- Velocity bars -->
+  <rect x="128" y="240" width="32" height="56" rx="6" fill="rgba(15,105,98,0.50)"/>
+  <rect x="172" y="208" width="32" height="88" rx="6" fill="rgba(15,105,98,0.65)"/>
+  <rect x="216" y="172" width="32" height="124" rx="6" fill="rgba(15,105,98,0.85)"/>
+  <rect x="260" y="200" width="32" height="96" rx="6" fill="rgba(15,105,98,0.65)"/>
+  <rect x="304" y="232" width="32" height="64" rx="6" fill="rgba(15,105,98,0.50)"/>
+  <!-- Sprint ring -->
+  <circle cx="256" cy="256" r="200" stroke="#0f6962" stroke-width="16" stroke-linecap="round" stroke-dasharray="850 400" fill="none" transform="rotate(-105 256 256)"/>
+  <!-- Arrow -->
+  <path d="M 416 108 L 440 138 L 400 146 Z" fill="#0f6962"/>
+  <!-- Plus sign -->
+  <rect x="236" y="184" width="40" height="104" rx="8" fill="#0f6962"/>
+  <rect x="204" y="216" width="104" height="40" rx="8" fill="#0f6962"/>
+</svg>

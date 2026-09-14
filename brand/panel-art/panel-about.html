@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=600, initial-scale=1.0">
+<title>AgilePlus — About Window Art</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    width: 600px; height: 400px;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  }
+  .about {
+    width: 600px; height: 400px;
+    position: relative;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 20px;
+    background: radial-gradient(ellipse at 50% 40%, #0f2e2a 0%, #0a1a18 50%, #060e0d 100%);
+  }
+  .logo {
+    width: 80px; height: 80px;
+    border-radius: 20px;
+    background: linear-gradient(155deg, #5ecec6 0%, #2db5ab 25%, #1a9e95 50%, #157e77 75%, #0f6962 100%);
+    box-shadow: 0 12px 40px rgba(46,181,171,0.25);
+    display: flex; align-items: center; justify-content: center;
+    position: relative; overflow: hidden;
+  }
+  .logo::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(140deg, rgba(255,255,255,0.35) 0%, transparent 25%);
+    border-radius: inherit;
+  }
+  .logo svg { width: 44px; height: 44px; filter: drop-shadow(0 1px 4px rgba(0,0,0,0.3)); }
+  .name { font-size: 32px; font-weight: 700; color: #e8f8f6; letter-spacing: -0.3px; }
+  .version {
+    font-size: 13px; font-weight: 400;
+    color: rgba(160,220,215,0.4);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .tagline {
+    font-size: 14px; font-weight: 400;
+    color: rgba(160,220,215,0.25);
+    margin-top: 8px;
+  }
+  /* Bottom accent */
+  .bottom-accent {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(46,181,171,0.2), transparent);
+  }
+  /* Subtle ring */
+  .ring-bg {
+    position: absolute;
+    width: 250px; height: 250px;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -55%);
+    border: 1px solid rgba(46,181,171,0.06);
+    border-radius: 50%;
+    animation: spin 25s linear infinite;
+  }
+  @keyframes spin { to { transform: translate(-50%, -55%) rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="about">
+  <div class="ring-bg"></div>
+  <div class="logo">
+    <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="30" y="52" width="12" height="24" rx="3" fill="rgba(255,255,255,0.7)"/>
+      <rect x="48" y="42" width="12" height="44" rx="3" fill="rgba(255,255,255,0.8)"/>
+      <rect x="66" y="32" width="12" height="56" rx="3" fill="rgba(255,255,255,0.95)"/>
+      <rect x="84" y="38" width="12" height="44" rx="3" fill="rgba(255,255,255,0.8)"/>
+      <circle cx="60" cy="60" r="50" stroke="rgba(255,255,255,0.3)" stroke-width="3" fill="none" stroke-dasharray="220 90" stroke-linecap="round" transform="rotate(-105 60 60)"/>
+      <path d="M 98 30 L 108 42 L 92 46 Z" fill="rgba(255,255,255,0.9)"/>
+    </svg>
+  </div>
+  <div class="name">AgilePlus</div>
+  <div class="version">v0.2.0</div>
+  <div class="tagline">Spec-driven development platform</div>
+  <div class="bottom-accent"></div>
+</div>
+</body>
+</html>

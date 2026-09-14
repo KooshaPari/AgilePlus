@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=800, initial-scale=1.0">
+<title>AgilePlus — Feature Detail Panel Art</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    width: 800px; height: 400px;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  }
+  .panel {
+    width: 800px; height: 400px;
+    position: relative;
+    background: linear-gradient(135deg, #0c2420 0%, #081614 40%, #050c0b 100%);
+    overflow: hidden;
+  }
+  /* Left accent line */
+  .accent-line {
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+    background: linear-gradient(to bottom, transparent, #2db5ab, transparent);
+    opacity: 0.4;
+  }
+  /* Sprint progress arc */
+  .arc {
+    position: absolute;
+    width: 300px; height: 300px;
+    top: 50%; right: 80px;
+    transform: translateY(-50%);
+    border: 2px solid rgba(46,181,171,0.08);
+    border-radius: 50%;
+    border-top-color: rgba(46,181,171,0.25);
+    border-right-color: rgba(46,181,171,0.15);
+    animation: spin 15s linear infinite;
+  }
+  @keyframes spin { to { transform: translateY(-50%) rotate(360deg); } }
+  /* Velocity mini-bars */
+  .mini-bars {
+    position: absolute;
+    bottom: 40px; right: 120px;
+    display: flex; gap: 4px; align-items: flex-end;
+    opacity: 0.2;
+  }
+  .mb { width: 3px; border-radius: 2px; background: #2db5ab; }
+  .mb:nth-child(1) { height: 8px; }
+  .mb:nth-child(2) { height: 14px; }
+  .mb:nth-child(3) { height: 22px; }
+  .mb:nth-child(4) { height: 16px; }
+  .mb:nth-child(5) { height: 10px; }
+  /* Text hint */
+  .label {
+    position: absolute;
+    top: 32px; left: 32px;
+    font-size: 11px; font-weight: 500;
+    color: rgba(45,181,171,0.25);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+  }
+</style>
+</head>
+<body>
+<div class="panel">
+  <div class="accent-line"></div>
+  <div class="arc"></div>
+  <div class="mini-bars">
+    <div class="mb"></div><div class="mb"></div><div class="mb"></div>
+    <div class="mb"></div><div class="mb"></div>
+  </div>
+  <div class="label">feature detail</div>
+</div>
+</body>
+</html>

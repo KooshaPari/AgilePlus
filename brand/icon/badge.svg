@@ -1,0 +1,6 @@
+<svg width="120" height="20" viewBox="0 0 120 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="120" height="20" rx="4" fill="#0a1a18"/>
+  <rect x="0.5" y="0.5" width="119" height="19" rx="3.5" stroke="#157e77" stroke-opacity="0.4"/>
+  <text x="8" y="13.5" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="10" font-weight="600" fill="#2db5ab">AgilePlus</text>
+  <text x="64" y="13.5" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="10" font-weight="500" fill="rgba(160,220,215,0.5)">v0.2.0</text>
+</svg>

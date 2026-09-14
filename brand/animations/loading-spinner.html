@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=400, initial-scale=1.0">
+<title>AgilePlus Loading Animation</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    width: 400px; height: 400px;
+    background: #0a1a18;
+    overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .loader {
+    position: relative;
+    width: 200px; height: 200px;
+  }
+  /* Velocity bars - main animation */
+  .bars {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .bar {
+    width: 10px;
+    border-radius: 5px;
+    background: linear-gradient(to top, #0f6962, #2db5ab, #5ecec6);
+    animation: barBounce 1.2s ease-in-out infinite;
+  }
+  .bar:nth-child(1) { height: 30px; animation-delay: 0s; }
+  .bar:nth-child(2) { height: 50px; animation-delay: 0.1s; }
+  .bar:nth-child(3) { height: 70px; animation-delay: 0.2s; }
+  .bar:nth-child(4) { height: 50px; animation-delay: 0.3s; }
+  .bar:nth-child(5) { height: 30px; animation-delay: 0.4s; }
+  @keyframes barBounce {
+    0%, 100% { transform: scaleY(0.5); opacity: 0.4; }
+    50% { transform: scaleY(1.2); opacity: 1; }
+  }
+  /* Sprint ring */
+  .ring {
+    position: absolute;
+    inset: 10px;
+    border: 2px solid rgba(46,181,171,0.15);
+    border-radius: 50%;
+    border-top-color: #2db5ab;
+    animation: spin 1.5s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  /* Plus icon in center */
+  .plus {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.25;
+  }
+  .plus-v {
+    width: 4px; height: 24px;
+    background: #2db5ab;
+    border-radius: 2px;
+    position: absolute;
+  }
+  .plus-h {
+    width: 24px; height: 4px;
+    background: #2db5ab;
+    border-radius: 2px;
+    position: absolute;
+  }
+</style>
+</head>
+<body>
+<div class="loader">
+  <div class="bars">
+    <div class="bar"></div>
+    <div class="bar"></div>
+    <div class="bar"></div>
+    <div class="bar"></div>
+    <div class="bar"></div>
+  </div>
+  <div class="ring"></div>
+  <div class="plus">
+    <div class="plus-v"></div>
+    <div class="plus-h"></div>
+  </div>
+</div>
+</body>
+</html>
