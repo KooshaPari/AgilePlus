@@ -158,28 +158,19 @@ jobs:
           staging="release-upload"
           mkdir -p "$staging"
 
+          echo "Looking for bundles in: $bundle_dir"
+          find "$bundle_dir" -type f 2>/dev/null | head -40 || true
+          echo ""
+
           count=0
-          for pattern in \
-            "$bundle_dir"/dmg/*.dmg \
-            "$bundle_dir"/macos/*.app.tar.gz \
-            "$bundle_dir"/deb/*.deb \
-            "$bundle_dir"/rpm/*.rpm \
-            "$bundle_dir"/appimage/*.AppImage \
-            "$bundle_dir"/nsis/*.exe \
-            "$bundle_dir"/msi/*.msi \
-            ; do
-            for f in $pattern; do
-              [ -f "$f" ] || continue
-              cp "$f" "$staging/"
-              echo "  + $(basename "$f")"
-              count=$((count + 1))
-            done
-          done
+          while IFS= read -r -d '' f; do
+            cp "$f" "$staging/"
+            echo "  + $(basename "$f")"
+            count=$((count + 1))
+          done < <(find "$bundle_dir" -type f \( -name '*.dmg' -o -name '*.app.tar.gz' -o -name '*.deb' -o -name '*.rpm' -o -name '*.AppImage' -o -name '*.exe' -o -name '*.msi' \) -print0 2>/dev/null || true)
 
           if [ "$count" -eq 0 ]; then
             echo "::error::No bundle artifacts found under $bundle_dir"
-            echo "Directory listing:"
-            find "$bundle_dir" -type f 2>/dev/null | head -40 || true
             exit 1
           fi
 
