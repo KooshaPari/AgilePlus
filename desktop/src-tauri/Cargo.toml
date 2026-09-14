@@ -1,6 +1,6 @@
 [package]
 name = "agileplus-desktop"
-version = "0.1.0"
+version = "0.2.0"
 description = "AgilePlus desktop client (Tauri). Offline-first, operates on local repo state."
 authors = ["Phenotype <kooshapari@gmail.com>"]
 license = "MIT OR Apache-2.0"
