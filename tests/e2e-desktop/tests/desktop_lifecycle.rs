@@ -168,7 +168,7 @@ fn test_tauri_config_valid() {
         "Tray icon config should exist"
     );
     assert!(
-        config["app"]["updater"]["active"].as_bool().unwrap(),
+        config["plugins"]["updater"]["active"].as_bool().unwrap(),
         "Updater should be active"
     );
     assert!(
