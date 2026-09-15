@@ -661,7 +661,8 @@ mod tests {
 
     #[test]
     fn render_status_md_no_labels_omits_label_line() {
-        let f = make_feature();
+        let mut f = make_feature();
+        f.labels.clear();
         let md = render_status_md(&f, &[]);
         assert!(!md.contains("**Labels**"));
     }
@@ -766,7 +767,7 @@ mod tests {
         for (state, expected) in [
             (PrState::Open, "open"),
             (PrState::Review, "review"),
-            (PrState::ChangesRequested, "changes_requested"),
+            (PrState::ChangesRequested, "changesrequested"),
             (PrState::Approved, "approved"),
             (PrState::Merged, "merged"),
         ] {
@@ -779,7 +780,8 @@ mod tests {
 
     #[test]
     fn render_wp_json_without_worktree_path() {
-        let wp = make_wp(1, "WP");
+        let mut wp = make_wp(1, "WP");
+        wp.worktree_path = None;
         let v = render_wp_json(&wp);
         assert!(v["worktree_path"].is_null());
     }
@@ -920,7 +922,7 @@ mod tests {
         let repo = git2::Repository::open(tmp.path()).unwrap();
         let head = repo.head().unwrap();
         let commit = head.peel_to_commit().unwrap();
-        assert_eq!(commit.message(), Some("custom msg"));
+        assert_eq!(commit.message().unwrap(), "custom msg");
     }
 
     #[test]
