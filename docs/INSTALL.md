@@ -1,80 +1,78 @@
 # Installing AgilePlus
 
-AgilePlus ships three distribution channels plus an optional Windows Start Menu shortcut.
+AgilePlus ships multiple installation channels. Pick whichever fits your workflow.
 
-| Channel | Best for | Command / location |
-|---------|----------|-------------------|
-| **cargo install** | Developers building from source | `cargo install --path crates/agileplus-cli --locked` |
-| **Prebuilt binaries** | Quick install without a Rust toolchain | [GitHub Releases](https://github.com/KooshaPari/AgilePlus/releases) |
-| **crates.io** | Rust projects adding the CLI as a dependency | `cargo install agileplus-cli --locked` |
-| **Start Menu** (Windows) | Desktop launcher under Phenotype-Apps | `packaging/start-menu.ps1` |
+| Channel | Best for | Command |
+|---------|----------|---------|
+| **curl (macOS/Linux)** | Quick install without Rust | `curl -fsSL ... \| bash` |
+| **PowerShell (Windows)** | One-line Windows install | `irm ... \| iex` |
+| **Bun (cross-platform)** | JavaScript/TypeScript runtime users | `bun run ...` |
+| **cargo install** | Rust developers | `cargo install agileplus-cli` |
+| **Prebuilt binaries** | Manual download | [GitHub Releases](https://github.com/KooshaPari/AgilePlus/releases) |
+| **From source** | Contributors building the workspace | `git clone` + `cargo build` |
+| **Start Menu** (Windows) | Desktop launcher | `packaging/start-menu.ps1` |
 
-## Prerequisites
+## macOS / Linux (curl)
 
-- **Rust** (nightly toolchain recommended): [rustup.rs](https://rustup.rs/)
-- **Git** 2.x
-- **protoc** 28.x (only when building from source in this monorepo)
+```bash
+curl -fsSL https://raw.githubusercontent.com/KooshaPari/AgilePlus/main/docs/install.sh | bash
+```
 
-## 1. Install from source (`cargo install`)
+Customises the install directory via `INSTALL_DIR`:
 
-From a clone of this repository:
+```bash
+INSTALL_DIR=/usr/local/bin curl -fsSL https://raw.githubusercontent.com/KooshaPari/AgilePlus/main/docs/install.sh | bash
+```
+
+## Windows (PowerShell)
+
+```powershell
+irm https://raw.githubusercontent.com/KooshaPari/AgilePlus/main/docs/install.ps1 | iex
+```
+
+The installer adds `%LOCALAPPDATA%\AgilePlus\bin` to your user PATH automatically.
+
+## Bun (cross-platform)
+
+```bash
+bun run https://raw.githubusercontent.com/KooshaPari/AgilePlus/main/docs/install.ts
+```
+
+## From crates.io
+
+```bash
+cargo install agileplus-cli --locked
+```
+
+## From source
 
 ```bash
 git clone https://github.com/KooshaPari/AgilePlus.git
 cd AgilePlus
-cargo install --path crates/agileplus-cli --locked
-agileplus --version
+cargo build --release --package agileplus-cli
 ```
 
-The installed binary lands in `~/.cargo/bin/agileplus` (or `%USERPROFILE%\.cargo\bin\agileplus.exe` on Windows).
+The built binary will be at `target/release/agileplus` (or `target/release/agileplus.exe` on Windows).
 
-## 2. Prebuilt binaries (GitHub Releases)
+## Prebuilt binaries (GitHub Releases)
 
 Tagged releases (`v*`) publish matrix-built archives for Linux, macOS (x86_64 + Apple Silicon), and Windows.
 
 1. Open [Releases](https://github.com/KooshaPari/AgilePlus/releases).
-2. Download the archive for your platform, for example:
+2. Download the archive for your platform:
    - `agileplus-<version>-agileplus-linux-x86_64.tar.gz`
    - `agileplus-<version>-agileplus-macos-aarch64.tar.gz`
+   - `agileplus-<version>-agileplus-macos-x86_64.tar.gz`
    - `agileplus-<version>-agileplus-windows-x86_64.zip`
 3. Extract and place `agileplus` (or `agileplus.exe`) on your `PATH`.
 
-Nightly/hourly CI artifacts are also uploaded by `.github/workflows/nightly.yml` (retention: 7 days).
-
-## 3. Install from crates.io
-
-Once published:
-
-```bash
-cargo install agileplus-cli --locked
-agileplus --version
-```
-
-Library crates (`agileplus-domain`, `agileplus-sqlite`, etc.) are published alongside the CLI on each `v*` tag via `.github/workflows/agileplus-release.yml`.
-
-**Repository secret:** `CARGO_REGISTRY_TOKEN` (crates.io API token).
-
-## 4. Windows Start Menu shortcut (Phenotype-Apps)
+## Windows Start Menu shortcut (Phenotype-Apps)
 
 After installing the binary (any channel above):
 
 ```powershell
-# Default: ~/.cargo/bin/agileplus.exe + packaging/agileplus.ico
 .\packaging\start-menu.ps1
-
-# Custom binary or icon
-.\packaging\start-menu.ps1 `
-  -BinaryPath "C:\Tools\agileplus.exe" `
-  -IconPath ".\packaging\agileplus.ico"
 ```
-
-This creates:
-
-```text
-%APPDATA%\Microsoft\Windows\Start Menu\Programs\Phenotype-Apps\AgilePlus.lnk
-```
-
-Place a project icon at `packaging/agileplus.ico` (referenced by the script; optional but recommended).
 
 ## Verify installation
 
@@ -100,26 +98,11 @@ Platform health is **not** a top-level `agileplus status` (that is not a product
 agileplus platform status
 ```
 
-On this machine, the PATH `agileplus` wrapper routes `platform status` to `.agileplus/platform-status.sh` (real HTTP probes). Neo4j is optional — status does not require it.
-
-## CI release system
-
-| Workflow | Trigger | Purpose |
-|----------|---------|---------|
-| `.github/workflows/agileplus-release.yml` | Tag `v*` | Matrix binaries + GitHub Release + crates.io publish |
-| `.github/workflows/nightly.yml` | Hourly `0 * * * *` + daily `0 6 * * *` | Build, test, upload nightly artifacts |
-| `.github/workflows/e2e.yml` | PR/push (CLI paths) | Installed CLI specify / list round-trip (no `init` / top-level `status`) |
-
-E2E harnesses:
-
-- `scripts/e2e.sh` — shell round-trip (used in CI)
-- `tests/e2e/roundtrip.rs` — Rust integration test (`AGILEPLUS_BIN` env var)
-
 ## Troubleshooting
 
 | Issue | Fix |
 |-------|-----|
-| `agileplus: command not found` | Add `~/.cargo/bin` to `PATH` |
+| `agileplus: command not found` | Add `~/.local/bin` or `~/.cargo/bin` to `PATH` |
 | Build fails on `protoc` | Install protobuf compiler 28.x |
 | crates.io publish fails in CI | Ensure `CARGO_REGISTRY_TOKEN` secret is set |
 | Start Menu shortcut has no icon | Add `packaging/agileplus.ico` or pass `-IconPath` |

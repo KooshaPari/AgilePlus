@@ -53,38 +53,31 @@ jobs:
         with:
           targets: ${{ matrix.target }}
 
-      # NOTE: agileplus-cli depends on agileplus-domain, which has incomplete
-      # scaffolding in the workspace and cannot currently be compiled from the
-      # git source tree (tracked separately; do not "fix" domain here).
-      # Until domain compiles, distribute the last-known-good published crate
-      # (crates.io) rather than tying the archive version to the git tag.
-      - name: Install published agileplus-cli binary
+      - name: Build from source
         run: |
-          cargo install "${{ env.PACKAGE }}" --root ./install --target ${{ matrix.target }}
+          cargo build --release --package ${{ env.PACKAGE }} --target ${{ matrix.target }}
 
       - name: Stage artifact
         shell: bash
         run: |
           set -euo pipefail
-          # Use the tag-driven version for the archive filename (release version),
-          # even though the binary itself is the latest published crates.io build.
           version="${GITHUB_REF_NAME#v}"
           staging="dist/${{ matrix.asset_name }}"
           mkdir -p "$staging"
-          # The published crate's binary is named `agileplus-cli`; newer source
-          # renames the [[bin]] target to `agileplus`. Accept either.
+          # The built binary is named by [[bin]] target (`agileplus`) or the
+          # package name (`agileplus-cli`). Accept either.
           src_bin=""
           for candidate in "${{ env.BIN_NAME }}" "${{ env.PACKAGE }}"; do
             for ext in "" ".exe"; do
-              if [ -f "install/bin/${candidate}${ext}" ]; then
-                src_bin="install/bin/${candidate}${ext}"
+              if [ -f "target/${{ matrix.target }}/release/${candidate}${ext}" ]; then
+                src_bin="target/${{ matrix.target }}/release/${candidate}${ext}"
                 break 2
               fi
             done
           done
           if [ -z "$src_bin" ]; then
-            echo "ERROR: could not find installed binary under install/bin/" >&2
-            ls -la install/bin/ >&2
+            echo "ERROR: could not find built binary" >&2
+            find target/${{ matrix.target }}/release/ -maxdepth 1 -type f 2>&1
             exit 1
           fi
           dest_name="${{ env.BIN_NAME }}"
