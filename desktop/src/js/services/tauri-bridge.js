@@ -9,5 +9,11 @@
  * @returns {Promise<any>} Command result
  */
 export async function invoke(command, args = {}) {
-  return window.__TAURI__.core.invoke(command, args);
+  if (window.__TAURI__ && window.__TAURI__.core) {
+    return window.__TAURI__.core.invoke(command, args);
+  }
+  throw new Error(
+    `Tauri IPC not available. Cannot invoke '${command}'. ` +
+    'This usually means the app is not running inside a Tauri webview.'
+  );
 }
