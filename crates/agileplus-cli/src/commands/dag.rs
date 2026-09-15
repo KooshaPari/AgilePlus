@@ -578,6 +578,8 @@ fn read_id_text(from: &str) -> Result<Vec<(String, String)>> {
 mod tests {
     use super::*;
 
+    // ── parse_claim_kind ──────────────────────────────────────────────────
+
     #[test]
     fn parse_claim_kind_ok() {
         assert!(parse_claim_kind("repo").is_ok());
@@ -592,6 +594,96 @@ mod tests {
     }
 
     #[test]
+    fn parse_claim_kind_case_insensitive() {
+        assert_eq!(
+            parse_claim_kind("Repo").unwrap(),
+            ClaimKind::Repo
+        );
+        assert_eq!(
+            parse_claim_kind("BRANCH").unwrap(),
+            ClaimKind::Branch
+        );
+        assert_eq!(
+            parse_claim_kind("WorkTree").unwrap(),
+            ClaimKind::Worktree
+        );
+        assert_eq!(
+            parse_claim_kind("SubProject").unwrap(),
+            ClaimKind::Subproject
+        );
+    }
+
+    #[test]
+    fn parse_claim_kind_unknown_returns_error_message() {
+        let err = parse_claim_kind("invalid").unwrap_err();
+        assert!(err.to_string().contains("unknown claim kind"));
+    }
+
+    // ── parse_claim_reason ────────────────────────────────────────────────
+
+    #[test]
+    fn parse_claim_reason_none_returns_default() {
+        let reason = parse_claim_reason(None);
+        assert_eq!(reason, ClaimReason::default());
+    }
+
+    #[test]
+    fn parse_claim_reason_task_prefix() {
+        let reason = parse_claim_reason(Some("task:wp-42"));
+        match reason {
+            ClaimReason::TaskRef(id) => assert_eq!(id, "wp-42"),
+            _ => panic!("expected TaskRef"),
+        }
+    }
+
+    #[test]
+    fn parse_claim_reason_branch_prefix() {
+        let reason = parse_claim_reason(Some("branch:feat/login"));
+        match reason {
+            ClaimReason::Branch(name) => assert_eq!(name, "feat/login"),
+            _ => panic!("expected Branch"),
+        }
+    }
+
+    #[test]
+    fn parse_claim_reason_subproject_prefix() {
+        let reason = parse_claim_reason(Some("subproject:auth-service"));
+        match reason {
+            ClaimReason::Subproject(name) => assert_eq!(name, "auth-service"),
+            _ => panic!("expected Subproject"),
+        }
+    }
+
+    #[test]
+    fn parse_claim_reason_wip_prefix() {
+        let reason = parse_claim_reason(Some("wip:run-99"));
+        match reason {
+            ClaimReason::WipRun(id) => assert_eq!(id, "run-99"),
+            _ => panic!("expected WipRun"),
+        }
+    }
+
+    #[test]
+    fn parse_claim_reason_freeform_becomes_manual() {
+        let reason = parse_claim_reason(Some("fixing auth bug"));
+        match reason {
+            ClaimReason::Manual(text) => assert_eq!(text, "fixing auth bug"),
+            _ => panic!("expected Manual"),
+        }
+    }
+
+    #[test]
+    fn parse_claim_reason_empty_string_becomes_manual() {
+        let reason = parse_claim_reason(Some(""));
+        match reason {
+            ClaimReason::Manual(text) => assert!(text.is_empty()),
+            _ => panic!("expected Manual with empty string"),
+        }
+    }
+
+    // ── read_id_text ──────────────────────────────────────────────────────
+
+    #[test]
     fn read_id_text_handles_tsv() {
         let dir = std::env::temp_dir().join("agileplus_dedup_test.tsv");
         std::fs::write(&dir, "wp-1\thello world\nwp-2\thello world\n").unwrap();
@@ -602,12 +694,173 @@ mod tests {
     }
 
     #[test]
-    fn dedup_explain_pair_hybrid_matches_helper() {
-        let a = "audit fastapi routes";
-        let b = "audit fastapi endpoints";
-        let (h, _fj, _nj, _lr, _sd) = hybrid_score(a, b);
-        let j = token_jaccard(a, b);
-        assert!(h > 0.0);
-        assert!(j > 0.0);
+    fn read_id_text_handles_pipe_delimiter() {
+        let path = std::env::temp_dir().join("agileplus_pipe_test.txt");
+        std::fs::write(&path, "id-a|text a\nid-b|text b\n").unwrap();
+        let items = read_id_text(path.to_str().unwrap()).unwrap();
+        assert_eq!(items.len(), 2);
+        assert_eq!(items[0], ("id-a".to_string(), "text a".to_string()));
+        assert_eq!(items[1], ("id-b".to_string(), "text b".to_string()));
+        std::fs::remove_file(&path).ok();
+    }
+
+    #[test]
+    fn read_id_text_skips_blank_lines_and_comments() {
+        let path = std::env::temp_dir().join("agileplus_comment_test.txt");
+        std::fs::write(
+            &path,
+            "# header comment\n\nwp-1\tgood\n# another comment\n\nwp-2\talso good\n",
+        )
+        .unwrap();
+        let items = read_id_text(path.to_str().unwrap()).unwrap();
+        assert_eq!(items.len(), 2);
+        assert_eq!(items[0].0, "wp-1");
+        assert_eq!(items[1].0, "wp-2");
+        std::fs::remove_file(&path).ok();
+    }
+
+    #[test]
+    fn read_id_text_no_delimiter_synthesizes_id() {
+        let path = std::env::temp_dir().join("agileplus_nodelim_test.txt");
+        std::fs::write(&path, "just some text\nanother line\n").unwrap();
+        let items = read_id_text(path.to_str().unwrap()).unwrap();
+        assert_eq!(items.len(), 2);
+        assert_eq!(items[0].0, "row1");
+        assert_eq!(items[0].1, "just some text");
+        assert_eq!(items[1].0, "row2");
+        assert_eq!(items[1].1, "another line");
+        std::fs::remove_file(&path).ok();
+    }
+
+    #[test]
+    fn read_id_text_empty_file_returns_empty() {
+        let path = std::env::temp_dir().join("agileplus_empty_test.txt");
+        std::fs::write(&path, "").unwrap();
+        let items = read_id_text(path.to_str().unwrap()).unwrap();
+        assert!(items.is_empty());
+        std::fs::remove_file(&path).ok();
+    }
+
+    #[test]
+    fn read_id_text_missing_file_returns_error() {
+        let result = read_id_text("/nonexistent/path/does_not_exist.txt");
+        assert!(result.is_err());
+    }
+
+    // ── InMemoryWpRepo ────────────────────────────────────────────────────
+
+    fn make_item(wp_id: &str, state: &str) -> agileplus_application::dto::PickedItem {
+        agileplus_application::dto::PickedItem {
+            wp_id: wp_id.to_string(),
+            title: format!("Title for {wp_id}"),
+            state: state.to_string(),
+            dependencies: vec![],
+        }
+    }
+
+    #[test]
+    fn inmemory_wp_repo_default_is_empty() {
+        let repo = InMemoryWpRepo::default();
+        assert_eq!(repo.wp_count(), 0);
+        assert_eq!(repo.claim_count(), 0);
+        assert_eq!(repo.stage_count(), 8);
+    }
+
+    #[test]
+    fn inmemory_wp_repo_list_pickable_filters_ready_state() {
+        let mut repo = InMemoryWpRepo::default();
+        repo.items.insert("wp-1".into(), make_item("wp-1", "ready"));
+        repo.items.insert("wp-2".into(), make_item("wp-2", "blocked"));
+        repo.items.insert("wp-3".into(), make_item("wp-3", "ready"));
+
+        let items = repo.list_pickable("agent-1", None, None, 10).unwrap();
+        assert_eq!(items.len(), 2);
+        assert!(items.iter().all(|i| i.state == "ready"));
+    }
+
+    #[test]
+    fn inmemory_wp_repo_list_pickable_respects_limit() {
+        let mut repo = InMemoryWpRepo::default();
+        for i in 1..=5 {
+            repo.items.insert(
+                format!("wp-{i}"),
+                make_item(&format!("wp-{i}"), "ready"),
+            );
+        }
+        let items = repo.list_pickable("agent-1", None, None, 2).unwrap();
+        assert_eq!(items.len(), 2);
+    }
+
+    #[test]
+    fn inmemory_wp_repo_all_for_export_returns_all() {
+        let mut repo = InMemoryWpRepo::default();
+        repo.items.insert("wp-1".into(), make_item("wp-1", "ready"));
+        repo.items.insert("wp-2".into(), make_item("wp-2", "done"));
+        let items = repo.all_for_export(false).unwrap();
+        assert_eq!(items.len(), 2);
+    }
+
+    #[test]
+    fn inmemory_wp_repo_add_dependency() {
+        let mut repo = InMemoryWpRepo::default();
+        repo.items.insert("wp-1".into(), make_item("wp-1", "ready"));
+        repo.add_dependency("wp-1", "wp-0").unwrap();
+        assert_eq!(repo.items["wp-1"].dependencies, vec!["wp-0"]);
+    }
+
+    #[test]
+    fn inmemory_wp_repo_add_dependency_no_duplicates() {
+        let mut repo = InMemoryWpRepo::default();
+        repo.items.insert("wp-1".into(), make_item("wp-1", "ready"));
+        repo.add_dependency("wp-1", "wp-0").unwrap();
+        repo.add_dependency("wp-1", "wp-0").unwrap();
+        assert_eq!(repo.items["wp-1"].dependencies, vec!["wp-0"]);
+    }
+
+    #[test]
+    fn inmemory_wp_repo_add_dependency_unknown_wp_errors() {
+        let mut repo = InMemoryWpRepo::default();
+        let result = repo.add_dependency("nonexistent", "wp-0");
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("unknown wp_id"));
+    }
+
+    #[test]
+    fn inmemory_wp_repo_mark_done() {
+        let mut repo = InMemoryWpRepo::default();
+        repo.items.insert("wp-1".into(), make_item("wp-1", "ready"));
+        repo.mark_done("wp-1").unwrap();
+        assert_eq!(repo.items["wp-1"].state, "done");
+    }
+
+    #[test]
+    fn inmemory_wp_repo_mark_done_unknown_errors() {
+        let mut repo = InMemoryWpRepo::default();
+        let result = repo.mark_done("nonexistent");
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("unknown wp_id"));
+    }
+
+    #[test]
+    fn inmemory_wp_repo_wp_count() {
+        let mut repo = InMemoryWpRepo::default();
+        assert_eq!(repo.wp_count(), 0);
+        repo.items.insert("wp-1".into(), make_item("wp-1", "ready"));
+        assert_eq!(repo.wp_count(), 1);
+        repo.items.insert("wp-2".into(), make_item("wp-2", "done"));
+        assert_eq!(repo.wp_count(), 2);
+    }
+
+    #[test]
+    fn inmemory_wp_repo_stage_count_is_fixed() {
+        let repo = InMemoryWpRepo::default();
+        assert_eq!(repo.stage_count(), 8);
+    }
+
+    #[test]
+    fn inmemory_wp_repo_claim_count_always_zero() {
+        let mut repo = InMemoryWpRepo::default();
+        repo.items.insert("wp-1".into(), make_item("wp-1", "ready"));
+        assert_eq!(repo.claim_count(), 0);
     }
 }

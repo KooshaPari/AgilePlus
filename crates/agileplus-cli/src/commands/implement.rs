@@ -491,6 +491,8 @@ mod tests {
     use super::*;
     use std::fs;
 
+    // ── slugify ───────────────────────────────────────────────────────────
+
     #[test]
     fn slugify_basic() {
         assert_eq!(
@@ -498,6 +500,52 @@ mod tests {
             "implement-auth-module-wp01"
         );
     }
+
+    #[test]
+    fn slugify_already_clean() {
+        assert_eq!(slugify("hello"), "hello");
+    }
+
+    #[test]
+    fn slugify_uppercase_lowered() {
+        assert_eq!(slugify("My Feature"), "my-feature");
+    }
+
+    #[test]
+    fn slugify_consecutive_non_alnum_collapsed() {
+        assert_eq!(slugify("a  --  b!!c"), "a-b-c");
+    }
+
+    #[test]
+    fn slugify_leading_trailing_non_alnum_trimmed() {
+        assert_eq!(slugify("--hello--"), "hello");
+        assert_eq!(slugify("  spaces  "), "spaces");
+    }
+
+    #[test]
+    fn slugify_truncated_at_40_chars() {
+        let long = "a".repeat(80);
+        let result = slugify(&long);
+        assert!(result.len() <= 40);
+        assert_eq!(result, "a".repeat(40));
+    }
+
+    #[test]
+    fn slugify_empty_string() {
+        assert_eq!(slugify(""), "");
+    }
+
+    #[test]
+    fn slugify_only_non_alphanumeric() {
+        assert_eq!(slugify("---___"), "");
+    }
+
+    #[test]
+    fn slugify_numbers_preserved() {
+        assert_eq!(slugify("WP01 is #1"), "wp01-is-1");
+    }
+
+    // ── materialize_artifact ──────────────────────────────────────────────
 
     #[test]
     fn materializes_artifact_into_worktree_layout() {
@@ -512,6 +560,39 @@ mod tests {
     }
 
     #[test]
+    fn materialize_artifact_creates_parent_dirs() {
+        let root = tempfile::tempdir().expect("tempdir");
+        materialize_artifact(root.path(), "a/b/c/deep.txt", "content").unwrap();
+        assert_eq!(
+            fs::read_to_string(root.path().join("a/b/c/deep.txt")).unwrap(),
+            "content"
+        );
+    }
+
+    #[test]
+    fn materialize_artifact_overwrites_existing() {
+        let root = tempfile::tempdir().expect("tempdir");
+        materialize_artifact(root.path(), "file.txt", "old").unwrap();
+        materialize_artifact(root.path(), "file.txt", "new").unwrap();
+        assert_eq!(
+            fs::read_to_string(root.path().join("file.txt")).unwrap(),
+            "new"
+        );
+    }
+
+    #[test]
+    fn materialize_artifact_empty_content() {
+        let root = tempfile::tempdir().expect("tempdir");
+        materialize_artifact(root.path(), "empty.txt", "").unwrap();
+        assert_eq!(
+            fs::read_to_string(root.path().join("empty.txt")).unwrap(),
+            ""
+        );
+    }
+
+    // ── find_resume_worktree ──────────────────────────────────────────────
+
+    #[test]
     fn finds_existing_resume_worktree_for_wp() {
         let worktrees = vec![agileplus_domain::ports::WorktreeInfo {
             path: "/tmp/wp01".into(),
@@ -524,5 +605,228 @@ mod tests {
             find_resume_worktree(&worktrees, "demo", "WP01"),
             Some(PathBuf::from("/tmp/wp01"))
         );
+    }
+
+    #[test]
+    fn finds_worktree_by_branch_convention() {
+        let worktrees = vec![agileplus_domain::ports::WorktreeInfo {
+            path: "/tmp/wp02".into(),
+            commit: "def".into(),
+            branch: "feat/my-feature/WP02".into(),
+            feature_slug: "different-slug".into(),
+            wp_id: "OTHER".into(),
+        }];
+        // Matches via branch convention even though slug/wp_id differ
+        assert_eq!(
+            find_resume_worktree(&worktrees, "my-feature", "WP02"),
+            Some(PathBuf::from("/tmp/wp02"))
+        );
+    }
+
+    #[test]
+    fn find_resume_worktree_no_match_returns_none() {
+        let worktrees = vec![agileplus_domain::ports::WorktreeInfo {
+            path: "/tmp/wp01".into(),
+            commit: "abc".into(),
+            branch: "feat/demo/WP01".into(),
+            feature_slug: "demo".into(),
+            wp_id: "WP01".into(),
+        }];
+        assert_eq!(
+            find_resume_worktree(&worktrees, "other-feature", "WP99"),
+            None
+        );
+    }
+
+    #[test]
+    fn find_resume_worktree_empty_list_returns_none() {
+        assert_eq!(find_resume_worktree(&[], "demo", "WP01"), None);
+    }
+
+    #[test]
+    fn find_resume_worktree_multiple_pick_correct() {
+        let worktrees = vec![
+            agileplus_domain::ports::WorktreeInfo {
+                path: "/tmp/wp01".into(),
+                commit: "a".into(),
+                branch: "feat/demo/WP01".into(),
+                feature_slug: "demo".into(),
+                wp_id: "WP01".into(),
+            },
+            agileplus_domain::ports::WorktreeInfo {
+                path: "/tmp/wp02".into(),
+                commit: "b".into(),
+                branch: "feat/demo/WP02".into(),
+                feature_slug: "demo".into(),
+                wp_id: "WP02".into(),
+            },
+        ];
+        assert_eq!(
+            find_resume_worktree(&worktrees, "demo", "WP02"),
+            Some(PathBuf::from("/tmp/wp02"))
+        );
+    }
+
+    // ── ImplementArgs defaults ────────────────────────────────────────────
+
+    #[test]
+    fn implement_args_defaults() {
+        // We can't easily construct ImplementArgs (it uses clap derive),
+        // but we can verify the clap default values by parsing.
+        use clap::Parser;
+
+        #[derive(Parser)]
+        struct Wrapper {
+            #[command(subcommand)]
+            cmd: Cmd,
+        }
+        #[derive(clap::Subcommand)]
+        enum Cmd {
+            Implement(ImplementArgs),
+        }
+
+        let args = Wrapper::try_parse_from([
+            "test",
+            "implement",
+            "--feature",
+            "auth",
+        ])
+        .unwrap();
+        match args.cmd {
+            Cmd::Implement(a) => {
+                assert_eq!(a.feature, "auth");
+                assert_eq!(a.parallel, 3);
+                assert_eq!(a.max_review_cycles, 5);
+                assert!(!a.resume);
+                assert!(a.wp.is_none());
+            }
+        }
+    }
+
+    #[test]
+    fn implement_args_custom_values() {
+        use clap::Parser;
+
+        #[derive(Parser)]
+        struct Wrapper {
+            #[command(subcommand)]
+            cmd: Cmd,
+        }
+        #[derive(clap::Subcommand)]
+        enum Cmd {
+            Implement(ImplementArgs),
+        }
+
+        let args = Wrapper::try_parse_from([
+            "test",
+            "implement",
+            "--feature",
+            "payments",
+            "--wp",
+            "WP01",
+            "--parallel",
+            "6",
+            "--max-review-cycles",
+            "10",
+            "--resume",
+        ])
+        .unwrap();
+        match args.cmd {
+            Cmd::Implement(a) => {
+                assert_eq!(a.feature, "payments");
+                assert_eq!(a.wp.as_deref(), Some("WP01"));
+                assert_eq!(a.parallel, 6);
+                assert_eq!(a.max_review_cycles, 10);
+                assert!(a.resume);
+            }
+        }
+    }
+
+    // ── get_latest_hash ───────────────────────────────────────────────────
+
+    #[tokio::test]
+    async fn get_latest_hash_returns_zeroes_when_no_entries() {
+        use agileplus_domain::error::DomainError;
+        use async_trait::async_trait;
+
+        struct StubStorage;
+
+        #[async_trait]
+        impl agileplus_domain::ports::StoragePort for StubStorage {
+            // Minimal stub – only implement the method we need.
+            async fn get_latest_audit_entry(
+                &self,
+                _feature_id: i64,
+            ) -> Result<Option<agileplus_domain::domain::audit::AuditEntry>, DomainError> {
+                Ok(None)
+            }
+            // -- required methods, all unimplemented stubs --
+            async fn create_feature(&self, _: &agileplus_domain::domain::feature::Feature) -> Result<i64, DomainError> { unimplemented!() }
+            async fn get_feature_by_slug(&self, _: &str) -> Result<Option<agileplus_domain::domain::feature::Feature>, DomainError> { unimplemented!() }
+            async fn get_feature_by_id(&self, _: i64) -> Result<Option<agileplus_domain::domain::feature::Feature>, DomainError> { unimplemented!() }
+            async fn update_feature_state(&self, _: i64, _: agileplus_domain::domain::state_machine::FeatureState) -> Result<(), DomainError> { unimplemented!() }
+            async fn list_features_by_state(&self, _: agileplus_domain::domain::state_machine::FeatureState) -> Result<Vec<agileplus_domain::domain::feature::Feature>, DomainError> { unimplemented!() }
+            async fn list_all_features(&self) -> Result<Vec<agileplus_domain::domain::feature::Feature>, DomainError> { unimplemented!() }
+            async fn create_work_package(&self, _: &agileplus_domain::domain::work_package::WorkPackage) -> Result<i64, DomainError> { unimplemented!() }
+            async fn get_work_package(&self, _: i64) -> Result<Option<agileplus_domain::domain::work_package::WorkPackage>, DomainError> { unimplemented!() }
+            async fn update_wp_state(&self, _: i64, _: agileplus_domain::domain::work_package::WpState) -> Result<(), DomainError> { unimplemented!() }
+            async fn list_wps_by_feature(&self, _: i64) -> Result<Vec<agileplus_domain::domain::work_package::WorkPackage>, DomainError> { unimplemented!() }
+            async fn add_wp_dependency(&self, _: &agileplus_domain::domain::work_package::WpDependency) -> Result<(), DomainError> { unimplemented!() }
+            async fn get_wp_dependencies(&self, _: i64) -> Result<Vec<agileplus_domain::domain::work_package::WpDependency>, DomainError> { unimplemented!() }
+            async fn get_ready_wps(&self, _: i64) -> Result<Vec<agileplus_domain::domain::work_package::WorkPackage>, DomainError> { unimplemented!() }
+            async fn append_audit_entry(&self, _: &agileplus_domain::domain::audit::AuditEntry) -> Result<i64, DomainError> { unimplemented!() }
+            async fn get_audit_trail(&self, _: i64) -> Result<Vec<agileplus_domain::domain::audit::AuditEntry>, DomainError> { unimplemented!() }
+            async fn create_evidence(&self, _: &agileplus_domain::domain::governance::Evidence) -> Result<i64, DomainError> { unimplemented!() }
+            async fn get_evidence_by_wp(&self, _: i64) -> Result<Vec<agileplus_domain::domain::governance::Evidence>, DomainError> { unimplemented!() }
+            async fn get_evidence_by_fr(&self, _: &str) -> Result<Vec<agileplus_domain::domain::governance::Evidence>, DomainError> { unimplemented!() }
+            async fn create_policy_rule(&self, _: &agileplus_domain::domain::governance::PolicyRule) -> Result<i64, DomainError> { unimplemented!() }
+            async fn list_active_policies(&self) -> Result<Vec<agileplus_domain::domain::governance::PolicyRule>, DomainError> { unimplemented!() }
+            async fn record_metric(&self, _: &agileplus_domain::domain::metric::Metric) -> Result<i64, DomainError> { unimplemented!() }
+            async fn get_metrics_by_feature(&self, _: i64) -> Result<Vec<agileplus_domain::domain::metric::Metric>, DomainError> { unimplemented!() }
+            async fn create_governance_contract(&self, _: &agileplus_domain::domain::governance::GovernanceContract) -> Result<i64, DomainError> { unimplemented!() }
+            async fn get_governance_contract(&self, _: i64, _: i32) -> Result<Option<agileplus_domain::domain::governance::GovernanceContract>, DomainError> { unimplemented!() }
+            async fn get_latest_governance_contract(&self, _: i64) -> Result<Option<agileplus_domain::domain::governance::GovernanceContract>, DomainError> { unimplemented!() }
+            async fn create_module(&self, _: &agileplus_domain::domain::module::Module) -> Result<i64, DomainError> { unimplemented!() }
+            async fn get_module(&self, _: i64) -> Result<Option<agileplus_domain::domain::module::Module>, DomainError> { unimplemented!() }
+            async fn get_module_by_slug(&self, _: &str) -> Result<Option<agileplus_domain::domain::module::Module>, DomainError> { unimplemented!() }
+            async fn update_module(&self, _: i64, _: &str, _: Option<&str>) -> Result<(), DomainError> { unimplemented!() }
+            async fn delete_module(&self, _: i64) -> Result<(), DomainError> { unimplemented!() }
+            async fn list_root_modules(&self) -> Result<Vec<agileplus_domain::domain::module::Module>, DomainError> { unimplemented!() }
+            async fn list_child_modules(&self, _: i64) -> Result<Vec<agileplus_domain::domain::module::Module>, DomainError> { unimplemented!() }
+            async fn get_module_with_features(&self, _: i64) -> Result<Option<agileplus_domain::domain::module::ModuleWithFeatures>, DomainError> { unimplemented!() }
+            async fn tag_feature_to_module(&self, _: &agileplus_domain::domain::module::ModuleFeatureTag) -> Result<(), DomainError> { unimplemented!() }
+            async fn untag_feature_from_module(&self, _: i64, _: i64) -> Result<(), DomainError> { unimplemented!() }
+            async fn create_cycle(&self, _: &agileplus_domain::domain::cycle::Cycle) -> Result<i64, DomainError> { unimplemented!() }
+            async fn get_cycle(&self, _: i64) -> Result<Option<agileplus_domain::domain::cycle::Cycle>, DomainError> { unimplemented!() }
+            async fn update_cycle_state(&self, _: i64, _: agileplus_domain::domain::cycle::CycleState) -> Result<(), DomainError> { unimplemented!() }
+            async fn list_cycles_by_state(&self, _: agileplus_domain::domain::cycle::CycleState) -> Result<Vec<agileplus_domain::domain::cycle::Cycle>, DomainError> { unimplemented!() }
+            async fn list_cycles_by_module(&self, _: i64) -> Result<Vec<agileplus_domain::domain::cycle::Cycle>, DomainError> { unimplemented!() }
+            async fn list_all_cycles(&self) -> Result<Vec<agileplus_domain::domain::cycle::Cycle>, DomainError> { unimplemented!() }
+            async fn get_cycle_with_features(&self, _: i64) -> Result<Option<agileplus_domain::domain::cycle::CycleWithFeatures>, DomainError> { unimplemented!() }
+            async fn add_feature_to_cycle(&self, _: &agileplus_domain::domain::cycle::CycleFeature) -> Result<(), DomainError> { unimplemented!() }
+            async fn remove_feature_from_cycle(&self, _: i64, _: i64) -> Result<(), DomainError> { unimplemented!() }
+            async fn get_sync_mapping(&self, _: &str, _: i64) -> Result<Option<agileplus_domain::domain::sync_mapping::SyncMapping>, DomainError> { unimplemented!() }
+            async fn upsert_sync_mapping(&self, _: &agileplus_domain::domain::sync_mapping::SyncMapping) -> Result<(), DomainError> { unimplemented!() }
+            async fn get_sync_mapping_by_plane_id(&self, _: &str, _: &str) -> Result<Option<agileplus_domain::domain::sync_mapping::SyncMapping>, DomainError> { unimplemented!() }
+            async fn delete_sync_mapping(&self, _: &str, _: i64) -> Result<(), DomainError> { unimplemented!() }
+            async fn create_project(&self, _: &agileplus_domain::domain::project::Project) -> Result<i64, DomainError> { unimplemented!() }
+            async fn get_project_by_slug(&self, _: &str) -> Result<Option<agileplus_domain::domain::project::Project>, DomainError> { unimplemented!() }
+            async fn list_all_projects(&self) -> Result<Vec<agileplus_domain::domain::project::Project>, DomainError> { unimplemented!() }
+            async fn create_epic(&self, _: &agileplus_domain::domain::epic::Epic) -> Result<i64, DomainError> { unimplemented!() }
+            async fn get_epic(&self, _: i64) -> Result<Option<agileplus_domain::domain::epic::Epic>, DomainError> { unimplemented!() }
+            async fn list_epics_by_project(&self, _: i64) -> Result<Vec<agileplus_domain::domain::epic::Epic>, DomainError> { unimplemented!() }
+            async fn update_epic_status(&self, _: i64, _: agileplus_domain::domain::epic::EpicStatus) -> Result<(), DomainError> { unimplemented!() }
+            async fn create_story(&self, _: &agileplus_domain::domain::story::Story) -> Result<i64, DomainError> { unimplemented!() }
+            async fn get_story(&self, _: i64) -> Result<Option<agileplus_domain::domain::story::Story>, DomainError> { unimplemented!() }
+            async fn list_stories_by_epic(&self, _: i64) -> Result<Vec<agileplus_domain::domain::story::Story>, DomainError> { unimplemented!() }
+            async fn update_story_status(&self, _: i64, _: agileplus_domain::domain::story::StoryStatus) -> Result<(), DomainError> { unimplemented!() }
+            async fn create_user(&self, _: &agileplus_domain::domain::user::User) -> Result<i64, DomainError> { unimplemented!() }
+            async fn get_user(&self, _: i64) -> Result<Option<agileplus_domain::domain::user::User>, DomainError> { unimplemented!() }
+            async fn get_user_by_email(&self, _: &str) -> Result<Option<agileplus_domain::domain::user::User>, DomainError> { unimplemented!() }
+            async fn list_all_users(&self) -> Result<Vec<agileplus_domain::domain::user::User>, DomainError> { unimplemented!() }
+        }
+
+        let hash = get_latest_hash(&StubStorage, 1).await;
+        assert_eq!(hash, [0u8; 32]);
     }
 }
