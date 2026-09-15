@@ -144,4 +144,116 @@ mod tests {
         let back: RequirementId = serde_json::from_str(&json).unwrap();
         assert_eq!(back, id);
     }
+
+    // --- NfrId tests ---
+
+    #[test]
+    fn nfr_id_from_string_idempotent() {
+        let a = NfrId::from_string("NFR-PERF-1");
+        let b = NfrId::from_string("NFR-PERF-1");
+        assert_eq!(a, b);
+        assert_eq!(a.as_str(), "NFR-PERF-1");
+    }
+
+    #[test]
+    fn nfr_id_from_string_bare_value_is_prefixed() {
+        let id = NfrId::from_string("SEC-42");
+        assert_eq!(id.as_str(), "NFR-SEC-42");
+    }
+
+    #[test]
+    fn nfr_id_from_fr_id_string_roundtrip() {
+        let id = NfrId::from_string("NFR-007");
+        let boundary: String = id.to_fr_id_string();
+        assert_eq!(boundary, "NFR-007");
+        let back: NfrId = NfrId::from_fr_id_string(boundary);
+        assert_eq!(back, id);
+    }
+
+    #[test]
+    fn nfr_id_parse_rejects_empty() {
+        assert!(NfrId::parse("").is_err());
+        assert!(NfrId::parse("   ").is_err());
+    }
+
+    #[test]
+    fn nfr_id_parse_accepts_valid() {
+        let id = NfrId::parse("NFR-SCAL-3").unwrap();
+        assert_eq!(id.as_str(), "NFR-SCAL-3");
+        // bare value also accepted
+        let id2 = NfrId::parse("7").unwrap();
+        assert_eq!(id2.as_str(), "NFR-7");
+    }
+
+    #[test]
+    fn nfr_id_display_matches_as_str() {
+        let id = NfrId::from_string("NFR-10");
+        assert_eq!(format!("{id}"), "NFR-10");
+        assert_eq!(id.to_string(), id.as_str());
+    }
+
+    #[test]
+    fn nfr_id_serde_json_roundtrip() {
+        let id = NfrId::from_string("NFR-9001");
+        let json = serde_json::to_string(&id).unwrap();
+        assert_eq!(json, "\"NFR-9001\"");
+        let back: NfrId = serde_json::from_str(&json).unwrap();
+        assert_eq!(back, id);
+    }
+
+    // --- Default trait ---
+
+    #[test]
+    fn requirement_id_default_is_fr_prefixed() {
+        let id = RequirementId::default();
+        assert!(id.as_str().starts_with("FR-"));
+    }
+
+    #[test]
+    fn nfr_id_default_is_nfr_prefixed() {
+        let id = NfrId::default();
+        assert!(id.as_str().starts_with("NFR-"));
+    }
+
+    // --- Ordering and Hash ---
+
+    #[test]
+    fn requirement_id_ordering() {
+        let a = RequirementId::from_string("FR-1");
+        let b = RequirementId::from_string("FR-2");
+        assert!(a < b);
+    }
+
+    #[test]
+    fn nfr_id_ordering() {
+        let a = NfrId::from_string("NFR-A");
+        let b = NfrId::from_string("NFR-B");
+        assert!(a < b);
+    }
+
+    // --- Equality between different IDs ---
+
+    #[test]
+    fn requirement_id_neq_nfr_id() {
+        let fr = RequirementId::from_string("FR-1");
+        // NfrId is a different type, can't compare directly, but as_str differs
+        let nfr = NfrId::from_string("FR-1");
+        assert_ne!(fr.as_str(), nfr.as_str()); // FR-1 vs NFR-FR-1
+    }
+
+    // --- Clone ---
+
+    #[test]
+    fn requirement_id_clone_is_equal() {
+        let a = RequirementId::from_string("FR-42");
+        let b = a.clone();
+        assert_eq!(a, b);
+    }
+
+    #[test]
+    fn nfr_id_clone_is_equal() {
+        let a = NfrId::from_string("NFR-42");
+        let b = a.clone();
+        assert_eq!(a, b);
+    }
 }

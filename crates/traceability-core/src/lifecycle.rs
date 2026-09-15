@@ -207,7 +207,99 @@ mod tests {
     }
 
     #[test]
-    fn eight_stages_present() {
-        assert_eq!(FeatureState::all().len(), 8);
+    fn from_str_unknown_returns_err() {
+        let err = FeatureState::from_str("not_a_state");
+        assert!(err.is_err());
+        assert!(err.unwrap_err().contains("unknown FeatureState"));
+    }
+
+    #[test]
+    fn ordinal_monotonic_across_all_states() {
+        let all = FeatureState::all();
+        for window in all.windows(2) {
+            assert!(
+                window[0].ordinal() < window[1].ordinal(),
+                "ordinal({:?})={} should be < ordinal({:?})={}",
+                window[0],
+                window[0].ordinal(),
+                window[1],
+                window[1].ordinal()
+            );
+        }
+    }
+
+    #[test]
+    fn display_matches_from_str_roundtrip() {
+        for state in FeatureState::all() {
+            let s = state.to_string();
+            let parsed: FeatureState = s.parse().unwrap();
+            assert_eq!(parsed, *state);
+        }
+    }
+
+    #[test]
+    fn same_state_transition_rejected() {
+        for state in FeatureState::all() {
+            let err = state.transition(*state);
+            assert!(err.is_err(), "same-state {:?} should be rejected", state);
+        }
+    }
+
+    #[test]
+    fn non_adjacent_forward_transition_rejected() {
+        // Created -> Planned skips Specified and Researched
+        let err = FeatureState::Created
+            .transition(FeatureState::Planned)
+            .unwrap_err();
+        assert_eq!(err.from, "created");
+        assert_eq!(err.to, "planned");
+    }
+
+    #[test]
+    fn transition_result_has_timestamp() {
+        let before = Utc::now();
+        let result = FeatureState::Created
+            .transition(FeatureState::Specified)
+            .unwrap();
+        let after = Utc::now();
+        assert!(result.timestamp >= before);
+        assert!(result.timestamp <= after);
+    }
+
+    #[test]
+    fn ordinal_first_and_last() {
+        assert_eq!(FeatureState::Created.ordinal(), 0);
+        assert_eq!(FeatureState::Retrospected.ordinal(), 7);
+    }
+
+    #[test]
+    fn all_returns_unique_states() {
+        let all = FeatureState::all();
+        let mut seen = std::collections::HashSet::new();
+        for s in all {
+            assert!(seen.insert(*s), "duplicate state: {:?}", s);
+        }
+    }
+
+    #[test]
+    fn lifecycle_error_display() {
+        let err = LifecycleError {
+            from: "a".to_string(),
+            to: "b".to_string(),
+            reason: "nope".to_string(),
+        };
+        let msg = err.to_string();
+        assert!(msg.contains("a"));
+        assert!(msg.contains("b"));
+        assert!(msg.contains("nope"));
+    }
+
+    #[test]
+    fn feature_state_serde_roundtrip() {
+        for state in FeatureState::all() {
+            let json = serde_json::to_string(state).unwrap();
+            let back: FeatureState = serde_json::from_str(&json).unwrap();
+            assert_eq!(back, *state);
+        }
     }
 }

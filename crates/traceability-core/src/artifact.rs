@@ -217,6 +217,217 @@ mod tests {
     }
 
     #[test]
+    fn artifact_new_defaults() {
+        let project = Uuid::new_v4();
+        let a = Artifact::new(project, ArtifactKind::Risk, "risky");
+        assert!(a.description.is_none());
+        assert!(a.external_id.is_none());
+        assert!(a.updated_at.is_some());
+        assert!(a.metadata.is_empty());
+        // id is unique per call
+        let b = Artifact::new(project, ArtifactKind::Risk, "risky");
+        assert_ne!(a.id, b.id);
+    }
+
+    #[test]
+    fn artifact_new_title_into_string() {
+        let a = Artifact::new(Uuid::new_v4(), ArtifactKind::Test, String::from("owned"));
+        assert_eq!(a.title, "owned");
+    }
+
+    #[test]
+    fn artifact_serde_roundtrip() {
+        let a = Artifact::new(Uuid::new_v4(), ArtifactKind::Design, "roundtrip");
+        let json = serde_json::to_string(&a).unwrap();
+        let back: Artifact = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.id, a.id);
+        assert_eq!(back.kind, ArtifactKind::Design);
+        assert_eq!(back.title, "roundtrip");
+    }
+
+    #[test]
+    fn artifact_serde_includes_kind_lowercase() {
+        let a = Artifact::new(Uuid::new_v4(), ArtifactKind::Evidence, "ev");
+        let json = serde_json::to_string(&a).unwrap();
+        assert!(json.contains("\"requirement\"") || json.contains("\"evidence\""));
+        // Specifically check kind field serializes as lowercase
+        let kind_json = serde_json::to_string(&a.kind).unwrap();
+        assert_eq!(kind_json, "\"evidence\"");
+    }
+
+    #[test]
+    fn artifact_kind_neo4j_labels_all_variants() {
+        assert_eq!(ArtifactKind::Requirement.neo4j_label(), "Requirement");
+        assert_eq!(ArtifactKind::Design.neo4j_label(), "Design");
+        assert_eq!(ArtifactKind::Code.neo4j_label(), "Code");
+        assert_eq!(ArtifactKind::Test.neo4j_label(), "Test");
+        assert_eq!(ArtifactKind::Evidence.neo4j_label(), "Evidence");
+        assert_eq!(ArtifactKind::Risk.neo4j_label(), "Risk");
+        assert_eq!(ArtifactKind::Rationale.neo4j_label(), "Rationale");
+    }
+
+    #[test]
+    fn artifact_kind_serde_roundtrip_all_variants() {
+        let variants = [
+            ArtifactKind::Requirement,
+            ArtifactKind::Design,
+            ArtifactKind::Code,
+            ArtifactKind::Test,
+            ArtifactKind::Evidence,
+            ArtifactKind::Risk,
+            ArtifactKind::Rationale,
+        ];
+        for v in variants {
+            let json = serde_json::to_string(&v).unwrap();
+            let back: ArtifactKind = serde_json::from_str(&json).unwrap();
+            assert_eq!(back, v);
+        }
+    }
+
+    #[test]
+    fn artifact_kind_equality_and_hash() {
+        let a = ArtifactKind::Code;
+        let b = ArtifactKind::Code;
+        let c = ArtifactKind::Test;
+        assert_eq!(a, b);
+        assert_ne!(a, c);
+        // Hash: equal values must hash equally
+        use std::collections::hash_map::DefaultHasher;
+        use std::hash::{Hash, Hasher};
+        let mut h1 = DefaultHasher::new();
+        let mut h2 = DefaultHasher::new();
+        a.hash(&mut h1);
+        b.hash(&mut h2);
+        assert_eq!(h1.finish(), h2.finish());
+    }
+
+    #[test]
+    fn artifact_ref_kind_str_all_variants() {
+        let cases = [
+            (
+                ArtifactRef::Requirement {
+                    id: RequirementId::from_string("FR-1"),
+                },
+                "requirement",
+            ),
+            (
+                ArtifactRef::NonFunctionalRequirement {
+                    id: NfrId::from_string("NFR-PERF-1"),
+                },
+                "nfr",
+            ),
+            (
+                ArtifactRef::Test {
+                    id: "T-1".to_string(),
+                },
+                "test",
+            ),
+            (
+                ArtifactRef::CodeEntity {
+                    id: "mod::fn".to_string(),
+                    lang: "rust".to_string(),
+                },
+                "code",
+            ),
+            (
+                ArtifactRef::Journey {
+                    id: "J-1".to_string(),
+                },
+                "journey",
+            ),
+            (
+                ArtifactRef::AgentRun {
+                    id: "AR-1".to_string(),
+                },
+                "agent",
+            ),
+            (
+                ArtifactRef::Evidence {
+                    id: "ev-1".to_string(),
+                    sha256: "0".repeat(64),
+                },
+                "evidence",
+            ),
+            (
+                ArtifactRef::Document {
+                    id: "doc-1".to_string(),
+                    range: Some("10-20".to_string()),
+                },
+                "document",
+            ),
+        ];
+        for (variant, expected) in cases {
+            assert_eq!(variant.kind_str(), expected, "failed for {expected}");
+        }
+    }
+
+    #[test]
+    fn artifact_ref_serde_roundtrip_all_variants() {
+        let refs = [
+            ArtifactRef::Requirement {
+                id: RequirementId::from_string("FR-1"),
+            },
+            ArtifactRef::NonFunctionalRequirement {
+                id: NfrId::from_string("NFR-SEC-1"),
+            },
+            ArtifactRef::Test {
+                id: "T-99".to_string(),
+            },
+            ArtifactRef::CodeEntity {
+                id: "lib::foo".to_string(),
+                lang: "python".to_string(),
+            },
+            ArtifactRef::Journey {
+                id: "J-10".to_string(),
+            },
+            ArtifactRef::AgentRun {
+                id: "AR-5".to_string(),
+            },
+            ArtifactRef::Evidence {
+                id: "ev-2".to_string(),
+                sha256: "a".repeat(64),
+            },
+            ArtifactRef::Document {
+                id: "doc-7".to_string(),
+                range: None,
+            },
+        ];
+        for r in &refs {
+            let json = serde_json::to_string(r).unwrap();
+            let back: ArtifactRef = serde_json::from_str(&json).unwrap();
+            assert_eq!(&back, r);
+        }
+    }
+
+    #[test]
+    fn trace_link_error_display_all_variants() {
+        let e = TraceLinkError::SelfLoop;
+        assert_eq!(
+            e.to_string(),
+            "TraceLink source_artifact_id and target_artifact_id must differ"
+        );
+
+        let e = TraceLinkError::WrongArtifactKind {
+            expected: ArtifactKind::Requirement,
+            got: ArtifactKind::Code,
+        };
+        let msg = e.to_string();
+        assert!(msg.contains("REQUIREMENT"));
+        assert!(msg.contains("Code"));
+
+        let e = TraceLinkError::BadConfidence(1.5);
+        let msg = e.to_string();
+        assert!(msg.contains("1.5"));
+        assert!(msg.contains("0.0..=1.0"));
+    }
+
+    #[test]
+    fn trace_link_error_is_std_error() {
+        let e: Box<dyn std::error::Error> = Box::new(TraceLinkError::SelfLoop);
+        assert!(e.source().is_none() || e.to_string().contains("must differ"));
+    }
+
+    #[test]
     fn trace_link_error_messages_are_stable() {
         let e = TraceLinkError::SelfLoop;
         assert_eq!(

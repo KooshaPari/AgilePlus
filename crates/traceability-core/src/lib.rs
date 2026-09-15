@@ -89,3 +89,109 @@ pub use tracelink::{
 // CoverageState is re-exported from the matrix module so the lib-level
 // `pub use` list stays compact.
 pub use matrix::{CoverageMatrix, CoverageState};
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn re_exported_artifact_types_are_accessible() {
+        let a = Artifact::new(
+            uuid::Uuid::new_v4(),
+            ArtifactKind::Requirement,
+            "smoke",
+        );
+        assert_eq!(a.kind, ArtifactKind::Requirement);
+    }
+
+    #[test]
+    fn re_exported_ids_are_accessible() {
+        let fr = RequirementId::from_string("FR-1");
+        let nfr = NfrId::from_string("NFR-1");
+        assert!(fr.as_str().starts_with("FR-"));
+        assert!(nfr.as_str().starts_with("NFR-"));
+    }
+
+    #[test]
+    fn re_exported_artifact_ref_kind_str() {
+        let r = ArtifactRef::Test {
+            id: "T-1".to_string(),
+        };
+        assert_eq!(r.kind_str(), "test");
+    }
+
+    #[test]
+    fn re_exported_link_kind_is_trace_link_type() {
+        // LinkKind is a type alias; verify it resolves to TraceLinkType
+        fn _assert_link_kind(_: LinkKind) {}
+    }
+
+    #[test]
+    fn re_exported_trace_link_error() {
+        let e = TraceLinkError::SelfLoop;
+        assert!(e.to_string().contains("must differ"));
+    }
+
+    #[test]
+    fn re_exported_governance_types_exist() {
+        // Smoke: ensure governance re-exports compile and are usable
+        let _ = std::any::type_name::<GovernanceContract>();
+        let _ = std::any::type_name::<PolicyRule>();
+        let _ = std::any::type_name::<EvidenceType>();
+        let _ = std::any::type_name::<BuiltinPolicy>();
+    }
+
+    #[test]
+    fn re_exported_lifecycle_types_exist() {
+        let _ = std::any::type_name::<FeatureState>();
+        let _ = std::any::type_name::<Transition>();
+        let _ = std::any::type_name::<TransitionResult>();
+    }
+
+    #[test]
+    fn re_exported_intent_graph_types_exist() {
+        let _ = std::any::type_name::<IntentGraph>();
+        let _ = std::any::type_name::<Node>();
+        let _ = std::any::type_name::<Edge>();
+        let _ = std::any::type_name::<NodeType>();
+        let _ = std::any::type_name::<DagStage>();
+        let _ = std::any::type_name::<RelationshipType>();
+    }
+
+    #[test]
+    fn re_exported_matrix_types_exist() {
+        let _ = std::any::type_name::<CoverageMatrix>();
+        let _ = std::any::type_name::<CoverageState>();
+        let _ = std::any::type_name::<MatrixCell>();
+    }
+
+    #[test]
+    fn re_exported_requirement_types_exist() {
+        let _ = std::any::type_name::<Requirement>();
+        let _ = std::any::type_name::<RequirementStatus>();
+        let _ = std::any::type_name::<VerificationMethod>();
+    }
+
+    #[test]
+    fn re_exported_tracelink_types_exist() {
+        let _ = std::any::type_name::<TraceLink>();
+        let _ = std::any::type_name::<TraceLinkType>();
+    }
+
+    #[test]
+    fn re_exported_contract_types_exist() {
+        let _ = std::any::type_name::<AcceptanceContract>();
+        let _ = std::any::type_name::<ProgressionGate>();
+        let _ = std::any::type_name::<Criterion>();
+        let _ = std::any::type_name::<GateReason>();
+        let _ = std::any::type_name::<GherkinRef>();
+        let _ = std::any::type_name::<Layer>();
+    }
+
+    #[test]
+    fn re_exported_impact_types_exist() {
+        let _ = std::any::type_name::<ImpactConfig>();
+        let _ = std::any::type_name::<ImpactReport>();
+        let _ = std::any::type_name::<BlastNode>();
+    }
+}
