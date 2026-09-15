@@ -112,7 +112,7 @@ impl Config {
         })
     }
 
-    fn empty() -> Self {
+    pub(crate) fn empty() -> Self {
         Self {
             plane: None,
             agents: None,

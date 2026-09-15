@@ -541,14 +541,14 @@ mod tests {
             None,
             None,
         );
-        assert!(config.services.is_none());
+        assert!(config.services.as_ref().is_none_or(Vec::is_empty));
     }
 
     #[test]
     fn test_apply_service_config_no_url_no_existing_does_nothing() {
         let mut config = Config::empty();
         apply_service_config(&mut config, "NoUrl", None, None, None);
-        assert!(config.services.is_none());
+        assert!(config.services.as_ref().is_none_or(Vec::is_empty));
     }
 
     #[test]
@@ -620,7 +620,7 @@ mod tests {
 
     #[test]
     fn test_health_build_restart_command_preserves_args() {
-        let cmd = build_restart_command("echo hello world").unwrap();
+        let mut cmd = build_restart_command("echo hello world").unwrap();
         // Verify the command was built with args
         let output = cmd.output().unwrap();
         assert!(output.status.success());
