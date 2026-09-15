@@ -334,4 +334,207 @@ mod tests {
         std::env::remove_var("AGILEPLUS_GOVERNANCE_ENABLED");
         std::env::remove_var("AGILEPLUS_GOVERNANCE_BASE_URL");
     }
+
+    #[test]
+    fn test_config_validation_clean() {
+        assert!(GovernanceConfig::default().validate().is_empty());
+    }
+
+    #[test]
+    fn test_config_validation_governance_enabled_no_url() {
+        let mut config = GovernanceConfig::default();
+        config.governance.enabled = true;
+        config.governance.base_url = "".into();
+        assert!(config.validate().iter().any(|e| e.contains("base URL")));
+    }
+
+    #[test]
+    fn test_config_validation_governance_enabled_no_api_key() {
+        let mut config = GovernanceConfig::default();
+        config.governance.enabled = true;
+        config.governance.auth.api_key = "".into();
+        assert!(config.validate().iter().any(|e| e.contains("API key")));
+    }
+
+    #[test]
+    fn test_config_from_file_json() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("config.json");
+        std::fs::write(&path, r#"{"governance":{"enabled":true,"base_url":"http://test:8080","auth":{"method":"api-key","api_key":"k","bearer_token":""},"timeout_secs":60,"retry_attempts":5},"local":{"enabled":false,"db_path":"/tmp/db","retention_days":30},"sync":{"enabled":false,"interval_ms":1000,"batch_size":10,"timeout_secs":10},"policy":{"enabled":true,"default_action":"allow","enforce_gates":true,"enforce_rate_limits":true},"rate_limit":{"enabled":true,"max_requests":50,"window_ms":60000}}"#).unwrap();
+        let config = GovernanceConfig::from_file(&path).unwrap();
+        assert!(config.governance.enabled);
+        assert_eq!(config.governance.base_url, "http://test:8080");
+    }
+
+    #[test]
+    fn test_config_serde_roundtrip() {
+        let config = GovernanceConfig::default();
+        let json = serde_json::to_string(&config).unwrap();
+        let back: GovernanceConfig = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.governance.enabled, config.governance.enabled);
+    }
+
+    #[test]
+    fn test_default_settings_values() {
+        let config = GovernanceConfig::default();
+        assert!(!config.governance.enabled);
+        assert!(config.local.enabled);
+        assert!(config.sync.enabled);
+        assert!(config.policy.enabled);
+        assert!(!config.rate_limit.enabled);
+    }
+
+}
+#[cfg(test)]
+mod extended_tests {
+    use super::*;
+
+    #[test]
+    fn governance_settings_defaults() {
+        let s = GovernanceSettings::default();
+        assert!(!s.enabled);
+        assert_eq!(s.base_url, "http://localhost:8080/api/v1");
+        assert_eq!(s.timeout_secs, 30);
+        assert_eq!(s.retry_attempts, 3);
+    }
+
+    #[test]
+    fn local_settings_defaults() {
+        let s = LocalSettings::default();
+        assert!(s.enabled);
+        assert_eq!(s.db_path, ".agileplus/governance.db");
+        assert_eq!(s.retention_days, 90);
+    }
+
+    #[test]
+    fn sync_settings_defaults() {
+        let s = SyncSettings::default();
+        assert!(s.enabled);
+        assert_eq!(s.interval_ms, 300_000);
+        assert_eq!(s.batch_size, 100);
+        assert_eq!(s.timeout_secs, 60);
+    }
+
+    #[test]
+    fn policy_settings_defaults() {
+        let s = PolicySettings::default();
+        assert!(s.enabled);
+        assert_eq!(s.default_action, PolicyDefaultAction::Allow);
+        assert!(s.enforce_gates);
+        assert!(s.enforce_rate_limits);
+    }
+
+    #[test]
+    fn rate_limit_settings_defaults() {
+        let s = RateLimitSettings::default();
+        assert!(!s.enabled);
+        assert_eq!(s.max_requests, 100);
+        assert_eq!(s.window_ms, 3_600_000);
+    }
+
+    #[test]
+    fn validate_empty_when_disabled() {
+        let config = GovernanceConfig::default();
+        let errors = config.validate();
+        assert!(errors.is_empty());
+    }
+
+    #[test]
+    fn validate_missing_url_when_enabled() {
+        let mut config = GovernanceConfig::default();
+        config.governance.enabled = true;
+        config.governance.base_url = String::new();
+        let errors = config.validate();
+        assert!(errors.iter().any(|e| e.contains("base URL")));
+    }
+
+    #[test]
+    fn validate_missing_api_key() {
+        let mut config = GovernanceConfig::default();
+        config.governance.enabled = true;
+        config.governance.auth.method = AuthMethod::ApiKey;
+        config.governance.auth.api_key = String::new();
+        let errors = config.validate();
+        assert!(errors.iter().any(|e| e.contains("API key")));
+    }
+
+    #[test]
+    fn validate_missing_db_path() {
+        let mut config = GovernanceConfig::default();
+        config.local.enabled = true;
+        config.local.db_path = String::new();
+        let errors = config.validate();
+        assert!(errors.iter().any(|e| e.contains("database path")));
+    }
+
+    #[test]
+    fn from_file_json() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("config.json");
+        std::fs::write(&path, r#"{"governance":{"enabled":true,"base_url":"http://x","auth":{"method":"api-key","api_key":"k","bearer_token":""},"timeout_secs":10,"retry_attempts":1},"local":{"enabled":false,"db_path":"x","retention_days":1},"sync":{"enabled":false,"interval_ms":1,"batch_size":1,"timeout_secs":1},"policy":{"enabled":true,"default_action":"allow","enforce_gates":true,"enforce_rate_limits":true},"rate_limit":{"enabled":false,"max_requests":1,"window_ms":1}}"#).unwrap();
+        let config = GovernanceConfig::from_file(&path).unwrap();
+        assert!(config.governance.enabled);
+        assert_eq!(config.governance.timeout_secs, 10);
+    }
+
+    #[test]
+    fn from_file_toml() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("config.toml");
+        std::fs::write(&path, r#"
+[governance]
+enabled = true
+base_url = "http://y"
+timeout_secs = 5
+retry_attempts = 2
+
+[governance.auth]
+method = "api-key"
+api_key = "key"
+bearer_token = ""
+
+[local]
+enabled = true
+db_path = "/tmp/test.db"
+retention_days = 30
+
+[sync]
+enabled = false
+interval_ms = 1000
+batch_size = 50
+timeout_secs = 10
+
+[policy]
+enabled = true
+default_action = "deny"
+enforce_gates = false
+enforce_rate_limits = true
+
+[rate_limit]
+enabled = true
+max_requests = 200
+window_ms = 60000
+"#).unwrap();
+        let config = GovernanceConfig::from_file(&path).unwrap();
+        assert!(config.governance.enabled);
+        assert_eq!(config.governance.timeout_secs, 5);
+        assert_eq!(config.local.retention_days, 30);
+        assert_eq!(config.policy.default_action, PolicyDefaultAction::Deny);
+    }
+
+    #[test]
+    fn governance_config_serde_roundtrip() {
+        let config = GovernanceConfig::default();
+        let json = serde_json::to_string(&config).unwrap();
+        let deser: GovernanceConfig = serde_json::from_str(&json).unwrap();
+        assert_eq!(config.governance.enabled, deser.governance.enabled);
+        assert_eq!(config.local.db_path, deser.local.db_path);
+    }
+
+    #[test]
+    fn auth_settings_api_key_default() {
+        let s = AuthSettings::default();
+        assert_eq!(s.method, AuthMethod::ApiKey);
+        assert!(s.api_key.is_empty());
+    }
 }

@@ -199,3 +199,80 @@ impl<T> OptionalExt<T> for rusqlite::Result<T> {
         }
     }
 }
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::SqliteStorageAdapter;
+use agileplus_domain::PolicyCheck;
+
+    fn sample_contract(feature_id: i64, version: i32) -> GovernanceContract {
+        GovernanceContract {
+            id: 0, feature_id, version,
+            rules: vec![GovernanceRule {
+                transition: "P->I".to_string(),
+                required_evidence: vec!["test".to_string()],
+                policy_refs: vec![],
+            }],
+            bound_at: chrono::Utc::now(),
+        }
+    }
+
+    fn sample_policy(domain: PolicyDomain) -> PolicyRule {
+        PolicyRule {
+            id: 0, domain,
+            rule: PolicyDefinition { description: "test".to_string(), check: PolicyCheck::Automated },
+            active: true,
+            created_at: chrono::Utc::now(),
+            updated_at: chrono::Utc::now(),
+        }
+    }
+
+    #[test]
+    fn create_and_get_contract() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let id = create_governance_contract(&conn, &sample_contract(42, 1)).unwrap();
+        assert!(id > 0);
+        let c = get_governance_contract(&conn, 42, 1).unwrap().unwrap();
+        assert_eq!(c.feature_id, 42);
+        assert_eq!(c.version, 1);
+    }
+
+    #[test]
+    fn get_latest_contract() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        create_governance_contract(&conn, &sample_contract(1, 1)).unwrap();
+        create_governance_contract(&conn, &sample_contract(1, 2)).unwrap();
+        assert_eq!(get_latest_governance_contract(&conn, 1).unwrap().unwrap().version, 2);
+    }
+
+    #[test]
+    fn create_and_list_policies() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        create_policy_rule(&conn, &sample_policy(PolicyDomain::Security)).unwrap();
+        create_policy_rule(&conn, &sample_policy(PolicyDomain::Quality)).unwrap();
+        assert_eq!(list_active_policies(&conn).unwrap().len(), 2);
+    }
+
+    #[test]
+    fn list_excludes_inactive() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        create_policy_rule(&conn, &sample_policy(PolicyDomain::Security)).unwrap();
+        let mut inactive = sample_policy(PolicyDomain::Quality);
+        inactive.active = false;
+        create_policy_rule(&conn, &inactive).unwrap();
+        assert_eq!(list_active_policies(&conn).unwrap().len(), 1);
+    }
+
+    #[test]
+    fn list_empty() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        assert!(list_active_policies(&conn).unwrap().is_empty());
+    }
+}

@@ -566,4 +566,354 @@ mod tests {
         let result = engine.check("test", "action", &context);
         assert!(result.allowed);
     }
+
+    #[test]
+    fn policy_new_and_builders() {
+        let p = Policy::new("res", "act", PolicyEffect::Allow)
+            .with_name("Test Policy")
+            .with_description("A test policy")
+            .with_priority(100)
+            .with_condition(PolicyCondition::Exists { key: "x".to_string() });
+        assert!(p.id.starts_with("pol_"));
+        assert_eq!(p.resource, "res");
+        assert_eq!(p.action, "act");
+        assert_eq!(p.effect, PolicyEffect::Allow);
+        assert_eq!(p.name, "Test Policy");
+        assert_eq!(p.description.as_deref(), Some("A test policy"));
+        assert_eq!(p.priority, 100);
+        assert!(p.enabled);
+    }
+
+    #[test]
+    fn policy_result_allowed_and_denied() {
+        let mut r = PolicyResult::allowed("ok");
+        assert!(r.allowed);
+        assert_eq!(r.reason, "ok");
+        assert!(r.policy.is_none());
+        r.add_detail(PolicyDetail { policy: "p1".into(), matched: true, reason: "matched".into() });
+        assert_eq!(r.details.len(), 1);
+        let r2 = PolicyResult::denied("nope", "policy_name");
+        assert!(!r2.allowed);
+        assert_eq!(r2.policy.as_deref(), Some("policy_name"));
+    }
+
+    #[test]
+    fn condition_equals() {
+        let engine = PolicyEngine::with_policies(vec![Policy::new("r", "a", PolicyEffect::Deny)
+            .with_condition(PolicyCondition::Equals { key: "user_id".into(), value: serde_json::json!("bad") })])
+            .with_default_action(PolicyEffect::Allow);
+        assert!(!engine.check("r", "a", &PolicyContext::new().with_user("bad")).allowed);
+        assert!(engine.check("r", "a", &PolicyContext::new().with_user("good")).allowed);
+    }
+
+    #[test]
+    fn condition_contains() {
+        let engine = PolicyEngine::with_policies(vec![Policy::new("r", "a", PolicyEffect::Allow)
+            .with_condition(PolicyCondition::Contains { key: "resource".into(), value: serde_json::json!("secret") })])
+            .with_default_action(PolicyEffect::Deny);
+        assert!(engine.check("r", "a", &PolicyContext::new().with_resource("super_secret_data", None)).allowed);
+        assert!(!engine.check("r", "a", &PolicyContext::new().with_resource("normal", None)).allowed);
+    }
+
+    #[test]
+    fn condition_matches_regex() {
+        let engine = PolicyEngine::with_policies(vec![Policy::new("r", "a", PolicyEffect::Allow)
+            .with_condition(PolicyCondition::Matches { key: "resource".into(), pattern: r"^test-.*".into() })])
+            .with_default_action(PolicyEffect::Deny);
+        assert!(engine.check("r", "a", &PolicyContext::new().with_resource("test-foo", None)).allowed);
+        assert!(!engine.check("r", "a", &PolicyContext::new().with_resource("prod-bar", None)).allowed);
+    }
+
+    #[test]
+    fn condition_exists() {
+        let engine = PolicyEngine::with_policies(vec![Policy::new("r", "a", PolicyEffect::Deny)
+            .with_condition(PolicyCondition::Exists { key: "channel".into() })])
+            .with_default_action(PolicyEffect::Allow);
+        assert!(!engine.check("r", "a", &PolicyContext::new().with_channel(ReleaseChannel::Alpha)).allowed);
+        assert!(engine.check("r", "a", &PolicyContext::new()).allowed);
+    }
+
+    #[test]
+    fn condition_min_channel() {
+        let engine = PolicyEngine::with_policies(vec![Policy::new("r", "a", PolicyEffect::Deny)
+            .with_condition(PolicyCondition::MinChannel { key: "channel".into(), channel: ReleaseChannel::Beta })])
+            .with_default_action(PolicyEffect::Allow);
+        assert!(engine.check("r", "a", &PolicyContext::new().with_channel(ReleaseChannel::Alpha)).allowed);
+        assert!(!engine.check("r", "a", &PolicyContext::new().with_channel(ReleaseChannel::Prod)).allowed);
+    }
+
+    #[test]
+    fn condition_not() {
+        let engine = PolicyEngine::with_policies(vec![Policy::new("r", "a", PolicyEffect::Deny)
+            .with_condition(PolicyCondition::Not { condition: Box::new(PolicyCondition::Exists { key: "channel".into() }) })])
+            .with_default_action(PolicyEffect::Allow);
+        assert!(!engine.check("r", "a", &PolicyContext::new()).allowed);
+        assert!(engine.check("r", "a", &PolicyContext::new().with_channel(ReleaseChannel::Alpha)).allowed);
+    }
+
+    #[test]
+    fn condition_and() {
+        let engine = PolicyEngine::with_policies(vec![Policy::new("r", "a", PolicyEffect::Deny)
+            .with_condition(PolicyCondition::And { conditions: vec![
+                PolicyCondition::Exists { key: "user_id".into() },
+                PolicyCondition::Exists { key: "channel".into() },
+            ] })])
+            .with_default_action(PolicyEffect::Allow);
+        assert!(!engine.check("r", "a", &PolicyContext::new().with_user("u").with_channel(ReleaseChannel::Alpha)).allowed);
+        assert!(engine.check("r", "a", &PolicyContext::new().with_user("u")).allowed);
+    }
+
+    #[test]
+    fn condition_or() {
+        let engine = PolicyEngine::with_policies(vec![Policy::new("r", "a", PolicyEffect::Deny)
+            .with_condition(PolicyCondition::Or { conditions: vec![
+                PolicyCondition::Exists { key: "user_id".into() },
+                PolicyCondition::Exists { key: "channel".into() },
+            ] })])
+            .with_default_action(PolicyEffect::Allow);
+        assert!(!engine.check("r", "a", &PolicyContext::new().with_user("u")).allowed);
+        assert!(engine.check("r", "a", &PolicyContext::new()).allowed);
+    }
+
+    #[test]
+    fn disabled_policy_skipped() {
+        let mut engine = PolicyEngine::with_policies(vec![]);
+        let mut p = Policy::new("r", "a", PolicyEffect::Deny);
+        p.enabled = false;
+        engine.add_policy(p);
+        assert!(engine.check("r", "a", &PolicyContext::new()).allowed);
+    }
+
+    #[test]
+    fn wildcard_resource_and_action() {
+        let engine = PolicyEngine::with_policies(vec![Policy::new("*", "*", PolicyEffect::Deny).with_priority(1000)])
+            .with_default_action(PolicyEffect::Allow);
+        assert!(!engine.check("any_resource", "any_action", &PolicyContext::new()).allowed);
+    }
+
+    #[test]
+    fn default_action_deny() {
+        let engine = PolicyEngine::with_policies(vec![]).with_default_action(PolicyEffect::Deny);
+        assert!(!engine.check("r", "a", &PolicyContext::new()).allowed);
+    }
+
+    #[test]
+    fn engine_default_action_allow() {
+        let engine = PolicyEngine::with_policies(vec![]);
+        assert!(engine.check("r", "a", &PolicyContext::new()).allowed);
+    }
+
+    #[test]
+    fn default_policies_count() {
+        assert!(default_policies().len() >= 6);
+    }
+
+    #[test]
+    fn policy_effect_serde() {
+        assert_eq!(serde_json::to_string(&PolicyEffect::Allow).unwrap(), "\"allow\"");
+        assert_eq!(serde_json::to_string(&PolicyEffect::Deny).unwrap(), "\"deny\"");
+        assert_eq!(serde_json::from_str::<PolicyEffect>("\"allow\"").unwrap(), PolicyEffect::Allow);
+        assert_eq!(serde_json::from_str::<PolicyEffect>("\"deny\"").unwrap(), PolicyEffect::Deny);
+    }
+
+}
+#[cfg(test)]
+mod extended_tests {
+    use super::*;
+
+    #[test]
+    fn policy_builder_chaining() {
+        let policy = Policy::new("res", "act", PolicyEffect::Allow)
+            .with_name("Test Policy")
+            .with_description("A test")
+            .with_priority(42)
+            .with_condition(PolicyCondition::Exists {
+                key: "channel".into(),
+            });
+        assert_eq!(policy.name, "Test Policy");
+        assert_eq!(policy.description.as_deref(), Some("A test"));
+        assert_eq!(policy.priority, 42);
+        assert_eq!(policy.conditions.len(), 1);
+        assert!(policy.enabled);
+    }
+
+    #[test]
+    fn policy_engine_sorted_by_priority_desc() {
+        let engine = PolicyEngine::new();
+        let policies = engine.policies();
+        for w in policies.windows(2) {
+            assert!(w[0].priority >= w[1].priority);
+        }
+    }
+
+    #[test]
+    fn default_action_allow_when_no_match() {
+        let engine = PolicyEngine::with_policies(vec![])
+            .with_default_action(PolicyEffect::Allow);
+        let result = engine.check("no_match", "no_match", &PolicyContext::new());
+        assert!(result.allowed);
+        assert!(result.reason.contains("default allow"));
+    }
+
+    #[test]
+    fn default_action_deny_when_no_match() {
+        let engine = PolicyEngine::with_policies(vec![])
+            .with_default_action(PolicyEffect::Deny);
+        let result = engine.check("no_match", "no_match", &PolicyContext::new());
+        assert!(!result.allowed);
+        assert!(result.reason.contains("default deny"));
+    }
+
+    #[test]
+    fn disabled_policy_is_skipped() {
+        let mut policy = Policy::new("r", "a", PolicyEffect::Deny);
+        policy.enabled = false;
+        let engine = PolicyEngine::with_policies(vec![policy]);
+        let result = engine.check("r", "a", &PolicyContext::new());
+        assert!(result.allowed);
+    }
+
+    #[test]
+    fn wildcard_resource_matches_any() {
+        let engine = PolicyEngine::with_policies(vec![Policy::new(
+            "*",
+            "bypass",
+            PolicyEffect::Allow,
+        )
+        .with_priority(1000)]);
+        let result = engine.check("anything", "bypass", &PolicyContext::new());
+        assert!(result.allowed);
+    }
+
+    #[test]
+    fn condition_exists_check() {
+        let ctx = PolicyContext::new().with_channel(ReleaseChannel::Beta);
+        assert!(PolicyEngine::evaluate_condition(
+            &PolicyCondition::Exists { key: "channel".into() },
+            &ctx
+        ));
+        assert!(!PolicyEngine::evaluate_condition(
+            &PolicyCondition::Exists { key: "nonexistent".into() },
+            &ctx
+        ));
+    }
+
+    #[test]
+    fn condition_not_inverts() {
+        let ctx = PolicyContext::new().with_user("alice");
+        assert!(!PolicyEngine::evaluate_condition(
+            &PolicyCondition::Not {
+                condition: Box::new(PolicyCondition::Exists { key: "user_id".into() }),
+            },
+            &ctx
+        ));
+        assert!(PolicyEngine::evaluate_condition(
+            &PolicyCondition::Not {
+                condition: Box::new(PolicyCondition::Exists { key: "nope".into() }),
+            },
+            &ctx
+        ));
+    }
+
+    #[test]
+    fn condition_and_all_must_match() {
+        let ctx = PolicyContext::new()
+            .with_user("alice")
+            .with_channel(ReleaseChannel::Beta);
+        let cond = PolicyCondition::And {
+            conditions: vec![
+                PolicyCondition::Exists { key: "user_id".into() },
+                PolicyCondition::Exists { key: "channel".into() },
+            ],
+        };
+        assert!(PolicyEngine::evaluate_condition(&cond, &ctx));
+    }
+
+    #[test]
+    fn condition_or_any_matches() {
+        let ctx = PolicyContext::new().with_user("alice");
+        let cond = PolicyCondition::Or {
+            conditions: vec![
+                PolicyCondition::Exists { key: "nope".into() },
+                PolicyCondition::Exists { key: "user_id".into() },
+            ],
+        };
+        assert!(PolicyEngine::evaluate_condition(&cond, &ctx));
+    }
+
+    #[test]
+    fn condition_matches_regex() {
+        let ctx = PolicyContext::new().with_user("alice-admin");
+        assert!(PolicyEngine::evaluate_condition(
+            &PolicyCondition::Matches {
+                key: "user_id".into(),
+                pattern: r".*-admin".into(),
+            },
+            &ctx
+        ));
+        assert!(!PolicyEngine::evaluate_condition(
+            &PolicyCondition::Matches {
+                key: "user_id".into(),
+                pattern: r"^bob".into(),
+            },
+            &ctx
+        ));
+    }
+
+    #[test]
+    fn condition_contains_string() {
+        let mut meta = std::collections::HashMap::new();
+        meta.insert("tag".into(), serde_json::json!("release-v2"));
+        let ctx = PolicyContext {
+            metadata: meta,
+            ..Default::default()
+        };
+        assert!(PolicyEngine::evaluate_condition(
+            &PolicyCondition::Contains {
+                key: "tag".into(),
+                value: serde_json::json!("release"),
+            },
+            &ctx
+        ));
+    }
+
+    #[test]
+    fn policy_context_getters() {
+        let ctx = PolicyContext::new()
+            .with_user("alice")
+            .with_channel(ReleaseChannel::Alpha)
+            .with_resource("crate", Some("id1".into()))
+            .with_action("deploy");
+
+        assert_eq!(ctx.get("user_id").unwrap(), serde_json::json!("alice"));
+        assert_eq!(ctx.get("channel").unwrap(), serde_json::json!("alpha"));
+        assert_eq!(ctx.get("resource").unwrap(), serde_json::json!("crate"));
+        assert_eq!(ctx.get("resource_id").unwrap(), serde_json::json!("id1"));
+        assert_eq!(ctx.get("action").unwrap(), serde_json::json!("deploy"));
+        assert!(ctx.get("nonexistent").is_none());
+    }
+
+    #[test]
+    fn policy_result_add_detail() {
+        let mut result = PolicyResult::allowed("ok");
+        result.add_detail(PolicyDetail {
+            policy: "p1".into(),
+            matched: true,
+            reason: "yes".into(),
+        });
+        assert_eq!(result.details.len(), 1);
+    }
+
+    #[test]
+    fn default_policies_count() {
+        let policies = default_policies();
+        assert!(policies.len() >= 5);
+    }
+
+    #[test]
+    fn denied_result_has_policy_name() {
+        let result = PolicyResult::denied("blocked", "Rate Limit Policy");
+        assert!(!result.allowed);
+        assert_eq!(result.policy.as_deref(), Some("Rate Limit Policy"));
+    }
 }

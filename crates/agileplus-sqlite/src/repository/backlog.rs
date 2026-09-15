@@ -292,3 +292,111 @@ impl<T> OptionalExt<T> for rusqlite::Result<T> {
         }
     }
 }
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::SqliteStorageAdapter;
+
+    fn sample_item(title: &str) -> BacklogItem {
+        BacklogItem::from_triage(
+            title.to_string(),
+            format!("Desc for {title}"),
+            Intent::Feature,
+            "test".to_string(),
+        )
+    }
+
+    fn default_filters() -> BacklogFilters {
+        BacklogFilters::default()
+    }
+
+    #[test]
+    fn create_and_get() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let id = create_backlog_item(&conn, &sample_item("Fix")).unwrap();
+        assert!(id > 0);
+        let item = get_backlog_item(&conn, id).unwrap().unwrap();
+        assert_eq!(item.title, "Fix");
+        assert_eq!(item.status, BacklogStatus::New);
+    }
+
+    #[test]
+    fn get_nonexistent() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        assert!(get_backlog_item(&conn, 999).unwrap().is_none());
+    }
+
+    #[test]
+    fn list_no_filters() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        create_backlog_item(&conn, &sample_item("A")).unwrap();
+        create_backlog_item(&conn, &sample_item("B")).unwrap();
+        assert_eq!(list_backlog_items(&conn, &default_filters()).unwrap().len(), 2);
+    }
+
+    #[test]
+    fn list_filter_by_intent() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        create_backlog_item(&conn, &sample_item("F")).unwrap();
+        let mut bug = sample_item("B");
+        bug.intent = Intent::Bug;
+        create_backlog_item(&conn, &bug).unwrap();
+        let mut f = default_filters();
+        f.intent = Some(Intent::Bug);
+        assert_eq!(list_backlog_items(&conn, &f).unwrap().len(), 1);
+    }
+
+    #[test]
+    fn update_status() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let id = create_backlog_item(&conn, &sample_item("X")).unwrap();
+        update_backlog_status(&conn, id, BacklogStatus::Triaged).unwrap();
+        assert_eq!(get_backlog_item(&conn, id).unwrap().unwrap().status, BacklogStatus::Triaged);
+    }
+
+    #[test]
+    fn update_priority() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let id = create_backlog_item(&conn, &sample_item("X")).unwrap();
+        update_backlog_priority(&conn, id, BacklogPriority::Critical).unwrap();
+        assert_eq!(get_backlog_item(&conn, id).unwrap().unwrap().priority, BacklogPriority::Critical);
+    }
+
+    #[test]
+    fn pop_returns_highest_priority() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let mut low = sample_item("Low");
+        low.priority = BacklogPriority::Low;
+        create_backlog_item(&conn, &low).unwrap();
+        let mut high = sample_item("High");
+        high.priority = BacklogPriority::High;
+        create_backlog_item(&conn, &high).unwrap();
+        assert_eq!(pop_next_backlog_item(&conn).unwrap().unwrap().title, "High");
+    }
+
+    #[test]
+    fn pop_empty_returns_none() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        assert!(pop_next_backlog_item(&conn).unwrap().is_none());
+    }
+
+    #[test]
+    fn pop_transitions_to_triaged() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let id = create_backlog_item(&conn, &sample_item("Item")).unwrap();
+        let item = pop_next_backlog_item(&conn).unwrap().unwrap();
+        assert_eq!(item.id, Some(id));
+        assert_eq!(get_backlog_item(&conn, id).unwrap().unwrap().status, BacklogStatus::Triaged);
+    }
+}

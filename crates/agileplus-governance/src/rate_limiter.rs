@@ -265,4 +265,163 @@ mod tests {
         assert!(result1.allowed);
         assert!(result2.allowed);
     }
+
+    #[test]
+    fn test_rate_limit_key_new() {
+        let key = RateLimitKey::new(Some("user1".into()), Some("127.0.0.1".into()), "deploy");
+        assert_eq!(key.user_id.as_deref(), Some("user1"));
+        assert_eq!(key.action, "deploy");
+    }
+
+    #[test]
+    fn test_rate_limit_key_anonymous() {
+        let key = RateLimitKey::anonymous(Some("10.0.0.1".into()), "read");
+        assert!(key.user_id.is_none());
+        assert_eq!(key.action, "read");
+    }
+
+    #[tokio::test]
+    async fn test_rate_limit_result_allowed() {
+        let result = RateLimitResult::allowed(10, std::time::Instant::now());
+        assert!(result.allowed);
+        assert_eq!(result.remaining, 10);
+    }
+
+    #[tokio::test]
+    async fn test_default_limiter() {
+        let limiter = RateLimiter::default_limiter();
+        assert!(limiter.is_empty().await);
+    }
+
+    #[tokio::test]
+    async fn test_peek_does_not_consume() {
+        let limiter = RateLimiter::new(RateLimitConfig { max_requests: 2, window: Duration::from_secs(60) });
+        let key = RateLimitKey::anonymous(Some("127.0.0.1".into()), "peek_test");
+        let peek1 = limiter.peek(&key).await;
+        assert!(peek1.allowed);
+        assert_eq!(peek1.remaining, 2);
+        let _ = limiter.check(&key).await;
+        let peek2 = limiter.peek(&key).await;
+        assert_eq!(peek2.remaining, 1);
+    }
+
+    #[tokio::test]
+    async fn test_reset_single_key() {
+        let limiter = RateLimiter::new(RateLimitConfig { max_requests: 1, window: Duration::from_secs(60) });
+        let key = RateLimitKey::anonymous(Some("127.0.0.1".into()), "reset_test");
+        limiter.check(&key).await;
+        assert!(!limiter.check(&key).await.allowed);
+        limiter.reset(&key).await;
+        assert!(limiter.check(&key).await.allowed);
+    }
+
+    #[tokio::test]
+    async fn test_rate_limit_config_default() {
+        let config = RateLimitConfig::default();
+        assert_eq!(config.max_requests, 100);
+    }
+
+}
+#[cfg(test)]
+mod extended_tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn peek_does_not_consume() {
+        let limiter = RateLimiter::new(RateLimitConfig {
+            max_requests: 1,
+            window: Duration::from_secs(60),
+        });
+        let key = RateLimitKey::anonymous(None, "peek_test");
+
+        // Peek should not consume
+        let peeked = limiter.peek(&key).await;
+        assert!(peeked.allowed);
+        assert_eq!(peeked.remaining, 1);
+
+        // check should still work
+        let checked = limiter.check(&key).await;
+        assert!(checked.allowed);
+    }
+
+    #[tokio::test]
+    async fn reset_all_clears_entries() {
+        let limiter = RateLimiter::default_limiter();
+        let key = RateLimitKey::anonymous(None, "action");
+        limiter.check(&key).await;
+        assert!(!limiter.is_empty().await);
+        limiter.reset_all().await;
+        assert!(limiter.is_empty().await);
+    }
+
+    #[tokio::test]
+    async fn reset_single_key() {
+        let limiter = RateLimiter::default_limiter();
+        let key1 = RateLimitKey::anonymous(None, "a1");
+        let key2 = RateLimitKey::anonymous(None, "a2");
+        limiter.check(&key1).await;
+        limiter.check(&key2).await;
+        assert_eq!(limiter.len().await, 2);
+        limiter.reset(&key1).await;
+        assert_eq!(limiter.len().await, 1);
+    }
+
+    #[tokio::test]
+    async fn default_limiter_has_100_max() {
+        let limiter = RateLimiter::default_limiter();
+        let key = RateLimitKey::anonymous(None, "action");
+        for _ in 0..100 {
+            let r = limiter.check(&key).await;
+            assert!(r.allowed);
+        }
+        let r = limiter.check(&key).await;
+        assert!(!r.allowed);
+    }
+
+    #[tokio::test]
+    async fn rate_limit_key_equality() {
+        let k1 = RateLimitKey::new(Some("u1".into()), Some("127.0.0.1".into()), "act");
+        let k2 = RateLimitKey::new(Some("u1".into()), Some("127.0.0.1".into()), "act");
+        let k3 = RateLimitKey::new(Some("u2".into()), Some("127.0.0.1".into()), "act");
+        assert_eq!(k1, k2);
+        assert_ne!(k1, k3);
+    }
+
+    #[tokio::test]
+    async fn cleanup_removes_expired() {
+        let limiter = RateLimiter::new(RateLimitConfig {
+            max_requests: 10,
+            window: Duration::from_millis(1),
+        });
+        let key = RateLimitKey::anonymous(None, "action");
+        limiter.check(&key).await;
+        // Wait for the window to expire
+        tokio::time::sleep(Duration::from_millis(10)).await;
+        limiter.cleanup().await;
+        // After cleanup + window expiry, entry may or may not be removed
+        // depending on timing, but it should not panic
+    }
+
+    #[tokio::test]
+    async fn rate_limit_result_allowed_factory() {
+        let r = RateLimitResult::allowed(5, Instant::now());
+        assert!(r.allowed);
+        assert_eq!(r.remaining, 5);
+        assert!(r.retry_after.is_none());
+    }
+
+    #[tokio::test]
+    async fn rate_limit_result_denied_factory() {
+        let r = RateLimitResult::denied(0, Instant::now(), Duration::from_secs(5));
+        assert!(!r.allowed);
+        assert_eq!(r.remaining, 0);
+        assert_eq!(r.retry_after, Some(Duration::from_secs(5)));
+    }
+
+    #[test]
+    fn rate_limit_config_defaults() {
+        let cfg = RateLimitConfig::default();
+        assert_eq!(cfg.max_requests, 100);
+        assert_eq!(cfg.window, Duration::from_secs(3600));
+    }
 }

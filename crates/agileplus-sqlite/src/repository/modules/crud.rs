@@ -218,3 +218,91 @@ pub fn get_module_with_features(
         child_modules,
     }))
 }
+
+mod tests {
+    use super::*;
+    use crate::SqliteStorageAdapter;
+
+    #[test]
+    fn create_and_get_module() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let m = Module::new("Core", None);
+        let id = create_module(&conn, &m).unwrap();
+        assert!(id > 0);
+        let fetched = get_module(&conn, id).unwrap().unwrap();
+        assert_eq!(fetched.friendly_name, "Core");
+    }
+
+    #[test]
+    fn get_nonexistent() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        assert!(get_module(&conn, 999).unwrap().is_none());
+    }
+
+    #[test]
+    fn get_by_slug() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let id = create_module(&conn, &Module::new("My Module", None)).unwrap();
+        let m = get_module_by_slug(&conn, "my-module").unwrap().unwrap();
+        assert_eq!(m.id, id);
+    }
+
+    #[test]
+    fn list_root_modules() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        create_module(&conn, &Module::new("A", None)).unwrap();
+        create_module(&conn, &Module::new("B", None)).unwrap();
+        assert_eq!(list_root_modules(&conn).unwrap().len(), 2);
+    }
+
+    #[test]
+    fn list_child_modules() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let parent_id = create_module(&conn, &Module::new("Parent", None)).unwrap();
+        let child = Module::new("Child", Some(parent_id));
+        create_module(&conn, &child).unwrap();
+        assert_eq!(list_child_modules(&conn, parent_id).unwrap().len(), 1);
+    }
+
+    #[test]
+    fn update_module_name() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let id = create_module(&conn, &Module::new("Old", None)).unwrap();
+        update_module(&conn, id, "Updated", None).unwrap();
+        assert_eq!(get_module(&conn, id).unwrap().unwrap().friendly_name, "Updated");
+    }
+
+    #[test]
+    fn circular_ref_detected() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let parent_id = create_module(&conn, &Module::new("Parent", None)).unwrap();
+        let child = Module::new("Child", Some(parent_id));
+        let child_id = create_module(&conn, &child).unwrap();
+        assert!(would_create_circular_ref(&conn, parent_id, child_id).unwrap());
+    }
+
+    #[test]
+    fn circular_ref_not_detected_for_normal() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let a = create_module(&conn, &Module::new("A", None)).unwrap();
+        let b = create_module(&conn, &Module::new("B", None)).unwrap();
+        assert!(!would_create_circular_ref(&conn, a, b).unwrap());
+    }
+
+    #[test]
+    fn delete_module_no_children() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let id = create_module(&conn, &Module::new("Del", None)).unwrap();
+        delete_module(&conn, id).unwrap();
+        assert!(get_module(&conn, id).unwrap().is_none());
+    }
+}

@@ -259,3 +259,178 @@ impl Default for PolicyCheckId {
         Self::new()
     }
 }
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn connection_status_display() {
+        assert_eq!(ConnectionStatus::Connected.to_string(), "connected");
+        assert_eq!(ConnectionStatus::Disconnected.to_string(), "disconnected");
+        assert_eq!(ConnectionStatus::Error.to_string(), "error");
+        assert_eq!(ConnectionStatus::Disabled.to_string(), "disabled");
+    }
+
+    #[test]
+    fn connection_status_default() {
+        assert_eq!(ConnectionStatus::default(), ConnectionStatus::Disabled);
+    }
+
+    #[test]
+    fn connection_status_serde_roundtrip() {
+        for s in [ConnectionStatus::Connected, ConnectionStatus::Disconnected, ConnectionStatus::Error, ConnectionStatus::Disabled] {
+            let j = serde_json::to_string(&s).unwrap();
+            let b: ConnectionStatus = serde_json::from_str(&j).unwrap();
+            assert_eq!(b, s);
+        }
+    }
+
+    #[test]
+    fn action_category_from_str() {
+        assert_eq!("release".parse::<ActionCategory>().unwrap(), ActionCategory::Release);
+        assert_eq!("REPOSITORY".parse::<ActionCategory>().unwrap(), ActionCategory::Repository);
+        assert_eq!("Policy".parse::<ActionCategory>().unwrap(), ActionCategory::Policy);
+        assert_eq!("audit".parse::<ActionCategory>().unwrap(), ActionCategory::Audit);
+        assert_eq!("config".parse::<ActionCategory>().unwrap(), ActionCategory::Config);
+        assert_eq!("general".parse::<ActionCategory>().unwrap(), ActionCategory::General);
+        assert!("invalid".parse::<ActionCategory>().is_err());
+    }
+
+    #[test]
+    fn action_category_default() {
+        assert_eq!(ActionCategory::default(), ActionCategory::General);
+    }
+
+    #[test]
+    fn action_category_serde_roundtrip() {
+        for c in [ActionCategory::Release, ActionCategory::Repository, ActionCategory::Policy, ActionCategory::Audit, ActionCategory::Config, ActionCategory::General] {
+            let j = serde_json::to_string(&c).unwrap();
+            let b: ActionCategory = serde_json::from_str(&j).unwrap();
+            assert_eq!(b, c);
+        }
+    }
+
+    #[test]
+    fn operation_result_display() {
+        assert_eq!(OperationResult::Success.to_string(), "success");
+        assert_eq!(OperationResult::Failure.to_string(), "failure");
+        assert_eq!(OperationResult::PartialSuccess.to_string(), "partial_success");
+    }
+
+    #[test]
+    fn operation_result_from_str() {
+        assert_eq!("success".parse::<OperationResult>().unwrap(), OperationResult::Success);
+        assert_eq!("failure".parse::<OperationResult>().unwrap(), OperationResult::Failure);
+        assert_eq!("partial_success".parse::<OperationResult>().unwrap(), OperationResult::PartialSuccess);
+        assert_eq!("partialsuccess".parse::<OperationResult>().unwrap(), OperationResult::PartialSuccess);
+        assert!("unknown".parse::<OperationResult>().is_err());
+    }
+
+    #[test]
+    fn operation_result_default() {
+        assert_eq!(OperationResult::default(), OperationResult::Success);
+    }
+
+    #[test]
+    fn log_level_display() {
+        assert_eq!(LogLevel::Debug.to_string(), "debug");
+        assert_eq!(LogLevel::Info.to_string(), "info");
+        assert_eq!(LogLevel::Warn.to_string(), "warn");
+        assert_eq!(LogLevel::Error.to_string(), "error");
+    }
+
+    #[test]
+    fn log_level_from_str() {
+        assert_eq!("debug".parse::<LogLevel>().unwrap(), LogLevel::Debug);
+        assert_eq!("info".parse::<LogLevel>().unwrap(), LogLevel::Info);
+        assert_eq!("warn".parse::<LogLevel>().unwrap(), LogLevel::Warn);
+        assert_eq!("warning".parse::<LogLevel>().unwrap(), LogLevel::Warn);
+        assert_eq!("error".parse::<LogLevel>().unwrap(), LogLevel::Error);
+        assert_eq!("err".parse::<LogLevel>().unwrap(), LogLevel::Error);
+        assert!("trace".parse::<LogLevel>().is_err());
+    }
+
+    #[test]
+    fn log_level_default() {
+        assert_eq!(LogLevel::default(), LogLevel::Info);
+    }
+
+    #[test]
+    fn auth_method_default() {
+        assert_eq!(AuthMethod::default(), AuthMethod::ApiKey);
+    }
+
+    #[test]
+    fn auth_method_serde_roundtrip() {
+        for m in [AuthMethod::ApiKey, AuthMethod::BearerToken, AuthMethod::None] {
+            let j = serde_json::to_string(&m).unwrap();
+            let b: AuthMethod = serde_json::from_str(&j).unwrap();
+            assert_eq!(b, m);
+        }
+    }
+
+    #[test]
+    fn audit_event_id_prefix() {
+        let id = AuditEventId::new();
+        assert!(id.0.starts_with("evt_"));
+    }
+
+    #[test]
+    fn audit_event_id_clone_eq() {
+        let id = AuditEventId("evt_test123".to_string());
+        assert_eq!(id, id.clone());
+    }
+
+    #[test]
+    fn policy_check_id_prefix() {
+        let id = PolicyCheckId::new();
+        assert!(id.0.starts_with("chk_"));
+    }
+
+    #[test]
+    fn policy_check_id_clone_eq() {
+        let id = PolicyCheckId("chk_test456".to_string());
+        assert_eq!(id, id.clone());
+    }
+
+    #[test]
+    fn governance_stats_default() {
+        let s = GovernanceStats::default();
+        assert_eq!(s.total, 0);
+        assert_eq!(s.errors, 0);
+        assert!(s.by_level.is_empty());
+        assert!(s.top_actions.is_empty());
+    }
+
+    #[test]
+    fn governance_status_default() {
+        let s = GovernanceStatus::default();
+        assert!(!s.initialized);
+        assert_eq!(s.connection_status, ConnectionStatus::Disabled);
+        assert!(!s.remote_enabled);
+        assert!(!s.local_enabled);
+        assert!(!s.sync_enabled);
+        assert!(s.last_sync.is_none());
+        assert_eq!(s.pending_operations, 0);
+    }
+
+    #[test]
+    fn governance_status_config_default() {
+        let c = GovernanceStatusConfig::default();
+        assert!(c.governance_url.is_empty());
+        assert_eq!(c.auth_method, AuthMethod::ApiKey);
+        assert!(c.policy_enabled);
+        assert!(!c.rate_limit_enabled);
+    }
+
+    #[test]
+    fn top_action_serde_roundtrip() {
+        let a = TopAction { action: "deploy".into(), count: 42 };
+        let j = serde_json::to_string(&a).unwrap();
+        let b: TopAction = serde_json::from_str(&j).unwrap();
+        assert_eq!(b.action, "deploy");
+        assert_eq!(b.count, 42);
+    }
+}

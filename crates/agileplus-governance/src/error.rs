@@ -129,3 +129,95 @@ impl From<toml::de::Error> for GovernanceError {
         GovernanceError::Config(err.to_string())
     }
 }
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn error_display_messages() {
+        let cases = vec![
+            (GovernanceError::Config("bad config".into()), "Configuration error: bad config"),
+            (GovernanceError::Database("db fail".into()), "Database error: db fail"),
+            (GovernanceError::Network("timeout".into()), "Network error: timeout"),
+            (GovernanceError::PolicyViolation("denied".into()), "Policy violation: denied"),
+            (GovernanceError::RateLimitExceeded("too many".into()), "Rate limit exceeded: too many"),
+            (GovernanceError::Auth("no token".into()), "Authentication error: no token"),
+            (GovernanceError::NotFound("item".into()), "Resource not found: item"),
+            (GovernanceError::NotAllowed("ops".into()), "Operation not allowed: ops"),
+            (GovernanceError::Sync("drift".into()), "Sync error: drift"),
+            (GovernanceError::Internal("crash".into()), "Internal error: crash"),
+            (GovernanceError::Rubric("parse".into()), "Rubric error: parse"),
+        ];
+        for (err, expected) in cases {
+            assert_eq!(err.to_string(), expected);
+        }
+    }
+
+    #[test]
+    fn error_invalid_channel_transition() {
+        let err = GovernanceError::InvalidChannelTransition { from: "alpha".into(), to: "prod".into() };
+        assert_eq!(err.to_string(), "Invalid channel transition from alpha to prod");
+    }
+
+    #[test]
+    fn is_policy_error() {
+        assert!(GovernanceError::PolicyViolation("x".into()).is_policy_error());
+        assert!(GovernanceError::NotAllowed("x".into()).is_policy_error());
+        assert!(!GovernanceError::Config("x".into()).is_policy_error());
+        assert!(!GovernanceError::RateLimitExceeded("x".into()).is_policy_error());
+    }
+
+    #[test]
+    fn is_rate_limit_error() {
+        assert!(GovernanceError::RateLimitExceeded("x".into()).is_rate_limit_error());
+        assert!(!GovernanceError::PolicyViolation("x".into()).is_rate_limit_error());
+        assert!(!GovernanceError::Config("x".into()).is_rate_limit_error());
+    }
+
+    #[test]
+    fn status_codes() {
+        assert_eq!(GovernanceError::Config("x".into()).status_code(), 400);
+        assert_eq!(GovernanceError::Database("x".into()).status_code(), 500);
+        assert_eq!(GovernanceError::Network("x".into()).status_code(), 503);
+        assert_eq!(GovernanceError::PolicyViolation("x".into()).status_code(), 403);
+        assert_eq!(GovernanceError::RateLimitExceeded("x".into()).status_code(), 429);
+        assert_eq!(GovernanceError::Auth("x".into()).status_code(), 401);
+        assert_eq!(GovernanceError::InvalidChannelTransition { from: "a".into(), to: "b".into() }.status_code(), 400);
+        assert_eq!(GovernanceError::NotFound("x".into()).status_code(), 404);
+        assert_eq!(GovernanceError::NotAllowed("x".into()).status_code(), 403);
+        assert_eq!(GovernanceError::Sync("x".into()).status_code(), 500);
+        assert_eq!(GovernanceError::Internal("x".into()).status_code(), 500);
+        assert_eq!(GovernanceError::Rubric("x".into()).status_code(), 422);
+    }
+
+    #[test]
+    fn from_io_error() {
+        let io_err = std::io::Error::new(std::io::ErrorKind::NotFound, "file missing");
+        let gov_err: GovernanceError = io_err.into();
+        assert!(matches!(gov_err, GovernanceError::Internal(_)));
+        assert!(gov_err.to_string().contains("file missing"));
+    }
+
+    #[test]
+    fn from_serde_json_error() {
+        let json_err = serde_json::from_str::<serde_json::Value>("not json").unwrap_err();
+        let gov_err: GovernanceError = json_err.into();
+        assert!(matches!(gov_err, GovernanceError::Config(_)));
+    }
+
+    #[test]
+    fn from_toml_error() {
+        let toml_err = toml::from_str::<toml::Value>("bad = [unclosed").unwrap_err();
+        let gov_err: GovernanceError = toml_err.into();
+        assert!(matches!(gov_err, GovernanceError::Config(_)));
+    }
+
+    #[test]
+    fn error_is_debug() {
+        let err = GovernanceError::Internal("test".into());
+        let debug = format!("{:?}", err);
+        assert!(debug.contains("Internal"));
+    }
+}

@@ -967,3 +967,179 @@ db-path = "/tmp"
         }
     }
 }
+
+#[cfg(test)]
+mod extended_tests {
+    use super::*;
+    use std::collections::BTreeMap;
+
+    fn scoring_spec_with_glyphs() -> ScoringSpec {
+        let mut glyphs = BTreeMap::new();
+        glyphs.insert("0".into(), "\u{2717}".into());
+        glyphs.insert("1".into(), "\u{25B3}".into());
+        glyphs.insert("2".into(), "~".into());
+        glyphs.insert("3".into(), "\u{2713}".into());
+        ScoringSpec {
+            scale: "0-3".into(),
+            glyphs,
+            grade: {
+                let mut g = BTreeMap::new();
+                g.insert("A".into(), 90);
+                g.insert("B".into(), 75);
+                g.insert("C".into(), 60);
+                g.insert("D".into(), 40);
+                g.insert("F".into(), 0);
+                g
+            },
+        }
+    }
+
+    #[test]
+    fn grade_for_all_bands() {
+        assert_eq!(grade_for(100), "A");
+        assert_eq!(grade_for(95), "A");
+        assert_eq!(grade_for(89), "B");
+        assert_eq!(grade_for(75), "B");
+        assert_eq!(grade_for(74), "C");
+        assert_eq!(grade_for(60), "C");
+        assert_eq!(grade_for(59), "D");
+        assert_eq!(grade_for(40), "D");
+        assert_eq!(grade_for(39), "F");
+        assert_eq!(grade_for(0), "F");
+    }
+
+    #[test]
+    fn glyph_for_with_full_glyph_map() {
+        let spec = scoring_spec_with_glyphs();
+        // The catalog supplies all four glyph keys. glyph_static normalizes
+        // known unicode symbols but the exact mapping depends on the byte
+        // representation in the BTreeMap. We pin 0→✗ and 3→✓ which are
+        // deterministic, and verify 1 and 2 are not "?" (i.e. recognized).
+        assert_eq!(glyph_for(0, &spec), "\u{2717}");
+        assert_eq!(glyph_for(3, &spec), "\u{2713}");
+        let g1 = glyph_for(1, &spec);
+        let g2 = glyph_for(2, &spec);
+        // Must not fall through to "?" — the catalog provides values
+        assert_ne!(g1, "?");
+        assert_ne!(g2, "?");
+    }
+
+    #[test]
+    fn render_markdown_empty_report() {
+        let report = ScoreReport {
+            repo: "test-repo".into(),
+            date: "2024-01-01".into(),
+            clusters: vec![],
+        };
+        let md = render_markdown(&report);
+        assert!(md.is_empty());
+    }
+
+    #[test]
+    fn render_markdown_with_cluster() {
+        let report = ScoreReport {
+            repo: "my-repo".into(),
+            date: "2024-01-01".into(),
+            clusters: vec![ClusterScore {
+                cluster: "C03".into(),
+                pillars: vec![PillarScore {
+                    pillar_id: "L30".into(),
+                    title: "Agent Readiness".into(),
+                    score: 2,
+                    glyph: "\u{223C}",
+                    evidence: vec!["AGENTS.md:1".into()],
+                    gaps: vec!["Missing CLAUDE.md".into()],
+                    soft_goal_delta: "notable".into(),
+                }],
+                total_points: 2,
+                max_points: 3,
+            }],
+        };
+        let md = render_markdown(&report);
+        assert!(md.contains("CLUSTER_START cluster=C03"));
+        assert!(md.contains("L30"));
+        assert!(md.contains("AGENTS.md:1"));
+        assert!(md.contains("Missing CLAUDE.md"));
+        assert!(md.contains("CLUSTER_TOTAL"));
+        assert!(md.contains("CLUSTER_DONE"));
+    }
+
+    #[test]
+    fn render_markdown_no_evidence() {
+        let report = ScoreReport {
+            repo: "r".into(),
+            date: "d".into(),
+            clusters: vec![ClusterScore {
+                cluster: "C00".into(),
+                pillars: vec![PillarScore {
+                    pillar_id: "L0".into(),
+                    title: "T".into(),
+                    score: 0,
+                    glyph: "\u{2717}",
+                    evidence: vec![],
+                    gaps: vec![],
+                    soft_goal_delta: "partial".into(),
+                }],
+                total_points: 0,
+                max_points: 3,
+            }],
+        };
+        let md = render_markdown(&report);
+        assert!(md.contains("(no evidence found)"));
+        assert!(md.contains("gaps:\n  - none"));
+    }
+
+    #[test]
+    fn probe_rule_compiles() {
+        let rule = ProbeRule {
+            cluster: "C01",
+            rule_text: "test",
+            target_file: "test.toml",
+            regex_src: r"(?m)^\[advisories\]",
+        };
+        assert!(rule.compiled().is_ok());
+    }
+
+    #[test]
+    fn probe_rule_invalid_regex() {
+        let rule = ProbeRule {
+            cluster: "C01",
+            rule_text: "test",
+            target_file: "test.toml",
+            regex_src: r"[invalid",
+        };
+        assert!(rule.compiled().is_err());
+    }
+
+    #[test]
+    fn current_iso_date_returns_epoch_format() {
+        let d = current_iso_date();
+        assert!(d.starts_with("epoch:"));
+    }
+
+    #[test]
+    fn rules_for_returns_matching() {
+        let r00 = rules_for("C00");
+        assert!(r00.iter().any(|(c, _, _)| *c == "C00"));
+        let empty = rules_for("C99");
+        assert!(empty.is_empty());
+    }
+
+    #[test]
+    fn cluster_title_mapping() {
+        // Verify cluster_title returns non-empty strings for known clusters
+        for cluster_id in ["C00", "C01", "C03", "C04", "C11"] {
+            let pillar = Pillar {
+                cluster: cluster_id.into(),
+                pillar_range: "L0".into(),
+                category: "X".into(),
+                source: "x".into(),
+                defs_ref: Some("ref".into()),
+                scoring: scoring_spec_with_glyphs(),
+                sub_pillars: vec![],
+            };
+            let title = cluster_title(&pillar);
+            assert!(!title.is_empty());
+        }
+    }
+}

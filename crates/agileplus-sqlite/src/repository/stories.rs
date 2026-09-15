@@ -200,3 +200,68 @@ pub fn delete_story(conn: &Connection, id: i64) -> Result<(), DomainError> {
     }
     Ok(())
 }
+
+mod tests {
+    use super::*;
+    use crate::SqliteStorageAdapter;
+
+    fn sample_story(title: &str, epic_id: i64) -> Story {
+        Story {
+            id: 0,
+            epic_id,
+            project_id: 1,
+            title: title.to_string(),
+            description: None,
+            status: StoryStatus::Todo,
+            points: None,
+            assignee_id: None,
+            requirement_id: None,
+            created_at: chrono::Utc::now(),
+            updated_at: chrono::Utc::now(),
+        }
+    }
+
+    #[test]
+    fn create_and_get_story() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let id = create_story(&conn, &sample_story("S1", 1)).unwrap();
+        let s = get_story_by_id(&conn, id).unwrap().unwrap();
+        assert_eq!(s.title, "S1");
+    }
+
+    #[test]
+    fn get_nonexistent() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        assert!(get_story_by_id(&conn, 999).unwrap().is_none());
+    }
+
+    #[test]
+    fn list_by_epic() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        create_story(&conn, &sample_story("A", 10)).unwrap();
+        create_story(&conn, &sample_story("B", 10)).unwrap();
+        create_story(&conn, &sample_story("C", 20)).unwrap();
+        assert_eq!(list_stories_by_epic(&conn, 10).unwrap().len(), 2);
+    }
+
+    #[test]
+    fn update_status() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let id = create_story(&conn, &sample_story("S", 1)).unwrap();
+        update_story_status(&conn, id, StoryStatus::InProgress).unwrap();
+        assert_eq!(get_story_by_id(&conn, id).unwrap().unwrap().status, StoryStatus::InProgress);
+    }
+
+    #[test]
+    fn delete_story() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let id = create_story(&conn, &sample_story("Del", 1)).unwrap();
+        delete_story(&conn, id).unwrap();
+        assert!(get_story_by_id(&conn, id).unwrap().is_none());
+    }
+}

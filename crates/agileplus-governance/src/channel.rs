@@ -355,3 +355,190 @@ mod tests {
         assert_eq!(req.skips_channels(), vec![ReleaseChannel::Canary]);
     }
 }
+
+#[cfg(test)]
+mod extended_tests {
+    use super::*;
+
+    #[test]
+    fn version_suffix_all_channels() {
+        assert_eq!(ReleaseChannel::Canary.version_suffix(1), "-canary.1");
+        assert_eq!(ReleaseChannel::Rc.version_suffix(5), "-rc.5");
+    }
+
+    #[test]
+    fn pep440_suffix() {
+        assert_eq!(ReleaseChannel::Alpha.pep440_suffix(1), "a1");
+        assert_eq!(ReleaseChannel::Beta.pep440_suffix(2), "b2");
+        assert_eq!(ReleaseChannel::Rc.pep440_suffix(3), "rc3");
+        assert_eq!(ReleaseChannel::Prod.pep440_suffix(1), "");
+    }
+
+    #[test]
+    fn descriptions() {
+        assert!(!ReleaseChannel::Alpha.description().is_empty());
+        assert!(!ReleaseChannel::Prod.description().is_empty());
+    }
+
+    #[test]
+    fn next_channel_chain() {
+        assert_eq!(ReleaseChannel::Alpha.next_channel(), Some(ReleaseChannel::Canary));
+        assert_eq!(ReleaseChannel::Canary.next_channel(), Some(ReleaseChannel::Beta));
+        assert_eq!(ReleaseChannel::Beta.next_channel(), Some(ReleaseChannel::Rc));
+        assert_eq!(ReleaseChannel::Rc.next_channel(), Some(ReleaseChannel::Prod));
+        assert_eq!(ReleaseChannel::Prod.next_channel(), None);
+    }
+
+    #[test]
+    fn requires_tests() {
+        assert!(!ReleaseChannel::Alpha.requires_tests());
+        assert!(!ReleaseChannel::Canary.requires_tests());
+        assert!(ReleaseChannel::Beta.requires_tests());
+        assert!(ReleaseChannel::Rc.requires_tests());
+        assert!(ReleaseChannel::Prod.requires_tests());
+    }
+
+    #[test]
+    fn requires_security_audit() {
+        assert!(!ReleaseChannel::Alpha.requires_security_audit());
+        assert!(!ReleaseChannel::Canary.requires_security_audit());
+        assert!(!ReleaseChannel::Beta.requires_security_audit());
+        assert!(ReleaseChannel::Rc.requires_security_audit());
+        assert!(ReleaseChannel::Prod.requires_security_audit());
+    }
+
+    #[test]
+    fn requires_docs() {
+        assert!(!ReleaseChannel::Alpha.requires_docs());
+        assert!(!ReleaseChannel::Canary.requires_docs());
+        assert!(ReleaseChannel::Beta.requires_docs());
+        assert!(ReleaseChannel::Rc.requires_docs());
+        assert!(ReleaseChannel::Prod.requires_docs());
+    }
+
+    #[test]
+    fn requires_rollback_plan() {
+        assert!(!ReleaseChannel::Alpha.requires_rollback_plan());
+        assert!(!ReleaseChannel::Canary.requires_rollback_plan());
+        assert!(!ReleaseChannel::Beta.requires_rollback_plan());
+        assert!(ReleaseChannel::Rc.requires_rollback_plan());
+        assert!(ReleaseChannel::Prod.requires_rollback_plan());
+    }
+
+    #[test]
+    fn channel_display() {
+        assert_eq!(ReleaseChannel::Alpha.to_string(), "alpha");
+        assert_eq!(ReleaseChannel::Canary.to_string(), "canary");
+        assert_eq!(ReleaseChannel::Beta.to_string(), "beta");
+        assert_eq!(ReleaseChannel::Rc.to_string(), "rc");
+        assert_eq!(ReleaseChannel::Prod.to_string(), "prod");
+    }
+
+    #[test]
+    fn channel_from_str_aliases() {
+        assert_eq!("a".parse::<ReleaseChannel>().unwrap(), ReleaseChannel::Alpha);
+        assert_eq!("c".parse::<ReleaseChannel>().unwrap(), ReleaseChannel::Canary);
+        assert_eq!("b".parse::<ReleaseChannel>().unwrap(), ReleaseChannel::Beta);
+        assert_eq!("release-candidate".parse::<ReleaseChannel>().unwrap(), ReleaseChannel::Rc);
+        assert_eq!("stable".parse::<ReleaseChannel>().unwrap(), ReleaseChannel::Prod);
+        assert_eq!("p".parse::<ReleaseChannel>().unwrap(), ReleaseChannel::Prod);
+    }
+
+    #[test]
+    fn channel_from_str_invalid() {
+        assert!("unknown".parse::<ReleaseChannel>().is_err());
+    }
+
+    #[test]
+    fn channel_order_values() {
+        assert_eq!(ReleaseChannel::Alpha.order(), 1);
+        assert_eq!(ReleaseChannel::Canary.order(), 2);
+        assert_eq!(ReleaseChannel::Beta.order(), 3);
+        assert_eq!(ReleaseChannel::Rc.order(), 4);
+        assert_eq!(ReleaseChannel::Prod.order(), 5);
+    }
+
+    #[test]
+    fn channel_metadata_full_version_prod() {
+        let meta = ChannelMetadata::new(ReleaseChannel::Prod, "1.0.0".into(), "dev".into(), 1);
+        assert_eq!(meta.full_version(), "1.0.0");
+    }
+
+    #[test]
+    fn channel_metadata_full_version_alpha() {
+        let meta = ChannelMetadata::new(ReleaseChannel::Alpha, "1.0.0".into(), "dev".into(), 3);
+        assert_eq!(meta.full_version(), "1.0.0-alpha.3");
+    }
+
+    #[test]
+    fn promotion_request_invalid_reverse() {
+        let req = PromotionRequest::new(
+            "pkg".into(), ReleaseChannel::Prod, ReleaseChannel::Alpha,
+            "dev".into(), "1.0.0".into(),
+        );
+        assert!(!req.is_valid_transition());
+    }
+
+    #[test]
+    fn promotion_request_invalid_same_channel() {
+        let req = PromotionRequest::new(
+            "pkg".into(), ReleaseChannel::Beta, ReleaseChannel::Beta,
+            "dev".into(), "1.0.0".into(),
+        );
+        assert!(!req.is_valid_transition());
+    }
+
+    #[test]
+    fn promotion_request_skips_multiple() {
+        let req = PromotionRequest::new(
+            "pkg".into(), ReleaseChannel::Alpha, ReleaseChannel::Prod,
+            "dev".into(), "1.0.0".into(),
+        );
+        assert_eq!(req.skips_channels(), vec![
+            ReleaseChannel::Canary, ReleaseChannel::Beta, ReleaseChannel::Rc
+        ]);
+    }
+
+    #[test]
+    fn promotion_result_denied() {
+        let result = PromotionResult::denied("bad".into(), vec!["check1".into()]);
+        assert!(!result.allowed);
+        assert!(result.channel_metadata.is_none());
+        assert_eq!(result.policy_failures, vec!["check1"]);
+    }
+
+    #[test]
+    fn promotion_result_allowed_with_metadata() {
+        let meta = ChannelMetadata::new(ReleaseChannel::Beta, "1.0.0".into(), "dev".into(), 1);
+        let mut result = PromotionResult::allowed(meta);
+        result.add_check("test_check".into(), true);
+        result.add_check("fail_check".into(), false);
+        result.add_warning("deprecation ahead");
+        assert!(result.allowed);
+        assert!(result.policy_checks.contains(&"test_check".to_string()));
+        assert!(result.policy_failures.contains(&"fail_check".to_string()));
+        assert!(result.warnings.contains(&"deprecation ahead".to_string()));
+    }
+
+    #[test]
+    fn channel_hash_consistency() {
+        use std::collections::HashSet;
+        let mut set = HashSet::new();
+        for ch in ReleaseChannel::all() {
+            set.insert(*ch);
+        }
+        assert_eq!(set.len(), 5);
+    }
+
+    #[test]
+    fn promotion_request_metadata_serde() {
+        let req = PromotionRequest::new(
+            "pkg".into(), ReleaseChannel::Alpha, ReleaseChannel::Beta,
+            "dev".into(), "1.0.0".into(),
+        );
+        let json = serde_json::to_string(&req).unwrap();
+        let deser: PromotionRequest = serde_json::from_str(&json).unwrap();
+        assert_eq!(req.package, deser.package);
+        assert_eq!(req.from, deser.from);
+    }
+}

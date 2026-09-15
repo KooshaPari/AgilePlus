@@ -174,13 +174,11 @@ dependencies = [
 name = "agileplus-dashboard"
 version = "0.2.1"
 dependencies = [
- "agileplus-api",
  "agileplus-domain",
  "agileplus-events",
  "agileplus-fixtures",
  "agileplus-governance",
  "agileplus-plane",
- "agileplus-sqlite",
  "anyhow",
  "askama",
  "async-stream",

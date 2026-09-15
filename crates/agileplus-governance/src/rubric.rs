@@ -237,4 +237,187 @@ mod tests {
             .unwrap()
             .contains("functional_requirements"));
     }
+
+    #[test]
+    fn catalog_version_and_schema() {
+        let c = RubricCatalog::from_json(minimal_json()).unwrap();
+        assert_eq!(c.version, "1.0");
+        assert_eq!(c.schema, "phenotype/audit-v38");
+    }
+
+    #[test]
+    fn pillar_scoring_spec() {
+        let c = RubricCatalog::from_json(minimal_json()).unwrap();
+        let spec = &c.pillars[0].scoring;
+        assert_eq!(spec.scale, "0-3");
+        assert!(!spec.glyphs.is_empty());
+        assert!(!spec.grade.is_empty());
+    }
+
+    #[test]
+    fn cluster_returns_none_for_unknown() {
+        let c = RubricCatalog::from_json(minimal_json()).unwrap();
+        assert!(c.cluster("C99").is_none());
+    }
+
+    #[test]
+    fn rejects_duplicate_cluster() {
+        let json = r#"{"version":"1.0","schema":"phenotype/audit-v38","clusters":2,"sub_pillars_enumerated":0,"pillars":[{"cluster":"C01","pillar_range":"L0","category":"A","source":"a","scoring":{"scale":"0-3","glyphs":{"0":"x"},"grade":{"A":90}},"sub_pillars":[]},{"cluster":"C01","pillar_range":"L1","category":"B","source":"b","scoring":{"scale":"0-3","glyphs":{"0":"x"},"grade":{"A":90}},"sub_pillars":[]}]}"#;
+        assert!(matches!(RubricCatalog::from_json(json).unwrap_err(), GovernanceError::Rubric(_)));
+    }
+
+    #[test]
+    fn rejects_empty_cluster_id() {
+        let json = r#"{"version":"1.0","schema":"phenotype/audit-v38","clusters":1,"sub_pillars_enumerated":0,"pillars":[{"cluster":"","pillar_range":"L0","category":"A","source":"a","scoring":{"scale":"0-3","glyphs":{"0":"x"},"grade":{"A":90}},"sub_pillars":[]}]}"#;
+        assert!(matches!(RubricCatalog::from_json(json).unwrap_err(), GovernanceError::Rubric(_)));
+    }
+
+}
+#[cfg(test)]
+mod extended_tests {
+    use super::*;
+
+    fn make_catalog(n: usize, with_subs: bool) -> RubricCatalog {
+        let mut pillars = Vec::new();
+        for i in 0..n {
+            let cluster = format!("C{:02}", i);
+            let sub_pillars = if with_subs {
+                vec![SubPillar {
+                    id: format!("L{}.1", i * 10),
+                    title: format!("Sub {}", i),
+                    name: None,
+                    acceptance: Some("test".into()),
+                    soft_goal: None,
+                    evidence_pattern: String::new(),
+                }]
+            } else {
+                vec![]
+            };
+            pillars.push(Pillar {
+                cluster,
+                pillar_range: format!("L{}", i * 10),
+                category: format!("Cat {}", i),
+                source: "test/".into(),
+                defs_ref: if sub_pillars.is_empty() { Some("ref".into()) } else { None },
+                scoring: ScoringSpec {
+                    scale: "0-3".into(),
+                    glyphs: {
+                        let mut m = std::collections::BTreeMap::new();
+                        m.insert("0".into(), "x".into());
+                        m.insert("3".into(), "y".into());
+                        m
+                    },
+                    grade: {
+                        let mut m = std::collections::BTreeMap::new();
+                        m.insert("A".into(), 90);
+                        m
+                    },
+                },
+                sub_pillars,
+            });
+        }
+        RubricCatalog {
+            version: "1.0".into(),
+            schema: "test".into(),
+            clusters: n,
+            sub_pillars_enumerated: if with_subs { n } else { 0 },
+            note: "test".into(),
+            pillars,
+        }
+    }
+
+    #[test]
+    fn validate_passes_for_valid_catalog() {
+        let catalog = make_catalog(3, false);
+        assert!(catalog.validate().is_ok());
+    }
+
+    #[test]
+    fn validate_passes_with_sub_pillars() {
+        let catalog = make_catalog(2, true);
+        assert!(catalog.validate().is_ok());
+    }
+
+    #[test]
+    fn validate_rejects_count_mismatch() {
+        let mut catalog = make_catalog(3, false);
+        catalog.clusters = 5;
+        assert!(catalog.validate().is_err());
+    }
+
+    #[test]
+    fn validate_rejects_duplicate_cluster_id() {
+        let mut catalog = make_catalog(2, false);
+        catalog.pillars[1].cluster = catalog.pillars[0].cluster.clone();
+        assert!(catalog.validate().is_err());
+    }
+
+    #[test]
+    fn validate_rejects_empty_glyphs() {
+        let mut catalog = make_catalog(1, false);
+        catalog.pillars[0].scoring.glyphs.clear();
+        assert!(catalog.validate().is_err());
+    }
+
+    #[test]
+    fn validate_rejects_empty_grade() {
+        let mut catalog = make_catalog(1, false);
+        catalog.pillars[0].scoring.grade.clear();
+        assert!(catalog.validate().is_err());
+    }
+
+    #[test]
+    fn validate_rejects_no_sub_pillars_no_defs_ref() {
+        let mut catalog = make_catalog(1, false);
+        catalog.pillars[0].sub_pillars.clear();
+        catalog.pillars[0].defs_ref = None;
+        assert!(catalog.validate().is_err());
+    }
+
+    #[test]
+    fn validate_rejects_duplicate_sub_pillar_id() {
+        let mut catalog = make_catalog(1, true);
+        let dup_id = catalog.pillars[0].sub_pillars[0].id.clone();
+        catalog.pillars[0].sub_pillars.push(SubPillar {
+            id: dup_id,
+            title: "dup".into(),
+            name: None,
+            acceptance: None,
+            soft_goal: None,
+            evidence_pattern: String::new(),
+        });
+        assert!(catalog.validate().is_err());
+    }
+
+    #[test]
+    fn validate_rejects_mismatched_enumerated_count() {
+        let mut catalog = make_catalog(2, true);
+        catalog.sub_pillars_enumerated = 999;
+        assert!(catalog.validate().is_err());
+    }
+
+    #[test]
+    fn enumerated_count_calculation() {
+        let catalog = make_catalog(3, true);
+        assert_eq!(catalog.enumerated_count(), 3);
+    }
+
+    #[test]
+    fn cluster_lookup() {
+        let catalog = make_catalog(3, false);
+        assert!(catalog.cluster("C00").is_some());
+        assert!(catalog.cluster("C02").is_some());
+        assert!(catalog.cluster("C99").is_none());
+    }
+
+    #[test]
+    fn from_json_rejects_bad_json() {
+        assert!(RubricCatalog::from_json("not json").is_err());
+    }
+
+    #[test]
+    fn from_json_rejects_invalid_catalog() {
+        let json = r#"{"version":"1.0","schema":"test","clusters":99,"pillars":[],"note":"","sub_pillars_enumerated":0}"#;
+        assert!(RubricCatalog::from_json(json).is_err());
+    }
 }
