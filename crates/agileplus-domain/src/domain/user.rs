@@ -184,4 +184,56 @@ mod tests {
         let err = u.transition_status(UserStatus::Inactive).unwrap_err();
         assert!(matches!(err, DomainError::InvalidTransition { .. }));
     }
+
+    // --- Additional coverage ---
+
+    #[test]
+    fn user_role_serde_roundtrip() {
+        for role in [UserRole::Admin, UserRole::Member, UserRole::Viewer] {
+            let json = serde_json::to_string(&role).unwrap();
+            let back: UserRole = serde_json::from_str(&json).unwrap();
+            assert_eq!(back, role);
+        }
+    }
+
+    #[test]
+    fn user_status_serde_roundtrip() {
+        for s in [UserStatus::Active, UserStatus::Inactive, UserStatus::Suspended] {
+            let json = serde_json::to_string(&s).unwrap();
+            let back: UserStatus = serde_json::from_str(&json).unwrap();
+            assert_eq!(back, s);
+        }
+    }
+
+    #[test]
+    fn user_serde_roundtrip() {
+        let u = User::new("Alice", "a@b.com", UserRole::Admin).unwrap();
+        let json = serde_json::to_string(&u).unwrap();
+        let back: User = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.display_name, "Alice");
+        assert_eq!(back.email, "a@b.com");
+    }
+
+    #[test]
+    fn user_role_display_all_variants() {
+        assert_eq!(UserRole::Admin.to_string(), "admin");
+        assert_eq!(UserRole::Member.to_string(), "member");
+        assert_eq!(UserRole::Viewer.to_string(), "viewer");
+    }
+
+    #[test]
+    fn user_role_from_str_invalid() {
+        assert!("superuser".parse::<UserRole>().is_err());
+    }
+
+    #[test]
+    fn user_status_from_str_invalid() {
+        assert!("deleted".parse::<UserStatus>().is_err());
+    }
+
+    #[test]
+    fn user_status_self_transition_rejected() {
+        let mut u = User::new("A", "a@b.com", UserRole::Member).unwrap();
+        assert!(u.transition_status(UserStatus::Active).is_err());
+    }
 }

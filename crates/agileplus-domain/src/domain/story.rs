@@ -195,4 +195,55 @@ mod tests {
         s.transition_status(StoryStatus::InProgress).unwrap();
         assert_eq!(s.status, StoryStatus::InProgress);
     }
+
+    // --- Additional coverage ---
+
+    #[test]
+    fn story_status_serde_roundtrip() {
+        for s in [
+            StoryStatus::Todo,
+            StoryStatus::InProgress,
+            StoryStatus::Review,
+            StoryStatus::Done,
+            StoryStatus::Blocked,
+            StoryStatus::Cancelled,
+        ] {
+            let json = serde_json::to_string(&s).unwrap();
+            let back: StoryStatus = serde_json::from_str(&json).unwrap();
+            assert_eq!(back, s);
+        }
+    }
+
+    #[test]
+    fn story_serde_roundtrip() {
+        let mut s = Story::new(1, 2, "Test", Some(3)).unwrap();
+        s.description = Some("A test story".to_string());
+        s.requirement_id = Some("FR-001".to_string());
+        let json = serde_json::to_string(&s).unwrap();
+        let back: Story = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.title, "Test");
+        assert_eq!(back.points, Some(3));
+        assert_eq!(back.requirement_id, Some("FR-001".to_string()));
+    }
+
+    #[test]
+    fn story_status_display_all() {
+        assert_eq!(StoryStatus::Todo.to_string(), "todo");
+        assert_eq!(StoryStatus::InProgress.to_string(), "in_progress");
+        assert_eq!(StoryStatus::Review.to_string(), "review");
+        assert_eq!(StoryStatus::Done.to_string(), "done");
+        assert_eq!(StoryStatus::Blocked.to_string(), "blocked");
+        assert_eq!(StoryStatus::Cancelled.to_string(), "cancelled");
+    }
+
+    #[test]
+    fn story_status_from_str_invalid() {
+        assert!("unknown".parse::<StoryStatus>().is_err());
+    }
+
+    #[test]
+    fn story_new_no_points() {
+        let s = Story::new(1, 2, "Title", None).unwrap();
+        assert!(s.points.is_none());
+    }
 }

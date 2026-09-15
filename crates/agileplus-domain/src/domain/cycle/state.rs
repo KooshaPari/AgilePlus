@@ -92,3 +92,78 @@ impl CycleState {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn display_all_states() {
+        assert_eq!(CycleState::Draft.to_string(), "Draft");
+        assert_eq!(CycleState::Active.to_string(), "Active");
+        assert_eq!(CycleState::Review.to_string(), "Review");
+        assert_eq!(CycleState::Shipped.to_string(), "Shipped");
+        assert_eq!(CycleState::Archived.to_string(), "Archived");
+    }
+
+    #[test]
+    fn from_str_all_states() {
+        assert_eq!("Draft".parse::<CycleState>().unwrap(), CycleState::Draft);
+        assert_eq!("Active".parse::<CycleState>().unwrap(), CycleState::Active);
+        assert_eq!("Review".parse::<CycleState>().unwrap(), CycleState::Review);
+        assert_eq!(
+            "Shipped".parse::<CycleState>().unwrap(),
+            CycleState::Shipped
+        );
+        assert_eq!(
+            "Archived".parse::<CycleState>().unwrap(),
+            CycleState::Archived
+        );
+    }
+
+    #[test]
+    fn from_str_invalid() {
+        assert!("Bogus".parse::<CycleState>().is_err());
+    }
+
+    #[test]
+    fn serde_roundtrip() {
+        for state in [
+            CycleState::Draft,
+            CycleState::Active,
+            CycleState::Review,
+            CycleState::Shipped,
+            CycleState::Archived,
+        ] {
+            let json = serde_json::to_string(&state).unwrap();
+            let back: CycleState = serde_json::from_str(&json).unwrap();
+            assert_eq!(back, state);
+        }
+    }
+
+    #[test]
+    fn valid_transitions() {
+        assert!(CycleState::Draft.transition(CycleState::Active).is_ok());
+        assert!(CycleState::Active.transition(CycleState::Review).is_ok());
+        assert!(CycleState::Active.transition(CycleState::Draft).is_ok());
+        assert!(CycleState::Review.transition(CycleState::Shipped).is_ok());
+        assert!(CycleState::Review.transition(CycleState::Active).is_ok());
+        assert!(CycleState::Shipped.transition(CycleState::Archived).is_ok());
+    }
+
+    #[test]
+    fn invalid_transitions() {
+        assert!(CycleState::Draft.transition(CycleState::Review).is_err());
+        assert!(CycleState::Draft.transition(CycleState::Shipped).is_err());
+        assert!(CycleState::Draft.transition(CycleState::Archived).is_err());
+        assert!(CycleState::Active.transition(CycleState::Shipped).is_err());
+        assert!(CycleState::Review.transition(CycleState::Draft).is_err());
+        assert!(CycleState::Archived.transition(CycleState::Draft).is_err());
+    }
+
+    #[test]
+    fn self_transition_is_err() {
+        assert!(CycleState::Draft.transition(CycleState::Draft).is_err());
+        assert!(CycleState::Active.transition(CycleState::Active).is_err());
+    }
+}

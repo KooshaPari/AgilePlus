@@ -34,3 +34,33 @@ fn default_credential_path() -> PathBuf {
         .join(".agileplus")
         .join("credentials.enc")
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn default_credential_config() {
+        let c = CredentialConfig::default();
+        assert_eq!(c.backend, CredentialBackend::Auto);
+        assert!(c.file_path.to_string_lossy().contains("credentials.enc"));
+    }
+
+    #[test]
+    fn serde_roundtrip() {
+        let c = CredentialConfig::default();
+        let json = serde_json::to_string(&c).unwrap();
+        let back: CredentialConfig = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.backend, CredentialBackend::Auto);
+    }
+
+    #[test]
+    fn credential_backend_variants() {
+        for backend in [CredentialBackend::Auto, CredentialBackend::Keychain, CredentialBackend::File]
+        {
+            let json = serde_json::to_string(&backend).unwrap();
+            let back: CredentialBackend = serde_json::from_str(&json).unwrap();
+            assert_eq!(back, backend);
+        }
+    }
+}

@@ -31,3 +31,42 @@ impl Snapshot {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn snapshot_new() {
+        let s = Snapshot::new("Feature", 42, serde_json::json!({"state": "active"}), 100);
+        assert_eq!(s.entity_type, "Feature");
+        assert_eq!(s.entity_id, 42);
+        assert_eq!(s.event_sequence, 100);
+        assert_eq!(s.state, serde_json::json!({"state": "active"}));
+    }
+
+    #[test]
+    fn snapshot_serde_roundtrip() {
+        let s = Snapshot::new("WorkPackage", 7, serde_json::json!({"title": "test"}), 5);
+        let json = serde_json::to_string(&s).unwrap();
+        let back: Snapshot = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.entity_type, "WorkPackage");
+        assert_eq!(back.entity_id, 7);
+        assert_eq!(back.event_sequence, 5);
+    }
+
+    #[test]
+    fn snapshot_clone() {
+        let s = Snapshot::new("Feature", 1, serde_json::json!(null), 0);
+        let s2 = s.clone();
+        assert_eq!(s.entity_type, s2.entity_type);
+        assert_eq!(s.entity_id, s2.entity_id);
+    }
+
+    #[test]
+    fn snapshot_debug() {
+        let s = Snapshot::new("Feature", 1, serde_json::json!({}), 0);
+        let dbg = format!("{:?}", s);
+        assert!(dbg.contains("Snapshot"));
+    }
+}

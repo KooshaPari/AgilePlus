@@ -28,3 +28,40 @@ impl Default for TelemetryConfig {
 fn default_log_level() -> String {
     "info".to_string()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn default_telemetry_config() {
+        let c = TelemetryConfig::default();
+        assert!(!c.enabled);
+        assert!(c.otlp_endpoint.is_none());
+        assert_eq!(c.log_level, "info");
+        assert!(c.log_file.is_none());
+    }
+
+    #[test]
+    fn serde_roundtrip() {
+        let c = TelemetryConfig::default();
+        let json = serde_json::to_string(&c).unwrap();
+        let back: TelemetryConfig = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.log_level, "info");
+        assert!(!back.enabled);
+    }
+
+    #[test]
+    fn custom_telemetry() {
+        let c = TelemetryConfig {
+            enabled: true,
+            otlp_endpoint: Some("http://localhost:4317".into()),
+            log_level: "debug".into(),
+            log_file: Some(PathBuf::from("/tmp/app.log")),
+        };
+        let json = serde_json::to_string(&c).unwrap();
+        let back: TelemetryConfig = serde_json::from_str(&json).unwrap();
+        assert!(back.enabled);
+        assert_eq!(back.otlp_endpoint.unwrap(), "http://localhost:4317");
+    }
+}

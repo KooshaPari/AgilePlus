@@ -22,3 +22,24 @@ impl CycleFeature {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn cycle_feature_new() {
+        let cf = CycleFeature::new(1, 42);
+        assert_eq!(cf.cycle_id, 1);
+        assert_eq!(cf.feature_id, 42);
+    }
+
+    #[test]
+    fn cycle_feature_serde_roundtrip() {
+        let cf = CycleFeature::new(5, 10);
+        let json = serde_json::to_string(&cf).unwrap();
+        let back: CycleFeature = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.cycle_id, 5);
+        assert_eq!(back.feature_id, 10);
+    }
+}

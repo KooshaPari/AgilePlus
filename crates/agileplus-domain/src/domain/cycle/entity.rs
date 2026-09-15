@@ -66,3 +66,95 @@ impl Cycle {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn cycle_new_happy_path() {
+        let c = Cycle::new(
+            "Sprint 1",
+            NaiveDate::from_ymd_opt(2025, 1, 1).unwrap(),
+            NaiveDate::from_ymd_opt(2025, 1, 14).unwrap(),
+            None,
+        )
+        .unwrap();
+        assert_eq!(c.name, "Sprint 1");
+        assert_eq!(c.state, CycleState::Draft);
+        assert_eq!(c.start_date, NaiveDate::from_ymd_opt(2025, 1, 1).unwrap());
+        assert_eq!(c.end_date, NaiveDate::from_ymd_opt(2025, 1, 14).unwrap());
+        assert!(c.module_scope_id.is_none());
+        assert!(c.description.is_none());
+    }
+
+    #[test]
+    fn cycle_new_rejects_same_date() {
+        let d = NaiveDate::from_ymd_opt(2025, 1, 1).unwrap();
+        assert!(Cycle::new("X", d, d, None).is_err());
+    }
+
+    #[test]
+    fn cycle_new_rejects_end_before_start() {
+        let start = NaiveDate::from_ymd_opt(2025, 1, 14).unwrap();
+        let end = NaiveDate::from_ymd_opt(2025, 1, 1).unwrap();
+        assert!(Cycle::new("X", start, end, None).is_err());
+    }
+
+    #[test]
+    fn cycle_with_module_scope() {
+        let c = Cycle::new(
+            "S",
+            NaiveDate::from_ymd_opt(2025, 1, 1).unwrap(),
+            NaiveDate::from_ymd_opt(2025, 2, 1).unwrap(),
+            Some(42),
+        )
+        .unwrap();
+        assert_eq!(c.module_scope_id, Some(42));
+    }
+
+    #[test]
+    fn cycle_transition_updates_state() {
+        let mut c = Cycle::new(
+            "S",
+            NaiveDate::from_ymd_opt(2025, 1, 1).unwrap(),
+            NaiveDate::from_ymd_opt(2025, 2, 1).unwrap(),
+            None,
+        )
+        .unwrap();
+        let before = c.updated_at;
+        std::thread::sleep(std::time::Duration::from_millis(10));
+        c.transition(CycleState::Active).unwrap();
+        assert_eq!(c.state, CycleState::Active);
+        assert!(c.updated_at >= before);
+    }
+
+    #[test]
+    fn cycle_transition_invalid() {
+        let mut c = Cycle::new(
+            "S",
+            NaiveDate::from_ymd_opt(2025, 1, 1).unwrap(),
+            NaiveDate::from_ymd_opt(2025, 2, 1).unwrap(),
+            None,
+        )
+        .unwrap();
+        assert!(c.transition(CycleState::Review).is_err());
+        assert_eq!(c.state, CycleState::Draft);
+    }
+
+    #[test]
+    fn cycle_serde_roundtrip() {
+        let c = Cycle::new(
+            "Sprint",
+            NaiveDate::from_ymd_opt(2025, 6, 1).unwrap(),
+            NaiveDate::from_ymd_opt(2025, 6, 14).unwrap(),
+            Some(3),
+        )
+        .unwrap();
+        let json = serde_json::to_string(&c).unwrap();
+        let back: Cycle = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.name, "Sprint");
+        assert_eq!(back.module_scope_id, Some(3));
+        assert_eq!(back.state, CycleState::Draft);
+    }
+}

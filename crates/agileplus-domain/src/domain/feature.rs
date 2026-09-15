@@ -358,4 +358,29 @@ mod tests {
         let result = serde_json::from_str::<Feature>(&json);
         assert!(result.is_err());
     }
+
+    // --- serde roundtrip and struct-level tests ---
+
+    #[test]
+    fn feature_serde_roundtrip() {
+        let f = Feature::new("my-feat", "My Feat", [0xcd; 32], None);
+        let json = serde_json::to_string(&f).unwrap();
+        let back: Feature = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.slug, "my-feat");
+        assert_eq!(back.spec_hash, [0xcd; 32]);
+        assert_eq!(back.state, FeatureState::Created);
+    }
+
+    #[test]
+    fn feature_with_labels_and_module() {
+        let mut f = Feature::new("f", "F", [0; 32], None);
+        f.labels = vec!["auth".into(), "security".into()];
+        f.module_id = Some(5);
+        f.project_id = Some(1);
+        let json = serde_json::to_string(&f).unwrap();
+        let back: Feature = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.labels, vec!["auth", "security"]);
+        assert_eq!(back.module_id, Some(5));
+        assert_eq!(back.project_id, Some(1));
+    }
 }

@@ -54,3 +54,61 @@ impl Event {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn event_new_defaults() {
+        let e = Event::new("Feature", 1, "created", serde_json::json!({}), "agent-1");
+        assert_eq!(e.id, 0);
+        assert_eq!(e.entity_type, "Feature");
+        assert_eq!(e.entity_id, 1);
+        assert_eq!(e.event_type, "created");
+        assert_eq!(e.actor, "agent-1");
+        assert_eq!(e.sequence, 0);
+        assert_eq!(e.prev_hash, [0u8; 32]);
+        assert_eq!(e.hash, [0u8; 32]);
+    }
+
+    #[test]
+    fn event_serde_roundtrip() {
+        let e = Event::new("WorkPackage", 42, "transitioned", serde_json::json!({"state": "doing"}), "user-1");
+        let json = serde_json::to_string(&e).unwrap();
+        let back: Event = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.entity_type, "WorkPackage");
+        assert_eq!(back.entity_id, 42);
+        assert_eq!(back.event_type, "transitioned");
+        assert_eq!(back.actor, "user-1");
+        assert_eq!(back.payload, serde_json::json!({"state": "doing"}));
+    }
+
+    #[test]
+    fn event_timestamp_is_recent() {
+        let before = Utc::now();
+        let e = Event::new("Feature", 1, "created", serde_json::json!(null), "agent");
+        let after = Utc::now();
+        assert!(e.timestamp >= before);
+        assert!(e.timestamp <= after);
+    }
+
+    #[test]
+    fn event_clone() {
+        let e = Event::new("Feature", 1, "created", serde_json::json!({}), "agent");
+        let e2 = e.clone();
+        assert_eq!(e.entity_type, e2.entity_type);
+        assert_eq!(e.entity_id, e2.entity_id);
+    }
+
+    #[test]
+    fn event_with_complex_payload() {
+        let payload = serde_json::json!({
+            "from": "created",
+            "to": "implementing",
+            "details": {"author": "alice"}
+        });
+        let e = Event::new("Feature", 5, "transitioned", payload.clone(), "bob");
+        assert_eq!(e.payload, payload);
+    }
+}

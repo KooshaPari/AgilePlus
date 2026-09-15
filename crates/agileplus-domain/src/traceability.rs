@@ -20,3 +20,42 @@ pub struct TraceRef {
     /// Timestamp when the trace link was established.
     pub linked_at: DateTime<Utc>,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn trace_ref_serde_roundtrip() {
+        let r = TraceRef {
+            trace_id: "TRAC-001".to_string(),
+            artifact_type: "requirement".to_string(),
+            linked_at: Utc::now(),
+        };
+        let json = serde_json::to_string(&r).unwrap();
+        let back: TraceRef = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.trace_id, "TRAC-001");
+        assert_eq!(back.artifact_type, "requirement");
+    }
+
+    #[test]
+    fn trace_ref_clone_and_debug() {
+        let r = TraceRef {
+            trace_id: "id".to_string(),
+            artifact_type: "evidence".to_string(),
+            linked_at: DateTime::from_timestamp(1_000_000, 0).unwrap(),
+        };
+        let r2 = r.clone();
+        assert_eq!(r, r2);
+        let dbg = format!("{:?}", r);
+        assert!(dbg.contains("TraceRef"));
+    }
+
+    #[test]
+    fn trace_ref_partial_eq() {
+        let ts = DateTime::from_timestamp(1_000_000, 0).unwrap();
+        let a = TraceRef { trace_id: "x".to_string(), artifact_type: "y".to_string(), linked_at: ts };
+        let b = TraceRef { trace_id: "x".to_string(), artifact_type: "y".to_string(), linked_at: ts };
+        assert_eq!(a, b);
+    }
+}
