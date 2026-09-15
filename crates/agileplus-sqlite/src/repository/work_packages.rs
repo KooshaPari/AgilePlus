@@ -391,3 +391,375 @@ impl<T> OptionalExt<T> for rusqlite::Result<T> {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::SqliteStorageAdapter;
+    use chrono::Utc;
+
+    fn seed_feature(conn: &Connection, feature_id: i64) {
+        conn.execute(
+            "INSERT OR IGNORE INTO features (id, slug, friendly_name, state, spec_hash, target_branch, created_at, updated_at)
+             VALUES (?1, ?2, ?3, 'created', X'00', 'main', datetime('now'), datetime('now'))",
+            params![feature_id, format!("feat-{feature_id}"), format!("Feature {feature_id}")],
+        )
+        .unwrap();
+    }
+
+    fn wp(feature_id: i64, title: &str, seq: i32) -> WorkPackage {
+        let now = Utc::now();
+        WorkPackage {
+            id: 0,
+            feature_id,
+            title: title.to_string(),
+            state: WpState::Planned,
+            sequence: seq,
+            file_scope: vec!["src/main.rs".to_string()],
+            acceptance_criteria: "tests pass".to_string(),
+            agent_id: None,
+            pr_url: None,
+            pr_state: None,
+            worktree_path: None,
+            plane_sub_issue_id: None,
+            base_commit: None,
+            head_commit: None,
+            created_at: now,
+            updated_at: now,
+        }
+    }
+
+    #[test]
+    fn create_and_get_work_package() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        seed_feature(&conn, 1);
+        let mut w = wp(1, "WP01 - Auth", 1);
+        let id = create_work_package(&conn, &mut w).unwrap();
+        assert!(id > 0);
+        let fetched = get_work_package(&conn, id).unwrap().unwrap();
+        assert_eq!(fetched.title, "WP01 - Auth");
+        assert_eq!(fetched.state, WpState::Planned);
+        assert_eq!(fetched.feature_id, 1);
+        assert_eq!(fetched.sequence, 1);
+        assert_eq!(fetched.file_scope, vec!["src/main.rs"]);
+    }
+
+    #[test]
+    fn get_nonexistent_returns_none() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        assert!(get_work_package(&conn, 99999).unwrap().is_none());
+    }
+
+    #[test]
+    fn update_wp_state_changes_state() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        seed_feature(&conn, 1);
+        let mut w = wp(1, "WP01", 1);
+        let id = create_work_package(&conn, &mut w).unwrap();
+        update_wp_state(&conn, id, WpState::Doing).unwrap();
+        let fetched = get_work_package(&conn, id).unwrap().unwrap();
+        assert_eq!(fetched.state, WpState::Doing);
+    }
+
+    #[test]
+    fn update_work_package_modifies_fields() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        seed_feature(&conn, 1);
+        let mut w = wp(1, "WP01", 1);
+        let id = create_work_package(&conn, &mut w).unwrap();
+        w.id = id;
+        w.title = "WP01 Updated".to_string();
+        w.state = WpState::Doing;
+        w.agent_id = Some("agent-1".to_string());
+        w.pr_url = Some("https://github.com/pr/1".to_string());
+        w.pr_state = Some(PrState::Open);
+        update_work_package(&conn, &w).unwrap();
+        let fetched = get_work_package(&conn, id).unwrap().unwrap();
+        assert_eq!(fetched.title, "WP01 Updated");
+        assert_eq!(fetched.state, WpState::Doing);
+        assert_eq!(fetched.agent_id.as_deref(), Some("agent-1"));
+        assert_eq!(fetched.pr_url.as_deref(), Some("https://github.com/pr/1"));
+    }
+
+    #[test]
+    fn list_wps_by_feature_filters_and_orders() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        seed_feature(&conn, 1);
+        seed_feature(&conn, 2);
+        create_work_package(&conn, &mut wp(1, "A", 2)).unwrap();
+        create_work_package(&conn, &mut wp(1, "B", 1)).unwrap();
+        create_work_package(&conn, &mut wp(2, "C", 1)).unwrap();
+
+        let list = list_wps_by_feature(&conn, 1).unwrap();
+        assert_eq!(list.len(), 2);
+        // Should be ordered by sequence
+        assert_eq!(list[0].title, "B");
+        assert_eq!(list[1].title, "A");
+    }
+
+    #[test]
+    fn list_all_work_packages_returns_all() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        seed_feature(&conn, 1);
+        seed_feature(&conn, 2);
+        create_work_package(&conn, &mut wp(1, "A", 1)).unwrap();
+        create_work_package(&conn, &mut wp(2, "B", 1)).unwrap();
+
+        let all = list_all_work_packages(&conn).unwrap();
+        assert_eq!(all.len(), 2);
+    }
+
+    #[test]
+    fn add_and_get_wp_dependencies() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        seed_feature(&conn, 1);
+        let id1 = create_work_package(&conn, &mut wp(1, "WP01", 1)).unwrap();
+        let id2 = create_work_package(&conn, &mut wp(1, "WP02", 2)).unwrap();
+
+        let dep = WpDependency {
+            wp_id: id2,
+            depends_on: id1,
+            dep_type: DependencyType::Explicit,
+        };
+        add_wp_dependency(&conn, &dep).unwrap();
+
+        let deps = get_wp_dependencies(&conn, id2).unwrap();
+        assert_eq!(deps.len(), 1);
+        assert_eq!(deps[0].wp_id, id2);
+        assert_eq!(deps[0].depends_on, id1);
+        assert_eq!(deps[0].dep_type, DependencyType::Explicit);
+    }
+
+    #[test]
+    fn get_wp_dependencies_empty_when_none() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let deps = get_wp_dependencies(&conn, 999).unwrap();
+        assert!(deps.is_empty());
+    }
+
+    #[test]
+    fn get_ready_wps_excludes_blocked_by_unfinished_dep() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        seed_feature(&conn, 1);
+        let id1 = create_work_package(&conn, &mut wp(1, "WP01", 1)).unwrap();
+        let id2 = create_work_package(&conn, &mut wp(1, "WP02", 2)).unwrap();
+
+        // WP02 depends on WP01 which is still planned (not done)
+        add_wp_dependency(
+            &conn,
+            &WpDependency {
+                wp_id: id2,
+                depends_on: id1,
+                dep_type: DependencyType::Explicit,
+            },
+        )
+        .unwrap();
+
+        let ready = get_ready_wps(&conn, 1).unwrap();
+        assert_eq!(ready.len(), 1);
+        assert_eq!(ready[0].id, id1); // WP01 is ready (no deps)
+    }
+
+    #[test]
+    fn get_ready_wps_includes_when_dep_done() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        seed_feature(&conn, 1);
+        let id1 = create_work_package(&conn, &mut wp(1, "WP01", 1)).unwrap();
+        let id2 = create_work_package(&conn, &mut wp(1, "WP02", 2)).unwrap();
+
+        // Mark WP01 as done
+        update_wp_state(&conn, id1, WpState::Review).unwrap();
+        update_wp_state(&conn, id1, WpState::Done).unwrap();
+
+        add_wp_dependency(
+            &conn,
+            &WpDependency {
+                wp_id: id2,
+                depends_on: id1,
+                dep_type: DependencyType::Explicit,
+            },
+        )
+        .unwrap();
+
+        let ready = get_ready_wps(&conn, 1).unwrap();
+        assert_eq!(ready.len(), 1); // only WP02 is planned now
+        assert_eq!(ready[0].id, id2);
+    }
+
+    #[test]
+    fn list_wps_by_story_empty_when_no_link() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE IF NOT EXISTS story_work_packages (
+                story_id INTEGER NOT NULL,
+                work_package_id INTEGER NOT NULL REFERENCES work_packages(id) ON DELETE CASCADE,
+                PRIMARY KEY (story_id, work_package_id)
+            );",
+        )
+        .unwrap();
+        let list = list_wps_by_story(&conn, 999).unwrap();
+        assert!(list.is_empty());
+    }
+
+    #[test]
+    fn get_next_ready_wps_filters_correctly() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        seed_feature(&conn, 1);
+        create_work_package(&conn, &mut wp(1, "Ready", 1)).unwrap();
+        let mut doing = wp(1, "In Progress", 2);
+        doing.state = WpState::Doing;
+        create_work_package(&conn, &mut doing).unwrap();
+
+        let ready = get_next_ready_wps(&conn, None).unwrap();
+        assert_eq!(ready.len(), 1);
+        assert_eq!(ready[0].title, "Ready");
+    }
+
+    #[test]
+    fn dep_type_all_variants_roundtrip() {
+        for dt in [
+            DependencyType::Explicit,
+            DependencyType::FileOverlap,
+            DependencyType::Data,
+        ] {
+            let s = dep_type_str(dt);
+            assert_eq!(dep_type_from_str(s).unwrap(), dt);
+        }
+    }
+
+    #[test]
+    fn dep_type_from_str_invalid_errors() {
+        assert!(dep_type_from_str("invalid").is_err());
+    }
+
+    #[test]
+    fn wp_state_all_variants_roundtrip() {
+        for s in ["planned", "doing", "review", "done", "blocked"] {
+            let state = wp_state_from_str(s).unwrap();
+            assert_eq!(wp_state_str(state), s);
+        }
+    }
+
+    #[test]
+    fn wp_state_from_str_invalid_errors() {
+        assert!(wp_state_from_str("invalid").is_err());
+    }
+
+    #[test]
+    fn pr_state_all_variants() {
+        let _ = pr_state_str(PrState::Open);
+        let _ = pr_state_str(PrState::Review);
+        let _ = pr_state_str(PrState::ChangesRequested);
+        let _ = pr_state_str(PrState::Approved);
+        let _ = pr_state_str(PrState::Merged);
+    }
+
+    #[test]
+    fn file_scope_roundtrips_through_json() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        seed_feature(&conn, 1);
+        let mut w = wp(1, "WP01", 1);
+        w.file_scope = vec!["src/a.rs".to_string(), "src/b.rs".to_string()];
+        let id = create_work_package(&conn, &mut w).unwrap();
+        let fetched = get_work_package(&conn, id).unwrap().unwrap();
+        assert_eq!(fetched.file_scope, vec!["src/a.rs", "src/b.rs"]);
+    }
+
+    #[test]
+    fn optional_extension_trait_on_none() {
+        let result: rusqlite::Result<i64> = Err(rusqlite::Error::QueryReturnedNoRows);
+        assert!(result.optional().unwrap().is_none());
+    }
+
+    #[test]
+    fn optional_extension_trait_on_some() {
+        let result: rusqlite::Result<i64> = Ok(42);
+        assert_eq!(result.optional().unwrap(), Some(42));
+    }
+
+    #[test]
+    fn optional_extension_trait_on_other_error() {
+        let result: rusqlite::Result<i64> =
+            Err(rusqlite::Error::InvalidParameterName("test".to_string()));
+        assert!(result.optional().is_err());
+    }
+
+    #[test]
+    fn wp_with_all_pr_states_roundtrips() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        seed_feature(&conn, 1);
+        for pr_state in [
+            PrState::Open,
+            PrState::Review,
+            PrState::ChangesRequested,
+            PrState::Approved,
+            PrState::Merged,
+        ] {
+            let mut w = wp(1, "WP", 1);
+            w.pr_state = Some(pr_state);
+            let id = create_work_package(&conn, &mut w).unwrap();
+            let fetched = get_work_package(&conn, id).unwrap().unwrap();
+            assert_eq!(fetched.pr_state, Some(pr_state));
+        }
+    }
+
+    #[test]
+    fn update_wp_state_with_all_states() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        seed_feature(&conn, 1);
+        let mut w = wp(1, "WP", 1);
+        let id = create_work_package(&conn, &mut w).unwrap();
+        for state in [WpState::Doing, WpState::Review, WpState::Done] {
+            update_wp_state(&conn, id, state).unwrap();
+            let fetched = get_work_package(&conn, id).unwrap().unwrap();
+            assert_eq!(fetched.state, state);
+        }
+    }
+
+    #[test]
+    fn multiple_deps_for_one_wp() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        seed_feature(&conn, 1);
+        let id1 = create_work_package(&conn, &mut wp(1, "WP01", 1)).unwrap();
+        let id2 = create_work_package(&conn, &mut wp(1, "WP02", 2)).unwrap();
+        let id3 = create_work_package(&conn, &mut wp(1, "WP03", 3)).unwrap();
+
+        add_wp_dependency(
+            &conn,
+            &WpDependency {
+                wp_id: id3,
+                depends_on: id1,
+                dep_type: DependencyType::Explicit,
+            },
+        )
+        .unwrap();
+        add_wp_dependency(
+            &conn,
+            &WpDependency {
+                wp_id: id3,
+                depends_on: id2,
+                dep_type: DependencyType::FileOverlap,
+            },
+        )
+        .unwrap();
+
+        let deps = get_wp_dependencies(&conn, id3).unwrap();
+        assert_eq!(deps.len(), 2);
+    }
+}
