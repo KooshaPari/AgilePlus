@@ -1143,4 +1143,668 @@ mod tests {
                 .any(|e| matches!(e, ValidationError::ConfidenceOutOfRange(_)))
         );
     }
+
+    // -----------------------------------------------------------------------
+    // Additional tests — coverage for untested paths
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn node_serde_roundtrip() {
+        let node = sample_node("Task#fix-leak", NodeType::Task, DagStage::Task);
+        let json = serde_json::to_string(&node).unwrap();
+        let back: Node = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.id, node.id);
+        assert_eq!(back.node_type, NodeType::Task);
+        assert_eq!(back.status, Status::Draft);
+    }
+
+    #[test]
+    fn edge_serde_roundtrip() {
+        let edge = sample_edge("e1", "Intent#a", "Feature#b", RelationshipType::Implements);
+        let json = serde_json::to_string(&edge).unwrap();
+        let back: Edge = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.id, "e1");
+        assert_eq!(back.relationship_type, RelationshipType::Implements);
+        assert_eq!(back.source, "Intent#a");
+        assert_eq!(back.target, "Feature#b");
+    }
+
+    #[test]
+    fn intent_graph_serde_roundtrip() {
+        let graph = IntentGraph {
+            nodes: vec![
+                sample_node("Intent#root", NodeType::Intent, DagStage::Intent),
+                sample_node("Feature#a", NodeType::Feature, DagStage::Feature),
+            ],
+            edges: vec![sample_edge(
+                "e1",
+                "Intent#root",
+                "Feature#a",
+                RelationshipType::Implements,
+            )],
+            metadata: GraphMetadata {
+                version: "1.0.0".to_string(),
+                schema_uri: "https://phenotype.dev/schemas/agileplus-intent-ontology/v1.json"
+                    .to_string(),
+                created_at: Utc::now(),
+                updated_at: None,
+                node_count: Some(2),
+                edge_count: Some(1),
+                dag_valid: Some(true),
+                source_system: Some("test".to_string()),
+            },
+        };
+        let json = serde_json::to_string_pretty(&graph).unwrap();
+        let back: IntentGraph = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.nodes.len(), 2);
+        assert_eq!(back.edges.len(), 1);
+        assert_eq!(back.metadata.version, "1.0.0");
+        assert_eq!(back.metadata.node_count, Some(2));
+    }
+
+    #[test]
+    fn node_with_optional_fields_serde() {
+        let mut node = sample_node("Task#x", NodeType::Task, DagStage::Task);
+        node.description = Some("desc".into());
+        node.tags = vec!["alpha".into()];
+        node.properties = Some(serde_json::json!({"k": "v"}));
+        node.table_ref = Some("requirements".into());
+        node.table_id = Some("42".into());
+        let json = serde_json::to_string(&node).unwrap();
+        let back: Node = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.description, Some("desc".into()));
+        assert_eq!(back.tags, vec!["alpha".to_string()]);
+        assert_eq!(back.properties, Some(serde_json::json!({"k": "v"})));
+        assert_eq!(back.table_ref, Some("requirements".into()));
+        assert_eq!(back.table_id, Some("42".into()));
+    }
+
+    #[test]
+    fn edge_with_canonical_map_serde() {
+        let mut edge = sample_edge("e1", "Intent#a", "Feature#b", RelationshipType::Implements);
+        edge.canonical_map = Some(CanonicalMap {
+            link_type: CanonicalLinkType::Implements,
+            source_table: Some("intent_nodes".into()),
+            source_id: Some("Intent#a".into()),
+            target_table: Some("feature_nodes".into()),
+            target_id: Some("Feature#b".into()),
+        });
+        edge.properties = Some(serde_json::json!({"priority": 1}));
+        let json = serde_json::to_string(&edge).unwrap();
+        let back: Edge = serde_json::from_str(&json).unwrap();
+        let cm = back.canonical_map.unwrap();
+        assert_eq!(cm.link_type, CanonicalLinkType::Implements);
+        assert_eq!(cm.source_table, Some("intent_nodes".into()));
+    }
+
+    #[test]
+    fn graph_metadata_serde_roundtrip() {
+        let meta = GraphMetadata {
+            version: "2.0".to_string(),
+            schema_uri: "https://example.com/schema".to_string(),
+            created_at: Utc::now(),
+            updated_at: Some(Utc::now()),
+            node_count: Some(10),
+            edge_count: Some(15),
+            dag_valid: Some(true),
+            source_system: Some("agileplus".into()),
+        };
+        let json = serde_json::to_string_pretty(&meta).unwrap();
+        let back: GraphMetadata = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.version, "2.0");
+        assert_eq!(back.node_count, Some(10));
+        assert_eq!(back.dag_valid, Some(true));
+    }
+
+    #[test]
+    fn validate_collects_multiple_errors() {
+        let graph = IntentGraph {
+            nodes: vec![
+                sample_node("Intent#a", NodeType::Intent, DagStage::Intent),
+                sample_node("Intent#a", NodeType::Intent, DagStage::Intent), // dup
+                sample_node("intent#bad", NodeType::Intent, DagStage::Intent), // invalid id
+            ],
+            edges: vec![],
+            metadata: GraphMetadata {
+                version: "1.0.0".to_string(),
+                schema_uri: "s".to_string(),
+                created_at: Utc::now(),
+                updated_at: None,
+                node_count: None,
+                edge_count: None,
+                dag_valid: None,
+                source_system: None,
+            },
+        };
+        let err = graph.validate().unwrap_err();
+        // Should have at least 2 errors (dup + invalid id)
+        assert!(err.len() >= 2);
+    }
+
+    #[test]
+    fn validate_empty_graph_ok() {
+        let graph = IntentGraph {
+            nodes: vec![],
+            edges: vec![],
+            metadata: GraphMetadata {
+                version: "1.0.0".to_string(),
+                schema_uri: "s".to_string(),
+                created_at: Utc::now(),
+                updated_at: None,
+                node_count: None,
+                edge_count: None,
+                dag_valid: None,
+                source_system: None,
+            },
+        };
+        assert!(graph.validate().is_ok());
+    }
+
+    #[test]
+    fn check_dag_no_edges_single_intent_node_ok() {
+        let graph = IntentGraph {
+            nodes: vec![sample_node("Intent#root", NodeType::Intent, DagStage::Intent)],
+            edges: vec![],
+            metadata: GraphMetadata {
+                version: "1.0.0".to_string(),
+                schema_uri: "s".to_string(),
+                created_at: Utc::now(),
+                updated_at: None,
+                node_count: None,
+                edge_count: None,
+                dag_valid: None,
+                source_system: None,
+            },
+        };
+        assert!(graph.check_dag().is_ok());
+    }
+
+    #[test]
+    fn check_dag_rejects_two_intent_roots_with_no_edges() {
+        // Two Intent roots with no edges — both have in-degree 0,
+        // both are Intent, so check_dag should pass.
+        let graph = IntentGraph {
+            nodes: vec![
+                sample_node("Intent#a", NodeType::Intent, DagStage::Intent),
+                sample_node("Intent#b", NodeType::Intent, DagStage::Intent),
+            ],
+            edges: vec![],
+            metadata: GraphMetadata {
+                version: "1.0.0".to_string(),
+                schema_uri: "s".to_string(),
+                created_at: Utc::now(),
+                updated_at: None,
+                node_count: None,
+                edge_count: None,
+                dag_valid: None,
+                source_system: None,
+            },
+        };
+        assert!(graph.check_dag().is_ok());
+    }
+
+    #[test]
+    fn check_dag_valid_linear_hierarchy() {
+        let graph = IntentGraph {
+            nodes: vec![
+                sample_node("Intent#root", NodeType::Intent, DagStage::Intent),
+                sample_node("Feature#a", NodeType::Feature, DagStage::Feature),
+                sample_node("Task#b", NodeType::Task, DagStage::Task),
+            ],
+            edges: vec![
+                sample_edge("e1", "Intent#root", "Feature#a", RelationshipType::Implements),
+                sample_edge("e2", "Feature#a", "Task#b", RelationshipType::Implements),
+            ],
+            metadata: GraphMetadata {
+                version: "1.0.0".to_string(),
+                schema_uri: "s".to_string(),
+                created_at: Utc::now(),
+                updated_at: None,
+                node_count: None,
+                edge_count: None,
+                dag_valid: None,
+                source_system: None,
+            },
+        };
+        assert!(graph.check_dag().is_ok());
+    }
+
+    #[test]
+    fn check_edge_constraints_all_relationship_types() {
+        // Valid Implements edge
+        let g = IntentGraph {
+            nodes: vec![
+                sample_node("Intent#root", NodeType::Intent, DagStage::Intent),
+                sample_node("Feature#a", NodeType::Feature, DagStage::Feature),
+            ],
+            edges: vec![sample_edge(
+                "e1",
+                "Intent#root",
+                "Feature#a",
+                RelationshipType::Implements,
+            )],
+            metadata: GraphMetadata {
+                version: "1.0.0".to_string(),
+                schema_uri: "s".to_string(),
+                created_at: Utc::now(),
+                updated_at: None,
+                node_count: None,
+                edge_count: None,
+                dag_valid: None,
+                source_system: None,
+            },
+        };
+        assert!(g.check_edge_constraints().is_ok());
+
+        // Valid Tests edge
+        let g2 = IntentGraph {
+            nodes: vec![
+                sample_node("Feature#a", NodeType::Feature, DagStage::Feature),
+                sample_node("Test#t1", NodeType::Test, DagStage::Test),
+            ],
+            edges: vec![sample_edge(
+                "e1",
+                "Feature#a",
+                "Test#t1",
+                RelationshipType::Tests,
+            )],
+            metadata: GraphMetadata {
+                version: "1.0.0".to_string(),
+                schema_uri: "s".to_string(),
+                created_at: Utc::now(),
+                updated_at: None,
+                node_count: None,
+                edge_count: None,
+                dag_valid: None,
+                source_system: None,
+            },
+        };
+        assert!(g2.check_edge_constraints().is_ok());
+
+        // Valid Covers edge
+        let g3 = IntentGraph {
+            nodes: vec![
+                sample_node("Feature#a", NodeType::Feature, DagStage::Feature),
+                sample_node("Artifact#art", NodeType::Artifact, DagStage::Artifact),
+            ],
+            edges: vec![sample_edge(
+                "e1",
+                "Feature#a",
+                "Artifact#art",
+                RelationshipType::Covers,
+            )],
+            metadata: GraphMetadata {
+                version: "1.0.0".to_string(),
+                schema_uri: "s".to_string(),
+                created_at: Utc::now(),
+                updated_at: None,
+                node_count: None,
+                edge_count: None,
+                dag_valid: None,
+                source_system: None,
+            },
+        };
+        assert!(g3.check_edge_constraints().is_ok());
+
+        // Valid DerivesFrom edge
+        let g4 = IntentGraph {
+            nodes: vec![
+                sample_node("Intent#root", NodeType::Intent, DagStage::Intent),
+                sample_node("Feature#a", NodeType::Feature, DagStage::Feature),
+            ],
+            edges: vec![sample_edge(
+                "e1",
+                "Feature#a",
+                "Intent#root",
+                RelationshipType::DerivesFrom,
+            )],
+            metadata: GraphMetadata {
+                version: "1.0.0".to_string(),
+                schema_uri: "s".to_string(),
+                created_at: Utc::now(),
+                updated_at: None,
+                node_count: None,
+                edge_count: None,
+                dag_valid: None,
+                source_system: None,
+            },
+        };
+        assert!(g4.check_edge_constraints().is_ok());
+
+        // Valid Resolves edge
+        let g5 = IntentGraph {
+            nodes: vec![
+                sample_node("Bug#crash", NodeType::Bug, DagStage::Bug),
+                sample_node("Commit#c1", NodeType::Commit, DagStage::Commit),
+            ],
+            edges: vec![sample_edge(
+                "e1",
+                "Bug#crash",
+                "Commit#c1",
+                RelationshipType::Resolves,
+            )],
+            metadata: GraphMetadata {
+                version: "1.0.0".to_string(),
+                schema_uri: "s".to_string(),
+                created_at: Utc::now(),
+                updated_at: None,
+                node_count: None,
+                edge_count: None,
+                dag_valid: None,
+                source_system: None,
+            },
+        };
+        assert!(g5.check_edge_constraints().is_ok());
+
+        // Valid Blocks edge
+        let g6 = IntentGraph {
+            nodes: vec![
+                sample_node("Task#a", NodeType::Task, DagStage::Task),
+                sample_node("Task#b", NodeType::Task, DagStage::Task),
+            ],
+            edges: vec![sample_edge(
+                "e1",
+                "Task#a",
+                "Task#b",
+                RelationshipType::Blocks,
+            )],
+            metadata: GraphMetadata {
+                version: "1.0.0".to_string(),
+                schema_uri: "s".to_string(),
+                created_at: Utc::now(),
+                updated_at: None,
+                node_count: None,
+                edge_count: None,
+                dag_valid: None,
+                source_system: None,
+            },
+        };
+        assert!(g6.check_edge_constraints().is_ok());
+
+        // Valid DependsOn edge
+        let g7 = IntentGraph {
+            nodes: vec![
+                sample_node("Task#a", NodeType::Task, DagStage::Task),
+                sample_node("Task#b", NodeType::Task, DagStage::Task),
+            ],
+            edges: vec![sample_edge(
+                "e1",
+                "Task#a",
+                "Task#b",
+                RelationshipType::DependsOn,
+            )],
+            metadata: GraphMetadata {
+                version: "1.0.0".to_string(),
+                schema_uri: "s".to_string(),
+                created_at: Utc::now(),
+                updated_at: None,
+                node_count: None,
+                edge_count: None,
+                dag_valid: None,
+                source_system: None,
+            },
+        };
+        assert!(g7.check_edge_constraints().is_ok());
+    }
+
+    #[test]
+    fn check_edge_constraints_rejects_tests_on_invalid_pair() {
+        let g = IntentGraph {
+            nodes: vec![
+                sample_node("Intent#a", NodeType::Intent, DagStage::Intent),
+                sample_node("Intent#b", NodeType::Intent, DagStage::Intent),
+            ],
+            edges: vec![sample_edge(
+                "e1",
+                "Intent#a",
+                "Intent#b",
+                RelationshipType::Tests,
+            )],
+            metadata: GraphMetadata {
+                version: "1.0.0".to_string(),
+                schema_uri: "s".to_string(),
+                created_at: Utc::now(),
+                updated_at: None,
+                node_count: None,
+                edge_count: None,
+                dag_valid: None,
+                source_system: None,
+            },
+        };
+        assert!(matches!(
+            g.check_edge_constraints().unwrap_err(),
+            ValidationError::InvalidEdgeConstraint { .. }
+        ));
+    }
+
+    #[test]
+    fn check_edge_constraints_empty_graph_ok() {
+        let g = IntentGraph {
+            nodes: vec![],
+            edges: vec![],
+            metadata: GraphMetadata {
+                version: "1.0.0".to_string(),
+                schema_uri: "s".to_string(),
+                created_at: Utc::now(),
+                updated_at: None,
+                node_count: None,
+                edge_count: None,
+                dag_valid: None,
+                source_system: None,
+            },
+        };
+        assert!(g.check_edge_constraints().is_ok());
+    }
+
+    #[test]
+    fn edge_meta_source_empty_rejected() {
+        let mut edge = sample_edge("e1", "Intent#a", "Feature#b", RelationshipType::Implements);
+        edge.meta.source = "   ".to_string();
+        let g = IntentGraph {
+            nodes: vec![
+                sample_node("Intent#a", NodeType::Intent, DagStage::Intent),
+                sample_node("Feature#b", NodeType::Feature, DagStage::Feature),
+            ],
+            edges: vec![edge],
+            metadata: GraphMetadata {
+                version: "1.0.0".to_string(),
+                schema_uri: "s".to_string(),
+                created_at: Utc::now(),
+                updated_at: None,
+                node_count: None,
+                edge_count: None,
+                dag_valid: None,
+                source_system: None,
+            },
+        };
+        let err = g.check_edge_constraints().unwrap_err();
+        assert!(matches!(err, ValidationError::MissingMeta(_)));
+    }
+
+    #[test]
+    fn edge_confidence_out_of_range_rejected() {
+        let mut edge = sample_edge("e1", "Intent#a", "Feature#b", RelationshipType::Implements);
+        edge.meta.confidence = Some(-0.5);
+        let g = IntentGraph {
+            nodes: vec![
+                sample_node("Intent#a", NodeType::Intent, DagStage::Intent),
+                sample_node("Feature#b", NodeType::Feature, DagStage::Feature),
+            ],
+            edges: vec![edge],
+            metadata: GraphMetadata {
+                version: "1.0.0".to_string(),
+                schema_uri: "s".to_string(),
+                created_at: Utc::now(),
+                updated_at: None,
+                node_count: None,
+                edge_count: None,
+                dag_valid: None,
+                source_system: None,
+            },
+        };
+        let err = g.check_edge_constraints().unwrap_err();
+        assert!(matches!(err, ValidationError::ConfidenceOutOfRange(_)));
+    }
+
+    #[test]
+    fn dag_self_loop_detected() {
+        let g = IntentGraph {
+            nodes: vec![sample_node("Task#a", NodeType::Task, DagStage::Task)],
+            edges: vec![sample_edge(
+                "e1",
+                "Task#a",
+                "Task#a",
+                RelationshipType::Blocks,
+            )],
+            metadata: GraphMetadata {
+                version: "1.0.0".to_string(),
+                schema_uri: "s".to_string(),
+                created_at: Utc::now(),
+                updated_at: None,
+                node_count: None,
+                edge_count: None,
+                dag_valid: None,
+                source_system: None,
+            },
+        };
+        // Self-loop is a cycle
+        assert!(matches!(g.check_dag().unwrap_err(), ValidationError::CycleDetected));
+    }
+
+    #[test]
+    fn check_dag_two_root_nodes_one_intent_one_feature_fails() {
+        // Feature has in-degree 0 but is not Intent -> InvalidRootNode
+        let g = IntentGraph {
+            nodes: vec![
+                sample_node("Intent#a", NodeType::Intent, DagStage::Intent),
+                sample_node("Feature#b", NodeType::Feature, DagStage::Feature),
+            ],
+            edges: vec![],
+            metadata: GraphMetadata {
+                version: "1.0.0".to_string(),
+                schema_uri: "s".to_string(),
+                created_at: Utc::now(),
+                updated_at: None,
+                node_count: None,
+                edge_count: None,
+                dag_valid: None,
+                source_system: None,
+            },
+        };
+        assert!(matches!(g.check_dag().unwrap_err(), ValidationError::InvalidRootNode(_)));
+    }
+
+    #[test]
+    fn meta_source_empty_rejected() {
+        let mut graph = IntentGraph {
+            nodes: vec![sample_node("Intent#root", NodeType::Intent, DagStage::Intent)],
+            edges: vec![],
+            metadata: GraphMetadata {
+                version: "1.0.0".to_string(),
+                schema_uri: "s".to_string(),
+                created_at: Utc::now(),
+                updated_at: None,
+                node_count: None,
+                edge_count: None,
+                dag_valid: None,
+                source_system: None,
+            },
+        };
+        graph.nodes[0].meta.source = "".to_string();
+        let err = graph.validate().unwrap_err();
+        assert!(err.iter().any(|e| matches!(e, ValidationError::MissingMeta(_))));
+    }
+
+    #[test]
+    fn node_type_try_from_all_variants() {
+        let variants = [
+            "Intent", "Plan", "Feature", "Story", "Task", "Spec",
+            "Commit", "Test", "PR", "Bug", "Artifact",
+        ];
+        for v in variants {
+            assert!(NodeType::try_from(v.to_string()).is_ok());
+        }
+    }
+
+    #[test]
+    fn dag_stage_try_from_all_variants() {
+        let variants = [
+            "intent", "plan", "feature", "story", "task", "spec",
+            "commit", "test", "pr", "bug", "artifact",
+        ];
+        for v in variants {
+            assert!(DagStage::try_from(v.to_string()).is_ok());
+        }
+    }
+
+    #[test]
+    fn relationship_type_try_from_all_variants() {
+        let variants = [
+            "implements", "tests", "covers", "traces-to",
+            "derives-from", "resolves", "blocks", "depends-on",
+        ];
+        for v in variants {
+            assert!(RelationshipType::try_from(v.to_string()).is_ok());
+        }
+    }
+
+    #[test]
+    fn status_try_from_all_variants() {
+        let variants = [
+            "draft", "active", "completed", "deprecated", "rejected",
+            "open", "in_progress", "blocked", "deferred", "cancelled",
+        ];
+        for v in variants {
+            assert!(Status::try_from(v.to_string()).is_ok());
+        }
+    }
+
+    #[test]
+    fn canonical_link_type_try_from_all_variants() {
+        let variants = [
+            "parent_of", "child_of", "depends_on", "blocks",
+            "implements", "verifies", "references", "duplicates",
+        ];
+        for v in variants {
+            assert!(CanonicalLinkType::try_from(v.to_string()).is_ok());
+        }
+    }
+
+    #[test]
+    fn validate_accepts_valid_confidence_range() {
+        let mut graph = IntentGraph {
+            nodes: vec![sample_node("Intent#r", NodeType::Intent, DagStage::Intent)],
+            edges: vec![],
+            metadata: GraphMetadata {
+                version: "1.0.0".to_string(),
+                schema_uri: "s".to_string(),
+                created_at: Utc::now(),
+                updated_at: None,
+                node_count: None,
+                edge_count: None,
+                dag_valid: None,
+                source_system: None,
+            },
+        };
+        graph.nodes[0].meta.confidence = Some(0.0);
+        assert!(graph.validate().is_ok());
+        graph.nodes[0].meta.confidence = Some(1.0);
+        assert!(graph.validate().is_ok());
+    }
+
+    #[test]
+    fn validation_error_display_messages() {
+        let e = ValidationError::CycleDetected;
+        assert!(e.to_string().contains("cycle"));
+        let e = ValidationError::InvalidNodeId("bad".into());
+        assert!(e.to_string().contains("bad"));
+        let e = ValidationError::DuplicateNodeId("dup".into());
+        assert!(e.to_string().contains("dup"));
+        let e = ValidationError::OrphanedEdge {
+            edge_id: "e1".into(),
+            node_id: "n1".into(),
+        };
+        assert!(e.to_string().contains("e1"));
+        assert!(e.to_string().contains("n1"));
+    }
 }

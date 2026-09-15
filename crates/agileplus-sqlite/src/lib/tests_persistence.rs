@@ -1351,6 +1351,308 @@ async fn story_invariant_no_zero_points_roundtrip() {
     assert!(got.points.is_none());
 }
 
+// -- Sync Mapping CRUD tests --
+
+use agileplus_domain::domain::sync_mapping::{SyncDirection, SyncMapping};
+
+#[tokio::test]
+async fn sync_mapping_upsert_and_get() {
+    let db = make_adapter();
+    let mapping = SyncMapping::new("feature", 1, "plane-issue-100", "hash_abc");
+    StoragePort::upsert_sync_mapping(&db, &mapping).await.unwrap();
+
+    let got = StoragePort::get_sync_mapping(&db, "feature", 1)
+        .await
+        .unwrap()
+        .unwrap();
+    assert_eq!(got.entity_type, "feature");
+    assert_eq!(got.entity_id, 1);
+    assert_eq!(got.plane_issue_id, "plane-issue-100");
+    assert_eq!(got.content_hash, "hash_abc");
+    assert_eq!(got.sync_direction, SyncDirection::Bidirectional);
+    assert_eq!(got.conflict_count, 0);
+}
+
+#[tokio::test]
+async fn sync_mapping_not_found_returns_none() {
+    let db = make_adapter();
+    let got = StoragePort::get_sync_mapping(&db, "feature", 999)
+        .await
+        .unwrap();
+    assert!(got.is_none());
+}
+
+#[tokio::test]
+async fn sync_mapping_upsert_updates_existing() {
+    let db = make_adapter();
+    let mut mapping = SyncMapping::new("feature", 1, "plane-100", "hash_v1");
+    StoragePort::upsert_sync_mapping(&db, &mapping).await.unwrap();
+
+    mapping.plane_issue_id = "plane-200".to_string();
+    mapping.content_hash = "hash_v2".to_string();
+    mapping.sync_direction = SyncDirection::Push;
+    mapping.conflict_count = 3;
+    StoragePort::upsert_sync_mapping(&db, &mapping).await.unwrap();
+
+    let got = StoragePort::get_sync_mapping(&db, "feature", 1)
+        .await
+        .unwrap()
+        .unwrap();
+    assert_eq!(got.plane_issue_id, "plane-200");
+    assert_eq!(got.content_hash, "hash_v2");
+    assert_eq!(got.sync_direction, SyncDirection::Push);
+    assert_eq!(got.conflict_count, 3);
+}
+
+#[tokio::test]
+async fn sync_mapping_get_by_plane_id() {
+    let db = make_adapter();
+    let mapping = SyncMapping::new("module", 42, "plane-mod-55", "h1");
+    StoragePort::upsert_sync_mapping(&db, &mapping).await.unwrap();
+
+    let got = StoragePort::get_sync_mapping_by_plane_id(&db, "module", "plane-mod-55")
+        .await
+        .unwrap()
+        .unwrap();
+    assert_eq!(got.entity_id, 42);
+    assert_eq!(got.entity_type, "module");
+}
+
+#[tokio::test]
+async fn sync_mapping_get_by_plane_id_not_found() {
+    let db = make_adapter();
+    let got = StoragePort::get_sync_mapping_by_plane_id(&db, "feature", "nonexistent")
+        .await
+        .unwrap();
+    assert!(got.is_none());
+}
+
+#[tokio::test]
+async fn sync_mapping_delete() {
+    let db = make_adapter();
+    let mapping = SyncMapping::new("feature", 5, "plane-del-1", "hash_d");
+    StoragePort::upsert_sync_mapping(&db, &mapping).await.unwrap();
+
+    StoragePort::delete_sync_mapping(&db, "feature", 5).await.unwrap();
+    let got = StoragePort::get_sync_mapping(&db, "feature", 5).await.unwrap();
+    assert!(got.is_none());
+}
+
+#[tokio::test]
+async fn sync_mapping_delete_nonexistent_is_ok() {
+    let db = make_adapter();
+    StoragePort::delete_sync_mapping(&db, "feature", 9999).await.unwrap();
+}
+
+#[tokio::test]
+async fn sync_mapping_different_entity_types_independent() {
+    let db = make_adapter();
+    StoragePort::upsert_sync_mapping(&db, &SyncMapping::new("feature", 1, "pf-1", "hash_f"))
+        .await
+        .unwrap();
+    StoragePort::upsert_sync_mapping(&db, &SyncMapping::new("work_package", 1, "pw-1", "hash_w"))
+        .await
+        .unwrap();
+    StoragePort::upsert_sync_mapping(&db, &SyncMapping::new("module", 1, "pm-1", "hash_m"))
+        .await
+        .unwrap();
+
+    let f = StoragePort::get_sync_mapping(&db, "feature", 1).await.unwrap().unwrap();
+    let w = StoragePort::get_sync_mapping(&db, "work_package", 1).await.unwrap().unwrap();
+    let m = StoragePort::get_sync_mapping(&db, "module", 1).await.unwrap().unwrap();
+
+    assert_eq!(f.plane_issue_id, "pf-1");
+    assert_eq!(w.plane_issue_id, "pw-1");
+    assert_eq!(m.plane_issue_id, "pm-1");
+}
+
+#[tokio::test]
+async fn sync_mapping_pull_direction_roundtrip() {
+    let db = make_adapter();
+    let mut mapping = SyncMapping::new("cycle", 10, "cyc-plane-1", "cycle_hash");
+    mapping.sync_direction = SyncDirection::Pull;
+    StoragePort::upsert_sync_mapping(&db, &mapping).await.unwrap();
+
+    let got = StoragePort::get_sync_mapping(&db, "cycle", 10).await.unwrap().unwrap();
+    assert_eq!(got.sync_direction, SyncDirection::Pull);
+}
+
+// -- Feature labels tests --
+
+#[tokio::test]
+async fn feature_list_by_label() {
+    let db = make_adapter();
+    let mut f1 = Feature::new("feat-a", "Feat A", [0u8; 32], None);
+    f1.labels = vec!["bug".into(), "urgent".into()];
+    StoragePort::create_feature(&db, &f1).await.unwrap();
+
+    let mut f2 = Feature::new("feat-b", "Feat B", [0u8; 32], None);
+    f2.labels = vec!["feature".into()];
+    StoragePort::create_feature(&db, &f2).await.unwrap();
+
+    let mut f3 = Feature::new("feat-c", "Feat C", [0u8; 32], None);
+    f3.labels = vec!["bug".into(), "enhancement".into()];
+    StoragePort::create_feature(&db, &f3).await.unwrap();
+
+    let bugs = StoragePort::list_features_by_label(&db, "bug").await.unwrap();
+    assert_eq!(bugs.len(), 2);
+    assert!(bugs.iter().any(|f| f.slug == "feat-a"));
+    assert!(bugs.iter().any(|f| f.slug == "feat-c"));
+
+    let features = StoragePort::list_features_by_label(&db, "feature").await.unwrap();
+    assert_eq!(features.len(), 1);
+    assert_eq!(features[0].slug, "feat-b");
+}
+
+#[tokio::test]
+async fn feature_list_by_label_no_match() {
+    let db = make_adapter();
+    let mut f = Feature::new("feat-x", "Feat X", [0u8; 32], None);
+    f.labels = vec!["bug".into()];
+    StoragePort::create_feature(&db, &f).await.unwrap();
+
+    let result = StoragePort::list_features_by_label(&db, "nonexistent").await.unwrap();
+    assert!(result.is_empty());
+}
+
+#[tokio::test]
+async fn feature_update_full() {
+    let db = make_adapter();
+    let mut f = Feature::new("orig", "Original", [1u8; 32], None);
+    f.labels = vec!["v1".into()];
+    let id = StoragePort::create_feature(&db, &f).await.unwrap();
+
+    let mut got = StoragePort::get_feature_by_id(&db, id).await.unwrap().unwrap();
+    got.friendly_name = "Updated Name".to_string();
+    got.labels = vec!["v2".into(), "updated".into()];
+    got.state = FeatureState::Implementing;
+    StoragePort::update_feature(&db, &got).await.unwrap();
+
+    let result = StoragePort::get_feature_by_id(&db, id).await.unwrap().unwrap();
+    assert_eq!(result.friendly_name, "Updated Name");
+    assert_eq!(result.labels, vec!["v2", "updated"]);
+    assert_eq!(result.state, FeatureState::Implementing);
+}
+
+// -- Work Package extended tests --
+
+#[tokio::test]
+async fn wp_list_all() {
+    let db = make_adapter();
+    let fid = StoragePort::create_feature(&db, &Feature::new("all-wp", "AWP", [0u8; 32], None))
+        .await
+        .unwrap();
+    StoragePort::create_work_package(&db, &WorkPackage::new(fid, "WP1", 1, "c1"))
+        .await
+        .unwrap();
+    StoragePort::create_work_package(&db, &WorkPackage::new(fid, "WP2", 2, "c2"))
+        .await
+        .unwrap();
+
+    let all = StoragePort::list_all_work_packages(&db).await.unwrap();
+    assert_eq!(all.len(), 2);
+}
+
+#[tokio::test]
+async fn wp_get_next_ready_with_dep() {
+    let db = make_adapter();
+    let fid = StoragePort::create_feature(&db, &Feature::new("cycle-wp", "CWP", [0u8; 32], None))
+        .await
+        .unwrap();
+    let wp1 = StoragePort::create_work_package(&db, &WorkPackage::new(fid, "Ready", 1, "c"))
+        .await
+        .unwrap();
+    let wp2 = StoragePort::create_work_package(&db, &WorkPackage::new(fid, "NotReady", 2, "c"))
+        .await
+        .unwrap();
+
+    StoragePort::add_wp_dependency(
+        &db,
+        &WpDependency {
+            wp_id: wp2,
+            depends_on: wp1,
+            dep_type: DependencyType::FileOverlap,
+        },
+    )
+    .await
+    .unwrap();
+
+    let ready = StoragePort::get_next_ready_wps(&db, None).await.unwrap();
+    assert!(ready.iter().any(|w| w.id == wp1));
+}
+
+#[tokio::test]
+async fn wp_get_ready_empty_when_all_done() {
+    let db = make_adapter();
+    let fid = StoragePort::create_feature(&db, &Feature::new("done-wp", "DWP", [0u8; 32], None))
+        .await
+        .unwrap();
+    let wp1 = StoragePort::create_work_package(&db, &WorkPackage::new(fid, "Done1", 1, "c"))
+        .await
+        .unwrap();
+    StoragePort::update_wp_state(&db, wp1, WpState::Doing).await.unwrap();
+    StoragePort::update_wp_state(&db, wp1, WpState::Review).await.unwrap();
+    StoragePort::update_wp_state(&db, wp1, WpState::Done).await.unwrap();
+
+    let ready = StoragePort::get_ready_wps(&db, fid).await.unwrap();
+    assert!(ready.is_empty());
+}
+
+// -- Cycle list all --
+
+#[tokio::test]
+async fn cycle_list_all() {
+    let db = make_adapter();
+    StoragePort::create_cycle(
+        &db,
+        &Cycle::new("C1", make_date(2026, 1, 1), make_date(2026, 2, 1), None).unwrap(),
+    )
+    .await
+    .unwrap();
+    StoragePort::create_cycle(
+        &db,
+        &Cycle::new("C2", make_date(2026, 3, 1), make_date(2026, 4, 1), None).unwrap(),
+    )
+    .await
+    .unwrap();
+
+    let all = StoragePort::list_all_cycles(&db).await.unwrap();
+    assert_eq!(all.len(), 2);
+}
+
+// -- Module edge cases --
+
+#[tokio::test]
+async fn module_create_with_nonexistent_parent_fails() {
+    let db = make_adapter();
+    let m = Module::new("Orphan", Some(9999));
+    let result = StoragePort::create_module(&db, &m).await;
+    assert!(result.is_err());
+}
+
+#[tokio::test]
+async fn module_update_not_found_fails() {
+    let db = make_adapter();
+    let result = StoragePort::update_module(&db, 9999, "New", None).await;
+    assert!(result.is_err());
+}
+
+#[tokio::test]
+async fn module_delete_not_found_fails() {
+    let db = make_adapter();
+    let result = StoragePort::delete_module(&db, 9999).await;
+    assert!(result.is_err());
+}
+
+// -- Add story to cycle (NotImplemented) --
+
+#[tokio::test]
+async fn add_story_to_cycle_returns_not_implemented() {
+    let db = make_adapter();
+    let result = StoragePort::add_story_to_cycle(&db, 1, 1).await;
+    assert!(matches!(result, Err(agileplus_domain::error::DomainError::NotImplemented)));
+}
+
 // -- L2 #38 migration test --
 //
 // The L1 #5 audit identified 5 tables missing from the schema that the

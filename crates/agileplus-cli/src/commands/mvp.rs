@@ -457,3 +457,130 @@ impl From<DepTypeArg> for DependencyType {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ── parse_csv ────────────────────────────────────────────────────────────
+
+    #[test]
+    fn parse_csv_single_element() {
+        assert_eq!(parse_csv("src/main.rs"), vec!["src/main.rs"]);
+    }
+
+    #[test]
+    fn parse_csv_multiple_elements() {
+        assert_eq!(
+            parse_csv("a.rs,b.rs,c.rs"),
+            vec!["a.rs", "b.rs", "c.rs"]
+        );
+    }
+
+    #[test]
+    fn parse_csv_trims_whitespace() {
+        assert_eq!(
+            parse_csv(" a.rs , b.rs , c.rs "),
+            vec!["a.rs", "b.rs", "c.rs"]
+        );
+    }
+
+    #[test]
+    fn parse_csv_filters_empty_segments() {
+        assert_eq!(
+            parse_csv("a.rs,,b.rs,,"),
+            vec!["a.rs", "b.rs"]
+        );
+    }
+
+    #[test]
+    fn parse_csv_empty_string() {
+        assert!(parse_csv("").is_empty());
+    }
+
+    #[test]
+    fn parse_csv_commas_only() {
+        assert!(parse_csv(",,,,").is_empty());
+    }
+
+    // ── parse_date ───────────────────────────────────────────────────────────
+
+    #[test]
+    fn parse_date_valid() {
+        let d = parse_date("2025-01-15").unwrap();
+        assert_eq!(d, NaiveDate::from_ymd_opt(2025, 1, 15).unwrap());
+    }
+
+    #[test]
+    fn parse_date_invalid_format() {
+        assert!(parse_date("01/15/2025").is_err());
+    }
+
+    #[test]
+    fn parse_date_invalid_day() {
+        assert!(parse_date("2025-02-30").is_err());
+    }
+
+    #[test]
+    fn parse_date_garbage() {
+        assert!(parse_date("not-a-date").is_err());
+    }
+
+    #[test]
+    fn parse_date_empty() {
+        assert!(parse_date("").is_err());
+    }
+
+    // ── parse_wp_state ───────────────────────────────────────────────────────
+
+    #[test]
+    fn parse_wp_state_all_variants() {
+        assert!(matches!(parse_wp_state("planned").unwrap(), WpState::Planned));
+        assert!(matches!(parse_wp_state("doing").unwrap(), WpState::Doing));
+        assert!(matches!(parse_wp_state("review").unwrap(), WpState::Review));
+        assert!(matches!(parse_wp_state("done").unwrap(), WpState::Done));
+        assert!(matches!(parse_wp_state("blocked").unwrap(), WpState::Blocked));
+    }
+
+    #[test]
+    fn parse_wp_state_unknown() {
+        assert!(parse_wp_state("unknown").is_err());
+    }
+
+    #[test]
+    fn parse_wp_state_case_sensitive() {
+        assert!(parse_wp_state("Planned").is_err());
+        assert!(parse_wp_state("DOING").is_err());
+    }
+
+    // ── wp_state_label ───────────────────────────────────────────────────────
+
+    #[test]
+    fn wp_state_label_roundtrip() {
+        assert_eq!(wp_state_label(WpState::Planned), "planned");
+        assert_eq!(wp_state_label(WpState::Doing), "doing");
+        assert_eq!(wp_state_label(WpState::Review), "review");
+        assert_eq!(wp_state_label(WpState::Done), "done");
+        assert_eq!(wp_state_label(WpState::Blocked), "blocked");
+    }
+
+    // ── DepTypeArg → DependencyType conversion ───────────────────────────────
+
+    #[test]
+    fn dep_type_arg_explicit_conversion() {
+        let dt: DependencyType = DepTypeArg::Explicit.into();
+        assert!(matches!(dt, DependencyType::Explicit));
+    }
+
+    #[test]
+    fn dep_type_arg_file_overlap_conversion() {
+        let dt: DependencyType = DepTypeArg::FileOverlap.into();
+        assert!(matches!(dt, DependencyType::FileOverlap));
+    }
+
+    #[test]
+    fn dep_type_arg_data_conversion() {
+        let dt: DependencyType = DepTypeArg::Data.into();
+        assert!(matches!(dt, DependencyType::Data));
+    }
+}

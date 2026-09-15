@@ -623,4 +623,133 @@ mod tests {
         // (and that the SQL joins both outgoing + incoming rows).
         run_show(&args).unwrap();
     }
+    #[test]
+    fn parse_ref_with_colons_in_id() {
+        let (k, i) = parse_ref("wp:abc:def", "from").unwrap();
+        assert_eq!(k, "wp");
+        assert_eq!(i, "abc:def");
+    }
+
+    #[test]
+    fn parse_ref_rejects_single_colon_only() {
+        assert!(parse_ref(":", "from").is_err());
+    }
+
+    // ── Additional truncate edge cases ──────────────────────────────────────
+
+    #[test]
+    fn truncate_exact_boundary() {
+        let s = "12345";
+        assert_eq!(truncate(s, 5), "12345");
+        assert_eq!(truncate(s, 4), "123\u{2026}");
+    }
+
+    #[test]
+    fn truncate_empty_string() {
+        assert_eq!(truncate("", 10), "");
+    }
+
+    // ── open_db creates trace_links table ───────────────────────────────────
+
+    #[test]
+    fn open_db_creates_trace_links_table() {
+        let dir = tempfile::tempdir().unwrap();
+        let db = dir.path().join("open-db-test.db");
+        let conn = open_db(&db).unwrap();
+        let columns: Vec<String> = conn
+            .prepare("PRAGMA table_info(trace_links)")
+            .unwrap()
+            .query_map([], |row| row.get::<_, String>(1))
+            .unwrap()
+            .collect::<rusqlite::Result<Vec<_>>>()
+            .unwrap();
+        assert!(columns.contains(&"from_kind".to_string()));
+        assert!(columns.contains(&"to_kind".to_string()));
+        assert!(columns.contains(&"link_type".to_string()));
+    }
+
+    #[test]
+    fn open_db_is_idempotent() {
+        let dir = tempfile::tempdir().unwrap();
+        let db = dir.path().join("idempotent.db");
+        open_db(&db).unwrap();
+        open_db(&db).unwrap();
+        let count: i64 = open_db(&db)
+            .unwrap()
+            .query_row("SELECT COUNT(*) FROM trace_links", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(count, 0);
+    }
+
+    // ── run_link with --db override ─────────────────────────────────────────
+
+    #[test]
+    fn run_link_with_explicit_db_path() {
+        let dir = tempfile::tempdir().unwrap();
+        let db = dir.path().join("explicit.db");
+        let args = LinkArgs {
+            from: "feature:1".to_string(),
+            to: "epic:2".to_string(),
+            link_type: "implements".to_string(),
+            note: "test".to_string(),
+            by: Some("test".to_string()),
+            db: Some(db.clone()),
+        };
+        run_link(&args).unwrap();
+        let conn = open_db(&db).unwrap();
+        let count: i64 = conn
+            .query_row("SELECT COUNT(*) FROM trace_links", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(count, 1);
+    }
+
+    #[test]
+    fn run_link_rejects_invalid_from_kind() {
+        let dir = tempfile::tempdir().unwrap();
+        let db = dir.path().join("bad-from.db");
+        let args = LinkArgs {
+            from: "bogus:1".to_string(),
+            to: "feature:2".to_string(),
+            link_type: "implements".to_string(),
+            note: String::new(),
+            by: None,
+            db: Some(db),
+        };
+        let err = run_link(&args).unwrap_err();
+        assert!(format!("{err:#}").contains("invalid --from-kind"));
+    }
+
+    #[test]
+    fn run_link_rejects_invalid_to_kind() {
+        let dir = tempfile::tempdir().unwrap();
+        let db = dir.path().join("bad-to.db");
+        let args = LinkArgs {
+            from: "work_package:1".to_string(),
+            to: "bogus:2".to_string(),
+            link_type: "implements".to_string(),
+            note: String::new(),
+            by: None,
+            db: Some(db),
+        };
+        let err = run_link(&args).unwrap_err();
+        assert!(format!("{err:#}").contains("invalid --to-kind"));
+    }
+
+    #[test]
+    fn run_list_empty_table_returns_ok() {
+        let dir = tempfile::tempdir().unwrap();
+        let db = dir.path().join("empty-list.db");
+        open_db(&db).unwrap();
+        let args = ListArgs { limit: 10, db: Some(db) };
+        run_list(&args).unwrap();
+    }
+
+    #[test]
+    fn run_show_no_matches_returns_ok() {
+        let dir = tempfile::tempdir().unwrap();
+        let db = dir.path().join("no-show.db");
+        open_db(&db).unwrap();
+        let args = ShowArgs { entity: "feature:999".to_string(), db: Some(db) };
+        run_show(&args).unwrap();
+    }
 }

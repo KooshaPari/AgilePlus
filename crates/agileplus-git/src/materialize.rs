@@ -654,4 +654,352 @@ mod tests {
         let line_count = content.lines().count();
         assert_eq!(line_count, 2, "each materialization appends one audit line");
     }
+
+    // -----------------------------------------------------------------------
+    // Additional tests — coverage for untested paths
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn render_status_md_no_labels_omits_label_line() {
+        let f = make_feature();
+        let md = render_status_md(&f, &[]);
+        assert!(!md.contains("**Labels**"));
+    }
+
+    #[test]
+    fn render_status_md_empty_labels_omits_label_line() {
+        let mut f = make_feature();
+        f.labels.clear();
+        let md = render_status_md(&f, &[]);
+        assert!(!md.contains("**Labels**"));
+    }
+
+    #[test]
+    fn render_status_md_target_branch() {
+        let f = make_feature();
+        let md = render_status_md(&f, &[]);
+        assert!(md.contains("main"));
+        assert!(md.contains("**Target branch**"));
+    }
+
+    #[test]
+    fn render_status_md_updated_timestamp() {
+        let f = make_feature();
+        let md = render_status_md(&f, &[]);
+        assert!(md.contains("**Updated**"));
+    }
+
+    #[test]
+    fn render_status_md_wp_without_agent_shows_dash() {
+        let f = make_feature();
+        let mut wp = make_wp(1, "No Agent WP");
+        wp.agent_id = None;
+        let md = render_status_md(&f, &[wp]);
+        // Agent column should show "-" when None
+        let lines: Vec<&str> = md.lines().collect();
+        let data_line = lines.iter().find(|l| l.contains("No Agent WP")).unwrap();
+        assert!(data_line.contains("| - |"));
+    }
+
+    #[test]
+    fn render_status_md_wp_without_worktree_shows_dash() {
+        let f = make_feature();
+        let mut wp = make_wp(1, "No Branch WP");
+        wp.worktree_path = None;
+        let md = render_status_md(&f, &[wp]);
+        let lines: Vec<&str> = md.lines().collect();
+        let data_line = lines.iter().find(|l| l.contains("No Branch WP")).unwrap();
+        // Branch column should be at the end
+        assert!(data_line.ends_with(" - |"));
+    }
+
+    #[test]
+    fn render_meta_json_empty_labels() {
+        let mut f = make_feature();
+        f.labels.clear();
+        let v = render_meta_json(&f);
+        let labels = v["labels"].as_array().unwrap();
+        assert!(labels.is_empty());
+    }
+
+    #[test]
+    fn render_meta_json_with_plane_issue_id() {
+        let mut f = make_feature();
+        f.plane_issue_id = Some("PLN-123".into());
+        let v = render_meta_json(&f);
+        assert_eq!(v["plane_issue_id"], "PLN-123");
+    }
+
+    #[test]
+    fn render_meta_json_without_plane_issue_id() {
+        let f = make_feature();
+        let v = render_meta_json(&f);
+        assert!(v["plane_issue_id"].is_null());
+    }
+
+    #[test]
+    fn render_meta_json_created_at_commit() {
+        let mut f = make_feature();
+        f.created_at_commit = Some("abc123".into());
+        let v = render_meta_json(&f);
+        assert_eq!(v["created_at_commit"], "abc123");
+    }
+
+    #[test]
+    fn render_meta_json_target_branch() {
+        let f = make_feature();
+        let v = render_meta_json(&f);
+        assert_eq!(v["target_branch"], "main");
+    }
+
+    #[test]
+    fn render_wp_json_with_pr_state() {
+        let mut wp = make_wp(1, "WP");
+        wp.pr_state = Some(agileplus_domain::domain::work_package::PrState::Approved);
+        let v = render_wp_json(&wp);
+        assert_eq!(v["pr_state"], "approved");
+    }
+
+    #[test]
+    fn render_wp_json_pr_state_variants() {
+        use agileplus_domain::domain::work_package::PrState;
+        for (state, expected) in [
+            (PrState::Open, "open"),
+            (PrState::Review, "review"),
+            (PrState::ChangesRequested, "changes_requested"),
+            (PrState::Approved, "approved"),
+            (PrState::Merged, "merged"),
+        ] {
+            let mut wp = make_wp(1, "WP");
+            wp.pr_state = Some(state);
+            let v = render_wp_json(&wp);
+            assert_eq!(v["pr_state"], expected);
+        }
+    }
+
+    #[test]
+    fn render_wp_json_without_worktree_path() {
+        let wp = make_wp(1, "WP");
+        let v = render_wp_json(&wp);
+        assert!(v["worktree_path"].is_null());
+    }
+
+    #[test]
+    fn render_wp_json_acceptance_criteria() {
+        let wp = make_wp(1, "WP");
+        let v = render_wp_json(&wp);
+        assert_eq!(v["acceptance_criteria"], "It must work.");
+    }
+
+    #[test]
+    fn render_wp_json_base_and_head_commit() {
+        let mut wp = make_wp(1, "WP");
+        wp.base_commit = Some("aaa111".into());
+        wp.head_commit = Some("bbb222".into());
+        let v = render_wp_json(&wp);
+        assert_eq!(v["base_commit"], "aaa111");
+        assert_eq!(v["head_commit"], "bbb222");
+    }
+
+    #[test]
+    fn render_wp_json_without_base_head_commit() {
+        let wp = make_wp(1, "WP");
+        let v = render_wp_json(&wp);
+        assert!(v["base_commit"].is_null());
+        assert!(v["head_commit"].is_null());
+    }
+
+    #[test]
+    fn render_wp_json_materialized_at_present() {
+        let wp = make_wp(1, "WP");
+        let v = render_wp_json(&wp);
+        assert!(v["materialized_at"].is_string());
+    }
+
+    #[test]
+    fn render_wp_json_feature_id() {
+        let wp = make_wp(1, "WP");
+        let v = render_wp_json(&wp);
+        assert_eq!(v["feature_id"], 1);
+    }
+
+    #[test]
+    fn render_audit_line_with_commit() {
+        let f = make_feature();
+        let line = render_audit_line(&f, Some("deadbeef"));
+        let v: Value = serde_json::from_str(&line).unwrap();
+        assert_eq!(v["commit"], "deadbeef");
+    }
+
+    #[test]
+    fn render_audit_line_has_timestamp() {
+        let f = make_feature();
+        let line = render_audit_line(&f, None);
+        let v: Value = serde_json::from_str(&line).unwrap();
+        assert!(v["timestamp"].is_string());
+    }
+
+    #[test]
+    fn render_audit_line_has_state() {
+        let f = make_feature();
+        let line = render_audit_line(&f, None);
+        let v: Value = serde_json::from_str(&line).unwrap();
+        assert_eq!(v["state"], "created");
+    }
+
+    // --- git integration: error paths ---
+
+    #[test]
+    fn materialize_feature_on_non_repo_fails() {
+        let tmp = tempfile::TempDir::new().unwrap();
+        // No git init
+        let adapter = GitVcsAdapter::new(tmp.path().to_path_buf());
+        let f = make_feature();
+        let result = materialize_feature(&adapter, &f, &[]);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn materialize_work_package_on_non_repo_fails() {
+        let tmp = tempfile::TempDir::new().unwrap();
+        let adapter = GitVcsAdapter::new(tmp.path().to_path_buf());
+        let wp = make_wp(1, "WP");
+        let result = materialize_work_package(&adapter, "my-feature", &wp);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn commit_materialization_on_non_repo_fails() {
+        let tmp = tempfile::TempDir::new().unwrap();
+        let adapter = GitVcsAdapter::new(tmp.path().to_path_buf());
+        let result = commit_materialization(&adapter, "my-feature", None);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn materialize_feature_with_multiple_wps() {
+        let tmp = tempfile::TempDir::new().unwrap();
+        {
+            let repo = git2::Repository::init(tmp.path()).unwrap();
+            make_initial_commit(&repo);
+        }
+        let adapter = GitVcsAdapter::new(tmp.path().to_path_buf());
+        let f = make_feature();
+        let wp1 = make_wp(1, "WP One");
+        let wp2 = make_wp(2, "WP Two");
+        let wp3 = make_wp(3, "WP Three");
+        materialize_feature(&adapter, &f, &[wp1, wp2, wp3]).unwrap();
+        let md = std::fs::read_to_string(
+            tmp.path()
+                .join("docs")
+                .join("agileplus")
+                .join("my-feature")
+                .join("status.md"),
+        )
+        .unwrap();
+        assert!(md.contains("WP One"));
+        assert!(md.contains("WP Two"));
+        assert!(md.contains("WP Three"));
+    }
+
+    #[test]
+    fn commit_materialization_with_custom_message() {
+        let tmp = tempfile::TempDir::new().unwrap();
+        {
+            let repo = git2::Repository::init(tmp.path()).unwrap();
+            make_initial_commit(&repo);
+        }
+        let adapter = GitVcsAdapter::new(tmp.path().to_path_buf());
+        let f = make_feature();
+        materialize_feature(&adapter, &f, &[]).unwrap();
+        let oid = commit_materialization(&adapter, &f.slug, Some("custom msg"))
+            .unwrap();
+        assert_eq!(oid.len(), 40);
+
+        // Verify the commit message
+        let repo = git2::Repository::open(tmp.path()).unwrap();
+        let head = repo.head().unwrap();
+        let commit = head.peel_to_commit().unwrap();
+        assert_eq!(commit.message(), Some("custom msg"));
+    }
+
+    #[test]
+    fn commit_materialization_default_message() {
+        let tmp = tempfile::TempDir::new().unwrap();
+        {
+            let repo = git2::Repository::init(tmp.path()).unwrap();
+            make_initial_commit(&repo);
+        }
+        let adapter = GitVcsAdapter::new(tmp.path().to_path_buf());
+        let f = make_feature();
+        materialize_feature(&adapter, &f, &[]).unwrap();
+        let oid = commit_materialization(&adapter, &f.slug, None).unwrap();
+        assert_eq!(oid.len(), 40);
+
+        let repo = git2::Repository::open(tmp.path()).unwrap();
+        let head = repo.head().unwrap();
+        let commit = head.peel_to_commit().unwrap();
+        assert!(commit.message().unwrap().contains("my-feature"));
+    }
+
+    #[test]
+    fn materialize_and_commit_with_multiple_wps() {
+        let tmp = tempfile::TempDir::new().unwrap();
+        {
+            let repo = git2::Repository::init(tmp.path()).unwrap();
+            make_initial_commit(&repo);
+        }
+        let adapter = GitVcsAdapter::new(tmp.path().to_path_buf());
+        let f = make_feature();
+        let wp1 = make_wp(10, "First");
+        let wp2 = make_wp(20, "Second");
+        let oid = materialize_and_commit(&adapter, &f, &[wp1, wp2]).unwrap();
+        assert_eq!(oid.len(), 40);
+
+        // Verify WP files exist
+        let wp1_path = tmp
+            .path()
+            .join("docs/agileplus/my-feature/work-packages/10.json");
+        let wp2_path = tmp
+            .path()
+            .join("docs/agileplus/my-feature/work-packages/20.json");
+        assert!(wp1_path.exists());
+        assert!(wp2_path.exists());
+    }
+
+    #[test]
+    fn render_meta_json_materialized_at_is_present() {
+        let f = make_feature();
+        let v = render_meta_json(&f);
+        assert!(v["materialized_at"].is_string());
+    }
+
+    #[test]
+    fn render_wp_json_pr_url() {
+        let mut wp = make_wp(1, "WP");
+        wp.pr_url = Some("https://github.com/org/repo/pull/42".into());
+        let v = render_wp_json(&wp);
+        assert_eq!(v["pr_url"], "https://github.com/org/repo/pull/42");
+    }
+
+    #[test]
+    fn render_wp_json_null_pr_url_when_none() {
+        let wp = make_wp(1, "WP");
+        let v = render_wp_json(&wp);
+        assert!(v["pr_url"].is_null());
+    }
+
+    #[test]
+    fn render_wp_json_title() {
+        let wp = make_wp(42, "Fix the thing");
+        let v = render_wp_json(&wp);
+        assert_eq!(v["title"], "Fix the thing");
+    }
+
+    #[test]
+    fn render_wp_json_sequence() {
+        let wp = make_wp(1, "WP");
+        let v = render_wp_json(&wp);
+        assert_eq!(v["sequence"], 1);
+    }
 }

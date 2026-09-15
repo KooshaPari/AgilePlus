@@ -514,4 +514,295 @@ mod tests {
             "10k-node impact analysis exceeded 5% regression gate: {elapsed:?}"
         );
     }
+
+    // -----------------------------------------------------------------------
+    // Additional tests — coverage for untested paths
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn affected_kinds_returns_set() {
+        let l1 = make_link(req("FR-001"), test("T-001"), TraceLinkType::Verifies, 0.9);
+        let matrix = make_matrix(vec![l1]);
+        let report = compute_impact(&matrix, &[req("FR-001")], &ImpactConfig::default());
+        let kinds = report.affected_kinds();
+        assert!(kinds.contains("requirement"));
+        assert!(kinds.contains("test"));
+    }
+
+    #[test]
+    fn conflicts_only_returns_conflict_links() {
+        let l1 = make_link(
+            req("FR-001"),
+            test("T-001"),
+            TraceLinkType::ConflictsWith,
+            0.8,
+        );
+        let l2 = make_link(req("FR-001"), test("T-002"), TraceLinkType::Verifies, 0.9);
+        let matrix = make_matrix(vec![l1, l2]);
+        let report = compute_impact(&matrix, &[req("FR-001")], &ImpactConfig::default());
+        let conflicts = conflicts_only(&report);
+        assert_eq!(conflicts.len(), 1);
+        assert_eq!(conflicts[0].link_type, TraceLinkType::ConflictsWith);
+    }
+
+    #[test]
+    fn conflicts_only_empty_when_no_conflicts() {
+        let l1 = make_link(req("FR-001"), test("T-001"), TraceLinkType::Verifies, 0.9);
+        let matrix = make_matrix(vec![l1]);
+        let report = compute_impact(&matrix, &[req("FR-001")], &ImpactConfig::default());
+        assert!(conflicts_only(&report).is_empty());
+    }
+
+    #[test]
+    fn parse_artifact_key_all_variants() {
+        // Requirement
+        let a = parse_artifact_key("FR-001");
+        assert!(matches!(a, ArtifactRef::Requirement { .. }));
+
+        // NFR
+        let a = parse_artifact_key("NFR-001");
+        assert!(matches!(a, ArtifactRef::NonFunctionalRequirement { .. }));
+
+        // Test
+        let a = parse_artifact_key("test:T-001");
+        assert!(matches!(a, ArtifactRef::Test { id } if id == "T-001"));
+
+        // CodeEntity
+        let a = parse_artifact_key("code:src/main.rs");
+        assert!(matches!(a, ArtifactRef::CodeEntity { id, .. } if id == "src/main.rs"));
+
+        // Journey
+        let a = parse_artifact_key("journey:j1");
+        assert!(matches!(a, ArtifactRef::Journey { id } if id == "j1"));
+
+        // AgentRun
+        let a = parse_artifact_key("agent:run-1");
+        assert!(matches!(a, ArtifactRef::AgentRun { id } if id == "run-1"));
+
+        // Evidence
+        let a = parse_artifact_key("evidence:ev-1");
+        assert!(matches!(a, ArtifactRef::Evidence { id, .. } if id == "ev-1"));
+
+        // Document
+        let a = parse_artifact_key("document:doc-1");
+        assert!(matches!(a, ArtifactRef::Document { id, .. } if id == "doc-1"));
+
+        // Unknown fallback -> Test
+        let a = parse_artifact_key("unknown-thing");
+        assert!(matches!(a, ArtifactRef::Test { id } if id == "unknown-thing"));
+    }
+
+    #[test]
+    fn infer_kind_all_prefixes() {
+        assert_eq!(infer_kind("FR-001"), "requirement");
+        assert_eq!(infer_kind("NFR-001"), "nfr");
+        assert_eq!(infer_kind("test:T-001"), "test");
+        assert_eq!(infer_kind("code:src/main.rs"), "code");
+        assert_eq!(infer_kind("journey:j1"), "journey");
+        assert_eq!(infer_kind("agent:run-1"), "agent");
+        assert_eq!(infer_kind("evidence:ev-1"), "evidence");
+        assert_eq!(infer_kind("document:doc-1"), "document");
+        assert_eq!(infer_kind("unknown"), "unknown");
+    }
+
+    #[test]
+    fn artifact_key_all_variants() {
+        let a = ArtifactRef::Requirement {
+            id: RequirementId::from_string("FR-001"),
+        };
+        assert_eq!(artifact_key(&a), "FR-001");
+
+        let a = ArtifactRef::NonFunctionalRequirement {
+            id: crate::ids::NfrId::from_string("001"),
+        };
+        assert!(artifact_key(&a).starts_with("NFR-"));
+
+        let a = ArtifactRef::Test {
+            id: "T-1".to_string(),
+        };
+        assert_eq!(artifact_key(&a), "test:T-1");
+
+        let a = ArtifactRef::CodeEntity {
+            id: "mod::fn".to_string(),
+            lang: "rust".to_string(),
+        };
+        assert_eq!(artifact_key(&a), "code:mod::fn");
+
+        let a = ArtifactRef::Journey {
+            id: "j1".to_string(),
+        };
+        assert_eq!(artifact_key(&a), "journey:j1");
+
+        let a = ArtifactRef::AgentRun {
+            id: "run-1".to_string(),
+        };
+        assert_eq!(artifact_key(&a), "agent:run-1");
+
+        let a = ArtifactRef::Evidence {
+            id: "ev-1".to_string(),
+            sha256: "0".repeat(64),
+        };
+        assert_eq!(artifact_key(&a), "evidence:ev-1");
+
+        let a = ArtifactRef::Document {
+            id: "doc-1".to_string(),
+            range: None,
+        };
+        assert_eq!(artifact_key(&a), "document:doc-1");
+    }
+
+    #[test]
+    fn kind_weight_custom_config() {
+        let mut cfg = ImpactConfig::default();
+        cfg.kind_weights.insert("test".to_string(), 2.0);
+        let w = kind_weight("test:T-001", &cfg);
+        assert_eq!(w, 2.0);
+    }
+
+    #[test]
+    fn kind_weight_unknown_falls_back_to_default() {
+        let cfg = ImpactConfig::default();
+        // "unknown" kind -> 0.5
+        let w = kind_weight("unknown-thing", &cfg);
+        assert_eq!(w, 0.5);
+    }
+
+    #[test]
+    fn multiple_seeds_combined() {
+        let l1 = make_link(req("FR-001"), test("T-001"), TraceLinkType::Verifies, 0.9);
+        let l2 = make_link(req("FR-002"), test("T-002"), TraceLinkType::Verifies, 0.8);
+        let matrix = make_matrix(vec![l1, l2]);
+        let report = compute_impact(
+            &matrix,
+            &[req("FR-001"), req("FR-002")],
+            &ImpactConfig::default(),
+        );
+        // Both seeds + their tests
+        assert!(report.blast.len() >= 4);
+    }
+
+    #[test]
+    fn diamond_shaped_graph() {
+        // A -> B, A -> C, B -> D, C -> D
+        let l1 = make_link(req("FR-001"), test("T-001"), TraceLinkType::Satisfies, 0.9);
+        let l2 = make_link(req("FR-001"), test("T-002"), TraceLinkType::Satisfies, 0.8);
+        let l3 = make_link(test("T-001"), req("FR-002"), TraceLinkType::Satisfies, 0.9);
+        let l4 = make_link(test("T-002"), req("FR-002"), TraceLinkType::Satisfies, 0.8);
+        let matrix = make_matrix(vec![l1, l2, l3, l4]);
+        let report = compute_impact(&matrix, &[req("FR-001")], &ImpactConfig::default());
+        // All 4 nodes should be reached
+        assert!(report.blast.len() >= 4);
+    }
+
+    #[test]
+    fn impact_report_default_is_empty() {
+        let report = ImpactReport::default();
+        assert!(report.seeds.is_empty());
+        assert!(report.blast.is_empty());
+        assert_eq!(report.total_score, 0.0);
+        assert!(report.by_kind.is_empty());
+        assert!(!report.truncated);
+        assert_eq!(report.max_depth_seen, 0);
+        assert!(report.conflicts.is_empty());
+    }
+
+    #[test]
+    fn impact_report_serde_roundtrip() {
+        let l1 = make_link(req("FR-001"), test("T-001"), TraceLinkType::Verifies, 0.9);
+        let matrix = make_matrix(vec![l1]);
+        let report = compute_impact(&matrix, &[req("FR-001")], &ImpactConfig::default());
+        let json = serde_json::to_string(&report).unwrap();
+        let back: ImpactReport = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.seeds, report.seeds);
+        assert_eq!(back.blast.len(), report.blast.len());
+        assert!((back.total_score - report.total_score).abs() < 0.001);
+    }
+
+    #[test]
+    fn blast_node_serde_roundtrip() {
+        let bn = BlastNode {
+            artifact: req("FR-001"),
+            depth: 2,
+            via: vec![TraceLinkType::Satisfies],
+            score: 0.75,
+        };
+        let json = serde_json::to_string(&bn).unwrap();
+        let back: BlastNode = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.depth, 2);
+        assert_eq!(back.via, vec![TraceLinkType::Satisfies]);
+        assert!((back.score - 0.75).abs() < 0.001);
+    }
+
+    #[test]
+    fn impact_config_serde_roundtrip() {
+        let cfg = ImpactConfig::default();
+        let json = serde_json::to_string(&cfg).unwrap();
+        let back: ImpactConfig = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.max_depth, 10);
+        assert_eq!(back.conflict_multiplier, -1.5);
+        assert_eq!(back.positive_multiplier, 1.0);
+    }
+
+    #[test]
+    fn zero_max_depth_is_unbounded() {
+        let cfg = ImpactConfig {
+            max_depth: 0,
+            ..Default::default()
+        };
+        // Chain: FR-001 -> T-001 -> T-002 -> T-003
+        let l1 = make_link(req("FR-001"), test("T-001"), TraceLinkType::Satisfies, 0.9);
+        let l2 = make_link(test("T-001"), test("T-002"), TraceLinkType::DerivesFrom, 0.8);
+        let l3 = make_link(test("T-002"), test("T-003"), TraceLinkType::DerivesFrom, 0.7);
+        let matrix = make_matrix(vec![l1, l2, l3]);
+        let report = compute_impact(&matrix, &[req("FR-001")], &cfg);
+        assert!(!report.truncated);
+        // All 4 nodes reached
+        assert!(report.blast.len() >= 4);
+    }
+
+    #[test]
+    fn by_kind_buckets_correctly() {
+        let l1 = make_link(req("FR-001"), test("T-001"), TraceLinkType::Verifies, 0.9);
+        let matrix = make_matrix(vec![l1]);
+        let report = compute_impact(&matrix, &[req("FR-001")], &ImpactConfig::default());
+        assert!(report.by_kind.contains_key("requirement"));
+        assert!(report.by_kind.contains_key("test"));
+    }
+
+    #[test]
+    fn total_score_includes_seed_weight() {
+        let matrix = make_matrix(vec![]);
+        let report = compute_impact(&matrix, &[req("FR-001")], &ImpactConfig::default());
+        // Seed weight for "requirement" is 1.0
+        assert!(report.total_score > 0.0);
+    }
+
+    #[test]
+    fn nfr_seed_uses_nfr_weight() {
+        let cfg = ImpactConfig::default();
+        let nfr = ArtifactRef::NonFunctionalRequirement {
+            id: crate::ids::NfrId::from_string("001"),
+        };
+        let matrix = make_matrix(vec![]);
+        let report = compute_impact(&matrix, &[nfr], &cfg);
+        // NFR weight is 1.5
+        assert!(report.total_score > 1.0);
+    }
+
+    #[test]
+    fn custom_positive_multiplier_boosts_score() {
+        let l1 = make_link(req("FR-001"), test("T-001"), TraceLinkType::Satisfies, 1.0);
+        let matrix = make_matrix(vec![l1]);
+        let cfg_default = ImpactConfig::default();
+        let report_default =
+            compute_impact(&matrix, &[req("FR-001")], &cfg_default);
+
+        let cfg_boosted = ImpactConfig {
+            positive_multiplier: 3.0,
+            ..Default::default()
+        };
+        let report_boosted =
+            compute_impact(&matrix, &[req("FR-001")], &cfg_boosted);
+        assert!(report_boosted.total_score > report_default.total_score);
+    }
 }
