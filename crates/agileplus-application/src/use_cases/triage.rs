@@ -753,7 +753,7 @@ mod tests {
     #[test]
     fn done_marks_wp_done() {
         let repo = MemRepo::with_items(vec![make_item("WP01", vec![])]);
-        let state = AppState::new(repo);
+        let mut state = AppState::new(repo);
         let req = DoneRequest {
             claim_id: "c1".to_string(),
             wp_id: "WP01".to_string(),
