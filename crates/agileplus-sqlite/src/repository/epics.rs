@@ -170,3 +170,155 @@ pub fn delete_epic(conn: &Connection, id: i64) -> Result<(), DomainError> {
     }
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::SqliteStorageAdapter;
+
+    fn setup_project(conn: &Connection, project_id: i64) {
+        conn.execute(
+            "INSERT INTO projects (id, slug, name, description, created_at, updated_at) VALUES (?1, ?2, ?3, '', ?4, ?4)",
+            params![project_id, format!("proj-{project_id}"), format!("Project {project_id}"), chrono::Utc::now().to_rfc3339()],
+        )
+        .unwrap();
+    }
+
+    fn sample_epic(project_id: i64, title: &str) -> Epic {
+        Epic {
+            id: 0,
+            project_id,
+            title: title.to_string(),
+            description: Some(format!("Desc for {title}")),
+            status: EpicStatus::Backlog,
+            owner_id: None,
+            requirement_id: None,
+            created_at: chrono::Utc::now(),
+            updated_at: chrono::Utc::now(),
+        }
+    }
+
+    #[test]
+    fn create_and_get_epic_by_id() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        setup_project(&conn, 1);
+        let id = create_epic(&conn, &sample_epic(1, "Auth System")).unwrap();
+        assert!(id > 0);
+        let fetched = get_epic_by_id(&conn, id).unwrap().unwrap();
+        assert_eq!(fetched.title, "Auth System");
+        assert_eq!(fetched.status, EpicStatus::Backlog);
+        assert_eq!(fetched.project_id, 1);
+    }
+
+    #[test]
+    fn get_epic_by_id_nonexistent_returns_none() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        assert!(get_epic_by_id(&conn, 99999).unwrap().is_none());
+    }
+
+    #[test]
+    fn update_epic_status_works() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        setup_project(&conn, 1);
+        let id = create_epic(&conn, &sample_epic(1, "Epic A")).unwrap();
+        update_epic_status(&conn, id, EpicStatus::Active).unwrap();
+        let fetched = get_epic_by_id(&conn, id).unwrap().unwrap();
+        assert_eq!(fetched.status, EpicStatus::Active);
+    }
+
+    #[test]
+    fn update_epic_status_nonexistent_errors() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let err = update_epic_status(&conn, 99999, EpicStatus::Done).unwrap_err();
+        assert!(format!("{err}").contains("99999"));
+    }
+
+    #[test]
+    fn list_epics_by_project_filters() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        setup_project(&conn, 1);
+        setup_project(&conn, 2);
+        create_epic(&conn, &sample_epic(1, "P1 Epic")).unwrap();
+        create_epic(&conn, &sample_epic(1, "P1 Epic 2")).unwrap();
+        create_epic(&conn, &sample_epic(2, "P2 Epic")).unwrap();
+
+        let p1 = list_epics_by_project(&conn, 1).unwrap();
+        assert_eq!(p1.len(), 2);
+        let p2 = list_epics_by_project(&conn, 2).unwrap();
+        assert_eq!(p2.len(), 1);
+    }
+
+    #[test]
+    fn list_epics_by_project_empty() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let list = list_epics_by_project(&conn, 999).unwrap();
+        assert!(list.is_empty());
+    }
+
+    #[test]
+    fn delete_epic_works() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        setup_project(&conn, 1);
+        let id = create_epic(&conn, &sample_epic(1, "To Delete")).unwrap();
+        delete_epic(&conn, id).unwrap();
+        assert!(get_epic_by_id(&conn, id).unwrap().is_none());
+    }
+
+    #[test]
+    fn delete_epic_nonexistent_errors() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let err = delete_epic(&conn, 99999).unwrap_err();
+        assert!(format!("{err}").contains("99999"));
+    }
+
+    #[test]
+    fn upsert_epic_creates_when_no_requirement_id() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        setup_project(&conn, 1);
+        let epic = sample_epic(1, "No Req");
+        let id = upsert_epic_by_requirement_id(&conn, &epic).unwrap();
+        let fetched = get_epic_by_id(&conn, id).unwrap().unwrap();
+        assert_eq!(fetched.title, "No Req");
+    }
+
+    #[test]
+    fn upsert_epic_by_requirement_id_creates_new() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        setup_project(&conn, 1);
+        let mut epic = sample_epic(1, "FR Epic");
+        epic.requirement_id = Some("FR-001".to_string());
+        let id = upsert_epic_by_requirement_id(&conn, &epic).unwrap();
+        let fetched = get_epic_by_requirement_id(&conn, "FR-001").unwrap().unwrap();
+        assert_eq!(fetched.id, id);
+        assert_eq!(fetched.requirement_id.as_deref(), Some("FR-001"));
+    }
+
+    #[test]
+    fn upsert_epic_by_requirement_id_is_idempotent() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        setup_project(&conn, 1);
+        let mut epic = sample_epic(1, "FR Epic");
+        epic.requirement_id = Some("FR-001".to_string());
+        let id1 = upsert_epic_by_requirement_id(&conn, &epic).unwrap();
+        let id2 = upsert_epic_by_requirement_id(&conn, &epic).unwrap();
+        assert_eq!(id1, id2);
+    }
+
+    #[test]
+    fn get_epic_by_requirement_id_nonexistent_returns_none() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        assert!(get_epic_by_requirement_id(&conn, "FR-999").unwrap().is_none());
+    }
+}
