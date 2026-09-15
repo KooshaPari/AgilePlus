@@ -18,6 +18,9 @@ pub mod sync;
 pub mod sync_queue;
 pub mod webhook;
 
+#[cfg(test)]
+mod extended_tests;
+
 pub use client::PlaneClient;
 pub use client::{
     PlaneCreateCycleRequest, PlaneCreateModuleRequest, PlaneCycleResponse, PlaneModuleResponse,
