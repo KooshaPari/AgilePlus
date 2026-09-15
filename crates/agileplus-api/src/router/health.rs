@@ -142,3 +142,78 @@ fn extract_host_port(url: &str) -> String {
         format!("{host_port}:80")
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn extract_host_port_bare() {
+        assert_eq!(extract_host_port("localhost:5432"), "localhost:5432");
+    }
+
+    #[test]
+    fn extract_host_port_http() {
+        assert_eq!(extract_host_port("http://10.0.0.1:8080"), "10.0.0.1:8080");
+    }
+
+    #[test]
+    fn extract_host_port_https() {
+        assert_eq!(extract_host_port("https://example.com:443"), "example.com:443");
+    }
+
+    #[test]
+    fn extract_host_port_nats() {
+        assert_eq!(extract_host_port("nats://nats.local:4222"), "nats.local:4222");
+    }
+
+    #[test]
+    fn extract_host_port_nats_no_port() {
+        assert_eq!(extract_host_port("nats://nats.local"), "nats.local:4222");
+    }
+
+    #[test]
+    fn extract_host_port_bolt() {
+        assert_eq!(extract_host_port("bolt://neo4j:7687"), "neo4j:7687");
+    }
+
+    #[test]
+    fn extract_host_port_bolt_routing() {
+        assert_eq!(
+            extract_host_port("bolt+routing://neo4j:7687"),
+            "neo4j:7687"
+        );
+    }
+
+    #[test]
+    fn extract_host_port_bare_no_port() {
+        assert_eq!(extract_host_port("myhost"), "myhost:80");
+    }
+
+    #[test]
+    fn extract_host_port_strips_path() {
+        assert_eq!(
+            extract_host_port("http://host:8080/api/health"),
+            "host:8080"
+        );
+    }
+
+    #[test]
+    fn extract_host_port_preserves_query() {
+        // The function strips trailing paths via split('/') but does not
+        // strip query strings (which lack a leading '/').
+        assert_eq!(
+            extract_host_port("http://host:8080?key=val"),
+            "host:8080?key=val"
+        );
+    }
+
+    #[test]
+    fn simple_health_handler_returns_200() {
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        rt.block_on(async {
+            let resp = simple_health_handler().await;
+            assert_eq!(resp.0.status, "healthy");
+        });
+    }
+}

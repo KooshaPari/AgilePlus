@@ -65,3 +65,114 @@ impl From<agileplus_domain::error::DomainError> for ApiError {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use axum::http::StatusCode;
+    use axum::response::IntoResponse;
+
+    #[test]
+    fn not_found_returns_404() {
+        let err = ApiError::NotFound("missing".into());
+        let resp = err.into_response();
+        assert_eq!(resp.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[test]
+    fn bad_request_returns_400() {
+        let err = ApiError::BadRequest("invalid".into());
+        let resp = err.into_response();
+        assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
+    }
+
+    #[test]
+    fn unauthorized_returns_401() {
+        let err = ApiError::Unauthorized("no key".into());
+        let resp = err.into_response();
+        assert_eq!(resp.status(), StatusCode::UNAUTHORIZED);
+    }
+
+    #[test]
+    fn conflict_returns_409() {
+        let err = ApiError::Conflict("dup".into());
+        let resp = err.into_response();
+        assert_eq!(resp.status(), StatusCode::CONFLICT);
+    }
+
+    #[test]
+    fn template_returns_500() {
+        let err = ApiError::Template("bad tpl".into());
+        let resp = err.into_response();
+        assert_eq!(resp.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    #[test]
+    fn internal_returns_500() {
+        let err = ApiError::Internal("something broke".into());
+        let resp = err.into_response();
+        assert_eq!(resp.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    #[test]
+    fn error_display_messages() {
+        assert_eq!(ApiError::NotFound("x".into()).to_string(), "x");
+        assert_eq!(ApiError::BadRequest("y".into()).to_string(), "y");
+        assert_eq!(ApiError::Unauthorized("z".into()).to_string(), "z");
+        assert_eq!(ApiError::Conflict("c".into()).to_string(), "c");
+    }
+
+    #[test]
+    fn internal_error_display_is_generic() {
+        let err = ApiError::Internal("db down".into());
+        assert_eq!(err.to_string(), "internal server error");
+    }
+
+    #[test]
+    fn domain_not_found_maps_to_api_not_found() {
+        let domain_err = agileplus_domain::error::DomainError::NotFound("feat".into());
+        let api_err: ApiError = domain_err.into();
+        match api_err {
+            ApiError::NotFound(msg) => assert_eq!(msg, "feat"),
+            _ => panic!("expected NotFound"),
+        }
+    }
+
+    #[test]
+    fn domain_conflict_maps_to_api_conflict() {
+        let domain_err = agileplus_domain::error::DomainError::Conflict("dup".into());
+        let api_err: ApiError = domain_err.into();
+        match api_err {
+            ApiError::Conflict(msg) => assert_eq!(msg, "dup"),
+            _ => panic!("expected Conflict"),
+        }
+    }
+
+    #[test]
+    fn domain_invalid_transition_maps_to_api_conflict() {
+        let domain_err = agileplus_domain::error::DomainError::InvalidTransition {
+            from: "a".into(),
+            to: "b".into(),
+            reason: "no".into(),
+        };
+        let api_err: ApiError = domain_err.into();
+        match api_err {
+            ApiError::Conflict(msg) => {
+                assert!(msg.contains("a"));
+                assert!(msg.contains("b"));
+                assert!(msg.contains("no"));
+            }
+            _ => panic!("expected Conflict for InvalidTransition"),
+        }
+    }
+
+    #[test]
+    fn domain_not_implemented_maps_to_api_internal() {
+        let domain_err = agileplus_domain::error::DomainError::NotImplemented;
+        let api_err: ApiError = domain_err.into();
+        match api_err {
+            ApiError::Internal(_) => {}
+            _ => panic!("expected Internal for NotImplemented"),
+        }
+    }
+}

@@ -80,4 +80,69 @@ mod tests {
         assert_eq!(received.len(), 1);
         assert_eq!(received[0].event.as_ref().unwrap().feature_slug, "feat-a");
     }
+
+    #[tokio::test]
+    async fn stream_empty_filter_matches_all() {
+        let bus = EventBus::new(16);
+        let rx = bus.subscribe();
+        let mut stream = agent_event_stream(rx, String::new());
+
+        bus.publish(AgentEvent::AgentStarted {
+            feature_slug: "feat-x".into(),
+            wp_sequence: 1,
+            agent_id: "ag".into(),
+        });
+        bus.publish(AgentEvent::PrCreated {
+            feature_slug: "feat-y".into(),
+            wp_sequence: 2,
+            pr_url: "u".into(),
+        });
+        drop(bus);
+
+        let mut received = Vec::new();
+        while let Some(item) = tokio_stream::StreamExt::next(&mut stream).await {
+            received.push(item.unwrap());
+        }
+        assert_eq!(received.len(), 2);
+    }
+
+    #[test]
+    fn domain_event_to_proto_fields() {
+        let event = AgentEvent::ReviewReceived {
+            feature_slug: "feat-a".into(),
+            wp_sequence: 3,
+            review_status: "approved".into(),
+            comments: 5,
+        };
+        let proto = domain_event_to_proto(event);
+        assert_eq!(proto.event_type, "review_received");
+        assert_eq!(proto.feature_slug, "feat-a");
+        assert_eq!(proto.wp_sequence, 3);
+        assert!(!proto.payload.is_empty());
+        assert!(!proto.timestamp.is_empty());
+        assert!(proto.timestamp.contains("T"));
+    }
+
+    #[test]
+    fn domain_event_to_proto_agent_id() {
+        let event = AgentEvent::AgentStarted {
+            feature_slug: "f".into(),
+            wp_sequence: 1,
+            agent_id: "agent-7".into(),
+        };
+        let proto = domain_event_to_proto(event);
+        assert_eq!(proto.agent_id, "agent-7");
+    }
+
+    #[test]
+    fn domain_event_to_proto_empty_agent_id() {
+        let event = AgentEvent::WpStateChanged {
+            feature_slug: "f".into(),
+            wp_sequence: 1,
+            old_state: "a".into(),
+            new_state: "b".into(),
+        };
+        let proto = domain_event_to_proto(event);
+        assert_eq!(proto.agent_id, "");
+    }
 }

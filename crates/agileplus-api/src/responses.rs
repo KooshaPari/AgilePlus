@@ -384,3 +384,202 @@ impl DetailedHealthResponse {
         "healthy"
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn simple_health_healthy() {
+        let h = SimpleHealthResponse::healthy();
+        assert_eq!(h.status, "healthy");
+        assert_eq!(h.service, "agileplus-api");
+        assert!(!h.version.is_empty());
+    }
+
+    #[test]
+    fn simple_health_ok() {
+        let h = SimpleHealthResponse::ok();
+        assert_eq!(h.status, "ok");
+    }
+
+    #[test]
+    fn health_response_ok() {
+        let h = HealthResponse::ok();
+        assert_eq!(h.status, "ok");
+        assert!(!h.version.is_empty());
+    }
+
+    #[test]
+    fn service_health_healthy() {
+        let h = ServiceHealth::healthy(42);
+        assert_eq!(h.status, "healthy");
+        assert_eq!(h.latency_ms, Some(42));
+        assert!(h.error.is_none());
+    }
+
+    #[test]
+    fn service_health_degraded() {
+        let h = ServiceHealth::degraded("slow");
+        assert_eq!(h.status, "degraded");
+        assert!(h.latency_ms.is_none());
+        assert_eq!(h.error.as_deref(), Some("slow"));
+    }
+
+    #[test]
+    fn service_health_unavailable() {
+        let h = ServiceHealth::unavailable("down");
+        assert_eq!(h.status, "unavailable");
+        assert_eq!(h.error.as_deref(), Some("down"));
+    }
+
+    #[test]
+    fn service_health_not_configured() {
+        let h = ServiceHealth::not_configured();
+        assert_eq!(h.status, "not_configured");
+        assert!(h.error.is_some());
+    }
+
+    #[test]
+    fn detailed_health_basic() {
+        let h = DetailedHealthResponse::basic(120);
+        assert_eq!(h.status, "healthy");
+        assert_eq!(h.api.uptime_seconds, 120);
+        assert!(h.services.contains_key("sqlite"));
+    }
+
+    #[test]
+    fn compute_status_all_healthy() {
+        let mut services = std::collections::HashMap::new();
+        services.insert("a".into(), ServiceHealth::healthy(1));
+        assert_eq!(DetailedHealthResponse::compute_status(&services), "healthy");
+    }
+
+    #[test]
+    fn compute_status_has_unavailable() {
+        let mut services = std::collections::HashMap::new();
+        services.insert("a".into(), ServiceHealth::healthy(1));
+        services.insert("b".into(), ServiceHealth::unavailable("x"));
+        assert_eq!(DetailedHealthResponse::compute_status(&services), "unavailable");
+    }
+
+    #[test]
+    fn compute_status_has_degraded() {
+        let mut services = std::collections::HashMap::new();
+        services.insert("a".into(), ServiceHealth::degraded("slow"));
+        assert_eq!(DetailedHealthResponse::compute_status(&services), "degraded");
+    }
+
+    #[test]
+    fn compute_status_ignores_not_configured() {
+        let mut services = std::collections::HashMap::new();
+        services.insert("a".into(), ServiceHealth::not_configured());
+        assert_eq!(DetailedHealthResponse::compute_status(&services), "healthy");
+    }
+
+    #[test]
+    fn feature_response_from_domain() {
+        let f = agileplus_domain::domain::feature::Feature::new(
+            "my-slug", "My Feature", [0u8; 32], Some("main"),
+        );
+        let resp = FeatureResponse::from(f);
+        assert_eq!(resp.slug, "my-slug");
+        assert_eq!(resp.name, "My Feature");
+        assert_eq!(resp.state, "created");
+        assert_eq!(resp.target_branch, "main");
+        assert!(resp.created_at.contains("T"));
+    }
+
+    #[test]
+    fn work_package_response_from_domain() {
+        use agileplus_domain::domain::work_package::WorkPackage;
+        let wp = WorkPackage::new(10, "Test WP", 3, "must do x");
+        let resp = WorkPackageResponse::from(wp);
+        assert_eq!(resp.feature_id, 10);
+        assert_eq!(resp.title, "Test WP");
+        assert_eq!(resp.sequence, 3);
+        assert_eq!(resp.state, "planned");
+        assert_eq!(resp.acceptance_criteria, "must do x");
+        assert!(resp.pr_url.is_none());
+    }
+
+    #[test]
+    fn audit_entry_response_hash_is_hex() {
+        use chrono::DateTime;
+        let entry = agileplus_domain::domain::audit::AuditEntry {
+            id: 1,
+            feature_id: 10,
+            wp_id: Some(5),
+            timestamp: DateTime::from_timestamp(1_000_000, 0).unwrap(),
+            actor: "user".into(),
+            transition: "Created->Specified".into(),
+            evidence_refs: vec![],
+            prev_hash: [0; 32],
+            hash: [0xAB; 32],
+            event_id: None,
+            archived_to: None,
+        };
+        let resp = AuditEntryResponse::from(entry);
+        assert_eq!(resp.hash, "ab".repeat(32));
+        assert_eq!(resp.wp_id, Some(5));
+    }
+
+    #[test]
+    fn governance_response_from_domain() {
+        let contract = agileplus_domain::domain::governance::GovernanceContract {
+            id: 1,
+            feature_id: 10,
+            version: 3,
+            rules: vec![
+                agileplus_domain::domain::governance::GovernanceRule {
+                    transition: "validate".into(),
+                    required_evidence: vec![],
+                    policy_refs: vec![],
+                },
+                agileplus_domain::domain::governance::GovernanceRule {
+                    transition: "ship".into(),
+                    required_evidence: vec![],
+                    policy_refs: vec![],
+                },
+            ],
+            bound_at: chrono::Utc::now(),
+        };
+        let resp = GovernanceResponse::from(contract);
+        assert_eq!(resp.id, 1);
+        assert_eq!(resp.feature_id, 10);
+        assert_eq!(resp.version, 3);
+        assert_eq!(resp.rules_count, 2);
+    }
+
+    #[test]
+    fn project_response_from_domain() {
+        use chrono::Utc;
+        let p = agileplus_domain::domain::project::Project {
+            id: 1,
+            slug: "proj".into(),
+            name: "My Project".into(),
+            description: Some("desc".into()),
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+        };
+        let resp = ProjectResponse::from(p);
+        assert_eq!(resp.slug, "proj");
+        assert_eq!(resp.name, "My Project");
+        assert_eq!(resp.description, Some("desc".into()));
+    }
+
+    #[test]
+    fn project_response_no_description() {
+        use chrono::Utc;
+        let p = agileplus_domain::domain::project::Project {
+            id: 2,
+            slug: "p2".into(),
+            name: "P2".into(),
+            description: None,
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+        };
+        let resp = ProjectResponse::from(p);
+        assert!(resp.description.is_none());
+    }
+}

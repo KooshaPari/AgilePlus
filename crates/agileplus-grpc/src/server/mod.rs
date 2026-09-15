@@ -1019,4 +1019,87 @@ mod tests {
         assert!(violation.message.contains("FR-053:ci_output"));
         assert!(!violation.message.contains("feature"));
     }
+
+    #[test]
+    fn domain_error_not_implemented_maps_to_unimplemented() {
+        let status = domain_error_to_status(agileplus_domain::error::DomainError::NotImplemented);
+        assert_eq!(status.code(), tonic::Code::Unimplemented);
+    }
+
+    #[test]
+    fn domain_error_generic_maps_to_internal() {
+        let status = domain_error_to_status(agileplus_domain::error::DomainError::Storage(
+            "db down".into(),
+        ));
+        assert_eq!(status.code(), tonic::Code::Internal);
+    }
+
+    #[test]
+    fn parse_evidence_requirement_all_known_types() {
+        let cases = [
+            ("FR-1:test_result", Some(EvidenceType::TestResult)),
+            ("FR-2:ci_output", Some(EvidenceType::CiOutput)),
+            ("FR-3:review_approval", Some(EvidenceType::ReviewApproval)),
+            ("FR-4:security_scan", Some(EvidenceType::SecurityScan)),
+            ("FR-5:lint_result", Some(EvidenceType::LintResult)),
+            ("FR-6:manual_attestation", Some(EvidenceType::ManualAttestation)),
+        ];
+        for (raw, expected_type) in cases {
+            let (fr_id, etype, recognized) = parse_evidence_requirement(raw);
+            assert!(recognized, "should recognize {raw}");
+            assert_eq!(etype, expected_type, "wrong type for {raw}");
+            assert!(fr_id.starts_with("FR-"));
+        }
+    }
+
+    #[test]
+    fn parse_evidence_requirement_no_colon() {
+        let (fr_id, etype, recognized) = parse_evidence_requirement("FR-100");
+        assert_eq!(fr_id, "FR-100");
+        assert!(etype.is_none());
+        assert!(recognized);
+    }
+
+    #[test]
+    fn evidence_satisfies_requires_matching_wp_id() {
+        let evidence = vec![Evidence {
+            id: 1,
+            wp_id: 10,
+            fr_id: "FR-1".into(),
+            evidence_type: EvidenceType::TestResult,
+            artifact_path: "test://1".into(),
+            metadata: None,
+            created_at: Utc::now(),
+        }];
+        // Wrong WP ID
+        assert!(!evidence_satisfies_requirement(
+            &evidence,
+            &HashSet::from([99]),
+            "FR-1",
+            None,
+        ));
+        // Matching WP ID
+        assert!(evidence_satisfies_requirement(
+            &evidence,
+            &HashSet::from([10]),
+            "FR-1",
+            None,
+        ));
+    }
+
+    #[test]
+    fn evidence_satisfies_empty_evidence_returns_false() {
+        let evidence: Vec<Evidence> = vec![];
+        assert!(!evidence_satisfies_requirement(
+            &evidence,
+            &HashSet::from([1]),
+            "FR-1",
+            None,
+        ));
+    }
+
+    #[test]
+    fn project_scope_validator_accepts_whitespace_trimmed_scope() {
+        assert!(validate_project_scope(Some("  /repo/a  "), "/repo/a").is_ok());
+    }
 }

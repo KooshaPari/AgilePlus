@@ -172,6 +172,7 @@ impl ProxyResult {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::collections::HashMap;
 
     #[tokio::test]
     async fn proxy_stub_mode_rejects_mutating_command() {
@@ -188,5 +189,69 @@ mod tests {
         let router = ProxyRouter::new(None, None).await;
         assert!(!router.health().agents_reachable);
         assert!(!router.health().integrations_reachable);
+    }
+
+    #[tokio::test]
+    async fn dispatch_integration_command_stub_mode() {
+        let router = ProxyRouter::new(None, None).await;
+        let result = router
+            .dispatch_integration_command("sync", "feat-a")
+            .await;
+        assert!(!result.is_success());
+        assert!(result.message().contains("stub"));
+    }
+
+    #[tokio::test]
+    async fn dispatch_agent_command_stub_mode_contains_feature() {
+        let router = ProxyRouter::new(None, None).await;
+        let result = router
+            .dispatch_agent_command("implement", "my-feature", &Default::default())
+            .await;
+        assert!(!result.is_success());
+        assert!(result.message().contains("my-feature"));
+    }
+
+    #[tokio::test]
+    async fn dispatch_agent_command_stub_mode_contains_command() {
+        let router = ProxyRouter::new(None, None).await;
+        let result = router
+            .dispatch_agent_command("build", "feat", &Default::default())
+            .await;
+        assert!(!result.is_success());
+        assert!(result.message().contains("build"));
+    }
+
+    #[test]
+    fn proxy_result_accessors() {
+        let forwarded = ProxyResult::Forwarded {
+            success: true,
+            message: "ok".into(),
+            outputs: Default::default(),
+        };
+        assert!(forwarded.is_success());
+        assert_eq!(forwarded.message(), "ok");
+        assert!(forwarded.outputs().is_empty());
+
+        let forwarded_with_outputs = ProxyResult::Forwarded {
+            success: true,
+            message: "done".into(),
+            outputs: HashMap::from([("k".into(), "v".into())]),
+        };
+        assert!(forwarded_with_outputs.is_success());
+        assert_eq!(forwarded_with_outputs.outputs().get("k").unwrap(), "v");
+
+        let stub = ProxyResult::Stub {
+            message: "nope".into(),
+        };
+        assert!(!stub.is_success());
+        assert_eq!(stub.message(), "nope");
+        assert!(stub.outputs().is_empty());
+    }
+
+    #[test]
+    fn downstream_health_default() {
+        let h = DownstreamHealth::default();
+        assert!(!h.agents_reachable);
+        assert!(!h.integrations_reachable);
     }
 }
