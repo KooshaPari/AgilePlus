@@ -960,7 +960,7 @@ mod tests {
 
     #[test]
     fn test_plane_api_key_hint_single_char() {
-        assert_eq!(plane_api_key_hint(&Some("x".to_string())), "Configured");
+        assert_eq!(plane_api_key_hint(&Some("x".to_string())), "x••••••x");
     }
 
     #[test]

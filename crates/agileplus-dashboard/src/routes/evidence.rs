@@ -448,8 +448,11 @@ mod tests {
         )
         .unwrap();
 
-        let bundles =
-            load_evidence_bundles_from_disk(dir.to_str().unwrap());
+        // Function reads from CWD, so chdir to temp dir and pass feature_id
+        let orig = std::env::current_dir().unwrap();
+        std::env::set_current_dir(&dir).unwrap();
+        let bundles = load_evidence_bundles_from_disk("42");
+        std::env::set_current_dir(&orig).unwrap();
         assert_eq!(bundles.len(), 1);
 
         let b = &bundles[0];
@@ -498,7 +501,11 @@ mod tests {
         )
         .unwrap();
 
-        let bundles = load_evidence_bundles_from_disk(dir.to_str().unwrap());
+        // Function reads from CWD
+        let orig = std::env::current_dir().unwrap();
+        std::env::set_current_dir(&dir).unwrap();
+        let bundles = load_evidence_bundles_from_disk("99");
+        std::env::set_current_dir(&orig).unwrap();
         assert_eq!(bundles.len(), 1);
         assert_eq!(bundles[0].test_passed, Some(false));
         assert_eq!(bundles[0].status, "generated"); // tests failed => not "verified"
@@ -524,7 +531,10 @@ mod tests {
         )
         .unwrap();
 
-        let bundles = load_evidence_bundles_from_disk(dir.to_str().unwrap());
+        let orig = std::env::current_dir().unwrap();
+        std::env::set_current_dir(&dir).unwrap();
+        let bundles = load_evidence_bundles_from_disk("1");
+        std::env::set_current_dir(&orig).unwrap();
         assert_eq!(bundles.len(), 1);
         assert_eq!(bundles[0].status, "generated");
         assert_eq!(bundles[0].commit_count, 0);
