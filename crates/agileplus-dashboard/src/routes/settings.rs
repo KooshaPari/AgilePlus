@@ -950,4 +950,294 @@ mod tests {
         assert_eq!(store.get("agileplus", PLANESO_KEY).unwrap(), "old-secret");
         std::fs::remove_dir_all(config_path.ancestors().nth(2).unwrap()).unwrap();
     }
+
+    // ── plane_api_key_hint ──────────────────────────────────────────────
+
+    #[test]
+    fn test_plane_api_key_hint_none() {
+        assert_eq!(plane_api_key_hint(&None), "Not configured");
+    }
+
+    #[test]
+    fn test_plane_api_key_hint_single_char() {
+        assert_eq!(plane_api_key_hint(&Some("x".to_string())), "Configured");
+    }
+
+    #[test]
+    fn test_plane_api_key_hint_normal_key() {
+        assert_eq!(
+            plane_api_key_hint(&Some("abc123xyz".to_string())),
+            "a••••••z"
+        );
+    }
+
+    #[test]
+    fn test_plane_api_key_hint_two_char_key() {
+        assert_eq!(
+            plane_api_key_hint(&Some("ab".to_string())),
+            "a••••••b"
+        );
+    }
+
+    // ── plane_connection_checks ──────────────────────────────────────────
+
+    #[test]
+    fn test_plane_connection_all_present() {
+        let (ok, status, warnings) = plane_connection_checks(
+            &Some("key".to_string()),
+            &Some("workspace".to_string()),
+        );
+        assert!(ok);
+        assert!(warnings.is_empty());
+        assert!(status.contains("Connected"));
+    }
+
+    #[test]
+    fn test_plane_connection_missing_key_only() {
+        let (ok, status, warnings) =
+            plane_connection_checks(&None, &Some("workspace".to_string()));
+        assert!(!ok);
+        assert_eq!(warnings.len(), 1);
+        assert!(status.contains("Missing PLANE_API_KEY"));
+    }
+
+    #[test]
+    fn test_plane_connection_missing_workspace_only() {
+        let (ok, _, warnings) =
+            plane_connection_checks(&Some("key".to_string()), &None);
+        assert!(!ok);
+        assert_eq!(warnings.len(), 1);
+    }
+
+    #[test]
+    fn test_plane_connection_both_missing() {
+        let (ok, status, warnings) = plane_connection_checks(&None, &None);
+        assert!(!ok);
+        assert_eq!(warnings.len(), 2);
+        assert!(status.contains("incomplete"));
+    }
+
+    // ── percentage_coverage ──────────────────────────────────────────────
+
+    #[test]
+    fn test_percentage_coverage_normal() {
+        assert_eq!(percentage_coverage(5, 10), "5/10 (50%)");
+    }
+
+    #[test]
+    fn test_percentage_coverage_zero_total() {
+        assert_eq!(percentage_coverage(0, 0), "0/0 (0%)");
+    }
+
+    #[test]
+    fn test_percentage_coverage_full() {
+        assert_eq!(percentage_coverage(10, 10), "10/10 (100%)");
+    }
+
+    #[test]
+    fn test_percentage_coverage_partial() {
+        assert_eq!(percentage_coverage(1, 3), "1/3 (33%)");
+    }
+
+    // ── default_service_enabled ──────────────────────────────────────────
+
+    #[test]
+    fn test_default_service_enabled_is_true() {
+        assert!(default_service_enabled());
+    }
+
+    // ── Config::empty ───────────────────────────────────────────────────
+
+    #[test]
+    fn test_config_empty_has_no_sections() {
+        let config = Config::empty();
+        assert!(config.plane.is_none());
+        assert!(config.agents.is_none());
+        assert!(config.services.is_none());
+        assert!(config.dashboard.is_none());
+    }
+
+    // ── Config::save_and_load roundtrip ──────────────────────────────────
+
+    #[test]
+    fn test_config_save_and_load_roundtrip() {
+        let config_path = temporary_config_path();
+        let config = Config {
+            plane: Some(PlaneConfig {
+                api_url: "https://plane.test".into(),
+                api_key_ref: PLANESO_KEY.into(),
+                api_key: None,
+                workspace_slug: "ws".into(),
+                project_slug: "proj".into(),
+            }),
+            agents: Some(AgentConfig {
+                pool_size: 4,
+                retry_budget: 2,
+                dispatch_mode: "balanced".into(),
+                default_provider: "claude".into(),
+            }),
+            services: Some(vec![ServiceConfig {
+                name: "test-svc".into(),
+                endpoint_url: "http://localhost:8080".into(),
+                enabled: true,
+                timeout_ms: Some(5000),
+                max_retries: Some(3),
+            }]),
+            dashboard: Some(DashboardConfig {
+                theme: "dark".into(),
+                log_level: "info".into(),
+                data_directory: "/data".into(),
+            }),
+        };
+        config.save_to_path(&config_path).unwrap();
+
+        let loaded = Config::load_from_path_with_credential_factory(&config_path, || {
+            Ok(Box::new(
+                agileplus_domain::credentials::InMemoryCredentialStore::new(),
+            ))
+        })
+        .unwrap();
+
+        let plane = loaded.plane.unwrap();
+        assert_eq!(plane.api_url, "https://plane.test");
+        assert_eq!(plane.workspace_slug, "ws");
+        assert_eq!(plane.project_slug, "proj");
+
+        let agents = loaded.agents.unwrap();
+        assert_eq!(agents.pool_size, 4);
+        assert_eq!(agents.dispatch_mode, "balanced");
+
+        let services = loaded.services.unwrap();
+        assert_eq!(services.len(), 1);
+        assert_eq!(services[0].name, "test-svc");
+        assert_eq!(services[0].timeout_ms, Some(5000));
+
+        let dashboard = loaded.dashboard.unwrap();
+        assert_eq!(dashboard.theme, "dark");
+
+        std::fs::remove_dir_all(config_path.ancestors().nth(2).unwrap()).unwrap();
+    }
+
+    // ── Config::has_legacy_plane_key ─────────────────────────────────────
+
+    #[test]
+    fn test_has_legacy_plane_key_true() {
+        let config = Config {
+            plane: Some(PlaneConfig {
+                api_url: "https://plane".into(),
+                api_key_ref: String::new(),
+                api_key: Some("secret".into()),
+                workspace_slug: "ws".into(),
+                project_slug: "proj".into(),
+            }),
+            agents: None,
+            services: None,
+            dashboard: None,
+        };
+        assert!(config.has_legacy_plane_key());
+    }
+
+    #[test]
+    fn test_has_legacy_plane_key_false_when_none() {
+        let config = Config {
+            plane: Some(PlaneConfig {
+                api_url: "https://plane".into(),
+                api_key_ref: PLANESO_KEY.into(),
+                api_key: None,
+                workspace_slug: "ws".into(),
+                project_slug: "proj".into(),
+            }),
+            agents: None,
+            services: None,
+            dashboard: None,
+        };
+        assert!(!config.has_legacy_plane_key());
+    }
+
+    #[test]
+    fn test_has_legacy_plane_key_false_when_empty() {
+        let config = Config {
+            plane: Some(PlaneConfig {
+                api_url: "https://plane".into(),
+                api_key_ref: PLANESO_KEY.into(),
+                api_key: Some(String::new()),
+                workspace_slug: "ws".into(),
+                project_slug: "proj".into(),
+            }),
+            agents: None,
+            services: None,
+            dashboard: None,
+        };
+        assert!(!config.has_legacy_plane_key());
+    }
+
+    #[test]
+    fn test_has_legacy_plane_key_false_when_no_plane() {
+        let config = Config {
+            plane: None,
+            agents: None,
+            services: None,
+            dashboard: None,
+        };
+        assert!(!config.has_legacy_plane_key());
+    }
+
+    // ── Config deserialization ───────────────────────────────────────────
+
+    #[test]
+    fn test_config_deserialize_minimal() {
+        let toml_str = "";
+        let config: Config = toml::from_str(toml_str).unwrap();
+        assert!(config.plane.is_none());
+        assert!(config.agents.is_none());
+        assert!(config.services.is_none());
+        assert!(config.dashboard.is_none());
+    }
+
+    #[test]
+    fn test_agent_config_deserialize() {
+        let toml_str = r#"
+            [agents]
+            pool_size = 8
+            retry_budget = 5
+            dispatch_mode = "aggressive"
+            default_provider = "gemini"
+        "#;
+        let config: Config = toml::from_str(toml_str).unwrap();
+        let agents = config.agents.unwrap();
+        assert_eq!(agents.pool_size, 8);
+        assert_eq!(agents.retry_budget, 5);
+        assert_eq!(agents.dispatch_mode, "aggressive");
+        assert_eq!(agents.default_provider, "gemini");
+    }
+
+    #[test]
+    fn test_dashboard_config_deserialize() {
+        let toml_str = r#"
+            [dashboard]
+            theme = "light"
+            log_level = "debug"
+            data_directory = "/tmp/data"
+        "#;
+        let config: Config = toml::from_str(toml_str).unwrap();
+        let dash = config.dashboard.unwrap();
+        assert_eq!(dash.theme, "light");
+        assert_eq!(dash.log_level, "debug");
+        assert_eq!(dash.data_directory, "/tmp/data");
+    }
+
+    #[test]
+    fn test_services_config_deserialize_with_defaults() {
+        let toml_str = r#"
+            [[services]]
+            name = "my-service"
+            endpoint_url = "http://localhost:9090"
+        "#;
+        let config: Config = toml::from_str(toml_str).unwrap();
+        let services = config.services.unwrap();
+        assert_eq!(services.len(), 1);
+        assert!(services[0].enabled); // default
+        assert!(services[0].timeout_ms.is_none());
+        assert!(services[0].max_retries.is_none());
+    }
 }

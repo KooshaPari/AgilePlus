@@ -363,4 +363,192 @@ mod tests {
         let agent = parse_agent_state(&json).expect("should parse");
         assert_eq!(agent.status, "idle");
     }
+
+    #[test]
+    fn test_parse_agent_state_with_optional_fields() {
+        let json = serde_json::json!({
+            "name": "worker-agent",
+            "status": "running",
+            "current_task": "WP42",
+            "worktree": null,
+            "started_at": null
+        });
+        let agent = parse_agent_state(&json).expect("should parse");
+        assert_eq!(agent.name, "worker-agent");
+        assert_eq!(agent.status, "running");
+        assert_eq!(agent.worktree, None);
+        assert_eq!(agent.started_at, None);
+    }
+
+    // ── extract_task_context additional edge cases ───────────────────────
+
+    #[test]
+    fn test_extract_task_context_feature_reference() {
+        let result = extract_task_context("claude --feature auth-impl");
+        assert_eq!(result, "feature");
+    }
+
+    #[test]
+    fn test_extract_task_context_wp_at_start() {
+        let result = extract_task_context("WP99 --some-flag");
+        assert!(result.contains("WP99"), "expected WP99 in: {result}");
+    }
+
+    #[test]
+    fn test_extract_task_context_wp_at_end() {
+        let result = extract_task_context("--task WP777");
+        assert!(result.contains("WP777"), "expected WP777 in: {result}");
+    }
+
+    // ── format_agent_name additional edge cases ──────────────────────────
+
+    #[test]
+    fn test_format_agent_name_codex() {
+        assert_eq!(format_agent_name("codex-cli", &None), "codex");
+    }
+
+    #[test]
+    fn test_format_agent_name_cursor() {
+        assert_eq!(format_agent_name("cursor", &None), "cursor");
+    }
+
+    #[test]
+    fn test_format_agent_name_windsurf() {
+        assert_eq!(format_agent_name("windsurf-ai", &None), "windsurf");
+    }
+
+    #[test]
+    fn test_format_agent_name_aider() {
+        assert_eq!(format_agent_name("aider", &None), "aider");
+    }
+
+    #[test]
+    fn test_format_agent_name_worktree_single_segment() {
+        let wt = Some("my-project".to_string());
+        assert_eq!(format_agent_name("claude", &wt), "claude-my-project");
+    }
+
+    #[test]
+    fn test_format_agent_name_unknown_with_worktree() {
+        let wt = Some("/repos/unknown-tool/project".to_string());
+        assert_eq!(format_agent_name("unknown-tool", &wt), "unknown-tool-project");
+    }
+
+    // ── extract_worktree_from_cmdline edge cases ─────────────────────────
+
+    #[test]
+    fn test_extract_worktree_cwd_at_end_no_value() {
+        assert_eq!(extract_worktree_from_cmdline("claude --cwd"), None);
+    }
+
+    #[test]
+    fn test_extract_worktree_multiple_flags() {
+        let result = extract_worktree_from_cmdline(
+            "claude --verbose --cwd /my/repo --debug",
+        );
+        assert_eq!(result, Some("/my/repo".to_string()));
+    }
+
+    // ── read_agent_state_files ───────────────────────────────────────────
+
+    #[test]
+    fn test_read_agent_state_files_nonexistent_dir() {
+        assert!(read_agent_state_files("/nonexistent/path/xyzzy").is_empty());
+    }
+
+    fn temp_test_dir(prefix: &str) -> std::path::PathBuf {
+        std::env::temp_dir().join(format!(
+            "agileplus-pd-{prefix}-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ))
+    }
+
+    #[test]
+    fn test_read_agent_state_files_valid_agent() {
+        let dir = temp_test_dir("valid");
+        let agents_dir = dir.join(".agileplus").join("agents");
+        std::fs::create_dir_all(&agents_dir).unwrap();
+        std::fs::write(
+            agents_dir.join("agent1.json"),
+            serde_json::json!({
+                "name": "test-runner", "status": "running",
+                "current_task": "WP1", "worktree": "/repo",
+                "started_at": "2026-01-01T00:00:00Z"
+            }).to_string(),
+        ).unwrap();
+
+        let agents = read_agent_state_files(dir.to_str().unwrap());
+        assert_eq!(agents.len(), 1);
+        assert_eq!(agents[0].name, "test-runner");
+        assert_eq!(agents[0].status, "running");
+        assert_eq!(agents[0].current_task, "WP1");
+        assert_eq!(agents[0].worktree, Some("/repo".to_string()));
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn test_read_agent_state_files_invalid_json_skipped() {
+        let dir = temp_test_dir("invalid");
+        let agents_dir = dir.join(".agileplus").join("agents");
+        std::fs::create_dir_all(&agents_dir).unwrap();
+        std::fs::write(agents_dir.join("bad.json"), "not json").unwrap();
+        std::fs::write(
+            agents_dir.join("good.json"),
+            serde_json::json!({"name": "ok-agent", "current_task": ""}).to_string(),
+        ).unwrap();
+
+        let agents = read_agent_state_files(dir.to_str().unwrap());
+        assert_eq!(agents.len(), 1);
+        assert_eq!(agents[0].name, "ok-agent");
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn test_read_agent_state_files_missing_name_skipped() {
+        let dir = temp_test_dir("noname");
+        let agents_dir = dir.join(".agileplus").join("agents");
+        std::fs::create_dir_all(&agents_dir).unwrap();
+        std::fs::write(
+            agents_dir.join("noname.json"),
+            serde_json::json!({"status": "idle"}).to_string(),
+        ).unwrap();
+
+        assert!(read_agent_state_files(dir.to_str().unwrap()).is_empty());
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn test_read_agent_state_files_empty_dir() {
+        let dir = temp_test_dir("empty");
+        let agents_dir = dir.join(".agileplus").join("agents");
+        std::fs::create_dir_all(&agents_dir).unwrap();
+        assert!(read_agent_state_files(dir.to_str().unwrap()).is_empty());
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn test_read_agent_state_files_multiple_agents() {
+        let dir = temp_test_dir("multi");
+        let agents_dir = dir.join(".agileplus").join("agents");
+        std::fs::create_dir_all(&agents_dir).unwrap();
+        std::fs::write(
+            agents_dir.join("b.json"),
+            serde_json::json!({"name": "builder", "current_task": "build"}).to_string(),
+        ).unwrap();
+        std::fs::write(
+            agents_dir.join("a.json"),
+            serde_json::json!({"name": "analyzer", "current_task": "analyze"}).to_string(),
+        ).unwrap();
+
+        let agents = read_agent_state_files(dir.to_str().unwrap());
+        assert_eq!(agents.len(), 2);
+        let names: Vec<&str> = agents.iter().map(|a| a.name.as_str()).collect();
+        assert!(names.contains(&"builder"));
+        assert!(names.contains(&"analyzer"));
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
 }

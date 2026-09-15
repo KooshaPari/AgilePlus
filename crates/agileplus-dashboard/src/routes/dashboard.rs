@@ -652,4 +652,121 @@ mod epics_stories_json_tests {
 
         std::fs::remove_file(path).expect("temporary database is removed");
     }
+
+    // ── column_expression ────────────────────────────────────────────────
+
+    #[test]
+    fn test_column_expression_returns_name_when_column_exists() {
+        let path = temporary_database_path("col-expr-exists");
+        let conn = rusqlite::Connection::open(&path).unwrap();
+        conn.execute_batch("CREATE TABLE test_table (id INTEGER, name TEXT)")
+            .unwrap();
+        assert_eq!(column_expression(&conn, "test_table", "name"), "name");
+        std::fs::remove_file(&path).unwrap();
+    }
+
+    #[test]
+    fn test_column_expression_returns_null_when_column_missing() {
+        let path = temporary_database_path("col-expr-missing");
+        let conn = rusqlite::Connection::open(&path).unwrap();
+        conn.execute_batch("CREATE TABLE test_table (id INTEGER)")
+            .unwrap();
+        assert_eq!(
+            column_expression(&conn, "test_table", "name"),
+            "NULL"
+        );
+        std::fs::remove_file(&path).unwrap();
+    }
+
+    #[test]
+    fn test_column_expression_returns_null_when_table_missing() {
+        let path = temporary_database_path("col-expr-no-table");
+        let conn = rusqlite::Connection::open(&path).unwrap();
+        assert_eq!(
+            column_expression(&conn, "nonexistent", "col"),
+            "NULL"
+        );
+        std::fs::remove_file(&path).unwrap();
+    }
+
+    // ── epics_stories_error ─────────────────────────────────────────────
+
+    #[test]
+    fn test_epics_stories_error_structure() {
+        let err = epics_stories_error(
+            "test context",
+            rusqlite::Error::ExecuteReturnedResults,
+        );
+        let json = err.0;
+        assert_eq!(json["epics"], serde_json::json!([]));
+        assert_eq!(json["stories"], serde_json::json!([]));
+        assert_eq!(json["epic_count"], 0);
+        assert_eq!(json["story_count"], 0);
+        let msg = json["error"].as_str().unwrap();
+        assert!(msg.contains("test context"));
+    }
+
+    // ── epics_stories_json with populated tables ────────────────────────
+
+    #[test]
+    fn test_epics_stories_json_populated_tables() {
+        let path = temporary_database_path("populated");
+        let conn = rusqlite::Connection::open(&path).unwrap();
+        conn.execute_batch(
+            "CREATE TABLE epics (id INTEGER, title TEXT, status TEXT, requirement_id TEXT);
+             CREATE TABLE stories (id INTEGER, epic_id INTEGER, title TEXT, status TEXT, requirement_id TEXT);
+             INSERT INTO epics VALUES (1, 'Auth Epic', 'active', 'REQ-001');
+             INSERT INTO epics VALUES (2, 'UI Epic', 'done', NULL);
+             INSERT INTO stories VALUES (1, 1, 'Login story', 'done', 'REQ-001');
+             INSERT INTO stories VALUES (2, 1, 'Signup story', 'todo', 'REQ-002');
+             INSERT INTO stories VALUES (3, 2, 'Dashboard story', 'done', NULL);",
+        )
+        .unwrap();
+        drop(conn);
+
+        let response = epics_stories_json_for_path(&path).0;
+        assert_eq!(response["epic_count"], 2);
+        assert_eq!(response["story_count"], 3);
+        assert_eq!(response["epics"][0]["requirement_id"], "REQ-001");
+        assert_eq!(
+            response["epics"][1]["requirement_id"],
+            serde_json::Value::Null
+        );
+        assert!(response.get("error").is_none());
+
+        std::fs::remove_file(path).unwrap();
+    }
+
+    // ── WorkPackageJson ─────────────────────────────────────────────────
+
+    #[test]
+    fn test_work_package_json_serialization() {
+        let wp = WorkPackageJson {
+            id: "42".to_string(),
+            feature_id: 1,
+            title: "Test WP".to_string(),
+            status: "in_progress".to_string(),
+            priority: "high".to_string(),
+            assignee: Some("agent-1".to_string()),
+        };
+        let json = serde_json::to_value(&wp).unwrap();
+        assert_eq!(json["id"], "42");
+        assert_eq!(json["feature_id"], 1);
+        assert_eq!(json["status"], "in_progress");
+        assert_eq!(json["assignee"], "agent-1");
+    }
+
+    #[test]
+    fn test_work_package_json_no_assignee() {
+        let wp = WorkPackageJson {
+            id: "1".to_string(),
+            feature_id: 2,
+            title: "Unassigned".to_string(),
+            status: "planned".to_string(),
+            priority: "medium".to_string(),
+            assignee: None,
+        };
+        let json = serde_json::to_value(&wp).unwrap();
+        assert!(json["assignee"].is_null());
+    }
 }

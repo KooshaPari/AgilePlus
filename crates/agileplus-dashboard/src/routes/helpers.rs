@@ -307,3 +307,278 @@ pub fn build_restart_command(cmd_line: &str) -> Result<std::process::Command, St
     }
     Ok(cmd)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::collections::HashMap;
+
+    // ── is_htmx ─────────────────────────────────────────────────────────
+
+    #[test]
+    fn test_is_htmx_true() {
+        let mut headers = HeaderMap::new();
+        headers.insert("HX-Request", "true".parse().unwrap());
+        assert!(is_htmx(&headers));
+    }
+
+    #[test]
+    fn test_is_htmx_false_value() {
+        let mut headers = HeaderMap::new();
+        headers.insert("HX-Request", "false".parse().unwrap());
+        assert!(!is_htmx(&headers));
+    }
+
+    #[test]
+    fn test_is_htmx_missing_header() {
+        let headers = HeaderMap::new();
+        assert!(!is_htmx(&headers));
+    }
+
+    // ── dashboard_filter_from_query ──────────────────────────────────────
+
+    #[test]
+    fn test_filter_all_default() {
+        let query = HashMap::new();
+        assert_eq!(
+            dashboard_filter_from_query(&query),
+            DashboardFilter::All
+        );
+    }
+
+    #[test]
+    fn test_filter_active() {
+        let mut query = HashMap::new();
+        query.insert("filter".to_string(), "active".to_string());
+        assert_eq!(
+            dashboard_filter_from_query(&query),
+            DashboardFilter::Active
+        );
+    }
+
+    #[test]
+    fn test_filter_blocked() {
+        let mut query = HashMap::new();
+        query.insert("filter".to_string(), "blocked".to_string());
+        assert_eq!(
+            dashboard_filter_from_query(&query),
+            DashboardFilter::Blocked
+        );
+    }
+
+    #[test]
+    fn test_filter_shipped() {
+        let mut query = HashMap::new();
+        query.insert("filter".to_string(), "shipped".to_string());
+        assert_eq!(
+            dashboard_filter_from_query(&query),
+            DashboardFilter::Shipped
+        );
+    }
+
+    #[test]
+    fn test_filter_unknown_falls_back_to_all() {
+        let mut query = HashMap::new();
+        query.insert("filter".to_string(), "unknown".to_string());
+        assert_eq!(
+            dashboard_filter_from_query(&query),
+            DashboardFilter::All
+        );
+    }
+
+    // ── html_escape ──────────────────────────────────────────────────────
+
+    #[test]
+    fn test_html_escape_plain_text() {
+        assert_eq!(html_escape("hello world"), "hello world");
+    }
+
+    #[test]
+    fn test_html_escape_all_entities() {
+        assert_eq!(
+            html_escape("a & b < c > d \"e\" f'g"),
+            "a &amp; b &lt; c &gt; d &quot;e&quot; f&#39;g"
+        );
+    }
+
+    #[test]
+    fn test_html_escape_empty_string() {
+        assert_eq!(html_escape(""), "");
+    }
+
+    // ── artifact_type_for_ext ────────────────────────────────────────────
+
+    #[test]
+    fn test_artifact_type_coverage() {
+        assert_eq!(artifact_type_for_ext("lcov"), "coverage");
+        assert_eq!(artifact_type_for_ext("coverage"), "coverage");
+        assert_eq!(artifact_type_for_ext("cov"), "coverage");
+    }
+
+    #[test]
+    fn test_artifact_type_test_results() {
+        assert_eq!(artifact_type_for_ext("xml"), "test-results");
+        assert_eq!(artifact_type_for_ext("junit"), "test-results");
+        assert_eq!(artifact_type_for_ext("tap"), "test-results");
+    }
+
+    #[test]
+    fn test_artifact_type_report() {
+        assert_eq!(artifact_type_for_ext("json"), "report");
+        assert_eq!(artifact_type_for_ext("sarif"), "report");
+    }
+
+    #[test]
+    fn test_artifact_type_image() {
+        assert_eq!(artifact_type_for_ext("png"), "image");
+        assert_eq!(artifact_type_for_ext("jpg"), "image");
+        assert_eq!(artifact_type_for_ext("jpeg"), "image");
+        assert_eq!(artifact_type_for_ext("gif"), "image");
+        assert_eq!(artifact_type_for_ext("svg"), "image");
+        assert_eq!(artifact_type_for_ext("webp"), "image");
+    }
+
+    #[test]
+    fn test_artifact_type_text() {
+        assert_eq!(artifact_type_for_ext("md"), "text");
+        assert_eq!(artifact_type_for_ext("txt"), "text");
+        assert_eq!(artifact_type_for_ext("log"), "text");
+    }
+
+    #[test]
+    fn test_artifact_type_unknown() {
+        assert_eq!(artifact_type_for_ext("rs"), "artifact");
+        assert_eq!(artifact_type_for_ext("unknown"), "artifact");
+    }
+
+    // ── percent_encode_path ──────────────────────────────────────────────
+
+    #[test]
+    fn test_percent_encode_no_special_chars() {
+        assert_eq!(percent_encode_path("hello/world.txt"), "hello/world.txt");
+    }
+
+    #[test]
+    fn test_percent_encode_space() {
+        assert_eq!(percent_encode_path("hello world"), "hello%20world");
+    }
+
+    #[test]
+    fn test_percent_encode_all_special() {
+        assert_eq!(
+            percent_encode_path("a#?%+b"),
+            "a%23%3F%25%2Bb"
+        );
+    }
+
+    #[test]
+    fn test_percent_encode_empty() {
+        assert_eq!(percent_encode_path(""), "");
+    }
+
+    // ── is_restart_command_allowed ───────────────────────────────────────
+
+    #[test]
+    fn test_restart_allowed_systemctl() {
+        assert!(is_restart_command_allowed("systemctl"));
+    }
+
+    #[test]
+    fn test_restart_allowed_docker() {
+        assert!(is_restart_command_allowed("docker"));
+    }
+
+    #[test]
+    fn test_restart_allowed_process_compose() {
+        assert!(is_restart_command_allowed("process-compose"));
+    }
+
+    #[test]
+    fn test_restart_allowed_echo() {
+        assert!(is_restart_command_allowed("echo"));
+    }
+
+    #[test]
+    fn test_restart_not_allowed() {
+        assert!(!is_restart_command_allowed("rm"));
+        assert!(!is_restart_command_allowed("bash"));
+        assert!(!is_restart_command_allowed(""));
+    }
+
+    // ── validate_restart_command ─────────────────────────────────────────
+
+    #[test]
+    fn test_validate_restart_empty_command() {
+        assert!(validate_restart_command("").is_err());
+    }
+
+    #[test]
+    fn test_validate_restart_allowed_command() {
+        assert!(validate_restart_command("systemctl restart nginx").is_ok());
+    }
+
+    #[test]
+    fn test_validate_restart_disallowed_command() {
+        let err = validate_restart_command("rm -rf /").unwrap_err();
+        assert!(err.contains("not in approved"));
+    }
+
+    // ── build_restart_command ────────────────────────────────────────────
+
+    #[test]
+    fn test_build_restart_command_valid() {
+        let cmd = build_restart_command("echo hello");
+        assert!(cmd.is_ok());
+    }
+
+    #[test]
+    fn test_build_restart_command_invalid() {
+        assert!(build_restart_command("malware").is_err());
+    }
+
+    // ── event_view ───────────────────────────────────────────────────────
+
+    #[test]
+    fn test_event_view_creation() {
+        let ev = event_view("evt-1", "system", "booted", "just now");
+        assert_eq!(ev.id, "evt-1");
+        assert_eq!(ev.kind, "system");
+        assert_eq!(ev.description, "booted");
+        assert_eq!(ev.timestamp, "just now");
+        assert!(ev.agent_name.is_none());
+        assert!(ev.wp_id.is_none());
+    }
+
+    // ── agent_view ───────────────────────────────────────────────────────
+
+    #[test]
+    fn test_agent_view_creation() {
+        let av = agent_view("spec-agent", "idle", "WP10", "2m ago");
+        assert_eq!(av.name, "spec-agent");
+        assert_eq!(av.status, "idle");
+        assert_eq!(av.current_task, "WP10");
+        assert_eq!(av.last_action, "2m ago");
+        assert!(!av.is_live);
+        assert!(av.pid.is_none());
+    }
+
+    // ── sample_events ────────────────────────────────────────────────────
+
+    #[test]
+    fn test_sample_events_returns_three() {
+        let events = sample_events();
+        assert_eq!(events.len(), 3);
+        assert_eq!(events[0].kind, "system");
+        assert_eq!(events[1].kind, "agent_action");
+        assert_eq!(events[2].kind, "state_change");
+    }
+
+    // ── DashboardFilter equality ─────────────────────────────────────────
+
+    #[test]
+    fn test_dashboard_filter_variants() {
+        assert_eq!(DashboardFilter::All, DashboardFilter::All);
+        assert_ne!(DashboardFilter::All, DashboardFilter::Active);
+        assert_ne!(DashboardFilter::Blocked, DashboardFilter::Shipped);
+    }
+}

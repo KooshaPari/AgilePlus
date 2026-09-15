@@ -363,4 +363,173 @@ mod tests {
         let plain = "Hello, world!";
         assert_eq!(html_escape(plain), plain);
     }
+
+    // ── load_evidence_bundles_from_disk ──────────────────────────────────
+
+    #[test]
+    fn test_load_evidence_bundles_nonexistent_path() {
+        let bundles = load_evidence_bundles_from_disk("nonexistent-feature-999");
+        assert!(bundles.is_empty());
+    }
+
+    #[test]
+    fn test_load_evidence_bundles_invalid_json() {
+        let dir = std::env::temp_dir().join(format!(
+            "agileplus-ev-invalid-{}-{}",
+            std::process::id(),
+            chrono::Utc::now().timestamp_nanos_opt().unwrap_or(0),
+        ));
+        let evidence_dir = dir.join(".agileplus").join("evidence").join("feat1");
+        std::fs::create_dir_all(&evidence_dir).unwrap();
+        std::fs::write(evidence_dir.join("bundle.json"), "not json!!!").unwrap();
+
+        let bundles =
+            load_evidence_bundles_from_disk(dir.to_str().unwrap());
+        // invalid JSON should return empty
+        assert!(bundles.is_empty());
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn test_load_evidence_bundles_valid_bundle() {
+        let dir = std::env::temp_dir().join(format!(
+            "agileplus-ev-valid-{}-{}",
+            std::process::id(),
+            chrono::Utc::now().timestamp_nanos_opt().unwrap_or(0),
+        ));
+        let evidence_dir = dir
+            .join(".agileplus")
+            .join("evidence")
+            .join("42");
+        std::fs::create_dir_all(&evidence_dir).unwrap();
+
+        let bundle = serde_json::json!({
+            "timestamp": "2026-03-28T12:00:00Z",
+            "test_results": {
+                "passed": true,
+                "passed_count": 10,
+                "failed_count": 1,
+                "summary": "All tests pass",
+                "output_snippet": "10 passed, 1 failed"
+            },
+            "git_log": [
+                {
+                    "short_hash": "abc1234",
+                    "subject": "feat: add test",
+                    "date": "2026-03-28",
+                    "author": "dev",
+                    "url": "https://github.com/test/commit/abc1234"
+                }
+            ],
+            "prs": [
+                {
+                    "number": 42,
+                    "title": "Add feature",
+                    "url": "https://github.com/test/pull/42",
+                    "state": "open",
+                    "headRefName": "feat/test",
+                    "createdAt": "2026-03-28T10:00:00Z"
+                }
+            ],
+            "ci_links": [
+                {
+                    "id": 100,
+                    "title": "CI Run",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "url": "https://github.com/test/actions/runs/100",
+                    "created_at": "2026-03-28T11:00:00Z"
+                }
+            ]
+        });
+        std::fs::write(
+            evidence_dir.join("bundle.json"),
+            serde_json::to_string_pretty(&bundle).unwrap(),
+        )
+        .unwrap();
+
+        let bundles =
+            load_evidence_bundles_from_disk(dir.to_str().unwrap());
+        assert_eq!(bundles.len(), 1);
+
+        let b = &bundles[0];
+        assert_eq!(b.id, "bundle-42-disk");
+        assert_eq!(b.fr_id, "FR-42");
+        assert_eq!(b.test_passed, Some(true));
+        assert_eq!(b.tests_passed_count, 10);
+        assert_eq!(b.tests_failed_count, 1);
+        assert_eq!(b.test_summary, Some("All tests pass".to_string()));
+        assert_eq!(b.commit_count, 1);
+        assert_eq!(b.pr_count, 1);
+        assert_eq!(b.status, "verified");
+        assert_eq!(b.git_commits[0].short_hash, "abc1234");
+        assert_eq!(b.pr_links[0].number, 42);
+        assert_eq!(b.ci_links[0].conclusion, "success");
+
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn test_load_evidence_bundles_tests_failed_status() {
+        let dir = std::env::temp_dir().join(format!(
+            "agileplus-ev-fail-{}-{}",
+            std::process::id(),
+            chrono::Utc::now().timestamp_nanos_opt().unwrap_or(0),
+        ));
+        let evidence_dir = dir
+            .join(".agileplus")
+            .join("evidence")
+            .join("99");
+        std::fs::create_dir_all(&evidence_dir).unwrap();
+
+        let bundle = serde_json::json!({
+            "timestamp": "2026-03-28T12:00:00Z",
+            "test_results": {
+                "passed": false,
+                "passed_count": 2,
+                "failed_count": 5,
+                "summary": "5 failures",
+                "output_snippet": "failure details"
+            }
+        });
+        std::fs::write(
+            evidence_dir.join("bundle.json"),
+            serde_json::to_string_pretty(&bundle).unwrap(),
+        )
+        .unwrap();
+
+        let bundles = load_evidence_bundles_from_disk(dir.to_str().unwrap());
+        assert_eq!(bundles.len(), 1);
+        assert_eq!(bundles[0].test_passed, Some(false));
+        assert_eq!(bundles[0].status, "generated"); // tests failed => not "verified"
+
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn test_load_evidence_bundles_minimal_json() {
+        let dir = std::env::temp_dir().join(format!(
+            "agileplus-ev-minimal-{}-{}",
+            std::process::id(),
+            chrono::Utc::now().timestamp_nanos_opt().unwrap_or(0),
+        ));
+        let evidence_dir = dir
+            .join(".agileplus")
+            .join("evidence")
+            .join("1");
+        std::fs::create_dir_all(&evidence_dir).unwrap();
+        std::fs::write(
+            evidence_dir.join("bundle.json"),
+            r#"{"timestamp": "2026-01-01T00:00:00Z"}"#,
+        )
+        .unwrap();
+
+        let bundles = load_evidence_bundles_from_disk(dir.to_str().unwrap());
+        assert_eq!(bundles.len(), 1);
+        assert_eq!(bundles[0].status, "generated");
+        assert_eq!(bundles[0].commit_count, 0);
+        assert_eq!(bundles[0].pr_count, 0);
+
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
 }

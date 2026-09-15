@@ -483,4 +483,148 @@ mod tests {
         assert_eq!(std::fs::read_to_string(&config_path).unwrap(), legacy);
         std::fs::remove_dir_all(directory).unwrap();
     }
+
+    // ── apply_service_config ─────────────────────────────────────────────
+
+    #[test]
+    fn test_apply_service_config_adds_new_service() {
+        let mut config = Config::empty();
+        apply_service_config(
+            &mut config,
+            "MyService",
+            Some("http://localhost:3000".to_string()),
+            Some(5000),
+            Some(3),
+        );
+        let services = config.services.unwrap();
+        assert_eq!(services.len(), 1);
+        assert_eq!(services[0].name, "MyService");
+        assert_eq!(services[0].endpoint_url, "http://localhost:3000");
+        assert_eq!(services[0].timeout_ms, Some(5000));
+        assert_eq!(services[0].max_retries, Some(3));
+        assert!(services[0].enabled);
+    }
+
+    #[test]
+    fn test_apply_service_config_updates_existing_service() {
+        let mut config = Config {
+            plane: None,
+            agents: None,
+            services: Some(vec![ServiceConfig {
+                name: "API".to_string(),
+                endpoint_url: "http://old:8080".to_string(),
+                enabled: true,
+                timeout_ms: None,
+                max_retries: None,
+            }]),
+            dashboard: None,
+        };
+        apply_service_config(
+            &mut config,
+            "API",
+            Some("http://new:9090".to_string()),
+            None,
+            None,
+        );
+        let services = config.services.unwrap();
+        assert_eq!(services.len(), 1);
+        assert_eq!(services[0].endpoint_url, "http://new:9090");
+    }
+
+    #[test]
+    fn test_apply_service_config_skips_empty_url() {
+        let mut config = Config::empty();
+        apply_service_config(
+            &mut config,
+            "Empty",
+            Some("   ".to_string()),
+            None,
+            None,
+        );
+        assert!(config.services.is_none());
+    }
+
+    #[test]
+    fn test_apply_service_config_no_url_no_existing_does_nothing() {
+        let mut config = Config::empty();
+        apply_service_config(&mut config, "NoUrl", None, None, None);
+        assert!(config.services.is_none());
+    }
+
+    #[test]
+    fn test_apply_service_config_existing_no_url_keeps_old() {
+        let mut config = Config {
+            plane: None,
+            agents: None,
+            services: Some(vec![ServiceConfig {
+                name: "Keep".to_string(),
+                endpoint_url: "http://keep:8080".to_string(),
+                enabled: false,
+                timeout_ms: None,
+                max_retries: None,
+            }]),
+            dashboard: None,
+        };
+        // Empty URL should not update the existing entry
+        apply_service_config(&mut config, "Keep", Some("   ".to_string()), None, None);
+        let services = config.services.unwrap();
+        assert_eq!(services[0].endpoint_url, "http://keep:8080");
+    }
+
+    // ── is_restart_command_allowed (health copy) ────────────────────────
+
+    #[test]
+    fn test_health_restart_allowed() {
+        assert!(is_restart_command_allowed("systemctl"));
+        assert!(is_restart_command_allowed("docker"));
+        assert!(is_restart_command_allowed("process-compose"));
+        assert!(is_restart_command_allowed("echo"));
+    }
+
+    #[test]
+    fn test_health_restart_not_allowed() {
+        assert!(!is_restart_command_allowed("rm"));
+        assert!(!is_restart_command_allowed("curl"));
+    }
+
+    // ── validate_restart_command (health copy) ──────────────────────────
+
+    #[test]
+    fn test_health_validate_restart_empty() {
+        assert!(validate_restart_command("").is_err());
+    }
+
+    #[test]
+    fn test_health_validate_restart_valid() {
+        assert!(validate_restart_command("docker restart web").is_ok());
+    }
+
+    #[test]
+    fn test_health_validate_restart_invalid_program() {
+        let err = validate_restart_command("nc -l 8080").unwrap_err();
+        assert!(err.contains("not in approved"));
+    }
+
+    // ── build_restart_command (health copy) ─────────────────────────────
+
+    #[test]
+    fn test_health_build_restart_command_valid() {
+        let cmd = build_restart_command("echo test");
+        assert!(cmd.is_ok());
+    }
+
+    #[test]
+    fn test_health_build_restart_command_invalid() {
+        assert!(build_restart_command("wget evil.com").is_err());
+    }
+
+    #[test]
+    fn test_health_build_restart_command_preserves_args() {
+        let cmd = build_restart_command("echo hello world").unwrap();
+        // Verify the command was built with args
+        let output = cmd.output().unwrap();
+        assert!(output.status.success());
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        assert!(stdout.contains("hello world"));
+    }
 }
