@@ -246,3 +246,164 @@ impl<T> OptionalExt<T> for rusqlite::Result<T> {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::SqliteStorageAdapter;
+    use agileplus_domain::domain::feature::Feature;
+
+    fn sample_feature(slug: &str) -> Feature {
+        let now = chrono::Utc::now();
+        Feature {
+            id: 0,
+            slug: slug.to_string(),
+            friendly_name: format!("Feature {slug}"),
+            state: FeatureState::Created,
+            spec_hash: [0u8; 32],
+            target_branch: "main".to_string(),
+            plane_issue_id: None,
+            plane_state_id: None,
+            labels: vec![],
+            module_id: None,
+            project_id: None,
+            created_at: now,
+            updated_at: now,
+            created_at_commit: None,
+            last_modified_commit: None,
+        }
+    }
+
+    #[test]
+    fn create_and_get_feature_by_slug() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let mut f = sample_feature("auth-flow");
+        f.labels = vec!["security".into()];
+        let id = create_feature(&conn, &f).unwrap();
+        assert!(id > 0);
+        let fetched = get_feature_by_slug(&conn, "auth-flow").unwrap().unwrap();
+        assert_eq!(fetched.slug, "auth-flow");
+        assert_eq!(fetched.state, FeatureState::Created);
+        assert_eq!(fetched.labels, vec!["security"]);
+        assert_eq!(fetched.target_branch, "main");
+    }
+
+    #[test]
+    fn get_feature_by_slug_nonexistent_returns_none() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        assert!(get_feature_by_slug(&conn, "nope").unwrap().is_none());
+    }
+
+    #[test]
+    fn get_feature_by_id_works() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let id = create_feature(&conn, &sample_feature("feat-a")).unwrap();
+        let fetched = get_feature_by_id(&conn, id).unwrap().unwrap();
+        assert_eq!(fetched.id, id);
+        assert_eq!(fetched.slug, "feat-a");
+    }
+
+    #[test]
+    fn get_feature_by_id_nonexistent_returns_none() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        assert!(get_feature_by_id(&conn, 99999).unwrap().is_none());
+    }
+
+    #[test]
+    fn update_feature_state_changes_state() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let id = create_feature(&conn, &sample_feature("feat-b")).unwrap();
+        update_feature_state(&conn, id, FeatureState::Implementing).unwrap();
+        let fetched = get_feature_by_id(&conn, id).unwrap().unwrap();
+        assert_eq!(fetched.state, FeatureState::Implementing);
+    }
+
+    #[test]
+    fn update_feature_modifies_fields() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let id = create_feature(&conn, &sample_feature("old-slug")).unwrap();
+        let mut f = sample_feature("new-slug");
+        f.id = id;
+        f.friendly_name = "Updated Name".to_string();
+        f.state = FeatureState::Planned;
+        f.labels = vec!["urgent".into(), "backend".into()];
+        f.target_branch = "develop".to_string();
+        update_feature(&conn, &f).unwrap();
+        let fetched = get_feature_by_id(&conn, id).unwrap().unwrap();
+        assert_eq!(fetched.slug, "new-slug");
+        assert_eq!(fetched.friendly_name, "Updated Name");
+        assert_eq!(fetched.state, FeatureState::Planned);
+        assert_eq!(fetched.labels, vec!["urgent", "backend"]);
+        assert_eq!(fetched.target_branch, "develop");
+    }
+
+    #[test]
+    fn list_features_by_state_filters() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        create_feature(&conn, &sample_feature("a")).unwrap();
+        let mut planned = sample_feature("b");
+        planned.state = FeatureState::Planned;
+        create_feature(&conn, &planned).unwrap();
+
+        let created = list_features_by_state(&conn, FeatureState::Created).unwrap();
+        assert_eq!(created.len(), 1);
+        assert_eq!(created[0].slug, "a");
+
+        let planned_list = list_features_by_state(&conn, FeatureState::Planned).unwrap();
+        assert_eq!(planned_list.len(), 1);
+        assert_eq!(planned_list[0].slug, "b");
+    }
+
+    #[test]
+    fn list_all_features_returns_all() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        create_feature(&conn, &sample_feature("a")).unwrap();
+        create_feature(&conn, &sample_feature("b")).unwrap();
+        let all = list_all_features(&conn).unwrap();
+        assert_eq!(all.len(), 2);
+    }
+
+    #[test]
+    fn list_features_by_label_filters() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let mut f1 = sample_feature("tagged");
+        f1.labels = vec!["security".into()];
+        create_feature(&conn, &f1).unwrap();
+        create_feature(&conn, &sample_feature("untagged")).unwrap();
+
+        let result = list_features_by_label(&conn, "security").unwrap();
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].slug, "tagged");
+    }
+
+    #[test]
+    fn state_str_roundtrips() {
+        for s in ["created", "specified", "researched", "planned",
+                   "implementing", "validated", "shipped", "retrospected"] {
+            let state: FeatureState = s.parse().unwrap();
+            assert_eq!(state_str(state), s);
+        }
+    }
+
+    #[test]
+    fn labels_json_roundtrips() {
+        let labels = vec!["a".to_string(), "b".to_string()];
+        let json = labels_to_json(&labels);
+        let back = labels_from_json(&json);
+        assert_eq!(back, labels);
+    }
+
+    #[test]
+    fn labels_from_json_invalid_returns_empty() {
+        assert!(labels_from_json("not-json").is_empty());
+    }
+}
