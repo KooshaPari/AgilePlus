@@ -1,0 +1,310 @@
+// ── Tests ─────────────────────────────────────────────────────────────────────
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use agileplus_domain::ports::StoragePort;
+    use agileplus_domain::ports::epic::EpicRepository;
+    use agileplus_domain::ports::story::StoryRepository;
+
+    // ── InMemoryFeatureRepo ──────────────────────────────────────────────────
+
+    #[tokio::test]
+    async fn feature_repo_create_and_get() {
+        let repo = InMemoryFeatureRepo::default();
+        let feature = Feature::new("auth", "Auth", [0u8; 32], None);
+        let id = repo.create_feature(&feature).await.unwrap();
+        assert_eq!(id, 1);
+
+        let got = repo.get_feature_by_id(id).await.unwrap().unwrap();
+        assert_eq!(got.slug, "auth");
+        assert_eq!(got.id, 1);
+    }
+
+    #[tokio::test]
+    async fn feature_repo_get_nonexistent_returns_none() {
+        let repo = InMemoryFeatureRepo::default();
+        let got = repo.get_feature_by_id(999).await.unwrap();
+        assert!(got.is_none());
+    }
+
+    #[tokio::test]
+    async fn feature_repo_auto_increment_ids() {
+        let repo = InMemoryFeatureRepo::default();
+        let f1 = Feature::new("a", "A", [0u8; 32], None);
+        let f2 = Feature::new("b", "B", [0u8; 32], None);
+        let id1 = repo.create_feature(&f1).await.unwrap();
+        let id2 = repo.create_feature(&f2).await.unwrap();
+        assert_eq!(id1, 1);
+        assert_eq!(id2, 2);
+    }
+
+    #[tokio::test]
+    async fn feature_repo_update_state() {
+        let repo = InMemoryFeatureRepo::default();
+        let feature = Feature::new("f", "F", [0u8; 32], None);
+        let id = repo.create_feature(&feature).await.unwrap();
+
+        repo.update_feature_state(id, FeatureState::Specified)
+            .await
+            .unwrap();
+
+        let got = repo.get_feature_by_id(id).await.unwrap().unwrap();
+        assert_eq!(got.state, FeatureState::Specified);
+    }
+
+    #[tokio::test]
+    async fn feature_repo_update_state_not_found() {
+        let repo = InMemoryFeatureRepo::default();
+        let err = repo.update_feature_state(999, FeatureState::Specified).await;
+        assert!(err.is_err());
+    }
+
+    #[tokio::test]
+    async fn feature_repo_update_feature() {
+        let repo = InMemoryFeatureRepo::default();
+        let mut feature = Feature::new("f", "F", [0u8; 32], None);
+        let id = repo.create_feature(&feature).await.unwrap();
+
+        feature.id = id;
+        feature.slug = "updated".into();
+        repo.update_feature(&feature).await.unwrap();
+
+        let got = repo.get_feature_by_id(id).await.unwrap().unwrap();
+        assert_eq!(got.slug, "updated");
+    }
+
+    #[tokio::test]
+    async fn feature_repo_update_feature_not_found() {
+        let repo = InMemoryFeatureRepo::default();
+        let feature = Feature::new("f", "F", [0u8; 32], None);
+        let err = repo.update_feature(&feature).await;
+        assert!(err.is_err());
+    }
+
+    #[tokio::test]
+    async fn feature_repo_get_by_slug() {
+        let repo = InMemoryFeatureRepo::default();
+        let feature = Feature::new("my-slug", "F", [0u8; 32], None);
+        repo.create_feature(&feature).await.unwrap();
+
+        let got = repo.get_feature_by_slug("my-slug").await.unwrap();
+        assert!(got.is_some());
+        assert_eq!(got.unwrap().slug, "my-slug");
+    }
+
+    #[tokio::test]
+    async fn feature_repo_get_by_slug_missing() {
+        let repo = InMemoryFeatureRepo::default();
+        let got = repo.get_feature_by_slug("nope").await.unwrap();
+        assert!(got.is_none());
+    }
+
+    #[tokio::test]
+    async fn feature_repo_list_by_state() {
+        let repo = InMemoryFeatureRepo::default();
+        let f1 = Feature::new("a", "A", [0u8; 32], None);
+        let f2 = Feature::new("b", "B", [0u8; 32], None);
+        let id1 = repo.create_feature(&f1).await.unwrap();
+        let id2 = repo.create_feature(&f2).await.unwrap();
+        repo.update_feature_state(id2, FeatureState::Specified)
+            .await
+            .unwrap();
+
+        let created = repo.list_features_by_state(FeatureState::Created).await.unwrap();
+        assert_eq!(created.len(), 1);
+        assert_eq!(created[0].slug, "a");
+
+        let specified = repo.list_features_by_state(FeatureState::Specified).await.unwrap();
+        assert_eq!(specified.len(), 1);
+        assert_eq!(specified[0].slug, "b");
+    }
+
+    #[tokio::test]
+    async fn feature_repo_list_all() {
+        let repo = InMemoryFeatureRepo::default();
+        repo.create_feature(&Feature::new("a", "A", [0u8; 32], None))
+            .await
+            .unwrap();
+        repo.create_feature(&Feature::new("b", "B", [0u8; 32], None))
+            .await
+            .unwrap();
+
+        let all = repo.list_all_features().await.unwrap();
+        assert_eq!(all.len(), 2);
+    }
+
+    #[tokio::test]
+    async fn feature_repo_list_by_label() {
+        let repo = InMemoryFeatureRepo::default();
+        let mut f1 = Feature::new("a", "A", [0u8; 32], None);
+        f1.labels.push("backend".into());
+        let mut f2 = Feature::new("b", "B", [0u8; 32], None);
+        f2.labels.push("frontend".into());
+        repo.create_feature(&f1).await.unwrap();
+        repo.create_feature(&f2).await.unwrap();
+
+        let backend = repo.list_features_by_label("backend").await.unwrap();
+        assert_eq!(backend.len(), 1);
+        assert_eq!(backend[0].slug, "a");
+
+        let all = repo.list_features_by_label("nonexistent").await.unwrap();
+        assert!(all.is_empty());
+    }
+
+    // ── InMemoryStoryRepo ────────────────────────────────────────────────────
+
+    #[tokio::test]
+    async fn story_repo_create_and_get() {
+        let repo = InMemoryStoryRepo::default();
+        let story = Story::new(1, 1, "Login", Some(3)).unwrap();
+        let id = repo.create(&story).await.unwrap();
+        assert_eq!(id, 1);
+
+        let got = repo.get_by_id(id).await.unwrap().unwrap();
+        assert_eq!(got.title, "Login");
+    }
+
+    #[tokio::test]
+    async fn story_repo_get_nonexistent() {
+        let repo = InMemoryStoryRepo::default();
+        assert!(repo.get_by_id(42).await.unwrap().is_none());
+    }
+
+    #[tokio::test]
+    async fn story_repo_update_status() {
+        let repo = InMemoryStoryRepo::default();
+        let story = Story::new(1, 1, "T", None).unwrap();
+        let id = repo.create(&story).await.unwrap();
+
+        repo.update_status(id, StoryStatus::InProgress).await.unwrap();
+
+        let got = repo.get_by_id(id).await.unwrap().unwrap();
+        assert_eq!(got.status, StoryStatus::InProgress);
+    }
+
+    #[tokio::test]
+    async fn story_repo_update_status_not_found() {
+        let repo = InMemoryStoryRepo::default();
+        let err = repo.update_status(999, StoryStatus::Done).await;
+        assert!(err.is_err());
+    }
+
+    #[tokio::test]
+    async fn story_repo_list_by_epic() {
+        let repo = InMemoryStoryRepo::default();
+        let s1 = Story::new(1, 1, "A", None).unwrap();
+        let s2 = Story::new(2, 1, "B", None).unwrap();
+        let s3 = Story::new(1, 1, "C", None).unwrap();
+        repo.create(&s1).await.unwrap();
+        repo.create(&s2).await.unwrap();
+        repo.create(&s3).await.unwrap();
+
+        let epic1 = repo.list_by_epic(1).await.unwrap();
+        assert_eq!(epic1.len(), 2);
+
+        let epic2 = repo.list_by_epic(2).await.unwrap();
+        assert_eq!(epic2.len(), 1);
+
+        let epic99 = repo.list_by_epic(99).await.unwrap();
+        assert!(epic99.is_empty());
+    }
+
+    // ── InMemoryEpicRepo ─────────────────────────────────────────────────────
+
+    #[tokio::test]
+    async fn epic_repo_create_and_get() {
+        let repo = InMemoryEpicRepo::default();
+        let epic = Epic::new(1, "Auth").unwrap();
+        let id = repo.create(&epic).await.unwrap();
+        assert_eq!(id, 1);
+
+        let got = repo.get_by_id(id).await.unwrap().unwrap();
+        assert_eq!(got.title, "Auth");
+    }
+
+    #[tokio::test]
+    async fn epic_repo_get_nonexistent() {
+        let repo = InMemoryEpicRepo::default();
+        assert!(repo.get_by_id(1).await.unwrap().is_none());
+    }
+
+    #[tokio::test]
+    async fn epic_repo_update_status() {
+        let repo = InMemoryEpicRepo::default();
+        let epic = Epic::new(1, "E").unwrap();
+        let id = repo.create(&epic).await.unwrap();
+
+        repo.update_status(id, EpicStatus::Completed).await.unwrap();
+
+        let got = repo.get_by_id(id).await.unwrap().unwrap();
+        assert_eq!(got.status, EpicStatus::Completed);
+    }
+
+    #[tokio::test]
+    async fn epic_repo_update_status_not_found() {
+        let repo = InMemoryEpicRepo::default();
+        let err = repo.update_status(999, EpicStatus::Completed).await;
+        assert!(err.is_err());
+    }
+
+    #[tokio::test]
+    async fn epic_repo_list_by_project() {
+        let repo = InMemoryEpicRepo::default();
+        let e1 = Epic::new(1, "A").unwrap();
+        let e2 = Epic::new(2, "B").unwrap();
+        let e3 = Epic::new(1, "C").unwrap();
+        repo.create(&e1).await.unwrap();
+        repo.create(&e2).await.unwrap();
+        repo.create(&e3).await.unwrap();
+
+        let proj1 = repo.list_by_project(1).await.unwrap();
+        assert_eq!(proj1.len(), 2);
+
+        let proj2 = repo.list_by_project(2).await.unwrap();
+        assert_eq!(proj2.len(), 1);
+    }
+
+    // ── SpyPublisher ─────────────────────────────────────────────────────────
+
+    #[test]
+    fn spy_publisher_starts_empty() {
+        let spy = SpyPublisher::default();
+        assert!(spy.emitted().is_empty());
+    }
+
+    #[test]
+    fn spy_publisher_records_events() {
+        let spy = SpyPublisher::default();
+        spy.publish(DomainEvent::FeatureCreated {
+            id: 1,
+            slug: "a".into(),
+        })
+        .unwrap();
+        spy.publish(DomainEvent::StoryCreated {
+            id: 2,
+            epic_id: 1,
+            title: "T".into(),
+        })
+        .unwrap();
+
+        let events = spy.emitted();
+        assert_eq!(events.len(), 2);
+        assert!(matches!(&events[0], DomainEvent::FeatureCreated { slug, .. } if slug == "a"));
+        assert!(matches!(&events[1], DomainEvent::StoryCreated { id: 2, .. }));
+    }
+
+    #[test]
+    fn spy_publisher_emitted_returns_clone() {
+        let spy = SpyPublisher::default();
+        spy.publish(DomainEvent::FeatureCreated {
+            id: 1,
+            slug: "x".into(),
+        })
+        .unwrap();
+
+        let first = spy.emitted();
+        let second = spy.emitted();
+        assert_eq!(first, second);
+    }
+}

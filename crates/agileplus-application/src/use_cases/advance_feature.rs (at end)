@@ -1,0 +1,161 @@
+// ── Tests ─────────────────────────────────────────────────────────────────────
+
+#[cfg(test)]
+mod tests {
+    use std::sync::Arc;
+
+    use agileplus_domain::domain::state_machine::FeatureState;
+    use agileplus_domain::ports::StoragePort;
+    use agileplus_domain::ports::events::DomainEvent;
+
+    use crate::dto::{AdvanceFeatureCmd, CreateFeatureCmd};
+    use crate::error::AppError;
+    use crate::test_mocks::{InMemoryFeatureRepo, SpyPublisher};
+
+    use super::AdvanceFeature;
+    use crate::use_cases::create_feature::CreateFeature;
+
+    #[tokio::test]
+    async fn new_constructor_works() {
+        let repo = Arc::new(InMemoryFeatureRepo::default());
+        let pub_ = Arc::new(SpyPublisher::default());
+        let _uc = AdvanceFeature::new(repo, pub_);
+    }
+
+    #[tokio::test]
+    async fn advance_to_specified() {
+        let repo = Arc::new(InMemoryFeatureRepo::default());
+        let pub_ = Arc::new(SpyPublisher::default());
+        let create_uc = CreateFeature::new(repo.clone(), pub_.clone());
+        let advance_uc = AdvanceFeature::new(repo.clone(), pub_.clone());
+
+        let out = create_uc
+            .execute(CreateFeatureCmd {
+                slug: "adv".into(),
+                friendly_name: "Adv".into(),
+                spec_hash: None,
+                target_branch: None,
+            })
+            .await
+            .unwrap();
+
+        advance_uc
+            .execute(AdvanceFeatureCmd {
+                feature_id: out.id,
+                target_state: "specified".into(),
+            })
+            .await
+            .unwrap();
+
+        let feature = repo.get_feature_by_id(out.id).await.unwrap().unwrap();
+        assert_eq!(feature.state, FeatureState::Specified);
+    }
+
+    #[tokio::test]
+    async fn advance_not_found() {
+        let repo = Arc::new(InMemoryFeatureRepo::default());
+        let pub_ = Arc::new(SpyPublisher::default());
+        let uc = AdvanceFeature::new(repo, pub_);
+
+        let err = uc
+            .execute(AdvanceFeatureCmd {
+                feature_id: 999,
+                target_state: "specified".into(),
+            })
+            .await
+            .unwrap_err();
+
+        assert!(matches!(err, AppError::NotFound(_)));
+    }
+
+    #[tokio::test]
+    async fn advance_invalid_state_string() {
+        let repo = Arc::new(InMemoryFeatureRepo::default());
+        let pub_ = Arc::new(SpyPublisher::default());
+        let create_uc = CreateFeature::new(repo.clone(), pub_.clone());
+        let advance_uc = AdvanceFeature::new(repo.clone(), pub_.clone());
+
+        let out = create_uc
+            .execute(CreateFeatureCmd {
+                slug: "bad-state".into(),
+                friendly_name: "Bad State".into(),
+                spec_hash: None,
+                target_branch: None,
+            })
+            .await
+            .unwrap();
+
+        let err = advance_uc
+            .execute(AdvanceFeatureCmd {
+                feature_id: out.id,
+                target_state: "nonexistent_state".into(),
+            })
+            .await
+            .unwrap_err();
+
+        assert!(matches!(err, AppError::Domain(_)));
+    }
+
+    #[tokio::test]
+    async fn advance_invalid_transition_rejected() {
+        let repo = Arc::new(InMemoryFeatureRepo::default());
+        let pub_ = Arc::new(SpyPublisher::default());
+        let create_uc = CreateFeature::new(repo.clone(), pub_.clone());
+        let advance_uc = AdvanceFeature::new(repo, pub_);
+
+        let out = create_uc
+            .execute(CreateFeatureCmd {
+                slug: "skip".into(),
+                friendly_name: "Skip".into(),
+                spec_hash: None,
+                target_branch: None,
+            })
+            .await
+            .unwrap();
+
+        // Can't go directly from created -> shipped
+        let err = advance_uc
+            .execute(AdvanceFeatureCmd {
+                feature_id: out.id,
+                target_state: "shipped".into(),
+            })
+            .await
+            .unwrap_err();
+
+        assert!(matches!(err, AppError::Domain(_)));
+    }
+
+    #[tokio::test]
+    async fn advance_publishes_event() {
+        let repo = Arc::new(InMemoryFeatureRepo::default());
+        let pub_ = Arc::new(SpyPublisher::default());
+        let create_uc = CreateFeature::new(repo, pub_.clone());
+        let advance_uc = AdvanceFeature::new(repo, pub_.clone());
+
+        let out = create_uc
+            .execute(CreateFeatureCmd {
+                slug: "evt".into(),
+                friendly_name: "Evt".into(),
+                spec_hash: None,
+                target_branch: None,
+            })
+            .await
+            .unwrap();
+
+        pub_.emitted(); // drain create event
+
+        advance_uc
+            .execute(AdvanceFeatureCmd {
+                feature_id: out.id,
+                target_state: "specified".into(),
+            })
+            .await
+            .unwrap();
+
+        let events = pub_.emitted();
+        // 1 create + 1 advance = 2 events
+        assert_eq!(events.len(), 2);
+        assert!(matches!(&events[1], DomainEvent::FeatureStateAdvanced { from, to, .. }
+            if from == "created" && to == "specified"));
+    }
+}

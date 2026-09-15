@@ -1,0 +1,150 @@
+// ── Tests ─────────────────────────────────────────────────────────────────────
+
+#[cfg(test)]
+mod tests {
+    use std::sync::Arc;
+
+    use agileplus_domain::ports::StoragePort;
+    use agileplus_domain::ports::events::DomainEvent;
+
+    use crate::dto::CreateFeatureCmd;
+    use crate::error::AppError;
+    use crate::test_mocks::{InMemoryFeatureRepo, SpyPublisher};
+
+    use super::CreateFeature;
+
+    #[tokio::test]
+    async fn new_constructor_works() {
+        let repo = Arc::new(InMemoryFeatureRepo::default());
+        let pub_ = Arc::new(SpyPublisher::default());
+        let _uc = CreateFeature::new(repo, pub_);
+    }
+
+    #[tokio::test]
+    async fn execute_returns_correct_id_and_slug() {
+        let repo = Arc::new(InMemoryFeatureRepo::default());
+        let pub_ = Arc::new(SpyPublisher::default());
+        let uc = CreateFeature::new(repo.clone(), pub_.clone());
+
+        let out = uc
+            .execute(CreateFeatureCmd {
+                slug: "billing".into(),
+                friendly_name: "Billing".into(),
+                spec_hash: None,
+                target_branch: None,
+            })
+            .await
+            .unwrap();
+
+        assert_eq!(out.id, 1);
+        assert_eq!(out.feature.slug, "billing");
+        assert_eq!(out.feature.friendly_name, "Billing");
+    }
+
+    #[tokio::test]
+    async fn execute_persists_feature_in_repo() {
+        let repo = Arc::new(InMemoryFeatureRepo::default());
+        let pub_ = Arc::new(SpyPublisher::default());
+        let uc = CreateFeature::new(repo.clone(), pub_.clone());
+
+        let out = uc
+            .execute(CreateFeatureCmd {
+                slug: "persist-check".into(),
+                friendly_name: "Persist Check".into(),
+                spec_hash: None,
+                target_branch: None,
+            })
+            .await
+            .unwrap();
+
+        let stored = repo.get_feature_by_id(out.id).await.unwrap();
+        assert!(stored.is_some());
+        assert_eq!(stored.unwrap().slug, "persist-check");
+    }
+
+    #[tokio::test]
+    async fn execute_publishes_feature_created_event() {
+        let repo = Arc::new(InMemoryFeatureRepo::default());
+        let pub_ = Arc::new(SpyPublisher::default());
+        let uc = CreateFeature::new(repo, pub_.clone());
+
+        uc.execute(CreateFeatureCmd {
+            slug: "event-check".into(),
+            friendly_name: "Event Check".into(),
+            spec_hash: None,
+            target_branch: None,
+        })
+        .await
+        .unwrap();
+
+        let events = pub_.emitted();
+        assert_eq!(events.len(), 1);
+        assert!(matches!(&events[0], DomainEvent::FeatureCreated { id: 1, slug } if slug == "event-check"));
+    }
+
+    #[tokio::test]
+    async fn execute_applies_defaults_when_none() {
+        let repo = Arc::new(InMemoryFeatureRepo::default());
+        let pub_ = Arc::new(SpyPublisher::default());
+        let uc = CreateFeature::new(repo, pub_);
+
+        let out = uc
+            .execute(CreateFeatureCmd {
+                slug: "defaults".into(),
+                friendly_name: "Defaults".into(),
+                spec_hash: None,
+                target_branch: None,
+            })
+            .await
+            .unwrap();
+
+        assert_eq!(out.feature.target_branch, "main");
+        assert_eq!(out.feature.spec_hash, [0u8; 32]);
+    }
+
+    #[tokio::test]
+    async fn execute_preserves_explicit_values() {
+        let repo = Arc::new(InMemoryFeatureRepo::default());
+        let pub_ = Arc::new(SpyPublisher::default());
+        let uc = CreateFeature::new(repo, pub_);
+        let spec = [99u8; 32];
+
+        let out = uc
+            .execute(CreateFeatureCmd {
+                slug: "explicit".into(),
+                friendly_name: "Explicit".into(),
+                spec_hash: Some(spec),
+                target_branch: Some("feature/x".into()),
+            })
+            .await
+            .unwrap();
+
+        assert_eq!(out.feature.target_branch, "feature/x");
+        assert_eq!(out.feature.spec_hash, spec);
+    }
+
+    #[tokio::test]
+    async fn execute_multiple_features_increment_ids() {
+        let repo = Arc::new(InMemoryFeatureRepo::default());
+        let pub_ = Arc::new(SpyPublisher::default());
+        let uc = CreateFeature::new(repo, pub_);
+
+        let out1 = uc.execute(CreateFeatureCmd {
+            slug: "a".into(),
+            friendly_name: "A".into(),
+            spec_hash: None,
+            target_branch: None,
+        }).await.unwrap();
+
+        let out2 = uc.execute(CreateFeatureCmd {
+            slug: "b".into(),
+            friendly_name: "B".into(),
+            spec_hash: None,
+            target_branch: None,
+        }).await.unwrap();
+
+        assert_eq!(out1.id, 1);
+        assert_eq!(out2.id, 2);
+        assert_ne!(out1.id, out2.id);
+    }
+}

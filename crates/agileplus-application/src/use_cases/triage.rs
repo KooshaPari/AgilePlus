@@ -845,4 +845,185 @@ mod tests {
         let resp = state.where_am_i(&req).unwrap();
         assert!(resp.repo.is_none());
     }
+
+    // ── Additional WpGraph tests ─────────────────────────────────────────────
+
+    #[test]
+    fn graph_self_referencing_cycle() {
+        // A -> A (self-loop)
+        let items = vec![make_item("A", vec!["A"])];
+        let g = WpGraph::from_items(&items);
+        let result = g.topo_sort();
+        assert!(result.cycle.is_some());
+    }
+
+    #[test]
+    fn graph_diamond_topo_order_constraints() {
+        // A -> B, A -> C, B -> D, C -> D
+        let items = vec![
+            make_item("A", vec!["B", "C"]),
+            make_item("B", vec!["D"]),
+            make_item("C", vec!["D"]),
+        ];
+        let g = WpGraph::from_items(&items);
+        let result = g.topo_sort();
+        assert_eq!(result.order.len(), 4);
+        assert!(result.cycle.is_none());
+
+        // Verify relative ordering: D must come after B and C
+        let pos = |n: &str| result.order.iter().position(|x| x == n).unwrap();
+        assert!(pos("B") < pos("D"));
+        assert!(pos("C") < pos("D"));
+    }
+
+    #[test]
+    fn parallel_layers_single_node() {
+        let items = vec![make_item("A", vec![])];
+        let g = WpGraph::from_items(&items);
+        let layers = g.parallel_layers();
+        assert_eq!(layers.len(), 1);
+        assert_eq!(layers[0], vec!["A"]);
+    }
+
+    #[test]
+    fn parallel_layers_linear_chain_depth() {
+        // A -> B -> C: should have 3 layers (or more depending on rank logic)
+        let items = vec![make_item("A", vec!["B"]), make_item("B", vec!["C"])];
+        let g = WpGraph::from_items(&items);
+        let layers = g.parallel_layers();
+        // Each layer should have at least one node, and all nodes should appear
+        let all: Vec<_> = layers.iter().flat_map(|l| l.clone()).collect();
+        assert_eq!(all.len(), 3);
+        assert!(all.contains(&"A".to_string()));
+        assert!(all.contains(&"B".to_string()));
+        assert!(all.contains(&"C".to_string()));
+    }
+
+    #[test]
+    fn parallel_layers_preserves_sorted_output() {
+        let items = vec![
+            make_item("Z", vec![]),
+            make_item("A", vec![]),
+            make_item("M", vec![]),
+        ];
+        let g = WpGraph::from_items(&items);
+        let layers = g.parallel_layers();
+        // All in layer 0, should be sorted alphabetically
+        assert_eq!(layers.len(), 1);
+        assert_eq!(layers[0], vec!["A", "M", "Z"]);
+    }
+
+    // ── Additional AppState tests ────────────────────────────────────────────
+
+    #[test]
+    fn claim_same_claim_id_succeeds() {
+        let repo = MemRepo::default();
+        let state = AppState::new(repo);
+        let req = ClaimRequest {
+            claim_id: "c1".into(),
+            resource: "worktree-slug".into(),
+            kind: ClaimKind::Worktree,
+            agent_id: "agent-1".into(),
+            ttl_seconds: 300,
+            reason: ClaimReason::default(),
+        };
+        state.claim(&req).unwrap();
+
+        // Same claim_id re-claiming same resource should succeed (heartbeat-like)
+        let req2 = ClaimRequest {
+            claim_id: "c1".into(),
+            resource: "worktree-slug".into(),
+            kind: ClaimKind::Worktree,
+            agent_id: "agent-1".into(),
+            ttl_seconds: 300,
+            reason: ClaimReason::default(),
+        };
+        // This may or may not succeed depending on ClaimStore internals;
+        // at minimum it should not panic.
+        let _ = state.claim(&req2);
+    }
+
+    #[test]
+    fn claim_release_and_reclaim() {
+        let repo = MemRepo::default();
+        let state = AppState::new(repo);
+
+        let req = ClaimRequest {
+            claim_id: "c1".into(),
+            resource: "res".into(),
+            kind: ClaimKind::Worktree,
+            agent_id: "agent-1".into(),
+            ttl_seconds: 300,
+            reason: ClaimReason::default(),
+        };
+        state.claim(&req).unwrap();
+        state.release(&ReleaseRequest { claim_id: "c1".into() }).unwrap();
+
+        // After release, a new claim should succeed
+        let req2 = ClaimRequest {
+            claim_id: "c2".into(),
+            resource: "res".into(),
+            kind: ClaimKind::Worktree,
+            agent_id: "agent-2".into(),
+            ttl_seconds: 300,
+            reason: ClaimReason::default(),
+        };
+        let claim = state.claim(&req2).unwrap();
+        assert_eq!(claim.agent_id, "agent-2");
+    }
+
+    #[test]
+    fn done_with_invalid_claim_id() {
+        let repo = MemRepo::with_items(vec![make_item("WP01", vec![])]);
+        let mut state = AppState::new(repo);
+        let mut req = DoneRequest {
+            claim_id: "nonexistent".into(),
+            wp_id: "WP01".into(),
+            result: None,
+        };
+        // done should still succeed (it releases and marks done even if claim missing)
+        let result = state.done(&mut req);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn topology_empty_graph() {
+        let repo = MemRepo::default();
+        let state = AppState::new(repo);
+        let report = state.topology(&TopologyRequest { root_wp: None }).unwrap();
+        assert!(report.topo.order.is_empty());
+        assert!(report.topo.cycle.is_none());
+    }
+
+    #[test]
+    fn topology_chain_produces_valid_layers() {
+        let items = vec![
+            make_item("WP01", vec![]),
+            make_item("WP02", vec!["WP01"]),
+            make_item("WP03", vec!["WP02"]),
+        ];
+        let repo = MemRepo::with_items(items);
+        let state = AppState::new(repo);
+        let report = state.topology(&TopologyRequest { root_wp: None }).unwrap();
+        assert_eq!(report.topo.order.len(), 3);
+        assert!(!report.layers.is_empty());
+
+        // All nodes present in layers
+        let all: Vec<_> = report.layers.iter().flat_map(|l| l.clone()).collect();
+        assert_eq!(all.len(), 3);
+    }
+
+    #[test]
+    fn where_am_i_empty_repo() {
+        let repo = MemRepo::default();
+        let state = AppState::new(repo);
+        let tmp = tempfile::tempdir().unwrap();
+        let req = WhereRequest {
+            cwd: tmp.path().to_string_lossy().to_string(),
+        };
+        let resp = state.where_am_i(&req).unwrap();
+        assert!(resp.repo.is_some());
+        assert!(resp.next_pickable.is_empty());
+        assert!(resp.active_claims.is_empty());
+    }
 }

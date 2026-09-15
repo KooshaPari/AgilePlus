@@ -1,0 +1,173 @@
+// ── Tests ─────────────────────────────────────────────────────────────────────
+
+#[cfg(test)]
+mod tests {
+    use std::sync::Arc;
+
+    use agileplus_domain::domain::story::StoryStatus;
+    use agileplus_domain::ports::events::DomainEvent;
+    use agileplus_domain::ports::story::StoryRepository;
+
+    use crate::dto::{CreateStoryCmd, TransitionStoryCmd};
+    use crate::error::AppError;
+    use crate::test_mocks::{InMemoryStoryRepo, SpyPublisher};
+
+    use super::TransitionStory;
+    use crate::use_cases::create_story::CreateStory;
+
+    #[tokio::test]
+    async fn new_constructor_works() {
+        let repo = Arc::new(InMemoryStoryRepo::default());
+        let pub_ = Arc::new(SpyPublisher::default());
+        let _uc = TransitionStory::new(repo, pub_);
+    }
+
+    #[tokio::test]
+    async fn transition_todo_to_in_progress() {
+        let repo = Arc::new(InMemoryStoryRepo::default());
+        let pub_ = Arc::new(SpyPublisher::default());
+        let create_uc = CreateStory::new(repo.clone(), pub_.clone());
+        let trans_uc = TransitionStory::new(repo.clone(), pub_.clone());
+
+        let out = create_uc
+            .execute(CreateStoryCmd {
+                epic_id: 1,
+                project_id: 1,
+                title: "T".into(),
+                points: None,
+            })
+            .await
+            .unwrap();
+
+        trans_uc
+            .execute(TransitionStoryCmd {
+                story_id: out.id,
+                target_status: StoryStatus::InProgress,
+            })
+            .await
+            .unwrap();
+
+        let story = repo.get_by_id(out.id).await.unwrap().unwrap();
+        assert_eq!(story.status, StoryStatus::InProgress);
+    }
+
+    #[tokio::test]
+    async fn transition_not_found() {
+        let repo = Arc::new(InMemoryStoryRepo::default());
+        let pub_ = Arc::new(SpyPublisher::default());
+        let uc = TransitionStory::new(repo, pub_);
+
+        let err = uc
+            .execute(TransitionStoryCmd {
+                story_id: 999,
+                target_status: StoryStatus::InProgress,
+            })
+            .await
+            .unwrap_err();
+
+        assert!(matches!(err, AppError::NotFound(_)));
+    }
+
+    #[tokio::test]
+    async fn transition_invalid_rejected() {
+        let repo = Arc::new(InMemoryStoryRepo::default());
+        let pub_ = Arc::new(SpyPublisher::default());
+        let create_uc = CreateStory::new(repo.clone(), pub_.clone());
+        let trans_uc = TransitionStory::new(repo, pub_);
+
+        let out = create_uc
+            .execute(CreateStoryCmd {
+                epic_id: 1,
+                project_id: 1,
+                title: "T".into(),
+                points: None,
+            })
+            .await
+            .unwrap();
+
+        // Can't go directly from todo -> done
+        let err = trans_uc
+            .execute(TransitionStoryCmd {
+                story_id: out.id,
+                target_status: StoryStatus::Done,
+            })
+            .await
+            .unwrap_err();
+
+        assert!(matches!(err, AppError::Domain(_)));
+    }
+
+    #[tokio::test]
+    async fn transition_publishes_event() {
+        let repo = Arc::new(InMemoryStoryRepo::default());
+        let pub_ = Arc::new(SpyPublisher::default());
+        let create_uc = CreateStory::new(repo.clone(), pub_.clone());
+        let trans_uc = TransitionStory::new(repo, pub_.clone());
+
+        let out = create_uc
+            .execute(CreateStoryCmd {
+                epic_id: 1,
+                project_id: 1,
+                title: "T".into(),
+                points: None,
+            })
+            .await
+            .unwrap();
+
+        trans_uc
+            .execute(TransitionStoryCmd {
+                story_id: out.id,
+                target_status: StoryStatus::InProgress,
+            })
+            .await
+            .unwrap();
+
+        let events = pub_.emitted();
+        assert_eq!(events.len(), 2);
+        assert!(matches!(&events[1], DomainEvent::StoryStatusChanged { from, to, .. }
+            if from == "todo" && to == "in_progress"));
+    }
+
+    #[tokio::test]
+    async fn transition_full_lifecycle() {
+        let repo = Arc::new(InMemoryStoryRepo::default());
+        let pub_ = Arc::new(SpyPublisher::default());
+        let create_uc = CreateStory::new(repo.clone(), pub_.clone());
+        let trans_uc = TransitionStory::new(repo.clone(), pub_.clone());
+
+        let out = create_uc
+            .execute(CreateStoryCmd {
+                epic_id: 1,
+                project_id: 1,
+                title: "Lifecycle".into(),
+                points: None,
+            })
+            .await
+            .unwrap();
+
+        // todo -> in_progress
+        trans_uc.execute(TransitionStoryCmd {
+            story_id: out.id,
+            target_status: StoryStatus::InProgress,
+        }).await.unwrap();
+
+        // in_progress -> in_review
+        trans_uc.execute(TransitionStoryCmd {
+            story_id: out.id,
+            target_status: StoryStatus::InReview,
+        }).await.unwrap();
+
+        // in_review -> done
+        trans_uc.execute(TransitionStoryCmd {
+            story_id: out.id,
+            target_status: StoryStatus::Done,
+        }).await.unwrap();
+
+        let story = repo.get_by_id(out.id).await.unwrap().unwrap();
+        assert_eq!(story.status, StoryStatus::Done);
+
+        // 1 create + 3 transitions = 4 events
+        let events = pub_.emitted();
+        assert_eq!(events.len(), 4);
+    }
+}

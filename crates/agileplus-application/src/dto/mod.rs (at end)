@@ -1,0 +1,416 @@
+// ── Tests ─────────────────────────────────────────────────────────────────────
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ── PickRequest ──────────────────────────────────────────────────────────
+
+    #[test]
+    fn pick_request_serde_roundtrip() {
+        let req = PickRequest {
+            agent_id: "agent-42".into(),
+            limit: 5,
+            lane: Some("backend".into()),
+            category: Some("bug".into()),
+        };
+        let json = serde_json::to_string(&req).unwrap();
+        let back: PickRequest = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.agent_id, "agent-42");
+        assert_eq!(back.limit, 5);
+        assert_eq!(back.lane.as_deref(), Some("backend"));
+        assert_eq!(back.category.as_deref(), Some("bug"));
+    }
+
+    #[test]
+    fn pick_request_optional_fields_default() {
+        let json = r#"{"agent_id":"a","limit":1}"#;
+        let req: PickRequest = serde_json::from_str(json).unwrap();
+        assert!(req.lane.is_none());
+        assert!(req.category.is_none());
+    }
+
+    // ── PickedItem ───────────────────────────────────────────────────────────
+
+    #[test]
+    fn picked_item_serde_roundtrip() {
+        let item = PickedItem {
+            wp_id: "wp-1".into(),
+            title: "Fix login".into(),
+            state: "ready".into(),
+            dependencies: vec!["wp-0".into()],
+        };
+        let json = serde_json::to_string(&item).unwrap();
+        let back: PickedItem = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.wp_id, "wp-1");
+        assert_eq!(back.dependencies, vec!["wp-0"]);
+    }
+
+    #[test]
+    fn picked_item_empty_deps() {
+        let item = PickedItem {
+            wp_id: "wp-99".into(),
+            title: "No deps".into(),
+            state: "done".into(),
+            dependencies: vec![],
+        };
+        let json = serde_json::to_string(&item).unwrap();
+        let back: PickedItem = serde_json::from_str(&json).unwrap();
+        assert!(back.dependencies.is_empty());
+    }
+
+    // ── ClaimRequest ─────────────────────────────────────────────────────────
+
+    #[test]
+    fn claim_request_serde_roundtrip() {
+        let req = ClaimRequest {
+            claim_id: "c1".into(),
+            resource: "worktree".into(),
+            kind: ClaimKind::Worktree,
+            agent_id: "agent-1".into(),
+            ttl_seconds: 300,
+            reason: ClaimReason::default(),
+        };
+        let json = serde_json::to_string(&req).unwrap();
+        let back: ClaimRequest = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.claim_id, "c1");
+        assert_eq!(back.ttl_seconds, 300);
+        assert_eq!(back.kind, ClaimKind::Worktree);
+    }
+
+    #[test]
+    fn claim_request_default_reason() {
+        let json = r#"{"claim_id":"x","resource":"r","kind":"worktree","agent_id":"a","ttl_seconds":60}"#;
+        let req: ClaimRequest = serde_json::from_str(json).unwrap();
+        assert_eq!(req.reason, ClaimReason::default());
+    }
+
+    // ── HeartbeatRequest ─────────────────────────────────────────────────────
+
+    #[test]
+    fn heartbeat_request_serde_roundtrip() {
+        let req = HeartbeatRequest {
+            claim_id: "hb-1".into(),
+        };
+        let json = serde_json::to_string(&req).unwrap();
+        let back: HeartbeatRequest = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.claim_id, "hb-1");
+    }
+
+    // ── ReleaseRequest ───────────────────────────────────────────────────────
+
+    #[test]
+    fn release_request_serde_roundtrip() {
+        let req = ReleaseRequest {
+            claim_id: "rel-1".into(),
+        };
+        let json = serde_json::to_string(&req).unwrap();
+        let back: ReleaseRequest = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.claim_id, "rel-1");
+    }
+
+    // ── DoneRequest ──────────────────────────────────────────────────────────
+
+    #[test]
+    fn done_request_serde_roundtrip() {
+        let req = DoneRequest {
+            claim_id: "d1".into(),
+            wp_id: "wp-5".into(),
+            result: Some("completed".into()),
+        };
+        let json = serde_json::to_string(&req).unwrap();
+        let back: DoneRequest = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.claim_id, "d1");
+        assert_eq!(back.wp_id, "wp-5");
+        assert_eq!(back.result.as_deref(), Some("completed"));
+    }
+
+    #[test]
+    fn done_request_result_none() {
+        let json = r#"{"claim_id":"d2","wp_id":"wp-6"}"#;
+        let req: DoneRequest = serde_json::from_str(json).unwrap();
+        assert!(req.result.is_none());
+    }
+
+    // ── DedupRequest ─────────────────────────────────────────────────────────
+
+    #[test]
+    fn dedup_request_serde_roundtrip() {
+        let req = DedupRequest {
+            items: vec![
+                ("a".into(), "b".into()),
+                ("c".into(), "d".into()),
+            ],
+            threshold: 0.85,
+        };
+        let json = serde_json::to_string(&req).unwrap();
+        let back: DedupRequest = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.items.len(), 2);
+        assert!((back.threshold - 0.85).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn dedup_request_empty_items() {
+        let req = DedupRequest {
+            items: vec![],
+            threshold: 0.0,
+        };
+        let json = serde_json::to_string(&req).unwrap();
+        let back: DedupRequest = serde_json::from_str(&json).unwrap();
+        assert!(back.items.is_empty());
+    }
+
+    // ── ScanRequest ──────────────────────────────────────────────────────────
+
+    #[test]
+    fn scan_request_serde_roundtrip() {
+        let req = ScanRequest {
+            roots: vec!["/tmp".into(), "/home".into()],
+            max_depth: Some(3),
+        };
+        let json = serde_json::to_string(&req).unwrap();
+        let back: ScanRequest = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.roots.len(), 2);
+        assert_eq!(back.max_depth, Some(3));
+    }
+
+    #[test]
+    fn scan_request_none_max_depth() {
+        let json = r#"{"roots":["/tmp"]}"#;
+        let req: ScanRequest = serde_json::from_str(json).unwrap();
+        assert!(req.max_depth.is_none());
+    }
+
+    // ── TopologyRequest ──────────────────────────────────────────────────────
+
+    #[test]
+    fn topology_request_serde_roundtrip() {
+        let req = TopologyRequest {
+            root_wp: Some("wp-1".into()),
+        };
+        let json = serde_json::to_string(&req).unwrap();
+        let back: TopologyRequest = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.root_wp.as_deref(), Some("wp-1"));
+    }
+
+    #[test]
+    fn topology_request_none_root() {
+        let json = r#"{}"#;
+        let req: TopologyRequest = serde_json::from_str(json).unwrap();
+        assert!(req.root_wp.is_none());
+    }
+
+    // ── ExportRequest ────────────────────────────────────────────────────────
+
+    #[test]
+    fn export_request_serde_roundtrip() {
+        let req = ExportRequest {
+            format: ExportFormat::Markdown,
+            output_path: Some("/out.md".into()),
+            with_side: true,
+        };
+        let json = serde_json::to_string(&req).unwrap();
+        let back: ExportRequest = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.format, ExportFormat::Markdown);
+        assert!(back.with_side);
+    }
+
+    #[test]
+    fn export_request_default_side_false() {
+        let json = r#"{"format":"csv"}"#;
+        let req: ExportRequest = serde_json::from_str(json).unwrap();
+        assert!(!req.with_side);
+        assert!(req.output_path.is_none());
+    }
+
+    // ── ExportFormat variants ────────────────────────────────────────────────
+
+    #[test]
+    fn export_format_all_variants_serde() {
+        let formats = [
+            (ExportFormat::Markdown, r#""markdown""#),
+            (ExportFormat::Csv, r#""csv""#),
+            (ExportFormat::Html, r#""html""#),
+            (ExportFormat::Mermaid, r#""mermaid""#),
+            (ExportFormat::Dot, r#""dot""#),
+        ];
+        for (expected, json_str) in &formats {
+            let fmt: ExportFormat = serde_json::from_str(json_str).unwrap();
+            assert_eq!(&fmt, expected);
+        }
+    }
+
+    #[test]
+    fn export_format_debug_and_copy() {
+        let fmt = ExportFormat::Html;
+        let copied = fmt;
+        assert_eq!(fmt, copied);
+        let dbg = format!("{:?}", fmt);
+        assert_eq!(dbg, "Html");
+    }
+
+    // ── WhereRequest / WhereResponse ─────────────────────────────────────────
+
+    #[test]
+    fn where_request_serde_roundtrip() {
+        let req = WhereRequest {
+            cwd: "/home/user/project".into(),
+        };
+        let json = serde_json::to_string(&req).unwrap();
+        let back: WhereRequest = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.cwd, "/home/user/project");
+    }
+
+    #[test]
+    fn where_response_serde_roundtrip() {
+        let resp = WhereResponse {
+            repo: None,
+            active_claims: vec![],
+            lane: None,
+            category: None,
+            next_pickable: vec![],
+        };
+        let json = serde_json::to_string(&resp).unwrap();
+        let back: WhereResponse = serde_json::from_str(&json).unwrap();
+        assert!(back.repo.is_none());
+        assert!(back.active_claims.is_empty());
+    }
+
+    // ── Domain command DTOs (Clone + Debug) ──────────────────────────────────
+
+    #[test]
+    fn create_feature_cmd_clone_and_debug() {
+        let cmd = CreateFeatureCmd {
+            slug: "auth".into(),
+            friendly_name: "Auth".into(),
+            spec_hash: Some([42u8; 32]),
+            target_branch: Some("main".into()),
+        };
+        let cloned = cmd.clone();
+        assert_eq!(cloned.slug, "auth");
+        let dbg = format!("{:?}", cloned);
+        assert!(dbg.contains("CreateFeatureCmd"));
+    }
+
+    #[test]
+    fn create_feature_cmd_defaults() {
+        let cmd = CreateFeatureCmd {
+            slug: "s".into(),
+            friendly_name: "F".into(),
+            spec_hash: None,
+            target_branch: None,
+        };
+        assert!(cmd.spec_hash.is_none());
+        assert!(cmd.target_branch.is_none());
+    }
+
+    #[test]
+    fn advance_feature_cmd_clone_and_debug() {
+        let cmd = AdvanceFeatureCmd {
+            feature_id: 7,
+            target_state: "specified".into(),
+        };
+        let cloned = cmd.clone();
+        assert_eq!(cloned.feature_id, 7);
+        let dbg = format!("{:?}", cloned);
+        assert!(dbg.contains("AdvanceFeatureCmd"));
+    }
+
+    #[test]
+    fn create_story_cmd_clone_and_debug() {
+        let cmd = CreateStoryCmd {
+            epic_id: 1,
+            project_id: 2,
+            title: "Login".into(),
+            points: Some(5),
+        };
+        let cloned = cmd.clone();
+        assert_eq!(cloned.title, "Login");
+        let dbg = format!("{:?}", cloned);
+        assert!(dbg.contains("CreateStoryCmd"));
+    }
+
+    #[test]
+    fn create_story_cmd_none_points() {
+        let cmd = CreateStoryCmd {
+            epic_id: 1,
+            project_id: 1,
+            title: "t".into(),
+            points: None,
+        };
+        assert!(cmd.points.is_none());
+    }
+
+    #[test]
+    fn transition_story_cmd_clone_and_debug() {
+        let cmd = TransitionStoryCmd {
+            story_id: 10,
+            target_status: StoryStatus::InProgress,
+        };
+        let cloned = cmd.clone();
+        assert_eq!(cloned.story_id, 10);
+        assert_eq!(cloned.target_status, StoryStatus::InProgress);
+    }
+
+    #[test]
+    fn create_epic_cmd_clone_and_debug() {
+        let cmd = CreateEpicCmd {
+            project_id: 3,
+            title: "Infrastructure".into(),
+        };
+        let cloned = cmd.clone();
+        assert_eq!(cloned.project_id, 3);
+        let dbg = format!("{:?}", cloned);
+        assert!(dbg.contains("CreateEpicCmd"));
+    }
+
+    // ── FeatureCreatedOutput / StoryCreatedOutput / EpicCreatedOutput ────────
+
+    #[test]
+    fn feature_created_output_clone_debug() {
+        use agileplus_domain::domain::feature::Feature;
+        use agileplus_domain::domain::state_machine::FeatureState;
+
+        let feature = Feature::new("s", "F", [0u8; 32], None);
+        let out = FeatureCreatedOutput { id: 1, feature };
+        let cloned = out.clone();
+        assert_eq!(cloned.id, 1);
+        let dbg = format!("{:?}", cloned);
+        assert!(dbg.contains("FeatureCreatedOutput"));
+    }
+
+    #[test]
+    fn story_created_output_clone_debug() {
+        use agileplus_domain::domain::story::Story;
+        let story = Story::new(1, 1, "Test", None).unwrap();
+        let out = StoryCreatedOutput { id: 1, story };
+        let cloned = out.clone();
+        assert_eq!(cloned.id, 1);
+    }
+
+    #[test]
+    fn epic_created_output_clone_debug() {
+        let out = EpicCreatedOutput { id: 42 };
+        let cloned = out.clone();
+        assert_eq!(cloned.id, 42);
+        let dbg = format!("{:?}", cloned);
+        assert!(dbg.contains("EpicCreatedOutput"));
+    }
+
+    // ── Re-exported types serde sanity ───────────────────────────────────────
+
+    #[test]
+    fn claim_kind_serde_roundtrip() {
+        let json = serde_json::to_string(&ClaimKind::Worktree).unwrap();
+        let back: ClaimKind = serde_json::from_str(&json).unwrap();
+        assert_eq!(back, ClaimKind::Worktree);
+    }
+
+    #[test]
+    fn claim_reason_default_is_manual_empty() {
+        let reason = ClaimReason::default();
+        let json = serde_json::to_string(&reason).unwrap();
+        let back: ClaimReason = serde_json::from_str(&json).unwrap();
+        assert_eq!(back, reason);
+    }
+}

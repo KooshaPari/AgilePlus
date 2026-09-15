@@ -123,7 +123,7 @@ mod tests {
     use agileplus_domain::error::DomainError;
     use agileplus_domain::ports::story::StoryRepository;
 
-    use super::{PersistSyncedStories, PersistSyncedStoriesCmd};
+    use super::{PersistSyncedStories, PersistSyncedStoriesCmd, PersistSyncReport};
 
     // ── In-memory StoryRepository double ─────────────────────────────────────
 
@@ -321,5 +321,52 @@ mod tests {
                 .any(|s| s.requirement_id.as_deref() == Some("gh:issue:999")),
             "skipped item must not be in repo"
         );
+    }
+
+    /// Batch with mix of good and bad stories fails on the first bad one.
+    #[tokio::test]
+    async fn batch_fails_on_first_missing_requirement_id() {
+        let repo = Arc::new(InMemRepo::default());
+        let uc = PersistSyncedStories::new(repo.clone());
+
+        let good = make_story(1, 10, "Good", "gh:issue:10");
+        let bad = Story::new(1, 10, "Bad", None).unwrap(); // no requirement_id
+        let good2 = make_story(1, 10, "Good2", "gh:issue:11");
+
+        let err = uc
+            .execute(PersistSyncedStoriesCmd {
+                stories: vec![good, bad, good2],
+            })
+            .await
+            .unwrap_err();
+
+        assert!(matches!(
+            err,
+            crate::error::AppError::Domain(agileplus_domain::error::DomainError::Validation(_))
+        ));
+
+        // good story should still be in repo since it was processed before error
+        let all = repo.list_by_epic(1).await.unwrap();
+        assert_eq!(all.len(), 1);
+    }
+
+    /// PersistSyncReport default values are sensible.
+    #[test]
+    fn persist_sync_report_default() {
+        let report = PersistSyncReport::default();
+        assert!(report.persisted_ids.is_empty());
+        assert_eq!(report.created, 0);
+        assert_eq!(report.updated, 0);
+    }
+
+    /// PersistSyncedStoriesCmd clone and debug traits work.
+    #[test]
+    fn persist_synced_stories_cmd_clone_debug() {
+        let stories = vec![make_story(1, 10, "T", "gh:issue:1")];
+        let cmd = PersistSyncedStoriesCmd { stories };
+        let cloned = cmd.clone();
+        assert_eq!(cloned.stories.len(), 1);
+        let dbg = format!("{:?}", cloned);
+        assert!(dbg.contains("PersistSyncedStoriesCmd"));
     }
 }

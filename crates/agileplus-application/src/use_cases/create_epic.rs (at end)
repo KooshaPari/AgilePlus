@@ -1,0 +1,148 @@
+// ── Tests ─────────────────────────────────────────────────────────────────────
+
+#[cfg(test)]
+mod tests {
+    use std::sync::Arc;
+
+    use agileplus_domain::ports::epic::EpicRepository;
+    use agileplus_domain::ports::events::DomainEvent;
+
+    use crate::dto::CreateEpicCmd;
+    use crate::error::AppError;
+    use crate::test_mocks::{InMemoryEpicRepo, SpyPublisher};
+
+    use super::CreateEpic;
+
+    #[tokio::test]
+    async fn new_constructor_works() {
+        let repo = Arc::new(InMemoryEpicRepo::default());
+        let pub_ = Arc::new(SpyPublisher::default());
+        let _uc = CreateEpic::new(repo, pub_);
+    }
+
+    #[tokio::test]
+    async fn execute_returns_id() {
+        let repo = Arc::new(InMemoryEpicRepo::default());
+        let pub_ = Arc::new(SpyPublisher::default());
+        let uc = CreateEpic::new(repo.clone(), pub_.clone());
+
+        let out = uc
+            .execute(CreateEpicCmd {
+                project_id: 5,
+                title: "Performance".into(),
+            })
+            .await
+            .unwrap();
+
+        assert_eq!(out.id, 1);
+    }
+
+    #[tokio::test]
+    async fn execute_persists_in_repo() {
+        let repo = Arc::new(InMemoryEpicRepo::default());
+        let pub_ = Arc::new(SpyPublisher::default());
+        let uc = CreateEpic::new(repo.clone(), pub_.clone());
+
+        let out = uc
+            .execute(CreateEpicCmd {
+                project_id: 1,
+                title: "Stored Epic".into(),
+            })
+            .await
+            .unwrap();
+
+        let stored = repo.get_by_id(out.id).await.unwrap();
+        assert!(stored.is_some());
+        assert_eq!(stored.unwrap().title, "Stored Epic");
+    }
+
+    #[tokio::test]
+    async fn execute_publishes_epic_created_event() {
+        let repo = Arc::new(InMemoryEpicRepo::default());
+        let pub_ = Arc::new(SpyPublisher::default());
+        let uc = CreateEpic::new(repo, pub_.clone());
+
+        uc.execute(CreateEpicCmd {
+            project_id: 42,
+            title: "Event Epic".into(),
+        })
+        .await
+        .unwrap();
+
+        let events = pub_.emitted();
+        assert_eq!(events.len(), 1);
+        assert!(matches!(&events[0], DomainEvent::EpicCreated { project_id: 42, title, .. } if title == "Event Epic"));
+    }
+
+    #[tokio::test]
+    async fn execute_empty_title_rejected() {
+        let repo = Arc::new(InMemoryEpicRepo::default());
+        let pub_ = Arc::new(SpyPublisher::default());
+        let uc = CreateEpic::new(repo, pub_);
+
+        let err = uc
+            .execute(CreateEpicCmd {
+                project_id: 1,
+                title: "".into(),
+            })
+            .await
+            .unwrap_err();
+
+        assert!(matches!(err, AppError::Domain(_)));
+    }
+
+    #[tokio::test]
+    async fn execute_whitespace_title_rejected() {
+        let repo = Arc::new(InMemoryEpicRepo::default());
+        let pub_ = Arc::new(SpyPublisher::default());
+        let uc = CreateEpic::new(repo, pub_);
+
+        let err = uc
+            .execute(CreateEpicCmd {
+                project_id: 1,
+                title: "   ".into(),
+            })
+            .await
+            .unwrap_err();
+
+        assert!(matches!(err, AppError::Domain(_)));
+    }
+
+    #[tokio::test]
+    async fn execute_trims_whitespace() {
+        let repo = Arc::new(InMemoryEpicRepo::default());
+        let pub_ = Arc::new(SpyPublisher::default());
+        let uc = CreateEpic::new(repo.clone(), pub_);
+
+        let out = uc
+            .execute(CreateEpicCmd {
+                project_id: 1,
+                title: "  trimmed  ".into(),
+            })
+            .await
+            .unwrap();
+
+        let stored = repo.get_by_id(out.id).await.unwrap().unwrap();
+        assert_eq!(stored.title, "trimmed");
+    }
+
+    #[tokio::test]
+    async fn execute_multiple_epics_increment_ids() {
+        let repo = Arc::new(InMemoryEpicRepo::default());
+        let pub_ = Arc::new(SpyPublisher::default());
+        let uc = CreateEpic::new(repo, pub_);
+
+        let o1 = uc.execute(CreateEpicCmd {
+            project_id: 1,
+            title: "E1".into(),
+        }).await.unwrap();
+
+        let o2 = uc.execute(CreateEpicCmd {
+            project_id: 1,
+            title: "E2".into(),
+        }).await.unwrap();
+
+        assert_eq!(o1.id, 1);
+        assert_eq!(o2.id, 2);
+    }
+}

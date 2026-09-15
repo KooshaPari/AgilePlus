@@ -1,0 +1,166 @@
+// ── Tests ─────────────────────────────────────────────────────────────────────
+
+#[cfg(test)]
+mod tests {
+    use std::sync::Arc;
+
+    use agileplus_domain::ports::events::DomainEvent;
+    use agileplus_domain::ports::story::StoryRepository;
+
+    use crate::dto::CreateStoryCmd;
+    use crate::error::AppError;
+    use crate::test_mocks::{InMemoryStoryRepo, SpyPublisher};
+
+    use super::CreateStory;
+
+    #[tokio::test]
+    async fn new_constructor_works() {
+        let repo = Arc::new(InMemoryStoryRepo::default());
+        let pub_ = Arc::new(SpyPublisher::default());
+        let _uc = CreateStory::new(repo, pub_);
+    }
+
+    #[tokio::test]
+    async fn execute_returns_correct_id_and_title() {
+        let repo = Arc::new(InMemoryStoryRepo::default());
+        let pub_ = Arc::new(SpyPublisher::default());
+        let uc = CreateStory::new(repo.clone(), pub_.clone());
+
+        let out = uc
+            .execute(CreateStoryCmd {
+                epic_id: 1,
+                project_id: 10,
+                title: "Add OAuth".into(),
+                points: Some(5),
+            })
+            .await
+            .unwrap();
+
+        assert_eq!(out.id, 1);
+        assert_eq!(out.story.title, "Add OAuth");
+        assert_eq!(out.story.epic_id, 1);
+        assert_eq!(out.story.project_id, 10);
+    }
+
+    #[tokio::test]
+    async fn execute_persists_in_repo() {
+        let repo = Arc::new(InMemoryStoryRepo::default());
+        let pub_ = Arc::new(SpyPublisher::default());
+        let uc = CreateStory::new(repo.clone(), pub_.clone());
+
+        let out = uc
+            .execute(CreateStoryCmd {
+                epic_id: 1,
+                project_id: 1,
+                title: "T".into(),
+                points: None,
+            })
+            .await
+            .unwrap();
+
+        let stored = repo.get_by_id(out.id).await.unwrap();
+        assert!(stored.is_some());
+        assert_eq!(stored.unwrap().title, "T");
+    }
+
+    #[tokio::test]
+    async fn execute_publishes_story_created_event() {
+        let repo = Arc::new(InMemoryStoryRepo::default());
+        let pub_ = Arc::new(SpyPublisher::default());
+        let uc = CreateStory::new(repo, pub_.clone());
+
+        uc.execute(CreateStoryCmd {
+            epic_id: 7,
+            project_id: 3,
+            title: "Event".into(),
+            points: None,
+        })
+        .await
+        .unwrap();
+
+        let events = pub_.emitted();
+        assert_eq!(events.len(), 1);
+        assert!(matches!(&events[0], DomainEvent::StoryCreated { id: 1, epic_id: 7, title } if title == "Event"));
+    }
+
+    #[tokio::test]
+    async fn execute_empty_title_rejected() {
+        let repo = Arc::new(InMemoryStoryRepo::default());
+        let pub_ = Arc::new(SpyPublisher::default());
+        let uc = CreateStory::new(repo, pub_);
+
+        let err = uc
+            .execute(CreateStoryCmd {
+                epic_id: 1,
+                project_id: 1,
+                title: "".into(),
+                points: None,
+            })
+            .await
+            .unwrap_err();
+
+        assert!(matches!(err, AppError::Domain(_)));
+    }
+
+    #[tokio::test]
+    async fn execute_zero_points_rejected() {
+        let repo = Arc::new(InMemoryStoryRepo::default());
+        let pub_ = Arc::new(SpyPublisher::default());
+        let uc = CreateStory::new(repo, pub_);
+
+        let err = uc
+            .execute(CreateStoryCmd {
+                epic_id: 1,
+                project_id: 1,
+                title: "Has points".into(),
+                points: Some(0),
+            })
+            .await
+            .unwrap_err();
+
+        assert!(matches!(err, AppError::Domain(_)));
+    }
+
+    #[tokio::test]
+    async fn execute_none_points_accepted() {
+        let repo = Arc::new(InMemoryStoryRepo::default());
+        let pub_ = Arc::new(SpyPublisher::default());
+        let uc = CreateStory::new(repo, pub_);
+
+        let out = uc
+            .execute(CreateStoryCmd {
+                epic_id: 1,
+                project_id: 1,
+                title: "No points".into(),
+                points: None,
+            })
+            .await
+            .unwrap();
+
+        assert_eq!(out.story.title, "No points");
+    }
+
+    #[tokio::test]
+    async fn execute_multiple_stories_increment_ids() {
+        let repo = Arc::new(InMemoryStoryRepo::default());
+        let pub_ = Arc::new(SpyPublisher::default());
+        let uc = CreateStory::new(repo, pub_);
+
+        let o1 = uc.execute(CreateStoryCmd {
+            epic_id: 1,
+            project_id: 1,
+            title: "A".into(),
+            points: None,
+        }).await.unwrap();
+
+        let o2 = uc.execute(CreateStoryCmd {
+            epic_id: 1,
+            project_id: 1,
+            title: "B".into(),
+            points: None,
+        }).await.unwrap();
+
+        assert_eq!(o1.id, 1);
+        assert_eq!(o2.id, 2);
+    }
+}
