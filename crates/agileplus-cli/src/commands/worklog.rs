@@ -1213,4 +1213,521 @@ mod tests {
         assert!(res.is_err());
         let _ = std::fs::remove_file(db);
     }
+
+    // ── to_canonical tests ──────────────────────────────────────────
+
+    #[test]
+    fn to_canonical_prefers_verification_result_over_verification() {
+        let raw = serde_json::json!({
+            "status": "completed",
+            "task_id": "T-1",
+            "agent_id": "a",
+            "verification_result": { "status": "passed", "commands": ["x"], "notes": "ok" },
+            "verification": { "status": "failed", "commands": [], "notes": "nope" },
+            "started_at": "2026-06-10T00:00:00Z"
+        });
+        let c = to_canonical(&raw);
+        assert_eq!(c.verification_result.status, "passed");
+    }
+
+    #[test]
+    fn to_canonical_falls_back_to_verification_when_no_verification_result() {
+        let raw = serde_json::json!({
+            "status": "completed",
+            "task_id": "T-1",
+            "agent_id": "a",
+            "verification": { "status": "partial", "commands": ["y"], "notes": "half" },
+            "started_at": "2026-06-10T00:00:00Z"
+        });
+        let c = to_canonical(&raw);
+        assert_eq!(c.verification_result.status, "partial");
+        assert_eq!(c.verification_result.commands, vec!["y"]);
+    }
+
+    #[test]
+    fn to_canonical_uses_task_fallback_for_task_id() {
+        let raw = serde_json::json!({
+            "status": "completed",
+            "task": "T-99",
+            "agent_id": "a",
+            "started_at": "2026-06-10T00:00:00Z"
+        });
+        let c = to_canonical(&raw);
+        assert_eq!(c.task_id, "T-99");
+    }
+
+    #[test]
+    fn to_canonical_uses_branch_fallback_for_commit_sha() {
+        let raw = serde_json::json!({
+            "status": "completed",
+            "task_id": "T-1",
+            "agent_id": "a",
+            "branch": "feature-x",
+            "started_at": "2026-06-10T00:00:00Z"
+        });
+        let c = to_canonical(&raw);
+        assert_eq!(c.commit_sha, "feature-x");
+    }
+
+    #[test]
+    fn to_canonical_uses_merge_commit_fallback_for_commit_sha() {
+        let raw = serde_json::json!({
+            "status": "completed",
+            "task_id": "T-1",
+            "agent_id": "a",
+            "merge_commit": "abc1234",
+            "started_at": "2026-06-10T00:00:00Z"
+        });
+        let c = to_canonical(&raw);
+        assert_eq!(c.commit_sha, "abc1234");
+    }
+
+    #[test]
+    fn to_canonical_uses_files_fallback_when_files_changed_empty() {
+        let raw = serde_json::json!({
+            "status": "completed",
+            "task_id": "T-1",
+            "agent_id": "a",
+            "files": ["x.rs", "y.rs"],
+            "started_at": "2026-06-10T00:00:00Z"
+        });
+        let c = to_canonical(&raw);
+        assert_eq!(c.files_changed, vec!["x.rs", "y.rs"]);
+    }
+
+    #[test]
+    fn to_canonical_prefers_files_changed_over_files() {
+        let raw = serde_json::json!({
+            "status": "completed",
+            "task_id": "T-1",
+            "agent_id": "a",
+            "files_changed": ["a.rs"],
+            "files": ["b.rs"],
+            "started_at": "2026-06-10T00:00:00Z"
+        });
+        let c = to_canonical(&raw);
+        assert_eq!(c.files_changed, vec!["a.rs"]);
+    }
+
+    #[test]
+    fn to_canonical_uses_date_fallback_for_completed_at() {
+        let raw = serde_json::json!({
+            "status": "completed",
+            "task_id": "T-1",
+            "agent_id": "a",
+            "date": "2026-06-10",
+            "started_at": "2026-06-10T00:00:00Z"
+        });
+        let c = to_canonical(&raw);
+        assert_eq!(c.completed_at.as_deref(), Some("2026-06-10"));
+    }
+
+    #[test]
+    fn to_canonical_defaults_for_missing_fields() {
+        let raw = serde_json::json!({});
+        let c = to_canonical(&raw);
+        assert_eq!(c.status, "completed");
+        assert_eq!(c.task_id, "unknown");
+        assert_eq!(c.agent_id, "codex-exec");
+        assert!(c.files_changed.is_empty());
+        assert_eq!(c.commit_sha, "unknown");
+        assert_eq!(c.verification_result.status, "not_run");
+        assert!(c.started_at.is_none());
+        assert!(c.completed_at.is_none());
+    }
+
+    #[test]
+    fn to_canonical_non_object_input() {
+        let raw = serde_json::json!("just a string");
+        let c = to_canonical(&raw);
+        assert_eq!(c.status, "completed");
+        assert_eq!(c.task_id, "unknown");
+    }
+
+    // ── find_worklogs edge cases ────────────────────────────────────
+
+    #[test]
+    fn find_worklogs_empty_dir() {
+        let dir = tempdir_root("agileplus-worklog-find-empty");
+        std::fs::create_dir_all(&dir).unwrap();
+        assert!(find_worklogs(&dir, false).unwrap().is_empty());
+        assert!(find_worklogs(&dir, true).unwrap().is_empty());
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn find_worklogs_nonexistent_dir() {
+        let dir = PathBuf::from("/tmp/__agileplus_nonexistent_dir_test__");
+        let res = find_worklogs(&dir, false);
+        assert!(res.is_err());
+    }
+
+    #[test]
+    fn find_worklogs_ignores_non_worklog_files() {
+        let dir = tempdir_root("agileplus-worklog-find-ignore");
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("readme.md"), "hello").unwrap();
+        std::fs::write(dir.join("data.json"), "{}").unwrap();
+        std::fs::write(dir.join("worklog-123.json"), "{}").unwrap();
+        let raw = find_worklogs(&dir, false).unwrap();
+        assert_eq!(raw.len(), 1);
+        assert!(raw[0].file_name().unwrap().to_string_lossy().contains("worklog-123"));
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    // ── path_with_suffix tests ──────────────────────────────────────
+
+    #[test]
+    fn path_with_suffix_strips_json() {
+        let p = PathBuf::from("worklog-123.json");
+        let result = path_with_suffix(&p, "-canonical.json");
+        assert_eq!(result, PathBuf::from("worklog-123-canonical.json"));
+    }
+
+    #[test]
+    fn path_with_suffix_non_json_fallback() {
+        let p = PathBuf::from("worklog-123.txt");
+        let result = path_with_suffix(&p, "-canonical.json");
+        // with_extension replaces the extension
+        assert!(result.to_string_lossy().contains("-canonical.json"));
+    }
+
+    // ── is_valid_sha tests ──────────────────────────────────────────
+
+    #[test]
+    fn is_valid_sha_rejects_too_short() {
+        assert!(!is_valid_sha("abc1234")); // 6 chars
+    }
+
+    #[test]
+    fn is_valid_sha_accepts_exactly_7() {
+        assert!(is_valid_sha("abcdef0"));
+    }
+
+    #[test]
+    fn is_valid_sha_accepts_40_chars() {
+        assert!(is_valid_sha("0123456789abcdef0123456789abcdef01234567"));
+    }
+
+    #[test]
+    fn is_valid_sha_rejects_41_chars() {
+        assert!(!is_valid_sha("0123456789abcdef0123456789abcdef012345678"));
+    }
+
+    #[test]
+    fn is_valid_sha_rejects_uppercase() {
+        assert!(!is_valid_sha("ABCDEF0"));
+    }
+
+    #[test]
+    fn is_valid_sha_rejects_mixed_case() {
+        assert!(!is_valid_sha("aBcDeF0"));
+    }
+
+    #[test]
+    fn is_valid_sha_accepts_all_lowercase_hex() {
+        assert!(is_valid_sha("deadbeef"));
+    }
+
+    #[test]
+    fn is_valid_sha_rejects_non_hex() {
+        assert!(!is_valid_sha("xyzw123"));
+    }
+
+    // ── is_iso8601_like tests ──────────────────────────────────────
+
+    #[test]
+    fn is_iso8601_rejects_date_only_no_suffix() {
+        assert!(!is_iso8601_like("2026-06-10"));
+    }
+
+    #[test]
+    fn is_iso8601_accepts_date_with_t_suffix() {
+        assert!(is_iso8601_like("2026-06-10T"));
+    }
+
+    #[test]
+    fn is_iso8601_accepts_full_datetime() {
+        assert!(is_iso8601_like("2026-06-10T00:00:00Z"));
+    }
+
+    #[test]
+    fn is_iso8601_rejects_yesterday() {
+        assert!(!is_iso8601_like("yesterday"));
+    }
+
+    #[test]
+    fn is_iso8601_rejects_slash_format() {
+        assert!(!is_iso8601_like("2026/06/10"));
+    }
+
+    #[test]
+    fn is_iso8601_rejects_short_string() {
+        assert!(!is_iso8601_like("2026"));
+    }
+
+    // ── truncate tests ─────────────────────────────────────────────
+
+    #[test]
+    fn truncate_short_string_unchanged() {
+        assert_eq!(truncate("hello", 10), "hello");
+    }
+
+    #[test]
+    fn truncate_long_string_truncated_with_ellipsis() {
+        let result = truncate("hello world", 5);
+        assert_eq!(result.len(), 5); // 4 chars + "…"
+        assert!(result.ends_with('…'));
+        assert!(result.starts_with("hell"));
+    }
+
+    #[test]
+    fn truncate_exact_length_unchanged() {
+        assert_eq!(truncate("abcde", 5), "abcde");
+    }
+
+    // ── print_table tests ──────────────────────────────────────────
+
+    #[test]
+    fn print_table_empty_does_not_panic() {
+        print_table(&[]);
+    }
+
+    #[test]
+    fn print_table_with_entries_does_not_panic() {
+        let entry = WorklogEntry {
+            id: 1,
+            status: "completed".into(),
+            task_id: "L2-39".into(),
+            agent_id: "forge".into(),
+            files_changed: vec![],
+            commit_sha: Some("abc1234".into()),
+            verification: VerificationResult::default(),
+            started_at: "2026-06-11T00:00:00Z".into(),
+            completed_at: None,
+            source_path: "w.json".into(),
+            ingested_at: "2026-06-11T00:00:00Z".into(),
+        };
+        print_table(&[entry]);
+    }
+
+    #[test]
+    fn print_table_long_task_id_truncated() {
+        let entry = WorklogEntry {
+            id: 1,
+            status: "completed".into(),
+            task_id: "this-is-a-very-long-task-id-that-should-be-truncated".into(),
+            agent_id: "forge".into(),
+            files_changed: vec![],
+            commit_sha: None,
+            verification: VerificationResult::default(),
+            started_at: "2026-06-11T00:00:00Z".into(),
+            completed_at: None,
+            source_path: "w.json".into(),
+            ingested_at: "2026-06-11T00:00:00Z".into(),
+        };
+        print_table(&[entry]);
+    }
+
+    // ── list command (happy path) ──────────────────────────────────
+
+    #[test]
+    fn list_command_works_with_empty_dir() {
+        let dir = tempdir_root("agileplus-worklist-empty");
+        std::fs::create_dir_all(&dir).unwrap();
+        assert!(list(&dir).is_ok());
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn list_command_works_with_worklog_files() {
+        let dir = tempdir_root("agileplus-worklist-files");
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("worklog-1.json"), "{}").unwrap();
+        std::fs::write(dir.join("worklog-1-canonical.json"), "{}").unwrap();
+        assert!(list(&dir).is_ok());
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    // ── validate command (happy path) ──────────────────────────────
+
+    #[test]
+    fn validate_command_passes_with_valid_json() {
+        let dir = tempdir_root("agileplus-worklog-validate-ok");
+        std::fs::create_dir_all(&dir).unwrap();
+        let payload = good_payload();
+        let json = serde_json::to_string_pretty(&payload).unwrap();
+        std::fs::write(dir.join("worklog-ok.json"), json).unwrap();
+        assert!(validate(&dir).is_ok());
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    // ── convert command tests ──────────────────────────────────────
+
+    #[test]
+    fn convert_in_place_overwrites_original() {
+        let dir = tempdir_root("agileplus-worklog-convert-inplace");
+        std::fs::create_dir_all(&dir).unwrap();
+        let payload = serde_json::json!({
+            "status": "completed",
+            "task_id": "T-1",
+            "agent_id": "a",
+            "verification": {"status":"passed","commands":["x"],"notes":"ok"},
+            "started_at": "2026-06-10T00:00:00Z"
+        });
+        let path = dir.join("worklog-T1.json");
+        std::fs::write(&path, serde_json::to_string(&payload).unwrap()).unwrap();
+        assert!(convert(&dir, true).is_ok());
+        let content = std::fs::read_to_string(&path).unwrap();
+        let v: serde_json::Value = serde_json::from_str(&content).unwrap();
+        // After in-place convert, the file should be canonical JSON
+        assert!(v.get("status").is_some());
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn convert_not_in_place_creates_canonical_copy() {
+        let dir = tempdir_root("agileplus-worklog-convert-copy");
+        std::fs::create_dir_all(&dir).unwrap();
+        let payload = serde_json::json!({
+            "status": "completed",
+            "task_id": "T-1",
+            "agent_id": "a",
+            "verification": {"status":"passed","commands":["x"],"notes":"ok"},
+            "started_at": "2026-06-10T00:00:00Z"
+        });
+        let path = dir.join("worklog-T1.json");
+        std::fs::write(&path, serde_json::to_string(&payload).unwrap()).unwrap();
+        assert!(convert(&dir, false).is_ok());
+        let canonical = dir.join("worklog-T1-canonical.json");
+        assert!(canonical.exists());
+        let orig = std::fs::read_to_string(&path).unwrap();
+        let conv = std::fs::read_to_string(&canonical).unwrap();
+        assert_ne!(orig, conv); // original kept, canonical is different format
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    // ── collect_worklog_files tests ─────────────────────────────────
+
+    #[test]
+    fn collect_worklog_files_from_single_file() {
+        let dir = tempdir_root("agileplus-worklog-collect-file");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("worklog-1.json");
+        std::fs::write(&path, "{}").unwrap();
+        let mut report = EmitReport::default();
+        let files = collect_worklog_files(&path, &mut report).unwrap();
+        assert_eq!(files.len(), 1);
+        assert_eq!(files[0], path);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn collect_worklog_files_from_directory() {
+        let dir = tempdir_root("agileplus-worklog-collect-dir");
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("worklog-1.json"), "{}").unwrap();
+        std::fs::write(dir.join("worklog-2.json"), "{}").unwrap();
+        std::fs::write(dir.join("readme.md"), "hello").unwrap();
+        let mut report = EmitReport::default();
+        let files = collect_worklog_files(&dir, &mut report).unwrap();
+        assert_eq!(files.len(), 2);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn collect_worklog_files_nonexistent_path() {
+        let path = PathBuf::from("/tmp/__agileplus_nonexistent_collect_test__");
+        let mut report = EmitReport::default();
+        let res = collect_worklog_files(&path, &mut report);
+        assert!(res.is_err());
+    }
+
+    // ── row_to_entry round-trip ─────────────────────────────────────
+
+    #[test]
+    fn row_to_entry_round_trip_via_db() {
+        let db = temp_db_path("agileplus-worklog-row-roundtrip");
+        let conn = open_db(&db).unwrap();
+        let p = good_payload();
+        let raw = serde_json::to_string(&p).unwrap();
+        insert_entry(&conn, &p, "test.json", &raw, false).unwrap();
+
+        // Read back and verify row_to_entry deserializes all fields
+        let mut stmt = conn
+            .prepare(
+                "SELECT id, status, task_id, agent_id, files_changed_json, commit_sha, \
+                 verification_json, started_at, completed_at, source_path, ingested_at \
+                 FROM worklog_entries",
+            )
+            .unwrap();
+        let entries: Vec<WorklogEntry> = stmt
+            .query_map([], row_to_entry)
+            .unwrap()
+            .map(|r| r.unwrap())
+            .collect();
+        assert_eq!(entries.len(), 1);
+        let e = &entries[0];
+        assert_eq!(e.status, "completed");
+        assert_eq!(e.task_id, "L2-39");
+        assert_eq!(e.agent_id, "forge-l2-39");
+        assert_eq!(e.files_changed, vec!["a.rs", "b.rs"]);
+        assert_eq!(
+            e.commit_sha.as_deref(),
+            Some("0123456789abcdef0123456789abcdef01234567")
+        );
+        assert_eq!(e.verification.status, "passed");
+        assert_eq!(e.verification.commands, vec!["cargo test"]);
+        assert_eq!(e.verification.notes, "ok");
+        assert_eq!(e.started_at, "2026-06-11T00:00:00Z");
+        assert_eq!(e.completed_at.as_deref(), Some("2026-06-11T00:10:00Z"));
+        assert_eq!(e.source_path, "test.json");
+        assert!(!e.ingested_at.is_empty());
+        let _ = std::fs::remove_file(db);
+    }
+
+    #[test]
+    fn row_to_entry_handles_invalid_json_gracefully() {
+        let db = temp_db_path("agileplus-worklog-row-invalid");
+        let conn = open_db(&db).unwrap();
+        // Insert a row with broken JSON in files_changed_json and verification_json
+        conn.execute(
+            "INSERT INTO worklog_entries \
+             (status, task_id, agent_id, files_changed_json, commit_sha, \
+              verification_json, started_at, completed_at, source_path, payload_json, ingested_at) \
+             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11)",
+            rusqlite::params![
+                "completed",
+                "T-1",
+                "a",
+                "not-json",
+                None::<String>,
+                "not-json",
+                "2026-06-10T00:00:00Z",
+                None::<String>,
+                "x.json",
+                "{}",
+                "2026-06-10T00:00:00Z",
+            ],
+        )
+        .unwrap();
+
+        let mut stmt = conn
+            .prepare(
+                "SELECT id, status, task_id, agent_id, files_changed_json, commit_sha, \
+                 verification_json, started_at, completed_at, source_path, ingested_at \
+                 FROM worklog_entries",
+            )
+            .unwrap();
+        let entries: Vec<WorklogEntry> = stmt
+            .query_map([], row_to_entry)
+            .unwrap()
+            .map(|r| r.unwrap())
+            .collect();
+        assert_eq!(entries.len(), 1);
+        // Should fall back to defaults
+        assert!(entries[0].files_changed.is_empty());
+        assert_eq!(entries[0].verification.status, "not_run");
+        let _ = std::fs::remove_file(db);
+    }
 }

@@ -712,4 +712,249 @@ mod tests {
         assert!(plan.contains("WP01: Auth Module"));
         assert!(plan.contains("Execution Waves"));
     }
+
+    // ── duplicate_sequences additional tests ─────────────────────────
+
+    #[test]
+    fn duplicate_sequences_no_duplicates() {
+        let wp1 = WorkPackage::new(1, "A (WP01)", 1, "- FR-001");
+        let wp2 = WorkPackage::new(1, "B (WP02)", 2, "- FR-002");
+        assert!(duplicate_sequences(&[wp1, wp2]).is_empty());
+    }
+
+    #[test]
+    fn duplicate_sequences_empty_list() {
+        assert!(duplicate_sequences(&[]).is_empty());
+    }
+
+    #[test]
+    fn duplicate_sequences_multiple_duplicates() {
+        let wp1 = WorkPackage::new(1, "A (WP01)", 1, "- FR-001");
+        let wp2 = WorkPackage::new(1, "A (WP01)", 1, "- FR-001");
+        let wp3 = WorkPackage::new(1, "B (WP02)", 2, "- FR-002");
+        let wp4 = WorkPackage::new(1, "B (WP02)", 2, "- FR-002");
+        let dups = duplicate_sequences(&[wp1, wp2, wp3, wp4]);
+        assert_eq!(dups, vec![1, 2]);
+    }
+
+    // ── plan_state_summary all states ───────────────────────────────
+
+    #[test]
+    fn plan_state_summary_researched() {
+        assert_eq!(
+            plan_state_summary(FeatureState::Researched),
+            "Researched -> Planned"
+        );
+    }
+
+    #[test]
+    fn plan_state_summary_planned() {
+        assert_eq!(plan_state_summary(FeatureState::Planned), "Planned (preserved)");
+    }
+
+    #[test]
+    fn plan_state_summary_shipped() {
+        assert_eq!(plan_state_summary(FeatureState::Shipped), "Shipped (preserved)");
+    }
+
+    #[test]
+    fn plan_state_summary_retrospected() {
+        assert_eq!(
+            plan_state_summary(FeatureState::Retrospected),
+            "Retrospected (preserved)"
+        );
+    }
+
+    #[test]
+    fn plan_state_summary_created() {
+        assert_eq!(plan_state_summary(FeatureState::Created), "Created (preserved)");
+    }
+
+    #[test]
+    fn plan_state_summary_specified() {
+        assert_eq!(
+            plan_state_summary(FeatureState::Specified),
+            "Specified (preserved)"
+        );
+    }
+
+    // ── reconcile additional tests ──────────────────────────────────
+
+    #[test]
+    fn reconcile_no_existing_works() {
+        let wp = WorkPackage::new(1, "Build API (WP01)", 1, "- FR-001 -- API");
+        let reconciled = reconcile_work_packages(vec![wp], vec![]).unwrap();
+        assert_eq!(reconciled.len(), 1);
+        assert_eq!(reconciled[0].id, 0); // new, not persisted
+    }
+
+    #[test]
+    fn reconcile_reuses_preserves_state() {
+        let mut expected = WorkPackage::new(1, "Build API (WP01)", 1, "- FR-001 -- API");
+        expected.file_scope = vec!["src/api.rs".into()];
+        let mut existing = expected.clone();
+        existing.id = 42;
+        existing.state = agileplus_domain::domain::work_package::WpState::Doing;
+        let reconciled = reconcile_work_packages(vec![expected], vec![existing]).unwrap();
+        assert_eq!(reconciled[0].id, 42);
+        assert_eq!(reconciled[0].state, agileplus_domain::domain::work_package::WpState::Doing);
+    }
+
+    // ── parse_functional_requirements additional tests ───────────────
+
+    #[test]
+    fn parse_frs_plain_text_format() {
+        let spec = "FR-005: plain text requirement\n";
+        let frs = parse_functional_requirements(spec);
+        assert_eq!(frs.len(), 1);
+        assert_eq!(frs[0].id, "FR-005");
+    }
+
+    #[test]
+    fn parse_frs_deduplicates_by_id() {
+        let spec =
+            "- **FR-001**: first mention\n- **FR-001**: duplicate mention\n";
+        let frs = parse_functional_requirements(spec);
+        assert_eq!(frs.len(), 1);
+    }
+
+    #[test]
+    fn parse_frs_skips_id_without_description() {
+        // FR- with no digits after it should not match since id.len() > 3 check
+        let spec = "FR-: empty\n";
+        let frs = parse_functional_requirements(spec);
+        assert_eq!(frs.len(), 0);
+    }
+
+    #[test]
+    fn parse_frs_many_requirements() {
+        let lines: Vec<String> = (1..=20)
+            .map(|i| format!("- **FR-{i:03}**: requirement {i}"))
+            .collect();
+        let spec = lines.join("\n");
+        let frs = parse_functional_requirements(&spec);
+        assert_eq!(frs.len(), 20);
+    }
+
+    // ── group_frs_into_wps additional tests ─────────────────────────
+
+    #[test]
+    fn group_frs_large_set() {
+        let frs: Vec<FunctionalRequirement> = (1..=20)
+            .map(|i| FunctionalRequirement {
+                id: format!("FR-{i:03}"),
+                description: format!("desc {i}"),
+            })
+            .collect();
+        let groups = group_frs_into_wps(&frs, 5);
+        let total: usize = groups.iter().map(|g| g.len()).sum();
+        assert_eq!(total, 20);
+        // Each group should be between 3 and 7 items
+        for g in &groups {
+            assert!(g.len() >= 3 && g.len() <= 7, "group len={}", g.len());
+        }
+    }
+
+    #[test]
+    fn group_frs_fewer_than_min_per_wp() {
+        // 2 FRs with max_wps=1 -> target_per_wp=2, clamped to 3
+        let frs: Vec<FunctionalRequirement> = (1..=2)
+            .map(|i| FunctionalRequirement {
+                id: format!("FR-{i:03}"),
+                description: format!("desc {i}"),
+            })
+            .collect();
+        let groups = group_frs_into_wps(&frs, 1);
+        let total: usize = groups.iter().map(|g| g.len()).sum();
+        assert_eq!(total, 2);
+    }
+
+    // ── slugify additional tests ────────────────────────────────────
+
+    #[test]
+    fn slugify_special_characters() {
+        assert_eq!(slugify("Hello, World! @#$%"), "hello-world");
+    }
+
+    #[test]
+    fn slugify_long_string_truncated() {
+        let long = "a".repeat(60);
+        let result = slugify(&long);
+        assert!(result.len() <= 40);
+    }
+
+    #[test]
+    fn slugify_empty_string() {
+        assert_eq!(slugify(""), "");
+    }
+
+    #[test]
+    fn slugify_consecutive_special_chars() {
+        assert_eq!(slugify("a---b"), "a-b");
+    }
+
+    // ── generate_plan_md additional tests ───────────────────────────
+
+    #[test]
+    fn generate_plan_md_with_dependencies() {
+        let wp1 = WorkPackage::new(1, "Auth (WP01)", 1, "- criteria 1");
+        let wp2 = WorkPackage::new(1, "API (WP02)", 2, "- criteria 2");
+        let deps = vec![agileplus_domain::domain::work_package::WpDependency {
+            wp_id: 2,
+            depends_on: 1,
+            dep_type: agileplus_domain::domain::work_package::DependencyType::FileOverlap,
+        }];
+        let plan = generate_plan_md("feat", &[wp1, wp2], &deps, &[]);
+        assert!(plan.contains("Dependencies"));
+        assert!(plan.contains("1")); // dep reference
+    }
+
+    #[test]
+    fn generate_plan_md_with_waves() {
+        let wp1 = WorkPackage::new(1, "A (WP01)", 1, "- c1");
+        let wp2 = WorkPackage::new(1, "B (WP02)", 2, "- c2");
+        let waves = vec![super::scheduler::ExecutionWave {
+            wave_number: 1,
+            wp_ids: vec![1],
+        }];
+        let plan = generate_plan_md("feat", &[wp1, wp2], &[], &waves);
+        assert!(plan.contains("Wave 1"));
+        assert!(plan.contains("parallel"));
+    }
+
+    #[test]
+    fn generate_plan_md_with_file_scope() {
+        let mut wp = WorkPackage::new(1, "Scoped (WP01)", 1, "- c1");
+        wp.file_scope = vec!["src/main.rs".into(), "src/lib.rs".into()];
+        let plan = generate_plan_md("feat", &[wp], &[], &[]);
+        assert!(plan.contains("File Scope"));
+        assert!(plan.contains("`src/main.rs`"));
+    }
+
+    #[test]
+    fn generate_plan_md_empty_wps() {
+        let plan = generate_plan_md("feat", &[], &[], &[]);
+        assert!(plan.contains("# Plan: feat"));
+        assert!(plan.contains("WPs**: 0"));
+    }
+
+    // ── derive_wp_title tests ───────────────────────────────────────
+
+    #[test]
+    fn derive_wp_title_empty_frs() {
+        let title = derive_wp_title(&[], 3);
+        assert_eq!(title, "Work Package 03");
+    }
+
+    #[test]
+    fn derive_wp_title_truncates_long_description() {
+        let fr = FunctionalRequirement {
+            id: "FR-001".into(),
+            description: "A".repeat(80),
+        };
+        let title = derive_wp_title(&[fr], 1);
+        // Title should be truncated to ~50 chars of the description + WP suffix
+        assert!(title.len() < 80);
+        assert!(title.contains("WP01"));
+    }
 }
