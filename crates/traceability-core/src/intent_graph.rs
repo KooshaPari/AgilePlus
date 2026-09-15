@@ -1224,17 +1224,14 @@ mod tests {
         let mut edge = sample_edge("e1", "Intent#a", "Feature#b", RelationshipType::Implements);
         edge.canonical_map = Some(CanonicalMap {
             link_type: CanonicalLinkType::Implements,
-            source_table: Some("intent_nodes".into()),
-            source_id: Some("Intent#a".into()),
-            target_table: Some("feature_nodes".into()),
-            target_id: Some("Feature#b".into()),
+            direction: Some("forward".into()),
         });
         edge.properties = Some(serde_json::json!({"priority": 1}));
         let json = serde_json::to_string(&edge).unwrap();
         let back: Edge = serde_json::from_str(&json).unwrap();
         let cm = back.canonical_map.unwrap();
         assert_eq!(cm.link_type, CanonicalLinkType::Implements);
-        assert_eq!(cm.source_table, Some("intent_nodes".into()));
+        assert_eq!(cm.direction, Some("forward".into()));
     }
 
     #[test]
