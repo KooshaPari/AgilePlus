@@ -129,3 +129,104 @@ pub fn get_evidence_by_fr(conn: &Connection, fr_id: &str) -> Result<Vec<Evidence
         .map(parse_evidence)
         .collect()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::SqliteStorageAdapter;
+    use agileplus_domain::domain::governance::{Evidence, EvidenceType};
+
+    fn seed_feature_and_wp(conn: &Connection, feature_id: i64, wp_id: i64) {
+        conn.execute(
+            "INSERT OR IGNORE INTO features (id, slug, friendly_name, state, spec_hash, target_branch, created_at, updated_at) \
+             VALUES (?1, ?2, ?3, 'created', X'00', 'main', datetime('now'), datetime('now'))",
+            params![feature_id, format!("feat-{feature_id}"), format!("Feature {feature_id}")],
+        )
+        .unwrap();
+        conn.execute(
+            "INSERT OR IGNORE INTO work_packages (id, feature_id, title, state, sequence, file_scope, acceptance_criteria, created_at, updated_at) \
+             VALUES (?1, ?2, ?3, 'planned', 0, '[]', '', datetime('now'), datetime('now'))",
+            params![wp_id, feature_id, format!("WP {wp_id}")],
+        )
+        .unwrap();
+    }
+
+    fn sample_evidence(wp_id: i64, fr_id: &str) -> Evidence {
+        Evidence {
+            id: 0,
+            wp_id,
+            fr_id: fr_id.to_string(),
+            evidence_type: EvidenceType::TestResult,
+            artifact_path: format!("/artifacts/{fr_id}.xml"),
+            metadata: None,
+            created_at: chrono::Utc::now(),
+        }
+    }
+
+    #[test]
+    fn test_create_and_get_by_wp() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        seed_feature_and_wp(&conn, 100, 10);
+        let id = create_evidence(&conn, &sample_evidence(10, "FR-001")).unwrap();
+        assert!(id > 0);
+        let results = get_evidence_by_wp(&conn, 10).unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].fr_id, "FR-001");
+    }
+
+    #[test]
+    fn test_get_by_wp_empty_when_none() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let results = get_evidence_by_wp(&conn, 999).unwrap();
+        assert!(results.is_empty());
+    }
+
+    #[test]
+    fn test_create_and_get_by_fr() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        seed_feature_and_wp(&conn, 100, 10);
+        seed_feature_and_wp(&conn, 101, 20);
+        create_evidence(&conn, &sample_evidence(10, "FR-001")).unwrap();
+        create_evidence(&conn, &sample_evidence(20, "FR-001")).unwrap();
+        let results = get_evidence_by_fr(&conn, "FR-001").unwrap();
+        assert_eq!(results.len(), 2);
+    }
+
+    #[test]
+    fn test_get_by_fr_empty_when_none() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let results = get_evidence_by_fr(&conn, "NONEXISTENT").unwrap();
+        assert!(results.is_empty());
+    }
+
+    #[test]
+    fn test_evidence_type_roundtrips() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        seed_feature_and_wp(&conn, 100, 10);
+        let mut ev = sample_evidence(10, "FR-001");
+        ev.evidence_type = EvidenceType::SecurityScan;
+        create_evidence(&conn, &ev).unwrap();
+        let results = get_evidence_by_wp(&conn, 10).unwrap();
+        assert_eq!(results[0].evidence_type, EvidenceType::SecurityScan);
+    }
+
+    #[test]
+    fn test_evidence_with_metadata_roundtrips() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        seed_feature_and_wp(&conn, 100, 10);
+        let mut ev = sample_evidence(10, "FR-002");
+        ev.metadata = Some(serde_json::json!({"duration_ms": 42, "tests_passed": 5}));
+        create_evidence(&conn, &ev).unwrap();
+        let results = get_evidence_by_wp(&conn, 10).unwrap();
+        assert_eq!(
+            results[0].metadata.as_ref().unwrap()["duration_ms"],
+            42
+        );
+    }
+}

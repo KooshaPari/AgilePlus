@@ -292,3 +292,181 @@ impl<T> OptionalExt<T> for rusqlite::Result<T> {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::SqliteStorageAdapter;
+    use agileplus_domain::domain::backlog::{
+        BacklogFilters, BacklogItem, BacklogPriority, BacklogSort, BacklogStatus, Intent,
+    };
+
+    fn sample_item(title: &str) -> BacklogItem {
+        BacklogItem::from_triage(
+            title.to_string(),
+            format!("Description for {title}"),
+            Intent::Feature,
+            "test-suite".to_string(),
+        )
+    }
+
+    #[test]
+    fn create_and_get_item() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let id = create_backlog_item(&conn, &sample_item("Fix login bug")).unwrap();
+        assert!(id > 0);
+        let item = get_backlog_item(&conn, id).unwrap().unwrap();
+        assert_eq!(item.title, "Fix login bug");
+        assert_eq!(item.status, BacklogStatus::New);
+    }
+
+    #[test]
+    fn get_nonexistent_returns_none() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        assert!(get_backlog_item(&conn, 999).unwrap().is_none());
+    }
+
+    #[test]
+    fn list_with_empty_filters() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        create_backlog_item(&conn, &sample_item("A")).unwrap();
+        create_backlog_item(&conn, &sample_item("B")).unwrap();
+        let filters = BacklogFilters::default();
+        let items = list_backlog_items(&conn, &filters).unwrap();
+        assert_eq!(items.len(), 2);
+    }
+
+    #[test]
+    fn list_filter_by_intent() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        create_backlog_item(&conn, &sample_item("Feature")).unwrap();
+        let mut bug = sample_item("Bug");
+        bug.intent = Intent::Bug;
+        create_backlog_item(&conn, &bug).unwrap();
+        let filters = BacklogFilters {
+            intent: Some(Intent::Bug),
+            ..Default::default()
+        };
+        let items = list_backlog_items(&conn, &filters).unwrap();
+        assert_eq!(items.len(), 1);
+        assert_eq!(items[0].intent, Intent::Bug);
+    }
+
+    #[test]
+    fn list_filter_by_status() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let id = create_backlog_item(&conn, &sample_item("A")).unwrap();
+        update_backlog_status(&conn, id, BacklogStatus::Done).unwrap();
+        create_backlog_item(&conn, &sample_item("B")).unwrap();
+        let filters = BacklogFilters {
+            status: Some(BacklogStatus::Done),
+            ..Default::default()
+        };
+        let items = list_backlog_items(&conn, &filters).unwrap();
+        assert_eq!(items.len(), 1);
+        assert_eq!(items[0].title, "A");
+    }
+
+    #[test]
+    fn list_with_limit() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        create_backlog_item(&conn, &sample_item("A")).unwrap();
+        create_backlog_item(&conn, &sample_item("B")).unwrap();
+        create_backlog_item(&conn, &sample_item("C")).unwrap();
+        let filters = BacklogFilters {
+            limit: Some(2),
+            ..Default::default()
+        };
+        let items = list_backlog_items(&conn, &filters).unwrap();
+        assert_eq!(items.len(), 2);
+    }
+
+    #[test]
+    fn list_sorted_by_priority() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let mut low = sample_item("Low");
+        low.priority = BacklogPriority::Low;
+        create_backlog_item(&conn, &low).unwrap();
+        let mut crit = sample_item("Critical");
+        crit.priority = BacklogPriority::Critical;
+        create_backlog_item(&conn, &crit).unwrap();
+        let filters = BacklogFilters {
+            sort: BacklogSort::Priority,
+            ..Default::default()
+        };
+        let items = list_backlog_items(&conn, &filters).unwrap();
+        assert_eq!(items[0].title, "Critical");
+        assert_eq!(items[1].title, "Low");
+    }
+
+    #[test]
+    fn update_status_works() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let id = create_backlog_item(&conn, &sample_item("A")).unwrap();
+        update_backlog_status(&conn, id, BacklogStatus::InProgress).unwrap();
+        let item = get_backlog_item(&conn, id).unwrap().unwrap();
+        assert_eq!(item.status, BacklogStatus::InProgress);
+    }
+
+    #[test]
+    fn update_priority_works() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let id = create_backlog_item(&conn, &sample_item("A")).unwrap();
+        update_backlog_priority(&conn, id, BacklogPriority::Critical).unwrap();
+        let item = get_backlog_item(&conn, id).unwrap().unwrap();
+        assert_eq!(item.priority, BacklogPriority::Critical);
+    }
+
+    #[test]
+    fn pop_next_returns_highest_priority_new_item() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let mut low = sample_item("Low");
+        low.priority = BacklogPriority::Low;
+        create_backlog_item(&conn, &low).unwrap();
+        let mut crit = sample_item("Critical");
+        crit.priority = BacklogPriority::Critical;
+        create_backlog_item(&conn, &crit).unwrap();
+        let popped = pop_next_backlog_item(&conn).unwrap().unwrap();
+        assert_eq!(popped.title, "Critical");
+        assert_eq!(popped.status, BacklogStatus::Triaged);
+        // Second pop should return the low one
+        let popped2 = pop_next_backlog_item(&conn).unwrap().unwrap();
+        assert_eq!(popped2.title, "Low");
+    }
+
+    #[test]
+    fn pop_next_returns_none_when_empty() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        assert!(pop_next_backlog_item(&conn).unwrap().is_none());
+    }
+
+    #[test]
+    fn pop_next_skips_non_new_items() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let id = create_backlog_item(&conn, &sample_item("A")).unwrap();
+        update_backlog_status(&conn, id, BacklogStatus::Done).unwrap();
+        assert!(pop_next_backlog_item(&conn).unwrap().is_none());
+    }
+
+    #[test]
+    fn item_with_tags_roundtrips() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let item = sample_item("Tagged").with_tags(vec!["urgent".into(), "regression".into()]);
+        let id = create_backlog_item(&conn, &item).unwrap();
+        let fetched = get_backlog_item(&conn, id).unwrap().unwrap();
+        assert_eq!(fetched.tags, vec!["urgent", "regression"]);
+    }
+}

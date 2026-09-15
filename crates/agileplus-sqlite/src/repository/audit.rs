@@ -148,3 +148,119 @@ impl<T> OptionalExt<T> for rusqlite::Result<T> {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::SqliteStorageAdapter;
+    use agileplus_domain::domain::audit::AuditEntry;
+
+    fn seed_feature(conn: &Connection, id: i64) {
+        conn.execute(
+            "INSERT OR IGNORE INTO features (id, slug, friendly_name, state, spec_hash, target_branch, created_at, updated_at) \
+             VALUES (?1, ?2, ?3, 'created', X'00', 'main', datetime('now'), datetime('now'))",
+            params![id, format!("feat-{id}"), format!("Feature {id}")],
+        )
+        .unwrap();
+    }
+
+    fn make_entry(feature_id: i64, actor: &str, prev_hash: [u8; 32], hash: [u8; 32]) -> AuditEntry {
+        AuditEntry {
+            id: 0,
+            feature_id,
+            wp_id: None,
+            timestamp: chrono::Utc::now(),
+            actor: actor.to_string(),
+            transition: "created".to_string(),
+            evidence_refs: vec![],
+            prev_hash,
+            hash,
+            event_id: None,
+            archived_to: None,
+        }
+    }
+
+    #[test]
+    fn test_append_and_get_trail() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        seed_feature(&conn, 1);
+        let h1 = [1u8; 32];
+        let entry = make_entry(1, "alice", [0u8; 32], h1);
+        append_audit_entry(&conn, &entry).unwrap();
+        let trail = get_audit_trail(&conn, 1).unwrap();
+        assert_eq!(trail.len(), 1);
+        assert_eq!(trail[0].actor, "alice");
+        assert_eq!(trail[0].hash, h1);
+    }
+
+    #[test]
+    fn test_chain_verification_succeeds() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        seed_feature(&conn, 1);
+        let h1 = [1u8; 32];
+        let h2 = [2u8; 32];
+        append_audit_entry(&conn, &make_entry(1, "alice", [0u8; 32], h1)).unwrap();
+        append_audit_entry(&conn, &make_entry(1, "bob", h1, h2)).unwrap();
+        let trail = get_audit_trail(&conn, 1).unwrap();
+        assert_eq!(trail.len(), 2);
+        assert_eq!(trail[0].prev_hash, [0u8; 32]);
+        assert_eq!(trail[1].prev_hash, h1);
+    }
+
+    #[test]
+    fn test_wrong_prev_hash_rejected() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        seed_feature(&conn, 1);
+        let h1 = [1u8; 32];
+        append_audit_entry(&conn, &make_entry(1, "alice", [0u8; 32], h1)).unwrap();
+        // Try to append with wrong prev_hash
+        let bad = make_entry(1, "bob", [99u8; 32], [2u8; 32]);
+        assert!(append_audit_entry(&conn, &bad).is_err());
+    }
+
+    #[test]
+    fn test_first_entry_nonzero_prev_hash_rejected() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        seed_feature(&conn, 1);
+        let bad = make_entry(1, "alice", [1u8; 32], [2u8; 32]);
+        assert!(append_audit_entry(&conn, &bad).is_err());
+    }
+
+    #[test]
+    fn test_get_latest_returns_last_entry() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        seed_feature(&conn, 1);
+        let h1 = [1u8; 32];
+        let h2 = [2u8; 32];
+        append_audit_entry(&conn, &make_entry(1, "alice", [0u8; 32], h1)).unwrap();
+        append_audit_entry(&conn, &make_entry(1, "bob", h1, h2)).unwrap();
+        let latest = get_latest_audit_entry(&conn, 1).unwrap().unwrap();
+        assert_eq!(latest.actor, "bob");
+        assert_eq!(latest.hash, h2);
+    }
+
+    #[test]
+    fn test_get_latest_nonexistent_returns_none() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        seed_feature(&conn, 1);
+        assert!(get_latest_audit_entry(&conn, 999).unwrap().is_none());
+    }
+
+    #[test]
+    fn test_trail_isolation_by_feature() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        seed_feature(&conn, 1);
+        seed_feature(&conn, 2);
+        append_audit_entry(&conn, &make_entry(1, "alice", [0u8; 32], [1u8; 32])).unwrap();
+        append_audit_entry(&conn, &make_entry(2, "bob", [0u8; 32], [2u8; 32])).unwrap();
+        assert_eq!(get_audit_trail(&conn, 1).unwrap().len(), 1);
+        assert_eq!(get_audit_trail(&conn, 2).unwrap().len(), 1);
+    }
+}
