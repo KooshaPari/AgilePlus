@@ -228,4 +228,73 @@ mod tests {
         let ready = s.next_ready(&done);
         assert_eq!(ready, vec![2]);
     }
+
+    // ── additional scheduler tests ─────────────────────────────────────
+
+    #[test]
+    fn execution_plan_empty() {
+        let s = Scheduler::new(HashMap::new(), vec![]);
+        let plan = s.execution_plan().unwrap();
+        assert!(plan.is_empty());
+    }
+
+    #[test]
+    fn execution_plan_two_independent() {
+        let s = Scheduler::new(states(&[1, 2]), vec![]);
+        let plan = s.execution_plan().unwrap();
+        assert_eq!(plan.len(), 1);
+        assert_eq!(plan[0].wp_ids, vec![1, 2]);
+    }
+
+    #[test]
+    fn next_ready_all_completed() {
+        let s = Scheduler::new(states(&[1]), vec![]);
+        let done: HashSet<i64> = [1].into_iter().collect();
+        let ready = s.next_ready(&done);
+        assert!(ready.is_empty());
+    }
+
+    #[test]
+    fn is_blocked_no_deps() {
+        let s = Scheduler::new(states(&[1]), vec![]);
+        assert_eq!(s.is_blocked(1, &HashSet::new()), None);
+    }
+
+    #[test]
+    fn is_blocked_partial_deps_met() {
+        let s = Scheduler::new(states(&[1, 2, 3]), vec![dep(3, 1), dep(3, 2)]);
+        let done: HashSet<i64> = [1].into_iter().collect();
+        let blockers = s.is_blocked(3, &done);
+        assert_eq!(blockers, Some(vec![2]));
+    }
+
+    #[test]
+    fn has_cycle_no_deps() {
+        let s = Scheduler::new(states(&[1, 2, 3]), vec![]);
+        assert!(!s.has_cycle());
+    }
+
+    #[test]
+    fn execution_plan_three_wave_diamond() {
+        // 1 -> 2, 1 -> 3, 2 -> 4, 3 -> 4
+        let s = Scheduler::new(
+            states(&[1, 2, 3, 4]),
+            vec![dep(2, 1), dep(3, 1), dep(4, 2), dep(4, 3)],
+        );
+        let plan = s.execution_plan().unwrap();
+        assert_eq!(plan.len(), 3);
+        assert_eq!(plan[0].wave_number, 0);
+        assert_eq!(plan[1].wave_number, 1);
+        assert_eq!(plan[2].wave_number, 2);
+    }
+
+    #[test]
+    fn execution_plan_wave_ids_sorted() {
+        let s = Scheduler::new(states(&[3, 1, 2]), vec![dep(2, 1), dep(3, 1)]);
+        let plan = s.execution_plan().unwrap();
+        assert_eq!(plan[0].wp_ids, vec![1]);
+        let mut wave1 = plan[1].wp_ids.clone();
+        wave1.sort();
+        assert_eq!(wave1, vec![2, 3]);
+    }
 }

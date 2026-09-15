@@ -184,4 +184,106 @@ mod tests {
         }];
         assert!(enforce_governance(&violations).is_err());
     }
+
+    // ── additional tests ───────────────────────────────────────────────
+
+    #[test]
+    fn violation_severity_display() {
+        assert_eq!(ViolationSeverity::Error.to_string(), "ERROR");
+        assert_eq!(ViolationSeverity::Warning.to_string(), "WARN");
+        assert_eq!(ViolationSeverity::Info.to_string(), "INFO");
+    }
+
+    #[test]
+    fn validates_all_required_sections() {
+        let spec = "# Spec\n## Problem Statement\nps\n## Functional Requirements\n- **FR-1**: x\n## Acceptance Criteria\nac\n";
+        let violations = validate_spec_consistency(spec, &dummy_constitution());
+        assert!(violations.is_empty(), "should have no violations: {violations:?}");
+    }
+
+    #[test]
+    fn detects_missing_problem_statement() {
+        let spec = "# Spec\n## Functional Requirements\n- **FR-1**: x\n## Acceptance Criteria\nac\n";
+        let violations = validate_spec_consistency(spec, &dummy_constitution());
+        let msgs: Vec<&str> = violations.iter().map(|v| v.message.as_str()).collect();
+        assert!(msgs.iter().any(|m| m.contains("Problem Statement")));
+    }
+
+    #[test]
+    fn detects_missing_functional_requirements() {
+        let spec = "# Spec\n## Problem Statement\nps\n## Acceptance Criteria\nac\n";
+        let violations = validate_spec_consistency(spec, &dummy_constitution());
+        let msgs: Vec<&str> = violations.iter().map(|v| v.message.as_str()).collect();
+        assert!(msgs.iter().any(|m| m.contains("Functional Requirements")));
+    }
+
+    #[test]
+    fn detects_missing_acceptance_criteria() {
+        let spec = "# Spec\n## Problem Statement\nps\n## Functional Requirements\n- **FR-1**: x\n";
+        let violations = validate_spec_consistency(spec, &dummy_constitution());
+        let msgs: Vec<&str> = violations.iter().map(|v| v.message.as_str()).collect();
+        assert!(msgs.iter().any(|m| m.contains("Acceptance Criteria")));
+    }
+
+    #[test]
+    fn warns_when_no_fr_found() {
+        let spec = "# Spec\n## Problem Statement\nps\n## Functional Requirements\nno FR here\n## Acceptance Criteria\nac\n";
+        let violations = validate_spec_consistency(spec, &dummy_constitution());
+        let has_fr_warning = violations.iter().any(|v| v.rule == "fr-required");
+        assert!(has_fr_warning, "should warn about missing FRs");
+    }
+
+    #[test]
+    fn no_fr_warning_when_present() {
+        let spec = "# Spec\n## Problem Statement\nps\n## Functional Requirements\n- **FR-1**: login\n## Acceptance Criteria\nac\n";
+        let violations = validate_spec_consistency(spec, &dummy_constitution());
+        let has_fr_warning = violations.iter().any(|v| v.rule == "fr-required");
+        assert!(!has_fr_warning, "should not warn about FRs");
+    }
+
+    #[test]
+    fn enforce_empty_violations_passes() {
+        assert!(enforce_governance(&[]).is_ok());
+    }
+
+    #[test]
+    fn enforce_only_infos_passes() {
+        let violations = vec![Violation {
+            rule: "test".into(),
+            severity: ViolationSeverity::Info,
+            message: "just info".into(),
+            location: None,
+        }];
+        assert!(enforce_governance(&violations).is_ok());
+    }
+
+    #[test]
+    fn enforce_mixed_warnings_and_errors_fails() {
+        let violations = vec![
+            Violation {
+                rule: "w".into(),
+                severity: ViolationSeverity::Warning,
+                message: "a warning".into(),
+                location: None,
+            },
+            Violation {
+                rule: "e".into(),
+                severity: ViolationSeverity::Error,
+                message: "an error".into(),
+                location: None,
+            },
+        ];
+        assert!(enforce_governance(&violations).is_err());
+    }
+
+    #[test]
+    fn violation_with_location() {
+        let v = Violation {
+            rule: "test".into(),
+            severity: ViolationSeverity::Warning,
+            message: "located warning".into(),
+            location: Some("src/main.rs:10".into()),
+        };
+        assert_eq!(v.location.as_deref(), Some("src/main.rs:10"));
+    }
 }

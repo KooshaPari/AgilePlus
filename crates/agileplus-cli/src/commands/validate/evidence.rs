@@ -75,6 +75,76 @@ pub(crate) async fn evaluate_evidence<S: StoragePort>(
     Ok((results, missing))
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ── parse_requirement ───────────────────────────────────────────────
+
+    #[test]
+    fn parse_requirement_fr_only() {
+        let (fr, ty) = parse_requirement("FR-001");
+        assert_eq!(fr, "FR-001");
+        assert!(ty.is_none());
+    }
+
+    #[test]
+    fn parse_requirement_with_test_result() {
+        let (fr, ty) = parse_requirement("FR-001:test_result");
+        assert_eq!(fr, "FR-001");
+        assert_eq!(ty, Some(EvidenceType::TestResult));
+    }
+
+    #[test]
+    fn parse_requirement_with_ci_output() {
+        let (fr, ty) = parse_requirement("FR-042:ci_output");
+        assert_eq!(fr, "FR-042");
+        assert_eq!(ty, Some(EvidenceType::CiOutput));
+    }
+
+    #[test]
+    fn parse_requirement_with_review_approval() {
+        let (fr, ty) = parse_requirement("FR-005:review_approval");
+        assert_eq!(fr, "FR-005");
+        assert_eq!(ty, Some(EvidenceType::ReviewApproval));
+    }
+
+    #[test]
+    fn parse_requirement_with_security_scan() {
+        let (fr, ty) = parse_requirement("FR-SEC:security_scan");
+        assert_eq!(fr, "FR-SEC");
+        assert_eq!(ty, Some(EvidenceType::SecurityScan));
+    }
+
+    #[test]
+    fn parse_requirement_with_lint_result() {
+        let (fr, ty) = parse_requirement("FR-010:lint_result");
+        assert_eq!(fr, "FR-010");
+        assert_eq!(ty, Some(EvidenceType::LintResult));
+    }
+
+    #[test]
+    fn parse_requirement_with_manual_attestation() {
+        let (fr, ty) = parse_requirement("FR-010:manual_attestation");
+        assert_eq!(fr, "FR-010");
+        assert_eq!(ty, Some(EvidenceType::ManualAttestation));
+    }
+
+    #[test]
+    fn parse_requirement_with_unknown_type() {
+        let (fr, ty) = parse_requirement("FR-010:unknown_type");
+        assert_eq!(fr, "FR-010");
+        assert!(ty.is_none());
+    }
+
+    #[test]
+    fn parse_requirement_empty_colon() {
+        let (fr, ty) = parse_requirement("FR-001:");
+        assert_eq!(fr, "FR-001");
+        assert!(ty.is_none());
+    }
+}
+
 /// Check if evidence meets a threshold defined in metadata.
 #[cfg(test)]
 pub(crate) fn evaluate_threshold(evidence: &[&Evidence], threshold: &serde_json::Value) -> bool {

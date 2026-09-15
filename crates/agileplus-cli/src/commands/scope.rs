@@ -181,4 +181,80 @@ mod tests {
             assert!(!g.contains(&1) || !g.contains(&2));
         }
     }
+
+    // ── additional detect_file_scope tests ─────────────────────────────
+
+    #[test]
+    fn detect_file_scope_skips_urls() {
+        let desc = "Visit https://example.com/path for more info";
+        let scope = detect_file_scope(desc);
+        assert!(scope.is_empty(), "URLs should not be detected as files");
+    }
+
+    #[test]
+    fn detect_file_scope_skips_relative_paths() {
+        let desc = "Check ../config for settings";
+        let scope = detect_file_scope(desc);
+        assert!(scope.is_empty(), "relative paths should be skipped");
+    }
+
+    #[test]
+    fn detect_file_scope_various_extensions() {
+        let desc = "Edit file.rs and file.toml and file.py";
+        let scope = detect_file_scope(desc);
+        assert_eq!(scope.len(), 3);
+    }
+
+    #[test]
+    fn detect_file_scope_long_extension_skipped() {
+        let desc = "Edit file.toolongext";
+        let scope = detect_file_scope(desc);
+        assert!(scope.is_empty(), "extensions > 6 chars should be skipped");
+    }
+
+    #[test]
+    fn detect_file_scope_sorted_output() {
+        let desc = "Edit z/file.rs and a/file.rs and m/file.rs";
+        let scope = detect_file_scope(desc);
+        let sorted = { let mut s = scope.clone(); s.sort(); s };
+        assert_eq!(scope, sorted, "output should be sorted");
+    }
+
+    // ── additional OverlapGraph tests ──────────────────────────────────
+
+    #[test]
+    fn parallel_groups_empty_ids() {
+        let graph = OverlapGraph::new();
+        let groups = graph.parallel_groups(&[]);
+        // Empty input yields one empty group (no colors assigned)
+        assert!(groups.iter().all(|g| g.is_empty()));
+    }
+
+    #[test]
+    fn parallel_groups_single_id() {
+        let graph = OverlapGraph::new();
+        let groups = graph.parallel_groups(&[1]);
+        assert_eq!(groups.len(), 1);
+        assert_eq!(groups[0], vec![1]);
+    }
+
+    #[test]
+    fn build_overlap_graph_empty() {
+        let graph = build_overlap_graph(&[]);
+        assert!(graph.edges.is_empty());
+    }
+
+    #[test]
+    fn build_overlap_graph_single_wp() {
+        let mut wp = WorkPackage::new(1, "test", 1, "criteria");
+        wp.file_scope = vec!["src/a.rs".into()];
+        let graph = build_overlap_graph(&[wp]);
+        assert!(graph.edges.is_empty());
+    }
+
+    #[test]
+    fn overlap_graph_new_has_no_edges() {
+        let graph = OverlapGraph::new();
+        assert!(graph.edges.is_empty());
+    }
 }

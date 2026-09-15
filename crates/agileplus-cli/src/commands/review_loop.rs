@@ -144,4 +144,50 @@ mod tests {
         assert!(result.contains("1. Fix typo"));
         assert!(result.contains("2. Add test"));
     }
+
+    // ── additional tests ───────────────────────────────────────────────
+
+    #[test]
+    fn format_feedback_single_comment() {
+        let comments = vec!["Only one issue".to_string()];
+        let result = format_feedback(&comments);
+        assert!(result.contains("1. Only one issue"));
+    }
+
+    #[test]
+    fn format_feedback_many_comments() {
+        let comments: Vec<String> = (1..=10).map(|i| format!("Issue {i}")).collect();
+        let result = format_feedback(&comments);
+        for i in 1..=10 {
+            assert!(result.contains(&format!("{i}. Issue {i}")));
+        }
+    }
+
+    #[test]
+    fn format_feedback_empty_string_comments() {
+        let comments = vec![String::new()];
+        let result = format_feedback(&comments);
+        // Empty comment still gets numbered
+        assert!(result.contains("1. "));
+    }
+
+    #[test]
+    fn review_outcome_variants() {
+        let approved = ReviewOutcome::Approved;
+        assert!(matches!(approved, ReviewOutcome::Approved));
+
+        let max = ReviewOutcome::MaxCyclesReached {
+            cycles: 3,
+            last_feedback: "some feedback".to_string(),
+        };
+        assert!(matches!(max, ReviewOutcome::MaxCyclesReached { cycles: 3, .. }));
+
+        let failed = ReviewOutcome::AgentFailed {
+            error: "crash".to_string(),
+        };
+        assert!(matches!(failed, ReviewOutcome::AgentFailed { .. }));
+
+        let cancelled = ReviewOutcome::Cancelled;
+        assert!(matches!(cancelled, ReviewOutcome::Cancelled));
+    }
 }

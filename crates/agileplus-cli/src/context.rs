@@ -383,4 +383,65 @@ mod tests {
         };
         assert_eq!(telemetry.duration_ms(), 123);
     }
+
+    // ── additional OutputFormat tests ──────────────────────────────────
+
+    #[test]
+    fn output_format_parse_case_insensitive() {
+        assert_eq!(OutputFormat::parse("Json").unwrap(), OutputFormat::Json);
+        assert_eq!(OutputFormat::parse("TABLE").unwrap(), OutputFormat::Table);
+        assert_eq!(OutputFormat::parse("Table").unwrap(), OutputFormat::Table);
+    }
+
+    #[test]
+    fn output_format_parse_various_invalid() {
+        assert!(OutputFormat::parse("").is_err());
+        assert!(OutputFormat::parse("yaml").is_err());
+        assert!(OutputFormat::parse("csv").is_err());
+    }
+
+    // ── CommandTelemetry additional ────────────────────────────────────
+
+    #[test]
+    fn telemetry_zero_duration() {
+        let t = CommandTelemetry {
+            duration: Duration::ZERO,
+        };
+        assert_eq!(t.duration_ms(), 0);
+    }
+
+    #[test]
+    fn telemetry_large_duration() {
+        let t = CommandTelemetry {
+            duration: Duration::from_millis(u64::MAX),
+        };
+        assert_eq!(t.duration_ms(), u64::MAX as u128);
+    }
+
+    // ── CommandTelemetry clone ─────────────────────────────────────────
+
+    #[test]
+    fn telemetry_clone() {
+        let t = CommandTelemetry {
+            duration: Duration::from_millis(42),
+        };
+        let cloned = t.clone();
+        assert_eq!(cloned.duration_ms(), 42);
+    }
+
+    // ── OutputFormat equality ──────────────────────────────────────────
+
+    #[test]
+    fn output_format_equality() {
+        assert_eq!(OutputFormat::Json, OutputFormat::Json);
+        assert_eq!(OutputFormat::Table, OutputFormat::Table);
+        assert_ne!(OutputFormat::Json, OutputFormat::Table);
+    }
+
+    #[test]
+    fn output_format_clone() {
+        let f = OutputFormat::Json;
+        let cloned = f;
+        assert_eq!(cloned, OutputFormat::Json);
+    }
 }

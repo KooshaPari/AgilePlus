@@ -129,3 +129,87 @@ pub(crate) fn generate_wp_prompt(wp: &WorkPackage, feature_name: &str, slug: &st
     ));
     lines.join("\n")
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ── slugify ─────────────────────────────────────────────────────────
+
+    #[test]
+    fn slugify_simple() {
+        assert_eq!(slugify("hello world"), "hello-world");
+    }
+
+    #[test]
+    fn slugify_special_chars() {
+        assert_eq!(slugify("foo!@#$bar"), "foo-bar");
+    }
+
+    #[test]
+    fn slugify_consecutive_dashes() {
+        assert_eq!(slugify("a  b  c"), "a-b-c");
+    }
+
+    #[test]
+    fn slugify_trims_dashes() {
+        assert_eq!(slugify(" hello "), "hello");
+    }
+
+    #[test]
+    fn slugify_empty() {
+        assert_eq!(slugify(""), "");
+    }
+
+    #[test]
+    fn slugify_truncates_at_40() {
+        let long = "a".repeat(60);
+        let result = slugify(&long);
+        assert!(result.len() <= 40);
+    }
+
+    #[test]
+    fn slugify_mixed_case() {
+        assert_eq!(slugify("My Feature"), "my-feature");
+    }
+
+    // ── generate_plan_md ────────────────────────────────────────────────
+
+    #[test]
+    fn generate_plan_md_empty_wps() {
+        let md = generate_plan_md("test-feat", &[], &[], &[]);
+        assert!(md.contains("# Plan: test-feat"));
+        assert!(md.contains("WPs: 0"));
+    }
+
+    // ── generate_wp_prompt ──────────────────────────────────────────────
+
+    #[test]
+    fn generate_wp_prompt_contains_frontmatter() {
+        let mut wp = WorkPackage::new(1, "Auth Module", 1, "FR-001: login");
+        wp.id = 5;
+        let prompt = generate_wp_prompt(&wp, "My Feature", "my-feature");
+        assert!(prompt.contains("---"));
+        assert!(prompt.contains("work_package_id: WP01"));
+        assert!(prompt.contains("title: Auth Module"));
+        assert!(prompt.contains("feature: My Feature"));
+        assert!(prompt.contains("feature_slug: my-feature"));
+        assert!(prompt.contains("state: planned"));
+    }
+
+    #[test]
+    fn generate_wp_prompt_with_file_scope() {
+        let mut wp = WorkPackage::new(1, "Test", 1, "criteria");
+        wp.file_scope = vec!["src/a.rs".into(), "src/b.rs".into()];
+        let prompt = generate_wp_prompt(&wp, "F", "f");
+        assert!(prompt.contains("`src/a.rs`"));
+        assert!(prompt.contains("`src/b.rs`"));
+    }
+
+    #[test]
+    fn generate_wp_prompt_without_file_scope() {
+        let wp = WorkPackage::new(1, "Test", 1, "criteria");
+        let prompt = generate_wp_prompt(&wp, "F", "f");
+        assert!(prompt.contains("auto-detect from spec"));
+    }
+}
