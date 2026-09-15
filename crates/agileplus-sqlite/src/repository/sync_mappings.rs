@@ -135,3 +135,75 @@ pub fn delete_sync_mapping(
     .map_err(map_err)?;
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::SqliteStorageAdapter;
+
+    #[test]
+    fn test_upsert_and_get() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let m = SyncMapping::new("feature", 1, "PLN-123", "hash1");
+        upsert_sync_mapping(&conn, &m).unwrap();
+        let got = get_sync_mapping(&conn, "feature", 1).unwrap().unwrap();
+        assert_eq!(got.plane_issue_id, "PLN-123");
+        assert_eq!(got.entity_type, "feature");
+    }
+
+    #[test]
+    fn test_upsert_updates_existing() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let mut m = SyncMapping::new("feature", 1, "PLN-123", "hash1");
+        upsert_sync_mapping(&conn, &m).unwrap();
+        m.content_hash = "hash2".to_string();
+        m.plane_issue_id = "PLN-456".to_string();
+        upsert_sync_mapping(&conn, &m).unwrap();
+        let got = get_sync_mapping(&conn, "feature", 1).unwrap().unwrap();
+        assert_eq!(got.plane_issue_id, "PLN-456");
+        assert_eq!(got.content_hash, "hash2");
+    }
+
+    #[test]
+    fn test_get_by_plane_id() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let m = SyncMapping::new("epic", 5, "PLN-789", "hash3");
+        upsert_sync_mapping(&conn, &m).unwrap();
+        let got = get_sync_mapping_by_plane_id(&conn, "epic", "PLN-789").unwrap().unwrap();
+        assert_eq!(got.entity_id, 5);
+    }
+
+    #[test]
+    fn test_delete() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let m = SyncMapping::new("feature", 10, "PLN-10", "h");
+        upsert_sync_mapping(&conn, &m).unwrap();
+        delete_sync_mapping(&conn, "feature", 10).unwrap();
+        assert!(get_sync_mapping(&conn, "feature", 10).unwrap().is_none());
+    }
+
+    #[test]
+    fn test_get_nonexistent() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        assert!(get_sync_mapping(&conn, "feature", 999).unwrap().is_none());
+    }
+
+    #[test]
+    fn test_different_entity_types() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let m1 = SyncMapping::new("feature", 1, "PLN-F1", "h1");
+        let m2 = SyncMapping::new("epic", 1, "PLN-E1", "h2");
+        upsert_sync_mapping(&conn, &m1).unwrap();
+        upsert_sync_mapping(&conn, &m2).unwrap();
+        let g1 = get_sync_mapping(&conn, "feature", 1).unwrap().unwrap();
+        let g2 = get_sync_mapping(&conn, "epic", 1).unwrap().unwrap();
+        assert_eq!(g1.plane_issue_id, "PLN-F1");
+        assert_eq!(g2.plane_issue_id, "PLN-E1");
+    }
+}

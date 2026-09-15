@@ -229,3 +229,101 @@ pub fn remove_feature_from_cycle(
     .map_err(map_err)?;
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::SqliteStorageAdapter;
+    use chrono::NaiveDate;
+
+    fn make_cycle(name: &str) -> Cycle {
+        Cycle::new(
+            name,
+            NaiveDate::from_ymd_opt(2025, 1, 1).unwrap(),
+            NaiveDate::from_ymd_opt(2025, 1, 14).unwrap(),
+            None,
+        )
+        .unwrap()
+    }
+
+    fn seed_feature(conn: &Connection, id: i64) {
+        conn.execute(
+            "INSERT OR IGNORE INTO features (id, slug, friendly_name, state, spec_hash, target_branch, created_at, updated_at)              VALUES (?1, ?2, ?3, 'created', X'00', 'main', strftime('%Y-%m-%dT%H:%M:%SZ', 'now'), strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))",
+            rusqlite::params![id, format!("feat-{id}"), format!("Feature {id}")],
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn test_create_and_get_cycle() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let c = make_cycle("Sprint 1");
+        let id = create_cycle(&conn, &c).unwrap();
+        assert!(id > 0);
+        let got = get_cycle(&conn, id).unwrap().unwrap();
+        assert_eq!(got.name, "Sprint 1");
+        assert_eq!(got.state, CycleState::Draft);
+    }
+
+    #[test]
+    fn test_get_cycle_nonexistent() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        assert!(get_cycle(&conn, 999).unwrap().is_none());
+    }
+
+    #[test]
+    fn test_update_cycle_state() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let id = create_cycle(&conn, &make_cycle("S2")).unwrap();
+        update_cycle_state(&conn, id, CycleState::Active).unwrap();
+        let got = get_cycle(&conn, id).unwrap().unwrap();
+        assert_eq!(got.state, CycleState::Active);
+    }
+
+    #[test]
+    fn test_list_all_cycles() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        create_cycle(&conn, &make_cycle("C1")).unwrap();
+        create_cycle(&conn, &make_cycle("C2")).unwrap();
+        let all = list_all_cycles(&conn).unwrap();
+        assert_eq!(all.len(), 2);
+    }
+
+    #[test]
+    fn test_list_by_state() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let id = create_cycle(&conn, &make_cycle("Draft")).unwrap();
+        update_cycle_state(&conn, id, CycleState::Active).unwrap();
+        create_cycle(&conn, &make_cycle("StillDraft")).unwrap();
+        let active = list_cycles_by_state(&conn, CycleState::Active).unwrap();
+        assert_eq!(active.len(), 1);
+        assert_eq!(active[0].name, "Draft");
+    }
+
+    #[test]
+    fn test_add_and_remove_feature() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        seed_feature(&conn, 10);
+        let cycle_id = create_cycle(&conn, &make_cycle("S")).unwrap();
+        let entry = CycleFeature::new(cycle_id, 10);
+        add_feature_to_cycle(&conn, &entry).unwrap();
+        let cwf = get_cycle_with_features(&conn, cycle_id).unwrap().unwrap();
+        assert_eq!(cwf.features.len(), 1);
+        remove_feature_from_cycle(&conn, cycle_id, 10).unwrap();
+        let cwf2 = get_cycle_with_features(&conn, cycle_id).unwrap().unwrap();
+        assert!(cwf2.features.is_empty());
+    }
+
+    #[test]
+    fn test_cycle_not_found_errors() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        assert!(update_cycle_state(&conn, 999, CycleState::Active).is_err());
+    }
+}

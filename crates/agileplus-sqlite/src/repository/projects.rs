@@ -109,3 +109,76 @@ pub fn delete_project(conn: &Connection, id: i64) -> Result<(), DomainError> {
     }
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::SqliteStorageAdapter;
+
+    fn make_project(slug: &str, name: &str) -> Project {
+        Project {
+            id: 0,
+            slug: slug.to_string(),
+            name: name.to_string(),
+            description: Some("desc".to_string()),
+            created_at: chrono::Utc::now(),
+            updated_at: chrono::Utc::now(),
+        }
+    }
+
+    #[test]
+    fn test_create_and_get_project() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let p = make_project("proj-1", "Project One");
+        let id = create_project(&conn, &p).unwrap();
+        assert!(id > 0);
+        let got = get_project_by_id(&conn, id).unwrap().unwrap();
+        assert_eq!(got.slug, "proj-1");
+        assert_eq!(got.name, "Project One");
+    }
+
+    #[test]
+    fn test_get_by_slug() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let p = make_project("slug-test", "Slug Test");
+        create_project(&conn, &p).unwrap();
+        let got = get_project_by_slug(&conn, "slug-test").unwrap().unwrap();
+        assert_eq!(got.name, "Slug Test");
+    }
+
+    #[test]
+    fn test_get_by_slug_nonexistent() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let got = get_project_by_slug(&conn, "nope").unwrap();
+        assert!(got.is_none());
+    }
+
+    #[test]
+    fn test_list_all_projects() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        create_project(&conn, &make_project("p1", "P1")).unwrap();
+        create_project(&conn, &make_project("p2", "P2")).unwrap();
+        let all = list_all_projects(&conn).unwrap();
+        assert_eq!(all.len(), 2);
+    }
+
+    #[test]
+    fn test_delete_project() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let id = create_project(&conn, &make_project("del", "Del")).unwrap();
+        delete_project(&conn, id).unwrap();
+        assert!(get_project_by_id(&conn, id).unwrap().is_none());
+    }
+
+    #[test]
+    fn test_delete_nonexistent_errors() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        assert!(delete_project(&conn, 999).is_err());
+    }
+}

@@ -150,3 +150,98 @@ pub fn delete_user(conn: &Connection, id: i64) -> Result<(), DomainError> {
     }
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::SqliteStorageAdapter;
+
+    fn make_user(name: &str, email: &str) -> User {
+        User {
+            id: 0,
+            display_name: name.to_string(),
+            email: email.to_string(),
+            role: UserRole::Member,
+            status: UserStatus::Active,
+            avatar_url: None,
+            github_login: None,
+            created_at: chrono::Utc::now(),
+            updated_at: chrono::Utc::now(),
+        }
+    }
+
+    #[test]
+    fn test_create_and_get_user() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let u = make_user("Alice", "alice@test.com");
+        let id = create_user(&conn, &u).unwrap();
+        assert!(id > 0);
+        let got = get_user_by_id(&conn, id).unwrap().unwrap();
+        assert_eq!(got.display_name, "Alice");
+        assert_eq!(got.email, "alice@test.com");
+        assert_eq!(got.role, UserRole::Member);
+    }
+
+    #[test]
+    fn test_get_by_email() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        create_user(&conn, &make_user("Bob", "bob@test.com")).unwrap();
+        let got = get_user_by_email(&conn, "bob@test.com").unwrap().unwrap();
+        assert_eq!(got.display_name, "Bob");
+    }
+
+    #[test]
+    fn test_get_user_nonexistent() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        assert!(get_user_by_id(&conn, 999).unwrap().is_none());
+    }
+
+    #[test]
+    fn test_list_all_users() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        create_user(&conn, &make_user("A", "a@t.com")).unwrap();
+        create_user(&conn, &make_user("B", "b@t.com")).unwrap();
+        let all = list_all_users(&conn).unwrap();
+        assert_eq!(all.len(), 2);
+    }
+
+    #[test]
+    fn test_update_user_status() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let id = create_user(&conn, &make_user("C", "c@t.com")).unwrap();
+        update_user_status(&conn, id, UserStatus::Suspended).unwrap();
+        let got = get_user_by_id(&conn, id).unwrap().unwrap();
+        assert_eq!(got.status, UserStatus::Suspended);
+    }
+
+    #[test]
+    fn test_update_user_role() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let id = create_user(&conn, &make_user("D", "d@t.com")).unwrap();
+        update_user_role(&conn, id, UserRole::Admin).unwrap();
+        let got = get_user_by_id(&conn, id).unwrap().unwrap();
+        assert_eq!(got.role, UserRole::Admin);
+    }
+
+    #[test]
+    fn test_delete_user() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let id = create_user(&conn, &make_user("E", "e@t.com")).unwrap();
+        delete_user(&conn, id).unwrap();
+        assert!(get_user_by_id(&conn, id).unwrap().is_none());
+    }
+
+    #[test]
+    fn test_delete_nonexistent_errors() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        assert!(delete_user(&conn, 999).is_err());
+    }
+}

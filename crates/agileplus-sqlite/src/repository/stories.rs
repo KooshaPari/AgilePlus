@@ -200,3 +200,122 @@ pub fn delete_story(conn: &Connection, id: i64) -> Result<(), DomainError> {
     }
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::SqliteStorageAdapter;
+    use rusqlite::params;
+
+    fn seed_project(conn: &Connection, id: i64) {
+        conn.execute(
+            "INSERT OR IGNORE INTO projects (id, slug, name, description, created_at, updated_at)              VALUES (?1, ?2, ?3, \'\', datetime(\'now\'), datetime(\'now\'))",
+            params![id, format!("proj-{id}"), format!("Project {id}")],
+        ).unwrap();
+    }
+
+    fn seed_epic(conn: &Connection, id: i64, project_id: i64) {
+        conn.execute(
+            "INSERT OR IGNORE INTO epics (id, project_id, title, status, created_at, updated_at)              VALUES (?1, ?2, ?3, \'backlog\', datetime(\'now\'), datetime(\'now\'))",
+            params![id, project_id, format!("Epic {id}")],
+        ).unwrap();
+    }
+
+    fn make_story(epic_id: i64, project_id: i64, title: &str) -> Story {
+        Story {
+            id: 0,
+            epic_id,
+            project_id,
+            title: title.to_string(),
+            description: None,
+            status: StoryStatus::Todo,
+            points: Some(3),
+            assignee_id: None,
+            requirement_id: None,
+            created_at: chrono::Utc::now(),
+            updated_at: chrono::Utc::now(),
+        }
+    }
+
+    #[test]
+    fn test_create_and_get_story() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        seed_project(&conn, 10);
+        seed_epic(&conn, 20, 10);
+        let s = make_story(20, 10, "User login");
+        let id = create_story(&conn, &s).unwrap();
+        assert!(id > 0);
+        let got = get_story_by_id(&conn, id).unwrap().unwrap();
+        assert_eq!(got.title, "User login");
+        assert_eq!(got.epic_id, 20);
+    }
+
+    #[test]
+    fn test_get_story_nonexistent() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        assert!(get_story_by_id(&conn, 999).unwrap().is_none());
+    }
+
+    #[test]
+    fn test_list_by_epic() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        seed_project(&conn, 10);
+        seed_epic(&conn, 20, 10);
+        create_story(&conn, &make_story(20, 10, "S1")).unwrap();
+        create_story(&conn, &make_story(20, 10, "S2")).unwrap();
+        let stories = list_stories_by_epic(&conn, 20).unwrap();
+        assert_eq!(stories.len(), 2);
+    }
+
+    #[test]
+    fn test_list_by_project() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        seed_project(&conn, 10);
+        seed_epic(&conn, 20, 10);
+        seed_epic(&conn, 21, 10);
+        create_story(&conn, &make_story(20, 10, "S1")).unwrap();
+        create_story(&conn, &make_story(21, 10, "S2")).unwrap();
+        let stories = list_stories_by_project(&conn, 10).unwrap();
+        assert_eq!(stories.len(), 2);
+    }
+
+    #[test]
+    fn test_update_story_status() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        seed_project(&conn, 10);
+        seed_epic(&conn, 20, 10);
+        let id = create_story(&conn, &make_story(20, 10, "S")).unwrap();
+        update_story_status(&conn, id, StoryStatus::InProgress).unwrap();
+        let got = get_story_by_id(&conn, id).unwrap().unwrap();
+        assert_eq!(got.status, StoryStatus::InProgress);
+    }
+
+    #[test]
+    fn test_delete_story() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        seed_project(&conn, 10);
+        seed_epic(&conn, 20, 10);
+        let id = create_story(&conn, &make_story(20, 10, "S")).unwrap();
+        delete_story(&conn, id).unwrap();
+        assert!(get_story_by_id(&conn, id).unwrap().is_none());
+    }
+
+    #[test]
+    fn test_upsert_by_requirement_id() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        seed_project(&conn, 10);
+        seed_epic(&conn, 20, 10);
+        let mut s = make_story(20, 10, "FR-001");
+        s.requirement_id = Some("FR-001".to_string());
+        let id1 = upsert_story_by_requirement_id(&conn, &s).unwrap();
+        let id2 = upsert_story_by_requirement_id(&conn, &s).unwrap();
+        assert_eq!(id1, id2);
+    }
+}
