@@ -386,3 +386,461 @@ pub struct TopologyReport {
     pub topo: TopoResult,
     pub layers: Vec<Vec<String>>,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::dto::*;
+
+    /// In-memory WpRepository for testing.
+    struct MemRepo {
+        items: Vec<PickedItem>,
+        dependencies: Vec<(String, String)>,
+        done_set: HashSet<String>,
+    }
+
+    impl Default for MemRepo {
+        fn default() -> Self {
+            Self {
+                items: Vec::new(),
+                dependencies: Vec::new(),
+                done_set: HashSet::new(),
+            }
+        }
+    }
+
+    impl MemRepo {
+        fn with_items(items: Vec<PickedItem>) -> Self {
+            Self {
+                items,
+                ..Default::default()
+            }
+        }
+    }
+
+    impl WpRepository for MemRepo {
+        fn list_pickable(
+            &self,
+            _agent: &str,
+            _lane: Option<&str>,
+            _category: Option<&str>,
+            limit: usize,
+        ) -> Result<Vec<PickedItem>> {
+            Ok(self.items.iter().take(limit).cloned().collect())
+        }
+
+        fn all_for_export(&self, _with_side: bool) -> Result<Vec<PickedItem>> {
+            Ok(self.items.clone())
+        }
+
+        fn add_dependency(&mut self, from: &str, to: &str) -> Result<()> {
+            self.dependencies.push((from.to_string(), to.to_string()));
+            Ok(())
+        }
+
+        fn mark_done(&mut self, wp_id: &str) -> Result<()> {
+            self.done_set.insert(wp_id.to_string());
+            Ok(())
+        }
+
+        fn claim_count(&self) -> usize {
+            0
+        }
+
+        fn wp_count(&self) -> usize {
+            self.items.len()
+        }
+
+        fn stage_count(&self) -> usize {
+            3
+        }
+    }
+
+    fn make_item(id: &str, deps: Vec<&str>) -> PickedItem {
+        PickedItem {
+            wp_id: id.to_string(),
+            title: format!("Title {id}"),
+            state: "ready".to_string(),
+            dependencies: deps.into_iter().map(String::from).collect(),
+        }
+    }
+
+    // ── WpGraph tests ────────────────────────────────────────────────────────
+
+    #[test]
+    fn graph_from_empty_items() {
+        let g = WpGraph::from_items(&[]);
+        assert!(g.nodes.is_empty());
+        assert!(g.edges.is_empty());
+    }
+
+    #[test]
+    fn graph_from_items_populates_nodes_and_edges() {
+        let items = vec![make_item("A", vec!["B"])];
+        let g = WpGraph::from_items(&items);
+        assert!(g.nodes.contains("A"));
+        assert!(g.nodes.contains("B"));
+        assert_eq!(g.edges.get("A").unwrap().as_slice(), &["B"]);
+    }
+
+    #[test]
+    fn graph_from_items_deduplicates_nodes() {
+        let items = vec![make_item("A", vec!["B"]), make_item("C", vec!["B"])];
+        let g = WpGraph::from_items(&items);
+        // B appears as a dep from both A and C but should be counted once
+        assert_eq!(g.nodes.len(), 3);
+    }
+
+    // ── topo_sort tests ──────────────────────────────────────────────────────
+
+    #[test]
+    fn topo_sort_empty_graph() {
+        let g = WpGraph::default();
+        let result = g.topo_sort();
+        assert!(result.order.is_empty());
+        assert!(result.cycle.is_none());
+    }
+
+    #[test]
+    fn topo_sort_single_node() {
+        let g = WpGraph::from_items(&[make_item("A", vec![])]);
+        let result = g.topo_sort();
+        assert_eq!(result.order, vec!["A"]);
+        assert!(result.cycle.is_none());
+    }
+
+    #[test]
+    fn topo_sort_linear_chain() {
+        // A depends on B, B depends on C -> order: C, B, A
+        let items = vec![make_item("A", vec!["B"]), make_item("B", vec!["C"])];
+        let g = WpGraph::from_items(&items);
+        let result = g.topo_sort();
+        assert_eq!(result.order, vec!["C", "B", "A"]);
+        assert!(result.cycle.is_none());
+    }
+
+    #[test]
+    fn topo_sort_diamond() {
+        // A -> B, A -> C, B -> D, C -> D
+        let items = vec![
+            make_item("A", vec!["B", "C"]),
+            make_item("B", vec!["D"]),
+            make_item("C", vec!["D"]),
+        ];
+        let g = WpGraph::from_items(&items);
+        let result = g.topo_sort();
+        assert_eq!(result.order.len(), 4);
+        assert!(result.cycle.is_none());
+        // D must come before B and C, which must come before A
+        let pos = |n: &str| result.order.iter().position(|x| x == n).unwrap();
+        assert!(pos("D") < pos("B"));
+        assert!(pos("D") < pos("C"));
+        assert!(pos("B") < pos("A"));
+        assert!(pos("C") < pos("A"));
+    }
+
+    #[test]
+    fn topo_sort_detects_cycle() {
+        // A -> B -> C -> A
+        let items = vec![
+            make_item("A", vec!["B"]),
+            make_item("B", vec!["C"]),
+            make_item("C", vec!["A"]),
+        ];
+        let g = WpGraph::from_items(&items);
+        let result = g.topo_sort();
+        assert!(result.cycle.is_some());
+        let cycle = result.cycle.unwrap();
+        assert_eq!(cycle.len(), 3);
+    }
+
+    #[test]
+    fn topo_sort_independent_nodes() {
+        let items = vec![make_item("A", vec![]), make_item("B", vec![]), make_item("C", vec![])];
+        let g = WpGraph::from_items(&items);
+        let result = g.topo_sort();
+        assert_eq!(result.order.len(), 3);
+        assert!(result.cycle.is_none());
+    }
+
+    // ── parallel_layers tests ────────────────────────────────────────────────
+
+    #[test]
+    fn parallel_layers_single_chain() {
+        // A -> B -> C => [[C], [B], [A]]
+        let items = vec![make_item("A", vec!["B"]), make_item("B", vec!["C"])];
+        let g = WpGraph::from_items(&items);
+        let layers = g.parallel_layers();
+        assert_eq!(layers.len(), 3); // 3 layers for 3-node chain
+        assert_eq!(layers[0], vec!["C"]); // roots (no deps)
+        assert_eq!(layers[1], vec!["B"]);
+        assert_eq!(layers[2], vec!["A"]);
+    }
+
+    #[test]
+    fn parallel_layers_diamond() {
+        // A -> B, A -> C, B -> D, C -> D
+        let items = vec![
+            make_item("A", vec!["B", "C"]),
+            make_item("B", vec!["D"]),
+            make_item("C", vec!["D"]),
+        ];
+        let g = WpGraph::from_items(&items);
+        let layers = g.parallel_layers();
+        // Layer 0: D, Layer 1: B+C, Layer 2: A
+        assert!(layers.len() >= 3);
+        assert!(layers[0].contains(&"D".to_string()));
+        // B and C should be in the same layer (both depend only on D)
+        let layer1: Vec<&String> = layers[1].iter().collect();
+        assert!(layer1.contains(&&"B".to_string()));
+        assert!(layer1.contains(&&"C".to_string()));
+        assert!(layers[2].contains(&"A".to_string()));
+    }
+
+    #[test]
+    fn parallel_layers_empty_graph() {
+        let g = WpGraph::default();
+        let layers = g.parallel_layers();
+        assert!(layers.is_empty() || layers.len() == 1);
+    }
+
+    #[test]
+    fn parallel_layers_all_roots() {
+        let items = vec![make_item("A", vec![]), make_item("B", vec![])];
+        let g = WpGraph::from_items(&items);
+        let layers = g.parallel_layers();
+        // All nodes should be in layer 0
+        assert_eq!(layers.len(), 1);
+        assert_eq!(layers[0].len(), 2);
+    }
+
+    // ── AppState use-case tests ──────────────────────────────────────────────
+
+    #[test]
+    fn pick_returns_items_from_repo() {
+        let repo = MemRepo::with_items(vec![
+            make_item("WP01", vec![]),
+            make_item("WP02", vec![]),
+        ]);
+        let state = AppState::new(repo);
+        let req = PickRequest {
+            agent_id: "agent-1".to_string(),
+            limit: 10,
+            lane: None,
+            category: None,
+        };
+        let items = state.pick(&req).unwrap();
+        assert_eq!(items.len(), 2);
+    }
+
+    #[test]
+    fn pick_respects_limit() {
+        let repo = MemRepo::with_items(vec![
+            make_item("WP01", vec![]),
+            make_item("WP02", vec![]),
+            make_item("WP03", vec![]),
+        ]);
+        let state = AppState::new(repo);
+        let req = PickRequest {
+            agent_id: "agent-1".to_string(),
+            limit: 2,
+            lane: None,
+            category: None,
+        };
+        let items = state.pick(&req).unwrap();
+        assert_eq!(items.len(), 2);
+    }
+
+    #[test]
+    fn claim_succeeds_on_first_attempt() {
+        let repo = MemRepo::default();
+        let state = AppState::new(repo);
+        let req = ClaimRequest {
+            claim_id: "c1".to_string(),
+            resource: "worktree-slug".to_string(),
+            kind: ClaimKind::Worktree,
+            agent_id: "agent-1".to_string(),
+            ttl_seconds: 300,
+            reason: ClaimReason::default(),
+        };
+        let claim = state.claim(&req).unwrap();
+        assert_eq!(claim.resource, "worktree-slug");
+    }
+
+    #[test]
+    fn claim_fails_when_already_claimed() {
+        let repo = MemRepo::default();
+        let state = AppState::new(repo);
+        let req = ClaimRequest {
+            claim_id: "c1".to_string(),
+            resource: "worktree-slug".to_string(),
+            kind: ClaimKind::Worktree,
+            agent_id: "agent-1".to_string(),
+            ttl_seconds: 300,
+            reason: ClaimReason::default(),
+        };
+        state.claim(&req).unwrap();
+        // Second claim on same resource with different claim_id should fail
+        let req2 = ClaimRequest {
+            claim_id: "c2".to_string(),
+            resource: "worktree-slug".to_string(),
+            kind: ClaimKind::Worktree,
+            agent_id: "agent-2".to_string(),
+            ttl_seconds: 300,
+            reason: ClaimReason::default(),
+        };
+        assert!(state.claim(&req2).is_err());
+    }
+
+    #[test]
+    fn heartbeat_returns_true_for_existing_claim() {
+        let repo = MemRepo::default();
+        let state = AppState::new(repo);
+        let req = ClaimRequest {
+            claim_id: "c1".to_string(),
+            resource: "res".to_string(),
+            kind: ClaimKind::Worktree,
+            agent_id: "agent-1".to_string(),
+            ttl_seconds: 300,
+            reason: ClaimReason::default(),
+        };
+        state.claim(&req).unwrap();
+        let hb = HeartbeatRequest {
+            claim_id: "c1".to_string(),
+        };
+        assert!(state.heartbeat(&hb).unwrap());
+    }
+
+    #[test]
+    fn heartbeat_returns_false_for_unknown_claim() {
+        let repo = MemRepo::default();
+        let state = AppState::new(repo);
+        let hb = HeartbeatRequest {
+            claim_id: "nonexistent".to_string(),
+        };
+        assert!(!state.heartbeat(&hb).unwrap());
+    }
+
+    #[test]
+    fn release_returns_true_for_existing_claim() {
+        let repo = MemRepo::default();
+        let state = AppState::new(repo);
+        let req = ClaimRequest {
+            claim_id: "c1".to_string(),
+            resource: "res".to_string(),
+            kind: ClaimKind::Worktree,
+            agent_id: "agent-1".to_string(),
+            ttl_seconds: 300,
+            reason: ClaimReason::default(),
+        };
+        state.claim(&req).unwrap();
+        let rel = ReleaseRequest {
+            claim_id: "c1".to_string(),
+        };
+        assert!(state.release(&rel).unwrap());
+    }
+
+    #[test]
+    fn release_returns_false_for_unknown() {
+        let repo = MemRepo::default();
+        let state = AppState::new(repo);
+        let rel = ReleaseRequest {
+            claim_id: "nope".to_string(),
+        };
+        assert!(!state.release(&rel).unwrap());
+    }
+
+    #[test]
+    fn done_marks_wp_done() {
+        let repo = MemRepo::with_items(vec![make_item("WP01", vec![])]);
+        let state = AppState::new(repo);
+        let req = DoneRequest {
+            claim_id: "c1".to_string(),
+            wp_id: "WP01".to_string(),
+            result: Some("completed".to_string()),
+        };
+        assert!(state.done(&mut req.clone()).unwrap());
+    }
+
+    #[test]
+    fn dedup_finds_identical_items() {
+        let repo = MemRepo::default();
+        let state = AppState::new(repo);
+        let req = DedupRequest {
+            items: vec![
+                ("Implement auth".to_string(), "Build auth system".to_string()),
+                ("Add authentication".to_string(), "Create login feature".to_string()),
+            ],
+            threshold: 0.3,
+        };
+        // The dedup function should return candidates (may be empty or non-empty
+        // depending on the similarity algorithm)
+        let _candidates = state.dedup(&req).unwrap();
+    }
+
+    #[test]
+    fn topology_builds_graph_from_repo() {
+        let items = vec![
+            make_item("WP01", vec![]),
+            make_item("WP02", vec!["WP01"]),
+        ];
+        let repo = MemRepo::with_items(items);
+        let state = AppState::new(repo);
+        let req = TopologyRequest {
+            root_wp: None,
+        };
+        let report = state.topology(&req).unwrap();
+        assert_eq!(report.topo.order.len(), 2);
+        assert!(report.topo.cycle.is_none());
+        assert!(!report.layers.is_empty());
+    }
+
+    #[test]
+    fn scan_inspects_directories() {
+        let repo = MemRepo::default();
+        let state = AppState::new(repo);
+        let tmp = tempfile::tempdir().unwrap();
+        let req = ScanRequest {
+            roots: vec![tmp.path().to_string_lossy().to_string()],
+            max_depth: None,
+        };
+        let infos = state.scan(&req).unwrap();
+        assert_eq!(infos.len(), 1);
+    }
+
+    #[test]
+    fn scan_skips_nonexistent_paths() {
+        let repo = MemRepo::default();
+        let state = AppState::new(repo);
+        let req = ScanRequest {
+            roots: vec!["/nonexistent/path/12345".to_string()],
+            max_depth: None,
+        };
+        let infos = state.scan(&req).unwrap();
+        assert!(infos.is_empty());
+    }
+
+    #[test]
+    fn where_am_i_returns_snapshot() {
+        let repo = MemRepo::with_items(vec![make_item("WP01", vec![])]);
+        let state = AppState::new(repo);
+        let tmp = tempfile::tempdir().unwrap();
+        let req = WhereRequest {
+            cwd: tmp.path().to_string_lossy().to_string(),
+        };
+        let resp = state.where_am_i(&req).unwrap();
+        assert!(resp.repo.is_some());
+        assert_eq!(resp.next_pickable.len(), 1);
+    }
+
+    #[test]
+    fn where_am_i_with_nonexistent_cwd() {
+        let repo = MemRepo::default();
+        let state = AppState::new(repo);
+        let req = WhereRequest {
+            cwd: "/nonexistent/path".to_string(),
+        };
+        let resp = state.where_am_i(&req).unwrap();
+        assert!(resp.repo.is_none());
+    }
+}

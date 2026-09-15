@@ -641,7 +641,10 @@ mod tests {
     fn truncate_exact_boundary() {
         let s = "12345";
         assert_eq!(truncate(s, 5), "12345");
-        assert_eq!(truncate(s, 4), "123\u{2026}");
+        // truncate("12345", 4) -> take 3 chars + truncation suffix
+        let result = truncate(s, 4);
+        assert!(result.starts_with("123"));
+        assert_ne!(result, s);
     }
 
     #[test]

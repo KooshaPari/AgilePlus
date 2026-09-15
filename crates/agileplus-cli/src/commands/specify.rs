@@ -439,4 +439,78 @@ mod tests {
         let expected = hash_entry(&entry);
         assert_eq!(entry.hash, expected);
     }
+#[test]
+    fn sha256_empty_string() {
+        let h = sha256_bytes("");
+        // SHA-256 of empty string is well-defined
+        assert_ne!(h, [0u8; 32]);
+    }
+
+    #[test]
+    fn sha256_known_vector() {
+        // SHA-256 of "abc" = ba7816bf...
+        let h = sha256_bytes("abc");
+        assert_eq!(h[0], 0xba);
+        assert_eq!(h[1], 0x78);
+        assert_eq!(h[2], 0x16);
+        assert_eq!(h[3], 0xbf);
+    }
+
+    #[test]
+    fn diff_summary_additions_only() {
+        let old = "line1
+";
+        let new = "line1
+line2
+";
+        let diff = compute_diff_summary(old, new);
+        assert!(diff.contains("+line2"));
+        assert!(!diff.contains("-line1"));
+    }
+
+    #[test]
+    fn diff_summary_deletions_only() {
+        let old = "line1
+line2
+";
+        let new = "line1
+";
+        let diff = compute_diff_summary(old, new);
+        assert!(diff.contains("-line2"));
+        assert!(!diff.contains("+"));
+    }
+
+    #[test]
+    fn diff_summary_empty_old() {
+        let old = "";
+        let new = "new content
+";
+        let diff = compute_diff_summary(old, new);
+        assert!(diff.contains("+new content"));
+    }
+
+    #[test]
+    fn diff_summary_empty_new() {
+        let old = "old content
+";
+        let new = "";
+        let diff = compute_diff_summary(old, new);
+        assert!(diff.contains("-old content"));
+    }
+
+    #[test]
+    fn build_audit_entry_unique_hashes() {
+        let e1 = build_audit_entry(1, "user", "Created", [0u8; 32]);
+        let e2 = build_audit_entry(2, "user", "Created", [0u8; 32]);
+        assert_ne!(e1.hash, e2.hash);
+    }
+
+    #[test]
+    fn build_audit_entry_preserves_metadata() {
+        let entry = build_audit_entry(42, "tester", "Test -> Done", [1u8; 32]);
+        assert_eq!(entry.feature_id, 42);
+        assert_eq!(entry.actor, "tester");
+        assert_eq!(entry.transition, "Test -> Done");
+        assert_eq!(entry.prev_hash, [1u8; 32]);
+    }
 }

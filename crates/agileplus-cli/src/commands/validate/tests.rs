@@ -323,3 +323,124 @@ fn contract_with_policy(
         bound_at: Utc::now(),
     }
 }
+
+
+// ── Additional ValidationReport tests ────────────────────────────────────────
+
+#[test]
+fn report_summary_pass() {
+    let report = ValidationReport {
+        feature_slug: "feat".to_string(),
+        timestamp: Utc::now(),
+        overall_pass: true,
+        evidence_results: vec![EvidenceCheck {
+            fr_id: "FR-1".to_string(),
+            evidence_type: "CiOutput".to_string(),
+            found: true,
+            threshold_met: true,
+            message: "OK".to_string(),
+        }],
+        policy_results: vec![PolicyEvalResult {
+            policy_id: 10,
+            domain: "quality".to_string(),
+            passed: true,
+            message: "passed".to_string(),
+        }],
+        missing_evidence: vec![],
+        governance_exceptions: vec![],
+    };
+    let summary = report.summary();
+    assert!(summary.contains("PASS"));
+    assert!(summary.contains("1/1 passed")); // evidence
+}
+
+#[test]
+fn report_summary_fail_with_missing() {
+    let report = ValidationReport {
+        feature_slug: "feat".to_string(),
+        timestamp: Utc::now(),
+        overall_pass: false,
+        evidence_results: vec![EvidenceCheck {
+            fr_id: "FR-1".to_string(),
+            evidence_type: "TestResult".to_string(),
+            found: false,
+            threshold_met: false,
+            message: "missing".to_string(),
+        }],
+        policy_results: vec![],
+        missing_evidence: vec![("FR-1".to_string(), "TestResult".to_string())],
+        governance_exceptions: vec!["exception one".to_string()],
+    };
+    let summary = report.summary();
+    assert!(summary.contains("FAIL"));
+    assert!(summary.contains("missing evidence 1"));
+    assert!(summary.contains("exceptions 1"));
+}
+
+#[test]
+fn report_to_markdown_with_governance_exceptions() {
+    let report = ValidationReport {
+        feature_slug: "my-feat".to_string(),
+        timestamp: Utc::now(),
+        overall_pass: false,
+        evidence_results: vec![],
+        policy_results: vec![PolicyEvalResult {
+            policy_id: 42,
+            domain: "security".to_string(),
+            passed: false,
+            message: "policy failed".to_string(),
+        }],
+        missing_evidence: vec![],
+        governance_exceptions: vec!["manual override required".to_string()],
+    };
+    let md = report.to_markdown();
+    assert!(md.contains("Governance Exceptions"));
+    assert!(md.contains("manual override required"));
+    assert!(md.contains("Policy Checks"));
+}
+
+#[test]
+fn report_to_markdown_empty_evidence_shows_placeholder() {
+    let report = ValidationReport {
+        feature_slug: "empty".to_string(),
+        timestamp: Utc::now(),
+        overall_pass: true,
+        evidence_results: vec![],
+        policy_results: vec![],
+        missing_evidence: vec![],
+        governance_exceptions: vec![],
+    };
+    let md = report.to_markdown();
+    assert!(md.contains("no evidence requirements defined"));
+}
+
+#[test]
+fn report_to_json_with_policies_and_missing() {
+    let report = ValidationReport {
+        feature_slug: "json-feat".to_string(),
+        timestamp: Utc::now(),
+        overall_pass: false,
+        evidence_results: vec![EvidenceCheck {
+            fr_id: "FR-2".to_string(),
+            evidence_type: "LintResult".to_string(),
+            found: false,
+            threshold_met: false,
+            message: "lint failed".to_string(),
+        }],
+        policy_results: vec![PolicyEvalResult {
+            policy_id: 5,
+            domain: "compliance".to_string(),
+            passed: false,
+            message: "not compliant".to_string(),
+        }],
+        missing_evidence: vec![("FR-2".to_string(), "LintResult".to_string())],
+        governance_exceptions: vec!["exception".to_string()],
+    };
+    let json = report.to_json();
+    let v: serde_json::Value = serde_json::from_str(&json).unwrap();
+    assert_eq!(v["overall_pass"], false);
+    assert!(v["evidence_results"].as_array().unwrap().len() == 1);
+    assert!(v["policy_results"].as_array().unwrap().len() == 1);
+    assert!(v["missing_evidence"].as_array().unwrap().len() == 1);
+    assert!(v["governance_exceptions"].as_array().unwrap().len() == 1);
+}
