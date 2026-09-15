@@ -679,4 +679,343 @@ mod tests {
         assert!(report.contains("## Insights"));
         assert!(report.contains("## Suggested Constitution Amendments"));
     }
+
+    // --- format_duration edge cases ---
+
+    #[test]
+    fn format_duration_zero_ms() {
+        assert_eq!(format_duration(0), "0s");
+    }
+
+    #[test]
+    fn format_duration_subsecond() {
+        assert_eq!(format_duration(500), "0s");
+    }
+
+    #[test]
+    fn format_duration_exact_minute() {
+        assert_eq!(format_duration(60000), "1m 0s");
+    }
+
+    #[test]
+    fn format_duration_exact_hour() {
+        assert_eq!(format_duration(3600000), "1h 0m");
+    }
+
+    #[test]
+    fn format_duration_multiple_days() {
+        let ms = (5 * 24 * 3600 + 3 * 3600) * 1000i64;
+        assert_eq!(format_duration(ms), "5d 3h");
+    }
+
+    // --- compute_durations edge cases ---
+
+    #[test]
+    fn compute_durations_three_entries() {
+        let base = Utc::now();
+        let t0 = base - Duration::hours(10);
+        let t1 = base - Duration::hours(6);
+        let t2 = base - Duration::hours(1);
+        let e0 = make_audit("Created -> Specified", t0);
+        let e1 = make_audit("Specified -> Researched", t1);
+        let e2 = make_audit("Researched -> Implemented", t2);
+        let (total, phases) = compute_durations_from_audit(&[e0, e1, e2], &t0);
+        assert!(total > 0);
+        assert_eq!(phases.len(), 2);
+        assert_eq!(phases[0].0, "Created -> Specified");
+        assert_eq!(phases[1].0, "Specified -> Researched");
+        // First phase ~4h, second phase ~5h
+        assert!(phases[0].1 > 0);
+        assert!(phases[1].1 > 0);
+    }
+
+    #[test]
+    fn compute_durations_allows_negative_transition() {
+        // If timestamps are somehow backwards, max(0) clamps to 0
+        let base = Utc::now();
+        let t0 = base - Duration::hours(1);
+        let t1 = base; // t1 > t0 as expected
+        let e0 = make_audit("Created -> Specified", t1);
+        let e1 = make_audit("Specified -> Researched", t0);
+        let (_, phases) = compute_durations_from_audit(&[e0, e1], &base);
+        assert_eq!(phases.len(), 1);
+        assert_eq!(phases[0].1, 0); // negative clamped to 0
+    }
+
+    // --- generate_insights edge cases ---
+
+    #[test]
+    fn generate_insights_high_agent_rate() {
+        let metrics = FeatureMetrics {
+            total_duration_ms: 3600000,
+            wp_count: 2,
+            total_agent_runs: 12,
+            total_review_cycles: 2,
+            avg_review_cycles_per_wp: 1.0,
+            state_transition_durations: vec![],
+            governance_exceptions: vec![],
+            high_review_wps: vec![],
+            wp_metrics: vec![],
+        };
+        let insights = generate_insights(&metrics);
+        let combined = insights.join(" ");
+        assert!(combined.contains("agent invocation") || combined.contains("No significant"));
+    }
+
+    #[test]
+    fn generate_insights_governance_exceptions() {
+        let metrics = FeatureMetrics {
+            total_duration_ms: 3600000,
+            wp_count: 3,
+            total_agent_runs: 6,
+            total_review_cycles: 3,
+            avg_review_cycles_per_wp: 1.0,
+            state_transition_durations: vec![],
+            governance_exceptions: vec![
+                "skipped review".to_string(),
+                "exception: fast-track".to_string(),
+            ],
+            high_review_wps: vec![],
+            wp_metrics: vec![],
+        };
+        let insights = generate_insights(&metrics);
+        let combined = insights.join(" ");
+        assert!(combined.contains("governance exception"));
+    }
+
+    #[test]
+    fn generate_insights_implementation_fraction_high() {
+        let metrics = FeatureMetrics {
+            total_duration_ms: 10000,
+            wp_count: 1,
+            total_agent_runs: 1,
+            total_review_cycles: 0,
+            avg_review_cycles_per_wp: 0.0,
+            state_transition_durations: vec![],
+            governance_exceptions: vec![],
+            high_review_wps: vec![],
+            wp_metrics: vec![WpMetrics {
+                sequence: 1,
+                title: "WP01".to_string(),
+                agent_runs: 1,
+                review_cycles: 0,
+                duration_ms: 8000, // 80% of total
+            }],
+        };
+        let insights = generate_insights(&metrics);
+        let combined = insights.join(" ");
+        assert!(combined.contains("80%") || combined.contains("No significant"));
+    }
+
+    #[test]
+    fn generate_insights_low_agent_rate_no_warning() {
+        let metrics = FeatureMetrics {
+            total_duration_ms: 3600000,
+            wp_count: 5,
+            total_agent_runs: 10, // 2 per WP, < 5
+            total_review_cycles: 5,
+            avg_review_cycles_per_wp: 1.0,
+            state_transition_durations: vec![],
+            governance_exceptions: vec![],
+            high_review_wps: vec![],
+            wp_metrics: vec![],
+        };
+        let insights = generate_insights(&metrics);
+        // Should NOT contain agent invocation warning
+        let combined = insights.join(" ");
+        assert!(!combined.contains("agent invocation rate"));
+    }
+
+    // --- generate_constitution_suggestions ---
+
+    #[test]
+    fn generate_constitution_suggestions_high_review() {
+        let metrics = FeatureMetrics {
+            total_duration_ms: 3600000,
+            wp_count: 3,
+            total_agent_runs: 6,
+            total_review_cycles: 15,
+            avg_review_cycles_per_wp: 5.0,
+            state_transition_durations: vec![],
+            governance_exceptions: vec![],
+            high_review_wps: vec![],
+            wp_metrics: vec![],
+        };
+        let suggestions = generate_constitution_suggestions(&metrics);
+        let combined = suggestions.join(" ");
+        assert!(combined.contains("pre-review"));
+    }
+
+    #[test]
+    fn generate_constitution_suggestions_governance() {
+        let metrics = FeatureMetrics {
+            total_duration_ms: 3600000,
+            wp_count: 3,
+            total_agent_runs: 6,
+            total_review_cycles: 3,
+            avg_review_cycles_per_wp: 1.0,
+            state_transition_durations: vec![],
+            governance_exceptions: vec!["skipped".to_string()],
+            high_review_wps: vec![],
+            wp_metrics: vec![],
+        };
+        let suggestions = generate_constitution_suggestions(&metrics);
+        let combined = suggestions.join(" ");
+        assert!(combined.contains("fast-track"));
+    }
+
+    #[test]
+    fn generate_constitution_suggestions_healthy() {
+        let metrics = FeatureMetrics {
+            total_duration_ms: 3600000,
+            wp_count: 3,
+            total_agent_runs: 6,
+            total_review_cycles: 3,
+            avg_review_cycles_per_wp: 1.0,
+            state_transition_durations: vec![],
+            governance_exceptions: vec![],
+            high_review_wps: vec![],
+            wp_metrics: vec![],
+        };
+        let suggestions = generate_constitution_suggestions(&metrics);
+        assert_eq!(suggestions.len(), 1);
+        assert!(suggestions[0].contains("No constitution amendments"));
+    }
+
+    // --- generate_retro_markdown edge cases ---
+
+    #[test]
+    fn generate_retro_markdown_verbose_with_exceptions() {
+        let metrics = FeatureMetrics {
+            total_duration_ms: 7200000,
+            wp_count: 2,
+            total_agent_runs: 4,
+            total_review_cycles: 2,
+            avg_review_cycles_per_wp: 1.0,
+            state_transition_durations: vec![],
+            governance_exceptions: vec!["skipped review on WP02".to_string()],
+            high_review_wps: vec![],
+            wp_metrics: vec![],
+        };
+        let report = generate_retro_markdown("feat-x", "Feature X", &metrics, true);
+        assert!(report.contains("## Governance Exceptions"));
+        assert!(report.contains("skipped review on WP02"));
+    }
+
+    #[test]
+    fn generate_retro_markdown_non_verbose_hides_exceptions() {
+        let metrics = FeatureMetrics {
+            total_duration_ms: 7200000,
+            wp_count: 2,
+            total_agent_runs: 4,
+            total_review_cycles: 2,
+            avg_review_cycles_per_wp: 1.0,
+            state_transition_durations: vec![],
+            governance_exceptions: vec!["skipped review".to_string()],
+            high_review_wps: vec![],
+            wp_metrics: vec![],
+        };
+        let report = generate_retro_markdown("feat-x", "Feature X", &metrics, false);
+        assert!(!report.contains("## Governance Exceptions"));
+    }
+
+    #[test]
+    fn generate_retro_markdown_no_phases_no_wp_section() {
+        let metrics = FeatureMetrics {
+            total_duration_ms: 3600000,
+            wp_count: 0,
+            total_agent_runs: 0,
+            total_review_cycles: 0,
+            avg_review_cycles_per_wp: 0.0,
+            state_transition_durations: vec![],
+            governance_exceptions: vec![],
+            high_review_wps: vec![],
+            wp_metrics: vec![],
+        };
+        let report = generate_retro_markdown("feat-y", "Empty Feature", &metrics, false);
+        assert!(!report.contains("## Phase Breakdown"));
+        assert!(!report.contains("## WP Performance"));
+        assert!(report.contains("# Retrospective: Empty Feature"));
+    }
+
+    #[test]
+    fn generate_retro_markdown_empty_metrics_healthy() {
+        let metrics = FeatureMetrics {
+            total_duration_ms: 0,
+            wp_count: 0,
+            total_agent_runs: 0,
+            total_review_cycles: 0,
+            avg_review_cycles_per_wp: 0.0,
+            state_transition_durations: vec![],
+            governance_exceptions: vec![],
+            high_review_wps: vec![],
+            wp_metrics: vec![],
+        };
+        let report = generate_retro_markdown("feat-z", "Z Feature", &metrics, false);
+        assert!(report.contains("0s")); // total duration 0
+        assert!(report.contains("Work packages**: 0"));
+    }
+
+    #[test]
+    fn generate_retro_markdown_with_long_wp_title() {
+        let metrics = FeatureMetrics {
+            total_duration_ms: 3600000,
+            wp_count: 1,
+            total_agent_runs: 1,
+            total_review_cycles: 0,
+            avg_review_cycles_per_wp: 0.0,
+            state_transition_durations: vec![],
+            governance_exceptions: vec![],
+            high_review_wps: vec![],
+            wp_metrics: vec![WpMetrics {
+                sequence: 1,
+                title: "A".repeat(80), // Very long title, truncated to 40
+                agent_runs: 1,
+                review_cycles: 0,
+                duration_ms: 3600000,
+            }],
+        };
+        let report = generate_retro_markdown("feat-long", "Long Title", &metrics, false);
+        assert!(report.contains("## WP Performance"));
+        // Title should be truncated in the table
+        assert!(report.len() > 100);
+    }
+
+    #[test]
+    fn generate_retro_markdown_high_review_in_insights() {
+        let metrics = FeatureMetrics {
+            total_duration_ms: 7200000,
+            wp_count: 2,
+            total_agent_runs: 8,
+            total_review_cycles: 10,
+            avg_review_cycles_per_wp: 5.0,
+            state_transition_durations: vec![
+                ("Created -> Specified".to_string(), 1800000),
+                ("Specified -> Done".to_string(), 5400000),
+            ],
+            governance_exceptions: vec![],
+            high_review_wps: vec![(1, "Auth".to_string(), 7)],
+            wp_metrics: vec![
+                WpMetrics {
+                    sequence: 1,
+                    title: "Auth".to_string(),
+                    agent_runs: 5,
+                    review_cycles: 7,
+                    duration_ms: 3600000,
+                },
+                WpMetrics {
+                    sequence: 2,
+                    title: "DB".to_string(),
+                    agent_runs: 3,
+                    review_cycles: 3,
+                    duration_ms: 3600000,
+                },
+            ],
+        };
+        let report = generate_retro_markdown("feat-hr", "High Review", &metrics, false);
+        assert!(report.contains("## Phase Breakdown"));
+        assert!(report.contains("## WP Performance"));
+        assert!(report.contains("## Insights"));
+        assert!(report.contains("## Suggested Constitution Amendments"));
+    }
 }

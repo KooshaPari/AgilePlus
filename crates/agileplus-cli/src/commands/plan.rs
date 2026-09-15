@@ -913,7 +913,7 @@ mod tests {
     fn generate_plan_md_with_waves() {
         let wp1 = WorkPackage::new(1, "A (WP01)", 1, "- c1");
         let wp2 = WorkPackage::new(1, "B (WP02)", 2, "- c2");
-        let waves = vec![super::scheduler::ExecutionWave {
+        let waves = vec![crate::commands::scheduler::ExecutionWave {
             wave_number: 1,
             wp_ids: vec![1],
         }];
