@@ -447,3 +447,196 @@ pub fn label_color(label: &str) -> &'static str {
         _ => "bg-zinc-800 text-zinc-300 border-zinc-700",
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use agileplus_domain::domain::state_machine::FeatureState;
+    use agileplus_domain::domain::work_package::{WorkPackage, WpState};
+
+    fn make_feature_for_view(id: i64, state: FeatureState) -> Feature {
+        let mut f = Feature::new(
+            &format!("feat-{id}"),
+            &format!("Feature {id}"),
+            [0; 32],
+            None,
+        );
+        f.id = id;
+        f.state = state;
+        f.labels = vec!["platform".to_string()];
+        f
+    }
+
+    fn make_wp_for_view(id: i64, state: WpState, agent_id: Option<String>) -> WorkPackage {
+        let mut wp = WorkPackage::new(id, &format!("WP-{id}"), 1, "done");
+        wp.id = id;
+        wp.state = state;
+        wp.agent_id = agent_id;
+        wp.pr_url = Some(format!("https://github.com/test/pull/{id}"));
+        wp.head_commit = Some(format!("abc{id:04}"));
+        wp
+    }
+
+    // ── WpView::from_wp ──────────────────────────────────────────────────────
+
+    #[test]
+    fn wp_view_from_wp_copies_basic_fields() {
+        let wp = make_wp_for_view(42, WpState::Doing, Some("claude".to_string()));
+        let view = WpView::from_wp(&wp);
+        assert_eq!(view.id, 42);
+        assert_eq!(view.title, "WP-42");
+        assert_eq!(view.state, "doing");
+        assert_eq!(view.agent, "claude");
+        assert_eq!(view.agent_id, Some("claude".to_string()));
+        assert!(view.pr_url.is_some());
+        assert!(view.head_commit.is_some());
+    }
+
+    #[test]
+    fn wp_view_from_wp_defaults_agent_to_dash() {
+        let wp = make_wp_for_view(1, WpState::Planned, None);
+        let view = WpView::from_wp(&wp);
+        assert_eq!(view.agent, "—");
+        assert!(view.agent_id.is_none());
+    }
+
+    #[test]
+    fn wp_view_from_wp_state_is_lowercase_debug() {
+        let wp = make_wp_for_view(1, WpState::Blocked, None);
+        let view = WpView::from_wp(&wp);
+        assert_eq!(view.state, "blocked");
+    }
+
+    #[test]
+    fn wp_view_from_wp_progress_and_task_count_default_zero() {
+        let wp = make_wp_for_view(1, WpState::Done, None);
+        let view = WpView::from_wp(&wp);
+        assert_eq!(view.progress, 0);
+        assert_eq!(view.task_count, 0);
+    }
+
+    // ── FeatureView::from_feature ────────────────────────────────────────────
+
+    #[test]
+    fn feature_view_from_feature_copies_fields() {
+        let f = make_feature_for_view(7, FeatureState::Implementing);
+        let view = FeatureView::from_feature(&f);
+        assert_eq!(view.id, 7);
+        assert_eq!(view.slug, "feat-7");
+        assert_eq!(view.title, "Feature 7");
+        assert_eq!(view.state, "implementing");
+        assert_eq!(view.labels, vec!["platform".to_string()]);
+    }
+
+    #[test]
+    fn feature_view_from_feature_empty_labels() {
+        let mut f = Feature::new("test", "Test", [0; 32], None);
+        f.id = 1;
+        f.labels = vec![];
+        let view = FeatureView::from_feature(&f);
+        assert!(view.labels.is_empty());
+    }
+
+    // ── all_feature_states ───────────────────────────────────────────────────
+
+    #[test]
+    fn all_feature_states_returns_all_8_states() {
+        let states = all_feature_states();
+        assert_eq!(states.len(), 8);
+    }
+
+    #[test]
+    fn all_feature_states_first_is_created() {
+        let states = all_feature_states();
+        assert_eq!(states[0], "created");
+    }
+
+    #[test]
+    fn all_feature_states_last_is_retrospected() {
+        let states = all_feature_states();
+        assert_eq!(states[7], "retrospected");
+    }
+
+    #[test]
+    fn all_feature_states_are_unique() {
+        let states = all_feature_states();
+        let mut sorted = states.clone();
+        sorted.sort();
+        sorted.dedup();
+        assert_eq!(sorted.len(), states.len());
+    }
+
+    // ── label_color ──────────────────────────────────────────────────────────
+
+    #[test]
+    fn label_color_platform() {
+        assert!(label_color("platform").contains("blue"));
+    }
+
+    #[test]
+    fn label_color_infrastructure() {
+        assert!(label_color("infrastructure").contains("blue"));
+    }
+
+    #[test]
+    fn label_color_governance() {
+        assert!(label_color("governance").contains("purple"));
+    }
+
+    #[test]
+    fn label_color_policy() {
+        assert!(label_color("policy").contains("purple"));
+    }
+
+    #[test]
+    fn label_color_automation() {
+        assert!(label_color("automation").contains("orange"));
+    }
+
+    #[test]
+    fn label_color_agents() {
+        assert!(label_color("agents").contains("orange"));
+    }
+
+    #[test]
+    fn label_color_testing() {
+        assert!(label_color("testing").contains("green"));
+    }
+
+    #[test]
+    fn label_color_qa() {
+        assert!(label_color("qa").contains("green"));
+    }
+
+    #[test]
+    fn label_color_bug() {
+        assert!(label_color("bug").contains("red"));
+    }
+
+    #[test]
+    fn label_color_defect() {
+        assert!(label_color("defect").contains("red"));
+    }
+
+    #[test]
+    fn label_color_research() {
+        assert!(label_color("research").contains("cyan"));
+    }
+
+    #[test]
+    fn label_color_exploration() {
+        assert!(label_color("exploration").contains("cyan"));
+    }
+
+    #[test]
+    fn label_color_unknown_falls_back_to_zinc() {
+        assert!(label_color("unknown-label").contains("zinc"));
+        assert!(label_color("").contains("zinc"));
+    }
+
+    #[test]
+    fn label_color_is_case_insensitive() {
+        assert_eq!(label_color("Platform"), label_color("platform"));
+        assert_eq!(label_color("GOVERNANCE"), label_color("governance"));
+    }
+}
