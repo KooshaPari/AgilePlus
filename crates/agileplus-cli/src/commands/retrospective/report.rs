@@ -94,3 +94,198 @@ pub(crate) fn generate_retro_markdown(
 
     lines.join("\n")
 }
+
+#[cfg(test)]
+mod tests {
+    use super::metrics::{FeatureMetrics, WpMetrics};
+    use super::generate_retro_markdown;
+
+    fn sample_metrics() -> FeatureMetrics {
+        FeatureMetrics {
+            total_duration_ms: 3600000,
+            wp_count: 2,
+            total_agent_runs: 4,
+            total_review_cycles: 2,
+            avg_review_cycles_per_wp: 1.0,
+            state_transition_durations: vec![],
+            governance_exceptions: vec![],
+            high_review_wps: vec![],
+            wp_metrics: vec![],
+        }
+    }
+
+    #[test]
+    fn contains_header_and_summary() {
+        let report = generate_retro_markdown("my-feat", "My Feature", &sample_metrics(), false);
+        assert!(report.contains("# Retrospective: My Feature"));
+        assert!(report.contains("## Summary"));
+        assert!(report.contains("`my-feat`"));
+    }
+
+    #[test]
+    fn contains_summary_metrics() {
+        let m = sample_metrics();
+        let report = generate_retro_markdown("f", "F", &m, false);
+        assert!(report.contains("Work packages**: 2"));
+        assert!(report.contains("agent invocations**: 4"));
+        assert!(report.contains("review cycles**: 2"));
+        assert!(report.contains("Governance exceptions**: 0"));
+    }
+
+    #[test]
+    fn phase_breakdown_shown_when_transitions_present() {
+        let mut m = sample_metrics();
+        m.state_transition_durations = vec![
+            ("Created -> Specified".to_string(), 3600000),
+            ("Specified -> Researched".to_string(), 7200000),
+        ];
+        let report = generate_retro_markdown("f", "F", &m, false);
+        assert!(report.contains("## Phase Breakdown"));
+        assert!(report.contains("Created -> Specified"));
+    }
+
+    #[test]
+    fn phase_breakdown_absent_when_empty() {
+        let report = generate_retro_markdown("f", "F", &sample_metrics(), false);
+        assert!(!report.contains("## Phase Breakdown"));
+    }
+
+    #[test]
+    fn wp_performance_shown_when_wps_present() {
+        let mut m = sample_metrics();
+        m.wp_metrics = vec![WpMetrics {
+            sequence: 1,
+            title: "Auth".to_string(),
+            agent_runs: 2,
+            review_cycles: 1,
+            duration_ms: 1800000,
+        }];
+        let report = generate_retro_markdown("f", "F", &m, false);
+        assert!(report.contains("## WP Performance"));
+        assert!(report.contains("WP01"));
+        assert!(report.contains("Auth"));
+    }
+
+    #[test]
+    fn wp_performance_absent_when_empty() {
+        let report = generate_retro_markdown("f", "F", &sample_metrics(), false);
+        assert!(!report.contains("## WP Performance"));
+    }
+
+    #[test]
+    fn long_wp_title_truncated() {
+        let mut m = sample_metrics();
+        m.wp_metrics = vec![WpMetrics {
+            sequence: 1,
+            title: "A".repeat(80),
+            agent_runs: 1,
+            review_cycles: 0,
+            duration_ms: 0,
+        }];
+        let report = generate_retro_markdown("f", "F", &m, false);
+        assert!(report.contains("## WP Performance"));
+    }
+
+    #[test]
+    fn insights_section_always_present() {
+        let report = generate_retro_markdown("f", "F", &sample_metrics(), false);
+        assert!(report.contains("## Insights"));
+    }
+
+    #[test]
+    fn constitution_amendments_always_present() {
+        let report = generate_retro_markdown("f", "F", &sample_metrics(), false);
+        assert!(report.contains("## Suggested Constitution Amendments"));
+    }
+
+    #[test]
+    fn verbose_shows_governance_exceptions() {
+        let mut m = sample_metrics();
+        m.governance_exceptions = vec!["skipped review".to_string()];
+        let report = generate_retro_markdown("f", "F", &m, true);
+        assert!(report.contains("## Governance Exceptions"));
+        assert!(report.contains("skipped review"));
+    }
+
+    #[test]
+    fn non_verbose_hides_governance_exceptions() {
+        let mut m = sample_metrics();
+        m.governance_exceptions = vec!["skipped review".to_string()];
+        let report = generate_retro_markdown("f", "F", &m, false);
+        assert!(!report.contains("## Governance Exceptions"));
+    }
+
+    #[test]
+    fn verbose_without_exceptions_no_section() {
+        let report = generate_retro_markdown("f", "F", &sample_metrics(), true);
+        assert!(!report.contains("## Governance Exceptions"));
+    }
+
+    #[test]
+    fn empty_metrics_healthy() {
+        let m = FeatureMetrics {
+            total_duration_ms: 0,
+            wp_count: 0,
+            total_agent_runs: 0,
+            total_review_cycles: 0,
+            avg_review_cycles_per_wp: 0.0,
+            state_transition_durations: vec![],
+            governance_exceptions: vec![],
+            high_review_wps: vec![],
+            wp_metrics: vec![],
+        };
+        let report = generate_retro_markdown("feat-z", "Z Feature", &m, false);
+        assert!(report.contains("0s"));
+        assert!(report.contains("Work packages**: 0"));
+        assert!(report.contains("# Retrospective: Z Feature"));
+    }
+
+    #[test]
+    fn high_review_wps_in_insights() {
+        let mut m = sample_metrics();
+        m.avg_review_cycles_per_wp = 5.0;
+        m.high_review_wps = vec![(1, "Auth".to_string(), 7)];
+        m.wp_metrics = vec![WpMetrics {
+            sequence: 1,
+            title: "Auth".to_string(),
+            agent_runs: 5,
+            review_cycles: 7,
+            duration_ms: 3600000,
+        }];
+        let report = generate_retro_markdown("f", "F", &m, false);
+        assert!(report.contains("WP01"));
+        assert!(report.contains("7 cycles"));
+    }
+
+    #[test]
+    fn multiple_wp_performance_rows() {
+        let mut m = sample_metrics();
+        m.wp_metrics = vec![
+            WpMetrics {
+                sequence: 1,
+                title: "Auth".to_string(),
+                agent_runs: 2,
+                review_cycles: 1,
+                duration_ms: 1000000,
+            },
+            WpMetrics {
+                sequence: 2,
+                title: "DB".to_string(),
+                agent_runs: 3,
+                review_cycles: 2,
+                duration_ms: 2000000,
+            },
+            WpMetrics {
+                sequence: 3,
+                title: "API".to_string(),
+                agent_runs: 1,
+                review_cycles: 0,
+                duration_ms: 500000,
+            },
+        ];
+        let report = generate_retro_markdown("f", "F", &m, false);
+        assert!(report.contains("WP01"));
+        assert!(report.contains("WP02"));
+        assert!(report.contains("WP03"));
+    }
+}

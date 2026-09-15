@@ -863,4 +863,116 @@ mod tests {
         repo.items.insert("wp-1".into(), make_item("wp-1", "ready"));
         assert_eq!(repo.claim_count(), 0);
     }
+
+    // ── additional parse_claim_kind edge cases ──────────────────────────────
+
+    #[test]
+    fn parse_claim_kind_empty_string_errors() {
+        assert!(parse_claim_kind("").is_err());
+    }
+
+    #[test]
+    fn parse_claim_kind_whitespace_only_errors() {
+        assert!(parse_claim_kind("  ").is_err());
+    }
+
+    #[test]
+    fn parse_claim_kind_partial_match_errors() {
+        assert!(parse_claim_kind("rep").is_err());
+        assert!(parse_claim_kind("bran").is_err());
+    }
+
+    #[test]
+    fn parse_claim_kind_with_surrounding_whitespace_errors() {
+        // The function does not trim, so " repo " should fail
+        assert!(parse_claim_kind(" repo ").is_err());
+    }
+
+    #[test]
+    fn parse_claim_kind_exact_variants_match() {
+        assert_eq!(parse_claim_kind("repo").unwrap(), ClaimKind::Repo);
+        assert_eq!(parse_claim_kind("branch").unwrap(), ClaimKind::Branch);
+        assert_eq!(parse_claim_kind("worktree").unwrap(), ClaimKind::Worktree);
+        assert_eq!(parse_claim_kind("subproject").unwrap(), ClaimKind::Subproject);
+    }
+
+    // ── additional parse_claim_reason edge cases ────────────────────────────
+
+    #[test]
+    fn parse_claim_reason_task_prefix_empty_rest() {
+        let reason = parse_claim_reason(Some("task:"));
+        match reason {
+            ClaimReason::TaskRef(id) => assert!(id.is_empty()),
+            _ => panic!("expected TaskRef with empty string"),
+        }
+    }
+
+    #[test]
+    fn parse_claim_reason_branch_prefix_empty_rest() {
+        let reason = parse_claim_reason(Some("branch:"));
+        match reason {
+            ClaimReason::Branch(name) => assert!(name.is_empty()),
+            _ => panic!("expected Branch with empty string"),
+        }
+    }
+
+    #[test]
+    fn parse_claim_reason_subproject_prefix_empty_rest() {
+        let reason = parse_claim_reason(Some("subproject:"));
+        match reason {
+            ClaimReason::Subproject(name) => assert!(name.is_empty()),
+            _ => panic!("expected Subproject with empty string"),
+        }
+    }
+
+    #[test]
+    fn parse_claim_reason_wip_prefix_empty_rest() {
+        let reason = parse_claim_reason(Some("wip:"));
+        match reason {
+            ClaimReason::WipRun(id) => assert!(id.is_empty()),
+            _ => panic!("expected WipRun with empty string"),
+        }
+    }
+
+    #[test]
+    fn parse_claim_reason_case_sensitive_prefixes() {
+        // "Task:" (capital T) should NOT match task: prefix
+        let reason = parse_claim_reason(Some("Task:wp-1"));
+        match reason {
+            ClaimReason::Manual(text) => assert_eq!(text, "Task:wp-1"),
+            _ => panic!("expected Manual for non-lowercase prefix"),
+        }
+    }
+
+    // ── read_id_text additional edge cases ──────────────────────────────────
+
+    #[test]
+    fn read_id_text_only_comments_returns_empty() {
+        let path = std::env::temp_dir().join("agileplus_only_comments.txt");
+        std::fs::write(&path, "# comment1\n# comment2\n").unwrap();
+        let items = read_id_text(path.to_str().unwrap()).unwrap();
+        assert!(items.is_empty());
+        std::fs::remove_file(&path).ok();
+    }
+
+    #[test]
+    fn read_id_text_mixed_delimiters_tab_wins() {
+        let path = std::env::temp_dir().join("agileplus_mixed_delim.txt");
+        std::fs::write(&path, "id1\ttext with | pipe\n").unwrap();
+        let items = read_id_text(path.to_str().unwrap()).unwrap();
+        assert_eq!(items.len(), 1);
+        assert_eq!(items[0].0, "id1");
+        assert_eq!(items[0].1, "text with | pipe");
+        std::fs::remove_file(&path).ok();
+    }
+
+    #[test]
+    fn read_id_text_single_line_no_newline() {
+        let path = std::env::temp_dir().join("agileplus_single_line.txt");
+        std::fs::write(&path, "wp-a\tdescription").unwrap();
+        let items = read_id_text(path.to_str().unwrap()).unwrap();
+        assert_eq!(items.len(), 1);
+        assert_eq!(items[0], ("wp-a".to_string(), "description".to_string()));
+        std::fs::remove_file(&path).ok();
+    }
 }

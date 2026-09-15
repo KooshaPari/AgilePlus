@@ -545,7 +545,27 @@ mod tests {
         assert_eq!(slugify("WP01 is #1"), "wp01-is-1");
     }
 
-    // ── materialize_artifact ──────────────────────────────────────────────
+    #[test]
+    fn slugify_all_special_chars_becomes_empty() {
+        assert_eq!(slugify("!@#$%^&*()"), "");
+    }
+
+    #[test]
+    fn slugify_mixed_case_and_numbers() {
+        assert_eq!(slugify("MyApp2.0-Release"), "myapp2-0-release");
+    }
+
+    #[test]
+    fn slugify_single_character() {
+        assert_eq!(slugify("A"), "a");
+        assert_eq!(slugify("!"), "");
+    }
+
+    #[test]
+    fn slugify_preserves_all_alphanumeric() {
+        let input = "abcdefghijklmnopqrstuvwxyz0123456789";
+        assert_eq!(slugify(input), input);
+    }
 
     #[test]
     fn materializes_artifact_into_worktree_layout() {

@@ -15,7 +15,8 @@ use crate::error::AppError;
 use crate::test_mocks::*;
 use crate::use_cases::{
     advance_feature::AdvanceFeature, create_epic::CreateEpic, create_feature::CreateFeature,
-    create_story::CreateStory, transition_story::TransitionStory,
+    create_story::CreateStory, persist_synced_stories::{PersistSyncedStories, PersistSyncedStoriesCmd},
+    transition_story::TransitionStory,
 };
 
 // --- CreateFeature ---

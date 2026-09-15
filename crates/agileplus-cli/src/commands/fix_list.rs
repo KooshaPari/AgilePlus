@@ -454,4 +454,159 @@ mod tests {
         assert_eq!(total_gaps_for(&report, "C04"), 2);
         assert_eq!(total_gaps_for(&report, "C99"), 0);
     }
+
+    // ── parse_effort additional edge cases ──────────────────────────────────
+
+    #[test]
+    fn parse_effort_lowercase_marker() {
+        let (t, e) = parse_effort("Has config -- effort: l");
+        assert_eq!(t, "Has config");
+        assert_eq!(e, 'L');
+    }
+
+    #[test]
+    fn parse_effort_with_extra_whitespace() {
+        let (t, e) = parse_effort("Something   —   effort:   S  ");
+        assert_eq!(t, "Something");
+        assert_eq!(e, 'S');
+    }
+
+    #[test]
+    fn parse_effort_no_dash_before_marker() {
+        let (t, e) = parse_effort("Gap text effort: M");
+        assert_eq!(t, "Gap text");
+        assert_eq!(e, 'M');
+    }
+
+    #[test]
+    fn parse_effort_empty_after_marker() {
+        let (t, e) = parse_effort("text effort:");
+        assert_eq!(t, "text");
+        assert_eq!(e, 'M'); // default when no char found
+    }
+
+    #[test]
+    fn parse_effort_marker_at_start() {
+        let (t, e) = parse_effort("effort: S");
+        assert_eq!(t, "");
+        assert_eq!(e, 'S');
+    }
+
+    #[test]
+    fn parse_effort_only_whitespace_input() {
+        let (t, e) = parse_effort("   ");
+        assert_eq!(t, "");
+        assert_eq!(e, 'M');
+    }
+
+    // ── score_glyph additional ──────────────────────────────────────────────
+
+    #[test]
+    fn score_glyph_all_defined_values() {
+        assert_eq!(score_glyph(0), "0 ✗");
+        assert_eq!(score_glyph(1), "1 △");
+        assert_eq!(score_glyph(2), "2 ~");
+        assert_eq!(score_glyph(3), "3 ✓");
+    }
+
+    #[test]
+    fn score_glyph_out_of_range() {
+        assert_eq!(score_glyph(4), "?");
+        assert_eq!(score_glyph(100), "?");
+        assert_eq!(score_glyph(u32::MAX), "?");
+    }
+
+    // ── collect_fix_rows additional ─────────────────────────────────────────
+
+    #[test]
+    fn collect_fix_rows_empty_clusters() {
+        let report = ScoreReport {
+            repo: "empty".into(),
+            date: "2026-01-01".into(),
+            clusters: vec![],
+        };
+        let rows = collect_fix_rows(&report);
+        assert!(rows.is_empty());
+    }
+
+    #[test]
+    fn collect_fix_rows_cluster_with_empty_pillars_and_zero_points() {
+        let report = ScoreReport {
+            repo: "test".into(),
+            date: "2026-01-01".into(),
+            clusters: vec![ClusterScore {
+                cluster: "C99".into(),
+                pillars: vec![],
+                total_points: 0,
+                max_points: 3,
+            }],
+        };
+        let rows = collect_fix_rows(&report);
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].gap, "(empty pillar set)");
+        assert_eq!(rows[0].effort, 'M');
+    }
+
+    #[test]
+    fn collect_fix_rows_skips_score_above_zero_with_no_gaps() {
+        let report = ScoreReport {
+            repo: "test".into(),
+            date: "2026-01-01".into(),
+            clusters: vec![ClusterScore {
+                cluster: "C01".into(),
+                pillars: vec![PillarScore {
+                    pillar_id: "L01".into(),
+                    title: "L01".into(),
+                    score: 2,
+                    glyph: "~".into(),
+                    evidence: vec![],
+                    gaps: vec![],
+                    soft_goal_delta: "partial".into(),
+                }],
+                total_points: 2,
+                max_points: 3,
+            }],
+        };
+        let rows = collect_fix_rows(&report);
+        assert!(rows.is_empty(), "score > 0 with no gaps should not produce rows");
+    }
+
+    // ── render_markdown additional ──────────────────────────────────────────
+
+    #[test]
+    fn render_markdown_single_cluster_totals() {
+        let report = ScoreReport {
+            repo: "single".into(),
+            date: "2026-07-06".into(),
+            clusters: vec![ClusterScore {
+                cluster: "C01".into(),
+                pillars: vec![PillarScore {
+                    pillar_id: "L01".into(),
+                    title: "L01".into(),
+                    score: 0,
+                    glyph: "✗".into(),
+                    evidence: vec![],
+                    gaps: vec!["Missing tool — effort: S".into()],
+                    soft_goal_delta: "partial".into(),
+                }],
+                total_points: 0,
+                max_points: 3,
+            }],
+        };
+        let rows = collect_fix_rows(&report);
+        let md = render_markdown(&report, &rows, 0);
+        assert!(md.contains("# Fix list — single"));
+        assert!(md.contains("C01"));
+        assert!(md.contains("Missing tool"));
+        // Cluster counts table
+        assert!(md.contains("1 gap"));
+    }
+
+    #[test]
+    fn render_markdown_no_truncation_when_all_rows_shown() {
+        let report = sample_report();
+        let rows = collect_fix_rows(&report);
+        let md = render_markdown(&report, &rows, 0);
+        assert!(!md.contains("--limit"));
+    }
 }

@@ -239,3 +239,409 @@ pub(crate) fn compute_durations_from_audit(
 
     (total_ms, phase_durations)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use chrono::{Duration, Utc};
+
+    fn make_audit(transition: &str, ts: DateTime<Utc>) -> AuditEntry {
+        let mut e = AuditEntry {
+            id: 0,
+            feature_id: 1,
+            wp_id: None,
+            timestamp: ts,
+            actor: "user".into(),
+            transition: transition.into(),
+            evidence_refs: vec![],
+            prev_hash: [0u8; 32],
+            hash: [0u8; 32],
+            event_id: None,
+            archived_to: None,
+        };
+        e.hash = agileplus_domain::domain::audit::hash_entry(&e);
+        e
+    }
+
+    fn make_wp(feature_id: i64, title: &str, sequence: i32) -> WorkPackage {
+        WorkPackage::new(feature_id, title, sequence, "- criteria")
+    }
+
+    fn make_metric(
+        feature_id: i64,
+        command: &str,
+        agent_runs: i32,
+        review_cycles: i32,
+        duration_ms: i64,
+    ) -> Metric {
+        Metric {
+            id: 0,
+            feature_id: Some(feature_id),
+            command: command.to_string(),
+            duration_ms,
+            agent_runs,
+            review_cycles,
+            metadata: None,
+            timestamp: Utc::now(),
+        }
+    }
+
+    fn sample_metrics() -> FeatureMetrics {
+        FeatureMetrics {
+            total_duration_ms: 3600000,
+            wp_count: 3,
+            total_agent_runs: 6,
+            total_review_cycles: 3,
+            avg_review_cycles_per_wp: 1.0,
+            state_transition_durations: vec![],
+            governance_exceptions: vec![],
+            high_review_wps: vec![],
+            wp_metrics: vec![],
+        }
+    }
+
+    // ── format_duration ───────────────────────────────────────────────
+
+    #[test]
+    fn format_duration_zero() {
+        assert_eq!(format_duration(0), "0s");
+    }
+
+    #[test]
+    fn format_duration_secs() {
+        assert_eq!(format_duration(5000), "5s");
+    }
+
+    #[test]
+    fn format_duration_subsecond() {
+        assert_eq!(format_duration(500), "0s");
+    }
+
+    #[test]
+    fn format_duration_minutes() {
+        assert_eq!(format_duration(65000), "1m 5s");
+    }
+
+    #[test]
+    fn format_duration_exact_minute() {
+        assert_eq!(format_duration(60000), "1m 0s");
+    }
+
+    #[test]
+    fn format_duration_hours() {
+        assert_eq!(format_duration(3660000), "1h 1m");
+    }
+
+    #[test]
+    fn format_duration_exact_hour() {
+        assert_eq!(format_duration(3600000), "1h 0m");
+    }
+
+    #[test]
+    fn format_duration_days() {
+        let ms = (2 * 24 * 3600 + 3 * 3600) * 1000i64;
+        assert_eq!(format_duration(ms), "2d 3h");
+    }
+
+    #[test]
+    fn format_duration_multiple_days() {
+        let ms = (5 * 24 * 3600 + 3 * 3600) * 1000i64;
+        assert_eq!(format_duration(ms), "5d 3h");
+    }
+
+    #[test]
+    fn format_duration_negative() {
+        assert_eq!(format_duration(-100), "N/A");
+    }
+
+    // ── compute_durations_from_audit ──────────────────────────────────
+
+    #[test]
+    fn compute_durations_empty_trail() {
+        let now = Utc::now();
+        let (total, phases) = compute_durations_from_audit(&[], &now);
+        assert_eq!(total, 0);
+        assert!(phases.is_empty());
+    }
+
+    #[test]
+    fn compute_durations_single_entry() {
+        let created = Utc::now() - Duration::hours(2);
+        let e = make_audit("Created -> Specified", Utc::now());
+        let (total, phases) = compute_durations_from_audit(&[e], &created);
+        assert!(total > 0);
+        assert!(phases.is_empty());
+    }
+
+    #[test]
+    fn compute_durations_two_entries() {
+        let base = Utc::now();
+        let t0 = base - Duration::hours(3);
+        let t1 = base - Duration::hours(1);
+        let e0 = make_audit("Created -> Specified", t0);
+        let e1 = make_audit("Specified -> Researched", t1);
+        let (total, phases) = compute_durations_from_audit(&[e0, e1], &t0);
+        assert!(total > 0);
+        assert_eq!(phases.len(), 1);
+        assert_eq!(phases[0].0, "Created -> Specified");
+        assert!(phases[0].1 > 0);
+    }
+
+    #[test]
+    fn compute_durations_three_entries() {
+        let base = Utc::now();
+        let t0 = base - Duration::hours(10);
+        let t1 = base - Duration::hours(6);
+        let t2 = base - Duration::hours(1);
+        let e0 = make_audit("Created -> Specified", t0);
+        let e1 = make_audit("Specified -> Researched", t1);
+        let e2 = make_audit("Researched -> Implemented", t2);
+        let (total, phases) = compute_durations_from_audit(&[e0, e1, e2], &t0);
+        assert!(total > 0);
+        assert_eq!(phases.len(), 2);
+        assert_eq!(phases[0].0, "Created -> Specified");
+        assert_eq!(phases[1].0, "Specified -> Researched");
+    }
+
+    #[test]
+    fn compute_durations_negative_clamped_to_zero() {
+        let base = Utc::now();
+        let t0 = base - Duration::hours(1);
+        let e0 = make_audit("A -> B", base); // later
+        let e1 = make_audit("B -> C", t0); // earlier — inverted
+        let (_, phases) = compute_durations_from_audit(&[e0, e1], &base);
+        assert_eq!(phases.len(), 1);
+        assert_eq!(phases[0].1, 0);
+    }
+
+    // ── generate_insights ─────────────────────────────────────────────
+
+    #[test]
+    fn generate_insights_healthy() {
+        let insights = generate_insights(&sample_metrics());
+        assert_eq!(insights.len(), 1);
+        assert!(insights[0].contains("healthy") || insights[0].contains("No significant"));
+    }
+
+    #[test]
+    fn generate_insights_high_review_cycles() {
+        let mut m = sample_metrics();
+        m.avg_review_cycles_per_wp = 5.0;
+        let insights = generate_insights(&m);
+        let combined = insights.join(" ");
+        assert!(combined.contains("review cycles"));
+    }
+
+    #[test]
+    fn generate_insights_high_review_wps() {
+        let mut m = sample_metrics();
+        m.high_review_wps = vec![(1, "Auth".to_string(), 5), (3, "DB".to_string(), 4)];
+        let insights = generate_insights(&m);
+        let combined = insights.join(" ");
+        assert!(combined.contains("WP01"));
+        assert!(combined.contains("WP03"));
+        assert!(combined.contains("bottleneck"));
+    }
+
+    #[test]
+    fn generate_insights_agent_rate_below_threshold() {
+        let mut m = sample_metrics();
+        m.total_agent_runs = 12; // 12/3 = 4 per wp, < 5
+        let insights = generate_insights(&m);
+        let combined = insights.join(" ");
+        assert!(!combined.contains("agent invocation rate"));
+    }
+
+    #[test]
+    fn generate_insights_agent_rate_above_threshold() {
+        let mut m = sample_metrics();
+        m.total_agent_runs = 18; // 18/3 = 6 per WP, > 5
+        let insights = generate_insights(&m);
+        let combined = insights.join(" ");
+        assert!(combined.contains("agent invocation rate"));
+    }
+
+    #[test]
+    fn generate_insights_governance_exceptions() {
+        let mut m = sample_metrics();
+        m.governance_exceptions = vec!["skipped review".into(), "exception".into()];
+        let insights = generate_insights(&m);
+        let combined = insights.join(" ");
+        assert!(combined.contains("2 governance exception"));
+    }
+
+    #[test]
+    fn generate_insights_implementation_fraction_high() {
+        let mut m = sample_metrics();
+        m.total_duration_ms = 10000;
+        m.wp_metrics = vec![WpMetrics {
+            sequence: 1,
+            title: "WP01".into(),
+            agent_runs: 1,
+            review_cycles: 0,
+            duration_ms: 8000,
+        }];
+        let insights = generate_insights(&m);
+        let combined = insights.join(" ");
+        assert!(combined.contains("80%"));
+    }
+
+    #[test]
+    fn generate_insights_implementation_fraction_low_no_warning() {
+        let mut m = sample_metrics();
+        m.total_duration_ms = 10000;
+        m.wp_metrics = vec![WpMetrics {
+            sequence: 1,
+            title: "WP01".into(),
+            agent_runs: 1,
+            review_cycles: 0,
+            duration_ms: 3000,
+        }];
+        let insights = generate_insights(&m);
+        let combined = insights.join(" ");
+        assert!(!combined.contains("% of total time"));
+    }
+
+    #[test]
+    fn generate_insights_zero_wp_count_skips_agent_rate() {
+        let mut m = sample_metrics();
+        m.wp_count = 0;
+        m.total_agent_runs = 100;
+        let insights = generate_insights(&m);
+        let combined = insights.join(" ");
+        assert!(!combined.contains("agent invocation"));
+    }
+
+    // ── generate_constitution_suggestions ─────────────────────────────
+
+    #[test]
+    fn generate_constitution_suggestions_healthy() {
+        let suggestions = generate_constitution_suggestions(&sample_metrics());
+        assert_eq!(suggestions.len(), 1);
+        assert!(suggestions[0].contains("No constitution amendments"));
+    }
+
+    #[test]
+    fn generate_constitution_suggestions_high_review() {
+        let mut m = sample_metrics();
+        m.avg_review_cycles_per_wp = 5.0;
+        let suggestions = generate_constitution_suggestions(&m);
+        let combined = suggestions.join(" ");
+        assert!(combined.contains("pre-review"));
+        assert!(combined.contains("doing -> review"));
+    }
+
+    #[test]
+    fn generate_constitution_suggestions_governance() {
+        let mut m = sample_metrics();
+        m.governance_exceptions = vec!["skipped".into()];
+        let suggestions = generate_constitution_suggestions(&m);
+        let combined = suggestions.join(" ");
+        assert!(combined.contains("fast-track"));
+    }
+
+    #[test]
+    fn generate_constitution_suggestions_both() {
+        let mut m = sample_metrics();
+        m.avg_review_cycles_per_wp = 4.0;
+        m.governance_exceptions = vec!["exception".into()];
+        let suggestions = generate_constitution_suggestions(&m);
+        assert_eq!(suggestions.len(), 2);
+    }
+
+    // ── collect_feature_metrics ───────────────────────────────────────
+
+    #[test]
+    fn collect_feature_metrics_empty_data() {
+        let now = Utc::now();
+        let metrics = collect_feature_metrics(1, &now, &[], &[], &[]);
+        assert_eq!(metrics.wp_count, 0);
+        assert_eq!(metrics.total_duration_ms, 0);
+        assert!(metrics.wp_metrics.is_empty());
+        assert!(metrics.governance_exceptions.is_empty());
+    }
+
+    #[test]
+    fn collect_feature_metrics_with_wps_no_metrics() {
+        let created = Utc::now() - Duration::hours(1);
+        let wp1 = make_wp(1, "Auth (WP01)", 1);
+        let wp2 = make_wp(1, "API (WP02)", 2);
+        let metrics = collect_feature_metrics(1, &created, &[wp1, wp2], &[], &[]);
+        assert_eq!(metrics.wp_count, 2);
+        assert_eq!(metrics.total_agent_runs, 0);
+        assert_eq!(metrics.total_review_cycles, 0);
+        assert_eq!(metrics.avg_review_cycles_per_wp, 0.0);
+    }
+
+    #[test]
+    fn collect_feature_metrics_with_matching_metrics() {
+        let created = Utc::now() - Duration::hours(2);
+        let wp1 = make_wp(1, "Auth (WP01)", 1);
+        let audit = make_audit("Created -> Done", Utc::now());
+        let metric = make_metric(1, "WP01 plan", 3, 2, 5000);
+        let metrics = collect_feature_metrics(1, &created, &[wp1], &[audit], &[metric]);
+        assert_eq!(metrics.wp_count, 1);
+        assert_eq!(metrics.total_agent_runs, 3);
+        assert_eq!(metrics.total_review_cycles, 2);
+        assert_eq!(metrics.avg_review_cycles_per_wp, 2.0);
+        assert_eq!(metrics.wp_metrics[0].agent_runs, 3);
+    }
+
+    #[test]
+    fn collect_feature_metrics_governance_exceptions_detected() {
+        let created = Utc::now() - Duration::hours(1);
+        let e1 = make_audit("Created -> Skipped review", Utc::now());
+        let e2 = make_audit("Doing -> exception: fast-track", Utc::now());
+        let metrics = collect_feature_metrics(1, &created, &[], &[e1, e2], &[]);
+        assert_eq!(metrics.governance_exceptions.len(), 2);
+    }
+
+    #[test]
+    fn collect_feature_metrics_high_review_wps_detected() {
+        let created = Utc::now() - Duration::hours(1);
+        let wp1 = make_wp(1, "Auth (WP01)", 1);
+        let metric = make_metric(1, "WP01 plan", 2, 5, 3000);
+        let metrics = collect_feature_metrics(1, &created, &[wp1], &[], &[metric]);
+        assert_eq!(metrics.high_review_wps.len(), 1);
+        assert_eq!(metrics.high_review_wps[0].0, 1);
+        assert_eq!(metrics.high_review_wps[0].2, 5);
+    }
+
+    #[test]
+    fn collect_feature_metrics_state_transitions() {
+        let base = Utc::now();
+        let t0 = base - Duration::hours(5);
+        let t1 = base - Duration::hours(3);
+        let t2 = base - Duration::hours(1);
+        let e0 = make_audit("Created -> Specified", t0);
+        let e1 = make_audit("Specified -> Researched", t1);
+        let e2 = make_audit("Researched -> Done", t2);
+        let metrics = collect_feature_metrics(1, &t0, &[], &[e0, e1, e2], &[]);
+        assert_eq!(metrics.state_transition_durations.len(), 2);
+        assert!(metrics.state_transition_durations[0].1 > 0);
+        assert!(metrics.state_transition_durations[1].1 > 0);
+    }
+
+    #[test]
+    fn collect_feature_metrics_agent_runs_summed() {
+        let created = Utc::now() - Duration::hours(1);
+        let wp1 = make_wp(1, "A (WP01)", 1);
+        let wp2 = make_wp(1, "B (WP02)", 2);
+        let m1 = make_metric(1, "WP01 plan", 3, 1, 1000);
+        let m2 = make_metric(1, "WP02 plan", 5, 2, 2000);
+        let m3 = make_metric(1, "overall", 2, 0, 500);
+        let metrics = collect_feature_metrics(1, &created, &[wp1, wp2], &[], &[m1, m2, m3]);
+        assert_eq!(metrics.total_agent_runs, 10);
+        assert_eq!(metrics.total_review_cycles, 3);
+    }
+
+    #[test]
+    fn collect_feature_metrics_no_matching_metric_for_wp() {
+        let created = Utc::now() - Duration::hours(1);
+        let wp1 = make_wp(1, "Auth (WP01)", 1);
+        let metric = make_metric(1, "WP99 plan", 5, 5, 9000);
+        let metrics = collect_feature_metrics(1, &created, &[wp1], &[], &[metric]);
+        assert_eq!(metrics.wp_metrics[0].agent_runs, 0);
+        assert_eq!(metrics.wp_metrics[0].review_cycles, 0);
+    }
+}

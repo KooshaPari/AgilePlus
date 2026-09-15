@@ -598,4 +598,132 @@ mod tests {
     fn supported_version_is_v1_0() {
         assert_eq!(SUPPORTED_OKF_VERSION, "1.0");
     }
+
+    // ── OkfDocument serde roundtrip ────────────────────────────────────────
+
+    #[test]
+    fn okf_document_serialization_roundtrip() {
+        let doc = OkfDocument {
+            okf: "1.0".to_string(),
+            source_id: "test-src".to_string(),
+            entities: vec![OkfEntity {
+                id: "e1".to_string(),
+                r#type: "intent".to_string(),
+                label: "test intent".to_string(),
+                properties: serde_json::json!({"key": "value"}),
+            }],
+            relations: vec![],
+            provenance: OkfProvenance {
+                corpus: "forge".to_string(),
+                source_id: "test-prov".to_string(),
+            },
+        };
+        let json = serde_json::to_string(&doc).unwrap();
+        let parsed: OkfDocument = serde_json::from_str(&json).unwrap();
+        assert_eq!(parsed.okf, "1.0");
+        assert_eq!(parsed.source_id, "test-src");
+        assert_eq!(parsed.entities.len(), 1);
+        assert_eq!(parsed.entities[0].id, "e1");
+        assert_eq!(parsed.entities[0].r#type, "intent");
+        assert_eq!(parsed.provenance.corpus, "forge");
+    }
+
+    #[test]
+    fn okf_document_with_relations_roundtrip() {
+        let doc = OkfDocument {
+            okf: "1.0".to_string(),
+            source_id: "src".to_string(),
+            entities: vec![
+                OkfEntity {
+                    id: "e1".to_string(),
+                    r#type: "intent".to_string(),
+                    label: "intent 1".to_string(),
+                    properties: serde_json::json!({}),
+                },
+                OkfEntity {
+                    id: "e2".to_string(),
+                    r#type: "acceptance".to_string(),
+                    label: "acceptance 1".to_string(),
+                    properties: serde_json::json!({}),
+                },
+            ],
+            relations: vec![OkfRelation {
+                source: "e1".to_string(),
+                target: "e2".to_string(),
+                r#type: "verified_by".to_string(),
+                provenance: OkfProvenance {
+                    corpus: "claude-code".to_string(),
+                    source_id: "prov".to_string(),
+                },
+            }],
+            provenance: OkfProvenance {
+                corpus: "forge".to_string(),
+                source_id: "prov".to_string(),
+            },
+        };
+        let json = serde_json::to_string(&doc).unwrap();
+        let parsed: OkfDocument = serde_json::from_str(&json).unwrap();
+        assert_eq!(parsed.relations.len(), 1);
+        assert_eq!(parsed.relations[0].source, "e1");
+        assert_eq!(parsed.relations[0].target, "e2");
+        assert_eq!(parsed.relations[0].r#type, "verified_by");
+    }
+
+    #[test]
+    fn okf_entity_default_properties() {
+        // When properties field is missing in JSON, it should default
+        let json = r#"{"id":"e1","type":"intent","label":"test"}"#;
+        let entity: OkfEntity = serde_json::from_str(json).unwrap();
+        assert_eq!(entity.properties, serde_json::Value::default());
+    }
+
+    #[test]
+    fn okf_document_empty_relations_serializes_without_key() {
+        let doc = OkfDocument {
+            okf: "1.0".to_string(),
+            source_id: "s".to_string(),
+            entities: vec![],
+            relations: vec![],
+            provenance: OkfProvenance {
+                corpus: "forge".to_string(),
+                source_id: "p".to_string(),
+            },
+        };
+        let json = serde_json::to_string(&doc).unwrap();
+        // skip_serializing_if = "Vec::is_empty" means relations key should be absent
+        assert!(!json.contains("relations"), "empty relations should be skipped: {json}");
+    }
+
+    // ── sanitize_tag additional edge cases ──────────────────────────────────
+
+    #[test]
+    fn sanitize_tag_with_special_chars() {
+        let tag = sanitize_tag("forge", "my space/special!");
+        assert!(tag.starts_with("forge::"));
+        assert!(!tag.contains(' '));
+        assert!(!tag.contains('/'));
+        assert!(!tag.contains('!'));
+    }
+
+    #[test]
+    fn sanitize_tag_preserves_hyphens_and_underscores() {
+        let tag = sanitize_tag("codex", "my-file_name");
+        assert_eq!(tag, "codex::my-file_name");
+    }
+
+    #[test]
+    fn sanitize_tag_empty_source_id() {
+        let tag = sanitize_tag("forge", "");
+        assert_eq!(tag, "forge::empty");
+    }
+
+    // ── truncate additional edge cases ──────────────────────────────────────
+
+    #[test]
+    fn truncate_with_unicode_ellipsis_char() {
+        let s = "hello world this is long";
+        let result = truncate(s, 5);
+        // truncate takes (max-1) chars then appends ellipsis, total = max chars
+        assert_eq!(result.chars().count(), 5);
+    }
 }

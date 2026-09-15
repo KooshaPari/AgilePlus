@@ -957,4 +957,112 @@ mod tests {
         assert!(title.len() < 80);
         assert!(title.contains("WP01"));
     }
+
+    // ── generate_wp_prompt tests ─────────────────────────────────────
+
+    #[test]
+    fn generate_wp_prompt_contains_frontmatter() {
+        let wp = WorkPackage::new(1, "Auth Module (WP01)", 1, "- FR-001 login");
+        let prompt = generate_wp_prompt(&wp, "My Feature", "my-feat");
+        assert!(prompt.contains("work_package_id: WP01"));
+        assert!(prompt.contains("title: Auth Module (WP01)"));
+        assert!(prompt.contains("feature: My Feature"));
+        assert!(prompt.contains("feature_slug: my-feat"));
+        assert!(prompt.contains("sequence: 1"));
+        assert!(prompt.contains("state: planned"));
+    }
+
+    #[test]
+    fn generate_wp_prompt_contains_sections() {
+        let wp = WorkPackage::new(1, "Auth (WP01)", 1, "- criteria 1\n- criteria 2");
+        let prompt = generate_wp_prompt(&wp, "F", "f");
+        assert!(prompt.contains("# Work Package: Auth (WP01)"));
+        assert!(prompt.contains("## Feature"));
+        assert!(prompt.contains("## Acceptance Criteria"));
+        assert!(prompt.contains("## File Scope"));
+        assert!(prompt.contains("## Instructions"));
+    }
+
+    #[test]
+    fn generate_wp_prompt_acceptance_criteria_included() {
+        let wp = WorkPackage::new(1, "WP", 1, "- FR-001 must login\n- FR-002 must logout");
+        let prompt = generate_wp_prompt(&wp, "F", "f");
+        assert!(prompt.contains("FR-001 must login"));
+        assert!(prompt.contains("FR-002 must logout"));
+    }
+
+    #[test]
+    fn generate_wp_prompt_empty_file_scope_auto_detect() {
+        let wp = WorkPackage::new(1, "WP", 1, "- criteria");
+        let prompt = generate_wp_prompt(&wp, "F", "f");
+        assert!(prompt.contains("(auto-detect from spec)"));
+    }
+
+    #[test]
+    fn generate_wp_prompt_with_file_scope() {
+        let mut wp = WorkPackage::new(1, "WP", 1, "- criteria");
+        wp.file_scope = vec!["src/main.rs".into(), "src/lib.rs".into()];
+        let prompt = generate_wp_prompt(&wp, "F", "f");
+        assert!(prompt.contains("`src/main.rs`"));
+        assert!(prompt.contains("`src/lib.rs`"));
+    }
+
+    #[test]
+    fn generate_wp_prompt_references_plan_and_spec() {
+        let wp = WorkPackage::new(1, "WP", 1, "- c");
+        let prompt = generate_wp_prompt(&wp, "F", "my-feat");
+        assert!(prompt.contains("kitty-specs/my-feat/spec.md"));
+        assert!(prompt.contains("kitty-specs/my-feat/plan.md"));
+    }
+
+    // ── build_governance_contract tests ───────────────────────────────
+
+    #[test]
+    fn build_governance_contract_generates_rules_per_wp() {
+        let wp1 = WorkPackage::new(1, "A (WP01)", 1, "- c1");
+        let wp2 = WorkPackage::new(1, "B (WP02)", 2, "- c2");
+        let contract = build_governance_contract(42, &[wp1, wp2]);
+        // 2 WPs -> 2 doing->review + 2 review->done = 4 rules
+        assert_eq!(contract.rules.len(), 4);
+        assert_eq!(contract.feature_id, 42);
+        assert_eq!(contract.version, 1);
+    }
+
+    #[test]
+    fn build_governance_contract_rule_transitions() {
+        let wp = WorkPackage::new(1, "A (WP01)", 1, "- c1");
+        let contract = build_governance_contract(1, &[wp]);
+        assert!(contract.rules[0].transition.contains("Doing -> Review"));
+        assert!(contract.rules[1].transition.contains("Review -> Done"));
+    }
+
+    #[test]
+    fn build_governance_contract_ci_evidence() {
+        let wp = WorkPackage::new(1, "A (WP01)", 1, "- c1");
+        let contract = build_governance_contract(1, &[wp]);
+        assert!(contract.rules[0].required_evidence[0].contains("CI"));
+    }
+
+    #[test]
+    fn build_governance_contract_review_evidence() {
+        let wp = WorkPackage::new(1, "A (WP01)", 1, "- c1");
+        let contract = build_governance_contract(1, &[wp]);
+        assert!(contract.rules[1].required_evidence[0].contains("REVIEW"));
+    }
+
+    #[test]
+    fn build_governance_contract_empty_wps() {
+        let contract = build_governance_contract(1, &[]);
+        assert!(contract.rules.is_empty());
+        assert_eq!(contract.feature_id, 1);
+    }
+
+    #[test]
+    fn build_governance_contract_bound_at_set() {
+        let before = chrono::Utc::now();
+        let contract = build_governance_contract(1, &[]);
+        let after = chrono::Utc::now();
+        assert!(contract.bound_at >= before);
+        assert!(contract.bound_at <= after);
+    }
 }

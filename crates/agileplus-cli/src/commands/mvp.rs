@@ -553,6 +553,26 @@ mod tests {
         assert!(parse_wp_state("DOING").is_err());
     }
 
+    #[test]
+    fn parse_wp_state_empty_string() {
+        assert!(parse_wp_state("").is_err());
+    }
+
+    // ── wp_state_label additional ──────────────────────────────────────────
+
+    #[test]
+    fn wp_state_label_all_unique() {
+        let labels: Vec<&str> = vec![
+            wp_state_label(WpState::Planned),
+            wp_state_label(WpState::Doing),
+            wp_state_label(WpState::Review),
+            wp_state_label(WpState::Done),
+            wp_state_label(WpState::Blocked),
+        ];
+        let unique: std::collections::HashSet<&str> = labels.into_iter().collect();
+        assert_eq!(unique.len(), 5, "all state labels should be unique");
+    }
+
     // ── wp_state_label ───────────────────────────────────────────────────────
 
     #[test]

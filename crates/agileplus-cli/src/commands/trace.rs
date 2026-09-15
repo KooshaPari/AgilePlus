@@ -755,4 +755,91 @@ mod tests {
         let args = ShowArgs { entity: "feature:999".to_string(), db: Some(db) };
         run_show(&args).unwrap();
     }
+
+    // ── additional truncate edge cases ──────────────────────────────────────
+
+    #[test]
+    fn truncate_exact_max_length() {
+        assert_eq!(truncate("12345", 5), "12345");
+    }
+
+    #[test]
+    fn truncate_one_over_max() {
+        // truncate takes max-1 chars + ellipsis (mojibake encoded)
+        let result = truncate("123456", 5);
+        assert_eq!(result, "1234â€¦");
+    }
+
+    #[test]
+    fn truncate_max_zero() {
+        // max=0: saturating_sub(1) = 0, so take(0) + ellipsis
+        let result = truncate("abc", 0);
+        assert_eq!(result, "â€¦");
+    }
+
+    #[test]
+    fn truncate_unicode_chars() {
+        let s = "\u{03b1}\u{03b2}\u{03b3}\u{03b4}\u{03b5}\u{03b6}\u{03b7}\u{03b8}";
+        // take(max-1=2) + ellipsis
+        let result = truncate(s, 3);
+        assert_eq!(result, "\u{03b1}\u{03b2}â€¦");
+    }
+
+    #[test]
+    fn truncate_single_char_string() {
+        assert_eq!(truncate("a", 1), "a");
+        assert_eq!(truncate("a", 5), "a");
+    }
+
+    // ── additional parse_ref edge cases ─────────────────────────────────────
+
+    #[test]
+    fn parse_ref_with_numeric_id() {
+        let (k, i) = parse_ref("feature:0", "from").unwrap();
+        assert_eq!(k, "feature");
+        assert_eq!(i, "0");
+    }
+
+    #[test]
+    fn parse_ref_with_uuid_id() {
+        let (k, i) = parse_ref("wp:550e8400-e29b-41d4-a716-446655440000", "to").unwrap();
+        assert_eq!(k, "wp");
+        assert_eq!(i, "550e8400-e29b-41d4-a716-446655440000");
+    }
+
+    #[test]
+    fn parse_ref_with_multiple_colons() {
+        let (k, i) = parse_ref("kind:id:extra", "from").unwrap();
+        assert_eq!(k, "kind");
+        assert_eq!(i, "id:extra");
+    }
+
+    // ── allowed constants ───────────────────────────────────────────────────
+
+    #[test]
+    fn allowed_kinds_contains_expected_values() {
+        assert!(ALLOWED_KINDS.contains(&"work_package"));
+        assert!(ALLOWED_KINDS.contains(&"feature"));
+        assert!(ALLOWED_KINDS.contains(&"story"));
+        assert!(ALLOWED_KINDS.contains(&"epic"));
+        assert!(ALLOWED_KINDS.contains(&"project"));
+        assert!(ALLOWED_KINDS.contains(&"cycle"));
+        assert!(ALLOWED_KINDS.contains(&"module"));
+        assert!(ALLOWED_KINDS.contains(&"requirement"));
+        assert!(ALLOWED_KINDS.contains(&"external"));
+        assert_eq!(ALLOWED_KINDS.len(), 9);
+    }
+
+    #[test]
+    fn allowed_link_types_contains_expected_values() {
+        assert!(ALLOWED_LINK_TYPES.contains(&"parent_of"));
+        assert!(ALLOWED_LINK_TYPES.contains(&"child_of"));
+        assert!(ALLOWED_LINK_TYPES.contains(&"depends_on"));
+        assert!(ALLOWED_LINK_TYPES.contains(&"blocks"));
+        assert!(ALLOWED_LINK_TYPES.contains(&"implements"));
+        assert!(ALLOWED_LINK_TYPES.contains(&"verifies"));
+        assert!(ALLOWED_LINK_TYPES.contains(&"references"));
+        assert!(ALLOWED_LINK_TYPES.contains(&"duplicates"));
+        assert_eq!(ALLOWED_LINK_TYPES.len(), 8);
+    }
 }

@@ -350,4 +350,67 @@ mod tests {
         entry.hash = hash_entry(&entry);
         assert_ne!(entry.hash, [0u8; 32]);
     }
+
+    #[test]
+    fn audit_hash_deterministic() {
+        let entry1 = AuditEntry {
+            id: 1,
+            feature_id: 10,
+            wp_id: None,
+            timestamp: Utc::now(),
+            actor: "user".into(),
+            transition: "Created -> Specified".into(),
+            evidence_refs: vec![],
+            prev_hash: [0u8; 32],
+            hash: [0u8; 32],
+            event_id: None,
+            archived_to: None,
+        };
+        let entry2 = AuditEntry {
+            id: 1,
+            feature_id: 10,
+            wp_id: None,
+            timestamp: entry1.timestamp,
+            actor: "user".into(),
+            transition: "Created -> Specified".into(),
+            evidence_refs: vec![],
+            prev_hash: [0u8; 32],
+            hash: [0u8; 32],
+            event_id: None,
+            archived_to: None,
+        };
+        assert_eq!(hash_entry(&entry1), hash_entry(&entry2));
+    }
+
+    #[test]
+    fn audit_hash_differs_for_different_actors() {
+        let base = AuditEntry {
+            id: 1,
+            feature_id: 10,
+            wp_id: None,
+            timestamp: Utc::now(),
+            actor: "user-a".into(),
+            transition: "Created -> Specified".into(),
+            evidence_refs: vec![],
+            prev_hash: [0u8; 32],
+            hash: [0u8; 32],
+            event_id: None,
+            archived_to: None,
+        };
+        let mut other = base.clone();
+        other.actor = "user-b".into();
+        assert_ne!(hash_entry(&base), hash_entry(&other));
+    }
+
+    #[test]
+    fn ship_args_dry_run_and_skip_validate() {
+        let args = ShipArgs {
+            feature: "feat".to_string(),
+            target: Some("main".to_string()),
+            skip_validate: true,
+            dry_run: true,
+        };
+        assert!(args.skip_validate);
+        assert!(args.dry_run);
+    }
 }

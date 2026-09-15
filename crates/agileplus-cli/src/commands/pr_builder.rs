@@ -209,4 +209,132 @@ mod tests {
         assert!(checklist.contains("- [ ] First criterion"));
         assert!(checklist.contains("- [ ] Second criterion"));
     }
+
+    // ── find_fr_description ─────────────────────────────────────────────────
+
+    #[test]
+    fn find_fr_description_found_with_colon() {
+        let spec = "- **FR-001**: Login works\n- **FR-002**: Logout works\n";
+        assert_eq!(
+            find_fr_description(spec, "FR-001"),
+            Some("Login works".to_string())
+        );
+    }
+
+    #[test]
+    fn find_fr_description_not_found() {
+        let spec = "- **FR-001**: Login works\n";
+        assert_eq!(find_fr_description(spec, "FR-999"), None);
+    }
+
+    #[test]
+    fn find_fr_description_without_colon() {
+        let spec = "FR-050 is referenced here\n";
+        assert_eq!(
+            find_fr_description(spec, "FR-050"),
+            Some("FR-050 is referenced here".to_string())
+        );
+    }
+
+    #[test]
+    fn find_fr_description_strips_bold_markers() {
+        let spec = "- **FR-003**: **Bolded** description\n";
+        let desc = find_fr_description(spec, "FR-003").unwrap();
+        assert!(!desc.contains("**"));
+        assert!(desc.contains("Bolded description") || desc.contains("Bolded"));
+    }
+
+    // ── extract_fr_references additional ────────────────────────────────────
+
+    #[test]
+    fn extract_fr_refs_no_references() {
+        let text = "No FR references here";
+        let result = extract_fr_references(text, "");
+        assert!(result.contains("no FR references found"));
+    }
+
+    #[test]
+    fn extract_fr_refs_deduplicates() {
+        let text = "FR-001 and FR-001 again";
+        let spec = "- **FR-001**: Feature one\n";
+        let result = extract_fr_references(text, spec);
+        // Should only appear once
+        let count = result.matches("FR-001").count();
+        assert_eq!(count, 1, "FR-001 should appear only once: {result}");
+    }
+
+    #[test]
+    fn extract_fr_refs_description_not_in_spec() {
+        let text = "Requires FR-100";
+        let spec = "- **FR-001**: Something else\n";
+        let result = extract_fr_references(text, spec);
+        assert!(result.contains("FR-100"));
+        assert!(result.contains("description not found"));
+    }
+
+    // ── build_acceptance_checklist additional ───────────────────────────────
+
+    #[test]
+    fn checklist_skips_empty_lines() {
+        let criteria = "Line one\n\nLine two\n";
+        let checklist = build_acceptance_checklist(criteria);
+        let lines: Vec<&str> = checklist.lines().collect();
+        assert_eq!(lines.len(), 2);
+    }
+
+    #[test]
+    fn checklist_strips_hash_prefix() {
+        let criteria = "# Hashed criterion\n";
+        let checklist = build_acceptance_checklist(criteria);
+        assert!(checklist.contains("- [ ] Hashed criterion"));
+    }
+
+    #[test]
+    fn checklist_empty_input() {
+        let checklist = build_acceptance_checklist("");
+        assert!(checklist.is_empty());
+    }
+
+    // ── build_pr_title boundary ─────────────────────────────────────────────
+
+    #[test]
+    fn pr_title_exact_72_chars() {
+        let mut wp = make_wp();
+        // "WP09: " is 6 chars, so title of 66 chars = 72 total
+        wp.title = "A".repeat(66);
+        let title = build_pr_title(&wp);
+        assert_eq!(title.len(), 72);
+        assert!(!title.ends_with("..."));
+    }
+
+    #[test]
+    fn pr_title_73_chars_gets_truncated() {
+        let mut wp = make_wp();
+        wp.title = "A".repeat(67);
+        let title = build_pr_title(&wp);
+        assert!(title.len() <= 72);
+        assert!(title.ends_with("..."));
+    }
+
+    // ── build_pr_description edge cases ─────────────────────────────────────
+
+    #[test]
+    fn pr_description_empty_file_scope() {
+        let feature = make_feature();
+        let mut wp = make_wp();
+        wp.file_scope = vec![];
+        let body = build_pr_description(&wp, &feature, "");
+        assert!(body.contains("no specific files identified"));
+    }
+
+    #[test]
+    fn pr_description_empty_spec() {
+        let feature = make_feature();
+        let wp = make_wp();
+        let body = build_pr_description(&wp, &feature, "");
+        // wp has FR-001/FR-002 in acceptance criteria, so they ARE found,
+        // but descriptions won't be in the empty spec
+        assert!(body.contains("description not found in spec"));
+        assert!(body.contains("## Work Package:"));
+    }
 }

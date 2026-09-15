@@ -513,4 +513,71 @@ line2
         assert_eq!(entry.transition, "Test -> Done");
         assert_eq!(entry.prev_hash, [1u8; 32]);
     }
+
+    // ── additional sha256 tests ─────────────────────────────────────────────
+
+    #[test]
+    fn sha256_longer_content() {
+        let h = sha256_bytes("the quick brown fox jumps over the lazy dog");
+        assert_ne!(h, [0u8; 32]);
+        // Deterministic
+        assert_eq!(h, sha256_bytes("the quick brown fox jumps over the lazy dog"));
+    }
+
+    #[test]
+    fn sha256_whitespace_only() {
+        let h1 = sha256_bytes(" ");
+        let h2 = sha256_bytes("  ");
+        assert_ne!(h1, h2);
+        assert_ne!(h1, sha256_bytes(""));
+    }
+
+    // ── compute_diff_summary additional ─────────────────────────────────────
+
+    #[test]
+    fn diff_summary_multiple_changes() {
+        let old = "line1
+line2
+line3
+";
+        let new = "line1
+line4
+line3
+line5
+";
+        let diff = compute_diff_summary(old, new);
+        assert!(diff.contains("-line2"));
+        assert!(diff.contains("+line4"));
+        assert!(diff.contains("+line5"));
+    }
+
+    #[test]
+    fn diff_summary_both_empty() {
+        let diff = compute_diff_summary("", "");
+        assert!(diff.is_empty());
+    }
+
+    // ── build_audit_entry additional ────────────────────────────────────────
+
+    #[test]
+    fn build_audit_entry_default_prev_hash_is_zeroes() {
+        let entry = build_audit_entry(1, "user", "test", [0u8; 32]);
+        assert_eq!(entry.prev_hash, [0u8; 32]);
+        assert_ne!(entry.hash, [0u8; 32]);
+    }
+
+    #[test]
+    fn build_audit_entry_with_nonzero_prev_hash() {
+        let prev = [1u8; 32];
+        let entry = build_audit_entry(1, "user", "test", prev);
+        assert_eq!(entry.prev_hash, prev);
+        assert_ne!(entry.hash, [0u8; 32]);
+        assert_ne!(entry.hash, prev);
+    }
+
+    #[test]
+    fn build_audit_entry_has_empty_evidence_refs() {
+        let entry = build_audit_entry(1, "user", "test", [0u8; 32]);
+        assert!(entry.evidence_refs.is_empty());
+    }
 }

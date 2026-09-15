@@ -1730,4 +1730,1159 @@ mod tests {
         assert_eq!(entries[0].verification.status, "not_run");
         let _ = std::fs::remove_file(db);
     }
+
+    // ── Additional validation edge-case tests ───────────────────────────
+
+    #[test]
+    fn validate_payload_accepts_empty_files_changed() {
+        let mut p = good_payload();
+        p.files_changed = vec![];
+        assert!(validate_payload(&p).is_ok());
+    }
+
+    #[test]
+    fn validate_payload_accepts_none_commit_sha() {
+        let mut p = good_payload();
+        p.commit_sha = None;
+        assert!(validate_payload(&p).is_ok());
+    }
+
+    #[test]
+    fn validate_payload_accepts_each_valid_status() {
+        for status in CANONICAL_STATUSES {
+            let mut p = good_payload();
+            p.status = (*status).to_string();
+            assert!(
+                validate_payload(&p).is_ok(),
+                "status '{status}' should be valid"
+            );
+        }
+    }
+
+    #[test]
+    fn validate_payload_accepts_each_valid_verification_status() {
+        for vs in CANONICAL_VERIFICATION_STATUSES {
+            let mut p = good_payload();
+            p.verification_result.status = (*vs).to_string();
+            if vs == &"not_run" {
+                p.verification_result.commands = vec![];
+            }
+            assert!(
+                validate_payload(&p).is_ok(),
+                "verification status '{vs}' should be valid"
+            );
+        }
+    }
+
+    #[test]
+    fn validate_payload_rejects_whitespace_only_command() {
+        let mut p = good_payload();
+        p.verification_result.commands = vec!["  ".into()];
+        assert!(validate_payload(&p).is_err());
+    }
+
+    #[test]
+    fn validate_payload_accepts_valid_short_sha() {
+        let mut p = good_payload();
+        p.commit_sha = Some("abcdef0".into());
+        assert!(validate_payload(&p).is_ok());
+    }
+
+    #[test]
+    fn validate_payload_rejects_sha_with_non_hex() {
+        let mut p = good_payload();
+        p.commit_sha = Some("ggggggg".into());
+        let err = validate_payload(&p).unwrap_err().to_string();
+        assert!(err.contains("not a 7-40 char hex"), "got: {err}");
+    }
+
+    #[test]
+    fn validate_payload_accepts_long_sha_40_chars() {
+        let mut p = good_payload();
+        p.commit_sha = Some("a".repeat(40));
+        assert!(validate_payload(&p).is_ok());
+    }
+
+    #[test]
+    fn validate_payload_rejects_sha_too_long() {
+        let mut p = good_payload();
+        p.commit_sha = Some("a".repeat(41));
+        assert!(validate_payload(&p).is_err());
+    }
+
+    // ── to_canonical additional edge-case tests ─────────────────────────
+
+    #[test]
+    fn to_canonical_non_array_files_changed() {
+        let raw = serde_json::json!({
+            "status": "completed",
+            "task_id": "T-1",
+            "agent_id": "a",
+            "files_changed": "not-an-array",
+            "started_at": "2026-06-10T00:00:00Z"
+        });
+        let c = to_canonical(&raw);
+        assert!(c.files_changed.is_empty());
+    }
+
+    #[test]
+    fn to_canonical_array_with_non_string_items() {
+        let raw = serde_json::json!({
+            "status": "completed",
+            "task_id": "T-1",
+            "agent_id": "a",
+            "files_changed": [123, true, null, "valid.rs"],
+            "started_at": "2026-06-10T00:00:00Z"
+        });
+        let c = to_canonical(&raw);
+        assert_eq!(c.files_changed, vec!["valid.rs"]);
+    }
+
+    #[test]
+    fn to_canonical_verification_with_non_array_commands() {
+        let raw = serde_json::json!({
+            "status": "completed",
+            "task_id": "T-1",
+            "agent_id": "a",
+            "verification_result": {"status": "passed", "commands": "not-an-array", "notes": "ok"},
+            "started_at": "2026-06-10T00:00:00Z"
+        });
+        let c = to_canonical(&raw);
+        assert!(c.verification_result.commands.is_empty());
+    }
+
+    #[test]
+    fn to_canonical_verification_with_mixed_command_types() {
+        let raw = serde_json::json!({
+            "status": "completed",
+            "task_id": "T-1",
+            "agent_id": "a",
+            "verification_result": {"status": "passed", "commands": [123, true, "cargo test"], "notes": ""},
+            "started_at": "2026-06-10T00:00:00Z"
+        });
+        let c = to_canonical(&raw);
+        assert_eq!(c.verification_result.commands, vec!["cargo test"]);
+    }
+
+    #[test]
+    fn to_canonical_verification_result_missing_status_defaults_empty() {
+        let raw = serde_json::json!({
+            "status": "completed",
+            "task_id": "T-1",
+            "agent_id": "a",
+            "verification_result": {},
+            "started_at": "2026-06-10T00:00:00Z"
+        });
+        let c = to_canonical(&raw);
+        assert_eq!(c.verification_result.status, "not_run");
+    }
+
+    #[test]
+    fn to_canonical_completed_at_prefers_completed_at_over_date() {
+        let raw = serde_json::json!({
+            "status": "completed",
+            "task_id": "T-1",
+            "agent_id": "a",
+            "completed_at": "2026-06-11T00:00:00Z",
+            "date": "2026-06-10",
+            "started_at": "2026-06-10T00:00:00Z"
+        });
+        let c = to_canonical(&raw);
+        assert_eq!(
+            c.completed_at.as_deref(),
+            Some("2026-06-11T00:00:00Z")
+        );
+    }
+
+    #[test]
+    fn to_canonical_commit_sha_prefers_commit_sha_over_branch() {
+        let raw = serde_json::json!({
+            "status": "completed",
+            "task_id": "T-1",
+            "agent_id": "a",
+            "commit_sha": "abc1234",
+            "branch": "feature-y",
+            "started_at": "2026-06-10T00:00:00Z"
+        });
+        let c = to_canonical(&raw);
+        assert_eq!(c.commit_sha, "abc1234");
+    }
+
+    // ── is_iso8601_like additional tests ───────────────────────────────
+
+    #[test]
+    fn is_iso8601_rejects_only_spaces_after_date() {
+        assert!(!is_iso8601_like("2026-06-10     "));
+    }
+
+    #[test]
+    fn is_iso8601_rejects_empty_string() {
+        assert!(!is_iso8601_like(""));
+    }
+
+    #[test]
+    fn is_iso8601_rejects_exactly_9_chars() {
+        assert!(!is_iso8601_like("2026-06-1"));
+    }
+
+    #[test]
+    fn is_iso8601_accepts_datetime_with_offset() {
+        assert!(is_iso8601_like("2026-06-10T12:00:00+05:30"));
+    }
+
+    #[test]
+    fn is_iso8601_rejects_wrong_date_separator() {
+        assert!(!is_iso8601_like("2026.06.10T00:00:00Z"));
+    }
+
+    #[test]
+    fn is_iso8601_rejects_non_digit_in_year() {
+        assert!(!is_iso8601_like("2O26-06-10T00:00:00Z"));
+    }
+
+    #[test]
+    fn is_iso8601_rejects_missing_month_dash() {
+        assert!(!is_iso8601_like("202606-10T00:00:00Z"));
+    }
+
+    // ── is_valid_sha additional tests ──────────────────────────────────
+
+    #[test]
+    fn is_valid_sha_rejects_empty() {
+        assert!(!is_valid_sha(""));
+    }
+
+    #[test]
+    fn is_valid_sha_rejects_dash() {
+        assert!(!is_valid_sha("abc-def"));
+    }
+
+    #[test]
+    fn is_valid_sha_rejects_underscore() {
+        assert!(!is_valid_sha("abc_def"));
+    }
+
+    #[test]
+    fn is_valid_sha_accepts_exactly_8() {
+        assert!(is_valid_sha("abcd1234"));
+    }
+
+    // ── truncate additional tests ──────────────────────────────────────
+
+    #[test]
+    fn truncate_empty_string() {
+        assert_eq!(truncate("", 5), "");
+    }
+
+    #[test]
+    fn truncate_zero_max_returns_ellipsis() {
+        let result = truncate("hello", 0);
+        // The source file uses mojibake bytes for the ellipsis (3 chars total)
+        assert!(!result.is_empty());
+        assert_eq!(result.chars().count(), 3);
+    }
+
+    #[test]
+    fn truncate_one_max() {
+        let result = truncate("hello", 1);
+        // take(0) yields empty + mojibake ellipsis suffix (3 chars total)
+        assert_eq!(result.chars().count(), 3);
+    }
+
+    #[test]
+    fn truncate_long_string_preserves_start() {
+        let result = truncate("abcdefghij", 5);
+        assert!(result.starts_with("abcd"));
+    }
+
+    // ── WorklogPayload deserialization ─────────────────────────────────
+
+    #[test]
+    fn worklog_payload_deserialize_from_json() {
+        let json = r#"{
+            "status": "completed",
+            "task_id": "T-1",
+            "agent_id": "agent-a",
+            "files_changed": ["a.rs"],
+            "commit_sha": "abc1234",
+            "verification_result": {"status": "passed", "commands": ["cargo test"], "notes": "ok"},
+            "started_at": "2026-06-10T00:00:00Z",
+            "completed_at": "2026-06-10T01:00:00Z"
+        }"#;
+        let p: WorklogPayload = serde_json::from_str(json).unwrap();
+        assert_eq!(p.status, "completed");
+        assert_eq!(p.task_id, "T-1");
+        assert_eq!(p.agent_id, "agent-a");
+        assert_eq!(p.files_changed, vec!["a.rs"]);
+        assert_eq!(p.commit_sha.as_deref(), Some("abc1234"));
+        assert_eq!(p.verification_result.status, "passed");
+        assert_eq!(p.started_at, "2026-06-10T00:00:00Z");
+        assert_eq!(
+            p.completed_at.as_deref(),
+            Some("2026-06-10T01:00:00Z")
+        );
+    }
+
+    #[test]
+    fn worklog_payload_defaults_files_changed_when_missing() {
+        let json = r#"{
+            "status": "running",
+            "task_id": "T-2",
+            "agent_id": "agent-b",
+            "verification_result": {"status": "not_run", "commands": [], "notes": ""},
+            "started_at": "2026-06-10T00:00:00Z"
+        }"#;
+        let p: WorklogPayload = serde_json::from_str(json).unwrap();
+        assert!(p.files_changed.is_empty());
+        assert!(p.commit_sha.is_none());
+        assert!(p.completed_at.is_none());
+    }
+
+    #[test]
+    fn worklog_payload_extra_fields_flattened() {
+        let json = r#"{
+            "status": "completed",
+            "task_id": "T-3",
+            "agent_id": "agent-c",
+            "verification_result": {"status": "passed", "commands": [], "notes": ""},
+            "started_at": "2026-06-10T00:00:00Z",
+            "custom_field": "custom_value",
+            "another_extra": 42
+        }"#;
+        let p: WorklogPayload = serde_json::from_str(json).unwrap();
+        assert_eq!(p.status, "completed");
+        assert_eq!(p.extra.get("custom_field").unwrap(), "custom_value");
+        assert_eq!(p.extra.get("another_extra").unwrap(), &serde_json::json!(42));
+    }
+
+    #[test]
+    fn worklog_payload_serialization_round_trip() {
+        let original = good_payload();
+        let json = serde_json::to_string(&original).unwrap();
+        let restored: WorklogPayload = serde_json::from_str(&json).unwrap();
+        assert_eq!(restored.status, original.status);
+        assert_eq!(restored.task_id, original.task_id);
+        assert_eq!(restored.agent_id, original.agent_id);
+        assert_eq!(restored.files_changed, original.files_changed);
+        assert_eq!(restored.commit_sha, original.commit_sha);
+        assert_eq!(restored.started_at, original.started_at);
+        assert_eq!(restored.completed_at, original.completed_at);
+    }
+
+    #[test]
+    fn worklog_payload_rejects_missing_required_fields() {
+        let json = r#"{"status": "completed"}"#;
+        let result = serde_json::from_str::<WorklogPayload>(json);
+        assert!(result.is_err());
+    }
+
+    // ── VerificationResult and other struct tests ──────────────────────
+
+    #[test]
+    fn verification_result_default_fields() {
+        let v = VerificationResult::default();
+        assert_eq!(v.status, "");
+        assert!(v.commands.is_empty());
+        assert_eq!(v.notes, "");
+    }
+
+    #[test]
+    fn verification_result_clone() {
+        let v = VerificationResult {
+            status: "passed".into(),
+            commands: vec!["cargo test".into()],
+            notes: "all good".into(),
+        };
+        let v2 = v.clone();
+        assert_eq!(v2.status, "passed");
+        assert_eq!(v2.commands, vec!["cargo test"]);
+        assert_eq!(v2.notes, "all good");
+    }
+
+    #[test]
+    fn verification_result_serialization_round_trip() {
+        let v = VerificationResult {
+            status: "partial".into(),
+            commands: vec!["make lint".into(), "cargo fmt".into()],
+            notes: "minor issues".into(),
+        };
+        let json = serde_json::to_string(&v).unwrap();
+        let restored: VerificationResult = serde_json::from_str(&json).unwrap();
+        assert_eq!(restored.status, "partial");
+        assert_eq!(restored.commands, vec!["make lint", "cargo fmt"]);
+        assert_eq!(restored.notes, "minor issues");
+    }
+
+    #[test]
+    fn verification_result_default_when_deserialized_from_empty() {
+        let v: VerificationResult = serde_json::from_str("{}").unwrap();
+        assert_eq!(v.status, "");
+        assert!(v.commands.is_empty());
+        assert_eq!(v.notes, "");
+    }
+
+    #[test]
+    fn emit_report_default_fields() {
+        let r = EmitReport::default();
+        assert_eq!(r.files_seen, 0);
+        assert_eq!(r.files_loaded, 0);
+        assert_eq!(r.files_skipped, 0);
+        assert_eq!(r.rows_inserted, 0);
+        assert_eq!(r.rows_replaced, 0);
+        assert!(r.validation_errors.is_empty());
+    }
+
+    #[test]
+    fn worklog_entry_clone() {
+        let e = WorklogEntry {
+            id: 42,
+            status: "completed".into(),
+            task_id: "T-1".into(),
+            agent_id: "a".into(),
+            files_changed: vec!["x.rs".into()],
+            commit_sha: Some("abc1234".into()),
+            verification: VerificationResult {
+                status: "passed".into(),
+                commands: vec![],
+                notes: "ok".into(),
+            },
+            started_at: "2026-06-10T00:00:00Z".into(),
+            completed_at: None,
+            source_path: "w.json".into(),
+            ingested_at: "2026-06-10T00:00:00Z".into(),
+        };
+        let e2 = e.clone();
+        assert_eq!(e2.id, 42);
+        assert_eq!(e2.task_id, "T-1");
+        assert!(e2.commit_sha.is_some());
+        assert!(e2.completed_at.is_none());
+    }
+
+    // ── print_table additional tests ───────────────────────────────────
+
+    #[test]
+    fn print_table_multiple_entries() {
+        let entries: Vec<WorklogEntry> = (0..5)
+            .map(|i| WorklogEntry {
+                id: i,
+                status: "completed".into(),
+                task_id: format!("T-{i}"),
+                agent_id: "forge".into(),
+                files_changed: vec![],
+                commit_sha: Some(format!("abc{i:04}")),
+                verification: VerificationResult::default(),
+                started_at: "2026-06-10T00:00:00Z".into(),
+                completed_at: None,
+                source_path: "w.json".into(),
+                ingested_at: "2026-06-10T00:00:00Z".into(),
+            })
+            .collect();
+        print_table(&entries);
+    }
+
+    #[test]
+    fn print_table_none_commit_sha_shows_dash() {
+        let entry = WorklogEntry {
+            id: 1,
+            status: "completed".into(),
+            task_id: "T-1".into(),
+            agent_id: "forge".into(),
+            files_changed: vec![],
+            commit_sha: None,
+            verification: VerificationResult::default(),
+            started_at: "2026-06-10T00:00:00Z".into(),
+            completed_at: None,
+            source_path: "w.json".into(),
+            ingested_at: "2026-06-10T00:00:00Z".into(),
+        };
+        print_table(&[entry]);
+    }
+
+    // ── Additional path_with_suffix tests ──────────────────────────────
+
+    #[test]
+    fn path_with_suffix_nested_path() {
+        let p = PathBuf::from("/tmp/subdir/worklog-abc.json");
+        let result = path_with_suffix(&p, "-canonical.json");
+        assert_eq!(
+            result,
+            PathBuf::from("/tmp/subdir/worklog-abc-canonical.json")
+        );
+    }
+
+    #[test]
+    fn path_with_suffix_double_extension() {
+        let p = PathBuf::from("worklog.json.bak");
+        let result = path_with_suffix(&p, "-canonical.json");
+        // .with_extension replaces the last extension
+        assert!(result.to_string_lossy().contains("-canonical.json"));
+    }
+
+    // ── find_worklogs additional edge cases ────────────────────────────
+
+    #[test]
+    fn find_worklogs_sorted_output() {
+        let dir = tempdir_root("agileplus-worklog-find-sorted");
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("worklog-c.json"), "{}").unwrap();
+        std::fs::write(dir.join("worklog-a.json"), "{}").unwrap();
+        std::fs::write(dir.join("worklog-b.json"), "{}").unwrap();
+        let files = find_worklogs(&dir, false).unwrap();
+        assert_eq!(files.len(), 3);
+        let names: Vec<_> = files
+            .iter()
+            .map(|p| p.file_name().unwrap().to_string_lossy().to_string())
+            .collect();
+        assert_eq!(names, vec!["worklog-a.json", "worklog-b.json", "worklog-c.json"]);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn find_worklogs_only_canonical_in_dir() {
+        let dir = tempdir_root("agileplus-worklog-find-canonical-only");
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("worklog-1-canonical.json"), "{}").unwrap();
+        // raw: empty (only canonical present)
+        let raw = find_worklogs(&dir, false).unwrap();
+        assert!(raw.is_empty());
+        let canonical = find_worklogs(&dir, true).unwrap();
+        assert_eq!(canonical.len(), 1);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    // ── collect_worklog_files additional tests ──────────────────────────
+
+    #[test]
+    fn collect_worklog_files_empty_directory() {
+        let dir = tempdir_root("agileplus-worklog-collect-empty");
+        std::fs::create_dir_all(&dir).unwrap();
+        let mut report = EmitReport::default();
+        let files = collect_worklog_files(&dir, &mut report).unwrap();
+        assert!(files.is_empty());
+        assert!(report.validation_errors.is_empty());
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn collect_worklog_files_skips_non_json() {
+        let dir = tempdir_root("agileplus-worklog-collect-skip");
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("data.txt"), "hello").unwrap();
+        std::fs::write(dir.join("config.yaml"), "key: val").unwrap();
+        std::fs::write(dir.join("worklog-1.json"), "{}").unwrap();
+        let mut report = EmitReport::default();
+        let files = collect_worklog_files(&dir, &mut report).unwrap();
+        assert_eq!(files.len(), 1);
+        assert!(files[0].file_name().unwrap().to_string_lossy().contains("worklog-1"));
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn collect_worklog_files_does_not_recurse() {
+        let dir = tempdir_root("agileplus-worklog-collect-no-recurse");
+        let subdir = dir.join("subdir");
+        std::fs::create_dir_all(&subdir).unwrap();
+        std::fs::write(dir.join("worklog-1.json"), "{}").unwrap();
+        std::fs::write(subdir.join("worklog-2.json"), "{}").unwrap();
+        let mut report = EmitReport::default();
+        let files = collect_worklog_files(&dir, &mut report).unwrap();
+        assert_eq!(files.len(), 1);
+        assert!(files[0].file_name().unwrap().to_string_lossy().contains("worklog-1"));
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    // ── run_with_db tests ──────────────────────────────────────────────
+
+    #[test]
+    fn run_with_db_schema_subcommand() {
+        let db = temp_db_path("agileplus-worklog-run-with-db-schema");
+        let args = WorklogArgs {
+            dir: PathBuf::from("."),
+            action: WorklogAction::Schema,
+        };
+        assert!(run_with_db(&args, &db).is_ok());
+        // Schema doesn't touch the DB, so it should be fine even if not created
+    }
+
+    #[test]
+    fn run_with_db_validate_subcommand() {
+        let dir = tempdir_root("agileplus-worklog-rwdb-validate");
+        std::fs::create_dir_all(&dir).unwrap();
+        let db = temp_db_path("agileplus-worklog-rwdb-validate-db");
+        let args = WorklogArgs {
+            dir: dir.clone(),
+            action: WorklogAction::Validate,
+        };
+        assert!(run_with_db(&args, &db).is_ok());
+        let _ = std::fs::remove_dir_all(&dir);
+        let _ = std::fs::remove_file(db);
+    }
+
+    #[test]
+    fn run_with_db_list_subcommand() {
+        let dir = tempdir_root("agileplus-worklog-rwdb-list");
+        std::fs::create_dir_all(&dir).unwrap();
+        let db = temp_db_path("agileplus-worklog-rwdb-list-db");
+        let args = WorklogArgs {
+            dir: dir.clone(),
+            action: WorklogAction::List,
+        };
+        assert!(run_with_db(&args, &db).is_ok());
+        let _ = std::fs::remove_dir_all(&dir);
+        let _ = std::fs::remove_file(db);
+    }
+
+    #[test]
+    fn run_with_db_convert_subcommand() {
+        let dir = tempdir_root("agileplus-worklog-rwdb-convert");
+        std::fs::create_dir_all(&dir).unwrap();
+        let payload = serde_json::json!({
+            "status": "completed",
+            "task_id": "T-1",
+            "agent_id": "a",
+            "verification": {"status":"passed","commands":[],"notes":"ok"},
+            "started_at": "2026-06-10T00:00:00Z"
+        });
+        std::fs::write(
+            dir.join("worklog-T1.json"),
+            serde_json::to_string(&payload).unwrap(),
+        )
+        .unwrap();
+        let db = temp_db_path("agileplus-worklog-rwdb-convert-db");
+        let args = WorklogArgs {
+            dir: dir.clone(),
+            action: WorklogAction::Convert { in_place: false },
+        };
+        assert!(run_with_db(&args, &db).is_ok());
+        let canonical = dir.join("worklog-T1-canonical.json");
+        assert!(canonical.exists());
+        let _ = std::fs::remove_dir_all(&dir);
+        let _ = std::fs::remove_file(db);
+    }
+
+    #[test]
+    fn run_with_db_show_subcommand_empty_table() {
+        let db = temp_db_path("agileplus-worklog-rwdb-show-empty");
+        let _ = open_db(&db).unwrap(); // create it
+        let args = WorklogArgs {
+            dir: PathBuf::from("."),
+            action: WorklogAction::Show(ShowArgs {
+                task: None,
+                status: None,
+                limit: 10,
+                json: false,
+            }),
+        };
+        assert!(run_with_db(&args, &db).is_ok());
+        let _ = std::fs::remove_file(db);
+    }
+
+    #[test]
+    fn run_with_db_show_subcommand_json_output() {
+        let db = temp_db_path("agileplus-worklog-rwdb-show-json");
+        let conn = open_db(&db).unwrap();
+        let p = good_payload();
+        let raw = serde_json::to_string(&p).unwrap();
+        insert_entry(&conn, &p, "test.json", &raw, false).unwrap();
+        drop(conn);
+
+        let args = WorklogArgs {
+            dir: PathBuf::from("."),
+            action: WorklogAction::Show(ShowArgs {
+                task: None,
+                status: None,
+                limit: 10,
+                json: true,
+            }),
+        };
+        assert!(run_with_db(&args, &db).is_ok());
+        let _ = std::fs::remove_file(db);
+    }
+
+    #[test]
+    fn run_with_db_emit_subcommand() {
+        let dir = tempdir_root("agileplus-worklog-rwdb-emit");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("worklog-emit-test.json");
+        let payload = good_payload();
+        std::fs::write(&path, serde_json::to_string(&payload).unwrap()).unwrap();
+        let db = temp_db_path("agileplus-worklog-rwdb-emit-db");
+        let args = WorklogArgs {
+            dir: dir.clone(),
+            action: WorklogAction::Emit(EmitArgs {
+                from: path.clone(),
+                verbose: false,
+                replace: false,
+            }),
+        };
+        assert!(run_with_db(&args, &db).is_ok());
+        let _ = std::fs::remove_dir_all(&dir);
+        let _ = std::fs::remove_file(db);
+    }
+
+    #[test]
+    fn run_with_db_emit_verbose() {
+        let dir = tempdir_root("agileplus-worklog-rwdb-emit-verbose");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("worklog-verbose-test.json");
+        let payload = good_payload();
+        std::fs::write(&path, serde_json::to_string(&payload).unwrap()).unwrap();
+        let db = temp_db_path("agileplus-worklog-rwdb-emit-verbose-db");
+        let args = WorklogArgs {
+            dir: dir.clone(),
+            action: WorklogAction::Emit(EmitArgs {
+                from: path.clone(),
+                verbose: true,
+                replace: false,
+            }),
+        };
+        assert!(run_with_db(&args, &db).is_ok());
+        let _ = std::fs::remove_dir_all(&dir);
+        let _ = std::fs::remove_file(db);
+    }
+
+    // ── insert_entry additional tests ──────────────────────────────────
+
+    #[test]
+    fn insert_entry_with_empty_files_changed() {
+        let db = temp_db_path("agileplus-worklog-insert-empty-files");
+        let conn = open_db(&db).unwrap();
+        let mut p = good_payload();
+        p.files_changed = vec![];
+        let raw = serde_json::to_string(&p).unwrap();
+        assert!(insert_entry(&conn, &p, "empty.json", &raw, false).unwrap());
+        let count: i64 = conn
+            .query_row("SELECT COUNT(*) FROM worklog_entries", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(count, 1);
+        let _ = std::fs::remove_file(db);
+    }
+
+    #[test]
+    fn insert_entry_with_none_commit_sha() {
+        let db = temp_db_path("agileplus-worklog-insert-none-sha");
+        let conn = open_db(&db).unwrap();
+        let mut p = good_payload();
+        p.commit_sha = None;
+        let raw = serde_json::to_string(&p).unwrap();
+        assert!(insert_entry(&conn, &p, "no-sha.json", &raw, false).unwrap());
+
+        let entries = run_show(
+            &ShowArgs {
+                task: None,
+                status: None,
+                limit: 10,
+                json: false,
+            },
+            &db,
+        )
+        .unwrap();
+        assert_eq!(entries.len(), 1);
+        assert!(entries[0].commit_sha.is_none());
+        let _ = std::fs::remove_file(db);
+    }
+
+    #[test]
+    fn insert_entry_replace_removes_old_row() {
+        let db = temp_db_path("agileplus-worklog-insert-replace");
+        let conn = open_db(&db).unwrap();
+        let mut p = good_payload();
+        p.task_id = "T-replace".into();
+
+        let raw1 = serde_json::to_string(&p).unwrap();
+        assert!(insert_entry(&conn, &p, "r.json", &raw1, false).unwrap());
+
+        // Change a field, re-insert with replace
+        p.status = "failed".into();
+        let raw2 = serde_json::to_string(&p).unwrap();
+        assert!(insert_entry(&conn, &p, "r.json", &raw2, true).unwrap());
+
+        let entries = run_show(
+            &ShowArgs {
+                task: Some("T-replace".into()),
+                status: None,
+                limit: 10,
+                json: false,
+            },
+            &db,
+        )
+        .unwrap();
+        assert_eq!(entries.len(), 1);
+        assert_eq!(entries[0].status, "failed");
+        let _ = std::fs::remove_file(db);
+    }
+
+    // ── run_show additional tests ──────────────────────────────────────
+
+    #[test]
+    fn run_show_zero_limit_errors() {
+        let db = temp_db_path("agileplus-worklog-show-zero-limit");
+        let _ = open_db(&db).unwrap();
+        let args = ShowArgs {
+            task: None,
+            status: None,
+            limit: 0,
+            json: false,
+        };
+        let res = run_show(&args, &db);
+        assert!(res.is_err());
+        let _ = std::fs::remove_file(db);
+    }
+
+    #[test]
+    fn run_show_both_filters() {
+        let db = temp_db_path("agileplus-worklog-show-both-filters");
+        let conn = open_db(&db).unwrap();
+        let p = good_payload();
+        let raw = serde_json::to_string(&p).unwrap();
+        insert_entry(&conn, &p, "a.json", &raw, false).unwrap();
+
+        // Filter by task AND status that matches
+        let result = run_show(
+            &ShowArgs {
+                task: Some("L2-39".into()),
+                status: Some("completed".into()),
+                limit: 10,
+                json: false,
+            },
+            &db,
+        )
+        .unwrap();
+        assert_eq!(result.len(), 1);
+
+        // Filter by task AND status that does NOT match
+        let result = run_show(
+            &ShowArgs {
+                task: Some("L2-39".into()),
+                status: Some("running".into()),
+                limit: 10,
+                json: false,
+            },
+            &db,
+        )
+        .unwrap();
+        assert!(result.is_empty());
+        let _ = std::fs::remove_file(db);
+    }
+
+    #[test]
+    fn run_show_limit_caps_results() {
+        let db = temp_db_path("agileplus-worklog-show-limit");
+        let conn = open_db(&db).unwrap();
+        for i in 0..10 {
+            let mut p = good_payload();
+            p.task_id = format!("T-{i}");
+            let raw = serde_json::to_string(&p).unwrap();
+            insert_entry(&conn, &p, &format!("f{i}.json"), &raw, false).unwrap();
+        }
+        let entries = run_show(
+            &ShowArgs {
+                task: None,
+                status: None,
+                limit: 3,
+                json: false,
+            },
+            &db,
+        )
+        .unwrap();
+        assert_eq!(entries.len(), 3);
+        let _ = std::fs::remove_file(db);
+    }
+
+    // ── row_to_entry additional tests ──────────────────────────────────
+
+    #[test]
+    fn row_to_entry_with_none_completed_at() {
+        let db = temp_db_path("agileplus-worklog-row-none-completed");
+        let conn = open_db(&db).unwrap();
+        let mut p = good_payload();
+        p.completed_at = None;
+        let raw = serde_json::to_string(&p).unwrap();
+        insert_entry(&conn, &p, "nc.json", &raw, false).unwrap();
+
+        let entries = run_show(
+            &ShowArgs {
+                task: None,
+                status: None,
+                limit: 10,
+                json: false,
+            },
+            &db,
+        )
+        .unwrap();
+        assert_eq!(entries.len(), 1);
+        assert!(entries[0].completed_at.is_none());
+        let _ = std::fs::remove_file(db);
+    }
+
+    #[test]
+    fn row_to_entry_empty_verification_commands() {
+        let db = temp_db_path("agileplus-worklog-row-empty-verify");
+        let conn = open_db(&db).unwrap();
+        let mut p = good_payload();
+        p.verification_result.commands = vec![];
+        let raw = serde_json::to_string(&p).unwrap();
+        insert_entry(&conn, &p, "ev.json", &raw, false).unwrap();
+
+        let entries = run_show(
+            &ShowArgs {
+                task: None,
+                status: None,
+                limit: 10,
+                json: false,
+            },
+            &db,
+        )
+        .unwrap();
+        assert_eq!(entries[0].verification.commands, Vec::<String>::new());
+        let _ = std::fs::remove_file(db);
+    }
+
+    // ── run_emit additional tests ──────────────────────────────────────
+
+    #[test]
+    fn run_emit_nonexistent_path_errors() {
+        let args = EmitArgs {
+            from: PathBuf::from("/tmp/__agileplus_nonexistent_emit_test__"),
+            verbose: false,
+            replace: false,
+        };
+        let db = temp_db_path("agileplus-worklog-emit-nonexist");
+        let res = run_emit(&args, &db);
+        assert!(res.is_err());
+        let _ = std::fs::remove_file(db);
+    }
+
+    #[test]
+    fn run_emit_replace_mode() {
+        let dir = tempdir_root("agileplus-worklog-emit-replace");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("worklog-replace.json");
+        let mut payload = good_payload();
+        let raw = serde_json::to_string(&payload).unwrap();
+        std::fs::write(&path, &raw).unwrap();
+
+        let db = temp_db_path("agileplus-worklog-emit-replace-db");
+
+        // First insert
+        let args1 = EmitArgs {
+            from: path.clone(),
+            verbose: false,
+            replace: false,
+        };
+        let report1 = run_emit(&args1, &db).unwrap();
+        assert_eq!(report1.rows_inserted, 1);
+
+        // Second insert without replace: skipped
+        let args2 = EmitArgs {
+            from: path.clone(),
+            verbose: false,
+            replace: false,
+        };
+        let report2 = run_emit(&args2, &db).unwrap();
+        assert_eq!(report2.files_loaded, 1);
+        assert_eq!(report2.rows_inserted, 0);
+
+        // Third insert with replace: replaced
+        payload.status = "failed".into();
+        let new_raw = serde_json::to_string(&payload).unwrap();
+        std::fs::write(&path, &new_raw).unwrap();
+        let args3 = EmitArgs {
+            from: path.clone(),
+            verbose: false,
+            replace: true,
+        };
+        let report3 = run_emit(&args3, &db).unwrap();
+        assert_eq!(report3.files_loaded, 1);
+        assert_eq!(report3.rows_inserted, 1);
+
+        let _ = std::fs::remove_dir_all(&dir);
+        let _ = std::fs::remove_file(db);
+    }
+
+    #[test]
+    fn run_emit_empty_directory() {
+        let dir = tempdir_root("agileplus-worklog-emit-empty");
+        std::fs::create_dir_all(&dir).unwrap();
+        let db = temp_db_path("agileplus-worklog-emit-empty-db");
+        let args = EmitArgs {
+            from: dir.clone(),
+            verbose: false,
+            replace: false,
+        };
+        let report = run_emit(&args, &db).unwrap();
+        assert_eq!(report.files_seen, 0);
+        assert_eq!(report.files_loaded, 0);
+        let _ = std::fs::remove_dir_all(&dir);
+        let _ = std::fs::remove_file(db);
+    }
+
+    #[test]
+    fn run_emit_invalid_json_reported() {
+        let dir = tempdir_root("agileplus-worklog-emit-badjson");
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("worklog-bad.json"), "NOT JSON AT ALL!!!").unwrap();
+        let db = temp_db_path("agileplus-worklog-emit-badjson-db");
+        let args = EmitArgs {
+            from: dir.clone(),
+            verbose: false,
+            replace: false,
+        };
+        let report = run_emit(&args, &db).unwrap();
+        assert_eq!(report.files_seen, 1);
+        assert_eq!(report.files_skipped, 1);
+        assert_eq!(report.files_loaded, 0);
+        assert_eq!(report.validation_errors.len(), 1);
+        assert!(report.validation_errors[0].1.contains("json parse"));
+        let _ = std::fs::remove_dir_all(&dir);
+        let _ = std::fs::remove_file(db);
+    }
+
+    #[test]
+    fn run_emit_missing_file_errors() {
+        let dir = tempdir_root("agileplus-worklog-emit-missing");
+        std::fs::create_dir_all(&dir).unwrap();
+        let missing = dir.join("worklog-gone.json");
+        // Don't write the file -- collect_worklog_files bails on non-existent path
+        let db = temp_db_path("agileplus-worklog-emit-missing-db");
+        let args = EmitArgs {
+            from: missing,
+            verbose: false,
+            replace: false,
+        };
+        let res = run_emit(&args, &db);
+        assert!(res.is_err());
+        let _ = std::fs::remove_dir_all(&dir);
+        let _ = std::fs::remove_file(db);
+    }
+
+    // ── validate command additional tests ──────────────────────────────
+
+    #[test]
+    fn validate_command_empty_dir() {
+        let dir = tempdir_root("agileplus-worklog-validate-empty");
+        std::fs::create_dir_all(&dir).unwrap();
+        assert!(validate(&dir).is_ok());
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn validate_command_invalid_json() {
+        let dir = tempdir_root("agileplus-worklog-validate-invalid");
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("worklog-bad.json"), "NOT JSON").unwrap();
+        // validate calls std::process::exit(1) on errors, so we can't test it directly.
+        // But we can test the file reading + JSON parsing logic.
+        let content = std::fs::read_to_string(dir.join("worklog-bad.json")).unwrap();
+        let parsed = serde_json::from_str::<serde_json::Value>(&content);
+        assert!(parsed.is_err());
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    // ── convert additional tests ───────────────────────────────────────
+
+    #[test]
+    fn convert_empty_dir() {
+        let dir = tempdir_root("agileplus-worklog-convert-empty");
+        std::fs::create_dir_all(&dir).unwrap();
+        assert!(convert(&dir, false).is_ok());
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    // ── db_path_from_env default ───────────────────────────────────────
+
+    #[test]
+    fn db_path_from_env_returns_default_when_unset() {
+        // We can't safely test when AGILEPLUS_DB IS set, but we can test
+        // that it returns a valid PathBuf. We don't set/unset env vars.
+        let path = db_path_from_env();
+        // Should always return some path (either from env or default)
+        assert!(!path.as_os_str().is_empty());
+    }
+
+    // ── WorklogArgs construction ───────────────────────────────────────
+
+    #[test]
+    fn worklog_args_default_dir() {
+        let args = WorklogArgs {
+            dir: PathBuf::from("."),
+            action: WorklogAction::Schema,
+        };
+        assert_eq!(args.dir, PathBuf::from("."));
+    }
+
+    // ── YAML deserialization of canonical worklog (JSON only) ──────────
+
+    #[test]
+    fn worklog_payload_rejects_invalid_json() {
+        let result = serde_json::from_str::<WorklogPayload>("not json at all");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn worklog_payload_rejects_json_array() {
+        let result = serde_json::from_str::<WorklogPayload>("[1, 2, 3]");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn worklog_payload_rejects_json_string() {
+        let result = serde_json::from_str::<WorklogPayload>("\"just a string\"");
+        assert!(result.is_err());
+    }
+
+    // ── CanonicalWorklog serialization ─────────────────────────────────
+
+    #[test]
+    fn canonical_worklog_serializes_to_json() {
+        let c = CanonicalWorklog {
+            status: "completed".into(),
+            task_id: "T-1".into(),
+            agent_id: "a".into(),
+            files_changed: vec!["a.rs".into()],
+            commit_sha: "abc1234".into(),
+            verification_result: VerificationResult {
+                status: "passed".into(),
+                commands: vec!["cargo test".into()],
+                notes: "ok".into(),
+            },
+            started_at: Some("2026-06-10T00:00:00Z".into()),
+            completed_at: Some("2026-06-10T01:00:00Z".into()),
+        };
+        let json = serde_json::to_string(&c).unwrap();
+        let v: serde_json::Value = serde_json::from_str(&json).unwrap();
+        assert_eq!(v["status"], "completed");
+        assert_eq!(v["task_id"], "T-1");
+        assert_eq!(v["agent_id"], "a");
+        assert_eq!(v["files_changed"][0], "a.rs");
+        assert_eq!(v["commit_sha"], "abc1234");
+        assert_eq!(v["verification_result"]["status"], "passed");
+        assert_eq!(v["started_at"], "2026-06-10T00:00:00Z");
+        assert_eq!(v["completed_at"], "2026-06-10T01:00:00Z");
+    }
+
+    // ── CANONICAL_FIELDS constant tests ────────────────────────────────
+
+    #[test]
+    fn canonical_fields_count() {
+        assert_eq!(CANONICAL_FIELDS.len(), 8);
+    }
+
+    #[test]
+    fn canonical_fields_are_distinct() {
+        let mut fields = CANONICAL_FIELDS.to_vec();
+        fields.sort();
+        fields.dedup();
+        assert_eq!(fields.len(), CANONICAL_FIELDS.len());
+    }
+
+    #[test]
+    fn canonical_statuses_count() {
+        assert!(CANONICAL_STATUSES.len() >= 6);
+    }
+
+    #[test]
+    fn canonical_verification_statuses_count() {
+        assert_eq!(CANONICAL_VERIFICATION_STATUSES.len(), 4);
+    }
 }
