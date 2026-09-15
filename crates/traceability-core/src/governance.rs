@@ -252,4 +252,180 @@ mod tests {
         assert_eq!(back.id, contract.id);
         assert_eq!(back.rules.len(), 1);
     }
+
+    #[test]
+    fn evidence_type_as_str_remaining_variants() {
+        assert_eq!(EvidenceType::ReviewApproval.as_str(), "review_approval");
+        assert_eq!(EvidenceType::SecurityScan.as_str(), "security_scan");
+        assert_eq!(EvidenceType::LintResult.as_str(), "lint_result");
+    }
+
+    #[test]
+    fn builtin_policy_ci_green() {
+        let p = BuiltinPolicy::from_ref("ci-green").unwrap();
+        assert_eq!(p.domain, PolicyDomain::Quality);
+        assert_eq!(p.evidence_type, EvidenceType::CiOutput);
+    }
+
+    #[test]
+    fn builtin_policy_review_approved() {
+        let p = BuiltinPolicy::from_ref("review-approved").unwrap();
+        assert_eq!(p.domain, PolicyDomain::Quality);
+        assert_eq!(p.evidence_type, EvidenceType::ReviewApproval);
+    }
+
+    #[test]
+    fn builtin_policy_lint_pass() {
+        let p = BuiltinPolicy::from_ref("lint-pass").unwrap();
+        assert_eq!(p.domain, PolicyDomain::Quality);
+        assert_eq!(p.evidence_type, EvidenceType::LintResult);
+    }
+
+    #[test]
+    fn policy_domain_serde_roundtrip() {
+        for domain in [
+            PolicyDomain::Security,
+            PolicyDomain::Quality,
+            PolicyDomain::Compliance,
+            PolicyDomain::Performance,
+            PolicyDomain::Custom,
+        ] {
+            let json = serde_json::to_string(&domain).unwrap();
+            let back: PolicyDomain = serde_json::from_str(&json).unwrap();
+            assert_eq!(back, domain);
+        }
+    }
+
+    #[test]
+    fn evidence_type_serde_roundtrip() {
+        for et in [
+            EvidenceType::TestResult,
+            EvidenceType::CiOutput,
+            EvidenceType::ReviewApproval,
+            EvidenceType::SecurityScan,
+            EvidenceType::LintResult,
+            EvidenceType::ManualAttestation,
+        ] {
+            let json = serde_json::to_string(&et).unwrap();
+            let back: EvidenceType = serde_json::from_str(&json).unwrap();
+            assert_eq!(back, et);
+        }
+    }
+
+    #[test]
+    fn evidence_serde_roundtrip() {
+        let e = Evidence {
+            id: 10,
+            wp_id: 20,
+            fr_id: "FR-42".to_string(),
+            evidence_type: EvidenceType::CiOutput,
+            artifact_path: "/ci/build.log".to_string(),
+            metadata: Some(serde_json::json!({"key": "value"})),
+            created_at: Utc::now(),
+        };
+        let json = serde_json::to_string(&e).unwrap();
+        let back: Evidence = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.id, 10);
+        assert_eq!(back.fr_id, "FR-42");
+        assert_eq!(back.evidence_type, EvidenceType::CiOutput);
+        assert!(back.metadata.is_some());
+    }
+
+    #[test]
+    fn evidence_without_metadata_serde() {
+        let e = Evidence {
+            id: 1,
+            wp_id: 1,
+            fr_id: "FR-1".to_string(),
+            evidence_type: EvidenceType::TestResult,
+            artifact_path: "/test.xml".to_string(),
+            metadata: None,
+            created_at: Utc::now(),
+        };
+        let json = serde_json::to_string(&e).unwrap();
+        let back: Evidence = serde_json::from_str(&json).unwrap();
+        assert!(back.metadata.is_none());
+    }
+
+    #[test]
+    fn policy_check_serde_roundtrip() {
+        for check in [PolicyCheck::ManualApproval, PolicyCheck::Automated] {
+            let json = serde_json::to_string(&check).unwrap();
+            let back: PolicyCheck = serde_json::from_str(&json).unwrap();
+            assert_eq!(back, check);
+        }
+    }
+
+    #[test]
+    fn evidence_requirement_serde_roundtrip() {
+        let er = EvidenceRequirement {
+            fr_id: "FR-99".to_string(),
+            evidence_type: EvidenceType::SecurityScan,
+        };
+        let json = serde_json::to_string(&er).unwrap();
+        let back: EvidenceRequirement = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.fr_id, "FR-99");
+        assert_eq!(back.evidence_type, EvidenceType::SecurityScan);
+    }
+
+    #[test]
+    fn governance_rule_serde_roundtrip() {
+        let gr = GovernanceRule {
+            transition: "Draft->Approved".to_string(),
+            required_evidence: vec![EvidenceRequirement {
+                fr_id: "FR-5".to_string(),
+                evidence_type: EvidenceType::ReviewApproval,
+            }],
+            policy_refs: vec![1, 2, 3],
+        };
+        let json = serde_json::to_string(&gr).unwrap();
+        let back: GovernanceRule = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.transition, "Draft->Approved");
+        assert_eq!(back.required_evidence.len(), 1);
+        assert_eq!(back.policy_refs, vec![1, 2, 3]);
+    }
+
+    #[test]
+    fn governance_contract_empty_rules() {
+        let contract = GovernanceContract {
+            id: 1,
+            feature_id: 1,
+            version: 1,
+            rules: vec![],
+            bound_at: Utc::now(),
+        };
+        let json = serde_json::to_string(&contract).unwrap();
+        let back: GovernanceContract = serde_json::from_str(&json).unwrap();
+        assert!(back.rules.is_empty());
+    }
+
+    #[test]
+    fn policy_rule_serde_roundtrip() {
+        let now = Utc::now();
+        let pr = PolicyRule {
+            id: 42,
+            domain: PolicyDomain::Security,
+            rule: PolicyDefinition {
+                description: "Must pass security scan".to_string(),
+                check: PolicyCheck::Automated,
+            },
+            active: true,
+            created_at: now,
+            updated_at: now,
+        };
+        let json = serde_json::to_string(&pr).unwrap();
+        let back: PolicyRule = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.id, 42);
+        assert_eq!(back.domain, PolicyDomain::Security);
+        assert!(back.active);
+        assert_eq!(back.rule.check, PolicyCheck::Automated);
+    }
+
+    #[test]
+    fn builtin_policy_all_known_refs_exist() {
+        let refs = ["tests-pass", "ci-green", "review-approved", "security-scan", "lint-pass"];
+        for r in refs {
+            assert!(BuiltinPolicy::from_ref(r).is_some(), "missing ref: {r}");
+        }
+    }
 }

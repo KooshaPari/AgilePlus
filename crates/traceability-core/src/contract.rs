@@ -430,4 +430,366 @@ mod tests {
         assert_eq!(Layer::Intent.next(), Some(Layer::IntentDoc));
         assert_eq!(Layer::Evidence.next(), None);
     }
+
+    #[test]
+    fn gate_predicate_to_reason_conversion() {
+        let mappings = [
+            (GatePredicate::NotApproved, GateReason::NotApproved),
+            (GatePredicate::MissingAcceptance, GateReason::MissingAcceptance),
+            (GatePredicate::MissingEvidence, GateReason::MissingEvidence),
+            (
+                GatePredicate::MissingImplementation,
+                GateReason::MissingImplementation,
+            ),
+            (GatePredicate::MissingTest, GateReason::MissingTest),
+        ];
+        for (pred, expected) in mappings {
+            let reason: GateReason = pred.into();
+            assert_eq!(reason, expected);
+        }
+    }
+
+    #[test]
+    fn gate_with_no_predicates_always_passes() {
+        let gate = ProgressionGate {
+            from_layer: Layer::Intent,
+            to_layer: Layer::IntentDoc,
+            predicates: vec![],
+        };
+        let ctx = GateContext::default();
+        assert!(gate.evaluate(&ctx).is_ok());
+    }
+
+    #[test]
+    fn gate_missing_evidence_blocks() {
+        let gate = ProgressionGate {
+            from_layer: Layer::Execution,
+            to_layer: Layer::Evidence,
+            predicates: vec![GatePredicate::MissingEvidence],
+        };
+        let ctx = GateContext {
+            evidence: &[],
+            ..Default::default()
+        };
+        assert_eq!(gate.evaluate(&ctx), Err(GateReason::MissingEvidence));
+    }
+
+    #[test]
+    fn gate_evidence_present_passes() {
+        let gate = ProgressionGate {
+            from_layer: Layer::Execution,
+            to_layer: Layer::Evidence,
+            predicates: vec![GatePredicate::MissingEvidence],
+        };
+        let evidence = Evidence {
+            id: 1,
+            wp_id: 1,
+            fr_id: "FR-1".to_string(),
+            evidence_type: EvidenceType::TestResult,
+            artifact_path: "/test.xml".to_string(),
+            metadata: None,
+            created_at: Utc::now(),
+        };
+        let ctx = GateContext {
+            evidence: &[evidence],
+            ..Default::default()
+        };
+        assert!(gate.evaluate(&ctx).is_ok());
+    }
+
+    #[test]
+    fn gate_missing_implementation_blocks() {
+        let gate = ProgressionGate {
+            from_layer: Layer::PlanWbs,
+            to_layer: Layer::Execution,
+            predicates: vec![GatePredicate::MissingImplementation],
+        };
+        let ctx = GateContext {
+            has_implementation: false,
+            ..Default::default()
+        };
+        assert_eq!(gate.evaluate(&ctx), Err(GateReason::MissingImplementation));
+    }
+
+    #[test]
+    fn gate_implementation_present_passes() {
+        let gate = ProgressionGate {
+            from_layer: Layer::PlanWbs,
+            to_layer: Layer::Execution,
+            predicates: vec![GatePredicate::MissingImplementation],
+        };
+        let ctx = GateContext {
+            has_implementation: true,
+            ..Default::default()
+        };
+        assert!(gate.evaluate(&ctx).is_ok());
+    }
+
+    #[test]
+    fn gate_not_approved_with_no_requirement_blocks() {
+        let gate = ProgressionGate::intent_to_intent_doc();
+        let ctx = GateContext::default();
+        assert_eq!(gate.evaluate(&ctx), Err(GateReason::NotApproved));
+    }
+
+    #[test]
+    fn gate_not_approved_with_proposed_requirement_blocks() {
+        let gate = ProgressionGate::intent_to_intent_doc();
+        let artifact = crate::artifact::Artifact {
+            id: Uuid::new_v4(),
+            project_id: Uuid::new_v4(),
+            kind: ArtifactKind::Requirement,
+            title: "FR-X".to_string(),
+            description: None,
+            external_id: None,
+            metadata: BTreeMap::new(),
+            created_at: None,
+            updated_at: None,
+        };
+        let mut req = Requirement::new(artifact).unwrap();
+        req.status = RequirementStatus::Proposed;
+        let ctx = GateContext {
+            requirement: Some(&req),
+            ..Default::default()
+        };
+        assert_eq!(gate.evaluate(&ctx), Err(GateReason::NotApproved));
+    }
+
+    #[test]
+    fn gate_passes_with_approved_requirement() {
+        let gate = ProgressionGate::intent_to_intent_doc();
+        let req = approved_requirement();
+        let ctx = GateContext {
+            requirement: Some(&req),
+            ..Default::default()
+        };
+        assert!(gate.evaluate(&ctx).is_ok());
+    }
+
+    #[test]
+    fn acceptance_contract_with_missing_matrix_key() {
+        let contract = sample_contract();
+        let mut cells = IndexMap::new();
+        cells.insert(
+            ("test:T-999".to_string(), "FR-999".to_string()),
+            MatrixCell {
+                from: "test:T-999".to_string(),
+                to: "FR-999".to_string(),
+                trace_links: vec![],
+                coverage: CoverageState::Covered,
+            },
+        );
+        let matrix = CoverageMatrix {
+            cells,
+            generated_at: Utc::now(),
+        };
+        assert!(!contract.is_satisfied(&matrix));
+        assert_eq!(contract.unsatisfied_criteria(&matrix), vec!["AC-1"]);
+    }
+
+    #[test]
+    fn acceptance_contract_multiple_criteria_mixed() {
+        let mut cells = IndexMap::new();
+        cells.insert(
+            ("test:T-1".to_string(), "FR-1".to_string()),
+            MatrixCell {
+                from: "test:T-1".to_string(),
+                to: "FR-1".to_string(),
+                trace_links: vec![],
+                coverage: CoverageState::Covered,
+            },
+        );
+        cells.insert(
+            ("test:T-2".to_string(), "FR-2".to_string()),
+            MatrixCell {
+                from: "test:T-2".to_string(),
+                to: "FR-2".to_string(),
+                trace_links: vec![],
+                coverage: CoverageState::Partial,
+            },
+        );
+        let matrix = CoverageMatrix {
+            cells,
+            generated_at: Utc::now(),
+        };
+        let contract = AcceptanceContract {
+            artifact_ref: ArtifactRef::Requirement {
+                id: RequirementId::from_string("FR-1"),
+            },
+            criteria: vec![
+                Criterion {
+                    id: "AC-1".to_string(),
+                    test_ref: "test:T-1".to_string(),
+                    evidence_ref: "FR-1".to_string(),
+                },
+                Criterion {
+                    id: "AC-2".to_string(),
+                    test_ref: "test:T-2".to_string(),
+                    evidence_ref: "FR-2".to_string(),
+                },
+            ],
+            verification: VerificationMethod::Test,
+            bdd: vec![],
+        };
+        assert!(!contract.is_satisfied(&matrix));
+        assert_eq!(contract.unsatisfied_criteria(&matrix), vec!["AC-2"]);
+    }
+
+    #[test]
+    fn execution_to_evidence_gate_structure() {
+        let gate = ProgressionGate::execution_to_evidence();
+        assert_eq!(gate.from_layer, Layer::Execution);
+        assert_eq!(gate.to_layer, Layer::Evidence);
+        assert_eq!(gate.predicates.len(), 3);
+        assert!(gate.predicates.contains(&GatePredicate::MissingAcceptance));
+        assert!(gate.predicates.contains(&GatePredicate::MissingEvidence));
+        assert!(gate.predicates.contains(&GatePredicate::MissingTest));
+    }
+
+    #[test]
+    fn layer_all_completeness() {
+        let all = Layer::all();
+        assert_eq!(
+            all,
+            &[
+                Layer::Intent,
+                Layer::IntentDoc,
+                Layer::SpecAdr,
+                Layer::PlanWbs,
+                Layer::Execution,
+                Layer::Evidence,
+            ]
+        );
+    }
+
+    #[test]
+    fn layer_next_chain_full() {
+        assert_eq!(Layer::Intent.next(), Some(Layer::IntentDoc));
+        assert_eq!(Layer::IntentDoc.next(), Some(Layer::SpecAdr));
+        assert_eq!(Layer::SpecAdr.next(), Some(Layer::PlanWbs));
+        assert_eq!(Layer::PlanWbs.next(), Some(Layer::Execution));
+        assert_eq!(Layer::Execution.next(), Some(Layer::Evidence));
+        assert_eq!(Layer::Evidence.next(), None);
+    }
+
+    #[test]
+    fn gate_reason_serde_roundtrip() {
+        let reasons = [
+            GateReason::NotApproved,
+            GateReason::MissingAcceptance,
+            GateReason::MissingEvidence,
+            GateReason::MissingImplementation,
+            GateReason::MissingTest,
+        ];
+        for r in reasons {
+            let json = serde_json::to_string(&r).unwrap();
+            let back: GateReason = serde_json::from_str(&json).unwrap();
+            assert_eq!(back, r);
+        }
+    }
+
+    #[test]
+    fn gate_predicate_serde_roundtrip() {
+        let preds = [
+            GatePredicate::NotApproved,
+            GatePredicate::MissingAcceptance,
+            GatePredicate::MissingEvidence,
+            GatePredicate::MissingImplementation,
+            GatePredicate::MissingTest,
+        ];
+        for p in preds {
+            let json = serde_json::to_string(&p).unwrap();
+            let back: GatePredicate = serde_json::from_str(&json).unwrap();
+            assert_eq!(back, p);
+        }
+    }
+
+    #[test]
+    fn layer_serde_roundtrip() {
+        for layer in Layer::all() {
+            let json = serde_json::to_string(layer).unwrap();
+            let back: Layer = serde_json::from_str(&json).unwrap();
+            assert_eq!(back, *layer);
+        }
+    }
+
+    #[test]
+    fn gherkin_ref_serde_roundtrip() {
+        let gr = GherkinRef {
+            feature_file: "login.feature".to_string(),
+            scenario: "valid login".to_string(),
+            line: Some(42),
+        };
+        let json = serde_json::to_string(&gr).unwrap();
+        let back: GherkinRef = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.feature_file, "login.feature");
+        assert_eq!(back.line, Some(42));
+    }
+
+    #[test]
+    fn gherkin_ref_serde_none_line() {
+        let gr = GherkinRef {
+            feature_file: "f.feature".to_string(),
+            scenario: "s".to_string(),
+            line: None,
+        };
+        let json = serde_json::to_string(&gr).unwrap();
+        let back: GherkinRef = serde_json::from_str(&json).unwrap();
+        assert!(back.line.is_none());
+    }
+
+    #[test]
+    fn criterion_serde_roundtrip() {
+        let c = Criterion {
+            id: "AC-5".to_string(),
+            test_ref: "test:T-5".to_string(),
+            evidence_ref: "FR-5".to_string(),
+        };
+        let json = serde_json::to_string(&c).unwrap();
+        let back: Criterion = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.id, "AC-5");
+        assert_eq!(back.test_ref, "test:T-5");
+    }
+
+    #[test]
+    fn gate_missing_test_blocks() {
+        let gate = ProgressionGate {
+            from_layer: Layer::Execution,
+            to_layer: Layer::Evidence,
+            predicates: vec![GatePredicate::MissingTest],
+        };
+        let ctx = GateContext {
+            has_test_links: false,
+            ..Default::default()
+        };
+        assert_eq!(gate.evaluate(&ctx), Err(GateReason::MissingTest));
+    }
+
+    #[test]
+    fn gate_test_links_pass() {
+        let gate = ProgressionGate {
+            from_layer: Layer::Execution,
+            to_layer: Layer::Evidence,
+            predicates: vec![GatePredicate::MissingTest],
+        };
+        let ctx = GateContext {
+            has_test_links: true,
+            ..Default::default()
+        };
+        assert!(gate.evaluate(&ctx).is_ok());
+    }
+
+    #[test]
+    fn gate_multiple_predicates_first_failure_wins() {
+        let gate = ProgressionGate {
+            from_layer: Layer::Execution,
+            to_layer: Layer::Evidence,
+            predicates: vec![
+                GatePredicate::NotApproved,
+                GatePredicate::MissingEvidence,
+            ],
+        };
+        let ctx = GateContext::default();
+        assert_eq!(gate.evaluate(&ctx), Err(GateReason::NotApproved));
+    }
 }

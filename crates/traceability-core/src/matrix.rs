@@ -336,4 +336,178 @@ mod tests {
             CoverageState::Partial
         );
     }
+
+    #[test]
+    fn neighbors_finds_correct_cells() {
+        let link = make_link(TraceLinkType::Verifies, 0.95, 1);
+        let source_id = link.source_artifact_id;
+        let target_id = link.target_artifact_id;
+        let r = build_matrix(&[link]);
+
+        let cells = neighbors(&r.matrix, &source_id);
+        assert_eq!(cells.len(), 1);
+        assert_eq!(cells[0].from, source_id.to_string());
+
+        let cells = neighbors(&r.matrix, &target_id);
+        assert_eq!(cells.len(), 1);
+        assert_eq!(cells[0].to, target_id.to_string());
+
+        // Non-existent id
+        let cells = neighbors(&r.matrix, &Uuid::new_v4());
+        assert!(cells.is_empty());
+    }
+
+    #[test]
+    fn added_and_removed_matrices() {
+        let a = make_link(TraceLinkType::Verifies, 0.95, 1);
+        let b = make_link(TraceLinkType::Verifies, 0.95, 1);
+        let old = build_matrix(&[a.clone()]).matrix;
+        let new = build_matrix(&[a, b]).matrix;
+        assert_eq!(added(&old, &new).len(), 1);
+        assert!(removed(&old, &new).is_empty());
+
+        // Different link types -> different cells -> removal detected
+        let link_a = make_link(TraceLinkType::Satisfies, 0.95, 1);
+        let link_b = make_link(TraceLinkType::Verifies, 0.95, 1);
+        let old3 = build_matrix(&[link_a]).matrix;
+        let new3 = build_matrix(&[link_b]).matrix;
+        assert_eq!(removed(&old3, &new3).len(), 1);
+    }
+
+    #[test]
+    fn changed_detects_coverage_shift() {
+        let a = make_link(TraceLinkType::Verifies, 0.95, 1);
+        let old = build_matrix(&[a.clone()]).matrix;
+        // New matrix has a low-confidence link -> partial
+        let mut low = a;
+        low.confidence = 0.3;
+        let new = build_matrix(&[low]).matrix;
+        assert_eq!(changed(&old, &new).len(), 1);
+    }
+
+    #[test]
+    fn build_from_pairs_empty() {
+        let r = build_from_pairs(&[]);
+        assert_eq!(r.link_count, 0);
+        assert_eq!(r.cell_count, 0);
+    }
+
+    #[test]
+    fn classify_cell_satisfies_high_confidence() {
+        assert_eq!(
+            classify_cell(&[make_link(TraceLinkType::Satisfies, 0.95, 1)]),
+            CoverageState::Covered
+        );
+    }
+
+    #[test]
+    fn classify_cell_satisfies_low_confidence() {
+        assert_eq!(
+            classify_cell(&[make_link(TraceLinkType::Satisfies, 0.5, 1)]),
+            CoverageState::Partial
+        );
+    }
+
+    #[test]
+    fn classify_cell_conflict_takes_precedence() {
+        let links = vec![
+            make_link(TraceLinkType::Verifies, 0.95, 1),
+            make_link(TraceLinkType::ConflictsWith, 0.95, 1),
+        ];
+        assert_eq!(classify_cell(&links), CoverageState::Conflict);
+    }
+
+    #[test]
+    fn classify_cell_stale_when_only_non_verifying_and_old() {
+        let link = make_link(TraceLinkType::DerivesFrom, 0.5, 120);
+        assert_eq!(classify_cell(&[link]), CoverageState::Stale);
+    }
+
+    #[test]
+    fn multiple_links_same_cell_coverage() {
+        let a = make_link(TraceLinkType::Verifies, 0.95, 1);
+        let mut b = make_link(TraceLinkType::Implements, 0.95, 1);
+        b.source_artifact_id = a.source_artifact_id;
+        b.target_artifact_id = a.target_artifact_id;
+        let r = build_matrix(&[a, b]);
+        assert_eq!(r.cell_count, 1);
+        assert_eq!(r.link_count, 2);
+        let cell = r.matrix.cells.values().next().unwrap();
+        assert_eq!(cell.coverage, CoverageState::Covered);
+    }
+
+    #[test]
+    fn stale_links_count() {
+        let fresh = make_link(TraceLinkType::Verifies, 0.95, 1);
+        let old = make_link(TraceLinkType::Verifies, 0.95, 100);
+        let r = build_matrix(&[fresh, old]);
+        assert_eq!(r.stale_links, 1);
+    }
+
+    #[test]
+    fn neighbors_empty_matrix() {
+        let m = CoverageMatrix::default();
+        assert!(neighbors(&m, &Uuid::new_v4()).is_empty());
+    }
+
+    #[test]
+    fn added_same_matrices_empty() {
+        let a = make_link(TraceLinkType::Verifies, 0.95, 1);
+        let m = build_matrix(&[a]).matrix;
+        assert!(added(&m, &m).is_empty());
+    }
+
+    #[test]
+    fn removed_same_matrices_empty() {
+        let a = make_link(TraceLinkType::Verifies, 0.95, 1);
+        let m = build_matrix(&[a]).matrix;
+        assert!(removed(&m, &m).is_empty());
+    }
+
+    #[test]
+    fn changed_same_matrices_empty() {
+        let a = make_link(TraceLinkType::Verifies, 0.95, 1);
+        let m = build_matrix(&[a]).matrix;
+        assert!(changed(&m, &m).is_empty());
+    }
+
+    #[test]
+    fn build_result_provenance_fields() {
+        let link = make_link(TraceLinkType::Verifies, 0.95, 1);
+        let r = build_matrix(&[link]);
+        assert_eq!(r.link_count, 1);
+        assert_eq!(r.cell_count, 1);
+        assert_eq!(r.stale_links, 0);
+        // generated_at and built_at should be recent
+        assert!(r.matrix.generated_at <= Utc::now());
+        assert!(r.built_at <= Utc::now());
+    }
+
+    #[test]
+    fn coverage_state_serde_roundtrip() {
+        let states = [
+            CoverageState::Covered,
+            CoverageState::Partial,
+            CoverageState::Missing,
+            CoverageState::Stale,
+            CoverageState::Conflict,
+        ];
+        for s in states {
+            let json = serde_json::to_string(&s).unwrap();
+            let back: CoverageState = serde_json::from_str(&json).unwrap();
+            assert_eq!(back, s);
+        }
+    }
+
+    #[test]
+    fn matrix_cell_serde_roundtrip() {
+        let link = make_link(TraceLinkType::Verifies, 0.95, 1);
+        let r = build_matrix(&[link]);
+        let cell = r.matrix.cells.values().next().unwrap();
+        let json = serde_json::to_string(cell).unwrap();
+        let back: MatrixCell = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.from, cell.from);
+        assert_eq!(back.to, cell.to);
+        assert_eq!(back.coverage, cell.coverage);
+    }
 }

@@ -331,4 +331,129 @@ mod tests {
         assert_eq!(back.from, link.from);
         assert_eq!(back.to, link.to);
     }
+
+    #[test]
+    fn with_confidence_boundary_zero_and_one() {
+        let link = TraceLink::new(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            TraceLinkType::Implements,
+        )
+        .unwrap();
+        assert!(link.clone().with_confidence(0.0).is_ok());
+        assert!(link.clone().with_confidence(1.0).is_ok());
+        assert!(link.clone().with_confidence(-0.1).is_err());
+    }
+
+    #[test]
+    fn is_core_for_non_core_types() {
+        assert!(!is_core_link_type(TraceLinkType::Refines));
+        assert!(!is_core_link_type(TraceLinkType::ConflictsWith));
+        assert!(!is_core_link_type(TraceLinkType::Duplicates));
+    }
+
+    #[test]
+    fn trace_link_default_confidence_is_one() {
+        let link = TraceLink::new(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            TraceLinkType::Satisfies,
+        )
+        .unwrap();
+        assert_eq!(link.confidence, 1.0);
+    }
+
+    #[test]
+    fn trace_link_default_metadata_is_empty() {
+        let link = TraceLink::new(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            TraceLinkType::Verifies,
+        )
+        .unwrap();
+        assert!(link.metadata.is_empty());
+        assert!(link.rationale.is_none());
+    }
+
+    #[test]
+    fn trace_link_has_timestamps() {
+        let link = TraceLink::new(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            TraceLinkType::Implements,
+        )
+        .unwrap();
+        assert!(link.created_at.is_some());
+        assert!(link.updated_at.is_some());
+    }
+
+    #[test]
+    fn trace_link_type_serde_roundtrip() {
+        let types = [
+            TraceLinkType::Satisfies,
+            TraceLinkType::Verifies,
+            TraceLinkType::Implements,
+            TraceLinkType::DerivesFrom,
+            TraceLinkType::Refines,
+            TraceLinkType::ConflictsWith,
+            TraceLinkType::Duplicates,
+        ];
+        for ty in types {
+            let json = serde_json::to_string(&ty).unwrap();
+            let back: TraceLinkType = serde_json::from_str(&json).unwrap();
+            assert_eq!(back, ty);
+        }
+    }
+
+    #[test]
+    fn neo4j_relationship_types_count_matches_link_types() {
+        assert_eq!(NEO4J_RELATIONSHIP_TYPES.len(), 7);
+    }
+
+    #[test]
+    fn neo4j_node_labels_count_matches_artifact_kinds() {
+        assert_eq!(NEO4J_NODE_LABELS.len(), 9);
+    }
+
+    #[test]
+    fn is_core_matches_core_const_len() {
+        let core_count = CORE_TRACE_LINK_TYPES
+            .iter()
+            .filter(|ty| is_core_link_type(**ty))
+            .count();
+        assert_eq!(core_count, CORE_TRACE_LINK_TYPES.len());
+    }
+
+    #[test]
+    fn trace_link_with_metadata() {
+        let mut link = TraceLink::new(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            TraceLinkType::Satisfies,
+        )
+        .unwrap();
+        link.metadata.insert(
+            "key".to_string(),
+            serde_json::Value::String("val".to_string()),
+        );
+        let json = serde_json::to_string(&link).unwrap();
+        let back: TraceLink = serde_json::from_str(&json).unwrap();
+        assert_eq!(
+            back.metadata.get("key"),
+            Some(&serde_json::Value::String("val".to_string()))
+        );
+    }
+
+    #[test]
+    fn trace_link_self_loop_error_display() {
+        let id = Uuid::new_v4();
+        let err = TraceLink::new(Uuid::new_v4(), id, id, TraceLinkType::Verifies).unwrap_err();
+        let msg = err.to_string();
+        assert!(msg.contains("must differ") || msg.contains("SelfLoop"));
+    }
 }
