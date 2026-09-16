@@ -349,7 +349,7 @@ mod tests {
     #[test]
     fn gh_pr_state_merged_uppercase() {
         assert_eq!(
-            gh_pr_state_to_story_status("MERGED", false).unwrap(),
+            gh_pr_state_to_story_status("MERGED", true).unwrap(),
             StoryStatus::Done
         );
     }

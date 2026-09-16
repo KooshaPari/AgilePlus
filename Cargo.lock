@@ -143,6 +143,11 @@ dependencies = [
 [[package]]
 name = "agileplus-api-types"
 version = "0.2.4"
+dependencies = [
+ "serde",
+ "serde_json",
+ "serde_yaml",
+]
 
 [[package]]
 name = "agileplus-application"
@@ -254,10 +259,14 @@ dependencies = [
 name = "agileplus-contract-tests"
 version = "0.2.4"
 dependencies = [
+ "agileplus-domain",
  "agileplus-events",
  "agileplus-sqlite",
  "async-trait",
+ "chrono",
+ "serde_json",
  "tokio",
+ "uuid",
 ]
 
 [[package]]
@@ -557,6 +566,7 @@ dependencies = [
  "hyper-util",
  "serde",
  "serde_json",
+ "tempfile",
  "thiserror 2.0.20",
  "tokio",
  "tracing",

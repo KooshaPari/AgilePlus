@@ -8,10 +8,16 @@ authors.workspace = true
 repository.workspace = true
 
 [dependencies]
+agileplus-domain = { version = "0.2.4", path = "../agileplus-domain" }
 agileplus-events = { version = "0.2.4", path = "../agileplus-events" }
 agileplus-sqlite = { version = "0.2.4", path = "../agileplus-sqlite" }
 tokio.workspace = true
 async-trait.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true
+chrono.workspace = true
+uuid.workspace = true
 
 [package.metadata.dist]
 dist = false

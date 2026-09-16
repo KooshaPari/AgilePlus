@@ -65,7 +65,7 @@ impl TokenBucket {
 pub struct GitHubIssuePayload {
     pub title: String,
     pub body: String,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub labels: Vec<String>,
 }
 
