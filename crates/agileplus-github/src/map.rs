@@ -533,7 +533,7 @@ mod tests {
 
     #[test]
     fn pr_to_story_empty_body_filtered() {
-        let mut pr = GhPullRequest {
+        let pr = GhPullRequest {
             number: 10,
             title: "Some PR".to_string(),
             body: Some("   ".to_string()),
