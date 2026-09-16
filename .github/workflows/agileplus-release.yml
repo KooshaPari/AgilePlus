@@ -1,11 +1,8 @@
-# Tag-triggered binary + crates.io release for agileplus-cli (all-3 distribution).
-# Complements the dispatch-based .github/workflows/release.yml orchestrator.
+# Manual-trigger release for agileplus-cli (all-3 distribution).
+# Tag-triggered releases are handled by .github/workflows/release.yml (cargo-dist).
 name: AgilePlus Release
 
 on:
-  push:
-    tags:
-      - "v*"
   workflow_dispatch:
 
 permissions:
