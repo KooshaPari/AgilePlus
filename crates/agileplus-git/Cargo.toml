@@ -12,8 +12,8 @@ categories = ["development-tools::version-control"]
 authors = ["kooshapari"]
 
 [dependencies]
-agileplus-domain = { version = "0.2.3", path = "../agileplus-domain" }
-agileplus-triage = { version = "0.2.3", path = "../agileplus-triage" }
+agileplus-domain = { version = "0.2.4", path = "../agileplus-domain" }
+agileplus-triage = { version = "0.2.4", path = "../agileplus-triage" }
 anyhow.workspace = true
 async-trait = "0.1"
 git2 = { version = "0.21", features = ["vendored-libgit2"] }

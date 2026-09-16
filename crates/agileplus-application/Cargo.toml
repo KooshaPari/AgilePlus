@@ -12,9 +12,9 @@ categories = ["data-structures"]
 authors = ["kooshapari"]
 
 [dependencies]
-agileplus-domain = { version = "0.2.3", path = "../agileplus-domain" }
-agileplus-triage = { version = "0.2.3", path = "../agileplus-triage" }
-agileplus-graph = { version = "0.2.3", path = "../agileplus-graph" }
+agileplus-domain = { version = "0.2.4", path = "../agileplus-domain" }
+agileplus-triage = { version = "0.2.4", path = "../agileplus-triage" }
+agileplus-graph = { version = "0.2.4", path = "../agileplus-graph" }
 serde = { workspace = true, features = ["derive"] }
 anyhow = "1.0"
 async-trait.workspace = true

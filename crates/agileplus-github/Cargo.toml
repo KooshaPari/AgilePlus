@@ -23,8 +23,8 @@ reqwest = { version = "0.12", features = ["json"] }
 sha2.workspace = true
 hex = "0.4"
 chrono.workspace = true
-agileplus-domain = { version = "0.2.3", path = "../agileplus-domain" }
-agileplus-triage = { version = "0.2.3", path = "../agileplus-triage" }
+agileplus-domain = { version = "0.2.4", path = "../agileplus-domain" }
+agileplus-triage = { version = "0.2.4", path = "../agileplus-triage" }
 
 [package.metadata.cargo-machete]
 ignored = ["chrono", "tracing"]

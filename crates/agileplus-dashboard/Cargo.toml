@@ -10,12 +10,12 @@ rust-version.workspace = true
 dirs = ["../../templates"]
 
 [dependencies]
-agileplus-domain = { version = "0.2.3", path = "../agileplus-domain" }
-agileplus-events = { version = "0.2.3", path = "../agileplus-events" }
+agileplus-domain = { version = "0.2.4", path = "../agileplus-domain" }
+agileplus-events = { version = "0.2.4", path = "../agileplus-events" }
 # agileplus-sqlite removed: unused by dashboard (uses rusqlite directly)
-agileplus-fixtures = { version = "0.2.3", path = "../agileplus-fixtures" }
+agileplus-fixtures = { version = "0.2.4", path = "../agileplus-fixtures" }
 agileplus-governance = { version = "0.1.0", path = "../agileplus-governance" }
-agileplus-plane = { version = "0.2.3", path = "../agileplus-plane" }
+agileplus-plane = { version = "0.2.4", path = "../agileplus-plane" }
 # agileplus-api removed: unused by dashboard
 askama = "0.16"
 axum = { version = "0.8", features = ["json", "macros", "tokio"] }

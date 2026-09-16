@@ -127,7 +127,7 @@ fn statement_complete(s: &str) -> bool {
             '-' if !in_single && !in_double && prev == '-' => {
                 in_line_comment = true;
             }
-            '/' if !in_single && !in_double && prev == '*' => {
+            '*' if !in_single && !in_double && prev == '/' => {
                 in_block_comment = true;
             }
             ';' if !in_single && !in_double => return true,
@@ -360,19 +360,16 @@ mod tests {
     }
 
     #[test]
-    fn statement_complete_block_comment_not_handled() {
-        // NOTE: statement_complete does NOT handle block comments (/* */).
-        // /* is not recognized as comment start, so ; is still a terminator.
-        // But */ after block close triggers block-comment-close logic (prev='*' c='/'),
-        // which sets in_block_comment=false (it was already false), so no effect.
+    fn statement_complete_block_comment_handled() {
+        // Block comments (/* */) are tracked; ; outside is a terminator.
         assert!(statement_complete("/* block */ SELECT 1;"));
     }
 
     #[test]
     fn statement_complete_semicolon_not_in_block_comment() {
-        // Same: block comments are not tracked, so the ; inside
-        // /* ; */ is treated as a real statement terminator.
-        assert!(statement_complete("/* ; */ SELECT 1"));
+        // Block comments are now tracked, so the ; inside
+        // /* ; */ is NOT treated as a real statement terminator.
+        assert!(!statement_complete("/* ; */ SELECT 1"));
     }
 
     #[test]
