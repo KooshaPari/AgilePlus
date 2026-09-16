@@ -597,4 +597,246 @@ mod tests {
             "wrong state for operation"
         );
     }
+
+    // ── Additional edge case tests ───────────────────────────────────────
+
+    #[test]
+    fn claim_age_seconds() {
+        let now = Utc::now();
+        let c = Claim {
+            id: "x".into(),
+            resource: "r".into(),
+            kind: ClaimKind::Repo,
+            agent_id: "a".into(),
+            created_at: now,
+            last_heartbeat: now - chrono::Duration::seconds(10),
+            ttl_seconds: 60,
+            state: ClaimState::Active,
+            reason: ClaimReason::default(),
+        };
+        let age = c.age_seconds(now);
+        assert!(age >= 9 && age <= 11, "age should be ~10, got {age}");
+    }
+
+    #[test]
+    fn claim_is_expired_before_ttl() {
+        let now = Utc::now();
+        let c = Claim {
+            id: "x".into(),
+            resource: "r".into(),
+            kind: ClaimKind::Repo,
+            agent_id: "a".into(),
+            created_at: now,
+            last_heartbeat: now,
+            ttl_seconds: 3600,
+            state: ClaimState::Active,
+            reason: ClaimReason::default(),
+        };
+        assert!(!c.is_expired(now));
+    }
+
+    #[test]
+    fn claim_is_expired_after_ttl() {
+        let now = Utc::now();
+        let c = Claim {
+            id: "x".into(),
+            resource: "r".into(),
+            kind: ClaimKind::Repo,
+            agent_id: "a".into(),
+            created_at: now,
+            last_heartbeat: now - chrono::Duration::seconds(100),
+            ttl_seconds: 60,
+            state: ClaimState::Active,
+            reason: ClaimReason::default(),
+        };
+        assert!(c.is_expired(now));
+    }
+
+    #[test]
+    fn claim_store_lookup_missing() {
+        let s = ClaimStore::new();
+        assert!(s.lookup(ClaimKind::Repo, "nonexistent").is_none());
+    }
+
+    #[test]
+    fn claim_store_lookup_after_heartbeat() {
+        let mut s = ClaimStore::new();
+        s.claim(
+            "c1",
+            "repo:foo",
+            ClaimKind::Repo,
+            "agent-a",
+            60,
+            ClaimReason::default(),
+        );
+        s.heartbeat("c1");
+        let found = s.lookup(ClaimKind::Repo, "repo:foo");
+        assert!(found.is_some());
+        assert_eq!(found.unwrap().id, "c1");
+    }
+
+    #[test]
+    fn claim_store_reap_no_expired() {
+        let mut s = ClaimStore::new();
+        s.claim(
+            "c1",
+            "repo:foo",
+            ClaimKind::Repo,
+            "agent-a",
+            3600,
+            ClaimReason::default(),
+        );
+        let reaped = s.reap_expired(Utc::now());
+        assert_eq!(reaped, 0);
+        assert_eq!(s.all().len(), 1);
+    }
+
+    #[test]
+    fn claim_store_reap_mixed() {
+        let mut s = ClaimStore::new();
+        // c1 will be expired (ttl=0)
+        s.claim("c1", "r1", ClaimKind::Repo, "a", 0, ClaimReason::default());
+        // c2 will not be expired (ttl=3600)
+        s.claim(
+            "c2",
+            "r2",
+            ClaimKind::Repo,
+            "a",
+            3600,
+            ClaimReason::default(),
+        );
+        std::thread::sleep(std::time::Duration::from_millis(2));
+        let reaped = s.reap_expired(Utc::now());
+        assert_eq!(reaped, 1);
+        assert_eq!(s.all().len(), 1);
+        assert!(s.lookup(ClaimKind::Repo, "r2").is_some());
+    }
+
+    #[test]
+    fn claim_store_overwrite_same_id() {
+        let mut s = ClaimStore::new();
+        s.claim(
+            "c1",
+            "repo:foo",
+            ClaimKind::Repo,
+            "agent-a",
+            60,
+            ClaimReason::default(),
+        );
+        // Re-claim with same id should succeed (upsert).
+        let c = s.claim(
+            "c1",
+            "repo:foo",
+            ClaimKind::Repo,
+            "agent-a",
+            120,
+            ClaimReason::TaskRef("wp-2".into()),
+        );
+        assert!(c.is_some());
+        let c = c.unwrap();
+        assert_eq!(c.ttl_seconds, 120);
+        assert_eq!(c.reason, ClaimReason::TaskRef("wp-2".into()));
+    }
+
+    #[test]
+    fn claim_store_release_nonexistent() {
+        let mut s = ClaimStore::new();
+        assert!(!s.release("does-not-exist"));
+    }
+
+    #[test]
+    fn claim_store_heartbeat_nonexistent() {
+        let mut s = ClaimStore::new();
+        assert!(!s.heartbeat("does-not-exist"));
+    }
+
+    #[test]
+    fn claim_store_active_filters_non_active() {
+        let mut s = ClaimStore::new();
+        s.claim(
+            "c1",
+            "r1",
+            ClaimKind::Repo,
+            "a",
+            60,
+            ClaimReason::default(),
+        );
+        s.claim(
+            "c2",
+            "r2",
+            ClaimKind::Repo,
+            "a",
+            60,
+            ClaimReason::default(),
+        );
+        assert_eq!(s.active().len(), 2);
+        // Transfer c1 -> c3 makes c1 Draining
+        s.claim_transfer("c1", "c3", "agent-b").unwrap();
+        let active = s.active();
+        // c1 is Draining, c2 and c3 are Active
+        assert_eq!(active.len(), 2);
+        let active_ids: Vec<&str> = active.iter().map(|c| c.id.as_str()).collect();
+        assert!(active_ids.contains(&"c2"));
+        assert!(active_ids.contains(&"c3"));
+        assert!(!active_ids.contains(&"c1"));
+    }
+
+    #[test]
+    fn claim_reason_subproject_and_wiprun() {
+        assert_eq!(
+            ClaimReason::Subproject("infra".into()).kind_str(),
+            "subproject"
+        );
+        assert_eq!(ClaimReason::Subproject("infra".into()).value(), "infra");
+        assert_eq!(ClaimReason::WipRun("run-42".into()).kind_str(), "wip_run");
+        assert_eq!(ClaimReason::WipRun("run-42".into()).value(), "run-42");
+    }
+
+    #[test]
+    fn claim_store_trait_get_all_active_lookup() {
+        let mut s: Box<dyn ClaimStoreTrait> = Box::new(ClaimStore::new());
+        s.claim(
+            "c1",
+            "repo:bar",
+            ClaimKind::Repo,
+            "agent-a",
+            60,
+            ClaimReason::default(),
+        );
+        assert_eq!(s.all().len(), 1);
+        assert_eq!(s.active().len(), 1);
+        assert!(s.lookup(ClaimKind::Repo, "repo:bar").is_some());
+    }
+
+    #[test]
+    fn claim_store_claim_transfer_trait_dispatch() {
+        let mut s: Box<dyn ClaimStoreTrait> = Box::new(ClaimStore::new());
+        s.claim(
+            "c1",
+            "branch:feat",
+            ClaimKind::Branch,
+            "agent-a",
+            3600,
+            ClaimReason::Branch("feat/login".into()),
+        )
+        .unwrap();
+        let new = s.claim_transfer("c1", "c2", "agent-b").unwrap();
+        assert_eq!(new.agent_id, "agent-b");
+    }
+
+    #[test]
+    fn claim_store_reap_expired_trait_dispatch() {
+        let mut s: Box<dyn ClaimStoreTrait> = Box::new(ClaimStore::new());
+        s.claim(
+            "c1",
+            "r",
+            ClaimKind::Repo,
+            "a",
+            0,
+            ClaimReason::default(),
+        );
+        std::thread::sleep(std::time::Duration::from_millis(2));
+        let reaped = s.reap_expired(Utc::now());
+        assert_eq!(reaped, 1);
+    }
 }

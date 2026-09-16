@@ -339,4 +339,71 @@ mod tests {
             );
         }
     }
+
+    #[test]
+    fn rust_tokenizer_handles_fat_arrow() {
+        let t = RustTokenizer;
+        let src = "match x { Some(v) => v, None => 0 }";
+        let toks = t.tokenize(src);
+        assert!(toks.contains(&"=>".to_string()));
+        assert!(toks.contains(&"match".to_string()));
+    }
+
+    #[test]
+    fn rust_tokenizer_numeric_literals() {
+        let t = RustTokenizer;
+        let src = "let x = 42;";
+        let toks = t.tokenize(src);
+        assert!(toks.contains(&"42".to_string()));
+    }
+
+    #[test]
+    fn python_tokenizer_elif_and_except() {
+        let t = PythonTokenizer;
+        let src = "if x: pass\nelif y: pass\ntry: pass\nexcept: pass";
+        let toks = t.tokenize(src);
+        let set = uniq(&toks);
+        assert!(set.contains("if"));
+        assert!(set.contains("elif"));
+        assert!(set.contains("try"));
+        assert!(set.contains("except"));
+    }
+
+    #[test]
+    fn python_tokenizer_from_import() {
+        let t = PythonTokenizer;
+        let src = "from os import path";
+        let toks = t.tokenize(src);
+        let set = uniq(&toks);
+        assert!(set.contains("from"));
+        assert!(set.contains("import"));
+    }
+
+    #[test]
+    fn for_language_case_insensitive() {
+        assert!(for_language("Rust").is_some());
+        assert!(for_language("PYTHON").is_some());
+        assert!(for_language("GoLang").is_none());
+    }
+
+    #[test]
+    fn rust_tokenizer_number_operators() {
+        let t = RustTokenizer;
+        let src = "1 + 2 * 3";
+        let toks = t.tokenize(src);
+        assert!(toks.contains(&"1".to_string()));
+        assert!(toks.contains(&"2".to_string()));
+        assert!(toks.contains(&"3".to_string()));
+        assert!(toks.contains(&"+".to_string()));
+        assert!(toks.contains(&"*".to_string()));
+    }
+
+    #[test]
+    fn python_tokenizer_f_string_like() {
+        let t = PythonTokenizer;
+        let src = r#"x = f"hello {name}""#;
+        let toks = t.tokenize(src);
+        // Should not panic and should produce some tokens
+        assert!(!toks.is_empty());
+    }
 }

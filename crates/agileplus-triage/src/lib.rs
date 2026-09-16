@@ -168,4 +168,68 @@ mod tests {
         let result = classify_ticket(&classifier::TriageClassifier::new(), &parsed);
         assert_eq!(result.intent, classifier::Intent::Feature);
     }
+
+    #[test]
+    fn parse_triage_input_empty_input_errors() {
+        let args = TriageArgs {
+            input: vec![],
+            r#type: None,
+            dry_run: false,
+            output: "table".into(),
+        };
+        assert!(parse_triage_input(&args).is_err());
+    }
+
+    #[test]
+    fn parse_triage_input_whitespace_only_errors() {
+        let args = TriageArgs {
+            input: vec!["   ".into(), "  ".into()],
+            r#type: None,
+            dry_run: false,
+            output: "table".into(),
+        };
+        assert!(parse_triage_input(&args).is_err());
+    }
+
+    #[test]
+    fn parse_triage_input_no_override() {
+        let args = TriageArgs {
+            input: vec!["Fix the crash".into()],
+            r#type: None,
+            dry_run: false,
+            output: "table".into(),
+        };
+        let parsed = parse_triage_input(&args).unwrap();
+        assert_eq!(parsed.input, "Fix the crash");
+        assert!(parsed.override_intent.is_none());
+    }
+
+    #[test]
+    fn parse_intent_valid_variants() {
+        assert!(parse_intent("bug").is_ok());
+        assert!(parse_intent("BUG").is_ok());
+        assert!(parse_intent("feature").is_ok());
+        assert!(parse_intent("idea").is_ok());
+        assert!(parse_intent("task").is_ok());
+        assert!(parse_intent("docs").is_ok());
+    }
+
+    #[test]
+    fn parse_intent_invalid() {
+        assert!(parse_intent("invalid_intent").is_err());
+    }
+
+    #[test]
+    fn classify_ticket_with_override() {
+        let args = TriageArgs {
+            input: vec!["Some text".into()],
+            r#type: Some("idea".into()),
+            dry_run: true,
+            output: "json".into(),
+        };
+        let parsed = parse_triage_input(&args).unwrap();
+        let result = classify_ticket(&classifier::TriageClassifier::new(), &parsed);
+        assert_eq!(result.intent, classifier::Intent::Idea);
+        assert_eq!(result.confidence, 1.0);
+    }
 }

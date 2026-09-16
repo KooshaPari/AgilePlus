@@ -197,3 +197,217 @@ fn has_source_files(p: &Path) -> bool {
     }
     false
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::TempDir;
+
+    #[test]
+    fn no_git_directory_no_source_files() {
+        let tmp = TempDir::new().unwrap();
+        let info = inspect_repo(tmp.path());
+        assert_eq!(info.state, RepoState::NoGit);
+        assert_eq!(info.hygiene_score, 30);
+        assert!(info.current_branch.is_none());
+        assert!(info.branches.is_empty());
+        assert!(info.remotes.is_empty());
+    }
+
+    #[test]
+    fn no_git_directory_with_source_files() {
+        let tmp = TempDir::new().unwrap();
+        std::fs::create_dir_all(tmp.path().join("src")).unwrap();
+        let info = inspect_repo(tmp.path());
+        assert_eq!(info.state, RepoState::NoGit);
+        assert_eq!(info.hygiene_score, 70);
+    }
+
+    #[test]
+    fn has_source_files_various_markers() {
+        let tmp = TempDir::new().unwrap();
+        assert!(!has_source_files(tmp.path()));
+        for marker in &["src", "lib", "pkg", "cmd", "crates", "backend", "frontend", "app"] {
+            let dir = tmp.path().join(marker);
+            std::fs::create_dir_all(&dir).unwrap();
+            assert!(has_source_files(tmp.path()), "{marker} should be detected");
+            std::fs::remove_dir(&dir).unwrap();
+        }
+    }
+
+    #[test]
+    fn valid_git_repo() {
+        let tmp = TempDir::new().unwrap();
+        let git_dir = tmp.path().join(".git");
+        std::fs::create_dir_all(&git_dir).unwrap();
+        // Create HEAD
+        std::fs::write(git_dir.join("HEAD"), "ref: refs/heads/main\n").unwrap();
+        // Create branches
+        let heads = git_dir.join("refs").join("heads");
+        std::fs::create_dir_all(&heads).unwrap();
+        std::fs::write(heads.join("main"), "abc123\n").unwrap();
+        std::fs::write(heads.join("feat-x"), "def456\n").unwrap();
+        // Create config with a remote
+        std::fs::write(
+            git_dir.join("config"),
+            "[remote \"origin\"]\n\turl = https://github.com/test/repo.git\n",
+        )
+        .unwrap();
+
+        let info = inspect_repo(tmp.path());
+        assert_eq!(info.state, RepoState::Git);
+        assert_eq!(info.hygiene_score, 100);
+        assert_eq!(info.current_branch.as_deref(), Some("main"));
+        assert!(info.branches.contains(&"main".to_string()));
+        assert!(info.branches.contains(&"feat-x".to_string()));
+        assert_eq!(info.remotes.len(), 1);
+        assert_eq!(info.remotes[0].name, "origin");
+        assert_eq!(info.remotes[0].url, "https://github.com/test/repo.git");
+    }
+
+    #[test]
+    fn mangled_git_missing_head() {
+        let tmp = TempDir::new().unwrap();
+        let git_dir = tmp.path().join(".git");
+        std::fs::create_dir_all(&git_dir).unwrap();
+        // No HEAD file
+        let info = inspect_repo(tmp.path());
+        assert_eq!(info.state, RepoState::MangledGit);
+        assert_eq!(info.hygiene_score, 50);
+    }
+
+    #[test]
+    fn linked_worktree_gitdir_file() {
+        let tmp = TempDir::new().unwrap();
+        let worktree_dir = tmp.path().join("worktree");
+        std::fs::create_dir_all(&worktree_dir).unwrap();
+
+        // Create a real git dir elsewhere
+        let real_git = tmp.path().join("real_git");
+        std::fs::create_dir_all(&real_git).unwrap();
+        std::fs::write(real_git.join("HEAD"), "ref: refs/heads/main\n").unwrap();
+
+        // Write a .git file pointing to the real git dir
+        std::fs::write(
+            worktree_dir.join(".git"),
+            format!("gitdir: {}\n", real_git.display()),
+        )
+        .unwrap();
+
+        let info = inspect_repo(&worktree_dir);
+        assert_eq!(info.state, RepoState::Git);
+        assert_eq!(info.hygiene_score, 100);
+    }
+
+    #[test]
+    fn linked_worktree_broken_gitdir() {
+        let tmp = TempDir::new().unwrap();
+        let worktree_dir = tmp.path().join("worktree");
+        std::fs::create_dir_all(&worktree_dir).unwrap();
+        std::fs::write(
+            worktree_dir.join(".git"),
+            "gitdir: /nonexistent/path\n",
+        )
+        .unwrap();
+
+        let info = inspect_repo(&worktree_dir);
+        assert_eq!(info.state, RepoState::MangledGit);
+        assert_eq!(info.hygiene_score, 50);
+    }
+
+    #[test]
+    fn read_remotes_multiple() {
+        let tmp = TempDir::new().unwrap();
+        let git_dir = tmp.path();
+        let config_content = r#"
+[remote "origin"]
+	url = https://github.com/org/repo.git
+[remote "upstream"]
+	url = https://github.com/upstream/repo.git
+"#;
+        std::fs::write(git_dir.join("config"), config_content).unwrap();
+        let remotes = read_remotes(git_dir);
+        assert_eq!(remotes.len(), 2);
+        assert_eq!(remotes[0].name, "origin");
+        assert_eq!(remotes[0].url, "https://github.com/org/repo.git");
+        assert_eq!(remotes[1].name, "upstream");
+    }
+
+    #[test]
+    fn read_remotes_empty_config() {
+        let tmp = TempDir::new().unwrap();
+        std::fs::write(tmp.path().join("config"), "").unwrap();
+        let remotes = read_remotes(tmp.path());
+        assert!(remotes.is_empty());
+    }
+
+    #[test]
+    fn read_branches_empty() {
+        let tmp = TempDir::new().unwrap();
+        let heads = tmp.path().join("refs").join("heads");
+        std::fs::create_dir_all(&heads).unwrap();
+        let branches = read_branches(tmp.path());
+        assert!(branches.is_empty());
+    }
+
+    #[test]
+    fn read_branches_with_files() {
+        let tmp = TempDir::new().unwrap();
+        let heads = tmp.path().join("refs").join("heads");
+        std::fs::create_dir_all(&heads.join("sub")).unwrap();
+        std::fs::write(heads.join("main"), "abc").unwrap();
+        std::fs::write(heads.join("sub").join("nested"), "def").unwrap();
+        let branches = read_branches(tmp.path());
+        assert!(branches.contains(&"main".to_string()));
+        assert!(branches.contains(&"sub/nested".to_string()));
+    }
+
+    #[test]
+    fn read_worktrees_empty() {
+        let tmp = TempDir::new().unwrap();
+        let worktrees = read_worktrees(tmp.path());
+        assert!(worktrees.is_empty());
+    }
+
+    #[test]
+    fn read_worktrees_with_entries() {
+        let tmp = TempDir::new().unwrap();
+        let wt = tmp.path().join("worktrees");
+        std::fs::create_dir_all(&wt).unwrap();
+        std::fs::create_dir(wt.join("wt-1")).unwrap();
+        std::fs::create_dir(wt.join("wt-2")).unwrap();
+        let worktrees = read_worktrees(tmp.path());
+        assert_eq!(worktrees.len(), 2);
+        assert!(worktrees.contains(&"wt-1".to_string()));
+        assert!(worktrees.contains(&"wt-2".to_string()));
+    }
+
+    #[test]
+    fn repo_info_serialization_roundtrip() {
+        let info = RepoInfo {
+            path: "/tmp/test".to_string(),
+            state: RepoState::Git,
+            current_branch: Some("main".to_string()),
+            branches: vec!["main".to_string()],
+            worktrees: vec![],
+            remotes: vec![RemoteInfo {
+                name: "origin".to_string(),
+                url: "https://example.com".to_string(),
+            }],
+            hygiene_score: 100,
+        };
+        let json = serde_json::to_string(&info).unwrap();
+        let back: RepoInfo = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.state, RepoState::Git);
+        assert_eq!(back.hygiene_score, 100);
+    }
+
+    #[test]
+    fn repo_state_serialization() {
+        for state in [RepoState::Git, RepoState::MangledGit, RepoState::NoGit] {
+            let json = serde_json::to_string(&state).unwrap();
+            let back: RepoState = serde_json::from_str(&json).unwrap();
+            assert_eq!(back, state);
+        }
+    }
+}
