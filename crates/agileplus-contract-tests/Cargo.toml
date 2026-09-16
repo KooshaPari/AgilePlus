@@ -1,0 +1,17 @@
+[package]
+name = "agileplus-contract-tests"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+agileplus-events = { version = "0.2.1", path = "../agileplus-events" }
+agileplus-sqlite = { version = "0.2.1", path = "../agileplus-sqlite" }
+tokio.workspace = true
+async-trait.workspace = true
+
+[package.metadata.dist]
+dist = false

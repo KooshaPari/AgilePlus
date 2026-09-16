@@ -6,6 +6,7 @@
 !pyproject.toml
 !deny.toml
 !.gitleaks.toml
+!Cargo.toml
 !package.json
 !vercel.json
 !.commitlintrc.json
