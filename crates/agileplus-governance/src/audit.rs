@@ -893,4 +893,228 @@ mod extended_tests {
         let events = logger.query(&AuditFilter::new()).unwrap();
         assert_eq!(events.len(), 1);
     }
+
+    // ── Additional coverage tests ────────────────────────────────────────
+
+    #[tokio::test]
+    async fn audit_query_by_result() {
+        let logger = AuditLogger::in_memory().unwrap();
+        logger.log(&AuditEvent::success("a")).unwrap();
+        logger.log(&AuditEvent::error("b", "fail")).unwrap();
+        logger
+            .log(&AuditEvent::new(
+                "c",
+                LogLevel::Info,
+                OperationResult::PartialSuccess,
+            ))
+            .unwrap();
+
+        let failures = logger
+            .query(&AuditFilter {
+                result: Some(OperationResult::Failure),
+                ..AuditFilter::new()
+            })
+            .unwrap();
+        assert_eq!(failures.len(), 1);
+        assert_eq!(failures[0].action, "b");
+
+        let successes = logger
+            .query(&AuditFilter {
+                result: Some(OperationResult::Success),
+                ..AuditFilter::new()
+            })
+            .unwrap();
+        assert_eq!(successes.len(), 1);
+
+        let partial = logger
+            .query(&AuditFilter {
+                result: Some(OperationResult::PartialSuccess),
+                ..AuditFilter::new()
+            })
+            .unwrap();
+        assert_eq!(partial.len(), 1);
+    }
+
+    #[tokio::test]
+    async fn audit_query_by_category() {
+        let logger = AuditLogger::in_memory().unwrap();
+        logger
+            .log(
+                &AuditEvent::success("a").with_category(ActionCategory::Release),
+            )
+            .unwrap();
+        logger
+            .log(
+                &AuditEvent::success("b").with_category(ActionCategory::Policy),
+            )
+            .unwrap();
+
+        let releases = logger
+            .query(&AuditFilter {
+                category: Some(ActionCategory::Release),
+                ..AuditFilter::new()
+            })
+            .unwrap();
+        assert_eq!(releases.len(), 1);
+        assert_eq!(releases[0].action, "a");
+    }
+
+    #[tokio::test]
+    async fn audit_query_by_resource() {
+        let logger = AuditLogger::in_memory().unwrap();
+        logger
+            .log(
+                &AuditEvent::success("a")
+                    .with_resource("package", Some("pkg-1".into())),
+            )
+            .unwrap();
+        logger
+            .log(
+                &AuditEvent::success("b")
+                    .with_resource("release", Some("rel-1".into())),
+            )
+            .unwrap();
+
+        let packages = logger
+            .query(&AuditFilter {
+                resource: Some("package".into()),
+                ..AuditFilter::new()
+            })
+            .unwrap();
+        assert_eq!(packages.len(), 1);
+        assert_eq!(packages[0].action, "a");
+    }
+
+    #[tokio::test]
+    async fn audit_query_limit_and_offset() {
+        let logger = AuditLogger::in_memory().unwrap();
+        for i in 0..5 {
+            logger
+                .log(&AuditEvent::success(format!("action_{}", i)))
+                .unwrap();
+        }
+
+        let limited = logger
+            .query(&AuditFilter {
+                limit: 2,
+                ..AuditFilter::new()
+            })
+            .unwrap();
+        assert_eq!(limited.len(), 2);
+
+        let offset = logger
+            .query(&AuditFilter {
+                limit: 2,
+                offset: 3,
+                ..AuditFilter::new()
+            })
+            .unwrap();
+        assert_eq!(offset.len(), 2);
+    }
+
+    #[tokio::test]
+    async fn audit_query_unsynced_only_filters_synced() {
+        let logger = AuditLogger::in_memory().unwrap();
+        let e1 = AuditEvent::success("synced");
+        let e2 = AuditEvent::success("unsynced");
+        logger.log(&e1).unwrap();
+        logger.log(&e2).unwrap();
+        logger.mark_synced(&[e1.id.clone()]).unwrap();
+
+        let unsynced = logger
+            .query(&AuditFilter::new().unsynced())
+            .unwrap();
+        assert_eq!(unsynced.len(), 1);
+        assert_eq!(unsynced[0].action, "unsynced");
+    }
+
+    #[tokio::test]
+    async fn audit_stats_top_actions() {
+        let logger = AuditLogger::in_memory().unwrap();
+        for _ in 0..5 {
+            logger.log(&AuditEvent::success("frequent")).unwrap();
+        }
+        logger.log(&AuditEvent::success("rare")).unwrap();
+
+        let stats = logger.stats().unwrap();
+        assert_eq!(stats.total, 6);
+        assert!(stats.top_actions.len() >= 2);
+        let top = stats.top_actions.iter().find(|a| a.action == "frequent");
+        assert!(top.is_some());
+        assert_eq!(top.unwrap().count, 5);
+    }
+
+    #[tokio::test]
+    async fn audit_cleanup_removes_old_events() {
+        let logger = AuditLogger::in_memory().unwrap();
+        logger.log(&AuditEvent::success("recent")).unwrap();
+        let deleted = logger.cleanup().unwrap();
+        // With 90-day retention and a freshly created event, nothing should be deleted
+        assert_eq!(deleted, 0);
+    }
+
+    #[tokio::test]
+    async fn audit_event_with_parameters_and_stack_trace() {
+        let event = AuditEvent::success("test")
+            .with_parameters(serde_json::json!({"key": "value"}));
+        let mut event = event;
+        event.stack_trace = Some("at fn foo() line 42".into());
+        assert!(event.parameters.is_some());
+        assert_eq!(
+            event.parameters.unwrap()["key"],
+            serde_json::json!("value")
+        );
+        assert_eq!(
+            event.stack_trace.as_deref(),
+            Some("at fn foo() line 42")
+        );
+    }
+
+    #[tokio::test]
+    async fn audit_event_with_result_override() {
+        let event =
+            AuditEvent::success("test").with_result(OperationResult::PartialSuccess);
+        assert_eq!(event.result, OperationResult::PartialSuccess);
+    }
+
+    #[tokio::test]
+    async fn audit_event_with_action_override() {
+        let event = AuditEvent::success("original").with_action("overridden");
+        assert_eq!(event.action, "overridden");
+    }
+
+    #[tokio::test]
+    async fn audit_filter_time_range() {
+        let logger = AuditLogger::in_memory().unwrap();
+        logger.log(&AuditEvent::success("a")).unwrap();
+
+        let now = Utc::now();
+        let filter =
+            AuditFilter::new().time_range(now - chrono::Duration::hours(1), now);
+        let events = logger.query(&filter).unwrap();
+        assert_eq!(events.len(), 1);
+
+        // Use a time range in the far past to get no results
+        let past = Utc::now() - chrono::Duration::days(365);
+        let filter = AuditFilter::new()
+            .time_range(past, past + chrono::Duration::seconds(1));
+        let events = logger.query(&filter).unwrap();
+        assert!(events.is_empty());
+    }
+
+    #[tokio::test]
+    async fn audit_filter_builder_chain() {
+        let filter = AuditFilter::new()
+            .action("deploy")
+            .user("alice")
+            .time_range(Utc::now(), Utc::now())
+            .unsynced()
+            .limit(50);
+        assert_eq!(filter.action.as_deref(), Some("deploy"));
+        assert_eq!(filter.user_id.as_deref(), Some("alice"));
+        assert!(filter.start_time.is_some());
+        assert!(filter.end_time.is_some());
+        assert!(filter.unsynced_only);
+        assert_eq!(filter.limit, 50);
+    }
 }

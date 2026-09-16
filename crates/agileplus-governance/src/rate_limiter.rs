@@ -424,4 +424,139 @@ mod extended_tests {
         assert_eq!(cfg.max_requests, 100);
         assert_eq!(cfg.window, Duration::from_secs(3600));
     }
+
+    // ── Additional coverage tests ────────────────────────────────────────
+
+    #[tokio::test]
+    async fn anonymous_key_constructor() {
+        let key = RateLimitKey::anonymous(Some("10.0.0.1".into()), "read");
+        assert!(key.user_id.is_none());
+        assert_eq!(key.client_ip.as_deref(), Some("10.0.0.1"));
+        assert_eq!(key.action, "read");
+    }
+
+    #[tokio::test]
+    async fn new_key_constructor() {
+        let key = RateLimitKey::new(
+            Some("user1".into()),
+            Some("192.168.1.1".into()),
+            "write",
+        );
+        assert_eq!(key.user_id.as_deref(), Some("user1"));
+        assert_eq!(key.client_ip.as_deref(), Some("192.168.1.1"));
+        assert_eq!(key.action, "write");
+    }
+
+    #[tokio::test]
+    async fn len_and_is_empty_tracking() {
+        let limiter = RateLimiter::new(RateLimitConfig {
+            max_requests: 10,
+            window: Duration::from_secs(60),
+        });
+        assert!(limiter.is_empty().await);
+        assert_eq!(limiter.len().await, 0);
+
+        let key1 = RateLimitKey::anonymous(None, "a");
+        limiter.check(&key1).await;
+        assert!(!limiter.is_empty().await);
+        assert_eq!(limiter.len().await, 1);
+
+        let key2 = RateLimitKey::anonymous(None, "b");
+        limiter.check(&key2).await;
+        assert_eq!(limiter.len().await, 2);
+    }
+
+    #[tokio::test]
+    async fn peek_returns_full_when_no_entry() {
+        let limiter = RateLimiter::new(RateLimitConfig {
+            max_requests: 10,
+            window: Duration::from_secs(60),
+        });
+        let key = RateLimitKey::anonymous(None, "fresh");
+        let result = limiter.peek(&key).await;
+        assert!(result.allowed);
+        assert_eq!(result.remaining, 10);
+    }
+
+    #[tokio::test]
+    async fn check_decrements_remaining() {
+        let limiter = RateLimiter::new(RateLimitConfig {
+            max_requests: 3,
+            window: Duration::from_secs(60),
+        });
+        let key = RateLimitKey::anonymous(None, "countdown");
+        let r1 = limiter.check(&key).await;
+        assert!(r1.allowed);
+        assert!(r1.remaining <= 2);
+
+        let r2 = limiter.check(&key).await;
+        assert!(r2.allowed);
+        assert!(r2.remaining <= 1);
+
+        let r3 = limiter.check(&key).await;
+        assert!(r3.allowed);
+
+        let r4 = limiter.check(&key).await;
+        assert!(!r4.allowed);
+        assert_eq!(r4.remaining, 0);
+    }
+
+    #[tokio::test]
+    async fn reset_all_clears_all_keys() {
+        let limiter = RateLimiter::new(RateLimitConfig {
+            max_requests: 5,
+            window: Duration::from_secs(60),
+        });
+        let k1 = RateLimitKey::anonymous(None, "a");
+        let k2 = RateLimitKey::anonymous(None, "b");
+        let k3 = RateLimitKey::anonymous(None, "c");
+        limiter.check(&k1).await;
+        limiter.check(&k2).await;
+        limiter.check(&k3).await;
+        assert_eq!(limiter.len().await, 3);
+
+        limiter.reset_all().await;
+        assert!(limiter.is_empty().await);
+        assert_eq!(limiter.len().await, 0);
+    }
+
+    #[tokio::test]
+    async fn reset_nonexistent_key_does_not_panic() {
+        let limiter = RateLimiter::default_limiter();
+        let key = RateLimitKey::anonymous(None, "nonexistent");
+        limiter.reset(&key).await;
+        assert!(limiter.is_empty().await);
+    }
+
+    #[tokio::test]
+    async fn default_limiter_factory() {
+        let limiter = RateLimiter::default_limiter();
+        let config = &limiter.config;
+        assert_eq!(config.max_requests, 100);
+        assert_eq!(config.window, Duration::from_secs(3600));
+    }
+
+    #[test]
+    fn rate_limit_key_hash_consistency() {
+        use std::collections::HashSet;
+        let k1 = RateLimitKey::new(Some("u".into()), Some("ip".into()), "act");
+        let k2 = RateLimitKey::new(Some("u".into()), Some("ip".into()), "act");
+        let mut set = HashSet::new();
+        set.insert(k1);
+        set.insert(k2);
+        assert_eq!(set.len(), 1);
+    }
+
+    #[test]
+    fn rate_limit_result_retry_after_none_for_allowed() {
+        let r = RateLimitResult::allowed(10, Instant::now());
+        assert!(r.retry_after.is_none());
+    }
+
+    #[test]
+    fn rate_limit_result_retry_after_some_for_denied() {
+        let r = RateLimitResult::denied(0, Instant::now(), Duration::from_secs(30));
+        assert!(r.retry_after.is_some());
+        assert_eq!(r.retry_after.unwrap(), Duration::from_secs(30));
+    }
 }

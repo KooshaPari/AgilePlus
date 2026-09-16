@@ -537,4 +537,73 @@ window_ms = 60000
         assert_eq!(s.method, AuthMethod::ApiKey);
         assert!(s.api_key.is_empty());
     }
+
+    #[test]
+    fn from_file_unknown_extension_falls_back_to_json() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("config.xyz");
+        std::fs::write(
+            &path,
+            r#"{"governance":{"enabled":false,"base_url":"x","auth":{"method":"api-key","api_key":"","bearer_token":""},"timeout_secs":1,"retry_attempts":1},"local":{"enabled":false,"db_path":"","retention_days":1},"sync":{"enabled":false,"interval_ms":1,"batch_size":1,"timeout_secs":1},"policy":{"enabled":false,"default_action":"allow","enforce_gates":false,"enforce_rate_limits":false},"rate_limit":{"enabled":false,"max_requests":1,"window_ms":1}}"#,
+        )
+        .unwrap();
+        let config = GovernanceConfig::from_file(&path).unwrap();
+        assert!(!config.governance.enabled);
+    }
+
+    #[test]
+    fn validate_local_db_path_empty() {
+        let mut config = GovernanceConfig::default();
+        config.local.enabled = true;
+        config.local.db_path = String::new();
+        let errors = config.validate();
+        assert!(errors.iter().any(|e| e.contains("database path")));
+    }
+
+    #[test]
+    fn validate_governance_disabled_no_errors() {
+        let mut config = GovernanceConfig::default();
+        config.governance.enabled = false;
+        config.governance.base_url = String::new();
+        config.governance.auth.api_key = String::new();
+        let errors = config.validate();
+        assert!(errors.is_empty());
+    }
+
+    #[test]
+    fn validate_all_clean_with_valid_config() {
+        let config = GovernanceConfig {
+            governance: GovernanceSettings {
+                enabled: true,
+                base_url: "http://ok:8080".into(),
+                auth: AuthSettings {
+                    method: AuthMethod::ApiKey,
+                    api_key: "key123".into(),
+                    bearer_token: String::new(),
+                },
+                timeout_secs: 10,
+                retry_attempts: 3,
+            },
+            local: LocalSettings {
+                enabled: true,
+                db_path: "/tmp/db".into(),
+                retention_days: 30,
+            },
+            ..Default::default()
+        };
+        let errors = config.validate();
+        assert!(errors.is_empty());
+    }
+
+    #[test]
+    fn policy_default_action_serde() {
+        assert_eq!(
+            serde_json::to_string(&PolicyDefaultAction::Allow).unwrap(),
+            "\"allow\""
+        );
+        assert_eq!(
+            serde_json::to_string(&PolicyDefaultAction::Deny).unwrap(),
+            "\"deny\""
+        );
+    }
 }

@@ -420,4 +420,128 @@ mod extended_tests {
         let json = r#"{"version":"1.0","schema":"test","clusters":99,"pillars":[],"note":"","sub_pillars_enumerated":0}"#;
         assert!(RubricCatalog::from_json(json).is_err());
     }
+
+    // ── Additional coverage tests ────────────────────────────────────────
+
+    #[test]
+    fn from_json_valid_catalog() {
+        let json = r#"{
+            "version": "1.0",
+            "schema": "test",
+            "clusters": 1,
+            "sub_pillars_enumerated": 0,
+            "note": "test catalog",
+            "pillars": [{
+                "cluster": "C00",
+                "pillar_range": "L0",
+                "category": "Test",
+                "source": "test/",
+                "defs_ref": "test.md",
+                "scoring": {"scale": "0-3", "glyphs": {"0": "x", "3": "y"}, "grade": {"A": 90}},
+                "sub_pillars": []
+            }]
+        }"#;
+        let catalog = RubricCatalog::from_json(json).unwrap();
+        assert_eq!(catalog.version, "1.0");
+        assert_eq!(catalog.schema, "test");
+        assert_eq!(catalog.clusters, 1);
+        assert_eq!(catalog.note, "test catalog");
+    }
+
+    #[test]
+    fn load_from_file() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("catalog.json");
+        std::fs::write(
+            &path,
+            r#"{
+                "version": "1.0",
+                "schema": "test",
+                "clusters": 1,
+                "sub_pillars_enumerated": 0,
+                "note": "file test",
+                "pillars": [{
+                    "cluster": "C00",
+                    "pillar_range": "L0",
+                    "category": "Test",
+                    "source": "test/",
+                    "defs_ref": "test.md",
+                    "scoring": {"scale": "0-3", "glyphs": {"0": "x"}, "grade": {"A": 90}},
+                    "sub_pillars": []
+                }]
+            }"#,
+        )
+        .unwrap();
+        let catalog = RubricCatalog::load(&path).unwrap();
+        assert_eq!(catalog.clusters, 1);
+    }
+
+    #[test]
+    fn load_from_nonexistent_file() {
+        let path = std::path::Path::new("/nonexistent/path/catalog.json");
+        assert!(RubricCatalog::load(path).is_err());
+    }
+
+    #[test]
+    fn enumerated_count_zero_when_no_sub_pillars() {
+        let catalog = make_catalog(3, false);
+        assert_eq!(catalog.enumerated_count(), 0);
+    }
+
+    #[test]
+    fn cluster_lookup_returns_correct_pillar() {
+        let catalog = make_catalog(5, false);
+        let p = catalog.cluster("C03").unwrap();
+        assert_eq!(p.cluster, "C03");
+        assert_eq!(p.pillar_range, "L30");
+    }
+
+    #[test]
+    fn validate_rejects_sub_pillars_enumerated_nonzero_when_none_present() {
+        let mut catalog = make_catalog(2, false);
+        catalog.sub_pillars_enumerated = 5;
+        assert!(catalog.validate().is_err());
+    }
+
+    #[test]
+    fn validate_accepts_sub_pillars_enumerated_zero_when_none_present() {
+        let mut catalog = make_catalog(2, false);
+        catalog.sub_pillars_enumerated = 0;
+        assert!(catalog.validate().is_ok());
+    }
+
+    #[test]
+    fn pillar_sub_pillars_serde_roundtrip() {
+        let catalog = make_catalog(1, true);
+        let json = serde_json::to_string(&catalog).unwrap();
+        let back: RubricCatalog = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.pillars.len(), 1);
+        assert_eq!(back.pillars[0].sub_pillars.len(), 1);
+    }
+
+    #[test]
+    fn sub_pillar_optional_fields() {
+        let sp = SubPillar {
+            id: "L10.1".into(),
+            title: "Test".into(),
+            name: Some("name".into()),
+            acceptance: Some("acc".into()),
+            soft_goal: Some("goal".into()),
+            evidence_pattern: "file:line".into(),
+        };
+        let json = serde_json::to_string(&sp).unwrap();
+        let back: SubPillar = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.name, Some("name".into()));
+        assert_eq!(back.acceptance, Some("acc".into()));
+        assert_eq!(back.soft_goal, Some("goal".into()));
+    }
+
+    #[test]
+    fn sub_pillar_null_optional_fields() {
+        let json = r#"{"id":"L10.1","title":"Test","evidence_pattern":""}"#;
+        let sp: SubPillar = serde_json::from_str(json).unwrap();
+        assert!(sp.name.is_none());
+        assert!(sp.acceptance.is_none());
+        assert!(sp.soft_goal.is_none());
+    }
 }

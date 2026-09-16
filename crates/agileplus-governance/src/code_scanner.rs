@@ -472,4 +472,106 @@ mod extended_tests {
         assert!(!scan.get("dir:.github/workflows").unwrap().present());
         fs::remove_dir_all(&repo).ok();
     }
+
+    // ── Additional coverage tests ────────────────────────────────────────
+
+    #[test]
+    fn evidence_item_present_true() {
+        let item = EvidenceItem::presence("file:README.md", "README.md", true);
+        assert!(item.present());
+        assert_eq!(item.count_value(), 0);
+        assert_eq!(item.artifact_id, "file:README.md");
+        assert_eq!(item.kind, "file_presence");
+    }
+
+    #[test]
+    fn evidence_item_present_false() {
+        let item = EvidenceItem::presence("file:MISSING.md", "MISSING.md", false);
+        assert!(!item.present());
+    }
+
+    #[test]
+    fn evidence_item_count_nonzero() {
+        let item = EvidenceItem::count("count:rs_files", 42);
+        assert_eq!(item.count_value(), 42);
+        assert!(!item.present());
+        assert_eq!(item.kind, "count");
+        assert!(item.path.is_empty());
+    }
+
+    #[test]
+    fn evidence_item_count_default_zero_when_no_metadata() {
+        let item = EvidenceItem {
+            artifact_id: "x".into(),
+            kind: "count".into(),
+            path: String::new(),
+            metadata: std::collections::BTreeMap::new(),
+        };
+        assert_eq!(item.count_value(), 0);
+        assert!(!item.present());
+    }
+
+    #[test]
+    fn repo_scan_get_and_has_combined() {
+        let scan = RepoScan {
+            items: vec![
+                EvidenceItem::presence("file:README.md", "README.md", true),
+                EvidenceItem::presence("file:MISSING.md", "MISSING.md", false),
+                EvidenceItem::count("count:rs_files", 5),
+            ],
+        };
+        assert!(scan.has("README.md"));
+        assert!(!scan.has("MISSING.md"));
+        assert!(!scan.has("NONEXISTENT.md"));
+        assert!(scan.get("count:rs_files").is_some());
+        assert!(scan.get("nonexistent").is_none());
+    }
+
+    #[test]
+    fn scan_repo_skips_node_modules() {
+        let repo = make_tmp("skipnode");
+        fs::create_dir_all(repo.join("node_modules/pkg")).unwrap();
+        fs::write(repo.join("node_modules/pkg/test.rs"), "#[test] fn t(){}").unwrap();
+        let scan = scan_repo(&repo).unwrap();
+        assert_eq!(scan.get("count:test_files").unwrap().count_value(), 0);
+        fs::remove_dir_all(&repo).ok();
+    }
+
+    #[test]
+    fn scan_repo_counts_nested_cargo_manifests() {
+        let repo = make_tmp("nested_cargo");
+        fs::write(repo.join("Cargo.toml"), "[package]").unwrap();
+        fs::create_dir_all(repo.join("crates/sub1")).unwrap();
+        fs::write(repo.join("crates/sub1/Cargo.toml"), "[package]").unwrap();
+        fs::create_dir_all(repo.join("crates/sub2")).unwrap();
+        fs::write(repo.join("crates/sub2/Cargo.toml"), "[package]").unwrap();
+        let scan = scan_repo(&repo).unwrap();
+        let manifests = scan.get("count:cargo_manifests").unwrap().count_value();
+        assert_eq!(manifests, 3);
+        fs::remove_dir_all(&repo).ok();
+    }
+
+    #[test]
+    fn scan_repo_presence_files_all_present() {
+        let repo = make_tmp("allpresent");
+        fs::write(repo.join("AGENTS.md"), "agents").unwrap();
+        fs::write(repo.join("CLAUDE.md"), "claude").unwrap();
+        fs::write(repo.join("llms.txt"), "llms").unwrap();
+        fs::write(repo.join("README.md"), "readme").unwrap();
+        let scan = scan_repo(&repo).unwrap();
+        assert!(scan.has("AGENTS.md"));
+        assert!(scan.has("CLAUDE.md"));
+        assert!(scan.has("llms.txt"));
+        assert!(scan.has("README.md"));
+        fs::remove_dir_all(&repo).ok();
+    }
+
+    #[test]
+    fn evidence_item_serde_roundtrip() {
+        let item = EvidenceItem::presence("file:README.md", "README.md", true);
+        let json = serde_json::to_string(&item).unwrap();
+        let back: EvidenceItem = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.artifact_id, item.artifact_id);
+        assert_eq!(back.present(), item.present());
+    }
 }
