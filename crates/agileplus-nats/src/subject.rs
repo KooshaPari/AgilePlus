@@ -98,7 +98,9 @@ mod tests {
     fn chevron_wildcard() {
         let s = Subject::all_for_entity("agileplus", "feature");
         assert!(s.matches(&Subject::new("agileplus.feature.1.created")));
-        assert!(s.matches(&Subject::new("agileplus.feature.1.state_transitioned")));
+        assert!(s.matches(
+            &Subject::new("agileplus.feature.1.state_transitioned")
+        ));
         assert!(!s.matches(&Subject::new("agileplus.wp.1.created")));
     }
 
@@ -106,5 +108,179 @@ mod tests {
     fn for_event_builds_correct_subject() {
         let s = Subject::for_event("agileplus", "feature", 42, "state_transitioned");
         assert_eq!(s.as_str(), "agileplus.feature.42.state_transitioned");
+    }
+
+    #[test]
+    fn display_trait() {
+        let s = Subject::new("a.b.c");
+        assert_eq!(format!("{s}"), "a.b.c");
+    }
+
+    #[test]
+    fn as_str_returns_inner() {
+        let s = Subject::new("x.y.z");
+        assert_eq!(s.as_str(), "x.y.z");
+    }
+
+    #[test]
+    fn partial_eq_reflexive() {
+        let s = Subject::new("t");
+        assert_eq!(s, s);
+    }
+
+    #[test]
+    fn clone_is_equal() {
+        let a = Subject::new("cloned.subject");
+        let b = a.clone();
+        assert_eq!(a, b);
+        assert_eq!(a.as_str(), b.as_str());
+    }
+
+    #[test]
+    fn hash_is_consistent() {
+        use std::collections::HashMap;
+        let mut map = HashMap::new();
+        let s1 = Subject::new("key1");
+        let s2 = Subject::new("key2");
+        map.insert(s1.clone(), "val1");
+        map.insert(s2.clone(), "val2");
+        assert_eq!(map.get(&s1), Some(&"val1"));
+        assert_eq!(map.get(&s2), Some(&"val2"));
+    }
+
+    #[test]
+    fn multiple_stars() {
+        let s = Subject::new("a.*.*.d");
+        assert!(s.matches(&Subject::new("a.b.c.d")));
+        assert!(s.matches(&Subject::new("a.x.y.d")));
+        assert!(!s.matches(&Subject::new("a.b.c.e")));
+        assert!(!s.matches(&Subject::new("a.b.c.d.e")));
+    }
+
+    #[test]
+    fn star_does_not_match_multiple_tokens() {
+        let s = Subject::new("a.*.c");
+        assert!(s.matches(&Subject::new("a.b.c")));
+        assert!(!s.matches(&Subject::new("a.b.c.d")));
+        assert!(!s.matches(&Subject::new("a.b")));
+    }
+
+    #[test]
+    fn chevron_matches_remaining_tokens() {
+        let s = Subject::new("a.b.>");
+        assert!(s.matches(&Subject::new("a.b.c")));
+        assert!(s.matches(&Subject::new("a.b.c.d.e")));
+        assert!(!s.matches(&Subject::new("a.b")));
+    }
+
+    #[test]
+    fn chevron_at_end_matches_one_token() {
+        let s = Subject::new("a.>");
+        assert!(s.matches(&Subject::new("a.b")));
+        assert!(s.matches(&Subject::new("a.b.c")));
+    }
+
+    #[test]
+    fn empty_pattern_empty_subject() {
+        let s = Subject::new("");
+        assert!(s.matches(&Subject::new("")));
+    }
+
+    #[test]
+    fn empty_pattern_does_not_match_nonempty() {
+        let s = Subject::new("");
+        assert!(!s.matches(&Subject::new("a")));
+    }
+
+    #[test]
+    fn nonempty_pattern_does_not_match_empty() {
+        let s = Subject::new("a");
+        assert!(!s.matches(&Subject::new("")));
+    }
+
+    #[test]
+    fn chevron_in_middle_matches_from_that_point() {
+        // `>` matches one or more tokens from its position onward.
+        // In NATS, `>` is always terminal: a.>.d is equivalent to a.>
+        let s = Subject::new("a.>.d");
+        assert!(s.matches(&Subject::new("a.b.d")));
+        assert!(s.matches(&Subject::new("a.b.c.d")));
+        // > consumes "b" and "c", so this also matches (> is terminal)
+        assert!(s.matches(&Subject::new("a.b.c")));
+    }
+
+    #[test]
+    fn for_event_with_zero_id() {
+        let s = Subject::for_event("pre", "ent", 0, "evt");
+        assert_eq!(s.as_str(), "pre.ent.0.evt");
+    }
+
+    #[test]
+    fn for_event_with_large_id() {
+        let s = Subject::for_event("pre", "ent", 999_999, "evt");
+        assert_eq!(s.as_str(), "pre.ent.999999.evt");
+    }
+
+    #[test]
+    fn all_for_entity_uses_chevron() {
+        let s = Subject::all_for_entity("p", "e");
+        assert!(s.as_str().ends_with(".>"));
+        assert_eq!(s.as_str(), "p.e.>");
+    }
+
+    #[test]
+    fn all_of_type_uses_star() {
+        let s = Subject::all_of_type("p", "e", "ev");
+        assert!(s.as_str().contains("*"));
+        assert_eq!(s.as_str(), "p.e.*.ev");
+    }
+
+    #[test]
+    fn new_from_string_owned() {
+        let raw = String::from("owned.subject");
+        let s = Subject::new(raw);
+        assert_eq!(s.as_str(), "owned.subject");
+    }
+
+    #[test]
+    fn exact_mismatch_different_prefix() {
+        let s = Subject::new("other.feature.1.created");
+        assert!(!s.matches(&Subject::new("agileplus.feature.1.created")));
+    }
+
+    #[test]
+    fn exact_mismatch_different_event() {
+        let s = Subject::new("agileplus.feature.1.deleted");
+        assert!(!s.matches(&Subject::new("agileplus.feature.1.created")));
+    }
+
+    #[test]
+    fn single_token_pattern_matches_single_token() {
+        let s = Subject::new("hello");
+        assert!(s.matches(&Subject::new("hello")));
+        assert!(!s.matches(&Subject::new("hello.world")));
+    }
+
+    #[test]
+    fn deeply_nested_pattern() {
+        let s = Subject::new("*.*.*.*.e");
+        assert!(s.matches(&Subject::new("a.b.c.d.e")));
+        assert!(!s.matches(&Subject::new("a.b.c.d")));
+        assert!(!s.matches(&Subject::new("a.b.c.d.e.f")));
+    }
+
+    #[test]
+    fn partial_eq_symmetric() {
+        let a = Subject::new("x");
+        let b = Subject::new("x");
+        assert!(a == b);
+        assert!(b == a);
+    }
+
+    #[test]
+    fn partial_eq_inequality() {
+        let a = Subject::new("x");
+        let b = Subject::new("y");
+        assert!(a != b);
     }
 }
