@@ -131,3 +131,87 @@ where
         })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use axum::body::Body;
+    use axum::http::Request;
+    use tower::Layer;
+
+    #[test]
+    fn otel_layer_creates_middleware() {
+        let layer = opentelemetry_tracing_layer();
+        let inner_service = tower::service_fn(|_req: Request<Body>| async move {
+            Ok::<_, std::convert::Infallible>(
+                axum::response::Response::builder()
+                    .status(200)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+        });
+        let _service = layer.layer(inner_service);
+    }
+
+    #[test]
+    fn otel_layer_is_clone() {
+        let layer = OtelTracingLayer;
+        let _cloned = layer.clone();
+    }
+
+    #[test]
+    fn otel_middleware_service_is_clone() {
+        let layer = OtelTracingLayer;
+        let inner_service = tower::service_fn(|_req: Request<Body>| async {
+            Ok::<_, std::convert::Infallible>(
+                axum::response::Response::builder()
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+        });
+        let service = layer.layer(inner_service);
+        let _cloned = service.clone();
+    }
+
+    #[tokio::test]
+    async fn otel_middleware_passes_through() {
+        let layer = opentelemetry_tracing_layer();
+        let inner_service = tower::service_fn(|_req: Request<Body>| async {
+            Ok::<_, std::convert::Infallible>(
+                axum::response::Response::builder()
+                    .status(200)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+        });
+        let mut service = layer.layer(inner_service);
+
+        let req = Request::builder()
+            .uri("/test")
+            .body(Body::empty())
+            .unwrap();
+        let resp = service.call(req).await.unwrap();
+        assert_eq!(resp.status(), 200);
+    }
+
+    #[tokio::test]
+    async fn otel_middleware_preserves_status_code() {
+        let layer = opentelemetry_tracing_layer();
+        let inner_service = tower::service_fn(|_req: Request<Body>| async {
+            Ok::<_, std::convert::Infallible>(
+                axum::response::Response::builder()
+                    .status(404)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+        });
+        let mut service = layer.layer(inner_service);
+
+        let req = Request::builder()
+            .uri("/not-found")
+            .body(Body::empty())
+            .unwrap();
+        let resp = service.call(req).await.unwrap();
+        assert_eq!(resp.status(), 404);
+    }
+}

@@ -184,3 +184,106 @@ where
 pub struct ActionResponse {
     pub message: String,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn action_response_serializes() {
+        let resp = ActionResponse {
+            message: "ok".to_string(),
+        };
+        let json = serde_json::to_value(&resp).unwrap();
+        assert_eq!(json["message"], "ok");
+    }
+
+    #[test]
+    fn create_branch_request_defaults() {
+        let req = CreateBranchRequest {
+            name: "feat-1".into(),
+            base: None,
+        };
+        assert_eq!(req.name, "feat-1");
+        assert!(req.base.is_none());
+    }
+
+    #[test]
+    fn checkout_branch_request() {
+        let req = CheckoutBranchRequest {
+            name: "main".into(),
+        };
+        assert_eq!(req.name, "main");
+    }
+
+    #[test]
+    fn delete_branch_request_defaults() {
+        let req = DeleteBranchRequest {
+            name: "old-branch".into(),
+            force: None,
+            remote: None,
+        };
+        assert_eq!(req.name, "old-branch");
+        assert!(req.force.is_none());
+        assert!(req.remote.is_none());
+    }
+
+    #[test]
+    fn delete_branch_request_with_force() {
+        let req = DeleteBranchRequest {
+            name: "branch".into(),
+            force: Some(true),
+            remote: Some("origin".into()),
+        };
+        assert!(req.force.unwrap());
+        assert_eq!(req.remote.as_deref(), Some("origin"));
+    }
+
+    #[test]
+    fn sync_branch_request() {
+        let req = SyncBranchRequest {
+            source: "feat".into(),
+            target: "main".into(),
+        };
+        assert_eq!(req.source, "feat");
+        assert_eq!(req.target, "main");
+    }
+
+    #[test]
+    fn sync_branch_response_serializes() {
+        let resp = SyncBranchResponse {
+            source: "feat".into(),
+            target: "main".into(),
+            success: true,
+            merged_commit: Some("abc123".into()),
+        };
+        let json = serde_json::to_value(&resp).unwrap();
+        assert_eq!(json["source"], "feat");
+        assert_eq!(json["target"], "main");
+        assert_eq!(json["success"], true);
+        assert_eq!(json["merged_commit"], "abc123");
+    }
+
+    #[test]
+    fn sync_branch_response_no_commit() {
+        let resp = SyncBranchResponse {
+            source: "a".into(),
+            target: "b".into(),
+            success: false,
+            merged_commit: None,
+        };
+        let json = serde_json::to_value(&resp).unwrap();
+        assert_eq!(json["success"], false);
+        assert!(json["merged_commit"].is_null());
+    }
+
+    #[test]
+    fn branch_list_params_defaults() {
+        let params = BranchListParams {
+            pattern: None,
+            remote: None,
+        };
+        assert!(params.pattern.is_none());
+        assert!(params.remote.is_none());
+    }
+}

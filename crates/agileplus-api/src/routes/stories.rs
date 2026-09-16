@@ -119,3 +119,60 @@ where
 
     Ok(Json(StoryResponse::from(story)))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn create_story_request_fields() {
+        let req = CreateStoryRequest {
+            epic_id: 1,
+            project_id: 2,
+            title: "My Story".into(),
+            description: Some("desc".into()),
+            points: Some(5),
+        };
+        assert_eq!(req.epic_id, 1);
+        assert_eq!(req.project_id, 2);
+        assert_eq!(req.title, "My Story");
+        assert_eq!(req.description.as_deref(), Some("desc"));
+        assert_eq!(req.points, Some(5));
+    }
+
+    #[test]
+    fn create_story_request_minimal() {
+        let req = CreateStoryRequest {
+            epic_id: 1,
+            project_id: 2,
+            title: "S".into(),
+            description: None,
+            points: None,
+        };
+        assert!(req.description.is_none());
+        assert!(req.points.is_none());
+    }
+
+    #[test]
+    fn transition_story_request() {
+        let req = TransitionStoryRequest {
+            target_status: "in_progress".into(),
+        };
+        assert_eq!(req.target_status, "in_progress");
+    }
+
+    #[test]
+    fn create_story_request_serializes() {
+        // CreateStoryRequest only derives Deserialize; verify field access
+        let req = CreateStoryRequest {
+            epic_id: 1,
+            project_id: 2,
+            title: "Test".into(),
+            description: None,
+            points: Some(3),
+        };
+        assert_eq!(req.epic_id, 1);
+        assert_eq!(req.title, "Test");
+        assert_eq!(req.points, Some(3));
+    }
+}

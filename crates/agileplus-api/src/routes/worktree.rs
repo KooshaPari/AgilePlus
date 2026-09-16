@@ -105,3 +105,35 @@ where
 pub struct ActionResponse {
     pub message: String,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn add_worktree_request() {
+        let req = AddWorktreeRequest {
+            feature_slug: "feat-x".into(),
+            wp_id: "wp-42".into(),
+        };
+        assert_eq!(req.feature_slug, "feat-x");
+        assert_eq!(req.wp_id, "wp-42");
+    }
+
+    #[test]
+    fn remove_worktree_request() {
+        let req = RemoveWorktreeRequest {
+            path: "/tmp/worktree".into(),
+        };
+        assert_eq!(req.path, "/tmp/worktree");
+    }
+
+    #[test]
+    fn action_response_serializes() {
+        let resp = ActionResponse {
+            message: "Removed worktree /tmp/wt".into(),
+        };
+        let json = serde_json::to_value(&resp).unwrap();
+        assert_eq!(json["message"], "Removed worktree /tmp/wt");
+    }
+}

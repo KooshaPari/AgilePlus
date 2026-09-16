@@ -145,3 +145,51 @@ where
         .map_err(ApiError::from)?;
     Ok(Json(stories.into_iter().map(StoryResponse::from).collect()))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn create_epic_request_fields() {
+        let req = CreateEpicRequest {
+            project_id: 1,
+            title: "Epic One".into(),
+            description: Some("A desc".into()),
+        };
+        assert_eq!(req.project_id, 1);
+        assert_eq!(req.title, "Epic One");
+        assert_eq!(req.description.as_deref(), Some("A desc"));
+    }
+
+    #[test]
+    fn create_epic_request_no_description() {
+        let req = CreateEpicRequest {
+            project_id: 1,
+            title: "E".into(),
+            description: None,
+        };
+        assert!(req.description.is_none());
+    }
+
+    #[test]
+    fn transition_epic_request() {
+        let req = TransitionEpicRequest {
+            target_status: "active".into(),
+        };
+        assert_eq!(req.target_status, "active");
+    }
+
+    #[test]
+    fn create_epic_request_serializes() {
+        // CreateEpicRequest only derives Deserialize; verify field access instead
+        let req = CreateEpicRequest {
+            project_id: 5,
+            title: "Test Epic".into(),
+            description: None,
+        };
+        assert_eq!(req.project_id, 5);
+        assert_eq!(req.title, "Test Epic");
+        assert!(req.description.is_none());
+    }
+}

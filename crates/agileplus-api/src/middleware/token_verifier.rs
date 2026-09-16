@@ -117,4 +117,32 @@ mod tests {
         assert!(v.verify("key-b").unwrap());
         assert!(!v.verify("key-c").unwrap());
     }
+
+    #[test]
+    fn empty_token_not_in_key_list() {
+        let v = verifier(&["not-empty"]);
+        assert!(!v.verify("").unwrap());
+    }
+
+    #[test]
+    fn partial_key_match_rejected() {
+        let v = verifier(&["secret-token"]);
+        assert!(!v.verify("secret").unwrap());
+        assert!(!v.verify("secret-token-extra").unwrap());
+    }
+
+    #[test]
+    fn single_key_verifier() {
+        let v = verifier(&["only-key"]);
+        assert!(v.verify("only-key").unwrap());
+        assert!(!v.verify("other").unwrap());
+    }
+
+    #[test]
+    fn dyn_token_verifier_arc() {
+        use std::sync::Arc;
+        let v: DynTokenVerifier = Arc::new(verifier(&["arc-key"]));
+        assert!(v.verify("arc-key").unwrap());
+        assert!(!v.verify("wrong").unwrap());
+    }
 }

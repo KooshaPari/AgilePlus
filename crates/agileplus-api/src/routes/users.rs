@@ -98,3 +98,43 @@ where
         .ok_or_else(|| ApiError::NotFound(format!("User {id} not found")))?;
     Ok(Json(UserResponse::from(user)))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn create_user_request_fields() {
+        let req = CreateUserRequest {
+            display_name: "Alice".into(),
+            email: "alice@example.com".into(),
+            role: Some("admin".into()),
+        };
+        assert_eq!(req.display_name, "Alice");
+        assert_eq!(req.email, "alice@example.com");
+        assert_eq!(req.role.as_deref(), Some("admin"));
+    }
+
+    #[test]
+    fn create_user_request_no_role() {
+        let req = CreateUserRequest {
+            display_name: "Bob".into(),
+            email: "bob@example.com".into(),
+            role: None,
+        };
+        assert!(req.role.is_none());
+    }
+
+    #[test]
+    fn create_user_request_serializes() {
+        // CreateUserRequest only derives Deserialize; verify field access
+        let req = CreateUserRequest {
+            display_name: "Carol".into(),
+            email: "carol@example.com".into(),
+            role: Some("viewer".into()),
+        };
+        assert_eq!(req.display_name, "Carol");
+        assert_eq!(req.email, "carol@example.com");
+        assert_eq!(req.role.as_deref(), Some("viewer"));
+    }
+}

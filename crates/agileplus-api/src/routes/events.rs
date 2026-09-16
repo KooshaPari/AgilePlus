@@ -256,3 +256,121 @@ fn parse_since(s: &str) -> Result<DateTime<Utc>, ApiError> {
     };
     Ok(Utc::now() - duration)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_since_iso8601() {
+        use chrono::Datelike;
+        let dt = parse_since("2025-01-15T12:00:00Z").unwrap();
+        let naive = dt.naive_utc();
+        assert_eq!(naive.date().year(), 2025);
+        assert_eq!(naive.date().month(), 1);
+        assert_eq!(naive.date().day(), 15);
+    }
+
+    #[test]
+    fn parse_since_hours() {
+        let before = Utc::now();
+        let dt = parse_since("1h").unwrap();
+        let after = Utc::now();
+        // Should be roughly 1 hour ago
+        assert!(dt >= before - Duration::hours(1) - Duration::seconds(5));
+        assert!(dt <= after - Duration::hours(1) + Duration::seconds(5));
+    }
+
+    #[test]
+    fn parse_since_24_hours() {
+        let dt = parse_since("24h").unwrap();
+        let now = Utc::now();
+        let diff = now - dt;
+        assert!(diff >= Duration::hours(23) && diff <= Duration::hours(25));
+    }
+
+    #[test]
+    fn parse_since_minutes() {
+        let dt = parse_since("30m").unwrap();
+        let now = Utc::now();
+        let diff = now - dt;
+        assert!(diff >= Duration::minutes(29) && diff <= Duration::minutes(31));
+    }
+
+    #[test]
+    fn parse_since_invalid_format() {
+        let err = parse_since("invalid");
+        assert!(err.is_err());
+        match err.unwrap_err() {
+            ApiError::BadRequest(msg) => assert!(msg.contains("invalid since")),
+            other => panic!("expected BadRequest, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn parse_since_invalid_number() {
+        let err = parse_since("abc_h");
+        assert!(err.is_err());
+    }
+
+    #[test]
+    fn parse_since_hours_zero() {
+        let dt = parse_since("0h").unwrap();
+        let now = Utc::now();
+        let diff = (now - dt).num_seconds().abs();
+        assert!(diff < 5);
+    }
+
+    #[test]
+    fn event_list_params_defaults() {
+        let params = EventListParams {
+            entity_type: None,
+            entity_id: None,
+            since: None,
+            until: None,
+            event_type: None,
+            actor: None,
+            limit: None,
+            offset: None,
+        };
+        assert!(params.entity_type.is_none());
+        assert!(params.entity_id.is_none());
+        assert!(params.since.is_none());
+        assert!(params.limit.is_none());
+    }
+
+    #[test]
+    fn event_response_serializes() {
+        let resp = EventResponse {
+            id: 1,
+            entity_type: "feature".into(),
+            entity_id: 10,
+            event_type: "Created".into(),
+            actor: "user".into(),
+            timestamp: "2025-01-01T00:00:00Z".into(),
+            payload: serde_json::json!({"key": "value"}),
+        };
+        let json = serde_json::to_value(&resp).unwrap();
+        assert_eq!(json["id"], 1);
+        assert_eq!(json["entity_type"], "feature");
+        assert_eq!(json["entity_id"], 10);
+        assert_eq!(json["actor"], "user");
+        assert_eq!(json["payload"]["key"], "value");
+    }
+
+    #[test]
+    fn event_response_wp_type() {
+        let resp = EventResponse {
+            id: 5,
+            entity_type: "work_package".into(),
+            entity_id: 5,
+            event_type: "wp_planned".into(),
+            actor: "system".into(),
+            timestamp: "2025-01-01T00:00:00Z".into(),
+            payload: serde_json::json!({"title": "Test WP"}),
+        };
+        let json = serde_json::to_value(&resp).unwrap();
+        assert_eq!(json["entity_type"], "work_package");
+        assert_eq!(json["payload"]["title"], "Test WP");
+    }
+}

@@ -128,6 +128,58 @@ mod tests {
         assert!(!stored.starts_with(KEY_PREFIX));
     }
 
+    #[tokio::test]
+    async fn ensure_api_key_idempotent() {
+        let store = InMemoryCredentialStore::new();
+        assert!(ensure_api_key(&store).await.unwrap()); // first call generates
+        assert!(!ensure_api_key(&store).await.unwrap()); // second call finds existing
+    }
+
+    #[test]
+    fn import_api_key_empty_rejected() {
+        let store = InMemoryCredentialStore::new();
+        let result = import_api_key(&store, "");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn import_api_key_whitespace_only_rejected() {
+        let store = InMemoryCredentialStore::new();
+        let result = import_api_key(&store, "   ");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn import_api_key_valid() {
+        let store = InMemoryCredentialStore::new();
+        import_api_key(&store, "my-custom-key").unwrap();
+        assert!(store.validate_api_key("my-custom-key").unwrap());
+        assert!(!store.validate_api_key("wrong-key").unwrap());
+    }
+
+    #[test]
+    fn generated_key_length() {
+        let key = generate_plaintext_key();
+        // prefix "agp_" (4 chars) + base64url of 32 bytes (~43 chars)
+        assert!(key.len() > 40);
+    }
+
+    #[test]
+    fn generated_key_contains_only_url_safe_chars() {
+        let key = generate_plaintext_key();
+        let content = &key[KEY_PREFIX.len()..]; // skip agp_ prefix
+        assert!(!content.is_empty());
+        for c in content.chars() {
+            assert!(c.is_alphanumeric() || c == '-' || c == '_', "unexpected char: {c}");
+        }
+    }
+
+    #[test]
+    fn hash_key_32_bytes() {
+        let h = hash_key("test");
+        assert_eq!(h.len(), 32);
+    }
+
     #[test]
     fn stored_key_hash_validates_without_persisting_plaintext() {
         let store = InMemoryCredentialStore::new();

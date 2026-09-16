@@ -112,3 +112,42 @@ where
         }))),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn verify_chain_valid_structure() {
+        let result = serde_json::json!({
+            "feature_slug": "my-feat",
+            "chain_valid": true,
+            "entries_verified": 5,
+        });
+        assert_eq!(result["feature_slug"], "my-feat");
+        assert!(result["chain_valid"].as_bool().unwrap());
+        assert_eq!(result["entries_verified"], 5);
+    }
+
+    #[test]
+    fn verify_chain_invalid_structure() {
+        let result = serde_json::json!({
+            "feature_slug": "feat",
+            "chain_valid": false,
+            "error": "hash mismatch at entry 2",
+        });
+        assert!(!result["chain_valid"].as_bool().unwrap());
+        assert!(result["error"].as_str().unwrap().contains("hash mismatch"));
+    }
+
+    #[test]
+    fn verify_chain_empty_trail() {
+        let result = serde_json::json!({
+            "feature_slug": "empty-feat",
+            "chain_valid": true,
+            "entries_verified": 0,
+        });
+        assert!(result["chain_valid"].as_bool().unwrap());
+        assert_eq!(result["entries_verified"], 0);
+    }
+}

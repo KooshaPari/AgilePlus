@@ -290,3 +290,114 @@ where
 pub fn parse_feature_state(s: &str) -> Result<FeatureState, ApiError> {
     s.parse::<FeatureState>().map_err(ApiError::BadRequest)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_feature_state_created() {
+        let state = parse_feature_state("created").unwrap();
+        assert_eq!(state, FeatureState::Created);
+    }
+
+    #[test]
+    fn parse_feature_state_specified() {
+        let state = parse_feature_state("specified").unwrap();
+        assert_eq!(state, FeatureState::Specified);
+    }
+
+    #[test]
+    fn parse_feature_state_researched() {
+        let state = parse_feature_state("researched").unwrap();
+        assert_eq!(state, FeatureState::Researched);
+    }
+
+    #[test]
+    fn parse_feature_state_planned() {
+        let state = parse_feature_state("planned").unwrap();
+        assert_eq!(state, FeatureState::Planned);
+    }
+
+    #[test]
+    fn parse_feature_state_implementing() {
+        let state = parse_feature_state("implementing").unwrap();
+        assert_eq!(state, FeatureState::Implementing);
+    }
+
+    #[test]
+    fn parse_feature_state_validated() {
+        let state = parse_feature_state("validated").unwrap();
+        assert_eq!(state, FeatureState::Validated);
+    }
+
+    #[test]
+    fn parse_feature_state_shipped() {
+        let state = parse_feature_state("shipped").unwrap();
+        assert_eq!(state, FeatureState::Shipped);
+    }
+
+    #[test]
+    fn parse_feature_state_retrospected() {
+        let state = parse_feature_state("retrospected").unwrap();
+        assert_eq!(state, FeatureState::Retrospected);
+    }
+
+    #[test]
+    fn parse_feature_state_invalid() {
+        let err = parse_feature_state("bogus");
+        assert!(err.is_err());
+        match err.unwrap_err() {
+            ApiError::BadRequest(msg) => assert!(msg.contains("bogus") || !msg.is_empty()),
+            other => panic!("expected BadRequest, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn parse_feature_state_empty_string() {
+        assert!(parse_feature_state("").is_err());
+    }
+
+    #[test]
+    fn parse_feature_state_case_sensitive() {
+        // FromStr is case-sensitive
+        assert!(parse_feature_state("Created").is_err());
+    }
+
+    #[test]
+    fn feature_list_params_defaults() {
+        let params = FeatureListParams {
+            state: None,
+            label: None,
+        };
+        assert!(params.state.is_none());
+        assert!(params.label.is_none());
+    }
+
+    #[test]
+    fn transition_response_fields() {
+        let resp = TransitionResponse {
+            feature_slug: "my-feat".into(),
+            from_state: "created".into(),
+            to_state: "specified".into(),
+            timestamp: "2025-01-01T00:00:00Z".into(),
+        };
+        assert_eq!(resp.feature_slug, "my-feat");
+        assert_eq!(resp.from_state, "created");
+        assert_eq!(resp.to_state, "specified");
+    }
+
+    #[test]
+    fn transition_response_serializes() {
+        let resp = TransitionResponse {
+            feature_slug: "slug".into(),
+            from_state: "a".into(),
+            to_state: "b".into(),
+            timestamp: "t".into(),
+        };
+        let json = serde_json::to_value(&resp).unwrap();
+        assert_eq!(json["feature_slug"], "slug");
+        assert_eq!(json["from_state"], "a");
+        assert_eq!(json["to_state"], "b");
+    }
+}

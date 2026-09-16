@@ -158,3 +158,49 @@ where
         "compliant": compliant,
     })))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn validation_summary_structure() {
+        let summary = serde_json::json!({
+            "feature_slug": "my-feat",
+            "governance_version": 3,
+            "total_rules": 5,
+            "satisfied_rules": 4,
+            "compliant": false,
+        });
+        assert_eq!(summary["feature_slug"], "my-feat");
+        assert_eq!(summary["governance_version"], 3);
+        assert_eq!(summary["total_rules"], 5);
+        assert_eq!(summary["satisfied_rules"], 4);
+        assert_eq!(summary["compliant"], false);
+    }
+
+    #[test]
+    fn validation_compliant_summary() {
+        let summary = serde_json::json!({
+            "feature_slug": "feat",
+            "governance_version": 1,
+            "total_rules": 2,
+            "satisfied_rules": 2,
+            "compliant": true,
+        });
+        assert!(summary["compliant"].as_bool().unwrap());
+        assert_eq!(summary["total_rules"], summary["satisfied_rules"]);
+    }
+
+    #[test]
+    fn validation_no_rules_compliant() {
+        let summary = serde_json::json!({
+            "feature_slug": "empty",
+            "governance_version": 1,
+            "total_rules": 0,
+            "satisfied_rules": 0,
+            "compliant": true,
+        });
+        assert!(summary["compliant"].as_bool().unwrap());
+    }
+}

@@ -270,3 +270,94 @@ fn parse_wp_state(s: &str) -> Result<WpState, ApiError> {
         other => Err(ApiError::BadRequest(format!("Unknown WP state: {other}"))),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_wp_state_planned() {
+        assert!(matches!(parse_wp_state("planned").unwrap(), WpState::Planned));
+    }
+
+    #[test]
+    fn parse_wp_state_doing() {
+        assert!(matches!(parse_wp_state("doing").unwrap(), WpState::Doing));
+    }
+
+    #[test]
+    fn parse_wp_state_review() {
+        assert!(matches!(parse_wp_state("review").unwrap(), WpState::Review));
+    }
+
+    #[test]
+    fn parse_wp_state_done() {
+        assert!(matches!(parse_wp_state("done").unwrap(), WpState::Done));
+    }
+
+    #[test]
+    fn parse_wp_state_blocked() {
+        assert!(matches!(parse_wp_state("blocked").unwrap(), WpState::Blocked));
+    }
+
+    #[test]
+    fn parse_wp_state_case_insensitive() {
+        assert!(matches!(parse_wp_state("Planned").unwrap(), WpState::Planned));
+        assert!(matches!(parse_wp_state("DOING").unwrap(), WpState::Doing));
+        assert!(matches!(parse_wp_state("Review").unwrap(), WpState::Review));
+        assert!(matches!(parse_wp_state("DONE").unwrap(), WpState::Done));
+        assert!(matches!(parse_wp_state("BLOCKED").unwrap(), WpState::Blocked));
+    }
+
+    #[test]
+    fn parse_wp_state_invalid() {
+        let err = parse_wp_state("unknown_state");
+        assert!(err.is_err());
+        match err.unwrap_err() {
+            ApiError::BadRequest(msg) => assert!(msg.contains("Unknown WP state")),
+            other => panic!("expected BadRequest, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn parse_wp_state_empty_string() {
+        assert!(parse_wp_state("").is_err());
+    }
+
+    #[test]
+    fn create_wp_request_defaults() {
+        let req = CreateWpRequest {
+            title: "Test".into(),
+            acceptance_criteria: None,
+            sequence: None,
+        };
+        assert_eq!(req.title, "Test");
+        assert!(req.acceptance_criteria.is_none());
+        assert!(req.sequence.is_none());
+    }
+
+    #[test]
+    fn update_wp_request_all_optional() {
+        let req = UpdateWpRequest {
+            title: None,
+            acceptance_criteria: None,
+            pr_url: None,
+        };
+        assert!(req.title.is_none());
+        assert!(req.acceptance_criteria.is_none());
+        assert!(req.pr_url.is_none());
+    }
+
+    #[test]
+    fn wp_transition_response_serializes() {
+        let resp = WpTransitionResponse {
+            wp_id: 42,
+            from_state: "planned".into(),
+            to_state: "doing".into(),
+        };
+        let json = serde_json::to_value(&resp).unwrap();
+        assert_eq!(json["wp_id"], 42);
+        assert_eq!(json["from_state"], "planned");
+        assert_eq!(json["to_state"], "doing");
+    }
+}

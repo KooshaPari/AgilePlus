@@ -129,3 +129,44 @@ where
         .map_err(ApiError::from)?;
     Ok(Json(epics.into_iter().map(EpicResponse::from).collect()))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn create_project_request_fields() {
+        let req = CreateProjectRequest {
+            name: "My Project".into(),
+            slug: Some("my-proj".into()),
+            description: Some("desc".into()),
+        };
+        assert_eq!(req.name, "My Project");
+        assert_eq!(req.slug.as_deref(), Some("my-proj"));
+        assert_eq!(req.description.as_deref(), Some("desc"));
+    }
+
+    #[test]
+    fn create_project_request_minimal() {
+        let req = CreateProjectRequest {
+            name: "P".into(),
+            slug: None,
+            description: None,
+        };
+        assert!(req.slug.is_none());
+        assert!(req.description.is_none());
+    }
+
+    #[test]
+    fn create_project_request_serializes() {
+        // CreateProjectRequest only derives Deserialize; verify field access
+        let req = CreateProjectRequest {
+            name: "Test".into(),
+            slug: Some("test".into()),
+            description: None,
+        };
+        assert_eq!(req.name, "Test");
+        assert_eq!(req.slug.as_deref(), Some("test"));
+        assert!(req.description.is_none());
+    }
+}

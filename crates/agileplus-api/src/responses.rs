@@ -569,17 +569,238 @@ mod tests {
     }
 
     #[test]
-    fn project_response_no_description() {
+    fn epic_response_from_domain() {
+        let epic = Epic::new(1, "My Epic").unwrap();
+        let resp = EpicResponse::from(epic);
+        assert_eq!(resp.project_id, 1);
+        assert_eq!(resp.title, "My Epic");
+        assert_eq!(resp.status, "backlog");
+        assert!(resp.description.is_none());
+        assert!(resp.owner_id.is_none());
+        assert!(resp.created_at.contains("T"));
+    }
+
+    #[test]
+    fn epic_response_with_description() {
+        let mut epic = Epic::new(2, "Epic Two").unwrap();
+        epic.description = Some("A longer description".into());
+        let resp = EpicResponse::from(epic);
+        assert_eq!(resp.description.as_deref(), Some("A longer description"));
+    }
+
+    #[test]
+    fn story_response_from_domain() {
+        let story = Story::new(10, 20, "My Story", Some(5)).unwrap();
+        let resp = StoryResponse::from(story);
+        assert_eq!(resp.epic_id, 10);
+        assert_eq!(resp.project_id, 20);
+        assert_eq!(resp.title, "My Story");
+        assert_eq!(resp.points, Some(5));
+        assert_eq!(resp.status, "todo");
+        assert!(resp.description.is_none());
+        assert!(resp.assignee_id.is_none());
+    }
+
+    #[test]
+    fn story_response_no_points() {
+        let story = Story::new(1, 2, "No Points", None).unwrap();
+        let resp = StoryResponse::from(story);
+        assert!(resp.points.is_none());
+    }
+
+    #[test]
+    fn story_response_with_description() {
+        let mut story = Story::new(1, 2, "With Desc", Some(3)).unwrap();
+        story.description = Some("desc text".into());
+        let resp = StoryResponse::from(story);
+        assert_eq!(resp.description.as_deref(), Some("desc text"));
+    }
+
+    #[test]
+    fn user_response_from_domain() {
+        use agileplus_domain::domain::user::{User, UserRole};
+        let user = User::new("Alice", "alice@example.com", UserRole::Admin).unwrap();
+        let resp = UserResponse::from(user);
+        assert_eq!(resp.display_name, "Alice");
+        assert_eq!(resp.email, "alice@example.com");
+        assert_eq!(resp.role, "admin");
+        assert_eq!(resp.status, "active");
+        assert!(resp.avatar_url.is_none());
+        assert!(resp.github_login.is_none());
+        assert!(resp.created_at.contains("T"));
+    }
+
+    #[test]
+    fn user_response_member_role() {
+        use agileplus_domain::domain::user::{User, UserRole};
+        let user = User::new("Bob", "bob@example.com", UserRole::Member).unwrap();
+        let resp = UserResponse::from(user);
+        assert_eq!(resp.role, "member");
+    }
+
+    #[test]
+    fn user_response_viewer_role() {
+        use agileplus_domain::domain::user::{User, UserRole};
+        let user = User::new("Carol", "carol@example.com", UserRole::Viewer).unwrap();
+        let resp = UserResponse::from(user);
+        assert_eq!(resp.role, "viewer");
+    }
+
+    #[test]
+    fn feature_response_serializes_to_json() {
+        let f = Feature::new("my-slug", "My Feature", [0u8; 32], Some("main"));
+        let resp = FeatureResponse::from(f);
+        let json = serde_json::to_value(&resp).unwrap();
+        assert_eq!(json["slug"], "my-slug");
+        assert_eq!(json["name"], "My Feature");
+        assert_eq!(json["target_branch"], "main");
+    }
+
+    #[test]
+    fn work_package_response_serializes_to_json() {
+        let wp = WorkPackage::new(10, "Test WP", 3, "must do x");
+        let resp = WorkPackageResponse::from(wp);
+        let json = serde_json::to_value(&resp).unwrap();
+        assert_eq!(json["title"], "Test WP");
+        assert_eq!(json["sequence"], 3);
+        assert!(json["pr_url"].is_null());
+    }
+
+    #[test]
+    fn epic_response_serializes_to_json() {
+        let epic = Epic::new(1, "My Epic").unwrap();
+        let resp = EpicResponse::from(epic);
+        let json = serde_json::to_value(&resp).unwrap();
+        assert_eq!(json["title"], "My Epic");
+        assert_eq!(json["project_id"], 1);
+    }
+
+    #[test]
+    fn story_response_serializes_to_json() {
+        let story = Story::new(1, 2, "My Story", Some(3)).unwrap();
+        let resp = StoryResponse::from(story);
+        let json = serde_json::to_value(&resp).unwrap();
+        assert_eq!(json["title"], "My Story");
+        assert_eq!(json["points"], 3);
+    }
+
+    #[test]
+    fn user_response_serializes_to_json() {
+        use agileplus_domain::domain::user::{User, UserRole};
+        let user = User::new("Alice", "a@b.com", UserRole::Admin).unwrap();
+        let resp = UserResponse::from(user);
+        let json = serde_json::to_value(&resp).unwrap();
+        assert_eq!(json["display_name"], "Alice");
+        assert_eq!(json["email"], "a@b.com");
+        assert_eq!(json["role"], "admin");
+    }
+
+    #[test]
+    fn project_response_serializes_to_json() {
         use chrono::Utc;
         let p = agileplus_domain::domain::project::Project {
-            id: 2,
-            slug: "p2".into(),
-            name: "P2".into(),
+            id: 1,
+            slug: "proj".into(),
+            name: "My Project".into(),
+            description: Some("desc".into()),
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+        };
+        let resp = ProjectResponse::from(p);
+        let json = serde_json::to_value(&resp).unwrap();
+        assert_eq!(json["slug"], "proj");
+        assert_eq!(json["name"], "My Project");
+        assert_eq!(json["description"], "desc");
+    }
+
+    #[test]
+    fn governance_response_serializes_to_json() {
+        let contract = agileplus_domain::domain::governance::GovernanceContract {
+            id: 1,
+            feature_id: 10,
+            version: 2,
+            rules: vec![],
+            bound_at: chrono::Utc::now(),
+        };
+        let resp = GovernanceResponse::from(contract);
+        let json = serde_json::to_value(&resp).unwrap();
+        assert_eq!(json["version"], 2);
+        assert_eq!(json["rules_count"], 0);
+    }
+
+    #[test]
+    fn audit_entry_response_serializes_to_json() {
+        use chrono::DateTime;
+        let entry = agileplus_domain::domain::audit::AuditEntry {
+            id: 1,
+            feature_id: 10,
+            wp_id: None,
+            timestamp: DateTime::from_timestamp(1_000_000, 0).unwrap(),
+            actor: "bot".into(),
+            transition: "Created->Specified".into(),
+            evidence_refs: vec![],
+            prev_hash: [0; 32],
+            hash: [0xCD; 32],
+            event_id: None,
+            archived_to: None,
+        };
+        let resp = AuditEntryResponse::from(entry);
+        let json = serde_json::to_value(&resp).unwrap();
+        assert_eq!(json["actor"], "bot");
+        assert!(json["wp_id"].is_null());
+    }
+
+    #[test]
+    fn compute_status_empty_map() {
+        let services = std::collections::HashMap::new();
+        assert_eq!(DetailedHealthResponse::compute_status(&services), "healthy");
+    }
+
+    #[test]
+    fn compute_status_mixed_degraded_and_unavailable() {
+        let mut services = std::collections::HashMap::new();
+        services.insert("a".into(), ServiceHealth::degraded("slow"));
+        services.insert("b".into(), ServiceHealth::unavailable("down"));
+        // unavailable takes precedence over degraded
+        assert_eq!(DetailedHealthResponse::compute_status(&services), "unavailable");
+    }
+
+    #[test]
+    fn compute_status_all_not_configured() {
+        let mut services = std::collections::HashMap::new();
+        services.insert("a".into(), ServiceHealth::not_configured());
+        services.insert("b".into(), ServiceHealth::not_configured());
+        assert_eq!(DetailedHealthResponse::compute_status(&services), "healthy");
+    }
+
+    #[test]
+    fn service_health_healthy_latency_zero() {
+        let h = ServiceHealth::healthy(0);
+        assert_eq!(h.latency_ms, Some(0));
+        assert!(h.error.is_none());
+    }
+
+    #[test]
+    fn detailed_health_basic_uptime() {
+        let h = DetailedHealthResponse::basic(0);
+        assert_eq!(h.api.uptime_seconds, 0);
+        assert!(!h.timestamp.is_empty());
+    }
+
+    #[test]
+    fn project_response_no_description_serializes_null() {
+        use chrono::Utc;
+        let p = agileplus_domain::domain::project::Project {
+            id: 3,
+            slug: "p3".into(),
+            name: "P3".into(),
             description: None,
             created_at: Utc::now(),
             updated_at: Utc::now(),
         };
         let resp = ProjectResponse::from(p);
-        assert!(resp.description.is_none());
+        let json = serde_json::to_value(&resp).unwrap();
+        assert!(json["description"].is_null());
     }
 }
+
