@@ -230,4 +230,292 @@ mod tests {
         let json = serde_json::to_string(&payload).unwrap();
         assert!(!json.contains("labels"));
     }
+
+    // ── TokenBucket ────────────────────────────────────────────────────────────
+
+    #[test]
+    fn token_bucket_exhausts_after_max_tokens() {
+        let mut bucket = TokenBucket::new(3.0, 0.0); // no refill
+        assert!(bucket.try_acquire());
+        assert!(bucket.try_acquire());
+        assert!(bucket.try_acquire());
+        assert!(!bucket.try_acquire()); // exhausted
+    }
+
+    #[test]
+    fn token_bucket_refills_over_time() {
+        let mut bucket = TokenBucket::new(10.0, 1000.0); // fast refill
+        // Exhaust
+        for _ in 0..10 {
+            bucket.try_acquire();
+        }
+        assert!(!bucket.try_acquire());
+        // Simulate time passing by manipulating last_refill
+        bucket.last_refill = Instant::now() - Duration::from_secs(1);
+        assert!(bucket.try_acquire()); // refilled 1000 tokens
+    }
+
+    #[test]
+    fn token_bucket_time_until_available_zero_when_tokens_available() {
+        let bucket = TokenBucket::new(5.0, 1.0);
+        assert_eq!(bucket.time_until_available(), Duration::ZERO);
+    }
+
+    #[test]
+    fn token_bucket_time_until_available_nonzero_when_empty() {
+        let mut bucket = TokenBucket::new(1.0, 1.0);
+        bucket.try_acquire(); // exhaust
+        let wait = bucket.time_until_available();
+        assert!(wait > Duration::ZERO);
+        assert!(wait <= Duration::from_secs(1));
+    }
+
+    #[test]
+    fn token_bucket_does_not_exceed_max_tokens() {
+        let mut bucket = TokenBucket::new(3.0, 1000.0);
+        // Wait by manipulating time
+        bucket.last_refill = Instant::now() - Duration::from_secs(10);
+        bucket.try_acquire();
+        // Tokens should be capped at max_tokens
+        assert!(bucket.tokens <= bucket.max_tokens);
+    }
+
+    #[test]
+    fn token_bucket_one_token_per_acquire() {
+        let mut bucket = TokenBucket::new(2.0, 0.0);
+        let before = bucket.tokens;
+        bucket.try_acquire();
+        let after = bucket.tokens;
+        assert!((before - after - 1.0).abs() < f64::EPSILON);
+    }
+
+    // ── GitHubIssuePayload serialization ───────────────────────────────────────
+
+    #[test]
+    fn github_issue_payload_deserialize_roundtrip() {
+        let payload = GitHubIssuePayload {
+            title: "Feature: add dark mode".to_string(),
+            body: "Implement dark mode toggle.".to_string(),
+            labels: vec!["enhancement".to_string(), "ui".to_string()],
+        };
+        let json = serde_json::to_string(&payload).unwrap();
+        let restored: GitHubIssuePayload = serde_json::from_str(&json).unwrap();
+        assert_eq!(restored.title, payload.title);
+        assert_eq!(restored.body, payload.body);
+        assert_eq!(restored.labels, payload.labels);
+    }
+
+    #[test]
+    fn github_issue_payload_labels_roundtrip() {
+        let payload = GitHubIssuePayload {
+            title: "Test".to_string(),
+            body: "".to_string(),
+            labels: vec![
+                "bug".to_string(),
+                "priority:high".to_string(),
+                "agileplus".to_string(),
+            ],
+        };
+        let json = serde_json::to_string(&payload).unwrap();
+        let restored: GitHubIssuePayload = serde_json::from_str(&json).unwrap();
+        assert_eq!(restored.labels.len(), 3);
+        assert_eq!(restored.labels[0], "bug");
+        assert_eq!(restored.labels[1], "priority:high");
+        assert_eq!(restored.labels[2], "agileplus");
+    }
+
+    #[test]
+    fn github_issue_payload_with_empty_body() {
+        let payload = GitHubIssuePayload {
+            title: "No description".to_string(),
+            body: String::new(),
+            labels: vec![],
+        };
+        let json = serde_json::to_string(&payload).unwrap();
+        assert!(json.contains("\"title\":\"No description\""));
+        assert!(json.contains("\"body\":\"\""));
+        let restored: GitHubIssuePayload = serde_json::from_str(&json).unwrap();
+        assert!(restored.body.is_empty());
+    }
+
+    #[test]
+    fn github_issue_payload_with_special_characters() {
+        let payload = GitHubIssuePayload {
+            title: "Bug: crash on \"start\"".to_string(),
+            body: "Line1\nLine2\tTab".to_string(),
+            labels: vec!["bug".to_string()],
+        };
+        let json = serde_json::to_string(&payload).unwrap();
+        let restored: GitHubIssuePayload = serde_json::from_str(&json).unwrap();
+        assert_eq!(restored.title, payload.title);
+        assert_eq!(restored.body, payload.body);
+    }
+
+    // ── GitHubIssueResponse deserialization ────────────────────────────────────
+
+    #[test]
+    fn github_issue_response_deserialize() {
+        let json = r#"{
+            "number": 42,
+            "title": "Fix crash",
+            "body": "Steps to reproduce...",
+            "state": "open",
+            "labels": [{"name": "bug"}, {"name": "priority:high"}],
+            "updated_at": "2025-01-15T10:30:00Z"
+        }"#;
+        let resp: GitHubIssueResponse = serde_json::from_str(json).unwrap();
+        assert_eq!(resp.number, 42);
+        assert_eq!(resp.title, "Fix crash");
+        assert_eq!(resp.body.as_deref(), Some("Steps to reproduce..."));
+        assert_eq!(resp.state, "open");
+        assert_eq!(resp.labels.len(), 2);
+        assert_eq!(resp.labels[0].name, "bug");
+        assert_eq!(resp.labels[1].name, "priority:high");
+    }
+
+    #[test]
+    fn github_issue_response_body_none() {
+        let json = r#"{
+            "number": 1,
+            "title": "Simple issue",
+            "body": null,
+            "state": "open",
+            "labels": [],
+            "updated_at": "2025-01-15T10:30:00Z"
+        }"#;
+        let resp: GitHubIssueResponse = serde_json::from_str(json).unwrap();
+        assert!(resp.body.is_none());
+    }
+
+    #[test]
+    fn github_issue_response_closed_state() {
+        let json = r#"{
+            "number": 99,
+            "title": "Closed bug",
+            "body": null,
+            "state": "closed",
+            "labels": [{"name": "wontfix"}],
+            "updated_at": "2025-02-01T00:00:00Z"
+        }"#;
+        let resp: GitHubIssueResponse = serde_json::from_str(json).unwrap();
+        assert_eq!(resp.state, "closed");
+        assert_eq!(resp.labels[0].name, "wontfix");
+    }
+
+    #[test]
+    fn github_issue_response_empty_labels() {
+        let json = r#"{
+            "number": 5,
+            "title": "No labels",
+            "body": null,
+            "state": "open",
+            "labels": [],
+            "updated_at": "2025-01-15T10:30:00Z"
+        }"#;
+        let resp: GitHubIssueResponse = serde_json::from_str(json).unwrap();
+        assert!(resp.labels.is_empty());
+    }
+
+    // ── GitHubLabel deserialization ────────────────────────────────────────────
+
+    #[test]
+    fn github_label_deserialize() {
+        let json = r#"{"name": "bug"}"#;
+        let label: GitHubLabel = serde_json::from_str(json).unwrap();
+        assert_eq!(label.name, "bug");
+    }
+
+    #[test]
+    fn github_label_deserialize_with_color() {
+        // The struct only has `name`, extra fields are ignored by serde
+        let json = r#"{"name": "enhancement", "color": "a2eeef"}"#;
+        let label: GitHubLabel = serde_json::from_str(json).unwrap();
+        assert_eq!(label.name, "enhancement");
+    }
+
+    // ── GitHubClient construction ──────────────────────────────────────────────
+
+    #[test]
+    fn github_client_construction() {
+        let client = GitHubClient::new(
+            "https://api.github.com".to_string(),
+            "ghp_test_token".to_string(),
+            "owner".to_string(),
+            "repo".to_string(),
+        );
+        assert_eq!(client.base_url, "https://api.github.com");
+        assert_eq!(client.token, "ghp_test_token");
+        assert_eq!(client.owner, "owner");
+        assert_eq!(client.repo, "repo");
+    }
+
+    #[test]
+    fn github_client_clone() {
+        let client = GitHubClient::new(
+            "https://api.github.com".to_string(),
+            "token".to_string(),
+            "owner".to_string(),
+            "repo".to_string(),
+        );
+        let cloned = client.clone();
+        assert_eq!(cloned.base_url, client.base_url);
+        assert_eq!(cloned.token, client.token);
+        assert_eq!(cloned.owner, client.owner);
+        assert_eq!(cloned.repo, client.repo);
+    }
+
+    #[test]
+    fn github_client_debug_format() {
+        let client = GitHubClient::new(
+            "https://api.github.com".to_string(),
+            "secret".to_string(),
+            "org".to_string(),
+            "project".to_string(),
+        );
+        let debug = format!("{client:?}");
+        assert!(debug.contains("GitHubClient"));
+        assert!(debug.contains("org"));
+        assert!(debug.contains("project"));
+    }
+
+    #[test]
+    fn github_client_issues_url_format() {
+        let client = GitHubClient::new(
+            "https://api.github.com".to_string(),
+            "token".to_string(),
+            "my-org".to_string(),
+            "my-repo".to_string(),
+        );
+        assert_eq!(
+            client.issues_url(),
+            "https://api.github.com/repos/my-org/my-repo/issues"
+        );
+    }
+
+    #[test]
+    fn github_client_issue_url_format() {
+        let client = GitHubClient::new(
+            "https://api.github.com".to_string(),
+            "token".to_string(),
+            "org".to_string(),
+            "repo".to_string(),
+        );
+        assert_eq!(
+            client.issue_url(42),
+            "https://api.github.com/repos/org/repo/issues/42"
+        );
+    }
+
+    #[test]
+    fn github_client_issue_url_various_numbers() {
+        let client = GitHubClient::new(
+            "https://api.github.com".to_string(),
+            "token".to_string(),
+            "org".to_string(),
+            "repo".to_string(),
+        );
+        assert!(client.issue_url(1).ends_with("/issues/1"));
+        assert!(client.issue_url(999).ends_with("/issues/999"));
+        assert!(client.issue_url(0).ends_with("/issues/0"));
+    }
 }
