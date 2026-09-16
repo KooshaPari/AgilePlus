@@ -2,6 +2,8 @@
 //!
 //! Traceability: WP08-T048, WP06-T031, WP06-T033
 
+pub mod module_cycle;
+
 use agileplus_domain::domain::cycle::Cycle;
 use agileplus_domain::domain::feature::Feature;
 use agileplus_domain::domain::module::Module;
@@ -483,6 +485,8 @@ pub async fn push_feature_cycle_unassignment<S: StoragePort>(
 mod tests {
     use super::*;
     use crate::state_mapper::PlaneStateMapper;
+    use wiremock::matchers::{method, path};
+    use wiremock::{Mock, MockServer, ResponseTemplate};
 
     #[test]
     fn outbound_sync_constructs() {
@@ -494,5 +498,164 @@ mod tests {
         );
         let mapper = PlaneStateMapper::new();
         let _sync = OutboundSync::new(client, mapper);
+    }
+
+    fn sample_feature() -> Feature {
+        let mut f = Feature::new("test-feature", "Test Feature", [0u8; 32], None);
+        f.id = 1;
+        f.labels = vec!["bug".to_string()];
+        f
+    }
+
+    #[tokio::test]
+    async fn push_feature_creates_new_issue() {
+        let server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path("/api/v1/workspaces/ws/projects/proj/work-items/"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "id": "plane-uuid-1",
+                "name": "Test Feature"
+            })))
+            .mount(&server)
+            .await;
+
+        let client = PlaneClient::new(server.uri(), "key".into(), "ws".into(), "proj".into());
+        let sync = OutboundSync::new(client, PlaneStateMapper::new());
+        let feature = sample_feature();
+
+        let issue_id = sync.push_feature(&feature).await.unwrap();
+        assert_eq!(issue_id, "plane-uuid-1");
+    }
+
+    #[tokio::test]
+    async fn push_feature_updates_existing_issue() {
+        let server = MockServer::start().await;
+        Mock::given(method("PATCH"))
+            .and(path("/api/v1/workspaces/ws/projects/proj/work-items/existing-id/"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "id": "existing-id",
+                "name": "Test Feature"
+            })))
+            .mount(&server)
+            .await;
+
+        let client = PlaneClient::new(server.uri(), "key".into(), "ws".into(), "proj".into());
+        let sync = OutboundSync::new(client, PlaneStateMapper::new());
+        let mut feature = sample_feature();
+        feature.plane_issue_id = Some("existing-id".to_string());
+
+        let issue_id = sync.push_feature(&feature).await.unwrap();
+        assert_eq!(issue_id, "existing-id");
+    }
+
+    #[tokio::test]
+    async fn push_feature_create_error_propagates() {
+        let server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path("/api/v1/workspaces/ws/projects/proj/work-items/"))
+            .respond_with(ResponseTemplate::new(500).set_body_string("internal error"))
+            .mount(&server)
+            .await;
+
+        let client = PlaneClient::new(server.uri(), "key".into(), "ws".into(), "proj".into());
+        let sync = OutboundSync::new(client, PlaneStateMapper::new());
+        let feature = sample_feature();
+
+        let result = sync.push_feature(&feature).await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn push_feature_update_error_propagates() {
+        let server = MockServer::start().await;
+        Mock::given(method("PATCH"))
+            .and(path("/api/v1/workspaces/ws/projects/proj/work-items/existing-id/"))
+            .respond_with(ResponseTemplate::new(404).set_body_string("not found"))
+            .mount(&server)
+            .await;
+
+        let client = PlaneClient::new(server.uri(), "key".into(), "ws".into(), "proj".into());
+        let sync = OutboundSync::new(client, PlaneStateMapper::new());
+        let mut feature = sample_feature();
+        feature.plane_issue_id = Some("existing-id".to_string());
+
+        let result = sync.push_feature(&feature).await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn push_work_package_creates_new_sub_issue() {
+        let server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path("/api/v1/workspaces/ws/projects/proj/work-items/"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "id": "wp-uuid-1",
+                "name": "[WP01] Test WP"
+            })))
+            .mount(&server)
+            .await;
+
+        let client = PlaneClient::new(server.uri(), "key".into(), "ws".into(), "proj".into());
+        let sync = OutboundSync::new(client, PlaneStateMapper::new());
+
+        let id = sync
+            .push_work_package(
+                "WP01",
+                "Test WP",
+                Some("description"),
+                &["label".to_string()],
+                "parent-plane-id",
+                None,
+            )
+            .await
+            .unwrap();
+        assert_eq!(id, "wp-uuid-1");
+    }
+
+    #[tokio::test]
+    async fn push_work_package_updates_existing() {
+        let server = MockServer::start().await;
+        Mock::given(method("PATCH"))
+            .and(path("/api/v1/workspaces/ws/projects/proj/work-items/wp-existing/"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "id": "wp-existing",
+                "name": "[WP02] Updated"
+            })))
+            .mount(&server)
+            .await;
+
+        let client = PlaneClient::new(server.uri(), "key".into(), "ws".into(), "proj".into());
+        let sync = OutboundSync::new(client, PlaneStateMapper::new());
+
+        let id = sync
+            .push_work_package(
+                "WP02",
+                "Updated",
+                None,
+                &[],
+                "parent-id",
+                Some("wp-existing"),
+            )
+            .await
+            .unwrap();
+        assert_eq!(id, "wp-existing");
+    }
+
+    #[tokio::test]
+    async fn push_work_package_error_propagates() {
+        let server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path("/api/v1/workspaces/ws/projects/proj/work-items/"))
+            .respond_with(ResponseTemplate::new(422).set_body_string("unprocessable"))
+            .mount(&server)
+            .await;
+
+        let client = PlaneClient::new(server.uri(), "key".into(), "ws".into(), "proj".into());
+        let sync = OutboundSync::new(client, PlaneStateMapper::new());
+
+        let result = sync
+            .push_work_package("WP03", "Fail", None, &[], "parent", None)
+            .await;
+        assert!(result.is_err());
     }
 }

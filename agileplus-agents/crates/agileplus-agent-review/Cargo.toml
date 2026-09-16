@@ -6,7 +6,7 @@ license.workspace = true
 description = "Review-loop logic: polls GitHub/Coderabbit, feeds comments back to agents"
 
 [dependencies]
-agileplus-agent-dispatch = { path = "../agileplus-agent-dispatch" }
+agileplus-agent-dispatch = { version = "0.2.2", path = "../agileplus-agent-dispatch" }
 tokio = { workspace = true }
 thiserror = { workspace = true }
 serde = { workspace = true, features = ["derive"] }

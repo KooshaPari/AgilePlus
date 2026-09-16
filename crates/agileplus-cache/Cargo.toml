@@ -8,11 +8,17 @@ authors.workspace = true
 repository.workspace = true
 
 [dependencies]
+agileplus-domain = { version = "0.2.2", path = "../agileplus-domain" }
+bb8 = "0.9"
+bb8-redis = "0.18"
 redis.workspace = true
 tokio.workspace = true
 tracing.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+thiserror.workspace = true
+async-trait.workspace = true
+chrono.workspace = true
 
 [dev-dependencies]
 tokio = { version = "1", features = ["full", "test-util"] }

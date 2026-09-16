@@ -59,7 +59,7 @@ impl SyncConflict {
 pub fn hash_value(value: &serde_json::Value) -> String {
     let bytes = serde_json::to_vec(value).unwrap_or_default();
     let digest = Sha256::digest(&bytes);
-    format!("{digest:x}")
+    digest.iter().map(|b| format!("{b:02x}")).collect()
 }
 
 /// Detect whether `local` and `remote` diverge from the stored `stored_hash`.

@@ -21,6 +21,9 @@ pub mod webhook;
 #[cfg(test)]
 mod extended_tests;
 
+#[cfg(test)]
+pub mod mock_storage;
+
 pub use client::PlaneClient;
 pub use client::{
     PlaneCreateCycleRequest, PlaneCreateModuleRequest, PlaneCycleResponse, PlaneModuleResponse,
