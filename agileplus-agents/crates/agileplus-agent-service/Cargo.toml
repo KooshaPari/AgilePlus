@@ -10,8 +10,8 @@ name = "agileplus-agent-service"
 path = "src/main.rs"
 
 [dependencies]
-agileplus-agent-dispatch = { version = "0.2.2", path = "../agileplus-agent-dispatch" }
-agileplus-agent-review = { version = "0.2.2", path = "../agileplus-agent-review" }
+agileplus-agent-dispatch = { version = "0.2.3", path = "../agileplus-agent-dispatch" }
+agileplus-agent-review = { version = "0.2.3", path = "../agileplus-agent-review" }
 
 tokio = { workspace = true }
 tokio-stream = { workspace = true }
@@ -27,3 +27,6 @@ uuid = { workspace = true }
 [build-dependencies]
 tonic-build = { workspace = true }
 tonic-prost-build = { workspace = true }
+
+[package.metadata.dist]
+dist = false

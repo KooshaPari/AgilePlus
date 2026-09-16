@@ -8,8 +8,8 @@ authors.workspace = true
 repository.workspace = true
 
 [dependencies]
-agileplus-events = { version = "0.2.2", path = "../agileplus-events" }
-agileplus-sqlite = { version = "0.2.2", path = "../agileplus-sqlite" }
+agileplus-events = { version = "0.2.3", path = "../agileplus-events" }
+agileplus-sqlite = { version = "0.2.3", path = "../agileplus-sqlite" }
 tokio.workspace = true
 async-trait.workspace = true
 

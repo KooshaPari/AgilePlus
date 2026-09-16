@@ -54,7 +54,7 @@ dependencies = [
 
 [[package]]
 name = "agileplus-agent-dispatch"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -73,7 +73,7 @@ dependencies = [
 
 [[package]]
 name = "agileplus-agent-review"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "agileplus-agent-dispatch",
  "async-trait",
@@ -93,7 +93,7 @@ dependencies = [
 
 [[package]]
 name = "agileplus-agent-service"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "agileplus-agent-dispatch",
  "agileplus-agent-review",
@@ -113,7 +113,7 @@ dependencies = [
 
 [[package]]
 name = "agileplus-api"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "agileplus-application",
  "agileplus-domain",
@@ -142,11 +142,11 @@ dependencies = [
 
 [[package]]
 name = "agileplus-api-types"
-version = "0.2.2"
+version = "0.2.3"
 
 [[package]]
 name = "agileplus-application"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "agileplus-domain",
  "agileplus-graph",
@@ -163,7 +163,7 @@ dependencies = [
 
 [[package]]
 name = "agileplus-bdd"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "agileplus-domain",
  "chrono",
@@ -178,7 +178,7 @@ dependencies = [
 
 [[package]]
 name = "agileplus-benchmarks"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "agileplus-domain",
  "agileplus-events",
@@ -197,7 +197,7 @@ dependencies = [
 
 [[package]]
 name = "agileplus-cache"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "agileplus-domain",
  "async-trait",
@@ -214,7 +214,7 @@ dependencies = [
 
 [[package]]
 name = "agileplus-cli"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "agileplus-application",
  "agileplus-domain",
@@ -252,7 +252,7 @@ dependencies = [
 
 [[package]]
 name = "agileplus-contract-tests"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "agileplus-events",
  "agileplus-sqlite",
@@ -262,7 +262,7 @@ dependencies = [
 
 [[package]]
 name = "agileplus-dashboard"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "agileplus-domain",
  "agileplus-events",
@@ -313,7 +313,7 @@ dependencies = [
 
 [[package]]
 name = "agileplus-domain"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "aes-gcm",
  "argon2",
@@ -363,11 +363,11 @@ dependencies = [
 
 [[package]]
 name = "agileplus-error-core"
-version = "0.2.2"
+version = "0.2.3"
 
 [[package]]
 name = "agileplus-events"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "agileplus-domain",
  "async-trait",
@@ -382,7 +382,7 @@ dependencies = [
 
 [[package]]
 name = "agileplus-fixtures"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "agileplus-domain",
  "chrono",
@@ -392,7 +392,7 @@ dependencies = [
 
 [[package]]
 name = "agileplus-git"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "agileplus-domain",
  "agileplus-triage",
@@ -413,7 +413,7 @@ dependencies = [
 
 [[package]]
 name = "agileplus-github"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "agileplus-domain",
  "agileplus-triage",
@@ -458,7 +458,7 @@ dependencies = [
 
 [[package]]
 name = "agileplus-graph"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "async-trait",
  "neo4rs",
@@ -472,7 +472,7 @@ dependencies = [
 
 [[package]]
 name = "agileplus-grpc"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "agileplus-domain",
  "agileplus-git",
@@ -492,7 +492,7 @@ dependencies = [
 
 [[package]]
 name = "agileplus-import"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "agileplus-domain",
  "anyhow",
@@ -505,7 +505,7 @@ dependencies = [
 
 [[package]]
 name = "agileplus-integration-tests"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "agileplus-api",
  "agileplus-domain",
@@ -513,6 +513,7 @@ dependencies = [
  "async-trait",
  "chrono",
  "reqwest 0.12.28",
+ "rusqlite",
  "serde_json",
  "tempfile",
  "thiserror 2.0.20",
@@ -521,7 +522,7 @@ dependencies = [
 
 [[package]]
 name = "agileplus-nats"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "async-trait",
  "chrono",
@@ -534,7 +535,7 @@ dependencies = [
 
 [[package]]
 name = "agileplus-p2p"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "agileplus-domain",
  "agileplus-events",
@@ -557,7 +558,7 @@ dependencies = [
 
 [[package]]
 name = "agileplus-plane"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "agileplus-domain",
  "anyhow",
@@ -580,7 +581,7 @@ dependencies = [
 
 [[package]]
 name = "agileplus-proto"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "prost",
  "prost-build",
@@ -592,7 +593,7 @@ dependencies = [
 
 [[package]]
 name = "agileplus-sqlite"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "agileplus-domain",
  "agileplus-events",
@@ -607,7 +608,7 @@ dependencies = [
 
 [[package]]
 name = "agileplus-subcmds"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "anyhow",
  "chrono",
@@ -621,7 +622,7 @@ dependencies = [
 
 [[package]]
 name = "agileplus-sync"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "agileplus-domain",
  "agileplus-nats",
@@ -638,7 +639,7 @@ dependencies = [
 
 [[package]]
 name = "agileplus-telemetry"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "agileplus-domain",
  "chrono",
@@ -662,7 +663,7 @@ dependencies = [
 
 [[package]]
 name = "agileplus-transport-tests"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "agileplus-domain",
  "agileplus-grpc",
@@ -678,7 +679,7 @@ dependencies = [
 
 [[package]]
 name = "agileplus-triage"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "agileplus-domain",
  "anyhow",
@@ -9615,7 +9616,7 @@ checksum = "8df9b6e13f2d32c91b9bd719c00d1958837bc7dec474d94952798cc8e69eeec3"
 
 [[package]]
 name = "traceability-core"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "chrono",
  "indexmap 2.14.2",

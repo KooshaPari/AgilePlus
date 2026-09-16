@@ -15,3 +15,6 @@ authors = ["kooshapari"]
 paste = "1"
 
 [dev-dependencies]
+
+[package.metadata.dist]
+dist = false

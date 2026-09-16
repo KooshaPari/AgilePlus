@@ -16,7 +16,7 @@ sqlite = ["dep:rusqlite"]
 codebert = ["oai"]
 
 [dependencies]
-agileplus-domain = { version = "0.2.2", path = "../agileplus-domain" }
+agileplus-domain = { version = "0.2.3", path = "../agileplus-domain" }
 serde.workspace = true
 serde_json.workspace = true
 chrono.workspace = true
@@ -32,3 +32,6 @@ rusqlite = { workspace = true, optional = true }
 [dev-dependencies]
 tempfile = "3"
 tokio = { version = "1", features = ["rt", "macros"] }
+
+[package.metadata.dist]
+dist = false

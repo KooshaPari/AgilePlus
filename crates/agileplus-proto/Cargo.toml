@@ -26,3 +26,6 @@ default = []
 
 [package.metadata.cargo-machete]
 ignored = ["prost"]
+
+[package.metadata.dist]
+dist = false

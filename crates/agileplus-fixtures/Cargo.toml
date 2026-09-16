@@ -6,9 +6,12 @@ license.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-agileplus-domain = { version = "0.2.2", path = "../agileplus-domain" }
+agileplus-domain = { version = "0.2.3", path = "../agileplus-domain" }
 chrono.workspace = true
 serde_json.workspace = true
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["full"] }
+
+[package.metadata.dist]
+dist = false

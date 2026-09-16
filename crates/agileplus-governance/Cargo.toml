@@ -72,3 +72,6 @@ version = "2"
 optional = true
 version = "4"
 features = ["derive"]
+
+[package.metadata.dist]
+dist = false

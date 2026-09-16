@@ -6,7 +6,7 @@ license.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-agileplus-domain = { version = "0.2.2", path = "../agileplus-domain" }
+agileplus-domain = { version = "0.2.3", path = "../agileplus-domain" }
 serde.workspace = true
 serde_json.workspace = true
 chrono.workspace = true
@@ -26,3 +26,6 @@ rusqlite = { version = "0.40", features = ["bundled"] }
 tempfile = "3"
 tokio = { version = "1", features = ["rt", "macros"] }
 wiremock = "0.6"
+
+[package.metadata.dist]
+dist = false
