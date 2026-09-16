@@ -8,8 +8,8 @@ authors.workspace = true
 repository.workspace = true
 
 [dependencies]
-agileplus-domain = { version = "0.2.1", path = "../agileplus-domain" }
-agileplus-events = { version = "0.2.1", path = "../agileplus-events" }
+agileplus-domain = { version = "0.2.2", path = "../agileplus-domain" }
+agileplus-events = { version = "0.2.2", path = "../agileplus-events" }
 async-nats.workspace = true
 async-trait.workspace = true
 bytes = "1"
