@@ -119,3 +119,70 @@ pub async fn maybe_sync_feature_cycle_unassignment_from_env<S: StoragePort>(
     };
     push_feature_cycle_unassignment(&client, storage, feature_id, cycle_id).await
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::env;
+
+    fn clear_plane_env() {
+        unsafe {
+            env::remove_var("PLANE_API_KEY");
+            env::remove_var("PLANE_WORKSPACE");
+            env::remove_var("PLANE_PROJECT");
+            env::remove_var("PLANE_API_URL");
+        }
+    }
+
+    #[test]
+    fn plane_client_from_env_returns_none_without_api_key() {
+        clear_plane_env();
+        assert!(plane_client_from_env().is_none());
+    }
+
+    #[test]
+    fn plane_client_from_env_returns_none_without_workspace() {
+        unsafe {
+            env::set_var("PLANE_API_KEY", "test-key");
+            env::remove_var("PLANE_WORKSPACE");
+            env::remove_var("PLANE_PROJECT");
+        }
+        assert!(plane_client_from_env().is_none());
+        clear_plane_env();
+    }
+
+    #[test]
+    fn plane_client_from_env_returns_none_without_project() {
+        unsafe {
+            env::set_var("PLANE_API_KEY", "test-key");
+            env::set_var("PLANE_WORKSPACE", "test-ws");
+            env::remove_var("PLANE_PROJECT");
+        }
+        assert!(plane_client_from_env().is_none());
+        clear_plane_env();
+    }
+
+    #[test]
+    fn plane_client_from_env_succeeds_with_all_vars() {
+        unsafe {
+            env::set_var("PLANE_API_KEY", "test-key");
+            env::set_var("PLANE_WORKSPACE", "test-ws");
+            env::set_var("PLANE_PROJECT", "test-proj");
+            env::remove_var("PLANE_API_URL");
+        }
+        assert!(plane_client_from_env().is_some());
+        clear_plane_env();
+    }
+
+    #[test]
+    fn plane_client_from_env_uses_custom_api_url() {
+        unsafe {
+            env::set_var("PLANE_API_KEY", "key");
+            env::set_var("PLANE_WORKSPACE", "ws");
+            env::set_var("PLANE_PROJECT", "proj");
+            env::set_var("PLANE_API_URL", "https://custom.plane.so");
+        }
+        assert!(plane_client_from_env().is_some());
+        clear_plane_env();
+    }
+}

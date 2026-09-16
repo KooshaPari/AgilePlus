@@ -35,10 +35,9 @@ pub(super) async fn import_projects<S: StoragePort>(
             project_ids.insert(project_slug, existing.id);
         } else {
             let new_project = Project::new(
-                &project_slug,
                 &project.name,
-                project.description.as_deref().unwrap_or_default(),
-            );
+                &project_slug,
+            ).context("Invalid project data")?;
             let id = storage
                 .create_project(&new_project)
                 .await

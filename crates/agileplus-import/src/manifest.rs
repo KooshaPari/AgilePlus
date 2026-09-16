@@ -20,7 +20,7 @@ pub struct ImportBundle {
     pub cycles: Vec<ImportCycle>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ImportProject {
     #[serde(default)]
     pub slug: Option<String>,

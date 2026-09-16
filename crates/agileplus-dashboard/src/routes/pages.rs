@@ -200,3 +200,301 @@ pub async fn time_footer() -> Html<String> {
             .to_string(),
     )
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::app_state::{DashboardStore, SharedState, default_health};
+    use std::sync::Arc;
+    use tokio::sync::RwLock;
+    use tower::util::ServiceExt;
+
+    fn make_state() -> SharedState {
+        let store = DashboardStore::seeded();
+        Arc::new(RwLock::new(store))
+    }
+
+    fn make_empty_state() -> SharedState {
+        let store = DashboardStore {
+            health: default_health(),
+            ..Default::default()
+        };
+        Arc::new(RwLock::new(store))
+    }
+
+    #[tokio::test]
+    async fn root_renders_home_page_with_seed_data() {
+        let state = make_state();
+        let response = root(State(state)).await;
+        let body = response.into_body();
+        let bytes = axum::body::to_bytes(body, usize::MAX).await.unwrap();
+        let html = String::from_utf8(bytes.to_vec()).unwrap();
+        assert!(html.contains("AgilePlus"));
+    }
+
+    #[tokio::test]
+    async fn root_counts_features_correctly() {
+        let state = make_state();
+        let store = state.read().await;
+        let total = store.features.len();
+        let active = store
+            .features
+            .iter()
+            .filter(|f| {
+                !matches!(
+                    f.state,
+                    agileplus_domain::domain::state_machine::FeatureState::Shipped
+                        | agileplus_domain::domain::state_machine::FeatureState::Retrospected
+                )
+            })
+            .count();
+        let shipped = store.features.len() - active;
+        drop(store);
+
+        let response = root(State(state)).await;
+        let body = response.into_body();
+        let bytes = axum::body::to_bytes(body, usize::MAX).await.unwrap();
+        let html = String::from_utf8(bytes.to_vec()).unwrap();
+        assert!(html.contains(&total.to_string()));
+        assert!(html.contains(&active.to_string()));
+        assert!(html.contains(&shipped.to_string()));
+    }
+
+    #[tokio::test]
+    async fn home_delegates_to_root() {
+        let state = make_state();
+        let response = home(State(state)).await;
+        let body = response.into_body();
+        let bytes = axum::body::to_bytes(body, usize::MAX).await.unwrap();
+        let html = String::from_utf8(bytes.to_vec()).unwrap();
+        assert!(html.contains("AgilePlus"));
+    }
+
+    #[tokio::test]
+    async fn dashboard_page_renders_kanban() {
+        let state = make_state();
+        let query = HashMap::new();
+        let response = dashboard_page(State(state), Query(query)).await;
+        let body = response.into_body();
+        let bytes = axum::body::to_bytes(body, usize::MAX).await.unwrap();
+        let html = String::from_utf8(bytes.to_vec()).unwrap();
+        assert!(html.contains("kanban-board"));
+    }
+
+    #[tokio::test]
+    async fn dashboard_page_with_filter_query() {
+        let state = make_state();
+        let mut query = HashMap::new();
+        query.insert("filter".to_string(), "active".to_string());
+        let response = dashboard_page(State(state), Query(query)).await;
+        let body = response.into_body();
+        let bytes = axum::body::to_bytes(body, usize::MAX).await.unwrap();
+        let html = String::from_utf8(bytes.to_vec()).unwrap();
+        assert!(html.contains("kanban-board"));
+    }
+
+    #[tokio::test]
+    async fn features_page_renders_feature_list() {
+        let state = make_state();
+        let response = features_page(State(state)).await;
+        let body = response.into_body();
+        let bytes = axum::body::to_bytes(body, usize::MAX).await.unwrap();
+        let html = String::from_utf8(bytes.to_vec()).unwrap();
+        assert!(html.contains("features") || html.contains("feature"));
+    }
+
+    #[tokio::test]
+    async fn features_page_with_empty_store() {
+        let state = make_empty_state();
+        let response = features_page(State(state)).await;
+        let body = response.into_body();
+        let bytes = axum::body::to_bytes(body, usize::MAX).await.unwrap();
+        assert_eq!(bytes.len() > 0, true);
+    }
+
+    #[tokio::test]
+    async fn events_page_renders() {
+        let response = events_page().await;
+        let body = response.into_body();
+        let bytes = axum::body::to_bytes(body, usize::MAX).await.unwrap();
+        let html = String::from_utf8(bytes.to_vec()).unwrap();
+        assert!(html.contains("event"));
+    }
+
+    #[tokio::test]
+    async fn settings_page_renders() {
+        let response = settings_page().await;
+        let body = response.into_body();
+        let bytes = axum::body::to_bytes(body, usize::MAX).await.unwrap();
+        let html = String::from_utf8(bytes.to_vec()).unwrap();
+        assert!(html.contains("settings") || html.contains("Settings"));
+    }
+
+    #[tokio::test]
+    async fn hub_page_renders_ecosystem_projects() {
+        let response = hub_page().await;
+        let body = response.into_body();
+        let bytes = axum::body::to_bytes(body, usize::MAX).await.unwrap();
+        let html = String::from_utf8(bytes.to_vec()).unwrap();
+        assert!(html.contains("AgilePlus"));
+        assert!(html.contains("phenodocs"));
+    }
+
+    #[tokio::test]
+    async fn feature_page_delegates_to_feature_detail() {
+        let state = make_state();
+        let response = feature_page(State(state), Path(1)).await;
+        let body = response.into_body();
+        let bytes = axum::body::to_bytes(body, usize::MAX).await.unwrap();
+        let html = String::from_utf8(bytes.to_vec()).unwrap();
+        assert!(html.contains("feature") || html.contains("Feature"));
+    }
+
+    #[tokio::test]
+    async fn feature_page_not_found() {
+        let state = make_state();
+        let response = feature_page(State(state), Path(99999)).await;
+        let body = response.into_body();
+        let bytes = axum::body::to_bytes(body, usize::MAX).await.unwrap();
+        let text = String::from_utf8(bytes.to_vec()).unwrap();
+        assert!(text.contains("not found") || text.contains("Not found"));
+    }
+
+    #[tokio::test]
+    async fn time_footer_returns_utc_timestamp() {
+        let response = time_footer().await;
+        let text = response.0;
+        assert!(text.contains("UTC"));
+        assert!(text.contains("-"));
+    }
+
+    #[tokio::test]
+    async fn dashboard_page_via_oneshot_router() {
+        let state = make_state();
+        let app = crate::routes::router(state);
+        let request = axum::http::Request::builder()
+            .method("GET")
+            .uri("/dashboard")
+            .body(axum::body::Body::empty())
+            .unwrap();
+        let response = app.oneshot(request).await.unwrap();
+        assert_eq!(response.status(), axum::http::StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn home_page_via_oneshot_router() {
+        let state = make_state();
+        let app = crate::routes::router(state);
+        let request = axum::http::Request::builder()
+            .method("GET")
+            .uri("/home")
+            .body(axum::body::Body::empty())
+            .unwrap();
+        let response = app.oneshot(request).await.unwrap();
+        assert_eq!(response.status(), axum::http::StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn features_page_via_oneshot_router() {
+        let state = make_state();
+        let app = crate::routes::router(state);
+        let request = axum::http::Request::builder()
+            .method("GET")
+            .uri("/features")
+            .body(axum::body::Body::empty())
+            .unwrap();
+        let response = app.oneshot(request).await.unwrap();
+        assert_eq!(response.status(), axum::http::StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn events_page_via_oneshot_router() {
+        let state = make_state();
+        let app = crate::routes::router(state);
+        let request = axum::http::Request::builder()
+            .method("GET")
+            .uri("/events")
+            .body(axum::body::Body::empty())
+            .unwrap();
+        let response = app.oneshot(request).await.unwrap();
+        assert_eq!(response.status(), axum::http::StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn settings_page_via_oneshot_router() {
+        let state = make_state();
+        let app = crate::routes::router(state);
+        let request = axum::http::Request::builder()
+            .method("GET")
+            .uri("/settings")
+            .body(axum::body::Body::empty())
+            .unwrap();
+        let response = app.oneshot(request).await.unwrap();
+        assert_eq!(response.status(), axum::http::StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn hub_page_via_oneshot_router() {
+        let state = make_state();
+        let app = crate::routes::router(state);
+        let request = axum::http::Request::builder()
+            .method("GET")
+            .uri("/hub")
+            .body(axum::body::Body::empty())
+            .unwrap();
+        let response = app.oneshot(request).await.unwrap();
+        assert_eq!(response.status(), axum::http::StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn feature_detail_api_via_oneshot_router() {
+        let state = make_state();
+        let app = crate::routes::router(state);
+        let request = axum::http::Request::builder()
+            .method("GET")
+            .uri("/api/dashboard/features/1")
+            .body(axum::body::Body::empty())
+            .unwrap();
+        let response = app.oneshot(request).await.unwrap();
+        assert_eq!(response.status(), axum::http::StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn feature_detail_not_found_via_oneshot_router() {
+        let state = make_state();
+        let app = crate::routes::router(state);
+        let request = axum::http::Request::builder()
+            .method("GET")
+            .uri("/api/dashboard/features/99999")
+            .body(axum::body::Body::empty())
+            .unwrap();
+        let response = app.oneshot(request).await.unwrap();
+        assert_eq!(response.status(), axum::http::StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn health_page_via_oneshot_router() {
+        let state = make_state();
+        let app = crate::routes::router(state);
+        let request = axum::http::Request::builder()
+            .method("GET")
+            .uri("/health-page")
+            .body(axum::body::Body::empty())
+            .unwrap();
+        let response = app.oneshot(request).await.unwrap();
+        assert_eq!(response.status(), axum::http::StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn time_endpoint_via_oneshot_router() {
+        let state = make_state();
+        let app = crate::routes::router(state);
+        let request = axum::http::Request::builder()
+            .method("GET")
+            .uri("/api/time")
+            .body(axum::body::Body::empty())
+            .unwrap();
+        let response = app.oneshot(request).await.unwrap();
+        assert_eq!(response.status(), axum::http::StatusCode::OK);
+    }
+}

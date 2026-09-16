@@ -326,3 +326,292 @@ fn format_value(v: &rusqlite::types::Value) -> String {
         Value::Blob(b) => format!("<blob {} bytes>", b.len()),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rusqlite::Connection;
+
+    // ── statement_complete ──────────────────────────────────────────────
+
+    #[test]
+    fn statement_complete_simple_select() {
+        assert!(statement_complete("SELECT 1;"));
+    }
+
+    #[test]
+    fn statement_complete_incomplete() {
+        assert!(!statement_complete("SELECT 1"));
+    }
+
+    #[test]
+    fn statement_complete_semicolon_inside_single_quotes() {
+        assert!(!statement_complete("SELECT ';'"));
+    }
+
+    #[test]
+    fn statement_complete_semicolon_inside_double_quotes() {
+        assert!(!statement_complete(r#"SELECT ";""#));
+    }
+
+    #[test]
+    fn statement_complete_comment_before_semicolon() {
+        assert!(statement_complete("-- comment\nSELECT 1;"));
+    }
+
+    #[test]
+    fn statement_complete_block_comment_before_semicolon() {
+        assert!(statement_complete("/* block */ SELECT 1;"));
+    }
+
+    #[test]
+    fn statement_complete_semicolon_inside_block_comment() {
+        assert!(!statement_complete("/* ; */ SELECT 1"));
+    }
+
+    #[test]
+    fn statement_complete_empty_string() {
+        assert!(!statement_complete(""));
+    }
+
+    #[test]
+    fn statement_complete_multiple_statements() {
+        assert!(statement_complete("SELECT 1; SELECT 2;"));
+    }
+
+    // ── is_safe_identifier ──────────────────────────────────────────────
+
+    #[test]
+    fn is_safe_identifier_valid() {
+        assert!(is_safe_identifier("users"));
+        assert!(is_safe_identifier("_private"));
+        assert!(is_safe_identifier("table_123"));
+        assert!(is_safe_identifier("A"));
+    }
+
+    #[test]
+    fn is_safe_identifier_invalid() {
+        assert!(!is_safe_identifier(""));
+        assert!(!is_safe_identifier("1table"));
+        assert!(!is_safe_identifier("table-name"));
+        assert!(!is_safe_identifier("table name"));
+        assert!(!is_safe_identifier("table.name"));
+    }
+
+    // ── is_read_only ────────────────────────────────────────────────────
+
+    #[test]
+    fn is_read_only_select() {
+        assert!(is_read_only("SELECT * FROM users"));
+    }
+
+    #[test]
+    fn is_read_only_with_cte() {
+        assert!(is_read_only("WITH cte AS (SELECT 1) SELECT * FROM cte"));
+    }
+
+    #[test]
+    fn is_read_only_pragma() {
+        assert!(is_read_only("PRAGMA table_info(users)"));
+    }
+
+    #[test]
+    fn is_read_only_explain() {
+        assert!(is_read_only("EXPLAIN SELECT 1"));
+    }
+
+    #[test]
+    fn is_read_only_insert_rejected() {
+        assert!(!is_read_only("INSERT INTO users VALUES (1)"));
+    }
+
+    #[test]
+    fn is_read_only_update_rejected() {
+        assert!(!is_read_only("UPDATE users SET name = 'x'"));
+    }
+
+    #[test]
+    fn is_read_only_delete_rejected() {
+        assert!(!is_read_only("DELETE FROM users"));
+    }
+
+    #[test]
+    fn is_read_only_drop_rejected() {
+        assert!(!is_read_only("DROP TABLE users"));
+    }
+
+    #[test]
+    fn is_read_only_empty_string() {
+        assert!(!is_read_only(""));
+    }
+
+    #[test]
+    fn is_read_only_with_leading_comment() {
+        assert!(is_read_only("-- comment\nSELECT 1"));
+    }
+
+    #[test]
+    fn is_read_only_with_block_comment() {
+        assert!(is_read_only("/* comment */ SELECT 1"));
+    }
+
+    // ── strip_leading_comments ──────────────────────────────────────────
+
+    #[test]
+    fn strip_leading_comments_no_comment() {
+        assert_eq!(strip_leading_comments("SELECT 1"), "SELECT 1");
+    }
+
+    #[test]
+    fn strip_leading_comments_line_comment() {
+        assert_eq!(strip_leading_comments("-- comment\nSELECT 1"), "SELECT 1");
+    }
+
+    #[test]
+    fn strip_leading_comments_block_comment() {
+        assert_eq!(
+            strip_leading_comments("/* comment */ SELECT 1"),
+            "SELECT 1"
+        );
+    }
+
+    #[test]
+    fn strip_leading_comments_multiple_line_comments() {
+        assert_eq!(
+            strip_leading_comments("-- a\n-- b\nSELECT 1"),
+            "SELECT 1"
+        );
+    }
+
+    #[test]
+    fn strip_leading_comments_unclosed_block_comment() {
+        let result = strip_leading_comments("/* unclosed");
+        assert_eq!(result, "/* unclosed");
+    }
+
+    #[test]
+    fn strip_leading_comments_line_comment_no_newline() {
+        let result = strip_leading_comments("-- just a comment");
+        assert_eq!(result, "");
+    }
+
+    // ── format_value ────────────────────────────────────────────────────
+
+    #[test]
+    fn format_value_null() {
+        let result = format_value(&rusqlite::types::Value::Null);
+        assert_eq!(result, "NULL");
+    }
+
+    #[test]
+    fn format_value_integer() {
+        let result = format_value(&rusqlite::types::Value::Integer(42));
+        assert_eq!(result, "42");
+    }
+
+    #[test]
+    fn format_value_real() {
+        let result = format_value(&rusqlite::types::Value::Real(3.14));
+        assert_eq!(result, "3.14");
+    }
+
+    #[test]
+    fn format_value_text() {
+        let result = format_value(&rusqlite::types::Value::Text("hello".into()));
+        assert_eq!(result, "hello");
+    }
+
+    #[test]
+    fn format_value_blob() {
+        let result = format_value(&rusqlite::types::Value::Blob(vec![1, 2, 3]));
+        assert_eq!(result, "<blob 3 bytes>");
+    }
+
+    #[test]
+    fn format_value_empty_blob() {
+        let result = format_value(&rusqlite::types::Value::Blob(vec![]));
+        assert_eq!(result, "<blob 0 bytes>");
+    }
+
+    // ── dispatch with real SQLite ───────────────────────────────────────
+
+    #[test]
+    fn dispatch_empty_string_is_ok() {
+        let conn = Connection::open_in_memory().unwrap();
+        assert!(dispatch("", &conn).is_ok());
+    }
+
+    #[test]
+    fn dispatch_select_works() {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch("CREATE TABLE t (id INTEGER)").unwrap();
+        assert!(dispatch("SELECT * FROM t;", &conn).is_ok());
+    }
+
+    #[test]
+    fn dispatch_mutating_rejected() {
+        let conn = Connection::open_in_memory().unwrap();
+        let result = dispatch("INSERT INTO t VALUES (1)", &conn);
+        assert!(result.is_err());
+    }
+
+    // ── handle_dot_command ──────────────────────────────────────────────
+
+    #[test]
+    fn handle_dot_command_help() {
+        let conn = Connection::open_in_memory().unwrap();
+        assert!(handle_dot_command(".help", &conn).is_ok());
+    }
+
+    #[test]
+    fn handle_dot_command_tables() {
+        let conn = Connection::open_in_memory().unwrap();
+        assert!(handle_dot_command(".tables", &conn).is_ok());
+    }
+
+    #[test]
+    fn handle_dot_command_schema_no_arg() {
+        let conn = Connection::open_in_memory().unwrap();
+        assert!(handle_dot_command(".schema", &conn).is_err());
+    }
+
+    #[test]
+    fn handle_dot_command_count_no_arg() {
+        let conn = Connection::open_in_memory().unwrap();
+        assert!(handle_dot_command(".count", &conn).is_err());
+    }
+
+    #[test]
+    fn handle_dot_command_unknown() {
+        let conn = Connection::open_in_memory().unwrap();
+        assert!(handle_dot_command(".foobar", &conn).is_err());
+    }
+
+    #[test]
+    fn handle_dot_command_schema_valid_table() {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch("CREATE TABLE my_table (id INTEGER)")
+            .unwrap();
+        assert!(handle_dot_command(".schema my_table", &conn).is_ok());
+    }
+
+    #[test]
+    fn handle_dot_command_count_valid_table() {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch("CREATE TABLE my_table (id INTEGER)")
+            .unwrap();
+        assert!(handle_dot_command(".count my_table", &conn).is_ok());
+    }
+
+    #[test]
+    fn handle_dot_command_schema_invalid_identifier() {
+        let conn = Connection::open_in_memory().unwrap();
+        assert!(handle_dot_command(".schema 1invalid", &conn).is_err());
+    }
+
+    #[test]
+    fn handle_dot_command_count_invalid_identifier() {
+        let conn = Connection::open_in_memory().unwrap();
+        assert!(handle_dot_command(".count 1invalid", &conn).is_err());
+    }
+}

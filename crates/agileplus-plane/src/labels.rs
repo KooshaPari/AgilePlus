@@ -125,6 +125,40 @@ mod tests {
     }
 
     #[test]
+    fn plane_label_deserialize_without_color() {
+        let json = "{\"id\":\"xyz\",\"name\":\"feature\"}";
+        let label: PlaneLabel = serde_json::from_str(json).unwrap();
+        assert_eq!(label.id, "xyz");
+        assert_eq!(label.name, "feature");
+        assert!(label.color.is_none());
+    }
+
+    #[test]
+    fn plane_label_serialize() {
+        let label = PlaneLabel {
+            id: "abc".to_string(),
+            name: "bug".to_string(),
+            color: Some("#ff0000".to_string()),
+        };
+        let json = serde_json::to_string(&label).unwrap();
+        assert!(json.contains("abc"));
+        assert!(json.contains("bug"));
+        assert!(json.contains("#ff0000"));
+    }
+
+    #[test]
+    fn plane_label_clone() {
+        let label = PlaneLabel {
+            id: "abc".to_string(),
+            name: "bug".to_string(),
+            color: None,
+        };
+        let cloned = label.clone();
+        assert_eq!(cloned.id, "abc");
+        assert_eq!(cloned.name, "bug");
+    }
+
+    #[test]
     fn create_label_request_no_color() {
         let req = CreateLabelRequest {
             name: "enhancement".into(),
@@ -133,5 +167,50 @@ mod tests {
         let json = serde_json::to_string(&req).unwrap();
         assert!(json.contains("enhancement"));
         assert!(!json.contains("color"));
+    }
+
+    #[test]
+    fn create_label_request_with_color() {
+        let req = CreateLabelRequest {
+            name: "urgent".to_string(),
+            color: Some("#ff0000".to_string()),
+        };
+        let json = serde_json::to_string(&req).unwrap();
+        assert!(json.contains("urgent"));
+        assert!(json.contains("#ff0000"));
+    }
+
+    #[test]
+    fn plane_label_debug_format() {
+        let label = PlaneLabel {
+            id: "1".to_string(),
+            name: "test".to_string(),
+            color: None,
+        };
+        let debug = format!("{:?}", label);
+        assert!(debug.contains("PlaneLabel"));
+        assert!(debug.contains("test"));
+    }
+
+    #[test]
+    fn create_label_request_debug_format() {
+        let req = CreateLabelRequest {
+            name: "bug".to_string(),
+            color: None,
+        };
+        let debug = format!("{:?}", req);
+        assert!(debug.contains("CreateLabelRequest"));
+    }
+
+    #[test]
+    fn label_sync_constructs() {
+        let client = PlaneClient::new(
+            "http://localhost".into(),
+            "key".into(),
+            "slug".into(),
+            "project".into(),
+        );
+        let sync = LabelSync::new(client);
+        assert_eq!(format!("{:?}", sync).contains("LabelSync"), true);
     }
 }

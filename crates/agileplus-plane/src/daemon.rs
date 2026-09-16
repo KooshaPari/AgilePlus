@@ -281,4 +281,79 @@ mod tests {
         assert!(!cfg.dry_run);
         assert!(cfg.interval >= Duration::from_secs(60));
     }
+
+    #[test]
+    fn sync_state_serializes() {
+        let state = SyncState {
+            running: true,
+            last_tick_at: Some(chrono::Utc::now()),
+            last_tick_duration_ms: 42,
+            modules_synced: 5,
+            cycles_synced: 3,
+            errors: 1,
+        };
+        let json = serde_json::to_string(&state).unwrap();
+        assert!(json.contains("running"));
+        assert!(json.contains("modules_synced"));
+    }
+
+    #[test]
+    fn sync_state_deserializes() {
+        let json = r#"{
+            "running": false,
+            "last_tick_at": null,
+            "last_tick_duration_ms": 0,
+            "modules_synced": 0,
+            "cycles_synced": 0,
+            "errors": 0
+        }"#;
+        let state: SyncState = serde_json::from_str(json).unwrap();
+        assert!(!state.running);
+        assert_eq!(state.modules_synced, 0);
+    }
+
+    #[test]
+    fn daemon_config_serializes() {
+        let config = PlaneDaemonConfig::default();
+        let json = serde_json::to_string(&config).unwrap();
+        assert!(json.contains("batch_size"));
+        assert!(json.contains("dry_run"));
+    }
+
+    #[test]
+    fn daemon_config_deserializes() {
+        let json = r#"{
+            "interval": {"secs": 120, "nanos": 0},
+            "batch_size": 50,
+            "dry_run": true
+        }"#;
+        let config: PlaneDaemonConfig = serde_json::from_str(json).unwrap();
+        assert_eq!(config.batch_size, 50);
+        assert!(config.dry_run);
+        assert_eq!(config.interval, Duration::from_secs(120));
+    }
+
+    #[test]
+    fn sync_state_default_values() {
+        let state = SyncState::default();
+        assert!(!state.running);
+        assert!(state.last_tick_at.is_none());
+        assert_eq!(state.last_tick_duration_ms, 0);
+        assert_eq!(state.modules_synced, 0);
+        assert_eq!(state.cycles_synced, 0);
+        assert_eq!(state.errors, 0);
+    }
+
+    #[test]
+    fn daemon_config_clone() {
+        let config = PlaneDaemonConfig {
+            interval: Duration::from_secs(60),
+            batch_size: 10,
+            dry_run: true,
+        };
+        let cloned = config.clone();
+        assert_eq!(cloned.interval, Duration::from_secs(60));
+        assert_eq!(cloned.batch_size, 10);
+        assert!(cloned.dry_run);
+    }
 }

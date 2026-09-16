@@ -195,4 +195,40 @@ mod tests {
         assert_eq!(restored.plane_issue_id.unwrap(), "issue-123");
         assert_eq!(restored.wp_mappings["WP01"], "sub-456");
     }
+
+    #[test]
+    fn sync_state_feature_slug_preserved() {
+        let state = SyncState::new("my-feature-slug".to_string());
+        assert_eq!(state.feature_slug, "my-feature-slug");
+    }
+
+    #[test]
+    fn sync_state_default_hash_is_none() {
+        let state = SyncState::new("feat".to_string());
+        assert!(state.content_hash.is_none());
+        assert!(state.last_synced_at.is_none());
+    }
+
+    #[test]
+    fn hash_empty_string() {
+        let h = hash_content("");
+        assert_eq!(h.len(), 64);
+    }
+
+    #[test]
+    fn hash_special_chars() {
+        let h = hash_content("hello\x00world");
+        assert_eq!(h.len(), 64);
+    }
+
+    #[test]
+    fn sync_outcome_variants() {
+        let created = SyncOutcome::Created("id-1".to_string());
+        let updated = SyncOutcome::Updated("id-2".to_string());
+        let skipped = SyncOutcome::Skipped;
+        let conflict = SyncOutcome::Conflict("id-3".to_string());
+
+        assert_ne!(format!("{:?}", created), format!("{:?}", updated));
+        assert_ne!(format!("{:?}", skipped), format!("{:?}", conflict));
+    }
 }

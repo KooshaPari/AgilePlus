@@ -225,3 +225,307 @@ fn print_sync_result(
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use agileplus_domain::error::DomainError;
+    use agileplus_domain::ports::vcs::{BranchInfo as VcsBranchInfo, FeatureArtifacts, MergeResult};
+
+    // ── Mock VcsPort ────────────────────────────────────────────────────
+
+    struct MockVcs {
+        create_should_fail: bool,
+        checkout_should_fail: bool,
+        merge_conflicts: bool,
+    }
+
+    impl Default for MockVcs {
+        fn default() -> Self {
+            Self {
+                create_should_fail: false,
+                checkout_should_fail: false,
+                merge_conflicts: false,
+            }
+        }
+    }
+
+    #[async_trait::async_trait]
+    impl VcsPort for MockVcs {
+        async fn create_worktree(
+            &self,
+            _: &str,
+            _: &str,
+        ) -> Result<std::path::PathBuf, DomainError> {
+            unimplemented!()
+        }
+        async fn list_worktrees(&self) -> Result<Vec<agileplus_domain::ports::vcs::WorktreeInfo>, DomainError> {
+            unimplemented!()
+        }
+        async fn cleanup_worktree(&self, _: &std::path::Path) -> Result<(), DomainError> {
+            unimplemented!()
+        }
+        async fn create_branch(&self, _: &str, _: &str) -> Result<(), DomainError> {
+            if self.create_should_fail {
+                Err(DomainError::NotFound("branch failed".into()))
+            } else {
+                Ok(())
+            }
+        }
+        async fn list_branches(
+            &self,
+            _: Option<&str>,
+            _: bool,
+        ) -> Result<Vec<VcsBranchInfo>, DomainError> {
+            unimplemented!()
+        }
+        async fn delete_branch(&self, _: &str, _: bool, _: Option<&str>) -> Result<(), DomainError> {
+            unimplemented!()
+        }
+        async fn checkout_branch(&self, _: &str) -> Result<(), DomainError> {
+            if self.checkout_should_fail {
+                Err(DomainError::NotFound("checkout failed".into()))
+            } else {
+                Ok(())
+            }
+        }
+        async fn merge_to_target(&self, _: &str, _: &str) -> Result<MergeResult, DomainError> {
+            if self.merge_conflicts {
+                Ok(MergeResult {
+                    success: false,
+                    conflicts: vec![],
+                    merged_commit: None,
+                    commit: None,
+                    message: Some("conflict".into()),
+                })
+            } else {
+                Ok(MergeResult {
+                    success: true,
+                    conflicts: vec![],
+                    merged_commit: Some("abc123".into()),
+                    commit: Some("abc123".into()),
+                    message: None,
+                })
+            }
+        }
+        async fn detect_conflicts(
+            &self,
+            _: &str,
+            _: &str,
+        ) -> Result<Vec<agileplus_domain::ports::vcs::ConflictInfo>, DomainError> {
+            unimplemented!()
+        }
+        async fn read_artifact(&self, _: &str, _: &str) -> Result<String, DomainError> {
+            unimplemented!()
+        }
+        async fn write_artifact(&self, _: &str, _: &str, _: &str) -> Result<(), DomainError> {
+            unimplemented!()
+        }
+        async fn artifact_exists(&self, _: &str, _: &str) -> Result<bool, DomainError> {
+            unimplemented!()
+        }
+        async fn scan_feature_artifacts(&self, _: &str) -> Result<FeatureArtifacts, DomainError> {
+            unimplemented!()
+        }
+    }
+
+    // ── print_branches ──────────────────────────────────────────────────
+
+    #[test]
+    fn print_branches_json_format() {
+        let branches = vec![
+            BranchInfo {
+                name: "main".into(),
+                is_remote: false,
+            },
+            BranchInfo {
+                name: "feat/x".into(),
+                is_remote: true,
+            },
+        ];
+        let result = print_branches(&branches, "json");
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn print_branches_empty() {
+        let branches: Vec<BranchInfo> = vec![];
+        let result = print_branches(&branches, "table");
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn print_branches_table_with_entries() {
+        let branches = vec![BranchInfo {
+            name: "main".into(),
+            is_remote: false,
+        }];
+        let result = print_branches(&branches, "table");
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn print_branches_json_empty() {
+        let branches: Vec<BranchInfo> = vec![];
+        let result = print_branches(&branches, "json");
+        assert!(result.is_ok());
+    }
+
+    // ── print_sync_result ───────────────────────────────────────────────
+
+    #[test]
+    fn print_sync_result_success_with_commit() {
+        let result = print_sync_result("main", "canary", true, "table", Some("abc123".into()));
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn print_sync_result_success_without_commit() {
+        let result = print_sync_result("main", "canary", true, "table", None);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn print_sync_result_conflicts() {
+        let result = print_sync_result("main", "canary", false, "table", None);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn print_sync_result_json_format() {
+        let result = print_sync_result(
+            "main",
+            "canary",
+            true,
+            "json",
+            Some("abc123".into()),
+        );
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn print_sync_result_json_conflicts() {
+        let result = print_sync_result("main", "canary", false, "json", None);
+        assert!(result.is_ok());
+    }
+
+    // ── BranchInfo serialization ────────────────────────────────────────
+
+    #[test]
+    fn branch_info_serialize() {
+        let info = BranchInfo {
+            name: "main".into(),
+            is_remote: false,
+        };
+        let json = serde_json::to_string(&info).unwrap();
+        assert!(json.contains("main"));
+        assert!(json.contains("false"));
+    }
+
+    #[test]
+    fn branch_info_remote_serialize() {
+        let info = BranchInfo {
+            name: "origin/feat".into(),
+            is_remote: true,
+        };
+        let json = serde_json::to_string(&info).unwrap();
+        assert!(json.contains("origin/feat"));
+        assert!(json.contains("true"));
+    }
+
+    // ── run with mock VcsPort ───────────────────────────────────────────
+
+    #[tokio::test]
+    async fn run_create_branch_success() {
+        let mock = MockVcs::default();
+        let args = BranchArgs {
+            command: BranchCommand::Create {
+                name: "feat/test".into(),
+                base: "main".into(),
+            },
+        };
+        assert!(run(args, &mock).await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn run_create_branch_failure() {
+        let mock = MockVcs {
+            create_should_fail: true,
+            ..Default::default()
+        };
+        let args = BranchArgs {
+            command: BranchCommand::Create {
+                name: "feat/test".into(),
+                base: "main".into(),
+            },
+        };
+        assert!(run(args, &mock).await.is_err());
+    }
+
+    #[tokio::test]
+    async fn run_checkout_branch_success() {
+        let mock = MockVcs::default();
+        let args = BranchArgs {
+            command: BranchCommand::Checkout {
+                name: "feat/test".into(),
+            },
+        };
+        assert!(run(args, &mock).await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn run_checkout_branch_failure() {
+        let mock = MockVcs {
+            checkout_should_fail: true,
+            ..Default::default()
+        };
+        let args = BranchArgs {
+            command: BranchCommand::Checkout {
+                name: "feat/test".into(),
+            },
+        };
+        assert!(run(args, &mock).await.is_err());
+    }
+
+    #[tokio::test]
+    async fn run_sync_success() {
+        let mock = MockVcs::default();
+        let args = BranchArgs {
+            command: BranchCommand::Sync {
+                source: "main".into(),
+                target: "canary".into(),
+                output: "table".into(),
+            },
+        };
+        assert!(run(args, &mock).await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn run_sync_conflicts() {
+        let mock = MockVcs {
+            merge_conflicts: true,
+            ..Default::default()
+        };
+        let args = BranchArgs {
+            command: BranchCommand::Sync {
+                source: "main".into(),
+                target: "canary".into(),
+                output: "table".into(),
+            },
+        };
+        assert!(run(args, &mock).await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn run_sync_json_output() {
+        let mock = MockVcs::default();
+        let args = BranchArgs {
+            command: BranchCommand::Sync {
+                source: "main".into(),
+                target: "canary".into(),
+                output: "json".into(),
+            },
+        };
+        assert!(run(args, &mock).await.is_ok());
+    }
+}

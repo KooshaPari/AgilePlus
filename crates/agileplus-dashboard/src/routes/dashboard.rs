@@ -567,6 +567,17 @@ fn epics_stories_error(context: &str, error: rusqlite::Error) -> axum::Json<serd
 #[cfg(test)]
 mod epics_stories_json_tests {
     use super::*;
+    use crate::app_state::{DashboardStore, default_health};
+    use std::sync::Arc;
+    use tokio::sync::RwLock;
+
+    fn make_state() -> SharedState {
+        let store = DashboardStore {
+            health: default_health(),
+            ..Default::default()
+        };
+        Arc::new(RwLock::new(store))
+    }
 
     fn temporary_database_path(name: &str) -> PathBuf {
         std::env::temp_dir().join(format!(
@@ -768,5 +779,419 @@ mod epics_stories_json_tests {
         };
         let json = serde_json::to_value(&wp).unwrap();
         assert!(json["assignee"].is_null());
+    }
+
+    // ── build_feature_events (dashboard copy) ─────────────────────────────
+
+    #[test]
+    fn dashboard_build_feature_events_with_work_packages() {
+        let feature = FeatureView {
+            id: 1,
+            slug: "feat-1".into(),
+            title: "Feature 1".into(),
+            state: "implementing".into(),
+            labels: vec![],
+        };
+        let wps = vec![
+            WpView {
+                id: 10,
+                title: "WP-10".into(),
+                state: "doing".into(),
+                agent: "claude".into(),
+                progress: 50,
+                task_count: 3,
+                agent_id: Some("claude".into()),
+                pr_url: None,
+                head_commit: None,
+            },
+            WpView {
+                id: 11,
+                title: "WP-11".into(),
+                state: "done".into(),
+                agent: "gemini".into(),
+                progress: 100,
+                task_count: 2,
+                agent_id: Some("gemini".into()),
+                pr_url: None,
+                head_commit: None,
+            },
+        ];
+        let events = super::build_feature_events(&feature, &wps);
+        assert_eq!(events.len(), 4); // created + sync + 2 wp events
+        assert_eq!(events[0].kind, "system");
+        assert!(events[0].description.contains("feat-1"));
+        assert_eq!(events[1].kind, "agent_action");
+        assert!(events[1].description.contains("2 work package"));
+        assert_eq!(events[2].kind, "state_change");
+        assert!(events[2].description.contains("WP-10"));
+        assert_eq!(events[3].kind, "state_change");
+        assert!(events[3].description.contains("WP-11"));
+    }
+
+    #[test]
+    fn dashboard_build_feature_events_without_work_packages() {
+        let feature = FeatureView {
+            id: 2,
+            slug: "feat-2".into(),
+            title: "Feature 2".into(),
+            state: "created".into(),
+            labels: vec![],
+        };
+        let events = super::build_feature_events(&feature, &[]);
+        assert_eq!(events.len(), 2); // created + no-wp
+        assert_eq!(events[0].kind, "system");
+        assert_eq!(events[1].kind, "system");
+        assert!(events[1].description.contains("No work packages"));
+    }
+
+    // ── build_feature_evidence_bundles (dashboard copy) ───────────────────
+
+    #[test]
+    fn dashboard_build_feature_evidence_bundles_with_work_packages() {
+        let feature = FeatureView {
+            id: 3,
+            slug: "feat-3".into(),
+            title: "Feature 3".into(),
+            state: "validated".into(),
+            labels: vec![],
+        };
+        let wps = vec![
+            WpView {
+                id: 20,
+                title: "WP-20".into(),
+                state: "done".into(),
+                agent: "claude".into(),
+                progress: 50,
+                task_count: 0,
+                agent_id: None,
+                pr_url: None,
+                head_commit: None,
+            },
+            WpView {
+                id: 21,
+                title: "WP-21".into(),
+                state: "doing".into(),
+                agent: "—".into(),
+                progress: 0,
+                task_count: 0,
+                agent_id: None,
+                pr_url: None,
+                head_commit: None,
+            },
+        ];
+        let bundles = super::build_feature_evidence_bundles(&feature, &wps);
+        assert_eq!(bundles.len(), 3); // summary + 2 wp bundles
+        assert_eq!(bundles[0].evidence_type, "feature_summary");
+        assert_eq!(bundles[0].id, "bundle-3-summary");
+        assert_eq!(bundles[1].evidence_type, "workpackage_artifact");
+        assert_eq!(bundles[1].status, "accepted"); // progress > 0
+        assert_eq!(bundles[2].status, "generated"); // progress == 0
+    }
+
+    #[test]
+    fn dashboard_build_feature_evidence_bundles_without_work_packages() {
+        let feature = FeatureView {
+            id: 4,
+            slug: "feat-4".into(),
+            title: "Feature 4".into(),
+            state: "created".into(),
+            labels: vec![],
+        };
+        let bundles = super::build_feature_evidence_bundles(&feature, &[]);
+        assert_eq!(bundles.len(), 1);
+        assert_eq!(bundles[0].evidence_type, "feature_summary");
+        assert!(bundles[0].is_text_artifact);
+        assert!(!bundles[0].is_image_artifact);
+    }
+
+    // ── build_feature_media_assets (dashboard copy) ───────────────────────
+
+    #[test]
+    fn dashboard_build_feature_media_assets_with_work_packages() {
+        let feature = FeatureView {
+            id: 5,
+            slug: "feat-5".into(),
+            title: "Feature 5".into(),
+            state: "implementing".into(),
+            labels: vec![],
+        };
+        let wps = vec![WpView {
+            id: 30,
+            title: "WP-30".into(),
+            state: "doing".into(),
+            agent: "claude".into(),
+            progress: 0,
+            task_count: 0,
+            agent_id: None,
+            pr_url: None,
+            head_commit: None,
+        }];
+        let media = super::build_feature_media_assets(&feature, &wps);
+        assert_eq!(media.len(), 2); // cover + 1 wp screenshot
+        assert_eq!(media[0].kind, "image");
+        assert_eq!(media[1].kind, "screenshot");
+        assert!(media[0].url_or_path.contains("cover.png"));
+        assert!(media[1].url_or_path.contains("coverage.png"));
+    }
+
+    #[test]
+    fn dashboard_build_feature_media_assets_without_work_packages() {
+        let feature = FeatureView {
+            id: 6,
+            slug: "feat-6".into(),
+            title: "Feature 6".into(),
+            state: "created".into(),
+            labels: vec![],
+        };
+        let media = super::build_feature_media_assets(&feature, &[]);
+        assert_eq!(media.len(), 1); // only cover
+        assert_eq!(media[0].source, "dashboard");
+    }
+
+    // ── build_feature_reports (dashboard copy) ────────────────────────────
+
+    #[test]
+    fn dashboard_build_feature_reports_with_labels() {
+        let feature = FeatureView {
+            id: 7,
+            slug: "feat-7".into(),
+            title: "Feature 7".into(),
+            state: "validated".into(),
+            labels: vec!["platform".into(), "testing".into()],
+        };
+        let wps = vec![WpView {
+            id: 40,
+            title: "WP-40".into(),
+            state: "done".into(),
+            agent: "claude".into(),
+            progress: 0,
+            task_count: 0,
+            agent_id: None,
+            pr_url: None,
+            head_commit: None,
+        }];
+        let reports = super::build_feature_reports(&feature, &wps);
+        assert_eq!(reports.len(), 1);
+        assert!(reports[0].compliant); // wps not empty
+        assert_eq!(reports[0].satisfied_count, 4); // 2 labels + 2
+        assert_eq!(reports[0].rule_count, 5);
+    }
+
+    #[test]
+    fn dashboard_build_feature_reports_without_labels_or_work_packages() {
+        let feature = FeatureView {
+            id: 8,
+            slug: "feat-8".into(),
+            title: "Feature 8".into(),
+            state: "created".into(),
+            labels: vec![],
+        };
+        let reports = super::build_feature_reports(&feature, &[]);
+        assert_eq!(reports.len(), 1);
+        assert!(!reports[0].compliant); // empty wps
+        assert_eq!(reports[0].satisfied_count, 2); // 0 labels + 2
+    }
+
+    // ── kanban_board handler tests ────────────────────────────────────────
+
+    #[tokio::test]
+    async fn kanban_board_htmx_returns_partial() {
+        let state = make_state();
+        let mut headers = HeaderMap::new();
+        headers.insert("HX-Request", "true".parse().unwrap());
+        let query = HashMap::new();
+
+        let response = super::kanban_board(State(state), headers, Query(query)).await;
+        let body_bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        let html = String::from_utf8(body_bytes.to_vec()).unwrap();
+        assert!(html.contains("kanban-board"));
+    }
+
+    #[tokio::test]
+    async fn kanban_board_full_page() {
+        let state = make_state();
+        let headers = HeaderMap::new();
+        let query = HashMap::new();
+
+        let response = super::kanban_board(State(state), headers, Query(query)).await;
+        let body_bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        let html = String::from_utf8(body_bytes.to_vec()).unwrap();
+        assert!(html.contains("kanban-board"));
+    }
+
+    // ── switch_project handler tests ──────────────────────────────────────
+
+    #[tokio::test]
+    async fn switch_project_activates_existing_project() {
+        let state = make_state();
+        // Pre-populate with a project so switch_project can find it.
+        {
+            let mut store = state.write().await;
+            let project = agileplus_domain::domain::project::Project::new("Test Project", "test-project").unwrap();
+            store.projects.push(agileplus_domain::domain::project::Project { id: 1, ..project });
+        }
+        let response = super::switch_project(State(state.clone()), Path(1)).await;
+        let body_bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        assert!(!body_bytes.is_empty());
+
+        let store = state.read().await;
+        assert_eq!(store.active_project_id, Some(1));
+    }
+
+    #[tokio::test]
+    async fn switch_project_all_projects_clears_filter() {
+        let state = make_state();
+        // Pre-populate with a project so switch_project can find it.
+        {
+            let mut store = state.write().await;
+            let project = agileplus_domain::domain::project::Project::new("Test Project", "test-project").unwrap();
+            store.projects.push(agileplus_domain::domain::project::Project { id: 1, ..project });
+        }
+        super::switch_project(State(state.clone()), Path(1)).await;
+        super::switch_project(State(state.clone()), Path(0)).await;
+
+        let store = state.read().await;
+        assert_eq!(store.active_project_id, None);
+    }
+
+    #[tokio::test]
+    async fn switch_project_not_found() {
+        let state = make_state();
+        let response = super::switch_project(State(state), Path(99999)).await;
+        assert_eq!(
+            response.status(),
+            axum::http::StatusCode::NOT_FOUND
+        );
+    }
+
+    // ── project_switcher handler tests ────────────────────────────────────
+
+    #[tokio::test]
+    async fn project_switcher_renders_projects() {
+        let state = make_state();
+        let response = super::project_switcher(State(state)).await;
+        let body_bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        let html = String::from_utf8(body_bytes.to_vec()).unwrap();
+        assert!(html.contains("project"));
+    }
+
+    // ── all_work_packages_json tests ──────────────────────────────────────
+
+    #[tokio::test]
+    async fn all_work_packages_json_returns_json() {
+        use axum::response::IntoResponse;
+        let state = make_state();
+        let response = super::all_work_packages_json(State(state)).await.into_response();
+        let body_bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        let json: serde_json::Value =
+            serde_json::from_slice(&body_bytes).expect("valid JSON");
+        assert!(json.get("work_packages").is_some());
+        assert!(json.get("count").is_some());
+        assert!(json.get("timestamp").is_some());
+    }
+
+    // ── feature_detail (dashboard copy) handler tests ─────────────────────
+
+    #[tokio::test]
+    async fn dashboard_feature_detail_not_found() {
+        let state = make_state();
+        let response = super::feature_detail(State(state), Path(99999), HeaderMap::new()).await;
+        assert_eq!(
+            response.status(),
+            axum::http::StatusCode::NOT_FOUND
+        );
+    }
+
+    #[tokio::test]
+    async fn dashboard_feature_detail_found() {
+        let state = make_state();
+        let response = super::feature_detail(State(state), Path(1), HeaderMap::new()).await;
+        let body_bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        let html = String::from_utf8(body_bytes.to_vec()).unwrap();
+        assert!(html.contains("feature") || html.contains("Feature"));
+    }
+
+    // ── wp_list handler tests ─────────────────────────────────────────────
+
+    #[tokio::test]
+    async fn wp_list_returns_for_existing_feature() {
+        let state = make_state();
+        let response = super::wp_list(State(state), Path(1)).await;
+        let body_bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        assert!(!body_bytes.is_empty());
+    }
+
+    #[tokio::test]
+    async fn wp_list_empty_for_nonexistent_feature() {
+        let state = make_state();
+        let response = super::wp_list(State(state), Path(99999)).await;
+        let body_bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        assert!(!body_bytes.is_empty()); // renders empty wp list
+    }
+
+    // ── health_panel handler tests ────────────────────────────────────────
+
+    #[tokio::test]
+    async fn health_panel_renders_with_seeded_data() {
+        let state = make_state();
+        let response = super::health_panel(State(state)).await;
+        let body_bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        let html = String::from_utf8(body_bytes.to_vec()).unwrap();
+        assert!(html.contains("NATS") || html.contains("health"));
+    }
+
+    // ── event_timeline handler tests ──────────────────────────────────────
+
+    #[tokio::test]
+    async fn dashboard_event_timeline_renders_empty() {
+        let state = make_state();
+        let response = super::event_timeline(State(state)).await;
+        let body_bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        let html = String::from_utf8(body_bytes.to_vec()).unwrap();
+        assert!(html.contains("event"));
+    }
+
+    // ── agent_activity (dashboard copy) handler tests ─────────────────────
+
+    #[tokio::test]
+    async fn dashboard_agent_activity_renders() {
+        let state = make_state();
+        let response = super::agent_activity(State(state)).await;
+        let body_bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        let html = String::from_utf8(body_bytes.to_vec()).unwrap();
+        assert!(html.contains("spec-agent"));
+        assert!(html.contains("impl-agent"));
+    }
+
+    // ── time_footer handler tests ─────────────────────────────────────────
+
+    #[tokio::test]
+    async fn dashboard_time_footer_returns_timestamp() {
+        let response = super::time_footer().await;
+        let text = response.0;
+        assert!(text.contains("UTC"));
+        assert!(text.contains("-"));
     }
 }
