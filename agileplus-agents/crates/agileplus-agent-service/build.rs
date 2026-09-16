@@ -6,12 +6,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .join("../..") // repo root
         .join("proto");
 
-    tonic_build::configure()
+    tonic_prost_build::configure()
         .build_server(true)
         .build_client(true)
         .compile_protos(
             &[proto_root.join("agileplus/v1/agents.proto")],
-            &[&proto_root],
+            &[proto_root],
         )?;
 
     Ok(())
