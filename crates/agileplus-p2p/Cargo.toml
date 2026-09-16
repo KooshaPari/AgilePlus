@@ -1,0 +1,30 @@
+[package]
+name = "agileplus-p2p"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+agileplus-domain = { version = "0.2.1", path = "../agileplus-domain" }
+agileplus-events = { version = "0.2.1", path = "../agileplus-events" }
+async-nats.workspace = true
+async-trait.workspace = true
+bytes = "1"
+chrono.workspace = true
+hostname = "0.4"
+futures-util.workspace = true
+http-body-util = "0.1"
+hyper = { workspace = true, features = ["client"] }
+hyper-util.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+uuid.workspace = true
+
+[package.metadata.dist]
+dist = false
