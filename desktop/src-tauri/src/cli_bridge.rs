@@ -9,7 +9,7 @@ use tauri::State;
 use crate::AppState;
 
 /// Default path to the agileplus binary.
-const AGILEPLUS_BIN: &str = "/Users/kooshapari/bin/agileplus";
+const AGILEPLUS_BIN: &str = "/Users/<REDACTED>/bin/agileplus";
 
 /// Read command timeout: 30 seconds.
 const READ_TIMEOUT_SECS: u64 = 30;

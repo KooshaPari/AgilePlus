@@ -374,7 +374,7 @@ pub async fn agent_activity(_state: State<SharedState>) -> Response {
 =======
             pid: Some(12345),
             started_at: Some("2024-01-15 10:30:00 UTC".into()),
-            worktree: "/Users/kooshapari/CodeProjects/Phenotype/repos/.worktrees/merge-spec-docs".into(),
+            worktree: "/Users/<REDACTED>/CodeProjects/Phenotype/repos/.worktrees/merge-spec-docs".into(),
             worktree_label: "merge-spec-docs".into(),
             is_live: true,
 >>>>>>> origin/main

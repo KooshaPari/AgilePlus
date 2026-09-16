@@ -61,7 +61,7 @@ const workPackages = {
       state: "Done",
       sequence: 1,
       acceptance_criteria: "forge PR #95 merged",
-      pr_url: "https://github.com/KooshaPari/forgecode/pull/95",
+      pr_url: "https://github.com/<REDACTED>/forgecode/pull/95",
       created_at: "2026-07-22T00:00:00Z",
       updated_at: "2026-07-22T00:00:00Z",
     },

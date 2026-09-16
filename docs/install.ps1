@@ -1,9 +1,9 @@
 #Requires -Version 5.1
 # AgilePlus installer — irm | iex
-# Usage: irm https://raw.githubusercontent.com/KooshaPari/AgilePlus/main/docs/install.ps1 | iex
+# Usage: irm https://raw.githubusercontent.com/<REDACTED>/AgilePlus/main/docs/install.ps1 | iex
 
 $ErrorActionPreference = "Stop"
-$Repo = "KooshaPari/AgilePlus"
+$Repo = "<REDACTED>/AgilePlus"
 $Binary = "agileplus"
 $InstallDir = if ($env:INSTALL_DIR) { $env:INSTALL_DIR } else { "$env:LOCALAPPDATA\AgilePlus\bin" }
 

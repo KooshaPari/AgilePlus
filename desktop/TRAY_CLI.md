@@ -108,7 +108,7 @@ use std::process::Command;
 use serde_json::Value;
 
 /// Path to the agileplus binary.
-const AGILEPLUS_BIN: &str = "/Users/kooshapari/bin/agileplus";
+const AGILEPLUS_BIN: &str = "/Users/<REDACTED>/bin/agileplus";
 
 /// Run an agileplus CLI command and capture JSON output.
 pub async fn run_cli_command(args: &[&str]) -> Result<String, String> {

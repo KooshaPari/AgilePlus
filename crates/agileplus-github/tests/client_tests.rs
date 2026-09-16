@@ -10,7 +10,7 @@ fn client_construction() {
     let client = GitHubClient::new(
         "https://api.github.com".to_string(),
         "ghp_test123".to_string(),
-        "KooshaPari".to_string(),
+        "<REDACTED>".to_string(),
         "AgilePlus".to_string(),
     );
     // Verify the client was constructed (Debug doesn't panic)

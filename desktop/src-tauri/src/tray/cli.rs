@@ -5,7 +5,7 @@ use std::process::Command;
 use std::time::Duration;
 
 /// Default path to the agileplus binary.
-const AGILEPLUS_BIN: &str = "/Users/kooshapari/bin/agileplus";
+const AGILEPLUS_BIN: &str = "/Users/<REDACTED>/bin/agileplus";
 
 /// Default timeout for CLI commands (30 seconds).
 const DEFAULT_TIMEOUT: Duration = Duration::from_secs(30);

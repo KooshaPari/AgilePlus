@@ -545,15 +545,15 @@ pub async fn features_page(State(state): State<SharedState>) -> Response {
 pub async fn hub_page() -> Response {
     use crate::templates::{HubPage, EcosystemProject};
     let projects = vec![
-        EcosystemProject { name: "phenodocs", tagline: "Ecosystem docs hub".into(), stack: "TypeScript · Vue".into(), port: Some(4100), github: "https://github.com/KooshaPari/phenodocs".into(), category: "docs".into() },
-        EcosystemProject { name: "AgilePlus", tagline: "Spec-driven PM platform".into(), stack: "Rust · Tauri".into(), port: Some(4101), github: "https://github.com/KooshaPari/AgilePlus".into(), category: "app".into() },
-        EcosystemProject { name: "heliosApp", tagline: "TypeScript runtime app".into(), stack: "TypeScript · Bun".into(), port: Some(4102), github: "https://github.com/KooshaPari/heliosApp".into(), category: "app".into() },
-        EcosystemProject { name: "thegent", tagline: "Agent framework".into(), stack: "TypeScript · Python".into(), port: Some(4103), github: "https://github.com/KooshaPari/thegent".into(), category: "lib".into() },
-        EcosystemProject { name: "bifrost-extensions", tagline: "LLM gateway extensions".into(), stack: "Go".into(), port: Some(4104), github: "https://github.com/KooshaPari/bifrost-extensions".into(), category: "lib".into() },
-        EcosystemProject { name: "civ", tagline: "CI validation".into(), stack: "TypeScript".into(), port: Some(4105), github: "https://github.com/KooshaPari/civ".into(), category: "docs".into() },
-        EcosystemProject { name: "TraceRTM", tagline: "Requirements traceability".into(), stack: "Python · Go · TS".into(), port: Some(4110), github: "https://github.com/KooshaPari/trace".into(), category: "app".into() },
-        EcosystemProject { name: "agentapi-plusplus", tagline: "Agent HTTP API".into(), stack: "Go".into(), port: None, github: "https://github.com/KooshaPari/agentapi-plusplus".into(), category: "api".into() },
-        EcosystemProject { name: "cliproxyapi-plusplus", tagline: "Multi-provider CLI proxy".into(), stack: "Go".into(), port: None, github: "https://github.com/KooshaPari/cliproxyapi-plusplus".into(), category: "api".into() },
+        EcosystemProject { name: "phenodocs", tagline: "Ecosystem docs hub".into(), stack: "TypeScript · Vue".into(), port: Some(4100), github: "https://github.com/<REDACTED>/phenodocs".into(), category: "docs".into() },
+        EcosystemProject { name: "AgilePlus", tagline: "Spec-driven PM platform".into(), stack: "Rust · Tauri".into(), port: Some(4101), github: "https://github.com/<REDACTED>/AgilePlus".into(), category: "app".into() },
+        EcosystemProject { name: "heliosApp", tagline: "TypeScript runtime app".into(), stack: "TypeScript · Bun".into(), port: Some(4102), github: "https://github.com/<REDACTED>/heliosApp".into(), category: "app".into() },
+        EcosystemProject { name: "thegent", tagline: "Agent framework".into(), stack: "TypeScript · Python".into(), port: Some(4103), github: "https://github.com/<REDACTED>/thegent".into(), category: "lib".into() },
+        EcosystemProject { name: "bifrost-extensions", tagline: "LLM gateway extensions".into(), stack: "Go".into(), port: Some(4104), github: "https://github.com/<REDACTED>/bifrost-extensions".into(), category: "lib".into() },
+        EcosystemProject { name: "civ", tagline: "CI validation".into(), stack: "TypeScript".into(), port: Some(4105), github: "https://github.com/<REDACTED>/civ".into(), category: "docs".into() },
+        EcosystemProject { name: "TraceRTM", tagline: "Requirements traceability".into(), stack: "Python · Go · TS".into(), port: Some(4110), github: "https://github.com/<REDACTED>/trace".into(), category: "app".into() },
+        EcosystemProject { name: "agentapi-plusplus", tagline: "Agent HTTP API".into(), stack: "Go".into(), port: None, github: "https://github.com/<REDACTED>/agentapi-plusplus".into(), category: "api".into() },
+        EcosystemProject { name: "cliproxyapi-plusplus", tagline: "Multi-provider CLI proxy".into(), stack: "Go".into(), port: None, github: "https://github.com/<REDACTED>/cliproxyapi-plusplus".into(), category: "api".into() },
     ];
     render(HubPage { projects })
 }

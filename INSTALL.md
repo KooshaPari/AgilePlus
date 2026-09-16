@@ -6,7 +6,7 @@ Phenotype-org spec-driven development framework for AI agents.
 
 ### One-liner (Windows PowerShell)
 ```powershell
-irm https://raw.githubusercontent.com/KooshaPari/AgilePlus/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/<REDACTED>/AgilePlus/main/install.ps1 | iex
 ```
 
 ### Chocolatey
@@ -16,12 +16,12 @@ choco install agileplus
 
 ### WinGet
 ```powershell
-winget install KooshaPari.AgilePlus
+winget install <REDACTED>.AgilePlus
 ```
 
 ### From Source
 ```bash
-git clone https://github.com/KooshaPari/AgilePlus
+git clone https://github.com/<REDACTED>/AgilePlus
 cd AgilePlus
 cargo build --release -p agileplus-cli -p agileplus-dashboard
 ./target/release/agileplus --help
@@ -41,14 +41,14 @@ agileplus --help              # All commands
 ## Uninstall
 
 ```powershell
-irm https://raw.githubusercontent.com/KooshaPari/AgilePlus/main/uninstall.ps1 | iex
+irm https://raw.githubusercontent.com/<REDACTED>/AgilePlus/main/uninstall.ps1 | iex
 ```
 
 ## Links
 
-- [GitHub](https://github.com/KooshaPari/AgilePlus)
-- [Releases](https://github.com/KooshaPari/AgilePlus/releases)
-- [Documentation](https://github.com/KooshaPari/AgilePlus/blob/main/README.md)
+- [GitHub](https://github.com/<REDACTED>/AgilePlus)
+- [Releases](https://github.com/<REDACTED>/AgilePlus/releases)
+- [Documentation](https://github.com/<REDACTED>/AgilePlus/blob/main/README.md)
 
 ## License
 

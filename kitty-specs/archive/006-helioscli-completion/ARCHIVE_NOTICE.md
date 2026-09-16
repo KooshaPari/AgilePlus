@@ -4,7 +4,7 @@
 
 **Reason:** Superseded by separate repo HeliosCLI; org-spec-id no longer canonical for that work.
 
-**Canonical Location:** https://github.com/KooshaPari/HeliosCLI
+**Canonical Location:** https://github.com/<REDACTED>/HeliosCLI
 
 This specification was originally part of the AgilePlus monorepo tracking system, but HeliosCLI has been decomposed into a standalone repository with independent spec and governance management.
 

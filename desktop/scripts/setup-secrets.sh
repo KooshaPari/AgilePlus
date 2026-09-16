@@ -10,7 +10,7 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-REPO="KooshaPari/AgilePlus"
+REPO="<REDACTED>/AgilePlus"
 P12_PATH=""
 APPLE_ID=""
 APPLE_PASSWORD=""

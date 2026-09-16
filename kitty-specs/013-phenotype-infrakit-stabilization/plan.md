@@ -1,7 +1,7 @@
 # Plan: phenotype-infrakit Stabilization — Consolidate 19 Infrastructure Crates
 
 > **Inputs:** [`spec.md`](./spec.md), [`tasks.md`](./tasks.md), audit memo `spec.md` §"Audit Update — 2026-04-02".
-> **Target repo:** `repos/phenotype-infrakit/` (origin: `github.com/KooshaPari/phenotype-infrakit`).
+> **Target repo:** `repos/phenotype-infrakit/` (origin: `github.com/<REDACTED>/phenotype-infrakit`).
 > **Out of scope:** new crates, language migrations, behavioral rewrites, deprecations beyond what consolidation forces.
 
 ---

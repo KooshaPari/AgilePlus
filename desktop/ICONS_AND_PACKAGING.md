@@ -241,7 +241,7 @@ branding/
 export APPLE_CERTIFICATE="path/to/certificate.p12"
 export APPLE_CERTIFICATE_PASSWORD="cert-password"
 export APPLE_SIGNING_IDENTITY="Developer ID Application: Phenotype (TEAM_ID)"
-export APPLE_ID="kooshapari@gmail.com"
+export APPLE_ID="<REDACTED>@gmail.com"
 export APPLE_PASSWORD="app-specific-password"
 export APPLE_TEAM_ID="YOUR_TEAM_ID"
 ```

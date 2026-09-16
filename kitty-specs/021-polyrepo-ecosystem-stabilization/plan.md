@@ -2,7 +2,7 @@
 
 ## Overview
 
-This plan orchestrates the stabilization of 247 repositories across the KooshaPari GitHub organization through a 4-phase approach targeting full ecosystem governance within one quarter.
+This plan orchestrates the stabilization of 247 repositories across the <REDACTED> GitHub organization through a 4-phase approach targeting full ecosystem governance within one quarter.
 
 ## Dependency Graph
 

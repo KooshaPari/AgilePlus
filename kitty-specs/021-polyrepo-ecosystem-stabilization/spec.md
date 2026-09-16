@@ -12,7 +12,7 @@
 
 ## Context
 
-The Phenotype ecosystem has exploded to **247 repositories** across the KooshaPari GitHub organization. Only **9 repos are cloned locally** consuming **89 GB** (22 GB in build artifacts alone). The ecosystem spans 15+ languages with 65 Rust, 45 Python, 30 TypeScript, and 25 Go repos.
+The Phenotype ecosystem has exploded to **247 repositories** across the <REDACTED> GitHub organization. Only **9 repos are cloned locally** consuming **89 GB** (22 GB in build artifacts alone). The ecosystem spans 15+ languages with 65 Rust, 45 Python, 30 TypeScript, and 25 Go repos.
 
 This growth was organic and rapid (~100 repos created in March 2026 alone) without systematic governance, resulting in:
 - **Fragmented state**: 7 of 9 local repos have uncommitted changes, 10 open PRs in phenotype-infrakit alone

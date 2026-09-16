@@ -20,7 +20,7 @@
 ## Architecture Notes
 - **Main binary**: `agileplus-cli` (crates/agileplus-cli) — the primary distributed artifact
 - **Other binaries** (not distributed): agileplus-governance, agileplus-agent-service, agileplus-api, agileplus-dashboard
-- **External plugin crates** (disabled in Cargo.toml): plugin-core, plugin-git, plugin-sqlite — git repos on KooshaPari account
+- **External plugin crates** (disabled in Cargo.toml): plugin-core, plugin-git, plugin-sqlite — git repos on <REDACTED> account
 - **Desktop app**: Tauri-based (desktop/src-tauri)
 - **Test directories**: tests/e2e, tests/e2e-desktop, tests/transport, tests/bdd
 

@@ -2,9 +2,9 @@
 name = "agileplus-desktop"
 version = "0.2.0"
 description = "AgilePlus desktop client (Tauri). Offline-first, operates on local repo state."
-authors = ["Phenotype <kooshapari@gmail.com>"]
+authors = ["Phenotype <<REDACTED>@gmail.com>"]
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/KooshaPari/AgilePlus"
+repository = "https://github.com/<REDACTED>/AgilePlus"
 edition = "2021"
 rust-version = "1.77.2"
 

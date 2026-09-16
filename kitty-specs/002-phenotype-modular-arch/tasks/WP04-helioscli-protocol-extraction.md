@@ -41,7 +41,7 @@ Extract the `protocol` crate types from the heliosCLI Cargo workspace to the `ph
 4. In heliosCLI, replace local protocol types with `phenotype-rs-protocol` dependency:
    ```toml
    [dependencies]
-   phenotype-rs-protocol = { git = "https://github.com/KooshaPari/phenotype-rs-protocol", branch = "main" }
+   phenotype-rs-protocol = { git = "https://github.com/<REDACTED>/phenotype-rs-protocol", branch = "main" }
    ```
 5. Update all `use protocol::*` imports across heliosCLI crates
 6. Remove the local protocol crate from heliosCLI workspace

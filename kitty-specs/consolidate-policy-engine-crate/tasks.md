@@ -4,7 +4,7 @@ Each WP is independently dispatchable. Hosts are parallel-mergeable except `Auth
 
 ## WP-CPE-01 — Discovery & drift matrix (incl. AuthKit inventory)
 
-- **Scope (read):** all KooshaPari org repos containing `crates/phenotype-policy-engine/`.
+- **Scope (read):** all <REDACTED> org repos containing `crates/phenotype-policy-engine/`.
 - **Scope (write):** `kitty-specs/consolidate-policy-engine-crate/research.md`.
 - **Acceptance criteria:**
   - Drift matrix lists LOC, last-commit, version, public-API delta, TOML schema, decision-combination strategy per copy.
@@ -14,7 +14,7 @@ Each WP is independently dispatchable. Hosts are parallel-mergeable except `Auth
 - **Depends on:** none.
 - **Estimate:** 8–14 tool calls / 3–5 min.
 **File Scope:**
-- Read: [all KooshaPari org repos containing `crates/phenotype-policy-engine/`, none]
+- Read: [all <REDACTED> org repos containing `crates/phenotype-policy-engine/`, none]
 - Write: [`kitty-specs/consolidate-policy-engine-crate/research.md`]
 
 ## WP-CPE-02 — Per-host migration ticket + canonical feature-flag + TOML reconciliation plan
@@ -45,7 +45,7 @@ Each WP is independently dispatchable. Hosts are parallel-mergeable except `Auth
 - **Depends on:** WP-CPE-02.
 - **Estimate:** 6–10 tool calls / 3–4 min.
 **File Scope:**
-- Read: [all KooshaPari org repos containing `crates/phenotype-policy-engine/`, phenoShared/, WP-CPE-02]
+- Read: [all <REDACTED> org repos containing `crates/phenotype-policy-engine/`, phenoShared/, WP-CPE-02]
 - Write: [phenoShared/crates/phenotype-policy-engine/Cargo.toml, phenoShared]
 
 ## WP-CPE-04 — Land canonical TOML schema-version handling on `phenoShared`
@@ -57,7 +57,7 @@ Each WP is independently dispatchable. Hosts are parallel-mergeable except `Auth
 - **Depends on:** WP-CPE-02.
 - **Estimate:** 5–8 tool calls / 2–3 min.
 **File Scope:**
-- Read: [all KooshaPari org repos containing `crates/phenotype-policy-engine/`, phenoShared/, WP-CPE-02]
+- Read: [all <REDACTED> org repos containing `crates/phenotype-policy-engine/`, phenoShared/, WP-CPE-02]
 - Write: [phenoShared]
 
 ## WP-CPE-05 — Migrate host `pheno`
@@ -79,7 +79,7 @@ Each WP is independently dispatchable. Hosts are parallel-mergeable except `Auth
 - **Parallel with:** WP-CPE-05, WP-CPE-07, WP-CPE-08.
 - **Estimate:** 5–8 tool calls / 3–4 min.
 **File Scope:**
-- Read: [all KooshaPari org repos containing `crates/phenotype-policy-engine/`, phenoShared/, WP-CPE-02, WP-CPE-04]
+- Read: [all <REDACTED> org repos containing `crates/phenotype-policy-engine/`, phenoShared/, WP-CPE-02, WP-CPE-04]
 - Write: [kitty-specs/consolidate-policy-engine-crate/research.md]
 
 ## WP-CPE-07 — Migrate hosts `HexaKit/crates` and `PhenoKits/HexaKit`
@@ -90,7 +90,7 @@ Each WP is independently dispatchable. Hosts are parallel-mergeable except `Auth
 - **Parallel with:** WP-CPE-05, WP-CPE-06, WP-CPE-08.
 - **Estimate:** 6–10 tool calls / 3–5 min.
 **File Scope:**
-- Read: [all KooshaPari org repos containing `crates/phenotype-policy-engine/`, phenoShared/, WP-CPE-02, WP-CPE-04]
+- Read: [all <REDACTED> org repos containing `crates/phenotype-policy-engine/`, phenoShared/, WP-CPE-02, WP-CPE-04]
 - Write: [HexaKit/crates, PhenoKits/HexaKit]
 
 ## WP-CPE-08 — Migrate host `AuthKit/rust` (special: features-enabled swap)
@@ -122,7 +122,7 @@ Each WP is independently dispatchable. Hosts are parallel-mergeable except `Auth
 - **Depends on:** WP-CPE-05 ∧ WP-CPE-06 ∧ WP-CPE-07 ∧ WP-CPE-08.
 - **Estimate:** 3–5 tool calls / 1–2 min.
 **File Scope:**
-- Read: [all KooshaPari org repos containing `crates/phenotype-policy-engine/`, phenoShared/, WP-CPE-05 ∧ WP-CPE-06 ∧ WP-CPE-07 ∧ WP-CPE-08]
+- Read: [all <REDACTED> org repos containing `crates/phenotype-policy-engine/`, phenoShared/, WP-CPE-05 ∧ WP-CPE-06 ∧ WP-CPE-07 ∧ WP-CPE-08]
 - Write: [kitty-specs/consolidate-policy-engine-crate/research.md]
 
 ## Aggregate

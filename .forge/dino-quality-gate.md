@@ -19,7 +19,7 @@ All changes to the Dino submodule (`Dino/`) and its worktrees (`Dino-wtrees/`).
 ### Submodule Rules
 - Dino submodule SHA must be updated via PR only (no direct pushes)
 - Worktree changes follow standard `Dino-wtrees/<topic>/` convention
-- Minimum 1 approval required from `@KooshaPari`
+- Minimum 1 approval required from `@<REDACTED>`
 
 ### Scorecard Threshold
 - Overall pillar grade must be >= C (60/100) for merge

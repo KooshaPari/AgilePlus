@@ -1,12 +1,12 @@
 #!/usr/bin/env pwsh
 # AgilePlus One-line Installer (Windows)
-# Usage: irm https://raw.githubusercontent.com/KooshaPari/AgilePlus/main/install.ps1 | iex
+# Usage: irm https://raw.githubusercontent.com/<REDACTED>/AgilePlus/main/install.ps1 | iex
 
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 
 # Configuration
-$Repo = 'KooshaPari/AgilePlus'
+$Repo = '<REDACTED>/AgilePlus'
 $InstallDir = if ($env:AGILEPLUS_HOME) { $env:AGILEPLUS_HOME } else { "$env:LOCALAPPDATA\AgilePlus" }
 $Version = if ($env:AGILEPLUS_VERSION) { $env:AGILEPLUS_VERSION } else { 'latest' }
 $RepoRoot = "$env:TEMP\agileplus-install-$(Get-Random)"

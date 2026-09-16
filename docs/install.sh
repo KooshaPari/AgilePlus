@@ -2,9 +2,9 @@
 set -euo pipefail
 
 # AgilePlus installer — curl | bash
-# Usage: curl -fsSL https://raw.githubusercontent.com/KooshaPari/AgilePlus/main/docs/install.sh | bash
+# Usage: curl -fsSL https://raw.githubusercontent.com/<REDACTED>/AgilePlus/main/docs/install.sh | bash
 
-REPO="KooshaPari/AgilePlus"
+REPO="<REDACTED>/AgilePlus"
 BINARY="agileplus"
 INSTALL_DIR="${INSTALL_DIR:-$HOME/.local/bin}"
 

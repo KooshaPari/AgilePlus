@@ -1,7 +1,7 @@
 # spec: DINOForge — AgilePlus Integration
 
 ## Goal
-Fully integrate the DINOForge mod platform (KooshaPari/Dino) into the AgilePlus monorepo governance framework, enabling automated quality gates, spec-driven development, and cross-repo visibility.
+Fully integrate the DINOForge mod platform (<REDACTED>/Dino) into the AgilePlus monorepo governance framework, enabling automated quality gates, spec-driven development, and cross-repo visibility.
 
 ## Why now
 - DINOForge has 12K+ files, 52 CI workflows, and 21 releases but operates outside AgilePlus governance.
@@ -80,10 +80,10 @@ Fully integrate the DINOForge mod platform (KooshaPari/Dino) into the AgilePlus 
 - Remove .forge/ config if quality gates conflict with Dino's existing 52 workflows.
 
 ## Owner
-- @KooshaPari (sole CODEOWNER of KooshaPari/Dino)
+- @<REDACTED> (sole CODEOWNER of <REDACTED>/Dino)
 
 ## References
-- Dino repo: https://github.com/KooshaPari/Dino
-- CI fix PR: https://github.com/KooshaPari/Dino/pull/391
-- DINOForge-UnityDoorstop: https://github.com/KooshaPari/DINOForge-UnityDoorstop
+- Dino repo: https://github.com/<REDACTED>/Dino
+- CI fix PR: https://github.com/<REDACTED>/Dino/pull/391
+- DINOForge-UnityDoorstop: https://github.com/<REDACTED>/DINOForge-UnityDoorstop
 - Scorecard: 30-pillar audit, grade C (61/100)

@@ -4,7 +4,7 @@ Each Work Package (WP) is independently dispatchable to a subagent. Hosts are pa
 
 ## WP-CES-01 — Discovery & drift matrix
 
-- **Scope (read):** all KooshaPari org repos containing `crates/phenotype-event-sourcing/`.
+- **Scope (read):** all <REDACTED> org repos containing `crates/phenotype-event-sourcing/`.
 - **Scope (write):** `kitty-specs/consolidate-event-sourcing-crate/research.md` (drift matrix table).
 - **Acceptance criteria:**
   - Drift matrix lists LOC, last-commit, declared version, and public-API delta vs. canonical for all 6 copies.
@@ -13,7 +13,7 @@ Each Work Package (WP) is independently dispatchable to a subagent. Hosts are pa
 - **Depends on:** none.
 - **Estimate:** 6–10 tool calls / 2–3 min.
 **File Scope:**
-- Read: [all KooshaPari org repos containing `crates/phenotype-event-sourcing/`, phenoShared@HEAD, none]
+- Read: [all <REDACTED> org repos containing `crates/phenotype-event-sourcing/`, phenoShared@HEAD, none]
 - Write: [`kitty-specs/consolidate-event-sourcing-crate/research.md` (drift matrix table)]
 
 ## WP-CES-02 — Per-host migration ticket authoring
@@ -72,7 +72,7 @@ Each Work Package (WP) is independently dispatchable to a subagent. Hosts are pa
 - **Parallel with:** WP-CES-03, WP-CES-04, WP-CES-06, WP-CES-07.
 - **Estimate:** 4–6 tool calls / 2–3 min.
 **File Scope:**
-- Read: [all KooshaPari org repos containing `crates/phenotype-event-sourcing/`, phenoShared/, WP-CES-02]
+- Read: [all <REDACTED> org repos containing `crates/phenotype-event-sourcing/`, phenoShared/, WP-CES-02]
 - Write: [DataKit/rust]
 
 ## WP-CES-06 — Migrate host `PhenoKits/HexaKit`
@@ -84,7 +84,7 @@ Each Work Package (WP) is independently dispatchable to a subagent. Hosts are pa
 - **Parallel with:** WP-CES-03, WP-CES-04, WP-CES-05, WP-CES-07.
 - **Estimate:** 4–6 tool calls / 2–3 min.
 **File Scope:**
-- Read: [all KooshaPari org repos containing `crates/phenotype-event-sourcing/`, phenoShared/, WP-CES-02]
+- Read: [all <REDACTED> org repos containing `crates/phenotype-event-sourcing/`, phenoShared/, WP-CES-02]
 - Write: [PhenoKits/HexaKit]
 
 ## WP-CES-07 — Migrate host `hwLedger/vendor`
@@ -96,7 +96,7 @@ Each Work Package (WP) is independently dispatchable to a subagent. Hosts are pa
 - **Parallel with:** WP-CES-03, WP-CES-04, WP-CES-05, WP-CES-06.
 - **Estimate:** 4–6 tool calls / 2–3 min.
 **File Scope:**
-- Read: [all KooshaPari org repos containing `crates/phenotype-event-sourcing/`, phenoShared/, WP-CES-02]
+- Read: [all <REDACTED> org repos containing `crates/phenotype-event-sourcing/`, phenoShared/, WP-CES-02]
 - Write: [hwLedger/vendor, phenoShared]
 
 ## WP-CES-08 — Audit-doc supersede pointer + AgilePlus WP closeout
@@ -111,7 +111,7 @@ Each Work Package (WP) is independently dispatchable to a subagent. Hosts are pa
 - **Depends on:** WP-CES-03 ∧ WP-CES-04 ∧ WP-CES-05 ∧ WP-CES-06 ∧ WP-CES-07.
 - **Estimate:** 4–6 tool calls / 2–3 min.
 **File Scope:**
-- Read: [all KooshaPari org repos containing `crates/phenotype-event-sourcing/`, phenoShared/, WP-CES-03 ∧ WP-CES-04 ∧ WP-CES-05 ∧ WP-CES-06 ∧ WP-CES-07]
+- Read: [all <REDACTED> org repos containing `crates/phenotype-event-sourcing/`, phenoShared/, WP-CES-03 ∧ WP-CES-04 ∧ WP-CES-05 ∧ WP-CES-06 ∧ WP-CES-07]
 - Write: [One-line trailing pointer added to `repos/docs/governance/cross-project-reuse-audit-2026-04-25.md`]
 
 ## Aggregate

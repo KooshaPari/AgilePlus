@@ -55,7 +55,7 @@ WP-000 ─┬─► WP-101 ─┬─► WP-201 ─► WP-202 ─┐
 
 ## Cross-Project Reuse Opportunities
 
-- Reuse `gh api` walker pattern from spec 012 (github-portfolio-triage) and spec `kooshapari-stale-repo-triage`. Extract into a shared `phenotype-repo-inventory` Rust binary if not already done.
+- Reuse `gh api` walker pattern from spec 012 (github-portfolio-triage) and spec `<REDACTED>-stale-repo-triage`. Extract into a shared `phenotype-repo-inventory` Rust binary if not already done.
 - Branch-protection apply step in WP-302 should reuse the policy bundle defined in `phenotype-infrakit` rather than per-repo bespoke configuration.
 - Sensitivity-tier policy should compose with the secret-scanning + SAST baseline from the Phase 1 Security work (already deployed across 30 repos per session memory).
 

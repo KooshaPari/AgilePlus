@@ -148,7 +148,7 @@ This is the **critical path foundation** — audit event integration across all 
      enabled: true
      override:
        - file_option: go_package_prefix
-         value: github.com/KooshaPari/phenotype-proto/gen/go
+         value: github.com/<REDACTED>/phenotype-proto/gen/go
    plugins:
      - remote: buf.build/protocolbuffers/go
        out: gen/go

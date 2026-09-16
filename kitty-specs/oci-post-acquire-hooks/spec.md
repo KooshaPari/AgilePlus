@@ -7,7 +7,7 @@
 - **Created**: 2026-04-25
 - **State**: shipped (backfill spec)
 - **Scope**: phenotype-infra (`iac/oci-post-acquire/` Rust crate)
-- **Reference PR**: https://github.com/KooshaPari/phenotype-infra/pull/14
+- **Reference PR**: https://github.com/<REDACTED>/phenotype-infra/pull/14
 - **Branch**: `feat/oci-acquire-hooks` (merged)
 
 ## Context

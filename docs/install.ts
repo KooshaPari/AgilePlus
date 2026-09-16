@@ -1,8 +1,8 @@
 #!/usr/bin/env bun
 // AgilePlus installer — bun run install.ts
-// Usage: bun run https://raw.githubusercontent.com/KooshaPari/AgilePlus/main/docs/install.ts
+// Usage: bun run https://raw.githubusercontent.com/<REDACTED>/AgilePlus/main/docs/install.ts
 
-const REPO = "KooshaPari/AgilePlus";
+const REPO = "<REDACTED>/AgilePlus";
 const BINARY = "agileplus";
 
 async function detectPlatform(): Promise<{ os: string; arch: string; archiveExt: string }> {

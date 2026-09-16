@@ -336,7 +336,7 @@ Expected: PASS.
 
 - [ ] **Step 4: Add fleet gate documentation.**
 
-Document that installer/release work begins only after all local checks pass and the two-repository test passes. The fleet acceptance matrix must independently verify install, upgrade, daemon restart, MCP root binding, hook execution, and repository-local round trip for every approved harness, kooshapari-desk, and this device.
+Document that installer/release work begins only after all local checks pass and the two-repository test passes. The fleet acceptance matrix must independently verify install, upgrade, daemon restart, MCP root binding, hook execution, and repository-local round trip for every approved harness, <REDACTED>-desk, and this device.
 
 - [ ] **Step 5: Commit.**
 

@@ -5,7 +5,7 @@ frontend:
   enabled: true
   replicaCount: 1
   image:
-    repository: kooshapari/agileplus-frontend
+    repository: <REDACTED>/agileplus-frontend
     tag: ""
     pullPolicy: IfNotPresent
   service:
@@ -42,7 +42,7 @@ tracera:
     maxReplicas: 5
     targetCPUUtilizationPercentage: 80
   image:
-    repository: kooshapari/tracera
+    repository: <REDACTED>/tracera
     tag: ""
     pullPolicy: IfNotPresent
   resources:
@@ -72,7 +72,7 @@ api:
   enabled: true
   replicaCount: 2
   image:
-    repository: ghcr.io/kooshapari/agileplus-api
+    repository: ghcr.io/<REDACTED>/agileplus-api
     pullPolicy: IfNotPresent
     tag: "latest"
   service:
@@ -102,7 +102,7 @@ mcp:
   enabled: true
   replicaCount: 1
   image:
-    repository: ghcr.io/kooshapari/agileplus-mcp
+    repository: ghcr.io/<REDACTED>/agileplus-mcp
     pullPolicy: IfNotPresent
     tag: "latest"
   service:

@@ -43,7 +43,7 @@
 | Source | Action | Why |
 |---|---|---|
 | `phenoForge` | keep separate | "Rust-native task runner with parallel execution, dependency graph resolution, hot reload" — distinct project despite name overlap |
-| `PlusForges` | keep as meta-pointer README | "Meta-repo of all KooshaPari 'Plus' forks" |
+| `PlusForges` | keep as meta-pointer README | "Meta-repo of all <REDACTED> 'Plus' forks" |
 | `MCPForge` | keep separate | Fork of `isaacphi/mcp-language-server` (Go LSP); distinct upstream from `antinomyhq/forgecode` (Rust) |
 | `DINOForge-UnityDoorstop` | keep archived | Fork of `NeighTools/UnityDoorstop` (C#/Unity DLL-injector); distinct project |
 

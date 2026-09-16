@@ -51,7 +51,7 @@ WP-101..WP-107 are siblings — dispatch as up to 7 parallel subagents.
 
 | WP | Description | Predecessors | Est. effort |
 |----|-------------|--------------|-------------|
-| WP-401 | Per-template README rewrite + central `templates.kooshapari.com` index entry (per Org Pages standing policy) | WP-301 | 6–10 tool calls, 4–6 min |
+| WP-401 | Per-template README rewrite + central `templates.<REDACTED>.com` index entry (per Org Pages standing policy) | WP-301 | 6–10 tool calls, 4–6 min |
 | WP-402 | Migration guide for downstream projects pointing to old templates; auto-redirect via archived-repo README | WP-301 | 4–6 tool calls, 2–4 min |
 
 ## DAG

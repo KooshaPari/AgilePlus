@@ -3,7 +3,7 @@
 # Checks all GitHub Actions workflow files for unpinned third-party actions.
 # eco-011 FR-5: Action hygiene audit
 # A third-party action is considered pinned if it uses a 40-character SHA ref.
-# First-party actions (KooshaPari/*, actions/*) are exempt.
+# First-party actions (<REDACTED>/*, actions/*) are exempt.
 
 set -euo pipefail
 
@@ -34,8 +34,8 @@ for file in "$WORKFLOWS_DIR"/*.yml; do
         # Extract the action reference after 'uses:'
         action_ref=$(echo "$line" | sed -n 's/.*uses:[[:space:]]*//p')
         [ -z "$action_ref" ] && continue
-        # Skip first-party actions (actions/* and KooshaPari/*)
-        if [[ "$action_ref" =~ ^actions/ || "$action_ref" =~ ^KooshaPari/ ]]; then
+        # Skip first-party actions (actions/* and <REDACTED>/*)
+        if [[ "$action_ref" =~ ^actions/ || "$action_ref" =~ ^<REDACTED>/ ]]; then
             continue
         fi
         # Check if the action is pinned to a 40-char SHA

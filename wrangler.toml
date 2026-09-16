@@ -5,7 +5,7 @@ compatibility_flags = ["nodejs_compat"]
 
 [vars]
 ENVIRONMENT = "production"
-AGILEPLUS_API = "https://agileplus.kooshapari.dev"
+AGILEPLUS_API = "https://agileplus.<REDACTED>.dev"
 
 [[kv_namespaces]]
 binding = "AGILEPLUS_KV"

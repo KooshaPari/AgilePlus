@@ -16,11 +16,11 @@ def run_command(cmd, cwd=None):
 
 
 def main():
-    repo_dir = "/Users/kooshapari/CodeProjects/Phenotype/repos/AgilePlus"
+    repo_dir = "/Users/<REDACTED>/CodeProjects/Phenotype/repos/AgilePlus"
 
     # 1. Get all remote branches (excluding main and HEAD)
     res = run_command(
-        f"{GH_PATH} api repos/KooshaPari/AgilePlus/branches --paginate --jq '.[].name'",
+        f"{GH_PATH} api repos/<REDACTED>/AgilePlus/branches --paginate --jq '.[].name'",
         cwd=repo_dir,
     )
     if not res or res.returncode != 0:
@@ -34,7 +34,7 @@ def main():
 
     # 2. Get all open PRs
     res = run_command(
-        f"{GH_PATH} pr list --repo KooshaPari/AgilePlus --state open --json headRefName",
+        f"{GH_PATH} pr list --repo <REDACTED>/AgilePlus --state open --json headRefName",
         cwd=repo_dir,
     )
     if not res or res.returncode != 0:
@@ -56,7 +56,7 @@ def main():
 
         # 1. Try to open PR
         res = run_command(
-            f"{GH_PATH} pr create --repo KooshaPari/AgilePlus --head {branch} --base main --title '[{branch}] sync: align with main' --body 'Ensuring every branch has an open PR.'",
+            f"{GH_PATH} pr create --repo <REDACTED>/AgilePlus --head {branch} --base main --title '[{branch}] sync: align with main' --body 'Ensuring every branch has an open PR.'",
             cwd=repo_dir,
         )
 
@@ -89,7 +89,7 @@ def main():
             if push_res and push_res.returncode == 0:
                 # Try creating PR again
                 res = run_command(
-                    f"{GH_PATH} pr create --repo KooshaPari/AgilePlus --head {branch} --base main --title '[{branch}] sync: align with main' --body 'Ensuring every branch has an open PR after merging main.'",
+                    f"{GH_PATH} pr create --repo <REDACTED>/AgilePlus --head {branch} --base main --title '[{branch}] sync: align with main' --body 'Ensuring every branch has an open PR after merging main.'",
                     cwd=repo_dir,
                 )
                 if res and res.returncode == 0:

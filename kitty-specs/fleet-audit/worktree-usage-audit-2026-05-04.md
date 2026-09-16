@@ -280,11 +280,11 @@ Found 50 markdown files mentioning worktree/working tree.
 ## `phenosdk-wave-a-contracts/tasks/WP01-initial-implementation.md`
 - 20: - `worktrees/phenoSDK/main/src/pheno/ports`
 
-## `portfolio-audit-kooshapari-2026/plan.md`
+## `portfolio-audit-<REDACTED>-2026/plan.md`
 - 16: - `Phenotype/repos/worktrees/phenoSDK/main`
 
-## `portfolio-audit-kooshapari-2026/spec.md`
-- 9: - Canonical SDK tree: `Phenotype/repos/worktrees/phenoSDK/main` (clone of `github.com/KooshaPari/phenoSDK`). Legacy `pheno-sdk` remote is empty; do not block on it.
+## `portfolio-audit-<REDACTED>-2026/spec.md`
+- 9: - Canonical SDK tree: `Phenotype/repos/worktrees/phenoSDK/main` (clone of `github.com/<REDACTED>/phenoSDK`). Legacy `pheno-sdk` remote is empty; do not block on it.
 
-## `portfolio-audit-kooshapari-2026/tasks/WP01-initial-implementation.md`
+## `portfolio-audit-<REDACTED>-2026/tasks/WP01-initial-implementation.md`
 - 23: - `Phenotype/repos/worktrees/phenoSDK/main`

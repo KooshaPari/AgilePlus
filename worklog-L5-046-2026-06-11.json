@@ -21,7 +21,7 @@
     {
       "command": "cargo fmt --all",
       "status": "failed_unrelated",
-      "details": "Attempted to format files under /Users/kooshapari/CodeProjects/Phenotype/repos/phenoShared/, which is outside this worktree and not writable in the sandbox."
+      "details": "Attempted to format files under /Users/<REDACTED>/CodeProjects/Phenotype/repos/phenoShared/, which is outside this worktree and not writable in the sandbox."
     }
   ],
   "notes": [

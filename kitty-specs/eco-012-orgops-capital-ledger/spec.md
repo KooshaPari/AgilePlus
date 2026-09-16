@@ -17,7 +17,7 @@ The result: agents waste cycles on failed API calls, duplicate secrets across wo
 ## Target Users
 
 - **AI Agents** (Forge, Sage, Muse, Helios): Need to query available resources before starting work, check secret freshness, allocate budgets
-- **Org Operator** (kooshapari): Needs a single place to declare resources, monitor consumption, manage rotations
+- **Org Operator** (<REDACTED>): Needs a single place to declare resources, monitor consumption, manage rotations
 - **CI/CD**: Needs secrets injected into worktrees without manual .env management
 
 ## Functional Requirements

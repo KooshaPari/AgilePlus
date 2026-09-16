@@ -6,7 +6,7 @@ last_audit: 2026-04-25
 owners: phenotype-org / shared-platform
 adr: docs/governance/shared-crates-canonical-home-adr-2026-04.md
 crate: phenotype-event-sourcing
-canonical_home: github.com/KooshaPari/phenoShared/crates/phenotype-event-sourcing
+canonical_home: github.com/<REDACTED>/phenoShared/crates/phenotype-event-sourcing
 ---
 
 # Consolidate `phenotype-event-sourcing` to `phenoShared`
@@ -54,7 +54,7 @@ External (cross-workspace) consumers: **0**. All current dependency edges are lo
 ## Non-Goals
 
 - No new feature work on the crate API.
-- No re-purposing of the dormant `KooshaPari/phenotype-shared` repo (separate org-hygiene WP).
+- No re-purposing of the dormant `<REDACTED>/phenotype-shared` repo (separate org-hygiene WP).
 - No code in this spec, plan, or task documents (Planner-Agents-No-Code rule).
 - No simultaneous SemVer bump — the canonical crate retains its current version line.
 

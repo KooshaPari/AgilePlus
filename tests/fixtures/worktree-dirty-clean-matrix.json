@@ -19,7 +19,7 @@
   "known_clean": [
     {
       "name": "agentapi-plusplus",
-      "path": "/Users/kooshapari/CodeProjects/Phenotype/repos/agentapi-plusplus",
+      "path": "/Users/<REDACTED>/CodeProjects/Phenotype/repos/agentapi-plusplus",
       "canonical_name": "agentapi-plusplus",
       "branch": "fix/sync-upstream",
       "git_status_clean": true,
@@ -30,7 +30,7 @@
     },
     {
       "name": "cliproxyapi-plusplus",
-      "path": "/Users/kooshapari/CodeProjects/Phenotype/repos/cliproxyapi-plusplus",
+      "path": "/Users/<REDACTED>/CodeProjects/Phenotype/repos/cliproxyapi-plusplus",
       "canonical_name": "cliproxyapi-plusplus",
       "branch": "fix/cliproxy-v6-migration-20260327",
       "git_status_clean": true,
@@ -41,7 +41,7 @@
     },
     {
       "name": "phenodocs",
-      "path": "/Users/kooshapari/CodeProjects/Phenotype/repos/.archive/phenodocs",
+      "path": "/Users/<REDACTED>/CodeProjects/Phenotype/repos/.archive/phenodocs",
       "canonical_name": ".archive/phenodocs",
       "branch": "main",
       "git_status_clean": true,
@@ -54,7 +54,7 @@
   "known_dirty": [
     {
       "name": "agent-devops-setups",
-      "path": "/Users/kooshapari/CodeProjects/Phenotype/repos/agent-devops-setups",
+      "path": "/Users/<REDACTED>/CodeProjects/Phenotype/repos/agent-devops-setups",
       "canonical_name": "agent-devops-setups",
       "branch": "docs-site-completion",
       "git_status_clean": false,
@@ -86,7 +86,7 @@
     },
     {
       "name": "heliosApp",
-      "path": "/Users/kooshapari/CodeProjects/Phenotype/repos/heliosApp",
+      "path": "/Users/<REDACTED>/CodeProjects/Phenotype/repos/heliosApp",
       "canonical_name": "heliosApp",
       "branch": "main",
       "git_status_clean": false,
@@ -121,7 +121,7 @@
     },
     {
       "name": "thegent",
-      "path": "/Users/kooshapari/CodeProjects/Phenotype/repos/thegent",
+      "path": "/Users/<REDACTED>/CodeProjects/Phenotype/repos/thegent",
       "canonical_name": "thegent",
       "branch": "main",
       "git_status_clean": false,

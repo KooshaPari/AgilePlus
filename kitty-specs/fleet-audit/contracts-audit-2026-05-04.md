@@ -34,7 +34,7 @@
 | `eco-012-orgops-capital-ledger` | missing contracts dir |  |
 | `feature-specification-template-platform-completion` | missing contracts dir |  |
 | `helioscli-rmcp-client-sdk-fix` | missing contracts dir |  |
-| `kooshapari-stale-repo-triage` | populated | governance-v1.json |
+| `<REDACTED>-stale-repo-triage` | populated | governance-v1.json |
 | `oci-lottery-daemon` | missing contracts dir |  |
 | `oci-post-acquire-hooks` | missing contracts dir |  |
 | `phenosdk-decompose-core` | populated | governance-v1.json |
@@ -43,6 +43,6 @@
 | `phenosdk-fix-notimplemented` | populated | governance-v1.json |
 | `phenosdk-sanitize-atoms` | populated | governance-v1.json |
 | `phenosdk-wave-a-contracts` | populated | governance-v1.json |
-| `portfolio-audit-kooshapari-2026` | populated | governance-v1.json |
+| `portfolio-audit-<REDACTED>-2026` | populated | governance-v1.json |
 | `snyk-phase-1-deploy` | missing contracts dir |  |
 | `thegent-dotfiles-consolidation` | missing contracts dir |  |

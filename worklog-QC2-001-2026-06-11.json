@@ -25,7 +25,7 @@
       "python3 - <<'PY'\\nimport tomllib\\nwith open('release-plz.toml','rb') as f:\\n    tomllib.load(f)\\nprint('toml_ok')\\nPY",
       "cargo metadata --no-deps"
     ],
-    "notes": "Workflow YAML, release-plz TOML, and Cargo metadata validation passed. git commit was blocked because the worktree gitdir resolves outside writable roots and git could not create index.lock under /Users/kooshapari/CodeProjects/Phenotype/repos/AgilePlus/.git/worktrees/AgilePlus-wt-QC2-001-2026-06-11."
+    "notes": "Workflow YAML, release-plz TOML, and Cargo metadata validation passed. git commit was blocked because the worktree gitdir resolves outside writable roots and git could not create index.lock under /Users/<REDACTED>/CodeProjects/Phenotype/repos/AgilePlus/.git/worktrees/AgilePlus-wt-QC2-001-2026-06-11."
   },
   "started_at": null,
   "completed_at": "2026-06-11T00:00:00Z"
