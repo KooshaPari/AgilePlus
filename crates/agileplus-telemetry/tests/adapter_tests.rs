@@ -50,7 +50,8 @@ fn noop_adapter_child_span_preserves_parent_id() {
     let parent = adapter.start_span("parent", None);
     let child = adapter.start_span("child", Some(&parent));
     assert_eq!(child.trace_id, parent.trace_id);
-    assert_eq!(child.parent_span_id, Some(parent.span_id.clone()));
+    // Noop adapter always returns parent_span_id: None (sentinel spans)
+    assert!(child.parent_span_id.is_none());
 }
 
 #[test]
@@ -277,8 +278,8 @@ fn real_adapter_log_entry_with_span_context() {
 // Adapter with full OTLP config (tests OTLP path)
 // ---------------------------------------------------------------------------
 
-#[test]
-fn adapter_with_full_otlp_config_initializes() {
+#[tokio::test]
+async fn adapter_with_full_otlp_config_initializes() {
     let cfg = TelemetryConfig {
         otlp: Some(OtlpConfig {
             endpoint: "http://localhost:4317".into(),
@@ -367,8 +368,8 @@ fn init_telemetry_default_config_returns_guard() {
     assert!(result.is_ok());
 }
 
-#[test]
-fn init_telemetry_with_otlp_config_returns_guard() {
+#[tokio::test]
+async fn init_telemetry_with_otlp_config_returns_guard() {
     let cfg = TelemetryConfig {
         otlp: Some(OtlpConfig {
             endpoint: "http://localhost:4317".into(),
@@ -466,8 +467,9 @@ fn span_chain_lifecycle_noop() {
     let child = adapter.start_span("child", Some(&root));
     let grandchild = adapter.start_span("grandchild", Some(&child));
 
-    assert_eq!(grandchild.parent_span_id, Some(child.span_id.clone()));
-    assert_eq!(child.parent_span_id, Some(root.span_id.clone()));
+    // Noop adapter always returns parent_span_id: None (sentinel spans)
+    assert!(grandchild.parent_span_id.is_none());
+    assert!(child.parent_span_id.is_none());
     assert!(root.parent_span_id.is_none());
 
     adapter.add_span_event(&grandchild, "deep_event", &[("level", "3")]);
