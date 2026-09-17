@@ -214,4 +214,98 @@ mod tests {
         let env = Envelope::new(&sub, serde_json::json!({}));
         assert_eq!(env.subject, "agileplus.wp.5.created");
     }
+
+    #[test]
+    fn id_is_uuid_v4_format() {
+        let env = Envelope::new(&Subject::new("t"), serde_json::json!({}));
+        let parts: Vec<&str> = env.id.split('-').collect();
+        assert_eq!(parts.len(), 5);
+        assert_eq!(parts[0].len(), 8);
+        assert_eq!(parts[1].len(), 4);
+        assert_eq!(parts[2].len(), 4);
+        assert!(parts[2].starts_with('4'));
+        assert_eq!(parts[3].len(), 4);
+        assert_eq!(parts[4].len(), 12);
+    }
+
+    #[test]
+    fn timestamp_is_recent() {
+        let before = chrono::Utc::now();
+        let env = Envelope::new(&Subject::new("t"), serde_json::json!({}));
+        let after = chrono::Utc::now();
+        assert!(env.timestamp >= before && env.timestamp <= after);
+    }
+
+    #[test]
+    fn roundtrip_preserves_reply_to() {
+        let env = Envelope::new(&Subject::new("a.b"), serde_json::json!({"k": 1}))
+            .with_reply_to(&Subject::new("_INBOX.reply"));
+        let bytes = env.to_bytes().unwrap();
+        let back = Envelope::from_bytes(&bytes).unwrap();
+        assert_eq!(back.reply_to.as_deref(), Some("_INBOX.reply"));
+    }
+
+    #[test]
+    fn roundtrip_preserves_correlation_id() {
+        let env = Envelope::new(&Subject::new("a"), serde_json::json!({}))
+            .with_correlation("corr-42");
+        let bytes = env.to_bytes().unwrap();
+        let back = Envelope::from_bytes(&bytes).unwrap();
+        assert_eq!(back.correlation_id.as_deref(), Some("corr-42"));
+    }
+
+    #[test]
+    fn roundtrip_preserves_payload_exactly() {
+        let payload = serde_json::json!({"nested": {"arr": [1, 2, 3]}, "null": null, "bool": false});
+        let env = Envelope::new(&Subject::new("t"), payload.clone());
+        let bytes = env.to_bytes().unwrap();
+        let back = Envelope::from_bytes(&bytes).unwrap();
+        assert_eq!(back.payload, payload);
+    }
+
+    #[test]
+    fn from_bytes_invalid_json_fails() {
+        assert!(Envelope::from_bytes(b"not json").is_err());
+    }
+
+    #[test]
+    fn from_bytes_missing_fields_fails() {
+        let bytes = serde_json::to_vec(&serde_json::json!({"subject": "x"})).unwrap();
+        assert!(Envelope::from_bytes(&bytes).is_err());
+    }
+
+    #[test]
+    fn reply_to_none_by_default() {
+        let env = Envelope::new(&Subject::new("t"), serde_json::json!({}));
+        assert!(env.reply_to.is_none());
+    }
+
+    #[test]
+    fn correlation_id_none_by_default() {
+        let env = Envelope::new(&Subject::new("t"), serde_json::json!({}));
+        assert!(env.correlation_id.is_none());
+    }
+
+    #[test]
+    fn clone_is_deep() {
+        let env = Envelope::new(&Subject::new("t"), serde_json::json!({"v": 1}))
+            .with_correlation("c");
+        let copy = env.clone();
+        assert_eq!(env.id, copy.id);
+        assert_eq!(env.subject, copy.subject);
+        assert_eq!(env.payload, copy.payload);
+        assert_eq!(env.reply_to, copy.reply_to);
+        assert_eq!(copy.correlation_id.as_deref(), Some("c"));
+    }
+
+    #[test]
+    fn debug_output_contains_fields() {
+        let env = Envelope::new(&Subject::new("debug.test"), serde_json::json!({"x": 1}))
+            .with_correlation("dbg-1")
+            .with_reply_to(&Subject::new("_INBOX.r"));
+        let s = format!("{env:?}");
+        assert!(s.contains("debug.test"));
+        assert!(s.contains("dbg-1"));
+        assert!(s.contains("_INBOX.r"));
+    }
 }

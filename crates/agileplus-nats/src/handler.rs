@@ -100,4 +100,91 @@ mod tests {
         let val = payload_val.lock().unwrap();
         assert_eq!(val.as_ref().unwrap()["nested"]["a"], 1);
     }
+
+    #[tokio::test]
+    async fn fn_handler_async_closure() {
+        // Sync closure that spawns a task; demonstrates async work alongside.
+        use std::sync::{Arc, Mutex};
+        let ok = Arc::new(Mutex::new(false));
+        let ok_clone = ok.clone();
+        let handler = FnHandler(move |_env: &Envelope| {
+            let ok = ok_clone.clone();
+            tokio::spawn(async move {
+                *ok.lock().unwrap() = true;
+            });
+            Ok(())
+        });
+        let env = Envelope::new(&Subject::new("t"), serde_json::json!({}));
+        assert!(handler.handle(&env).await.is_ok());
+        // Give spawn a tick.
+        tokio::time::sleep(std::time::Duration::from_millis(20)).await;
+        assert!(*ok.lock().unwrap());
+    }
+
+    #[tokio::test]
+    async fn fn_handler_return_variants() {
+        // success
+        let ok = FnHandler(|_env: &Envelope| Ok(()));
+        assert!(ok.handle(&Envelope::new(&Subject::new("t"), serde_json::json!({}))).await.is_ok());
+
+        // handler error
+        let err = FnHandler(|_env: &Envelope| Err(EventBusError::HandlerError("fail".into())));
+        assert!(err.handle(&Envelope::new(&Subject::new("t"), serde_json::json!({}))).await.is_err());
+
+        // other error variants also work
+        let ser = FnHandler(|_env: &Envelope| Err(EventBusError::SerializationError("bad".into())));
+        assert!(ser.handle(&Envelope::new(&Subject::new("t"), serde_json::json!({}))).await.is_err());
+    }
+
+    #[tokio::test]
+    async fn fn_handler_can_inspect_correlation() {
+        let seen: Arc<Mutex<Option<String>>> = Arc::new(Mutex::new(None));
+        let clone = seen.clone();
+        let handler = FnHandler(move |env: &Envelope| {
+            *clone.lock().unwrap() = env.correlation_id.clone();
+            Ok(())
+        });
+
+        let env = Envelope::new(&Subject::new("t"), serde_json::json!({}))
+            .with_correlation("cid-999");
+        handler.handle(&env).await.unwrap();
+        assert_eq!(*seen.lock().unwrap(), Some("cid-999".to_string()));
+    }
+
+    #[tokio::test]
+    async fn fn_handler_can_inspect_reply_to() {
+        let seen: Arc<Mutex<Option<String>>> = Arc::new(Mutex::new(None));
+        let clone = seen.clone();
+        let handler = FnHandler(move |env: &Envelope| {
+            *clone.lock().unwrap() = env.reply_to.clone();
+            Ok(())
+        });
+
+        let env = Envelope::new(&Subject::new("req"), serde_json::json!({}))
+            .with_reply_to(&Subject::new("_INBOX.abc"));
+        handler.handle(&env).await.unwrap();
+        assert_eq!(*seen.lock().unwrap(), Some("_INBOX.abc".to_string()));
+    }
+
+    #[tokio::test]
+    async fn fn_handler_called_multiple_times() {
+        let count: Arc<Mutex<u32>> = Arc::new(Mutex::new(0));
+        let clone = count.clone();
+        let handler = FnHandler(move |_env: &Envelope| {
+            *clone.lock().unwrap() += 1;
+            Ok(())
+        });
+
+        for _ in 0..5 {
+            handler.handle(&Envelope::new(&Subject::new("t"), serde_json::json!({}))).await.unwrap();
+        }
+        assert_eq!(*count.lock().unwrap(), 5);
+    }
+
+    #[tokio::test]
+    async fn fn_handler_is_send_sync() {
+        // FnHandler<F> where F: Send + Sync must itself be Send + Sync
+        fn assert_send_sync<T: Send + Sync>() {}
+        assert_send_sync::<FnHandler<fn(&Envelope) -> Result<(), EventBusError>>>();
+    }
 }

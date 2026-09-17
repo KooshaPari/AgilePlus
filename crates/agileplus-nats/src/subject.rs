@@ -283,4 +283,139 @@ mod tests {
         let b = Subject::new("y");
         assert!(a != b);
     }
+
+    #[test]
+    fn matches_self() {
+        let s = Subject::new("agileplus.feature.1.created");
+        assert!(s.matches(&s));
+    }
+
+    #[test]
+    fn star_wildcard_does_not_cross_dots() {
+        let pat = Subject::new("a.*.c");
+        assert!(pat.matches(&Subject::new("a.b.c")));
+        assert!(!pat.matches(&Subject::new("a.b.b.c")));
+    }
+
+    #[test]
+    fn chevron_wildcard_matches_entire_suffix() {
+        let pat = Subject::new("a.b.>");
+        assert!(pat.matches(&Subject::new("a.b.c")));
+        assert!(pat.matches(&Subject::new("a.b.c.d.e")));
+    }
+
+    #[test]
+    fn chevron_wildcard_requires_at_least_one_token() {
+        let pat = Subject::new("a.>");
+        assert!(!pat.matches(&Subject::new("a")));
+        assert!(pat.matches(&Subject::new("a.b")));
+    }
+
+    #[test]
+    fn multiple_stars_in_pattern() {
+        let pat = Subject::new("*.b.*");
+        assert!(pat.matches(&Subject::new("a.b.c")));
+        assert!(pat.matches(&Subject::new("x.b.y")));
+        assert!(!pat.matches(&Subject::new("a.c.d"))); // b required
+        assert!(!pat.matches(&Subject::new("a.b"))); // need trailing token
+    }
+
+    #[test]
+    fn mixed_star_and_chevron() {
+        let pat = Subject::new("*.b.>");
+        assert!(pat.matches(&Subject::new("a.b.c")));
+        assert!(pat.matches(&Subject::new("a.b.c.d.e")));
+        assert!(!pat.matches(&Subject::new("a.b"))); // chevron needs token
+        assert!(!pat.matches(&Subject::new("a.c.d"))); // second token not b
+    }
+
+    #[test]
+    fn pattern_longer_than_subject_fails() {
+        let pat = Subject::new("a.b.c");
+        assert!(!pat.matches(&Subject::new("a.b")));
+        assert!(!pat.matches(&Subject::new("a")));
+    }
+
+    #[test]
+    fn subject_longer_than_pattern_no_chevron_fails() {
+        let pat = Subject::new("a.b");
+        assert!(!pat.matches(&Subject::new("a.b.c")));
+    }
+
+    #[test]
+    fn empty_pattern_only_matches_empty() {
+        let pat = Subject::new("");
+        assert!(pat.matches(&Subject::new("")));
+        assert!(!pat.matches(&Subject::new("a")));
+    }
+
+    #[test]
+    fn tokens_with_special_chars_match_exactly() {
+        let pat = Subject::new("a.b-c.d");
+        assert!(pat.matches(&Subject::new("a.b-c.d")));
+        assert!(!pat.matches(&Subject::new("a.b_c.d")));
+    }
+
+    #[test]
+    fn for_event_zero_id_extended() {
+        let s = Subject::for_event("pre", "ent", 0, "evt");
+        assert_eq!(s.as_str(), "pre.ent.0.evt");
+    }
+
+    #[test]
+    fn for_event_negative_id_extended() {
+        let s = Subject::for_event("p", "e", -5, "e");
+        assert_eq!(s.as_str(), "p.e.-5.e");
+    }
+
+    #[test]
+    fn for_event_large_id_extended() {
+        let s = Subject::for_event("p", "e", i64::MAX, "e");
+        assert_eq!(s.as_str(), format!("p.e.{}.e", i64::MAX));
+    }
+
+    #[test]
+    fn all_for_entity_uses_chevron_extended() {
+        let s = Subject::all_for_entity("pre", "feat");
+        assert_eq!(s.as_str(), "pre.feat.>");
+    }
+
+    #[test]
+    fn all_of_type_uses_star_extended() {
+        let s = Subject::all_of_type("pre", "feat", "created");
+        assert_eq!(s.as_str(), "pre.feat.*.created");
+    }
+
+    #[test]
+    fn hash_consistent_with_eq() {
+        use std::collections::hash_map::DefaultHasher;
+        use std::hash::{Hash, Hasher};
+        let a = Subject::new("a.b.c");
+        let b = Subject::new("a.b.c");
+        let mut ha = DefaultHasher::new();
+        a.hash(&mut ha);
+        let mut hb = DefaultHasher::new();
+        b.hash(&mut hb);
+        assert_eq!(ha.finish(), hb.finish());
+    }
+
+    #[test]
+    fn display_matches_as_str() {
+        let s = Subject::new("disp.test");
+        assert_eq!(format!("{s}"), s.as_str());
+    }
+
+    #[test]
+    fn send_sync() {
+        fn assert_send_sync<T: Send + Sync>() {}
+        assert_send_sync::<Subject>();
+    }
+
+    #[test]
+    fn clone_is_independent() {
+        let a = Subject::new("clone.test");
+        let b = a.clone();
+        assert_eq!(a, b);
+        // No shared mutation possible (immutable struct)
+    }
 }

@@ -132,4 +132,36 @@ mod tests {
         assert!(debug_str.contains("NatsConfig"));
         assert!(debug_str.contains("nats://broker:4222"));
     }
+
+    #[test]
+    fn with_auth_overwrites_token() {
+        let cfg = NatsConfig::new("nats://broker:4222")
+            .with_auth("first")
+            .with_auth("second");
+        assert_eq!(cfg.auth_token.as_deref(), Some("second"));
+    }
+
+    #[test]
+    fn with_prefix_overwrites_prefix() {
+        let cfg = NatsConfig::default()
+            .with_prefix("p1")
+            .with_prefix("p2");
+        assert_eq!(cfg.subject_prefix, "p2");
+    }
+
+    #[test]
+    fn new_accepts_arbitrary_url() {
+        let cfg = NatsConfig::new("nats://user:pass@host:4222");
+        assert_eq!(cfg.url, "nats://user:pass@host:4222");
+        assert!(cfg.auth_token.is_none());
+    }
+
+    #[test]
+    fn default_clone_preserves_all_fields() {
+        let original = NatsConfig::default();
+        let clone = original.clone();
+        assert_eq!(clone.url, original.url);
+        assert_eq!(clone.subject_prefix, original.subject_prefix);
+        assert_eq!(clone.max_payload, original.max_payload);
+    }
 }
