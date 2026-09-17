@@ -1006,8 +1006,12 @@ fn daemon_config_defaults() {
     assert!(!config.dry_run);
 }
 
+// Serialize every daemon env test across setup, reads, assertions, and cleanup.
+static DAEMON_ENV_MUTEX: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
 #[test]
 fn daemon_config_from_env_defaults() {
+    let _guard = DAEMON_ENV_MUTEX.lock().unwrap();
     // Clear any existing env vars
     unsafe {
         std::env::remove_var("PLANE_DAEMON_INTERVAL_SECS");
@@ -1023,6 +1027,7 @@ fn daemon_config_from_env_defaults() {
 
 #[test]
 fn daemon_config_from_env_custom() {
+    let _guard = DAEMON_ENV_MUTEX.lock().unwrap();
     unsafe {
         std::env::set_var("PLANE_DAEMON_INTERVAL_SECS", "60");
         std::env::set_var("PLANE_DAEMON_BATCH_SIZE", "50");
@@ -1044,6 +1049,7 @@ fn daemon_config_from_env_custom() {
 
 #[test]
 fn daemon_config_from_env_true_string() {
+    let _guard = DAEMON_ENV_MUTEX.lock().unwrap();
     unsafe {
         std::env::set_var("PLANE_DAEMON_DRY_RUN", "true");
     }
@@ -1056,6 +1062,7 @@ fn daemon_config_from_env_true_string() {
 
 #[test]
 fn daemon_config_from_env_invalid_interval() {
+    let _guard = DAEMON_ENV_MUTEX.lock().unwrap();
     unsafe {
         std::env::set_var("PLANE_DAEMON_INTERVAL_SECS", "not_a_number");
     }
@@ -1068,6 +1075,7 @@ fn daemon_config_from_env_invalid_interval() {
 
 #[test]
 fn daemon_config_from_env_invalid_batch_size() {
+    let _guard = DAEMON_ENV_MUTEX.lock().unwrap();
     unsafe {
         std::env::set_var("PLANE_DAEMON_BATCH_SIZE", "abc");
     }
