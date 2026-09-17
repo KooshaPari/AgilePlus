@@ -127,3 +127,40 @@ impl CacheStore for RedisCacheStore {
             .map_err(|e| CacheError::RedisError(e.to_string()))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn assert_error<T: std::error::Error + Send + Sync>() {}
+
+    #[test]
+    fn cache_error_implements_std_error() {
+        assert_error::<CacheError>();
+    }
+
+    #[test]
+    fn cache_error_variants_have_no_source() {
+        let errors = [
+            CacheError::SerializationError("x".to_string()),
+            CacheError::RedisError("x".to_string()),
+            CacheError::NotFound,
+            CacheError::ConnectionError("x".to_string()),
+        ];
+        for error in &errors {
+            assert!(
+                std::error::Error::source(error).is_none(),
+                "{error:?} should not wrap another error"
+            );
+        }
+    }
+
+    #[test]
+    fn cache_error_debug_includes_variant_name() {
+        assert!(format!("{:?}", CacheError::NotFound).contains("NotFound"));
+        assert!(
+            format!("{:?}", CacheError::SerializationError("x".to_string()))
+                .contains("SerializationError")
+        );
+    }
+}

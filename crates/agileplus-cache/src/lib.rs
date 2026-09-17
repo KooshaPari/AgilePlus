@@ -25,3 +25,26 @@ pub enum Error {
     #[error("Config error: {0}")]
     Config(String),
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn error_is_send_sync() {
+        fn assert_send_sync<T: Send + Sync>() {}
+        assert_send_sync::<Error>();
+    }
+
+    #[test]
+    fn cache_variant_exposes_source() {
+        let error = Error::from(CacheError::RedisError("boom".to_string()));
+        assert!(std::error::Error::source(&error).is_some());
+    }
+
+    #[test]
+    fn config_variant_has_no_source() {
+        let error = Error::Config("bad config".to_string());
+        assert!(std::error::Error::source(&error).is_none());
+    }
+}

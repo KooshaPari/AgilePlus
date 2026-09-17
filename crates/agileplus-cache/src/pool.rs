@@ -46,3 +46,25 @@ impl CachePool {
         &self.pool
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn pool_error_implements_std_error() {
+        fn assert_error<T: std::error::Error + Send + Sync>() {}
+        assert_error::<PoolError>();
+    }
+
+    #[test]
+    fn pool_error_variants_have_no_source() {
+        let errors = [
+            PoolError::ConnectionError("x".to_string()),
+            PoolError::Timeout("x".to_string()),
+        ];
+        for error in &errors {
+            assert!(std::error::Error::source(error).is_none());
+        }
+    }
+}

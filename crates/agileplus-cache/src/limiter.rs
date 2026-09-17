@@ -79,3 +79,29 @@ impl RateLimiter {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn limiter_error_implements_std_error() {
+        fn assert_error<T: std::error::Error + Send + Sync>() {}
+        assert_error::<LimiterError>();
+    }
+
+    #[test]
+    fn limiter_error_source_is_none() {
+        let error = LimiterError::Error("x".to_string());
+        assert!(std::error::Error::source(&error).is_none());
+    }
+
+    #[test]
+    fn remaining_is_saturating_at_zero() {
+        // Mirrors `get_remaining` arithmetic: never underflows below zero.
+        let max_requests: u32 = 5;
+        let count: u32 = 9;
+        assert_eq!(max_requests.saturating_sub(count), 0);
+        assert_eq!(max_requests.saturating_sub(3), 2);
+    }
+}

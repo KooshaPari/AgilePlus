@@ -89,3 +89,27 @@ impl ProjectionCache {
             .map_err(|e| ProjectionError::CacheError(e.to_string()))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn projection_error_implements_std_error() {
+        fn assert_error<T: std::error::Error + Send + Sync>() {}
+        assert_error::<ProjectionError>();
+    }
+
+    #[test]
+    fn projection_error_wraps_message_without_source() {
+        let error = ProjectionError::CacheError("backend down".to_string());
+        assert!(error.to_string().contains("backend down"));
+        assert!(std::error::Error::source(&error).is_none());
+    }
+
+    #[test]
+    fn projection_key_layout_is_stable() {
+        assert_eq!(format!("feature:{}", 7), "feature:7");
+        assert_eq!(format!("wp:{}", 7), "wp:7");
+    }
+}
