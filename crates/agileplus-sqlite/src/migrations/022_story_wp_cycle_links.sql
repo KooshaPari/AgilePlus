@@ -1,11 +1,11 @@
 -- UP
 CREATE TABLE IF NOT EXISTS story_work_packages (
     story_id INTEGER NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
-    wp_id    INTEGER NOT NULL REFERENCES work_packages(id) ON DELETE CASCADE,
-    PRIMARY KEY (story_id, wp_id)
+    work_package_id INTEGER NOT NULL REFERENCES work_packages(id) ON DELETE CASCADE,
+    PRIMARY KEY (story_id, work_package_id)
 );
 
-CREATE INDEX IF NOT EXISTS idx_story_work_packages_wp ON story_work_packages(wp_id);
+CREATE INDEX IF NOT EXISTS idx_story_work_packages_wp ON story_work_packages(work_package_id);
 
 CREATE TABLE IF NOT EXISTS cycle_stories (
     cycle_id INTEGER NOT NULL REFERENCES cycles(id) ON DELETE CASCADE,
