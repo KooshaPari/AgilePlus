@@ -12,11 +12,9 @@
 *, *::before, *::after { box-sizing: border-box; }
 body {
   margin: 0;
-  display: grid;
-  grid-template-columns: 180px 1fr;
-  grid-template-rows: auto 1fr auto;
-  grid-template-areas: "header header" "sidebar content" "footer footer";
-  height: 100vh;
+  background: var(--bg);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 13px; color: var(--fg);
 }
 
 /* Header */
@@ -181,3 +179,39 @@ body {
 
 /* Button sizes */
 .btn-sm { padding: 4px 10px; font-size: 11px; }
+
+/* ── Splash Screen ─────────────────────────────── */
+.splash {
+  position: fixed; inset: 0; z-index: 9999;
+  background: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  transition: opacity 0.4s ease, visibility 0.4s ease;
+}
+.splash.fade-out { opacity: 0; visibility: hidden; }
+.splash-content { text-align: center; }
+.splash-logo { margin-bottom: 20px; animation: splash-pulse 2s ease-in-out infinite; }
+.splash-title { font-size: 28px; font-weight: 700; margin: 0 0 4px; letter-spacing: -0.5px; }
+.splash-subtitle { color: var(--fg-dim); font-size: 13px; margin: 0 0 28px; }
+.splash-spinner { margin-bottom: 16px; }
+.splash-status { color: var(--fg-dim); font-size: 11px; margin: 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+@keyframes splash-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.04); opacity: 0.85; }
+}
+
+/* ── Spinner ───────────────────────────────────── */
+.spinner {
+  width: 28px; height: 28px; margin: 0 auto;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+.spinner-inline { width: 20px; height: 20px; border-width: 2px; display: inline-block; vertical-align: middle; margin-right: 8px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── App shell ─────────────────────────────────── */
+.hidden { display: none !important; }
+.app { display: grid; grid-template-columns: 180px 1fr; grid-template-rows: auto 1fr auto; grid-template-areas: "header header" "sidebar content" "footer footer"; height: 100vh; }
+.app-brand { display: flex; align-items: center; gap: 8px; }
+.app-brand h1 { font-size: 14px; margin: 0; letter-spacing: 0.5px; }

@@ -6,7 +6,7 @@ import { escapeHtml } from '../utils/escape-html.js';
  * @param {HTMLElement} container
  */
 export async function render(container) {
-  container.innerHTML = '<div class="loading">Loading ADRs...</div>';
+  container.innerHTML = '<div class="loading"><div class="spinner spinner-inline"></div> Loading ADRs...</div>';
 
   try {
     // Get repo path from backend, then fetch ADRs

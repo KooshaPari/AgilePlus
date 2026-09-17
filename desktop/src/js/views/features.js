@@ -12,7 +12,7 @@ const ALL_STATES = [
  * @param {HTMLElement} container
  */
 export async function render(container) {
-  container.innerHTML = '<div class="loading">Loading features...</div>';
+  container.innerHTML = '<div class="loading"><div class="spinner spinner-inline"></div> Loading features...</div>';
 
   try {
     const features = await invoke('list_features');

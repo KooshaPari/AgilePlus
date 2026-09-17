@@ -16,6 +16,23 @@ const NAV_ITEMS = [
   { id: 'traces', label: 'Traces', hash: '#traces' },
 ];
 
+/** Dismiss splash screen with fade. */
+function dismissSplash() {
+  const splash = document.getElementById('splash');
+  const app = document.getElementById('app');
+  if (splash) {
+    splash.classList.add('fade-out');
+    setTimeout(() => splash.remove(), 500);
+  }
+  if (app) app.classList.remove('hidden');
+}
+
+/** Update splash status text. */
+function setSplashStatus(msg) {
+  const el = document.getElementById('splash-status');
+  if (el) el.textContent = msg;
+}
+
 /** Get the content container element. */
 function getContentEl() {
   return document.getElementById('content');
@@ -84,7 +101,19 @@ function renderSidebar() {
 
 /** Bootstrap the app. */
 async function init() {
+  setSplashStatus('Loading workspace...');
+
+  // Build sidebar
   renderSidebar();
+
+  // Small delay so splash is visible at least briefly
+  await new Promise(r => setTimeout(r, 600));
+
+  setSplashStatus('Ready');
+  await new Promise(r => setTimeout(r, 200));
+
+  // Fade splash, reveal app
+  dismissSplash();
 
   // Route on hash change
   window.addEventListener('hashchange', route);

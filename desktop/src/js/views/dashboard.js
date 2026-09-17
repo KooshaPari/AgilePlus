@@ -7,7 +7,7 @@ import { renderFeatureListItem } from '../components/feature-list-item.js';
  * @param {HTMLElement} container
  */
 export async function render(container) {
-  container.innerHTML = '<div class="loading">Loading dashboard...</div>';
+  container.innerHTML = '<div class="loading"><div class="spinner spinner-inline"></div> Loading dashboard...</div>';
 
   try {
     // Check if a project is loaded

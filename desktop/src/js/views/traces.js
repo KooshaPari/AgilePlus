@@ -6,7 +6,7 @@ import { escapeHtml } from '../utils/escape-html.js';
  * @param {HTMLElement} container
  */
 export async function render(container) {
-  container.innerHTML = '<div class="loading">Loading traces...</div>';
+  container.innerHTML = '<div class="loading"><div class="spinner spinner-inline"></div> Loading traces...</div>';
 
   try {
     const repoPath = await invoke('get_repo_path');

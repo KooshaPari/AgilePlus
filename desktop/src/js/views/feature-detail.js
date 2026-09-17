@@ -9,7 +9,7 @@ import { escapeHtml } from '../utils/escape-html.js';
  * @param {string} featureId
  */
 export async function render(container, featureId) {
-  container.innerHTML = '<div class="loading">Loading feature...</div>';
+  container.innerHTML = '<div class="loading"><div class="spinner spinner-inline"></div> Loading feature...</div>';
 
   try {
     const feature = await invoke('get_feature', { id: Number(featureId) });
