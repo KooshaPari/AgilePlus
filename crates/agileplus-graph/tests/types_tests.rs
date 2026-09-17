@@ -396,19 +396,13 @@ fn multiple_rel_types_on_same_pair() {
 fn node_with_large_properties() {
     let mut properties = serde_json::Map::new();
     for i in 0..100 {
-        properties.insert(
-            format!("key_{i}"),
-            json!(format!("value_{}", i * 42)),
-        );
+        properties.insert(format!("key_{i}"), json!(format!("value_{}", i * 42)));
     }
     let node = Node::new(
         NodeType::WorkPackage,
         serde_json::Value::Object(properties.clone()),
     );
-    assert_eq!(
-        node.properties.as_object().unwrap().len(),
-        100
-    );
+    assert_eq!(node.properties.as_object().unwrap().len(), 100);
     assert_eq!(node.properties["key_0"], "value_0");
     assert_eq!(node.properties["key_99"], "value_4158");
 }
@@ -434,4 +428,191 @@ fn hash_of<T: std::hash::Hash>(v: T) -> u64 {
     let mut hasher = DefaultHasher::new();
     v.hash(&mut hasher);
     hasher.finish()
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// Deepened coverage: string contracts, deep clone, serde edge cases
+// ════════════════════════════════════════════════════════════════════════════
+
+#[test]
+fn node_type_as_str_values_are_pascal_case() {
+    for t in [
+        NodeType::Feature,
+        NodeType::WorkPackage,
+        NodeType::Agent,
+        NodeType::Label,
+        NodeType::Project,
+    ] {
+        let s = t.as_str();
+        let mut chars = s.chars();
+        let first = chars.next().unwrap();
+        assert!(first.is_ascii_uppercase(), "{s} should start uppercase");
+        assert!(
+            s.chars().all(|c| c.is_ascii_alphanumeric()),
+            "{s} should be alphanumeric"
+        );
+    }
+}
+
+#[test]
+fn rel_type_as_str_values_are_upper_snake() {
+    for t in [
+        RelType::Owns,
+        RelType::AssignedTo,
+        RelType::DependsOn,
+        RelType::Blocks,
+        RelType::Tagged,
+        RelType::InProject,
+    ] {
+        let s = t.as_str();
+        assert_eq!(s, s.to_uppercase(), "{s} should be uppercase");
+        assert!(s.chars().all(|c| c.is_ascii_uppercase() || c == '_'));
+    }
+}
+
+#[test]
+fn rel_type_as_str_values_are_unique() {
+    let values = [
+        RelType::Owns.as_str(),
+        RelType::AssignedTo.as_str(),
+        RelType::DependsOn.as_str(),
+        RelType::Blocks.as_str(),
+        RelType::Tagged.as_str(),
+        RelType::InProject.as_str(),
+    ];
+    let mut sorted = values.to_vec();
+    sorted.sort_unstable();
+    sorted.dedup();
+    assert_eq!(sorted.len(), 6, "relationship names must be unique");
+}
+
+#[test]
+fn node_type_as_str_values_are_unique() {
+    let values = [
+        NodeType::Feature.as_str(),
+        NodeType::WorkPackage.as_str(),
+        NodeType::Agent.as_str(),
+        NodeType::Label.as_str(),
+        NodeType::Project.as_str(),
+    ];
+    let mut sorted = values.to_vec();
+    sorted.sort_unstable();
+    sorted.dedup();
+    assert_eq!(sorted.len(), 5, "node type names must be unique");
+}
+
+#[test]
+fn node_properties_null_is_allowed() {
+    let node = Node::new(NodeType::Label, serde_json::Value::Null);
+    let json = serde_json::to_string(&node).unwrap();
+    let back: Node = serde_json::from_str(&json).unwrap();
+    assert!(back.properties.is_null());
+}
+
+#[test]
+fn node_properties_array_is_supported() {
+    let node = Node::new(NodeType::Label, json!(["a", "b", "c"]));
+    assert_eq!(node.properties.as_array().unwrap().len(), 3);
+}
+
+#[test]
+fn relationship_with_id_properties_are_empty_object() {
+    let from = uuid::Uuid::new_v4();
+    let to = uuid::Uuid::new_v4();
+    for rel_type in [
+        RelType::Owns,
+        RelType::AssignedTo,
+        RelType::DependsOn,
+        RelType::Blocks,
+        RelType::Tagged,
+        RelType::InProject,
+    ] {
+        let rel = Relationship::with_id(uuid::Uuid::new_v4(), from, to, rel_type);
+        assert_eq!(rel.properties, json!({}));
+        assert_eq!(rel.rel_type, rel_type);
+    }
+}
+
+#[test]
+fn node_clone_properties_are_deep_copied() {
+    let mut node = Node::new(NodeType::Feature, json!({"tags": ["a"]}));
+    let clone = node.clone();
+
+    node.properties["tags"] = json!(["b"]);
+
+    assert_eq!(clone.properties["tags"], json!(["a"]));
+}
+
+#[test]
+fn relationship_clone_properties_are_deep_copied() {
+    let mut rel = Relationship::new(uuid::Uuid::new_v4(), uuid::Uuid::new_v4(), RelType::Owns);
+    rel.properties = json!({"weight": 1});
+    let clone = rel.clone();
+
+    rel.properties = json!({"weight": 2});
+
+    assert_eq!(clone.properties["weight"], 1);
+    assert_eq!(clone.from_node_id, rel.from_node_id);
+}
+
+#[test]
+fn node_serde_preserves_uuid_string_form() {
+    let id = uuid::Uuid::new_v4();
+    let node = Node::with_id(id, NodeType::Agent, json!({"name": "agent"}));
+    let value = serde_json::to_value(&node).unwrap();
+
+    assert_eq!(value["id"], json!(id.to_string()));
+    assert_eq!(value["node_type"], json!("Agent"));
+}
+
+#[test]
+fn all_node_types_roundtrip_through_json() {
+    for t in [
+        NodeType::Feature,
+        NodeType::WorkPackage,
+        NodeType::Agent,
+        NodeType::Label,
+        NodeType::Project,
+    ] {
+        let node = Node::new(t, json!({}));
+        let json = serde_json::to_string(&node).unwrap();
+        let back: Node = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.node_type, t);
+    }
+}
+
+#[test]
+fn all_rel_types_roundtrip_through_json() {
+    let from = uuid::Uuid::new_v4();
+    let to = uuid::Uuid::new_v4();
+    for t in [
+        RelType::Owns,
+        RelType::AssignedTo,
+        RelType::DependsOn,
+        RelType::Blocks,
+        RelType::Tagged,
+        RelType::InProject,
+    ] {
+        let rel = Relationship::new(from, to, t);
+        let json = serde_json::to_string(&rel).unwrap();
+        let back: Relationship = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.rel_type, t);
+    }
+}
+
+#[test]
+fn rel_type_hash_values_are_distinct() {
+    let types = [
+        RelType::Owns,
+        RelType::AssignedTo,
+        RelType::DependsOn,
+        RelType::Blocks,
+        RelType::Tagged,
+        RelType::InProject,
+    ];
+    let hashes: Vec<u64> = types.iter().map(|t| hash_of(*t)).collect();
+    let mut unique = hashes.clone();
+    unique.sort_unstable();
+    unique.dedup();
+    assert_eq!(unique.len(), types.len(), "hash collision across variants");
 }

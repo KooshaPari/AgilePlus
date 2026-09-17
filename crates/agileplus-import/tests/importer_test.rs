@@ -22,10 +22,15 @@ use agileplus_domain::domain::sync_mapping::SyncMapping;
 use agileplus_domain::domain::user::User;
 use agileplus_domain::domain::work_package::{WorkPackage, WpDependency, WpState};
 use agileplus_domain::error::DomainError;
-use agileplus_domain::ports::{BranchInfo, ConflictInfo, FeatureArtifacts, MergeResult, StoragePort, VcsPort, WorktreeInfo};
+use agileplus_domain::ports::{
+    BranchInfo, ConflictInfo, FeatureArtifacts, MergeResult, StoragePort, VcsPort, WorktreeInfo,
+};
 
-use agileplus_import::{import_bundle, ImportBundle, ImportCycle, ImportFeature, ImportModule, ImportProject, ImportWorkPackage, ImportReport};
 use agileplus_domain::domain::work_package::PrState;
+use agileplus_import::{
+    ImportBundle, ImportCycle, ImportFeature, ImportModule, ImportProject, ImportReport,
+    ImportWorkPackage, import_bundle,
+};
 
 // ---------------------------------------------------------------------------
 // Mock Storage
@@ -64,6 +69,46 @@ impl MockStorage {
         *id += 1;
         current
     }
+
+    /// Seed a feature directly, as though a prior import had persisted it.
+    fn seed_feature(&self, mut feature: Feature) -> i64 {
+        let id = self.next_id();
+        feature.id = id;
+        self.features.lock().unwrap().insert(id, feature);
+        id
+    }
+
+    /// Seed a module directly.
+    fn seed_module(&self, mut module: Module) -> i64 {
+        let id = self.next_id();
+        module.id = id;
+        self.modules.lock().unwrap().insert(id, module);
+        id
+    }
+
+    /// Seed a project directly.
+    fn seed_project(&self, mut project: Project) -> i64 {
+        let id = self.next_id();
+        project.id = id;
+        self.projects.lock().unwrap().insert(id, project);
+        id
+    }
+
+    /// Seed a cycle directly.
+    fn seed_cycle(&self, mut cycle: Cycle) -> i64 {
+        let id = self.next_id();
+        cycle.id = id;
+        self.cycles.lock().unwrap().push(cycle);
+        id
+    }
+
+    /// Seed a work package directly, as though a prior import had persisted it.
+    fn seed_work_package(&self, mut wp: WorkPackage) -> i64 {
+        let id = self.next_id();
+        wp.id = id;
+        self.work_packages.lock().unwrap().push(wp);
+        id
+    }
 }
 
 #[async_trait]
@@ -95,7 +140,10 @@ impl StoragePort for MockStorage {
         Ok(())
     }
 
-    async fn list_features_by_state(&self, _state: FeatureState) -> Result<Vec<Feature>, DomainError> {
+    async fn list_features_by_state(
+        &self,
+        _state: FeatureState,
+    ) -> Result<Vec<Feature>, DomainError> {
         Ok(vec![])
     }
 
@@ -126,8 +174,15 @@ impl StoragePort for MockStorage {
         Ok(())
     }
 
-    async fn list_wps_by_feature(&self, _feature_id: i64) -> Result<Vec<WorkPackage>, DomainError> {
-        Ok(vec![])
+    async fn list_wps_by_feature(&self, feature_id: i64) -> Result<Vec<WorkPackage>, DomainError> {
+        Ok(self
+            .work_packages
+            .lock()
+            .unwrap()
+            .iter()
+            .filter(|w| w.feature_id == feature_id)
+            .cloned()
+            .collect())
     }
 
     async fn add_wp_dependency(&self, dep: &WpDependency) -> Result<(), DomainError> {
@@ -240,10 +295,11 @@ impl StoragePort for MockStorage {
         friendly_name: &str,
         description: Option<&str>,
     ) -> Result<(), DomainError> {
-        self.module_updates
-            .lock()
-            .unwrap()
-            .push((id, friendly_name.to_string(), description.map(|s| s.to_string())));
+        self.module_updates.lock().unwrap().push((
+            id,
+            friendly_name.to_string(),
+            description.map(|s| s.to_string()),
+        ));
         Ok(())
     }
 
@@ -412,11 +468,7 @@ impl StoragePort for MockStorage {
         Ok(vec![])
     }
 
-    async fn update_story_status(
-        &self,
-        _id: i64,
-        _status: StoryStatus,
-    ) -> Result<(), DomainError> {
+    async fn update_story_status(&self, _id: i64, _status: StoryStatus) -> Result<(), DomainError> {
         Ok(())
     }
 
@@ -489,7 +541,11 @@ impl VcsPort for MockVcs {
         Ok(())
     }
 
-    async fn merge_to_target(&self, _source: &str, _target: &str) -> Result<MergeResult, DomainError> {
+    async fn merge_to_target(
+        &self,
+        _source: &str,
+        _target: &str,
+    ) -> Result<MergeResult, DomainError> {
         Ok(MergeResult {
             success: true,
             conflicts: vec![],
@@ -1822,5 +1878,723 @@ fn import_project_requires_name_field() {
     assert_eq!(project.slug, Some("slug".into()));
 }
 
-#[allow(dead_code)]
-fn _placeholder() {}
+// ---------------------------------------------------------------------------
+// Deepened coverage: idempotency, update paths, and error paths
+// ---------------------------------------------------------------------------
+
+fn make_feature(slug: &str, friendly_name: &str) -> Feature {
+    Feature::new(slug, friendly_name, [7u8; 32], Some("main"))
+}
+
+fn make_wp(feature_id: i64, title: &str, sequence: i32) -> WorkPackage {
+    WorkPackage {
+        id: 0,
+        feature_id,
+        title: title.to_string(),
+        state: WpState::Planned,
+        sequence,
+        file_scope: vec![],
+        acceptance_criteria: String::new(),
+        agent_id: None,
+        pr_url: None,
+        pr_state: None,
+        worktree_path: None,
+        plane_sub_issue_id: None,
+        created_at: chrono::Utc::now(),
+        updated_at: chrono::Utc::now(),
+        base_commit: None,
+        head_commit: None,
+    }
+}
+
+fn import_feature_spec(
+    slug: &str,
+    friendly_name: &str,
+    wps: Vec<ImportWorkPackage>,
+) -> ImportFeature {
+    ImportFeature {
+        slug: Some(slug.to_string()),
+        friendly_name: friendly_name.to_string(),
+        spec_content: format!("# {friendly_name}\n"),
+        state: FeatureState::Specified,
+        target_branch: None,
+        labels: vec![],
+        module_slug: None,
+        project_id: None,
+        plane_issue_id: None,
+        plane_state_id: None,
+        work_packages: wps,
+    }
+}
+
+fn import_wp_spec(title: &str, sequence: i32) -> ImportWorkPackage {
+    ImportWorkPackage {
+        title: title.to_string(),
+        acceptance_criteria: None,
+        sequence: Some(sequence),
+        file_scope: vec![],
+        state: WpState::Planned,
+        agent_id: None,
+        pr_url: None,
+        pr_state: None,
+        worktree_path: None,
+        plane_sub_issue_id: None,
+        depends_on_sequences: vec![],
+    }
+}
+
+fn make_cycle(
+    name: &str,
+    module_scope_slug: Option<String>,
+    feature_slugs: Vec<String>,
+) -> ImportCycle {
+    ImportCycle {
+        name: name.to_string(),
+        description: None,
+        start_date: chrono::NaiveDate::from_ymd_opt(2026, 5, 1).unwrap(),
+        end_date: chrono::NaiveDate::from_ymd_opt(2026, 5, 14).unwrap(),
+        state: CycleState::Draft,
+        module_scope_slug,
+        feature_slugs,
+    }
+}
+
+#[tokio::test]
+async fn import_existing_feature_slug_is_updated_not_created() {
+    let storage = MockStorage::new();
+    let vcs = MockVcs::default();
+    storage.seed_feature(make_feature("auth-login", "Auth Login"));
+
+    let bundle = ImportBundle {
+        features: vec![import_feature_spec("auth-login", "Auth Login", vec![])],
+        ..empty_bundle()
+    };
+    let report = import_bundle(bundle, &storage, &vcs).await.unwrap();
+
+    assert_eq!(report.features_created, 0);
+    assert_eq!(report.features_updated, 1);
+    assert_eq!(storage.features.lock().unwrap().len(), 1);
+    // A non-default state still updates the existing feature.
+    assert_eq!(storage.feature_state_updates.lock().unwrap().len(), 1);
+}
+
+#[tokio::test]
+async fn import_existing_module_is_updated_not_created() {
+    let storage = MockStorage::new();
+    let vcs = MockVcs::default();
+    let mut existing = Module::new("Auth", None);
+    existing.slug = "auth".into();
+    let existing_id = storage.seed_module(existing);
+
+    let bundle = ImportBundle {
+        modules: vec![ImportModule {
+            slug: Some("auth".into()),
+            friendly_name: "Auth Renamed".into(),
+            description: Some("updated".into()),
+            parent_slug: None,
+        }],
+        ..empty_bundle()
+    };
+    let report = import_bundle(bundle, &storage, &vcs).await.unwrap();
+
+    assert_eq!(report.modules_created, 0);
+    assert_eq!(report.modules_updated, 1);
+    assert_eq!(storage.modules.lock().unwrap().len(), 1);
+
+    let updates = storage.module_updates.lock().unwrap();
+    assert_eq!(updates.len(), 1);
+    assert_eq!(updates[0].0, existing_id);
+    assert_eq!(updates[0].1, "Auth Renamed");
+    assert_eq!(updates[0].2.as_deref(), Some("updated"));
+}
+
+#[tokio::test]
+async fn import_existing_module_derived_slug_is_updated() {
+    let storage = MockStorage::new();
+    let vcs = MockVcs::default();
+    let mut existing = Module::new("Auth", None);
+    existing.slug = "auth".into();
+    storage.seed_module(existing);
+
+    let bundle = ImportBundle {
+        modules: vec![ImportModule {
+            slug: None,
+            friendly_name: "Auth".into(),
+            description: None,
+            parent_slug: None,
+        }],
+        ..empty_bundle()
+    };
+    let report = import_bundle(bundle, &storage, &vcs).await.unwrap();
+
+    assert_eq!(report.modules_created, 0);
+    assert_eq!(report.modules_updated, 1);
+}
+
+#[tokio::test]
+async fn import_existing_cycle_by_name_is_reused() {
+    let storage = MockStorage::new();
+    let vcs = MockVcs::default();
+    storage.seed_cycle(
+        Cycle::new(
+            "Sprint 1",
+            chrono::NaiveDate::from_ymd_opt(2026, 1, 1).unwrap(),
+            chrono::NaiveDate::from_ymd_opt(2026, 1, 14).unwrap(),
+            None,
+        )
+        .unwrap(),
+    );
+
+    let bundle = ImportBundle {
+        cycles: vec![make_cycle("Sprint 1", None, vec![])],
+        ..empty_bundle()
+    };
+    let report = import_bundle(bundle, &storage, &vcs).await.unwrap();
+
+    assert_eq!(report.cycles_created, 0);
+    assert_eq!(report.cycles_updated, 0);
+    assert_eq!(storage.cycles.lock().unwrap().len(), 1);
+}
+
+#[tokio::test]
+async fn import_cycle_scope_module_resolved_from_storage() {
+    let storage = MockStorage::new();
+    let vcs = MockVcs::default();
+    let mut module = Module::new("Platform", None);
+    module.slug = "platform".into();
+    let module_id = storage.seed_module(module);
+
+    let bundle = ImportBundle {
+        cycles: vec![make_cycle("Sprint 1", Some("platform".into()), vec![])],
+        ..empty_bundle()
+    };
+    import_bundle(bundle, &storage, &vcs).await.unwrap();
+
+    let cycles = storage.cycles.lock().unwrap();
+    assert_eq!(cycles.len(), 1);
+    assert_eq!(cycles[0].module_scope_id, Some(module_id));
+}
+
+#[tokio::test]
+async fn import_cycle_unknown_feature_slug_fails() {
+    let storage = MockStorage::new();
+    let vcs = MockVcs::default();
+    let bundle = ImportBundle {
+        cycles: vec![make_cycle("Sprint 1", None, vec!["ghost-feature".into()])],
+        ..empty_bundle()
+    };
+
+    let err = import_bundle(bundle, &storage, &vcs).await.unwrap_err();
+    assert!(err.to_string().contains("unknown feature"));
+}
+
+#[tokio::test]
+async fn import_cycle_feature_slug_resolved_from_storage() {
+    let storage = MockStorage::new();
+    let vcs = MockVcs::default();
+    let feature_id = storage.seed_feature(make_feature("ghost-feature", "Ghost Feature"));
+
+    let bundle = ImportBundle {
+        cycles: vec![make_cycle("Sprint 1", None, vec!["ghost-feature".into()])],
+        ..empty_bundle()
+    };
+    let report = import_bundle(bundle, &storage, &vcs).await.unwrap();
+
+    assert_eq!(report.cycle_links_created, 1);
+    let links = storage.cycle_features.lock().unwrap();
+    assert_eq!(links.len(), 1);
+    assert_eq!(links[0].feature_id, feature_id);
+}
+
+#[tokio::test]
+async fn import_module_own_parent_fails() {
+    let storage = MockStorage::new();
+    let vcs = MockVcs::default();
+    // Seed the module so the parent slug resolves to an existing id; the
+    // self-parent guard only fires once a parent id is resolvable.
+    let mut existing = Module::new("Auth", None);
+    existing.slug = "auth".into();
+    storage.seed_module(existing);
+
+    let bundle = ImportBundle {
+        modules: vec![ImportModule {
+            slug: Some("auth".into()),
+            friendly_name: "Auth".into(),
+            description: None,
+            parent_slug: Some("auth".into()),
+        }],
+        ..empty_bundle()
+    };
+
+    let err = import_bundle(bundle, &storage, &vcs).await.unwrap_err();
+    assert!(err.to_string().contains("cannot be its own parent"));
+}
+
+#[tokio::test]
+async fn import_module_cyclic_parents_fail() {
+    let storage = MockStorage::new();
+    let vcs = MockVcs::default();
+    let bundle = ImportBundle {
+        modules: vec![
+            ImportModule {
+                slug: Some("a".into()),
+                friendly_name: "A".into(),
+                description: None,
+                parent_slug: Some("b".into()),
+            },
+            ImportModule {
+                slug: Some("b".into()),
+                friendly_name: "B".into(),
+                description: None,
+                parent_slug: Some("a".into()),
+            },
+        ],
+        ..empty_bundle()
+    };
+
+    let err = import_bundle(bundle, &storage, &vcs).await.unwrap_err();
+    assert!(err.to_string().contains("could not resolve module parents"));
+}
+
+#[tokio::test]
+async fn import_module_parent_resolved_from_storage() {
+    let storage = MockStorage::new();
+    let vcs = MockVcs::default();
+    let mut parent = Module::new("Parent", None);
+    parent.slug = "parent".into();
+    let parent_id = storage.seed_module(parent);
+
+    let bundle = ImportBundle {
+        modules: vec![ImportModule {
+            slug: Some("child".into()),
+            friendly_name: "Child".into(),
+            description: None,
+            parent_slug: Some("parent".into()),
+        }],
+        ..empty_bundle()
+    };
+    let report = import_bundle(bundle, &storage, &vcs).await.unwrap();
+
+    assert_eq!(report.modules_created, 1);
+    let modules = storage.modules.lock().unwrap();
+    let child = modules.values().find(|m| m.slug == "child").unwrap();
+    assert_eq!(child.parent_module_id, Some(parent_id));
+}
+
+#[tokio::test]
+async fn import_work_package_existing_by_sequence_updates_state() {
+    let storage = MockStorage::new();
+    let vcs = MockVcs::default();
+    let feature_id = storage.seed_feature(make_feature("feat", "Feat"));
+    let existing_wp_id = storage.seed_work_package(make_wp(feature_id, "Old Title", 1));
+
+    let mut wp = import_wp_spec("New Title", 1);
+    wp.state = WpState::Doing;
+    let bundle = ImportBundle {
+        features: vec![import_feature_spec("feat", "Feat", vec![wp])],
+        ..empty_bundle()
+    };
+    let report = import_bundle(bundle, &storage, &vcs).await.unwrap();
+
+    assert_eq!(report.work_packages_created, 0);
+    assert_eq!(report.work_packages_updated, 1);
+    let updates = storage.wp_state_updates.lock().unwrap();
+    assert_eq!(updates.len(), 1);
+    // The update targets the pre-existing work package id, not the feature id.
+    assert_eq!(updates[0], (existing_wp_id, WpState::Doing));
+}
+
+#[tokio::test]
+async fn import_work_package_existing_by_title_updates_state() {
+    let storage = MockStorage::new();
+    let vcs = MockVcs::default();
+    let feature_id = storage.seed_feature(make_feature("feat", "Feat"));
+    storage.seed_work_package(make_wp(feature_id, "Shared Title", 5));
+
+    let mut wp = import_wp_spec("Shared Title", 1);
+    wp.state = WpState::Done;
+    let bundle = ImportBundle {
+        features: vec![import_feature_spec("feat", "Feat", vec![wp])],
+        ..empty_bundle()
+    };
+    let report = import_bundle(bundle, &storage, &vcs).await.unwrap();
+
+    assert_eq!(report.work_packages_created, 0);
+    assert_eq!(report.work_packages_updated, 1);
+    assert_eq!(storage.wp_state_updates.lock().unwrap().len(), 1);
+}
+
+#[tokio::test]
+async fn import_work_package_existing_planned_state_counts_no_update() {
+    let storage = MockStorage::new();
+    let vcs = MockVcs::default();
+    let feature_id = storage.seed_feature(make_feature("feat", "Feat"));
+    storage.seed_work_package(make_wp(feature_id, "Stable", 1));
+
+    let bundle = ImportBundle {
+        features: vec![import_feature_spec(
+            "feat",
+            "Feat",
+            vec![import_wp_spec("Stable", 1)],
+        )],
+        ..empty_bundle()
+    };
+    let report = import_bundle(bundle, &storage, &vcs).await.unwrap();
+
+    assert_eq!(report.work_packages_created, 0);
+    assert_eq!(report.work_packages_updated, 0);
+    assert!(storage.wp_state_updates.lock().unwrap().is_empty());
+}
+
+#[tokio::test]
+async fn import_work_package_unknown_dependency_sequence_fails() {
+    let storage = MockStorage::new();
+    let vcs = MockVcs::default();
+
+    let mut wp = import_wp_spec("Only", 1);
+    wp.depends_on_sequences = vec![99];
+    let bundle = ImportBundle {
+        features: vec![import_feature_spec("feat", "Feat", vec![wp])],
+        ..empty_bundle()
+    };
+
+    let err = import_bundle(bundle, &storage, &vcs).await.unwrap_err();
+    assert!(err.to_string().contains("unknown sequence 99"));
+}
+
+#[tokio::test]
+async fn import_work_package_dependency_without_sequence_is_skipped() {
+    let storage = MockStorage::new();
+    let vcs = MockVcs::default();
+
+    let mut first = import_wp_spec("First", 1);
+    first.sequence = None;
+    let mut second = import_wp_spec("Second", 2);
+    second.sequence = None;
+    second.depends_on_sequences = vec![1];
+
+    let bundle = ImportBundle {
+        features: vec![import_feature_spec("feat", "Feat", vec![first, second])],
+        ..empty_bundle()
+    };
+    let report = import_bundle(bundle, &storage, &vcs).await.unwrap();
+
+    assert_eq!(report.work_packages_created, 2);
+    // Dependencies declared on sequence-less specs cannot be resolved and are skipped.
+    assert!(storage.wp_deps.lock().unwrap().is_empty());
+}
+
+#[tokio::test]
+async fn import_feature_defaults_target_branch_to_main() {
+    let storage = MockStorage::new();
+    let vcs = MockVcs::default();
+    let bundle = ImportBundle {
+        features: vec![import_feature_spec("feat", "Feat", vec![])],
+        ..empty_bundle()
+    };
+    import_bundle(bundle, &storage, &vcs).await.unwrap();
+
+    let features = storage.features.lock().unwrap();
+    let feature = features.values().next().unwrap();
+    assert_eq!(feature.target_branch, "main");
+}
+
+#[tokio::test]
+async fn import_feature_labels_and_plane_ids_are_persisted() {
+    let storage = MockStorage::new();
+    let vcs = MockVcs::default();
+    let mut spec = import_feature_spec("feat", "Feat", vec![]);
+    spec.labels = vec!["a".into(), "b".into()];
+    spec.plane_issue_id = Some("issue-1".into());
+    spec.plane_state_id = Some("state-9".into());
+    spec.target_branch = Some("feature/x".into());
+
+    let bundle = ImportBundle {
+        features: vec![spec],
+        ..empty_bundle()
+    };
+    import_bundle(bundle, &storage, &vcs).await.unwrap();
+
+    let features = storage.features.lock().unwrap();
+    let feature = features.values().next().unwrap();
+    assert_eq!(feature.labels, vec!["a", "b"]);
+    assert_eq!(feature.plane_issue_id.as_deref(), Some("issue-1"));
+    assert_eq!(feature.plane_state_id.as_deref(), Some("state-9"));
+    assert_eq!(feature.target_branch, "feature/x");
+}
+
+#[tokio::test]
+async fn import_work_package_optional_fields_are_persisted() {
+    let storage = MockStorage::new();
+    let vcs = MockVcs::default();
+    let mut wp = import_wp_spec("Ship it", 1);
+    wp.file_scope = vec!["src/lib.rs".into()];
+    wp.agent_id = Some("agent-7".into());
+    wp.pr_url = Some("https://example.test/pr/1".into());
+    wp.pr_state = Some(PrState::Open);
+    wp.worktree_path = Some("/tmp/wt".into());
+    wp.plane_sub_issue_id = Some("sub-3".into());
+
+    let bundle = ImportBundle {
+        features: vec![import_feature_spec("feat", "Feat", vec![wp])],
+        ..empty_bundle()
+    };
+    import_bundle(bundle, &storage, &vcs).await.unwrap();
+
+    let wps = storage.work_packages.lock().unwrap();
+    assert_eq!(wps.len(), 1);
+    let stored = &wps[0];
+    assert_eq!(stored.file_scope, vec!["src/lib.rs"]);
+    assert_eq!(stored.agent_id.as_deref(), Some("agent-7"));
+    assert_eq!(stored.pr_url.as_deref(), Some("https://example.test/pr/1"));
+    assert_eq!(stored.pr_state, Some(PrState::Open));
+    assert_eq!(stored.worktree_path.as_deref(), Some("/tmp/wt"));
+    assert_eq!(stored.plane_sub_issue_id.as_deref(), Some("sub-3"));
+    // Missing acceptance criteria becomes an empty string.
+    assert_eq!(stored.acceptance_criteria, "");
+}
+
+#[tokio::test]
+async fn import_writes_exact_spec_content_and_parsable_meta() {
+    let storage = MockStorage::new();
+    let vcs = MockVcs::default();
+    let bundle = ImportBundle {
+        features: vec![import_feature_spec("feat", "Feat", vec![])],
+        ..empty_bundle()
+    };
+    import_bundle(bundle, &storage, &vcs).await.unwrap();
+
+    let artifacts = vcs.written_artifacts.lock().unwrap();
+    let spec = artifacts.iter().find(|a| a.1 == "spec.md").unwrap();
+    assert_eq!(spec.2, "# Feat\n");
+
+    let meta = artifacts.iter().find(|a| a.1 == "meta.json").unwrap();
+    let parsed: serde_json::Value = serde_json::from_str(&meta.2).unwrap();
+    assert_eq!(parsed["slug"], "feat");
+    assert_eq!(parsed["state"], "specified");
+}
+
+#[tokio::test]
+async fn import_project_embedded_feature_is_stamped_with_project_id() {
+    let storage = MockStorage::new();
+    let vcs = MockVcs::default();
+    let bundle = ImportBundle {
+        projects: vec![ImportProject {
+            slug: Some("proj".into()),
+            name: "Proj".into(),
+            description: None,
+            features: vec![import_feature_spec("embedded", "Embedded", vec![])],
+        }],
+        ..empty_bundle()
+    };
+    let report = import_bundle(bundle, &storage, &vcs).await.unwrap();
+
+    assert_eq!(report.projects_created, 1);
+    assert_eq!(report.features_created, 1);
+    let projects = storage.projects.lock().unwrap();
+    let project_id = projects.values().next().unwrap().id;
+    let features = storage.features.lock().unwrap();
+    let feature = features.values().next().unwrap();
+    assert_eq!(feature.project_id, Some(project_id));
+}
+
+#[tokio::test]
+async fn import_multiple_projects_get_distinct_ids() {
+    let storage = MockStorage::new();
+    let vcs = MockVcs::default();
+    let bundle = ImportBundle {
+        projects: vec![
+            ImportProject {
+                slug: Some("p1".into()),
+                name: "P1".into(),
+                description: None,
+                features: vec![],
+            },
+            ImportProject {
+                slug: Some("p2".into()),
+                name: "P2".into(),
+                description: None,
+                features: vec![],
+            },
+        ],
+        ..empty_bundle()
+    };
+    let report = import_bundle(bundle, &storage, &vcs).await.unwrap();
+
+    assert_eq!(report.projects_created, 2);
+    let projects = storage.projects.lock().unwrap();
+    assert_eq!(projects.len(), 2);
+    let ids: Vec<i64> = projects.keys().copied().collect();
+    assert_ne!(ids[0], ids[1]);
+}
+
+#[tokio::test]
+async fn import_twice_is_idempotent_for_stable_entities() {
+    let storage = MockStorage::new();
+    let vcs = MockVcs::default();
+
+    let build = || ImportBundle {
+        projects: vec![ImportProject {
+            slug: Some("proj".into()),
+            name: "Proj".into(),
+            description: None,
+            features: vec![],
+        }],
+        modules: vec![ImportModule {
+            slug: Some("mod".into()),
+            friendly_name: "Mod".into(),
+            description: None,
+            parent_slug: None,
+        }],
+        features: vec![import_feature_spec(
+            "feat",
+            "Feat",
+            vec![import_wp_spec("WP", 1)],
+        )],
+        cycles: vec![make_cycle("Cycle", None, vec!["feat".into()])],
+    };
+
+    let first = import_bundle(build(), &storage, &vcs).await.unwrap();
+    let second = import_bundle(build(), &storage, &vcs).await.unwrap();
+
+    assert_eq!(first.projects_created, 1);
+    assert_eq!(first.modules_created, 1);
+    assert_eq!(first.features_created, 1);
+    assert_eq!(first.work_packages_created, 1);
+    assert_eq!(first.cycles_created, 1);
+
+    assert_eq!(second.projects_created, 0);
+    assert_eq!(second.projects_updated, 1);
+    assert_eq!(second.modules_created, 0);
+    assert_eq!(second.modules_updated, 1);
+    assert_eq!(second.features_created, 0);
+    assert_eq!(second.features_updated, 1);
+    assert_eq!(second.work_packages_created, 0);
+    assert_eq!(second.cycles_created, 0);
+
+    assert_eq!(storage.projects.lock().unwrap().len(), 1);
+    assert_eq!(storage.modules.lock().unwrap().len(), 1);
+    assert_eq!(storage.features.lock().unwrap().len(), 1);
+    assert_eq!(storage.cycles.lock().unwrap().len(), 1);
+}
+
+#[tokio::test]
+async fn import_records_one_audit_entry_per_feature() {
+    let storage = MockStorage::new();
+    let vcs = MockVcs::default();
+    let bundle = ImportBundle {
+        features: vec![
+            import_feature_spec("a", "A", vec![]),
+            import_feature_spec("b", "B", vec![]),
+        ],
+        ..empty_bundle()
+    };
+    let report = import_bundle(bundle, &storage, &vcs).await.unwrap();
+
+    assert_eq!(report.audits_written, 2);
+    let audits = storage.audits.lock().unwrap();
+    assert_eq!(audits.len(), 2);
+    assert!(audits.iter().all(|a| a.actor == "import"));
+}
+
+#[tokio::test]
+async fn import_module_ids_are_tracked_for_link_creation() {
+    let storage = MockStorage::new();
+    let vcs = MockVcs::default();
+    let bundle = ImportBundle {
+        modules: vec![ImportModule {
+            slug: Some("mod".into()),
+            friendly_name: "Mod".into(),
+            description: None,
+            parent_slug: None,
+        }],
+        features: vec![{
+            let mut spec = import_feature_spec("feat", "Feat", vec![]);
+            spec.module_slug = Some("mod".into());
+            spec
+        }],
+        ..empty_bundle()
+    };
+    let report = import_bundle(bundle, &storage, &vcs).await.unwrap();
+
+    assert_eq!(report.module_links_created, 1);
+    let module_id = storage.modules.lock().unwrap().values().next().unwrap().id;
+    let feature_id = storage.features.lock().unwrap().values().next().unwrap().id;
+    let tags = storage.module_feature_tags.lock().unwrap();
+    assert_eq!(tags.len(), 1);
+    assert_eq!(tags[0].module_id, module_id);
+    assert_eq!(tags[0].feature_id, feature_id);
+}
+
+#[tokio::test]
+async fn import_cycle_landing_after_feature_in_single_bundle_links_them() {
+    let storage = MockStorage::new();
+    let vcs = MockVcs::default();
+    let bundle = ImportBundle {
+        features: vec![import_feature_spec("feat", "Feat", vec![])],
+        cycles: vec![make_cycle("Cycle", None, vec!["feat".into()])],
+        ..empty_bundle()
+    };
+    let report = import_bundle(bundle, &storage, &vcs).await.unwrap();
+
+    assert_eq!(report.cycles_created, 1);
+    assert_eq!(report.cycle_links_created, 1);
+}
+
+#[tokio::test]
+async fn import_no_work_packages_keeps_wp_counters_zero() {
+    let storage = MockStorage::new();
+    let vcs = MockVcs::default();
+    let bundle = ImportBundle {
+        features: vec![import_feature_spec("feat", "Feat", vec![])],
+        ..empty_bundle()
+    };
+    let report = import_bundle(bundle, &storage, &vcs).await.unwrap();
+
+    assert_eq!(report.work_packages_created, 0);
+    assert_eq!(report.work_packages_updated, 0);
+    assert!(storage.wp_deps.lock().unwrap().is_empty());
+}
+
+#[tokio::test]
+async fn import_duplicate_cycle_names_in_one_bundle_create_separately() {
+    let storage = MockStorage::new();
+    let vcs = MockVcs::default();
+    let bundle = ImportBundle {
+        cycles: vec![
+            make_cycle("Dup", None, vec![]),
+            make_cycle("Dup", None, vec![]),
+        ],
+        ..empty_bundle()
+    };
+    let report = import_bundle(bundle, &storage, &vcs).await.unwrap();
+
+    // Intra-bundle duplicates are not de-duplicated because existing cycles are
+    // fetched once before the loop; documents current behaviour.
+    assert_eq!(report.cycles_created, 2);
+    assert_eq!(storage.cycles.lock().unwrap().len(), 2);
+}
+
+#[tokio::test]
+async fn import_existing_project_slug_is_updated_not_created() {
+    let storage = MockStorage::new();
+    let vcs = MockVcs::default();
+    let existing_id = storage.seed_project(Project::new("Proj", "proj").unwrap());
+
+    let bundle = ImportBundle {
+        projects: vec![ImportProject {
+            slug: Some("proj".into()),
+            name: "Proj Renamed".into(),
+            description: None,
+            features: vec![],
+        }],
+        ..empty_bundle()
+    };
+    let report = import_bundle(bundle, &storage, &vcs).await.unwrap();
+
+    assert_eq!(report.projects_created, 0);
+    assert_eq!(report.projects_updated, 1);
+    let projects = storage.projects.lock().unwrap();
+    assert_eq!(projects.len(), 1);
+    assert_eq!(projects.values().next().unwrap().id, existing_id);
+}

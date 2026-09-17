@@ -823,7 +823,7 @@ fn node_with_id_preserves_uuid() {
 /// Test: Relationship with_id preserves custom UUID.
 #[test]
 fn relationship_with_id_preserves_uuid() {
-    use agileplus_graph::{Relationship, RelType};
+    use agileplus_graph::{RelType, Relationship};
     let from = uuid::Uuid::new_v4();
     let to = uuid::Uuid::new_v4();
     let id = uuid::Uuid::new_v4();
@@ -836,7 +836,7 @@ fn relationship_with_id_preserves_uuid() {
 /// Test: Relationship new generates unique ID.
 #[test]
 fn relationship_new_generates_unique_id() {
-    use agileplus_graph::{Relationship, RelType};
+    use agileplus_graph::{RelType, Relationship};
     let from = uuid::Uuid::new_v4();
     let to = uuid::Uuid::new_v4();
     let r1 = Relationship::new(from, to, RelType::Owns);
@@ -859,7 +859,7 @@ fn node_clone_independent() {
 /// Test: Relationship clone produces independent copy.
 #[test]
 fn relationship_clone_independent() {
-    use agileplus_graph::{Relationship, RelType};
+    use agileplus_graph::{RelType, Relationship};
     let r1 = Relationship::new(uuid::Uuid::new_v4(), uuid::Uuid::new_v4(), RelType::Owns);
     let r2 = r1.clone();
     assert_eq!(r1.id, r2.id);
@@ -879,7 +879,7 @@ fn node_empty_properties_allowed() {
 /// Test: Relationship can have empty properties.
 #[test]
 fn relationship_empty_properties_allowed() {
-    use agileplus_graph::{Relationship, RelType};
+    use agileplus_graph::{RelType, Relationship};
     let rel = Relationship::new(uuid::Uuid::new_v4(), uuid::Uuid::new_v4(), RelType::Tagged);
     assert!(rel.properties.is_object());
 }
@@ -1020,7 +1020,7 @@ fn store_is_send_sync() {
 /// Test: Relationship properties can be set and retrieved.
 #[test]
 fn relationship_properties_roundtrip() {
-    use agileplus_graph::{Relationship, RelType};
+    use agileplus_graph::{RelType, Relationship};
     use serde_json::json;
     let rel = Relationship {
         id: uuid::Uuid::new_v4(),
@@ -1097,4 +1097,365 @@ fn error_graph_variant_debug() {
     let err: Error = GraphError::ConnectionError("refused".into()).into();
     let dbg = format!("{:?}", err);
     assert!(dbg.contains("Graph"));
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// Deepened coverage: traversal semantics, concurrency, trait objects, errors
+// ════════════════════════════════════════════════════════════════════════════
+
+#[tokio::test]
+async fn get_nodes_by_type_returns_empty_for_absent_type() {
+    let store = InMemoryGraphStore::new();
+    store
+        .upsert_node(&Node::new(NodeType::Feature, json!({"slug": "f"})))
+        .await
+        .unwrap();
+
+    assert!(store.get_nodes_by_type(NodeType::Agent).is_empty());
+}
+
+#[tokio::test]
+async fn get_nodes_by_type_returns_all_matches() {
+    let store = InMemoryGraphStore::new();
+    for n in 0..5 {
+        store
+            .upsert_node(&Node::new(NodeType::WorkPackage, json!({"n": n})))
+            .await
+            .unwrap();
+    }
+    store
+        .upsert_node(&Node::new(NodeType::Feature, json!({"slug": "f"})))
+        .await
+        .unwrap();
+
+    assert_eq!(store.get_nodes_by_type(NodeType::WorkPackage).len(), 5);
+}
+
+#[tokio::test]
+async fn get_nodes_by_type_same_type_distinct_properties_all_retrieved() {
+    let store = InMemoryGraphStore::new();
+    store
+        .upsert_node(&Node::new(NodeType::Label, json!({"name": "a"})))
+        .await
+        .unwrap();
+    store
+        .upsert_node(&Node::new(NodeType::Label, json!({"name": "b"})))
+        .await
+        .unwrap();
+
+    let labels = store.get_nodes_by_type(NodeType::Label);
+    assert_eq!(labels.len(), 2);
+    let names: Vec<&str> = labels
+        .iter()
+        .map(|n| n.properties["name"].as_str().unwrap())
+        .collect();
+    assert!(names.contains(&"a") && names.contains(&"b"));
+}
+
+#[tokio::test]
+async fn get_relationships_from_empty_for_isolated_node() {
+    let store = InMemoryGraphStore::new();
+    let isolated = Node::new(NodeType::Feature, json!({"slug": "iso"}));
+    store.upsert_node(&isolated).await.unwrap();
+
+    assert!(store.get_relationships_from(isolated.id).is_empty());
+}
+
+#[tokio::test]
+async fn get_relationships_to_empty_for_isolated_node() {
+    let store = InMemoryGraphStore::new();
+    let isolated = Node::new(NodeType::Feature, json!({"slug": "iso"}));
+    store.upsert_node(&isolated).await.unwrap();
+
+    assert!(store.get_relationships_to(isolated.id).is_empty());
+}
+
+#[tokio::test]
+async fn upsert_node_same_id_twice_keeps_single_entry() {
+    let store = InMemoryGraphStore::new();
+    let node = Node::with_id(uuid::Uuid::new_v4(), NodeType::Feature, json!({"v": 1}));
+    store.upsert_node(&node).await.unwrap();
+
+    let updated = Node::with_id(node.id, NodeType::Feature, json!({"v": 2}));
+    store.upsert_node(&updated).await.unwrap();
+
+    assert_eq!(store.get_nodes_by_type(NodeType::Feature).len(), 1);
+    assert_eq!(store.get_node(node.id).unwrap().properties["v"], 2);
+}
+
+#[tokio::test]
+async fn get_dependencies_preserves_insertion_order() {
+    let store = InMemoryGraphStore::new();
+    let source = Node::new(NodeType::WorkPackage, json!({"t": "src"}));
+    store.upsert_node(&source).await.unwrap();
+
+    let mut expected = Vec::new();
+    for i in 0..4 {
+        let dep = Node::new(NodeType::WorkPackage, json!({"t": i}));
+        store.upsert_node(&dep).await.unwrap();
+        store
+            .create_relationship(&Relationship::new(source.id, dep.id, RelType::DependsOn))
+            .await
+            .unwrap();
+        expected.push(dep.id);
+    }
+
+    assert_eq!(store.get_dependencies(source.id).await.unwrap(), expected);
+}
+
+#[tokio::test]
+async fn mixed_relationship_types_on_same_pair_are_independent() {
+    let store = InMemoryGraphStore::new();
+    let a = Node::new(NodeType::WorkPackage, json!({"t": "a"}));
+    let b = Node::new(NodeType::WorkPackage, json!({"t": "b"}));
+    store.upsert_node(&a).await.unwrap();
+    store.upsert_node(&b).await.unwrap();
+
+    store
+        .create_relationship(&Relationship::new(a.id, b.id, RelType::DependsOn))
+        .await
+        .unwrap();
+    store
+        .create_relationship(&Relationship::new(a.id, b.id, RelType::Blocks))
+        .await
+        .unwrap();
+
+    // Dependency query sees only DEPENDS_ON, blocking query sees only BLOCKS.
+    assert_eq!(store.get_dependencies(a.id).await.unwrap(), vec![b.id]);
+    assert_eq!(store.get_blocking_path(b.id).await.unwrap(), vec![a.id]);
+    assert!(store.get_blocking_path(a.id).await.unwrap().is_empty());
+    assert_eq!(store.get_relationships_from(a.id).len(), 2);
+}
+
+#[tokio::test]
+async fn get_blocking_path_is_direct_only_in_memory() {
+    let store = InMemoryGraphStore::new();
+    let a = Node::new(NodeType::WorkPackage, json!({"t": "a"}));
+    let b = Node::new(NodeType::WorkPackage, json!({"t": "b"}));
+    let c = Node::new(NodeType::WorkPackage, json!({"t": "c"}));
+    store.upsert_node(&a).await.unwrap();
+    store.upsert_node(&b).await.unwrap();
+    store.upsert_node(&c).await.unwrap();
+
+    // a blocks b, b blocks c.
+    store
+        .create_relationship(&Relationship::new(a.id, b.id, RelType::Blocks))
+        .await
+        .unwrap();
+    store
+        .create_relationship(&Relationship::new(b.id, c.id, RelType::Blocks))
+        .await
+        .unwrap();
+
+    // The in-memory store reports only direct blockers, not the transitive chain.
+    assert_eq!(store.get_blocking_path(c.id).await.unwrap(), vec![b.id]);
+    assert_eq!(store.get_blocking_path(b.id).await.unwrap(), vec![a.id]);
+}
+
+#[tokio::test]
+async fn get_dependencies_is_direct_only_in_memory() {
+    let store = InMemoryGraphStore::new();
+    let a = Node::new(NodeType::WorkPackage, json!({"t": "a"}));
+    let b = Node::new(NodeType::WorkPackage, json!({"t": "b"}));
+    let c = Node::new(NodeType::WorkPackage, json!({"t": "c"}));
+    for n in [&a, &b, &c] {
+        store.upsert_node(n).await.unwrap();
+    }
+    store
+        .create_relationship(&Relationship::new(a.id, b.id, RelType::DependsOn))
+        .await
+        .unwrap();
+    store
+        .create_relationship(&Relationship::new(b.id, c.id, RelType::DependsOn))
+        .await
+        .unwrap();
+
+    assert_eq!(store.get_dependencies(a.id).await.unwrap(), vec![b.id]);
+}
+
+#[tokio::test]
+async fn delete_relationship_by_wrong_id_keeps_original() {
+    let store = InMemoryGraphStore::new();
+    let a = Node::new(NodeType::Feature, json!({"s": "a"}));
+    let b = Node::new(NodeType::Feature, json!({"s": "b"}));
+    store.upsert_node(&a).await.unwrap();
+    store.upsert_node(&b).await.unwrap();
+    let rel = Relationship::new(a.id, b.id, RelType::DependsOn);
+    store.create_relationship(&rel).await.unwrap();
+
+    store
+        .delete_relationship(uuid::Uuid::new_v4())
+        .await
+        .unwrap();
+
+    assert_eq!(store.get_dependencies(a.id).await.unwrap().len(), 1);
+}
+
+#[tokio::test]
+async fn node_upsert_after_relationship_does_not_drop_relationship() {
+    let store = InMemoryGraphStore::new();
+    let a = Node::new(NodeType::Feature, json!({"s": "a"}));
+    let b = Node::new(NodeType::Feature, json!({"s": "b"}));
+    store.upsert_node(&a).await.unwrap();
+    store.upsert_node(&b).await.unwrap();
+    store
+        .create_relationship(&Relationship::new(a.id, b.id, RelType::DependsOn))
+        .await
+        .unwrap();
+
+    store
+        .upsert_node(&Node::with_id(a.id, NodeType::Feature, json!({"s": "a2"})))
+        .await
+        .unwrap();
+
+    assert_eq!(store.get_dependencies(a.id).await.unwrap(), vec![b.id]);
+}
+
+#[tokio::test]
+async fn self_reference_dependency_is_reported() {
+    let store = InMemoryGraphStore::new();
+    let node = Node::new(NodeType::WorkPackage, json!({"t": "self"}));
+    store.upsert_node(&node).await.unwrap();
+    store
+        .create_relationship(&Relationship::new(node.id, node.id, RelType::DependsOn))
+        .await
+        .unwrap();
+
+    assert_eq!(
+        store.get_dependencies(node.id).await.unwrap(),
+        vec![node.id]
+    );
+}
+
+#[tokio::test]
+async fn multi_hop_dependency_chain_reports_each_hop() {
+    let store = InMemoryGraphStore::new();
+    let mut nodes = Vec::new();
+    for i in 0..10 {
+        let n = Node::new(NodeType::WorkPackage, json!({"t": i}));
+        store.upsert_node(&n).await.unwrap();
+        nodes.push(n);
+    }
+    for w in nodes.windows(2) {
+        store
+            .create_relationship(&Relationship::new(w[0].id, w[1].id, RelType::DependsOn))
+            .await
+            .unwrap();
+    }
+
+    for (i, w) in nodes.windows(2).enumerate() {
+        assert_eq!(
+            store.get_dependencies(w[0].id).await.unwrap(),
+            vec![w[1].id],
+            "hop {i} mismatch"
+        );
+    }
+    assert!(
+        store
+            .get_dependencies(nodes[9].id)
+            .await
+            .unwrap()
+            .is_empty()
+    );
+}
+
+#[tokio::test]
+async fn concurrent_upserts_are_all_retained() {
+    let store = std::sync::Arc::new(InMemoryGraphStore::new());
+    let mut handles = Vec::new();
+    for i in 0..20 {
+        let store = store.clone();
+        handles.push(tokio::spawn(async move {
+            let node = Node::new(NodeType::WorkPackage, json!({"i": i}));
+            store.upsert_node(&node).await.unwrap();
+            node.id
+        }));
+    }
+    let mut ids = Vec::new();
+    for h in handles {
+        ids.push(h.await.unwrap());
+    }
+
+    assert_eq!(store.get_nodes_by_type(NodeType::WorkPackage).len(), 20);
+    for id in ids {
+        assert!(store.get_node(id).is_some());
+    }
+}
+
+#[tokio::test]
+async fn concurrent_relationship_creates_are_all_retained() {
+    let store = std::sync::Arc::new(InMemoryGraphStore::new());
+    let a = Node::new(NodeType::Feature, json!({"s": "a"}));
+    store.upsert_node(&a).await.unwrap();
+
+    let mut handles = Vec::new();
+    for i in 0..15 {
+        let store = store.clone();
+        let from = a.id;
+        handles.push(tokio::spawn(async move {
+            let to = Node::new(NodeType::WorkPackage, json!({"i": i}));
+            store.upsert_node(&to).await.unwrap();
+            store
+                .create_relationship(&Relationship::new(from, to.id, RelType::Owns))
+                .await
+                .unwrap();
+        }));
+    }
+    for h in handles {
+        h.await.unwrap();
+    }
+
+    assert_eq!(store.get_relationships_from(a.id).len(), 15);
+}
+
+#[tokio::test]
+async fn health_check_is_idempotent() {
+    let store = InMemoryGraphStore::new();
+    for _ in 0..5 {
+        assert!(store.health_check().await.is_ok());
+    }
+}
+
+#[tokio::test]
+async fn store_is_usable_as_trait_object() {
+    let boxed: Box<dyn GraphStore> = Box::new(InMemoryGraphStore::new());
+    let node = Node::new(NodeType::Project, json!({"slug": "p"}));
+    boxed.upsert_node(&node).await.unwrap();
+    assert!(boxed.health_check().await.is_ok());
+
+    let arc: std::sync::Arc<dyn GraphStore> = std::sync::Arc::new(InMemoryGraphStore::new());
+    assert!(arc.health_check().await.is_ok());
+}
+
+#[tokio::test]
+async fn large_chain_is_fully_retained() {
+    let store = InMemoryGraphStore::new();
+    let mut prev = Node::new(NodeType::WorkPackage, json!({"i": 0}));
+    store.upsert_node(&prev).await.unwrap();
+    for i in 1..100 {
+        let next = Node::new(NodeType::WorkPackage, json!({"i": i}));
+        store.upsert_node(&next).await.unwrap();
+        store
+            .create_relationship(&Relationship::new(prev.id, next.id, RelType::DependsOn))
+            .await
+            .unwrap();
+        prev = next;
+    }
+
+    assert_eq!(store.get_nodes_by_type(NodeType::WorkPackage).len(), 100);
+    assert_eq!(store.get_dependencies(prev.id).await.unwrap().len(), 0);
+}
+
+// ── Error trait conformance ─────────────────────────────────────────────────
+
+#[test]
+fn graph_error_implements_std_error() {
+    fn assert_error<E: std::error::Error + Send + Sync + 'static>() {}
+    assert_error::<GraphError>();
+}
+
+#[test]
+fn graph_error_variants_are_send_sync() {
+    fn assert_send_sync<T: Send + Sync>() {}
+    assert_send_sync::<GraphError>();
 }

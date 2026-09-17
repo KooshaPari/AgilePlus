@@ -64,16 +64,53 @@ fn re_exported_graph_error_is_useable() {
 
 #[test]
 fn re_exported_node_type_variants() {
-    assert_eq!(
-        agileplus_graph::NodeType::Feature.as_str(),
-        "Feature"
-    );
+    assert_eq!(agileplus_graph::NodeType::Feature.as_str(), "Feature");
 }
 
 #[test]
 fn re_exported_rel_type_variants() {
-    assert_eq!(
-        agileplus_graph::RelType::Blocks.as_str(),
-        "BLOCKS"
-    );
+    assert_eq!(agileplus_graph::RelType::Blocks.as_str(), "BLOCKS");
+}
+
+// ── Deepened: error source chaining and trait bounds ────────────────────────
+
+#[test]
+fn error_from_graph_error_exposes_source() {
+    use std::error::Error as _;
+    let error: Error = GraphError::QueryError("cypher failed".into()).into();
+    let source = error.source().expect("Graph variant should carry a source");
+    assert!(source.to_string().contains("cypher failed"));
+}
+
+#[test]
+fn config_error_has_no_source() {
+    use std::error::Error as _;
+    let error = Error::Config("bad config".into());
+    assert!(error.source().is_none());
+}
+
+#[test]
+fn error_is_send_sync_and_static() {
+    fn assert_bounds<T: Send + Sync + 'static>() {}
+    assert_bounds::<Error>();
+}
+
+#[test]
+fn error_from_each_graph_variant_preserves_message() {
+    for (err, needle) in [
+        (
+            GraphError::ConnectionError("c".into()),
+            "Connection error: c",
+        ),
+        (GraphError::QueryError("q".into()), "Query error: q"),
+        (
+            GraphError::ConstraintViolation("v".into()),
+            "Constraint violation: v",
+        ),
+        (GraphError::NotFound("n".into()), "Not found: n"),
+        (GraphError::InvalidInput("i".into()), "Invalid input: i"),
+    ] {
+        let wrapped: Error = err.into();
+        assert!(wrapped.to_string().contains(needle));
+    }
 }
