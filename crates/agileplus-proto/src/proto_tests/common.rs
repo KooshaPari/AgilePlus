@@ -11,7 +11,6 @@ roundtrip!(
     ProjectScope,
     ProjectScope {
         canonical_repo_root: "/Users/dev/repo".to_string(),
-        ..Default::default()
     }
 );
 
