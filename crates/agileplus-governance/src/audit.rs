@@ -1118,3 +1118,319 @@ mod extended_tests {
         assert_eq!(filter.limit, 50);
     }
 }
+
+#[cfg(test)]
+mod coverage_tests {
+    use super::*;
+
+    fn logger() -> AuditLogger {
+        AuditLogger::in_memory().unwrap()
+    }
+
+    #[test]
+    fn success_factory_fields() {
+        let e = AuditEvent::success("deploy");
+        assert_eq!(e.action, "deploy");
+        assert_eq!(e.level, LogLevel::Info);
+        assert_eq!(e.result, OperationResult::Success);
+        assert!(e.message.is_none());
+    }
+
+    #[test]
+    fn warn_factory_fields() {
+        let e = AuditEvent::warn("deprecated");
+        assert_eq!(e.level, LogLevel::Warn);
+        assert_eq!(e.result, OperationResult::Success);
+    }
+
+    #[test]
+    fn error_factory_fields() {
+        let e = AuditEvent::error("fail", "broke");
+        assert_eq!(e.level, LogLevel::Error);
+        assert_eq!(e.result, OperationResult::Failure);
+        assert_eq!(e.message.as_deref(), Some("broke"));
+    }
+
+    #[test]
+    fn new_sets_id_and_timestamps() {
+        let e = AuditEvent::new("a", LogLevel::Info, OperationResult::Success);
+        assert!(e.id.starts_with("evt_"));
+        assert!(e.synced_at.is_none());
+        assert!(e.created_at <= Utc::now());
+    }
+
+    #[test]
+    fn with_category_sets_category() {
+        let e = AuditEvent::success("a").with_category(ActionCategory::Policy);
+        assert_eq!(e.category, Some(ActionCategory::Policy));
+    }
+
+    #[test]
+    fn with_request_generates_request_id() {
+        let e = AuditEvent::success("a").with_request("GET", "/x", None);
+        assert_eq!(e.method.as_deref(), Some("GET"));
+        assert_eq!(e.endpoint.as_deref(), Some("/x"));
+        assert!(e.request_id.as_deref().unwrap().starts_with("req_"));
+    }
+
+    #[test]
+    fn with_request_uses_supplied_request_id() {
+        let e = AuditEvent::success("a").with_request("GET", "/x", Some("req_custom".into()));
+        assert_eq!(e.request_id.as_deref(), Some("req_custom"));
+    }
+
+    #[test]
+    fn with_resource_sets_id() {
+        let e = AuditEvent::success("a").with_resource("release", Some("rel-1".into()));
+        assert_eq!(e.resource.as_deref(), Some("release"));
+        assert_eq!(e.resource_id.as_deref(), Some("rel-1"));
+    }
+
+    #[test]
+    fn with_parameters_and_duration_and_metadata() {
+        let e = AuditEvent::success("a")
+            .with_parameters(serde_json::json!({"p": 1}))
+            .with_duration(250)
+            .with_metadata(serde_json::json!({"m": true}));
+        assert_eq!(e.parameters.unwrap()["p"], serde_json::json!(1));
+        assert_eq!(e.duration_ms, Some(250));
+        assert!(e.metadata.is_some());
+    }
+
+    #[test]
+    fn with_error_sets_code_and_message() {
+        let e = AuditEvent::success("a").with_error("E1", "bad");
+        assert_eq!(e.error_code.as_deref(), Some("E1"));
+        assert_eq!(e.error_message.as_deref(), Some("bad"));
+    }
+
+    #[test]
+    fn with_result_override() {
+        let e = AuditEvent::success("a").with_result(OperationResult::PartialSuccess);
+        assert_eq!(e.result, OperationResult::PartialSuccess);
+    }
+
+    #[test]
+    fn with_user_and_ip_and_agent() {
+        let e = AuditEvent::success("a")
+            .with_user("u1")
+            .with_client_ip("10.0.0.1")
+            .with_user_agent("agent/1");
+        assert_eq!(e.user_id.as_deref(), Some("u1"));
+        assert_eq!(e.client_ip.as_deref(), Some("10.0.0.1"));
+        assert_eq!(e.user_agent.as_deref(), Some("agent/1"));
+    }
+
+    #[test]
+    fn audit_event_serde_roundtrip_full() {
+        let e = AuditEvent::error("fail", "oops")
+            .with_user("u1")
+            .with_category(ActionCategory::Audit)
+            .with_duration(10)
+            .with_metadata(serde_json::json!({"k": "v"}));
+        let json = serde_json::to_string(&e).unwrap();
+        let back: AuditEvent = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.action, "fail");
+        assert_eq!(back.level, LogLevel::Error);
+        assert_eq!(back.category, Some(ActionCategory::Audit));
+    }
+
+    #[test]
+    fn filter_new_defaults() {
+        let f = AuditFilter::new();
+        assert_eq!(f.limit, 100);
+        assert_eq!(f.offset, 0);
+        assert!(!f.unsynced_only);
+        assert!(f.action.is_none());
+    }
+
+    #[test]
+    fn filter_default_has_zero_limit() {
+        let f = AuditFilter::default();
+        assert_eq!(f.limit, 0);
+    }
+
+    #[test]
+    fn filter_builder_chain() {
+        let now = Utc::now();
+        let f = AuditFilter::new()
+            .action("deploy")
+            .user("alice")
+            .time_range(now, now)
+            .unsynced()
+            .limit(7);
+        assert_eq!(f.action.as_deref(), Some("deploy"));
+        assert_eq!(f.user_id.as_deref(), Some("alice"));
+        assert!(f.start_time.is_some());
+        assert!(f.end_time.is_some());
+        assert!(f.unsynced_only);
+        assert_eq!(f.limit, 7);
+    }
+
+    #[test]
+    fn query_empty_logger_returns_nothing() {
+        assert!(logger().query(&AuditFilter::new()).unwrap().is_empty());
+    }
+
+    #[test]
+    fn query_by_action() {
+        let l = logger();
+        l.log(&AuditEvent::success("a")).unwrap();
+        l.log(&AuditEvent::success("b")).unwrap();
+        let got = l.query(&AuditFilter::new().action("a")).unwrap();
+        assert_eq!(got.len(), 1);
+    }
+
+    #[test]
+    fn query_by_category() {
+        let l = logger();
+        l.log(&AuditEvent::success("a").with_category(ActionCategory::Release)).unwrap();
+        l.log(&AuditEvent::success("b").with_category(ActionCategory::Config)).unwrap();
+        let got = l.query(&AuditFilter { category: Some(ActionCategory::Config), ..AuditFilter::new() }).unwrap();
+        assert_eq!(got.len(), 1);
+        assert_eq!(got[0].action, "b");
+    }
+
+    #[test]
+    fn query_by_level() {
+        let l = logger();
+        l.log(&AuditEvent::success("a")).unwrap();
+        l.log(&AuditEvent::warn("b")).unwrap();
+        let got = l.query(&AuditFilter { level: Some(LogLevel::Warn), ..AuditFilter::new() }).unwrap();
+        assert_eq!(got.len(), 1);
+        assert_eq!(got[0].action, "b");
+    }
+
+    #[test]
+    fn query_by_result() {
+        let l = logger();
+        l.log(&AuditEvent::success("a")).unwrap();
+        l.log(&AuditEvent::error("b", "x")).unwrap();
+        let got = l.query(&AuditFilter { result: Some(OperationResult::Failure), ..AuditFilter::new() }).unwrap();
+        assert_eq!(got.len(), 1);
+        assert_eq!(got[0].action, "b");
+    }
+
+    #[test]
+    fn query_by_user_and_resource() {
+        let l = logger();
+        l.log(&AuditEvent::success("a").with_user("alice").with_resource("rel", None)).unwrap();
+        l.log(&AuditEvent::success("b").with_user("bob").with_resource("rel", None)).unwrap();
+        let by_user = l.query(&AuditFilter::new().user("alice")).unwrap();
+        assert_eq!(by_user.len(), 1);
+        let by_res = l.query(&AuditFilter { resource: Some("rel".into()), ..AuditFilter::new() }).unwrap();
+        assert_eq!(by_res.len(), 2);
+    }
+
+    #[test]
+    fn query_time_range_excludes_old() {
+        let l = logger();
+        let mut old = AuditEvent::success("old");
+        old.timestamp = Utc::now() - Duration::days(30);
+        l.log(&old).unwrap();
+        l.log(&AuditEvent::success("new")).unwrap();
+
+        let now = Utc::now();
+        let recent = l.query(&AuditFilter::new().time_range(now - Duration::hours(1), now)).unwrap();
+        assert_eq!(recent.len(), 1);
+        assert_eq!(recent[0].action, "new");
+    }
+
+    #[test]
+    fn query_orders_by_timestamp_desc() {
+        let l = logger();
+        let mut first = AuditEvent::success("first");
+        first.timestamp = Utc::now() - Duration::hours(2);
+        let mut second = AuditEvent::success("second");
+        second.timestamp = Utc::now() - Duration::hours(1);
+        l.log(&first).unwrap();
+        l.log(&second).unwrap();
+        let got = l.query(&AuditFilter::new()).unwrap();
+        assert_eq!(got[0].action, "second");
+    }
+
+    #[test]
+    fn query_limit_and_offset() {
+        let l = logger();
+        for i in 0..5 {
+            l.log(&AuditEvent::success(format!("act{i}"))).unwrap();
+        }
+        assert_eq!(l.query(&AuditFilter { limit: 2, ..AuditFilter::new() }).unwrap().len(), 2);
+        assert_eq!(l.query(&AuditFilter { limit: 10, offset: 3, ..AuditFilter::new() }).unwrap().len(), 2);
+    }
+
+    #[test]
+    fn query_unsynced_only() {
+        let l = logger();
+        let e1 = AuditEvent::success("synced");
+        l.log(&e1).unwrap();
+        l.log(&AuditEvent::success("pending")).unwrap();
+        l.mark_synced(&[e1.id.clone()]).unwrap();
+        let got = l.query(&AuditFilter::new().unsynced()).unwrap();
+        assert_eq!(got.len(), 1);
+        assert_eq!(got[0].action, "pending");
+    }
+
+    #[test]
+    fn stats_total_and_errors() {
+        let l = logger();
+        l.log(&AuditEvent::success("a")).unwrap();
+        l.log(&AuditEvent::error("b", "x")).unwrap();
+        let s = l.stats().unwrap();
+        assert_eq!(s.total, 2);
+        assert_eq!(s.errors, 1);
+    }
+
+    #[test]
+    fn stats_by_level_and_top_actions() {
+        let l = logger();
+        for _ in 0..4 {
+            l.log(&AuditEvent::success("common")).unwrap();
+        }
+        l.log(&AuditEvent::warn("rare")).unwrap();
+        let s = l.stats().unwrap();
+        assert_eq!(s.by_level.get("info"), Some(&4));
+        assert_eq!(s.by_level.get("warn"), Some(&1));
+        assert_eq!(s.top_actions[0].action, "common");
+        assert_eq!(s.top_actions[0].count, 4);
+    }
+
+    #[test]
+    fn mark_synced_multiple_and_empty() {
+        let l = logger();
+        let a = AuditEvent::success("a");
+        let b = AuditEvent::success("b");
+        l.log(&a).unwrap();
+        l.log(&b).unwrap();
+        l.mark_synced(&[]).unwrap();
+        assert_eq!(l.unsynced_count().unwrap(), 2);
+        l.mark_synced(&[a.id.clone(), b.id.clone()]).unwrap();
+        assert_eq!(l.unsynced_count().unwrap(), 0);
+    }
+
+    #[test]
+    fn cleanup_removes_events_beyond_retention() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("retention.db");
+        let l = AuditLogger::new(&path, 1).unwrap();
+        let mut old = AuditEvent::success("old");
+        old.timestamp = Utc::now() - Duration::days(10);
+        l.log(&old).unwrap();
+        l.log(&AuditEvent::success("new")).unwrap();
+        assert_eq!(l.cleanup().unwrap(), 1);
+        assert_eq!(l.stats().unwrap().total, 1);
+    }
+
+    #[test]
+    fn file_logger_persists_across_reopen() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("persist.db");
+        {
+            let l = AuditLogger::new(&path, 90).unwrap();
+            l.log(&AuditEvent::success("persisted")).unwrap();
+        }
+        let l2 = AuditLogger::new(&path, 90).unwrap();
+        let got = l2.query(&AuditFilter::new().action("persisted")).unwrap();
+        assert_eq!(got.len(), 1);
+    }
+}

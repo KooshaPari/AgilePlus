@@ -1143,3 +1143,453 @@ mod extended_tests {
         }
     }
 }
+
+#[cfg(test)]
+mod coverage_tests {
+    use super::*;
+    use std::collections::BTreeMap;
+    use std::path::PathBuf;
+
+    fn glyph_map(pairs: &[(&str, &str)]) -> ScoringSpec {
+        let mut glyphs = BTreeMap::new();
+        let mut grade = BTreeMap::new();
+        grade.insert("A".into(), 90);
+        for (k, v) in pairs {
+            glyphs.insert((*k).to_string(), (*v).to_string());
+        }
+        ScoringSpec { scale: "0-3".into(), glyphs, grade }
+    }
+
+    fn write_catalog(dir: &std::path::Path, cluster: &str, range: &str, sub: bool) -> PathBuf {
+        let sub_json = if sub {
+            format!(r#"[{{"id":"{cluster}.1","title":"Sub","acceptance":"a","evidence_pattern":"file"}}]"#)
+        } else {
+            "[]".to_string()
+        };
+        let defs = if sub { String::new() } else { r#","defs_ref":"ref.md""#.to_string() };
+        let json = format!(
+            r#"{{"version":"1.0","schema":"test","clusters":1,"sub_pillars_enumerated":{enum_count},"note":"n","pillars":[{{"cluster":"{cluster}","pillar_range":"{range}","category":"Cat","source":"s"{defs},"scoring":{{"scale":"0-3","glyphs":{{"0":"x","3":"y"}},"grade":{{"A":90}}}},"sub_pillars":{sub_json}}}]}}"#,
+            enum_count = if sub { 1 } else { 0 },
+        );
+        let path = dir.join("catalog.json");
+        std::fs::write(&path, json).unwrap();
+        path
+    }
+
+    fn create_c03_repo(dir: &std::path::Path) {
+        let files = [
+            "AGENTS.md",
+            "CLAUDE.md",
+            "llms.txt",
+            ".github/PULL_REQUEST_TEMPLATE.md",
+            "docs/functional_requirements.md",
+        ];
+        for rel in files {
+            let p = dir.join(rel);
+            std::fs::create_dir_all(p.parent().unwrap()).unwrap();
+            std::fs::write(p, "x").unwrap();
+        }
+    }
+
+    #[test]
+    fn grade_for_boundaries() {
+        assert_eq!(grade_for(90), "A");
+        assert_eq!(grade_for(75), "B");
+        assert_eq!(grade_for(60), "C");
+        assert_eq!(grade_for(40), "D");
+        assert_eq!(grade_for(0), "F");
+    }
+
+    #[test]
+    fn grade_for_upper_edges() {
+        assert_eq!(grade_for(100), "A");
+        assert_eq!(grade_for(89), "B");
+        assert_eq!(grade_for(74), "C");
+        assert_eq!(grade_for(59), "D");
+        assert_eq!(grade_for(39), "F");
+    }
+
+    #[test]
+    fn glyph_for_empty_map_falls_back_to_digit() {
+        let spec = glyph_map(&[]);
+        assert_eq!(glyph_for(0, &spec), "0");
+        assert_eq!(glyph_for(1, &spec), "1");
+        assert_eq!(glyph_for(2, &spec), "2");
+        assert_eq!(glyph_for(3, &spec), "3");
+    }
+
+    #[test]
+    fn glyph_for_unknown_catalog_text_is_question_mark() {
+        let spec = glyph_map(&[("3", "FIRE")]);
+        assert_eq!(glyph_for(3, &spec), "?");
+    }
+
+    #[test]
+    fn glyph_for_ok_normalizes_to_check() {
+        let spec = glyph_map(&[("3", "OK")]);
+        assert_eq!(glyph_for(3, &spec), "\u{2713}");
+    }
+
+    #[test]
+    fn glyph_for_bad_normalizes_to_cross() {
+        let spec = glyph_map(&[("0", "BAD")]);
+        assert_eq!(glyph_for(0, &spec), "\u{2717}");
+    }
+
+    #[test]
+    fn glyph_for_tri_normalizes_to_triangle() {
+        let spec = glyph_map(&[("1", "TRI")]);
+        assert_eq!(glyph_for(1, &spec), "\u{25B3}");
+    }
+
+    #[test]
+    fn glyph_for_wave_normalizes_to_tilde() {
+        let spec = glyph_map(&[("2", "WAVE")]);
+        assert_eq!(glyph_for(2, &spec), "\u{223C}");
+    }
+
+    #[test]
+    fn glyph_for_digit_string_key_fallback() {
+        let spec = glyph_map(&[("3", "3")]);
+        assert_eq!(glyph_for(3, &spec), "3");
+    }
+
+    #[test]
+    fn probe_rule_compiles_valid_regex() {
+        let rule = ProbeRule {
+            cluster: "C01",
+            rule_text: "t",
+            target_file: "f",
+            regex_src: r"^ok$",
+        };
+        assert!(rule.compiled().is_ok());
+    }
+
+    #[test]
+    fn probe_rule_invalid_regex_errors() {
+        let rule = ProbeRule {
+            cluster: "C01",
+            rule_text: "t",
+            target_file: "f",
+            regex_src: "[unclosed",
+        };
+        assert!(rule.compiled().is_err());
+    }
+
+    #[test]
+    fn scoring_probes_has_at_least_five() {
+        assert!(SCORING_PROBES.len() >= 5);
+    }
+
+    #[test]
+    fn scoring_probes_cover_required_clusters() {
+        let clusters: std::collections::BTreeSet<&str> =
+            SCORING_PROBES.iter().map(|p| p.cluster).collect();
+        for c in ["C01", "C04", "C05", "C08", "C11"] {
+            assert!(clusters.contains(c), "missing probe cluster {c}");
+        }
+    }
+
+    #[test]
+    fn scoring_probes_all_compile() {
+        for p in SCORING_PROBES {
+            assert!(p.compiled().is_ok(), "probe {} failed", p.rule_text);
+        }
+    }
+
+    #[test]
+    fn tagged_probe_collect_reports_line_and_excerpt() {
+        let tmp = tempfile::tempdir().unwrap();
+        std::fs::write(tmp.path().join("deny.toml"), "[advisories]\n").unwrap();
+        let probes = [ProbeRule {
+            cluster: "C01",
+            rule_text: "cargo-deny",
+            target_file: "deny.toml",
+            regex_src: r"(?m)^\[advisories\]",
+        }];
+        let ev = TaggedProbeEvidence::collect(tmp.path(), &probes);
+        assert_eq!(ev.matches.len(), 1);
+        assert_eq!(ev.matches[0].0, "C01");
+        assert!(ev.matches[0].3.contains("deny.toml:1"));
+    }
+
+    #[test]
+    fn tagged_probe_skips_missing_file() {
+        let tmp = tempfile::tempdir().unwrap();
+        let probes = [ProbeRule {
+            cluster: "C01",
+            rule_text: "missing",
+            target_file: "nope.toml",
+            regex_src: "x",
+        }];
+        assert!(TaggedProbeEvidence::collect(tmp.path(), &probes).matches.is_empty());
+    }
+
+    #[test]
+    fn tagged_probe_count_for_filters_cluster() {
+        let ev = TaggedProbeEvidence {
+            matches: vec![
+                ("C01", "a", "f", "x".into()),
+                ("C01", "b", "f", "y".into()),
+                ("C04", "c", "f", "z".into()),
+            ],
+        };
+        assert_eq!(ev.count_for("C01"), 2);
+        assert_eq!(ev.count_for("C04"), 1);
+        assert_eq!(ev.count_for("C99"), 0);
+    }
+
+    #[test]
+    fn probe_evidence_collect_matches() {
+        let tmp = tempfile::tempdir().unwrap();
+        std::fs::write(tmp.path().join("f.txt"), "hello world\n").unwrap();
+        let probes = [ProbeRule {
+            cluster: "C01",
+            rule_text: "greeting",
+            target_file: "f.txt",
+            regex_src: "hello",
+        }];
+        let ev = ProbeEvidence::collect(tmp.path(), &probes);
+        assert_eq!(ev.matches.len(), 1);
+        assert_eq!(ev.matches[0].0, "greeting");
+    }
+
+    #[test]
+    fn probe_evidence_skips_missing() {
+        let tmp = tempfile::tempdir().unwrap();
+        let probes = [ProbeRule {
+            cluster: "C01",
+            rule_text: "m",
+            target_file: "absent",
+            regex_src: "x",
+        }];
+        assert!(ProbeEvidence::collect(tmp.path(), &probes).matches.is_empty());
+    }
+
+    #[test]
+    fn rules_for_returns_matching_cluster() {
+        let rules = rules_for("C00");
+        assert!(rules.iter().all(|(c, _, _)| *c == "C00"));
+        assert!(rules_for("C99").is_empty());
+    }
+
+    #[test]
+    fn cluster_title_known_ids() {
+        for (id, expected) in [
+            ("C00", "Architecture + Module"),
+            ("C01", "CI, DX, Observability"),
+            ("C03", "Agent Readiness"),
+            ("C11", "Packaging + Distribution"),
+        ] {
+            let p = Pillar {
+                cluster: id.into(),
+                pillar_range: "L0".into(),
+                category: "x".into(),
+                source: "x".into(),
+                defs_ref: Some("r".into()),
+                scoring: glyph_map(&[("0", "x")]),
+                sub_pillars: vec![],
+            };
+            assert_eq!(cluster_title(&p), expected);
+        }
+    }
+
+    #[test]
+    fn cluster_title_unknown_is_unknown() {
+        let p = Pillar {
+            cluster: "C99".into(),
+            pillar_range: "L0".into(),
+            category: "x".into(),
+            source: "x".into(),
+            defs_ref: Some("r".into()),
+            scoring: glyph_map(&[("0", "x")]),
+            sub_pillars: vec![],
+        };
+        assert_eq!(cluster_title(&p), "Unknown");
+    }
+
+    #[test]
+    fn current_iso_date_is_epoch_prefixed() {
+        assert!(current_iso_date().starts_with("epoch:"));
+    }
+
+    #[test]
+    fn render_markdown_empty_report() {
+        let report = ScoreReport { repo: "r".into(), date: "d".into(), clusters: vec![] };
+        assert!(render_markdown(&report).is_empty());
+    }
+
+    #[test]
+    fn render_markdown_contains_all_sections() {
+        let report = ScoreReport {
+            repo: "r".into(),
+            date: "d".into(),
+            clusters: vec![ClusterScore {
+                cluster: "C03".into(),
+                pillars: vec![PillarScore {
+                    pillar_id: "L30".into(),
+                    title: "Agent Readiness".into(),
+                    score: 2,
+                    glyph: "~",
+                    evidence: vec!["AGENTS.md:1".into()],
+                    gaps: vec!["missing CLAUDE.md".into()],
+                    soft_goal_delta: "partial".into(),
+                }],
+                total_points: 2,
+                max_points: 3,
+            }],
+        };
+        let md = render_markdown(&report);
+        assert!(md.contains("CLUSTER_START cluster=C03"));
+        assert!(md.contains("### L30"));
+        assert!(md.contains("AGENTS.md:1"));
+        assert!(md.contains("missing CLAUDE.md"));
+        assert!(md.contains("CLUSTER_TOTAL"));
+        assert!(md.contains("CLUSTER_DONE"));
+    }
+
+    #[test]
+    fn render_markdown_handles_zero_max_points() {
+        let report = ScoreReport {
+            repo: "r".into(),
+            date: "d".into(),
+            clusters: vec![ClusterScore {
+                cluster: "C00".into(),
+                pillars: vec![],
+                total_points: 0,
+                max_points: 0,
+            }],
+        };
+        let md = render_markdown(&report);
+        assert!(md.contains("pct=0%"));
+    }
+
+    #[test]
+    fn render_markdown_no_evidence_no_gaps() {
+        let report = ScoreReport {
+            repo: "r".into(),
+            date: "d".into(),
+            clusters: vec![ClusterScore {
+                cluster: "C00".into(),
+                pillars: vec![PillarScore {
+                    pillar_id: "L0".into(),
+                    title: "T".into(),
+                    score: 0,
+                    glyph: "x",
+                    evidence: vec![],
+                    gaps: vec![],
+                    soft_goal_delta: "partial".into(),
+                }],
+                total_points: 0,
+                max_points: 3,
+            }],
+        };
+        let md = render_markdown(&report);
+        assert!(md.contains("(no evidence found)"));
+        assert!(md.contains("gaps:\n  - none"));
+    }
+
+    #[test]
+    fn evaluate_aggregate_scores_full_marks() {
+        let tmp = tempfile::tempdir().unwrap();
+        create_c03_repo(tmp.path());
+        let catalog = write_catalog(tmp.path(), "C03", "L30", false);
+        let report = evaluate(tmp.path(), &catalog, &[]).unwrap();
+        assert_eq!(report.clusters.len(), 1);
+        assert_eq!(report.clusters[0].pillars[0].score, 3);
+    }
+
+    #[test]
+    fn evaluate_with_cluster_filter_excludes_others() {
+        let tmp = tempfile::tempdir().unwrap();
+        create_c03_repo(tmp.path());
+        let catalog = write_catalog(tmp.path(), "C03", "L30", false);
+        let filtered = evaluate(tmp.path(), &catalog, &["C99".to_string()]).unwrap();
+        assert!(filtered.clusters.is_empty());
+        let included = evaluate(tmp.path(), &catalog, &["C03".to_string()]).unwrap();
+        assert_eq!(included.clusters.len(), 1);
+    }
+
+    #[test]
+    fn evaluate_unknown_catalog_path_errors() {
+        let tmp = tempfile::tempdir().unwrap();
+        assert!(evaluate(tmp.path(), "/nonexistent/catalog.json", &[]).is_err());
+    }
+
+    #[test]
+    fn evaluate_probes_disabled_matches_plain_evaluate() {
+        let tmp = tempfile::tempdir().unwrap();
+        create_c03_repo(tmp.path());
+        let catalog = write_catalog(tmp.path(), "C03", "L30", false);
+        let v1 = evaluate(tmp.path(), &catalog, &[]).unwrap();
+        let v2 = evaluate_with_probes(tmp.path(), &catalog, &[], Some(&[])).unwrap();
+        assert_eq!(v1.clusters[0].total_points, v2.clusters[0].total_points);
+        assert_eq!(v1.clusters[0].max_points, v2.clusters[0].max_points);
+    }
+
+    #[test]
+    fn evaluate_with_probe_bonus_adds_evidence() {
+        let tmp = tempfile::tempdir().unwrap();
+        std::fs::write(tmp.path().join("AGENTS.md"), "agents here").unwrap();
+        let catalog = write_catalog(tmp.path(), "C03", "L30", false);
+        let probes = [ProbeRule {
+            cluster: "C03",
+            rule_text: "agents marker",
+            target_file: "AGENTS.md",
+            regex_src: "agents",
+        }];
+        let report = evaluate_with_probes(tmp.path(), &catalog, &[], Some(&probes)).unwrap();
+        let first = &report.clusters[0].pillars[0];
+        // Base partial score 1 (only AGENTS.md of the C03 presence set) + 1 probe bonus.
+        assert_eq!(first.score, 2);
+        assert!(first.evidence.iter().any(|e| e.starts_with("probe:")));
+    }
+
+    #[test]
+    fn run_delegates_to_evaluate() {
+        let tmp = tempfile::tempdir().unwrap();
+        create_c03_repo(tmp.path());
+        let catalog = write_catalog(tmp.path(), "C03", "L30", false);
+        let report = run(tmp.path(), &catalog, &[], None).unwrap();
+        assert_eq!(report.clusters.len(), 1);
+    }
+
+    #[test]
+    fn score_cluster_with_probes_bonus_capped_at_three() {
+        let tmp = tempfile::tempdir().unwrap();
+        create_c03_repo(tmp.path());
+        let scan = scan_repo(tmp.path()).unwrap();
+        let pillar = Pillar {
+            cluster: "C03".into(),
+            pillar_range: "L30".into(),
+            category: "x".into(),
+            source: "x".into(),
+            defs_ref: Some("r".into()),
+            scoring: glyph_map(&[("0", "x"), ("3", "y")]),
+            sub_pillars: vec![],
+        };
+        let probes = TaggedProbeEvidence {
+            matches: vec![("C03", "r", "AGENTS.md", "AGENTS.md:1 x".into())],
+        };
+        let score = score_cluster_with_probes(&pillar, &scan, tmp.path(), &probes);
+        assert_eq!(score.pillars[0].score, 3);
+    }
+
+    #[test]
+    fn score_pillar_aggregate_no_rule_scores_zero() {
+        let tmp = tempfile::tempdir().unwrap();
+        let scan = scan_repo(tmp.path()).unwrap();
+        let pillar = Pillar {
+            cluster: "C99".into(),
+            pillar_range: "L99".into(),
+            category: "x".into(),
+            source: "x".into(),
+            defs_ref: Some("r".into()),
+            scoring: glyph_map(&[("0", "x")]),
+            sub_pillars: vec![],
+        };
+        let score = score_pillar_aggregate(&pillar, &scan, &[]);
+        assert_eq!(score.score, 0);
+        assert!(!score.gaps.is_empty());
+    }
+}

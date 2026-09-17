@@ -607,3 +607,283 @@ window_ms = 60000
         );
     }
 }
+
+#[cfg(test)]
+mod coverage_tests {
+    use super::*;
+
+    #[test]
+    fn governance_settings_defaults() {
+        let s = GovernanceSettings::default();
+        assert!(!s.enabled);
+        assert_eq!(s.base_url, "http://localhost:8080/api/v1");
+        assert_eq!(s.timeout_secs, 30);
+        assert_eq!(s.retry_attempts, 3);
+    }
+
+    #[test]
+    fn auth_settings_defaults() {
+        let s = AuthSettings::default();
+        assert_eq!(s.method, AuthMethod::ApiKey);
+        assert!(s.api_key.is_empty());
+        assert!(s.bearer_token.is_empty());
+    }
+
+    #[test]
+    fn local_settings_defaults() {
+        let s = LocalSettings::default();
+        assert!(s.enabled);
+        assert_eq!(s.db_path, ".agileplus/governance.db");
+        assert_eq!(s.retention_days, 90);
+    }
+
+    #[test]
+    fn sync_settings_defaults() {
+        let s = SyncSettings::default();
+        assert!(s.enabled);
+        assert_eq!(s.interval_ms, 300_000);
+        assert_eq!(s.batch_size, 100);
+        assert_eq!(s.timeout_secs, 60);
+    }
+
+    #[test]
+    fn policy_settings_defaults() {
+        let s = PolicySettings::default();
+        assert!(s.enabled);
+        assert_eq!(s.default_action, PolicyDefaultAction::Allow);
+        assert!(s.enforce_gates);
+        assert!(s.enforce_rate_limits);
+    }
+
+    #[test]
+    fn rate_limit_settings_defaults() {
+        let s = RateLimitSettings::default();
+        assert!(!s.enabled);
+        assert_eq!(s.max_requests, 100);
+        assert_eq!(s.window_ms, 3_600_000);
+    }
+
+    #[test]
+    fn policy_default_action_default_is_allow() {
+        assert_eq!(PolicyDefaultAction::default(), PolicyDefaultAction::Allow);
+    }
+
+    #[test]
+    fn governance_config_default_matches_section_defaults() {
+        let config = GovernanceConfig::default();
+        assert_eq!(config.governance.base_url, GovernanceSettings::default().base_url);
+        assert_eq!(config.local.db_path, LocalSettings::default().db_path);
+        assert_eq!(config.sync.batch_size, SyncSettings::default().batch_size);
+        assert_eq!(config.rate_limit.max_requests, RateLimitSettings::default().max_requests);
+    }
+
+    #[test]
+    fn governance_config_serde_roundtrip_all_sections() {
+        let mut config = GovernanceConfig::default();
+        config.governance.enabled = true;
+        config.governance.base_url = "http://x:1".into();
+        config.policy.default_action = PolicyDefaultAction::Deny;
+        config.rate_limit.max_requests = 12;
+        let json = serde_json::to_string(&config).unwrap();
+        let back: GovernanceConfig = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.governance.base_url, "http://x:1");
+        assert_eq!(back.policy.default_action, PolicyDefaultAction::Deny);
+        assert_eq!(back.rate_limit.max_requests, 12);
+    }
+
+    #[test]
+    fn governance_settings_serde_roundtrip() {
+        let s = GovernanceSettings::default();
+        let json = serde_json::to_string(&s).unwrap();
+        let back: GovernanceSettings = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.timeout_secs, s.timeout_secs);
+        assert_eq!(back.auth.method, AuthMethod::ApiKey);
+    }
+
+    #[test]
+    fn auth_settings_serde_roundtrip() {
+        let s = AuthSettings {
+            method: AuthMethod::BearerToken,
+            api_key: "k".into(),
+            bearer_token: "t".into(),
+        };
+        let json = serde_json::to_string(&s).unwrap();
+        let back: AuthSettings = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.method, AuthMethod::BearerToken);
+        assert_eq!(back.bearer_token, "t");
+    }
+
+    #[test]
+    fn local_settings_serde_roundtrip() {
+        let s = LocalSettings { enabled: false, db_path: "/db".into(), retention_days: 5 };
+        let json = serde_json::to_string(&s).unwrap();
+        let back: LocalSettings = serde_json::from_str(&json).unwrap();
+        assert!(!back.enabled);
+        assert_eq!(back.retention_days, 5);
+    }
+
+    #[test]
+    fn sync_settings_serde_roundtrip() {
+        let s = SyncSettings { enabled: false, interval_ms: 1, batch_size: 2, timeout_secs: 3 };
+        let json = serde_json::to_string(&s).unwrap();
+        let back: SyncSettings = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.batch_size, 2);
+        assert!(!back.enabled);
+    }
+
+    #[test]
+    fn policy_settings_serde_roundtrip() {
+        let s = PolicySettings {
+            enabled: false,
+            default_action: PolicyDefaultAction::Deny,
+            enforce_gates: false,
+            enforce_rate_limits: false,
+        };
+        let json = serde_json::to_string(&s).unwrap();
+        let back: PolicySettings = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.default_action, PolicyDefaultAction::Deny);
+        assert!(!back.enforce_gates);
+    }
+
+    #[test]
+    fn rate_limit_settings_serde_roundtrip() {
+        let s = RateLimitSettings { enabled: true, max_requests: 9, window_ms: 10 };
+        let json = serde_json::to_string(&s).unwrap();
+        let back: RateLimitSettings = serde_json::from_str(&json).unwrap();
+        assert!(back.enabled);
+        assert_eq!(back.window_ms, 10);
+    }
+
+    #[test]
+    fn policy_default_action_serde_strings() {
+        assert_eq!(serde_json::to_string(&PolicyDefaultAction::Allow).unwrap(), "\"allow\"");
+        assert_eq!(serde_json::to_string(&PolicyDefaultAction::Deny).unwrap(), "\"deny\"");
+    }
+
+    #[test]
+    fn validate_clean_default() {
+        assert!(GovernanceConfig::default().validate().is_empty());
+    }
+
+    #[test]
+    fn validate_governance_enabled_requires_url() {
+        let mut config = GovernanceConfig::default();
+        config.governance.enabled = true;
+        config.governance.auth.api_key = "k".into();
+        config.governance.base_url = String::new();
+        assert!(config.validate().iter().any(|e| e.contains("base URL")));
+    }
+
+    #[test]
+    fn validate_governance_enabled_requires_api_key() {
+        let mut config = GovernanceConfig::default();
+        config.governance.enabled = true;
+        config.governance.auth.method = AuthMethod::ApiKey;
+        config.governance.auth.api_key = String::new();
+        assert!(config.validate().iter().any(|e| e.contains("API key")));
+    }
+
+    #[test]
+    fn validate_bearer_method_skips_api_key_check() {
+        let mut config = GovernanceConfig::default();
+        config.governance.enabled = true;
+        config.governance.base_url = "http://x".into();
+        config.governance.auth.method = AuthMethod::BearerToken;
+        config.governance.auth.api_key = String::new();
+        assert!(config.validate().is_empty());
+    }
+
+    #[test]
+    fn validate_none_method_skips_api_key_check() {
+        let mut config = GovernanceConfig::default();
+        config.governance.enabled = true;
+        config.governance.base_url = "http://x".into();
+        config.governance.auth.method = AuthMethod::None;
+        assert!(config.validate().is_empty());
+    }
+
+    #[test]
+    fn validate_local_enabled_requires_db_path() {
+        let mut config = GovernanceConfig::default();
+        config.local.enabled = true;
+        config.local.db_path = String::new();
+        assert!(config.validate().iter().any(|e| e.contains("database path")));
+    }
+
+    #[test]
+    fn validate_returns_multiple_errors() {
+        let mut config = GovernanceConfig::default();
+        config.governance.enabled = true;
+        config.governance.base_url = String::new();
+        config.governance.auth.api_key = String::new();
+        config.local.db_path = String::new();
+        assert!(config.validate().len() >= 3);
+    }
+
+    #[test]
+    fn from_file_toml_parses_all_sections() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("c.toml");
+        std::fs::write(
+            &path,
+            r#"
+[governance]
+enabled = true
+base_url = "http://z"
+timeout_secs = 7
+retry_attempts = 2
+[governance.auth]
+method = "bearer-token"
+api_key = ""
+bearer_token = "tok"
+[local]
+enabled = true
+db_path = "/tmp/z.db"
+retention_days = 11
+[sync]
+enabled = false
+interval_ms = 5
+batch_size = 6
+timeout_secs = 7
+[policy]
+enabled = true
+default_action = "allow"
+enforce_gates = true
+enforce_rate_limits = false
+[rate_limit]
+enabled = true
+max_requests = 8
+window_ms = 9
+"#,
+        )
+        .unwrap();
+        let config = GovernanceConfig::from_file(&path).unwrap();
+        assert_eq!(config.governance.timeout_secs, 7);
+        assert_eq!(config.local.retention_days, 11);
+        assert_eq!(config.rate_limit.max_requests, 8);
+        assert_eq!(config.governance.auth.method, AuthMethod::BearerToken);
+    }
+
+    #[test]
+    fn from_file_invalid_json_is_error() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("bad.json");
+        std::fs::write(&path, "{not json").unwrap();
+        assert!(GovernanceConfig::from_file(&path).is_err());
+    }
+
+    #[test]
+    fn from_file_missing_path_is_error() {
+        let path = std::path::Path::new("/nonexistent/governance-config.json");
+        assert!(GovernanceConfig::from_file(path).is_err());
+    }
+
+    #[test]
+    fn from_env_returns_positive_numeric_defaults() {
+        let config = GovernanceConfig::from_env();
+        assert!(config.governance.timeout_secs > 0);
+        assert!(config.governance.retry_attempts > 0);
+        assert!(config.local.retention_days > 0);
+        assert!(config.rate_limit.window_ms > 0);
+    }
+}

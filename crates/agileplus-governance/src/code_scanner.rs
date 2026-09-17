@@ -575,3 +575,320 @@ mod extended_tests {
         assert_eq!(back.present(), item.present());
     }
 }
+
+#[cfg(test)]
+mod coverage_tests {
+    use super::*;
+    use std::fs;
+    use std::sync::atomic::{AtomicU64, Ordering};
+    static COV_COUNTER: AtomicU64 = AtomicU64::new(0);
+
+    fn tmp(tag: &str) -> PathBuf {
+        let n = COV_COUNTER.fetch_add(1, Ordering::Relaxed);
+        let base = std::env::temp_dir().join(format!(
+            "scan-cov-{}-{}-{}",
+            std::process::id(),
+            tag,
+            n
+        ));
+        let _ = fs::remove_dir_all(&base);
+        fs::create_dir_all(&base).unwrap();
+        base
+    }
+
+    #[test]
+    fn presence_item_fields() {
+        let item = EvidenceItem::presence("file:README.md", "README.md", true);
+        assert_eq!(item.artifact_id, "file:README.md");
+        assert_eq!(item.kind, "file_presence");
+        assert_eq!(item.path, "README.md");
+        assert!(item.present());
+    }
+
+    #[test]
+    fn count_item_fields() {
+        let item = EvidenceItem::count("count:rs_files", 3);
+        assert_eq!(item.artifact_id, "count:rs_files");
+        assert_eq!(item.kind, "count");
+        assert!(item.path.is_empty());
+        assert_eq!(item.count_value(), 3);
+    }
+
+    #[test]
+    fn present_true_parses() {
+        assert!(EvidenceItem::presence("x", "x", true).present());
+    }
+
+    #[test]
+    fn present_false_parses() {
+        assert!(!EvidenceItem::presence("x", "x", false).present());
+    }
+
+    #[test]
+    fn present_non_true_string_is_false() {
+        let mut metadata = BTreeMap::new();
+        metadata.insert("present".into(), "yes".into());
+        let item = EvidenceItem {
+            artifact_id: "x".into(),
+            kind: "file_presence".into(),
+            path: "x".into(),
+            metadata,
+        };
+        assert!(!item.present());
+    }
+
+    #[test]
+    fn count_value_invalid_string_defaults_zero() {
+        let mut metadata = BTreeMap::new();
+        metadata.insert("count".into(), "not-a-number".into());
+        let item = EvidenceItem {
+            artifact_id: "x".into(),
+            kind: "count".into(),
+            path: String::new(),
+            metadata,
+        };
+        assert_eq!(item.count_value(), 0);
+    }
+
+    #[test]
+    fn repo_scan_get_found_and_missing() {
+        let scan = RepoScan {
+            items: vec![EvidenceItem::count("count:rs_files", 1)],
+        };
+        assert!(scan.get("count:rs_files").is_some());
+        assert!(scan.get("count:other").is_none());
+    }
+
+    #[test]
+    fn repo_scan_has_true_and_false() {
+        let scan = RepoScan {
+            items: vec![EvidenceItem::presence("file:README.md", "README.md", true)],
+        };
+        assert!(scan.has("README.md"));
+        assert!(!scan.has("MISSING.md"));
+    }
+
+    #[test]
+    fn repo_scan_default_is_empty() {
+        assert!(RepoScan::default().items.is_empty());
+    }
+
+    #[test]
+    fn evidence_item_serde_roundtrip() {
+        let item = EvidenceItem::presence("file:README.md", "README.md", true);
+        let json = serde_json::to_string(&item).unwrap();
+        let back: EvidenceItem = serde_json::from_str(&json).unwrap();
+        assert_eq!(back, item);
+    }
+
+    #[test]
+    fn evidence_item_equality() {
+        let a = EvidenceItem::count("c", 1);
+        let b = EvidenceItem::count("c", 1);
+        let c = EvidenceItem::count("c", 2);
+        assert_eq!(a, b);
+        assert_ne!(a, c);
+    }
+
+    #[test]
+    fn scan_empty_dir_reports_all_presence_false() {
+        let repo = tmp("empty");
+        let scan = scan_repo(&repo).unwrap();
+        for item in &scan.items {
+            if item.kind == "file_presence" {
+                assert!(!item.present(), "{} should be absent", item.artifact_id);
+            }
+        }
+        fs::remove_dir_all(&repo).ok();
+    }
+
+    #[test]
+    fn scan_all_presence_files_present() {
+        let repo = tmp("allpresence");
+        for rel in PRESENCE_FILES {
+            let path = repo.join(rel);
+            if let Some(parent) = path.parent() {
+                fs::create_dir_all(parent).unwrap();
+            }
+            fs::write(&path, "x").unwrap();
+        }
+        let scan = scan_repo(&repo).unwrap();
+        for rel in PRESENCE_FILES {
+            assert!(scan.has(rel), "{rel} should be present");
+        }
+        fs::remove_dir_all(&repo).ok();
+    }
+
+    #[test]
+    fn scan_counts_rs_files() {
+        let repo = tmp("rsfiles");
+        fs::create_dir_all(repo.join("src")).unwrap();
+        fs::write(repo.join("src/a.rs"), "fn a() {}").unwrap();
+        fs::write(repo.join("src/b.rs"), "fn b() {}").unwrap();
+        fs::write(repo.join("src/c.txt"), "not rust").unwrap();
+        let scan = scan_repo(&repo).unwrap();
+        assert_eq!(scan.get("count:rs_files").unwrap().count_value(), 2);
+        fs::remove_dir_all(&repo).ok();
+    }
+
+    #[test]
+    fn scan_counts_test_files() {
+        let repo = tmp("testfiles");
+        fs::write(repo.join("a.rs"), "#[test] fn t() {}").unwrap();
+        fs::write(repo.join("b.rs"), "#[tokio::test] async fn t() {}").unwrap();
+        fs::write(repo.join("c.rs"), "fn not_test() {}").unwrap();
+        let scan = scan_repo(&repo).unwrap();
+        assert_eq!(scan.get("count:test_files").unwrap().count_value(), 2);
+        fs::remove_dir_all(&repo).ok();
+    }
+
+    #[test]
+    fn scan_skips_target_dir() {
+        let repo = tmp("skiptarget");
+        fs::create_dir_all(repo.join("target/debug")).unwrap();
+        fs::write(repo.join("target/debug/t.rs"), "#[test] fn t() {}").unwrap();
+        let scan = scan_repo(&repo).unwrap();
+        assert_eq!(scan.get("count:test_files").unwrap().count_value(), 0);
+        fs::remove_dir_all(&repo).ok();
+    }
+
+    #[test]
+    fn scan_skips_git_dir() {
+        let repo = tmp("skipgit");
+        fs::create_dir_all(repo.join(".git/objects")).unwrap();
+        fs::write(repo.join(".git/objects/x.rs"), "#[test] fn t() {}").unwrap();
+        let scan = scan_repo(&repo).unwrap();
+        assert_eq!(scan.get("count:test_files").unwrap().count_value(), 0);
+        fs::remove_dir_all(&repo).ok();
+    }
+
+    #[test]
+    fn scan_skips_node_modules() {
+        let repo = tmp("skipnode");
+        fs::create_dir_all(repo.join("node_modules/p")).unwrap();
+        fs::write(repo.join("node_modules/p/x.rs"), "#[test] fn t() {}").unwrap();
+        let scan = scan_repo(&repo).unwrap();
+        assert_eq!(scan.get("count:test_files").unwrap().count_value(), 0);
+        fs::remove_dir_all(&repo).ok();
+    }
+
+    #[test]
+    fn scan_skips_venv() {
+        let repo = tmp("skipvenv");
+        fs::create_dir_all(repo.join(".venv/lib")).unwrap();
+        fs::write(repo.join(".venv/lib/x.rs"), "#[test] fn t() {}").unwrap();
+        let scan = scan_repo(&repo).unwrap();
+        assert_eq!(scan.get("count:test_files").unwrap().count_value(), 0);
+        fs::remove_dir_all(&repo).ok();
+    }
+
+    #[test]
+    fn scan_skips_vendor() {
+        let repo = tmp("skipvendor");
+        fs::create_dir_all(repo.join("vendor")).unwrap();
+        fs::write(repo.join("vendor/x.rs"), "#[test] fn t() {}").unwrap();
+        let scan = scan_repo(&repo).unwrap();
+        assert_eq!(scan.get("count:test_files").unwrap().count_value(), 0);
+        fs::remove_dir_all(&repo).ok();
+    }
+
+    #[test]
+    fn scan_skips_dist() {
+        let repo = tmp("skipdist");
+        fs::create_dir_all(repo.join("dist")).unwrap();
+        fs::write(repo.join("dist/x.rs"), "#[test] fn t() {}").unwrap();
+        let scan = scan_repo(&repo).unwrap();
+        assert_eq!(scan.get("count:test_files").unwrap().count_value(), 0);
+        fs::remove_dir_all(&repo).ok();
+    }
+
+    #[test]
+    fn scan_skips_build() {
+        let repo = tmp("skipbuild");
+        fs::create_dir_all(repo.join("build")).unwrap();
+        fs::write(repo.join("build/x.rs"), "#[test] fn t() {}").unwrap();
+        let scan = scan_repo(&repo).unwrap();
+        assert_eq!(scan.get("count:test_files").unwrap().count_value(), 0);
+        fs::remove_dir_all(&repo).ok();
+    }
+
+    #[test]
+    fn scan_skips_claude_dir() {
+        let repo = tmp("skipclaude");
+        fs::create_dir_all(repo.join(".claude")).unwrap();
+        fs::write(repo.join(".claude/x.rs"), "#[test] fn t() {}").unwrap();
+        let scan = scan_repo(&repo).unwrap();
+        assert_eq!(scan.get("count:test_files").unwrap().count_value(), 0);
+        fs::remove_dir_all(&repo).ok();
+    }
+
+    #[test]
+    fn scan_ci_workflow_present_with_yml() {
+        let repo = tmp("ciyml");
+        fs::create_dir_all(repo.join(".github/workflows")).unwrap();
+        fs::write(repo.join(".github/workflows/ci.yml"), "name: CI").unwrap();
+        let scan = scan_repo(&repo).unwrap();
+        assert!(scan.get("dir:.github/workflows").unwrap().present());
+        fs::remove_dir_all(&repo).ok();
+    }
+
+    #[test]
+    fn scan_ci_workflow_false_when_dir_empty() {
+        let repo = tmp("ciempty");
+        fs::create_dir_all(repo.join(".github/workflows")).unwrap();
+        let scan = scan_repo(&repo).unwrap();
+        assert!(!scan.get("dir:.github/workflows").unwrap().present());
+        fs::remove_dir_all(&repo).ok();
+    }
+
+    #[test]
+    fn scan_counts_multiple_cargo_manifests() {
+        let repo = tmp("cargos");
+        fs::write(repo.join("Cargo.toml"), "[workspace]").unwrap();
+        fs::create_dir_all(repo.join("crates/a")).unwrap();
+        fs::write(repo.join("crates/a/Cargo.toml"), "[package]").unwrap();
+        fs::create_dir_all(repo.join("crates/b")).unwrap();
+        fs::write(repo.join("crates/b/Cargo.toml"), "[package]").unwrap();
+        let scan = scan_repo(&repo).unwrap();
+        assert_eq!(scan.get("count:cargo_manifests").unwrap().count_value(), 3);
+        fs::remove_dir_all(&repo).ok();
+    }
+
+    #[test]
+    fn scan_missing_dir_is_error() {
+        assert!(scan_repo("/nonexistent/scan/cov/path").is_err());
+    }
+
+    #[test]
+    fn scan_file_target_is_error() {
+        let n = COV_COUNTER.fetch_add(1, Ordering::Relaxed);
+        let p = std::env::temp_dir().join(format!("scan-cov-file-{}-{}", std::process::id(), n));
+        let _ = fs::remove_file(&p);
+        fs::write(&p, "hello").unwrap();
+        assert!(scan_repo(&p).is_err());
+        fs::remove_file(&p).ok();
+    }
+
+    #[test]
+    fn scan_nested_rs_counts() {
+        let repo = tmp("nested");
+        fs::create_dir_all(repo.join("a/b/c")).unwrap();
+        fs::write(repo.join("a/b/c/deep.rs"), "#[test] fn t() {}").unwrap();
+        let scan = scan_repo(&repo).unwrap();
+        assert_eq!(scan.get("count:rs_files").unwrap().count_value(), 1);
+        assert_eq!(scan.get("count:test_files").unwrap().count_value(), 1);
+        fs::remove_dir_all(&repo).ok();
+    }
+
+    #[test]
+    fn skip_dirs_constant_lists_expected_entries() {
+        for expected in ["target", "node_modules", ".git"] {
+            assert!(SKIP_DIRS.contains(&expected), "SKIP_DIRS missing {expected}");
+        }
+    }
+
+    #[test]
+    fn presence_files_constant_lists_agents_md() {
+        assert!(PRESENCE_FILES.contains(&"AGENTS.md"));
+    }
+}

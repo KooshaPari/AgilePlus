@@ -560,3 +560,199 @@ mod extended_tests {
         assert_eq!(r.retry_after.unwrap(), Duration::from_secs(30));
     }
 }
+
+#[cfg(test)]
+mod coverage_tests {
+    use super::*;
+
+    fn limiter(max: u64, ms: u64) -> RateLimiter {
+        RateLimiter::new(RateLimitConfig {
+            max_requests: max,
+            window: Duration::from_millis(ms),
+        })
+    }
+
+    #[test]
+    fn config_default_window_one_hour() {
+        assert_eq!(RateLimitConfig::default().window, Duration::from_secs(3600));
+    }
+
+    #[test]
+    fn config_clone_preserves_fields() {
+        let cfg = RateLimitConfig { max_requests: 7, window: Duration::from_secs(9) };
+        let clone = cfg.clone();
+        assert_eq!(clone.max_requests, 7);
+        assert_eq!(clone.window, Duration::from_secs(9));
+    }
+
+    #[test]
+    fn config_debug_contains_value() {
+        let cfg = RateLimitConfig { max_requests: 12, window: Duration::from_secs(1) };
+        assert!(format!("{cfg:?}").contains("12"));
+    }
+
+    #[test]
+    fn key_new_without_user() {
+        let key = RateLimitKey::new(None, Some("1.2.3.4".into()), "act");
+        assert!(key.user_id.is_none());
+        assert_eq!(key.client_ip.as_deref(), Some("1.2.3.4"));
+    }
+
+    #[test]
+    fn key_anonymous_without_ip() {
+        let key = RateLimitKey::anonymous(None, "act");
+        assert!(key.user_id.is_none());
+        assert!(key.client_ip.is_none());
+    }
+
+    #[test]
+    fn key_equality_differs_by_action() {
+        let a = RateLimitKey::anonymous(None, "read");
+        let b = RateLimitKey::anonymous(None, "write");
+        assert_ne!(a, b);
+    }
+
+    #[test]
+    fn key_hash_deduplicates_identical() {
+        use std::collections::HashSet;
+        let mut set = HashSet::new();
+        set.insert(RateLimitKey::anonymous(None, "x"));
+        set.insert(RateLimitKey::anonymous(None, "x"));
+        assert_eq!(set.len(), 1);
+    }
+
+    #[test]
+    fn result_allowed_has_no_retry() {
+        let r = RateLimitResult::allowed(9, Instant::now());
+        assert!(r.allowed);
+        assert_eq!(r.remaining, 9);
+        assert!(r.retry_after.is_none());
+    }
+
+    #[test]
+    fn result_denied_has_retry() {
+        let r = RateLimitResult::denied(0, Instant::now(), Duration::from_millis(250));
+        assert!(!r.allowed);
+        assert_eq!(r.retry_after, Some(Duration::from_millis(250)));
+    }
+
+    #[tokio::test]
+    async fn check_allows_up_to_max() {
+        let l = limiter(3, 60_000);
+        let key = RateLimitKey::anonymous(None, "a");
+        for _ in 0..3 {
+            assert!(l.check(&key).await.allowed);
+        }
+    }
+
+    #[tokio::test]
+    async fn check_denies_beyond_max() {
+        let l = limiter(2, 60_000);
+        let key = RateLimitKey::anonymous(None, "a");
+        assert!(l.check(&key).await.allowed);
+        assert!(l.check(&key).await.allowed);
+        let denied = l.check(&key).await;
+        assert!(!denied.allowed);
+        assert_eq!(denied.remaining, 0);
+    }
+
+    #[tokio::test]
+    async fn check_remaining_decrements() {
+        let l = limiter(5, 60_000);
+        let key = RateLimitKey::anonymous(None, "a");
+        let r1 = l.check(&key).await;
+        let r2 = l.check(&key).await;
+        assert!(r1.remaining > r2.remaining);
+    }
+
+    #[tokio::test]
+    async fn peek_full_when_no_entry() {
+        let l = limiter(4, 60_000);
+        let key = RateLimitKey::anonymous(None, "fresh");
+        assert_eq!(l.peek(&key).await.remaining, 4);
+    }
+
+    #[tokio::test]
+    async fn peek_does_not_consume_token() {
+        let l = limiter(2, 60_000);
+        let key = RateLimitKey::anonymous(None, "p");
+        assert_eq!(l.peek(&key).await.remaining, 2);
+        assert_eq!(l.peek(&key).await.remaining, 2);
+        assert_eq!(l.check(&key).await.remaining, 1);
+    }
+
+    #[tokio::test]
+    async fn peek_reflects_consumption() {
+        let l = limiter(3, 60_000);
+        let key = RateLimitKey::anonymous(None, "p");
+        l.check(&key).await;
+        assert_eq!(l.peek(&key).await.remaining, 2);
+    }
+
+    #[tokio::test]
+    async fn reset_removes_single_key() {
+        let l = limiter(1, 60_000);
+        let key = RateLimitKey::anonymous(None, "r");
+        assert!(l.check(&key).await.allowed);
+        assert!(!l.check(&key).await.allowed);
+        l.reset(&key).await;
+        assert!(l.check(&key).await.allowed);
+    }
+
+    #[tokio::test]
+    async fn reset_nonexistent_is_noop() {
+        let l = limiter(1, 60_000);
+        l.reset(&RateLimitKey::anonymous(None, "missing")).await;
+        assert!(l.is_empty().await);
+    }
+
+    #[tokio::test]
+    async fn reset_all_clears_entries() {
+        let l = limiter(5, 60_000);
+        l.check(&RateLimitKey::anonymous(None, "a")).await;
+        l.check(&RateLimitKey::anonymous(None, "b")).await;
+        assert_eq!(l.len().await, 2);
+        l.reset_all().await;
+        assert!(l.is_empty().await);
+    }
+
+    #[tokio::test]
+    async fn len_and_is_empty_track_entries() {
+        let l = limiter(5, 60_000);
+        assert!(l.is_empty().await);
+        l.check(&RateLimitKey::anonymous(None, "a")).await;
+        assert_eq!(l.len().await, 1);
+    }
+
+    #[tokio::test]
+    async fn cleanup_runs_without_panic() {
+        let l = limiter(5, 60_000);
+        l.check(&RateLimitKey::anonymous(None, "a")).await;
+        l.cleanup().await;
+    }
+
+    #[tokio::test]
+    async fn window_expiry_restores_tokens() {
+        let l = limiter(1, 5);
+        let key = RateLimitKey::anonymous(None, "w");
+        assert!(l.check(&key).await.allowed);
+        assert!(!l.check(&key).await.allowed);
+        tokio::time::sleep(Duration::from_millis(20)).await;
+        assert!(l.check(&key).await.allowed);
+    }
+
+    #[tokio::test]
+    async fn default_limiter_starts_empty() {
+        assert!(RateLimiter::default_limiter().is_empty().await);
+    }
+
+    #[tokio::test]
+    async fn separate_keys_have_separate_buckets() {
+        let l = limiter(1, 60_000);
+        let a = RateLimitKey::anonymous(None, "a");
+        let b = RateLimitKey::anonymous(None, "b");
+        assert!(l.check(&a).await.allowed);
+        assert!(l.check(&b).await.allowed);
+        assert!(!l.check(&a).await.allowed);
+    }
+}

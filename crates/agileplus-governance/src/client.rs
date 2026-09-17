@@ -411,3 +411,248 @@ mod tests {
         assert!(result.is_ok() || result.is_err()); // Accept any result
     }
 }
+
+#[cfg(test)]
+mod coverage_tests {
+    use super::*;
+    use crate::config::{GovernanceConfig, LocalSettings, RateLimitSettings};
+    use crate::policy::{Policy, PolicyEffect};
+
+    async fn test_client() -> (GovernanceClient, tempfile::TempDir) {
+        let dir = tempfile::tempdir().unwrap();
+        let config = GovernanceConfig {
+            local: LocalSettings {
+                enabled: true,
+                db_path: dir.path().join("gov.db").to_string_lossy().to_string(),
+                retention_days: 30,
+            },
+            ..Default::default()
+        };
+        let client = GovernanceClient::new(config).await.unwrap();
+        (client, dir)
+    }
+
+    fn check(resource: &str, action: &str) -> PolicyCheck {
+        PolicyCheck {
+            resource: resource.to_string(),
+            action: action.to_string(),
+            context: PolicyContext::new().with_user("tester").with_action(action),
+        }
+    }
+
+    #[tokio::test]
+    async fn new_client_status_is_initialized() {
+        let (client, _dir) = test_client().await;
+        assert!(client.status().await.initialized);
+    }
+
+    #[tokio::test]
+    async fn status_reports_local_enabled_and_config() {
+        let (client, _dir) = test_client().await;
+        let status = client.status().await;
+        assert!(status.local_enabled);
+        assert!(!status.remote_enabled);
+        assert!(status.config.policy_enabled);
+    }
+
+    #[tokio::test]
+    async fn connection_status_defaults_to_disabled() {
+        let (client, _dir) = test_client().await;
+        assert_eq!(client.connection_status().await, ConnectionStatus::Disabled);
+    }
+
+    #[tokio::test]
+    async fn check_policy_default_allows() {
+        let (client, _dir) = test_client().await;
+        let result = client.check_policy(check("crate", "build")).await.unwrap();
+        assert!(result.allowed);
+    }
+
+    #[tokio::test]
+    async fn check_policy_writes_audit_entry() {
+        let (client, _dir) = test_client().await;
+        client.check_policy(check("crate", "build")).await.unwrap();
+        let events = client
+            .query_audit(AuditFilter::new().action("build"))
+            .await
+            .unwrap();
+        assert_eq!(events.len(), 1);
+        assert_eq!(events[0].user_id.as_deref(), Some("tester"));
+    }
+
+    #[tokio::test]
+    async fn audit_stats_count_checks() {
+        let (client, _dir) = test_client().await;
+        client.check_policy(check("crate", "a")).await.unwrap();
+        client.check_policy(check("crate", "b")).await.unwrap();
+        assert_eq!(client.audit_stats().await.unwrap().total, 2);
+    }
+
+    #[tokio::test]
+    async fn query_audit_by_action_filters() {
+        let (client, _dir) = test_client().await;
+        client.log_audit(AuditEvent::success("manual-a")).await.unwrap();
+        client.log_audit(AuditEvent::success("manual-b")).await.unwrap();
+        let got = client
+            .query_audit(AuditFilter::new().action("manual-a"))
+            .await
+            .unwrap();
+        assert_eq!(got.len(), 1);
+    }
+
+    #[tokio::test]
+    async fn add_policy_then_list_contains_it() {
+        let (client, _dir) = test_client().await;
+        let before = client.policies().await.len();
+        client.add_policy(Policy::new("res", "act", PolicyEffect::Deny)).await;
+        let after = client.policies().await;
+        assert_eq!(after.len(), before + 1);
+        assert!(after.iter().any(|p| p.resource == "res"));
+    }
+
+    #[tokio::test]
+    async fn default_policies_are_present() {
+        let (client, _dir) = test_client().await;
+        assert!(!client.policies().await.is_empty());
+    }
+
+    #[tokio::test]
+    async fn check_promotion_forward_is_allowed() {
+        let (client, _dir) = test_client().await;
+        let req = PromotionRequest::new(
+            "pkg".into(),
+            crate::channel::ReleaseChannel::Alpha,
+            crate::channel::ReleaseChannel::Beta,
+            "dev".into(),
+            "1.0.0".into(),
+        );
+        let result = client.check_promotion(req).await.unwrap();
+        assert!(result.allowed);
+        assert!(result.channel_metadata.is_some());
+    }
+
+    #[tokio::test]
+    async fn check_promotion_reverse_is_denied() {
+        let (client, _dir) = test_client().await;
+        let req = PromotionRequest::new(
+            "pkg".into(),
+            crate::channel::ReleaseChannel::Prod,
+            crate::channel::ReleaseChannel::Alpha,
+            "dev".into(),
+            "1.0.0".into(),
+        );
+        let result = client.check_promotion(req).await.unwrap();
+        assert!(!result.allowed);
+        assert!(result.policy_failures.contains(&"invalid_transition".to_string()));
+    }
+
+    #[tokio::test]
+    async fn check_promotion_iteration_increments() {
+        let (client, _dir) = test_client().await;
+        let make = || {
+            PromotionRequest::new(
+                "pkg".into(),
+                crate::channel::ReleaseChannel::Alpha,
+                crate::channel::ReleaseChannel::Beta,
+                "dev".into(),
+                "1.0.0".into(),
+            )
+        };
+        let first = client.check_promotion(make()).await.unwrap();
+        let second = client.check_promotion(make()).await.unwrap();
+        let first_iter = first.channel_metadata.unwrap().iteration;
+        let second_iter = second.channel_metadata.unwrap().iteration;
+        assert_eq!(second_iter, first_iter + 1);
+    }
+
+    #[tokio::test]
+    async fn check_promotion_writes_audit_entry() {
+        let (client, _dir) = test_client().await;
+        let req = PromotionRequest::new(
+            "pkg".into(),
+            crate::channel::ReleaseChannel::Beta,
+            crate::channel::ReleaseChannel::Rc,
+            "dev".into(),
+            "1.0.0".into(),
+        );
+        client.check_promotion(req).await.unwrap();
+        let got = client
+            .query_audit(AuditFilter::new().action("check_promotion"))
+            .await
+            .unwrap();
+        assert_eq!(got.len(), 1);
+    }
+
+    #[tokio::test]
+    async fn rate_limit_denies_when_exceeded() {
+        let dir = tempfile::tempdir().unwrap();
+        let config = GovernanceConfig {
+            local: LocalSettings {
+                enabled: true,
+                db_path: dir.path().join("gov.db").to_string_lossy().to_string(),
+                retention_days: 30,
+            },
+            rate_limit: RateLimitSettings { enabled: true, max_requests: 1, window_ms: 60_000 },
+            ..Default::default()
+        };
+        let client = GovernanceClient::new(config).await.unwrap();
+        assert!(client.check_policy(check("crate", "x")).await.is_ok());
+        let second = client.check_policy(check("crate", "x")).await;
+        assert!(matches!(second, Err(GovernanceError::RateLimitExceeded(_))));
+    }
+
+    #[tokio::test]
+    async fn status_pending_operations_counts_unsynced() {
+        let (client, _dir) = test_client().await;
+        client.log_audit(AuditEvent::success("a")).await.unwrap();
+        client.log_audit(AuditEvent::success("b")).await.unwrap();
+        assert_eq!(client.status().await.pending_operations, 2);
+    }
+
+    #[tokio::test]
+    async fn log_audit_when_local_disabled_is_ok() {
+        let config = GovernanceConfig {
+            local: LocalSettings {
+                enabled: false,
+                db_path: String::new(),
+                retention_days: 1,
+            },
+            ..Default::default()
+        };
+        let client = GovernanceClient::new(config).await.unwrap();
+        client.log_audit(AuditEvent::success("a")).await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn builder_with_explicit_config() {
+        let dir = tempfile::tempdir().unwrap();
+        let config = GovernanceConfig {
+            local: LocalSettings {
+                enabled: true,
+                db_path: dir.path().join("gov.db").to_string_lossy().to_string(),
+                retention_days: 30,
+            },
+            ..Default::default()
+        };
+        let client = GovernanceClientBuilder::new().config(config).build().await.unwrap();
+        assert!(client.status().await.initialized);
+    }
+
+    #[tokio::test]
+    async fn builder_default_builds_client() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut config = GovernanceConfig::default();
+        config.local.db_path = dir.path().join("gov.db").to_string_lossy().to_string();
+        let client = GovernanceClientBuilder::default().config(config).build().await.unwrap();
+        assert_eq!(client.connection_status().await, ConnectionStatus::Disabled);
+    }
+
+    #[tokio::test]
+    async fn builder_config_from_env_builds() {
+        let dir = tempfile::tempdir().unwrap();
+        std::env::set_var("AGILEPLUS_LOCAL_DB_PATH", dir.path().join("gov.db"));
+        let built = GovernanceClientBuilder::new().config_from_env().build().await;
+        std::env::remove_var("AGILEPLUS_LOCAL_DB_PATH");
+        assert!(built.is_ok());
+    }
+}

@@ -434,3 +434,195 @@ mod tests {
         assert_eq!(b.count, 42);
     }
 }
+
+#[cfg(test)]
+mod coverage_tests {
+    use super::*;
+
+    #[test]
+    fn audit_event_id_default_has_prefix() {
+        let id = AuditEventId::default();
+        assert!(id.0.starts_with("evt_"));
+    }
+
+    #[test]
+    fn policy_check_id_default_has_prefix() {
+        let id = PolicyCheckId::default();
+        assert!(id.0.starts_with("chk_"));
+    }
+
+    #[test]
+    fn audit_event_id_new_values_are_unique() {
+        let a = AuditEventId::new();
+        let b = AuditEventId::new();
+        assert_ne!(a, b);
+    }
+
+    #[test]
+    fn policy_check_id_new_values_are_unique() {
+        let a = PolicyCheckId::new();
+        let b = PolicyCheckId::new();
+        assert_ne!(a, b);
+    }
+
+    #[test]
+    fn audit_event_id_serde_roundtrip() {
+        let id = AuditEventId("evt_custom".into());
+        let json = serde_json::to_string(&id).unwrap();
+        assert_eq!(json, "\"evt_custom\"");
+        let back: AuditEventId = serde_json::from_str(&json).unwrap();
+        assert_eq!(back, id);
+    }
+
+    #[test]
+    fn policy_check_id_serde_roundtrip() {
+        let id = PolicyCheckId("chk_custom".into());
+        let json = serde_json::to_string(&id).unwrap();
+        assert_eq!(json, "\"chk_custom\"");
+        let back: PolicyCheckId = serde_json::from_str(&json).unwrap();
+        assert_eq!(back, id);
+    }
+
+    #[test]
+    fn connection_status_serde_lowercase_strings() {
+        assert_eq!(serde_json::to_string(&ConnectionStatus::Connected).unwrap(), "\"connected\"");
+        assert_eq!(serde_json::to_string(&ConnectionStatus::Disconnected).unwrap(), "\"disconnected\"");
+        assert_eq!(serde_json::to_string(&ConnectionStatus::Error).unwrap(), "\"error\"");
+        assert_eq!(serde_json::to_string(&ConnectionStatus::Disabled).unwrap(), "\"disabled\"");
+    }
+
+    #[test]
+    fn action_category_serde_snake_case_strings() {
+        assert_eq!(serde_json::to_string(&ActionCategory::Release).unwrap(), "\"release\"");
+        assert_eq!(serde_json::to_string(&ActionCategory::Repository).unwrap(), "\"repository\"");
+        assert_eq!(serde_json::to_string(&ActionCategory::Policy).unwrap(), "\"policy\"");
+        assert_eq!(serde_json::to_string(&ActionCategory::Audit).unwrap(), "\"audit\"");
+        assert_eq!(serde_json::to_string(&ActionCategory::Config).unwrap(), "\"config\"");
+        assert_eq!(serde_json::to_string(&ActionCategory::General).unwrap(), "\"general\"");
+    }
+
+    #[test]
+    fn operation_result_serde_lowercase_strings() {
+        assert_eq!(serde_json::to_string(&OperationResult::Success).unwrap(), "\"success\"");
+        assert_eq!(serde_json::to_string(&OperationResult::Failure).unwrap(), "\"failure\"");
+        assert_eq!(serde_json::to_string(&OperationResult::PartialSuccess).unwrap(), "\"partialsuccess\"");
+    }
+
+    #[test]
+    fn log_level_serde_lowercase_strings() {
+        assert_eq!(serde_json::to_string(&LogLevel::Debug).unwrap(), "\"debug\"");
+        assert_eq!(serde_json::to_string(&LogLevel::Info).unwrap(), "\"info\"");
+        assert_eq!(serde_json::to_string(&LogLevel::Warn).unwrap(), "\"warn\"");
+        assert_eq!(serde_json::to_string(&LogLevel::Error).unwrap(), "\"error\"");
+    }
+
+    #[test]
+    fn auth_method_serde_kebab_case_strings() {
+        assert_eq!(serde_json::to_string(&AuthMethod::ApiKey).unwrap(), "\"api-key\"");
+        assert_eq!(serde_json::to_string(&AuthMethod::BearerToken).unwrap(), "\"bearer-token\"");
+        assert_eq!(serde_json::to_string(&AuthMethod::None).unwrap(), "\"none\"");
+    }
+
+    #[test]
+    fn action_category_from_str_is_case_insensitive() {
+        assert_eq!("ReLeAsE".parse::<ActionCategory>().unwrap(), ActionCategory::Release);
+        assert_eq!("CoNfIg".parse::<ActionCategory>().unwrap(), ActionCategory::Config);
+    }
+
+    #[test]
+    fn action_category_from_str_rejects_unknown() {
+        assert!("nope".parse::<ActionCategory>().is_err());
+        assert!("".parse::<ActionCategory>().is_err());
+    }
+
+    #[test]
+    fn operation_result_from_str_is_case_insensitive() {
+        assert_eq!("SUCCESS".parse::<OperationResult>().unwrap(), OperationResult::Success);
+        assert_eq!("Partial_Success".parse::<OperationResult>().unwrap(), OperationResult::PartialSuccess);
+    }
+
+    #[test]
+    fn log_level_from_str_is_case_insensitive() {
+        assert_eq!("WARN".parse::<LogLevel>().unwrap(), LogLevel::Warn);
+        assert_eq!("ERR".parse::<LogLevel>().unwrap(), LogLevel::Error);
+    }
+
+    #[test]
+    fn governance_stats_serde_with_values() {
+        let mut stats = GovernanceStats::default();
+        stats.total = 10;
+        stats.today = 3;
+        stats.errors = 1;
+        stats.by_level.insert("info".into(), 9);
+        stats.top_actions.push(TopAction { action: "deploy".into(), count: 10 });
+        let json = serde_json::to_string(&stats).unwrap();
+        let back: GovernanceStats = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.total, 10);
+        assert_eq!(back.by_level.get("info"), Some(&9));
+        assert_eq!(back.top_actions.len(), 1);
+    }
+
+    #[test]
+    fn governance_status_full_construction() {
+        let status = GovernanceStatus {
+            initialized: true,
+            connection_status: ConnectionStatus::Connected,
+            remote_enabled: true,
+            local_enabled: true,
+            sync_enabled: true,
+            last_sync: Some(Utc::now()),
+            pending_operations: 5,
+            config: GovernanceStatusConfig::default(),
+            stats: GovernanceStats::default(),
+        };
+        assert!(status.initialized);
+        assert_eq!(status.pending_operations, 5);
+        assert!(status.last_sync.is_some());
+    }
+
+    #[test]
+    fn governance_status_serde_roundtrip() {
+        let status = GovernanceStatus::default();
+        let json = serde_json::to_string(&status).unwrap();
+        let back: GovernanceStatus = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.initialized, status.initialized);
+        assert_eq!(back.connection_status, status.connection_status);
+    }
+
+    #[test]
+    fn governance_status_config_serde_roundtrip() {
+        let cfg = GovernanceStatusConfig {
+            governance_url: "http://example.test".into(),
+            auth_method: AuthMethod::BearerToken,
+            policy_enabled: false,
+            rate_limit_enabled: true,
+        };
+        let json = serde_json::to_string(&cfg).unwrap();
+        let back: GovernanceStatusConfig = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.governance_url, "http://example.test");
+        assert_eq!(back.auth_method, AuthMethod::BearerToken);
+        assert!(back.rate_limit_enabled);
+    }
+
+    #[test]
+    fn top_action_fields_construct() {
+        let a = TopAction { action: "build".into(), count: 7 };
+        assert_eq!(a.action, "build");
+        assert_eq!(a.count, 7);
+    }
+
+    #[test]
+    fn operation_result_from_str_partial_no_underscore() {
+        assert_eq!("partialsuccess".parse::<OperationResult>().unwrap(), OperationResult::PartialSuccess);
+    }
+
+    #[test]
+    fn operation_result_from_str_rejects_unknown() {
+        assert!("maybe".parse::<OperationResult>().is_err());
+    }
+
+    #[test]
+    fn log_level_from_str_rejects_unknown() {
+        assert!("verbose".parse::<LogLevel>().is_err());
+    }
+}

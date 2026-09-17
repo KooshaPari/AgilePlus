@@ -221,3 +221,126 @@ mod tests {
         assert!(debug.contains("Internal"));
     }
 }
+
+#[cfg(test)]
+mod coverage_tests {
+    use super::*;
+
+    #[test]
+    fn config_status_is_bad_request() {
+        assert_eq!(GovernanceError::Config("x".into()).status_code(), 400);
+    }
+
+    #[test]
+    fn database_status_is_server_error() {
+        assert_eq!(GovernanceError::Database("x".into()).status_code(), 500);
+    }
+
+    #[test]
+    fn network_status_is_service_unavailable() {
+        assert_eq!(GovernanceError::Network("x".into()).status_code(), 503);
+    }
+
+    #[test]
+    fn auth_status_is_unauthorized() {
+        assert_eq!(GovernanceError::Auth("x".into()).status_code(), 401);
+    }
+
+    #[test]
+    fn not_found_status_is_404() {
+        assert_eq!(GovernanceError::NotFound("x".into()).status_code(), 404);
+    }
+
+    #[test]
+    fn policy_violation_status_is_forbidden() {
+        assert_eq!(GovernanceError::PolicyViolation("x".into()).status_code(), 403);
+    }
+
+    #[test]
+    fn rate_limit_status_is_429() {
+        assert_eq!(GovernanceError::RateLimitExceeded("x".into()).status_code(), 429);
+    }
+
+    #[test]
+    fn internal_and_sync_are_server_errors() {
+        assert_eq!(GovernanceError::Internal("x".into()).status_code(), 500);
+        assert_eq!(GovernanceError::Sync("x".into()).status_code(), 500);
+    }
+
+    #[test]
+    fn rubric_status_is_unprocessable() {
+        assert_eq!(GovernanceError::Rubric("x".into()).status_code(), 422);
+    }
+
+    #[test]
+    fn invalid_channel_transition_status_is_bad_request() {
+        let err = GovernanceError::InvalidChannelTransition {
+            from: "alpha".into(),
+            to: "prod".into(),
+        };
+        assert_eq!(err.status_code(), 400);
+    }
+
+    #[test]
+    fn is_policy_error_matches_only_policy_variants() {
+        assert!(GovernanceError::PolicyViolation("x".into()).is_policy_error());
+        assert!(GovernanceError::NotAllowed("x".into()).is_policy_error());
+        assert!(!GovernanceError::Auth("x".into()).is_policy_error());
+        assert!(!GovernanceError::NotFound("x".into()).is_policy_error());
+        assert!(!GovernanceError::Internal("x".into()).is_policy_error());
+    }
+
+    #[test]
+    fn is_rate_limit_error_matches_only_rate_variant() {
+        assert!(GovernanceError::RateLimitExceeded("x".into()).is_rate_limit_error());
+        assert!(!GovernanceError::NotAllowed("x".into()).is_rate_limit_error());
+        assert!(!GovernanceError::Internal("x".into()).is_rate_limit_error());
+    }
+
+    #[test]
+    fn from_json_error_preserves_message() {
+        let json_err = serde_json::from_str::<serde_json::Value>("{bad").unwrap_err();
+        let expected = json_err.to_string();
+        let gov_err: GovernanceError = json_err.into();
+        assert!(matches!(gov_err, GovernanceError::Config(_)));
+        assert!(gov_err.to_string().contains(&expected));
+    }
+
+    #[test]
+    fn from_toml_error_is_config() {
+        let toml_err = toml::from_str::<toml::Value>("x = [").unwrap_err();
+        let gov_err: GovernanceError = toml_err.into();
+        assert!(matches!(gov_err, GovernanceError::Config(_)));
+    }
+
+    #[test]
+    fn from_io_error_is_internal() {
+        let io_err = std::io::Error::new(std::io::ErrorKind::PermissionDenied, "denied");
+        let gov_err: GovernanceError = io_err.into();
+        assert!(matches!(gov_err, GovernanceError::Internal(_)));
+        assert!(gov_err.to_string().contains("denied"));
+    }
+
+    #[test]
+    fn error_implements_std_error_trait() {
+        fn as_dyn(e: &GovernanceError) -> &dyn std::error::Error {
+            e
+        }
+        let err = GovernanceError::Internal("boom".into());
+        assert!(as_dyn(&err).to_string().contains("boom"));
+    }
+
+    #[test]
+    fn result_alias_holds_ok_and_err() {
+        let ok: Result<u32> = Ok(3);
+        let err: Result<u32> = Err(GovernanceError::NotFound("thing".into()));
+        assert_eq!(ok.unwrap(), 3);
+        assert!(err.is_err());
+    }
+
+    #[test]
+    fn error_debug_contains_variant_name() {
+        assert!(format!("{:?}", GovernanceError::Config("x".into())).contains("Config"));
+        assert!(format!("{:?}", GovernanceError::Rubric("x".into())).contains("Rubric"));
+    }
+}

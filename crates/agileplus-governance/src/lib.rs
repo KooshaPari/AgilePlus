@@ -167,3 +167,123 @@ mod tests {
         assert_eq!(item.count_value(), 0);
     }
 }
+
+#[cfg(test)]
+mod coverage_tests {
+    use super::*;
+
+    #[test]
+    fn channel_alias_order_matches_release_channel() {
+        let ch: Channel = ReleaseChannel::Rc;
+        assert_eq!(ch.order(), 4);
+        assert_eq!(ch.to_string(), "rc");
+    }
+
+    #[test]
+    fn release_channel_all_has_five_in_order() {
+        let all = ReleaseChannel::all();
+        assert_eq!(all.len(), 5);
+        assert_eq!(all[0], ReleaseChannel::Alpha);
+        assert_eq!(all[4], ReleaseChannel::Prod);
+    }
+
+    #[test]
+    fn policy_engine_default_has_policies() {
+        assert!(!PolicyEngine::default().policies().is_empty());
+    }
+
+    #[test]
+    fn rate_limiter_default_is_constructible() {
+        let limiter = RateLimiter::default_limiter();
+        let _ = &limiter;
+    }
+
+    #[test]
+    fn governance_config_default_validates_clean() {
+        assert!(GovernanceConfig::default().validate().is_empty());
+    }
+
+    #[test]
+    fn rubric_catalog_minimal_json_parses() {
+        let json = r#"{"version":"1.0","schema":"s","clusters":0,"pillars":[]}"#;
+        let catalog = RubricCatalog::from_json(json).unwrap();
+        assert_eq!(catalog.clusters, 0);
+        assert_eq!(catalog.enumerated_count(), 0);
+    }
+
+    #[test]
+    fn evidence_item_helpers_via_reexport() {
+        let present = EvidenceItem {
+            artifact_id: "file:README.md".into(),
+            kind: "file_presence".into(),
+            path: "README.md".into(),
+            metadata: {
+                let mut m = std::collections::BTreeMap::new();
+                m.insert("present".into(), "true".into());
+                m
+            },
+        };
+        assert!(present.present());
+        let count = EvidenceItem {
+            artifact_id: "count:test_files".into(),
+            kind: "count".into(),
+            path: String::new(),
+            metadata: {
+                let mut m = std::collections::BTreeMap::new();
+                m.insert("count".into(), "7".into());
+                m
+            },
+        };
+        assert_eq!(count.count_value(), 7);
+    }
+
+    #[test]
+    fn governance_error_reexport_usable_in_result() {
+        let r: Result<()> = Err(GovernanceError::NotFound("x".into()));
+        assert!(r.is_err());
+    }
+
+    #[test]
+    fn render_markdown_empty_report_is_empty() {
+        let report = ScoreReport { repo: "r".into(), date: "d".into(), clusters: vec![] };
+        assert!(render_markdown(&report).is_empty());
+    }
+
+    #[test]
+    fn policy_check_reexport_serde_roundtrip() {
+        let check = PolicyCheck {
+            resource: "crate".into(),
+            action: "build".into(),
+            context: PolicyContext::new().with_channel(ReleaseChannel::Beta),
+        };
+        let json = serde_json::to_string(&check).unwrap();
+        let back: PolicyCheck = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.resource, "crate");
+        assert_eq!(back.context.channel, Some(ReleaseChannel::Beta));
+    }
+
+    #[test]
+    fn governance_status_reexport_default() {
+        let status: GovernanceStatus = GovernanceStatus::default();
+        assert!(!status.initialized);
+    }
+
+    #[test]
+    fn scoring_engine_types_reexport_usable() {
+        let cluster = ClusterScore {
+            cluster: "C00".into(),
+            pillars: vec![PillarScore {
+                pillar_id: "L0".into(),
+                title: "t".into(),
+                score: 3,
+                glyph: "y",
+                evidence: vec![],
+                gaps: vec![],
+                soft_goal_delta: "complete".into(),
+            }],
+            total_points: 3,
+            max_points: 3,
+        };
+        assert_eq!(cluster.total_points, cluster.max_points);
+    }
+}
