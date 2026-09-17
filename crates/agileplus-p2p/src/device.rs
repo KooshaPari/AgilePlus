@@ -243,3 +243,141 @@ mod tests {
         ));
     }
 }
+
+#[cfg(test)]
+mod deep_tests {
+    use super::*;
+
+    fn sample_node(id: &str) -> DeviceNode {
+        DeviceNode {
+            device_id: id.to_string(),
+            hostname: "host".to_string(),
+            tailscale_ip: "100.64.0.5".to_string(),
+            created_at: Utc::now(),
+        }
+    }
+
+    struct FailingStore;
+    impl DeviceStore for FailingStore {
+        fn insert_device(&self, _device: &DeviceNode) -> Result<(), ConnectionError> {
+            Err(ConnectionError::Database("insert nope".into()))
+        }
+        fn get_device(&self) -> Result<Option<DeviceNode>, ConnectionError> {
+            Err(ConnectionError::Database("get nope".into()))
+        }
+    }
+
+    #[test]
+    fn device_node_serde_roundtrip() {
+        let node = sample_node("dev-123");
+        let json = serde_json::to_string(&node).unwrap();
+        let back: DeviceNode = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.device_id, "dev-123");
+        assert_eq!(back.hostname, "host");
+        assert_eq!(back.tailscale_ip, "100.64.0.5");
+    }
+
+    #[test]
+    fn device_node_clone_equal() {
+        let node = sample_node("d");
+        let c = node.clone();
+        assert_eq!(c.device_id, node.device_id);
+        assert_eq!(c.created_at, node.created_at);
+    }
+
+    #[test]
+    fn device_node_debug() {
+        let node = sample_node("debug-id");
+        assert!(format!("{node:?}").contains("debug-id"));
+    }
+
+    #[test]
+    fn in_memory_store_starts_empty() {
+        let store = InMemoryDeviceStore::default();
+        assert!(store.get_device().unwrap().is_none());
+    }
+
+    #[test]
+    fn in_memory_store_insert_then_get() {
+        let store = InMemoryDeviceStore::default();
+        let node = sample_node("abc");
+        store.insert_device(&node).unwrap();
+        let got = store.get_device().unwrap().unwrap();
+        assert_eq!(got.device_id, "abc");
+    }
+
+    #[test]
+    fn in_memory_store_rejects_second_insert_even_different_id() {
+        let store = InMemoryDeviceStore::default();
+        store.insert_device(&sample_node("a")).unwrap();
+        let err = store.insert_device(&sample_node("b")).unwrap_err();
+        assert!(matches!(err, ConnectionError::ConflictingRegistration));
+    }
+
+    #[test]
+    fn in_memory_store_debug() {
+        let store = InMemoryDeviceStore::default();
+        assert!(format!("{store:?}").contains("InMemoryDeviceStore"));
+    }
+
+    #[test]
+    fn get_local_device_delegates_to_store() {
+        let store = InMemoryDeviceStore::default();
+        store.insert_device(&sample_node("local")).unwrap();
+        let got = get_local_device(&store).unwrap().unwrap();
+        assert_eq!(got.device_id, "local");
+    }
+
+    #[test]
+    fn get_local_device_propagates_store_error() {
+        let err = get_local_device(&FailingStore).unwrap_err();
+        assert!(matches!(err, ConnectionError::Database(_)));
+    }
+
+    #[tokio::test]
+    async fn register_propagates_insert_error() {
+        let err = register_device(&FailingStore).await.unwrap_err();
+        assert!(matches!(err, ConnectionError::Database(_)));
+    }
+
+    #[tokio::test]
+    async fn register_device_hostname_not_empty() {
+        let store = InMemoryDeviceStore::default();
+        let device = register_device(&store).await.unwrap();
+        // hostname falls back to OS hostname when Tailscale is unavailable;
+        // it must never be empty.
+        assert!(!device.hostname.is_empty());
+    }
+
+    #[tokio::test]
+    async fn register_device_sets_created_at() {
+        let before = Utc::now();
+        let store = InMemoryDeviceStore::default();
+        let device = register_device(&store).await.unwrap();
+        assert!(device.created_at >= before);
+    }
+
+    #[tokio::test]
+    async fn register_twice_returns_same_record() {
+        let store = InMemoryDeviceStore::default();
+        let first = register_device(&store).await.unwrap();
+        let second = register_device(&store).await.unwrap();
+        assert_eq!(first.device_id, second.device_id);
+        assert_eq!(first.created_at, second.created_at);
+    }
+
+    #[test]
+    fn device_store_is_object_safe() {
+        let store = InMemoryDeviceStore::default();
+        let dyn_store: &dyn DeviceStore = &store;
+        assert!(dyn_store.get_device().unwrap().is_none());
+    }
+
+    #[test]
+    fn multiple_stores_are_independent() {
+        let a = InMemoryDeviceStore::default();
+        let b = InMemoryDeviceStore::default();
+        a.insert_device(&sample_node("a-dev")).unwrap();
+        assert!(b.get_device().unwrap().is_none());
+    }
+}

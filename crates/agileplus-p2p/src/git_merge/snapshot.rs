@@ -62,3 +62,69 @@ pub(crate) fn resolve_snapshot_conflict(path: &Path) -> Result<bool, MergeError>
     }
     Ok(resolved)
 }
+
+#[cfg(test)]
+mod deep_tests {
+    use super::*;
+
+    fn conflict(ours: &str, theirs: &str) -> String {
+        format!("<<<<<<< HEAD\n{ours}\n=======\n{theirs}\n>>>>>>> x\n")
+    }
+
+    #[test]
+    fn clean_file_returns_false() {
+        let tmp = tempfile::tempdir().unwrap();
+        let path = tmp.path().join("1.json");
+        std::fs::write(&path, "{}").unwrap();
+        assert!(!resolve_snapshot_conflict(&path).unwrap());
+    }
+
+    #[test]
+    fn missing_file_errors() {
+        let tmp = tempfile::tempdir().unwrap();
+        assert!(resolve_snapshot_conflict(&tmp.path().join("nope.json")).is_err());
+    }
+
+    #[test]
+    fn higher_sequence_wins() {
+        let tmp = tempfile::tempdir().unwrap();
+        let path = tmp.path().join("1.json");
+        let low = serde_json::to_string_pretty(&Snapshot::new("F", 1, serde_json::json!({"v": 1}), 1)).unwrap();
+        let high = serde_json::to_string_pretty(&Snapshot::new("F", 1, serde_json::json!({"v": 9}), 9)).unwrap();
+        std::fs::write(&path, conflict(&low, &high)).unwrap();
+        assert!(resolve_snapshot_conflict(&path).unwrap());
+        let back: Snapshot = serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
+        assert_eq!(back.event_sequence, 9);
+    }
+
+    #[test]
+    fn ours_wins_when_higher() {
+        let tmp = tempfile::tempdir().unwrap();
+        let path = tmp.path().join("1.json");
+        let high = serde_json::to_string_pretty(&Snapshot::new("F", 1, serde_json::json!({}), 7)).unwrap();
+        let low = serde_json::to_string_pretty(&Snapshot::new("F", 1, serde_json::json!({}), 2)).unwrap();
+        std::fs::write(&path, conflict(&high, &low)).unwrap();
+        resolve_snapshot_conflict(&path).unwrap();
+        let back: Snapshot = serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
+        assert_eq!(back.event_sequence, 7);
+    }
+
+    #[test]
+    fn both_unparsable_returns_false() {
+        let tmp = tempfile::tempdir().unwrap();
+        let path = tmp.path().join("1.json");
+        std::fs::write(&path, conflict("{bad", "also bad")).unwrap();
+        assert!(!resolve_snapshot_conflict(&path).unwrap());
+    }
+
+    #[test]
+    fn one_side_empty_uses_other() {
+        let tmp = tempfile::tempdir().unwrap();
+        let path = tmp.path().join("1.json");
+        let good = serde_json::to_string_pretty(&Snapshot::new("F", 1, serde_json::json!({}), 4)).unwrap();
+        std::fs::write(&path, conflict("", &good)).unwrap();
+        assert!(resolve_snapshot_conflict(&path).unwrap());
+        let back: Snapshot = serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
+        assert_eq!(back.event_sequence, 4);
+    }
+}

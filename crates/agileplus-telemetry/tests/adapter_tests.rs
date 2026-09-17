@@ -10,7 +10,6 @@ use agileplus_domain::ports::observability::{
     LogEntry, LogLevel, ObservabilityPort, SpanContext,
 };
 use agileplus_telemetry::config::{OtlpConfig, OtlpProtocol, SamplingConfig, TelemetryConfig};
-use agileplus_telemetry::logs::LogConfig;
 
 // ---------------------------------------------------------------------------
 // Helpers

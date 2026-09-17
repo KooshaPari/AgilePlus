@@ -223,3 +223,111 @@ mod tests {
         assert_eq!(back.events.len(), 1);
     }
 }
+
+#[cfg(test)]
+mod deep_tests {
+    use super::*;
+    use agileplus_domain::domain::event::Event;
+
+    fn peer(id: &str, ip: &str) -> PeerInfo {
+        PeerInfo {
+            device_id: id.to_string(),
+            hostname: format!("{id}.ts.net"),
+            tailscale_ip: ip.to_string(),
+            status: crate::discovery::PeerStatus::Offline,
+        }
+    }
+
+    fn event(entity_id: i64, seq: i64) -> Event {
+        let mut e = Event::new("Feature", entity_id, "created", serde_json::json!({}), "t");
+        e.sequence = seq;
+        e
+    }
+
+    #[test]
+    fn device_subject_simple_id() {
+        assert_eq!(device_subject("abc"), "agileplus.sync.device.abc");
+    }
+
+    #[test]
+    fn device_subject_uuid_like_id() {
+        let id = "1b4e28ba-2fa1-11d2-883f-0016d3cca427";
+        assert_eq!(
+            device_subject(id),
+            format!("agileplus.sync.device.{id}")
+        );
+    }
+
+    #[test]
+    fn device_subject_empty_id() {
+        assert_eq!(device_subject(""), "agileplus.sync.device.");
+    }
+
+    #[test]
+    fn event_batch_empty_events_roundtrip() {
+        let batch = EventBatch {
+            sender_device_id: "s".into(),
+            events: vec![],
+        };
+        let json = serde_json::to_string(&batch).unwrap();
+        let back: EventBatch = serde_json::from_str(&json).unwrap();
+        assert!(back.events.is_empty());
+        assert_eq!(back.sender_device_id, "s");
+    }
+
+    #[test]
+    fn event_batch_multiple_events_roundtrip() {
+        let batch = EventBatch {
+            sender_device_id: "dev-a".into(),
+            events: vec![event(1, 1), event(1, 2), event(2, 1)],
+        };
+        let json = serde_json::to_string(&batch).unwrap();
+        let back: EventBatch = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.events.len(), 3);
+        assert_eq!(back.events[1].sequence, 2);
+        assert_eq!(back.events[2].entity_id, 2);
+    }
+
+    #[test]
+    fn event_batch_debug() {
+        let batch = EventBatch {
+            sender_device_id: "dbg".into(),
+            events: vec![],
+        };
+        assert!(format!("{batch:?}").contains("dbg"));
+    }
+
+    #[test]
+    fn replication_result_default_zeroed() {
+        let r = ReplicationResult::default();
+        assert_eq!(r.events_sent, 0);
+        assert_eq!(r.events_received, 0);
+    }
+
+    #[test]
+    fn replication_result_debug() {
+        let r = ReplicationResult {
+            events_sent: 3,
+            events_received: 4,
+        };
+        let s = format!("{r:?}");
+        assert!(s.contains('3'));
+        assert!(s.contains('4'));
+    }
+
+    #[tokio::test]
+    async fn replicate_events_unreachable_peer_errors() {
+        // TEST-NET-1 address: connection attempts fail, exercising the
+        // retry/backoff path and returning a ConnectionFailed error.
+        let p = peer("dev-unreachable", "192.0.2.1");
+        let err = replicate_events("local", &p, vec![event(1, 1)])
+            .await
+            .unwrap_err();
+        match err {
+            SyncError::ConnectionFailed { peer_id, .. } => {
+                assert_eq!(peer_id, "dev-unreachable")
+            }
+            other => panic!("expected ConnectionFailed, got {other:?}"),
+        }
+    }
+}

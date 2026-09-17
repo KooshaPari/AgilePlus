@@ -206,3 +206,127 @@ include_target: true
         assert!(!cfg.include_spans);
     }
 }
+
+#[cfg(test)]
+mod deep_tests {
+    use super::*;
+
+    #[test]
+    fn log_output_default_is_stdout() {
+        assert_eq!(LogOutput::default(), LogOutput::Stdout);
+    }
+
+    #[test]
+    fn log_output_stdout_serde() {
+        let s = serde_yaml::to_string(&LogOutput::Stdout).unwrap();
+        assert_eq!(s.trim(), "stdout");
+    }
+
+    #[test]
+    fn log_output_file_serde_roundtrip() {
+        let out = LogOutput::File(PathBuf::from("/tmp/x.log"));
+        let s = serde_yaml::to_string(&out).unwrap();
+        let back: LogOutput = serde_yaml::from_str(&s).unwrap();
+        assert_eq!(back, out);
+    }
+
+    #[test]
+    fn log_output_both_serde_roundtrip() {
+        let out = LogOutput::Both(PathBuf::from("/var/log/ap.log"));
+        let s = serde_yaml::to_string(&out).unwrap();
+        let back: LogOutput = serde_yaml::from_str(&s).unwrap();
+        assert_eq!(back, out);
+    }
+
+    #[test]
+    fn log_config_default_fields() {
+        let cfg = LogConfig::default();
+        assert_eq!(cfg.level, "info");
+        assert_eq!(cfg.output, LogOutput::Stdout);
+        assert!(cfg.include_spans);
+        assert!(cfg.include_target);
+    }
+
+    #[test]
+    fn log_config_defaults_via_serde_empty_map() {
+        let cfg: LogConfig = serde_yaml::from_str("{}").unwrap();
+        assert_eq!(cfg.level, "info");
+        assert_eq!(cfg.output, LogOutput::Stdout);
+        assert!(cfg.include_spans);
+        assert!(cfg.include_target);
+    }
+
+    #[test]
+    fn log_config_serde_roundtrip_all_fields() {
+        let cfg = LogConfig {
+            level: "warn".into(),
+            output: LogOutput::File(PathBuf::from("/tmp/a.log")),
+            include_spans: false,
+            include_target: false,
+        };
+        let yaml = serde_yaml::to_string(&cfg).unwrap();
+        let back: LogConfig = serde_yaml::from_str(&yaml).unwrap();
+        assert_eq!(back.level, "warn");
+        assert_eq!(back.output, cfg.output);
+        assert!(!back.include_spans);
+        assert!(!back.include_target);
+    }
+
+    #[test]
+    fn log_config_clone_is_equal() {
+        let cfg = LogConfig::default();
+        let cloned = cfg.clone();
+        assert_eq!(cloned.level, cfg.level);
+        assert_eq!(cloned.output, cfg.output);
+    }
+
+    #[test]
+    fn log_error_file_open_display() {
+        let e = LogError::FileOpen {
+            path: PathBuf::from("/nope/x.log"),
+            source: std::io::Error::new(std::io::ErrorKind::NotFound, "gone"),
+        };
+        let s = e.to_string();
+        assert!(s.contains("/nope/x.log"));
+        assert!(s.contains("failed to open log file"));
+    }
+
+    #[test]
+    fn log_error_init_display() {
+        let e = LogError::Init("boom".into());
+        assert!(e.to_string().contains("boom"));
+        assert!(e.to_string().contains("subscriber initialisation failed"));
+    }
+
+    #[test]
+    fn build_filter_uses_config_level() {
+        let cfg = LogConfig {
+            level: "debug".into(),
+            ..LogConfig::default()
+        };
+        // build_filter consults env first; when neither env is set, it must
+        // succeed with the configured level. Regardless, it must not panic.
+        let _ = build_filter(&cfg);
+    }
+
+    #[test]
+    fn build_filter_invalid_level_falls_back() {
+        let cfg = LogConfig {
+            level: "totally-not-a-level".into(),
+            ..LogConfig::default()
+        };
+        let _ = build_filter(&cfg);
+    }
+
+    #[test]
+    fn flush_is_callable() {
+        flush();
+    }
+
+    #[test]
+    fn output_file_with_no_parent_serialises() {
+        let out = LogOutput::File(PathBuf::from("relative.log"));
+        let s = serde_yaml::to_string(&out).unwrap();
+        assert!(s.contains("relative.log"));
+    }
+}

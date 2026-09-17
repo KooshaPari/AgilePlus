@@ -269,3 +269,296 @@ logging:
         assert!(cfg.otlp.is_none());
     }
 }
+
+#[cfg(test)]
+mod deep_tests {
+    use super::*;
+    use std::io::Write;
+
+    fn write_yaml(yaml: &str) -> tempfile::NamedTempFile {
+        let mut f = tempfile::NamedTempFile::new().unwrap();
+        write!(f, "{yaml}").unwrap();
+        f.flush().unwrap();
+        f
+    }
+
+    // ── OtlpProtocol serde ──────────────────────────────────────────────────
+
+    #[test]
+    fn otlp_protocol_default_is_grpc() {
+        assert_eq!(OtlpProtocol::default(), OtlpProtocol::Grpc);
+    }
+
+    #[test]
+    fn otlp_protocol_serde_roundtrip_grpc() {
+        let s = serde_yaml::to_string(&OtlpProtocol::Grpc).unwrap();
+        assert_eq!(s.trim(), "grpc");
+        let p: OtlpProtocol = serde_yaml::from_str("grpc").unwrap();
+        assert_eq!(p, OtlpProtocol::Grpc);
+    }
+
+    #[test]
+    fn otlp_protocol_serde_roundtrip_http() {
+        let s = serde_yaml::to_string(&OtlpProtocol::Http).unwrap();
+        assert_eq!(s.trim(), "http");
+        let p: OtlpProtocol = serde_yaml::from_str("http").unwrap();
+        assert_eq!(p, OtlpProtocol::Http);
+    }
+
+    #[test]
+    fn otlp_config_defaults_applied() {
+        let yaml = r#"
+endpoint: "http://localhost:4317"
+"#;
+        let otlp: OtlpConfig = serde_yaml::from_str(yaml).unwrap();
+        assert_eq!(otlp.protocol, OtlpProtocol::Grpc);
+        assert_eq!(otlp.timeout_ms, 5_000);
+        assert_eq!(otlp.export_interval_ms, 60_000);
+        assert!(otlp.headers.is_empty());
+    }
+
+    #[test]
+    fn otlp_config_headers_parse() {
+        let yaml = r#"
+endpoint: "http://localhost:4317"
+headers:
+  authorization: "Bearer xyz"
+  x-tenant: "acme"
+"#;
+        let otlp: OtlpConfig = serde_yaml::from_str(yaml).unwrap();
+        assert_eq!(otlp.headers.get("authorization").unwrap(), "Bearer xyz");
+        assert_eq!(otlp.headers.get("x-tenant").unwrap(), "acme");
+        assert_eq!(otlp.headers.len(), 2);
+    }
+
+    #[test]
+    fn otlp_config_timeout_override() {
+        let yaml = r#"
+endpoint: "http://localhost:4317"
+timeout_ms: 123
+export_interval_ms: 456
+"#;
+        let otlp: OtlpConfig = serde_yaml::from_str(yaml).unwrap();
+        assert_eq!(otlp.timeout_ms, 123);
+        assert_eq!(otlp.export_interval_ms, 456);
+    }
+
+    // ── SamplingConfig ──────────────────────────────────────────────────────
+
+    #[test]
+    fn sampling_default_ratio_is_one() {
+        assert_eq!(SamplingConfig::default().trace_ratio, 1.0);
+    }
+
+    #[test]
+    fn sampling_ratio_zero_valid() {
+        let f = write_yaml("sampling:\n  trace_ratio: 0.0\n");
+        let cfg = TelemetryConfig::load_from(f.path()).unwrap();
+        assert_eq!(cfg.sampling.trace_ratio, 0.0);
+    }
+
+    #[test]
+    fn sampling_ratio_one_valid() {
+        let f = write_yaml("sampling:\n  trace_ratio: 1.0\n");
+        let cfg = TelemetryConfig::load_from(f.path()).unwrap();
+        assert_eq!(cfg.sampling.trace_ratio, 1.0);
+    }
+
+    #[test]
+    fn sampling_ratio_slightly_above_one_invalid() {
+        let f = write_yaml("sampling:\n  trace_ratio: 1.0001\n");
+        let err = TelemetryConfig::load_from(f.path()).unwrap_err();
+        assert!(matches!(err, ConfigError::Validation(_)));
+    }
+
+    #[test]
+    fn sampling_ratio_negative_invalid() {
+        let f = write_yaml("sampling:\n  trace_ratio: -0.1\n");
+        let err = TelemetryConfig::load_from(f.path()).unwrap_err();
+        assert!(matches!(err, ConfigError::Validation(_)));
+    }
+
+    #[test]
+    fn sampling_ratio_midpoint_valid() {
+        let f = write_yaml("sampling:\n  trace_ratio: 0.5\n");
+        let cfg = TelemetryConfig::load_from(f.path()).unwrap();
+        assert!((cfg.sampling.trace_ratio - 0.5).abs() < f64::EPSILON);
+    }
+
+    // ── OTLP validation ─────────────────────────────────────────────────────
+
+    #[test]
+    fn otlp_invalid_url_rejected() {
+        let f = write_yaml("otlp:\n  endpoint: \"not a url\"\n");
+        let err = TelemetryConfig::load_from(f.path()).unwrap_err();
+        assert!(matches!(err, ConfigError::Validation(_)));
+    }
+
+    #[test]
+    fn otlp_empty_endpoint_rejected() {
+        let f = write_yaml("otlp:\n  endpoint: \"\"\n");
+        let err = TelemetryConfig::load_from(f.path()).unwrap_err();
+        assert!(matches!(err, ConfigError::Validation(_)));
+    }
+
+    #[test]
+    fn otlp_zero_timeout_rejected() {
+        let f = write_yaml("otlp:\n  endpoint: \"http://localhost:4317\"\n  timeout_ms: 0\n");
+        let err = TelemetryConfig::load_from(f.path()).unwrap_err();
+        assert!(matches!(err, ConfigError::Validation(_)));
+    }
+
+    #[test]
+    fn otlp_https_endpoint_accepted() {
+        let f = write_yaml("otlp:\n  endpoint: \"https://otlp.example.com:4317\"\n");
+        let cfg = TelemetryConfig::load_from(f.path()).unwrap();
+        assert!(cfg.otlp.is_some());
+    }
+
+    #[test]
+    fn default_config_yaml_roundtrips_and_validates() {
+        let f = write_yaml(DEFAULT_CONFIG_YAML);
+        let cfg = TelemetryConfig::load_from(f.path()).unwrap();
+        assert!(cfg.otlp.is_some());
+        let otlp = cfg.otlp.unwrap();
+        assert_eq!(otlp.endpoint, "http://localhost:4317");
+        assert_eq!(otlp.protocol, OtlpProtocol::Grpc);
+        assert!(otlp.headers.is_empty());
+        assert_eq!(otlp.timeout_ms, 5_000);
+        assert_eq!(otlp.export_interval_ms, 60_000);
+        assert_eq!(cfg.sampling.trace_ratio, 1.0);
+    }
+
+    #[test]
+    fn default_config_yaml_includes_logging_section() {
+        let f = write_yaml(DEFAULT_CONFIG_YAML);
+        let cfg = TelemetryConfig::load_from(f.path()).unwrap();
+        assert_eq!(cfg.logging.level, "info");
+        assert!(cfg.logging.include_spans);
+        assert!(cfg.logging.include_target);
+    }
+
+    #[test]
+    fn empty_yaml_uses_defaults() {
+        let f = write_yaml("{}\n");
+        let cfg = TelemetryConfig::load_from(f.path()).unwrap();
+        assert!(cfg.otlp.is_none());
+        assert_eq!(cfg.sampling.trace_ratio, 1.0);
+        assert_eq!(cfg.logging.level, "info");
+    }
+
+    #[test]
+    fn unknown_fields_are_ignored() {
+        let f = write_yaml("some_future_field: 42\nlogging:\n  level: debug\n");
+        let cfg = TelemetryConfig::load_from(f.path()).unwrap();
+        assert_eq!(cfg.logging.level, "debug");
+    }
+
+    #[test]
+    fn config_serde_roundtrip() {
+        let cfg = TelemetryConfig {
+            otlp: Some(OtlpConfig {
+                endpoint: "http://localhost:4317".into(),
+                protocol: OtlpProtocol::Http,
+                headers: HashMap::new(),
+                timeout_ms: 111,
+                export_interval_ms: 222,
+            }),
+            logging: LogConfig::default(),
+            sampling: SamplingConfig { trace_ratio: 0.25 },
+        };
+        let yaml = serde_yaml::to_string(&cfg).unwrap();
+        let back: TelemetryConfig = serde_yaml::from_str(&yaml).unwrap();
+        assert_eq!(back.sampling.trace_ratio, 0.25);
+        assert_eq!(back.otlp.as_ref().unwrap().timeout_ms, 111);
+        assert_eq!(back.otlp.unwrap().protocol, OtlpProtocol::Http);
+    }
+
+    #[test]
+    fn telemetry_config_default_has_no_otlp() {
+        let cfg = TelemetryConfig::default();
+        assert!(cfg.otlp.is_none());
+        assert_eq!(cfg.sampling.trace_ratio, 1.0);
+    }
+
+    // ── ConfigError display ─────────────────────────────────────────────────
+
+    #[test]
+    fn config_error_validation_display() {
+        let e = ConfigError::Validation("bad".into());
+        assert!(e.to_string().contains("bad"));
+        assert!(e.to_string().contains("invalid config"));
+    }
+
+    #[test]
+    fn config_error_io_from_missing_file() {
+        let e = TelemetryConfig::load_from(Path::new("/definitely/not/here/otel.yaml")).unwrap_err();
+        assert!(matches!(e, ConfigError::Io(_)));
+        assert!(e.to_string().contains("IO error"));
+    }
+
+    #[test]
+    fn config_error_yaml_display() {
+        let e = ConfigError::Yaml(serde_yaml::from_str::<TelemetryConfig>(": bad {").unwrap_err());
+        assert!(e.to_string().contains("YAML parse error"));
+    }
+
+    #[test]
+    fn default_config_path_ends_with_expected_suffix() {
+        // default_config_path is private but reachable from this module.
+        let p = default_config_path();
+        assert!(p.ends_with(".agileplus/otel-config.yaml"));
+    }
+
+    #[test]
+    fn load_missing_default_path_returns_ok_or_err_without_panic() {
+        // We can't control the home dir; just ensure it does not panic and
+        // returns a Result.
+        let _ = TelemetryConfig::load();
+    }
+
+    #[test]
+    fn logs_section_parses_with_file_output() {
+        let yaml = r#"
+logging:
+  level: "trace"
+  output: !file /tmp/agileplus-test.log
+  include_spans: false
+  include_target: false
+"#;
+        let f = write_yaml(yaml);
+        let cfg = TelemetryConfig::load_from(f.path()).unwrap();
+        assert_eq!(cfg.logging.level, "trace");
+        assert!(!cfg.logging.include_spans);
+        assert!(!cfg.logging.include_target);
+    }
+
+    #[test]
+    fn otlp_headers_serde_roundtrip() {
+        let mut headers = HashMap::new();
+        headers.insert("a".to_string(), "1".to_string());
+        let otlp = OtlpConfig {
+            endpoint: "http://localhost:4317".into(),
+            protocol: OtlpProtocol::Grpc,
+            headers,
+            timeout_ms: 5,
+            export_interval_ms: 6,
+        };
+        let yaml = serde_yaml::to_string(&otlp).unwrap();
+        let back: OtlpConfig = serde_yaml::from_str(&yaml).unwrap();
+        assert_eq!(back.headers.get("a").unwrap(), "1");
+    }
+
+    #[test]
+    fn timeout_defaults_helpers() {
+        assert_eq!(default_timeout_ms(), 5_000);
+        assert_eq!(default_export_interval_ms(), 60_000);
+        assert_eq!(default_trace_ratio(), 1.0);
+    }
+
+    #[test]
+    fn otlp_protocol_lowercase_serde_rejects_uppercase() {
+        let r: Result<OtlpProtocol, _> = serde_yaml::from_str("GRPC");
+        assert!(r.is_err());
+    }
+}

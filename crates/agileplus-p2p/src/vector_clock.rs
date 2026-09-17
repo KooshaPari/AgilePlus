@@ -291,3 +291,305 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+mod deep_tests {
+    use super::*;
+    use agileplus_domain::domain::event::Event;
+    use agileplus_events::store::EventError;
+    use async_trait::async_trait;
+
+    #[derive(Default)]
+    struct EmptyEventStore {
+        events: std::sync::Mutex<Vec<Event>>,
+    }
+
+    #[async_trait]
+    impl EventStore for EmptyEventStore {
+        async fn append(&self, event: &Event) -> Result<i64, EventError> {
+            self.events.lock().unwrap().push(event.clone());
+            Ok(event.sequence)
+        }
+
+        async fn get_events(
+            &self,
+            entity_type: &str,
+            entity_id: i64,
+        ) -> Result<Vec<Event>, EventError> {
+            Ok(self
+                .events
+                .lock()
+                .unwrap()
+                .iter()
+                .filter(|e| e.entity_type == entity_type && e.entity_id == entity_id)
+                .cloned()
+                .collect())
+        }
+
+        async fn get_events_since(
+            &self,
+            entity_type: &str,
+            entity_id: i64,
+            sequence: i64,
+        ) -> Result<Vec<Event>, EventError> {
+            Ok(self
+                .events
+                .lock()
+                .unwrap()
+                .iter()
+                .filter(|e| {
+                    e.entity_type == entity_type
+                        && e.entity_id == entity_id
+                        && e.sequence > sequence
+                })
+                .cloned()
+                .collect())
+        }
+
+        async fn get_events_by_range(
+            &self,
+            _entity_type: &str,
+            _entity_id: i64,
+            _from: chrono::DateTime<chrono::Utc>,
+            _to: chrono::DateTime<chrono::Utc>,
+        ) -> Result<Vec<Event>, EventError> {
+            Ok(Vec::new())
+        }
+
+        async fn get_latest_sequence(
+            &self,
+            entity_type: &str,
+            entity_id: i64,
+        ) -> Result<i64, EventError> {
+            Ok(self
+                .events
+                .lock()
+                .unwrap()
+                .iter()
+                .filter(|e| e.entity_type == entity_type && e.entity_id == entity_id)
+                .map(|e| e.sequence)
+                .max()
+                .unwrap_or(0))
+        }
+    }
+
+    fn peer(id: &str) -> PeerInfo {
+        PeerInfo {
+            device_id: id.to_string(),
+            hostname: format!("{id}.tailnet"),
+            tailscale_ip: "127.0.0.1".to_string(),
+            status: crate::discovery::PeerStatus::Online,
+        }
+    }
+
+    #[test]
+    fn new_vector_has_device_id_and_no_entries() {
+        let v = SyncVector::new("dev-x");
+        assert_eq!(v.device_id, "dev-x");
+        assert!(v.entries.is_empty());
+    }
+
+    #[test]
+    fn new_accepts_owned_string() {
+        let v = SyncVector::new(String::from("dev-y"));
+        assert_eq!(v.device_id, "dev-y");
+    }
+
+    #[test]
+    fn advance_creates_then_updates() {
+        let mut v = SyncVector::new("d");
+        assert_eq!(v.get("A", "1"), 0);
+        v.advance("A", "1", 1);
+        assert_eq!(v.get("A", "1"), 1);
+        v.advance("A", "1", 9);
+        assert_eq!(v.get("A", "1"), 9);
+    }
+
+    #[test]
+    fn advance_zero_is_recorded() {
+        let mut v = SyncVector::new("d");
+        v.advance("A", "1", 0);
+        assert_eq!(v.get("A", "1"), 0);
+        assert!(v.entries.contains_key(&("A".to_string(), "1".to_string())));
+    }
+
+    #[test]
+    fn advance_distinct_keys_are_independent() {
+        let mut v = SyncVector::new("d");
+        v.advance("A", "1", 5);
+        v.advance("A", "2", 7);
+        v.advance("B", "1", 3);
+        assert_eq!(v.get("A", "1"), 5);
+        assert_eq!(v.get("A", "2"), 7);
+        assert_eq!(v.get("B", "1"), 3);
+    }
+
+    #[test]
+    fn merge_into_empty_is_identity() {
+        let mut a = SyncVector::new("a");
+        let mut b = SyncVector::new("b");
+        b.advance("A", "1", 4);
+        a.merge(&b);
+        assert_eq!(a.get("A", "1"), 4);
+    }
+
+    #[test]
+    fn merge_equal_values_keeps_value() {
+        let mut a = SyncVector::new("a");
+        a.advance("A", "1", 4);
+        let mut b = SyncVector::new("b");
+        b.advance("A", "1", 4);
+        a.merge(&b);
+        assert_eq!(a.get("A", "1"), 4);
+    }
+
+    #[test]
+    fn merge_does_not_lose_local_when_peer_behind() {
+        let mut a = SyncVector::new("a");
+        a.advance("A", "1", 10);
+        let mut b = SyncVector::new("b");
+        b.advance("A", "1", 2);
+        a.merge(&b);
+        assert_eq!(a.get("A", "1"), 10);
+    }
+
+    #[test]
+    fn merge_is_associative_on_max() {
+        let mut a = SyncVector::new("a");
+        a.advance("A", "1", 1);
+        let mut b = SyncVector::new("b");
+        b.advance("A", "1", 5);
+        let mut c = SyncVector::new("c");
+        c.advance("A", "1", 3);
+
+        let mut left = a.clone();
+        left.merge(&b);
+        left.merge(&c);
+
+        let mut bc = b.clone();
+        bc.merge(&c);
+        let mut right = a.clone();
+        right.merge(&bc);
+
+        assert_eq!(left.get("A", "1"), right.get("A", "1"));
+    }
+
+    #[test]
+    fn merge_idempotent() {
+        let mut a = SyncVector::new("a");
+        a.advance("A", "1", 5);
+        let b = a.clone();
+        a.merge(&b);
+        a.merge(&b);
+        assert_eq!(a.get("A", "1"), 5);
+        assert_eq!(a.entries.len(), 1);
+    }
+
+    #[test]
+    fn sync_vector_json_requires_string_keys() {
+        // `SyncVector::entries` is keyed by `(String, String)`, and serde_json
+        // cannot encode non-string map keys. This documents the limitation: the
+        // export path therefore serialises vectors as `serde_json::Value`.
+        let mut v = SyncVector::new("d1");
+        v.advance("Feature", "1", 42);
+        assert!(
+            serde_json::to_string(&v).is_err(),
+            "tuple-keyed map must not be JSON-encodable"
+        );
+    }
+
+    #[test]
+    fn sync_vector_default_is_empty() {
+        let v = SyncVector::default();
+        assert!(v.entries.is_empty());
+        assert!(v.device_id.is_empty());
+    }
+
+    #[test]
+    fn compute_missing_multiple_entities() {
+        let mut local = SyncVector::new("l");
+        local.advance("A", "1", 5);
+        local.advance("B", "2", 9);
+        local.advance("C", "3", 1);
+        let mut peer = SyncVector::new("p");
+        peer.advance("A", "1", 3);
+        peer.advance("C", "3", 1);
+
+        let mut missing = compute_missing_locally(&local, &peer);
+        missing.sort();
+        assert_eq!(missing.len(), 2);
+        // B/2: peer unknown (0) -> 9
+        assert!(missing.contains(&("B".to_string(), "2".to_string(), 0, 9)));
+        assert!(missing.contains(&("A".to_string(), "1".to_string(), 3, 5)));
+    }
+
+    #[test]
+    fn compute_missing_empty_local() {
+        let local = SyncVector::new("l");
+        let mut peer = SyncVector::new("p");
+        peer.advance("A", "1", 5);
+        assert!(compute_missing_locally(&local, &peer).is_empty());
+    }
+
+    #[test]
+    fn compute_missing_unknown_peer_key_is_treated_as_zero() {
+        let mut local = SyncVector::new("l");
+        local.advance("New", "77", 3);
+        let peer = SyncVector::new("p");
+        let missing = compute_missing_locally(&local, &peer);
+        assert_eq!(missing, vec![("New".into(), "77".into(), 0, 3)]);
+    }
+
+    #[test]
+    fn sync_result_default_is_zeroed() {
+        let r = SyncResult::default();
+        assert_eq!(r.events_sent, 0);
+        assert_eq!(r.events_received, 0);
+        assert_eq!(r.conflicts_detected, 0);
+        assert!(r.updated_vector.entries.is_empty());
+    }
+
+    #[tokio::test]
+    async fn sync_with_peer_vectors_merges_vector() {
+        let store = EmptyEventStore::default();
+        let mut local = SyncVector::new("dev-local");
+        local.advance("Feature", "1", 4);
+        let mut peer_vec = SyncVector::new("dev-peer");
+        peer_vec.advance("Feature", "1", 2);
+        peer_vec.advance("Epic", "9", 6);
+
+        let result = sync_with_peer_vectors(
+            "dev-local",
+            &peer("dev-peer"),
+            &local,
+            &peer_vec,
+            &store,
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(result.updated_vector.get("Feature", "1"), 4);
+        assert_eq!(result.updated_vector.get("Epic", "9"), 6);
+        assert_eq!(result.conflicts_detected, 0);
+    }
+
+    #[tokio::test]
+    async fn sync_with_peer_vectors_no_events_to_send() {
+        let store = EmptyEventStore::default();
+        let local = SyncVector::new("dev-local");
+        let peer_vec = SyncVector::new("dev-peer");
+        let result =
+            sync_with_peer_vectors("dev-local", &peer("dev-peer"), &local, &peer_vec, &store)
+                .await
+                .unwrap();
+        assert_eq!(result.events_sent, 0);
+    }
+
+    #[tokio::test]
+    async fn sync_with_peer_empty_vectors() {
+        let store = EmptyEventStore::default();
+        let local = SyncVector::new("l");
+        let result = sync_with_peer("l", &peer("p"), &local, &store).await.unwrap();
+        assert_eq!(result.updated_vector.device_id, "l");
+    }
+}

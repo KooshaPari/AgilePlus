@@ -11,6 +11,9 @@
 pub mod device;
 pub mod discovery;
 pub mod error;
+pub mod export;
+pub mod git_merge;
+pub mod import;
 pub mod replication;
 pub mod vector_clock;
 

@@ -157,3 +157,135 @@ fn collect_evidence_recursive(dir: &Path, paths: &mut Vec<String>) -> Result<(),
     }
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn repo_root() -> std::path::PathBuf {
+        std::path::PathBuf::from("/repo")
+    }
+
+    #[test]
+    fn full_path_joins_under_kitty_specs() {
+        let p = artifact_full_path(&repo_root(), "001-feature", "spec.md").unwrap();
+        assert!(p.ends_with("kitty-specs/001-feature/spec.md"));
+    }
+
+    #[test]
+    fn full_path_allows_nested_relative_paths() {
+        let p = artifact_full_path(&repo_root(), "001-feature", "evidence/logs/run.txt").unwrap();
+        assert!(p.ends_with("kitty-specs/001-feature/evidence/logs/run.txt"));
+    }
+
+    #[test]
+    fn full_path_accepts_empty_relative_path() {
+        let p = artifact_full_path(&repo_root(), "001-feature", "").unwrap();
+        assert!(p.ends_with("kitty-specs/001-feature"));
+    }
+
+    #[test]
+    fn full_path_rejects_parent_traversal() {
+        let err = artifact_full_path(&repo_root(), "001-feature", "../secret.txt").unwrap_err();
+        assert!(format!("{err}").contains("traversal"));
+    }
+
+    #[test]
+    fn full_path_rejects_deep_traversal() {
+        let err =
+            artifact_full_path(&repo_root(), "001-feature", "../../etc/passwd").unwrap_err();
+        assert!(format!("{err}").contains("traversal"));
+    }
+
+    #[test]
+    fn full_path_rejects_traversal_before_re_entry() {
+        // `../x` pops the slug dir; the result is still under kitty-specs but
+        // outside the feature directory, so it must be rejected.
+        let err = artifact_full_path(&repo_root(), "001-feature", "../other/spec.md").unwrap_err();
+        assert!(format!("{err}").contains("traversal"));
+    }
+
+    #[test]
+    fn full_path_traversal_returning_under_slug_is_allowed() {
+        // `sub/../spec.md` normalises back inside the slug directory.
+        let p = artifact_full_path(&repo_root(), "001-feature", "sub/../spec.md").unwrap();
+        assert!(p.ends_with("kitty-specs/001-feature/spec.md"));
+    }
+
+    #[test]
+    fn artifact_exists_is_false_for_missing_file() {
+        let dir = tempfile::tempdir().unwrap();
+        let adapter = GitVcsAdapter::new(dir.path().to_path_buf());
+        assert!(!artifact_exists(&adapter, "001-feature", "spec.md").unwrap());
+    }
+
+    #[test]
+    fn artifact_exists_is_true_for_present_file() {
+        let dir = tempfile::tempdir().unwrap();
+        let base = dir.path().join("kitty-specs/001-feature");
+        std::fs::create_dir_all(&base).unwrap();
+        std::fs::write(base.join("spec.md"), "content").unwrap();
+        let adapter = GitVcsAdapter::new(dir.path().to_path_buf());
+        assert!(artifact_exists(&adapter, "001-feature", "spec.md").unwrap());
+    }
+
+    #[test]
+    fn read_artifact_returns_contents() {
+        let dir = tempfile::tempdir().unwrap();
+        let base = dir.path().join("kitty-specs/001-feature");
+        std::fs::create_dir_all(&base).unwrap();
+        std::fs::write(base.join("spec.md"), "hello").unwrap();
+        let adapter = GitVcsAdapter::new(dir.path().to_path_buf());
+        assert_eq!(read_artifact(&adapter, "001-feature", "spec.md").unwrap(), "hello");
+    }
+
+    #[test]
+    fn read_artifact_missing_is_not_found() {
+        let dir = tempfile::tempdir().unwrap();
+        let adapter = GitVcsAdapter::new(dir.path().to_path_buf());
+        let err = read_artifact(&adapter, "001-feature", "nope.md").unwrap_err();
+        assert!(matches!(err, DomainError::NotFound(_)));
+    }
+
+    #[test]
+    fn read_artifact_rejects_traversal() {
+        let dir = tempfile::tempdir().unwrap();
+        let adapter = GitVcsAdapter::new(dir.path().to_path_buf());
+        assert!(read_artifact(&adapter, "001-feature", "../../secret").is_err());
+    }
+
+    #[test]
+    fn scan_feature_artifacts_empty_feature_has_no_files() {
+        let dir = tempfile::tempdir().unwrap();
+        let adapter = GitVcsAdapter::new(dir.path().to_path_buf());
+        let arts = scan_feature_artifacts(&adapter, "missing-feature").unwrap();
+        assert!(arts.meta_json.is_none());
+        assert!(arts.audit_chain.is_none());
+        assert!(arts.evidence_paths.is_empty());
+    }
+
+    #[test]
+    fn scan_feature_artifacts_reads_meta_and_evidence() {
+        let dir = tempfile::tempdir().unwrap();
+        let base = dir.path().join("kitty-specs/001-feature");
+        std::fs::create_dir_all(base.join("evidence/nested")).unwrap();
+        std::fs::write(base.join("meta.json"), "{}").unwrap();
+        std::fs::write(base.join("evidence/nested/log.txt"), "x").unwrap();
+        std::fs::write(base.join("evidence/run.log"), "y").unwrap();
+        let adapter = GitVcsAdapter::new(dir.path().to_path_buf());
+        let arts = scan_feature_artifacts(&adapter, "001-feature").unwrap();
+        assert_eq!(arts.meta_json.as_deref(), Some("{}"));
+        assert_eq!(arts.evidence_paths.len(), 2);
+    }
+
+    #[test]
+    fn scan_feature_artifacts_reads_audit_chain() {
+        let dir = tempfile::tempdir().unwrap();
+        let base = dir.path().join("kitty-specs/001-feature/audit");
+        std::fs::create_dir_all(&base).unwrap();
+        std::fs::write(base.join("chain.jsonl"), "{}\n").unwrap();
+        let adapter = GitVcsAdapter::new(dir.path().to_path_buf());
+        let arts = scan_feature_artifacts(&adapter, "001-feature").unwrap();
+        assert_eq!(arts.audit_chain.as_deref(), Some("{}\n"));
+    }
+}

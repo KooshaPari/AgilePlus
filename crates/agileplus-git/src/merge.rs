@@ -112,3 +112,154 @@ impl GitVcsAdapter {
         merge_result
     }
 }
+
+#[cfg(test)]
+mod deep_tests {
+    use super::*;
+    use std::path::PathBuf;
+    use std::process::Command as StdCommand;
+    use tempfile::tempdir;
+
+    fn git(dir: &Path, args: &[&str]) {
+        let out = StdCommand::new("git")
+            .args(args)
+            .current_dir(dir)
+            .output()
+            .unwrap();
+        assert!(
+            out.status.success(),
+            "git {args:?} failed: {}",
+            String::from_utf8_lossy(&out.stderr)
+        );
+    }
+
+    fn make_repo() -> (tempfile::TempDir, PathBuf) {
+        let dir = tempdir().unwrap();
+        let path = dir.path().to_path_buf();
+        git(&path, &["init", "-q", "-b", "main"]);
+        git(&path, &["config", "user.email", "t@example.com"]);
+        git(&path, &["config", "user.name", "tester"]);
+        std::fs::write(path.join("f.txt"), "base\n").unwrap();
+        git(&path, &["add", "."]);
+        git(&path, &["commit", "-q", "-m", "init"]);
+        (dir, path)
+    }
+
+    fn commit_file(dir: &Path, name: &str, content: &str, msg: &str) {
+        std::fs::write(dir.join(name), content).unwrap();
+        git(dir, &["add", name]);
+        git(dir, &["commit", "-q", "-m", msg]);
+    }
+
+    #[test]
+    fn unresolved_conflicts_in_non_repo_is_empty() {
+        let tmp = tempdir().unwrap();
+        let out = GitVcsAdapter::unresolved_conflicts_in(tmp.path());
+        assert!(out.is_empty());
+    }
+
+    #[test]
+    fn unresolved_conflicts_in_clean_repo_is_empty() {
+        let (_d, path) = make_repo();
+        assert!(GitVcsAdapter::unresolved_conflicts_in(&path).is_empty());
+    }
+
+    #[test]
+    fn merge_in_dir_success_sets_commit_and_no_conflicts() {
+        let (_d, path) = make_repo();
+        git(&path, &["checkout", "-q", "-b", "feature"]);
+        commit_file(&path, "feature.txt", "feat\n", "add feature");
+        git(&path, &["checkout", "-q", "main"]);
+
+        let adapter = GitVcsAdapter::new(path.clone());
+        let result = adapter.merge_in_dir(&path, "feature", "main").unwrap();
+        assert!(result.success);
+        assert!(result.conflicts.is_empty());
+        assert!(result.commit.is_some());
+        assert!(result.merged_commit.is_some());
+        assert!(result.message.is_some());
+    }
+
+    #[test]
+    fn merge_in_dir_conflict_reports_paths() {
+        let (_d, path) = make_repo();
+        git(&path, &["checkout", "-q", "-b", "feature"]);
+        commit_file(&path, "f.txt", "feature side\n", "feature edit");
+        git(&path, &["checkout", "-q", "main"]);
+        commit_file(&path, "f.txt", "main side\n", "main edit");
+
+        let adapter = GitVcsAdapter::new(path.clone());
+        let result = adapter.merge_in_dir(&path, "feature", "main").unwrap();
+        assert!(!result.success);
+        assert!(!result.conflicts.is_empty());
+        assert_eq!(result.conflicts[0].path, "f.txt");
+        assert!(result.commit.is_none());
+        // Clean up the conflicted merge state so the temp dir can be removed.
+        let _ = StdCommand::new("git")
+            .args(["merge", "--abort"])
+            .current_dir(&path)
+            .output();
+    }
+
+    #[test]
+    fn merge_in_dir_up_to_date_still_succeeds() {
+        let (_d, path) = make_repo();
+        git(&path, &["branch", "feature"]);
+        let adapter = GitVcsAdapter::new(path.clone());
+        // feature is an ancestor of main, so merge is a no-op success.
+        let result = adapter.merge_in_dir(&path, "feature", "main").unwrap();
+        assert!(result.success);
+    }
+
+    #[test]
+    fn merge_in_dir_missing_source_returns_failure_result() {
+        let (_d, path) = make_repo();
+        let adapter = GitVcsAdapter::new(path.clone());
+        let result = adapter
+            .merge_in_dir(&path, "does-not-exist", "main")
+            .unwrap();
+        assert!(!result.success);
+    }
+
+    #[test]
+    fn merge_via_temp_worktree_succeeds_for_free_branch() {
+        let (_d, path) = make_repo();
+        git(&path, &["checkout", "-q", "-b", "feature"]);
+        commit_file(&path, "x.txt", "x\n", "feature work");
+        git(&path, &["checkout", "-q", "main"]);
+        git(&path, &["branch", "release"]);
+
+        let adapter = GitVcsAdapter::new(path);
+        let result = adapter.merge_via_temp_worktree("feature", "release").unwrap();
+        assert!(result.success);
+    }
+
+    #[test]
+    fn parse_conflicts_via_merge_module_works() {
+        // Sanity: the shared parser is reachable from merge.rs.
+        let out = GitVcsAdapter::parse_conflicts("CONFLICT (content): Merge conflict in a.rs\n");
+        assert_eq!(out.len(), 1);
+    }
+
+    #[test]
+    fn merge_via_temp_worktree_cleans_up_on_success() {
+        let (_d, path) = make_repo();
+        git(&path, &["checkout", "-q", "-b", "feature"]);
+        commit_file(&path, "y.txt", "y\n", "work");
+        git(&path, &["checkout", "-q", "main"]);
+        git(&path, &["branch", "release2"]);
+
+        let adapter = GitVcsAdapter::new(path.clone());
+        adapter.merge_via_temp_worktree("feature", "release2").unwrap();
+        let raw = std::process::Command::new("git")
+            .args(["worktree", "list", "--porcelain"])
+            .current_dir(&path)
+            .output()
+            .unwrap();
+        let list = String::from_utf8_lossy(&raw.stdout);
+        assert!(
+            !list.contains("agileplus-ship-"),
+            "temporary ship worktree should be removed: {list}"
+        );
+    }
+}

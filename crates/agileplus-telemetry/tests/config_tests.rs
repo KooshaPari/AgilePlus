@@ -561,18 +561,3 @@ logging:
     assert_eq!(cfg.logging.level, "warn");
     assert!(!cfg.logging.include_target);
 }
-
-// ---------------------------------------------------------------------------
-// Check that adapter.rs inline tests file exists (adapter/tests.rs)
-// ---------------------------------------------------------------------------
-
-#[test]
-fn adapter_tests_file_exists_and_compiles() {
-    // This test just ensures the tests module in adapter.rs compiles.
-    // The real adapter tests are in adapter::tests::* (inline).
-    let path = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("src")
-        .join("adapter")
-        .join("tests.rs");
-    assert!(path.exists(), "adapter/tests.rs should exist");
-}

@@ -129,3 +129,185 @@ impl GitSnapshot {
         })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::process::Command;
+
+    fn git(dir: &std::path::Path, args: &[&str]) {
+        let out = Command::new("git")
+            .args(args)
+            .current_dir(dir)
+            .output()
+            .expect("spawn git");
+        assert!(
+            out.status.success(),
+            "git {:?} failed: {}",
+            args,
+            String::from_utf8_lossy(&out.stderr)
+        );
+    }
+
+    fn init_repo() -> tempfile::TempDir {
+        let dir = tempfile::tempdir().unwrap();
+        git(dir.path(), &["init", "-q", "-b", "main"]);
+        git(dir.path(), &["config", "user.email", "t@example.com"]);
+        git(dir.path(), &["config", "user.name", "tester"]);
+        std::fs::write(dir.path().join("a.txt"), "hello\n").unwrap();
+        git(dir.path(), &["add", "."]);
+        git(dir.path(), &["commit", "-q", "-m", "init"]);
+        dir
+    }
+
+    #[test]
+    fn capture_on_non_repo_errors() {
+        let dir = tempfile::tempdir().unwrap();
+        assert!(GitSnapshot::capture(dir.path()).is_err());
+    }
+
+    #[test]
+    fn capture_reports_head_commit_and_branch() {
+        let dir = init_repo();
+        let snap = GitSnapshot::capture(dir.path()).unwrap();
+        assert_eq!(snap.branch.as_deref(), Some("main"));
+        assert!(!snap.is_detached);
+        assert_eq!(snap.head_commit.len(), 40);
+        assert!(snap.head_commit.chars().all(|c| c.is_ascii_hexdigit()));
+    }
+
+    #[test]
+    fn capture_clean_repo_has_no_dirty_files() {
+        let dir = init_repo();
+        let snap = GitSnapshot::capture(dir.path()).unwrap();
+        assert!(snap.dirty_files.is_empty(), "got {:?}", snap.dirty_files);
+    }
+
+    #[test]
+    fn capture_detects_modified_file() {
+        let dir = init_repo();
+        std::fs::write(dir.path().join("a.txt"), "changed\n").unwrap();
+        let snap = GitSnapshot::capture(dir.path()).unwrap();
+        let modified: Vec<_> = snap
+            .dirty_files
+            .iter()
+            .filter(|f| matches!(f.status, FileStatus::Modified))
+            .collect();
+        assert_eq!(modified.len(), 1);
+        assert_eq!(modified[0].path, "a.txt");
+    }
+
+    #[test]
+    fn capture_detects_untracked_file() {
+        let dir = init_repo();
+        std::fs::write(dir.path().join("new.txt"), "x\n").unwrap();
+        let snap = GitSnapshot::capture(dir.path()).unwrap();
+        assert!(snap
+            .dirty_files
+            .iter()
+            .any(|f| f.path == "new.txt" && matches!(f.status, FileStatus::Untracked)));
+    }
+
+    #[test]
+    fn capture_detects_added_file() {
+        let dir = init_repo();
+        std::fs::write(dir.path().join("new.txt"), "x\n").unwrap();
+        git(dir.path(), &["add", "new.txt"]);
+        let snap = GitSnapshot::capture(dir.path()).unwrap();
+        assert!(snap
+            .dirty_files
+            .iter()
+            .any(|f| f.path == "new.txt" && matches!(f.status, FileStatus::Added)));
+    }
+
+    #[test]
+    fn capture_detects_deleted_file() {
+        let dir = init_repo();
+        std::fs::remove_file(dir.path().join("a.txt")).unwrap();
+        let snap = GitSnapshot::capture(dir.path()).unwrap();
+        assert!(snap
+            .dirty_files
+            .iter()
+            .any(|f| f.path == "a.txt" && matches!(f.status, FileStatus::Deleted)));
+    }
+
+    #[test]
+    fn capture_detached_head_has_no_branch() {
+        let dir = init_repo();
+        let head = {
+            let out = Command::new("git")
+                .args(["rev-parse", "HEAD"])
+                .current_dir(dir.path())
+                .output()
+                .unwrap();
+            String::from_utf8_lossy(&out.stdout).trim().to_string()
+        };
+        git(dir.path(), &["checkout", "-q", &head]);
+        let snap = GitSnapshot::capture(dir.path()).unwrap();
+        assert!(snap.is_detached);
+        assert!(snap.branch.is_none());
+    }
+
+    #[test]
+    fn capture_includes_main_worktree_entry() {
+        let dir = init_repo();
+        let snap = GitSnapshot::capture(dir.path()).unwrap();
+        assert_eq!(snap.worktrees.len(), 1);
+        assert!(snap.worktrees[0].is_main);
+        assert_eq!(snap.worktrees[0].branch.as_deref(), Some("main"));
+    }
+
+    #[test]
+    fn snapshot_serde_roundtrip() {
+        let dir = init_repo();
+        let snap = GitSnapshot::capture(dir.path()).unwrap();
+        let json = serde_json::to_string(&snap).unwrap();
+        let back: GitSnapshot = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.head_commit, snap.head_commit);
+        assert_eq!(back.branch, snap.branch);
+    }
+
+    #[test]
+    fn file_status_serde_roundtrip() {
+        for status in [
+            FileStatus::Modified,
+            FileStatus::Added,
+            FileStatus::Deleted,
+            FileStatus::Untracked,
+        ] {
+            let json = serde_json::to_string(&status).unwrap();
+            let back: FileStatus = serde_json::from_str(&json).unwrap();
+            assert_eq!(
+                serde_json::to_string(&back).unwrap(),
+                json,
+                "status roundtrip"
+            );
+        }
+    }
+
+    #[test]
+    fn dirty_file_serde_roundtrip() {
+        let f = DirtyFile {
+            path: "src/lib.rs".into(),
+            status: FileStatus::Modified,
+        };
+        let json = serde_json::to_string(&f).unwrap();
+        let back: DirtyFile = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.path, "src/lib.rs");
+        assert!(matches!(back.status, FileStatus::Modified));
+    }
+
+    #[test]
+    fn worktree_info_serde_roundtrip() {
+        let w = WorktreeInfo {
+            path: PathBuf::from("/tmp/wt"),
+            branch: Some("feature/x".into()),
+            head_commit: "deadbeef".into(),
+            is_main: false,
+        };
+        let json = serde_json::to_string(&w).unwrap();
+        let back: WorktreeInfo = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.branch.as_deref(), Some("feature/x"));
+        assert!(!back.is_main);
+    }
+}

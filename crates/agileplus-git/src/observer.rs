@@ -131,3 +131,147 @@ impl GitObserver {
         None
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::Path;
+
+    #[test]
+    fn new_without_git_dir_succeeds() {
+        let dir = tempfile::tempdir().unwrap();
+        let obs = GitObserver::new(dir.path().to_path_buf()).unwrap();
+        assert_eq!(obs.repo_root(), dir.path());
+    }
+
+    #[test]
+    fn subscribe_returns_live_receiver() {
+        let dir = tempfile::tempdir().unwrap();
+        let obs = GitObserver::new(dir.path().to_path_buf()).unwrap();
+        let mut rx = obs.subscribe();
+        // No events yet.
+        assert!(rx.try_recv().is_err());
+    }
+
+    #[test]
+    fn classify_head_ref_is_checkout() {
+        let dir = tempfile::tempdir().unwrap();
+        let git = dir.path().join(".git");
+        std::fs::create_dir_all(&git).unwrap();
+        std::fs::write(git.join("HEAD"), "ref: refs/heads/feature/x\n").unwrap();
+        let ev = GitObserver::classify_change(dir.path(), &git.join("HEAD"));
+        match ev {
+            Some(GitEvent::Checkout { branch }) => assert_eq!(branch, "feature/x"),
+            other => panic!("expected Checkout, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn classify_detached_head_is_none() {
+        let dir = tempfile::tempdir().unwrap();
+        let git = dir.path().join(".git");
+        std::fs::create_dir_all(&git).unwrap();
+        std::fs::write(git.join("HEAD"), "0123456789abcdef0123456789abcdef01234567\n").unwrap();
+        assert!(GitObserver::classify_change(dir.path(), &git.join("HEAD")).is_none());
+    }
+
+    #[test]
+    fn classify_branch_ref_is_ref_changed() {
+        let dir = tempfile::tempdir().unwrap();
+        let git = dir.path().join(".git");
+        let refs = git.join("refs/heads");
+        std::fs::create_dir_all(&refs).unwrap();
+        let p = refs.join("main");
+        std::fs::write(&p, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n").unwrap();
+        match GitObserver::classify_change(dir.path(), &p) {
+            Some(GitEvent::RefChanged { ref_name, new_oid, old_oid }) => {
+                assert_eq!(ref_name, "refs/heads/main");
+                assert_eq!(new_oid, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+                assert!(old_oid.is_none());
+            }
+            other => panic!("expected RefChanged, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn classify_merge_head_is_merge() {
+        let dir = tempfile::tempdir().unwrap();
+        let git = dir.path().join(".git");
+        std::fs::create_dir_all(&git).unwrap();
+        let p = git.join("MERGE_HEAD");
+        std::fs::write(&p, "abc\n").unwrap();
+        assert!(matches!(
+            GitObserver::classify_change(dir.path(), &p),
+            Some(GitEvent::Merge { .. })
+        ));
+    }
+
+    #[test]
+    fn classify_rebase_merge_is_rebase() {
+        let dir = tempfile::tempdir().unwrap();
+        let git = dir.path().join(".git");
+        let p = git.join("rebase-merge");
+        std::fs::create_dir_all(&p).unwrap();
+        let f = p.join("head-name");
+        std::fs::write(&f, "refs/heads/x\n").unwrap();
+        assert!(matches!(
+            GitObserver::classify_change(dir.path(), &f),
+            Some(GitEvent::Rebase { .. })
+        ));
+    }
+
+    #[test]
+    fn classify_stash_ref_is_merge() {
+        let dir = tempfile::tempdir().unwrap();
+        let git = dir.path().join(".git");
+        let p = git.join("refs/stash");
+        std::fs::create_dir_all(p.parent().unwrap()).unwrap();
+        std::fs::write(&p, "abc\n").unwrap();
+        assert!(matches!(
+            GitObserver::classify_change(dir.path(), &p),
+            Some(GitEvent::Merge { .. })
+        ));
+    }
+
+    #[test]
+    fn classify_unrelated_path_is_none() {
+        let dir = tempfile::tempdir().unwrap();
+        let git = dir.path().join(".git");
+        std::fs::create_dir_all(&git).unwrap();
+        let p = git.join("some-other-file");
+        std::fs::write(&p, "x").unwrap();
+        assert!(GitObserver::classify_change(dir.path(), &p).is_none());
+    }
+
+    #[test]
+    fn classify_path_outside_git_dir_is_none() {
+        let dir = tempfile::tempdir().unwrap();
+        let outside = dir.path().join("README.md");
+        std::fs::write(&outside, "hi").unwrap();
+        assert!(GitObserver::classify_change(dir.path(), Path::new(&outside)).is_none());
+    }
+
+    #[test]
+    fn git_event_serializes_with_variant_name() {
+        let json = serde_json::to_string(&GitEvent::Checkout {
+            branch: "main".into(),
+        })
+        .unwrap();
+        assert!(json.contains("Checkout"));
+        assert!(json.contains("main"));
+    }
+
+    #[test]
+    fn git_event_clone_is_independent() {
+        let e = GitEvent::RefChanged {
+            ref_name: "refs/heads/x".into(),
+            old_oid: None,
+            new_oid: "abc".into(),
+        };
+        let c = e.clone();
+        match c {
+            GitEvent::RefChanged { new_oid, .. } => assert_eq!(new_oid, "abc"),
+            other => panic!("unexpected {other:?}"),
+        }
+    }
+}

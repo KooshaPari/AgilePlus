@@ -1005,3 +1005,309 @@ mod tests {
         assert_eq!(v["sequence"], 1);
     }
 }
+
+#[cfg(test)]
+mod deep_tests {
+    use super::*;
+    use agileplus_domain::domain::{
+        feature::Feature,
+        work_package::{PrState, WorkPackage, WpState},
+    };
+    use std::process::Command as StdCommand;
+
+    fn feature() -> Feature {
+        let mut f = Feature::new("deep-feature", "Deep Feature", [0u8; 32], None);
+        f.id = 7;
+        f.labels = vec!["one".into(), "two".into()];
+        f.plane_issue_id = Some("plane-42".into());
+        f.created_at_commit = Some("cafe".into());
+        f.last_modified_commit = Some("beef".into());
+        f
+    }
+
+    fn wp() -> WorkPackage {
+        let mut w = WorkPackage::new(7, "Deep WP", 3, "Criteria here.");
+        w.id = 99;
+        w.state = WpState::Doing;
+        w.file_scope = vec!["src/a.rs".into(), "src/b.rs".into()];
+        w.agent_id = Some("agent-x".into());
+        w.pr_url = Some("https://example.com/pr/1".into());
+        w.pr_state = Some(PrState::Open);
+        w.worktree_path = Some("wt/deep".into());
+        w.base_commit = Some("base".into());
+        w.head_commit = Some("head".into());
+        w
+    }
+
+    // ── render_meta_json ────────────────────────────────────────────────────
+
+    #[test]
+    fn meta_friendly_name() {
+        assert_eq!(render_meta_json(&feature())["friendly_name"], "Deep Feature");
+    }
+
+    #[test]
+    fn meta_default_target_branch_is_main() {
+        assert_eq!(render_meta_json(&feature())["target_branch"], "main");
+    }
+
+    #[test]
+    fn meta_labels_are_array() {
+        let v = render_meta_json(&feature());
+        assert_eq!(v["labels"], serde_json::json!(["one", "two"]));
+    }
+
+    #[test]
+    fn meta_plane_issue_id_present() {
+        assert_eq!(render_meta_json(&feature())["plane_issue_id"], "plane-42");
+    }
+
+    #[test]
+    fn meta_plane_issue_id_null_when_absent() {
+        let mut f = feature();
+        f.plane_issue_id = None;
+        assert!(render_meta_json(&f)["plane_issue_id"].is_null());
+    }
+
+    #[test]
+    fn meta_created_at_commit() {
+        assert_eq!(render_meta_json(&feature())["created_at_commit"], "cafe");
+    }
+
+    #[test]
+    fn meta_zero_spec_hash_is_all_zeros() {
+        let hex = render_meta_json(&feature())["spec_hash"]
+            .as_str()
+            .unwrap()
+            .to_string();
+        assert_eq!(hex, "0".repeat(64));
+    }
+
+    #[test]
+    fn meta_materialized_at_is_rfc3339() {
+        let v = render_meta_json(&feature());
+        let ts = v["materialized_at"].as_str().unwrap();
+        assert!(chrono::DateTime::parse_from_rfc3339(ts).is_ok());
+    }
+
+    #[test]
+    fn meta_has_expected_key_set() {
+        let v = render_meta_json(&feature());
+        let obj = v.as_object().unwrap();
+        for key in [
+            "slug",
+            "friendly_name",
+            "state",
+            "target_branch",
+            "spec_hash",
+            "created_at",
+            "updated_at",
+            "created_at_commit",
+            "last_modified_commit",
+            "labels",
+            "plane_issue_id",
+            "materialized_at",
+        ] {
+            assert!(obj.contains_key(key), "missing key {key}");
+        }
+    }
+
+    // ── render_status_md ────────────────────────────────────────────────────
+
+    #[test]
+    fn status_contains_slug_and_state() {
+        let md = render_status_md(&feature(), &[]);
+        assert!(md.contains("`deep-feature`"));
+        assert!(md.contains("**State**: created"));
+    }
+
+    #[test]
+    fn status_shows_target_branch() {
+        let md = render_status_md(&feature(), &[]);
+        assert!(md.contains("**Target branch**: `main`"));
+    }
+
+    #[test]
+    fn status_omits_labels_line_when_empty() {
+        let mut f = feature();
+        f.labels.clear();
+        let md = render_status_md(&f, &[]);
+        assert!(!md.contains("**Labels**"));
+    }
+
+    #[test]
+    fn status_wp_agent_and_branch_fallback_to_dash() {
+        let mut w = wp();
+        w.agent_id = None;
+        w.worktree_path = None;
+        let md = render_status_md(&feature(), &[w]);
+        assert!(md.contains("| - | - |"));
+    }
+
+    #[test]
+    fn status_wp_state_is_lowercased() {
+        let md = render_status_md(&feature(), &[wp()]);
+        assert!(md.contains("doing"));
+        assert!(!md.contains("Doing"));
+    }
+
+    #[test]
+    fn status_includes_table_header_when_wps_present() {
+        let md = render_status_md(&feature(), &[wp()]);
+        assert!(md.contains("| ID | Seq | Title | State | Agent | Branch |"));
+        assert!(md.contains("|----|-----|-------|-------|-------|--------|"));
+    }
+
+    // ── render_audit_line ───────────────────────────────────────────────────
+
+    #[test]
+    fn audit_line_is_single_json_object() {
+        let line = render_audit_line(&feature(), Some("abc"));
+        assert!(!line.contains('\n'));
+        let v: Value = serde_json::from_str(&line).unwrap();
+        assert_eq!(v["action"], "materialized");
+        assert_eq!(v["slug"], "deep-feature");
+        assert_eq!(v["state"], "created");
+        assert_eq!(v["commit"], "abc");
+    }
+
+    #[test]
+    fn audit_line_commit_null_when_none() {
+        let line = render_audit_line(&feature(), None);
+        let v: Value = serde_json::from_str(&line).unwrap();
+        assert!(v["commit"].is_null());
+    }
+
+    #[test]
+    fn audit_line_timestamp_is_rfc3339() {
+        let line = render_audit_line(&feature(), None);
+        let v: Value = serde_json::from_str(&line).unwrap();
+        let ts = v["timestamp"].as_str().unwrap();
+        assert!(chrono::DateTime::parse_from_rfc3339(ts).is_ok());
+    }
+
+    // ── render_wp_json ──────────────────────────────────────────────────────
+
+    #[test]
+    fn wp_json_core_fields() {
+        let v = render_wp_json(&wp());
+        assert_eq!(v["id"], 99);
+        assert_eq!(v["feature_id"], 7);
+        assert_eq!(v["title"], "Deep WP");
+        assert_eq!(v["state"], "doing");
+        assert_eq!(v["sequence"], 3);
+        assert_eq!(v["acceptance_criteria"], "Criteria here.");
+    }
+
+    #[test]
+    fn wp_json_file_scope() {
+        let v = render_wp_json(&wp());
+        assert_eq!(v["file_scope"], serde_json::json!(["src/a.rs", "src/b.rs"]));
+    }
+
+    #[test]
+    fn wp_json_pr_state_lowercased() {
+        assert_eq!(render_wp_json(&wp())["pr_state"], "open");
+    }
+
+    #[test]
+    fn wp_json_pr_state_null_when_absent() {
+        let mut w = wp();
+        w.pr_state = None;
+        assert!(render_wp_json(&w)["pr_state"].is_null());
+    }
+
+    #[test]
+    fn wp_json_commit_fields() {
+        let v = render_wp_json(&wp());
+        assert_eq!(v["base_commit"], "base");
+        assert_eq!(v["head_commit"], "head");
+        assert_eq!(v["worktree_path"], "wt/deep");
+    }
+
+    #[test]
+    fn wp_json_agent_null_when_absent() {
+        let mut w = wp();
+        w.agent_id = None;
+        assert!(render_wp_json(&w)["agent_id"].is_null());
+    }
+
+    // ── End-to-end materialization ──────────────────────────────────────────
+
+    fn make_repo() -> (tempfile::TempDir, PathBuf) {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().to_path_buf();
+        for args in [
+            vec!["init", "-q", "-b", "main"],
+            vec!["config", "user.email", "t@example.com"],
+            vec!["config", "user.name", "tester"],
+        ] {
+            StdCommand::new("git").args(&args).current_dir(&path).output().unwrap();
+        }
+        std::fs::write(path.join("README.md"), "hello\n").unwrap();
+        StdCommand::new("git")
+            .args(["add", "."])
+            .current_dir(&path)
+            .output()
+            .unwrap();
+        StdCommand::new("git")
+            .args(["commit", "-q", "-m", "init"])
+            .current_dir(&path)
+            .output()
+            .unwrap();
+        (dir, path)
+    }
+
+    #[test]
+    fn materialize_feature_writes_expected_files() {
+        let (_d, path) = make_repo();
+        let adapter = GitVcsAdapter::new(path.clone());
+        let dir = materialize_feature(&adapter, &feature(), &[wp()]).unwrap();
+        assert!(dir.join("meta.json").is_file());
+        assert!(dir.join("status.md").is_file());
+        assert!(dir.join("audit.jsonl").is_file());
+        let meta: Value =
+            serde_json::from_str(&std::fs::read_to_string(dir.join("meta.json")).unwrap()).unwrap();
+        assert_eq!(meta["slug"], "deep-feature");
+    }
+
+    #[test]
+    fn materialize_work_package_writes_file() {
+        let (_d, path) = make_repo();
+        let adapter = GitVcsAdapter::new(path.clone());
+        materialize_work_package(&adapter, "deep-feature", &wp()).unwrap();
+        let wp_path = path.join("docs/agileplus/deep-feature/work-packages/99.json");
+        assert!(wp_path.is_file());
+        let v: Value = serde_json::from_str(&std::fs::read_to_string(&wp_path).unwrap()).unwrap();
+        assert_eq!(v["id"], 99);
+    }
+
+    #[test]
+    fn materialize_and_commit_returns_oid() {
+        let (_d, path) = make_repo();
+        let adapter = GitVcsAdapter::new(path.clone());
+        let oid = materialize_and_commit(&adapter, &feature(), &[wp()]).unwrap();
+        assert_eq!(oid.len(), 40);
+        // Second commit appends another audit line.
+        let audit = path.join("docs/agileplus/deep-feature/audit.jsonl");
+        let before = std::fs::read_to_string(&audit).unwrap().lines().count();
+        materialize_feature(&adapter, &feature(), &[wp()]).unwrap();
+        let after = std::fs::read_to_string(&audit).unwrap().lines().count();
+        assert_eq!(after, before + 1);
+    }
+
+    #[test]
+    fn commit_materialization_custom_message() {
+        let (_d, path) = make_repo();
+        let adapter = GitVcsAdapter::new(path.clone());
+        materialize_feature(&adapter, &feature(), &[]).unwrap();
+        let oid = commit_materialization(&adapter, "deep-feature", Some("test: custom")).unwrap();
+        let log = StdCommand::new("git")
+            .args(["log", "-1", "--pretty=%s"])
+            .current_dir(&path)
+            .output()
+            .unwrap();
+        assert_eq!(String::from_utf8_lossy(&log.stdout).trim(), "test: custom");
+        assert_eq!(oid.len(), 40);
+    }
+}

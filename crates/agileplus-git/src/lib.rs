@@ -300,3 +300,262 @@ pub fn scan_all_features(adapter: &GitVcsAdapter) -> Result<Vec<String>, DomainE
 #[cfg(test)]
 #[path = "lib_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+mod extra_tests {
+    use super::*;
+    use std::process::Command as StdCommand;
+
+    fn make_repo() -> (tempfile::TempDir, PathBuf) {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().to_path_buf();
+        for args in [
+            vec!["init", "-q", "-b", "main"],
+            vec!["config", "user.email", "t@example.com"],
+            vec!["config", "user.name", "tester"],
+        ] {
+            StdCommand::new("git").args(&args).current_dir(&path).output().unwrap();
+        }
+        std::fs::write(path.join("README.md"), "hello\n").unwrap();
+        StdCommand::new("git").args(["add", "."]).current_dir(&path).output().unwrap();
+        StdCommand::new("git").args(["commit", "-q", "-m", "init"]).current_dir(&path).output().unwrap();
+        (dir, path)
+    }
+
+    // ── glob_match ──────────────────────────────────────────────────────────
+
+    #[test]
+    fn glob_match_exact_no_wildcard() {
+        assert!(glob_match("main", "main"));
+        assert!(!glob_match("main", "main2"));
+    }
+
+    #[test]
+    fn glob_match_prefix_star() {
+        assert!(glob_match("feat/*", "feat/x"));
+        assert!(!glob_match("feat/*", "feat"));
+    }
+
+    #[test]
+    fn glob_match_leading_star() {
+        assert!(glob_match("*main", "origin/main"));
+        assert!(!glob_match("*main", "mainline"));
+    }
+
+    #[test]
+    fn glob_match_two_wildcards() {
+        assert!(glob_match("a*b*c", "aXXbYYc"));
+        assert!(!glob_match("a*b*c", "aXXcYY"));
+    }
+
+    #[test]
+    fn glob_match_star_requires_ordered_parts() {
+        assert!(!glob_match("a*b", "bxxxa"));
+    }
+
+    #[test]
+    fn glob_match_consecutive_stars() {
+        assert!(glob_match("a**b", "ab"));
+        assert!(glob_match("a**b", "aXYb"));
+    }
+
+    #[test]
+    fn glob_match_empty_pattern_only_matches_empty() {
+        assert!(glob_match("", ""));
+        assert!(!glob_match("", "x"));
+    }
+
+    #[test]
+    fn glob_match_repeated_literal_parts() {
+        // "abc*abc" matches "abcXabc" but not "abcabcX" or "abc".
+        assert!(glob_match("abc*abc", "abcXabc"));
+        assert!(!glob_match("abc*abc", "abc"));
+        assert!(!glob_match("abc*abc", "Xabcabc"));
+    }
+
+    // ── worktree naming ─────────────────────────────────────────────────────
+
+    #[test]
+    fn worktree_branch_uses_feat_prefix() {
+        assert_eq!(
+            GitVcsAdapter::worktree_branch("my-feature", "wp-1"),
+            "feat/my-feature/wp-1"
+        );
+    }
+
+    #[test]
+    fn worktree_dirname_joins_with_dash() {
+        assert_eq!(
+            GitVcsAdapter::worktree_dirname("my-feature", "wp-1"),
+            "my-feature-wp-1"
+        );
+    }
+
+    #[test]
+    fn worktree_path_is_sibling_of_repo_root() {
+        let adapter = GitVcsAdapter::new(PathBuf::from("/repos/project"));
+        let p = adapter.worktree_path("s", "wp");
+        assert_eq!(p, PathBuf::from("/repos/s-wp"));
+    }
+
+    #[test]
+    fn repo_root_accessor_round_trips() {
+        let adapter = GitVcsAdapter::new(PathBuf::from("/x/y"));
+        assert_eq!(adapter.repo_root(), Path::new("/x/y"));
+    }
+
+    #[test]
+    fn adapter_is_clonable_and_debug() {
+        let adapter = GitVcsAdapter::new(PathBuf::from("/x"));
+        let cloned = adapter.clone();
+        assert_eq!(cloned.repo_root(), adapter.repo_root());
+        assert!(format!("{adapter:?}").contains("GitVcsAdapter"));
+    }
+
+    // ── artifact_path ───────────────────────────────────────────────────────
+
+    #[test]
+    fn artifact_path_layout() {
+        let adapter = GitVcsAdapter::new(PathBuf::from("/repo"));
+        let p = adapter.artifact_path("my-feature", "spec.md");
+        assert_eq!(p, PathBuf::from("/repo/docs/agileplus/my-feature/spec.md"));
+    }
+
+    #[test]
+    fn artifact_path_nested_relative() {
+        let adapter = GitVcsAdapter::new(PathBuf::from("/repo"));
+        let p = adapter.artifact_path("f", "a/b/c.json");
+        assert!(p.ends_with("docs/agileplus/f/a/b/c.json"));
+    }
+
+    // ── open / run_git error paths ──────────────────────────────────────────
+
+    #[test]
+    fn open_fails_on_non_repo_dir() {
+        assert!(GitVcsAdapter::new(PathBuf::from("/nonexistent/xyz")).open().is_err());
+    }
+
+    #[test]
+    fn open_succeeds_on_real_repo() {
+        let (_d, path) = make_repo();
+        let adapter = GitVcsAdapter::new(path);
+        assert!(adapter.open().is_ok());
+    }
+
+    #[test]
+    fn run_git_captures_output() {
+        let (_d, path) = make_repo();
+        let adapter = GitVcsAdapter::new(path);
+        let out = adapter.run_git(&["rev-parse", "--is-inside-work-tree"]).unwrap();
+        assert_eq!(out, "true");
+    }
+
+    #[test]
+    fn run_git_error_contains_stderr() {
+        let (_d, path) = make_repo();
+        let adapter = GitVcsAdapter::new(path);
+        let err = adapter.run_git(&["rev-parse", "no-such-ref"]).unwrap_err();
+        assert!(err.to_string().contains("rev-parse"));
+    }
+
+    #[test]
+    fn run_git_allow_failure_returns_stdout() {
+        let (_d, path) = make_repo();
+        let adapter = GitVcsAdapter::new(path);
+        // `git status --porcelain` succeeds with empty output.
+        let out = adapter.run_git_allow_failure(&["status", "--porcelain"]).unwrap();
+        assert!(out.is_empty());
+    }
+
+    #[test]
+    fn run_git_status_ok_on_valid_command() {
+        let (_d, path) = make_repo();
+        let adapter = GitVcsAdapter::new(path);
+        adapter.run_git_status(&["status"]).unwrap();
+    }
+
+    // ── checkout_blocked_by_other_worktree ──────────────────────────────────
+
+    #[test]
+    fn checkout_blocked_true_for_already_used_by_worktree() {
+        let e = DomainError::Storage("fatal: 'main' is already used by worktree at /x".into());
+        assert!(GitVcsAdapter::checkout_blocked_by_other_worktree(&e));
+    }
+
+    #[test]
+    fn checkout_blocked_true_for_already_checked_out() {
+        let e = DomainError::Storage("error: branch is already checked out".into());
+        assert!(GitVcsAdapter::checkout_blocked_by_other_worktree(&e));
+    }
+
+    #[test]
+    fn checkout_blocked_false_for_unrelated() {
+        let e = DomainError::Storage("pathspec did not match".into());
+        assert!(!GitVcsAdapter::checkout_blocked_by_other_worktree(&e));
+    }
+
+    // ── collect_evidence_paths ──────────────────────────────────────────────
+
+    #[test]
+    fn collect_evidence_missing_dir_errors() {
+        let mut paths = Vec::new();
+        let err = collect_evidence_paths(Path::new("/no/such/dir"), &mut paths).unwrap_err();
+        assert!(err.to_string().contains("scan evidence"));
+    }
+
+    #[test]
+    fn collect_evidence_nested() {
+        let dir = tempfile::tempdir().unwrap();
+        let nested = dir.path().join("a/b");
+        std::fs::create_dir_all(&nested).unwrap();
+        std::fs::write(dir.path().join("top"), "x").unwrap();
+        std::fs::write(nested.join("deep"), "y").unwrap();
+        let mut paths = Vec::new();
+        collect_evidence_paths(dir.path(), &mut paths).unwrap();
+        assert_eq!(paths.len(), 2);
+    }
+
+    // ── scan_all_features ───────────────────────────────────────────────────
+
+    #[test]
+    fn scan_all_features_missing_dir_empty() {
+        let dir = tempfile::tempdir().unwrap();
+        let adapter = GitVcsAdapter::new(dir.path().to_path_buf());
+        assert!(scan_all_features(&adapter).unwrap().is_empty());
+    }
+
+    #[test]
+    fn scan_all_features_requires_meta_json() {
+        let dir = tempfile::tempdir().unwrap();
+        let base = dir.path().join("docs/agileplus");
+        std::fs::create_dir_all(base.join("with-meta")).unwrap();
+        std::fs::create_dir_all(base.join("without-meta")).unwrap();
+        std::fs::write(base.join("with-meta/meta.json"), "{}").unwrap();
+        let adapter = GitVcsAdapter::new(dir.path().to_path_buf());
+        let found = scan_all_features(&adapter).unwrap();
+        assert_eq!(found, vec!["with-meta".to_string()]);
+    }
+
+    #[test]
+    fn scan_all_features_sorted() {
+        let dir = tempfile::tempdir().unwrap();
+        let base = dir.path().join("docs/agileplus");
+        for slug in ["zeta", "alpha", "mid"] {
+            std::fs::create_dir_all(base.join(slug)).unwrap();
+            std::fs::write(base.join(slug).join("meta.json"), "{}").unwrap();
+        }
+        let adapter = GitVcsAdapter::new(dir.path().to_path_buf());
+        let found = scan_all_features(&adapter).unwrap();
+        assert_eq!(found, vec!["alpha", "mid", "zeta"]);
+    }
+
+    #[test]
+    fn scan_all_features_ignores_files() {
+        let dir = tempfile::tempdir().unwrap();
+        let base = dir.path().join("docs/agileplus");
+        std::fs::create_dir_all(&base).unwrap();
+        std::fs::write(base.join("loose.txt"), "x").unwrap();
+        let adapter = GitVcsAdapter::new(dir.path().to_path_buf());
+        assert!(scan_all_features(&adapter).unwrap().is_empty());
+    }
+}

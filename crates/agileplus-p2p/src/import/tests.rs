@@ -224,3 +224,278 @@ async fn import_sync_mappings_counted() {
     let stats = import_state(dir, &event_store, &snapshot_store).await.unwrap();
     assert_eq!(stats.sync_mappings_merged, 2);
 }
+
+// ── Deep reader coverage ───────────────────────────────────────────────────
+
+use super::reader::{
+    read_events_from_dir, read_snapshots_from_dir, read_sync_mappings,
+};
+
+fn write_event_jsonl(dir: &std::path::Path, entity_type: &str, id: i64, lines: &[String]) {
+    let d = dir.join(entity_type);
+    std::fs::create_dir_all(&d).unwrap();
+    std::fs::write(d.join(format!("{id}.jsonl")), lines.join("\n")).unwrap();
+}
+
+#[test]
+fn read_events_from_missing_dir_is_empty() {
+    let tmp = tempfile::tempdir().unwrap();
+    let events = read_events_from_dir(&tmp.path().join("nope")).unwrap();
+    assert!(events.is_empty());
+}
+
+#[test]
+fn read_events_from_empty_dir_is_empty() {
+    let tmp = tempfile::tempdir().unwrap();
+    let events = read_events_from_dir(tmp.path()).unwrap();
+    assert!(events.is_empty());
+}
+
+#[test]
+fn read_events_skips_blank_lines() {
+    let tmp = tempfile::tempdir().unwrap();
+    let e1 = serde_json::to_string(&make_event("Feature", 1, 1)).unwrap();
+    let e2 = serde_json::to_string(&make_event("Feature", 1, 2)).unwrap();
+    write_event_jsonl(tmp.path(), "Feature", 1, &[e1, String::new(), "   ".into(), e2]);
+    let events = read_events_from_dir(tmp.path()).unwrap();
+    assert_eq!(events.len(), 2);
+}
+
+#[test]
+fn read_events_ignores_non_jsonl_files() {
+    let tmp = tempfile::tempdir().unwrap();
+    let d = tmp.path().join("Feature");
+    std::fs::create_dir_all(&d).unwrap();
+    std::fs::write(d.join("ignore.txt"), "not json").unwrap();
+    std::fs::write(d.join("1.jsonl"), serde_json::to_string(&make_event("Feature", 1, 1)).unwrap()).unwrap();
+    let events = read_events_from_dir(tmp.path()).unwrap();
+    assert_eq!(events.len(), 1);
+}
+
+#[test]
+fn read_events_ignores_top_level_files() {
+    let tmp = tempfile::tempdir().unwrap();
+    std::fs::write(tmp.path().join("loose.jsonl"), "{}").unwrap();
+    let events = read_events_from_dir(tmp.path()).unwrap();
+    assert!(events.is_empty());
+}
+
+#[test]
+fn read_events_sorted_by_type_id_sequence() {
+    let tmp = tempfile::tempdir().unwrap();
+    // Insert out of order across entity types.
+    write_event_jsonl(tmp.path(), "Feature", 2, &[serde_json::to_string(&make_event("Feature", 2, 1)).unwrap()]);
+    write_event_jsonl(tmp.path(), "Epic", 1, &[serde_json::to_string(&make_event("Epic", 1, 1)).unwrap()]);
+    write_event_jsonl(
+        tmp.path(),
+        "Feature",
+        1,
+        &[
+            serde_json::to_string(&make_event("Feature", 1, 2)).unwrap(),
+            serde_json::to_string(&make_event("Feature", 1, 1)).unwrap(),
+        ],
+    );
+    let events = read_events_from_dir(tmp.path()).unwrap();
+    let triples: Vec<(String, i64, i64)> = events
+        .iter()
+        .map(|e| (e.entity_type.clone(), e.entity_id, e.sequence))
+        .collect();
+    assert_eq!(
+        triples,
+        vec![
+            ("Epic".to_string(), 1, 1),
+            ("Feature".to_string(), 1, 1),
+            ("Feature".to_string(), 1, 2),
+            ("Feature".to_string(), 2, 1),
+        ]
+    );
+}
+
+#[test]
+fn read_events_malformed_line_reports_file_and_line() {
+    let tmp = tempfile::tempdir().unwrap();
+    write_event_jsonl(tmp.path(), "Feature", 1, &["{not json".to_string()]);
+    let err = read_events_from_dir(tmp.path()).unwrap_err();
+    match err {
+        super::ImportError::Deserialization { file, .. } => {
+            assert!(file.contains("1.jsonl"), "file={file}");
+            assert!(file.contains(":1"), "line number missing: {file}");
+        }
+        other => panic!("expected Deserialization, got {other:?}"),
+    }
+}
+
+#[test]
+fn read_events_multiple_files_same_entity_merged() {
+    let tmp = tempfile::tempdir().unwrap();
+    let d = tmp.path().join("Feature");
+    std::fs::create_dir_all(&d).unwrap();
+    std::fs::write(d.join("a.jsonl"), serde_json::to_string(&make_event("Feature", 1, 1)).unwrap()).unwrap();
+    std::fs::write(d.join("b.jsonl"), serde_json::to_string(&make_event("Feature", 1, 2)).unwrap()).unwrap();
+    let events = read_events_from_dir(tmp.path()).unwrap();
+    assert_eq!(events.len(), 2);
+}
+
+#[test]
+fn read_snapshots_missing_dir_is_empty() {
+    let tmp = tempfile::tempdir().unwrap();
+    assert!(read_snapshots_from_dir(&tmp.path().join("nope")).unwrap().is_empty());
+}
+
+#[test]
+fn read_snapshots_parses_files() {
+    let tmp = tempfile::tempdir().unwrap();
+    let d = tmp.path().join("Feature");
+    std::fs::create_dir_all(&d).unwrap();
+    let snap = Snapshot::new("Feature", 1, serde_json::json!({"v": 3}), 3);
+    std::fs::write(d.join("1.json"), serde_json::to_string_pretty(&snap).unwrap()).unwrap();
+    let snaps = read_snapshots_from_dir(tmp.path()).unwrap();
+    assert_eq!(snaps.len(), 1);
+    assert_eq!(snaps[0].event_sequence, 3);
+}
+
+#[test]
+fn read_snapshots_ignores_non_json() {
+    let tmp = tempfile::tempdir().unwrap();
+    let d = tmp.path().join("Feature");
+    std::fs::create_dir_all(&d).unwrap();
+    std::fs::write(d.join("1.jsonl"), "nope").unwrap();
+    assert!(read_snapshots_from_dir(tmp.path()).unwrap().is_empty());
+}
+
+#[test]
+fn read_snapshots_malformed_reports_error() {
+    let tmp = tempfile::tempdir().unwrap();
+    let d = tmp.path().join("Feature");
+    std::fs::create_dir_all(&d).unwrap();
+    std::fs::write(d.join("1.json"), "{bad").unwrap();
+    let err = read_snapshots_from_dir(tmp.path()).unwrap_err();
+    assert!(matches!(err, super::ImportError::Deserialization { .. }));
+}
+
+#[test]
+fn read_sync_mappings_missing_file_is_empty() {
+    let tmp = tempfile::tempdir().unwrap();
+    let mappings = read_sync_mappings(&tmp.path().join("none.json")).unwrap();
+    assert!(mappings.is_empty());
+}
+
+#[test]
+fn read_sync_mappings_missing_key_is_empty() {
+    let tmp = tempfile::tempdir().unwrap();
+    let path = tmp.path().join("sync_state.json");
+    std::fs::write(&path, serde_json::json!({"other": 1}).to_string()).unwrap();
+    assert!(read_sync_mappings(&path).unwrap().is_empty());
+}
+
+#[test]
+fn read_sync_mappings_parses_entries() {
+    let tmp = tempfile::tempdir().unwrap();
+    let path = tmp.path().join("sync_state.json");
+    let mappings = vec![
+        agileplus_domain::domain::sync_mapping::SyncMapping::new("Feature", 1, "p1", "h1"),
+        agileplus_domain::domain::sync_mapping::SyncMapping::new("Epic", 2, "p2", "h2"),
+    ];
+    std::fs::write(
+        &path,
+        serde_json::json!({"sync_mappings": mappings}).to_string(),
+    )
+    .unwrap();
+    let parsed = read_sync_mappings(&path).unwrap();
+    assert_eq!(parsed.len(), 2);
+    assert_eq!(parsed[0].plane_issue_id, "p1");
+}
+
+#[test]
+fn read_sync_mappings_malformed_json_errors() {
+    let tmp = tempfile::tempdir().unwrap();
+    let path = tmp.path().join("sync_state.json");
+    std::fs::write(&path, "{not json").unwrap();
+    let err = read_sync_mappings(&path).unwrap_err();
+    assert!(matches!(err, super::ImportError::Deserialization { .. }));
+}
+
+#[test]
+fn read_sync_mappings_wrong_shape_errors() {
+    let tmp = tempfile::tempdir().unwrap();
+    let path = tmp.path().join("sync_state.json");
+    std::fs::write(&path, serde_json::json!({"sync_mappings": 5}).to_string()).unwrap();
+    assert!(read_sync_mappings(&path).is_err());
+}
+
+#[tokio::test]
+async fn import_empty_dir_is_noop() {
+    let tmp = tempfile::tempdir().unwrap();
+    let es = MemEventStore::default();
+    let ss = MemSnapshotStore::default();
+    let stats = import_state(tmp.path(), &es, &ss).await.unwrap();
+    assert_eq!(stats.events_imported, 0);
+    assert_eq!(stats.snapshots_updated, 0);
+    assert_eq!(stats.sync_mappings_merged, 0);
+}
+
+#[tokio::test]
+async fn import_malformed_event_propagates_error() {
+    let tmp = tempfile::tempdir().unwrap();
+    write_event_jsonl(&tmp.path().join("events"), "Feature", 1, &["{bad".to_string()]);
+    let es = MemEventStore::default();
+    let ss = MemSnapshotStore::default();
+    let err = import_state(tmp.path(), &es, &ss).await.unwrap_err();
+    assert!(matches!(err, super::ImportError::Deserialization { .. }));
+}
+
+#[tokio::test]
+async fn import_non_contiguous_newer_event_is_applied() {
+    let tmp = tempfile::tempdir().unwrap();
+    let dir = tmp.path();
+    // Existing seq 1, importing seq 2 (newer) should be applied.
+    let es = MemEventStore::default();
+    es.append(&make_event("Feature", 1, 1)).await.unwrap();
+    write_event_jsonl(&dir.join("events"), "Feature", 1, &[serde_json::to_string(&make_event("Feature", 1, 2)).unwrap()]);
+    let ss = MemSnapshotStore::default();
+    let stats = import_state(dir, &es, &ss).await.unwrap();
+    assert_eq!(stats.events_imported, 1);
+}
+
+#[tokio::test]
+async fn import_equal_sequence_same_hash_is_skipped() {
+    let tmp = tempfile::tempdir().unwrap();
+    let dir = tmp.path();
+    let e = make_event("Feature", 1, 1);
+    let es = MemEventStore::default();
+    es.append(&e).await.unwrap();
+    write_event_jsonl(&dir.join("events"), "Feature", 1, &[serde_json::to_string(&e).unwrap()]);
+    let ss = MemSnapshotStore::default();
+    let stats = import_state(dir, &es, &ss).await.unwrap();
+    assert_eq!(stats.events_imported, 0);
+}
+
+#[tokio::test]
+async fn import_snapshot_equal_sequence_is_skipped() {
+    let tmp = tempfile::tempdir().unwrap();
+    let dir = tmp.path();
+    let es = MemEventStore::default();
+    let ss = MemSnapshotStore::default();
+    ss.save(&Snapshot::new("Feature", 1, serde_json::json!({"v": 1}), 5))
+        .await
+        .unwrap();
+    let d = dir.join("snapshots/Feature");
+    std::fs::create_dir_all(&d).unwrap();
+    std::fs::write(
+        d.join("1.json"),
+        serde_json::to_string_pretty(&Snapshot::new("Feature", 1, serde_json::json!({"v": 2}), 5)).unwrap(),
+    )
+    .unwrap();
+    let stats = import_state(dir, &es, &ss).await.unwrap();
+    assert_eq!(stats.snapshots_updated, 0);
+}
+
+#[tokio::test]
+async fn import_stats_duration_field_present() {
+    let tmp = tempfile::tempdir().unwrap();
+    let es = MemEventStore::default();
+    let ss = MemSnapshotStore::default();
+    let stats = import_state(tmp.path(), &es, &ss).await.unwrap();
+    let _ = stats.duration_ms;
+}
+

@@ -359,3 +359,210 @@ mod tests {
         assert!(guard.is_ok());
     }
 }
+
+#[cfg(test)]
+mod deep_tests {
+    use super::*;
+    use agileplus_domain::ports::observability::{LogEntry, LogLevel};
+    use std::collections::HashMap;
+
+    fn entry(level: LogLevel, msg: &str) -> LogEntry {
+        LogEntry {
+            level,
+            message: msg.into(),
+            fields: HashMap::new(),
+            span_context: None,
+        }
+    }
+
+    #[test]
+    fn noop_reports_is_noop() {
+        assert!(TelemetryAdapter::noop().is_noop());
+    }
+
+    #[test]
+    fn noop_config_is_default() {
+        let adapter = TelemetryAdapter::noop();
+        assert!(adapter.config().otlp.is_none());
+        assert_eq!(adapter.config().sampling.trace_ratio, 1.0);
+    }
+
+    #[test]
+    fn noop_metrics_accessor_works() {
+        let adapter = TelemetryAdapter::noop();
+        adapter.metrics().record_agent_run("f", "WP1", "codex");
+    }
+
+    #[test]
+    fn noop_span_with_parent_returns_sentinel() {
+        let adapter = TelemetryAdapter::noop();
+        let parent = SpanContext {
+            trace_id: "trace".into(),
+            span_id: "span".into(),
+            parent_span_id: None,
+        };
+        let ctx = adapter.start_span("child", Some(&parent));
+        assert_eq!(ctx.trace_id, "00000000000000000000000000000000");
+        assert_eq!(ctx.span_id, "0000000000000000");
+    }
+
+    #[test]
+    fn noop_log_all_levels() {
+        let adapter = TelemetryAdapter::noop();
+        for level in [
+            LogLevel::Trace,
+            LogLevel::Debug,
+            LogLevel::Info,
+            LogLevel::Warn,
+            LogLevel::Error,
+        ] {
+            adapter.log(&entry(level, "msg"));
+        }
+    }
+
+    #[test]
+    fn noop_log_entry_with_fields() {
+        let adapter = TelemetryAdapter::noop();
+        let mut fields = HashMap::new();
+        fields.insert("k".to_string(), "v".to_string());
+        let e = LogEntry {
+            level: LogLevel::Info,
+            message: "with fields".into(),
+            fields,
+            span_context: None,
+        };
+        adapter.log(&e);
+    }
+
+    #[test]
+    fn noop_record_metrics_with_labels() {
+        let adapter = TelemetryAdapter::noop();
+        adapter.record_counter("agileplus.c", 5, &[("a", "b"), ("c", "d")]);
+        adapter.record_histogram("agileplus.h", 1.5, &[("a", "b")]);
+        adapter.record_gauge("agileplus.g", 0.0, &[]);
+    }
+
+    #[test]
+    fn noop_span_lifecycle() {
+        let adapter = TelemetryAdapter::noop();
+        let ctx = adapter.start_span("op", None);
+        adapter.add_span_event(&ctx, "evt", &[]);
+        adapter.set_span_error(&ctx, "err");
+        adapter.end_span(&ctx);
+    }
+
+    #[test]
+    fn telemetry_error_log_display() {
+        let e = TelemetryError::Log(LogError::Init("x".into()));
+        assert!(e.to_string().contains("logging init error"));
+    }
+
+    #[test]
+    fn telemetry_error_config_display() {
+        let e = TelemetryError::Config(crate::config::ConfigError::Validation("bad".into()));
+        assert!(e.to_string().contains("config error"));
+    }
+
+    #[test]
+    fn telemetry_error_otel_display() {
+        let e = TelemetryError::Otel("nope".into());
+        assert_eq!(e.to_string(), "opentelemetry error: nope");
+    }
+
+    #[test]
+    fn telemetry_error_debug() {
+        let e = TelemetryError::Otel("nope".into());
+        assert!(format!("{e:?}").contains("Otel"));
+    }
+
+    #[test]
+    fn init_telemetry_default_ok() {
+        let guard = init_telemetry(TelemetryConfig::default());
+        assert!(guard.is_ok());
+    }
+
+    #[tokio::test]
+    async fn init_telemetry_with_otlp_config_ok() {
+        let cfg = TelemetryConfig {
+            otlp: Some(crate::config::OtlpConfig {
+                endpoint: "http://127.0.0.1:4317".into(),
+                protocol: crate::config::OtlpProtocol::Grpc,
+                headers: Default::default(),
+                timeout_ms: 100,
+                export_interval_ms: 1000,
+            }),
+            logging: Default::default(),
+            sampling: Default::default(),
+        };
+        let guard = init_telemetry(cfg);
+        assert!(guard.is_ok());
+    }
+
+    #[test]
+    fn adapter_new_with_default_config() {
+        let result = TelemetryAdapter::new(TelemetryConfig::default());
+        assert!(result.is_ok());
+        let adapter = result.unwrap();
+        assert!(!adapter.is_noop());
+    }
+
+    #[test]
+    fn non_noop_adapter_span_lifecycle() {
+        let adapter = TelemetryAdapter::new(TelemetryConfig::default()).unwrap();
+        let ctx = adapter.start_span("op", None);
+        adapter.add_span_event(&ctx, "evt", &[("k", "v")]);
+        adapter.set_span_error(&ctx, "err");
+        adapter.end_span(&ctx);
+    }
+
+    #[test]
+    fn non_noop_adapter_metrics_and_logs() {
+        let adapter = TelemetryAdapter::new(TelemetryConfig::default()).unwrap();
+        adapter.record_counter("agileplus.c", 1, &[("k", "v")]);
+        adapter.record_histogram("agileplus.h", 2.0, &[]);
+        adapter.record_gauge("agileplus.g", 3.0, &[]);
+        adapter.log_info("info");
+        adapter.log_warn("warn");
+        adapter.log_error("error");
+        adapter.log(&entry(LogLevel::Info, "entry"));
+    }
+
+    #[test]
+    fn noop_span_context_helper_values() {
+        let ctx = noop_span_context();
+        assert_eq!(ctx.trace_id.len(), 32);
+        assert_eq!(ctx.span_id.len(), 16);
+        assert!(ctx.parent_span_id.is_none());
+    }
+
+    #[tokio::test]
+    async fn build_otlp_provider_unreachable_endpoint_falls_back() {
+        let cfg = crate::config::OtlpConfig {
+            endpoint: "http://127.0.0.1:1".into(),
+            protocol: crate::config::OtlpProtocol::Grpc,
+            headers: Default::default(),
+            timeout_ms: 10,
+            export_interval_ms: 10,
+        };
+        // Building may succeed (lazy connect) or error; either is acceptable
+        // and neither must panic.
+        let _ = build_otlp_provider(&cfg);
+    }
+
+    #[tokio::test]
+    async fn init_trace_provider_does_not_panic() {
+        init_trace_provider(&TelemetryConfig::default());
+        let cfg = TelemetryConfig {
+            otlp: Some(crate::config::OtlpConfig {
+                endpoint: "http://127.0.0.1:1".into(),
+                protocol: crate::config::OtlpProtocol::Grpc,
+                headers: Default::default(),
+                timeout_ms: 10,
+                export_interval_ms: 10,
+            }),
+            logging: Default::default(),
+            sampling: Default::default(),
+        };
+        init_trace_provider(&cfg);
+    }
+}

@@ -68,3 +68,123 @@ pub(crate) fn resolve_jsonl_conflict(path: &Path) -> Result<bool, MergeError> {
 fn encode_hash(bytes: [u8; 32]) -> String {
     bytes.iter().map(|b| format!("{b:02x}")).collect()
 }
+
+#[cfg(test)]
+mod deep_tests {
+    use super::*;
+
+    fn make_event(seq: i64, hash_byte: u8) -> Event {
+        let mut e = Event::new("Feature", 1, "created", serde_json::json!({}), "test");
+        e.sequence = seq;
+        e.hash[0] = hash_byte;
+        e
+    }
+
+    fn conflict(ours: &str, theirs: &str) -> String {
+        format!("<<<<<<< HEAD\n{ours}\n=======\n{theirs}\n>>>>>>> x\n")
+    }
+
+    #[test]
+    fn clean_file_returns_false() {
+        let tmp = tempfile::tempdir().unwrap();
+        let path = tmp.path().join("1.jsonl");
+        std::fs::write(&path, "no markers\n").unwrap();
+        assert!(!resolve_jsonl_conflict(&path).unwrap());
+    }
+
+    #[test]
+    fn missing_file_errors() {
+        let tmp = tempfile::tempdir().unwrap();
+        let err = resolve_jsonl_conflict(&tmp.path().join("nope.jsonl")).unwrap_err();
+        assert!(matches!(err, MergeError::Io(_)));
+    }
+
+    #[test]
+    fn dedup_keeps_unique_only() {
+        let tmp = tempfile::tempdir().unwrap();
+        let path = tmp.path().join("1.jsonl");
+        let e1 = serde_json::to_string(&make_event(1, 1)).unwrap();
+        let e2 = serde_json::to_string(&make_event(2, 2)).unwrap();
+        std::fs::write(&path, conflict(&format!("{e1}\n{e2}"), &e1)).unwrap();
+        assert!(resolve_jsonl_conflict(&path).unwrap());
+        let lines: Vec<&str> = std::fs::read_to_string(&path)
+            .unwrap()
+            .lines()
+            .filter(|l| !l.is_empty())
+            .map(|l| Box::leak(l.to_string().into_boxed_str()) as &str)
+            .collect();
+        assert_eq!(lines.len(), 2);
+    }
+
+    #[test]
+    fn output_sorted_by_sequence() {
+        let tmp = tempfile::tempdir().unwrap();
+        let path = tmp.path().join("1.jsonl");
+        let e5 = serde_json::to_string(&make_event(5, 5)).unwrap();
+        let e1 = serde_json::to_string(&make_event(1, 1)).unwrap();
+        // ours has seq5 first; theirs adds seq1.
+        std::fs::write(&path, conflict(&e5, &e1)).unwrap();
+        resolve_jsonl_conflict(&path).unwrap();
+        let seqs: Vec<i64> = std::fs::read_to_string(&path)
+            .unwrap()
+            .lines()
+            .filter(|l| !l.is_empty())
+            .map(|l| serde_json::from_str::<Event>(l).unwrap().sequence)
+            .collect();
+        assert_eq!(seqs, vec![1, 5]);
+    }
+
+    #[test]
+    fn unparsable_lines_are_skipped() {
+        let tmp = tempfile::tempdir().unwrap();
+        let path = tmp.path().join("1.jsonl");
+        let good = serde_json::to_string(&make_event(1, 1)).unwrap();
+        std::fs::write(&path, conflict(&format!("{{bad json\n{good}"), "also bad")).unwrap();
+        assert!(resolve_jsonl_conflict(&path).unwrap());
+        let lines: Vec<String> = std::fs::read_to_string(&path)
+            .unwrap()
+            .lines()
+            .filter(|l| !l.is_empty())
+            .map(String::from)
+            .collect();
+        assert_eq!(lines.len(), 1);
+        assert_eq!(serde_json::from_str::<Event>(&lines[0]).unwrap().sequence, 1);
+    }
+
+    #[test]
+    fn both_sides_unparsable_yields_empty_file() {
+        let tmp = tempfile::tempdir().unwrap();
+        let path = tmp.path().join("1.jsonl");
+        std::fs::write(&path, conflict("{bad", "also bad")).unwrap();
+        assert!(resolve_jsonl_conflict(&path).unwrap());
+        assert!(std::fs::read_to_string(&path).unwrap().trim().is_empty());
+    }
+
+    #[test]
+    fn duplicate_hash_different_content_deduped() {
+        let tmp = tempfile::tempdir().unwrap();
+        let path = tmp.path().join("1.jsonl");
+        // Same hash[0] and same seq => same hash string => dedup.
+        let a = serde_json::to_string(&make_event(1, 1)).unwrap();
+        let b = serde_json::to_string(&make_event(1, 1)).unwrap();
+        std::fs::write(&path, conflict(&a, &b)).unwrap();
+        resolve_jsonl_conflict(&path).unwrap();
+        let count = std::fs::read_to_string(&path)
+            .unwrap()
+            .lines()
+            .filter(|l| !l.is_empty())
+            .count();
+        assert_eq!(count, 1);
+    }
+
+    #[test]
+    fn encode_hash_formats_hex() {
+        let mut bytes = [0u8; 32];
+        bytes[0] = 0xab;
+        bytes[31] = 0x0f;
+        let s = encode_hash(bytes);
+        assert_eq!(s.len(), 64);
+        assert!(s.starts_with("ab"));
+        assert!(s.ends_with("0f"));
+    }
+}

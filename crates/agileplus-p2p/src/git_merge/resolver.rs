@@ -63,3 +63,92 @@ fn walkdir(dir: &Path) -> Result<Vec<std::path::PathBuf>, MergeError> {
     }
     Ok(result)
 }
+
+#[cfg(test)]
+mod deep_tests {
+    use super::*;
+    use std::path::PathBuf;
+
+    #[test]
+    fn walkdir_missing_dir_errors() {
+        let err = walkdir(&PathBuf::from("/definitely/not/here")).unwrap_err();
+        assert!(matches!(err, MergeError::Io(_)));
+    }
+
+    #[test]
+    fn walkdir_empty_dir_returns_empty() {
+        let tmp = tempfile::tempdir().unwrap();
+        assert!(walkdir(tmp.path()).unwrap().is_empty());
+    }
+
+    #[test]
+    fn walkdir_recurses_nested_dirs() {
+        let tmp = tempfile::tempdir().unwrap();
+        let nested = tmp.path().join("a/b/c");
+        std::fs::create_dir_all(&nested).unwrap();
+        std::fs::write(nested.join("f.txt"), "x").unwrap();
+        std::fs::write(tmp.path().join("top.txt"), "y").unwrap();
+        let files = walkdir(tmp.path()).unwrap();
+        assert_eq!(files.len(), 2);
+    }
+
+    #[test]
+    fn resolve_no_sync_dir_is_noop() {
+        let tmp = tempfile::tempdir().unwrap();
+        let r = resolve_git_conflicts(tmp.path()).unwrap();
+        assert_eq!(r.jsonl_files_resolved, 0);
+        assert_eq!(r.snapshot_files_resolved, 0);
+        assert!(!r.sync_state_merged);
+    }
+
+    #[test]
+    fn resolve_sync_dir_exists_but_empty() {
+        let tmp = tempfile::tempdir().unwrap();
+        std::fs::create_dir_all(tmp.path().join(".agileplus/sync")).unwrap();
+        let r = resolve_git_conflicts(tmp.path()).unwrap();
+        assert_eq!(r.jsonl_files_resolved, 0);
+        assert_eq!(r.snapshot_files_resolved, 0);
+    }
+
+    #[test]
+    fn resolve_ignores_clean_files() {
+        let tmp = tempfile::tempdir().unwrap();
+        let events = tmp.path().join(".agileplus/sync/events/Feature");
+        std::fs::create_dir_all(&events).unwrap();
+        std::fs::write(events.join("1.jsonl"), "no conflict here\n").unwrap();
+        let snaps = tmp.path().join(".agileplus/sync/snapshots/Feature");
+        std::fs::create_dir_all(&snaps).unwrap();
+        std::fs::write(snaps.join("1.json"), "{}").unwrap();
+        let r = resolve_git_conflicts(tmp.path()).unwrap();
+        assert_eq!(r.jsonl_files_resolved, 0);
+        assert_eq!(r.snapshot_files_resolved, 0);
+    }
+
+    #[test]
+    fn resolve_nested_entity_subdirs() {
+        let tmp = tempfile::tempdir().unwrap();
+        let dir = tmp.path().join(".agileplus/sync/events/Feature/sub");
+        std::fs::create_dir_all(&dir).unwrap();
+        let mut e1 = agileplus_domain::domain::event::Event::new(
+            "Feature",
+            1,
+            "created",
+            serde_json::json!({}),
+            "t",
+        );
+        e1.sequence = 1;
+        e1.hash[0] = 1;
+        let mut e2 = e1.clone();
+        e2.sequence = 2;
+        e2.hash[0] = 2;
+        let content = format!(
+            "<<<<<<< HEAD\n{}\n{}\n=======\n{}\n>>>>>>> x\n",
+            serde_json::to_string(&e1).unwrap(),
+            serde_json::to_string(&e2).unwrap(),
+            serde_json::to_string(&e1).unwrap(),
+        );
+        std::fs::write(dir.join("1.jsonl"), content).unwrap();
+        let r = resolve_git_conflicts(tmp.path()).unwrap();
+        assert_eq!(r.jsonl_files_resolved, 1);
+    }
+}

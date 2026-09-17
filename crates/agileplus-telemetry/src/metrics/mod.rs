@@ -393,3 +393,195 @@ mod tests {
         metrics.record_api_request_duration(12.3, &[("endpoint", "/health")]);
     }
 }
+
+#[cfg(test)]
+mod deep_tests {
+    use super::*;
+    use opentelemetry::metrics::MeterProvider as _;
+    use opentelemetry_sdk::metrics::SdkMeterProvider;
+
+    fn test_recorder() -> MetricsRecorder {
+        let provider = SdkMeterProvider::builder().build();
+        let meter = provider.meter("agileplus-deep-test");
+        MetricsRecorder::new(&meter)
+    }
+
+    fn test_metrics() -> AgilePlusMetrics {
+        let provider = SdkMeterProvider::builder().build();
+        let meter = provider.meter("agileplus-deep-test");
+        AgilePlusMetrics::new(&meter)
+    }
+
+    #[test]
+    fn recorder_starts_at_zero() {
+        let rec = test_recorder();
+        assert_eq!(rec.agent_runs_total.load(Ordering::Relaxed), 0);
+        assert_eq!(rec.review_cycles_total.load(Ordering::Relaxed), 0);
+    }
+
+    #[test]
+    fn review_cycle_counter_increments() {
+        let rec = test_recorder();
+        rec.record_review_cycle("f", "WP1", 1);
+        rec.record_review_cycle("f", "WP1", 2);
+        assert_eq!(rec.review_cycles_total.load(Ordering::Relaxed), 2);
+    }
+
+    #[test]
+    fn agent_runs_accumulate_across_labels() {
+        let rec = test_recorder();
+        rec.record_agent_run("f1", "WP1", "codex");
+        rec.record_agent_run("f2", "WP2", "claude-code");
+        rec.record_agent_run("f3", "WP3", "gemini");
+        assert_eq!(rec.agent_runs_total.load(Ordering::Relaxed), 3);
+    }
+
+    #[test]
+    fn snapshot_reports_command_and_duration() {
+        let rec = test_recorder();
+        let snap = rec.collect_snapshot("specify", Duration::from_millis(1234));
+        assert_eq!(snap.command, "specify");
+        assert_eq!(snap.duration_ms, 1234);
+    }
+
+    #[test]
+    fn snapshot_zero_duration() {
+        let rec = test_recorder();
+        let snap = rec.collect_snapshot("noop", Duration::ZERO);
+        assert_eq!(snap.duration_ms, 0);
+    }
+
+    #[test]
+    fn snapshot_cumulative_delta_then_reset() {
+        let rec = test_recorder();
+        rec.record_agent_run("f", "WP1", "codex");
+        let first = rec.collect_snapshot("a", Duration::from_millis(1));
+        assert_eq!(first.agent_runs, 1);
+        rec.record_agent_run("f", "WP1", "codex");
+        let second = rec.collect_snapshot("b", Duration::from_millis(1));
+        assert_eq!(second.agent_runs, 1);
+        let third = rec.collect_snapshot("c", Duration::from_millis(1));
+        assert_eq!(third.agent_runs, 0);
+    }
+
+    #[test]
+    fn reset_clears_counters_and_snapshot_state() {
+        let rec = test_recorder();
+        rec.record_agent_run("f", "WP1", "codex");
+        rec.record_review_cycle("f", "WP1", 1);
+        let _ = rec.collect_snapshot("a", Duration::from_millis(1));
+        rec.reset();
+        assert_eq!(rec.agent_runs_total.load(Ordering::Relaxed), 0);
+        assert_eq!(rec.review_cycles_total.load(Ordering::Relaxed), 0);
+        assert_eq!(rec.agent_runs_snapshot.load(Ordering::Relaxed), 0);
+        assert_eq!(rec.review_cycles_snapshot.load(Ordering::Relaxed), 0);
+        let snap = rec.collect_snapshot("after", Duration::from_millis(1));
+        assert_eq!(snap.agent_runs, 0);
+        assert_eq!(snap.review_cycles, 0);
+    }
+
+    #[test]
+    fn snapshot_timestamp_is_set() {
+        let before = Utc::now();
+        let rec = test_recorder();
+        let snap = rec.collect_snapshot("t", Duration::from_millis(1));
+        assert!(snap.timestamp >= before);
+    }
+
+    #[test]
+    fn metric_snapshot_is_clone() {
+        let rec = test_recorder();
+        let snap = rec.collect_snapshot("c", Duration::from_millis(7));
+        let cloned = snap.clone();
+        assert_eq!(cloned.command, "c");
+        assert_eq!(cloned.duration_ms, 7);
+    }
+
+    #[test]
+    fn metric_snapshot_debug_format() {
+        let rec = test_recorder();
+        let snap = rec.collect_snapshot("dbg", Duration::from_millis(3));
+        let s = format!("{snap:?}");
+        assert!(s.contains("dbg"));
+    }
+
+    #[test]
+    fn record_command_duration_without_feature() {
+        let rec = test_recorder();
+        rec.record_command_duration("list", None, Duration::from_secs(1));
+    }
+
+    #[test]
+    fn record_command_duration_with_feature() {
+        let rec = test_recorder();
+        rec.record_command_duration("implement", Some("001-sde"), Duration::from_millis(250));
+    }
+
+    #[test]
+    fn record_command_duration_zero() {
+        let rec = test_recorder();
+        rec.record_command_duration("noop", None, Duration::ZERO);
+    }
+
+    #[test]
+    fn record_event_processed_with_and_without_labels() {
+        let rec = test_recorder();
+        rec.record_event_processed(&[KeyValue::new("source", "git")]);
+        rec.record_event_processed(&[]);
+    }
+
+    #[test]
+    fn record_sync_duration_variants() {
+        let rec = test_recorder();
+        rec.record_sync_duration(0.0, &[]);
+        rec.record_sync_duration(1.5, &[KeyValue::new("sync_type", "incremental")]);
+        rec.record_sync_duration(10_000.0, &[KeyValue::new("sync_type", "full")]);
+    }
+
+    #[test]
+    fn cache_hit_rate_bounds() {
+        let rec = test_recorder();
+        rec.set_cache_hit_rate(0.0, &[]);
+        rec.set_cache_hit_rate(0.5, &[]);
+        rec.set_cache_hit_rate(1.0, &[]);
+    }
+
+    #[test]
+    fn api_request_duration_counts() {
+        let rec = test_recorder();
+        rec.record_api_request_duration(1.0, &[KeyValue::new("endpoint", "/health")]);
+        rec.record_api_request_duration(9_999.0, &[KeyValue::new("endpoint", "/v1/specs")]);
+    }
+
+    #[test]
+    fn active_features_set_values() {
+        let rec = test_recorder();
+        rec.set_active_features(0, &[]);
+        rec.set_active_features(u64::MAX, &[]);
+    }
+
+    #[test]
+    fn init_metrics_is_idempotent() {
+        let provider = SdkMeterProvider::builder().build();
+        let meter = provider.meter("agileplus-init-deep");
+        init_metrics(&meter);
+        init_metrics(&meter);
+    }
+
+    #[test]
+    fn agileplus_metrics_clone_shares_inner() {
+        let metrics = test_metrics();
+        let cloned = metrics.clone();
+        metrics.events_processed(&[("s", "1")]);
+        cloned.events_processed(&[("s", "2")]);
+    }
+
+    #[test]
+    fn agileplus_metrics_all_methods_smoke() {
+        let metrics = test_metrics();
+        metrics.events_processed(&[]);
+        metrics.record_sync_duration(12.5, &[("sync_type", "full")]);
+        metrics.set_cache_hit_rate(0.25, &[]);
+        metrics.record_api_request_duration(3.5, &[("endpoint", "/x")]);
+    }
+}
