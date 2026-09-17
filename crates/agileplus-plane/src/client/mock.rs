@@ -186,3 +186,84 @@ mod tests {
         assert!(result.is_err());
     }
 }
+
+#[cfg(test)]
+mod extra_tests {
+    use super::*;
+
+    fn item(name: &str) -> PlaneWorkItem {
+        PlaneWorkItem {
+            id: None,
+            name: name.to_string(),
+            description_html: Some("<p>x</p>".to_string()),
+            state: Some("started".to_string()),
+            priority: Some(1),
+            parent: None,
+            labels: vec!["l".to_string()],
+        }
+    }
+
+    #[tokio::test]
+    async fn new_client_is_empty() {
+        let client = InMemoryPlaneClient::new();
+        assert!(client.list_issues().await.unwrap().is_empty());
+    }
+
+    #[tokio::test]
+    async fn with_issue_is_retrievable() {
+        let client = InMemoryPlaneClient::new().with_issue("a", "Alpha");
+        let got = client.get_issue("a").await.unwrap();
+        assert_eq!(got.name, "Alpha");
+    }
+
+    #[tokio::test]
+    async fn create_assigns_sequential_ids() {
+        let client = InMemoryPlaneClient::new();
+        let first = client.create_issue(&item("one")).await.unwrap();
+        let second = client.create_issue(&item("two")).await.unwrap();
+        assert_eq!(first.id, "issue-1");
+        assert_eq!(second.id, "issue-2");
+    }
+
+    #[tokio::test]
+    async fn update_missing_issue_errors() {
+        let client = InMemoryPlaneClient::new();
+        assert!(client.update_issue("nope", &item("x")).await.is_err());
+    }
+
+    #[tokio::test]
+    async fn update_existing_issue_reflects_new_name() {
+        let client = InMemoryPlaneClient::new().with_issue("a", "Alpha");
+        let updated = client.update_issue("a", &item("Alpha v2")).await.unwrap();
+        assert_eq!(updated.name, "Alpha v2");
+    }
+
+    #[tokio::test]
+    async fn create_sub_issue_records_parent() {
+        let client = InMemoryPlaneClient::new();
+        let child = client
+            .create_sub_issue("parent-9", "Child", Some("<p>c</p>".to_string()))
+            .await
+            .unwrap();
+        assert_eq!(child.id, "issue-1");
+        let stored = client.get_issue("issue-1").await.unwrap();
+        assert_eq!(stored.name, "Child");
+    }
+
+    #[tokio::test]
+    async fn list_work_items_reflects_with_issue_calls() {
+        let client = InMemoryPlaneClient::new()
+            .with_issue("a", "A")
+            .with_issue("b", "B")
+            .with_issue("c", "C");
+        assert_eq!(client.list_work_items().await.unwrap().len(), 3);
+    }
+
+    #[tokio::test]
+    async fn created_item_preserves_state_and_labels() {
+        let client = InMemoryPlaneClient::new();
+        let resp = client.create_work_item(&item("Feature")).await.unwrap();
+        assert_eq!(resp.state.as_deref(), Some("started"));
+        assert!(resp.updated_at.is_some());
+    }
+}

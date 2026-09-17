@@ -235,3 +235,178 @@ mod tests {
         assert!(store.load("Feature", 99).await.unwrap().is_none());
     }
 }
+
+#[cfg(test)]
+mod coverage_tests {
+    use super::*;
+    use crate::store::InMemoryEventStore;
+
+    fn snap(entity_type: &str, entity_id: i64, seq: i64) -> Snapshot {
+        Snapshot::new(entity_type, entity_id, serde_json::json!({"v": seq}), seq)
+    }
+
+    fn ev(entity_type: &str, entity_id: i64, event_type: &str) -> Event {
+        Event::new(entity_type, entity_id, event_type, serde_json::json!({}), "t")
+    }
+
+    #[test]
+    fn snapshot_error_not_found_display() {
+        let e = SnapshotError::NotFound { entity_type: "Feature".into(), entity_id: 3 };
+        assert_eq!(e.to_string(), "Snapshot not found for Feature:3");
+    }
+
+    #[test]
+    fn snapshot_error_storage_display() {
+        assert_eq!(
+            SnapshotError::StorageError("io".into()).to_string(),
+            "Storage error: io"
+        );
+    }
+
+    #[test]
+    fn snapshot_error_invalid_display() {
+        assert_eq!(SnapshotError::Invalid("bad".into()).to_string(), "Invalid snapshot: bad");
+    }
+
+    #[test]
+    fn config_default_values() {
+        let c = SnapshotConfig::default();
+        assert_eq!(c.event_threshold, 100);
+        assert_eq!(c.time_threshold_secs, 300);
+    }
+
+    #[test]
+    fn config_clone_preserves_fields() {
+        let c = SnapshotConfig { event_threshold: 5, time_threshold_secs: 9 };
+        let d = c.clone();
+        assert_eq!(d.event_threshold, 5);
+        assert_eq!(d.time_threshold_secs, 9);
+    }
+
+    #[test]
+    fn should_snapshot_event_threshold_true() {
+        let c = SnapshotConfig { event_threshold: 10, time_threshold_secs: 300 };
+        assert!(should_snapshot(&c, 10, 0, None));
+    }
+
+    #[test]
+    fn should_snapshot_event_threshold_false() {
+        let c = SnapshotConfig { event_threshold: 10, time_threshold_secs: 300 };
+        assert!(!should_snapshot(&c, 9, 0, None));
+    }
+
+    #[test]
+    fn should_snapshot_time_threshold_true() {
+        let c = SnapshotConfig { event_threshold: 100, time_threshold_secs: 60 };
+        let old = Utc::now() - TimeDelta::seconds(120);
+        assert!(should_snapshot(&c, 1, 0, Some(old)));
+    }
+
+    #[test]
+    fn should_snapshot_time_threshold_false() {
+        let c = SnapshotConfig { event_threshold: 100, time_threshold_secs: 600 };
+        assert!(!should_snapshot(&c, 1, 0, Some(Utc::now())));
+    }
+
+    #[test]
+    fn should_snapshot_with_none_time_ignores_time_rule() {
+        let c = SnapshotConfig { event_threshold: 100, time_threshold_secs: 0 };
+        assert!(!should_snapshot(&c, 1, 0, None));
+    }
+
+    #[test]
+    fn should_snapshot_event_threshold_short_circuits() {
+        let c = SnapshotConfig { event_threshold: 1, time_threshold_secs: 999_999 };
+        assert!(should_snapshot(&c, 5, 4, None));
+    }
+
+    #[tokio::test]
+    async fn save_and_load_latest_by_sequence() {
+        let store = InMemorySnapshotStore::new();
+        store.save(&snap("F", 1, 10)).await.unwrap();
+        store.save(&snap("F", 1, 30)).await.unwrap();
+        store.save(&snap("F", 1, 20)).await.unwrap();
+        let loaded = store.load("F", 1).await.unwrap().unwrap();
+        assert_eq!(loaded.event_sequence, 30);
+    }
+
+    #[tokio::test]
+    async fn load_unknown_returns_none() {
+        let store = InMemorySnapshotStore::new();
+        assert!(store.load("F", 9).await.unwrap().is_none());
+    }
+
+    #[tokio::test]
+    async fn delete_before_removes_older_keeps_newer() {
+        let store = InMemorySnapshotStore::new();
+        store.save(&snap("F", 1, 10)).await.unwrap();
+        store.save(&snap("F", 1, 20)).await.unwrap();
+        store.delete_before("F", 1, 20).await.unwrap();
+        let loaded = store.load("F", 1).await.unwrap().unwrap();
+        assert_eq!(loaded.event_sequence, 20);
+    }
+
+    #[tokio::test]
+    async fn delete_before_unknown_is_noop() {
+        let store = InMemorySnapshotStore::new();
+        store.delete_before("F", 404, 1).await.unwrap();
+        assert!(store.load("F", 404).await.unwrap().is_none());
+    }
+
+    #[tokio::test]
+    async fn entities_are_independent() {
+        let store = InMemorySnapshotStore::new();
+        store.save(&snap("F", 1, 5)).await.unwrap();
+        store.save(&snap("F", 2, 7)).await.unwrap();
+        assert_eq!(store.load("F", 1).await.unwrap().unwrap().event_sequence, 5);
+        assert_eq!(store.load("F", 2).await.unwrap().unwrap().event_sequence, 7);
+    }
+
+    #[tokio::test]
+    async fn new_store_is_empty() {
+        let store = InMemorySnapshotStore::new();
+        assert!(store.load("X", 1).await.unwrap().is_none());
+    }
+
+    #[tokio::test]
+    async fn default_store_matches_new() {
+        let store = InMemorySnapshotStore::default();
+        assert!(store.load("X", 1).await.unwrap().is_none());
+    }
+
+    #[tokio::test]
+    async fn loaded_state_without_snapshot_returns_all_events() {
+        let snaps = InMemorySnapshotStore::new();
+        let events = InMemoryEventStore::new();
+        events.append(&ev("F", 1, "a")).await.unwrap();
+        events.append(&ev("F", 1, "b")).await.unwrap();
+
+        let state = LoadedState::load(&snaps, &events, "F", 1).await.unwrap();
+        assert!(state.snapshot.is_none());
+        assert_eq!(state.events_to_replay.len(), 2);
+    }
+
+    #[tokio::test]
+    async fn loaded_state_with_snapshot_returns_newer_events_only() {
+        let snaps = InMemorySnapshotStore::new();
+        let events = InMemoryEventStore::new();
+        events.append(&ev("F", 1, "a")).await.unwrap();
+        events.append(&ev("F", 1, "b")).await.unwrap();
+        events.append(&ev("F", 1, "c")).await.unwrap();
+        snaps.save(&snap("F", 1, 1)).await.unwrap();
+
+        let state = LoadedState::load(&snaps, &events, "F", 1).await.unwrap();
+        assert!(state.snapshot.is_some());
+        assert_eq!(state.events_to_replay.len(), 2);
+        assert!(state.events_to_replay.iter().all(|e| e.sequence > 1));
+    }
+
+    #[tokio::test]
+    async fn loaded_state_empty_when_nothing_stored() {
+        let snaps = InMemorySnapshotStore::new();
+        let events = InMemoryEventStore::new();
+        let state = LoadedState::load(&snaps, &events, "F", 1).await.unwrap();
+        assert!(state.snapshot.is_none());
+        assert!(state.events_to_replay.is_empty());
+    }
+}

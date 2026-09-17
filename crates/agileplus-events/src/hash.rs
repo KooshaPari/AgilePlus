@@ -249,3 +249,219 @@ mod tests {
         assert!(verify_chain(&[e1]).is_err());
     }
 }
+
+#[cfg(test)]
+mod coverage_tests {
+    use super::*;
+
+    fn ts() -> DateTime<Utc> {
+        DateTime::parse_from_rfc3339("2026-03-02T00:00:00Z")
+            .unwrap()
+            .with_timezone(&Utc)
+    }
+
+    fn base_hash() -> [u8; 32] {
+        compute_hash(
+            1,
+            "Feature",
+            "created",
+            &serde_json::json!({"n": 1}),
+            ts(),
+            "actor",
+            &[0u8; 32],
+        )
+        .unwrap()
+    }
+
+    fn make_event(sequence: i64, payload: serde_json::Value, prev_hash: [u8; 32]) -> Event {
+        let hash = compute_hash(1, "Feature", "updated", &payload, ts(), "actor", &prev_hash).unwrap();
+        Event {
+            id: sequence,
+            entity_type: "Feature".into(),
+            entity_id: 1,
+            event_type: "updated".into(),
+            payload,
+            actor: "actor".into(),
+            timestamp: ts(),
+            prev_hash,
+            hash,
+            sequence,
+        }
+    }
+
+    fn make_chain(n: i64) -> Vec<Event> {
+        let mut events = Vec::new();
+        let mut prev = [0u8; 32];
+        for seq in 1..=n {
+            let ev = make_event(seq, serde_json::json!({"seq": seq}), prev);
+            prev = ev.hash;
+            events.push(ev);
+        }
+        events
+    }
+
+    #[test]
+    fn compute_hash_deterministic_same_inputs() {
+        assert_eq!(base_hash(), base_hash());
+    }
+
+    #[test]
+    fn compute_hash_not_all_zero() {
+        assert_ne!(base_hash(), [0u8; 32]);
+    }
+
+    #[test]
+    fn compute_hash_changes_with_entity_id() {
+        let a = compute_hash(1, "F", "e", &serde_json::json!({}), ts(), "a", &[0u8; 32]).unwrap();
+        let b = compute_hash(2, "F", "e", &serde_json::json!({}), ts(), "a", &[0u8; 32]).unwrap();
+        assert_ne!(a, b);
+    }
+
+    #[test]
+    fn compute_hash_changes_with_entity_type() {
+        let a = compute_hash(1, "F", "e", &serde_json::json!({}), ts(), "a", &[0u8; 32]).unwrap();
+        let b = compute_hash(1, "G", "e", &serde_json::json!({}), ts(), "a", &[0u8; 32]).unwrap();
+        assert_ne!(a, b);
+    }
+
+    #[test]
+    fn compute_hash_changes_with_event_type() {
+        let a = compute_hash(1, "F", "e", &serde_json::json!({}), ts(), "a", &[0u8; 32]).unwrap();
+        let b = compute_hash(1, "F", "f", &serde_json::json!({}), ts(), "a", &[0u8; 32]).unwrap();
+        assert_ne!(a, b);
+    }
+
+    #[test]
+    fn compute_hash_changes_with_payload() {
+        let a = compute_hash(1, "F", "e", &serde_json::json!({"x": 1}), ts(), "a", &[0u8; 32]).unwrap();
+        let b = compute_hash(1, "F", "e", &serde_json::json!({"x": 2}), ts(), "a", &[0u8; 32]).unwrap();
+        assert_ne!(a, b);
+    }
+
+    #[test]
+    fn compute_hash_changes_with_timestamp() {
+        let other = DateTime::parse_from_rfc3339("2026-03-03T00:00:00Z")
+            .unwrap()
+            .with_timezone(&Utc);
+        let a = compute_hash(1, "F", "e", &serde_json::json!({}), ts(), "a", &[0u8; 32]).unwrap();
+        let b = compute_hash(1, "F", "e", &serde_json::json!({}), other, "a", &[0u8; 32]).unwrap();
+        assert_ne!(a, b);
+    }
+
+    #[test]
+    fn compute_hash_changes_with_actor() {
+        let a = compute_hash(1, "F", "e", &serde_json::json!({}), ts(), "a", &[0u8; 32]).unwrap();
+        let b = compute_hash(1, "F", "e", &serde_json::json!({}), ts(), "b", &[0u8; 32]).unwrap();
+        assert_ne!(a, b);
+    }
+
+    #[test]
+    fn compute_hash_changes_with_prev_hash() {
+        let a = compute_hash(1, "F", "e", &serde_json::json!({}), ts(), "a", &[0u8; 32]).unwrap();
+        let b = compute_hash(1, "F", "e", &serde_json::json!({}), ts(), "a", &[1u8; 32]).unwrap();
+        assert_ne!(a, b);
+    }
+
+    #[test]
+    fn length_prefix_prevents_field_boundary_collision() {
+        // "ab"+"c" must not hash the same as "a"+"bc" because each field is length-prefixed.
+        let a = compute_hash(1, "ab", "c", &serde_json::json!({}), ts(), "x", &[0u8; 32]).unwrap();
+        let b = compute_hash(1, "a", "bc", &serde_json::json!({}), ts(), "x", &[0u8; 32]).unwrap();
+        assert_ne!(a, b);
+    }
+
+    #[test]
+    fn hash_error_chain_broken_display() {
+        let e = HashError::ChainBroken { sequence: 5 };
+        assert_eq!(e.to_string(), "Hash chain broken at sequence 5");
+    }
+
+    #[test]
+    fn hash_error_invalid_length_display() {
+        let e = HashError::InvalidHashLength(7);
+        assert_eq!(e.to_string(), "Invalid hash length: expected 32, got 7");
+    }
+
+    #[test]
+    fn hash_error_hash_mismatch_display() {
+        let e = HashError::HashMismatch { sequence: 3 };
+        assert_eq!(e.to_string(), "Hash mismatch at sequence 3");
+    }
+
+    #[test]
+    fn verify_chain_empty_is_ok() {
+        verify_chain(&[]).unwrap();
+    }
+
+    #[test]
+    fn verify_chain_single_event_ok() {
+        verify_chain(&make_chain(1)).unwrap();
+    }
+
+    #[test]
+    fn verify_chain_two_events_ok() {
+        verify_chain(&make_chain(2)).unwrap();
+    }
+
+    #[test]
+    fn verify_chain_three_events_ok() {
+        verify_chain(&make_chain(3)).unwrap();
+    }
+
+    #[test]
+    fn verify_chain_first_prev_hash_nonzero_is_broken() {
+        let mut events = make_chain(1);
+        events[0].prev_hash = [9u8; 32];
+        assert!(matches!(
+            verify_chain(&events),
+            Err(HashError::ChainBroken { .. })
+        ));
+    }
+
+    #[test]
+    fn verify_chain_sequence_gap_detected() {
+        let mut events = make_chain(2);
+        events[1].sequence = 5;
+        assert!(matches!(
+            verify_chain(&events),
+            Err(HashError::ChainBroken { sequence: 5 })
+        ));
+    }
+
+    #[test]
+    fn verify_chain_prev_hash_mismatch_detected() {
+        let mut events = make_chain(2);
+        events[1].prev_hash = [7u8; 32];
+        assert!(matches!(
+            verify_chain(&events),
+            Err(HashError::ChainBroken { .. })
+        ));
+    }
+
+    #[test]
+    fn verify_chain_hash_mismatch_detected_on_second() {
+        let mut events = make_chain(2);
+        events[1].payload = serde_json::json!({"tampered": true});
+        assert!(matches!(
+            verify_chain(&events),
+            Err(HashError::HashMismatch { sequence: 2 })
+        ));
+    }
+
+    #[test]
+    fn verify_chain_tampered_first_hash_detected() {
+        let mut events = make_chain(1);
+        events[0].hash[0] ^= 0xFF;
+        assert!(matches!(
+            verify_chain(&events),
+            Err(HashError::HashMismatch { sequence: 1 })
+        ));
+    }
+
+    #[test]
+    fn verify_chain_middle_tamper_detected() {
+        let mut events = make_chain(3);
+        events[1].hash[5] ^= 0x01;
+        assert!(verify_chain(&events).is_err());
+    }
+}

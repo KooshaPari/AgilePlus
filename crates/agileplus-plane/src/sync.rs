@@ -232,3 +232,54 @@ mod tests {
         assert_ne!(format!("{:?}", skipped), format!("{:?}", conflict));
     }
 }
+
+#[cfg(test)]
+mod tests_extra {
+    use super::*;
+
+    #[test]
+    fn hash_content_is_64_hex_chars() {
+        let h = hash_content("anything");
+        assert_eq!(h.len(), 64);
+        assert!(h.chars().all(|c| c.is_ascii_hexdigit()));
+    }
+
+    #[test]
+    fn hash_content_distinguishes_concatenations() {
+        assert_ne!(hash_content("ab"), hash_content("a b"));
+    }
+
+    #[test]
+    fn hash_content_handles_unicode() {
+        assert_eq!(hash_content("λ"), hash_content("λ"));
+        assert_ne!(hash_content("λ"), hash_content("L"));
+    }
+
+    #[test]
+    fn hash_content_empty_vs_newline() {
+        assert_ne!(hash_content(""), hash_content("\n"));
+    }
+
+    #[test]
+    fn sync_state_clone_is_independent() {
+        let mut original = SyncState::new("feat".into());
+        original.wp_mappings.insert("WP01".into(), "sub".into());
+        let mut clone = original.clone();
+        clone.wp_mappings.insert("WP02".into(), "sub2".into());
+        assert_eq!(original.wp_mappings.len(), 1);
+        assert_eq!(clone.wp_mappings.len(), 2);
+    }
+
+    #[test]
+    fn sync_state_debug_contains_slug() {
+        let state = SyncState::new("my-slug".into());
+        assert!(format!("{state:?}").contains("my-slug"));
+    }
+
+    #[test]
+    fn sync_outcome_clone_and_eq() {
+        let outcome = SyncOutcome::Conflict("id".into());
+        assert_eq!(outcome.clone(), outcome);
+        assert_eq!(format!("{outcome:?}").contains("Conflict"), true);
+    }
+}

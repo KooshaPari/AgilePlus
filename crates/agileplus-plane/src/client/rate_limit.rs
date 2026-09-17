@@ -41,3 +41,58 @@ impl TokenBucket {
         }
     }
 }
+
+#[cfg(test)]
+mod extra_tests {
+    use super::*;
+    use std::time::Duration;
+
+    #[test]
+    fn fresh_bucket_allows_max_tokens() {
+        let mut bucket = TokenBucket::new(4.0, 0.0);
+        for _ in 0..4 {
+            assert!(bucket.try_acquire());
+        }
+        assert!(!bucket.try_acquire());
+    }
+
+    #[test]
+    fn time_until_available_is_zero_when_token_present() {
+        let bucket = TokenBucket::new(1.0, 1.0);
+        assert_eq!(bucket.time_until_available(), Duration::ZERO);
+    }
+
+    #[test]
+    fn time_until_available_grows_as_tokens_drain() {
+        let mut bucket = TokenBucket::new(2.0, 1.0);
+        assert!(bucket.try_acquire());
+        assert!(bucket.try_acquire());
+        let wait = bucket.time_until_available();
+        assert!(wait >= Duration::from_millis(900), "wait={wait:?}");
+    }
+
+    #[test]
+    fn refill_never_exceeds_capacity() {
+        let mut bucket = TokenBucket::new(2.0, 1_000_000.0);
+        assert!(bucket.try_acquire());
+        std::thread::sleep(Duration::from_millis(10));
+        // A huge refill rate must still cap at max_tokens (2).
+        assert!(bucket.try_acquire());
+        assert!(bucket.try_acquire());
+        assert!(!bucket.try_acquire());
+    }
+
+    #[test]
+    fn zero_refill_rate_stays_exhausted() {
+        let mut bucket = TokenBucket::new(1.0, 0.0);
+        assert!(bucket.try_acquire());
+        std::thread::sleep(Duration::from_millis(5));
+        assert!(!bucket.try_acquire());
+    }
+
+    #[test]
+    fn debug_does_not_panic() {
+        let bucket = TokenBucket::new(1.0, 1.0);
+        assert!(!format!("{bucket:?}").is_empty());
+    }
+}

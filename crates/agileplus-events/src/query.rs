@@ -192,3 +192,166 @@ mod tests {
         assert_eq!(result[0].sequence, 2);
     }
 }
+
+#[cfg(test)]
+mod coverage_tests {
+    use super::*;
+    use chrono::Duration;
+
+    fn mk(
+        seq: i64,
+        entity_type: &str,
+        entity_id: i64,
+        event_type: &str,
+        actor: &str,
+        age_secs: i64,
+    ) -> Event {
+        Event {
+            id: seq,
+            entity_type: entity_type.into(),
+            entity_id,
+            event_type: event_type.into(),
+            payload: serde_json::json!({}),
+            actor: actor.into(),
+            timestamp: Utc::now() - Duration::seconds(age_secs),
+            prev_hash: [0u8; 32],
+            hash: [0u8; 32],
+            sequence: seq,
+        }
+    }
+
+    fn sample() -> Vec<Event> {
+        vec![
+            mk(1, "Feature", 1, "created", "alice", 300),
+            mk(2, "Feature", 1, "updated", "bob", 200),
+            mk(3, "Feature", 2, "created", "alice", 100),
+            mk(4, "WorkPackage", 3, "created", "carol", 50),
+        ]
+    }
+
+    #[test]
+    fn empty_query_returns_all() {
+        assert_eq!(EventQuery::new().filter(&sample()).len(), 4);
+    }
+
+    #[test]
+    fn default_matches_new() {
+        assert_eq!(EventQuery::default().filter(&sample()).len(), 4);
+    }
+
+    #[test]
+    fn filter_by_entity_type() {
+        let got = EventQuery::new().entity_type("Feature").filter(&sample());
+        assert_eq!(got.len(), 3);
+        assert!(got.iter().all(|e| e.entity_type == "Feature"));
+    }
+
+    #[test]
+    fn filter_by_entity_id() {
+        let got = EventQuery::new().entity_id(1).filter(&sample());
+        assert_eq!(got.len(), 2);
+        assert!(got.iter().all(|e| e.entity_id == 1));
+    }
+
+    #[test]
+    fn filter_by_event_type() {
+        let got = EventQuery::new().event_type("created").filter(&sample());
+        assert_eq!(got.len(), 3);
+    }
+
+    #[test]
+    fn filter_by_actor() {
+        let got = EventQuery::new().actor("alice").filter(&sample());
+        assert_eq!(got.len(), 2);
+    }
+
+    #[test]
+    fn filter_by_start_time() {
+        let cutoff = Utc::now() - Duration::seconds(150);
+        let got = EventQuery::new().start_time(cutoff).filter(&sample());
+        assert_eq!(got.len(), 2);
+    }
+
+    #[test]
+    fn filter_by_end_time() {
+        let cutoff = Utc::now() - Duration::seconds(150);
+        let got = EventQuery::new().end_time(cutoff).filter(&sample());
+        assert_eq!(got.len(), 2);
+    }
+
+    #[test]
+    fn filter_by_after_sequence() {
+        let got = EventQuery::new().after_sequence(2).filter(&sample());
+        assert_eq!(got.len(), 3);
+        assert!(got.iter().all(|e| e.sequence >= 2));
+    }
+
+    #[test]
+    fn filter_by_end_sequence() {
+        let got = EventQuery::new().end_sequence(2).filter(&sample());
+        assert_eq!(got.len(), 2);
+        assert!(got.iter().all(|e| e.sequence <= 2));
+    }
+
+    #[test]
+    fn limit_zero_returns_empty() {
+        assert!(EventQuery::new().limit(0).filter(&sample()).is_empty());
+    }
+
+    #[test]
+    fn limit_truncates_results() {
+        assert_eq!(EventQuery::new().limit(2).filter(&sample()).len(), 2);
+    }
+
+    #[test]
+    fn combined_filters_narrow_results() {
+        let got = EventQuery::new()
+            .entity_type("Feature")
+            .entity_id(1)
+            .event_type("created")
+            .filter(&sample());
+        assert_eq!(got.len(), 1);
+        assert_eq!(got[0].sequence, 1);
+    }
+
+    #[test]
+    fn combined_entity_type_and_id() {
+        let got = EventQuery::new().entity_type("Feature").entity_id(2).filter(&sample());
+        assert_eq!(got.len(), 1);
+        assert_eq!(got[0].actor, "alice");
+    }
+
+    #[test]
+    fn no_match_returns_empty() {
+        assert!(EventQuery::new().actor("nobody").filter(&sample()).is_empty());
+    }
+
+    #[test]
+    fn empty_input_returns_empty() {
+        assert!(EventQuery::new().filter(&[]).is_empty());
+    }
+
+    #[test]
+    fn query_error_display() {
+        assert_eq!(QueryError::Error("bad".into()).to_string(), "Query error: bad");
+    }
+
+    #[test]
+    fn sequence_range_inclusive_bounds() {
+        let got = EventQuery::new()
+            .after_sequence(2)
+            .end_sequence(3)
+            .filter(&sample());
+        assert_eq!(got.len(), 2);
+        assert_eq!(got[0].sequence, 2);
+        assert_eq!(got[1].sequence, 3);
+    }
+
+    #[test]
+    fn time_range_both_bounds() {
+        let from = Utc::now() - Duration::seconds(250);
+        let to = Utc::now() - Duration::seconds(75);
+        let got = EventQuery::new().start_time(from).end_time(to).filter(&sample());
+        assert_eq!(got.len(), 2);
+    }
+}

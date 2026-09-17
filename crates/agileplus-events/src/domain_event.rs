@@ -714,3 +714,384 @@ mod tests {
         }
     }
 }
+
+#[cfg(test)]
+mod coverage_tests {
+    use super::*;
+    use agileplus_domain::domain::epic::EpicStatus;
+    use agileplus_domain::domain::story::StoryStatus;
+    use agileplus_domain::domain::user::{UserRole, UserStatus};
+    use agileplus_domain::domain::work_package::WpState;
+    use std::sync::{Arc, Mutex};
+
+    fn all_variants() -> Vec<DomainEvent> {
+        vec![
+            DomainEvent::ProjectCreated(ProjectCreated {
+                project_id: 1.into(),
+                slug: "s".into(),
+                name: "n".into(),
+            }),
+            DomainEvent::ProjectRenamed(ProjectRenamed {
+                project_id: 1.into(),
+                old_name: "old".into(),
+                new_name: "new".into(),
+            }),
+            DomainEvent::ProjectArchived(ProjectArchived { project_id: 1.into() }),
+            DomainEvent::EpicCreated(EpicCreated {
+                epic_id: 2.into(),
+                project_id: 1.into(),
+                title: "e".into(),
+            }),
+            DomainEvent::EpicStatusChanged(EpicStatusChanged {
+                epic_id: 2.into(),
+                project_id: 1.into(),
+                from: EpicStatus::Backlog,
+                to: EpicStatus::Active,
+            }),
+            DomainEvent::StoryCreated(StoryCreated {
+                story_id: 3.into(),
+                epic_id: 2.into(),
+                project_id: 1.into(),
+                title: "s".into(),
+                points: None,
+            }),
+            DomainEvent::StoryStatusChanged(StoryStatusChanged {
+                story_id: 3.into(),
+                epic_id: 2.into(),
+                from: StoryStatus::Todo,
+                to: StoryStatus::Done,
+            }),
+            DomainEvent::StoryAssigned(StoryAssigned {
+                story_id: 3.into(),
+                assignee_id: Some(9.into()),
+            }),
+            DomainEvent::UserAdded(UserAdded {
+                user_id: 4.into(),
+                display_name: "u".into(),
+                email: "u@x".into(),
+                role: UserRole::Member,
+            }),
+            DomainEvent::UserRoleChanged(UserRoleChanged {
+                user_id: 4.into(),
+                old_role: UserRole::Viewer,
+                new_role: UserRole::Admin,
+            }),
+            DomainEvent::UserStatusChanged(UserStatusChanged {
+                user_id: 4.into(),
+                from: UserStatus::Active,
+                to: UserStatus::Suspended,
+            }),
+            DomainEvent::FeatureCreated(FeatureCreated {
+                feature_id: 5.into(),
+                slug: "f".into(),
+                friendly_name: "F".into(),
+                project_id: None,
+            }),
+            DomainEvent::FeatureStateAdvanced(FeatureStateAdvanced {
+                feature_id: 5.into(),
+                from: FeatureState::Created,
+                to: FeatureState::Specified,
+            }),
+            DomainEvent::FeatureShipped(FeatureShipped {
+                feature_id: 5.into(),
+                slug: "f".into(),
+            }),
+            DomainEvent::WorkPackageCreated(WorkPackageCreated {
+                wp_id: 6.into(),
+                feature_id: 5.into(),
+                title: "wp".into(),
+                sequence: 1,
+            }),
+            DomainEvent::WorkPackageStateChanged(WorkPackageStateChanged {
+                wp_id: 6.into(),
+                feature_id: 5.into(),
+                from: WpState::Planned,
+                to: WpState::Doing,
+            }),
+        ]
+    }
+
+    fn variant(n: usize) -> DomainEvent {
+        all_variants().into_iter().nth(n).expect("variant index in range")
+    }
+
+    #[test]
+    fn aggregate_id_from_i64() {
+        let id: AggregateId = 7i64.into();
+        assert_eq!(id, AggregateId(7));
+    }
+
+    #[test]
+    fn aggregate_id_serde_roundtrip() {
+        let id = AggregateId(42);
+        let json = serde_json::to_string(&id).unwrap();
+        let back: AggregateId = serde_json::from_str(&json).unwrap();
+        assert_eq!(back, id);
+    }
+
+    #[test]
+    fn aggregate_id_hash_usable_in_set() {
+        use std::collections::HashSet;
+        let mut set = HashSet::new();
+        set.insert(AggregateId(1));
+        set.insert(AggregateId(1));
+        set.insert(AggregateId(2));
+        assert_eq!(set.len(), 2);
+    }
+
+    #[test]
+    fn all_variants_event_type_is_unique_and_snake_case() {
+        let mut seen = std::collections::HashSet::new();
+        for ev in all_variants() {
+            let t = ev.event_type();
+            assert!(t.contains('.'), "expected dotted type, got {t}");
+            assert!(
+                t.chars().all(|c| c.is_ascii_lowercase() || c == '.' || c == '_'),
+                "not machine-readable: {t}"
+            );
+            assert!(seen.insert(t), "duplicate event type {t}");
+        }
+        assert_eq!(seen.len(), 16);
+    }
+
+    #[test]
+    fn wire_code_matches_event_type_for_all_variants() {
+        for ev in all_variants() {
+            assert_eq!(ev.wire_code(), ev.event_type());
+        }
+    }
+
+    #[test]
+    fn aggregate_type_for_project_variants() {
+        for ev in all_variants().into_iter().take(3) {
+            assert_eq!(ev.aggregate_type(), "Project");
+        }
+    }
+
+    #[test]
+    fn aggregate_type_for_epic_variants() {
+        for ev in all_variants().into_iter().skip(3).take(2) {
+            assert_eq!(ev.aggregate_type(), "Epic");
+        }
+    }
+
+    #[test]
+    fn aggregate_type_for_story_variants() {
+        for ev in all_variants().into_iter().skip(5).take(3) {
+            assert_eq!(ev.aggregate_type(), "Story");
+        }
+    }
+
+    #[test]
+    fn aggregate_type_for_user_variants() {
+        for ev in all_variants().into_iter().skip(8).take(3) {
+            assert_eq!(ev.aggregate_type(), "User");
+        }
+    }
+
+    #[test]
+    fn aggregate_type_for_feature_variants() {
+        for ev in all_variants().into_iter().skip(11).take(3) {
+            assert_eq!(ev.aggregate_type(), "Feature");
+        }
+    }
+
+    #[test]
+    fn aggregate_type_for_work_package_variants() {
+        for ev in all_variants().into_iter().skip(14).take(2) {
+            assert_eq!(ev.aggregate_type(), "WorkPackage");
+        }
+    }
+
+    #[test]
+    fn envelope_new_derives_aggregate_type_from_payload() {
+        let env = EventEnvelope::new(AggregateId(3), DomainEvent::ProjectArchived(ProjectArchived { project_id: 3.into() }));
+        assert_eq!(env.aggregate_type, "Project");
+        assert_eq!(env.aggregate_id, AggregateId(3));
+        assert!(env.causation_id.is_none());
+        assert!(env.correlation_id.is_none());
+    }
+
+    #[test]
+    fn envelope_occurred_at_is_recent() {
+        let before = Utc::now();
+        let env = EventEnvelope::new(1i64, DomainEvent::ProjectArchived(ProjectArchived { project_id: 1.into() }));
+        let after = Utc::now();
+        assert!(env.occurred_at >= before && env.occurred_at <= after);
+    }
+
+    #[test]
+    fn envelope_builders_set_ids() {
+        let c = Uuid::new_v4();
+        let r = Uuid::new_v4();
+        let env = EventEnvelope::new(1i64, variant(0))
+            .with_causation(c)
+            .with_correlation(r);
+        assert_eq!(env.causation_id, Some(c));
+        assert_eq!(env.correlation_id, Some(r));
+    }
+
+    #[test]
+    fn envelope_serde_roundtrip_preserves_optional_ids() {
+        let env = EventEnvelope::new(9i64, variant(7))
+            .with_causation(Uuid::new_v4())
+            .with_correlation(Uuid::new_v4());
+        let json = serde_json::to_string(&env).unwrap();
+        let back: EventEnvelope = serde_json::from_str(&json).unwrap();
+        assert_eq!(back, env);
+    }
+
+    #[test]
+    fn envelope_clone_preserves_payload() {
+        let env = EventEnvelope::new(1i64, variant(0));
+        assert_eq!(env.clone().payload, env.payload);
+    }
+
+    #[test]
+    fn all_variant_payloads_serde_roundtrip() {
+        for ev in all_variants() {
+            let env = EventEnvelope::new(1i64, ev);
+            let json = serde_json::to_string(&env).unwrap();
+            let back: EventEnvelope = serde_json::from_str(&json).unwrap();
+            assert_eq!(back, env);
+        }
+    }
+
+    #[test]
+    fn story_assigned_none_assignee_roundtrip() {
+        let ev = DomainEvent::StoryAssigned(StoryAssigned { story_id: 1.into(), assignee_id: None });
+        let json = serde_json::to_string(&ev).unwrap();
+        let back: DomainEvent = serde_json::from_str(&json).unwrap();
+        assert_eq!(back, ev);
+    }
+
+    #[test]
+    fn handler_error_rejected_display() {
+        let e = EventHandlerError::Rejected("no".into());
+        assert!(e.to_string().contains("handler rejected event: no"));
+    }
+
+    #[test]
+    fn handler_error_transient_display() {
+        let e = EventHandlerError::Transient("later".into());
+        assert!(e.to_string().contains("handler encountered a transient error: later"));
+    }
+
+    struct SpyHandler {
+        seen: Arc<Mutex<usize>>,
+        fail: bool,
+    }
+
+    impl EventHandler for SpyHandler {
+        fn handle(&self, _envelope: &EventEnvelope) -> Result<(), EventHandlerError> {
+            if self.fail {
+                return Err(EventHandlerError::Rejected("forced".into()));
+            }
+            *self.seen.lock().unwrap() += 1;
+            Ok(())
+        }
+    }
+
+    #[test]
+    fn sync_handler_counts_events() {
+        let seen = Arc::new(Mutex::new(0));
+        let handler = SpyHandler { seen: seen.clone(), fail: false };
+        handler.handle(&EventEnvelope::new(1i64, variant(0))).unwrap();
+        handler.handle(&EventEnvelope::new(1i64, variant(1))).unwrap();
+        assert_eq!(*seen.lock().unwrap(), 2);
+    }
+
+    #[test]
+    fn sync_handler_can_reject() {
+        let handler = SpyHandler { seen: Arc::new(Mutex::new(0)), fail: true };
+        let err = handler.handle(&EventEnvelope::new(1i64, variant(0))).unwrap_err();
+        assert!(matches!(err, EventHandlerError::Rejected(_)));
+    }
+
+    struct AsyncSpy {
+        seen: Arc<Mutex<usize>>,
+    }
+
+    #[async_trait::async_trait]
+    impl AsyncEventHandler for AsyncSpy {
+        async fn handle(&self, _envelope: &EventEnvelope) -> Result<(), EventHandlerError> {
+            *self.seen.lock().unwrap() += 1;
+            Ok(())
+        }
+    }
+
+    struct AsyncFanout {
+        handlers: Vec<Arc<AsyncSpy>>,
+    }
+
+    #[async_trait::async_trait]
+    impl AsyncEventBus for AsyncFanout {
+        async fn publish(&self, envelope: EventEnvelope) -> Result<(), EventHandlerError> {
+            for h in &self.handlers {
+                h.handle(&envelope).await?;
+            }
+            Ok(())
+        }
+    }
+
+    #[tokio::test]
+    async fn async_handler_receives_event() {
+        let seen = Arc::new(Mutex::new(0));
+        let h = AsyncSpy { seen: seen.clone() };
+        h.handle(&EventEnvelope::new(1i64, variant(0))).await.unwrap();
+        assert_eq!(*seen.lock().unwrap(), 1);
+    }
+
+    #[tokio::test]
+    async fn async_event_bus_fans_out() {
+        let a = Arc::new(AsyncSpy { seen: Arc::new(Mutex::new(0)) });
+        let b = Arc::new(AsyncSpy { seen: Arc::new(Mutex::new(0)) });
+        let bus = AsyncFanout { handlers: vec![a.clone(), b.clone()] };
+        bus.publish(EventEnvelope::new(1i64, variant(0))).await.unwrap();
+        assert_eq!(*a.seen.lock().unwrap(), 1);
+        assert_eq!(*b.seen.lock().unwrap(), 1);
+    }
+
+    #[test]
+    fn event_type_for_feature_state_advanced() {
+        let ev = DomainEvent::FeatureStateAdvanced(FeatureStateAdvanced {
+            feature_id: 1.into(),
+            from: FeatureState::Planned,
+            to: FeatureState::Implementing,
+        });
+        assert_eq!(ev.event_type(), "feature.state_advanced");
+    }
+
+    #[test]
+    fn event_type_for_work_package_state_changed() {
+        let ev = DomainEvent::WorkPackageStateChanged(WorkPackageStateChanged {
+            wp_id: 1.into(),
+            feature_id: 1.into(),
+            from: WpState::Review,
+            to: WpState::Done,
+        });
+        assert_eq!(ev.event_type(), "work_package.state_changed");
+    }
+
+    #[test]
+    fn event_type_for_user_role_changed() {
+        let ev = DomainEvent::UserRoleChanged(UserRoleChanged {
+            user_id: 1.into(),
+            old_role: UserRole::Member,
+            new_role: UserRole::Admin,
+        });
+        assert_eq!(ev.event_type(), "user.role_changed");
+    }
+
+    #[test]
+    fn event_type_for_story_assigned() {
+        let ev = DomainEvent::StoryAssigned(StoryAssigned { story_id: 1.into(), assignee_id: None });
+        assert_eq!(ev.event_type(), "story.assigned");
+    }
+
+    #[test]
+    fn event_type_for_project_archived() {
+        let ev = DomainEvent::ProjectArchived(ProjectArchived { project_id: 1.into() });
+        assert_eq!(ev.event_type(), "project.archived");
+    }
+}

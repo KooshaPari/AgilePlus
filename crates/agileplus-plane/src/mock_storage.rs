@@ -178,3 +178,160 @@ impl StoragePort for MockStoragePort {
     async fn get_user_by_email(&self, _: &str) -> Result<Option<User>, DomainError> { Ok(None) }
     async fn list_all_users(&self) -> Result<Vec<User>, DomainError> { Ok(vec![]) }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use chrono::NaiveDate;
+
+    fn module(name: &str) -> Module {
+        Module::new(name, None)
+    }
+
+    fn cycle(name: &str) -> Cycle {
+        Cycle {
+            id: 0,
+            name: name.to_string(),
+            description: Some("desc".to_string()),
+            state: CycleState::Active,
+            start_date: NaiveDate::from_ymd_opt(2026, 1, 1).unwrap(),
+            end_date: NaiveDate::from_ymd_opt(2026, 1, 14).unwrap(),
+            module_scope_id: None,
+            created_at: chrono::Utc::now(),
+            updated_at: chrono::Utc::now(),
+        }
+    }
+
+    #[tokio::test]
+    async fn create_module_assigns_incrementing_ids() {
+        let store = MockStoragePort::new();
+        let a = store.create_module(&module("A")).await.unwrap();
+        let b = store.create_module(&module("B")).await.unwrap();
+        assert_eq!((a, b), (1, 2));
+    }
+
+    #[tokio::test]
+    async fn get_module_returns_stored_module() {
+        let store = MockStoragePort::new();
+        let id = store.create_module(&module("Auth")).await.unwrap();
+        let got = store.get_module(id).await.unwrap().unwrap();
+        assert_eq!(got.friendly_name, "Auth");
+    }
+
+    #[tokio::test]
+    async fn get_module_missing_returns_none() {
+        let store = MockStoragePort::new();
+        assert!(store.get_module(42).await.unwrap().is_none());
+    }
+
+    #[tokio::test]
+    async fn update_and_delete_module_are_noops_but_ok() {
+        let store = MockStoragePort::new();
+        store.update_module(1, "x", Some("d")).await.unwrap();
+        store.delete_module(1).await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn list_root_modules_returns_all() {
+        let store = MockStoragePort::new();
+        store.create_module(&module("A")).await.unwrap();
+        store.create_module(&module("B")).await.unwrap();
+        assert_eq!(store.list_root_modules().await.unwrap().len(), 2);
+    }
+
+    #[tokio::test]
+    async fn create_cycle_assigns_incrementing_ids() {
+        let store = MockStoragePort::new();
+        let a = store.create_cycle(&cycle("S1")).await.unwrap();
+        let b = store.create_cycle(&cycle("S2")).await.unwrap();
+        assert_eq!((a, b), (1, 2));
+    }
+
+    #[tokio::test]
+    async fn get_cycle_returns_stored_cycle() {
+        let store = MockStoragePort::new();
+        let id = store.create_cycle(&cycle("Sprint")).await.unwrap();
+        let got = store.get_cycle(id).await.unwrap().unwrap();
+        assert_eq!(got.name, "Sprint");
+    }
+
+    #[tokio::test]
+    async fn get_cycle_missing_returns_none() {
+        let store = MockStoragePort::new();
+        assert!(store.get_cycle(7).await.unwrap().is_none());
+    }
+
+    #[tokio::test]
+    async fn list_all_cycles_returns_all() {
+        let store = MockStoragePort::new();
+        store.create_cycle(&cycle("A")).await.unwrap();
+        store.create_cycle(&cycle("B")).await.unwrap();
+        assert_eq!(store.list_all_cycles().await.unwrap().len(), 2);
+    }
+
+    #[tokio::test]
+    async fn with_sync_mapping_preseed_is_readable() {
+        let store = MockStoragePort::new().with_sync_mapping("module", 1, "plane-1");
+        let got = store.get_sync_mapping("module", 1).await.unwrap().unwrap();
+        assert_eq!(got.plane_issue_id, "plane-1");
+    }
+
+    #[tokio::test]
+    async fn upsert_sync_mapping_overwrites() {
+        let store = MockStoragePort::new();
+        store
+            .upsert_sync_mapping(&SyncMapping::new("feature", 5, "p-1", "h1"))
+            .await
+            .unwrap();
+        store
+            .upsert_sync_mapping(&SyncMapping::new("feature", 5, "p-2", "h2"))
+            .await
+            .unwrap();
+        let got = store.get_sync_mapping("feature", 5).await.unwrap().unwrap();
+        assert_eq!(got.plane_issue_id, "p-2");
+    }
+
+    #[tokio::test]
+    async fn get_sync_mapping_by_plane_id_finds_match() {
+        let store = MockStoragePort::new();
+        store
+            .upsert_sync_mapping(&SyncMapping::new("cycle", 9, "plane-xyz", "h"))
+            .await
+            .unwrap();
+        let found = store
+            .get_sync_mapping_by_plane_id("cycle", "plane-xyz")
+            .await
+            .unwrap();
+        assert_eq!(found.unwrap().entity_id, 9);
+    }
+
+    #[tokio::test]
+    async fn get_sync_mapping_by_plane_id_respects_type() {
+        let store = MockStoragePort::new();
+        store
+            .upsert_sync_mapping(&SyncMapping::new("cycle", 9, "plane-xyz", "h"))
+            .await
+            .unwrap();
+        assert!(store
+            .get_sync_mapping_by_plane_id("module", "plane-xyz")
+            .await
+            .unwrap()
+            .is_none());
+    }
+
+    #[tokio::test]
+    async fn delete_sync_mapping_removes_entry() {
+        let store = MockStoragePort::new().with_sync_mapping("module", 1, "p");
+        store.delete_sync_mapping("module", 1).await.unwrap();
+        assert!(store.get_sync_mapping("module", 1).await.unwrap().is_none());
+    }
+
+    #[tokio::test]
+    async fn stub_crud_methods_return_defaults() {
+        let store = MockStoragePort::new();
+        assert_eq!(store.create_feature(&Feature::new("s", "n", [0u8; 32], None)).await.unwrap(), 1);
+        assert!(store.list_all_features().await.unwrap().is_empty());
+        assert!(store.list_all_projects().await.unwrap().is_empty());
+        assert!(store.list_all_users().await.unwrap().is_empty());
+    }
+}

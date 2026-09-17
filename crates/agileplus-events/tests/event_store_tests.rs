@@ -198,3 +198,45 @@ async fn new_store_is_empty() {
     let seq = store.get_latest_sequence("Feature", 1).await.unwrap();
     assert_eq!(seq, 0);
 }
+
+// ── EventError surface ──────────────────────────────────────────────────────
+
+#[test]
+fn event_error_variants_display_expected_messages() {
+    assert_eq!(EventError::NotFound("e".into()).to_string(), "Event not found: e");
+    assert_eq!(
+        EventError::DuplicateSequence("2".into()).to_string(),
+        "Duplicate sequence: 2"
+    );
+    assert_eq!(
+        EventError::StorageError("disk".into()).to_string(),
+        "Storage error: disk"
+    );
+    assert_eq!(EventError::InvalidHash("h".into()).to_string(), "Invalid hash: h");
+    assert_eq!(
+        EventError::SequenceGap { expected: 1, actual: 3 }.to_string(),
+        "Sequence gap: expected 1, got 3"
+    );
+}
+
+#[tokio::test]
+async fn append_returns_increasing_sequences_for_same_entity() {
+    let store = InMemoryEventStore::new();
+    let a = store.append(&make_event("Feature", 7, "created", "x")).await.unwrap();
+    let b = store.append(&make_event("Feature", 7, "updated", "x")).await.unwrap();
+    assert_eq!(a, 1);
+    assert_eq!(b, 2);
+}
+
+#[tokio::test]
+async fn events_for_distinct_entities_are_isolated() {
+    let store = InMemoryEventStore::new();
+    store.append(&make_event("Feature", 1, "created", "x")).await.unwrap();
+    store.append(&make_event("Feature", 2, "created", "y")).await.unwrap();
+    let one = store.get_events("Feature", 1).await.unwrap();
+    let two = store.get_events("Feature", 2).await.unwrap();
+    assert_eq!(one.len(), 1);
+    assert_eq!(two.len(), 1);
+    assert_eq!(one[0].actor, "x");
+    assert_eq!(two[0].actor, "y");
+}
