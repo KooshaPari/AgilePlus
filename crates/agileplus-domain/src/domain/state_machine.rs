@@ -170,3 +170,117 @@ mod tests {
         }
     }
 }
+
+#[cfg(test)]
+mod coverage_tests {
+    use super::*;
+
+    const ALL: [FeatureState; 8] = [
+        FeatureState::Created,
+        FeatureState::Specified,
+        FeatureState::Researched,
+        FeatureState::Planned,
+        FeatureState::Implementing,
+        FeatureState::Validated,
+        FeatureState::Shipped,
+        FeatureState::Retrospected,
+    ];
+
+    fn is_allowed(a: FeatureState, b: FeatureState) -> bool {
+        matches!(
+            (a, b),
+            (FeatureState::Created, FeatureState::Specified)
+                | (FeatureState::Specified, FeatureState::Researched)
+                | (FeatureState::Researched, FeatureState::Planned)
+                | (FeatureState::Planned, FeatureState::Implementing)
+                | (FeatureState::Implementing, FeatureState::Validated)
+                | (FeatureState::Validated, FeatureState::Shipped)
+                | (FeatureState::Shipped, FeatureState::Retrospected)
+        )
+    }
+
+    #[test]
+    fn transition_returns_result_with_from_and_to() {
+        for from in ALL {
+            for to in ALL {
+                let r = transition(from, to);
+                if is_allowed(from, to) {
+                    let tr = r.expect("allowed");
+                    assert_eq!(tr.transition.from, from);
+                    assert_eq!(tr.transition.to, to);
+                } else {
+                    match r {
+                        Err(DomainError::InvalidTransition { from: f, to: t, reason }) => {
+                            assert_eq!(f, from.to_string());
+                            assert_eq!(t, to.to_string());
+                            assert!(!reason.is_empty());
+                        }
+                        other => panic!("{from:?}->{to:?}: {other:?}"),
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn display_roundtrip_and_wire_strings() {
+        for st in ALL {
+            assert_eq!(st.to_string().parse::<FeatureState>().unwrap(), st);
+        }
+        assert_eq!(serde_json::to_string(&FeatureState::Created).unwrap(), "\"created\"");
+        assert_eq!(
+            serde_json::to_string(&FeatureState::Retrospected).unwrap(),
+            "\"retrospected\""
+        );
+    }
+
+    #[test]
+    fn from_str_rejects_unknown_and_uppercase() {
+        for s in ["", "bogus", "Created", "CREATED", " created"] {
+            assert!(s.parse::<FeatureState>().is_err(), "input {s:?}");
+        }
+    }
+
+    #[test]
+    fn terminal_state_has_no_valid_successor() {
+        for to in ALL {
+            assert!(!is_allowed(FeatureState::Retrospected, to));
+            assert!(transition(FeatureState::Retrospected, to).is_err());
+        }
+    }
+
+    #[test]
+    fn created_only_advances_to_specified() {
+        for to in ALL {
+            let r = transition(FeatureState::Created, to);
+            if to == FeatureState::Specified {
+                assert!(r.is_ok());
+            } else {
+                assert!(r.is_err(), "Created->{to:?} must fail");
+            }
+        }
+    }
+
+    #[test]
+    fn feature_state_is_copy_hash_debug() {
+        use std::collections::HashSet;
+        let st = FeatureState::Planned;
+        let c = st;
+        assert_eq!(st, c);
+        let mut set = HashSet::new();
+        for s in ALL {
+            set.insert(s);
+        }
+        assert_eq!(set.len(), 8);
+        assert_eq!(format!("{:?}", FeatureState::Shipped), "Shipped");
+    }
+
+    #[test]
+    fn serde_roundtrip_all_states() {
+        for st in ALL {
+            let back: FeatureState =
+                serde_json::from_str(&serde_json::to_string(&st).unwrap()).unwrap();
+            assert_eq!(back, st);
+        }
+    }
+}

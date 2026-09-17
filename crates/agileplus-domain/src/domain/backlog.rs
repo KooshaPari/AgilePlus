@@ -295,3 +295,175 @@ mod tests {
         }
     }
 }
+
+#[cfg(test)]
+mod coverage_tests {
+    use super::*;
+
+    #[test]
+    fn intent_default_priority_complete_table() {
+        let expected = [
+            (Intent::Bug, BacklogPriority::High),
+            (Intent::Feature, BacklogPriority::Medium),
+            (Intent::Task, BacklogPriority::Medium),
+            (Intent::Idea, BacklogPriority::Low),
+            (Intent::Docs, BacklogPriority::Low),
+        ];
+        for (intent, prio) in expected {
+            assert_eq!(intent.default_priority(), prio, "{intent}");
+        }
+    }
+
+    #[test]
+    fn intent_display_all() {
+        assert_eq!(Intent::Bug.to_string(), "bug");
+        assert_eq!(Intent::Feature.to_string(), "feature");
+        assert_eq!(Intent::Idea.to_string(), "idea");
+        assert_eq!(Intent::Task.to_string(), "task");
+        assert_eq!(Intent::Docs.to_string(), "docs");
+    }
+
+    #[test]
+    fn intent_from_str_case_insensitive() {
+        assert_eq!("BUG".parse::<Intent>().unwrap(), Intent::Bug);
+        assert_eq!("Feature".parse::<Intent>().unwrap(), Intent::Feature);
+        assert!("nope".parse::<Intent>().is_err());
+    }
+
+    #[test]
+    fn backlog_priority_display_all() {
+        assert_eq!(BacklogPriority::Critical.to_string(), "critical");
+        assert_eq!(BacklogPriority::High.to_string(), "high");
+        assert_eq!(BacklogPriority::Medium.to_string(), "medium");
+        assert_eq!(BacklogPriority::Low.to_string(), "low");
+    }
+
+    #[test]
+    fn backlog_priority_from_str_case_insensitive_and_invalid() {
+        assert_eq!("CRITICAL".parse::<BacklogPriority>().unwrap(), BacklogPriority::Critical);
+        assert!("urgent".parse::<BacklogPriority>().is_err());
+    }
+
+    #[test]
+    fn backlog_status_display_all() {
+        assert_eq!(BacklogStatus::New.to_string(), "new");
+        assert_eq!(BacklogStatus::Triaged.to_string(), "triaged");
+        assert_eq!(BacklogStatus::InProgress.to_string(), "in_progress");
+        assert_eq!(BacklogStatus::Done.to_string(), "done");
+        assert_eq!(BacklogStatus::Dismissed.to_string(), "dismissed");
+    }
+
+    #[test]
+    fn backlog_status_from_str_invalid() {
+        assert!("archived".parse::<BacklogStatus>().is_err());
+    }
+
+    #[test]
+    fn backlog_sort_default_is_age() {
+        assert_eq!(BacklogSort::default(), BacklogSort::Age);
+    }
+
+    #[test]
+    fn backlog_sort_from_str_all_and_invalid() {
+        assert_eq!("age".parse::<BacklogSort>().unwrap(), BacklogSort::Age);
+        assert_eq!("priority".parse::<BacklogSort>().unwrap(), BacklogSort::Priority);
+        assert_eq!("impact".parse::<BacklogSort>().unwrap(), BacklogSort::Impact);
+        assert!("date".parse::<BacklogSort>().is_err());
+    }
+
+    #[test]
+    fn from_triage_produces_expected_defaults() {
+        let item = BacklogItem::from_triage(
+            "T".into(),
+            "D".into(),
+            Intent::Feature,
+            "cli".into(),
+        );
+        assert_eq!(item.title, "T");
+        assert_eq!(item.description, "D");
+        assert_eq!(item.intent, Intent::Feature);
+        assert_eq!(item.priority, BacklogPriority::Medium);
+        assert_eq!(item.status, BacklogStatus::New);
+        assert_eq!(item.source, "cli");
+        assert!(item.id.is_none());
+        assert!(item.feature_slug.is_none());
+        assert!(item.tags.is_empty());
+        assert_eq!(item.created_at, item.updated_at);
+    }
+
+    #[test]
+    fn with_tags_and_with_feature_slug_builders() {
+        let item = BacklogItem::from_triage("T".into(), "D".into(), Intent::Bug, "gh".into())
+            .with_tags(vec!["a".into(), "b".into()])
+            .with_feature_slug(Some("auth".into()));
+        assert_eq!(item.tags, vec!["a", "b"]);
+        assert_eq!(item.feature_slug.as_deref(), Some("auth"));
+    }
+
+    #[test]
+    fn backlog_item_serde_roundtrip() {
+        let item = BacklogItem::from_triage("T".into(), "D".into(), Intent::Docs, "src".into())
+            .with_tags(vec!["docs".into()]);
+        let back: BacklogItem =
+            serde_json::from_str(&serde_json::to_string(&item).unwrap()).unwrap();
+        assert_eq!(back.title, "T");
+        assert_eq!(back.intent, Intent::Docs);
+        assert_eq!(back.tags, vec!["docs"]);
+        assert_eq!(back.status, BacklogStatus::New);
+    }
+
+    #[test]
+    fn backlog_filters_default_and_serde() {
+        let filters = BacklogFilters::default();
+        assert!(filters.intent.is_none());
+        assert!(filters.status.is_none());
+        assert!(filters.priority.is_none());
+        assert!(filters.feature_slug.is_none());
+        assert!(filters.source.is_none());
+        assert_eq!(filters.sort, BacklogSort::Age);
+        assert!(filters.limit.is_none());
+
+        let filters = BacklogFilters {
+            intent: Some(Intent::Bug),
+            status: Some(BacklogStatus::Triaged),
+            priority: Some(BacklogPriority::High),
+            feature_slug: Some("auth".into()),
+            source: Some("github".into()),
+            sort: BacklogSort::Impact,
+            limit: Some(10),
+        };
+        let back: BacklogFilters =
+            serde_json::from_str(&serde_json::to_string(&filters).unwrap()).unwrap();
+        assert_eq!(back.intent, Some(Intent::Bug));
+        assert_eq!(back.sort, BacklogSort::Impact);
+        assert_eq!(back.limit, Some(10));
+    }
+
+    #[test]
+    fn intent_serde_wire_strings() {
+        assert_eq!(serde_json::to_string(&Intent::Bug).unwrap(), "\"bug\"");
+        assert_eq!(serde_json::to_string(&Intent::Docs).unwrap(), "\"docs\"");
+        assert_eq!(
+            serde_json::to_string(&BacklogStatus::InProgress).unwrap(),
+            "\"in_progress\""
+        );
+        assert_eq!(
+            serde_json::to_string(&BacklogPriority::Critical).unwrap(),
+            "\"critical\""
+        );
+    }
+
+    #[test]
+    fn enums_are_copy_and_debug() {
+        let i = Intent::Idea;
+        let j = i;
+        assert_eq!(i, j);
+        assert_eq!(format!("{i:?}"), "Idea");
+        let p = BacklogPriority::Low;
+        let q = p;
+        assert_eq!(p, q);
+        let s = BacklogStatus::Done;
+        let t = s;
+        assert_eq!(s, t);
+    }
+}

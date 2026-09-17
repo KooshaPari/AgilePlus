@@ -168,3 +168,80 @@ fn mixed_states_not_shippable() {
     let cwf = make_cycle_with_features(vec![f1, f2]);
     assert!(!cwf.is_shippable());
 }
+
+// --- coverage_tests: additional edge cases ---
+
+#[test]
+fn cycle_new_accepts_empty_name() {
+    let c = Cycle::new("", make_date(2026, 1, 1), make_date(2026, 2, 1), None);
+    assert!(c.is_ok());
+    assert_eq!(c.unwrap().name, "");
+}
+
+#[test]
+fn cycle_transition_full_happy_path() {
+    let mut c = Cycle::new("C", make_date(2026, 1, 1), make_date(2026, 2, 1), None).unwrap();
+    c.transition(CycleState::Active).unwrap();
+    c.transition(CycleState::Review).unwrap();
+    c.transition(CycleState::Shipped).unwrap();
+    c.transition(CycleState::Archived).unwrap();
+    assert_eq!(c.state, CycleState::Archived);
+}
+
+#[test]
+fn cycle_transition_revert_active_to_draft() {
+    let mut c = Cycle::new("C", make_date(2026, 1, 1), make_date(2026, 2, 1), None).unwrap();
+    c.transition(CycleState::Active).unwrap();
+    c.transition(CycleState::Draft).unwrap();
+    assert_eq!(c.state, CycleState::Draft);
+}
+
+#[test]
+fn cycle_review_back_to_active() {
+    let mut c = Cycle::new("C", make_date(2026, 1, 1), make_date(2026, 2, 1), None).unwrap();
+    c.transition(CycleState::Active).unwrap();
+    c.transition(CycleState::Review).unwrap();
+    c.transition(CycleState::Active).unwrap();
+    assert_eq!(c.state, CycleState::Active);
+}
+
+#[test]
+fn is_shippable_ignores_wp_progress() {
+    let mut f = Feature::new("f", "F", [0u8; 32], None);
+    f.state = FeatureState::Validated;
+    let cycle = Cycle::new("C", make_date(2026, 1, 1), make_date(2026, 2, 1), None).unwrap();
+    let cwf = CycleWithFeatures {
+        cycle,
+        features: vec![f],
+        wp_progress: WpProgressSummary {
+            total: 5,
+            planned: 5,
+            in_progress: 0,
+            done: 0,
+            blocked: 0,
+        },
+    };
+    assert!(cwf.is_shippable());
+}
+
+#[test]
+fn cycle_with_features_serde_roundtrip() {
+    let mut f = Feature::new("f", "F", [0u8; 32], None);
+    f.state = FeatureState::Shipped;
+    let cycle = Cycle::new("C", make_date(2026, 1, 1), make_date(2026, 2, 1), None).unwrap();
+    let cwf = CycleWithFeatures {
+        cycle,
+        features: vec![f],
+        wp_progress: WpProgressSummary::default(),
+    };
+    let back: CycleWithFeatures =
+        serde_json::from_str(&serde_json::to_string(&cwf).unwrap()).unwrap();
+    assert_eq!(back.features.len(), 1);
+    assert!(back.is_shippable());
+}
+
+#[test]
+fn cycle_state_from_str_error_does_not_accept_whitespace() {
+    assert!(" Draft".parse::<CycleState>().is_err());
+    assert!("Draft ".parse::<CycleState>().is_err());
+}

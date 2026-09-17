@@ -588,3 +588,206 @@ mod tests {
         assert!(back.metadata.is_none());
     }
 }
+
+#[cfg(test)]
+mod coverage_tests {
+    use super::*;
+
+    #[test]
+    fn builtin_policy_full_table() {
+        let expected: &[(&str, PolicyDomain, EvidenceType, &str)] = &[
+            ("tests-pass", PolicyDomain::Quality, EvidenceType::TestResult, "Unit tests passing"),
+            ("ci-green", PolicyDomain::Quality, EvidenceType::CiOutput, "CI pipeline green"),
+            ("review-approved", PolicyDomain::Quality, EvidenceType::ReviewApproval, "Peer review approved"),
+            ("security-scan", PolicyDomain::Security, EvidenceType::SecurityScan, "Security scan clean"),
+            ("lint-pass", PolicyDomain::Quality, EvidenceType::LintResult, "Lint checks pass"),
+        ];
+        for (key, domain, evidence, label) in expected {
+            let bp = BuiltinPolicy::from_ref(key).unwrap_or_else(|| panic!("missing {key}"));
+            assert_eq!(bp.domain, *domain, "{key}");
+            assert_eq!(bp.evidence_type, *evidence, "{key}");
+            assert_eq!(bp.label, *label, "{key}");
+        }
+    }
+
+    #[test]
+    fn builtin_policy_lookup_is_exact_case_sensitive() {
+        assert!(BuiltinPolicy::from_ref("Tests-Pass").is_none());
+        assert!(BuiltinPolicy::from_ref("TESTS-PASS").is_none());
+        assert!(BuiltinPolicy::from_ref(" tests-pass").is_none());
+        assert!(BuiltinPolicy::from_ref("tests-pass ").is_none());
+    }
+
+    #[test]
+    fn builtin_policy_is_copy_and_debug() {
+        let bp = *BuiltinPolicy::from_ref("ci-green").unwrap();
+        assert_eq!(bp.domain, PolicyDomain::Quality);
+        assert!(!format!("{bp:?}").is_empty());
+    }
+
+    #[test]
+    fn policy_domain_equality() {
+        assert_eq!(PolicyDomain::Security, PolicyDomain::Security);
+        assert_ne!(PolicyDomain::Quality, PolicyDomain::Compliance);
+        assert_ne!(PolicyDomain::Custom, PolicyDomain::Performance);
+    }
+
+    #[test]
+    fn evidence_type_equality() {
+        assert_eq!(EvidenceType::TestResult, EvidenceType::TestResult);
+        assert_ne!(EvidenceType::TestResult, EvidenceType::CiOutput);
+        assert_ne!(EvidenceType::LintResult, EvidenceType::ManualAttestation);
+    }
+
+    #[test]
+    fn policy_domain_debug_and_copy() {
+        let d = PolicyDomain::Performance;
+        let copy = d;
+        assert_eq!(format!("{d:?}"), "Performance");
+        assert_eq!(copy, d);
+    }
+
+    #[test]
+    fn evidence_type_debug_and_copy() {
+        let e = EvidenceType::ManualAttestation;
+        let copy = e;
+        assert_eq!(format!("{e:?}"), "ManualAttestation");
+        assert_eq!(copy, e);
+    }
+
+    #[test]
+    fn policy_rule_matches_reference_matrix() {
+        let rule = PolicyRule {
+            id: 0,
+            domain: PolicyDomain::Custom,
+            rule: PolicyDefinition {
+                description: "d".into(),
+                check: PolicyCheck::Automated,
+            },
+            active: false,
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+        };
+        assert!(rule.matches_reference("0"));
+        assert!(rule.matches_reference("policy:0"));
+        assert!(!rule.matches_reference(" 0"));
+        assert!(!rule.matches_reference("policy:0 "));
+        assert!(!rule.matches_reference("policy:00"));
+        assert!(!rule.matches_reference("policy:"));
+    }
+
+    #[test]
+    fn policy_check_equality_all_variants() {
+        assert_eq!(PolicyCheck::ManualApproval, PolicyCheck::ManualApproval);
+        assert_ne!(PolicyCheck::ManualApproval, PolicyCheck::Automated);
+        assert_eq!(
+            PolicyCheck::EvidencePresent { evidence_type: EvidenceType::CiOutput },
+            PolicyCheck::EvidencePresent { evidence_type: EvidenceType::CiOutput }
+        );
+        assert_ne!(
+            PolicyCheck::EvidencePresent { evidence_type: EvidenceType::CiOutput },
+            PolicyCheck::EvidencePresent { evidence_type: EvidenceType::LintResult }
+        );
+        assert_ne!(
+            PolicyCheck::ThresholdMet { metric: "c".into(), min: 1.0 },
+            PolicyCheck::ThresholdMet { metric: "c".into(), min: 2.0 }
+        );
+    }
+
+    #[test]
+    fn policy_check_wire_strings() {
+        assert_eq!(
+            serde_json::to_string(&PolicyCheck::ManualApproval).unwrap(),
+            "\"manual_approval\""
+        );
+        assert_eq!(
+            serde_json::to_string(&PolicyCheck::Automated).unwrap(),
+            "\"automated\""
+        );
+        let ep = serde_json::to_string(&PolicyCheck::EvidencePresent {
+            evidence_type: EvidenceType::TestResult,
+        })
+        .unwrap();
+        assert!(ep.contains("evidence_present"), "got {ep}");
+    }
+
+    #[test]
+    fn policy_definition_clone_and_debug() {
+        let d = PolicyDefinition {
+            description: "desc".into(),
+            check: PolicyCheck::Custom { script: "s.sh".into() },
+        };
+        let c = d.clone();
+        assert_eq!(c.description, d.description);
+        assert!(!format!("{d:?}").is_empty());
+    }
+
+    #[test]
+    fn governance_rule_and_contract_clone() {
+        let rule = GovernanceRule {
+            transition: "A->B".into(),
+            required_evidence: vec!["FR-1".into()],
+            policy_refs: vec![7],
+        };
+        let c = rule.clone();
+        assert_eq!(c.policy_refs, vec![7]);
+        let contract = GovernanceContract {
+            id: 1,
+            feature_id: 2,
+            version: 3,
+            rules: vec![rule],
+            bound_at: Utc::now(),
+        };
+        let cc = contract.clone();
+        assert_eq!(cc.rules.len(), 1);
+        assert!(!format!("{contract:?}").is_empty());
+    }
+
+    #[test]
+    fn evidence_metadata_serde_with_nested_json() {
+        let e = Evidence {
+            id: 3,
+            wp_id: 4,
+            fr_id: "FR-3".into(),
+            evidence_type: EvidenceType::SecurityScan,
+            artifact_path: "/a".into(),
+            metadata: Some(serde_json::json!({"nested": {"k": [1, 2, 3]}})),
+            created_at: Utc::now(),
+        };
+        let json = serde_json::to_string(&e).unwrap();
+        let back: Evidence = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.metadata, e.metadata);
+    }
+
+    #[test]
+    fn policy_rule_inactive_flag_roundtrip() {
+        let rule = PolicyRule {
+            id: 9,
+            domain: PolicyDomain::Compliance,
+            rule: PolicyDefinition {
+                description: "d".into(),
+                check: PolicyCheck::ManualApproval,
+            },
+            active: false,
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+        };
+        let back: PolicyRule =
+            serde_json::from_str(&serde_json::to_string(&rule).unwrap()).unwrap();
+        assert!(!back.active);
+        assert_eq!(back.id, 9);
+    }
+
+    #[test]
+    fn policy_domain_wire_strings_all() {
+        for (d, s) in [
+            (PolicyDomain::Security, "\"security\""),
+            (PolicyDomain::Quality, "\"quality\""),
+            (PolicyDomain::Compliance, "\"compliance\""),
+            (PolicyDomain::Performance, "\"performance\""),
+            (PolicyDomain::Custom, "\"custom\""),
+        ] {
+            assert_eq!(serde_json::to_string(&d).unwrap(), s);
+        }
+    }
+}

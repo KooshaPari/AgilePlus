@@ -149,3 +149,153 @@ mod tests {
         assert_eq!(status.overall, HealthStatus::Unavailable);
     }
 }
+
+#[cfg(test)]
+mod coverage_tests {
+    use super::*;
+
+    #[test]
+    fn new_service_defaults_to_unavailable() {
+        let h = ServiceHealth::new("nats", "localhost:4222");
+        assert_eq!(h.service_name, "nats");
+        assert_eq!(h.connection_info, "localhost:4222");
+        assert_eq!(h.status, HealthStatus::Unavailable);
+        assert_eq!(h.uptime_seconds, 0);
+        assert!(h.metadata.is_object());
+        assert_eq!(h.metadata.as_object().unwrap().len(), 0);
+    }
+
+    #[test]
+    fn mark_healthy_sets_uptime_and_clears_nothing() {
+        let mut h = ServiceHealth::new("svc", "addr");
+        h.mark_degraded("slow");
+        h.mark_healthy(55);
+        assert_eq!(h.status, HealthStatus::Healthy);
+        assert_eq!(h.uptime_seconds, 55);
+        // degraded_reason is left in metadata (documents current behavior)
+        assert_eq!(h.metadata["degraded_reason"], "slow");
+    }
+
+    #[test]
+    fn mark_degraded_records_reason() {
+        let mut h = ServiceHealth::new("svc", "addr");
+        h.mark_degraded("latency spike");
+        assert_eq!(h.status, HealthStatus::Degraded);
+        assert_eq!(h.metadata["degraded_reason"], "latency spike");
+    }
+
+    #[test]
+    fn mark_unavailable_resets_status() {
+        let mut h = ServiceHealth::new("svc", "addr");
+        h.mark_healthy(10);
+        h.mark_unavailable();
+        assert_eq!(h.status, HealthStatus::Unavailable);
+        // uptime is not reset by mark_unavailable
+        assert_eq!(h.uptime_seconds, 10);
+    }
+
+    #[test]
+    fn platform_status_empty_is_healthy_vacuously() {
+        let s = PlatformStatus::from_services(vec![]);
+        assert_eq!(s.overall, HealthStatus::Healthy);
+        assert!(s.services.is_empty());
+    }
+
+    #[test]
+    fn platform_status_all_healthy() {
+        let mut a = ServiceHealth::new("a", "x");
+        a.mark_healthy(1);
+        let mut b = ServiceHealth::new("b", "y");
+        b.mark_healthy(2);
+        assert_eq!(
+            PlatformStatus::from_services(vec![a, b]).overall,
+            HealthStatus::Healthy
+        );
+    }
+
+    #[test]
+    fn platform_status_any_unavailable_wins_over_degraded() {
+        let mut a = ServiceHealth::new("a", "x");
+        a.mark_degraded("slow");
+        let b = ServiceHealth::new("b", "y"); // Unavailable
+        assert_eq!(
+            PlatformStatus::from_services(vec![a, b]).overall,
+            HealthStatus::Unavailable
+        );
+    }
+
+    #[test]
+    fn platform_status_single_degraded() {
+        let mut a = ServiceHealth::new("a", "x");
+        a.mark_degraded("slow");
+        assert_eq!(
+            PlatformStatus::from_services(vec![a]).overall,
+            HealthStatus::Degraded
+        );
+    }
+
+    #[test]
+    fn platform_status_single_unavailable() {
+        let a = ServiceHealth::new("a", "x");
+        assert_eq!(
+            PlatformStatus::from_services(vec![a]).overall,
+            HealthStatus::Unavailable
+        );
+    }
+
+    #[test]
+    fn health_status_display_and_hash() {
+        assert_eq!(HealthStatus::Healthy.to_string(), "healthy");
+        assert_eq!(HealthStatus::Degraded.to_string(), "degraded");
+        assert_eq!(HealthStatus::Unavailable.to_string(), "unavailable");
+        use std::collections::HashSet;
+        let mut set = HashSet::new();
+        set.insert(HealthStatus::Healthy);
+        set.insert(HealthStatus::Healthy);
+        set.insert(HealthStatus::Degraded);
+        assert_eq!(set.len(), 2);
+    }
+
+    #[test]
+    fn health_status_serde_roundtrip() {
+        for s in [
+            HealthStatus::Healthy,
+            HealthStatus::Degraded,
+            HealthStatus::Unavailable,
+        ] {
+            let json = serde_json::to_string(&s).unwrap();
+            let back: HealthStatus = serde_json::from_str(&json).unwrap();
+            assert_eq!(back, s);
+        }
+    }
+
+    #[test]
+    fn service_health_serde_roundtrip() {
+        let mut h = ServiceHealth::new("svc", "addr");
+        h.mark_healthy(9);
+        let back: ServiceHealth =
+            serde_json::from_str(&serde_json::to_string(&h).unwrap()).unwrap();
+        assert_eq!(back.service_name, "svc");
+        assert_eq!(back.status, HealthStatus::Healthy);
+        assert_eq!(back.uptime_seconds, 9);
+    }
+
+    #[test]
+    fn platform_status_serde_roundtrip() {
+        let mut a = ServiceHealth::new("a", "x");
+        a.mark_healthy(3);
+        let ps = PlatformStatus::from_services(vec![a]);
+        let back: PlatformStatus =
+            serde_json::from_str(&serde_json::to_string(&ps).unwrap()).unwrap();
+        assert_eq!(back.overall, HealthStatus::Healthy);
+        assert_eq!(back.services.len(), 1);
+    }
+
+    #[test]
+    fn service_health_clone_and_debug() {
+        let h = ServiceHealth::new("n", "c");
+        let c = h.clone();
+        assert_eq!(c.service_name, h.service_name);
+        assert!(format!("{h:?}").contains("ServiceHealth"));
+    }
+}

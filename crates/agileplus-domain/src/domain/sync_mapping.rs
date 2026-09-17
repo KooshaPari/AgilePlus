@@ -92,3 +92,86 @@ mod tests {
         assert_eq!(SyncDirection::Bidirectional.to_string(), "bidirectional");
     }
 }
+
+#[cfg(test)]
+mod coverage_tests {
+    use super::*;
+
+    #[test]
+    fn new_defaults() {
+        let m = SyncMapping::new("feature", 1, "plane-1", "hash");
+        assert_eq!(m.id, 0);
+        assert_eq!(m.entity_type, "feature");
+        assert_eq!(m.entity_id, 1);
+        assert_eq!(m.plane_issue_id, "plane-1");
+        assert_eq!(m.content_hash, "hash");
+        assert_eq!(m.sync_direction, SyncDirection::Bidirectional);
+        assert_eq!(m.conflict_count, 0);
+    }
+
+    #[test]
+    fn increment_conflict_is_monotonic() {
+        let mut m = SyncMapping::new("wp", 1, "p", "h");
+        m.increment_conflict();
+        assert_eq!(m.conflict_count, 1);
+        m.increment_conflict();
+        m.increment_conflict();
+        assert_eq!(m.conflict_count, 3);
+    }
+
+    #[test]
+    fn direction_display_all() {
+        assert_eq!(SyncDirection::Push.to_string(), "push");
+        assert_eq!(SyncDirection::Pull.to_string(), "pull");
+        assert_eq!(SyncDirection::Bidirectional.to_string(), "bidirectional");
+    }
+
+    #[test]
+    fn direction_serde_roundtrip_and_wire() {
+        for d in [
+            SyncDirection::Push,
+            SyncDirection::Pull,
+            SyncDirection::Bidirectional,
+        ] {
+            let back: SyncDirection =
+                serde_json::from_str(&serde_json::to_string(&d).unwrap()).unwrap();
+            assert_eq!(back, d);
+        }
+        assert_eq!(serde_json::to_string(&SyncDirection::Push).unwrap(), "\"push\"");
+    }
+
+    #[test]
+    fn direction_is_copy_and_hash() {
+        use std::collections::HashSet;
+        let d = SyncDirection::Pull;
+        let c = d;
+        assert_eq!(d, c);
+        let mut set = HashSet::new();
+        set.insert(d);
+        set.insert(SyncDirection::Push);
+        set.insert(SyncDirection::Push);
+        assert_eq!(set.len(), 2);
+    }
+
+    #[test]
+    fn mapping_serde_roundtrip() {
+        let mut m = SyncMapping::new("feature", 5, "plane-9", "abc");
+        m.sync_direction = SyncDirection::Pull;
+        m.conflict_count = 2;
+        let back: SyncMapping =
+            serde_json::from_str(&serde_json::to_string(&m).unwrap()).unwrap();
+        assert_eq!(back.entity_type, "feature");
+        assert_eq!(back.entity_id, 5);
+        assert_eq!(back.plane_issue_id, "plane-9");
+        assert_eq!(back.sync_direction, SyncDirection::Pull);
+        assert_eq!(back.conflict_count, 2);
+    }
+
+    #[test]
+    fn clone_and_debug() {
+        let m = SyncMapping::new("f", 1, "p", "h");
+        let c = m.clone();
+        assert_eq!(c.content_hash, m.content_hash);
+        assert!(format!("{m:?}").contains("SyncMapping"));
+    }
+}

@@ -158,3 +158,99 @@ mod tests {
         assert_eq!(back.state, CycleState::Draft);
     }
 }
+
+#[cfg(test)]
+mod coverage_tests {
+    use super::*;
+
+    fn d(y: i32, m: u32, day: u32) -> NaiveDate {
+        NaiveDate::from_ymd_opt(y, m, day).unwrap()
+    }
+
+    fn cyc() -> Cycle {
+        Cycle::new("C", d(2026, 1, 1), d(2026, 2, 1), None).unwrap()
+    }
+
+    #[test]
+    fn new_sets_draft_and_optional_fields() {
+        let c = Cycle::new("Q1", d(2026, 1, 1), d(2026, 3, 31), Some(4)).unwrap();
+        assert_eq!(c.id, 0);
+        assert_eq!(c.name, "Q1");
+        assert_eq!(c.state, CycleState::Draft);
+        assert_eq!(c.module_scope_id, Some(4));
+        assert!(c.description.is_none());
+        assert_eq!(c.created_at, c.updated_at);
+    }
+
+    #[test]
+    fn new_accepts_single_day_apart() {
+        let c = Cycle::new("S", d(2026, 1, 1), d(2026, 1, 2), None);
+        assert!(c.is_ok());
+    }
+
+    #[test]
+    fn new_rejects_equal_and_reversed_dates() {
+        let same = Cycle::new("S", d(2026, 1, 1), d(2026, 1, 1), None);
+        assert!(matches!(same, Err(DomainError::Other(_))));
+        let reversed = Cycle::new("S", d(2026, 3, 1), d(2026, 1, 1), None);
+        assert!(reversed.is_err());
+    }
+
+    #[test]
+    fn new_accepts_multiyear_span() {
+        assert!(Cycle::new("Long", d(2020, 1, 1), d(2030, 1, 1), None).is_ok());
+    }
+
+    #[test]
+    fn transition_updates_state_and_timestamp() {
+        let mut c = cyc();
+        let before = c.updated_at;
+        std::thread::sleep(std::time::Duration::from_millis(2));
+        c.transition(CycleState::Active).unwrap();
+        assert_eq!(c.state, CycleState::Active);
+        assert!(c.updated_at >= before);
+    }
+
+    #[test]
+    fn transition_failure_leaves_state_untouched() {
+        let mut c = cyc();
+        let before = c.updated_at;
+        assert!(c.transition(CycleState::Shipped).is_err());
+        assert_eq!(c.state, CycleState::Draft);
+        assert_eq!(c.updated_at, before);
+    }
+
+    #[test]
+    fn transition_noop_is_error() {
+        let mut c = cyc();
+        assert!(matches!(
+            c.transition(CycleState::Draft),
+            Err(DomainError::NoOpTransition)
+        ));
+    }
+
+    #[test]
+    fn serde_roundtrip_preserves_dates_and_scope() {
+        let c = Cycle::new("S", d(2026, 6, 1), d(2026, 6, 14), Some(3)).unwrap();
+        let back: Cycle = serde_json::from_str(&serde_json::to_string(&c).unwrap()).unwrap();
+        assert_eq!(back.name, "S");
+        assert_eq!(back.start_date, c.start_date);
+        assert_eq!(back.end_date, c.end_date);
+        assert_eq!(back.module_scope_id, Some(3));
+    }
+
+    #[test]
+    fn serde_omits_none_optionals() {
+        let v = serde_json::to_value(cyc()).unwrap();
+        assert!(v.get("description").is_none());
+        assert!(v.get("module_scope_id").is_none());
+    }
+
+    #[test]
+    fn clone_and_debug() {
+        let c = cyc();
+        let cl = c.clone();
+        assert_eq!(cl.name, c.name);
+        assert!(format!("{c:?}").contains("Cycle"));
+    }
+}

@@ -64,3 +64,71 @@ mod tests {
         assert!(back.feature_id.is_none());
     }
 }
+
+#[cfg(test)]
+mod coverage_tests {
+    use super::*;
+
+    fn metric() -> Metric {
+        Metric {
+            id: 7,
+            feature_id: Some(3),
+            command: "cargo build".into(),
+            duration_ms: 250,
+            agent_runs: 2,
+            review_cycles: 1,
+            metadata: None,
+            timestamp: DateTime::from_timestamp(1_700_000_000, 0).unwrap(),
+        }
+    }
+
+    #[test]
+    fn fields_are_accessible() {
+        let m = metric();
+        assert_eq!(m.id, 7);
+        assert_eq!(m.feature_id, Some(3));
+        assert_eq!(m.command, "cargo build");
+        assert_eq!(m.duration_ms, 250);
+        assert_eq!(m.agent_runs, 2);
+        assert_eq!(m.review_cycles, 1);
+        assert!(m.metadata.is_none());
+    }
+
+    #[test]
+    fn serde_roundtrip_with_none_feature_and_metadata() {
+        let mut m = metric();
+        m.feature_id = None;
+        let back: Metric = serde_json::from_str(&serde_json::to_string(&m).unwrap()).unwrap();
+        assert!(back.feature_id.is_none());
+        assert!(back.metadata.is_none());
+        assert_eq!(back.duration_ms, 250);
+    }
+
+    #[test]
+    fn serde_roundtrip_with_metadata() {
+        let mut m = metric();
+        m.metadata = Some(serde_json::json!({"k": [1, 2]}));
+        let back: Metric = serde_json::from_str(&serde_json::to_string(&m).unwrap()).unwrap();
+        assert_eq!(back.metadata, m.metadata);
+    }
+
+    #[test]
+    fn negative_and_zero_values_allowed() {
+        let mut m = metric();
+        m.duration_ms = -1;
+        m.agent_runs = 0;
+        m.review_cycles = -5;
+        let back: Metric = serde_json::from_str(&serde_json::to_string(&m).unwrap()).unwrap();
+        assert_eq!(back.duration_ms, -1);
+        assert_eq!(back.agent_runs, 0);
+        assert_eq!(back.review_cycles, -5);
+    }
+
+    #[test]
+    fn clone_and_debug() {
+        let m = metric();
+        let c = m.clone();
+        assert_eq!(c.command, m.command);
+        assert!(format!("{m:?}").contains("Metric"));
+    }
+}

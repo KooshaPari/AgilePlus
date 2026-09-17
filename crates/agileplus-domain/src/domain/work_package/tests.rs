@@ -312,3 +312,293 @@ fn graph_execution_order_single_node() {
     // No edges => empty execution order.
     assert!(g.execution_order().unwrap().is_empty());
 }
+
+// --- coverage_tests: deeper edge cases ---
+
+mod coverage_tests {
+    use super::*;
+    use crate::domain::work_package::PrState;
+    use crate::error::DomainError;
+
+    const ALL: [WpState; 5] = [
+        WpState::Planned,
+        WpState::Doing,
+        WpState::Review,
+        WpState::Done,
+        WpState::Blocked,
+    ];
+
+    fn is_allowed(a: WpState, b: WpState) -> bool {
+        matches!(
+            (a, b),
+            (WpState::Planned, WpState::Doing)
+                | (WpState::Planned, WpState::Blocked)
+                | (WpState::Doing, WpState::Review)
+                | (WpState::Doing, WpState::Blocked)
+                | (WpState::Review, WpState::Done)
+                | (WpState::Review, WpState::Doing)
+                | (WpState::Blocked, WpState::Planned)
+                | (WpState::Blocked, WpState::Doing)
+        )
+    }
+
+    #[test]
+    fn complete_wp_state_matrix() {
+        for from in ALL {
+            for to in ALL {
+                assert_eq!(
+                    from.can_transition_to(to),
+                    is_allowed(from, to),
+                    "{from:?}->{to:?}"
+                );
+                let mut wp = WorkPackage::new(1, "t", 1, "c");
+                wp.state = from;
+                let r = wp.transition(to);
+                if is_allowed(from, to) {
+                    assert!(r.is_ok(), "{from:?}->{to:?}");
+                    assert_eq!(wp.state, to);
+                } else {
+                    match r {
+                        Err(DomainError::InvalidTransition { from: f, to: t, reason }) => {
+                            assert_eq!(f, format!("{from:?}"));
+                            assert_eq!(t, format!("{to:?}"));
+                            assert_eq!(reason, "transition not allowed");
+                        }
+                        other => panic!("{from:?}->{to:?}: {other:?}"),
+                    }
+                    assert_eq!(wp.state, from);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn wp_state_serde_and_hash() {
+        use std::collections::HashSet;
+        for st in ALL {
+            let back: WpState = serde_json::from_str(&serde_json::to_string(&st).unwrap()).unwrap();
+            assert_eq!(back, st);
+        }
+        assert_eq!(serde_json::to_string(&WpState::Planned).unwrap(), "\"planned\"");
+        assert_eq!(serde_json::to_string(&WpState::Done).unwrap(), "\"done\"");
+        let mut set = HashSet::new();
+        for st in ALL {
+            set.insert(st);
+        }
+        assert_eq!(set.len(), 5);
+    }
+
+    #[test]
+    fn pr_state_variants_serde() {
+        for st in [
+            PrState::Open,
+            PrState::Review,
+            PrState::ChangesRequested,
+            PrState::Approved,
+            PrState::Merged,
+        ] {
+            let back: PrState = serde_json::from_str(&serde_json::to_string(&st).unwrap()).unwrap();
+            assert_eq!(back, st);
+        }
+        assert_eq!(serde_json::to_string(&PrState::Open).unwrap(), "\"open\"");
+        assert_eq!(
+            serde_json::to_string(&PrState::ChangesRequested).unwrap(),
+            "\"changes_requested\""
+        );
+    }
+
+    #[test]
+    fn wp_serde_omits_none_optional_commit_fields() {
+        let wp = WorkPackage::new(1, "t", 1, "c");
+        let v = serde_json::to_value(&wp).unwrap();
+        assert!(v.get("plane_sub_issue_id").is_none());
+        assert!(v.get("base_commit").is_none());
+        assert!(v.get("head_commit").is_none());
+    }
+
+    #[test]
+    fn wp_serde_roundtrip_with_all_optionals() {
+        let mut wp = WorkPackage::new(1, "t", 2, "c");
+        wp.agent_id = Some("agent-1".into());
+        wp.pr_url = Some("http://pr".into());
+        wp.pr_state = Some(PrState::Approved);
+        wp.worktree_path = Some("/tmp/wt".into());
+        wp.plane_sub_issue_id = Some("sub-1".into());
+        wp.base_commit = Some("abc1234".into());
+        wp.head_commit = Some("def5678".into());
+        wp.file_scope = vec!["a.rs".into(), "b.rs".into()];
+        let back: WorkPackage =
+            serde_json::from_str(&serde_json::to_string(&wp).unwrap()).unwrap();
+        assert_eq!(back.agent_id.as_deref(), Some("agent-1"));
+        assert_eq!(back.pr_state, Some(PrState::Approved));
+        assert_eq!(back.file_scope, vec!["a.rs", "b.rs"]);
+        assert_eq!(back.base_commit.as_deref(), Some("abc1234"));
+    }
+
+    #[test]
+    fn file_overlap_returns_all_shared_files() {
+        let mut a = WorkPackage::new(1, "a", 1, "c");
+        a.file_scope = vec!["x.rs".into(), "y.rs".into(), "z.rs".into()];
+        let mut b = WorkPackage::new(1, "b", 2, "c");
+        b.file_scope = vec!["y.rs".into(), "z.rs".into()];
+        let mut overlap = a.has_file_overlap(&b);
+        overlap.sort();
+        assert_eq!(overlap, vec!["y.rs".to_string(), "z.rs".to_string()]);
+    }
+
+    #[test]
+    fn graph_diamond_execution_order() {
+        let mut g = DependencyGraph::new();
+        for (wp, dep) in [(2, 1), (3, 1), (4, 2), (4, 3)] {
+            g.add_edge(WpDependency {
+                wp_id: wp,
+                depends_on: dep,
+                dep_type: DependencyType::Explicit,
+            });
+        }
+        let order = g.execution_order().unwrap();
+        assert_eq!(order[0], vec![1]);
+        assert_eq!(order[1], vec![2, 3]);
+        assert_eq!(order[2], vec![4]);
+        assert!(!g.has_cycle());
+    }
+
+    #[test]
+    fn graph_self_loop_is_cycle() {
+        let mut g = DependencyGraph::new();
+        g.add_edge(WpDependency {
+            wp_id: 1,
+            depends_on: 1,
+            dep_type: DependencyType::Explicit,
+        });
+        assert!(g.has_cycle());
+        assert!(g.execution_order().is_err());
+    }
+
+    #[test]
+    fn graph_three_node_cycle_is_cycle() {
+        let mut g = DependencyGraph::new();
+        for (wp, dep) in [(1, 2), (2, 3), (3, 1)] {
+            g.add_edge(WpDependency {
+                wp_id: wp,
+                depends_on: dep,
+                dep_type: DependencyType::Explicit,
+            });
+        }
+        assert!(g.has_cycle());
+    }
+
+    #[test]
+    fn graph_single_edge_order_and_ready() {
+        let mut g = DependencyGraph::new();
+        g.add_edge(WpDependency {
+            wp_id: 2,
+            depends_on: 1,
+            dep_type: DependencyType::Explicit,
+        });
+        assert_eq!(g.execution_order().unwrap(), vec![vec![1], vec![2]]);
+        let mut ready = g.ready_wps(&HashSet::new());
+        ready.sort();
+        assert_eq!(ready, vec![1]);
+        let mut ready = g.ready_wps(&HashSet::from([1]));
+        ready.sort();
+        assert_eq!(ready, vec![2]);
+    }
+
+    #[test]
+    fn graph_ready_wps_empty_graph_is_empty() {
+        let g = DependencyGraph::new();
+        assert!(g.ready_wps(&HashSet::new()).is_empty());
+    }
+
+    #[test]
+    fn graph_ready_wps_ignores_unknown_done_ids() {
+        let mut g = DependencyGraph::new();
+        g.add_edge(WpDependency {
+            wp_id: 2,
+            depends_on: 1,
+            dep_type: DependencyType::Explicit,
+        });
+        let ready = g.ready_wps(&HashSet::from([99]));
+        assert_eq!(ready, vec![1]);
+    }
+
+    #[test]
+    fn graph_add_file_overlap_orders_by_sequence_regardless_of_input_order() {
+        let mut a = WorkPackage::new(1, "a", 5, "c");
+        a.id = 10;
+        a.file_scope = vec!["f.rs".into()];
+        let mut b = WorkPackage::new(1, "b", 2, "c");
+        b.id = 20;
+        b.file_scope = vec!["f.rs".into()];
+        // b has lower sequence, so b must be the predecessor of a.
+        let mut g = DependencyGraph::new();
+        g.add_file_overlap_edges(&[a, b]);
+        assert_eq!(g.execution_order().unwrap(), vec![vec![20], vec![10]]);
+    }
+
+    #[test]
+    fn graph_file_overlap_disjoint_files_no_edge() {
+        let mut a = WorkPackage::new(1, "a", 1, "c");
+        a.id = 1;
+        a.file_scope = vec!["a.rs".into()];
+        let mut b = WorkPackage::new(1, "b", 2, "c");
+        b.id = 2;
+        b.file_scope = vec!["b.rs".into()];
+        let mut g = DependencyGraph::new();
+        g.add_file_overlap_edges(&[a, b]);
+        assert!(g.execution_order().unwrap().is_empty());
+    }
+
+    #[test]
+    fn dependency_type_serde_and_hash() {
+        use std::collections::HashSet;
+        for t in [
+            DependencyType::Explicit,
+            DependencyType::FileOverlap,
+            DependencyType::Data,
+        ] {
+            let back: DependencyType =
+                serde_json::from_str(&serde_json::to_string(&t).unwrap()).unwrap();
+            assert_eq!(back, t);
+        }
+        let mut set = HashSet::new();
+        set.insert(DependencyType::Explicit);
+        set.insert(DependencyType::Explicit);
+        set.insert(DependencyType::Data);
+        assert_eq!(set.len(), 2);
+    }
+
+    #[test]
+    fn wp_dependency_serde_roundtrip() {
+        let dep = WpDependency {
+            wp_id: 5,
+            depends_on: 3,
+            dep_type: DependencyType::FileOverlap,
+        };
+        let back: WpDependency =
+            serde_json::from_str(&serde_json::to_string(&dep).unwrap()).unwrap();
+        assert_eq!(back.wp_id, 5);
+        assert_eq!(back.depends_on, 3);
+        assert_eq!(back.dep_type, DependencyType::FileOverlap);
+    }
+
+    #[test]
+    fn multiple_edges_same_wp_accumulate() {
+        let mut g = DependencyGraph::new();
+        for dep in [1, 2] {
+            g.add_edge(WpDependency {
+                wp_id: 3,
+                depends_on: dep,
+                dep_type: DependencyType::Explicit,
+            });
+        }
+        let order = g.execution_order().unwrap();
+        assert_eq!(order[0], vec![1, 2]);
+        assert_eq!(order[1], vec![3]);
+        // With only dependency 1 done, node 2 (no deps) is still ready.
+        assert_eq!(g.ready_wps(&HashSet::from([1])), vec![2]);
+        // Once both dependencies are done, only node 3 is ready.
+        assert_eq!(g.ready_wps(&HashSet::from([1, 2])), vec![3]);
+    }
+}

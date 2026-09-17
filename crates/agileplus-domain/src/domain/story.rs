@@ -247,3 +247,162 @@ mod tests {
         assert!(s.points.is_none());
     }
 }
+
+#[cfg(test)]
+mod coverage_tests {
+    use super::*;
+
+    const ALL: [StoryStatus; 6] = [
+        StoryStatus::Todo,
+        StoryStatus::InProgress,
+        StoryStatus::Review,
+        StoryStatus::Done,
+        StoryStatus::Blocked,
+        StoryStatus::Cancelled,
+    ];
+
+    fn allowed(a: StoryStatus, b: StoryStatus) -> bool {
+        matches!(
+            (a, b),
+            (StoryStatus::Todo, StoryStatus::InProgress)
+                | (StoryStatus::Todo, StoryStatus::Cancelled)
+                | (StoryStatus::InProgress, StoryStatus::Review)
+                | (StoryStatus::InProgress, StoryStatus::Blocked)
+                | (StoryStatus::InProgress, StoryStatus::Cancelled)
+                | (StoryStatus::Blocked, StoryStatus::InProgress)
+                | (StoryStatus::Review, StoryStatus::Done)
+                | (StoryStatus::Review, StoryStatus::InProgress)
+        )
+    }
+
+    #[test]
+    fn can_transition_to_full_matrix() {
+        for from in ALL {
+            for to in ALL {
+                assert_eq!(
+                    from.can_transition_to(to),
+                    allowed(from, to),
+                    "{from:?} -> {to:?}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn transition_status_matrix_matches_can_transition() {
+        for from in ALL {
+            for to in ALL {
+                let mut s = Story::new(1, 1, "T", None).unwrap();
+                s.status = from;
+                let before = s.updated_at;
+                let r = s.transition_status(to);
+                if allowed(from, to) {
+                    assert!(r.is_ok(), "{from:?} -> {to:?}");
+                    assert_eq!(s.status, to);
+                } else {
+                    assert!(r.is_err(), "{from:?} -> {to:?}");
+                    assert_eq!(s.status, from);
+                    assert_eq!(s.updated_at, before);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn invalid_transition_error_fields() {
+        let mut s = Story::new(1, 1, "T", None).unwrap();
+        let err = s.transition_status(StoryStatus::Done).unwrap_err();
+        match err {
+            DomainError::InvalidTransition { from, to, reason } => {
+                assert_eq!(from, "todo");
+                assert_eq!(to, "done");
+                assert!(!reason.is_empty());
+            }
+            other => panic!("wrong error: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn self_transition_rejected_for_all_states() {
+        for st in ALL {
+            assert!(!st.can_transition_to(st), "{st:?} self");
+        }
+    }
+
+    #[test]
+    fn new_trims_title_and_rejects_whitespace_only() {
+        let s = Story::new(1, 2, "  Trim me  ", None).unwrap();
+        assert_eq!(s.title, "Trim me");
+        assert!(Story::new(1, 2, "   \t\n", None).is_err());
+    }
+
+    #[test]
+    fn new_rejects_zero_points_but_allows_none_and_positive() {
+        assert!(Story::new(1, 1, "T", Some(0)).is_err());
+        assert_eq!(Story::new(1, 1, "T", Some(1)).unwrap().points, Some(1));
+        assert_eq!(Story::new(1, 1, "T", Some(u32::MAX)).unwrap().points, Some(u32::MAX));
+        assert!(Story::new(1, 1, "T", None).unwrap().points.is_none());
+    }
+
+    #[test]
+    fn new_sets_todo_status_and_zeroed_optionals() {
+        let s = Story::new(5, 6, "T", Some(2)).unwrap();
+        assert_eq!(s.id, 0);
+        assert_eq!(s.epic_id, 5);
+        assert_eq!(s.project_id, 6);
+        assert_eq!(s.status, StoryStatus::Todo);
+        assert!(s.description.is_none());
+        assert!(s.assignee_id.is_none());
+        assert!(s.requirement_id.is_none());
+        assert_eq!(s.created_at, s.updated_at);
+    }
+
+    #[test]
+    fn display_round_trips_for_all_statuses() {
+        for st in ALL {
+            let s = st.to_string();
+            assert_eq!(s.parse::<StoryStatus>().unwrap(), st);
+        }
+    }
+
+    #[test]
+    fn from_str_rejects_unknown_and_is_case_sensitive() {
+        assert!("unknown".parse::<StoryStatus>().is_err());
+        assert!("TODO".parse::<StoryStatus>().is_err());
+        assert!("".parse::<StoryStatus>().is_err());
+    }
+
+    #[test]
+    fn from_str_error_is_validation() {
+        match "nope".parse::<StoryStatus>() {
+            Err(DomainError::Validation(msg)) => assert!(msg.contains("nope")),
+            other => panic!("wrong: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn serde_roundtrip_all_statuses() {
+        for st in ALL {
+            let back: StoryStatus =
+                serde_json::from_str(&serde_json::to_string(&st).unwrap()).unwrap();
+            assert_eq!(back, st);
+        }
+    }
+
+    #[test]
+    fn requirement_id_defaults_to_none_when_absent_in_json() {
+        let s = Story::new(1, 1, "T", None).unwrap();
+        let mut v = serde_json::to_value(&s).unwrap();
+        v.as_object_mut().unwrap().remove("requirement_id");
+        let back: Story = serde_json::from_value(v).unwrap();
+        assert!(back.requirement_id.is_none());
+    }
+
+    #[test]
+    fn story_clone_and_debug() {
+        let s = Story::new(1, 1, "T", Some(1)).unwrap();
+        let c = s.clone();
+        assert_eq!(c.title, s.title);
+        assert!(format!("{s:?}").contains("Story"));
+    }
+}

@@ -145,3 +145,106 @@ mod tests {
         assert!(tag.created_at <= after);
     }
 }
+
+#[cfg(test)]
+mod coverage_tests {
+    use super::*;
+
+    #[test]
+    fn slug_from_name_table() {
+        for (input, expected) in [
+            ("OAuth Providers", "oauth-providers"),
+            ("Hello World", "hello-world"),
+            ("  Foo  Bar  ", "foo-bar"),
+            ("a--b", "a-b"),
+            ("", ""),
+            ("---", ""),
+            ("CamelCase", "camelcase"),
+            ("v2 API", "v2-api"),
+            ("unicode 功能", "unicode-功能"),
+        ] {
+            assert_eq!(Module::slug_from_name(input), expected, "input {input:?}");
+        }
+    }
+
+    #[test]
+    fn new_module_defaults_and_serde() {
+        let m = Module::new("Payments", None);
+        assert_eq!(m.id, 0);
+        assert_eq!(m.slug, "payments");
+        assert_eq!(m.friendly_name, "Payments");
+        assert!(m.description.is_none());
+        assert!(m.parent_module_id.is_none());
+        assert_eq!(m.created_at, m.updated_at);
+
+        let back: Module = serde_json::from_str(&serde_json::to_string(&m).unwrap()).unwrap();
+        assert_eq!(back.slug, "payments");
+        assert_eq!(back.id, 0);
+    }
+
+    #[test]
+    fn serde_skips_none_optional_fields() {
+        let m = Module::new("M", None);
+        let v = serde_json::to_value(&m).unwrap();
+        assert!(v.get("description").is_none());
+        assert!(v.get("parent_module_id").is_none());
+    }
+
+    #[test]
+    fn serde_includes_optional_fields_when_set() {
+        let mut m = Module::new("M", Some(3));
+        m.description = Some("desc".into());
+        let v = serde_json::to_value(&m).unwrap();
+        assert_eq!(v["description"], "desc");
+        assert_eq!(v["parent_module_id"], 3);
+    }
+
+    #[test]
+    fn update_name_re_slugs_and_preserves_other_fields() {
+        let mut m = Module::new("Old Name", Some(9));
+        m.description = Some("d".into());
+        m.update_name("Brand New!");
+        assert_eq!(m.friendly_name, "Brand New!");
+        assert_eq!(m.slug, "brand-new");
+        assert_eq!(m.parent_module_id, Some(9));
+        assert_eq!(m.description.as_deref(), Some("d"));
+    }
+
+    #[test]
+    fn module_feature_tag_new_and_serde() {
+        let tag = ModuleFeatureTag::new(1, 2);
+        assert_eq!(tag.module_id, 1);
+        assert_eq!(tag.feature_id, 2);
+        let back: ModuleFeatureTag =
+            serde_json::from_str(&serde_json::to_string(&tag).unwrap()).unwrap();
+        assert_eq!(back.module_id, 1);
+        assert_eq!(back.feature_id, 2);
+    }
+
+    #[test]
+    fn module_with_features_construction_and_serde() {
+        let m = Module::new("Core", None);
+        let feat = crate::domain::feature::Feature::new("f", "F", [1u8; 32], None);
+        let child = Module::new("Child", Some(1));
+        let view = ModuleWithFeatures {
+            module: m,
+            owned_features: vec![feat.clone()],
+            tagged_features: vec![feat],
+            child_modules: vec![child],
+        };
+        assert_eq!(view.owned_features.len(), 1);
+        assert_eq!(view.tagged_features.len(), 1);
+        assert_eq!(view.child_modules.len(), 1);
+        let back: ModuleWithFeatures =
+            serde_json::from_str(&serde_json::to_string(&view).unwrap()).unwrap();
+        assert_eq!(back.child_modules.len(), 1);
+    }
+
+    #[test]
+    fn module_clone_and_debug() {
+        let m = Module::new("X", None);
+        let c = m.clone();
+        assert_eq!(c.slug, m.slug);
+        assert!(format!("{m:?}").contains("Module"));
+    }
+}

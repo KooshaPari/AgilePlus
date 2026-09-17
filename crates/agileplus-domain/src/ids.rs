@@ -173,3 +173,147 @@ mod tests {
         assert_eq!(id.as_str(), "payments");
     }
 }
+
+#[cfg(test)]
+mod coverage_tests {
+    use super::*;
+    use std::str::FromStr;
+
+    macro_rules! id_tests {
+        ($($fn_name:ident : $ty:ty),+ $(,)?) => {
+            $(
+                #[test]
+                fn $fn_name() {
+                    let t = <$ty>::new("sample-1");
+                    assert_eq!(t.as_str(), "sample-1");
+                    assert_eq!(t.to_string(), "sample-1");
+                    assert_eq!(t.clone().into_inner(), "sample-1");
+                    assert_eq!(<$ty>::from("sample-1"), t);
+                    assert_eq!(<$ty>::from("sample-1".to_string()), t);
+                    assert_eq!(AsRef::<str>::as_ref(&t), "sample-1");
+                    assert_eq!(<$ty>::from_str("sample-1").unwrap(), t);
+                    assert!(<$ty>::from_str("").is_err());
+                    let json = serde_json::to_string(&t).unwrap();
+                    assert_eq!(json, "\"sample-1\"");
+                    let back: $ty = serde_json::from_str(&json).unwrap();
+                    assert_eq!(back, t);
+                    assert!(!format!("{t:?}").is_empty());
+                }
+            )+
+        };
+    }
+
+    id_tests! {
+        project_id_roundtrip: ProjectId,
+        module_id_roundtrip: ModuleId,
+        feature_id_roundtrip: FeatureId,
+        epic_id_roundtrip: EpicId,
+        story_id_roundtrip: StoryId,
+        cycle_id_roundtrip: CycleId,
+        work_package_id_roundtrip: WorkPackageId,
+        backlog_id_roundtrip: BacklogId,
+        intent_id_roundtrip: IntentId,
+        user_id_roundtrip: UserId,
+        api_key_id_roundtrip: ApiKeyId,
+        audit_id_roundtrip: AuditId,
+        plane_issue_id_roundtrip: PlaneIssueId,
+        plane_state_id_roundtrip: PlaneStateId,
+        github_login_roundtrip: GithubLogin,
+        branch_name_roundtrip: BranchName,
+        commit_sha_roundtrip: CommitSha,
+    }
+
+    #[test]
+    fn empty_parse_error_mentions_type_name() {
+        let err = FeatureId::from_str("").unwrap_err();
+        let msg = err.to_string();
+        assert!(msg.contains("FeatureId"), "got: {msg}");
+        assert!(matches!(err, DomainError::Validation(_)));
+
+        let err = UserId::from_str("").unwrap_err();
+        assert!(err.to_string().contains("UserId"));
+    }
+
+    #[test]
+    fn whitespace_only_is_accepted_by_newtype_parse() {
+        // Only empty is rejected; whitespace is a valid (unchecked) id.
+        assert!(FeatureId::from_str(" ").is_ok());
+    }
+
+    #[test]
+    fn ids_are_hashable_across_types() {
+        // Same inner value, different newtype wrappers: each is independently
+        // hashable in its own typed set.
+        let mut feature_set = std::collections::HashSet::new();
+        assert!(feature_set.insert(FeatureId::new("x")));
+        assert_eq!(feature_set.len(), 1);
+
+        let mut epic_set = std::collections::HashSet::new();
+        assert!(epic_set.insert(EpicId::new("x")));
+        assert_eq!(epic_set.len(), 1);
+    }
+
+    #[test]
+    fn identical_ids_are_eq_and_dedup_in_set() {
+        let a = FeatureId::new("dup");
+        let mut set = std::collections::HashSet::new();
+        assert!(set.insert(a.clone()));
+        assert!(!set.insert(a));
+        assert_eq!(set.len(), 1);
+    }
+
+    #[test]
+    fn commit_sha_parse_valid_short_and_full() {
+        assert!(CommitSha::parse_sha("0123abc").is_ok());
+        assert!(CommitSha::parse_sha("deadbeef1234567890abcdef1234567890abcdef").is_ok());
+        let short = CommitSha::parse_sha("abcdef1").unwrap();
+        assert_eq!(short.as_str(), "abcdef1");
+        let full = CommitSha::parse_sha("DEADBEEF1234567890abcdef1234567890abcdef").unwrap();
+        assert_eq!(full.as_str(), "deadbeef1234567890abcdef1234567890abcdef");
+    }
+
+    #[test]
+    fn commit_sha_parse_rejects_too_short_and_too_long() {
+        assert!(CommitSha::parse_sha("").is_err());
+        assert!(CommitSha::parse_sha("abcdef").is_err()); // 6
+        let long = "a".repeat(41);
+        assert!(CommitSha::parse_sha(&long).is_err());
+    }
+
+    #[test]
+    fn commit_sha_parse_rejects_non_hex() {
+        assert!(CommitSha::parse_sha("not a sha!").is_err());
+        assert!(CommitSha::parse_sha("zzzzzzz").is_err());
+        assert!(CommitSha::parse_sha("abc-def1").is_err());
+    }
+
+    #[test]
+    fn commit_sha_parse_boundary_lengths() {
+        assert!(CommitSha::parse_sha(&"0".repeat(7)).is_ok());
+        assert!(CommitSha::parse_sha(&"0".repeat(40)).is_ok());
+        assert!(CommitSha::parse_sha(&"0".repeat(6)).is_err());
+        assert!(CommitSha::parse_sha(&"0".repeat(41)).is_err());
+    }
+
+    #[test]
+    fn commit_sha_error_messages_are_descriptive() {
+        let err = CommitSha::parse_sha("abc").unwrap_err();
+        assert!(err.to_string().contains("7-40"), "got: {err}");
+        let err = CommitSha::parse_sha("ggggggg").unwrap_err();
+        assert!(err.to_string().contains("hex"), "got: {err}");
+    }
+
+    #[test]
+    fn newtype_new_accepts_string_and_str() {
+        let from_str = ModuleId::new("m");
+        let from_owned = ModuleId::new(String::from("m"));
+        assert_eq!(from_str, from_owned);
+    }
+
+    #[test]
+    fn newtype_into_inner_transfers_ownership() {
+        let id = BacklogId::new("b-1");
+        let inner: String = id.into_inner();
+        assert_eq!(inner, "b-1");
+    }
+}

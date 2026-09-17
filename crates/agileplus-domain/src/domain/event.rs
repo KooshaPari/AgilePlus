@@ -112,3 +112,91 @@ mod tests {
         assert_eq!(e.payload, payload);
     }
 }
+
+#[cfg(test)]
+mod coverage_tests {
+    use super::*;
+
+    #[test]
+    fn new_initializes_unset_chain_fields() {
+        let e = Event::new("Feature", 7, "created", serde_json::json!({"a": 1}), "agent");
+        assert_eq!(e.id, 0);
+        assert_eq!(e.sequence, 0);
+        assert_eq!(e.prev_hash, [0u8; 32]);
+        assert_eq!(e.hash, [0u8; 32]);
+        assert_eq!(e.entity_type, "Feature");
+        assert_eq!(e.entity_id, 7);
+        assert_eq!(e.event_type, "created");
+        assert_eq!(e.actor, "agent");
+        assert_eq!(e.payload, serde_json::json!({"a": 1}));
+    }
+
+    #[test]
+    fn new_accepts_empty_strings_and_null_payload() {
+        let e = Event::new("", 0, "", serde_json::Value::Null, "");
+        assert_eq!(e.entity_type, "");
+        assert_eq!(e.payload, serde_json::Value::Null);
+        assert_eq!(e.actor, "");
+    }
+
+    #[test]
+    fn serde_roundtrip_preserves_hashes_and_sequence() {
+        let mut e = Event::new("WorkPackage", 42, "transitioned", serde_json::json!({}), "u");
+        e.id = 10;
+        e.sequence = 5;
+        e.prev_hash = [1u8; 32];
+        e.hash = [2u8; 32];
+        let back: Event = serde_json::from_str(&serde_json::to_string(&e).unwrap()).unwrap();
+        assert_eq!(back.id, 10);
+        assert_eq!(back.sequence, 5);
+        assert_eq!(back.prev_hash, [1u8; 32]);
+        assert_eq!(back.hash, [2u8; 32]);
+    }
+
+    #[test]
+    fn timestamp_within_call_window() {
+        let before = Utc::now();
+        let e = Event::new("F", 1, "t", serde_json::json!(null), "a");
+        let after = Utc::now();
+        assert!(e.timestamp >= before && e.timestamp <= after);
+    }
+
+    #[test]
+    fn payload_roundtrip_complex_json() {
+        let payload = serde_json::json!({
+            "from": "created",
+            "to": "implementing",
+            "nested": {"list": [1, 2, 3], "flag": true}
+        });
+        let e = Event::new("Feature", 5, "transitioned", payload.clone(), "bob");
+        let back: Event = serde_json::from_str(&serde_json::to_string(&e).unwrap()).unwrap();
+        assert_eq!(back.payload, payload);
+    }
+
+    #[test]
+    fn clone_is_deep_for_payload() {
+        let mut e = Event::new("F", 1, "t", serde_json::json!({"k": "v"}), "a");
+        let c = e.clone();
+        e.payload = serde_json::json!({"k": "changed"});
+        assert_eq!(c.payload, serde_json::json!({"k": "v"}));
+    }
+
+    #[test]
+    fn debug_contains_type_name() {
+        let e = Event::new("F", 1, "t", serde_json::json!({}), "a");
+        assert!(format!("{e:?}").contains("Event"));
+    }
+
+    #[test]
+    fn json_wire_shape() {
+        let e = Event::new("Feature", 1, "created", serde_json::json!({}), "agent-1");
+        let v = serde_json::to_value(&e).unwrap();
+        assert_eq!(v["entity_type"], "Feature");
+        assert_eq!(v["entity_id"], 1);
+        assert_eq!(v["event_type"], "created");
+        assert_eq!(v["actor"], "agent-1");
+        assert!(v["timestamp"].is_string());
+        assert_eq!(v["prev_hash"].as_array().unwrap().len(), 32);
+        assert_eq!(v["hash"].as_array().unwrap().len(), 32);
+    }
+}

@@ -237,3 +237,152 @@ mod tests {
         assert!(u.transition_status(UserStatus::Active).is_err());
     }
 }
+
+#[cfg(test)]
+mod coverage_tests {
+    use super::*;
+
+    const ROLES: [UserRole; 3] = [UserRole::Admin, UserRole::Member, UserRole::Viewer];
+    const STATUSES: [UserStatus; 3] = [
+        UserStatus::Active,
+        UserStatus::Inactive,
+        UserStatus::Suspended,
+    ];
+
+    fn allowed(a: UserStatus, b: UserStatus) -> bool {
+        matches!(
+            (a, b),
+            (UserStatus::Active, UserStatus::Inactive)
+                | (UserStatus::Active, UserStatus::Suspended)
+                | (UserStatus::Inactive, UserStatus::Active)
+                | (UserStatus::Suspended, UserStatus::Active)
+        )
+    }
+
+    #[test]
+    fn can_transition_to_full_matrix() {
+        for from in STATUSES {
+            for to in STATUSES {
+                assert_eq!(
+                    from.can_transition_to(to),
+                    allowed(from, to),
+                    "{from:?} -> {to:?}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn transition_status_matrix() {
+        for from in STATUSES {
+            for to in STATUSES {
+                let mut u = User::new("N", "n@x.com", UserRole::Member).unwrap();
+                u.status = from;
+                let r = u.transition_status(to);
+                if allowed(from, to) {
+                    assert!(r.is_ok());
+                    assert_eq!(u.status, to);
+                } else {
+                    assert!(r.is_err());
+                    assert_eq!(u.status, from);
+                    match r.unwrap_err() {
+                        DomainError::InvalidTransition { from: f, to: t, .. } => {
+                            assert_eq!(f, from.to_string());
+                            assert_eq!(t, to.to_string());
+                        }
+                        other => panic!("wrong error: {other:?}"),
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn new_trims_and_defaults() {
+        let u = User::new("  Alice  ", " a@b.com ", UserRole::Admin).unwrap();
+        assert_eq!(u.display_name, "Alice");
+        assert_eq!(u.email, "a@b.com");
+        assert_eq!(u.status, UserStatus::Active);
+        assert_eq!(u.role, UserRole::Admin);
+        assert_eq!(u.id, 0);
+        assert!(u.avatar_url.is_none());
+        assert!(u.github_login.is_none());
+        assert_eq!(u.created_at, u.updated_at);
+    }
+
+    #[test]
+    fn new_rejects_empty_display_name() {
+        for name in ["", "   ", "\t\n"] {
+            assert!(matches!(
+                User::new(name, "a@b.com", UserRole::Member),
+                Err(DomainError::Validation(_))
+            ));
+        }
+    }
+
+    #[test]
+    fn email_validation_requires_at_sign() {
+        assert!(User::new("N", "a@b.com", UserRole::Admin).is_ok());
+        assert!(User::new("N", "@", UserRole::Admin).is_ok());
+        assert!(User::new("N", "no-at-sign", UserRole::Admin).is_err());
+        assert!(User::new("N", "", UserRole::Admin).is_err());
+    }
+
+    #[test]
+    fn role_display_roundtrip() {
+        for r in ROLES {
+            assert_eq!(r.to_string().parse::<UserRole>().unwrap(), r);
+        }
+    }
+
+    #[test]
+    fn status_display_roundtrip() {
+        for s in STATUSES {
+            assert_eq!(s.to_string().parse::<UserStatus>().unwrap(), s);
+        }
+    }
+
+    #[test]
+    fn from_str_rejects_unknown_and_is_case_sensitive() {
+        assert!("SUPERUSER".parse::<UserRole>().is_err());
+        assert!("Admin".parse::<UserRole>().is_err());
+        assert!("DELETED".parse::<UserStatus>().is_err());
+        assert!("Active".parse::<UserStatus>().is_err());
+    }
+
+    #[test]
+    fn serde_roundtrip_user_and_enums() {
+        for r in ROLES {
+            let back: UserRole = serde_json::from_str(&serde_json::to_string(&r).unwrap()).unwrap();
+            assert_eq!(back, r);
+        }
+        for s in STATUSES {
+            let back: UserStatus =
+                serde_json::from_str(&serde_json::to_string(&s).unwrap()).unwrap();
+            assert_eq!(back, s);
+        }
+        let mut u = User::new("N", "n@x.com", UserRole::Viewer).unwrap();
+        u.avatar_url = Some("http://a".into());
+        u.github_login = Some("gh".into());
+        let back: User = serde_json::from_str(&serde_json::to_string(&u).unwrap()).unwrap();
+        assert_eq!(back.avatar_url.as_deref(), Some("http://a"));
+        assert_eq!(back.github_login.as_deref(), Some("gh"));
+    }
+
+    #[test]
+    fn wire_strings() {
+        assert_eq!(serde_json::to_string(&UserRole::Admin).unwrap(), "\"admin\"");
+        assert_eq!(
+            serde_json::to_string(&UserStatus::Active).unwrap(),
+            "\"active\""
+        );
+    }
+
+    #[test]
+    fn user_clone_and_debug() {
+        let u = User::new("N", "n@x.com", UserRole::Member).unwrap();
+        let c = u.clone();
+        assert_eq!(c.email, u.email);
+        assert!(format!("{u:?}").contains("User"));
+    }
+}

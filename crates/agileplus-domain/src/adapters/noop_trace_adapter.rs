@@ -55,3 +55,89 @@ impl TraceabilityPort for NoopTraceAdapter {
         Ok(vec![])
     }
 }
+
+#[cfg(test)]
+mod coverage_tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn link_trace_returns_ok_for_any_input() {
+        let adapter = NoopTraceAdapter;
+        let r = adapter
+            .link_trace(
+                "entity-1".to_string(),
+                TraceRef {
+                    trace_id: "T".to_string(),
+                    artifact_type: "requirement".to_string(),
+                    linked_at: chrono::Utc::now(),
+                },
+            )
+            .await;
+        assert!(r.is_ok());
+    }
+
+    #[tokio::test]
+    async fn link_trace_is_idempotent() {
+        let adapter = NoopTraceAdapter;
+        let mk = || TraceRef {
+            trace_id: "T".to_string(),
+            artifact_type: "requirement".to_string(),
+            linked_at: chrono::Utc::now(),
+        };
+        assert!(adapter.link_trace("e".to_string(), mk()).await.is_ok());
+        assert!(adapter.link_trace("e".to_string(), mk()).await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn get_traces_returns_empty_vec() {
+        let adapter = NoopTraceAdapter;
+        let traces = adapter.get_traces("anything".to_string()).await.unwrap();
+        assert!(traces.is_empty());
+    }
+
+    #[tokio::test]
+    async fn get_traces_ignores_empty_entity_id() {
+        let adapter = NoopTraceAdapter;
+        assert!(adapter.get_traces(String::new()).await.unwrap().is_empty());
+    }
+
+    #[tokio::test]
+    async fn works_as_trait_object() {
+        let adapter: Box<dyn TraceabilityPort> = Box::new(NoopTraceAdapter);
+        assert!(adapter.get_traces("x".to_string()).await.unwrap().is_empty());
+        let link = adapter
+            .link_trace(
+                "x".to_string(),
+                TraceRef {
+                    trace_id: "id".to_string(),
+                    artifact_type: "spec".to_string(),
+                    linked_at: chrono::Utc::now(),
+                },
+            )
+            .await;
+        assert!(link.is_ok());
+    }
+
+    #[tokio::test]
+    async fn concurrent_links_are_all_ok() {
+        let adapter = std::sync::Arc::new(NoopTraceAdapter);
+        let mut handles = Vec::new();
+        for i in 0..8 {
+            let a = adapter.clone();
+            handles.push(tokio::spawn(async move {
+                a.link_trace(
+                    format!("e-{i}"),
+                    TraceRef {
+                        trace_id: format!("T-{i}"),
+                        artifact_type: "requirement".to_string(),
+                        linked_at: chrono::Utc::now(),
+                    },
+                )
+                .await
+            }));
+        }
+        for h in handles {
+            assert!(h.await.unwrap().is_ok());
+        }
+    }
+}

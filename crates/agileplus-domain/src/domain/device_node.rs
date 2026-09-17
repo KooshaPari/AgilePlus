@@ -80,3 +80,85 @@ mod tests {
         assert_eq!(d2.tailscale_ip.as_deref(), Some("100.64.0.1"));
     }
 }
+
+#[cfg(test)]
+mod coverage_tests {
+    use super::*;
+
+    #[test]
+    fn new_defaults_and_version() {
+        let d = DeviceNode::new("dev", "host");
+        assert_eq!(d.device_id, "dev");
+        assert_eq!(d.hostname, "host");
+        assert!(d.tailscale_ip.is_none());
+        assert_eq!(d.sync_vector, serde_json::json!({}));
+        assert_eq!(d.platform_version, env!("CARGO_PKG_VERSION"));
+        assert!(!d.platform_version.is_empty());
+    }
+
+    #[test]
+    fn get_last_sequence_defaults_to_zero() {
+        let d = DeviceNode::new("d", "h");
+        assert_eq!(d.get_last_sequence("feature", 1), 0);
+        assert_eq!(d.get_last_sequence("", 0), 0);
+    }
+
+    #[test]
+    fn update_and_query_sequences_independently() {
+        let mut d = DeviceNode::new("d", "h");
+        d.update_sync_vector("feature", 1, 10);
+        d.update_sync_vector("feature", 2, 20);
+        d.update_sync_vector("wp", 1, 30);
+        assert_eq!(d.get_last_sequence("feature", 1), 10);
+        assert_eq!(d.get_last_sequence("feature", 2), 20);
+        assert_eq!(d.get_last_sequence("wp", 1), 30);
+        assert_eq!(d.get_last_sequence("wp", 2), 0);
+    }
+
+    #[test]
+    fn update_overwrites_previous_sequence() {
+        let mut d = DeviceNode::new("d", "h");
+        d.update_sync_vector("feature", 1, 5);
+        d.update_sync_vector("feature", 1, 99);
+        assert_eq!(d.get_last_sequence("feature", 1), 99);
+    }
+
+    #[test]
+    fn update_refreshes_last_seen() {
+        let mut d = DeviceNode::new("d", "h");
+        let before = d.last_seen;
+        std::thread::sleep(std::time::Duration::from_millis(2));
+        d.update_sync_vector("x", 1, 1);
+        assert!(d.last_seen >= before);
+    }
+
+    #[test]
+    fn sequence_accepts_negative_and_large_values() {
+        let mut d = DeviceNode::new("d", "h");
+        d.update_sync_vector("x", 1, -5);
+        assert_eq!(d.get_last_sequence("x", 1), -5);
+        d.update_sync_vector("x", 2, i64::MAX);
+        assert_eq!(d.get_last_sequence("x", 2), i64::MAX);
+    }
+
+    #[test]
+    fn serde_roundtrip_preserves_sync_vector() {
+        let mut d = DeviceNode::new("dev-1", "host");
+        d.tailscale_ip = Some("100.64.0.1".into());
+        d.update_sync_vector("feature", 3, 42);
+        let back: DeviceNode = serde_json::from_str(&serde_json::to_string(&d).unwrap()).unwrap();
+        assert_eq!(back.device_id, "dev-1");
+        assert_eq!(back.tailscale_ip.as_deref(), Some("100.64.0.1"));
+        assert_eq!(back.get_last_sequence("feature", 3), 42);
+        assert_eq!(back.platform_version, d.platform_version);
+    }
+
+    #[test]
+    fn clone_and_debug() {
+        let mut d = DeviceNode::new("d", "h");
+        d.update_sync_vector("x", 1, 1);
+        let c = d.clone();
+        assert_eq!(c.get_last_sequence("x", 1), 1);
+        assert!(format!("{d:?}").contains("DeviceNode"));
+    }
+}

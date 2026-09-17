@@ -70,3 +70,55 @@ mod tests {
         assert!(dbg.contains("Snapshot"));
     }
 }
+
+#[cfg(test)]
+mod coverage_tests {
+    use super::*;
+
+    #[test]
+    fn new_stores_all_fields() {
+        let s = Snapshot::new("Feature", 42, serde_json::json!({"k": "v"}), 7);
+        assert_eq!(s.entity_type, "Feature");
+        assert_eq!(s.entity_id, 42);
+        assert_eq!(s.event_sequence, 7);
+        assert_eq!(s.state, serde_json::json!({"k": "v"}));
+    }
+
+    #[test]
+    fn new_accepts_empty_type_and_null_state() {
+        let s = Snapshot::new("", 0, serde_json::Value::Null, 0);
+        assert_eq!(s.entity_type, "");
+        assert!(s.state.is_null());
+    }
+
+    #[test]
+    fn serde_roundtrip_nested_state() {
+        let s = Snapshot::new(
+            "WorkPackage",
+            9,
+            serde_json::json!({"a": [1, 2], "b": {"c": true}}),
+            -1,
+        );
+        let back: Snapshot = serde_json::from_str(&serde_json::to_string(&s).unwrap()).unwrap();
+        assert_eq!(back.state, s.state);
+        assert_eq!(back.event_sequence, -1);
+    }
+
+    #[test]
+    fn clone_is_independent() {
+        let mut s = Snapshot::new("F", 1, serde_json::json!({"n": 1}), 1);
+        let c = s.clone();
+        s.state = serde_json::json!({"n": 2});
+        assert_eq!(c.state, serde_json::json!({"n": 1}));
+    }
+
+    #[test]
+    fn debug_and_json_shape() {
+        let s = Snapshot::new("F", 1, serde_json::json!({}), 3);
+        assert!(format!("{s:?}").contains("Snapshot"));
+        let v = serde_json::to_value(&s).unwrap();
+        assert_eq!(v["entity_type"], "F");
+        assert_eq!(v["entity_id"], 1);
+        assert_eq!(v["event_sequence"], 3);
+    }
+}

@@ -159,3 +159,136 @@ mod tests {
         assert_eq!(e.title, "Trimmed");
     }
 }
+
+#[cfg(test)]
+mod coverage_tests {
+    use super::*;
+
+    const ALL: [EpicStatus; 5] = [
+        EpicStatus::Backlog,
+        EpicStatus::Active,
+        EpicStatus::Review,
+        EpicStatus::Done,
+        EpicStatus::Cancelled,
+    ];
+
+    fn allowed(a: EpicStatus, b: EpicStatus) -> bool {
+        matches!(
+            (a, b),
+            (EpicStatus::Backlog, EpicStatus::Active)
+                | (EpicStatus::Active, EpicStatus::Review)
+                | (EpicStatus::Active, EpicStatus::Cancelled)
+                | (EpicStatus::Review, EpicStatus::Done)
+                | (EpicStatus::Review, EpicStatus::Active)
+        )
+    }
+
+    #[test]
+    fn can_transition_to_full_matrix() {
+        for from in ALL {
+            for to in ALL {
+                assert_eq!(from.can_transition_to(to), allowed(from, to), "{from:?}->{to:?}");
+            }
+        }
+    }
+
+    #[test]
+    fn transition_status_matrix() {
+        for from in ALL {
+            for to in ALL {
+                let mut e = Epic::new(1, "T").unwrap();
+                e.status = from;
+                let r = e.transition_status(to);
+                if allowed(from, to) {
+                    assert!(r.is_ok(), "{from:?}->{to:?}");
+                    assert_eq!(e.status, to);
+                } else {
+                    assert!(r.is_err(), "{from:?}->{to:?}");
+                    assert_eq!(e.status, from);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn invalid_transition_error_fields() {
+        let mut e = Epic::new(1, "T").unwrap();
+        match e.transition_status(EpicStatus::Done).unwrap_err() {
+            DomainError::InvalidTransition { from, to, reason } => {
+                assert_eq!(from, "backlog");
+                assert_eq!(to, "done");
+                assert!(reason.contains("epic"));
+            }
+            other => panic!("wrong: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn new_trims_title_and_defaults() {
+        let e = Epic::new(9, "  Big Epic  ").unwrap();
+        assert_eq!(e.title, "Big Epic");
+        assert_eq!(e.project_id, 9);
+        assert_eq!(e.id, 0);
+        assert_eq!(e.status, EpicStatus::Backlog);
+        assert!(e.description.is_none());
+        assert!(e.owner_id.is_none());
+        assert!(e.requirement_id.is_none());
+    }
+
+    #[test]
+    fn new_rejects_empty_and_whitespace_title() {
+        for t in ["", "   ", "\t"] {
+            assert!(matches!(Epic::new(1, t), Err(DomainError::Validation(_))));
+        }
+    }
+
+    #[test]
+    fn display_roundtrip_and_case_sensitivity() {
+        for s in ALL {
+            assert_eq!(s.to_string().parse::<EpicStatus>().unwrap(), s);
+        }
+        assert!("Backlog".parse::<EpicStatus>().is_err());
+        assert!("bogus".parse::<EpicStatus>().is_err());
+    }
+
+    #[test]
+    fn serde_roundtrip_and_wire_strings() {
+        for s in ALL {
+            let back: EpicStatus =
+                serde_json::from_str(&serde_json::to_string(&s).unwrap()).unwrap();
+            assert_eq!(back, s);
+        }
+        assert_eq!(serde_json::to_string(&EpicStatus::Backlog).unwrap(), "\"backlog\"");
+        assert_eq!(serde_json::to_string(&EpicStatus::Cancelled).unwrap(), "\"cancelled\"");
+    }
+
+    #[test]
+    fn requirement_id_defaults_none_when_absent() {
+        let e = Epic::new(1, "T").unwrap();
+        let mut v = serde_json::to_value(&e).unwrap();
+        v.as_object_mut().unwrap().remove("requirement_id");
+        let back: Epic = serde_json::from_value(v).unwrap();
+        assert!(back.requirement_id.is_none());
+    }
+
+    #[test]
+    fn epic_serde_roundtrip_preserves_fields() {
+        let mut e = Epic::new(3, "E").unwrap();
+        e.description = Some("d".into());
+        e.owner_id = Some(7);
+        e.requirement_id = Some("EP-1".into());
+        let back: Epic = serde_json::from_str(&serde_json::to_string(&e).unwrap()).unwrap();
+        assert_eq!(back.project_id, 3);
+        assert_eq!(back.description.as_deref(), Some("d"));
+        assert_eq!(back.owner_id, Some(7));
+        assert_eq!(back.requirement_id.as_deref(), Some("EP-1"));
+    }
+
+    #[test]
+    fn epic_clone_and_debug() {
+        let e = Epic::new(1, "T").unwrap();
+        let c = e.clone();
+        assert_eq!(c.title, e.title);
+        assert!(format!("{e:?}").contains("Epic"));
+    }
+}

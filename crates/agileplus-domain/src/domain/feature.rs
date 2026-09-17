@@ -384,3 +384,187 @@ mod tests {
         assert_eq!(back.project_id, Some(1));
     }
 }
+
+#[cfg(test)]
+mod coverage_tests {
+    use super::*;
+
+    fn f() -> Feature {
+        Feature::new("s", "S", [0u8; 32], None)
+    }
+
+    #[test]
+    fn slug_from_name_table() {
+        for (input, expected) in [
+            ("Hello World", "hello-world"),
+            ("", ""),
+            ("   ", ""),
+            ("---", ""),
+            ("a   b", "a-b"),
+            ("--x--y--", "x-y"),
+            ("foo@bar!baz#qux", "foo-bar-baz-qux"),
+            ("v2 release", "v2-release"),
+            ("Ünïcödé", "Ünïcödé"),
+            ("CamelCase", "camelcase"),
+            ("a\tb\nc", "a-b-c"),
+            ("123", "123"),
+        ] {
+            assert_eq!(Feature::slug_from_name(input), expected, "input {input:?}");
+        }
+    }
+
+    #[test]
+    fn transition_allowed_target_from_each_state() {
+        let allowed: &[(FeatureState, FeatureState)] = &[
+            (FeatureState::Created, FeatureState::Specified),
+            (FeatureState::Specified, FeatureState::Researched),
+            (FeatureState::Researched, FeatureState::Planned),
+            (FeatureState::Planned, FeatureState::Implementing),
+            (FeatureState::Implementing, FeatureState::Validated),
+            (FeatureState::Validated, FeatureState::Shipped),
+            (FeatureState::Shipped, FeatureState::Retrospected),
+        ];
+        let all = [
+            FeatureState::Created,
+            FeatureState::Specified,
+            FeatureState::Researched,
+            FeatureState::Planned,
+            FeatureState::Implementing,
+            FeatureState::Validated,
+            FeatureState::Shipped,
+            FeatureState::Retrospected,
+        ];
+        for (from, to) in allowed {
+            let mut feat = f();
+            feat.state = *from;
+            assert!(feat.transition(*to).is_ok(), "{from:?} -> {to:?} should be allowed");
+            assert_eq!(feat.state, *to);
+            // Every other target must be rejected from `from`.
+            for other in all {
+                if other == *to {
+                    continue;
+                }
+                let mut feat2 = f();
+                feat2.state = *from;
+                assert!(
+                    feat2.transition(other).is_err(),
+                    "{from:?} -> {other:?} should be rejected"
+                );
+                assert_eq!(feat2.state, *from);
+            }
+        }
+    }
+
+    #[test]
+    fn invalid_transition_error_message_shape() {
+        let mut feat = f();
+        let err = feat.transition(FeatureState::Shipped).unwrap_err();
+        assert_eq!(err, "invalid transition Created -> Shipped");
+    }
+
+    #[test]
+    fn retrospected_is_terminal() {
+        let mut feat = f();
+        feat.state = FeatureState::Retrospected;
+        for target in [
+            FeatureState::Created,
+            FeatureState::Specified,
+            FeatureState::Retrospected,
+        ] {
+            assert!(feat.transition(target).is_err());
+        }
+        assert_eq!(feat.state, FeatureState::Retrospected);
+    }
+
+    #[test]
+    fn self_transition_always_rejected_on_feature() {
+        let mut feat = f();
+        assert!(feat.transition(FeatureState::Created).is_err());
+    }
+
+    #[test]
+    fn new_sets_state_and_defaults() {
+        let feat = Feature::new("slug", "Name", [7; 32], Some("dev"));
+        assert_eq!(feat.id, 0);
+        assert_eq!(feat.state, FeatureState::Created);
+        assert_eq!(feat.target_branch, "dev");
+        assert_eq!(feat.spec_hash, [7; 32]);
+        assert!(feat.labels.is_empty());
+        assert_eq!(feat.created_at, feat.updated_at);
+    }
+
+    #[test]
+    fn new_allows_empty_branch_and_empty_slug() {
+        let feat = Feature::new("", "", [0; 32], Some(""));
+        assert_eq!(feat.slug, "");
+        assert_eq!(feat.target_branch, "");
+    }
+
+    #[test]
+    fn clone_and_debug() {
+        let feat = Feature::new("c", "C", [3; 32], None);
+        let c = feat.clone();
+        assert_eq!(c.slug, feat.slug);
+        assert_eq!(c.spec_hash, feat.spec_hash);
+        assert!(format!("{feat:?}").contains("Feature"));
+    }
+
+    #[test]
+    fn spec_hash_serializes_as_byte_array() {
+        // `Feature.spec_hash` has no `serde(with="hex_bytes")` attribute, so it
+        // round-trips as a plain 32-element JSON array.
+        let mut feat = f();
+        feat.spec_hash = [0xAB; 32];
+        let v = serde_json::to_value(&feat).unwrap();
+        let arr = v["spec_hash"].as_array().unwrap();
+        assert_eq!(arr.len(), 32);
+        assert!(arr.iter().all(|b| b.as_u64() == Some(0xAB)));
+        let back: Feature = serde_json::from_value(v).unwrap();
+        assert_eq!(back.spec_hash, [0xAB; 32]);
+    }
+
+    #[test]
+    fn spec_hash_array_roundtrip_many_values() {
+        for byte in [0x00u8, 0x0f, 0x10, 0xff] {
+            let feat = Feature::new("s", "S", [byte; 32], None);
+            let back: Feature =
+                serde_json::from_str(&serde_json::to_string(&feat).unwrap()).unwrap();
+            assert_eq!(back.spec_hash, [byte; 32]);
+        }
+    }
+
+    #[test]
+    fn spec_hash_rejects_wrong_length_array() {
+        let mut v = serde_json::to_value(f()).unwrap();
+        v["spec_hash"] = serde_json::json!([1, 2, 3]);
+        assert!(serde_json::from_value::<Feature>(v).is_err());
+    }
+
+    #[test]
+    fn serde_preserves_optional_fields() {
+        let mut feat = f();
+        feat.plane_issue_id = Some("plane-1".into());
+        feat.plane_state_id = Some("state-1".into());
+        feat.created_at_commit = Some("abc1234".into());
+        feat.last_modified_commit = Some("def5678".into());
+        feat.module_id = Some(1);
+        feat.project_id = Some(2);
+        let back: Feature =
+            serde_json::from_str(&serde_json::to_string(&feat).unwrap()).unwrap();
+        assert_eq!(back.plane_issue_id.as_deref(), Some("plane-1"));
+        assert_eq!(back.plane_state_id.as_deref(), Some("state-1"));
+        assert_eq!(back.created_at_commit.as_deref(), Some("abc1234"));
+        assert_eq!(back.last_modified_commit.as_deref(), Some("def5678"));
+        assert_eq!(back.module_id, Some(1));
+        assert_eq!(back.project_id, Some(2));
+    }
+
+    #[test]
+    fn transition_advances_updated_at_monotonically() {
+        let mut feat = f();
+        let t0 = feat.updated_at;
+        feat.transition(FeatureState::Specified).unwrap();
+        feat.transition(FeatureState::Researched).unwrap();
+        assert!(feat.updated_at >= t0);
+    }
+}

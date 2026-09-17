@@ -167,3 +167,105 @@ mod tests {
         assert!(CycleState::Active.transition(CycleState::Active).is_err());
     }
 }
+
+#[cfg(test)]
+mod coverage_tests {
+    use super::*;
+
+    const ALL: [CycleState; 5] = [
+        CycleState::Draft,
+        CycleState::Active,
+        CycleState::Review,
+        CycleState::Shipped,
+        CycleState::Archived,
+    ];
+
+    fn is_allowed(from: CycleState, to: CycleState) -> bool {
+        matches!(
+            (from, to),
+            (CycleState::Draft, CycleState::Active)
+                | (CycleState::Active, CycleState::Review)
+                | (CycleState::Active, CycleState::Draft)
+                | (CycleState::Review, CycleState::Shipped)
+                | (CycleState::Review, CycleState::Active)
+                | (CycleState::Shipped, CycleState::Archived)
+        )
+    }
+
+    #[test]
+    fn full_25_pair_transition_matrix() {
+        for from in ALL {
+            for to in ALL {
+                let r = from.transition(to);
+                if from == to {
+                    assert!(
+                        matches!(r, Err(DomainError::NoOpTransition)),
+                        "{from:?}->{to:?} should be NoOp, got {r:?}"
+                    );
+                } else if is_allowed(from, to) {
+                    assert!(r.is_ok(), "{from:?}->{to:?} should be allowed");
+                } else {
+                    match r {
+                        Err(DomainError::InvalidTransition { from: f, to: t, reason }) => {
+                            assert_eq!(f, from.to_string());
+                            assert_eq!(t, to.to_string());
+                            assert!(!reason.is_empty());
+                        }
+                        other => panic!("{from:?}->{to:?} expected InvalidTransition, got {other:?}"),
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn display_roundtrip_and_serde_wire() {
+        for s in ALL {
+            assert_eq!(s.to_string().parse::<CycleState>().unwrap(), s);
+        }
+        assert_eq!(serde_json::to_string(&CycleState::Draft).unwrap(), "\"Draft\"");
+        assert_eq!(
+            serde_json::to_string(&CycleState::Archived).unwrap(),
+            "\"Archived\""
+        );
+    }
+
+    #[test]
+    fn from_str_rejects_unknown_and_lowercase() {
+        assert!("draft".parse::<CycleState>().is_err());
+        assert!("Bogus".parse::<CycleState>().is_err());
+        assert!("".parse::<CycleState>().is_err());
+    }
+
+    #[test]
+    fn from_str_error_mentions_input() {
+        match "weird".parse::<CycleState>() {
+            Err(DomainError::Other(msg)) => assert!(msg.contains("weird")),
+            other => panic!("wrong: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn terminal_archived_has_no_outgoing_edges() {
+        for to in ALL {
+            if to == CycleState::Archived {
+                continue;
+            }
+            assert!(CycleState::Archived.transition(to).is_err(), "Archived->{to:?}");
+        }
+    }
+
+    #[test]
+    fn is_copy_hash_and_debug() {
+        use std::collections::HashSet;
+        let s = CycleState::Active;
+        let c = s;
+        assert_eq!(s, c);
+        let mut set = HashSet::new();
+        for st in ALL {
+            set.insert(st);
+        }
+        assert_eq!(set.len(), 5);
+        assert_eq!(format!("{:?}", CycleState::Review), "Review");
+    }
+}

@@ -390,3 +390,227 @@ mod code_projection_tests {
         assert!(r.is_err());
     }
 }
+
+#[cfg(test)]
+mod coverage_tests {
+    use super::*;
+
+    fn every_variant() -> Vec<DomainError> {
+        vec![
+            DomainError::FeatureNotInModuleScope {
+                feature_slug: "f".into(),
+                module_slug: "m".into(),
+            },
+            DomainError::ModuleHasDependents("m".into()),
+            DomainError::CycleNotFound("c".into()),
+            DomainError::ModuleNotFound("m".into()),
+            DomainError::FeatureNotFound("f".into()),
+            DomainError::WorkPackageNotFound("w".into()),
+            DomainError::NotFound("n".into()),
+            DomainError::NotImplemented,
+            DomainError::Storage("s".into()),
+            DomainError::Validation("v".into()),
+            DomainError::Conflict("c".into()),
+            DomainError::InvalidTransition {
+                from: "a".into(),
+                to: "b".into(),
+                reason: "r".into(),
+            },
+            DomainError::LockPoisoned,
+            DomainError::InvalidClaim("i".into()),
+            DomainError::NoOpTransition,
+            DomainError::Other("o".into()),
+            DomainError::Agent("a".into()),
+            DomainError::Timeout(9),
+        ]
+    }
+
+    #[test]
+    fn all_variants_display_nonempty_and_unique() {
+        let mut seen = std::collections::HashSet::new();
+        for e in every_variant() {
+            let msg = e.to_string();
+            assert!(!msg.is_empty(), "empty display for {e:?}");
+            seen.insert(msg);
+        }
+        // Every variant produced a message (18 variants, all distinct here).
+        assert_eq!(seen.len(), 18);
+    }
+
+    #[test]
+    fn domain_error_implements_std_error() {
+        fn assert_error<E: std::error::Error>() {}
+        assert_error::<DomainError>();
+        let boxed: Box<dyn std::error::Error> = Box::new(DomainError::NotImplemented);
+        assert_eq!(boxed.to_string(), "Not implemented");
+    }
+
+    #[test]
+    fn error_code_projection_covers_every_variant() {
+        let mappings: Vec<(DomainError, ErrorCode)> = vec![
+            (DomainError::CycleNotFound("c".into()), ErrorCode::NotFound),
+            (DomainError::ModuleNotFound("m".into()), ErrorCode::NotFound),
+            (DomainError::FeatureNotFound("f".into()), ErrorCode::NotFound),
+            (
+                DomainError::WorkPackageNotFound("w".into()),
+                ErrorCode::NotFound,
+            ),
+            (DomainError::NotFound("n".into()), ErrorCode::NotFound),
+            (
+                DomainError::ModuleHasDependents("m".into()),
+                ErrorCode::AlreadyExists,
+            ),
+            (DomainError::Conflict("c".into()), ErrorCode::AlreadyExists),
+            (
+                DomainError::Validation("v".into()),
+                ErrorCode::ValidationError,
+            ),
+            (
+                DomainError::FeatureNotInModuleScope {
+                    feature_slug: "f".into(),
+                    module_slug: "m".into(),
+                },
+                ErrorCode::ValidationError,
+            ),
+            (
+                DomainError::InvalidTransition {
+                    from: "a".into(),
+                    to: "b".into(),
+                    reason: "r".into(),
+                },
+                ErrorCode::ValidationError,
+            ),
+            (
+                DomainError::InvalidClaim("i".into()),
+                ErrorCode::ValidationError,
+            ),
+            (DomainError::NotImplemented, ErrorCode::NotImplemented),
+            (DomainError::NoOpTransition, ErrorCode::ValidationError),
+            (DomainError::Storage("s".into()), ErrorCode::InternalError),
+            (DomainError::LockPoisoned, ErrorCode::InternalError),
+            (DomainError::Other("o".into()), ErrorCode::InternalError),
+            (DomainError::Agent("a".into()), ErrorCode::InternalError),
+            (DomainError::Timeout(1), ErrorCode::InternalError),
+        ];
+        assert_eq!(mappings.len(), 18);
+        for (err, expected) in mappings {
+            let got: ErrorCode = err.into();
+            assert_eq!(got, expected);
+        }
+    }
+
+    #[test]
+    fn error_code_serde_wire_strings() {
+        assert_eq!(
+            serde_json::to_string(&ErrorCode::NotFound).unwrap(),
+            "\"NotFound\""
+        );
+        assert_eq!(
+            serde_json::to_string(&ErrorCode::AlreadyExists).unwrap(),
+            "\"AlreadyExists\""
+        );
+        assert_eq!(
+            serde_json::to_string(&ErrorCode::ValidationError).unwrap(),
+            "\"ValidationError\""
+        );
+        assert_eq!(
+            serde_json::to_string(&ErrorCode::NotImplemented).unwrap(),
+            "\"NotImplemented\""
+        );
+        assert_eq!(
+            serde_json::to_string(&ErrorCode::InternalError).unwrap(),
+            "\"InternalError\""
+        );
+    }
+
+    #[test]
+    fn error_code_is_copy_and_clone() {
+        let a = ErrorCode::NotFound;
+        let b = a; // Copy
+        #[allow(clippy::clone_on_copy)]
+        let c = a.clone();
+        assert_eq!(a, b);
+        assert_eq!(b, c);
+        assert_ne!(ErrorCode::NotFound, ErrorCode::InternalError);
+    }
+
+    #[test]
+    fn error_code_debug() {
+        assert_eq!(format!("{:?}", ErrorCode::NotFound), "NotFound");
+        assert_eq!(format!("{:?}", ErrorCode::InternalError), "InternalError");
+    }
+
+    #[test]
+    fn timeout_display_includes_seconds() {
+        assert_eq!(DomainError::Timeout(0).to_string(), "Timed out after 0 seconds");
+        assert_eq!(
+            DomainError::Timeout(u64::MAX).to_string(),
+            format!("Timed out after {} seconds", u64::MAX)
+        );
+    }
+
+    #[test]
+    fn feature_not_in_module_scope_display_exact() {
+        let e = DomainError::FeatureNotInModuleScope {
+            feature_slug: "auth".into(),
+            module_slug: "core".into(),
+        };
+        assert_eq!(
+            e.to_string(),
+            "Feature not in module scope: feature 'auth' not in module 'core'"
+        );
+    }
+
+    #[test]
+    fn invalid_transition_display_exact() {
+        let e = DomainError::InvalidTransition {
+            from: "draft".into(),
+            to: "done".into(),
+            reason: "missing review".into(),
+        };
+        assert_eq!(
+            e.to_string(),
+            "Invalid transition from draft to done: missing review"
+        );
+    }
+
+    #[test]
+    fn no_op_transition_display_exact() {
+        assert_eq!(
+            DomainError::NoOpTransition.to_string(),
+            "No-op transition: already in the requested state"
+        );
+    }
+
+    #[test]
+    fn domain_result_alias_works_with_question_mark() {
+        fn inner() -> DomainResult<i32> {
+            Err(DomainError::NotFound("x".into()))
+        }
+        fn outer() -> DomainResult<i32> {
+            Ok(inner()? + 1)
+        }
+        assert!(outer().is_err());
+    }
+
+    #[test]
+    fn domain_result_alias_ok_path() {
+        let r: DomainResult<String> = Ok("ok".to_string());
+        assert_eq!(r.unwrap(), "ok");
+    }
+
+    #[test]
+    fn debug_impls_present_for_errors() {
+        for e in every_variant() {
+            let dbg = format!("{e:?}");
+            assert!(!dbg.is_empty());
+        }
+    }
+
+    #[test]
+    fn error_source_is_none_for_unit_variants() {
+        use std::error::Error;
+        assert!(DomainError::LockPoisoned.source().is_none());
+        assert!(DomainError::NotImplemented.source().is_none());
+    }
+}
