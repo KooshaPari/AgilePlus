@@ -492,7 +492,8 @@ export_interval_ms: 456
 
     #[test]
     fn config_error_io_from_missing_file() {
-        let e = TelemetryConfig::load_from(Path::new("/definitely/not/here/otel.yaml")).unwrap_err();
+        let e =
+            TelemetryConfig::load_from(Path::new("/definitely/not/here/otel.yaml")).unwrap_err();
         assert!(matches!(e, ConfigError::Io(_)));
         assert!(e.to_string().contains("IO error"));
     }

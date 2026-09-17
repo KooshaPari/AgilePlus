@@ -9,7 +9,13 @@ use agileplus_domain::domain::snapshot::Snapshot;
 use agileplus_p2p::git_merge::{MergeError, resolve_git_conflicts};
 
 fn make_event_line(seq: i64) -> String {
-    let mut e = Event::new("Feature", 1, "created", serde_json::json!({"seq": seq}), "t");
+    let mut e = Event::new(
+        "Feature",
+        1,
+        "created",
+        serde_json::json!({"seq": seq}),
+        "t",
+    );
     e.sequence = seq;
     e.hash[0] = seq as u8;
     serde_json::to_string(&e).unwrap()
@@ -47,7 +53,11 @@ fn sync_dir_without_conflicts_resolves_nothing() {
     let tmp = tempfile::tempdir().unwrap();
     let d = sync_dir(tmp.path());
     std::fs::create_dir_all(d.join("events/Feature")).unwrap();
-    std::fs::write(d.join("events/Feature/1.jsonl"), format!("{}\n", make_event_line(1))).unwrap();
+    std::fs::write(
+        d.join("events/Feature/1.jsonl"),
+        format!("{}\n", make_event_line(1)),
+    )
+    .unwrap();
 
     let r = resolve_git_conflicts(tmp.path()).unwrap();
     assert_eq!(r.jsonl_files_resolved, 0);
@@ -260,7 +270,10 @@ fn walks_nested_entity_directories() {
     std::fs::create_dir_all(&d).unwrap();
     std::fs::write(
         d.join("1.jsonl"),
-        conflict_block(&format!("{}\n{}", make_event_line(1), make_event_line(2)), &make_event_line(1)),
+        conflict_block(
+            &format!("{}\n{}", make_event_line(1), make_event_line(2)),
+            &make_event_line(1),
+        ),
     )
     .unwrap();
 

@@ -512,10 +512,7 @@ fn worktree_branch_format() {
 fn worktree_path_computation() {
     let adapter = GitVcsAdapter::new(PathBuf::from("/home/user/my-repo"));
     let wt_path = adapter.worktree_path("login", "wp-1");
-    assert_eq!(
-        wt_path,
-        PathBuf::from("/home/user/login-wp-1")
-    );
+    assert_eq!(wt_path, PathBuf::from("/home/user/login-wp-1"));
 }
 
 #[test]
@@ -776,10 +773,7 @@ async fn list_branches_pattern_filtering() {
     adapter.create_branch("feat/beta", "main").await.unwrap();
     adapter.create_branch("fix/bug", "main").await.unwrap();
 
-    let feat_branches = adapter
-        .list_branches(Some("feat/*"), false)
-        .await
-        .unwrap();
+    let feat_branches = adapter.list_branches(Some("feat/*"), false).await.unwrap();
     assert_eq!(feat_branches.len(), 2);
     let names: Vec<&str> = feat_branches.iter().map(|b| b.name.as_str()).collect();
     assert!(names.contains(&"feat/alpha"));
@@ -844,7 +838,10 @@ fn parse_conflicts_ours_theirs_are_none() {
 async fn branch_info_has_correct_fields() {
     let (_dir, path) = make_repo();
     let adapter = GitVcsAdapter::new(path.clone());
-    adapter.create_branch("feat/test-branch", "main").await.unwrap();
+    adapter
+        .create_branch("feat/test-branch", "main")
+        .await
+        .unwrap();
 
     let branches = adapter
         .list_branches(Some("feat/test-branch"), false)

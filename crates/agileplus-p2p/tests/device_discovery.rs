@@ -4,7 +4,7 @@
 //! PeerInfo/PeerStatus types, error formatting, and device
 //! registration flow (via mock stores).
 
-use agileplus_p2p::device::{DeviceNode, InMemoryDeviceStore, DeviceStore, register_device};
+use agileplus_p2p::device::{DeviceNode, DeviceStore, InMemoryDeviceStore, register_device};
 use agileplus_p2p::discovery::{PeerInfo, PeerStatus};
 use agileplus_p2p::error::{ConnectionError, PeerDiscoveryError};
 

@@ -314,11 +314,23 @@ mod extra_tests {
             vec!["config", "user.email", "t@example.com"],
             vec!["config", "user.name", "tester"],
         ] {
-            StdCommand::new("git").args(&args).current_dir(&path).output().unwrap();
+            StdCommand::new("git")
+                .args(&args)
+                .current_dir(&path)
+                .output()
+                .unwrap();
         }
         std::fs::write(path.join("README.md"), "hello\n").unwrap();
-        StdCommand::new("git").args(["add", "."]).current_dir(&path).output().unwrap();
-        StdCommand::new("git").args(["commit", "-q", "-m", "init"]).current_dir(&path).output().unwrap();
+        StdCommand::new("git")
+            .args(["add", "."])
+            .current_dir(&path)
+            .output()
+            .unwrap();
+        StdCommand::new("git")
+            .args(["commit", "-q", "-m", "init"])
+            .current_dir(&path)
+            .output()
+            .unwrap();
         (dir, path)
     }
 
@@ -432,7 +444,11 @@ mod extra_tests {
 
     #[test]
     fn open_fails_on_non_repo_dir() {
-        assert!(GitVcsAdapter::new(PathBuf::from("/nonexistent/xyz")).open().is_err());
+        assert!(
+            GitVcsAdapter::new(PathBuf::from("/nonexistent/xyz"))
+                .open()
+                .is_err()
+        );
     }
 
     #[test]
@@ -446,7 +462,9 @@ mod extra_tests {
     fn run_git_captures_output() {
         let (_d, path) = make_repo();
         let adapter = GitVcsAdapter::new(path);
-        let out = adapter.run_git(&["rev-parse", "--is-inside-work-tree"]).unwrap();
+        let out = adapter
+            .run_git(&["rev-parse", "--is-inside-work-tree"])
+            .unwrap();
         assert_eq!(out, "true");
     }
 
@@ -463,7 +481,9 @@ mod extra_tests {
         let (_d, path) = make_repo();
         let adapter = GitVcsAdapter::new(path);
         // `git status --porcelain` succeeds with empty output.
-        let out = adapter.run_git_allow_failure(&["status", "--porcelain"]).unwrap();
+        let out = adapter
+            .run_git_allow_failure(&["status", "--porcelain"])
+            .unwrap();
         assert!(out.is_empty());
     }
 

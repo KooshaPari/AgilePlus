@@ -101,9 +101,7 @@ struct MemSnapshotStore {
 impl SnapshotStore for MemSnapshotStore {
     async fn save(&self, snapshot: &Snapshot) -> Result<(), SnapshotError> {
         let mut g = self.snapshots.lock().unwrap();
-        g.retain(|s| {
-            !(s.entity_type == snapshot.entity_type && s.entity_id == snapshot.entity_id)
-        });
+        g.retain(|s| !(s.entity_type == snapshot.entity_type && s.entity_id == snapshot.entity_id));
         g.push(snapshot.clone());
         Ok(())
     }
@@ -331,17 +329,9 @@ async fn export_device_json_reflects_registered_device() {
     })
     .unwrap();
 
-    export_state(
-        &es,
-        &ss,
-        &ds,
-        &[],
-        serde_json::json!({}),
-        &[],
-        tmp.path(),
-    )
-    .await
-    .unwrap();
+    export_state(&es, &ss, &ds, &[], serde_json::json!({}), &[], tmp.path())
+        .await
+        .unwrap();
 
     let device: serde_json::Value =
         serde_json::from_str(&std::fs::read_to_string(tmp.path().join("device.json")).unwrap())
@@ -388,17 +378,9 @@ async fn export_records_nonzero_duration() {
     let ss = MemSnapshotStore::default();
     let ds = InMemoryDeviceStore::default();
 
-    let stats = export_state(
-        &es,
-        &ss,
-        &ds,
-        &[],
-        serde_json::json!({}),
-        &[],
-        tmp.path(),
-    )
-    .await
-    .unwrap();
+    let stats = export_state(&es, &ss, &ds, &[], serde_json::json!({}), &[], tmp.path())
+        .await
+        .unwrap();
     // duration_ms is a u64; it can legitimately be 0 on very fast machines,
     // so assert only that the export completed with consistent counts.
     assert_eq!(stats.sync_mappings_exported, 0);
@@ -412,17 +394,9 @@ async fn export_overwrites_existing_output_dir() {
     let ds = InMemoryDeviceStore::default();
 
     std::fs::write(tmp.path().join("stale.txt"), b"old").unwrap();
-    export_state(
-        &es,
-        &ss,
-        &ds,
-        &[],
-        serde_json::json!({}),
-        &[],
-        tmp.path(),
-    )
-    .await
-    .unwrap();
+    export_state(&es, &ss, &ds, &[], serde_json::json!({}), &[], tmp.path())
+        .await
+        .unwrap();
 
     // Existing unrelated files must not prevent a successful export.
     assert!(tmp.path().join("device.json").exists());

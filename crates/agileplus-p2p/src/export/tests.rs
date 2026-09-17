@@ -182,7 +182,13 @@ fn to_sorted_sorts_object_keys() {
 // ── Deep coverage additions ────────────────────────────────────────────────
 
 fn make_event(entity_type: &str, entity_id: i64, seq: i64) -> Event {
-    let mut e = Event::new(entity_type, entity_id, "created", serde_json::json!({"n": seq}), "test");
+    let mut e = Event::new(
+        entity_type,
+        entity_id,
+        "created",
+        serde_json::json!({"n": seq}),
+        "test",
+    );
     e.sequence = seq;
     e
 }
@@ -230,12 +236,26 @@ async fn export_counts_events_across_multiple_entities() {
     let tmp = tempfile::tempdir().unwrap();
     let (es, ss, ds) = populated_stores().await;
     let entities = vec![
-        EntityRef { entity_type: "Feature".into(), entity_id: 1 },
-        EntityRef { entity_type: "Epic".into(), entity_id: 5 },
+        EntityRef {
+            entity_type: "Feature".into(),
+            entity_id: 1,
+        },
+        EntityRef {
+            entity_type: "Epic".into(),
+            entity_id: 5,
+        },
     ];
-    let stats = export_state(&es, &ss, &ds, &[], serde_json::json!({}), &entities, tmp.path())
-        .await
-        .unwrap();
+    let stats = export_state(
+        &es,
+        &ss,
+        &ds,
+        &[],
+        serde_json::json!({}),
+        &entities,
+        tmp.path(),
+    )
+    .await
+    .unwrap();
     assert_eq!(stats.events_exported, 3);
     assert_eq!(stats.snapshots_exported, 1);
 }
@@ -244,10 +264,21 @@ async fn export_counts_events_across_multiple_entities() {
 async fn export_writes_jsonl_lines_parseable_and_ordered() {
     let tmp = tempfile::tempdir().unwrap();
     let (es, ss, ds) = populated_stores().await;
-    let entities = vec![EntityRef { entity_type: "Feature".into(), entity_id: 1 }];
-    export_state(&es, &ss, &ds, &[], serde_json::json!({}), &entities, tmp.path())
-        .await
-        .unwrap();
+    let entities = vec![EntityRef {
+        entity_type: "Feature".into(),
+        entity_id: 1,
+    }];
+    export_state(
+        &es,
+        &ss,
+        &ds,
+        &[],
+        serde_json::json!({}),
+        &entities,
+        tmp.path(),
+    )
+    .await
+    .unwrap();
 
     let content = std::fs::read_to_string(tmp.path().join("events/Feature/1.jsonl")).unwrap();
     let seqs: Vec<i64> = content
@@ -264,10 +295,21 @@ async fn export_entity_with_no_events_creates_no_file() {
     let es = MemEventStore::default();
     let ss = MemSnapshotStore::default();
     let ds = InMemoryDeviceStore::default();
-    let entities = vec![EntityRef { entity_type: "Ghost".into(), entity_id: 99 }];
-    let stats = export_state(&es, &ss, &ds, &[], serde_json::json!({}), &entities, tmp.path())
-        .await
-        .unwrap();
+    let entities = vec![EntityRef {
+        entity_type: "Ghost".into(),
+        entity_id: 99,
+    }];
+    let stats = export_state(
+        &es,
+        &ss,
+        &ds,
+        &[],
+        serde_json::json!({}),
+        &entities,
+        tmp.path(),
+    )
+    .await
+    .unwrap();
     assert_eq!(stats.events_exported, 0);
     assert!(!tmp.path().join("events/Ghost/99.jsonl").exists());
 }
@@ -279,10 +321,21 @@ async fn export_entity_with_event_but_no_snapshot() {
     let ss = MemSnapshotStore::default();
     let ds = InMemoryDeviceStore::default();
     es.append(&make_event("Feature", 7, 1)).await.unwrap();
-    let entities = vec![EntityRef { entity_type: "Feature".into(), entity_id: 7 }];
-    let stats = export_state(&es, &ss, &ds, &[], serde_json::json!({}), &entities, tmp.path())
-        .await
-        .unwrap();
+    let entities = vec![EntityRef {
+        entity_type: "Feature".into(),
+        entity_id: 7,
+    }];
+    let stats = export_state(
+        &es,
+        &ss,
+        &ds,
+        &[],
+        serde_json::json!({}),
+        &entities,
+        tmp.path(),
+    )
+    .await
+    .unwrap();
     assert_eq!(stats.events_exported, 1);
     assert_eq!(stats.snapshots_exported, 0);
     assert!(!tmp.path().join("snapshots/Feature/7.json").exists());
@@ -297,10 +350,21 @@ async fn export_entity_with_snapshot_but_no_events() {
     ss.save(&Snapshot::new("Feature", 8, serde_json::json!({"v": 1}), 3))
         .await
         .unwrap();
-    let entities = vec![EntityRef { entity_type: "Feature".into(), entity_id: 8 }];
-    let stats = export_state(&es, &ss, &ds, &[], serde_json::json!({}), &entities, tmp.path())
-        .await
-        .unwrap();
+    let entities = vec![EntityRef {
+        entity_type: "Feature".into(),
+        entity_id: 8,
+    }];
+    let stats = export_state(
+        &es,
+        &ss,
+        &ds,
+        &[],
+        serde_json::json!({}),
+        &entities,
+        tmp.path(),
+    )
+    .await
+    .unwrap();
     assert_eq!(stats.events_exported, 0);
     assert_eq!(stats.snapshots_exported, 1);
     let raw = std::fs::read_to_string(tmp.path().join("snapshots/Feature/8.json")).unwrap();
@@ -365,7 +429,10 @@ async fn export_sync_state_is_sorted_and_contains_vector() {
 async fn export_is_deterministic_across_runs() {
     let tmp = tempfile::tempdir().unwrap();
     let (es, ss, ds) = populated_stores().await;
-    let entities = vec![EntityRef { entity_type: "Feature".into(), entity_id: 1 }];
+    let entities = vec![EntityRef {
+        entity_type: "Feature".into(),
+        entity_id: 1,
+    }];
     let mappings = vec![SyncMapping::new("Feature", 1, "p1", "h1")];
 
     for _ in 0..2 {
@@ -384,13 +451,29 @@ async fn export_is_deterministic_across_runs() {
     }
     // Re-run twice into the same directory and compare bytes.
     let dir = tmp.path().join("same");
-    export_state(&es, &ss, &ds, &mappings, serde_json::json!({}), &entities, &dir)
-        .await
-        .unwrap();
+    export_state(
+        &es,
+        &ss,
+        &ds,
+        &mappings,
+        serde_json::json!({}),
+        &entities,
+        &dir,
+    )
+    .await
+    .unwrap();
     let first = std::fs::read_to_string(dir.join("sync_state.json")).unwrap();
-    export_state(&es, &ss, &ds, &mappings, serde_json::json!({}), &entities, &dir)
-        .await
-        .unwrap();
+    export_state(
+        &es,
+        &ss,
+        &ds,
+        &mappings,
+        serde_json::json!({}),
+        &entities,
+        &dir,
+    )
+    .await
+    .unwrap();
     let second = std::fs::read_to_string(dir.join("sync_state.json")).unwrap();
     assert_eq!(first, second);
 }

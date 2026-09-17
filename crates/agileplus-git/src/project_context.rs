@@ -77,7 +77,10 @@ mod deep_tests {
         let sub = dir.path().join("a/b/c");
         std::fs::create_dir_all(&sub).unwrap();
         let ctx = ProjectContext::discover(&sub).unwrap();
-        assert_eq!(ctx.repo_root(), dir.path().canonicalize().unwrap().as_path());
+        assert_eq!(
+            ctx.repo_root(),
+            dir.path().canonicalize().unwrap().as_path()
+        );
     }
 
     #[test]
@@ -131,6 +134,9 @@ mod deep_tests {
         let file = dir.path().join("notes.txt");
         std::fs::write(&file, "hi").unwrap();
         let ctx = ProjectContext::discover(&file).unwrap();
-        assert_eq!(ctx.repo_root(), dir.path().canonicalize().unwrap().as_path());
+        assert_eq!(
+            ctx.repo_root(),
+            dir.path().canonicalize().unwrap().as_path()
+        );
     }
 }

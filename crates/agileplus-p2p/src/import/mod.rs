@@ -97,11 +97,7 @@ where
         if event.sequence <= latest_seq {
             // Potentially a duplicate; verify by loading the exact event.
             let existing = event_store
-                .get_events_since(
-                    &event.entity_type,
-                    event.entity_id,
-                    event.sequence - 1,
-                )
+                .get_events_since(&event.entity_type, event.entity_id, event.sequence - 1)
                 .await
                 .map_err(|e| ImportError::EventStore(e.to_string()))?;
 

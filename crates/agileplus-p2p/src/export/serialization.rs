@@ -102,9 +102,6 @@ mod deep_tests {
     fn to_sorted_is_deterministic() {
         let v1 = serde_json::json!({"b": 1, "a": {"d": 4, "c": 3}});
         let v2 = serde_json::json!({"a": {"c": 3, "d": 4}, "b": 1});
-        assert_eq!(
-            to_sorted_line(v1).unwrap(),
-            to_sorted_line(v2).unwrap()
-        );
+        assert_eq!(to_sorted_line(v1).unwrap(), to_sorted_line(v2).unwrap());
     }
 }

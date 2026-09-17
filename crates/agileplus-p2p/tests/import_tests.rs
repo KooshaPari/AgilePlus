@@ -101,9 +101,7 @@ struct MemSnapshotStore {
 impl SnapshotStore for MemSnapshotStore {
     async fn save(&self, snapshot: &Snapshot) -> Result<(), SnapshotError> {
         let mut g = self.snapshots.lock().unwrap();
-        g.retain(|s| {
-            !(s.entity_type == snapshot.entity_type && s.entity_id == snapshot.entity_id)
-        });
+        g.retain(|s| !(s.entity_type == snapshot.entity_type && s.entity_id == snapshot.entity_id));
         g.push(snapshot.clone());
         Ok(())
     }
@@ -331,11 +329,17 @@ async fn import_snapshot_created_when_absent() {
     let tmp = tempfile::tempdir().unwrap();
     let es = MemEventStore::default();
     let ss = MemSnapshotStore::default();
-    write_snapshot(tmp.path(), &Snapshot::new("Feature", 1, serde_json::json!({"v": 1}), 5));
+    write_snapshot(
+        tmp.path(),
+        &Snapshot::new("Feature", 1, serde_json::json!({"v": 1}), 5),
+    );
 
     let stats = import_state(tmp.path(), &es, &ss).await.unwrap();
     assert_eq!(stats.snapshots_updated, 1);
-    assert_eq!(ss.load("Feature", 1).await.unwrap().unwrap().event_sequence, 5);
+    assert_eq!(
+        ss.load("Feature", 1).await.unwrap().unwrap().event_sequence,
+        5
+    );
 }
 
 #[tokio::test]
@@ -346,11 +350,17 @@ async fn import_updates_snapshot_when_newer() {
     ss.save(&Snapshot::new("Feature", 1, serde_json::json!({"v": 1}), 1))
         .await
         .unwrap();
-    write_snapshot(tmp.path(), &Snapshot::new("Feature", 1, serde_json::json!({"v": 2}), 9));
+    write_snapshot(
+        tmp.path(),
+        &Snapshot::new("Feature", 1, serde_json::json!({"v": 2}), 9),
+    );
 
     let stats = import_state(tmp.path(), &es, &ss).await.unwrap();
     assert_eq!(stats.snapshots_updated, 1);
-    assert_eq!(ss.load("Feature", 1).await.unwrap().unwrap().event_sequence, 9);
+    assert_eq!(
+        ss.load("Feature", 1).await.unwrap().unwrap().event_sequence,
+        9
+    );
 }
 
 #[tokio::test]
@@ -361,11 +371,17 @@ async fn import_keeps_existing_snapshot_when_imported_is_older() {
     ss.save(&Snapshot::new("Feature", 1, serde_json::json!({"v": 9}), 9))
         .await
         .unwrap();
-    write_snapshot(tmp.path(), &Snapshot::new("Feature", 1, serde_json::json!({"v": 1}), 1));
+    write_snapshot(
+        tmp.path(),
+        &Snapshot::new("Feature", 1, serde_json::json!({"v": 1}), 1),
+    );
 
     let stats = import_state(tmp.path(), &es, &ss).await.unwrap();
     assert_eq!(stats.snapshots_updated, 0);
-    assert_eq!(ss.load("Feature", 1).await.unwrap().unwrap().event_sequence, 9);
+    assert_eq!(
+        ss.load("Feature", 1).await.unwrap().unwrap().event_sequence,
+        9
+    );
 }
 
 #[tokio::test]
@@ -376,7 +392,10 @@ async fn import_snapshot_with_equal_sequence_is_not_applied() {
     ss.save(&Snapshot::new("Feature", 1, serde_json::json!({"v": 3}), 3))
         .await
         .unwrap();
-    write_snapshot(tmp.path(), &Snapshot::new("Feature", 1, serde_json::json!({"v": 4}), 3));
+    write_snapshot(
+        tmp.path(),
+        &Snapshot::new("Feature", 1, serde_json::json!({"v": 4}), 3),
+    );
 
     let stats = import_state(tmp.path(), &es, &ss).await.unwrap();
     assert_eq!(stats.snapshots_updated, 0);
@@ -475,7 +494,10 @@ async fn import_combines_events_snapshots_and_mappings() {
     let es = MemEventStore::default();
     let ss = MemSnapshotStore::default();
     write_jsonl(tmp.path(), "Feature", 1, &[make_event("Feature", 1, 1)]);
-    write_snapshot(tmp.path(), &Snapshot::new("Feature", 1, serde_json::json!({}), 1));
+    write_snapshot(
+        tmp.path(),
+        &Snapshot::new("Feature", 1, serde_json::json!({}), 1),
+    );
     std::fs::write(
         tmp.path().join("sync_state.json"),
         serde_json::json!({"sync_mappings": [SyncMapping::new("Feature", 1, "p", "h")]})

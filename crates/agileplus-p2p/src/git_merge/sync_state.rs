@@ -154,7 +154,8 @@ mod deep_tests {
             "sync_vector": {"device_id": "d", "entries": {}}
         });
         let merged = merge_sync_state(&ours, &theirs);
-        let maps: Vec<SyncMapping> = serde_json::from_value(merged["sync_mappings"].clone()).unwrap();
+        let maps: Vec<SyncMapping> =
+            serde_json::from_value(merged["sync_mappings"].clone()).unwrap();
         assert_eq!(maps.len(), 2);
     }
 
@@ -169,7 +170,8 @@ mod deep_tests {
             "sync_vector": {}
         });
         let merged = merge_sync_state(&ours, &theirs);
-        let maps: Vec<SyncMapping> = serde_json::from_value(merged["sync_mappings"].clone()).unwrap();
+        let maps: Vec<SyncMapping> =
+            serde_json::from_value(merged["sync_mappings"].clone()).unwrap();
         assert_eq!(maps.len(), 1);
         assert_eq!(maps[0].conflict_count, 5);
     }
@@ -260,7 +262,8 @@ mod deep_tests {
         let value: serde_json::Value =
             serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
         assert_eq!(value["sync_vector"]["entries"]["A/1"].as_u64(), Some(8));
-        let maps: Vec<SyncMapping> = serde_json::from_value(value["sync_mappings"].clone()).unwrap();
+        let maps: Vec<SyncMapping> =
+            serde_json::from_value(value["sync_mappings"].clone()).unwrap();
         assert_eq!(maps[0].conflict_count, 3);
     }
 
@@ -270,16 +273,13 @@ mod deep_tests {
         let path = tmp.path().join("sync_state.json");
         let a = serde_json::json!({"sync_mappings": [mapping(1, 0)], "sync_vector": {"device_id":"d","entries":{"A/1":1}}});
         let b = serde_json::json!({"sync_mappings": [mapping(2, 0)], "sync_vector": {"device_id":"d","entries":{"A/2":2}}});
-        let content = format!(
-            "{}{}",
-            conflict(&a, &a),
-            conflict(&b, &b)
-        );
+        let content = format!("{}{}", conflict(&a, &a), conflict(&b, &b));
         std::fs::write(&path, content).unwrap();
         assert!(resolve_sync_state_conflict(&path).unwrap());
         let value: serde_json::Value =
             serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
-        let maps: Vec<SyncMapping> = serde_json::from_value(value["sync_mappings"].clone()).unwrap();
+        let maps: Vec<SyncMapping> =
+            serde_json::from_value(value["sync_mappings"].clone()).unwrap();
         assert_eq!(maps.len(), 2);
     }
 }

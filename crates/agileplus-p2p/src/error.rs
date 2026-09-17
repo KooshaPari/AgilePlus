@@ -191,10 +191,7 @@ mod deep_tests {
     #[test]
     fn connection_error_conflicting_registration_display() {
         let e = ConnectionError::ConflictingRegistration;
-        assert_eq!(
-            e.to_string(),
-            "Device already registered with different ID"
-        );
+        assert_eq!(e.to_string(), "Device already registered with different ID");
     }
 
     #[test]

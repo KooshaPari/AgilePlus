@@ -252,10 +252,7 @@ mod deep_tests {
     #[test]
     fn device_subject_uuid_like_id() {
         let id = "1b4e28ba-2fa1-11d2-883f-0016d3cca427";
-        assert_eq!(
-            device_subject(id),
-            format!("agileplus.sync.device.{id}")
-        );
+        assert_eq!(device_subject(id), format!("agileplus.sync.device.{id}"));
     }
 
     #[test]

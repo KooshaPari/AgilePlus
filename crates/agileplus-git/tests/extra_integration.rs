@@ -60,7 +60,12 @@ fn sample_feature(slug: &str) -> Feature {
 }
 
 fn sample_work_package(feature_id: i64, seq: i32) -> WorkPackage {
-    let mut wp = WorkPackage::new(feature_id, &format!("Work Package {seq}"), seq, "Must pass tests");
+    let mut wp = WorkPackage::new(
+        feature_id,
+        &format!("Work Package {seq}"),
+        seq,
+        "Must pass tests",
+    );
     // Use sequential IDs starting from 1 so files are 1.json, 2.json, etc.
     wp.id = seq as i64;
     wp.file_scope = vec![format!("src/module{seq}.rs")];
@@ -123,10 +128,7 @@ fn render_meta_json_no_plane_issue() {
 #[test]
 fn render_status_md_with_work_packages() {
     let feature = sample_feature("checkout");
-    let wps = vec![
-        sample_work_package(1, 1),
-        sample_work_package(1, 2),
-    ];
+    let wps = vec![sample_work_package(1, 1), sample_work_package(1, 2)];
     let md = agileplus_git::materialize::render_status_md(&feature, &wps);
 
     assert!(md.contains("# Feature checkout"));
@@ -170,7 +172,8 @@ fn render_status_md_without_labels() {
 fn render_audit_line_produces_valid_json() {
     let feature = sample_feature("audit-test");
     let line = agileplus_git::materialize::render_audit_line(&feature, Some("commit-abc"));
-    let parsed: serde_json::Value = serde_json::from_str(&line).expect("audit line should be valid JSON");
+    let parsed: serde_json::Value =
+        serde_json::from_str(&line).expect("audit line should be valid JSON");
     assert_eq!(parsed["slug"], "audit-test");
     assert_eq!(parsed["commit"], "commit-abc");
     assert!(parsed["timestamp"].as_str().is_some());
@@ -198,10 +201,7 @@ fn render_wp_json_all_fields() {
     assert_eq!(value["sequence"], 3);
     assert_eq!(value["state"], "planned");
     assert_eq!(value["agent_id"], "agent-alpha");
-    assert_eq!(
-        value["pr_url"],
-        "https://github.com/org/repo/pull/42"
-    );
+    assert_eq!(value["pr_url"], "https://github.com/org/repo/pull/42");
     assert_eq!(value["pr_state"], "review");
     assert_eq!(value["base_commit"], "aaa111");
     assert_eq!(value["head_commit"], "bbb222");
@@ -295,10 +295,13 @@ fn commit_materialization_commits_files() {
     let feature = sample_feature("committed");
     let wps = vec![sample_work_package(1, 1)];
 
-    agileplus_git::materialize::materialize_feature(&adapter, &feature, &wps)
-        .expect("materialize");
-    let oid = agileplus_git::materialize::commit_materialization(&adapter, "committed", Some("materialize committed"))
-        .expect("commit");
+    agileplus_git::materialize::materialize_feature(&adapter, &feature, &wps).expect("materialize");
+    let oid = agileplus_git::materialize::commit_materialization(
+        &adapter,
+        "committed",
+        Some("materialize committed"),
+    )
+    .expect("commit");
     assert!(!oid.is_empty(), "commit OID should not be empty");
 }
 
@@ -314,10 +317,7 @@ fn project_context_discover_from_subdir() {
     std::fs::create_dir_all(&nested).unwrap();
 
     let ctx = agileplus_git::ProjectContext::discover(&nested).unwrap();
-    let expected = dir
-        .path()
-        .canonicalize()
-        .unwrap();
+    let expected = dir.path().canonicalize().unwrap();
     assert_eq!(ctx.repo_root(), expected);
 }
 
@@ -365,7 +365,10 @@ fn adapter_open_fails_on_non_repo() {
 async fn vcs_create_checkout_list_delete_branch() {
     let (_dir, adapter) = setup_test_repo();
 
-    adapter.create_branch("feat/roundtrip", "HEAD").await.unwrap();
+    adapter
+        .create_branch("feat/roundtrip", "HEAD")
+        .await
+        .unwrap();
     adapter.checkout_branch("feat/roundtrip").await.unwrap();
 
     // Use git2 directly to verify HEAD (adapter.run_git is private)
@@ -463,7 +466,12 @@ async fn vcs_artifact_write_read_exists_scan() {
     let (_dir, adapter) = setup_test_repo();
 
     // Nonexistent artifact
-    assert!(!adapter.artifact_exists("test-feat", "spec.md").await.unwrap());
+    assert!(
+        !adapter
+            .artifact_exists("test-feat", "spec.md")
+            .await
+            .unwrap()
+    );
     assert!(adapter.read_artifact("test-feat", "spec.md").await.is_err());
 
     // Write
@@ -471,7 +479,12 @@ async fn vcs_artifact_write_read_exists_scan() {
         .write_artifact("test-feat", "spec.md", "# Spec\n")
         .await
         .unwrap();
-    assert!(adapter.artifact_exists("test-feat", "spec.md").await.unwrap());
+    assert!(
+        adapter
+            .artifact_exists("test-feat", "spec.md")
+            .await
+            .unwrap()
+    );
 
     // Read
     let content = adapter.read_artifact("test-feat", "spec.md").await.unwrap();

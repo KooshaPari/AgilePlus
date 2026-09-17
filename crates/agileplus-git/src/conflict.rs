@@ -383,9 +383,7 @@ mod deep_tests {
     #[test]
     fn diagnostic_deleted_in() {
         assert_eq!(
-            GitVcsAdapter::conflict_diagnostic_path(
-                "foo.rs deleted in HEAD and modified in topic"
-            ),
+            GitVcsAdapter::conflict_diagnostic_path("foo.rs deleted in HEAD and modified in topic"),
             Some("foo.rs")
         );
     }
@@ -480,7 +478,8 @@ mod deep_tests {
 
     #[test]
     fn parse_conflicts_changed_in_both_heading_with_row() {
-        let raw = "changed in both\n  base   100644 abc docs/x y.txt\n  our    100644 def docs/x y.txt\n";
+        let raw =
+            "changed in both\n  base   100644 abc docs/x y.txt\n  our    100644 def docs/x y.txt\n";
         let out = GitVcsAdapter::parse_conflicts(raw);
         assert_eq!(out.len(), 1);
         assert_eq!(out[0].file_path, "docs/x y.txt");
@@ -496,7 +495,12 @@ mod deep_tests {
 
     #[test]
     fn parse_conflicts_markers_without_diff_header_are_ignored() {
-        let raw = format!("{} HEAD\nours\n{}\ntheirs\n{} topic\n", "<".repeat(7), "=".repeat(7), ">".repeat(7));
+        let raw = format!(
+            "{} HEAD\nours\n{}\ntheirs\n{} topic\n",
+            "<".repeat(7),
+            "=".repeat(7),
+            ">".repeat(7)
+        );
         assert!(GitVcsAdapter::parse_conflicts(&raw).is_empty());
     }
 
@@ -642,7 +646,10 @@ mod tests {
 
     #[test]
     fn conflict_diagnostic_path_empty_merge_conflict_is_none() {
-        assert_eq!(GitVcsAdapter::conflict_diagnostic_path("Merge conflict in "), None);
+        assert_eq!(
+            GitVcsAdapter::conflict_diagnostic_path("Merge conflict in "),
+            None
+        );
     }
 
     #[test]

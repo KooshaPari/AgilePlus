@@ -230,7 +230,9 @@ mod deep_tests {
         git(&path, &["branch", "release"]);
 
         let adapter = GitVcsAdapter::new(path);
-        let result = adapter.merge_via_temp_worktree("feature", "release").unwrap();
+        let result = adapter
+            .merge_via_temp_worktree("feature", "release")
+            .unwrap();
         assert!(result.success);
     }
 
@@ -250,7 +252,9 @@ mod deep_tests {
         git(&path, &["branch", "release2"]);
 
         let adapter = GitVcsAdapter::new(path.clone());
-        adapter.merge_via_temp_worktree("feature", "release2").unwrap();
+        adapter
+            .merge_via_temp_worktree("feature", "release2")
+            .unwrap();
         let raw = std::process::Command::new("git")
             .args(["worktree", "list", "--porcelain"])
             .current_dir(&path)

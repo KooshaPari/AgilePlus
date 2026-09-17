@@ -6,9 +6,7 @@
 
 use std::collections::HashMap;
 
-use agileplus_domain::ports::observability::{
-    LogEntry, LogLevel, ObservabilityPort, SpanContext,
-};
+use agileplus_domain::ports::observability::{LogEntry, LogLevel, ObservabilityPort, SpanContext};
 use agileplus_telemetry::config::{OtlpConfig, OtlpProtocol, SamplingConfig, TelemetryConfig};
 
 // ---------------------------------------------------------------------------
@@ -85,8 +83,13 @@ fn noop_adapter_all_methods_no_panic() {
 #[test]
 fn noop_adapter_log_all_levels_no_panic() {
     let adapter = noop_adapter();
-    for level in [LogLevel::Trace, LogLevel::Debug, LogLevel::Info, LogLevel::Warn, LogLevel::Error]
-    {
+    for level in [
+        LogLevel::Trace,
+        LogLevel::Debug,
+        LogLevel::Info,
+        LogLevel::Warn,
+        LogLevel::Error,
+    ] {
         let entry = LogEntry {
             level,
             message: format!("test at level {:?}", level),
@@ -190,11 +193,7 @@ fn real_adapter_end_span_no_panic() {
 #[test]
 fn real_adapter_record_counter_with_labels() {
     let adapter = real_adapter();
-    adapter.record_counter(
-        "test.counter",
-        10,
-        &[("feature", "auth"), ("wp", "WP10")],
-    );
+    adapter.record_counter("test.counter", 10, &[("feature", "auth"), ("wp", "WP10")]);
 }
 
 #[test]
@@ -248,8 +247,13 @@ fn real_adapter_log_error_message() {
 #[test]
 fn real_adapter_structured_log_entry_all_levels() {
     let adapter = real_adapter();
-    for level in [LogLevel::Trace, LogLevel::Debug, LogLevel::Info, LogLevel::Warn, LogLevel::Error]
-    {
+    for level in [
+        LogLevel::Trace,
+        LogLevel::Debug,
+        LogLevel::Info,
+        LogLevel::Warn,
+        LogLevel::Error,
+    ] {
         let entry = LogEntry {
             level,
             message: format!("structured msg at {:?}", level),
@@ -298,9 +302,7 @@ async fn adapter_with_full_otlp_config_initializes() {
 #[test]
 fn adapter_with_custom_sampling_config() {
     let cfg = TelemetryConfig {
-        sampling: SamplingConfig {
-            trace_ratio: 0.25,
-        },
+        sampling: SamplingConfig { trace_ratio: 0.25 },
         ..Default::default()
     };
     let adapter = agileplus_telemetry::TelemetryAdapter::new(cfg).unwrap();

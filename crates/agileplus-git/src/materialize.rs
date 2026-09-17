@@ -914,8 +914,7 @@ mod tests {
         let adapter = GitVcsAdapter::new(tmp.path().to_path_buf());
         let f = make_feature();
         materialize_feature(&adapter, &f, &[]).unwrap();
-        let oid = commit_materialization(&adapter, &f.slug, Some("custom msg"))
-            .unwrap();
+        let oid = commit_materialization(&adapter, &f.slug, Some("custom msg")).unwrap();
         assert_eq!(oid.len(), 40);
 
         // Verify the commit message
@@ -1043,7 +1042,10 @@ mod deep_tests {
 
     #[test]
     fn meta_friendly_name() {
-        assert_eq!(render_meta_json(&feature())["friendly_name"], "Deep Feature");
+        assert_eq!(
+            render_meta_json(&feature())["friendly_name"],
+            "Deep Feature"
+        );
     }
 
     #[test]
@@ -1242,7 +1244,11 @@ mod deep_tests {
             vec!["config", "user.email", "t@example.com"],
             vec!["config", "user.name", "tester"],
         ] {
-            StdCommand::new("git").args(&args).current_dir(&path).output().unwrap();
+            StdCommand::new("git")
+                .args(&args)
+                .current_dir(&path)
+                .output()
+                .unwrap();
         }
         std::fs::write(path.join("README.md"), "hello\n").unwrap();
         StdCommand::new("git")

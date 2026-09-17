@@ -148,7 +148,10 @@ mod deep_tests {
             .map(String::from)
             .collect();
         assert_eq!(lines.len(), 1);
-        assert_eq!(serde_json::from_str::<Event>(&lines[0]).unwrap().sequence, 1);
+        assert_eq!(
+            serde_json::from_str::<Event>(&lines[0]).unwrap().sequence,
+            1
+        );
     }
 
     #[test]

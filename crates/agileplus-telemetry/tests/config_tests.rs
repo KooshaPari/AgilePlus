@@ -8,8 +8,7 @@ use std::io::Write;
 use std::path::Path;
 
 use agileplus_telemetry::config::{
-    ConfigError, DEFAULT_CONFIG_YAML, OtlpConfig, OtlpProtocol, SamplingConfig,
-    TelemetryConfig,
+    ConfigError, DEFAULT_CONFIG_YAML, OtlpConfig, OtlpProtocol, SamplingConfig, TelemetryConfig,
 };
 
 // ---------------------------------------------------------------------------
@@ -180,7 +179,10 @@ fn telemetry_config_default() {
     let cfg = TelemetryConfig::default();
     assert!(cfg.otlp.is_none());
     assert_eq!(cfg.logging.level, "info");
-    assert_eq!(cfg.logging.output, agileplus_telemetry::logs::LogOutput::Stdout);
+    assert_eq!(
+        cfg.logging.output,
+        agileplus_telemetry::logs::LogOutput::Stdout
+    );
     assert!(cfg.logging.include_spans);
     assert!(cfg.logging.include_target);
     assert_eq!(cfg.sampling.trace_ratio, 1.0);
@@ -271,7 +273,10 @@ fn default_config_yaml_parses() {
     assert_eq!(otlp.timeout_ms, 5000);
     assert_eq!(otlp.export_interval_ms, 60000);
     assert_eq!(cfg.logging.level, "info");
-    assert_eq!(cfg.logging.output, agileplus_telemetry::logs::LogOutput::Stdout);
+    assert_eq!(
+        cfg.logging.output,
+        agileplus_telemetry::logs::LogOutput::Stdout
+    );
     assert!(cfg.logging.include_spans);
     assert!(cfg.logging.include_target);
     assert_eq!(cfg.sampling.trace_ratio, 1.0);

@@ -4,18 +4,15 @@
 //! NATS subject generation, SyncError formatting, and serde roundtrips.
 //! Skips tests requiring actual NATS connections.
 
-use agileplus_p2p::replication::{EventBatch, ReplicationResult, device_subject};
-use agileplus_p2p::error::SyncError;
 use agileplus_domain::domain::event::Event;
+use agileplus_p2p::error::SyncError;
+use agileplus_p2p::replication::{EventBatch, ReplicationResult, device_subject};
 
 // ── device_subject ─────────────────────────────────────────────────────────
 
 #[test]
 fn device_subject_format() {
-    assert_eq!(
-        device_subject("abc-123"),
-        "agileplus.sync.device.abc-123"
-    );
+    assert_eq!(device_subject("abc-123"), "agileplus.sync.device.abc-123");
 }
 
 #[test]
@@ -34,17 +31,20 @@ fn device_subject_empty_string() {
 
 #[test]
 fn device_subject_special_characters() {
-    assert_eq!(
-        device_subject("dev-1"),
-        "agileplus.sync.device.dev-1"
-    );
+    assert_eq!(device_subject("dev-1"), "agileplus.sync.device.dev-1");
 }
 
 // ── EventBatch ─────────────────────────────────────────────────────────────
 
 #[test]
 fn event_batch_serde_roundtrip() {
-    let mut ev = Event::new("Feature", 1, "created", serde_json::json!({"title": "T1"}), "actor-1");
+    let mut ev = Event::new(
+        "Feature",
+        1,
+        "created",
+        serde_json::json!({"title": "T1"}),
+        "actor-1",
+    );
     ev.sequence = 42;
 
     let batch = EventBatch {

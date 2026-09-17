@@ -558,15 +558,10 @@ mod deep_tests {
         peer_vec.advance("Feature", "1", 2);
         peer_vec.advance("Epic", "9", 6);
 
-        let result = sync_with_peer_vectors(
-            "dev-local",
-            &peer("dev-peer"),
-            &local,
-            &peer_vec,
-            &store,
-        )
-        .await
-        .unwrap();
+        let result =
+            sync_with_peer_vectors("dev-local", &peer("dev-peer"), &local, &peer_vec, &store)
+                .await
+                .unwrap();
 
         assert_eq!(result.updated_vector.get("Feature", "1"), 4);
         assert_eq!(result.updated_vector.get("Epic", "9"), 6);
@@ -589,7 +584,9 @@ mod deep_tests {
     async fn sync_with_peer_empty_vectors() {
         let store = EmptyEventStore::default();
         let local = SyncVector::new("l");
-        let result = sync_with_peer("l", &peer("p"), &local, &store).await.unwrap();
+        let result = sync_with_peer("l", &peer("p"), &local, &store)
+            .await
+            .unwrap();
         assert_eq!(result.updated_vector.device_id, "l");
     }
 }

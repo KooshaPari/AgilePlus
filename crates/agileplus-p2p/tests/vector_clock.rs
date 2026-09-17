@@ -290,7 +290,8 @@ fn sync_vector_entries_stored_correctly() {
         Some(&5)
     );
     assert_eq!(
-        v.entries.get(&("WorkPackage".to_string(), "42".to_string())),
+        v.entries
+            .get(&("WorkPackage".to_string(), "42".to_string())),
         Some(&10)
     );
 }
