@@ -140,14 +140,15 @@ impl BloomFilter {
         self.bits.count_ones()
     }
 
-    /// Empirical false-positive estimate based on saturation:
-    /// `1 - (1 - popcount/m)^k`.  Useful for the test suite.
+    /// Estimated false-positive rate based on bit saturation:
+    /// `p = popcount/m`, probability an unrelated query's `k` probes all
+    /// hit set bits is `p^k`.  Useful for the test suite.
     pub fn empirical_fp(&self) -> f64 {
         if self.m == 0 {
             return 0.0;
         }
         let p = self.bits.count_ones() as f64 / self.m as f64;
-        1.0 - (1.0 - p).powi(self.k as i32)
+        p.powi(self.k as i32)
     }
 
     /// Insert a byte slice.  Always succeeds.
