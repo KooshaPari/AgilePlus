@@ -234,4 +234,244 @@ mod tests {
 
         assert_eq!(wp.file_scope, files);
     }
+
+    // ── FeatureBuilder ───────────────────────────────────────────────────────
+
+    #[test]
+    fn feature_builder_default_impl_uses_canonical_slug() {
+        let feature = FeatureBuilder::default().build();
+        assert_eq!(feature.slug, "test-feature");
+        assert_eq!(feature.friendly_name, "Test Feature");
+    }
+
+    #[test]
+    fn feature_builder_id_setter_is_applied() {
+        assert_eq!(FeatureBuilder::new("s", "n").id(99).build().id, 99);
+    }
+
+    #[test]
+    fn feature_builder_supports_every_state() {
+        let states = [
+            FeatureState::Created,
+            FeatureState::Specified,
+            FeatureState::Researched,
+            FeatureState::Planned,
+            FeatureState::Implementing,
+            FeatureState::Validated,
+            FeatureState::Shipped,
+            FeatureState::Retrospected,
+        ];
+        for state in states {
+            let feature = FeatureBuilder::new("s", "n").state(state).build();
+            assert_eq!(feature.state, state, "state {state:?} not preserved");
+        }
+    }
+
+    #[test]
+    fn feature_builder_with_label_appends_in_order() {
+        let feature = FeatureBuilder::new("s", "n")
+            .with_label("first")
+            .with_label("second")
+            .build();
+        assert_eq!(feature.labels, vec!["first", "second"]);
+    }
+
+    #[test]
+    fn feature_builder_with_labels_replaces_existing() {
+        let feature = FeatureBuilder::new("s", "n")
+            .with_label("dropped")
+            .with_labels(vec!["a".to_string(), "b".to_string()])
+            .build();
+        assert_eq!(feature.labels, vec!["a", "b"]);
+    }
+
+    #[test]
+    fn feature_builder_project_id_is_optional() {
+        assert!(FeatureBuilder::new("s", "n").build().project_id.is_none());
+        assert_eq!(
+            FeatureBuilder::new("s", "n")
+                .project_id(7)
+                .build()
+                .project_id,
+            Some(7)
+        );
+    }
+
+    #[test]
+    fn feature_builder_spec_hash_is_preserved() {
+        let hash = [0xAB_u8; 32];
+        assert_eq!(
+            FeatureBuilder::new("s", "n")
+                .spec_hash(hash)
+                .build()
+                .spec_hash,
+            hash
+        );
+        assert_eq!(
+            FeatureBuilder::new("s", "n").build().spec_hash,
+            [0_u8; 32],
+            "default spec hash must be zeroed"
+        );
+    }
+
+    #[test]
+    fn feature_builder_plane_fields_are_none() {
+        let feature = FeatureBuilder::new("s", "n").build();
+        assert!(feature.plane_issue_id.is_none());
+        assert!(feature.plane_state_id.is_none());
+        assert!(feature.module_id.is_none());
+        assert!(feature.created_at_commit.is_none());
+        assert!(feature.last_modified_commit.is_none());
+    }
+
+    #[test]
+    fn feature_builder_timestamps_are_set_and_ordered() {
+        let feature = FeatureBuilder::new("s", "n").build();
+        assert!(feature.created_at <= feature.updated_at);
+    }
+
+    #[test]
+    fn feature_builder_clone_is_independent() {
+        let base = FeatureBuilder::new("s", "n");
+        let a = base.clone().id(1).build();
+        let b = base.clone().id(2).build();
+        assert_eq!(a.id, 1);
+        assert_eq!(b.id, 2);
+    }
+
+    #[test]
+    fn feature_builder_does_not_leak_labels_between_builds() {
+        let with_label = FeatureBuilder::new("s", "n").with_label("x").build();
+        let fresh = FeatureBuilder::new("s", "n").build();
+        assert_eq!(with_label.labels.len(), 1);
+        assert!(fresh.labels.is_empty());
+    }
+
+    #[test]
+    fn feature_builder_full_chain() {
+        let feature = FeatureBuilder::new("slug", "Name")
+            .id(5)
+            .state(FeatureState::Shipped)
+            .project_id(3)
+            .spec_hash([1u8; 32])
+            .with_labels(vec!["a".to_string()])
+            .build();
+        assert_eq!(feature.id, 5);
+        assert_eq!(feature.slug, "slug");
+        assert_eq!(feature.state, FeatureState::Shipped);
+        assert_eq!(feature.project_id, Some(3));
+        assert_eq!(feature.target_branch, "main");
+    }
+
+    // ── WorkPackageBuilder ───────────────────────────────────────────────────
+
+    #[test]
+    fn work_package_builder_defaults() {
+        let wp = WorkPackageBuilder::new(4, "WP", 2).build();
+        assert_eq!(wp.id, 1, "default id is 1");
+        assert_eq!(wp.feature_id, 4);
+        assert_eq!(wp.title, "WP");
+        assert_eq!(wp.sequence, 2);
+        assert_eq!(wp.state, WpState::Planned);
+        assert!(wp.acceptance_criteria.is_empty());
+        assert!(wp.file_scope.is_empty());
+    }
+
+    #[test]
+    fn work_package_builder_id_setter() {
+        assert_eq!(WorkPackageBuilder::new(1, "t", 1).id(77).build().id, 77);
+    }
+
+    #[test]
+    fn work_package_builder_supports_every_state() {
+        for state in [
+            WpState::Planned,
+            WpState::Doing,
+            WpState::Review,
+            WpState::Done,
+            WpState::Blocked,
+        ] {
+            let wp = WorkPackageBuilder::new(1, "t", 1).state(state).build();
+            assert_eq!(wp.state, state);
+        }
+    }
+
+    #[test]
+    fn work_package_builder_acceptance_criteria_is_stored() {
+        let wp = WorkPackageBuilder::new(1, "t", 1)
+            .acceptance_criteria("cargo test passes")
+            .build();
+        assert_eq!(wp.acceptance_criteria, "cargo test passes");
+    }
+
+    #[test]
+    #[allow(deprecated)]
+    fn work_package_builder_summary_alias_matches_acceptance_criteria() {
+        let via_alias = WorkPackageBuilder::new(1, "t", 1)
+            .summary("same text")
+            .build();
+        let via_canonical = WorkPackageBuilder::new(1, "t", 1)
+            .acceptance_criteria("same text")
+            .build();
+        assert_eq!(
+            via_alias.acceptance_criteria,
+            via_canonical.acceptance_criteria
+        );
+    }
+
+    #[test]
+    fn work_package_builder_with_file_appends() {
+        let wp = WorkPackageBuilder::new(1, "t", 1)
+            .with_file("a.rs")
+            .with_file("b.rs")
+            .build();
+        assert_eq!(wp.file_scope, vec!["a.rs", "b.rs"]);
+    }
+
+    #[test]
+    fn work_package_builder_with_files_replaces() {
+        let wp = WorkPackageBuilder::new(1, "t", 1)
+            .with_file("dropped.rs")
+            .with_files(vec!["x.rs".to_string(), "y.rs".to_string()])
+            .build();
+        assert_eq!(wp.file_scope, vec!["x.rs", "y.rs"]);
+    }
+
+    #[test]
+    fn work_package_builder_leaves_agent_and_pr_unset() {
+        let wp = WorkPackageBuilder::new(1, "t", 1).build();
+        assert!(wp.agent_id.is_none());
+        assert!(wp.pr_url.is_none());
+        assert!(wp.pr_state.is_none());
+        assert!(wp.worktree_path.is_none());
+        assert!(wp.plane_sub_issue_id.is_none());
+        assert!(wp.base_commit.is_none());
+        assert!(wp.head_commit.is_none());
+    }
+
+    #[test]
+    fn work_package_builder_sets_timestamps() {
+        let wp = WorkPackageBuilder::new(1, "t", 1).build();
+        assert!(wp.created_at <= wp.updated_at);
+    }
+
+    #[test]
+    fn work_package_builder_clone_is_independent() {
+        let base = WorkPackageBuilder::new(1, "t", 1);
+        let a = base.clone().id(10).build();
+        let b = base.clone().id(20).build();
+        assert_eq!(a.id, 10);
+        assert_eq!(b.id, 20);
+    }
+
+    #[test]
+    fn builders_are_cloneable() {
+        let fb = FeatureBuilder::new("s", "n").with_label("l");
+        let fb2 = fb.clone();
+        assert_eq!(fb.build().labels, fb2.build().labels);
+
+        let wb = WorkPackageBuilder::new(1, "t", 1).with_file("f.rs");
+        let wb2 = wb.clone();
+        assert_eq!(wb.build().file_scope, wb2.build().file_scope);
+    }
 }

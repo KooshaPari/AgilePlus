@@ -2,6 +2,10 @@
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Declare the custom cfg flag so rustc doesn't warn about it.
     println!("cargo::rustc-check-cfg=cfg(agileplus_proto_stubs)");
+    // Re-run when the protoc discovery inputs change so switching between the
+    // generated and hand-written-stub code paths rebuilds correctly.
+    println!("cargo:rerun-if-env-changed=SKIP_PROTO_BUILD");
+    println!("cargo:rerun-if-env-changed=PROTOC");
 
     // Skip proto compilation when protoc is unavailable (e.g. CI check-only runs).
     if std::env::var("SKIP_PROTO_BUILD").is_ok() || which_protoc().is_none() {

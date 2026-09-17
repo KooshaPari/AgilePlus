@@ -95,4 +95,74 @@ mod tests {
         assert_eq!(f.feature1.id, 1);
         assert_eq!(f.feature2.id, 2);
     }
+
+    #[test]
+    fn default_matches_new() {
+        let a = TestFixtures::default();
+        let b = TestFixtures::new();
+        assert_eq!(a.feature1.id, b.feature1.id);
+        assert_eq!(a.feature1.slug, b.feature1.slug);
+        assert_eq!(a.feature2.id, b.feature2.id);
+        assert_eq!(a.feature2.slug, b.feature2.slug);
+    }
+
+    #[test]
+    fn clone_is_independent() {
+        let fixtures = TestFixtures::new();
+        let mut cloned = fixtures.clone();
+        cloned.feature1.slug = "mutated".to_string();
+        assert_eq!(fixtures.feature1.slug, "implement-caching-layer");
+    }
+
+    #[test]
+    fn features_have_expected_identity() {
+        let f = TestFixtures::new();
+        assert_eq!(f.feature1.id, 1);
+        assert_eq!(f.feature2.id, 2);
+        assert_eq!(f.feature1.friendly_name, "Implement caching layer");
+        assert_eq!(f.feature2.friendly_name, "Add API rate limiting");
+    }
+
+    #[test]
+    fn features_have_distinct_spec_hashes() {
+        let f = TestFixtures::new();
+        assert_eq!(f.feature1.spec_hash, [0x01u8; 32]);
+        assert_eq!(f.feature2.spec_hash, [0x02u8; 32]);
+        assert_ne!(f.feature1.spec_hash, f.feature2.spec_hash);
+    }
+
+    #[test]
+    fn features_share_default_branch_and_empty_labels() {
+        let f = TestFixtures::new();
+        assert_eq!(f.feature1.target_branch, "main");
+        assert_eq!(f.feature2.target_branch, "main");
+        assert!(f.feature1.labels.is_empty());
+        assert!(f.feature2.labels.is_empty());
+    }
+
+    #[test]
+    fn fixture_features_have_no_plane_or_module_links() {
+        let f = TestFixtures::new();
+        assert!(f.feature1.plane_issue_id.is_none());
+        assert!(f.feature1.plane_state_id.is_none());
+        assert!(f.feature1.module_id.is_none());
+        assert!(f.feature1.project_id.is_none());
+        assert!(f.feature2.plane_issue_id.is_none());
+        assert!(f.feature2.project_id.is_none());
+    }
+
+    #[test]
+    fn fixture_timestamps_are_set() {
+        let f = TestFixtures::new();
+        assert!(f.feature1.created_at <= f.feature1.updated_at);
+        assert!(f.feature2.created_at <= f.feature2.updated_at);
+    }
+
+    #[tokio::test]
+    async fn seed_test_data_matches_synchronous_construction() {
+        let seeded = seed_test_data().await;
+        let direct = TestFixtures::new();
+        assert_eq!(seeded.feature1.slug, direct.feature1.slug);
+        assert_eq!(seeded.feature2.slug, direct.feature2.slug);
+    }
 }
