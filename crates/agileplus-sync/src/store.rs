@@ -169,4 +169,158 @@ mod tests {
         let all = store.list_all().await.unwrap();
         assert_eq!(all.len(), 2);
     }
+
+    #[tokio::test]
+    async fn create_assigns_incrementing_ids() {
+        let store = InMemoryStore::default();
+        let id1 = store
+            .create(SyncMapping::new("feature", 1, "p1", "h1"))
+            .await
+            .unwrap();
+        let id2 = store
+            .create(SyncMapping::new("feature", 2, "p2", "h2"))
+            .await
+            .unwrap();
+        let id3 = store
+            .create(SyncMapping::new("feature", 3, "p3", "h3"))
+            .await
+            .unwrap();
+        assert_eq!(id1, 1);
+        assert_eq!(id2, 2);
+        assert_eq!(id3, 3);
+    }
+
+    #[tokio::test]
+    async fn get_by_entity_returns_none_when_missing() {
+        let store = InMemoryStore::default();
+        store
+            .create(SyncMapping::new("feature", 1, "p1", "h1"))
+            .await
+            .unwrap();
+        assert!(store.get_by_entity("feature", 999).await.unwrap().is_none());
+    }
+
+    #[tokio::test]
+    async fn get_by_entity_returns_none_when_wrong_type() {
+        let store = InMemoryStore::default();
+        store
+            .create(SyncMapping::new("feature", 1, "p1", "h1"))
+            .await
+            .unwrap();
+        assert!(store
+            .get_by_entity("work_package", 1)
+            .await
+            .unwrap()
+            .is_none());
+    }
+
+    #[tokio::test]
+    async fn get_by_entity_distinguishes_same_id_different_type() {
+        let store = InMemoryStore::default();
+        store
+            .create(SyncMapping::new("feature", 7, "p-f", "h-f"))
+            .await
+            .unwrap();
+        store
+            .create(SyncMapping::new("work_package", 7, "p-w", "h-w"))
+            .await
+            .unwrap();
+
+        let f = store.get_by_entity("feature", 7).await.unwrap().unwrap();
+        let w = store
+            .get_by_entity("work_package", 7)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(f.plane_issue_id, "p-f");
+        assert_eq!(w.plane_issue_id, "p-w");
+    }
+
+    #[tokio::test]
+    async fn update_hash_sets_last_synced_timestamp() {
+        let store = InMemoryStore::default();
+        let id = store
+            .create(SyncMapping::new("feature", 1, "p1", "old"))
+            .await
+            .unwrap();
+
+        let ts = Utc::now();
+        store.update_hash(id, "new-hash".into(), ts).await.unwrap();
+
+        let found = store.get_by_entity("feature", 1).await.unwrap().unwrap();
+        assert_eq!(found.content_hash, "new-hash");
+        assert_eq!(found.last_synced_at, ts);
+    }
+
+    #[tokio::test]
+    async fn update_hash_nonexistent_returns_error() {
+        let store = InMemoryStore::default();
+        let err = store
+            .update_hash(42, "h".into(), Utc::now())
+            .await
+            .unwrap_err();
+        assert!(matches!(err, SyncError::Store(_)));
+    }
+
+    #[tokio::test]
+    async fn increment_conflict_nonexistent_returns_error() {
+        let store = InMemoryStore::default();
+        let err = store.increment_conflict(99).await.unwrap_err();
+        assert!(matches!(err, SyncError::Store(_)));
+    }
+
+    #[tokio::test]
+    async fn list_all_empty_when_no_mappings() {
+        let store = InMemoryStore::default();
+        assert!(store.list_all().await.unwrap().is_empty());
+    }
+
+    #[tokio::test]
+    async fn store_clone_shares_state() {
+        let store = InMemoryStore::default();
+        store
+            .create(SyncMapping::new("feature", 1, "p1", "h1"))
+            .await
+            .unwrap();
+
+        let clone = store.clone();
+        let found = clone.get_by_entity("feature", 1).await.unwrap();
+        assert!(found.is_some());
+
+        // Mutation through one handle is visible on the other.
+        let id = found.unwrap().id;
+        store.increment_conflict(id).await.unwrap();
+        let updated = clone.get_by_entity("feature", 1).await.unwrap().unwrap();
+        assert_eq!(updated.conflict_count, 1);
+    }
+
+    #[tokio::test]
+    async fn full_store_lifecycle() {
+        let store = InMemoryStore::default();
+
+        // Create.
+        let id = store
+            .create(SyncMapping::new("feature", 100, "PLN-100", "hash-v1"))
+            .await
+            .unwrap();
+
+        // Retrieve.
+        let m = store.get_by_entity("feature", 100).await.unwrap().unwrap();
+        assert_eq!(m.content_hash, "hash-v1");
+        assert_eq!(m.conflict_count, 0);
+
+        // Update hash.
+        store
+            .update_hash(id, "hash-v2".into(), Utc::now())
+            .await
+            .unwrap();
+        let updated = store.get_by_entity("feature", 100).await.unwrap().unwrap();
+        assert_eq!(updated.content_hash, "hash-v2");
+
+        // Increment conflict.
+        store.increment_conflict(id).await.unwrap();
+        store.increment_conflict(id).await.unwrap();
+        let after = store.get_by_entity("feature", 100).await.unwrap().unwrap();
+        assert_eq!(after.conflict_count, 2);
+    }
 }
