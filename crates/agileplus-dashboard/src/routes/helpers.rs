@@ -311,6 +311,7 @@ pub fn build_restart_command(cmd_line: &str) -> Result<std::process::Command, St
 #[cfg(test)]
 mod tests {
     use super::*;
+    use agileplus_domain::domain::work_package::WorkPackage;
     use std::collections::HashMap;
 
     // ── is_htmx ─────────────────────────────────────────────────────────
@@ -580,5 +581,154 @@ mod tests {
         assert_eq!(DashboardFilter::All, DashboardFilter::All);
         assert_ne!(DashboardFilter::All, DashboardFilter::Active);
         assert_ne!(DashboardFilter::Blocked, DashboardFilter::Shipped);
+    }
+
+    // ── load_projects ────────────────────────────────────────────────────
+
+    fn project(id: i64, slug: &str, name: &str) -> agileplus_domain::domain::project::Project {
+        let mut p = agileplus_domain::domain::project::Project::new(name, slug).unwrap();
+        p.id = id;
+        p
+    }
+
+    fn feature_with(id: i64, state: FeatureState, project_id: Option<i64>) -> Feature {
+        let mut f = Feature::new(&format!("f-{id}"), &format!("F {id}"), [0; 32], None);
+        f.id = id;
+        f.state = state;
+        f.project_id = project_id;
+        f
+    }
+
+    #[test]
+    fn load_projects_maps_fields_and_active() {
+        let mut store = DashboardStore::default();
+        store.projects = vec![project(1, "alpha", "Alpha"), project(2, "beta", "Beta")];
+        store.active_project_id = Some(2);
+        let (views, active) = load_projects(&store);
+        assert_eq!(views.len(), 2);
+        assert_eq!(views[1].slug, "beta");
+        assert_eq!(active.map(|p| p.id), Some(2));
+    }
+
+    #[test]
+    fn load_projects_no_active_returns_none() {
+        let mut store = DashboardStore::default();
+        store.projects = vec![project(1, "alpha", "Alpha")];
+        let (views, active) = load_projects(&store);
+        assert_eq!(views.len(), 1);
+        assert!(active.is_none());
+    }
+
+    #[test]
+    fn build_project_summaries_counts_per_project() {
+        let mut store = DashboardStore::default();
+        store.projects = vec![project(1, "alpha", "Alpha"), project(2, "beta", "Beta")];
+        store.features = vec![
+            feature_with(1, FeatureState::Created, Some(1)),
+            feature_with(2, FeatureState::Shipped, Some(1)),
+            feature_with(3, FeatureState::Implementing, Some(2)),
+        ];
+        let summaries = build_project_summaries(&store);
+        assert_eq!(summaries.len(), 2);
+        assert_eq!(summaries[0].feature_count, 2);
+        assert_eq!(summaries[0].active_count, 1);
+        assert_eq!(summaries[0].shipped_count, 1);
+        assert_eq!(summaries[1].feature_count, 1);
+    }
+
+    // ── feature_matches_filter ───────────────────────────────────────────
+
+    #[test]
+    fn feature_matches_filter_all_and_active_and_shipped() {
+        let store = DashboardStore::default();
+        let created = feature_with(1, FeatureState::Created, None);
+        let shipped = feature_with(2, FeatureState::Shipped, None);
+        assert!(feature_matches_filter(&store, &created, DashboardFilter::All));
+        assert!(feature_matches_filter(&store, &created, DashboardFilter::Active));
+        assert!(!feature_matches_filter(&store, &shipped, DashboardFilter::Active));
+        assert!(feature_matches_filter(&store, &shipped, DashboardFilter::Shipped));
+        assert!(!feature_matches_filter(&store, &created, DashboardFilter::Shipped));
+    }
+
+    #[test]
+    fn feature_matches_filter_blocked_requires_blocked_wp() {
+        let mut store = DashboardStore::default();
+        let f = feature_with(1, FeatureState::Implementing, None);
+        assert!(!feature_matches_filter(&store, &f, DashboardFilter::Blocked));
+        let mut wp = WorkPackage::new(1, "WP", 1, "done");
+        wp.state = WpState::Blocked;
+        store.work_packages.insert(1, vec![wp]);
+        assert!(feature_matches_filter(&store, &f, DashboardFilter::Blocked));
+    }
+
+    // ── build_kanban_cards ───────────────────────────────────────────────
+
+    #[test]
+    fn build_kanban_cards_creates_all_state_buckets() {
+        let store = DashboardStore::default();
+        let cards = build_kanban_cards(&store, DashboardFilter::All);
+        for state in crate::templates::all_feature_states() {
+            assert!(cards.contains_key(&state), "missing bucket {state}");
+        }
+    }
+
+    #[test]
+    fn build_kanban_cards_places_features_in_state_bucket() {
+        let mut store = DashboardStore::default();
+        store.features = vec![feature_with(1, FeatureState::Created, None)];
+        let cards = build_kanban_cards(&store, DashboardFilter::All);
+        assert_eq!(cards["created"].len(), 1);
+        assert!(cards["shipped"].is_empty());
+    }
+
+    #[test]
+    fn build_kanban_cards_active_filter_excludes_shipped() {
+        let mut store = DashboardStore::default();
+        store.features = vec![
+            feature_with(1, FeatureState::Created, None),
+            feature_with(2, FeatureState::Shipped, None),
+        ];
+        let cards = build_kanban_cards(&store, DashboardFilter::Active);
+        assert_eq!(cards["created"].len(), 1);
+        assert!(cards["shipped"].is_empty());
+    }
+
+    #[test]
+    fn build_kanban_cards_scopes_to_active_project() {
+        let mut store = DashboardStore::default();
+        store.projects = vec![project(1, "alpha", "Alpha")];
+        store.active_project_id = Some(1);
+        store.features = vec![
+            feature_with(1, FeatureState::Created, Some(1)),
+            feature_with(2, FeatureState::Created, Some(2)),
+        ];
+        let cards = build_kanban_cards(&store, DashboardFilter::All);
+        assert_eq!(cards["created"].len(), 1);
+    }
+
+    // ── render ───────────────────────────────────────────────────────────
+
+    #[test]
+    fn render_returns_html_response() {
+        use axum::response::IntoResponse;
+        let response = render(crate::templates::ToastPartial {
+            message: "ok".into(),
+            success: true,
+        })
+        .into_response();
+        assert_eq!(response.status(), StatusCode::OK);
+    }
+
+    // ── parse_bool_env / env_or_none ─────────────────────────────────────
+
+    #[test]
+    fn env_or_none_missing_key_is_none() {
+        assert!(env_or_none("AGILEPLUS_TEST_DEFINITELY_UNSET_VAR").is_none());
+    }
+
+    #[test]
+    fn parse_bool_env_default_used_when_unset() {
+        assert!(parse_bool_env("AGILEPLUS_TEST_DEFINITELY_UNSET_VAR", true));
+        assert!(!parse_bool_env("AGILEPLUS_TEST_DEFINITELY_UNSET_VAR", false));
     }
 }

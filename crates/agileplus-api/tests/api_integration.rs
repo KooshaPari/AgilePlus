@@ -13,6 +13,19 @@
 #[path = "api_integration/support/mod.rs"]
 mod support;
 
+// Domain-specific integration suites (each declared explicitly so the whole
+// directory is compiled, not just the file directly under `tests/`).
+#[path = "api_integration/module_cycle.rs"]
+mod module_cycle;
+#[path = "api_integration/branch.rs"]
+mod branch;
+#[path = "api_integration/worktree.rs"]
+mod worktree;
+#[path = "api_integration/features_work_packages.rs"]
+mod features_work_packages;
+#[path = "api_integration/route_coverage.rs"]
+mod route_coverage;
+
 use axum::http::StatusCode;
 
 use support::{TEST_API_KEY, setup_test_server};

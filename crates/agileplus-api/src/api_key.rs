@@ -190,4 +190,37 @@ mod tests {
         assert!(store.validate_api_key(plaintext).unwrap());
         assert!(!store.validate_api_key("agp_wrong_secret").unwrap());
     }
+
+    #[test]
+    fn hash_key_matches_sha256_reference_vector() {
+        // SHA-256("abc") — NIST reference vector.
+        let digest = hash_key("abc");
+        let hex: String = digest.iter().map(|b| format!("{b:02x}")).collect();
+        assert_eq!(
+            hex,
+            "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+        );
+    }
+
+    #[test]
+    fn hash_key_len_is_32() {
+        assert_eq!(hash_key("anything").len(), 32);
+    }
+
+    #[test]
+    fn import_api_key_stores_hash_prefix_not_plaintext() {
+        let store = InMemoryCredentialStore::new();
+        import_api_key(&store, "operator-supplied-key").unwrap();
+        let stored = store.get("agileplus", keys::API_KEYS).unwrap();
+        assert!(stored.starts_with("sha256:"));
+        assert!(!stored.contains("operator-supplied-key"));
+    }
+
+    #[test]
+    fn getrandom_keys_are_unique_across_many_draws() {
+        let mut seen = std::collections::HashSet::new();
+        for _ in 0..64 {
+            assert!(seen.insert(generate_plaintext_key()), "duplicate key generated");
+        }
+    }
 }

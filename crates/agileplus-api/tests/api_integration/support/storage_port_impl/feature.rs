@@ -106,3 +106,18 @@ pub(crate) fn list_all_features(
         .clone();
     async move { Ok(features) }
 }
+
+pub(crate) fn list_features_by_label(
+    storage: &MockStorage,
+    label: &str,
+) -> impl Future<Output = Result<Vec<Feature>, DomainError>> + Send {
+    let features: Vec<Feature> = storage
+        .features
+        .lock()
+        .expect("features lock poisoned")
+        .iter()
+        .filter(|f| f.labels.iter().any(|stored| stored == label))
+        .cloned()
+        .collect();
+    async move { Ok(features) }
+}

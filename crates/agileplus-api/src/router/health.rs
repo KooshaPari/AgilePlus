@@ -216,4 +216,32 @@ mod tests {
             assert_eq!(resp.0.status, "healthy");
         });
     }
+
+    #[test]
+    fn extract_host_port_http_without_port_defaults_80() {
+        assert_eq!(extract_host_port("http://host"), "host:80");
+    }
+
+    #[test]
+    fn extract_host_port_bare_ipv4_defaults_80() {
+        assert_eq!(extract_host_port("10.0.0.1"), "10.0.0.1:80");
+    }
+
+    #[test]
+    fn extract_host_port_nats_strips_trailing_path() {
+        assert_eq!(extract_host_port("nats://nats.local:4222/stream"), "nats.local:4222");
+    }
+
+    #[test]
+    fn extract_host_port_https_without_port_defaults_80() {
+        assert_eq!(extract_host_port("https://example.com"), "example.com:80");
+    }
+
+    #[test]
+    fn simple_health_response_shape_is_stable() {
+        let response = crate::responses::SimpleHealthResponse::healthy();
+        assert_eq!(response.status, "healthy");
+        assert_eq!(response.service, "agileplus-api");
+        assert!(!response.version.is_empty());
+    }
 }

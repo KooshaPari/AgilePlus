@@ -180,3 +180,84 @@ pub fn build_dashboard_store() -> DashboardStore {
         plane_daemon: None,
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::build_dashboard_store;
+    use crate::app_state::DashboardStore;
+    use agileplus_domain::domain::cycle::CycleState;
+
+    #[test]
+    fn build_dashboard_store_seeds_features() {
+        let store = build_dashboard_store();
+        assert!(!store.features.is_empty());
+    }
+
+    #[test]
+    fn dashboard_store_seeded_matches_build_counts() {
+        let built = build_dashboard_store();
+        let seeded = DashboardStore::seeded();
+        assert_eq!(built.features.len(), seeded.features.len());
+        assert_eq!(built.projects.len(), seeded.projects.len());
+        assert_eq!(built.modules.len(), seeded.modules.len());
+    }
+
+    #[test]
+    fn build_dashboard_store_seeds_expected_modules() {
+        let store = build_dashboard_store();
+        let slugs: Vec<&str> = store.modules.iter().map(|m| m.slug.as_str()).collect();
+        assert!(slugs.contains(&"core"));
+        assert!(slugs.contains(&"kitty-specs"));
+        assert!(slugs.contains(&"agents"));
+    }
+
+    #[test]
+    fn build_dashboard_store_seeds_active_cycle() {
+        let store = build_dashboard_store();
+        assert_eq!(store.cycles.len(), 1);
+        assert_eq!(store.cycles[0].name, "Sprint 1");
+        matches!(store.cycles[0].state, CycleState::Active);
+    }
+
+    #[test]
+    fn build_dashboard_store_seeds_internal_project() {
+        let store = build_dashboard_store();
+        assert_eq!(store.projects.len(), 1);
+        assert_eq!(store.projects[0].slug, "agileplus-internal");
+        assert_eq!(store.active_project_id, Some(store.projects[0].id));
+    }
+
+    #[test]
+    fn build_dashboard_store_indexes_all_features_into_cycle_one() {
+        let store = build_dashboard_store();
+        let indexed = store.cycle_feature_ids(1);
+        assert_eq!(indexed.len(), store.features.len());
+    }
+
+    #[test]
+    fn build_dashboard_store_work_packages_reference_real_features() {
+        let store = build_dashboard_store();
+        assert!(!store.work_packages.is_empty());
+        for feature_id in store.work_packages.keys() {
+            assert!(
+                store.features.iter().any(|f| f.id == *feature_id),
+                "work packages reference unknown feature {feature_id}"
+            );
+        }
+    }
+
+    #[test]
+    fn build_dashboard_store_health_defaults_are_healthy() {
+        let store = build_dashboard_store();
+        assert!(store.health.len() >= 7);
+        assert!(store.health.iter().all(|s| s.healthy));
+    }
+
+    #[test]
+    fn build_dashboard_store_has_no_live_clients() {
+        let store = build_dashboard_store();
+        assert!(store.governance_client.is_none());
+        assert!(store.plane_client.is_none());
+        assert!(store.plane_daemon.is_none());
+    }
+}

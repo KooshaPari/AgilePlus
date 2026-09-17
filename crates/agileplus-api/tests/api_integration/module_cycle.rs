@@ -64,6 +64,8 @@ fn seeded_shipping_gate_storage() -> MockStorage {
             labels: vec![],
             module_id: None,
             project_id: None,
+            created_at_commit: None,
+            last_modified_commit: None,
             created_at: now,
             updated_at: now,
         });

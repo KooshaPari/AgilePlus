@@ -47,6 +47,14 @@ impl StoragePort for MockStorage {
         feature::list_all_features(self).await
     }
 
+    async fn update_feature(&self, feature: &Feature) -> Result<(), DomainError> {
+        feature::update_feature(self, feature).await
+    }
+
+    async fn list_features_by_label(&self, label: &str) -> Result<Vec<Feature>, DomainError> {
+        feature::list_features_by_label(self, label).await
+    }
+
     async fn create_work_package(
         &self,
         wp: &agileplus_domain::domain::work_package::WorkPackage,
