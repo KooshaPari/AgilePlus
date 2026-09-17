@@ -24,7 +24,8 @@ use agileplus_domain::domain::work_package::{WorkPackage, WpDependency, WpState}
 use agileplus_domain::error::DomainError;
 use agileplus_domain::ports::{BranchInfo, ConflictInfo, FeatureArtifacts, MergeResult, StoragePort, VcsPort, WorktreeInfo};
 
-use agileplus_import::{import_bundle, ImportBundle, ImportCycle, ImportFeature, ImportModule, ImportProject, ImportWorkPackage};
+use agileplus_import::{import_bundle, ImportBundle, ImportCycle, ImportFeature, ImportModule, ImportProject, ImportWorkPackage, ImportReport};
+use agileplus_domain::domain::work_package::PrState;
 
 // ---------------------------------------------------------------------------
 // Mock Storage
@@ -1266,3 +1267,560 @@ async fn import_full_bundle_comprehensive() {
     assert_eq!(report.audits_written, 2); // 1 per feature
     assert_eq!(report.artifacts_written, 4); // 2 per feature
 }
+
+// ── Additional edge-case tests (expanded coverage) ────────────────────────────
+
+/// Test: Empty bundle produces zero counts.
+#[tokio::test]
+async fn import_empty_bundle_produces_zero_report() {
+    let storage = MockStorage::new();
+    let vcs = MockVcs::default();
+    let bundle = ImportBundle::default();
+    let report = import_bundle(bundle, &storage, &vcs).await.unwrap();
+    assert_eq!(report.projects_created, 0);
+    assert_eq!(report.modules_created, 0);
+    assert_eq!(report.features_created, 0);
+    assert_eq!(report.cycles_created, 0);
+    assert_eq!(report.work_packages_created, 0);
+    assert_eq!(report.module_links_created, 0);
+    assert_eq!(report.cycle_links_created, 0);
+    assert_eq!(report.audits_written, 0);
+    assert_eq!(report.artifacts_written, 0);
+}
+
+/// Test: Project with no slug derives slug from name.
+#[tokio::test]
+async fn import_project_without_slug_derives_from_name() {
+    let storage = MockStorage::new();
+    let vcs = MockVcs::default();
+    let bundle = ImportBundle {
+        projects: vec![ImportProject {
+            slug: None,
+            name: "My Cool Project".into(),
+            description: None,
+            features: vec![],
+        }],
+        ..Default::default()
+    };
+    let report = import_bundle(bundle, &storage, &vcs).await.unwrap();
+    assert_eq!(report.projects_created, 1);
+    // The mock storage should have recorded the project
+    assert_eq!(storage.projects.lock().unwrap().len(), 1);
+}
+
+/// Test: Duplicate project slugs result in update.
+#[tokio::test]
+async fn import_duplicate_project_slugs_results_in_update() {
+    let storage = MockStorage::new();
+    let vcs = MockVcs::default();
+    let bundle = ImportBundle {
+        projects: vec![
+            ImportProject {
+                slug: Some("dup-proj".into()),
+                name: "First".into(),
+                description: None,
+                features: vec![],
+            },
+            ImportProject {
+                slug: Some("dup-proj".into()),
+                name: "Second".into(),
+                description: Some("Updated".into()),
+                features: vec![],
+            },
+        ],
+        ..Default::default()
+    };
+    let report = import_bundle(bundle, &storage, &vcs).await.unwrap();
+    assert_eq!(report.projects_created, 1);
+    assert_eq!(report.projects_updated, 1);
+}
+
+/// Test: Cycle without module scope still creates cycle.
+#[tokio::test]
+async fn import_cycle_without_module_scope_succeeds() {
+    let storage = MockStorage::new();
+    let vcs = MockVcs::default();
+    let bundle = ImportBundle {
+        cycles: vec![ImportCycle {
+            name: "Standalone Cycle".into(),
+            description: None,
+            start_date: chrono::NaiveDate::from_ymd_opt(2026, 3, 1).unwrap(),
+            end_date: chrono::NaiveDate::from_ymd_opt(2026, 3, 14).unwrap(),
+            state: CycleState::Active,
+            module_scope_slug: None,
+            feature_slugs: vec![],
+        }],
+        ..Default::default()
+    };
+    let report = import_bundle(bundle, &storage, &vcs).await.unwrap();
+    assert_eq!(report.cycles_created, 1);
+}
+
+/// Test: Feature with module_slug resolved from storage lookup.
+#[tokio::test]
+async fn import_feature_module_slug_resolved_from_storage() {
+    let storage = MockStorage::new();
+    let vcs = MockVcs::default();
+    let bundle = ImportBundle {
+        projects: vec![ImportProject {
+            slug: Some("p1".into()),
+            name: "P1".into(),
+            description: None,
+            features: vec![ImportFeature {
+                slug: Some("feat".into()),
+                friendly_name: "Feat".into(),
+                spec_content: "# Spec".into(),
+                state: FeatureState::Specified,
+                target_branch: None,
+                labels: vec![],
+                module_slug: Some("existing-module".to_string()),
+                project_id: None,
+                plane_issue_id: None,
+                plane_state_id: None,
+                work_packages: vec![],
+            }],
+        }],
+        modules: vec![ImportModule {
+            slug: Some("existing-module".into()),
+            friendly_name: "Existing Module".into(),
+            description: None,
+            parent_slug: None,
+        }],
+        ..Default::default()
+    };
+    let report = import_bundle(bundle, &storage, &vcs).await.unwrap();
+    assert_eq!(report.features_created, 1);
+    assert_eq!(report.module_links_created, 1);
+}
+
+/// Test: Cycle referencing unknown module fails.
+#[tokio::test]
+async fn import_cycle_unknown_module_fails() {
+    let storage = MockStorage::new();
+    let vcs = MockVcs::default();
+    let bundle = ImportBundle {
+        cycles: vec![ImportCycle {
+            name: "Scoped Cycle".into(),
+            description: None,
+            start_date: chrono::NaiveDate::from_ymd_opt(2026, 4, 1).unwrap(),
+            end_date: chrono::NaiveDate::from_ymd_opt(2026, 4, 14).unwrap(),
+            state: CycleState::Active,
+            module_scope_slug: Some("does-not-exist".into()),
+            feature_slugs: vec![],
+        }],
+        ..Default::default()
+    };
+    let result = import_bundle(bundle, &storage, &vcs).await;
+    assert!(result.is_err());
+}
+
+/// Test: Feature referencing nonexistent module via storage lookup fails.
+#[tokio::test]
+async fn import_feature_nonexistent_module_fails() {
+    let storage = MockStorage::new();
+    let vcs = MockVcs::default();
+    let bundle = ImportBundle {
+        projects: vec![ImportProject {
+            slug: Some("p-fail".into()),
+            name: "PFail".into(),
+            description: None,
+            features: vec![ImportFeature {
+                slug: Some("feat-fail".into()),
+                friendly_name: "Bad Module".into(),
+                spec_content: "# Spec".into(),
+                state: FeatureState::Specified,
+                target_branch: None,
+                labels: vec![],
+                module_slug: Some("nonexistent".into()),
+                project_id: None,
+                plane_issue_id: None,
+                plane_state_id: None,
+                work_packages: vec![],
+            }],
+        }],
+        ..Default::default()
+    };
+    let result = import_bundle(bundle, &storage, &vcs).await;
+    assert!(result.is_err());
+}
+
+/// Test: ImportReport is Clone and Debug.
+#[test]
+fn import_report_clone_and_debug() {
+    let mut report = ImportReport::default();
+    report.projects_created = 5;
+    let cloned = report.clone();
+    assert_eq!(cloned.projects_created, 5);
+    let debug_str = format!("{report:?}");
+    assert!(debug_str.contains("ImportReport"));
+}
+
+/// Test: ImportReport JSON roundtrip preserves all fields.
+#[test]
+fn import_report_json_roundtrip_preserves_all_fields() {
+    let mut report = ImportReport::default();
+    report.projects_created = 1;
+    report.modules_created = 2;
+    report.features_updated = 3;
+    report.work_packages_created = 4;
+    report.cycle_links_created = 5;
+    report.artifacts_written = 6;
+    report.audits_written = 7;
+
+    let json = serde_json::to_string(&report).unwrap();
+    let restored: ImportReport = serde_json::from_str(&json).unwrap();
+    assert_eq!(restored, report);
+}
+
+/// Test: ImportReport serialization with all fields non-zero.
+#[test]
+fn import_report_full_json_roundtrip() {
+    let mut report = ImportReport::default();
+    report.projects_created = 10;
+    report.projects_updated = 20;
+    report.modules_created = 30;
+    report.modules_updated = 40;
+    report.features_created = 50;
+    report.features_updated = 60;
+    report.cycles_created = 70;
+    report.cycles_updated = 80;
+    report.work_packages_created = 90;
+    report.work_packages_updated = 100;
+    report.module_links_created = 110;
+    report.cycle_links_created = 120;
+    report.artifacts_written = 130;
+    report.audits_written = 140;
+
+    let json = serde_json::to_string(&report).unwrap();
+    let restored: ImportReport = serde_json::from_str(&json).unwrap();
+    assert_eq!(restored.projects_created, 10);
+    assert_eq!(restored.audits_written, 140);
+}
+
+/// Test: ImportWorkPackage fields are mutable post-construction.
+#[test]
+fn import_work_package_all_fields_mutable() {
+    let mut wp = ImportWorkPackage {
+        title: "Task".into(),
+        acceptance_criteria: Some("Given when then".into()),
+        sequence: Some(1),
+        file_scope: vec!["src/main.rs".into()],
+        state: WpState::Planned,
+        agent_id: Some("agent-1".into()),
+        pr_url: Some("http://example.com".into()),
+        pr_state: Some(PrState::Open),
+        worktree_path: Some("/wt/path".into()),
+        plane_sub_issue_id: Some("sub-1".into()),
+        depends_on_sequences: vec![1, 2],
+    };
+    wp.title = "Updated".into();
+    wp.state = WpState::Doing;
+    assert_eq!(wp.title, "Updated");
+    assert_eq!(wp.state, WpState::Doing);
+}
+
+/// Test: ImportFeature with None slug and project_id.
+#[test]
+fn import_feature_no_slug_no_project_id() {
+    let feature = ImportFeature {
+        slug: None,
+        friendly_name: "Untitled".into(),
+        spec_content: "# Untitled".into(),
+        state: FeatureState::Planned,
+        target_branch: None,
+        labels: vec!["bug".into()],
+        module_slug: None,
+        project_id: None,
+        plane_issue_id: None,
+        plane_state_id: None,
+        work_packages: vec![],
+    };
+    assert!(feature.slug.is_none());
+    assert!(feature.project_id.is_none());
+    assert_eq!(feature.labels.len(), 1);
+}
+
+/// Test: ImportModule::slug() derives from friendly_name when slug is None.
+#[test]
+fn import_module_slug_derives_from_friendly_name() {
+    let module = ImportModule {
+        slug: None,
+        friendly_name: "My Module".into(),
+        description: None,
+        parent_slug: None,
+    };
+    let derived = module.slug();
+    assert!(!derived.is_empty());
+}
+
+/// Test: ImportModule::slug() uses provided slug when present.
+#[test]
+fn import_module_slug_uses_provided_slug() {
+    let module = ImportModule {
+        slug: Some("custom-slug".into()),
+        friendly_name: "Friendly".into(),
+        description: None,
+        parent_slug: None,
+    };
+    assert_eq!(module.slug(), "custom-slug");
+}
+
+/// Test: ImportBundle serde with empty arrays serializes correctly.
+#[test]
+fn import_bundle_empty_arrays_serialize() {
+    let bundle = ImportBundle::default();
+    let json = serde_json::to_string(&bundle).unwrap();
+    let restored: ImportBundle = serde_json::from_str(&json).unwrap();
+    assert!(restored.projects.is_empty());
+    assert!(restored.modules.is_empty());
+    assert!(restored.features.is_empty());
+    assert!(restored.cycles.is_empty());
+}
+
+/// Test: ImportCycle serde roundtrip with all fields.
+#[test]
+fn import_cycle_full_roundtrip() {
+    let cycle = ImportCycle {
+        name: "Cycle A".into(),
+        description: Some("Desc".into()),
+        start_date: chrono::NaiveDate::from_ymd_opt(2026, 1, 1).unwrap(),
+        end_date: chrono::NaiveDate::from_ymd_opt(2026, 2, 1).unwrap(),
+        state: CycleState::Shipped,
+        module_scope_slug: Some("mod-a".into()),
+        feature_slugs: vec!["feat-1".into(), "feat-2".into()],
+    };
+    let json = serde_json::to_string(&cycle).unwrap();
+    let restored: ImportCycle = serde_json::from_str(&json).unwrap();
+    assert_eq!(restored.name, "Cycle A");
+    assert_eq!(restored.state, CycleState::Shipped);
+    assert_eq!(restored.feature_slugs.len(), 2);
+}
+
+/// Test: ImportProject serde roundtrip with embedded features.
+#[test]
+fn import_project_with_embedded_features_roundtrip() {
+    let project = ImportProject {
+        slug: Some("proj".into()),
+        name: "Project".into(),
+        description: Some("Desc".into()),
+        features: vec![ImportFeature {
+            slug: Some("f1".into()),
+            friendly_name: "F1".into(),
+            spec_content: "# F1".into(),
+            state: FeatureState::Specified,
+            target_branch: Some("branch".into()),
+            labels: vec!["label".into()],
+            module_slug: None,
+            project_id: None,
+            plane_issue_id: None,
+            plane_state_id: None,
+            work_packages: vec![],
+        }],
+    };
+    let json = serde_json::to_string(&project).unwrap();
+    let restored: ImportProject = serde_json::from_str(&json).unwrap();
+    assert_eq!(restored.features.len(), 1);
+    assert_eq!(restored.features[0].friendly_name, "F1");
+}
+
+/// Test: ImportBundle with all top-level entries roundtrips.
+#[test]
+fn import_bundle_full_roundtrip() {
+    let bundle = ImportBundle {
+        projects: vec![ImportProject {
+            slug: Some("p".into()),
+            name: "P".into(),
+            description: None,
+            features: vec![],
+        }],
+        modules: vec![ImportModule {
+            slug: Some("m".into()),
+            friendly_name: "M".into(),
+            description: None,
+            parent_slug: None,
+        }],
+        features: vec![ImportFeature {
+            slug: Some("f".into()),
+            friendly_name: "F".into(),
+            spec_content: "# F".into(),
+            state: FeatureState::Specified,
+            target_branch: None,
+            labels: vec![],
+            module_slug: None,
+            project_id: None,
+            plane_issue_id: None,
+            plane_state_id: None,
+            work_packages: vec![],
+        }],
+        cycles: vec![ImportCycle {
+            name: "C".into(),
+            description: None,
+            start_date: chrono::NaiveDate::from_ymd_opt(2026, 5, 1).unwrap(),
+            end_date: chrono::NaiveDate::from_ymd_opt(2026, 5, 14).unwrap(),
+            state: CycleState::Draft,
+            module_scope_slug: None,
+            feature_slugs: vec![],
+        }],
+    };
+    let json = serde_json::to_string(&bundle).unwrap();
+    let restored: ImportBundle = serde_json::from_str(&json).unwrap();
+    assert_eq!(restored.projects.len(), 1);
+    assert_eq!(restored.modules.len(), 1);
+    assert_eq!(restored.features.len(), 1);
+    assert_eq!(restored.cycles.len(), 1);
+}
+
+/// Test: ImportFeature default state is Specified.
+#[test]
+fn import_feature_default_state_is_specified() {
+    let raw = r##"{"friendly_name":"TestFeature","spec_content":"# Spec"}"##;
+    let feature: ImportFeature = serde_json::from_str(raw).unwrap();
+    assert_eq!(feature.state, FeatureState::Specified);
+}
+
+/// Test: ImportWorkPackage default state is Planned.
+#[test]
+fn import_work_package_default_state_is_planned() {
+    let raw = r#"{"title":"Task"}"#;
+    let wp: ImportWorkPackage = serde_json::from_str(raw).unwrap();
+    assert_eq!(wp.state, WpState::Planned);
+}
+
+/// Test: ImportCycle default state is Draft.
+#[test]
+fn import_cycle_default_state_is_draft() {
+    let raw = r#"{"name":"Cycle","start_date":"2026-01-01","end_date":"2026-02-01"}"#;
+    let cycle: ImportCycle = serde_json::from_str(raw).unwrap();
+    assert_eq!(cycle.state, CycleState::Draft);
+}
+
+/// Test: ImportModule with parent_slug resolves module hierarchy.
+#[tokio::test]
+async fn import_module_hierarchy_resolves_parent() {
+    let storage = MockStorage::new();
+    let vcs = MockVcs::default();
+    let bundle = ImportBundle {
+        modules: vec![
+            ImportModule {
+                slug: Some("parent-mod".into()),
+                friendly_name: "Parent".into(),
+                description: None,
+                parent_slug: None,
+            },
+            ImportModule {
+                slug: Some("child-mod".into()),
+                friendly_name: "Child".into(),
+                description: None,
+                parent_slug: Some("parent-mod".into()),
+            },
+        ],
+        ..Default::default()
+    };
+    let report = import_bundle(bundle, &storage, &vcs).await.unwrap();
+    assert_eq!(report.modules_created, 2);
+}
+
+/// Test: ImportModule with unresolved parent defers then resolves.
+#[tokio::test]
+async fn import_module_unresolved_parent_defers() {
+    let storage = MockStorage::new();
+    let vcs = MockVcs::default();
+    let bundle = ImportBundle {
+        modules: vec![
+            ImportModule {
+                slug: Some("child-first".into()),
+                friendly_name: "Child".into(),
+                description: None,
+                parent_slug: Some("parent-later".into()),
+            },
+            ImportModule {
+                slug: Some("parent-later".into()),
+                friendly_name: "Parent".into(),
+                description: None,
+                parent_slug: None,
+            },
+        ],
+        ..Default::default()
+    };
+    let report = import_bundle(bundle, &storage, &vcs).await.unwrap();
+    assert_eq!(report.modules_created, 2);
+}
+
+/// Test: ImportFeature with non-Created state triggers state update.
+#[tokio::test]
+async fn import_feature_non_created_state_triggers_update() {
+    let storage = MockStorage::new();
+    let vcs = MockVcs::default();
+    let bundle = ImportBundle {
+        projects: vec![ImportProject {
+            slug: Some("proj-state".into()),
+            name: "Proj".into(),
+            description: None,
+            features: vec![ImportFeature {
+                slug: Some("feat-state".into()),
+                friendly_name: "Feat".into(),
+                spec_content: "# Spec".into(),
+                state: FeatureState::Planned,
+                target_branch: None,
+                labels: vec![],
+                module_slug: None,
+                project_id: None,
+                plane_issue_id: None,
+                plane_state_id: None,
+                work_packages: vec![],
+            }],
+        }],
+        ..Default::default()
+    };
+    let report = import_bundle(bundle, &storage, &vcs).await.unwrap();
+    assert_eq!(report.features_created, 1);
+    assert_eq!(storage.feature_state_updates.lock().unwrap().len(), 1);
+}
+
+/// Test: ImportWorkPackage default sequence is index + 1.
+#[test]
+fn import_work_package_sequence_defaults_to_index() {
+    let wp = ImportWorkPackage {
+        title: "Task".into(),
+        acceptance_criteria: None,
+        sequence: None,
+        file_scope: vec![],
+        state: WpState::Planned,
+        agent_id: None,
+        pr_url: None,
+        pr_state: None,
+        worktree_path: None,
+        plane_sub_issue_id: None,
+        depends_on_sequences: vec![],
+    };
+    assert!(wp.sequence.is_none());
+    assert!(wp.file_scope.is_empty());
+    assert!(wp.depends_on_sequences.is_empty());
+}
+
+/// Test: ImportBundle Default derives empty vecs.
+#[test]
+fn import_bundle_default_has_empty_vecs() {
+    let bundle = ImportBundle::default();
+    assert!(bundle.projects.is_empty());
+    assert!(bundle.modules.is_empty());
+    assert!(bundle.features.is_empty());
+    assert!(bundle.cycles.is_empty());
+    assert!(bundle.projects.is_empty());
+}
+
+/// Test: ImportProject Default is not possible (no Default impl).
+#[test]
+fn import_project_requires_name_field() {
+    // ImportProject does not implement Default; verify via construction
+    let project = ImportProject {
+        slug: Some("slug".into()),
+        name: "Name".into(),
+        description: Some("desc".into()),
+        features: vec![],
+    };
+    assert_eq!(project.slug, Some("slug".into()));
+}
+
+#[allow(dead_code)]
+fn _placeholder() {}

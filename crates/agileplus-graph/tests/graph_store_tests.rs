@@ -516,3 +516,585 @@ async fn nodes_and_relationships_are_independent() {
     let from_a = store.get_relationships_from(a.id);
     assert_eq!(from_a.len(), 1);
 }
+
+// ── Additional edge-case tests (expanded coverage) ────────────────────────────
+
+/// Test: GraphError variants all display correctly.
+#[test]
+fn graph_error_all_variants_display() {
+    use agileplus_graph::GraphError;
+    let errors = vec![
+        GraphError::ConnectionError("conn".into()),
+        GraphError::QueryError("query".into()),
+        GraphError::ConstraintViolation("constraint".into()),
+        GraphError::NotFound("node".into()),
+        GraphError::InvalidInput("input".into()),
+    ];
+    for err in errors {
+        let msg = format!("{err}");
+        assert!(!msg.is_empty());
+    }
+}
+
+/// Test: InMemoryGraphStore::default creates empty store (all types).
+#[tokio::test]
+async fn default_store_is_empty_all_types() {
+    let store = InMemoryGraphStore::default();
+    assert!(store.get_nodes_by_type(NodeType::Feature).is_empty());
+    assert!(store.get_nodes_by_type(NodeType::WorkPackage).is_empty());
+    assert!(store.get_nodes_by_type(NodeType::Agent).is_empty());
+    assert!(store.get_nodes_by_type(NodeType::Label).is_empty());
+    assert!(store.get_nodes_by_type(NodeType::Project).is_empty());
+}
+
+/// Test: get_node returns None for non-existent ID.
+#[tokio::test]
+async fn get_node_returns_none_for_missing_id() {
+    let store = InMemoryGraphStore::new();
+    let id = uuid::Uuid::new_v4();
+    assert!(store.get_node(id).is_none());
+}
+
+/// Test: create_relationship allows self-referencing relationship.
+#[tokio::test]
+async fn create_relationship_allows_self_reference() {
+    let store = InMemoryGraphStore::new();
+    let a = Node::new(NodeType::Feature, json!({}));
+    store.upsert_node(&a).await.unwrap();
+    let rel = Relationship::new(a.id, a.id, RelType::Owns);
+    store.create_relationship(&rel).await.unwrap();
+    let outgoing = store.get_relationships_from(a.id);
+    assert_eq!(outgoing.len(), 1);
+    assert_eq!(outgoing[0].to_node_id, a.id);
+}
+
+/// Test: delete_relationship removes existing relationship.
+#[tokio::test]
+async fn delete_relationship_removes_existing() {
+    let store = InMemoryGraphStore::new();
+    let a = Node::new(NodeType::Feature, json!({}));
+    let b = Node::new(NodeType::Feature, json!({}));
+    store.upsert_node(&a).await.unwrap();
+    store.upsert_node(&b).await.unwrap();
+    let rel = Relationship::new(a.id, b.id, RelType::DependsOn);
+    store.create_relationship(&rel).await.unwrap();
+    assert_eq!(store.get_relationships_from(a.id).len(), 1);
+    store.delete_relationship(rel.id).await.unwrap();
+    assert!(store.get_relationships_from(a.id).is_empty());
+    assert!(store.get_relationships_to(b.id).is_empty());
+}
+
+/// Test: delete_relationship on non-existent ID is no-op (no error).
+#[tokio::test]
+async fn delete_relationship_nonexistent_is_noop() {
+    let store = InMemoryGraphStore::new();
+    let result = store.delete_relationship(uuid::Uuid::new_v4()).await;
+    assert!(result.is_ok());
+}
+
+/// Test: get_dependencies returns empty for node with no outgoing edges.
+#[tokio::test]
+async fn get_dependencies_empty_for_isolated_node() {
+    let store = InMemoryGraphStore::new();
+    let a = Node::new(NodeType::WorkPackage, json!({}));
+    store.upsert_node(&a).await.unwrap();
+    let deps = store.get_dependencies(a.id).await.unwrap();
+    assert!(deps.is_empty());
+}
+
+/// Test: get_dependencies follows DependsOn relationships.
+#[tokio::test]
+async fn get_dependencies_follows_depends_on() {
+    let store = InMemoryGraphStore::new();
+    let a = Node::new(NodeType::WorkPackage, json!({}));
+    let b = Node::new(NodeType::WorkPackage, json!({}));
+    store.upsert_node(&a).await.unwrap();
+    store.upsert_node(&b).await.unwrap();
+    store
+        .create_relationship(&Relationship::new(b.id, a.id, RelType::DependsOn))
+        .await
+        .unwrap();
+    let deps = store.get_dependencies(b.id).await.unwrap();
+    assert_eq!(deps, vec![a.id]);
+}
+
+/// Test: get_dependencies ignores non-DependsOn relationships.
+#[tokio::test]
+async fn get_dependencies_ignores_other_relations() {
+    let store = InMemoryGraphStore::new();
+    let a = Node::new(NodeType::WorkPackage, json!({}));
+    let b = Node::new(NodeType::WorkPackage, json!({}));
+    store.upsert_node(&a).await.unwrap();
+    store.upsert_node(&b).await.unwrap();
+    store
+        .create_relationship(&Relationship::new(b.id, a.id, RelType::Owns))
+        .await
+        .unwrap();
+    let deps = store.get_dependencies(b.id).await.unwrap();
+    assert!(deps.is_empty());
+}
+
+/// Test: get_blocking_path returns empty when no blockers.
+#[tokio::test]
+async fn get_blocking_path_empty_when_no_blockers() {
+    let store = InMemoryGraphStore::new();
+    let a = Node::new(NodeType::WorkPackage, json!({}));
+    store.upsert_node(&a).await.unwrap();
+    let blockers = store.get_blocking_path(a.id).await.unwrap();
+    assert!(blockers.is_empty());
+}
+
+/// Test: get_blocking_path finds direct Blocks relationship.
+#[tokio::test]
+async fn get_blocking_path_finds_direct_blocker() {
+    let store = InMemoryGraphStore::new();
+    let blocker = Node::new(NodeType::WorkPackage, json!({}));
+    let target = Node::new(NodeType::WorkPackage, json!({}));
+    store.upsert_node(&blocker).await.unwrap();
+    store.upsert_node(&target).await.unwrap();
+    store
+        .create_relationship(&Relationship::new(blocker.id, target.id, RelType::Blocks))
+        .await
+        .unwrap();
+    let blockers = store.get_blocking_path(target.id).await.unwrap();
+    assert_eq!(blockers, vec![blocker.id]);
+}
+
+/// Test: get_blocking_path returns direct blockers only (no traversal).
+#[tokio::test]
+async fn get_blocking_path_returns_direct_blockers() {
+    let store = InMemoryGraphStore::new();
+    let b1 = Node::new(NodeType::WorkPackage, json!({}));
+    let b2 = Node::new(NodeType::WorkPackage, json!({}));
+    let target = Node::new(NodeType::WorkPackage, json!({}));
+    store.upsert_node(&b1).await.unwrap();
+    store.upsert_node(&b2).await.unwrap();
+    store.upsert_node(&target).await.unwrap();
+    store
+        .create_relationship(&Relationship::new(b1.id, b2.id, RelType::Blocks))
+        .await
+        .unwrap();
+    store
+        .create_relationship(&Relationship::new(b2.id, target.id, RelType::Blocks))
+        .await
+        .unwrap();
+    let blockers = store.get_blocking_path(target.id).await.unwrap();
+    // Direct blocker of target is b2 only.
+    assert_eq!(blockers, vec![b2.id]);
+}
+
+/// Test: get_blocking_path ignores non-Blocks relationships.
+#[tokio::test]
+async fn get_blocking_path_ignores_other_relations() {
+    let store = InMemoryGraphStore::new();
+    let a = Node::new(NodeType::WorkPackage, json!({}));
+    let b = Node::new(NodeType::WorkPackage, json!({}));
+    store.upsert_node(&a).await.unwrap();
+    store.upsert_node(&b).await.unwrap();
+    store
+        .create_relationship(&Relationship::new(a.id, b.id, RelType::DependsOn))
+        .await
+        .unwrap();
+    let blockers = store.get_blocking_path(b.id).await.unwrap();
+    assert!(blockers.is_empty());
+}
+
+/// Test: get_blocking_path on non-existent node returns empty.
+#[tokio::test]
+async fn get_blocking_path_nonexistent_returns_empty() {
+    let store = InMemoryGraphStore::new();
+    let blockers = store.get_blocking_path(uuid::Uuid::new_v4()).await.unwrap();
+    assert!(blockers.is_empty());
+}
+
+/// Test: health_check always succeeds for InMemoryGraphStore.
+#[tokio::test]
+async fn health_check_succeeds_for_in_memory() {
+    let store = InMemoryGraphStore::new();
+    let result = store.health_check().await;
+    assert!(result.is_ok());
+}
+
+/// Test: get_relationships_from returns outgoing edges (mixed types).
+#[tokio::test]
+async fn get_relationships_from_returns_outgoing_mixed() {
+    let store = InMemoryGraphStore::new();
+    let a = Node::new(NodeType::Feature, json!({}));
+    let b = Node::new(NodeType::Feature, json!({}));
+    let c = Node::new(NodeType::Feature, json!({}));
+    store.upsert_node(&a).await.unwrap();
+    store.upsert_node(&b).await.unwrap();
+    store.upsert_node(&c).await.unwrap();
+    store
+        .create_relationship(&Relationship::new(a.id, b.id, RelType::Owns))
+        .await
+        .unwrap();
+    store
+        .create_relationship(&Relationship::new(a.id, c.id, RelType::AssignedTo))
+        .await
+        .unwrap();
+    let outgoing = store.get_relationships_from(a.id);
+    assert_eq!(outgoing.len(), 2);
+}
+
+/// Test: get_relationships_to returns incoming edges (mixed sources).
+#[tokio::test]
+async fn get_relationships_to_returns_incoming_mixed() {
+    let store = InMemoryGraphStore::new();
+    let a = Node::new(NodeType::Feature, json!({}));
+    let b = Node::new(NodeType::Feature, json!({}));
+    let c = Node::new(NodeType::Feature, json!({}));
+    store.upsert_node(&a).await.unwrap();
+    store.upsert_node(&b).await.unwrap();
+    store.upsert_node(&c).await.unwrap();
+    store
+        .create_relationship(&Relationship::new(a.id, b.id, RelType::Owns))
+        .await
+        .unwrap();
+    store
+        .create_relationship(&Relationship::new(c.id, b.id, RelType::AssignedTo))
+        .await
+        .unwrap();
+    let incoming = store.get_relationships_to(b.id);
+    assert_eq!(incoming.len(), 2);
+}
+
+/// Test: upsert_node preserves node ID when updating with new properties.
+#[tokio::test]
+async fn upsert_node_preserves_id_with_new_props() {
+    let store = InMemoryGraphStore::new();
+    let id = uuid::Uuid::new_v4();
+    let node = Node::with_id(id, NodeType::WorkPackage, json!({"title": "task"}));
+    store.upsert_node(&node).await.unwrap();
+    let fetched = store.get_node(id).unwrap();
+    assert_eq!(fetched.id, id);
+    assert_eq!(fetched.properties["title"], "task");
+}
+
+/// Test: NodeType serde roundtrip for all variants.
+#[test]
+fn node_type_serde_roundtrip_all_variants() {
+    use agileplus_graph::NodeType;
+    use serde_json;
+    let variants = vec![
+        NodeType::Feature,
+        NodeType::WorkPackage,
+        NodeType::Agent,
+        NodeType::Label,
+        NodeType::Project,
+    ];
+    for v in variants {
+        let json = serde_json::to_string(&v).unwrap();
+        let restored: NodeType = serde_json::from_str(&json).unwrap();
+        assert_eq!(restored, v);
+    }
+}
+
+/// Test: RelType serde roundtrip for all variants.
+#[test]
+fn rel_type_serde_roundtrip_all_variants() {
+    use agileplus_graph::RelType;
+    use serde_json;
+    let variants = vec![
+        RelType::Owns,
+        RelType::AssignedTo,
+        RelType::DependsOn,
+        RelType::Blocks,
+        RelType::Tagged,
+        RelType::InProject,
+    ];
+    for v in variants {
+        let json = serde_json::to_string(&v).unwrap();
+        let restored: RelType = serde_json::from_str(&json).unwrap();
+        assert_eq!(restored, v);
+    }
+}
+
+/// Test: Node with_id preserves custom UUID.
+#[test]
+fn node_with_id_preserves_uuid() {
+    use agileplus_graph::Node;
+    use serde_json::json;
+    let id = uuid::Uuid::new_v4();
+    let node = Node::with_id(id, NodeType::Project, json!({"name": "Proj"}));
+    assert_eq!(node.id, id);
+}
+
+/// Test: Relationship with_id preserves custom UUID.
+#[test]
+fn relationship_with_id_preserves_uuid() {
+    use agileplus_graph::{Relationship, RelType};
+    let from = uuid::Uuid::new_v4();
+    let to = uuid::Uuid::new_v4();
+    let id = uuid::Uuid::new_v4();
+    let rel = Relationship::with_id(id, from, to, RelType::Owns);
+    assert_eq!(rel.id, id);
+    assert_eq!(rel.from_node_id, from);
+    assert_eq!(rel.to_node_id, to);
+}
+
+/// Test: Relationship new generates unique ID.
+#[test]
+fn relationship_new_generates_unique_id() {
+    use agileplus_graph::{Relationship, RelType};
+    let from = uuid::Uuid::new_v4();
+    let to = uuid::Uuid::new_v4();
+    let r1 = Relationship::new(from, to, RelType::Owns);
+    let r2 = Relationship::new(from, to, RelType::Owns);
+    assert_ne!(r1.id, r2.id);
+}
+
+/// Test: Node clone produces independent copy.
+#[test]
+fn node_clone_independent() {
+    use agileplus_graph::Node;
+    use serde_json::json;
+    let n1 = Node::new(NodeType::Feature, json!({"val": 1}));
+    let n2 = n1.clone();
+    assert_eq!(n1.id, n2.id);
+    assert_eq!(n1.node_type, n2.node_type);
+    assert_eq!(n1.properties, n2.properties);
+}
+
+/// Test: Relationship clone produces independent copy.
+#[test]
+fn relationship_clone_independent() {
+    use agileplus_graph::{Relationship, RelType};
+    let r1 = Relationship::new(uuid::Uuid::new_v4(), uuid::Uuid::new_v4(), RelType::Owns);
+    let r2 = r1.clone();
+    assert_eq!(r1.id, r2.id);
+    assert_eq!(r1.from_node_id, r2.from_node_id);
+    assert_eq!(r1.to_node_id, r2.to_node_id);
+}
+
+/// Test: Node can have empty properties object.
+#[test]
+fn node_empty_properties_allowed() {
+    use agileplus_graph::Node;
+    use serde_json::json;
+    let node = Node::new(NodeType::Label, json!({}));
+    assert!(node.properties.is_object());
+}
+
+/// Test: Relationship can have empty properties.
+#[test]
+fn relationship_empty_properties_allowed() {
+    use agileplus_graph::{Relationship, RelType};
+    let rel = Relationship::new(uuid::Uuid::new_v4(), uuid::Uuid::new_v4(), RelType::Tagged);
+    assert!(rel.properties.is_object());
+}
+
+/// Test: InMemoryGraphStore handles many nodes efficiently.
+#[tokio::test]
+async fn store_handles_many_nodes() {
+    let store = InMemoryGraphStore::new();
+    let mut ids = Vec::new();
+    for i in 0..100 {
+        let node = Node::new(NodeType::Feature, json!({"idx": i}));
+        ids.push(node.id);
+        store.upsert_node(&node).await.unwrap();
+    }
+    assert_eq!(store.get_nodes_by_type(NodeType::Feature).len(), 100);
+}
+
+/// Test: InMemoryGraphStore handles many relationships efficiently.
+#[tokio::test]
+async fn store_handles_many_relationships() {
+    let store = InMemoryGraphStore::new();
+    let a = Node::new(NodeType::Feature, json!({}));
+    store.upsert_node(&a).await.unwrap();
+    for i in 0..50 {
+        let b = Node::new(NodeType::Feature, json!({"idx": i}));
+        store.upsert_node(&b).await.unwrap();
+        store
+            .create_relationship(&Relationship::new(a.id, b.id, RelType::Owns))
+            .await
+            .unwrap();
+    }
+    assert_eq!(store.get_relationships_from(a.id).len(), 50);
+}
+
+/// Test: Multiple relationship types between same nodes allowed.
+#[tokio::test]
+async fn multiple_relation_types_between_same_nodes() {
+    let store = InMemoryGraphStore::new();
+    let a = Node::new(NodeType::Feature, json!({}));
+    let b = Node::new(NodeType::Feature, json!({}));
+    store.upsert_node(&a).await.unwrap();
+    store.upsert_node(&b).await.unwrap();
+    store
+        .create_relationship(&Relationship::new(a.id, b.id, RelType::Owns))
+        .await
+        .unwrap();
+    store
+        .create_relationship(&Relationship::new(a.id, b.id, RelType::DependsOn))
+        .await
+        .unwrap();
+    store
+        .create_relationship(&Relationship::new(a.id, b.id, RelType::Tagged))
+        .await
+        .unwrap();
+    let rels = store.get_relationships_from(a.id);
+    assert_eq!(rels.len(), 3);
+}
+
+/// Test: get_nodes_by_type filters correctly across types.
+#[tokio::test]
+async fn get_nodes_by_type_filters_by_type() {
+    let store = InMemoryGraphStore::new();
+    let f = Node::new(NodeType::Feature, json!({}));
+    let w = Node::new(NodeType::WorkPackage, json!({}));
+    let ag = Node::new(NodeType::Agent, json!({}));
+    let l = Node::new(NodeType::Label, json!({}));
+    let p = Node::new(NodeType::Project, json!({}));
+    store.upsert_node(&f).await.unwrap();
+    store.upsert_node(&w).await.unwrap();
+    store.upsert_node(&ag).await.unwrap();
+    store.upsert_node(&l).await.unwrap();
+    store.upsert_node(&p).await.unwrap();
+    assert_eq!(store.get_nodes_by_type(NodeType::Feature).len(), 1);
+    assert_eq!(store.get_nodes_by_type(NodeType::WorkPackage).len(), 1);
+    assert_eq!(store.get_nodes_by_type(NodeType::Agent).len(), 1);
+    assert_eq!(store.get_nodes_by_type(NodeType::Label).len(), 1);
+    assert_eq!(store.get_nodes_by_type(NodeType::Project).len(), 1);
+}
+
+/// Test: get_relationships_from/to together cover all relationships.
+#[tokio::test]
+async fn get_relationships_from_and_to_cover_all() {
+    let store = InMemoryGraphStore::new();
+    let a = Node::new(NodeType::Feature, json!({}));
+    let b = Node::new(NodeType::Feature, json!({}));
+    let c = Node::new(NodeType::Feature, json!({}));
+    store.upsert_node(&a).await.unwrap();
+    store.upsert_node(&b).await.unwrap();
+    store.upsert_node(&c).await.unwrap();
+    store
+        .create_relationship(&Relationship::new(a.id, b.id, RelType::Owns))
+        .await
+        .unwrap();
+    store
+        .create_relationship(&Relationship::new(b.id, c.id, RelType::Owns))
+        .await
+        .unwrap();
+    let from_a = store.get_relationships_from(a.id);
+    let from_b = store.get_relationships_from(b.id);
+    let to_b = store.get_relationships_to(b.id);
+    let to_c = store.get_relationships_to(c.id);
+    assert_eq!(from_a.len(), 1);
+    assert_eq!(from_b.len(), 1);
+    assert_eq!(to_b.len(), 1);
+    assert_eq!(to_c.len(), 1);
+}
+
+/// Test: NodeType Debug formatting matches variant names.
+#[test]
+fn node_type_debug_matches_names() {
+    use agileplus_graph::NodeType;
+    assert_eq!(format!("{:?}", NodeType::Feature), "Feature");
+    assert_eq!(format!("{:?}", NodeType::WorkPackage), "WorkPackage");
+    assert_eq!(format!("{:?}", NodeType::Agent), "Agent");
+    assert_eq!(format!("{:?}", NodeType::Label), "Label");
+    assert_eq!(format!("{:?}", NodeType::Project), "Project");
+}
+
+/// Test: RelType Debug formatting matches variant names.
+#[test]
+fn rel_type_debug_matches_names() {
+    use agileplus_graph::RelType;
+    assert_eq!(format!("{:?}", RelType::Owns), "Owns");
+    assert_eq!(format!("{:?}", RelType::AssignedTo), "AssignedTo");
+    assert_eq!(format!("{:?}", RelType::DependsOn), "DependsOn");
+    assert_eq!(format!("{:?}", RelType::Blocks), "Blocks");
+    assert_eq!(format!("{:?}", RelType::Tagged), "Tagged");
+    assert_eq!(format!("{:?}", RelType::InProject), "InProject");
+}
+
+/// Test: InMemoryGraphStore is Send + Sync.
+#[test]
+fn store_is_send_sync() {
+    fn assert_send_sync<T: Send + Sync>() {}
+    assert_send_sync::<InMemoryGraphStore>();
+}
+
+/// Test: Relationship properties can be set and retrieved.
+#[test]
+fn relationship_properties_roundtrip() {
+    use agileplus_graph::{Relationship, RelType};
+    use serde_json::json;
+    let rel = Relationship {
+        id: uuid::Uuid::new_v4(),
+        from_node_id: uuid::Uuid::new_v4(),
+        to_node_id: uuid::Uuid::new_v4(),
+        rel_type: RelType::Owns,
+        properties: json!({"weight": 10, "meta": "data"}),
+    };
+    assert_eq!(rel.properties["weight"], 10);
+    assert_eq!(rel.properties["meta"], "data");
+}
+
+/// Test: Node properties can be set and retrieved.
+#[test]
+fn node_properties_roundtrip() {
+    use agileplus_graph::Node;
+    use serde_json::json;
+    let node = Node::new(NodeType::Project, json!({"name": "Proj", "version": 2}));
+    assert_eq!(node.properties["name"], "Proj");
+    assert_eq!(node.properties["version"], 2);
+}
+
+/// Test: InMemoryGraphStore relationships_from/to return empty for missing node.
+#[tokio::test]
+async fn relationships_from_to_missing_node_empty() {
+    let store = InMemoryGraphStore::new();
+    let missing_id = uuid::Uuid::new_v4();
+    assert!(store.get_relationships_from(missing_id).is_empty());
+    assert!(store.get_relationships_to(missing_id).is_empty());
+}
+
+/// Test: create_relationship with non-existent nodes is allowed (no FK check).
+#[tokio::test]
+async fn create_relationship_missing_nodes_allowed() {
+    let store = InMemoryGraphStore::new();
+    let rel = Relationship::new(uuid::Uuid::new_v4(), uuid::Uuid::new_v4(), RelType::Owns);
+    store.create_relationship(&rel).await.unwrap();
+    let outgoing = store.get_relationships_from(rel.from_node_id);
+    assert_eq!(outgoing.len(), 1);
+}
+
+/// Test: Error enum from GraphError conversion.
+#[test]
+fn error_from_graph_error_conversion() {
+    use agileplus_graph::{Error, GraphError};
+    let graph_err = GraphError::NotFound("test".into());
+    let err: Error = graph_err.into();
+    let msg = format!("{err}");
+    assert!(msg.contains("Graph error"));
+    assert!(msg.contains("Not found"));
+}
+
+/// Test: Error Config variant display.
+#[test]
+fn error_config_variant_display() {
+    use agileplus_graph::Error;
+    let err = Error::Config("missing config".into());
+    assert_eq!(format!("{err}"), "Config error: missing config");
+}
+
+/// Test: Error Debug formatting includes variant.
+#[test]
+fn error_debug_includes_variant() {
+    use agileplus_graph::Error;
+    let err = Error::Config("test".into());
+    let dbg = format!("{:?}", err);
+    assert!(dbg.contains("Config"));
+}
+
+/// Test: Error Graph variant Debug formatting.
+#[test]
+fn error_graph_variant_debug() {
+    use agileplus_graph::{Error, GraphError};
+    let err: Error = GraphError::ConnectionError("refused".into()).into();
+    let dbg = format!("{:?}", err);
+    assert!(dbg.contains("Graph"));
+}
