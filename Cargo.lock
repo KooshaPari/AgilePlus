@@ -256,6 +256,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "agileplus-config"
+version = "0.2.4"
+dependencies = [
+ "paste",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+]
+
+[[package]]
 name = "agileplus-contract-tests"
 version = "0.2.4"
 dependencies = [

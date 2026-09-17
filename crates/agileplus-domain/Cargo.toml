@@ -24,7 +24,7 @@ base64.workspace = true
 rand.workspace = true
 keyring = { workspace = true, optional = true }
 dhat = { version = "0.3", optional = true }
-# agileplus-plugin-core = { git = "https://github.com/<REDACTED>/agileplus-plugin-core", optional = true }
+# agileplus-plugin-core = { git = "https://github.com/KooshaPari/agileplus-plugin-core", optional = true }
 
 [features]
 default = ["keychain"]

@@ -34,7 +34,7 @@
     "updater": {
       "active": true,
       "endpoints": [
-        "https://github.com/<REDACTED>/AgilePlus/releases/latest/download/latest.json"
+        "https://github.com/KooshaPari/AgilePlus/releases/latest/download/latest.json"
       ],
       "pubkey": "RWQxEapOx9VrQkjrGMEBjWO6gW8e2/rHXFW+Vp0wvZgOSrkdwvfGFw02"
     }

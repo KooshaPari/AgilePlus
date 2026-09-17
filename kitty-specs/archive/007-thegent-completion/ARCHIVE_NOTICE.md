@@ -4,7 +4,7 @@
 
 **Reason:** Superseded by separate repo thegent; org-spec-id no longer canonical for that work.
 
-**Canonical Location:** https://github.com/<REDACTED>/thegent
+**Canonical Location:** https://github.com/KooshaPari/thegent
 
 This specification was originally part of the AgilePlus monorepo tracking system, but thegent has been decomposed into a standalone repository with independent spec and governance management.
 

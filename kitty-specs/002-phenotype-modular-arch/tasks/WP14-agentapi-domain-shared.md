@@ -44,8 +44,8 @@ Extract `internal/domain/` package with formal domain entities from agentapi++. 
 **Steps**:
 1. Add dependencies:
    ```
-   go get github.com/<REDACTED>/phenotype-go-authkit
-   go get github.com/<REDACTED>/phenotype-go-httpkit
+   go get github.com/KooshaPari/phenotype-go-authkit
+   go get github.com/KooshaPari/phenotype-go-httpkit
    ```
 2. Replace local auth logic with authkit imports
 3. Replace local HTTP helpers with httpkit imports

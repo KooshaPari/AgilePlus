@@ -284,7 +284,7 @@ Found 50 markdown files mentioning worktree/working tree.
 - 16: - `Phenotype/repos/worktrees/phenoSDK/main`
 
 ## `portfolio-audit-<REDACTED>-2026/spec.md`
-- 9: - Canonical SDK tree: `Phenotype/repos/worktrees/phenoSDK/main` (clone of `github.com/<REDACTED>/phenoSDK`). Legacy `pheno-sdk` remote is empty; do not block on it.
+- 9: - Canonical SDK tree: `Phenotype/repos/worktrees/phenoSDK/main` (clone of `github.com/KooshaPari/phenoSDK`). Legacy `pheno-sdk` remote is empty; do not block on it.
 
 ## `portfolio-audit-<REDACTED>-2026/tasks/WP01-initial-implementation.md`
 - 23: - `Phenotype/repos/worktrees/phenoSDK/main`

@@ -21,7 +21,7 @@ winget install <REDACTED>.AgilePlus
 
 ### From Source
 ```bash
-git clone https://github.com/<REDACTED>/AgilePlus
+git clone https://github.com/KooshaPari/AgilePlus
 cd AgilePlus
 cargo build --release -p agileplus-cli -p agileplus-dashboard
 ./target/release/agileplus --help
@@ -46,9 +46,9 @@ irm https://raw.githubusercontent.com/<REDACTED>/AgilePlus/main/uninstall.ps1 | 
 
 ## Links
 
-- [GitHub](https://github.com/<REDACTED>/AgilePlus)
-- [Releases](https://github.com/<REDACTED>/AgilePlus/releases)
-- [Documentation](https://github.com/<REDACTED>/AgilePlus/blob/main/README.md)
+- [GitHub](https://github.com/KooshaPari/AgilePlus)
+- [Releases](https://github.com/KooshaPari/AgilePlus/releases)
+- [Documentation](https://github.com/KooshaPari/AgilePlus/blob/main/README.md)
 
 ## License
 

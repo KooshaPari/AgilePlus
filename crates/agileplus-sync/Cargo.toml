@@ -23,6 +23,10 @@ tracing.workspace = true
 
 [dev-dependencies]
 tokio.workspace = true
+serde_json.workspace = true
+async-nats.workspace = true
+chrono.workspace = true
+async-trait.workspace = true
 
 [package.metadata.dist]
 dist = false

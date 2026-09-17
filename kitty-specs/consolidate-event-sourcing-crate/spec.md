@@ -6,7 +6,7 @@ last_audit: 2026-04-25
 owners: phenotype-org / shared-platform
 adr: docs/governance/shared-crates-canonical-home-adr-2026-04.md
 crate: phenotype-event-sourcing
-canonical_home: github.com/<REDACTED>/phenoShared/crates/phenotype-event-sourcing
+canonical_home: github.com/KooshaPari/phenoShared/crates/phenotype-event-sourcing
 ---
 
 # Consolidate `phenotype-event-sourcing` to `phenoShared`

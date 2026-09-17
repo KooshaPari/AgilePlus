@@ -9,16 +9,20 @@ use agileplus_cli::commands::branch::{BranchArgs, BranchCommand};
 
 /// Helper: parse args from string slices.
 fn parse_branch(args: &[&str]) -> BranchArgs {
+    // BranchArgs derives clap::Args (not Subcommand), so we wrap
+    // BranchCommand as a subcommand and reconstruct BranchArgs.
     #[derive(Parser)]
     #[command(name = "test")]
     struct Wrapper {
         #[command(subcommand)]
-        cmd: BranchArgs,
+        command: BranchCommand,
     }
-    // Prepend a dummy program name + "branch" subcommand prefix.
-    let mut full = vec!["test", "branch"];
+    let mut full = vec!["test"];
     full.extend(args);
-    Wrapper::parse_from(full).cmd
+    let wrapper = Wrapper::parse_from(full);
+    BranchArgs {
+        command: wrapper.command,
+    }
 }
 
 // ── Create ──────────────────────────────────────────────────────────────────

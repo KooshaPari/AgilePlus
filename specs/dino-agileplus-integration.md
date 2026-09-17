@@ -83,7 +83,7 @@ Fully integrate the DINOForge mod platform (<REDACTED>/Dino) into the AgilePlus 
 - @<REDACTED> (sole CODEOWNER of <REDACTED>/Dino)
 
 ## References
-- Dino repo: https://github.com/<REDACTED>/Dino
-- CI fix PR: https://github.com/<REDACTED>/Dino/pull/391
-- DINOForge-UnityDoorstop: https://github.com/<REDACTED>/DINOForge-UnityDoorstop
+- Dino repo: https://github.com/KooshaPari/Dino
+- CI fix PR: https://github.com/KooshaPari/Dino/pull/391
+- DINOForge-UnityDoorstop: https://github.com/KooshaPari/DINOForge-UnityDoorstop
 - Scorecard: 30-pillar audit, grade C (61/100)

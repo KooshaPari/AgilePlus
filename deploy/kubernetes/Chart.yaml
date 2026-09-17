@@ -4,9 +4,9 @@ description: AgilePlus monorepo stack (frontend + API + MCP + 4 backing services
 type: application
 version: 0.1.0
 appVersion: "1.0.0"
-home: https://github.com/<REDACTED>/AgilePlus
+home: https://github.com/KooshaPari/AgilePlus
 sources:
-  - https://github.com/<REDACTED>/AgilePlus
+  - https://github.com/KooshaPari/AgilePlus
 keywords:
   - agileplus
   - monorepo

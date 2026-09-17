@@ -6,7 +6,7 @@ last_audit: 2026-04-25
 owners: phenotype-org / shared-platform
 adr: docs/governance/shared-crates-canonical-home-adr-2026-04.md
 crate: phenotype-state-machine
-canonical_home: github.com/<REDACTED>/phenoShared/crates/phenotype-state-machine
+canonical_home: github.com/KooshaPari/phenoShared/crates/phenotype-state-machine
 ---
 
 # Consolidate `phenotype-state-machine` to `phenoShared`

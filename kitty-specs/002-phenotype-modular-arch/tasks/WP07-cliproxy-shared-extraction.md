@@ -54,7 +54,7 @@ Extract auth logic to `phenotype-go-authkit` and HTTP helpers to `phenotype-go-h
 4. Ensure no cliproxyapi++-internal imports in extracted code
 5. In cliproxyapi++, replace `internal/auth` imports with `phenotype-go-authkit`:
    ```go
-   import authkit "github.com/<REDACTED>/phenotype-go-authkit"
+   import authkit "github.com/KooshaPari/phenotype-go-authkit"
    ```
 6. Collapse the 3 parallel auth systems to the single `TokenSourceRegistry`
 7. Update `go.mod` with new dependency

@@ -35,19 +35,19 @@ Create 7 empty shared package repositories with proper structure, CI, README, an
 
 1. **phenotype-go-authkit**:
    - `gh repo create <REDACTED>/phenotype-go-authkit --public`
-   - `go mod init github.com/<REDACTED>/phenotype-go-authkit`
+   - `go mod init github.com/KooshaPari/phenotype-go-authkit`
    - Create `authkit.go` with package declaration + doc comment
    - Create `.github/workflows/go-ci.yml` (build, test, vet, lint)
    - README: purpose (token storage, refresh, provider auth), consumers (cliproxy++, agent++)
 
 2. **phenotype-go-executor-core**:
    - Same scaffold
-   - `go mod init github.com/<REDACTED>/phenotype-go-executor-core`
+   - `go mod init github.com/KooshaPari/phenotype-go-executor-core`
    - README: purpose (ExecutorInterface, BaseExecutor, retry/HTTP helpers)
 
 3. **phenotype-go-httpkit**:
    - Same scaffold
-   - `go mod init github.com/<REDACTED>/phenotype-go-httpkit`
+   - `go mod init github.com/KooshaPari/phenotype-go-httpkit`
    - README: purpose (defaultHttpRequest, proxy helpers, cache helpers)
 
 **Common CI template** (`.github/workflows/go-ci.yml`):

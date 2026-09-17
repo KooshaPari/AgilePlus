@@ -8,7 +8,7 @@ AgilePlus ships multiple installation channels. Pick whichever fits your workflo
 | **PowerShell (Windows)** | One-line Windows install | `irm ... \| iex` |
 | **Bun (cross-platform)** | JavaScript/TypeScript runtime users | `bun run ...` |
 | **cargo install** | Rust developers | `cargo install agileplus-cli` |
-| **Prebuilt binaries** | Manual download | [GitHub Releases](https://github.com/<REDACTED>/AgilePlus/releases) |
+| **Prebuilt binaries** | Manual download | [GitHub Releases](https://github.com/KooshaPari/AgilePlus/releases) |
 | **From source** | Contributors building the workspace | `git clone` + `cargo build` |
 | **Start Menu** (Windows) | Desktop launcher | `packaging/start-menu.ps1` |
 
@@ -47,7 +47,7 @@ cargo install agileplus-cli --locked
 ## From source
 
 ```bash
-git clone https://github.com/<REDACTED>/AgilePlus.git
+git clone https://github.com/KooshaPari/AgilePlus.git
 cd AgilePlus
 cargo build --release --package agileplus-cli
 ```
@@ -58,7 +58,7 @@ The built binary will be at `target/release/agileplus` (or `target/release/agile
 
 Tagged releases (`v*`) publish matrix-built archives for Linux, macOS (x86_64 + Apple Silicon), and Windows.
 
-1. Open [Releases](https://github.com/<REDACTED>/AgilePlus/releases).
+1. Open [Releases](https://github.com/KooshaPari/AgilePlus/releases).
 2. Download the archive for your platform:
    - `agileplus-<version>-agileplus-linux-x86_64.tar.gz`
    - `agileplus-<version>-agileplus-macos-aarch64.tar.gz`
