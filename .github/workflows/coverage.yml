@@ -24,17 +24,17 @@ jobs:
     name: python-coverage (uv)
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v7
         with:
           version: "0.5.x"
           enable-cache: true
           cache-dependency-path: python/uv.lock
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.14"
 
@@ -53,14 +53,14 @@ jobs:
         working-directory: python
 
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: python-coverage-xml
           path: .coverage/coverage.xml
 
       - name: Comment coverage on PR
         if: github.event_name == 'pull_request'
-        uses: py-cov-action/python-coverage-comment-action@v4.1
+        uses: py-cov-action/python-coverage-comment-action@v4.3
         with:
           GITHUB_TOKEN: ${{ github.token }}
 
@@ -68,7 +68,7 @@ jobs:
     name: rust-coverage (cargo-llvm-cov)
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install protoc
         # Ubuntu 24.04 runners do not include protoc; prost-build needs it for
@@ -102,7 +102,7 @@ jobs:
           cargo llvm-cov report --fail-under-lines 20
 
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: rust-coverage-lcov
           path: .coverage/rust-lcov.info
@@ -111,10 +111,10 @@ jobs:
     name: go-coverage (go test -cover)
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
           go-version: "1.23"
           cache: true
@@ -129,7 +129,7 @@ jobs:
         working-directory: pheno-cli
 
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: go-coverage-out
           path: .coverage/go-cover.out
@@ -139,7 +139,7 @@ jobs:
     needs: [coverage-python, coverage-rust, coverage-go]
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Verify all coverage artifacts
         run: |
           set -euo pipefail
