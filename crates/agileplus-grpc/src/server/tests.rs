@@ -8,9 +8,7 @@ use super::{
     domain_error_to_status, evidence_satisfies_requirement, missing_evidence_violation,
     parse_evidence_requirement, validate_project_scope,
 };
-use agileplus_domain::domain::governance::{
-    Evidence, EvidenceType, GovernanceRule,
-};
+use agileplus_domain::domain::governance::{Evidence, EvidenceType, GovernanceRule};
 use chrono::Utc;
 use std::collections::HashSet;
 use tonic::Code;
@@ -126,7 +124,10 @@ fn unknown_evidence_type_is_reported_as_unrecognized() {
 fn evidence_type_matching_is_case_sensitive() {
     let (_, kind, recognized) = parse_evidence_requirement("FR-7:Test_Result");
     assert_eq!(kind, None);
-    assert!(!recognized, "type names are the wire contract, not free text");
+    assert!(
+        !recognized,
+        "type names are the wire contract, not free text"
+    );
 }
 
 #[test]
@@ -192,10 +193,7 @@ fn evidence_matches_only_the_requested_requirement() {
     ];
 
     assert!(evidence_satisfies_requirement(
-        &evidence,
-        &wps,
-        "FR-1",
-        None
+        &evidence, &wps, "FR-1", None
     ));
     assert!(evidence_satisfies_requirement(
         &evidence,
@@ -204,10 +202,7 @@ fn evidence_matches_only_the_requested_requirement() {
         Some(EvidenceType::CiOutput)
     ));
     assert!(!evidence_satisfies_requirement(
-        &evidence,
-        &wps,
-        "FR-404",
-        None
+        &evidence, &wps, "FR-404", None
     ));
 }
 
@@ -227,7 +222,9 @@ fn evidence_type_must_match_when_the_requirement_demands_one() {
     let wps: HashSet<i64> = [1].into_iter().collect();
     let evidence = vec![evidence(4, 1, "FR-1", EvidenceType::LintResult)];
 
-    assert!(evidence_satisfies_requirement(&evidence, &wps, "FR-1", None));
+    assert!(evidence_satisfies_requirement(
+        &evidence, &wps, "FR-1", None
+    ));
     assert!(!evidence_satisfies_requirement(
         &evidence,
         &wps,
