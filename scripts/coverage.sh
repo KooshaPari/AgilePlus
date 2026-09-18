@@ -59,7 +59,10 @@ for tool in "$llvm_cov" "$llvm_profdata"; do
 done
 
 echo "==> running the workspace suite under llvm-cov"
-cargo llvm-cov --workspace --summary-only > "$work_dir/workspace.txt" 2>&1 || true
+# --no-clean matters: by default cargo-llvm-cov cleans its target directory, and
+# the instrumented test binaries this script later needs are exactly what
+# disappears. Without it the union pass finds nothing to run.
+cargo llvm-cov --workspace --summary-only --no-clean > "$work_dir/workspace.txt" 2>&1 || true
 grep -E '^TOTAL' "$work_dir/workspace.txt" | tail -1 || echo "workspace summary unavailable"
 
 echo "==> hand-measuring agileplus-cli from its own test binaries"
@@ -144,7 +147,11 @@ if [ "${COVERAGE_ALL:-1}" = "1" ]; then
     # build itself, for example:
     #   RUSTFLAGS="-Cinstrument-coverage" cargo test --workspace --no-run \
     #       --message-format=json | jq -r 'select(.executable != null) | .executable'
-    all_bins=("$target_dir"/debug/build/*/*/out/*-* "$target_dir"/debug/deps/*-*)
+    # Test binaries live at debug/build/<crate>/<hash>/out/<name>-<hash>. Only
+    # that location is searched: debug/deps also holds non-test executables,
+    # and running those produced a wall of instant non-zero exits that showed up
+    # as bogus "skipped" counts in the first version of this pass.
+    all_bins=("$target_dir"/debug/build/*/*/out/*-*)
     measured=0
     skipped=0
     for bin in "${all_bins[@]}"; do
