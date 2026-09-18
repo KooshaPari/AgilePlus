@@ -239,7 +239,7 @@ mod tests {
 #[cfg(test)]
 mod coverage_tests {
     use super::*;
-    use crate::store::InMemoryEventStore;
+    use crate::store::{EventError, InMemoryEventStore};
 
     fn snap(entity_type: &str, entity_id: i64, seq: i64) -> Snapshot {
         Snapshot::new(entity_type, entity_id, serde_json::json!({"v": seq}), seq)
@@ -408,5 +408,159 @@ mod coverage_tests {
         let state = LoadedState::load(&snaps, &events, "F", 1).await.unwrap();
         assert!(state.snapshot.is_none());
         assert!(state.events_to_replay.is_empty());
+    }
+
+    /// Snapshot store whose every operation fails, used to exercise the
+    /// error arms of `LoadedState::load` that the in-memory store never hits.
+    struct FailingSnapshotStore;
+
+    #[async_trait]
+    impl SnapshotStore for FailingSnapshotStore {
+        async fn save(&self, _snapshot: &Snapshot) -> Result<(), SnapshotError> {
+            Err(SnapshotError::StorageError("snapshot write failed".into()))
+        }
+
+        async fn load(
+            &self,
+            entity_type: &str,
+            entity_id: i64,
+        ) -> Result<Option<Snapshot>, SnapshotError> {
+            Err(SnapshotError::StorageError(format!(
+                "snapshot read failed for {entity_type}:{entity_id}"
+            )))
+        }
+
+        async fn delete_before(
+            &self,
+            _entity_type: &str,
+            _entity_id: i64,
+            _sequence: i64,
+        ) -> Result<(), SnapshotError> {
+            Err(SnapshotError::StorageError("snapshot delete failed".into()))
+        }
+    }
+
+    /// Event store whose reads always fail.
+    struct FailingEventStore;
+
+    #[async_trait]
+    impl EventStore for FailingEventStore {
+        async fn append(&self, _event: &Event) -> Result<i64, EventError> {
+            Err(EventError::StorageError("append failed".into()))
+        }
+
+        async fn get_events(
+            &self,
+            entity_type: &str,
+            entity_id: i64,
+        ) -> Result<Vec<Event>, EventError> {
+            Err(EventError::StorageError(format!(
+                "event read failed for {entity_type}:{entity_id}"
+            )))
+        }
+
+        async fn get_events_since(
+            &self,
+            entity_type: &str,
+            entity_id: i64,
+            _sequence: i64,
+        ) -> Result<Vec<Event>, EventError> {
+            Err(EventError::StorageError(format!(
+                "event read-since failed for {entity_type}:{entity_id}"
+            )))
+        }
+
+        async fn get_events_by_range(
+            &self,
+            entity_type: &str,
+            entity_id: i64,
+            _from: chrono::DateTime<Utc>,
+            _to: chrono::DateTime<Utc>,
+        ) -> Result<Vec<Event>, EventError> {
+            Err(EventError::StorageError(format!(
+                "event range read failed for {entity_type}:{entity_id}"
+            )))
+        }
+
+        async fn get_latest_sequence(
+            &self,
+            entity_type: &str,
+            entity_id: i64,
+        ) -> Result<i64, EventError> {
+            Err(EventError::StorageError(format!(
+                "event latest failed for {entity_type}:{entity_id}"
+            )))
+        }
+    }
+
+    #[tokio::test]
+    async fn loaded_state_propagates_snapshot_store_error() {
+        let events = InMemoryEventStore::new();
+        let err = load_error(&FailingSnapshotStore, &events, "F", 1).await;
+        match err {
+            SnapshotError::StorageError(msg) => {
+                assert_eq!(msg, "snapshot read failed for F:1");
+            }
+            other => panic!("expected StorageError, got {other:?}"),
+        }
+    }
+
+    async fn load_error(
+        snaps: &impl SnapshotStore,
+        events: &impl EventStore,
+        entity_type: &str,
+        entity_id: i64,
+    ) -> SnapshotError {
+        match LoadedState::load(snaps, events, entity_type, entity_id).await {
+            Ok(_) => panic!("expected LoadedState::load to fail"),
+            Err(err) => err,
+        }
+    }
+
+    #[tokio::test]
+    async fn loaded_state_wraps_event_store_error_when_no_snapshot() {
+        let snaps = InMemorySnapshotStore::new();
+        let err = load_error(&snaps, &FailingEventStore, "F", 1).await;
+        match err {
+            SnapshotError::StorageError(msg) => {
+                assert_eq!(msg, "Storage error: event read failed for F:1");
+            }
+            other => panic!("expected StorageError, got {other:?}"),
+        }
+    }
+
+    #[tokio::test]
+    async fn loaded_state_wraps_event_store_error_when_snapshot_present() {
+        let snaps = InMemorySnapshotStore::new();
+        snaps.save(&snap("F", 2, 7)).await.unwrap();
+
+        let err = load_error(&snaps, &FailingEventStore, "F", 2).await;
+        match err {
+            SnapshotError::StorageError(msg) => {
+                assert_eq!(msg, "Storage error: event read-since failed for F:2");
+            }
+            other => panic!("expected StorageError, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn should_snapshot_false_when_sequence_did_not_advance_enough() {
+        let c = SnapshotConfig {
+            event_threshold: 10,
+            time_threshold_secs: 300,
+        };
+        assert!(!should_snapshot(&c, 5, 5, None), "no movement");
+        assert!(!should_snapshot(&c, 4, 10, None), "sequence moved backwards");
+        assert!(should_snapshot(&c, 15, 5, None), "moved by exactly the threshold");
+    }
+
+    #[test]
+    fn should_snapshot_false_when_last_snapshot_time_is_in_the_future() {
+        let c = SnapshotConfig {
+            event_threshold: 100,
+            time_threshold_secs: 60,
+        };
+        let future = Utc::now() + TimeDelta::seconds(3600);
+        assert!(!should_snapshot(&c, 1, 0, Some(future)));
     }
 }

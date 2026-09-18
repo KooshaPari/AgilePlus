@@ -1094,4 +1094,85 @@ mod coverage_tests {
         let ev = DomainEvent::ProjectArchived(ProjectArchived { project_id: 1.into() });
         assert_eq!(ev.event_type(), "project.archived");
     }
+
+    // ── wire-format contract (consumed by other repos / brokers) ──────────────
+
+    #[test]
+    fn aggregate_id_serializes_as_bare_integer() {
+        assert_eq!(serde_json::to_string(&AggregateId(7)).unwrap(), "7");
+        assert_eq!(
+            serde_json::from_str::<AggregateId>("7").unwrap(),
+            AggregateId(7)
+        );
+    }
+
+    #[test]
+    fn envelope_json_exposes_the_documented_field_set() {
+        let env = EventEnvelope::new(
+            AggregateId(2),
+            DomainEvent::ProjectArchived(ProjectArchived {
+                project_id: AggregateId(2),
+            }),
+        );
+
+        let value = serde_json::to_value(&env).unwrap();
+        let object = value.as_object().expect("envelope serialises to an object");
+        let mut keys: Vec<&str> = object.keys().map(String::as_str).collect();
+        keys.sort_unstable();
+        assert_eq!(
+            keys,
+            vec![
+                "aggregate_id",
+                "aggregate_type",
+                "causation_id",
+                "correlation_id",
+                "id",
+                "occurred_at",
+                "payload",
+            ]
+        );
+
+        assert_eq!(object["id"], serde_json::json!(env.id.to_string()));
+        assert_eq!(object["occurred_at"], serde_json::json!(env.occurred_at));
+        assert_eq!(object["aggregate_id"], serde_json::json!(2));
+        assert_eq!(object["aggregate_type"], serde_json::json!("Project"));
+        assert_eq!(object["causation_id"], serde_json::Value::Null);
+        assert_eq!(object["correlation_id"], serde_json::Value::Null);
+        assert_eq!(
+            object["payload"],
+            serde_json::json!({"ProjectArchived": {"project_id": 2}})
+        );
+    }
+
+    #[test]
+    fn envelope_deserialises_from_literal_wire_json() {
+        let id = Uuid::new_v4();
+        let cause = Uuid::new_v4();
+        let literal = format!(
+            "{{\"id\":\"{id}\",\"occurred_at\":\"2026-03-02T00:00:00Z\",\"aggregate_id\":7,\"aggregate_type\":\"Feature\",\"causation_id\":\"{cause}\",\"correlation_id\":null,\"payload\":{{\"FeatureShipped\":{{\"feature_id\":7,\"slug\":\"f-7\"}}}}}}",
+            id = id,
+            cause = cause
+        );
+
+        let env: EventEnvelope = serde_json::from_str(&literal).unwrap();
+        assert_eq!(env.id, id);
+        assert_eq!(env.causation_id, Some(cause));
+        assert_eq!(env.correlation_id, None);
+        assert_eq!(env.aggregate_id, AggregateId(7));
+        assert_eq!(
+            env.occurred_at,
+            DateTime::parse_from_rfc3339("2026-03-02T00:00:00Z")
+                .unwrap()
+                .with_timezone(&Utc)
+        );
+        match &env.payload {
+            DomainEvent::FeatureShipped(shipped) => {
+                assert_eq!(shipped.feature_id, AggregateId(7));
+                assert_eq!(shipped.slug, "f-7");
+            }
+            other => panic!("unexpected payload: {other:?}"),
+        }
+        assert_eq!(env.payload.event_type(), "feature.shipped");
+        assert_eq!(env.aggregate_type, env.payload.aggregate_type());
+    }
 }

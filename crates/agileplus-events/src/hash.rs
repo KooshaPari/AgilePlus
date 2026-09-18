@@ -464,4 +464,76 @@ mod coverage_tests {
         events[1].hash[5] ^= 0x01;
         assert!(verify_chain(&events).is_err());
     }
+
+    #[test]
+    fn compute_hash_handles_multibyte_fields() {
+        let payload = serde_json::json!({"note": "café ☕"});
+        let first =
+            compute_hash(1, "Fëature", "créated", &payload, ts(), "álice", &[0u8; 32]).unwrap();
+        let second =
+            compute_hash(1, "Fëature", "créated", &payload, ts(), "álice", &[0u8; 32]).unwrap();
+        assert_eq!(first, second, "multi-byte inputs must hash deterministically");
+
+        let ascii = compute_hash(
+            1,
+            "Feature",
+            "created",
+            &serde_json::json!({"note": "cafe"}),
+            ts(),
+            "alice",
+            &[0u8; 32],
+        )
+        .unwrap();
+        assert_ne!(first, ascii, "accented and ASCII text must not collide");
+
+        let split_a =
+            compute_hash(1, "é", "ab", &serde_json::json!({}), ts(), "a", &[0u8; 32]).unwrap();
+        let split_b =
+            compute_hash(1, "éa", "b", &serde_json::json!({}), ts(), "a", &[0u8; 32]).unwrap();
+        assert_ne!(split_a, split_b, "field boundaries must stay unambiguous");
+    }
+
+    fn multibyte_chain() -> Vec<Event> {
+        let payloads = [
+            serde_json::json!({"title": "café ☕"}),
+            serde_json::json!({"title": "日本語"}),
+        ];
+        let mut events = Vec::new();
+        let mut prev = [0u8; 32];
+        for (index, payload) in payloads.into_iter().enumerate() {
+            let sequence = (index + 1) as i64;
+            let hash = compute_hash(1, "Fëaturé", "créé", &payload, ts(), "Álice", &prev).unwrap();
+            events.push(Event {
+                id: sequence,
+                entity_type: "Fëaturé".into(),
+                entity_id: 1,
+                event_type: "créé".into(),
+                payload,
+                actor: "Álice".into(),
+                timestamp: ts(),
+                prev_hash: prev,
+                hash,
+                sequence,
+            });
+            prev = hash;
+        }
+        events
+    }
+
+    #[test]
+    fn verify_chain_accepts_multibyte_fields() {
+        let events = multibyte_chain();
+        verify_chain(&events).unwrap();
+        assert_ne!(events[0].hash, events[1].hash);
+    }
+
+    #[test]
+    fn verify_chain_detects_tampered_multibyte_payload() {
+        let mut events = multibyte_chain();
+        events[1].payload = serde_json::json!({"title": "tampered"});
+        assert!(matches!(
+            verify_chain(&events),
+            Err(HashError::HashMismatch { sequence: 2 })
+        ));
+    }
 }

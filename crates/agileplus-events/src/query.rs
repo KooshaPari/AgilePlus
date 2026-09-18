@@ -354,4 +354,42 @@ mod coverage_tests {
         let got = EventQuery::new().start_time(from).end_time(to).filter(&sample());
         assert_eq!(got.len(), 2);
     }
+
+    fn event_at(seq: i64, ts: DateTime<Utc>) -> Event {
+        Event {
+            id: seq,
+            entity_type: "Feature".into(),
+            entity_id: 1,
+            event_type: "updated".into(),
+            payload: serde_json::json!({}),
+            actor: "alice".into(),
+            timestamp: ts,
+            prev_hash: [0u8; 32],
+            hash: [0u8; 32],
+            sequence: seq,
+        }
+    }
+
+    #[test]
+    fn time_bounds_include_events_exactly_on_the_boundary() {
+        let boundary = DateTime::parse_from_rfc3339("2026-01-01T00:00:00Z")
+            .unwrap()
+            .with_timezone(&Utc);
+        let events = vec![
+            event_at(1, boundary - Duration::seconds(1)),
+            event_at(2, boundary),
+            event_at(3, boundary + Duration::seconds(1)),
+        ];
+
+        let sequences = |query: &EventQuery| -> Vec<i64> {
+            query.filter(&events).iter().map(|e| e.sequence).collect()
+        };
+
+        assert_eq!(sequences(&EventQuery::new().start_time(boundary)), vec![2, 3]);
+        assert_eq!(sequences(&EventQuery::new().end_time(boundary)), vec![1, 2]);
+        assert_eq!(
+            sequences(&EventQuery::new().start_time(boundary).end_time(boundary)),
+            vec![2]
+        );
+    }
 }

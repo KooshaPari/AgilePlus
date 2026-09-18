@@ -425,4 +425,71 @@ mod coverage_tests {
         assert!(default_store.get_events("X", 1).await.unwrap().is_empty());
         assert!(new_store.get_events("X", 1).await.unwrap().is_empty());
     }
+
+    #[tokio::test]
+    async fn get_events_by_range_includes_both_boundary_timestamps() {
+        let store = InMemoryEventStore::new();
+        let from = chrono::DateTime::parse_from_rfc3339("2026-01-01T00:00:00Z")
+            .unwrap()
+            .with_timezone(&Utc);
+        let to = chrono::DateTime::parse_from_rfc3339("2026-01-02T00:00:00Z")
+            .unwrap()
+            .with_timezone(&Utc);
+
+        let mut too_early = ev("F", 1, "too_early");
+        too_early.timestamp = from - Duration::seconds(1);
+        let mut at_from = ev("F", 1, "at_from");
+        at_from.timestamp = from;
+        let mut at_to = ev("F", 1, "at_to");
+        at_to.timestamp = to;
+        let mut too_late = ev("F", 1, "too_late");
+        too_late.timestamp = to + Duration::seconds(1);
+
+        for event in [too_early, at_from, at_to, too_late] {
+            store.append(&event).await.unwrap();
+        }
+
+        let got = store.get_events_by_range("F", 1, from, to).await.unwrap();
+        let types: Vec<&str> = got.iter().map(|e| e.event_type.as_str()).collect();
+        assert_eq!(types, vec!["at_from", "at_to"]);
+    }
+
+    #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+    async fn concurrent_appends_assign_each_event_a_unique_sequence() {
+        use std::sync::Arc;
+
+        const TASKS: i64 = 8;
+        const PER_TASK: i64 = 5;
+
+        let store = Arc::new(InMemoryEventStore::new());
+        let mut handles = Vec::new();
+        for _ in 0..TASKS {
+            let store = Arc::clone(&store);
+            handles.push(tokio::spawn(async move {
+                let mut assigned = Vec::new();
+                for _ in 0..PER_TASK {
+                    assigned.push(store.append(&ev("F", 1, "a")).await.unwrap());
+                }
+                assigned
+            }));
+        }
+
+        let mut assigned: Vec<i64> = Vec::new();
+        for handle in handles {
+            assigned.extend(handle.await.unwrap());
+        }
+        assigned.sort_unstable();
+        assert_eq!(assigned, (1..=TASKS * PER_TASK).collect::<Vec<_>>());
+
+        let mut stored: Vec<i64> = store
+            .get_events("F", 1)
+            .await
+            .unwrap()
+            .iter()
+            .map(|e| e.sequence)
+            .collect();
+        stored.sort_unstable();
+        assert_eq!(stored, (1..=TASKS * PER_TASK).collect::<Vec<_>>());
+        assert_eq!(store.get_latest_sequence("F", 1).await.unwrap(), TASKS * PER_TASK);
+    }
 }

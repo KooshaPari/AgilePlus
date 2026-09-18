@@ -481,4 +481,146 @@ mod coverage_tests {
         assert_eq!(a.clone(), a);
         assert_ne!(a, DomainEvent::CycleStarted { cycle_id: 3, module_id: 2 });
     }
+
+    // ── typed variants not covered by `typed_events()` above ──────────────────
+
+    /// The five typed variants omitted from `typed_events()`: their
+    /// `event_type()` arms were never exercised.
+    fn remaining_typed_events() -> Vec<(DomainEvent, &'static str, &'static str)> {
+        use agileplus_domain::domain::epic::EpicStatus;
+        use agileplus_domain::domain::state_machine::FeatureState;
+        use agileplus_domain::domain::story::StoryStatus;
+        use agileplus_domain::domain::user::{UserRole, UserStatus};
+
+        vec![
+            (
+                DomainEvent::EpicStatusChanged(EpicStatusChanged {
+                    epic_id: 2.into(),
+                    project_id: 1.into(),
+                    from: EpicStatus::Backlog,
+                    to: EpicStatus::Active,
+                }),
+                "epic.status_changed",
+                "Epic",
+            ),
+            (
+                DomainEvent::StoryStatusChanged(StoryStatusChanged {
+                    story_id: 3.into(),
+                    epic_id: 2.into(),
+                    from: StoryStatus::Todo,
+                    to: StoryStatus::InProgress,
+                }),
+                "story.status_changed",
+                "Story",
+            ),
+            (
+                DomainEvent::UserRoleChanged(UserRoleChanged {
+                    user_id: 4.into(),
+                    old_role: UserRole::Member,
+                    new_role: UserRole::Admin,
+                }),
+                "user.role_changed",
+                "User",
+            ),
+            (
+                DomainEvent::UserStatusChanged(UserStatusChanged {
+                    user_id: 4.into(),
+                    from: UserStatus::Active,
+                    to: UserStatus::Suspended,
+                }),
+                "user.status_changed",
+                "User",
+            ),
+            (
+                DomainEvent::FeatureStateAdvanced(FeatureStateAdvanced {
+                    feature_id: 5.into(),
+                    from: FeatureState::Created,
+                    to: FeatureState::Specified,
+                }),
+                "feature.state_advanced",
+                "Feature",
+            ),
+        ]
+    }
+
+    #[test]
+    fn remaining_typed_variant_event_type_strings() {
+        let pairs: Vec<(&'static str, &'static str)> = remaining_typed_events()
+            .iter()
+            .map(|(ev, ty, _)| (ev.event_type(), *ty))
+            .collect();
+        assert_eq!(
+            pairs,
+            vec![
+                ("epic.status_changed", "epic.status_changed"),
+                ("story.status_changed", "story.status_changed"),
+                ("user.role_changed", "user.role_changed"),
+                ("user.status_changed", "user.status_changed"),
+                ("feature.state_advanced", "feature.state_advanced"),
+            ]
+        );
+        for (ev, _, aggregate) in remaining_typed_events() {
+            assert_eq!(ev.aggregate_type(), aggregate);
+        }
+    }
+
+    #[test]
+    fn remaining_typed_variants_survive_serde_round_trip() {
+        for (ev, _, _) in remaining_typed_events() {
+            let json = serde_json::to_string(&ev).unwrap();
+            let back: DomainEvent = serde_json::from_str(&json).unwrap();
+            assert_eq!(back, ev, "round-trip failed for {json}");
+        }
+    }
+
+    #[test]
+    fn bus_wire_format_is_internally_tagged_and_flattened() {
+        // Cross-repo routing contract: the bus enum is internally tagged with
+        // `kind` and typed newtype variants flatten their struct payload.
+        let legacy = DomainEvent::CycleStarted { cycle_id: 1, module_id: 2 };
+        assert_eq!(
+            serde_json::to_string(&legacy).unwrap(),
+            r#"{"kind":"cycle_started","cycle_id":1,"module_id":2}"#
+        );
+
+        let typed = DomainEvent::EpicCreated(EpicCreated {
+            epic_id: 2.into(),
+            project_id: 1.into(),
+            title: "e".into(),
+        });
+        assert_eq!(
+            serde_json::to_string(&typed).unwrap(),
+            r#"{"kind":"epic_created","epic_id":2,"project_id":1,"title":"e"}"#
+        );
+
+        let decoded: DomainEvent = serde_json::from_str(
+            r#"{"kind":"epic_created","epic_id":2,"project_id":1,"title":"e"}"#,
+        )
+        .unwrap();
+        assert_eq!(decoded, typed);
+    }
+
+    #[tokio::test]
+    async fn try_recv_reports_closed_after_bus_dropped() {
+        use tokio::sync::broadcast::error::RecvError;
+
+        let bus = EventBus::new(4);
+        let mut sub = bus.subscribe();
+        drop(bus);
+
+        let got = sub.try_recv().expect("closed, not empty");
+        assert!(matches!(got, Err(RecvError::Closed)));
+    }
+
+    #[tokio::test]
+    async fn try_recv_drains_published_events_in_order() {
+        let bus = EventBus::new(4);
+        let mut sub = bus.subscribe();
+        bus.publish(DomainEvent::CycleEnded { cycle_id: 1 }).unwrap();
+        bus.publish(DomainEvent::CycleEnded { cycle_id: 2 }).unwrap();
+
+        assert_eq!(sub.try_recv().unwrap().unwrap(), DomainEvent::CycleEnded { cycle_id: 1 });
+        assert_eq!(sub.try_recv().unwrap().unwrap(), DomainEvent::CycleEnded { cycle_id: 2 });
+        assert!(sub.try_recv().is_none());
+    }
 }
