@@ -225,11 +225,22 @@ pub struct AgentSettingsForm {
     pub default_provider: String,
 }
 
-/// Form data for custom service endpoint addition (from HTML form POST).
-#[derive(Debug, Deserialize)]
+/// Form data for the connection-URL form on the services settings page.
+///
+/// Field names mirror `templates/pages/settings-services.html`. A blank field
+/// means "leave the default alone", so every value is optional.
+#[derive(Debug, Default, Deserialize)]
 pub struct ServiceSettingsForm {
-    pub names: Vec<String>,
-    pub endpoint_urls: Vec<String>,
+    #[serde(default)]
+    pub nats_url: Option<String>,
+    #[serde(default)]
+    pub neo4j_url: Option<String>,
+    #[serde(default)]
+    pub minio_url: Option<String>,
+    #[serde(default)]
+    pub postgres_url: Option<String>,
+    #[serde(default)]
+    pub dragonfly_url: Option<String>,
 }
 
 /// Form data for dashboard UI settings (from HTML form POST).
@@ -645,23 +656,38 @@ pub async fn save_services_settings(axum::Form(form): axum::Form<ServiceSettings
         }
     };
 
-    let mut services = Vec::new();
-    for (name, url) in form.names.into_iter().zip(form.endpoint_urls) {
-        if !name.trim().is_empty() {
-            services.push(ServiceConfig {
-                name: name.trim().to_string(),
-                endpoint_url: url.trim().to_string(),
+    let submitted = [
+        ("NATS", form.nats_url),
+        ("Neo4j", form.neo4j_url),
+        ("MinIO", form.minio_url),
+        ("Postgres", form.postgres_url),
+        ("Dragonfly", form.dragonfly_url),
+    ];
+
+    let services = config.services.get_or_insert_with(Vec::new);
+    let mut updated = 0usize;
+    for (name, url) in submitted {
+        // A blank field means "keep the default", so it is not a save.
+        let Some(url) = url.map(|url| url.trim().to_string()).filter(|url| !url.is_empty()) else {
+            continue;
+        };
+        match services.iter_mut().find(|service| service.name == name) {
+            Some(entry) => entry.endpoint_url = url,
+            None => services.push(ServiceConfig {
+                name: name.to_string(),
+                endpoint_url: url,
                 enabled: default_service_enabled(),
                 timeout_ms: None,
                 max_retries: None,
-            });
+            }),
         }
+        updated += 1;
     }
-    config.services = Some(services);
+    config.services = Some(std::mem::take(services));
 
     match config.save() {
         Ok(_) => render(ToastPartial {
-            message: "Service settings saved successfully".to_string(),
+            message: format!("Saved {updated} service endpoint(s)"),
             success: true,
         }),
         Err(e) => render(ToastPartial {
