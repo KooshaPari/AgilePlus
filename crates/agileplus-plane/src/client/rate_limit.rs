@@ -101,3 +101,24 @@ mod extra_tests {
         assert!(!format!("{bucket:?}").is_empty());
     }
 }
+
+/// A bucket configured with `refill_rate == 0.0` can never earn a token back.
+///
+/// That means `time_until_available` has to divide by zero, and
+/// `Duration::from_secs_f64(inf)` panics. The test pins today's behaviour so
+/// that fixing it is a deliberate decision rather than an accidental one; no
+/// production caller currently constructs a zero-rate bucket.
+#[cfg(test)]
+mod zero_refill_edge_case {
+    use super::*;
+
+    #[test]
+    #[should_panic(expected = "cannot convert float seconds to Duration")]
+    fn time_until_available_panics_when_exhausted_with_zero_refill_rate() {
+        let mut bucket = TokenBucket::new(1.0, 0.0);
+        assert!(bucket.try_acquire());
+        assert!(bucket.tokens < 1.0, "the bucket is now empty");
+
+        let _ = bucket.time_until_available();
+    }
+}

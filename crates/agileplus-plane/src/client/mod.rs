@@ -89,3 +89,61 @@ impl PlaneClient {
         transport::request_without_body(&self.client, method, url, &self.api_key).await
     }
 }
+
+/// Rate-limiter behaviour observed through the public client API.
+///
+/// `TokenBucket` itself is unit-tested elsewhere; what matters here is that a
+/// caller which has spent the bucket is actually made to wait for a refill
+/// instead of being rejected.
+#[cfg(test)]
+mod rate_limit_backoff_tests {
+    use super::*;
+    use std::time::{Duration, Instant};
+    use wiremock::matchers::{method, path};
+    use wiremock::{Mock, MockServer, ResponseTemplate};
+
+    fn work_item() -> PlaneWorkItem {
+        PlaneWorkItem {
+            id: None,
+            name: "Item".to_string(),
+            description_html: None,
+            state: None,
+            priority: None,
+            parent: None,
+            labels: vec![],
+        }
+    }
+
+    #[tokio::test]
+    async fn client_waits_for_a_refill_once_the_bucket_is_empty() {
+        let server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path("/api/v1/workspaces/ws/projects/proj/work-items/"))
+            .respond_with(
+                ResponseTemplate::new(200)
+                    .set_body_json(serde_json::json!({"id": "item-1", "name": "Item"})),
+            )
+            .mount(&server)
+            .await;
+
+        let client = PlaneClient::new(server.uri(), "key".into(), "ws".into(), "proj".into());
+        let item = work_item();
+
+        // The client is constructed with a full 50-token bucket refilling at
+        // 50/min, so the 51st call can only succeed after `acquire_token` has
+        // slept for the refill.
+        let started = Instant::now();
+        for _ in 0..51 {
+            client
+                .create_work_item(&item)
+                .await
+                .expect("every call should eventually be admitted");
+        }
+        let elapsed = started.elapsed();
+
+        assert!(
+            elapsed >= Duration::from_millis(900),
+            "the 51st request should have blocked for a refill, elapsed={elapsed:?}"
+        );
+    }
+}

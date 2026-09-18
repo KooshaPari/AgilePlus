@@ -357,3 +357,298 @@ mod tests {
         assert!(cloned.dry_run);
     }
 }
+
+/// Behaviour of the background tick loop: lifecycle transitions (`running`),
+/// per-tick counters, and failure handling.
+#[cfg(test)]
+mod loop_tests {
+    // The environment lock is deliberately held across `await` points: these are
+    // current-thread `#[tokio::test]`s, so there is no scheduler on which the
+    // guard could deadlock, and dropping it early would let another test rewrite
+    // PLANE_* halfway through a tick.
+    #![allow(clippy::await_holding_lock)]
+
+    use super::*;
+    use crate::mock_storage::MockStoragePort;
+    use crate::test_env::lock_env;
+    use agileplus_domain::domain::cycle::{Cycle, CycleState};
+    use agileplus_domain::domain::module::Module;
+    use chrono::NaiveDate;
+    use std::env;
+
+    /// A port that refuses connections immediately, so outbound sync calls fail
+    /// without touching the real Plane.so API.
+    const DEAD_ENDPOINT: &str = "http://127.0.0.1:1";
+
+    fn clear_plane_env() {
+        unsafe {
+            env::remove_var("PLANE_API_KEY");
+            env::remove_var("PLANE_WORKSPACE");
+            env::remove_var("PLANE_PROJECT");
+            env::remove_var("PLANE_API_URL");
+        }
+    }
+
+    fn point_plane_at_dead_endpoint() {
+        unsafe {
+            env::set_var("PLANE_API_KEY", "test-key");
+            env::set_var("PLANE_WORKSPACE", "test-ws");
+            env::set_var("PLANE_PROJECT", "test-proj");
+            env::set_var("PLANE_API_URL", DEAD_ENDPOINT);
+        }
+    }
+
+    fn module(name: &str) -> Module {
+        Module::new(name, None)
+    }
+
+    fn cycle(name: &str) -> Cycle {
+        Cycle {
+            id: 0,
+            name: name.to_string(),
+            description: None,
+            state: CycleState::Active,
+            start_date: NaiveDate::from_ymd_opt(2026, 1, 1).unwrap(),
+            end_date: NaiveDate::from_ymd_opt(2026, 1, 14).unwrap(),
+            module_scope_id: None,
+            created_at: chrono::Utc::now(),
+            updated_at: chrono::Utc::now(),
+        }
+    }
+
+    fn cfg(interval_ms: u64, batch_size: usize, dry_run: bool) -> PlaneDaemonConfig {
+        PlaneDaemonConfig {
+            interval: Duration::from_millis(interval_ms),
+            batch_size,
+            dry_run,
+        }
+    }
+
+    /// Read daemon state until `pred` holds or the deadline expires.
+    async fn wait_for<F>(daemon: &PlaneSyncDaemon, pred: F) -> SyncState
+    where
+        F: Fn(&SyncState) -> bool,
+    {
+        let deadline = Instant::now() + Duration::from_secs(5);
+        loop {
+            let state = daemon.state().await;
+            if pred(&state) || Instant::now() >= deadline {
+                return state;
+            }
+            tokio::time::sleep(Duration::from_millis(5)).await;
+        }
+    }
+
+    // -- lifecycle: running flag transitions --
+
+    #[tokio::test]
+    async fn spawn_reports_running_and_exposes_config() {
+        let daemon = PlaneSyncDaemon::spawn(Arc::new(MockStoragePort::new()), cfg(60_000, 7, true));
+
+        let state = daemon.state().await;
+        assert!(state.running, "a freshly spawned daemon is running");
+        assert_eq!(state.modules_synced, 0);
+
+        let snapshot = daemon.config();
+        assert_eq!(snapshot.batch_size, 7);
+        assert_eq!(snapshot.interval, Duration::from_millis(60_000));
+        assert!(snapshot.dry_run);
+
+        daemon.stop().await;
+    }
+
+    #[tokio::test]
+    async fn stop_clears_running_flag_and_is_idempotent() {
+        let daemon = PlaneSyncDaemon::spawn(Arc::new(MockStoragePort::new()), cfg(60_000, 25, true));
+        assert!(daemon.state().await.running);
+
+        daemon.stop().await;
+        let state = wait_for(&daemon, |s| !s.running).await;
+        assert!(!state.running, "stop() must mark the loop as no longer running");
+
+        // Documented as safe to call repeatedly; a second call must not hang.
+        daemon.stop().await;
+        assert!(!daemon.state().await.running);
+    }
+
+    #[tokio::test]
+    async fn pause_stops_the_loop() {
+        let daemon = PlaneSyncDaemon::spawn(Arc::new(MockStoragePort::new()), cfg(5, 25, true));
+        assert!(daemon.state().await.running);
+
+        daemon.pause().await;
+        let state = wait_for(&daemon, |s| !s.running).await;
+        assert!(!state.running, "pause() must let the loop exit");
+    }
+
+    #[tokio::test]
+    async fn resume_cannot_revive_an_exited_loop() {
+        let daemon = PlaneSyncDaemon::spawn(Arc::new(MockStoragePort::new()), cfg(5, 25, true));
+        daemon.pause().await;
+
+        let stopped = wait_for(&daemon, |s| !s.running).await;
+        assert!(!stopped.running);
+        let last_tick = stopped.last_tick_at;
+
+        // `resume` only clears the cancel flag; the task is already gone, so a
+        // fresh daemon is required for full resume semantics (see the doc
+        // comment on `PlaneSyncDaemon::resume`).
+        daemon.resume().await;
+        tokio::time::sleep(Duration::from_millis(50)).await;
+
+        let after = daemon.state().await;
+        assert!(!after.running, "resume() must not report a dead loop as running");
+        assert_eq!(
+            after.last_tick_at, last_tick,
+            "an exited loop must not produce further ticks"
+        );
+    }
+
+    #[tokio::test]
+    async fn sync_now_and_start_keep_the_daemon_running() {
+        let daemon = PlaneSyncDaemon::spawn(Arc::new(MockStoragePort::new()), cfg(60_000, 25, true));
+
+        daemon.sync_now().await;
+        daemon.start().await;
+
+        let state = daemon.state().await;
+        assert!(state.running);
+        assert_eq!(state.errors, 0, "neither call performs sync work");
+
+        daemon.stop().await;
+    }
+
+    // -- tick behaviour against a working store --
+
+    #[tokio::test]
+    async fn dry_run_tick_stamps_state_without_touching_storage() {
+        let store = MockStoragePort::new();
+        store.create_module(&module("A")).await.unwrap();
+        store.create_cycle(&cycle("Sprint")).await.unwrap();
+
+        let daemon = PlaneSyncDaemon::spawn(Arc::new(store), cfg(60_000, 25, true));
+        let state = wait_for(&daemon, |s| s.last_tick_at.is_some()).await;
+
+        assert!(state.last_tick_at.is_some(), "dry-run tick still stamps the tick time");
+        assert_eq!(
+            (state.modules_synced, state.cycles_synced, state.errors),
+            (0, 0, 0),
+            "dry-run ticks must not report synced entities"
+        );
+
+        daemon.stop().await;
+    }
+
+    #[tokio::test]
+    async fn tick_counts_every_module_and_cycle_when_plane_is_unconfigured() {
+        let _env = lock_env();
+        clear_plane_env();
+
+        let store = MockStoragePort::new();
+        store.create_module(&module("A")).await.unwrap();
+        store.create_module(&module("B")).await.unwrap();
+        store.create_cycle(&cycle("Sprint")).await.unwrap();
+
+        let daemon = PlaneSyncDaemon::spawn(Arc::new(store), cfg(60_000, 25, false));
+        let state = wait_for(&daemon, |s| s.last_tick_at.is_some()).await;
+
+        assert_eq!(state.modules_synced, 2);
+        assert_eq!(state.cycles_synced, 1);
+        assert_eq!(state.errors, 0);
+
+        daemon.stop().await;
+        clear_plane_env();
+    }
+
+    #[tokio::test]
+    async fn tick_honours_batch_size() {
+        let _env = lock_env();
+        clear_plane_env();
+
+        let store = MockStoragePort::new();
+        for name in ["A", "B", "C"] {
+            store.create_module(&module(name)).await.unwrap();
+        }
+
+        let daemon = PlaneSyncDaemon::spawn(Arc::new(store), cfg(60_000, 1, false));
+        let state = wait_for(&daemon, |s| s.last_tick_at.is_some()).await;
+
+        assert_eq!(
+            state.modules_synced, 1,
+            "only batch_size modules may be processed per tick"
+        );
+        assert_eq!(state.errors, 0);
+
+        daemon.stop().await;
+        clear_plane_env();
+    }
+
+    #[tokio::test]
+    async fn tick_counts_push_failures_as_errors() {
+        let _env = lock_env();
+        point_plane_at_dead_endpoint();
+
+        let store = MockStoragePort::new();
+        store.create_module(&module("A")).await.unwrap();
+        store.create_cycle(&cycle("Sprint")).await.unwrap();
+
+        let daemon = PlaneSyncDaemon::spawn(Arc::new(store), cfg(60_000, 25, false));
+        // Wait for the whole tick, not just the first failure: the error counter
+        // is only final once the cycle pass has finished.
+        let state = wait_for(&daemon, |s| s.last_tick_at.is_some()).await;
+
+        assert_eq!(state.errors, 2, "both the module and the cycle push must fail");
+        assert_eq!((state.modules_synced, state.cycles_synced), (0, 0));
+        assert!(state.running, "a failing push must not kill the daemon");
+
+        daemon.stop().await;
+        clear_plane_env();
+    }
+
+    // -- tick behaviour when the store itself fails --
+
+    #[tokio::test]
+    async fn failed_tick_aborts_before_stamping_state() {
+        let store = MockStoragePort::new().failing_list_modules();
+        let state = Arc::new(Mutex::new(SyncState {
+            running: true,
+            ..Default::default()
+        }));
+
+        let err = run_tick(&store, &cfg(60_000, 25, false), &state)
+            .await
+            .unwrap_err();
+        assert!(
+            err.to_string().contains("list_root_modules failed"),
+            "unexpected error: {err}"
+        );
+
+        let snapshot = state.lock().await.clone();
+        assert!(
+            snapshot.last_tick_at.is_none(),
+            "an aborted tick must not stamp last_tick_at"
+        );
+        assert_eq!(
+            snapshot.errors, 0,
+            "the tick itself does not own the error counter"
+        );
+    }
+
+    #[tokio::test]
+    async fn loop_survives_repeated_tick_failures() {
+        let store = Arc::new(MockStoragePort::new().failing_list_modules());
+        let daemon = PlaneSyncDaemon::spawn(store, cfg(10, 25, false));
+
+        let state = wait_for(&daemon, |s| s.errors >= 2).await;
+        assert!(state.errors >= 2, "the loop must count failing ticks");
+        assert!(state.running, "the loop must keep running after a failed tick");
+        assert!(
+            state.last_tick_at.is_none(),
+            "failed ticks never reach the stamping code"
+        );
+
+        daemon.stop().await;
+        let stopped = wait_for(&daemon, |s| !s.running).await;
+        assert!(!stopped.running);
+    }
+}

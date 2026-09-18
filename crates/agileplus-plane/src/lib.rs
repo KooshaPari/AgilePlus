@@ -44,3 +44,26 @@ pub use webhook::{
     PlaneWebhookPayload, handle_plane_webhook, parse_webhook, verify_hmac_signature,
     verify_webhook_signature,
 };
+
+/// Test-only helpers shared by the crate's unit tests.
+#[cfg(test)]
+pub(crate) mod test_env {
+    use std::sync::{Mutex, MutexGuard};
+
+    /// Serializes every unit test that mutates process-global `PLANE_*`
+    /// environment variables.
+    ///
+    /// `set_var`/`remove_var` are process-global, and cargo runs the tests of a
+    /// single binary on parallel threads, so tests that read `PLANE_*` (e.g.
+    /// `runtime::plane_client_from_env`) will observe whatever a concurrent test
+    /// just wrote unless they all take this lock.
+    static ENV_MUTEX: Mutex<()> = Mutex::new(());
+
+    /// Acquire the environment lock.
+    ///
+    /// Poisoning is ignored on purpose: one failing test must not turn every
+    /// other environment test into a spurious failure.
+    pub(crate) fn lock_env() -> MutexGuard<'static, ()> {
+        ENV_MUTEX.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
+    }
+}

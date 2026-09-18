@@ -1,6 +1,7 @@
 //! Minimal mock StoragePort for testing outbound sync functions.
 
 use std::collections::HashMap;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
 
 use async_trait::async_trait;
@@ -25,6 +26,9 @@ pub struct MockStoragePort {
     pub sync_mappings: Mutex<HashMap<(String, i64), SyncMapping>>,
     pub modules: Mutex<Vec<Module>>,
     pub cycles: Mutex<Vec<Cycle>>,
+    /// When set, `list_root_modules` fails. Lets tests drive the daemon's
+    /// tick-failure path without a bespoke `StoragePort` implementation.
+    pub fail_list_modules: AtomicBool,
 }
 
 impl MockStoragePort {
@@ -40,6 +44,12 @@ impl MockStoragePort {
                 (entity_type.to_string(), entity_id),
                 SyncMapping::new(entity_type, entity_id, plane_id, ""),
             );
+        self
+    }
+
+    /// Make every subsequent `list_root_modules` call fail.
+    pub fn failing_list_modules(self) -> Self {
+        self.fail_list_modules.store(true, Ordering::SeqCst);
         self
     }
 }
@@ -98,6 +108,11 @@ impl StoragePort for MockStoragePort {
     async fn update_module(&self, _: i64, _: &str, _: Option<&str>) -> Result<(), DomainError> { Ok(()) }
     async fn delete_module(&self, _: i64) -> Result<(), DomainError> { Ok(()) }
     async fn list_root_modules(&self) -> Result<Vec<Module>, DomainError> {
+        if self.fail_list_modules.load(Ordering::SeqCst) {
+            return Err(DomainError::Storage(
+                "mock: list_root_modules failed".to_string(),
+            ));
+        }
         Ok(self.modules.lock().unwrap().clone())
     }
     async fn list_child_modules(&self, _: i64) -> Result<Vec<Module>, DomainError> { Ok(vec![]) }
@@ -333,5 +348,104 @@ mod tests {
         assert!(store.list_all_features().await.unwrap().is_empty());
         assert!(store.list_all_projects().await.unwrap().is_empty());
         assert!(store.list_all_users().await.unwrap().is_empty());
+    }
+
+    // -- stub contract for the read/query half of StoragePort --
+    //
+    // The outbound and daemon tests depend on these neutral defaults, so they
+    // are pinned here rather than discovered through an unrelated failure.
+
+    #[tokio::test]
+    async fn feature_queries_return_neutral_defaults() {
+        use agileplus_domain::domain::state_machine::FeatureState;
+
+        let store = MockStoragePort::new();
+        assert!(store.get_feature_by_slug("nope").await.unwrap().is_none());
+        assert!(store.get_feature_by_id(1).await.unwrap().is_none());
+        assert!(store.list_features_by_state(FeatureState::Created).await.unwrap().is_empty());
+        store.update_feature_state(1, FeatureState::Created).await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn work_package_queries_return_neutral_defaults() {
+        use agileplus_domain::domain::work_package::WpState;
+
+        let store = MockStoragePort::new();
+        assert!(store.get_work_package(1).await.unwrap().is_none());
+        assert!(store.list_wps_by_feature(1).await.unwrap().is_empty());
+        assert!(store.get_wp_dependencies(1).await.unwrap().is_empty());
+        assert!(store.get_ready_wps(1).await.unwrap().is_empty());
+        store.update_wp_state(1, WpState::Planned).await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn audit_evidence_and_policy_queries_return_neutral_defaults() {
+        let entry = AuditEntry {
+            id: 0,
+            feature_id: 1,
+            wp_id: None,
+            timestamp: chrono::Utc::now(),
+            actor: "test".to_string(),
+            transition: "created".to_string(),
+            evidence_refs: vec![],
+            prev_hash: [0u8; 32],
+            hash: [0u8; 32],
+            event_id: None,
+            archived_to: None,
+        };
+
+        let store = MockStoragePort::new();
+        assert_eq!(store.append_audit_entry(&entry).await.unwrap(), 1);
+        assert!(store.get_audit_trail(1).await.unwrap().is_empty());
+        assert!(store.get_latest_audit_entry(1).await.unwrap().is_none());
+        assert_eq!(store.get_evidence_by_wp(1).await.unwrap().len(), 0);
+        assert_eq!(store.get_evidence_by_fr("FR-1").await.unwrap().len(), 0);
+        assert!(store.list_active_policies().await.unwrap().is_empty());
+        assert!(store.get_metrics_by_feature(1).await.unwrap().is_empty());
+    }
+
+    #[tokio::test]
+    async fn governance_queries_return_none() {
+        let store = MockStoragePort::new();
+        assert!(store.get_governance_contract(1, 1).await.unwrap().is_none());
+        assert!(store.get_latest_governance_contract(1).await.unwrap().is_none());
+    }
+
+    #[tokio::test]
+    async fn module_child_queries_return_neutral_defaults() {
+        let store = MockStoragePort::new();
+        assert!(store.get_module_by_slug("nope").await.unwrap().is_none());
+        assert!(store.list_child_modules(1).await.unwrap().is_empty());
+        assert!(store.get_module_with_features(1).await.unwrap().is_none());
+        store.tag_feature_to_module(&ModuleFeatureTag::new(1, 2)).await.unwrap();
+        store.untag_feature_from_module(1, 2).await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn cycle_queries_return_neutral_defaults() {
+        let store = MockStoragePort::new();
+        assert!(store.get_cycle_with_features(1).await.unwrap().is_none());
+        assert!(store.list_cycles_by_module(1).await.unwrap().is_empty());
+        assert!(store.list_cycles_by_state(CycleState::Active).await.unwrap().is_empty());
+        store.update_cycle_state(1, CycleState::Review).await.unwrap();
+        store.add_feature_to_cycle(&CycleFeature::new(1, 2)).await.unwrap();
+        store.remove_feature_from_cycle(1, 2).await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn project_epic_story_and_user_queries_return_neutral_defaults() {
+        use agileplus_domain::domain::epic::EpicStatus;
+        use agileplus_domain::domain::story::StoryStatus;
+
+        let store = MockStoragePort::new();
+        assert!(store.get_project_by_slug("nope").await.unwrap().is_none());
+        assert!(store.get_epic(1).await.unwrap().is_none());
+        assert!(store.list_epics_by_project(1).await.unwrap().is_empty());
+        store.update_epic_status(1, EpicStatus::Active).await.unwrap();
+        assert!(store.get_story(1).await.unwrap().is_none());
+        assert!(store.list_stories_by_epic(1).await.unwrap().is_empty());
+        store.update_story_status(1, StoryStatus::Todo).await.unwrap();
+        assert!(store.get_user(1).await.unwrap().is_none());
+        assert!(store.get_user_by_email("nobody@example.com").await.unwrap().is_none());
     }
 }

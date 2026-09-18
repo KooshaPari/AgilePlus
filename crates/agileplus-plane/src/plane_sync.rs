@@ -305,6 +305,9 @@ mod tests {
 
     #[tokio::test]
     async fn from_env_reads_configuration() {
+        // PLANE_WORKSPACE is also read by runtime::plane_client_from_env, so this
+        // test must not run while another test is rewriting the environment.
+        let _env = crate::test_env::lock_env();
         let old_base = env::var("PLANE_BASE_URL").ok();
         let old_workspace = env::var("PLANE_WORKSPACE").ok();
         let old_token = env::var("PLANE_TOKEN").ok();

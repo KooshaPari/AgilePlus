@@ -426,3 +426,96 @@ mod tests {
         assert_eq!(task.content_hash, Some("abc123".into()));
     }
 }
+
+/// Persistence resilience: the queue file is a cache of pending work, so a
+/// single unreadable row must be dropped rather than failing the whole load.
+#[cfg(test)]
+mod store_resilience_tests {
+    use super::*;
+
+    /// Insert a row directly so malformed values can be injected.
+    fn insert_raw_row(store: &SyncQueueStore, id: i64, kind: &str, next: &str, created: &str) {
+        store
+            .conn
+            .execute(
+                "INSERT INTO sync_queue (id, kind, payload, attempt, next_attempt_at, created_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+                rusqlite::params![id, kind, "{}", 0i32, next, created],
+            )
+            .unwrap();
+    }
+
+    const GOOD_TIME: &str = "2026-01-01T00:00:00Z";
+
+    #[test]
+    fn load_all_skips_rows_with_an_unknown_op_kind() {
+        let store = SyncQueueStore::open_in_memory().unwrap();
+        insert_raw_row(&store, 1, "\"create_issue\"", GOOD_TIME, GOOD_TIME);
+        insert_raw_row(&store, 2, "\"explode\"", GOOD_TIME, GOOD_TIME);
+
+        let items = store.load_all().unwrap();
+
+        assert_eq!(items.len(), 1, "a corrupt row must not invalidate the queue");
+        assert_eq!(items[0].id, 1);
+        assert_eq!(items[0].kind, SyncOpKind::CreateIssue);
+    }
+
+    #[test]
+    fn load_all_skips_rows_with_malformed_timestamps() {
+        let store = SyncQueueStore::open_in_memory().unwrap();
+        insert_raw_row(&store, 1, "\"update_issue\"", GOOD_TIME, GOOD_TIME);
+        insert_raw_row(&store, 2, "\"update_issue\"", "not-a-timestamp", GOOD_TIME);
+        insert_raw_row(&store, 3, "\"update_issue\"", GOOD_TIME, "also-not-a-timestamp");
+
+        let items = store.load_all().unwrap();
+
+        assert_eq!(items.len(), 1);
+        assert_eq!(items[0].id, 1);
+    }
+
+    #[test]
+    fn load_all_preserves_attempt_and_kind_of_readable_rows() {
+        let store = SyncQueueStore::open_in_memory().unwrap();
+        store
+            .conn
+            .execute(
+                "INSERT INTO sync_queue (id, kind, payload, attempt, next_attempt_at, created_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+                rusqlite::params![7i64, "\"delete_issue\"", "{\"x\":1}", 2i32, GOOD_TIME, GOOD_TIME],
+            )
+            .unwrap();
+
+        let items = store.load_all().unwrap();
+
+        assert_eq!(items.len(), 1);
+        assert_eq!(items[0].id, 7);
+        assert_eq!(items[0].kind, SyncOpKind::DeleteIssue);
+        assert_eq!(items[0].payload, "{\"x\":1}");
+        assert_eq!(items[0].attempt, 2);
+    }
+
+    #[test]
+    fn save_all_then_load_all_is_a_lossless_restart() {
+        let store = SyncQueueStore::open_in_memory().unwrap();
+        let mut queue = SyncQueue::new();
+        queue
+            .enqueue(SyncOpKind::CreateIssue, r#"{"n":1}"#.into())
+            .unwrap();
+        queue
+            .enqueue(SyncOpKind::CreateLabel, r#"{"n":2}"#.into())
+            .unwrap();
+
+        store.save_all(&queue.drain()).unwrap();
+        let reloaded = store.load_all().unwrap();
+        assert_eq!(reloaded.len(), 2);
+
+        let mut restored = SyncQueue::new();
+        restored.reload(reloaded);
+        assert_eq!(restored.len(), 2);
+
+        // `load_all` makes no ordering promise, so compare as a set.
+        let mut kinds: Vec<SyncOpKind> = restored.drain().into_iter().map(|i| i.kind).collect();
+        kinds.sort_by_key(|k| format!("{k:?}"));
+        assert_eq!(kinds, vec![SyncOpKind::CreateIssue, SyncOpKind::CreateLabel]);
+    }
+}
