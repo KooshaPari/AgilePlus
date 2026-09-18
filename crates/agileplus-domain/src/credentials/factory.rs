@@ -119,9 +119,25 @@ impl CredentialStore for KeychainThenEncryptedFile {
 mod tests {
     use super::*;
     use crate::credentials::keys;
+    use crate::test_support::env_lock;
+    use std::path::Path;
+
+    /// Point `HOME` at `home` for the duration of a closure, restoring the
+    /// previous value afterwards. The caller must hold [`env_lock`].
+    fn with_home<T>(home: &Path, operation: impl FnOnce() -> T) -> T {
+        let previous_home = std::env::var_os("HOME");
+        unsafe { std::env::set_var("HOME", home) };
+        let result = operation();
+        match previous_home {
+            Some(value) => unsafe { std::env::set_var("HOME", value) },
+            None => unsafe { std::env::remove_var("HOME") },
+        }
+        result
+    }
 
     #[test]
     fn configured_file_backend_uses_exact_path_and_survives_reload() {
+        let _guard = env_lock();
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("configured.enc");
         let home = dir.path().join("home");
@@ -134,28 +150,31 @@ mod tests {
             ),
         )
         .unwrap();
-        let previous_home = std::env::var_os("HOME");
-        unsafe { std::env::set_var("HOME", &home) };
-        unsafe { std::env::set_var("AGILEPLUS_CREDENTIAL_KEY", "test-key") };
-        let config = AppConfig::load().unwrap();
-        let store = create_credential_store(&config).unwrap();
-        store
-            .set("agileplus", keys::API_KEYS, "sha256:test")
-            .unwrap();
-        assert!(path.is_file());
-        assert_eq!(
-            store.get("agileplus", keys::API_KEYS).unwrap(),
-            "sha256:test"
-        );
-        unsafe { std::env::remove_var("AGILEPLUS_CREDENTIAL_KEY") };
-        match previous_home {
-            Some(value) => unsafe { std::env::set_var("HOME", value) },
-            None => unsafe { std::env::remove_var("HOME") },
+        let previous_key = std::env::var_os("AGILEPLUS_CREDENTIAL_KEY");
+        let loaded = with_home(&home, || {
+            unsafe { std::env::set_var("AGILEPLUS_CREDENTIAL_KEY", "test-key") };
+            let config = AppConfig::load().unwrap();
+            let store = create_credential_store(&config).unwrap();
+            store
+                .set("agileplus", keys::API_KEYS, "sha256:test")
+                .unwrap();
+            (
+                store.get("agileplus", keys::API_KEYS).unwrap(),
+                config.credentials.file_path.clone(),
+            )
+        });
+        match previous_key {
+            Some(value) => unsafe { std::env::set_var("AGILEPLUS_CREDENTIAL_KEY", value) },
+            None => unsafe { std::env::remove_var("AGILEPLUS_CREDENTIAL_KEY") },
         }
+        assert_eq!(loaded.0, "sha256:test");
+        assert_eq!(loaded.1, path);
+        assert!(path.is_file());
     }
 
     #[test]
     fn malformed_app_config_fails_closed() {
+        let _guard = env_lock();
         let dir = tempfile::tempdir().unwrap();
         let home = dir.path().join("home");
         std::fs::create_dir_all(home.join(".agileplus")).unwrap();
@@ -164,12 +183,57 @@ mod tests {
             "[credentials\nbackend = \"file\"",
         )
         .unwrap();
-        let previous_home = std::env::var_os("HOME");
-        unsafe { std::env::set_var("HOME", &home) };
-        assert!(AppConfig::load().is_err());
-        match previous_home {
-            Some(value) => unsafe { std::env::set_var("HOME", value) },
-            None => unsafe { std::env::remove_var("HOME") },
+        let error = with_home(&home, AppConfig::load).unwrap_err();
+        assert!(matches!(error, crate::config::ConfigError::TomlParse(_)));
+    }
+
+    #[test]
+    fn file_backend_without_encryption_key_fails_closed() {
+        let _guard = env_lock();
+        let dir = tempfile::tempdir().unwrap();
+        let config = AppConfig {
+            credentials: crate::config::CredentialConfig {
+                backend: CredentialBackend::File,
+                file_path: dir.path().join("creds.enc"),
+            },
+            ..AppConfig::default()
+        };
+        let previous_key = std::env::var_os("AGILEPLUS_CREDENTIAL_KEY");
+        unsafe { std::env::remove_var("AGILEPLUS_CREDENTIAL_KEY") };
+        let result = create_credential_store(&config);
+        match previous_key {
+            Some(value) => unsafe { std::env::set_var("AGILEPLUS_CREDENTIAL_KEY", value) },
+            None => unsafe { std::env::remove_var("AGILEPLUS_CREDENTIAL_KEY") },
         }
+        assert!(matches!(
+            result.err(),
+            Some(CredentialError::MissingEncryptionKey)
+        ));
+    }
+
+    #[cfg(feature = "keychain")]
+    #[test]
+    fn auto_backend_prefers_keychain_without_touching_the_file() {
+        let _guard = env_lock();
+        let dir = tempfile::tempdir().unwrap();
+        let file_path = dir.path().join("creds.enc");
+        let config = AppConfig {
+            credentials: crate::config::CredentialConfig {
+                backend: CredentialBackend::Auto,
+                file_path: file_path.clone(),
+            },
+            ..AppConfig::default()
+        };
+        let previous_key = std::env::var_os("AGILEPLUS_CREDENTIAL_KEY");
+        unsafe { std::env::remove_var("AGILEPLUS_CREDENTIAL_KEY") };
+        let result = create_credential_store(&config);
+        match previous_key {
+            Some(value) => unsafe { std::env::set_var("AGILEPLUS_CREDENTIAL_KEY", value) },
+            None => unsafe { std::env::remove_var("AGILEPLUS_CREDENTIAL_KEY") },
+        }
+        // Construction must not need the encryption key: the encrypted file is
+        // only opened lazily when the keychain is unavailable.
+        assert!(result.is_ok());
+        assert!(!file_path.exists());
     }
 }

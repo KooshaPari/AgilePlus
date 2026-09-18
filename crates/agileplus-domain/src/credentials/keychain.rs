@@ -63,3 +63,46 @@ impl CredentialStore for KeychainCredentialStore {
         Ok(Vec::new())
     }
 }
+
+// These tests deliberately never call `get`/`set`/`delete`: those reach the
+// real OS keychain of whatever machine runs the suite. Only the pure
+// name-mapping behavior and the non-enumerable `list_keys` contract are
+// asserted here.
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn entry_service_prefixes_the_requested_service() {
+        let store = KeychainCredentialStore::new();
+
+        assert_eq!(store.entry_service("github"), "agileplus-github");
+        assert_eq!(store.entry_service("plane"), "agileplus-plane");
+        assert_eq!(store.entry_service(""), "agileplus-");
+    }
+
+    #[test]
+    fn distinct_services_never_collide() {
+        let store = KeychainCredentialStore::new();
+
+        assert_ne!(store.entry_service("a"), store.entry_service("b"));
+        assert_ne!(store.entry_service("a-b"), store.entry_service("ab"));
+    }
+
+    #[test]
+    fn default_matches_new() {
+        assert_eq!(
+            KeychainCredentialStore::default().entry_service("github"),
+            KeychainCredentialStore::new().entry_service("github")
+        );
+    }
+
+    #[test]
+    fn list_keys_does_not_enumerate_the_os_keychain() {
+        let store = KeychainCredentialStore::new();
+
+        // The OS keychain has no enumeration API, so the port reports an empty
+        // list rather than erroring.
+        assert!(store.list_keys("github").unwrap().is_empty());
+    }
+}

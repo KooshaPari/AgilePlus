@@ -73,3 +73,126 @@ pub(crate) fn constant_time_eq(a: &[u8], b: &[u8]) -> bool {
     }
     diff == 0
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::credentials::InMemoryCredentialStore;
+
+    /// A store whose reads always fail at the backend layer.
+    struct FailingStore;
+
+    impl CredentialStore for FailingStore {
+        fn get(&self, _service: &str, _key: &str) -> Result<String, CredentialError> {
+            Err(CredentialError::BackendError(
+                "keychain unavailable".to_string(),
+            ))
+        }
+
+        fn set(&self, _service: &str, _key: &str, _value: &str) -> Result<(), CredentialError> {
+            Err(CredentialError::BackendError(
+                "keychain unavailable".to_string(),
+            ))
+        }
+
+        fn delete(&self, _service: &str, _key: &str) -> Result<(), CredentialError> {
+            Err(CredentialError::BackendError(
+                "keychain unavailable".to_string(),
+            ))
+        }
+
+        fn list_keys(&self, _service: &str) -> Result<Vec<String>, CredentialError> {
+            Err(CredentialError::BackendError(
+                "keychain unavailable".to_string(),
+            ))
+        }
+    }
+
+    fn store_with_api_keys(value: &str) -> InMemoryCredentialStore {
+        let store = InMemoryCredentialStore::new();
+        store.set("agileplus", keys::API_KEYS, value).unwrap();
+        store
+    }
+
+    #[test]
+    fn format_api_key_hash_is_the_prefixed_sha256_digest() {
+        let hashed = format_api_key_hash("secret");
+        assert_eq!(
+            hashed,
+            "sha256:2bb80d537b1da3e38bd30361aa855686bde0eacd7162fef6a25fe97bf527a25b"
+        );
+        let hex = hashed.strip_prefix(API_KEY_HASH_PREFIX).unwrap();
+        assert_eq!(hex.len(), 64);
+        assert!(
+            hex.chars()
+                .all(|c| c.is_ascii_digit() || ('a'..='f').contains(&c))
+        );
+        assert!(!hashed.contains("secret"));
+    }
+
+    #[test]
+    fn format_api_key_hash_distinguishes_similar_inputs() {
+        assert_ne!(format_api_key_hash("key"), format_api_key_hash("key "));
+        assert_eq!(format_api_key_hash("key"), format_api_key_hash("key"));
+        assert_eq!(format_api_key_hash("").len(), "sha256:".len() + 64);
+    }
+
+    #[test]
+    fn validate_api_key_prefers_a_hash_but_rejects_legacy_plaintext() {
+        let store = store_with_api_keys("legacy-plaintext-key");
+
+        let result = store.validate_api_key("legacy-plaintext-key");
+
+        assert!(matches!(
+            result,
+            Err(CredentialError::LegacyPlaintextApiKey)
+        ));
+        assert_eq!(
+            CredentialError::LegacyPlaintextApiKey.to_string(),
+            "legacy plaintext API key detected; rotate it with AGILEPLUS_API_KEY before starting"
+        );
+    }
+
+    #[test]
+    fn validate_api_key_rejects_a_list_holding_any_plaintext_entry() {
+        let store = store_with_api_keys(&format!(
+            "{}, rotated-plaintext",
+            format_api_key_hash("good-key")
+        ));
+
+        assert!(matches!(
+            store.validate_api_key("good-key"),
+            Err(CredentialError::LegacyPlaintextApiKey)
+        ));
+    }
+
+    #[test]
+    fn validate_api_key_ignores_blank_entries_and_surrounding_whitespace() {
+        let store = store_with_api_keys(&format!(
+            "  , {},  {} , ",
+            format_api_key_hash("key-a"),
+            format_api_key_hash("key-b")
+        ));
+
+        assert!(store.validate_api_key("key-a").unwrap());
+        assert!(store.validate_api_key("key-b").unwrap());
+        assert!(!store.validate_api_key("key-c").unwrap());
+    }
+
+    #[test]
+    fn validate_api_key_treats_an_empty_stored_list_as_no_keys() {
+        let store = store_with_api_keys("");
+
+        assert!(!store.validate_api_key("anything").unwrap());
+    }
+
+    #[test]
+    fn validate_api_key_surfaces_backend_failures_instead_of_denying() {
+        let result = FailingStore.validate_api_key("anything");
+
+        assert!(matches!(
+            result,
+            Err(CredentialError::BackendError(ref message)) if message == "keychain unavailable"
+        ));
+    }
+}

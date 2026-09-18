@@ -453,4 +453,140 @@ mod tests {
         assert_eq!(slugify("Auth & OAuth2!!!"), "auth-oauth2");
         assert_eq!(slugify("---weird---"), "weird");
     }
+
+    #[test]
+    fn node_builder_applies_dag_stage_tags_and_properties() {
+        let node = NodeBuilder::new(NodeType::Task)
+            .title("Wire the DAG stage")
+            .dag_stage(DagStage::Spec)
+            .tags(vec!["backend".to_string(), "urgent".to_string()])
+            .properties(serde_json::json!({ "estimate": 3 }))
+            .meta(sample_meta())
+            .build()
+            .expect("domain operation");
+
+        // An explicit stage wins over the node-type default.
+        assert_eq!(node.dag_stage, DagStage::Spec);
+        assert_eq!(node.tags, vec!["backend", "urgent"]);
+        assert_eq!(node.properties, Some(serde_json::json!({ "estimate": 3 })));
+        // `tags` replaces the whole list instead of appending.
+        let replaced = NodeBuilder::new(NodeType::Task)
+            .title("Replace tags")
+            .tag("first")
+            .tags(vec!["only".to_string()])
+            .meta(sample_meta())
+            .build()
+            .expect("domain operation");
+        assert_eq!(replaced.tags, vec!["only"]);
+    }
+
+    #[test]
+    fn node_builder_rejects_an_empty_meta_source() {
+        let meta = Meta {
+            source: "   ".to_string(),
+            ..sample_meta()
+        };
+
+        let error = NodeBuilder::new(NodeType::Bug)
+            .title("Has a source")
+            .meta(meta)
+            .build()
+            .unwrap_err();
+
+        assert_eq!(
+            error,
+            ValidationError::MissingMeta("node: source is empty".to_string())
+        );
+    }
+
+    #[test]
+    fn edge_builder_rejects_an_empty_meta_source() {
+        let meta = Meta {
+            source: String::new(),
+            ..sample_meta()
+        };
+
+        let error = EdgeBuilder::new("Intent#a", "Feature#b", RelationshipType::TracesTo)
+            .meta(meta)
+            .build()
+            .unwrap_err();
+
+        assert_eq!(
+            error,
+            ValidationError::MissingMeta("edge: source is empty".to_string())
+        );
+    }
+
+    #[test]
+    fn edge_builder_carries_canonical_map_and_properties() {
+        use crate::intent_graph::CanonicalLinkType;
+
+        let edge = EdgeBuilder::new("Feature#a", "Task#b", RelationshipType::Implements)
+            .canonical_map(CanonicalMap {
+                link_type: CanonicalLinkType::ParentOf,
+                direction: Some("forward".to_string()),
+            })
+            .properties(serde_json::json!({ "weight": 1.5 }))
+            .meta(sample_meta())
+            .build()
+            .expect("domain operation");
+
+        let canonical = edge.canonical_map.expect("canonical map");
+        assert_eq!(canonical.link_type, CanonicalLinkType::ParentOf);
+        assert_eq!(canonical.direction.as_deref(), Some("forward"));
+        assert_eq!(edge.properties, Some(serde_json::json!({ "weight": 1.5 })));
+    }
+
+    #[test]
+    fn node_builder_rejects_a_title_that_slugs_to_nothing() {
+        let error = NodeBuilder::new(NodeType::Intent)
+            .title("!!! ???")
+            .meta(sample_meta())
+            .build()
+            .unwrap_err();
+
+        // The generated id would be `Intent#`, which is not a valid node id.
+        assert_eq!(error, ValidationError::InvalidNodeId("Intent#".to_string()));
+    }
+
+    #[test]
+    fn edge_ids_generated_by_the_builder_are_unique_and_prefixed() {
+        let first = new_edge_id();
+        let second = new_edge_id();
+
+        assert_ne!(first, second);
+        assert!(first.starts_with("edge-"));
+        assert_eq!(first.matches('-').count(), 2, "edge-<ts>-<counter>");
+    }
+
+    #[test]
+    fn builder_node_id_validation_rejects_off_grammar_ids() {
+        // Valid: `^[A-Z][a-z]+#[a-z0-9-]+$`
+        assert!(is_valid_node_id("Feature#oauth2-login"));
+        assert!(is_valid_node_id("Bug#a"));
+
+        // Invalid shapes never reach the node id grammar.
+        assert!(!is_valid_node_id("Feature#"), "empty slug");
+        assert!(!is_valid_node_id("#slug"), "empty prefix");
+        assert!(!is_valid_node_id("Feature"), "no separator");
+        assert!(!is_valid_node_id("Feature#a#b"), "too many separators");
+        assert!(!is_valid_node_id("feature#slug"), "lowercase type");
+        assert!(!is_valid_node_id("F#slug"), "single-letter type");
+        assert!(!is_valid_node_id("FeAture#slug"), "inner uppercase");
+        // An all-caps acronym is rejected: only the first letter may be uppercase.
+        assert!(!is_valid_node_id("PR#1234"), "acronym prefix");
+        assert!(!is_valid_node_id("Feature#Slug"), "uppercase slug");
+        assert!(!is_valid_node_id("Feature#slug_1"), "slug underscore");
+        assert!(!is_valid_node_id("Feature#slug one"), "slug space");
+    }
+
+    #[test]
+    fn slugify_collapses_edge_cases() {
+        assert_eq!(slugify(""), "");
+        assert_eq!(slugify("!!!"), "");
+        assert_eq!(slugify("-"), "");
+        assert_eq!(slugify("A  --  B"), "a-b");
+        // Only ASCII letters are lowercased, so non-ASCII case is preserved.
+        assert_eq!(slugify("Ünicode Tïtle"), "Ünicode-tïtle");
+    }
 }

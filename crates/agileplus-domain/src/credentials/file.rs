@@ -380,4 +380,246 @@ mod tests {
         assert!(store.delete("plane", "api-key").is_err());
         assert_eq!(store.get("plane", "api-key").unwrap(), "old");
     }
+
+    /// Rebuild a structurally valid envelope, then hand back the JSON so a test
+    /// can tamper with exactly one field.
+    fn tampered_envelope(
+        store: &FileCredentialStore,
+        mutate: impl FnOnce(&mut serde_json::Value),
+    ) -> Vec<u8> {
+        let raw = store.encrypt(&HashMap::new()).unwrap();
+        let mut envelope: serde_json::Value = serde_json::from_slice(&raw).unwrap();
+        mutate(&mut envelope);
+        serde_json::to_vec(&envelope).unwrap()
+    }
+
+    /// One named mutation applied to an otherwise valid envelope.
+    type EnvelopeTamper = (&'static str, Box<dyn FnOnce(&mut serde_json::Value)>);
+
+    #[test]
+    fn new_reads_the_process_encryption_key() {
+        let _guard = crate::test_support::env_lock();
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("credentials.enc");
+        let previous = std::env::var_os("AGILEPLUS_CREDENTIAL_KEY");
+
+        unsafe { std::env::remove_var("AGILEPLUS_CREDENTIAL_KEY") };
+        let missing = FileCredentialStore::new(&path);
+        assert!(matches!(
+            missing,
+            Err(CredentialError::MissingEncryptionKey)
+        ));
+
+        unsafe { std::env::set_var("AGILEPLUS_CREDENTIAL_KEY", "process-key") };
+        let from_env = FileCredentialStore::new(&path).unwrap();
+        from_env.set("plane", "api-key", "value").unwrap();
+        assert_eq!(from_env.get("plane", "api-key").unwrap(), "value");
+        // The file is unreadable without the same process key.
+        let reopened =
+            FileCredentialStore::with_passphrase(&path, "other-key".to_string()).unwrap();
+        assert!(matches!(
+            reopened.get("plane", "api-key"),
+            Err(CredentialError::Encryption(_))
+        ));
+
+        match previous {
+            Some(value) => unsafe { std::env::set_var("AGILEPLUS_CREDENTIAL_KEY", value) },
+            None => unsafe { std::env::remove_var("AGILEPLUS_CREDENTIAL_KEY") },
+        }
+    }
+
+    #[test]
+    fn set_creates_missing_parent_directories() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory
+            .path()
+            .join("nested")
+            .join("deeper")
+            .join("credentials.enc");
+        let store = FileCredentialStore::with_passphrase(&path, "key".to_string()).unwrap();
+
+        store.set("plane", "api-key", "value").unwrap();
+
+        assert!(path.is_file());
+        assert_eq!(store.get("plane", "api-key").unwrap(), "value");
+    }
+
+    #[test]
+    fn get_and_delete_report_not_found_for_unknown_keys() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("credentials.enc");
+        let store = FileCredentialStore::with_passphrase(&path, "key".to_string()).unwrap();
+
+        // Unknown service: nothing was ever persisted, so no file is created.
+        assert!(matches!(
+            store.get("plane", "api-key"),
+            Err(CredentialError::NotFound(ref key)) if key == "api-key"
+        ));
+        assert!(!path.exists());
+
+        store.set("plane", "api-key", "value").unwrap();
+        assert!(matches!(
+            store.get("plane", "other-key"),
+            Err(CredentialError::NotFound(ref key)) if key == "other-key"
+        ));
+        store.delete("plane", "api-key").unwrap();
+        assert!(matches!(
+            store.delete("plane", "api-key"),
+            Err(CredentialError::NotFound(ref key)) if key == "api-key"
+        ));
+    }
+
+    #[test]
+    fn list_keys_is_empty_for_unknown_services_and_lists_stored_keys() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("credentials.enc");
+        let store = FileCredentialStore::with_passphrase(&path, "key".to_string()).unwrap();
+
+        assert!(store.list_keys("plane").unwrap().is_empty());
+        store.set("plane", "b-key", "1").unwrap();
+        store.set("plane", "a-key", "2").unwrap();
+        store.set("github", "token", "3").unwrap();
+        let mut keys = store.list_keys("plane").unwrap();
+        keys.sort();
+        assert_eq!(keys, vec!["a-key".to_string(), "b-key".to_string()]);
+        assert_eq!(store.list_keys("github").unwrap().len(), 1);
+    }
+
+    #[test]
+    fn derive_key_rejects_a_salt_of_the_wrong_length() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("credentials.enc");
+        let store = FileCredentialStore::with_passphrase(&path, "key".to_string()).unwrap();
+
+        for salt_length in [0usize, 8, 15, 17, 32] {
+            let salt = vec![1u8; salt_length];
+            assert!(
+                matches!(
+                    store.derive_key(&salt),
+                    Err(CredentialError::Encryption(ref message))
+                        if message == "invalid credential salt length"
+                ),
+                "salt length {salt_length} should be rejected"
+            );
+        }
+        assert!(store.derive_key(&[1u8; SALT_LENGTH]).is_ok());
+    }
+
+    #[test]
+    fn reading_rejects_an_unsupported_envelope_version() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("credentials.enc");
+        let store = FileCredentialStore::with_passphrase(&path, "key".to_string()).unwrap();
+        std::fs::write(
+            &path,
+            tampered_envelope(&store, |envelope| {
+                envelope["version"] = serde_json::json!(2);
+            }),
+        )
+        .unwrap();
+
+        let reopened = FileCredentialStore::with_passphrase(&path, "key".to_string()).unwrap();
+        assert!(matches!(
+            reopened.get("plane", "api-key"),
+            Err(CredentialError::Encryption(ref message))
+                if message == "unsupported credential envelope version 2"
+        ));
+    }
+
+    #[test]
+    fn reading_rejects_malformed_envelope_fields() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("credentials.enc");
+        let store = FileCredentialStore::with_passphrase(&path, "key".to_string()).unwrap();
+
+        let cases: Vec<EnvelopeTamper> = vec![
+            (
+                "non-base64 salt",
+                Box::new(|envelope: &mut serde_json::Value| {
+                    envelope["salt"] = serde_json::json!("not base64!!");
+                }),
+            ),
+            (
+                "short salt",
+                Box::new(|envelope: &mut serde_json::Value| {
+                    envelope["salt"] = serde_json::json!(STANDARD_NO_PAD.encode([0u8; 8]));
+                }),
+            ),
+            (
+                "non-base64 nonce",
+                Box::new(|envelope: &mut serde_json::Value| {
+                    envelope["nonce"] = serde_json::json!("!");
+                }),
+            ),
+            (
+                "short nonce",
+                Box::new(|envelope: &mut serde_json::Value| {
+                    envelope["nonce"] = serde_json::json!(STANDARD_NO_PAD.encode([0u8; 4]));
+                }),
+            ),
+            (
+                "non-base64 ciphertext",
+                Box::new(|envelope: &mut serde_json::Value| {
+                    envelope["ciphertext"] = serde_json::json!("!!!");
+                }),
+            ),
+            (
+                "tampered ciphertext",
+                Box::new(|envelope: &mut serde_json::Value| {
+                    envelope["ciphertext"] = serde_json::json!(STANDARD_NO_PAD.encode([7u8; 32]));
+                }),
+            ),
+        ];
+
+        for (name, mutate) in cases {
+            std::fs::write(&path, tampered_envelope(&store, mutate)).unwrap();
+            let reopened = FileCredentialStore::with_passphrase(&path, "key".to_string()).unwrap();
+            let result = reopened.get("plane", "api-key");
+            assert!(
+                matches!(result, Err(CredentialError::Encryption(_))),
+                "{name} should fail closed, got {result:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn reading_rejects_a_file_that_is_not_an_envelope() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("credentials.enc");
+        std::fs::write(&path, b"definitely not json").unwrap();
+        let store = FileCredentialStore::with_passphrase(&path, "key".to_string()).unwrap();
+
+        assert!(matches!(
+            store.get("plane", "api-key"),
+            Err(CredentialError::Serialization(_))
+        ));
+    }
+
+    #[test]
+    fn persist_rejects_a_path_without_a_parent_directory() {
+        let store =
+            FileCredentialStore::with_passphrase(Path::new("/"), "key".to_string()).unwrap();
+
+        let error = store.persist_candidate(&HashMap::new()).unwrap_err();
+        assert!(matches!(
+            error,
+            CredentialError::Io(ref io) if io.to_string() == "credential file path has no parent"
+        ));
+    }
+
+    #[test]
+    fn encrypting_the_same_state_twice_produces_different_bytes() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("credentials.enc");
+        let store = FileCredentialStore::with_passphrase(&path, "key".to_string()).unwrap();
+        let mut state: HashMap<String, HashMap<String, String>> = HashMap::new();
+        state.insert("plane".to_string(), HashMap::new());
+
+        let first = store.encrypt(&state).unwrap();
+        let second = store.encrypt(&state).unwrap();
+
+        assert_ne!(first, second, "a fresh salt/nonce must be used per write");
+        assert_eq!(store.decrypt(&first).unwrap(), state);
+        assert_eq!(store.decrypt(&second).unwrap(), state);
+    }
 }

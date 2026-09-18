@@ -1275,9 +1275,15 @@ mod coverage_tests {
 
     #[test]
     fn node_type_serde_pascal_case() {
-        assert_eq!(serde_json::to_string(&NodeType::Feature).unwrap(), "\"Feature\"");
+        assert_eq!(
+            serde_json::to_string(&NodeType::Feature).unwrap(),
+            "\"Feature\""
+        );
         assert_eq!(serde_json::to_string(&NodeType::PR).unwrap(), "\"PR\"");
-        assert_eq!(serde_json::to_string(&NodeType::Artifact).unwrap(), "\"Artifact\"");
+        assert_eq!(
+            serde_json::to_string(&NodeType::Artifact).unwrap(),
+            "\"Artifact\""
+        );
     }
 
     #[test]
@@ -1293,7 +1299,10 @@ mod coverage_tests {
 
     #[test]
     fn dag_stage_serde_lowercase() {
-        assert_eq!(serde_json::to_string(&DagStage::Commit).unwrap(), "\"commit\"");
+        assert_eq!(
+            serde_json::to_string(&DagStage::Commit).unwrap(),
+            "\"commit\""
+        );
         assert_eq!(serde_json::to_string(&DagStage::PR).unwrap(), "\"pr\"");
     }
 
@@ -1315,7 +1324,10 @@ mod coverage_tests {
             assert_eq!(RelationshipType::from(w), *r);
         }
         for bad in ["", "unknown", "Implements", "traces_to", "TracesTo"] {
-            assert!(RelationshipType::try_from(bad.to_string()).is_err(), "{bad}");
+            assert!(
+                RelationshipType::try_from(bad.to_string()).is_err(),
+                "{bad}"
+            );
         }
     }
 
@@ -1349,7 +1361,10 @@ mod coverage_tests {
             assert_eq!(CanonicalLinkType::from(w), *l);
         }
         for bad in ["", "unknown", "ParentOf", "parent-of"] {
-            assert!(CanonicalLinkType::try_from(bad.to_string()).is_err(), "{bad}");
+            assert!(
+                CanonicalLinkType::try_from(bad.to_string()).is_err(),
+                "{bad}"
+            );
         }
     }
 
@@ -1387,7 +1402,10 @@ mod coverage_tests {
 
     #[test]
     fn status_serde_snake_case() {
-        assert_eq!(serde_json::to_string(&Status::InProgress).unwrap(), "\"in_progress\"");
+        assert_eq!(
+            serde_json::to_string(&Status::InProgress).unwrap(),
+            "\"in_progress\""
+        );
     }
 
     #[test]
@@ -1502,7 +1520,12 @@ mod coverage_tests {
 
     #[test]
     fn node_id_validation_matrix() {
-        let valid = ["Feature#a", "Bug#123", "Task#fix-memory-leak", "Intent#a1-b2-c3"];
+        let valid = [
+            "Feature#a",
+            "Bug#123",
+            "Task#fix-memory-leak",
+            "Intent#a1-b2-c3",
+        ];
         let invalid = [
             "PR#x",
             "feature#a",
@@ -1535,10 +1558,22 @@ mod coverage_tests {
         let dup = node("Intent#dup", NodeType::Intent);
         let graph = g(vec![bad1, bad2, dup], vec![]);
         let errs = graph.validate().unwrap_err();
-        assert!(errs.iter().any(|e| matches!(e, ValidationError::InvalidNodeId(_))));
-        assert!(errs.iter().any(|e| matches!(e, ValidationError::ConfidenceOutOfRange(_))));
-        assert!(errs.iter().any(|e| matches!(e, ValidationError::MissingMeta(_))));
-        assert!(errs.iter().any(|e| matches!(e, ValidationError::DuplicateNodeId(_))));
+        assert!(
+            errs.iter()
+                .any(|e| matches!(e, ValidationError::InvalidNodeId(_)))
+        );
+        assert!(
+            errs.iter()
+                .any(|e| matches!(e, ValidationError::ConfidenceOutOfRange(_)))
+        );
+        assert!(
+            errs.iter()
+                .any(|e| matches!(e, ValidationError::MissingMeta(_)))
+        );
+        assert!(
+            errs.iter()
+                .any(|e| matches!(e, ValidationError::DuplicateNodeId(_)))
+        );
         assert!(errs.len() >= 4, "got {errs:?}");
     }
 
@@ -1568,5 +1603,146 @@ mod coverage_tests {
         let mut n = node("Intent#a", NodeType::Intent);
         n.meta.confidence = None;
         assert!(g(vec![n], vec![]).validate().is_ok());
+    }
+
+    #[test]
+    fn validate_collects_edge_level_errors() {
+        let mut empty_source = edge("e1", "Intent#root", "Bug#crash", RelationshipType::TracesTo);
+        empty_source.meta.source = "   ".to_string();
+
+        let mut bad_confidence = edge("e2", "Intent#root", "Bug#crash", RelationshipType::TracesTo);
+        bad_confidence.meta.confidence = Some(2.0);
+
+        // Implements from Intent to Bug is not an allowed pair in the ontology.
+        let bad_pair = edge(
+            "e3",
+            "Intent#root",
+            "Bug#crash",
+            RelationshipType::Implements,
+        );
+
+        let graph = g(
+            vec![
+                node("Intent#root", NodeType::Intent),
+                node("Bug#crash", NodeType::Bug),
+            ],
+            vec![empty_source, bad_confidence, bad_pair],
+        );
+
+        let errors = graph.validate().unwrap_err();
+
+        assert_eq!(
+            errors,
+            vec![
+                ValidationError::MissingMeta("edge e1: source is empty".to_string()),
+                ValidationError::ConfidenceOutOfRange(2.0),
+                ValidationError::InvalidEdgeConstraint {
+                    relationship: "implements".to_string(),
+                    from: "Intent".to_string(),
+                    to: "Bug".to_string(),
+                },
+            ]
+        );
+    }
+
+    #[test]
+    fn validate_and_constraint_checks_ignore_edges_with_unknown_endpoints() {
+        // An edge whose endpoints are not part of `nodes` is skipped rather than
+        // reported: `validate` resolves both ends through the node map first.
+        let graph = g(
+            vec![node("Intent#root", NodeType::Intent)],
+            vec![edge(
+                "dangling",
+                "Feature#missing",
+                "Intent#root",
+                RelationshipType::Implements,
+            )],
+        );
+
+        assert!(graph.validate().is_ok());
+        assert!(graph.check_edge_constraints().is_ok());
+    }
+
+    #[test]
+    fn dag_accepts_a_diamond_where_one_node_is_reached_twice() {
+        // Intent#root -> {Feature#a, Feature#b} -> Task#c exercises the
+        // already-finished ("black") branch of the cycle-detection DFS.
+        let graph = g(
+            vec![
+                node("Intent#root", NodeType::Intent),
+                node("Feature#a", NodeType::Feature),
+                node("Feature#b", NodeType::Feature),
+                node("Task#c", NodeType::Task),
+            ],
+            vec![
+                edge(
+                    "e1",
+                    "Intent#root",
+                    "Feature#a",
+                    RelationshipType::Implements,
+                ),
+                edge(
+                    "e2",
+                    "Intent#root",
+                    "Feature#b",
+                    RelationshipType::Implements,
+                ),
+                edge("e3", "Feature#a", "Task#c", RelationshipType::Implements),
+                edge("e4", "Feature#b", "Task#c", RelationshipType::Implements),
+            ],
+        );
+
+        assert!(graph.check_dag().is_ok());
+        assert!(graph.validate().is_ok());
+    }
+
+    #[test]
+    fn dag_rejects_a_self_loop() {
+        let graph = g(
+            vec![node("Intent#root", NodeType::Intent)],
+            vec![edge(
+                "e1",
+                "Intent#root",
+                "Intent#root",
+                RelationshipType::TracesTo,
+            )],
+        );
+
+        assert_eq!(
+            graph.check_dag().unwrap_err(),
+            ValidationError::CycleDetected
+        );
+    }
+
+    #[test]
+    #[should_panic(expected = "unknown NodeType: Service")]
+    fn node_type_from_panics_on_an_unknown_label() {
+        // `From<&str>` is the infallible conversion and panics; `TryFrom<String>`
+        // is the checked one.
+        let _ = NodeType::from("Service");
+    }
+
+    #[test]
+    #[should_panic(expected = "unknown DagStage: epic")]
+    fn dag_stage_from_panics_on_an_unknown_label() {
+        let _ = DagStage::from("epic");
+    }
+
+    #[test]
+    #[should_panic(expected = "unknown RelationshipType: owns")]
+    fn relationship_type_from_panics_on_an_unknown_label() {
+        let _ = RelationshipType::from("owns");
+    }
+
+    #[test]
+    #[should_panic(expected = "unknown Status: Archived")]
+    fn status_from_panics_on_an_unknown_label() {
+        let _ = Status::from("Archived");
+    }
+
+    #[test]
+    #[should_panic(expected = "unknown CanonicalLinkType: owns")]
+    fn canonical_link_type_from_panics_on_an_unknown_label() {
+        let _ = CanonicalLinkType::from("owns");
     }
 }
