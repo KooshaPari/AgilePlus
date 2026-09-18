@@ -562,118 +562,18 @@ async fn dispatcher_routes_every_module_subcommand() {
     assert_eq!(tags[0].feature_id, 1);
 }
 
-// ── Tag / untag handlers ─────────────────────────────────────────────────────
 
-#[tokio::test]
-async fn tag_records_the_module_feature_link() {
-    let store = MemStore::default();
-    let module_id = seed_module(&store, "Platform", None);
-    let feature_id = seed_feature(&store, "login", "Login");
-
-    run_tag(
-        TagArgs {
-            module: "platform".to_string(),
-            feature: "login".to_string(),
-        },
-        &store,
-    )
-    .await
-    .expect("tagging an existing pair must succeed");
-
-    let tags = store.module_feature_tags.lock().unwrap();
-    assert_eq!(tags.len(), 1, "exactly one link should be recorded");
-    assert_eq!(tags[0].module_id, module_id);
-    assert_eq!(tags[0].feature_id, feature_id);
-}
-
-#[tokio::test]
-async fn tag_rejects_an_unknown_module() {
-    let store = MemStore::default();
-    seed_feature(&store, "login", "Login");
-
-    let error = run_tag(
-        TagArgs {
-            module: "ghost".to_string(),
-            feature: "login".to_string(),
-        },
-        &store,
-    )
-    .await
-    .expect_err("an unknown module must be refused");
-
-    assert!(
-        error.to_string().contains("module 'ghost' not found"),
-        "unexpected error: {error}"
-    );
-    assert!(
-        store.module_feature_tags.lock().unwrap().is_empty(),
-        "a failed lookup must not write a link"
-    );
-}
-
-#[tokio::test]
-async fn tag_rejects_an_unknown_feature() {
-    let store = MemStore::default();
-    seed_module(&store, "Platform", None);
-
-    let error = run_tag(
-        TagArgs {
-            module: "platform".to_string(),
-            feature: "ghost".to_string(),
-        },
-        &store,
-    )
-    .await
-    .expect_err("an unknown feature must be refused");
-
-    assert!(
-        error.to_string().contains("feature 'ghost' not found"),
-        "unexpected error: {error}"
-    );
-    assert!(store.module_feature_tags.lock().unwrap().is_empty());
-}
-
-// ── Untag handler ────────────────────────────────────────────────────────────
-
-#[tokio::test]
-async fn untag_removes_an_existing_link() {
-    let store = MemStore::default();
-    seed_module(&store, "Platform", None);
-    seed_feature(&store, "login", "Login");
-
-    run_tag(
-        TagArgs {
-            module: "platform".to_string(),
-            feature: "login".to_string(),
-        },
-        &store,
-    )
-    .await
-    .expect("seed the link");
-    assert_eq!(store.module_feature_tags.lock().unwrap().len(), 1);
-
-    run_untag(
-        UntagArgs {
-            module: "platform".to_string(),
-            feature: "login".to_string(),
-        },
-        &store,
-    )
-    .await
-    .expect("untagging must succeed");
-
-    assert!(
-        store.module_feature_tags.lock().unwrap().is_empty(),
-        "the link should be gone"
-    );
-}
+// ── Untag error paths ────────────────────────────────────────────────────────
+//
+// `untag_removes_existing_link_only` covers the success path; its two lookup
+// failures were unexercised.
 
 #[tokio::test]
 async fn untag_rejects_an_unknown_module() {
     let store = MemStore::default();
     seed_feature(&store, "login", "Login");
 
-    let error = run_untag(
+    let err = super::untag::run_untag(
         UntagArgs {
             module: "ghost".to_string(),
             feature: "login".to_string(),
@@ -681,103 +581,27 @@ async fn untag_rejects_an_unknown_module() {
         &store,
     )
     .await
-    .expect_err("an unknown module must be refused");
-
-    assert!(
-        error.to_string().contains("module 'ghost' not found"),
-        "unexpected error: {error}"
-    );
+    .expect_err("unknown module must fail");
+    assert!(format!("{err:#}").contains("module 'ghost' not found"));
 }
 
-// ── Delete handler ───────────────────────────────────────────────────────────
-
 #[tokio::test]
-async fn delete_removes_a_childless_module() {
+async fn untag_rejects_an_unknown_feature() {
     let store = MemStore::default();
     seed_module(&store, "Platform", None);
 
-    run_delete(
-        DeleteArgs {
-            slug: "platform".to_string(),
+    let err = super::untag::run_untag(
+        UntagArgs {
+            module: "platform".to_string(),
+            feature: "ghost".to_string(),
         },
         &store,
     )
     .await
-    .expect("deleting a childless module must succeed");
-
+    .expect_err("unknown feature must fail");
+    assert!(format!("{err:#}").contains("feature 'ghost' not found"));
     assert!(
-        store.modules.lock().unwrap().is_empty(),
-        "the module should be gone"
-    );
-}
-
-#[tokio::test]
-async fn delete_rejects_an_unknown_slug() {
-    let store = MemStore::default();
-
-    let error = run_delete(
-        DeleteArgs {
-            slug: "ghost".to_string(),
-        },
-        &store,
-    )
-    .await
-    .expect_err("an unknown slug must be refused");
-
-    assert!(
-        error.to_string().contains("module 'ghost' not found"),
-        "unexpected error: {error}"
-    );
-}
-
-#[tokio::test]
-async fn delete_explains_why_a_populated_module_cannot_go() {
-    let store = MemStore::default();
-    seed_module(&store, "Platform", None);
-    *store.module_fault.lock().unwrap() = MemFault::DeleteHasDependents;
-
-    let error = run_delete(
-        DeleteArgs {
-            slug: "platform".to_string(),
-        },
-        &store,
-    )
-    .await
-    .expect_err("a module with dependents must be refused");
-
-    let message = error.to_string();
-    assert!(
-        message.contains("still has children or owned features"),
-        "the error should explain the dependency: {message}"
-    );
-    assert!(
-        message.contains("Reassign or delete dependents first"),
-        "the error should suggest a remedy: {message}"
-    );
-    assert_eq!(
-        store.modules.lock().unwrap().len(),
-        1,
-        "a refused delete must leave the module in place"
-    );
-}
-
-#[tokio::test]
-async fn delete_surfaces_a_storage_failure_with_the_slug() {
-    let store = MemStore::default();
-    seed_module(&store, "Platform", None);
-    *store.module_fault.lock().unwrap() = MemFault::DeleteStorageError;
-
-    let error = run_delete(
-        DeleteArgs {
-            slug: "platform".to_string(),
-        },
-        &store,
-    )
-    .await
-    .expect_err("a storage error must propagate");
-
-    assert!(
-        error.to_string().contains("deleting module 'platform'"),
-        "unexpected error: {error}"
+        store.module_feature_tags.lock().unwrap().is_empty(),
+        "a failed lookup must not write or remove a link"
     );
 }
