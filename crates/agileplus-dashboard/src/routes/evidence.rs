@@ -342,6 +342,17 @@ pub async fn feature_evidence_json(
 mod tests {
     use super::*;
 
+    /// Serializes the tests that change the process working directory.
+    ///
+    /// `load_evidence_bundles_from_disk` resolves `.agileplus/evidence/...`
+    /// relative to the working directory, and the working directory is global to
+    /// this test binary, so without this lock two of these tests can observe each
+    /// other's chdir and fail intermittently.
+    fn cwd_lock() -> std::sync::MutexGuard<'static, ()> {
+        static LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+        LOCK.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
+    }
+
     #[test]
     fn test_html_escape_ampersand() {
         assert_eq!(html_escape("a & b"), "a &amp; b");
@@ -374,6 +385,7 @@ mod tests {
 
     #[test]
     fn test_load_evidence_bundles_invalid_json() {
+        let _guard = cwd_lock();
         let dir = std::env::temp_dir().join(format!(
             "agileplus-ev-invalid-{}-{}",
             std::process::id(),
@@ -383,15 +395,25 @@ mod tests {
         std::fs::create_dir_all(&evidence_dir).unwrap();
         std::fs::write(evidence_dir.join("bundle.json"), "not json!!!").unwrap();
 
-        let bundles =
-            load_evidence_bundles_from_disk(dir.to_str().unwrap());
-        // invalid JSON should return empty
-        assert!(bundles.is_empty());
+        // The loader resolves `.agileplus/evidence/<id>/bundle.json` against the
+        // working directory, so run from inside the sandbox: passing the sandbox
+        // path as the id would resolve to a file that does not exist and the
+        // assertion below would hold for the wrong reason.
+        let orig = std::env::current_dir().unwrap();
+        std::env::set_current_dir(&dir).unwrap();
+        let bundles = load_evidence_bundles_from_disk("feat1");
+        std::env::set_current_dir(&orig).unwrap();
+
+        assert!(
+            bundles.is_empty(),
+            "a bundle that fails to parse must be skipped"
+        );
         std::fs::remove_dir_all(&dir).unwrap();
     }
 
     #[test]
     fn test_load_evidence_bundles_valid_bundle() {
+        let _guard = cwd_lock();
         let dir = std::env::temp_dir().join(format!(
             "agileplus-ev-valid-{}-{}",
             std::process::id(),
@@ -474,6 +496,7 @@ mod tests {
 
     #[test]
     fn test_load_evidence_bundles_tests_failed_status() {
+        let _guard = cwd_lock();
         let dir = std::env::temp_dir().join(format!(
             "agileplus-ev-fail-{}-{}",
             std::process::id(),
@@ -515,6 +538,7 @@ mod tests {
 
     #[test]
     fn test_load_evidence_bundles_minimal_json() {
+        let _guard = cwd_lock();
         let dir = std::env::temp_dir().join(format!(
             "agileplus-ev-minimal-{}-{}",
             std::process::id(),

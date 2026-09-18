@@ -657,4 +657,49 @@ mod tests {
         assert!(health.iter().all(|h| h.healthy));
         assert!(health.iter().all(|h| !h.degraded));
     }
+
+    // ── default_plane_daemon_config ───────────────────────────────────────────
+
+    #[test]
+    fn default_plane_daemon_config_reads_daemon_env_vars() {
+        use std::time::Duration;
+
+        // The `PLANE_DAEMON_*` variables are read only by this helper inside the
+        // dashboard crate, so no other test in this binary can observe them.
+        for key in [
+            "PLANE_DAEMON_INTERVAL_SECS",
+            "PLANE_DAEMON_BATCH_SIZE",
+            "PLANE_DAEMON_DRY_RUN",
+        ] {
+            // SAFETY: single-threaded use of variables no concurrent test reads.
+            unsafe { std::env::remove_var(key) };
+        }
+        let defaults = DashboardStore::default_plane_daemon_config();
+        assert_eq!(defaults.interval, Duration::from_secs(5 * 60));
+        assert_eq!(defaults.batch_size, 25);
+        assert!(!defaults.dry_run);
+
+        unsafe {
+            std::env::set_var("PLANE_DAEMON_INTERVAL_SECS", "7");
+            std::env::set_var("PLANE_DAEMON_BATCH_SIZE", "3");
+            std::env::set_var("PLANE_DAEMON_DRY_RUN", "true");
+        }
+        let configured = DashboardStore::default_plane_daemon_config();
+        assert_eq!(configured.interval, Duration::from_secs(7));
+        assert_eq!(configured.batch_size, 3);
+        assert!(configured.dry_run);
+
+        // An unparseable interval falls back to the default rather than panicking.
+        unsafe { std::env::set_var("PLANE_DAEMON_INTERVAL_SECS", "not-a-number") };
+        assert_eq!(
+            DashboardStore::default_plane_daemon_config().interval,
+            Duration::from_secs(5 * 60)
+        );
+
+        unsafe {
+            std::env::remove_var("PLANE_DAEMON_INTERVAL_SECS");
+            std::env::remove_var("PLANE_DAEMON_BATCH_SIZE");
+            std::env::remove_var("PLANE_DAEMON_DRY_RUN");
+        }
+    }
 }

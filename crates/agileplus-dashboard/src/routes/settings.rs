@@ -1266,4 +1266,34 @@ mod tests {
         assert!(services[0].timeout_ms.is_none());
         assert!(services[0].max_retries.is_none());
     }
+
+    // ── plane_sync_mode (PLANE_SYNC_BIDIRECTIONAL) ───────────────────────
+
+    #[test]
+    fn plane_sync_mode_reports_bidirectional_for_affirmative_values() {
+        // `plane_settings_page` is the only caller of `plane_sync_mode`, and no
+        // test in this binary renders it, so mutating this variable cannot race
+        // with another test's assertion.
+        for affirmative in ["1", "true", "TRUE", "yes", "on", " On "] {
+            // SAFETY: single-threaded use of a variable no concurrent test reads.
+            unsafe { std::env::set_var("PLANE_SYNC_BIDIRECTIONAL", affirmative) };
+            assert_eq!(
+                plane_sync_mode(),
+                "Bidirectional",
+                "{affirmative:?} must enable bidirectional sync"
+            );
+        }
+
+        for negative in ["0", "false", "no", "off", ""] {
+            unsafe { std::env::set_var("PLANE_SYNC_BIDIRECTIONAL", negative) };
+            assert_eq!(
+                plane_sync_mode(),
+                "One-way",
+                "{negative:?} must leave sync one-way"
+            );
+        }
+
+        unsafe { std::env::remove_var("PLANE_SYNC_BIDIRECTIONAL") };
+        assert_eq!(plane_sync_mode(), "One-way");
+    }
 }

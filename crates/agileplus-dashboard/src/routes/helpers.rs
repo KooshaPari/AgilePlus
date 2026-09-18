@@ -731,4 +731,41 @@ mod tests {
         assert!(parse_bool_env("AGILEPLUS_TEST_DEFINITELY_UNSET_VAR", true));
         assert!(!parse_bool_env("AGILEPLUS_TEST_DEFINITELY_UNSET_VAR", false));
     }
+
+    #[test]
+    fn env_or_none_trims_a_set_value_and_rejects_blank() {
+        // A private variable name: no other test in this binary reads it, so
+        // setting it cannot race with the unset-value test above.
+        let key = "AGILEPLUS_TEST_ENV_OR_NONE_SET";
+        // SAFETY: single-threaded use of a variable no concurrent test reads.
+        unsafe { std::env::set_var(key, "  http://localhost:4222  ") };
+        assert_eq!(env_or_none(key).as_deref(), Some("http://localhost:4222"));
+
+        unsafe { std::env::set_var(key, "   ") };
+        assert!(env_or_none(key).is_none());
+
+        unsafe { std::env::remove_var(key) };
+        assert!(env_or_none(key).is_none());
+    }
+
+    #[test]
+    fn parse_bool_env_reads_affirmative_and_negative_values() {
+        let key = "AGILEPLUS_TEST_PARSE_BOOL_ENV";
+        for affirmative in ["1", "true", "TRUE", "yes", "on", " On "] {
+            // SAFETY: single-threaded use of a variable no concurrent test reads.
+            unsafe { std::env::set_var(key, affirmative) };
+            assert!(
+                parse_bool_env(key, false),
+                "{affirmative:?} must parse as true"
+            );
+        }
+        for negative in ["0", "false", "no", "off", "disabled"] {
+            unsafe { std::env::set_var(key, negative) };
+            assert!(
+                !parse_bool_env(key, true),
+                "{negative:?} must parse as false even when the default is true"
+            );
+        }
+        unsafe { std::env::remove_var(key) };
+    }
 }

@@ -325,8 +325,40 @@ mod tests {
         Arc::new(RwLock::new(store))
     }
 
+    /// Serializes the tests in this binary that mutate process-global state and
+    /// owns the `HOME` redirect.
+    ///
+    /// `toggle_service` persists through `Config::config_path()`, which resolves
+    /// `$HOME/.agileplus/config.toml`. Without this sandbox the test would
+    /// rewrite the operator's real dashboard configuration.
+    async fn lock_global_state() -> tokio::sync::MutexGuard<'static, ()> {
+        static LOCK: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
+        let guard = LOCK.lock().await;
+        sandbox_home();
+        guard
+    }
+
+    /// Private `HOME` for this test binary; returned so tests can assert on it.
+    fn sandbox_home() -> &'static std::path::Path {
+        static HOME: std::sync::OnceLock<std::path::PathBuf> = std::sync::OnceLock::new();
+        HOME.get_or_init(|| {
+            let dir = std::env::temp_dir().join(format!(
+                "agileplus-dashboard-routes-unit-{}",
+                std::process::id()
+            ));
+            std::fs::create_dir_all(dir.join(".agileplus")).expect("create sandbox home");
+            // SAFETY: `set_var` is unsafe because a concurrent `HOME` read is
+            // undefined behaviour. This is the only write in this binary and it
+            // happens while holding the file-wide mutex, before any test that
+            // reads `HOME` runs.
+            unsafe { std::env::set_var("HOME", &dir) };
+            dir
+        })
+    }
+
     #[tokio::test]
     async fn toggle_service_updates_store_and_responds() {
+        let _guard = lock_global_state().await;
         let state = make_state();
         let app = router(state.clone());
 
@@ -352,10 +384,19 @@ mod tests {
         let health = store.health.iter().find(|s| s.name == "NATS").unwrap();
         assert!(!health.healthy);
         assert!(health.degraded);
+
+        // The toggle must have persisted into the sandbox, not the real home.
+        let persisted = std::fs::read_to_string(
+            sandbox_home().join(".agileplus").join("config.toml"),
+        )
+        .expect("toggle_service persists its config");
+        assert!(persisted.contains("name = \"NATS\""), "got: {persisted}");
+        assert!(persisted.contains("enabled = false"), "got: {persisted}");
     }
 
     #[tokio::test]
     async fn restart_service_executes_command() {
+        let _guard = lock_global_state().await;
         let state = make_state();
         let app = router(state.clone());
 
