@@ -161,8 +161,6 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     #[test]
     fn validation_summary_structure() {
         let summary = serde_json::json!({

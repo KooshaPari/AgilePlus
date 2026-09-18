@@ -175,4 +175,56 @@ mod tests {
             _ => panic!("expected Internal for NotImplemented"),
         }
     }
+
+    // ── Response bodies ──────────────────────────────────────────────────────
+    //
+    // 500-class variants deliberately replace the internal message with a fixed
+    // string so a template or storage error can never reach a client. The status
+    // codes are asserted above; these pin the bodies.
+
+    async fn body_json(resp: Response) -> serde_json::Value {
+        let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
+            .await
+            .expect("error responses carry a body");
+        serde_json::from_slice(&bytes).expect("error bodies are JSON")
+    }
+
+    #[tokio::test]
+    async fn template_error_body_is_generic_and_hides_details() {
+        let resp =
+            ApiError::Template("cycle_detail.html: field `nope` missing".into()).into_response();
+        assert_eq!(resp.status(), StatusCode::INTERNAL_SERVER_ERROR);
+        let json = body_json(resp).await;
+        assert_eq!(json["error"], "template render error");
+        assert!(
+            !json.to_string().contains("cycle_detail.html"),
+            "the template name and field must not leak, got: {json}"
+        );
+    }
+
+    #[tokio::test]
+    async fn internal_error_body_is_generic_and_hides_details() {
+        let resp =
+            ApiError::Internal("sqlite: disk I/O error at /var/db/x.sqlite".into()).into_response();
+        assert_eq!(resp.status(), StatusCode::INTERNAL_SERVER_ERROR);
+        let json = body_json(resp).await;
+        assert_eq!(json["error"], "internal server error");
+        assert!(
+            !json.to_string().contains("sqlite"),
+            "storage details must not leak, got: {json}"
+        );
+    }
+
+    #[tokio::test]
+    async fn client_error_body_uses_the_error_envelope() {
+        let resp = ApiError::Unauthorized("Invalid API key".into()).into_response();
+        assert_eq!(resp.status(), StatusCode::UNAUTHORIZED);
+        let json = body_json(resp).await;
+        assert_eq!(json["error"], "Invalid API key");
+        assert_eq!(
+            json.as_object().expect("object").len(),
+            1,
+            "the envelope is exactly {{\"error\": ...}}, got: {json}"
+        );
+    }
 }

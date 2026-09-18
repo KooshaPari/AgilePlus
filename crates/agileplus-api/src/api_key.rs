@@ -170,7 +170,10 @@ mod tests {
         let content = &key[KEY_PREFIX.len()..]; // skip agp_ prefix
         assert!(!content.is_empty());
         for c in content.chars() {
-            assert!(c.is_alphanumeric() || c == '-' || c == '_', "unexpected char: {c}");
+            assert!(
+                c.is_alphanumeric() || c == '-' || c == '_',
+                "unexpected char: {c}"
+            );
         }
     }
 
@@ -220,7 +223,38 @@ mod tests {
     fn getrandom_keys_are_unique_across_many_draws() {
         let mut seen = std::collections::HashSet::new();
         for _ in 0..64 {
-            assert!(seen.insert(generate_plaintext_key()), "duplicate key generated");
+            assert!(
+                seen.insert(generate_plaintext_key()),
+                "duplicate key generated"
+            );
         }
+    }
+
+    #[tokio::test]
+    async fn ensure_api_key_regenerates_when_stored_value_is_blank() {
+        let store = InMemoryCredentialStore::new();
+        store
+            .set("agileplus", keys::API_KEYS, "   ")
+            .expect("seeding a blank value should succeed");
+
+        assert!(
+            ensure_api_key(&store).await.unwrap(),
+            "a blank stored value must be treated as missing and replaced"
+        );
+        let stored = store.get("agileplus", keys::API_KEYS).unwrap();
+        assert!(stored.starts_with("sha256:"));
+        // The regenerated key is a fresh `agp_`-prefixed secret, so the blank
+        // placeholder no longer validates.
+        assert!(!store.validate_api_key("   ").unwrap());
+    }
+
+    #[test]
+    fn import_api_key_hashes_the_exact_operator_supplied_bytes() {
+        let store = InMemoryCredentialStore::new();
+        // Only the emptiness check trims; the stored hash covers the raw value,
+        // so a padded key validates as-is and not in its trimmed form.
+        import_api_key(&store, "  padded-key  ").unwrap();
+        assert!(store.validate_api_key("  padded-key  ").unwrap());
+        assert!(!store.validate_api_key("padded-key").unwrap());
     }
 }

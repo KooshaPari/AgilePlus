@@ -15,20 +15,26 @@ mod support;
 
 // Domain-specific integration suites (each declared explicitly so the whole
 // directory is compiled, not just the file directly under `tests/`).
-#[path = "api_integration/module_cycle.rs"]
-mod module_cycle;
 #[path = "api_integration/auth_middleware.rs"]
 mod auth_middleware;
 #[path = "api_integration/branch.rs"]
 mod branch;
-#[path = "api_integration/worktree.rs"]
-mod worktree;
+#[path = "api_integration/domain_lifecycle.rs"]
+mod domain_lifecycle;
 #[path = "api_integration/features_work_packages.rs"]
 mod features_work_packages;
+#[path = "api_integration/governance_audit.rs"]
+mod governance_audit;
+#[path = "api_integration/module_cycle.rs"]
+mod module_cycle;
+#[path = "api_integration/request_validation.rs"]
+mod request_validation;
 #[path = "api_integration/route_coverage.rs"]
 mod route_coverage;
 #[path = "api_integration/stream_sse.rs"]
 mod stream_sse;
+#[path = "api_integration/worktree.rs"]
+mod worktree;
 
 use axum::http::StatusCode;
 

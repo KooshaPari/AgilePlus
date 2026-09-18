@@ -115,8 +115,6 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     #[test]
     fn verify_chain_valid_structure() {
         let result = serde_json::json!({

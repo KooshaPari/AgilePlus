@@ -460,14 +460,20 @@ mod tests {
         let mut services = std::collections::HashMap::new();
         services.insert("a".into(), ServiceHealth::healthy(1));
         services.insert("b".into(), ServiceHealth::unavailable("x"));
-        assert_eq!(DetailedHealthResponse::compute_status(&services), "unavailable");
+        assert_eq!(
+            DetailedHealthResponse::compute_status(&services),
+            "unavailable"
+        );
     }
 
     #[test]
     fn compute_status_has_degraded() {
         let mut services = std::collections::HashMap::new();
         services.insert("a".into(), ServiceHealth::degraded("slow"));
-        assert_eq!(DetailedHealthResponse::compute_status(&services), "degraded");
+        assert_eq!(
+            DetailedHealthResponse::compute_status(&services),
+            "degraded"
+        );
     }
 
     #[test]
@@ -480,7 +486,10 @@ mod tests {
     #[test]
     fn feature_response_from_domain() {
         let f = agileplus_domain::domain::feature::Feature::new(
-            "my-slug", "My Feature", [0u8; 32], Some("main"),
+            "my-slug",
+            "My Feature",
+            [0u8; 32],
+            Some("main"),
         );
         let resp = FeatureResponse::from(f);
         assert_eq!(resp.slug, "my-slug");
@@ -762,7 +771,10 @@ mod tests {
         services.insert("a".into(), ServiceHealth::degraded("slow"));
         services.insert("b".into(), ServiceHealth::unavailable("down"));
         // unavailable takes precedence over degraded
-        assert_eq!(DetailedHealthResponse::compute_status(&services), "unavailable");
+        assert_eq!(
+            DetailedHealthResponse::compute_status(&services),
+            "unavailable"
+        );
     }
 
     #[test]
@@ -802,5 +814,63 @@ mod tests {
         let json = serde_json::to_value(&resp).unwrap();
         assert!(json["description"].is_null());
     }
-}
 
+    // ── /detailed-health payload shape ───────────────────────────────────────
+    //
+    // `ServiceHealth` skips its optional fields when they are absent. That is
+    // the wire contract monitoring consumes: a healthy service must not carry an
+    // `error` key, and an unhealthy one must not carry a `latency_ms` key.
+
+    #[test]
+    fn service_health_healthy_omits_error_field() {
+        let json = serde_json::to_value(ServiceHealth::healthy(12)).unwrap();
+        assert_eq!(json["status"], "healthy");
+        assert_eq!(json["latency_ms"], 12);
+        assert!(
+            json.get("error").is_none(),
+            "healthy entries must not serialize an error key, got: {json}"
+        );
+    }
+
+    #[test]
+    fn service_health_unavailable_omits_latency_field() {
+        let json = serde_json::to_value(ServiceHealth::unavailable("connection refused")).unwrap();
+        assert_eq!(json["status"], "unavailable");
+        assert_eq!(json["error"], "connection refused");
+        assert!(
+            json.get("latency_ms").is_none(),
+            "failed probes have no latency to report, got: {json}"
+        );
+    }
+
+    #[test]
+    fn service_health_not_configured_explains_why() {
+        let json = serde_json::to_value(ServiceHealth::not_configured()).unwrap();
+        assert_eq!(json["status"], "not_configured");
+        assert_eq!(json["error"], "not configured in this deployment");
+        assert!(json.get("latency_ms").is_none());
+    }
+
+    #[test]
+    fn detailed_health_serializes_nested_services_and_api_block() {
+        let json = serde_json::to_value(DetailedHealthResponse::basic(42)).unwrap();
+        assert_eq!(json["status"], "healthy");
+        assert!(json["timestamp"].is_string());
+        assert_eq!(json["services"]["sqlite"]["status"], "healthy");
+        assert_eq!(json["services"]["sqlite"]["latency_ms"], 0);
+        assert_eq!(json["api"]["status"], "healthy");
+        assert_eq!(json["api"]["uptime_seconds"], 42);
+    }
+
+    #[test]
+    fn simple_health_response_serializes_expected_keys() {
+        let json = serde_json::to_value(SimpleHealthResponse::healthy()).unwrap();
+        assert_eq!(
+            json.as_object().expect("object").len(),
+            3,
+            "the simple health payload is a fixed three-key object, got: {json}"
+        );
+        assert_eq!(json["status"], "healthy");
+        assert_eq!(json["service"], "agileplus-api");
+    }
+}
