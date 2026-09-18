@@ -164,11 +164,33 @@ if [ "${COVERAGE_ALL:-1}" = "1" ]; then
 
     if ls "$work_dir"/all-*.profraw >/dev/null 2>&1; then
         "$llvm_profdata" merge -sparse "$work_dir"/all-*.profraw -o "$work_dir/all.profdata" 2>/dev/null
+        present=()
         for bin in "${all_bins[@]}"; do
             [ -f "$bin" ] && [ -x "$bin" ] || continue
-            "$llvm_cov" report "$bin" -instr-profile="$work_dir/all.profdata" 2>/dev/null \
-                >> "$work_dir/allreports/union.txt"
+            present+=("$bin")
         done
+        # Report every binary in ONE invocation. Doing it per binary costs a
+        # full profile lookup each time: 201 test binaries made the earlier
+        # per-binary pass run for tens of minutes without finishing, which is
+        # why the union number was never produced. This llvm-cov takes one
+        # positional object plus repeated --object=<path> for the rest, and
+        # emits a single merged report (verified against two real binaries).
+        objects=()
+        for bin in "${present[@]:1}"; do
+            objects+=("--object=$bin")
+        done
+        if [ ${#present[@]} -gt 1 ] && "$llvm_cov" report "${present[0]}" "${objects[@]}" \
+            -instr-profile="$work_dir/all.profdata" > "$work_dir/allreports/union.txt" 2>/dev/null \
+            && [ -s "$work_dir/allreports/union.txt" ]; then
+            echo "    unioned ${#present[@]} binaries in a single report pass"
+        else
+            echo "    batched report unavailable; falling back to per-binary (slow)"
+            : > "$work_dir/allreports/union.txt"
+            for bin in "${present[@]}"; do
+                "$llvm_cov" report "$bin" -instr-profile="$work_dir/all.profdata" 2>/dev/null \
+                    >> "$work_dir/allreports/union.txt"
+            done
+        fi
         awk -v root="${repo_root#/}" '
             index($1, root "/") == 1 && NF >= 13 {
                 if ($8 > lines[$1]) lines[$1] = $8
