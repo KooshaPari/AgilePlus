@@ -15,8 +15,13 @@
 # relative rows survive into the summary.
 #
 # Evidence: running the instrumented cli test binary directly and reporting
-# it by hand shows commands/module/tag.rs at 89.7% lines and cli overall at
-# 74.2% (14,348 lines), against the 14.8% the cargo-llvm-cov summary claims.
+# it by hand shows commands/module/tag.rs at 89.7% lines instead of 0.00%.
+# That hand-run view is test-INCLUSIVE (a file's own #[cfg(test)] module is
+# reported there but excluded from cargo-llvm-cov's rows), so its raw cli
+# total of 74.2% over 14,348 lines is not comparable with the workspace
+# metric: it would credit 7,488 lines of test code as covered production
+# code. Compared on the workspace's own basis, agileplus-cli is ~46% and the
+# corrected workspace figure is ~61.5% rather than the reported 48.7%.
 #
 # Reproduce the cli half on its own:
 #   bin=target/llvm-cov-target/debug/build/agileplus-cli/*/out/agileplus_cli-*
@@ -94,15 +99,29 @@ printf 'agileplus-cli (hand-measured): %d files, %d lines, %.1f%% covered\n' \
     "$(awk -v l="$cli_lines" -v m="$cli_missed" 'BEGIN { printf "%.1f", (l - m) * 100 / l }')"
 
 echo "==> corrected workspace total"
+# The two views count different things: cargo-llvm-cov excludes a file's own
+# #[cfg(test)] module from its rows (a file with in-file tests reports fewer
+# lines there than here), while a hand-run binary reports everything it holds.
+# Substituting raw manual totals would therefore credit test-module lines as
+# covered production code and inflate the result. Compare on one basis: keep
+# the workspace denominator, and take only the covered lines that fall outside
+# the file's test code, assuming the test module itself fully executes.
 awk -v cli_lines="$cli_lines" -v cli_missed="$cli_missed" '
     NF >= 13 && $1 == "TOTAL" { ws_lines = $8; ws_missed = $9 }
-    NF >= 13 && $1 ~ /^agileplus-cli/ { lost_lines += $8; lost_missed += $9 }
+    NF >= 13 && $1 ~ /^agileplus-cli\// { lost_lines += $8 }
     END {
-        total = ws_lines - lost_lines + cli_lines
-        missed = ws_missed - lost_missed + cli_missed
-        printf "  raw     : %d lines, %.2f%% covered\n", ws_lines, (ws_lines - ws_missed) * 100 / ws_lines
-        printf "  corrected: %d lines, %.2f%% covered (cli replaced with its hand-measured rows)\n",
-            total, (total - missed) * 100 / total
+        ws_covered = ws_lines - ws_missed
+        test_lines = cli_lines - lost_lines
+        if (test_lines < 0) test_lines = 0
+        cli_covered = (cli_lines - cli_missed) - test_lines
+        if (cli_covered < 0) cli_covered = 0
+        if (cli_covered > lost_lines) cli_covered = lost_lines
+        printf "  raw        : %d lines, %.2f%% covered (agileplus-cli counted as empty)\n",
+            ws_lines, ws_covered * 100 / ws_lines
+        printf "  corrected  : %d lines, %.2f%% covered (cli restored on the same basis)\n",
+            ws_lines, (ws_covered + cli_covered) * 100 / ws_lines
+        printf "  agileplus-cli alone: %d of %d lines = %.1f%% (test code excluded)\n",
+            cli_covered, lost_lines, cli_covered * 100 / lost_lines
     }
 ' "$work_dir/workspace.txt"
 
