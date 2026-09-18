@@ -49,7 +49,7 @@ jobs:
         runs-on: ubuntu-latest
         timeout-minutes: 30
         steps:
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@v7
             - uses: dtolnay/rust-toolchain@stable
             - uses: Swatinem/rust-cache@v2
             - name: Run tests with rerun-on-flake
@@ -67,7 +67,7 @@ jobs:
                   fi
                   python3 scripts/ci/detect_flakes.py /tmp/cargo-test.log /tmp/rerun.log > flaky-tests.json
                   cat flaky-tests.json
-            - uses: actions/upload-artifact@v4
+            - uses: actions/upload-artifact@v7
               with:
                   name: flaky-tests
                   path: flaky-tests.json
@@ -78,7 +78,7 @@ jobs:
         runs-on: ubuntu-latest
         timeout-minutes: 60
         steps:
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@v7
             - uses: dtolnay/rust-toolchain@stable
             - uses: Swatinem/rust-cache@v2
             - name: Run benchmarks
@@ -97,7 +97,7 @@ jobs:
             - name: Compare to baseline
               run: |
                   python3 scripts/ci/check_bench_regressions.py bench.txt .bench-baseline.json --max-regress 15
-            - uses: actions/upload-artifact@v4
+            - uses: actions/upload-artifact@v7
               with:
                   name: bench-results
                   path: bench.txt
@@ -109,13 +109,13 @@ jobs:
         runs-on: ubuntu-latest
         if: github.event_name == 'pull_request'
         steps:
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@v7
             - name: Compute summary
               id: summary
               run: |
                   echo "status=green" >> "$GITHUB_OUTPUT"
             - name: Comment on PR
-              uses: marocchino/sticky-pull-request-comment@v2
+              uses: marocchino/sticky-pull-request-comment@v3
               with:
                   header: green-button
                   message: |
