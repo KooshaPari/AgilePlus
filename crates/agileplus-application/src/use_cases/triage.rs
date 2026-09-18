@@ -391,70 +391,7 @@ pub struct TopologyReport {
 mod tests {
     use super::*;
     use crate::dto::*;
-
-    /// In-memory WpRepository for testing.
-    struct MemRepo {
-        items: Vec<PickedItem>,
-        dependencies: Vec<(String, String)>,
-        done_set: HashSet<String>,
-    }
-
-    impl Default for MemRepo {
-        fn default() -> Self {
-            Self {
-                items: Vec::new(),
-                dependencies: Vec::new(),
-                done_set: HashSet::new(),
-            }
-        }
-    }
-
-    impl MemRepo {
-        fn with_items(items: Vec<PickedItem>) -> Self {
-            Self {
-                items,
-                ..Default::default()
-            }
-        }
-    }
-
-    impl WpRepository for MemRepo {
-        fn list_pickable(
-            &self,
-            _agent: &str,
-            _lane: Option<&str>,
-            _category: Option<&str>,
-            limit: usize,
-        ) -> Result<Vec<PickedItem>> {
-            Ok(self.items.iter().take(limit).cloned().collect())
-        }
-
-        fn all_for_export(&self, _with_side: bool) -> Result<Vec<PickedItem>> {
-            Ok(self.items.clone())
-        }
-
-        fn add_dependency(&mut self, from: &str, to: &str) -> Result<()> {
-            self.dependencies.push((from.to_string(), to.to_string()));
-            Ok(())
-        }
-
-        fn mark_done(&mut self, wp_id: &str) -> Result<()> {
-            self.done_set.insert(wp_id.to_string());
-            Ok(())
-        }
-
-        fn claim_count(&self) -> usize {
-            0
-        }
-
-        fn wp_count(&self) -> usize {
-            self.items.len()
-        }
-
-        fn stage_count(&self) -> usize {
-            3
-        }
-    }
+    use crate::test_mocks::InMemoryWpRepo;
 
     fn make_item(id: &str, deps: Vec<&str>) -> PickedItem {
         PickedItem {
@@ -557,7 +494,11 @@ mod tests {
 
     #[test]
     fn topo_sort_independent_nodes() {
-        let items = vec![make_item("A", vec![]), make_item("B", vec![]), make_item("C", vec![])];
+        let items = vec![
+            make_item("A", vec![]),
+            make_item("B", vec![]),
+            make_item("C", vec![]),
+        ];
         let g = WpGraph::from_items(&items);
         let result = g.topo_sort();
         assert_eq!(result.order.len(), 3);
@@ -620,10 +561,8 @@ mod tests {
 
     #[test]
     fn pick_returns_items_from_repo() {
-        let repo = MemRepo::with_items(vec![
-            make_item("WP01", vec![]),
-            make_item("WP02", vec![]),
-        ]);
+        let repo =
+            InMemoryWpRepo::with_items(vec![make_item("WP01", vec![]), make_item("WP02", vec![])]);
         let state = AppState::new(repo);
         let req = PickRequest {
             agent_id: "agent-1".to_string(),
@@ -637,7 +576,7 @@ mod tests {
 
     #[test]
     fn pick_respects_limit() {
-        let repo = MemRepo::with_items(vec![
+        let repo = InMemoryWpRepo::with_items(vec![
             make_item("WP01", vec![]),
             make_item("WP02", vec![]),
             make_item("WP03", vec![]),
@@ -655,7 +594,7 @@ mod tests {
 
     #[test]
     fn claim_succeeds_on_first_attempt() {
-        let repo = MemRepo::default();
+        let repo = InMemoryWpRepo::default();
         let state = AppState::new(repo);
         let req = ClaimRequest {
             claim_id: "c1".to_string(),
@@ -671,7 +610,7 @@ mod tests {
 
     #[test]
     fn claim_fails_when_already_claimed() {
-        let repo = MemRepo::default();
+        let repo = InMemoryWpRepo::default();
         let state = AppState::new(repo);
         let req = ClaimRequest {
             claim_id: "c1".to_string(),
@@ -696,7 +635,7 @@ mod tests {
 
     #[test]
     fn heartbeat_returns_true_for_existing_claim() {
-        let repo = MemRepo::default();
+        let repo = InMemoryWpRepo::default();
         let state = AppState::new(repo);
         let req = ClaimRequest {
             claim_id: "c1".to_string(),
@@ -715,7 +654,7 @@ mod tests {
 
     #[test]
     fn heartbeat_returns_false_for_unknown_claim() {
-        let repo = MemRepo::default();
+        let repo = InMemoryWpRepo::default();
         let state = AppState::new(repo);
         let hb = HeartbeatRequest {
             claim_id: "nonexistent".to_string(),
@@ -725,7 +664,7 @@ mod tests {
 
     #[test]
     fn release_returns_true_for_existing_claim() {
-        let repo = MemRepo::default();
+        let repo = InMemoryWpRepo::default();
         let state = AppState::new(repo);
         let req = ClaimRequest {
             claim_id: "c1".to_string(),
@@ -744,7 +683,7 @@ mod tests {
 
     #[test]
     fn release_returns_false_for_unknown() {
-        let repo = MemRepo::default();
+        let repo = InMemoryWpRepo::default();
         let state = AppState::new(repo);
         let rel = ReleaseRequest {
             claim_id: "nope".to_string(),
@@ -754,43 +693,22 @@ mod tests {
 
     #[test]
     fn done_marks_wp_done() {
-        let repo = MemRepo::with_items(vec![make_item("WP01", vec![])]);
+        let repo = InMemoryWpRepo::with_items(vec![make_item("WP01", vec![])]);
         let mut state = AppState::new(repo);
         let req = DoneRequest {
             claim_id: "c1".to_string(),
             wp_id: "WP01".to_string(),
             result: Some("completed".to_string()),
         };
-        assert!(state.done(&mut req.clone()).unwrap());
-    }
-
-    #[test]
-    fn dedup_finds_identical_items() {
-        let repo = MemRepo::default();
-        let state = AppState::new(repo);
-        let req = DedupRequest {
-            items: vec![
-                ("Implement auth".to_string(), "Build auth system".to_string()),
-                ("Add authentication".to_string(), "Create login feature".to_string()),
-            ],
-            threshold: 0.3,
-        };
-        // The dedup function should return candidates (may be empty or non-empty
-        // depending on the similarity algorithm)
-        let _candidates = state.dedup(&req).unwrap();
+        assert!(state.done(&req).unwrap());
     }
 
     #[test]
     fn topology_builds_graph_from_repo() {
-        let items = vec![
-            make_item("WP01", vec![]),
-            make_item("WP02", vec!["WP01"]),
-        ];
-        let repo = MemRepo::with_items(items);
+        let items = vec![make_item("WP01", vec![]), make_item("WP02", vec!["WP01"])];
+        let repo = InMemoryWpRepo::with_items(items);
         let state = AppState::new(repo);
-        let req = TopologyRequest {
-            root_wp: None,
-        };
+        let req = TopologyRequest { root_wp: None };
         let report = state.topology(&req).unwrap();
         assert_eq!(report.topo.order.len(), 2);
         assert!(report.topo.cycle.is_none());
@@ -799,7 +717,7 @@ mod tests {
 
     #[test]
     fn scan_inspects_directories() {
-        let repo = MemRepo::default();
+        let repo = InMemoryWpRepo::default();
         let state = AppState::new(repo);
         let tmp = tempfile::tempdir().unwrap();
         let req = ScanRequest {
@@ -812,7 +730,7 @@ mod tests {
 
     #[test]
     fn scan_skips_nonexistent_paths() {
-        let repo = MemRepo::default();
+        let repo = InMemoryWpRepo::default();
         let state = AppState::new(repo);
         let req = ScanRequest {
             roots: vec!["/nonexistent/path/12345".to_string()],
@@ -824,7 +742,7 @@ mod tests {
 
     #[test]
     fn where_am_i_returns_snapshot() {
-        let repo = MemRepo::with_items(vec![make_item("WP01", vec![])]);
+        let repo = InMemoryWpRepo::with_items(vec![make_item("WP01", vec![])]);
         let state = AppState::new(repo);
         let tmp = tempfile::tempdir().unwrap();
         let req = WhereRequest {
@@ -837,7 +755,7 @@ mod tests {
 
     #[test]
     fn where_am_i_with_nonexistent_cwd() {
-        let repo = MemRepo::default();
+        let repo = InMemoryWpRepo::default();
         let state = AppState::new(repo);
         let req = WhereRequest {
             cwd: "/nonexistent/path".to_string(),
@@ -917,7 +835,7 @@ mod tests {
 
     #[test]
     fn claim_same_claim_id_succeeds() {
-        let repo = MemRepo::default();
+        let repo = InMemoryWpRepo::default();
         let state = AppState::new(repo);
         let req = ClaimRequest {
             claim_id: "c1".into(),
@@ -929,23 +847,21 @@ mod tests {
         };
         state.claim(&req).unwrap();
 
-        // Same claim_id re-claiming same resource should succeed (heartbeat-like)
-        let req2 = ClaimRequest {
-            claim_id: "c1".into(),
-            resource: "worktree-slug".into(),
-            kind: ClaimKind::Worktree,
-            agent_id: "agent-1".into(),
-            ttl_seconds: 300,
-            reason: ClaimReason::default(),
-        };
-        // This may or may not succeed depending on ClaimStore internals;
-        // at minimum it should not panic.
-        let _ = state.claim(&req2);
+        // Re-claiming under the same id is idempotent: it refreshes the
+        // existing claim instead of failing or creating a second one.
+        let claim = state.claim(&req).unwrap();
+        assert_eq!(claim.id, "c1");
+        assert_eq!(claim.state, ClaimState::Active);
+        assert_eq!(
+            state.claim_store.lock().unwrap().active().len(),
+            1,
+            "re-claiming under the same id must not add a second claim"
+        );
     }
 
     #[test]
     fn claim_release_and_reclaim() {
-        let repo = MemRepo::default();
+        let repo = InMemoryWpRepo::default();
         let state = AppState::new(repo);
 
         let req = ClaimRequest {
@@ -957,7 +873,11 @@ mod tests {
             reason: ClaimReason::default(),
         };
         state.claim(&req).unwrap();
-        state.release(&ReleaseRequest { claim_id: "c1".into() }).unwrap();
+        state
+            .release(&ReleaseRequest {
+                claim_id: "c1".into(),
+            })
+            .unwrap();
 
         // After release, a new claim should succeed
         let req2 = ClaimRequest {
@@ -974,21 +894,21 @@ mod tests {
 
     #[test]
     fn done_with_invalid_claim_id() {
-        let repo = MemRepo::with_items(vec![make_item("WP01", vec![])]);
+        let repo = InMemoryWpRepo::with_items(vec![make_item("WP01", vec![])]);
         let mut state = AppState::new(repo);
-        let mut req = DoneRequest {
+        let req = DoneRequest {
             claim_id: "nonexistent".into(),
             wp_id: "WP01".into(),
             result: None,
         };
         // done should still succeed (it releases and marks done even if claim missing)
-        let result = state.done(&mut req);
+        let result = state.done(&req);
         assert!(result.is_ok());
     }
 
     #[test]
     fn topology_empty_graph() {
-        let repo = MemRepo::default();
+        let repo = InMemoryWpRepo::default();
         let state = AppState::new(repo);
         let report = state.topology(&TopologyRequest { root_wp: None }).unwrap();
         assert!(report.topo.order.is_empty());
@@ -1002,7 +922,7 @@ mod tests {
             make_item("WP02", vec!["WP01"]),
             make_item("WP03", vec!["WP02"]),
         ];
-        let repo = MemRepo::with_items(items);
+        let repo = InMemoryWpRepo::with_items(items);
         let state = AppState::new(repo);
         let report = state.topology(&TopologyRequest { root_wp: None }).unwrap();
         assert_eq!(report.topo.order.len(), 3);
@@ -1015,7 +935,7 @@ mod tests {
 
     #[test]
     fn where_am_i_empty_repo() {
-        let repo = MemRepo::default();
+        let repo = InMemoryWpRepo::default();
         let state = AppState::new(repo);
         let tmp = tempfile::tempdir().unwrap();
         let req = WhereRequest {
