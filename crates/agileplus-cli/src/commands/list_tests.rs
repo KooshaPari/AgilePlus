@@ -17,7 +17,7 @@ use agileplus_domain::{
     domain::{
         audit::AuditEntry,
         backlog::{BacklogFilters, BacklogItem, BacklogPriority, BacklogStatus},
-        cycle::{Cycle, CycleFeature, CycleState, CycleWithFeatures},
+        cycle::{Cycle, CycleFeature, CycleState, CycleWithFeatures, WpProgressSummary},
         epic::{Epic, EpicStatus},
         feature::Feature,
         governance::{Evidence, GovernanceContract, PolicyRule},
@@ -55,6 +55,37 @@ pub struct MemStore {
     pub cycle_features: Mutex<Vec<CycleFeature>>,
     pub sync_mappings: Mutex<Vec<SyncMapping>>,
     pub users: Mutex<Vec<User>>,
+    /// Test-only fault selector for module/cycle command error paths.
+    pub module_fault: Mutex<MemFault>,
+    /// Test-only override for the work-package progress summary returned by
+    /// `get_cycle_with_features` (defaults to an all-zero summary).
+    pub cycle_wp_progress: Mutex<Option<WpProgressSummary>>,
+}
+
+/// Fault injection selector consulted by [`MemStore`]'s module/cycle
+/// operations.
+///
+/// The default is [`MemFault::None`], which reproduces the plain in-memory
+/// behaviour. Tests for command error handling opt in explicitly.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum MemFault {
+    /// Behave normally.
+    #[default]
+    None,
+    /// `delete_module` refuses with `ModuleHasDependents`.
+    DeleteHasDependents,
+    /// `delete_module` fails with a generic storage error.
+    DeleteStorageError,
+    /// `get_module_with_features` reports the module as absent.
+    DetailMissing,
+    /// `get_cycle_with_features` reports the cycle as absent.
+    CycleDetailMissing,
+    /// `add_feature_to_cycle` rejects the feature as out of module scope.
+    AddFeatureOutOfScope,
+    /// `add_feature_to_cycle` fails with a generic storage error.
+    AddFeatureStorageError,
+    /// `remove_feature_from_cycle` fails with a generic storage error.
+    RemoveFeatureStorageError,
 }
 
 #[async_trait]
@@ -384,6 +415,17 @@ impl StoragePort for MemStore {
     }
 
     async fn delete_module(&self, id: i64) -> Result<(), DomainError> {
+        match *self.module_fault.lock().unwrap() {
+            MemFault::DeleteHasDependents => {
+                return Err(DomainError::ModuleHasDependents(
+                    "module still owns 2 features".to_string(),
+                ));
+            }
+            MemFault::DeleteStorageError => {
+                return Err(DomainError::Storage("disk on fire".to_string()));
+            }
+            _ => {}
+        }
         self.modules.lock().unwrap().retain(|m| m.id != id);
         Ok(())
     }
@@ -414,6 +456,9 @@ impl StoragePort for MemStore {
         &self,
         id: i64,
     ) -> Result<Option<ModuleWithFeatures>, DomainError> {
+        if *self.module_fault.lock().unwrap() == MemFault::DetailMissing {
+            return Ok(None);
+        }
         let modules = self.modules.lock().unwrap();
         let module = modules.iter().find(|m| m.id == id).cloned();
         match module {
@@ -520,6 +565,9 @@ impl StoragePort for MemStore {
         &self,
         id: i64,
     ) -> Result<Option<CycleWithFeatures>, DomainError> {
+        if *self.module_fault.lock().unwrap() == MemFault::CycleDetailMissing {
+            return Ok(None);
+        }
         let cycles = self.cycles.lock().unwrap();
         let cycle = cycles.iter().find(|c| c.id == id).cloned();
         match cycle {
@@ -538,7 +586,12 @@ impl StoragePort for MemStore {
                 Ok(Some(CycleWithFeatures {
                     cycle,
                     features: linked_features,
-                    wp_progress: Default::default(),
+                    wp_progress: self
+                        .cycle_wp_progress
+                        .lock()
+                        .unwrap()
+                        .clone()
+                        .unwrap_or_default(),
                 }))
             }
             None => Ok(None),
@@ -546,6 +599,18 @@ impl StoragePort for MemStore {
     }
 
     async fn add_feature_to_cycle(&self, entry: &CycleFeature) -> Result<(), DomainError> {
+        match *self.module_fault.lock().unwrap() {
+            MemFault::AddFeatureOutOfScope => {
+                return Err(DomainError::FeatureNotInModuleScope {
+                    feature_slug: "login".to_string(),
+                    module_slug: "platform".to_string(),
+                });
+            }
+            MemFault::AddFeatureStorageError => {
+                return Err(DomainError::Storage("cycle write refused".to_string()));
+            }
+            _ => {}
+        }
         self.cycle_features.lock().unwrap().push(entry.clone());
         Ok(())
     }
@@ -555,6 +620,9 @@ impl StoragePort for MemStore {
         cycle_id: i64,
         feature_id: i64,
     ) -> Result<(), DomainError> {
+        if *self.module_fault.lock().unwrap() == MemFault::RemoveFeatureStorageError {
+            return Err(DomainError::Storage("cycle delete refused".to_string()));
+        }
         self.cycle_features
             .lock()
             .unwrap()
