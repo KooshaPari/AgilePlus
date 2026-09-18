@@ -73,10 +73,15 @@ mod extra_tests {
 
     #[test]
     fn refill_never_exceeds_capacity() {
-        let mut bucket = TokenBucket::new(2.0, 1_000_000.0);
+        // 200 tokens/s refills well past the capacity of 2 during the sleep,
+        // so the bucket must saturate. The rate is deliberately slow enough
+        // (1 token per 5ms) that the three acquires below cannot span long
+        // enough to earn a token back, which keeps the exhaustion check
+        // deterministic instead of racing the refill.
+        let mut bucket = TokenBucket::new(2.0, 200.0);
         assert!(bucket.try_acquire());
-        std::thread::sleep(Duration::from_millis(10));
-        // A huge refill rate must still cap at max_tokens (2).
+        std::thread::sleep(Duration::from_millis(50));
+        // A refill must still cap at max_tokens (2).
         assert!(bucket.try_acquire());
         assert!(bucket.try_acquire());
         assert!(!bucket.try_acquire());
