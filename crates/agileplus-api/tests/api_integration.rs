@@ -17,6 +17,8 @@ mod support;
 // directory is compiled, not just the file directly under `tests/`).
 #[path = "api_integration/module_cycle.rs"]
 mod module_cycle;
+#[path = "api_integration/auth_middleware.rs"]
+mod auth_middleware;
 #[path = "api_integration/branch.rs"]
 mod branch;
 #[path = "api_integration/worktree.rs"]
@@ -25,6 +27,8 @@ mod worktree;
 mod features_work_packages;
 #[path = "api_integration/route_coverage.rs"]
 mod route_coverage;
+#[path = "api_integration/stream_sse.rs"]
+mod stream_sse;
 
 use axum::http::StatusCode;
 
