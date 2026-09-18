@@ -274,3 +274,90 @@ fn max_depth_zero_unbounded_traverses_all() {
     assert!(!report.truncated);
     assert!(report.blast.len() >= 6, "should reach all 6 nodes");
 }
+
+// ---------------------------------------------------------------------------
+// Blast-node score escalation and traversal bookkeeping
+// ---------------------------------------------------------------------------
+
+/// A node may be reached more than once. The higher `|score|` wins, the node is
+/// re-queued so its own neighbours are explored through the better path, and
+/// `depth` / `via` keep the *first discovery* values (documented contract of
+/// the O(N+E) queue).
+#[test]
+fn blast_score_upgrades_on_better_path_and_keeps_first_discovery_metadata() {
+    // T-001 is first reached from the seed through a `Verifies` link, which has
+    // no positive multiplier (score 0.0). It is then re-reached from T-002 at
+    // depth 1 through a full-confidence `Satisfies` link.
+    let ty_v = TraceLinkType::Verifies;
+    let ty_s = TraceLinkType::Satisfies;
+    let l1 = make_link(req("FR-001"), test_ref("T-001"), ty_v, 0.3);
+    let l2 = make_link(req("FR-001"), test_ref("T-002"), ty_s, 1.0);
+    let l3 = make_link(test_ref("T-002"), test_ref("T-001"), ty_s, 1.0);
+
+    let matrix = make_matrix(vec![l1, l2, l3]);
+    let report = compute_impact(&matrix, &[req("FR-001")], &ImpactConfig::default());
+
+    let t1 = report
+        .blast
+        .iter()
+        .find(|n| n.artifact == test_ref("T-001"))
+        .expect("T-001 must be in the blast radius");
+
+    // test weight 0.5 * (1.0 confidence * 1.0 positive multiplier * 0.85 decay)
+    assert!(
+        (t1.score - 0.425).abs() < 1e-5,
+        "score must escalate to 0.425, got {}",
+        t1.score
+    );
+    assert_eq!(t1.depth, 1, "first discovery depth is retained");
+    assert_eq!(t1.via, vec![TraceLinkType::Verifies]);
+
+    let t2 = report
+        .blast
+        .iter()
+        .find(|n| n.artifact == test_ref("T-002"))
+        .expect("T-002 must be in the blast radius");
+    assert!((t2.score - 0.5).abs() < 1e-5, "got {}", t2.score);
+
+    // seed (1.0) + T-002 (0.5) + escalated T-001 (0.425); T-001 is counted once.
+    assert!(
+        (report.total_score - 1.925).abs() < 1e-5,
+        "total score must not double-count the upgraded node, got {}",
+        report.total_score
+    );
+    assert_eq!(
+        report.blast.len(),
+        3,
+        "seed + T-002 + T-001, each counted exactly once"
+    );
+}
+
+/// `max_depth_seen` reports the deepest depth actually *popped* from the queue,
+/// which is what callers compare against `ImpactConfig::max_depth`.
+#[test]
+fn max_depth_seen_reports_deepest_visited_hop() {
+    let ty = TraceLinkType::Satisfies;
+    let l1 = make_link(req("FR-001"), test_ref("T-001"), ty, 0.9);
+    let l2 = make_link(test_ref("T-001"), test_ref("T-002"), ty, 0.9);
+    let l3 = make_link(test_ref("T-002"), test_ref("T-003"), ty, 0.9);
+
+    let matrix = make_matrix(vec![l1, l2, l3]);
+    let report = compute_impact(&matrix, &[req("FR-001")], &ImpactConfig::default());
+
+    assert_eq!(report.max_depth_seen, 3);
+    assert!(!report.truncated);
+    assert_eq!(report.blast.len(), 4);
+
+    let depth_of = |artifact: ArtifactRef| {
+        report
+            .blast
+            .iter()
+            .find(|n| n.artifact == artifact)
+            .map(|n| n.depth)
+            .expect("artifact in blast radius")
+    };
+    assert_eq!(depth_of(req("FR-001")), 0);
+    assert_eq!(depth_of(test_ref("T-001")), 1);
+    assert_eq!(depth_of(test_ref("T-002")), 2);
+    assert_eq!(depth_of(test_ref("T-003")), 3);
+}

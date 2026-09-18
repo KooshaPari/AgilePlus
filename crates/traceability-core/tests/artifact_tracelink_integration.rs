@@ -478,3 +478,73 @@ fn requirement_full_serde_roundtrip() {
         Some(traceability_core::VerificationMethod::Test)
     );
 }
+
+// ---------------------------------------------------------------------------
+// TraceLink::new defaults and Neo4j DDL ordering
+// ---------------------------------------------------------------------------
+
+/// `TraceLink::new` documents that `from` / `to` are *placeholder* refs until
+/// the caller overwrites them. Consumers that read the link before overwriting
+/// depend on those placeholders being UUID-shaped `CodeEntity` refs.
+#[test]
+fn trace_link_new_uses_uuid_shaped_code_entity_placeholders() {
+    let project = Uuid::new_v4();
+    let source = Uuid::new_v4();
+    let target = Uuid::new_v4();
+
+    let link = TraceLink::new(project, source, target, TraceLinkType::Implements).unwrap();
+
+    assert_eq!(
+        link.from,
+        ArtifactRef::CodeEntity {
+            id: source.to_string(),
+            lang: "uuid".to_string(),
+        }
+    );
+    assert_eq!(
+        link.to,
+        ArtifactRef::CodeEntity {
+            id: target.to_string(),
+            lang: "uuid".to_string(),
+        }
+    );
+    assert_eq!(link.project_id, project);
+    assert_eq!(link.source_artifact_id, source);
+    assert_eq!(link.target_artifact_id, target);
+    assert!(link.rationale.is_none());
+    assert!(link.metadata.is_empty());
+}
+
+/// The Neo4j projection applies constraints before indexes; `all_statements`
+/// must preserve that order because Cypher DDL is applied sequentially.
+#[test]
+fn neo4j_all_statements_lists_constraints_before_indexes() {
+    let statements = Neo4jSchema::all_statements();
+
+    assert_eq!(
+        statements.len(),
+        Neo4jSchema::CONSTRAINTS.len() + Neo4jSchema::INDEXES.len()
+    );
+
+    let last_constraint = statements
+        .iter()
+        .rposition(|s| s.starts_with("CREATE CONSTRAINT"))
+        .expect("at least one constraint");
+    let first_index = statements
+        .iter()
+        .position(|s| s.starts_with("CREATE INDEX"))
+        .expect("at least one index");
+
+    assert!(
+        last_constraint < first_index,
+        "every constraint must be emitted before the first index"
+    );
+    assert_eq!(
+        &statements[..Neo4jSchema::CONSTRAINTS.len()],
+        Neo4jSchema::CONSTRAINTS
+    );
+    assert_eq!(
+        &statements[Neo4jSchema::CONSTRAINTS.len()..],
+        Neo4jSchema::INDEXES
+    );
+}

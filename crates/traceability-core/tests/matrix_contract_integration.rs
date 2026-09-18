@@ -308,3 +308,103 @@ fn all_gate_predicates_convert_to_reasons() {
         assert_eq!(reason, expected);
     }
 }
+
+// ---------------------------------------------------------------------------
+// ProgressionGate: MissingAcceptance error path with a matrix present
+// ---------------------------------------------------------------------------
+
+/// `MissingAcceptance` is produced by two distinct sub-paths: no
+/// contract/matrix at all, and a contract that is present *with* a matrix but
+/// whose criteria are not fully Covered. The second sub-path is exercised here.
+#[test]
+fn gate_reports_missing_acceptance_for_unsatisfied_contract() {
+    let src = Uuid::new_v4();
+    let tgt = Uuid::new_v4();
+    // Low confidence -> Partial, so the criterion is not Covered.
+    let matrix = build_matrix(&[make_link(src, tgt, TraceLinkType::Verifies, 0.4)]).matrix;
+
+    let contract = AcceptanceContract {
+        artifact_ref: ArtifactRef::Requirement {
+            id: RequirementId::new(),
+        },
+        criteria: vec![Criterion {
+            id: "AC-1".into(),
+            test_ref: src.to_string(),
+            evidence_ref: tgt.to_string(),
+        }],
+        verification: VerificationMethod::Test,
+        bdd: vec![],
+    };
+
+    assert!(!contract.is_satisfied(&matrix));
+    assert_eq!(contract.unsatisfied_criteria(&matrix), vec!["AC-1"]);
+
+    let gate = ProgressionGate::execution_to_evidence();
+    let ctx = GateContext {
+        acceptance: Some(&contract),
+        matrix: Some(&matrix),
+        ..Default::default()
+    };
+    assert_eq!(gate.evaluate(&ctx), Err(GateReason::MissingAcceptance));
+}
+
+/// A contract supplied without a matrix cannot be evaluated, so the gate must
+/// fail closed rather than assume satisfaction.
+#[test]
+fn gate_reports_missing_acceptance_when_matrix_absent() {
+    let src = Uuid::new_v4();
+    let tgt = Uuid::new_v4();
+    let contract = AcceptanceContract {
+        artifact_ref: ArtifactRef::Requirement {
+            id: RequirementId::new(),
+        },
+        criteria: vec![Criterion {
+            id: "AC-1".into(),
+            test_ref: src.to_string(),
+            evidence_ref: tgt.to_string(),
+        }],
+        verification: VerificationMethod::Test,
+        bdd: vec![],
+    };
+
+    let gate = ProgressionGate::execution_to_evidence();
+    let ctx = GateContext {
+        acceptance: Some(&contract),
+        matrix: None,
+        ..Default::default()
+    };
+    assert_eq!(gate.evaluate(&ctx), Err(GateReason::MissingAcceptance));
+}
+
+/// A contract with no criteria is documented as *not* satisfied, yet it has no
+/// unsatisfied criterion ids to report. Both halves of that asymmetry matter to
+/// callers that render "why did the gate block?" output.
+#[test]
+fn empty_criteria_contract_is_unsatisfied_but_lists_no_ids() {
+    let src = Uuid::new_v4();
+    let tgt = Uuid::new_v4();
+    let matrix = build_matrix(&[make_link(src, tgt, TraceLinkType::Verifies, 0.95)]).matrix;
+
+    let contract = AcceptanceContract {
+        artifact_ref: ArtifactRef::Requirement {
+            id: RequirementId::new(),
+        },
+        criteria: vec![],
+        verification: VerificationMethod::Test,
+        bdd: vec![],
+    };
+
+    assert!(!contract.is_satisfied(&matrix));
+    assert!(contract.unsatisfied_criteria(&matrix).is_empty());
+
+    let gate = ProgressionGate::execution_to_evidence();
+    let ctx = GateContext {
+        requirement: None,
+        acceptance: Some(&contract),
+        matrix: Some(&matrix),
+        evidence: &[],
+        has_test_links: true,
+        has_implementation: true,
+    };
+    assert_eq!(gate.evaluate(&ctx), Err(GateReason::MissingAcceptance));
+}

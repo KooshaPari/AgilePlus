@@ -510,4 +510,90 @@ mod tests {
         assert_eq!(back.to, cell.to);
         assert_eq!(back.coverage, cell.coverage);
     }
+
+    #[test]
+    fn build_from_pairs_skips_evidence_that_hashes_to_the_requirement_id() {
+        // The evidence string is hashed into the target UUID with the same
+        // namespace as the source, so an evidence id equal to the requirement
+        // id would yield a self-loop. That pair is dropped rather than emitted.
+        let mut evs = BTreeSet::new();
+        evs.insert("FR-1".to_string());
+        let r = build_from_pairs(&[(RequirementId::from_string("FR-1"), evs)]);
+        assert_eq!(r.link_count, 0);
+        assert_eq!(r.cell_count, 0);
+        assert!(r.matrix.cells.is_empty());
+
+        // A non-colliding evidence id in the same pair still produces a link,
+        // so the skip is per-evidence rather than per-requirement.
+        let mut mixed = BTreeSet::new();
+        mixed.insert("FR-1".to_string());
+        mixed.insert("ev-1".to_string());
+        let r = build_from_pairs(&[(RequirementId::from_string("FR-1"), mixed)]);
+        assert_eq!(r.link_count, 1);
+        assert_eq!(r.cell_count, 1);
+        let cell = r.matrix.cells.values().next().unwrap();
+        assert_eq!(cell.coverage, CoverageState::Covered);
+    }
+
+    #[test]
+    fn links_without_timestamps_are_not_stale() {
+        let project = Uuid::new_v4();
+        let mut untimed = TraceLink::new(
+            project,
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            TraceLinkType::DerivesFrom,
+        )
+        .unwrap();
+        untimed.confidence = 0.5;
+        untimed.created_at = None;
+        untimed.updated_at = None;
+
+        // A non-verifying link with no age information is Missing, never Stale.
+        assert_eq!(classify_cell(&[untimed.clone()]), CoverageState::Missing);
+        assert_eq!(build_matrix(&[untimed]).stale_links, 0);
+
+        // Half-populated timestamps are treated the same way.
+        let mut half_timed = TraceLink::new(
+            project,
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            TraceLinkType::DerivesFrom,
+        )
+        .unwrap();
+        half_timed.created_at = Some(Utc::now() - Duration::days(500));
+        half_timed.updated_at = None;
+        assert_eq!(classify_cell(&[half_timed]), CoverageState::Missing);
+    }
+
+    #[test]
+    fn changed_reports_link_set_change_at_unchanged_coverage() {
+        let base = make_link(TraceLinkType::Verifies, 0.95, 1);
+        let mut extra = make_link(TraceLinkType::Implements, 0.95, 1);
+        extra.source_artifact_id = base.source_artifact_id;
+        extra.target_artifact_id = base.target_artifact_id;
+
+        let old = build_matrix(std::slice::from_ref(&base)).matrix;
+        let new = build_matrix(&[base, extra]).matrix;
+
+        // The (from, to) key is identical and both cells stay Covered, so only
+        // the link set differs — that is the second operand of `changed`.
+        assert_eq!(old.cells.len(), 1);
+        assert_eq!(new.cells.len(), 1);
+        assert_eq!(
+            old.cells.values().next().unwrap().coverage,
+            CoverageState::Covered
+        );
+        assert_eq!(
+            new.cells.values().next().unwrap().coverage,
+            CoverageState::Covered
+        );
+
+        assert!(added(&old, &new).is_empty());
+        assert!(removed(&old, &new).is_empty());
+        let diff = changed(&old, &new);
+        assert_eq!(diff.len(), 1);
+        assert_eq!(diff[0].0.trace_links.len(), 1);
+        assert_eq!(diff[0].1.trace_links.len(), 2);
+    }
 }

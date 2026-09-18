@@ -420,3 +420,64 @@ fn all_validation_error_variants_display() {
         assert!(!msg.is_empty(), "display should produce non-empty string");
     }
 }
+
+// ---------------------------------------------------------------------------
+// Dangling edges (endpoint not present in `nodes`)
+// ---------------------------------------------------------------------------
+
+/// Pins the current *permissive* contract for dangling edges.
+///
+/// `check_edge_against_node_map` bails out with `None` when either endpoint is
+/// missing from the node map, so an edge whose endpoint is absent from
+/// `graph.nodes` is never checked against the ontology constraints and never
+/// reported as `OrphanedEdge`. The presence of the endpoint — not the edge
+/// itself — decides whether the constraint is enforced. Pinned here so that
+/// changing that contract becomes a deliberate decision instead of an
+/// accidental regression.
+#[test]
+fn dangling_edge_endpoint_suppresses_constraint_check() {
+    // `Tests` requires a (Feature|Task|Commit|PR|Bug) -> Test pair, so with the
+    // target node present this exact edge is rejected.
+    let present = make_graph(
+        vec![
+            node("Intent#root", NodeType::Intent, DagStage::Intent),
+            node("Feature#a", NodeType::Feature, DagStage::Feature),
+        ],
+        vec![edge(
+            "e1",
+            "Intent#root",
+            "Feature#a",
+            RelationshipType::Tests,
+        )],
+    );
+    let err = present
+        .check_edge_constraints()
+        .expect_err("Intent -> Feature is not a legal Tests pair");
+    assert!(matches!(err, ValidationError::InvalidEdgeConstraint { .. }));
+
+    // Same edge, but the target is absent from `nodes`: nothing is reported.
+    let dangling_target = make_graph(
+        vec![node("Intent#root", NodeType::Intent, DagStage::Intent)],
+        vec![edge(
+            "e1",
+            "Intent#root",
+            "Feature#ghost",
+            RelationshipType::Tests,
+        )],
+    );
+    assert!(dangling_target.check_edge_constraints().is_ok());
+    assert!(dangling_target.validate().is_ok());
+
+    // An absent *source* is skipped the same way.
+    let dangling_source = make_graph(
+        vec![node("Feature#a", NodeType::Feature, DagStage::Feature)],
+        vec![edge(
+            "e1",
+            "Intent#ghost",
+            "Feature#a",
+            RelationshipType::Tests,
+        )],
+    );
+    assert!(dangling_source.check_edge_constraints().is_ok());
+    assert!(dangling_source.validate().is_ok());
+}

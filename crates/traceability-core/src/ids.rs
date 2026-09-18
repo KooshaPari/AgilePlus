@@ -120,6 +120,16 @@ mod tests {
     }
 
     #[test]
+    fn requirement_id_parse_accepts_valid() {
+        let id = RequirementId::parse("FR-12").unwrap();
+        assert_eq!(id.as_str(), "FR-12");
+        // A bare value is prefixed, matching from_string.
+        let bare = RequirementId::parse("12").unwrap();
+        assert_eq!(bare.as_str(), "FR-12");
+        assert_eq!(bare, id);
+    }
+
+    #[test]
     fn to_fr_id_string_round_trips_with_agileplus_shape() {
         let id = RequirementId::from_string("FR-001");
         let boundary: String = id.to_fr_id_string();
