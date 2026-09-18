@@ -244,4 +244,25 @@ mod tests {
         let conn = adapter.conn_for_bench().unwrap();
         assert!(delete_user(&conn, 999).is_err());
     }
+
+    #[test]
+    fn unknown_role_status_and_timestamp_fall_back_to_defaults() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let before = chrono::Utc::now();
+        conn.execute(
+            "INSERT INTO users (id, display_name, email, role, status, avatar_url, github_login, created_at, updated_at)
+             VALUES (1, 'Legacy', 'legacy@example.com', 'not-a-role', 'not-a-status', NULL, NULL, 'not-a-timestamp', 'not-a-timestamp')",
+            [],
+        )
+        .unwrap();
+
+        let user = get_user_by_id(&conn, 1).unwrap().unwrap();
+        assert_eq!(user.role, UserRole::Member);
+        assert_eq!(user.status, UserStatus::Active);
+        assert!(
+            user.created_at >= before && user.updated_at >= before,
+            "unparseable timestamps must fall back to now"
+        );
+    }
 }

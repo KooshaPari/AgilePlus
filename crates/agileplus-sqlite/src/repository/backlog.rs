@@ -469,4 +469,41 @@ mod tests {
         let fetched = get_backlog_item(&conn, id).unwrap().unwrap();
         assert_eq!(fetched.tags, vec!["urgent", "regression"]);
     }
+
+    #[test]
+    fn malformed_tags_json_reads_as_empty() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let now = chrono::Utc::now().to_rfc3339();
+        conn.execute(
+            "INSERT INTO backlog_items
+             (title, description, intent, priority, status, source, feature_slug, tags_json, created_at, updated_at)
+             VALUES ('bad','','idea','high','new','triage',NULL,'not-json',?1,?1)",
+            rusqlite::params![now],
+        )
+        .unwrap();
+
+        let fetched = get_backlog_item(&conn, 1).unwrap().unwrap();
+        assert!(fetched.tags.is_empty());
+    }
+
+    #[test]
+    fn corrupt_timestamps_are_storage_errors() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let now = chrono::Utc::now().to_rfc3339();
+        conn.execute(
+            "INSERT INTO backlog_items
+             (title, description, intent, priority, status, source, feature_slug, tags_json, created_at, updated_at)
+             VALUES ('bad','','idea','high','new','triage',NULL,'[]','not-a-timestamp',?1)",
+            rusqlite::params![now],
+        )
+        .unwrap();
+
+        let err = get_backlog_item(&conn, 1).unwrap_err();
+        assert!(
+            matches!(err, agileplus_domain::error::DomainError::Storage(_)),
+            "got {err:?}"
+        );
+    }
 }

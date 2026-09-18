@@ -518,4 +518,290 @@ mod tests {
             .unwrap();
         assert_eq!(report.features_restored, 0);
     }
+
+    fn hex(b: [u8; 32]) -> String {
+        b.iter().map(|x| format!("{x:02x}")).collect()
+    }
+
+    /// Build a `meta.json` payload; `spec_hash` and `state` are injectable so
+    /// malformed values can be exercised.
+    fn meta_json(slug: &str, state: &str, spec_hash: &str, target_branch: Option<&str>) -> String {
+        let now = chrono::Utc::now().to_rfc3339();
+        let mut value = serde_json::json!({
+            "slug": slug,
+            "friendly_name": "Test Feature",
+            "state": state,
+            "spec_hash": spec_hash,
+            "created_at": now,
+            "updated_at": now,
+        });
+        if let Some(branch) = target_branch {
+            value["target_branch"] = serde_json::Value::String(branch.to_string());
+        }
+        value.to_string()
+    }
+
+    /// Build one `audit/chain.jsonl` line plus the hash it claims.
+    fn chain_line(
+        actor: &str,
+        transition: &str,
+        prev_hash: [u8; 32],
+        evidence_refs: Vec<EvidenceRef>,
+    ) -> (String, [u8; 32]) {
+        let entry = AuditEntry {
+            id: 0,
+            feature_id: 1,
+            wp_id: None,
+            timestamp: chrono::Utc::now(),
+            actor: actor.to_string(),
+            transition: transition.to_string(),
+            evidence_refs: evidence_refs.clone(),
+            prev_hash,
+            hash: [0u8; 32],
+            event_id: None,
+            archived_to: None,
+        };
+        let hash = hash_entry(&entry);
+        let line = serde_json::json!({
+            "feature_id": 1i64,
+            "wp_id": null,
+            "timestamp": entry.timestamp.to_rfc3339(),
+            "actor": actor,
+            "transition": transition,
+            "evidence_refs": evidence_refs,
+            "prev_hash": hex(prev_hash),
+            "hash": hex(hash),
+        });
+        (line.to_string(), hash)
+    }
+
+    async fn expect_storage_error(mock: &MockVcs, slug: &str) -> String {
+        let db = SqliteStorageAdapter::in_memory().unwrap();
+        let err = db.rebuild_from_git(mock, &[slug]).await.unwrap_err();
+        let DomainError::Storage(message) = err else {
+            panic!("expected DomainError::Storage, got {err:?}");
+        };
+        // A failed rebuild must leave no partially restored features behind.
+        assert!(
+            StoragePort::list_all_features(&db)
+                .await
+                .unwrap()
+                .is_empty()
+        );
+        message
+    }
+
+    #[tokio::test]
+    async fn rebuild_rejects_spec_hash_with_wrong_length() {
+        let slug = "short-hash";
+        let mut mock = MockVcs::new();
+        mock.add(
+            slug,
+            "meta.json",
+            &meta_json(slug, "specified", "abc", Some("main")),
+        );
+
+        let message = expect_storage_error(&mock, slug).await;
+        assert!(message.contains("64-char hex"), "{message}");
+    }
+
+    #[tokio::test]
+    async fn rebuild_rejects_non_hex_spec_hash() {
+        let slug = "not-hex";
+        let mut mock = MockVcs::new();
+        mock.add(
+            slug,
+            "meta.json",
+            &meta_json(slug, "specified", &"z".repeat(64), Some("main")),
+        );
+
+        let message = expect_storage_error(&mock, slug).await;
+        assert!(message.contains("hex parse error"), "{message}");
+    }
+
+    #[tokio::test]
+    async fn rebuild_rejects_malformed_meta_json() {
+        let slug = "broken-meta";
+        let mut mock = MockVcs::new();
+        mock.add(slug, "meta.json", "{not valid json");
+
+        let message = expect_storage_error(&mock, slug).await;
+        assert!(message.contains("meta.json parse error"), "{message}");
+    }
+
+    #[tokio::test]
+    async fn rebuild_rejects_unknown_feature_state() {
+        let slug = "bad-state";
+        let mut mock = MockVcs::new();
+        mock.add(
+            slug,
+            "meta.json",
+            &meta_json(slug, "not-a-state", &"a".repeat(64), Some("main")),
+        );
+
+        let message = expect_storage_error(&mock, slug).await;
+        assert!(message.contains("invalid state"), "{message}");
+    }
+
+    #[tokio::test]
+    async fn rebuild_rejects_unparseable_meta_timestamp() {
+        let slug = "bad-timestamp";
+        let mut mock = MockVcs::new();
+        let mut value: serde_json::Value =
+            serde_json::from_str(&meta_json(slug, "specified", &"a".repeat(64), Some("main")))
+                .unwrap();
+        value["created_at"] = serde_json::Value::String("not-a-timestamp".into());
+        mock.add(slug, "meta.json", &value.to_string());
+
+        let message = expect_storage_error(&mock, slug).await;
+        assert!(!message.is_empty(), "error must describe the failure");
+    }
+
+    #[tokio::test]
+    async fn rebuild_defaults_target_branch_to_main_and_skips_missing_chain() {
+        let slug = "no-branch";
+        let mut mock = MockVcs::new();
+        mock.add(
+            slug,
+            "meta.json",
+            &meta_json(slug, "specified", &"a".repeat(64), None),
+        );
+
+        let db = SqliteStorageAdapter::in_memory().unwrap();
+        let report = db.rebuild_from_git(&mock, &[slug]).await.unwrap();
+
+        assert_eq!(report.features_restored, 1);
+        assert_eq!(report.audit_entries_restored, 0);
+        let feat = StoragePort::get_feature_by_slug(&db, slug)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(feat.target_branch, "main");
+    }
+
+    #[tokio::test]
+    async fn rebuild_restores_audit_evidence_refs() {
+        let slug = "with-evidence";
+        let mut mock = MockVcs::new();
+        mock.add(
+            slug,
+            "meta.json",
+            &meta_json(slug, "specified", &"a".repeat(64), Some("main")),
+        );
+        let refs = vec![EvidenceRef {
+            evidence_id: 42,
+            fr_id: "FR-AGP-001".to_string(),
+        }];
+        let (line, _) = chain_line("agent", "created", [0u8; 32], refs);
+        mock.add(slug, "audit/chain.jsonl", &format!("{line}\n"));
+
+        let db = SqliteStorageAdapter::in_memory().unwrap();
+        let report = db.rebuild_from_git(&mock, &[slug]).await.unwrap();
+        assert_eq!(report.audit_entries_restored, 1);
+
+        let feature = StoragePort::get_feature_by_slug(&db, slug)
+            .await
+            .unwrap()
+            .unwrap();
+        let trail = StoragePort::get_audit_trail(&db, feature.id).await.unwrap();
+        assert_eq!(trail.len(), 1);
+        assert_eq!(trail[0].evidence_refs.len(), 1);
+        assert_eq!(trail[0].evidence_refs[0].evidence_id, 42);
+        assert_eq!(trail[0].evidence_refs[0].fr_id, "FR-AGP-001");
+    }
+
+    #[tokio::test]
+    async fn rebuild_rejects_broken_audit_chain() {
+        let slug = "broken-chain";
+        let mut mock = MockVcs::new();
+        mock.add(
+            slug,
+            "meta.json",
+            &meta_json(slug, "specified", &"a".repeat(64), Some("main")),
+        );
+        let (first, first_hash) = chain_line("agent", "created", [0u8; 32], vec![]);
+        // Second entry claims a prev_hash that does not match the first entry.
+        let second_entry = AuditEntry {
+            id: 0,
+            feature_id: 1,
+            wp_id: None,
+            timestamp: chrono::Utc::now(),
+            actor: "agent".to_string(),
+            transition: "created->specified".to_string(),
+            evidence_refs: vec![],
+            prev_hash: [9u8; 32],
+            hash: [0u8; 32],
+            event_id: None,
+            archived_to: None,
+        };
+        let second = serde_json::json!({
+            "feature_id": 1i64,
+            "wp_id": null,
+            "timestamp": second_entry.timestamp.to_rfc3339(),
+            "actor": "agent",
+            "transition": "created->specified",
+            "evidence_refs": [],
+            "prev_hash": hex([9u8; 32]),
+            "hash": hex(hash_entry(&second_entry)),
+        });
+        assert_ne!(first_hash, [9u8; 32]);
+        mock.add(slug, "audit/chain.jsonl", &format!("{first}\n{second}\n"));
+
+        let message = expect_storage_error(&mock, slug).await;
+        assert!(message.contains("audit chain broken"), "{message}");
+    }
+
+    #[tokio::test]
+    async fn rebuild_rejects_tampered_audit_entry_hash() {
+        let slug = "tampered";
+        let mut mock = MockVcs::new();
+        mock.add(
+            slug,
+            "meta.json",
+            &meta_json(slug, "specified", &"a".repeat(64), Some("main")),
+        );
+        // Claim a hash that does not match the entry contents.
+        let line = serde_json::json!({
+            "feature_id": 1i64,
+            "wp_id": null,
+            "timestamp": chrono::Utc::now().to_rfc3339(),
+            "actor": "agent",
+            "transition": "created",
+            "evidence_refs": [],
+            "prev_hash": hex([0u8; 32]),
+            "hash": hex([7u8; 32]),
+        });
+        mock.add(slug, "audit/chain.jsonl", &format!("{line}\n"));
+
+        let message = expect_storage_error(&mock, slug).await;
+        assert!(message.contains("hash mismatch"), "{message}");
+    }
+
+    #[tokio::test]
+    async fn rebuild_rolls_back_all_features_when_a_later_feature_fails() {
+        let good = "good-feature";
+        let bad = "bad-feature";
+        let mut mock = MockVcs::new();
+        mock.add(
+            good,
+            "meta.json",
+            &meta_json(good, "specified", &"a".repeat(64), Some("main")),
+        );
+        mock.add(
+            bad,
+            "meta.json",
+            &meta_json(bad, "specified", "too-short", Some("main")),
+        );
+
+        let db = SqliteStorageAdapter::in_memory().unwrap();
+        let err = db.rebuild_from_git(&mock, &[good, bad]).await.unwrap_err();
+        assert!(matches!(err, DomainError::Storage(_)), "got {err:?}");
+        assert!(
+            StoragePort::list_all_features(&db)
+                .await
+                .unwrap()
+                .is_empty(),
+            "the first feature must be rolled back with the transaction"
+        );
+    }
 }

@@ -323,4 +323,175 @@ Some description without a status row.
             assert!(!s.title.is_empty(), "story has empty title: {s:?}");
         }
     }
+
+    const TITLELESS_CATALOG: &str = r#"
+# Titleless Catalog
+
+## Functional Requirements
+
+### FR-TITLE-900
+"#;
+
+    #[test]
+    fn heading_without_title_uses_requirement_id_as_story_title() {
+        let conn = in_memory_conn();
+        let initiatives = vec![Initiative {
+            slug: "titleless",
+            title: "Titleless",
+            catalog_markdown: TITLELESS_CATALOG,
+        }];
+        seed_requirements(&conn, &initiatives).unwrap();
+
+        let story = stories::get_story_by_requirement_id(&conn, "FR-TITLE-900")
+            .unwrap()
+            .expect("story seeded from titleless heading");
+        assert_eq!(story.title, "FR-TITLE-900");
+        assert_eq!(story.requirement_id.as_deref(), Some("FR-TITLE-900"));
+    }
+
+    #[test]
+    fn seed_rejects_invalid_project_slug() {
+        let conn = in_memory_conn();
+        let initiatives = vec![Initiative {
+            slug: "Not A Slug",
+            title: "Invalid",
+            catalog_markdown: MINI_CATALOG,
+        }];
+
+        let err = seed_requirements(&conn, &initiatives).unwrap_err();
+        assert!(
+            matches!(err, DomainError::Validation(_)),
+            "expected Validation error, got {err:?}"
+        );
+        assert!(
+            projects::get_project_by_slug(&conn, "Not A Slug")
+                .unwrap()
+                .is_none(),
+            "a rejected initiative must not create a project row"
+        );
+    }
+
+    #[test]
+    fn existing_project_row_is_reused_and_not_renamed() {
+        use agileplus_domain::domain::project::Project;
+
+        let conn = in_memory_conn();
+        let existing =
+            projects::create_project(&conn, &Project::new("Original Name", "mini8").unwrap())
+                .unwrap();
+        let initiatives = vec![Initiative {
+            slug: "mini8",
+            title: "Renamed Initiative",
+            catalog_markdown: MINI_CATALOG,
+        }];
+
+        let report = seed_requirements(&conn, &initiatives).unwrap();
+
+        let project = projects::get_project_by_slug(&conn, "mini8")
+            .unwrap()
+            .expect("project exists");
+        assert_eq!(project.id, existing);
+        assert_eq!(project.name, "Original Name");
+        assert_eq!(projects::list_all_projects(&conn).unwrap().len(), 1);
+        let epic = epics::get_epic_by_requirement_id(&conn, "EPIC-mini8")
+            .unwrap()
+            .expect("epic seeded");
+        assert_eq!(epic.project_id, existing);
+        assert_eq!(report.initiatives[0].epic_id, epic.id);
+    }
+
+    const AGILEPLUS_CATALOG: &str =
+        include_str!("../../../../docs/requirements/agileplus-frnfr.md");
+    const AUTHVAULT_CATALOG: &str =
+        include_str!("../../../../docs/requirements/authvault-frnfr.md");
+    const TRACERA_CATALOG: &str = include_str!("../../../../docs/requirements/tracera-frnfr.md");
+    const VOXEL_CATALOG: &str =
+        include_str!("../../../../docs/requirements/phenotype-voxel-frnfr.md");
+
+    /// End-to-end seed of the shipped catalogs: every initiative must yield an
+    /// epic plus at least one requirement-keyed story, and a second run must not
+    /// duplicate anything.
+    #[test]
+    fn seeds_shipped_catalogs_without_duplicates() {
+        use std::collections::HashSet;
+
+        let conn = in_memory_conn();
+        let initiatives = vec![
+            Initiative {
+                slug: "agileplus",
+                title: "AgilePlus",
+                catalog_markdown: AGILEPLUS_CATALOG,
+            },
+            Initiative {
+                slug: "authvault",
+                title: "Authvault",
+                catalog_markdown: AUTHVAULT_CATALOG,
+            },
+            Initiative {
+                slug: "tracera",
+                title: "Tracera",
+                catalog_markdown: TRACERA_CATALOG,
+            },
+            Initiative {
+                slug: "phenotype-voxel",
+                title: "phenotype-voxel",
+                catalog_markdown: VOXEL_CATALOG,
+            },
+        ];
+
+        let first = seed_requirements(&conn, &initiatives).unwrap();
+        assert_eq!(first.epics_upserted, initiatives.len());
+        assert!(first.stories_upserted > 0, "catalogs must yield stories");
+        assert_eq!(first.initiatives.len(), initiatives.len());
+
+        let mut seen: HashSet<String> = HashSet::new();
+        for initiative in &first.initiatives {
+            assert!(
+                !initiative.stories.is_empty(),
+                "initiative {} produced no stories",
+                initiative.initiative_slug
+            );
+            assert_eq!(
+                initiative.epic_requirement_id,
+                format!("EPIC-{}", initiative.initiative_slug)
+            );
+            for story in &initiative.stories {
+                assert!(
+                    story.requirement_id.starts_with("FR-")
+                        || story.requirement_id.starts_with("NFR-"),
+                    "unexpected requirement id {}",
+                    story.requirement_id
+                );
+                assert!(
+                    seen.insert(story.requirement_id.clone()),
+                    "requirement id {} was seeded twice",
+                    story.requirement_id
+                );
+            }
+        }
+
+        // Re-running is a no-op: the same counts and no extra rows.
+        let second = seed_requirements(&conn, &initiatives).unwrap();
+        assert_eq!(second.epics_upserted, first.epics_upserted);
+        assert_eq!(second.stories_upserted, first.stories_upserted);
+        assert_eq!(
+            projects::list_all_projects(&conn).unwrap().len(),
+            initiatives.len()
+        );
+        for initiative in &first.initiatives {
+            let stories = stories::list_stories_by_project(&conn, {
+                projects::get_project_by_slug(&conn, &initiative.initiative_slug)
+                    .unwrap()
+                    .unwrap()
+                    .id
+            })
+            .unwrap();
+            assert_eq!(
+                stories.len(),
+                initiative.stories.len(),
+                "re-seeding {} duplicated stories",
+                initiative.initiative_slug
+            );
+        }
+    }
 }

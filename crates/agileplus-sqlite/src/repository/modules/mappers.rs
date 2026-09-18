@@ -129,3 +129,71 @@ impl<T> OptionalExt<T> for rusqlite::Result<T> {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use rusqlite::params;
+
+    use agileplus_domain::error::DomainError;
+
+    use crate::SqliteStorageAdapter;
+    use crate::repository::modules::{get_module, get_module_with_features};
+
+    fn adapter() -> SqliteStorageAdapter {
+        SqliteStorageAdapter::in_memory().expect("in-memory adapter")
+    }
+
+    #[test]
+    fn module_with_corrupt_created_at_is_storage_error() {
+        let a = adapter();
+        let conn = a.conn_for_bench().unwrap();
+        conn.execute(
+            "INSERT INTO modules (id, slug, friendly_name, created_at, updated_at)
+             VALUES (1, 'm', 'M', 'not-a-timestamp', ?1)",
+            params![chrono::Utc::now().to_rfc3339()],
+        )
+        .unwrap();
+
+        let err = get_module(&conn, 1).unwrap_err();
+        assert!(matches!(err, DomainError::Storage(_)), "got {err:?}");
+    }
+
+    #[test]
+    fn module_with_corrupt_updated_at_is_storage_error() {
+        let a = adapter();
+        let conn = a.conn_for_bench().unwrap();
+        conn.execute(
+            "INSERT INTO modules (id, slug, friendly_name, created_at, updated_at)
+             VALUES (1, 'm', 'M', ?1, 'not-a-timestamp')",
+            params![chrono::Utc::now().to_rfc3339()],
+        )
+        .unwrap();
+
+        let err = get_module(&conn, 1).unwrap_err();
+        assert!(matches!(err, DomainError::Storage(_)), "got {err:?}");
+    }
+
+    #[test]
+    fn module_feature_with_short_spec_hash_reads_as_zeroed_bytes() {
+        let a = adapter();
+        let conn = a.conn_for_bench().unwrap();
+        let now = chrono::Utc::now().to_rfc3339();
+        conn.execute(
+            "INSERT INTO modules (id, slug, friendly_name, created_at, updated_at)
+             VALUES (1, 'm', 'M', ?1, ?1)",
+            params![now],
+        )
+        .unwrap();
+        conn.execute(
+            "INSERT INTO features (id, slug, friendly_name, state, spec_hash, target_branch, module_id, created_at, updated_at)
+             VALUES (1, 'owned', 'Owned', 'created', X'00', 'main', 1, ?1, ?1)",
+            params![now],
+        )
+        .unwrap();
+
+        let view = get_module_with_features(&conn, 1).unwrap().unwrap();
+        assert_eq!(view.owned_features.len(), 1);
+        assert_eq!(view.owned_features[0].spec_hash, [0u8; 32]);
+        assert!(view.tagged_features.is_empty());
+    }
+}

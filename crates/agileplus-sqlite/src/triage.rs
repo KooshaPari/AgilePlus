@@ -87,3 +87,106 @@ impl TriagePort for SqliteTriageAdapter {
             .map_err(TriageError::from)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::path::{Path, PathBuf};
+
+    use agileplus_domain::ports::{TriageError, TriagePort};
+
+    use super::SqliteTriageAdapter;
+
+    /// Create a fresh temp directory unique to this process and label.
+    fn unique_temp_dir(label: &str) -> PathBuf {
+        let nanos = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .expect("clock")
+            .as_nanos();
+        let dir = std::env::temp_dir().join(format!(
+            "agileplus-sqlite-{label}-{}-{nanos}",
+            std::process::id()
+        ));
+        std::fs::create_dir_all(&dir).expect("temp dir");
+        dir
+    }
+
+    fn cleanup(dir: &Path) {
+        let _ = std::fs::remove_dir_all(dir);
+    }
+
+    #[tokio::test]
+    async fn file_backed_adapter_ensures_backlog_storage_and_serves_tickets() {
+        let dir = unique_temp_dir("triage-file");
+        let path = dir.join("triage.db");
+
+        let triage = SqliteTriageAdapter::new(&path).expect("file-backed triage adapter");
+        // No tickets yet: the empty backlog must surface as NoTicketAvailable.
+        let empty = TriagePort::next_ticket(&triage)
+            .await
+            .expect_err("empty backlog");
+        assert!(matches!(empty, TriageError::NoTicketAvailable));
+
+        {
+            let conn = triage.storage().conn_for_bench().expect("lock");
+            conn.execute(
+                "INSERT INTO backlog_items
+                 (title, description, intent, priority, status, source, feature_slug, tags_json, created_at, updated_at)
+                 VALUES ('Needs triage','desc','bug','critical','new','sentry',NULL,'[\"p0\"]',?1,?1)",
+                rusqlite::params![chrono::Utc::now().to_rfc3339()],
+            )
+            .expect("seed backlog item");
+        }
+
+        let ticket = TriagePort::next_ticket(&triage).await.expect("ticket");
+        assert_eq!(ticket.title, "Needs triage");
+        assert_eq!(
+            ticket.priority,
+            agileplus_domain::domain::backlog::BacklogPriority::Critical
+        );
+        assert_eq!(ticket.tags, vec!["p0".to_string()]);
+        let id = ticket.id.clone();
+
+        TriagePort::record_outcome(
+            &triage,
+            &id,
+            agileplus_domain::ports::TriageOutcome::Accepted,
+        )
+        .await
+        .expect("record accepted");
+        assert!(
+            matches!(
+                TriagePort::next_ticket(&triage).await,
+                Err(TriageError::NoTicketAvailable)
+            ),
+            "an accepted ticket must leave the new queue"
+        );
+
+        // Reopening the same file must not fail on the already-applied 016 DDL.
+        let reopened = SqliteTriageAdapter::new(&path).expect("reopen");
+        assert!(
+            matches!(
+                TriagePort::next_ticket(&reopened).await,
+                Err(TriageError::NoTicketAvailable)
+            ),
+            "reopened adapter must see the same triaged state"
+        );
+
+        drop(reopened);
+        drop(triage);
+        cleanup(&dir);
+    }
+
+    #[test]
+    fn new_fails_when_parent_directory_is_missing() {
+        let dir = unique_temp_dir("triage-missing");
+        let path = dir.join("absent").join("triage.db");
+
+        let err = match SqliteTriageAdapter::new(&path) {
+            Ok(_) => panic!("opening a database in a missing directory must fail"),
+            Err(err) => err,
+        };
+        assert!(matches!(err, TriageError::Storage(_)), "got {err:?}");
+
+        cleanup(&dir);
+    }
+}

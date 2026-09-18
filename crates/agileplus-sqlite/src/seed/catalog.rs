@@ -301,4 +301,104 @@ No status field here; should default to Shipped.
         assert!(!looks_like_req_id("PLAN-VOXEL-001")); // Not FR/NFR prefix
         assert!(!looks_like_req_id("FR-AGP")); // Too few parts
     }
+
+    #[test]
+    fn heading_listed_in_gap_section_without_status_is_planned() {
+        let catalog = "\
+# Catalog
+
+## Functional Requirements
+
+### FR-CAT-001 - Still open
+
+## Gaps / PLANNED
+
+- FR-CAT-001 is not started yet
+";
+        let entries = parse_catalog(catalog);
+        assert_eq!(entries.len(), 1);
+        assert_eq!(entries[0].id, "FR-CAT-001");
+        assert_eq!(
+            entries[0].status,
+            CatalogStatus::Planned,
+            "a heading listed in the gaps section must default to Planned"
+        );
+    }
+
+    #[test]
+    fn explicit_status_cell_overrides_gap_section_membership() {
+        let catalog = "\
+# Catalog
+
+### FR-CAT-002 - Shipped anyway
+
+| **Status** | SHIPPED |
+
+## Gaps / PLANNED
+
+- FR-CAT-002 mentioned here too
+";
+        let entries = parse_catalog(catalog);
+        let entry = entries
+            .iter()
+            .find(|e| e.id == "FR-CAT-002")
+            .expect("FR-CAT-002 parsed");
+        assert_eq!(entry.status, CatalogStatus::Shipped);
+    }
+
+    #[test]
+    fn partial_status_maps_to_planned() {
+        let catalog = "\
+# Catalog
+
+### FR-CAT-003 - Half done
+
+| **Status** | PARTIAL - 50 percent |
+";
+        let entries = parse_catalog(catalog);
+        assert_eq!(entries[0].status, CatalogStatus::Planned);
+    }
+
+    #[test]
+    fn title_field_fills_heading_without_separator() {
+        let catalog = "\
+# Catalog
+
+### FR-CAT-004
+
+| **Title:** Real title text |
+";
+        let entries = parse_catalog(catalog);
+        assert_eq!(entries.len(), 1);
+        assert_eq!(entries[0].id, "FR-CAT-004");
+        assert_eq!(entries[0].title, "Real title text");
+    }
+
+    #[test]
+    fn hyphen_separator_heading_parses_title() {
+        let catalog = "\
+# Catalog
+
+### NFR-CAT-005 - Hyphen separated title
+";
+        let entries = parse_catalog(catalog);
+        assert_eq!(entries[0].id, "NFR-CAT-005");
+        assert_eq!(entries[0].title, "Hyphen separated title");
+    }
+
+    #[test]
+    fn non_requirement_headings_are_ignored() {
+        let catalog = "\
+# Catalog
+
+## Functional Requirements
+
+### Random Heading
+
+Some prose mentioning PLAN-VOXEL-001 and nothing else.
+
+### FR-CAT
+";
+        assert!(parse_catalog(catalog).is_empty());
+    }
 }

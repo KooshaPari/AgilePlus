@@ -263,4 +263,71 @@ mod tests {
         assert_eq!(get_audit_trail(&conn, 1).unwrap().len(), 1);
         assert_eq!(get_audit_trail(&conn, 2).unwrap().len(), 1);
     }
+
+    /// Insert an audit row directly, bypassing the chain checks.
+    fn insert_raw_entry(
+        conn: &Connection,
+        evidence_refs: &str,
+        prev_hash: &[u8],
+        hash: &[u8],
+        timestamp: &str,
+    ) {
+        conn.execute(
+            "INSERT INTO audit_log
+             (feature_id, wp_id, timestamp, actor, transition, evidence_refs, prev_hash, hash)
+             VALUES (1, NULL, ?1, 'agent', 'created', ?2, ?3, ?4)",
+            params![timestamp, evidence_refs, prev_hash, hash],
+        )
+        .expect("raw audit insert");
+    }
+
+    #[test]
+    fn short_hash_blobs_read_as_zeroed_32_bytes() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        seed_feature(&conn, 1);
+        insert_raw_entry(
+            &conn,
+            "[]",
+            &[7u8, 7u8],
+            &[9u8],
+            &chrono::Utc::now().to_rfc3339(),
+        );
+
+        let trail = get_audit_trail(&conn, 1).unwrap();
+        assert_eq!(trail.len(), 1);
+        assert_eq!(trail[0].prev_hash, [0u8; 32]);
+        assert_eq!(trail[0].hash, [0u8; 32]);
+    }
+
+    #[test]
+    fn malformed_evidence_refs_reads_as_empty() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        seed_feature(&conn, 1);
+        insert_raw_entry(
+            &conn,
+            "{not-a-list}",
+            &[0u8; 32],
+            &[1u8; 32],
+            &chrono::Utc::now().to_rfc3339(),
+        );
+
+        let trail = get_audit_trail(&conn, 1).unwrap();
+        assert!(trail[0].evidence_refs.is_empty());
+    }
+
+    #[test]
+    fn corrupt_timestamp_reads_as_storage_error() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        seed_feature(&conn, 1);
+        insert_raw_entry(&conn, "[]", &[0u8; 32], &[1u8; 32], "not-a-timestamp");
+
+        let err = get_audit_trail(&conn, 1).unwrap_err();
+        assert!(
+            matches!(err, agileplus_domain::error::DomainError::Storage(_)),
+            "got {err:?}"
+        );
+    }
 }

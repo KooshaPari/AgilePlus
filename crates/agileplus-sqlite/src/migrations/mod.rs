@@ -274,4 +274,234 @@ mod tests {
             .expect("query");
         assert_eq!(count, 1, "backlog_items must exist after run_all");
     }
+
+    #[test]
+    fn parse_up_extracts_body_between_markers() {
+        let sql = "-- UP\nCREATE TABLE t (id INTEGER);\n\n-- DOWN\nDROP TABLE t;\n";
+        assert_eq!(parse_up(sql), "CREATE TABLE t (id INTEGER);");
+    }
+
+    #[test]
+    fn parse_up_without_marker_returns_whole_text() {
+        assert_eq!(parse_up("SELECT 1;"), "SELECT 1;");
+    }
+
+    #[test]
+    fn parse_up_requires_uppercase_marker() {
+        // A lowercase `-- up` is not recognized, so the entire text is the body.
+        assert_eq!(parse_up("-- up\nSELECT 1;"), "-- up\nSELECT 1;");
+    }
+
+    #[test]
+    fn parse_up_marker_accepts_colon_suffix() {
+        let sql = "-- UP:\nSELECT 1;\n-- DOWN\nSELECT 2;";
+        assert_eq!(parse_up(sql), "SELECT 1;");
+    }
+
+    #[test]
+    fn parse_up_body_runs_to_end_when_no_down_marker() {
+        assert_eq!(
+            parse_up("-- UP\nSELECT 1;\nSELECT 2;"),
+            "SELECT 1;\nSELECT 2;"
+        );
+    }
+
+    #[test]
+    fn parse_down_extracts_body_after_marker() {
+        assert_eq!(
+            parse_down("-- UP\nSELECT 1;\n-- DOWN\nDROP TABLE t;\n"),
+            "DROP TABLE t;"
+        );
+    }
+
+    #[test]
+    fn parse_down_without_marker_is_empty() {
+        assert_eq!(parse_down("SELECT 1;"), "");
+    }
+
+    #[test]
+    fn every_registered_migration_has_a_nonempty_up_body() {
+        for (name, sql) in MIGRATIONS {
+            let up = parse_up(sql);
+            assert!(
+                !up.is_empty(),
+                "migration {name} has an empty UP body, so run_all would be a silent no-op"
+            );
+            assert!(
+                !up.contains("-- DOWN"),
+                "migration {name} leaked the DOWN section into its UP body"
+            );
+        }
+    }
+
+    #[test]
+    fn rollback_last_deletes_tracking_row_for_unregistered_migration() {
+        let conn = Connection::open_in_memory().expect("in-memory");
+        let runner = MigrationRunner::new(&conn);
+        runner.run_all().expect("migrate");
+        // A tracking row whose name is not in MIGRATIONS: rollback must still
+        // drop the row (there is simply no DOWN body to execute).
+        conn.execute(
+            "INSERT INTO _migrations (name, applied_at) VALUES ('999_not_registered', '2026-01-01T00:00:00Z')",
+            [],
+        )
+        .expect("insert fake row");
+
+        runner.rollback_last().expect("rollback");
+
+        let remaining: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM _migrations WHERE name = '999_not_registered'",
+                [],
+                |row| row.get(0),
+            )
+            .expect("count");
+        assert_eq!(remaining, 0, "unknown migration row must be removed");
+        let total: i64 = conn
+            .query_row("SELECT COUNT(*) FROM _migrations", [], |row| row.get(0))
+            .expect("count all");
+        assert_eq!(total as usize, MIGRATIONS.len());
+    }
+
+    #[test]
+    fn run_all_reports_failing_migration_and_leaves_it_unapplied() {
+        let conn = Connection::open_in_memory().expect("in-memory");
+        // Pre-create a conflicting `features` table so `CREATE TABLE IF NOT
+        // EXISTS features` is a no-op and the later index migration fails.
+        conn.execute_batch("CREATE TABLE features (bogus TEXT);")
+            .expect("conflicting table");
+
+        let err = MigrationRunner::new(&conn)
+            .run_all()
+            .expect_err("migration must fail");
+        let DomainError::Storage(message) = err else {
+            panic!("expected DomainError::Storage, got {err:?}");
+        };
+        assert!(
+            message.contains("migration 009_create_indexes failed"),
+            "error must name the failing migration: {message}"
+        );
+
+        let earlier: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM _migrations WHERE name = '001_create_features'",
+                [],
+                |row| row.get(0),
+            )
+            .expect("count");
+        assert_eq!(earlier, 1, "migrations before the failure stay recorded");
+
+        let failed: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM _migrations WHERE name = '009_create_indexes'",
+                [],
+                |row| row.get(0),
+            )
+            .expect("count");
+        assert_eq!(
+            failed, 0,
+            "a failed migration must not be recorded as applied"
+        );
+    }
+
+    #[test]
+    fn run_all_heals_a_database_missing_a_later_migration() {
+        let conn = Connection::open_in_memory().expect("in-memory");
+        let runner = MigrationRunner::new(&conn);
+        runner.run_all().expect("migrate");
+
+        // Simulate a database created by an older CLI that skipped 016.
+        conn.execute_batch("DROP TABLE backlog_items;")
+            .expect("drop backlog table");
+        conn.execute(
+            "DELETE FROM _migrations WHERE name = '016_create_backlog_items'",
+            [],
+        )
+        .expect("forget 016");
+
+        runner.run_all().expect("re-run must heal the schema");
+
+        let tables: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'backlog_items'",
+                [],
+                |row| row.get(0),
+            )
+            .expect("query");
+        assert_eq!(tables, 1, "backlog_items must be recreated");
+        let recorded: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM _migrations WHERE name = '016_create_backlog_items'",
+                [],
+                |row| row.get(0),
+            )
+            .expect("query");
+        assert_eq!(recorded, 1, "016 must be recorded again");
+    }
+
+    #[test]
+    fn rollback_last_drops_tracking_row_but_keeps_add_column_changes() {
+        let conn = Connection::open_in_memory().expect("in-memory");
+        let runner = MigrationRunner::new(&conn);
+        runner.run_all().expect("migrate");
+        let (last_name, last_sql) = MIGRATIONS[MIGRATIONS.len() - 1];
+        assert_eq!(last_name, "026_feature_labels");
+
+        runner.rollback_last().expect("rollback");
+        let applied: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM _migrations WHERE name = ?1",
+                rusqlite::params![last_name],
+                |row| row.get(0),
+            )
+            .expect("query");
+        assert_eq!(applied, 0, "{last_name} must no longer be recorded");
+
+        // 026 only appends a column and its DOWN body is comment-only, so the
+        // column survives the rollback (see the comment inside the migration file).
+        let down = parse_down(last_sql);
+        assert!(
+            down.lines()
+                .all(|line| line.trim().is_empty() || line.trim_start().starts_with("--")),
+            "this test documents a DOWN body that only contains comments: {down:?}"
+        );
+        let has_labels: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM pragma_table_info('features') WHERE name = 'labels'",
+                [],
+                |row| row.get(0),
+            )
+            .expect("query");
+        assert_eq!(
+            has_labels, 1,
+            "the appended column remains after an irreversible rollback"
+        );
+    }
+
+    #[test]
+    fn run_all_marks_all_migrations_applied_when_schema_is_clean() {
+        let conn = Connection::open_in_memory().expect("in-memory");
+        MigrationRunner::new(&conn).run_all().expect("migrate");
+        let applied: i64 = conn
+            .query_row("SELECT COUNT(*) FROM _migrations", [], |row| row.get(0))
+            .expect("count");
+        assert_eq!(applied as usize, MIGRATIONS.len());
+        let names: Vec<String> = conn
+            .prepare("SELECT name, applied_at FROM _migrations ORDER BY id")
+            .expect("prepare")
+            .query_map([], |row| {
+                let name: String = row.get(0)?;
+                let applied_at: String = row.get(1)?;
+                assert!(
+                    applied_at.parse::<chrono::DateTime<chrono::Utc>>().is_ok(),
+                    "applied_at for {name} must be RFC3339"
+                );
+                Ok(name)
+            })
+            .expect("query")
+            .collect::<SqlResult<Vec<_>>>()
+            .expect("collect");
+        assert_eq!(names[0], MIGRATIONS[0].0);
+        assert_eq!(names[names.len() - 1], MIGRATIONS[MIGRATIONS.len() - 1].0);
+    }
 }

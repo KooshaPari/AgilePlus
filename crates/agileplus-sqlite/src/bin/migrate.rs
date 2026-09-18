@@ -78,3 +78,45 @@ fn applied_names(conn: &rusqlite::Connection) -> anyhow::Result<Vec<String>> {
         .collect::<Result<Vec<_>, _>>()?;
     Ok(names)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn applied_names_lists_migrations_in_application_order() {
+        let conn = rusqlite::Connection::open_in_memory().expect("in-memory");
+        MigrationRunner::new(&conn).run_all().expect("migrate");
+
+        let names = applied_names(&conn).expect("applied names");
+        assert_eq!(
+            names.first().map(String::as_str),
+            Some("001_create_features")
+        );
+        assert!(
+            names.contains(&"016_create_backlog_items".to_string()),
+            "the backlog migration must stay applied: {names:?}"
+        );
+        let mut unique = names.clone();
+        unique.sort();
+        unique.dedup();
+        assert_eq!(unique.len(), names.len(), "migration names must be unique");
+        let has_backlog: bool = conn
+            .query_row(
+                "SELECT COUNT(*) > 0 FROM sqlite_master WHERE type = 'table' AND name = 'backlog_items'",
+                [],
+                |row| row.get(0),
+            )
+            .expect("query");
+        assert!(has_backlog, "backlog_items must exist after run_all");
+    }
+
+    #[test]
+    fn applied_names_errors_before_migrations_run() {
+        let conn = rusqlite::Connection::open_in_memory().expect("in-memory");
+        assert!(
+            applied_names(&conn).is_err(),
+            "the _migrations table does not exist yet"
+        );
+    }
+}

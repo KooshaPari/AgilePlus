@@ -266,4 +266,73 @@ mod tests {
             [2, 3]
         );
     }
+
+    /// Insert an event row directly so a corrupted column can be read back.
+    fn insert_raw_event(
+        conn: &rusqlite::Connection,
+        payload: &str,
+        prev_hash: &[u8],
+        hash: &[u8],
+        timestamp: &str,
+    ) {
+        conn.execute(
+            "INSERT INTO events (entity_type, entity_id, event_type, payload, actor, timestamp, prev_hash, hash, sequence)
+             VALUES ('Feature', 5, 'transitioned', ?1, 'agent', ?2, ?3, ?4, 1)",
+            rusqlite::params![payload, timestamp, prev_hash, hash],
+        )
+        .expect("raw event insert");
+    }
+
+    #[test]
+    fn non_json_payload_reads_as_null_instead_of_failing() {
+        let adapter = SqliteStorageAdapter::in_memory().expect("in-memory storage");
+        let conn = adapter.conn_for_bench().expect("database connection");
+        insert_raw_event(
+            &conn,
+            "definitely not json",
+            &[0u8; 32],
+            &[0u8; 32],
+            &Utc.with_ymd_and_hms(2026, 8, 29, 10, 0, 0)
+                .single()
+                .unwrap()
+                .to_rfc3339(),
+        );
+
+        let events = get_events(&conn, "Feature", 5).expect("read event stream");
+        assert_eq!(events.len(), 1);
+        assert_eq!(events[0].payload, serde_json::Value::Null);
+    }
+
+    #[test]
+    fn short_hash_blobs_read_as_zeroed_32_bytes() {
+        let adapter = SqliteStorageAdapter::in_memory().expect("in-memory storage");
+        let conn = adapter.conn_for_bench().expect("database connection");
+        insert_raw_event(
+            &conn,
+            "{}",
+            &[1u8],
+            &[2u8, 3u8],
+            &Utc.with_ymd_and_hms(2026, 8, 29, 10, 0, 0)
+                .single()
+                .unwrap()
+                .to_rfc3339(),
+        );
+
+        let events = get_events(&conn, "Feature", 5).expect("read event stream");
+        assert_eq!(events[0].prev_hash, [0u8; 32]);
+        assert_eq!(events[0].hash, [0u8; 32]);
+    }
+
+    #[test]
+    fn corrupt_timestamp_column_is_storage_error() {
+        let adapter = SqliteStorageAdapter::in_memory().expect("in-memory storage");
+        let conn = adapter.conn_for_bench().expect("database connection");
+        insert_raw_event(&conn, "{}", &[0u8; 32], &[0u8; 32], "not-a-timestamp");
+
+        let err = get_events(&conn, "Feature", 5).unwrap_err();
+        assert!(
+            matches!(err, agileplus_domain::error::DomainError::Storage(_)),
+            "got {err:?}"
+        );
+    }
 }

@@ -326,4 +326,69 @@ mod tests {
         let conn = adapter.conn_for_bench().unwrap();
         assert!(update_cycle_state(&conn, 999, CycleState::Active).is_err());
     }
+
+    #[test]
+    fn wp_progress_buckets_doing_review_and_blocked() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let cycle_id = create_cycle(&conn, &make_cycle("Buckets")).unwrap();
+        let feature_id = 42;
+        seed_feature(&conn, feature_id);
+        add_feature_to_cycle(&conn, &CycleFeature::new(cycle_id, feature_id)).unwrap();
+
+        let now = chrono::Utc::now().to_rfc3339();
+        for (sequence, state) in [(1, "doing"), (2, "review"), (3, "blocked"), (4, "planned")] {
+            conn.execute(
+                "INSERT INTO work_packages
+                 (feature_id, title, state, sequence, file_scope, acceptance_criteria, created_at, updated_at)
+                 VALUES (?1, ?2, ?3, ?4, '[]', '', ?5, ?5)",
+                rusqlite::params![feature_id, format!("WP {state}"), state, sequence, now],
+            )
+            .unwrap();
+        }
+
+        let view = get_cycle_with_features(&conn, cycle_id)
+            .unwrap()
+            .expect("cycle view");
+        let progress = view.wp_progress;
+        assert_eq!(progress.total, 4);
+        assert_eq!(
+            progress.in_progress, 2,
+            "doing and review both count as in progress"
+        );
+        assert_eq!(progress.blocked, 1);
+        assert_eq!(progress.planned, 1);
+        assert_eq!(progress.done, 0);
+    }
+
+    #[test]
+    fn wp_progress_ignores_work_packages_of_other_cycles() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let in_scope = create_cycle(&conn, &make_cycle("InScope")).unwrap();
+        let out_of_scope = create_cycle(&conn, &make_cycle("OutOfScope")).unwrap();
+        let scoped_feature = 7;
+        let other_feature = 8;
+        seed_feature(&conn, scoped_feature);
+        seed_feature(&conn, other_feature);
+        add_feature_to_cycle(&conn, &CycleFeature::new(in_scope, scoped_feature)).unwrap();
+        add_feature_to_cycle(&conn, &CycleFeature::new(out_of_scope, other_feature)).unwrap();
+
+        let now = chrono::Utc::now().to_rfc3339();
+        for (feature_id, sequence) in [(scoped_feature, 1), (other_feature, 2)] {
+            conn.execute(
+                "INSERT INTO work_packages
+                 (feature_id, title, state, sequence, file_scope, acceptance_criteria, created_at, updated_at)
+                 VALUES (?1, 'WP', 'done', ?2, '[]', '', ?3, ?3)",
+                rusqlite::params![feature_id, sequence, now],
+            )
+            .unwrap();
+        }
+
+        let view = get_cycle_with_features(&conn, in_scope)
+            .unwrap()
+            .expect("cycle view");
+        assert_eq!(view.wp_progress.total, 1);
+        assert_eq!(view.wp_progress.done, 1);
+    }
 }

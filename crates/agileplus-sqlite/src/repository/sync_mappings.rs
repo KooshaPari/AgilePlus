@@ -172,7 +172,9 @@ mod tests {
         let conn = adapter.conn_for_bench().unwrap();
         let m = SyncMapping::new("epic", 5, "PLN-789", "hash3");
         upsert_sync_mapping(&conn, &m).unwrap();
-        let got = get_sync_mapping_by_plane_id(&conn, "epic", "PLN-789").unwrap().unwrap();
+        let got = get_sync_mapping_by_plane_id(&conn, "epic", "PLN-789")
+            .unwrap()
+            .unwrap();
         assert_eq!(got.entity_id, 5);
     }
 
@@ -205,5 +207,33 @@ mod tests {
         let g2 = get_sync_mapping(&conn, "epic", 1).unwrap().unwrap();
         assert_eq!(g1.plane_issue_id, "PLN-F1");
         assert_eq!(g2.plane_issue_id, "PLN-E1");
+    }
+
+    #[test]
+    fn unparseable_timestamp_and_unknown_direction_fall_back() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        conn.execute(
+            "INSERT INTO sync_mappings
+             (entity_type, entity_id, plane_issue_id, content_hash, last_synced_at, sync_direction, conflict_count)
+             VALUES ('feature', 3, 'PLN-3', 'h', 'not-a-timestamp', 'sideways', 0)",
+            [],
+        )
+        .unwrap();
+
+        let before = Utc::now();
+        let got = get_sync_mapping(&conn, "feature", 3).unwrap().unwrap();
+        assert_eq!(got.sync_direction, SyncDirection::Bidirectional);
+        assert!(
+            got.last_synced_at >= before - chrono::Duration::seconds(1),
+            "unparseable timestamp must fall back to now, got {}",
+            got.last_synced_at
+        );
+
+        let by_plane = get_sync_mapping_by_plane_id(&conn, "feature", "PLN-3")
+            .unwrap()
+            .unwrap();
+        assert_eq!(by_plane.sync_direction, SyncDirection::Bidirectional);
+        assert!(by_plane.last_synced_at >= before - chrono::Duration::seconds(1));
     }
 }

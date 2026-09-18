@@ -318,4 +318,27 @@ mod tests {
         let id2 = upsert_story_by_requirement_id(&conn, &s).unwrap();
         assert_eq!(id1, id2);
     }
+
+    #[test]
+    fn unknown_status_and_timestamp_fall_back_to_defaults() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        seed_project(&conn, 10);
+        seed_epic(&conn, 20, 10);
+        let before = chrono::Utc::now();
+        conn.execute(
+            "INSERT INTO stories (id, epic_id, project_id, title, description, status, points, assignee_id, created_at, updated_at)
+             VALUES (1, 20, 10, 'Legacy story', NULL, 'not-a-status', 3, NULL, 'not-a-timestamp', 'not-a-timestamp')",
+            [],
+        )
+        .unwrap();
+
+        let story = get_story_by_id(&conn, 1).unwrap().unwrap();
+        assert_eq!(story.status, StoryStatus::Todo);
+        assert_eq!(story.points, Some(3));
+        assert!(
+            story.created_at >= before,
+            "unparseable timestamp falls back to now"
+        );
+    }
 }

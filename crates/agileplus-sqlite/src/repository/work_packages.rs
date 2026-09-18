@@ -762,4 +762,143 @@ mod tests {
         let deps = get_wp_dependencies(&conn, id3).unwrap();
         assert_eq!(deps.len(), 2);
     }
+
+    /// Insert a work package row directly so a corrupted column can be read back.
+    fn insert_raw_wp(
+        conn: &Connection,
+        state: &str,
+        file_scope: &str,
+        pr_state: Option<&str>,
+        created_at: &str,
+        updated_at: &str,
+    ) {
+        conn.execute(
+            "INSERT INTO work_packages
+             (feature_id, title, state, sequence, file_scope, acceptance_criteria, pr_state, created_at, updated_at)
+             VALUES (1, 'raw', ?1, 1, ?2, 'ac', ?3, ?4, ?5)",
+            params![state, file_scope, pr_state, created_at, updated_at],
+        )
+        .expect("raw wp insert");
+    }
+
+    #[test]
+    fn malformed_file_scope_json_reads_as_empty() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        seed_feature(&conn, 1);
+        let now = Utc::now().to_rfc3339();
+        insert_raw_wp(&conn, "planned", "not-json", None, &now, &now);
+
+        let all = list_all_work_packages(&conn).unwrap();
+        assert_eq!(all.len(), 1);
+        assert!(all[0].file_scope.is_empty());
+    }
+
+    #[test]
+    fn unknown_pr_state_falls_back_to_open() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        seed_feature(&conn, 1);
+        let now = Utc::now().to_rfc3339();
+        // Bypass the pr_state CHECK constraint to simulate a row written by a
+        // newer schema that this reader does not know about.
+        conn.execute_batch("PRAGMA ignore_check_constraints=ON;")
+            .unwrap();
+        insert_raw_wp(
+            &conn,
+            "planned",
+            "[]",
+            Some("not-a-real-pr-state"),
+            &now,
+            &now,
+        );
+
+        let w = get_work_package(&conn, 1).unwrap().unwrap();
+        assert_eq!(w.pr_state, Some(PrState::Open));
+    }
+
+    #[test]
+    fn corrupt_timestamp_columns_are_storage_errors() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        seed_feature(&conn, 1);
+        let now = Utc::now().to_rfc3339();
+
+        insert_raw_wp(&conn, "planned", "[]", None, "not-a-timestamp", &now);
+        let err = get_work_package(&conn, 1).unwrap_err();
+        assert!(matches!(err, DomainError::Storage(_)), "got {err:?}");
+
+        conn.execute("DELETE FROM work_packages", []).unwrap();
+        insert_raw_wp(&conn, "planned", "[]", None, &now, "not-a-timestamp");
+        let err = get_work_package(&conn, 2).unwrap_err();
+        assert!(matches!(err, DomainError::Storage(_)), "got {err:?}");
+    }
+
+    #[test]
+    fn corrupt_state_column_is_storage_error() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        seed_feature(&conn, 1);
+        let now = Utc::now().to_rfc3339();
+        conn.execute_batch("PRAGMA ignore_check_constraints=ON;")
+            .unwrap();
+        insert_raw_wp(&conn, "bogus-state", "[]", None, &now, &now);
+
+        let err = get_work_package(&conn, 1).unwrap_err();
+        assert!(matches!(err, DomainError::Storage(_)), "got {err:?}");
+    }
+
+    #[test]
+    fn list_wps_by_story_returns_only_linked_packages() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        seed_feature(&conn, 1);
+        conn.execute(
+            "INSERT INTO projects (id, slug, name, description, created_at, updated_at)
+             VALUES (1, 'p', 'P', '', ?1, ?1)",
+            params![Utc::now().to_rfc3339()],
+        )
+        .unwrap();
+        conn.execute(
+            "INSERT INTO epics (id, project_id, title, description, status, created_at, updated_at)
+             VALUES (1, 1, 'E', '', 'backlog', ?1, ?1)",
+            params![Utc::now().to_rfc3339()],
+        )
+        .unwrap();
+        conn.execute(
+            "INSERT INTO stories (id, epic_id, project_id, title, description, status, points, created_at, updated_at)
+             VALUES (1, 1, 1, 'S', '', 'todo', NULL, ?1, ?1)",
+            params![Utc::now().to_rfc3339()],
+        )
+        .unwrap();
+
+        let linked = create_work_package_for_story(&conn, 1, &wp(1, "linked", 1)).unwrap();
+        let unlinked = create_work_package(&conn, &wp(1, "unlinked", 2)).unwrap();
+
+        let found = list_wps_by_story(&conn, 1).unwrap();
+        assert_eq!(found.len(), 1);
+        assert_eq!(found[0].id, linked);
+        assert_ne!(found[0].id, unlinked);
+        assert!(list_wps_by_story(&conn, 999).unwrap().is_empty());
+    }
+
+    #[test]
+    fn unknown_dependency_type_is_storage_error() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        seed_feature(&conn, 1);
+        let first = create_work_package(&conn, &wp(1, "WP1", 1)).unwrap();
+        let second = create_work_package(&conn, &wp(1, "WP2", 2)).unwrap();
+        // Bypass the dep_type CHECK constraint to simulate an unknown value.
+        conn.execute_batch("PRAGMA ignore_check_constraints=ON;")
+            .unwrap();
+        conn.execute(
+            "INSERT INTO wp_dependencies (wp_id, depends_on, dep_type) VALUES (?1, ?2, 'not-a-type')",
+            params![second, first],
+        )
+        .unwrap();
+
+        let err = get_wp_dependencies(&conn, second).unwrap_err();
+        assert!(matches!(err, DomainError::Storage(_)), "got {err:?}");
+    }
 }

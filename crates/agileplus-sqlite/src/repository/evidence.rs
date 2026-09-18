@@ -224,9 +224,71 @@ mod tests {
         ev.metadata = Some(serde_json::json!({"duration_ms": 42, "tests_passed": 5}));
         create_evidence(&conn, &ev).unwrap();
         let results = get_evidence_by_wp(&conn, 10).unwrap();
-        assert_eq!(
-            results[0].metadata.as_ref().unwrap()["duration_ms"],
-            42
+        assert_eq!(results[0].metadata.as_ref().unwrap()["duration_ms"], 42);
+    }
+
+    /// Insert an evidence row directly, bypassing the CHECK constraint.
+    fn insert_raw_evidence(
+        conn: &Connection,
+        evidence_type: &str,
+        metadata: Option<&str>,
+        created_at: &str,
+    ) {
+        conn.execute(
+            "INSERT INTO evidence (wp_id, fr_id, evidence_type, artifact_path, metadata, created_at)
+             VALUES (10, 'FR-RAW', ?1, '/tmp/x', ?2, ?3)",
+            params![evidence_type, metadata, created_at],
+        )
+        .expect("raw evidence insert");
+    }
+
+    #[test]
+    fn malformed_metadata_json_is_storage_error() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        seed_feature_and_wp(&conn, 100, 10);
+        insert_raw_evidence(
+            &conn,
+            "test_result",
+            Some("{not-json"),
+            &chrono::Utc::now().to_rfc3339(),
         );
+
+        let err = get_evidence_by_wp(&conn, 10).unwrap_err();
+        assert!(
+            matches!(err, DomainError::Storage(_)),
+            "expected Storage error, got {err:?}"
+        );
+    }
+
+    #[test]
+    fn corrupt_created_at_is_storage_error() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        seed_feature_and_wp(&conn, 100, 10);
+        insert_raw_evidence(&conn, "test_result", None, "not-a-timestamp");
+
+        let err = get_evidence_by_wp(&conn, 10).unwrap_err();
+        assert!(matches!(err, DomainError::Storage(_)), "got {err:?}");
+    }
+
+    #[test]
+    fn unknown_evidence_type_is_storage_error() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        seed_feature_and_wp(&conn, 100, 10);
+        // Bypass the evidence_type CHECK constraint to simulate a value this
+        // reader does not know about.
+        conn.execute_batch("PRAGMA ignore_check_constraints=ON;")
+            .unwrap();
+        insert_raw_evidence(
+            &conn,
+            "not-a-real-type",
+            None,
+            &chrono::Utc::now().to_rfc3339(),
+        );
+
+        let err = get_evidence_by_wp(&conn, 10).unwrap_err();
+        assert!(matches!(err, DomainError::Storage(_)), "got {err:?}");
     }
 }

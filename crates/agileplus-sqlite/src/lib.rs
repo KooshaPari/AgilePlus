@@ -91,3 +91,65 @@ impl SqliteStorageAdapter {
 #[cfg(test)]
 #[path = "lib/tests_persistence.rs"]
 mod tests_persistence;
+
+#[cfg(test)]
+mod tests {
+    use std::sync::Arc;
+
+    use agileplus_domain::error::DomainError;
+
+    use super::*;
+
+    #[tokio::test]
+    async fn poisoned_lock_surfaces_as_storage_error() {
+        let adapter = Arc::new(SqliteStorageAdapter::in_memory().expect("in-memory adapter"));
+        let worker = Arc::clone(&adapter);
+
+        // Hold the connection guard and panic, poisoning the mutex.
+        let joined = std::thread::spawn(move || {
+            let _guard = worker.conn_for_bench().expect("guard");
+            panic!("poison the connection mutex");
+        })
+        .join();
+        assert!(joined.is_err(), "worker thread must have panicked");
+
+        match adapter.conn_for_bench() {
+            Ok(_) => panic!("expected a poisoned lock"),
+            Err(err) => assert!(
+                matches!(err, DomainError::Storage(_)),
+                "expected Storage error, got {err:?}"
+            ),
+        }
+
+        // The async port surface must report the same failure instead of panicking.
+        let err = StoragePort::list_all_features(&*adapter)
+            .await
+            .expect_err("port call must fail on a poisoned lock");
+        assert!(
+            matches!(err, DomainError::Storage(_)),
+            "expected Storage error, got {err:?}"
+        );
+    }
+
+    #[test]
+    fn new_fails_when_parent_directory_is_missing() {
+        let nanos = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .expect("clock")
+            .as_nanos();
+        let root = std::env::temp_dir().join(format!(
+            "agileplus-sqlite-lib-{}-{nanos}",
+            std::process::id()
+        ));
+        let path = root.join("absent").join("agileplus.db");
+
+        let err = match SqliteStorageAdapter::new(&path) {
+            Ok(_) => panic!("opening a database in a missing directory must fail"),
+            Err(err) => err,
+        };
+        assert!(
+            matches!(err, DomainError::Storage(_)),
+            "expected Storage error, got {err:?}"
+        );
+    }
+}

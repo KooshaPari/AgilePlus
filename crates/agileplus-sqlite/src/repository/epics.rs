@@ -298,7 +298,9 @@ mod tests {
         let mut epic = sample_epic(1, "FR Epic");
         epic.requirement_id = Some("FR-001".to_string());
         let id = upsert_epic_by_requirement_id(&conn, &epic).unwrap();
-        let fetched = get_epic_by_requirement_id(&conn, "FR-001").unwrap().unwrap();
+        let fetched = get_epic_by_requirement_id(&conn, "FR-001")
+            .unwrap()
+            .unwrap();
         assert_eq!(fetched.id, id);
         assert_eq!(fetched.requirement_id.as_deref(), Some("FR-001"));
     }
@@ -319,6 +321,31 @@ mod tests {
     fn get_epic_by_requirement_id_nonexistent_returns_none() {
         let adapter = SqliteStorageAdapter::in_memory().unwrap();
         let conn = adapter.conn_for_bench().unwrap();
-        assert!(get_epic_by_requirement_id(&conn, "FR-999").unwrap().is_none());
+        assert!(
+            get_epic_by_requirement_id(&conn, "FR-999")
+                .unwrap()
+                .is_none()
+        );
+    }
+
+    #[test]
+    fn unknown_status_and_timestamp_fall_back_to_defaults() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        setup_project(&conn, 1);
+        let before = chrono::Utc::now();
+        conn.execute(
+            "INSERT INTO epics (id, project_id, title, description, status, owner_id, created_at, updated_at)
+             VALUES (1, 1, 'Legacy epic', NULL, 'not-a-status', NULL, 'not-a-timestamp', 'not-a-timestamp')",
+            [],
+        )
+        .unwrap();
+
+        let epic = get_epic_by_id(&conn, 1).unwrap().unwrap();
+        assert_eq!(epic.status, EpicStatus::Backlog);
+        assert!(
+            epic.created_at >= before,
+            "unparseable timestamp falls back to now"
+        );
     }
 }

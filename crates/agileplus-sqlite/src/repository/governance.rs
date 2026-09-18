@@ -294,7 +294,11 @@ mod tests {
         let adapter = SqliteStorageAdapter::in_memory().unwrap();
         let conn = adapter.conn_for_bench().unwrap();
         seed_feature(&conn, 999);
-        assert!(get_latest_governance_contract(&conn, 999).unwrap().is_none());
+        assert!(
+            get_latest_governance_contract(&conn, 999)
+                .unwrap()
+                .is_none()
+        );
     }
 
     #[test]
@@ -335,5 +339,24 @@ mod tests {
         }
         let active = list_active_policies(&conn).unwrap();
         assert_eq!(active.len(), 5);
+    }
+
+    #[test]
+    fn unknown_policy_domain_is_storage_error() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        // Bypass the domain CHECK constraint to simulate an unknown value.
+        conn.execute_batch("PRAGMA ignore_check_constraints=ON;")
+            .unwrap();
+        let now = chrono::Utc::now().to_rfc3339();
+        conn.execute(
+            "INSERT INTO policy_rules (domain, rule, active, created_at, updated_at)
+             VALUES ('not-a-domain', 'rule', 1, ?1, ?1)",
+            params![now],
+        )
+        .unwrap();
+
+        let err = list_active_policies(&conn).unwrap_err();
+        assert!(matches!(err, DomainError::Storage(_)), "got {err:?}");
     }
 }

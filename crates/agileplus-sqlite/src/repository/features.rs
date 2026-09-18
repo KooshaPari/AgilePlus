@@ -387,8 +387,16 @@ mod tests {
 
     #[test]
     fn state_str_roundtrips() {
-        for s in ["created", "specified", "researched", "planned",
-                   "implementing", "validated", "shipped", "retrospected"] {
+        for s in [
+            "created",
+            "specified",
+            "researched",
+            "planned",
+            "implementing",
+            "validated",
+            "shipped",
+            "retrospected",
+        ] {
             let state: FeatureState = s.parse().unwrap();
             assert_eq!(state_str(state), s);
         }
@@ -405,5 +413,95 @@ mod tests {
     #[test]
     fn labels_from_json_invalid_returns_empty() {
         assert!(labels_from_json("not-json").is_empty());
+    }
+
+    /// Insert a feature row directly so a corrupted column can be read back.
+    fn insert_raw_feature(
+        conn: &Connection,
+        slug: &str,
+        state: &str,
+        created_at: &str,
+        updated_at: &str,
+    ) {
+        conn.execute(
+            "INSERT INTO features (slug, friendly_name, state, spec_hash, target_branch, created_at, updated_at)
+             VALUES (?1, ?2, ?3, X'00', 'main', ?4, ?5)",
+            params![slug, format!("Feature {slug}"), state, created_at, updated_at],
+        )
+        .expect("raw feature insert");
+    }
+
+    #[test]
+    fn short_spec_hash_reads_as_zeroed_32_bytes() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let now = chrono::Utc::now().to_rfc3339();
+        insert_raw_feature(&conn, "short-hash", "created", &now, &now);
+
+        let feature = get_feature_by_slug(&conn, "short-hash").unwrap().unwrap();
+        assert_eq!(feature.spec_hash, [0u8; 32]);
+    }
+
+    #[test]
+    fn corrupt_state_column_is_storage_error() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let now = chrono::Utc::now().to_rfc3339();
+        // Bypass the state CHECK constraint to simulate a row written by an
+        // older or mismatched schema.
+        conn.execute_batch("PRAGMA ignore_check_constraints=ON;")
+            .unwrap();
+        insert_raw_feature(&conn, "bad-state", "bogus", &now, &now);
+
+        let err = get_feature_by_slug(&conn, "bad-state").unwrap_err();
+        assert!(
+            matches!(err, DomainError::Storage(_)),
+            "expected Storage error, got {err:?}"
+        );
+    }
+
+    #[test]
+    fn corrupt_created_at_column_is_storage_error() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let now = chrono::Utc::now().to_rfc3339();
+        insert_raw_feature(&conn, "bad-created", "created", "not-a-timestamp", &now);
+
+        let err = get_feature_by_slug(&conn, "bad-created").unwrap_err();
+        assert!(matches!(err, DomainError::Storage(_)), "got {err:?}");
+    }
+
+    #[test]
+    fn corrupt_updated_at_column_is_storage_error() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let now = chrono::Utc::now().to_rfc3339();
+        insert_raw_feature(&conn, "bad-updated", "created", &now, "not-a-timestamp");
+
+        let err = list_all_features(&conn).unwrap_err();
+        assert!(matches!(err, DomainError::Storage(_)), "got {err:?}");
+    }
+
+    #[test]
+    fn module_id_and_labels_columns_are_read_back() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let now = chrono::Utc::now().to_rfc3339();
+        conn.execute(
+            "INSERT INTO modules (id, slug, friendly_name, created_at, updated_at)
+             VALUES (7, 'mod-7', 'Module 7', ?1, ?1)",
+            params![now],
+        )
+        .unwrap();
+        let id = create_feature(&conn, &sample_feature("modular")).unwrap();
+        conn.execute(
+            "UPDATE features SET module_id = 7, labels = '[\"a\",\"b\"]' WHERE id = ?1",
+            params![id],
+        )
+        .unwrap();
+
+        let feature = get_feature_by_id(&conn, id).unwrap().unwrap();
+        assert_eq!(feature.module_id, Some(7));
+        assert_eq!(feature.labels, vec!["a".to_string(), "b".to_string()]);
     }
 }
