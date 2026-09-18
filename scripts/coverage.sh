@@ -125,4 +125,57 @@ awk -v cli_lines="$cli_lines" -v cli_missed="$cli_missed" '
     }
 ' "$work_dir/workspace.txt"
 
+# The workspace summary also omits whole crates: 24 of the 37 declared members
+# contribute no rows at all (agileplus-cache, -config, -subcmds, -p2p and the
+# agileplus-agents/* crates among them) even though their test binaries run.
+# Measure every instrumented test binary directly so those crates are counted,
+# then union the per-file results.
+if [ "${COVERAGE_ALL:-1}" = "1" ]; then
+    echo "==> measuring every instrumented test binary (recovers crates the summary drops)"
+    rm -f "$work_dir"/all-*.profraw "$work_dir/all.profdata"
+    mkdir -p "$work_dir/allreports"
+
+    all_bins=("$target_dir"/debug/build/*/out/*-*)
+    measured=0
+    skipped=0
+    for bin in "${all_bins[@]}"; do
+        [ -f "$bin" ] && [ -x "$bin" ] || continue
+        case "$bin" in *.d|*.rlib|*/-*) continue ;; esac
+        if timeout "${COVERAGE_BIN_TIMEOUT:-180}" env \
+            LLVM_PROFILE_FILE="$work_dir/all-%p.profraw" "$bin" --test-threads=4 \
+            >/dev/null 2>&1; then
+            measured=$((measured + 1))
+        else
+            # Slow or environment-dependent suites are skipped, not silently
+            # counted as uncovered; the skip count is reported below.
+            skipped=$((skipped + 1))
+        fi
+    done
+    printf '    ran %d test binaries (%d skipped on timeout)\n' "$measured" "$skipped"
+
+    if ls "$work_dir"/all-*.profraw >/dev/null 2>&1; then
+        "$llvm_profdata" merge -sparse "$work_dir"/all-*.profraw -o "$work_dir/all.profdata" 2>/dev/null
+        for bin in "${all_bins[@]}"; do
+            [ -f "$bin" ] && [ -x "$bin" ] || continue
+            "$llvm_cov" report "$bin" -instr-profile="$work_dir/all.profdata" 2>/dev/null \
+                >> "$work_dir/allreports/union.txt"
+        done
+        awk -v root="${repo_root#/}" '
+            index($1, root "/") == 1 && NF >= 13 {
+                if ($8 > lines[$1]) lines[$1] = $8
+                covered = $8 - $9
+                if (covered > coveredlines[$1]) coveredlines[$1] = covered
+                next
+            }
+            END {
+                for (f in lines) { total += lines[f]; cov += coveredlines[f]; files++ }
+                printf "    full workspace (all test binaries, test code included): %d files, %d lines, %.2f%% covered\n",
+                    files, total, cov * 100 / total
+            }
+        ' "$work_dir/allreports/union.txt"
+    else
+        echo "    no profiles collected; union skipped"
+    fi
+fi
+
 echo "reports: $work_dir/workspace.txt, $work_dir/cli-report.txt"
