@@ -135,12 +135,21 @@ if [ "${COVERAGE_ALL:-1}" = "1" ]; then
     rm -f "$work_dir"/all-*.profraw "$work_dir/all.profdata"
     mkdir -p "$work_dir/allreports"
 
-    all_bins=("$target_dir"/debug/build/*/out/*-*)
+    # Test binaries live at debug/build/<crate>/<hash>/out/<name>-<hash>. Note
+    # that cargo-llvm-cov does not keep them around indefinitely: the out/
+    # directories can be present with zero executables once a run has finished,
+    # so this discovery is best-effort. If nothing is found, the union step
+    # says so rather than reporting a partial total as if it were complete.
+    # The robust alternative is to capture the paths from the instrumented
+    # build itself, for example:
+    #   RUSTFLAGS="-Cinstrument-coverage" cargo test --workspace --no-run \
+    #       --message-format=json | jq -r 'select(.executable != null) | .executable'
+    all_bins=("$target_dir"/debug/build/*/*/out/*-* "$target_dir"/debug/deps/*-*)
     measured=0
     skipped=0
     for bin in "${all_bins[@]}"; do
         [ -f "$bin" ] && [ -x "$bin" ] || continue
-        case "$bin" in *.d|*.rlib|*/-*) continue ;; esac
+        case "$bin" in *.d|*.rlib|*.rmeta|*.lock|*/-*) continue ;; esac
         if timeout "${COVERAGE_BIN_TIMEOUT:-180}" env \
             LLVM_PROFILE_FILE="$work_dir/all-%p.profraw" "$bin" --test-threads=4 \
             >/dev/null 2>&1; then
