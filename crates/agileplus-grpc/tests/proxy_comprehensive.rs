@@ -226,3 +226,86 @@ async fn health_accessor_returns_reference() {
     let health: &DownstreamHealth = router.health();
     assert!(!health.agents_reachable);
 }
+
+// ---------------------------------------------------------------------------
+// Reachable downstreams (the forwarding branch)
+//
+// The router only probes TCP reachability, so a bound listener stands in for a
+// live downstream service.
+// ---------------------------------------------------------------------------
+
+/// Bind a listener that accepts connections so `ProxyRouter::new` probes true.
+fn reachable_address() -> (std::net::TcpListener, String) {
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("listener should bind");
+    let port = listener
+        .local_addr()
+        .expect("listener address should be readable")
+        .port();
+    (listener, format!("127.0.0.1:{port}"))
+}
+
+#[tokio::test]
+async fn reachable_downstreams_are_reported_in_health() {
+    let (_agents, agents_addr) = reachable_address();
+    let (_integrations, integrations_addr) = reachable_address();
+
+    let router = ProxyRouter::new(Some(agents_addr), Some(integrations_addr)).await;
+
+    assert!(router.health().agents_reachable);
+    assert!(router.health().integrations_reachable);
+}
+
+#[tokio::test]
+async fn reachable_agents_address_produces_a_forwarded_result() {
+    let (_agents, agents_addr) = reachable_address();
+    let router = ProxyRouter::new(Some(agents_addr), None).await;
+
+    let args = HashMap::from([("wp".to_string(), "2".to_string())]);
+    let result = router
+        .dispatch_agent_command("implement", "feat-a", &args)
+        .await;
+
+    assert!(result.is_success());
+    assert!(result.message().contains("forwarded"));
+    assert!(result.message().contains("feat-a"));
+    assert_eq!(result.outputs(), args);
+}
+
+#[tokio::test]
+async fn reachable_integrations_address_produces_a_forwarded_result() {
+    let (_integrations, integrations_addr) = reachable_address();
+    let router = ProxyRouter::new(None, Some(integrations_addr)).await;
+
+    let result = router.dispatch_integration_command("sync", "feat-b").await;
+
+    assert!(result.is_success());
+    assert!(result.message().contains("forwarded"));
+    assert!(result.message().contains("feat-b"));
+    assert!(result.outputs().is_empty());
+}
+
+#[tokio::test]
+async fn addresses_may_carry_a_scheme_prefix() {
+    let (_agents, agents_addr) = reachable_address();
+    let (_integrations, integrations_addr) = reachable_address();
+
+    // `probe` strips `http://` and `grpc://` before connecting.
+    let router = ProxyRouter::new(
+        Some(format!("grpc://{agents_addr}")),
+        Some(format!("http://{integrations_addr}")),
+    )
+    .await;
+
+    assert!(router.health().agents_reachable);
+    assert!(router.health().integrations_reachable);
+}
+
+#[tokio::test]
+async fn a_closed_downstream_is_reported_unreachable() {
+    let (listener, addr) = reachable_address();
+    drop(listener);
+
+    let router = ProxyRouter::new(Some(addr), None).await;
+
+    assert!(!router.health().agents_reachable);
+}
