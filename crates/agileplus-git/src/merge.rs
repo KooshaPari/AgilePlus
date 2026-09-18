@@ -266,4 +266,183 @@ mod deep_tests {
             "temporary ship worktree should be removed: {list}"
         );
     }
+
+    /// Trimmed stdout of a `git` invocation that must succeed.
+    fn git_out(dir: &Path, args: &[&str]) -> String {
+        let out = StdCommand::new("git")
+            .args(args)
+            .current_dir(dir)
+            .output()
+            .unwrap();
+        assert!(
+            out.status.success(),
+            "git {args:?} failed: {}",
+            String::from_utf8_lossy(&out.stderr)
+        );
+        String::from_utf8_lossy(&out.stdout).trim().to_string()
+    }
+
+    /// `git worktree list --porcelain` for `dir`.
+    fn worktree_porcelain(dir: &Path) -> String {
+        git_out(dir, &["worktree", "list", "--porcelain"])
+    }
+
+    #[test]
+    fn merge_via_temp_worktree_missing_target_is_error() {
+        let (_d, path) = make_repo();
+        let adapter = GitVcsAdapter::new(path.clone());
+
+        let err = adapter
+            .merge_via_temp_worktree("main", "no-such-target")
+            .unwrap_err();
+        assert!(
+            err.to_string().contains("invalid reference"),
+            "expected git's invalid-reference error, got: {err}"
+        );
+        assert!(
+            !worktree_porcelain(&path).contains("agileplus-ship-"),
+            "a refused worktree add must not register a ship worktree"
+        );
+    }
+
+    #[test]
+    fn merge_via_temp_worktree_advances_target_with_no_ff_merge_commit() {
+        let (_d, path) = make_repo();
+        git(&path, &["checkout", "-q", "-b", "feature"]);
+        commit_file(&path, "feature.txt", "feat\n", "feature work");
+        git(&path, &["checkout", "-q", "main"]);
+        git(&path, &["branch", "rel-merge"]);
+
+        let before = git_out(&path, &["rev-parse", "rel-merge"]);
+        let adapter = GitVcsAdapter::new(path.clone());
+        let result = adapter
+            .merge_via_temp_worktree("feature", "rel-merge")
+            .unwrap();
+        assert!(result.success, "merge failed: {:?}", result.message);
+
+        let after = git_out(&path, &["rev-parse", "rel-merge"]);
+        assert_ne!(before, after, "target ref must advance");
+        assert_eq!(result.commit.as_deref(), Some(after.as_str()));
+        assert_eq!(result.merged_commit.as_deref(), Some(after.as_str()));
+        assert_eq!(
+            git_out(&path, &["log", "-1", "--format=%s", "rel-merge"]),
+            "Merge branch 'feature' into rel-merge"
+        );
+        assert_eq!(
+            git_out(&path, &["rev-list", "--parents", "-n", "1", "rel-merge"])
+                .split_whitespace()
+                .count(),
+            3,
+            "--no-ff merge commit must have two parents"
+        );
+        assert!(!worktree_porcelain(&path).contains("agileplus-ship-"));
+    }
+
+    #[test]
+    fn merge_via_temp_worktree_conflict_reports_conflicts_and_keeps_target_put() {
+        let (_d, path) = make_repo();
+        git(&path, &["checkout", "-q", "-b", "feature"]);
+        commit_file(&path, "f.txt", "feature side\n", "feature edit");
+        git(&path, &["checkout", "-q", "main"]);
+        git(&path, &["branch", "rel-conflict"]);
+        git(&path, &["checkout", "-q", "rel-conflict"]);
+        commit_file(&path, "f.txt", "release side\n", "release edit");
+        git(&path, &["checkout", "-q", "main"]);
+        let target_before = git_out(&path, &["rev-parse", "rel-conflict"]);
+
+        let adapter = GitVcsAdapter::new(path.clone());
+        let result = adapter
+            .merge_via_temp_worktree("feature", "rel-conflict")
+            .unwrap();
+
+        assert!(!result.success);
+        assert!(
+            result.conflicts.iter().any(|c| c.path == "f.txt"),
+            "conflicting path must be reported: {:?}",
+            result.conflicts
+        );
+        assert!(result.commit.is_none());
+        assert!(result.merged_commit.is_none());
+        assert!(
+            result
+                .message
+                .as_deref()
+                .is_some_and(|m| !m.trim().is_empty()),
+            "failure message should carry git's output"
+        );
+        assert_eq!(
+            git_out(&path, &["rev-parse", "rel-conflict"]),
+            target_before,
+            "a conflicted ship merge must not move the target ref"
+        );
+        assert_eq!(
+            git_out(&path, &["rev-parse", "--abbrev-ref", "HEAD"]),
+            "main",
+            "the caller's worktree must stay on its own branch"
+        );
+        assert!(
+            !worktree_porcelain(&path).contains("agileplus-ship-"),
+            "the temporary ship worktree must be removed even after a conflict"
+        );
+    }
+
+    #[test]
+    fn merge_in_dir_missing_source_reports_no_conflicts() {
+        let (_d, path) = make_repo();
+        let adapter = GitVcsAdapter::new(path.clone());
+
+        let result = adapter
+            .merge_in_dir(&path, "no-such-source", "main")
+            .unwrap();
+        assert!(!result.success);
+        assert!(
+            result.conflicts.is_empty(),
+            "git diagnostics must not be parsed as conflicts: {:?}",
+            result.conflicts
+        );
+        assert!(result.commit.is_none());
+        assert!(result.merged_commit.is_none());
+        assert!(
+            result
+                .message
+                .as_deref()
+                .unwrap_or_default()
+                .contains("no-such-source"),
+            "failure message should name the missing source: {:?}",
+            result.message
+        );
+    }
+
+    #[tokio::test]
+    async fn merge_to_target_unknown_target_is_an_error() {
+        use agileplus_domain::ports::VcsPort;
+
+        let (_d, path) = make_repo();
+        let adapter = GitVcsAdapter::new(path);
+        let err = adapter
+            .merge_to_target("main", "no-such-branch")
+            .await
+            .unwrap_err();
+        assert!(
+            err.to_string().contains("no-such-branch")
+                && !GitVcsAdapter::checkout_blocked_by_other_worktree(&err),
+            "unrelated checkout failures must surface unchanged: {err}"
+        );
+    }
+
+    #[tokio::test]
+    async fn detect_conflicts_unknown_source_is_an_error() {
+        use agileplus_domain::ports::VcsPort;
+
+        let (_d, path) = make_repo();
+        let adapter = GitVcsAdapter::new(path);
+        let err = adapter
+            .detect_conflicts("no-such-ref", "main")
+            .await
+            .unwrap_err();
+        assert!(
+            err.to_string().contains("no-such-ref"),
+            "merge-tree failure must propagate with git's diagnostic: {err}"
+        );
+    }
 }

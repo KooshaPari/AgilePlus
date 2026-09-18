@@ -494,6 +494,90 @@ mod extra_tests {
         adapter.run_git_status(&["status"]).unwrap();
     }
 
+    fn commit_all(dir: &Path, message: &str) {
+        StdCommand::new("git")
+            .args(["add", "."])
+            .current_dir(dir)
+            .output()
+            .unwrap();
+        StdCommand::new("git")
+            .args(["commit", "-q", "-m", message])
+            .current_dir(dir)
+            .output()
+            .unwrap();
+    }
+
+    #[test]
+    fn run_git_allow_failure_returns_stdout_when_exit_is_nonzero() {
+        let (_d, path) = make_repo();
+        std::fs::write(path.join("README.md"), "changed\n").unwrap();
+        let adapter = GitVcsAdapter::new(path);
+
+        // `git diff --exit-code` exits 1 and still prints the diff.
+        let out = adapter
+            .run_git_allow_failure(&["diff", "--exit-code"])
+            .unwrap();
+        assert!(
+            out.contains("diff --git"),
+            "expected diff output, got: {out}"
+        );
+        assert!(
+            out.contains("+changed"),
+            "expected the changed line, got: {out}"
+        );
+    }
+
+    #[test]
+    fn run_git_allow_failure_errors_when_failure_has_no_stdout() {
+        let (_d, path) = make_repo();
+        let adapter = GitVcsAdapter::new(path);
+
+        let err = adapter
+            .run_git_allow_failure(&["merge-tree", "no-such-ref", "HEAD"])
+            .unwrap_err();
+        let msg = err.to_string();
+        assert!(msg.contains("merge-tree"), "{msg}");
+        assert!(
+            msg.contains("no-such-ref"),
+            "git's stderr diagnostic should survive: {msg}"
+        );
+    }
+
+    #[test]
+    fn run_git_reports_args_when_failure_has_no_output_at_all() {
+        let (_d, path) = make_repo();
+        // Diverge `main` and `other` so `merge-base --is-ancestor` exits 1
+        // with nothing on either stream.
+        StdCommand::new("git")
+            .args(["checkout", "-q", "-b", "other"])
+            .current_dir(&path)
+            .output()
+            .unwrap();
+        std::fs::write(path.join("other.txt"), "o\n").unwrap();
+        commit_all(&path, "other side");
+        StdCommand::new("git")
+            .args(["checkout", "-q", "main"])
+            .current_dir(&path)
+            .output()
+            .unwrap();
+        std::fs::write(path.join("README.md"), "main side\n").unwrap();
+        commit_all(&path, "main side");
+
+        let adapter = GitVcsAdapter::new(path);
+        let err = adapter
+            .run_git(&["merge-base", "--is-ancestor", "main", "other"])
+            .unwrap_err();
+        let msg = err.to_string();
+        assert!(
+            msg.contains("git merge-base --is-ancestor main other failed:"),
+            "message should name the command: {msg}"
+        );
+        assert!(
+            msg.trim_end().ends_with("failed:"),
+            "silent failure leaves nothing to append: {msg}"
+        );
+    }
+
     // ── checkout_blocked_by_other_worktree ──────────────────────────────────
 
     #[test]
