@@ -582,6 +582,50 @@ mod tests {
         assert!(result.is_err());
     }
 
+    // ── update-path failures ────────────────────────────────
+
+    #[tokio::test]
+    async fn push_module_update_error_propagates() {
+        let server = MockServer::start().await;
+        Mock::given(method("PATCH"))
+            .and(path("/api/v1/workspaces/ws/projects/proj/modules/existing-mod/"))
+            .respond_with(ResponseTemplate::new(500).set_body_string("error"))
+            .mount(&server)
+            .await;
+
+        let client = PlaneClient::new(server.uri(), "key".into(), "ws".into(), "proj".into());
+        let storage = MockStoragePort::new().with_sync_mapping("module", 1, "existing-mod");
+
+        let err = push_module(&client, &storage, &test_module(1, "Updated"))
+            .await
+            .unwrap_err();
+        assert!(
+            err.to_string().contains("updating Plane module existing-mod"),
+            "unexpected error: {err}"
+        );
+    }
+
+    #[tokio::test]
+    async fn push_cycle_update_error_propagates() {
+        let server = MockServer::start().await;
+        Mock::given(method("PATCH"))
+            .and(path("/api/v1/workspaces/ws/projects/proj/cycles/existing-cyc/"))
+            .respond_with(ResponseTemplate::new(500).set_body_string("error"))
+            .mount(&server)
+            .await;
+
+        let client = PlaneClient::new(server.uri(), "key".into(), "ws".into(), "proj".into());
+        let storage = MockStoragePort::new().with_sync_mapping("cycle", 1, "existing-cyc");
+
+        let err = push_cycle(&client, &storage, &test_cycle(1, "Updated Sprint"))
+            .await
+            .unwrap_err();
+        assert!(
+            err.to_string().contains("updating Plane cycle existing-cyc"),
+            "unexpected error: {err}"
+        );
+    }
+
     // ── push_feature_module_assignment ──────────────────────
 
     #[tokio::test]
@@ -678,6 +722,32 @@ mod tests {
             .unwrap();
     }
 
+    #[tokio::test]
+    async fn push_feature_module_unassignment_error_propagates() {
+        let server = MockServer::start().await;
+        Mock::given(method("DELETE"))
+            .and(path(
+                "/api/v1/workspaces/ws/projects/proj/modules/plane-mod/module-issues/plane-feat/",
+            ))
+            .respond_with(ResponseTemplate::new(500).set_body_string("error"))
+            .mount(&server)
+            .await;
+
+        let client = PlaneClient::new(server.uri(), "key".into(), "ws".into(), "proj".into());
+        let storage = MockStoragePort::new()
+            .with_sync_mapping("feature", 10, "plane-feat")
+            .with_sync_mapping("module", 20, "plane-mod");
+
+        let err = push_feature_module_unassignment(&client, &storage, 10, 20)
+            .await
+            .unwrap_err();
+        assert!(
+            err.to_string()
+                .contains("removing Plane work item plane-feat from module plane-mod"),
+            "unexpected error: {err}"
+        );
+    }
+
     // ── push_feature_cycle_assignment ──────────────────────
 
     #[tokio::test]
@@ -716,6 +786,32 @@ mod tests {
             .unwrap();
     }
 
+    #[tokio::test]
+    async fn push_feature_cycle_assignment_error_propagates() {
+        let server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path(
+                "/api/v1/workspaces/ws/projects/proj/cycles/plane-cyc/cycle-issues/",
+            ))
+            .respond_with(ResponseTemplate::new(409).set_body_string("conflict"))
+            .mount(&server)
+            .await;
+
+        let client = PlaneClient::new(server.uri(), "key".into(), "ws".into(), "proj".into());
+        let storage = MockStoragePort::new()
+            .with_sync_mapping("feature", 10, "plane-feat")
+            .with_sync_mapping("cycle", 20, "plane-cyc");
+
+        let err = push_feature_cycle_assignment(&client, &storage, 10, 20)
+            .await
+            .unwrap_err();
+        assert!(
+            err.to_string()
+                .contains("adding Plane work item plane-feat to cycle plane-cyc"),
+            "unexpected error: {err}"
+        );
+    }
+
     // ── push_feature_cycle_unassignment ────────────────────
 
     #[tokio::test]
@@ -752,5 +848,31 @@ mod tests {
         push_feature_cycle_unassignment(&client, &storage, 1, 1)
             .await
             .unwrap();
+    }
+
+    #[tokio::test]
+    async fn push_feature_cycle_unassignment_error_propagates() {
+        let server = MockServer::start().await;
+        Mock::given(method("DELETE"))
+            .and(path(
+                "/api/v1/workspaces/ws/projects/proj/cycles/plane-cyc/cycle-issues/plane-feat/",
+            ))
+            .respond_with(ResponseTemplate::new(500).set_body_string("error"))
+            .mount(&server)
+            .await;
+
+        let client = PlaneClient::new(server.uri(), "key".into(), "ws".into(), "proj".into());
+        let storage = MockStoragePort::new()
+            .with_sync_mapping("feature", 10, "plane-feat")
+            .with_sync_mapping("cycle", 20, "plane-cyc");
+
+        let err = push_feature_cycle_unassignment(&client, &storage, 10, 20)
+            .await
+            .unwrap_err();
+        assert!(
+            err.to_string()
+                .contains("removing Plane work item plane-feat from cycle plane-cyc"),
+            "unexpected error: {err}"
+        );
     }
 }

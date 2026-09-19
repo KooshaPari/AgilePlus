@@ -29,6 +29,9 @@ pub struct MockStoragePort {
     /// When set, `list_root_modules` fails. Lets tests drive the daemon's
     /// tick-failure path without a bespoke `StoragePort` implementation.
     pub fail_list_modules: AtomicBool,
+    /// When set, `upsert_sync_mapping` fails. Lets tests drive the outbound
+    /// push functions' mapping-write error paths.
+    pub fail_upsert_mapping: AtomicBool,
 }
 
 impl MockStoragePort {
@@ -50,6 +53,12 @@ impl MockStoragePort {
     /// Make every subsequent `list_root_modules` call fail.
     pub fn failing_list_modules(self) -> Self {
         self.fail_list_modules.store(true, Ordering::SeqCst);
+        self
+    }
+
+    /// Make every subsequent `upsert_sync_mapping` call fail.
+    pub fn failing_upsert_mapping(self) -> Self {
+        self.fail_upsert_mapping.store(true, Ordering::SeqCst);
         self
     }
 }
@@ -146,6 +155,11 @@ impl StoragePort for MockStoragePort {
         Ok(mappings.get(&(entity_type.to_string(), entity_id)).cloned())
     }
     async fn upsert_sync_mapping(&self, mapping: &SyncMapping) -> Result<(), DomainError> {
+        if self.fail_upsert_mapping.load(Ordering::SeqCst) {
+            return Err(DomainError::Storage(
+                "mock: upsert_sync_mapping failed".to_string(),
+            ));
+        }
         let mut mappings = self.sync_mappings.lock().unwrap();
         mappings.insert(
             (mapping.entity_type.clone(), mapping.entity_id),
@@ -348,6 +362,136 @@ mod tests {
         assert!(store.list_all_features().await.unwrap().is_empty());
         assert!(store.list_all_projects().await.unwrap().is_empty());
         assert!(store.list_all_users().await.unwrap().is_empty());
+    }
+
+    /// The write-side stubs that no other test calls.
+    ///
+    /// They only exist to satisfy `StoragePort` without a database, but they
+    /// are part of the port the daemon and outbound tests build on: if one of
+    /// them started returning `Err` (or stopped being reachable at all) the
+    /// dependent suites would fail for an unrelated-looking reason.
+    #[tokio::test]
+    async fn write_only_stubs_report_success() {
+        use agileplus_domain::domain::governance::{
+            EvidenceType, GovernanceRule, PolicyCheck, PolicyDefinition, PolicyDomain,
+        };
+        use agileplus_domain::domain::user::UserRole;
+        use agileplus_domain::domain::work_package::DependencyType;
+
+        let store = MockStoragePort::new();
+        let now = chrono::Utc::now();
+
+        assert_eq!(
+            store
+                .create_work_package(&WorkPackage::new(1, "WP01", 1, "criteria"))
+                .await
+                .unwrap(),
+            1
+        );
+        store
+            .add_wp_dependency(&WpDependency {
+                wp_id: 1,
+                depends_on: 2,
+                dep_type: DependencyType::Explicit,
+            })
+            .await
+            .unwrap();
+        assert_eq!(
+            store
+                .create_evidence(&Evidence {
+                    id: 0,
+                    wp_id: 1,
+                    fr_id: "FR-051".to_string(),
+                    evidence_type: EvidenceType::TestResult,
+                    artifact_path: "target/test.log".to_string(),
+                    metadata: None,
+                    created_at: now,
+                })
+                .await
+                .unwrap(),
+            1
+        );
+        assert_eq!(
+            store
+                .create_policy_rule(&PolicyRule {
+                    id: 0,
+                    domain: PolicyDomain::Quality,
+                    rule: PolicyDefinition {
+                        description: "coverage floor".to_string(),
+                        check: PolicyCheck::ThresholdMet {
+                            metric: "line_coverage".to_string(),
+                            min: 0.85,
+                        },
+                    },
+                    active: true,
+                    created_at: now,
+                    updated_at: now,
+                })
+                .await
+                .unwrap(),
+            1
+        );
+        assert_eq!(
+            store
+                .record_metric(&Metric {
+                    id: 0,
+                    feature_id: Some(1),
+                    command: "cargo test".to_string(),
+                    duration_ms: 10,
+                    agent_runs: 1,
+                    review_cycles: 0,
+                    metadata: None,
+                    timestamp: now,
+                })
+                .await
+                .unwrap(),
+            1
+        );
+        assert_eq!(
+            store
+                .create_governance_contract(&GovernanceContract {
+                    id: 0,
+                    feature_id: 1,
+                    version: 1,
+                    rules: vec![GovernanceRule {
+                        transition: "created->specified".to_string(),
+                        required_evidence: vec!["test_result".to_string()],
+                        policy_refs: vec![1],
+                    }],
+                    bound_at: now,
+                })
+                .await
+                .unwrap(),
+            1
+        );
+        assert_eq!(
+            store
+                .create_project(&Project::new("Alpha", "alpha").unwrap())
+                .await
+                .unwrap(),
+            1
+        );
+        assert_eq!(
+            store
+                .create_epic(&Epic::new(1, "Epic").unwrap())
+                .await
+                .unwrap(),
+            1
+        );
+        assert_eq!(
+            store
+                .create_story(&Story::new(1, 1, "Story", Some(1)).unwrap())
+                .await
+                .unwrap(),
+            1
+        );
+        assert_eq!(
+            store
+                .create_user(&User::new("Ada", "ada@example.com", UserRole::Admin).unwrap())
+                .await
+                .unwrap(),
+            1
+        );
     }
 
     // -- stub contract for the read/query half of StoragePort --

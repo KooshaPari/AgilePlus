@@ -817,3 +817,61 @@ fn work_item_response_from_json_roundtrip() {
         serde_json::from_str(r#"{"id":"a","name":"n","state":"started"}"#).unwrap();
     assert_eq!(resp.state.as_deref(), Some("started"));
 }
+
+// ============================================================
+// success responses whose body does not match the expected shape
+// ============================================================
+
+#[tokio::test]
+async fn list_work_items_rejects_body_that_is_neither_array_nor_envelope() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/api/v1/workspaces/ws/projects/proj/work-items/"))
+        .respond_with(ResponseTemplate::new(200).set_body_string(r#"{"unexpected":true}"#))
+        .mount(&server)
+        .await;
+
+    let err = client(&server).list_work_items().await.unwrap_err();
+    assert!(
+        err.to_string().contains("parsing Plane.so paginated response"),
+        "unexpected error: {err}"
+    );
+}
+
+#[tokio::test]
+async fn fetch_remote_labels_rejects_body_that_matches_neither_shape() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/api/v1/workspaces/ws/projects/proj/labels/"))
+        .respond_with(ResponseTemplate::new(200).set_body_string(r#"{"nope":1}"#))
+        .mount(&server)
+        .await;
+
+    let err = LabelSync::new(client(&server))
+        .fetch_remote_labels()
+        .await
+        .unwrap_err();
+    assert!(
+        err.to_string().contains("parsing label list response"),
+        "unexpected error: {err}"
+    );
+}
+
+#[tokio::test]
+async fn create_remote_label_rejects_unparseable_success_body() {
+    let server = MockServer::start().await;
+    Mock::given(method("POST"))
+        .and(path("/api/v1/workspaces/ws/projects/proj/labels/"))
+        .respond_with(ResponseTemplate::new(200).set_body_string("not-json"))
+        .mount(&server)
+        .await;
+
+    let err = LabelSync::new(client(&server))
+        .create_remote_label("bug", None)
+        .await
+        .unwrap_err();
+    assert!(
+        err.to_string().contains("parsing created label"),
+        "unexpected error: {err}"
+    );
+}

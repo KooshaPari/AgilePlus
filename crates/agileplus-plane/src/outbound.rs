@@ -874,4 +874,329 @@ mod tests_extra {
         let sync = OutboundSync::new(client, PlaneStateMapper::new());
         assert!(format!("{sync:?}").contains("OutboundSync"));
     }
+
+    // -- module / cycle push (the copies re-exported as the live API) --
+    //
+    // `outbound::push_module` and friends are what `runtime::maybe_*_from_env`
+    // and the `pub use` in `lib.rs` resolve to; the identically-named
+    // functions in `outbound::module_cycle` are a separate copy with their own
+    // tests, so the branches below were previously reached only from
+    // `runtime`'s no-Plane and create-failure paths.
+
+    fn module(id: i64, name: &str) -> Module {
+        let mut module = Module::new(name, None);
+        module.id = id;
+        module
+    }
+
+    fn cycle(id: i64, name: &str) -> Cycle {
+        use agileplus_domain::domain::cycle::CycleState;
+        use chrono::NaiveDate;
+
+        Cycle {
+            id,
+            name: name.to_string(),
+            description: None,
+            state: CycleState::Active,
+            start_date: NaiveDate::from_ymd_opt(2026, 1, 1).unwrap(),
+            end_date: NaiveDate::from_ymd_opt(2026, 1, 14).unwrap(),
+            module_scope_id: None,
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+        }
+    }
+
+    #[tokio::test]
+    async fn push_module_creates_module_and_records_mapping() {
+        let server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path("/api/v1/workspaces/ws/projects/proj/modules/"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "id": "plane-mod-1",
+                "name": "Auth"
+            })))
+            .expect(1)
+            .mount(&server)
+            .await;
+
+        let client = PlaneClient::new(server.uri(), "k".into(), "ws".into(), "proj".into());
+        let storage = MockStoragePort::new();
+
+        push_module(&client, &storage, &module(7, "Auth")).await.unwrap();
+
+        let mapping = storage.get_sync_mapping("module", 7).await.unwrap().unwrap();
+        assert_eq!(mapping.entity_type, "module");
+        assert_eq!(mapping.entity_id, 7);
+        assert_eq!(mapping.plane_issue_id, "plane-mod-1");
+    }
+
+    #[tokio::test]
+    async fn push_module_patches_mapped_module_and_keeps_the_mapping() {
+        let server = MockServer::start().await;
+        Mock::given(method("PATCH"))
+            .and(path("/api/v1/workspaces/ws/projects/proj/modules/plane-mod-9/"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "id": "plane-mod-9",
+                "name": "Auth v2"
+            })))
+            .expect(1)
+            .mount(&server)
+            .await;
+
+        let client = PlaneClient::new(server.uri(), "k".into(), "ws".into(), "proj".into());
+        let storage = MockStoragePort::new().with_sync_mapping("module", 7, "plane-mod-9");
+        let before = storage
+            .get_sync_mapping("module", 7)
+            .await
+            .unwrap()
+            .unwrap()
+            .last_synced_at;
+
+        push_module(&client, &storage, &module(7, "Auth v2")).await.unwrap();
+
+        let after = storage.get_sync_mapping("module", 7).await.unwrap().unwrap();
+        assert_eq!(
+            after.plane_issue_id, "plane-mod-9",
+            "an update must reuse the existing Plane module, not create a second one"
+        );
+        assert!(after.last_synced_at >= before);
+    }
+
+    #[tokio::test]
+    async fn push_module_create_failure_is_contextual() {
+        let server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path("/api/v1/workspaces/ws/projects/proj/modules/"))
+            .respond_with(ResponseTemplate::new(500).set_body_string("boom"))
+            .mount(&server)
+            .await;
+
+        let client = PlaneClient::new(server.uri(), "k".into(), "ws".into(), "proj".into());
+        let storage = MockStoragePort::new();
+
+        let err = push_module(&client, &storage, &module(7, "Auth"))
+            .await
+            .unwrap_err();
+        assert!(
+            err.to_string().contains("creating Plane module"),
+            "unexpected error: {err}"
+        );
+        assert!(
+            storage.get_sync_mapping("module", 7).await.unwrap().is_none(),
+            "a failed push must not record a mapping"
+        );
+    }
+
+    #[tokio::test]
+    async fn push_cycle_creates_cycle_and_records_mapping() {
+        let server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path("/api/v1/workspaces/ws/projects/proj/cycles/"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "id": "plane-cyc-1",
+                "name": "Sprint 1"
+            })))
+            .expect(1)
+            .mount(&server)
+            .await;
+
+        let client = PlaneClient::new(server.uri(), "k".into(), "ws".into(), "proj".into());
+        let storage = MockStoragePort::new();
+
+        push_cycle(&client, &storage, &cycle(3, "Sprint 1")).await.unwrap();
+
+        let mapping = storage.get_sync_mapping("cycle", 3).await.unwrap().unwrap();
+        assert_eq!(mapping.entity_type, "cycle");
+        assert_eq!(mapping.plane_issue_id, "plane-cyc-1");
+    }
+
+    #[tokio::test]
+    async fn push_cycle_update_failure_is_contextual() {
+        let server = MockServer::start().await;
+        Mock::given(method("PATCH"))
+            .and(path("/api/v1/workspaces/ws/projects/proj/cycles/plane-cyc-9/"))
+            .respond_with(ResponseTemplate::new(503).set_body_string("unavailable"))
+            .mount(&server)
+            .await;
+
+        let client = PlaneClient::new(server.uri(), "k".into(), "ws".into(), "proj".into());
+        let storage = MockStoragePort::new().with_sync_mapping("cycle", 3, "plane-cyc-9");
+
+        let err = push_cycle(&client, &storage, &cycle(3, "Sprint 1"))
+            .await
+            .unwrap_err();
+        assert!(
+            err.to_string().contains("updating Plane cycle plane-cyc-9"),
+            "unexpected error: {err}"
+        );
+    }
+
+    #[tokio::test]
+    async fn push_module_delete_removes_plane_module_and_mapping() {
+        let server = MockServer::start().await;
+        Mock::given(method("DELETE"))
+            .and(path("/api/v1/workspaces/ws/projects/proj/modules/plane-mod-5/"))
+            .respond_with(ResponseTemplate::new(204))
+            .expect(1)
+            .mount(&server)
+            .await;
+
+        let client = PlaneClient::new(server.uri(), "k".into(), "ws".into(), "proj".into());
+        let storage = MockStoragePort::new().with_sync_mapping("module", 5, "plane-mod-5");
+
+        push_module_delete(&client, &storage, 5).await.unwrap();
+
+        assert!(storage.get_sync_mapping("module", 5).await.unwrap().is_none());
+    }
+
+    #[tokio::test]
+    async fn push_module_delete_is_noop_without_mapping() {
+        let client =
+            PlaneClient::new("http://127.0.0.1:1".into(), "k".into(), "ws".into(), "proj".into());
+        let storage = MockStoragePort::new();
+
+        // No mapping means nothing to delete remotely, so the dead endpoint is
+        // never contacted.
+        push_module_delete(&client, &storage, 5).await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn push_cycle_delete_removes_plane_cycle_and_mapping() {
+        let server = MockServer::start().await;
+        Mock::given(method("DELETE"))
+            .and(path("/api/v1/workspaces/ws/projects/proj/cycles/plane-cyc-5/"))
+            .respond_with(ResponseTemplate::new(204))
+            .expect(1)
+            .mount(&server)
+            .await;
+
+        let client = PlaneClient::new(server.uri(), "k".into(), "ws".into(), "proj".into());
+        let storage = MockStoragePort::new().with_sync_mapping("cycle", 5, "plane-cyc-5");
+
+        push_cycle_delete(&client, &storage, 5).await.unwrap();
+
+        assert!(storage.get_sync_mapping("cycle", 5).await.unwrap().is_none());
+    }
+
+    #[tokio::test]
+    async fn push_cycle_delete_failure_keeps_the_mapping() {
+        let server = MockServer::start().await;
+        Mock::given(method("DELETE"))
+            .and(path("/api/v1/workspaces/ws/projects/proj/cycles/plane-cyc-5/"))
+            .respond_with(ResponseTemplate::new(500).set_body_string("boom"))
+            .mount(&server)
+            .await;
+
+        let client = PlaneClient::new(server.uri(), "k".into(), "ws".into(), "proj".into());
+        let storage = MockStoragePort::new().with_sync_mapping("cycle", 5, "plane-cyc-5");
+
+        let err = push_cycle_delete(&client, &storage, 5).await.unwrap_err();
+        assert!(
+            err.to_string().contains("deleting Plane cycle plane-cyc-5"),
+            "unexpected error: {err}"
+        );
+        assert!(
+            storage.get_sync_mapping("cycle", 5).await.unwrap().is_some(),
+            "the mapping must survive a failed remote delete so the delete can be retried"
+        );
+    }
+
+    // -- mapping-write failures --
+
+    #[tokio::test]
+    async fn push_module_create_surfaces_mapping_write_failure() {
+        let server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path("/api/v1/workspaces/ws/projects/proj/modules/"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "id": "plane-mod-1",
+                "name": "Auth"
+            })))
+            .mount(&server)
+            .await;
+
+        let client = PlaneClient::new(server.uri(), "k".into(), "ws".into(), "proj".into());
+        let storage = MockStoragePort::new().failing_upsert_mapping();
+
+        let err = push_module(&client, &storage, &module(7, "Auth"))
+            .await
+            .unwrap_err();
+        assert!(
+            err.to_string().contains("storing module sync mapping"),
+            "a Plane module created without a local mapping cannot be updated later, \
+             so the failure must surface: {err}"
+        );
+    }
+
+    #[tokio::test]
+    async fn push_module_update_surfaces_mapping_write_failure() {
+        let server = MockServer::start().await;
+        Mock::given(method("PATCH"))
+            .and(path("/api/v1/workspaces/ws/projects/proj/modules/plane-mod-9/"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "id": "plane-mod-9",
+                "name": "Auth v2"
+            })))
+            .mount(&server)
+            .await;
+
+        let client = PlaneClient::new(server.uri(), "k".into(), "ws".into(), "proj".into());
+        let storage = MockStoragePort::new()
+            .with_sync_mapping("module", 7, "plane-mod-9")
+            .failing_upsert_mapping();
+
+        let err = push_module(&client, &storage, &module(7, "Auth v2"))
+            .await
+            .unwrap_err();
+        assert!(
+            err.to_string().contains("updating sync mapping timestamp"),
+            "unexpected error: {err}"
+        );
+    }
+
+    #[tokio::test]
+    async fn push_cycle_create_surfaces_mapping_write_failure() {
+        let server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path("/api/v1/workspaces/ws/projects/proj/cycles/"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "id": "plane-cyc-1",
+                "name": "Sprint 1"
+            })))
+            .mount(&server)
+            .await;
+
+        let client = PlaneClient::new(server.uri(), "k".into(), "ws".into(), "proj".into());
+        let storage = MockStoragePort::new().failing_upsert_mapping();
+
+        let err = push_cycle(&client, &storage, &cycle(3, "Sprint 1"))
+            .await
+            .unwrap_err();
+        assert!(
+            err.to_string().contains("storing cycle sync mapping"),
+            "unexpected error: {err}"
+        );
+    }
+
+    #[tokio::test]
+    async fn push_work_package_update_failure_is_contextual() {
+        let server = MockServer::start().await;
+        Mock::given(method("PATCH"))
+            .and(path("/api/v1/workspaces/ws/projects/proj/work-items/wp-existing/"))
+            .respond_with(ResponseTemplate::new(500).set_body_string("boom"))
+            .mount(&server)
+            .await;
+
+        let client = PlaneClient::new(server.uri(), "k".into(), "ws".into(), "proj".into());
+        let sync = OutboundSync::new(client, PlaneStateMapper::new());
+
+        let err = sync
+            .push_work_package("WP02", "Updated", None, &[], "parent-id", Some("wp-existing"))
+            .await
+            .unwrap_err();
+        assert!(
+            err.to_string().contains("updating Plane sub-issue wp-existing"),
+            "unexpected error: {err}"
+        );
+    }
 }

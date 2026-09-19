@@ -121,6 +121,7 @@ mod tests {
         imported: Vec<String>,
         fail_apply: bool,
         fail_import: bool,
+        fail_archive: bool,
     }
 
     impl MockStore {
@@ -150,6 +151,9 @@ mod tests {
         }
 
         fn mark_archived(&mut self, id: &str) -> anyhow::Result<()> {
+            if self.fail_archive {
+                anyhow::bail!("archive failed");
+            }
             self.hashes.remove(id);
             self.archived.push(id.to_string());
             Ok(())
@@ -334,6 +338,25 @@ mod tests {
             handle_delete("14".into(), &mut store).unwrap(),
             super::InboundOutcome::NotTracked { .. }
         ));
+    }
+
+    #[test]
+    fn delete_propagates_store_error_and_leaves_entity_tracked() {
+        let mut store = MockStore {
+            fail_archive: true,
+            ..Default::default()
+        };
+        store.hashes.insert("17".into(), "hash".into());
+
+        let err = handle_delete("17".into(), &mut store).unwrap_err();
+
+        assert!(err.to_string().contains("archive failed"), "{err}");
+        assert!(store.archived.is_empty());
+        assert_eq!(
+            store.hashes.get("17").map(String::as_str),
+            Some("hash"),
+            "a failed archive must not report the entity as gone"
+        );
     }
 
     #[test]
