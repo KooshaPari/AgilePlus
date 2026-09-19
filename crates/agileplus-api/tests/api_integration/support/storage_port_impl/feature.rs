@@ -99,12 +99,15 @@ pub(crate) fn list_features_by_state(
 pub(crate) fn list_all_features(
     storage: &MockStorage,
 ) -> impl Future<Output = Result<Vec<Feature>, DomainError>> + Send {
-    let features = storage
-        .features
-        .lock()
-        .expect("features lock poisoned")
-        .clone();
-    async move { Ok(features) }
+    let result = match storage.injected_failure("list_all_features") {
+        Some(error) => Err(error),
+        None => Ok(storage
+            .features
+            .lock()
+            .expect("features lock poisoned")
+            .clone()),
+    };
+    async move { result }
 }
 
 pub(crate) fn list_features_by_label(

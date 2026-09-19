@@ -155,6 +155,17 @@ pub(crate) fn get_module_with_features(
     storage: &MockStorage,
     id: i64,
 ) -> impl Future<Output = Result<Option<ModuleWithFeatures>, DomainError>> + Send {
+    let result = match storage.injected_failure("get_module_with_features") {
+        Some(error) => Err(error),
+        None => build_module_with_features(storage, id),
+    };
+    async move { result }
+}
+
+fn build_module_with_features(
+    storage: &MockStorage,
+    id: i64,
+) -> Result<Option<ModuleWithFeatures>, DomainError> {
     let module = storage
         .modules
         .lock()
@@ -204,5 +215,5 @@ pub(crate) fn get_module_with_features(
     } else {
         None
     };
-    async move { Ok(result) }
+    Ok(result)
 }

@@ -176,6 +176,64 @@ mod tests {
         }
     }
 
+    /// Only `NotFound`, `Conflict`, and `InvalidTransition` are client errors.
+    /// Every other domain variant is an infrastructure failure and must be
+    /// reported as a 500, whatever its message says.
+    #[test]
+    fn domain_errors_are_client_errors_only_for_not_found_conflict_and_transitions() {
+        use agileplus_domain::error::DomainError;
+
+        let client_errors = [
+            (DomainError::NotFound("gone".into()), 404u16),
+            (DomainError::Conflict("dup".into()), 409),
+            (
+                DomainError::InvalidTransition {
+                    from: "a".into(),
+                    to: "b".into(),
+                    reason: "no".into(),
+                },
+                409,
+            ),
+        ];
+        for (domain_err, expected) in client_errors {
+            let status = ApiError::from(domain_err).into_response().status();
+            assert_eq!(status.as_u16(), expected);
+        }
+
+        let infrastructure_errors = [
+            DomainError::Validation("bad input".into()),
+            DomainError::Storage("disk on fire".into()),
+            DomainError::LockPoisoned,
+            DomainError::NoOpTransition,
+            DomainError::Other("misc".into()),
+            DomainError::Agent("worker died".into()),
+            DomainError::Timeout(30),
+            DomainError::FeatureNotFound("f".into()),
+            DomainError::ModuleNotFound("m".into()),
+            DomainError::CycleNotFound("c".into()),
+            DomainError::WorkPackageNotFound("wp".into()),
+            DomainError::ModuleHasDependents("m".into()),
+            DomainError::FeatureNotInModuleScope {
+                feature_slug: "f".into(),
+                module_slug: "m".into(),
+            },
+            DomainError::InvalidClaim("stale".into()),
+        ];
+        for domain_err in infrastructure_errors {
+            let api_err = ApiError::from(domain_err);
+            assert!(
+                matches!(api_err, ApiError::Internal(_)),
+                "expected Internal, got {api_err:?}"
+            );
+            let status = api_err.into_response().status();
+            assert_eq!(
+                status.as_u16(),
+                500,
+                "infrastructure failures must be 500s"
+            );
+        }
+    }
+
     // ── Response bodies ──────────────────────────────────────────────────────
     //
     // 500-class variants deliberately replace the internal message with a fixed
