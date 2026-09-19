@@ -182,3 +182,48 @@ fn build_overlap_graph_three_wps_partial_overlap() {
     assert_eq!(graph.edges[0].0, 1);
     assert_eq!(graph.edges[0].1, 2);
 }
+
+#[test]
+fn parallel_groups_chained_conflict_forces_two_groups() {
+    // 1-2 conflict and 2-3 conflict, but 1-3 do not: greedy coloring reuses
+    // color 0 for 3, exercising the neighbor-color lookup path.
+    let mut graph = OverlapGraph::new();
+    graph.edges.push((1, 2, vec!["f.rs".into()]));
+    graph.edges.push((2, 3, vec!["f.rs".into()]));
+    let groups = graph.parallel_groups(&[1, 2, 3]);
+    assert_eq!(groups.len(), 2, "expected two colors: {groups:?}");
+    let flat: Vec<i64> = groups.iter().flatten().copied().collect();
+    assert_eq!(flat.len(), 3);
+}
+
+#[test]
+fn parallel_groups_ignores_edges_to_unlisted_ids() {
+    // Edge references id 99 which is not in all_ids: its colour is never
+    // assigned, so the lookup must simply skip it.
+    let mut graph = OverlapGraph::new();
+    graph.edges.push((1, 99, vec!["f.rs".into()]));
+    let groups = graph.parallel_groups(&[1, 2]);
+    assert_eq!(groups.len(), 1);
+    let flat: Vec<i64> = groups.iter().flatten().copied().collect();
+    assert!(flat.contains(&1) && flat.contains(&2));
+}
+
+#[test]
+fn detect_file_scope_skips_words_that_trim_to_empty() {
+    let scope = detect_file_scope("(( )) !!!! \\\\");
+    assert!(scope.is_empty(), "punctuation-only words are skipped: {scope:?}");
+}
+
+#[test]
+fn detect_file_scope_rejects_non_alphabetic_extension() {
+    let scope = detect_file_scope("version file.123");
+    assert!(scope.is_empty(), "numeric extension is not a file: {scope:?}");
+}
+
+#[test]
+fn detect_file_scope_accepts_six_char_extension_rejects_seven() {
+    let scope = detect_file_scope("see a.abcdef and b.abcdefg");
+    assert!(scope.contains(&"a.abcdef".to_string()));
+    assert!(!scope.contains(&"b.abcdefg".to_string()));
+}
+

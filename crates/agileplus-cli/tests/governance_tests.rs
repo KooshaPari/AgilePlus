@@ -6,8 +6,39 @@
 //! these add edge cases for comprehensive line coverage.
 
 use agileplus_cli::commands::governance::{
-    Constitution, Violation, ViolationSeverity, enforce_governance, validate_spec_consistency,
+    Constitution, Violation, ViolationSeverity, enforce_governance, load_constitution,
+    validate_spec_consistency,
 };
+
+mod support;
+use support::MockVcs;
+
+/// Well-known constitution path probed by `load_constitution`.
+const CONSTITUTION_PATH: &str = "../.kittify/memory/constitution.md";
+
+// ── load_constitution ────────────────────────────────────────────────────────
+
+#[tokio::test]
+async fn load_constitution_returns_content_when_artifact_present() {
+    let vcs = MockVcs::new().with_artifact("", CONSTITUTION_PATH, "gov rules");
+    let constitution = load_constitution(&vcs)
+        .await
+        .expect("constitution should load");
+    assert_eq!(constitution.content, "gov rules");
+}
+
+#[tokio::test]
+async fn load_constitution_returns_none_when_absent() {
+    let vcs = MockVcs::new();
+    assert!(load_constitution(&vcs).await.is_none());
+}
+
+#[tokio::test]
+async fn load_constitution_returns_none_when_read_fails() {
+    let mut vcs = MockVcs::new().with_artifact("", CONSTITUTION_PATH, "gov rules");
+    vcs.read_fails = true;
+    assert!(load_constitution(&vcs).await.is_none());
+}
 
 fn dummy_constitution() -> Constitution {
     Constitution {
