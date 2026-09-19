@@ -146,3 +146,55 @@ fn response_roundtrip_full() {
     assert_eq!(resp.state, "closed");
     assert_eq!(resp.labels.len(), 2);
 }
+// ── Payload field optionality (what the wire format actually requires) ────
+
+#[test]
+fn payload_missing_labels_field_defaults_to_empty() {
+    let payload: GitHubIssuePayload = serde_json::from_str(r#"{"title":"t","body":"b"}"#).unwrap();
+    assert!(payload.labels.is_empty());
+}
+
+#[test]
+fn payload_missing_title_is_rejected() {
+    let error = serde_json::from_str::<GitHubIssuePayload>(r#"{"body":"b"}"#).unwrap_err();
+    assert!(error.to_string().contains("title"), "got {error}");
+}
+
+#[test]
+fn payload_unknown_fields_are_ignored() {
+    let payload: GitHubIssuePayload =
+        serde_json::from_str(r#"{"title":"t","body":"b","assignee":"octocat"}"#).unwrap();
+    assert_eq!(payload.title, "t");
+}
+
+// ── Response field strictness ─────────────────────────────────────────────
+
+#[test]
+fn response_missing_body_field_deserialises_to_none() {
+    let json = r#"{"number":1,"title":"t","state":"open","labels":[],"updated_at":"2025-01-01T00:00:00Z"}"#;
+    let resp: GitHubIssueResponse = serde_json::from_str(json).unwrap();
+    assert!(resp.body.is_none());
+}
+
+#[test]
+fn response_missing_labels_is_rejected() {
+    let json = r#"{"number":1,"title":"t","state":"open","updated_at":"2025-01-01T00:00:00Z"}"#;
+    let error = serde_json::from_str::<GitHubIssueResponse>(json).unwrap_err();
+    assert!(error.to_string().contains("labels"), "got {error}");
+}
+
+#[test]
+fn response_missing_updated_at_is_rejected() {
+    let json = r#"{"number":1,"title":"t","state":"open","labels":[]}"#;
+    let error = serde_json::from_str::<GitHubIssueResponse>(json).unwrap_err();
+    assert!(error.to_string().contains("updated_at"), "got {error}");
+}
+
+#[test]
+fn response_string_number_is_rejected() {
+    let json = r#"{"number":"42","title":"t","state":"open","labels":[],"updated_at":"2025-01-01T00:00:00Z"}"#;
+    let error = serde_json::from_str::<GitHubIssueResponse>(json).unwrap_err();
+    // GitHub always sends a JSON number; a quoted number must fail loudly
+    // rather than being coerced, and serde reports the expected type only.
+    assert!(error.to_string().contains("expected i64"), "got {error}");
+}

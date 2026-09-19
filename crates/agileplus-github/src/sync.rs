@@ -373,4 +373,104 @@ mod tests {
             vec![(7_u64, "story title must not be empty".to_string())]
         );
     }
+
+    // ── format_bug_body (private) ─────────────────────────────────────────────
+
+    fn fixed_bug() -> BacklogItem {
+        let created: DateTime<Utc> = DateTime::parse_from_rfc3339("2025-01-15T10:30:00Z")
+            .expect("fixed RFC 3339 timestamp")
+            .with_timezone(&Utc);
+        BacklogItem {
+            id: Some(1),
+            title: "Login crash".to_string(),
+            description: "App crashes when clicking login".to_string(),
+            intent: Intent::Bug,
+            priority: BacklogPriority::High,
+            status: BacklogStatus::New,
+            source: "user-report".to_string(),
+            feature_slug: Some("auth".to_string()),
+            tags: Vec::new(),
+            created_at: created,
+            updated_at: created,
+        }
+    }
+
+    #[test]
+    fn bug_body_matches_the_golden_layout() {
+        // The body is content-hashed for change detection, so its exact layout
+        // is part of the sync contract: any reformatting re-syncs every issue.
+        let expected = concat!(
+            "## Description\n\n",
+            "App crashes when clicking login",
+            "\n\n",
+            "## Metadata\n\n",
+            "- **Priority**: high\n",
+            "- **Status**: new\n",
+            "- **Source**: user-report\n",
+            "- **Feature**: auth\n",
+            "- **Created**: 2025-01-15T10:30:00+00:00\n",
+            "\n---\n*Synced by AgilePlus*\n",
+        );
+        assert_eq!(format_bug_body(&fixed_bug()), expected);
+    }
+
+    #[test]
+    fn bug_body_omits_feature_line_without_a_slug() {
+        let mut item = fixed_bug();
+        item.feature_slug = None;
+        let body = format_bug_body(&item);
+        assert!(!body.contains("**Feature**"));
+        assert!(body.contains("- **Source**: user-report\n"));
+    }
+
+    #[test]
+    fn bug_body_reports_the_item_status_and_priority() {
+        let mut item = fixed_bug();
+        item.priority = BacklogPriority::Critical;
+        item.status = BacklogStatus::Triaged;
+        let body = format_bug_body(&item);
+        assert!(body.contains("- **Priority**: critical\n"));
+        assert!(body.contains("- **Status**: triaged\n"));
+    }
+
+    #[test]
+    fn bug_body_description_is_not_escaped() {
+        let mut item = fixed_bug();
+        item.description = "Use `--force` then **check** the log".to_string();
+        let body = format_bug_body(&item);
+        assert!(body.contains("Use `--force` then **check** the log"));
+    }
+
+    // ── hash_content (private) ────────────────────────────────────────────────
+
+    #[test]
+    fn hash_content_matches_published_sha256_vectors() {
+        // Standard SHA-256 vectors, so the digest is checked against the
+        // algorithm rather than against another call to itself.
+        assert_eq!(
+            hash_content(""),
+            "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        );
+        assert_eq!(
+            hash_content("abc"),
+            "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+        );
+    }
+
+    #[test]
+    fn hash_content_is_lowercase_hex_of_fixed_length() {
+        let hash = hash_content("App crashes when clicking login");
+        assert_eq!(hash.len(), 64);
+        assert!(
+            hash.chars()
+                .all(|c| c.is_ascii_hexdigit() && !c.is_ascii_uppercase())
+        );
+    }
+
+    #[test]
+    fn hash_content_distinguishes_whitespace_and_case() {
+        assert_ne!(hash_content("a b"), hash_content("ab"));
+        assert_ne!(hash_content("Bug"), hash_content("bug"));
+        assert_ne!(hash_content("ab\n"), hash_content("ab"));
+    }
 }
