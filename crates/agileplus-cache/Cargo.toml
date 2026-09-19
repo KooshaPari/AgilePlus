@@ -10,7 +10,7 @@ repository.workspace = true
 [dependencies]
 agileplus-domain = { version = "0.2.4", path = "../agileplus-domain" }
 bb8 = "0.9"
-bb8-redis = "0.18"
+bb8-redis = "0.26"
 redis.workspace = true
 tokio.workspace = true
 tracing.workspace = true
