@@ -188,12 +188,17 @@ async fn feature_transition_rejects_a_disallowed_lifecycle_step_without_mutating
     assert!(body.contains("Created"), "rejection must name the current state: {body}");
     assert!(body.contains("Shipped"), "rejection must name the target state: {body}");
 
-    let store = state.read().await;
-    assert_eq!(
-        store.features[0].state,
-        FeatureState::Created,
-        "a rejected transition must leave the feature untouched"
-    );
+    // Scoped so the read guard is released before the next request: the
+    // handler takes `state.write()`, and tokio's `RwLock` is fair, so a live
+    // reader would deadlock the write instead of failing.
+    {
+        let store = state.read().await;
+        assert_eq!(
+            store.features[0].state,
+            FeatureState::Created,
+            "a rejected transition must leave the feature untouched"
+        );
+    }
 
     // The same feature still accepts a legal step afterwards. This must go
     // through the *seeded* app - the plain `send` helper builds an empty store,
