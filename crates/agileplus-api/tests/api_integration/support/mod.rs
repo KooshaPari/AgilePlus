@@ -15,7 +15,7 @@ use tokio::sync::broadcast;
 
 use self::observability::MockObs;
 pub(crate) use self::storage::MockStorage;
-use self::vcs::MockVcs;
+pub(crate) use self::vcs::MockVcs;
 
 pub(crate) const TEST_API_KEY: &str = "test-api-key-12345";
 
@@ -45,10 +45,24 @@ pub(crate) fn setup_state_with_storage(
     AppState<MockStorage, MockVcs, MockObs>,
     broadcast::Sender<serde_json::Value>,
 ) {
+    setup_state_with_ports(storage, MockVcs::new(), event_capacity)
+}
+
+/// Build the application state with an explicitly configured [`MockVcs`], so a
+/// test can inject port failures or canned results and still keep the handle
+/// needed to inspect the recorded calls.
+pub(crate) fn setup_state_with_ports(
+    storage: MockStorage,
+    vcs: MockVcs,
+    event_capacity: usize,
+) -> (
+    AppState<MockStorage, MockVcs, MockObs>,
+    broadcast::Sender<serde_json::Value>,
+) {
     let (event_tx, _) = broadcast::channel(event_capacity);
     let state = AppState::with_event_tx(
         Arc::new(storage),
-        Arc::new(MockVcs),
+        Arc::new(vcs),
         Arc::new(MockObs),
         Arc::new(AppConfig::default()),
         test_credentials(),
@@ -62,6 +76,12 @@ pub(crate) async fn setup_test_server() -> TestServer {
 }
 
 pub(crate) async fn setup_test_server_with_storage(storage: MockStorage) -> TestServer {
-    let (state, _event_tx) = setup_state_with_storage(storage, EVENT_CHANNEL_CAPACITY);
+    setup_test_server_with_ports(storage, MockVcs::new()).await
+}
+
+/// A server whose `VcsPort` is the caller's mock, so the test can both drive
+/// failures and read back the calls the handlers made.
+pub(crate) async fn setup_test_server_with_ports(storage: MockStorage, vcs: MockVcs) -> TestServer {
+    let (state, _event_tx) = setup_state_with_ports(storage, vcs, EVENT_CHANNEL_CAPACITY);
     TestServer::new(create_router(state))
 }

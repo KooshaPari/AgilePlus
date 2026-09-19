@@ -33,6 +33,8 @@ mod request_validation;
 mod route_coverage;
 #[path = "api_integration/stream_sse.rs"]
 mod stream_sse;
+#[path = "api_integration/vcs_contract.rs"]
+mod vcs_contract;
 #[path = "api_integration/worktree.rs"]
 mod worktree;
 

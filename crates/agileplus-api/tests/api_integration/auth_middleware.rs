@@ -236,6 +236,54 @@ async fn validate_api_key_rejects_empty_query_param_value() {
     );
 }
 
+/// A credential header that is not valid UTF-8 cannot be read as a token, so
+/// the middleware must treat the request as *missing* credentials ("Missing API
+/// key") rather than as a present-but-wrong key ("Invalid API key"). The
+/// `to_str().ok()` guard is what decides this.
+#[tokio::test]
+async fn validate_api_key_treats_a_non_utf8_header_as_missing() {
+    let server = credential_app();
+    let resp = server
+        .get("/protected")
+        .add_header(API_KEY_HEADER, &b"\xff\xfe\xfd"[..])
+        .await;
+    resp.assert_status(StatusCode::UNAUTHORIZED);
+    let error = resp.json::<serde_json::Value>()["error"]
+        .as_str()
+        .expect("the 401 body carries an error string")
+        .to_string();
+    assert!(
+        error.starts_with("Missing API key"),
+        "unreadable bytes are no credential at all, got: {error}"
+    );
+}
+
+/// An unreadable `Authorization` header must not abort extraction: the
+/// `X-API-Key` fallback still authenticates the request.
+#[tokio::test]
+async fn validate_api_key_skips_a_non_utf8_authorization_header() {
+    let server = credential_app();
+    let resp = server
+        .get("/protected")
+        .add_header("Authorization", &b"Bearer \xff\xfe"[..])
+        .add_header(API_KEY_HEADER, VALID_KEY)
+        .await;
+    resp.assert_status_ok();
+}
+
+/// Same guard on the `bearer ` prefix path: unreadable bytes plus a valid query
+/// param must still succeed.
+#[tokio::test]
+async fn authorize_skips_a_non_utf8_authorization_header() {
+    let server = authorize_app(shared_secret_verifier(&[VALID_KEY]));
+    let resp = server
+        .get("/protected")
+        .add_header("Authorization", &b"\xff\xfe\xfd"[..])
+        .add_header(API_KEY_HEADER, VALID_KEY)
+        .await;
+    resp.assert_status_ok();
+}
+
 #[tokio::test]
 async fn validate_api_key_401_is_json() {
     let server = credential_app();
