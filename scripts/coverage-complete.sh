@@ -95,11 +95,20 @@ fi
 [ -s "$profdata" ] || { echo "no merged profile at $profdata" >&2; exit 1; }
 echo "==> profile: $profdata ($(du -h "$profdata" | cut -f1))"
 
-echo "==> collecting non-test compilation units"
-# Only out directories that also hold a .rlib are the non-test lib build; the
-# ones without an rlib are test harnesses (which would re-introduce test code).
-# Bins are non-test by construction and are what cargo-llvm-cov already reports,
-# so keeping them preserves comparability with the published figure.
+echo "==> collecting compilation units"
+# Lib objects: only out directories that also hold a .rlib are the non-test
+# lib build; the ones without an rlib are test harnesses. Bins are non-test by
+# construction and are what cargo-llvm-cov already reports, so keeping them
+# preserves comparability with the published figure.
+#
+# KNOWN LIMITATION (verified 2026-09-19): for some members (agileplus-nats,
+# -events, ...) neither lib compilation's objects carry profile data - the
+# test harness links a different compilation of the lib, and the rlib objects
+# are keyed to a compilation that never executed. Reporting those objects
+# against any profile yields 0.00%. The ONLY source of counts for such a crate
+# is its test-harness binary object, whose rows are test-inclusive (a file's
+# own #[cfg(test)] module is counted). Those crates are excluded from the
+# production-only basis and listed separately below.
 : > "$work_dir/objects.txt"
 # One traversal for the rlibs, rather than an `ls` probe per out directory:
 # the build directory holds an entry for every third-party dependency too, and
@@ -178,3 +187,50 @@ BEGIN { printf "%d files, %d lines, %d covered = %.2f%%\n", files, l, c, c * 100
 echo
 echo "raw chunk reports: $work_dir/chunks.txt"
 echo "merged per-file:   $work_dir/merged.txt"
+
+# ── Test-inclusive supplement ─────────────────────────────────────────────────
+#
+# For each workspace member, report its test-harness binary object. If the
+# production-only basis above carries rows for that crate, the supplement adds
+# nothing (the merge takes the larger covered count and lib rows already
+# dominate). If the basis has no rows for the crate (the lib objects carry no
+# data), the supplement is the only measurement available - and it is
+# TEST-INCLUSIVE: a file's own #[cfg(test)] module counts as covered lines.
+# Those crates are printed in their own section and must not be summed into
+# the production-only figure.
+
+echo "==> collecting test-harness binary objects"
+: > "$work_dir/harness-chunks.txt"
+# One invocation per member's out directory that holds a harness binary but no
+# rlib (the lib-only dirs are already in the production basis).
+find "$target_dir/debug/build" -mindepth 1 -maxdepth 1 -type d -print0 2>/dev/null \
+    | while IFS= read -r -d '' crate_dir; do
+        # Any out dir under this crate that has an executable but no rlib.
+        for out in "$crate_dir"/*/out; do
+            [ -d "$out" ] || continue
+            has_rlib=$(find "$out" -maxdepth 1 -name '*.rlib' | head -1)
+            [ -n "$has_rlib" ] && continue
+            find "$out" -maxdepth 1 -type f -perm -u+x ! -name '*.so' -print0 2>/dev/null
+        done
+    done > "$work_dir/harness-objects.txt"
+harness_total="$(tr '\0' '\n' < "$work_dir/harness-objects.txt" | grep -v '^$' | sort -u | wc -l | tr -d ' ')"
+echo "    $harness_total harness objects"
+if [ "$harness_total" != "0" ]; then
+    tr '\0' '\n' < "$work_dir/harness-objects.txt" | grep -v '^$' | sort -u > "$work_dir/harness-object-list.txt"
+    split -l 300 "$work_dir/harness-object-list.txt" "$work_dir/harness-chunk-"
+    for part in "$work_dir"/harness-chunk-*; do
+        args=()
+        while IFS= read -r obj; do
+            args+=(-object "$obj")
+        done < "$part"
+        "$llvm_cov" report -use-color=0 -instr-profile="$profdata" -ignore-filename-regex="$ignore_regex" "${args[@]}" >> "$work_dir/harness-chunks.txt" 2>/dev/null || true
+    done
+    awk -f "$repo_root/scripts/coverage-merge.awk" -v ancestor="$(basename "$repo_root")" \
+        "$work_dir/harness-chunks.txt" > "$work_dir/harness-merged.txt"
+    echo
+    echo "TEST-INCLUSIVE SUPPLEMENT — crates with no production-basis rows"
+    echo "(their #[cfg(test)] modules count as covered lines; do not sum into the figure above)"
+    echo "============================================================"
+    awk '/^CRATE_TABLE$/{f=1;next} /^TOTAL$/{f=0} f' "$work_dir/harness-merged.txt" | sort -k5 -n
+    echo "============================================================"
+fi
