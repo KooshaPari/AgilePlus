@@ -308,4 +308,206 @@ mod tests {
         assert!(s.contains("dbg-1"));
         assert!(s.contains("_INBOX.r"));
     }
+
+    #[test]
+    fn missing_each_required_field_is_rejected() {
+        let full = serde_json::json!({
+            "id": "00000000-0000-4000-8000-000000000000",
+            "subject": "a.b",
+            "payload": {},
+            "timestamp": "2026-01-02T03:04:05Z",
+        });
+        assert!(
+            serde_json::from_value::<Envelope>(full.clone()).is_ok(),
+            "full document must parse"
+        );
+        for field in ["id", "subject", "payload", "timestamp"] {
+            let mut partial = full.clone();
+            partial.as_object_mut().unwrap().remove(field);
+            let res = serde_json::from_value::<Envelope>(partial);
+            assert!(
+                res.is_err(),
+                "removing `{field}` must break deserialization"
+            );
+        }
+    }
+
+    #[test]
+    fn wrong_type_for_each_required_field_is_rejected() {
+        for field in ["id", "subject", "timestamp"] {
+            let doc = serde_json::json!({
+                "id": "00000000-0000-4000-8000-000000000000",
+                "subject": "a.b",
+                "payload": {},
+                "timestamp": "2026-01-02T03:04:05Z",
+                field: 42,
+            });
+            assert!(
+                serde_json::from_value::<Envelope>(doc).is_err(),
+                "numeric `{field}` must be rejected"
+            );
+        }
+        // payload, however, is a free-form Value and accepts non-objects.
+        let doc = serde_json::json!({
+            "id": "00000000-0000-4000-8000-000000000000",
+            "subject": "a.b",
+            "payload": "just-a-string",
+            "timestamp": "2026-01-02T03:04:05Z",
+        });
+        let env = serde_json::from_value::<Envelope>(doc).unwrap();
+        assert_eq!(env.payload, serde_json::json!("just-a-string"));
+    }
+
+    #[test]
+    fn optional_fields_accept_any_json_value_type_or_null() {
+        let base = serde_json::json!({
+            "id": "00000000-0000-4000-8000-000000000000",
+            "subject": "a.b",
+            "payload": {},
+            "timestamp": "2026-01-02T03:04:05Z",
+        });
+        // Explicit null deserializes to None (same as absent).
+        let mut with_nulls = base.clone();
+        with_nulls["reply_to"] = serde_json::Value::Null;
+        with_nulls["correlation_id"] = serde_json::Value::Null;
+        let env = serde_json::from_value::<Envelope>(with_nulls).unwrap();
+        assert_eq!(env.reply_to, None);
+        assert_eq!(env.correlation_id, None);
+
+        // Wrong type for an optional field is still rejected.
+        let mut bad_reply = base.clone();
+        bad_reply["reply_to"] = serde_json::json!(7);
+        assert!(serde_json::from_value::<Envelope>(bad_reply).is_err());
+        let mut bad_corr = base.clone();
+        bad_corr["correlation_id"] = serde_json::json!({ "nested": true });
+        assert!(serde_json::from_value::<Envelope>(bad_corr).is_err());
+    }
+
+    #[test]
+    fn unknown_extra_fields_are_tolerated_and_dropped() {
+        let doc = serde_json::json!({
+            "id": "00000000-0000-4000-8000-000000000000",
+            "subject": "a.b",
+            "payload": {"k": 1},
+            "timestamp": "2026-01-02T03:04:05Z",
+            "schema_version": 2,
+            "future_field": ["anything"],
+        });
+        let env = serde_json::from_value::<Envelope>(doc).unwrap();
+        assert_eq!(env.subject, "a.b");
+        assert_eq!(env.payload["k"], 1);
+        // Extras must not surface anywhere: a round-trip loses them.
+        let round = Envelope::from_bytes(&env.to_bytes().unwrap()).unwrap();
+        let serialized: serde_json::Value =
+            serde_json::from_slice(&round.to_bytes().unwrap()).unwrap();
+        assert!(serialized.get("schema_version").is_none());
+        assert!(serialized.get("future_field").is_none());
+    }
+
+    #[test]
+    fn malformed_timestamp_is_rejected() {
+        let base = serde_json::json!({
+            "id": "00000000-0000-4000-8000-000000000000",
+            "subject": "a.b",
+            "payload": {},
+        });
+        for bad in ["not-a-date", "2026-13-45T99:99:99Z", "", "2026-01-02"] {
+            let mut doc = base.clone();
+            doc["timestamp"] = serde_json::json!(bad);
+            assert!(
+                serde_json::from_value::<Envelope>(doc).is_err(),
+                "timestamp {bad:?} must be rejected"
+            );
+        }
+    }
+
+    #[test]
+    fn non_utc_timestamp_offset_is_accepted_as_utc() {
+        // chrono's DateTime<Utc> deserializer accepts RFC3339 with an explicit
+        // non-zero offset and normalizes it to UTC.
+        let doc = serde_json::json!({
+            "id": "00000000-0000-4000-8000-000000000000",
+            "subject": "a.b",
+            "payload": {},
+            "timestamp": "2026-01-02T05:04:05+02:00",
+        });
+        let env = serde_json::from_value::<Envelope>(doc).unwrap();
+        assert_eq!(env.timestamp.to_rfc3339(), "2026-01-02T03:04:05+00:00");
+    }
+
+    #[test]
+    fn timestamp_roundtrip_preserves_instant_exactly() {
+        let env = Envelope::new(&Subject::new("t"), serde_json::json!({}));
+        let back = Envelope::from_bytes(&env.to_bytes().unwrap()).unwrap();
+        assert_eq!(back.timestamp, env.timestamp);
+        assert_eq!(back.timestamp.timestamp_subsec_nanos() >= 0, true);
+        // Nanosecond precision survives the wire.
+        let back2 = Envelope::from_bytes(&back.to_bytes().unwrap()).unwrap();
+        assert_eq!(back2.timestamp, back.timestamp);
+    }
+
+    #[test]
+    fn payload_accepts_arrays_strings_numbers_and_null() {
+        for payload in [
+            serde_json::json!([1, 2, 3]),
+            serde_json::json!("scalar"),
+            serde_json::json!(3.14),
+            serde_json::json!(true),
+            serde_json::Value::Null,
+        ] {
+            let env = Envelope::new(&Subject::new("t"), payload.clone());
+            let back = Envelope::from_bytes(&env.to_bytes().unwrap()).unwrap();
+            assert_eq!(back.payload, payload);
+        }
+    }
+
+    #[test]
+    fn to_bytes_is_valid_json_object_with_all_required_keys() {
+        let env = Envelope::new(&Subject::new("a.b.c"), serde_json::json!({}))
+            .with_reply_to(&Subject::new("inbox"))
+            .with_correlation("cid");
+        let value: serde_json::Value =
+            serde_json::from_slice(&env.to_bytes().unwrap()).unwrap();
+        let obj = value.as_object().expect("envelope must serialize to a JSON object");
+        for key in ["id", "subject", "payload", "timestamp", "reply_to", "correlation_id"] {
+            assert!(obj.contains_key(key), "serialized envelope must contain `{key}`");
+        }
+        assert_eq!(obj["subject"], "a.b.c");
+        assert_eq!(obj["correlation_id"], "cid");
+    }
+
+    #[test]
+    fn from_bytes_trailing_garbage_is_rejected() {
+        let env = Envelope::new(&Subject::new("t"), serde_json::json!({}));
+        let mut bytes = env.to_bytes().unwrap();
+        bytes.extend_from_slice(b"trailing");
+        assert!(Envelope::from_bytes(&bytes).is_err());
+    }
+
+    #[test]
+    fn from_bytes_utf8_invalid_bytes_are_rejected() {
+        // Build a document whose subject value is a known unique marker, then
+        // corrupt one of its bytes to invalid UTF-8.
+        let marker = "ZZSUBJECTZZ";
+        let env = Envelope::new(&Subject::new(marker), serde_json::json!({"k": "v"}));
+        let mut bytes = env.to_bytes().unwrap();
+        let needle = format!("\"{marker}\"");
+        let idx = bytes
+            .windows(needle.len())
+            .position(|w| w == needle.as_bytes())
+            .expect("subject value present in serialized envelope");
+        bytes[idx + 1] = 0xFF; // first byte inside the subject string
+        assert!(Envelope::from_bytes(&bytes).is_err());
+    }
+
+    #[test]
+    fn huge_payload_roundtrips() {
+        // ~100k entries: stresses serialization without wall-clock dependence.
+        let items: Vec<i32> = (0..100_000).collect();
+        let env = Envelope::new(&Subject::new("big"), serde_json::json!({ "items": items }));
+        let back = Envelope::from_bytes(&env.to_bytes().unwrap()).unwrap();
+        assert_eq!(back.payload["items"].as_array().map(Vec::len), Some(100_000));
+        assert_eq!(back.payload["items"][0], 0);
+        assert_eq!(back.payload["items"][99_999], 99_999);
+    }
 }
