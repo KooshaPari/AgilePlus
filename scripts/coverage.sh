@@ -154,6 +154,7 @@ if [ "${COVERAGE_ALL:-1}" = "1" ]; then
     all_bins=("$target_dir"/debug/build/*/*/out/*-*)
     measured=0
     skipped=0
+    ran_bins=()
     for bin in "${all_bins[@]}"; do
         [ -f "$bin" ] && [ -x "$bin" ] || continue
         case "$bin" in *.d|*.rlib|*.rmeta|*.lock|*/-*) continue ;; esac
@@ -161,19 +162,19 @@ if [ "${COVERAGE_ALL:-1}" = "1" ]; then
             LLVM_PROFILE_FILE="$work_dir/all-%p.profraw" "$bin" --test-threads=4 \
             >/dev/null 2>&1; then
             measured=$((measured + 1))
+            ran_bins+=("$bin")
         else
             # Slow or environment-dependent suites are skipped, not silently
             # counted as uncovered; the skip count is reported below.
             skipped=$((skipped + 1))
         fi
     done
-    printf '    ran %d test binaries (%d skipped on timeout)\n' "$measured" "$skipped"
+    printf '    ran %d test binaries (%d skipped)\n' "$measured" "$skipped"
 
     if ls "$work_dir"/all-*.profraw >/dev/null 2>&1; then
         "$llvm_profdata" merge -sparse "$work_dir"/all-*.profraw -o "$work_dir/all.profdata" 2>/dev/null
         present=()
-        for bin in "${all_bins[@]}"; do
-            [ -f "$bin" ] && [ -x "$bin" ] || continue
+        for bin in "${ran_bins[@]}"; do
             present+=("$bin")
         done
         # Report every binary in ONE invocation. Doing it per binary costs a
