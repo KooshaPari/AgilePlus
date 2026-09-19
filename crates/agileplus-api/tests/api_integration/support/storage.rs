@@ -5,7 +5,7 @@ use agileplus_domain::domain::backlog::BacklogItem;
 use agileplus_domain::domain::cycle::{Cycle, CycleFeature};
 use agileplus_domain::domain::epic::{Epic, EpicStatus};
 use agileplus_domain::domain::feature::Feature;
-use agileplus_domain::domain::governance::GovernanceContract;
+use agileplus_domain::domain::governance::{Evidence, GovernanceContract};
 use agileplus_domain::domain::module::{Module, ModuleFeatureTag};
 use agileplus_domain::domain::project::Project;
 use agileplus_domain::domain::state_machine::FeatureState;
@@ -25,6 +25,9 @@ pub(crate) struct MockStorage {
     pub(crate) module_tags: Arc<Mutex<Vec<ModuleFeatureTag>>>,
     pub(crate) cycle_features: Arc<Mutex<Vec<CycleFeature>>>,
     pub(crate) governance: Arc<Mutex<Vec<GovernanceContract>>>,
+    /// Evidence artifacts, keyed by `wp_id`/`fr_id` on read. Empty by default,
+    /// which is what every pre-existing suite relies on.
+    pub(crate) evidence: Arc<Mutex<Vec<Evidence>>>,
     pub(crate) audit: Arc<Mutex<Vec<AuditEntry>>>,
     pub(crate) projects: Arc<Mutex<Vec<Project>>>,
     pub(crate) epics: Arc<Mutex<Vec<Epic>>>,

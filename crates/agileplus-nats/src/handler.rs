@@ -187,4 +187,81 @@ mod tests {
         fn assert_send_sync<T: Send + Sync>() {}
         assert_send_sync::<FnHandler<fn(&Envelope) -> Result<(), EventBusError>>>();
     }
+
+    #[tokio::test]
+    async fn dispatch_via_dyn_trait_object() {
+        // Handlers must be usable as Arc<dyn Handler> — the exact shape the
+        // bus subscription API demands.
+        let handler: Arc<dyn Handler> = Arc::new(FnHandler(|env: &Envelope| {
+            assert_eq!(env.subject, "dispatch.test");
+            Ok(())
+        }));
+        let env = Envelope::new(&Subject::new("dispatch.test"), serde_json::json!({}));
+        handler.handle(&env).await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn custom_handler_impl_dispatches() {
+        // The Handler trait itself (not just FnHandler) is exercisable.
+        struct RecordingHandler {
+            subjects: Mutex<Vec<String>>,
+        }
+        #[async_trait::async_trait]
+        impl Handler for RecordingHandler {
+            async fn handle(&self, envelope: &Envelope) -> Result<(), EventBusError> {
+                self.subjects.lock().unwrap().push(envelope.subject.clone());
+                Ok(())
+            }
+        }
+        let h = Arc::new(RecordingHandler { subjects: Mutex::new(Vec::new()) });
+        for s in ["a.b", "c.d"] {
+            h.handle(&Envelope::new(&Subject::new(s), serde_json::json!({})))
+                .await
+                .unwrap();
+        }
+        assert_eq!(
+            h.subjects.lock().unwrap().as_slice(),
+            ["a.b".to_string(), "c.d".to_string()]
+        );
+    }
+
+    #[tokio::test]
+    async fn handler_error_surfaces_through_trait_object() {
+        let handler: Arc<dyn Handler> = Arc::new(FnHandler(|_: &Envelope| {
+            Err(EventBusError::ConnectionError("down".into()))
+        }));
+        let err = handler
+            .handle(&Envelope::new(&Subject::new("t"), serde_json::json!({})))
+            .await
+            .unwrap_err();
+        match err {
+            EventBusError::ConnectionError(m) => assert_eq!(m, "down"),
+            other => panic!("expected ConnectionError, got {other:?}"),
+        }
+    }
+
+    #[tokio::test]
+    async fn handler_runs_concurrently_from_multiple_tasks() {
+        let count = Arc::new(Mutex::new(0u32));
+        let handler: Arc<dyn Handler> = {
+            let count = count.clone();
+            Arc::new(FnHandler(move |_: &Envelope| {
+                *count.lock().unwrap() += 1;
+                Ok(())
+            }))
+        };
+        let mut tasks = Vec::new();
+        for _ in 0..8 {
+            let h = handler.clone();
+            tasks.push(tokio::spawn(async move {
+                h.handle(&Envelope::new(&Subject::new("t"), serde_json::json!({})))
+                    .await
+                    .unwrap();
+            }));
+        }
+        for t in tasks {
+            t.await.unwrap();
+        }
+        assert_eq!(*count.lock().unwrap(), 8);
+    }
 }

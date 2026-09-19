@@ -510,3 +510,275 @@ async fn import_combines_events_snapshots_and_mappings() {
     assert_eq!(stats.snapshots_updated, 1);
     assert_eq!(stats.sync_mappings_merged, 1);
 }
+
+// ── Failure propagation ───────────────────────────────────────────────────────
+//
+// `import_state` maps both store errors into `ImportError` variants. The paths
+// are only reachable with a store that actually fails, so these tests inject
+// failures at each read and write the importer performs.
+
+/// Event store whose reads and/or writes fail on demand.
+#[derive(Default)]
+struct BrokenEventStore {
+    fail_reads: bool,
+    fail_appends: bool,
+}
+
+#[async_trait]
+impl EventStore for BrokenEventStore {
+    async fn append(&self, _event: &Event) -> Result<i64, EventError> {
+        if self.fail_appends {
+            return Err(EventError::StorageError("append refused".into()));
+        }
+        Ok(0)
+    }
+
+    async fn get_events(
+        &self,
+        _entity_type: &str,
+        _entity_id: i64,
+    ) -> Result<Vec<Event>, EventError> {
+        Err(EventError::StorageError("read refused".into()))
+    }
+
+    async fn get_events_since(
+        &self,
+        _entity_type: &str,
+        _entity_id: i64,
+        _sequence: i64,
+    ) -> Result<Vec<Event>, EventError> {
+        if self.fail_reads {
+            return Err(EventError::StorageError("read refused".into()));
+        }
+        Ok(Vec::new())
+    }
+
+    async fn get_events_by_range(
+        &self,
+        _entity_type: &str,
+        _entity_id: i64,
+        _from: chrono::DateTime<Utc>,
+        _to: chrono::DateTime<Utc>,
+    ) -> Result<Vec<Event>, EventError> {
+        Err(EventError::StorageError("read refused".into()))
+    }
+
+    async fn get_latest_sequence(
+        &self,
+        _entity_type: &str,
+        _entity_id: i64,
+    ) -> Result<i64, EventError> {
+        if self.fail_reads {
+            return Err(EventError::StorageError("read refused".into()));
+        }
+        Ok(0)
+    }
+}
+
+/// Snapshot store whose reads and/or writes fail on demand.
+#[derive(Default)]
+struct BrokenSnapshotStore {
+    fail_reads: bool,
+    fail_writes: bool,
+}
+
+#[async_trait]
+impl SnapshotStore for BrokenSnapshotStore {
+    async fn save(&self, _snapshot: &Snapshot) -> Result<(), SnapshotError> {
+        if self.fail_writes {
+            return Err(SnapshotError::StorageError("write refused".into()));
+        }
+        Ok(())
+    }
+
+    async fn load(
+        &self,
+        _entity_type: &str,
+        _entity_id: i64,
+    ) -> Result<Option<Snapshot>, SnapshotError> {
+        if self.fail_reads {
+            return Err(SnapshotError::StorageError("read refused".into()));
+        }
+        Ok(None)
+    }
+
+    async fn delete_before(
+        &self,
+        _entity_type: &str,
+        _entity_id: i64,
+        _sequence: i64,
+    ) -> Result<(), SnapshotError> {
+        Ok(())
+    }
+}
+
+#[tokio::test]
+async fn import_reports_an_event_store_read_failure() {
+    let tmp = tempfile::tempdir().unwrap();
+    write_jsonl(tmp.path(), "Feature", 1, &[make_event("Feature", 1, 1)]);
+
+    let error = import_state(
+        tmp.path(),
+        &BrokenEventStore {
+            fail_reads: true,
+            fail_appends: false,
+        },
+        &MemSnapshotStore::default(),
+    )
+    .await
+    .expect_err("a store that cannot be read must fail the import");
+
+    match error {
+        ImportError::EventStore(message) => assert!(
+            message.contains("read refused"),
+            "the cause should survive: {message}"
+        ),
+        other => panic!("expected EventStore, got {other:?}"),
+    }
+}
+
+#[tokio::test]
+async fn import_reports_an_event_store_append_failure() {
+    let tmp = tempfile::tempdir().unwrap();
+    write_jsonl(tmp.path(), "Feature", 1, &[make_event("Feature", 1, 1)]);
+
+    let error = import_state(
+        tmp.path(),
+        &BrokenEventStore {
+            fail_reads: false,
+            fail_appends: true,
+        },
+        &MemSnapshotStore::default(),
+    )
+    .await
+    .expect_err("a store that refuses appends must fail the import");
+
+    match error {
+        ImportError::EventStore(message) => assert!(message.contains("append refused")),
+        other => panic!("expected EventStore, got {other:?}"),
+    }
+}
+
+#[tokio::test]
+async fn import_reports_a_snapshot_store_read_failure() {
+    let tmp = tempfile::tempdir().unwrap();
+    write_snapshot(
+        tmp.path(),
+        &Snapshot::new("Feature", 1, serde_json::json!({}), 1),
+    );
+
+    let error = import_state(
+        tmp.path(),
+        &MemEventStore::default(),
+        &BrokenSnapshotStore {
+            fail_reads: true,
+            fail_writes: false,
+        },
+    )
+    .await
+    .expect_err("a snapshot store that cannot be read must fail the import");
+
+    match error {
+        ImportError::SnapshotStore(message) => assert!(message.contains("read refused")),
+        other => panic!("expected SnapshotStore, got {other:?}"),
+    }
+}
+
+#[tokio::test]
+async fn import_reports_a_snapshot_store_write_failure() {
+    let tmp = tempfile::tempdir().unwrap();
+    write_snapshot(
+        tmp.path(),
+        &Snapshot::new("Feature", 1, serde_json::json!({}), 1),
+    );
+
+    let error = import_state(
+        tmp.path(),
+        &MemEventStore::default(),
+        &BrokenSnapshotStore {
+            fail_reads: false,
+            fail_writes: true,
+        },
+    )
+    .await
+    .expect_err("a snapshot store that refuses writes must fail the import");
+
+    match error {
+        ImportError::SnapshotStore(message) => assert!(message.contains("write refused")),
+        other => panic!("expected SnapshotStore, got {other:?}"),
+    }
+}
+
+#[tokio::test]
+async fn import_rejects_sync_mappings_of_the_wrong_shape() {
+    // Well-formed JSON, wrong schema: this must be reported as a deserialization
+    // failure naming the file rather than silently importing zero mappings.
+    let tmp = tempfile::tempdir().unwrap();
+    std::fs::write(
+        tmp.path().join("sync_state.json"),
+        r#"{"sync_mappings": {"Feature/1": 3}}"#,
+    )
+    .unwrap();
+
+    let error = import_state(
+        tmp.path(),
+        &MemEventStore::default(),
+        &MemSnapshotStore::default(),
+    )
+    .await
+    .expect_err("an object where a list is expected must not import");
+
+    match error {
+        ImportError::Deserialization { file, .. } => {
+            assert!(file.ends_with("sync_state.json"), "file was {file}");
+        }
+        other => panic!("expected Deserialization, got {other:?}"),
+    }
+}
+
+#[tokio::test]
+async fn import_tolerates_a_list_shaped_sync_state_as_empty() {
+    // Documents the true contract: `read_sync_mappings` parses the file as JSON
+    // (a list IS valid JSON), then reads the `sync_mappings` key. An array has
+    // no such key, so the reader defaults to an empty mapping list and the
+    // import succeeds with nothing merged.
+    let tmp = tempfile::tempdir().unwrap();
+    std::fs::write(tmp.path().join("sync_state.json"), "[1, 2, 3]").unwrap();
+
+    let stats = import_state(
+        tmp.path(),
+        &MemEventStore::default(),
+        &MemSnapshotStore::default(),
+    )
+    .await
+    .expect("a list-shaped sync_state parses and imports as empty");
+
+    assert_eq!(stats.events_imported, 0);
+    assert_eq!(stats.snapshots_updated, 0);
+    assert_eq!(stats.sync_mappings_merged, 0);
+}
+
+#[tokio::test]
+async fn import_rejects_sync_mappings_that_are_not_a_list() {
+    // The rejection path that DOES exist: a `sync_mappings` value that is not
+    // an array of SyncMapping objects fails Deserialization.
+    let tmp = tempfile::tempdir().unwrap();
+    std::fs::write(
+        tmp.path().join("sync_state.json"),
+        r#"{"sync_mappings": "not-a-list"}"#,
+    )
+    .unwrap();
+
+    let error = import_state(
+        tmp.path(),
+        &MemEventStore::default(),
+        &MemSnapshotStore::default(),
+    )
+    .await
+    .expect_err("a string sync_mappings must not import");
+
+    assert!(
+        matches!(error, ImportError::Deserialization { .. }),
+        "expected Deserialization, got {error:?}"
+    );
+}

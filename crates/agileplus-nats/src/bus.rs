@@ -996,3 +996,4 @@ mod tests {
         assert_eq!(bus.published().len(), 1);
     }
 }
+
