@@ -5,6 +5,8 @@
 //! store contract be exercised without a live Dragonfly/Redis instance.
 #![allow(dead_code)]
 
+pub mod redis;
+
 use agileplus_cache::store::{CacheError, CacheStore};
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};

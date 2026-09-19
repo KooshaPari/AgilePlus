@@ -1,8 +1,9 @@
-//! CacheStore TTL expiry and LRU capacity eviction contract tests.
+//! CacheStore TTL expiry contract: deadlines, default vs explicit TTL, and
+//! boundary cases at zero and very long lifetimes.
 //!
-//! Uses the shared in-memory store double (see `tests/common/mod.rs`) so that
-//! time-based expiry and capacity behaviour are deterministic and do not need a
-//! live Dragonfly/Redis server.
+//! Uses the shared in-memory store double (see `tests/common/mod.rs`) so expiry
+//! behaviour is deterministic and needs no live Dragonfly/Redis server.
+//! Sleeps are deliberately generous multiples of the TTL under test.
 
 mod common;
 
@@ -209,157 +210,140 @@ async fn default_ttl_does_not_affect_explicit_long_ttl() {
 }
 
 // ===========================================================================
-// LRU capacity eviction
+// TTL boundaries
 // ===========================================================================
 
 #[tokio::test]
-async fn capacity_one_evicts_previous_insert() {
-    let store = InMemoryCacheStore::with_capacity(1);
-    store.set("a", &1u8, None).await.unwrap();
-    store.set("b", &2u8, None).await.unwrap();
+async fn sub_millisecond_ttl_expires_well_within_the_sleep_margin() {
+    let store = InMemoryCacheStore::unbounded();
+    store
+        .set("k", &1u8, Some(Duration::from_micros(1)))
+        .await
+        .unwrap();
 
-    assert_eq!(store.get::<u8>("a").await.unwrap(), None);
-    assert_eq!(store.get::<u8>("b").await.unwrap(), Some(2));
-}
+    // 20ms is 20_000x the TTL, so this does not depend on tight timing.
+    sleep_ms(20).await;
 
-#[tokio::test]
-async fn capacity_two_keeps_both_entries() {
-    let store = InMemoryCacheStore::with_capacity(2);
-    store.set("a", &1u8, None).await.unwrap();
-    store.set("b", &2u8, None).await.unwrap();
-
-    assert_eq!(store.get::<u8>("a").await.unwrap(), Some(1));
-    assert_eq!(store.get::<u8>("b").await.unwrap(), Some(2));
-}
-
-#[tokio::test]
-async fn eviction_removes_least_recently_used_entry() {
-    let store = InMemoryCacheStore::with_capacity(2);
-    store.set("a", &1u8, None).await.unwrap();
-    store.set("b", &2u8, None).await.unwrap();
-
-    // Touch "a" so it becomes the most recently used.
-    assert_eq!(store.get::<u8>("a").await.unwrap(), Some(1));
-
-    store.set("c", &3u8, None).await.unwrap();
-
-    assert_eq!(
-        store.get::<u8>("a").await.unwrap(),
-        Some(1),
-        "touched key survives"
-    );
-    assert_eq!(
-        store.get::<u8>("b").await.unwrap(),
-        None,
-        "stale key evicted"
-    );
-    assert_eq!(store.get::<u8>("c").await.unwrap(), Some(3));
-}
-
-#[tokio::test]
-async fn overwrite_counts_as_recent_access() {
-    let store = InMemoryCacheStore::with_capacity(2);
-    store.set("a", &1u8, None).await.unwrap();
-    store.set("b", &2u8, None).await.unwrap();
-
-    store.set("a", &10u8, None).await.unwrap(); // refresh "a"
-    store.set("c", &3u8, None).await.unwrap();
-
-    assert_eq!(store.get::<u8>("a").await.unwrap(), Some(10));
-    assert_eq!(store.get::<u8>("b").await.unwrap(), None);
-    assert_eq!(store.get::<u8>("c").await.unwrap(), Some(3));
-}
-
-#[tokio::test]
-async fn live_len_never_exceeds_capacity() {
-    let store = InMemoryCacheStore::with_capacity(3);
-    for i in 0..25u32 {
-        store.set(&format!("k{i}"), &i, None).await.unwrap();
-    }
-    assert_eq!(store.live_len(), 3);
-}
-
-#[tokio::test]
-async fn zero_capacity_evicts_immediately() {
-    let store = InMemoryCacheStore::with_capacity(0);
-    store.set("k", &1u8, None).await.unwrap();
-
-    assert_eq!(store.live_len(), 0);
     assert_eq!(store.get::<u8>("k").await.unwrap(), None);
+    assert!(!store.raw_contains("k"), "expired entry must be purged");
 }
 
 #[tokio::test]
-async fn large_capacity_performs_no_eviction() {
-    let store = InMemoryCacheStore::with_capacity(100);
-    for i in 0..50u32 {
-        store.set(&format!("k{i}"), &i, None).await.unwrap();
-    }
-    assert_eq!(store.live_len(), 50);
+async fn year_long_ttl_entry_stays_live() {
+    let store = InMemoryCacheStore::unbounded();
+    store
+        .set("k", &1u8, Some(Duration::from_secs(365 * 24 * 3600)))
+        .await
+        .unwrap();
+
+    sleep_ms(20).await;
+
+    assert_eq!(store.get::<u8>("k").await.unwrap(), Some(1));
+    assert!(store.exists("k").await.unwrap());
 }
 
 #[tokio::test]
-async fn eviction_keeps_most_recent_keys() {
-    let store = InMemoryCacheStore::with_capacity(2);
-    for (key, value) in [("k1", 1u8), ("k2", 2), ("k3", 3), ("k4", 4)] {
-        store.set(key, &value, None).await.unwrap();
-    }
+async fn zero_ttl_entry_is_absent_for_reads_without_a_sleep() {
+    let store = InMemoryCacheStore::unbounded();
+    store.set("k", &1u8, Some(Duration::ZERO)).await.unwrap();
 
-    assert_eq!(store.get::<u8>("k1").await.unwrap(), None);
-    assert_eq!(store.get::<u8>("k2").await.unwrap(), None);
-    assert_eq!(store.get::<u8>("k3").await.unwrap(), Some(3));
-    assert_eq!(store.get::<u8>("k4").await.unwrap(), Some(4));
+    assert!(
+        !store.exists("k").await.unwrap(),
+        "a zero TTL is already past its deadline"
+    );
+    assert!(!store.raw_contains("k"), "the dead entry must be purged");
+    assert_eq!(store.live_len(), 0);
 }
 
 #[tokio::test]
-async fn evicted_key_is_missing_and_not_exists() {
-    let store = InMemoryCacheStore::with_capacity(1);
-    store.set("gone", &1u8, None).await.unwrap();
-    store.set("kept", &2u8, None).await.unwrap();
+async fn overwrite_without_ttl_clears_a_previous_expiry() {
+    let store = InMemoryCacheStore::unbounded();
+    store
+        .set("k", &1u8, Some(Duration::from_millis(20)))
+        .await
+        .unwrap();
+    sleep_ms(40).await;
+    assert_eq!(
+        store.get::<u8>("k").await.unwrap(),
+        None,
+        "first entry expired"
+    );
 
-    assert_eq!(store.get::<u8>("gone").await.unwrap(), None);
-    assert!(!store.exists("gone").await.unwrap());
-    assert!(!store.raw_contains("gone"));
-}
-
-#[tokio::test]
-async fn delete_frees_capacity_for_new_entries() {
-    let store = InMemoryCacheStore::with_capacity(2);
-    store.set("a", &1u8, None).await.unwrap();
-    store.set("b", &2u8, None).await.unwrap();
-    store.delete("a").await.unwrap();
-    store.set("c", &3u8, None).await.unwrap();
-
-    assert_eq!(store.live_len(), 2);
-    assert_eq!(store.get::<u8>("b").await.unwrap(), Some(2));
-    assert_eq!(store.get::<u8>("c").await.unwrap(), Some(3));
-}
-
-#[tokio::test]
-async fn eviction_does_not_remove_a_just_inserted_entry() {
-    let store = InMemoryCacheStore::with_capacity(1);
-    store.set("a", &1u8, None).await.unwrap();
-    store.set("b", &2u8, None).await.unwrap();
+    store.set("k", &2u8, None).await.unwrap();
+    sleep_ms(40).await;
 
     assert_eq!(
-        store.get::<u8>("b").await.unwrap(),
+        store.get::<u8>("k").await.unwrap(),
         Some(2),
-        "the most recently inserted entry must survive eviction"
+        "the replacement must not inherit the old deadline"
     );
 }
 
 #[tokio::test]
-async fn expired_entries_do_not_count_toward_capacity() {
+async fn overwrite_without_ttl_falls_back_to_the_default_ttl() {
+    let store = InMemoryCacheStore::unbounded().with_default_ttl(Duration::from_millis(20));
+    store
+        .set("k", &1u8, Some(Duration::from_secs(30)))
+        .await
+        .unwrap();
+    assert_eq!(store.get::<u8>("k").await.unwrap(), Some(1));
+
+    store.set("k", &2u8, None).await.unwrap();
+    sleep_ms(60).await;
+
+    assert_eq!(
+        store.get::<u8>("k").await.unwrap(),
+        None,
+        "the default TTL must apply to the replacement"
+    );
+}
+
+#[tokio::test]
+async fn refilling_an_expired_key_yields_a_live_entry() {
+    let store = InMemoryCacheStore::unbounded();
+    store
+        .set("k", &1u8, Some(Duration::from_millis(10)))
+        .await
+        .unwrap();
+    sleep_ms(40).await;
+
+    store.set("k", &2u8, None).await.unwrap();
+
+    assert_eq!(store.get::<u8>("k").await.unwrap(), Some(2));
+    assert_eq!(store.live_len(), 1);
+}
+
+#[tokio::test]
+async fn expiry_does_not_disturb_a_live_sibling() {
     let store = InMemoryCacheStore::with_capacity(2);
     store
         .set("expiring", &1u8, Some(Duration::from_millis(10)))
         .await
         .unwrap();
+    store.set("stable", &2u8, None).await.unwrap();
     sleep_ms(40).await;
 
-    store.set("a", &1u8, None).await.unwrap();
-    store.set("b", &2u8, None).await.unwrap();
-    store.set("c", &3u8, None).await.unwrap();
-
-    assert_eq!(store.live_len(), 2);
-    assert!(!store.raw_contains("expiring"));
+    assert_eq!(store.get::<u8>("expiring").await.unwrap(), None);
+    assert_eq!(store.get::<u8>("stable").await.unwrap(), Some(2));
+    assert_eq!(store.live_len(), 1);
 }
+
+#[tokio::test]
+async fn live_len_ignores_expired_entries_without_a_read() {
+    let store = InMemoryCacheStore::unbounded();
+    store
+        .set("short", &1u8, Some(Duration::from_millis(10)))
+        .await
+        .unwrap();
+    store
+        .set("long", &2u8, Some(Duration::from_secs(30)))
+        .await
+        .unwrap();
+    sleep_ms(40).await;
+
+    assert_eq!(store.live_len(), 1, "expired entries are not live");
+}
+
+// ===========================================================================
+// Eviction policy boundaries
+// ===========================================================================
