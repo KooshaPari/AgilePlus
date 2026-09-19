@@ -330,3 +330,125 @@ mod deep_tests {
         assert!(s.contains("relative.log"));
     }
 }
+
+#[cfg(test)]
+mod env_filter_precedence_tests {
+    use super::*;
+    use std::ffi::{OsStr, OsString};
+    use std::sync::{Mutex, MutexGuard};
+
+    const AGILEPLUS_LOG: &str = "AGILEPLUS_LOG";
+    const RUST_LOG: &str = "RUST_LOG";
+
+    /// One lock for every test in this module: the process environment is global.
+    fn env_lock() -> MutexGuard<'static, ()> {
+        static LOCK: Mutex<()> = Mutex::new(());
+        LOCK.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
+    }
+
+    /// Restores one environment variable on drop, even if the test panics.
+    struct EnvGuard {
+        key: &'static str,
+        original: Option<OsString>,
+    }
+
+    impl EnvGuard {
+        fn capture(key: &'static str) -> Self {
+            Self {
+                key,
+                original: std::env::var_os(key),
+            }
+        }
+
+        /// Capture and set `key`. Caller must hold [`env_lock`].
+        fn set(key: &'static str, value: impl AsRef<OsStr>) -> Self {
+            let guard = Self::capture(key);
+            // SAFETY: the caller holds `env_lock`, so no other thread in this
+            // test binary mutates the process environment concurrently.
+            unsafe { std::env::set_var(key, value) };
+            guard
+        }
+
+        /// Capture and remove `key`. Caller must hold [`env_lock`].
+        fn unset(key: &'static str) -> Self {
+            let guard = Self::capture(key);
+            // SAFETY: as above.
+            unsafe { std::env::remove_var(key) };
+            guard
+        }
+    }
+
+    impl Drop for EnvGuard {
+        fn drop(&mut self) {
+            match self.original.take() {
+                // SAFETY: as above; the lock is still held by the caller's guard.
+                Some(value) => unsafe { std::env::set_var(self.key, value) },
+                None => unsafe { std::env::remove_var(self.key) },
+            }
+        }
+    }
+
+    fn config_with_level(level: &str) -> LogConfig {
+        LogConfig {
+            level: level.to_string(),
+            ..LogConfig::default()
+        }
+    }
+
+    #[test]
+    fn agileplus_log_takes_precedence_over_rust_log() {
+        let _lock = env_lock();
+        let _agileplus = EnvGuard::set(AGILEPLUS_LOG, "debug");
+        let _rust = EnvGuard::set(RUST_LOG, "warn");
+
+        let filter = build_filter(&config_with_level("error"));
+
+        assert_eq!(filter.to_string(), "debug");
+    }
+
+    #[test]
+    fn rust_log_is_used_when_agileplus_log_is_absent() {
+        let _lock = env_lock();
+        let _agileplus = EnvGuard::unset(AGILEPLUS_LOG);
+        let _rust = EnvGuard::set(RUST_LOG, "warn");
+
+        let filter = build_filter(&config_with_level("error"));
+
+        assert_eq!(filter.to_string(), "warn");
+    }
+
+    #[test]
+    fn config_level_is_used_when_no_env_filter_is_set() {
+        let _lock = env_lock();
+        let _agileplus = EnvGuard::unset(AGILEPLUS_LOG);
+        let _rust = EnvGuard::unset(RUST_LOG);
+
+        let filter = build_filter(&config_with_level("trace"));
+
+        assert_eq!(filter.to_string(), "trace");
+    }
+
+    #[test]
+    fn bare_config_level_is_interpreted_as_a_target_directive() {
+        let _lock = env_lock();
+        let _agileplus = EnvGuard::unset(AGILEPLUS_LOG);
+        let _rust = EnvGuard::unset(RUST_LOG);
+
+        let filter = build_filter(&config_with_level("totally-not-a-level"));
+
+        // `EnvFilter` accepts any bare word as a target filter, so a mistyped
+        // level does not error: it silently becomes `<word>=trace`.
+        assert_eq!(filter.to_string(), "totally-not-a-level=trace");
+    }
+
+    #[test]
+    fn unparseable_config_level_falls_back_to_info() {
+        let _lock = env_lock();
+        let _agileplus = EnvGuard::unset(AGILEPLUS_LOG);
+        let _rust = EnvGuard::unset(RUST_LOG);
+
+        let filter = build_filter(&config_with_level("agileplus=not-a-level"));
+
+        assert_eq!(filter.to_string(), "info");
+    }
+}

@@ -76,7 +76,7 @@ fn noop_adapter_all_methods_no_panic() {
 
     // Metrics
     adapter.record_counter("counter.name", 42, &[("c", "d")]);
-    adapter.record_histogram("histogram.name", 3.14, &[("h", "v")]);
+    adapter.record_histogram("histogram.name", 3.5, &[("h", "v")]);
     adapter.record_gauge("gauge.name", 99.0, &[("g", "v")]);
 }
 

@@ -566,3 +566,59 @@ mod deep_tests {
         init_trace_provider(&cfg);
     }
 }
+
+#[cfg(test)]
+mod otlp_builder_tests {
+    use super::*;
+    use crate::config::{OtlpConfig, OtlpProtocol};
+    use opentelemetry::global::ObjectSafeSpan as _;
+    use opentelemetry::trace::Tracer as _;
+    use std::collections::HashMap;
+
+    fn otlp(endpoint: &str) -> OtlpConfig {
+        OtlpConfig {
+            endpoint: endpoint.to_string(),
+            protocol: OtlpProtocol::Grpc,
+            headers: HashMap::new(),
+            timeout_ms: 1_000,
+            export_interval_ms: 60_000,
+        }
+    }
+
+    #[tokio::test]
+    async fn build_otlp_provider_accepts_a_well_formed_endpoint() {
+        // Building the tonic channel touches the tokio reactor, so this must run
+        // inside a runtime: from a plain synchronous context hyper panics with
+        // "there is no reactor running" instead of returning Err.
+        let provider = build_otlp_provider(&otlp("http://127.0.0.1:4317"));
+
+        assert!(
+            provider.is_ok(),
+            "exporter construction is lazy, so a well-formed endpoint must not connect or fail"
+        );
+    }
+
+    #[test]
+    fn build_otlp_provider_rejects_an_unparseable_endpoint() {
+        let provider = build_otlp_provider(&otlp("definitely not a url"));
+
+        assert!(
+            provider.is_err(),
+            "a malformed endpoint must surface as an error rather than a panic"
+        );
+    }
+
+    #[test]
+    fn init_trace_provider_falls_back_when_the_endpoint_is_unparseable() {
+        init_trace_provider(&TelemetryConfig {
+            otlp: Some(otlp("definitely not a url")),
+            ..TelemetryConfig::default()
+        });
+
+        // The fallback provider is installed globally, so a span must still be
+        // creatable and closable through the global tracer.
+        let tracer = opentelemetry::global::tracer("agileplus-fallback-test");
+        let mut span = tracer.start("fallback-span");
+        span.end();
+    }
+}

@@ -211,3 +211,60 @@ fn sync_error_from_serde_json() {
         other => panic!("Expected Serialization, got {:?}", other),
     }
 }
+
+// ── SyncError conversions from the NATS client ─────────────────────────────
+//
+// `SyncError` implements `From<async_nats::ConnectError>`. That conversion is
+// reached here through a server address that cannot be parsed, so the error
+// type is real while no broker and no socket are involved.
+
+#[tokio::test]
+async fn malformed_server_address_becomes_nats_error() {
+    let connect_error = async_nats::connect("not a nats server address")
+        .await
+        .expect_err("an address that cannot be parsed must not connect");
+
+    // Pins the reason: the failure happened while parsing, before any socket
+    // work, so this test cannot be satisfied by an unreachable host.
+    assert_eq!(
+        connect_error.kind(),
+        async_nats::ConnectErrorKind::ServerParse
+    );
+
+    let sync_error: SyncError = connect_error.into();
+    match sync_error {
+        SyncError::Nats(ref message) => assert!(
+            !message.is_empty(),
+            "the client's description must survive the conversion"
+        ),
+        other => panic!("expected Nats, got {other:?}"),
+    }
+    assert!(sync_error.to_string().starts_with("NATS error:"));
+}
+
+// ── EventBatch rejection of malformed payloads ─────────────────────────────
+
+#[test]
+fn event_batch_rejects_missing_events_field() {
+    let error = serde_json::from_str::<EventBatch>(r#"{"sender_device_id":"d"}"#)
+        .expect_err("a batch without events must not decode");
+    assert!(
+        error.to_string().contains("events"),
+        "the missing field should be named: {error}"
+    );
+}
+
+#[test]
+fn event_batch_rejects_non_object_payload() {
+    assert!(serde_json::from_str::<EventBatch>("[]").is_err());
+    assert!(serde_json::from_str::<EventBatch>("null").is_err());
+    assert!(serde_json::from_str::<EventBatch>(r#""d""#).is_err());
+}
+
+#[test]
+fn event_batch_rejects_events_that_are_not_events() {
+    let payload = r#"{"sender_device_id":"d","events":[{"nope":1}]}"#;
+    let error =
+        serde_json::from_str::<EventBatch>(payload).expect_err("a malformed event must not decode");
+    assert!(!error.to_string().is_empty());
+}
