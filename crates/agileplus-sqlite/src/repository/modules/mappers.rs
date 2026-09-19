@@ -196,4 +196,65 @@ mod tests {
         assert_eq!(view.owned_features[0].spec_hash, [0u8; 32]);
         assert!(view.tagged_features.is_empty());
     }
+
+    /// Seed a module owning one feature, corrupt a feature column, and read the
+    /// module view back so `row_to_feature` is exercised on the bad row.
+    ///
+    /// `ignore_check_constraints` is applied on the same connection before the
+    /// corruption, because the pragma is connection scoped.
+    fn module_with_corrupt_feature(sql: &str, ignore_check_constraints: bool) -> DomainError {
+        let a = adapter();
+        let conn = a.conn_for_bench().unwrap();
+        let now = chrono::Utc::now().to_rfc3339();
+        conn.execute(
+            "INSERT INTO modules (id, slug, friendly_name, created_at, updated_at)
+             VALUES (1, 'm', 'M', ?1, ?1)",
+            params![now],
+        )
+        .unwrap();
+        conn.execute(
+            "INSERT INTO features (id, slug, friendly_name, state, spec_hash, target_branch, module_id, created_at, updated_at)
+             VALUES (1, 'owned', 'Owned', 'created', X'00', 'main', 1, ?1, ?1)",
+            params![now],
+        )
+        .unwrap();
+        if ignore_check_constraints {
+            conn.execute_batch("PRAGMA ignore_check_constraints=ON;")
+                .unwrap();
+        }
+        conn.execute(sql, params![]).expect("corrupt feature");
+
+        get_module_with_features(&conn, 1).unwrap_err()
+    }
+
+    #[test]
+    fn module_feature_with_corrupt_state_is_storage_error() {
+        let err = module_with_corrupt_feature(
+            "UPDATE features SET state = 'bogus' WHERE id = 1",
+            true,
+        );
+        assert!(matches!(err, DomainError::Storage(_)), "got {err:?}");
+        assert!(
+            err.to_string().contains("bogus"),
+            "the unparsable feature state must surface: {err}"
+        );
+    }
+
+    #[test]
+    fn module_feature_with_corrupt_created_at_is_storage_error() {
+        let err = module_with_corrupt_feature(
+            "UPDATE features SET created_at = 'not-a-timestamp' WHERE id = 1",
+            false,
+        );
+        assert!(matches!(err, DomainError::Storage(_)), "got {err:?}");
+    }
+
+    #[test]
+    fn module_feature_with_corrupt_updated_at_is_storage_error() {
+        let err = module_with_corrupt_feature(
+            "UPDATE features SET updated_at = 'not-a-timestamp' WHERE id = 1",
+            false,
+        );
+        assert!(matches!(err, DomainError::Storage(_)), "got {err:?}");
+    }
 }

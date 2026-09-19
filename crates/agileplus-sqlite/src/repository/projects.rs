@@ -181,4 +181,49 @@ mod tests {
         let conn = adapter.conn_for_bench().unwrap();
         assert!(delete_project(&conn, 999).is_err());
     }
+
+    #[test]
+    fn project_with_unparseable_timestamps_falls_back_to_now() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let before = chrono::Utc::now();
+        conn.execute(
+            "INSERT INTO projects (id, slug, name, description, created_at, updated_at)
+             VALUES (1, 'legacy', 'Legacy', 'from an older writer', 'not-a-timestamp', 'not-a-timestamp')",
+            [],
+        )
+        .unwrap();
+
+        let project = get_project_by_id(&conn, 1).unwrap().unwrap();
+        assert_eq!(project.slug, "legacy");
+        assert!(
+            project.created_at >= before && project.updated_at >= before,
+            "unparseable timestamps must fall back to now"
+        );
+
+        // The same row must read back through the slug lookup as well.
+        let by_slug = get_project_by_slug(&conn, "legacy").unwrap().unwrap();
+        assert_eq!(by_slug.id, 1);
+    }
+
+    #[test]
+    fn delete_project_referenced_by_epic_fails() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let project_id = create_project(&conn, &make_project("owner", "Owner")).unwrap();
+        let now = chrono::Utc::now().to_rfc3339();
+        conn.execute(
+            "INSERT INTO epics (id, project_id, title, description, status, created_at, updated_at)
+             VALUES (1, ?1, 'Epic', '', 'backlog', ?2, ?2)",
+            params![project_id, now],
+        )
+        .unwrap();
+
+        let err = delete_project(&conn, project_id).unwrap_err();
+        assert!(matches!(err, DomainError::Storage(_)), "got {err:?}");
+        assert!(
+            get_project_by_id(&conn, project_id).unwrap().is_some(),
+            "a project referenced by an epic must survive the failed delete"
+        );
+    }
 }

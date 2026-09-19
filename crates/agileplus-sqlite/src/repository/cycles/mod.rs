@@ -391,4 +391,201 @@ mod tests {
         assert_eq!(view.wp_progress.total, 1);
         assert_eq!(view.wp_progress.done, 1);
     }
+
+    /// Insert a cycle row verbatim so a column can hold a value the repository
+    /// writer would never produce (only the date ordering is constrained).
+    fn insert_raw_cycle(
+        conn: &Connection,
+        name: &str,
+        state: &str,
+        start_date: &str,
+        end_date: &str,
+        created_at: &str,
+        updated_at: &str,
+    ) -> i64 {
+        conn.execute(
+            "INSERT INTO cycles
+             (name, description, state, start_date, end_date, module_scope_id, created_at, updated_at)
+             VALUES (?1, '', ?2, ?3, ?4, NULL, ?5, ?6)",
+            rusqlite::params![name, state, start_date, end_date, created_at, updated_at],
+        )
+        .expect("raw cycle insert");
+        conn.last_insert_rowid()
+    }
+
+    fn raw_cycle_err(conn: &Connection, id: i64) -> DomainError {
+        let err = get_cycle(conn, id).unwrap_err();
+        assert!(matches!(err, DomainError::Storage(_)), "got {err:?}");
+        err
+    }
+
+    #[test]
+    fn cycle_with_unknown_state_is_storage_error() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let now = chrono::Utc::now().to_rfc3339();
+        let id = insert_raw_cycle(
+            &conn,
+            "raw-state",
+            "Sideways",
+            "2025-01-01",
+            "2025-01-14",
+            &now,
+            &now,
+        );
+
+        let err = raw_cycle_err(&conn, id);
+        assert!(
+            err.to_string().contains("Sideways"),
+            "the unparsable state must surface in the error: {err}"
+        );
+    }
+
+    #[test]
+    fn cycle_with_unparseable_start_date_is_storage_error() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let now = chrono::Utc::now().to_rfc3339();
+        // "0001-00-00" is not a valid date (month 00), so reading it must error,
+        // yet it sorts before "2025-01-14" bytewise, keeping the
+        // CHECK (end_date > start_date) satisfied so the raw insert is allowed.
+        let id = insert_raw_cycle(
+            &conn,
+            "raw-start",
+            "Draft",
+            "0001-00-00",
+            "2025-01-14",
+            &now,
+            &now,
+        );
+
+        raw_cycle_err(&conn, id);
+    }
+
+    #[test]
+    fn cycle_with_unparseable_end_date_is_storage_error() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let now = chrono::Utc::now().to_rfc3339();
+        let id = insert_raw_cycle(
+            &conn,
+            "raw-end",
+            "Draft",
+            "2025-01-01",
+            "not-a-date",
+            &now,
+            &now,
+        );
+
+        raw_cycle_err(&conn, id);
+    }
+
+    #[test]
+    fn cycle_with_corrupt_created_at_is_storage_error() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let now = chrono::Utc::now().to_rfc3339();
+        let id = insert_raw_cycle(
+            &conn,
+            "raw-created",
+            "Draft",
+            "2025-01-01",
+            "2025-01-14",
+            "not-a-timestamp",
+            &now,
+        );
+
+        raw_cycle_err(&conn, id);
+    }
+
+    #[test]
+    fn cycle_with_corrupt_updated_at_is_storage_error() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let now = chrono::Utc::now().to_rfc3339();
+        let id = insert_raw_cycle(
+            &conn,
+            "raw-updated",
+            "Draft",
+            "2025-01-01",
+            "2025-01-14",
+            &now,
+            "not-a-timestamp",
+        );
+
+        raw_cycle_err(&conn, id);
+    }
+
+    /// Assign a feature to a fresh cycle, then corrupt a feature column and read
+    /// the cycle view back, which maps features through `row_to_feature`.
+    fn corrupt_cycle_feature(conn: &Connection, label: &str, sql: &str) -> DomainError {
+        let feature_id = label.len() as i64 + 1000;
+        seed_feature(conn, feature_id);
+        let cycle_id = create_cycle(conn, &make_cycle(label)).unwrap();
+        add_feature_to_cycle(conn, &CycleFeature::new(cycle_id, feature_id)).unwrap();
+        conn.execute(
+            &sql.replace("?feature", &feature_id.to_string()),
+            rusqlite::params![],
+        )
+        .expect("corrupt feature");
+
+        let err = get_cycle_with_features(conn, cycle_id).unwrap_err();
+        assert!(matches!(err, DomainError::Storage(_)), "got {err:?}");
+        err
+    }
+
+    #[test]
+    fn cycle_feature_with_corrupt_state_is_storage_error() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        conn.execute_batch("PRAGMA ignore_check_constraints=ON;")
+            .unwrap();
+
+        let err = corrupt_cycle_feature(
+            &conn,
+            "FeatureState",
+            "UPDATE features SET state = 'bogus' WHERE id = ?feature",
+        );
+        assert!(
+            err.to_string().contains("bogus"),
+            "the unparsable feature state must surface: {err}"
+        );
+    }
+
+    #[test]
+    fn cycle_feature_with_corrupt_created_at_is_storage_error() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+
+        corrupt_cycle_feature(
+            &conn,
+            "FeatureCreatedAt",
+            "UPDATE features SET created_at = 'not-a-timestamp' WHERE id = ?feature",
+        );
+    }
+
+    #[test]
+    fn cycle_feature_with_corrupt_updated_at_is_storage_error() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+
+        corrupt_cycle_feature(
+            &conn,
+            "FeatureUpdatedAt",
+            "UPDATE features SET updated_at = 'not-a-timestamp' WHERE id = ?feature",
+        );
+    }
+
+    #[test]
+    fn add_feature_to_unknown_cycle_is_cycle_not_found() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        seed_feature(&conn, 5);
+
+        let err = add_feature_to_cycle(&conn, &CycleFeature::new(4242, 5)).unwrap_err();
+        assert!(
+            matches!(err, DomainError::CycleNotFound(ref id) if id == "4242"),
+            "got {err:?}"
+        );
+    }
 }

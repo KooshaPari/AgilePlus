@@ -190,4 +190,38 @@ mod tests {
         let f2 = get_metrics_by_feature(&conn, 2).unwrap();
         assert_eq!(f2.len(), 1);
     }
+
+    /// Insert a metric row verbatim so the nullable payload columns can hold
+    /// values the repository writer would never produce.
+    fn insert_raw_metric(conn: &Connection, feature_id: i64, metadata: Option<&str>, timestamp: &str) {
+        conn.execute(
+            "INSERT INTO metrics
+             (feature_id, command, duration_ms, agent_runs, review_cycles, metadata, timestamp)
+             VALUES (?1, 'raw', 1, 0, 0, ?2, ?3)",
+            params![feature_id, metadata, timestamp],
+        )
+        .expect("raw metric insert");
+    }
+
+    #[test]
+    fn corrupt_metadata_json_is_storage_error() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        seed_feature(&conn, 7);
+        insert_raw_metric(&conn, 7, Some("not-json"), &Utc::now().to_rfc3339());
+
+        let err = get_metrics_by_feature(&conn, 7).unwrap_err();
+        assert!(matches!(err, DomainError::Storage(_)), "got {err:?}");
+    }
+
+    #[test]
+    fn corrupt_timestamp_is_storage_error() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        seed_feature(&conn, 8);
+        insert_raw_metric(&conn, 8, Some("{}"), "not-a-timestamp");
+
+        let err = get_metrics_by_feature(&conn, 8).unwrap_err();
+        assert!(matches!(err, DomainError::Storage(_)), "got {err:?}");
+    }
 }

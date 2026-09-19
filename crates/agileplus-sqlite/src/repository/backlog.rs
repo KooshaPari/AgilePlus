@@ -506,4 +506,163 @@ mod tests {
             "got {err:?}"
         );
     }
+
+    /// Insert a backlog row verbatim so an enum column can hold a value the
+    /// writer would never produce (the table has no CHECK constraints).
+    fn insert_raw_backlog(
+        conn: &Connection,
+        intent: &str,
+        priority: &str,
+        status: &str,
+        created_at: &str,
+    ) -> i64 {
+        conn.execute(
+            "INSERT INTO backlog_items
+             (title, description, intent, priority, status, source, feature_slug, tags_json, created_at, updated_at)
+             VALUES ('raw','',?1,?2,?3,'triage',NULL,'[]',?4,?4)",
+            rusqlite::params![intent, priority, status, created_at],
+        )
+        .expect("raw backlog insert");
+        conn.last_insert_rowid()
+    }
+
+    #[test]
+    fn unknown_intent_is_storage_error() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let now = chrono::Utc::now().to_rfc3339();
+        insert_raw_backlog(&conn, "incident", "high", "new", &now);
+
+        let err = get_backlog_item(&conn, 1).unwrap_err();
+        assert!(
+            matches!(err, agileplus_domain::error::DomainError::Storage(_)),
+            "got {err:?}"
+        );
+        assert!(
+            err.to_string().contains("intent"),
+            "the failing column must be named in the error: {err}"
+        );
+    }
+
+    #[test]
+    fn unknown_priority_is_storage_error() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let now = chrono::Utc::now().to_rfc3339();
+        insert_raw_backlog(&conn, "bug", "urgent", "new", &now);
+
+        let err = get_backlog_item(&conn, 1).unwrap_err();
+        assert!(
+            matches!(err, agileplus_domain::error::DomainError::Storage(_)),
+            "got {err:?}"
+        );
+        assert!(
+            err.to_string().contains("priority"),
+            "the failing column must be named in the error: {err}"
+        );
+    }
+
+    #[test]
+    fn unknown_status_is_storage_error() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        let now = chrono::Utc::now().to_rfc3339();
+        insert_raw_backlog(&conn, "bug", "high", "archived", &now);
+
+        let err = get_backlog_item(&conn, 1).unwrap_err();
+        assert!(
+            matches!(err, agileplus_domain::error::DomainError::Storage(_)),
+            "got {err:?}"
+        );
+        assert!(
+            err.to_string().contains("status"),
+            "the failing column must be named in the error: {err}"
+        );
+    }
+
+    #[test]
+    fn list_filters_by_priority_source_and_feature_slug() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+
+        let mut scoped = sample_item("Scoped");
+        scoped.priority = BacklogPriority::Critical;
+        scoped.source = "sentry".to_string();
+        scoped.feature_slug = Some("alpha".to_string());
+        create_backlog_item(&conn, &scoped).unwrap();
+        create_backlog_item(&conn, &sample_item("Other")).unwrap();
+
+        let by_priority = list_backlog_items(
+            &conn,
+            &BacklogFilters {
+                priority: Some(BacklogPriority::Critical),
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        assert_eq!(by_priority.len(), 1);
+        assert_eq!(by_priority[0].title, "Scoped");
+
+        let by_source = list_backlog_items(
+            &conn,
+            &BacklogFilters {
+                source: Some("sentry".to_string()),
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        assert_eq!(by_source.len(), 1);
+        assert_eq!(by_source[0].title, "Scoped");
+
+        let by_feature = list_backlog_items(
+            &conn,
+            &BacklogFilters {
+                feature_slug: Some("alpha".to_string()),
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        assert_eq!(by_feature.len(), 1);
+        assert_eq!(by_feature[0].feature_slug.as_deref(), Some("alpha"));
+
+        let by_missing_source = list_backlog_items(
+            &conn,
+            &BacklogFilters {
+                source: Some("nobody".to_string()),
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        assert!(by_missing_source.is_empty());
+    }
+
+    #[test]
+    fn sort_by_age_orders_oldest_first() {
+        let adapter = SqliteStorageAdapter::in_memory().unwrap();
+        let conn = adapter.conn_for_bench().unwrap();
+        insert_raw_backlog(&conn, "bug", "low", "new", "2024-01-01T00:00:00Z");
+        insert_raw_backlog(&conn, "bug", "critical", "new", "2025-01-01T00:00:00Z");
+
+        let by_age = list_backlog_items(
+            &conn,
+            &BacklogFilters {
+                sort: BacklogSort::Age,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        assert_eq!(by_age.len(), 2);
+        assert!(by_age[0].created_at < by_age[1].created_at, "oldest first");
+
+        // Impact shares the priority ranking: the critical row wins despite age.
+        let by_impact = list_backlog_items(
+            &conn,
+            &BacklogFilters {
+                sort: BacklogSort::Impact,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        assert_eq!(by_impact[0].priority, BacklogPriority::Critical);
+    }
 }

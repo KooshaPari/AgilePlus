@@ -551,3 +551,54 @@ fn migrations_include_newly_registered_story_links() {
         .unwrap();
     assert_eq!(count, 1, "story/wp/cycle link migration must be recorded");
 }
+
+/// The `migrate` binary must create missing parent directories, heal a stale
+/// database file, and report that it is up to date on a second run.
+#[test]
+fn migrate_binary_heals_stale_database_file() {
+    let nanos = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .expect("clock")
+        .as_nanos();
+    let dir = std::env::temp_dir().join(format!(
+        "agileplus-sqlite-migrate-bin-{}-{nanos}",
+        std::process::id()
+    ));
+    std::fs::create_dir_all(&dir).expect("temp dir");
+    // The parent directory does not exist yet: the binary must create it.
+    let db = dir.join("nested").join("agileplus.db");
+
+    let run = || {
+        std::process::Command::new(env!("CARGO_BIN_EXE_migrate"))
+            .arg(&db)
+            .output()
+            .expect("spawn migrate")
+    };
+
+    let first = run();
+    assert!(
+        first.status.success(),
+        "migrate failed: {}",
+        String::from_utf8_lossy(&first.stderr)
+    );
+    let first_stdout = String::from_utf8_lossy(&first.stdout);
+    assert!(
+        first_stdout.contains("Migrating database at:"),
+        "unexpected output: {first_stdout}"
+    );
+    assert!(
+        first_stdout.contains("Applied") && first_stdout.contains("OK: backlog_items present"),
+        "a fresh file must have migrations applied: {first_stdout}"
+    );
+    assert!(db.exists(), "migrate must create the database file");
+
+    let second = run();
+    assert!(second.status.success(), "second migrate run must succeed");
+    let second_stdout = String::from_utf8_lossy(&second.stdout);
+    assert!(
+        second_stdout.contains("Already up to date"),
+        "a migrated file must report no work: {second_stdout}"
+    );
+
+    let _ = std::fs::remove_dir_all(&dir);
+}
