@@ -358,3 +358,51 @@ async fn advance_feature_publish_error_leaves_state_advanced() {
         "only FeatureCreated reached the spy"
     );
 }
+
+/// The target state is parsed case-sensitively: a real state spelled in the
+/// wrong case is refused (and named in the error) rather than silently
+/// normalised into a transition.
+#[tokio::test]
+async fn advance_feature_rejects_valid_state_in_wrong_case() {
+    let repo = Arc::new(InMemoryFeatureRepo::default());
+    let pub_ = Arc::new(SpyPublisher::default());
+    let create_uc = CreateFeature::new(repo.clone(), pub_.clone());
+    let advance_uc = AdvanceFeature::new(repo.clone(), pub_.clone());
+
+    let id = create_uc
+        .execute(CreateFeatureCmd {
+            slug: "wrong-case".to_string(),
+            friendly_name: "Wrong case".to_string(),
+            spec_hash: None,
+            target_branch: None,
+        })
+        .await
+        .unwrap()
+        .id;
+
+    // `specified` is the next legal state, but only in lower case.
+    let err = advance_uc
+        .execute(AdvanceFeatureCmd {
+            feature_id: id,
+            target_state: "Specified".to_string(),
+        })
+        .await
+        .unwrap_err();
+
+    match err {
+        AppError::Domain(DomainError::Validation(msg)) => {
+            assert!(
+                msg.contains("Specified"),
+                "the refusal should name the offending input, got {msg:?}"
+            );
+        }
+        other => panic!("expected Domain(Validation), got {other:?}"),
+    }
+
+    assert_eq!(
+        repo.get_feature_by_id(id).await.unwrap().unwrap().state,
+        FeatureState::Created,
+        "a refused parse must not advance the feature"
+    );
+    assert_eq!(pub_.emitted().len(), 1, "only FeatureCreated was published");
+}

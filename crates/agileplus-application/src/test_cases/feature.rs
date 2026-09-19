@@ -196,3 +196,46 @@ async fn create_feature_assigns_sequential_ids_and_returns_persisted_aggregate()
     assert!(matches!(&events[0], DomainEvent::FeatureCreated { id: 1, slug } if slug == "first"));
     assert!(matches!(&events[1], DomainEvent::FeatureCreated { id: 2, slug } if slug == "second"));
 }
+
+// --- CreateFeature: target branch semantics ---
+
+/// Only a missing branch falls back to the default; an explicit empty string
+/// is stored as given rather than being silently replaced by `main`.
+#[tokio::test]
+async fn create_feature_empty_target_branch_is_stored_verbatim() {
+    let repo = Arc::new(InMemoryFeatureRepo::default());
+    let pub_ = Arc::new(SpyPublisher::default());
+    let uc = CreateFeature::new(repo.clone(), pub_.clone());
+
+    let defaulted = uc
+        .execute(CreateFeatureCmd {
+            slug: "no-branch".to_string(),
+            friendly_name: "No branch".to_string(),
+            spec_hash: None,
+            target_branch: None,
+        })
+        .await
+        .unwrap();
+    let explicit = uc
+        .execute(CreateFeatureCmd {
+            slug: "empty-branch".to_string(),
+            friendly_name: "Empty branch".to_string(),
+            spec_hash: None,
+            target_branch: Some(String::new()),
+        })
+        .await
+        .unwrap();
+
+    assert_eq!(defaulted.feature.target_branch, "main");
+    assert_eq!(explicit.feature.target_branch, "");
+    assert_eq!(
+        repo.get_feature_by_slug("empty-branch")
+            .await
+            .unwrap()
+            .expect("row was persisted")
+            .target_branch,
+        "",
+        "the persisted row keeps the caller's explicit choice"
+    );
+    assert_eq!(pub_.emitted().len(), 2);
+}

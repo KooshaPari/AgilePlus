@@ -435,3 +435,102 @@ async fn transition_story_publish_error_leaves_status_changed() {
     );
     assert_eq!(spy.emitted().len(), 1);
 }
+
+/// Re-transitioning to the status the story already has is refused: the
+/// domain state machine has no self-loop, so nothing is written and no event
+/// is published.
+#[tokio::test]
+async fn transition_story_rejects_self_transition() {
+    let repo = Arc::new(InMemoryStoryRepo::default());
+    let pub_ = Arc::new(SpyPublisher::default());
+    let create_uc = CreateStory::new(repo.clone(), pub_.clone());
+    let trans_uc = TransitionStory::new(repo.clone(), pub_.clone());
+
+    let id = create_uc
+        .execute(CreateStoryCmd {
+            epic_id: 6,
+            project_id: 60,
+            title: "Self loop".to_string(),
+            points: None,
+        })
+        .await
+        .unwrap()
+        .id;
+
+    let err = trans_uc
+        .execute(TransitionStoryCmd {
+            story_id: id,
+            target_status: StoryStatus::Todo,
+        })
+        .await
+        .unwrap_err();
+
+    match err {
+        AppError::Domain(DomainError::InvalidTransition { from, to, .. }) => {
+            assert_eq!((from.as_str(), to.as_str()), ("todo", "todo"));
+        }
+        other => panic!("expected InvalidTransition, got {other:?}"),
+    }
+
+    assert_eq!(
+        repo.get_by_id(id).await.unwrap().unwrap().status,
+        StoryStatus::Todo
+    );
+    assert_eq!(pub_.emitted().len(), 1, "only StoryCreated was published");
+}
+
+/// `cancelled` is terminal: a cancelled story cannot be reopened, and the
+/// refusal names both ends of the attempted transition.
+#[tokio::test]
+async fn transition_story_cancelled_is_terminal() {
+    let repo = Arc::new(InMemoryStoryRepo::default());
+    let pub_ = Arc::new(SpyPublisher::default());
+    let create_uc = CreateStory::new(repo.clone(), pub_.clone());
+    let trans_uc = TransitionStory::new(repo.clone(), pub_.clone());
+
+    let id = create_uc
+        .execute(CreateStoryCmd {
+            epic_id: 7,
+            project_id: 70,
+            title: "Abandoned".to_string(),
+            points: None,
+        })
+        .await
+        .unwrap()
+        .id;
+
+    trans_uc
+        .execute(TransitionStoryCmd {
+            story_id: id,
+            target_status: StoryStatus::Cancelled,
+        })
+        .await
+        .unwrap();
+    assert_eq!(pub_.emitted().len(), 2);
+
+    let err = trans_uc
+        .execute(TransitionStoryCmd {
+            story_id: id,
+            target_status: StoryStatus::InProgress,
+        })
+        .await
+        .unwrap_err();
+
+    match err {
+        AppError::Domain(DomainError::InvalidTransition { from, to, .. }) => {
+            assert_eq!((from.as_str(), to.as_str()), ("cancelled", "in_progress"));
+        }
+        other => panic!("expected InvalidTransition, got {other:?}"),
+    }
+
+    assert_eq!(
+        repo.get_by_id(id).await.unwrap().unwrap().status,
+        StoryStatus::Cancelled,
+        "a refused reopen leaves the status alone"
+    );
+    assert_eq!(
+        pub_.emitted().len(),
+        2,
+        "no StoryStatusChanged for the refused reopen"
+    );
+}

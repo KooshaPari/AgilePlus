@@ -185,3 +185,28 @@ async fn create_story_persists_domain_defaults_and_stored_id() {
     assert_eq!(repo.list_by_epic(3).await.unwrap().len(), 2);
     assert!(repo.list_by_epic(999).await.unwrap().is_empty());
 }
+
+// --- CreateStory: title whitespace ---
+
+/// A whitespace-only title is rejected exactly like an empty one — nothing is
+/// persisted and nothing is published.
+#[tokio::test]
+async fn create_story_rejects_whitespace_only_title() {
+    let repo = Arc::new(InMemoryStoryRepo::default());
+    let pub_ = Arc::new(SpyPublisher::default());
+    let uc = CreateStory::new(repo.clone(), pub_.clone());
+
+    let err = uc
+        .execute(CreateStoryCmd {
+            epic_id: 4,
+            project_id: 40,
+            title: " \t\n ".to_string(),
+            points: Some(3),
+        })
+        .await
+        .unwrap_err();
+
+    assert!(matches!(err, AppError::Domain(DomainError::Validation(_))));
+    assert!(pub_.emitted().is_empty(), "no event for a rejected story");
+    assert!(repo.list_by_epic(4).await.unwrap().is_empty());
+}

@@ -223,6 +223,102 @@ async fn report_counts_matching_ids_as_updated() {
     assert_eq!(report.created, 1, "story 1 was still id 0");
 }
 
+/// A mapper that puts a GitHub number in `story.id` (rather than the row id)
+/// must not create a second row: the row keyed by `requirement_id` is reused,
+/// the stored row id is what gets reported, and — because the incoming id did
+/// not match the stored one — the story is accounted for as a create.
+#[tokio::test]
+async fn stale_non_zero_incoming_id_reuses_the_row_and_counts_as_created() {
+    let repo = Arc::new(InMemoryStoryRepo::default());
+    let uc = PersistSyncedStories::new(repo.clone());
+
+    let seeded = uc
+        .execute(PersistSyncedStoriesCmd {
+            stories: vec![make_story(6, 60, "Original title", "gh:issue:7")],
+        })
+        .await
+        .unwrap();
+    assert_eq!(seeded.persisted_ids, vec![1]);
+    assert_eq!(seeded.created, 1);
+    assert_eq!(seeded.updated, 0);
+
+    // Re-sync the same requirement_id, but this time the mapper wrote the
+    // GitHub issue number (7) into `id` instead of the row id (1), and the
+    // issue moved on upstream.
+    let mut remapped = make_story(6, 60, "Renamed upstream", "gh:issue:7");
+    remapped.id = 7;
+    remapped.status = StoryStatus::InProgress;
+
+    let report = uc
+        .execute(PersistSyncedStoriesCmd {
+            stories: vec![remapped],
+        })
+        .await
+        .unwrap();
+
+    assert_eq!(
+        report.persisted_ids,
+        vec![1],
+        "the stored row id is reported, not the inbound GitHub number"
+    );
+    assert_eq!(
+        report.created, 1,
+        "an incoming id that differs from the stored one is counted as a create"
+    );
+    assert_eq!(report.updated, 0);
+
+    let stored = repo.list_by_epic(6).await.unwrap();
+    assert_eq!(
+        stored.len(),
+        1,
+        "one row per requirement_id, whatever id the mapping carried"
+    );
+    assert_eq!(stored[0].id, 1);
+    assert_eq!(
+        stored[0].status,
+        StoryStatus::InProgress,
+        "the sync still lands the latest status"
+    );
+    assert_eq!(
+        stored[0].title, "Original title",
+        "the portable upsert applies status only"
+    );
+    assert!(
+        repo.get_by_id(7).await.unwrap().is_none(),
+        "the GitHub number is never used as a row id"
+    );
+}
+
+/// Two stories carrying the same `requirement_id` in one batch collapse onto
+/// the first row instead of inserting a duplicate.
+#[tokio::test]
+async fn duplicate_requirement_id_within_one_batch_updates_the_first_row() {
+    let repo = Arc::new(InMemoryStoryRepo::default());
+    let uc = PersistSyncedStories::new(repo.clone());
+
+    let report = uc
+        .execute(PersistSyncedStoriesCmd {
+            stories: vec![
+                make_story(4, 40, "First", "gh:issue:9"),
+                make_story(4, 40, "Second", "gh:issue:9"),
+            ],
+        })
+        .await
+        .unwrap();
+
+    assert_eq!(
+        report.persisted_ids,
+        vec![1, 1],
+        "the second story resolves to the row the first one created"
+    );
+    assert_eq!(report.created, 2, "both arrived unmapped (id == 0)");
+    assert_eq!(report.updated, 0);
+
+    let stored = repo.list_by_epic(4).await.unwrap();
+    assert_eq!(stored.len(), 1, "one row per requirement_id");
+    assert_eq!(stored[0].title, "First");
+}
+
 /// Empty story list produces an empty report — no error.
 #[tokio::test]
 async fn empty_story_list_produces_empty_report() {

@@ -184,6 +184,49 @@ fn done_surfaces_repo_failure_after_releasing_claim() {
     );
 }
 
+/// `done` releases exactly the claim named in the request. Other active
+/// claims survive, so only the finished resource becomes claimable again.
+#[test]
+fn done_releases_only_the_requested_claim() {
+    let repo =
+        InMemoryWpRepo::with_items(vec![make_item("WP01", vec![]), make_item("WP02", vec![])]);
+    let mut state = AppState::new(repo);
+    state
+        .claim(&claim_req("c1", "WP01", ClaimKind::Worktree))
+        .unwrap();
+    state
+        .claim(&claim_req("c2", "WP02", ClaimKind::Branch))
+        .unwrap();
+
+    let ok = state
+        .done(&DoneRequest {
+            claim_id: "c1".to_string(),
+            wp_id: "WP01".to_string(),
+            result: None,
+        })
+        .unwrap();
+
+    assert!(ok);
+    assert_eq!(state.wp_repo.done_ids(), vec!["WP01"]);
+
+    let active = state.claim_store.lock().unwrap().active();
+    assert_eq!(active.len(), 1, "the untouched claim stays held");
+    assert_eq!(active[0].id, "c2");
+    assert_eq!(active[0].resource, "WP02");
+
+    // WP01 is free again; WP02 is still taken.
+    state
+        .claim(&claim_req("c3", "WP01", ClaimKind::Worktree))
+        .expect("the finished resource is claimable again");
+    assert_eq!(
+        state
+            .claim(&claim_req("c4", "WP02", ClaimKind::Branch))
+            .unwrap_err()
+            .to_string(),
+        "resource already claimed"
+    );
+}
+
 /// Lock poisoning is reported as a clear error from every entry point rather
 /// than panicking the caller.
 #[test]
