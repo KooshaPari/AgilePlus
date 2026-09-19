@@ -590,3 +590,231 @@ mod deep_tests {
         assert_eq!(result.updated_vector.device_id, "l");
     }
 }
+
+/// Coverage for the private event-fetching helper.
+///
+/// `fetch_events_to_send` cannot be reached through the public API without
+/// entering `replicate_events`, which opens a NATS connection. Exercising it
+/// here keeps the watermark translation and the entity-id parsing under test
+/// without any network participation.
+#[cfg(test)]
+mod fetch_tests {
+    use super::*;
+    use async_trait::async_trait;
+    use std::sync::Mutex;
+
+    /// Event store that records the arguments of every `get_events_since` call
+    /// and replays a fixed event list.
+    #[derive(Default)]
+    struct RecordingStore {
+        calls: Mutex<Vec<(String, i64, i64)>>,
+        events: Vec<Event>,
+    }
+
+    impl RecordingStore {
+        fn with_events(events: Vec<Event>) -> Self {
+            Self {
+                calls: Mutex::new(Vec::new()),
+                events,
+            }
+        }
+
+        fn calls(&self) -> Vec<(String, i64, i64)> {
+            self.calls.lock().unwrap().clone()
+        }
+    }
+
+    #[async_trait]
+    impl EventStore for RecordingStore {
+        async fn append(&self, event: &Event) -> Result<i64, EventError> {
+            Ok(event.sequence)
+        }
+
+        async fn get_events(
+            &self,
+            _entity_type: &str,
+            _entity_id: i64,
+        ) -> Result<Vec<Event>, EventError> {
+            Ok(Vec::new())
+        }
+
+        async fn get_events_since(
+            &self,
+            entity_type: &str,
+            entity_id: i64,
+            sequence: i64,
+        ) -> Result<Vec<Event>, EventError> {
+            // Scoped so that no lock guard is held across the return.
+            {
+                let mut calls = self.calls.lock().unwrap();
+                calls.push((entity_type.to_string(), entity_id, sequence));
+            }
+            Ok(self.events.clone())
+        }
+
+        async fn get_events_by_range(
+            &self,
+            _entity_type: &str,
+            _entity_id: i64,
+            _from: chrono::DateTime<chrono::Utc>,
+            _to: chrono::DateTime<chrono::Utc>,
+        ) -> Result<Vec<Event>, EventError> {
+            Ok(Vec::new())
+        }
+
+        async fn get_latest_sequence(
+            &self,
+            _entity_type: &str,
+            _entity_id: i64,
+        ) -> Result<i64, EventError> {
+            Ok(0)
+        }
+    }
+
+    /// Event store whose every read fails.
+    struct FailingStore;
+
+    #[async_trait]
+    impl EventStore for FailingStore {
+        async fn append(&self, _event: &Event) -> Result<i64, EventError> {
+            Err(EventError::StorageError("read-only store".to_string()))
+        }
+
+        async fn get_events(
+            &self,
+            _entity_type: &str,
+            _entity_id: i64,
+        ) -> Result<Vec<Event>, EventError> {
+            Err(EventError::StorageError("read-only store".to_string()))
+        }
+
+        async fn get_events_since(
+            &self,
+            _entity_type: &str,
+            _entity_id: i64,
+            _sequence: i64,
+        ) -> Result<Vec<Event>, EventError> {
+            Err(EventError::StorageError("read-only store".to_string()))
+        }
+
+        async fn get_events_by_range(
+            &self,
+            _entity_type: &str,
+            _entity_id: i64,
+            _from: chrono::DateTime<chrono::Utc>,
+            _to: chrono::DateTime<chrono::Utc>,
+        ) -> Result<Vec<Event>, EventError> {
+            Err(EventError::StorageError("read-only store".to_string()))
+        }
+
+        async fn get_latest_sequence(
+            &self,
+            _entity_type: &str,
+            _entity_id: i64,
+        ) -> Result<i64, EventError> {
+            Err(EventError::StorageError("read-only store".to_string()))
+        }
+    }
+
+    fn entity_event(entity_type: &str, entity_id: i64, sequence: i64) -> Event {
+        let mut event = Event::new(
+            entity_type,
+            entity_id,
+            "created",
+            serde_json::json!({ "sequence": sequence }),
+            "test",
+        );
+        event.sequence = sequence;
+        event
+    }
+
+    #[tokio::test]
+    async fn fetch_uses_the_peer_watermark_as_the_lower_bound() {
+        let mut local = SyncVector::new("local");
+        local.advance("Feature", "7", 5);
+        let mut peer = SyncVector::new("peer");
+        peer.advance("Feature", "7", 2);
+
+        let store = RecordingStore::with_events(vec![
+            entity_event("Feature", 7, 3),
+            entity_event("Feature", 7, 5),
+        ]);
+        let fetched = fetch_events_to_send(&local, &peer, &store).await.unwrap();
+
+        assert_eq!(store.calls(), vec![("Feature".to_string(), 7, 2)]);
+        assert_eq!(fetched.len(), 2);
+        assert_eq!(fetched[0].sequence, 3);
+        assert_eq!(fetched[1].sequence, 5);
+    }
+
+    #[tokio::test]
+    async fn fetch_reads_nothing_when_the_peer_is_not_behind() {
+        let mut local = SyncVector::new("local");
+        local.advance("Feature", "1", 3);
+        let mut peer = SyncVector::new("peer");
+        peer.advance("Feature", "1", 3);
+
+        let store = RecordingStore::default();
+        let fetched = fetch_events_to_send(&local, &peer, &store).await.unwrap();
+
+        assert!(fetched.is_empty());
+        assert!(
+            store.calls().is_empty(),
+            "equal watermarks need no read: {:?}",
+            store.calls()
+        );
+    }
+
+    #[tokio::test]
+    async fn fetch_maps_unparsable_entity_ids_to_zero() {
+        // Entity ids travel as strings in the vector but as `i64` in the store,
+        // so a non-numeric id cannot be represented and must degrade to 0
+        // instead of panicking.
+        let mut local = SyncVector::new("local");
+        local.advance("Feature", "not-a-number", 4);
+        let peer = SyncVector::new("peer");
+
+        let store = RecordingStore::default();
+        let fetched = fetch_events_to_send(&local, &peer, &store).await.unwrap();
+
+        assert!(fetched.is_empty());
+        assert_eq!(store.calls(), vec![("Feature".to_string(), 0, 0)]);
+    }
+
+    #[tokio::test]
+    async fn fetch_queries_every_entity_the_peer_is_missing() {
+        let mut local = SyncVector::new("local");
+        local.advance("Feature", "1", 4);
+        local.advance("Epic", "2", 9);
+        local.advance("Story", "3", 1);
+        let mut peer = SyncVector::new("peer");
+        peer.advance("Feature", "1", 4);
+        peer.advance("Epic", "2", 2);
+
+        let store = RecordingStore::default();
+        fetch_events_to_send(&local, &peer, &store).await.unwrap();
+
+        let mut calls = store.calls();
+        calls.sort();
+        assert_eq!(
+            calls,
+            vec![("Epic".to_string(), 2, 2), ("Story".to_string(), 3, 0),]
+        );
+    }
+
+    #[tokio::test]
+    async fn fetch_propagates_store_errors() {
+        let mut local = SyncVector::new("local");
+        local.advance("Feature", "1", 2);
+        let peer = SyncVector::new("peer");
+
+        let error = fetch_events_to_send(&local, &peer, &FailingStore)
+            .await
+            .unwrap_err();
+
+        match error {
+            EventError::StorageError(message) => assert_eq!(message, "read-only store"),
+            other => panic!("expected StorageError, got {other:?}"),
+        }
+    }
+}
