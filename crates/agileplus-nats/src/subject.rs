@@ -418,4 +418,158 @@ mod tests {
         assert_eq!(a, b);
         // No shared mutation possible (immutable struct)
     }
+
+    #[test]
+    fn empty_middle_segment_is_significant() {
+        // "a..b" splits to ["a", "", "b"]: distinct from "a.b".
+        let with_gap = Subject::new("a..b");
+        let without_gap = Subject::new("a.b");
+        assert_ne!(with_gap, without_gap);
+        assert!(with_gap.matches(&Subject::new("a..b")));
+        assert!(!without_gap.matches(&with_gap));
+        assert!(!with_gap.matches(&without_gap));
+    }
+
+    #[test]
+    fn star_matches_empty_token() {
+        // "*" matches any single token including the empty token produced by "..".
+        let pat = Subject::new("a.*.b");
+        assert!(pat.matches(&Subject::new("a..b")));
+        assert!(pat.matches(&Subject::new("a.x.b")));
+        assert!(!pat.matches(&Subject::new("a.b")));
+    }
+
+    #[test]
+    fn leading_dot_is_distinct_token() {
+        let leading = Subject::new(".a");
+        let plain = Subject::new("a");
+        assert_ne!(leading, plain);
+        assert!(leading.matches(&Subject::new(".a")));
+        assert!(!plain.matches(&leading));
+        // "*.*" requires two tokens; ".a" has exactly two (["", "a"]).
+        assert!(Subject::new("*.*").matches(&leading));
+    }
+
+    #[test]
+    fn trailing_dot_is_distinct_token() {
+        let trailing = Subject::new("a.");
+        let plain = Subject::new("a");
+        assert_ne!(trailing, plain);
+        assert!(trailing.matches(&Subject::new("a.")));
+        assert!(!plain.matches(&trailing));
+        // "a.>" needs a (possibly empty) token after "a": "a." provides one.
+        assert!(Subject::new("a.>").matches(&trailing));
+        assert!(!Subject::new("a.>").matches(&plain));
+    }
+
+    #[test]
+    fn chevron_matches_empty_token_suffix() {
+        // "a." splits to ["a", ""], so "a.>" matches it (one token, empty).
+        assert!(Subject::new("a.>").matches(&Subject::new("a.")));
+    }
+
+    #[test]
+    fn chevron_only_pattern_matches_every_subject() {
+        // "".split('.') yields [""] (one empty token), never zero tokens,
+        // so ">" matches every possible subject string.
+        let pat = Subject::new(">");
+        assert!(pat.matches(&Subject::new("")));
+        assert!(pat.matches(&Subject::new("a")));
+        assert!(pat.matches(&Subject::new("a.b.c")));
+        assert!(pat.matches(&Subject::new("a.")));
+    }
+
+    #[test]
+    fn chevron_after_chevron_is_greedy_terminal() {
+        // First ">" wins and consumes everything remaining.
+        let pat = Subject::new("a.>.>");
+        assert!(pat.matches(&Subject::new("a.b")));
+        assert!(pat.matches(&Subject::new("a.b.c.d")));
+        assert!(!pat.matches(&Subject::new("a")));
+    }
+
+    #[test]
+    fn whitespace_token_matched_literally() {
+        let pat = Subject::new("a.b c.d");
+        assert!(pat.matches(&Subject::new("a.b c.d")));
+        assert!(!pat.matches(&Subject::new("a.bc.d")));
+        // Documents that no validation rejects spaces today.
+    }
+
+    #[test]
+    fn unicode_tokens_match_literally() {
+        let pat = Subject::new("a.héllo");
+        assert!(pat.matches(&Subject::new("a.héllo")));
+        assert!(!pat.matches(&Subject::new("a.hello")));
+    }
+
+    #[test]
+    fn very_long_subject_exact_match() {
+        let tokens: Vec<String> = (0..500).map(|i| i.to_string()).collect();
+        let raw = tokens.join(".");
+        let s = Subject::new(raw.clone());
+        assert_eq!(s.as_str(), raw);
+        assert!(s.matches(&Subject::new(raw.clone())));
+        assert!(!s.matches(&Subject::new("0.1")));
+    }
+
+    #[test]
+    fn very_long_subject_chevron_match() {
+        let tokens: Vec<String> = (0..500).map(|i| i.to_string()).collect();
+        let raw = format!("root.{}", tokens.join("."));
+        let pat = Subject::new("root.>");
+        assert!(pat.matches(&Subject::new(raw)));
+        assert!(!pat.matches(&Subject::new("root")));
+    }
+
+    #[test]
+    fn long_star_chain_matches_equal_token_count() {
+        let stars: Vec<&str> = vec!["*"; 100];
+        let pat = Subject::new(stars.join("."));
+        let toks: Vec<String> = (0..100).map(|i| format!("t{i}")).collect();
+        assert!(pat.matches(&Subject::new(toks.join("."))));
+        let short: Vec<String> = (0..99).map(|i| format!("t{i}")).collect();
+        assert!(!pat.matches(&Subject::new(short.join("."))));
+    }
+
+    #[test]
+    fn single_token_with_dots_is_not_split_by_star() {
+        // "*" is one token; it must not match a token containing a dot.
+        let pat = Subject::new("a.*");
+        assert!(!pat.matches(&Subject::new("a.b.c")));
+        assert!(pat.matches(&Subject::new("a.b")));
+    }
+
+    #[test]
+    fn roundtrip_new_from_as_str_is_identity() {
+        for raw in [
+            "plain",
+            "a.b.c",
+            "a..b",
+            ".leading",
+            "trailing.",
+            "agileplus.feature.42.state_transitioned",
+            "",
+        ] {
+            let s = Subject::new(raw);
+            assert_eq!(s.as_str(), raw);
+            let rebuilt = Subject::new(s.as_str());
+            assert_eq!(rebuilt, s);
+            assert_eq!(format!("{s}"), raw, "Display must round-trip {raw:?}");
+        }
+    }
+
+    #[test]
+    fn for_event_roundtrips_through_all_of_type_pattern() {
+        // Every for_event subject must match its all_of_type and
+        // all_for_entity patterns — the crate's core routing contract.
+        for id in [0, 1, 7, 999_999, i64::MAX] {
+            for event in ["created", "updated", "state_transitioned"] {
+                let s = Subject::for_event("agileplus", "feature", id, event);
+                assert!(Subject::all_of_type("agileplus", "feature", event).matches(&s));
+                assert!(Subject::all_for_entity("agileplus", "feature").matches(&s));
+                assert!(!Subject::all_for_entity("agileplus", "wp").matches(&s));
+            }
+        }
+    }
 }
