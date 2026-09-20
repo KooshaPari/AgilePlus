@@ -2598,3 +2598,130 @@ async fn import_existing_project_slug_is_updated_not_created() {
     assert_eq!(projects.len(), 1);
     assert_eq!(projects.values().next().unwrap().id, existing_id);
 }
+
+// ---------------------------------------------------------------------------
+// Domain-validation failure paths
+//
+// The importers build `Project` / `Cycle` domain entities, which perform their
+// own validation before anything is persisted. A bundle that violates those
+// invariants must abort the whole import with a contextual error rather than
+// writing a partially-imported entity.
+// ---------------------------------------------------------------------------
+
+#[tokio::test]
+async fn import_project_with_unsluggable_name_fails_with_invalid_project_data() {
+    let storage = MockStorage::new();
+    let vcs = MockVcs::default();
+    let bundle = ImportBundle {
+        projects: vec![ImportProject {
+            slug: None,
+            // Slugification strips everything, leaving an empty slug.
+            name: "!!! ???".into(),
+            description: None,
+            features: vec![],
+        }],
+        ..empty_bundle()
+    };
+
+    let error = import_bundle(bundle, &storage, &vcs).await.unwrap_err();
+    assert!(
+        error.to_string().contains("Invalid project data"),
+        "unexpected error: {error}"
+    );
+    assert!(storage.projects.lock().unwrap().is_empty());
+}
+
+#[tokio::test]
+async fn import_project_with_an_explicit_slug_that_violates_the_grammar_fails() {
+    let storage = MockStorage::new();
+    let vcs = MockVcs::default();
+    let bundle = ImportBundle {
+        projects: vec![ImportProject {
+            // Uppercase and whitespace are rejected by `Project::new`.
+            slug: Some("Not A Slug".into()),
+            name: "Project".into(),
+            description: None,
+            features: vec![],
+        }],
+        ..empty_bundle()
+    };
+
+    let error = import_bundle(bundle, &storage, &vcs).await.unwrap_err();
+    assert!(
+        error.to_string().contains("Invalid project data"),
+        "unexpected error: {error}"
+    );
+    assert!(storage.projects.lock().unwrap().is_empty());
+}
+
+#[tokio::test]
+async fn import_cycle_with_non_increasing_dates_fails_to_create_a_cycle() {
+    let date = |y, m, d| chrono::NaiveDate::from_ymd_opt(y, m, d).unwrap();
+
+    for (start, end) in [
+        (date(2026, 1, 1), date(2026, 1, 1)),  // equal
+        (date(2026, 1, 14), date(2026, 1, 1)), // reversed
+    ] {
+        let storage = MockStorage::new();
+        let vcs = MockVcs::default();
+        let bundle = ImportBundle {
+            cycles: vec![ImportCycle {
+                name: "Bad Sprint".into(),
+                description: None,
+                start_date: start,
+                end_date: end,
+                state: CycleState::Draft,
+                module_scope_slug: None,
+                feature_slugs: vec![],
+            }],
+            ..empty_bundle()
+        };
+
+        let error = import_bundle(bundle, &storage, &vcs).await.unwrap_err();
+        assert!(
+            error.to_string().contains("creating cycle"),
+            "{start}..{end} should fail, got: {error}"
+        );
+        assert!(storage.cycles.lock().unwrap().is_empty());
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Work-package matching precedence
+// ---------------------------------------------------------------------------
+
+#[tokio::test]
+async fn import_work_package_sequence_match_takes_precedence_over_title_match() {
+    let storage = MockStorage::new();
+    let vcs = MockVcs::default();
+    let feature_id = storage.seed_feature(make_feature("feat", "Feat"));
+    // Two distinct existing work packages: one matches by sequence, the other by
+    // title.
+    let matched_by_sequence = storage.seed_work_package(make_wp(feature_id, "Alpha", 1));
+    let matched_by_title = storage.seed_work_package(make_wp(feature_id, "Beta", 2));
+
+    let bundle = ImportBundle {
+        features: vec![import_feature_spec(
+            "feat",
+            "Feat",
+            vec![import_wp_spec("Beta", 1)],
+        )],
+        ..empty_bundle()
+    };
+    let report = import_bundle(bundle, &storage, &vcs).await.unwrap();
+
+    // Sequence is consulted first, so nothing is created and the title-matched
+    // work package is left alone.
+    assert_eq!(report.work_packages_created, 0);
+    assert_eq!(report.work_packages_updated, 0);
+    let wps = storage.work_packages.lock().unwrap();
+    assert_eq!(wps.len(), 2);
+    assert!(
+        wps.iter()
+            .any(|w| w.id == matched_by_sequence && w.title == "Alpha")
+    );
+    assert!(
+        wps.iter()
+            .any(|w| w.id == matched_by_title && w.title == "Beta")
+    );
+}
