@@ -1209,3 +1209,21 @@ async fn coverage_json_content_type_on_error() {
     let body: serde_json::Value = resp.json();
     assert!(body["error"].as_str().unwrap().contains("ghost"));
 }
+
+/// An `entity_id` that matches no event must filter the entire result set out.
+/// The seeded events all belong to entity id 1, so an unrelated id exercises the
+/// exact-match rejection in the event filter.
+#[tokio::test]
+async fn coverage_events_filter_entity_id_without_match_is_empty() {
+    let server = setup_test_server().await;
+    let resp = server
+        .get("/api/v1/events?entity_id=424242")
+        .add_header(KEY, TEST_API_KEY)
+        .await;
+    resp.assert_status_ok();
+    let events: Vec<serde_json::Value> = resp.json();
+    assert!(
+        events.is_empty(),
+        "an entity id with no events must yield an empty page, got: {events:?}"
+    );
+}

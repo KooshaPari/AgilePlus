@@ -1199,4 +1199,46 @@ mod tests_extra {
             "unexpected error: {err}"
         );
     }
+
+    /// The `push_cycle` update branch: with a mapping already recorded the
+    /// adapter must PATCH the existing Plane cycle and refresh the mapping's
+    /// `last_synced_at` rather than creating a second cycle.
+    #[tokio::test]
+    async fn push_cycle_updates_mapped_cycle_and_refreshes_timestamp() {
+        let server = MockServer::start().await;
+        Mock::given(method("PATCH"))
+            .and(path(
+                "/api/v1/workspaces/ws/projects/proj/cycles/plane-cyc-7/",
+            ))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "id": "plane-cyc-7",
+                "name": "Sprint 2"
+            })))
+            .expect(1)
+            .mount(&server)
+            .await;
+
+        let client = PlaneClient::new(server.uri(), "k".into(), "ws".into(), "proj".into());
+        let storage = MockStoragePort::new().with_sync_mapping("cycle", 3, "plane-cyc-7");
+        let before = storage
+            .get_sync_mapping("cycle", 3)
+            .await
+            .unwrap()
+            .unwrap()
+            .last_synced_at;
+
+        push_cycle(&client, &storage, &cycle(3, "Sprint 2"))
+            .await
+            .unwrap();
+
+        let after = storage.get_sync_mapping("cycle", 3).await.unwrap().unwrap();
+        assert_eq!(
+            after.plane_issue_id, "plane-cyc-7",
+            "an update must reuse the existing Plane cycle, not create a second one"
+        );
+        assert!(
+            after.last_synced_at >= before,
+            "a successful update must refresh the mapping timestamp"
+        );
+    }
 }

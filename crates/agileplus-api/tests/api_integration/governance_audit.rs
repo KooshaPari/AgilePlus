@@ -12,7 +12,9 @@
 
 use agileplus_domain::domain::audit::{AuditEntry, hash_entry};
 use agileplus_domain::domain::feature::Feature;
-use agileplus_domain::domain::governance::{GovernanceContract, GovernanceRule};
+use agileplus_domain::domain::governance::{
+    Evidence, EvidenceType, GovernanceContract, GovernanceRule,
+};
 use agileplus_domain::domain::state_machine::FeatureState;
 use agileplus_domain::domain::work_package::{WorkPackage, WpState};
 use chrono::{DateTime, Utc};
@@ -361,4 +363,127 @@ async fn audit_trail_for_feature_without_entries_is_empty() {
     resp.assert_status_ok();
     let entries: Vec<serde_json::Value> = resp.json();
     assert!(entries.is_empty(), "got: {entries:?}");
+}
+
+// ── Evidence lookup: the by-FR and by-work-package fallback paths ────────────
+//
+// `POST /features/:slug/validate` first asks the storage port for evidence by
+// FR id, then falls back to a per-work-package lookup when that comes back
+// empty. Only the "missing everywhere" case was exercised before; these tests
+// drive both success branches: a match through the by-FR lookup, and a match on
+// the evidence *type label* through the work-package fallback.
+
+fn evidence(id: i64, fr_id: &str, evidence_type: EvidenceType) -> Evidence {
+    Evidence {
+        id,
+        wp_id: 1,
+        fr_id: fr_id.to_string(),
+        evidence_type,
+        artifact_path: "artifacts/evidence.txt".to_string(),
+        metadata: None,
+        created_at: Utc::now(),
+    }
+}
+
+/// Feature + work package + a single-rule contract demanding `required`.
+fn storage_requiring_evidence(required: &str) -> MockStorage {
+    let storage = storage_with_feature();
+    storage
+        .work_packages
+        .lock()
+        .expect("work_packages lock poisoned")
+        .push(seeded_work_package());
+    storage
+        .governance
+        .lock()
+        .expect("governance lock poisoned")
+        .push(GovernanceContract {
+            id: 1,
+            feature_id: 1,
+            version: 4,
+            rules: vec![GovernanceRule {
+                transition: "validate".to_string(),
+                required_evidence: vec![required.to_string()],
+                policy_refs: vec![],
+            }],
+            bound_at: Utc::now(),
+        });
+    storage
+}
+
+/// The evidence is addressed by FR id, so the first lookup finds it directly.
+#[tokio::test]
+async fn validate_finds_evidence_through_the_fr_lookup() {
+    let storage = storage_requiring_evidence("FR-1");
+    storage
+        .evidence
+        .lock()
+        .expect("evidence lock poisoned")
+        .push(evidence(1, "FR-1", EvidenceType::TestResult));
+
+    let server = setup_test_server_with_storage(storage).await;
+    let resp = server
+        .post("/api/v1/features/governed-feature/validate")
+        .add_header(KEY, TEST_API_KEY)
+        .await;
+    resp.assert_status_ok();
+    let body: serde_json::Value = resp.json();
+    assert_eq!(body["total_rules"], 1);
+    assert_eq!(
+        body["satisfied_rules"], 1,
+        "evidence carrying the required FR id satisfies the rule, got: {body}"
+    );
+    assert_eq!(body["compliant"], true);
+}
+
+/// The requirement is an evidence *type label* (`lint_result`), which no FR id
+/// matches: the evaluator must fall back to the work-package lookup and match
+/// on `evidence_type`.
+#[tokio::test]
+async fn validate_falls_back_to_work_package_evidence_by_type_label() {
+    let storage = storage_requiring_evidence("lint_result");
+    storage
+        .evidence
+        .lock()
+        .expect("evidence lock poisoned")
+        // Deliberately not addressed by the required label as an FR id.
+        .push(evidence(1, "FR-999", EvidenceType::LintResult));
+
+    let server = setup_test_server_with_storage(storage).await;
+    let resp = server
+        .post("/api/v1/features/governed-feature/validate")
+        .add_header(KEY, TEST_API_KEY)
+        .await;
+    resp.assert_status_ok();
+    let body: serde_json::Value = resp.json();
+    assert_eq!(
+        body["satisfied_rules"], 1,
+        "a work-package evidence artifact whose type matches the label satisfies \
+         the rule even though no FR id matched, got: {body}"
+    );
+    assert_eq!(body["compliant"], true);
+}
+
+/// Evidence attached to a different work package must not satisfy the rule.
+#[tokio::test]
+async fn validate_ignores_evidence_from_unrelated_work_package() {
+    let storage = storage_requiring_evidence("lint_result");
+    storage
+        .evidence
+        .lock()
+        .expect("evidence lock poisoned")
+        .push(Evidence {
+            wp_id: 99,
+            ..evidence(1, "FR-999", EvidenceType::LintResult)
+        });
+
+    let server = setup_test_server_with_storage(storage).await;
+    let resp = server
+        .post("/api/v1/features/governed-feature/validate")
+        .add_header(KEY, TEST_API_KEY)
+        .await;
+    resp.assert_status_ok();
+    let body: serde_json::Value = resp.json();
+    assert_eq!(body["satisfied_rules"], 0);
+    assert_eq!(body["compliant"], false);
 }

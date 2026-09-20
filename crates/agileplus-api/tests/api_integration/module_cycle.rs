@@ -695,3 +695,32 @@ fn seeded_module_tree_storage() -> MockStorage {
 async fn setup_module_tree_server() -> axum_test::TestServer {
     setup_test_server_with_storage(seeded_module_tree_storage()).await
 }
+
+// ── Shipping-edge classification ─────────────────────────────────────────────
+
+/// A transition *toward* `Shipped` that the state graph forbids is reported as
+/// a conflict (409), not a generic bad request: the handler treats any failed
+/// move to `Shipped` as a shipping-gate rejection. Cycle 1 is `Draft`, which has
+/// no edge to `Shipped` (the only legal predecessor is `Review`).
+#[tokio::test]
+async fn transition_cycle_to_shipped_from_draft_is_409() {
+    let server = setup_mutation_server().await;
+    let resp = server
+        .post("/api/cycles/1/transition")
+        .add_header("X-API-Key", TEST_API_KEY)
+        .json(&serde_json::json!({ "state": "Shipped" }))
+        .await;
+    resp.assert_status(StatusCode::CONFLICT);
+
+    // The illegal edge is rejected, so the persisted state must be unchanged.
+    let reread = server
+        .get("/api/cycles/1")
+        .add_header("X-API-Key", TEST_API_KEY)
+        .await;
+    reread.assert_status_ok();
+    assert_eq!(
+        reread.json::<serde_json::Value>()["cycle"]["state"],
+        "Draft",
+        "a rejected shipping transition must not persist"
+    );
+}
