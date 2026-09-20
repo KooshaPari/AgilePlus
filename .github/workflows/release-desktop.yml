@@ -94,11 +94,11 @@ jobs:
           fi
 
       # ── Frontend toolchain ─────────────────────────────────────────
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 20
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
           version: 9
 
@@ -182,7 +182,7 @@ jobs:
           echo "Staged $count artifact(s) for upload:"
           ls -lh "$staging/"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.artifact_name }}
           path: release-upload/*
@@ -197,12 +197,12 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: agileplus-desktop-macos-aarch64
           path: macos-arm64
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: agileplus-desktop-macos-x86_64
           path: macos-x86_64
@@ -290,7 +290,7 @@ jobs:
           echo "Staged artifacts:"
           ls -lh universal-output/
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: agileplus-desktop-macos-universal
           path: universal-output/*
@@ -305,7 +305,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: release-assets
           merge-multiple: true
@@ -318,7 +318,7 @@ jobs:
           echo "Total files: $(find release-assets -type f | wc -l)"
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: release-assets/*
           generate_release_notes: true
