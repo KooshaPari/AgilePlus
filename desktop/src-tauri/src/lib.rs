@@ -14,6 +14,9 @@ mod traces;
 mod tray;
 mod work_packages;
 
+#[cfg(test)]
+mod test_support;
+
 pub use commands::*;
 pub use db::{AppState, DatabaseState};
 
