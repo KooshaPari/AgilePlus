@@ -8,6 +8,7 @@
 
 #![allow(dead_code)]
 
+pub mod implement;
 pub mod ship;
 
 use std::collections::HashMap;
@@ -17,10 +18,10 @@ use std::sync::Mutex;
 use async_trait::async_trait;
 
 use agileplus_domain::error::DomainError;
-use agileplus_domain::ports::VcsPort;
 use agileplus_domain::ports::vcs::{
     BranchInfo, ConflictInfo, FeatureArtifacts, MergeResult, WorktreeInfo,
 };
+use agileplus_domain::ports::VcsPort;
 
 /// In-memory `VcsPort` double.
 ///
