@@ -123,13 +123,13 @@ hyper-util = "0.1"
 # Observability
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-opentelemetry = { version = "0.32", features = ["metrics"] }
-opentelemetry_sdk = { version = "0.32.1", features = [
+opentelemetry = { version = "0.33", features = ["metrics"] }
+opentelemetry_sdk = { version = "0.33.0", features = [
   "metrics",
   "trace",
   "rt-tokio",
 ] }
-opentelemetry-otlp = { version = "0.32", features = ["grpc-tonic", "gzip-tonic"] }
+opentelemetry-otlp = { version = "0.33", features = ["grpc-tonic", "gzip-tonic"] }
 tracing-opentelemetry = "0.33"
 sentry = { version = "0.34", features = ["tracing"] }
 
@@ -174,7 +174,7 @@ predicates = "3"
 
 # Data / storage
 rusqlite = { version = "0.40", features = ["bundled"] }
-redis = { version = "0.27", features = ["tokio-comp", "connection-manager"] }
+redis = { version = "1.7", features = ["tokio-comp", "connection-manager"] }
 
 # HTTP client
 reqwest = { version = "0.12", features = ["json"] }
@@ -194,7 +194,7 @@ proptest = "1"
 tokio-test = "0.4"
 
 # OpenAPI
-utoipa = "5"
+utoipa = "6"
 # Concurrency
 dashmap = "6"
 
@@ -202,7 +202,7 @@ dashmap = "6"
 agileplus-error-core = { path = "crates/agileplus-error-core" }
 
 # Async-nats
-async-nats = "0.38"
+async-nats = "0.50"
 paste = "1"
 agileplus-config = { path = "crates/agileplus-config" }
 agileplus-proto = { path = "crates/agileplus-proto" }
