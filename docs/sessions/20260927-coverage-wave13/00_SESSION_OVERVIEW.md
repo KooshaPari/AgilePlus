@@ -58,18 +58,35 @@ Two behaviors were discovered by writing assertions rather than assuming them:
 - `list_adrs` sorts the id **string** descending, so unprefixed `notes` outranks
   `0002`. The test now documents that ordering.
 
-Result: 14 passed, deterministic across 5 runs. `cargo clippy --all-targets` clean;
-`cargo build -p agileplus-desktop` still succeeds, confirming the added `test` feature
-does not affect non-test builds.
+Result: 14 passed, deterministic across 5 runs. `cargo clippy --all-targets` clean.
+
+The tauri's `test` feature is declared under `[dev-dependencies]`, not
+`[dependencies]`, so release builds do not compile the mock runtime. Verified
+against the graph rather than by inspection: `cargo tree --edges normal` lists
+tauri's features with no `test` entry. This was initially committed into
+`[dependencies]` and corrected in `0a8579b1`.
 
 ## Measurement honesty
 
 Two bases are reported and they disagree structurally. This is not a bug in either:
 
-| Basis | Meaning | Workspace | `desktop/src-tauri` |
-|---|---|---|---|
-| production-only | non-test rlib objects only | 50.17% (15625/31145) | 0.00% before wave 13 |
-| test-inclusive | harness objects, counts a file's own `#[cfg(test)]` | 93.10% (82271/88370) | 0.00% before wave 13 |
+| Basis | Meaning | Before | After | Delta |
+|---|---|---|---|---|
+| production-only | non-test rlib objects only | 50.17% (15625/31145) | 50.72% (16578/32685) | +0.55pp |
+| test-inclusive | harness objects, counts a file's own `#[cfg(test)]` | 93.10% (82271/88370) | 93.67% (83024/88630) | +0.57pp |
+| `desktop/src-tauri` (test-inclusive) | — | 0.00% | 36.50% (438/1200) | +36.50pp |
+
+Note the denominators moved too (31145→32685 production, 88370→88630
+test-inclusive). The before/after figures are not a like-for-like
+denominator comparison; the line count grew because the instrumented build
+was a clean rebuild after `target/llvm-cov-target` had been cleared, not
+because production source was added.
+
+`desktop/src-tauri` still reports **0.00%** on the production-only basis after
+wave 13. That crate's lib is `crate-type = ["staticlib", "cdylib", "rlib"]` but
+the instrumented build produced no rlib for the report to key against, so the
+harness objects are the only source of counts. The tests genuinely execute; the
+production basis structurally cannot see them.
 
 The production-only basis structurally cannot see tests that live in the test
 harness. `commands/review_loop.rs` reports **0.00%** production-only while reporting
@@ -82,18 +99,27 @@ Documented in `scripts/coverage-complete.sh` lines 104-111.
 1. **`ReviewOutcome::Cancelled` is dead code.** In `commands/review_loop.rs` it is
    declared at line 20 and constructed nowhere except its own in-file assertion at
    line 190. `run_review_loop` never returns it.
-2. **Two load-sensitive network tests flake under instrumentation.** Both pass in a
-   normal build and both pass 3x under `cargo llvm-cov` in isolation, but they fail
-   when the whole instrumented workspace suite runs concurrently:
-   - `agileplus-api` `probe_tcp_url_reports_timeout_for_unroutable_address` expects
-     `"connection timed out"` but receives `"Network is unreachable (os error 51)"`.
-   - `agileplus-p2p` `probe_agileplus_unroutable_ip_times_out_to_unknown` expects
-     `PeerStatus::Unknown` but receives `PeerStatus::Offline`.
+2. **Two network tests are intermittently fragile.** Both target `192.0.2.1`
+   (RFC 5737 TEST-NET-1) and assume the failure mode is a *connection timeout*.
+   When the OS instead returns `ENETUNREACH` first, the premise is wrong:
+   - `agileplus-api` `probe_tcp_url_reports_timeout_for_unroutable_address`
+     expects `"192.0.2.1:80: connection timed out"` but received
+     `"192.0.2.1:80: Network is unreachable (os error 51)"`.
+   - `agileplus-p2p` `probe_agileplus_unroutable_ip_times_out_to_unknown`
+     expects `PeerStatus::Unknown` but received `PeerStatus::Offline`.
 
-   Both target `192.0.2.1` (RFC 5737 TEST-NET-1) and assume the failure mode is a
-   *timeout*. Under load the OS returns ENETUNREACH first, so the premise is wrong.
-   Neither crate is touched by this campaign. This is a real test defect worth fixing,
-   but it is a production-file edit, so it is left for a separate change.
+   Observed exactly once, in the first full instrumented workspace run. The
+   second full run passed both. They also pass in a normal build, and passed 3x
+   each under `cargo llvm-cov` in isolation (`agileplus-api` 200/200 three
+   times, `agileplus-p2p` 224/224 three times). So the trigger is
+   nondeterministic rather than strictly load-dependent, and the honest
+   characterisation is an environment-dependent assumption, not a
+   reproducible defect in these tests. The underlying fragility is real: the
+   test hard-codes one of two legitimate failure modes for an unroutable
+   address.
+
+   Neither crate is touched by this campaign, and the fix would be a
+   production-file edit, so it is left for a separate change.
 
 ## Environment notes
 
