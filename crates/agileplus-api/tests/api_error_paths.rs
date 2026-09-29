@@ -66,14 +66,20 @@ fn assert_generic_500(resp: &TestResponse) {
 #[tokio::test]
 async fn features_list_returns_generic_500_when_storage_scan_fails() {
     let server = setup_test_server_with_storage(storage_failing_at("list_all_features")).await;
-    let resp = server.get("/api/v1/features").add_header(KEY, TEST_API_KEY).await;
+    let resp = server
+        .get("/api/v1/features")
+        .add_header(KEY, TEST_API_KEY)
+        .await;
     assert_generic_500(&resp);
 }
 
 #[tokio::test]
 async fn events_list_returns_generic_500_when_storage_scan_fails() {
     let server = setup_test_server_with_storage(storage_failing_at("list_all_features")).await;
-    let resp = server.get("/api/v1/events").add_header(KEY, TEST_API_KEY).await;
+    let resp = server
+        .get("/api/v1/events")
+        .add_header(KEY, TEST_API_KEY)
+        .await;
     assert_generic_500(&resp);
 }
 
@@ -146,11 +152,8 @@ async fn modules_page_returns_generic_500_when_module_lookup_fails() {
     let storage = MockStorage::default();
     storage.fail_on("get_module_with_features", STORAGE_FAILURE);
     let now = Utc::now();
-    storage
-        .modules
-        .lock()
-        .expect("modules lock poisoned")
-        .push(agileplus_domain::domain::module::Module {
+    storage.modules.lock().expect("modules lock poisoned").push(
+        agileplus_domain::domain::module::Module {
             id: 1,
             slug: "platform".to_string(),
             friendly_name: "Platform".to_string(),
@@ -158,7 +161,8 @@ async fn modules_page_returns_generic_500_when_module_lookup_fails() {
             parent_module_id: None,
             created_at: now,
             updated_at: now,
-        });
+        },
+    );
 
     let server = setup_test_server_with_storage(storage).await;
     let resp = server.get("/modules").await;
@@ -246,7 +250,8 @@ fn storage_with_event_aged(age: Duration) -> MockStorage {
 /// the comparison reversed, one of the two assertions would fail.
 #[tokio::test]
 async fn events_since_minutes_window_selects_events_by_age() {
-    let server = setup_test_server_with_storage(storage_with_event_aged(Duration::minutes(45))).await;
+    let server =
+        setup_test_server_with_storage(storage_with_event_aged(Duration::minutes(45))).await;
 
     let inside = server
         .get("/api/v1/events?actor=stale-bot&since=90m")

@@ -196,15 +196,16 @@ async fn create_persists_parsed_dates_and_description() {
 #[tokio::test]
 async fn create_rejects_malformed_start_date() {
     let store = MemStore::default();
-    let err = super::create::cmd_create(
-        create_args("Q1", "2026/01/01", "2026-03-31", None),
-        &store,
-    )
-    .await
-    .expect_err("bad start date must fail");
+    let err =
+        super::create::cmd_create(create_args("Q1", "2026/01/01", "2026-03-31", None), &store)
+            .await
+            .expect_err("bad start date must fail");
 
     let message = format!("{err:#}");
-    assert!(message.contains("invalid start date '2026/01/01'"), "{message}");
+    assert!(
+        message.contains("invalid start date '2026/01/01'"),
+        "{message}"
+    );
     assert!(message.contains("YYYY-MM-DD"), "{message}");
     assert!(store.cycles.lock().unwrap().is_empty());
 }
@@ -212,24 +213,20 @@ async fn create_rejects_malformed_start_date() {
 #[tokio::test]
 async fn create_rejects_malformed_end_date() {
     let store = MemStore::default();
-    let err = super::create::cmd_create(
-        create_args("Q1", "2026-01-01", "2026-13-40", None),
-        &store,
-    )
-    .await
-    .expect_err("bad end date must fail");
+    let err =
+        super::create::cmd_create(create_args("Q1", "2026-01-01", "2026-13-40", None), &store)
+            .await
+            .expect_err("bad end date must fail");
     assert!(format!("{err:#}").contains("invalid end date '2026-13-40'"));
 }
 
 #[tokio::test]
 async fn create_rejects_end_before_start() {
     let store = MemStore::default();
-    let err = super::create::cmd_create(
-        create_args("Q1", "2026-03-31", "2026-01-01", None),
-        &store,
-    )
-    .await
-    .expect_err("inverted range must fail");
+    let err =
+        super::create::cmd_create(create_args("Q1", "2026-03-31", "2026-01-01", None), &store)
+            .await
+            .expect_err("inverted range must fail");
     assert!(format!("{err:#}").contains("end_date must be after start_date"));
     assert!(store.cycles.lock().unwrap().is_empty());
 }
@@ -246,7 +243,10 @@ async fn create_scopes_cycle_to_resolved_module() {
     .await
     .unwrap();
 
-    assert_eq!(store.cycles.lock().unwrap()[0].module_scope_id, Some(module_id));
+    assert_eq!(
+        store.cycles.lock().unwrap()[0].module_scope_id,
+        Some(module_id)
+    );
 }
 
 #[tokio::test]
@@ -320,7 +320,10 @@ async fn show_reports_missing_cycle_with_remediation() {
 
     let message = format!("{err:#}");
     assert!(message.contains("Cycle 'ghost' not found"), "{message}");
-    assert!(message.contains("agileplus cycle create --name ghost"), "{message}");
+    assert!(
+        message.contains("agileplus cycle create --name ghost"),
+        "{message}"
+    );
 }
 
 #[tokio::test]
@@ -333,15 +336,14 @@ async fn show_renders_features_and_work_package_progress() {
     link_feature(&store, cycle_id, blocked);
     link_feature(&store, cycle_id, done);
     store.cycles.lock().unwrap()[0].description = Some("scope".to_string());
-    *store.cycle_wp_progress.lock().unwrap() = Some(
-        agileplus_domain::domain::cycle::WpProgressSummary {
+    *store.cycle_wp_progress.lock().unwrap() =
+        Some(agileplus_domain::domain::cycle::WpProgressSummary {
             total: 5,
             planned: 1,
             in_progress: 1,
             done: 2,
             blocked: 1,
-        },
-    );
+        });
 
     super::show::cmd_show(
         ShowArgs {
@@ -367,9 +369,8 @@ async fn show_renders_features_and_work_package_progress() {
 async fn show_handles_cycle_without_features_or_scope() {
     let store = MemStore::default();
     seed_cycle(&store, "Q2", CycleState::Draft, None);
-    *store.cycle_wp_progress.lock().unwrap() = Some(
-        agileplus_domain::domain::cycle::WpProgressSummary::default(),
-    );
+    *store.cycle_wp_progress.lock().unwrap() =
+        Some(agileplus_domain::domain::cycle::WpProgressSummary::default());
 
     super::show::cmd_show(
         ShowArgs {
@@ -452,7 +453,10 @@ async fn add_reports_unknown_feature_with_specify_hint() {
 
     let message = format!("{err:#}");
     assert!(message.contains("Feature 'ghost' not found."), "{message}");
-    assert!(message.contains("agileplus specify --feature ghost"), "{message}");
+    assert!(
+        message.contains("agileplus specify --feature ghost"),
+        "{message}"
+    );
 }
 
 #[tokio::test]

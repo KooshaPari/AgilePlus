@@ -9,7 +9,7 @@ use agileplus_domain::{
         backlog::{BacklogFilters, BacklogItem, BacklogPriority, BacklogStatus, Intent},
         feature::Feature,
         state_machine::FeatureState,
-        work_package::{DependencyType, WpDependency, WpState, WorkPackage},
+        work_package::{DependencyType, WorkPackage, WpDependency, WpState},
     },
     ports::ContentStoragePort,
 };
@@ -71,11 +71,17 @@ async fn content_port_feature_crud() {
     let a = adapter();
     let id = a.create_feature(&feature("content-feat")).await.unwrap();
     assert_eq!(
-        a.get_feature_by_slug("content-feat").await.unwrap().unwrap().id,
+        a.get_feature_by_slug("content-feat")
+            .await
+            .unwrap()
+            .unwrap()
+            .id,
         id
     );
     assert!(a.get_feature_by_id(id).await.unwrap().is_some());
-    a.update_feature_state(id, FeatureState::Validated).await.unwrap();
+    a.update_feature_state(id, FeatureState::Validated)
+        .await
+        .unwrap();
     let mut f = feature("content-feat");
     f.id = id;
     f.friendly_name = "Content Renamed".into();
@@ -86,7 +92,10 @@ async fn content_port_feature_crud() {
     assert_eq!(got.state, FeatureState::Validated);
     assert_eq!(a.list_all_features().await.unwrap().len(), 1);
     assert_eq!(
-        a.list_features_by_state(FeatureState::Validated).await.unwrap().len(),
+        a.list_features_by_state(FeatureState::Validated)
+            .await
+            .unwrap()
+            .len(),
         1
     );
 }
@@ -107,10 +116,17 @@ async fn content_port_backlog_lifecycle() {
 
     let filters = BacklogFilters::default();
     assert_eq!(a.list_backlog_items(&filters).await.unwrap().len(), 1);
-    assert_eq!(a.list_backlog_items(&filters).await.unwrap()[0].intent, Intent::Bug);
+    assert_eq!(
+        a.list_backlog_items(&filters).await.unwrap()[0].intent,
+        Intent::Bug
+    );
 
-    a.update_backlog_priority(id, BacklogPriority::Critical).await.unwrap();
-    a.update_backlog_status(id, BacklogStatus::InProgress).await.unwrap();
+    a.update_backlog_priority(id, BacklogPriority::Critical)
+        .await
+        .unwrap();
+    a.update_backlog_status(id, BacklogStatus::InProgress)
+        .await
+        .unwrap();
     let got = a.get_backlog_item(id).await.unwrap().unwrap();
     assert_eq!(got.priority, BacklogPriority::Critical);
     assert_eq!(got.status, BacklogStatus::InProgress);
@@ -146,10 +162,16 @@ async fn content_port_work_package_ops() {
     changed.id = wpid;
     changed.state = WpState::Review;
     a.update_work_package(&changed).await.unwrap();
-    assert_eq!(a.get_work_package(wpid).await.unwrap().unwrap().title, "cwp-updated");
+    assert_eq!(
+        a.get_work_package(wpid).await.unwrap().unwrap().title,
+        "cwp-updated"
+    );
 
     a.update_wp_state(wpid, WpState::Done).await.unwrap();
-    assert_eq!(a.get_work_package(wpid).await.unwrap().unwrap().state, WpState::Done);
+    assert_eq!(
+        a.get_work_package(wpid).await.unwrap().unwrap().state,
+        WpState::Done
+    );
 
     assert_eq!(a.list_wps_by_feature(fid).await.unwrap().len(), 1);
 }

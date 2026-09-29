@@ -54,8 +54,16 @@ mod tests {
     #[test]
     fn trace_ref_partial_eq() {
         let ts = DateTime::from_timestamp(1_000_000, 0).unwrap();
-        let a = TraceRef { trace_id: "x".to_string(), artifact_type: "y".to_string(), linked_at: ts };
-        let b = TraceRef { trace_id: "x".to_string(), artifact_type: "y".to_string(), linked_at: ts };
+        let a = TraceRef {
+            trace_id: "x".to_string(),
+            artifact_type: "y".to_string(),
+            linked_at: ts,
+        };
+        let b = TraceRef {
+            trace_id: "x".to_string(),
+            artifact_type: "y".to_string(),
+            linked_at: ts,
+        };
         assert_eq!(a, b);
     }
 }

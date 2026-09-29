@@ -8,7 +8,7 @@ use crate::claude_code::{extract_commits_from_output, extract_pr_url};
 use crate::types::{AgentConfig, AgentResult, AgentTask, DomainError};
 use tokio::io::AsyncWriteExt;
 use tokio::process::Command;
-use tokio::time::{timeout, Duration};
+use tokio::time::{Duration, timeout};
 
 // ─── Public entry point ───────────────────────────────────────────────────────
 

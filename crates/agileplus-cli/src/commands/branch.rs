@@ -230,7 +230,9 @@ fn print_sync_result(
 mod tests {
     use super::*;
     use agileplus_domain::error::DomainError;
-    use agileplus_domain::ports::vcs::{BranchInfo as VcsBranchInfo, FeatureArtifacts, MergeResult};
+    use agileplus_domain::ports::vcs::{
+        BranchInfo as VcsBranchInfo, FeatureArtifacts, MergeResult,
+    };
 
     // ── Mock VcsPort ────────────────────────────────────────────────────
 
@@ -259,7 +261,9 @@ mod tests {
         ) -> Result<std::path::PathBuf, DomainError> {
             unimplemented!()
         }
-        async fn list_worktrees(&self) -> Result<Vec<agileplus_domain::ports::vcs::WorktreeInfo>, DomainError> {
+        async fn list_worktrees(
+            &self,
+        ) -> Result<Vec<agileplus_domain::ports::vcs::WorktreeInfo>, DomainError> {
             unimplemented!()
         }
         async fn cleanup_worktree(&self, _: &std::path::Path) -> Result<(), DomainError> {
@@ -279,7 +283,12 @@ mod tests {
         ) -> Result<Vec<VcsBranchInfo>, DomainError> {
             unimplemented!()
         }
-        async fn delete_branch(&self, _: &str, _: bool, _: Option<&str>) -> Result<(), DomainError> {
+        async fn delete_branch(
+            &self,
+            _: &str,
+            _: bool,
+            _: Option<&str>,
+        ) -> Result<(), DomainError> {
             unimplemented!()
         }
         async fn checkout_branch(&self, _: &str) -> Result<(), DomainError> {
@@ -393,13 +402,7 @@ mod tests {
 
     #[test]
     fn print_sync_result_json_format() {
-        let result = print_sync_result(
-            "main",
-            "canary",
-            true,
-            "json",
-            Some("abc123".into()),
-        );
+        let result = print_sync_result("main", "canary", true, "json", Some("abc123".into()));
         assert!(result.is_ok());
     }
 

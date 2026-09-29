@@ -11,9 +11,7 @@
 //! - rule `priority == None` resolves to `intent.default_priority()`
 
 use agileplus_domain::domain::backlog::{BacklogPriority as BP, Intent};
-use agileplus_triage::engine::{
-    classify, SyncedItem, TriageOutcome, TriageRule, TriageRules,
-};
+use agileplus_triage::engine::{SyncedItem, TriageOutcome, TriageRule, TriageRules, classify};
 
 fn item(title: &str, body: Option<&str>, labels: &[&str]) -> SyncedItem {
     SyncedItem {
@@ -297,7 +295,8 @@ fn triage_rule_serde_roundtrips_with_and_without_priority() {
         intent: Intent::Idea,
         priority: Some(BP::Critical),
     };
-    let back: TriageRule = serde_json::from_str(&serde_json::to_string(&with_prio).unwrap()).unwrap();
+    let back: TriageRule =
+        serde_json::from_str(&serde_json::to_string(&with_prio).unwrap()).unwrap();
     assert_eq!(back.priority, Some(BP::Critical));
 
     let no_prio = TriageRule {

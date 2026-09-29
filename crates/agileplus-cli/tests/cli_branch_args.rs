@@ -86,12 +86,7 @@ fn branch_delete_defaults() {
 #[test]
 fn branch_delete_force_with_remote() {
     let args = parse_branch(&[
-        "delete",
-        "--name",
-        "feat/old",
-        "--force",
-        "--remote",
-        "upstream",
+        "delete", "--name", "feat/old", "--force", "--remote", "upstream",
     ]);
     match args.command {
         BranchCommand::Delete {
@@ -128,7 +123,14 @@ fn branch_list_defaults() {
 
 #[test]
 fn branch_list_with_pattern() {
-    let args = parse_branch(&["list", "--pattern", "feat/*", "--remote", "--output", "json"]);
+    let args = parse_branch(&[
+        "list",
+        "--pattern",
+        "feat/*",
+        "--remote",
+        "--output",
+        "json",
+    ]);
     match args.command {
         BranchCommand::List {
             pattern,
@@ -165,13 +167,7 @@ fn branch_sync_defaults() {
 #[test]
 fn branch_sync_custom_refs() {
     let args = parse_branch(&[
-        "sync",
-        "--source",
-        "develop",
-        "--target",
-        "release",
-        "--output",
-        "json",
+        "sync", "--source", "develop", "--target", "release", "--output", "json",
     ]);
     match args.command {
         BranchCommand::Sync {

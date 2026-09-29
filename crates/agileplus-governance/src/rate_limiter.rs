@@ -295,7 +295,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_peek_does_not_consume() {
-        let limiter = RateLimiter::new(RateLimitConfig { max_requests: 2, window: Duration::from_secs(60) });
+        let limiter = RateLimiter::new(RateLimitConfig {
+            max_requests: 2,
+            window: Duration::from_secs(60),
+        });
         let key = RateLimitKey::anonymous(Some("127.0.0.1".into()), "peek_test");
         let peek1 = limiter.peek(&key).await;
         assert!(peek1.allowed);
@@ -307,7 +310,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_reset_single_key() {
-        let limiter = RateLimiter::new(RateLimitConfig { max_requests: 1, window: Duration::from_secs(60) });
+        let limiter = RateLimiter::new(RateLimitConfig {
+            max_requests: 1,
+            window: Duration::from_secs(60),
+        });
         let key = RateLimitKey::anonymous(Some("127.0.0.1".into()), "reset_test");
         limiter.check(&key).await;
         assert!(!limiter.check(&key).await.allowed);
@@ -320,7 +326,6 @@ mod tests {
         let config = RateLimitConfig::default();
         assert_eq!(config.max_requests, 100);
     }
-
 }
 #[cfg(test)]
 mod extended_tests {
@@ -437,11 +442,7 @@ mod extended_tests {
 
     #[tokio::test]
     async fn new_key_constructor() {
-        let key = RateLimitKey::new(
-            Some("user1".into()),
-            Some("192.168.1.1".into()),
-            "write",
-        );
+        let key = RateLimitKey::new(Some("user1".into()), Some("192.168.1.1".into()), "write");
         assert_eq!(key.user_id.as_deref(), Some("user1"));
         assert_eq!(key.client_ip.as_deref(), Some("192.168.1.1"));
         assert_eq!(key.action, "write");
@@ -579,7 +580,10 @@ mod coverage_tests {
 
     #[test]
     fn config_clone_preserves_fields() {
-        let cfg = RateLimitConfig { max_requests: 7, window: Duration::from_secs(9) };
+        let cfg = RateLimitConfig {
+            max_requests: 7,
+            window: Duration::from_secs(9),
+        };
         let clone = cfg.clone();
         assert_eq!(clone.max_requests, 7);
         assert_eq!(clone.window, Duration::from_secs(9));
@@ -587,7 +591,10 @@ mod coverage_tests {
 
     #[test]
     fn config_debug_contains_value() {
-        let cfg = RateLimitConfig { max_requests: 12, window: Duration::from_secs(1) };
+        let cfg = RateLimitConfig {
+            max_requests: 12,
+            window: Duration::from_secs(1),
+        };
         assert!(format!("{cfg:?}").contains("12"));
     }
 

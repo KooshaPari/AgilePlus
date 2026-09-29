@@ -95,7 +95,10 @@ fn domain_error_display_all_variants() {
         ),
         (DomainError::InvalidClaim("bad claim".into()), "bad claim"),
         (DomainError::Other("misc".into()), "misc"),
-        (DomainError::Agent("dispatch failed".into()), "dispatch failed"),
+        (
+            DomainError::Agent("dispatch failed".into()),
+            "dispatch failed",
+        ),
         (DomainError::Timeout(30), "30"),
     ];
 
@@ -126,7 +129,10 @@ fn domain_error_lock_poisoned_display() {
 #[test]
 fn domain_error_no_op_transition_display() {
     let e = DomainError::NoOpTransition;
-    assert_eq!(e.to_string(), "No-op transition: already in the requested state");
+    assert_eq!(
+        e.to_string(),
+        "No-op transition: already in the requested state"
+    );
 }
 
 // ---------------------------------------------------------------------------
@@ -145,7 +151,11 @@ fn error_code_projection_not_found_family() {
     for err in cases {
         let variant_desc = format!("{:?}", err);
         let code: ErrorCode = err.into();
-        assert_eq!(code, ErrorCode::NotFound, "Expected NotFound for {variant_desc}");
+        assert_eq!(
+            code,
+            ErrorCode::NotFound,
+            "Expected NotFound for {variant_desc}"
+        );
     }
 }
 
@@ -162,7 +172,11 @@ fn error_code_projection_already_exists_family() {
     for err in cases {
         let variant_desc = format!("{:?}", err);
         let code: ErrorCode = err.into();
-        assert_eq!(code, ErrorCode::AlreadyExists, "Expected AlreadyExists for {variant_desc}");
+        assert_eq!(
+            code,
+            ErrorCode::AlreadyExists,
+            "Expected AlreadyExists for {variant_desc}"
+        );
     }
 }
 
@@ -189,7 +203,11 @@ fn error_code_projection_validation_family() {
     for err in cases {
         let variant_desc = format!("{:?}", err);
         let code: ErrorCode = err.into();
-        assert_eq!(code, ErrorCode::ValidationError, "Expected ValidationError for {variant_desc}");
+        assert_eq!(
+            code,
+            ErrorCode::ValidationError,
+            "Expected ValidationError for {variant_desc}"
+        );
     }
 }
 
@@ -209,7 +227,11 @@ fn error_code_projection_internal_error_family() {
     for err in cases {
         let variant_desc = format!("{:?}", err);
         let code: ErrorCode = err.into();
-        assert_eq!(code, ErrorCode::InternalError, "Expected InternalError for {variant_desc}");
+        assert_eq!(
+            code,
+            ErrorCode::InternalError,
+            "Expected InternalError for {variant_desc}"
+        );
     }
 }
 
@@ -277,9 +299,15 @@ fn feature_not_in_module_scope_preserves_both_slugs() {
         module_slug: "auth-module".into(),
     };
     let msg = e.to_string();
-    assert!(msg.contains("login-feature"), "Missing feature_slug in: {msg}");
+    assert!(
+        msg.contains("login-feature"),
+        "Missing feature_slug in: {msg}"
+    );
     assert!(msg.contains("auth-module"), "Missing module_slug in: {msg}");
-    assert!(msg.contains("not in module"), "Missing 'not in module' in: {msg}");
+    assert!(
+        msg.contains("not in module"),
+        "Missing 'not in module' in: {msg}"
+    );
 }
 
 // ---------------------------------------------------------------------------
@@ -296,7 +324,10 @@ fn invalid_transition_preserves_from_to_reason() {
     let msg = e.to_string();
     assert!(msg.contains("draft"), "Missing from in: {msg}");
     assert!(msg.contains("shipped"), "Missing to in: {msg}");
-    assert!(msg.contains("skipped validation"), "Missing reason in: {msg}");
+    assert!(
+        msg.contains("skipped validation"),
+        "Missing reason in: {msg}"
+    );
 }
 
 // ---------------------------------------------------------------------------
@@ -307,7 +338,10 @@ fn invalid_transition_preserves_from_to_reason() {
 fn domain_error_exhaustive_display_coverage() {
     // Ensure every variant has a Display implementation by constructing and displaying each
     let variants: Vec<DomainError> = vec![
-        DomainError::FeatureNotInModuleScope { feature_slug: "f".into(), module_slug: "m".into() },
+        DomainError::FeatureNotInModuleScope {
+            feature_slug: "f".into(),
+            module_slug: "m".into(),
+        },
         DomainError::ModuleHasDependents("d".into()),
         DomainError::CycleNotFound("c".into()),
         DomainError::ModuleNotFound("m".into()),
@@ -318,7 +352,11 @@ fn domain_error_exhaustive_display_coverage() {
         DomainError::Storage("s".into()),
         DomainError::Validation("v".into()),
         DomainError::Conflict("c".into()),
-        DomainError::InvalidTransition { from: "a".into(), to: "b".into(), reason: "r".into() },
+        DomainError::InvalidTransition {
+            from: "a".into(),
+            to: "b".into(),
+            reason: "r".into(),
+        },
         DomainError::LockPoisoned,
         DomainError::InvalidClaim("c".into()),
         DomainError::NoOpTransition,
@@ -345,15 +383,43 @@ fn error_code_exhaustive_projection_coverage() {
     let mapping: Vec<(DomainError, ErrorCode)> = vec![
         (DomainError::CycleNotFound("c".into()), ErrorCode::NotFound),
         (DomainError::ModuleNotFound("m".into()), ErrorCode::NotFound),
-        (DomainError::FeatureNotFound("f".into()), ErrorCode::NotFound),
-        (DomainError::WorkPackageNotFound("w".into()), ErrorCode::NotFound),
+        (
+            DomainError::FeatureNotFound("f".into()),
+            ErrorCode::NotFound,
+        ),
+        (
+            DomainError::WorkPackageNotFound("w".into()),
+            ErrorCode::NotFound,
+        ),
         (DomainError::NotFound("n".into()), ErrorCode::NotFound),
-        (DomainError::ModuleHasDependents("d".into()), ErrorCode::AlreadyExists),
+        (
+            DomainError::ModuleHasDependents("d".into()),
+            ErrorCode::AlreadyExists,
+        ),
         (DomainError::Conflict("c".into()), ErrorCode::AlreadyExists),
-        (DomainError::Validation("v".into()), ErrorCode::ValidationError),
-        (DomainError::FeatureNotInModuleScope { feature_slug: "f".into(), module_slug: "m".into() }, ErrorCode::ValidationError),
-        (DomainError::InvalidTransition { from: "a".into(), to: "b".into(), reason: "r".into() }, ErrorCode::ValidationError),
-        (DomainError::InvalidClaim("c".into()), ErrorCode::ValidationError),
+        (
+            DomainError::Validation("v".into()),
+            ErrorCode::ValidationError,
+        ),
+        (
+            DomainError::FeatureNotInModuleScope {
+                feature_slug: "f".into(),
+                module_slug: "m".into(),
+            },
+            ErrorCode::ValidationError,
+        ),
+        (
+            DomainError::InvalidTransition {
+                from: "a".into(),
+                to: "b".into(),
+                reason: "r".into(),
+            },
+            ErrorCode::ValidationError,
+        ),
+        (
+            DomainError::InvalidClaim("c".into()),
+            ErrorCode::ValidationError,
+        ),
         (DomainError::NoOpTransition, ErrorCode::ValidationError),
         (DomainError::NotImplemented, ErrorCode::NotImplemented),
         (DomainError::Storage("s".into()), ErrorCode::InternalError),

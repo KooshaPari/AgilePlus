@@ -1300,7 +1300,11 @@ mod tests {
     #[test]
     fn check_dag_no_edges_single_intent_node_ok() {
         let graph = IntentGraph {
-            nodes: vec![sample_node("Intent#root", NodeType::Intent, DagStage::Intent)],
+            nodes: vec![sample_node(
+                "Intent#root",
+                NodeType::Intent,
+                DagStage::Intent,
+            )],
             edges: vec![],
             metadata: GraphMetadata {
                 version: "1.0.0".to_string(),
@@ -1349,7 +1353,12 @@ mod tests {
                 sample_node("Task#b", NodeType::Task, DagStage::Task),
             ],
             edges: vec![
-                sample_edge("e1", "Intent#root", "Feature#a", RelationshipType::Implements),
+                sample_edge(
+                    "e1",
+                    "Intent#root",
+                    "Feature#a",
+                    RelationshipType::Implements,
+                ),
                 sample_edge("e2", "Feature#a", "Task#b", RelationshipType::Implements),
             ],
             metadata: GraphMetadata {
@@ -1665,7 +1674,10 @@ mod tests {
             },
         };
         // Self-loop is a cycle
-        assert!(matches!(g.check_dag().unwrap_err(), ValidationError::CycleDetected));
+        assert!(matches!(
+            g.check_dag().unwrap_err(),
+            ValidationError::CycleDetected
+        ));
     }
 
     #[test]
@@ -1688,13 +1700,20 @@ mod tests {
                 source_system: None,
             },
         };
-        assert!(matches!(g.check_dag().unwrap_err(), ValidationError::InvalidRootNode(_)));
+        assert!(matches!(
+            g.check_dag().unwrap_err(),
+            ValidationError::InvalidRootNode(_)
+        ));
     }
 
     #[test]
     fn meta_source_empty_rejected() {
         let mut graph = IntentGraph {
-            nodes: vec![sample_node("Intent#root", NodeType::Intent, DagStage::Intent)],
+            nodes: vec![sample_node(
+                "Intent#root",
+                NodeType::Intent,
+                DagStage::Intent,
+            )],
             edges: vec![],
             metadata: GraphMetadata {
                 version: "1.0.0".to_string(),
@@ -1709,14 +1728,17 @@ mod tests {
         };
         graph.nodes[0].meta.source = "".to_string();
         let err = graph.validate().unwrap_err();
-        assert!(err.iter().any(|e| matches!(e, ValidationError::MissingMeta(_))));
+        assert!(
+            err.iter()
+                .any(|e| matches!(e, ValidationError::MissingMeta(_)))
+        );
     }
 
     #[test]
     fn node_type_try_from_all_variants() {
         let variants = [
-            "Intent", "Plan", "Feature", "Story", "Task", "Spec",
-            "Commit", "Test", "PR", "Bug", "Artifact",
+            "Intent", "Plan", "Feature", "Story", "Task", "Spec", "Commit", "Test", "PR", "Bug",
+            "Artifact",
         ];
         for v in variants {
             assert!(NodeType::try_from(v.to_string()).is_ok());
@@ -1726,8 +1748,8 @@ mod tests {
     #[test]
     fn dag_stage_try_from_all_variants() {
         let variants = [
-            "intent", "plan", "feature", "story", "task", "spec",
-            "commit", "test", "pr", "bug", "artifact",
+            "intent", "plan", "feature", "story", "task", "spec", "commit", "test", "pr", "bug",
+            "artifact",
         ];
         for v in variants {
             assert!(DagStage::try_from(v.to_string()).is_ok());
@@ -1737,8 +1759,14 @@ mod tests {
     #[test]
     fn relationship_type_try_from_all_variants() {
         let variants = [
-            "implements", "tests", "covers", "traces-to",
-            "derives-from", "resolves", "blocks", "depends-on",
+            "implements",
+            "tests",
+            "covers",
+            "traces-to",
+            "derives-from",
+            "resolves",
+            "blocks",
+            "depends-on",
         ];
         for v in variants {
             assert!(RelationshipType::try_from(v.to_string()).is_ok());
@@ -1748,8 +1776,16 @@ mod tests {
     #[test]
     fn status_try_from_all_variants() {
         let variants = [
-            "draft", "active", "completed", "deprecated", "rejected",
-            "open", "in_progress", "blocked", "deferred", "cancelled",
+            "draft",
+            "active",
+            "completed",
+            "deprecated",
+            "rejected",
+            "open",
+            "in_progress",
+            "blocked",
+            "deferred",
+            "cancelled",
         ];
         for v in variants {
             assert!(Status::try_from(v.to_string()).is_ok());
@@ -1759,8 +1795,14 @@ mod tests {
     #[test]
     fn canonical_link_type_try_from_all_variants() {
         let variants = [
-            "parent_of", "child_of", "depends_on", "blocks",
-            "implements", "verifies", "references", "duplicates",
+            "parent_of",
+            "child_of",
+            "depends_on",
+            "blocks",
+            "implements",
+            "verifies",
+            "references",
+            "duplicates",
         ];
         for v in variants {
             assert!(CanonicalLinkType::try_from(v.to_string()).is_ok());

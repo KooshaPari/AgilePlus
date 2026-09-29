@@ -1359,7 +1359,9 @@ use agileplus_domain::domain::sync_mapping::{SyncDirection, SyncMapping};
 async fn sync_mapping_upsert_and_get() {
     let db = make_adapter();
     let mapping = SyncMapping::new("feature", 1, "plane-issue-100", "hash_abc");
-    StoragePort::upsert_sync_mapping(&db, &mapping).await.unwrap();
+    StoragePort::upsert_sync_mapping(&db, &mapping)
+        .await
+        .unwrap();
 
     let got = StoragePort::get_sync_mapping(&db, "feature", 1)
         .await
@@ -1386,13 +1388,17 @@ async fn sync_mapping_not_found_returns_none() {
 async fn sync_mapping_upsert_updates_existing() {
     let db = make_adapter();
     let mut mapping = SyncMapping::new("feature", 1, "plane-100", "hash_v1");
-    StoragePort::upsert_sync_mapping(&db, &mapping).await.unwrap();
+    StoragePort::upsert_sync_mapping(&db, &mapping)
+        .await
+        .unwrap();
 
     mapping.plane_issue_id = "plane-200".to_string();
     mapping.content_hash = "hash_v2".to_string();
     mapping.sync_direction = SyncDirection::Push;
     mapping.conflict_count = 3;
-    StoragePort::upsert_sync_mapping(&db, &mapping).await.unwrap();
+    StoragePort::upsert_sync_mapping(&db, &mapping)
+        .await
+        .unwrap();
 
     let got = StoragePort::get_sync_mapping(&db, "feature", 1)
         .await
@@ -1408,7 +1414,9 @@ async fn sync_mapping_upsert_updates_existing() {
 async fn sync_mapping_get_by_plane_id() {
     let db = make_adapter();
     let mapping = SyncMapping::new("module", 42, "plane-mod-55", "h1");
-    StoragePort::upsert_sync_mapping(&db, &mapping).await.unwrap();
+    StoragePort::upsert_sync_mapping(&db, &mapping)
+        .await
+        .unwrap();
 
     let got = StoragePort::get_sync_mapping_by_plane_id(&db, "module", "plane-mod-55")
         .await
@@ -1431,17 +1439,25 @@ async fn sync_mapping_get_by_plane_id_not_found() {
 async fn sync_mapping_delete() {
     let db = make_adapter();
     let mapping = SyncMapping::new("feature", 5, "plane-del-1", "hash_d");
-    StoragePort::upsert_sync_mapping(&db, &mapping).await.unwrap();
+    StoragePort::upsert_sync_mapping(&db, &mapping)
+        .await
+        .unwrap();
 
-    StoragePort::delete_sync_mapping(&db, "feature", 5).await.unwrap();
-    let got = StoragePort::get_sync_mapping(&db, "feature", 5).await.unwrap();
+    StoragePort::delete_sync_mapping(&db, "feature", 5)
+        .await
+        .unwrap();
+    let got = StoragePort::get_sync_mapping(&db, "feature", 5)
+        .await
+        .unwrap();
     assert!(got.is_none());
 }
 
 #[tokio::test]
 async fn sync_mapping_delete_nonexistent_is_ok() {
     let db = make_adapter();
-    StoragePort::delete_sync_mapping(&db, "feature", 9999).await.unwrap();
+    StoragePort::delete_sync_mapping(&db, "feature", 9999)
+        .await
+        .unwrap();
 }
 
 #[tokio::test]
@@ -1457,9 +1473,18 @@ async fn sync_mapping_different_entity_types_independent() {
         .await
         .unwrap();
 
-    let f = StoragePort::get_sync_mapping(&db, "feature", 1).await.unwrap().unwrap();
-    let w = StoragePort::get_sync_mapping(&db, "work_package", 1).await.unwrap().unwrap();
-    let m = StoragePort::get_sync_mapping(&db, "module", 1).await.unwrap().unwrap();
+    let f = StoragePort::get_sync_mapping(&db, "feature", 1)
+        .await
+        .unwrap()
+        .unwrap();
+    let w = StoragePort::get_sync_mapping(&db, "work_package", 1)
+        .await
+        .unwrap()
+        .unwrap();
+    let m = StoragePort::get_sync_mapping(&db, "module", 1)
+        .await
+        .unwrap()
+        .unwrap();
 
     assert_eq!(f.plane_issue_id, "pf-1");
     assert_eq!(w.plane_issue_id, "pw-1");
@@ -1471,9 +1496,14 @@ async fn sync_mapping_pull_direction_roundtrip() {
     let db = make_adapter();
     let mut mapping = SyncMapping::new("cycle", 10, "cyc-plane-1", "cycle_hash");
     mapping.sync_direction = SyncDirection::Pull;
-    StoragePort::upsert_sync_mapping(&db, &mapping).await.unwrap();
+    StoragePort::upsert_sync_mapping(&db, &mapping)
+        .await
+        .unwrap();
 
-    let got = StoragePort::get_sync_mapping(&db, "cycle", 10).await.unwrap().unwrap();
+    let got = StoragePort::get_sync_mapping(&db, "cycle", 10)
+        .await
+        .unwrap()
+        .unwrap();
     assert_eq!(got.sync_direction, SyncDirection::Pull);
 }
 
@@ -1494,12 +1524,16 @@ async fn feature_list_by_label() {
     f3.labels = vec!["bug".into(), "enhancement".into()];
     StoragePort::create_feature(&db, &f3).await.unwrap();
 
-    let bugs = StoragePort::list_features_by_label(&db, "bug").await.unwrap();
+    let bugs = StoragePort::list_features_by_label(&db, "bug")
+        .await
+        .unwrap();
     assert_eq!(bugs.len(), 2);
     assert!(bugs.iter().any(|f| f.slug == "feat-a"));
     assert!(bugs.iter().any(|f| f.slug == "feat-c"));
 
-    let features = StoragePort::list_features_by_label(&db, "feature").await.unwrap();
+    let features = StoragePort::list_features_by_label(&db, "feature")
+        .await
+        .unwrap();
     assert_eq!(features.len(), 1);
     assert_eq!(features[0].slug, "feat-b");
 }
@@ -1511,7 +1545,9 @@ async fn feature_list_by_label_no_match() {
     f.labels = vec!["bug".into()];
     StoragePort::create_feature(&db, &f).await.unwrap();
 
-    let result = StoragePort::list_features_by_label(&db, "nonexistent").await.unwrap();
+    let result = StoragePort::list_features_by_label(&db, "nonexistent")
+        .await
+        .unwrap();
     assert!(result.is_empty());
 }
 
@@ -1522,13 +1558,19 @@ async fn feature_update_full() {
     f.labels = vec!["v1".into()];
     let id = StoragePort::create_feature(&db, &f).await.unwrap();
 
-    let mut got = StoragePort::get_feature_by_id(&db, id).await.unwrap().unwrap();
+    let mut got = StoragePort::get_feature_by_id(&db, id)
+        .await
+        .unwrap()
+        .unwrap();
     got.friendly_name = "Updated Name".to_string();
     got.labels = vec!["v2".into(), "updated".into()];
     got.state = FeatureState::Implementing;
     StoragePort::update_feature(&db, &got).await.unwrap();
 
-    let result = StoragePort::get_feature_by_id(&db, id).await.unwrap().unwrap();
+    let result = StoragePort::get_feature_by_id(&db, id)
+        .await
+        .unwrap()
+        .unwrap();
     assert_eq!(result.friendly_name, "Updated Name");
     assert_eq!(result.labels, vec!["v2", "updated"]);
     assert_eq!(result.state, FeatureState::Implementing);
@@ -1590,9 +1632,15 @@ async fn wp_get_ready_empty_when_all_done() {
     let wp1 = StoragePort::create_work_package(&db, &WorkPackage::new(fid, "Done1", 1, "c"))
         .await
         .unwrap();
-    StoragePort::update_wp_state(&db, wp1, WpState::Doing).await.unwrap();
-    StoragePort::update_wp_state(&db, wp1, WpState::Review).await.unwrap();
-    StoragePort::update_wp_state(&db, wp1, WpState::Done).await.unwrap();
+    StoragePort::update_wp_state(&db, wp1, WpState::Doing)
+        .await
+        .unwrap();
+    StoragePort::update_wp_state(&db, wp1, WpState::Review)
+        .await
+        .unwrap();
+    StoragePort::update_wp_state(&db, wp1, WpState::Done)
+        .await
+        .unwrap();
 
     let ready = StoragePort::get_ready_wps(&db, fid).await.unwrap();
     assert!(ready.is_empty());
@@ -1650,7 +1698,10 @@ async fn module_delete_not_found_fails() {
 async fn add_story_to_cycle_returns_not_implemented() {
     let db = make_adapter();
     let result = StoragePort::add_story_to_cycle(&db, 1, 1).await;
-    assert!(matches!(result, Err(agileplus_domain::error::DomainError::NotImplemented)));
+    assert!(matches!(
+        result,
+        Err(agileplus_domain::error::DomainError::NotImplemented)
+    ));
 }
 
 // -- L2 #38 migration test --

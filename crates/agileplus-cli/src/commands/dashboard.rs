@@ -892,5 +892,4 @@ mod tests {
         assert!(!args.json);
         assert!(!args.no_color);
     }
-
 }

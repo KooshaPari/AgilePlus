@@ -1,8 +1,8 @@
 //! Integration tests for RateLimiter token bucket logic.
 //! Complements the inline unit tests in src/rate_limiter.rs.
 
-use agileplus_governance::*;
 use agileplus_governance::rate_limiter::{RateLimitConfig, RateLimitKey, RateLimitResult};
+use agileplus_governance::*;
 use std::time::Duration;
 
 #[test]
@@ -22,11 +22,7 @@ fn rate_limit_key_anonymous() {
 
 #[test]
 fn rate_limit_key_new_with_all_fields() {
-    let key = RateLimitKey::new(
-        Some("user-1".into()),
-        Some("127.0.0.1".into()),
-        "deploy",
-    );
+    let key = RateLimitKey::new(Some("user-1".into()), Some("127.0.0.1".into()), "deploy");
     assert_eq!(key.user_id.as_deref(), Some("user-1"));
     assert_eq!(key.client_ip.as_deref(), Some("127.0.0.1"));
     assert_eq!(key.action, "deploy");

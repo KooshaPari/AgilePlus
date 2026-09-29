@@ -65,8 +65,7 @@ fn append_then_retrieve_multi_entity() {
     }
     // Each entity should have 20 events (100 / 5)
     for entity_id in 1..=5 {
-        let retrieved =
-            event_repo::get_events(&conn, "Feature", entity_id).expect("get");
+        let retrieved = event_repo::get_events(&conn, "Feature", entity_id).expect("get");
         assert_eq!(retrieved.len(), 20);
     }
 }
@@ -235,7 +234,10 @@ fn benchmark_config_multi_entity_counts() {
     assert_eq!(events.len(), 1000);
     for entity_id in 1..=100 {
         let count = events.iter().filter(|e| e.entity_id == entity_id).count();
-        assert_eq!(count, 10, "entity {entity_id} should have exactly 10 events");
+        assert_eq!(
+            count, 10,
+            "entity {entity_id} should have exactly 10 events"
+        );
     }
 }
 

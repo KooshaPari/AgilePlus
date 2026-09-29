@@ -246,12 +246,21 @@ mod coverage_tests {
     }
 
     fn ev(entity_type: &str, entity_id: i64, event_type: &str) -> Event {
-        Event::new(entity_type, entity_id, event_type, serde_json::json!({}), "t")
+        Event::new(
+            entity_type,
+            entity_id,
+            event_type,
+            serde_json::json!({}),
+            "t",
+        )
     }
 
     #[test]
     fn snapshot_error_not_found_display() {
-        let e = SnapshotError::NotFound { entity_type: "Feature".into(), entity_id: 3 };
+        let e = SnapshotError::NotFound {
+            entity_type: "Feature".into(),
+            entity_id: 3,
+        };
         assert_eq!(e.to_string(), "Snapshot not found for Feature:3");
     }
 
@@ -265,7 +274,10 @@ mod coverage_tests {
 
     #[test]
     fn snapshot_error_invalid_display() {
-        assert_eq!(SnapshotError::Invalid("bad".into()).to_string(), "Invalid snapshot: bad");
+        assert_eq!(
+            SnapshotError::Invalid("bad".into()).to_string(),
+            "Invalid snapshot: bad"
+        );
     }
 
     #[test]
@@ -277,7 +289,10 @@ mod coverage_tests {
 
     #[test]
     fn config_clone_preserves_fields() {
-        let c = SnapshotConfig { event_threshold: 5, time_threshold_secs: 9 };
+        let c = SnapshotConfig {
+            event_threshold: 5,
+            time_threshold_secs: 9,
+        };
         let d = c.clone();
         assert_eq!(d.event_threshold, 5);
         assert_eq!(d.time_threshold_secs, 9);
@@ -285,38 +300,56 @@ mod coverage_tests {
 
     #[test]
     fn should_snapshot_event_threshold_true() {
-        let c = SnapshotConfig { event_threshold: 10, time_threshold_secs: 300 };
+        let c = SnapshotConfig {
+            event_threshold: 10,
+            time_threshold_secs: 300,
+        };
         assert!(should_snapshot(&c, 10, 0, None));
     }
 
     #[test]
     fn should_snapshot_event_threshold_false() {
-        let c = SnapshotConfig { event_threshold: 10, time_threshold_secs: 300 };
+        let c = SnapshotConfig {
+            event_threshold: 10,
+            time_threshold_secs: 300,
+        };
         assert!(!should_snapshot(&c, 9, 0, None));
     }
 
     #[test]
     fn should_snapshot_time_threshold_true() {
-        let c = SnapshotConfig { event_threshold: 100, time_threshold_secs: 60 };
+        let c = SnapshotConfig {
+            event_threshold: 100,
+            time_threshold_secs: 60,
+        };
         let old = Utc::now() - TimeDelta::seconds(120);
         assert!(should_snapshot(&c, 1, 0, Some(old)));
     }
 
     #[test]
     fn should_snapshot_time_threshold_false() {
-        let c = SnapshotConfig { event_threshold: 100, time_threshold_secs: 600 };
+        let c = SnapshotConfig {
+            event_threshold: 100,
+            time_threshold_secs: 600,
+        };
         assert!(!should_snapshot(&c, 1, 0, Some(Utc::now())));
     }
 
     #[test]
     fn should_snapshot_with_none_time_ignores_time_rule() {
-        let c = SnapshotConfig { event_threshold: 100, time_threshold_secs: 0 };
+        let c = SnapshotConfig {
+            event_threshold: 100,
+            time_threshold_secs: 0,
+        };
         assert!(!should_snapshot(&c, 1, 0, None));
     }
 
     #[test]
     fn should_snapshot_event_threshold_short_circuits() {
-        let c = SnapshotConfig { event_threshold: 1, time_threshold_secs: 999_999 };
+        let c = SnapshotConfig {
+            event_threshold: 1,
+            time_threshold_secs: 999_999,
+        };
         assert!(should_snapshot(&c, 5, 4, None));
     }
 
@@ -550,8 +583,14 @@ mod coverage_tests {
             time_threshold_secs: 300,
         };
         assert!(!should_snapshot(&c, 5, 5, None), "no movement");
-        assert!(!should_snapshot(&c, 4, 10, None), "sequence moved backwards");
-        assert!(should_snapshot(&c, 15, 5, None), "moved by exactly the threshold");
+        assert!(
+            !should_snapshot(&c, 4, 10, None),
+            "sequence moved backwards"
+        );
+        assert!(
+            should_snapshot(&c, 15, 5, None),
+            "moved by exactly the threshold"
+        );
     }
 
     #[test]

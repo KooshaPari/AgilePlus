@@ -341,20 +341,14 @@ mod tests {
     #[test]
     fn test_filter_all_default() {
         let query = HashMap::new();
-        assert_eq!(
-            dashboard_filter_from_query(&query),
-            DashboardFilter::All
-        );
+        assert_eq!(dashboard_filter_from_query(&query), DashboardFilter::All);
     }
 
     #[test]
     fn test_filter_active() {
         let mut query = HashMap::new();
         query.insert("filter".to_string(), "active".to_string());
-        assert_eq!(
-            dashboard_filter_from_query(&query),
-            DashboardFilter::Active
-        );
+        assert_eq!(dashboard_filter_from_query(&query), DashboardFilter::Active);
     }
 
     #[test]
@@ -381,10 +375,7 @@ mod tests {
     fn test_filter_unknown_falls_back_to_all() {
         let mut query = HashMap::new();
         query.insert("filter".to_string(), "unknown".to_string());
-        assert_eq!(
-            dashboard_filter_from_query(&query),
-            DashboardFilter::All
-        );
+        assert_eq!(dashboard_filter_from_query(&query), DashboardFilter::All);
     }
 
     // ── html_escape ──────────────────────────────────────────────────────
@@ -466,10 +457,7 @@ mod tests {
 
     #[test]
     fn test_percent_encode_all_special() {
-        assert_eq!(
-            percent_encode_path("a#?%+b"),
-            "a%23%3F%25%2Bb"
-        );
+        assert_eq!(percent_encode_path("a#?%+b"), "a%23%3F%25%2Bb");
     }
 
     #[test]
@@ -643,18 +631,42 @@ mod tests {
         let store = DashboardStore::default();
         let created = feature_with(1, FeatureState::Created, None);
         let shipped = feature_with(2, FeatureState::Shipped, None);
-        assert!(feature_matches_filter(&store, &created, DashboardFilter::All));
-        assert!(feature_matches_filter(&store, &created, DashboardFilter::Active));
-        assert!(!feature_matches_filter(&store, &shipped, DashboardFilter::Active));
-        assert!(feature_matches_filter(&store, &shipped, DashboardFilter::Shipped));
-        assert!(!feature_matches_filter(&store, &created, DashboardFilter::Shipped));
+        assert!(feature_matches_filter(
+            &store,
+            &created,
+            DashboardFilter::All
+        ));
+        assert!(feature_matches_filter(
+            &store,
+            &created,
+            DashboardFilter::Active
+        ));
+        assert!(!feature_matches_filter(
+            &store,
+            &shipped,
+            DashboardFilter::Active
+        ));
+        assert!(feature_matches_filter(
+            &store,
+            &shipped,
+            DashboardFilter::Shipped
+        ));
+        assert!(!feature_matches_filter(
+            &store,
+            &created,
+            DashboardFilter::Shipped
+        ));
     }
 
     #[test]
     fn feature_matches_filter_blocked_requires_blocked_wp() {
         let mut store = DashboardStore::default();
         let f = feature_with(1, FeatureState::Implementing, None);
-        assert!(!feature_matches_filter(&store, &f, DashboardFilter::Blocked));
+        assert!(!feature_matches_filter(
+            &store,
+            &f,
+            DashboardFilter::Blocked
+        ));
         let mut wp = WorkPackage::new(1, "WP", 1, "done");
         wp.state = WpState::Blocked;
         store.work_packages.insert(1, vec![wp]);
@@ -729,7 +741,10 @@ mod tests {
     #[test]
     fn parse_bool_env_default_used_when_unset() {
         assert!(parse_bool_env("AGILEPLUS_TEST_DEFINITELY_UNSET_VAR", true));
-        assert!(!parse_bool_env("AGILEPLUS_TEST_DEFINITELY_UNSET_VAR", false));
+        assert!(!parse_bool_env(
+            "AGILEPLUS_TEST_DEFINITELY_UNSET_VAR",
+            false
+        ));
     }
 
     #[test]

@@ -6,8 +6,8 @@
 use uuid::Uuid;
 
 use traceability_core::{
-    Artifact, ArtifactKind, ArtifactRef, LinkKind, Neo4jSchema, TraceLink, TraceLinkError,
-    TraceLinkType, CORE_TRACE_LINK_TYPES, NEO4J_NODE_LABELS, NEO4J_RELATIONSHIP_TYPES,
+    Artifact, ArtifactKind, ArtifactRef, CORE_TRACE_LINK_TYPES, LinkKind, NEO4J_NODE_LABELS,
+    NEO4J_RELATIONSHIP_TYPES, Neo4jSchema, TraceLink, TraceLinkError, TraceLinkType,
     ids::{NfrId, RequirementId},
 };
 
@@ -18,13 +18,15 @@ use traceability_core::{
 #[test]
 fn artifact_full_construction_and_metadata() {
     let project = Uuid::new_v4();
-    let mut a = Artifact::new(project, ArtifactKind::Requirement, "FR-1 must validate input");
+    let mut a = Artifact::new(
+        project,
+        ArtifactKind::Requirement,
+        "FR-1 must validate input",
+    );
     a.description = Some("Detailed validation requirement".into());
     a.external_id = Some("FR-1".into());
-    a.metadata.insert(
-        "priority".into(),
-        serde_json::Value::String("P0".into()),
-    );
+    a.metadata
+        .insert("priority".into(), serde_json::Value::String("P0".into()));
     a.metadata.insert(
         "owner".into(),
         serde_json::Value::String("team-platform".into()),
@@ -36,7 +38,10 @@ fn artifact_full_construction_and_metadata() {
     assert_eq!(back.project_id, project);
     assert_eq!(back.kind, ArtifactKind::Requirement);
     assert_eq!(back.title, "FR-1 must validate input");
-    assert_eq!(back.description, Some("Detailed validation requirement".into()));
+    assert_eq!(
+        back.description,
+        Some("Detailed validation requirement".into())
+    );
     assert_eq!(back.external_id, Some("FR-1".into()));
     assert_eq!(back.metadata.len(), 2);
     assert_eq!(
@@ -64,12 +69,7 @@ fn artifact_ref_all_variants_kind_str() {
             },
             "nfr",
         ),
-        (
-            ArtifactRef::Test {
-                id: "T-1".into(),
-            },
-            "test",
-        ),
+        (ArtifactRef::Test { id: "T-1".into() }, "test"),
         (
             ArtifactRef::CodeEntity {
                 id: "lib::main".into(),
@@ -77,18 +77,8 @@ fn artifact_ref_all_variants_kind_str() {
             },
             "code",
         ),
-        (
-            ArtifactRef::Journey {
-                id: "J-1".into(),
-            },
-            "journey",
-        ),
-        (
-            ArtifactRef::AgentRun {
-                id: "AR-1".into(),
-            },
-            "agent",
-        ),
+        (ArtifactRef::Journey { id: "J-1".into() }, "journey"),
+        (ArtifactRef::AgentRun { id: "AR-1".into() }, "agent"),
         (
             ArtifactRef::Evidence {
                 id: "ev-1".into(),
@@ -118,19 +108,13 @@ fn artifact_ref_serde_roundtrip_all_variants() {
         ArtifactRef::NonFunctionalRequirement {
             id: NfrId::from_string("NFR-SEC-1"),
         },
-        ArtifactRef::Test {
-            id: "T-99".into(),
-        },
+        ArtifactRef::Test { id: "T-99".into() },
         ArtifactRef::CodeEntity {
             id: "mod::fn".into(),
             lang: "python".into(),
         },
-        ArtifactRef::Journey {
-            id: "J-10".into(),
-        },
-        ArtifactRef::AgentRun {
-            id: "AR-5".into(),
-        },
+        ArtifactRef::Journey { id: "J-10".into() },
+        ArtifactRef::AgentRun { id: "AR-5".into() },
         ArtifactRef::Evidence {
             id: "ev-2".into(),
             sha256: "b".repeat(64),
@@ -199,13 +183,7 @@ fn tracelink_confidence_validation() {
 #[test]
 fn tracelink_is_core_for_each_type() {
     for &ty in CORE_TRACE_LINK_TYPES {
-        let link = TraceLink::new(
-            Uuid::new_v4(),
-            Uuid::new_v4(),
-            Uuid::new_v4(),
-            ty,
-        )
-        .unwrap();
+        let link = TraceLink::new(Uuid::new_v4(), Uuid::new_v4(), Uuid::new_v4(), ty).unwrap();
         assert!(link.is_core());
     }
 
@@ -214,13 +192,7 @@ fn tracelink_is_core_for_each_type() {
         TraceLinkType::ConflictsWith,
         TraceLinkType::Duplicates,
     ] {
-        let link = TraceLink::new(
-            Uuid::new_v4(),
-            Uuid::new_v4(),
-            Uuid::new_v4(),
-            ty,
-        )
-        .unwrap();
+        let link = TraceLink::new(Uuid::new_v4(), Uuid::new_v4(), Uuid::new_v4(), ty).unwrap();
         assert!(!link.is_core());
     }
 }
@@ -242,10 +214,8 @@ fn tracelink_serde_roundtrip_with_typed_refs() {
     };
     link.confidence = 0.85;
     link.rationale = Some("verified by integration test".into());
-    link.metadata.insert(
-        "env".into(),
-        serde_json::Value::String("staging".into()),
-    );
+    link.metadata
+        .insert("env".into(), serde_json::Value::String("staging".into()));
 
     let json = serde_json::to_string(&link).unwrap();
     let back: TraceLink = serde_json::from_str(&json).unwrap();
@@ -421,7 +391,10 @@ fn requirement_new_validates_kind() {
 fn requirement_rejects_wrong_kind() {
     let artifact = Artifact::new(Uuid::new_v4(), ArtifactKind::Code, "not a requirement");
     let result = traceability_core::Requirement::new(artifact);
-    assert!(matches!(result, Err(TraceLinkError::WrongArtifactKind { .. })));
+    assert!(matches!(
+        result,
+        Err(TraceLinkError::WrongArtifactKind { .. })
+    ));
 }
 
 #[test]
@@ -447,14 +420,26 @@ fn requirement_status_terminal_and_in_progress() {
 
 #[test]
 fn verification_method_db_strings() {
-    assert_eq!(traceability_core::VerificationMethod::Test.as_db_str(), "test");
-    assert_eq!(traceability_core::VerificationMethod::Analysis.as_db_str(), "analysis");
-    assert_eq!(traceability_core::VerificationMethod::Inspection.as_db_str(), "inspection");
+    assert_eq!(
+        traceability_core::VerificationMethod::Test.as_db_str(),
+        "test"
+    );
+    assert_eq!(
+        traceability_core::VerificationMethod::Analysis.as_db_str(),
+        "analysis"
+    );
+    assert_eq!(
+        traceability_core::VerificationMethod::Inspection.as_db_str(),
+        "inspection"
+    );
     assert_eq!(
         traceability_core::VerificationMethod::Demonstration.as_db_str(),
         "demonstration"
     );
-    assert_eq!(traceability_core::VerificationMethod::Review.as_db_str(), "review");
+    assert_eq!(
+        traceability_core::VerificationMethod::Review.as_db_str(),
+        "review"
+    );
 }
 
 #[test]

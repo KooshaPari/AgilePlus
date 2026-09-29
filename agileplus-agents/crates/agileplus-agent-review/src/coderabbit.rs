@@ -79,11 +79,7 @@ struct GhReview {
 // ─── HTTP helpers ─────────────────────────────────────────────────────────────
 
 /// Build a GitHub API request with auth and accept headers.
-fn gh_request(
-    client: &reqwest::Client,
-    token: &str,
-    url: &str,
-) -> reqwest::RequestBuilder {
+fn gh_request(client: &reqwest::Client, token: &str, url: &str) -> reqwest::RequestBuilder {
     client
         .get(url)
         .header("Authorization", format!("Bearer {token}"))
@@ -203,8 +199,7 @@ pub async fn fetch_review_comments(
 ) -> Result<Vec<CoderabbitComment>, DomainError> {
     // Inline review comments (code diffs).
     let inline_url = format!("{api_base}/repos/{owner}/{repo}/pulls/{pr_number}/comments");
-    let inline_raw: Vec<GhPullComment> =
-        fetch_all_pages(client, token, &inline_url).await?;
+    let inline_raw: Vec<GhPullComment> = fetch_all_pages(client, token, &inline_url).await?;
 
     // Top-level issue comments.
     let top_url = format!("{api_base}/repos/{owner}/{repo}/issues/{pr_number}/comments");
@@ -362,13 +357,14 @@ fn classify_comment(body: &str) -> (bool, CommentSeverity) {
         || lower.contains("issue:")
         || lower.contains("actionable comment");
 
-    let severity = if lower.contains("error") || lower.contains("critical") || lower.contains("must") {
-        CommentSeverity::Error
-    } else if lower.contains("warning") || lower.contains("should") || lower.contains("issue") {
-        CommentSeverity::Warning
-    } else {
-        CommentSeverity::Info
-    };
+    let severity =
+        if lower.contains("error") || lower.contains("critical") || lower.contains("must") {
+            CommentSeverity::Error
+        } else if lower.contains("warning") || lower.contains("should") || lower.contains("issue") {
+            CommentSeverity::Warning
+        } else {
+            CommentSeverity::Info
+        };
 
     (is_actionable, severity)
 }

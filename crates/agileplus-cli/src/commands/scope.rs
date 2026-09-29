@@ -216,7 +216,11 @@ mod tests {
     fn detect_file_scope_sorted_output() {
         let desc = "Edit z/file.rs and a/file.rs and m/file.rs";
         let scope = detect_file_scope(desc);
-        let sorted = { let mut s = scope.clone(); s.sort(); s };
+        let sorted = {
+            let mut s = scope.clone();
+            s.sort();
+            s
+        };
         assert_eq!(scope, sorted, "output should be sorted");
     }
 

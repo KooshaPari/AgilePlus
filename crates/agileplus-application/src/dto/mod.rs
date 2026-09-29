@@ -354,10 +354,7 @@ mod tests {
     #[test]
     fn dedup_request_roundtrips() {
         let req = DedupRequest {
-            items: vec![
-                ("a".into(), "b".into()),
-                ("c".into(), "d".into()),
-            ],
+            items: vec![("a".into(), "b".into()), ("c".into(), "d".into())],
             threshold: 0.75,
         };
         let json = serde_json::to_string(&req).unwrap();
@@ -543,10 +540,7 @@ mod tests {
         let cmd = FeatureCreatedOutput {
             id: 1,
             feature: agileplus_domain::domain::feature::Feature::new(
-                "slug",
-                "Friendly",
-                [0u8; 32],
-                None,
+                "slug", "Friendly", [0u8; 32], None,
             ),
         };
         let cloned = cmd.clone();
@@ -584,12 +578,10 @@ mod tests {
 
     #[test]
     fn story_created_output_clone_and_debug() {
-        let mut story = agileplus_domain::domain::story::Story::new(1, 2, "Login", Some(3)).unwrap();
+        let mut story =
+            agileplus_domain::domain::story::Story::new(1, 2, "Login", Some(3)).unwrap();
         story.id = 10;
-        let out = StoryCreatedOutput {
-            id: 10,
-            story,
-        };
+        let out = StoryCreatedOutput { id: 10, story };
         let cloned = out.clone();
         assert_eq!(cloned.id, 10);
         let dbg = format!("{:?}", cloned);

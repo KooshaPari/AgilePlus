@@ -114,12 +114,16 @@ async fn distinct_requirement_ids_produce_distinct_rows() {
     assert_eq!(report.persisted_ids, vec![1, 2]);
     let stored = repo.list_by_epic(3).await.unwrap();
     assert_eq!(stored.len(), 2);
-    assert!(stored
-        .iter()
-        .any(|s| s.requirement_id.as_deref() == Some("gh:issue:1")));
-    assert!(stored
-        .iter()
-        .any(|s| s.requirement_id.as_deref() == Some("gh:pr:1")));
+    assert!(
+        stored
+            .iter()
+            .any(|s| s.requirement_id.as_deref() == Some("gh:issue:1"))
+    );
+    assert!(
+        stored
+            .iter()
+            .any(|s| s.requirement_id.as_deref() == Some("gh:pr:1"))
+    );
 }
 
 /// The upsert contract is "update the existing row for this requirement id":

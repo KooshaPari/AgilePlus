@@ -193,8 +193,7 @@ mod coverage_tests {
         for byte in [0x00u8, 0x0f, 0x10, 0xff] {
             let mut k = ApiKey::new([byte; 32], "n");
             k.touch();
-            let back: ApiKey =
-                serde_json::from_str(&serde_json::to_string(&k).unwrap()).unwrap();
+            let back: ApiKey = serde_json::from_str(&serde_json::to_string(&k).unwrap()).unwrap();
             assert_eq!(back.key_hash, [byte; 32]);
             assert!(back.last_used_at.is_some());
         }

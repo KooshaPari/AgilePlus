@@ -206,12 +206,18 @@ mod coverage_tests {
                     assert!(r.is_ok(), "{from:?}->{to:?} should be allowed");
                 } else {
                     match r {
-                        Err(DomainError::InvalidTransition { from: f, to: t, reason }) => {
+                        Err(DomainError::InvalidTransition {
+                            from: f,
+                            to: t,
+                            reason,
+                        }) => {
                             assert_eq!(f, from.to_string());
                             assert_eq!(t, to.to_string());
                             assert!(!reason.is_empty());
                         }
-                        other => panic!("{from:?}->{to:?} expected InvalidTransition, got {other:?}"),
+                        other => {
+                            panic!("{from:?}->{to:?} expected InvalidTransition, got {other:?}")
+                        }
                     }
                 }
             }
@@ -223,7 +229,10 @@ mod coverage_tests {
         for s in ALL {
             assert_eq!(s.to_string().parse::<CycleState>().unwrap(), s);
         }
-        assert_eq!(serde_json::to_string(&CycleState::Draft).unwrap(), "\"Draft\"");
+        assert_eq!(
+            serde_json::to_string(&CycleState::Draft).unwrap(),
+            "\"Draft\""
+        );
         assert_eq!(
             serde_json::to_string(&CycleState::Archived).unwrap(),
             "\"Archived\""
@@ -251,7 +260,10 @@ mod coverage_tests {
             if to == CycleState::Archived {
                 continue;
             }
-            assert!(CycleState::Archived.transition(to).is_err(), "Archived->{to:?}");
+            assert!(
+                CycleState::Archived.transition(to).is_err(),
+                "Archived->{to:?}"
+            );
         }
     }
 

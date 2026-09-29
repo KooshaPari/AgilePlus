@@ -20,7 +20,7 @@ use agileplus_domain::{
         story::{Story, StoryStatus},
         sync_mapping::{SyncDirection, SyncMapping},
         user::{User, UserRole, UserStatus},
-        work_package::{DependencyType, WpDependency, WpState, WorkPackage},
+        work_package::{DependencyType, WorkPackage, WpDependency, WpState},
     },
     ports::{StoragePort, TriageOutcome, TriagePort},
 };
@@ -183,7 +183,9 @@ async fn port_feature_crud_roundtrip() {
     let by_slug = a.get_feature_by_slug("port-feat").await.unwrap().unwrap();
     assert_eq!(by_slug.id, id);
 
-    a.update_feature_state(id, FeatureState::Planned).await.unwrap();
+    a.update_feature_state(id, FeatureState::Planned)
+        .await
+        .unwrap();
     assert_eq!(
         a.get_feature_by_id(id).await.unwrap().unwrap().state,
         FeatureState::Planned
@@ -215,11 +217,17 @@ async fn port_list_features_by_state_and_all() {
 
     assert_eq!(a.list_all_features().await.unwrap().len(), 2);
     assert_eq!(
-        a.list_features_by_state(FeatureState::Created).await.unwrap().len(),
+        a.list_features_by_state(FeatureState::Created)
+            .await
+            .unwrap()
+            .len(),
         1
     );
     assert_eq!(
-        a.list_features_by_state(FeatureState::Planned).await.unwrap().len(),
+        a.list_features_by_state(FeatureState::Planned)
+            .await
+            .unwrap()
+            .len(),
         1
     );
 }
@@ -252,7 +260,10 @@ async fn port_work_package_crud_roundtrip() {
     assert_eq!(got.file_scope, vec!["src/lib.rs"]);
 
     a.update_wp_state(id, WpState::Doing).await.unwrap();
-    assert_eq!(a.get_work_package(id).await.unwrap().unwrap().state, WpState::Doing);
+    assert_eq!(
+        a.get_work_package(id).await.unwrap().unwrap().state,
+        WpState::Doing
+    );
 }
 
 #[tokio::test]
@@ -324,7 +335,10 @@ async fn port_wp_dependency_idempotent() {
 #[tokio::test]
 async fn port_create_work_package_for_story_and_list() {
     let a = adapter();
-    let pid = a.create_project(&Project::new("P", "p").unwrap()).await.unwrap();
+    let pid = a
+        .create_project(&Project::new("P", "p").unwrap())
+        .await
+        .unwrap();
     let eid = a.create_epic(&Epic::new(pid, "E").unwrap()).await.unwrap();
     let sid = a
         .create_story(&Story::new(eid, pid, "S", Some(1)).unwrap())
@@ -346,7 +360,10 @@ async fn port_create_work_package_for_story_and_list() {
 async fn port_add_story_to_cycle_not_implemented() {
     let a = adapter();
     let err = a.add_story_to_cycle(1, 1).await.unwrap_err();
-    assert!(matches!(err, agileplus_domain::error::DomainError::NotImplemented));
+    assert!(matches!(
+        err,
+        agileplus_domain::error::DomainError::NotImplemented
+    ));
 }
 
 #[tokio::test]
@@ -356,7 +373,10 @@ async fn port_upsert_story_by_requirement_id_not_implemented() {
         .upsert_story_by_requirement_id(&Story::new(1, 1, "S", None).unwrap())
         .await
         .unwrap_err();
-    assert!(matches!(err, agileplus_domain::error::DomainError::NotImplemented));
+    assert!(matches!(
+        err,
+        agileplus_domain::error::DomainError::NotImplemented
+    ));
 }
 
 // ---------------------------------------------------------------------------
@@ -416,8 +436,18 @@ async fn port_governance_contract_roundtrip() {
     a.create_governance_contract(&contract(fid)).await.unwrap();
     let got = a.get_governance_contract(fid, 1).await.unwrap().unwrap();
     assert_eq!(got.rules.len(), 1);
-    assert!(a.get_latest_governance_contract(fid).await.unwrap().is_some());
-    assert!(a.get_latest_governance_contract(9999).await.unwrap().is_none());
+    assert!(
+        a.get_latest_governance_contract(fid)
+            .await
+            .unwrap()
+            .is_some()
+    );
+    assert!(
+        a.get_latest_governance_contract(9999)
+            .await
+            .unwrap()
+            .is_none()
+    );
 }
 
 // ---------------------------------------------------------------------------
@@ -429,11 +459,10 @@ async fn port_module_crud_roundtrip() {
     let a = adapter();
     let id = a.create_module(&Module::new("Auth", None)).await.unwrap();
     assert_eq!(a.get_module(id).await.unwrap().unwrap().slug, "auth");
-    assert_eq!(
-        a.get_module_by_slug("auth").await.unwrap().unwrap().id,
-        id
-    );
-    a.update_module(id, "Authentication", Some("desc")).await.unwrap();
+    assert_eq!(a.get_module_by_slug("auth").await.unwrap().unwrap().id, id);
+    a.update_module(id, "Authentication", Some("desc"))
+        .await
+        .unwrap();
     let got = a.get_module(id).await.unwrap().unwrap();
     assert_eq!(got.slug, "authentication");
     assert_eq!(got.description.as_deref(), Some("desc"));
@@ -446,7 +475,10 @@ async fn port_module_crud_roundtrip() {
 async fn port_module_hierarchy_and_view() {
     let a = adapter();
     let root = a.create_module(&Module::new("Root", None)).await.unwrap();
-    let child = a.create_module(&Module::new("Child", Some(root))).await.unwrap();
+    let child = a
+        .create_module(&Module::new("Child", Some(root)))
+        .await
+        .unwrap();
     assert_eq!(a.list_child_modules(root).await.unwrap().len(), 1);
     assert_eq!(a.list_child_modules(root).await.unwrap()[0].id, child);
 
@@ -482,16 +514,27 @@ async fn port_cycle_crud_and_joins() {
         .create_cycle(&Cycle::new("Sprint", date(2026, 1, 1), date(2026, 2, 1), None).unwrap())
         .await
         .unwrap();
-    assert_eq!(a.get_cycle(cid).await.unwrap().unwrap().state, CycleState::Draft);
+    assert_eq!(
+        a.get_cycle(cid).await.unwrap().unwrap().state,
+        CycleState::Draft
+    );
 
     a.update_cycle_state(cid, CycleState::Active).await.unwrap();
-    assert_eq!(a.list_cycles_by_state(CycleState::Active).await.unwrap().len(), 1);
+    assert_eq!(
+        a.list_cycles_by_state(CycleState::Active)
+            .await
+            .unwrap()
+            .len(),
+        1
+    );
     assert_eq!(a.list_all_cycles().await.unwrap().len(), 1);
     assert!(a.list_cycles_by_module(1).await.unwrap().is_empty());
     assert!(a.get_cycle(1234).await.unwrap().is_none());
 
     let fid = a.create_feature(&feature("cycle-feat")).await.unwrap();
-    a.add_feature_to_cycle(&CycleFeature::new(cid, fid)).await.unwrap();
+    a.add_feature_to_cycle(&CycleFeature::new(cid, fid))
+        .await
+        .unwrap();
     let view = a.get_cycle_with_features(cid).await.unwrap().unwrap();
     assert_eq!(view.features.len(), 1);
     assert!(a.get_cycle_with_features(999).await.unwrap().is_none());
@@ -537,10 +580,17 @@ async fn port_project_crud_roundtrip() {
     let p = Project::new("Port Project", "port-project").unwrap();
     let id = a.create_project(&p).await.unwrap();
     assert_eq!(
-        a.get_project_by_slug("port-project").await.unwrap().unwrap().id,
+        a.get_project_by_slug("port-project")
+            .await
+            .unwrap()
+            .unwrap()
+            .id,
         id
     );
-    assert_eq!(a.get_project_by_id(id).await.unwrap().unwrap().name, "Port Project");
+    assert_eq!(
+        a.get_project_by_id(id).await.unwrap().unwrap().name,
+        "Port Project"
+    );
     assert_eq!(a.list_all_projects().await.unwrap().len(), 1);
     assert!(a.get_project_by_id(999).await.unwrap().is_none());
 
@@ -557,7 +607,10 @@ async fn port_user_crud_roundtrip() {
     let a = adapter();
     let u = User::new("Port User", "port@example.com", UserRole::Admin).unwrap();
     let id = a.create_user(&u).await.unwrap();
-    assert_eq!(a.get_user(id).await.unwrap().unwrap().display_name, "Port User");
+    assert_eq!(
+        a.get_user(id).await.unwrap().unwrap().display_name,
+        "Port User"
+    );
     assert_eq!(
         a.get_user_by_email("port@example.com")
             .await
@@ -567,7 +620,9 @@ async fn port_user_crud_roundtrip() {
         id
     );
 
-    a.update_user_status(id, UserStatus::Suspended).await.unwrap();
+    a.update_user_status(id, UserStatus::Suspended)
+        .await
+        .unwrap();
     a.update_user_role(id, UserRole::Viewer).await.unwrap();
     let got = a.get_user(id).await.unwrap().unwrap();
     assert_eq!(got.status, UserStatus::Suspended);
@@ -585,8 +640,14 @@ async fn port_user_crud_roundtrip() {
 #[tokio::test]
 async fn port_epic_and_story_roundtrip() {
     let a = adapter();
-    let pid = a.create_project(&Project::new("P", "p-epic").unwrap()).await.unwrap();
-    let eid = a.create_epic(&Epic::new(pid, "Epic").unwrap()).await.unwrap();
+    let pid = a
+        .create_project(&Project::new("P", "p-epic").unwrap())
+        .await
+        .unwrap();
+    let eid = a
+        .create_epic(&Epic::new(pid, "Epic").unwrap())
+        .await
+        .unwrap();
     assert_eq!(a.get_epic(eid).await.unwrap().unwrap().title, "Epic");
     a.update_epic_status(eid, EpicStatus::Active).await.unwrap();
     assert_eq!(a.list_epics_by_project(pid).await.unwrap().len(), 1);
@@ -643,7 +704,13 @@ async fn event_store_range() {
 
     let from = chrono::Utc::now() - chrono::Duration::hours(1);
     let to = chrono::Utc::now() + chrono::Duration::hours(1);
-    assert_eq!(a.get_events_by_range("Feature", 1, from, to).await.unwrap().len(), 1);
+    assert_eq!(
+        a.get_events_by_range("Feature", 1, from, to)
+            .await
+            .unwrap()
+            .len(),
+        1
+    );
 }
 
 #[tokio::test]
@@ -681,7 +748,10 @@ async fn ticket_status(t: &SqliteTriageAdapter, id: i64) -> BacklogStatus {
 async fn triage_no_ticket_available() {
     let t = SqliteTriageAdapter::in_memory().unwrap();
     let err = t.next_ticket().await.unwrap_err();
-    assert!(matches!(err, agileplus_domain::ports::TriageError::NoTicketAvailable));
+    assert!(matches!(
+        err,
+        agileplus_domain::ports::TriageError::NoTicketAvailable
+    ));
 }
 
 #[tokio::test]
@@ -718,7 +788,10 @@ async fn triage_record_outcome_dismissed() {
 #[tokio::test]
 async fn triage_record_outcome_invalid_id() {
     let t = SqliteTriageAdapter::in_memory().unwrap();
-    let err = t.record_outcome("not-a-number", TriageOutcome::Accepted).await.unwrap_err();
+    let err = t
+        .record_outcome("not-a-number", TriageOutcome::Accepted)
+        .await
+        .unwrap_err();
     assert!(matches!(
         err,
         agileplus_domain::ports::TriageError::InvalidTicketId(_)
@@ -728,7 +801,10 @@ async fn triage_record_outcome_invalid_id() {
 #[tokio::test]
 async fn triage_record_outcome_missing_ticket() {
     let t = SqliteTriageAdapter::in_memory().unwrap();
-    let err = t.record_outcome("4242", TriageOutcome::Accepted).await.unwrap_err();
+    let err = t
+        .record_outcome("4242", TriageOutcome::Accepted)
+        .await
+        .unwrap_err();
     assert!(matches!(
         err,
         agileplus_domain::ports::TriageError::TicketNotFound(_)

@@ -450,7 +450,10 @@ mod coverage_tests {
         let mappings: Vec<(DomainError, ErrorCode)> = vec![
             (DomainError::CycleNotFound("c".into()), ErrorCode::NotFound),
             (DomainError::ModuleNotFound("m".into()), ErrorCode::NotFound),
-            (DomainError::FeatureNotFound("f".into()), ErrorCode::NotFound),
+            (
+                DomainError::FeatureNotFound("f".into()),
+                ErrorCode::NotFound,
+            ),
             (
                 DomainError::WorkPackageNotFound("w".into()),
                 ErrorCode::NotFound,
@@ -542,7 +545,10 @@ mod coverage_tests {
 
     #[test]
     fn timeout_display_includes_seconds() {
-        assert_eq!(DomainError::Timeout(0).to_string(), "Timed out after 0 seconds");
+        assert_eq!(
+            DomainError::Timeout(0).to_string(),
+            "Timed out after 0 seconds"
+        );
         assert_eq!(
             DomainError::Timeout(u64::MAX).to_string(),
             format!("Timed out after {} seconds", u64::MAX)

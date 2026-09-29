@@ -459,12 +459,16 @@ mod loop_tests {
 
     #[tokio::test]
     async fn stop_clears_running_flag_and_is_idempotent() {
-        let daemon = PlaneSyncDaemon::spawn(Arc::new(MockStoragePort::new()), cfg(60_000, 25, true));
+        let daemon =
+            PlaneSyncDaemon::spawn(Arc::new(MockStoragePort::new()), cfg(60_000, 25, true));
         assert!(daemon.state().await.running);
 
         daemon.stop().await;
         let state = wait_for(&daemon, |s| !s.running).await;
-        assert!(!state.running, "stop() must mark the loop as no longer running");
+        assert!(
+            !state.running,
+            "stop() must mark the loop as no longer running"
+        );
 
         // Documented as safe to call repeatedly; a second call must not hang.
         daemon.stop().await;
@@ -497,7 +501,10 @@ mod loop_tests {
         tokio::time::sleep(Duration::from_millis(50)).await;
 
         let after = daemon.state().await;
-        assert!(!after.running, "resume() must not report a dead loop as running");
+        assert!(
+            !after.running,
+            "resume() must not report a dead loop as running"
+        );
         assert_eq!(
             after.last_tick_at, last_tick,
             "an exited loop must not produce further ticks"
@@ -506,7 +513,8 @@ mod loop_tests {
 
     #[tokio::test]
     async fn sync_now_and_start_keep_the_daemon_running() {
-        let daemon = PlaneSyncDaemon::spawn(Arc::new(MockStoragePort::new()), cfg(60_000, 25, true));
+        let daemon =
+            PlaneSyncDaemon::spawn(Arc::new(MockStoragePort::new()), cfg(60_000, 25, true));
 
         daemon.sync_now().await;
         daemon.start().await;
@@ -529,7 +537,10 @@ mod loop_tests {
         let daemon = PlaneSyncDaemon::spawn(Arc::new(store), cfg(60_000, 25, true));
         let state = wait_for(&daemon, |s| s.last_tick_at.is_some()).await;
 
-        assert!(state.last_tick_at.is_some(), "dry-run tick still stamps the tick time");
+        assert!(
+            state.last_tick_at.is_some(),
+            "dry-run tick still stamps the tick time"
+        );
         assert_eq!(
             (state.modules_synced, state.cycles_synced, state.errors),
             (0, 0, 0),
@@ -597,7 +608,10 @@ mod loop_tests {
         // is only final once the cycle pass has finished.
         let state = wait_for(&daemon, |s| s.last_tick_at.is_some()).await;
 
-        assert_eq!(state.errors, 2, "both the module and the cycle push must fail");
+        assert_eq!(
+            state.errors, 2,
+            "both the module and the cycle push must fail"
+        );
         assert_eq!((state.modules_synced, state.cycles_synced), (0, 0));
         assert!(state.running, "a failing push must not kill the daemon");
 
@@ -641,7 +655,10 @@ mod loop_tests {
 
         let state = wait_for(&daemon, |s| s.errors >= 2).await;
         assert!(state.errors >= 2, "the loop must count failing ticks");
-        assert!(state.running, "the loop must keep running after a failed tick");
+        assert!(
+            state.running,
+            "the loop must keep running after a failed tick"
+        );
         assert!(
             state.last_tick_at.is_none(),
             "failed ticks never reach the stamping code"

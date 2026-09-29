@@ -150,12 +150,8 @@ fn combined_filters_narrow_results() {
 
 #[test]
 fn filter_with_no_matches_returns_empty() {
-    let events = vec![
-        make_event(1, "Feature", 1, "created", "alice"),
-    ];
-    let result = EventQuery::new()
-        .entity_type("WorkPackage")
-        .filter(&events);
+    let events = vec![make_event(1, "Feature", 1, "created", "alice")];
+    let result = EventQuery::new().entity_type("WorkPackage").filter(&events);
     assert!(result.is_empty());
 }
 
@@ -168,9 +164,7 @@ fn filter_on_empty_input_returns_empty() {
 
 #[test]
 fn limit_of_zero_returns_empty() {
-    let events = vec![
-        make_event(1, "Feature", 1, "created", "a"),
-    ];
+    let events = vec![make_event(1, "Feature", 1, "created", "a")];
     let result = EventQuery::new().limit(0).filter(&events);
     assert!(result.is_empty());
 }

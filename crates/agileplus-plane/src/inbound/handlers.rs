@@ -190,8 +190,13 @@ mod tests {
     #[test]
     fn create_auto_imports_new_issue_when_enabled() {
         let mut store = MockStore::default();
-        let outcome = handle_create(&mapper(), true, issue("1", "New", Some("backlog"), &[]), &mut store)
-            .unwrap();
+        let outcome = handle_create(
+            &mapper(),
+            true,
+            issue("1", "New", Some("backlog"), &[]),
+            &mut store,
+        )
+        .unwrap();
         assert_eq!(
             outcome,
             super::InboundOutcome::AutoImported {
@@ -205,9 +210,14 @@ mod tests {
     #[test]
     fn create_skips_when_auto_import_disabled() {
         let mut store = MockStore::default();
-        let outcome = handle_create(&mapper(), false, issue("2", "New", None, &[]), &mut store)
-            .unwrap();
-        assert_eq!(outcome, super::InboundOutcome::NotTracked { issue_id: "2".into() });
+        let outcome =
+            handle_create(&mapper(), false, issue("2", "New", None, &[]), &mut store).unwrap();
+        assert_eq!(
+            outcome,
+            super::InboundOutcome::NotTracked {
+                issue_id: "2".into()
+            }
+        );
         assert!(store.imported.is_empty());
     }
 
@@ -223,8 +233,13 @@ mod tests {
     #[test]
     fn create_on_tracked_issue_delegates_to_update() {
         let mut store = MockStore::with_tracked("4", "stale-hash");
-        let outcome = handle_create(&mapper(), true, issue("4", "Changed", Some("started"), &[]), &mut store)
-            .unwrap();
+        let outcome = handle_create(
+            &mapper(),
+            true,
+            issue("4", "Changed", Some("started"), &[]),
+            &mut store,
+        )
+        .unwrap();
         assert!(matches!(outcome, super::InboundOutcome::Updated { .. }));
     }
 
@@ -243,23 +258,41 @@ mod tests {
         );
         let mut store = MockStore::with_tracked("5", &hash);
         let outcome = handle_create(&m, true, issue_val, &mut store).unwrap();
-        assert_eq!(outcome, super::InboundOutcome::Unchanged { issue_id: "5".into() });
+        assert_eq!(
+            outcome,
+            super::InboundOutcome::Unchanged {
+                issue_id: "5".into()
+            }
+        );
     }
 
     #[test]
     fn update_untracked_issue_is_not_tracked() {
         let mut store = MockStore::default();
         let outcome = handle_update(&mapper(), issue("6", "X", None, &[]), &mut store).unwrap();
-        assert_eq!(outcome, super::InboundOutcome::NotTracked { issue_id: "6".into() });
+        assert_eq!(
+            outcome,
+            super::InboundOutcome::NotTracked {
+                issue_id: "6".into()
+            }
+        );
     }
 
     #[test]
     fn update_changed_content_returns_updated_with_state() {
         let mut store = MockStore::with_tracked("7", "old");
-        let outcome = handle_update(&mapper(), issue("7", "New", Some("started"), &[]), &mut store)
-            .unwrap();
+        let outcome = handle_update(
+            &mapper(),
+            issue("7", "New", Some("started"), &[]),
+            &mut store,
+        )
+        .unwrap();
         match outcome {
-            super::InboundOutcome::Updated { issue_id, new_state, new_hash } => {
+            super::InboundOutcome::Updated {
+                issue_id,
+                new_state,
+                new_hash,
+            } => {
                 assert_eq!(issue_id, "7");
                 assert_eq!(new_state, FeatureState::Implementing);
                 assert_ne!(new_hash, "old");
@@ -272,20 +305,27 @@ mod tests {
     #[test]
     fn update_unchanged_content_is_unchanged() {
         let m = mapper();
-        let hash = compute_content_hash("Stable", "backlog", &FeatureState::Created.to_string(), &[]);
+        let hash =
+            compute_content_hash("Stable", "backlog", &FeatureState::Created.to_string(), &[]);
         let mut store = MockStore::with_tracked("8", &hash);
-        let outcome = handle_update(&m, issue("8", "Stable", Some("backlog"), &[]), &mut store)
-            .unwrap();
-        assert_eq!(outcome, super::InboundOutcome::Unchanged { issue_id: "8".into() });
+        let outcome =
+            handle_update(&m, issue("8", "Stable", Some("backlog"), &[]), &mut store).unwrap();
+        assert_eq!(
+            outcome,
+            super::InboundOutcome::Unchanged {
+                issue_id: "8".into()
+            }
+        );
     }
 
     #[test]
     fn update_label_change_triggers_update() {
         let m = mapper();
-        let hash = compute_content_hash("T", "started", &FeatureState::Implementing.to_string(), &[]);
+        let hash =
+            compute_content_hash("T", "started", &FeatureState::Implementing.to_string(), &[]);
         let mut store = MockStore::with_tracked("9", &hash);
-        let outcome = handle_update(&m, issue("9", "T", Some("started"), &["bug"]), &mut store)
-            .unwrap();
+        let outcome =
+            handle_update(&m, issue("9", "T", Some("started"), &["bug"]), &mut store).unwrap();
         assert!(matches!(outcome, super::InboundOutcome::Updated { .. }));
     }
 
@@ -315,7 +355,12 @@ mod tests {
     fn delete_untracked_is_not_tracked() {
         let mut store = MockStore::default();
         let outcome = handle_delete("12".into(), &mut store).unwrap();
-        assert_eq!(outcome, super::InboundOutcome::NotTracked { issue_id: "12".into() });
+        assert_eq!(
+            outcome,
+            super::InboundOutcome::NotTracked {
+                issue_id: "12".into()
+            }
+        );
         assert!(store.archived.is_empty());
     }
 
@@ -323,7 +368,12 @@ mod tests {
     fn delete_tracked_archives() {
         let mut store = MockStore::with_tracked("13", "hash");
         let outcome = handle_delete("13".into(), &mut store).unwrap();
-        assert_eq!(outcome, super::InboundOutcome::Archived { issue_id: "13".into() });
+        assert_eq!(
+            outcome,
+            super::InboundOutcome::Archived {
+                issue_id: "13".into()
+            }
+        );
         assert_eq!(store.archived, vec!["13".to_string()]);
     }
 

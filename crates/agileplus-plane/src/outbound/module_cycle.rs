@@ -1,10 +1,10 @@
+use crate::client::{PlaneClient, PlaneCreateCycleRequest, PlaneCreateModuleRequest};
 use agileplus_domain::domain::cycle::Cycle;
 use agileplus_domain::domain::module::Module;
 use agileplus_domain::domain::sync_mapping::SyncMapping;
 use agileplus_domain::ports::StoragePort;
 use anyhow::{Context, Result};
 use chrono::Utc;
-use crate::client::{PlaneClient, PlaneCreateCycleRequest, PlaneCreateModuleRequest};
 // -- Module & Cycle outbound push (WP06-T031) --
 /// Push a newly created or updated Module to Plane.so.
 /// Stores a sync_mappings row with entity_type = "module".
@@ -389,7 +389,9 @@ mod tests {
     async fn push_module_updates_existing_mapping() {
         let server = MockServer::start().await;
         Mock::given(method("PATCH"))
-            .and(path("/api/v1/workspaces/ws/projects/proj/modules/existing-mod/"))
+            .and(path(
+                "/api/v1/workspaces/ws/projects/proj/modules/existing-mod/",
+            ))
             .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
                 "id": "existing-mod",
                 "name": "Updated"
@@ -450,7 +452,9 @@ mod tests {
     async fn push_cycle_updates_existing_mapping() {
         let server = MockServer::start().await;
         Mock::given(method("PATCH"))
-            .and(path("/api/v1/workspaces/ws/projects/proj/cycles/existing-cyc/"))
+            .and(path(
+                "/api/v1/workspaces/ws/projects/proj/cycles/existing-cyc/",
+            ))
             .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
                 "id": "existing-cyc",
                 "name": "Updated Sprint"
@@ -488,7 +492,9 @@ mod tests {
     async fn push_module_delete_removes_plane_and_mapping() {
         let server = MockServer::start().await;
         Mock::given(method("DELETE"))
-            .and(path("/api/v1/workspaces/ws/projects/proj/modules/plane-mod-del/"))
+            .and(path(
+                "/api/v1/workspaces/ws/projects/proj/modules/plane-mod-del/",
+            ))
             .respond_with(ResponseTemplate::new(204))
             .mount(&server)
             .await;
@@ -539,7 +545,9 @@ mod tests {
     async fn push_cycle_delete_removes_plane_and_mapping() {
         let server = MockServer::start().await;
         Mock::given(method("DELETE"))
-            .and(path("/api/v1/workspaces/ws/projects/proj/cycles/plane-cyc-del/"))
+            .and(path(
+                "/api/v1/workspaces/ws/projects/proj/cycles/plane-cyc-del/",
+            ))
             .respond_with(ResponseTemplate::new(204))
             .mount(&server)
             .await;
@@ -588,7 +596,9 @@ mod tests {
     async fn push_module_update_error_propagates() {
         let server = MockServer::start().await;
         Mock::given(method("PATCH"))
-            .and(path("/api/v1/workspaces/ws/projects/proj/modules/existing-mod/"))
+            .and(path(
+                "/api/v1/workspaces/ws/projects/proj/modules/existing-mod/",
+            ))
             .respond_with(ResponseTemplate::new(500).set_body_string("error"))
             .mount(&server)
             .await;
@@ -600,7 +610,8 @@ mod tests {
             .await
             .unwrap_err();
         assert!(
-            err.to_string().contains("updating Plane module existing-mod"),
+            err.to_string()
+                .contains("updating Plane module existing-mod"),
             "unexpected error: {err}"
         );
     }
@@ -609,7 +620,9 @@ mod tests {
     async fn push_cycle_update_error_propagates() {
         let server = MockServer::start().await;
         Mock::given(method("PATCH"))
-            .and(path("/api/v1/workspaces/ws/projects/proj/cycles/existing-cyc/"))
+            .and(path(
+                "/api/v1/workspaces/ws/projects/proj/cycles/existing-cyc/",
+            ))
             .respond_with(ResponseTemplate::new(500).set_body_string("error"))
             .mount(&server)
             .await;
@@ -621,7 +634,8 @@ mod tests {
             .await
             .unwrap_err();
         assert!(
-            err.to_string().contains("updating Plane cycle existing-cyc"),
+            err.to_string()
+                .contains("updating Plane cycle existing-cyc"),
             "unexpected error: {err}"
         );
     }

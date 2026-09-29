@@ -1,8 +1,8 @@
 //! Integration tests for GovernanceConfig: serde, file loading, validation, defaults.
 //! Complements the inline unit tests in src/config.rs.
 
-use agileplus_governance::*;
 use agileplus_governance::config::PolicyDefaultAction;
+use agileplus_governance::*;
 use tempfile::tempdir;
 
 // ── Default values ───────────────────────────────────────────────────

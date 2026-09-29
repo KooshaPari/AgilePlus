@@ -7,21 +7,14 @@ use chrono::Utc;
 use uuid::Uuid;
 
 use traceability_core::{
-    AcceptanceContract, ArtifactRef, CoverageState, Criterion, Evidence,
-    EvidenceType, Layer, ProgressionGate,
-    VerificationMethod,
-    build_matrix, classify_cell,
+    AcceptanceContract, ArtifactRef, CoverageState, Criterion, Evidence, EvidenceType, Layer,
+    ProgressionGate, VerificationMethod, build_matrix, classify_cell,
+    contract::{GateContext, GatePredicate, GateReason},
     ids::RequirementId,
     tracelink::{TraceLink, TraceLinkType},
-    contract::{GateContext, GateReason, GatePredicate},
 };
 
-fn make_link(
-    source: Uuid,
-    target: Uuid,
-    link_type: TraceLinkType,
-    confidence: f32,
-) -> TraceLink {
+fn make_link(source: Uuid, target: Uuid, link_type: TraceLinkType, confidence: f32) -> TraceLink {
     let project = Uuid::new_v4();
     let mut link = TraceLink::new(project, source, target, link_type).unwrap();
     link.confidence = confidence;
@@ -55,8 +48,14 @@ fn matrix_with_all_link_types_classifies_correctly() {
 
     // Find cells and check coverage
     let cells: Vec<_> = result.matrix.cells.values().collect();
-    let covered = cells.iter().filter(|c| c.coverage == CoverageState::Covered).count();
-    let partial = cells.iter().filter(|c| c.coverage == CoverageState::Partial).count();
+    let covered = cells
+        .iter()
+        .filter(|c| c.coverage == CoverageState::Covered)
+        .count();
+    let partial = cells
+        .iter()
+        .filter(|c| c.coverage == CoverageState::Partial)
+        .count();
     let stale_or_missing = cells
         .iter()
         .filter(|c| c.coverage == CoverageState::Stale || c.coverage == CoverageState::Missing)
@@ -264,12 +263,7 @@ fn classify_high_confidence_satisfies_returns_covered() {
 
 #[test]
 fn classify_low_confidence_verifies_returns_partial() {
-    let link = make_link(
-        Uuid::new_v4(),
-        Uuid::new_v4(),
-        TraceLinkType::Verifies,
-        0.5,
-    );
+    let link = make_link(Uuid::new_v4(), Uuid::new_v4(), TraceLinkType::Verifies, 0.5);
     assert_eq!(classify_cell(&[link]), CoverageState::Partial);
 }
 
@@ -295,7 +289,10 @@ fn layer_chain_complete() {
 fn all_gate_predicates_convert_to_reasons() {
     let cases = [
         (GatePredicate::NotApproved, GateReason::NotApproved),
-        (GatePredicate::MissingAcceptance, GateReason::MissingAcceptance),
+        (
+            GatePredicate::MissingAcceptance,
+            GateReason::MissingAcceptance,
+        ),
         (GatePredicate::MissingEvidence, GateReason::MissingEvidence),
         (
             GatePredicate::MissingImplementation,

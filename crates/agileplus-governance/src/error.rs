@@ -130,7 +130,6 @@ impl From<toml::de::Error> for GovernanceError {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -138,17 +137,47 @@ mod tests {
     #[test]
     fn error_display_messages() {
         let cases = vec![
-            (GovernanceError::Config("bad config".into()), "Configuration error: bad config"),
-            (GovernanceError::Database("db fail".into()), "Database error: db fail"),
-            (GovernanceError::Network("timeout".into()), "Network error: timeout"),
-            (GovernanceError::PolicyViolation("denied".into()), "Policy violation: denied"),
-            (GovernanceError::RateLimitExceeded("too many".into()), "Rate limit exceeded: too many"),
-            (GovernanceError::Auth("no token".into()), "Authentication error: no token"),
-            (GovernanceError::NotFound("item".into()), "Resource not found: item"),
-            (GovernanceError::NotAllowed("ops".into()), "Operation not allowed: ops"),
+            (
+                GovernanceError::Config("bad config".into()),
+                "Configuration error: bad config",
+            ),
+            (
+                GovernanceError::Database("db fail".into()),
+                "Database error: db fail",
+            ),
+            (
+                GovernanceError::Network("timeout".into()),
+                "Network error: timeout",
+            ),
+            (
+                GovernanceError::PolicyViolation("denied".into()),
+                "Policy violation: denied",
+            ),
+            (
+                GovernanceError::RateLimitExceeded("too many".into()),
+                "Rate limit exceeded: too many",
+            ),
+            (
+                GovernanceError::Auth("no token".into()),
+                "Authentication error: no token",
+            ),
+            (
+                GovernanceError::NotFound("item".into()),
+                "Resource not found: item",
+            ),
+            (
+                GovernanceError::NotAllowed("ops".into()),
+                "Operation not allowed: ops",
+            ),
             (GovernanceError::Sync("drift".into()), "Sync error: drift"),
-            (GovernanceError::Internal("crash".into()), "Internal error: crash"),
-            (GovernanceError::Rubric("parse".into()), "Rubric error: parse"),
+            (
+                GovernanceError::Internal("crash".into()),
+                "Internal error: crash",
+            ),
+            (
+                GovernanceError::Rubric("parse".into()),
+                "Rubric error: parse",
+            ),
         ];
         for (err, expected) in cases {
             assert_eq!(err.to_string(), expected);
@@ -157,8 +186,14 @@ mod tests {
 
     #[test]
     fn error_invalid_channel_transition() {
-        let err = GovernanceError::InvalidChannelTransition { from: "alpha".into(), to: "prod".into() };
-        assert_eq!(err.to_string(), "Invalid channel transition from alpha to prod");
+        let err = GovernanceError::InvalidChannelTransition {
+            from: "alpha".into(),
+            to: "prod".into(),
+        };
+        assert_eq!(
+            err.to_string(),
+            "Invalid channel transition from alpha to prod"
+        );
     }
 
     #[test]
@@ -181,10 +216,23 @@ mod tests {
         assert_eq!(GovernanceError::Config("x".into()).status_code(), 400);
         assert_eq!(GovernanceError::Database("x".into()).status_code(), 500);
         assert_eq!(GovernanceError::Network("x".into()).status_code(), 503);
-        assert_eq!(GovernanceError::PolicyViolation("x".into()).status_code(), 403);
-        assert_eq!(GovernanceError::RateLimitExceeded("x".into()).status_code(), 429);
+        assert_eq!(
+            GovernanceError::PolicyViolation("x".into()).status_code(),
+            403
+        );
+        assert_eq!(
+            GovernanceError::RateLimitExceeded("x".into()).status_code(),
+            429
+        );
         assert_eq!(GovernanceError::Auth("x".into()).status_code(), 401);
-        assert_eq!(GovernanceError::InvalidChannelTransition { from: "a".into(), to: "b".into() }.status_code(), 400);
+        assert_eq!(
+            GovernanceError::InvalidChannelTransition {
+                from: "a".into(),
+                to: "b".into()
+            }
+            .status_code(),
+            400
+        );
         assert_eq!(GovernanceError::NotFound("x".into()).status_code(), 404);
         assert_eq!(GovernanceError::NotAllowed("x".into()).status_code(), 403);
         assert_eq!(GovernanceError::Sync("x".into()).status_code(), 500);
@@ -253,12 +301,18 @@ mod coverage_tests {
 
     #[test]
     fn policy_violation_status_is_forbidden() {
-        assert_eq!(GovernanceError::PolicyViolation("x".into()).status_code(), 403);
+        assert_eq!(
+            GovernanceError::PolicyViolation("x".into()).status_code(),
+            403
+        );
     }
 
     #[test]
     fn rate_limit_status_is_429() {
-        assert_eq!(GovernanceError::RateLimitExceeded("x".into()).status_code(), 429);
+        assert_eq!(
+            GovernanceError::RateLimitExceeded("x".into()).status_code(),
+            429
+        );
     }
 
     #[test]

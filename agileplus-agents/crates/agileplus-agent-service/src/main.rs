@@ -5,8 +5,8 @@
 //! - gRPC health check — for readiness probes
 
 use agileplus_agent_dispatch::AgentDispatchAdapter;
-use service::proto::agent_dispatch_service_server::AgentDispatchServiceServer;
 use service::AgentDispatchServiceImpl;
+use service::proto::agent_dispatch_service_server::AgentDispatchServiceServer;
 use std::sync::Arc;
 use tonic::transport::Server;
 use tonic_health::server::health_reporter;
@@ -25,11 +25,7 @@ mod vcs_noop {
 
     #[async_trait]
     impl VcsPort for NoopVcs {
-        async fn create_worktree(
-            &self,
-            feature: &str,
-            wp: &str,
-        ) -> Result<PathBuf, DomainError> {
+        async fn create_worktree(&self, feature: &str, wp: &str) -> Result<PathBuf, DomainError> {
             let path = std::env::temp_dir().join(format!("{feature}-{wp}"));
             tokio::fs::create_dir_all(&path).await?;
             Ok(path)

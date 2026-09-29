@@ -77,7 +77,12 @@ pub fn seed_user(conn: &rusqlite::Connection, id: i64, email: &str) {
         "INSERT OR REPLACE INTO users
          (id, display_name, email, role, status, avatar_url, github_login, created_at, updated_at)
          VALUES (?1, ?2, ?3, 'member', 'active', NULL, NULL, ?4, ?4)",
-        rusqlite::params![id, format!("User {id}"), email, chrono::Utc::now().to_rfc3339()],
+        rusqlite::params![
+            id,
+            format!("User {id}"),
+            email,
+            chrono::Utc::now().to_rfc3339()
+        ],
     )
     .expect("failed to seed user");
 }

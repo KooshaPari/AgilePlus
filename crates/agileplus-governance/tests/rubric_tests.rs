@@ -80,7 +80,10 @@ fn catalog_rejects_cluster_count_mismatch() {
 #[test]
 fn catalog_rejects_sub_pillar_count_mismatch() {
     let mut json = make_catalog_json(2, &[]);
-    json = json.replace("\"sub_pillars_enumerated\": 0", "\"sub_pillars_enumerated\": 3");
+    json = json.replace(
+        "\"sub_pillars_enumerated\": 0",
+        "\"sub_pillars_enumerated\": 3",
+    );
     assert!(RubricCatalog::from_json(&json).is_err());
 }
 

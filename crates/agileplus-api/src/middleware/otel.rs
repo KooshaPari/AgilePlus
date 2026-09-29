@@ -186,10 +186,7 @@ mod tests {
         });
         let mut service = layer.layer(inner_service);
 
-        let req = Request::builder()
-            .uri("/test")
-            .body(Body::empty())
-            .unwrap();
+        let req = Request::builder().uri("/test").body(Body::empty()).unwrap();
         let resp = service.call(req).await.unwrap();
         assert_eq!(resp.status(), 200);
     }

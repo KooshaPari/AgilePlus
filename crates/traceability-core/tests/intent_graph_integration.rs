@@ -6,9 +6,8 @@
 use chrono::Utc;
 
 use traceability_core::{
-    DagStage, Edge, GraphMetadata, IntentGraph, Meta, Node, NodeType,
-    RelationshipType, ValidationError,
-    intent_graph::Status as NodeStatus,
+    DagStage, Edge, GraphMetadata, IntentGraph, Meta, Node, NodeType, RelationshipType,
+    ValidationError, intent_graph::Status as NodeStatus,
 };
 
 fn meta() -> Meta {
@@ -83,10 +82,30 @@ fn valid_diamond_hierarchy_passes() {
             node("Task#oauth", NodeType::Task, DagStage::Task),
         ],
         vec![
-            edge("e1", "Intent#root", "Feature#auth", RelationshipType::Implements),
-            edge("e2", "Intent#root", "Story#login", RelationshipType::Implements),
-            edge("e3", "Feature#auth", "Task#oauth", RelationshipType::Implements),
-            edge("e4", "Story#login", "Task#oauth", RelationshipType::Implements),
+            edge(
+                "e1",
+                "Intent#root",
+                "Feature#auth",
+                RelationshipType::Implements,
+            ),
+            edge(
+                "e2",
+                "Intent#root",
+                "Story#login",
+                RelationshipType::Implements,
+            ),
+            edge(
+                "e3",
+                "Feature#auth",
+                "Task#oauth",
+                RelationshipType::Implements,
+            ),
+            edge(
+                "e4",
+                "Story#login",
+                "Task#oauth",
+                RelationshipType::Implements,
+            ),
         ],
     );
     assert!(g.validate().is_ok());
@@ -113,7 +132,10 @@ fn complex_cycle_detection() {
         ],
     );
     let err = g.validate().unwrap_err();
-    assert!(err.iter().any(|e| matches!(e, ValidationError::CycleDetected)));
+    assert!(
+        err.iter()
+            .any(|e| matches!(e, ValidationError::CycleDetected))
+    );
 }
 
 // ---------------------------------------------------------------------------
@@ -241,11 +263,46 @@ fn depends_on_valid_and_invalid_pairs() {
 #[test]
 fn blocks_valid_pairs() {
     let pairs: Vec<(&str, NodeType, DagStage, &str, NodeType, DagStage)> = vec![
-        ("Task#a", NodeType::Task, DagStage::Task, "Task#b", NodeType::Task, DagStage::Task),
-        ("Bug#x", NodeType::Bug, DagStage::Bug, "Task#y", NodeType::Task, DagStage::Task),
-        ("Bug#x", NodeType::Bug, DagStage::Bug, "PR#z", NodeType::PR, DagStage::PR),
-        ("Task#a", NodeType::Task, DagStage::Task, "PR#z", NodeType::PR, DagStage::PR),
-        ("PR#1", NodeType::PR, DagStage::PR, "Feature#f", NodeType::Feature, DagStage::Feature),
+        (
+            "Task#a",
+            NodeType::Task,
+            DagStage::Task,
+            "Task#b",
+            NodeType::Task,
+            DagStage::Task,
+        ),
+        (
+            "Bug#x",
+            NodeType::Bug,
+            DagStage::Bug,
+            "Task#y",
+            NodeType::Task,
+            DagStage::Task,
+        ),
+        (
+            "Bug#x",
+            NodeType::Bug,
+            DagStage::Bug,
+            "PR#z",
+            NodeType::PR,
+            DagStage::PR,
+        ),
+        (
+            "Task#a",
+            NodeType::Task,
+            DagStage::Task,
+            "PR#z",
+            NodeType::PR,
+            DagStage::PR,
+        ),
+        (
+            "PR#1",
+            NodeType::PR,
+            DagStage::PR,
+            "Feature#f",
+            NodeType::Feature,
+            DagStage::Feature,
+        ),
     ];
     for (sid, st, ds_s, tid, tt, ds_t) in pairs {
         let g = make_graph(
@@ -304,7 +361,10 @@ fn node_empty_meta_source_rejected() {
     n.meta.source = "".into();
     let g = make_graph(vec![n], vec![]);
     let err = g.validate().unwrap_err();
-    assert!(err.iter().any(|e| matches!(e, ValidationError::MissingMeta(_))));
+    assert!(
+        err.iter()
+            .any(|e| matches!(e, ValidationError::MissingMeta(_)))
+    );
 }
 
 // ---------------------------------------------------------------------------
@@ -318,7 +378,12 @@ fn non_intent_root_rejected() {
             node("Feature#root", NodeType::Feature, DagStage::Feature),
             node("Task#child", NodeType::Task, DagStage::Task),
         ],
-        vec![edge("e1", "Feature#root", "Task#child", RelationshipType::Implements)],
+        vec![edge(
+            "e1",
+            "Feature#root",
+            "Task#child",
+            RelationshipType::Implements,
+        )],
     );
     assert!(matches!(
         g.check_dag().unwrap_err(),
@@ -357,10 +422,25 @@ fn full_validation_pipeline() {
             node("Bug#issue-one", NodeType::Bug, DagStage::Bug),
         ],
         vec![
-            edge("e1", "Intent#root", "Feature#oauth", RelationshipType::Implements),
-            edge("e2", "Feature#oauth", "Task#impl", RelationshipType::Implements),
+            edge(
+                "e1",
+                "Intent#root",
+                "Feature#oauth",
+                RelationshipType::Implements,
+            ),
+            edge(
+                "e2",
+                "Feature#oauth",
+                "Task#impl",
+                RelationshipType::Implements,
+            ),
             edge("e3", "Feature#oauth", "Test#unit", RelationshipType::Tests),
-            edge("e4", "Task#impl", "Bug#issue-one", RelationshipType::DerivesFrom),
+            edge(
+                "e4",
+                "Task#impl",
+                "Bug#issue-one",
+                RelationshipType::DerivesFrom,
+            ),
         ],
     );
     assert!(g.validate().is_ok());
@@ -377,7 +457,12 @@ fn full_graph_serde_roundtrip() {
             node("Intent#root", NodeType::Intent, DagStage::Intent),
             node("Feature#a", NodeType::Feature, DagStage::Feature),
         ],
-        vec![edge("e1", "Intent#root", "Feature#a", RelationshipType::Implements)],
+        vec![edge(
+            "e1",
+            "Intent#root",
+            "Feature#a",
+            RelationshipType::Implements,
+        )],
     );
     let json = serde_json::to_string_pretty(&g).unwrap();
     let back: IntentGraph = serde_json::from_str(&json).unwrap();

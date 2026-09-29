@@ -1,7 +1,7 @@
 //! Integration tests for SHA-256 hash chain — `compute_hash` and `verify_chain`.
 
 use agileplus_domain::domain::event::Event;
-use agileplus_events::hash::{compute_hash, verify_chain, HashError};
+use agileplus_events::hash::{HashError, compute_hash, verify_chain};
 use chrono::{DateTime, Utc};
 
 /// Build a properly chained sequence of events with valid hashes.
@@ -17,13 +17,7 @@ fn build_valid_chain(count: usize, entity_id: i64) -> Vec<Event> {
         let seq = (i + 1) as i64;
         let payload = serde_json::json!({"step": i});
         let hash = compute_hash(
-            entity_id,
-            "Feature",
-            "created",
-            &payload,
-            ts,
-            "tester",
-            &prev_hash,
+            entity_id, "Feature", "created", &payload, ts, "tester", &prev_hash,
         )
         .unwrap();
 
@@ -80,20 +74,74 @@ fn compute_hash_deterministic() {
 #[test]
 fn compute_hash_different_inputs_differ() {
     let ts = Utc::now();
-    let h1 = compute_hash(1, "Feature", "created", &serde_json::json!({}), ts, "a", &[0u8; 32]).unwrap();
-    let h2 = compute_hash(2, "Feature", "created", &serde_json::json!({}), ts, "a", &[0u8; 32]).unwrap();
+    let h1 = compute_hash(
+        1,
+        "Feature",
+        "created",
+        &serde_json::json!({}),
+        ts,
+        "a",
+        &[0u8; 32],
+    )
+    .unwrap();
+    let h2 = compute_hash(
+        2,
+        "Feature",
+        "created",
+        &serde_json::json!({}),
+        ts,
+        "a",
+        &[0u8; 32],
+    )
+    .unwrap();
     assert_ne!(h1, h2);
 
-    let h3 = compute_hash(1, "WorkPackage", "created", &serde_json::json!({}), ts, "a", &[0u8; 32]).unwrap();
+    let h3 = compute_hash(
+        1,
+        "WorkPackage",
+        "created",
+        &serde_json::json!({}),
+        ts,
+        "a",
+        &[0u8; 32],
+    )
+    .unwrap();
     assert_ne!(h1, h3);
 
-    let h4 = compute_hash(1, "Feature", "shipped", &serde_json::json!({}), ts, "a", &[0u8; 32]).unwrap();
+    let h4 = compute_hash(
+        1,
+        "Feature",
+        "shipped",
+        &serde_json::json!({}),
+        ts,
+        "a",
+        &[0u8; 32],
+    )
+    .unwrap();
     assert_ne!(h1, h4);
 
-    let h5 = compute_hash(1, "Feature", "created", &serde_json::json!({"x": 1}), ts, "a", &[0u8; 32]).unwrap();
+    let h5 = compute_hash(
+        1,
+        "Feature",
+        "created",
+        &serde_json::json!({"x": 1}),
+        ts,
+        "a",
+        &[0u8; 32],
+    )
+    .unwrap();
     assert_ne!(h1, h5);
 
-    let h6 = compute_hash(1, "Feature", "created", &serde_json::json!({}), ts, "b", &[0u8; 32]).unwrap();
+    let h6 = compute_hash(
+        1,
+        "Feature",
+        "created",
+        &serde_json::json!({}),
+        ts,
+        "b",
+        &[0u8; 32],
+    )
+    .unwrap();
     assert_ne!(h1, h6);
 }
 

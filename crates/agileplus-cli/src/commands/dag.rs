@@ -595,18 +595,9 @@ mod tests {
 
     #[test]
     fn parse_claim_kind_case_insensitive() {
-        assert_eq!(
-            parse_claim_kind("Repo").unwrap(),
-            ClaimKind::Repo
-        );
-        assert_eq!(
-            parse_claim_kind("BRANCH").unwrap(),
-            ClaimKind::Branch
-        );
-        assert_eq!(
-            parse_claim_kind("WorkTree").unwrap(),
-            ClaimKind::Worktree
-        );
+        assert_eq!(parse_claim_kind("Repo").unwrap(), ClaimKind::Repo);
+        assert_eq!(parse_claim_kind("BRANCH").unwrap(), ClaimKind::Branch);
+        assert_eq!(parse_claim_kind("WorkTree").unwrap(), ClaimKind::Worktree);
         assert_eq!(
             parse_claim_kind("SubProject").unwrap(),
             ClaimKind::Subproject
@@ -770,7 +761,8 @@ mod tests {
     fn inmemory_wp_repo_list_pickable_filters_ready_state() {
         let mut repo = InMemoryWpRepo::default();
         repo.items.insert("wp-1".into(), make_item("wp-1", "ready"));
-        repo.items.insert("wp-2".into(), make_item("wp-2", "blocked"));
+        repo.items
+            .insert("wp-2".into(), make_item("wp-2", "blocked"));
         repo.items.insert("wp-3".into(), make_item("wp-3", "ready"));
 
         let items = repo.list_pickable("agent-1", None, None, 10).unwrap();
@@ -782,10 +774,8 @@ mod tests {
     fn inmemory_wp_repo_list_pickable_respects_limit() {
         let mut repo = InMemoryWpRepo::default();
         for i in 1..=5 {
-            repo.items.insert(
-                format!("wp-{i}"),
-                make_item(&format!("wp-{i}"), "ready"),
-            );
+            repo.items
+                .insert(format!("wp-{i}"), make_item(&format!("wp-{i}"), "ready"));
         }
         let items = repo.list_pickable("agent-1", None, None, 2).unwrap();
         assert_eq!(items.len(), 2);
@@ -893,7 +883,10 @@ mod tests {
         assert_eq!(parse_claim_kind("repo").unwrap(), ClaimKind::Repo);
         assert_eq!(parse_claim_kind("branch").unwrap(), ClaimKind::Branch);
         assert_eq!(parse_claim_kind("worktree").unwrap(), ClaimKind::Worktree);
-        assert_eq!(parse_claim_kind("subproject").unwrap(), ClaimKind::Subproject);
+        assert_eq!(
+            parse_claim_kind("subproject").unwrap(),
+            ClaimKind::Subproject
+        );
     }
 
     // ── additional parse_claim_reason edge cases ────────────────────────────

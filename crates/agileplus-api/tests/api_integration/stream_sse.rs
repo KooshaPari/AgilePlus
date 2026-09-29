@@ -27,9 +27,7 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 use tokio_stream::StreamExt as _;
 
-use crate::support::{
-    MockStorage, TEST_API_KEY, setup_state_with_storage, setup_test_server,
-};
+use crate::support::{MockStorage, TEST_API_KEY, setup_state_with_storage, setup_test_server};
 
 const FRAME_TIMEOUT: Duration = Duration::from_secs(15);
 
@@ -73,7 +71,11 @@ async fn stream_is_served_as_event_stream() {
 #[tokio::test]
 async fn stream_forwards_published_event_as_sse_frame() {
     let (state, event_tx) = setup_state_with_storage(MockStorage::with_test_data(), 16);
-    let mut body = stream_events(State(state)).await.into_response().into_body().into_data_stream();
+    let mut body = stream_events(State(state))
+        .await
+        .into_response()
+        .into_body()
+        .into_data_stream();
 
     event_tx
         .send(serde_json::json!({
@@ -96,7 +98,11 @@ async fn stream_forwards_published_event_as_sse_frame() {
 #[tokio::test]
 async fn stream_defaults_event_name_when_payload_has_none() {
     let (state, event_tx) = setup_state_with_storage(MockStorage::with_test_data(), 16);
-    let mut body = stream_events(State(state)).await.into_response().into_body().into_data_stream();
+    let mut body = stream_events(State(state))
+        .await
+        .into_response()
+        .into_body()
+        .into_data_stream();
 
     event_tx
         .send(serde_json::json!({"data": {"n": 1}}))
@@ -116,7 +122,11 @@ async fn stream_defaults_event_name_when_payload_has_none() {
 #[tokio::test]
 async fn stream_renders_null_data_when_payload_has_none() {
     let (state, event_tx) = setup_state_with_storage(MockStorage::with_test_data(), 16);
-    let mut body = stream_events(State(state)).await.into_response().into_body().into_data_stream();
+    let mut body = stream_events(State(state))
+        .await
+        .into_response()
+        .into_body()
+        .into_data_stream();
 
     event_tx
         .send(serde_json::json!({"event_type": "ping"}))
@@ -134,7 +144,11 @@ async fn stream_renders_null_data_when_payload_has_none() {
 async fn stream_reports_lagging_subscriber_instead_of_dropping_connection() {
     // Capacity 2 with 5 unconsumed messages guarantees the receiver lags.
     let (state, event_tx) = setup_state_with_storage(MockStorage::with_test_data(), 2);
-    let mut body = stream_events(State(state)).await.into_response().into_body().into_data_stream();
+    let mut body = stream_events(State(state))
+        .await
+        .into_response()
+        .into_body()
+        .into_data_stream();
 
     for n in 0..5 {
         let _ = event_tx.send(serde_json::json!({"event_type": "tick", "data": n}));
@@ -204,10 +218,8 @@ async fn start_api_streams_events_and_enforces_auth_over_tcp() {
     let mut unauthenticated = connect_with_retry(addr).await;
     unauthenticated
         .write_all(
-            format!(
-                "GET /api/v1/stream HTTP/1.1\r\nHost: {addr}\r\nConnection: close\r\n\r\n"
-            )
-            .as_bytes(),
+            format!("GET /api/v1/stream HTTP/1.1\r\nHost: {addr}\r\nConnection: close\r\n\r\n")
+                .as_bytes(),
         )
         .await
         .expect("write unauthenticated request");
@@ -254,7 +266,9 @@ async fn start_api_streams_events_and_enforces_auth_over_tcp() {
         "authenticated stream should open, got: {headers:?}"
     );
     assert!(
-        headers.to_lowercase().contains("content-type: text/event-stream"),
+        headers
+            .to_lowercase()
+            .contains("content-type: text/event-stream"),
         "stream should be served as SSE, got: {headers:?}"
     );
 

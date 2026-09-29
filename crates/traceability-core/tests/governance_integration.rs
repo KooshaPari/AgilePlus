@@ -3,8 +3,8 @@
 use chrono::Utc;
 
 use traceability_core::{
-    BuiltinPolicy, Evidence, EvidenceRequirement, EvidenceType, GovernanceContract,
-    GovernanceRule, PolicyCheck, PolicyDefinition, PolicyDomain, PolicyRule,
+    BuiltinPolicy, Evidence, EvidenceRequirement, EvidenceType, GovernanceContract, GovernanceRule,
+    PolicyCheck, PolicyDefinition, PolicyDomain, PolicyRule,
 };
 
 #[test]
@@ -38,7 +38,10 @@ fn evidence_type_all_variants_as_str() {
     assert_eq!(EvidenceType::ReviewApproval.as_str(), "review_approval");
     assert_eq!(EvidenceType::SecurityScan.as_str(), "security_scan");
     assert_eq!(EvidenceType::LintResult.as_str(), "lint_result");
-    assert_eq!(EvidenceType::ManualAttestation.as_str(), "manual_attestation");
+    assert_eq!(
+        EvidenceType::ManualAttestation.as_str(),
+        "manual_attestation"
+    );
 }
 
 #[test]

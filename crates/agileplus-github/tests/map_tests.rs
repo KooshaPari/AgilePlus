@@ -173,10 +173,7 @@ fn issue_requirement_id_format() {
         user_avatar_url: None,
     };
     let story = issue_to_story(&issue, 1, 1).unwrap();
-    assert_eq!(
-        story.requirement_id.as_deref(),
-        Some("gh:issue:77")
-    );
+    assert_eq!(story.requirement_id.as_deref(), Some("gh:issue:77"));
     assert_eq!(story.id, 77);
 }
 

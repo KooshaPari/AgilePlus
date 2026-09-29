@@ -17,10 +17,7 @@ pub struct Evidence {
 }
 
 #[tauri::command]
-pub fn list_evidence(
-    state: State<'_, AppState>,
-    feature_id: i64,
-) -> Result<Vec<Evidence>, String> {
+pub fn list_evidence(state: State<'_, AppState>, feature_id: i64) -> Result<Vec<Evidence>, String> {
     let conn_guard = state.db_connection()?;
     let conn = conn_guard.as_ref().ok_or("Database not initialized")?;
 

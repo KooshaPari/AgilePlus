@@ -9,12 +9,7 @@ static COUNTER: AtomicU64 = AtomicU64::new(0);
 
 fn tmp_repo(tag: &str) -> std::path::PathBuf {
     let n = COUNTER.fetch_add(1, Ordering::Relaxed);
-    let base = std::env::temp_dir().join(format!(
-        "gov-scan-{}-{}-{}",
-        std::process::id(),
-        tag,
-        n
-    ));
+    let base = std::env::temp_dir().join(format!("gov-scan-{}-{}-{}", std::process::id(), tag, n));
     let _ = fs::remove_dir_all(&base);
     fs::create_dir_all(&base).unwrap();
     base
@@ -189,11 +184,7 @@ fn scan_repo_with_test_files() {
     let repo = tmp_repo("testfiles");
     fs::create_dir_all(repo.join("src")).unwrap();
     fs::write(repo.join("src/lib.rs"), "#[test] fn t() {}").unwrap();
-    fs::write(
-        repo.join("src/other.rs"),
-        "#[tokio::test] async fn at() {}",
-    )
-    .unwrap();
+    fs::write(repo.join("src/other.rs"), "#[tokio::test] async fn at() {}").unwrap();
     fs::write(repo.join("src/no_test.rs"), "fn helper() {}").unwrap();
 
     let scan = scan_repo(&repo).unwrap();

@@ -455,7 +455,11 @@ mod store_resilience_tests {
 
         let items = store.load_all().unwrap();
 
-        assert_eq!(items.len(), 1, "a corrupt row must not invalidate the queue");
+        assert_eq!(
+            items.len(),
+            1,
+            "a corrupt row must not invalidate the queue"
+        );
         assert_eq!(items[0].id, 1);
         assert_eq!(items[0].kind, SyncOpKind::CreateIssue);
     }
@@ -465,7 +469,13 @@ mod store_resilience_tests {
         let store = SyncQueueStore::open_in_memory().unwrap();
         insert_raw_row(&store, 1, "\"update_issue\"", GOOD_TIME, GOOD_TIME);
         insert_raw_row(&store, 2, "\"update_issue\"", "not-a-timestamp", GOOD_TIME);
-        insert_raw_row(&store, 3, "\"update_issue\"", GOOD_TIME, "also-not-a-timestamp");
+        insert_raw_row(
+            &store,
+            3,
+            "\"update_issue\"",
+            GOOD_TIME,
+            "also-not-a-timestamp",
+        );
 
         let items = store.load_all().unwrap();
 
@@ -481,7 +491,14 @@ mod store_resilience_tests {
             .execute(
                 "INSERT INTO sync_queue (id, kind, payload, attempt, next_attempt_at, created_at)
                  VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-                rusqlite::params![7i64, "\"delete_issue\"", "{\"x\":1}", 2i32, GOOD_TIME, GOOD_TIME],
+                rusqlite::params![
+                    7i64,
+                    "\"delete_issue\"",
+                    "{\"x\":1}",
+                    2i32,
+                    GOOD_TIME,
+                    GOOD_TIME
+                ],
             )
             .unwrap();
 
@@ -516,6 +533,9 @@ mod store_resilience_tests {
         // `load_all` makes no ordering promise, so compare as a set.
         let mut kinds: Vec<SyncOpKind> = restored.drain().into_iter().map(|i| i.kind).collect();
         kinds.sort_by_key(|k| format!("{k:?}"));
-        assert_eq!(kinds, vec![SyncOpKind::CreateIssue, SyncOpKind::CreateLabel]);
+        assert_eq!(
+            kinds,
+            vec![SyncOpKind::CreateIssue, SyncOpKind::CreateLabel]
+        );
     }
 }

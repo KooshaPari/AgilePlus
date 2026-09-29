@@ -4,10 +4,10 @@
 //! enum, CacheStore trait (mock), and projection serde roundtrips.
 //! Redis-connection-dependent tests are excluded.
 
+use agileplus_cache::Error;
 use agileplus_cache::config::CacheConfig;
 use agileplus_cache::health::CacheHealth;
 use agileplus_cache::store::{CacheError, CacheStore};
-use agileplus_cache::Error;
 
 use async_trait::async_trait;
 use chrono::Utc;
@@ -54,8 +54,8 @@ impl CacheStore for MockCacheStore {
         value: &T,
         _ttl: Option<Duration>,
     ) -> Result<(), CacheError> {
-        let serialized =
-            serde_json::to_string(value).map_err(|e| CacheError::SerializationError(e.to_string()))?;
+        let serialized = serde_json::to_string(value)
+            .map_err(|e| CacheError::SerializationError(e.to_string()))?;
         let mut map = self.data.lock().expect("lock poisoned");
         map.insert(key.to_string(), serialized);
         Ok(())
@@ -439,7 +439,10 @@ async fn concrete_store_dispatch() {
 #[tokio::test]
 async fn concrete_store_delete() {
     let store = MockCacheStore::new();
-    store.set("to_del", &"hello".to_string(), None).await.unwrap();
+    store
+        .set("to_del", &"hello".to_string(), None)
+        .await
+        .unwrap();
     assert!(store.exists("to_del").await.unwrap());
 
     store.delete("to_del").await.unwrap();
@@ -487,7 +490,10 @@ fn workpackage_projection_serde_roundtrip() {
 
     assert_eq!(decoded.workpackage.feature_id, 1);
     assert_eq!(decoded.workpackage.title, "Implement caching");
-    assert_eq!(decoded.workpackage.acceptance_criteria, "Cache reads complete in <10ms");
+    assert_eq!(
+        decoded.workpackage.acceptance_criteria,
+        "Cache reads complete in <10ms"
+    );
     assert_eq!(decoded.workpackage.sequence, 1);
 }
 
@@ -605,9 +611,7 @@ fn config_large_ttl() {
 
 #[test]
 fn config_builder_overwrite_pool_size() {
-    let cfg = CacheConfig::default()
-        .with_pool_size(8)
-        .with_pool_size(64);
+    let cfg = CacheConfig::default().with_pool_size(8).with_pool_size(64);
     assert_eq!(cfg.pool_size, 64);
 }
 

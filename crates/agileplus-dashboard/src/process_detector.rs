@@ -431,7 +431,10 @@ mod tests {
     #[test]
     fn test_format_agent_name_unknown_with_worktree() {
         let wt = Some("/repos/unknown-tool/project".to_string());
-        assert_eq!(format_agent_name("unknown-tool", &wt), "unknown-tool-project");
+        assert_eq!(
+            format_agent_name("unknown-tool", &wt),
+            "unknown-tool-project"
+        );
     }
 
     // ── extract_worktree_from_cmdline edge cases ─────────────────────────
@@ -443,9 +446,7 @@ mod tests {
 
     #[test]
     fn test_extract_worktree_multiple_flags() {
-        let result = extract_worktree_from_cmdline(
-            "claude --verbose --cwd /my/repo --debug",
-        );
+        let result = extract_worktree_from_cmdline("claude --verbose --cwd /my/repo --debug");
         assert_eq!(result, Some("/my/repo".to_string()));
     }
 
@@ -478,8 +479,10 @@ mod tests {
                 "name": "test-runner", "status": "running",
                 "current_task": "WP1", "worktree": "/repo",
                 "started_at": "2026-01-01T00:00:00Z"
-            }).to_string(),
-        ).unwrap();
+            })
+            .to_string(),
+        )
+        .unwrap();
 
         let agents = read_agent_state_files(dir.to_str().unwrap());
         assert_eq!(agents.len(), 1);
@@ -499,7 +502,8 @@ mod tests {
         std::fs::write(
             agents_dir.join("good.json"),
             serde_json::json!({"name": "ok-agent", "current_task": ""}).to_string(),
-        ).unwrap();
+        )
+        .unwrap();
 
         let agents = read_agent_state_files(dir.to_str().unwrap());
         assert_eq!(agents.len(), 1);
@@ -515,7 +519,8 @@ mod tests {
         std::fs::write(
             agents_dir.join("noname.json"),
             serde_json::json!({"status": "idle"}).to_string(),
-        ).unwrap();
+        )
+        .unwrap();
 
         assert!(read_agent_state_files(dir.to_str().unwrap()).is_empty());
         std::fs::remove_dir_all(&dir).unwrap();
@@ -538,11 +543,13 @@ mod tests {
         std::fs::write(
             agents_dir.join("b.json"),
             serde_json::json!({"name": "builder", "current_task": "build"}).to_string(),
-        ).unwrap();
+        )
+        .unwrap();
         std::fs::write(
             agents_dir.join("a.json"),
             serde_json::json!({"name": "analyzer", "current_task": "analyze"}).to_string(),
-        ).unwrap();
+        )
+        .unwrap();
 
         let agents = read_agent_state_files(dir.to_str().unwrap());
         assert_eq!(agents.len(), 2);

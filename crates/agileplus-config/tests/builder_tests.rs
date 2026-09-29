@@ -226,9 +226,7 @@ fn default_is_immutable_template() {
 
 #[test]
 fn clone_after_build_equal() {
-    let orig = WebConfig::default()
-        .with_host("clone-me")
-        .with_tls(true);
+    let orig = WebConfig::default().with_host("clone-me").with_tls(true);
     let copy = orig.clone();
     assert_eq!(orig, copy);
 }

@@ -64,6 +64,8 @@ pub(crate) mod test_env {
     /// Poisoning is ignored on purpose: one failing test must not turn every
     /// other environment test into a spurious failure.
     pub(crate) fn lock_env() -> MutexGuard<'static, ()> {
-        ENV_MUTEX.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
+        ENV_MUTEX
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
     }
 }

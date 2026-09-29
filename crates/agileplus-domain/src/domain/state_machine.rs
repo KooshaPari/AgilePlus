@@ -210,7 +210,11 @@ mod coverage_tests {
                     assert_eq!(tr.transition.to, to);
                 } else {
                     match r {
-                        Err(DomainError::InvalidTransition { from: f, to: t, reason }) => {
+                        Err(DomainError::InvalidTransition {
+                            from: f,
+                            to: t,
+                            reason,
+                        }) => {
                             assert_eq!(f, from.to_string());
                             assert_eq!(t, to.to_string());
                             assert!(!reason.is_empty());
@@ -227,7 +231,10 @@ mod coverage_tests {
         for st in ALL {
             assert_eq!(st.to_string().parse::<FeatureState>().unwrap(), st);
         }
-        assert_eq!(serde_json::to_string(&FeatureState::Created).unwrap(), "\"created\"");
+        assert_eq!(
+            serde_json::to_string(&FeatureState::Created).unwrap(),
+            "\"created\""
+        );
         assert_eq!(
             serde_json::to_string(&FeatureState::Retrospected).unwrap(),
             "\"retrospected\""

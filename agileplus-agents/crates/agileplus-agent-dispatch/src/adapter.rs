@@ -40,8 +40,7 @@ pub trait AgentPort: Send + Sync {
 
     /// Send an ad-hoc instruction to a running agent by writing a file into
     /// its worktree.  Returns an error if the job is not running.
-    async fn send_instruction(&self, job_id: &str, instruction: &str)
-        -> Result<(), DomainError>;
+    async fn send_instruction(&self, job_id: &str, instruction: &str) -> Result<(), DomainError>;
 }
 
 // ─── Adapter implementation ───────────────────────────────────────────────────
@@ -189,11 +188,7 @@ impl AgentPort for AgentDispatchAdapter {
         }
     }
 
-    async fn send_instruction(
-        &self,
-        job_id: &str,
-        instruction: &str,
-    ) -> Result<(), DomainError> {
+    async fn send_instruction(&self, job_id: &str, instruction: &str) -> Result<(), DomainError> {
         let worktree_path = self
             .jobs
             .get(job_id)
@@ -209,9 +204,7 @@ impl AgentPort for AgentDispatchAdapter {
         let instruction_file = worktree_path.join(".agileplus-instruction.md");
         tokio::fs::write(&instruction_file, instruction)
             .await
-            .map_err(|e| {
-                DomainError::Other(format!("failed to write instruction file: {e}"))
-            })?;
+            .map_err(|e| DomainError::Other(format!("failed to write instruction file: {e}")))?;
 
         info!(%job_id, path = %instruction_file.display(), "instruction written");
         Ok(())
@@ -275,11 +268,25 @@ mod tests {
         let t2 = make_task(tmp2.path().to_path_buf());
 
         let id1 = adapter
-            .dispatch_async(t1, AgentConfig { kind: AgentKind::ClaudeCode, timeout_secs: 1, ..Default::default() })
+            .dispatch_async(
+                t1,
+                AgentConfig {
+                    kind: AgentKind::ClaudeCode,
+                    timeout_secs: 1,
+                    ..Default::default()
+                },
+            )
             .await
             .unwrap();
         let id2 = adapter
-            .dispatch_async(t2, AgentConfig { kind: AgentKind::ClaudeCode, timeout_secs: 1, ..Default::default() })
+            .dispatch_async(
+                t2,
+                AgentConfig {
+                    kind: AgentKind::ClaudeCode,
+                    timeout_secs: 1,
+                    ..Default::default()
+                },
+            )
             .await
             .unwrap();
 
@@ -303,7 +310,14 @@ mod tests {
 
         let t = make_task(tmp.path().to_path_buf());
         let id = adapter
-            .dispatch_async(t, AgentConfig { kind: AgentKind::ClaudeCode, timeout_secs: 60, ..Default::default() })
+            .dispatch_async(
+                t,
+                AgentConfig {
+                    kind: AgentKind::ClaudeCode,
+                    timeout_secs: 60,
+                    ..Default::default()
+                },
+            )
             .await
             .unwrap();
 
@@ -340,11 +354,9 @@ mod tests {
             .await
             .unwrap();
 
-        let written = tokio::fs::read_to_string(
-            tmp.path().join(".agileplus-instruction.md"),
-        )
-        .await
-        .unwrap();
+        let written = tokio::fs::read_to_string(tmp.path().join(".agileplus-instruction.md"))
+            .await
+            .unwrap();
         assert!(written.contains("Please fix it."));
     }
 }

@@ -736,7 +736,9 @@ mod coverage_tests {
                 old_name: "old".into(),
                 new_name: "new".into(),
             }),
-            DomainEvent::ProjectArchived(ProjectArchived { project_id: 1.into() }),
+            DomainEvent::ProjectArchived(ProjectArchived {
+                project_id: 1.into(),
+            }),
             DomainEvent::EpicCreated(EpicCreated {
                 epic_id: 2.into(),
                 project_id: 1.into(),
@@ -812,7 +814,10 @@ mod coverage_tests {
     }
 
     fn variant(n: usize) -> DomainEvent {
-        all_variants().into_iter().nth(n).expect("variant index in range")
+        all_variants()
+            .into_iter()
+            .nth(n)
+            .expect("variant index in range")
     }
 
     #[test]
@@ -846,7 +851,8 @@ mod coverage_tests {
             let t = ev.event_type();
             assert!(t.contains('.'), "expected dotted type, got {t}");
             assert!(
-                t.chars().all(|c| c.is_ascii_lowercase() || c == '.' || c == '_'),
+                t.chars()
+                    .all(|c| c.is_ascii_lowercase() || c == '.' || c == '_'),
                 "not machine-readable: {t}"
             );
             assert!(seen.insert(t), "duplicate event type {t}");
@@ -905,7 +911,12 @@ mod coverage_tests {
 
     #[test]
     fn envelope_new_derives_aggregate_type_from_payload() {
-        let env = EventEnvelope::new(AggregateId(3), DomainEvent::ProjectArchived(ProjectArchived { project_id: 3.into() }));
+        let env = EventEnvelope::new(
+            AggregateId(3),
+            DomainEvent::ProjectArchived(ProjectArchived {
+                project_id: 3.into(),
+            }),
+        );
         assert_eq!(env.aggregate_type, "Project");
         assert_eq!(env.aggregate_id, AggregateId(3));
         assert!(env.causation_id.is_none());
@@ -915,7 +926,12 @@ mod coverage_tests {
     #[test]
     fn envelope_occurred_at_is_recent() {
         let before = Utc::now();
-        let env = EventEnvelope::new(1i64, DomainEvent::ProjectArchived(ProjectArchived { project_id: 1.into() }));
+        let env = EventEnvelope::new(
+            1i64,
+            DomainEvent::ProjectArchived(ProjectArchived {
+                project_id: 1.into(),
+            }),
+        );
         let after = Utc::now();
         assert!(env.occurred_at >= before && env.occurred_at <= after);
     }
@@ -959,7 +975,10 @@ mod coverage_tests {
 
     #[test]
     fn story_assigned_none_assignee_roundtrip() {
-        let ev = DomainEvent::StoryAssigned(StoryAssigned { story_id: 1.into(), assignee_id: None });
+        let ev = DomainEvent::StoryAssigned(StoryAssigned {
+            story_id: 1.into(),
+            assignee_id: None,
+        });
         let json = serde_json::to_string(&ev).unwrap();
         let back: DomainEvent = serde_json::from_str(&json).unwrap();
         assert_eq!(back, ev);
@@ -974,7 +993,10 @@ mod coverage_tests {
     #[test]
     fn handler_error_transient_display() {
         let e = EventHandlerError::Transient("later".into());
-        assert!(e.to_string().contains("handler encountered a transient error: later"));
+        assert!(
+            e.to_string()
+                .contains("handler encountered a transient error: later")
+        );
     }
 
     struct SpyHandler {
@@ -995,16 +1017,28 @@ mod coverage_tests {
     #[test]
     fn sync_handler_counts_events() {
         let seen = Arc::new(Mutex::new(0));
-        let handler = SpyHandler { seen: seen.clone(), fail: false };
-        handler.handle(&EventEnvelope::new(1i64, variant(0))).unwrap();
-        handler.handle(&EventEnvelope::new(1i64, variant(1))).unwrap();
+        let handler = SpyHandler {
+            seen: seen.clone(),
+            fail: false,
+        };
+        handler
+            .handle(&EventEnvelope::new(1i64, variant(0)))
+            .unwrap();
+        handler
+            .handle(&EventEnvelope::new(1i64, variant(1)))
+            .unwrap();
         assert_eq!(*seen.lock().unwrap(), 2);
     }
 
     #[test]
     fn sync_handler_can_reject() {
-        let handler = SpyHandler { seen: Arc::new(Mutex::new(0)), fail: true };
-        let err = handler.handle(&EventEnvelope::new(1i64, variant(0))).unwrap_err();
+        let handler = SpyHandler {
+            seen: Arc::new(Mutex::new(0)),
+            fail: true,
+        };
+        let err = handler
+            .handle(&EventEnvelope::new(1i64, variant(0)))
+            .unwrap_err();
         assert!(matches!(err, EventHandlerError::Rejected(_)));
     }
 
@@ -1038,16 +1072,26 @@ mod coverage_tests {
     async fn async_handler_receives_event() {
         let seen = Arc::new(Mutex::new(0));
         let h = AsyncSpy { seen: seen.clone() };
-        h.handle(&EventEnvelope::new(1i64, variant(0))).await.unwrap();
+        h.handle(&EventEnvelope::new(1i64, variant(0)))
+            .await
+            .unwrap();
         assert_eq!(*seen.lock().unwrap(), 1);
     }
 
     #[tokio::test]
     async fn async_event_bus_fans_out() {
-        let a = Arc::new(AsyncSpy { seen: Arc::new(Mutex::new(0)) });
-        let b = Arc::new(AsyncSpy { seen: Arc::new(Mutex::new(0)) });
-        let bus = AsyncFanout { handlers: vec![a.clone(), b.clone()] };
-        bus.publish(EventEnvelope::new(1i64, variant(0))).await.unwrap();
+        let a = Arc::new(AsyncSpy {
+            seen: Arc::new(Mutex::new(0)),
+        });
+        let b = Arc::new(AsyncSpy {
+            seen: Arc::new(Mutex::new(0)),
+        });
+        let bus = AsyncFanout {
+            handlers: vec![a.clone(), b.clone()],
+        };
+        bus.publish(EventEnvelope::new(1i64, variant(0)))
+            .await
+            .unwrap();
         assert_eq!(*a.seen.lock().unwrap(), 1);
         assert_eq!(*b.seen.lock().unwrap(), 1);
     }
@@ -1085,13 +1129,18 @@ mod coverage_tests {
 
     #[test]
     fn event_type_for_story_assigned() {
-        let ev = DomainEvent::StoryAssigned(StoryAssigned { story_id: 1.into(), assignee_id: None });
+        let ev = DomainEvent::StoryAssigned(StoryAssigned {
+            story_id: 1.into(),
+            assignee_id: None,
+        });
         assert_eq!(ev.event_type(), "story.assigned");
     }
 
     #[test]
     fn event_type_for_project_archived() {
-        let ev = DomainEvent::ProjectArchived(ProjectArchived { project_id: 1.into() });
+        let ev = DomainEvent::ProjectArchived(ProjectArchived {
+            project_id: 1.into(),
+        });
         assert_eq!(ev.event_type(), "project.archived");
     }
 

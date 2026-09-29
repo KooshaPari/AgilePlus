@@ -127,7 +127,10 @@ async fn coverage_modules_api_requires_auth() {
 #[tokio::test]
 async fn coverage_list_features_all() {
     let server = setup_test_server().await;
-    let resp = server.get("/api/v1/features").add_header(KEY, TEST_API_KEY).await;
+    let resp = server
+        .get("/api/v1/features")
+        .add_header(KEY, TEST_API_KEY)
+        .await;
     resp.assert_status_ok();
     let arr: Vec<serde_json::Value> = resp.json();
     assert_eq!(arr.len(), 1);
@@ -548,7 +551,10 @@ async fn coverage_transition_work_package_missing_is_404() {
 #[tokio::test]
 async fn coverage_list_events_unfiltered() {
     let server = setup_test_server().await;
-    let resp = server.get("/api/v1/events").add_header(KEY, TEST_API_KEY).await;
+    let resp = server
+        .get("/api/v1/events")
+        .add_header(KEY, TEST_API_KEY)
+        .await;
     resp.assert_status_ok();
     let arr: Vec<serde_json::Value> = resp.json();
     assert_eq!(arr.len(), 3);
@@ -957,7 +963,10 @@ async fn coverage_create_user_missing_email_is_422() {
 #[tokio::test]
 async fn coverage_list_modules_empty() {
     let server = setup_test_server().await;
-    let resp = server.get("/api/modules").add_header(KEY, TEST_API_KEY).await;
+    let resp = server
+        .get("/api/modules")
+        .add_header(KEY, TEST_API_KEY)
+        .await;
     resp.assert_status_ok();
     let arr: Vec<serde_json::Value> = resp.json();
     assert!(arr.is_empty());
@@ -990,7 +999,10 @@ async fn coverage_module_tree_unknown_is_empty() {
 #[tokio::test]
 async fn coverage_list_cycles_empty() {
     let server = setup_test_server().await;
-    let resp = server.get("/api/cycles").add_header(KEY, TEST_API_KEY).await;
+    let resp = server
+        .get("/api/cycles")
+        .add_header(KEY, TEST_API_KEY)
+        .await;
     resp.assert_status_ok();
     let arr: Vec<serde_json::Value> = resp.json();
     assert!(arr.is_empty());

@@ -340,7 +340,10 @@ mod coverage_tests {
     fn new_rejects_zero_points_but_allows_none_and_positive() {
         assert!(Story::new(1, 1, "T", Some(0)).is_err());
         assert_eq!(Story::new(1, 1, "T", Some(1)).unwrap().points, Some(1));
-        assert_eq!(Story::new(1, 1, "T", Some(u32::MAX)).unwrap().points, Some(u32::MAX));
+        assert_eq!(
+            Story::new(1, 1, "T", Some(u32::MAX)).unwrap().points,
+            Some(u32::MAX)
+        );
         assert!(Story::new(1, 1, "T", None).unwrap().points.is_none());
     }
 

@@ -39,12 +39,7 @@ impl LocalEntityStore for MockStore {
         self.hashes.get(id).cloned()
     }
 
-    fn apply_update(
-        &mut self,
-        id: &str,
-        _state: FeatureState,
-        hash: String,
-    ) -> anyhow::Result<()> {
+    fn apply_update(&mut self, id: &str, _state: FeatureState, hash: String) -> anyhow::Result<()> {
         self.hashes.insert(id.into(), hash);
         Ok(())
     }
@@ -111,7 +106,8 @@ fn issue_created_already_tracked_treats_as_update() {
     let sync = InboundSync::new(PlaneStateMapper::new(), true);
     let mut store = MockStore::new().with_hash("i3", "old_hash");
 
-    let event = PlaneInboundEvent::IssueCreated(webhook_issue("i3", "Updated Issue", Some("started")));
+    let event =
+        PlaneInboundEvent::IssueCreated(webhook_issue("i3", "Updated Issue", Some("started")));
     let outcome = sync.process(event, &mut store).unwrap();
 
     assert!(matches!(outcome, InboundOutcome::Updated { .. }));
@@ -150,7 +146,9 @@ fn issue_deleted_tracked_archives() {
     let sync = InboundSync::new(PlaneStateMapper::new(), true);
     let mut store = MockStore::new().with_hash("i6", "hash");
 
-    let event = PlaneInboundEvent::IssueDeleted { issue_id: "i6".into() };
+    let event = PlaneInboundEvent::IssueDeleted {
+        issue_id: "i6".into(),
+    };
     let outcome = sync.process(event, &mut store).unwrap();
 
     assert!(matches!(outcome, InboundOutcome::Archived { .. }));
@@ -162,7 +160,9 @@ fn issue_deleted_untracked_returns_not_tracked() {
     let sync = InboundSync::new(PlaneStateMapper::new(), true);
     let mut store = MockStore::new();
 
-    let event = PlaneInboundEvent::IssueDeleted { issue_id: "i7".into() };
+    let event = PlaneInboundEvent::IssueDeleted {
+        issue_id: "i7".into(),
+    };
     let outcome = sync.process(event, &mut store).unwrap();
 
     assert!(matches!(outcome, InboundOutcome::NotTracked { .. }));
@@ -192,7 +192,9 @@ fn module_updated_returns_not_tracked() {
 fn module_deleted_returns_not_tracked() {
     let sync = InboundSync::new(PlaneStateMapper::new(), true);
     let mut store = MockStore::new();
-    let event = PlaneInboundEvent::ModuleDeleted { module_id: "mod-2".into() };
+    let event = PlaneInboundEvent::ModuleDeleted {
+        module_id: "mod-2".into(),
+    };
     let outcome = sync.process(event, &mut store).unwrap();
 
     match outcome {
@@ -223,7 +225,9 @@ fn cycle_updated_returns_not_tracked() {
 fn cycle_deleted_returns_not_tracked() {
     let sync = InboundSync::new(PlaneStateMapper::new(), true);
     let mut store = MockStore::new();
-    let event = PlaneInboundEvent::CycleDeleted { cycle_id: "cyc-2".into() };
+    let event = PlaneInboundEvent::CycleDeleted {
+        cycle_id: "cyc-2".into(),
+    };
     let outcome = sync.process(event, &mut store).unwrap();
 
     match outcome {
@@ -257,21 +261,27 @@ fn inbound_outcome_updated_debug() {
 
 #[test]
 fn inbound_outcome_unchanged_debug() {
-    let outcome = InboundOutcome::Unchanged { issue_id: "1".into() };
+    let outcome = InboundOutcome::Unchanged {
+        issue_id: "1".into(),
+    };
     let debug = format!("{:?}", outcome);
     assert!(debug.contains("Unchanged"));
 }
 
 #[test]
 fn inbound_outcome_archived_debug() {
-    let outcome = InboundOutcome::Archived { issue_id: "1".into() };
+    let outcome = InboundOutcome::Archived {
+        issue_id: "1".into(),
+    };
     let debug = format!("{:?}", outcome);
     assert!(debug.contains("Archived"));
 }
 
 #[test]
 fn inbound_outcome_not_tracked_debug() {
-    let outcome = InboundOutcome::NotTracked { issue_id: "1".into() };
+    let outcome = InboundOutcome::NotTracked {
+        issue_id: "1".into(),
+    };
     let debug = format!("{:?}", outcome);
     assert!(debug.contains("NotTracked"));
 }
@@ -281,12 +291,20 @@ fn inbound_outcome_not_tracked_debug() {
 #[test]
 fn inbound_outcome_partial_eq() {
     assert_eq!(
-        InboundOutcome::Archived { issue_id: "1".into() },
-        InboundOutcome::Archived { issue_id: "1".into() }
+        InboundOutcome::Archived {
+            issue_id: "1".into()
+        },
+        InboundOutcome::Archived {
+            issue_id: "1".into()
+        }
     );
     assert_ne!(
-        InboundOutcome::Archived { issue_id: "1".into() },
-        InboundOutcome::Archived { issue_id: "2".into() }
+        InboundOutcome::Archived {
+            issue_id: "1".into()
+        },
+        InboundOutcome::Archived {
+            issue_id: "2".into()
+        }
     );
 }
 
@@ -299,8 +317,5 @@ fn inbound_outcome_serialization_roundtrip() {
     };
     let json = serde_json::to_string(&outcome).unwrap();
     let restored: InboundOutcome = serde_json::from_str(&json).unwrap();
-    assert_eq!(
-        outcome,
-        restored
-    );
+    assert_eq!(outcome, restored);
 }

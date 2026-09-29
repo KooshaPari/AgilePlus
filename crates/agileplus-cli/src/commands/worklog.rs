@@ -1371,7 +1371,13 @@ mod tests {
         std::fs::write(dir.join("worklog-123.json"), "{}").unwrap();
         let raw = find_worklogs(&dir, false).unwrap();
         assert_eq!(raw.len(), 1);
-        assert!(raw[0].file_name().unwrap().to_string_lossy().contains("worklog-123"));
+        assert!(
+            raw[0]
+                .file_name()
+                .unwrap()
+                .to_string_lossy()
+                .contains("worklog-123")
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 
@@ -1888,10 +1894,7 @@ mod tests {
             "started_at": "2026-06-10T00:00:00Z"
         });
         let c = to_canonical(&raw);
-        assert_eq!(
-            c.completed_at.as_deref(),
-            Some("2026-06-11T00:00:00Z")
-        );
+        assert_eq!(c.completed_at.as_deref(), Some("2026-06-11T00:00:00Z"));
     }
 
     #[test]
@@ -2017,10 +2020,7 @@ mod tests {
         assert_eq!(p.commit_sha.as_deref(), Some("abc1234"));
         assert_eq!(p.verification_result.status, "passed");
         assert_eq!(p.started_at, "2026-06-10T00:00:00Z");
-        assert_eq!(
-            p.completed_at.as_deref(),
-            Some("2026-06-10T01:00:00Z")
-        );
+        assert_eq!(p.completed_at.as_deref(), Some("2026-06-10T01:00:00Z"));
     }
 
     #[test]
@@ -2052,7 +2052,10 @@ mod tests {
         let p: WorklogPayload = serde_json::from_str(json).unwrap();
         assert_eq!(p.status, "completed");
         assert_eq!(p.extra.get("custom_field").unwrap(), "custom_value");
-        assert_eq!(p.extra.get("another_extra").unwrap(), &serde_json::json!(42));
+        assert_eq!(
+            p.extra.get("another_extra").unwrap(),
+            &serde_json::json!(42)
+        );
     }
 
     #[test]
@@ -2233,7 +2236,10 @@ mod tests {
             .iter()
             .map(|p| p.file_name().unwrap().to_string_lossy().to_string())
             .collect();
-        assert_eq!(names, vec!["worklog-a.json", "worklog-b.json", "worklog-c.json"]);
+        assert_eq!(
+            names,
+            vec!["worklog-a.json", "worklog-b.json", "worklog-c.json"]
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 
@@ -2273,7 +2279,13 @@ mod tests {
         let mut report = EmitReport::default();
         let files = collect_worklog_files(&dir, &mut report).unwrap();
         assert_eq!(files.len(), 1);
-        assert!(files[0].file_name().unwrap().to_string_lossy().contains("worklog-1"));
+        assert!(
+            files[0]
+                .file_name()
+                .unwrap()
+                .to_string_lossy()
+                .contains("worklog-1")
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 
@@ -2287,7 +2299,13 @@ mod tests {
         let mut report = EmitReport::default();
         let files = collect_worklog_files(&dir, &mut report).unwrap();
         assert_eq!(files.len(), 1);
-        assert!(files[0].file_name().unwrap().to_string_lossy().contains("worklog-1"));
+        assert!(
+            files[0]
+                .file_name()
+                .unwrap()
+                .to_string_lossy()
+                .contains("worklog-1")
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 

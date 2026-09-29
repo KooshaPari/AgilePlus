@@ -682,10 +682,7 @@ mod epics_stories_json_tests {
         let conn = rusqlite::Connection::open(&path).unwrap();
         conn.execute_batch("CREATE TABLE test_table (id INTEGER)")
             .unwrap();
-        assert_eq!(
-            column_expression(&conn, "test_table", "name"),
-            "NULL"
-        );
+        assert_eq!(column_expression(&conn, "test_table", "name"), "NULL");
         std::fs::remove_file(&path).unwrap();
     }
 
@@ -693,10 +690,7 @@ mod epics_stories_json_tests {
     fn test_column_expression_returns_null_when_table_missing() {
         let path = temporary_database_path("col-expr-no-table");
         let conn = rusqlite::Connection::open(&path).unwrap();
-        assert_eq!(
-            column_expression(&conn, "nonexistent", "col"),
-            "NULL"
-        );
+        assert_eq!(column_expression(&conn, "nonexistent", "col"), "NULL");
         std::fs::remove_file(&path).unwrap();
     }
 
@@ -704,10 +698,7 @@ mod epics_stories_json_tests {
 
     #[test]
     fn test_epics_stories_error_structure() {
-        let err = epics_stories_error(
-            "test context",
-            rusqlite::Error::ExecuteReturnedResults,
-        );
+        let err = epics_stories_error("test context", rusqlite::Error::ExecuteReturnedResults);
         let json = err.0;
         assert_eq!(json["epics"], serde_json::json!([]));
         assert_eq!(json["stories"], serde_json::json!([]));
@@ -1031,8 +1022,12 @@ mod epics_stories_json_tests {
         // Pre-populate with a project so switch_project can find it.
         {
             let mut store = state.write().await;
-            let project = agileplus_domain::domain::project::Project::new("Test Project", "test-project").unwrap();
-            store.projects.push(agileplus_domain::domain::project::Project { id: 1, ..project });
+            let project =
+                agileplus_domain::domain::project::Project::new("Test Project", "test-project")
+                    .unwrap();
+            store
+                .projects
+                .push(agileplus_domain::domain::project::Project { id: 1, ..project });
         }
         let response = super::switch_project(State(state.clone()), Path(1)).await;
         let body_bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
@@ -1050,8 +1045,12 @@ mod epics_stories_json_tests {
         // Pre-populate with a project so switch_project can find it.
         {
             let mut store = state.write().await;
-            let project = agileplus_domain::domain::project::Project::new("Test Project", "test-project").unwrap();
-            store.projects.push(agileplus_domain::domain::project::Project { id: 1, ..project });
+            let project =
+                agileplus_domain::domain::project::Project::new("Test Project", "test-project")
+                    .unwrap();
+            store
+                .projects
+                .push(agileplus_domain::domain::project::Project { id: 1, ..project });
         }
         super::switch_project(State(state.clone()), Path(1)).await;
         super::switch_project(State(state.clone()), Path(0)).await;
@@ -1064,10 +1063,7 @@ mod epics_stories_json_tests {
     async fn switch_project_not_found() {
         let state = make_state();
         let response = super::switch_project(State(state), Path(99999)).await;
-        assert_eq!(
-            response.status(),
-            axum::http::StatusCode::NOT_FOUND
-        );
+        assert_eq!(response.status(), axum::http::StatusCode::NOT_FOUND);
     }
 
     // ── project_switcher handler tests ────────────────────────────────────
@@ -1089,12 +1085,13 @@ mod epics_stories_json_tests {
     async fn all_work_packages_json_returns_json() {
         use axum::response::IntoResponse;
         let state = make_state();
-        let response = super::all_work_packages_json(State(state)).await.into_response();
+        let response = super::all_work_packages_json(State(state))
+            .await
+            .into_response();
         let body_bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
             .await
             .unwrap();
-        let json: serde_json::Value =
-            serde_json::from_slice(&body_bytes).expect("valid JSON");
+        let json: serde_json::Value = serde_json::from_slice(&body_bytes).expect("valid JSON");
         assert!(json.get("work_packages").is_some());
         assert!(json.get("count").is_some());
         assert!(json.get("timestamp").is_some());
@@ -1106,10 +1103,7 @@ mod epics_stories_json_tests {
     async fn dashboard_feature_detail_not_found() {
         let state = make_state();
         let response = super::feature_detail(State(state), Path(99999), HeaderMap::new()).await;
-        assert_eq!(
-            response.status(),
-            axum::http::StatusCode::NOT_FOUND
-        );
+        assert_eq!(response.status(), axum::http::StatusCode::NOT_FOUND);
     }
 
     #[tokio::test]

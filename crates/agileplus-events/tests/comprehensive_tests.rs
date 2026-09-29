@@ -12,23 +12,21 @@ use agileplus_domain::domain::state_machine::FeatureState;
 use agileplus_domain::domain::story::StoryStatus;
 use agileplus_domain::domain::user::{UserRole, UserStatus};
 use agileplus_domain::domain::work_package::WpState;
+use agileplus_events::EventSourcingError;
 use agileplus_events::bus::{DomainEvent as BusDomainEvent, EventBus};
 use agileplus_events::domain_event::{
-    AggregateId, DomainEvent, EpicCreated, EpicStatusChanged,
-    EventEnvelope, EventHandler, EventHandlerError, FeatureCreated, FeatureShipped,
-    FeatureStateAdvanced, ProjectArchived, ProjectCreated, ProjectRenamed, StoryAssigned,
-    StoryCreated, StoryStatusChanged, UserAdded, UserRoleChanged, UserStatusChanged,
-    WorkPackageCreated, WorkPackageStateChanged,
+    AggregateId, DomainEvent, EpicCreated, EpicStatusChanged, EventEnvelope, EventHandler,
+    EventHandlerError, FeatureCreated, FeatureShipped, FeatureStateAdvanced, ProjectArchived,
+    ProjectCreated, ProjectRenamed, StoryAssigned, StoryCreated, StoryStatusChanged, UserAdded,
+    UserRoleChanged, UserStatusChanged, WorkPackageCreated, WorkPackageStateChanged,
 };
-use agileplus_events::hash::{compute_hash, verify_chain, HashError};
+use agileplus_events::hash::{HashError, compute_hash, verify_chain};
 use agileplus_events::query::EventQuery;
-use agileplus_events::replay::{replay_events, replay_events_since, Aggregate, ReplayError};
+use agileplus_events::replay::{Aggregate, ReplayError, replay_events, replay_events_since};
 use agileplus_events::snapshot::{
-    InMemorySnapshotStore, LoadedState, SnapshotConfig, SnapshotStore,
-    should_snapshot,
+    InMemorySnapshotStore, LoadedState, SnapshotConfig, SnapshotStore, should_snapshot,
 };
 use agileplus_events::store::{EventError, EventStore, InMemoryEventStore};
-use agileplus_events::EventSourcingError;
 use async_trait::async_trait;
 use chrono::{DateTime, Duration, Utc};
 use uuid::Uuid;
@@ -74,7 +72,11 @@ fn make_event_at(
     }
 }
 
-fn make_snapshot(entity_type: &str, entity_id: i64, seq: i64) -> agileplus_domain::domain::snapshot::Snapshot {
+fn make_snapshot(
+    entity_type: &str,
+    entity_id: i64,
+    seq: i64,
+) -> agileplus_domain::domain::snapshot::Snapshot {
     agileplus_domain::domain::snapshot::Snapshot::new(
         entity_type,
         entity_id,
@@ -94,8 +96,10 @@ fn build_hash_chain(count: usize, entity_id: i64) -> Vec<Event> {
     for i in 0..count {
         let seq = (i + 1) as i64;
         let payload = serde_json::json!({"step": i});
-        let hash = compute_hash(entity_id, "Feature", "created", &payload, ts, "tester", &prev_hash)
-            .unwrap();
+        let hash = compute_hash(
+            entity_id, "Feature", "created", &payload, ts, "tester", &prev_hash,
+        )
+        .unwrap();
         events.push(Event {
             id: seq,
             entity_type: "Feature".into(),
@@ -121,7 +125,10 @@ fn build_hash_chain(count: usize, entity_id: i64) -> Vec<Event> {
 async fn bus_publish_no_subscribers_returns_err() {
     let bus = EventBus::new(8);
     let result = bus.publish(BusDomainEvent::FeatureCreatedLegacy { id: 1 });
-    assert!(result.is_err(), "publishing with no subscribers should fail");
+    assert!(
+        result.is_err(),
+        "publishing with no subscribers should fail"
+    );
 }
 
 #[tokio::test]
@@ -262,20 +269,44 @@ async fn bus_serde_round_trip_all_bus_variants() {
 #[tokio::test]
 async fn bus_domain_event_all_event_types() {
     let variants = vec![
-        (BusDomainEvent::FeatureCreatedLegacy { id: 1 }, "feature.created"),
         (
-            BusDomainEvent::FeatureStateChanged { id: 1, from: "a".into(), to: "b".into() },
+            BusDomainEvent::FeatureCreatedLegacy { id: 1 },
+            "feature.created",
+        ),
+        (
+            BusDomainEvent::FeatureStateChanged {
+                id: 1,
+                from: "a".into(),
+                to: "b".into(),
+            },
             "feature.state_changed",
         ),
-        (BusDomainEvent::CycleStarted { cycle_id: 1, module_id: 1 }, "cycle.started"),
+        (
+            BusDomainEvent::CycleStarted {
+                cycle_id: 1,
+                module_id: 1,
+            },
+            "cycle.started",
+        ),
         (BusDomainEvent::CycleEnded { cycle_id: 1 }, "cycle.ended"),
         (
-            BusDomainEvent::WorkPackageLinked { work_package_id: 1, feature_id: 1 },
+            BusDomainEvent::WorkPackageLinked {
+                work_package_id: 1,
+                feature_id: 1,
+            },
             "work_package.linked",
         ),
-        (BusDomainEvent::UserLoggedIn { user_id: "x".into() }, "user.logged_in"),
         (
-            BusDomainEvent::PlaneWebhookReceived { issue_id: "x".into(), action: "y".into() },
+            BusDomainEvent::UserLoggedIn {
+                user_id: "x".into(),
+            },
+            "user.logged_in",
+        ),
+        (
+            BusDomainEvent::PlaneWebhookReceived {
+                issue_id: "x".into(),
+                action: "y".into(),
+            },
             "plane.webhook_received",
         ),
     ];
@@ -290,18 +321,39 @@ async fn bus_domain_event_all_aggregate_types() {
     let variants = vec![
         (BusDomainEvent::FeatureCreatedLegacy { id: 1 }, "Feature"),
         (
-            BusDomainEvent::FeatureStateChanged { id: 1, from: "a".into(), to: "b".into() },
+            BusDomainEvent::FeatureStateChanged {
+                id: 1,
+                from: "a".into(),
+                to: "b".into(),
+            },
             "Feature",
         ),
-        (BusDomainEvent::CycleStarted { cycle_id: 1, module_id: 1 }, "Cycle"),
+        (
+            BusDomainEvent::CycleStarted {
+                cycle_id: 1,
+                module_id: 1,
+            },
+            "Cycle",
+        ),
         (BusDomainEvent::CycleEnded { cycle_id: 1 }, "Cycle"),
         (
-            BusDomainEvent::WorkPackageLinked { work_package_id: 1, feature_id: 1 },
+            BusDomainEvent::WorkPackageLinked {
+                work_package_id: 1,
+                feature_id: 1,
+            },
             "WorkPackage",
         ),
-        (BusDomainEvent::UserLoggedIn { user_id: "x".into() }, "User"),
         (
-            BusDomainEvent::PlaneWebhookReceived { issue_id: "x".into(), action: "y".into() },
+            BusDomainEvent::UserLoggedIn {
+                user_id: "x".into(),
+            },
+            "User",
+        ),
+        (
+            BusDomainEvent::PlaneWebhookReceived {
+                issue_id: "x".into(),
+                action: "y".into(),
+            },
             "Plane",
         ),
     ];
@@ -1149,25 +1201,78 @@ fn hash_differs_with_different_entity_id() {
 #[test]
 fn hash_differs_with_different_entity_type() {
     let ts = Utc::now();
-    let h1 = compute_hash(1, "Feature", "c", &serde_json::json!({}), ts, "a", &[0u8; 32]).unwrap();
-    let h2 =
-        compute_hash(1, "WorkPackage", "c", &serde_json::json!({}), ts, "a", &[0u8; 32]).unwrap();
+    let h1 = compute_hash(
+        1,
+        "Feature",
+        "c",
+        &serde_json::json!({}),
+        ts,
+        "a",
+        &[0u8; 32],
+    )
+    .unwrap();
+    let h2 = compute_hash(
+        1,
+        "WorkPackage",
+        "c",
+        &serde_json::json!({}),
+        ts,
+        "a",
+        &[0u8; 32],
+    )
+    .unwrap();
     assert_ne!(h1, h2);
 }
 
 #[test]
 fn hash_differs_with_different_event_type() {
     let ts = Utc::now();
-    let h1 = compute_hash(1, "F", "created", &serde_json::json!({}), ts, "a", &[0u8; 32]).unwrap();
-    let h2 = compute_hash(1, "F", "shipped", &serde_json::json!({}), ts, "a", &[0u8; 32]).unwrap();
+    let h1 = compute_hash(
+        1,
+        "F",
+        "created",
+        &serde_json::json!({}),
+        ts,
+        "a",
+        &[0u8; 32],
+    )
+    .unwrap();
+    let h2 = compute_hash(
+        1,
+        "F",
+        "shipped",
+        &serde_json::json!({}),
+        ts,
+        "a",
+        &[0u8; 32],
+    )
+    .unwrap();
     assert_ne!(h1, h2);
 }
 
 #[test]
 fn hash_differs_with_different_payload() {
     let ts = Utc::now();
-    let h1 = compute_hash(1, "F", "c", &serde_json::json!({"a": 1}), ts, "a", &[0u8; 32]).unwrap();
-    let h2 = compute_hash(1, "F", "c", &serde_json::json!({"a": 2}), ts, "a", &[0u8; 32]).unwrap();
+    let h1 = compute_hash(
+        1,
+        "F",
+        "c",
+        &serde_json::json!({"a": 1}),
+        ts,
+        "a",
+        &[0u8; 32],
+    )
+    .unwrap();
+    let h2 = compute_hash(
+        1,
+        "F",
+        "c",
+        &serde_json::json!({"a": 2}),
+        ts,
+        "a",
+        &[0u8; 32],
+    )
+    .unwrap();
     assert_ne!(h1, h2);
 }
 
@@ -1483,10 +1588,7 @@ async fn store_get_events_by_range_filters_timestamp() {
 #[tokio::test]
 async fn store_get_latest_sequence_returns_zero_for_empty() {
     let store = InMemoryEventStore::new();
-    assert_eq!(
-        store.get_latest_sequence("Feature", 1).await.unwrap(),
-        0
-    );
+    assert_eq!(store.get_latest_sequence("Feature", 1).await.unwrap(), 0);
 }
 
 #[tokio::test]
@@ -1500,10 +1602,7 @@ async fn store_get_latest_sequence_returns_last() {
         .append(&make_event(0, "Feature", 1, "shipped", "a"))
         .await
         .unwrap();
-    assert_eq!(
-        store.get_latest_sequence("Feature", 1).await.unwrap(),
-        2
-    );
+    assert_eq!(store.get_latest_sequence("Feature", 1).await.unwrap(), 2);
 }
 
 #[tokio::test]
@@ -1706,9 +1805,7 @@ fn query_combined_filters_narrow() {
 #[test]
 fn query_no_matches_returns_empty() {
     let events = vec![make_event(1, "Feature", 1, "created", "alice")];
-    let result = EventQuery::new()
-        .entity_type("WorkPackage")
-        .filter(&events);
+    let result = EventQuery::new().entity_type("WorkPackage").filter(&events);
     assert!(result.is_empty());
 }
 
@@ -1723,7 +1820,14 @@ fn query_empty_input_returns_empty() {
 fn query_all_filters_combined() {
     let now = Utc::now();
     let events = vec![
-        make_event_at(1, "Feature", 1, "created", "alice", now - Duration::hours(2)),
+        make_event_at(
+            1,
+            "Feature",
+            1,
+            "created",
+            "alice",
+            now - Duration::hours(2),
+        ),
         make_event_at(2, "Feature", 1, "updated", "alice", now),
         make_event_at(3, "WorkPackage", 1, "created", "alice", now),
     ];
@@ -1862,7 +1966,10 @@ async fn replay_rejects_mixed_entities() {
 
 #[tokio::test]
 async fn replay_propagates_aggregate_errors() {
-    let mut agg = FailingAggregate { version: 0, fail_on: 2 };
+    let mut agg = FailingAggregate {
+        version: 0,
+        fail_on: 2,
+    };
     let events = vec![
         make_replay_event(1, 1, serde_json::json!({})),
         make_replay_event(2, 1, serde_json::json!({})),
@@ -2045,17 +2152,17 @@ async fn snapshot_store_delete_before_removes_old() {
 #[tokio::test]
 async fn snapshot_store_delete_before_no_panic_on_unknown() {
     let store = InMemorySnapshotStore::new();
-    store
-        .delete_before("Feature", 999, 10)
-        .await
-        .unwrap();
+    store.delete_before("Feature", 999, 10).await.unwrap();
 }
 
 #[tokio::test]
 async fn snapshot_store_independent_entities() {
     let store = InMemorySnapshotStore::new();
     store.save(&make_snapshot("Feature", 1, 10)).await.unwrap();
-    store.save(&make_snapshot("WorkPackage", 1, 20)).await.unwrap();
+    store
+        .save(&make_snapshot("WorkPackage", 1, 20))
+        .await
+        .unwrap();
     let f = store.load("Feature", 1).await.unwrap().unwrap();
     let w = store.load("WorkPackage", 1).await.unwrap().unwrap();
     assert_eq!(f.event_sequence, 10);

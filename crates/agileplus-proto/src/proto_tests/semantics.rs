@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Contract tests for generated `agileplus.v1` types (see `mod.rs`).
 
-use crate::agileplus::v1::work_items_service_server::{
-    WorkItemsService, WorkItemsServiceServer,
-};
+use crate::agileplus::v1::work_items_service_server::{WorkItemsService, WorkItemsServiceServer};
 use crate::agileplus::v1::*;
 use prost::Message;
 
@@ -265,9 +263,7 @@ fn clone_produces_independent_vectors_and_maps() {
     let mut original = CommandRequest {
         command: "c".to_string(),
         feature_slug: "f".to_string(),
-        args: [("k".to_string(), "v".to_string())]
-            .into_iter()
-            .collect(),
+        args: [("k".to_string(), "v".to_string())].into_iter().collect(),
     };
     let cloned = original.clone();
     original.args.insert("k2".to_string(), "v2".to_string());

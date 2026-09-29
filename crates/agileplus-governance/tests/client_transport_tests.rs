@@ -27,7 +27,9 @@ struct TestServer {
 
 impl TestServer {
     async fn start(status: &'static str, delay: Duration) -> Self {
-        let listener = TcpListener::bind("127.0.0.1:0").await.expect("bind ephemeral port");
+        let listener = TcpListener::bind("127.0.0.1:0")
+            .await
+            .expect("bind ephemeral port");
         let addr = listener.local_addr().expect("local_addr");
         let handle = tokio::spawn(async move {
             loop {
@@ -41,8 +43,9 @@ impl TestServer {
                     if !delay.is_zero() {
                         tokio::time::sleep(delay).await;
                     }
-                    let response =
-                        format!("HTTP/1.1 {status}\r\ncontent-length: 0\r\nconnection: close\r\n\r\n");
+                    let response = format!(
+                        "HTTP/1.1 {status}\r\ncontent-length: 0\r\nconnection: close\r\n\r\n"
+                    );
                     let _ = socket.write_all(response.as_bytes()).await;
                     let _ = socket.shutdown().await;
                 });
@@ -200,7 +203,11 @@ async fn log_audit_tolerates_remote_sync_failure() {
     tokio::time::sleep(Duration::from_millis(300)).await;
 
     let events = client.query_audit(AuditFilter::new()).await.unwrap();
-    assert_eq!(events.len(), 1, "local audit entry must survive sync failure");
+    assert_eq!(
+        events.len(),
+        1,
+        "local audit entry must survive sync failure"
+    );
     assert!(client.status().await.last_sync.is_none());
 }
 
@@ -231,8 +238,14 @@ async fn builder_config_file_loads_settings_from_disk() {
     assert!(!status.sync_enabled);
     assert_eq!(status.config.governance_url, "http://127.0.0.1:1");
     assert_eq!(client.connection_status().await, ConnectionStatus::Disabled);
-    assert!(db_path.exists(), "audit DB from the file config should be created");
+    assert!(
+        db_path.exists(),
+        "audit DB from the file config should be created"
+    );
 
     let missing = GovernanceClientBuilder::new().config_file(dir.path().join("absent.json"));
-    assert!(missing.is_err(), "missing config file must fail the builder");
+    assert!(
+        missing.is_err(),
+        "missing config file must fail the builder"
+    );
 }

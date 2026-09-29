@@ -230,7 +230,11 @@ async fn delete_branch_forwards_force_and_remote_to_the_port() {
 
     assert_eq!(
         vcs.calls_of("delete_branch")[0].args,
-        vec!["old".to_string(), "true".to_string(), "upstream".to_string()],
+        vec![
+            "old".to_string(),
+            "true".to_string(),
+            "upstream".to_string()
+        ],
         "force must not default away when explicitly set"
     );
 }

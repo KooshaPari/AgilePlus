@@ -51,8 +51,7 @@ fn event_measurement_multi_entity_access_pattern() {
 
     // Measure retrieval per entity
     for entity_id in 1..=entity_count {
-        let retrieved =
-            event_repo::get_events(&conn, "Feature", entity_id).expect("get");
+        let retrieved = event_repo::get_events(&conn, "Feature", entity_id).expect("get");
         assert_eq!(retrieved.len(), events_per_entity as usize);
     }
 }
@@ -69,8 +68,7 @@ fn event_measurement_since_cutoff() {
 
     // Measure delta events since various cutoffs
     for &cutoff in &[0, 25, 50, 75, 90, 99] {
-        let delta = event_repo::get_events_since(&conn, "Feature", 1, cutoff)
-            .expect("get_since");
+        let delta = event_repo::get_events_since(&conn, "Feature", 1, cutoff).expect("get_since");
         let expected = 100 - cutoff;
         assert_eq!(
             delta.len(),
@@ -131,12 +129,16 @@ fn feature_measurement_state_transitions() {
 
     // Measure state transitions
     feat_repo::update_feature_state(&conn, 1, FeatureState::Specified).expect("transition");
-    let f = feat_repo::get_feature_by_id(&conn, 1).expect("get").unwrap();
+    let f = feat_repo::get_feature_by_id(&conn, 1)
+        .expect("get")
+        .unwrap();
     assert_eq!(f.state, FeatureState::Specified);
 
     // Reset for next measurement
     feat_repo::update_feature_state(&conn, 1, FeatureState::Created).expect("reset");
-    let f = feat_repo::get_feature_by_id(&conn, 1).expect("get").unwrap();
+    let f = feat_repo::get_feature_by_id(&conn, 1)
+        .expect("get")
+        .unwrap();
     assert_eq!(f.state, FeatureState::Created);
 }
 

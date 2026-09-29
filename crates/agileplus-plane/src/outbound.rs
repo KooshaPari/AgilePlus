@@ -531,7 +531,9 @@ mod tests {
     async fn push_feature_updates_existing_issue() {
         let server = MockServer::start().await;
         Mock::given(method("PATCH"))
-            .and(path("/api/v1/workspaces/ws/projects/proj/work-items/existing-id/"))
+            .and(path(
+                "/api/v1/workspaces/ws/projects/proj/work-items/existing-id/",
+            ))
             .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
                 "id": "existing-id",
                 "name": "Test Feature"
@@ -569,7 +571,9 @@ mod tests {
     async fn push_feature_update_error_propagates() {
         let server = MockServer::start().await;
         Mock::given(method("PATCH"))
-            .and(path("/api/v1/workspaces/ws/projects/proj/work-items/existing-id/"))
+            .and(path(
+                "/api/v1/workspaces/ws/projects/proj/work-items/existing-id/",
+            ))
             .respond_with(ResponseTemplate::new(404).set_body_string("not found"))
             .mount(&server)
             .await;
@@ -616,7 +620,9 @@ mod tests {
     async fn push_work_package_updates_existing() {
         let server = MockServer::start().await;
         Mock::given(method("PATCH"))
-            .and(path("/api/v1/workspaces/ws/projects/proj/work-items/wp-existing/"))
+            .and(path(
+                "/api/v1/workspaces/ws/projects/proj/work-items/wp-existing/",
+            ))
             .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
                 "id": "wp-existing",
                 "name": "[WP02] Updated"
@@ -682,7 +688,9 @@ mod tests_extra {
     async fn module_assignment_links_when_both_mapped() {
         let server = MockServer::start().await;
         Mock::given(method("POST"))
-            .and(path("/api/v1/workspaces/ws/projects/proj/modules/m1/module-issues/"))
+            .and(path(
+                "/api/v1/workspaces/ws/projects/proj/modules/m1/module-issues/",
+            ))
             .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({})))
             .mount(&server)
             .await;
@@ -691,28 +699,46 @@ mod tests_extra {
         let storage = MockStoragePort::new()
             .with_sync_mapping("feature", 1, "plane-feat")
             .with_sync_mapping("module", 2, "m1");
-        push_feature_module_assignment(&client, &storage, 1, 2).await.unwrap();
+        push_feature_module_assignment(&client, &storage, 1, 2)
+            .await
+            .unwrap();
     }
 
     #[tokio::test]
     async fn module_assignment_skips_when_feature_unmapped() {
-        let client = PlaneClient::new("http://127.0.0.1:1".into(), "k".into(), "ws".into(), "proj".into());
+        let client = PlaneClient::new(
+            "http://127.0.0.1:1".into(),
+            "k".into(),
+            "ws".into(),
+            "proj".into(),
+        );
         let storage = MockStoragePort::new().with_sync_mapping("module", 2, "m1");
-        push_feature_module_assignment(&client, &storage, 1, 2).await.unwrap();
+        push_feature_module_assignment(&client, &storage, 1, 2)
+            .await
+            .unwrap();
     }
 
     #[tokio::test]
     async fn module_assignment_skips_when_module_unmapped() {
-        let client = PlaneClient::new("http://127.0.0.1:1".into(), "k".into(), "ws".into(), "proj".into());
+        let client = PlaneClient::new(
+            "http://127.0.0.1:1".into(),
+            "k".into(),
+            "ws".into(),
+            "proj".into(),
+        );
         let storage = MockStoragePort::new().with_sync_mapping("feature", 1, "plane-feat");
-        push_feature_module_assignment(&client, &storage, 1, 2).await.unwrap();
+        push_feature_module_assignment(&client, &storage, 1, 2)
+            .await
+            .unwrap();
     }
 
     #[tokio::test]
     async fn module_assignment_error_propagates() {
         let server = MockServer::start().await;
         Mock::given(method("POST"))
-            .and(path("/api/v1/workspaces/ws/projects/proj/modules/m1/module-issues/"))
+            .and(path(
+                "/api/v1/workspaces/ws/projects/proj/modules/m1/module-issues/",
+            ))
             .respond_with(ResponseTemplate::new(500).set_body_string("err"))
             .mount(&server)
             .await;
@@ -721,14 +747,20 @@ mod tests_extra {
         let storage = MockStoragePort::new()
             .with_sync_mapping("feature", 1, "plane-feat")
             .with_sync_mapping("module", 2, "m1");
-        assert!(push_feature_module_assignment(&client, &storage, 1, 2).await.is_err());
+        assert!(
+            push_feature_module_assignment(&client, &storage, 1, 2)
+                .await
+                .is_err()
+        );
     }
 
     #[tokio::test]
     async fn module_unassignment_removes_link() {
         let server = MockServer::start().await;
         Mock::given(method("DELETE"))
-            .and(path("/api/v1/workspaces/ws/projects/proj/modules/m1/module-issues/plane-feat/"))
+            .and(path(
+                "/api/v1/workspaces/ws/projects/proj/modules/m1/module-issues/plane-feat/",
+            ))
             .respond_with(ResponseTemplate::new(204))
             .mount(&server)
             .await;
@@ -737,21 +769,32 @@ mod tests_extra {
         let storage = MockStoragePort::new()
             .with_sync_mapping("feature", 1, "plane-feat")
             .with_sync_mapping("module", 2, "m1");
-        push_feature_module_unassignment(&client, &storage, 1, 2).await.unwrap();
+        push_feature_module_unassignment(&client, &storage, 1, 2)
+            .await
+            .unwrap();
     }
 
     #[tokio::test]
     async fn module_unassignment_skips_when_missing() {
-        let client = PlaneClient::new("http://127.0.0.1:1".into(), "k".into(), "ws".into(), "proj".into());
+        let client = PlaneClient::new(
+            "http://127.0.0.1:1".into(),
+            "k".into(),
+            "ws".into(),
+            "proj".into(),
+        );
         let storage = MockStoragePort::new();
-        push_feature_module_unassignment(&client, &storage, 1, 2).await.unwrap();
+        push_feature_module_unassignment(&client, &storage, 1, 2)
+            .await
+            .unwrap();
     }
 
     #[tokio::test]
     async fn module_unassignment_error_propagates() {
         let server = MockServer::start().await;
         Mock::given(method("DELETE"))
-            .and(path("/api/v1/workspaces/ws/projects/proj/modules/m1/module-issues/plane-feat/"))
+            .and(path(
+                "/api/v1/workspaces/ws/projects/proj/modules/m1/module-issues/plane-feat/",
+            ))
             .respond_with(ResponseTemplate::new(500).set_body_string("err"))
             .mount(&server)
             .await;
@@ -760,14 +803,20 @@ mod tests_extra {
         let storage = MockStoragePort::new()
             .with_sync_mapping("feature", 1, "plane-feat")
             .with_sync_mapping("module", 2, "m1");
-        assert!(push_feature_module_unassignment(&client, &storage, 1, 2).await.is_err());
+        assert!(
+            push_feature_module_unassignment(&client, &storage, 1, 2)
+                .await
+                .is_err()
+        );
     }
 
     #[tokio::test]
     async fn cycle_assignment_links_when_both_mapped() {
         let server = MockServer::start().await;
         Mock::given(method("POST"))
-            .and(path("/api/v1/workspaces/ws/projects/proj/cycles/c1/cycle-issues/"))
+            .and(path(
+                "/api/v1/workspaces/ws/projects/proj/cycles/c1/cycle-issues/",
+            ))
             .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({})))
             .mount(&server)
             .await;
@@ -776,21 +825,32 @@ mod tests_extra {
         let storage = MockStoragePort::new()
             .with_sync_mapping("feature", 1, "plane-feat")
             .with_sync_mapping("cycle", 3, "c1");
-        push_feature_cycle_assignment(&client, &storage, 1, 3).await.unwrap();
+        push_feature_cycle_assignment(&client, &storage, 1, 3)
+            .await
+            .unwrap();
     }
 
     #[tokio::test]
     async fn cycle_assignment_skips_when_missing() {
-        let client = PlaneClient::new("http://127.0.0.1:1".into(), "k".into(), "ws".into(), "proj".into());
+        let client = PlaneClient::new(
+            "http://127.0.0.1:1".into(),
+            "k".into(),
+            "ws".into(),
+            "proj".into(),
+        );
         let storage = MockStoragePort::new();
-        push_feature_cycle_assignment(&client, &storage, 1, 3).await.unwrap();
+        push_feature_cycle_assignment(&client, &storage, 1, 3)
+            .await
+            .unwrap();
     }
 
     #[tokio::test]
     async fn cycle_assignment_error_propagates() {
         let server = MockServer::start().await;
         Mock::given(method("POST"))
-            .and(path("/api/v1/workspaces/ws/projects/proj/cycles/c1/cycle-issues/"))
+            .and(path(
+                "/api/v1/workspaces/ws/projects/proj/cycles/c1/cycle-issues/",
+            ))
             .respond_with(ResponseTemplate::new(409).set_body_string("conflict"))
             .mount(&server)
             .await;
@@ -799,14 +859,20 @@ mod tests_extra {
         let storage = MockStoragePort::new()
             .with_sync_mapping("feature", 1, "plane-feat")
             .with_sync_mapping("cycle", 3, "c1");
-        assert!(push_feature_cycle_assignment(&client, &storage, 1, 3).await.is_err());
+        assert!(
+            push_feature_cycle_assignment(&client, &storage, 1, 3)
+                .await
+                .is_err()
+        );
     }
 
     #[tokio::test]
     async fn cycle_unassignment_removes_link() {
         let server = MockServer::start().await;
         Mock::given(method("DELETE"))
-            .and(path("/api/v1/workspaces/ws/projects/proj/cycles/c1/cycle-issues/plane-feat/"))
+            .and(path(
+                "/api/v1/workspaces/ws/projects/proj/cycles/c1/cycle-issues/plane-feat/",
+            ))
             .respond_with(ResponseTemplate::new(204))
             .mount(&server)
             .await;
@@ -815,21 +881,32 @@ mod tests_extra {
         let storage = MockStoragePort::new()
             .with_sync_mapping("feature", 1, "plane-feat")
             .with_sync_mapping("cycle", 3, "c1");
-        push_feature_cycle_unassignment(&client, &storage, 1, 3).await.unwrap();
+        push_feature_cycle_unassignment(&client, &storage, 1, 3)
+            .await
+            .unwrap();
     }
 
     #[tokio::test]
     async fn cycle_unassignment_skips_when_missing() {
-        let client = PlaneClient::new("http://127.0.0.1:1".into(), "k".into(), "ws".into(), "proj".into());
+        let client = PlaneClient::new(
+            "http://127.0.0.1:1".into(),
+            "k".into(),
+            "ws".into(),
+            "proj".into(),
+        );
         let storage = MockStoragePort::new();
-        push_feature_cycle_unassignment(&client, &storage, 1, 3).await.unwrap();
+        push_feature_cycle_unassignment(&client, &storage, 1, 3)
+            .await
+            .unwrap();
     }
 
     #[tokio::test]
     async fn cycle_unassignment_error_propagates() {
         let server = MockServer::start().await;
         Mock::given(method("DELETE"))
-            .and(path("/api/v1/workspaces/ws/projects/proj/cycles/c1/cycle-issues/plane-feat/"))
+            .and(path(
+                "/api/v1/workspaces/ws/projects/proj/cycles/c1/cycle-issues/plane-feat/",
+            ))
             .respond_with(ResponseTemplate::new(500).set_body_string("err"))
             .mount(&server)
             .await;
@@ -838,7 +915,11 @@ mod tests_extra {
         let storage = MockStoragePort::new()
             .with_sync_mapping("feature", 1, "plane-feat")
             .with_sync_mapping("cycle", 3, "c1");
-        assert!(push_feature_cycle_unassignment(&client, &storage, 1, 3).await.is_err());
+        assert!(
+            push_feature_cycle_unassignment(&client, &storage, 1, 3)
+                .await
+                .is_err()
+        );
     }
 
     // -- mapper-driven payload shaping --
@@ -922,9 +1003,15 @@ mod tests_extra {
         let client = PlaneClient::new(server.uri(), "k".into(), "ws".into(), "proj".into());
         let storage = MockStoragePort::new();
 
-        push_module(&client, &storage, &module(7, "Auth")).await.unwrap();
+        push_module(&client, &storage, &module(7, "Auth"))
+            .await
+            .unwrap();
 
-        let mapping = storage.get_sync_mapping("module", 7).await.unwrap().unwrap();
+        let mapping = storage
+            .get_sync_mapping("module", 7)
+            .await
+            .unwrap()
+            .unwrap();
         assert_eq!(mapping.entity_type, "module");
         assert_eq!(mapping.entity_id, 7);
         assert_eq!(mapping.plane_issue_id, "plane-mod-1");
@@ -934,7 +1021,9 @@ mod tests_extra {
     async fn push_module_patches_mapped_module_and_keeps_the_mapping() {
         let server = MockServer::start().await;
         Mock::given(method("PATCH"))
-            .and(path("/api/v1/workspaces/ws/projects/proj/modules/plane-mod-9/"))
+            .and(path(
+                "/api/v1/workspaces/ws/projects/proj/modules/plane-mod-9/",
+            ))
             .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
                 "id": "plane-mod-9",
                 "name": "Auth v2"
@@ -952,9 +1041,15 @@ mod tests_extra {
             .unwrap()
             .last_synced_at;
 
-        push_module(&client, &storage, &module(7, "Auth v2")).await.unwrap();
+        push_module(&client, &storage, &module(7, "Auth v2"))
+            .await
+            .unwrap();
 
-        let after = storage.get_sync_mapping("module", 7).await.unwrap().unwrap();
+        let after = storage
+            .get_sync_mapping("module", 7)
+            .await
+            .unwrap()
+            .unwrap();
         assert_eq!(
             after.plane_issue_id, "plane-mod-9",
             "an update must reuse the existing Plane module, not create a second one"
@@ -982,7 +1077,11 @@ mod tests_extra {
             "unexpected error: {err}"
         );
         assert!(
-            storage.get_sync_mapping("module", 7).await.unwrap().is_none(),
+            storage
+                .get_sync_mapping("module", 7)
+                .await
+                .unwrap()
+                .is_none(),
             "a failed push must not record a mapping"
         );
     }
@@ -1003,7 +1102,9 @@ mod tests_extra {
         let client = PlaneClient::new(server.uri(), "k".into(), "ws".into(), "proj".into());
         let storage = MockStoragePort::new();
 
-        push_cycle(&client, &storage, &cycle(3, "Sprint 1")).await.unwrap();
+        push_cycle(&client, &storage, &cycle(3, "Sprint 1"))
+            .await
+            .unwrap();
 
         let mapping = storage.get_sync_mapping("cycle", 3).await.unwrap().unwrap();
         assert_eq!(mapping.entity_type, "cycle");
@@ -1014,7 +1115,9 @@ mod tests_extra {
     async fn push_cycle_update_failure_is_contextual() {
         let server = MockServer::start().await;
         Mock::given(method("PATCH"))
-            .and(path("/api/v1/workspaces/ws/projects/proj/cycles/plane-cyc-9/"))
+            .and(path(
+                "/api/v1/workspaces/ws/projects/proj/cycles/plane-cyc-9/",
+            ))
             .respond_with(ResponseTemplate::new(503).set_body_string("unavailable"))
             .mount(&server)
             .await;
@@ -1035,7 +1138,9 @@ mod tests_extra {
     async fn push_module_delete_removes_plane_module_and_mapping() {
         let server = MockServer::start().await;
         Mock::given(method("DELETE"))
-            .and(path("/api/v1/workspaces/ws/projects/proj/modules/plane-mod-5/"))
+            .and(path(
+                "/api/v1/workspaces/ws/projects/proj/modules/plane-mod-5/",
+            ))
             .respond_with(ResponseTemplate::new(204))
             .expect(1)
             .mount(&server)
@@ -1046,13 +1151,23 @@ mod tests_extra {
 
         push_module_delete(&client, &storage, 5).await.unwrap();
 
-        assert!(storage.get_sync_mapping("module", 5).await.unwrap().is_none());
+        assert!(
+            storage
+                .get_sync_mapping("module", 5)
+                .await
+                .unwrap()
+                .is_none()
+        );
     }
 
     #[tokio::test]
     async fn push_module_delete_is_noop_without_mapping() {
-        let client =
-            PlaneClient::new("http://127.0.0.1:1".into(), "k".into(), "ws".into(), "proj".into());
+        let client = PlaneClient::new(
+            "http://127.0.0.1:1".into(),
+            "k".into(),
+            "ws".into(),
+            "proj".into(),
+        );
         let storage = MockStoragePort::new();
 
         // No mapping means nothing to delete remotely, so the dead endpoint is
@@ -1064,7 +1179,9 @@ mod tests_extra {
     async fn push_cycle_delete_removes_plane_cycle_and_mapping() {
         let server = MockServer::start().await;
         Mock::given(method("DELETE"))
-            .and(path("/api/v1/workspaces/ws/projects/proj/cycles/plane-cyc-5/"))
+            .and(path(
+                "/api/v1/workspaces/ws/projects/proj/cycles/plane-cyc-5/",
+            ))
             .respond_with(ResponseTemplate::new(204))
             .expect(1)
             .mount(&server)
@@ -1075,14 +1192,22 @@ mod tests_extra {
 
         push_cycle_delete(&client, &storage, 5).await.unwrap();
 
-        assert!(storage.get_sync_mapping("cycle", 5).await.unwrap().is_none());
+        assert!(
+            storage
+                .get_sync_mapping("cycle", 5)
+                .await
+                .unwrap()
+                .is_none()
+        );
     }
 
     #[tokio::test]
     async fn push_cycle_delete_failure_keeps_the_mapping() {
         let server = MockServer::start().await;
         Mock::given(method("DELETE"))
-            .and(path("/api/v1/workspaces/ws/projects/proj/cycles/plane-cyc-5/"))
+            .and(path(
+                "/api/v1/workspaces/ws/projects/proj/cycles/plane-cyc-5/",
+            ))
             .respond_with(ResponseTemplate::new(500).set_body_string("boom"))
             .mount(&server)
             .await;
@@ -1096,7 +1221,11 @@ mod tests_extra {
             "unexpected error: {err}"
         );
         assert!(
-            storage.get_sync_mapping("cycle", 5).await.unwrap().is_some(),
+            storage
+                .get_sync_mapping("cycle", 5)
+                .await
+                .unwrap()
+                .is_some(),
             "the mapping must survive a failed remote delete so the delete can be retried"
         );
     }
@@ -1132,7 +1261,9 @@ mod tests_extra {
     async fn push_module_update_surfaces_mapping_write_failure() {
         let server = MockServer::start().await;
         Mock::given(method("PATCH"))
-            .and(path("/api/v1/workspaces/ws/projects/proj/modules/plane-mod-9/"))
+            .and(path(
+                "/api/v1/workspaces/ws/projects/proj/modules/plane-mod-9/",
+            ))
             .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
                 "id": "plane-mod-9",
                 "name": "Auth v2"
@@ -1182,7 +1313,9 @@ mod tests_extra {
     async fn push_work_package_update_failure_is_contextual() {
         let server = MockServer::start().await;
         Mock::given(method("PATCH"))
-            .and(path("/api/v1/workspaces/ws/projects/proj/work-items/wp-existing/"))
+            .and(path(
+                "/api/v1/workspaces/ws/projects/proj/work-items/wp-existing/",
+            ))
             .respond_with(ResponseTemplate::new(500).set_body_string("boom"))
             .mount(&server)
             .await;
@@ -1191,11 +1324,19 @@ mod tests_extra {
         let sync = OutboundSync::new(client, PlaneStateMapper::new());
 
         let err = sync
-            .push_work_package("WP02", "Updated", None, &[], "parent-id", Some("wp-existing"))
+            .push_work_package(
+                "WP02",
+                "Updated",
+                None,
+                &[],
+                "parent-id",
+                Some("wp-existing"),
+            )
             .await
             .unwrap_err();
         assert!(
-            err.to_string().contains("updating Plane sub-issue wp-existing"),
+            err.to_string()
+                .contains("updating Plane sub-issue wp-existing"),
             "unexpected error: {err}"
         );
     }

@@ -168,7 +168,11 @@ async fn route_dashboard_renders_kanban() {
 #[tokio::test]
 async fn route_dashboard_accepts_filter_query() {
     for filter in ["all", "active", "blocked", "shipped"] {
-        let (status, bytes, _) = get(&app(populated_state()), &format!("/dashboard?filter={filter}")).await;
+        let (status, bytes, _) = get(
+            &app(populated_state()),
+            &format!("/dashboard?filter={filter}"),
+        )
+        .await;
         assert_eq!(status, StatusCode::OK, "filter={filter}");
         assert!(!bytes.is_empty());
     }
@@ -260,7 +264,8 @@ async fn route_kanban_json_shaped() {
 
 #[tokio::test]
 async fn route_work_packages_json_shape() {
-    let (status, bytes, ct) = get(&app(populated_state()), "/api/dashboard/work-packages.json").await;
+    let (status, bytes, ct) =
+        get(&app(populated_state()), "/api/dashboard/work-packages.json").await;
     assert_eq!(status, StatusCode::OK);
     assert!(ct.contains("application/json"));
     let v = json(&bytes);
@@ -367,7 +372,11 @@ async fn route_feature_detail_api_not_found() {
 
 #[tokio::test]
 async fn route_feature_work_packages_found() {
-    let (status, bytes, _) = get(&app(populated_state()), "/api/dashboard/features/1/work-packages").await;
+    let (status, bytes, _) = get(
+        &app(populated_state()),
+        "/api/dashboard/features/1/work-packages",
+    )
+    .await;
     assert_eq!(status, StatusCode::OK);
     let html = body_text(bytes).await;
     assert!(html.contains("WP-10") || html.contains("WP-11"));
@@ -375,7 +384,11 @@ async fn route_feature_work_packages_found() {
 
 #[tokio::test]
 async fn route_feature_work_packages_unknown_feature_is_empty() {
-    let (status, bytes, _) = get(&app(populated_state()), "/api/dashboard/features/777/work-packages").await;
+    let (status, bytes, _) = get(
+        &app(populated_state()),
+        "/api/dashboard/features/777/work-packages",
+    )
+    .await;
     assert_eq!(status, StatusCode::OK);
     assert!(!bytes.is_empty());
 }
@@ -389,7 +402,11 @@ async fn route_feature_events_found() {
 
 #[tokio::test]
 async fn route_feature_events_not_found() {
-    let (status, _, _) = get(&app(populated_state()), "/api/dashboard/features/777/events").await;
+    let (status, _, _) = get(
+        &app(populated_state()),
+        "/api/dashboard/features/777/events",
+    )
+    .await;
     assert_eq!(status, StatusCode::NOT_FOUND);
 }
 
@@ -415,7 +432,11 @@ async fn route_feature_evidence_list_renders() {
 
 #[tokio::test]
 async fn route_feature_evidence_json_empty_on_disk() {
-    let (status, bytes, _) = get(&app(populated_state()), "/api/dashboard/features/1/evidence.json").await;
+    let (status, bytes, _) = get(
+        &app(populated_state()),
+        "/api/dashboard/features/1/evidence.json",
+    )
+    .await;
     assert_eq!(status, StatusCode::OK);
     let v = json(&bytes);
     assert_eq!(v["feature_id"], "1");
@@ -442,7 +463,11 @@ async fn route_feature_evidence_generate_reports_missing_script() {
 
 #[tokio::test]
 async fn route_evidence_content_missing_artifact_returns_stub() {
-    let (status, bytes, _) = get(&app(empty_state()), "/api/evidence/1/does-not-exist.txt/content").await;
+    let (status, bytes, _) = get(
+        &app(empty_state()),
+        "/api/evidence/1/does-not-exist.txt/content",
+    )
+    .await;
     assert_eq!(status, StatusCode::OK);
     let text = body_text(bytes).await;
     assert!(text.contains("No artifact found"));
@@ -480,7 +505,12 @@ async fn route_activate_project_all_clears_filter() {
 
 #[tokio::test]
 async fn route_activate_unknown_project_is_404() {
-    let (status, _, _) = post_json(&app(populated_state()), "/api/dashboard/projects/999/activate", "{}").await;
+    let (status, _, _) = post_json(
+        &app(populated_state()),
+        "/api/dashboard/projects/999/activate",
+        "{}",
+    )
+    .await;
     assert_eq!(status, StatusCode::NOT_FOUND);
 }
 
@@ -490,12 +520,8 @@ async fn route_activate_unknown_project_is_404() {
 async fn route_feature_transition_valid_step() {
     let state = populated_state();
     let app = app(state.clone());
-    let (status, bytes, _) = post_form(
-        &app,
-        "/api/features/1/transition",
-        "target_state=specified",
-    )
-    .await;
+    let (status, bytes, _) =
+        post_form(&app, "/api/features/1/transition", "target_state=specified").await;
     assert_eq!(status, StatusCode::OK);
     assert!(body_text(bytes).await.contains("kanban-board"));
     let store = state.read().await;
@@ -555,7 +581,12 @@ async fn route_plane_daemon_status_uninitialized() {
 
 #[tokio::test]
 async fn route_plane_daemon_start_uninitialized() {
-    let (status, bytes, _) = post_json(&app(empty_state()), "/api/dashboard/plane/daemon/start", "{}").await;
+    let (status, bytes, _) = post_json(
+        &app(empty_state()),
+        "/api/dashboard/plane/daemon/start",
+        "{}",
+    )
+    .await;
     assert_eq!(status, StatusCode::OK);
     let v = json(&bytes);
     assert_eq!(v["started"], false);
@@ -564,7 +595,12 @@ async fn route_plane_daemon_start_uninitialized() {
 
 #[tokio::test]
 async fn route_plane_daemon_stop_uninitialized() {
-    let (status, bytes, _) = post_json(&app(empty_state()), "/api/dashboard/plane/daemon/stop", "{}").await;
+    let (status, bytes, _) = post_json(
+        &app(empty_state()),
+        "/api/dashboard/plane/daemon/stop",
+        "{}",
+    )
+    .await;
     assert_eq!(status, StatusCode::OK);
     let v = json(&bytes);
     assert_eq!(v["stopped"], false);
@@ -792,13 +828,21 @@ async fn extra_health_json_names_checkers() {
 
 #[tokio::test]
 async fn extra_kanban_blocked_filter_accepts_query() {
-    let (status, _, _) = get(&app(populated_state()), "/api/dashboard/kanban?filter=blocked").await;
+    let (status, _, _) = get(
+        &app(populated_state()),
+        "/api/dashboard/kanban?filter=blocked",
+    )
+    .await;
     assert_eq!(status, StatusCode::OK);
 }
 
 #[tokio::test]
 async fn extra_kanban_unknown_filter_falls_back() {
-    let (status, _, _) = get(&app(populated_state()), "/api/dashboard/kanban?filter=nonsense").await;
+    let (status, _, _) = get(
+        &app(populated_state()),
+        "/api/dashboard/kanban?filter=nonsense",
+    )
+    .await;
     assert_eq!(status, StatusCode::OK);
 }
 
@@ -811,7 +855,11 @@ async fn extra_feature_detail_includes_stub_evidence_bundle() {
 #[tokio::test]
 async fn extra_feature_media_renders_cover_asset() {
     let (_, bytes, _) = get(&app(populated_state()), "/api/dashboard/features/1/media").await;
-    assert!(body_text(bytes).await.contains("/assets/feature-1/cover.png"));
+    assert!(
+        body_text(bytes)
+            .await
+            .contains("/assets/feature-1/cover.png")
+    );
 }
 
 #[tokio::test]
@@ -822,7 +870,11 @@ async fn extra_feature_events_mentions_opened_feature() {
 
 #[tokio::test]
 async fn extra_feature_work_packages_lists_second_feature() {
-    let (_, bytes, _) = get(&app(populated_state()), "/api/dashboard/features/2/work-packages").await;
+    let (_, bytes, _) = get(
+        &app(populated_state()),
+        "/api/dashboard/features/2/work-packages",
+    )
+    .await;
     assert!(body_text(bytes).await.contains("WP-20"));
 }
 
@@ -849,7 +901,9 @@ async fn extra_switch_project_changes_active_and_scopes_kanban() {
         let mut second = Project::new("Second", "second").unwrap();
         second.id = 2;
         store.projects.push(second);
-        store.features.push(feature(4, FeatureState::Created, Some(2)));
+        store
+            .features
+            .push(feature(4, FeatureState::Created, Some(2)));
     }
     let app = app(state.clone());
     let (status, _, _) = post_json(&app, "/api/dashboard/projects/2/activate", "{}").await;

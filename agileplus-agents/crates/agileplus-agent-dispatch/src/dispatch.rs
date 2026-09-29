@@ -25,9 +25,7 @@ pub async fn dispatch_wp(
     config: &AgentConfig,
 ) -> Result<AgentResult, DomainError> {
     // 1. Create the worktree.
-    let worktree = vcs
-        .create_worktree(&task.feature_slug, &task.wp_id)
-        .await?;
+    let worktree = vcs.create_worktree(&task.feature_slug, &task.wp_id).await?;
     task.worktree_path = worktree.clone();
 
     info!(
@@ -134,11 +132,7 @@ mod tests {
 
     #[async_trait]
     impl VcsPort for FakeVcs {
-        async fn create_worktree(
-            &self,
-            _feature: &str,
-            _wp: &str,
-        ) -> Result<PathBuf, DomainError> {
+        async fn create_worktree(&self, _feature: &str, _wp: &str) -> Result<PathBuf, DomainError> {
             Ok(self.worktree_dir.clone())
         }
 
@@ -162,7 +156,9 @@ mod tests {
 
         // Create a fake prompt file.
         let prompt_file = tmp.path().join("WP-TEST.md");
-        tokio::fs::write(&prompt_file, "# Test Prompt").await.unwrap();
+        tokio::fs::write(&prompt_file, "# Test Prompt")
+            .await
+            .unwrap();
 
         // Create a fake context file.
         let ctx_file = tmp.path().join("spec.md");

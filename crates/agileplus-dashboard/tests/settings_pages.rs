@@ -71,7 +71,8 @@ fn reset_config() {
 }
 
 fn write_config(contents: &str) {
-    std::fs::create_dir_all(config_file().parent().expect("config parent")).expect("create config dir");
+    std::fs::create_dir_all(config_file().parent().expect("config parent"))
+        .expect("create config dir");
     std::fs::write(config_file(), contents).expect("write sandbox config");
 }
 
@@ -154,15 +155,27 @@ async fn agent_settings_page_falls_back_to_defaults_without_a_config_file() {
     let (status, html) = get("/settings/agents").await;
 
     assert_eq!(status, StatusCode::OK);
-    assert!(html.contains("Agent Settings"), "missing page title: {html}");
+    assert!(
+        html.contains("Agent Settings"),
+        "missing page title: {html}"
+    );
     // The documented fallback pool configuration.
-    assert!(html.contains(r#"value="6""#), "missing default pool size: {html}");
-    assert!(html.contains(r#"value="3""#), "missing default retry budget: {html}");
+    assert!(
+        html.contains(r#"value="6""#),
+        "missing default pool size: {html}"
+    );
+    assert!(
+        html.contains(r#"value="3""#),
+        "missing default retry budget: {html}"
+    );
     assert!(
         html.contains(r#"value="balanced" selected"#),
         "missing default dispatch mode: {html}"
     );
-    assert!(!config_file().exists(), "rendering settings must not create a config");
+    assert!(
+        !config_file().exists(),
+        "rendering settings must not create a config"
+    );
 }
 
 #[tokio::test]
@@ -180,14 +193,23 @@ async fn agent_settings_page_renders_the_persisted_pool_configuration() {
     let (status, html) = get("/settings/agents").await;
 
     assert_eq!(status, StatusCode::OK);
-    assert!(html.contains(r#"value="12""#), "persisted pool size missing: {html}");
-    assert!(html.contains(r#"value="7""#), "persisted retry budget missing: {html}");
+    assert!(
+        html.contains(r#"value="12""#),
+        "persisted pool size missing: {html}"
+    );
+    assert!(
+        html.contains(r#"value="7""#),
+        "persisted retry budget missing: {html}"
+    );
     assert!(
         html.contains(r#"value="priority" selected"#),
         "persisted dispatch mode missing: {html}"
     );
     // The summary cards render the same values as the form.
-    assert!(html.contains("Priority"), "dispatch mode label missing: {html}");
+    assert!(
+        html.contains("Priority"),
+        "dispatch mode label missing: {html}"
+    );
     assert_eq!(read_config(), before, "a settings page must be read-only");
 }
 
@@ -213,8 +235,14 @@ async fn agent_settings_save_route_persists_and_the_page_reflects_it() {
     );
 
     let saved = read_config();
-    assert!(saved.contains("pool_size = 9"), "config not persisted: {saved}");
-    assert!(saved.contains("retry_budget = 4"), "config not persisted: {saved}");
+    assert!(
+        saved.contains("pool_size = 9"),
+        "config not persisted: {saved}"
+    );
+    assert!(
+        saved.contains("retry_budget = 4"),
+        "config not persisted: {saved}"
+    );
     assert!(
         saved.contains(r#"dispatch_mode = "round-robin""#),
         "config not persisted: {saved}"
@@ -222,7 +250,10 @@ async fn agent_settings_save_route_persists_and_the_page_reflects_it() {
 
     let (status, html) = get("/settings/agents").await;
     assert_eq!(status, StatusCode::OK);
-    assert!(html.contains(r#"value="9""#), "page ignored the saved pool size: {html}");
+    assert!(
+        html.contains(r#"value="9""#),
+        "page ignored the saved pool size: {html}"
+    );
     assert!(
         html.contains(r#"value="round-robin" selected"#),
         "page ignored the saved dispatch mode: {html}"
@@ -238,8 +269,14 @@ async fn duplicated_agent_handlers_in_the_agents_module_persist_the_same_configu
     // the router re-exports the `routes::settings` copies, so these two were
     // previously never executed by any test.
     let html = body_text(agent_routes::agent_settings_page().await).await;
-    assert!(html.contains("Agent Settings"), "missing page title: {html}");
-    assert!(html.contains(r#"value="6""#), "missing default pool size: {html}");
+    assert!(
+        html.contains("Agent Settings"),
+        "missing page title: {html}"
+    );
+    assert!(
+        html.contains(r#"value="6""#),
+        "missing default pool size: {html}"
+    );
 
     let toast = body_text(
         agent_routes::save_agent_settings(Form(agent_routes::AgentSettingsForm {
@@ -258,7 +295,10 @@ async fn duplicated_agent_handlers_in_the_agents_module_persist_the_same_configu
     );
     // Surrounding whitespace from the form is trimmed before it is written.
     let saved = read_config();
-    assert!(saved.contains("pool_size = 11"), "config not persisted: {saved}");
+    assert!(
+        saved.contains("pool_size = 11"),
+        "config not persisted: {saved}"
+    );
     assert!(
         saved.contains(r#"dispatch_mode = "manual""#),
         "dispatch mode must be trimmed before persisting: {saved}"
@@ -269,7 +309,10 @@ async fn duplicated_agent_handlers_in_the_agents_module_persist_the_same_configu
     );
 
     let html = body_text(agent_routes::agent_settings_page().await).await;
-    assert!(html.contains(r#"value="11""#), "page ignored the saved value: {html}");
+    assert!(
+        html.contains(r#"value="11""#),
+        "page ignored the saved value: {html}"
+    );
 }
 
 // ── Services settings page ───────────────────────────────────────────────────
@@ -290,7 +333,10 @@ async fn services_settings_page_lists_health_and_survives_a_persisted_endpoint_c
     let (status, html) = get("/settings/services").await;
 
     assert_eq!(status, StatusCode::OK);
-    assert!(html.contains("Service Endpoints"), "missing page title: {html}");
+    assert!(
+        html.contains("Service Endpoints"),
+        "missing page title: {html}"
+    );
     for service in ["NATS", "Dragonfly", "Neo4j", "MinIO", "SQLite"] {
         assert!(
             html.contains(service),
@@ -366,7 +412,10 @@ async fn plane_settings_page_reports_a_fully_configured_workspace() {
         html.contains(&format!("0/{total_work_packages} (0%)")),
         "work package coverage line missing: {html}"
     );
-    assert!(html.contains(">Plane API<"), "plane api endpoint missing: {html}");
+    assert!(
+        html.contains(">Plane API<"),
+        "plane api endpoint missing: {html}"
+    );
     assert!(html.contains(">API<"), "api endpoint missing: {html}");
     assert!(html.contains("(12ms)"), "plane api latency missing: {html}");
 
@@ -394,7 +443,10 @@ async fn plane_settings_page_warns_when_the_workspace_is_not_configured() {
         html.contains("Plane sync disabled until required settings are provided"),
         "an unconfigured page must say sync is disabled: {html}"
     );
-    assert!(html.contains("Not configured"), "workspace must read unconfigured: {html}");
+    assert!(
+        html.contains("Not configured"),
+        "workspace must read unconfigured: {html}"
+    );
     // No key is configured, so the hint block is skipped entirely.
     assert!(
         !html.contains("Current key:"),

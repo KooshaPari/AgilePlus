@@ -11,4 +11,3 @@ pub use manifest::{
     ImportBundle, ImportCycle, ImportFeature, ImportModule, ImportProject, ImportWorkPackage,
 };
 pub use report::ImportReport;
-

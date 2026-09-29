@@ -72,25 +72,23 @@ mod tests {
     #[test]
     fn from_values_defaults_bind() {
         let config = CoreConfig::from_values(None, Some("/tmp/proj"), None).unwrap();
-        assert_eq!(config.bind, "127.0.0.1:50051".parse::<SocketAddr>().unwrap());
+        assert_eq!(
+            config.bind,
+            "127.0.0.1:50051".parse::<SocketAddr>().unwrap()
+        );
         assert_eq!(config.project_root, PathBuf::from("/tmp/proj"));
     }
 
     #[test]
     fn from_values_custom_bind() {
-        let config = CoreConfig::from_values(
-            Some("127.0.0.1:9999"),
-            Some("/tmp/proj"),
-            None,
-        )
-        .unwrap();
+        let config =
+            CoreConfig::from_values(Some("127.0.0.1:9999"), Some("/tmp/proj"), None).unwrap();
         assert_eq!(config.bind.port(), 9999);
     }
 
     #[test]
     fn from_values_rejects_non_loopback() {
-        let err = CoreConfig::from_values(Some("0.0.0.0:50051"), Some("/tmp"), None)
-            .unwrap_err();
+        let err = CoreConfig::from_values(Some("0.0.0.0:50051"), Some("/tmp"), None).unwrap_err();
         assert!(err.contains("loopback"));
     }
 

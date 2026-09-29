@@ -263,15 +263,20 @@ mod tests {
     #[test]
     fn rejects_duplicate_cluster() {
         let json = r#"{"version":"1.0","schema":"phenotype/audit-v38","clusters":2,"sub_pillars_enumerated":0,"pillars":[{"cluster":"C01","pillar_range":"L0","category":"A","source":"a","scoring":{"scale":"0-3","glyphs":{"0":"x"},"grade":{"A":90}},"sub_pillars":[]},{"cluster":"C01","pillar_range":"L1","category":"B","source":"b","scoring":{"scale":"0-3","glyphs":{"0":"x"},"grade":{"A":90}},"sub_pillars":[]}]}"#;
-        assert!(matches!(RubricCatalog::from_json(json).unwrap_err(), GovernanceError::Rubric(_)));
+        assert!(matches!(
+            RubricCatalog::from_json(json).unwrap_err(),
+            GovernanceError::Rubric(_)
+        ));
     }
 
     #[test]
     fn rejects_empty_cluster_id() {
         let json = r#"{"version":"1.0","schema":"phenotype/audit-v38","clusters":1,"sub_pillars_enumerated":0,"pillars":[{"cluster":"","pillar_range":"L0","category":"A","source":"a","scoring":{"scale":"0-3","glyphs":{"0":"x"},"grade":{"A":90}},"sub_pillars":[]}]}"#;
-        assert!(matches!(RubricCatalog::from_json(json).unwrap_err(), GovernanceError::Rubric(_)));
+        assert!(matches!(
+            RubricCatalog::from_json(json).unwrap_err(),
+            GovernanceError::Rubric(_)
+        ));
     }
-
 }
 #[cfg(test)]
 mod extended_tests {
@@ -298,7 +303,11 @@ mod extended_tests {
                 pillar_range: format!("L{}", i * 10),
                 category: format!("Cat {}", i),
                 source: "test/".into(),
-                defs_ref: if sub_pillars.is_empty() { Some("ref".into()) } else { None },
+                defs_ref: if sub_pillars.is_empty() {
+                    Some("ref".into())
+                } else {
+                    None
+                },
                 scoring: ScoringSpec {
                     scale: "0-3".into(),
                     glyphs: {
@@ -555,7 +564,11 @@ mod coverage_tests {
         glyphs.insert("0".into(), "x".into());
         let mut grade = std::collections::BTreeMap::new();
         grade.insert("A".into(), 90);
-        ScoringSpec { scale: "0-3".into(), glyphs, grade }
+        ScoringSpec {
+            scale: "0-3".into(),
+            glyphs,
+            grade,
+        }
     }
 
     fn pillar(cluster: &str, with_subs: bool) -> Pillar {
@@ -564,7 +577,11 @@ mod coverage_tests {
             pillar_range: "L0".into(),
             category: "Cat".into(),
             source: "src.md".into(),
-            defs_ref: if with_subs { None } else { Some("ref.md".into()) },
+            defs_ref: if with_subs {
+                None
+            } else {
+                Some("ref.md".into())
+            },
             scoring: scoring(),
             sub_pillars: if with_subs {
                 vec![SubPillar {
@@ -727,7 +744,11 @@ mod coverage_tests {
     fn load_from_file_ok() {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("c.json");
-        std::fs::write(&path, r#"{"version":"1.0","schema":"s","clusters":0,"pillars":[]}"#).unwrap();
+        std::fs::write(
+            &path,
+            r#"{"version":"1.0","schema":"s","clusters":0,"pillars":[]}"#,
+        )
+        .unwrap();
         assert!(RubricCatalog::load(&path).is_ok());
     }
 

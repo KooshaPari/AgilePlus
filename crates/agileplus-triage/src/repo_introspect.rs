@@ -227,7 +227,9 @@ mod tests {
     fn has_source_files_various_markers() {
         let tmp = TempDir::new().unwrap();
         assert!(!has_source_files(tmp.path()));
-        for marker in &["src", "lib", "pkg", "cmd", "crates", "backend", "frontend", "app"] {
+        for marker in &[
+            "src", "lib", "pkg", "cmd", "crates", "backend", "frontend", "app",
+        ] {
             let dir = tmp.path().join(marker);
             std::fs::create_dir_all(&dir).unwrap();
             assert!(has_source_files(tmp.path()), "{marker} should be detected");
@@ -304,11 +306,7 @@ mod tests {
         let tmp = TempDir::new().unwrap();
         let worktree_dir = tmp.path().join("worktree");
         std::fs::create_dir_all(&worktree_dir).unwrap();
-        std::fs::write(
-            worktree_dir.join(".git"),
-            "gitdir: /nonexistent/path\n",
-        )
-        .unwrap();
+        std::fs::write(worktree_dir.join(".git"), "gitdir: /nonexistent/path\n").unwrap();
 
         let info = inspect_repo(&worktree_dir);
         assert_eq!(info.state, RepoState::MangledGit);

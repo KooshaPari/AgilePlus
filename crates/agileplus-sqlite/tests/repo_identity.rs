@@ -5,8 +5,8 @@ use agileplus_domain::domain::{
     user::{User, UserRole, UserStatus},
 };
 use agileplus_sqlite::{
-    repository::{projects, users},
     SqliteStorageAdapter,
+    repository::{projects, users},
 };
 
 fn adapter() -> SqliteStorageAdapter {
@@ -29,7 +29,9 @@ fn project_create_returns_id_and_get_by_slug() {
     let id = projects::create_project(&conn, &p).unwrap();
     assert!(id > 0);
 
-    let got = projects::get_project_by_slug(&conn, "alpha").unwrap().unwrap();
+    let got = projects::get_project_by_slug(&conn, "alpha")
+        .unwrap()
+        .unwrap();
     assert_eq!(got.id, id);
     assert_eq!(got.name, "Alpha");
     assert_eq!(got.slug, "alpha");
@@ -51,7 +53,11 @@ fn project_get_by_id_roundtrips_description() {
 fn project_get_by_slug_nonexistent() {
     let a = adapter();
     let conn = a.conn_for_bench().unwrap();
-    assert!(projects::get_project_by_slug(&conn, "ghost").unwrap().is_none());
+    assert!(
+        projects::get_project_by_slug(&conn, "ghost")
+            .unwrap()
+            .is_none()
+    );
 }
 
 #[test]
@@ -98,7 +104,10 @@ fn project_delete_then_missing() {
     projects::delete_project(&conn, id).unwrap();
     assert!(projects::get_project_by_id(&conn, id).unwrap().is_none());
     let err = projects::delete_project(&conn, id).unwrap_err();
-    assert!(matches!(err, agileplus_domain::error::DomainError::NotFound(_)));
+    assert!(matches!(
+        err,
+        agileplus_domain::error::DomainError::NotFound(_)
+    ));
 }
 
 // ---------------------------------------------------------------------------
@@ -146,9 +155,11 @@ fn user_get_by_id_nonexistent() {
 fn user_get_by_email_nonexistent() {
     let a = adapter();
     let conn = a.conn_for_bench().unwrap();
-    assert!(users::get_user_by_email(&conn, "nobody@example.com")
-        .unwrap()
-        .is_none());
+    assert!(
+        users::get_user_by_email(&conn, "nobody@example.com")
+            .unwrap()
+            .is_none()
+    );
 }
 
 #[test]
@@ -176,7 +187,10 @@ fn user_update_status_unknown_id_is_not_found() {
     let a = adapter();
     let conn = a.conn_for_bench().unwrap();
     let err = users::update_user_status(&conn, 999, UserStatus::Inactive).unwrap_err();
-    assert!(matches!(err, agileplus_domain::error::DomainError::NotFound(_)));
+    assert!(matches!(
+        err,
+        agileplus_domain::error::DomainError::NotFound(_)
+    ));
 }
 
 #[test]
@@ -196,7 +210,10 @@ fn user_update_role_unknown_id_is_not_found() {
     let a = adapter();
     let conn = a.conn_for_bench().unwrap();
     let err = users::update_user_role(&conn, 1000, UserRole::Admin).unwrap_err();
-    assert!(matches!(err, agileplus_domain::error::DomainError::NotFound(_)));
+    assert!(matches!(
+        err,
+        agileplus_domain::error::DomainError::NotFound(_)
+    ));
 }
 
 #[test]
@@ -212,7 +229,10 @@ fn user_all_roles_roundtrip() {
             &user(&format!("u{i}"), &format!("u{i}@example.com"), role),
         )
         .unwrap();
-        assert_eq!(users::get_user_by_id(&conn, id).unwrap().unwrap().role, role);
+        assert_eq!(
+            users::get_user_by_id(&conn, id).unwrap().unwrap().role,
+            role
+        );
     }
 }
 
@@ -220,13 +240,21 @@ fn user_all_roles_roundtrip() {
 fn user_all_statuses_roundtrip() {
     let a = adapter();
     let conn = a.conn_for_bench().unwrap();
-    for (i, status) in [UserStatus::Active, UserStatus::Inactive, UserStatus::Suspended]
-        .into_iter()
-        .enumerate()
+    for (i, status) in [
+        UserStatus::Active,
+        UserStatus::Inactive,
+        UserStatus::Suspended,
+    ]
+    .into_iter()
+    .enumerate()
     {
         let id = users::create_user(
             &conn,
-            &user(&format!("s{i}"), &format!("s{i}@example.com"), UserRole::Member),
+            &user(
+                &format!("s{i}"),
+                &format!("s{i}@example.com"),
+                UserRole::Member,
+            ),
         )
         .unwrap();
         users::update_user_status(&conn, id, status).unwrap();
@@ -243,7 +271,11 @@ fn user_list_all_orders_by_created_at() {
     let conn = a.conn_for_bench().unwrap();
     users::create_user(&conn, &user("First", "first@example.com", UserRole::Member)).unwrap();
     std::thread::sleep(std::time::Duration::from_millis(5));
-    users::create_user(&conn, &user("Second", "second@example.com", UserRole::Member)).unwrap();
+    users::create_user(
+        &conn,
+        &user("Second", "second@example.com", UserRole::Member),
+    )
+    .unwrap();
 
     let all = users::list_all_users(&conn).unwrap();
     assert_eq!(all.len(), 2);
@@ -262,7 +294,8 @@ fn user_list_all_empty() {
 fn user_delete_then_missing() {
     let a = adapter();
     let conn = a.conn_for_bench().unwrap();
-    let id = users::create_user(&conn, &user("Temp", "temp@example.com", UserRole::Member)).unwrap();
+    let id =
+        users::create_user(&conn, &user("Temp", "temp@example.com", UserRole::Member)).unwrap();
     users::delete_user(&conn, id).unwrap();
     assert!(users::get_user_by_id(&conn, id).unwrap().is_none());
     assert!(users::delete_user(&conn, id).is_err());

@@ -51,9 +51,5 @@ pub trait ReviewPort: Send + Sync {
     ) -> Result<Vec<ReviewComment>, DomainError>;
 
     /// Block until CI finishes or `timeout` elapses.
-    async fn await_ci(
-        &self,
-        pr_url: &str,
-        timeout: Duration,
-    ) -> Result<CiStatus, DomainError>;
+    async fn await_ci(&self, pr_url: &str, timeout: Duration) -> Result<CiStatus, DomainError>;
 }

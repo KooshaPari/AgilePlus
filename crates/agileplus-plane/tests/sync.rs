@@ -2,8 +2,8 @@
 //!
 //! Covers: SyncState, SyncOutcome, and sync adapter construction.
 
-use agileplus_plane::sync::{PlaneSyncAdapter, SyncOutcome, SyncState};
 use agileplus_plane::PlaneClient;
+use agileplus_plane::sync::{PlaneSyncAdapter, SyncOutcome, SyncState};
 
 // ── SyncState ───────────────────────────────────────────────
 
@@ -23,12 +23,8 @@ fn sync_state_set_fields() {
     state.plane_issue_id = Some("issue-123".into());
     state.content_hash = Some("abc123".into());
     state.last_synced_at = Some(chrono::Utc::now());
-    state
-        .wp_mappings
-        .insert("WP01".into(), "sub-456".into());
-    state
-        .wp_mappings
-        .insert("WP02".into(), "sub-789".into());
+    state.wp_mappings.insert("WP01".into(), "sub-456".into());
+    state.wp_mappings.insert("WP02".into(), "sub-789".into());
 
     assert_eq!(state.plane_issue_id, Some("issue-123".into()));
     assert_eq!(state.wp_mappings.len(), 2);
@@ -40,9 +36,7 @@ fn sync_state_serialization_roundtrip() {
     let mut state = SyncState::new("feat".into());
     state.plane_issue_id = Some("issue-123".into());
     state.content_hash = Some("hash-abc".into());
-    state
-        .wp_mappings
-        .insert("WP01".into(), "sub-456".into());
+    state.wp_mappings.insert("WP01".into(), "sub-456".into());
 
     let json = serde_json::to_string(&state).unwrap();
     let restored: SyncState = serde_json::from_str(&json).unwrap();
@@ -73,9 +67,7 @@ fn sync_state_debug_format() {
 fn sync_state_clone() {
     let mut state = SyncState::new("feat".into());
     state.plane_issue_id = Some("i1".into());
-    state
-        .wp_mappings
-        .insert("WP1".into(), "sub1".into());
+    state.wp_mappings.insert("WP1".into(), "sub1".into());
     let cloned = state.clone();
     assert_eq!(cloned.feature_slug, "feat");
     assert_eq!(cloned.plane_issue_id, Some("i1".into()));

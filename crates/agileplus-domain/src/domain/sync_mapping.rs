@@ -137,7 +137,10 @@ mod coverage_tests {
                 serde_json::from_str(&serde_json::to_string(&d).unwrap()).unwrap();
             assert_eq!(back, d);
         }
-        assert_eq!(serde_json::to_string(&SyncDirection::Push).unwrap(), "\"push\"");
+        assert_eq!(
+            serde_json::to_string(&SyncDirection::Push).unwrap(),
+            "\"push\""
+        );
     }
 
     #[test]
@@ -158,8 +161,7 @@ mod coverage_tests {
         let mut m = SyncMapping::new("feature", 5, "plane-9", "abc");
         m.sync_direction = SyncDirection::Pull;
         m.conflict_count = 2;
-        let back: SyncMapping =
-            serde_json::from_str(&serde_json::to_string(&m).unwrap()).unwrap();
+        let back: SyncMapping = serde_json::from_str(&serde_json::to_string(&m).unwrap()).unwrap();
         assert_eq!(back.entity_type, "feature");
         assert_eq!(back.entity_id, 5);
         assert_eq!(back.plane_issue_id, "plane-9");

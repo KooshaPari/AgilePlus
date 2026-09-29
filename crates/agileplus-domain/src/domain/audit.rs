@@ -253,9 +253,7 @@ mod tests {
     #[test]
     fn single_entry_chain_verifies() {
         let e = make_entry(1, [0u8; 32]);
-        let chain = AuditChain {
-            entries: vec![e],
-        };
+        let chain = AuditChain { entries: vec![e] };
         assert!(chain.verify_chain().is_ok());
     }
 }

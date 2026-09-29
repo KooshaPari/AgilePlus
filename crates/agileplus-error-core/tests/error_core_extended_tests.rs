@@ -54,10 +54,8 @@ fn error_code_hash_eq() {
         ErrorCode::NotFound,
         ErrorCode::AlreadyExists,
     ];
-    let unique: std::collections::HashSet<String> = codes
-        .into_iter()
-        .map(|c| format!("{:?}", c))
-        .collect();
+    let unique: std::collections::HashSet<String> =
+        codes.into_iter().map(|c| format!("{:?}", c)).collect();
     assert_eq!(unique.len(), 2);
 }
 
@@ -414,7 +412,10 @@ fn display_work_package_not_found_exact() {
 
 #[test]
 fn display_not_found_exact() {
-    assert_eq!(DomainError::NotFound("x".into()).to_string(), "Not found: x");
+    assert_eq!(
+        DomainError::NotFound("x".into()).to_string(),
+        "Not found: x"
+    );
 }
 
 #[test]
@@ -477,10 +478,7 @@ fn display_no_op_transition_exact() {
 
 #[test]
 fn display_other_preserves_payload() {
-    assert_eq!(
-        DomainError::Other("misc".into()).to_string(),
-        "misc"
-    );
+    assert_eq!(DomainError::Other("misc".into()).to_string(), "misc");
 }
 
 #[test]
@@ -618,8 +616,7 @@ fn hashmap_key_for_error_code() {
         ErrorCode::NotImplemented,
         ErrorCode::InternalError,
     ];
-    let discriminants: std::collections::HashSet<i32> =
-        codes.iter().map(|c| *c as i32).collect();
+    let discriminants: std::collections::HashSet<i32> = codes.iter().map(|c| *c as i32).collect();
     assert_eq!(discriminants.len(), 5);
 }
 
@@ -672,7 +669,10 @@ fn display_messages_remain_stable() {
     // If any of these change, downstream log scraping / alerting may break.
     let cases = [
         (DomainError::LockPoisoned, "Lock poisoned"),
-        (DomainError::NoOpTransition, "No-op transition: already in the requested state"),
+        (
+            DomainError::NoOpTransition,
+            "No-op transition: already in the requested state",
+        ),
         (DomainError::NotImplemented, "Not implemented"),
     ];
 

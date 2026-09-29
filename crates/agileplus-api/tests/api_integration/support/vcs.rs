@@ -34,7 +34,10 @@ pub(crate) struct VcsCall {
 
 impl VcsCall {
     fn new(operation: &'static str, args: &[String]) -> Self {
-        Self { operation, args: args.to_vec() }
+        Self {
+            operation,
+            args: args.to_vec(),
+        }
     }
 }
 
@@ -101,12 +104,20 @@ impl MockVcs {
 
     /// Branches `list_branches` reports.
     pub(crate) fn with_branches(&self, branches: Vec<BranchInfo>) {
-        *self.inner.branches.lock().expect("vcs branches lock poisoned") = branches;
+        *self
+            .inner
+            .branches
+            .lock()
+            .expect("vcs branches lock poisoned") = branches;
     }
 
     /// Worktrees `list_worktrees` reports.
     pub(crate) fn with_worktrees(&self, worktrees: Vec<WorktreeInfo>) {
-        *self.inner.worktrees.lock().expect("vcs worktrees lock poisoned") = worktrees;
+        *self
+            .inner
+            .worktrees
+            .lock()
+            .expect("vcs worktrees lock poisoned") = worktrees;
     }
 
     /// Path `create_worktree` reports.
@@ -237,7 +248,11 @@ impl VcsPort for MockVcs {
         Ok(())
     }
 
-    async fn merge_to_target(&self, source: &str, target: &str) -> Result<MergeResult, DomainError> {
+    async fn merge_to_target(
+        &self,
+        source: &str,
+        target: &str,
+    ) -> Result<MergeResult, DomainError> {
         self.record("merge_to_target", &[source.to_string(), target.to_string()]);
         self.check("merge_to_target")?;
         Ok(self.merge())
@@ -248,7 +263,10 @@ impl VcsPort for MockVcs {
         source: &str,
         target: &str,
     ) -> Result<Vec<ConflictInfo>, DomainError> {
-        self.record("detect_conflicts", &[source.to_string(), target.to_string()]);
+        self.record(
+            "detect_conflicts",
+            &[source.to_string(), target.to_string()],
+        );
         self.check("detect_conflicts")?;
         Ok(vec![])
     }

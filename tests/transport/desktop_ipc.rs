@@ -327,7 +327,9 @@ fn dashboard_stats_query_aggregates_correctly() {
         .prepare("SELECT state, COUNT(*) FROM features GROUP BY state")
         .unwrap();
     let features_by_state: Vec<(String, i64)> = stmt
-        .query_map([], |row| Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?)))
+        .query_map([], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?))
+        })
         .unwrap()
         .filter_map(|r| r.ok())
         .collect();
@@ -341,7 +343,9 @@ fn dashboard_stats_query_aggregates_correctly() {
         .prepare("SELECT state, COUNT(*) FROM work_packages GROUP BY state")
         .unwrap();
     let wp_by_state: Vec<(String, i64)> = stmt
-        .query_map([], |row| Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?)))
+        .query_map([], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?))
+        })
         .unwrap()
         .filter_map(|r| r.ok())
         .collect();
@@ -368,11 +372,9 @@ fn work_package_state_transition_query() {
 
     // Verify
     let state: String = conn
-        .query_row(
-            "SELECT state FROM work_packages WHERE id = 3",
-            [],
-            |row| row.get(0),
-        )
+        .query_row("SELECT state FROM work_packages WHERE id = 3", [], |row| {
+            row.get(0)
+        })
         .unwrap();
     assert_eq!(state, "researching");
 

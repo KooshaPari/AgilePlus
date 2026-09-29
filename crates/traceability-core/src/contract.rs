@@ -435,7 +435,10 @@ mod tests {
     fn gate_predicate_to_reason_conversion() {
         let mappings = [
             (GatePredicate::NotApproved, GateReason::NotApproved),
-            (GatePredicate::MissingAcceptance, GateReason::MissingAcceptance),
+            (
+                GatePredicate::MissingAcceptance,
+                GateReason::MissingAcceptance,
+            ),
             (GatePredicate::MissingEvidence, GateReason::MissingEvidence),
             (
                 GatePredicate::MissingImplementation,
@@ -784,10 +787,7 @@ mod tests {
         let gate = ProgressionGate {
             from_layer: Layer::Execution,
             to_layer: Layer::Evidence,
-            predicates: vec![
-                GatePredicate::NotApproved,
-                GatePredicate::MissingEvidence,
-            ],
+            predicates: vec![GatePredicate::NotApproved, GatePredicate::MissingEvidence],
         };
         let ctx = GateContext::default();
         assert_eq!(gate.evaluate(&ctx), Err(GateReason::NotApproved));

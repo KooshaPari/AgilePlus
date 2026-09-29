@@ -1,13 +1,7 @@
 //! Integration tests for feature CRUD operations via the repository layer.
 
-use agileplus_domain::domain::{
-    feature::Feature,
-    state_machine::FeatureState,
-};
-use agileplus_sqlite::{
-    repository::features,
-    SqliteStorageAdapter,
-};
+use agileplus_domain::domain::{feature::Feature, state_machine::FeatureState};
+use agileplus_sqlite::{SqliteStorageAdapter, repository::features};
 
 fn make_adapter() -> SqliteStorageAdapter {
     SqliteStorageAdapter::in_memory().unwrap()
@@ -73,7 +67,11 @@ fn create_feature_persists_all_fields() {
 fn get_feature_by_slug_returns_none_for_missing() {
     let adapter = make_adapter();
     let conn = adapter.conn_for_bench().unwrap();
-    assert!(features::get_feature_by_slug(&conn, "nonexistent").unwrap().is_none());
+    assert!(
+        features::get_feature_by_slug(&conn, "nonexistent")
+            .unwrap()
+            .is_none()
+    );
 }
 
 #[test]
@@ -89,7 +87,9 @@ fn get_feature_by_slug_matches_id() {
     let conn = adapter.conn_for_bench().unwrap();
     let f = sample_feature("match-test");
     let id = features::create_feature(&conn, &f).unwrap();
-    let by_slug = features::get_feature_by_slug(&conn, "match-test").unwrap().unwrap();
+    let by_slug = features::get_feature_by_slug(&conn, "match-test")
+        .unwrap()
+        .unwrap();
     let by_id = features::get_feature_by_id(&conn, id).unwrap().unwrap();
     assert_eq!(by_slug.id, by_id.id);
 }
@@ -160,7 +160,10 @@ fn update_feature_preserves_created_at() {
     features::update_feature(&conn, &updated).unwrap();
 
     let got = features::get_feature_by_id(&conn, id).unwrap().unwrap();
-    assert_eq!(got.created_at, original.created_at, "created_at should not change");
+    assert_eq!(
+        got.created_at, original.created_at,
+        "created_at should not change"
+    );
 }
 
 // --- List ---

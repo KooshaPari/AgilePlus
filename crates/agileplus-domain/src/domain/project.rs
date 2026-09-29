@@ -109,7 +109,16 @@ mod coverage_tests {
 
     #[test]
     fn new_rejects_invalid_slug_chars() {
-        for slug in ["A", "My Project", "a_b", "a.b", "a/b", "ünicode", "a b", "-A"] {
+        for slug in [
+            "A",
+            "My Project",
+            "a_b",
+            "a.b",
+            "a/b",
+            "ünicode",
+            "a b",
+            "-A",
+        ] {
             let r = Project::new("N", slug);
             assert!(
                 matches!(r, Err(DomainError::Validation(_))),
@@ -120,10 +129,22 @@ mod coverage_tests {
 
     #[test]
     fn new_rejects_empty_and_whitespace() {
-        assert!(matches!(Project::new("", "s"), Err(DomainError::Validation(_))));
-        assert!(matches!(Project::new("   ", "s"), Err(DomainError::Validation(_))));
-        assert!(matches!(Project::new("N", ""), Err(DomainError::Validation(_))));
-        assert!(matches!(Project::new("N", "   "), Err(DomainError::Validation(_))));
+        assert!(matches!(
+            Project::new("", "s"),
+            Err(DomainError::Validation(_))
+        ));
+        assert!(matches!(
+            Project::new("   ", "s"),
+            Err(DomainError::Validation(_))
+        ));
+        assert!(matches!(
+            Project::new("N", ""),
+            Err(DomainError::Validation(_))
+        ));
+        assert!(matches!(
+            Project::new("N", "   "),
+            Err(DomainError::Validation(_))
+        ));
     }
 
     #[test]

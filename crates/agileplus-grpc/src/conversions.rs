@@ -247,7 +247,10 @@ mod tests {
             let mut wp = WorkPackage::new(1, "t", 1, "c");
             wp.state = state;
             let proto = wp_to_proto(wp);
-            assert_eq!(proto.state, expected, "state {state:?} should format as {expected}");
+            assert_eq!(
+                proto.state, expected,
+                "state {state:?} should format as {expected}"
+            );
         }
     }
 

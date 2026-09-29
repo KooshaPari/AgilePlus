@@ -162,12 +162,38 @@ mod tests {
     #[test]
     fn agent_event_wp_sequence_accessor() {
         let events = [
-            AgentEvent::AgentStarted { feature_slug: "f".into(), wp_sequence: 1, agent_id: "a".into() },
-            AgentEvent::PrCreated { feature_slug: "f".into(), wp_sequence: 2, pr_url: "u".into() },
-            AgentEvent::ReviewReceived { feature_slug: "f".into(), wp_sequence: 3, review_status: "ok".into(), comments: 0 },
-            AgentEvent::AgentFixing { feature_slug: "f".into(), wp_sequence: 4, cycle: 1 },
-            AgentEvent::AgentCompleted { feature_slug: "f".into(), wp_sequence: 5, success: true },
-            AgentEvent::WpStateChanged { feature_slug: "f".into(), wp_sequence: 6, old_state: "a".into(), new_state: "b".into() },
+            AgentEvent::AgentStarted {
+                feature_slug: "f".into(),
+                wp_sequence: 1,
+                agent_id: "a".into(),
+            },
+            AgentEvent::PrCreated {
+                feature_slug: "f".into(),
+                wp_sequence: 2,
+                pr_url: "u".into(),
+            },
+            AgentEvent::ReviewReceived {
+                feature_slug: "f".into(),
+                wp_sequence: 3,
+                review_status: "ok".into(),
+                comments: 0,
+            },
+            AgentEvent::AgentFixing {
+                feature_slug: "f".into(),
+                wp_sequence: 4,
+                cycle: 1,
+            },
+            AgentEvent::AgentCompleted {
+                feature_slug: "f".into(),
+                wp_sequence: 5,
+                success: true,
+            },
+            AgentEvent::WpStateChanged {
+                feature_slug: "f".into(),
+                wp_sequence: 6,
+                old_state: "a".into(),
+                new_state: "b".into(),
+            },
         ];
         for (i, e) in events.iter().enumerate() {
             assert_eq!(e.wp_sequence(), (i + 1) as i32);
@@ -204,12 +230,56 @@ mod tests {
     #[test]
     fn agent_event_event_type_strings() {
         let cases: Vec<(AgentEvent, &str)> = vec![
-            (AgentEvent::AgentStarted { feature_slug: "f".into(), wp_sequence: 1, agent_id: "a".into() }, "agent_started"),
-            (AgentEvent::PrCreated { feature_slug: "f".into(), wp_sequence: 1, pr_url: "u".into() }, "pr_created"),
-            (AgentEvent::ReviewReceived { feature_slug: "f".into(), wp_sequence: 1, review_status: "s".into(), comments: 0 }, "review_received"),
-            (AgentEvent::AgentFixing { feature_slug: "f".into(), wp_sequence: 1, cycle: 1 }, "agent_fixing"),
-            (AgentEvent::AgentCompleted { feature_slug: "f".into(), wp_sequence: 1, success: true }, "agent_completed"),
-            (AgentEvent::WpStateChanged { feature_slug: "f".into(), wp_sequence: 1, old_state: "a".into(), new_state: "b".into() }, "wp_state_changed"),
+            (
+                AgentEvent::AgentStarted {
+                    feature_slug: "f".into(),
+                    wp_sequence: 1,
+                    agent_id: "a".into(),
+                },
+                "agent_started",
+            ),
+            (
+                AgentEvent::PrCreated {
+                    feature_slug: "f".into(),
+                    wp_sequence: 1,
+                    pr_url: "u".into(),
+                },
+                "pr_created",
+            ),
+            (
+                AgentEvent::ReviewReceived {
+                    feature_slug: "f".into(),
+                    wp_sequence: 1,
+                    review_status: "s".into(),
+                    comments: 0,
+                },
+                "review_received",
+            ),
+            (
+                AgentEvent::AgentFixing {
+                    feature_slug: "f".into(),
+                    wp_sequence: 1,
+                    cycle: 1,
+                },
+                "agent_fixing",
+            ),
+            (
+                AgentEvent::AgentCompleted {
+                    feature_slug: "f".into(),
+                    wp_sequence: 1,
+                    success: true,
+                },
+                "agent_completed",
+            ),
+            (
+                AgentEvent::WpStateChanged {
+                    feature_slug: "f".into(),
+                    wp_sequence: 1,
+                    old_state: "a".into(),
+                    new_state: "b".into(),
+                },
+                "wp_state_changed",
+            ),
         ];
         for (event, expected_type) in &cases {
             assert_eq!(event.event_type(), *expected_type);

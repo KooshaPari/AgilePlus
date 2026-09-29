@@ -470,9 +470,7 @@ fn serde_deserialize_from_json() {
 
 #[test]
 fn serde_roundtrip_yaml() {
-    let original = SerdeConfig::default()
-        .with_name("yaml-test")
-        .with_count(55);
+    let original = SerdeConfig::default().with_name("yaml-test").with_count(55);
     let yaml = serde_yaml::to_string(&original).unwrap();
     let restored: SerdeConfig = serde_yaml::from_str(&yaml).unwrap();
     assert_eq!(original, restored);

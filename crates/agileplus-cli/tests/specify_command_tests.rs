@@ -152,13 +152,12 @@ async fn refines_existing_feature_and_records_revision_diff() {
     let diff = vcs
         .get("alpha", "evidence/spec-revisions/rev-1.diff")
         .expect("rev-1 diff written");
-    assert!(diff.contains("revised"), "diff should show the change: {diff}");
+    assert!(
+        diff.contains("revised"),
+        "diff should show the change: {diff}"
+    );
 
-    let feature = storage
-        .get_feature_by_slug("alpha")
-        .await
-        .unwrap()
-        .unwrap();
+    let feature = storage.get_feature_by_slug("alpha").await.unwrap().unwrap();
     // create audit + refinement audit
     let trail = storage.get_audit_trail(feature.id).await.unwrap();
     assert_eq!(trail.len(), 2);
@@ -194,7 +193,10 @@ async fn second_refinement_increments_revision_number() {
     .await
     .unwrap();
 
-    assert!(vcs.get("alpha", "evidence/spec-revisions/rev-2.diff").is_some());
+    assert!(
+        vcs.get("alpha", "evidence/spec-revisions/rev-2.diff")
+            .is_some()
+    );
 }
 
 #[tokio::test]
@@ -222,7 +224,10 @@ async fn identical_spec_short_circuits_without_a_new_revision() {
     .unwrap();
 
     assert_eq!(vcs.artifact_count(), after_create, "no new artifacts");
-    assert!(vcs.get("alpha", "evidence/spec-revisions/rev-1.diff").is_none());
+    assert!(
+        vcs.get("alpha", "evidence/spec-revisions/rev-1.diff")
+            .is_none()
+    );
 }
 
 // ── governance ───────────────────────────────────────────────────────────────
@@ -271,5 +276,9 @@ async fn missing_spec_file_is_an_error() {
     let tmp = tempfile::tempdir().unwrap();
     let missing = tmp.path().join("does-not-exist.md");
 
-    assert!(run_specify(args(Some("alpha"), missing), &storage, &vcs).await.is_err());
+    assert!(
+        run_specify(args(Some("alpha"), missing), &storage, &vcs)
+            .await
+            .is_err()
+    );
 }

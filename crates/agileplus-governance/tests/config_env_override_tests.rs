@@ -30,7 +30,10 @@ impl EnvGuard {
     }
 
     fn set(&self, key: &str, value: &str) {
-        assert!(self.keys.contains(&key), "key {key} must be scoped by the guard");
+        assert!(
+            self.keys.contains(&key),
+            "key {key} must be scoped by the guard"
+        );
         std::env::set_var(key, value);
     }
 }
@@ -145,7 +148,10 @@ fn from_env_reads_enabled_flags_and_policy_default_action() {
     let env = EnvGuard::acquire(FLAG_KEYS);
 
     env.set("AGILEPLUS_GOVERNANCE_ENABLED", "true");
-    env.set("AGILEPLUS_GOVERNANCE_BASE_URL", "http://governance.internal:9090");
+    env.set(
+        "AGILEPLUS_GOVERNANCE_BASE_URL",
+        "http://governance.internal:9090",
+    );
     env.set("AGILEPLUS_LOCAL_ENABLED", "false");
     env.set("AGILEPLUS_SYNC_ENABLED", "false");
     env.set("AGILEPLUS_POLICY_ENABLED", "false");
@@ -156,7 +162,10 @@ fn from_env_reads_enabled_flags_and_policy_default_action() {
 
     let config = GovernanceConfig::from_env();
     assert!(config.governance.enabled);
-    assert_eq!(config.governance.base_url, "http://governance.internal:9090");
+    assert_eq!(
+        config.governance.base_url,
+        "http://governance.internal:9090"
+    );
     assert!(!config.local.enabled);
     assert!(!config.sync.enabled);
     assert!(!config.policy.enabled);

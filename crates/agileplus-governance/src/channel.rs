@@ -382,10 +382,22 @@ mod extended_tests {
 
     #[test]
     fn next_channel_chain() {
-        assert_eq!(ReleaseChannel::Alpha.next_channel(), Some(ReleaseChannel::Canary));
-        assert_eq!(ReleaseChannel::Canary.next_channel(), Some(ReleaseChannel::Beta));
-        assert_eq!(ReleaseChannel::Beta.next_channel(), Some(ReleaseChannel::Rc));
-        assert_eq!(ReleaseChannel::Rc.next_channel(), Some(ReleaseChannel::Prod));
+        assert_eq!(
+            ReleaseChannel::Alpha.next_channel(),
+            Some(ReleaseChannel::Canary)
+        );
+        assert_eq!(
+            ReleaseChannel::Canary.next_channel(),
+            Some(ReleaseChannel::Beta)
+        );
+        assert_eq!(
+            ReleaseChannel::Beta.next_channel(),
+            Some(ReleaseChannel::Rc)
+        );
+        assert_eq!(
+            ReleaseChannel::Rc.next_channel(),
+            Some(ReleaseChannel::Prod)
+        );
         assert_eq!(ReleaseChannel::Prod.next_channel(), None);
     }
 
@@ -436,11 +448,23 @@ mod extended_tests {
 
     #[test]
     fn channel_from_str_aliases() {
-        assert_eq!("a".parse::<ReleaseChannel>().unwrap(), ReleaseChannel::Alpha);
-        assert_eq!("c".parse::<ReleaseChannel>().unwrap(), ReleaseChannel::Canary);
+        assert_eq!(
+            "a".parse::<ReleaseChannel>().unwrap(),
+            ReleaseChannel::Alpha
+        );
+        assert_eq!(
+            "c".parse::<ReleaseChannel>().unwrap(),
+            ReleaseChannel::Canary
+        );
         assert_eq!("b".parse::<ReleaseChannel>().unwrap(), ReleaseChannel::Beta);
-        assert_eq!("release-candidate".parse::<ReleaseChannel>().unwrap(), ReleaseChannel::Rc);
-        assert_eq!("stable".parse::<ReleaseChannel>().unwrap(), ReleaseChannel::Prod);
+        assert_eq!(
+            "release-candidate".parse::<ReleaseChannel>().unwrap(),
+            ReleaseChannel::Rc
+        );
+        assert_eq!(
+            "stable".parse::<ReleaseChannel>().unwrap(),
+            ReleaseChannel::Prod
+        );
         assert_eq!("p".parse::<ReleaseChannel>().unwrap(), ReleaseChannel::Prod);
     }
 
@@ -473,8 +497,11 @@ mod extended_tests {
     #[test]
     fn promotion_request_invalid_reverse() {
         let req = PromotionRequest::new(
-            "pkg".into(), ReleaseChannel::Prod, ReleaseChannel::Alpha,
-            "dev".into(), "1.0.0".into(),
+            "pkg".into(),
+            ReleaseChannel::Prod,
+            ReleaseChannel::Alpha,
+            "dev".into(),
+            "1.0.0".into(),
         );
         assert!(!req.is_valid_transition());
     }
@@ -482,8 +509,11 @@ mod extended_tests {
     #[test]
     fn promotion_request_invalid_same_channel() {
         let req = PromotionRequest::new(
-            "pkg".into(), ReleaseChannel::Beta, ReleaseChannel::Beta,
-            "dev".into(), "1.0.0".into(),
+            "pkg".into(),
+            ReleaseChannel::Beta,
+            ReleaseChannel::Beta,
+            "dev".into(),
+            "1.0.0".into(),
         );
         assert!(!req.is_valid_transition());
     }
@@ -491,12 +521,20 @@ mod extended_tests {
     #[test]
     fn promotion_request_skips_multiple() {
         let req = PromotionRequest::new(
-            "pkg".into(), ReleaseChannel::Alpha, ReleaseChannel::Prod,
-            "dev".into(), "1.0.0".into(),
+            "pkg".into(),
+            ReleaseChannel::Alpha,
+            ReleaseChannel::Prod,
+            "dev".into(),
+            "1.0.0".into(),
         );
-        assert_eq!(req.skips_channels(), vec![
-            ReleaseChannel::Canary, ReleaseChannel::Beta, ReleaseChannel::Rc
-        ]);
+        assert_eq!(
+            req.skips_channels(),
+            vec![
+                ReleaseChannel::Canary,
+                ReleaseChannel::Beta,
+                ReleaseChannel::Rc
+            ]
+        );
     }
 
     #[test]
@@ -533,8 +571,11 @@ mod extended_tests {
     #[test]
     fn promotion_request_metadata_serde() {
         let req = PromotionRequest::new(
-            "pkg".into(), ReleaseChannel::Alpha, ReleaseChannel::Beta,
-            "dev".into(), "1.0.0".into(),
+            "pkg".into(),
+            ReleaseChannel::Alpha,
+            ReleaseChannel::Beta,
+            "dev".into(),
+            "1.0.0".into(),
         );
         let json = serde_json::to_string(&req).unwrap();
         let deser: PromotionRequest = serde_json::from_str(&json).unwrap();
@@ -595,40 +636,73 @@ mod coverage_tests {
 
     #[test]
     fn next_channel_chain_terminates_at_prod() {
-        assert_eq!(ReleaseChannel::Alpha.next_channel(), Some(ReleaseChannel::Canary));
-        assert_eq!(ReleaseChannel::Rc.next_channel(), Some(ReleaseChannel::Prod));
+        assert_eq!(
+            ReleaseChannel::Alpha.next_channel(),
+            Some(ReleaseChannel::Canary)
+        );
+        assert_eq!(
+            ReleaseChannel::Rc.next_channel(),
+            Some(ReleaseChannel::Prod)
+        );
         assert_eq!(ReleaseChannel::Prod.next_channel(), None);
     }
 
     #[test]
     fn from_str_alpha_full_and_short() {
-        assert_eq!("alpha".parse::<ReleaseChannel>().unwrap(), ReleaseChannel::Alpha);
-        assert_eq!("A".parse::<ReleaseChannel>().unwrap(), ReleaseChannel::Alpha);
+        assert_eq!(
+            "alpha".parse::<ReleaseChannel>().unwrap(),
+            ReleaseChannel::Alpha
+        );
+        assert_eq!(
+            "A".parse::<ReleaseChannel>().unwrap(),
+            ReleaseChannel::Alpha
+        );
     }
 
     #[test]
     fn from_str_canary_full_and_short() {
-        assert_eq!("canary".parse::<ReleaseChannel>().unwrap(), ReleaseChannel::Canary);
-        assert_eq!("C".parse::<ReleaseChannel>().unwrap(), ReleaseChannel::Canary);
+        assert_eq!(
+            "canary".parse::<ReleaseChannel>().unwrap(),
+            ReleaseChannel::Canary
+        );
+        assert_eq!(
+            "C".parse::<ReleaseChannel>().unwrap(),
+            ReleaseChannel::Canary
+        );
     }
 
     #[test]
     fn from_str_beta_full_and_short() {
-        assert_eq!("beta".parse::<ReleaseChannel>().unwrap(), ReleaseChannel::Beta);
+        assert_eq!(
+            "beta".parse::<ReleaseChannel>().unwrap(),
+            ReleaseChannel::Beta
+        );
         assert_eq!("B".parse::<ReleaseChannel>().unwrap(), ReleaseChannel::Beta);
     }
 
     #[test]
     fn from_str_rc_variants() {
         assert_eq!("rc".parse::<ReleaseChannel>().unwrap(), ReleaseChannel::Rc);
-        assert_eq!("release-candidate".parse::<ReleaseChannel>().unwrap(), ReleaseChannel::Rc);
+        assert_eq!(
+            "release-candidate".parse::<ReleaseChannel>().unwrap(),
+            ReleaseChannel::Rc
+        );
     }
 
     #[test]
     fn from_str_prod_variants() {
-        assert_eq!("prod".parse::<ReleaseChannel>().unwrap(), ReleaseChannel::Prod);
-        assert_eq!("production".parse::<ReleaseChannel>().unwrap(), ReleaseChannel::Prod);
-        assert_eq!("stable".parse::<ReleaseChannel>().unwrap(), ReleaseChannel::Prod);
+        assert_eq!(
+            "prod".parse::<ReleaseChannel>().unwrap(),
+            ReleaseChannel::Prod
+        );
+        assert_eq!(
+            "production".parse::<ReleaseChannel>().unwrap(),
+            ReleaseChannel::Prod
+        );
+        assert_eq!(
+            "stable".parse::<ReleaseChannel>().unwrap(),
+            ReleaseChannel::Prod
+        );
         assert_eq!("p".parse::<ReleaseChannel>().unwrap(), ReleaseChannel::Prod);
     }
 
@@ -704,7 +778,11 @@ mod coverage_tests {
     #[test]
     fn promotion_request_adjacent_skips_nothing() {
         let req = PromotionRequest::new(
-            "c".into(), ReleaseChannel::Beta, ReleaseChannel::Rc, "x".into(), "1".into(),
+            "c".into(),
+            ReleaseChannel::Beta,
+            ReleaseChannel::Rc,
+            "x".into(),
+            "1".into(),
         );
         assert!(req.skips_channels().is_empty());
     }
@@ -712,15 +790,26 @@ mod coverage_tests {
     #[test]
     fn promotion_request_skips_from_canary_to_prod() {
         let req = PromotionRequest::new(
-            "c".into(), ReleaseChannel::Canary, ReleaseChannel::Prod, "x".into(), "1".into(),
+            "c".into(),
+            ReleaseChannel::Canary,
+            ReleaseChannel::Prod,
+            "x".into(),
+            "1".into(),
         );
-        assert_eq!(req.skips_channels(), vec![ReleaseChannel::Beta, ReleaseChannel::Rc]);
+        assert_eq!(
+            req.skips_channels(),
+            vec![ReleaseChannel::Beta, ReleaseChannel::Rc]
+        );
     }
 
     #[test]
     fn promotion_request_forward_transition_is_valid() {
         let req = PromotionRequest::new(
-            "c".into(), ReleaseChannel::Beta, ReleaseChannel::Prod, "x".into(), "1".into(),
+            "c".into(),
+            ReleaseChannel::Beta,
+            ReleaseChannel::Prod,
+            "x".into(),
+            "1".into(),
         );
         assert!(req.is_valid_transition());
     }
@@ -741,7 +830,10 @@ mod coverage_tests {
     fn promotion_result_denied_records_failures() {
         let result = PromotionResult::denied("no".into(), vec!["a".into(), "b".into()]);
         assert!(!result.allowed);
-        assert_eq!(result.policy_failures, vec!["a".to_string(), "b".to_string()]);
+        assert_eq!(
+            result.policy_failures,
+            vec!["a".to_string(), "b".to_string()]
+        );
         assert!(result.channel_metadata.is_none());
     }
 
@@ -766,7 +858,11 @@ mod coverage_tests {
     #[test]
     fn promotion_request_serde_roundtrip_all_fields() {
         let mut req = PromotionRequest::new(
-            "pkg".into(), ReleaseChannel::Alpha, ReleaseChannel::Beta, "dev".into(), "1.0.0".into(),
+            "pkg".into(),
+            ReleaseChannel::Alpha,
+            ReleaseChannel::Beta,
+            "dev".into(),
+            "1.0.0".into(),
         );
         req.metadata = Some(serde_json::json!({"ticket": 42}));
         let json = serde_json::to_string(&req).unwrap();

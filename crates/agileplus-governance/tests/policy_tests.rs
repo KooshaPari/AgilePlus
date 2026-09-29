@@ -1,8 +1,10 @@
 //! Integration tests for policy engine, conditions, and context.
 //! Complements the inline unit tests in src/policy.rs.
 
+use agileplus_governance::policy::{
+    default_policies, Policy, PolicyCondition, PolicyDetail, PolicyEffect,
+};
 use agileplus_governance::*;
-use agileplus_governance::policy::{Policy, PolicyCondition, PolicyDetail, PolicyEffect, default_policies};
 
 // ── Policy builder chain ─────────────────────────────────────────────
 
@@ -44,9 +46,7 @@ fn policy_serde_roundtrip() {
         .with_name("Test Policy")
         .with_description("desc")
         .with_priority(42)
-        .with_condition(PolicyCondition::Exists {
-            key: "x".into(),
-        });
+        .with_condition(PolicyCondition::Exists { key: "x".into() });
 
     let json = serde_json::to_string(&p).unwrap();
     let back: Policy = serde_json::from_str(&json).unwrap();
@@ -86,7 +86,10 @@ fn policy_context_get_returns_all_keys() {
     ctx.version = Some("2.0.0".into());
 
     assert_eq!(ctx.get("user_id").unwrap(), serde_json::json!("u1"));
-    assert_eq!(ctx.get("client_ip").unwrap(), serde_json::json!("127.0.0.1"));
+    assert_eq!(
+        ctx.get("client_ip").unwrap(),
+        serde_json::json!("127.0.0.1")
+    );
     assert_eq!(ctx.get("resource").unwrap(), serde_json::json!("res"));
     assert_eq!(ctx.get("resource_id").unwrap(), serde_json::json!("r1"));
     assert_eq!(ctx.get("action").unwrap(), serde_json::json!("read"));
@@ -100,7 +103,10 @@ fn policy_context_get_unknown_key_returns_metadata() {
     let mut ctx = PolicyContext::new();
     ctx.metadata
         .insert("custom_key".into(), serde_json::json!("custom_value"));
-    assert_eq!(ctx.get("custom_key").unwrap(), serde_json::json!("custom_value"));
+    assert_eq!(
+        ctx.get("custom_key").unwrap(),
+        serde_json::json!("custom_value")
+    );
 }
 
 #[test]
@@ -123,8 +129,7 @@ fn policy_context_serde_roundtrip() {
     let mut ctx = PolicyContext::new()
         .with_user("user1")
         .with_channel(ReleaseChannel::Alpha);
-    ctx.metadata
-        .insert("k".into(), serde_json::json!("v"));
+    ctx.metadata.insert("k".into(), serde_json::json!("v"));
     let json = serde_json::to_string(&ctx).unwrap();
     let back: PolicyContext = serde_json::from_str(&json).unwrap();
     assert_eq!(back.user_id.as_deref(), Some("user1"));
@@ -142,7 +147,10 @@ fn engine_with_policies_sorted_by_priority_desc() {
     ]);
     // Higher priority should be evaluated first
     let result = engine.check("r", "a", &PolicyContext::new());
-    assert!(!result.allowed, "Deny with priority 100 should be evaluated first");
+    assert!(
+        !result.allowed,
+        "Deny with priority 100 should be evaluated first"
+    );
 }
 
 #[test]
@@ -253,13 +261,17 @@ fn default_policies_include_admin_bypass() {
 #[test]
 fn default_policies_include_security_audit_requirement() {
     let policies = default_policies();
-    assert!(policies.iter().any(|p| p.name == "Require Security Audit for RC"));
+    assert!(policies
+        .iter()
+        .any(|p| p.name == "Require Security Audit for RC"));
 }
 
 #[test]
 fn default_policies_include_rollback_plan_requirement() {
     let policies = default_policies();
-    assert!(policies.iter().any(|p| p.name == "Require Rollback Plan for Production"));
+    assert!(policies
+        .iter()
+        .any(|p| p.name == "Require Rollback Plan for Production"));
 }
 
 // ── PolicyCheck ──────────────────────────────────────────────────────

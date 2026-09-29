@@ -7,8 +7,7 @@
 
 use crate::ports::ReviewPort;
 use crate::types::{
-    AgentConfig, AgentTask, CiStatus, CommentSeverity, DomainError, ReviewComment,
-    ReviewOutcome,
+    AgentConfig, AgentTask, CiStatus, CommentSeverity, DomainError, ReviewComment, ReviewOutcome,
 };
 use std::path::Path;
 use std::time::Duration;
@@ -97,9 +96,7 @@ pub async fn create_pr(
 
     let stdout = String::from_utf8_lossy(&output.stdout);
     let pr_url = parse_pr_url_from_gh_output(&stdout).ok_or_else(|| {
-        DomainError::PrCreationError(format!(
-            "could not parse PR URL from gh output: {stdout}"
-        ))
+        DomainError::PrCreationError(format!("could not parse PR URL from gh output: {stdout}"))
     })?;
 
     info!(%pr_url, "PR created");
@@ -194,7 +191,11 @@ pub async fn run_review_fix_loop(
             }
 
             ReviewOutcome::Pending | ReviewOutcome::Dismissed => {
-                warn!(cycle, ?outcome, "review still pending or dismissed — continuing");
+                warn!(
+                    cycle,
+                    ?outcome,
+                    "review still pending or dismissed — continuing"
+                );
             }
         }
 
@@ -207,7 +208,9 @@ pub async fn run_review_fix_loop(
 
         if final_ci_status == CiStatus::Failing {
             warn!(cycle, "CI failing — notifying agent");
-            let ci_instruction = format!("## CI Failure\n\nThe CI pipeline is failing. Please check the CI logs, fix the issues, commit, and push.\n\nPR: {pr_url}\n");
+            let ci_instruction = format!(
+                "## CI Failure\n\nThe CI pipeline is failing. Please check the CI logs, fix the issues, commit, and push.\n\nPR: {pr_url}\n"
+            );
             feed_instruction_to_agent(task, &ci_instruction).await;
         }
     }
@@ -221,9 +224,7 @@ pub async fn run_review_fix_loop(
         "governance exception: review loop exhausted without approval"
     );
 
-    Err(DomainError::ReviewLoopExhausted {
-        cycles: max_cycles,
-    })
+    Err(DomainError::ReviewLoopExhausted { cycles: max_cycles })
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -259,7 +260,10 @@ pub fn format_review_comments_as_instruction(comments: &[ReviewComment]) -> Stri
             Some(l) => format!("{}, Line {l}", c.file_path),
             None => c.file_path.clone(),
         };
-        lines.push(format!("\n### File: {location} ({severity})\n> {}\n", c.body));
+        lines.push(format!(
+            "\n### File: {location} ({severity})\n> {}\n",
+            c.body
+        ));
     }
 
     lines.concat()
@@ -268,9 +272,7 @@ pub fn format_review_comments_as_instruction(comments: &[ReviewComment]) -> Stri
 /// Write the instruction to a file inside the worktree so the agent can pick it
 /// up on its next invocation.  (Stdin is not available for async hand-off.)
 async fn feed_instruction_to_agent(task: &AgentTask, instruction: &str) {
-    let path = task
-        .worktree_path
-        .join(".agileplus-review-instruction.md");
+    let path = task.worktree_path.join(".agileplus-review-instruction.md");
     if let Err(e) = tokio::fs::write(&path, instruction).await {
         warn!("could not write review instruction file: {e}");
     } else {
@@ -290,8 +292,8 @@ mod tests {
     use crate::types::{AgentConfig, AgentTask, CiStatus, DomainError, ReviewOutcome};
     use async_trait::async_trait;
     use std::path::PathBuf;
-    use std::sync::atomic::{AtomicU32, Ordering};
     use std::sync::Arc;
+    use std::sync::atomic::{AtomicU32, Ordering};
 
     // ── PrDescription ──────────────────────────────────────────────────────────
 
@@ -348,11 +350,11 @@ mod tests {
 
     #[test]
     fn backoff_increases_exponentially_and_caps_at_300() {
-        assert_eq!(backoff_secs(0), 30);   // 30 * 2^0 = 30
-        assert_eq!(backoff_secs(1), 60);   // 30 * 2^1 = 60
-        assert_eq!(backoff_secs(2), 120);  // 30 * 2^2 = 120
-        assert_eq!(backoff_secs(3), 240);  // 30 * 2^3 = 240
-        assert_eq!(backoff_secs(4), 300);  // 30 * 2^4 = 480 → capped at 300
+        assert_eq!(backoff_secs(0), 30); // 30 * 2^0 = 30
+        assert_eq!(backoff_secs(1), 60); // 30 * 2^1 = 60
+        assert_eq!(backoff_secs(2), 120); // 30 * 2^2 = 120
+        assert_eq!(backoff_secs(3), 240); // 30 * 2^3 = 240
+        assert_eq!(backoff_secs(4), 300); // 30 * 2^4 = 480 → capped at 300
         assert_eq!(backoff_secs(10), 300); // still capped
     }
 
@@ -424,7 +426,8 @@ mod tests {
         };
 
         let config = AgentConfig::default();
-        let result = run_review_fix_loop("https://github.com/x/y/pull/1", &review, &config, &task, 5).await;
+        let result =
+            run_review_fix_loop("https://github.com/x/y/pull/1", &review, &config, &task, 5).await;
 
         assert!(result.is_ok());
         let outcome = result.unwrap();
@@ -443,7 +446,8 @@ mod tests {
         };
 
         let config = AgentConfig::default();
-        let result = run_review_fix_loop("https://github.com/x/y/pull/2", &review, &config, &task, 2).await;
+        let result =
+            run_review_fix_loop("https://github.com/x/y/pull/2", &review, &config, &task, 2).await;
 
         assert!(result.is_err());
         match result.unwrap_err() {

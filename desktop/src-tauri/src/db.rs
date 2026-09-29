@@ -76,8 +76,7 @@ pub fn open_project_db(project_root: &Path) -> Result<Connection, String> {
             project_root.display()
         ));
     }
-    let conn =
-        Connection::open(&db_path).map_err(|e| format!("Failed to open database: {e}"))?;
+    let conn = Connection::open(&db_path).map_err(|e| format!("Failed to open database: {e}"))?;
 
     // Enable WAL mode for concurrent reads
     conn.execute_batch("PRAGMA journal_mode=WAL;")

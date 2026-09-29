@@ -378,7 +378,9 @@ fn in_memory_adapter_sequential_connections() {
     // Second connection: read back the data
     {
         let conn = adapter.conn_for_bench().expect("conn2");
-        let result: i64 = conn.query_row("SELECT x FROM t", [], |row| row.get(0)).unwrap();
+        let result: i64 = conn
+            .query_row("SELECT x FROM t", [], |row| row.get(0))
+            .unwrap();
         assert_eq!(result, 1);
     }
 }

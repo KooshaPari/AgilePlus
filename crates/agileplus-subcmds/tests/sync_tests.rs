@@ -6,9 +6,9 @@
 #![cfg(feature = "sync")]
 
 use agileplus_subcmds::{
-    AutoSyncAction, ConflictResolution, SyncAutoArgs, SyncConfig, SyncConflict,
-    SyncDirection, SyncItemOutcome, SyncPullArgs, SyncPushArgs, SyncReport, SyncReportEntry,
-    SyncResolveArgs, SyncStatusArgs, SyncStatusRow, SyncSubcommand,
+    AutoSyncAction, ConflictResolution, SyncAutoArgs, SyncConfig, SyncConflict, SyncDirection,
+    SyncItemOutcome, SyncPullArgs, SyncPushArgs, SyncReport, SyncReportEntry, SyncResolveArgs,
+    SyncStatusArgs, SyncStatusRow, SyncSubcommand,
 };
 use tempfile::TempDir;
 

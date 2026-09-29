@@ -1157,16 +1157,26 @@ mod coverage_tests {
         for (k, v) in pairs {
             glyphs.insert((*k).to_string(), (*v).to_string());
         }
-        ScoringSpec { scale: "0-3".into(), glyphs, grade }
+        ScoringSpec {
+            scale: "0-3".into(),
+            glyphs,
+            grade,
+        }
     }
 
     fn write_catalog(dir: &std::path::Path, cluster: &str, range: &str, sub: bool) -> PathBuf {
         let sub_json = if sub {
-            format!(r#"[{{"id":"{cluster}.1","title":"Sub","acceptance":"a","evidence_pattern":"file"}}]"#)
+            format!(
+                r#"[{{"id":"{cluster}.1","title":"Sub","acceptance":"a","evidence_pattern":"file"}}]"#
+            )
         } else {
             "[]".to_string()
         };
-        let defs = if sub { String::new() } else { r#","defs_ref":"ref.md""#.to_string() };
+        let defs = if sub {
+            String::new()
+        } else {
+            r#","defs_ref":"ref.md""#.to_string()
+        };
         let json = format!(
             r#"{{"version":"1.0","schema":"test","clusters":1,"sub_pillars_enumerated":{enum_count},"note":"n","pillars":[{{"cluster":"{cluster}","pillar_range":"{range}","category":"Cat","source":"s"{defs},"scoring":{{"scale":"0-3","glyphs":{{"0":"x","3":"y"}},"grade":{{"A":90}}}},"sub_pillars":{sub_json}}}]}}"#,
             enum_count = if sub { 1 } else { 0 },
@@ -1322,7 +1332,9 @@ mod coverage_tests {
             target_file: "nope.toml",
             regex_src: "x",
         }];
-        assert!(TaggedProbeEvidence::collect(tmp.path(), &probes).matches.is_empty());
+        assert!(TaggedProbeEvidence::collect(tmp.path(), &probes)
+            .matches
+            .is_empty());
     }
 
     #[test]
@@ -1363,7 +1375,9 @@ mod coverage_tests {
             target_file: "absent",
             regex_src: "x",
         }];
-        assert!(ProbeEvidence::collect(tmp.path(), &probes).matches.is_empty());
+        assert!(ProbeEvidence::collect(tmp.path(), &probes)
+            .matches
+            .is_empty());
     }
 
     #[test]
@@ -1415,7 +1429,11 @@ mod coverage_tests {
 
     #[test]
     fn render_markdown_empty_report() {
-        let report = ScoreReport { repo: "r".into(), date: "d".into(), clusters: vec![] };
+        let report = ScoreReport {
+            repo: "r".into(),
+            date: "d".into(),
+            clusters: vec![],
+        };
         assert!(render_markdown(&report).is_empty());
     }
 

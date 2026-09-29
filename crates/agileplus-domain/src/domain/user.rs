@@ -198,7 +198,11 @@ mod tests {
 
     #[test]
     fn user_status_serde_roundtrip() {
-        for s in [UserStatus::Active, UserStatus::Inactive, UserStatus::Suspended] {
+        for s in [
+            UserStatus::Active,
+            UserStatus::Inactive,
+            UserStatus::Suspended,
+        ] {
             let json = serde_json::to_string(&s).unwrap();
             let back: UserStatus = serde_json::from_str(&json).unwrap();
             assert_eq!(back, s);
@@ -371,7 +375,10 @@ mod coverage_tests {
 
     #[test]
     fn wire_strings() {
-        assert_eq!(serde_json::to_string(&UserRole::Admin).unwrap(), "\"admin\"");
+        assert_eq!(
+            serde_json::to_string(&UserRole::Admin).unwrap(),
+            "\"admin\""
+        );
         assert_eq!(
             serde_json::to_string(&UserStatus::Active).unwrap(),
             "\"active\""

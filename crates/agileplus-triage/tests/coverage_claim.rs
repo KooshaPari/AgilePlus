@@ -107,7 +107,11 @@ fn claim_state_serde_snake_case() {
 
 #[test]
 fn claim_state_roundtrip() {
-    for state in [ClaimState::Active, ClaimState::Draining, ClaimState::Expired] {
+    for state in [
+        ClaimState::Active,
+        ClaimState::Draining,
+        ClaimState::Expired,
+    ] {
         let json = serde_json::to_string(&state).unwrap();
         assert_eq!(serde_json::from_str::<ClaimState>(&json).unwrap(), state);
     }
@@ -301,20 +305,28 @@ fn claim_store_lookup_wrong_kind_misses() {
 #[test]
 fn claim_store_second_claim_on_same_resource_is_rejected() {
     let mut s = ClaimStore::new();
-    assert!(s
-        .claim("c1", "repo:foo", ClaimKind::Repo, "a", 60, reason())
-        .is_some());
-    assert!(s
-        .claim("c2", "repo:foo", ClaimKind::Repo, "b", 60, reason())
-        .is_none());
+    assert!(
+        s.claim("c1", "repo:foo", ClaimKind::Repo, "a", 60, reason())
+            .is_some()
+    );
+    assert!(
+        s.claim("c2", "repo:foo", ClaimKind::Repo, "b", 60, reason())
+            .is_none()
+    );
     assert_eq!(s.all().len(), 1);
 }
 
 #[test]
 fn claim_store_same_resource_different_kind_allowed() {
     let mut s = ClaimStore::new();
-    assert!(s.claim("c1", "x", ClaimKind::Repo, "a", 60, reason()).is_some());
-    assert!(s.claim("c2", "x", ClaimKind::Branch, "b", 60, reason()).is_some());
+    assert!(
+        s.claim("c1", "x", ClaimKind::Repo, "a", 60, reason())
+            .is_some()
+    );
+    assert!(
+        s.claim("c2", "x", ClaimKind::Branch, "b", 60, reason())
+            .is_some()
+    );
     assert_eq!(s.all().len(), 2);
 }
 
@@ -331,7 +343,14 @@ fn claim_store_reclaim_same_id_updates_record() {
     let mut s = ClaimStore::new();
     s.claim("c1", "r1", ClaimKind::Repo, "a", 60, reason());
     let c = s
-        .claim("c1", "r1", ClaimKind::Repo, "a", 120, ClaimReason::TaskRef("wp".into()))
+        .claim(
+            "c1",
+            "r1",
+            ClaimKind::Repo,
+            "a",
+            120,
+            ClaimReason::TaskRef("wp".into()),
+        )
         .unwrap();
     assert_eq!(c.ttl_seconds, 120);
     assert_eq!(c.reason, ClaimReason::TaskRef("wp".into()));
@@ -343,7 +362,10 @@ fn claim_store_claim_after_release_succeeds() {
     let mut s = ClaimStore::new();
     s.claim("c1", "r", ClaimKind::Repo, "a", 60, reason());
     assert!(s.release("c1"));
-    assert!(s.claim("c2", "r", ClaimKind::Repo, "b", 60, reason()).is_some());
+    assert!(
+        s.claim("c2", "r", ClaimKind::Repo, "b", 60, reason())
+            .is_some()
+    );
 }
 
 #[test]
@@ -352,7 +374,10 @@ fn claim_store_claim_after_expiry_reap_succeeds() {
     s.claim("c1", "r", ClaimKind::Repo, "a", 0, reason());
     std::thread::sleep(std::time::Duration::from_millis(3));
     assert_eq!(s.reap_expired(Utc::now()), 1);
-    assert!(s.claim("c2", "r", ClaimKind::Repo, "b", 60, reason()).is_some());
+    assert!(
+        s.claim("c2", "r", ClaimKind::Repo, "b", 60, reason())
+            .is_some()
+    );
 }
 
 // ============================================================
@@ -568,7 +593,11 @@ fn transfer_to_same_id_overwrites() {
 
 #[test]
 fn claim_error_not_found_display() {
-    assert!(ClaimError::NotFound("abc".into()).to_string().contains("abc"));
+    assert!(
+        ClaimError::NotFound("abc".into())
+            .to_string()
+            .contains("abc")
+    );
 }
 
 #[test]
@@ -596,9 +625,10 @@ fn claim_error_wrong_state_display() {
 #[test]
 fn trait_claim_and_lookup() {
     let mut s: Box<dyn ClaimStoreTrait> = Box::new(ClaimStore::new());
-    assert!(s
-        .claim("c1", "r", ClaimKind::Repo, "a", 60, reason())
-        .is_some());
+    assert!(
+        s.claim("c1", "r", ClaimKind::Repo, "a", 60, reason())
+            .is_some()
+    );
     assert_eq!(s.all().len(), 1);
     assert_eq!(s.active().len(), 1);
     assert!(s.lookup(ClaimKind::Repo, "r").is_some());
@@ -608,7 +638,10 @@ fn trait_claim_and_lookup() {
 fn trait_conflict_returns_none() {
     let mut s: Box<dyn ClaimStoreTrait> = Box::new(ClaimStore::new());
     s.claim("c1", "r", ClaimKind::Repo, "a", 60, reason());
-    assert!(s.claim("c2", "r", ClaimKind::Repo, "b", 60, reason()).is_none());
+    assert!(
+        s.claim("c2", "r", ClaimKind::Repo, "b", 60, reason())
+            .is_none()
+    );
 }
 
 #[test]
@@ -722,7 +755,10 @@ fn watcher_failed_claim_emits_nothing() {
     let mut w = ClaimWatcher::new();
     w.claim("c1", "r", ClaimKind::Repo, "a", 60, reason());
     let mut rx = w.watch("c2");
-    assert!(w.claim("c2", "r", ClaimKind::Repo, "b", 60, reason()).is_none());
+    assert!(
+        w.claim("c2", "r", ClaimKind::Repo, "b", 60, reason())
+            .is_none()
+    );
     assert!(rx.try_recv().is_err());
 }
 

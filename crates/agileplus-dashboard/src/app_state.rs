@@ -366,22 +366,13 @@ mod tests {
             make_feature(4, FeatureState::Implementing, None, None),
         ];
         let map = store.features_by_state();
-        assert_eq!(
-            map.get(&FeatureState::Created).map_or(0, |v| v.len()),
-            2
-        );
-        assert_eq!(
-            map.get(&FeatureState::Shipped).map_or(0, |v| v.len()),
-            1
-        );
+        assert_eq!(map.get(&FeatureState::Created).map_or(0, |v| v.len()), 2);
+        assert_eq!(map.get(&FeatureState::Shipped).map_or(0, |v| v.len()), 1);
         assert_eq!(
             map.get(&FeatureState::Implementing).map_or(0, |v| v.len()),
             1
         );
-        assert_eq!(
-            map.get(&FeatureState::Planned).map_or(0, |v| v.len()),
-            0
-        );
+        assert_eq!(map.get(&FeatureState::Planned).map_or(0, |v| v.len()), 0);
     }
 
     // ── active_project ────────────────────────────────────────────────────────
@@ -548,7 +539,10 @@ mod tests {
         ];
         store.work_packages.insert(
             1,
-            vec![make_wp(10, 1, WpState::Planned), make_wp(11, 1, WpState::Doing)],
+            vec![
+                make_wp(10, 1, WpState::Planned),
+                make_wp(11, 1, WpState::Doing),
+            ],
         );
         store
             .work_packages

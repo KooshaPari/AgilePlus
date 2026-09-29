@@ -269,18 +269,12 @@ mod tests {
 
     #[test]
     fn gh_state_open_uppercase() {
-        assert_eq!(
-            gh_state_to_story_status("OPEN").unwrap(),
-            StoryStatus::Todo
-        );
+        assert_eq!(gh_state_to_story_status("OPEN").unwrap(), StoryStatus::Todo);
     }
 
     #[test]
     fn gh_state_open_mixed_case() {
-        assert_eq!(
-            gh_state_to_story_status("OpEn").unwrap(),
-            StoryStatus::Todo
-        );
+        assert_eq!(gh_state_to_story_status("OpEn").unwrap(), StoryStatus::Todo);
     }
 
     #[test]
@@ -410,7 +404,12 @@ mod tests {
 
     #[test]
     fn user_with_avatar_sets_it() {
-        let user = gh_user_to_domain("frank", None, Some("https://avatars.githubusercontent.com/u/1")).unwrap();
+        let user = gh_user_to_domain(
+            "frank",
+            None,
+            Some("https://avatars.githubusercontent.com/u/1"),
+        )
+        .unwrap();
         assert_eq!(
             user.avatar_url.as_deref(),
             Some("https://avatars.githubusercontent.com/u/1")
@@ -468,10 +467,7 @@ mod tests {
         let mut issue = open_issue("Some issue");
         issue.number = 42;
         let story = issue_to_story(&issue, 1, 1).unwrap();
-        assert_eq!(
-            story.requirement_id.as_deref(),
-            Some("gh:issue:42")
-        );
+        assert_eq!(story.requirement_id.as_deref(), Some("gh:issue:42"));
     }
 
     #[test]

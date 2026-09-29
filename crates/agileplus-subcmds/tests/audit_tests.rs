@@ -72,13 +72,8 @@ fn multiple_entries_preserve_order() {
     let log = AuditLog::new(tmp.path().join("audit.jsonl"));
 
     for i in 0..10 {
-        log.log_pre_dispatch(
-            &format!("cmd:{i}"),
-            None,
-            None,
-            serde_json::Value::Null,
-        )
-        .unwrap();
+        log.log_pre_dispatch(&format!("cmd:{i}"), None, None, serde_json::Value::Null)
+            .unwrap();
     }
 
     let entries = log.read_all().unwrap();

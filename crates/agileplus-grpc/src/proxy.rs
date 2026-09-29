@@ -194,9 +194,7 @@ mod tests {
     #[tokio::test]
     async fn dispatch_integration_command_stub_mode() {
         let router = ProxyRouter::new(None, None).await;
-        let result = router
-            .dispatch_integration_command("sync", "feat-a")
-            .await;
+        let result = router.dispatch_integration_command("sync", "feat-a").await;
         assert!(!result.is_success());
         assert!(result.message().contains("stub"));
     }

@@ -21,8 +21,14 @@ fn connection_status_all_variants_serde_roundtrip() {
 
 #[test]
 fn connection_status_json_is_lowercase() {
-    assert_eq!(serde_json::to_string(&ConnectionStatus::Connected).unwrap(), "\"connected\"");
-    assert_eq!(serde_json::to_string(&ConnectionStatus::Error).unwrap(), "\"error\"");
+    assert_eq!(
+        serde_json::to_string(&ConnectionStatus::Connected).unwrap(),
+        "\"connected\""
+    );
+    assert_eq!(
+        serde_json::to_string(&ConnectionStatus::Error).unwrap(),
+        "\"error\""
+    );
 }
 
 // ── ActionCategory ───────────────────────────────────────────────────
@@ -44,8 +50,14 @@ fn action_category_all_variants_from_str() {
 
 #[test]
 fn action_category_case_insensitive() {
-    assert_eq!("RELEASE".parse::<ActionCategory>().unwrap(), ActionCategory::Release);
-    assert_eq!("Repository".parse::<ActionCategory>().unwrap(), ActionCategory::Repository);
+    assert_eq!(
+        "RELEASE".parse::<ActionCategory>().unwrap(),
+        ActionCategory::Release
+    );
+    assert_eq!(
+        "Repository".parse::<ActionCategory>().unwrap(),
+        ActionCategory::Repository
+    );
 }
 
 #[test]
@@ -68,17 +80,32 @@ fn action_category_serde_roundtrip_all() {
 
 #[test]
 fn operation_result_from_str_variants() {
-    assert_eq!("success".parse::<OperationResult>().unwrap(), OperationResult::Success);
-    assert_eq!("failure".parse::<OperationResult>().unwrap(), OperationResult::Failure);
-    assert_eq!("partial_success".parse::<OperationResult>().unwrap(), OperationResult::PartialSuccess);
-    assert_eq!("partialsuccess".parse::<OperationResult>().unwrap(), OperationResult::PartialSuccess);
+    assert_eq!(
+        "success".parse::<OperationResult>().unwrap(),
+        OperationResult::Success
+    );
+    assert_eq!(
+        "failure".parse::<OperationResult>().unwrap(),
+        OperationResult::Failure
+    );
+    assert_eq!(
+        "partial_success".parse::<OperationResult>().unwrap(),
+        OperationResult::PartialSuccess
+    );
+    assert_eq!(
+        "partialsuccess".parse::<OperationResult>().unwrap(),
+        OperationResult::PartialSuccess
+    );
 }
 
 #[test]
 fn operation_result_display_all() {
     assert_eq!(OperationResult::Success.to_string(), "success");
     assert_eq!(OperationResult::Failure.to_string(), "failure");
-    assert_eq!(OperationResult::PartialSuccess.to_string(), "partial_success");
+    assert_eq!(
+        OperationResult::PartialSuccess.to_string(),
+        "partial_success"
+    );
 }
 
 #[test]
@@ -116,7 +143,12 @@ fn log_level_display_all() {
 
 #[test]
 fn log_level_serde_roundtrip() {
-    for l in [LogLevel::Debug, LogLevel::Info, LogLevel::Warn, LogLevel::Error] {
+    for l in [
+        LogLevel::Debug,
+        LogLevel::Info,
+        LogLevel::Warn,
+        LogLevel::Error,
+    ] {
         let j = serde_json::to_string(&l).unwrap();
         let back: LogLevel = serde_json::from_str(&j).unwrap();
         assert_eq!(l, back);
@@ -132,7 +164,11 @@ fn log_level_default_is_info() {
 
 #[test]
 fn auth_method_serde_roundtrip() {
-    for m in [AuthMethod::ApiKey, AuthMethod::BearerToken, AuthMethod::None] {
+    for m in [
+        AuthMethod::ApiKey,
+        AuthMethod::BearerToken,
+        AuthMethod::None,
+    ] {
         let j = serde_json::to_string(&m).unwrap();
         let back: AuthMethod = serde_json::from_str(&j).unwrap();
         assert_eq!(m, back);
@@ -141,9 +177,18 @@ fn auth_method_serde_roundtrip() {
 
 #[test]
 fn auth_method_json_uses_kebab_case() {
-    assert_eq!(serde_json::to_string(&AuthMethod::ApiKey).unwrap(), "\"api-key\"");
-    assert_eq!(serde_json::to_string(&AuthMethod::BearerToken).unwrap(), "\"bearer-token\"");
-    assert_eq!(serde_json::to_string(&AuthMethod::None).unwrap(), "\"none\"");
+    assert_eq!(
+        serde_json::to_string(&AuthMethod::ApiKey).unwrap(),
+        "\"api-key\""
+    );
+    assert_eq!(
+        serde_json::to_string(&AuthMethod::BearerToken).unwrap(),
+        "\"bearer-token\""
+    );
+    assert_eq!(
+        serde_json::to_string(&AuthMethod::None).unwrap(),
+        "\"none\""
+    );
 }
 
 #[test]
@@ -207,8 +252,14 @@ fn governance_stats_serde_roundtrip() {
             m
         },
         top_actions: vec![
-            TopAction { action: "promote".into(), count: 20 },
-            TopAction { action: "check".into(), count: 15 },
+            TopAction {
+                action: "promote".into(),
+                count: 20,
+            },
+            TopAction {
+                action: "check".into(),
+                count: 15,
+            },
         ],
     };
     let j = serde_json::to_string(&stats).unwrap();
@@ -257,7 +308,10 @@ fn governance_status_config_defaults() {
 
 #[test]
 fn top_action_serde_roundtrip() {
-    let a = TopAction { action: "deploy".into(), count: 99 };
+    let a = TopAction {
+        action: "deploy".into(),
+        count: 99,
+    };
     let j = serde_json::to_string(&a).unwrap();
     let back: TopAction = serde_json::from_str(&j).unwrap();
     assert_eq!(back.action, "deploy");

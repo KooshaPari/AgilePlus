@@ -68,7 +68,11 @@ fn credential_app() -> TestServer {
     let creds: Arc<dyn CredentialStore> = {
         let store = InMemoryCredentialStore::new();
         store
-            .set("agileplus", cred_keys::API_KEYS, &format_api_key_hash(VALID_KEY))
+            .set(
+                "agileplus",
+                cred_keys::API_KEYS,
+                &format_api_key_hash(VALID_KEY),
+            )
             .expect("seeding the test API key should succeed");
         Arc::new(store)
     };
@@ -230,10 +234,7 @@ async fn validate_api_key_rejects_empty_query_param_value() {
     let server = credential_app();
     let resp = server.get("/protected?api_key=").await;
     resp.assert_status(StatusCode::UNAUTHORIZED);
-    assert_eq!(
-        resp.json::<serde_json::Value>()["error"],
-        "Invalid API key"
-    );
+    assert_eq!(resp.json::<serde_json::Value>()["error"], "Invalid API key");
 }
 
 /// A credential header that is not valid UTF-8 cannot be read as a token, so

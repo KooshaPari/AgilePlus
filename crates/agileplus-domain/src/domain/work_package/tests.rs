@@ -359,7 +359,11 @@ mod coverage_tests {
                     assert_eq!(wp.state, to);
                 } else {
                     match r {
-                        Err(DomainError::InvalidTransition { from: f, to: t, reason }) => {
+                        Err(DomainError::InvalidTransition {
+                            from: f,
+                            to: t,
+                            reason,
+                        }) => {
                             assert_eq!(f, format!("{from:?}"));
                             assert_eq!(t, format!("{to:?}"));
                             assert_eq!(reason, "transition not allowed");
@@ -379,7 +383,10 @@ mod coverage_tests {
             let back: WpState = serde_json::from_str(&serde_json::to_string(&st).unwrap()).unwrap();
             assert_eq!(back, st);
         }
-        assert_eq!(serde_json::to_string(&WpState::Planned).unwrap(), "\"planned\"");
+        assert_eq!(
+            serde_json::to_string(&WpState::Planned).unwrap(),
+            "\"planned\""
+        );
         assert_eq!(serde_json::to_string(&WpState::Done).unwrap(), "\"done\"");
         let mut set = HashSet::new();
         for st in ALL {
@@ -427,8 +434,7 @@ mod coverage_tests {
         wp.base_commit = Some("abc1234".into());
         wp.head_commit = Some("def5678".into());
         wp.file_scope = vec!["a.rs".into(), "b.rs".into()];
-        let back: WorkPackage =
-            serde_json::from_str(&serde_json::to_string(&wp).unwrap()).unwrap();
+        let back: WorkPackage = serde_json::from_str(&serde_json::to_string(&wp).unwrap()).unwrap();
         assert_eq!(back.agent_id.as_deref(), Some("agent-1"));
         assert_eq!(back.pr_state, Some(PrState::Approved));
         assert_eq!(back.file_scope, vec!["a.rs", "b.rs"]);

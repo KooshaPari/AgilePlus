@@ -753,22 +753,8 @@ mod tests {
     #[test]
     fn claim_store_active_filters_non_active() {
         let mut s = ClaimStore::new();
-        s.claim(
-            "c1",
-            "r1",
-            ClaimKind::Repo,
-            "a",
-            60,
-            ClaimReason::default(),
-        );
-        s.claim(
-            "c2",
-            "r2",
-            ClaimKind::Repo,
-            "a",
-            60,
-            ClaimReason::default(),
-        );
+        s.claim("c1", "r1", ClaimKind::Repo, "a", 60, ClaimReason::default());
+        s.claim("c2", "r2", ClaimKind::Repo, "a", 60, ClaimReason::default());
         assert_eq!(s.active().len(), 2);
         // Transfer c1 -> c3 makes c1 Draining
         s.claim_transfer("c1", "c3", "agent-b").unwrap();
@@ -827,14 +813,7 @@ mod tests {
     #[test]
     fn claim_store_reap_expired_trait_dispatch() {
         let mut s: Box<dyn ClaimStoreTrait> = Box::new(ClaimStore::new());
-        s.claim(
-            "c1",
-            "r",
-            ClaimKind::Repo,
-            "a",
-            0,
-            ClaimReason::default(),
-        );
+        s.claim("c1", "r", ClaimKind::Repo, "a", 0, ClaimReason::default());
         std::thread::sleep(std::time::Duration::from_millis(2));
         let reaped = s.reap_expired(Utc::now());
         assert_eq!(reaped, 1);

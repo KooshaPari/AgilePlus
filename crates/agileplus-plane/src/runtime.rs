@@ -289,18 +289,26 @@ mod maybe_sync_tests {
         clear_plane_env();
         let store = storage_with(false);
 
-        assert!(maybe_sync_feature_module_assignment_from_env(&store, 1, 2)
-            .await
-            .is_ok());
-        assert!(maybe_sync_feature_module_unassignment_from_env(&store, 1, 2)
-            .await
-            .is_ok());
-        assert!(maybe_sync_feature_cycle_assignment_from_env(&store, 1, 3)
-            .await
-            .is_ok());
-        assert!(maybe_sync_feature_cycle_unassignment_from_env(&store, 1, 3)
-            .await
-            .is_ok());
+        assert!(
+            maybe_sync_feature_module_assignment_from_env(&store, 1, 2)
+                .await
+                .is_ok()
+        );
+        assert!(
+            maybe_sync_feature_module_unassignment_from_env(&store, 1, 2)
+                .await
+                .is_ok()
+        );
+        assert!(
+            maybe_sync_feature_cycle_assignment_from_env(&store, 1, 3)
+                .await
+                .is_ok()
+        );
+        assert!(
+            maybe_sync_feature_cycle_unassignment_from_env(&store, 1, 3)
+                .await
+                .is_ok()
+        );
     }
 
     // -- configured, but the local entity is missing --
@@ -313,7 +321,8 @@ mod maybe_sync_tests {
 
         let err = maybe_sync_module_from_env(&store, 123).await.unwrap_err();
         assert!(
-            err.to_string().contains("module 123 not found for Plane sync"),
+            err.to_string()
+                .contains("module 123 not found for Plane sync"),
             "unexpected error: {err}"
         );
         clear_plane_env();
@@ -340,19 +349,26 @@ mod maybe_sync_tests {
         let _env = lock_env();
         point_plane_at_dead_endpoint();
         let store = storage_with(false);
-        let module_id = store.create_module(&Module::new("Auth", None)).await.unwrap();
+        let module_id = store
+            .create_module(&Module::new("Auth", None))
+            .await
+            .unwrap();
 
-        let err = maybe_sync_module_from_env(&store, module_id).await.unwrap_err();
+        let err = maybe_sync_module_from_env(&store, module_id)
+            .await
+            .unwrap_err();
         assert!(
             err.to_string().contains("creating Plane module"),
             "unexpected error: {err}"
         );
         // A failed push must not leave a sync mapping behind.
-        assert!(store
-            .get_sync_mapping("module", module_id)
-            .await
-            .unwrap()
-            .is_none());
+        assert!(
+            store
+                .get_sync_mapping("module", module_id)
+                .await
+                .unwrap()
+                .is_none()
+        );
         clear_plane_env();
     }
 
@@ -363,7 +379,9 @@ mod maybe_sync_tests {
         let store = storage_with(false);
         let cycle_id = store.create_cycle(&sample_cycle("Sprint")).await.unwrap();
 
-        let err = maybe_sync_cycle_from_env(&store, cycle_id).await.unwrap_err();
+        let err = maybe_sync_cycle_from_env(&store, cycle_id)
+            .await
+            .unwrap_err();
         assert!(
             err.to_string().contains("creating Plane cycle"),
             "unexpected error: {err}"
@@ -390,12 +408,16 @@ mod maybe_sync_tests {
         point_plane_at_dead_endpoint();
         let store = storage_with(false);
 
-        assert!(maybe_sync_feature_module_assignment_from_env(&store, 1, 2)
-            .await
-            .is_ok());
-        assert!(maybe_sync_feature_cycle_assignment_from_env(&store, 1, 3)
-            .await
-            .is_ok());
+        assert!(
+            maybe_sync_feature_module_assignment_from_env(&store, 1, 2)
+                .await
+                .is_ok()
+        );
+        assert!(
+            maybe_sync_feature_cycle_assignment_from_env(&store, 1, 3)
+                .await
+                .is_ok()
+        );
         clear_plane_env();
     }
 

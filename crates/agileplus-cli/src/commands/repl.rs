@@ -472,18 +472,12 @@ mod tests {
 
     #[test]
     fn strip_leading_comments_block_comment() {
-        assert_eq!(
-            strip_leading_comments("/* comment */ SELECT 1"),
-            "SELECT 1"
-        );
+        assert_eq!(strip_leading_comments("/* comment */ SELECT 1"), "SELECT 1");
     }
 
     #[test]
     fn strip_leading_comments_multiple_line_comments() {
-        assert_eq!(
-            strip_leading_comments("-- a\n-- b\nSELECT 1"),
-            "SELECT 1"
-        );
+        assert_eq!(strip_leading_comments("-- a\n-- b\nSELECT 1"), "SELECT 1");
     }
 
     #[test]

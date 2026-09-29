@@ -9,8 +9,8 @@ use agileplus_domain::domain::{
     story::{Story, StoryStatus},
 };
 use agileplus_sqlite::{
-    repository::{backlog, epics, stories},
     SqliteStorageAdapter,
+    repository::{backlog, epics, stories},
 };
 use rusqlite::Connection;
 
@@ -223,16 +223,21 @@ fn backlog_list_limit_is_respected() {
         limit: Some(2),
         ..BacklogFilters::default()
     };
-    assert_eq!(backlog::list_backlog_items(&conn, &filters).unwrap().len(), 2);
+    assert_eq!(
+        backlog::list_backlog_items(&conn, &filters).unwrap().len(),
+        2
+    );
 }
 
 #[test]
 fn backlog_list_empty_table_returns_empty() {
     let a = adapter();
     let conn = a.conn_for_bench().unwrap();
-    assert!(backlog::list_backlog_items(&conn, &BacklogFilters::default())
-        .unwrap()
-        .is_empty());
+    assert!(
+        backlog::list_backlog_items(&conn, &BacklogFilters::default())
+            .unwrap()
+            .is_empty()
+    );
 }
 
 #[test]
@@ -276,7 +281,13 @@ fn backlog_all_status_variants_roundtrip() {
     ] {
         let id = backlog::create_backlog_item(&conn, &item(Intent::Bug, "x")).unwrap();
         backlog::update_backlog_status(&conn, id, s).unwrap();
-        assert_eq!(backlog::get_backlog_item(&conn, id).unwrap().unwrap().status, s);
+        assert_eq!(
+            backlog::get_backlog_item(&conn, id)
+                .unwrap()
+                .unwrap()
+                .status,
+            s
+        );
     }
 }
 
@@ -284,9 +295,21 @@ fn backlog_all_status_variants_roundtrip() {
 fn backlog_all_intents_roundtrip() {
     let a = adapter();
     let conn = a.conn_for_bench().unwrap();
-    for intent in [Intent::Bug, Intent::Feature, Intent::Idea, Intent::Task, Intent::Docs] {
+    for intent in [
+        Intent::Bug,
+        Intent::Feature,
+        Intent::Idea,
+        Intent::Task,
+        Intent::Docs,
+    ] {
         let id = backlog::create_backlog_item(&conn, &item(intent, "x")).unwrap();
-        assert_eq!(backlog::get_backlog_item(&conn, id).unwrap().unwrap().intent, intent);
+        assert_eq!(
+            backlog::get_backlog_item(&conn, id)
+                .unwrap()
+                .unwrap()
+                .intent,
+            intent
+        );
     }
 }
 
@@ -300,7 +323,10 @@ fn backlog_pop_next_marks_item_triaged() {
     assert_eq!(popped.status, BacklogStatus::Triaged);
     // Persisted too.
     assert_eq!(
-        backlog::get_backlog_item(&conn, id).unwrap().unwrap().status,
+        backlog::get_backlog_item(&conn, id)
+            .unwrap()
+            .unwrap()
+            .status,
         BacklogStatus::Triaged
     );
 }
@@ -341,7 +367,10 @@ fn backlog_row_with_invalid_intent_is_storage_error() {
     )
     .unwrap();
     let err = backlog::list_backlog_items(&conn, &BacklogFilters::default()).unwrap_err();
-    assert!(matches!(err, agileplus_domain::error::DomainError::Storage(_)));
+    assert!(matches!(
+        err,
+        agileplus_domain::error::DomainError::Storage(_)
+    ));
 }
 
 #[test]
@@ -407,7 +436,10 @@ fn epic_update_status_unknown_id_is_not_found() {
     let a = adapter();
     let conn = a.conn_for_bench().unwrap();
     let err = epics::update_epic_status(&conn, 123, EpicStatus::Active).unwrap_err();
-    assert!(matches!(err, agileplus_domain::error::DomainError::NotFound(_)));
+    assert!(matches!(
+        err,
+        agileplus_domain::error::DomainError::NotFound(_)
+    ));
 }
 
 #[test]
@@ -436,7 +468,10 @@ fn epic_delete_then_missing() {
     epics::delete_epic(&conn, id).unwrap();
     assert!(epics::get_epic_by_id(&conn, id).unwrap().is_none());
     let err = epics::delete_epic(&conn, id).unwrap_err();
-    assert!(matches!(err, agileplus_domain::error::DomainError::NotFound(_)));
+    assert!(matches!(
+        err,
+        agileplus_domain::error::DomainError::NotFound(_)
+    ));
 }
 
 #[test]
@@ -488,7 +523,11 @@ fn epic_upsert_with_requirement_id_is_findable_and_idempotent() {
 fn epic_get_by_requirement_id_none() {
     let a = adapter();
     let conn = a.conn_for_bench().unwrap();
-    assert!(epics::get_epic_by_requirement_id(&conn, "nope").unwrap().is_none());
+    assert!(
+        epics::get_epic_by_requirement_id(&conn, "nope")
+            .unwrap()
+            .is_none()
+    );
 }
 
 // ---------------------------------------------------------------------------
@@ -523,7 +562,10 @@ fn story_points_none_roundtrips() {
     let conn = a.conn_for_bench().unwrap();
     let epic_id = seed_epic(&conn, 1);
     let id = stories::create_story(&conn, &Story::new(epic_id, 1, "S", None).unwrap()).unwrap();
-    assert_eq!(stories::get_story_by_id(&conn, id).unwrap().unwrap().points, None);
+    assert_eq!(
+        stories::get_story_by_id(&conn, id).unwrap().unwrap().points,
+        None
+    );
 }
 
 #[test]
@@ -551,7 +593,10 @@ fn story_update_status_unknown_id_is_not_found() {
     let a = adapter();
     let conn = a.conn_for_bench().unwrap();
     let err = stories::update_story_status(&conn, 555, StoryStatus::Done).unwrap_err();
-    assert!(matches!(err, agileplus_domain::error::DomainError::NotFound(_)));
+    assert!(matches!(
+        err,
+        agileplus_domain::error::DomainError::NotFound(_)
+    ));
 }
 
 #[test]
@@ -567,8 +612,7 @@ fn story_all_statuses_roundtrip() {
         StoryStatus::Blocked,
         StoryStatus::Cancelled,
     ] {
-        let id =
-            stories::create_story(&conn, &Story::new(epic_id, 1, "S", None).unwrap()).unwrap();
+        let id = stories::create_story(&conn, &Story::new(epic_id, 1, "S", None).unwrap()).unwrap();
         stories::update_story_status(&conn, id, status).unwrap();
         assert_eq!(
             stories::get_story_by_id(&conn, id).unwrap().unwrap().status,
@@ -589,11 +633,21 @@ fn story_list_by_epic_and_project() {
     stories::create_story(&conn, &Story::new(epic_a, 1, "s2", None).unwrap()).unwrap();
     stories::create_story(&conn, &Story::new(epic_b, 2, "s3", None).unwrap()).unwrap();
 
-    assert_eq!(stories::list_stories_by_epic(&conn, epic_a).unwrap().len(), 2);
-    assert_eq!(stories::list_stories_by_epic(&conn, epic_b).unwrap().len(), 1);
+    assert_eq!(
+        stories::list_stories_by_epic(&conn, epic_a).unwrap().len(),
+        2
+    );
+    assert_eq!(
+        stories::list_stories_by_epic(&conn, epic_b).unwrap().len(),
+        1
+    );
     assert_eq!(stories::list_stories_by_project(&conn, 1).unwrap().len(), 2);
     assert_eq!(stories::list_stories_by_project(&conn, 2).unwrap().len(), 1);
-    assert!(stories::list_stories_by_epic(&conn, 999).unwrap().is_empty());
+    assert!(
+        stories::list_stories_by_epic(&conn, 999)
+            .unwrap()
+            .is_empty()
+    );
 }
 
 #[test]
@@ -641,7 +695,11 @@ fn story_upsert_without_requirement_id_creates() {
 fn story_get_by_requirement_id_none() {
     let a = adapter();
     let conn = a.conn_for_bench().unwrap();
-    assert!(stories::get_story_by_requirement_id(&conn, "missing").unwrap().is_none());
+    assert!(
+        stories::get_story_by_requirement_id(&conn, "missing")
+            .unwrap()
+            .is_none()
+    );
 }
 
 #[test]

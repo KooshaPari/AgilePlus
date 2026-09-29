@@ -6,17 +6,50 @@ use agileplus_governance::*;
 #[test]
 fn error_display_all_variants() {
     let cases: Vec<(GovernanceError, &str)> = vec![
-        (GovernanceError::Config("url required".into()), "Configuration error: url required"),
-        (GovernanceError::Database("table missing".into()), "Database error: table missing"),
-        (GovernanceError::Network("connection refused".into()), "Network error: connection refused"),
-        (GovernanceError::PolicyViolation("not allowed".into()), "Policy violation: not allowed"),
-        (GovernanceError::RateLimitExceeded("too many".into()), "Rate limit exceeded: too many"),
-        (GovernanceError::Auth("expired token".into()), "Authentication error: expired token"),
-        (GovernanceError::NotFound("pkg v1".into()), "Resource not found: pkg v1"),
-        (GovernanceError::NotAllowed("write denied".into()), "Operation not allowed: write denied"),
-        (GovernanceError::Sync("drift detected".into()), "Sync error: drift detected"),
-        (GovernanceError::Internal("panic".into()), "Internal error: panic"),
-        (GovernanceError::Rubric("invalid json".into()), "Rubric error: invalid json"),
+        (
+            GovernanceError::Config("url required".into()),
+            "Configuration error: url required",
+        ),
+        (
+            GovernanceError::Database("table missing".into()),
+            "Database error: table missing",
+        ),
+        (
+            GovernanceError::Network("connection refused".into()),
+            "Network error: connection refused",
+        ),
+        (
+            GovernanceError::PolicyViolation("not allowed".into()),
+            "Policy violation: not allowed",
+        ),
+        (
+            GovernanceError::RateLimitExceeded("too many".into()),
+            "Rate limit exceeded: too many",
+        ),
+        (
+            GovernanceError::Auth("expired token".into()),
+            "Authentication error: expired token",
+        ),
+        (
+            GovernanceError::NotFound("pkg v1".into()),
+            "Resource not found: pkg v1",
+        ),
+        (
+            GovernanceError::NotAllowed("write denied".into()),
+            "Operation not allowed: write denied",
+        ),
+        (
+            GovernanceError::Sync("drift detected".into()),
+            "Sync error: drift detected",
+        ),
+        (
+            GovernanceError::Internal("panic".into()),
+            "Internal error: panic",
+        ),
+        (
+            GovernanceError::Rubric("invalid json".into()),
+            "Rubric error: invalid json",
+        ),
     ];
     for (err, expected) in cases {
         assert_eq!(err.to_string(), expected, "mismatch for {}", expected);
@@ -63,12 +96,21 @@ fn error_status_code_all_variants() {
     assert_eq!(GovernanceError::Config("x".into()).status_code(), 400);
     assert_eq!(GovernanceError::Database("x".into()).status_code(), 500);
     assert_eq!(GovernanceError::Network("x".into()).status_code(), 503);
-    assert_eq!(GovernanceError::PolicyViolation("x".into()).status_code(), 403);
-    assert_eq!(GovernanceError::RateLimitExceeded("x".into()).status_code(), 429);
+    assert_eq!(
+        GovernanceError::PolicyViolation("x".into()).status_code(),
+        403
+    );
+    assert_eq!(
+        GovernanceError::RateLimitExceeded("x".into()).status_code(),
+        429
+    );
     assert_eq!(GovernanceError::Auth("x".into()).status_code(), 401);
     assert_eq!(
-        GovernanceError::InvalidChannelTransition { from: "a".into(), to: "b".into() }
-            .status_code(),
+        GovernanceError::InvalidChannelTransition {
+            from: "a".into(),
+            to: "b".into()
+        }
+        .status_code(),
         400
     );
     assert_eq!(GovernanceError::NotFound("x".into()).status_code(), 404);

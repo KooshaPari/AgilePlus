@@ -115,12 +115,20 @@ async fn unusable_api_payloads_leave_every_seeded_collection_intact() {
     let merged = try_merge_from_api(seeded).await;
 
     assert_eq!(
-        merged.modules.iter().map(|m| m.slug.clone()).collect::<Vec<_>>(),
+        merged
+            .modules
+            .iter()
+            .map(|m| m.slug.clone())
+            .collect::<Vec<_>>(),
         seed_modules,
         "a non-JSON module payload must not replace the seed"
     );
     assert_eq!(
-        merged.cycles.iter().map(|c| c.name.clone()).collect::<Vec<_>>(),
+        merged
+            .cycles
+            .iter()
+            .map(|c| c.name.clone())
+            .collect::<Vec<_>>(),
         seed_cycles,
         "a wrong-shaped cycle payload must not replace the seed"
     );
@@ -138,7 +146,11 @@ async fn unusable_api_payloads_leave_every_seeded_collection_intact() {
     );
     assert_eq!(merged.cycle_features, seed_cycle_features);
     assert_eq!(
-        merged.projects.iter().map(|p| p.slug.clone()).collect::<Vec<_>>(),
+        merged
+            .projects
+            .iter()
+            .map(|p| p.slug.clone())
+            .collect::<Vec<_>>(),
         seed_projects,
         "a rejected credential must leave the seed projects in place"
     );
@@ -216,7 +228,11 @@ async fn merge_rebuilds_the_cycle_index_from_feature_module_ids() {
         merged.cycle_feature_ids(7).is_empty(),
         "a feature in another module must not be indexed into this cycle"
     );
-    assert_eq!(merged.features.len(), 4, "features are never rewritten by a merge");
+    assert_eq!(
+        merged.features.len(),
+        4,
+        "features are never rewritten by a merge"
+    );
 
     unset_var("AGILEPLUS_API_BASE");
 }

@@ -340,7 +340,10 @@ mod coverage_tests {
 
     #[test]
     fn backlog_priority_from_str_case_insensitive_and_invalid() {
-        assert_eq!("CRITICAL".parse::<BacklogPriority>().unwrap(), BacklogPriority::Critical);
+        assert_eq!(
+            "CRITICAL".parse::<BacklogPriority>().unwrap(),
+            BacklogPriority::Critical
+        );
         assert!("urgent".parse::<BacklogPriority>().is_err());
     }
 
@@ -366,19 +369,20 @@ mod coverage_tests {
     #[test]
     fn backlog_sort_from_str_all_and_invalid() {
         assert_eq!("age".parse::<BacklogSort>().unwrap(), BacklogSort::Age);
-        assert_eq!("priority".parse::<BacklogSort>().unwrap(), BacklogSort::Priority);
-        assert_eq!("impact".parse::<BacklogSort>().unwrap(), BacklogSort::Impact);
+        assert_eq!(
+            "priority".parse::<BacklogSort>().unwrap(),
+            BacklogSort::Priority
+        );
+        assert_eq!(
+            "impact".parse::<BacklogSort>().unwrap(),
+            BacklogSort::Impact
+        );
         assert!("date".parse::<BacklogSort>().is_err());
     }
 
     #[test]
     fn from_triage_produces_expected_defaults() {
-        let item = BacklogItem::from_triage(
-            "T".into(),
-            "D".into(),
-            Intent::Feature,
-            "cli".into(),
-        );
+        let item = BacklogItem::from_triage("T".into(), "D".into(), Intent::Feature, "cli".into());
         assert_eq!(item.title, "T");
         assert_eq!(item.description, "D");
         assert_eq!(item.intent, Intent::Feature);

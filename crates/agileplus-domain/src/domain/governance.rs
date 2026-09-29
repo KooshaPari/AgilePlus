@@ -541,7 +541,13 @@ mod tests {
 
     #[test]
     fn builtin_policy_all_known_refs_resolve() {
-        let known = ["tests-pass", "ci-green", "review-approved", "security-scan", "lint-pass"];
+        let known = [
+            "tests-pass",
+            "ci-green",
+            "review-approved",
+            "security-scan",
+            "lint-pass",
+        ];
         for key in known {
             assert!(
                 BuiltinPolicy::from_ref(key).is_some(),
@@ -552,7 +558,13 @@ mod tests {
 
     #[test]
     fn builtin_policy_labels_are_nonempty() {
-        let known = ["tests-pass", "ci-green", "review-approved", "security-scan", "lint-pass"];
+        let known = [
+            "tests-pass",
+            "ci-green",
+            "review-approved",
+            "security-scan",
+            "lint-pass",
+        ];
         for key in known {
             let bp = BuiltinPolicy::from_ref(key).unwrap();
             assert!(!bp.label.is_empty(), "label should not be empty for {key}");
@@ -596,11 +608,36 @@ mod coverage_tests {
     #[test]
     fn builtin_policy_full_table() {
         let expected: &[(&str, PolicyDomain, EvidenceType, &str)] = &[
-            ("tests-pass", PolicyDomain::Quality, EvidenceType::TestResult, "Unit tests passing"),
-            ("ci-green", PolicyDomain::Quality, EvidenceType::CiOutput, "CI pipeline green"),
-            ("review-approved", PolicyDomain::Quality, EvidenceType::ReviewApproval, "Peer review approved"),
-            ("security-scan", PolicyDomain::Security, EvidenceType::SecurityScan, "Security scan clean"),
-            ("lint-pass", PolicyDomain::Quality, EvidenceType::LintResult, "Lint checks pass"),
+            (
+                "tests-pass",
+                PolicyDomain::Quality,
+                EvidenceType::TestResult,
+                "Unit tests passing",
+            ),
+            (
+                "ci-green",
+                PolicyDomain::Quality,
+                EvidenceType::CiOutput,
+                "CI pipeline green",
+            ),
+            (
+                "review-approved",
+                PolicyDomain::Quality,
+                EvidenceType::ReviewApproval,
+                "Peer review approved",
+            ),
+            (
+                "security-scan",
+                PolicyDomain::Security,
+                EvidenceType::SecurityScan,
+                "Security scan clean",
+            ),
+            (
+                "lint-pass",
+                PolicyDomain::Quality,
+                EvidenceType::LintResult,
+                "Lint checks pass",
+            ),
         ];
         for (key, domain, evidence, label) in expected {
             let bp = BuiltinPolicy::from_ref(key).unwrap_or_else(|| panic!("missing {key}"));
@@ -681,16 +718,30 @@ mod coverage_tests {
         assert_eq!(PolicyCheck::ManualApproval, PolicyCheck::ManualApproval);
         assert_ne!(PolicyCheck::ManualApproval, PolicyCheck::Automated);
         assert_eq!(
-            PolicyCheck::EvidencePresent { evidence_type: EvidenceType::CiOutput },
-            PolicyCheck::EvidencePresent { evidence_type: EvidenceType::CiOutput }
+            PolicyCheck::EvidencePresent {
+                evidence_type: EvidenceType::CiOutput
+            },
+            PolicyCheck::EvidencePresent {
+                evidence_type: EvidenceType::CiOutput
+            }
         );
         assert_ne!(
-            PolicyCheck::EvidencePresent { evidence_type: EvidenceType::CiOutput },
-            PolicyCheck::EvidencePresent { evidence_type: EvidenceType::LintResult }
+            PolicyCheck::EvidencePresent {
+                evidence_type: EvidenceType::CiOutput
+            },
+            PolicyCheck::EvidencePresent {
+                evidence_type: EvidenceType::LintResult
+            }
         );
         assert_ne!(
-            PolicyCheck::ThresholdMet { metric: "c".into(), min: 1.0 },
-            PolicyCheck::ThresholdMet { metric: "c".into(), min: 2.0 }
+            PolicyCheck::ThresholdMet {
+                metric: "c".into(),
+                min: 1.0
+            },
+            PolicyCheck::ThresholdMet {
+                metric: "c".into(),
+                min: 2.0
+            }
         );
     }
 
@@ -715,7 +766,9 @@ mod coverage_tests {
     fn policy_definition_clone_and_debug() {
         let d = PolicyDefinition {
             description: "desc".into(),
-            check: PolicyCheck::Custom { script: "s.sh".into() },
+            check: PolicyCheck::Custom {
+                script: "s.sh".into(),
+            },
         };
         let c = d.clone();
         assert_eq!(c.description, d.description);

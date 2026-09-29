@@ -263,38 +263,88 @@ mod coverage_tests {
     fn legacy_events() -> Vec<DomainEvent> {
         vec![
             DomainEvent::FeatureCreatedLegacy { id: 1 },
-            DomainEvent::FeatureStateChanged { id: 1, from: "a".into(), to: "b".into() },
-            DomainEvent::CycleStarted { cycle_id: 1, module_id: 2 },
+            DomainEvent::FeatureStateChanged {
+                id: 1,
+                from: "a".into(),
+                to: "b".into(),
+            },
+            DomainEvent::CycleStarted {
+                cycle_id: 1,
+                module_id: 2,
+            },
             DomainEvent::CycleEnded { cycle_id: 1 },
-            DomainEvent::WorkPackageLinked { work_package_id: 1, feature_id: 2 },
-            DomainEvent::UserLoggedIn { user_id: "u".into() },
-            DomainEvent::PlaneWebhookReceived { issue_id: "i".into(), action: "created".into() },
+            DomainEvent::WorkPackageLinked {
+                work_package_id: 1,
+                feature_id: 2,
+            },
+            DomainEvent::UserLoggedIn {
+                user_id: "u".into(),
+            },
+            DomainEvent::PlaneWebhookReceived {
+                issue_id: "i".into(),
+                action: "created".into(),
+            },
         ]
     }
 
     fn typed_events() -> Vec<DomainEvent> {
         vec![
-            DomainEvent::ProjectCreated(ProjectCreated { project_id: 1.into(), slug: "s".into(), name: "n".into() }),
-            DomainEvent::ProjectRenamed(ProjectRenamed { project_id: 1.into(), old_name: "o".into(), new_name: "n".into() }),
-            DomainEvent::ProjectArchived(ProjectArchived { project_id: 1.into() }),
-            DomainEvent::EpicCreated(EpicCreated { epic_id: 2.into(), project_id: 1.into(), title: "e".into() }),
-            DomainEvent::StoryCreated(StoryCreated {
-                story_id: 3.into(), epic_id: 2.into(), project_id: 1.into(), title: "s".into(), points: Some(1),
+            DomainEvent::ProjectCreated(ProjectCreated {
+                project_id: 1.into(),
+                slug: "s".into(),
+                name: "n".into(),
             }),
-            DomainEvent::StoryAssigned(StoryAssigned { story_id: 3.into(), assignee_id: None }),
+            DomainEvent::ProjectRenamed(ProjectRenamed {
+                project_id: 1.into(),
+                old_name: "o".into(),
+                new_name: "n".into(),
+            }),
+            DomainEvent::ProjectArchived(ProjectArchived {
+                project_id: 1.into(),
+            }),
+            DomainEvent::EpicCreated(EpicCreated {
+                epic_id: 2.into(),
+                project_id: 1.into(),
+                title: "e".into(),
+            }),
+            DomainEvent::StoryCreated(StoryCreated {
+                story_id: 3.into(),
+                epic_id: 2.into(),
+                project_id: 1.into(),
+                title: "s".into(),
+                points: Some(1),
+            }),
+            DomainEvent::StoryAssigned(StoryAssigned {
+                story_id: 3.into(),
+                assignee_id: None,
+            }),
             DomainEvent::UserAdded(UserAdded {
-                user_id: 4.into(), display_name: "u".into(), email: "u@x".into(),
+                user_id: 4.into(),
+                display_name: "u".into(),
+                email: "u@x".into(),
                 role: agileplus_domain::domain::user::UserRole::Member,
             }),
             DomainEvent::FeatureCreated(FeatureCreated {
-                feature_id: 5.into(), slug: "f".into(), friendly_name: "F".into(), project_id: None,
+                feature_id: 5.into(),
+                slug: "f".into(),
+                friendly_name: "F".into(),
+                project_id: None,
             }),
-            DomainEvent::FeatureShipped(FeatureShipped { feature_id: 5.into(), slug: "f".into() }),
+            DomainEvent::FeatureShipped(FeatureShipped {
+                feature_id: 5.into(),
+                slug: "f".into(),
+            }),
             DomainEvent::WorkPackageCreated(WorkPackageCreated {
-                wp_id: 6.into(), feature_id: 5.into(), title: "wp".into(), sequence: 1,
+                wp_id: 6.into(),
+                feature_id: 5.into(),
+                title: "wp".into(),
+                sequence: 1,
             }),
             DomainEvent::WorkPackageStateChanged(WorkPackageStateChanged {
-                wp_id: 6.into(), feature_id: 5.into(), from: WpState::Planned, to: WpState::Doing,
+                wp_id: 6.into(),
+                feature_id: 5.into(),
+                from: WpState::Planned,
+                to: WpState::Doing,
             }),
         ]
     }
@@ -321,7 +371,15 @@ mod coverage_tests {
         let types: Vec<&str> = legacy_events().iter().map(|e| e.aggregate_type()).collect();
         assert_eq!(
             types,
-            vec!["Feature", "Feature", "Cycle", "Cycle", "WorkPackage", "User", "Plane"]
+            vec![
+                "Feature",
+                "Feature",
+                "Cycle",
+                "Cycle",
+                "WorkPackage",
+                "User",
+                "Plane"
+            ]
         );
     }
 
@@ -369,13 +427,19 @@ mod coverage_tests {
 
     #[test]
     fn serde_is_tagged_with_kind() {
-        let json = serde_json::to_string(&DomainEvent::UserLoggedIn { user_id: "u".into() }).unwrap();
+        let json = serde_json::to_string(&DomainEvent::UserLoggedIn {
+            user_id: "u".into(),
+        })
+        .unwrap();
         assert!(json.contains("\"kind\":\"user_logged_in\""));
     }
 
     #[test]
     fn serde_roundtrip_legacy_variant() {
-        let ev = DomainEvent::CycleStarted { cycle_id: 3, module_id: 4 };
+        let ev = DomainEvent::CycleStarted {
+            cycle_id: 3,
+            module_id: 4,
+        };
         let json = serde_json::to_string(&ev).unwrap();
         let back: DomainEvent = serde_json::from_str(&json).unwrap();
         assert_eq!(back, ev);
@@ -401,14 +465,18 @@ mod coverage_tests {
     #[test]
     fn publish_without_subscribers_errors() {
         let bus = EventBus::new(4);
-        assert!(bus.publish(DomainEvent::CycleEnded { cycle_id: 1 }).is_err());
+        assert!(
+            bus.publish(DomainEvent::CycleEnded { cycle_id: 1 })
+                .is_err()
+        );
     }
 
     #[tokio::test]
     async fn publish_delivers_to_subscriber() {
         let bus = EventBus::new(4);
         let mut sub = bus.subscribe();
-        bus.publish(DomainEvent::CycleEnded { cycle_id: 9 }).unwrap();
+        bus.publish(DomainEvent::CycleEnded { cycle_id: 9 })
+            .unwrap();
         let ev = tokio::time::timeout(Duration::from_millis(100), sub.recv())
             .await
             .expect("no timeout")
@@ -421,7 +489,10 @@ mod coverage_tests {
         let bus = EventBus::new(4);
         let mut a = bus.subscribe();
         let mut b = bus.subscribe();
-        bus.publish(DomainEvent::UserLoggedIn { user_id: "u".into() }).unwrap();
+        bus.publish(DomainEvent::UserLoggedIn {
+            user_id: "u".into(),
+        })
+        .unwrap();
         assert_eq!(a.recv().await.unwrap(), b.recv().await.unwrap());
     }
 
@@ -445,7 +516,8 @@ mod coverage_tests {
     async fn try_recv_some_after_publish() {
         let bus = EventBus::new(4);
         let mut sub = bus.subscribe();
-        bus.publish(DomainEvent::FeatureCreatedLegacy { id: 1 }).unwrap();
+        bus.publish(DomainEvent::FeatureCreatedLegacy { id: 1 })
+            .unwrap();
         let got = sub.try_recv().expect("event buffered");
         assert_eq!(got.unwrap(), DomainEvent::FeatureCreatedLegacy { id: 1 });
     }
@@ -454,8 +526,10 @@ mod coverage_tests {
     async fn try_recv_reports_lag() {
         let bus = EventBus::new(1);
         let mut sub = bus.subscribe();
-        bus.publish(DomainEvent::FeatureCreatedLegacy { id: 1 }).unwrap();
-        bus.publish(DomainEvent::FeatureCreatedLegacy { id: 2 }).unwrap();
+        bus.publish(DomainEvent::FeatureCreatedLegacy { id: 1 })
+            .unwrap();
+        bus.publish(DomainEvent::FeatureCreatedLegacy { id: 2 })
+            .unwrap();
         let got = sub.try_recv().expect("lagged");
         assert!(got.is_err());
     }
@@ -477,9 +551,18 @@ mod coverage_tests {
 
     #[test]
     fn equality_and_clone() {
-        let a = DomainEvent::CycleStarted { cycle_id: 1, module_id: 2 };
+        let a = DomainEvent::CycleStarted {
+            cycle_id: 1,
+            module_id: 2,
+        };
         assert_eq!(a.clone(), a);
-        assert_ne!(a, DomainEvent::CycleStarted { cycle_id: 3, module_id: 2 });
+        assert_ne!(
+            a,
+            DomainEvent::CycleStarted {
+                cycle_id: 3,
+                module_id: 2
+            }
+        );
     }
 
     // ── typed variants not covered by `typed_events()` above ──────────────────
@@ -577,7 +660,10 @@ mod coverage_tests {
     fn bus_wire_format_is_internally_tagged_and_flattened() {
         // Cross-repo routing contract: the bus enum is internally tagged with
         // `kind` and typed newtype variants flatten their struct payload.
-        let legacy = DomainEvent::CycleStarted { cycle_id: 1, module_id: 2 };
+        let legacy = DomainEvent::CycleStarted {
+            cycle_id: 1,
+            module_id: 2,
+        };
         assert_eq!(
             serde_json::to_string(&legacy).unwrap(),
             r#"{"kind":"cycle_started","cycle_id":1,"module_id":2}"#
@@ -616,11 +702,19 @@ mod coverage_tests {
     async fn try_recv_drains_published_events_in_order() {
         let bus = EventBus::new(4);
         let mut sub = bus.subscribe();
-        bus.publish(DomainEvent::CycleEnded { cycle_id: 1 }).unwrap();
-        bus.publish(DomainEvent::CycleEnded { cycle_id: 2 }).unwrap();
+        bus.publish(DomainEvent::CycleEnded { cycle_id: 1 })
+            .unwrap();
+        bus.publish(DomainEvent::CycleEnded { cycle_id: 2 })
+            .unwrap();
 
-        assert_eq!(sub.try_recv().unwrap().unwrap(), DomainEvent::CycleEnded { cycle_id: 1 });
-        assert_eq!(sub.try_recv().unwrap().unwrap(), DomainEvent::CycleEnded { cycle_id: 2 });
+        assert_eq!(
+            sub.try_recv().unwrap().unwrap(),
+            DomainEvent::CycleEnded { cycle_id: 1 }
+        );
+        assert_eq!(
+            sub.try_recv().unwrap().unwrap(),
+            DomainEvent::CycleEnded { cycle_id: 2 }
+        );
         assert!(sub.try_recv().is_none());
     }
 }
