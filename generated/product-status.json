@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0.0",
+  "product_id": "PRD-AGILEPLUS",
+  "contract": "AGP-MATURE-V1",
+  "source_revision": "f4deadab516293651398fb69b6f5cc38d621d069",
+  "assessed_at": "2026-09-29",
+  "specification": {
+    "pillars": 25,
+    "features": 200,
+    "functional_requirements": 1000,
+    "test_generation": "deferred",
+    "verification_intent": "specified",
+    "implementation_trace_mapping": "pending",
+    "evidence_mapping": "pending"
+  },
+  "grade": {
+    "mature_contract_completeness": null,
+    "highest_achieved_stage": "not_assessed",
+    "stage_readiness": {
+      "cvp": null,
+      "mvp": null,
+      "ga": null,
+      "mature": null
+    },
+    "structural_shape": "not_assessed",
+    "feature_closure": null,
+    "journey_closure": null,
+    "implementation_survivability": null,
+    "mature_contract_compatibility": null,
+    "transition_burden": null
+  },
+  "reason_ungraded": "Specification count and existing code/test volume are not product completion evidence. Exhaustive FR-to-implementation/evidence mapping is pending."
+}
