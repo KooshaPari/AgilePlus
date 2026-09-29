@@ -1,37 +1,11 @@
-# AgilePlus VP Stages
+# AgilePlus stage design — no accepted generated projection
 
-Stages are projections over `AGP-MATURE-V1`.
+The first draft assigned stages by feature-array position. Those assignments are invalidated. A stage must instead bind concrete reviewed requirements, their dependencies, feature completion rules and usable end-to-end journeys.
 
-## CVP
+Preserve the intended execution spine: intake and specification, bounded plan/work-package dependencies, resource authority, execution, review, governance/evidence evaluation, completion or shipping, and durable receipts. Which supported variants constitute CVP/MVP/other stages requires explicit product reasoning. Neither the first N features nor a fixed percentage defines viability.
 
-The smallest real encapsulated AgilePlus should close:
+Stages share the mature contract's canonical identities, may branch where appropriate, and distinguish required, optional, excluded and inapplicable obligations. A stage cannot silently omit prerequisites or inherited safety/operational requirements. Parent aggregation deduplicates leaves.
 
-```text
-intake
- -> specification
- -> plan/work-package DAG
- -> scoped resource claim/worktree
- -> agent or human execution
- -> review
- -> governance/evidence gate
- -> ship/close work
- -> immutable receipt/audit
-```
+Stub only nonrequired breadth behind mature-shaped interfaces. The selected journey must be real and encapsulated; replacement/migration debt must be bounded and visible. Report primitive/scaffold activity separately from feature/journey closure and usable product state.
 
-The spine must be real. Optional external sync, distributed operation and richer interfaces may be stubbed or deferred.
-
-## MVP
-
-MVP makes the same execution spine repeatedly useful across multiple features/repos/agents, with durable recovery, stronger CLI/API/MCP/dashboard surfaces, reliable governance, external references/sync and reciprocal Tracera federation.
-
-## GA
-
-GA requires supported security, recovery, packaging/runtime, compatibility, release proof, external integration behavior and broad accepted journey closure.
-
-## Grade shape
-
-Never report only "AgilePlus is N% done." Report mature completeness, stage readiness, structural shape, closed core features/journeys, survivability, mature-contract compatibility, transition burden and blockers.
-
-Shape vocabulary: `scaffold | primitive_system | product_husk | vertical_slice | narrow_functional_product | broad_product`.
-
-A stage may be blocked despite high numerical completion when an essential execution/gating journey is open.
+No achieved stage or numerical readiness is asserted by this correction. See `governance/COUNT_INDEPENDENT_SPECIFICATION.md`.

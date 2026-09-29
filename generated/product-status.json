@@ -1,33 +1,29 @@
 {
-  "schema_version": "1.0.0",
+  "schema_version": "1.1.0",
   "product_id": "PRD-AGILEPLUS",
-  "contract": "AGP-MATURE-V1",
-  "source_revision": "f4deadab516293651398fb69b6f5cc38d621d069",
-  "assessed_at": "2026-09-29",
-  "specification": {
-    "pillars": 25,
-    "features": 200,
-    "functional_requirements": 1000,
-    "test_generation": "deferred",
-    "verification_intent": "specified",
-    "implementation_trace_mapping": "pending",
-    "evidence_mapping": "pending"
-  },
-  "grade": {
-    "mature_contract_completeness": null,
-    "highest_achieved_stage": "not_assessed",
-    "stage_readiness": {
-      "cvp": null,
-      "mvp": null,
-      "ga": null,
-      "mature": null
-    },
-    "structural_shape": "not_assessed",
-    "feature_closure": null,
-    "journey_closure": null,
-    "implementation_survivability": null,
-    "mature_contract_compatibility": null,
-    "transition_burden": null
-  },
-  "reason_ungraded": "Specification count and existing code/test volume are not product completion evidence. Exhaustive FR-to-implementation/evidence mapping is pending."
+  "record_type": "specification_correction_status_not_runtime_assessment",
+  "recorded_on": "2026-09-29",
+  "source_snapshot": "f4deadab516293651398fb69b6f5cc38d621d069",
+  "specification_pass_complete": false,
+  "catalog_status": "invalidated_requires_source_backed_replacement",
+  "requirement_count": null,
+  "count_policy": "derived_only",
+  "grading_eligible": false,
+  "test_generation_ready": false,
+  "test_generation": "deferred",
+  "mature_contract_completeness": null,
+  "highest_achieved_stage": null,
+  "stage_readiness": null,
+  "structural_shape": null,
+  "feature_closure": null,
+  "journey_closure": null,
+  "implementation_survivability": null,
+  "mature_contract_compatibility": null,
+  "transition_burden": null,
+  "blockers": [
+    "Replace template-product records with source-backed independently falsifiable obligations.",
+    "Reconcile source-native requirements, PRD, ADRs, journeys, current interfaces and documented gaps.",
+    "Derive stage, feature and journey membership from actual dependency closure.",
+    "Complete concrete test/oracle design; executable product-test generation remains deferred."
+  ]
 }
