@@ -16,7 +16,7 @@ use agileplus_domain::domain::work_package::WpState;
 use agileplus_domain::ports::StoragePort;
 use agileplus_sqlite::SqliteStorageAdapter;
 use support::implement::{
-    args, block_on, block_on_paused, seed, AgentBehavior, ScriptedAgent, TempVcs, PLAN, SPEC,
+    AgentBehavior, PLAN, SPEC, ScriptedAgent, TempVcs, args, block_on, block_on_paused, seed,
 };
 
 /// A feature in an invalid state is rejected before any agent work happens.
@@ -311,13 +311,7 @@ fn implement_single_wp_selector_runs_only_that_wp() {
             .await
             .unwrap();
         assert_eq!(wps.len(), 2);
-        let by_seq = |seq: i32| {
-            wps.iter()
-                .find(|w| w.sequence == seq)
-                .unwrap()
-                .state
-                .clone()
-        };
+        let by_seq = |seq: i32| wps.iter().find(|w| w.sequence == seq).unwrap().state;
         assert_eq!(by_seq(1), WpState::Planned, "WP01 must be untouched");
         assert_eq!(by_seq(2), WpState::Done, "WP02 must be done");
 

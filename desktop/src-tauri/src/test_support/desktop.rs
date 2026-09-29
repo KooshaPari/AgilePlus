@@ -16,7 +16,7 @@ use serde_json::json;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU32, Ordering};
 use tauri::ipc::{CallbackFn, InvokeBody, InvokeResponseBody};
-use tauri::test::{MockRuntime, INVOKE_KEY};
+use tauri::test::{INVOKE_KEY, MockRuntime};
 use tauri::webview::InvokeRequest;
 use tauri::{Manager, WebviewWindow, WebviewWindowBuilder};
 
@@ -235,10 +235,11 @@ fn read_adr_returns_contents_for_matching_id() {
 
     let body = invoke(&wv, "read_adr", args(vec![("id", json!("0042"))]))
         .expect("read_adr should succeed");
-    assert!(body
-        .as_str()
-        .expect("read_adr returns a string")
-        .contains("ADR 42"));
+    assert!(
+        body.as_str()
+            .expect("read_adr returns a string")
+            .contains("ADR 42")
+    );
 }
 
 #[test]
