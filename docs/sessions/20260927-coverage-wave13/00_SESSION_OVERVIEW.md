@@ -136,10 +136,13 @@ Documented in `scripts/coverage-complete.sh` lines 104-111.
    that value matches that value, and it cannot fail.
 
    The real finding is narrower: the variant encodes a cancellation path that
-   no caller can trigger, and the surrounding test asserts a tautology to give
-   the variant a coverage line. Either the cancellation path should be wired
-   up, or the variant and its two handler arms should go. That is a
-   production-file change and is out of scope for this test-only wave.
+   no caller can trigger, and the surrounding test in the source file asserts a
+   tautology to give the variant a coverage line. Note that
+   `tests/review_loop_flow.rs` already drives the function through 11 real
+   tests; an earlier note in this document implied no test called
+   `run_review_loop` at all, which was wrong. Either the cancellation path
+   should be wired up, or the variant and its two handler arms should go. That
+   is a production-file change and is out of scope for this test-only wave.
 
    A PCRE2 search across the workspace (`crates/`, excluding `tests/`) for the
    shape `let x = <Enum>::<Variant>;` followed on the next line by
