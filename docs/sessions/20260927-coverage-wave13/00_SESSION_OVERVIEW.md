@@ -183,8 +183,26 @@ Documented in `scripts/coverage-complete.sh` lines 104-111.
 - `scripts/coverage-complete.sh` uses `set -e`, so one failing test aborts before the
   merge step and no report is written. The underlying profile data survives, but a
   rerun is needed.
-- `cargo fmt -p <crate>` reformats unrelated files; use
-  `rustfmt --edition 2021 <file>` directly.
+- `cargo fmt -p <crate>` reformats unrelated files; use `rustfmt` on the specific
+  file directly. **The `--edition` flag must follow the crate, not the repo.**
+  This repository carries two editions, verified from each manifest's
+  `edition` field:
+
+  | Edition | Crates |
+  |---|---|
+  | `2024` | all `crates/*`, `agileplus-agents/crates/*`, `tests/{e2e,transport,bdd}` — i.e. the workspace default at `Cargo.toml:49` |
+  | `2021` | `desktop/src-tauri`, `tests/e2e-desktop`, `crates/agileplus-governance` |
+
+  Run `rustup run stable rustfmt --edition <N> <file>` with that crate's N.
+  Cargo derives `style_edition` from the package edition, so CI's
+  `cargo fmt --check` rejects a file formatted with the wrong one — and
+  direct `rustfmt --edition 2024` will report a 2021 file clean while
+  `cargo fmt --check` rejects it, because the two ask for opposite import
+  orderings (`{MockRuntime, INVOKE_KEY}` under 2021, reversed under 2024).
+
+  An earlier version of this note said to always use `--edition 2021`. That
+  was wrong for every workspace crate and is what put this campaign's files
+  on CI's failing fmt list for three waves.
 
 ## Verification record
 
