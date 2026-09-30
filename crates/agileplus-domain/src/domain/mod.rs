@@ -16,6 +16,7 @@ pub mod evaluation;
 pub mod execution;
 pub mod feature;
 pub mod governance;
+pub mod governance_evaluator;
 pub mod metric;
 pub mod module;
 pub mod project;
