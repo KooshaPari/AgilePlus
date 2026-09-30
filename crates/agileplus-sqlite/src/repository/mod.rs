@@ -5,6 +5,7 @@ pub mod backlog;
 pub mod cycles;
 pub mod epics;
 pub mod events;
+pub mod execution;
 pub mod evidence;
 pub mod features;
 pub mod governance;
