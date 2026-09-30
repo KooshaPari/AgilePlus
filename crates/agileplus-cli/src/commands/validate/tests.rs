@@ -4,6 +4,7 @@ use agileplus_domain::domain::governance::{
     Evidence, EvidenceType, GovernanceContract, GovernanceRule, PolicyCheck, PolicyDefinition,
     PolicyDomain, PolicyRule,
 };
+use agileplus_domain::domain::metric::Metric;
 use agileplus_domain::domain::work_package::WorkPackage;
 use agileplus_domain::ports::StoragePort;
 use agileplus_sqlite::SqliteStorageAdapter;
@@ -399,6 +400,60 @@ async fn shared_evaluator_requires_every_declared_ci_requirement() {
     assert_eq!(legacy[0].passed, shared.policy_results[0].passed);
     assert!(!shared.passed(&contract));
     assert!(shared.policy_results[0].message.contains("FR-B"));
+}
+
+#[tokio::test]
+async fn shared_evaluator_matches_legacy_for_command_named_metric_policy() {
+    let db = SqliteStorageAdapter::in_memory().unwrap();
+    let (feature_id, _wp_id) = create_feature_with_wp(&db).await;
+    let policy_id = create_policy_rule(
+        &db,
+        PolicyDomain::Quality,
+        PolicyCheck::ThresholdMet {
+            metric: "cargo test".to_string(),
+            min: 1.0,
+        },
+    )
+    .await;
+    let contract = GovernanceContract {
+        id: 1,
+        feature_id,
+        version: 1,
+        rules: vec![GovernanceRule {
+            transition: "Implementing -> Validated".to_string(),
+            required_evidence: vec![],
+            policy_refs: vec![policy_id],
+        }],
+        bound_at: Utc::now(),
+    };
+    let metric = Metric {
+        id: 0,
+        feature_id: Some(feature_id),
+        command: "cargo test".to_string(),
+        duration_ms: 500,
+        agent_runs: 1,
+        review_cycles: 0,
+        metadata: None,
+        timestamp: Utc::now(),
+    };
+    StoragePort::record_metric(&db, &metric).await.unwrap();
+
+    let legacy = super::evidence::evaluate_policies(&db, &contract, feature_id)
+        .await
+        .unwrap();
+    let shared =
+        agileplus_domain::domain::governance_evaluator::evaluate_governance(
+            &db,
+            &contract,
+            feature_id,
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(legacy.len(), 1);
+    assert!(legacy[0].passed);
+    assert_eq!(legacy[0].passed, shared.policy_results[0].passed);
+    assert!(shared.passed(&contract));
 }
 
 #[tokio::test]
