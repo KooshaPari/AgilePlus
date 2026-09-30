@@ -10,7 +10,8 @@ use axum::routing::{get, post};
 use axum::{Json, Router};
 use serde_json::{Value, json};
 
-use agileplus_domain::domain::evaluation::summarize_rules;
+use agileplus_domain::domain::evaluation::GovernanceResult;
+use agileplus_domain::domain::governance_evaluator::evaluate_governance;
 use agileplus_domain::ports::vcs::VcsPort;
 use agileplus_domain::ports::{ObservabilityPort, StoragePort};
 
@@ -101,58 +102,20 @@ where
             ApiError::NotFound(format!("No governance contract for feature '{slug}'"))
         })?;
 
-    // Get evidence for all WPs in this feature
-    let wps = state
-        .storage
-        .list_wps_by_feature(feature.id)
+    let evaluation = evaluate_governance(&state.storage, &contract, feature.id)
         .await
         .map_err(ApiError::from)?;
-
-    let mut total_rules = 0usize;
-    let mut satisfied_rules = 0usize;
-
-    let wp_ids: std::collections::HashSet<i64> = wps.iter().map(|w| w.id).collect();
-
-    for rule in &contract.rules {
-        total_rules += 1;
-        // `required_evidence` entries are FR ids and/or evidence-type labels.
-        let mut rule_satisfied = true;
-        for req in &rule.required_evidence {
-            let by_fr = state
-                .storage
-                .get_evidence_by_fr(req)
-                .await
-                .map_err(ApiError::from)?;
-            let mut found = by_fr.iter().any(|e| wp_ids.contains(&e.wp_id));
-            if !found {
-                for wp in &wps {
-                    let ev = state
-                        .storage
-                        .get_evidence_by_wp(wp.id)
-                        .await
-                        .map_err(ApiError::from)?;
-                    if ev
-                        .iter()
-                        .any(|e| e.fr_id == *req || e.evidence_type.as_str() == req.as_str())
-                    {
-                        found = true;
-                        break;
-                    }
-                }
-            }
-            if !found {
-                rule_satisfied = false;
-                break;
-            }
-        }
-        if rule_satisfied {
-            satisfied_rules += 1;
-        }
-    }
-
-    // Empty policy is not proof of compliance. It is explicitly unconfigured.
-    let result = summarize_rules(total_rules, satisfied_rules);
+    let result = if !evaluation.configured(&contract) {
+        GovernanceResult::NotConfigured
+    } else if evaluation.passed(&contract) {
+        GovernanceResult::Satisfied
+    } else {
+        GovernanceResult::Unsatisfied
+    };
     let compliant = result.compliant();
+    let total_rules = contract.rules.len();
+    let satisfied_rules = if compliant { total_rules } else { 0 };
+
     Ok(Json(json!({
         "feature_slug": slug,
         "governance_version": contract.version,
@@ -160,6 +123,8 @@ where
         "satisfied_rules": satisfied_rules,
         "compliant": compliant,
         "result": result.as_str(),
+        "missing_evidence": evaluation.missing_evidence,
+        "policy_results": evaluation.policy_results.iter().map(|p| serde_json::json!({"policy_id":p.policy_id,"domain":p.domain,"passed":p.passed,"message":p.message})).collect::<Vec<_>>(),
     })))
 }
 
