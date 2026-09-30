@@ -10,6 +10,7 @@ use axum::routing::{get, post};
 use axum::{Json, Router};
 use serde_json::{Value, json};
 
+use agileplus_domain::domain::evaluation::summarize_rules;
 use agileplus_domain::ports::vcs::VcsPort;
 use agileplus_domain::ports::{ObservabilityPort, StoragePort};
 
@@ -150,21 +151,15 @@ where
     }
 
     // Empty policy is not proof of compliance. It is explicitly unconfigured.
-    let result = if total_rules == 0 {
-        "not_configured"
-    } else if satisfied_rules == total_rules {
-        "satisfied"
-    } else {
-        "unsatisfied"
-    };
-    let compliant = result == "satisfied";
+    let result = summarize_rules(total_rules, satisfied_rules);
+    let compliant = result.compliant();
     Ok(Json(json!({
         "feature_slug": slug,
         "governance_version": contract.version,
         "total_rules": total_rules,
         "satisfied_rules": satisfied_rules,
         "compliant": compliant,
-        "result": result,
+        "result": result.as_str(),
     })))
 }
 
