@@ -12,6 +12,7 @@ pub mod cycle;
 pub mod device_node;
 pub mod epic;
 pub mod event;
+pub mod evaluation;
 pub mod execution;
 pub mod feature;
 pub mod governance;
