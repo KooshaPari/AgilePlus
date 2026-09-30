@@ -273,6 +273,7 @@ pub async fn evaluate_governance_with_options<S: StoragePort>(
                         "duration_ms" => Some(m.duration_ms as f64),
                         "agent_runs" => Some(m.agent_runs as f64),
                         "review_cycles" => Some(m.review_cycles as f64),
+                        name if name == m.command => Some(1.0),
                         name => m
                             .metadata
                             .as_ref()
