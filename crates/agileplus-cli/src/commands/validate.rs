@@ -11,14 +11,17 @@ use chrono::Utc;
 
 use agileplus_domain::domain::audit::{AuditEntry, hash_entry};
 use agileplus_domain::domain::event::Event;
+use agileplus_domain::domain::governance_evaluator::{
+    GovernanceEvaluationOptions, evaluate_governance_with_options,
+};
 use agileplus_domain::domain::state_machine::FeatureState;
 use agileplus_domain::ports::{StoragePort, VcsPort};
 use agileplus_events::{EventStore, compute_hash};
 
+#[cfg(test)]
 mod evidence;
 mod report;
 
-use self::evidence::{evaluate_evidence, evaluate_policies};
 pub use report::{EvidenceCheck, PolicyEvalResult, ValidationReport};
 
 /// Arguments for the `validate` subcommand.
@@ -100,23 +103,29 @@ where
             )
         })?;
 
-    // Evaluate evidence
-    let (evidence_results, missing_evidence) =
-        evaluate_evidence(storage, &contract, feature.id).await?;
-
-    // Evaluate policies unless explicitly running a diagnostic-only evidence check.
-    // Skipping policy evaluation must never authorize a Validated transition.
-    let policy_results = if args.skip_policies {
-        Vec::new()
+    // All production transports must share one governance evaluator.
+    // --skip-policies remains diagnostic-only and must never authorize a transition.
+    let evaluation_options = if args.skip_policies {
+        GovernanceEvaluationOptions::evidence_only()
     } else {
-        evaluate_policies(storage, &contract, feature.id).await?
+        GovernanceEvaluationOptions::default()
     };
-
-    // Compute overall pass
-    let evidence_pass =
-        missing_evidence.is_empty() && evidence_results.iter().all(|e| e.found && e.threshold_met);
-    let policy_pass = policy_results.iter().all(|p| p.passed);
-    let overall_pass = evidence_pass && policy_pass;
+    let evaluation =
+        evaluate_governance_with_options(storage, &contract, feature.id, evaluation_options)
+            .await
+            .context("evaluating governance")?;
+    let overall_pass = evaluation.passed(&contract);
+    let evidence_results = evaluation
+        .evidence_results
+        .into_iter()
+        .map(EvidenceCheck::from)
+        .collect();
+    let policy_results = evaluation
+        .policy_results
+        .into_iter()
+        .map(PolicyEvalResult::from)
+        .collect();
+    let missing_evidence = evaluation.missing_evidence;
     let authoritative_transition = !args.skip_policies && !args.force;
 
     let report = ValidationReport {

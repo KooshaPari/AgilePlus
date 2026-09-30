@@ -1,7 +1,7 @@
 //! Shared governance evaluation service.
 //!
-//! This is migrated from the CLI validator so transports do not invent
-//! independent compliance semantics.
+//! Transports must use this service rather than inventing independent
+//! evidence or policy-completion semantics.
 
 use std::collections::BTreeSet;
 
@@ -48,6 +48,27 @@ impl GovernanceEvaluation {
                 .iter()
                 .all(|e| e.found && e.threshold_met)
             && self.policy_results.iter().all(|p| p.passed)
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct GovernanceEvaluationOptions {
+    pub evaluate_policies: bool,
+}
+
+impl Default for GovernanceEvaluationOptions {
+    fn default() -> Self {
+        Self {
+            evaluate_policies: true,
+        }
+    }
+}
+
+impl GovernanceEvaluationOptions {
+    pub const fn evidence_only() -> Self {
+        Self {
+            evaluate_policies: false,
+        }
     }
 }
 
@@ -160,6 +181,21 @@ pub async fn evaluate_governance<S: StoragePort>(
     contract: &GovernanceContract,
     feature_id: i64,
 ) -> Result<GovernanceEvaluation, DomainError> {
+    evaluate_governance_with_options(
+        storage,
+        contract,
+        feature_id,
+        GovernanceEvaluationOptions::default(),
+    )
+    .await
+}
+
+pub async fn evaluate_governance_with_options<S: StoragePort>(
+    storage: &S,
+    contract: &GovernanceContract,
+    feature_id: i64,
+    options: GovernanceEvaluationOptions,
+) -> Result<GovernanceEvaluation, DomainError> {
     let evidence = feature_evidence(storage, feature_id).await?;
     let mut evidence_results = Vec::new();
     let mut missing = Vec::new();
@@ -177,17 +213,22 @@ pub async fn evaluate_governance<S: StoragePort>(
                 })
                 .collect();
             let found = !relevant.is_empty();
-            let evidence_type = expected
-                .map(|t| t.as_str().to_string())
-                .unwrap_or_else(|| "any".to_string());
+            let report_type = expected
+                .map(|t| format!("{t:?}"))
+                .unwrap_or_else(|| "Any".to_string());
 
             if !found {
-                missing.push((fr.clone(), evidence_type.clone()));
+                missing.push((
+                    fr.clone(),
+                    expected
+                        .map(|t| format!("{t:?}"))
+                        .unwrap_or_else(|| "any".to_string()),
+                ));
             }
 
             evidence_results.push(EvidenceCheck {
                 fr_id: fr,
-                evidence_type,
+                evidence_type: report_type,
                 found,
                 threshold_met: found,
                 message: if found {
@@ -199,85 +240,88 @@ pub async fn evaluate_governance<S: StoragePort>(
         }
     }
 
-    let active = storage.list_active_policies().await?;
-    let referenced: BTreeSet<String> = contract
-        .rules
-        .iter()
-        .flat_map(|r| r.policy_refs.iter().map(ToString::to_string))
-        .collect();
-    let mut handled = BTreeSet::new();
     let mut policy_results = Vec::new();
 
-    for policy in &active {
-        let matched: Vec<&String> = referenced
+    if options.evaluate_policies {
+        let active = storage.list_active_policies().await?;
+        let referenced: BTreeSet<String> = contract
+            .rules
             .iter()
-            .filter(|r| policy.matches_reference(r))
+            .flat_map(|r| r.policy_refs.iter().map(ToString::to_string))
             .collect();
-        if matched.is_empty() {
-            continue;
-        }
+        let mut handled = BTreeSet::new();
 
-        let (passed, message) = match &policy.rule.check {
-            PolicyCheck::EvidencePresent { evidence_type } => {
-                evaluate_evidence_policy(contract, &evidence, *evidence_type)
+        for policy in &active {
+            let matched: Vec<&String> = referenced
+                .iter()
+                .filter(|r| policy.matches_reference(r))
+                .collect();
+            if matched.is_empty() {
+                continue;
             }
-            PolicyCheck::ManualApproval | PolicyCheck::Automated => {
-                evaluate_evidence_policy(contract, &evidence, EvidenceType::ManualAttestation)
-            }
-            PolicyCheck::ThresholdMet { metric, min } => {
-                let metrics = storage.get_metrics_by_feature(feature_id).await?;
-                let value = metrics.iter().find_map(|m| match metric.as_str() {
-                    "duration_ms" => Some(m.duration_ms as f64),
-                    "agent_runs" => Some(m.agent_runs as f64),
-                    "review_cycles" => Some(m.review_cycles as f64),
-                    name => m
-                        .metadata
-                        .as_ref()
-                        .and_then(|v| v.get(name))
-                        .and_then(|v| v.as_f64()),
-                });
-                (
-                    value.map(|v| v >= *min).unwrap_or(false),
-                    format!("metric {metric}={value:?}, min={min}"),
-                )
-            }
-            PolicyCheck::Custom { script } => (
-                false,
-                format!(
-                    "custom policy requires external evaluator: {}",
-                    script.chars().take(60).collect::<String>()
+
+            let (passed, message) = match &policy.rule.check {
+                PolicyCheck::EvidencePresent { evidence_type } => {
+                    evaluate_evidence_policy(contract, &evidence, *evidence_type)
+                }
+                PolicyCheck::ManualApproval | PolicyCheck::Automated => {
+                    evaluate_evidence_policy(contract, &evidence, EvidenceType::ManualAttestation)
+                }
+                PolicyCheck::ThresholdMet { metric, min } => {
+                    let metrics = storage.get_metrics_by_feature(feature_id).await?;
+                    let value = metrics.iter().find_map(|m| match metric.as_str() {
+                        "duration_ms" => Some(m.duration_ms as f64),
+                        "agent_runs" => Some(m.agent_runs as f64),
+                        "review_cycles" => Some(m.review_cycles as f64),
+                        name => m
+                            .metadata
+                            .as_ref()
+                            .and_then(|v| v.get(name))
+                            .and_then(|v| v.as_f64()),
+                    });
+                    (
+                        value.map(|v| v >= *min).unwrap_or(false),
+                        format!("metric {metric}={value:?}, min={min}"),
+                    )
+                }
+                PolicyCheck::Custom { script } => (
+                    false,
+                    format!(
+                        "custom policy requires external evaluator: {}",
+                        script.chars().take(60).collect::<String>()
+                    ),
                 ),
-            ),
-        };
+            };
 
-        for r in matched {
-            handled.insert(r.clone());
-        }
-        policy_results.push(PolicyEvalResult {
-            policy_id: policy.id,
-            domain: policy.domain.as_str().to_string(),
-            passed,
-            message,
-        });
-    }
-
-    for r in referenced.difference(&handled) {
-        if let Some(b) = BuiltinPolicy::from_ref(r) {
-            let (passed, message) =
-                evaluate_evidence_policy(contract, &evidence, b.evidence_type);
+            for r in matched {
+                handled.insert(r.clone());
+            }
             policy_results.push(PolicyEvalResult {
-                policy_id: 0,
-                domain: b.domain.as_str().to_string(),
+                policy_id: policy.id,
+                domain: policy.domain.as_str().to_string(),
                 passed,
-                message: format!("{}: {message}", b.label),
+                message,
             });
-        } else {
-            policy_results.push(PolicyEvalResult {
-                policy_id: 0,
-                domain: "custom".to_string(),
-                passed: false,
-                message: format!("policy ref {r} has no evaluator"),
-            });
+        }
+
+        for r in referenced.difference(&handled) {
+            if let Some(b) = BuiltinPolicy::from_ref(r) {
+                let (passed, message) =
+                    evaluate_evidence_policy(contract, &evidence, b.evidence_type);
+                policy_results.push(PolicyEvalResult {
+                    policy_id: 0,
+                    domain: b.domain.as_str().to_string(),
+                    passed,
+                    message: format!("{}: {message}", b.label),
+                });
+            } else {
+                policy_results.push(PolicyEvalResult {
+                    policy_id: 0,
+                    domain: "custom".to_string(),
+                    passed: false,
+                    message: format!("policy ref {r} has no evaluator"),
+                });
+            }
         }
     }
 
