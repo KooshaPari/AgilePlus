@@ -38,3 +38,11 @@ pub fn list_evaluations(c:&Connection,assignment_id:&str)->Result<Vec<Evaluation
  let rows=q.query_map([assignment_id],|r|Ok((r.get::<_,String>(0)?,r.get::<_,String>(1)?,r.get::<_,Option<String>>(2)?,r.get::<_,String>(3)?,r.get::<_,String>(4)?,r.get::<_,String>(5)?,r.get::<_,String>(6)?,r.get::<_,String>(7)?,r.get::<_,String>(8)?,r.get::<_,String>(9)?))).map_err(err)?;
  rows.map(|x|{let(id,assignment_id,attempt_id,candidate_ref,evaluator_id,evaluator_version,result,refs,started,finished)=x.map_err(err)?;Ok(Evaluation{id,assignment_id,attempt_id,candidate_ref,evaluator_id,evaluator_version,result:ev(&result)?,evidence_refs:serde_json::from_str(&refs).map_err(|e|DomainError::Storage(e.to_string()))?,started_at:dt(started)?,finished_at:dt(finished)?})}).collect()
 }
+
+
+pub fn update_attempt_runtime(c:&Connection,id:&str,status:AttemptStatus,job_id:Option<&str>,result_candidate_ref:Option<&str>,failure_class:Option<&str>,ended_at:Option<DateTime<Utc>>)->Result<(),DomainError>{
+ let st=match status{AttemptStatus::Pending=>"pending",AttemptStatus::Running=>"running",AttemptStatus::Failed=>"failed",AttemptStatus::Cancelled=>"cancelled",AttemptStatus::Completed=>"completed",AttemptStatus::Expired=>"expired"};
+ let changed=c.execute("UPDATE attempts SET status=?2, job_id=COALESCE(?3,job_id), result_candidate_ref=COALESCE(?4,result_candidate_ref), failure_class=COALESCE(?5,failure_class), ended_at=COALESCE(?6,ended_at) WHERE id=?1",
+ params![id,st,job_id,result_candidate_ref,failure_class,ended_at.map(|d|d.to_rfc3339())]).map_err(err)?;
+ if changed!=1{return Err(DomainError::Storage(format!("attempt {id} not found")))} Ok(())
+}
