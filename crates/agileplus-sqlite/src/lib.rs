@@ -100,6 +100,9 @@ impl agileplus_domain::ports::ExecutionRecordPort for SqliteStorageAdapter {
     async fn create_attempt(&self, a:&agileplus_domain::domain::execution::Attempt)->Result<(),DomainError>{
         let c=self.lock()?; repository::execution::create_attempt(&c,a)
     }
+    async fn update_attempt_runtime(&self, attempt_id:&str, status:agileplus_domain::domain::execution::AttemptStatus, job_id:Option<&str>, result_candidate_ref:Option<&str>, failure_class:Option<&str>, ended_at:Option<chrono::DateTime<chrono::Utc>>)->Result<(),DomainError>{
+        let c=self.lock()?; repository::execution::update_attempt_runtime(&c,attempt_id,status,job_id,result_candidate_ref,failure_class,ended_at)
+    }
     async fn create_evaluation(&self, e:&agileplus_domain::domain::execution::Evaluation)->Result<(),DomainError>{
         let c=self.lock()?; repository::execution::create_evaluation(&c,e)
     }
