@@ -1,5 +1,7 @@
 # ADR-0010: Acceptance Contract and Progression Gates
 
+> **Current status note:** PARTIALLY SUPERSEDED by ADR-0019 (2026-09-30). Keep criterion-level AcceptanceContract/ProgressionGate semantics. Supersede the assumption that AgilePlus terminal acceptance requires a live Tracera-owned CoverageMatrix; AgilePlus must grade its own development assignment independently.
+
 ## Status
 
 Accepted
