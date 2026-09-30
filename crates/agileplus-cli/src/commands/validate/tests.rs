@@ -358,6 +358,50 @@ async fn shared_evaluator_matches_legacy_for_wrong_evidence_type() {
 }
 
 #[tokio::test]
+async fn shared_evaluator_requires_every_declared_ci_requirement() {
+    let db = SqliteStorageAdapter::in_memory().unwrap();
+    let (feature_id, wp_id) = create_feature_with_wp(&db).await;
+    let policy_id = create_ci_evidence_policy(&db).await;
+    let contract = GovernanceContract {
+        id: 1,
+        feature_id,
+        version: 1,
+        rules: vec![
+            GovernanceRule {
+                transition: "Implementing -> Validated".to_string(),
+                required_evidence: vec!["FR-A:ci_output".to_string()],
+                policy_refs: vec![policy_id],
+            },
+            GovernanceRule {
+                transition: "Implementing -> Validated".to_string(),
+                required_evidence: vec!["FR-B:ci_output".to_string()],
+                policy_refs: vec![policy_id],
+            },
+        ],
+        bound_at: Utc::now(),
+    };
+    create_evidence(&db, wp_id, "FR-A", EvidenceType::CiOutput).await;
+
+    let legacy = super::evidence::evaluate_policies(&db, &contract, feature_id)
+        .await
+        .unwrap();
+    let shared =
+        agileplus_domain::domain::governance_evaluator::evaluate_governance(
+            &db,
+            &contract,
+            feature_id,
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(legacy.len(), 1);
+    assert!(!legacy[0].passed);
+    assert_eq!(legacy[0].passed, shared.policy_results[0].passed);
+    assert!(!shared.passed(&contract));
+    assert!(shared.policy_results[0].message.contains("FR-B"));
+}
+
+#[tokio::test]
 async fn shared_evaluator_empty_contract_is_not_configured() {
     let db = SqliteStorageAdapter::in_memory().unwrap();
     let feature_id = create_feature_with_wp(&db).await.0;
