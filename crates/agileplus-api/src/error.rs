@@ -226,11 +226,7 @@ mod tests {
                 "expected Internal, got {api_err:?}"
             );
             let status = api_err.into_response().status();
-            assert_eq!(
-                status.as_u16(),
-                500,
-                "infrastructure failures must be 500s"
-            );
+            assert_eq!(status.as_u16(), 500, "infrastructure failures must be 500s");
         }
     }
 

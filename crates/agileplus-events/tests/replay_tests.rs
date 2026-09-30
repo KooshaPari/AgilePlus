@@ -1,7 +1,7 @@
 //! Integration tests for event replay — `replay_events`, `replay_events_since`, Aggregate.
 
 use agileplus_domain::domain::event::Event;
-use agileplus_events::replay::{replay_events, replay_events_since, Aggregate, ReplayError};
+use agileplus_events::replay::{Aggregate, ReplayError, replay_events, replay_events_since};
 use async_trait::async_trait;
 
 // ── Test aggregate ──────────────────────────────────────────────────────────

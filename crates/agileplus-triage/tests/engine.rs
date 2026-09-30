@@ -374,8 +374,18 @@ fn triage_rules_serialization_round_trip() {
 #[test]
 fn all_bug_keywords_match() {
     let rules = TriageRules::default_rules();
-    let bug_keywords = ["bug", "crash", "error", "panic", "broken", "regression",
-                        "failing", "exception", "segfault", "fix"];
+    let bug_keywords = [
+        "bug",
+        "crash",
+        "error",
+        "panic",
+        "broken",
+        "regression",
+        "failing",
+        "exception",
+        "segfault",
+        "fix",
+    ];
     for kw in &bug_keywords {
         let item = SyncedItem {
             title: format!("Issue with {kw}"),
@@ -383,15 +393,29 @@ fn all_bug_keywords_match() {
             labels: vec![],
         };
         let out = classify(&item, &rules);
-        assert_eq!(out.intent, Intent::Bug, "keyword '{kw}' should classify as Bug");
+        assert_eq!(
+            out.intent,
+            Intent::Bug,
+            "keyword '{kw}' should classify as Bug"
+        );
     }
 }
 
 #[test]
 fn all_docs_keywords_match() {
     let rules = TriageRules::default_rules();
-    let docs_keywords = ["docs", "documentation", "readme", "changelog", "typo",
-                         "spelling", "document", "guide", "tutorial", "wiki"];
+    let docs_keywords = [
+        "docs",
+        "documentation",
+        "readme",
+        "changelog",
+        "typo",
+        "spelling",
+        "document",
+        "guide",
+        "tutorial",
+        "wiki",
+    ];
     for kw in &docs_keywords {
         let item = SyncedItem {
             title: format!("Update the {kw}"),
@@ -399,15 +423,26 @@ fn all_docs_keywords_match() {
             labels: vec![],
         };
         let out = classify(&item, &rules);
-        assert_eq!(out.intent, Intent::Docs, "keyword '{kw}' should classify as Docs");
+        assert_eq!(
+            out.intent,
+            Intent::Docs,
+            "keyword '{kw}' should classify as Docs"
+        );
     }
 }
 
 #[test]
 fn all_feature_keywords_match() {
     let rules = TriageRules::default_rules();
-    let feature_keywords = ["feature", "enhancement", "implement", "add", "new",
-                            "support", "request"];
+    let feature_keywords = [
+        "feature",
+        "enhancement",
+        "implement",
+        "add",
+        "new",
+        "support",
+        "request",
+    ];
     for kw in &feature_keywords {
         let item = SyncedItem {
             title: format!("Need to {kw} something"),
@@ -415,7 +450,11 @@ fn all_feature_keywords_match() {
             labels: vec![],
         };
         let out = classify(&item, &rules);
-        assert_eq!(out.intent, Intent::Feature, "keyword '{kw}' should classify as Feature");
+        assert_eq!(
+            out.intent,
+            Intent::Feature,
+            "keyword '{kw}' should classify as Feature"
+        );
     }
 }
 

@@ -310,7 +310,12 @@ mod adapter_tests {
     /// A client whose every request fails, used to prove a code path performs
     /// no I/O at all.
     fn unreachable_client() -> PlaneClient {
-        PlaneClient::new(DEAD_ENDPOINT.into(), "key".into(), "ws".into(), "proj".into())
+        PlaneClient::new(
+            DEAD_ENDPOINT.into(),
+            "key".into(),
+            "ws".into(),
+            "proj".into(),
+        )
     }
 
     fn issue_body(id: &str, name: &str, description_html: Option<&str>) -> serde_json::Value {
@@ -342,14 +347,19 @@ mod adapter_tests {
                 "name": "Title",
                 "description_html": "<p>Desc</p>"
             })))
-            .respond_with(ResponseTemplate::new(200).set_body_json(issue_body("plane-1", "Title", None)))
+            .respond_with(
+                ResponseTemplate::new(200).set_body_json(issue_body("plane-1", "Title", None)),
+            )
             .mount(&server)
             .await;
 
         let adapter = PlaneSyncAdapter::new(client(&server));
         let mut state = SyncState::new("feat".into());
 
-        let outcome = adapter.sync_feature(&mut state, "Title", "Desc").await.unwrap();
+        let outcome = adapter
+            .sync_feature(&mut state, "Title", "Desc")
+            .await
+            .unwrap();
 
         assert_eq!(outcome, SyncOutcome::Created("plane-1".into()));
         assert_eq!(state.plane_issue_id.as_deref(), Some("plane-1"));
@@ -366,7 +376,10 @@ mod adapter_tests {
         let mut state = SyncState::new("feat".into());
         state.content_hash = Some(hash_content("Title\nDesc"));
 
-        let outcome = adapter.sync_feature(&mut state, "Title", "Desc").await.unwrap();
+        let outcome = adapter
+            .sync_feature(&mut state, "Title", "Desc")
+            .await
+            .unwrap();
 
         assert_eq!(outcome, SyncOutcome::Skipped);
         assert!(state.plane_issue_id.is_none());
@@ -402,7 +415,10 @@ mod adapter_tests {
         state.plane_issue_id = Some("plane-1".into());
         state.content_hash = Some(hash_content("Title\n<p>Desc</p>"));
 
-        let outcome = adapter.sync_feature(&mut state, "Title", "Desc").await.unwrap();
+        let outcome = adapter
+            .sync_feature(&mut state, "Title", "Desc")
+            .await
+            .unwrap();
 
         assert_eq!(outcome, SyncOutcome::Updated("plane-1".into()));
         assert_eq!(
@@ -424,7 +440,9 @@ mod adapter_tests {
         .await;
         // Nothing may be pushed while a conflict is unresolved.
         Mock::given(method("PATCH"))
-            .respond_with(ResponseTemplate::new(200).set_body_json(issue_body("plane-1", "T", None)))
+            .respond_with(
+                ResponseTemplate::new(200).set_body_json(issue_body("plane-1", "T", None)),
+            )
             .expect(0)
             .mount(&server)
             .await;
@@ -434,7 +452,10 @@ mod adapter_tests {
         state.plane_issue_id = Some("plane-1".into());
         state.content_hash = Some("stale-local-hash".into());
 
-        let outcome = adapter.sync_feature(&mut state, "Title", "Desc").await.unwrap();
+        let outcome = adapter
+            .sync_feature(&mut state, "Title", "Desc")
+            .await
+            .unwrap();
 
         assert_eq!(outcome, SyncOutcome::Conflict("plane-1".into()));
         assert_eq!(
@@ -471,7 +492,10 @@ mod adapter_tests {
         state.plane_issue_id = Some("plane-1".into());
         state.content_hash = Some("stale-local-hash".into());
 
-        let outcome = adapter.sync_feature(&mut state, "Title", "Desc").await.unwrap();
+        let outcome = adapter
+            .sync_feature(&mut state, "Title", "Desc")
+            .await
+            .unwrap();
 
         assert_eq!(outcome, SyncOutcome::Updated("plane-1".into()));
     }
@@ -495,7 +519,10 @@ mod adapter_tests {
         state.plane_issue_id = Some("plane-1".into());
         state.content_hash = Some("stale-local-hash".into());
 
-        let outcome = adapter.sync_feature(&mut state, "Title", "Desc").await.unwrap();
+        let outcome = adapter
+            .sync_feature(&mut state, "Title", "Desc")
+            .await
+            .unwrap();
 
         assert_eq!(outcome, SyncOutcome::Updated("plane-1".into()));
     }
@@ -512,7 +539,10 @@ mod adapter_tests {
         let adapter = PlaneSyncAdapter::new(client(&server));
         let mut state = SyncState::new("feat".into());
 
-        let err = adapter.sync_feature(&mut state, "Title", "Desc").await.unwrap_err();
+        let err = adapter
+            .sync_feature(&mut state, "Title", "Desc")
+            .await
+            .unwrap_err();
 
         assert!(err.to_string().contains("500"), "unexpected error: {err}");
         assert!(state.plane_issue_id.is_none());
@@ -532,7 +562,10 @@ mod adapter_tests {
         let mut state = SyncState::new("feat".into());
         state.plane_issue_id = Some("plane-1".into());
 
-        let err = adapter.sync_feature(&mut state, "Title", "Desc").await.unwrap_err();
+        let err = adapter
+            .sync_feature(&mut state, "Title", "Desc")
+            .await
+            .unwrap_err();
 
         assert!(err.to_string().contains("503"), "unexpected error: {err}");
     }
@@ -567,10 +600,11 @@ mod adapter_tests {
                 "parent": "parent-1",
                 "description_html": "<p>Details</p>"
             })))
-            .respond_with(
-                ResponseTemplate::new(200)
-                    .set_body_json(issue_body("sub-1", "[WP01] Do it", None)),
-            )
+            .respond_with(ResponseTemplate::new(200).set_body_json(issue_body(
+                "sub-1",
+                "[WP01] Do it",
+                None,
+            )))
             .mount(&server)
             .await;
 
@@ -584,7 +618,10 @@ mod adapter_tests {
             .unwrap();
 
         assert_eq!(outcome, SyncOutcome::Created("sub-1".into()));
-        assert_eq!(state.wp_mappings.get("WP01").map(String::as_str), Some("sub-1"));
+        assert_eq!(
+            state.wp_mappings.get("WP01").map(String::as_str),
+            Some("sub-1")
+        );
     }
 
     #[tokio::test]
@@ -592,10 +629,11 @@ mod adapter_tests {
         let server = MockServer::start().await;
         Mock::given(method("PATCH"))
             .and(path(item_path("sub-1")))
-            .respond_with(
-                ResponseTemplate::new(200)
-                    .set_body_json(issue_body("sub-1", "[WP01] Do it", None)),
-            )
+            .respond_with(ResponseTemplate::new(200).set_body_json(issue_body(
+                "sub-1",
+                "[WP01] Do it",
+                None,
+            )))
             .expect(1)
             .mount(&server)
             .await;
@@ -611,7 +649,10 @@ mod adapter_tests {
             .unwrap();
 
         assert_eq!(outcome, SyncOutcome::Updated("sub-1".into()));
-        assert_eq!(state.wp_mappings.get("WP01").map(String::as_str), Some("sub-1"));
+        assert_eq!(
+            state.wp_mappings.get("WP01").map(String::as_str),
+            Some("sub-1")
+        );
     }
 
     #[tokio::test]

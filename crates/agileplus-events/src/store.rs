@@ -234,32 +234,53 @@ mod coverage_tests {
     use chrono::Duration;
 
     fn ev(entity_type: &str, entity_id: i64, event_type: &str) -> Event {
-        Event::new(entity_type, entity_id, event_type, serde_json::json!({}), "tester")
+        Event::new(
+            entity_type,
+            entity_id,
+            event_type,
+            serde_json::json!({}),
+            "tester",
+        )
     }
 
     #[test]
     fn event_error_not_found_display() {
-        assert_eq!(EventError::NotFound("x".into()).to_string(), "Event not found: x");
+        assert_eq!(
+            EventError::NotFound("x".into()).to_string(),
+            "Event not found: x"
+        );
     }
 
     #[test]
     fn event_error_duplicate_sequence_display() {
-        assert_eq!(EventError::DuplicateSequence("5".into()).to_string(), "Duplicate sequence: 5");
+        assert_eq!(
+            EventError::DuplicateSequence("5".into()).to_string(),
+            "Duplicate sequence: 5"
+        );
     }
 
     #[test]
     fn event_error_storage_display() {
-        assert_eq!(EventError::StorageError("boom".into()).to_string(), "Storage error: boom");
+        assert_eq!(
+            EventError::StorageError("boom".into()).to_string(),
+            "Storage error: boom"
+        );
     }
 
     #[test]
     fn event_error_invalid_hash_display() {
-        assert_eq!(EventError::InvalidHash("bad".into()).to_string(), "Invalid hash: bad");
+        assert_eq!(
+            EventError::InvalidHash("bad".into()).to_string(),
+            "Invalid hash: bad"
+        );
     }
 
     #[test]
     fn event_error_sequence_gap_display() {
-        let e = EventError::SequenceGap { expected: 2, actual: 4 };
+        let e = EventError::SequenceGap {
+            expected: 2,
+            actual: 4,
+        };
         assert_eq!(e.to_string(), "Sequence gap: expected 2, got 4");
     }
 
@@ -347,7 +368,10 @@ mod coverage_tests {
         old.timestamp = Utc::now() - Duration::days(30);
         store.append(&old).await.unwrap();
         let from = Utc::now() - Duration::days(1);
-        let got = store.get_events_by_range("F", 1, from, Utc::now()).await.unwrap();
+        let got = store
+            .get_events_by_range("F", 1, from, Utc::now())
+            .await
+            .unwrap();
         assert!(got.is_empty());
     }
 
@@ -388,7 +412,12 @@ mod coverage_tests {
         async fn get_events(&self, _e: &str, _i: i64) -> Result<Vec<Event>, EventError> {
             Ok(vec![])
         }
-        async fn get_events_since(&self, _e: &str, _i: i64, _s: i64) -> Result<Vec<Event>, EventError> {
+        async fn get_events_since(
+            &self,
+            _e: &str,
+            _i: i64,
+            _s: i64,
+        ) -> Result<Vec<Event>, EventError> {
             Ok(vec![])
         }
         async fn get_events_by_range(
@@ -490,6 +519,9 @@ mod coverage_tests {
             .collect();
         stored.sort_unstable();
         assert_eq!(stored, (1..=TASKS * PER_TASK).collect::<Vec<_>>());
-        assert_eq!(store.get_latest_sequence("F", 1).await.unwrap(), TASKS * PER_TASK);
+        assert_eq!(
+            store.get_latest_sequence("F", 1).await.unwrap(),
+            TASKS * PER_TASK
+        );
     }
 }

@@ -10,7 +10,9 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use agileplus_dashboard::app_state::{DashboardStore, ServiceHealth as StoreServiceHealth, SharedState, default_health};
+use agileplus_dashboard::app_state::{
+    DashboardStore, ServiceHealth as StoreServiceHealth, SharedState, default_health,
+};
 use agileplus_dashboard::routes::{
     agents, dashboard as dash_routes, evidence, features, health as health_routes, pages, settings,
 };
@@ -148,7 +150,9 @@ async fn pages_time_footer_formats_utc() {
 #[tokio::test]
 async fn dash_wp_list_returns_partial_with_wp() {
     let mut store = store();
-    store.work_packages.insert(1, vec![wp(7, 1, WpState::Doing)]);
+    store
+        .work_packages
+        .insert(1, vec![wp(7, 1, WpState::Doing)]);
     let html = text(dash_routes::wp_list(State(state_with(store)), Path(1)).await).await;
     assert!(html.contains("WP-7"));
     assert!(html.contains("wp-list-1"));
@@ -194,11 +198,15 @@ async fn dash_project_switcher_lists_projects() {
 async fn dash_all_work_packages_json_flat_map() {
     let mut store = store();
     store.work_packages.insert(1, vec![wp(1, 1, WpState::Done)]);
-    store.work_packages.insert(2, vec![wp(2, 2, WpState::Review)]);
+    store
+        .work_packages
+        .insert(2, vec![wp(2, 2, WpState::Review)]);
     let value = dash_routes::all_work_packages_json(State(state_with(store)))
         .await
         .into_response();
-    let bytes = axum::body::to_bytes(value.into_body(), usize::MAX).await.unwrap();
+    let bytes = axum::body::to_bytes(value.into_body(), usize::MAX)
+        .await
+        .unwrap();
     let v: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
     assert_eq!(v["count"], 2);
 }
@@ -216,14 +224,27 @@ async fn features_detail_renders_with_work_packages() {
     let mut store = store();
     store.features = vec![feature(1, FeatureState::Implementing, None)];
     store.work_packages.insert(1, vec![wp(3, 1, WpState::Done)]);
-    let html = text(features::feature_detail(State(state_with(store)), Path(1), axum::http::HeaderMap::new()).await).await;
+    let html = text(
+        features::feature_detail(
+            State(state_with(store)),
+            Path(1),
+            axum::http::HeaderMap::new(),
+        )
+        .await,
+    )
+    .await;
     assert!(html.contains("Feat 1"));
     assert!(html.contains("WP-3"));
 }
 
 #[tokio::test]
 async fn features_detail_not_found() {
-    let response = features::feature_detail(State(state_with(store())), Path(1), axum::http::HeaderMap::new()).await;
+    let response = features::feature_detail(
+        State(state_with(store())),
+        Path(1),
+        axum::http::HeaderMap::new(),
+    )
+    .await;
     assert_eq!(response.status(), axum::http::StatusCode::NOT_FOUND);
 }
 
@@ -251,11 +272,9 @@ async fn features_media_contains_gallery_wrapper() {
 
 #[tokio::test]
 async fn evidence_content_rejects_path_traversal() {
-    let response = evidence::evidence_content(
-        State(state_with(store())),
-        Path((1_i64, "..".to_string())),
-    )
-    .await;
+    let response =
+        evidence::evidence_content(State(state_with(store())), Path((1_i64, "..".to_string())))
+            .await;
     let html = text(response).await;
     assert!(html.contains("Forbidden"));
 }
@@ -297,10 +316,13 @@ async fn evidence_list_empty_renders() {
 
 #[tokio::test]
 async fn evidence_json_empty_artifacts() {
-    let response = evidence::feature_evidence_json(State(state_with(store())), Path("1".to_string()))
+    let response =
+        evidence::feature_evidence_json(State(state_with(store())), Path("1".to_string()))
+            .await
+            .into_response();
+    let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
         .await
-        .into_response();
-    let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap();
+        .unwrap();
     let v: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
     assert_eq!(v["feature_id"], "1");
     assert!(v["artifacts"].as_array().unwrap().is_empty());
@@ -308,13 +330,13 @@ async fn evidence_json_empty_artifacts() {
 
 #[tokio::test]
 async fn evidence_generate_reports_missing_script() {
-    let response = evidence::feature_evidence_generate(
-        State(state_with(store())),
-        Path("1".to_string()),
-    )
-    .await
-    .into_response();
-    let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap();
+    let response =
+        evidence::feature_evidence_generate(State(state_with(store())), Path("1".to_string()))
+            .await
+            .into_response();
+    let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
     let v: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
     assert_eq!(v["status"], "error");
 }
@@ -360,9 +382,21 @@ fn evidence_artifact_json_roundtrips() {
 async fn health_page_counts_services() {
     let mut store = store();
     store.health = vec![
-        StoreServiceHealth { healthy: true, degraded: false, ..sample_service() },
-        StoreServiceHealth { healthy: false, degraded: true, ..sample_service() },
-        StoreServiceHealth { healthy: false, degraded: false, ..sample_service() },
+        StoreServiceHealth {
+            healthy: true,
+            degraded: false,
+            ..sample_service()
+        },
+        StoreServiceHealth {
+            healthy: false,
+            degraded: true,
+            ..sample_service()
+        },
+        StoreServiceHealth {
+            healthy: false,
+            degraded: false,
+            ..sample_service()
+        },
     ];
     let html = text(health_routes::health_page(State(state_with(store))).await).await;
     assert!(!html.is_empty());
@@ -373,7 +407,9 @@ async fn health_json_returns_all_healthy_flag() {
     let response = health_routes::health_json(State(state_with(store())))
         .await
         .into_response();
-    let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap();
+    let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
     let v: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
     assert!(v["services"].is_array());
     assert!(v["all_healthy"].is_boolean());
@@ -406,7 +442,8 @@ fn service_toggle_body_defaults_none() {
 #[test]
 fn service_config_form_deserializes() {
     let form: health_routes::ServiceConfigForm =
-        serde_json::from_str(r#"{"endpoint_url":"http://x","timeout_ms":10,"max_retries":2}"#).unwrap();
+        serde_json::from_str(r#"{"endpoint_url":"http://x","timeout_ms":10,"max_retries":2}"#)
+            .unwrap();
     assert_eq!(form.endpoint_url.as_deref(), Some("http://x"));
     assert_eq!(form.timeout_ms, Some(10));
     assert_eq!(form.max_retries, Some(2));
@@ -422,8 +459,12 @@ async fn agents_activity_partial_from_processes() {
 
 #[tokio::test]
 async fn agents_json_has_shape() {
-    let response = agents::agents_json(State(state_with(store()))).await.into_response();
-    let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap();
+    let response = agents::agents_json(State(state_with(store())))
+        .await
+        .into_response();
+    let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
     let v: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
     assert!(v["agents"].is_array());
     assert!(v["count"].is_number());
@@ -539,10 +580,9 @@ fn plane_settings_form_deserializes() {
 
 #[test]
 fn dashboard_settings_form_deserializes() {
-    let form: settings::DashboardSettingsForm = serde_json::from_str(
-        r#"{"theme":"dark","log_level":"info","data_directory":"/data"}"#,
-    )
-    .unwrap();
+    let form: settings::DashboardSettingsForm =
+        serde_json::from_str(r#"{"theme":"dark","log_level":"info","data_directory":"/data"}"#)
+            .unwrap();
     assert_eq!(form.theme, "dark");
     assert_eq!(form.data_directory, "/data");
 }

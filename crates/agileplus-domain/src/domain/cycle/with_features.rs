@@ -89,12 +89,14 @@ mod coverage_tests {
 
     #[test]
     fn one_blocker_blocks_the_whole_cycle() {
-        assert!(!cycle_with(&[
-            FeatureState::Validated,
-            FeatureState::Shipped,
-            FeatureState::Implementing,
-        ])
-        .is_shippable());
+        assert!(
+            !cycle_with(&[
+                FeatureState::Validated,
+                FeatureState::Shipped,
+                FeatureState::Implementing,
+            ])
+            .is_shippable()
+        );
     }
 
     #[test]

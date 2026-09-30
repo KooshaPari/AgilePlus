@@ -2,7 +2,7 @@
 
 use std::path::PathBuf;
 
-use agileplus_sqlite::{migrations::MigrationRunner, SqliteStorageAdapter};
+use agileplus_sqlite::{SqliteStorageAdapter, migrations::MigrationRunner};
 
 fn adapter() -> SqliteStorageAdapter {
     SqliteStorageAdapter::in_memory().unwrap()
@@ -121,7 +121,9 @@ fn migrations_meta_table_records_each_migration() {
 
     // Names must be unique (UNIQUE constraint + no duplicate inserts).
     let distinct: i64 = conn
-        .query_row("SELECT COUNT(DISTINCT name) FROM _migrations", [], |r| r.get(0))
+        .query_row("SELECT COUNT(DISTINCT name) FROM _migrations", [], |r| {
+            r.get(0)
+        })
         .unwrap();
     assert_eq!(count, distinct);
 }
@@ -138,14 +140,19 @@ fn run_all_is_idempotent() {
     let after: i64 = conn
         .query_row("SELECT COUNT(*) FROM _migrations", [], |r| r.get(0))
         .unwrap();
-    assert_eq!(before, after, "re-running migrations must not duplicate rows");
+    assert_eq!(
+        before, after,
+        "re-running migrations must not duplicate rows"
+    );
 }
 
 #[test]
 fn foreign_keys_pragma_is_enabled() {
     let a = adapter();
     let conn = a.conn_for_bench().unwrap();
-    let fk: i64 = conn.query_row("PRAGMA foreign_keys", [], |r| r.get(0)).unwrap();
+    let fk: i64 = conn
+        .query_row("PRAGMA foreign_keys", [], |r| r.get(0))
+        .unwrap();
     assert_eq!(fk, 1);
 }
 
@@ -192,9 +199,11 @@ fn file_backed_adapter_reopens_existing_database() {
         let a = SqliteStorageAdapter::new(&path).unwrap();
         let conn = a.conn_for_bench().unwrap();
         let slug: String = conn
-            .query_row("SELECT slug FROM features WHERE slug = 'persisted'", [], |r| {
-                r.get(0)
-            })
+            .query_row(
+                "SELECT slug FROM features WHERE slug = 'persisted'",
+                [],
+                |r| r.get(0),
+            )
             .unwrap();
         assert_eq!(slug, "persisted");
     }
@@ -346,7 +355,10 @@ fn evidence_type_check_constraint() {
          VALUES (1,'FR-1','bogus','p',NULL, ?1)",
         rusqlite::params![ts],
     );
-    assert!(err.is_err(), "evidence_type CHECK must reject unknown values");
+    assert!(
+        err.is_err(),
+        "evidence_type CHECK must reject unknown values"
+    );
 }
 
 #[test]
@@ -371,12 +383,13 @@ fn module_feature_tags_composite_pk_is_unique() {
         rusqlite::params![ts],
     )
     .unwrap();
-    assert!(conn
-        .execute(
+    assert!(
+        conn.execute(
             "INSERT INTO module_feature_tags (module_id, feature_id, created_at) VALUES (1,1, ?1)",
             rusqlite::params![ts],
         )
-        .is_err());
+        .is_err()
+    );
 }
 
 #[test]
@@ -409,11 +422,15 @@ fn work_packages_fk_cascade_on_feature_delete() {
         rusqlite::params![ts],
     )
     .unwrap();
-    conn.execute("DELETE FROM features WHERE id = 1", []).unwrap();
+    conn.execute("DELETE FROM features WHERE id = 1", [])
+        .unwrap();
     let remaining: i64 = conn
         .query_row("SELECT COUNT(*) FROM work_packages", [], |r| r.get(0))
         .unwrap();
-    assert_eq!(remaining, 0, "work packages must cascade-delete with their feature");
+    assert_eq!(
+        remaining, 0,
+        "work packages must cascade-delete with their feature"
+    );
 }
 
 #[test]
@@ -428,7 +445,11 @@ fn feature_labels_column_exists() {
     )
     .unwrap();
     let labels: String = conn
-        .query_row("SELECT labels FROM features WHERE slug='labelled'", [], |r| r.get(0))
+        .query_row(
+            "SELECT labels FROM features WHERE slug='labelled'",
+            [],
+            |r| r.get(0),
+        )
         .unwrap();
     assert_eq!(labels, "[\"a\",\"b\"]");
 }
@@ -480,7 +501,10 @@ fn gate_results_table_has_expected_columns() {
         .map(|r| r.unwrap())
         .collect();
     for col in ["work_package_id", "gate_name", "status", "checked_at"] {
-        assert!(cols.contains(&col.to_string()), "gate_results missing {col}");
+        assert!(
+            cols.contains(&col.to_string()),
+            "gate_results missing {col}"
+        );
     }
 }
 
@@ -529,13 +553,14 @@ fn user_email_unique_constraint() {
         rusqlite::params![ts],
     )
     .unwrap();
-    assert!(conn
-        .execute(
+    assert!(
+        conn.execute(
             "INSERT INTO users (display_name, email, role, status, created_at, updated_at)
              VALUES ('B','same@example.com','member','active', ?1, ?1)",
             rusqlite::params![ts],
         )
-        .is_err());
+        .is_err()
+    );
 }
 
 #[test]

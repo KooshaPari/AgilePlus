@@ -5,8 +5,8 @@ use agileplus_domain::domain::{
     sync_mapping::{SyncDirection, SyncMapping},
 };
 use agileplus_sqlite::{
-    repository::{events, sync_mappings},
     SqliteStorageAdapter,
+    repository::{events, sync_mappings},
 };
 
 fn adapter() -> SqliteStorageAdapter {
@@ -63,7 +63,10 @@ fn event_scoped_to_entity() {
 
     assert_eq!(events::get_events(&conn, "Feature", 1).unwrap().len(), 1);
     assert_eq!(events::get_events(&conn, "Feature", 2).unwrap().len(), 1);
-    assert_eq!(events::get_events(&conn, "WorkPackage", 1).unwrap().len(), 1);
+    assert_eq!(
+        events::get_events(&conn, "WorkPackage", 1).unwrap().len(),
+        1
+    );
     assert!(events::get_events(&conn, "Feature", 99).unwrap().is_empty());
 }
 
@@ -79,7 +82,11 @@ fn event_since_filters_strictly_greater() {
     assert_eq!(got[0].sequence, 2);
     assert_eq!(got[1].sequence, 3);
     // Since the latest returns nothing.
-    assert!(events::get_events_since(&conn, "Feature", 1, 3).unwrap().is_empty());
+    assert!(
+        events::get_events_since(&conn, "Feature", 1, 3)
+            .unwrap()
+            .is_empty()
+    );
 }
 
 #[test]
@@ -110,9 +117,11 @@ fn event_by_range_empty_when_outside() {
 
     let from = (chrono::Utc::now() + chrono::Duration::days(1)).to_rfc3339();
     let to = (chrono::Utc::now() + chrono::Duration::days(2)).to_rfc3339();
-    assert!(events::get_events_by_range(&conn, "Feature", 1, &from, &to)
-        .unwrap()
-        .is_empty());
+    assert!(
+        events::get_events_by_range(&conn, "Feature", 1, &from, &to)
+            .unwrap()
+            .is_empty()
+    );
 }
 
 #[test]
@@ -172,7 +181,10 @@ fn event_actor_roundtrips() {
     let mut e = event("Feature", 1, "created", 1);
     e.actor = "agent-42".into();
     events::append_event(&conn, &e).unwrap();
-    assert_eq!(events::get_events(&conn, "Feature", 1).unwrap()[0].actor, "agent-42");
+    assert_eq!(
+        events::get_events(&conn, "Feature", 1).unwrap()[0].actor,
+        "agent-42"
+    );
 }
 
 // ---------------------------------------------------------------------------
@@ -204,7 +216,11 @@ fn sync_mapping_upsert_and_get() {
 fn sync_mapping_get_missing() {
     let a = adapter();
     let conn = a.conn_for_bench().unwrap();
-    assert!(sync_mappings::get_sync_mapping(&conn, "feature", 1).unwrap().is_none());
+    assert!(
+        sync_mappings::get_sync_mapping(&conn, "feature", 1)
+            .unwrap()
+            .is_none()
+    );
 }
 
 #[test]
@@ -236,9 +252,11 @@ fn sync_mapping_get_by_plane_id() {
         .unwrap()
         .unwrap();
     assert_eq!(got.entity_id, 42);
-    assert!(sync_mappings::get_sync_mapping_by_plane_id(&conn, "feature", "nope")
-        .unwrap()
-        .is_none());
+    assert!(
+        sync_mappings::get_sync_mapping_by_plane_id(&conn, "feature", "nope")
+            .unwrap()
+            .is_none()
+    );
 }
 
 #[test]
@@ -269,7 +287,11 @@ fn sync_mapping_delete_removes_row() {
     let conn = a.conn_for_bench().unwrap();
     sync_mappings::upsert_sync_mapping(&conn, &mapping("feature", 1, "plane-1")).unwrap();
     sync_mappings::delete_sync_mapping(&conn, "feature", 1).unwrap();
-    assert!(sync_mappings::get_sync_mapping(&conn, "feature", 1).unwrap().is_none());
+    assert!(
+        sync_mappings::get_sync_mapping(&conn, "feature", 1)
+            .unwrap()
+            .is_none()
+    );
 }
 
 #[test]
@@ -285,7 +307,9 @@ fn sync_mapping_plane_issue_id_is_unique() {
     let conn = a.conn_for_bench().unwrap();
     sync_mappings::upsert_sync_mapping(&conn, &mapping("feature", 1, "plane-shared")).unwrap();
     // Different entity but same plane id -> UNIQUE violation.
-    assert!(sync_mappings::upsert_sync_mapping(&conn, &mapping("feature", 2, "plane-shared")).is_err());
+    assert!(
+        sync_mappings::upsert_sync_mapping(&conn, &mapping("feature", 2, "plane-shared")).is_err()
+    );
 }
 
 #[test]
@@ -294,6 +318,14 @@ fn sync_mapping_separate_entity_types_coexist() {
     let conn = a.conn_for_bench().unwrap();
     sync_mappings::upsert_sync_mapping(&conn, &mapping("feature", 1, "plane-f1")).unwrap();
     sync_mappings::upsert_sync_mapping(&conn, &mapping("work_package", 1, "plane-w1")).unwrap();
-    assert!(sync_mappings::get_sync_mapping(&conn, "feature", 1).unwrap().is_some());
-    assert!(sync_mappings::get_sync_mapping(&conn, "work_package", 1).unwrap().is_some());
+    assert!(
+        sync_mappings::get_sync_mapping(&conn, "feature", 1)
+            .unwrap()
+            .is_some()
+    );
+    assert!(
+        sync_mappings::get_sync_mapping(&conn, "work_package", 1)
+            .unwrap()
+            .is_some()
+    );
 }

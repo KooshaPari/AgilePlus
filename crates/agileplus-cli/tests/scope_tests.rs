@@ -211,13 +211,19 @@ fn parallel_groups_ignores_edges_to_unlisted_ids() {
 #[test]
 fn detect_file_scope_skips_words_that_trim_to_empty() {
     let scope = detect_file_scope("(( )) !!!! \\\\");
-    assert!(scope.is_empty(), "punctuation-only words are skipped: {scope:?}");
+    assert!(
+        scope.is_empty(),
+        "punctuation-only words are skipped: {scope:?}"
+    );
 }
 
 #[test]
 fn detect_file_scope_rejects_non_alphabetic_extension() {
     let scope = detect_file_scope("version file.123");
-    assert!(scope.is_empty(), "numeric extension is not a file: {scope:?}");
+    assert!(
+        scope.is_empty(),
+        "numeric extension is not a file: {scope:?}"
+    );
 }
 
 #[test]
@@ -226,4 +232,3 @@ fn detect_file_scope_accepts_six_char_extension_rejects_seven() {
     assert!(scope.contains(&"a.abcdef".to_string()));
     assert!(!scope.contains(&"b.abcdefg".to_string()));
 }
-

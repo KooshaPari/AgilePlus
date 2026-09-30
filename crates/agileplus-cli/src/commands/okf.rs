@@ -691,7 +691,10 @@ mod tests {
         };
         let json = serde_json::to_string(&doc).unwrap();
         // skip_serializing_if = "Vec::is_empty" means relations key should be absent
-        assert!(!json.contains("relations"), "empty relations should be skipped: {json}");
+        assert!(
+            !json.contains("relations"),
+            "empty relations should be skipped: {json}"
+        );
     }
 
     // ── sanitize_tag additional edge cases ──────────────────────────────────

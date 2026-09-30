@@ -1,8 +1,8 @@
 //! Integration tests for ReleaseChannel, ChannelMetadata, PromotionRequest, PromotionResult.
 //! Complements the inline unit tests in src/channel.rs.
 
-use agileplus_governance::*;
 use agileplus_governance::channel::PromotionResult;
+use agileplus_governance::*;
 use chrono::Utc;
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
@@ -175,12 +175,7 @@ fn promotion_request_from_alpha_to_prod_skips_three() {
 
 #[test]
 fn promotion_result_serde_roundtrip() {
-    let meta = ChannelMetadata::new(
-        ReleaseChannel::Beta,
-        "1.0.0".into(),
-        "dev".into(),
-        1,
-    );
+    let meta = ChannelMetadata::new(ReleaseChannel::Beta, "1.0.0".into(), "dev".into(), 1);
     let result = PromotionResult::allowed(meta);
     let json = serde_json::to_string(&result).unwrap();
     let back: PromotionResult = serde_json::from_str(&json).unwrap();
@@ -198,12 +193,7 @@ fn promotion_result_denied_has_no_metadata() {
 
 #[test]
 fn promotion_result_add_check_passing() {
-    let meta = ChannelMetadata::new(
-        ReleaseChannel::Alpha,
-        "1.0.0".into(),
-        "dev".into(),
-        1,
-    );
+    let meta = ChannelMetadata::new(ReleaseChannel::Alpha, "1.0.0".into(), "dev".into(), 1);
     let mut result = PromotionResult::allowed(meta);
     result.add_check("test_gate".into(), true);
     result.add_check("security_gate".into(), false);
@@ -213,12 +203,7 @@ fn promotion_result_add_check_passing() {
 
 #[test]
 fn promotion_result_add_warning() {
-    let meta = ChannelMetadata::new(
-        ReleaseChannel::Alpha,
-        "1.0.0".into(),
-        "dev".into(),
-        1,
-    );
+    let meta = ChannelMetadata::new(ReleaseChannel::Alpha, "1.0.0".into(), "dev".into(), 1);
     let mut result = PromotionResult::allowed(meta);
     result.add_warning("test coverage below 80%");
     result.add_warning("no CHANGELOG entry");

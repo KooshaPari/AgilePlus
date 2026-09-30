@@ -9,7 +9,7 @@ use regex::Regex;
 use std::sync::OnceLock;
 use tokio::io::AsyncWriteExt;
 use tokio::process::Command;
-use tokio::time::{timeout, Duration};
+use tokio::time::{Duration, timeout};
 
 // ─── Public entry point ───────────────────────────────────────────────────────
 
@@ -118,9 +118,7 @@ pub fn extract_pr_url(output: &str) -> Option<String> {
 /// Extract commit SHAs mentioned in agent stdout (7-char or full SHA).
 pub fn extract_commits_from_output(output: &str) -> Vec<String> {
     static RE: OnceLock<Regex> = OnceLock::new();
-    let re = RE.get_or_init(|| {
-        Regex::new(r"\b([0-9a-f]{7,40})\b").expect("valid regex")
-    });
+    let re = RE.get_or_init(|| Regex::new(r"\b([0-9a-f]{7,40})\b").expect("valid regex"));
     re.find_iter(output)
         .map(|m| m.as_str().to_owned())
         .collect()
@@ -134,7 +132,8 @@ mod tests {
 
     #[test]
     fn pr_url_extraction_finds_url() {
-        let output = "Agent created PR: https://github.com/phenotype/agileplus/pull/42 and finished.";
+        let output =
+            "Agent created PR: https://github.com/phenotype/agileplus/pull/42 and finished.";
         assert_eq!(
             extract_pr_url(output),
             Some("https://github.com/phenotype/agileplus/pull/42".to_owned())
@@ -148,7 +147,8 @@ mod tests {
 
     #[test]
     fn commit_extraction_finds_shas() {
-        let output = "Committed abc1234 and pushed def5678901234567890123456789012345678901 successfully.";
+        let output =
+            "Committed abc1234 and pushed def5678901234567890123456789012345678901 successfully.";
         let commits = extract_commits_from_output(output);
         assert!(commits.contains(&"abc1234".to_owned()));
     }

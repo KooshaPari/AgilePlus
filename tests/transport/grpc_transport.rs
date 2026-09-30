@@ -14,7 +14,6 @@ use agileplus_grpc::event_bus::EventBus;
 use agileplus_grpc::proxy::ProxyRouter;
 use agileplus_grpc::server::{domain_error_to_status, parse_evidence_requirement};
 
-
 // ===========================================================================
 // gRPC helper function tests — domain_error_to_status
 // ===========================================================================
@@ -134,8 +133,7 @@ fn parse_evidence_requirement_with_lint_result_type() {
 
 #[test]
 fn parse_evidence_requirement_with_manual_attestation_type() {
-    let (fr_id, etype, recognized) =
-        parse_evidence_requirement("FR-007:manual_attestation");
+    let (fr_id, etype, recognized) = parse_evidence_requirement("FR-007:manual_attestation");
     assert_eq!(fr_id, "FR-007");
     assert_eq!(etype, Some(EvidenceType::ManualAttestation));
     assert!(recognized);
@@ -213,8 +211,14 @@ async fn sqlite_feature_state_all_variants() {
     use agileplus_domain::domain::state_machine::FeatureState;
 
     let variants = [
-        "created", "specified", "researched", "planned",
-        "implementing", "validated", "shipped", "retrospected",
+        "created",
+        "specified",
+        "researched",
+        "planned",
+        "implementing",
+        "validated",
+        "shipped",
+        "retrospected",
     ];
     for variant in variants {
         let state: FeatureState = variant.parse().unwrap();

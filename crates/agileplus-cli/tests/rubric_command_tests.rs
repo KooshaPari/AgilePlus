@@ -18,7 +18,12 @@ fn bundled_catalog() -> PathBuf {
     manifest_dir().join("../agileplus-governance/data/PILLARS-CATALOG.json")
 }
 
-fn score_args(repo: &Path, catalog: Option<PathBuf>, output: Option<PathBuf>, probes: ProbeMode) -> RubricArgs {
+fn score_args(
+    repo: &Path,
+    catalog: Option<PathBuf>,
+    output: Option<PathBuf>,
+    probes: ProbeMode,
+) -> RubricArgs {
     RubricArgs {
         sub: RubricSubcommand::Score {
             repo: repo.to_path_buf(),
@@ -34,19 +39,34 @@ fn score_args(repo: &Path, catalog: Option<PathBuf>, output: Option<PathBuf>, pr
 
 #[test]
 fn score_with_none_probes_succeeds() {
-    let args = score_args(&manifest_dir(), Some(bundled_catalog()), None, ProbeMode::None);
+    let args = score_args(
+        &manifest_dir(),
+        Some(bundled_catalog()),
+        None,
+        ProbeMode::None,
+    );
     run(&args).expect("v1 probe-free scoring should succeed");
 }
 
 #[test]
 fn score_with_auto_probes_succeeds() {
-    let args = score_args(&manifest_dir(), Some(bundled_catalog()), None, ProbeMode::Auto);
+    let args = score_args(
+        &manifest_dir(),
+        Some(bundled_catalog()),
+        None,
+        ProbeMode::Auto,
+    );
     run(&args).expect("auto probe scoring should succeed");
 }
 
 #[test]
 fn score_with_all_probes_succeeds() {
-    let args = score_args(&manifest_dir(), Some(bundled_catalog()), None, ProbeMode::All);
+    let args = score_args(
+        &manifest_dir(),
+        Some(bundled_catalog()),
+        None,
+        ProbeMode::All,
+    );
     run(&args).expect("all probe scoring should succeed");
 }
 

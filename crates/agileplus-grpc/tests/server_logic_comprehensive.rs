@@ -90,8 +90,7 @@ fn parse_ci_output_type() {
 
 #[test]
 fn parse_review_approval_type() {
-    let (fr_id, evidence_type, recognized) =
-        parse_evidence_requirement("FR-7:review_approval");
+    let (fr_id, evidence_type, recognized) = parse_evidence_requirement("FR-7:review_approval");
     assert_eq!(fr_id, "FR-7");
     assert!(evidence_type.is_some());
     assert!(recognized);
@@ -99,8 +98,7 @@ fn parse_review_approval_type() {
 
 #[test]
 fn parse_security_scan_type() {
-    let (fr_id, evidence_type, recognized) =
-        parse_evidence_requirement("FR-99:security_scan");
+    let (fr_id, evidence_type, recognized) = parse_evidence_requirement("FR-99:security_scan");
     assert_eq!(fr_id, "FR-99");
     assert!(evidence_type.is_some());
     assert!(recognized);
@@ -108,8 +106,7 @@ fn parse_security_scan_type() {
 
 #[test]
 fn parse_lint_result_type() {
-    let (fr_id, evidence_type, recognized) =
-        parse_evidence_requirement("FR-12:lint_result");
+    let (fr_id, evidence_type, recognized) = parse_evidence_requirement("FR-12:lint_result");
     assert_eq!(fr_id, "FR-12");
     assert!(evidence_type.is_some());
     assert!(recognized);
@@ -117,8 +114,7 @@ fn parse_lint_result_type() {
 
 #[test]
 fn parse_manual_attestation_type() {
-    let (fr_id, evidence_type, recognized) =
-        parse_evidence_requirement("FR-50:manual_attestation");
+    let (fr_id, evidence_type, recognized) = parse_evidence_requirement("FR-50:manual_attestation");
     assert_eq!(fr_id, "FR-50");
     assert!(evidence_type.is_some());
     assert!(recognized);
@@ -126,8 +122,7 @@ fn parse_manual_attestation_type() {
 
 #[test]
 fn parse_unrecognized_type() {
-    let (fr_id, evidence_type, recognized) =
-        parse_evidence_requirement("FR-1:unknown_type");
+    let (fr_id, evidence_type, recognized) = parse_evidence_requirement("FR-1:unknown_type");
     assert_eq!(fr_id, "FR-1");
     assert!(evidence_type.is_none());
     // When type is present but unrecognized, recognized should be false
@@ -155,8 +150,7 @@ fn parse_colon_with_empty_type() {
 fn parse_multiple_colons_uses_first_split() {
     // "FR-1:ci_output:extra" splits at first colon -> ("FR-1", "ci_output:extra")
     // "ci_output:extra" won't match any known type
-    let (fr_id, evidence_type, recognized) =
-        parse_evidence_requirement("FR-1:ci_output:extra");
+    let (fr_id, evidence_type, recognized) = parse_evidence_requirement("FR-1:ci_output:extra");
     assert_eq!(fr_id, "FR-1");
     assert!(evidence_type.is_none());
     assert!(!recognized);

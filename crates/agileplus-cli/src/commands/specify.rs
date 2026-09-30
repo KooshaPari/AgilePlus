@@ -439,7 +439,7 @@ mod tests {
         let expected = hash_entry(&entry);
         assert_eq!(entry.hash, expected);
     }
-#[test]
+    #[test]
     fn sha256_empty_string() {
         let h = sha256_bytes("");
         // SHA-256 of empty string is well-defined
@@ -521,7 +521,10 @@ line2
         let h = sha256_bytes("the quick brown fox jumps over the lazy dog");
         assert_ne!(h, [0u8; 32]);
         // Deterministic
-        assert_eq!(h, sha256_bytes("the quick brown fox jumps over the lazy dog"));
+        assert_eq!(
+            h,
+            sha256_bytes("the quick brown fox jumps over the lazy dog")
+        );
     }
 
     #[test]

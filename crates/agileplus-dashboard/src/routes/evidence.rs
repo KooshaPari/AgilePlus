@@ -419,10 +419,7 @@ mod tests {
             std::process::id(),
             chrono::Utc::now().timestamp_nanos_opt().unwrap_or(0),
         ));
-        let evidence_dir = dir
-            .join(".agileplus")
-            .join("evidence")
-            .join("42");
+        let evidence_dir = dir.join(".agileplus").join("evidence").join("42");
         std::fs::create_dir_all(&evidence_dir).unwrap();
 
         let bundle = serde_json::json!({
@@ -502,10 +499,7 @@ mod tests {
             std::process::id(),
             chrono::Utc::now().timestamp_nanos_opt().unwrap_or(0),
         ));
-        let evidence_dir = dir
-            .join(".agileplus")
-            .join("evidence")
-            .join("99");
+        let evidence_dir = dir.join(".agileplus").join("evidence").join("99");
         std::fs::create_dir_all(&evidence_dir).unwrap();
 
         let bundle = serde_json::json!({
@@ -544,10 +538,7 @@ mod tests {
             std::process::id(),
             chrono::Utc::now().timestamp_nanos_opt().unwrap_or(0),
         ));
-        let evidence_dir = dir
-            .join(".agileplus")
-            .join("evidence")
-            .join("1");
+        let evidence_dir = dir.join(".agileplus").join("evidence").join("1");
         std::fs::create_dir_all(&evidence_dir).unwrap();
         std::fs::write(
             evidence_dir.join("bundle.json"),

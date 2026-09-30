@@ -186,7 +186,8 @@ fn request(
     let mut stream = TcpStream::connect(("127.0.0.1", port))?;
     stream.set_read_timeout(Some(Duration::from_secs(10)))?;
 
-    let mut raw = format!("{method} {path} HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\nConnection: close\r\n");
+    let mut raw =
+        format!("{method} {path} HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\nConnection: close\r\n");
     if let Some(body) = body {
         raw.push_str(&format!(
             "Content-Type: application/json\r\nContent-Length: {}\r\n",
@@ -292,7 +293,8 @@ fn await_ready(port: u16, child: &mut Child) -> HttpResponse {
 
 /// Full happy path: bind, serve, authenticate, persist, and read back.
 #[tokio::test]
-async fn a_configured_binary_serves_authenticated_traffic_over_the_database_url_api_host_and_port() {
+async fn a_configured_binary_serves_authenticated_traffic_over_the_database_url_api_host_and_port()
+{
     let sandbox = Sandbox::new("happy-path");
     let port = free_port();
     let mut child = sandbox.spawn("API_HOST", port);
@@ -314,7 +316,10 @@ async fn a_configured_binary_serves_authenticated_traffic_over_the_database_url_
     // ── /health ──────────────────────────────────────────────────────────────
     assert_eq!(health.status, 200);
     assert!(
-        health.header("content-type").unwrap_or_default().contains("application/json"),
+        health
+            .header("content-type")
+            .unwrap_or_default()
+            .contains("application/json"),
         "health must be JSON, got: {:?}",
         health.header("content-type")
     );
@@ -331,7 +336,8 @@ async fn a_configured_binary_serves_authenticated_traffic_over_the_database_url_
     assert_eq!(info["version"], env!("CARGO_PKG_VERSION"));
 
     // ── /detailed-health ─────────────────────────────────────────────────────
-    let detailed = request(port, "GET", "/detailed-health", &[], None).expect("GET /detailed-health");
+    let detailed =
+        request(port, "GET", "/detailed-health", &[], None).expect("GET /detailed-health");
     assert_eq!(detailed.status, 200);
     let detailed = detailed.json();
     assert_eq!(
@@ -404,7 +410,9 @@ async fn a_configured_binary_serves_authenticated_traffic_over_the_database_url_
     assert_eq!(created["name"], "Lifecycle Feature");
     assert_eq!(created["state"], "created");
     assert_eq!(created["target_branch"], "main");
-    let id = created["id"].as_i64().expect("the created feature has an id");
+    let id = created["id"]
+        .as_i64()
+        .expect("the created feature has an id");
     assert!(id > 0, "the database assigned an id, got {id}");
 
     let by_slug = request(

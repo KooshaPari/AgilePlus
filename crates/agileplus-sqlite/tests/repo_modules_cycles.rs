@@ -7,8 +7,8 @@ use agileplus_domain::domain::{
     state_machine::FeatureState,
 };
 use agileplus_sqlite::{
-    repository::{cycles, features, modules},
     SqliteStorageAdapter,
+    repository::{cycles, features, modules},
 };
 use rusqlite::Connection;
 
@@ -84,7 +84,11 @@ fn module_get_by_slug_roundtrips() {
         .unwrap()
         .unwrap();
     assert_eq!(got.friendly_name, "OAuth Providers");
-    assert!(modules::get_module_by_slug(&conn, "nope").unwrap().is_none());
+    assert!(
+        modules::get_module_by_slug(&conn, "nope")
+            .unwrap()
+            .is_none()
+    );
 }
 
 #[test]
@@ -112,7 +116,11 @@ fn module_child_parent_relationship() {
     let children = modules::list_child_modules(&conn, root).unwrap();
     assert_eq!(children.len(), 1);
     assert_eq!(children[0].id, child);
-    assert!(modules::list_child_modules(&conn, child).unwrap().is_empty());
+    assert!(
+        modules::list_child_modules(&conn, child)
+            .unwrap()
+            .is_empty()
+    );
 }
 
 #[test]
@@ -254,7 +262,9 @@ fn module_with_features_reports_owned() {
     )
     .unwrap();
 
-    let mwf = modules::get_module_with_features(&conn, id).unwrap().unwrap();
+    let mwf = modules::get_module_with_features(&conn, id)
+        .unwrap()
+        .unwrap();
     assert_eq!(mwf.module.id, id);
     assert_eq!(mwf.owned_features.len(), 1);
     assert_eq!(mwf.owned_features[0].slug, "f-owned");
@@ -269,7 +279,9 @@ fn module_with_features_reports_tagged() {
     let feature_id = seed_feature(&conn, "f-tagged");
     modules::tag_feature_to_module(&conn, &ModuleFeatureTag::new(id, feature_id)).unwrap();
 
-    let mwf = modules::get_module_with_features(&conn, id).unwrap().unwrap();
+    let mwf = modules::get_module_with_features(&conn, id)
+        .unwrap()
+        .unwrap();
     assert!(mwf.owned_features.is_empty());
     assert_eq!(mwf.tagged_features.len(), 1);
     assert_eq!(mwf.tagged_features[0].slug, "f-tagged");
@@ -281,7 +293,9 @@ fn module_with_features_reports_children() {
     let conn = a.conn_for_bench().unwrap();
     let root = modules::create_module(&conn, &module("Root", None)).unwrap();
     modules::create_module(&conn, &module("Child", Some(root))).unwrap();
-    let mwf = modules::get_module_with_features(&conn, root).unwrap().unwrap();
+    let mwf = modules::get_module_with_features(&conn, root)
+        .unwrap()
+        .unwrap();
     assert_eq!(mwf.child_modules.len(), 1);
 }
 
@@ -289,7 +303,11 @@ fn module_with_features_reports_children() {
 fn module_with_features_missing_is_none() {
     let a = adapter();
     let conn = a.conn_for_bench().unwrap();
-    assert!(modules::get_module_with_features(&conn, 5).unwrap().is_none());
+    assert!(
+        modules::get_module_with_features(&conn, 5)
+            .unwrap()
+            .is_none()
+    );
 }
 
 #[test]
@@ -368,7 +386,10 @@ fn cycle_update_state_persists() {
     let conn = a.conn_for_bench().unwrap();
     let id = cycles::create_cycle(&conn, &cycle("S", None)).unwrap();
     cycles::update_cycle_state(&conn, id, CycleState::Active).unwrap();
-    assert_eq!(cycles::get_cycle(&conn, id).unwrap().unwrap().state, CycleState::Active);
+    assert_eq!(
+        cycles::get_cycle(&conn, id).unwrap().unwrap().state,
+        CycleState::Active
+    );
 }
 
 #[test]
@@ -397,7 +418,11 @@ fn cycle_list_by_state_and_all() {
     let active = cycles::list_cycles_by_state(&conn, CycleState::Active).unwrap();
     assert_eq!(active.len(), 1);
     assert_eq!(active[0].id, c2);
-    assert!(cycles::list_cycles_by_state(&conn, CycleState::Shipped).unwrap().is_empty());
+    assert!(
+        cycles::list_cycles_by_state(&conn, CycleState::Shipped)
+            .unwrap()
+            .is_empty()
+    );
 }
 
 #[test]
@@ -411,7 +436,11 @@ fn cycle_list_by_module_scope() {
     let scoped = cycles::list_cycles_by_module(&conn, mid).unwrap();
     assert_eq!(scoped.len(), 1);
     assert_eq!(scoped[0].name, "Scoped");
-    assert!(cycles::list_cycles_by_module(&conn, 1234).unwrap().is_empty());
+    assert!(
+        cycles::list_cycles_by_module(&conn, 1234)
+            .unwrap()
+            .is_empty()
+    );
 }
 
 #[test]
@@ -422,12 +451,16 @@ fn cycle_add_and_remove_feature() {
     let fid = seed_feature(&conn, "in-cycle");
 
     cycles::add_feature_to_cycle(&conn, &CycleFeature::new(cid, fid)).unwrap();
-    let cwf = cycles::get_cycle_with_features(&conn, cid).unwrap().unwrap();
+    let cwf = cycles::get_cycle_with_features(&conn, cid)
+        .unwrap()
+        .unwrap();
     assert_eq!(cwf.features.len(), 1);
     assert_eq!(cwf.features[0].slug, "in-cycle");
 
     cycles::remove_feature_from_cycle(&conn, cid, fid).unwrap();
-    let cwf = cycles::get_cycle_with_features(&conn, cid).unwrap().unwrap();
+    let cwf = cycles::get_cycle_with_features(&conn, cid)
+        .unwrap()
+        .unwrap();
     assert!(cwf.features.is_empty());
 }
 
@@ -440,7 +473,11 @@ fn cycle_add_feature_is_idempotent() {
     cycles::add_feature_to_cycle(&conn, &CycleFeature::new(cid, fid)).unwrap();
     cycles::add_feature_to_cycle(&conn, &CycleFeature::new(cid, fid)).unwrap();
     assert_eq!(
-        cycles::get_cycle_with_features(&conn, cid).unwrap().unwrap().features.len(),
+        cycles::get_cycle_with_features(&conn, cid)
+            .unwrap()
+            .unwrap()
+            .features
+            .len(),
         1
     );
 }
@@ -483,7 +520,11 @@ fn cycle_scope_accepts_tagged_feature() {
 
     cycles::add_feature_to_cycle(&conn, &CycleFeature::new(cid, fid)).unwrap();
     assert_eq!(
-        cycles::get_cycle_with_features(&conn, cid).unwrap().unwrap().features.len(),
+        cycles::get_cycle_with_features(&conn, cid)
+            .unwrap()
+            .unwrap()
+            .features
+            .len(),
         1
     );
 }
@@ -503,7 +544,11 @@ fn cycle_scope_accepts_owned_feature() {
 
     cycles::add_feature_to_cycle(&conn, &CycleFeature::new(cid, fid)).unwrap();
     assert_eq!(
-        cycles::get_cycle_with_features(&conn, cid).unwrap().unwrap().features.len(),
+        cycles::get_cycle_with_features(&conn, cid)
+            .unwrap()
+            .unwrap()
+            .features
+            .len(),
         1
     );
 }
@@ -512,7 +557,11 @@ fn cycle_scope_accepts_owned_feature() {
 fn cycle_with_features_missing_is_none() {
     let a = adapter();
     let conn = a.conn_for_bench().unwrap();
-    assert!(cycles::get_cycle_with_features(&conn, 42).unwrap().is_none());
+    assert!(
+        cycles::get_cycle_with_features(&conn, 42)
+            .unwrap()
+            .is_none()
+    );
 }
 
 #[test]
@@ -537,7 +586,9 @@ fn cycle_wp_progress_counts_states() {
     )
     .unwrap();
 
-    let cwf = cycles::get_cycle_with_features(&conn, cid).unwrap().unwrap();
+    let cwf = cycles::get_cycle_with_features(&conn, cid)
+        .unwrap()
+        .unwrap();
     assert_eq!(cwf.wp_progress.total, 2);
     assert_eq!(cwf.wp_progress.planned, 1);
     assert_eq!(cwf.wp_progress.done, 1);
@@ -555,5 +606,8 @@ fn cycle_remove_nonexistent_feature_is_ok() {
 fn cycle_create_rejects_inverted_dates_at_domain_level() {
     // Domain guard: end_date must be after start_date.
     let err = Cycle::new("Bad", date(2026, 2, 1), date(2026, 1, 1), None).unwrap_err();
-    assert!(matches!(err, agileplus_domain::error::DomainError::Other(_)));
+    assert!(matches!(
+        err,
+        agileplus_domain::error::DomainError::Other(_)
+    ));
 }

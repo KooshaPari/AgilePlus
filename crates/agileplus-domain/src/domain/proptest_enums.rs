@@ -131,8 +131,14 @@ mod coverage_tests {
     #[test]
     fn backlog_sort_parsing_and_default() {
         assert_eq!(BacklogSort::from_str("age").unwrap(), BacklogSort::Age);
-        assert_eq!(BacklogSort::from_str("Priority").unwrap(), BacklogSort::Priority);
-        assert_eq!(BacklogSort::from_str("IMPACT").unwrap(), BacklogSort::Impact);
+        assert_eq!(
+            BacklogSort::from_str("Priority").unwrap(),
+            BacklogSort::Priority
+        );
+        assert_eq!(
+            BacklogSort::from_str("IMPACT").unwrap(),
+            BacklogSort::Impact
+        );
         assert!(BacklogSort::from_str("bogus").is_err());
         assert_eq!(BacklogSort::default(), BacklogSort::Age);
     }
@@ -142,7 +148,10 @@ mod coverage_tests {
         // StoryStatus uses exact matching (no to_lowercase).
         assert!(StoryStatus::from_str("todo").is_ok());
         assert!(StoryStatus::from_str("TODO").is_err());
-        assert_eq!(StoryStatus::from_str("in_progress").unwrap(), StoryStatus::InProgress);
+        assert_eq!(
+            StoryStatus::from_str("in_progress").unwrap(),
+            StoryStatus::InProgress
+        );
     }
 
     #[test]
@@ -153,7 +162,14 @@ mod coverage_tests {
 
     #[test]
     fn all_enum_displays_round_trip_via_from_str() {
-        for s in ["todo", "in_progress", "review", "done", "blocked", "cancelled"] {
+        for s in [
+            "todo",
+            "in_progress",
+            "review",
+            "done",
+            "blocked",
+            "cancelled",
+        ] {
             let st = StoryStatus::from_str(s).unwrap();
             assert_eq!(st.to_string(), s);
         }

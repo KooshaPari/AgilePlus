@@ -423,7 +423,13 @@ mod tests {
 
     #[test]
     fn builtin_policy_all_known_refs_exist() {
-        let refs = ["tests-pass", "ci-green", "review-approved", "security-scan", "lint-pass"];
+        let refs = [
+            "tests-pass",
+            "ci-green",
+            "review-approved",
+            "security-scan",
+            "lint-pass",
+        ];
         for r in refs {
             assert!(BuiltinPolicy::from_ref(r).is_some(), "missing ref: {r}");
         }

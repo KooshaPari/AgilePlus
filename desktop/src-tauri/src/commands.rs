@@ -60,7 +60,9 @@ pub struct DashboardStats {
 #[tauri::command]
 pub fn list_features(state: State<'_, AppState>) -> Result<Vec<Feature>, String> {
     let conn = state.db_connection()?;
-    let conn = conn.as_ref().ok_or("Database not initialized. Open a project first.")?;
+    let conn = conn
+        .as_ref()
+        .ok_or("Database not initialized. Open a project first.")?;
 
     let mut stmt = conn
         .prepare(
@@ -123,8 +125,8 @@ pub fn get_feature_with_details(
     state: State<'_, AppState>,
     id: i64,
 ) -> Result<Option<FeatureWithDetails>, String> {
-    let feature = get_feature(state.clone(), id)?
-        .ok_or_else(|| format!("Feature '{id}' not found"))?;
+    let feature =
+        get_feature(state.clone(), id)?.ok_or_else(|| format!("Feature '{id}' not found"))?;
 
     let conn = state.db_connection()?;
     let conn = conn.as_ref().ok_or("Database not initialized")?;
@@ -262,9 +264,7 @@ pub fn open_project(state: State<'_, AppState>, path: String) -> Result<Feature,
 
     // Store in state
     {
-        let mut db_guard = state
-            .db_connection()
-            .map_err(|e| e.to_string())?;
+        let mut db_guard = state.db_connection().map_err(|e| e.to_string())?;
         *db_guard = Some(conn);
     }
     state.set_repo_path(path);

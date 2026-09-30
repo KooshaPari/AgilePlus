@@ -138,7 +138,16 @@ fn features_table_has_expected_columns() {
         .collect::<Result<Vec<_>, _>>()
         .unwrap();
 
-    let expected = ["id", "slug", "friendly_name", "state", "spec_hash", "target_branch", "created_at", "updated_at"];
+    let expected = [
+        "id",
+        "slug",
+        "friendly_name",
+        "state",
+        "spec_hash",
+        "target_branch",
+        "created_at",
+        "updated_at",
+    ];
     for col in &expected {
         assert!(
             columns.iter().any(|c| c == col),
@@ -160,7 +169,14 @@ fn work_packages_table_has_expected_columns() {
         .collect::<Result<Vec<_>, _>>()
         .unwrap();
 
-    let expected = ["id", "feature_id", "title", "state", "sequence", "file_scope"];
+    let expected = [
+        "id",
+        "feature_id",
+        "title",
+        "state",
+        "sequence",
+        "file_scope",
+    ];
     for col in &expected {
         assert!(
             columns.iter().any(|c| c == col),

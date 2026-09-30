@@ -96,7 +96,10 @@ async fn create_work_item_posts_to_root_and_sends_api_key() {
         .mount(&server)
         .await;
 
-    let resp = client(&server).create_work_item(&work_item("Feature")).await.unwrap();
+    let resp = client(&server)
+        .create_work_item(&work_item("Feature"))
+        .await
+        .unwrap();
     assert_eq!(resp.id, "wi-1");
     assert_eq!(resp.name, "Feature");
 }
@@ -126,7 +129,12 @@ async fn create_work_item_bad_json_body_is_error() {
         .mount(&server)
         .await;
 
-    assert!(client(&server).create_work_item(&work_item("x")).await.is_err());
+    assert!(
+        client(&server)
+            .create_work_item(&work_item("x"))
+            .await
+            .is_err()
+    );
 }
 
 #[tokio::test]
@@ -154,7 +162,12 @@ async fn update_work_item_error_propagates() {
         .mount(&server)
         .await;
 
-    assert!(client(&server).update_work_item("wi-9", &work_item("x")).await.is_err());
+    assert!(
+        client(&server)
+            .update_work_item("wi-9", &work_item("x"))
+            .await
+            .is_err()
+    );
 }
 
 #[tokio::test]
@@ -264,7 +277,12 @@ async fn create_sub_issue_error_propagates() {
         .mount(&server)
         .await;
 
-    assert!(client(&server).create_sub_issue("p", "c", None).await.is_err());
+    assert!(
+        client(&server)
+            .create_sub_issue("p", "c", None)
+            .await
+            .is_err()
+    );
 }
 
 #[tokio::test]
@@ -277,7 +295,10 @@ async fn issue_aliases_delegate_to_work_item_methods() {
         .await;
     Mock::given(method("GET"))
         .and(path("/api/v1/workspaces/ws/projects/proj/work-items/"))
-        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!([item_json("i-1", "Issue")])))
+        .respond_with(
+            ResponseTemplate::new(200)
+                .set_body_json(serde_json::json!([item_json("i-1", "Issue")])),
+        )
         .mount(&server)
         .await;
 
@@ -308,7 +329,10 @@ async fn update_issue_alias_works() {
         .await;
 
     let issue: PlaneIssue = work_item("X2");
-    assert_eq!(client(&server).update_issue("x", &issue).await.unwrap().id, "x");
+    assert_eq!(
+        client(&server).update_issue("x", &issue).await.unwrap().id,
+        "x"
+    );
 }
 
 // ============================================================
@@ -359,7 +383,12 @@ async fn update_module_patches_module_url() {
         .mount(&server)
         .await;
 
-    assert!(client(&server).update_module("m-1", &module_req()).await.is_ok());
+    assert!(
+        client(&server)
+            .update_module("m-1", &module_req())
+            .await
+            .is_ok()
+    );
 }
 
 #[tokio::test]
@@ -371,7 +400,12 @@ async fn update_module_error_propagates() {
         .mount(&server)
         .await;
 
-    assert!(client(&server).update_module("m-1", &module_req()).await.is_err());
+    assert!(
+        client(&server)
+            .update_module("m-1", &module_req())
+            .await
+            .is_err()
+    );
 }
 
 #[tokio::test]
@@ -402,48 +436,76 @@ async fn delete_module_error_propagates() {
 async fn add_work_item_to_module_posts_module_issues() {
     let server = MockServer::start().await;
     Mock::given(method("POST"))
-        .and(path("/api/v1/workspaces/ws/projects/proj/modules/m-1/module-issues/"))
+        .and(path(
+            "/api/v1/workspaces/ws/projects/proj/modules/m-1/module-issues/",
+        ))
         .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({})))
         .mount(&server)
         .await;
 
-    assert!(client(&server).add_work_item_to_module("m-1", "wi-1").await.is_ok());
+    assert!(
+        client(&server)
+            .add_work_item_to_module("m-1", "wi-1")
+            .await
+            .is_ok()
+    );
 }
 
 #[tokio::test]
 async fn add_work_item_to_module_error_propagates() {
     let server = MockServer::start().await;
     Mock::given(method("POST"))
-        .and(path("/api/v1/workspaces/ws/projects/proj/modules/m-1/module-issues/"))
+        .and(path(
+            "/api/v1/workspaces/ws/projects/proj/modules/m-1/module-issues/",
+        ))
         .respond_with(ResponseTemplate::new(400).set_body_string("bad"))
         .mount(&server)
         .await;
 
-    assert!(client(&server).add_work_item_to_module("m-1", "wi-1").await.is_err());
+    assert!(
+        client(&server)
+            .add_work_item_to_module("m-1", "wi-1")
+            .await
+            .is_err()
+    );
 }
 
 #[tokio::test]
 async fn delete_work_item_from_module_sends_delete() {
     let server = MockServer::start().await;
     Mock::given(method("DELETE"))
-        .and(path("/api/v1/workspaces/ws/projects/proj/modules/m-1/module-issues/wi-1/"))
+        .and(path(
+            "/api/v1/workspaces/ws/projects/proj/modules/m-1/module-issues/wi-1/",
+        ))
         .respond_with(ResponseTemplate::new(204))
         .mount(&server)
         .await;
 
-    assert!(client(&server).delete_work_item_from_module("m-1", "wi-1").await.is_ok());
+    assert!(
+        client(&server)
+            .delete_work_item_from_module("m-1", "wi-1")
+            .await
+            .is_ok()
+    );
 }
 
 #[tokio::test]
 async fn delete_work_item_from_module_error_propagates() {
     let server = MockServer::start().await;
     Mock::given(method("DELETE"))
-        .and(path("/api/v1/workspaces/ws/projects/proj/modules/m-1/module-issues/wi-1/"))
+        .and(path(
+            "/api/v1/workspaces/ws/projects/proj/modules/m-1/module-issues/wi-1/",
+        ))
         .respond_with(ResponseTemplate::new(404).set_body_string("gone"))
         .mount(&server)
         .await;
 
-    assert!(client(&server).delete_work_item_from_module("m-1", "wi-1").await.is_err());
+    assert!(
+        client(&server)
+            .delete_work_item_from_module("m-1", "wi-1")
+            .await
+            .is_err()
+    );
 }
 
 // ============================================================
@@ -497,7 +559,12 @@ async fn update_cycle_patches_cycle_url() {
         .mount(&server)
         .await;
 
-    assert!(client(&server).update_cycle("c-1", &cycle_req()).await.is_ok());
+    assert!(
+        client(&server)
+            .update_cycle("c-1", &cycle_req())
+            .await
+            .is_ok()
+    );
 }
 
 #[tokio::test]
@@ -509,7 +576,12 @@ async fn update_cycle_error_propagates() {
         .mount(&server)
         .await;
 
-    assert!(client(&server).update_cycle("c-1", &cycle_req()).await.is_err());
+    assert!(
+        client(&server)
+            .update_cycle("c-1", &cycle_req())
+            .await
+            .is_err()
+    );
 }
 
 #[tokio::test]
@@ -540,48 +612,76 @@ async fn delete_cycle_error_propagates() {
 async fn add_work_item_to_cycle_posts_cycle_issues() {
     let server = MockServer::start().await;
     Mock::given(method("POST"))
-        .and(path("/api/v1/workspaces/ws/projects/proj/cycles/c-1/cycle-issues/"))
+        .and(path(
+            "/api/v1/workspaces/ws/projects/proj/cycles/c-1/cycle-issues/",
+        ))
         .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({})))
         .mount(&server)
         .await;
 
-    assert!(client(&server).add_work_item_to_cycle("c-1", "wi-1").await.is_ok());
+    assert!(
+        client(&server)
+            .add_work_item_to_cycle("c-1", "wi-1")
+            .await
+            .is_ok()
+    );
 }
 
 #[tokio::test]
 async fn add_work_item_to_cycle_error_propagates() {
     let server = MockServer::start().await;
     Mock::given(method("POST"))
-        .and(path("/api/v1/workspaces/ws/projects/proj/cycles/c-1/cycle-issues/"))
+        .and(path(
+            "/api/v1/workspaces/ws/projects/proj/cycles/c-1/cycle-issues/",
+        ))
         .respond_with(ResponseTemplate::new(409).set_body_string("conflict"))
         .mount(&server)
         .await;
 
-    assert!(client(&server).add_work_item_to_cycle("c-1", "wi-1").await.is_err());
+    assert!(
+        client(&server)
+            .add_work_item_to_cycle("c-1", "wi-1")
+            .await
+            .is_err()
+    );
 }
 
 #[tokio::test]
 async fn delete_work_item_from_cycle_sends_delete() {
     let server = MockServer::start().await;
     Mock::given(method("DELETE"))
-        .and(path("/api/v1/workspaces/ws/projects/proj/cycles/c-1/cycle-issues/wi-1/"))
+        .and(path(
+            "/api/v1/workspaces/ws/projects/proj/cycles/c-1/cycle-issues/wi-1/",
+        ))
         .respond_with(ResponseTemplate::new(204))
         .mount(&server)
         .await;
 
-    assert!(client(&server).delete_work_item_from_cycle("c-1", "wi-1").await.is_ok());
+    assert!(
+        client(&server)
+            .delete_work_item_from_cycle("c-1", "wi-1")
+            .await
+            .is_ok()
+    );
 }
 
 #[tokio::test]
 async fn delete_work_item_from_cycle_error_propagates() {
     let server = MockServer::start().await;
     Mock::given(method("DELETE"))
-        .and(path("/api/v1/workspaces/ws/projects/proj/cycles/c-1/cycle-issues/wi-1/"))
+        .and(path(
+            "/api/v1/workspaces/ws/projects/proj/cycles/c-1/cycle-issues/wi-1/",
+        ))
         .respond_with(ResponseTemplate::new(404).set_body_string("gone"))
         .mount(&server)
         .await;
 
-    assert!(client(&server).delete_work_item_from_cycle("c-1", "wi-1").await.is_err());
+    assert!(
+        client(&server)
+            .delete_work_item_from_cycle("c-1", "wi-1")
+            .await
+            .is_err()
+    );
 }
 
 // ============================================================
@@ -597,7 +697,10 @@ async fn get_raw_returns_body_text() {
         .mount(&server)
         .await;
 
-    let body = client(&server).get_raw(&format!("{}/anything", server.uri())).await.unwrap();
+    let body = client(&server)
+        .get_raw(&format!("{}/anything", server.uri()))
+        .await
+        .unwrap();
     assert_eq!(body, "hello");
 }
 
@@ -610,7 +713,10 @@ async fn get_raw_error_propagates() {
         .mount(&server)
         .await;
 
-    let err = client(&server).get_raw(&format!("{}/anything", server.uri())).await.unwrap_err();
+    let err = client(&server)
+        .get_raw(&format!("{}/anything", server.uri()))
+        .await
+        .unwrap_err();
     assert!(err.to_string().contains("503"));
 }
 
@@ -639,15 +745,22 @@ async fn post_raw_error_propagates() {
         .mount(&server)
         .await;
 
-    assert!(client(&server)
-        .post_raw(&format!("{}/anything", server.uri()), "{}")
-        .await
-        .is_err());
+    assert!(
+        client(&server)
+            .post_raw(&format!("{}/anything", server.uri()), "{}")
+            .await
+            .is_err()
+    );
 }
 
 #[test]
 fn labels_url_builds_expected_path() {
-    let c = PlaneClient::new("https://api.plane.so".into(), "k".into(), "ws".into(), "p".into());
+    let c = PlaneClient::new(
+        "https://api.plane.so".into(),
+        "k".into(),
+        "ws".into(),
+        "p".into(),
+    );
     assert_eq!(
         c.labels_url(),
         "https://api.plane.so/api/v1/workspaces/ws/projects/p/labels/"
@@ -666,7 +779,10 @@ async fn fetch_remote_labels_parses_bare_list() {
         .mount(&server)
         .await;
 
-    let labels = LabelSync::new(client(&server)).fetch_remote_labels().await.unwrap();
+    let labels = LabelSync::new(client(&server))
+        .fetch_remote_labels()
+        .await
+        .unwrap();
     assert_eq!(labels.len(), 2);
     assert_eq!(labels[1].name, "feature");
 }
@@ -682,7 +798,10 @@ async fn fetch_remote_labels_parses_wrapped_results() {
         .mount(&server)
         .await;
 
-    let labels = LabelSync::new(client(&server)).fetch_remote_labels().await.unwrap();
+    let labels = LabelSync::new(client(&server))
+        .fetch_remote_labels()
+        .await
+        .unwrap();
     assert_eq!(labels.len(), 1);
 }
 
@@ -695,7 +814,12 @@ async fn fetch_remote_labels_error_propagates() {
         .mount(&server)
         .await;
 
-    assert!(LabelSync::new(client(&server)).fetch_remote_labels().await.is_err());
+    assert!(
+        LabelSync::new(client(&server))
+            .fetch_remote_labels()
+            .await
+            .is_err()
+    );
 }
 
 #[tokio::test]
@@ -725,10 +849,12 @@ async fn create_remote_label_error_propagates() {
         .mount(&server)
         .await;
 
-    assert!(LabelSync::new(client(&server))
-        .create_remote_label("x", None)
-        .await
-        .is_err());
+    assert!(
+        LabelSync::new(client(&server))
+            .create_remote_label("x", None)
+            .await
+            .is_err()
+    );
 }
 
 #[tokio::test]
@@ -792,7 +918,10 @@ async fn client_sync_labels_delegates_to_label_sync() {
         .mount(&server)
         .await;
 
-    let map = client(&server).sync_labels(&["fresh".into()]).await.unwrap();
+    let map = client(&server)
+        .sync_labels(&["fresh".into()])
+        .await
+        .unwrap();
     assert_eq!(map.get("fresh").map(String::as_str), Some("n1"));
 }
 
@@ -833,7 +962,8 @@ async fn list_work_items_rejects_body_that_is_neither_array_nor_envelope() {
 
     let err = client(&server).list_work_items().await.unwrap_err();
     assert!(
-        err.to_string().contains("parsing Plane.so paginated response"),
+        err.to_string()
+            .contains("parsing Plane.so paginated response"),
         "unexpected error: {err}"
     );
 }

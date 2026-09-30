@@ -245,7 +245,11 @@ mod coverage_tests {
 
     #[test]
     fn render_markdown_empty_report_is_empty() {
-        let report = ScoreReport { repo: "r".into(), date: "d".into(), clusters: vec![] };
+        let report = ScoreReport {
+            repo: "r".into(),
+            date: "d".into(),
+            clusters: vec![],
+        };
         assert!(render_markdown(&report).is_empty());
     }
 

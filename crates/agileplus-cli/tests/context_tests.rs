@@ -11,7 +11,10 @@ use std::time::Duration;
 
 #[test]
 fn parse_json_case_insensitive() {
-    assert!(matches!(OutputFormat::parse("json"), Ok(OutputFormat::Json)));
+    assert!(matches!(
+        OutputFormat::parse("json"),
+        Ok(OutputFormat::Json)
+    ));
     assert!(matches!(
         OutputFormat::parse("JSON"),
         Ok(OutputFormat::Json)

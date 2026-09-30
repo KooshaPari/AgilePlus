@@ -47,10 +47,7 @@ fn storage_error_has_source() {
     let src: Box<dyn Error + Send + Sync> = "inner".to_string().into();
     let err = AppError::Storage(src);
     assert!(err.source().is_some());
-    assert_eq!(
-        err.source().unwrap().to_string(),
-        "inner"
-    );
+    assert_eq!(err.source().unwrap().to_string(), "inner");
 }
 
 #[test]
@@ -170,9 +167,7 @@ fn storage_error_chain_preserves_inner() {
 
 #[test]
 fn domain_validation_preserves_message() {
-    let err = AppError::Domain(DomainError::Validation(
-        "title must be non-empty".into(),
-    ));
+    let err = AppError::Domain(DomainError::Validation("title must be non-empty".into()));
     let msg = err.to_string();
     assert!(msg.contains("title must be non-empty"));
 }

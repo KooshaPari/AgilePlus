@@ -156,9 +156,11 @@ fn stub_work_package_status_and_wrappers() {
         wp_sequence: 2,
     };
     assert_eq!(get_req.wp_sequence, 2);
-    assert!(GetWorkPackageStatusResponse::default()
-        .work_package_status
-        .is_none());
+    assert!(
+        GetWorkPackageStatusResponse::default()
+            .work_package_status
+            .is_none()
+    );
 }
 
 #[test]
@@ -246,9 +248,7 @@ fn stub_dispatch_command_types() {
     };
     assert_eq!(cmd.args.len(), 1);
 
-    let req = DispatchCommandRequest {
-        command: Some(cmd),
-    };
+    let req = DispatchCommandRequest { command: Some(cmd) };
     assert_eq!(req.command.as_ref().unwrap().command, "specify");
 
     let resp = DispatchCommandResponse {
@@ -297,9 +297,7 @@ fn stub_backlog_types() {
     );
     assert!(ImportBacklogResponse::default().items.is_empty());
 
-    let get_req = GetBacklogItemRequest {
-        backlog_item_id: 5,
-    };
+    let get_req = GetBacklogItemRequest { backlog_item_id: 5 };
     assert_eq!(get_req.backlog_item_id, 5);
     assert!(GetBacklogItemResponse::default().item.is_none());
 
@@ -381,7 +379,14 @@ fn stub_work_item_types() {
         updated_at: "u".to_string(),
     };
     assert_eq!(story.points, 5);
-    assert_eq!(ListStoriesResponse { stories: vec![story] }.stories.len(), 1);
+    assert_eq!(
+        ListStoriesResponse {
+            stories: vec![story]
+        }
+        .stories
+        .len(),
+        1
+    );
 
     let sync = SyncRepositoryRequest {
         repo: "acme/backend".to_string(),

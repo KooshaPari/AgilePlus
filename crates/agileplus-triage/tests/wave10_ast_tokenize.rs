@@ -11,7 +11,7 @@
 //! - Rust and Python tokenizers produce structurally distinct output
 //!   for the same input (so downstream dedup can tell them apart)
 
-use agileplus_triage::ast_tokenize::{for_language, AstTokenizer, PythonTokenizer, RustTokenizer};
+use agileplus_triage::ast_tokenize::{AstTokenizer, PythonTokenizer, RustTokenizer, for_language};
 
 // ─── dispatcher ─────────────────────────────────────────────────────────────
 
@@ -35,11 +35,17 @@ fn for_language_is_case_insensitive() {
 
 #[test]
 fn for_language_rejects_unsupported_languages() {
-    for lang in ["", "ruby", "go", "javascript", "typescript", "java", "c", "cpp"] {
-        assert!(
-            for_language(lang).is_none(),
-            "expected None for {lang:?}"
-        );
+    for lang in [
+        "",
+        "ruby",
+        "go",
+        "javascript",
+        "typescript",
+        "java",
+        "c",
+        "cpp",
+    ] {
+        assert!(for_language(lang).is_none(), "expected None for {lang:?}");
     }
 }
 

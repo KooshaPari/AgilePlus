@@ -15,30 +15,15 @@ use agileplus_plane::sync_queue::{
 
 #[test]
 fn backoff_at_attempt_zero() {
-    assert_eq!(
-        SyncQueueItem::next_backoff_delay(0),
-        Duration::from_secs(1)
-    );
+    assert_eq!(SyncQueueItem::next_backoff_delay(0), Duration::from_secs(1));
 }
 
 #[test]
 fn backoff_doubles_each_attempt() {
-    assert_eq!(
-        SyncQueueItem::next_backoff_delay(0),
-        Duration::from_secs(1)
-    );
-    assert_eq!(
-        SyncQueueItem::next_backoff_delay(1),
-        Duration::from_secs(2)
-    );
-    assert_eq!(
-        SyncQueueItem::next_backoff_delay(2),
-        Duration::from_secs(4)
-    );
-    assert_eq!(
-        SyncQueueItem::next_backoff_delay(3),
-        Duration::from_secs(8)
-    );
+    assert_eq!(SyncQueueItem::next_backoff_delay(0), Duration::from_secs(1));
+    assert_eq!(SyncQueueItem::next_backoff_delay(1), Duration::from_secs(2));
+    assert_eq!(SyncQueueItem::next_backoff_delay(2), Duration::from_secs(4));
+    assert_eq!(SyncQueueItem::next_backoff_delay(3), Duration::from_secs(8));
     assert_eq!(
         SyncQueueItem::next_backoff_delay(4),
         Duration::from_secs(16)
@@ -51,18 +36,9 @@ fn backoff_doubles_each_attempt() {
 
 #[test]
 fn backoff_caps_at_max() {
-    assert_eq!(
-        SyncQueueItem::next_backoff_delay(10),
-        MAX_BACKOFF
-    );
-    assert_eq!(
-        SyncQueueItem::next_backoff_delay(100),
-        MAX_BACKOFF
-    );
-    assert_eq!(
-        SyncQueueItem::next_backoff_delay(255),
-        MAX_BACKOFF
-    );
+    assert_eq!(SyncQueueItem::next_backoff_delay(10), MAX_BACKOFF);
+    assert_eq!(SyncQueueItem::next_backoff_delay(100), MAX_BACKOFF);
+    assert_eq!(SyncQueueItem::next_backoff_delay(255), MAX_BACKOFF);
 }
 
 #[test]
@@ -383,7 +359,12 @@ fn requeue_returns_full_error_at_capacity() {
 
 #[test]
 fn sync_task_new_defaults() {
-    let task = SyncTask::new(42, SyncOpKind::CreateIssue, "{}".into(), Some("hash".into()));
+    let task = SyncTask::new(
+        42,
+        SyncOpKind::CreateIssue,
+        "{}".into(),
+        Some("hash".into()),
+    );
     assert_eq!(task.id, 42);
     assert_eq!(task.kind, SyncOpKind::CreateIssue);
     assert_eq!(task.payload, "{}");
@@ -724,10 +705,7 @@ fn max_retries_is_three() {
 
 #[test]
 fn base_backoff_is_one_second() {
-    assert_eq!(
-        SyncQueueItem::next_backoff_delay(0),
-        Duration::from_secs(1)
-    );
+    assert_eq!(SyncQueueItem::next_backoff_delay(0), Duration::from_secs(1));
 }
 
 #[test]

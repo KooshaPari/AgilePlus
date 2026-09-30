@@ -104,7 +104,13 @@ mod coverage_tests {
     #[tokio::test]
     async fn works_as_trait_object() {
         let adapter: Box<dyn TraceabilityPort> = Box::new(NoopTraceAdapter);
-        assert!(adapter.get_traces("x".to_string()).await.unwrap().is_empty());
+        assert!(
+            adapter
+                .get_traces("x".to_string())
+                .await
+                .unwrap()
+                .is_empty()
+        );
         let link = adapter
             .link_trace(
                 "x".to_string(),

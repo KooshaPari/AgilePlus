@@ -85,17 +85,15 @@ mod tests {
 
     #[test]
     fn with_correlation_sets_id() {
-        let env = Envelope::new(&Subject::new("t"), serde_json::json!({}))
-            .with_correlation("corr-999");
+        let env =
+            Envelope::new(&Subject::new("t"), serde_json::json!({})).with_correlation("corr-999");
         assert_eq!(env.correlation_id.as_deref(), Some("corr-999"));
     }
 
     #[test]
     fn correlation_accepts_string_ref() {
         let cid = String::from("cid-123");
-        let env =
-            Envelope::new(&Subject::new("t"), serde_json::json!({}))
-                .with_correlation(&cid);
+        let env = Envelope::new(&Subject::new("t"), serde_json::json!({})).with_correlation(&cid);
         assert_eq!(env.correlation_id.as_deref(), Some("cid-123"));
     }
 
@@ -109,8 +107,7 @@ mod tests {
     #[test]
     fn new_sets_timestamp() {
         let before = Utc::now();
-        let env =
-            Envelope::new(&Subject::new("t"), serde_json::json!({}));
+        let env = Envelope::new(&Subject::new("t"), serde_json::json!({}));
         let after = Utc::now();
         assert!(env.timestamp >= before);
         assert!(env.timestamp <= after);
@@ -118,15 +115,13 @@ mod tests {
 
     #[test]
     fn new_reply_to_is_none_by_default() {
-        let env =
-            Envelope::new(&Subject::new("t"), serde_json::json!({}));
+        let env = Envelope::new(&Subject::new("t"), serde_json::json!({}));
         assert_eq!(env.reply_to, None);
     }
 
     #[test]
     fn new_correlation_id_is_none_by_default() {
-        let env =
-            Envelope::new(&Subject::new("t"), serde_json::json!({}));
+        let env = Envelope::new(&Subject::new("t"), serde_json::json!({}));
         assert_eq!(env.correlation_id, None);
     }
 
@@ -183,10 +178,7 @@ mod tests {
 
     #[test]
     fn envelope_is_clone() {
-        let env = Envelope::new(
-            &Subject::new("clone.test"),
-            serde_json::json!({"k": 1}),
-        );
+        let env = Envelope::new(&Subject::new("clone.test"), serde_json::json!({"k": 1}));
         let env2 = env.clone();
         assert_eq!(env.id, env2.id);
         assert_eq!(env.subject, env2.subject);
@@ -247,8 +239,8 @@ mod tests {
 
     #[test]
     fn roundtrip_preserves_correlation_id() {
-        let env = Envelope::new(&Subject::new("a"), serde_json::json!({}))
-            .with_correlation("corr-42");
+        let env =
+            Envelope::new(&Subject::new("a"), serde_json::json!({})).with_correlation("corr-42");
         let bytes = env.to_bytes().unwrap();
         let back = Envelope::from_bytes(&bytes).unwrap();
         assert_eq!(back.correlation_id.as_deref(), Some("corr-42"));
@@ -256,7 +248,8 @@ mod tests {
 
     #[test]
     fn roundtrip_preserves_payload_exactly() {
-        let payload = serde_json::json!({"nested": {"arr": [1, 2, 3]}, "null": null, "bool": false});
+        let payload =
+            serde_json::json!({"nested": {"arr": [1, 2, 3]}, "null": null, "bool": false});
         let env = Envelope::new(&Subject::new("t"), payload.clone());
         let bytes = env.to_bytes().unwrap();
         let back = Envelope::from_bytes(&bytes).unwrap();
@@ -288,8 +281,8 @@ mod tests {
 
     #[test]
     fn clone_is_deep() {
-        let env = Envelope::new(&Subject::new("t"), serde_json::json!({"v": 1}))
-            .with_correlation("c");
+        let env =
+            Envelope::new(&Subject::new("t"), serde_json::json!({"v": 1})).with_correlation("c");
         let copy = env.clone();
         assert_eq!(env.id, copy.id);
         assert_eq!(env.subject, copy.subject);
@@ -466,11 +459,22 @@ mod tests {
         let env = Envelope::new(&Subject::new("a.b.c"), serde_json::json!({}))
             .with_reply_to(&Subject::new("inbox"))
             .with_correlation("cid");
-        let value: serde_json::Value =
-            serde_json::from_slice(&env.to_bytes().unwrap()).unwrap();
-        let obj = value.as_object().expect("envelope must serialize to a JSON object");
-        for key in ["id", "subject", "payload", "timestamp", "reply_to", "correlation_id"] {
-            assert!(obj.contains_key(key), "serialized envelope must contain `{key}`");
+        let value: serde_json::Value = serde_json::from_slice(&env.to_bytes().unwrap()).unwrap();
+        let obj = value
+            .as_object()
+            .expect("envelope must serialize to a JSON object");
+        for key in [
+            "id",
+            "subject",
+            "payload",
+            "timestamp",
+            "reply_to",
+            "correlation_id",
+        ] {
+            assert!(
+                obj.contains_key(key),
+                "serialized envelope must contain `{key}`"
+            );
         }
         assert_eq!(obj["subject"], "a.b.c");
         assert_eq!(obj["correlation_id"], "cid");
@@ -506,7 +510,10 @@ mod tests {
         let items: Vec<i32> = (0..100_000).collect();
         let env = Envelope::new(&Subject::new("big"), serde_json::json!({ "items": items }));
         let back = Envelope::from_bytes(&env.to_bytes().unwrap()).unwrap();
-        assert_eq!(back.payload["items"].as_array().map(Vec::len), Some(100_000));
+        assert_eq!(
+            back.payload["items"].as_array().map(Vec::len),
+            Some(100_000)
+        );
         assert_eq!(back.payload["items"][0], 0);
         assert_eq!(back.payload["items"][99_999], 99_999);
     }

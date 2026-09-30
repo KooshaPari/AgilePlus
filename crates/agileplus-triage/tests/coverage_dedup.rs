@@ -5,8 +5,8 @@
 use std::collections::HashSet;
 
 use agileplus_triage::dedup::{
-    add_fuzzy_ratio, find_duplicates, fuzzy_ratio, hybrid_score, levenshtein, ngram_jaccard, ngrams,
-    simhash64, simhash_distance, token_jaccard, tokenize, DuplicateCandidate,
+    DuplicateCandidate, add_fuzzy_ratio, find_duplicates, fuzzy_ratio, hybrid_score, levenshtein,
+    ngram_jaccard, ngrams, simhash_distance, simhash64, token_jaccard, tokenize,
 };
 use agileplus_triage::lsh::LshIndex;
 use agileplus_triage::minhash::MinHash;
@@ -46,7 +46,10 @@ fn tokenize_empty_and_whitespace() {
 
 #[test]
 fn tokenize_digits_are_tokens() {
-    assert_eq!(tokenize("version 42 release 7"), vec!["version", "42", "release"]);
+    assert_eq!(
+        tokenize("version 42 release 7"),
+        vec!["version", "42", "release"]
+    );
 }
 
 #[test]
@@ -139,7 +142,12 @@ fn levenshtein_transposition_costs_two() {
 
 #[test]
 fn levenshtein_is_symmetric() {
-    for (a, b) in [("abc", "xyz"), ("hello", "hallo"), ("", "x"), ("long", "short")] {
+    for (a, b) in [
+        ("abc", "xyz"),
+        ("hello", "hallo"),
+        ("", "x"),
+        ("long", "short"),
+    ] {
         assert_eq!(levenshtein(a, b), levenshtein(b, a));
     }
 }
@@ -255,7 +263,9 @@ fn ngram_jaccard_both_empty_is_one() {
 
 #[test]
 fn ngram_jaccard_is_symmetric() {
-    assert!((ngram_jaccard("abcdef", "abcxyz", 3) - ngram_jaccard("abcxyz", "abcdef", 3)).abs() < 1e-9);
+    assert!(
+        (ngram_jaccard("abcdef", "abcxyz", 3) - ngram_jaccard("abcxyz", "abcdef", 3)).abs() < 1e-9
+    );
 }
 
 // ============================================================
@@ -264,14 +274,21 @@ fn ngram_jaccard_is_symmetric() {
 
 #[test]
 fn simhash_deterministic() {
-    assert_eq!(simhash64("the quick brown fox"), simhash64("the quick brown fox"));
+    assert_eq!(
+        simhash64("the quick brown fox"),
+        simhash64("the quick brown fox")
+    );
 }
 
 #[test]
 fn simhash_near_identical_small_distance() {
     let a = simhash64("implement login flow with oauth2 support");
     let b = simhash64("implement login flow with oauth2 support.");
-    assert!(simhash_distance(a, b) < 16, "distance {}", simhash_distance(a, b));
+    assert!(
+        simhash_distance(a, b) < 16,
+        "distance {}",
+        simhash_distance(a, b)
+    );
 }
 
 #[test]
@@ -361,7 +378,10 @@ fn add_fuzzy_ratio_is_a_noop_safe_call() {
 // ============================================================
 
 fn items(pairs: &[(&str, &str)]) -> Vec<(String, String)> {
-    pairs.iter().map(|(a, b)| (a.to_string(), b.to_string())).collect()
+    pairs
+        .iter()
+        .map(|(a, b)| (a.to_string(), b.to_string()))
+        .collect()
 }
 
 #[test]
@@ -412,7 +432,10 @@ fn find_duplicates_sorted_descending() {
 #[test]
 fn find_duplicates_score_breakdown_populated() {
     let results = find_duplicates(
-        &items(&[("a", "fix race in cache layer"), ("b", "fix race in cache layer")]),
+        &items(&[
+            ("a", "fix race in cache layer"),
+            ("b", "fix race in cache layer"),
+        ]),
         0.5,
     );
     assert_eq!(results.len(), 1);
@@ -441,8 +464,14 @@ fn find_duplicates_candidate_serde_roundtrip() {
 
 #[test]
 fn duplicates_are_symmetric_scoring() {
-    let ab = find_duplicates(&items(&[("a", "one two three"), ("b", "one two four")]), 0.0);
-    let ba = find_duplicates(&items(&[("b", "one two four"), ("a", "one two three")]), 0.0);
+    let ab = find_duplicates(
+        &items(&[("a", "one two three"), ("b", "one two four")]),
+        0.0,
+    );
+    let ba = find_duplicates(
+        &items(&[("b", "one two four"), ("a", "one two three")]),
+        0.0,
+    );
     assert!((ab[0].hybrid_score - ba[0].hybrid_score).abs() < 1e-9);
 }
 
@@ -611,7 +640,10 @@ fn lsh_insert_deduplicates_ids_within_bucket() {
     let s = sig(2, 12);
     idx.insert("dup", &s);
     idx.insert("dup", &s);
-    assert_eq!(idx.query(&s).iter().filter(|x| x.as_str() == "dup").count(), 1);
+    assert_eq!(
+        idx.query(&s).iter().filter(|x| x.as_str() == "dup").count(),
+        1
+    );
 }
 
 #[test]
@@ -698,7 +730,7 @@ fn lsh_band_hash_out_of_range_panics() {
 
 #[cfg(feature = "bloom")]
 mod bloom {
-    use agileplus_triage::bloom::{optimal_k, optimal_m, BloomFilter};
+    use agileplus_triage::bloom::{BloomFilter, optimal_k, optimal_m};
 
     #[test]
     fn optimal_m_grows_with_n() {

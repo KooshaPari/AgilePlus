@@ -180,7 +180,10 @@ mod tests {
             cycles: 3,
             last_feedback: "some feedback".to_string(),
         };
-        assert!(matches!(max, ReviewOutcome::MaxCyclesReached { cycles: 3, .. }));
+        assert!(matches!(
+            max,
+            ReviewOutcome::MaxCyclesReached { cycles: 3, .. }
+        ));
 
         let failed = ReviewOutcome::AgentFailed {
             error: "crash".to_string(),

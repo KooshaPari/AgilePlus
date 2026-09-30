@@ -324,7 +324,6 @@ fn contract_with_policy(
     }
 }
 
-
 // ── Additional ValidationReport tests ────────────────────────────────────────
 
 #[test]

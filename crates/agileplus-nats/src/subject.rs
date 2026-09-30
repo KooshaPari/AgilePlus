@@ -98,9 +98,7 @@ mod tests {
     fn chevron_wildcard() {
         let s = Subject::all_for_entity("agileplus", "feature");
         assert!(s.matches(&Subject::new("agileplus.feature.1.created")));
-        assert!(s.matches(
-            &Subject::new("agileplus.feature.1.state_transitioned")
-        ));
+        assert!(s.matches(&Subject::new("agileplus.feature.1.state_transitioned")));
         assert!(!s.matches(&Subject::new("agileplus.wp.1.created")));
     }
 

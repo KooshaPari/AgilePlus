@@ -67,24 +67,21 @@ mod tests {
 
     #[test]
     fn error_bus_from_subscribe() {
-        let err: Error =
-            EventBusError::SubscribeError("no topic".into()).into();
+        let err: Error = EventBusError::SubscribeError("no topic".into()).into();
         let msg = format!("{err}");
         assert!(msg.contains("Subscribe error"));
     }
 
     #[test]
     fn error_bus_from_serialization() {
-        let err: Error =
-            EventBusError::SerializationError("bad json".into()).into();
+        let err: Error = EventBusError::SerializationError("bad json".into()).into();
         let msg = format!("{err}");
         assert!(msg.contains("Serialization error"));
     }
 
     #[test]
     fn error_bus_from_handler() {
-        let err: Error =
-            EventBusError::HandlerError("crash".into()).into();
+        let err: Error = EventBusError::HandlerError("crash".into()).into();
         let msg = format!("{err}");
         assert!(msg.contains("Handler error"));
     }
@@ -105,11 +102,17 @@ mod tests {
     #[test]
     fn error_from_all_bus_variants() {
         let cases = vec![
-            (EventBusError::ConnectionError("c".into()), "Connection error"),
+            (
+                EventBusError::ConnectionError("c".into()),
+                "Connection error",
+            ),
             (EventBusError::PublishError("p".into()), "Publish error"),
             (EventBusError::SubscribeError("s".into()), "Subscribe error"),
             (EventBusError::Timeout, "Request timeout"),
-            (EventBusError::SerializationError("ser".into()), "Serialization error"),
+            (
+                EventBusError::SerializationError("ser".into()),
+                "Serialization error",
+            ),
             (EventBusError::HandlerError("h".into()), "Handler error"),
         ];
         for (bus_err, expected_substr) in cases {
@@ -135,10 +138,7 @@ mod tests {
         let _subject = Subject::new("test");
         let _health = BusHealth::Connected;
         let _bus = InMemoryBus::new();
-        let _env = Envelope::new(
-            &Subject::new("test"),
-            serde_json::json!({}),
-        );
+        let _env = Envelope::new(&Subject::new("test"), serde_json::json!({}));
     }
 
     #[test]

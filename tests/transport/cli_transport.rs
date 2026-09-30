@@ -61,7 +61,16 @@ fn cli_help_lists_core_subcommands() {
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
 
-    for subcmd in &["cycle", "list", "specify", "dag", "okf", "mvp", "dashboard", "rubric"] {
+    for subcmd in &[
+        "cycle",
+        "list",
+        "specify",
+        "dag",
+        "okf",
+        "mvp",
+        "dashboard",
+        "rubric",
+    ] {
         assert!(
             stdout.contains(subcmd),
             "help should list subcommand '{subcmd}': {stdout}"
@@ -173,10 +182,7 @@ fn unknown_subcommand_fails() {
         .args(["nonexistent-subcommand"])
         .output()
         .expect("failed to execute");
-    assert!(
-        !output.status.success(),
-        "unknown subcommand should fail"
-    );
+    assert!(!output.status.success(), "unknown subcommand should fail");
 }
 
 #[test]

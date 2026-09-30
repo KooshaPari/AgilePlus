@@ -6,7 +6,13 @@ use chrono::{Duration, Utc};
 
 /// Helper to create a minimal event for testing.
 fn make_event(entity_type: &str, entity_id: i64, event_type: &str, actor: &str) -> Event {
-    Event::new(entity_type, entity_id, event_type, serde_json::json!({}), actor)
+    Event::new(
+        entity_type,
+        entity_id,
+        event_type,
+        serde_json::json!({}),
+        actor,
+    )
 }
 
 // ── append ──────────────────────────────────────────────────────────────────
@@ -48,9 +54,18 @@ async fn append_independent_entities_have_separate_sequences() {
 #[tokio::test]
 async fn get_events_returns_all_for_entity_sorted_by_sequence() {
     let store = InMemoryEventStore::new();
-    store.append(&make_event("Feature", 1, "created", "a")).await.unwrap();
-    store.append(&make_event("Feature", 1, "transitioned", "a")).await.unwrap();
-    store.append(&make_event("Feature", 2, "created", "a")).await.unwrap();
+    store
+        .append(&make_event("Feature", 1, "created", "a"))
+        .await
+        .unwrap();
+    store
+        .append(&make_event("Feature", 1, "transitioned", "a"))
+        .await
+        .unwrap();
+    store
+        .append(&make_event("Feature", 2, "created", "a"))
+        .await
+        .unwrap();
 
     let events = store.get_events("Feature", 1).await.unwrap();
     assert_eq!(events.len(), 2);
@@ -68,8 +83,14 @@ async fn get_events_returns_empty_for_unknown_entity() {
 #[tokio::test]
 async fn get_events_does_not_mix_entity_types() {
     let store = InMemoryEventStore::new();
-    store.append(&make_event("Feature", 1, "created", "a")).await.unwrap();
-    store.append(&make_event("WorkPackage", 1, "created", "a")).await.unwrap();
+    store
+        .append(&make_event("Feature", 1, "created", "a"))
+        .await
+        .unwrap();
+    store
+        .append(&make_event("WorkPackage", 1, "created", "a"))
+        .await
+        .unwrap();
 
     let feature_events = store.get_events("Feature", 1).await.unwrap();
     let wp_events = store.get_events("WorkPackage", 1).await.unwrap();
@@ -83,10 +104,22 @@ async fn get_events_does_not_mix_entity_types() {
 #[tokio::test]
 async fn get_events_since_filters_by_sequence() {
     let store = InMemoryEventStore::new();
-    store.append(&make_event("Feature", 1, "created", "a")).await.unwrap();
-    store.append(&make_event("Feature", 1, "specified", "a")).await.unwrap();
-    store.append(&make_event("Feature", 1, "implemented", "a")).await.unwrap();
-    store.append(&make_event("Feature", 1, "shipped", "a")).await.unwrap();
+    store
+        .append(&make_event("Feature", 1, "created", "a"))
+        .await
+        .unwrap();
+    store
+        .append(&make_event("Feature", 1, "specified", "a"))
+        .await
+        .unwrap();
+    store
+        .append(&make_event("Feature", 1, "implemented", "a"))
+        .await
+        .unwrap();
+    store
+        .append(&make_event("Feature", 1, "shipped", "a"))
+        .await
+        .unwrap();
 
     let events = store.get_events_since("Feature", 1, 2).await.unwrap();
     assert_eq!(events.len(), 2);
@@ -97,8 +130,14 @@ async fn get_events_since_filters_by_sequence() {
 #[tokio::test]
 async fn get_events_since_with_zero_returns_all() {
     let store = InMemoryEventStore::new();
-    store.append(&make_event("Feature", 1, "created", "a")).await.unwrap();
-    store.append(&make_event("Feature", 1, "shipped", "a")).await.unwrap();
+    store
+        .append(&make_event("Feature", 1, "created", "a"))
+        .await
+        .unwrap();
+    store
+        .append(&make_event("Feature", 1, "shipped", "a"))
+        .await
+        .unwrap();
 
     let events = store.get_events_since("Feature", 1, 0).await.unwrap();
     assert_eq!(events.len(), 2);
@@ -107,7 +146,10 @@ async fn get_events_since_with_zero_returns_all() {
 #[tokio::test]
 async fn get_events_since_beyond_last_returns_empty() {
     let store = InMemoryEventStore::new();
-    store.append(&make_event("Feature", 1, "created", "a")).await.unwrap();
+    store
+        .append(&make_event("Feature", 1, "created", "a"))
+        .await
+        .unwrap();
 
     let events = store.get_events_since("Feature", 1, 1).await.unwrap();
     assert!(events.is_empty());
@@ -131,7 +173,12 @@ async fn get_events_by_range_filters_by_timestamp() {
     store.append(&e2).await.unwrap();
 
     let events = store
-        .get_events_by_range("Feature", 1, before - Duration::minutes(1), middle + Duration::minutes(1))
+        .get_events_by_range(
+            "Feature",
+            1,
+            before - Duration::minutes(1),
+            middle + Duration::minutes(1),
+        )
         .await
         .unwrap();
     assert_eq!(events.len(), 2);
@@ -156,8 +203,14 @@ async fn get_latest_sequence_returns_zero_for_empty() {
 #[tokio::test]
 async fn get_latest_sequence_returns_last_appended() {
     let store = InMemoryEventStore::new();
-    store.append(&make_event("Feature", 1, "created", "a")).await.unwrap();
-    store.append(&make_event("Feature", 1, "shipped", "a")).await.unwrap();
+    store
+        .append(&make_event("Feature", 1, "created", "a"))
+        .await
+        .unwrap();
+    store
+        .append(&make_event("Feature", 1, "shipped", "a"))
+        .await
+        .unwrap();
 
     let seq = store.get_latest_sequence("Feature", 1).await.unwrap();
     assert_eq!(seq, 2);
@@ -168,9 +221,18 @@ async fn get_latest_sequence_returns_last_appended() {
 #[tokio::test]
 async fn get_events_by_type_filters_correctly() {
     let store = InMemoryEventStore::new();
-    store.append(&make_event("Feature", 1, "created", "a")).await.unwrap();
-    store.append(&make_event("Feature", 1, "transitioned", "a")).await.unwrap();
-    store.append(&make_event("Feature", 2, "created", "a")).await.unwrap();
+    store
+        .append(&make_event("Feature", 1, "created", "a"))
+        .await
+        .unwrap();
+    store
+        .append(&make_event("Feature", 1, "transitioned", "a"))
+        .await
+        .unwrap();
+    store
+        .append(&make_event("Feature", 2, "created", "a"))
+        .await
+        .unwrap();
 
     let events = store.get_events_by_type("created").await.unwrap();
     assert_eq!(events.len(), 2);
@@ -182,7 +244,10 @@ async fn get_events_by_type_filters_correctly() {
 #[tokio::test]
 async fn get_events_by_type_returns_empty_for_nonexistent() {
     let store = InMemoryEventStore::new();
-    store.append(&make_event("Feature", 1, "created", "a")).await.unwrap();
+    store
+        .append(&make_event("Feature", 1, "created", "a"))
+        .await
+        .unwrap();
 
     let events = store.get_events_by_type("nonexistent").await.unwrap();
     assert!(events.is_empty());
@@ -203,7 +268,10 @@ async fn new_store_is_empty() {
 
 #[test]
 fn event_error_variants_display_expected_messages() {
-    assert_eq!(EventError::NotFound("e".into()).to_string(), "Event not found: e");
+    assert_eq!(
+        EventError::NotFound("e".into()).to_string(),
+        "Event not found: e"
+    );
     assert_eq!(
         EventError::DuplicateSequence("2".into()).to_string(),
         "Duplicate sequence: 2"
@@ -212,9 +280,16 @@ fn event_error_variants_display_expected_messages() {
         EventError::StorageError("disk".into()).to_string(),
         "Storage error: disk"
     );
-    assert_eq!(EventError::InvalidHash("h".into()).to_string(), "Invalid hash: h");
     assert_eq!(
-        EventError::SequenceGap { expected: 1, actual: 3 }.to_string(),
+        EventError::InvalidHash("h".into()).to_string(),
+        "Invalid hash: h"
+    );
+    assert_eq!(
+        EventError::SequenceGap {
+            expected: 1,
+            actual: 3
+        }
+        .to_string(),
         "Sequence gap: expected 1, got 3"
     );
 }
@@ -222,8 +297,14 @@ fn event_error_variants_display_expected_messages() {
 #[tokio::test]
 async fn append_returns_increasing_sequences_for_same_entity() {
     let store = InMemoryEventStore::new();
-    let a = store.append(&make_event("Feature", 7, "created", "x")).await.unwrap();
-    let b = store.append(&make_event("Feature", 7, "updated", "x")).await.unwrap();
+    let a = store
+        .append(&make_event("Feature", 7, "created", "x"))
+        .await
+        .unwrap();
+    let b = store
+        .append(&make_event("Feature", 7, "updated", "x"))
+        .await
+        .unwrap();
     assert_eq!(a, 1);
     assert_eq!(b, 2);
 }
@@ -231,8 +312,14 @@ async fn append_returns_increasing_sequences_for_same_entity() {
 #[tokio::test]
 async fn events_for_distinct_entities_are_isolated() {
     let store = InMemoryEventStore::new();
-    store.append(&make_event("Feature", 1, "created", "x")).await.unwrap();
-    store.append(&make_event("Feature", 2, "created", "y")).await.unwrap();
+    store
+        .append(&make_event("Feature", 1, "created", "x"))
+        .await
+        .unwrap();
+    store
+        .append(&make_event("Feature", 2, "created", "y"))
+        .await
+        .unwrap();
     let one = store.get_events("Feature", 1).await.unwrap();
     let two = store.get_events("Feature", 2).await.unwrap();
     assert_eq!(one.len(), 1);

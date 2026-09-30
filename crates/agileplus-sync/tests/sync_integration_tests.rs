@@ -3,10 +3,10 @@
 use agileplus_sync::conflict::SyncConflict;
 use agileplus_sync::error::SyncError;
 use agileplus_sync::nats::{
-    InboundSyncEvent, OutboundSyncCommand, SUBJECT_INBOUND, SUBJECT_OUTBOUND, STREAM_NAME,
+    InboundSyncEvent, OutboundSyncCommand, STREAM_NAME, SUBJECT_INBOUND, SUBJECT_OUTBOUND,
 };
 use agileplus_sync::report::SyncReport;
-use agileplus_sync::resolution::{apply_resolution, FieldSource, ResolutionStrategy};
+use agileplus_sync::resolution::{FieldSource, ResolutionStrategy, apply_resolution};
 use serde_json::json;
 
 // ---------------------------------------------------------------------------
@@ -205,7 +205,12 @@ fn sync_report_duration_is_settable() {
 
 #[test]
 fn local_wins_resolution() {
-    let conflict = SyncConflict::new("feature", 1, json!({"name": "local_name"}), json!({"name": "remote_name"}));
+    let conflict = SyncConflict::new(
+        "feature",
+        1,
+        json!({"name": "local_name"}),
+        json!({"name": "remote_name"}),
+    );
     let result = apply_resolution(&conflict, &ResolutionStrategy::LocalWins).unwrap();
 
     assert_eq!(result.resolved_value, json!({"name": "local_name"}));
@@ -215,7 +220,12 @@ fn local_wins_resolution() {
 
 #[test]
 fn remote_wins_resolution() {
-    let conflict = SyncConflict::new("feature", 1, json!({"name": "local_name"}), json!({"name": "remote_name"}));
+    let conflict = SyncConflict::new(
+        "feature",
+        1,
+        json!({"name": "local_name"}),
+        json!({"name": "remote_name"}),
+    );
     let result = apply_resolution(&conflict, &ResolutionStrategy::RemoteWins).unwrap();
 
     assert_eq!(result.resolved_value, json!({"name": "remote_name"}));
@@ -224,7 +234,12 @@ fn remote_wins_resolution() {
 
 #[test]
 fn manual_resolution() {
-    let conflict = SyncConflict::new("feature", 1, json!({"name": "local_name"}), json!({"name": "remote_name"}));
+    let conflict = SyncConflict::new(
+        "feature",
+        1,
+        json!({"name": "local_name"}),
+        json!({"name": "remote_name"}),
+    );
     let strategy = ResolutionStrategy::Manual(json!({"name": "merged_name"}));
     let result = apply_resolution(&conflict, &strategy).unwrap();
 
@@ -234,7 +249,12 @@ fn manual_resolution() {
 
 #[test]
 fn field_level_resolution_local_source() {
-    let conflict = SyncConflict::new("feature", 1, json!({"a": "local_a", "b": "local_b"}), json!({"a": "remote_a", "b": "remote_b"}));
+    let conflict = SyncConflict::new(
+        "feature",
+        1,
+        json!({"a": "local_a", "b": "local_b"}),
+        json!({"a": "remote_a", "b": "remote_b"}),
+    );
 
     let mut sources = std::collections::HashMap::new();
     sources.insert("a".to_string(), FieldSource::Local);
@@ -243,13 +263,21 @@ fn field_level_resolution_local_source() {
     let strategy = ResolutionStrategy::FieldLevel(sources);
     let result = apply_resolution(&conflict, &strategy).unwrap();
 
-    assert_eq!(result.resolved_value, json!({"a": "local_a", "b": "remote_b"}));
+    assert_eq!(
+        result.resolved_value,
+        json!({"a": "local_a", "b": "remote_b"})
+    );
     assert_eq!(result.strategy_label, "field_level");
 }
 
 #[test]
 fn field_level_resolution_falls_back_to_remote() {
-    let conflict = SyncConflict::new("feature", 1, json!({"a": "local_a"}), json!({"a": "remote_a", "c": "remote_c"}));
+    let conflict = SyncConflict::new(
+        "feature",
+        1,
+        json!({"a": "local_a"}),
+        json!({"a": "remote_a", "c": "remote_c"}),
+    );
 
     let mut sources = std::collections::HashMap::new();
     sources.insert("a".to_string(), FieldSource::Local);
@@ -258,12 +286,20 @@ fn field_level_resolution_falls_back_to_remote() {
     let result = apply_resolution(&conflict, &strategy).unwrap();
 
     // "a" from local, "c" falls back to remote
-    assert_eq!(result.resolved_value, json!({"a": "local_a", "c": "remote_c"}));
+    assert_eq!(
+        result.resolved_value,
+        json!({"a": "local_a", "c": "remote_c"})
+    );
 }
 
 #[test]
 fn field_level_resolution_all_local() {
-    let conflict = SyncConflict::new("feature", 1, json!({"x": 1, "y": 2}), json!({"x": 10, "y": 20}));
+    let conflict = SyncConflict::new(
+        "feature",
+        1,
+        json!({"x": 1, "y": 2}),
+        json!({"x": 10, "y": 20}),
+    );
 
     let mut sources = std::collections::HashMap::new();
     sources.insert("x".to_string(), FieldSource::Local);
@@ -290,12 +326,18 @@ fn resolution_strategy_serde_roundtrip() {
     let strategies = [
         ("local_wins", ResolutionStrategy::LocalWins),
         ("remote_wins", ResolutionStrategy::RemoteWins),
-        ("manual", ResolutionStrategy::Manual(json!({"key": "value"}))),
-        ("field_level", ResolutionStrategy::FieldLevel({
-            let mut m = std::collections::HashMap::new();
-            m.insert("f".to_string(), FieldSource::Local);
-            m
-        })),
+        (
+            "manual",
+            ResolutionStrategy::Manual(json!({"key": "value"})),
+        ),
+        (
+            "field_level",
+            ResolutionStrategy::FieldLevel({
+                let mut m = std::collections::HashMap::new();
+                m.insert("f".to_string(), FieldSource::Local);
+                m
+            }),
+        ),
     ];
     for (tag, strategy) in &strategies {
         let json = serde_json::to_string(strategy).unwrap();
@@ -416,7 +458,8 @@ fn sync_report_with_resolution_results() {
     let result = apply_resolution(
         r.conflicts.first().unwrap(),
         &ResolutionStrategy::RemoteWins,
-    ).unwrap();
+    )
+    .unwrap();
 
     assert_eq!(result.resolved_value, json!({"a": 2}));
     assert_eq!(r.total_processed(), 1);
@@ -425,7 +468,12 @@ fn sync_report_with_resolution_results() {
 
 #[test]
 fn resolution_result_full_structure() {
-    let conflict = SyncConflict::new("feature", 1, json!({"name": "local"}), json!({"name": "remote"}));
+    let conflict = SyncConflict::new(
+        "feature",
+        1,
+        json!({"name": "local"}),
+        json!({"name": "remote"}),
+    );
     let result = apply_resolution(&conflict, &ResolutionStrategy::RemoteWins).unwrap();
 
     assert!(!result.resolved_value.is_null());
@@ -504,10 +552,14 @@ fn resolution_strategy_label_matches_variant() {
     let mw = apply_resolution(&conflict, &ResolutionStrategy::Manual(json!("x"))).unwrap();
     assert_eq!(mw.strategy_label, "manual");
 
-    let fl = apply_resolution(&conflict, &ResolutionStrategy::FieldLevel({
-        let mut m = std::collections::HashMap::new();
-        m.insert("k".to_string(), FieldSource::Local);
-        m
-    })).unwrap();
+    let fl = apply_resolution(
+        &conflict,
+        &ResolutionStrategy::FieldLevel({
+            let mut m = std::collections::HashMap::new();
+            m.insert("k".to_string(), FieldSource::Local);
+            m
+        }),
+    )
+    .unwrap();
     assert_eq!(fl.strategy_label, "field_level");
 }

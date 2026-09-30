@@ -122,9 +122,7 @@ fn only_optional_struct_all_none_default() {
 
 #[test]
 fn only_optional_struct_some_both() {
-    let c = OnlyOptional::default()
-        .with_a("a")
-        .with_b("b");
+    let c = OnlyOptional::default().with_a("a").with_b("b");
     assert_eq!(c.a.as_deref(), Some("a"));
     assert_eq!(c.b.as_deref(), Some("b"));
 }

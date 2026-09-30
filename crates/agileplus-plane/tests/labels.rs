@@ -2,8 +2,8 @@
 //!
 //! Covers: PlaneLabel serialization, CreateLabelRequest, LabelSync construction.
 
-use agileplus_plane::labels::{CreateLabelRequest, LabelSync, PlaneLabel};
 use agileplus_plane::PlaneClient;
+use agileplus_plane::labels::{CreateLabelRequest, LabelSync, PlaneLabel};
 
 // ── PlaneLabel ──────────────────────────────────────────────
 

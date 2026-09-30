@@ -6,7 +6,7 @@ use agileplus_domain::domain::module::Module;
 use agileplus_domain::domain::state_machine::FeatureState;
 use agileplus_domain::ports::StoragePort;
 
-use crate::commands::list_tests::{MemStore, MemFault};
+use crate::commands::list_tests::{MemFault, MemStore};
 
 /// Wrap ModuleArgs so we can parse it from a top-level binary name.
 #[derive(Debug, clap::Parser)]
@@ -225,7 +225,10 @@ async fn create_with_unknown_parent_fails_with_actionable_message() {
         message.contains("parent module 'ghost' not found"),
         "unexpected error: {message}"
     );
-    assert!(store.modules.lock().unwrap().is_empty(), "nothing persisted");
+    assert!(
+        store.modules.lock().unwrap().is_empty(),
+        "nothing persisted"
+    );
 }
 
 #[tokio::test]
@@ -272,13 +275,9 @@ async fn show_renders_all_sections_for_populated_module() {
     store.modules.lock().unwrap()[0].description = Some("core".to_string());
     let child = seed_module(&store, "Auth", Some(root));
     let feature_id = seed_feature(&store, "login", "Login");
-    store
-        .module_feature_tags
-        .lock()
-        .unwrap()
-        .push(agileplus_domain::domain::module::ModuleFeatureTag::new(
-            root, feature_id,
-        ));
+    store.module_feature_tags.lock().unwrap().push(
+        agileplus_domain::domain::module::ModuleFeatureTag::new(root, feature_id),
+    );
 
     super::show::run_show(
         ShowArgs {
@@ -382,12 +381,10 @@ async fn untag_removes_existing_link_only() {
     {
         let mut tags = store.module_feature_tags.lock().unwrap();
         tags.push(agileplus_domain::domain::module::ModuleFeatureTag::new(
-            module_id,
-            feature_id,
+            module_id, feature_id,
         ));
         tags.push(agileplus_domain::domain::module::ModuleFeatureTag::new(
-            other_id,
-            feature_id,
+            other_id, feature_id,
         ));
     }
 
@@ -491,9 +488,18 @@ async fn delete_with_dependents_explains_remediation() {
     .expect_err("dependent module must not delete");
     let message = format!("{err:#}");
 
-    assert!(message.contains("cannot delete module 'platform'"), "{message}");
-    assert!(message.contains("it still has children or owned features"), "{message}");
-    assert!(message.contains("module still owns 2 features"), "{message}");
+    assert!(
+        message.contains("cannot delete module 'platform'"),
+        "{message}"
+    );
+    assert!(
+        message.contains("it still has children or owned features"),
+        "{message}"
+    );
+    assert!(
+        message.contains("module still owns 2 features"),
+        "{message}"
+    );
     assert_eq!(store.modules.lock().unwrap().len(), 1, "module retained");
 }
 
@@ -561,7 +567,6 @@ async fn dispatcher_routes_every_module_subcommand() {
     assert_eq!(tags[0].module_id, 1);
     assert_eq!(tags[0].feature_id, 1);
 }
-
 
 // ── Untag error paths ────────────────────────────────────────────────────────
 //

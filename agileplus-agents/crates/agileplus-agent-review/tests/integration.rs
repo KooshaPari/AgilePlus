@@ -41,9 +41,7 @@ async fn integration_await_review_approved() {
 
     Mock::given(method("GET"))
         .and(path("/repos/acme/repo/pulls/7/reviews"))
-        .respond_with(
-            ResponseTemplate::new(200).set_body_string(fixture("pr_reviews.json")),
-        )
+        .respond_with(ResponseTemplate::new(200).set_body_string(fixture("pr_reviews.json")))
         .mount(&server)
         .await;
 
@@ -85,7 +83,10 @@ async fn integration_await_review_changes_requested() {
         .await
         .unwrap();
 
-    assert_eq!(outcome, agileplus_agent_dispatch::ReviewOutcome::ChangesRequested);
+    assert_eq!(
+        outcome,
+        agileplus_agent_dispatch::ReviewOutcome::ChangesRequested
+    );
 }
 
 #[tokio::test]

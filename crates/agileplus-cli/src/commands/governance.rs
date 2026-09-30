@@ -198,12 +198,16 @@ mod tests {
     fn validates_all_required_sections() {
         let spec = "# Spec\n## Problem Statement\nps\n## Functional Requirements\n- **FR-1**: x\n## Acceptance Criteria\nac\n";
         let violations = validate_spec_consistency(spec, &dummy_constitution());
-        assert!(violations.is_empty(), "should have no violations: {violations:?}");
+        assert!(
+            violations.is_empty(),
+            "should have no violations: {violations:?}"
+        );
     }
 
     #[test]
     fn detects_missing_problem_statement() {
-        let spec = "# Spec\n## Functional Requirements\n- **FR-1**: x\n## Acceptance Criteria\nac\n";
+        let spec =
+            "# Spec\n## Functional Requirements\n- **FR-1**: x\n## Acceptance Criteria\nac\n";
         let violations = validate_spec_consistency(spec, &dummy_constitution());
         let msgs: Vec<&str> = violations.iter().map(|v| v.message.as_str()).collect();
         assert!(msgs.iter().any(|m| m.contains("Problem Statement")));

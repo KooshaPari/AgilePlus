@@ -274,7 +274,8 @@ mod coverage_tests {
     }
 
     fn make_event(sequence: i64, payload: serde_json::Value, prev_hash: [u8; 32]) -> Event {
-        let hash = compute_hash(1, "Feature", "updated", &payload, ts(), "actor", &prev_hash).unwrap();
+        let hash =
+            compute_hash(1, "Feature", "updated", &payload, ts(), "actor", &prev_hash).unwrap();
         Event {
             id: sequence,
             entity_type: "Feature".into(),
@@ -333,8 +334,26 @@ mod coverage_tests {
 
     #[test]
     fn compute_hash_changes_with_payload() {
-        let a = compute_hash(1, "F", "e", &serde_json::json!({"x": 1}), ts(), "a", &[0u8; 32]).unwrap();
-        let b = compute_hash(1, "F", "e", &serde_json::json!({"x": 2}), ts(), "a", &[0u8; 32]).unwrap();
+        let a = compute_hash(
+            1,
+            "F",
+            "e",
+            &serde_json::json!({"x": 1}),
+            ts(),
+            "a",
+            &[0u8; 32],
+        )
+        .unwrap();
+        let b = compute_hash(
+            1,
+            "F",
+            "e",
+            &serde_json::json!({"x": 2}),
+            ts(),
+            "a",
+            &[0u8; 32],
+        )
+        .unwrap();
         assert_ne!(a, b);
     }
 
@@ -472,7 +491,10 @@ mod coverage_tests {
             compute_hash(1, "Fëature", "créated", &payload, ts(), "álice", &[0u8; 32]).unwrap();
         let second =
             compute_hash(1, "Fëature", "créated", &payload, ts(), "álice", &[0u8; 32]).unwrap();
-        assert_eq!(first, second, "multi-byte inputs must hash deterministically");
+        assert_eq!(
+            first, second,
+            "multi-byte inputs must hash deterministically"
+        );
 
         let ascii = compute_hash(
             1,

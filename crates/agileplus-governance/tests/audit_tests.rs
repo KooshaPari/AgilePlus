@@ -1,8 +1,8 @@
 //! Integration tests for AuditEvent, AuditFilter, and AuditLogger.
 //! Complements the inline unit tests in src/audit.rs.
 
-use agileplus_governance::*;
 use agileplus_governance::audit::{AuditEvent, AuditFilter, AuditLogger};
+use agileplus_governance::*;
 use chrono::Utc;
 
 fn temp_logger() -> (AuditLogger, tempfile::TempDir) {
@@ -87,8 +87,7 @@ fn audit_event_builder_chain() {
 
 #[test]
 fn audit_event_request_generates_id_when_none() {
-    let event = AuditEvent::success("test")
-        .with_request("GET", "/health", None);
+    let event = AuditEvent::success("test").with_request("GET", "/health", None);
     assert!(event.request_id.is_some());
     assert!(event.request_id.unwrap().starts_with("req_"));
 }

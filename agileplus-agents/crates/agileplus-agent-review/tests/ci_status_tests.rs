@@ -1,6 +1,6 @@
 //! Integration tests for the `ci_status` module using wiremock.
 
-use agileplus_agent_review::ci_status::{check_ci_status, CiStatus};
+use agileplus_agent_review::ci_status::{CiStatus, check_ci_status};
 use wiremock::matchers::{method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
@@ -177,9 +177,7 @@ async fn test_ci_combined_checks_and_legacy_status() {
     // Legacy status: travis also passes.
     Mock::given(method("GET"))
         .and(path(format!("/repos/acme/repo/commits/{sha}/status")))
-        .respond_with(
-            ResponseTemplate::new(200).set_body_string(fixture("commit_status.json")),
-        )
+        .respond_with(ResponseTemplate::new(200).set_body_string(fixture("commit_status.json")))
         .mount(&server)
         .await;
 
@@ -187,5 +185,9 @@ async fn test_ci_combined_checks_and_legacy_status() {
         .await
         .unwrap();
 
-    assert_eq!(status, CiStatus::Passed, "both checks and legacy status pass");
+    assert_eq!(
+        status,
+        CiStatus::Passed,
+        "both checks and legacy status pass"
+    );
 }

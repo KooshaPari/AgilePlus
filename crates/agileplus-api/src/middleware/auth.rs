@@ -150,7 +150,11 @@ mod tests {
     fn validate_api_key_empty_key_rejected() {
         let credentials = InMemoryCredentialStore::new();
         credentials
-            .set("agileplus", keys::API_KEYS, &format_api_key_hash("valid-key"))
+            .set(
+                "agileplus",
+                keys::API_KEYS,
+                &format_api_key_hash("valid-key"),
+            )
             .unwrap();
         assert!(!validate_api_key_value(&credentials, "").unwrap());
     }
@@ -159,7 +163,11 @@ mod tests {
     fn validate_api_key_wrong_key_rejected() {
         let credentials = InMemoryCredentialStore::new();
         credentials
-            .set("agileplus", keys::API_KEYS, &format_api_key_hash("correct-key"))
+            .set(
+                "agileplus",
+                keys::API_KEYS,
+                &format_api_key_hash("correct-key"),
+            )
             .unwrap();
         assert!(!validate_api_key_value(&credentials, "wrong-key").unwrap());
     }
@@ -187,7 +195,10 @@ mod tests {
     fn extract_token_from_lowercase_bearer() {
         use axum::http::{HeaderMap, HeaderValue};
         let mut headers = HeaderMap::new();
-        headers.insert("Authorization", HeaderValue::from_static("bearer lowercase-token"));
+        headers.insert(
+            "Authorization",
+            HeaderValue::from_static("bearer lowercase-token"),
+        );
         let req = axum::http::Request::builder()
             .uri("/api/v1/features")
             .body(axum::body::Body::empty())
@@ -237,7 +248,10 @@ mod tests {
     fn extract_token_bearer_takes_precedence_over_x_api_key() {
         use axum::http::{HeaderMap, HeaderValue};
         let mut headers = HeaderMap::new();
-        headers.insert("Authorization", HeaderValue::from_static("Bearer bearer-val"));
+        headers.insert(
+            "Authorization",
+            HeaderValue::from_static("Bearer bearer-val"),
+        );
         headers.insert("X-API-Key", HeaderValue::from_static("xkey-val"));
         let req = axum::http::Request::builder()
             .uri("/api/v1/features")

@@ -9,7 +9,7 @@
 //! - builder semantics for `OaiEmbeddings` / `VoyageEmbeddings` when their
 //!   features are enabled at compile time.
 
-use agileplus_triage::embeddings::{cosine, EmbeddingBackend, LocalMockEmbeddings};
+use agileplus_triage::embeddings::{EmbeddingBackend, LocalMockEmbeddings, cosine};
 
 fn approx(a: f32, b: f32, eps: f32) -> bool {
     (a - b).abs() < eps
@@ -231,7 +231,11 @@ fn local_mock_handles_long_input_without_panic() {
     let long: String = (0..1000).map(|i| format!("word{i} ")).collect();
     let embs = b.embed(&[&long]);
     assert_eq!(embs[0].len(), dim);
-    let norm: f64 = embs[0].iter().map(|x| (*x as f64).powi(2)).sum::<f64>().sqrt();
+    let norm: f64 = embs[0]
+        .iter()
+        .map(|x| (*x as f64).powi(2))
+        .sum::<f64>()
+        .sqrt();
     assert!(approx(norm as f32, 1.0, 1e-3), "long-input norm={norm}");
 }
 

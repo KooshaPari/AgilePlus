@@ -67,7 +67,10 @@ fn missing_problem_statement_only() {
     let v = validate_spec_consistency(spec, &dummy_constitution());
     assert!(v.iter().any(|x| x.message.contains("Problem Statement")));
     // The other sections are present, so they should not produce violations.
-    assert!(!v.iter().any(|x| x.message.contains("Functional Requirements")));
+    assert!(
+        !v.iter()
+            .any(|x| x.message.contains("Functional Requirements"))
+    );
     assert!(!v.iter().any(|x| x.message.contains("Acceptance Criteria")));
 }
 
@@ -75,7 +78,10 @@ fn missing_problem_statement_only() {
 fn missing_functional_requirements_only() {
     let spec = "## Problem Statement\nX\n## Acceptance Criteria\nY\n";
     let v = validate_spec_consistency(spec, &dummy_constitution());
-    assert!(v.iter().any(|x| x.message.contains("Functional Requirements")));
+    assert!(
+        v.iter()
+            .any(|x| x.message.contains("Functional Requirements"))
+    );
     assert!(!v.iter().any(|x| x.message.contains("Problem Statement")));
 }
 
@@ -101,9 +107,7 @@ fn missing_all_three_sections() {
 fn missing_fr_adds_warning() {
     let spec = "## Problem Statement\nX\n## Functional Requirements\nNo FRs here\n## Acceptance Criteria\nY\n";
     let v = validate_spec_consistency(spec, &dummy_constitution());
-    let warning = v
-        .iter()
-        .find(|x| x.severity == ViolationSeverity::Warning);
+    let warning = v.iter().find(|x| x.severity == ViolationSeverity::Warning);
     assert!(warning.is_some(), "should have a warning for missing FRs");
     assert_eq!(warning.unwrap().rule, "fr-required");
 }

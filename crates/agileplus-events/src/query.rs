@@ -316,14 +316,22 @@ mod coverage_tests {
 
     #[test]
     fn combined_entity_type_and_id() {
-        let got = EventQuery::new().entity_type("Feature").entity_id(2).filter(&sample());
+        let got = EventQuery::new()
+            .entity_type("Feature")
+            .entity_id(2)
+            .filter(&sample());
         assert_eq!(got.len(), 1);
         assert_eq!(got[0].actor, "alice");
     }
 
     #[test]
     fn no_match_returns_empty() {
-        assert!(EventQuery::new().actor("nobody").filter(&sample()).is_empty());
+        assert!(
+            EventQuery::new()
+                .actor("nobody")
+                .filter(&sample())
+                .is_empty()
+        );
     }
 
     #[test]
@@ -333,7 +341,10 @@ mod coverage_tests {
 
     #[test]
     fn query_error_display() {
-        assert_eq!(QueryError::Error("bad".into()).to_string(), "Query error: bad");
+        assert_eq!(
+            QueryError::Error("bad".into()).to_string(),
+            "Query error: bad"
+        );
     }
 
     #[test]
@@ -351,7 +362,10 @@ mod coverage_tests {
     fn time_range_both_bounds() {
         let from = Utc::now() - Duration::seconds(250);
         let to = Utc::now() - Duration::seconds(75);
-        let got = EventQuery::new().start_time(from).end_time(to).filter(&sample());
+        let got = EventQuery::new()
+            .start_time(from)
+            .end_time(to)
+            .filter(&sample());
         assert_eq!(got.len(), 2);
     }
 
@@ -385,7 +399,10 @@ mod coverage_tests {
             query.filter(&events).iter().map(|e| e.sequence).collect()
         };
 
-        assert_eq!(sequences(&EventQuery::new().start_time(boundary)), vec![2, 3]);
+        assert_eq!(
+            sequences(&EventQuery::new().start_time(boundary)),
+            vec![2, 3]
+        );
         assert_eq!(sequences(&EventQuery::new().end_time(boundary)), vec![1, 2]);
         assert_eq!(
             sequences(&EventQuery::new().start_time(boundary).end_time(boundary)),

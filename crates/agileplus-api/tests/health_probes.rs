@@ -50,7 +50,9 @@ impl EnvSandbox {
     fn cleared(keys: &[&'static str]) -> Self {
         // `unwrap_or_else(into_inner)` keeps the suite working even if an
         // earlier test panicked while holding the lock.
-        let guard = ENV_MUTEX.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        let guard = ENV_MUTEX
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         let saved = keys
             .iter()
             .map(|key| (*key, std::env::var_os(key)))

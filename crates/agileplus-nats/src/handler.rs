@@ -46,9 +46,7 @@ mod tests {
 
     #[tokio::test]
     async fn fn_handler_error() {
-        let handler = FnHandler(|_env: &Envelope| {
-            Err(EventBusError::HandlerError("boom".into()))
-        });
+        let handler = FnHandler(|_env: &Envelope| Err(EventBusError::HandlerError("boom".into())));
         let env = Envelope::new(
             &Subject::new("agileplus.test.1.created"),
             serde_json::json!({}),
@@ -63,8 +61,7 @@ mod tests {
 
     #[tokio::test]
     async fn fn_handler_receives_correct_envelope() {
-        let received_subject: Arc<Mutex<Option<String>>> =
-            Arc::new(Mutex::new(None));
+        let received_subject: Arc<Mutex<Option<String>>> = Arc::new(Mutex::new(None));
         let clone = received_subject.clone();
         let handler = FnHandler(move |env: &Envelope| {
             *clone.lock().unwrap() = Some(env.subject.clone());
@@ -84,8 +81,7 @@ mod tests {
 
     #[tokio::test]
     async fn fn_handler_preserves_payload() {
-        let payload_val: Arc<Mutex<Option<serde_json::Value>>> =
-            Arc::new(Mutex::new(None));
+        let payload_val: Arc<Mutex<Option<serde_json::Value>>> = Arc::new(Mutex::new(None));
         let clone = payload_val.clone();
         let handler = FnHandler(move |env: &Envelope| {
             *clone.lock().unwrap() = Some(env.payload.clone());
@@ -125,15 +121,27 @@ mod tests {
     async fn fn_handler_return_variants() {
         // success
         let ok = FnHandler(|_env: &Envelope| Ok(()));
-        assert!(ok.handle(&Envelope::new(&Subject::new("t"), serde_json::json!({}))).await.is_ok());
+        assert!(
+            ok.handle(&Envelope::new(&Subject::new("t"), serde_json::json!({})))
+                .await
+                .is_ok()
+        );
 
         // handler error
         let err = FnHandler(|_env: &Envelope| Err(EventBusError::HandlerError("fail".into())));
-        assert!(err.handle(&Envelope::new(&Subject::new("t"), serde_json::json!({}))).await.is_err());
+        assert!(
+            err.handle(&Envelope::new(&Subject::new("t"), serde_json::json!({})))
+                .await
+                .is_err()
+        );
 
         // other error variants also work
         let ser = FnHandler(|_env: &Envelope| Err(EventBusError::SerializationError("bad".into())));
-        assert!(ser.handle(&Envelope::new(&Subject::new("t"), serde_json::json!({}))).await.is_err());
+        assert!(
+            ser.handle(&Envelope::new(&Subject::new("t"), serde_json::json!({})))
+                .await
+                .is_err()
+        );
     }
 
     #[tokio::test]
@@ -145,8 +153,8 @@ mod tests {
             Ok(())
         });
 
-        let env = Envelope::new(&Subject::new("t"), serde_json::json!({}))
-            .with_correlation("cid-999");
+        let env =
+            Envelope::new(&Subject::new("t"), serde_json::json!({})).with_correlation("cid-999");
         handler.handle(&env).await.unwrap();
         assert_eq!(*seen.lock().unwrap(), Some("cid-999".to_string()));
     }
@@ -176,7 +184,10 @@ mod tests {
         });
 
         for _ in 0..5 {
-            handler.handle(&Envelope::new(&Subject::new("t"), serde_json::json!({}))).await.unwrap();
+            handler
+                .handle(&Envelope::new(&Subject::new("t"), serde_json::json!({})))
+                .await
+                .unwrap();
         }
         assert_eq!(*count.lock().unwrap(), 5);
     }
@@ -213,7 +224,9 @@ mod tests {
                 Ok(())
             }
         }
-        let h = Arc::new(RecordingHandler { subjects: Mutex::new(Vec::new()) });
+        let h = Arc::new(RecordingHandler {
+            subjects: Mutex::new(Vec::new()),
+        });
         for s in ["a.b", "c.d"] {
             h.handle(&Envelope::new(&Subject::new(s), serde_json::json!({})))
                 .await

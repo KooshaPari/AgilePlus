@@ -7,9 +7,10 @@ use chrono::Utc;
 use uuid::Uuid;
 
 use traceability_core::{
-    ArtifactRef, ImpactConfig, compute_impact, conflicts_only, top_affected,
+    ArtifactRef, ImpactConfig, compute_impact, conflicts_only,
     ids::RequirementId,
     matrix::{CoverageMatrix, CoverageState, MatrixCell},
+    top_affected,
     tracelink::{TraceLink, TraceLinkType},
 };
 
@@ -20,9 +21,7 @@ fn req(id: &str) -> ArtifactRef {
 }
 
 fn test_ref(id: &str) -> ArtifactRef {
-    ArtifactRef::Test {
-        id: id.to_string(),
-    }
+    ArtifactRef::Test { id: id.to_string() }
 }
 
 fn code_ref(id: &str) -> ArtifactRef {
@@ -32,12 +31,7 @@ fn code_ref(id: &str) -> ArtifactRef {
     }
 }
 
-fn make_link(
-    from: ArtifactRef,
-    to: ArtifactRef,
-    ty: TraceLinkType,
-    conf: f32,
-) -> TraceLink {
+fn make_link(from: ArtifactRef, to: ArtifactRef, ty: TraceLinkType, conf: f32) -> TraceLink {
     let project = Uuid::new_v4();
     let source = Uuid::new_v4();
     let target = Uuid::new_v4();
@@ -88,10 +82,30 @@ fn make_matrix(links: Vec<TraceLink>) -> CoverageMatrix {
 
 #[test]
 fn diamond_graph_all_nodes_reached() {
-    let l1 = make_link(req("FR-001"), test_ref("T-001"), TraceLinkType::Satisfies, 0.9);
-    let l2 = make_link(req("FR-001"), test_ref("T-002"), TraceLinkType::Satisfies, 0.8);
-    let l3 = make_link(test_ref("T-001"), req("FR-002"), TraceLinkType::Satisfies, 0.9);
-    let l4 = make_link(test_ref("T-002"), req("FR-002"), TraceLinkType::Satisfies, 0.8);
+    let l1 = make_link(
+        req("FR-001"),
+        test_ref("T-001"),
+        TraceLinkType::Satisfies,
+        0.9,
+    );
+    let l2 = make_link(
+        req("FR-001"),
+        test_ref("T-002"),
+        TraceLinkType::Satisfies,
+        0.8,
+    );
+    let l3 = make_link(
+        test_ref("T-001"),
+        req("FR-002"),
+        TraceLinkType::Satisfies,
+        0.9,
+    );
+    let l4 = make_link(
+        test_ref("T-002"),
+        req("FR-002"),
+        TraceLinkType::Satisfies,
+        0.8,
+    );
 
     let matrix = make_matrix(vec![l1, l2, l3, l4]);
     let report = compute_impact(&matrix, &[req("FR-001")], &ImpactConfig::default());
@@ -106,10 +120,30 @@ fn diamond_graph_all_nodes_reached() {
 
 #[test]
 fn chain_graph_depth_propagation() {
-    let l1 = make_link(req("FR-001"), test_ref("T-001"), TraceLinkType::Verifies, 0.9);
-    let l2 = make_link(test_ref("T-001"), code_ref("mod::foo"), TraceLinkType::Implements, 0.85);
-    let l3 = make_link(code_ref("mod::foo"), test_ref("T-002"), TraceLinkType::Verifies, 0.8);
-    let l4 = make_link(test_ref("T-002"), req("FR-002"), TraceLinkType::Satisfies, 0.75);
+    let l1 = make_link(
+        req("FR-001"),
+        test_ref("T-001"),
+        TraceLinkType::Verifies,
+        0.9,
+    );
+    let l2 = make_link(
+        test_ref("T-001"),
+        code_ref("mod::foo"),
+        TraceLinkType::Implements,
+        0.85,
+    );
+    let l3 = make_link(
+        code_ref("mod::foo"),
+        test_ref("T-002"),
+        TraceLinkType::Verifies,
+        0.8,
+    );
+    let l4 = make_link(
+        test_ref("T-002"),
+        req("FR-002"),
+        TraceLinkType::Satisfies,
+        0.75,
+    );
 
     let matrix = make_matrix(vec![l1, l2, l3, l4]);
     let cfg = ImpactConfig {
@@ -135,7 +169,12 @@ fn conflicts_only_filters_non_conflicts() {
         TraceLinkType::ConflictsWith,
         0.9,
     );
-    let l2 = make_link(req("FR-001"), test_ref("T-002"), TraceLinkType::Verifies, 0.9);
+    let l2 = make_link(
+        req("FR-001"),
+        test_ref("T-002"),
+        TraceLinkType::Verifies,
+        0.9,
+    );
     let l3 = make_link(
         req("FR-002"),
         test_ref("T-003"),
@@ -144,7 +183,11 @@ fn conflicts_only_filters_non_conflicts() {
     );
 
     let matrix = make_matrix(vec![l1, l2, l3]);
-    let report = compute_impact(&matrix, &[req("FR-001"), req("FR-002")], &ImpactConfig::default());
+    let report = compute_impact(
+        &matrix,
+        &[req("FR-001"), req("FR-002")],
+        &ImpactConfig::default(),
+    );
 
     let conflicts = conflicts_only(&report);
     assert_eq!(conflicts.len(), 2);
@@ -159,9 +202,24 @@ fn conflicts_only_filters_non_conflicts() {
 
 #[test]
 fn top_affected_returns_sorted_by_abs_score() {
-    let l1 = make_link(req("FR-001"), test_ref("T-001"), TraceLinkType::Verifies, 0.95);
-    let l2 = make_link(req("FR-001"), test_ref("T-002"), TraceLinkType::Satisfies, 0.5);
-    let l3 = make_link(req("FR-001"), code_ref("src/main"), TraceLinkType::Implements, 0.9);
+    let l1 = make_link(
+        req("FR-001"),
+        test_ref("T-001"),
+        TraceLinkType::Verifies,
+        0.95,
+    );
+    let l2 = make_link(
+        req("FR-001"),
+        test_ref("T-002"),
+        TraceLinkType::Satisfies,
+        0.5,
+    );
+    let l3 = make_link(
+        req("FR-001"),
+        code_ref("src/main"),
+        TraceLinkType::Implements,
+        0.9,
+    );
 
     let matrix = make_matrix(vec![l1, l2, l3]);
     let report = compute_impact(&matrix, &[req("FR-001")], &ImpactConfig::default());
@@ -180,8 +238,18 @@ fn top_affected_returns_sorted_by_abs_score() {
 
 #[test]
 fn overlapping_seeds_deduplicate() {
-    let l1 = make_link(req("FR-001"), test_ref("T-001"), TraceLinkType::Verifies, 0.9);
-    let l2 = make_link(req("FR-002"), test_ref("T-001"), TraceLinkType::Verifies, 0.8);
+    let l1 = make_link(
+        req("FR-001"),
+        test_ref("T-001"),
+        TraceLinkType::Verifies,
+        0.9,
+    );
+    let l2 = make_link(
+        req("FR-002"),
+        test_ref("T-001"),
+        TraceLinkType::Verifies,
+        0.8,
+    );
 
     let matrix = make_matrix(vec![l1, l2]);
     let report = compute_impact(
@@ -191,9 +259,11 @@ fn overlapping_seeds_deduplicate() {
     );
 
     // T-001 appears in both seeds' blast but should only appear once
-    let t1_count = report.blast.iter().filter(|n| {
-        matches!(&n.artifact, ArtifactRef::Test { id } if id == "T-001")
-    }).count();
+    let t1_count = report
+        .blast
+        .iter()
+        .filter(|n| matches!(&n.artifact, ArtifactRef::Test { id } if id == "T-001"))
+        .count();
     assert_eq!(t1_count, 1, "T-001 should appear exactly once");
 }
 
@@ -215,8 +285,18 @@ fn empty_seeds_returns_empty_report() {
 
 #[test]
 fn by_kind_bucketing_accurate() {
-    let l1 = make_link(req("FR-001"), test_ref("T-001"), TraceLinkType::Verifies, 0.9);
-    let l2 = make_link(req("FR-001"), code_ref("mod::x"), TraceLinkType::Implements, 0.85);
+    let l1 = make_link(
+        req("FR-001"),
+        test_ref("T-001"),
+        TraceLinkType::Verifies,
+        0.9,
+    );
+    let l2 = make_link(
+        req("FR-001"),
+        code_ref("mod::x"),
+        TraceLinkType::Implements,
+        0.85,
+    );
 
     let matrix = make_matrix(vec![l1, l2]);
     let report = compute_impact(&matrix, &[req("FR-001")], &ImpactConfig::default());
@@ -233,7 +313,12 @@ fn by_kind_bucketing_accurate() {
 
 #[test]
 fn impact_report_full_serde_roundtrip() {
-    let l1 = make_link(req("FR-001"), test_ref("T-001"), TraceLinkType::Verifies, 0.9);
+    let l1 = make_link(
+        req("FR-001"),
+        test_ref("T-001"),
+        TraceLinkType::Verifies,
+        0.9,
+    );
     let l2 = make_link(
         req("FR-001"),
         test_ref("T-002"),
@@ -259,11 +344,36 @@ fn impact_report_full_serde_roundtrip() {
 #[test]
 fn max_depth_zero_unbounded_traverses_all() {
     // Chain of 5
-    let l1 = make_link(req("FR-001"), test_ref("T-001"), TraceLinkType::Satisfies, 0.9);
-    let l2 = make_link(test_ref("T-001"), test_ref("T-002"), TraceLinkType::DerivesFrom, 0.8);
-    let l3 = make_link(test_ref("T-002"), test_ref("T-003"), TraceLinkType::DerivesFrom, 0.7);
-    let l4 = make_link(test_ref("T-003"), test_ref("T-004"), TraceLinkType::DerivesFrom, 0.6);
-    let l5 = make_link(test_ref("T-004"), req("FR-002"), TraceLinkType::Satisfies, 0.5);
+    let l1 = make_link(
+        req("FR-001"),
+        test_ref("T-001"),
+        TraceLinkType::Satisfies,
+        0.9,
+    );
+    let l2 = make_link(
+        test_ref("T-001"),
+        test_ref("T-002"),
+        TraceLinkType::DerivesFrom,
+        0.8,
+    );
+    let l3 = make_link(
+        test_ref("T-002"),
+        test_ref("T-003"),
+        TraceLinkType::DerivesFrom,
+        0.7,
+    );
+    let l4 = make_link(
+        test_ref("T-003"),
+        test_ref("T-004"),
+        TraceLinkType::DerivesFrom,
+        0.6,
+    );
+    let l5 = make_link(
+        test_ref("T-004"),
+        req("FR-002"),
+        TraceLinkType::Satisfies,
+        0.5,
+    );
 
     let matrix = make_matrix(vec![l1, l2, l3, l4, l5]);
     let cfg = ImpactConfig {

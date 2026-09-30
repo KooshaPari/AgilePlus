@@ -242,7 +242,10 @@ fn requires_a_credential_encryption_key_for_file_backed_credentials() {
 
     let output = sandbox
         .command()
-        .env("DATABASE_URL", format!("sqlite:{}", sandbox.database_path().display()))
+        .env(
+            "DATABASE_URL",
+            format!("sqlite:{}", sandbox.database_path().display()),
+        )
         .output()
         .expect("the built binary runs");
 
@@ -272,7 +275,10 @@ fn requires_an_operator_supplied_api_key_to_start() {
 
     let output = sandbox
         .command()
-        .env("DATABASE_URL", format!("sqlite:{}", sandbox.database_path().display()))
+        .env(
+            "DATABASE_URL",
+            format!("sqlite:{}", sandbox.database_path().display()),
+        )
         .env("AGILEPLUS_CREDENTIAL_KEY", "operator-passphrase-for-tests")
         .output()
         .expect("the built binary runs");

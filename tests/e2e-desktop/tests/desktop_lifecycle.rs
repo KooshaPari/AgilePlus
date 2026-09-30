@@ -23,9 +23,7 @@ fn test_cli_binary_exists() {
         repo_root().join("target/debug/agileplus")
     };
 
-    let output = Command::new(&bin)
-        .args(["--version"])
-        .output();
+    let output = Command::new(&bin).args(["--version"]).output();
     assert!(
         output.is_ok(),
         "agileplus CLI binary should be runnable at {}",
@@ -128,7 +126,9 @@ fn test_work_packages_via_cli() {
 
     // The subcommand should be recognised (not an "unknown command" error)
     assert!(
-        output.status.success() || stderr.contains("work-package") || stdout.contains("work-package"),
+        output.status.success()
+            || stderr.contains("work-package")
+            || stdout.contains("work-package"),
         "work-package subcommand should exist: stdout={stdout} stderr={stderr}"
     );
 }
@@ -142,8 +142,14 @@ fn test_tray_icon_files_exist() {
     // Verify all required tray icon files exist at correct paths
     let icons = icons_dir();
 
-    assert!(icons.join("32x32.png").exists(), "Missing tray icon 32x32.png");
-    assert!(icons.join("128x128.png").exists(), "Missing bundle icon 128x128.png");
+    assert!(
+        icons.join("32x32.png").exists(),
+        "Missing tray icon 32x32.png"
+    );
+    assert!(
+        icons.join("128x128.png").exists(),
+        "Missing bundle icon 128x128.png"
+    );
     assert!(icons.join("icon.icns").exists(), "Missing macOS icon");
     assert!(icons.join("icon.ico").exists(), "Missing Windows icon");
 }
@@ -158,8 +164,7 @@ fn test_tauri_config_valid() {
     let config_path = tauri_config_path();
 
     let content = std::fs::read_to_string(&config_path).expect("Should read tauri.conf.json");
-    let config: serde_json::Value =
-        serde_json::from_str(&content).expect("Should be valid JSON");
+    let config: serde_json::Value = serde_json::from_str(&content).expect("Should be valid JSON");
 
     assert_eq!(config["productName"], "AgilePlus Desktop");
     assert_eq!(config["version"], "0.2.0");
@@ -200,7 +205,10 @@ fn test_database_schema_matches_desktop() {
         .filter_map(|r| r.ok())
         .collect();
 
-    assert!(tables.contains(&"features".to_string()), "Missing features table");
+    assert!(
+        tables.contains(&"features".to_string()),
+        "Missing features table"
+    );
     assert!(
         tables.contains(&"work_packages".to_string()),
         "Missing work_packages table"
@@ -218,9 +226,11 @@ fn test_database_schema_matches_desktop() {
     .unwrap();
 
     let name: String = conn
-        .query_row("SELECT name FROM features WHERE id = 'test-id'", [], |row| {
-            row.get(0)
-        })
+        .query_row(
+            "SELECT name FROM features WHERE id = 'test-id'",
+            [],
+            |row| row.get(0),
+        )
         .unwrap();
 
     assert_eq!(name, "Test Feature");

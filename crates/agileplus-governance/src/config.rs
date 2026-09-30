@@ -383,7 +383,6 @@ mod tests {
         assert!(config.policy.enabled);
         assert!(!config.rate_limit.enabled);
     }
-
 }
 #[cfg(test)]
 mod extended_tests {
@@ -481,7 +480,9 @@ mod extended_tests {
     fn from_file_toml() {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("config.toml");
-        std::fs::write(&path, r#"
+        std::fs::write(
+            &path,
+            r#"
 [governance]
 enabled = true
 base_url = "http://y"
@@ -514,7 +515,9 @@ enforce_rate_limits = true
 enabled = true
 max_requests = 200
 window_ms = 60000
-"#).unwrap();
+"#,
+        )
+        .unwrap();
         let config = GovernanceConfig::from_file(&path).unwrap();
         assert!(config.governance.enabled);
         assert_eq!(config.governance.timeout_secs, 5);
@@ -671,10 +674,16 @@ mod coverage_tests {
     #[test]
     fn governance_config_default_matches_section_defaults() {
         let config = GovernanceConfig::default();
-        assert_eq!(config.governance.base_url, GovernanceSettings::default().base_url);
+        assert_eq!(
+            config.governance.base_url,
+            GovernanceSettings::default().base_url
+        );
         assert_eq!(config.local.db_path, LocalSettings::default().db_path);
         assert_eq!(config.sync.batch_size, SyncSettings::default().batch_size);
-        assert_eq!(config.rate_limit.max_requests, RateLimitSettings::default().max_requests);
+        assert_eq!(
+            config.rate_limit.max_requests,
+            RateLimitSettings::default().max_requests
+        );
     }
 
     #[test]
@@ -715,7 +724,11 @@ mod coverage_tests {
 
     #[test]
     fn local_settings_serde_roundtrip() {
-        let s = LocalSettings { enabled: false, db_path: "/db".into(), retention_days: 5 };
+        let s = LocalSettings {
+            enabled: false,
+            db_path: "/db".into(),
+            retention_days: 5,
+        };
         let json = serde_json::to_string(&s).unwrap();
         let back: LocalSettings = serde_json::from_str(&json).unwrap();
         assert!(!back.enabled);
@@ -724,7 +737,12 @@ mod coverage_tests {
 
     #[test]
     fn sync_settings_serde_roundtrip() {
-        let s = SyncSettings { enabled: false, interval_ms: 1, batch_size: 2, timeout_secs: 3 };
+        let s = SyncSettings {
+            enabled: false,
+            interval_ms: 1,
+            batch_size: 2,
+            timeout_secs: 3,
+        };
         let json = serde_json::to_string(&s).unwrap();
         let back: SyncSettings = serde_json::from_str(&json).unwrap();
         assert_eq!(back.batch_size, 2);
@@ -747,7 +765,11 @@ mod coverage_tests {
 
     #[test]
     fn rate_limit_settings_serde_roundtrip() {
-        let s = RateLimitSettings { enabled: true, max_requests: 9, window_ms: 10 };
+        let s = RateLimitSettings {
+            enabled: true,
+            max_requests: 9,
+            window_ms: 10,
+        };
         let json = serde_json::to_string(&s).unwrap();
         let back: RateLimitSettings = serde_json::from_str(&json).unwrap();
         assert!(back.enabled);
@@ -756,8 +778,14 @@ mod coverage_tests {
 
     #[test]
     fn policy_default_action_serde_strings() {
-        assert_eq!(serde_json::to_string(&PolicyDefaultAction::Allow).unwrap(), "\"allow\"");
-        assert_eq!(serde_json::to_string(&PolicyDefaultAction::Deny).unwrap(), "\"deny\"");
+        assert_eq!(
+            serde_json::to_string(&PolicyDefaultAction::Allow).unwrap(),
+            "\"allow\""
+        );
+        assert_eq!(
+            serde_json::to_string(&PolicyDefaultAction::Deny).unwrap(),
+            "\"deny\""
+        );
     }
 
     #[test]
@@ -807,7 +835,10 @@ mod coverage_tests {
         let mut config = GovernanceConfig::default();
         config.local.enabled = true;
         config.local.db_path = String::new();
-        assert!(config.validate().iter().any(|e| e.contains("database path")));
+        assert!(config
+            .validate()
+            .iter()
+            .any(|e| e.contains("database path")));
     }
 
     #[test]

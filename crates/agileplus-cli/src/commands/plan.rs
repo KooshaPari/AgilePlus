@@ -749,12 +749,18 @@ mod tests {
 
     #[test]
     fn plan_state_summary_planned() {
-        assert_eq!(plan_state_summary(FeatureState::Planned), "Planned (preserved)");
+        assert_eq!(
+            plan_state_summary(FeatureState::Planned),
+            "Planned (preserved)"
+        );
     }
 
     #[test]
     fn plan_state_summary_shipped() {
-        assert_eq!(plan_state_summary(FeatureState::Shipped), "Shipped (preserved)");
+        assert_eq!(
+            plan_state_summary(FeatureState::Shipped),
+            "Shipped (preserved)"
+        );
     }
 
     #[test]
@@ -767,7 +773,10 @@ mod tests {
 
     #[test]
     fn plan_state_summary_created() {
-        assert_eq!(plan_state_summary(FeatureState::Created), "Created (preserved)");
+        assert_eq!(
+            plan_state_summary(FeatureState::Created),
+            "Created (preserved)"
+        );
     }
 
     #[test]
@@ -797,7 +806,10 @@ mod tests {
         existing.state = agileplus_domain::domain::work_package::WpState::Doing;
         let reconciled = reconcile_work_packages(vec![expected], vec![existing]).unwrap();
         assert_eq!(reconciled[0].id, 42);
-        assert_eq!(reconciled[0].state, agileplus_domain::domain::work_package::WpState::Doing);
+        assert_eq!(
+            reconciled[0].state,
+            agileplus_domain::domain::work_package::WpState::Doing
+        );
     }
 
     // ── parse_functional_requirements additional tests ───────────────
@@ -812,8 +824,7 @@ mod tests {
 
     #[test]
     fn parse_frs_deduplicates_by_id() {
-        let spec =
-            "- **FR-001**: first mention\n- **FR-001**: duplicate mention\n";
+        let spec = "- **FR-001**: first mention\n- **FR-001**: duplicate mention\n";
         let frs = parse_functional_requirements(spec);
         assert_eq!(frs.len(), 1);
     }

@@ -305,7 +305,6 @@ mod tests {
         assert!(count >= 2, "expected >= 2, got {count}");
         fs::remove_dir_all(&repo).ok();
     }
-
 }
 #[cfg(test)]
 mod extended_tests {
@@ -316,12 +315,8 @@ mod extended_tests {
 
     fn make_tmp(name: &str) -> PathBuf {
         let n = EXT_COUNTER.fetch_add(1, Ordering::Relaxed);
-        let base = std::env::temp_dir().join(format!(
-            "scan-ext-{}-{}-{}",
-            std::process::id(),
-            name,
-            n
-        ));
+        let base =
+            std::env::temp_dir().join(format!("scan-ext-{}-{}-{}", std::process::id(), name, n));
         let _ = fs::remove_dir_all(&base);
         fs::create_dir_all(&base).unwrap();
         base
@@ -443,11 +438,7 @@ mod extended_tests {
     #[test]
     fn scan_not_a_dir_fails() {
         let n = EXT_COUNTER.fetch_add(1, Ordering::Relaxed);
-        let tmp = std::env::temp_dir().join(format!(
-            "scan-notdir-{}-{}",
-            std::process::id(),
-            n
-        ));
+        let tmp = std::env::temp_dir().join(format!("scan-notdir-{}-{}", std::process::id(), n));
         let _ = fs::remove_file(&tmp);
         let _ = fs::remove_dir_all(&tmp);
         fs::write(&tmp, "hello").unwrap();
@@ -585,12 +576,8 @@ mod coverage_tests {
 
     fn tmp(tag: &str) -> PathBuf {
         let n = COV_COUNTER.fetch_add(1, Ordering::Relaxed);
-        let base = std::env::temp_dir().join(format!(
-            "scan-cov-{}-{}-{}",
-            std::process::id(),
-            tag,
-            n
-        ));
+        let base =
+            std::env::temp_dir().join(format!("scan-cov-{}-{}-{}", std::process::id(), tag, n));
         let _ = fs::remove_dir_all(&base);
         fs::create_dir_all(&base).unwrap();
         base
@@ -883,7 +870,10 @@ mod coverage_tests {
     #[test]
     fn skip_dirs_constant_lists_expected_entries() {
         for expected in ["target", "node_modules", ".git"] {
-            assert!(SKIP_DIRS.contains(&expected), "SKIP_DIRS missing {expected}");
+            assert!(
+                SKIP_DIRS.contains(&expected),
+                "SKIP_DIRS missing {expected}"
+            );
         }
     }
 

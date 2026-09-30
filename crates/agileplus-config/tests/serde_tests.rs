@@ -101,8 +101,7 @@ fn json_deserialize_full() {
 
 #[test]
 fn json_deserialize_null_api_key() {
-    let json =
-        r#"{"base_url":"x","timeout_ms":1,"retries":1,"api_key":null,"enabled":true}"#;
+    let json = r#"{"base_url":"x","timeout_ms":1,"retries":1,"api_key":null,"enabled":true}"#;
     let c: ApiConfig = serde_json::from_str(json).unwrap();
     assert_eq!(c.api_key, None);
 }
@@ -116,8 +115,7 @@ fn json_deserialize_negative_not_allowed_by_type() {
 
 #[test]
 fn json_deserialize_type_mismatch() {
-    let json =
-        r#"{"base_url":"x","timeout_ms":"not-a-number","retries":1,"enabled":true}"#;
+    let json = r#"{"base_url":"x","timeout_ms":"not-a-number","retries":1,"enabled":true}"#;
     assert!(serde_json::from_str::<ApiConfig>(json).is_err());
 }
 
@@ -154,9 +152,7 @@ fn json_roundtrip_default() {
 
 #[test]
 fn json_roundtrip_option_set() {
-    let orig = ApiConfig::default()
-        .with_api_key("key")
-        .with_enabled(false);
+    let orig = ApiConfig::default().with_api_key("key").with_enabled(false);
     let bytes = serde_json::to_vec(&orig).unwrap();
     let back: ApiConfig = serde_json::from_slice(&bytes).unwrap();
     assert_eq!(orig, back);
@@ -200,8 +196,7 @@ fn yaml_deserialize_invalid_fails() {
 fn json_and_yaml_produce_same_values() {
     let c = ApiConfig::default().with_base_url("cross").with_retries(9);
     let json: ApiConfig = serde_json::from_str(&serde_json::to_string(&c).unwrap()).unwrap();
-    let yaml: ApiConfig =
-        serde_yaml::from_str(&serde_yaml::to_string(&c).unwrap()).unwrap();
+    let yaml: ApiConfig = serde_yaml::from_str(&serde_yaml::to_string(&c).unwrap()).unwrap();
     assert_eq!(json, c);
     assert_eq!(yaml, c);
     assert_eq!(json, yaml);

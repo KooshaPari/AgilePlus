@@ -8,168 +8,17 @@
 //! completion, failed completion with feedback re-instruction, waiting for
 //! review, hard agent failure, running, pending, and status-query errors, plus
 //! the max-cycles exit and the resulting `last_feedback` payload.
+//!
+//! The double and the domain-value constructors live in
+//! `tests/support/review_loop.rs`, extracted when this file passed the project's
+//! 500-line cap. This file holds the assertions.
 
-use std::collections::VecDeque;
-use std::sync::Mutex;
+mod support;
 
-use agileplus_cli::commands::review_loop::{run_review_loop, ReviewOutcome};
-use agileplus_domain::domain::work_package::WorkPackage;
-use agileplus_domain::error::DomainError;
-use agileplus_domain::ports::agent::{
-    AgentConfig, AgentKind, AgentPort, AgentResult, AgentStatus, AgentTask,
-};
+use support::review_loop::{ScriptedAgent, Step, block_on, config, result, work_package};
 
-fn block_on<F: std::future::Future>(fut: F) -> F::Output {
-    tokio_test::block_on(fut)
-}
-
-fn work_package() -> WorkPackage {
-    let mut wp = WorkPackage::new(1, "Review loop WP", 1, "passes review");
-    wp.id = 42;
-    wp
-}
-
-fn config() -> AgentConfig {
-    AgentConfig {
-        kind: AgentKind::ClaudeCode,
-        max_review_cycles: 3,
-        timeout_secs: 30,
-        extra_args: vec![],
-    }
-}
-
-fn result(success: bool, stderr: &str) -> AgentResult {
-    AgentResult {
-        success,
-        pr_url: None,
-        commits: vec![],
-        stdout: String::new(),
-        stderr: stderr.to_string(),
-        exit_code: if success { 0 } else { 1 },
-    }
-}
-
-/// A poll result: either a status or a query error.
-#[derive(Clone)]
-enum Step {
-    Status(AgentStatus),
-    Error(String),
-}
-
-/// Scripted `AgentPort` double. Each `query_status` pops the next step; once
-/// the script is exhausted it repeats the last step, so multi-cycle loops can
-/// be described without knowing exactly how many polls occur.
-struct ScriptedAgent {
-    steps: Mutex<VecDeque<Step>>,
-    last: Mutex<Option<Step>>,
-    polls: Mutex<usize>,
-    instructions: Mutex<Vec<String>>,
-    send_fails: bool,
-}
-
-impl ScriptedAgent {
-    fn new(steps: Vec<Step>) -> Self {
-        Self {
-            steps: Mutex::new(steps.into()),
-            last: Mutex::new(None),
-            polls: Mutex::new(0),
-            instructions: Mutex::new(vec![]),
-            send_fails: false,
-        }
-    }
-
-    fn with_send_failure(mut self) -> Self {
-        self.send_fails = true;
-        self
-    }
-
-    fn poll_count(&self) -> usize {
-        *self.polls.lock().unwrap()
-    }
-
-    fn instructions(&self) -> Vec<String> {
-        self.instructions.lock().unwrap().clone()
-    }
-}
-
-/// Build a next step, remembering it as the repeat value once the script runs out.
-fn advance(steps: &mut VecDeque<Step>, last: &mut Option<Step>) -> Step {
-    let step = match steps.pop_front() {
-        Some(step) => step,
-        None => last.clone().expect("script must contain at least one step"),
-    };
-    if steps.is_empty() {
-        *last = Some(clone_step(&step));
-    }
-    step
-}
-
-fn clone_step(step: &Step) -> Step {
-    match step {
-        Step::Status(s) => Step::Status(s.clone()),
-        Step::Error(e) => Step::Error(e.clone()),
-    }
-}
-
-impl AgentPort for ScriptedAgent {
-    fn dispatch(
-        &self,
-        _task: AgentTask,
-        _config: &AgentConfig,
-    ) -> impl std::future::Future<Output = Result<AgentResult, DomainError>> + Send {
-        async { Err(DomainError::NotFound("not used by review loop".into())) }
-    }
-
-    fn dispatch_async(
-        &self,
-        _task: AgentTask,
-        _config: &AgentConfig,
-    ) -> impl std::future::Future<Output = Result<String, DomainError>> + Send {
-        async { Err(DomainError::NotFound("not used by review loop".into())) }
-    }
-
-    fn query_status(
-        &self,
-        _job_id: &str,
-    ) -> impl std::future::Future<Output = Result<AgentStatus, DomainError>> + Send {
-        let step = {
-            *self.polls.lock().unwrap() += 1;
-            let mut steps = self.steps.lock().unwrap();
-            let mut last = self.last.lock().unwrap();
-            advance(&mut steps, &mut last)
-        };
-        async move {
-            match step {
-                Step::Status(s) => Ok(s),
-                Step::Error(e) => Err(DomainError::NotFound(e)),
-            }
-        }
-    }
-
-    fn cancel(
-        &self,
-        _job_id: &str,
-    ) -> impl std::future::Future<Output = Result<(), DomainError>> + Send {
-        async { Ok(()) }
-    }
-
-    fn send_instruction(
-        &self,
-        _job_id: &str,
-        instruction: &str,
-    ) -> impl std::future::Future<Output = Result<(), DomainError>> + Send {
-        let fails = self.send_fails;
-        let recorded = instruction.to_string();
-        self.instructions.lock().unwrap().push(recorded);
-        async move {
-            if fails {
-                Err(DomainError::NotFound("send failed".into()))
-            } else {
-                Ok(())
-            }
-        }
-    }
-}
+use agileplus_cli::commands::review_loop::{ReviewOutcome, run_review_loop};
+use agileplus_domain::ports::agent::AgentStatus;
 
 #[test]
 fn review_loop_approves_on_successful_completion() {
@@ -391,5 +240,101 @@ fn review_loop_with_zero_cycles_returns_immediately() {
             other => panic!("expected MaxCyclesReached, got {other:?}"),
         }
         assert_eq!(agent.poll_count(), 0, "no cycles means no polls");
+    })
+}
+
+/// The loop must poll the job id it was handed. A mismatch would be invisible
+/// from the returned `ReviewOutcome` alone, since the outcome does not carry
+/// the id, so it is asserted directly on the port.
+#[test]
+fn review_loop_polls_only_the_requested_job_id() {
+    block_on(async {
+        let agent = ScriptedAgent::new(vec![Step::Status(AgentStatus::Running { pid: 4242 })]);
+        let outcome = run_review_loop(
+            &work_package(),
+            "the-one-real-job-id",
+            &agent,
+            &config(),
+            3,
+            0,
+        )
+        .await;
+
+        assert!(
+            matches!(outcome, ReviewOutcome::MaxCyclesReached { .. }),
+            "expected the budget to be spent, got {outcome:?}"
+        );
+
+        let queried = agent.queried_job_ids();
+        assert_eq!(queried.len(), 3, "expected one poll per cycle");
+        assert!(
+            queried.iter().all(|id| id == "the-one-real-job-id"),
+            "loop polled something other than the requested id: {queried:?}"
+        );
+    })
+}
+
+/// `send_instruction` must also address the same job id, otherwise a
+/// corrective instruction would be delivered to a different job.
+#[test]
+fn review_loop_sends_corrections_to_the_requested_job_id() {
+    block_on(async {
+        let agent = ScriptedAgent::new(vec![
+            Step::Status(AgentStatus::Completed {
+                result: result(false, "lint error"),
+            }),
+            Step::Status(AgentStatus::Completed {
+                result: result(true, ""),
+            }),
+        ]);
+
+        let outcome = run_review_loop(
+            &work_package(),
+            "correction-target",
+            &agent,
+            &config(),
+            2,
+            0,
+        )
+        .await;
+
+        assert!(
+            matches!(outcome, ReviewOutcome::Approved),
+            "got {outcome:?}"
+        );
+        assert_eq!(agent.instructions().len(), 1);
+    })
+}
+
+/// The printed log truncates stderr at 200 chars, but the instruction handed to
+/// the agent must carry all of it. An implementation that reused the truncated
+/// slice would still satisfy a `contains` check on a short message, so this
+/// uses stderr long enough that truncation would be visible.
+#[test]
+fn review_loop_sends_untruncated_stderr_to_the_agent() {
+    block_on(async {
+        let long = "E".repeat(600);
+        let agent = ScriptedAgent::new(vec![
+            Step::Status(AgentStatus::Completed {
+                result: result(false, &long),
+            }),
+            Step::Status(AgentStatus::Completed {
+                result: result(true, ""),
+            }),
+        ]);
+
+        let outcome = run_review_loop(&work_package(), "job-long", &agent, &config(), 2, 0).await;
+
+        assert!(
+            matches!(outcome, ReviewOutcome::Approved),
+            "got {outcome:?}"
+        );
+
+        let instruction = &agent.instructions()[0];
+        assert!(
+            instruction.contains(&long),
+            "all 600 stderr chars must reach the agent, instruction was {} chars",
+            instruction.len()
+        );
     })
 }

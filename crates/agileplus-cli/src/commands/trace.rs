@@ -743,7 +743,10 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let db = dir.path().join("empty-list.db");
         open_db(&db).unwrap();
-        let args = ListArgs { limit: 10, db: Some(db) };
+        let args = ListArgs {
+            limit: 10,
+            db: Some(db),
+        };
         run_list(&args).unwrap();
     }
 
@@ -752,7 +755,10 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let db = dir.path().join("no-show.db");
         open_db(&db).unwrap();
-        let args = ShowArgs { entity: "feature:999".to_string(), db: Some(db) };
+        let args = ShowArgs {
+            entity: "feature:999".to_string(),
+            db: Some(db),
+        };
         run_show(&args).unwrap();
     }
 

@@ -55,7 +55,9 @@ fn lookup_known_commands() {
         "meta:generate-router",
         "meta:list-commands",
     ] {
-        let cmd = reg.get(name).unwrap_or_else(|| panic!("Missing command: {name}"));
+        let cmd = reg
+            .get(name)
+            .unwrap_or_else(|| panic!("Missing command: {name}"));
         assert_eq!(cmd.name, *name);
         assert!(!cmd.description.is_empty());
         assert!(!cmd.usage.is_empty());
@@ -77,7 +79,10 @@ fn list_by_category_triage() {
     let reg = SubCommandRegistry::new();
     let cmds = reg.list(Some(SubCommandCategory::Triage));
     assert_eq!(cmds.len(), 3);
-    assert!(cmds.iter().all(|c| c.category == SubCommandCategory::Triage));
+    assert!(
+        cmds.iter()
+            .all(|c| c.category == SubCommandCategory::Triage)
+    );
 }
 
 #[test]

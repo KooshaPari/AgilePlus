@@ -56,8 +56,11 @@ mod tests {
 
     #[test]
     fn credential_backend_variants() {
-        for backend in [CredentialBackend::Auto, CredentialBackend::Keychain, CredentialBackend::File]
-        {
+        for backend in [
+            CredentialBackend::Auto,
+            CredentialBackend::Keychain,
+            CredentialBackend::File,
+        ] {
             let json = serde_json::to_string(&backend).unwrap();
             let back: CredentialBackend = serde_json::from_str(&json).unwrap();
             assert_eq!(back, backend);

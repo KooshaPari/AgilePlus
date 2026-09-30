@@ -203,7 +203,10 @@ async fn save_agent_settings_persists_pool_configuration() {
 
     let config = read_config();
     assert!(config.contains("pool_size = 7"), "pool size: {config}");
-    assert!(config.contains("retry_budget = 4"), "retry budget: {config}");
+    assert!(
+        config.contains("retry_budget = 4"),
+        "retry budget: {config}"
+    );
     assert!(config.contains("parallel"), "dispatch mode: {config}");
     assert!(config.contains("deepseek"), "provider: {config}");
     assert!(
@@ -282,7 +285,10 @@ async fn patch_service_config_creates_entry_with_limits() {
         "endpoint should persist: {config}"
     );
     assert!(config.contains("2500"), "timeout should persist: {config}");
-    assert!(config.contains('5'), "retry budget should persist: {config}");
+    assert!(
+        config.contains('5'),
+        "retry budget should persist: {config}"
+    );
 }
 
 #[tokio::test]
@@ -349,7 +355,10 @@ async fn toggle_service_defaults_to_enabled_for_unknown_service() {
     assert_eq!(status, StatusCode::OK, "toggle body: {body}");
 
     let config = read_config();
-    assert!(config.contains("Ghost"), "entry should be created: {config}");
+    assert!(
+        config.contains("Ghost"),
+        "entry should be created: {config}"
+    );
     assert!(
         config.contains("enabled = true"),
         "an omitted flag defaults to enabled: {config}"
@@ -388,10 +397,7 @@ async fn restart_service_rejects_template_without_placeholder() {
     assert_eq!(body["status"], "error", "body: {body}");
     assert_eq!(body["service"], "Plane");
     assert!(
-        body["error"]
-            .as_str()
-            .unwrap_or_default()
-            .contains("{}"),
+        body["error"].as_str().unwrap_or_default().contains("{}"),
         "the error should explain the missing placeholder: {body}"
     );
 }

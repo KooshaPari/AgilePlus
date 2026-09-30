@@ -386,10 +386,9 @@ mod tests {
         assert!(health.degraded);
 
         // The toggle must have persisted into the sandbox, not the real home.
-        let persisted = std::fs::read_to_string(
-            sandbox_home().join(".agileplus").join("config.toml"),
-        )
-        .expect("toggle_service persists its config");
+        let persisted =
+            std::fs::read_to_string(sandbox_home().join(".agileplus").join("config.toml"))
+                .expect("toggle_service persists its config");
         assert!(persisted.contains("name = \"NATS\""), "got: {persisted}");
         assert!(persisted.contains("enabled = false"), "got: {persisted}");
     }

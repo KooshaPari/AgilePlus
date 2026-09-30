@@ -772,8 +772,18 @@ mod tests {
         };
         // Chain: FR-001 -> T-001 -> T-002 -> T-003
         let l1 = make_link(req("FR-001"), test("T-001"), TraceLinkType::Satisfies, 0.9);
-        let l2 = make_link(test("T-001"), test("T-002"), TraceLinkType::DerivesFrom, 0.8);
-        let l3 = make_link(test("T-002"), test("T-003"), TraceLinkType::DerivesFrom, 0.7);
+        let l2 = make_link(
+            test("T-001"),
+            test("T-002"),
+            TraceLinkType::DerivesFrom,
+            0.8,
+        );
+        let l3 = make_link(
+            test("T-002"),
+            test("T-003"),
+            TraceLinkType::DerivesFrom,
+            0.7,
+        );
         let matrix = make_matrix(vec![l1, l2, l3]);
         let report = compute_impact(&matrix, &[req("FR-001")], &cfg);
         assert!(!report.truncated);
@@ -815,15 +825,13 @@ mod tests {
         let l1 = make_link(req("FR-001"), test("T-001"), TraceLinkType::Satisfies, 1.0);
         let matrix = make_matrix(vec![l1]);
         let cfg_default = ImpactConfig::default();
-        let report_default =
-            compute_impact(&matrix, &[req("FR-001")], &cfg_default);
+        let report_default = compute_impact(&matrix, &[req("FR-001")], &cfg_default);
 
         let cfg_boosted = ImpactConfig {
             positive_multiplier: 3.0,
             ..Default::default()
         };
-        let report_boosted =
-            compute_impact(&matrix, &[req("FR-001")], &cfg_boosted);
+        let report_boosted = compute_impact(&matrix, &[req("FR-001")], &cfg_boosted);
         assert!(report_boosted.total_score > report_default.total_score);
     }
 }

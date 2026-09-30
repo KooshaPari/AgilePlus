@@ -229,10 +229,8 @@ mod tests {
 
     #[test]
     fn module_feature_with_corrupt_state_is_storage_error() {
-        let err = module_with_corrupt_feature(
-            "UPDATE features SET state = 'bogus' WHERE id = 1",
-            true,
-        );
+        let err =
+            module_with_corrupt_feature("UPDATE features SET state = 'bogus' WHERE id = 1", true);
         assert!(matches!(err, DomainError::Storage(_)), "got {err:?}");
         assert!(
             err.to_string().contains("bogus"),

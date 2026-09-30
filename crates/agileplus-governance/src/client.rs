@@ -491,8 +491,14 @@ mod coverage_tests {
     #[tokio::test]
     async fn query_audit_by_action_filters() {
         let (client, _dir) = test_client().await;
-        client.log_audit(AuditEvent::success("manual-a")).await.unwrap();
-        client.log_audit(AuditEvent::success("manual-b")).await.unwrap();
+        client
+            .log_audit(AuditEvent::success("manual-a"))
+            .await
+            .unwrap();
+        client
+            .log_audit(AuditEvent::success("manual-b"))
+            .await
+            .unwrap();
         let got = client
             .query_audit(AuditFilter::new().action("manual-a"))
             .await
@@ -504,7 +510,9 @@ mod coverage_tests {
     async fn add_policy_then_list_contains_it() {
         let (client, _dir) = test_client().await;
         let before = client.policies().await.len();
-        client.add_policy(Policy::new("res", "act", PolicyEffect::Deny)).await;
+        client
+            .add_policy(Policy::new("res", "act", PolicyEffect::Deny))
+            .await;
         let after = client.policies().await;
         assert_eq!(after.len(), before + 1);
         assert!(after.iter().any(|p| p.resource == "res"));
@@ -543,7 +551,9 @@ mod coverage_tests {
         );
         let result = client.check_promotion(req).await.unwrap();
         assert!(!result.allowed);
-        assert!(result.policy_failures.contains(&"invalid_transition".to_string()));
+        assert!(result
+            .policy_failures
+            .contains(&"invalid_transition".to_string()));
     }
 
     #[tokio::test]
@@ -592,7 +602,11 @@ mod coverage_tests {
                 db_path: dir.path().join("gov.db").to_string_lossy().to_string(),
                 retention_days: 30,
             },
-            rate_limit: RateLimitSettings { enabled: true, max_requests: 1, window_ms: 60_000 },
+            rate_limit: RateLimitSettings {
+                enabled: true,
+                max_requests: 1,
+                window_ms: 60_000,
+            },
             ..Default::default()
         };
         let client = GovernanceClient::new(config).await.unwrap();
@@ -634,7 +648,11 @@ mod coverage_tests {
             },
             ..Default::default()
         };
-        let client = GovernanceClientBuilder::new().config(config).build().await.unwrap();
+        let client = GovernanceClientBuilder::new()
+            .config(config)
+            .build()
+            .await
+            .unwrap();
         assert!(client.status().await.initialized);
     }
 
@@ -643,7 +661,11 @@ mod coverage_tests {
         let dir = tempfile::tempdir().unwrap();
         let mut config = GovernanceConfig::default();
         config.local.db_path = dir.path().join("gov.db").to_string_lossy().to_string();
-        let client = GovernanceClientBuilder::default().config(config).build().await.unwrap();
+        let client = GovernanceClientBuilder::default()
+            .config(config)
+            .build()
+            .await
+            .unwrap();
         assert_eq!(client.connection_status().await, ConnectionStatus::Disabled);
     }
 
@@ -651,7 +673,10 @@ mod coverage_tests {
     async fn builder_config_from_env_builds() {
         let dir = tempfile::tempdir().unwrap();
         std::env::set_var("AGILEPLUS_LOCAL_DB_PATH", dir.path().join("gov.db"));
-        let built = GovernanceClientBuilder::new().config_from_env().build().await;
+        let built = GovernanceClientBuilder::new()
+            .config_from_env()
+            .build()
+            .await;
         std::env::remove_var("AGILEPLUS_LOCAL_DB_PATH");
         assert!(built.is_ok());
     }

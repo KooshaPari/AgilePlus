@@ -96,11 +96,7 @@ mod tests {
 
     #[test]
     fn re_exported_artifact_types_are_accessible() {
-        let a = Artifact::new(
-            uuid::Uuid::new_v4(),
-            ArtifactKind::Requirement,
-            "smoke",
-        );
+        let a = Artifact::new(uuid::Uuid::new_v4(), ArtifactKind::Requirement, "smoke");
         assert_eq!(a.kind, ArtifactKind::Requirement);
     }
 

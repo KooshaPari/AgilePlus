@@ -7,7 +7,9 @@ use agileplus_domain::domain::{
     state_machine::FeatureState,
     work_package::{PrState, WpState},
 };
-use agileplus_import::{ImportBundle, ImportCycle, ImportFeature, ImportModule, ImportProject, ImportWorkPackage};
+use agileplus_import::{
+    ImportBundle, ImportCycle, ImportFeature, ImportModule, ImportProject, ImportWorkPackage,
+};
 
 // ---------------------------------------------------------------------------
 // ImportBundle
@@ -301,7 +303,10 @@ fn import_work_package_with_pr_state() {
     }"#;
     let wp: ImportWorkPackage = serde_json::from_str(json).unwrap();
     assert_eq!(wp.state, WpState::Review);
-    assert_eq!(wp.pr_url.as_deref(), Some("https://github.com/org/repo/pull/1"));
+    assert_eq!(
+        wp.pr_url.as_deref(),
+        Some("https://github.com/org/repo/pull/1")
+    );
     assert_eq!(wp.pr_state, Some(PrState::Approved));
 }
 
@@ -401,7 +406,10 @@ fn import_cycle_with_feature_slugs() {
         "feature_slugs": ["login", "signup", "forgot-password"]
     }"#;
     let cycle: ImportCycle = serde_json::from_str(json).unwrap();
-    assert_eq!(cycle.feature_slugs, vec!["login", "signup", "forgot-password"]);
+    assert_eq!(
+        cycle.feature_slugs,
+        vec!["login", "signup", "forgot-password"]
+    );
 }
 
 #[test]
@@ -417,8 +425,14 @@ fn import_cycle_roundtrip_preserves_dates() {
     };
     let json = serde_json::to_string(&cycle).unwrap();
     let restored: ImportCycle = serde_json::from_str(&json).unwrap();
-    assert_eq!(restored.start_date, chrono::NaiveDate::from_ymd_opt(2026, 4, 1).unwrap());
-    assert_eq!(restored.end_date, chrono::NaiveDate::from_ymd_opt(2026, 6, 30).unwrap());
+    assert_eq!(
+        restored.start_date,
+        chrono::NaiveDate::from_ymd_opt(2026, 4, 1).unwrap()
+    );
+    assert_eq!(
+        restored.end_date,
+        chrono::NaiveDate::from_ymd_opt(2026, 6, 30).unwrap()
+    );
 }
 
 // ---------------------------------------------------------------------------
@@ -428,53 +442,51 @@ fn import_cycle_roundtrip_preserves_dates() {
 #[test]
 fn full_bundle_yaml_roundtrip() {
     let bundle = ImportBundle {
-        projects: vec![
-            ImportProject {
-                slug: Some("proj-a".into()),
-                name: "Project A".into(),
-                description: Some("desc".into()),
-                features: vec![ImportFeature {
-                    slug: Some("feat-1".into()),
-                    friendly_name: "Feature One".into(),
-                    spec_content: "spec content".into(),
-                    state: FeatureState::Planned,
-                    target_branch: Some("main".into()),
-                    labels: vec!["core".into()],
-                    module_slug: Some("mod-a".into()),
-                    project_id: Some(1),
-                    plane_issue_id: Some("PI-1".into()),
-                    plane_state_id: Some("PS-1".into()),
-                    work_packages: vec![
-                        ImportWorkPackage {
-                            title: "WP 1".into(),
-                            acceptance_criteria: Some("AC 1".into()),
-                            sequence: Some(1),
-                            file_scope: vec!["a.rs".into()],
-                            state: WpState::Doing,
-                            agent_id: Some("agent-1".into()),
-                            pr_url: None,
-                            pr_state: None,
-                            worktree_path: None,
-                            plane_sub_issue_id: None,
-                            depends_on_sequences: vec![],
-                        },
-                        ImportWorkPackage {
-                            title: "WP 2".into(),
-                            acceptance_criteria: None,
-                            sequence: Some(2),
-                            file_scope: vec![],
-                            state: WpState::Planned,
-                            agent_id: None,
-                            pr_url: None,
-                            pr_state: None,
-                            worktree_path: None,
-                            plane_sub_issue_id: None,
-                            depends_on_sequences: vec![1],
-                        },
-                    ],
-                }],
-            },
-        ],
+        projects: vec![ImportProject {
+            slug: Some("proj-a".into()),
+            name: "Project A".into(),
+            description: Some("desc".into()),
+            features: vec![ImportFeature {
+                slug: Some("feat-1".into()),
+                friendly_name: "Feature One".into(),
+                spec_content: "spec content".into(),
+                state: FeatureState::Planned,
+                target_branch: Some("main".into()),
+                labels: vec!["core".into()],
+                module_slug: Some("mod-a".into()),
+                project_id: Some(1),
+                plane_issue_id: Some("PI-1".into()),
+                plane_state_id: Some("PS-1".into()),
+                work_packages: vec![
+                    ImportWorkPackage {
+                        title: "WP 1".into(),
+                        acceptance_criteria: Some("AC 1".into()),
+                        sequence: Some(1),
+                        file_scope: vec!["a.rs".into()],
+                        state: WpState::Doing,
+                        agent_id: Some("agent-1".into()),
+                        pr_url: None,
+                        pr_state: None,
+                        worktree_path: None,
+                        plane_sub_issue_id: None,
+                        depends_on_sequences: vec![],
+                    },
+                    ImportWorkPackage {
+                        title: "WP 2".into(),
+                        acceptance_criteria: None,
+                        sequence: Some(2),
+                        file_scope: vec![],
+                        state: WpState::Planned,
+                        agent_id: None,
+                        pr_url: None,
+                        pr_state: None,
+                        worktree_path: None,
+                        plane_sub_issue_id: None,
+                        depends_on_sequences: vec![1],
+                    },
+                ],
+            }],
+        }],
         modules: vec![ImportModule {
             slug: Some("mod-a".into()),
             friendly_name: "Module A".into(),
@@ -497,6 +509,9 @@ fn full_bundle_yaml_roundtrip() {
     let restored: ImportBundle = serde_yaml::from_str(&yaml).unwrap();
 
     assert_eq!(restored.projects[0].features[0].work_packages.len(), 2);
-    assert_eq!(restored.projects[0].features[0].work_packages[1].depends_on_sequences, vec![1]);
+    assert_eq!(
+        restored.projects[0].features[0].work_packages[1].depends_on_sequences,
+        vec![1]
+    );
     assert_eq!(restored.cycles[0].feature_slugs, vec!["feat-1"]);
 }

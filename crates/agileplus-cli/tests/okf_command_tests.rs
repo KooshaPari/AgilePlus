@@ -327,7 +327,10 @@ fn merge_relation_referencing_unknown_entity_uses_prefix_fallback() {
         0
     );
     let text = std::fs::read_to_string(&out).unwrap();
-    assert!(text.contains("ghost"), "fallback relation preserved: {text}");
+    assert!(
+        text.contains("ghost"),
+        "fallback relation preserved: {text}"
+    );
 }
 
 #[test]

@@ -534,13 +534,7 @@ mod tests {
     #[test]
     fn test_apply_service_config_skips_empty_url() {
         let mut config = Config::empty();
-        apply_service_config(
-            &mut config,
-            "Empty",
-            Some("   ".to_string()),
-            None,
-            None,
-        );
+        apply_service_config(&mut config, "Empty", Some("   ".to_string()), None, None);
         assert!(config.services.as_ref().is_none_or(Vec::is_empty));
     }
 

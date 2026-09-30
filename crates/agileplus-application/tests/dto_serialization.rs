@@ -124,7 +124,12 @@ fn claim_request_default_reason_on_missing_field() {
 
 #[test]
 fn claim_request_various_kinds() {
-    for kind in [ClaimKind::Worktree, ClaimKind::Branch, ClaimKind::Repo, ClaimKind::Subproject] {
+    for kind in [
+        ClaimKind::Worktree,
+        ClaimKind::Branch,
+        ClaimKind::Repo,
+        ClaimKind::Subproject,
+    ] {
         let req = ClaimRequest {
             claim_id: "c".into(),
             resource: "r".into(),
@@ -564,10 +569,7 @@ fn feature_created_output_clone_debug() {
         [0u8; 32],
         None,
     );
-    let out = FeatureCreatedOutput {
-        id: 42,
-        feature,
-    };
+    let out = FeatureCreatedOutput { id: 42, feature };
     let cloned = out.clone();
     assert_eq!(cloned.id, 42);
     let dbg = format!("{:?}", cloned);
@@ -616,8 +618,7 @@ fn create_story_cmd_no_points() {
 
 #[test]
 fn story_created_output_clone_debug() {
-    let mut story =
-        agileplus_domain::domain::story::Story::new(1, 2, "Login", Some(3)).unwrap();
+    let mut story = agileplus_domain::domain::story::Story::new(1, 2, "Login", Some(3)).unwrap();
     story.id = 10;
     let out = StoryCreatedOutput { id: 10, story };
     let cloned = out.clone();

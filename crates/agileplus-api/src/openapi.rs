@@ -135,7 +135,10 @@ mod tests {
             "AuditEntryResponse",
             "GovernanceResponse",
         ] {
-            assert!(doc.contains(schema), "openapi document missing schema {schema}");
+            assert!(
+                doc.contains(schema),
+                "openapi document missing schema {schema}"
+            );
         }
     }
 }

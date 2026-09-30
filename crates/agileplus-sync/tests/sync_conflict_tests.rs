@@ -1,6 +1,6 @@
 //! Integration tests for SyncConflict, hash_value, and detect_conflict.
 
-use agileplus_sync::conflict::{detect_conflict, hash_value, SyncConflict};
+use agileplus_sync::conflict::{SyncConflict, detect_conflict, hash_value};
 use serde_json::json;
 
 // ---- SyncConflict::new ----
@@ -21,7 +21,8 @@ fn sync_conflict_new_creates_valid_struct() {
 
 #[test]
 fn sync_conflict_accepts_string_types() {
-    let c: SyncConflict = SyncConflict::new(String::from("work_package"), 100, json!({}), json!({}));
+    let c: SyncConflict =
+        SyncConflict::new(String::from("work_package"), 100, json!({}), json!({}));
     assert_eq!(c.entity_type, "work_package");
     assert_eq!(c.entity_id, 100);
 }
@@ -57,13 +58,23 @@ fn sync_conflict_with_arrays() {
 
 #[test]
 fn sync_conflict_with_unicode_strings() {
-    let c = SyncConflict::new("feature", 1, json!({"name": "特征"}), json!({"name": "feature"}));
+    let c = SyncConflict::new(
+        "feature",
+        1,
+        json!({"name": "特征"}),
+        json!({"name": "feature"}),
+    );
     assert_ne!(c.local_hash, c.remote_hash);
 }
 
 #[test]
 fn sync_conflict_with_special_characters() {
-    let c = SyncConflict::new("feature", 1, json!({"data": "a\nb\tc"}), json!({"data": "a\nb\td"}));
+    let c = SyncConflict::new(
+        "feature",
+        1,
+        json!({"data": "a\nb\tc"}),
+        json!({"data": "a\nb\td"}),
+    );
     assert_ne!(c.local_hash, c.remote_hash);
 }
 
@@ -142,7 +153,10 @@ fn hash_value_same_for_equivalent_structures() {
 
 #[test]
 fn hash_value_different_for_different_content() {
-    assert_ne!(hash_value(&json!({"key": "v1"})), hash_value(&json!({"key": "v2"})));
+    assert_ne!(
+        hash_value(&json!({"key": "v1"})),
+        hash_value(&json!({"key": "v2"}))
+    );
 }
 
 #[test]
@@ -203,14 +217,26 @@ fn detect_conflict_returns_none_when_both_identical() {
 #[test]
 fn detect_conflict_returns_none_when_only_local_changed() {
     let stored = hash_value(&json!({"id": 1, "name": "old"}));
-    let result = detect_conflict("feature", 1, json!({"id": 1, "name": "new"}), json!({"id": 1, "name": "old"}), &stored);
+    let result = detect_conflict(
+        "feature",
+        1,
+        json!({"id": 1, "name": "new"}),
+        json!({"id": 1, "name": "old"}),
+        &stored,
+    );
     assert!(result.is_none());
 }
 
 #[test]
 fn detect_conflict_returns_none_when_only_remote_changed() {
     let stored = hash_value(&json!({"id": 1, "name": "old"}));
-    let result = detect_conflict("feature", 1, json!({"id": 1, "name": "old"}), json!({"id": 1, "name": "new"}), &stored);
+    let result = detect_conflict(
+        "feature",
+        1,
+        json!({"id": 1, "name": "old"}),
+        json!({"id": 1, "name": "new"}),
+        &stored,
+    );
     assert!(result.is_none());
 }
 
@@ -224,7 +250,13 @@ fn detect_conflict_returns_none_when_neither_changed() {
 #[test]
 fn detect_conflict_detects_real_conflict() {
     let stored = hash_value(&json!({"id": 1, "name": "original"}));
-    let result = detect_conflict("feature", 1, json!({"id": 1, "name": "new"}), json!({"id": 1, "name": "also new"}), &stored);
+    let result = detect_conflict(
+        "feature",
+        1,
+        json!({"id": 1, "name": "new"}),
+        json!({"id": 1, "name": "also new"}),
+        &stored,
+    );
     assert!(result.is_some());
     let c = result.unwrap();
     assert_eq!(c.entity_type, "feature");
@@ -235,20 +267,38 @@ fn detect_conflict_detects_real_conflict() {
 #[test]
 fn detect_conflict_requires_both_changed() {
     let stored = hash_value(&json!({"id": 1}));
-    let result = detect_conflict("feature", 1, json!({"id": 1, "name": "new"}), json!({"id": 1}), &stored);
+    let result = detect_conflict(
+        "feature",
+        1,
+        json!({"id": 1, "name": "new"}),
+        json!({"id": 1}),
+        &stored,
+    );
     assert!(result.is_none());
 }
 
 #[test]
 fn detect_conflict_requires_hashes_different() {
     let stored = hash_value(&json!({"id": 1}));
-    let result = detect_conflict("feature", 1, json!({"id": 1, "name": "x"}), json!({"id": 1, "name": "x"}), &stored);
+    let result = detect_conflict(
+        "feature",
+        1,
+        json!({"id": 1, "name": "x"}),
+        json!({"id": 1, "name": "x"}),
+        &stored,
+    );
     assert!(result.is_none());
 }
 
 #[test]
 fn detect_conflict_with_empty_stored_hash() {
-    let result = detect_conflict("feature", 1, json!({"id": 1}), json!({"id": 1, "new": true}), "");
+    let result = detect_conflict(
+        "feature",
+        1,
+        json!({"id": 1}),
+        json!({"id": 1, "new": true}),
+        "",
+    );
     assert!(result.is_some());
 }
 
@@ -262,7 +312,13 @@ fn detect_conflict_with_zero_entity_id() {
 #[test]
 fn detect_conflict_unicode_entity_type() {
     let stored = hash_value(&json!({"id": 1}));
-    let result = detect_conflict("特征", 1, json!({"id": 1, "name": "new"}), json!({"id": 1, "name": "different"}), &stored);
+    let result = detect_conflict(
+        "特征",
+        1,
+        json!({"id": 1, "name": "new"}),
+        json!({"id": 1, "name": "different"}),
+        &stored,
+    );
     assert!(result.is_some());
 }
 

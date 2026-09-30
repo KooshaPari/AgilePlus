@@ -158,7 +158,10 @@ fn wp_with_many_dependencies() {
 
     let proto = wp_to_proto_with_dependencies(wp, &deps);
     assert_eq!(proto.depends_on.len(), 10);
-    assert_eq!(proto.depends_on, vec![10, 11, 12, 13, 14, 15, 16, 17, 18, 19]);
+    assert_eq!(
+        proto.depends_on,
+        vec![10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+    );
 }
 
 #[test]
@@ -284,9 +287,18 @@ fn audit_entry_multiple_evidence_refs() {
         actor: "agent".into(),
         transition: "x".into(),
         evidence_refs: vec![
-            EvidenceRef { evidence_id: 1, fr_id: "FR-001".into() },
-            EvidenceRef { evidence_id: 2, fr_id: "FR-002".into() },
-            EvidenceRef { evidence_id: 3, fr_id: "FR-003".into() },
+            EvidenceRef {
+                evidence_id: 1,
+                fr_id: "FR-001".into(),
+            },
+            EvidenceRef {
+                evidence_id: 2,
+                fr_id: "FR-002".into(),
+            },
+            EvidenceRef {
+                evidence_id: 3,
+                fr_id: "FR-003".into(),
+            },
         ],
         prev_hash: [0; 32],
         hash: [0; 32],
@@ -296,7 +308,11 @@ fn audit_entry_multiple_evidence_refs() {
     let proto = audit_entry_to_proto(entry);
     assert_eq!(
         proto.evidence_refs,
-        vec!["FR-001".to_string(), "FR-002".to_string(), "FR-003".to_string()]
+        vec![
+            "FR-001".to_string(),
+            "FR-002".to_string(),
+            "FR-003".to_string()
+        ]
     );
 }
 

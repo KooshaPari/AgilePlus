@@ -8,10 +8,10 @@ use std::path::PathBuf;
 use std::pin::Pin;
 use std::sync::Arc;
 
+use chrono::Utc;
 #[cfg(not(agileplus_proto_stubs))]
 use tonic::transport::Server;
 use tonic::{Request, Response, Status};
-use chrono::Utc;
 use tracing::info;
 
 use agileplus_domain::domain::audit::AuditChain;
@@ -708,9 +708,7 @@ where
             "ship" => FeatureState::Shipped,
             "retrospective" => FeatureState::Retrospected,
             other => {
-                return Err(Status::unimplemented(format!(
-                    "unknown command: '{other}'"
-                )));
+                return Err(Status::unimplemented(format!("unknown command: '{other}'")));
             }
         };
 
@@ -748,11 +746,7 @@ where
                     }],
                     bound_at: Utc::now(),
                 };
-                if let Err(e) = self
-                    .storage
-                    .create_governance_contract(&contract)
-                    .await
-                {
+                if let Err(e) = self.storage.create_governance_contract(&contract).await {
                     info!(
                         feature_slug,
                         error = %e,
@@ -762,8 +756,10 @@ where
             }
             "validate" => {
                 // Check governance evidence requirements if a contract exists.
-                if let Ok(Some(contract)) =
-                    self.storage.get_latest_governance_contract(feature.id).await
+                if let Ok(Some(contract)) = self
+                    .storage
+                    .get_latest_governance_contract(feature.id)
+                    .await
                 {
                     let feature_wp_ids: HashSet<i64> = self
                         .storage
@@ -812,9 +808,7 @@ where
         let mut outputs = args.clone();
         outputs.insert("state".to_string(), new_state.clone());
 
-        let msg = format!(
-            "command '{command}' applied to feature '{feature_slug}': {new_state}"
-        );
+        let msg = format!("command '{command}' applied to feature '{feature_slug}': {new_state}");
         Ok((msg, outputs))
     }
 }

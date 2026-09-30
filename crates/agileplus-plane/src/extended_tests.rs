@@ -8,11 +8,11 @@ use std::time::Duration;
 
 use chrono::Utc;
 
+use crate::content_hash::*;
+use crate::daemon::*;
+use crate::state_mapper::*;
 use crate::sync_queue::*;
 use crate::webhook::*;
-use crate::state_mapper::*;
-use crate::daemon::*;
-use crate::content_hash::*;
 use agileplus_domain::domain::state_machine::FeatureState;
 
 // ============================================================
@@ -21,10 +21,7 @@ use agileplus_domain::domain::state_machine::FeatureState;
 
 #[test]
 fn sync_queue_item_backoff_at_zero() {
-    assert_eq!(
-        SyncQueueItem::next_backoff_delay(0),
-        Duration::from_secs(1)
-    );
+    assert_eq!(SyncQueueItem::next_backoff_delay(0), Duration::from_secs(1));
 }
 
 #[test]
@@ -39,10 +36,7 @@ fn sync_queue_item_backoff_at_max_retries() {
 #[test]
 fn sync_queue_item_backoff_overflow_cap() {
     // Very large attempt should still cap at MAX_BACKOFF
-    assert_eq!(
-        SyncQueueItem::next_backoff_delay(100),
-        MAX_BACKOFF
-    );
+    assert_eq!(SyncQueueItem::next_backoff_delay(100), MAX_BACKOFF);
 }
 
 #[test]
@@ -135,11 +129,7 @@ fn sync_queue_pop_ready_returns_none_when_empty() {
 #[test]
 fn sync_queue_pop_ready_returns_none_when_all_future() {
     let mut q = SyncQueue::new();
-    q.enqueue(
-        SyncOpKind::CreateIssue,
-        "{}".into(),
-    )
-    .unwrap();
+    q.enqueue(SyncOpKind::CreateIssue, "{}".into()).unwrap();
     // The item was just enqueued with next_attempt_at = now, so it should be ready.
     // But if we had a future item, it wouldn't be ready.
     // The item IS ready since next_attempt_at is Utc::now() at enqueue.
@@ -183,8 +173,7 @@ fn sync_queue_reload_respects_capacity() {
     let mut q = SyncQueue::new();
     // Fill to capacity
     for i in 0..QUEUE_CAPACITY {
-        q.enqueue(SyncOpKind::CreateIssue, format!("{i}"))
-            .unwrap();
+        q.enqueue(SyncOpKind::CreateIssue, format!("{i}")).unwrap();
     }
     assert_eq!(q.len(), QUEUE_CAPACITY);
 
@@ -220,7 +209,12 @@ fn sync_queue_enqueue_sequential_ids() {
 
 #[test]
 fn sync_task_new_defaults() {
-    let task = SyncTask::new(42, SyncOpKind::CreateIssue, "{}".into(), Some("hash1".into()));
+    let task = SyncTask::new(
+        42,
+        SyncOpKind::CreateIssue,
+        "{}".into(),
+        Some("hash1".into()),
+    );
     assert_eq!(task.id, 42);
     assert_eq!(task.kind, SyncOpKind::CreateIssue);
     assert_eq!(task.attempt, 0);
@@ -344,7 +338,7 @@ fn sync_op_kind_serde_roundtrip() {
 
 #[test]
 fn verify_hmac_valid_signature() {
-    use hmac::{Hmac, Mac, KeyInit};
+    use hmac::{Hmac, KeyInit, Mac};
     use sha2::Sha256;
 
     let secret = b"webhook_secret";
@@ -382,7 +376,7 @@ fn verify_hmac_invalid_hex() {
 
 #[test]
 fn verify_hmac_raw_hex_without_prefix_is_rejected() {
-    use hmac::{Hmac, Mac, KeyInit};
+    use hmac::{Hmac, KeyInit, Mac};
     use sha2::Sha256;
 
     let secret = b"secret";
@@ -399,7 +393,7 @@ fn verify_hmac_raw_hex_without_prefix_is_rejected() {
 
 #[test]
 fn verify_webhook_signature_alias() {
-    use hmac::{Hmac, Mac, KeyInit};
+    use hmac::{Hmac, KeyInit, Mac};
     use sha2::Sha256;
 
     let secret = b"test";
@@ -653,15 +647,12 @@ fn parse_webhook_bad_signature() {
 
     let result = parse_webhook(secret, &headers, &body_bytes.clone().into());
     assert!(result.is_err());
-    assert_eq!(
-        result.unwrap_err().0,
-        axum::http::StatusCode::UNAUTHORIZED
-    );
+    assert_eq!(result.unwrap_err().0, axum::http::StatusCode::UNAUTHORIZED);
 }
 
 #[test]
 fn parse_webhook_valid_signature() {
-    use hmac::{Hmac, Mac, KeyInit};
+    use hmac::{Hmac, KeyInit, Mac};
     use sha2::Sha256;
 
     let secret = b"my_secret";

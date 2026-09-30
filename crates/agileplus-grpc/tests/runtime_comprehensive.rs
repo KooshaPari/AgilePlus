@@ -116,13 +116,9 @@ fn from_env_values_both_databases_rejects() {
 
 #[test]
 fn from_env_values_core_database_only_rejects() {
-    let err = CoreConfig::from_env_values(
-        Some("127.0.0.1:50051"),
-        Some("/tmp"),
-        Some("core.db"),
-        None,
-    )
-    .unwrap_err();
+    let err =
+        CoreConfig::from_env_values(Some("127.0.0.1:50051"), Some("/tmp"), Some("core.db"), None)
+            .unwrap_err();
     assert!(err.contains("database path is not supported"));
 }
 

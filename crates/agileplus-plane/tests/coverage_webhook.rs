@@ -10,9 +10,9 @@ use hmac::{Hmac, KeyInit, Mac};
 use sha2::Sha256;
 
 use agileplus_plane::webhook::{
-    handle_plane_webhook, parse_webhook, verify_hmac_signature, verify_webhook_signature,
     PlaneEventType, PlaneInboundEvent, PlaneWebhookAction, PlaneWebhookCycle, PlaneWebhookIssue,
-    PlaneWebhookModule, PlaneWebhookPayload,
+    PlaneWebhookModule, PlaneWebhookPayload, handle_plane_webhook, parse_webhook,
+    verify_hmac_signature, verify_webhook_signature,
 };
 
 fn sign(secret: &[u8], body: &[u8]) -> String {
@@ -208,10 +208,8 @@ fn parse_issue_create() {
 
 #[test]
 fn parse_issue_update() {
-    let event = parse(
-        r#"{"event":"issue","action":"update","data":{"id":"i2","name":"Updated"}}"#,
-    )
-    .unwrap();
+    let event = parse(r#"{"event":"issue","action":"update","data":{"id":"i2","name":"Updated"}}"#)
+        .unwrap();
     assert!(matches!(event, PlaneInboundEvent::IssueUpdated(i) if i.id == "i2"));
 }
 
@@ -227,15 +225,16 @@ fn parse_issue_delete_carries_id() {
 
 #[test]
 fn parse_issue_unknown_action_is_400() {
-    let (code, msg) = parse(r#"{"event":"issue","action":"archive","data":{"id":"1","name":"n"}}"#)
-        .unwrap_err();
+    let (code, msg) =
+        parse(r#"{"event":"issue","action":"archive","data":{"id":"1","name":"n"}}"#).unwrap_err();
     assert_eq!(code, StatusCode::BAD_REQUEST);
     assert!(msg.contains("unknown action"));
 }
 
 #[test]
 fn parse_issue_missing_name_is_400() {
-    let (code, msg) = parse(r#"{"event":"issue","action":"create","data":{"id":"1"}}"#).unwrap_err();
+    let (code, msg) =
+        parse(r#"{"event":"issue","action":"create","data":{"id":"1"}}"#).unwrap_err();
     assert_eq!(code, StatusCode::BAD_REQUEST);
     assert!(msg.contains("invalid issue data"));
 }
@@ -248,8 +247,8 @@ fn parse_issue_data_wrong_shape_is_400() {
 
 #[test]
 fn parse_issue_optional_fields_default() {
-    let event = parse(r#"{"event":"issue","action":"create","data":{"id":"1","name":"n"}}"#)
-        .unwrap();
+    let event =
+        parse(r#"{"event":"issue","action":"create","data":{"id":"1","name":"n"}}"#).unwrap();
     match event {
         PlaneInboundEvent::IssueCreated(issue) => {
             assert!(issue.description_html.is_none());
@@ -280,10 +279,9 @@ fn parse_issue_full_fields() {
 
 #[test]
 fn parse_event_prefixed_issues_uses_issue_path() {
-    let event = parse(
-        r#"{"event":"issues:create","action":"create","data":{"id":"1","name":"n"}}"#,
-    )
-    .unwrap();
+    let event =
+        parse(r#"{"event":"issues:create","action":"create","data":{"id":"1","name":"n"}}"#)
+            .unwrap();
     assert!(matches!(event, PlaneInboundEvent::IssueCreated(_)));
 }
 
@@ -308,15 +306,15 @@ fn parse_module_update() {
 
 #[test]
 fn parse_module_delete() {
-    let event = parse(r#"{"event":"module","action":"delete","data":{"id":"m2","name":"Mod"}}"#)
-        .unwrap();
+    let event =
+        parse(r#"{"event":"module","action":"delete","data":{"id":"m2","name":"Mod"}}"#).unwrap();
     assert!(matches!(event, PlaneInboundEvent::ModuleDeleted { module_id } if module_id == "m2"));
 }
 
 #[test]
 fn parse_module_create_treated_as_update() {
-    let event = parse(r#"{"event":"module","action":"create","data":{"id":"m3","name":"Mod"}}"#)
-        .unwrap();
+    let event =
+        parse(r#"{"event":"module","action":"create","data":{"id":"m3","name":"Mod"}}"#).unwrap();
     assert!(matches!(event, PlaneInboundEvent::ModuleUpdated(m) if m.id == "m3"));
 }
 
@@ -380,8 +378,8 @@ fn parse_cycle_missing_name_is_400() {
 
 #[test]
 fn parse_cycle_optional_dates_default() {
-    let event = parse(r#"{"event":"cycle","action":"update","data":{"id":"c","name":"n"}}"#)
-        .unwrap();
+    let event =
+        parse(r#"{"event":"cycle","action":"update","data":{"id":"c","name":"n"}}"#).unwrap();
     match event {
         PlaneInboundEvent::CycleUpdated(c) => {
             assert!(c.start_date.is_none());
@@ -425,7 +423,10 @@ fn webhook_action_roundtrip() {
         PlaneWebhookAction::Delete,
     ] {
         let json = serde_json::to_string(&action).unwrap();
-        assert_eq!(serde_json::from_str::<PlaneWebhookAction>(&json).unwrap(), action);
+        assert_eq!(
+            serde_json::from_str::<PlaneWebhookAction>(&json).unwrap(),
+            action
+        );
     }
 }
 
@@ -513,13 +514,10 @@ fn inbound_event_debug_and_clone() {
 #[tokio::test]
 async fn handler_returns_200_for_valid_event() {
     let raw = r#"{"event":"issue","action":"create","data":{"id":"1","name":"n"}}"#;
-    let response = handle_plane_webhook(
-        State(Vec::<u8>::new()),
-        HeaderMap::new(),
-        Bytes::from(raw),
-    )
-    .await
-    .into_response();
+    let response =
+        handle_plane_webhook(State(Vec::<u8>::new()), HeaderMap::new(), Bytes::from(raw))
+            .await
+            .into_response();
     assert_eq!(response.status(), StatusCode::OK);
 }
 
@@ -527,22 +525,17 @@ async fn handler_returns_200_for_valid_event() {
 async fn handler_returns_401_for_bad_signature() {
     let raw = r#"{"event":"issue","action":"create","data":{"id":"1","name":"n"}}"#;
     let headers = headers_with("x-plane-signature", "sha256=deadbeef");
-    let response = handle_plane_webhook(
-        State(b"secret".to_vec()),
-        headers,
-        Bytes::from(raw),
-    )
-    .await
-    .into_response();
+    let response = handle_plane_webhook(State(b"secret".to_vec()), headers, Bytes::from(raw))
+        .await
+        .into_response();
     assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
 }
 
 #[tokio::test]
 async fn handler_returns_400_for_bad_json() {
-    let response =
-        handle_plane_webhook(State(Vec::new()), HeaderMap::new(), Bytes::from("nope"))
-            .await
-            .into_response();
+    let response = handle_plane_webhook(State(Vec::new()), HeaderMap::new(), Bytes::from("nope"))
+        .await
+        .into_response();
     assert_eq!(response.status(), StatusCode::BAD_REQUEST);
 }
 
@@ -559,12 +552,8 @@ async fn handler_returns_400_for_missing_data() {
 async fn handler_accepts_valid_signature_when_secret_configured() {
     let raw = r#"{"event":"module","action":"update","data":{"id":"m","name":"n"}}"#;
     let headers = headers_with("x-plane-signature", &sign(b"topsecret", raw.as_bytes()));
-    let response = handle_plane_webhook(
-        State(b"topsecret".to_vec()),
-        headers,
-        Bytes::from(raw),
-    )
-    .await
-    .into_response();
+    let response = handle_plane_webhook(State(b"topsecret".to_vec()), headers, Bytes::from(raw))
+        .await
+        .into_response();
     assert_eq!(response.status(), StatusCode::OK);
 }

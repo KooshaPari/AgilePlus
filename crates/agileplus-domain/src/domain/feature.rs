@@ -312,9 +312,7 @@ mod tests {
         let original = [0x42_u8; 32];
         let hex_str: String = original
             .iter()
-            .flat_map(|b| {
-                format!("{:02x}", b).into_bytes()
-            })
+            .flat_map(|b| format!("{:02x}", b).into_bytes())
             .map(|b| b as char)
             .collect();
         assert_eq!(hex_str.len(), 64);
@@ -437,7 +435,10 @@ mod coverage_tests {
         for (from, to) in allowed {
             let mut feat = f();
             feat.state = *from;
-            assert!(feat.transition(*to).is_ok(), "{from:?} -> {to:?} should be allowed");
+            assert!(
+                feat.transition(*to).is_ok(),
+                "{from:?} -> {to:?} should be allowed"
+            );
             assert_eq!(feat.state, *to);
             // Every other target must be rejected from `from`.
             for other in all {
@@ -549,8 +550,7 @@ mod coverage_tests {
         feat.last_modified_commit = Some("def5678".into());
         feat.module_id = Some(1);
         feat.project_id = Some(2);
-        let back: Feature =
-            serde_json::from_str(&serde_json::to_string(&feat).unwrap()).unwrap();
+        let back: Feature = serde_json::from_str(&serde_json::to_string(&feat).unwrap()).unwrap();
         assert_eq!(back.plane_issue_id.as_deref(), Some("plane-1"));
         assert_eq!(back.plane_state_id.as_deref(), Some("state-1"));
         assert_eq!(back.created_at_commit.as_deref(), Some("abc1234"));

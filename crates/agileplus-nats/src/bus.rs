@@ -411,14 +411,8 @@ mod tests {
         let handler = Arc::new(FnHandler(|_: &Envelope| Ok(())));
         let handler2 = Arc::new(FnHandler(|_: &Envelope| Ok(())));
 
-        let id1 = bus
-            .subscribe(Subject::new("a"), handler)
-            .await
-            .unwrap();
-        let id2 = bus
-            .subscribe(Subject::new("b"), handler2)
-            .await
-            .unwrap();
+        let id1 = bus.subscribe(Subject::new("a"), handler).await.unwrap();
+        let id2 = bus.subscribe(Subject::new("b"), handler2).await.unwrap();
         assert_ne!(id1, id2);
     }
 
@@ -426,10 +420,7 @@ mod tests {
     async fn subscribe_id_format() {
         let bus = InMemoryBus::new();
         let handler = Arc::new(FnHandler(|_: &Envelope| Ok(())));
-        let id = bus
-            .subscribe(Subject::new("x"), handler)
-            .await
-            .unwrap();
+        let id = bus.subscribe(Subject::new("x"), handler).await.unwrap();
         assert!(id.starts_with("sub-"));
     }
 
@@ -486,10 +477,7 @@ mod tests {
 
         let handler = Arc::new(FnHandler(move |env: &Envelope| {
             if let Some(reply_to) = &env.reply_to {
-                let reply = Envelope::new(
-                    &Subject::new(reply_to),
-                    serde_json::json!({"ok": true}),
-                );
+                let reply = Envelope::new(&Subject::new(reply_to), serde_json::json!({"ok": true}));
                 let b = bus_clone.clone();
                 tokio::spawn(async move {
                     let _ = b.publish(reply).await;
@@ -502,10 +490,7 @@ mod tests {
             .await
             .unwrap();
 
-        let req = Envelope::new(
-            &Subject::new("test.rpc"),
-            serde_json::json!({}),
-        );
+        let req = Envelope::new(&Subject::new("test.rpc"), serde_json::json!({}));
         let _reply = bus.request(req, Duration::from_secs(2)).await.unwrap();
 
         // History should include both request and reply
@@ -560,10 +545,7 @@ mod tests {
     async fn event_bus_store_subscribe_and_unsubscribe() {
         let store = EventBusStore::in_memory(NatsConfig::default());
         let handler = Arc::new(FnHandler(|_: &Envelope| Ok(())));
-        let id = store
-            .subscribe(Subject::new("t"), handler)
-            .await
-            .unwrap();
+        let id = store.subscribe(Subject::new("t"), handler).await.unwrap();
         assert!(id.starts_with("sub-"));
         store.unsubscribe(&id).await.unwrap();
     }
@@ -571,10 +553,7 @@ mod tests {
     #[tokio::test]
     async fn event_bus_store_request_delegates() {
         let store = EventBusStore::in_memory(NatsConfig::default());
-        let req = Envelope::new(
-            &Subject::new("agileplus.rpc.nobody"),
-            serde_json::json!({}),
-        );
+        let req = Envelope::new(&Subject::new("agileplus.rpc.nobody"), serde_json::json!({}));
         let result = store.request(req, Duration::from_millis(50)).await;
         assert!(matches!(result, Err(EventBusError::Timeout)));
     }
@@ -639,9 +618,12 @@ mod tests {
             Ok(())
         }));
 
-        bus.subscribe(Subject::all_of_type("agileplus", "feature", "created"), handler)
-            .await
-            .unwrap();
+        bus.subscribe(
+            Subject::all_of_type("agileplus", "feature", "created"),
+            handler,
+        )
+        .await
+        .unwrap();
 
         // This matches
         let env1 = Envelope::new(
@@ -672,10 +654,7 @@ mod tests {
                     "echo": env.payload,
                     "status": "processed"
                 });
-                let reply = Envelope::new(
-                    &Subject::new(reply_to),
-                    response,
-                );
+                let reply = Envelope::new(&Subject::new(reply_to), response);
                 let b = bus_clone.clone();
                 tokio::spawn(async move {
                     let _ = b.publish(reply).await;
@@ -725,7 +704,9 @@ mod tests {
         let bus = InMemoryBus::new();
         for i in 0..5 {
             let payload = serde_json::json!({ "i": i });
-            bus.publish(Envelope::new(&Subject::new(&format!("t.{i}")), payload)).await.unwrap();
+            bus.publish(Envelope::new(&Subject::new(&format!("t.{i}")), payload))
+                .await
+                .unwrap();
         }
         let history = bus.published();
         assert_eq!(history.len(), 5);
@@ -752,10 +733,8 @@ mod tests {
                 *observed_clone.lock().unwrap() = Some(captured.clone());
                 let bus_clone = responder_bus.clone();
                 tokio::spawn(async move {
-                    let reply = Envelope::new(
-                        &Subject::new(&captured),
-                        serde_json::json!({"reply": true}),
-                    );
+                    let reply =
+                        Envelope::new(&Subject::new(&captured), serde_json::json!({"reply": true}));
                     let _ = bus_clone.publish(reply).await;
                 });
             }
@@ -793,7 +772,10 @@ mod tests {
         let bus = InMemoryBus::new();
         let req = Envelope::new(&Subject::new("no_reply"), serde_json::json!({}))
             .with_reply_to(&Subject::new("_INBOX.missing"));
-        let err = bus.request(req, Duration::from_millis(10)).await.unwrap_err();
+        let err = bus
+            .request(req, Duration::from_millis(10))
+            .await
+            .unwrap_err();
         assert!(matches!(err, EventBusError::Timeout));
     }
 
@@ -807,12 +789,19 @@ mod tests {
             Ok(())
         }));
 
-        let sub1 = bus.subscribe(Subject::new("t"), handler_a.clone()).await.unwrap();
-        bus.publish(Envelope::new(&Subject::new("t"), serde_json::json!({}))).await.unwrap();
+        let sub1 = bus
+            .subscribe(Subject::new("t"), handler_a.clone())
+            .await
+            .unwrap();
+        bus.publish(Envelope::new(&Subject::new("t"), serde_json::json!({})))
+            .await
+            .unwrap();
         assert_eq!(*count.lock().unwrap(), 1);
 
         bus.unsubscribe(&sub1).await.unwrap();
-        bus.publish(Envelope::new(&Subject::new("t"), serde_json::json!({}))).await.unwrap();
+        bus.publish(Envelope::new(&Subject::new("t"), serde_json::json!({})))
+            .await
+            .unwrap();
         assert_eq!(*count.lock().unwrap(), 1);
 
         let count_b = count.clone();
@@ -821,7 +810,9 @@ mod tests {
             Ok(())
         }));
         let sub2 = bus.subscribe(Subject::new("t"), handler_b).await.unwrap();
-        bus.publish(Envelope::new(&Subject::new("t"), serde_json::json!({}))).await.unwrap();
+        bus.publish(Envelope::new(&Subject::new("t"), serde_json::json!({})))
+            .await
+            .unwrap();
         assert_eq!(*count.lock().unwrap(), 2);
         bus.unsubscribe(&sub2).await.unwrap();
     }
@@ -874,8 +865,20 @@ mod tests {
         let config = NatsConfig::default();
         let store = EventBusStore::new(config, backend);
 
-        store.publish(Envelope::new(&Subject::new("hist.1"), serde_json::json!({}))).await.unwrap();
-        store.publish(Envelope::new(&Subject::new("hist.2"), serde_json::json!({}))).await.unwrap();
+        store
+            .publish(Envelope::new(
+                &Subject::new("hist.1"),
+                serde_json::json!({}),
+            ))
+            .await
+            .unwrap();
+        store
+            .publish(Envelope::new(
+                &Subject::new("hist.2"),
+                serde_json::json!({}),
+            ))
+            .await
+            .unwrap();
 
         let _ = shared_bus_for_outer; // ensure captured
     }
@@ -923,10 +926,17 @@ mod tests {
             Ok(())
         }));
 
-        bus.subscribe(Subject::new("agileplus.>"), handler).await.unwrap();
+        bus.subscribe(Subject::new("agileplus.>"), handler)
+            .await
+            .unwrap();
 
         for i in 1..=3 {
-            bus.publish(Envelope::new(&Subject::new(&format!("agileplus.feature.{i}.created")), serde_json::json!({}))).await.unwrap();
+            bus.publish(Envelope::new(
+                &Subject::new(&format!("agileplus.feature.{i}.created")),
+                serde_json::json!({}),
+            ))
+            .await
+            .unwrap();
         }
 
         assert_eq!(received.lock().unwrap().len(), 3);
@@ -943,11 +953,28 @@ mod tests {
         }));
 
         // Pattern matches 3-token subjects ending in `.created`.
-        bus.subscribe(Subject::new("*.wp.created"), handler).await.unwrap();
+        bus.subscribe(Subject::new("*.wp.created"), handler)
+            .await
+            .unwrap();
 
-        bus.publish(Envelope::new(&Subject::new("agileplus.wp.created"), serde_json::json!({}))).await.unwrap();
-        bus.publish(Envelope::new(&Subject::new("acme.wp.created"), serde_json::json!({}))).await.unwrap();
-        bus.publish(Envelope::new(&Subject::new("agileplus.wp.updated"), serde_json::json!({}))).await.unwrap();
+        bus.publish(Envelope::new(
+            &Subject::new("agileplus.wp.created"),
+            serde_json::json!({}),
+        ))
+        .await
+        .unwrap();
+        bus.publish(Envelope::new(
+            &Subject::new("acme.wp.created"),
+            serde_json::json!({}),
+        ))
+        .await
+        .unwrap();
+        bus.publish(Envelope::new(
+            &Subject::new("agileplus.wp.updated"),
+            serde_json::json!({}),
+        ))
+        .await
+        .unwrap();
 
         let got = received.lock().unwrap();
         assert_eq!(got.len(), 2);
@@ -967,14 +994,17 @@ mod tests {
                 let env_payload = env.payload.clone();
                 let bus_clone = inner_bus.clone();
                 tokio::spawn(async move {
-                    let reply = Envelope::new(&Subject::new(&r), serde_json::json!({"echo": env_payload}))
-                        .with_correlation(cid.unwrap_or_default());
+                    let reply =
+                        Envelope::new(&Subject::new(&r), serde_json::json!({"echo": env_payload}))
+                            .with_correlation(cid.unwrap_or_default());
                     let _ = bus_clone.publish(reply).await;
                 });
             }
             Ok(())
         }));
-        bus.subscribe(Subject::new("echo"), responder).await.unwrap();
+        bus.subscribe(Subject::new("echo"), responder)
+            .await
+            .unwrap();
 
         let req_payload = serde_json::json!({"msg": "hello"});
         let req = Envelope::new(&Subject::new("echo"), req_payload.clone())
@@ -991,9 +1021,13 @@ mod tests {
     async fn no_matching_subscribers_silently_publishes_extended() {
         let bus = InMemoryBus::new();
         // No subscribers, just publish
-        bus.publish(Envelope::new(&Subject::new("orphan"), serde_json::json!({}))).await.unwrap();
+        bus.publish(Envelope::new(
+            &Subject::new("orphan"),
+            serde_json::json!({}),
+        ))
+        .await
+        .unwrap();
         // Should not error, envelope recorded
         assert_eq!(bus.published().len(), 1);
     }
 }
-

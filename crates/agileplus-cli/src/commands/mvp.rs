@@ -471,10 +471,7 @@ mod tests {
 
     #[test]
     fn parse_csv_multiple_elements() {
-        assert_eq!(
-            parse_csv("a.rs,b.rs,c.rs"),
-            vec!["a.rs", "b.rs", "c.rs"]
-        );
+        assert_eq!(parse_csv("a.rs,b.rs,c.rs"), vec!["a.rs", "b.rs", "c.rs"]);
     }
 
     #[test]
@@ -487,10 +484,7 @@ mod tests {
 
     #[test]
     fn parse_csv_filters_empty_segments() {
-        assert_eq!(
-            parse_csv("a.rs,,b.rs,,"),
-            vec!["a.rs", "b.rs"]
-        );
+        assert_eq!(parse_csv("a.rs,,b.rs,,"), vec!["a.rs", "b.rs"]);
     }
 
     #[test]
@@ -535,11 +529,17 @@ mod tests {
 
     #[test]
     fn parse_wp_state_all_variants() {
-        assert!(matches!(parse_wp_state("planned").unwrap(), WpState::Planned));
+        assert!(matches!(
+            parse_wp_state("planned").unwrap(),
+            WpState::Planned
+        ));
         assert!(matches!(parse_wp_state("doing").unwrap(), WpState::Doing));
         assert!(matches!(parse_wp_state("review").unwrap(), WpState::Review));
         assert!(matches!(parse_wp_state("done").unwrap(), WpState::Done));
-        assert!(matches!(parse_wp_state("blocked").unwrap(), WpState::Blocked));
+        assert!(matches!(
+            parse_wp_state("blocked").unwrap(),
+            WpState::Blocked
+        ));
     }
 
     #[test]

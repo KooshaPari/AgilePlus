@@ -187,7 +187,11 @@ mod coverage_tests {
     fn can_transition_to_full_matrix() {
         for from in ALL {
             for to in ALL {
-                assert_eq!(from.can_transition_to(to), allowed(from, to), "{from:?}->{to:?}");
+                assert_eq!(
+                    from.can_transition_to(to),
+                    allowed(from, to),
+                    "{from:?}->{to:?}"
+                );
             }
         }
     }
@@ -258,8 +262,14 @@ mod coverage_tests {
                 serde_json::from_str(&serde_json::to_string(&s).unwrap()).unwrap();
             assert_eq!(back, s);
         }
-        assert_eq!(serde_json::to_string(&EpicStatus::Backlog).unwrap(), "\"backlog\"");
-        assert_eq!(serde_json::to_string(&EpicStatus::Cancelled).unwrap(), "\"cancelled\"");
+        assert_eq!(
+            serde_json::to_string(&EpicStatus::Backlog).unwrap(),
+            "\"backlog\""
+        );
+        assert_eq!(
+            serde_json::to_string(&EpicStatus::Cancelled).unwrap(),
+            "\"cancelled\""
+        );
     }
 
     #[test]

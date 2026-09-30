@@ -668,7 +668,10 @@ pub async fn save_services_settings(axum::Form(form): axum::Form<ServiceSettings
     let mut updated = 0usize;
     for (name, url) in submitted {
         // A blank field means "keep the default", so it is not a save.
-        let Some(url) = url.map(|url| url.trim().to_string()).filter(|url| !url.is_empty()) else {
+        let Some(url) = url
+            .map(|url| url.trim().to_string())
+            .filter(|url| !url.is_empty())
+        else {
             continue;
         };
         match services.iter_mut().find(|service| service.name == name) {
@@ -999,20 +1002,15 @@ mod tests {
 
     #[test]
     fn test_plane_api_key_hint_two_char_key() {
-        assert_eq!(
-            plane_api_key_hint(&Some("ab".to_string())),
-            "a••••••b"
-        );
+        assert_eq!(plane_api_key_hint(&Some("ab".to_string())), "a••••••b");
     }
 
     // ── plane_connection_checks ──────────────────────────────────────────
 
     #[test]
     fn test_plane_connection_all_present() {
-        let (ok, status, warnings) = plane_connection_checks(
-            &Some("key".to_string()),
-            &Some("workspace".to_string()),
-        );
+        let (ok, status, warnings) =
+            plane_connection_checks(&Some("key".to_string()), &Some("workspace".to_string()));
         assert!(ok);
         assert!(warnings.is_empty());
         assert!(status.contains("Connected"));
@@ -1020,8 +1018,7 @@ mod tests {
 
     #[test]
     fn test_plane_connection_missing_key_only() {
-        let (ok, status, warnings) =
-            plane_connection_checks(&None, &Some("workspace".to_string()));
+        let (ok, status, warnings) = plane_connection_checks(&None, &Some("workspace".to_string()));
         assert!(!ok);
         assert_eq!(warnings.len(), 1);
         assert!(status.contains("Missing PLANE_API_KEY"));
@@ -1029,8 +1026,7 @@ mod tests {
 
     #[test]
     fn test_plane_connection_missing_workspace_only() {
-        let (ok, _, warnings) =
-            plane_connection_checks(&Some("key".to_string()), &None);
+        let (ok, _, warnings) = plane_connection_checks(&Some("key".to_string()), &None);
         assert!(!ok);
         assert_eq!(warnings.len(), 1);
     }

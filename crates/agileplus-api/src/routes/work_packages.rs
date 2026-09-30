@@ -277,7 +277,10 @@ mod tests {
 
     #[test]
     fn parse_wp_state_planned() {
-        assert!(matches!(parse_wp_state("planned").unwrap(), WpState::Planned));
+        assert!(matches!(
+            parse_wp_state("planned").unwrap(),
+            WpState::Planned
+        ));
     }
 
     #[test]
@@ -297,16 +300,25 @@ mod tests {
 
     #[test]
     fn parse_wp_state_blocked() {
-        assert!(matches!(parse_wp_state("blocked").unwrap(), WpState::Blocked));
+        assert!(matches!(
+            parse_wp_state("blocked").unwrap(),
+            WpState::Blocked
+        ));
     }
 
     #[test]
     fn parse_wp_state_case_insensitive() {
-        assert!(matches!(parse_wp_state("Planned").unwrap(), WpState::Planned));
+        assert!(matches!(
+            parse_wp_state("Planned").unwrap(),
+            WpState::Planned
+        ));
         assert!(matches!(parse_wp_state("DOING").unwrap(), WpState::Doing));
         assert!(matches!(parse_wp_state("Review").unwrap(), WpState::Review));
         assert!(matches!(parse_wp_state("DONE").unwrap(), WpState::Done));
-        assert!(matches!(parse_wp_state("BLOCKED").unwrap(), WpState::Blocked));
+        assert!(matches!(
+            parse_wp_state("BLOCKED").unwrap(),
+            WpState::Blocked
+        ));
     }
 
     #[test]

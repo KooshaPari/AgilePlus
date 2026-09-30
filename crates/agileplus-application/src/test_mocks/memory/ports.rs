@@ -2,8 +2,8 @@
 //! In-memory doubles for the smaller repository ports, plus the event spy.
 
 use std::collections::HashMap;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use async_trait::async_trait;
 use tokio::sync::RwLock;

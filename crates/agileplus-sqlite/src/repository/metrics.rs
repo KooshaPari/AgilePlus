@@ -193,7 +193,12 @@ mod tests {
 
     /// Insert a metric row verbatim so the nullable payload columns can hold
     /// values the repository writer would never produce.
-    fn insert_raw_metric(conn: &Connection, feature_id: i64, metadata: Option<&str>, timestamp: &str) {
+    fn insert_raw_metric(
+        conn: &Connection,
+        feature_id: i64,
+        metadata: Option<&str>,
+        timestamp: &str,
+    ) {
         conn.execute(
             "INSERT INTO metrics
              (feature_id, command, duration_ms, agent_runs, review_cycles, metadata, timestamp)

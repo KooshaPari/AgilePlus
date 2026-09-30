@@ -1,6 +1,8 @@
 //! Integration tests for the `coderabbit` module using wiremock.
 
-use agileplus_agent_review::coderabbit::{fetch_review_comments, parse_review_status, ReviewStatus};
+use agileplus_agent_review::coderabbit::{
+    ReviewStatus, fetch_review_comments, parse_review_status,
+};
 use wiremock::matchers::{method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
@@ -58,10 +60,19 @@ async fn test_fetch_comments_coderabbit_only() {
     assert_eq!(comments.len(), 3);
 
     // First two are actionable (suggestion block and warning prefix).
-    assert!(comments[0].is_actionable, "suggestion block should be actionable");
-    assert!(comments[1].is_actionable, "warning prefix should be actionable");
+    assert!(
+        comments[0].is_actionable,
+        "suggestion block should be actionable"
+    );
+    assert!(
+        comments[1].is_actionable,
+        "warning prefix should be actionable"
+    );
     // Third is praise — informational.
-    assert!(!comments[2].is_actionable, "praise should not be actionable");
+    assert!(
+        !comments[2].is_actionable,
+        "praise should not be actionable"
+    );
 }
 
 #[tokio::test]
@@ -70,9 +81,7 @@ async fn test_fetch_comments_mixed_filters_non_bot() {
 
     Mock::given(method("GET"))
         .and(path("/repos/acme/repo/pulls/1/comments"))
-        .respond_with(
-            ResponseTemplate::new(200).set_body_string(fixture("pr_comments_mixed.json")),
-        )
+        .respond_with(ResponseTemplate::new(200).set_body_string(fixture("pr_comments_mixed.json")))
         .mount(&server)
         .await;
 
@@ -153,7 +162,10 @@ async fn test_fetch_comments_pagination() {
     }]);
 
     // Page 2 URL that the Link header will point to.
-    let page2_url = format!("{}/repos/acme/repo/pulls/1/comments?per_page=100&page=2", server.uri());
+    let page2_url = format!(
+        "{}/repos/acme/repo/pulls/1/comments?per_page=100&page=2",
+        server.uri()
+    );
     let link_header = format!(r#"<{page2_url}>; rel="next""#);
 
     // First request (with per_page=100 query param).
@@ -228,7 +240,10 @@ async fn test_fetch_comments_rate_limited() {
 
     assert!(result.is_err());
     let msg = result.unwrap_err().to_string();
-    assert!(msg.contains("rate limited"), "expected rate limit error, got: {msg}");
+    assert!(
+        msg.contains("rate limited"),
+        "expected rate limit error, got: {msg}"
+    );
     assert!(msg.contains("1746000000"), "should include reset timestamp");
 }
 
@@ -240,9 +255,7 @@ async fn test_parse_review_status_approved() {
 
     Mock::given(method("GET"))
         .and(path("/repos/acme/repo/pulls/1/reviews"))
-        .respond_with(
-            ResponseTemplate::new(200).set_body_string(fixture("pr_reviews.json")),
-        )
+        .respond_with(ResponseTemplate::new(200).set_body_string(fixture("pr_reviews.json")))
         .mount(&server)
         .await;
 

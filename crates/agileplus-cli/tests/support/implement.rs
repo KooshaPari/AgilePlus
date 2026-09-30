@@ -331,12 +331,12 @@ impl ScriptedAgent {
 }
 
 impl AgentPort for ScriptedAgent {
-    fn dispatch(
+    async fn dispatch(
         &self,
         _task: AgentTask,
         _config: &AgentConfig,
-    ) -> impl std::future::Future<Output = Result<AgentResult, DomainError>> + Send {
-        async { Err(DomainError::NotFound("not used by implement".into())) }
+    ) -> Result<AgentResult, DomainError> {
+        Err(DomainError::NotFound("not used by implement".into()))
     }
 
     fn dispatch_async(
@@ -386,11 +386,8 @@ impl AgentPort for ScriptedAgent {
         async move { Ok(status) }
     }
 
-    fn cancel(
-        &self,
-        _job_id: &str,
-    ) -> impl std::future::Future<Output = Result<(), DomainError>> + Send {
-        async { Ok(()) }
+    async fn cancel(&self, _job_id: &str) -> Result<(), DomainError> {
+        Ok(())
     }
 
     fn send_instruction(

@@ -11,8 +11,8 @@ use agileplus_domain::domain::{
     metric::Metric,
 };
 use agileplus_sqlite::{
-    repository::{audit, evidence, governance, metrics},
     SqliteStorageAdapter,
+    repository::{audit, evidence, governance, metrics},
 };
 
 fn adapter() -> SqliteStorageAdapter {
@@ -81,7 +81,10 @@ fn audit_first_entry_with_nonzero_prev_hash_rejected() {
     common::seed_feature_valid(&conn, 1, "f1");
     let entry = audit_entry(1, [9u8; 32], [1u8; 32], "created");
     let err = audit::append_audit_entry(&conn, &entry).unwrap_err();
-    assert!(matches!(err, agileplus_domain::error::DomainError::Storage(_)));
+    assert!(matches!(
+        err,
+        agileplus_domain::error::DomainError::Storage(_)
+    ));
 }
 
 #[test]
@@ -97,7 +100,10 @@ fn audit_chain_links_and_latest() {
     assert_eq!(trail[0].transition, "created");
     assert_eq!(trail[0].prev_hash, [0u8; 32]);
     assert_eq!(trail[0].hash, [1u8; 32]);
-    assert_eq!(trail[1].prev_hash, [1u8; 32], "second entry chains to first");
+    assert_eq!(
+        trail[1].prev_hash, [1u8; 32],
+        "second entry chains to first"
+    );
 
     let latest = audit::get_latest_audit_entry(&conn, 1).unwrap().unwrap();
     assert_eq!(latest.hash, [2u8; 32]);
@@ -215,7 +221,11 @@ fn evidence_get_by_fr_filters() {
     let a_items = evidence::get_evidence_by_fr(&conn, "FR-A").unwrap();
     assert_eq!(a_items.len(), 1);
     assert_eq!(a_items[0].evidence_type, EvidenceType::CiOutput);
-    assert!(evidence::get_evidence_by_fr(&conn, "FR-Z").unwrap().is_empty());
+    assert!(
+        evidence::get_evidence_by_fr(&conn, "FR-Z")
+            .unwrap()
+            .is_empty()
+    );
 }
 
 #[test]
@@ -254,7 +264,11 @@ fn evidence_metadata_roundtrips() {
 fn evidence_empty_for_unknown_wp() {
     let a = adapter();
     let conn = a.conn_for_bench().unwrap();
-    assert!(evidence::get_evidence_by_wp(&conn, 1234).unwrap().is_empty());
+    assert!(
+        evidence::get_evidence_by_wp(&conn, 1234)
+            .unwrap()
+            .is_empty()
+    );
 }
 
 #[test]
@@ -268,7 +282,10 @@ fn evidence_invalid_type_is_rejected_by_check_constraint() {
          VALUES (1, 'FR-Q', 'not_a_type', 'p', NULL, ?1)",
         rusqlite::params![chrono::Utc::now().to_rfc3339()],
     );
-    assert!(err.is_err(), "unknown evidence_type must violate the CHECK constraint");
+    assert!(
+        err.is_err(),
+        "unknown evidence_type must violate the CHECK constraint"
+    );
 }
 
 #[test]
@@ -290,8 +307,10 @@ fn evidence_valid_row_parses_through_wp_query() {
 fn evidence_fk_requires_existing_wp() {
     let a = adapter();
     let conn = a.conn_for_bench().unwrap();
-    assert!(evidence::create_evidence(&conn, &evidence_row(9999, "FR", EvidenceType::TestResult))
-        .is_err());
+    assert!(
+        evidence::create_evidence(&conn, &evidence_row(9999, "FR", EvidenceType::TestResult))
+            .is_err()
+    );
 }
 
 // ---------------------------------------------------------------------------
@@ -320,7 +339,9 @@ fn governance_contract_create_and_get() {
     let id = governance::create_governance_contract(&conn, &contract(1, 1)).unwrap();
     assert!(id > 0);
 
-    let got = governance::get_governance_contract(&conn, 1, 1).unwrap().unwrap();
+    let got = governance::get_governance_contract(&conn, 1, 1)
+        .unwrap()
+        .unwrap();
     assert_eq!(got.version, 1);
     assert_eq!(got.rules.len(), 1);
     assert_eq!(got.rules[0].transition, "ship");
@@ -355,8 +376,16 @@ fn governance_contract_duplicate_version_rejected() {
 fn governance_contract_missing_is_none() {
     let a = adapter();
     let conn = a.conn_for_bench().unwrap();
-    assert!(governance::get_governance_contract(&conn, 1, 1).unwrap().is_none());
-    assert!(governance::get_latest_governance_contract(&conn, 1).unwrap().is_none());
+    assert!(
+        governance::get_governance_contract(&conn, 1, 1)
+            .unwrap()
+            .is_none()
+    );
+    assert!(
+        governance::get_latest_governance_contract(&conn, 1)
+            .unwrap()
+            .is_none()
+    );
 }
 
 #[test]
@@ -483,7 +512,11 @@ fn metric_with_null_feature_not_returned_for_feature_query() {
     let a = adapter();
     let conn = a.conn_for_bench().unwrap();
     metrics::record_metric(&conn, &metric(None, "global")).unwrap();
-    assert!(metrics::get_metrics_by_feature(&conn, 1).unwrap().is_empty());
+    assert!(
+        metrics::get_metrics_by_feature(&conn, 1)
+            .unwrap()
+            .is_empty()
+    );
 }
 
 #[test]

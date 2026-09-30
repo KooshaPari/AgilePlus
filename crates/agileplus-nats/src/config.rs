@@ -64,15 +64,13 @@ mod tests {
 
     #[test]
     fn with_auth_sets_token() {
-        let cfg =
-            NatsConfig::new("nats://broker:4222").with_auth("secret-token-123");
+        let cfg = NatsConfig::new("nats://broker:4222").with_auth("secret-token-123");
         assert_eq!(cfg.auth_token.as_deref(), Some("secret-token-123"));
     }
 
     #[test]
     fn with_prefix_overrides_default() {
-        let cfg =
-            NatsConfig::new("nats://broker:4222").with_prefix("myorg");
+        let cfg = NatsConfig::new("nats://broker:4222").with_prefix("myorg");
         assert_eq!(cfg.subject_prefix, "myorg");
     }
 
@@ -87,8 +85,7 @@ mod tests {
 
     #[test]
     fn config_is_clone() {
-        let cfg =
-            NatsConfig::new("nats://broker:4222").with_auth("x");
+        let cfg = NatsConfig::new("nats://broker:4222").with_auth("x");
         let cfg2 = cfg.clone();
         assert_eq!(cfg.url, cfg2.url);
         assert_eq!(cfg.auth_token, cfg2.auth_token);
@@ -106,16 +103,14 @@ mod tests {
     #[test]
     fn with_auth_accepts_string_ref() {
         let token = String::from("bearer-xyz");
-        let cfg =
-            NatsConfig::new("nats://broker:4222").with_auth(&token);
+        let cfg = NatsConfig::new("nats://broker:4222").with_auth(&token);
         assert_eq!(cfg.auth_token.as_deref(), Some("bearer-xyz"));
     }
 
     #[test]
     fn with_prefix_accepts_string_ref() {
         let prefix = String::from("custom_prefix");
-        let cfg =
-            NatsConfig::new("nats://broker:4222").with_prefix(&prefix);
+        let cfg = NatsConfig::new("nats://broker:4222").with_prefix(&prefix);
         assert_eq!(cfg.subject_prefix, "custom_prefix");
     }
 
@@ -143,9 +138,7 @@ mod tests {
 
     #[test]
     fn with_prefix_overwrites_prefix() {
-        let cfg = NatsConfig::default()
-            .with_prefix("p1")
-            .with_prefix("p2");
+        let cfg = NatsConfig::default().with_prefix("p1").with_prefix("p2");
         assert_eq!(cfg.subject_prefix, "p2");
     }
 

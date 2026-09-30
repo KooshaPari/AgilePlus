@@ -1,8 +1,10 @@
 //! Integration tests for the scoring engine: evaluate, render_markdown, probes.
 //! Complements the inline unit tests in src/scoring_engine.rs.
 
+use agileplus_governance::scoring_engine::{
+    ProbeEvidence, ProbeRule, TaggedProbeEvidence, SCORING_PROBES,
+};
 use agileplus_governance::*;
-use agileplus_governance::scoring_engine::{ProbeRule, ProbeEvidence, TaggedProbeEvidence, SCORING_PROBES};
 use std::collections::BTreeMap;
 
 fn _scoring_spec() -> ScoringSpec {
@@ -270,12 +272,12 @@ fn scoring_probes_has_at_least_five() {
 
 #[test]
 fn scoring_probes_clusters_cover_required() {
-    let clusters: BTreeMap<&str, bool> = SCORING_PROBES
-        .iter()
-        .map(|p| (p.cluster, true))
-        .collect();
+    let clusters: BTreeMap<&str, bool> = SCORING_PROBES.iter().map(|p| (p.cluster, true)).collect();
     for required in ["C01", "C04", "C05", "C08", "C11"] {
-        assert!(clusters.contains_key(required), "missing probe for {required}");
+        assert!(
+            clusters.contains_key(required),
+            "missing probe for {required}"
+        );
     }
 }
 

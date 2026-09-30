@@ -556,9 +556,7 @@ async fn run_validate(world: &mut AgilePlusWorld, slug: String) {
                 for rule in &contract.rules {
                     if rule.transition == "implementing -> validated" {
                         for req in &rule.required_evidence {
-                            let found = collected_evidence.iter().any(|e| {
-                                e.fr_id == *req
-                            });
+                            let found = collected_evidence.iter().any(|e| e.fr_id == *req);
                             if !found {
                                 missing.push(req.clone());
                             }
@@ -898,7 +896,10 @@ async fn first_entry_has_transition(world: &mut AgilePlusWorld, transition: Stri
 async fn verification_fails_empty_chain(world: &mut AgilePlusWorld) {
     let result = world.last_result.as_ref().expect("No result");
     let err = result.as_ref().unwrap_err();
-    assert!(err.contains("empty audit chain"), "Expected 'empty audit chain' error, got: {err}");
+    assert!(
+        err.contains("empty audit chain"),
+        "Expected 'empty audit chain' error, got: {err}"
+    );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

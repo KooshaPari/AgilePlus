@@ -694,9 +694,15 @@ mod tests {
     #[tokio::test]
     async fn test_log_and_query_by_user() {
         let logger = AuditLogger::in_memory().unwrap();
-        logger.log(&AuditEvent::success("a1").with_user("alice")).unwrap();
-        logger.log(&AuditEvent::success("a2").with_user("bob")).unwrap();
-        logger.log(&AuditEvent::success("a3").with_user("alice")).unwrap();
+        logger
+            .log(&AuditEvent::success("a1").with_user("alice"))
+            .unwrap();
+        logger
+            .log(&AuditEvent::success("a2").with_user("bob"))
+            .unwrap();
+        logger
+            .log(&AuditEvent::success("a3").with_user("alice"))
+            .unwrap();
         let events = logger.query(&AuditFilter::new().user("alice")).unwrap();
         assert_eq!(events.len(), 2);
     }
@@ -706,7 +712,12 @@ mod tests {
         let logger = AuditLogger::in_memory().unwrap();
         logger.log(&AuditEvent::success("a1")).unwrap();
         logger.log(&AuditEvent::error("a2", "err")).unwrap();
-        let events = logger.query(&AuditFilter { level: Some(LogLevel::Error), ..AuditFilter::new() }).unwrap();
+        let events = logger
+            .query(&AuditFilter {
+                level: Some(LogLevel::Error),
+                ..AuditFilter::new()
+            })
+            .unwrap();
         assert_eq!(events.len(), 1);
     }
 
@@ -736,7 +747,6 @@ mod tests {
         let back: AuditEvent = serde_json::from_str(&json).unwrap();
         assert_eq!(back.action, "test");
     }
-
 }
 #[cfg(test)]
 mod extended_tests {
@@ -815,8 +825,12 @@ mod extended_tests {
     #[tokio::test]
     async fn audit_query_filter_by_user() {
         let logger = AuditLogger::in_memory().unwrap();
-        logger.log(&AuditEvent::success("a").with_user("alice")).unwrap();
-        logger.log(&AuditEvent::success("b").with_user("bob")).unwrap();
+        logger
+            .log(&AuditEvent::success("a").with_user("alice"))
+            .unwrap();
+        logger
+            .log(&AuditEvent::success("b").with_user("bob"))
+            .unwrap();
         let filter = AuditFilter::new().user("alice");
         let events = logger.query(&filter).unwrap();
         assert_eq!(events.len(), 1);
@@ -855,16 +869,36 @@ mod extended_tests {
         let logger = AuditLogger::in_memory().unwrap();
         logger.log(&AuditEvent::success("a")).unwrap();
         assert_eq!(logger.unsynced_count().unwrap(), 1);
-        logger.mark_synced(&[logger.query(&AuditFilter::new()).unwrap()[0].id.clone()]).unwrap();
+        logger
+            .mark_synced(&[logger.query(&AuditFilter::new()).unwrap()[0].id.clone()])
+            .unwrap();
         assert_eq!(logger.unsynced_count().unwrap(), 0);
     }
 
     #[tokio::test]
     async fn audit_stats_levels() {
         let logger = AuditLogger::in_memory().unwrap();
-        logger.log(&AuditEvent::new("a", LogLevel::Info, OperationResult::Success)).unwrap();
-        logger.log(&AuditEvent::new("b", LogLevel::Warn, OperationResult::Success)).unwrap();
-        logger.log(&AuditEvent::new("c", LogLevel::Error, OperationResult::Failure)).unwrap();
+        logger
+            .log(&AuditEvent::new(
+                "a",
+                LogLevel::Info,
+                OperationResult::Success,
+            ))
+            .unwrap();
+        logger
+            .log(&AuditEvent::new(
+                "b",
+                LogLevel::Warn,
+                OperationResult::Success,
+            ))
+            .unwrap();
+        logger
+            .log(&AuditEvent::new(
+                "c",
+                LogLevel::Error,
+                OperationResult::Failure,
+            ))
+            .unwrap();
         let stats = logger.stats().unwrap();
         assert_eq!(stats.total, 3);
         assert_eq!(stats.errors, 1);
@@ -875,10 +909,7 @@ mod extended_tests {
 
     #[tokio::test]
     async fn audit_filter_builder() {
-        let filter = AuditFilter::new()
-            .action("deploy")
-            .user("alice")
-            .limit(50);
+        let filter = AuditFilter::new().action("deploy").user("alice").limit(50);
         assert_eq!(filter.action.as_deref(), Some("deploy"));
         assert_eq!(filter.user_id.as_deref(), Some("alice"));
         assert_eq!(filter.limit, 50);
@@ -939,14 +970,10 @@ mod extended_tests {
     async fn audit_query_by_category() {
         let logger = AuditLogger::in_memory().unwrap();
         logger
-            .log(
-                &AuditEvent::success("a").with_category(ActionCategory::Release),
-            )
+            .log(&AuditEvent::success("a").with_category(ActionCategory::Release))
             .unwrap();
         logger
-            .log(
-                &AuditEvent::success("b").with_category(ActionCategory::Policy),
-            )
+            .log(&AuditEvent::success("b").with_category(ActionCategory::Policy))
             .unwrap();
 
         let releases = logger
@@ -963,16 +990,10 @@ mod extended_tests {
     async fn audit_query_by_resource() {
         let logger = AuditLogger::in_memory().unwrap();
         logger
-            .log(
-                &AuditEvent::success("a")
-                    .with_resource("package", Some("pkg-1".into())),
-            )
+            .log(&AuditEvent::success("a").with_resource("package", Some("pkg-1".into())))
             .unwrap();
         logger
-            .log(
-                &AuditEvent::success("b")
-                    .with_resource("release", Some("rel-1".into())),
-            )
+            .log(&AuditEvent::success("b").with_resource("release", Some("rel-1".into())))
             .unwrap();
 
         let packages = logger
@@ -1021,9 +1042,7 @@ mod extended_tests {
         logger.log(&e2).unwrap();
         logger.mark_synced(&[e1.id.clone()]).unwrap();
 
-        let unsynced = logger
-            .query(&AuditFilter::new().unsynced())
-            .unwrap();
+        let unsynced = logger.query(&AuditFilter::new().unsynced()).unwrap();
         assert_eq!(unsynced.len(), 1);
         assert_eq!(unsynced[0].action, "unsynced");
     }
@@ -1055,25 +1074,18 @@ mod extended_tests {
 
     #[tokio::test]
     async fn audit_event_with_parameters_and_stack_trace() {
-        let event = AuditEvent::success("test")
-            .with_parameters(serde_json::json!({"key": "value"}));
+        let event =
+            AuditEvent::success("test").with_parameters(serde_json::json!({"key": "value"}));
         let mut event = event;
         event.stack_trace = Some("at fn foo() line 42".into());
         assert!(event.parameters.is_some());
-        assert_eq!(
-            event.parameters.unwrap()["key"],
-            serde_json::json!("value")
-        );
-        assert_eq!(
-            event.stack_trace.as_deref(),
-            Some("at fn foo() line 42")
-        );
+        assert_eq!(event.parameters.unwrap()["key"], serde_json::json!("value"));
+        assert_eq!(event.stack_trace.as_deref(), Some("at fn foo() line 42"));
     }
 
     #[tokio::test]
     async fn audit_event_with_result_override() {
-        let event =
-            AuditEvent::success("test").with_result(OperationResult::PartialSuccess);
+        let event = AuditEvent::success("test").with_result(OperationResult::PartialSuccess);
         assert_eq!(event.result, OperationResult::PartialSuccess);
     }
 
@@ -1089,15 +1101,13 @@ mod extended_tests {
         logger.log(&AuditEvent::success("a")).unwrap();
 
         let now = Utc::now();
-        let filter =
-            AuditFilter::new().time_range(now - chrono::Duration::hours(1), now);
+        let filter = AuditFilter::new().time_range(now - chrono::Duration::hours(1), now);
         let events = logger.query(&filter).unwrap();
         assert_eq!(events.len(), 1);
 
         // Use a time range in the far past to get no results
         let past = Utc::now() - chrono::Duration::days(365);
-        let filter = AuditFilter::new()
-            .time_range(past, past + chrono::Duration::seconds(1));
+        let filter = AuditFilter::new().time_range(past, past + chrono::Duration::seconds(1));
         let events = logger.query(&filter).unwrap();
         assert!(events.is_empty());
     }
@@ -1284,9 +1294,16 @@ mod coverage_tests {
     #[test]
     fn query_by_category() {
         let l = logger();
-        l.log(&AuditEvent::success("a").with_category(ActionCategory::Release)).unwrap();
-        l.log(&AuditEvent::success("b").with_category(ActionCategory::Config)).unwrap();
-        let got = l.query(&AuditFilter { category: Some(ActionCategory::Config), ..AuditFilter::new() }).unwrap();
+        l.log(&AuditEvent::success("a").with_category(ActionCategory::Release))
+            .unwrap();
+        l.log(&AuditEvent::success("b").with_category(ActionCategory::Config))
+            .unwrap();
+        let got = l
+            .query(&AuditFilter {
+                category: Some(ActionCategory::Config),
+                ..AuditFilter::new()
+            })
+            .unwrap();
         assert_eq!(got.len(), 1);
         assert_eq!(got[0].action, "b");
     }
@@ -1296,7 +1313,12 @@ mod coverage_tests {
         let l = logger();
         l.log(&AuditEvent::success("a")).unwrap();
         l.log(&AuditEvent::warn("b")).unwrap();
-        let got = l.query(&AuditFilter { level: Some(LogLevel::Warn), ..AuditFilter::new() }).unwrap();
+        let got = l
+            .query(&AuditFilter {
+                level: Some(LogLevel::Warn),
+                ..AuditFilter::new()
+            })
+            .unwrap();
         assert_eq!(got.len(), 1);
         assert_eq!(got[0].action, "b");
     }
@@ -1306,7 +1328,12 @@ mod coverage_tests {
         let l = logger();
         l.log(&AuditEvent::success("a")).unwrap();
         l.log(&AuditEvent::error("b", "x")).unwrap();
-        let got = l.query(&AuditFilter { result: Some(OperationResult::Failure), ..AuditFilter::new() }).unwrap();
+        let got = l
+            .query(&AuditFilter {
+                result: Some(OperationResult::Failure),
+                ..AuditFilter::new()
+            })
+            .unwrap();
         assert_eq!(got.len(), 1);
         assert_eq!(got[0].action, "b");
     }
@@ -1314,11 +1341,26 @@ mod coverage_tests {
     #[test]
     fn query_by_user_and_resource() {
         let l = logger();
-        l.log(&AuditEvent::success("a").with_user("alice").with_resource("rel", None)).unwrap();
-        l.log(&AuditEvent::success("b").with_user("bob").with_resource("rel", None)).unwrap();
+        l.log(
+            &AuditEvent::success("a")
+                .with_user("alice")
+                .with_resource("rel", None),
+        )
+        .unwrap();
+        l.log(
+            &AuditEvent::success("b")
+                .with_user("bob")
+                .with_resource("rel", None),
+        )
+        .unwrap();
         let by_user = l.query(&AuditFilter::new().user("alice")).unwrap();
         assert_eq!(by_user.len(), 1);
-        let by_res = l.query(&AuditFilter { resource: Some("rel".into()), ..AuditFilter::new() }).unwrap();
+        let by_res = l
+            .query(&AuditFilter {
+                resource: Some("rel".into()),
+                ..AuditFilter::new()
+            })
+            .unwrap();
         assert_eq!(by_res.len(), 2);
     }
 
@@ -1331,7 +1373,9 @@ mod coverage_tests {
         l.log(&AuditEvent::success("new")).unwrap();
 
         let now = Utc::now();
-        let recent = l.query(&AuditFilter::new().time_range(now - Duration::hours(1), now)).unwrap();
+        let recent = l
+            .query(&AuditFilter::new().time_range(now - Duration::hours(1), now))
+            .unwrap();
         assert_eq!(recent.len(), 1);
         assert_eq!(recent[0].action, "new");
     }
@@ -1355,8 +1399,25 @@ mod coverage_tests {
         for i in 0..5 {
             l.log(&AuditEvent::success(format!("act{i}"))).unwrap();
         }
-        assert_eq!(l.query(&AuditFilter { limit: 2, ..AuditFilter::new() }).unwrap().len(), 2);
-        assert_eq!(l.query(&AuditFilter { limit: 10, offset: 3, ..AuditFilter::new() }).unwrap().len(), 2);
+        assert_eq!(
+            l.query(&AuditFilter {
+                limit: 2,
+                ..AuditFilter::new()
+            })
+            .unwrap()
+            .len(),
+            2
+        );
+        assert_eq!(
+            l.query(&AuditFilter {
+                limit: 10,
+                offset: 3,
+                ..AuditFilter::new()
+            })
+            .unwrap()
+            .len(),
+            2
+        );
     }
 
     #[test]

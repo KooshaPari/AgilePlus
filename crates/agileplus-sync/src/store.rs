@@ -207,11 +207,13 @@ mod tests {
             .create(SyncMapping::new("feature", 1, "p1", "h1"))
             .await
             .unwrap();
-        assert!(store
-            .get_by_entity("work_package", 1)
-            .await
-            .unwrap()
-            .is_none());
+        assert!(
+            store
+                .get_by_entity("work_package", 1)
+                .await
+                .unwrap()
+                .is_none()
+        );
     }
 
     #[tokio::test]

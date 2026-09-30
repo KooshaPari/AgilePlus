@@ -185,8 +185,14 @@ async fn feature_transition_rejects_a_disallowed_lifecycle_step_without_mutating
         body.contains("invalid transition"),
         "the rejection must name the refused transition: {body}"
     );
-    assert!(body.contains("Created"), "rejection must name the current state: {body}");
-    assert!(body.contains("Shipped"), "rejection must name the target state: {body}");
+    assert!(
+        body.contains("Created"),
+        "rejection must name the current state: {body}"
+    );
+    assert!(
+        body.contains("Shipped"),
+        "rejection must name the target state: {body}"
+    );
 
     // Scoped so the read guard is released before the next request: the
     // handler takes `state.write()`, and tokio's `RwLock` is fair, so a live
@@ -219,8 +225,15 @@ async fn feature_transition_rejects_a_disallowed_lifecycle_step_without_mutating
         .await
         .expect("read response body");
     let body = String::from_utf8_lossy(&bytes).into_owned();
-    assert_eq!(status, StatusCode::OK, "a legal step must still be accepted: {body}");
-    assert!(body.contains("kanban-board"), "expected the kanban partial: {body}");
+    assert_eq!(
+        status,
+        StatusCode::OK,
+        "a legal step must still be accepted: {body}"
+    );
+    assert!(
+        body.contains("kanban-board"),
+        "expected the kanban partial: {body}"
+    );
 }
 
 // ── restart_service spawn failure ────────────────────────────────────────────
@@ -236,18 +249,23 @@ async fn restart_service_reports_a_failed_spawn_for_an_unresolvable_program() {
     set_var("AGILEPLUS_SERVICE_RESTART_CMD", "echo restart {}");
     set_var("PATH", "");
 
-    let (status, body) = send(Request::builder()
-        .method("POST")
-        .uri("/api/dashboard/services/AgilePlusSpawnProbe/restart")
-        .body(Body::empty())
-        .expect("build request"))
+    let (status, body) = send(
+        Request::builder()
+            .method("POST")
+            .uri("/api/dashboard/services/AgilePlusSpawnProbe/restart")
+            .body(Body::empty())
+            .expect("build request"),
+    )
     .await;
 
     assert_eq!(status, StatusCode::OK);
-    let json: serde_json::Value =
-        serde_json::from_str(&body).unwrap_or_else(|error| panic!("expected JSON: {body}: {error}"));
+    let json: serde_json::Value = serde_json::from_str(&body)
+        .unwrap_or_else(|error| panic!("expected JSON: {body}: {error}"));
 
-    assert_eq!(json["status"], "error", "a failed spawn must not report success");
+    assert_eq!(
+        json["status"], "error",
+        "a failed spawn must not report success"
+    );
     assert_eq!(json["service"], "AgilePlusSpawnProbe");
     assert_eq!(json["command"], "echo restart AgilePlusSpawnProbe");
     let error = json["error"].as_str().unwrap_or_default();
@@ -282,8 +300,8 @@ async fn epics_stories_reports_a_database_that_cannot_be_opened() {
     .await;
 
     assert_eq!(status, StatusCode::OK);
-    let json: serde_json::Value =
-        serde_json::from_str(&body).unwrap_or_else(|error| panic!("expected JSON: {body}: {error}"));
+    let json: serde_json::Value = serde_json::from_str(&body)
+        .unwrap_or_else(|error| panic!("expected JSON: {body}: {error}"));
 
     assert_eq!(json["epic_count"], 0);
     assert_eq!(json["story_count"], 0);

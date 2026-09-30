@@ -74,7 +74,13 @@ mod tests {
 
     #[test]
     fn event_serde_roundtrip() {
-        let e = Event::new("WorkPackage", 42, "transitioned", serde_json::json!({"state": "doing"}), "user-1");
+        let e = Event::new(
+            "WorkPackage",
+            42,
+            "transitioned",
+            serde_json::json!({"state": "doing"}),
+            "user-1",
+        );
         let json = serde_json::to_string(&e).unwrap();
         let back: Event = serde_json::from_str(&json).unwrap();
         assert_eq!(back.entity_type, "WorkPackage");
@@ -119,7 +125,13 @@ mod coverage_tests {
 
     #[test]
     fn new_initializes_unset_chain_fields() {
-        let e = Event::new("Feature", 7, "created", serde_json::json!({"a": 1}), "agent");
+        let e = Event::new(
+            "Feature",
+            7,
+            "created",
+            serde_json::json!({"a": 1}),
+            "agent",
+        );
         assert_eq!(e.id, 0);
         assert_eq!(e.sequence, 0);
         assert_eq!(e.prev_hash, [0u8; 32]);
@@ -141,7 +153,13 @@ mod coverage_tests {
 
     #[test]
     fn serde_roundtrip_preserves_hashes_and_sequence() {
-        let mut e = Event::new("WorkPackage", 42, "transitioned", serde_json::json!({}), "u");
+        let mut e = Event::new(
+            "WorkPackage",
+            42,
+            "transitioned",
+            serde_json::json!({}),
+            "u",
+        );
         e.id = 10;
         e.sequence = 5;
         e.prev_hash = [1u8; 32];

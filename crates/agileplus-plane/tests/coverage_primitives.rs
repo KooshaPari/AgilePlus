@@ -11,7 +11,7 @@ use agileplus_plane::client::{
     PlaneCreateCycleRequest, PlaneCreateModuleRequest, PlaneCycleResponse, PlaneIssue,
     PlaneModuleResponse, PlaneWorkItem, PlaneWorkItemResponse,
 };
-use agileplus_plane::content_hash::{compute_content_hash, detect_conflict, ConflictStatus};
+use agileplus_plane::content_hash::{ConflictStatus, compute_content_hash, detect_conflict};
 use agileplus_plane::daemon::{PlaneDaemonConfig, SyncState as DaemonSyncState};
 use agileplus_plane::labels::{CreateLabelRequest, LabelSync, PlaneLabel};
 use agileplus_plane::state_mapper::{
@@ -19,8 +19,8 @@ use agileplus_plane::state_mapper::{
 };
 use agileplus_plane::sync::{SyncOutcome, SyncState};
 use agileplus_plane::sync_queue::{
-    QueueError, SyncOpKind, SyncQueue, SyncQueueItem, SyncQueueStore, SyncTask, BASE_BACKOFF,
-    MAX_BACKOFF, MAX_RETRIES, QUEUE_CAPACITY,
+    BASE_BACKOFF, MAX_BACKOFF, MAX_RETRIES, QUEUE_CAPACITY, QueueError, SyncOpKind, SyncQueue,
+    SyncQueueItem, SyncQueueStore, SyncTask,
 };
 
 // ============================================================
@@ -33,7 +33,10 @@ const HEX_LEN: usize = 64;
 fn content_hash_is_lowercase_hex_64() {
     let h = compute_content_hash("t", "d", "s", &[]);
     assert_eq!(h.len(), HEX_LEN);
-    assert!(h.chars().all(|c| c.is_ascii_hexdigit() && !c.is_uppercase()));
+    assert!(
+        h.chars()
+            .all(|c| c.is_ascii_hexdigit() && !c.is_uppercase())
+    );
 }
 
 #[test]
@@ -114,12 +117,18 @@ fn detect_conflict_both_unchanged_is_clean() {
 
 #[test]
 fn detect_conflict_only_local_changed_is_clean() {
-    assert_eq!(detect_conflict("base", "local", "base"), ConflictStatus::Clean);
+    assert_eq!(
+        detect_conflict("base", "local", "base"),
+        ConflictStatus::Clean
+    );
 }
 
 #[test]
 fn detect_conflict_only_remote_changed_is_clean() {
-    assert_eq!(detect_conflict("base", "base", "remote"), ConflictStatus::Clean);
+    assert_eq!(
+        detect_conflict("base", "base", "remote"),
+        ConflictStatus::Clean
+    );
 }
 
 #[test]
@@ -134,7 +143,10 @@ fn detect_conflict_both_changed_is_conflict() {
 fn detect_conflict_divergent_new_values_is_clean_for_identical_edit() {
     // Both sides moved away from the baseline, even to the same value, so the
     // detector reports a conflict (it only compares against the baseline).
-    assert_eq!(detect_conflict("base", "same", "same"), ConflictStatus::Conflict);
+    assert_eq!(
+        detect_conflict("base", "same", "same"),
+        ConflictStatus::Conflict
+    );
 }
 
 #[test]
@@ -174,7 +186,10 @@ fn backoff_sequence_doubles() {
     assert_eq!(SyncQueueItem::next_backoff_delay(1), Duration::from_secs(2));
     assert_eq!(SyncQueueItem::next_backoff_delay(2), Duration::from_secs(4));
     assert_eq!(SyncQueueItem::next_backoff_delay(3), Duration::from_secs(8));
-    assert_eq!(SyncQueueItem::next_backoff_delay(4), Duration::from_secs(16));
+    assert_eq!(
+        SyncQueueItem::next_backoff_delay(4),
+        Duration::from_secs(16)
+    );
 }
 
 #[test]
@@ -517,7 +532,10 @@ fn sync_task_exhausts_after_three_retries() {
 fn sync_task_content_hash_retained() {
     let task = SyncTask::new(5, SyncOpKind::CreateIssue, "{}".into(), Some("abc".into()));
     assert_eq!(task.content_hash.as_deref(), Some("abc"));
-    assert_eq!(task.with_next_attempt().content_hash.as_deref(), Some("abc"));
+    assert_eq!(
+        task.with_next_attempt().content_hash.as_deref(),
+        Some("abc")
+    );
 }
 
 // ============================================================
@@ -561,7 +579,8 @@ fn sync_queue_store_persists_to_file_and_reopens() {
     {
         let store = SyncQueueStore::open(path_str).unwrap();
         let mut q = SyncQueue::new();
-        q.enqueue(SyncOpKind::DeleteIssue, "persist".into()).unwrap();
+        q.enqueue(SyncOpKind::DeleteIssue, "persist".into())
+            .unwrap();
         store.save_all(&q.drain()).unwrap();
     }
     let store = SyncQueueStore::open(path_str).unwrap();
@@ -650,8 +669,14 @@ fn sync_outcome_variants_distinct() {
 
 #[test]
 fn sync_outcome_carries_id() {
-    assert_eq!(SyncOutcome::Created("id-1".into()), SyncOutcome::Created("id-1".into()));
-    assert_ne!(SyncOutcome::Created("id-1".into()), SyncOutcome::Created("id-2".into()));
+    assert_eq!(
+        SyncOutcome::Created("id-1".into()),
+        SyncOutcome::Created("id-1".into())
+    );
+    assert_ne!(
+        SyncOutcome::Created("id-1".into()),
+        SyncOutcome::Created("id-2".into())
+    );
 }
 
 #[test]
@@ -679,7 +704,10 @@ fn plane_state_group_parses_canonical_names() {
 
 #[test]
 fn plane_state_group_parses_aliases() {
-    assert_eq!("todo".parse::<PlaneStateGroup>().unwrap(), PlaneStateGroup::Unstarted);
+    assert_eq!(
+        "todo".parse::<PlaneStateGroup>().unwrap(),
+        PlaneStateGroup::Unstarted
+    );
     assert_eq!(
         "in_progress".parse::<PlaneStateGroup>().unwrap(),
         PlaneStateGroup::Started
@@ -688,14 +716,26 @@ fn plane_state_group_parses_aliases() {
         "in progress".parse::<PlaneStateGroup>().unwrap(),
         PlaneStateGroup::Started
     );
-    assert_eq!("done".parse::<PlaneStateGroup>().unwrap(), PlaneStateGroup::Completed);
-    assert_eq!("canceled".parse::<PlaneStateGroup>().unwrap(), PlaneStateGroup::Cancelled);
+    assert_eq!(
+        "done".parse::<PlaneStateGroup>().unwrap(),
+        PlaneStateGroup::Completed
+    );
+    assert_eq!(
+        "canceled".parse::<PlaneStateGroup>().unwrap(),
+        PlaneStateGroup::Cancelled
+    );
 }
 
 #[test]
 fn plane_state_group_parse_is_case_insensitive() {
-    assert_eq!("BACKLOG".parse::<PlaneStateGroup>().unwrap(), PlaneStateGroup::Backlog);
-    assert_eq!("Started".parse::<PlaneStateGroup>().unwrap(), PlaneStateGroup::Started);
+    assert_eq!(
+        "BACKLOG".parse::<PlaneStateGroup>().unwrap(),
+        PlaneStateGroup::Backlog
+    );
+    assert_eq!(
+        "Started".parse::<PlaneStateGroup>().unwrap(),
+        PlaneStateGroup::Started
+    );
 }
 
 #[test]
@@ -736,10 +776,22 @@ fn mapper_default_maps_backlog_to_created() {
 #[test]
 fn mapper_defaults_for_all_known_groups() {
     let m = PlaneStateMapper::new();
-    assert_eq!(m.map_plane_state("unstarted", "Todo"), FeatureState::Specified);
-    assert_eq!(m.map_plane_state("started", "In Progress"), FeatureState::Implementing);
-    assert_eq!(m.map_plane_state("completed", "Done"), FeatureState::Validated);
-    assert_eq!(m.map_plane_state("cancelled", "Wont Fix"), FeatureState::Validated);
+    assert_eq!(
+        m.map_plane_state("unstarted", "Todo"),
+        FeatureState::Specified
+    );
+    assert_eq!(
+        m.map_plane_state("started", "In Progress"),
+        FeatureState::Implementing
+    );
+    assert_eq!(
+        m.map_plane_state("completed", "Done"),
+        FeatureState::Validated
+    );
+    assert_eq!(
+        m.map_plane_state("cancelled", "Wont Fix"),
+        FeatureState::Validated
+    );
 }
 
 #[test]
@@ -751,7 +803,10 @@ fn mapper_unknown_group_defaults_to_created() {
 #[test]
 fn mapper_group_matching_is_case_insensitive() {
     let m = PlaneStateMapper::new();
-    assert_eq!(m.map_plane_state("STARTED", "X"), FeatureState::Implementing);
+    assert_eq!(
+        m.map_plane_state("STARTED", "X"),
+        FeatureState::Implementing
+    );
 }
 
 #[test]
@@ -763,7 +818,10 @@ fn mapper_uses_group_alias_todo() {
 #[test]
 fn mapper_default_impl_matches_new() {
     let m = PlaneStateMapper::default();
-    assert_eq!(m.map_plane_state("started", "x"), FeatureState::Implementing);
+    assert_eq!(
+        m.map_plane_state("started", "x"),
+        FeatureState::Implementing
+    );
 }
 
 #[test]
@@ -777,8 +835,14 @@ fn mapper_override_group_and_name_wins() {
         state_id_map: std::collections::HashMap::new(),
     };
     let m = PlaneStateMapper::with_config(config);
-    assert_eq!(m.map_plane_state("started", "review"), FeatureState::Validated);
-    assert_eq!(m.map_plane_state("started", "coding"), FeatureState::Implementing);
+    assert_eq!(
+        m.map_plane_state("started", "review"),
+        FeatureState::Validated
+    );
+    assert_eq!(
+        m.map_plane_state("started", "coding"),
+        FeatureState::Implementing
+    );
 }
 
 #[test]
@@ -792,7 +856,10 @@ fn mapper_override_group_only_applies_without_name_match() {
         state_id_map: std::collections::HashMap::new(),
     };
     let m = PlaneStateMapper::with_config(config);
-    assert_eq!(m.map_plane_state("started", "anything"), FeatureState::Researched);
+    assert_eq!(
+        m.map_plane_state("started", "anything"),
+        FeatureState::Researched
+    );
 }
 
 #[test]
@@ -813,10 +880,19 @@ fn mapper_specific_name_override_beats_group_only() {
         state_id_map: std::collections::HashMap::new(),
     };
     let m = PlaneStateMapper::with_config(config);
-    assert_eq!(m.map_plane_state("started", "review"), FeatureState::Validated);
-    assert_eq!(m.map_plane_state("started", "other"), FeatureState::Researched);
+    assert_eq!(
+        m.map_plane_state("started", "review"),
+        FeatureState::Validated
+    );
+    assert_eq!(
+        m.map_plane_state("started", "other"),
+        FeatureState::Researched
+    );
     // Group-only override must not clobber a name-specific match.
-    assert_eq!(m.map_plane_state("started", "Review"), FeatureState::Validated);
+    assert_eq!(
+        m.map_plane_state("started", "Review"),
+        FeatureState::Validated
+    );
 }
 
 #[test]
@@ -1055,8 +1131,7 @@ fn daemon_sync_state_deserializes_null_timestamp() {
 
 #[test]
 fn work_item_response_deserializes_minimal() {
-    let r: PlaneWorkItemResponse =
-        serde_json::from_str(r#"{"id":"1","name":"n"}"#).unwrap();
+    let r: PlaneWorkItemResponse = serde_json::from_str(r#"{"id":"1","name":"n"}"#).unwrap();
     assert_eq!(r.id, "1");
     assert!(r.description_html.is_none());
     assert!(r.state.is_none());
@@ -1150,8 +1225,7 @@ fn cycle_response_deserializes_with_dates() {
 
 #[test]
 fn cycle_response_allows_missing_dates() {
-    let r: PlaneCycleResponse =
-        serde_json::from_str(r#"{"id":"c1","name":"Sprint"}"#).unwrap();
+    let r: PlaneCycleResponse = serde_json::from_str(r#"{"id":"c1","name":"Sprint"}"#).unwrap();
     assert!(r.start_date.is_none());
 }
 

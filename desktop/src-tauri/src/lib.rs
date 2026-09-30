@@ -56,10 +56,7 @@ pub fn run() {
                 .join("com.phenotype.agileplus-desktop")
                 .join("crashes");
             let _ = std::fs::create_dir_all(&crash_dir);
-            let filename = format!(
-                "crash-{}.log",
-                chrono::Utc::now().format("%Y%m%d-%H%M%S")
-            );
+            let filename = format!("crash-{}.log", chrono::Utc::now().format("%Y%m%d-%H%M%S"));
             let _ = std::fs::write(crash_dir.join(filename), &crash_report);
         }
 
@@ -163,10 +160,7 @@ pub fn run() {
                         *state.db.0.lock().unwrap() = Some(conn);
                         *state.repo_path.lock().unwrap() =
                             project_root.to_string_lossy().to_string();
-                        log::info!(
-                            "Connected to project: {}",
-                            project_root.display()
-                        );
+                        log::info!("Connected to project: {}", project_root.display());
                     }
                     Err(e) => {
                         log::warn!("Found project but failed to open DB: {e}");

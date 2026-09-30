@@ -568,7 +568,10 @@ mod tests {
             }],
         };
         let rows = collect_fix_rows(&report);
-        assert!(rows.is_empty(), "score > 0 with no gaps should not produce rows");
+        assert!(
+            rows.is_empty(),
+            "score > 0 with no gaps should not produce rows"
+        );
     }
 
     // ── render_markdown additional ──────────────────────────────────────────

@@ -152,8 +152,8 @@ mod tests {
 #[cfg(test)]
 mod coverage_tests {
     use super::*;
-    use std::sync::atomic::{AtomicUsize, Ordering};
     use std::sync::Arc;
+    use std::sync::atomic::{AtomicUsize, Ordering};
 
     #[derive(Default)]
     struct CountingAggregate {
@@ -225,7 +225,9 @@ mod coverage_tests {
     #[tokio::test]
     async fn replay_single_event_sets_version() {
         let mut a = agg();
-        replay_events(&mut a, &[mk(1, 1, serde_json::json!({"v": 1}))]).await.unwrap();
+        replay_events(&mut a, &[mk(1, 1, serde_json::json!({"v": 1}))])
+            .await
+            .unwrap();
         assert_eq!(a.version(), 1);
         assert_eq!(a.applies.load(Ordering::SeqCst), 1);
     }
@@ -247,7 +249,10 @@ mod coverage_tests {
     #[tokio::test]
     async fn replay_mixed_entities_is_rejected() {
         let mut a = agg();
-        let events = vec![mk(1, 1, serde_json::json!({})), mk(2, 2, serde_json::json!({}))];
+        let events = vec![
+            mk(1, 1, serde_json::json!({})),
+            mk(2, 2, serde_json::json!({})),
+        ];
         assert!(matches!(
             replay_events(&mut a, &events).await,
             Err(ReplayError::InvalidState(_))
@@ -257,7 +262,10 @@ mod coverage_tests {
     #[tokio::test]
     async fn replay_same_entity_across_events_ok() {
         let mut a = agg();
-        let events = vec![mk(1, 5, serde_json::json!({})), mk(2, 5, serde_json::json!({}))];
+        let events = vec![
+            mk(1, 5, serde_json::json!({})),
+            mk(2, 5, serde_json::json!({})),
+        ];
         replay_events(&mut a, &events).await.unwrap();
         assert_eq!(a.version(), 2);
     }
@@ -279,7 +287,10 @@ mod coverage_tests {
     async fn replay_since_beyond_all_is_noop() {
         let mut a = agg();
         a.version = 4;
-        let events = vec![mk(1, 1, serde_json::json!({})), mk(2, 1, serde_json::json!({}))];
+        let events = vec![
+            mk(1, 1, serde_json::json!({})),
+            mk(2, 1, serde_json::json!({})),
+        ];
         replay_events_since(&mut a, 10, &events).await.unwrap();
         assert_eq!(a.applies.load(Ordering::SeqCst), 0);
         assert_eq!(a.version(), 4);
