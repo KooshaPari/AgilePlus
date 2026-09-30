@@ -14,7 +14,7 @@ use anyhow::{Context, Result};
 use chrono::Utc;
 
 use agileplus_domain::domain::audit::{AuditEntry, hash_entry};
-use agileplus_domain::domain::execution::{Assignment, AssignmentStatus, Attempt, AttemptStatus, SpecRevision};
+use agileplus_domain::domain::execution::{Assignment, AssignmentStatus, Attempt, AttemptStatus, Evaluation, EvaluationResult, SpecRevision};
 use agileplus_domain::domain::state_machine::FeatureState;
 use agileplus_domain::domain::work_package::{WorkPackage, WpState};
 use agileplus_domain::ports::agent::{AgentConfig, AgentKind, AgentPort, AgentTask};
@@ -354,6 +354,9 @@ where
             .context(format!("dispatching agent for {wp_id_str}"))?;
 
         println!("  Agent dispatched (job: {job_id}).");
+        storage.update_attempt_runtime(
+            &attempt_id, AttemptStatus::Running, Some(&job_id), None, None, None
+        ).await.context("marking attempt running")?;
 
         // Build PR description
         let feature_ref = storage
@@ -380,6 +383,26 @@ where
         match outcome {
             ReviewOutcome::Approved => {
                 println!("  WP{:02} approved!", wp.sequence);
+                let evaluated_at = Utc::now();
+                // Review approval is persisted as an evaluation receipt, but the
+                // legacy WP Done gate is intentionally unchanged in this commit.
+                let evaluation_id = format!("evaluation:{}:{}", wp.id, evaluated_at.timestamp_micros());
+                storage.create_evaluation(&Evaluation {
+                    id: evaluation_id.clone(),
+                    assignment_id: assignment_id.clone(),
+                    attempt_id: Some(attempt_id.clone()),
+                    candidate_ref: format!("job:{job_id}"),
+                    evaluator_id: "legacy-review-loop".into(),
+                    evaluator_version: "v1".into(),
+                    result: EvaluationResult::Satisfied,
+                    evidence_refs: vec![],
+                    started_at: now,
+                    finished_at: evaluated_at,
+                }).await.context("persisting review evaluation")?;
+                storage.update_attempt_runtime(
+                    &attempt_id, AttemptStatus::Completed, Some(&job_id),
+                    Some(&format!("job:{job_id}")), None, Some(evaluated_at)
+                ).await.context("marking attempt completed")?;
                 storage
                     .update_wp_state(wp.id, WpState::Review)
                     .await
@@ -420,6 +443,20 @@ where
                 cycles,
                 last_feedback,
             } => {
+                let ended_at = Utc::now();
+                storage.create_evaluation(&Evaluation {
+                    id: format!("evaluation:{}:{}", wp.id, ended_at.timestamp_micros()),
+                    assignment_id: assignment_id.clone(),
+                    attempt_id: Some(attempt_id.clone()),
+                    candidate_ref: format!("job:{job_id}"),
+                    evaluator_id: "legacy-review-loop".into(),
+                    evaluator_version: "v1".into(),
+                    result: EvaluationResult::Unsatisfied,
+                    evidence_refs: vec![],
+                    started_at: now,
+                    finished_at: ended_at,
+                }).await.context("persisting failed review evaluation")?;
+                storage.update_attempt_runtime(&attempt_id, AttemptStatus::Failed, Some(&job_id), Some(&format!("job:{job_id}")), Some("max_review_cycles"), Some(ended_at)).await.context("marking attempt failed")?;
                 println!(
                     "  WP{:02} reached max review cycles ({cycles}). Marking blocked.",
                     wp.sequence
@@ -456,10 +493,12 @@ where
                 );
             }
             ReviewOutcome::AgentFailed { error } => {
+                storage.update_attempt_runtime(&attempt_id, AttemptStatus::Failed, Some(&job_id), None, Some("agent_failed"), Some(Utc::now())).await.ok();
                 storage.update_wp_state(wp.id, WpState::Blocked).await.ok();
                 anyhow::bail!("Agent failed for WP{:02}: {}", wp.sequence, error);
             }
             ReviewOutcome::Cancelled => {
+                storage.update_attempt_runtime(&attempt_id, AttemptStatus::Cancelled, Some(&job_id), None, Some("cancelled"), Some(Utc::now())).await.ok();
                 storage.update_wp_state(wp.id, WpState::Blocked).await.ok();
                 println!("  WP{:02} cancelled.", wp.sequence);
             }
