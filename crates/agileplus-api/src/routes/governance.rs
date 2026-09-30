@@ -149,13 +149,22 @@ where
         }
     }
 
-    let compliant = satisfied_rules == total_rules;
+    // Empty policy is not proof of compliance. It is explicitly unconfigured.
+    let result = if total_rules == 0 {
+        "not_configured"
+    } else if satisfied_rules == total_rules {
+        "satisfied"
+    } else {
+        "unsatisfied"
+    };
+    let compliant = result == "satisfied";
     Ok(Json(json!({
         "feature_slug": slug,
         "governance_version": contract.version,
         "total_rules": total_rules,
         "satisfied_rules": satisfied_rules,
         "compliant": compliant,
+        "result": result,
     })))
 }
 
@@ -191,14 +200,19 @@ mod tests {
     }
 
     #[test]
-    fn validation_no_rules_compliant() {
+    fn validation_no_rules_is_not_configured() {
+        let total_rules = 0usize;
+        let satisfied_rules = 0usize;
+        let result = if total_rules == 0 { "not_configured" } else if satisfied_rules == total_rules { "satisfied" } else { "unsatisfied" };
         let summary = serde_json::json!({
             "feature_slug": "empty",
             "governance_version": 1,
-            "total_rules": 0,
-            "satisfied_rules": 0,
-            "compliant": true,
+            "total_rules": total_rules,
+            "satisfied_rules": satisfied_rules,
+            "compliant": result == "satisfied",
+            "result": result,
         });
-        assert!(summary["compliant"].as_bool().unwrap());
+        assert_eq!(summary["result"], "not_configured");
+        assert_eq!(summary["compliant"], false);
     }
 }
