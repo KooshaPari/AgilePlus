@@ -384,14 +384,19 @@ where
             ReviewOutcome::Approved => {
                 println!("  WP{:02} approved!", wp.sequence);
                 let evaluated_at = Utc::now();
-                // Review approval is persisted as an evaluation receipt, but the
-                // legacy WP Done gate is intentionally unchanged in this commit.
+                // Resolve the immutable git commit currently checked out by the
+                // WP worktree. If the adapter cannot resolve it, keep the job
+                // fallback explicit rather than pretending it is a commit.
+                let candidate_ref = vcs.list_worktrees().await.ok()
+                    .and_then(|items| items.into_iter().find(|w| w.path == worktree_path))
+                    .map(|w| format!("git:{}", w.commit))
+                    .unwrap_or_else(|| format!("job:{job_id}"));
                 let evaluation_id = format!("evaluation:{}:{}", wp.id, evaluated_at.timestamp_micros());
                 storage.create_evaluation(&Evaluation {
                     id: evaluation_id.clone(),
                     assignment_id: assignment_id.clone(),
                     attempt_id: Some(attempt_id.clone()),
-                    candidate_ref: format!("job:{job_id}"),
+                    candidate_ref: candidate_ref.clone(),
                     evaluator_id: "legacy-review-loop".into(),
                     evaluator_version: "v1".into(),
                     result: EvaluationResult::Satisfied,
@@ -401,7 +406,7 @@ where
                 }).await.context("persisting review evaluation")?;
                 storage.update_attempt_runtime(
                     &attempt_id, AttemptStatus::Completed, Some(&job_id),
-                    Some(&format!("job:{job_id}")), None, Some(evaluated_at)
+                    Some(&candidate_ref), None, Some(evaluated_at)
                 ).await.context("marking attempt completed")?;
                 storage
                     .update_wp_state(wp.id, WpState::Review)
@@ -448,7 +453,10 @@ where
                     id: format!("evaluation:{}:{}", wp.id, ended_at.timestamp_micros()),
                     assignment_id: assignment_id.clone(),
                     attempt_id: Some(attempt_id.clone()),
-                    candidate_ref: format!("job:{job_id}"),
+                    candidate_ref: vcs.list_worktrees().await.ok()
+                        .and_then(|items| items.into_iter().find(|w| w.path == worktree_path))
+                        .map(|w| format!("git:{}", w.commit))
+                        .unwrap_or_else(|| format!("job:{job_id}")),
                     evaluator_id: "legacy-review-loop".into(),
                     evaluator_version: "v1".into(),
                     result: EvaluationResult::Unsatisfied,
