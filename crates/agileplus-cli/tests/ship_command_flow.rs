@@ -2,10 +2,9 @@
 //! Integration tests for `agileplus ship` gating and merge behavior
 //! (commands/ship.rs).
 //!
-//! Covers feature lookup, state enforcement (including `--skip-validate`),
+//! Covers feature lookup, state enforcement (including fail-closed `--skip-validate`),
 //! the incomplete-work-package gate, dry-run short-circuiting, branch-name
-//! derivation, merge ordering, target selection, conflict reporting, and the
-//! non-fatal handling of merge errors.
+//! derivation, merge ordering, target selection, conflict reporting, and fail-closed handling of merge errors.
 
 use agileplus_cli::commands::ship::run_ship;
 use agileplus_domain::domain::state_machine::FeatureState;
@@ -51,22 +50,20 @@ fn ship_rejects_non_validated_state_without_skip() {
 }
 
 #[test]
-fn ship_skip_validate_overrides_state_check() {
+fn ship_skip_validate_cannot_authorize_shipping() {
     block_on(async {
         let storage = SqliteStorageAdapter::in_memory().unwrap();
         let vcs = RecordingVcs::new();
-        // No WPs, so the incomplete gate is satisfied.
         let id = seed(&storage, "forced-feat", FeatureState::Implementing, &[]).await;
         let mut a = args("forced-feat");
         a.skip_validate = true;
-        run_ship(a, &storage, &vcs)
-            .await
-            .expect("skip-validate override");
+        let err = run_ship(a, &storage, &vcs).await.unwrap_err();
+        assert!(err.to_string().contains("diagnostic-only"), "got: {err}");
         let f = StoragePort::get_feature_by_id(&storage, id)
             .await
             .unwrap()
             .unwrap();
-        assert_eq!(f.state, FeatureState::Shipped);
+        assert_eq!(f.state, FeatureState::Implementing);
     })
 }
 
@@ -264,10 +261,9 @@ fn ship_reports_merge_conflicts_and_stops() {
 }
 
 #[test]
-fn ship_skips_branches_whose_merge_errors() {
+fn ship_fails_closed_when_merge_errors() {
     block_on(async {
         let storage = SqliteStorageAdapter::in_memory().unwrap();
-        // All merges error, so nothing is merged, but shipping still completes.
         let vcs = RecordingVcs::new().with_merge_outcome(MergeOutcome::Error);
         let id = seed(
             &storage,
@@ -276,21 +272,16 @@ fn ship_skips_branches_whose_merge_errors() {
             &[(1, WpState::Done), (2, WpState::Done)],
         )
         .await;
-        run_ship(args("err-feat"), &storage, &vcs)
+        let err = run_ship(args("err-feat"), &storage, &vcs)
             .await
-            .expect("merge errors are non-fatal, they are skipped");
-        assert_eq!(vcs.merges.lock().unwrap().len(), 2, "both attempted");
+            .unwrap_err();
+        assert!(err.to_string().contains("fails closed") || err.to_string().contains("merging"));
+        assert_eq!(vcs.merges.lock().unwrap().len(), 1, "stop on first merge error");
         let f = StoragePort::get_feature_by_id(&storage, id)
             .await
             .unwrap()
             .unwrap();
-        assert_eq!(f.state, FeatureState::Shipped);
-        let artifacts = vcs.artifacts.lock().unwrap().clone();
-        let meta: serde_json::Value = serde_json::from_str(&artifacts[0].2).unwrap();
-        assert_eq!(
-            meta["merged_branches"].as_array().unwrap().len(),
-            0,
-            "no branches actually merged"
-        );
+        assert_eq!(f.state, FeatureState::Validated);
+        assert!(vcs.artifacts.lock().unwrap().is_empty());
     })
 }
