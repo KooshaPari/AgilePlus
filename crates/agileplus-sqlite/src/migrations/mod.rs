@@ -38,6 +38,7 @@ const MIGRATION_025: &str = include_str!("025_create_intent_graph.sql");
 const MIGRATION_025_GOV: &str = include_str!("025_governance_channel_iteration.sql");
 const MIGRATION_025_VIEWS: &str = include_str!("025_intent_graph_views.sql");
 const MIGRATION_026: &str = include_str!("026_feature_labels.sql");
+const MIGRATION_027: &str = include_str!("027_execution_records.sql");
 
 /// All migrations in order: (name, up_sql, down_sql)
 const MIGRATIONS: &[(&str, &str)] = &[
@@ -70,6 +71,7 @@ const MIGRATIONS: &[(&str, &str)] = &[
     ("025_governance_channel_iteration", MIGRATION_025_GOV),
     ("025_intent_graph_views", MIGRATION_025_VIEWS),
     ("026_feature_labels", MIGRATION_026),
+    ("027_execution_records", MIGRATION_027),
 ];
 
 /// Find the byte offset where the UP body starts, given a `-- UP` marker
