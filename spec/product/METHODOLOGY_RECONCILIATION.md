@@ -188,3 +188,16 @@ It must reconcile A–D and then promote accepted decisions explicitly.
 3. propose one authority table and migration, not another independent model;
 4. inspect actual persistence/API/CLI mounting for those identities;
 5. update ADR statuses only after evidence-backed adjudication.
+
+
+## Provenance correction — shared agent-lab material
+
+The rich `handbook/specs/assessment/agent-lab-dossiers...` assignment/epoch/criterion/claim/evaluator material discovered during portfolio search is shared PhenoRegistry/portfolio prior art, not yet proven to be AgilePlus-owned runtime/schema.
+
+Correct disposition:
+- treat it as **ADAPT/MERGE candidate prior art**;
+- compare AgilePlus's own Feature/WP/Governance/Claim models against it;
+- do not cite those shared schemas as current AgilePlus implementation;
+- require an explicit absorption/alignment decision before making them AgilePlus authority.
+
+This distinction prevents shared portfolio research from being accidentally promoted into repo-local product truth.
