@@ -88,6 +88,29 @@ impl SqliteStorageAdapter {
     }
 }
 
+
+#[async_trait::async_trait]
+impl agileplus_domain::ports::ExecutionRecordPort for SqliteStorageAdapter {
+    async fn create_spec_revision(&self, r:&agileplus_domain::domain::execution::SpecRevision)->Result<(),DomainError>{
+        let c=self.lock()?; repository::execution::create_spec_revision(&c,r)
+    }
+    async fn create_assignment(&self, a:&agileplus_domain::domain::execution::Assignment)->Result<(),DomainError>{
+        let c=self.lock()?; repository::execution::create_assignment(&c,a)
+    }
+    async fn create_attempt(&self, a:&agileplus_domain::domain::execution::Attempt)->Result<(),DomainError>{
+        let c=self.lock()?; repository::execution::create_attempt(&c,a)
+    }
+    async fn create_evaluation(&self, e:&agileplus_domain::domain::execution::Evaluation)->Result<(),DomainError>{
+        let c=self.lock()?; repository::execution::create_evaluation(&c,e)
+    }
+    async fn list_attempts(&self, assignment_id:&str)->Result<Vec<agileplus_domain::domain::execution::Attempt>,DomainError>{
+        let c=self.lock()?; repository::execution::list_attempts(&c,assignment_id)
+    }
+    async fn list_evaluations(&self, assignment_id:&str)->Result<Vec<agileplus_domain::domain::execution::Evaluation>,DomainError>{
+        let c=self.lock()?; repository::execution::list_evaluations(&c,assignment_id)
+    }
+}
+
 #[cfg(test)]
 #[path = "lib/tests_persistence.rs"]
 mod tests_persistence;
