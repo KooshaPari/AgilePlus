@@ -14,10 +14,11 @@ use anyhow::{Context, Result};
 use chrono::Utc;
 
 use agileplus_domain::domain::audit::{AuditEntry, hash_entry};
+use agileplus_domain::domain::execution::{Assignment, AssignmentStatus, Attempt, AttemptStatus, SpecRevision};
 use agileplus_domain::domain::state_machine::FeatureState;
 use agileplus_domain::domain::work_package::{WorkPackage, WpState};
 use agileplus_domain::ports::agent::{AgentConfig, AgentKind, AgentPort, AgentTask};
-use agileplus_domain::ports::{StoragePort, VcsPort};
+use agileplus_domain::ports::{ExecutionRecordPort, StoragePort, VcsPort};
 
 use super::pr_builder::{build_pr_description, build_pr_title};
 use super::review_loop::{ReviewOutcome, run_review_loop};
@@ -55,7 +56,7 @@ pub async fn run_implement<S, V, A>(
     agent: &A,
 ) -> Result<()>
 where
-    S: StoragePort,
+    S: StoragePort + ExecutionRecordPort,
     V: VcsPort,
     A: AgentPort,
 {
@@ -293,6 +294,50 @@ where
             worktree_path.join(format!("kitty-specs/{slug}/research.md")),
         ];
 
+        // Freeze the execution basis before dispatch. Existing Feature.spec_hash
+        // remains the compatibility source for the first vertical witness.
+        let now = Utc::now();
+        let spec_hash_hex: String = feature.spec_hash.iter().map(|b| format!("{b:02x}")).collect();
+        let spec_revision_id = format!("spec:{}:{}", feature.id, spec_hash_hex);
+        storage.create_spec_revision(&SpecRevision {
+            id: spec_revision_id.clone(),
+            feature_id: feature.id,
+            content_hash: spec_hash_hex,
+            parent_revision_id: None,
+            accepted_at: now,
+            authority: "feature.spec_hash".into(),
+        }).await.or_else(|e| {
+            // The same immutable revision may already exist on resume.
+            tracing::debug!(error=%e, "spec revision insert skipped/failed");
+            Ok(())
+        })?;
+
+        let assignment_id = format!("assignment:{}:{}", wp.id, now.timestamp_micros());
+        storage.create_assignment(&Assignment {
+            id: assignment_id.clone(),
+            wp_id: wp.id,
+            spec_revision_id: spec_revision_id.clone(),
+            created_at: now,
+            supersedes_assignment_id: None,
+            status: AssignmentStatus::Active,
+        }).await.context("creating immutable assignment")?;
+
+        let attempt_id = format!("attempt:{}:{}", wp.id, now.timestamp_micros());
+        storage.create_attempt(&Attempt {
+            id: attempt_id.clone(),
+            assignment_id: assignment_id.clone(),
+            worker_id: format!("{:?}", agent_config.kind),
+            backend: format!("{:?}", agent_config.kind),
+            job_id: None,
+            worktree_path: Some(worktree_path.display().to_string()),
+            base_candidate_ref: None,
+            result_candidate_ref: None,
+            status: AttemptStatus::Pending,
+            failure_class: None,
+            started_at: now,
+            ended_at: None,
+        }).await.context("creating immutable attempt")?;
+
         let task = AgentTask {
             wp_id: wp_id_str.clone(),
             feature_slug: slug.clone(),
@@ -301,7 +346,8 @@ where
             context_files,
         };
 
-        // Dispatch agent asynchronously
+        // Dispatch agent asynchronously. The first slice persists the Attempt
+        // before dispatch; job/result updates are added in the next ledger step.
         let job_id = agent
             .dispatch_async(task, &agent_config)
             .await
