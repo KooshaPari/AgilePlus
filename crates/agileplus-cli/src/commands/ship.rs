@@ -197,7 +197,7 @@ where
 
         // Re-read the source ref immediately before merge to reduce the
         // preflight-to-merge drift window.
-        let source_commit = resolve_source_commit(vcs, &active_worktrees, branch)
+        let source_commit = resolve_source_commit(vcs, branch)
             .await
             .with_context(|| format!("rechecking source branch {branch}"))?;
         let source_candidate = format!("git:{source_commit}");
@@ -418,13 +418,11 @@ async fn resolve_branch_commit<V: VcsPort>(vcs: &V, branch: &str) -> Result<Stri
     anyhow::bail!("source branch '{branch}' could not be resolved to an exact commit")
 }
 
-async fn resolve_source_commit<V: VcsPort>(
-    vcs: &V,
-    worktrees: &[agileplus_domain::ports::WorktreeInfo],
-    branch: &str,
-) -> Result<String> {
-    if let Some(worktree) = worktrees.iter().find(|worktree| worktree.branch == branch) {
-        return Ok(worktree.commit.clone());
+async fn resolve_source_commit<V: VcsPort>(vcs: &V, branch: &str) -> Result<String> {
+    if let Ok(worktrees) = vcs.list_worktrees().await {
+        if let Some(worktree) = worktrees.iter().find(|worktree| worktree.branch == branch) {
+            return Ok(worktree.commit.clone());
+        }
     }
     resolve_branch_commit(vcs, branch).await
 }
