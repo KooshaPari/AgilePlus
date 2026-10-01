@@ -18,6 +18,24 @@ These are supporting evidence. They do not close the runtime evidence plan by th
 
 ### Negative / classified
 
+#### Rust job — branch-local formatting failure
+
+The Rust matrix fails `cargo fmt --check` on branch-modified execution/governance surfaces, including:
+- API governance route;
+- CLI implement path;
+- CLI governance differential tests;
+- ship command tests;
+- Evaluation/Attempt domain records;
+- governance evaluator;
+- execution port;
+- SQLite execution repository.
+
+No semantic compiler/test failure is established by this job because formatting fails first.
+
+**Classification:** branch-local implementation hygiene defect. It is mechanically repairable, but source modification is outside the current non-code-only phase.
+
+The green aggregate `ci / test` therefore must not be interpreted as proof that the Rust matrix is fully green; the jobs cover different gates/scopes.
+
 #### Python job — repository-wide hygiene debt
 
 Ruff reports approximately **180 errors**, dominated by:
