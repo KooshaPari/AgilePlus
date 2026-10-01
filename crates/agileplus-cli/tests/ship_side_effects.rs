@@ -139,6 +139,10 @@ fn ship_meta_artifact_records_slug_target_and_merged_branches() {
         assert_eq!(meta["target_branch"], "main");
         assert_eq!(meta["wp_count"], 2);
         assert_eq!(meta["merged_branches"].as_array().unwrap().len(), 2);
+        let accepted = meta["accepted_candidates"].as_array().unwrap();
+        assert_eq!(accepted.len(), 2);
+        assert_eq!(accepted[0]["candidate"], "git:candidate-1");
+        assert_eq!(accepted[1]["candidate"], "git:candidate-2");
         assert!(
             meta["shipped_at"].as_str().unwrap().contains('T'),
             "shipped_at must be an RFC3339 timestamp"
