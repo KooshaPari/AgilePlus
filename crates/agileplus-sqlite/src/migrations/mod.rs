@@ -39,6 +39,7 @@ const MIGRATION_025_GOV: &str = include_str!("025_governance_channel_iteration.s
 const MIGRATION_025_VIEWS: &str = include_str!("025_intent_graph_views.sql");
 const MIGRATION_026: &str = include_str!("026_feature_labels.sql");
 const MIGRATION_027: &str = include_str!("027_execution_records.sql");
+const MIGRATION_028: &str = include_str!("028_one_active_assignment.sql");
 
 /// All migrations in order: (name, up_sql, down_sql)
 const MIGRATIONS: &[(&str, &str)] = &[
@@ -72,6 +73,7 @@ const MIGRATIONS: &[(&str, &str)] = &[
     ("025_intent_graph_views", MIGRATION_025_VIEWS),
     ("026_feature_labels", MIGRATION_026),
     ("027_execution_records", MIGRATION_027),
+    ("028_one_active_assignment", MIGRATION_028),
 ];
 
 /// Find the byte offset where the UP body starts, given a `-- UP` marker
@@ -450,7 +452,10 @@ mod tests {
         // 027 now follows 026. Roll it back first so this test continues to
         // document the intentionally irreversible semantics of 026 itself.
         let current_last = MIGRATIONS[MIGRATIONS.len() - 1].0;
-        assert_eq!(current_last, "027_execution_records");
+        assert_eq!(current_last, "028_one_active_assignment");
+        runner.rollback_last().expect("rollback 028");
+        let next_last = MIGRATIONS[MIGRATIONS.len() - 2].0;
+        assert_eq!(next_last, "027_execution_records");
         runner.rollback_last().expect("rollback 027");
 
         let (name_026, sql_026) = MIGRATIONS
