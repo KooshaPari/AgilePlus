@@ -374,7 +374,6 @@ fn validate_rejects_governance_green_without_exact_candidate_acceptance() {
 fn validate_rejects_satisfied_evaluation_when_attempt_candidate_differs() {
     block_on(async {
         let storage = SqliteStorageAdapter::in_memory().unwrap();
-        let vcs = GitVcsAdapter::new(std::env::temp_dir());
         let id = StoragePort::create_feature(&storage, &implementing_feature("candidate-mismatch"))
             .await
             .unwrap();

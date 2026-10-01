@@ -393,6 +393,11 @@ mod tests {
             started_at: t0 + Duration::seconds(21),
             finished_at: t0 + Duration::seconds(22),
         };
+        let direct_err = ExecutionRecordPort::create_evaluation(&db, &evaluation)
+            .await
+            .expect_err("Satisfied evaluation must require a criterion receipt");
+        assert!(matches!(direct_err, DomainError::Validation(_)));
+
         ExecutionRecordPort::create_evaluation_receipt(&db, &evaluation, &criterion_results)
             .await
             .expect("evaluation");
