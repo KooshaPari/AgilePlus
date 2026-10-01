@@ -134,15 +134,11 @@ where
 
         let branch = matching_worktree
             .map(|wt| wt.branch.clone())
-            .or_else(|| {
-                wp.worktree_path.as_deref().and_then(|p| {
-                    std::path::Path::new(p)
-                        .file_name()
-                        .and_then(|n| n.to_str())
-                        .map(ToString::to_string)
-                })
-            })
-            .unwrap_or_else(|| format!("feature/{slug}/wp{:02}", wp.sequence));
+            // The Git adapter's canonical worktree branch is
+            // feat/<feature-slug>/<WP-ID>. A filesystem worktree path is an
+            // execution resource, not a branch identity, so never derive a
+            // source ref from its directory name.
+            .unwrap_or_else(|| format!("feat/{slug}/WP{:02}", wp.sequence));
 
         let current_commit = match matching_worktree {
             Some(worktree) => worktree.commit.clone(),
