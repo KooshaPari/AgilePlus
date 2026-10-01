@@ -99,3 +99,27 @@ Reason:
 - performance/coverage evidence incomplete.
 
 No semantic criterion is weakened because CI is red.
+
+
+## Exact-candidate acceptance recovery checkpoint
+
+The runtime recovery branch has advanced through a bounded acceptance-hardening slice:
+
+- SpecRevision replay is idempotent only for identical immutable content.
+- changed execution basis creates a parent-linked SpecRevision and explicitly supersedes the prior Assignment;
+- migration 028 enforces at most one active Assignment per WorkPackage;
+- replacement Attempts remain durable rather than overwriting prior execution history;
+- review approval is non-terminal and records an Inconclusive exact-candidate Evaluation;
+- unresolved jobs cannot masquerade as exact candidates;
+- `validate` requires both governance success and a Satisfied Evaluation bound to a Completed Attempt's exact `git:` candidate for every WorkPackage;
+- `ship` rejects zero-work promotion, rechecks source drift, and merges the immutable evaluated commit SHA rather than a mutable branch;
+- promotion receipts include the exact accepted candidates;
+- automated governance policies without a concrete evaluator fail closed.
+
+Exact rustfmt normalization for this source state was produced by:
+
+- `c52325ae429a619287053ed040c0dcfdc9b889b0` — `style(rust): apply cargo fmt`
+
+The bot-authored commit's workflows completed as `action_required` without executing jobs. This user-authored evidence checkpoint exists to obtain native CI on the same formatted runtime semantics plus this note.
+
+These changes still do **not** provide a first-class independent candidate evaluator capable of legitimately producing a new Satisfied Evaluation. That remains an explicit runtime gap rather than being filled by review approval or governance evidence.
