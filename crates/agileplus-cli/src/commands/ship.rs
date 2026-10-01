@@ -87,6 +87,13 @@ where
         .await
         .context("listing work packages")?;
 
+    if all_wps.is_empty() && !args.dry_run {
+        anyhow::bail!(
+            "Feature '{}' has no work packages; shipping cannot be vacuously accepted",
+            slug
+        );
+    }
+
     // Check all WPs are done
     let incomplete: Vec<_> = all_wps
         .iter()
