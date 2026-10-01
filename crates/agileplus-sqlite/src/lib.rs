@@ -367,6 +367,159 @@ mod tests {
         assert_eq!(evaluations[0].result, EvaluationResult::Satisfied);
     }
 
+    #[tokio::test]
+    async fn spec_revision_creation_is_idempotent_but_not_mutable() {
+        use agileplus_domain::{
+            domain::{execution::SpecRevision, feature::Feature},
+            ports::{ExecutionRecordPort, StoragePort},
+        };
+        use chrono::Utc;
+
+        let db = SqliteStorageAdapter::in_memory().expect("in-memory adapter");
+        let feature_id = StoragePort::create_feature(
+            &db,
+            &Feature::new("spec-idempotent", "Spec Idempotent", [9u8; 32], None),
+        )
+        .await
+        .expect("feature");
+        let revision = SpecRevision {
+            id: "spec:idempotent:1".into(),
+            feature_id,
+            content_hash: "sha256:stable".into(),
+            parent_revision_id: None,
+            accepted_at: Utc::now(),
+            authority: "test".into(),
+        };
+
+        ExecutionRecordPort::create_spec_revision(&db, &revision)
+            .await
+            .expect("first insert");
+        ExecutionRecordPort::create_spec_revision(&db, &revision)
+            .await
+            .expect("identical replay must be idempotent");
+
+        let mut conflicting = revision.clone();
+        conflicting.authority = "different-authority".into();
+        let err = ExecutionRecordPort::create_spec_revision(&db, &conflicting)
+            .await
+            .expect_err("immutable revision mutation must fail");
+        assert!(matches!(err, DomainError::Conflict(_)));
+    }
+
+    #[tokio::test]
+    async fn assignment_supersession_is_atomic_and_only_one_active_remains() {
+        use agileplus_domain::{
+            domain::{
+                execution::{Assignment, AssignmentStatus, SpecRevision},
+                feature::Feature,
+                work_package::WorkPackage,
+            },
+            ports::{ExecutionRecordPort, StoragePort},
+        };
+        use chrono::{Duration, Utc};
+
+        let db = SqliteStorageAdapter::in_memory().expect("in-memory adapter");
+        let feature_id = StoragePort::create_feature(
+            &db,
+            &Feature::new("assignment-supersede", "Assignment Supersede", [10u8; 32], None),
+        )
+        .await
+        .expect("feature");
+        let wp_id = StoragePort::create_work_package(
+            &db,
+            &WorkPackage::new(feature_id, "WP", 1, "criterion"),
+        )
+        .await
+        .expect("wp");
+        let t0 = Utc::now();
+
+        let spec_a = SpecRevision {
+            id: "spec:a".into(),
+            feature_id,
+            content_hash: "sha256:a".into(),
+            parent_revision_id: None,
+            accepted_at: t0,
+            authority: "test".into(),
+        };
+        let spec_b = SpecRevision {
+            id: "spec:b".into(),
+            feature_id,
+            content_hash: "sha256:b".into(),
+            parent_revision_id: Some(spec_a.id.clone()),
+            accepted_at: t0 + Duration::seconds(1),
+            authority: "test".into(),
+        };
+        ExecutionRecordPort::create_spec_revision(&db, &spec_a)
+            .await
+            .expect("spec A");
+        ExecutionRecordPort::create_spec_revision(&db, &spec_b)
+            .await
+            .expect("spec B");
+
+        let assignment_a = Assignment {
+            id: "assignment:a".into(),
+            wp_id,
+            spec_revision_id: spec_a.id.clone(),
+            created_at: t0,
+            supersedes_assignment_id: None,
+            status: AssignmentStatus::Active,
+        };
+        ExecutionRecordPort::create_assignment(&db, &assignment_a)
+            .await
+            .expect("assignment A");
+        assert_eq!(
+            ExecutionRecordPort::get_active_assignment(&db, wp_id)
+                .await
+                .expect("active A")
+                .expect("A exists")
+                .id,
+            assignment_a.id
+        );
+
+        let assignment_b = Assignment {
+            id: "assignment:b".into(),
+            wp_id,
+            spec_revision_id: spec_b.id.clone(),
+            created_at: t0 + Duration::seconds(2),
+            supersedes_assignment_id: Some(assignment_a.id.clone()),
+            status: AssignmentStatus::Active,
+        };
+        ExecutionRecordPort::supersede_assignment(&db, &assignment_a.id, &assignment_b)
+            .await
+            .expect("supersede A with B");
+
+        let active = ExecutionRecordPort::get_active_assignment(&db, wp_id)
+            .await
+            .expect("active B")
+            .expect("B exists");
+        assert_eq!(active.id, assignment_b.id);
+        assert_eq!(active.supersedes_assignment_id.as_deref(), Some("assignment:a"));
+
+        let old_status: String = db
+            .conn_for_bench()
+            .expect("connection")
+            .query_row(
+                "SELECT status FROM assignments WHERE id='assignment:a'",
+                [],
+                |row| row.get(0),
+            )
+            .expect("old assignment status");
+        assert_eq!(old_status, "superseded");
+
+        let parallel = Assignment {
+            id: "assignment:parallel".into(),
+            wp_id,
+            spec_revision_id: spec_b.id,
+            created_at: t0 + Duration::seconds(3),
+            supersedes_assignment_id: None,
+            status: AssignmentStatus::Active,
+        };
+        let err = ExecutionRecordPort::create_assignment(&db, &parallel)
+            .await
+            .expect_err("partial unique index must reject parallel active assignment");
+        assert!(matches!(err, DomainError::Storage(_)));
+    }
+
     #[test]
     fn new_fails_when_parent_directory_is_missing() {
         let nanos = std::time::SystemTime::now()
