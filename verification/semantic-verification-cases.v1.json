@@ -1,0 +1,483 @@
+{
+  "schema_version": "0.1.0",
+  "product_id": "PRD-AGILEPLUS",
+  "status": "specified_not_executed",
+  "scope": "canonical_semantic_spine",
+  "cases": [
+    {
+      "id": "AP-VC-001",
+      "journey_id": "AP-J-01",
+      "title": "Accepted spec revision is immutable",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture"
+      ],
+      "stimulus": "Accept revision A, revise behavior, accept revision B",
+      "expected": "A remains queryable unchanged; B has distinct identity",
+      "adversarial": "edit A in place or let prompt drift redefine it",
+      "evidence_contract": [
+        "exact spec/assignment/candidate identities as applicable",
+        "evaluator/verifier identity",
+        "raw result",
+        "environment/fixture identity"
+      ]
+    },
+    {
+      "id": "AP-VC-002",
+      "journey_id": "AP-J-01",
+      "title": "Material ambiguity blocks acceptance",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture"
+      ],
+      "stimulus": "leave conflicting mandatory behavior unresolved",
+      "expected": "spec remains Inconclusive/Incomplete",
+      "adversarial": "accept because a document exists",
+      "evidence_contract": [
+        "exact spec/assignment/candidate identities as applicable",
+        "evaluator/verifier identity",
+        "raw result",
+        "environment/fixture identity"
+      ]
+    },
+    {
+      "id": "AP-VC-003",
+      "journey_id": "AP-J-02",
+      "title": "Empty criteria cannot create executable accepted assignment",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture"
+      ],
+      "stimulus": "construct WP/Assignment with zero applicable criteria",
+      "expected": "NotConfigured/non-accepting",
+      "adversarial": "0/0 treated as complete",
+      "evidence_contract": [
+        "exact spec/assignment/candidate identities as applicable",
+        "evaluator/verifier identity",
+        "raw result",
+        "environment/fixture identity"
+      ]
+    },
+    {
+      "id": "AP-VC-004",
+      "journey_id": "AP-J-02",
+      "title": "Dependency cycle blocks executable decomposition",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture"
+      ],
+      "stimulus": "create cyclic WP dependency fixture",
+      "expected": "cycle surfaced; assignment blocked",
+      "adversarial": "schedule cycle as if valid",
+      "evidence_contract": [
+        "exact spec/assignment/candidate identities as applicable",
+        "evaluator/verifier identity",
+        "raw result",
+        "environment/fixture identity"
+      ]
+    },
+    {
+      "id": "AP-VC-005",
+      "journey_id": "AP-J-03",
+      "title": "Replacement worker creates new Attempt",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture"
+      ],
+      "stimulus": "expire worker A then resume worker B",
+      "expected": "A history retained; B has new AttemptId/claim",
+      "adversarial": "overwrite A or reuse its identity",
+      "evidence_contract": [
+        "exact spec/assignment/candidate identities as applicable",
+        "evaluator/verifier identity",
+        "raw result",
+        "environment/fixture identity"
+      ]
+    },
+    {
+      "id": "AP-VC-006",
+      "journey_id": "AP-J-03",
+      "title": "Claim expiry ends mutation authority",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture"
+      ],
+      "stimulus": "expire claim during attempt",
+      "expected": "subsequent protected mutation denied until new claim",
+      "adversarial": "expired worker continues as authorized",
+      "evidence_contract": [
+        "exact spec/assignment/candidate identities as applicable",
+        "evaluator/verifier identity",
+        "raw result",
+        "environment/fixture identity"
+      ]
+    },
+    {
+      "id": "AP-VC-007",
+      "journey_id": "AP-J-03",
+      "title": "Instruction change revises execution basis",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture"
+      ],
+      "stimulus": "change accepted instructions after Assignment A",
+      "expected": "new SpecRevision and revised Assignment where basis changed",
+      "adversarial": "silently mutate Assignment A",
+      "evidence_contract": [
+        "exact spec/assignment/candidate identities as applicable",
+        "evaluator/verifier identity",
+        "raw result",
+        "environment/fixture identity"
+      ]
+    },
+    {
+      "id": "AP-VC-008",
+      "journey_id": "AP-J-04",
+      "title": "Worker cannot self-award acceptance",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture"
+      ],
+      "stimulus": "worker reports success without independent evaluation",
+      "expected": "no AcceptedWork",
+      "adversarial": "worker success becomes Done",
+      "evidence_contract": [
+        "exact spec/assignment/candidate identities as applicable",
+        "evaluator/verifier identity",
+        "raw result",
+        "environment/fixture identity"
+      ]
+    },
+    {
+      "id": "AP-VC-009",
+      "journey_id": "AP-J-04",
+      "title": "Evaluation binds exact candidate",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture"
+      ],
+      "stimulus": "evaluate candidate A then substitute candidate B",
+      "expected": "receipt for A cannot accept B",
+      "adversarial": "reuse generic green receipt",
+      "evidence_contract": [
+        "exact spec/assignment/candidate identities as applicable",
+        "evaluator/verifier identity",
+        "raw result",
+        "environment/fixture identity"
+      ]
+    },
+    {
+      "id": "AP-VC-010",
+      "journey_id": "AP-J-04",
+      "title": "Evaluator failure is non-green",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture"
+      ],
+      "stimulus": "make required evaluator unavailable",
+      "expected": "Unknown/Inconclusive",
+      "adversarial": "skipped evaluator counts pass",
+      "evidence_contract": [
+        "exact spec/assignment/candidate identities as applicable",
+        "evaluator/verifier identity",
+        "raw result",
+        "environment/fixture identity"
+      ]
+    },
+    {
+      "id": "AP-VC-011",
+      "journey_id": "AP-J-05",
+      "title": "Review and CI are insufficient alone",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture"
+      ],
+      "stimulus": "review approved + CI green but mandatory criterion fails",
+      "expected": "work not accepted",
+      "adversarial": "approval/CI awards Done",
+      "evidence_contract": [
+        "exact spec/assignment/candidate identities as applicable",
+        "evaluator/verifier identity",
+        "raw result",
+        "environment/fixture identity"
+      ]
+    },
+    {
+      "id": "AP-VC-012",
+      "journey_id": "AP-J-05",
+      "title": "Policy and correctness are independent",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture"
+      ],
+      "stimulus": "criterion pass while policy denies",
+      "expected": "blocked, not AcceptedWork",
+      "adversarial": "correctness bypasses policy",
+      "evidence_contract": [
+        "exact spec/assignment/candidate identities as applicable",
+        "evaluator/verifier identity",
+        "raw result",
+        "environment/fixture identity"
+      ]
+    },
+    {
+      "id": "AP-VC-013",
+      "journey_id": "AP-J-05",
+      "title": "Policy pass cannot substitute correctness",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture"
+      ],
+      "stimulus": "policy allows transition but criterion fails",
+      "expected": "Unsatisfied",
+      "adversarial": "policy presence awards acceptance",
+      "evidence_contract": [
+        "exact spec/assignment/candidate identities as applicable",
+        "evaluator/verifier identity",
+        "raw result",
+        "environment/fixture identity"
+      ]
+    },
+    {
+      "id": "AP-VC-014",
+      "journey_id": "AP-J-06",
+      "title": "Promotion fails closed on merge error",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture"
+      ],
+      "stimulus": "inject merge transport error",
+      "expected": "no Promoted state/receipt",
+      "adversarial": "log error and continue",
+      "evidence_contract": [
+        "exact spec/assignment/candidate identities as applicable",
+        "evaluator/verifier identity",
+        "raw result",
+        "environment/fixture identity"
+      ]
+    },
+    {
+      "id": "AP-VC-015",
+      "journey_id": "AP-J-06",
+      "title": "Changed candidate requires re-evaluation",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture"
+      ],
+      "stimulus": "modify candidate after accepted evaluation",
+      "expected": "promotion blocked until evaluation of new candidate",
+      "adversarial": "stale receipt reused",
+      "evidence_contract": [
+        "exact spec/assignment/candidate identities as applicable",
+        "evaluator/verifier identity",
+        "raw result",
+        "environment/fixture identity"
+      ]
+    },
+    {
+      "id": "AP-VC-016",
+      "journey_id": "AP-J-07",
+      "title": "Recovery preserves durable work truth",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture"
+      ],
+      "stimulus": "restart with interrupted attempt and expired claim",
+      "expected": "accepted spec/DAG/attempt history recovered; new authority explicit",
+      "adversarial": "treat last worker memory as authority",
+      "evidence_contract": [
+        "exact spec/assignment/candidate identities as applicable",
+        "evaluator/verifier identity",
+        "raw result",
+        "environment/fixture identity"
+      ]
+    },
+    {
+      "id": "AP-VC-017",
+      "journey_id": "AP-J-08",
+      "title": "Quick profile cannot weaken acceptance",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture"
+      ],
+      "stimulus": "select minimal bugfix profile",
+      "expected": "optional ceremony collapses; criteria/evaluation/governance remain",
+      "adversarial": "profile skips mandatory acceptance",
+      "evidence_contract": [
+        "exact spec/assignment/candidate identities as applicable",
+        "evaluator/verifier identity",
+        "raw result",
+        "environment/fixture identity"
+      ]
+    },
+    {
+      "id": "AP-VC-018",
+      "journey_id": "AP-J-09",
+      "title": "Framework import cannot create duplicate authority",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture"
+      ],
+      "stimulus": "import equivalent OpenSpec/SpecKit artifacts",
+      "expected": "map aliases/provenance to one canonical role/revision",
+      "adversarial": "parallel accepted roots created",
+      "evidence_contract": [
+        "exact spec/assignment/candidate identities as applicable",
+        "evaluator/verifier identity",
+        "raw result",
+        "environment/fixture identity"
+      ]
+    },
+    {
+      "id": "AP-VC-019",
+      "journey_id": "AP-J-09",
+      "title": "Conflicting import is explicit",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture"
+      ],
+      "stimulus": "import external behavior conflicting with accepted spec",
+      "expected": "conflict surfaced; no silent overwrite",
+      "adversarial": "latest file wins",
+      "evidence_contract": [
+        "exact spec/assignment/candidate identities as applicable",
+        "evaluator/verifier identity",
+        "raw result",
+        "environment/fixture identity"
+      ]
+    },
+    {
+      "id": "AP-VC-020",
+      "journey_id": "AP-J-10",
+      "title": "AgilePlus accepted work does not satisfy Tracera automatically",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture"
+      ],
+      "stimulus": "send accepted work receipt without qualifying product applicability",
+      "expected": "Tracera may remain Unknown/Unsatisfied",
+      "adversarial": "Done maps directly to Satisfied",
+      "evidence_contract": [
+        "exact spec/assignment/candidate identities as applicable",
+        "evaluator/verifier identity",
+        "raw result",
+        "environment/fixture identity"
+      ]
+    },
+    {
+      "id": "AP-VC-021",
+      "journey_id": "AP-J-10",
+      "title": "Tracera outage does not erase AgilePlus truth",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture"
+      ],
+      "stimulus": "make Tracera unavailable",
+      "expected": "local accepted work/evaluation remains queryable; federation pending",
+      "adversarial": "AgilePlus acceptance requires live Tracera",
+      "evidence_contract": [
+        "exact spec/assignment/candidate identities as applicable",
+        "evaluator/verifier identity",
+        "raw result",
+        "environment/fixture identity"
+      ]
+    },
+    {
+      "id": "AP-VC-022",
+      "journey_id": "AP-J-11",
+      "title": "Transport semantics agree",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture"
+      ],
+      "stimulus": "query same assignment/evaluation via two supported surfaces",
+      "expected": "same canonical IDs/status/result",
+      "adversarial": "one surface greener/different identity",
+      "evidence_contract": [
+        "exact spec/assignment/candidate identities as applicable",
+        "evaluator/verifier identity",
+        "raw result",
+        "environment/fixture identity"
+      ]
+    },
+    {
+      "id": "AP-VC-023",
+      "journey_id": "AP-J-12",
+      "title": "Audit v1 limitation is explicit",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture"
+      ],
+      "stimulus": "mutate a documented non-covered v1 field in fixture",
+      "expected": "hash behavior matches v1 contract and limitation is reported",
+      "adversarial": "claim full-field tamper evidence",
+      "evidence_contract": [
+        "exact spec/assignment/candidate identities as applicable",
+        "evaluator/verifier identity",
+        "raw result",
+        "environment/fixture identity"
+      ]
+    },
+    {
+      "id": "AP-VC-024",
+      "journey_id": "AP-J-12",
+      "title": "Audit v2 covered field mutation fails verification",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture"
+      ],
+      "stimulus": "mutate each v2-covered field",
+      "expected": "verification fails",
+      "adversarial": "covered mutation remains green",
+      "evidence_contract": [
+        "exact spec/assignment/candidate identities as applicable",
+        "evaluator/verifier identity",
+        "raw result",
+        "environment/fixture identity"
+      ]
+    },
+    {
+      "id": "AP-VC-025",
+      "journey_id": "AP-J-12",
+      "title": "Audit chain crosses schema versions explicitly",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture"
+      ],
+      "stimulus": "fixture contains valid v1→v2 transition",
+      "expected": "each entry verified under declared schema and chain continuity preserved",
+      "adversarial": "reinterpret old v1 bytes as v2",
+      "evidence_contract": [
+        "exact spec/assignment/candidate identities as applicable",
+        "evaluator/verifier identity",
+        "raw result",
+        "environment/fixture identity"
+      ]
+    }
+  ]
+}
