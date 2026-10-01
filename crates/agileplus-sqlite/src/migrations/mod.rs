@@ -442,26 +442,36 @@ mod tests {
     }
 
     #[test]
-    fn rollback_last_drops_tracking_row_but_keeps_add_column_changes() {
+    fn rollback_of_026_drops_tracking_row_but_keeps_add_column_changes() {
         let conn = Connection::open_in_memory().expect("in-memory");
         let runner = MigrationRunner::new(&conn);
         runner.run_all().expect("migrate");
-        let (last_name, last_sql) = MIGRATIONS[MIGRATIONS.len() - 1];
-        assert_eq!(last_name, "026_feature_labels");
 
-        runner.rollback_last().expect("rollback");
+        // 027 now follows 026. Roll it back first so this test continues to
+        // document the intentionally irreversible semantics of 026 itself.
+        let current_last = MIGRATIONS[MIGRATIONS.len() - 1].0;
+        assert_eq!(current_last, "027_execution_records");
+        runner.rollback_last().expect("rollback 027");
+
+        let (name_026, sql_026) = MIGRATIONS
+            .iter()
+            .find(|(name, _)| *name == "026_feature_labels")
+            .copied()
+            .expect("026 registered");
+        runner.rollback_last().expect("rollback 026");
+
         let applied: i64 = conn
             .query_row(
                 "SELECT COUNT(*) FROM _migrations WHERE name = ?1",
-                rusqlite::params![last_name],
+                rusqlite::params![name_026],
                 |row| row.get(0),
             )
             .expect("query");
-        assert_eq!(applied, 0, "{last_name} must no longer be recorded");
+        assert_eq!(applied, 0, "{name_026} must no longer be recorded");
 
         // 026 only appends a column and its DOWN body is comment-only, so the
         // column survives the rollback (see the comment inside the migration file).
-        let down = parse_down(last_sql);
+        let down = parse_down(sql_026);
         assert!(
             down.lines()
                 .all(|line| line.trim().is_empty() || line.trim_start().starts_with("--")),
