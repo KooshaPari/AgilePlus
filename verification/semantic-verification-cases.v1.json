@@ -1,5 +1,5 @@
 {
-  "schema_version": "0.2.0",
+  "schema_version": "0.3.0",
   "product_id": "PRD-AGILEPLUS",
   "status": "specified_not_executed",
   "scope": "canonical_semantic_spine",
@@ -771,6 +771,741 @@
         "interface/profile version",
         "actor/authority",
         "raw result/error"
+      ]
+    },
+    {
+      "id": "AP-RVC-040",
+      "requirement_id": "AP-R-DEV-ID",
+      "journey_id": "AP-J-01",
+      "title": "Durable development identity",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture",
+        "exact applicable identities/revisions known"
+      ],
+      "stimulus": "A development/change effort has a stable identity independent of worker, worktree, branch, PR, claim, or transport.",
+      "expected": "The stated obligation is satisfied with canonical identities, authority and non-vacuous acceptance semantics preserved.",
+      "adversarial": "Construct a counterexample that violates 'Durable development identity' while adjacent work remains healthy; the violation must remain explicit and cannot produce AcceptedWork.",
+      "evidence_contract": [
+        "exact Development/SpecRevision/Assignment/Candidate identities as applicable",
+        "verifier/evaluator identity/version",
+        "raw observable/result",
+        "fixture/environment identity"
+      ]
+    },
+    {
+      "id": "AP-RVC-041",
+      "requirement_id": "AP-R-SPEC-REV",
+      "journey_id": "AP-J-01",
+      "title": "Immutable accepted specification revisions",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture",
+        "exact applicable identities/revisions known"
+      ],
+      "stimulus": "Accepted behavior/instructions are represented by immutable SpecRevision identities; changes create explicit revisions.",
+      "expected": "The stated obligation is satisfied with canonical identities, authority and non-vacuous acceptance semantics preserved.",
+      "adversarial": "Construct a counterexample that violates 'Immutable accepted specification revisions' while adjacent work remains healthy; the violation must remain explicit and cannot produce AcceptedWork.",
+      "evidence_contract": [
+        "exact Development/SpecRevision/Assignment/Candidate identities as applicable",
+        "verifier/evaluator identity/version",
+        "raw observable/result",
+        "fixture/environment identity"
+      ]
+    },
+    {
+      "id": "AP-RVC-042",
+      "requirement_id": "AP-R-AMBIGUITY",
+      "journey_id": "AP-J-01",
+      "title": "Material ambiguity blocks acceptance",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture",
+        "exact applicable identities/revisions known"
+      ],
+      "stimulus": "Unresolved contradictions or material ambiguity remain explicit and cannot be hidden by accepting a document shell.",
+      "expected": "The stated obligation is satisfied with canonical identities, authority and non-vacuous acceptance semantics preserved.",
+      "adversarial": "Construct a counterexample that violates 'Material ambiguity blocks acceptance' while adjacent work remains healthy; the violation must remain explicit and cannot produce AcceptedWork.",
+      "evidence_contract": [
+        "exact Development/SpecRevision/Assignment/Candidate identities as applicable",
+        "verifier/evaluator identity/version",
+        "raw observable/result",
+        "fixture/environment identity"
+      ]
+    },
+    {
+      "id": "AP-RVC-043",
+      "requirement_id": "AP-R-ARTIFACT-ROLE",
+      "journey_id": "AP-J-01",
+      "title": "Framework-neutral artifact authority",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture",
+        "exact applicable identities/revisions known"
+      ],
+      "stimulus": "Canonical artifact authority is based on typed roles, identity, revision and provenance rather than a framework-specific filesystem root.",
+      "expected": "The stated obligation is satisfied with canonical identities, authority and non-vacuous acceptance semantics preserved.",
+      "adversarial": "Construct a counterexample that violates 'Framework-neutral artifact authority' while adjacent work remains healthy; the violation must remain explicit and cannot produce AcceptedWork.",
+      "evidence_contract": [
+        "exact Development/SpecRevision/Assignment/Candidate identities as applicable",
+        "verifier/evaluator identity/version",
+        "raw observable/result",
+        "fixture/environment identity"
+      ]
+    },
+    {
+      "id": "AP-RVC-044",
+      "requirement_id": "AP-R-WP-DAG",
+      "journey_id": "AP-J-02",
+      "title": "Dependency-aware durable work packages",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture",
+        "exact applicable identities/revisions known"
+      ],
+      "stimulus": "Accepted work can be decomposed into durable WorkPackages with explicit dependencies and cycle detection.",
+      "expected": "The stated obligation is satisfied with canonical identities, authority and non-vacuous acceptance semantics preserved.",
+      "adversarial": "Construct a counterexample that violates 'Dependency-aware durable work packages' while adjacent work remains healthy; the violation must remain explicit and cannot produce AcceptedWork.",
+      "evidence_contract": [
+        "exact Development/SpecRevision/Assignment/Candidate identities as applicable",
+        "verifier/evaluator identity/version",
+        "raw observable/result",
+        "fixture/environment identity"
+      ]
+    },
+    {
+      "id": "AP-RVC-045",
+      "requirement_id": "AP-R-ASSIGNMENT",
+      "journey_id": "AP-J-02",
+      "title": "Frozen executable assignment",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture",
+        "exact applicable identities/revisions known"
+      ],
+      "stimulus": "An Assignment binds exact WorkPackage, SpecRevision, context/scope, criteria and execution constraints without later silent mutation.",
+      "expected": "The stated obligation is satisfied with canonical identities, authority and non-vacuous acceptance semantics preserved.",
+      "adversarial": "Construct a counterexample that violates 'Frozen executable assignment' while adjacent work remains healthy; the violation must remain explicit and cannot produce AcceptedWork.",
+      "evidence_contract": [
+        "exact Development/SpecRevision/Assignment/Candidate identities as applicable",
+        "verifier/evaluator identity/version",
+        "raw observable/result",
+        "fixture/environment identity"
+      ]
+    },
+    {
+      "id": "AP-RVC-046",
+      "requirement_id": "AP-R-CRITERIA-NONEMPTY",
+      "journey_id": "AP-J-02",
+      "title": "No vacuous assignment acceptance",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture",
+        "exact applicable identities/revisions known"
+      ],
+      "stimulus": "An Assignment with zero applicable mandatory criteria cannot be accepted or graded successful.",
+      "expected": "The stated obligation is satisfied with canonical identities, authority and non-vacuous acceptance semantics preserved.",
+      "adversarial": "Construct a counterexample that violates 'No vacuous assignment acceptance' while adjacent work remains healthy; the violation must remain explicit and cannot produce AcceptedWork.",
+      "evidence_contract": [
+        "exact Development/SpecRevision/Assignment/Candidate identities as applicable",
+        "verifier/evaluator identity/version",
+        "raw observable/result",
+        "fixture/environment identity"
+      ]
+    },
+    {
+      "id": "AP-RVC-047",
+      "requirement_id": "AP-R-CONTEXT",
+      "journey_id": "AP-J-02",
+      "title": "Bounded provenance-bearing context bundle",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture",
+        "exact applicable identities/revisions known"
+      ],
+      "stimulus": "Assignments provide sufficient bounded context with source provenance, prerequisites, exclusions and allowed/forbidden work surfaces.",
+      "expected": "The stated obligation is satisfied with canonical identities, authority and non-vacuous acceptance semantics preserved.",
+      "adversarial": "Construct a counterexample that violates 'Bounded provenance-bearing context bundle' while adjacent work remains healthy; the violation must remain explicit and cannot produce AcceptedWork.",
+      "evidence_contract": [
+        "exact Development/SpecRevision/Assignment/Candidate identities as applicable",
+        "verifier/evaluator identity/version",
+        "raw observable/result",
+        "fixture/environment identity"
+      ]
+    },
+    {
+      "id": "AP-RVC-048",
+      "requirement_id": "AP-R-ATTEMPT-ID",
+      "journey_id": "AP-J-03",
+      "title": "Replaceable execution attempts",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture",
+        "exact applicable identities/revisions known"
+      ],
+      "stimulus": "Each worker execution episode has a durable Attempt identity distinct from Assignment and worker identity.",
+      "expected": "The stated obligation is satisfied with canonical identities, authority and non-vacuous acceptance semantics preserved.",
+      "adversarial": "Construct a counterexample that violates 'Replaceable execution attempts' while adjacent work remains healthy; the violation must remain explicit and cannot produce AcceptedWork.",
+      "evidence_contract": [
+        "exact Development/SpecRevision/Assignment/Candidate identities as applicable",
+        "verifier/evaluator identity/version",
+        "raw observable/result",
+        "fixture/environment identity"
+      ]
+    },
+    {
+      "id": "AP-RVC-049",
+      "requirement_id": "AP-R-CLAIM",
+      "journey_id": "AP-J-03",
+      "title": "Temporary explicit execution authority",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture",
+        "exact applicable identities/revisions known"
+      ],
+      "stimulus": "Claims/leases grant bounded temporary authority, expire/reap explicitly, and do not define durable work identity.",
+      "expected": "The stated obligation is satisfied with canonical identities, authority and non-vacuous acceptance semantics preserved.",
+      "adversarial": "Construct a counterexample that violates 'Temporary explicit execution authority' while adjacent work remains healthy; the violation must remain explicit and cannot produce AcceptedWork.",
+      "evidence_contract": [
+        "exact Development/SpecRevision/Assignment/Candidate identities as applicable",
+        "verifier/evaluator identity/version",
+        "raw observable/result",
+        "fixture/environment identity"
+      ]
+    },
+    {
+      "id": "AP-RVC-050",
+      "requirement_id": "AP-R-CLAIM-NOINHERIT",
+      "journey_id": "AP-J-03",
+      "title": "Authority is not inherited by replacement",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture",
+        "exact applicable identities/revisions known"
+      ],
+      "stimulus": "Replacement workers receive newly authorized claims/credentials; transfer does not implicitly inherit unrelated authority.",
+      "expected": "The stated obligation is satisfied with canonical identities, authority and non-vacuous acceptance semantics preserved.",
+      "adversarial": "Construct a counterexample that violates 'Authority is not inherited by replacement' while adjacent work remains healthy; the violation must remain explicit and cannot produce AcceptedWork.",
+      "evidence_contract": [
+        "exact Development/SpecRevision/Assignment/Candidate identities as applicable",
+        "verifier/evaluator identity/version",
+        "raw observable/result",
+        "fixture/environment identity"
+      ]
+    },
+    {
+      "id": "AP-RVC-051",
+      "requirement_id": "AP-R-ISOLATION",
+      "journey_id": "AP-J-03",
+      "title": "Execution isolation is explicit",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture",
+        "exact applicable identities/revisions known"
+      ],
+      "stimulus": "Worktree/sandbox/resource boundaries are attached to Attempts and prevent accidental cross-attempt mutation where the profile requires isolation.",
+      "expected": "The stated obligation is satisfied with canonical identities, authority and non-vacuous acceptance semantics preserved.",
+      "adversarial": "Construct a counterexample that violates 'Execution isolation is explicit' while adjacent work remains healthy; the violation must remain explicit and cannot produce AcceptedWork.",
+      "evidence_contract": [
+        "exact Development/SpecRevision/Assignment/Candidate identities as applicable",
+        "verifier/evaluator identity/version",
+        "raw observable/result",
+        "fixture/environment identity"
+      ]
+    },
+    {
+      "id": "AP-RVC-052",
+      "requirement_id": "AP-R-CANDIDATE",
+      "journey_id": "AP-J-03",
+      "title": "Exact candidate identity",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture",
+        "exact applicable identities/revisions known"
+      ],
+      "stimulus": "Produced work is represented by an exact immutable candidate reference sufficient for independent evaluation and promotion.",
+      "expected": "The stated obligation is satisfied with canonical identities, authority and non-vacuous acceptance semantics preserved.",
+      "adversarial": "Construct a counterexample that violates 'Exact candidate identity' while adjacent work remains healthy; the violation must remain explicit and cannot produce AcceptedWork.",
+      "evidence_contract": [
+        "exact Development/SpecRevision/Assignment/Candidate identities as applicable",
+        "verifier/evaluator identity/version",
+        "raw observable/result",
+        "fixture/environment identity"
+      ]
+    },
+    {
+      "id": "AP-RVC-053",
+      "requirement_id": "AP-R-EVALUATION",
+      "journey_id": "AP-J-04",
+      "title": "Independent exact-candidate evaluation",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture",
+        "exact applicable identities/revisions known"
+      ],
+      "stimulus": "Evaluation binds exact Assignment/SpecRevision/Candidate and evaluator identity/version and records criterion-level outcomes.",
+      "expected": "The stated obligation is satisfied with canonical identities, authority and non-vacuous acceptance semantics preserved.",
+      "adversarial": "Construct a counterexample that violates 'Independent exact-candidate evaluation' while adjacent work remains healthy; the violation must remain explicit and cannot produce AcceptedWork.",
+      "evidence_contract": [
+        "exact Development/SpecRevision/Assignment/Candidate identities as applicable",
+        "verifier/evaluator identity/version",
+        "raw observable/result",
+        "fixture/environment identity"
+      ]
+    },
+    {
+      "id": "AP-RVC-054",
+      "requirement_id": "AP-R-NO-SELF-GRADE",
+      "journey_id": "AP-J-04",
+      "title": "Worker cannot self-award terminal acceptance",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture",
+        "exact applicable identities/revisions known"
+      ],
+      "stimulus": "Worker completion/self-report cannot substitute for the independent accepted evaluation boundary.",
+      "expected": "The stated obligation is satisfied with canonical identities, authority and non-vacuous acceptance semantics preserved.",
+      "adversarial": "Construct a counterexample that violates 'Worker cannot self-award terminal acceptance' while adjacent work remains healthy; the violation must remain explicit and cannot produce AcceptedWork.",
+      "evidence_contract": [
+        "exact Development/SpecRevision/Assignment/Candidate identities as applicable",
+        "verifier/evaluator identity/version",
+        "raw observable/result",
+        "fixture/environment identity"
+      ]
+    },
+    {
+      "id": "AP-RVC-055",
+      "requirement_id": "AP-R-EVAL-FAIL",
+      "journey_id": "AP-J-04",
+      "title": "Evaluator failure is non-green",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture",
+        "exact applicable identities/revisions known"
+      ],
+      "stimulus": "Unavailable, failed, cancelled or mismatched required evaluation yields explicit non-success semantics.",
+      "expected": "The stated obligation is satisfied with canonical identities, authority and non-vacuous acceptance semantics preserved.",
+      "adversarial": "Construct a counterexample that violates 'Evaluator failure is non-green' while adjacent work remains healthy; the violation must remain explicit and cannot produce AcceptedWork.",
+      "evidence_contract": [
+        "exact Development/SpecRevision/Assignment/Candidate identities as applicable",
+        "verifier/evaluator identity/version",
+        "raw observable/result",
+        "fixture/environment identity"
+      ]
+    },
+    {
+      "id": "AP-RVC-056",
+      "requirement_id": "AP-R-EVIDENCE",
+      "journey_id": "AP-J-04",
+      "title": "Evaluation evidence receipts are attributable",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture",
+        "exact applicable identities/revisions known"
+      ],
+      "stimulus": "Evaluation retains raw/derived evidence references, verifier context and enough provenance for audit/replay/reassessment.",
+      "expected": "The stated obligation is satisfied with canonical identities, authority and non-vacuous acceptance semantics preserved.",
+      "adversarial": "Construct a counterexample that violates 'Evaluation evidence receipts are attributable' while adjacent work remains healthy; the violation must remain explicit and cannot produce AcceptedWork.",
+      "evidence_contract": [
+        "exact Development/SpecRevision/Assignment/Candidate identities as applicable",
+        "verifier/evaluator identity/version",
+        "raw observable/result",
+        "fixture/environment identity"
+      ]
+    },
+    {
+      "id": "AP-RVC-057",
+      "requirement_id": "AP-R-ACCEPT-BOTH",
+      "journey_id": "AP-J-05",
+      "title": "Accepted work requires correctness and governance",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture",
+        "exact applicable identities/revisions known"
+      ],
+      "stimulus": "Terminal accepted work requires mandatory criterion satisfaction plus applicable governance/authority permission.",
+      "expected": "The stated obligation is satisfied with canonical identities, authority and non-vacuous acceptance semantics preserved.",
+      "adversarial": "Construct a counterexample that violates 'Accepted work requires correctness and governance' while adjacent work remains healthy; the violation must remain explicit and cannot produce AcceptedWork.",
+      "evidence_contract": [
+        "exact Development/SpecRevision/Assignment/Candidate identities as applicable",
+        "verifier/evaluator identity/version",
+        "raw observable/result",
+        "fixture/environment identity"
+      ]
+    },
+    {
+      "id": "AP-RVC-058",
+      "requirement_id": "AP-R-REVIEW-NOT-DONE",
+      "journey_id": "AP-J-05",
+      "title": "Review/CI alone are insufficient",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture",
+        "exact applicable identities/revisions known"
+      ],
+      "stimulus": "Review approval, CI green, policy presence or merge alone cannot award AcceptedWork.",
+      "expected": "The stated obligation is satisfied with canonical identities, authority and non-vacuous acceptance semantics preserved.",
+      "adversarial": "Construct a counterexample that violates 'Review/CI alone are insufficient' while adjacent work remains healthy; the violation must remain explicit and cannot produce AcceptedWork.",
+      "evidence_contract": [
+        "exact Development/SpecRevision/Assignment/Candidate identities as applicable",
+        "verifier/evaluator identity/version",
+        "raw observable/result",
+        "fixture/environment identity"
+      ]
+    },
+    {
+      "id": "AP-RVC-059",
+      "requirement_id": "AP-R-POLICY-SEPARATE",
+      "journey_id": "AP-J-05",
+      "title": "Policy permission and correctness proof remain separate",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture",
+        "exact applicable identities/revisions known"
+      ],
+      "stimulus": "GovernanceContract cannot substitute for criterion grading and grading cannot bypass policy.",
+      "expected": "The stated obligation is satisfied with canonical identities, authority and non-vacuous acceptance semantics preserved.",
+      "adversarial": "Construct a counterexample that violates 'Policy permission and correctness proof remain separate' while adjacent work remains healthy; the violation must remain explicit and cannot produce AcceptedWork.",
+      "evidence_contract": [
+        "exact Development/SpecRevision/Assignment/Candidate identities as applicable",
+        "verifier/evaluator identity/version",
+        "raw observable/result",
+        "fixture/environment identity"
+      ]
+    },
+    {
+      "id": "AP-RVC-060",
+      "requirement_id": "AP-R-PROMOTE-EXACT",
+      "journey_id": "AP-J-06",
+      "title": "Promotion uses the evaluated candidate",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture",
+        "exact applicable identities/revisions known"
+      ],
+      "stimulus": "Promotion/ship/integration operates on the exact accepted candidate and fails if it changed or acceptance became stale.",
+      "expected": "The stated obligation is satisfied with canonical identities, authority and non-vacuous acceptance semantics preserved.",
+      "adversarial": "Construct a counterexample that violates 'Promotion uses the evaluated candidate' while adjacent work remains healthy; the violation must remain explicit and cannot produce AcceptedWork.",
+      "evidence_contract": [
+        "exact Development/SpecRevision/Assignment/Candidate identities as applicable",
+        "verifier/evaluator identity/version",
+        "raw observable/result",
+        "fixture/environment identity"
+      ]
+    },
+    {
+      "id": "AP-RVC-061",
+      "requirement_id": "AP-R-PROMOTE-CLOSED",
+      "journey_id": "AP-J-06",
+      "title": "Promotion fails closed",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture",
+        "exact applicable identities/revisions known"
+      ],
+      "stimulus": "Merge conflict, transport error, missing authority or stale/invalid acceptance prevents promotion.",
+      "expected": "The stated obligation is satisfied with canonical identities, authority and non-vacuous acceptance semantics preserved.",
+      "adversarial": "Construct a counterexample that violates 'Promotion fails closed' while adjacent work remains healthy; the violation must remain explicit and cannot produce AcceptedWork.",
+      "evidence_contract": [
+        "exact Development/SpecRevision/Assignment/Candidate identities as applicable",
+        "verifier/evaluator identity/version",
+        "raw observable/result",
+        "fixture/environment identity"
+      ]
+    },
+    {
+      "id": "AP-RVC-062",
+      "requirement_id": "AP-R-RECOVERY",
+      "journey_id": "AP-J-07",
+      "title": "Durable recovery without owner replay",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture",
+        "exact applicable identities/revisions known"
+      ],
+      "stimulus": "Accepted specs, DAG, assignments, attempts, claims, candidates, evaluations and decisions are recoverable enough to continue after interruption.",
+      "expected": "The stated obligation is satisfied with canonical identities, authority and non-vacuous acceptance semantics preserved.",
+      "adversarial": "Construct a counterexample that violates 'Durable recovery without owner replay' while adjacent work remains healthy; the violation must remain explicit and cannot produce AcceptedWork.",
+      "evidence_contract": [
+        "exact Development/SpecRevision/Assignment/Candidate identities as applicable",
+        "verifier/evaluator identity/version",
+        "raw observable/result",
+        "fixture/environment identity"
+      ]
+    },
+    {
+      "id": "AP-RVC-063",
+      "requirement_id": "AP-R-PROFILE",
+      "journey_id": "AP-J-08",
+      "title": "Adaptive methodology profiles",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture",
+        "exact applicable identities/revisions known"
+      ],
+      "stimulus": "Workflow profiles may vary research/design/planning depth while preserving semantic prerequisites for acceptance.",
+      "expected": "The stated obligation is satisfied with canonical identities, authority and non-vacuous acceptance semantics preserved.",
+      "adversarial": "Construct a counterexample that violates 'Adaptive methodology profiles' while adjacent work remains healthy; the violation must remain explicit and cannot produce AcceptedWork.",
+      "evidence_contract": [
+        "exact Development/SpecRevision/Assignment/Candidate identities as applicable",
+        "verifier/evaluator identity/version",
+        "raw observable/result",
+        "fixture/environment identity"
+      ]
+    },
+    {
+      "id": "AP-RVC-064",
+      "requirement_id": "AP-R-IMPORT",
+      "journey_id": "AP-J-09",
+      "title": "Provenance-preserving framework harmonization",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture",
+        "exact applicable identities/revisions known"
+      ],
+      "stimulus": "External framework artifacts map into canonical roles/identities with aliases/provenance and explicit conflict handling.",
+      "expected": "The stated obligation is satisfied with canonical identities, authority and non-vacuous acceptance semantics preserved.",
+      "adversarial": "Construct a counterexample that violates 'Provenance-preserving framework harmonization' while adjacent work remains healthy; the violation must remain explicit and cannot produce AcceptedWork.",
+      "evidence_contract": [
+        "exact Development/SpecRevision/Assignment/Candidate identities as applicable",
+        "verifier/evaluator identity/version",
+        "raw observable/result",
+        "fixture/environment identity"
+      ]
+    },
+    {
+      "id": "AP-RVC-065",
+      "requirement_id": "AP-R-NO-DUP-AUTH",
+      "journey_id": "AP-J-09",
+      "title": "Imports cannot create competing accepted intent",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture",
+        "exact applicable identities/revisions known"
+      ],
+      "stimulus": "Equivalent/imported artifacts do not create parallel accepted authorities; conflicts require explicit reconciliation.",
+      "expected": "The stated obligation is satisfied with canonical identities, authority and non-vacuous acceptance semantics preserved.",
+      "adversarial": "Construct a counterexample that violates 'Imports cannot create competing accepted intent' while adjacent work remains healthy; the violation must remain explicit and cannot produce AcceptedWork.",
+      "evidence_contract": [
+        "exact Development/SpecRevision/Assignment/Candidate identities as applicable",
+        "verifier/evaluator identity/version",
+        "raw observable/result",
+        "fixture/environment identity"
+      ]
+    },
+    {
+      "id": "AP-RVC-066",
+      "requirement_id": "AP-R-FEDERATION",
+      "journey_id": "AP-J-10",
+      "title": "Versioned Tracera evidence handoff",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture",
+        "exact applicable identities/revisions known"
+      ],
+      "stimulus": "AgilePlus can export exact work/evaluation evidence references to Tracera without asserting product satisfaction.",
+      "expected": "The stated obligation is satisfied with canonical identities, authority and non-vacuous acceptance semantics preserved.",
+      "adversarial": "Construct a counterexample that violates 'Versioned Tracera evidence handoff' while adjacent work remains healthy; the violation must remain explicit and cannot produce AcceptedWork.",
+      "evidence_contract": [
+        "exact Development/SpecRevision/Assignment/Candidate identities as applicable",
+        "verifier/evaluator identity/version",
+        "raw observable/result",
+        "fixture/environment identity"
+      ]
+    },
+    {
+      "id": "AP-RVC-067",
+      "requirement_id": "AP-R-STANDALONE",
+      "journey_id": "AP-J-10",
+      "title": "AgilePlus acceptance remains standalone",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture",
+        "exact applicable identities/revisions known"
+      ],
+      "stimulus": "AgilePlus can evaluate/recover its own work when Tracera is unavailable; federation failure does not erase work truth.",
+      "expected": "The stated obligation is satisfied with canonical identities, authority and non-vacuous acceptance semantics preserved.",
+      "adversarial": "Construct a counterexample that violates 'AgilePlus acceptance remains standalone' while adjacent work remains healthy; the violation must remain explicit and cannot produce AcceptedWork.",
+      "evidence_contract": [
+        "exact Development/SpecRevision/Assignment/Candidate identities as applicable",
+        "verifier/evaluator identity/version",
+        "raw observable/result",
+        "fixture/environment identity"
+      ]
+    },
+    {
+      "id": "AP-RVC-068",
+      "requirement_id": "AP-R-PRODUCT-BOUNDARY",
+      "journey_id": "AP-J-10",
+      "title": "Work acceptance is not product satisfaction",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture",
+        "exact applicable identities/revisions known"
+      ],
+      "stimulus": "Tracera independently decides product-level applicability/acceptance of AgilePlus evidence.",
+      "expected": "The stated obligation is satisfied with canonical identities, authority and non-vacuous acceptance semantics preserved.",
+      "adversarial": "Construct a counterexample that violates 'Work acceptance is not product satisfaction' while adjacent work remains healthy; the violation must remain explicit and cannot produce AcceptedWork.",
+      "evidence_contract": [
+        "exact Development/SpecRevision/Assignment/Candidate identities as applicable",
+        "verifier/evaluator identity/version",
+        "raw observable/result",
+        "fixture/environment identity"
+      ]
+    },
+    {
+      "id": "AP-RVC-069",
+      "requirement_id": "AP-R-INTERFACE-PARITY",
+      "journey_id": "AP-J-11",
+      "title": "Interface semantic parity",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture",
+        "exact applicable identities/revisions known"
+      ],
+      "stimulus": "Supported CLI/API/MCP/human surfaces expose matching canonical identities, revisions, status and acceptance meaning.",
+      "expected": "The stated obligation is satisfied with canonical identities, authority and non-vacuous acceptance semantics preserved.",
+      "adversarial": "Construct a counterexample that violates 'Interface semantic parity' while adjacent work remains healthy; the violation must remain explicit and cannot produce AcceptedWork.",
+      "evidence_contract": [
+        "exact Development/SpecRevision/Assignment/Candidate identities as applicable",
+        "verifier/evaluator identity/version",
+        "raw observable/result",
+        "fixture/environment identity"
+      ]
+    },
+    {
+      "id": "AP-RVC-070",
+      "requirement_id": "AP-R-ERROR-TRUTH",
+      "journey_id": "AP-J-11",
+      "title": "Interfaces fail truthfully",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture",
+        "exact applicable identities/revisions known"
+      ],
+      "stimulus": "Invalid, unauthorized, missing, stale, dependency and internal failures cannot be represented as successful work state.",
+      "expected": "The stated obligation is satisfied with canonical identities, authority and non-vacuous acceptance semantics preserved.",
+      "adversarial": "Construct a counterexample that violates 'Interfaces fail truthfully' while adjacent work remains healthy; the violation must remain explicit and cannot produce AcceptedWork.",
+      "evidence_contract": [
+        "exact Development/SpecRevision/Assignment/Candidate identities as applicable",
+        "verifier/evaluator identity/version",
+        "raw observable/result",
+        "fixture/environment identity"
+      ]
+    },
+    {
+      "id": "AP-RVC-071",
+      "requirement_id": "AP-R-AUDIT-V1",
+      "journey_id": "AP-J-12",
+      "title": "Historical audit-hash-v1 envelope is explicit",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture",
+        "exact applicable identities/revisions known"
+      ],
+      "stimulus": "v1 verification covers only its actual transition-core fields and documentation does not claim broader tamper evidence.",
+      "expected": "The stated obligation is satisfied with canonical identities, authority and non-vacuous acceptance semantics preserved.",
+      "adversarial": "Construct a counterexample that violates 'Historical audit-hash-v1 envelope is explicit' while adjacent work remains healthy; the violation must remain explicit and cannot produce AcceptedWork.",
+      "evidence_contract": [
+        "exact Development/SpecRevision/Assignment/Candidate identities as applicable",
+        "verifier/evaluator identity/version",
+        "raw observable/result",
+        "fixture/environment identity"
+      ]
+    },
+    {
+      "id": "AP-RVC-072",
+      "requirement_id": "AP-R-AUDIT-V2",
+      "journey_id": "AP-J-12",
+      "title": "Versioned stronger audit receipts",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture",
+        "exact applicable identities/revisions known"
+      ],
+      "stimulus": "Future audit-hash-v2 defines canonical serialization, covered fields, immutable evidence/evaluation references and cross-version verification without rewriting v1 history.",
+      "expected": "The stated obligation is satisfied with canonical identities, authority and non-vacuous acceptance semantics preserved.",
+      "adversarial": "Construct a counterexample that violates 'Versioned stronger audit receipts' while adjacent work remains healthy; the violation must remain explicit and cannot produce AcceptedWork.",
+      "evidence_contract": [
+        "exact Development/SpecRevision/Assignment/Candidate identities as applicable",
+        "verifier/evaluator identity/version",
+        "raw observable/result",
+        "fixture/environment identity"
+      ]
+    },
+    {
+      "id": "AP-RVC-073",
+      "requirement_id": "AP-R-TRACE",
+      "journey_id": "AP-J-12",
+      "title": "Bidirectional work traceability",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture",
+        "exact applicable identities/revisions known"
+      ],
+      "stimulus": "Durable links connect intent/spec/work/assignment/attempt/candidate/evaluation/evidence/promotion in both explanatory directions.",
+      "expected": "The stated obligation is satisfied with canonical identities, authority and non-vacuous acceptance semantics preserved.",
+      "adversarial": "Construct a counterexample that violates 'Bidirectional work traceability' while adjacent work remains healthy; the violation must remain explicit and cannot produce AcceptedWork.",
+      "evidence_contract": [
+        "exact Development/SpecRevision/Assignment/Candidate identities as applicable",
+        "verifier/evaluator identity/version",
+        "raw observable/result",
+        "fixture/environment identity"
+      ]
+    },
+    {
+      "id": "AP-RVC-074",
+      "requirement_id": "AP-R-HISTORY",
+      "journey_id": "AP-J-07",
+      "title": "Supersession preserves history",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture",
+        "exact applicable identities/revisions known"
+      ],
+      "stimulus": "Revisions, assignment supersession, failed attempts, rejected evaluations and promotions remain attributable rather than overwritten.",
+      "expected": "The stated obligation is satisfied with canonical identities, authority and non-vacuous acceptance semantics preserved.",
+      "adversarial": "Construct a counterexample that violates 'Supersession preserves history' while adjacent work remains healthy; the violation must remain explicit and cannot produce AcceptedWork.",
+      "evidence_contract": [
+        "exact Development/SpecRevision/Assignment/Candidate identities as applicable",
+        "verifier/evaluator identity/version",
+        "raw observable/result",
+        "fixture/environment identity"
       ]
     }
   ]
