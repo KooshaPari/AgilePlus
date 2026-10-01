@@ -11,7 +11,10 @@ use chrono::Utc;
 
 use agileplus_domain::domain::audit::{AuditEntry, hash_entry};
 use agileplus_domain::domain::event::Event;
-use agileplus_domain::domain::execution::{AttemptStatus, EvaluationResult};
+use agileplus_domain::domain::execution::{
+    AttemptStatus, EvaluationResult, aggregate_evidence_refs, reduce_criterion_results,
+    validate_criterion_receipt,
+};
 use agileplus_domain::domain::governance_evaluator::{
     GovernanceEvaluationOptions, evaluate_governance_with_options,
 };
@@ -298,6 +301,45 @@ where
                 evaluation.result
             );
         }
+
+        let criteria = storage
+            .list_assignment_criteria(&assignment.id)
+            .await
+            .with_context(|| format!("loading frozen criteria for WP{:02}", wp.sequence))?;
+        if criteria.is_empty() {
+            anyhow::bail!(
+                "WP{:02} Satisfied Evaluation {} has no frozen Assignment criteria; legacy naked grades are not authoritative",
+                wp.sequence,
+                evaluation.id
+            );
+        }
+        let criterion_results = storage
+            .list_criterion_results(&evaluation.id)
+            .await
+            .with_context(|| format!("loading criterion results for WP{:02}", wp.sequence))?;
+        validate_criterion_receipt(&criteria, &criterion_results)
+            .map_err(anyhow::Error::msg)
+            .with_context(|| {
+                format!(
+                    "WP{:02} Evaluation {} has an invalid criterion receipt",
+                    wp.sequence, evaluation.id
+                )
+            })?;
+        if reduce_criterion_results(&criteria, &criterion_results) != EvaluationResult::Satisfied {
+            anyhow::bail!(
+                "WP{:02} Evaluation {} aggregate is inconsistent with its criterion receipt",
+                wp.sequence,
+                evaluation.id
+            );
+        }
+        if aggregate_evidence_refs(&criterion_results) != evaluation.evidence_refs {
+            anyhow::bail!(
+                "WP{:02} Evaluation {} evidence union does not match its criterion receipt",
+                wp.sequence,
+                evaluation.id
+            );
+        }
+
         if !evaluation.candidate_ref.starts_with("git:") {
             anyhow::bail!(
                 "WP{:02} Satisfied Evaluation {} is not bound to an exact Git candidate: {}",

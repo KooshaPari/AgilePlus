@@ -371,6 +371,105 @@ fn validate_rejects_governance_green_without_exact_candidate_acceptance() {
 }
 
 #[test]
+fn validate_rejects_legacy_satisfied_evaluation_without_criterion_receipt() {
+    block_on(async {
+        let storage = SqliteStorageAdapter::in_memory().unwrap();
+        let vcs = GitVcsAdapter::new(std::env::temp_dir());
+        let id = StoragePort::create_feature(&storage, &implementing_feature("legacy-grade"))
+            .await
+            .unwrap();
+        StoragePort::create_governance_contract(
+            &storage,
+            &contract_for(id, vec!["FR-LEGACY:test_result".to_string()]),
+        )
+        .await
+        .unwrap();
+        let wp_id = seed_governance_evidence(&storage, id, "FR-LEGACY").await;
+
+        let t0 = chrono::Utc::now();
+        let revision = SpecRevision {
+            id: "spec:legacy".into(),
+            feature_id: id,
+            content_hash: "sha256:legacy".into(),
+            parent_revision_id: None,
+            accepted_at: t0,
+            authority: "legacy-test".into(),
+        };
+        ExecutionRecordPort::create_spec_revision(&storage, &revision)
+            .await
+            .unwrap();
+        let assignment = Assignment {
+            id: "assignment:legacy".into(),
+            wp_id,
+            spec_revision_id: revision.id,
+            created_at: t0,
+            supersedes_assignment_id: None,
+            status: AssignmentStatus::Active,
+        };
+        // Compatibility API deliberately creates no criterion snapshot, matching
+        // a pre-029 database row.
+        ExecutionRecordPort::create_assignment(&storage, &assignment)
+            .await
+            .unwrap();
+        let attempt = Attempt {
+            id: "attempt:legacy".into(),
+            assignment_id: assignment.id.clone(),
+            worker_id: "worker".into(),
+            backend: "legacy".into(),
+            job_id: Some("job:legacy".into()),
+            worktree_path: Some("/tmp/legacy".into()),
+            base_candidate_ref: Some("git:base".into()),
+            result_candidate_ref: Some("git:legacy".into()),
+            status: AttemptStatus::Completed,
+            failure_class: None,
+            started_at: t0,
+            ended_at: Some(t0),
+        };
+        ExecutionRecordPort::create_attempt(&storage, &attempt)
+            .await
+            .unwrap();
+
+        {
+            let conn = storage.conn_for_bench().unwrap();
+            conn.execute(
+                "INSERT INTO evaluations
+                 (id,assignment_id,attempt_id,candidate_ref,evaluator_id,evaluator_version,result,evidence_refs,started_at,finished_at)
+                 VALUES (?1,?2,?3,?4,?5,?6,'satisfied','["legacy:evidence"]',?7,?7)",
+                rusqlite::params![
+                    "evaluation:legacy",
+                    assignment.id,
+                    attempt.id,
+                    "git:legacy",
+                    "legacy-evaluator",
+                    "0",
+                    t0.to_rfc3339()
+                ],
+            )
+            .unwrap();
+        }
+
+        let err = run_validate(args("legacy-grade"), &storage, &vcs)
+            .await
+            .expect_err("legacy naked Satisfied grade must not validate");
+        assert!(
+            err.to_string().contains("no frozen Assignment criteria"),
+            "unexpected error: {err}"
+        );
+
+        let feature = StoragePort::get_feature_by_id(&storage, id)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(feature.state, FeatureState::Implementing);
+        let wp = StoragePort::get_work_package(&storage, wp_id)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(wp.state, WpState::Review);
+    })
+}
+
+#[test]
 fn validate_rejects_satisfied_evaluation_when_attempt_candidate_differs() {
     block_on(async {
         let storage = SqliteStorageAdapter::in_memory().unwrap();

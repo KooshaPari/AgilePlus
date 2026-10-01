@@ -242,6 +242,44 @@ fn ship_merges_evaluated_candidate_when_worktree_path_is_present() {
 }
 
 #[test]
+fn ship_rejects_satisfied_evaluation_with_missing_criterion_receipt() {
+    block_on(async {
+        let storage = SqliteStorageAdapter::in_memory().unwrap();
+        let vcs = RecordingVcs::new();
+        let id = seed(
+            &storage,
+            "receipt-loss",
+            FeatureState::Validated,
+            &[(1, WpState::Done)],
+        )
+        .await;
+
+        {
+            let conn = storage.conn_for_bench().unwrap();
+            conn.execute("DELETE FROM evaluation_criterion_results", [])
+                .unwrap();
+        }
+
+        let err = run_ship(args("receipt-loss"), &storage, &vcs)
+            .await
+            .expect_err("missing criterion receipt must fail closed");
+        assert!(
+            err.to_string().contains("invalid criterion receipt"),
+            "unexpected error: {err}"
+        );
+        assert!(
+            vcs.merges.lock().unwrap().is_empty(),
+            "no merge may occur after receipt loss"
+        );
+        let feature = StoragePort::get_feature_by_id(&storage, id)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(feature.state, FeatureState::Validated);
+    })
+}
+
+#[test]
 fn ship_rejects_source_branch_that_drifted_from_accepted_candidate() {
     block_on(async {
         let storage = SqliteStorageAdapter::in_memory().unwrap();
