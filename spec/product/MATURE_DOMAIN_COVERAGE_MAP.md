@@ -34,12 +34,12 @@ The 35 `AP-R-*` semantic requirements form the accepted **work-control spine**. 
 | Graph backend | OPTIONAL-PROFILE | dependency queries without mandatory Neo4j |
 | Object storage | OPTIONAL-PROFILE | archival/artifacts without mandatory MinIO |
 | P2P/multi-device | OPTIONAL-PROFILE | replication/conflict semantics if product-retained |
-| Observability/health | PARTIAL | metrics/traces/logs/health must not affect correctness semantics |
-| Security/secrets | PARTIAL | authn/authz, credential delegation, least privilege, redaction |
-| Persistence/migration | PARTIAL | local-first durability, migrations, transactions, backup/recovery |
-| Configuration/profiles | PARTIAL | repository/workflow/tool/provider profiles and precedence |
-| Extensibility/plugins | PARTIAL | replaceable worker/evaluator/storage/integration boundaries |
-| Documentation/fresh-context recovery | DECOMPOSED semantically / PARTIAL artifact audit | dossier/source/decision recovery quality |
+| Observability/health | DECOMPOSED | metrics/traces/logs/health must not affect correctness semantics |
+| Security/secrets | DECOMPOSED | authn/authz, credential delegation, least privilege, redaction |
+| Persistence/migration | DECOMPOSED | local-first durability, migrations, transactions, backup/recovery |
+| Configuration/profiles | DECOMPOSED | repository/workflow/tool/provider profiles and precedence |
+| Extensibility/plugins | DECOMPOSED | replaceable worker/evaluator/storage/integration boundaries |
+| Documentation/fresh-context recovery | DECOMPOSED | dossier/source/decision recovery quality |
 
 ## Closure rule
 
