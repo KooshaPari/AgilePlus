@@ -223,6 +223,35 @@ fn ship_uses_worktree_path_as_branch_when_present() {
 }
 
 #[test]
+fn ship_rejects_source_branch_that_drifted_from_accepted_candidate() {
+    block_on(async {
+        let storage = SqliteStorageAdapter::in_memory().unwrap();
+        let vcs = RecordingVcs::new().with_branch_commit("stale-commit");
+        let id = seed(
+            &storage,
+            "drift-feat",
+            FeatureState::Validated,
+            &[(1, WpState::Done)],
+        )
+        .await;
+
+        let err = run_ship(args("drift-feat"), &storage, &vcs)
+            .await
+            .expect_err("candidate drift must fail closed");
+        assert!(
+            err.to_string().contains("drifted from accepted candidate"),
+            "unexpected error: {err}"
+        );
+        assert!(vcs.merges.lock().unwrap().is_empty(), "no merge after drift");
+        let feature = StoragePort::get_feature_by_id(&storage, id)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(feature.state, FeatureState::Validated);
+    })
+}
+
+#[test]
 fn ship_reports_merge_conflicts_and_stops() {
     block_on(async {
         let storage = SqliteStorageAdapter::in_memory().unwrap();
