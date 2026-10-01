@@ -201,9 +201,9 @@ mod tests {
     async fn replacement_attempt_preserves_history_and_exact_candidate_evaluation() {
         use agileplus_domain::{
             domain::{
-                evaluation::EvaluationResult,
                 execution::{
-                    Assignment, AssignmentStatus, Attempt, AttemptStatus, Evaluation, SpecRevision,
+                    Assignment, AssignmentStatus, Attempt, AttemptStatus, Evaluation,
+                    EvaluationResult, SpecRevision,
                 },
                 feature::Feature,
                 work_package::WorkPackage,
