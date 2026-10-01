@@ -501,7 +501,7 @@ where
                         candidate_ref: candidate_ref.clone(),
                         evaluator_id: "legacy-review-loop".into(),
                         evaluator_version: "v1".into(),
-                        result: EvaluationResult::Satisfied,
+                        result: EvaluationResult::Inconclusive,
                         evidence_refs: vec![],
                         started_at: now,
                         finished_at: evaluated_at,
@@ -523,13 +523,12 @@ where
                     .update_wp_state(wp.id, WpState::Review)
                     .await
                     .context("transitioning WP to Review")?;
-                storage
-                    .update_wp_state(wp.id, WpState::Done)
-                    .await
-                    .context("transitioning WP to Done")?;
-                completed.insert(wp.id);
 
-                // Audit
+                // Review approval proves that the review loop completed, not that
+                // mandatory correctness criteria and governance have accepted the
+                // exact candidate. Keep the candidate and attempt durable, but
+                // leave the WP in Review until an independent candidate-bound
+                // evaluator can award terminal acceptance.
                 let prev_hash = get_latest_hash(storage, feature.id).await;
                 let mut audit = AuditEntry {
                     id: 0,
@@ -537,8 +536,11 @@ where
                     wp_id: Some(wp.id),
                     timestamp: Utc::now(),
                     actor: "agent".into(),
-                    transition: format!("WP{:02} Planned -> Done", wp.sequence),
-                    evidence_refs: vec![],
+                    transition: format!(
+                        "WP{:02} Doing -> Review (candidate produced; independent evaluation pending)",
+                        wp.sequence
+                    ),
+                    evidence_refs: vec![candidate_ref.clone()],
                     prev_hash,
                     hash: [0u8; 32],
                     event_id: None,
@@ -550,10 +552,10 @@ where
                     .await
                     .context("appending audit entry")?;
 
-                // Cleanup worktree
-                if let Err(e) = vcs.cleanup_worktree(&worktree_path).await {
-                    tracing::warn!(error = %e, "worktree cleanup failed (non-fatal)");
-                }
+                println!(
+                    "  WP{:02} candidate {} is in Review; review approval is not terminal acceptance.",
+                    wp.sequence, candidate_ref
+                );
             }
             ReviewOutcome::MaxCyclesReached {
                 cycles,
