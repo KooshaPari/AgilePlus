@@ -66,7 +66,7 @@ impl AuditChain {
 }
 
 /// Compute the legacy audit-hash-v1 SHA-256 receipt.
-////
+///
 /// v1 covers only feature_id, optional wp_id, timestamp, actor, transition,
 /// and prev_hash. It intentionally does NOT cover evidence_refs, event_id,
 /// archived_to, or id. Do not claim full-entry tamper evidence from v1.
