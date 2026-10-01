@@ -12,6 +12,7 @@ pub mod implement;
 pub mod queue;
 pub mod review_loop;
 pub mod ship;
+pub mod worklog;
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
