@@ -316,24 +316,48 @@ where
                 authority: "feature.spec_hash".into(),
             })
             .await
-            .or_else(|e| {
-                // The same immutable revision may already exist on resume.
-                tracing::debug!(error=%e, "spec revision insert skipped/failed");
-                Ok(())
-            })?;
+            .context("persisting immutable spec revision")?;
 
-        let assignment_id = format!("assignment:{}:{}", wp.id, now.timestamp_micros());
-        storage
-            .create_assignment(&Assignment {
-                id: assignment_id.clone(),
-                wp_id: wp.id,
-                spec_revision_id: spec_revision_id.clone(),
-                created_at: now,
-                supersedes_assignment_id: None,
-                status: AssignmentStatus::Active,
-            })
+        let active_assignment = storage
+            .get_active_assignment(wp.id)
             .await
-            .context("creating immutable assignment")?;
+            .context("loading active assignment")?;
+        let assignment_id = match active_assignment {
+            Some(existing) if existing.spec_revision_id == spec_revision_id => existing.id,
+            Some(existing) => {
+                let replacement_id =
+                    format!("assignment:{}:{}", wp.id, now.timestamp_micros());
+                let replacement = Assignment {
+                    id: replacement_id.clone(),
+                    wp_id: wp.id,
+                    spec_revision_id: spec_revision_id.clone(),
+                    created_at: now,
+                    supersedes_assignment_id: Some(existing.id.clone()),
+                    status: AssignmentStatus::Active,
+                };
+                storage
+                    .supersede_assignment(&existing.id, &replacement)
+                    .await
+                    .context("superseding active assignment")?;
+                replacement_id
+            }
+            None => {
+                let assignment_id =
+                    format!("assignment:{}:{}", wp.id, now.timestamp_micros());
+                storage
+                    .create_assignment(&Assignment {
+                        id: assignment_id.clone(),
+                        wp_id: wp.id,
+                        spec_revision_id: spec_revision_id.clone(),
+                        created_at: now,
+                        supersedes_assignment_id: None,
+                        status: AssignmentStatus::Active,
+                    })
+                    .await
+                    .context("creating immutable assignment")?;
+                assignment_id
+            }
+        };
 
         let attempt_id = format!("attempt:{}:{}", wp.id, now.timestamp_micros());
         storage
@@ -411,13 +435,56 @@ where
                 // Resolve the immutable git commit currently checked out by the
                 // WP worktree. If the adapter cannot resolve it, keep the job
                 // fallback explicit rather than pretending it is a commit.
-                let candidate_ref = vcs
+                let candidate_ref = match vcs
                     .list_worktrees()
                     .await
                     .ok()
                     .and_then(|items| items.into_iter().find(|w| w.path == worktree_path))
                     .map(|w| format!("git:{}", w.commit))
-                    .unwrap_or_else(|| format!("job:{job_id}"));
+                {
+                    Some(candidate_ref) => candidate_ref,
+                    None => {
+                        let failed_at = Utc::now();
+                        storage
+                            .create_evaluation(&Evaluation {
+                                id: format!(
+                                    "evaluation:{}:{}",
+                                    wp.id,
+                                    failed_at.timestamp_micros()
+                                ),
+                                assignment_id: assignment_id.clone(),
+                                attempt_id: Some(attempt_id.clone()),
+                                candidate_ref: format!("unresolved:job:{job_id}"),
+                                evaluator_id: "legacy-review-loop".into(),
+                                evaluator_version: "v1".into(),
+                                result: EvaluationResult::Unknown,
+                                evidence_refs: vec![],
+                                started_at: now,
+                                finished_at: failed_at,
+                            })
+                            .await
+                            .context("persisting unresolved-candidate evaluation")?;
+                        storage
+                            .update_attempt_runtime(
+                                &attempt_id,
+                                AttemptStatus::Failed,
+                                Some(&job_id),
+                                None,
+                                Some("candidate_unresolved"),
+                                Some(failed_at),
+                            )
+                            .await
+                            .context("marking unresolved-candidate attempt failed")?;
+                        storage
+                            .update_wp_state(wp.id, WpState::Blocked)
+                            .await
+                            .context("blocking WP with unresolved candidate")?;
+                        anyhow::bail!(
+                            "WP{:02} review approved but exact Git candidate could not be resolved",
+                            wp.sequence
+                        );
+                    }
+                };
                 let evaluation_id =
                     format!("evaluation:{}:{}", wp.id, evaluated_at.timestamp_micros());
                 storage
