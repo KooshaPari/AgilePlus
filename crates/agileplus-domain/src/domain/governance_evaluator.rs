@@ -129,10 +129,7 @@ fn evaluate_evidence_policy(
     if requirements.is_empty() {
         let any = evidence.iter().any(|e| e.evidence_type == evidence_type);
         return if any {
-            (
-                true,
-                format!("{} evidence present", evidence_type.as_str()),
-            )
+            (true, format!("{} evidence present", evidence_type.as_str()))
         } else {
             (
                 false,

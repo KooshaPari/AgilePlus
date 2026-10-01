@@ -276,7 +276,11 @@ fn ship_fails_closed_when_merge_errors() {
             .await
             .unwrap_err();
         assert!(err.to_string().contains("fails closed") || err.to_string().contains("merging"));
-        assert_eq!(vcs.merges.lock().unwrap().len(), 1, "stop on first merge error");
+        assert_eq!(
+            vcs.merges.lock().unwrap().len(),
+            1,
+            "stop on first merge error"
+        );
         let f = StoragePort::get_feature_by_id(&storage, id)
             .await
             .unwrap()

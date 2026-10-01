@@ -325,7 +325,6 @@ fn contract_with_policy(
     }
 }
 
-
 #[tokio::test]
 async fn shared_evaluator_matches_legacy_for_matching_ci_policy() {
     let db = SqliteStorageAdapter::in_memory().unwrap();
@@ -334,8 +333,14 @@ async fn shared_evaluator_matches_legacy_for_matching_ci_policy() {
     let contract = contract_with_policy(feature_id, EvidenceType::CiOutput, "FR-CI", policy_id);
     create_evidence(&db, wp_id, "FR-CI", EvidenceType::CiOutput).await;
 
-    let legacy = super::evidence::evaluate_policies(&db, &contract, feature_id).await.unwrap();
-    let shared = agileplus_domain::domain::governance_evaluator::evaluate_governance(&db, &contract, feature_id).await.unwrap();
+    let legacy = super::evidence::evaluate_policies(&db, &contract, feature_id)
+        .await
+        .unwrap();
+    let shared = agileplus_domain::domain::governance_evaluator::evaluate_governance(
+        &db, &contract, feature_id,
+    )
+    .await
+    .unwrap();
 
     assert_eq!(legacy.len(), shared.policy_results.len());
     assert_eq!(legacy[0].passed, shared.policy_results[0].passed);
@@ -351,8 +356,14 @@ async fn shared_evaluator_matches_legacy_for_wrong_evidence_type() {
     let contract = contract_with_policy(feature_id, EvidenceType::CiOutput, "FR-CI", policy_id);
     create_evidence(&db, wp_id, "FR-CI", EvidenceType::ReviewApproval).await;
 
-    let legacy = super::evidence::evaluate_policies(&db, &contract, feature_id).await.unwrap();
-    let shared = agileplus_domain::domain::governance_evaluator::evaluate_governance(&db, &contract, feature_id).await.unwrap();
+    let legacy = super::evidence::evaluate_policies(&db, &contract, feature_id)
+        .await
+        .unwrap();
+    let shared = agileplus_domain::domain::governance_evaluator::evaluate_governance(
+        &db, &contract, feature_id,
+    )
+    .await
+    .unwrap();
 
     assert_eq!(legacy[0].passed, shared.policy_results[0].passed);
     assert!(!shared.passed(&contract));
@@ -386,14 +397,11 @@ async fn shared_evaluator_requires_every_declared_ci_requirement() {
     let legacy = super::evidence::evaluate_policies(&db, &contract, feature_id)
         .await
         .unwrap();
-    let shared =
-        agileplus_domain::domain::governance_evaluator::evaluate_governance(
-            &db,
-            &contract,
-            feature_id,
-        )
-        .await
-        .unwrap();
+    let shared = agileplus_domain::domain::governance_evaluator::evaluate_governance(
+        &db, &contract, feature_id,
+    )
+    .await
+    .unwrap();
 
     assert_eq!(legacy.len(), 1);
     assert!(!legacy[0].passed);
@@ -441,14 +449,11 @@ async fn shared_evaluator_matches_legacy_for_command_named_metric_policy() {
     let legacy = super::evidence::evaluate_policies(&db, &contract, feature_id)
         .await
         .unwrap();
-    let shared =
-        agileplus_domain::domain::governance_evaluator::evaluate_governance(
-            &db,
-            &contract,
-            feature_id,
-        )
-        .await
-        .unwrap();
+    let shared = agileplus_domain::domain::governance_evaluator::evaluate_governance(
+        &db, &contract, feature_id,
+    )
+    .await
+    .unwrap();
 
     assert_eq!(legacy.len(), 1);
     assert!(legacy[0].passed);
@@ -460,8 +465,18 @@ async fn shared_evaluator_matches_legacy_for_command_named_metric_policy() {
 async fn shared_evaluator_empty_contract_is_not_configured() {
     let db = SqliteStorageAdapter::in_memory().unwrap();
     let feature_id = create_feature_with_wp(&db).await.0;
-    let contract = GovernanceContract { id:1, feature_id, version:1, rules:vec![], bound_at:Utc::now() };
-    let shared = agileplus_domain::domain::governance_evaluator::evaluate_governance(&db, &contract, feature_id).await.unwrap();
+    let contract = GovernanceContract {
+        id: 1,
+        feature_id,
+        version: 1,
+        rules: vec![],
+        bound_at: Utc::now(),
+    };
+    let shared = agileplus_domain::domain::governance_evaluator::evaluate_governance(
+        &db, &contract, feature_id,
+    )
+    .await
+    .unwrap();
     assert!(!shared.configured(&contract));
     assert!(!shared.passed(&contract));
 }

@@ -15,7 +15,11 @@ pub struct SpecRevision {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
-pub enum AssignmentStatus { Active, Superseded, Cancelled }
+pub enum AssignmentStatus {
+    Active,
+    Superseded,
+    Cancelled,
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Assignment {
@@ -29,7 +33,14 @@ pub struct Assignment {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
-pub enum AttemptStatus { Pending, Running, Failed, Cancelled, Completed, Expired }
+pub enum AttemptStatus {
+    Pending,
+    Running,
+    Failed,
+    Cancelled,
+    Completed,
+    Expired,
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Attempt {

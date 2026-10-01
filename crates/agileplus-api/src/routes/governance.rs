@@ -163,7 +163,13 @@ mod tests {
     fn validation_no_rules_is_not_configured() {
         let total_rules = 0usize;
         let satisfied_rules = 0usize;
-        let result = if total_rules == 0 { "not_configured" } else if satisfied_rules == total_rules { "satisfied" } else { "unsatisfied" };
+        let result = if total_rules == 0 {
+            "not_configured"
+        } else if satisfied_rules == total_rules {
+            "satisfied"
+        } else {
+            "unsatisfied"
+        };
         let summary = serde_json::json!({
             "feature_slug": "empty",
             "governance_version": 1,
