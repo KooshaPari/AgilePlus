@@ -8,7 +8,7 @@ use agileplus_domain::{
     error::DomainError,
 };
 use chrono::{DateTime, Utc};
-use rusqlite::{Connection, params};
+use rusqlite::{Connection, OptionalExtension, params};
 
 fn err(e: rusqlite::Error) -> DomainError {
     DomainError::Storage(e.to_string())
@@ -54,8 +54,52 @@ fn ev(s: &str) -> Result<EvaluationResult, DomainError> {
 }
 
 pub fn create_spec_revision(c: &Connection, r: &SpecRevision) -> Result<(), DomainError> {
-    c.execute("INSERT INTO spec_revisions(id,feature_id,content_hash,parent_revision_id,accepted_at,authority) VALUES (?1,?2,?3,?4,?5,?6)",params![r.id,r.feature_id,r.content_hash,r.parent_revision_id,r.accepted_at.to_rfc3339(),r.authority]).map_err(err)?;
-    Ok(())
+    let changed = c
+        .execute(
+            "INSERT OR IGNORE INTO spec_revisions(id,feature_id,content_hash,parent_revision_id,accepted_at,authority)
+             VALUES (?1,?2,?3,?4,?5,?6)",
+            params![
+                r.id,
+                r.feature_id,
+                r.content_hash,
+                r.parent_revision_id,
+                r.accepted_at.to_rfc3339(),
+                r.authority
+            ],
+        )
+        .map_err(err)?;
+    if changed == 1 {
+        return Ok(());
+    }
+
+    let existing: Option<(i64, String, Option<String>, String)> = c
+        .query_row(
+            "SELECT feature_id,content_hash,parent_revision_id,authority
+             FROM spec_revisions WHERE id=?1",
+            [&r.id],
+            |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)),
+        )
+        .optional()
+        .map_err(err)?;
+
+    match existing {
+        Some((feature_id, content_hash, parent_revision_id, authority))
+            if feature_id == r.feature_id
+                && content_hash == r.content_hash
+                && parent_revision_id == r.parent_revision_id
+                && authority == r.authority =>
+        {
+            Ok(())
+        }
+        Some(_) => Err(DomainError::Conflict(format!(
+            "spec revision {} already exists with different immutable content",
+            r.id
+        ))),
+        None => Err(DomainError::Conflict(format!(
+            "spec revision {} conflicts with an existing feature/content revision",
+            r.id
+        ))),
+    }
 }
 pub fn create_assignment(c: &Connection, a: &Assignment) -> Result<(), DomainError> {
     let st = match a.status {
@@ -66,6 +110,94 @@ pub fn create_assignment(c: &Connection, a: &Assignment) -> Result<(), DomainErr
     c.execute("INSERT INTO assignments(id,wp_id,spec_revision_id,created_at,supersedes_assignment_id,status) VALUES (?1,?2,?3,?4,?5,?6)",params![a.id,a.wp_id,a.spec_revision_id,a.created_at.to_rfc3339(),a.supersedes_assignment_id,st]).map_err(err)?;
     Ok(())
 }
+pub fn get_active_assignment(
+    c: &Connection,
+    wp_id: i64,
+) -> Result<Option<Assignment>, DomainError> {
+    c.query_row(
+        "SELECT id,wp_id,spec_revision_id,created_at,supersedes_assignment_id,status
+         FROM assignments WHERE wp_id=?1 AND status='active'
+         ORDER BY created_at DESC,id DESC LIMIT 1",
+        [wp_id],
+        |row| {
+            let created_at: String = row.get(3)?;
+            let status: String = row.get(5)?;
+            Ok((
+                row.get::<_, String>(0)?,
+                row.get::<_, i64>(1)?,
+                row.get::<_, String>(2)?,
+                created_at,
+                row.get::<_, Option<String>>(4)?,
+                status,
+            ))
+        },
+    )
+    .optional()
+    .map_err(err)?
+    .map(
+        |(id, wp_id, spec_revision_id, created_at, supersedes_assignment_id, status)| {
+            Ok(Assignment {
+                id,
+                wp_id,
+                spec_revision_id,
+                created_at: dt(created_at)?,
+                supersedes_assignment_id,
+                status: asg(&status)?,
+            })
+        },
+    )
+    .transpose()
+}
+
+pub fn supersede_assignment(
+    c: &mut Connection,
+    previous_assignment_id: &str,
+    replacement: &Assignment,
+) -> Result<(), DomainError> {
+    if replacement.status != AssignmentStatus::Active {
+        return Err(DomainError::Validation(
+            "replacement assignment must be active".into(),
+        ));
+    }
+    if replacement.supersedes_assignment_id.as_deref() != Some(previous_assignment_id) {
+        return Err(DomainError::Validation(format!(
+            "replacement assignment {} must explicitly supersede {}",
+            replacement.id, previous_assignment_id
+        )));
+    }
+
+    let tx = c.transaction().map_err(err)?;
+    let previous: Option<(i64, String)> = tx
+        .query_row(
+            "SELECT wp_id,status FROM assignments WHERE id=?1",
+            [previous_assignment_id],
+            |row| Ok((row.get(0)?, row.get(1)?)),
+        )
+        .optional()
+        .map_err(err)?;
+    let Some((previous_wp_id, previous_status)) = previous else {
+        return Err(DomainError::NotFound(format!(
+            "assignment {previous_assignment_id}"
+        )));
+    };
+    if previous_wp_id != replacement.wp_id || previous_status != "active" {
+        return Err(DomainError::Conflict(format!(
+            "assignment {previous_assignment_id} is not the active assignment for WP {}",
+            replacement.wp_id
+        )));
+    }
+
+    tx.execute(
+        "UPDATE assignments SET status='superseded' WHERE id=?1 AND status='active'",
+        [previous_assignment_id],
+    )
+    .map_err(err)?;
+
+    create_assignment(&tx, replacement)?;
+    tx.commit().map_err(err)?;
+    Ok(())
+}
+
 pub fn create_attempt(c: &Connection, a: &Attempt) -> Result<(), DomainError> {
     let st = match a.status {
         AttemptStatus::Pending => "pending",
