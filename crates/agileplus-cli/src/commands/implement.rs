@@ -306,22 +306,28 @@ where
             .map(|b| format!("{b:02x}"))
             .collect();
         let spec_revision_id = format!("spec:{}:{}", feature.id, spec_hash_hex);
+
+        let active_assignment = storage
+            .get_active_assignment(wp.id)
+            .await
+            .context("loading active assignment")?;
+        let parent_revision_id = active_assignment
+            .as_ref()
+            .filter(|assignment| assignment.spec_revision_id != spec_revision_id)
+            .map(|assignment| assignment.spec_revision_id.clone());
+
         storage
             .create_spec_revision(&SpecRevision {
                 id: spec_revision_id.clone(),
                 feature_id: feature.id,
                 content_hash: spec_hash_hex,
-                parent_revision_id: None,
+                parent_revision_id,
                 accepted_at: now,
                 authority: "feature.spec_hash".into(),
             })
             .await
             .context("persisting immutable spec revision")?;
 
-        let active_assignment = storage
-            .get_active_assignment(wp.id)
-            .await
-            .context("loading active assignment")?;
         let assignment_id = match active_assignment {
             Some(existing) if existing.spec_revision_id == spec_revision_id => existing.id,
             Some(existing) => {
