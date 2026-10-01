@@ -1,4 +1,4 @@
-//! NATS-style event bus for AgilePlus.
+//! NATS-style event bus for `AgilePlus`.
 //!
 //! Provides a trait-based event bus abstraction with typed domain events,
 //! hierarchical subject routing, and request/reply semantics. The default
@@ -133,12 +133,18 @@ mod tests {
 
     #[test]
     fn re_exports_are_accessible() {
-        // Verify all re-exported types are usable from crate root.
-        let _cfg = NatsConfig::default();
-        let _subject = Subject::new("test");
-        let _health = BusHealth::Connected;
-        let _bus = InMemoryBus::new();
-        let _env = Envelope::new(&Subject::new("test"), serde_json::json!({}));
+        // Exercise every crate-root re-export so a broken re-export fails here
+        // rather than in a downstream crate.
+        let cfg = NatsConfig::default();
+        let subject = Subject::new("test");
+        let bus = InMemoryBus::new();
+        let env = Envelope::new(&subject, serde_json::json!({}));
+
+        assert_eq!(cfg.subject_prefix, "agileplus");
+        assert_eq!(subject.as_str(), "test");
+        assert_ne!(BusHealth::Connected, BusHealth::Disconnected);
+        assert!(bus.published().is_empty());
+        assert_eq!(env.subject, "test");
     }
 
     #[test]

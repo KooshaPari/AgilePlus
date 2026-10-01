@@ -68,11 +68,13 @@ pub struct EventBusStore {
 
 impl EventBusStore {
     /// Create a new `EventBusStore` with the given backend.
+    #[must_use]
     pub fn new(config: NatsConfig, backend: Box<dyn EventBus>) -> Self {
         Self { backend, config }
     }
 
     /// Create an `EventBusStore` backed by the in-memory implementation.
+    #[must_use]
     pub fn in_memory(config: NatsConfig) -> Self {
         Self {
             backend: Box::new(InMemoryBus::new()),
@@ -80,14 +82,25 @@ impl EventBusStore {
         }
     }
 
+    #[must_use]
     pub fn backend(&self) -> &dyn EventBus {
         &*self.backend
     }
 
+    /// Publish an envelope to the bus.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the backend rejects the publish.
     pub async fn publish(&self, envelope: Envelope) -> Result<(), EventBusError> {
         self.backend.publish(envelope).await
     }
 
+    /// Subscribe a handler to a subject.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the backend rejects the subscription.
     pub async fn subscribe(
         &self,
         subject: Subject,
@@ -96,10 +109,21 @@ impl EventBusStore {
         self.backend.subscribe(subject, handler).await
     }
 
+    /// Remove a subscription by id.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the backend rejects the removal.
     pub async fn unsubscribe(&self, id: &str) -> Result<(), EventBusError> {
         self.backend.unsubscribe(id).await
     }
 
+    /// Publish an envelope and await a reply within `timeout`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`EventBusError::Timeout`] when no reply arrives in time, or
+    /// when the initial publish fails.
     pub async fn request(
         &self,
         envelope: Envelope,
@@ -134,6 +158,7 @@ pub struct InMemoryBus {
 }
 
 impl InMemoryBus {
+    #[must_use]
     pub fn new() -> Self {
         Self {
             subscriptions: Mutex::new(HashMap::new()),
@@ -144,6 +169,10 @@ impl InMemoryBus {
     }
 
     /// Return all envelopes published so far (test helper).
+    ///
+    /// # Panics
+    ///
+    /// Panics if the internal lock is poisoned.
     pub fn published(&self) -> Vec<Envelope> {
         self.published.lock().unwrap().clone()
     }
@@ -229,8 +258,7 @@ impl EventBus for InMemoryBus {
         // Wait for the reply with a timeout.
         match tokio::time::timeout(timeout, rx).await {
             Ok(Ok(reply)) => Ok(reply),
-            Ok(Err(_)) => Err(EventBusError::Timeout),
-            Err(_) => Err(EventBusError::Timeout),
+            Ok(Err(_)) | Err(_) => Err(EventBusError::Timeout),
         }
     }
 
@@ -704,7 +732,7 @@ mod tests {
         let bus = InMemoryBus::new();
         for i in 0..5 {
             let payload = serde_json::json!({ "i": i });
-            bus.publish(Envelope::new(&Subject::new(&format!("t.{i}")), payload))
+            bus.publish(Envelope::new(&Subject::new(format!("t.{i}")), payload))
                 .await
                 .unwrap();
         }
@@ -762,8 +790,7 @@ mod tests {
         let history = bus.published();
         assert!(
             history.iter().any(|e| e.subject == inbox_subject),
-            "reply envelope to {} never observed",
-            inbox_subject
+            "reply envelope to {inbox_subject} never observed",
         );
     }
 
@@ -883,7 +910,7 @@ mod tests {
         let _ = shared_bus_for_outer; // ensure captured
     }
 
-    /// Trivial adapter that re-publishes through the shared InMemoryBus so we
+    /// Trivial adapter that re-publishes through the shared `InMemoryBus` so we
     /// can observe the `published()` history from outside.
     struct ArcSharedBus {
         inner: Arc<InMemoryBus>,
@@ -932,7 +959,7 @@ mod tests {
 
         for i in 1..=3 {
             bus.publish(Envelope::new(
-                &Subject::new(&format!("agileplus.feature.{i}.created")),
+                &Subject::new(format!("agileplus.feature.{i}.created")),
                 serde_json::json!({}),
             ))
             .await

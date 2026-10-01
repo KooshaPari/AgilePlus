@@ -55,7 +55,7 @@ mod tests {
     #[test]
     fn clone_semantics() {
         let a = BusHealth::Disconnected;
-        let b = a.clone();
+        let b = a;
         assert_eq!(a, b);
     }
 
@@ -65,8 +65,7 @@ mod tests {
         let vals = [BusHealth::Connected, BusHealth::Disconnected];
         for v in vals {
             match v {
-                BusHealth::Connected => {}
-                BusHealth::Disconnected => {}
+                BusHealth::Connected | BusHealth::Disconnected => {}
             }
         }
     }

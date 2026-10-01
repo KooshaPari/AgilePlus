@@ -21,28 +21,33 @@ impl Subject {
     }
 
     /// Convenience: `{prefix}.{entity_type}.{entity_id}.{event_type}`
+    #[must_use]
     pub fn for_event(prefix: &str, entity_type: &str, entity_id: i64, event_type: &str) -> Self {
         Self(format!("{prefix}.{entity_type}.{entity_id}.{event_type}"))
     }
 
     /// Wildcard subject matching all events for an entity type:
     /// `{prefix}.{entity_type}.>`
+    #[must_use]
     pub fn all_for_entity(prefix: &str, entity_type: &str) -> Self {
         Self(format!("{prefix}.{entity_type}.>"))
     }
 
     /// Wildcard subject matching a specific event type across all entities:
     /// `{prefix}.{entity_type}.*.{event_type}`
+    #[must_use]
     pub fn all_of_type(prefix: &str, entity_type: &str, event_type: &str) -> Self {
         Self(format!("{prefix}.{entity_type}.*.{event_type}"))
     }
 
     /// Return the raw subject string.
+    #[must_use]
     pub fn as_str(&self) -> &str {
         &self.0
     }
 
     /// Check whether this subject matches a concrete (non-wildcard) subject.
+    #[must_use]
     pub fn matches(&self, concrete: &Subject) -> bool {
         let pat_tokens: Vec<&str> = self.0.split('.').collect();
         let sub_tokens: Vec<&str> = concrete.0.split('.').collect();
@@ -229,7 +234,7 @@ mod tests {
     #[test]
     fn all_of_type_uses_star() {
         let s = Subject::all_of_type("p", "e", "ev");
-        assert!(s.as_str().contains("*"));
+        assert!(s.as_str().contains('*'));
         assert_eq!(s.as_str(), "p.e.*.ev");
     }
 
@@ -271,15 +276,15 @@ mod tests {
     fn partial_eq_symmetric() {
         let a = Subject::new("x");
         let b = Subject::new("x");
-        assert!(a == b);
-        assert!(b == a);
+        assert_eq!(a, b);
+        assert_eq!(b, a);
     }
 
     #[test]
     fn partial_eq_inequality() {
         let a = Subject::new("x");
         let b = Subject::new("y");
-        assert!(a != b);
+        assert_ne!(a, b);
     }
 
     #[test]

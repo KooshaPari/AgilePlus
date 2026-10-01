@@ -7,7 +7,7 @@ pub struct NatsConfig {
     pub url: String,
     /// Optional authentication token.
     pub auth_token: Option<String>,
-    /// Subject prefix for all AgilePlus messages.
+    /// Subject prefix for all `AgilePlus` messages.
     pub subject_prefix: String,
     /// Maximum payload size in bytes (NATS default is 1 MiB).
     pub max_payload: usize,
@@ -23,11 +23,13 @@ impl NatsConfig {
         }
     }
 
+    #[must_use]
     pub fn with_auth(mut self, token: impl Into<String>) -> Self {
         self.auth_token = Some(token.into());
         self
     }
 
+    #[must_use]
     pub fn with_prefix(mut self, prefix: impl Into<String>) -> Self {
         self.subject_prefix = prefix.into();
         self

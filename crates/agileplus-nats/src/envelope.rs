@@ -26,6 +26,7 @@ pub struct Envelope {
 
 impl Envelope {
     /// Create a new envelope for a publish operation.
+    #[must_use]
     pub fn new(subject: &Subject, payload: serde_json::Value) -> Self {
         Self {
             id: Uuid::new_v4().to_string(),
@@ -38,23 +39,33 @@ impl Envelope {
     }
 
     /// Attach a reply-to subject (for request/reply).
+    #[must_use]
     pub fn with_reply_to(mut self, reply_to: &Subject) -> Self {
         self.reply_to = Some(reply_to.to_string());
         self
     }
 
     /// Attach a correlation ID.
+    #[must_use]
     pub fn with_correlation(mut self, id: impl Into<String>) -> Self {
         self.correlation_id = Some(id.into());
         self
     }
 
     /// Serialise the envelope to bytes.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the envelope cannot be encoded as JSON.
     pub fn to_bytes(&self) -> Result<Vec<u8>, serde_json::Error> {
         serde_json::to_vec(self)
     }
 
     /// Deserialise an envelope from bytes.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if `data` is not a valid encoded envelope.
     pub fn from_bytes(data: &[u8]) -> Result<Self, serde_json::Error> {
         serde_json::from_slice(data)
     }
@@ -433,7 +444,6 @@ mod tests {
         let env = Envelope::new(&Subject::new("t"), serde_json::json!({}));
         let back = Envelope::from_bytes(&env.to_bytes().unwrap()).unwrap();
         assert_eq!(back.timestamp, env.timestamp);
-        assert_eq!(back.timestamp.timestamp_subsec_nanos() >= 0, true);
         // Nanosecond precision survives the wire.
         let back2 = Envelope::from_bytes(&back.to_bytes().unwrap()).unwrap();
         assert_eq!(back2.timestamp, back.timestamp);
@@ -444,7 +454,7 @@ mod tests {
         for payload in [
             serde_json::json!([1, 2, 3]),
             serde_json::json!("scalar"),
-            serde_json::json!(3.14),
+            serde_json::json!(3.5),
             serde_json::json!(true),
             serde_json::Value::Null,
         ] {

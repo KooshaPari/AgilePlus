@@ -490,9 +490,9 @@ fn resolution_result_full_structure() {
 fn sync_report_many_entities() {
     let mut r = SyncReport::new();
     for i in 0..100 {
-        r.created.push((format!("feature"), i));
-        r.updated.push((format!("work_package"), i));
-        r.skipped.push((format!("feature"), i + 100));
+        r.created.push(("feature".to_string(), i));
+        r.updated.push(("work_package".to_string(), i));
+        r.skipped.push(("feature".to_string(), i + 100));
     }
     assert_eq!(r.total_processed(), 300);
 }
@@ -533,7 +533,7 @@ fn sync_error_from_serde_json_error_with_detail() {
 fn sync_report_display_no_panic_with_large_numbers() {
     let mut r = SyncReport::new();
     for i in 0..1000 {
-        r.created.push((format!("feature"), i));
+        r.created.push(("feature".to_string(), i));
     }
     // Should not panic
     let _ = format!("{}", r);
