@@ -379,8 +379,7 @@ pub fn create_evaluation_receipt(
     criterion_results: &[CriterionEvaluation],
 ) -> Result<(), DomainError> {
     let criteria = list_assignment_criteria(c, &e.assignment_id)?;
-    validate_criterion_receipt(&criteria, criterion_results)
-        .map_err(DomainError::Validation)?;
+    validate_criterion_receipt(&criteria, criterion_results).map_err(DomainError::Validation)?;
     let expected_result = reduce_criterion_results(&criteria, criterion_results);
     if e.result != expected_result {
         return Err(DomainError::Validation(format!(
@@ -575,7 +574,12 @@ pub fn list_criterion_results(
         .query_map([evaluation_id], |row| {
             let result: String = row.get(1)?;
             let refs: String = row.get(2)?;
-            Ok((row.get::<_, String>(0)?, result, refs, row.get::<_, Option<String>>(3)?))
+            Ok((
+                row.get::<_, String>(0)?,
+                result,
+                refs,
+                row.get::<_, Option<String>>(3)?,
+            ))
         })
         .map_err(err)?;
     rows.map(|row| {

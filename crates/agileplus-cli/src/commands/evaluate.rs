@@ -107,8 +107,7 @@ where
         .iter()
         .find(|attempt| {
             attempt.status == agileplus_domain::domain::execution::AttemptStatus::Completed
-                && attempt.result_candidate_ref.as_deref()
-                    == Some(receipt.candidate_ref.as_str())
+                && attempt.result_candidate_ref.as_deref() == Some(receipt.candidate_ref.as_str())
         })
         .ok_or_else(|| {
             anyhow::anyhow!(
