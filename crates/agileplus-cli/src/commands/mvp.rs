@@ -563,6 +563,46 @@ mod tests {
         assert!(parse_wp_state("").is_err());
     }
 
+    #[tokio::test]
+    async fn direct_wp_done_transition_is_rejected() {
+        let storage = agileplus_sqlite::SqliteStorageAdapter::in_memory().unwrap();
+        let feature = agileplus_domain::domain::feature::Feature::new(
+            "acceptance-gate",
+            "Acceptance Gate",
+            [0u8; 32],
+            None,
+        );
+        let feature_id = StoragePort::create_feature(&storage, &feature)
+            .await
+            .unwrap();
+        let mut wp = WorkPackage::new(feature_id, "WP", 1, "criterion");
+        wp.state = WpState::Review;
+        let wp_id = StoragePort::create_work_package(&storage, &wp)
+            .await
+            .unwrap();
+
+        let err = transition(
+            &TransitionArgs {
+                wp: Some(wp_id),
+                story: None,
+                to: "done".into(),
+            },
+            &storage,
+        )
+        .await
+        .expect_err("generic MVP transition must not self-award Done");
+        assert!(
+            err.to_string().contains("exact candidate-bound evaluation"),
+            "unexpected error: {err}"
+        );
+
+        let stored = StoragePort::get_work_package(&storage, wp_id)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(stored.state, WpState::Review);
+    }
+
     // ── wp_state_label additional ──────────────────────────────────────────
 
     #[test]
