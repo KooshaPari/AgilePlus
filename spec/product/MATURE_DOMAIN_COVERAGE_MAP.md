@@ -19,16 +19,16 @@ The 35 `AP-R-*` semantic requirements form the accepted **work-control spine**. 
 | Framework harmonization | DECOMPOSED at semantic level | typed roles, aliases, provenance, conflicts |
 | Tracera federation | DECOMPOSED | standalone work truth + product boundary |
 | Audit/trace | DECOMPOSED at semantic level | v1 honest envelope, v2 intent, bidirectional work trace |
-| CLI | PARTIAL | operation-by-operation mature command semantics and machine-readable output contracts |
-| HTTP API | PARTIAL | resource/action/version/auth/error/idempotency contracts |
-| MCP | PARTIAL | tool/resource/prompt semantics, parity and authority |
+| CLI | DECOMPOSED | operation-by-operation mature command semantics and machine-readable output contracts |
+| HTTP API | DECOMPOSED | resource/action/version/auth/error/idempotency contracts |
+| MCP | DECOMPOSED | tool/resource/prompt semantics, parity and authority |
 | gRPC | OPTIONAL-PROFILE | if retained, parity/version/TLS contracts |
-| Human dashboard/UI | OPTIONAL/PARTIAL | inspection/control surfaces without competing truth |
-| Git/GitHub | PARTIAL | candidate/worktree/PR operations, base drift/conflicts, provenance |
-| Triage/intake | PARTIAL | classification/routing/priority, override/provenance |
-| Scheduling/concurrency | PARTIAL | ready-work selection, resource constraints, claims, fairness/priority |
-| Review/HITL | PARTIAL | escalation, reviewer authority, comment disposition, no review→accept shortcut |
-| Release/versioning | PARTIAL | promotion profiles, prerelease/stable/HITL policy, rollback/receipts |
+| Human dashboard/UI | OPTIONAL-PROFILE | inspection/control surfaces without competing truth |
+| Git/GitHub | DECOMPOSED | candidate/worktree/PR operations, base drift/conflicts, provenance |
+| Triage/intake | DECOMPOSED | classification/routing/priority, override/provenance |
+| Scheduling/concurrency | DECOMPOSED | ready-work selection, resource constraints, claims, fairness/priority |
+| Review/HITL | DECOMPOSED | escalation, reviewer authority, comment disposition, no review→accept shortcut |
+| Release/versioning | DECOMPOSED | promotion profiles, prerelease/stable/HITL policy, rollback/receipts |
 | External PM sync | OPTIONAL-PROFILE | Plane/GitHub/etc never canonical authority |
 | Event bus | OPTIONAL-PROFILE | NATS/other transport replaceable |
 | Graph backend | OPTIONAL-PROFILE | dependency queries without mandatory Neo4j |
