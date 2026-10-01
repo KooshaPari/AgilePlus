@@ -1,5 +1,5 @@
 {
-  "schema_version": "0.3.0",
+  "schema_version": "0.4.0",
   "product_id": "PRD-AGILEPLUS",
   "status": "specified_not_executed",
   "scope": "canonical_semantic_spine",
@@ -1506,6 +1506,366 @@
         "verifier/evaluator identity/version",
         "raw observable/result",
         "fixture/environment identity"
+      ]
+    },
+    {
+      "id": "AP-RVC-075",
+      "requirement_id": "AP-R-OBS-NOINFLUENCE",
+      "journey_id": "AP-J-11",
+      "title": "Observability cannot alter correctness",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture"
+      ],
+      "stimulus": "Metrics/traces/logging/health collection failure or sampling cannot manufacture or erase accepted correctness results.",
+      "expected": "The obligation holds without altering canonical acceptance semantics.",
+      "adversarial": "Violate 'Observability cannot alter correctness' under an otherwise healthy work fixture; the violation must remain explicit and non-green where acceptance-relevant.",
+      "evidence_contract": [
+        "exact canonical identities/revisions",
+        "component/profile/evaluator identity as applicable",
+        "raw result",
+        "fixture/environment"
+      ]
+    },
+    {
+      "id": "AP-RVC-076",
+      "requirement_id": "AP-R-OBS-ATTRIB",
+      "journey_id": "AP-J-12",
+      "title": "Operational evidence is attributable",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture"
+      ],
+      "stimulus": "Metrics/traces/health used as evidence identify operation/component/candidate/environment/time sufficiently for interpretation.",
+      "expected": "The obligation holds without altering canonical acceptance semantics.",
+      "adversarial": "Violate 'Operational evidence is attributable' under an otherwise healthy work fixture; the violation must remain explicit and non-green where acceptance-relevant.",
+      "evidence_contract": [
+        "exact canonical identities/revisions",
+        "component/profile/evaluator identity as applicable",
+        "raw result",
+        "fixture/environment"
+      ]
+    },
+    {
+      "id": "AP-RVC-077",
+      "requirement_id": "AP-R-SEC-LEAST",
+      "journey_id": "AP-J-03",
+      "title": "Least-privilege execution authority",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture"
+      ],
+      "stimulus": "Workers/evaluators/integrations receive only authority needed for their bounded operation and authority expiry/revocation is explicit.",
+      "expected": "The obligation holds without altering canonical acceptance semantics.",
+      "adversarial": "Violate 'Least-privilege execution authority' under an otherwise healthy work fixture; the violation must remain explicit and non-green where acceptance-relevant.",
+      "evidence_contract": [
+        "exact canonical identities/revisions",
+        "component/profile/evaluator identity as applicable",
+        "raw result",
+        "fixture/environment"
+      ]
+    },
+    {
+      "id": "AP-RVC-078",
+      "requirement_id": "AP-R-SEC-CRED",
+      "journey_id": "AP-J-03",
+      "title": "Credential delegation is explicit and auditable",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture"
+      ],
+      "stimulus": "Credential use is bound to actor/attempt/purpose/scope where feasible and secrets are not copied into ordinary spec/evidence artifacts.",
+      "expected": "The obligation holds without altering canonical acceptance semantics.",
+      "adversarial": "Violate 'Credential delegation is explicit and auditable' under an otherwise healthy work fixture; the violation must remain explicit and non-green where acceptance-relevant.",
+      "evidence_contract": [
+        "exact canonical identities/revisions",
+        "component/profile/evaluator identity as applicable",
+        "raw result",
+        "fixture/environment"
+      ]
+    },
+    {
+      "id": "AP-RVC-079",
+      "requirement_id": "AP-R-SEC-REDACT",
+      "journey_id": "AP-J-12",
+      "title": "Sensitive evidence redaction preserves references",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture"
+      ],
+      "stimulus": "Redaction removes protected payload while retaining allowed immutable receipt/provenance references required for audit.",
+      "expected": "The obligation holds without altering canonical acceptance semantics.",
+      "adversarial": "Violate 'Sensitive evidence redaction preserves references' under an otherwise healthy work fixture; the violation must remain explicit and non-green where acceptance-relevant.",
+      "evidence_contract": [
+        "exact canonical identities/revisions",
+        "component/profile/evaluator identity as applicable",
+        "raw result",
+        "fixture/environment"
+      ]
+    },
+    {
+      "id": "AP-RVC-080",
+      "requirement_id": "AP-R-PERSIST-DURABLE",
+      "journey_id": "AP-J-07",
+      "title": "Canonical work state is durable",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture"
+      ],
+      "stimulus": "Accepted SpecRevisions, WPs, Assignments, Attempts, Evaluations and promotion history survive supported restart/reopen without identity drift.",
+      "expected": "The obligation holds without altering canonical acceptance semantics.",
+      "adversarial": "Violate 'Canonical work state is durable' under an otherwise healthy work fixture; the violation must remain explicit and non-green where acceptance-relevant.",
+      "evidence_contract": [
+        "exact canonical identities/revisions",
+        "component/profile/evaluator identity as applicable",
+        "raw result",
+        "fixture/environment"
+      ]
+    },
+    {
+      "id": "AP-RVC-081",
+      "requirement_id": "AP-R-PERSIST-TXN",
+      "journey_id": "AP-J-07",
+      "title": "Accepted-state mutations are atomic",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture"
+      ],
+      "stimulus": "Multi-record accepted-state changes do not expose silently half-applied canonical work truth.",
+      "expected": "The obligation holds without altering canonical acceptance semantics.",
+      "adversarial": "Violate 'Accepted-state mutations are atomic' under an otherwise healthy work fixture; the violation must remain explicit and non-green where acceptance-relevant.",
+      "evidence_contract": [
+        "exact canonical identities/revisions",
+        "component/profile/evaluator identity as applicable",
+        "raw result",
+        "fixture/environment"
+      ]
+    },
+    {
+      "id": "AP-RVC-082",
+      "requirement_id": "AP-R-PERSIST-MIG",
+      "journey_id": "AP-J-07",
+      "title": "Migrations preserve canonical identities/history",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture"
+      ],
+      "stimulus": "Supported schema migration preserves durable identities, relationships and audit/evaluation history or fails with explicit recovery path.",
+      "expected": "The obligation holds without altering canonical acceptance semantics.",
+      "adversarial": "Violate 'Migrations preserve canonical identities/history' under an otherwise healthy work fixture; the violation must remain explicit and non-green where acceptance-relevant.",
+      "evidence_contract": [
+        "exact canonical identities/revisions",
+        "component/profile/evaluator identity as applicable",
+        "raw result",
+        "fixture/environment"
+      ]
+    },
+    {
+      "id": "AP-RVC-083",
+      "requirement_id": "AP-R-PERSIST-BACKUP",
+      "journey_id": "AP-J-07",
+      "title": "Backup/restore preserves work truth",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture"
+      ],
+      "stimulus": "Supported backup/restore recovers canonical development/spec/work/evaluation history and detects incompatible/incomplete restore.",
+      "expected": "The obligation holds without altering canonical acceptance semantics.",
+      "adversarial": "Violate 'Backup/restore preserves work truth' under an otherwise healthy work fixture; the violation must remain explicit and non-green where acceptance-relevant.",
+      "evidence_contract": [
+        "exact canonical identities/revisions",
+        "component/profile/evaluator identity as applicable",
+        "raw result",
+        "fixture/environment"
+      ]
+    },
+    {
+      "id": "AP-RVC-084",
+      "requirement_id": "AP-R-CONFIG-PREC",
+      "journey_id": "AP-J-08",
+      "title": "Configuration precedence is deterministic",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture"
+      ],
+      "stimulus": "Repository/user/environment/profile/tool/provider configuration has documented precedence and identical inputs resolve identically.",
+      "expected": "The obligation holds without altering canonical acceptance semantics.",
+      "adversarial": "Violate 'Configuration precedence is deterministic' under an otherwise healthy work fixture; the violation must remain explicit and non-green where acceptance-relevant.",
+      "evidence_contract": [
+        "exact canonical identities/revisions",
+        "component/profile/evaluator identity as applicable",
+        "raw result",
+        "fixture/environment"
+      ]
+    },
+    {
+      "id": "AP-RVC-085",
+      "requirement_id": "AP-R-CONFIG-REV",
+      "journey_id": "AP-J-04",
+      "title": "Acceptance-relevant configuration is revision-bound",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture"
+      ],
+      "stimulus": "Evaluator/profile/policy configuration affecting acceptance is identified/versioned in Assignment/Evaluation receipts.",
+      "expected": "The obligation holds without altering canonical acceptance semantics.",
+      "adversarial": "Violate 'Acceptance-relevant configuration is revision-bound' under an otherwise healthy work fixture; the violation must remain explicit and non-green where acceptance-relevant.",
+      "evidence_contract": [
+        "exact canonical identities/revisions",
+        "component/profile/evaluator identity as applicable",
+        "raw result",
+        "fixture/environment"
+      ]
+    },
+    {
+      "id": "AP-RVC-086",
+      "requirement_id": "AP-R-CONFIG-SECRET",
+      "journey_id": "AP-J-03",
+      "title": "Secrets are separate from ordinary configuration",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture"
+      ],
+      "stimulus": "Secret values use bounded secret mechanisms and do not leak through generated config, logs, prompts or receipts.",
+      "expected": "The obligation holds without altering canonical acceptance semantics.",
+      "adversarial": "Violate 'Secrets are separate from ordinary configuration' under an otherwise healthy work fixture; the violation must remain explicit and non-green where acceptance-relevant.",
+      "evidence_contract": [
+        "exact canonical identities/revisions",
+        "component/profile/evaluator identity as applicable",
+        "raw result",
+        "fixture/environment"
+      ]
+    },
+    {
+      "id": "AP-RVC-087",
+      "requirement_id": "AP-R-PLUGIN-WORKER",
+      "journey_id": "AP-J-03",
+      "title": "Worker backends are replaceable",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture"
+      ],
+      "stimulus": "Worker/provider adapters implement a stable dispatch/result contract; backend choice does not redefine Assignment or acceptance semantics.",
+      "expected": "The obligation holds without altering canonical acceptance semantics.",
+      "adversarial": "Violate 'Worker backends are replaceable' under an otherwise healthy work fixture; the violation must remain explicit and non-green where acceptance-relevant.",
+      "evidence_contract": [
+        "exact canonical identities/revisions",
+        "component/profile/evaluator identity as applicable",
+        "raw result",
+        "fixture/environment"
+      ]
+    },
+    {
+      "id": "AP-RVC-088",
+      "requirement_id": "AP-R-PLUGIN-EVAL",
+      "journey_id": "AP-J-04",
+      "title": "Evaluator backends are replaceable but versioned",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture"
+      ],
+      "stimulus": "Evaluator implementations may vary while Evaluation records exact evaluator/version and criterion semantics remain accepted-contract authority.",
+      "expected": "The obligation holds without altering canonical acceptance semantics.",
+      "adversarial": "Violate 'Evaluator backends are replaceable but versioned' under an otherwise healthy work fixture; the violation must remain explicit and non-green where acceptance-relevant.",
+      "evidence_contract": [
+        "exact canonical identities/revisions",
+        "component/profile/evaluator identity as applicable",
+        "raw result",
+        "fixture/environment"
+      ]
+    },
+    {
+      "id": "AP-RVC-089",
+      "requirement_id": "AP-R-PLUGIN-STORE",
+      "journey_id": "AP-J-07",
+      "title": "Storage/integration adapters cannot redefine domain semantics",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture"
+      ],
+      "stimulus": "Replaceable persistence/integration adapters preserve canonical identity/status semantics and expose unsupported capabilities explicitly.",
+      "expected": "The obligation holds without altering canonical acceptance semantics.",
+      "adversarial": "Violate 'Storage/integration adapters cannot redefine domain semantics' under an otherwise healthy work fixture; the violation must remain explicit and non-green where acceptance-relevant.",
+      "evidence_contract": [
+        "exact canonical identities/revisions",
+        "component/profile/evaluator identity as applicable",
+        "raw result",
+        "fixture/environment"
+      ]
+    },
+    {
+      "id": "AP-RVC-090",
+      "requirement_id": "AP-R-DOC-DOSSIER",
+      "journey_id": "AP-J-07",
+      "title": "Fresh-context product dossier is sufficient",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture"
+      ],
+      "stimulus": "A fresh authorized agent can recover product boundary, canonical semantics, current contract, journeys, oracle rules, decisions, unresolved debt and execution gates without owner replay.",
+      "expected": "The obligation holds without altering canonical acceptance semantics.",
+      "adversarial": "Violate 'Fresh-context product dossier is sufficient' under an otherwise healthy work fixture; the violation must remain explicit and non-green where acceptance-relevant.",
+      "evidence_contract": [
+        "exact canonical identities/revisions",
+        "component/profile/evaluator identity as applicable",
+        "raw result",
+        "fixture/environment"
+      ]
+    },
+    {
+      "id": "AP-RVC-091",
+      "requirement_id": "AP-R-DOC-PROV",
+      "journey_id": "AP-J-07",
+      "title": "Raw intent and decision provenance remain reachable",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture"
+      ],
+      "stimulus": "Canonical summaries link to raw/historical sources and supersession rationale so abstraction does not erase why decisions exist.",
+      "expected": "The obligation holds without altering canonical acceptance semantics.",
+      "adversarial": "Violate 'Raw intent and decision provenance remain reachable' under an otherwise healthy work fixture; the violation must remain explicit and non-green where acceptance-relevant.",
+      "evidence_contract": [
+        "exact canonical identities/revisions",
+        "component/profile/evaluator identity as applicable",
+        "raw result",
+        "fixture/environment"
+      ]
+    },
+    {
+      "id": "AP-RVC-092",
+      "requirement_id": "AP-R-DOC-STALE",
+      "journey_id": "AP-J-07",
+      "title": "Documentation authority and staleness are explicit",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "isolated deterministic fixture"
+      ],
+      "stimulus": "Historical/proposed/superseded documents cannot masquerade as current authority; canonical entrypoints identify their status.",
+      "expected": "The obligation holds without altering canonical acceptance semantics.",
+      "adversarial": "Violate 'Documentation authority and staleness are explicit' under an otherwise healthy work fixture; the violation must remain explicit and non-green where acceptance-relevant.",
+      "evidence_contract": [
+        "exact canonical identities/revisions",
+        "component/profile/evaluator identity as applicable",
+        "raw result",
+        "fixture/environment"
       ]
     }
   ]
