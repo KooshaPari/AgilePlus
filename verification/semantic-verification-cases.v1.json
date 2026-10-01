@@ -1,5 +1,5 @@
 {
-  "schema_version": "0.1.0",
+  "schema_version": "0.2.0",
   "product_id": "PRD-AGILEPLUS",
   "status": "specified_not_executed",
   "scope": "canonical_semantic_spine",
@@ -477,6 +477,300 @@
         "evaluator/verifier identity",
         "raw result",
         "environment/fixture identity"
+      ]
+    },
+    {
+      "id": "AP-VC-026",
+      "journey_id": "AP-J-11",
+      "requirement_id": "AP-R-IFACE-CANON",
+      "title": "Interfaces share one application semantics",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "applicable interface/profile selected",
+        "isolated deterministic fixture"
+      ],
+      "stimulus": "CLI/HTTP/MCP/UI and optional gRPC project the same canonical identities, revisions, evaluation and acceptance semantics.",
+      "expected": "Canonical semantics and authority remain intact across the selected interface/profile.",
+      "adversarial": "Construct a profile/transport state that violates 'Interfaces share one application semantics'; no greener canonical state may be manufactured.",
+      "evidence_contract": [
+        "exact development/assignment/candidate identity",
+        "interface/profile version",
+        "actor/authority",
+        "raw result/error"
+      ]
+    },
+    {
+      "id": "AP-VC-027",
+      "journey_id": "AP-J-11",
+      "requirement_id": "AP-R-IFACE-MACHINE",
+      "title": "Automation-critical operations have machine-readable truthful results",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "applicable interface/profile selected",
+        "isolated deterministic fixture"
+      ],
+      "stimulus": "Automation surfaces expose structured status/identity/error data sufficient to avoid parsing optimistic human prose.",
+      "expected": "Canonical semantics and authority remain intact across the selected interface/profile.",
+      "adversarial": "Construct a profile/transport state that violates 'Automation-critical operations have machine-readable truthful results'; no greener canonical state may be manufactured.",
+      "evidence_contract": [
+        "exact development/assignment/candidate identity",
+        "interface/profile version",
+        "actor/authority",
+        "raw result/error"
+      ]
+    },
+    {
+      "id": "AP-VC-028",
+      "journey_id": "AP-J-11",
+      "requirement_id": "AP-R-MUTATE-PRECOND",
+      "title": "Accepted-state mutations bind authority and concurrency preconditions",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "applicable interface/profile selected",
+        "isolated deterministic fixture"
+      ],
+      "stimulus": "Mutations identify actor/authority and use idempotency/version preconditions where retry/concurrency could duplicate or lose accepted state.",
+      "expected": "Canonical semantics and authority remain intact across the selected interface/profile.",
+      "adversarial": "Construct a profile/transport state that violates 'Accepted-state mutations bind authority and concurrency preconditions'; no greener canonical state may be manufactured.",
+      "evidence_contract": [
+        "exact development/assignment/candidate identity",
+        "interface/profile version",
+        "actor/authority",
+        "raw result/error"
+      ]
+    },
+    {
+      "id": "AP-VC-029",
+      "journey_id": "AP-J-11",
+      "requirement_id": "AP-R-MCP-UNTRUST",
+      "title": "MCP prompts/sampling cannot grant authority",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "applicable interface/profile selected",
+        "isolated deterministic fixture"
+      ],
+      "stimulus": "Prompt/model output is untrusted proposal/work content until accepted/evaluated and cannot self-authorize mutation or acceptance.",
+      "expected": "Canonical semantics and authority remain intact across the selected interface/profile.",
+      "adversarial": "Supply a prompt/resource telling the agent/tool to self-authorize acceptance; authority must not change.",
+      "evidence_contract": [
+        "exact development/assignment/candidate identity",
+        "interface/profile version",
+        "actor/authority",
+        "raw result/error"
+      ]
+    },
+    {
+      "id": "AP-VC-030",
+      "journey_id": "AP-J-03",
+      "requirement_id": "AP-R-GIT-BASE",
+      "title": "Attempt binds exact Git base where Git profile applies",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "applicable interface/profile selected",
+        "isolated deterministic fixture"
+      ],
+      "stimulus": "Software Attempt records exact base candidate and detects dirty/base drift before evaluation/promotion.",
+      "expected": "Canonical semantics and authority remain intact across the selected interface/profile.",
+      "adversarial": "Change/dirty the base after Assignment; evaluation/promotion must detect mismatch.",
+      "evidence_contract": [
+        "exact development/assignment/candidate identity",
+        "interface/profile version",
+        "actor/authority",
+        "raw result/error"
+      ]
+    },
+    {
+      "id": "AP-VC-031",
+      "journey_id": "AP-J-05",
+      "requirement_id": "AP-R-PR-CONTEXT",
+      "title": "PR/review state is context/evidence, not acceptance",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "applicable interface/profile selected",
+        "isolated deterministic fixture"
+      ],
+      "stimulus": "Pull request state and review approval cannot substitute for canonical Evaluation/AcceptedWork.",
+      "expected": "Canonical semantics and authority remain intact across the selected interface/profile.",
+      "adversarial": "Construct a profile/transport state that violates 'PR/review state is context/evidence, not acceptance'; no greener canonical state may be manufactured.",
+      "evidence_contract": [
+        "exact development/assignment/candidate identity",
+        "interface/profile version",
+        "actor/authority",
+        "raw result/error"
+      ]
+    },
+    {
+      "id": "AP-VC-032",
+      "journey_id": "AP-J-09",
+      "requirement_id": "AP-R-TRIAGE-PROV",
+      "title": "Automated intake classification retains provenance",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "applicable interface/profile selected",
+        "isolated deterministic fixture"
+      ],
+      "stimulus": "Triage classification/routing/priority retains source and model/method/confidence where derived and supports authorized override.",
+      "expected": "Canonical semantics and authority remain intact across the selected interface/profile.",
+      "adversarial": "Construct a profile/transport state that violates 'Automated intake classification retains provenance'; no greener canonical state may be manufactured.",
+      "evidence_contract": [
+        "exact development/assignment/candidate identity",
+        "interface/profile version",
+        "actor/authority",
+        "raw result/error"
+      ]
+    },
+    {
+      "id": "AP-VC-033",
+      "journey_id": "AP-J-02",
+      "requirement_id": "AP-R-SCHED-DEPS",
+      "title": "Scheduler respects dependency readiness",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "applicable interface/profile selected",
+        "isolated deterministic fixture"
+      ],
+      "stimulus": "Work is not scheduled as executable while mandatory predecessors/dependencies remain unsatisfied.",
+      "expected": "Canonical semantics and authority remain intact across the selected interface/profile.",
+      "adversarial": "Construct a profile/transport state that violates 'Scheduler respects dependency readiness'; no greener canonical state may be manufactured.",
+      "evidence_contract": [
+        "exact development/assignment/candidate identity",
+        "interface/profile version",
+        "actor/authority",
+        "raw result/error"
+      ]
+    },
+    {
+      "id": "AP-VC-034",
+      "journey_id": "AP-J-03",
+      "requirement_id": "AP-R-SCHED-EXCL",
+      "title": "Scheduler prevents double-authorized exclusive mutation",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "applicable interface/profile selected",
+        "isolated deterministic fixture"
+      ],
+      "stimulus": "Exclusive resources cannot be simultaneously granted to conflicting active claims/attempts.",
+      "expected": "Canonical semantics and authority remain intact across the selected interface/profile.",
+      "adversarial": "Request two conflicting exclusive claims concurrently; at most one active authority may be granted.",
+      "evidence_contract": [
+        "exact development/assignment/candidate identity",
+        "interface/profile version",
+        "actor/authority",
+        "raw result/error"
+      ]
+    },
+    {
+      "id": "AP-VC-035",
+      "journey_id": "AP-J-05",
+      "requirement_id": "AP-R-REVIEW-ESC",
+      "title": "Review/HITL escalation is policy-driven and explicit",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "applicable interface/profile selected",
+        "isolated deterministic fixture"
+      ],
+      "stimulus": "High-severity unresolved findings, repeated evaluator failure, authority ambiguity or policy-defined irreversible actions escalate rather than silently continue.",
+      "expected": "Canonical semantics and authority remain intact across the selected interface/profile.",
+      "adversarial": "Construct a profile/transport state that violates 'Review/HITL escalation is policy-driven and explicit'; no greener canonical state may be manufactured.",
+      "evidence_contract": [
+        "exact development/assignment/candidate identity",
+        "interface/profile version",
+        "actor/authority",
+        "raw result/error"
+      ]
+    },
+    {
+      "id": "AP-VC-036",
+      "journey_id": "AP-J-06",
+      "requirement_id": "AP-R-RELEASE-ID",
+      "title": "Promotion creates exact release/promotion receipt",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "applicable interface/profile selected",
+        "isolated deterministic fixture"
+      ],
+      "stimulus": "Promotion records release/profile identity, exact candidate, governing acceptance and outcome.",
+      "expected": "Canonical semantics and authority remain intact across the selected interface/profile.",
+      "adversarial": "Construct a profile/transport state that violates 'Promotion creates exact release/promotion receipt'; no greener canonical state may be manufactured.",
+      "evidence_contract": [
+        "exact development/assignment/candidate identity",
+        "interface/profile version",
+        "actor/authority",
+        "raw result/error"
+      ]
+    },
+    {
+      "id": "AP-VC-037",
+      "journey_id": "AP-J-06",
+      "requirement_id": "AP-R-RELEASE-HITL",
+      "title": "Stable/official release honors human gate where policy requires",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "applicable interface/profile selected",
+        "isolated deterministic fixture"
+      ],
+      "stimulus": "Automation cannot bypass a profile-defined human authorization gate for stable/official promotion.",
+      "expected": "Canonical semantics and authority remain intact across the selected interface/profile.",
+      "adversarial": "Attempt stable promotion without required human approval; promotion must remain blocked.",
+      "evidence_contract": [
+        "exact development/assignment/candidate identity",
+        "interface/profile version",
+        "actor/authority",
+        "raw result/error"
+      ]
+    },
+    {
+      "id": "AP-VC-038",
+      "journey_id": "AP-J-06",
+      "requirement_id": "AP-R-RELEASE-ROLLBACK",
+      "title": "Rollback/supersession preserves release history",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "applicable interface/profile selected",
+        "isolated deterministic fixture"
+      ],
+      "stimulus": "Rollback or supersession does not erase the prior promotion/evaluation history.",
+      "expected": "Canonical semantics and authority remain intact across the selected interface/profile.",
+      "adversarial": "Construct a profile/transport state that violates 'Rollback/supersession preserves release history'; no greener canonical state may be manufactured.",
+      "evidence_contract": [
+        "exact development/assignment/candidate identity",
+        "interface/profile version",
+        "actor/authority",
+        "raw result/error"
+      ]
+    },
+    {
+      "id": "AP-VC-039",
+      "journey_id": "AP-J-07",
+      "requirement_id": "AP-R-OPTIONAL-FAIL",
+      "title": "Optional integration failure cannot redefine core work truth",
+      "status": "specified_not_executed",
+      "preconditions": [
+        "canonical semantic decisions accepted",
+        "applicable interface/profile selected",
+        "isolated deterministic fixture"
+      ],
+      "stimulus": "Failure/unavailability of optional Plane/NATS/Neo4j/MinIO/P2P/etc profiles is isolated and explicitly degraded.",
+      "expected": "Canonical semantics and authority remain intact across the selected interface/profile.",
+      "adversarial": "Disable optional integration; core local work/evaluation/recovery remains available and degraded state is explicit.",
+      "evidence_contract": [
+        "exact development/assignment/candidate identity",
+        "interface/profile version",
+        "actor/authority",
+        "raw result/error"
       ]
     }
   ]
