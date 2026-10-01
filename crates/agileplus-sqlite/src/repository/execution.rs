@@ -144,7 +144,7 @@ fn insert_assignment_criteria(
                 i64::from(criterion.ordinal),
                 criterion.statement,
                 criterion.source_ref,
-                i64::from(criterion.mandatory)
+                if criterion.mandatory { 1_i64 } else { 0_i64 }
             ],
         )
         .map_err(err)?;
