@@ -554,18 +554,22 @@ where
                 last_feedback,
             } => {
                 let ended_at = Utc::now();
+                let failed_candidate_ref = vcs
+                    .list_worktrees()
+                    .await
+                    .ok()
+                    .and_then(|items| items.into_iter().find(|w| w.path == worktree_path))
+                    .map(|w| format!("git:{}", w.commit))
+                    .unwrap_or_else(|| format!("unresolved:job:{job_id}"));
+                let exact_failed_candidate = failed_candidate_ref
+                    .starts_with("git:")
+                    .then_some(failed_candidate_ref.as_str());
                 storage
                     .create_evaluation(&Evaluation {
                         id: format!("evaluation:{}:{}", wp.id, ended_at.timestamp_micros()),
                         assignment_id: assignment_id.clone(),
                         attempt_id: Some(attempt_id.clone()),
-                        candidate_ref: vcs
-                            .list_worktrees()
-                            .await
-                            .ok()
-                            .and_then(|items| items.into_iter().find(|w| w.path == worktree_path))
-                            .map(|w| format!("git:{}", w.commit))
-                            .unwrap_or_else(|| format!("job:{job_id}")),
+                        candidate_ref: failed_candidate_ref,
                         evaluator_id: "legacy-review-loop".into(),
                         evaluator_version: "v1".into(),
                         result: EvaluationResult::Unsatisfied,
@@ -580,7 +584,7 @@ where
                         &attempt_id,
                         AttemptStatus::Failed,
                         Some(&job_id),
-                        Some(&format!("job:{job_id}")),
+                        exact_failed_candidate,
                         Some("max_review_cycles"),
                         Some(ended_at),
                     )
