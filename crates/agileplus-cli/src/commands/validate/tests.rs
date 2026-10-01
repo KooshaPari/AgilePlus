@@ -462,6 +462,52 @@ async fn shared_evaluator_matches_legacy_for_command_named_metric_policy() {
 }
 
 #[tokio::test]
+async fn automated_policy_without_concrete_evaluator_fails_closed() {
+    let db = SqliteStorageAdapter::in_memory().unwrap();
+    let (feature_id, wp_id) = create_feature_with_wp(&db).await;
+    let policy_id = create_policy_rule(
+        &db,
+        PolicyDomain::Quality,
+        PolicyCheck::Automated,
+    )
+    .await;
+    let contract = GovernanceContract {
+        id: 1,
+        feature_id,
+        version: 1,
+        rules: vec![GovernanceRule {
+            transition: "Implementing -> Validated".to_string(),
+            required_evidence: vec!["FR-AUTO:manual_attestation".to_string()],
+            policy_refs: vec![policy_id],
+        }],
+        bound_at: Utc::now(),
+    };
+    create_evidence(
+        &db,
+        wp_id,
+        "FR-AUTO",
+        EvidenceType::ManualAttestation,
+    )
+    .await;
+
+    let legacy = super::evidence::evaluate_policies(&db, &contract, feature_id)
+        .await
+        .unwrap();
+    let shared = agileplus_domain::domain::governance_evaluator::evaluate_governance(
+        &db, &contract, feature_id,
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(legacy.len(), 1);
+    assert!(!legacy[0].passed);
+    assert!(legacy[0].message.contains("concrete evaluator"));
+    assert_eq!(legacy[0].passed, shared.policy_results[0].passed);
+    assert!(!shared.passed(&contract));
+    assert!(shared.policy_results[0].message.contains("concrete evaluator"));
+}
+
+#[tokio::test]
 async fn shared_evaluator_empty_contract_is_not_configured() {
     let db = SqliteStorageAdapter::in_memory().unwrap();
     let feature_id = create_feature_with_wp(&db).await.0;
