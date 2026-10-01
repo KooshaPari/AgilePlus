@@ -104,6 +104,25 @@ impl agileplus_domain::ports::ExecutionRecordPort for SqliteStorageAdapter {
         let c = self.lock()?;
         repository::execution::create_assignment(&c, a)
     }
+    async fn get_active_assignment(
+        &self,
+        wp_id: i64,
+    ) -> Result<Option<agileplus_domain::domain::execution::Assignment>, DomainError> {
+        let c = self.lock()?;
+        repository::execution::get_active_assignment(&c, wp_id)
+    }
+    async fn supersede_assignment(
+        &self,
+        previous_assignment_id: &str,
+        replacement: &agileplus_domain::domain::execution::Assignment,
+    ) -> Result<(), DomainError> {
+        let mut c = self.lock()?;
+        repository::execution::supersede_assignment(
+            &mut c,
+            previous_assignment_id,
+            replacement,
+        )
+    }
     async fn create_attempt(
         &self,
         a: &agileplus_domain::domain::execution::Attempt,
