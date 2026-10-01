@@ -1,7 +1,7 @@
 {
-  "schema_version": "0.1.0",
+  "schema_version": "0.2.0",
   "product_id": "PRD-AGILEPLUS",
-  "catalog_status": "accepted_semantic_spine",
+  "catalog_status": "accepted_semantic_spine_and_interface_profiles",
   "count_policy": "derived_only",
   "authority": "spec/product/CANONICAL_SEMANTIC_DECISIONS.md",
   "requirements": [
@@ -455,6 +455,188 @@
         "AP-J-07"
       ],
       "status": "accepted_semantic_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-IFACE-CANON",
+      "title": "Interfaces share one application semantics",
+      "statement": "CLI/HTTP/MCP/UI and optional gRPC project the same canonical identities, revisions, evaluation and acceptance semantics.",
+      "journeys": [
+        "AP-J-11"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-IFACE-MACHINE",
+      "title": "Automation-critical operations have machine-readable truthful results",
+      "statement": "Automation surfaces expose structured status/identity/error data sufficient to avoid parsing optimistic human prose.",
+      "journeys": [
+        "AP-J-11"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-MUTATE-PRECOND",
+      "title": "Accepted-state mutations bind authority and concurrency preconditions",
+      "statement": "Mutations identify actor/authority and use idempotency/version preconditions where retry/concurrency could duplicate or lose accepted state.",
+      "journeys": [
+        "AP-J-11"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-MCP-UNTRUST",
+      "title": "MCP prompts/sampling cannot grant authority",
+      "statement": "Prompt/model output is untrusted proposal/work content until accepted/evaluated and cannot self-authorize mutation or acceptance.",
+      "journeys": [
+        "AP-J-11"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-GIT-BASE",
+      "title": "Attempt binds exact Git base where Git profile applies",
+      "statement": "Software Attempt records exact base candidate and detects dirty/base drift before evaluation/promotion.",
+      "journeys": [
+        "AP-J-03"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-PR-CONTEXT",
+      "title": "PR/review state is context/evidence, not acceptance",
+      "statement": "Pull request state and review approval cannot substitute for canonical Evaluation/AcceptedWork.",
+      "journeys": [
+        "AP-J-05"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-TRIAGE-PROV",
+      "title": "Automated intake classification retains provenance",
+      "statement": "Triage classification/routing/priority retains source and model/method/confidence where derived and supports authorized override.",
+      "journeys": [
+        "AP-J-09"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-SCHED-DEPS",
+      "title": "Scheduler respects dependency readiness",
+      "statement": "Work is not scheduled as executable while mandatory predecessors/dependencies remain unsatisfied.",
+      "journeys": [
+        "AP-J-02"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-SCHED-EXCL",
+      "title": "Scheduler prevents double-authorized exclusive mutation",
+      "statement": "Exclusive resources cannot be simultaneously granted to conflicting active claims/attempts.",
+      "journeys": [
+        "AP-J-03"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-REVIEW-ESC",
+      "title": "Review/HITL escalation is policy-driven and explicit",
+      "statement": "High-severity unresolved findings, repeated evaluator failure, authority ambiguity or policy-defined irreversible actions escalate rather than silently continue.",
+      "journeys": [
+        "AP-J-05"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-RELEASE-ID",
+      "title": "Promotion creates exact release/promotion receipt",
+      "statement": "Promotion records release/profile identity, exact candidate, governing acceptance and outcome.",
+      "journeys": [
+        "AP-J-06"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-RELEASE-HITL",
+      "title": "Stable/official release honors human gate where policy requires",
+      "statement": "Automation cannot bypass a profile-defined human authorization gate for stable/official promotion.",
+      "journeys": [
+        "AP-J-06"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-RELEASE-ROLLBACK",
+      "title": "Rollback/supersession preserves release history",
+      "statement": "Rollback or supersession does not erase the prior promotion/evaluation history.",
+      "journeys": [
+        "AP-J-06"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-OPTIONAL-FAIL",
+      "title": "Optional integration failure cannot redefine core work truth",
+      "statement": "Failure/unavailability of optional Plane/NATS/Neo4j/MinIO/P2P/etc profiles is isolated and explicitly degraded.",
+      "journeys": [
+        "AP-J-07"
+      ],
+      "status": "accepted_mature_requirement",
       "stages": [
         "MATURE"
       ],
