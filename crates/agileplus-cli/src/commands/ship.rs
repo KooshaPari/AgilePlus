@@ -190,9 +190,7 @@ where
 
     // Perform merges in order
     let mut merged_branches: Vec<String> = Vec::new();
-    for (wp, (wp_label, branch, accepted_candidate)) in
-        sorted_wps.iter().zip(wp_branches.iter())
-    {
+    for (wp, (wp_label, branch, accepted_candidate)) in sorted_wps.iter().zip(wp_branches.iter()) {
         tracing::info!(wp_seq = wp.sequence, branch = %branch, target = %target_branch, accepted_candidate = %accepted_candidate, "merging WP branch");
 
         // Re-read the source ref immediately before merge to reduce the
@@ -211,13 +209,13 @@ where
             );
         }
 
-        let accepted_commit = accepted_candidate
-            .strip_prefix("git:")
-            .ok_or_else(|| anyhow::anyhow!(
+        let accepted_commit = accepted_candidate.strip_prefix("git:").ok_or_else(|| {
+            anyhow::anyhow!(
                 "{} accepted candidate is not a Git commit: {}",
                 wp_label,
                 accepted_candidate
-            ))?;
+            )
+        })?;
         let merge_result = vcs
             .merge_to_target(accepted_commit, &target_branch)
             .await
@@ -329,10 +327,7 @@ struct AcceptedCandidate {
     worktree_path: Option<std::path::PathBuf>,
 }
 
-async fn accepted_candidate_for_wp<S>(
-    storage: &S,
-    wp: &WorkPackage,
-) -> Result<AcceptedCandidate>
+async fn accepted_candidate_for_wp<S>(storage: &S, wp: &WorkPackage) -> Result<AcceptedCandidate>
 where
     S: ExecutionRecordPort,
 {
@@ -415,7 +410,12 @@ async fn resolve_branch_commit<V: VcsPort>(vcs: &V, branch: &str) -> Result<Stri
         let branches = vcs
             .list_branches(Some(branch), remote)
             .await
-            .with_context(|| format!("listing {}branches for {branch}", if remote { "remote " } else { "" }))?;
+            .with_context(|| {
+                format!(
+                    "listing {}branches for {branch}",
+                    if remote { "remote " } else { "" }
+                )
+            })?;
         if let Some(info) = branches
             .into_iter()
             .find(|info| info.name == branch || info.name.ends_with(&format!("/{branch}")))

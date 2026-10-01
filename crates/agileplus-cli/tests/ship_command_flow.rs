@@ -261,7 +261,10 @@ fn ship_rejects_source_branch_that_drifted_from_accepted_candidate() {
             err.to_string().contains("drifted from accepted candidate"),
             "unexpected error: {err}"
         );
-        assert!(vcs.merges.lock().unwrap().is_empty(), "no merge after drift");
+        assert!(
+            vcs.merges.lock().unwrap().is_empty(),
+            "no merge after drift"
+        );
         let feature = StoragePort::get_feature_by_id(&storage, id)
             .await
             .unwrap()

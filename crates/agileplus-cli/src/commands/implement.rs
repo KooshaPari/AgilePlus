@@ -331,8 +331,7 @@ where
         let assignment_id = match active_assignment {
             Some(existing) if existing.spec_revision_id == spec_revision_id => existing.id,
             Some(existing) => {
-                let replacement_id =
-                    format!("assignment:{}:{}", wp.id, now.timestamp_micros());
+                let replacement_id = format!("assignment:{}:{}", wp.id, now.timestamp_micros());
                 let replacement = Assignment {
                     id: replacement_id.clone(),
                     wp_id: wp.id,
@@ -348,8 +347,7 @@ where
                 replacement_id
             }
             None => {
-                let assignment_id =
-                    format!("assignment:{}:{}", wp.id, now.timestamp_micros());
+                let assignment_id = format!("assignment:{}:{}", wp.id, now.timestamp_micros());
                 storage
                     .create_assignment(&Assignment {
                         id: assignment_id.clone(),

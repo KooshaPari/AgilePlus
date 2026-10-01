@@ -11,10 +11,10 @@ use chrono::Utc;
 
 use agileplus_domain::domain::audit::{AuditEntry, hash_entry};
 use agileplus_domain::domain::event::Event;
+use agileplus_domain::domain::execution::{AttemptStatus, EvaluationResult};
 use agileplus_domain::domain::governance_evaluator::{
     GovernanceEvaluationOptions, evaluate_governance_with_options,
 };
-use agileplus_domain::domain::execution::{AttemptStatus, EvaluationResult};
 use agileplus_domain::domain::state_machine::FeatureState;
 use agileplus_domain::domain::work_package::WpState;
 use agileplus_domain::ports::{ExecutionRecordPort, StoragePort, VcsPort};
@@ -251,10 +251,7 @@ where
     Ok(())
 }
 
-async fn require_exact_candidate_acceptance<S>(
-    storage: &S,
-    feature_id: i64,
-) -> Result<Vec<i64>>
+async fn require_exact_candidate_acceptance<S>(storage: &S, feature_id: i64) -> Result<Vec<i64>>
 where
     S: StoragePort + ExecutionRecordPort,
 {

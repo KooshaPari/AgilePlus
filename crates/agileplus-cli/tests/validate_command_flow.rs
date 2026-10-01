@@ -11,7 +11,9 @@ use agileplus_domain::domain::execution::{
     SpecRevision,
 };
 use agileplus_domain::domain::feature::Feature;
-use agileplus_domain::domain::governance::{Evidence, EvidenceType, GovernanceContract, GovernanceRule};
+use agileplus_domain::domain::governance::{
+    Evidence, EvidenceType, GovernanceContract, GovernanceRule,
+};
 use agileplus_domain::domain::state_machine::FeatureState;
 use agileplus_domain::domain::work_package::{WorkPackage, WpState};
 use agileplus_domain::ports::{ExecutionRecordPort, StoragePort};
@@ -323,12 +325,9 @@ fn validate_rejects_governance_green_without_exact_candidate_acceptance() {
     block_on(async {
         let storage = SqliteStorageAdapter::in_memory().unwrap();
         let vcs = GitVcsAdapter::new(std::env::temp_dir());
-        let id = StoragePort::create_feature(
-            &storage,
-            &implementing_feature("governance-only"),
-        )
-        .await
-        .unwrap();
+        let id = StoragePort::create_feature(&storage, &implementing_feature("governance-only"))
+            .await
+            .unwrap();
         StoragePort::create_governance_contract(
             &storage,
             &contract_for(id, vec!["FR-GREEN:test_result".to_string()]),

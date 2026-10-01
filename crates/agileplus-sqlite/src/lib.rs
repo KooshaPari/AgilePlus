@@ -117,11 +117,7 @@ impl agileplus_domain::ports::ExecutionRecordPort for SqliteStorageAdapter {
         replacement: &agileplus_domain::domain::execution::Assignment,
     ) -> Result<(), DomainError> {
         let mut c = self.lock()?;
-        repository::execution::supersede_assignment(
-            &mut c,
-            previous_assignment_id,
-            replacement,
-        )
+        repository::execution::supersede_assignment(&mut c, previous_assignment_id, replacement)
     }
     async fn create_attempt(
         &self,
@@ -234,7 +230,12 @@ mod tests {
         let db = SqliteStorageAdapter::in_memory().expect("in-memory adapter");
         let feature_id = StoragePort::create_feature(
             &db,
-            &Feature::new("replacement-witness", "Replacement Witness", [7u8; 32], None),
+            &Feature::new(
+                "replacement-witness",
+                "Replacement Witness",
+                [7u8; 32],
+                None,
+            ),
         )
         .await
         .expect("feature");
@@ -347,7 +348,11 @@ mod tests {
         let attempts = ExecutionRecordPort::list_attempts(&db, &assignment.id)
             .await
             .expect("list attempts");
-        assert_eq!(attempts.len(), 2, "replacement must not erase prior attempt");
+        assert_eq!(
+            attempts.len(),
+            2,
+            "replacement must not erase prior attempt"
+        );
         assert_eq!(attempts[0].id, "attempt:a");
         assert_eq!(attempts[0].status, AttemptStatus::Expired);
         assert_eq!(attempts[0].failure_class.as_deref(), Some("lease_expired"));
@@ -421,7 +426,12 @@ mod tests {
         let db = SqliteStorageAdapter::in_memory().expect("in-memory adapter");
         let feature_id = StoragePort::create_feature(
             &db,
-            &Feature::new("assignment-supersede", "Assignment Supersede", [10u8; 32], None),
+            &Feature::new(
+                "assignment-supersede",
+                "Assignment Supersede",
+                [10u8; 32],
+                None,
+            ),
         )
         .await
         .expect("feature");
@@ -493,7 +503,10 @@ mod tests {
             .expect("active B")
             .expect("B exists");
         assert_eq!(active.id, assignment_b.id);
-        assert_eq!(active.supersedes_assignment_id.as_deref(), Some("assignment:a"));
+        assert_eq!(
+            active.supersedes_assignment_id.as_deref(),
+            Some("assignment:a")
+        );
 
         let old_status: String = db
             .conn_for_bench()
