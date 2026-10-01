@@ -144,7 +144,7 @@ impl RecordingVcs {
     pub fn worktree(path: &str, slug: &str) -> WorktreeInfo {
         WorktreeInfo {
             path: PathBuf::from(path),
-            commit: "a".into(),
+            commit: candidate_commit_for_sequence(1),
             branch: format!("{slug}/wp01"),
             feature_slug: slug.to_string(),
             wp_id: "WP01".into(),
