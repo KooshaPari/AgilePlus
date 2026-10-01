@@ -538,7 +538,10 @@ where
                         "WP{:02} Doing -> Review (candidate produced; independent evaluation pending)",
                         wp.sequence
                     ),
-                    evidence_refs: vec![candidate_ref.clone()],
+                    // Candidate identity is persisted on Attempt/Evaluation. Audit evidence_refs
+                    // only accepts persisted EvidenceRef identities, so do not forge one from a
+                    // Git candidate string before a real evidence record exists.
+                    evidence_refs: vec![],
                     prev_hash,
                     hash: [0u8; 32],
                     event_id: None,
