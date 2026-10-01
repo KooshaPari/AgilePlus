@@ -197,6 +197,157 @@ mod tests {
         );
     }
 
+    #[tokio::test]
+    async fn replacement_attempt_preserves_history_and_exact_candidate_evaluation() {
+        use agileplus_domain::{
+            domain::{
+                evaluation::EvaluationResult,
+                execution::{
+                    Assignment, AssignmentStatus, Attempt, AttemptStatus, Evaluation, SpecRevision,
+                },
+                feature::Feature,
+                work_package::WorkPackage,
+            },
+            ports::{ExecutionRecordPort, StoragePort},
+        };
+        use chrono::{Duration, Utc};
+
+        let db = SqliteStorageAdapter::in_memory().expect("in-memory adapter");
+        let feature_id = StoragePort::create_feature(
+            &db,
+            &Feature::new("replacement-witness", "Replacement Witness", [7u8; 32], None),
+        )
+        .await
+        .expect("feature");
+        let wp_id = StoragePort::create_work_package(
+            &db,
+            &WorkPackage::new(feature_id, "Replacement WP", 1, "exact candidate"),
+        )
+        .await
+        .expect("wp");
+
+        let t0 = Utc::now();
+        let spec = SpecRevision {
+            id: "spec:replacement:1".into(),
+            feature_id,
+            content_hash: "sha256:spec-a".into(),
+            parent_revision_id: None,
+            accepted_at: t0,
+            authority: "test-authority".into(),
+        };
+        ExecutionRecordPort::create_spec_revision(&db, &spec)
+            .await
+            .expect("spec revision");
+
+        let assignment = Assignment {
+            id: "assignment:replacement:1".into(),
+            wp_id,
+            spec_revision_id: spec.id.clone(),
+            created_at: t0,
+            supersedes_assignment_id: None,
+            status: AssignmentStatus::Active,
+        };
+        ExecutionRecordPort::create_assignment(&db, &assignment)
+            .await
+            .expect("assignment");
+
+        let attempt_a = Attempt {
+            id: "attempt:a".into(),
+            assignment_id: assignment.id.clone(),
+            worker_id: "worker-a".into(),
+            backend: "test".into(),
+            job_id: Some("job-a".into()),
+            worktree_path: Some("/tmp/a".into()),
+            base_candidate_ref: Some("git:base".into()),
+            result_candidate_ref: None,
+            status: AttemptStatus::Running,
+            failure_class: None,
+            started_at: t0,
+            ended_at: None,
+        };
+        ExecutionRecordPort::create_attempt(&db, &attempt_a)
+            .await
+            .expect("attempt A");
+        ExecutionRecordPort::update_attempt_runtime(
+            &db,
+            &attempt_a.id,
+            AttemptStatus::Expired,
+            None,
+            None,
+            Some("lease_expired"),
+            Some(t0 + Duration::seconds(10)),
+        )
+        .await
+        .expect("expire attempt A");
+
+        let attempt_b = Attempt {
+            id: "attempt:b".into(),
+            assignment_id: assignment.id.clone(),
+            worker_id: "worker-b".into(),
+            backend: "test".into(),
+            job_id: Some("job-b".into()),
+            worktree_path: Some("/tmp/b".into()),
+            base_candidate_ref: Some("git:base".into()),
+            result_candidate_ref: None,
+            status: AttemptStatus::Running,
+            failure_class: None,
+            started_at: t0 + Duration::seconds(11),
+            ended_at: None,
+        };
+        ExecutionRecordPort::create_attempt(&db, &attempt_b)
+            .await
+            .expect("attempt B");
+        ExecutionRecordPort::update_attempt_runtime(
+            &db,
+            &attempt_b.id,
+            AttemptStatus::Completed,
+            None,
+            Some("git:candidate-b"),
+            None,
+            Some(t0 + Duration::seconds(20)),
+        )
+        .await
+        .expect("complete attempt B");
+
+        let evaluation = Evaluation {
+            id: "evaluation:b".into(),
+            assignment_id: assignment.id.clone(),
+            attempt_id: Some(attempt_b.id.clone()),
+            candidate_ref: "git:candidate-b".into(),
+            evaluator_id: "test-evaluator".into(),
+            evaluator_version: "1".into(),
+            result: EvaluationResult::Satisfied,
+            evidence_refs: vec!["evidence:test".into()],
+            started_at: t0 + Duration::seconds(21),
+            finished_at: t0 + Duration::seconds(22),
+        };
+        ExecutionRecordPort::create_evaluation(&db, &evaluation)
+            .await
+            .expect("evaluation");
+
+        let attempts = ExecutionRecordPort::list_attempts(&db, &assignment.id)
+            .await
+            .expect("list attempts");
+        assert_eq!(attempts.len(), 2, "replacement must not erase prior attempt");
+        assert_eq!(attempts[0].id, "attempt:a");
+        assert_eq!(attempts[0].status, AttemptStatus::Expired);
+        assert_eq!(attempts[0].failure_class.as_deref(), Some("lease_expired"));
+        assert_eq!(attempts[1].id, "attempt:b");
+        assert_eq!(attempts[1].status, AttemptStatus::Completed);
+        assert_eq!(
+            attempts[1].result_candidate_ref.as_deref(),
+            Some("git:candidate-b")
+        );
+
+        let evaluations = ExecutionRecordPort::list_evaluations(&db, &assignment.id)
+            .await
+            .expect("list evaluations");
+        assert_eq!(evaluations.len(), 1);
+        assert_eq!(evaluations[0].attempt_id.as_deref(), Some("attempt:b"));
+        assert_eq!(evaluations[0].candidate_ref, "git:candidate-b");
+        assert_eq!(evaluations[0].result, EvaluationResult::Satisfied);
+    }
+
     #[test]
     fn new_fails_when_parent_directory_is_missing() {
         let nanos = std::time::SystemTime::now()
