@@ -16,7 +16,7 @@ use chrono::Utc;
 use agileplus_domain::domain::audit::{AuditEntry, hash_entry};
 use agileplus_domain::domain::execution::{
     Assignment, AssignmentStatus, Attempt, AttemptStatus, Evaluation, EvaluationResult,
-    SpecRevision,
+    SpecRevision, snapshot_acceptance_criteria,
 };
 use agileplus_domain::domain::state_machine::FeatureState;
 use agileplus_domain::domain::work_package::{WorkPackage, WpState};
@@ -307,10 +307,25 @@ where
             .collect();
         let spec_revision_id = format!("spec:{}:{}", feature.id, spec_hash_hex);
 
+        let criterion_snapshot = snapshot_acceptance_criteria(&wp.acceptance_criteria);
+        if criterion_snapshot.is_empty() {
+            anyhow::bail!(
+                "WP{:02} has no acceptance criteria; cannot create executable Assignment",
+                wp.sequence
+            );
+        }
+
         let active_assignment = storage
             .get_active_assignment(wp.id)
             .await
             .context("loading active assignment")?;
+        let active_criteria = match &active_assignment {
+            Some(assignment) => storage
+                .list_assignment_criteria(&assignment.id)
+                .await
+                .context("loading active assignment criteria")?,
+            None => vec![],
+        };
         let parent_revision_id = active_assignment
             .as_ref()
             .filter(|assignment| assignment.spec_revision_id != spec_revision_id)
@@ -329,7 +344,12 @@ where
             .context("persisting immutable spec revision")?;
 
         let assignment_id = match active_assignment {
-            Some(existing) if existing.spec_revision_id == spec_revision_id => existing.id,
+            Some(existing)
+                if existing.spec_revision_id == spec_revision_id
+                    && active_criteria == criterion_snapshot =>
+            {
+                existing.id
+            }
             Some(existing) => {
                 let replacement_id = format!("assignment:{}:{}", wp.id, now.timestamp_micros());
                 let replacement = Assignment {
@@ -341,7 +361,11 @@ where
                     status: AssignmentStatus::Active,
                 };
                 storage
-                    .supersede_assignment(&existing.id, &replacement)
+                    .supersede_assignment_with_criteria(
+                        &existing.id,
+                        &replacement,
+                        &criterion_snapshot,
+                    )
                     .await
                     .context("superseding active assignment")?;
                 replacement_id
@@ -349,14 +373,17 @@ where
             None => {
                 let assignment_id = format!("assignment:{}:{}", wp.id, now.timestamp_micros());
                 storage
-                    .create_assignment(&Assignment {
-                        id: assignment_id.clone(),
-                        wp_id: wp.id,
-                        spec_revision_id: spec_revision_id.clone(),
-                        created_at: now,
-                        supersedes_assignment_id: None,
-                        status: AssignmentStatus::Active,
-                    })
+                    .create_assignment_with_criteria(
+                        &Assignment {
+                            id: assignment_id.clone(),
+                            wp_id: wp.id,
+                            spec_revision_id: spec_revision_id.clone(),
+                            created_at: now,
+                            supersedes_assignment_id: None,
+                            status: AssignmentStatus::Active,
+                        },
+                        &criterion_snapshot,
+                    )
                     .await
                     .context("creating immutable assignment")?;
                 assignment_id

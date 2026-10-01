@@ -104,6 +104,14 @@ impl agileplus_domain::ports::ExecutionRecordPort for SqliteStorageAdapter {
         let c = self.lock()?;
         repository::execution::create_assignment(&c, a)
     }
+    async fn create_assignment_with_criteria(
+        &self,
+        a: &agileplus_domain::domain::execution::Assignment,
+        criteria: &[agileplus_domain::domain::execution::AssignmentCriterion],
+    ) -> Result<(), DomainError> {
+        let mut c = self.lock()?;
+        repository::execution::create_assignment_with_criteria(&mut c, a, criteria)
+    }
     async fn get_active_assignment(
         &self,
         wp_id: i64,
@@ -118,6 +126,27 @@ impl agileplus_domain::ports::ExecutionRecordPort for SqliteStorageAdapter {
     ) -> Result<(), DomainError> {
         let mut c = self.lock()?;
         repository::execution::supersede_assignment(&mut c, previous_assignment_id, replacement)
+    }
+    async fn supersede_assignment_with_criteria(
+        &self,
+        previous_assignment_id: &str,
+        replacement: &agileplus_domain::domain::execution::Assignment,
+        criteria: &[agileplus_domain::domain::execution::AssignmentCriterion],
+    ) -> Result<(), DomainError> {
+        let mut c = self.lock()?;
+        repository::execution::supersede_assignment_with_criteria(
+            &mut c,
+            previous_assignment_id,
+            replacement,
+            criteria,
+        )
+    }
+    async fn list_assignment_criteria(
+        &self,
+        assignment_id: &str,
+    ) -> Result<Vec<agileplus_domain::domain::execution::AssignmentCriterion>, DomainError> {
+        let c = self.lock()?;
+        repository::execution::list_assignment_criteria(&c, assignment_id)
     }
     async fn create_attempt(
         &self,
@@ -153,6 +182,14 @@ impl agileplus_domain::ports::ExecutionRecordPort for SqliteStorageAdapter {
         let c = self.lock()?;
         repository::execution::create_evaluation(&c, e)
     }
+    async fn create_evaluation_receipt(
+        &self,
+        e: &agileplus_domain::domain::execution::Evaluation,
+        criterion_results: &[agileplus_domain::domain::execution::CriterionEvaluation],
+    ) -> Result<(), DomainError> {
+        let mut c = self.lock()?;
+        repository::execution::create_evaluation_receipt(&mut c, e, criterion_results)
+    }
     async fn list_attempts(
         &self,
         assignment_id: &str,
@@ -166,6 +203,13 @@ impl agileplus_domain::ports::ExecutionRecordPort for SqliteStorageAdapter {
     ) -> Result<Vec<agileplus_domain::domain::execution::Evaluation>, DomainError> {
         let c = self.lock()?;
         repository::execution::list_evaluations(&c, assignment_id)
+    }
+    async fn list_criterion_results(
+        &self,
+        evaluation_id: &str,
+    ) -> Result<Vec<agileplus_domain::domain::execution::CriterionEvaluation>, DomainError> {
+        let c = self.lock()?;
+        repository::execution::list_criterion_results(&c, evaluation_id)
     }
 }
 
@@ -217,8 +261,9 @@ mod tests {
         use agileplus_domain::{
             domain::{
                 execution::{
-                    Assignment, AssignmentStatus, Attempt, AttemptStatus, Evaluation,
-                    EvaluationResult, SpecRevision,
+                    Assignment, AssignmentStatus, Attempt, AttemptStatus, CriterionEvaluation,
+                    Evaluation, EvaluationResult, SpecRevision, aggregate_evidence_refs,
+                    reduce_criterion_results, snapshot_acceptance_criteria,
                 },
                 feature::Feature,
                 work_package::WorkPackage,
@@ -267,7 +312,8 @@ mod tests {
             supersedes_assignment_id: None,
             status: AssignmentStatus::Active,
         };
-        ExecutionRecordPort::create_assignment(&db, &assignment)
+        let criteria = snapshot_acceptance_criteria("exact candidate");
+        ExecutionRecordPort::create_assignment_with_criteria(&db, &assignment, &criteria)
             .await
             .expect("assignment");
 
@@ -329,6 +375,12 @@ mod tests {
         .await
         .expect("complete attempt B");
 
+        let criterion_results = vec![CriterionEvaluation {
+            criterion_id: criteria[0].id.clone(),
+            result: EvaluationResult::Satisfied,
+            evidence_refs: vec!["evidence:test".into()],
+            rationale: Some("replacement witness".into()),
+        }];
         let evaluation = Evaluation {
             id: "evaluation:b".into(),
             assignment_id: assignment.id.clone(),
@@ -336,12 +388,12 @@ mod tests {
             candidate_ref: "git:candidate-b".into(),
             evaluator_id: "test-evaluator".into(),
             evaluator_version: "1".into(),
-            result: EvaluationResult::Satisfied,
-            evidence_refs: vec!["evidence:test".into()],
+            result: reduce_criterion_results(&criteria, &criterion_results),
+            evidence_refs: aggregate_evidence_refs(&criterion_results),
             started_at: t0 + Duration::seconds(21),
             finished_at: t0 + Duration::seconds(22),
         };
-        ExecutionRecordPort::create_evaluation(&db, &evaluation)
+        ExecutionRecordPort::create_evaluation_receipt(&db, &evaluation, &criterion_results)
             .await
             .expect("evaluation");
 

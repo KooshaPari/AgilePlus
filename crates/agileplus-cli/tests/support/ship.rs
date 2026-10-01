@@ -14,8 +14,9 @@ use async_trait::async_trait;
 
 use agileplus_cli::commands::ship::ShipArgs;
 use agileplus_domain::domain::execution::{
-    Assignment, AssignmentStatus, Attempt, AttemptStatus, Evaluation, EvaluationResult,
-    SpecRevision,
+    Assignment, AssignmentStatus, Attempt, AttemptStatus, CriterionEvaluation, Evaluation,
+    EvaluationResult, SpecRevision, aggregate_evidence_refs, reduce_criterion_results,
+    snapshot_acceptance_criteria,
 };
 use agileplus_domain::domain::feature::Feature;
 use agileplus_domain::domain::state_machine::FeatureState;
@@ -355,7 +356,8 @@ async fn seed_accepted_execution(
         supersedes_assignment_id: None,
         status: AssignmentStatus::Active,
     };
-    ExecutionRecordPort::create_assignment(storage, &assignment)
+    let criteria = snapshot_acceptance_criteria("done");
+    ExecutionRecordPort::create_assignment_with_criteria(storage, &assignment, &criteria)
         .await
         .expect("assignment");
     let candidate = format!("git:{}", candidate_commit_for_sequence(sequence));
@@ -376,7 +378,13 @@ async fn seed_accepted_execution(
     ExecutionRecordPort::create_attempt(storage, &attempt)
         .await
         .expect("attempt");
-    ExecutionRecordPort::create_evaluation(
+    let criterion_results = vec![CriterionEvaluation {
+        criterion_id: criteria[0].id.clone(),
+        result: EvaluationResult::Satisfied,
+        evidence_refs: vec!["evidence:test".into()],
+        rationale: Some("ship fixture".into()),
+    }];
+    ExecutionRecordPort::create_evaluation_receipt(
         storage,
         &Evaluation {
             id: format!("evaluation:{wp_id}"),
@@ -385,11 +393,12 @@ async fn seed_accepted_execution(
             candidate_ref: candidate,
             evaluator_id: "independent-test-evaluator".into(),
             evaluator_version: "1".into(),
-            result: EvaluationResult::Satisfied,
-            evidence_refs: vec!["evidence:test".into()],
+            result: reduce_criterion_results(&criteria, &criterion_results),
+            evidence_refs: aggregate_evidence_refs(&criterion_results),
             started_at: t0,
             finished_at: t0,
         },
+        &criterion_results,
     )
     .await
     .expect("evaluation");

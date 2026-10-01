@@ -7,8 +7,9 @@
 
 use agileplus_cli::commands::validate::{ValidateArgs, run_validate};
 use agileplus_domain::domain::execution::{
-    Assignment, AssignmentStatus, Attempt, AttemptStatus, Evaluation, EvaluationResult,
-    SpecRevision,
+    Assignment, AssignmentStatus, Attempt, AttemptStatus, CriterionEvaluation, Evaluation,
+    EvaluationResult, SpecRevision, aggregate_evidence_refs, reduce_criterion_results,
+    snapshot_acceptance_criteria,
 };
 use agileplus_domain::domain::feature::Feature;
 use agileplus_domain::domain::governance::{
@@ -116,7 +117,8 @@ async fn seed_exact_candidate_acceptance(
         supersedes_assignment_id: None,
         status: AssignmentStatus::Active,
     };
-    ExecutionRecordPort::create_assignment(storage, &assignment)
+    let criteria = snapshot_acceptance_criteria("works");
+    ExecutionRecordPort::create_assignment_with_criteria(storage, &assignment, &criteria)
         .await
         .expect("assignment");
     let attempt = Attempt {
@@ -136,7 +138,14 @@ async fn seed_exact_candidate_acceptance(
     ExecutionRecordPort::create_attempt(storage, &attempt)
         .await
         .expect("attempt");
-    ExecutionRecordPort::create_evaluation(
+    let criterion_results = vec![CriterionEvaluation {
+        criterion_id: criteria[0].id.clone(),
+        result: EvaluationResult::Satisfied,
+        evidence_refs: vec!["evidence:test".into()],
+        rationale: Some("test fixture".into()),
+    }];
+    let result = reduce_criterion_results(&criteria, &criterion_results);
+    ExecutionRecordPort::create_evaluation_receipt(
         storage,
         &Evaluation {
             id: format!("evaluation:{wp_id}:accepted"),
@@ -145,11 +154,12 @@ async fn seed_exact_candidate_acceptance(
             candidate_ref: "git:candidate".into(),
             evaluator_id: "independent-test-evaluator".into(),
             evaluator_version: "1".into(),
-            result: EvaluationResult::Satisfied,
-            evidence_refs: vec!["evidence:test".into()],
+            result,
+            evidence_refs: aggregate_evidence_refs(&criterion_results),
             started_at: t0,
             finished_at: t0,
         },
+        &criterion_results,
     )
     .await
     .expect("evaluation");
@@ -396,7 +406,8 @@ fn validate_rejects_satisfied_evaluation_when_attempt_candidate_differs() {
             supersedes_assignment_id: None,
             status: AssignmentStatus::Active,
         };
-        ExecutionRecordPort::create_assignment(&storage, &assignment)
+        let criteria = snapshot_acceptance_criteria("works");
+        ExecutionRecordPort::create_assignment_with_criteria(&storage, &assignment, &criteria)
             .await
             .unwrap();
         let attempt = Attempt {
@@ -416,7 +427,13 @@ fn validate_rejects_satisfied_evaluation_when_attempt_candidate_differs() {
         ExecutionRecordPort::create_attempt(&storage, &attempt)
             .await
             .unwrap();
-        ExecutionRecordPort::create_evaluation(
+        let criterion_results = vec![CriterionEvaluation {
+            criterion_id: criteria[0].id.clone(),
+            result: EvaluationResult::Satisfied,
+            evidence_refs: vec!["evidence:test".into()],
+            rationale: None,
+        }];
+        let err = ExecutionRecordPort::create_evaluation_receipt(
             &storage,
             &Evaluation {
                 id: "evaluation:mismatch".into(),
@@ -426,19 +443,16 @@ fn validate_rejects_satisfied_evaluation_when_attempt_candidate_differs() {
                 evaluator_id: "independent".into(),
                 evaluator_version: "1".into(),
                 result: EvaluationResult::Satisfied,
-                evidence_refs: vec!["evidence:test".into()],
+                evidence_refs: aggregate_evidence_refs(&criterion_results),
                 started_at: t0,
                 finished_at: t0,
             },
+            &criterion_results,
         )
         .await
-        .unwrap();
-
-        let err = run_validate(args("candidate-mismatch"), &storage, &vcs)
-            .await
-            .expect_err("mismatched candidate must not validate");
+        .expect_err("mismatched candidate receipt must be rejected");
         assert!(
-            err.to_string().contains("candidate mismatch"),
+            err.to_string().contains("completed Attempt candidate"),
             "unexpected error: {err}"
         );
 
