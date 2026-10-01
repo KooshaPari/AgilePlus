@@ -10,6 +10,12 @@ use async_trait::async_trait;
 pub trait ExecutionRecordPort: Send + Sync {
     async fn create_spec_revision(&self, revision: &SpecRevision) -> Result<(), DomainError>;
     async fn create_assignment(&self, assignment: &Assignment) -> Result<(), DomainError>;
+    async fn get_active_assignment(&self, wp_id: i64) -> Result<Option<Assignment>, DomainError>;
+    async fn supersede_assignment(
+        &self,
+        previous_assignment_id: &str,
+        replacement: &Assignment,
+    ) -> Result<(), DomainError>;
     async fn create_attempt(&self, attempt: &Attempt) -> Result<(), DomainError>;
     async fn update_attempt_runtime(
         &self,
