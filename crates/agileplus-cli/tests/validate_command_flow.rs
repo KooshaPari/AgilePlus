@@ -432,9 +432,9 @@ fn validate_rejects_legacy_satisfied_evaluation_without_criterion_receipt() {
         {
             let conn = storage.conn_for_bench().unwrap();
             conn.execute(
-                "INSERT INTO evaluations
+                r#"INSERT INTO evaluations
                  (id,assignment_id,attempt_id,candidate_ref,evaluator_id,evaluator_version,result,evidence_refs,started_at,finished_at)
-                 VALUES (?1,?2,?3,?4,?5,?6,'satisfied','["legacy:evidence"]',?7,?7)",
+                 VALUES (?1,?2,?3,?4,?5,?6,'satisfied','["legacy:evidence"]',?7,?7)"#,
                 rusqlite::params![
                     "evaluation:legacy",
                     assignment.id,
