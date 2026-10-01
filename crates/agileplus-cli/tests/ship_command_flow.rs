@@ -162,9 +162,9 @@ fn ship_derives_branches_and_merges_in_sequence_order() {
         assert_eq!(
             sources,
             vec![
-                "feature/merge-feat/wp01",
-                "feature/merge-feat/wp02",
-                "feature/merge-feat/wp10"
+                "feat/merge-feat/WP01",
+                "feat/merge-feat/WP02",
+                "feat/merge-feat/WP10"
             ],
             "WP10 must be zero-padded, and order must follow sequence"
         );
@@ -216,8 +216,8 @@ fn ship_uses_worktree_path_as_branch_when_present() {
             .expect("ship");
         let merges = vcs.merges.lock().unwrap().clone();
         assert_eq!(
-            merges[0].0, "wt-feat-WP01",
-            "worktree file_name wins over the convention"
+            merges[0].0, "feat/wt-feat/WP01",
+            "filesystem worktree path must not masquerade as branch identity"
         );
     })
 }
