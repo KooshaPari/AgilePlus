@@ -14,8 +14,10 @@ use agileplus_domain::domain::event::Event;
 use agileplus_domain::domain::governance_evaluator::{
     GovernanceEvaluationOptions, evaluate_governance_with_options,
 };
+use agileplus_domain::domain::execution::{AttemptStatus, EvaluationResult};
 use agileplus_domain::domain::state_machine::FeatureState;
-use agileplus_domain::ports::{StoragePort, VcsPort};
+use agileplus_domain::domain::work_package::WpState;
+use agileplus_domain::ports::{ExecutionRecordPort, StoragePort, VcsPort};
 use agileplus_events::{EventStore, compute_hash};
 
 #[cfg(test)]
@@ -51,7 +53,7 @@ pub struct ValidateArgs {
 /// Run the `validate` command.
 pub async fn run_validate<S, V>(args: ValidateArgs, storage: &S, vcs: &V) -> Result<()>
 where
-    S: StoragePort + EventStore,
+    S: StoragePort + EventStore + ExecutionRecordPort,
     V: VcsPort,
 {
     let start = std::time::Instant::now();
@@ -169,7 +171,28 @@ where
         );
     }
 
-    // Transition to Validated
+    // Correctness and governance are separate acceptance boundaries.
+    // Governance passed above; now require each WP to have an independently
+    // Satisfied Evaluation bound to the exact completed candidate.
+    let accepted_wps = require_exact_candidate_acceptance(storage, feature.id)
+        .await
+        .context("checking exact-candidate work acceptance")?;
+
+    for wp_id in accepted_wps {
+        let wp = storage
+            .get_work_package(wp_id)
+            .await
+            .context("loading accepted work package")?
+            .ok_or_else(|| anyhow::anyhow!("accepted work package {wp_id} disappeared"))?;
+        if wp.state == WpState::Review {
+            storage
+                .update_wp_state(wp.id, WpState::Done)
+                .await
+                .with_context(|| format!("transitioning WP{} from Review to Done", wp.sequence))?;
+        }
+    }
+
+    // Transition to Validated only after both correctness and governance pass.
     storage
         .update_feature_state(feature.id, FeatureState::Validated)
         .await
@@ -226,6 +249,110 @@ where
     println!("  Report: kitty-specs/{slug}/validation-report.md");
 
     Ok(())
+}
+
+async fn require_exact_candidate_acceptance<S>(
+    storage: &S,
+    feature_id: i64,
+) -> Result<Vec<i64>>
+where
+    S: StoragePort + ExecutionRecordPort,
+{
+    let work_packages = storage
+        .list_wps_by_feature(feature_id)
+        .await
+        .context("listing work packages for acceptance")?;
+    if work_packages.is_empty() {
+        anyhow::bail!(
+            "Feature {feature_id} has no work packages; terminal acceptance cannot be vacuous"
+        );
+    }
+
+    let mut accepted = Vec::with_capacity(work_packages.len());
+    for wp in work_packages {
+        if !matches!(wp.state, WpState::Review | WpState::Done) {
+            anyhow::bail!(
+                "WP{:02} '{}' is in state {:?}; exact-candidate acceptance requires Review or Done",
+                wp.sequence,
+                wp.title,
+                wp.state
+            );
+        }
+
+        let assignment = storage
+            .get_active_assignment(wp.id)
+            .await
+            .with_context(|| format!("loading active assignment for WP{:02}", wp.sequence))?
+            .ok_or_else(|| anyhow::anyhow!("WP{:02} has no active Assignment", wp.sequence))?;
+
+        let evaluations = storage
+            .list_evaluations(&assignment.id)
+            .await
+            .with_context(|| format!("loading evaluations for WP{:02}", wp.sequence))?;
+        let evaluation = evaluations
+            .last()
+            .ok_or_else(|| anyhow::anyhow!("WP{:02} has no Evaluation", wp.sequence))?;
+
+        if evaluation.result != EvaluationResult::Satisfied {
+            anyhow::bail!(
+                "WP{:02} latest Evaluation {} is {:?}, not Satisfied",
+                wp.sequence,
+                evaluation.id,
+                evaluation.result
+            );
+        }
+        if !evaluation.candidate_ref.starts_with("git:") {
+            anyhow::bail!(
+                "WP{:02} Satisfied Evaluation {} is not bound to an exact Git candidate: {}",
+                wp.sequence,
+                evaluation.id,
+                evaluation.candidate_ref
+            );
+        }
+
+        let attempt_id = evaluation.attempt_id.as_deref().ok_or_else(|| {
+            anyhow::anyhow!(
+                "WP{:02} Satisfied Evaluation {} is not bound to an Attempt",
+                wp.sequence,
+                evaluation.id
+            )
+        })?;
+        let attempts = storage
+            .list_attempts(&assignment.id)
+            .await
+            .with_context(|| format!("loading attempts for WP{:02}", wp.sequence))?;
+        let attempt = attempts
+            .iter()
+            .find(|attempt| attempt.id == attempt_id)
+            .ok_or_else(|| {
+                anyhow::anyhow!(
+                    "WP{:02} Evaluation {} references missing Attempt {}",
+                    wp.sequence,
+                    evaluation.id,
+                    attempt_id
+                )
+            })?;
+        if attempt.status != AttemptStatus::Completed {
+            anyhow::bail!(
+                "WP{:02} evaluated Attempt {} is {:?}, not Completed",
+                wp.sequence,
+                attempt.id,
+                attempt.status
+            );
+        }
+        if attempt.result_candidate_ref.as_deref() != Some(evaluation.candidate_ref.as_str()) {
+            anyhow::bail!(
+                "WP{:02} candidate mismatch: Attempt {:?}, Evaluation {}",
+                wp.sequence,
+                attempt.result_candidate_ref,
+                evaluation.candidate_ref
+            );
+        }
+
+        accepted.push(wp.id);
+    }
+
+    Ok(accepted)
 }
 
 async fn get_latest_hash<S: StoragePort>(storage: &S, feature_id: i64) -> [u8; 32] {
