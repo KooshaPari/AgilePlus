@@ -166,7 +166,7 @@ fn ship_dry_run_with_no_wps_succeeds() {
 }
 
 #[test]
-fn ship_derives_branches_and_merges_in_sequence_order() {
+fn ship_merges_exact_accepted_candidates_in_sequence_order() {
     block_on(async {
         let storage = SqliteStorageAdapter::in_memory().unwrap();
         let vcs = RecordingVcs::new();
@@ -184,12 +184,8 @@ fn ship_derives_branches_and_merges_in_sequence_order() {
         let sources: Vec<&str> = merges.iter().map(|(s, _)| s.as_str()).collect();
         assert_eq!(
             sources,
-            vec![
-                "feat/merge-feat/WP01",
-                "feat/merge-feat/WP02",
-                "feat/merge-feat/WP10"
-            ],
-            "WP10 must be zero-padded, and order must follow sequence"
+            vec!["candidate-1", "candidate-2", "candidate-10"],
+            "merge source must be the immutable accepted candidate in WP sequence order"
         );
         assert!(
             merges.iter().all(|(_, t)| t == "main"),
@@ -222,7 +218,7 @@ fn ship_honors_target_branch_override() {
 }
 
 #[test]
-fn ship_uses_worktree_path_as_branch_when_present() {
+fn ship_merges_evaluated_candidate_when_worktree_path_is_present() {
     block_on(async {
         let storage = SqliteStorageAdapter::in_memory().unwrap();
         let vcs = RecordingVcs::new();
@@ -239,8 +235,8 @@ fn ship_uses_worktree_path_as_branch_when_present() {
             .expect("ship");
         let merges = vcs.merges.lock().unwrap().clone();
         assert_eq!(
-            merges[0].0, "feat/wt-feat/WP01",
-            "filesystem worktree path must not masquerade as branch identity"
+            merges[0].0, "candidate-1",
+            "ship must merge the evaluated commit rather than a mutable branch or worktree path"
         );
     })
 }
