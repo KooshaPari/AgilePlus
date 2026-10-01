@@ -211,13 +211,20 @@ where
             );
         }
 
+        let accepted_commit = accepted_candidate
+            .strip_prefix("git:")
+            .ok_or_else(|| anyhow::anyhow!(
+                "{} accepted candidate is not a Git commit: {}",
+                wp_label,
+                accepted_candidate
+            ))?;
         let merge_result = vcs
-            .merge_to_target(branch, &target_branch)
+            .merge_to_target(accepted_commit, &target_branch)
             .await
             .with_context(|| {
                 format!(
-                    "merging {} branch '{}' into '{}'; shipping fails closed on merge errors",
-                    wp_label, branch, target_branch
+                    "merging {} accepted candidate '{}' (from branch '{}') into '{}'; shipping fails closed on merge errors",
+                    wp_label, accepted_commit, branch, target_branch
                 )
             })?;
 
@@ -228,10 +235,11 @@ where
                 .map(|c| c.path.clone())
                 .collect();
             anyhow::bail!(
-                "Merge conflict when merging {} branch '{}' into '{}'.\n\
+                "Merge conflict when merging {} accepted candidate '{}' from branch '{}' into '{}'.\n\
                 Conflicting files:\n  {}\n\
-                Resolve conflicts manually and re-run `agileplus ship`.",
+                Resolve conflicts and re-evaluate the exact candidate before re-running `agileplus ship`.",
                 wp_label,
+                accepted_commit,
                 branch,
                 target_branch,
                 conflicts.join("\n  ")
