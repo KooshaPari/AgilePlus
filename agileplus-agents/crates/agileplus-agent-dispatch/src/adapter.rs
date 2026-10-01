@@ -232,11 +232,7 @@ mod tests {
         async fn remove_worktree(&self, _p: &Path) -> Result<(), DomainError> {
             Ok(())
         }
-        async fn new_commits_since(
-            &self,
-            _p: &Path,
-            _s: &str,
-        ) -> Result<Vec<String>, DomainError> {
+        async fn new_commits_since(&self, _p: &Path, _s: &str) -> Result<Vec<String>, DomainError> {
             Ok(vec![])
         }
     }
