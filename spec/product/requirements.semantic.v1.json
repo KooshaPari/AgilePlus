@@ -1,7 +1,7 @@
 {
-  "schema_version": "0.2.0",
+  "schema_version": "0.3.0",
   "product_id": "PRD-AGILEPLUS",
-  "catalog_status": "accepted_semantic_spine_and_interface_profiles",
+  "catalog_status": "accepted_mature_semantic_contract",
   "count_policy": "derived_only",
   "authority": "spec/product/CANONICAL_SEMANTIC_DECISIONS.md",
   "requirements": [
@@ -633,6 +633,240 @@
       "id": "AP-R-OPTIONAL-FAIL",
       "title": "Optional integration failure cannot redefine core work truth",
       "statement": "Failure/unavailability of optional Plane/NATS/Neo4j/MinIO/P2P/etc profiles is isolated and explicitly degraded.",
+      "journeys": [
+        "AP-J-07"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-OBS-NOINFLUENCE",
+      "title": "Observability cannot alter correctness",
+      "statement": "Metrics/traces/logging/health collection failure or sampling cannot manufacture or erase accepted correctness results.",
+      "journeys": [
+        "AP-J-11"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-OBS-ATTRIB",
+      "title": "Operational evidence is attributable",
+      "statement": "Metrics/traces/health used as evidence identify operation/component/candidate/environment/time sufficiently for interpretation.",
+      "journeys": [
+        "AP-J-12"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-SEC-LEAST",
+      "title": "Least-privilege execution authority",
+      "statement": "Workers/evaluators/integrations receive only authority needed for their bounded operation and authority expiry/revocation is explicit.",
+      "journeys": [
+        "AP-J-03"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-SEC-CRED",
+      "title": "Credential delegation is explicit and auditable",
+      "statement": "Credential use is bound to actor/attempt/purpose/scope where feasible and secrets are not copied into ordinary spec/evidence artifacts.",
+      "journeys": [
+        "AP-J-03"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-SEC-REDACT",
+      "title": "Sensitive evidence redaction preserves references",
+      "statement": "Redaction removes protected payload while retaining allowed immutable receipt/provenance references required for audit.",
+      "journeys": [
+        "AP-J-12"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-PERSIST-DURABLE",
+      "title": "Canonical work state is durable",
+      "statement": "Accepted SpecRevisions, WPs, Assignments, Attempts, Evaluations and promotion history survive supported restart/reopen without identity drift.",
+      "journeys": [
+        "AP-J-07"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-PERSIST-TXN",
+      "title": "Accepted-state mutations are atomic",
+      "statement": "Multi-record accepted-state changes do not expose silently half-applied canonical work truth.",
+      "journeys": [
+        "AP-J-07"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-PERSIST-MIG",
+      "title": "Migrations preserve canonical identities/history",
+      "statement": "Supported schema migration preserves durable identities, relationships and audit/evaluation history or fails with explicit recovery path.",
+      "journeys": [
+        "AP-J-07"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-PERSIST-BACKUP",
+      "title": "Backup/restore preserves work truth",
+      "statement": "Supported backup/restore recovers canonical development/spec/work/evaluation history and detects incompatible/incomplete restore.",
+      "journeys": [
+        "AP-J-07"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-CONFIG-PREC",
+      "title": "Configuration precedence is deterministic",
+      "statement": "Repository/user/environment/profile/tool/provider configuration has documented precedence and identical inputs resolve identically.",
+      "journeys": [
+        "AP-J-08"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-CONFIG-REV",
+      "title": "Acceptance-relevant configuration is revision-bound",
+      "statement": "Evaluator/profile/policy configuration affecting acceptance is identified/versioned in Assignment/Evaluation receipts.",
+      "journeys": [
+        "AP-J-04"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-CONFIG-SECRET",
+      "title": "Secrets are separate from ordinary configuration",
+      "statement": "Secret values use bounded secret mechanisms and do not leak through generated config, logs, prompts or receipts.",
+      "journeys": [
+        "AP-J-03"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-PLUGIN-WORKER",
+      "title": "Worker backends are replaceable",
+      "statement": "Worker/provider adapters implement a stable dispatch/result contract; backend choice does not redefine Assignment or acceptance semantics.",
+      "journeys": [
+        "AP-J-03"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-PLUGIN-EVAL",
+      "title": "Evaluator backends are replaceable but versioned",
+      "statement": "Evaluator implementations may vary while Evaluation records exact evaluator/version and criterion semantics remain accepted-contract authority.",
+      "journeys": [
+        "AP-J-04"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-PLUGIN-STORE",
+      "title": "Storage/integration adapters cannot redefine domain semantics",
+      "statement": "Replaceable persistence/integration adapters preserve canonical identity/status semantics and expose unsupported capabilities explicitly.",
+      "journeys": [
+        "AP-J-07"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-DOC-DOSSIER",
+      "title": "Fresh-context product dossier is sufficient",
+      "statement": "A fresh authorized agent can recover product boundary, canonical semantics, current contract, journeys, oracle rules, decisions, unresolved debt and execution gates without owner replay.",
+      "journeys": [
+        "AP-J-07"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-DOC-PROV",
+      "title": "Raw intent and decision provenance remain reachable",
+      "statement": "Canonical summaries link to raw/historical sources and supersession rationale so abstraction does not erase why decisions exist.",
+      "journeys": [
+        "AP-J-07"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-DOC-STALE",
+      "title": "Documentation authority and staleness are explicit",
+      "statement": "Historical/proposed/superseded documents cannot masquerade as current authority; canonical entrypoints identify their status.",
       "journeys": [
         "AP-J-07"
       ],
