@@ -164,9 +164,8 @@ where
                     .await
                     .context("appending audit entry")?;
 
-                if let Err(e) = ctx.vcs.cleanup_worktree(&worktree_path).await {
-                    tracing::warn!(error = %e, "worktree cleanup failed (non-fatal)");
-                }
+                // Keep the review worktree available until terminal acceptance or an
+                // explicit cleanup policy handles the exact candidate.
             }
             ReviewOutcome::MaxCyclesReached {
                 cycles,
