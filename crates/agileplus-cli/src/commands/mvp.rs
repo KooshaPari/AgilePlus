@@ -351,6 +351,11 @@ pub async fn transition<S: StoragePort>(args: &TransitionArgs, storage: &S) -> R
     match (args.wp, args.story) {
         (Some(wp_id), None) => {
             let target = parse_wp_state(&args.to)?;
+            if target == WpState::Done {
+                bail!(
+                    "direct transition to done is not permitted; terminal acceptance requires an exact candidate-bound evaluation plus governance"
+                );
+            }
             let wp = storage
                 .get_work_package(wp_id)
                 .await
