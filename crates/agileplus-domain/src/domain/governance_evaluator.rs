@@ -261,9 +261,13 @@ pub async fn evaluate_governance_with_options<S: StoragePort>(
                 PolicyCheck::EvidencePresent { evidence_type } => {
                     evaluate_evidence_policy(contract, &evidence, *evidence_type)
                 }
-                PolicyCheck::ManualApproval | PolicyCheck::Automated => {
+                PolicyCheck::ManualApproval => {
                     evaluate_evidence_policy(contract, &evidence, EvidenceType::ManualAttestation)
                 }
+                PolicyCheck::Automated => (
+                    false,
+                    "automated policy requires a concrete evaluator".to_string(),
+                )
                 PolicyCheck::ThresholdMet { metric, min } => {
                     let metrics = storage.get_metrics_by_feature(feature_id).await?;
                     let value = metrics.iter().find_map(|m| match metric.as_str() {
