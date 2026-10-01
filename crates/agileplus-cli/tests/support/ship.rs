@@ -145,7 +145,7 @@ impl RecordingVcs {
         WorktreeInfo {
             path: PathBuf::from(path),
             commit: candidate_commit_for_sequence(1),
-            branch: format!("{slug}/wp01"),
+            branch: format!("feat/{slug}/WP01"),
             feature_slug: slug.to_string(),
             wp_id: "WP01".into(),
         }
@@ -424,9 +424,9 @@ pub async fn seed(
     id
 }
 
-/// Create a Done work package whose `worktree_path` is set, so ship derives
-/// its branch from the worktree name rather than the `feature/{slug}/wpNN`
-/// convention.
+/// Create a Done work package whose `worktree_path` is set. The path is an
+/// execution resource; branch identity remains the Git adapter convention
+/// `feat/<slug>/WPNN` unless an active worktree supplies the exact branch.
 pub async fn seed_with_worktree_wp(
     storage: &SqliteStorageAdapter,
     slug: &str,
