@@ -129,6 +129,29 @@ fn ship_dry_run_makes_no_changes() {
 }
 
 #[test]
+fn ship_rejects_zero_work_packages_outside_dry_run() {
+    block_on(async {
+        let storage = SqliteStorageAdapter::in_memory().unwrap();
+        let vcs = RecordingVcs::new();
+        let id = seed(&storage, "empty-ship", FeatureState::Validated, &[]).await;
+
+        let err = run_ship(args("empty-ship"), &storage, &vcs)
+            .await
+            .expect_err("zero-work promotion must fail closed");
+        assert!(
+            err.to_string().contains("no work packages"),
+            "unexpected error: {err}"
+        );
+        assert!(vcs.merges.lock().unwrap().is_empty());
+        let feature = StoragePort::get_feature_by_id(&storage, id)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(feature.state, FeatureState::Validated);
+    })
+}
+
+#[test]
 fn ship_dry_run_with_no_wps_succeeds() {
     block_on(async {
         let storage = SqliteStorageAdapter::in_memory().unwrap();
