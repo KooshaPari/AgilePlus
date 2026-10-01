@@ -106,13 +106,13 @@ impl VcsPort for FakeVcs {
         Ok(self.worktree.clone())
     }
 
-    async fn remove_worktree(&self, _worktree_path: &PathBuf) -> Result<(), DomainError> {
+    async fn remove_worktree(&self, _worktree_path: &Path) -> Result<(), DomainError> {
         Ok(())
     }
 
     async fn new_commits_since(
         &self,
-        _worktree_path: &PathBuf,
+        _worktree_path: &Path,
         _since_sha: &str,
     ) -> Result<Vec<String>, DomainError> {
         Ok(vec!["cafebabe".to_string()])

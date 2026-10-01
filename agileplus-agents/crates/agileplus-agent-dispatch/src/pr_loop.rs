@@ -107,8 +107,8 @@ fn parse_pr_url_from_gh_output(output: &str) -> Option<String> {
     // `gh pr create` prints the PR URL as the last non-empty line.
     output
         .lines()
-        .filter(|l| l.contains("github.com") && l.contains("/pull/"))
-        .last()
+        .rev()
+        .find(|l| l.contains("github.com") && l.contains("/pull/"))
         .map(str::trim)
         .map(ToOwned::to_owned)
 }

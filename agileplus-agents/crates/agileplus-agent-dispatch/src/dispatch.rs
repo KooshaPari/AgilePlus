@@ -9,7 +9,7 @@ use crate::codex::spawn_codex;
 use crate::ports::VcsPort;
 use crate::types::{AgentConfig, AgentKind, AgentResult, AgentTask, DomainError};
 use futures::future::join_all;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tracing::{info, warn};
 
 // ─── Single-agent dispatch ────────────────────────────────────────────────────
@@ -104,7 +104,7 @@ async fn dispatch_wp_owned(
 }
 
 /// Copy context files into `worktree_root`, logging but not failing on errors.
-async fn copy_context_files(paths: &[PathBuf], worktree_root: &PathBuf) {
+async fn copy_context_files(paths: &[PathBuf], worktree_root: &Path) {
     for src in paths {
         let file_name = src.file_name().unwrap_or_default();
         let dest = worktree_root.join(file_name);
@@ -122,7 +122,7 @@ mod tests {
     use crate::ports::VcsPort;
     use crate::types::{AgentConfig, AgentKind, AgentTask, DomainError};
     use async_trait::async_trait;
-    use std::path::PathBuf;
+    use std::path::{Path, PathBuf};
     use std::sync::Arc;
     use tempfile::tempdir;
 
@@ -136,13 +136,13 @@ mod tests {
             Ok(self.worktree_dir.clone())
         }
 
-        async fn remove_worktree(&self, _path: &PathBuf) -> Result<(), DomainError> {
+        async fn remove_worktree(&self, _path: &Path) -> Result<(), DomainError> {
             Ok(())
         }
 
         async fn new_commits_since(
             &self,
-            _path: &PathBuf,
+            _path: &Path,
             _since: &str,
         ) -> Result<Vec<String>, DomainError> {
             Ok(vec![])

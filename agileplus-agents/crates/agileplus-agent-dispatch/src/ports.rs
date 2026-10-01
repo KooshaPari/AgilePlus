@@ -5,7 +5,7 @@
 
 use crate::types::{CiStatus, DomainError, ReviewComment, ReviewOutcome};
 use async_trait::async_trait;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 // ─── VcsPort ──────────────────────────────────────────────────────────────────
@@ -22,12 +22,12 @@ pub trait VcsPort: Send + Sync {
     ) -> Result<PathBuf, DomainError>;
 
     /// Remove the worktree once the job is complete (optional cleanup).
-    async fn remove_worktree(&self, worktree_path: &PathBuf) -> Result<(), DomainError>;
+    async fn remove_worktree(&self, worktree_path: &Path) -> Result<(), DomainError>;
 
     /// List commit SHAs added to `worktree_path` since `since_sha` (exclusive).
     async fn new_commits_since(
         &self,
-        worktree_path: &PathBuf,
+        worktree_path: &Path,
         since_sha: &str,
     ) -> Result<Vec<String>, DomainError>;
 }

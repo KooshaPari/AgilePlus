@@ -219,7 +219,7 @@ mod tests {
     use crate::ports::VcsPort;
     use crate::types::{AgentConfig, AgentKind, AgentTask, DomainError};
     use async_trait::async_trait;
-    use std::path::PathBuf;
+    use std::path::{Path, PathBuf};
     use tempfile::tempdir;
 
     struct FakeVcs(PathBuf);
@@ -229,12 +229,12 @@ mod tests {
         async fn create_worktree(&self, _f: &str, _w: &str) -> Result<PathBuf, DomainError> {
             Ok(self.0.clone())
         }
-        async fn remove_worktree(&self, _p: &PathBuf) -> Result<(), DomainError> {
+        async fn remove_worktree(&self, _p: &Path) -> Result<(), DomainError> {
             Ok(())
         }
         async fn new_commits_since(
             &self,
-            _p: &PathBuf,
+            _p: &Path,
             _s: &str,
         ) -> Result<Vec<String>, DomainError> {
             Ok(vec![])

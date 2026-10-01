@@ -19,7 +19,7 @@ mod service;
 mod vcs_noop {
     use agileplus_agent_dispatch::{DomainError, VcsPort};
     use async_trait::async_trait;
-    use std::path::PathBuf;
+    use std::path::{Path, PathBuf};
 
     pub struct NoopVcs;
 
@@ -31,14 +31,14 @@ mod vcs_noop {
             Ok(path)
         }
 
-        async fn remove_worktree(&self, path: &PathBuf) -> Result<(), DomainError> {
+        async fn remove_worktree(&self, path: &Path) -> Result<(), DomainError> {
             let _ = tokio::fs::remove_dir_all(path).await;
             Ok(())
         }
 
         async fn new_commits_since(
             &self,
-            _path: &PathBuf,
+            _path: &Path,
             _since: &str,
         ) -> Result<Vec<String>, DomainError> {
             Ok(vec![])
