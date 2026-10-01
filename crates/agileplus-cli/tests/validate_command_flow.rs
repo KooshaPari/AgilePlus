@@ -310,6 +310,15 @@ fn validate_passes_with_evidence_and_transitions() {
             .unwrap()
             .unwrap();
         assert_eq!(f.state, FeatureState::Validated);
+        let wp = StoragePort::get_work_package(&storage, wp_id)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            wp.state,
+            WpState::Done,
+            "WP may become Done only after governance and exact-candidate acceptance both pass"
+        );
         // Audit entry appended with hash chain.
         let id = f.id;
         let trail = StoragePort::get_audit_trail(&storage, id).await.unwrap();
@@ -343,6 +352,156 @@ fn validate_rejects_governance_green_without_exact_candidate_acceptance() {
             err.to_string().contains("exact-candidate work acceptance"),
             "unexpected error: {err}"
         );
+        let feature = StoragePort::get_feature_by_id(&storage, id)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(feature.state, FeatureState::Implementing);
+    })
+}
+
+#[test]
+fn validate_rejects_satisfied_evaluation_when_attempt_candidate_differs() {
+    block_on(async {
+        let storage = SqliteStorageAdapter::in_memory().unwrap();
+        let vcs = GitVcsAdapter::new(std::env::temp_dir());
+        let id = StoragePort::create_feature(&storage, &implementing_feature("candidate-mismatch"))
+            .await
+            .unwrap();
+        StoragePort::create_governance_contract(
+            &storage,
+            &contract_for(id, vec!["FR-MISMATCH:test_result".to_string()]),
+        )
+        .await
+        .unwrap();
+        let wp_id = seed_governance_evidence(&storage, id, "FR-MISMATCH").await;
+
+        let t0 = chrono::Utc::now();
+        let revision = SpecRevision {
+            id: "spec:mismatch".into(),
+            feature_id: id,
+            content_hash: "sha256:mismatch".into(),
+            parent_revision_id: None,
+            accepted_at: t0,
+            authority: "test".into(),
+        };
+        ExecutionRecordPort::create_spec_revision(&storage, &revision)
+            .await
+            .unwrap();
+        let assignment = Assignment {
+            id: "assignment:mismatch".into(),
+            wp_id,
+            spec_revision_id: revision.id,
+            created_at: t0,
+            supersedes_assignment_id: None,
+            status: AssignmentStatus::Active,
+        };
+        ExecutionRecordPort::create_assignment(&storage, &assignment)
+            .await
+            .unwrap();
+        let attempt = Attempt {
+            id: "attempt:mismatch".into(),
+            assignment_id: assignment.id.clone(),
+            worker_id: "worker".into(),
+            backend: "test".into(),
+            job_id: Some("job".into()),
+            worktree_path: Some("/tmp/mismatch".into()),
+            base_candidate_ref: Some("git:base".into()),
+            result_candidate_ref: Some("git:candidate-a".into()),
+            status: AttemptStatus::Completed,
+            failure_class: None,
+            started_at: t0,
+            ended_at: Some(t0),
+        };
+        ExecutionRecordPort::create_attempt(&storage, &attempt)
+            .await
+            .unwrap();
+        ExecutionRecordPort::create_evaluation(
+            &storage,
+            &Evaluation {
+                id: "evaluation:mismatch".into(),
+                assignment_id: assignment.id,
+                attempt_id: Some(attempt.id),
+                candidate_ref: "git:candidate-b".into(),
+                evaluator_id: "independent".into(),
+                evaluator_version: "1".into(),
+                result: EvaluationResult::Satisfied,
+                evidence_refs: vec!["evidence:test".into()],
+                started_at: t0,
+                finished_at: t0,
+            },
+        )
+        .await
+        .unwrap();
+
+        let err = run_validate(args("candidate-mismatch"), &storage, &vcs)
+            .await
+            .expect_err("mismatched candidate must not validate");
+        assert!(
+            err.to_string().contains("candidate mismatch"),
+            "unexpected error: {err}"
+        );
+
+        let feature = StoragePort::get_feature_by_id(&storage, id)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(feature.state, FeatureState::Implementing);
+        let wp = StoragePort::get_work_package(&storage, wp_id)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(wp.state, WpState::Review);
+    })
+}
+
+#[test]
+fn validate_is_atomic_across_work_packages_when_one_lacks_acceptance() {
+    block_on(async {
+        let storage = SqliteStorageAdapter::in_memory().unwrap();
+        let vcs = GitVcsAdapter::new(std::env::temp_dir());
+        let id = StoragePort::create_feature(&storage, &implementing_feature("partial-acceptance"))
+            .await
+            .unwrap();
+        StoragePort::create_governance_contract(
+            &storage,
+            &contract_for(
+                id,
+                vec![
+                    "FR-A:test_result".to_string(),
+                    "FR-B:test_result".to_string(),
+                ],
+            ),
+        )
+        .await
+        .unwrap();
+
+        let wp_a = seed_governance_evidence(&storage, id, "FR-A").await;
+        let wp_b = seed_governance_evidence(&storage, id, "FR-B").await;
+        seed_exact_candidate_acceptance(&storage, id, wp_a).await;
+
+        let err = run_validate(args("partial-acceptance"), &storage, &vcs)
+            .await
+            .expect_err("one accepted WP must not validate the feature");
+        assert!(
+            err.to_string().contains("exact-candidate work acceptance"),
+            "unexpected error: {err}"
+        );
+
+        let first = StoragePort::get_work_package(&storage, wp_a)
+            .await
+            .unwrap()
+            .unwrap();
+        let second = StoragePort::get_work_package(&storage, wp_b)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            first.state,
+            WpState::Review,
+            "accepted sibling must not transition early when another WP blocks feature acceptance"
+        );
+        assert_eq!(second.state, WpState::Review);
         let feature = StoragePort::get_feature_by_id(&storage, id)
             .await
             .unwrap()
