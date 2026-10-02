@@ -193,7 +193,7 @@ where
     };
 
     // Process WPs
-    let mut completed: HashSet<i64> = all_wps
+    let completed: HashSet<i64> = all_wps
         .iter()
         .filter(|wp| wp.state == WpState::Done)
         .map(|wp| wp.id)
@@ -599,13 +599,13 @@ where
                     .unwrap_or_else(|| format!("unresolved:job:{job_id}"));
                 let exact_failed_candidate = failed_candidate_ref
                     .starts_with("git:")
-                    .then_some(failed_candidate_ref.as_str());
+                    .then(|| failed_candidate_ref.clone());
                 storage
                     .create_evaluation(&Evaluation {
                         id: format!("evaluation:{}:{}", wp.id, ended_at.timestamp_micros()),
                         assignment_id: assignment_id.clone(),
                         attempt_id: Some(attempt_id.clone()),
-                        candidate_ref: failed_candidate_ref,
+                        candidate_ref: failed_candidate_ref.clone(),
                         evaluator_id: "legacy-review-loop".into(),
                         evaluator_version: "v1".into(),
                         result: EvaluationResult::Unsatisfied,
@@ -620,7 +620,7 @@ where
                         &attempt_id,
                         AttemptStatus::Failed,
                         Some(&job_id),
-                        exact_failed_candidate,
+                        exact_failed_candidate.as_deref(),
                         Some("max_review_cycles"),
                         Some(ended_at),
                     )
