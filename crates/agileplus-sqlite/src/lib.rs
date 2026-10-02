@@ -88,6 +88,41 @@ impl SqliteStorageAdapter {
     }
 }
 
+
+#[async_trait::async_trait]
+impl agileplus_domain::ports::TerminalAcceptancePort for SqliteStorageAdapter {
+    async fn commit_terminal_acceptance(
+        &self,
+        mutation: &agileplus_domain::ports::TerminalAcceptanceMutation,
+    ) -> Result<(), DomainError> {
+        use agileplus_domain::domain::{
+            state_machine::FeatureState,
+            work_package::WpState,
+        };
+
+        let mut conn = self.lock()?;
+        let tx = conn
+            .transaction()
+            .map_err(|e| DomainError::Storage(format!("begin acceptance transaction: {e}")))?;
+
+        for wp_id in &mutation.wp_ids_to_complete {
+            repository::work_packages::update_wp_state(&tx, *wp_id, WpState::Done)?;
+        }
+        repository::features::update_feature_state(
+            &tx,
+            mutation.feature_id,
+            FeatureState::Validated,
+        )?;
+        for entry in &mutation.audit_entries {
+            repository::audit::append_audit_entry(&tx, entry)?;
+        }
+
+        tx.commit()
+            .map_err(|e| DomainError::Storage(format!("commit acceptance transaction: {e}")))?;
+        Ok(())
+    }
+}
+
 #[async_trait::async_trait]
 impl agileplus_domain::ports::ExecutionRecordPort for SqliteStorageAdapter {
     async fn create_spec_revision(
