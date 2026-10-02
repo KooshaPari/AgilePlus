@@ -9,14 +9,12 @@ use std::path::PathBuf;
 use anyhow::{Context, Result};
 use chrono::Utc;
 
-use agileplus_application::use_cases::acceptance::require_feature_acceptance;
-use agileplus_domain::domain::audit::{AuditEntry, hash_entry};
+use agileplus_application::use_cases::accept_feature::{GovernanceReceipt, accept_feature};
 use agileplus_domain::domain::event::Event;
 use agileplus_domain::domain::governance_evaluator::{
     GovernanceEvaluationOptions, evaluate_governance_with_options,
 };
 use agileplus_domain::domain::state_machine::FeatureState;
-use agileplus_domain::domain::work_package::WpState;
 use agileplus_domain::ports::{ExecutionRecordPort, StoragePort, VcsPort};
 use agileplus_events::{EventStore, compute_hash};
 
@@ -171,79 +169,20 @@ where
         );
     }
 
-    // Correctness and governance are separate acceptance boundaries.
-    // Governance passed above; now require each WP to have an independently
-    // Satisfied Evaluation bound to the exact completed candidate.
-    let accepted = require_feature_acceptance(storage, feature.id)
-        .await
-        .map_err(anyhow::Error::new)
-        .context("checking exact-candidate work acceptance")?;
-
-    for accepted_candidate in accepted {
-        let wp = storage
-            .get_work_package(accepted_candidate.wp_id)
-            .await
-            .context("loading accepted work package")?
-            .ok_or_else(|| anyhow::anyhow!("accepted work package {wp_id} disappeared"))?;
-        if wp.state == WpState::Review {
-            storage
-                .update_wp_state(wp.id, WpState::Done)
-                .await
-                .with_context(|| format!("transitioning WP{} from Review to Done", wp.sequence))?;
-
-            let prev_hash = get_latest_hash(storage, feature.id).await;
-            let mut wp_audit = AuditEntry {
-                id: 0,
-                feature_id: feature.id,
-                wp_id: Some(wp.id),
-                timestamp: Utc::now(),
-                actor: "validator".into(),
-                transition: format!(
-                    "WP{:02} Review -> Done (exact-candidate correctness + governance accepted)",
-                    wp.sequence
-                ),
-                evidence_refs: vec![],
-                prev_hash,
-                hash: [0u8; 32],
-                event_id: None,
-                archived_to: None,
-            };
-            wp_audit.hash = hash_entry(&wp_audit);
-            storage
-                .append_audit_entry(&wp_audit)
-                .await
-                .with_context(|| {
-                    format!("recording terminal acceptance for WP{:02}", wp.sequence)
-                })?;
-        }
-    }
-
-    // Transition to Validated only after both correctness and governance pass.
-    storage
-        .update_feature_state(feature.id, FeatureState::Validated)
-        .await
-        .context("transitioning feature to Validated")?;
-
-    // Append audit entry
-    let prev_hash = get_latest_hash(storage, feature.id).await;
-    let mut audit = AuditEntry {
-        id: 0,
-        feature_id: feature.id,
-        wp_id: None,
-        timestamp: Utc::now(),
-        actor: "user".into(),
-        transition: "Implementing -> Validated".into(),
-        evidence_refs: vec![],
-        prev_hash,
-        hash: [0u8; 32],
-        event_id: None,
-        archived_to: None,
-    };
-    audit.hash = hash_entry(&audit);
-    storage
-        .append_audit_entry(&audit)
-        .await
-        .context("appending audit entry")?;
+    // Correctness and governance are separate inputs to one canonical terminal
+    // mutation use case. It preflights every WP before the first state write.
+    accept_feature(
+        storage,
+        feature.id,
+        GovernanceReceipt {
+            passed: overall_pass,
+            authoritative: authoritative_transition,
+        },
+        "user",
+    )
+    .await
+    .map_err(anyhow::Error::new)
+    .context("accepting exact-candidate work and transitioning feature")?;
 
     append_feature_transition_event(storage, feature.id, "Implementing", "Validated", "user")
         .await
@@ -275,13 +214,6 @@ where
     println!("  Report: kitty-specs/{slug}/validation-report.md");
 
     Ok(())
-}
-
-async fn get_latest_hash<S: StoragePort>(storage: &S, feature_id: i64) -> [u8; 32] {
-    match storage.get_latest_audit_entry(feature_id).await {
-        Ok(Some(entry)) => entry.hash,
-        _ => [0u8; 32],
-    }
 }
 
 async fn append_feature_transition_event<S: EventStore>(
