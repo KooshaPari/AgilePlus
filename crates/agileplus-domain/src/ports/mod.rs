@@ -8,6 +8,7 @@ pub mod observability;
 pub mod review;
 pub mod storage;
 pub mod story;
+pub mod terminal_acceptance;
 pub mod traceability_port;
 pub mod vcs;
 
@@ -17,6 +18,7 @@ pub use execution::ExecutionRecordPort;
 pub use observability::ObservabilityPort;
 pub use review::ReviewPort;
 pub use story::StoryRepository;
+pub use terminal_acceptance::{TerminalAcceptanceMutation, TerminalAcceptancePort};
 pub use vcs::{BranchInfo, ConflictInfo, FeatureArtifacts, MergeResult, VcsPort, WorktreeInfo};
 
 use async_trait::async_trait;
