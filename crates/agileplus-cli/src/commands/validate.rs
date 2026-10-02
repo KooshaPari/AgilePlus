@@ -192,6 +192,29 @@ where
                 .update_wp_state(wp.id, WpState::Done)
                 .await
                 .with_context(|| format!("transitioning WP{} from Review to Done", wp.sequence))?;
+
+            let prev_hash = get_latest_hash(storage, feature.id).await;
+            let mut wp_audit = AuditEntry {
+                id: 0,
+                feature_id: feature.id,
+                wp_id: Some(wp.id),
+                timestamp: Utc::now(),
+                actor: "validator".into(),
+                transition: format!(
+                    "WP{:02} Review -> Done (exact-candidate correctness + governance accepted)",
+                    wp.sequence
+                ),
+                evidence_refs: vec![],
+                prev_hash,
+                hash: [0u8; 32],
+                event_id: None,
+                archived_to: None,
+            };
+            wp_audit.hash = hash_entry(&wp_audit);
+            storage
+                .append_audit_entry(&wp_audit)
+                .await
+                .with_context(|| format!("recording terminal acceptance for WP{:02}", wp.sequence))?;
         }
     }
 
