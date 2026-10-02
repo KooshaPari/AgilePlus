@@ -469,10 +469,10 @@ async fn resolve_branch_commit<V: VcsPort>(vcs: &V, branch: &str) -> Result<Stri
 }
 
 async fn resolve_source_commit<V: VcsPort>(vcs: &V, branch: &str) -> Result<String> {
-    if let Ok(worktrees) = vcs.list_worktrees().await {
-        if let Some(worktree) = worktrees.iter().find(|worktree| worktree.branch == branch) {
-            return Ok(worktree.commit.clone());
-        }
+    if let Ok(worktrees) = vcs.list_worktrees().await
+        && let Some(worktree) = worktrees.iter().find(|worktree| worktree.branch == branch)
+    {
+        return Ok(worktree.commit.clone());
     }
     resolve_branch_commit(vcs, branch).await
 }
