@@ -49,44 +49,72 @@ where
     O: ObservabilityPort + Send + Sync + 'static,
 {
     // Mounted under the existing API-key middleware. Actor is server-controlled.
-    let port = state.atomic_acceptance.as_ref().map(Arc::clone).ok_or_else(|| (
-        StatusCode::NOT_IMPLEMENTED,
-        Json(json!({"error":"atomic_acceptance_not_configured"})),
-    ))?;
-    let feature = state.storage.get_feature_by_slug(&slug).await.map_err(domain_error)?
-        .ok_or_else(|| (StatusCode::NOT_FOUND, Json(json!({"error":"feature_not_found"}))))?;
+    let port = state
+        .atomic_acceptance
+        .as_ref()
+        .map(Arc::clone)
+        .ok_or_else(|| {
+            (
+                StatusCode::NOT_IMPLEMENTED,
+                Json(json!({"error":"atomic_acceptance_not_configured"})),
+            )
+        })?;
+    let feature = state
+        .storage
+        .get_feature_by_slug(&slug)
+        .await
+        .map_err(domain_error)?
+        .ok_or_else(|| {
+            (
+                StatusCode::NOT_FOUND,
+                Json(json!({"error":"feature_not_found"})),
+            )
+        })?;
     let command = AcceptFeatureCommand {
         request_id: request.request_id,
         feature_id: feature.id,
         actor: "http:api-key".into(),
         expected_governance_version: request.expected_governance_version,
     };
-    command.validate().map_err(|e| (
-        StatusCode::BAD_REQUEST, Json(json!({"error":e.to_string()})),
-    ))?;
-    let outcome = accept_feature(port.as_ref(), &command).await.map_err(|error| match error {
-        AppError::Domain(error) => domain_error(error),
-        AppError::NotFound(_) => (StatusCode::NOT_FOUND, Json(json!({"error":"not_found"}))),
-        other => {
-            tracing::error!(%other, "atomic acceptance failed");
-            (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error":"acceptance_persistence_failed"})))
-        }
+    command.validate().map_err(|e| {
+        (
+            StatusCode::BAD_REQUEST,
+            Json(json!({"error":e.to_string()})),
+        )
     })?;
+    let outcome = accept_feature(port.as_ref(), &command)
+        .await
+        .map_err(|error| match error {
+            AppError::Domain(error) => domain_error(error),
+            AppError::NotFound(_) => (StatusCode::NOT_FOUND, Json(json!({"error":"not_found"}))),
+            other => {
+                tracing::error!(%other, "atomic acceptance failed");
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(json!({"error":"acceptance_persistence_failed"})),
+                )
+            }
+        })?;
     Ok(Json(outcome))
 }
 
 fn domain_error(error: DomainError) -> HttpError {
     match error {
         DomainError::Validation(message) | DomainError::Conflict(message) => (
-            StatusCode::CONFLICT, Json(json!({"error":"acceptance_rejected", "message":message})),
+            StatusCode::CONFLICT,
+            Json(json!({"error":"acceptance_rejected", "message":message})),
         ),
         DomainError::NotFound(_) => (StatusCode::NOT_FOUND, Json(json!({"error":"not_found"}))),
         DomainError::NotImplemented => (
-            StatusCode::NOT_IMPLEMENTED, Json(json!({"error":"atomic_acceptance_not_supported"})),
+            StatusCode::NOT_IMPLEMENTED,
+            Json(json!({"error":"atomic_acceptance_not_supported"})),
         ),
         other => {
             tracing::error!(%other, "atomic acceptance persistence failed");
-            (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error":"acceptance_persistence_failed"})))
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"error":"acceptance_persistence_failed"})),
+            )
         }
     }
 }
