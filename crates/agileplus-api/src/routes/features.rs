@@ -168,6 +168,12 @@ where
         .map(parse_feature_state)
         .transpose()?
         .unwrap_or(FeatureState::Created);
+    if matches!(initial_state, FeatureState::Validated | FeatureState::Shipped) {
+        return Err(ApiError::BadRequest(
+            "terminal feature states cannot be assigned at creation; use canonical acceptance/promotion"
+                .to_string(),
+        ));
+    }
 
     let slug = body.title.to_lowercase().replace(' ', "-");
     let now = Utc::now();
