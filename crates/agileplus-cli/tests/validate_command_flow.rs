@@ -341,7 +341,9 @@ fn validate_passes_with_evidence_and_transitions() {
             trail.iter().any(|entry| {
                 entry.wp_id == Some(wp_id)
                     && entry.transition.contains("Review -> Done")
-                    && entry.transition.contains("correctness + governance accepted")
+                    && entry
+                        .transition
+                        .contains("correctness + governance accepted")
             }),
             "terminal WP acceptance must have its own audit receipt: {trail:?}"
         );

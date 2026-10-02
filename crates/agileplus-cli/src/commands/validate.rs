@@ -214,7 +214,9 @@ where
             storage
                 .append_audit_entry(&wp_audit)
                 .await
-                .with_context(|| format!("recording terminal acceptance for WP{:02}", wp.sequence))?;
+                .with_context(|| {
+                    format!("recording terminal acceptance for WP{:02}", wp.sequence)
+                })?;
         }
     }
 
