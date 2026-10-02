@@ -168,7 +168,10 @@ where
         .map(parse_feature_state)
         .transpose()?
         .unwrap_or(FeatureState::Created);
-    if matches!(initial_state, FeatureState::Validated | FeatureState::Shipped) {
+    if matches!(
+        initial_state,
+        FeatureState::Validated | FeatureState::Shipped
+    ) {
         return Err(ApiError::BadRequest(
             "terminal feature states cannot be assigned at creation; use canonical acceptance/promotion"
                 .to_string(),
@@ -388,7 +391,10 @@ mod tests {
     #[test]
     fn terminal_feature_states_are_not_generic_transition_targets() {
         for target in [FeatureState::Validated, FeatureState::Shipped] {
-            assert!(matches!(target, FeatureState::Validated | FeatureState::Shipped));
+            assert!(matches!(
+                target,
+                FeatureState::Validated | FeatureState::Shipped
+            ));
         }
     }
 
