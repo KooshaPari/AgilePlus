@@ -1,0 +1,54 @@
+name: Recovery Acceptance Witnesses
+on:
+  push:
+    branches: [spec/mature-product-contract-v2]
+    paths:
+      - 'crates/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - '.github/workflows/recovery-acceptance.yml'
+permissions:
+  contents: read
+concurrency:
+  group: recovery-acceptance-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  atomic-acceptance:
+    # Public standard runner only: never fall back to paid private/larger runners.
+    if: github.repository == 'KooshaPari/AgilePlus' && github.event.repository.private == false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      CARGO_BUILD_JOBS: '2'
+      CARGO_TERM_COLOR: never
+      RUST_BACKTRACE: '1'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - id: toolchain
+        uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87
+        with:
+          toolchain: stable
+          components: rustfmt, clippy
+      - name: Exact evidence identity
+        run: |
+          git rev-parse HEAD
+          git rev-parse HEAD^{tree}
+          rustc --version
+          cargo --version
+      - name: SQLite atomic acceptance and failure injection
+        run: cargo test --locked -p agileplus-sqlite --test atomic_acceptance -- --nocapture
+      - name: Migration regression tests
+        if: ${{ !cancelled() && steps.toolchain.outcome == 'success' }}
+        run: cargo test --locked -p agileplus-sqlite --lib migrations::tests -- --nocapture
+      - name: Mounted HTTP acceptance
+        if: ${{ !cancelled() && steps.toolchain.outcome == 'success' }}
+        run: cargo test --locked -p agileplus-api --test atomic_acceptance_http -- --nocapture
+      - name: CLI acceptance and candidate continuity
+        if: ${{ !cancelled() && steps.toolchain.outcome == 'success' }}
+        run: cargo test --locked -p agileplus-cli --test validate_command_flow --test ship_command_flow --test implement_command_flow -- --nocapture
+      - name: Formatting gate is independent of executed tests
+        if: ${{ !cancelled() && steps.toolchain.outcome == 'success' }}
+        run: cargo fmt --all -- --check

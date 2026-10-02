@@ -1,4 +1,4 @@
-//! Focused persistence port for immutable execution records.
+//! Focused persistence ports for execution records and atomic acceptance.
 
 use crate::{
     domain::execution::{
@@ -55,4 +55,17 @@ pub trait ExecutionRecordPort: Send + Sync {
         &self,
         evaluation_id: &str,
     ) -> Result<Vec<CriterionEvaluation>, DomainError>;
+}
+
+/// Focused, all-or-nothing acceptance capability; separate from generic StoragePort.
+/// Implementations must evaluate current governance/correctness under their write
+/// transaction and commit state, audit, event, and idempotency receipt together.
+#[async_trait]
+pub trait AtomicAcceptancePort: Send + Sync {
+    async fn accept_feature_atomic(
+        &self,
+        _command: &crate::domain::acceptance::AcceptFeatureCommand,
+    ) -> Result<crate::domain::acceptance::AcceptanceOutcome, DomainError> {
+        Err(DomainError::NotImplemented)
+    }
 }

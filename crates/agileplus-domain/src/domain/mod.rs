@@ -5,6 +5,7 @@
 //! directory forms (the flat `.rs` duplicates were removed to fix the E0761 that
 //! #873 originally addressed and #877 reintroduced).
 
+pub mod acceptance;
 pub mod api_key;
 pub mod audit;
 pub mod backlog;
