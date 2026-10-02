@@ -268,6 +268,7 @@ mod tests {
         ports::{ExecutionRecordPort, StoragePort},
     };
     use crate::SqliteStorageAdapter;
+    use rusqlite::params;
 
     async fn fixture() -> (SqliteStorageAdapter, i64, i64) {
         let db = SqliteStorageAdapter::in_memory().expect("db");
