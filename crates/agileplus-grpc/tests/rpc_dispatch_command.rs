@@ -234,20 +234,21 @@ async fn dispatch_command_plan_binds_a_default_governance_contract() {
 }
 
 #[tokio::test]
-async fn dispatch_command_validate_skips_the_gate_when_no_contract_exists() {
+async fn dispatch_command_validate_cannot_bypass_canonical_acceptance() {
     let harness = Harness::new().await;
     harness
         .seed_feature("alpha", FeatureState::Implementing)
         .await;
 
-    let result = dispatch(&harness, "validate", "alpha", &[])
+    let status = dispatch(&harness, "validate", "alpha", &[])
         .await
-        .expect("validate should succeed without a contract");
+        .expect_err("generic gRPC validate must fail closed");
 
-    assert!(result.success);
+    assert_eq!(status.code(), Code::Unimplemented);
+    assert!(status.message().contains("canonical acceptance"));
     assert_eq!(
         harness.persisted_feature("alpha").await.state,
-        FeatureState::Validated
+        FeatureState::Implementing
     );
 }
 
@@ -270,6 +271,23 @@ async fn dispatch_command_rejects_an_invalid_transition() {
         harness.persisted_feature("alpha").await.state,
         FeatureState::Created,
         "a rejected transition must not be persisted"
+    );
+}
+
+#[tokio::test]
+async fn dispatch_command_ship_cannot_bypass_canonical_promotion() {
+    let harness = Harness::new().await;
+    harness.seed_feature("alpha", FeatureState::Validated).await;
+
+    let status = dispatch(&harness, "ship", "alpha", &[])
+        .await
+        .expect_err("generic gRPC ship must fail closed");
+
+    assert_eq!(status.code(), Code::Unimplemented);
+    assert!(status.message().contains("canonical acceptance/promotion"));
+    assert_eq!(
+        harness.persisted_feature("alpha").await.state,
+        FeatureState::Validated
     );
 }
 
@@ -302,18 +320,14 @@ async fn dispatch_command_validate_blocks_when_required_evidence_is_missing() {
 
     let status = dispatch(&harness, "validate", "alpha", &[])
         .await
-        .expect_err("a governance violation must block validate");
+        .expect_err("generic gRPC validate must not bypass canonical acceptance");
 
-    assert_eq!(status.code(), Code::FailedPrecondition);
-    assert!(status.message().contains("governance violation"));
-    assert!(status.message().contains("FR-7:test_result"));
-    // Observed ordering: `dispatch_core_command` persists the new state before it
-    // evaluates the governance gate, so a gate failure still leaves the feature
-    // in `validated`. Pinned here so the behaviour change is noticed when the
-    // ordering is fixed (defect report: WP14-T079 follow-up).
+    assert_eq!(status.code(), Code::Unimplemented);
+    assert!(status.message().contains("canonical acceptance"));
     assert_eq!(
         harness.persisted_feature("alpha").await.state,
-        FeatureState::Validated
+        FeatureState::Implementing,
+        "rejected transport-local validation must not mutate feature state"
     );
 }
 
