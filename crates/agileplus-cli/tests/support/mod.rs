@@ -9,6 +9,7 @@
 #![allow(dead_code)]
 
 pub mod implement;
+pub mod plan;
 pub mod queue;
 pub mod review_loop;
 pub mod ship;
