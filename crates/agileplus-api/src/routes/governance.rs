@@ -102,7 +102,7 @@ where
             ApiError::NotFound(format!("No governance contract for feature '{slug}'"))
         })?;
 
-    let evaluation = evaluate_governance(&state.storage, &contract, feature.id)
+    let evaluation = evaluate_governance(state.storage.as_ref(), &contract, feature.id)
         .await
         .map_err(ApiError::from)?;
     let result = if !evaluation.configured(&contract) {
