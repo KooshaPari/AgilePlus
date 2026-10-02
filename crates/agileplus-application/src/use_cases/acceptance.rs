@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Read-only preflight shares its pure correctness oracle with atomic acceptance.
 
+use crate::error::AppError;
 pub use agileplus_domain::domain::acceptance::AcceptedCandidate;
 use agileplus_domain::{
     domain::{acceptance::validate_candidate, work_package::WorkPackage},
     error::DomainError,
     ports::{ExecutionRecordPort, StoragePort},
 };
-use crate::error::AppError;
 
 pub async fn accepted_candidate_for_wp<S>(
     storage: &S,
@@ -16,15 +16,24 @@ pub async fn accepted_candidate_for_wp<S>(
 where
     S: StoragePort + ExecutionRecordPort,
 {
-    let assignment = storage.get_active_assignment(wp.id).await?
-        .ok_or_else(|| DomainError::Validation(format!("WP{:02} has no active Assignment", wp.sequence)))?;
+    let assignment = storage.get_active_assignment(wp.id).await?.ok_or_else(|| {
+        DomainError::Validation(format!("WP{:02} has no active Assignment", wp.sequence))
+    })?;
     let evaluations = storage.list_evaluations(&assignment.id).await?;
-    let evaluation = evaluations.last()
-        .ok_or_else(|| DomainError::Validation(format!("WP{:02} has no Evaluation", wp.sequence)))?;
+    let evaluation = evaluations.last().ok_or_else(|| {
+        DomainError::Validation(format!("WP{:02} has no Evaluation", wp.sequence))
+    })?;
     let criteria = storage.list_assignment_criteria(&assignment.id).await?;
     let results = storage.list_criterion_results(&evaluation.id).await?;
     let attempts = storage.list_attempts(&assignment.id).await?;
-    Ok(validate_candidate(wp, &assignment, evaluation, &criteria, &results, &attempts)?)
+    Ok(validate_candidate(
+        wp,
+        &assignment,
+        evaluation,
+        &criteria,
+        &results,
+        &attempts,
+    )?)
 }
 
 /// Read-only preflight is not a token authorizing subsequent writes.
@@ -40,7 +49,8 @@ where
     if work_packages.is_empty() {
         return Err(DomainError::Validation(format!(
             "Feature {feature_id} has no work packages; terminal acceptance cannot be vacuous"
-        )).into());
+        ))
+        .into());
     }
     let mut accepted = Vec::with_capacity(work_packages.len());
     for wp in &work_packages {

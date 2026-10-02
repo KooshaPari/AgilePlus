@@ -18,22 +18,68 @@ async fn acceptance_commits_states_audit_event_and_receipt_together() {
     assert_eq!(outcome.receipt.audit_ids.len(), 3);
     assert_eq!(f.count("events"), 1);
     assert_eq!(f.count("feature_acceptance_receipts"), 1);
-    assert_eq!(StoragePort::get_feature_by_id(&f.db, f.feature_id).await.unwrap().unwrap().state, FeatureState::Validated);
+    assert_eq!(
+        StoragePort::get_feature_by_id(&f.db, f.feature_id)
+            .await
+            .unwrap()
+            .unwrap()
+            .state,
+        FeatureState::Validated
+    );
     for wp in &f.wp_ids {
-        assert_eq!(StoragePort::get_work_package(&f.db, *wp).await.unwrap().unwrap().state, WpState::Done);
+        assert_eq!(
+            StoragePort::get_work_package(&f.db, *wp)
+                .await
+                .unwrap()
+                .unwrap()
+                .state,
+            WpState::Done
+        );
     }
-    AuditChain { entries: StoragePort::get_audit_trail(&f.db, f.feature_id).await.unwrap() }.verify_chain().unwrap();
-    let events = agileplus_sqlite::repository::events::get_events(&f.db.conn_for_bench().unwrap(), "feature", f.feature_id).unwrap();
+    AuditChain {
+        entries: StoragePort::get_audit_trail(&f.db, f.feature_id)
+            .await
+            .unwrap(),
+    }
+    .verify_chain()
+    .unwrap();
+    let events = agileplus_sqlite::repository::events::get_events(
+        &f.db.conn_for_bench().unwrap(),
+        "feature",
+        f.feature_id,
+    )
+    .unwrap();
     assert_eq!(events[0].payload["acceptance_request_id"], "request:atomic");
-    assert_eq!(events[0].payload["accepted_candidates"].as_array().unwrap().len(), 2);
-    assert_eq!(events[0].hash, agileplus_events::compute_hash(events[0].entity_id, &events[0].entity_type,
-        &events[0].event_type, &events[0].payload, events[0].timestamp, &events[0].actor, &events[0].prev_hash).unwrap());
+    assert_eq!(
+        events[0].payload["accepted_candidates"]
+            .as_array()
+            .unwrap()
+            .len(),
+        2
+    );
+    assert_eq!(
+        events[0].hash,
+        agileplus_events::compute_hash(
+            events[0].entity_id,
+            &events[0].entity_type,
+            &events[0].event_type,
+            &events[0].payload,
+            events[0].timestamp,
+            &events[0].actor,
+            &events[0].prev_hash
+        )
+        .unwrap()
+    );
 }
 
 #[tokio::test]
 async fn failures_at_every_write_boundary_roll_back_everything() {
     for (table, operation, condition) in [
-        ("work_packages", "UPDATE", "NEW.sequence=2 AND NEW.state='done'"),
+        (
+            "work_packages",
+            "UPDATE",
+            "NEW.sequence=2 AND NEW.state='done'",
+        ),
         ("audit_log", "INSERT", "1"),
         ("features", "UPDATE", "NEW.state='validated'"),
         ("events", "INSERT", "1"),
@@ -41,10 +87,15 @@ async fn failures_at_every_write_boundary_roll_back_everything() {
     ] {
         let f = seed(SqliteStorageAdapter::in_memory().unwrap()).await;
         f.sql(&format!("CREATE TRIGGER reject_acceptance BEFORE {operation} ON {table} WHEN {condition} BEGIN SELECT RAISE(ABORT,'injected failure'); END;"));
-        assert!(f.db.accept_feature_atomic(&f.command()).await.is_err(), "{table}");
+        assert!(
+            f.db.accept_feature_atomic(&f.command()).await.is_err(),
+            "{table}"
+        );
         f.assert_unchanged().await;
         f.sql("DROP TRIGGER reject_acceptance;");
-        f.db.accept_feature_atomic(&f.command()).await.expect("same request can retry after rollback");
+        f.db.accept_feature_atomic(&f.command())
+            .await
+            .expect("same request can retry after rollback");
         assert_eq!(f.count("feature_acceptance_receipts"), 1);
     }
 }
@@ -83,7 +134,10 @@ async fn current_attempt_or_candidate_drift_prevents_any_acceptance() {
     ] {
         let f = seed(SqliteStorageAdapter::in_memory().unwrap()).await;
         f.sql(mutation);
-        assert!(f.db.accept_feature_atomic(&f.command()).await.is_err(), "{mutation}");
+        assert!(
+            f.db.accept_feature_atomic(&f.command()).await.is_err(),
+            "{mutation}"
+        );
         f.assert_unchanged().await;
     }
 }
@@ -113,13 +167,26 @@ async fn receipts_cannot_be_silently_rewritten_or_deleted() {
     let f = seed(SqliteStorageAdapter::in_memory().unwrap()).await;
     f.db.accept_feature_atomic(&f.command()).await.unwrap();
     let conn = f.db.conn_for_bench().unwrap();
-    assert!(conn.execute("UPDATE feature_acceptance_receipts SET receipt_json='{}'", []).is_err());
-    assert!(conn.execute("DELETE FROM feature_acceptance_receipts", []).is_err());
+    assert!(
+        conn.execute(
+            "UPDATE feature_acceptance_receipts SET receipt_json='{}'",
+            []
+        )
+        .is_err()
+    );
+    assert!(
+        conn.execute("DELETE FROM feature_acceptance_receipts", [])
+            .is_err()
+    );
 }
 
 #[tokio::test]
 async fn file_reopen_preserves_atomic_receipt_and_replay() {
-    let path = std::env::temp_dir().join(format!("agileplus-acceptance-{}-{}.db", std::process::id(), chrono::Utc::now().timestamp_nanos_opt().unwrap()));
+    let path = std::env::temp_dir().join(format!(
+        "agileplus-acceptance-{}-{}.db",
+        std::process::id(),
+        chrono::Utc::now().timestamp_nanos_opt().unwrap()
+    ));
     let command;
     let receipt;
     {
@@ -132,7 +199,14 @@ async fn file_reopen_preserves_atomic_receipt_and_replay() {
         let replay = db.accept_feature_atomic(&command).await.unwrap();
         assert!(replay.replayed);
         assert_eq!(replay.receipt, receipt);
-        assert_eq!(StoragePort::get_feature_by_id(&db, command.feature_id).await.unwrap().unwrap().state, FeatureState::Validated);
+        assert_eq!(
+            StoragePort::get_feature_by_id(&db, command.feature_id)
+                .await
+                .unwrap()
+                .unwrap()
+                .state,
+            FeatureState::Validated
+        );
     }
     std::fs::remove_file(path).unwrap();
 }
@@ -143,16 +217,23 @@ async fn concurrent_same_request_commits_once() {
     let command = f.command();
     let db = std::sync::Arc::new(f.db);
     let barrier = std::sync::Arc::new(std::sync::Barrier::new(2));
-    let workers: Vec<_> = (0..2).map(|_| {
-        let db = db.clone();
-        let command = command.clone();
-        let barrier = barrier.clone();
-        std::thread::spawn(move || {
-            let runtime = tokio::runtime::Builder::new_current_thread().enable_all().build().unwrap();
-            barrier.wait();
-            runtime.block_on(db.accept_feature_atomic(&command)).unwrap()
+    let workers: Vec<_> = (0..2)
+        .map(|_| {
+            let db = db.clone();
+            let command = command.clone();
+            let barrier = barrier.clone();
+            std::thread::spawn(move || {
+                let runtime = tokio::runtime::Builder::new_current_thread()
+                    .enable_all()
+                    .build()
+                    .unwrap();
+                barrier.wait();
+                runtime
+                    .block_on(db.accept_feature_atomic(&command))
+                    .unwrap()
+            })
         })
-    }).collect();
+        .collect();
     let outcomes: Vec<_> = workers.into_iter().map(|w| w.join().unwrap()).collect();
     assert_eq!(outcomes[0].receipt, outcomes[1].receipt);
     assert_ne!(outcomes[0].replayed, outcomes[1].replayed);

@@ -18,7 +18,8 @@ async fn main() -> Result<()> {
     if env::args().any(|a| a == "--dump-openapi") {
         use utoipa::OpenApi;
         let openapi = agileplus_api::openapi::ApiDoc::openapi();
-        let yaml = serde_yaml::to_string(&openapi).context("failed to serialize OpenAPI to YAML")?;
+        let yaml =
+            serde_yaml::to_string(&openapi).context("failed to serialize OpenAPI to YAML")?;
         print!("{yaml}");
         return Ok(());
     }
@@ -34,14 +35,20 @@ async fn main() -> Result<()> {
     import_api_key(credentials.as_ref(), &api_key).map_err(|err| anyhow!(err.to_string()))?;
     let state = AppState::new(storage, vcs, telemetry, Arc::new(config), credentials)
         .with_atomic_acceptance();
-    agileplus_api::router::start_api(addr, state).await.map_err(|err| anyhow!(err.to_string()))?;
+    agileplus_api::router::start_api(addr, state)
+        .await
+        .map_err(|err| anyhow!(err.to_string()))?;
     Ok(())
 }
 
 struct NoOpObservability;
 impl ObservabilityPort for NoOpObservability {
     fn start_span(&self, _n: &str, _p: Option<&SpanContext>) -> SpanContext {
-        SpanContext { trace_id: String::new(), span_id: String::new(), parent_span_id: None }
+        SpanContext {
+            trace_id: String::new(),
+            span_id: String::new(),
+            parent_span_id: None,
+        }
     }
     fn end_span(&self, _c: &SpanContext) {}
     fn add_span_event(&self, _c: &SpanContext, _n: &str, _a: &[(&str, &str)]) {}
@@ -63,20 +70,29 @@ fn load_runtime_config() -> Result<AppConfig> {
     Ok(config)
 }
 fn sqlite_path_from_database_url(database_url: &str) -> Result<PathBuf> {
-    let path = database_url.strip_prefix("sqlite:")
+    let path = database_url
+        .strip_prefix("sqlite:")
         .ok_or_else(|| anyhow!("DATABASE_URL must use the sqlite: scheme"))?;
-    if path.is_empty() { return Err(anyhow!("DATABASE_URL must include a filesystem path after sqlite:")); }
+    if path.is_empty() {
+        return Err(anyhow!(
+            "DATABASE_URL must include a filesystem path after sqlite:"
+        ));
+    }
     Ok(PathBuf::from(path))
 }
 fn bind_address(config: &AppConfig) -> Result<SocketAddr> {
-    let host = env::var("API_HOST").or_else(|_| env::var("AGILEPLUS_API_HOST"))
+    let host = env::var("API_HOST")
+        .or_else(|_| env::var("AGILEPLUS_API_HOST"))
         .unwrap_or_else(|_| "0.0.0.0".to_string());
     let addr = format!("{host}:{}", config.api.port);
-    addr.to_socket_addrs()?.next().ok_or_else(|| anyhow!("invalid API bind address"))
+    addr.to_socket_addrs()?
+        .next()
+        .ok_or_else(|| anyhow!("invalid API bind address"))
 }
 fn ensure_database_parent(database_path: &Path) -> Result<()> {
     if let Some(parent) = database_path.parent() {
-        std::fs::create_dir_all(parent).with_context(|| format!("failed to create database directory {parent:?}"))?;
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("failed to create database directory {parent:?}"))?;
     }
     Ok(())
 }
