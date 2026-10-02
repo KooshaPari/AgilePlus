@@ -232,9 +232,26 @@ jobs:
   test:
     name: ci / test
     if: always()
-    needs: [lint]
+    needs: [detect, rust, typescript]
     runs-on: ubuntu-latest
     steps:
-      - name: Test gate
+      - name: Aggregate executed test gate
         run: |
-          echo "✅ All test stages passed (gated via ci / lint)"
+          failed=0
+          if [ "${{ needs.detect.outputs.has_rust }}" = "true" ] && [ "${{ needs.rust.result }}" != "success" ]; then
+            echo "  ✗ rust tests are not proven: Rust job=${{ needs.rust.result }}"
+            failed=$((failed + 1))
+          else
+            echo "  ✓ rust: ${{ needs.rust.result }}"
+          fi
+          if [ "${{ needs.detect.outputs.has_typescript }}" = "true" ] && [ "${{ needs.typescript.result }}" != "success" ]; then
+            echo "  ✗ typescript tests are not proven: TS/JS job=${{ needs.typescript.result }}"
+            failed=$((failed + 1))
+          else
+            echo "  ✓ typescript: ${{ needs.typescript.result }}"
+          fi
+          if [ "$failed" -gt 0 ]; then
+            echo "❌ required test execution is incomplete or failed"
+            exit 1
+          fi
+          echo "✅ Required language test jobs completed successfully"
