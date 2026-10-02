@@ -47,6 +47,12 @@ async fn latest_hash<S: StoragePort>(storage: &S, feature_id: i64) -> Result<[u8
 
 /// Award terminal work acceptance after independent correctness and governance
 /// have both passed. All work packages are preflighted before mutation.
+///
+/// The current StoragePort does not expose a transaction boundary spanning WP
+/// state, Feature state, and audit rows. Therefore preflight is atomic with
+/// respect to semantic rejection, but persistence failure during the write
+/// phase can still leave a partial commit. Callers must not describe this as a
+/// fully transactional acceptance operation until the port gains that primitive.
 pub async fn accept_feature<S>(
     storage: &S,
     feature_id: i64,
