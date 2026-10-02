@@ -7,8 +7,8 @@
 use agileplus_domain::{
     domain::{
         execution::{
-            aggregate_evidence_refs, reduce_criterion_results, validate_criterion_receipt,
-            AttemptStatus, EvaluationResult,
+            AttemptStatus, EvaluationResult, aggregate_evidence_refs, reduce_criterion_results,
+            validate_criterion_receipt,
         },
         work_package::{WorkPackage, WpState},
     },
@@ -73,8 +73,7 @@ where
     }
 
     let criterion_results = storage.list_criterion_results(&evaluation.id).await?;
-    validate_criterion_receipt(&criteria, &criterion_results)
-        .map_err(validation)?;
+    validate_criterion_receipt(&criteria, &criterion_results).map_err(validation)?;
     if reduce_criterion_results(&criteria, &criterion_results) != EvaluationResult::Satisfied {
         return Err(validation(format!(
             "WP{:02} Evaluation {} aggregate is inconsistent with its criterion receipt",

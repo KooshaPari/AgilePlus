@@ -9,9 +9,9 @@ use std::path::PathBuf;
 use anyhow::{Context, Result};
 use chrono::Utc;
 
+use agileplus_application::use_cases::acceptance::require_feature_acceptance;
 use agileplus_domain::domain::audit::{AuditEntry, hash_entry};
 use agileplus_domain::domain::event::Event;
-use agileplus_application::use_cases::acceptance::require_feature_acceptance;
 use agileplus_domain::domain::governance_evaluator::{
     GovernanceEvaluationOptions, evaluate_governance_with_options,
 };

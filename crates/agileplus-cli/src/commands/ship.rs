@@ -7,9 +7,9 @@
 use anyhow::{Context, Result};
 use chrono::Utc;
 
+use agileplus_application::use_cases::acceptance::accepted_candidate_for_wp;
 use agileplus_domain::domain::audit::{AuditEntry, hash_entry};
 use agileplus_domain::domain::event::Event;
-use agileplus_application::use_cases::acceptance::accepted_candidate_for_wp;
 use agileplus_domain::domain::state_machine::FeatureState;
 use agileplus_domain::domain::work_package::{WorkPackage, WpState};
 use agileplus_domain::ports::{ExecutionRecordPort, StoragePort, VcsPort};
@@ -130,7 +130,10 @@ where
             .map_err(anyhow::Error::new)
             .with_context(|| format!("checking accepted candidate for WP{:02}", wp.sequence))?;
 
-        let accepted_worktree_path = accepted.worktree_path.as_ref().map(std::path::PathBuf::from);
+        let accepted_worktree_path = accepted
+            .worktree_path
+            .as_ref()
+            .map(std::path::PathBuf::from);
         let matching_worktree = accepted_worktree_path
             .as_ref()
             .and_then(|path| active_worktrees.iter().find(|wt| &wt.path == path))
