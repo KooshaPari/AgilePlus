@@ -130,10 +130,8 @@ where
             .map_err(anyhow::Error::new)
             .with_context(|| format!("checking accepted candidate for WP{:02}", wp.sequence))?;
 
-        let matching_worktree = accepted
-            .worktree_path
-            .as_ref()
-            .map(std::path::PathBuf::from)
+        let accepted_worktree_path = accepted.worktree_path.as_ref().map(std::path::PathBuf::from);
+        let matching_worktree = accepted_worktree_path
             .as_ref()
             .and_then(|path| active_worktrees.iter().find(|wt| &wt.path == path))
             .or_else(|| {
