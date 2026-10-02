@@ -11,10 +11,7 @@ use chrono::Utc;
 
 use agileplus_domain::domain::audit::{AuditEntry, hash_entry};
 use agileplus_domain::domain::event::Event;
-use agileplus_domain::domain::execution::{
-    AttemptStatus, EvaluationResult, aggregate_evidence_refs, reduce_criterion_results,
-    validate_criterion_receipt,
-};
+use agileplus_application::use_cases::acceptance::require_feature_acceptance;
 use agileplus_domain::domain::governance_evaluator::{
     GovernanceEvaluationOptions, evaluate_governance_with_options,
 };
@@ -177,13 +174,14 @@ where
     // Correctness and governance are separate acceptance boundaries.
     // Governance passed above; now require each WP to have an independently
     // Satisfied Evaluation bound to the exact completed candidate.
-    let accepted_wps = require_exact_candidate_acceptance(storage, feature.id)
+    let accepted = require_feature_acceptance(storage, feature.id)
         .await
+        .map_err(anyhow::Error::new)
         .context("checking exact-candidate work acceptance")?;
 
-    for wp_id in accepted_wps {
+    for accepted_candidate in accepted {
         let wp = storage
-            .get_work_package(wp_id)
+            .get_work_package(accepted_candidate.wp_id)
             .await
             .context("loading accepted work package")?
             .ok_or_else(|| anyhow::anyhow!("accepted work package {wp_id} disappeared"))?;
@@ -277,146 +275,6 @@ where
     println!("  Report: kitty-specs/{slug}/validation-report.md");
 
     Ok(())
-}
-
-async fn require_exact_candidate_acceptance<S>(storage: &S, feature_id: i64) -> Result<Vec<i64>>
-where
-    S: StoragePort + ExecutionRecordPort,
-{
-    let work_packages = storage
-        .list_wps_by_feature(feature_id)
-        .await
-        .context("listing work packages for acceptance")?;
-    if work_packages.is_empty() {
-        anyhow::bail!(
-            "Feature {feature_id} has no work packages; terminal acceptance cannot be vacuous"
-        );
-    }
-
-    let mut accepted = Vec::with_capacity(work_packages.len());
-    for wp in work_packages {
-        if !matches!(wp.state, WpState::Review | WpState::Done) {
-            anyhow::bail!(
-                "WP{:02} '{}' is in state {:?}; exact-candidate acceptance requires Review or Done",
-                wp.sequence,
-                wp.title,
-                wp.state
-            );
-        }
-
-        let assignment = storage
-            .get_active_assignment(wp.id)
-            .await
-            .with_context(|| format!("loading active assignment for WP{:02}", wp.sequence))?
-            .ok_or_else(|| anyhow::anyhow!("WP{:02} has no active Assignment", wp.sequence))?;
-
-        let evaluations = storage
-            .list_evaluations(&assignment.id)
-            .await
-            .with_context(|| format!("loading evaluations for WP{:02}", wp.sequence))?;
-        let evaluation = evaluations
-            .last()
-            .ok_or_else(|| anyhow::anyhow!("WP{:02} has no Evaluation", wp.sequence))?;
-
-        if evaluation.result != EvaluationResult::Satisfied {
-            anyhow::bail!(
-                "WP{:02} latest Evaluation {} is {:?}, not Satisfied",
-                wp.sequence,
-                evaluation.id,
-                evaluation.result
-            );
-        }
-
-        let criteria = storage
-            .list_assignment_criteria(&assignment.id)
-            .await
-            .with_context(|| format!("loading frozen criteria for WP{:02}", wp.sequence))?;
-        if criteria.is_empty() {
-            anyhow::bail!(
-                "WP{:02} Satisfied Evaluation {} has no frozen Assignment criteria; legacy naked grades are not authoritative",
-                wp.sequence,
-                evaluation.id
-            );
-        }
-        let criterion_results = storage
-            .list_criterion_results(&evaluation.id)
-            .await
-            .with_context(|| format!("loading criterion results for WP{:02}", wp.sequence))?;
-        validate_criterion_receipt(&criteria, &criterion_results)
-            .map_err(anyhow::Error::msg)
-            .with_context(|| {
-                format!(
-                    "WP{:02} Evaluation {} has an invalid criterion receipt",
-                    wp.sequence, evaluation.id
-                )
-            })?;
-        if reduce_criterion_results(&criteria, &criterion_results) != EvaluationResult::Satisfied {
-            anyhow::bail!(
-                "WP{:02} Evaluation {} aggregate is inconsistent with its criterion receipt",
-                wp.sequence,
-                evaluation.id
-            );
-        }
-        if aggregate_evidence_refs(&criterion_results) != evaluation.evidence_refs {
-            anyhow::bail!(
-                "WP{:02} Evaluation {} evidence union does not match its criterion receipt",
-                wp.sequence,
-                evaluation.id
-            );
-        }
-
-        if !evaluation.candidate_ref.starts_with("git:") {
-            anyhow::bail!(
-                "WP{:02} Satisfied Evaluation {} is not bound to an exact Git candidate: {}",
-                wp.sequence,
-                evaluation.id,
-                evaluation.candidate_ref
-            );
-        }
-
-        let attempt_id = evaluation.attempt_id.as_deref().ok_or_else(|| {
-            anyhow::anyhow!(
-                "WP{:02} Satisfied Evaluation {} is not bound to an Attempt",
-                wp.sequence,
-                evaluation.id
-            )
-        })?;
-        let attempts = storage
-            .list_attempts(&assignment.id)
-            .await
-            .with_context(|| format!("loading attempts for WP{:02}", wp.sequence))?;
-        let attempt = attempts
-            .iter()
-            .find(|attempt| attempt.id == attempt_id)
-            .ok_or_else(|| {
-                anyhow::anyhow!(
-                    "WP{:02} Evaluation {} references missing Attempt {}",
-                    wp.sequence,
-                    evaluation.id,
-                    attempt_id
-                )
-            })?;
-        if attempt.status != AttemptStatus::Completed {
-            anyhow::bail!(
-                "WP{:02} evaluated Attempt {} is {:?}, not Completed",
-                wp.sequence,
-                attempt.id,
-                attempt.status
-            );
-        }
-        if attempt.result_candidate_ref.as_deref() != Some(evaluation.candidate_ref.as_str()) {
-            anyhow::bail!(
-                "WP{:02} candidate mismatch: Attempt {:?}, Evaluation {}",
-                wp.sequence,
-                attempt.result_candidate_ref,
-                evaluation.candidate_ref
-            );
-        }
-
-        accepted.push(wp.id);
-    }
-
-    Ok(accepted)
 }
 
 async fn get_latest_hash<S: StoragePort>(storage: &S, feature_id: i64) -> [u8; 32] {
