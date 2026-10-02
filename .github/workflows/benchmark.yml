@@ -9,6 +9,10 @@ permissions:
   contents: read
   pull-requests: write
   issues: write
+  # actions/github-script calls checks.create (POST /repos/.../check-runs);
+  # without `checks: write` the default token gets "Resource not accessible
+  # by integration".
+  checks: write
 
 concurrency:
   group: bench-${{ github.ref }}

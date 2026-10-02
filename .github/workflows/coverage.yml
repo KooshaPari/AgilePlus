@@ -70,12 +70,22 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Install protoc
+      - name: Install protoc and Linux GUI system dependencies
         # Ubuntu 24.04 runners do not include protoc; prost-build needs it for
-        # the full-featured Rust coverage build.
+        # the full-featured Rust coverage build. `cargo llvm-cov --all-features`
+        # also builds the desktop (Tauri) member, so glib-sys' build script
+        # aborts with "glib-2.0.pc needs to be installed" (exit 101) unless the
+        # glib/gtk headers are present. Exact package list from ci.yml's Rust job.
         run: |
           sudo apt-get update
-          sudo apt-get install -y protobuf-compiler
+          sudo apt-get install -y \
+            pkg-config \
+            protobuf-compiler \
+            libglib2.0-dev \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf
           protoc --version
 
       - name: Install Rust
