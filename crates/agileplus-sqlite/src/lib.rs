@@ -91,16 +91,6 @@ impl SqliteStorageAdapter {
 
 
 #[async_trait::async_trait]
-impl agileplus_domain::ports::execution::AtomicAcceptancePort for SqliteStorageAdapter {
-    async fn accept_feature_atomic(
-        &self,
-        command: &agileplus_domain::domain::acceptance::AcceptFeatureCommand,
-    ) -> Result<agileplus_domain::domain::acceptance::AcceptanceOutcome, DomainError> {
-        repository::acceptance::accept_feature_atomic(&mut self.lock()?, command)
-    }
-}
-
-#[async_trait::async_trait]
 impl agileplus_domain::ports::ExecutionRecordPort for SqliteStorageAdapter {
     async fn create_spec_revision(
         &self,
