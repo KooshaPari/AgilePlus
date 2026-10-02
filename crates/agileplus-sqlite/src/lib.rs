@@ -88,8 +88,6 @@ impl SqliteStorageAdapter {
     }
 }
 
-
-
 #[async_trait::async_trait]
 impl agileplus_domain::ports::ExecutionRecordPort for SqliteStorageAdapter {
     async fn create_spec_revision(

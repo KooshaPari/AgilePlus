@@ -6,11 +6,11 @@ use crate::SqliteStorageAdapter;
 use agileplus_domain::{
     domain::{
         acceptance::{
-            validate_candidate, AcceptFeatureCommand, AcceptanceOutcome, FeatureAcceptanceReceipt,
+            AcceptFeatureCommand, AcceptanceOutcome, FeatureAcceptanceReceipt, validate_candidate,
         },
-        audit::{hash_entry, AuditChain, AuditEntry},
+        audit::{AuditChain, AuditEntry, hash_entry},
         event::Event,
-        governance_evaluator::{evaluate_governance_snapshot, GovernanceEvaluationOptions},
+        governance_evaluator::{GovernanceEvaluationOptions, evaluate_governance_snapshot},
         state_machine::FeatureState,
         work_package::WpState,
     },
@@ -18,7 +18,7 @@ use agileplus_domain::{
     ports::execution::AtomicAcceptancePort,
 };
 use chrono::Utc;
-use rusqlite::{params, Connection, OptionalExtension, TransactionBehavior};
+use rusqlite::{Connection, OptionalExtension, TransactionBehavior, params};
 
 fn storage(error: impl std::fmt::Display) -> DomainError {
     DomainError::Storage(error.to_string())
