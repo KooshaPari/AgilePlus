@@ -9,10 +9,7 @@ use chrono::Utc;
 
 use agileplus_domain::domain::audit::{AuditEntry, hash_entry};
 use agileplus_domain::domain::event::Event;
-use agileplus_domain::domain::execution::{
-    AttemptStatus, EvaluationResult, aggregate_evidence_refs, reduce_criterion_results,
-    validate_criterion_receipt,
-};
+use agileplus_application::use_cases::acceptance::accepted_candidate_for_wp;
 use agileplus_domain::domain::state_machine::FeatureState;
 use agileplus_domain::domain::work_package::{WorkPackage, WpState};
 use agileplus_domain::ports::{ExecutionRecordPort, StoragePort, VcsPort};
@@ -130,10 +127,13 @@ where
     for wp in &sorted_wps {
         let accepted = accepted_candidate_for_wp(storage, wp)
             .await
+            .map_err(anyhow::Error::new)
             .with_context(|| format!("checking accepted candidate for WP{:02}", wp.sequence))?;
 
         let matching_worktree = accepted
             .worktree_path
+            .as_ref()
+            .map(std::path::PathBuf::from)
             .as_ref()
             .and_then(|path| active_worktrees.iter().find(|wt| &wt.path == path))
             .or_else(|| {
@@ -323,128 +323,6 @@ where
     println!("  State: Validated -> Shipped");
 
     Ok(())
-}
-
-struct AcceptedCandidate {
-    candidate_ref: String,
-    worktree_path: Option<std::path::PathBuf>,
-}
-
-async fn accepted_candidate_for_wp<S>(storage: &S, wp: &WorkPackage) -> Result<AcceptedCandidate>
-where
-    S: ExecutionRecordPort,
-{
-    let assignment = storage
-        .get_active_assignment(wp.id)
-        .await
-        .with_context(|| format!("loading active assignment for WP{:02}", wp.sequence))?
-        .ok_or_else(|| anyhow::anyhow!("WP{:02} has no active Assignment", wp.sequence))?;
-    let evaluations = storage
-        .list_evaluations(&assignment.id)
-        .await
-        .with_context(|| format!("loading evaluations for WP{:02}", wp.sequence))?;
-    let evaluation = evaluations
-        .last()
-        .ok_or_else(|| anyhow::anyhow!("WP{:02} has no Evaluation", wp.sequence))?;
-    if evaluation.result != EvaluationResult::Satisfied {
-        anyhow::bail!(
-            "WP{:02} latest Evaluation {} is {:?}, not Satisfied",
-            wp.sequence,
-            evaluation.id,
-            evaluation.result
-        );
-    }
-
-    let criteria = storage
-        .list_assignment_criteria(&assignment.id)
-        .await
-        .with_context(|| format!("loading frozen criteria for WP{:02}", wp.sequence))?;
-    if criteria.is_empty() {
-        anyhow::bail!(
-            "WP{:02} accepted Evaluation {} has no frozen Assignment criteria; legacy naked grades are not authoritative",
-            wp.sequence,
-            evaluation.id
-        );
-    }
-    let criterion_results = storage
-        .list_criterion_results(&evaluation.id)
-        .await
-        .with_context(|| format!("loading criterion results for WP{:02}", wp.sequence))?;
-    validate_criterion_receipt(&criteria, &criterion_results)
-        .map_err(anyhow::Error::msg)
-        .with_context(|| {
-            format!(
-                "WP{:02} accepted Evaluation {} has an invalid criterion receipt",
-                wp.sequence, evaluation.id
-            )
-        })?;
-    if reduce_criterion_results(&criteria, &criterion_results) != EvaluationResult::Satisfied {
-        anyhow::bail!(
-            "WP{:02} accepted Evaluation {} aggregate is inconsistent with its criterion receipt",
-            wp.sequence,
-            evaluation.id
-        );
-    }
-    if aggregate_evidence_refs(&criterion_results) != evaluation.evidence_refs {
-        anyhow::bail!(
-            "WP{:02} accepted Evaluation {} evidence union does not match its criterion receipt",
-            wp.sequence,
-            evaluation.id
-        );
-    }
-
-    if !evaluation.candidate_ref.starts_with("git:") {
-        anyhow::bail!(
-            "WP{:02} accepted Evaluation {} is not bound to an exact Git candidate: {}",
-            wp.sequence,
-            evaluation.id,
-            evaluation.candidate_ref
-        );
-    }
-
-    let attempt_id = evaluation.attempt_id.as_deref().ok_or_else(|| {
-        anyhow::anyhow!(
-            "WP{:02} accepted Evaluation {} is not bound to an Attempt",
-            wp.sequence,
-            evaluation.id
-        )
-    })?;
-    let attempts = storage
-        .list_attempts(&assignment.id)
-        .await
-        .with_context(|| format!("loading attempts for WP{:02}", wp.sequence))?;
-    let attempt = attempts
-        .iter()
-        .find(|attempt| attempt.id == attempt_id)
-        .ok_or_else(|| {
-            anyhow::anyhow!(
-                "WP{:02} accepted Evaluation {} references missing Attempt {}",
-                wp.sequence,
-                evaluation.id,
-                attempt_id
-            )
-        })?;
-    if attempt.status != AttemptStatus::Completed {
-        anyhow::bail!(
-            "WP{:02} accepted Attempt {} is {:?}, not Completed",
-            wp.sequence,
-            attempt.id,
-            attempt.status
-        );
-    }
-    if attempt.result_candidate_ref.as_deref() != Some(evaluation.candidate_ref.as_str()) {
-        anyhow::bail!(
-            "WP{:02} accepted candidate mismatch between Attempt {:?} and Evaluation {}",
-            wp.sequence,
-            attempt.result_candidate_ref,
-            evaluation.candidate_ref
-        );
-    }
-
-    Ok(AcceptedCandidate {
-        candidate_ref: evaluation.candidate_ref.clone(),
-        worktree_path: attempt.worktree_path.clone().map(Into::into),
-    })
 }
 
 async fn resolve_branch_commit<V: VcsPort>(vcs: &V, branch: &str) -> Result<String> {
