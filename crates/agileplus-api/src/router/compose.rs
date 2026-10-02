@@ -7,7 +7,8 @@ use crate::routes::{
     stories, stream, users, work_packages, worktree,
 };
 use crate::state::AppState;
-use agileplus_domain::ports::{ContentStoragePort, ObservabilityPort, StoragePort, VcsPort};
+use agileplus_domain::ports::vcs::VcsPort;
+use agileplus_domain::ports::{ContentStoragePort, ObservabilityPort, StoragePort};
 use axum::{Router, middleware, routing::get};
 use std::{net::SocketAddr, sync::Arc};
 use tower_http::{cors::CorsLayer, services::ServeDir, trace::TraceLayer};
@@ -32,10 +33,7 @@ where
     let protected = Router::new()
         .nest("/api/v1/features", features::routes::<S, V, O>())
         .nest("/api/v1/work-packages", work_packages::routes::<S, V, O>())
-        .nest(
-            "/api/v1/features",
-            work_packages::feature_wp_routes::<S, V, O>(),
-        )
+        .nest("/api/v1/features", work_packages::feature_wp_routes::<S, V, O>())
         .nest("/api/v1/features", governance::routes::<S, V, O>())
         .nest("/api/v1/features", acceptance::routes::<S, V, O>())
         .nest("/api/v1/features", audit::routes::<S, V, O>())
@@ -49,17 +47,11 @@ where
         .nest("/api/v1/epics", epics::routes::<S, V, O>())
         .nest("/api/v1/stories", stories::routes::<S, V, O>())
         .nest("/api/v1/users", users::routes::<S, V, O>())
-        .layer(middleware::from_fn_with_state(
-            credentials,
-            crate::middleware::auth::validate_api_key,
-        ))
+        .layer(middleware::from_fn_with_state(credentials, crate::middleware::auth::validate_api_key))
         .with_state(state);
-    Router::new()
-        .merge(public)
-        .merge(protected)
+    Router::new().merge(public).merge(protected)
         .nest_service("/static", ServeDir::new("templates/static"))
-        .layer(TraceLayer::new_for_http())
-        .layer(CorsLayer::permissive())
+        .layer(TraceLayer::new_for_http()).layer(CorsLayer::permissive())
 }
 
 pub async fn start_api<S, V, O>(addr: SocketAddr, state: AppState<S, V, O>) -> Result<(), BoxError>

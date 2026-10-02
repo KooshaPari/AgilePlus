@@ -14,7 +14,6 @@ concurrency:
   cancel-in-progress: true
 jobs:
   atomic-acceptance:
-    # Public standard runner only: never fall back to paid private/larger runners.
     if: github.repository == 'KooshaPari/AgilePlus' && github.event.repository.private == false
     runs-on: ubuntu-24.04
     timeout-minutes: 35
@@ -46,6 +45,9 @@ jobs:
       - name: Mounted HTTP acceptance
         if: ${{ !cancelled() && steps.toolchain.outcome == 'success' }}
         run: cargo test --locked -p agileplus-api --test atomic_acceptance_http -- --nocapture
+      - name: Authenticated gRPC acceptance
+        if: ${{ !cancelled() && steps.toolchain.outcome == 'success' }}
+        run: cargo test --locked -p agileplus-grpc --test atomic_acceptance_rpc -- --nocapture
       - name: CLI acceptance and candidate continuity
         if: ${{ !cancelled() && steps.toolchain.outcome == 'success' }}
         run: cargo test --locked -p agileplus-cli --test validate_command_flow --test ship_command_flow --test implement_command_flow -- --nocapture
