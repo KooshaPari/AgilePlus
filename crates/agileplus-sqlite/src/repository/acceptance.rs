@@ -3,12 +3,12 @@
 use agileplus_domain::{
     domain::{
         acceptance::{
-            AcceptFeatureCommand, AcceptanceOutcome, AcceptedCandidate, FeatureAcceptanceReceipt,
-            validate_candidate,
+            validate_candidate, AcceptFeatureCommand, AcceptanceOutcome, AcceptedCandidate,
+            FeatureAcceptanceReceipt,
         },
-        audit::{AuditEntry, hash_entry},
+        audit::{hash_entry, AuditEntry},
         event::Event,
-        governance_evaluator::{GovernanceEvaluationOptions, evaluate_governance_snapshot},
+        governance_evaluator::{evaluate_governance_snapshot, GovernanceEvaluationOptions},
         state_machine::FeatureState,
         work_package::WpState,
     },
@@ -16,7 +16,7 @@ use agileplus_domain::{
 };
 use agileplus_events::compute_hash;
 use chrono::Utc;
-use rusqlite::{Connection, OptionalExtension, params};
+use rusqlite::{params, Connection, OptionalExtension};
 
 use super::{audit, events, evidence, execution, features, governance, metrics, work_packages};
 
@@ -116,8 +116,9 @@ pub fn accept_feature_atomic(
 
     let mut accepted_candidates = Vec::<AcceptedCandidate>::with_capacity(work_packages.len());
     for wp in &work_packages {
-        let assignment = execution::get_active_assignment(&tx, wp.id)?
-            .ok_or_else(|| DomainError::Validation(format!("WP{:02}: no active Assignment", wp.sequence)))?;
+        let assignment = execution::get_active_assignment(&tx, wp.id)?.ok_or_else(|| {
+            DomainError::Validation(format!("WP{:02}: no active Assignment", wp.sequence))
+        })?;
         let evaluations = execution::list_evaluations(&tx, &assignment.id)?;
         let evaluation = evaluations.last().ok_or_else(|| {
             DomainError::Validation(format!("WP{:02}: no Evaluation", wp.sequence))
