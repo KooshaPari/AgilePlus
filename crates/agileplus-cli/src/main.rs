@@ -20,7 +20,7 @@ use agileplus_cli::commands::{
 };
 #[cfg(feature = "full-deps")]
 use agileplus_cli::commands::{
-    implement::ImplementArgs, plan::PlanArgs, research::ResearchArgs,
+    evaluate::EvaluateArgs, implement::ImplementArgs, plan::PlanArgs, research::ResearchArgs,
     retrospective::RetrospectiveArgs, ship::ShipArgs, triage::TriageArgs, validate::ValidateArgs,
 };
 use agileplus_git::{GitVcsAdapter, ProjectContext};
@@ -67,6 +67,9 @@ enum Commands {
     /// Implement work packages (dispatches agents).
     #[cfg(feature = "full-deps")]
     Implement(ImplementArgs),
+    /// Record an independent, criterion-bound evaluation receipt.
+    #[cfg(feature = "full-deps")]
+    Evaluate(EvaluateArgs),
     /// Validate governance evidence and policies.
     #[cfg(feature = "full-deps")]
     Validate(ValidateArgs),
@@ -224,6 +227,13 @@ async fn run(cli: Cli) -> Result<()> {
             let vcs = open_vcs(&cli.repo)?;
             let agent = RealAgentAdapter::new();
             agileplus_cli::commands::implement::run_implement(args, &storage, &vcs, &agent).await
+        }
+        #[cfg(feature = "full-deps")]
+        Commands::Evaluate(args) => {
+            let db = repository_database(&cli.repo)?;
+            let storage = SqliteStorageAdapter::new(&db)
+                .with_context(|| format!("opening database at {}", db.display()))?;
+            agileplus_cli::commands::evaluate::run_evaluate(args, &storage).await
         }
         #[cfg(feature = "full-deps")]
         Commands::Validate(args) => {

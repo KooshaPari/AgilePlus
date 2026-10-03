@@ -14,10 +14,14 @@ use anyhow::{Context, Result};
 use chrono::Utc;
 
 use agileplus_domain::domain::audit::{AuditEntry, hash_entry};
+use agileplus_domain::domain::execution::{
+    Assignment, AssignmentStatus, Attempt, AttemptStatus, Evaluation, EvaluationResult,
+    SpecRevision, snapshot_acceptance_criteria,
+};
 use agileplus_domain::domain::state_machine::FeatureState;
 use agileplus_domain::domain::work_package::{WorkPackage, WpState};
 use agileplus_domain::ports::agent::{AgentConfig, AgentKind, AgentPort, AgentTask};
-use agileplus_domain::ports::{StoragePort, VcsPort};
+use agileplus_domain::ports::{ExecutionRecordPort, StoragePort, VcsPort};
 
 use super::pr_builder::{build_pr_description, build_pr_title};
 use super::review_loop::{ReviewOutcome, run_review_loop};
@@ -55,7 +59,7 @@ pub async fn run_implement<S, V, A>(
     agent: &A,
 ) -> Result<()>
 where
-    S: StoragePort,
+    S: StoragePort + ExecutionRecordPort,
     V: VcsPort,
     A: AgentPort,
 {
@@ -189,7 +193,7 @@ where
     };
 
     // Process WPs
-    let mut completed: HashSet<i64> = all_wps
+    let completed: HashSet<i64> = all_wps
         .iter()
         .filter(|wp| wp.state == WpState::Done)
         .map(|wp| wp.id)
@@ -293,6 +297,118 @@ where
             worktree_path.join(format!("kitty-specs/{slug}/research.md")),
         ];
 
+        // Freeze the execution basis before dispatch. Existing Feature.spec_hash
+        // remains the compatibility source for the first vertical witness.
+        let now = Utc::now();
+        let spec_hash_hex: String = feature
+            .spec_hash
+            .iter()
+            .map(|b| format!("{b:02x}"))
+            .collect();
+        let spec_revision_id = format!("spec:{}:{}", feature.id, spec_hash_hex);
+
+        let criterion_snapshot = snapshot_acceptance_criteria(&wp.acceptance_criteria);
+        if criterion_snapshot.is_empty() {
+            anyhow::bail!(
+                "WP{:02} has no acceptance criteria; cannot create executable Assignment",
+                wp.sequence
+            );
+        }
+
+        let active_assignment = storage
+            .get_active_assignment(wp.id)
+            .await
+            .context("loading active assignment")?;
+        let active_criteria = match &active_assignment {
+            Some(assignment) => storage
+                .list_assignment_criteria(&assignment.id)
+                .await
+                .context("loading active assignment criteria")?,
+            None => vec![],
+        };
+        let parent_revision_id = active_assignment
+            .as_ref()
+            .filter(|assignment| assignment.spec_revision_id != spec_revision_id)
+            .map(|assignment| assignment.spec_revision_id.clone());
+
+        storage
+            .create_spec_revision(&SpecRevision {
+                id: spec_revision_id.clone(),
+                feature_id: feature.id,
+                content_hash: spec_hash_hex,
+                parent_revision_id,
+                accepted_at: now,
+                authority: "feature.spec_hash".into(),
+            })
+            .await
+            .context("persisting immutable spec revision")?;
+
+        let assignment_id = match active_assignment {
+            Some(existing)
+                if existing.spec_revision_id == spec_revision_id
+                    && active_criteria == criterion_snapshot =>
+            {
+                existing.id
+            }
+            Some(existing) => {
+                let replacement_id = format!("assignment:{}:{}", wp.id, now.timestamp_micros());
+                let replacement = Assignment {
+                    id: replacement_id.clone(),
+                    wp_id: wp.id,
+                    spec_revision_id: spec_revision_id.clone(),
+                    created_at: now,
+                    supersedes_assignment_id: Some(existing.id.clone()),
+                    status: AssignmentStatus::Active,
+                };
+                storage
+                    .supersede_assignment_with_criteria(
+                        &existing.id,
+                        &replacement,
+                        &criterion_snapshot,
+                    )
+                    .await
+                    .context("superseding active assignment")?;
+                replacement_id
+            }
+            None => {
+                let assignment_id = format!("assignment:{}:{}", wp.id, now.timestamp_micros());
+                storage
+                    .create_assignment_with_criteria(
+                        &Assignment {
+                            id: assignment_id.clone(),
+                            wp_id: wp.id,
+                            spec_revision_id: spec_revision_id.clone(),
+                            created_at: now,
+                            supersedes_assignment_id: None,
+                            status: AssignmentStatus::Active,
+                        },
+                        &criterion_snapshot,
+                    )
+                    .await
+                    .context("creating immutable assignment")?;
+                assignment_id
+            }
+        };
+
+        let attempt_id = format!("attempt:{}:{}", wp.id, now.timestamp_micros());
+        storage
+            .create_attempt(&Attempt {
+                id: attempt_id.clone(),
+                assignment_id: assignment_id.clone(),
+                worker_id: format!("{:?}", agent_config.kind),
+                backend: format!("{:?}", agent_config.kind),
+                job_id: None,
+                worktree_path: Some(worktree_path.display().to_string()),
+                base_candidate_ref: None,
+                result_candidate_ref: None,
+                status: AttemptStatus::Pending,
+                failure_class: None,
+                started_at: now,
+                ended_at: None,
+            })
+            .await
+            .context("creating immutable attempt")?;
+
         let task = AgentTask {
             wp_id: wp_id_str.clone(),
             feature_slug: slug.clone(),
@@ -301,13 +417,25 @@ where
             context_files,
         };
 
-        // Dispatch agent asynchronously
+        // Dispatch agent asynchronously. The first slice persists the Attempt
+        // before dispatch; job/result updates are added in the next ledger step.
         let job_id = agent
             .dispatch_async(task, &agent_config)
             .await
             .context(format!("dispatching agent for {wp_id_str}"))?;
 
         println!("  Agent dispatched (job: {job_id}).");
+        storage
+            .update_attempt_runtime(
+                &attempt_id,
+                AttemptStatus::Running,
+                Some(&job_id),
+                None,
+                None,
+                None,
+            )
+            .await
+            .context("marking attempt running")?;
 
         // Build PR description
         let feature_ref = storage
@@ -334,17 +462,98 @@ where
         match outcome {
             ReviewOutcome::Approved => {
                 println!("  WP{:02} approved!", wp.sequence);
+                let evaluated_at = Utc::now();
+                // Resolve the immutable git commit currently checked out by the
+                // WP worktree. If the adapter cannot resolve it, keep the job
+                // fallback explicit rather than pretending it is a commit.
+                let candidate_ref = match vcs
+                    .list_worktrees()
+                    .await
+                    .ok()
+                    .and_then(|items| items.into_iter().find(|w| w.path == worktree_path))
+                    .map(|w| format!("git:{}", w.commit))
+                {
+                    Some(candidate_ref) => candidate_ref,
+                    None => {
+                        let failed_at = Utc::now();
+                        storage
+                            .create_evaluation(&Evaluation {
+                                id: format!(
+                                    "evaluation:{}:{}",
+                                    wp.id,
+                                    failed_at.timestamp_micros()
+                                ),
+                                assignment_id: assignment_id.clone(),
+                                attempt_id: Some(attempt_id.clone()),
+                                candidate_ref: format!("unresolved:job:{job_id}"),
+                                evaluator_id: "legacy-review-loop".into(),
+                                evaluator_version: "v1".into(),
+                                result: EvaluationResult::Unknown,
+                                evidence_refs: vec![],
+                                started_at: now,
+                                finished_at: failed_at,
+                            })
+                            .await
+                            .context("persisting unresolved-candidate evaluation")?;
+                        storage
+                            .update_attempt_runtime(
+                                &attempt_id,
+                                AttemptStatus::Failed,
+                                Some(&job_id),
+                                None,
+                                Some("candidate_unresolved"),
+                                Some(failed_at),
+                            )
+                            .await
+                            .context("marking unresolved-candidate attempt failed")?;
+                        storage
+                            .update_wp_state(wp.id, WpState::Blocked)
+                            .await
+                            .context("blocking WP with unresolved candidate")?;
+                        anyhow::bail!(
+                            "WP{:02} review approved but exact Git candidate could not be resolved",
+                            wp.sequence
+                        );
+                    }
+                };
+                let evaluation_id =
+                    format!("evaluation:{}:{}", wp.id, evaluated_at.timestamp_micros());
+                storage
+                    .create_evaluation(&Evaluation {
+                        id: evaluation_id.clone(),
+                        assignment_id: assignment_id.clone(),
+                        attempt_id: Some(attempt_id.clone()),
+                        candidate_ref: candidate_ref.clone(),
+                        evaluator_id: "legacy-review-loop".into(),
+                        evaluator_version: "v1".into(),
+                        result: EvaluationResult::Inconclusive,
+                        evidence_refs: vec![],
+                        started_at: now,
+                        finished_at: evaluated_at,
+                    })
+                    .await
+                    .context("persisting review evaluation")?;
+                storage
+                    .update_attempt_runtime(
+                        &attempt_id,
+                        AttemptStatus::Completed,
+                        Some(&job_id),
+                        Some(&candidate_ref),
+                        None,
+                        Some(evaluated_at),
+                    )
+                    .await
+                    .context("marking attempt completed")?;
                 storage
                     .update_wp_state(wp.id, WpState::Review)
                     .await
                     .context("transitioning WP to Review")?;
-                storage
-                    .update_wp_state(wp.id, WpState::Done)
-                    .await
-                    .context("transitioning WP to Done")?;
-                completed.insert(wp.id);
 
-                // Audit
+                // Review approval proves that the review loop completed, not that
+                // mandatory correctness criteria and governance have accepted the
+                // exact candidate. Keep the candidate and attempt durable, but
+                // leave the WP in Review until an independent candidate-bound
+                // evaluator can award terminal acceptance.
                 let prev_hash = get_latest_hash(storage, feature.id).await;
                 let mut audit = AuditEntry {
                     id: 0,
@@ -352,7 +561,13 @@ where
                     wp_id: Some(wp.id),
                     timestamp: Utc::now(),
                     actor: "agent".into(),
-                    transition: format!("WP{:02} Planned -> Done", wp.sequence),
+                    transition: format!(
+                        "WP{:02} Doing -> Review (candidate produced; independent evaluation pending)",
+                        wp.sequence
+                    ),
+                    // Candidate identity is persisted on Attempt/Evaluation. Audit evidence_refs
+                    // only accepts persisted EvidenceRef identities, so do not forge one from a
+                    // Git candidate string before a real evidence record exists.
                     evidence_refs: vec![],
                     prev_hash,
                     hash: [0u8; 32],
@@ -365,15 +580,52 @@ where
                     .await
                     .context("appending audit entry")?;
 
-                // Cleanup worktree
-                if let Err(e) = vcs.cleanup_worktree(&worktree_path).await {
-                    tracing::warn!(error = %e, "worktree cleanup failed (non-fatal)");
-                }
+                println!(
+                    "  WP{:02} candidate {} is in Review; review approval is not terminal acceptance.",
+                    wp.sequence, candidate_ref
+                );
             }
             ReviewOutcome::MaxCyclesReached {
                 cycles,
                 last_feedback,
             } => {
+                let ended_at = Utc::now();
+                let failed_candidate_ref = vcs
+                    .list_worktrees()
+                    .await
+                    .ok()
+                    .and_then(|items| items.into_iter().find(|w| w.path == worktree_path))
+                    .map(|w| format!("git:{}", w.commit))
+                    .unwrap_or_else(|| format!("unresolved:job:{job_id}"));
+                let exact_failed_candidate = failed_candidate_ref
+                    .starts_with("git:")
+                    .then(|| failed_candidate_ref.clone());
+                storage
+                    .create_evaluation(&Evaluation {
+                        id: format!("evaluation:{}:{}", wp.id, ended_at.timestamp_micros()),
+                        assignment_id: assignment_id.clone(),
+                        attempt_id: Some(attempt_id.clone()),
+                        candidate_ref: failed_candidate_ref.clone(),
+                        evaluator_id: "legacy-review-loop".into(),
+                        evaluator_version: "v1".into(),
+                        result: EvaluationResult::Unsatisfied,
+                        evidence_refs: vec![],
+                        started_at: now,
+                        finished_at: ended_at,
+                    })
+                    .await
+                    .context("persisting failed review evaluation")?;
+                storage
+                    .update_attempt_runtime(
+                        &attempt_id,
+                        AttemptStatus::Failed,
+                        Some(&job_id),
+                        exact_failed_candidate.as_deref(),
+                        Some("max_review_cycles"),
+                        Some(ended_at),
+                    )
+                    .await
+                    .context("marking attempt failed")?;
                 println!(
                     "  WP{:02} reached max review cycles ({cycles}). Marking blocked.",
                     wp.sequence
@@ -410,10 +662,32 @@ where
                 );
             }
             ReviewOutcome::AgentFailed { error } => {
+                storage
+                    .update_attempt_runtime(
+                        &attempt_id,
+                        AttemptStatus::Failed,
+                        Some(&job_id),
+                        None,
+                        Some("agent_failed"),
+                        Some(Utc::now()),
+                    )
+                    .await
+                    .ok();
                 storage.update_wp_state(wp.id, WpState::Blocked).await.ok();
                 anyhow::bail!("Agent failed for WP{:02}: {}", wp.sequence, error);
             }
             ReviewOutcome::Cancelled => {
+                storage
+                    .update_attempt_runtime(
+                        &attempt_id,
+                        AttemptStatus::Cancelled,
+                        Some(&job_id),
+                        None,
+                        Some("cancelled"),
+                        Some(Utc::now()),
+                    )
+                    .await
+                    .ok();
                 storage.update_wp_state(wp.id, WpState::Blocked).await.ok();
                 println!("  WP{:02} cancelled.", wp.sequence);
             }

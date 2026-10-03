@@ -213,10 +213,14 @@ pub(crate) async fn evaluate_policies<S: StoragePort>(
             PolicyCheck::ThresholdMet { metric, min } => {
                 evaluate_metric_policy(storage, feature_id, metric, *min).await?
             }
-            PolicyCheck::ManualApproval | PolicyCheck::Automated => evaluate_evidence_policy(
+            PolicyCheck::ManualApproval => evaluate_evidence_policy(
                 contract,
                 &feature_evidence,
                 EvidenceType::ManualAttestation,
+            ),
+            PolicyCheck::Automated => (
+                false,
+                "automated policy requires a concrete evaluator".to_string(),
             ),
             PolicyCheck::Custom { script } => (
                 false,

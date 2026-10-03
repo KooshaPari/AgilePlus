@@ -1,0 +1,45 @@
+# AgilePlus Non-Code Finality Ledger
+
+**Date:** 2026-10-01  
+**Scope:** specification, documentation, test/oracle design, trace/governance and other non-production-code layers.
+
+| Layer | State | Evidence / remaining condition |
+|---|---|---|
+| Product boundary vs Tracera | CLOSED | canonical semantic decisions |
+| Identity model | CLOSED at spec layer | Development→SpecRevision→WP→Assignment→Attempt→Candidate→Evaluation |
+| Lifecycle semantics | CLOSED | adaptive partial-order milestones; fixed mandatory waterfall superseded |
+| Artifact authority | CLOSED | typed roles/revisions, filesystem-profile independent |
+| Traceability authority | CLOSED | typed identities; RequirementId not universal namespace |
+| Acceptance authority | CLOSED | ADR-0019 + canonical decisions |
+| Audit v1/v2 semantics | CLOSED at spec layer | historical v1 honest envelope; future v2 contract |
+| Worker replacement semantics | CLOSED | new Attempt/claim; immutable history |
+| Historical FR family disposition | CLOSED at family level | atomic ID-by-ID mapping remains PARTIAL |
+| Methodology-generation reconciliation | PARTIAL | major contradictions resolved; individual historical proposals still need status updates/mapping |
+| Accepted journey map | CLOSED | 12 canonical semantic journeys |
+| Semantic oracle catalogue | CLOSED | 25 adversarial cases |
+| Specification grader contract | CLOSED | verification/SPECIFICATION_ACCEPTANCE_CONTRACT.md |
+| Mature semantic requirement catalogue | CLOSED | 67 derived obligations; every reviewed mature domain decomposed or explicit optional-profile |
+| Historical FR atomic migration | CLOSED | all 90 FUNCTIONAL_REQUIREMENTS.md IDs have explicit mature disposition |
+| CLI/API/MCP/human parity specification | CLOSED at mature semantic/profile layer |
+| Framework import/harmonization specification | CLOSED at mature semantic layer |
+| Promotion/release profiles | CLOSED at mature semantic/profile layer |
+| Runtime evaluator convergence | EXECUTION-GATE | implementation/test execution required |
+| Runtime Assignment/Attempt/Evaluation persistence | EXECUTION-GATE | implementation evidence required |
+| Audit v2 implementation | EXECUTION-GATE | implementation evidence required |
+| Worker-replacement executable witness | EXECUTION-GATE | runtime test required |
+| Tracera federation executable witness | EXECUTION-GATE | runtime/integration evidence required |
+
+## Non-code finality blockers
+
+The defined non-code semantic/product-method layers are now closed across the reviewed domain denominator. Every accepted requirement has journey and oracle trace coverage; historical source generations have explicit dispositions; authority ordering and runtime evidence handoff are explicit.
+
+Future archaeology may reveal genuinely independent behavior and expand the natural denominator through accepted revision. Remaining known gates require implementation/runtime/external evidence, not unresolved product meaning.
+
+## Forbidden shortcuts
+
+Do not:
+- accept implementation-derived FRs wholesale;
+- preserve mandatory Neo4j/NATS/MinIO/Plane merely because March PRD named them;
+- treat Feature FSM as mature universal lifecycle;
+- treat review/CI/governance evidence as correctness grade;
+- claim finality while canonical contract/journey/criteria denominators are empty or invalidated.

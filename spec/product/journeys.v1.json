@@ -1,0 +1,248 @@
+{
+  "schema_version": "2.0.0",
+  "product_id": "PRD-AGILEPLUS",
+  "status": "accepted_semantic_journey_map",
+  "authority": "spec/product/CANONICAL_SEMANTIC_DECISIONS.md",
+  "grading_eligible_for_specification": true,
+  "runtime_verified": false,
+  "journeys": [
+    {
+      "id": "AP-J-01",
+      "name": "Shape and accept a development contract",
+      "actor": "operator_or_authorized_agent",
+      "preconditions": [
+        "repository/workspace identity known",
+        "development authority established"
+      ],
+      "outcome": "Turn ambiguous or brownfield work into an accepted immutable SpecRevision with explicit intent, scope, scenarios, constraints, provenance and non-empty acceptance expectations.",
+      "activities": [
+        "explore existing state as needed",
+        "research/clarify uncertainty",
+        "author or revise behavior/design artifacts",
+        "resolve material contradictions",
+        "accept SpecRevision"
+      ],
+      "failure_recovery": [
+        "unresolved material ambiguity => Inconclusive/return to research or clarification",
+        "changed accepted behavior => new SpecRevision, never silent edit"
+      ]
+    },
+    {
+      "id": "AP-J-02",
+      "name": "Decompose accepted intent into executable work",
+      "actor": "planner_or_agent",
+      "preconditions": [
+        "accepted SpecRevision"
+      ],
+      "outcome": "Create dependency-aware WorkPackages and Assignments with bounded context, allowed/forbidden surfaces, criteria, dependencies, authority and evidence expectations.",
+      "activities": [
+        "derive WBS/DAG",
+        "identify dependencies/critical constraints",
+        "construct context bundle",
+        "bind criteria/oracles",
+        "issue Assignment"
+      ],
+      "failure_recovery": [
+        "cycle/unresolved dependency => block executable status",
+        "missing/non-empty criteria => NotConfigured; no assignment acceptance"
+      ]
+    },
+    {
+      "id": "AP-J-03",
+      "name": "Execute with isolated replaceable workers",
+      "actor": "worker_agent",
+      "preconditions": [
+        "valid Assignment",
+        "required execution resources available",
+        "claim/authority granted"
+      ],
+      "outcome": "Run an Attempt in an isolated resource boundary and produce an exact Candidate without mutating durable assignment identity.",
+      "activities": [
+        "acquire claim",
+        "materialize worktree/sandbox",
+        "execute",
+        "record receipts",
+        "produce candidate",
+        "release/expire claim"
+      ],
+      "failure_recovery": [
+        "worker death/timeout => Attempt retained and new Attempt may replace it",
+        "claim expiry => authority ends",
+        "instruction change => revised SpecRevision/Assignment as required"
+      ]
+    },
+    {
+      "id": "AP-J-04",
+      "name": "Independently grade a candidate",
+      "actor": "evaluator_or_grader",
+      "preconditions": [
+        "exact Candidate",
+        "accepted Assignment/SpecRevision",
+        "mandatory Criteria",
+        "evaluator identity/version"
+      ],
+      "outcome": "Produce criterion-level results and evidence receipt for the exact candidate without worker self-award.",
+      "activities": [
+        "load fixture/context",
+        "evaluate positive and adversarial oracles",
+        "record raw evidence",
+        "reduce criterion results",
+        "issue Evaluation receipt"
+      ],
+      "failure_recovery": [
+        "evaluator unavailable => Unknown/Inconclusive",
+        "candidate mismatch/stale receipt => non-accepted",
+        "zero criteria => NotConfigured"
+      ]
+    },
+    {
+      "id": "AP-J-05",
+      "name": "Authorize accepted work",
+      "actor": "governance_authority",
+      "preconditions": [
+        "candidate evaluation exists"
+      ],
+      "outcome": "Award AcceptedWork only when mandatory correctness criteria pass and transition governance/authority also permits acceptance.",
+      "activities": [
+        "check grade",
+        "check governance/policy",
+        "check authority/claim if required",
+        "record accepted completion"
+      ],
+      "failure_recovery": [
+        "correctness pass + policy deny => blocked",
+        "policy pass + correctness fail => unsatisfied",
+        "review/CI alone => insufficient"
+      ]
+    },
+    {
+      "id": "AP-J-06",
+      "name": "Promote or ship accepted work",
+      "actor": "operator_or_automation",
+      "preconditions": [
+        "AcceptedWork",
+        "promotion target identified"
+      ],
+      "outcome": "Integrate/release/handoff the exact accepted candidate while failing closed on conflicts, stale acceptance or transport errors.",
+      "activities": [
+        "preflight",
+        "merge/promote/release as profile requires",
+        "record promotion receipt"
+      ],
+      "failure_recovery": [
+        "merge conflict/error => no promotion",
+        "candidate changes => re-evaluation required",
+        "diagnostic bypass cannot authorize promotion"
+      ]
+    },
+    {
+      "id": "AP-J-07",
+      "name": "Resume after interruption without losing truth",
+      "actor": "operator_or_replacement_agent",
+      "preconditions": [
+        "durable development/work history exists"
+      ],
+      "outcome": "Recover accepted spec, DAG, assignments, attempts, claims, candidates, evaluations and decisions sufficiently to continue without replaying owner context.",
+      "activities": [
+        "load durable dossier/state",
+        "identify latest accepted revisions",
+        "classify incomplete attempts/claims",
+        "resume with new Attempt or revised Assignment"
+      ],
+      "failure_recovery": [
+        "ambiguous authority/history => Inconclusive and require explicit reconciliation",
+        "expired claim never treated as active"
+      ]
+    },
+    {
+      "id": "AP-J-08",
+      "name": "Adapt methodology depth without weakening acceptance",
+      "actor": "operator_or_profile",
+      "preconditions": [
+        "development class/risk/context known"
+      ],
+      "outcome": "Use a lightweight or deep workflow profile while preserving semantic prerequisites for accepted work.",
+      "activities": [
+        "select profile",
+        "materialize only justified research/design/planning artifacts",
+        "retain canonical identities/trace",
+        "grade normally"
+      ],
+      "failure_recovery": [
+        "profile omits required criterion/authority/dependency => cannot reach AcceptedWork"
+      ]
+    },
+    {
+      "id": "AP-J-09",
+      "name": "Import or harmonize external specification frameworks",
+      "actor": "operator_or_agent",
+      "preconditions": [
+        "external artifacts available"
+      ],
+      "outcome": "Map external framework artifacts into canonical AgilePlus roles/identities with provenance and aliases without creating competing accepted intent.",
+      "activities": [
+        "detect source framework",
+        "map roles/ids",
+        "surface conflicts",
+        "accept or reject imported revision"
+      ],
+      "failure_recovery": [
+        "conflicting accepted intent => no silent merge",
+        "unmapped semantics => preserve source and mark unresolved"
+      ]
+    },
+    {
+      "id": "AP-J-10",
+      "name": "Federate work evidence to Tracera",
+      "actor": "system_or_operator",
+      "preconditions": [
+        "AgilePlus Evaluation/Promotion receipt exists"
+      ],
+      "outcome": "Hand exact candidate/evaluation/evidence references to Tracera without asserting product satisfaction.",
+      "activities": [
+        "export versioned receipt",
+        "bind product reference when known",
+        "submit/project to Tracera",
+        "record response"
+      ],
+      "failure_recovery": [
+        "Tracera unavailable => AgilePlus standalone work truth remains intact",
+        "Tracera rejects applicability => AgilePlus accepted work remains accepted but product satisfaction remains non-green"
+      ]
+    },
+    {
+      "id": "AP-J-11",
+      "name": "Inspect the same work semantics across interfaces",
+      "actor": "human_and_agent",
+      "preconditions": [
+        "development state exists"
+      ],
+      "outcome": "CLI/API/MCP/human surfaces expose matching canonical identities, revisions, statuses and acceptance meaning.",
+      "activities": [
+        "query same development/assignment/evaluation through supported surfaces",
+        "compare canonical fields"
+      ],
+      "failure_recovery": [
+        "transport disagreement => parity defect; no surface may manufacture a greener state"
+      ]
+    },
+    {
+      "id": "AP-J-12",
+      "name": "Audit who changed what and why",
+      "actor": "operator_or_auditor",
+      "preconditions": [
+        "development history exists"
+      ],
+      "outcome": "Trace accepted revisions, attempts, evaluations, authority and promotion history while correctly representing the audit-hash version/integrity envelope.",
+      "activities": [
+        "query audit/event history",
+        "verify applicable hash schema",
+        "follow evidence/evaluation references"
+      ],
+      "failure_recovery": [
+        "v1 non-covered-field mutation => documented limitation, not false tamper claim",
+        "hash failure => explicit integrity failure"
+      ]
+    }
+  ]
+}

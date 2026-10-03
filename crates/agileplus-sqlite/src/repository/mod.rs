@@ -1,11 +1,13 @@
-//! Repository implementations for the SQLite adapter.
+//! Repository implementations for agileplus-sqlite.
 
+pub mod acceptance;
 pub mod audit;
 pub mod backlog;
 pub mod cycles;
 pub mod epics;
 pub mod events;
 pub mod evidence;
+pub mod execution;
 pub mod features;
 pub mod governance;
 pub mod metrics;

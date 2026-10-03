@@ -1,0 +1,43 @@
+{
+  "schema_version": "2.1.0",
+  "record_type": "mature_contract_recovery_manifest",
+  "product_id": "PRD-AGILEPLUS",
+  "canonical_name": "AgilePlus",
+  "status": "accepted_mature_semantic_contract_runtime_evidence_pending",
+  "accepted": true,
+  "mature_complete": false,
+  "grading_eligible_for_semantic_spine": true,
+  "grading_eligible_for_full_mature_contract": false,
+  "requirement_count_policy": "derived_only_no_target_floor_ceiling_or_range",
+  "canonical_semantics": "spec/product/CANONICAL_SEMANTIC_DECISIONS.md",
+  "canonical_spine": {
+    "path": "spec/product/requirements.semantic.v1.json",
+    "derived_requirement_count": 67
+  },
+  "journeys": {
+    "path": "spec/product/journeys.v1.json",
+    "status": "accepted_mature_semantic_journeys",
+    "count": 12
+  },
+  "verification": {
+    "path": "verification/semantic-verification-cases.v1.json",
+    "status": "specified_not_executed",
+    "case_count": 92,
+    "requirement_trace_complete": true
+  },
+  "historical_requirement_disposition": {
+    "path": "spec/product/historical-fr-disposition.v1.json",
+    "historical_requirement_count": 90
+  },
+  "mature_domain_denominator": "spec/product/MATURE_DOMAIN_COVERAGE_MAP.md",
+  "specification_acceptance": "verification/SPECIFICATION_ACCEPTANCE_CONTRACT.md",
+  "finality_ledger": "spec/product/NON_CODE_FINALITY_LEDGER.md",
+  "invalidated_predecessor": {
+    "reason": "quota-shaped/generated catalogue was not source-backed semantic decomposition"
+  },
+  "closure_rule": "Mature semantic/product-method specification accepted. Full product completion remains false until implementation/runtime evidence closes evaluator, persistence, worker-replacement, interface and federation witnesses. Newly recovered independently gradable behavior may expand the natural contract denominator through explicit accepted revisions.",
+  "mature_semantic_complete": true,
+  "grading_eligible_for_semantic_contract": true,
+  "grading_eligible_for_runtime_completion": false,
+  "authority_index": "spec/product/AUTHORITY_INDEX.md"
+}

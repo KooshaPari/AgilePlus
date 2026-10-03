@@ -10,6 +10,18 @@ pub struct EvidenceCheck {
     pub message: String,
 }
 
+impl From<agileplus_domain::domain::governance_evaluator::EvidenceCheck> for EvidenceCheck {
+    fn from(value: agileplus_domain::domain::governance_evaluator::EvidenceCheck) -> Self {
+        Self {
+            fr_id: value.fr_id,
+            evidence_type: value.evidence_type,
+            found: value.found,
+            threshold_met: value.threshold_met,
+            message: value.message,
+        }
+    }
+}
+
 impl EvidenceCheck {
     fn to_markdown_row(&self) -> String {
         format!(
@@ -30,6 +42,17 @@ pub struct PolicyEvalResult {
     pub domain: String,
     pub passed: bool,
     pub message: String,
+}
+
+impl From<agileplus_domain::domain::governance_evaluator::PolicyEvalResult> for PolicyEvalResult {
+    fn from(value: agileplus_domain::domain::governance_evaluator::PolicyEvalResult) -> Self {
+        Self {
+            policy_id: value.policy_id,
+            domain: value.domain,
+            passed: value.passed,
+            message: value.message,
+        }
+    }
 }
 
 impl PolicyEvalResult {

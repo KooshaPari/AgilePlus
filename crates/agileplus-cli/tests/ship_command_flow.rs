@@ -2,10 +2,9 @@
 //! Integration tests for `agileplus ship` gating and merge behavior
 //! (commands/ship.rs).
 //!
-//! Covers feature lookup, state enforcement (including `--skip-validate`),
+//! Covers feature lookup, state enforcement (including fail-closed `--skip-validate`),
 //! the incomplete-work-package gate, dry-run short-circuiting, branch-name
-//! derivation, merge ordering, target selection, conflict reporting, and the
-//! non-fatal handling of merge errors.
+//! derivation, merge ordering, target selection, conflict reporting, and fail-closed handling of merge errors.
 
 use agileplus_cli::commands::ship::run_ship;
 use agileplus_domain::domain::state_machine::FeatureState;
@@ -51,22 +50,20 @@ fn ship_rejects_non_validated_state_without_skip() {
 }
 
 #[test]
-fn ship_skip_validate_overrides_state_check() {
+fn ship_skip_validate_cannot_authorize_shipping() {
     block_on(async {
         let storage = SqliteStorageAdapter::in_memory().unwrap();
         let vcs = RecordingVcs::new();
-        // No WPs, so the incomplete gate is satisfied.
         let id = seed(&storage, "forced-feat", FeatureState::Implementing, &[]).await;
         let mut a = args("forced-feat");
         a.skip_validate = true;
-        run_ship(a, &storage, &vcs)
-            .await
-            .expect("skip-validate override");
+        let err = run_ship(a, &storage, &vcs).await.unwrap_err();
+        assert!(err.to_string().contains("diagnostic-only"), "got: {err}");
         let f = StoragePort::get_feature_by_id(&storage, id)
             .await
             .unwrap()
             .unwrap();
-        assert_eq!(f.state, FeatureState::Shipped);
+        assert_eq!(f.state, FeatureState::Implementing);
     })
 }
 
@@ -132,6 +129,29 @@ fn ship_dry_run_makes_no_changes() {
 }
 
 #[test]
+fn ship_rejects_zero_work_packages_outside_dry_run() {
+    block_on(async {
+        let storage = SqliteStorageAdapter::in_memory().unwrap();
+        let vcs = RecordingVcs::new();
+        let id = seed(&storage, "empty-ship", FeatureState::Validated, &[]).await;
+
+        let err = run_ship(args("empty-ship"), &storage, &vcs)
+            .await
+            .expect_err("zero-work promotion must fail closed");
+        assert!(
+            err.to_string().contains("no work packages"),
+            "unexpected error: {err}"
+        );
+        assert!(vcs.merges.lock().unwrap().is_empty());
+        let feature = StoragePort::get_feature_by_id(&storage, id)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(feature.state, FeatureState::Validated);
+    })
+}
+
+#[test]
 fn ship_dry_run_with_no_wps_succeeds() {
     block_on(async {
         let storage = SqliteStorageAdapter::in_memory().unwrap();
@@ -146,7 +166,7 @@ fn ship_dry_run_with_no_wps_succeeds() {
 }
 
 #[test]
-fn ship_derives_branches_and_merges_in_sequence_order() {
+fn ship_merges_exact_accepted_candidates_in_sequence_order() {
     block_on(async {
         let storage = SqliteStorageAdapter::in_memory().unwrap();
         let vcs = RecordingVcs::new();
@@ -164,12 +184,8 @@ fn ship_derives_branches_and_merges_in_sequence_order() {
         let sources: Vec<&str> = merges.iter().map(|(s, _)| s.as_str()).collect();
         assert_eq!(
             sources,
-            vec![
-                "feature/merge-feat/wp01",
-                "feature/merge-feat/wp02",
-                "feature/merge-feat/wp10"
-            ],
-            "WP10 must be zero-padded, and order must follow sequence"
+            vec!["candidate-1", "candidate-2", "candidate-10"],
+            "merge source must be the immutable accepted candidate in WP sequence order"
         );
         assert!(
             merges.iter().all(|(_, t)| t == "main"),
@@ -202,7 +218,7 @@ fn ship_honors_target_branch_override() {
 }
 
 #[test]
-fn ship_uses_worktree_path_as_branch_when_present() {
+fn ship_merges_evaluated_candidate_when_worktree_path_is_present() {
     block_on(async {
         let storage = SqliteStorageAdapter::in_memory().unwrap();
         let vcs = RecordingVcs::new();
@@ -219,9 +235,79 @@ fn ship_uses_worktree_path_as_branch_when_present() {
             .expect("ship");
         let merges = vcs.merges.lock().unwrap().clone();
         assert_eq!(
-            merges[0].0, "wt-feat-WP01",
-            "worktree file_name wins over the convention"
+            merges[0].0, "candidate-1",
+            "ship must merge the evaluated commit rather than a mutable branch or worktree path"
         );
+    })
+}
+
+#[test]
+fn ship_rejects_satisfied_evaluation_with_missing_criterion_receipt() {
+    block_on(async {
+        let storage = SqliteStorageAdapter::in_memory().unwrap();
+        let vcs = RecordingVcs::new();
+        let id = seed(
+            &storage,
+            "receipt-loss",
+            FeatureState::Validated,
+            &[(1, WpState::Done)],
+        )
+        .await;
+
+        {
+            let conn = storage.conn_for_bench().unwrap();
+            conn.execute("DELETE FROM evaluation_criterion_results", [])
+                .unwrap();
+        }
+
+        let err = run_ship(args("receipt-loss"), &storage, &vcs)
+            .await
+            .expect_err("missing criterion receipt must fail closed");
+        assert!(
+            err.to_string().contains("invalid criterion receipt"),
+            "unexpected error: {err}"
+        );
+        assert!(
+            vcs.merges.lock().unwrap().is_empty(),
+            "no merge may occur after receipt loss"
+        );
+        let feature = StoragePort::get_feature_by_id(&storage, id)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(feature.state, FeatureState::Validated);
+    })
+}
+
+#[test]
+fn ship_rejects_source_branch_that_drifted_from_accepted_candidate() {
+    block_on(async {
+        let storage = SqliteStorageAdapter::in_memory().unwrap();
+        let vcs = RecordingVcs::new().with_branch_commit("stale-commit");
+        let id = seed(
+            &storage,
+            "drift-feat",
+            FeatureState::Validated,
+            &[(1, WpState::Done)],
+        )
+        .await;
+
+        let err = run_ship(args("drift-feat"), &storage, &vcs)
+            .await
+            .expect_err("candidate drift must fail closed");
+        assert!(
+            err.to_string().contains("drifted from accepted candidate"),
+            "unexpected error: {err}"
+        );
+        assert!(
+            vcs.merges.lock().unwrap().is_empty(),
+            "no merge after drift"
+        );
+        let feature = StoragePort::get_feature_by_id(&storage, id)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(feature.state, FeatureState::Validated);
     })
 }
 
@@ -264,10 +350,9 @@ fn ship_reports_merge_conflicts_and_stops() {
 }
 
 #[test]
-fn ship_skips_branches_whose_merge_errors() {
+fn ship_fails_closed_when_merge_errors() {
     block_on(async {
         let storage = SqliteStorageAdapter::in_memory().unwrap();
-        // All merges error, so nothing is merged, but shipping still completes.
         let vcs = RecordingVcs::new().with_merge_outcome(MergeOutcome::Error);
         let id = seed(
             &storage,
@@ -276,21 +361,20 @@ fn ship_skips_branches_whose_merge_errors() {
             &[(1, WpState::Done), (2, WpState::Done)],
         )
         .await;
-        run_ship(args("err-feat"), &storage, &vcs)
+        let err = run_ship(args("err-feat"), &storage, &vcs)
             .await
-            .expect("merge errors are non-fatal, they are skipped");
-        assert_eq!(vcs.merges.lock().unwrap().len(), 2, "both attempted");
+            .unwrap_err();
+        assert!(err.to_string().contains("fails closed") || err.to_string().contains("merging"));
+        assert_eq!(
+            vcs.merges.lock().unwrap().len(),
+            1,
+            "stop on first merge error"
+        );
         let f = StoragePort::get_feature_by_id(&storage, id)
             .await
             .unwrap()
             .unwrap();
-        assert_eq!(f.state, FeatureState::Shipped);
-        let artifacts = vcs.artifacts.lock().unwrap().clone();
-        let meta: serde_json::Value = serde_json::from_str(&artifacts[0].2).unwrap();
-        assert_eq!(
-            meta["merged_branches"].as_array().unwrap().len(),
-            0,
-            "no branches actually merged"
-        );
+        assert_eq!(f.state, FeatureState::Validated);
+        assert!(vcs.artifacts.lock().unwrap().is_empty());
     })
 }
