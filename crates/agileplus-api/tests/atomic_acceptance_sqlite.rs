@@ -236,3 +236,40 @@ async fn acceptance_endpoint_replays_exact_request_and_rejects_conflicting_reuse
         .await;
     conflict.assert_status(StatusCode::CONFLICT);
 }
+
+
+#[tokio::test]
+async fn acceptance_precondition_failure_is_422_and_does_not_mutate_terminal_state() {
+    let (server, storage, feature_id, wp_id) = fixture().await;
+    {
+        let conn = storage.conn_for_bench().expect("sqlite connection");
+        conn.execute("DELETE FROM evaluations", []).expect("remove evaluation");
+    }
+
+    let response = server
+        .post("/api/v1/features/atomic-http/accept")
+        .add_header("X-API-Key", API_KEY)
+        .json(&serde_json::json!({
+            "request_id": "http-request:invalid",
+            "expected_governance_version": 1
+        }))
+        .await;
+    response.assert_status(StatusCode::UNPROCESSABLE_ENTITY);
+
+    assert_eq!(
+        StoragePort::get_feature_by_id(storage.as_ref(), feature_id)
+            .await
+            .unwrap()
+            .unwrap()
+            .state,
+        FeatureState::Implementing
+    );
+    assert_eq!(
+        StoragePort::get_work_package(storage.as_ref(), wp_id)
+            .await
+            .unwrap()
+            .unwrap()
+            .state,
+        WpState::Review
+    );
+}
