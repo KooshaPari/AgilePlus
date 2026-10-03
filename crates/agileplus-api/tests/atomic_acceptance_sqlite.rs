@@ -6,12 +6,14 @@ use std::sync::Arc;
 use agileplus_api::{AppState, create_router};
 use agileplus_domain::{
     config::AppConfig,
-    credentials::{CredentialStore, InMemoryCredentialStore, format_api_key_hash, keys as cred_keys},
+    credentials::{
+        CredentialStore, InMemoryCredentialStore, format_api_key_hash, keys as cred_keys,
+    },
     domain::{
         execution::{
-            aggregate_evidence_refs, reduce_criterion_results, snapshot_acceptance_criteria,
-            Assignment, AssignmentStatus, Attempt, AttemptStatus, CriterionEvaluation,
-            Evaluation, EvaluationResult, SpecRevision,
+            Assignment, AssignmentStatus, Attempt, AttemptStatus, CriterionEvaluation, Evaluation,
+            EvaluationResult, SpecRevision, aggregate_evidence_refs, reduce_criterion_results,
+            snapshot_acceptance_criteria,
         },
         feature::Feature,
         governance::{Evidence, EvidenceType, GovernanceContract, GovernanceRule},
@@ -38,7 +40,11 @@ const API_KEY: &str = "atomic-http-key";
 fn credentials() -> Arc<dyn CredentialStore> {
     let store = InMemoryCredentialStore::new();
     store
-        .set("agileplus", cred_keys::API_KEYS, &format_api_key_hash(API_KEY))
+        .set(
+            "agileplus",
+            cred_keys::API_KEYS,
+            &format_api_key_hash(API_KEY),
+        )
         .expect("api key");
     Arc::new(store)
 }
@@ -158,7 +164,12 @@ async fn fixture() -> (TestServer, Arc<SqliteStorageAdapter>, i64, i64) {
         credentials(),
     )
     .with_atomic_acceptance();
-    (TestServer::new(create_router(state)), storage, feature_id, wp_id)
+    (
+        TestServer::new(create_router(state)),
+        storage,
+        feature_id,
+        wp_id,
+    )
 }
 
 #[tokio::test]
@@ -237,13 +248,13 @@ async fn acceptance_endpoint_replays_exact_request_and_rejects_conflicting_reuse
     conflict.assert_status(StatusCode::CONFLICT);
 }
 
-
 #[tokio::test]
 async fn acceptance_precondition_failure_is_422_and_does_not_mutate_terminal_state() {
     let (server, storage, feature_id, wp_id) = fixture().await;
     {
         let conn = storage.conn_for_bench().expect("sqlite connection");
-        conn.execute("DELETE FROM evaluations", []).expect("remove evaluation");
+        conn.execute("DELETE FROM evaluations", [])
+            .expect("remove evaluation");
     }
 
     let response = server

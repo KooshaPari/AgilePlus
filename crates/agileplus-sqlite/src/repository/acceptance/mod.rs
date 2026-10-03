@@ -265,16 +265,16 @@ fn append_audit(
     audit::append_audit_entry(connection, &entry)
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::SqliteStorageAdapter;
     use agileplus_domain::{
         domain::{
             execution::{
-                aggregate_evidence_refs, reduce_criterion_results, snapshot_acceptance_criteria,
                 Assignment, AssignmentStatus, Attempt, AttemptStatus, CriterionEvaluation,
-                Evaluation, EvaluationResult, SpecRevision,
+                Evaluation, EvaluationResult, SpecRevision, aggregate_evidence_refs,
+                reduce_criterion_results, snapshot_acceptance_criteria,
             },
             feature::Feature,
             governance::{Evidence, EvidenceType, GovernanceContract, GovernanceRule},
@@ -282,17 +282,20 @@ mod tests {
         },
         ports::{ExecutionRecordPort, StoragePort},
     };
-    use crate::SqliteStorageAdapter;
 
     async fn fixture() -> (SqliteStorageAdapter, i64, i64) {
         let db = SqliteStorageAdapter::in_memory().expect("in-memory sqlite");
         let mut feature = Feature::new("atomic-acceptance", "Atomic acceptance", [7; 32], None);
         feature.state = FeatureState::Implementing;
-        let feature_id = StoragePort::create_feature(&db, &feature).await.expect("feature");
+        let feature_id = StoragePort::create_feature(&db, &feature)
+            .await
+            .expect("feature");
 
         let mut wp = WorkPackage::new(feature_id, "WP", 1, "criterion");
         wp.state = WpState::Review;
-        let wp_id = StoragePort::create_work_package(&db, &wp).await.expect("wp");
+        let wp_id = StoragePort::create_work_package(&db, &wp)
+            .await
+            .expect("wp");
 
         StoragePort::create_governance_contract(
             &db,
@@ -333,7 +336,9 @@ mod tests {
             accepted_at: Utc::now(),
             authority: "test".into(),
         };
-        ExecutionRecordPort::create_spec_revision(&db, &spec).await.expect("spec");
+        ExecutionRecordPort::create_spec_revision(&db, &spec)
+            .await
+            .expect("spec");
         let assignment = Assignment {
             id: "assignment:atomic".into(),
             wp_id,
@@ -361,7 +366,9 @@ mod tests {
             started_at: Utc::now(),
             ended_at: Some(Utc::now()),
         };
-        ExecutionRecordPort::create_attempt(&db, &attempt).await.expect("attempt");
+        ExecutionRecordPort::create_attempt(&db, &attempt)
+            .await
+            .expect("attempt");
 
         let criterion_results = vec![CriterionEvaluation {
             criterion_id: criteria[0].id.clone(),
@@ -420,7 +427,13 @@ mod tests {
                 .state,
             WpState::Done
         );
-        assert_eq!(StoragePort::get_audit_trail(&db, feature_id).await.unwrap().len(), 2);
+        assert_eq!(
+            StoragePort::get_audit_trail(&db, feature_id)
+                .await
+                .unwrap()
+                .len(),
+            2
+        );
         let conn = db.conn_for_bench().unwrap();
         let receipt_count: i64 = conn
             .query_row(
@@ -503,7 +516,11 @@ mod tests {
         );
         let conn = db.conn_for_bench().unwrap();
         let receipts: i64 = conn
-            .query_row("SELECT COUNT(*) FROM feature_acceptance_receipts", [], |row| row.get(0))
+            .query_row(
+                "SELECT COUNT(*) FROM feature_acceptance_receipts",
+                [],
+                |row| row.get(0),
+            )
             .unwrap();
         let events: i64 = conn
             .query_row(
@@ -557,7 +574,11 @@ mod tests {
         );
         let conn = db.conn_for_bench().unwrap();
         let receipts: i64 = conn
-            .query_row("SELECT COUNT(*) FROM feature_acceptance_receipts", [], |row| row.get(0))
+            .query_row(
+                "SELECT COUNT(*) FROM feature_acceptance_receipts",
+                [],
+                |row| row.get(0),
+            )
             .unwrap();
         let events: i64 = conn
             .query_row(
