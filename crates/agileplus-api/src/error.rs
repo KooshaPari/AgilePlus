@@ -22,6 +22,8 @@ pub enum ApiError {
     #[error("{0}")]
     Conflict(String),
     #[error("{0}")]
+    UnprocessableEntity(String),
+    #[error("{0}")]
     Template(String),
     #[error("internal server error")]
     Internal(String),
@@ -34,6 +36,7 @@ impl IntoResponse for ApiError {
             ApiError::BadRequest(m) => (StatusCode::BAD_REQUEST, m.clone()),
             ApiError::Unauthorized(m) => (StatusCode::UNAUTHORIZED, m.clone()),
             ApiError::Conflict(m) => (StatusCode::CONFLICT, m.clone()),
+            ApiError::UnprocessableEntity(m) => (StatusCode::UNPROCESSABLE_ENTITY, m.clone()),
             ApiError::Template(m) => {
                 tracing::error!(error.message = %m, kind = "template_render", "template render failed");
                 (
@@ -98,6 +101,13 @@ mod tests {
         let err = ApiError::Conflict("dup".into());
         let resp = err.into_response();
         assert_eq!(resp.status(), StatusCode::CONFLICT);
+    }
+
+    #[test]
+    fn unprocessable_entity_returns_422() {
+        let err = ApiError::UnprocessableEntity("acceptance precondition failed".into());
+        let resp = err.into_response();
+        assert_eq!(resp.status(), StatusCode::UNPROCESSABLE_ENTITY);
     }
 
     #[test]
