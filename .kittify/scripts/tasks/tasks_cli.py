@@ -8,33 +8,15 @@ import json
 import os
 import subprocess
 import sys
-from pathlib import Path
-from typing import Any, Dict, List, Optional
 from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
-from task_helpers import (  # noqa: E402
-    LANES,
-    TaskCliError,
-    WorkPackage,
-    append_activity_log,
-    activity_entries,
-    build_document,
-    ensure_lane,
-    find_repo_root,
-    get_lane_from_frontmatter,
-    is_legacy_format,
-    normalize_note,
-    now_utc,
-    run_git,
-    set_scalar,
-    split_frontmatter,
-    locate_work_package,
-)
-from acceptance_support import (  # noqa: E402
+from acceptance_support import (
     AcceptanceError,
     AcceptanceSummary,
     ArtifactEncodingError,
@@ -43,6 +25,24 @@ from acceptance_support import (  # noqa: E402
     detect_feature_slug,
     normalize_feature_encoding,
     perform_acceptance,
+)
+from task_helpers import (
+    LANES,
+    TaskCliError,
+    WorkPackage,
+    activity_entries,
+    append_activity_log,
+    build_document,
+    ensure_lane,
+    find_repo_root,
+    get_lane_from_frontmatter,
+    is_legacy_format,
+    locate_work_package,
+    normalize_note,
+    now_utc,
+    run_git,
+    set_scalar,
+    split_frontmatter,
 )
 
 
@@ -144,7 +144,7 @@ def _check_legacy_format(feature: str, repo_root: Path) -> bool:
         if not _legacy_warning_shown:
             print("\n" + "=" * 60, file=sys.stderr)
             print("Legacy directory-based lanes detected.", file=sys.stderr)
-            print("", file=sys.stderr)
+            print(file=sys.stderr)
             print(
                 "Your project uses the old lane structure (tasks/planned/, tasks/doing/, etc.).",
                 file=sys.stderr,
@@ -153,7 +153,7 @@ def _check_legacy_format(feature: str, repo_root: Path) -> bool:
                 "Run `spec-kitty upgrade` to migrate to frontmatter-only lanes.",
                 file=sys.stderr,
             )
-            print("", file=sys.stderr)
+            print(file=sys.stderr)
             print("Benefits of upgrading:", file=sys.stderr)
             print("  - No file conflicts during lane changes", file=sys.stderr)
             print("  - Direct editing of lane: field supported", file=sys.stderr)
@@ -396,14 +396,14 @@ def rollback_command(args: argparse.Namespace) -> None:
     update_command(args_for_update)
 
 
-def _resolve_feature(repo_root: Path, requested: Optional[str]) -> str:
+def _resolve_feature(repo_root: Path, requested: str | None) -> str:
     if requested:
         return requested
     return detect_feature_slug(repo_root)
 
 
-def _summary_to_text(summary: AcceptanceSummary) -> List[str]:
-    lines: List[str] = []
+def _summary_to_text(summary: AcceptanceSummary) -> list[str]:
+    lines: list[str] = []
     lines.append(f"Feature: {summary.feature}")
     lines.append(f"Branch: {summary.branch or 'N/A'}")
     lines.append(f"Worktree: {summary.worktree_root}")
@@ -561,7 +561,7 @@ def _prepare_merge_metadata(
     target: str,
     strategy: str,
     pushed: bool,
-) -> Optional[Path]:
+) -> Path | None:
     feature_dir = repo_root / "kitty-specs" / feature
     feature_dir.mkdir(parents=True, exist_ok=True)
     meta_path = feature_dir / "meta.json"
@@ -569,7 +569,7 @@ def _prepare_merge_metadata(
     timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     merged_by = _merge_actor(repo_root)
 
-    entry: Dict[str, Any] = {
+    entry: dict[str, Any] = {
         "merged_at": timestamp,
         "merged_by": merged_by,
         "target": target,
@@ -578,7 +578,7 @@ def _prepare_merge_metadata(
         "merge_commit": None,
     }
 
-    meta: Dict[str, Any] = {}
+    meta: dict[str, Any] = {}
     if meta_path.exists():
         try:
             meta = json.loads(meta_path.read_text(encoding="utf-8-sig"))
@@ -605,7 +605,7 @@ def _prepare_merge_metadata(
     return meta_path
 
 
-def _finalize_merge_metadata(meta_path: Optional[Path], merge_commit: str) -> None:
+def _finalize_merge_metadata(meta_path: Path | None, merge_commit: str) -> None:
     if not meta_path or not meta_path.exists():
         return
 
@@ -615,9 +615,8 @@ def _finalize_merge_metadata(meta_path: Optional[Path], merge_commit: str) -> No
         meta = {}
 
     history = meta.get("merge_history")
-    if isinstance(history, list) and history:
-        if isinstance(history[-1], dict):
-            history[-1]["merge_commit"] = merge_commit
+    if isinstance(history, list) and history and isinstance(history[-1], dict):
+        history[-1]["merge_commit"] = merge_commit
     meta["merged_commit"] = merge_commit
 
     meta_path.write_text(
@@ -704,7 +703,7 @@ def merge_command(args: argparse.Namespace) -> None:
         return
 
     def git(
-        cmd: List[str], *, cwd: Path = primary_repo_root, check: bool = True
+        cmd: list[str], *, cwd: Path = primary_repo_root, check: bool = True
     ) -> subprocess.CompletedProcess:
         return run_git(cmd, cwd=cwd, check=check)
 
@@ -725,8 +724,8 @@ def merge_command(args: argparse.Namespace) -> None:
             "Rebase strategy requires manual steps. Run `git checkout {feature}` followed by `git rebase {args.target}`."
         )
 
-    meta_path: Optional[Path] = None
-    meta_rel: Optional[str] = None
+    meta_path: Path | None = None
+    meta_rel: str | None = None
 
     if args.strategy == "squash":
         merge_proc = git(["merge", "--squash", feature], check=False)
@@ -771,9 +770,8 @@ def merge_command(args: argparse.Namespace) -> None:
     elif args.push and not has_remote:
         print("[spec-kitty] Skipping push: no remote configured.", file=sys.stderr)
 
-    if in_worktree and args.remove_worktree:
-        if worktree_root.exists():
-            git(["worktree", "remove", str(worktree_root), "--force"])
+    if in_worktree and args.remove_worktree and worktree_root.exists():
+        git(["worktree", "remove", str(worktree_root), "--force"])
 
     if args.delete_branch:
         delete = git(["branch", "-d", feature], check=False)
@@ -960,7 +958,7 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main(argv: Optional[List[str]] = None) -> int:
+def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     try:
