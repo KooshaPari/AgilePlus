@@ -264,3 +264,253 @@ fn append_audit(
     entry.hash = hash_entry(&entry);
     audit::append_audit_entry(connection, &entry)
 }
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use agileplus_domain::{
+        domain::{
+            execution::{
+                aggregate_evidence_refs, reduce_criterion_results, snapshot_acceptance_criteria,
+                Assignment, AssignmentStatus, Attempt, AttemptStatus, CriterionEvaluation,
+                Evaluation, EvaluationResult, SpecRevision,
+            },
+            feature::Feature,
+            governance::{Evidence, EvidenceType, GovernanceContract, GovernanceRule},
+            work_package::WorkPackage,
+        },
+        ports::{ExecutionRecordPort, StoragePort},
+    };
+    use crate::SqliteStorageAdapter;
+
+    async fn fixture() -> (SqliteStorageAdapter, i64, i64) {
+        let db = SqliteStorageAdapter::in_memory().expect("in-memory sqlite");
+        let mut feature = Feature::new("atomic-acceptance", "Atomic acceptance", [7; 32], None);
+        feature.state = FeatureState::Implementing;
+        let feature_id = StoragePort::create_feature(&db, &feature).await.expect("feature");
+
+        let mut wp = WorkPackage::new(feature_id, "WP", 1, "criterion");
+        wp.state = WpState::Review;
+        let wp_id = StoragePort::create_work_package(&db, &wp).await.expect("wp");
+
+        StoragePort::create_governance_contract(
+            &db,
+            &GovernanceContract {
+                id: 0,
+                feature_id,
+                version: 1,
+                rules: vec![GovernanceRule {
+                    transition: "Implementing->Validated".into(),
+                    required_evidence: vec!["FR-1:test_result".into()],
+                    policy_refs: vec![],
+                }],
+                bound_at: Utc::now(),
+            },
+        )
+        .await
+        .expect("governance");
+        StoragePort::create_evidence(
+            &db,
+            &Evidence {
+                id: 0,
+                wp_id,
+                fr_id: "FR-1".into(),
+                evidence_type: EvidenceType::TestResult,
+                artifact_path: "artifact:test".into(),
+                metadata: None,
+                created_at: Utc::now(),
+            },
+        )
+        .await
+        .expect("evidence");
+
+        let spec = SpecRevision {
+            id: "spec:atomic".into(),
+            feature_id,
+            content_hash: "sha256:atomic".into(),
+            parent_revision_id: None,
+            accepted_at: Utc::now(),
+            authority: "test".into(),
+        };
+        ExecutionRecordPort::create_spec_revision(&db, &spec).await.expect("spec");
+        let assignment = Assignment {
+            id: "assignment:atomic".into(),
+            wp_id,
+            spec_revision_id: spec.id,
+            created_at: Utc::now(),
+            supersedes_assignment_id: None,
+            status: AssignmentStatus::Active,
+        };
+        let criteria = snapshot_acceptance_criteria("criterion");
+        ExecutionRecordPort::create_assignment_with_criteria(&db, &assignment, &criteria)
+            .await
+            .expect("assignment");
+
+        let attempt = Attempt {
+            id: "attempt:atomic".into(),
+            assignment_id: assignment.id.clone(),
+            worker_id: "worker".into(),
+            backend: "test".into(),
+            job_id: None,
+            worktree_path: Some("/tmp/atomic".into()),
+            base_candidate_ref: Some("git:base".into()),
+            result_candidate_ref: Some("git:candidate".into()),
+            status: AttemptStatus::Completed,
+            failure_class: None,
+            started_at: Utc::now(),
+            ended_at: Some(Utc::now()),
+        };
+        ExecutionRecordPort::create_attempt(&db, &attempt).await.expect("attempt");
+
+        let criterion_results = vec![CriterionEvaluation {
+            criterion_id: criteria[0].id.clone(),
+            result: EvaluationResult::Satisfied,
+            evidence_refs: vec!["evidence:criterion".into()],
+            rationale: None,
+        }];
+        let evaluation = Evaluation {
+            id: "evaluation:atomic".into(),
+            assignment_id: assignment.id,
+            attempt_id: Some(attempt.id),
+            candidate_ref: "git:candidate".into(),
+            evaluator_id: "independent".into(),
+            evaluator_version: "1".into(),
+            result: reduce_criterion_results(&criteria, &criterion_results),
+            evidence_refs: aggregate_evidence_refs(&criterion_results),
+            started_at: Utc::now(),
+            finished_at: Utc::now(),
+        };
+        ExecutionRecordPort::create_evaluation_receipt(&db, &evaluation, &criterion_results)
+            .await
+            .expect("evaluation");
+        (db, feature_id, wp_id)
+    }
+
+    fn command(feature_id: i64) -> AcceptFeatureCommand {
+        AcceptFeatureCommand {
+            request_id: "acceptance-request:atomic".into(),
+            feature_id,
+            actor: "test-actor".into(),
+            expected_governance_version: Some(1),
+        }
+    }
+
+    #[tokio::test]
+    async fn commit_is_atomic_and_persists_receipt_event_and_terminal_states() {
+        let (db, feature_id, wp_id) = fixture().await;
+        let outcome = AtomicAcceptancePort::accept_feature_atomic(&db, &command(feature_id))
+            .await
+            .expect("acceptance");
+
+        assert!(!outcome.replayed);
+        assert_eq!(
+            StoragePort::get_feature_by_id(&db, feature_id)
+                .await
+                .unwrap()
+                .unwrap()
+                .state,
+            FeatureState::Validated
+        );
+        assert_eq!(
+            StoragePort::get_work_package(&db, wp_id)
+                .await
+                .unwrap()
+                .unwrap()
+                .state,
+            WpState::Done
+        );
+        assert_eq!(StoragePort::get_audit_trail(&db, feature_id).await.unwrap().len(), 2);
+        let conn = db.conn_for_bench().unwrap();
+        let receipt_count: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM feature_acceptance_receipts WHERE request_id=?1",
+                [&command(feature_id).request_id],
+                |row| row.get(0),
+            )
+            .unwrap();
+        let event_count: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM events WHERE entity_type='feature' AND entity_id=?1",
+                [feature_id],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(receipt_count, 1);
+        assert_eq!(event_count, 1);
+    }
+
+    #[tokio::test]
+    async fn exact_replay_returns_original_receipt_and_changed_command_conflicts() {
+        let (db, feature_id, _) = fixture().await;
+        let first = AtomicAcceptancePort::accept_feature_atomic(&db, &command(feature_id))
+            .await
+            .expect("first");
+        let replay = AtomicAcceptancePort::accept_feature_atomic(&db, &command(feature_id))
+            .await
+            .expect("replay");
+        assert!(replay.replayed);
+        assert_eq!(replay.receipt, first.receipt);
+
+        let mut changed = command(feature_id);
+        changed.actor = "different-actor".into();
+        let err = AtomicAcceptancePort::accept_feature_atomic(&db, &changed)
+            .await
+            .expect_err("same request ID with changed command must conflict");
+        assert!(matches!(err, DomainError::Conflict(_)));
+    }
+
+    #[tokio::test]
+    async fn invalid_existing_audit_chain_fails_before_any_terminal_mutation() {
+        let (db, feature_id, wp_id) = fixture().await;
+        {
+            let conn = db.conn_for_bench().unwrap();
+            conn.execute(
+                "INSERT INTO audit_log
+                 (feature_id,wp_id,timestamp,actor,transition,evidence_refs,prev_hash,hash)
+                 VALUES (?1,NULL,?2,'corrupt','seed','[]',?3,?4)",
+                params![
+                    feature_id,
+                    Utc::now().to_rfc3339(),
+                    vec![0_u8; 32],
+                    vec![9_u8; 32]
+                ],
+            )
+            .unwrap();
+        }
+
+        AtomicAcceptancePort::accept_feature_atomic(&db, &command(feature_id))
+            .await
+            .expect_err("corrupt audit chain must fail acceptance");
+
+        assert_eq!(
+            StoragePort::get_feature_by_id(&db, feature_id)
+                .await
+                .unwrap()
+                .unwrap()
+                .state,
+            FeatureState::Implementing
+        );
+        assert_eq!(
+            StoragePort::get_work_package(&db, wp_id)
+                .await
+                .unwrap()
+                .unwrap()
+                .state,
+            WpState::Review
+        );
+        let conn = db.conn_for_bench().unwrap();
+        let receipts: i64 = conn
+            .query_row("SELECT COUNT(*) FROM feature_acceptance_receipts", [], |row| row.get(0))
+            .unwrap();
+        let events: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM events WHERE entity_type='feature' AND entity_id=?1",
+                [feature_id],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(receipts, 0);
+        assert_eq!(events, 0);
+    }
+}
