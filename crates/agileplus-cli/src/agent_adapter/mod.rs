@@ -265,7 +265,7 @@ impl AgentPort for RealAgentAdapter {
         match &mut *entry {
             JobState::Running { child, .. } => {
                 // Take child out and drop the MutexGuard BEFORE the .await
-                let mut cp = child.lock().unwrap().take();
+                let mut cp = child.get_mut().unwrap().take();
                 if let Some(ref mut proc) = cp {
                     let _ = proc.kill().await;
                     tracing::info!(job_id, "killed agent process");

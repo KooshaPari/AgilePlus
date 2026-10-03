@@ -508,8 +508,8 @@ mod tests {
 
     #[test]
     fn format_value_real() {
-        let result = format_value(&rusqlite::types::Value::Real(3.14));
-        assert_eq!(result, "3.14");
+        let result = format_value(&rusqlite::types::Value::Real(std::f64::consts::PI));
+        assert_eq!(result, "3.141592653589793");
     }
 
     #[test]

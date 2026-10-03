@@ -8,11 +8,15 @@
 
 #![allow(dead_code)]
 
+pub mod dag;
+pub mod dashboard;
 pub mod implement;
 pub mod plan;
 pub mod queue;
+pub mod retrospective;
 pub mod review_loop;
 pub mod ship;
+pub mod trace;
 pub mod worklog;
 
 use std::collections::HashMap;

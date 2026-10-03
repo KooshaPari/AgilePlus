@@ -236,20 +236,11 @@ mod tests {
 
     // ── Mock VcsPort ────────────────────────────────────────────────────
 
+    #[derive(Default)]
     struct MockVcs {
         create_should_fail: bool,
         checkout_should_fail: bool,
         merge_conflicts: bool,
-    }
-
-    impl Default for MockVcs {
-        fn default() -> Self {
-            Self {
-                create_should_fail: false,
-                checkout_should_fail: false,
-                merge_conflicts: false,
-            }
-        }
     }
 
     #[async_trait::async_trait]

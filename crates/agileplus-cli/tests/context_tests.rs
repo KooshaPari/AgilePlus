@@ -4,7 +4,7 @@
 //! Covers `OutputFormat::parse`, `CommandTelemetry`, and `StorageOnlyContext`
 //! — all public types exercised without requiring storage/VCS backends.
 
-use agileplus_cli::context::{CommandTelemetry, OutputFormat, StorageOnlyContext};
+use agileplus_cli::context::{CommandTelemetry, OutputFormat};
 use std::time::Duration;
 
 // ── OutputFormat::parse ──────────────────────────────────────────────────────
