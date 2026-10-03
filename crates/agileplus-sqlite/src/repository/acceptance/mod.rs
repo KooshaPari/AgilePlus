@@ -461,6 +461,62 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn late_receipt_failure_rolls_back_terminal_states_audits_and_event() {
+        let (db, feature_id, wp_id) = fixture().await;
+        {
+            let conn = db.conn_for_bench().unwrap();
+            conn.execute_batch(
+                "CREATE TRIGGER fail_acceptance_receipt
+                 BEFORE INSERT ON feature_acceptance_receipts
+                 BEGIN
+                   SELECT RAISE(ABORT, 'forced late receipt failure');
+                 END;",
+            )
+            .unwrap();
+        }
+
+        AtomicAcceptancePort::accept_feature_atomic(&db, &command(feature_id))
+            .await
+            .expect_err("forced late receipt failure must roll back the transaction");
+
+        assert_eq!(
+            StoragePort::get_feature_by_id(&db, feature_id)
+                .await
+                .unwrap()
+                .unwrap()
+                .state,
+            FeatureState::Implementing
+        );
+        assert_eq!(
+            StoragePort::get_work_package(&db, wp_id)
+                .await
+                .unwrap()
+                .unwrap()
+                .state,
+            WpState::Review
+        );
+        assert!(
+            StoragePort::get_audit_trail(&db, feature_id)
+                .await
+                .unwrap()
+                .is_empty()
+        );
+        let conn = db.conn_for_bench().unwrap();
+        let receipts: i64 = conn
+            .query_row("SELECT COUNT(*) FROM feature_acceptance_receipts", [], |row| row.get(0))
+            .unwrap();
+        let events: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM events WHERE entity_type='feature' AND entity_id=?1",
+                [feature_id],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(receipts, 0);
+        assert_eq!(events, 0);
+    }
+
+    #[tokio::test]
     async fn invalid_existing_audit_chain_fails_before_any_terminal_mutation() {
         let (db, feature_id, wp_id) = fixture().await;
         {
