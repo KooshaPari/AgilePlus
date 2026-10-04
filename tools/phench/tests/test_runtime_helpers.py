@@ -40,11 +40,12 @@ class RuntimeHelperTests(unittest.TestCase):
             commands=[RunnerCommand("make", "build", "make build", "Makefile")],
         )
 
-        with patch("sys.stdin.isatty", return_value=False), patch(
-            "sys.stdout.isatty", return_value=False
+        with (
+            patch("sys.stdin.isatty", return_value=False),
+            patch("sys.stdout.isatty", return_value=False),
+            self.assertRaisesRegex(ValueError, "requires a TTY"),
         ):
-            with self.assertRaisesRegex(ValueError, "requires a TTY"):
-                pick_command_interactive(catalog)
+            pick_command_interactive(catalog)
 
 
 if __name__ == "__main__":

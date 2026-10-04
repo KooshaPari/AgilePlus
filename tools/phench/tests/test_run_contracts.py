@@ -7,7 +7,13 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from phench.service import add_repo, init_target, lock_target, materialize_target, run_target
+from phench.service import (
+    add_repo,
+    init_target,
+    lock_target,
+    materialize_target,
+    run_target,
+)
 
 
 class RunContractTests(unittest.TestCase):
@@ -34,8 +40,15 @@ class RunContractTests(unittest.TestCase):
     def _make_git_repo(self, name: str, files: dict[str, str]) -> Path:
         repo = Path(self._tmp.name) / name
         repo.mkdir(parents=True)
-        subprocess.run(["git", "init", "-b", "main"], cwd=repo, check=True, capture_output=True)
-        subprocess.run(["git", "config", "user.name", "Codex"], cwd=repo, check=True, capture_output=True)
+        subprocess.run(
+            ["git", "init", "-b", "main"], cwd=repo, check=True, capture_output=True
+        )
+        subprocess.run(
+            ["git", "config", "user.name", "Codex"],
+            cwd=repo,
+            check=True,
+            capture_output=True,
+        )
         subprocess.run(
             ["git", "config", "user.email", "codex@example.com"],
             cwd=repo,
@@ -47,7 +60,9 @@ class RunContractTests(unittest.TestCase):
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(content, encoding="utf-8")
         subprocess.run(["git", "add", "."], cwd=repo, check=True, capture_output=True)
-        subprocess.run(["git", "commit", "-m", "init"], cwd=repo, check=True, capture_output=True)
+        subprocess.run(
+            ["git", "commit", "-m", "init"], cwd=repo, check=True, capture_output=True
+        )
         return repo
 
     def _materialize_repo(self, repo: Path, repo_id: str) -> None:
@@ -60,18 +75,21 @@ class RunContractTests(unittest.TestCase):
         repo = self._make_git_repo("plain", {"README.md": "# plain\n"})
         self._materialize_repo(repo, "plain")
 
-        with self.assertRaisesRegex(ValueError, "runner has no discovered commands: make"):
+        with self.assertRaisesRegex(
+            ValueError, "runner has no discovered commands: make"
+        ):
             run_target("alpha", runner="make")
 
     def test_run_target_rejects_noninteractive_selection_without_tty(self) -> None:
         repo = self._make_git_repo("make-repo", {"Makefile": "build:\n\t@echo build\n"})
         self._materialize_repo(repo, "make-repo")
 
-        with patch("sys.stdin.isatty", return_value=False), patch(
-            "sys.stdout.isatty", return_value=False
+        with (
+            patch("sys.stdin.isatty", return_value=False),
+            patch("sys.stdout.isatty", return_value=False),
+            self.assertRaisesRegex(ValueError, "requires a TTY"),
         ):
-            with self.assertRaisesRegex(ValueError, "requires a TTY"):
-                run_target("alpha")
+            run_target("alpha")
 
 
 if __name__ == "__main__":

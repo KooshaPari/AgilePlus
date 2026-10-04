@@ -30,7 +30,6 @@ Validation: duplicate unit_ids cause an error before any files are written.
 
 import argparse
 import json
-import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -76,8 +75,8 @@ def generate_spec_md(epic: str, manifest: dict) -> str:
         "",
         f"**Epic:** {epic}",
         f"**Generated:** {now}",
-        f"**Status:** Draft",
-        f"**Type:** automation",
+        "**Status:** Draft",
+        "**Type:** automation",
         "",
         "## Overview",
         "",
@@ -134,7 +133,7 @@ def generate_wp_md(unit: dict, epic: str, phase: str) -> str:
         'lane: "planned"',
         f"dependencies: {json.dumps(deps)}",
         f'created_at: "{now}"',
-        f"subtasks:",
+        "subtasks:",
     ]
     for st in subtasks:
         frontmatter_lines.append(f"  - {st}")

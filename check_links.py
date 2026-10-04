@@ -18,12 +18,7 @@ def extract_links(filepath):
     for m in pattern.finditer(content):
         url = m.group(2).strip()
         # Skip external links, anchors, mailto
-        if (
-            url.startswith("http://")
-            or url.startswith("https://")
-            or url.startswith("#")
-            or url.startswith("mailto:")
-        ):
+        if url.startswith(("http://", "https://", "#", "mailto:")):
             continue
         links.append((m.group(1), url, m.start()))
 

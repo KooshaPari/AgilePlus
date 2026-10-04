@@ -86,7 +86,11 @@ def spans_for_file(path: Path) -> int:
             continue
         # An inline module: find its opening brace, then its extent.
         hint = index
-        while hint < len(lines) and "{" not in lines[hint] and not MOD_DECL.match(lines[hint]):
+        while (
+            hint < len(lines)
+            and "{" not in lines[hint]
+            and not MOD_DECL.match(lines[hint])
+        ):
             hint += 1
         if hint >= len(lines):
             marked.add(index)

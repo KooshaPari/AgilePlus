@@ -13,7 +13,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-
 TOOL_TIMEOUT = 30  # seconds per tool invocation
 
 
@@ -29,6 +28,7 @@ def run_tool(
             timeout=TOOL_TIMEOUT,
             cwd=cwd,
             env=env or None,
+            check=False,
         )
         return result.returncode, result.stdout, result.stderr
     except FileNotFoundError:
@@ -39,7 +39,7 @@ def run_tool(
             "",
             f"[drift-check] timed out after {TOOL_TIMEOUT}s: {' '.join(cmd)}",
         )
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 -- graceful degradation: tool errors become findings
         return 1, "", f"[drift-check] error running {' '.join(cmd)}: {exc}"
 
 
@@ -174,7 +174,7 @@ def python_check(file_path: Path, repo_root: Path, findings: list) -> None:
 
 def yaml_check(file_path: Path, repo_root: Path, findings: list) -> None:
     """Run actionlint on a YAML file."""
-    rc, stdout, stderr = run_tool(["actionlint", str(file_path)], cwd=repo_root)
+    rc, _stdout, stderr = run_tool(["actionlint", str(file_path)], cwd=repo_root)
     if rc == 127:
         pass
     elif rc != 0:
@@ -232,7 +232,7 @@ def typescript_check(file_path: Path, repo_root: Path, findings: list) -> None:
 
 def markdown_check(file_path: Path, repo_root: Path, findings: list) -> None:
     """Run markdownlint on a .md file if markdownlint is installed."""
-    rc, stdout, stderr = run_tool(
+    rc, stdout, _stderr = run_tool(
         ["npx", "markdownlint", str(file_path)], cwd=repo_root
     )
     if rc == 127:

@@ -67,9 +67,15 @@ def generate_html(history_data: dict, config: dict) -> str:
     latest = history[-1]["metrics"]
 
     # Group metrics for charts
-    latency_keys = [k for k, v in metrics_def.items() if v.get("chart_group") == "latency"]
-    throughput_keys = [k for k, v in metrics_def.items() if v.get("chart_group") == "throughput"]
-    memory_keys = [k for k, v in metrics_def.items() if v.get("chart_group") == "memory"]
+    latency_keys = [
+        k for k, v in metrics_def.items() if v.get("chart_group") == "latency"
+    ]
+    throughput_keys = [
+        k for k, v in metrics_def.items() if v.get("chart_group") == "throughput"
+    ]
+    memory_keys = [
+        k for k, v in metrics_def.items() if v.get("chart_group") == "memory"
+    ]
 
     def metric_data(key):
         return [h["metrics"].get(key, 0) for h in history]
@@ -90,13 +96,17 @@ def generate_html(history_data: dict, config: dict) -> str:
 
         unit = mdef.get("unit", "")
         status_colors = display.get("status_colors", {})
-        trend_icon = {"improving": "&#9650;", "degrading": "&#9660;", "stable": "&#9644;"}.get(tr, "&#9644;")
+        trend_icon = {
+            "improving": "&#9650;",
+            "degrading": "&#9660;",
+            "stable": "&#9644;",
+        }.get(tr, "&#9644;")
         trend_color = status_colors.get(tr, "#6b7280")
         status_color = status_colors.get(status, "#6b7280")
 
         summary_rows += f"""
         <tr>
-          <td><strong>{mdef.get('label', mkey)}</strong></td>
+          <td><strong>{mdef.get("label", mkey)}</strong></td>
           <td>{bl} {unit}</td>
           <td>{current} {unit}</td>
           <td>{delta:+.1f} ({delta_pct:+.1f}%)</td>
@@ -110,7 +120,11 @@ def generate_html(history_data: dict, config: dict) -> str:
         mdef = metrics_def.get(key, {})
         data = metric_data(key)
         bl = baseline_val(key)
-        ds_colors = [colors.get("latency_line"), colors.get("info"), colors.get("secondary")]
+        ds_colors = [
+            colors.get("latency_line"),
+            colors.get("info"),
+            colors.get("secondary"),
+        ]
         line_color = ds_colors[i % len(ds_colors)]
         c = line_styles.get("current_data", {})
         b = line_styles.get("baseline", {})
@@ -119,9 +133,9 @@ def generate_html(history_data: dict, config: dict) -> str:
             data: {json.dumps(data)},
             borderColor: '{line_color}',
             backgroundColor: '{colors.get("latency_fill", "rgba(59,130,246,0.1)")}',
-            borderWidth: {c.get('borderWidth', 2.5)},
-            pointRadius: {c.get('pointRadius', 4)},
-            tension: {c.get('tension', 0.3)},
+            borderWidth: {c.get("borderWidth", 2.5)},
+            pointRadius: {c.get("pointRadius", 4)},
+            tension: {c.get("tension", 0.3)},
             yAxisID: 'y_latency',
             fill: false
         }},
@@ -129,8 +143,8 @@ def generate_html(history_data: dict, config: dict) -> str:
             label: '{mdef.get("label", key)} baseline',
             data: Array({len(data)}).fill({bl}),
             borderColor: '{colors.get("baseline_dash", "#ef4444")}',
-            borderWidth: {b.get('borderWidth', 1.5)},
-            borderDash: {b.get('borderDash', [6, 3])},
+            borderWidth: {b.get("borderWidth", 1.5)},
+            borderDash: {b.get("borderDash", [6, 3])},
             pointRadius: 0,
             tension: 0,
             yAxisID: 'y_latency',
@@ -150,17 +164,17 @@ def generate_html(history_data: dict, config: dict) -> str:
             data: {json.dumps(data)},
             borderColor: '{colors.get("throughput_line", "#22c55e")}',
             backgroundColor: '{colors.get("throughput_fill", "rgba(34,197,94,0.1)")}',
-            borderWidth: {c.get('borderWidth', 2.5)},
-            pointRadius: {c.get('pointRadius', 4)},
-            tension: {c.get('tension', 0.3)},
+            borderWidth: {c.get("borderWidth", 2.5)},
+            pointRadius: {c.get("pointRadius", 4)},
+            tension: {c.get("tension", 0.3)},
             fill: false
         }},
         {{
             label: '{mdef.get("label", key)} baseline',
             data: Array({len(data)}).fill({bl}),
             borderColor: '{colors.get("baseline_dash", "#ef4444")}',
-            borderWidth: {b.get('borderWidth', 1.5)},
-            borderDash: {b.get('borderDash', [6, 3])},
+            borderWidth: {b.get("borderWidth", 1.5)},
+            borderDash: {b.get("borderDash", [6, 3])},
             pointRadius: 0,
             tension: 0,
             fill: false
@@ -181,17 +195,17 @@ def generate_html(history_data: dict, config: dict) -> str:
             data: {json.dumps(data)},
             borderColor: '{line_color}',
             backgroundColor: '{colors.get("memory_fill", "rgba(245,158,11,0.1)")}',
-            borderWidth: {c.get('borderWidth', 2.5)},
-            pointRadius: {c.get('pointRadius', 4)},
-            tension: {c.get('tension', 0.3)},
+            borderWidth: {c.get("borderWidth", 2.5)},
+            pointRadius: {c.get("pointRadius", 4)},
+            tension: {c.get("tension", 0.3)},
             fill: false
         }},
         {{
             label: '{mdef.get("label", key)} baseline',
             data: Array({len(data)}).fill({bl}),
             borderColor: '{colors.get("baseline_dash", "#ef4444")}',
-            borderWidth: {b.get('borderWidth', 1.5)},
-            borderDash: {b.get('borderDash', [6, 3])},
+            borderWidth: {b.get("borderWidth", 1.5)},
+            borderDash: {b.get("borderDash", [6, 3])},
             pointRadius: 0,
             tension: 0,
             fill: false
@@ -225,7 +239,7 @@ def generate_html(history_data: dict, config: dict) -> str:
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
   <style>
     *, *::before, *::after {{ box-sizing: border-box; margin: 0; padding: 0; }}
-    body {{ font-family: {display.get('font_family', 'Inter, system-ui, sans-serif')}; background: #f8fafc; color: #1e293b; padding: 24px; }}
+    body {{ font-family: {display.get("font_family", "Inter, system-ui, sans-serif")}; background: #f8fafc; color: #1e293b; padding: 24px; }}
     .dashboard-header {{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding: 20px 24px; background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }}
     .dashboard-header h1 {{ font-size: 1.5rem; font-weight: 700; }}
     .dashboard-header .meta {{ color: #64748b; font-size: 0.875rem; }}
@@ -253,7 +267,7 @@ def generate_html(history_data: dict, config: dict) -> str:
   <div class="dashboard-header">
     <div>
       <h1>Performance Trend Dashboard</h1>
-      <div class="meta">{repo_name} &mdash; Last updated: {history[-1]['date']}</div>
+      <div class="meta">{repo_name} &mdash; Last updated: {history[-1]["date"]}</div>
     </div>
     <div class="meta">{len(history)} data points &bull; 4-week window</div>
   </div>
@@ -264,15 +278,15 @@ def generate_html(history_data: dict, config: dict) -> str:
       <div class="label">Overall Status</div>
     </div>
     <div class="status-card">
-      <div class="number" style="color: {colors.get('success')}">{pass_c}</div>
+      <div class="number" style="color: {colors.get("success")}">{pass_c}</div>
       <div class="label">Passing</div>
     </div>
     <div class="status-card">
-      <div class="number" style="color: {colors.get('warning')}">{warn_c}</div>
+      <div class="number" style="color: {colors.get("warning")}">{warn_c}</div>
       <div class="label">Warnings</div>
     </div>
     <div class="status-card">
-      <div class="number" style="color: {colors.get('danger')}">{fail_c}</div>
+      <div class="number" style="color: {colors.get("danger")}">{fail_c}</div>
       <div class="label">Failing</div>
     </div>
   </div>
@@ -367,7 +381,7 @@ def generate_html(history_data: dict, config: dict) -> str:
         datasets: [
           {{
             label: 'Error Rate',
-            data: {json.dumps([h['metrics'].get('error_rate_pct', 0) for h in history])},
+            data: {json.dumps([h["metrics"].get("error_rate_pct", 0) for h in history])},
             borderColor: '{colors.get("danger", "#ef4444")}',
             borderWidth: 2.5,
             pointRadius: 4,
@@ -376,7 +390,7 @@ def generate_html(history_data: dict, config: dict) -> str:
           }},
           {{
             label: 'CPU Utilization',
-            data: {json.dumps([h['metrics'].get('cpu_utilization_pct', 0) for h in history])},
+            data: {json.dumps([h["metrics"].get("cpu_utilization_pct", 0) for h in history])},
             borderColor: '{colors.get("info", "#06b6d4")}',
             borderWidth: 2.5,
             pointRadius: 4,
@@ -403,7 +417,9 @@ def generate_html(history_data: dict, config: dict) -> str:
 
 def main():
     parser = argparse.ArgumentParser(description="Generate perf trend dashboard HTML")
-    parser.add_argument("--history", required=True, help="Path to perf-trend-history.json")
+    parser.add_argument(
+        "--history", required=True, help="Path to perf-trend-history.json"
+    )
     parser.add_argument("--config", required=True, help="Path to dashboard-config.json")
     parser.add_argument("--output", required=True, help="Output HTML file path")
     args = parser.parse_args()
@@ -412,7 +428,10 @@ def main():
     try:
         config = load_json(args.config)
     except FileNotFoundError:
-        print(f"Warning: Config file {args.config} not found, using defaults", file=sys.stderr)
+        print(
+            f"Warning: Config file {args.config} not found, using defaults",
+            file=sys.stderr,
+        )
         config = {}
 
     html = generate_html(history_data, config)

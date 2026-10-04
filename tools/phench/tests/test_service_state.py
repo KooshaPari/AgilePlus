@@ -5,8 +5,14 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from phench.service import init_target, list_targets, load_target_lock, sync_target, target_status
-from phench.store import dual_write, read_dual
+from phench.service import (
+    init_target,
+    list_targets,
+    load_target_lock,
+    sync_target,
+    target_status,
+)
+from phench.store import read_dual
 
 
 class ServiceStateTests(unittest.TestCase):
@@ -53,7 +59,10 @@ class ServiceStateTests(unittest.TestCase):
     def test_sync_target_repairs_missing_mirror_copy(self) -> None:
         init_target("alpha", mode="repo")
         mirror_file = (
-            Path(os.environ["THGENT_PHENCH_HOME_ROOT"]) / "alpha" / ".phench" / "target.lock.json"
+            Path(os.environ["THGENT_PHENCH_HOME_ROOT"])
+            / "alpha"
+            / ".phench"
+            / "target.lock.json"
         )
         mirror_file.unlink()
 

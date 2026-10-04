@@ -83,7 +83,9 @@ def read_dual(target: str, filename: str) -> dict[str, Any]:
             return payload
         except json.JSONDecodeError:
             errors.append(f"json-error:{path}")
-    raise FileNotFoundError(f"Unable to load {filename} for {target}; {', '.join(errors)}")
+    raise FileNotFoundError(
+        f"Unable to load {filename} for {target}; {', '.join(errors)}"
+    )
 
 
 def sync_dual(target: str, filename: str, prefer: str | None = None) -> dict[str, Any]:
@@ -95,18 +97,34 @@ def sync_dual(target: str, filename: str, prefer: str | None = None) -> dict[str
 
     if project_path.exists() and not mirror_path.exists():
         mirror_path.parent.mkdir(parents=True, exist_ok=True)
-        mirror_path.write_text(project_path.read_text(encoding="utf-8"), encoding="utf-8")
-        return {"source": str(project_path), "synced": str(mirror_path), "status": "repaired"}
+        mirror_path.write_text(
+            project_path.read_text(encoding="utf-8"), encoding="utf-8"
+        )
+        return {
+            "source": str(project_path),
+            "synced": str(mirror_path),
+            "status": "repaired",
+        }
 
     if mirror_path.exists() and not project_path.exists():
         project_path.parent.mkdir(parents=True, exist_ok=True)
-        project_path.write_text(mirror_path.read_text(encoding="utf-8"), encoding="utf-8")
-        return {"source": str(mirror_path), "synced": str(project_path), "status": "repaired"}
+        project_path.write_text(
+            mirror_path.read_text(encoding="utf-8"), encoding="utf-8"
+        )
+        return {
+            "source": str(mirror_path),
+            "synced": str(project_path),
+            "status": "repaired",
+        }
 
     project_raw = project_path.read_text(encoding="utf-8")
     mirror_raw = mirror_path.read_text(encoding="utf-8")
     if project_raw == mirror_raw:
-        return {"status": "in-sync", "project_path": str(project_path), "mirror_path": str(mirror_path)}
+        return {
+            "status": "in-sync",
+            "project_path": str(project_path),
+            "mirror_path": str(mirror_path),
+        }
 
     if prefer not in {None, "projects", "home"}:
         raise ValueError("prefer must be one of: projects, home")
@@ -119,8 +137,14 @@ def sync_dual(target: str, filename: str, prefer: str | None = None) -> dict[str
         project_mtime = project_path.stat().st_mtime
         mirror_mtime = mirror_path.stat().st_mtime
         if project_mtime == mirror_mtime:
-            raise ValueError("Dual state drift with equal mtime; rerun with --prefer projects|home")
-        source, dest = (project_path, mirror_path) if project_mtime > mirror_mtime else (mirror_path, project_path)
+            raise ValueError(
+                "Dual state drift with equal mtime; rerun with --prefer projects|home"
+            )
+        source, dest = (
+            (project_path, mirror_path)
+            if project_mtime > mirror_mtime
+            else (mirror_path, project_path)
+        )
 
     dest.write_text(source.read_text(encoding="utf-8"), encoding="utf-8")
     return {"status": "repaired", "source": str(source), "synced": str(dest)}

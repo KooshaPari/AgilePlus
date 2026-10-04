@@ -244,15 +244,16 @@ class TestTierTools:
             seen[id_] = getattr(tool, "__name__", str(tool))
 
 
-
 class TestMessageSizeLimit:
     """Tests for MAX_MESSAGE_LENGTH enforcement."""
 
     def test_unicode_message_is_accepted(self) -> None:
         from dispatch_mcp.server import dispatch_custom
 
-        with patch.dict("os.environ", {"OMNIROUTE_URL": "http://localhost:8080"}), \
-             patch("dispatch_mcp.server.httpx.Client") as mock_client_cls:
+        with (
+            patch.dict("os.environ", {"OMNIROUTE_URL": "http://localhost:8080"}),
+            patch("dispatch_mcp.server.httpx.Client") as mock_client_cls,
+        ):
             mock_response = MagicMock()
             mock_response.json.return_value = {"ok": True}
             mock_response.raise_for_status = MagicMock()
@@ -265,7 +266,6 @@ class TestMessageSizeLimit:
             dispatch_custom("worker", "hello 🐍")
             call_args = mock_client.post.call_args
             assert call_args[1]["json"]["message"] == "hello 🐍"
-
 
     def test_liveness_does_not_call_backend(self) -> None:
         with patch("dispatch_mcp.server.httpx.Client") as mock_client_cls:

@@ -70,9 +70,10 @@ def _owned_identity(process: ManagedProcess) -> _OwnedIdentity:
     with _OWNED_LOCK:
         identity = _OWNED.get(token) if token is not None else None
     if identity is None or identity.process is not process.process:
-        raise ProcessOwnershipError(f"process {process.name!r} is not owned by this harness")
+        raise ProcessOwnershipError(
+            f"process {process.name!r} is not owned by this harness"
+        )
     return identity
-
 
 
 def reserve_loopback_port() -> int:
@@ -130,9 +131,7 @@ def build_mcp_environment(
 ) -> dict[str, str]:
     """Build a secret-free environment for the Python MCP bridge."""
     source = os.environ if parent is None else parent
-    environment = _allowlisted_environment(
-        source, ("PATH", "PYTHONPATH", "RUST_LOG")
-    )
+    environment = _allowlisted_environment(source, ("PATH", "PYTHONPATH", "RUST_LOG"))
     environment.update(
         {
             "AGILEPLUS_GRPC_ADDRESS": core_address,
@@ -164,6 +163,7 @@ class CleanupRegistry:
             self._processes = []
         for process in reversed(processes):
             stop_process(process)
+
 
 _CLEANUP = CleanupRegistry()
 atexit.register(_CLEANUP.cleanup)
@@ -274,7 +274,7 @@ async def wait_until(
         try:
             await probe()
             return
-        except Exception as exc:  # readiness probes communicate retryable failure
+        except Exception as exc:  # noqa: BLE001 -- readiness probes communicate retryable failure
             last_error = exc
         remaining = deadline - time.monotonic()
         if remaining <= 0:

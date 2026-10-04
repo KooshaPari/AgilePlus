@@ -15,7 +15,6 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 SPECS_DIR = ROOT / ".agileplus" / "specs"
 DB_PATH = ROOT / ".agileplus" / "agileplus.db"
@@ -150,7 +149,7 @@ def extract_acceptance(text: str) -> str:
             capture = True
             continue
         if capture:
-            if stripped.startswith("### ") or stripped.startswith("## "):
+            if stripped.startswith(("### ", "## ")):
                 break
             if stripped:
                 lines.append(stripped)
@@ -164,7 +163,9 @@ def parse_large_tasks(task_text: str) -> list[WorkPackageSeed]:
         for pattern in WP_HEADING_PATTERNS:
             match = pattern.match(line)
             if match:
-                headings.append((match.group(1), normalize_title(match.group(2)), idx, -1))
+                headings.append(
+                    (match.group(1), normalize_title(match.group(2)), idx, -1)
+                )
                 break
     if not headings:
         return []
@@ -256,9 +257,13 @@ def ensure_project(conn: sqlite3.Connection) -> None:
     )
 
 
-def ensure_module(conn: sqlite3.Connection, slug: str, name: str, description: str) -> int:
+def ensure_module(
+    conn: sqlite3.Connection, slug: str, name: str, description: str
+) -> int:
     now = utc_now()
-    row = conn.execute("SELECT id FROM modules WHERE slug = ? AND parent_module_id IS NULL", (slug,)).fetchone()
+    row = conn.execute(
+        "SELECT id FROM modules WHERE slug = ? AND parent_module_id IS NULL", (slug,)
+    ).fetchone()
     if row:
         conn.execute(
             "UPDATE modules SET friendly_name = ?, description = ?, updated_at = ? WHERE id = ?",
@@ -277,10 +282,16 @@ def ensure_module(conn: sqlite3.Connection, slug: str, name: str, description: s
 
 def upsert_feature(conn: sqlite3.Connection, seed: FeatureSeed, module_id: int) -> int:
     now = utc_now()
-    row = conn.execute("SELECT id, state FROM features WHERE slug = ?", (seed.slug,)).fetchone()
+    row = conn.execute(
+        "SELECT id, state FROM features WHERE slug = ?", (seed.slug,)
+    ).fetchone()
     if row:
         feature_id, existing_state = int(row[0]), row[1]
-        state = existing_state if existing_state in {"shipped", "retrospected"} else seed.state
+        state = (
+            existing_state
+            if existing_state in {"shipped", "retrospected"}
+            else seed.state
+        )
         conn.execute(
             """
             UPDATE features
@@ -301,7 +312,9 @@ def upsert_feature(conn: sqlite3.Connection, seed: FeatureSeed, module_id: int) 
     return int(cur.lastrowid)
 
 
-def replace_work_packages(conn: sqlite3.Connection, feature_id: int, work_packages: list[WorkPackageSeed]) -> None:
+def replace_work_packages(
+    conn: sqlite3.Connection, feature_id: int, work_packages: list[WorkPackageSeed]
+) -> None:
     now = utc_now()
     conn.execute("DELETE FROM work_packages WHERE feature_id = ?", (feature_id,))
     for wp in work_packages:
@@ -311,7 +324,15 @@ def replace_work_packages(conn: sqlite3.Connection, feature_id: int, work_packag
                 (feature_id, title, state, sequence, file_scope, acceptance_criteria, created_at, updated_at)
             VALUES (?, ?, ?, ?, '[]', ?, ?, ?)
             """,
-            (feature_id, wp.title, wp.state, wp.sequence, wp.acceptance_criteria, now, now),
+            (
+                feature_id,
+                wp.title,
+                wp.state,
+                wp.sequence,
+                wp.acceptance_criteria,
+                now,
+                now,
+            ),
         )
 
 
@@ -343,7 +364,9 @@ def main() -> None:
         conn.execute("PRAGMA foreign_keys = ON")
         ensure_project(conn)
         for seed in seeds:
-            module_id = ensure_module(conn, seed.module_slug, seed.module_name, seed.module_description)
+            module_id = ensure_module(
+                conn, seed.module_slug, seed.module_name, seed.module_description
+            )
             feature_id = upsert_feature(conn, seed, module_id)
             replace_work_packages(conn, feature_id, seed.work_packages)
         conn.commit()

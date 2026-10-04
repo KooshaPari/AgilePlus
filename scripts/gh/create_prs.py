@@ -1,14 +1,14 @@
-import subprocess
 import json
+import subprocess
 
 
 def run_command(command, cwd=None):
     try:
         result = subprocess.run(
-            command, shell=True, capture_output=True, text=True, cwd=cwd
+            command, shell=True, capture_output=True, text=True, cwd=cwd, check=False
         )
         return result.stdout.strip(), result.stderr.strip(), result.returncode
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 -- wrapper converts any command failure into an error return
         return "", str(e), 1
 
 
@@ -80,7 +80,7 @@ def main():
                 f'git checkout "{branch}" || git checkout -b "{branch}" "origin/{branch}"',
                 cwd=repo_path,
             )
-            stdout_merge, stderr_merge, code_merge = run_command(
+            _stdout_merge, _stderr_merge, code_merge = run_command(
                 "git merge origin/main --no-edit", cwd=repo_path
             )
 

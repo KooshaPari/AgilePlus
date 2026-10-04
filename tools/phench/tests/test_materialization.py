@@ -42,8 +42,15 @@ class MaterializationTests(unittest.TestCase):
     def _make_git_repo(self, name: str) -> Path:
         repo = Path(self._tmp.name) / name
         repo.mkdir(parents=True)
-        subprocess.run(["git", "init", "-b", "main"], cwd=repo, check=True, capture_output=True)
-        subprocess.run(["git", "config", "user.name", "Codex"], cwd=repo, check=True, capture_output=True)
+        subprocess.run(
+            ["git", "init", "-b", "main"], cwd=repo, check=True, capture_output=True
+        )
+        subprocess.run(
+            ["git", "config", "user.name", "Codex"],
+            cwd=repo,
+            check=True,
+            capture_output=True,
+        )
         subprocess.run(
             ["git", "config", "user.email", "codex@example.com"],
             cwd=repo,
@@ -51,12 +58,18 @@ class MaterializationTests(unittest.TestCase):
             capture_output=True,
         )
         (repo / "README.md").write_text(f"# {name}\n", encoding="utf-8")
-        (repo / "Makefile").write_text("build:\n\t@echo build\nlint:\n\t@echo lint\n", encoding="utf-8")
+        (repo / "Makefile").write_text(
+            "build:\n\t@echo build\nlint:\n\t@echo lint\n", encoding="utf-8"
+        )
         subprocess.run(["git", "add", "."], cwd=repo, check=True, capture_output=True)
-        subprocess.run(["git", "commit", "-m", "init"], cwd=repo, check=True, capture_output=True)
+        subprocess.run(
+            ["git", "commit", "-m", "init"], cwd=repo, check=True, capture_output=True
+        )
         return repo
 
-    def test_materialize_target_creates_detached_checkout_and_env_snapshot(self) -> None:
+    def test_materialize_target_creates_detached_checkout_and_env_snapshot(
+        self,
+    ) -> None:
         repo = self._make_git_repo("demo-repo")
         init_target("alpha", mode="repo")
         add_repo("alpha", str(repo), "HEAD", repo_id="demo")
@@ -67,7 +80,9 @@ class MaterializationTests(unittest.TestCase):
         env_payload = read_dual("alpha", "env.snapshot.json")
         checkout = Path(runtime.repo_materializations[0].checkout_path)
 
-        self.assertEqual(locked.repos[0].resolved_sha, runtime.repo_materializations[0].resolved_sha)
+        self.assertEqual(
+            locked.repos[0].resolved_sha, runtime.repo_materializations[0].resolved_sha
+        )
         self.assertTrue(checkout.exists())
         self.assertTrue((checkout / "README.md").exists())
         self.assertIsNone(runtime.repo_materializations[0].head_branch)

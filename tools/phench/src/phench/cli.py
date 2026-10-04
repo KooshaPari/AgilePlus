@@ -33,7 +33,11 @@ def target_init_cmd(name: str, mode: str = "repo") -> None:
     if mode not in {"repo", "stack"}:
         raise typer.BadParameter("mode must be one of: repo, stack")
     lock = init_target(name, mode=mode)
-    console.print_json(json.dumps({"target": lock.target_name, "mode": lock.mode, "lock_hash": lock.lock_hash}).decode())
+    console.print_json(
+        json.dumps(
+            {"target": lock.target_name, "mode": lock.mode, "lock_hash": lock.lock_hash}
+        ).decode()
+    )
 
 
 @target_app.command("add-repo")
@@ -46,7 +50,13 @@ def target_add_repo_cmd(
 ) -> None:
     lock = add_repo(name, repo, ref, repo_id=repo_id, worktree_path=worktree)
     console.print_json(
-        json.dumps({"target": lock.target_name, "repos": [repo.repo_id for repo in lock.repos], "lock_hash": lock.lock_hash}).decode()
+        json.dumps(
+            {
+                "target": lock.target_name,
+                "repos": [repo.repo_id for repo in lock.repos],
+                "lock_hash": lock.lock_hash,
+            }
+        ).decode()
     )
 
 
@@ -59,7 +69,11 @@ def target_lock_cmd(name: str) -> None:
                 "target": lock.target_name,
                 "lock_hash": lock.lock_hash,
                 "repos": [
-                    {"repo_id": repo.repo_id, "selected_ref": repo.selected_ref, "resolved_sha": repo.resolved_sha}
+                    {
+                        "repo_id": repo.repo_id,
+                        "selected_ref": repo.selected_ref,
+                        "resolved_sha": repo.resolved_sha,
+                    }
                     for repo in lock.repos
                 ],
             }
@@ -83,7 +97,9 @@ def target_materialize_cmd(name: str) -> None:
 
 @app.command("timeline")
 def timeline_cmd(name: str, repo_id: str | None = None, limit: int = 30) -> None:
-    console.print_json(json.dumps(target_timeline(name, repo_id=repo_id, limit=limit)).decode())
+    console.print_json(
+        json.dumps(target_timeline(name, repo_id=repo_id, limit=limit)).decode()
+    )
 
 
 @app.command("run")
@@ -139,7 +155,9 @@ def tui_cmd() -> None:
     selected_target = targets[target_index - 1]
 
     timeline = target_timeline(selected_target, limit=20)
-    console.print(f"Timeline for [bold]{selected_target}[/bold] ({timeline['repo_id']}):")
+    console.print(
+        f"Timeline for [bold]{selected_target}[/bold] ({timeline['repo_id']}):"
+    )
     for line in timeline.get("recent", []):
         console.print(f"  {line}")
 
