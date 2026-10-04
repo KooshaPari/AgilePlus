@@ -15,7 +15,6 @@ aes-gcm = "0.10"
 argon2 = "0.5"
 rand = "0.8"
 sha2 = "0.10"
-base64 = "0.22"
 hex = "0.4"
 hmac = "0.12"
 thiserror.workspace = true

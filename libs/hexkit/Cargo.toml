@@ -13,9 +13,7 @@ description = "Hexagonal architecture helpers for AgilePlus - reduces boilerplat
 [dependencies]
 tokio.workspace = true
 thiserror.workspace = true
-serde = { workspace = true, features = ["derive"] }
 async-trait.workspace = true
-tracing.workspace = true
 
 [dev-dependencies]
 tokio-test = "0.4"

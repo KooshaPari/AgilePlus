@@ -1,5 +1,20 @@
 [advisories]
 db-path = "$CARGO_HOME/advisory-db"
+# Unmaintained (info-severity) advisories. All are transitive or build-time
+# only; none have a drop-in fix available in the current dependency graph.
+# CVE-level vulnerability advisories are handled by a separate triage pass.
+ignore = [
+  { id = "RUSTSEC-2024-0436", reason = "paste unmaintained: direct build-time proc-macro dep of agileplus-config; drop-in replacement is `pastey`, migration tracked separately." },
+  { id = "RUSTSEC-2024-0370", reason = "proc-macro-error unmaintained: build-time only via glib-macros 0.18 (tauri stack); glib 0.18 pins it, no fix until tauri/glib bump." },
+  { id = "RUSTSEC-2025-0134", reason = "rustls-pemfile unmaintained: transitive via async-nats; upstream migration to rustls-pki-types PemObject is pending." },
+  { id = "RUSTSEC-2025-0075", reason = "unic-char-range unmaintained: transitive via urlpattern <- tauri-utils; cleared by future tauri-utils update." },
+  { id = "RUSTSEC-2025-0080", reason = "unic-common unmaintained: transitive via urlpattern <- tauri-utils; cleared by future tauri-utils update." },
+  { id = "RUSTSEC-2025-0081", reason = "unic-char-property unmaintained: transitive via urlpattern <- tauri-utils; cleared by future tauri-utils update." },
+  { id = "RUSTSEC-2025-0098", reason = "unic-ucd-version unmaintained: transitive via urlpattern <- tauri-utils; cleared by future tauri-utils update." },
+  { id = "RUSTSEC-2025-0100", reason = "unic-ucd-ident unmaintained: transitive via urlpattern <- tauri-utils; cleared by future tauri-utils update." },
+  { id = "RUSTSEC-2025-0012", reason = "backoff unmaintained: only reachable with --all-features (neo4j <- neo4rs <- agileplus-graph); upstream recommends backon, replacement tracked separately." },
+  { id = "RUSTSEC-2024-0384", reason = "instant unmaintained: only reachable with --all-features; transitive dep, no action needed." },
+]
 
 [licenses]
 version = 2
