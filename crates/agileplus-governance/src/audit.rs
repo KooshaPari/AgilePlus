@@ -851,7 +851,7 @@ mod extended_tests {
         let logger = AuditLogger::in_memory().unwrap();
         let event = AuditEvent::success("a");
         logger.log(&event).unwrap();
-        logger.mark_synced(&[event.id.clone()]).unwrap();
+        logger.mark_synced(std::slice::from_ref(&event.id)).unwrap();
         let filter = AuditFilter::new().unsynced();
         let events = logger.query(&filter).unwrap();
         assert!(events.is_empty());
@@ -1040,7 +1040,7 @@ mod extended_tests {
         let e2 = AuditEvent::success("unsynced");
         logger.log(&e1).unwrap();
         logger.log(&e2).unwrap();
-        logger.mark_synced(&[e1.id.clone()]).unwrap();
+        logger.mark_synced(std::slice::from_ref(&e1.id)).unwrap();
 
         let unsynced = logger.query(&AuditFilter::new().unsynced()).unwrap();
         assert_eq!(unsynced.len(), 1);
@@ -1426,7 +1426,7 @@ mod coverage_tests {
         let e1 = AuditEvent::success("synced");
         l.log(&e1).unwrap();
         l.log(&AuditEvent::success("pending")).unwrap();
-        l.mark_synced(&[e1.id.clone()]).unwrap();
+        l.mark_synced(std::slice::from_ref(&e1.id)).unwrap();
         let got = l.query(&AuditFilter::new().unsynced()).unwrap();
         assert_eq!(got.len(), 1);
         assert_eq!(got[0].action, "pending");

@@ -35,9 +35,9 @@ fn make_catalog_json(cluster_count: usize, sub_pillars: &[&str]) -> String {
     // Build pillars array: first cluster has defs_ref, rest have sub_pillars
     let mut pillars = Vec::new();
     if cluster_count > 0 {
-        pillars.push(format!(
-            r#"{{"cluster": "C00", "pillar_range": "L0-L9", "category": "Arch", "source": "x/", "defs_ref": "ref.md", "scoring": {{"scale": "0-3", "glyphs": {{"0": "x"}}, "grade": {{"A": 90}}}}, "sub_pillars": []}}"#
-        ));
+        pillars.push(
+            r#"{"cluster": "C00", "pillar_range": "L0-L9", "category": "Arch", "source": "x/", "defs_ref": "ref.md", "scoring": {"scale": "0-3", "glyphs": {"0": "x"}, "grade": {"A": 90}}, "sub_pillars": []}"#.to_string(),
+        );
     }
     for i in 1..cluster_count {
         pillars.push(format!(

@@ -236,7 +236,7 @@ mod tests {
 
     #[test]
     fn evidence_ref_fields() {
-        let refs = vec![
+        let refs = [
             EvidenceRef {
                 evidence_id: 1,
                 fr_id: "FR-001".to_string(),

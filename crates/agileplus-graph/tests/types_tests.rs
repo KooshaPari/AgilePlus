@@ -42,7 +42,7 @@ fn node_type_copy_semantics() {
 #[test]
 fn node_type_clone_semantics() {
     let original = NodeType::Label;
-    let cloned = original.clone();
+    let cloned = clone_via_trait(&original);
     assert_eq!(original, cloned);
 }
 
@@ -85,7 +85,7 @@ fn rel_type_copy_semantics() {
 #[test]
 fn rel_type_clone_semantics() {
     let original = RelType::AssignedTo;
-    let cloned = original.clone();
+    let cloned = clone_via_trait(&original);
     assert_eq!(original, cloned);
 }
 
@@ -428,6 +428,12 @@ fn hash_of<T: std::hash::Hash>(v: T) -> u64 {
     let mut hasher = DefaultHasher::new();
     v.hash(&mut hasher);
     hasher.finish()
+}
+
+/// Exercises `Clone` through a generic bound so the clone-semantics tests do
+/// not hit the `Copy` fast path (which `clone_on_copy` correctly flags).
+fn clone_via_trait<T: Clone>(value: &T) -> T {
+    value.clone()
 }
 
 // ════════════════════════════════════════════════════════════════════════════

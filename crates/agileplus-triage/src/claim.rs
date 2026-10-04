@@ -615,7 +615,7 @@ mod tests {
             reason: ClaimReason::default(),
         };
         let age = c.age_seconds(now);
-        assert!(age >= 9 && age <= 11, "age should be ~10, got {age}");
+        assert!((9..=11).contains(&age), "age should be ~10, got {age}");
     }
 
     #[test]

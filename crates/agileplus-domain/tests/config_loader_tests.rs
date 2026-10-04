@@ -6,7 +6,6 @@
 //! repoint `HOME`. The variable is process-global; every test that depends on it
 //! runs behind one mutex and restores the previous environment on drop.
 
-use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 use std::sync::{Mutex, MutexGuard};
 
@@ -264,7 +263,7 @@ fn env_override_is_validated_after_being_applied() {
 
 #[test]
 fn config_error_display_messages_are_stable() {
-    let io = ConfigError::Io(std::io::Error::new(ErrorKind::Other, "disk gone"));
+    let io = ConfigError::Io(std::io::Error::other("disk gone"));
     assert_eq!(io.to_string(), "IO error: disk gone");
 
     assert_eq!(

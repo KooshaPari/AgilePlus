@@ -352,7 +352,7 @@ mod tests {
     fn read_branches_with_files() {
         let tmp = TempDir::new().unwrap();
         let heads = tmp.path().join("refs").join("heads");
-        std::fs::create_dir_all(&heads.join("sub")).unwrap();
+        std::fs::create_dir_all(heads.join("sub")).unwrap();
         std::fs::write(heads.join("main"), "abc").unwrap();
         std::fs::write(heads.join("sub").join("nested"), "def").unwrap();
         let branches = read_branches(tmp.path());

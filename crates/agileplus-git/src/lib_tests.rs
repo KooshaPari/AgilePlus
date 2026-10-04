@@ -850,7 +850,7 @@ async fn branch_info_has_correct_fields() {
     assert_eq!(branches.len(), 1);
     let b = &branches[0];
     assert_eq!(b.name, "feat/test-branch");
-    assert!(b.is_remote == false || b.is_remote == true); // just ensure field exists
+    assert!(!b.is_remote); // local branch query must report is_remote == false
 }
 
 // ---------------------------------------------------------------------------

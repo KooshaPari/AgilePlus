@@ -666,10 +666,12 @@ mod coverage_tests {
 
     #[test]
     fn governance_stats_serde_with_values() {
-        let mut stats = GovernanceStats::default();
-        stats.total = 10;
-        stats.today = 3;
-        stats.errors = 1;
+        let mut stats = GovernanceStats {
+            total: 10,
+            today: 3,
+            errors: 1,
+            ..Default::default()
+        };
         stats.by_level.insert("info".into(), 9);
         stats.top_actions.push(TopAction {
             action: "deploy".into(),

@@ -118,7 +118,7 @@ fn audit_filter_default() {
     assert!(filter.level.is_none());
     assert!(filter.result.is_none());
     assert!(filter.user_id.is_none());
-    assert!(filter.unsynced_only == false);
+    assert!(!filter.unsynced_only);
 }
 
 #[test]

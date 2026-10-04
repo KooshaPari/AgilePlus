@@ -239,7 +239,7 @@ fn sync_state_clone() {
         errors: 1,
     };
     let cloned = state.clone();
-    assert_eq!(cloned.running, true);
+    assert!(cloned.running);
     assert_eq!(cloned.modules_synced, 5);
     assert_eq!(cloned.cycles_synced, 3);
     assert_eq!(cloned.errors, 1);
@@ -264,7 +264,7 @@ fn sync_state_serialization_roundtrip() {
     };
     let json = serde_json::to_string(&state).unwrap();
     let restored: SyncState = serde_json::from_str(&json).unwrap();
-    assert_eq!(restored.running, true);
+    assert!(restored.running);
     assert_eq!(restored.modules_synced, 10);
     assert_eq!(restored.cycles_synced, 7);
     assert_eq!(restored.errors, 2);

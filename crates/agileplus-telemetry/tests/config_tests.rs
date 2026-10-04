@@ -326,7 +326,7 @@ fn config_error_debug_format() {
 
 #[test]
 fn config_error_from_io() {
-    let io_err = std::io::Error::new(std::io::ErrorKind::Other, "broken");
+    let io_err = std::io::Error::other("broken");
     let config_err: ConfigError = io_err.into();
     assert!(matches!(config_err, ConfigError::Io(_)));
 }
@@ -502,7 +502,7 @@ fn load_empty_file_defaults() {
 #[test]
 fn load_comment_only_file_defaults() {
     let mut f = tempfile::NamedTempFile::new().unwrap();
-    write!(f, "# just a comment\n").unwrap();
+    writeln!(f, "# just a comment").unwrap();
     let cfg = TelemetryConfig::load_from(f.path()).unwrap();
     assert!(cfg.otlp.is_none());
     assert_eq!(cfg.sampling.trace_ratio, 1.0);

@@ -246,13 +246,13 @@ mod tests {
     #[test]
     fn create_on_tracked_unchanged_content_is_unchanged() {
         let name = "Same";
-        let state = Some("backlog");
+        let state = "backlog";
         let labels: &[&str] = &[];
-        let issue_val = issue("5", name, state, labels);
+        let issue_val = issue("5", name, Some(state), labels);
         let m = mapper();
         let hash = compute_content_hash(
             name,
-            state.unwrap(),
+            state,
             &m.map_plane_state("backlog", "backlog").to_string(),
             &[],
         );

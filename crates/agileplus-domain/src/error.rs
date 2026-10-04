@@ -381,7 +381,7 @@ mod code_projection_tests {
     #[test]
     fn domain_result_ok_variant() {
         let r: DomainResult<i32> = Ok(42);
-        assert_eq!(r.unwrap(), 42);
+        assert_eq!(r.ok(), Some(42));
     }
 
     #[test]
@@ -602,7 +602,7 @@ mod coverage_tests {
     #[test]
     fn domain_result_alias_ok_path() {
         let r: DomainResult<String> = Ok("ok".to_string());
-        assert_eq!(r.unwrap(), "ok");
+        assert_eq!(r.ok(), Some("ok".to_string()));
     }
 
     #[test]

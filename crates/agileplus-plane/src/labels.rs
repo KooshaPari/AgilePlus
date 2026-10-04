@@ -211,6 +211,6 @@ mod tests {
             "project".into(),
         );
         let sync = LabelSync::new(client);
-        assert_eq!(format!("{:?}", sync).contains("LabelSync"), true);
+        assert!(format!("{:?}", sync).contains("LabelSync"));
     }
 }

@@ -403,7 +403,9 @@ fn an_unsupported_envelope_version_fails_closed() {
 
 #[test]
 fn malformed_salt_nonce_and_ciphertext_fields_are_all_rejected() {
-    let tamperers: Vec<(&str, bool, Box<dyn FnOnce(&mut serde_json::Value)>)> = vec![
+    // One mutation case: (label, expects-encryption-error, mutator).
+    type Tamperer = (&'static str, bool, Box<dyn FnOnce(&mut serde_json::Value)>);
+    let tamperers: Vec<Tamperer> = vec![
         (
             "non-base64 salt",
             true,

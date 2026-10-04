@@ -361,7 +361,7 @@ mod tests {
     fn added_and_removed_matrices() {
         let a = make_link(TraceLinkType::Verifies, 0.95, 1);
         let b = make_link(TraceLinkType::Verifies, 0.95, 1);
-        let old = build_matrix(&[a.clone()]).matrix;
+        let old = build_matrix(std::slice::from_ref(&a)).matrix;
         let new = build_matrix(&[a, b]).matrix;
         assert_eq!(added(&old, &new).len(), 1);
         assert!(removed(&old, &new).is_empty());
@@ -377,7 +377,7 @@ mod tests {
     #[test]
     fn changed_detects_coverage_shift() {
         let a = make_link(TraceLinkType::Verifies, 0.95, 1);
-        let old = build_matrix(&[a.clone()]).matrix;
+        let old = build_matrix(std::slice::from_ref(&a)).matrix;
         // New matrix has a low-confidence link -> partial
         let mut low = a;
         low.confidence = 0.3;

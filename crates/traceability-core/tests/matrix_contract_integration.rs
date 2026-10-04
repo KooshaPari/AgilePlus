@@ -196,7 +196,7 @@ fn matrix_diff_detects_new_and_removed_links() {
     let link_a = make_link(src, tgt_a, TraceLinkType::Verifies, 0.95);
     let link_b = make_link(src, tgt_b, TraceLinkType::Satisfies, 0.8);
 
-    let old = build_matrix(&[link_a.clone()]).matrix;
+    let old = build_matrix(std::slice::from_ref(&link_a)).matrix;
     let new = build_matrix(&[link_a, link_b]).matrix;
 
     let added = traceability_core::matrix::added(&old, &new);

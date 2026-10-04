@@ -388,7 +388,7 @@ mod coverage_tests {
     fn result_alias_holds_ok_and_err() {
         let ok: Result<u32> = Ok(3);
         let err: Result<u32> = Err(GovernanceError::NotFound("thing".into()));
-        assert_eq!(ok.unwrap(), 3);
+        assert_eq!(ok.ok(), Some(3));
         assert!(err.is_err());
     }
 

@@ -703,7 +703,7 @@ fn feature_artifacts_round_trips_optional_artifacts_and_extra_list() {
 
 #[test]
 fn domain_event_variants_clone_and_debug_with_their_payloads() {
-    let events = vec![
+    let events = [
         DomainEvent::FeatureCreated {
             id: 1,
             slug: "auth".to_string(),

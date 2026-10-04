@@ -2,7 +2,6 @@
 
 use std::str::FromStr;
 
-use agileplus_domain::error::DomainError;
 use agileplus_domain::ids::*;
 
 #[test]

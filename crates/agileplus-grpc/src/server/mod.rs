@@ -723,7 +723,7 @@ where
         // Validate and apply the state transition via the domain model.
         feature
             .transition(target_state)
-            .map_err(|e| Status::failed_precondition(e))?;
+            .map_err(Status::failed_precondition)?;
 
         // Persist the new state.
         self.storage

@@ -938,12 +938,13 @@ mod tests_extra {
             .mount(&server)
             .await;
 
-        let mut config = PlaneStateMapperConfig::default();
-        config.state_id_map = HashMap::new();
-        config.state_id_map.insert(
-            agileplus_domain::domain::state_machine::FeatureState::Created,
-            ("backlog".into(), "state-uuid".into()),
-        );
+        let config = PlaneStateMapperConfig {
+            state_id_map: HashMap::from([(
+                agileplus_domain::domain::state_machine::FeatureState::Created,
+                ("backlog".into(), "state-uuid".into()),
+            )]),
+            ..Default::default()
+        };
         let client = PlaneClient::new(server.uri(), "k".into(), "ws".into(), "proj".into());
         let sync = OutboundSync::new(client, PlaneStateMapper::with_config(config));
         assert_eq!(sync.push_feature(&feature()).await.unwrap(), "plane-1");

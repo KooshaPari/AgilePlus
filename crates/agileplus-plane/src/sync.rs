@@ -280,7 +280,7 @@ mod tests_extra {
     fn sync_outcome_clone_and_eq() {
         let outcome = SyncOutcome::Conflict("id".into());
         assert_eq!(outcome.clone(), outcome);
-        assert_eq!(format!("{outcome:?}").contains("Conflict"), true);
+        assert!(format!("{outcome:?}").contains("Conflict"));
     }
 }
 
