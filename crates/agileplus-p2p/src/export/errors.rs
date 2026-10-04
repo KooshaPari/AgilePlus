@@ -27,7 +27,7 @@ mod deep_tests {
 
     #[test]
     fn export_error_io_display() {
-        let io = std::io::Error::new(std::io::ErrorKind::Other, "disk full");
+        let io = std::io::Error::other("disk full");
         let e: ExportError = io.into();
         assert!(e.to_string().contains("IO error"));
     }

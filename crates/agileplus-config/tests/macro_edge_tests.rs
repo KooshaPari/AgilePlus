@@ -86,7 +86,7 @@ config_builder! {
     pub struct AttrConfig {
         #[doc = "This field is important"]
         (str) pub important: String = "default".to_string(),
-        #[deprecated(since = "1.0", note = "Use important instead")]
+        #[deprecated(since = "1.0.0", note = "Use important instead")]
         (val) pub legacy: u32 = 0,
     }
 }

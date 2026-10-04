@@ -129,9 +129,8 @@ async fn replay_thousand_events() {
 #[tokio::test]
 async fn replay_since_zero_delta() {
     let mut agg = CountingAggregate::default();
-    #[allow(unused_variables)]
-    let _events = replay_events_since(&mut agg, 0, &[]).await.unwrap();
     // replay_events_since returns the events replayed; empty delta = nothing applied
+    replay_events_since(&mut agg, 0, &[]).await.unwrap();
     assert_eq!(agg.events_applied, 0);
 }
 
@@ -153,21 +152,27 @@ async fn replay_since_partial() {
 #[tokio::test]
 async fn replay_after_snapshot_equals_full_replay() {
     let adapter = make_in_memory_adapter();
-    let conn = adapter.conn_for_bench().expect("conn");
-    for seq in 1..=200 {
-        let ev = make_event(1, seq);
-        event_repo::append_event(&conn, &ev).expect("append");
-    }
+    // All synchronous DB work happens with the connection guard scoped in,
+    // so no MutexGuard is held across an await point.
+    let (all_events, snapshot, delta) = {
+        let conn = adapter.conn_for_bench().expect("conn");
+        for seq in 1..=200 {
+            let ev = make_event(1, seq);
+            event_repo::append_event(&conn, &ev).expect("append");
+        }
 
-    // Full replay from DB
-    let all_events = event_repo::get_events(&conn, "Feature", 1).expect("get_all");
+        // Full replay from DB
+        let all_events = event_repo::get_events(&conn, "Feature", 1).expect("get_all");
+
+        // Snapshot at seq 100, replay delta
+        let snapshot = make_snapshot(1, 100);
+        let delta = event_repo::get_events_since(&conn, "Feature", 1, snapshot.event_sequence)
+            .expect("get_delta");
+        (all_events, snapshot, delta)
+    };
+
     let mut agg_full = CountingAggregate::default();
     replay_events(&mut agg_full, &all_events).await.unwrap();
-
-    // Snapshot at seq 100, replay delta
-    let snapshot = make_snapshot(1, 100);
-    let delta = event_repo::get_events_since(&conn, "Feature", 1, snapshot.event_sequence)
-        .expect("get_delta");
 
     let mut agg_partial = CountingAggregate {
         version: snapshot.event_sequence,
@@ -189,17 +194,20 @@ async fn replay_after_snapshot_equals_full_replay() {
 #[tokio::test]
 async fn snapshot_replay_from_sqlite() {
     let adapter = make_in_memory_adapter();
-    let conn = adapter.conn_for_bench().expect("conn");
-    for seq in 1..=100 {
-        let ev = make_event(1, seq);
-        event_repo::append_event(&conn, &ev).expect("append");
+    {
+        let conn = adapter.conn_for_bench().expect("conn");
+        for seq in 1..=100 {
+            let ev = make_event(1, seq);
+            event_repo::append_event(&conn, &ev).expect("append");
+        }
     }
-    drop(conn);
 
     let snapshot = make_snapshot(1, 80);
-    let conn = adapter.conn_for_bench().expect("conn");
-    let delta = event_repo::get_events_since(&conn, "Feature", 1, snapshot.event_sequence)
-        .expect("get_since");
+    let delta = {
+        let conn = adapter.conn_for_bench().expect("conn");
+        event_repo::get_events_since(&conn, "Feature", 1, snapshot.event_sequence)
+            .expect("get_since")
+    };
     assert_eq!(delta.len(), 20);
 
     let mut agg = CountingAggregate {

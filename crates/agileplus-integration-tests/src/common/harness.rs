@@ -123,10 +123,10 @@ impl TestHarness {
     async fn wait_for_health(&self, timeout: Duration) -> Result<(), HarnessError> {
         let start = Instant::now();
         loop {
-            if let Ok(resp) = self.client.get(self.url("/health")).send().await {
-                if resp.status().is_success() {
-                    return Ok(());
-                }
+            if let Ok(resp) = self.client.get(self.url("/health")).send().await
+                && resp.status().is_success()
+            {
+                return Ok(());
             }
             if start.elapsed() > timeout {
                 return Err(HarnessError::HealthCheckTimeout);

@@ -415,30 +415,31 @@ async fn gh_fetch_review_comments(pr_url: &str) -> Result<Vec<ReviewComment>, Do
 
     if let Some(reviews) = json["reviews"].as_array() {
         for review in reviews {
-            if let Some(body) = review["body"].as_str() {
-                if !body.is_empty() {
-                    comments.push(ReviewComment {
-                        file_path: "(review summary)".to_owned(),
-                        line: None,
-                        severity: gh_infer_severity(body),
-                        body: body.to_owned(),
-                    });
-                }
+            if let Some(body) = review["body"].as_str()
+                && !body.is_empty()
+            {
+                comments.push(ReviewComment {
+                    file_path: "(review summary)".to_owned(),
+                    line: None,
+                    severity: gh_infer_severity(body),
+                    body: body.to_owned(),
+                });
             }
         }
     }
 
     if let Some(pr_comments) = json["comments"].as_array() {
         for c in pr_comments {
-            if let Some(body) = c["body"].as_str() {
-                if !body.is_empty() && (body.contains("coderabbit") || body.contains("**")) {
-                    comments.push(ReviewComment {
-                        file_path: "(PR comment)".to_owned(),
-                        line: None,
-                        severity: gh_infer_severity(body),
-                        body: body.to_owned(),
-                    });
-                }
+            if let Some(body) = c["body"].as_str()
+                && !body.is_empty()
+                && (body.contains("coderabbit") || body.contains("**"))
+            {
+                comments.push(ReviewComment {
+                    file_path: "(PR comment)".to_owned(),
+                    line: None,
+                    severity: gh_infer_severity(body),
+                    body: body.to_owned(),
+                });
             }
         }
     }

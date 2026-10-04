@@ -13,7 +13,7 @@
 //! configuration, and the pages are asserted to be read-only.
 
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex, MutexGuard, OnceLock};
+use std::sync::{Arc, OnceLock};
 
 use agileplus_dashboard::app_state::{DashboardStore, SharedState};
 use agileplus_dashboard::routes::agents as agent_routes;
@@ -38,9 +38,13 @@ const PLANE_VARS: [&str; 6] = [
 // ── Sandbox ──────────────────────────────────────────────────────────────────
 
 /// Serializes every test in this file and installs the sandbox `HOME`.
-fn lock() -> MutexGuard<'static, ()> {
-    static LOCK: Mutex<()> = Mutex::new(());
-    let guard = LOCK.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+///
+/// An async mutex is used because the guard is deliberately held across the
+/// test's `await` points: releasing it earlier would let a second test start
+/// while this one is mid-request.
+async fn lock() -> tokio::sync::MutexGuard<'static, ()> {
+    static LOCK: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
+    let guard = LOCK.lock().await;
     sandbox_home();
     guard
 }
@@ -149,7 +153,7 @@ async fn body_text(response: axum::response::Response) -> String {
 
 #[tokio::test]
 async fn agent_settings_page_falls_back_to_defaults_without_a_config_file() {
-    let _guard = lock();
+    let _guard = lock().await;
     reset_config();
 
     let (status, html) = get("/settings/agents").await;
@@ -180,7 +184,7 @@ async fn agent_settings_page_falls_back_to_defaults_without_a_config_file() {
 
 #[tokio::test]
 async fn agent_settings_page_renders_the_persisted_pool_configuration() {
-    let _guard = lock();
+    let _guard = lock().await;
     write_config(
         "[agents]\n\
          pool_size = 12\n\
@@ -215,7 +219,7 @@ async fn agent_settings_page_renders_the_persisted_pool_configuration() {
 
 #[tokio::test]
 async fn agent_settings_save_route_persists_and_the_page_reflects_it() {
-    let _guard = lock();
+    let _guard = lock().await;
     reset_config();
 
     let (status, toast) = post_form(
@@ -262,7 +266,7 @@ async fn agent_settings_save_route_persists_and_the_page_reflects_it() {
 
 #[tokio::test]
 async fn duplicated_agent_handlers_in_the_agents_module_persist_the_same_configuration() {
-    let _guard = lock();
+    let _guard = lock().await;
     reset_config();
 
     // `routes::agents` carries its own copies of the agent settings handlers;
@@ -319,7 +323,7 @@ async fn duplicated_agent_handlers_in_the_agents_module_persist_the_same_configu
 
 #[tokio::test]
 async fn services_settings_page_lists_health_and_survives_a_persisted_endpoint_config() {
-    let _guard = lock();
+    let _guard = lock().await;
     write_config(
         "[[services]]\n\
          name = \"NATS\"\n\
@@ -350,7 +354,7 @@ async fn services_settings_page_lists_health_and_survives_a_persisted_endpoint_c
 
 #[tokio::test]
 async fn plane_settings_page_reports_a_fully_configured_workspace() {
-    let _guard = lock();
+    let _guard = lock().await;
     reset_config();
     clear_plane_env();
 
@@ -424,7 +428,7 @@ async fn plane_settings_page_reports_a_fully_configured_workspace() {
 
 #[tokio::test]
 async fn plane_settings_page_warns_when_the_workspace_is_not_configured() {
-    let _guard = lock();
+    let _guard = lock().await;
     reset_config();
     clear_plane_env();
 
@@ -463,7 +467,7 @@ async fn plane_settings_page_warns_when_the_workspace_is_not_configured() {
 
 #[tokio::test]
 async fn config_path_falls_back_to_the_working_directory_when_home_is_unset() {
-    let _guard = lock();
+    let _guard = lock().await;
     reset_config();
 
     // `Config::config_path` joins `HOME`, so with `HOME` unset it must resolve

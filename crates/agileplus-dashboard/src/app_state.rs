@@ -358,13 +358,15 @@ mod tests {
 
     #[test]
     fn custom_features_by_state_groups_correctly() {
-        let mut store = DashboardStore::default();
-        store.features = vec![
-            make_feature(1, FeatureState::Created, None, None),
-            make_feature(2, FeatureState::Created, None, None),
-            make_feature(3, FeatureState::Shipped, None, None),
-            make_feature(4, FeatureState::Implementing, None, None),
-        ];
+        let store = DashboardStore {
+            features: vec![
+                make_feature(1, FeatureState::Created, None, None),
+                make_feature(2, FeatureState::Created, None, None),
+                make_feature(3, FeatureState::Shipped, None, None),
+                make_feature(4, FeatureState::Implementing, None, None),
+            ],
+            ..Default::default()
+        };
         let map = store.features_by_state();
         assert_eq!(map.get(&FeatureState::Created).map_or(0, |v| v.len()), 2);
         assert_eq!(map.get(&FeatureState::Shipped).map_or(0, |v| v.len()), 1);
@@ -385,17 +387,21 @@ mod tests {
 
     #[test]
     fn custom_active_project_none_when_id_not_found() {
-        let mut store = DashboardStore::default();
-        store.projects = vec![make_project(1, "P1", "p1")];
-        store.active_project_id = Some(999);
+        let store = DashboardStore {
+            projects: vec![make_project(1, "P1", "p1")],
+            active_project_id: Some(999),
+            ..Default::default()
+        };
         assert!(store.active_project().is_none());
     }
 
     #[test]
     fn custom_active_project_returns_matching_project() {
-        let mut store = DashboardStore::default();
-        store.projects = vec![make_project(1, "P1", "p1"), make_project(2, "P2", "p2")];
-        store.active_project_id = Some(2);
+        let store = DashboardStore {
+            projects: vec![make_project(1, "P1", "p1"), make_project(2, "P2", "p2")],
+            active_project_id: Some(2),
+            ..Default::default()
+        };
         let proj = store.active_project().expect("should find project");
         assert_eq!(proj.id, 2);
         assert_eq!(proj.name, "P2");
@@ -405,24 +411,28 @@ mod tests {
 
     #[test]
     fn custom_features_for_active_project_returns_all_when_no_active() {
-        let mut store = DashboardStore::default();
-        store.features = vec![
-            make_feature(1, FeatureState::Created, Some(1), None),
-            make_feature(2, FeatureState::Created, Some(2), None),
-        ];
-        store.active_project_id = None;
+        let store = DashboardStore {
+            features: vec![
+                make_feature(1, FeatureState::Created, Some(1), None),
+                make_feature(2, FeatureState::Created, Some(2), None),
+            ],
+            active_project_id: None,
+            ..Default::default()
+        };
         assert_eq!(store.features_for_active_project().len(), 2);
     }
 
     #[test]
     fn custom_features_for_active_project_filters_by_project() {
-        let mut store = DashboardStore::default();
-        store.features = vec![
-            make_feature(1, FeatureState::Created, Some(1), None),
-            make_feature(2, FeatureState::Created, Some(2), None),
-            make_feature(3, FeatureState::Created, Some(1), None),
-        ];
-        store.active_project_id = Some(1);
+        let store = DashboardStore {
+            features: vec![
+                make_feature(1, FeatureState::Created, Some(1), None),
+                make_feature(2, FeatureState::Created, Some(2), None),
+                make_feature(3, FeatureState::Created, Some(1), None),
+            ],
+            active_project_id: Some(1),
+            ..Default::default()
+        };
         let features = store.features_for_active_project();
         assert_eq!(features.len(), 2);
         assert!(features.iter().all(|f| f.project_id == Some(1)));
@@ -432,24 +442,30 @@ mod tests {
 
     #[test]
     fn custom_project_for_feature_none_when_no_project_id() {
-        let mut store = DashboardStore::default();
-        store.projects = vec![make_project(1, "P1", "p1")];
+        let store = DashboardStore {
+            projects: vec![make_project(1, "P1", "p1")],
+            ..Default::default()
+        };
         let f = make_feature(1, FeatureState::Created, None, None);
         assert!(store.project_for_feature(&f).is_none());
     }
 
     #[test]
     fn custom_project_for_feature_none_when_project_missing() {
-        let mut store = DashboardStore::default();
-        store.projects = vec![make_project(1, "P1", "p1")];
+        let store = DashboardStore {
+            projects: vec![make_project(1, "P1", "p1")],
+            ..Default::default()
+        };
         let f = make_feature(1, FeatureState::Created, Some(999), None);
         assert!(store.project_for_feature(&f).is_none());
     }
 
     #[test]
     fn custom_project_for_feature_finds_match() {
-        let mut store = DashboardStore::default();
-        store.projects = vec![make_project(1, "P1", "p1"), make_project(2, "P2", "p2")];
+        let store = DashboardStore {
+            projects: vec![make_project(1, "P1", "p1"), make_project(2, "P2", "p2")],
+            ..Default::default()
+        };
         let f = make_feature(1, FeatureState::Created, Some(2), None);
         let proj = store.project_for_feature(&f).expect("should find project");
         assert_eq!(proj.id, 2);
@@ -468,14 +484,16 @@ mod tests {
 
     #[test]
     fn custom_feature_counts_for_project_correct_counts() {
-        let mut store = DashboardStore::default();
-        store.features = vec![
-            make_feature(1, FeatureState::Created, Some(1), None),
-            make_feature(2, FeatureState::Implementing, Some(1), None),
-            make_feature(3, FeatureState::Shipped, Some(1), None),
-            make_feature(4, FeatureState::Retrospected, Some(1), None),
-            make_feature(5, FeatureState::Created, Some(2), None),
-        ];
+        let store = DashboardStore {
+            features: vec![
+                make_feature(1, FeatureState::Created, Some(1), None),
+                make_feature(2, FeatureState::Implementing, Some(1), None),
+                make_feature(3, FeatureState::Shipped, Some(1), None),
+                make_feature(4, FeatureState::Retrospected, Some(1), None),
+                make_feature(5, FeatureState::Created, Some(2), None),
+            ],
+            ..Default::default()
+        };
         let (total, active, shipped) = store.feature_counts_for_project(1);
         assert_eq!(total, 4);
         assert_eq!(active, 2);
@@ -484,11 +502,13 @@ mod tests {
 
     #[test]
     fn custom_feature_counts_for_project_ignores_other_projects() {
-        let mut store = DashboardStore::default();
-        store.features = vec![
-            make_feature(1, FeatureState::Created, Some(2), None),
-            make_feature(2, FeatureState::Shipped, Some(2), None),
-        ];
+        let store = DashboardStore {
+            features: vec![
+                make_feature(1, FeatureState::Created, Some(2), None),
+                make_feature(2, FeatureState::Shipped, Some(2), None),
+            ],
+            ..Default::default()
+        };
         let (total, active, shipped) = store.feature_counts_for_project(1);
         assert_eq!(total, 0);
         assert_eq!(active, 0);
@@ -508,13 +528,15 @@ mod tests {
 
     #[test]
     fn custom_feature_counts_for_module_correct_counts() {
-        let mut store = DashboardStore::default();
-        store.features = vec![
-            make_feature(1, FeatureState::Created, None, Some(1)),
-            make_feature(2, FeatureState::Implementing, None, Some(1)),
-            make_feature(3, FeatureState::Shipped, None, Some(1)),
-            make_feature(4, FeatureState::Created, None, Some(2)),
-        ];
+        let store = DashboardStore {
+            features: vec![
+                make_feature(1, FeatureState::Created, None, Some(1)),
+                make_feature(2, FeatureState::Implementing, None, Some(1)),
+                make_feature(3, FeatureState::Shipped, None, Some(1)),
+                make_feature(4, FeatureState::Created, None, Some(2)),
+            ],
+            ..Default::default()
+        };
         let (total, active, shipped) = store.feature_counts_for_module(1);
         assert_eq!(total, 3);
         assert_eq!(active, 2);
@@ -531,12 +553,14 @@ mod tests {
 
     #[test]
     fn custom_work_package_count_for_module_sums_work_packages() {
-        let mut store = DashboardStore::default();
-        store.features = vec![
-            make_feature(1, FeatureState::Created, None, Some(1)),
-            make_feature(2, FeatureState::Created, None, Some(1)),
-            make_feature(3, FeatureState::Created, None, Some(2)),
-        ];
+        let mut store = DashboardStore {
+            features: vec![
+                make_feature(1, FeatureState::Created, None, Some(1)),
+                make_feature(2, FeatureState::Created, None, Some(1)),
+                make_feature(3, FeatureState::Created, None, Some(2)),
+            ],
+            ..Default::default()
+        };
         store.work_packages.insert(
             1,
             vec![
@@ -604,22 +628,26 @@ mod tests {
 
     #[test]
     fn custom_cycle_is_shippable_true_when_all_validated_or_shipped() {
-        let mut store = DashboardStore::default();
-        store.features = vec![
-            make_feature(1, FeatureState::Validated, None, None),
-            make_feature(2, FeatureState::Shipped, None, None),
-        ];
+        let mut store = DashboardStore {
+            features: vec![
+                make_feature(1, FeatureState::Validated, None, None),
+                make_feature(2, FeatureState::Shipped, None, None),
+            ],
+            ..Default::default()
+        };
         store.cycle_features.insert(1, vec![1, 2]);
         assert!(store.cycle_is_shippable(1));
     }
 
     #[test]
     fn custom_cycle_is_shippable_false_when_any_feature_not_ready() {
-        let mut store = DashboardStore::default();
-        store.features = vec![
-            make_feature(1, FeatureState::Validated, None, None),
-            make_feature(2, FeatureState::Implementing, None, None),
-        ];
+        let mut store = DashboardStore {
+            features: vec![
+                make_feature(1, FeatureState::Validated, None, None),
+                make_feature(2, FeatureState::Implementing, None, None),
+            ],
+            ..Default::default()
+        };
         store.cycle_features.insert(1, vec![1, 2]);
         assert!(!store.cycle_is_shippable(1));
     }

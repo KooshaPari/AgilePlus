@@ -19,7 +19,7 @@
 //! private sandbox. Nothing can touch the operator's real configuration.
 
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex, MutexGuard, OnceLock};
+use std::sync::{Arc, OnceLock};
 
 use agileplus_dashboard::app_state::{DashboardStore, SharedState};
 use agileplus_dashboard::routes::router;
@@ -35,9 +35,13 @@ use tower::util::ServiceExt;
 
 /// Serializes the file, installs the sandbox `HOME`, and fences the global
 /// variables these tests own.
-fn lock() -> MutexGuard<'static, ()> {
-    static LOCK: Mutex<()> = Mutex::new(());
-    let guard = LOCK.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+///
+/// An async mutex is used because the guard is deliberately held across the
+/// test's `await` points: releasing it earlier would let a second test start
+/// while this one is mid-request.
+async fn lock() -> tokio::sync::MutexGuard<'static, ()> {
+    static LOCK: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
+    let guard = LOCK.lock().await;
     sandbox_home();
     guard
 }
@@ -150,7 +154,7 @@ fn created_feature(id: i64) -> Feature {
 
 #[tokio::test]
 async fn feature_transition_rejects_a_disallowed_lifecycle_step_without_mutating_state() {
-    let _guard = lock();
+    let _guard = lock().await;
 
     let store = DashboardStore {
         features: vec![created_feature(1)],
@@ -240,7 +244,7 @@ async fn feature_transition_rejects_a_disallowed_lifecycle_step_without_mutating
 
 #[tokio::test]
 async fn restart_service_reports_a_failed_spawn_for_an_unresolvable_program() {
-    let _guard = lock();
+    let _guard = lock().await;
     let _command = EnvRestore::capture("AGILEPLUS_SERVICE_RESTART_CMD");
     let _path = EnvRestore::capture("PATH");
 
@@ -283,7 +287,7 @@ async fn restart_service_reports_a_failed_spawn_for_an_unresolvable_program() {
 
 #[tokio::test]
 async fn epics_stories_reports_a_database_that_cannot_be_opened() {
-    let _guard = lock();
+    let _guard = lock().await;
     let _url = EnvRestore::capture("DATABASE_URL");
     let _path = EnvRestore::capture("DATABASE_PATH");
 

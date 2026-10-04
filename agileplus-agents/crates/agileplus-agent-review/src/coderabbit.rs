@@ -141,12 +141,11 @@ fn extract_next_link(headers: &reqwest::header::HeaderMap) -> Option<String> {
     // Format: `<url>; rel="next", <url>; rel="last"`
     for part in link.split(',') {
         let part = part.trim();
-        if part.contains(r#"rel="next""#) {
-            if let Some(start) = part.find('<') {
-                if let Some(end) = part.find('>') {
-                    return Some(part[start + 1..end].to_owned());
-                }
-            }
+        if part.contains(r#"rel="next""#)
+            && let Some(start) = part.find('<')
+            && let Some(end) = part.find('>')
+        {
+            return Some(part[start + 1..end].to_owned());
         }
     }
     None
@@ -339,8 +338,6 @@ fn classify_comment(body: &str) -> (bool, CommentSeverity) {
         {
             let sev = if trimmed.starts_with("error:") {
                 CommentSeverity::Error
-            } else if trimmed.starts_with("warning:") {
-                CommentSeverity::Warning
             } else {
                 CommentSeverity::Warning
             };

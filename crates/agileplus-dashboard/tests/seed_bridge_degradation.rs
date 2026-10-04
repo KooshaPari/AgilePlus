@@ -16,7 +16,7 @@
 //! `AGILEPLUS_API_*` is owned by the same guard.
 
 use std::path::{Path, PathBuf};
-use std::sync::{Mutex, MutexGuard, OnceLock};
+use std::sync::OnceLock;
 
 use agileplus_dashboard::app_state::DashboardStore;
 use agileplus_dashboard::seed_bridge::try_merge_from_api;
@@ -29,9 +29,13 @@ use axum::routing::get;
 // ── Sandbox ──────────────────────────────────────────────────────────────────
 
 /// Serializes the file and installs the sandbox `HOME`.
-fn lock() -> MutexGuard<'static, ()> {
-    static LOCK: Mutex<()> = Mutex::new(());
-    let guard = LOCK.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+///
+/// An async mutex is used because the guard is deliberately held across the
+/// test's `await` points: releasing it earlier would let a second test start
+/// while this one is mid-request.
+async fn lock() -> tokio::sync::MutexGuard<'static, ()> {
+    static LOCK: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
+    let guard = LOCK.lock().await;
     sandbox_home();
     guard
 }
@@ -82,7 +86,7 @@ async fn serve(routes: Router) -> String {
 
 #[tokio::test]
 async fn unusable_api_payloads_leave_every_seeded_collection_intact() {
-    let _guard = lock();
+    let _guard = lock().await;
     unset_var("AGILEPLUS_API_KEY");
 
     let routes = Router::new()
@@ -178,7 +182,7 @@ fn module_feature(id: i64, module_id: Option<i64>) -> Feature {
 
 #[tokio::test]
 async fn merge_rebuilds_the_cycle_index_from_feature_module_ids() {
-    let _guard = lock();
+    let _guard = lock().await;
     unset_var("AGILEPLUS_API_KEY");
 
     let cycle = serde_json::json!([{
@@ -207,13 +211,15 @@ async fn merge_rebuilds_the_cycle_index_from_feature_module_ids() {
     let base = serve(routes).await;
     set_var("AGILEPLUS_API_BASE", &base);
 
-    let mut store = DashboardStore::default();
-    store.features = vec![
-        module_feature(1, Some(42)),
-        module_feature(2, Some(7)),
-        module_feature(3, Some(42)),
-        module_feature(4, None),
-    ];
+    let store = DashboardStore {
+        features: vec![
+            module_feature(1, Some(42)),
+            module_feature(2, Some(7)),
+            module_feature(3, Some(42)),
+            module_feature(4, None),
+        ],
+        ..Default::default()
+    };
 
     let merged = try_merge_from_api(store).await;
 

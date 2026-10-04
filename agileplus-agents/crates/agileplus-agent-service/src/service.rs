@@ -10,6 +10,11 @@ use tracing::{info, warn};
 use uuid::Uuid;
 
 // Include generated protobuf types.
+// `dead_code` is allowed here only because these are machine-generated
+// prost/tonic types for the full gRPC contract; this binary implements a
+// single service and never constructs the remaining generated messages, and
+// the generated file cannot carry its own attribute from source.
+#[allow(dead_code)]
 pub mod proto {
     tonic::include_proto!("agileplus.v1");
 }

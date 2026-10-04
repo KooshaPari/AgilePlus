@@ -14,7 +14,7 @@ use std::error::Error as StdError;
 #[test]
 fn domain_result_ok_works() {
     let result: DomainResult<i32> = Ok(42);
-    assert_eq!(result.unwrap(), 42);
+    assert_eq!(result.ok(), Some(42));
 }
 
 #[test]

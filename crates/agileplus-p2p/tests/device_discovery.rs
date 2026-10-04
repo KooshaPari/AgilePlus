@@ -272,7 +272,7 @@ fn connection_error_from_peer_discovery() {
 
 #[test]
 fn connection_error_from_io() {
-    let io_err = std::io::Error::new(std::io::ErrorKind::Other, "disk full");
+    let io_err = std::io::Error::other("disk full");
     let err: ConnectionError = io_err.into();
     match err {
         ConnectionError::Io(_) => {}
@@ -292,7 +292,7 @@ fn peer_discovery_error_parse_error_display() {
 
 #[test]
 fn peer_discovery_error_io_display() {
-    let io_err = std::io::Error::new(std::io::ErrorKind::Other, "something broke");
+    let io_err = std::io::Error::other("something broke");
     let err: PeerDiscoveryError = io_err.into();
     let msg = format!("{}", err);
     assert!(msg.contains("IO error"));

@@ -846,7 +846,7 @@ async fn verification_fails_at_entry(world: &mut AgilePlusWorld, index: usize) {
     let zero_based = index - 1;
     assert!(
         err.contains(&format!("hash mismatch at entry index {zero_based}"))
-            || err.contains(&format!("chain break between entries")),
+            || err.contains("chain break between entries"),
         "Expected failure at entry {index} (0-based {zero_based}), got: {err}"
     );
 }

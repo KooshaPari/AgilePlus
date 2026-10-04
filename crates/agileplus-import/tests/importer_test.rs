@@ -36,6 +36,8 @@ use agileplus_import::{
 // Mock Storage
 // ---------------------------------------------------------------------------
 
+type ModuleUpdateList = Arc<Mutex<Vec<(i64, String, Option<String>)>>>;
+
 #[derive(Default, Clone)]
 struct MockStorage {
     features: Arc<Mutex<HashMap<i64, Feature>>>,
@@ -52,7 +54,7 @@ struct MockStorage {
     feature_state_updates: Arc<Mutex<Vec<(i64, FeatureState)>>>,
     wp_state_updates: Arc<Mutex<Vec<(i64, WpState)>>>,
     cycle_state_updates: Arc<Mutex<Vec<(i64, CycleState)>>>,
-    module_updates: Arc<Mutex<Vec<(i64, String, Option<String>)>>>,
+    module_updates: ModuleUpdateList,
 }
 
 impl MockStorage {
@@ -1503,8 +1505,10 @@ async fn import_feature_nonexistent_module_fails() {
 /// Test: ImportReport is Clone and Debug.
 #[test]
 fn import_report_clone_and_debug() {
-    let mut report = ImportReport::default();
-    report.projects_created = 5;
+    let report = ImportReport {
+        projects_created: 5,
+        ..Default::default()
+    };
     let cloned = report.clone();
     assert_eq!(cloned.projects_created, 5);
     let debug_str = format!("{report:?}");
@@ -1514,14 +1518,16 @@ fn import_report_clone_and_debug() {
 /// Test: ImportReport JSON roundtrip preserves all fields.
 #[test]
 fn import_report_json_roundtrip_preserves_all_fields() {
-    let mut report = ImportReport::default();
-    report.projects_created = 1;
-    report.modules_created = 2;
-    report.features_updated = 3;
-    report.work_packages_created = 4;
-    report.cycle_links_created = 5;
-    report.artifacts_written = 6;
-    report.audits_written = 7;
+    let report = ImportReport {
+        projects_created: 1,
+        modules_created: 2,
+        features_updated: 3,
+        work_packages_created: 4,
+        cycle_links_created: 5,
+        artifacts_written: 6,
+        audits_written: 7,
+        ..Default::default()
+    };
 
     let json = serde_json::to_string(&report).unwrap();
     let restored: ImportReport = serde_json::from_str(&json).unwrap();
@@ -1531,21 +1537,22 @@ fn import_report_json_roundtrip_preserves_all_fields() {
 /// Test: ImportReport serialization with all fields non-zero.
 #[test]
 fn import_report_full_json_roundtrip() {
-    let mut report = ImportReport::default();
-    report.projects_created = 10;
-    report.projects_updated = 20;
-    report.modules_created = 30;
-    report.modules_updated = 40;
-    report.features_created = 50;
-    report.features_updated = 60;
-    report.cycles_created = 70;
-    report.cycles_updated = 80;
-    report.work_packages_created = 90;
-    report.work_packages_updated = 100;
-    report.module_links_created = 110;
-    report.cycle_links_created = 120;
-    report.artifacts_written = 130;
-    report.audits_written = 140;
+    let report = ImportReport {
+        projects_created: 10,
+        projects_updated: 20,
+        modules_created: 30,
+        modules_updated: 40,
+        features_created: 50,
+        features_updated: 60,
+        cycles_created: 70,
+        cycles_updated: 80,
+        work_packages_created: 90,
+        work_packages_updated: 100,
+        module_links_created: 110,
+        cycle_links_created: 120,
+        artifacts_written: 130,
+        audits_written: 140,
+    };
 
     let json = serde_json::to_string(&report).unwrap();
     let restored: ImportReport = serde_json::from_str(&json).unwrap();

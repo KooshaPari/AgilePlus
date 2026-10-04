@@ -129,10 +129,7 @@ pub fn prompt_manual_review(
 fn read_line() -> Result<String, DomainError> {
     let stdin = io::stdin();
     let mut line = String::new();
-    stdin
-        .lock()
-        .read_line(&mut line)
-        .map_err(|e| DomainError::Io(e))?;
+    stdin.lock().read_line(&mut line).map_err(DomainError::Io)?;
     Ok(line)
 }
 

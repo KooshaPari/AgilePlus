@@ -65,7 +65,6 @@ struct GhCheckRun {
 
 #[derive(Debug, Deserialize)]
 struct GhCombinedStatus {
-    state: String,
     statuses: Vec<GhStatus>,
 }
 
@@ -336,17 +335,17 @@ pub async fn poll_until_complete(
 
     loop {
         // Cancellation check.
-        if let Some(ref ct) = cancel {
-            if ct.is_cancelled() {
-                info!("CI polling cancelled by token");
-                return Ok(CiStatus::Unknown);
-            }
+        if let Some(ct) = cancel
+            && ct.is_cancelled()
+        {
+            info!("CI polling cancelled by token");
+            return Ok(CiStatus::Unknown);
         }
 
         // Timeout check.
         if start.elapsed() >= max_wait {
             info!("CI polling max_wait exceeded");
-            return Ok(check_ci_status(client, api_base, token, owner, repo, pr_number).await?);
+            return check_ci_status(client, api_base, token, owner, repo, pr_number).await;
         }
 
         let status = check_ci_status(client, api_base, token, owner, repo, pr_number).await?;

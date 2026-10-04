@@ -270,7 +270,7 @@ fn local_mock_batch_size_matches_input_count() {
 
 #[cfg(feature = "oai")]
 mod oai {
-    use agileplus_triage::embeddings::OaiEmbeddings;
+    use agileplus_triage::embeddings::{EmbeddingBackend, OaiEmbeddings};
 
     #[test]
     fn oai_builder_preserves_api_key_dim_and_name() {
@@ -296,7 +296,7 @@ mod oai {
 
 #[cfg(feature = "voyage")]
 mod voyage {
-    use agileplus_triage::embeddings::VoyageEmbeddings;
+    use agileplus_triage::embeddings::{EmbeddingBackend, VoyageEmbeddings};
 
     #[test]
     fn voyage_builder_chain_is_well_typed() {

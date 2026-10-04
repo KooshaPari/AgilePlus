@@ -10,7 +10,8 @@
 //! A Neo4j-backed benchmark would be added in CI using the `neo4j` feature.
 
 use agileplus_graph::{GraphStore, InMemoryGraphStore, Node, NodeType, RelType, Relationship};
-use criterion::{BenchmarkId, Criterion, black_box, criterion_group, criterion_main};
+use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
+use std::hint::black_box;
 use tokio::runtime::Runtime;
 use uuid::Uuid;
 

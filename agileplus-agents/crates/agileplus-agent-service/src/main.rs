@@ -66,7 +66,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let service_impl = AgentDispatchServiceImpl::new(Arc::clone(&adapter));
 
     // Health check.
-    let (mut health_reporter, health_service) = health_reporter();
+    let (health_reporter, health_service) = health_reporter();
     health_reporter
         .set_serving::<AgentDispatchServiceServer<AgentDispatchServiceImpl>>()
         .await;

@@ -434,8 +434,8 @@ mod tests {
         let adapter = SqliteStorageAdapter::in_memory().unwrap();
         let conn = adapter.conn_for_bench().unwrap();
         seed_feature(&conn, 1);
-        let mut w = wp(1, "WP01 - Auth", 1);
-        let id = create_work_package(&conn, &mut w).unwrap();
+        let w = wp(1, "WP01 - Auth", 1);
+        let id = create_work_package(&conn, &w).unwrap();
         assert!(id > 0);
         let fetched = get_work_package(&conn, id).unwrap().unwrap();
         assert_eq!(fetched.title, "WP01 - Auth");
@@ -457,8 +457,8 @@ mod tests {
         let adapter = SqliteStorageAdapter::in_memory().unwrap();
         let conn = adapter.conn_for_bench().unwrap();
         seed_feature(&conn, 1);
-        let mut w = wp(1, "WP01", 1);
-        let id = create_work_package(&conn, &mut w).unwrap();
+        let w = wp(1, "WP01", 1);
+        let id = create_work_package(&conn, &w).unwrap();
         update_wp_state(&conn, id, WpState::Doing).unwrap();
         let fetched = get_work_package(&conn, id).unwrap().unwrap();
         assert_eq!(fetched.state, WpState::Doing);
@@ -470,7 +470,7 @@ mod tests {
         let conn = adapter.conn_for_bench().unwrap();
         seed_feature(&conn, 1);
         let mut w = wp(1, "WP01", 1);
-        let id = create_work_package(&conn, &mut w).unwrap();
+        let id = create_work_package(&conn, &w).unwrap();
         w.id = id;
         w.title = "WP01 Updated".to_string();
         w.state = WpState::Doing;
@@ -491,9 +491,9 @@ mod tests {
         let conn = adapter.conn_for_bench().unwrap();
         seed_feature(&conn, 1);
         seed_feature(&conn, 2);
-        create_work_package(&conn, &mut wp(1, "A", 2)).unwrap();
-        create_work_package(&conn, &mut wp(1, "B", 1)).unwrap();
-        create_work_package(&conn, &mut wp(2, "C", 1)).unwrap();
+        create_work_package(&conn, &wp(1, "A", 2)).unwrap();
+        create_work_package(&conn, &wp(1, "B", 1)).unwrap();
+        create_work_package(&conn, &wp(2, "C", 1)).unwrap();
 
         let list = list_wps_by_feature(&conn, 1).unwrap();
         assert_eq!(list.len(), 2);
@@ -508,8 +508,8 @@ mod tests {
         let conn = adapter.conn_for_bench().unwrap();
         seed_feature(&conn, 1);
         seed_feature(&conn, 2);
-        create_work_package(&conn, &mut wp(1, "A", 1)).unwrap();
-        create_work_package(&conn, &mut wp(2, "B", 1)).unwrap();
+        create_work_package(&conn, &wp(1, "A", 1)).unwrap();
+        create_work_package(&conn, &wp(2, "B", 1)).unwrap();
 
         let all = list_all_work_packages(&conn).unwrap();
         assert_eq!(all.len(), 2);
@@ -520,8 +520,8 @@ mod tests {
         let adapter = SqliteStorageAdapter::in_memory().unwrap();
         let conn = adapter.conn_for_bench().unwrap();
         seed_feature(&conn, 1);
-        let id1 = create_work_package(&conn, &mut wp(1, "WP01", 1)).unwrap();
-        let id2 = create_work_package(&conn, &mut wp(1, "WP02", 2)).unwrap();
+        let id1 = create_work_package(&conn, &wp(1, "WP01", 1)).unwrap();
+        let id2 = create_work_package(&conn, &wp(1, "WP02", 2)).unwrap();
 
         let dep = WpDependency {
             wp_id: id2,
@@ -550,8 +550,8 @@ mod tests {
         let adapter = SqliteStorageAdapter::in_memory().unwrap();
         let conn = adapter.conn_for_bench().unwrap();
         seed_feature(&conn, 1);
-        let id1 = create_work_package(&conn, &mut wp(1, "WP01", 1)).unwrap();
-        let id2 = create_work_package(&conn, &mut wp(1, "WP02", 2)).unwrap();
+        let id1 = create_work_package(&conn, &wp(1, "WP01", 1)).unwrap();
+        let id2 = create_work_package(&conn, &wp(1, "WP02", 2)).unwrap();
 
         // WP02 depends on WP01 which is still planned (not done)
         add_wp_dependency(
@@ -574,8 +574,8 @@ mod tests {
         let adapter = SqliteStorageAdapter::in_memory().unwrap();
         let conn = adapter.conn_for_bench().unwrap();
         seed_feature(&conn, 1);
-        let id1 = create_work_package(&conn, &mut wp(1, "WP01", 1)).unwrap();
-        let id2 = create_work_package(&conn, &mut wp(1, "WP02", 2)).unwrap();
+        let id1 = create_work_package(&conn, &wp(1, "WP01", 1)).unwrap();
+        let id2 = create_work_package(&conn, &wp(1, "WP02", 2)).unwrap();
 
         // Mark WP01 as done
         update_wp_state(&conn, id1, WpState::Review).unwrap();
@@ -617,10 +617,10 @@ mod tests {
         let adapter = SqliteStorageAdapter::in_memory().unwrap();
         let conn = adapter.conn_for_bench().unwrap();
         seed_feature(&conn, 1);
-        create_work_package(&conn, &mut wp(1, "Ready", 1)).unwrap();
+        create_work_package(&conn, &wp(1, "Ready", 1)).unwrap();
         let mut doing = wp(1, "In Progress", 2);
         doing.state = WpState::Doing;
-        create_work_package(&conn, &mut doing).unwrap();
+        create_work_package(&conn, &doing).unwrap();
 
         let ready = get_next_ready_wps(&conn, None).unwrap();
         assert_eq!(ready.len(), 1);
@@ -673,7 +673,7 @@ mod tests {
         seed_feature(&conn, 1);
         let mut w = wp(1, "WP01", 1);
         w.file_scope = vec!["src/a.rs".to_string(), "src/b.rs".to_string()];
-        let id = create_work_package(&conn, &mut w).unwrap();
+        let id = create_work_package(&conn, &w).unwrap();
         let fetched = get_work_package(&conn, id).unwrap().unwrap();
         assert_eq!(fetched.file_scope, vec!["src/a.rs", "src/b.rs"]);
     }
@@ -711,7 +711,7 @@ mod tests {
         ] {
             let mut w = wp(1, "WP", 1);
             w.pr_state = Some(pr_state);
-            let id = create_work_package(&conn, &mut w).unwrap();
+            let id = create_work_package(&conn, &w).unwrap();
             let fetched = get_work_package(&conn, id).unwrap().unwrap();
             assert_eq!(fetched.pr_state, Some(pr_state));
         }
@@ -722,8 +722,8 @@ mod tests {
         let adapter = SqliteStorageAdapter::in_memory().unwrap();
         let conn = adapter.conn_for_bench().unwrap();
         seed_feature(&conn, 1);
-        let mut w = wp(1, "WP", 1);
-        let id = create_work_package(&conn, &mut w).unwrap();
+        let w = wp(1, "WP", 1);
+        let id = create_work_package(&conn, &w).unwrap();
         for state in [WpState::Doing, WpState::Review, WpState::Done] {
             update_wp_state(&conn, id, state).unwrap();
             let fetched = get_work_package(&conn, id).unwrap().unwrap();
@@ -736,9 +736,9 @@ mod tests {
         let adapter = SqliteStorageAdapter::in_memory().unwrap();
         let conn = adapter.conn_for_bench().unwrap();
         seed_feature(&conn, 1);
-        let id1 = create_work_package(&conn, &mut wp(1, "WP01", 1)).unwrap();
-        let id2 = create_work_package(&conn, &mut wp(1, "WP02", 2)).unwrap();
-        let id3 = create_work_package(&conn, &mut wp(1, "WP03", 3)).unwrap();
+        let id1 = create_work_package(&conn, &wp(1, "WP01", 1)).unwrap();
+        let id2 = create_work_package(&conn, &wp(1, "WP02", 2)).unwrap();
+        let id3 = create_work_package(&conn, &wp(1, "WP03", 3)).unwrap();
 
         add_wp_dependency(
             &conn,

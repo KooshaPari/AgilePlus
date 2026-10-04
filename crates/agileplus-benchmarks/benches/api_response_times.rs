@@ -14,7 +14,8 @@
 use agileplus_benchmarks::helpers::{make_feature, make_in_memory_adapter};
 use agileplus_domain::domain::state_machine::FeatureState;
 use agileplus_sqlite::SqliteStorageAdapter;
-use criterion::{BenchmarkId, Criterion, black_box, criterion_group, criterion_main};
+use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
+use std::hint::black_box;
 
 // ---------------------------------------------------------------------------
 // Setup helpers

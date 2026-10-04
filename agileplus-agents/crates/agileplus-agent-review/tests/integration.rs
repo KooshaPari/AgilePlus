@@ -103,7 +103,7 @@ async fn integration_fallback_triggers_in_non_interactive_mode() {
 
     // Short fallback timeout so fallback triggers quickly.
     let config = ReviewAdapterConfig::new("fake-token", "acme", "repo")
-        .with_api_base(&server.uri())
+        .with_api_base(server.uri())
         .with_fallback_timeout(Duration::from_millis(10));
     let adapter = ReviewAdapter::new(config).unwrap();
 

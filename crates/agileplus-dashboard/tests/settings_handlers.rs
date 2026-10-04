@@ -11,7 +11,7 @@
 //! these tests credential-free (no OS keychain access).
 
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex, MutexGuard, OnceLock};
+use std::sync::{Arc, OnceLock};
 
 use agileplus_dashboard::app_state::{DashboardStore, SharedState, default_health};
 use agileplus_dashboard::routes::router;
@@ -24,9 +24,13 @@ use tower::util::ServiceExt;
 // ── Sandbox ──────────────────────────────────────────────────────────────────
 
 /// Serializes every test in this file and owns the `HOME` redirect.
-fn lock() -> MutexGuard<'static, ()> {
-    static LOCK: Mutex<()> = Mutex::new(());
-    let guard = LOCK.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+///
+/// An async mutex is used because the guard is deliberately held across the
+/// test's `await` points: releasing it earlier would let a second test start
+/// while this one is mid-request.
+async fn lock() -> tokio::sync::MutexGuard<'static, ()> {
+    static LOCK: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
+    let guard = LOCK.lock().await;
     sandbox_home();
     guard
 }
@@ -125,7 +129,7 @@ async fn post_json(uri: &str, json: &str) -> (StatusCode, serde_json::Value) {
 
 #[tokio::test]
 async fn save_services_settings_persists_configured_services() {
-    let _guard = lock();
+    let _guard = lock().await;
     reset_config();
 
     let (status, body) = post_form(
@@ -162,7 +166,7 @@ async fn save_services_settings_persists_configured_services() {
 
 #[tokio::test]
 async fn save_services_settings_skips_blank_fields() {
-    let _guard = lock();
+    let _guard = lock().await;
     reset_config();
 
     let (status, body) = post_form(
@@ -191,7 +195,7 @@ async fn save_services_settings_skips_blank_fields() {
 
 #[tokio::test]
 async fn save_agent_settings_persists_pool_configuration() {
-    let _guard = lock();
+    let _guard = lock().await;
     reset_config();
 
     let (status, body) = post_form(
@@ -217,7 +221,7 @@ async fn save_agent_settings_persists_pool_configuration() {
 
 #[tokio::test]
 async fn save_dashboard_settings_persists_ui_configuration() {
-    let _guard = lock();
+    let _guard = lock().await;
     reset_config();
 
     let (status, _body) = post_form(
@@ -240,7 +244,7 @@ async fn save_dashboard_settings_persists_ui_configuration() {
 
 #[tokio::test]
 async fn save_plane_settings_rejects_a_missing_api_key() {
-    let _guard = lock();
+    let _guard = lock().await;
     reset_config();
 
     let (status, body) = post_form(
@@ -264,7 +268,7 @@ async fn save_plane_settings_rejects_a_missing_api_key() {
 
 #[tokio::test]
 async fn patch_service_config_creates_entry_with_limits() {
-    let _guard = lock();
+    let _guard = lock().await;
     reset_config();
 
     let (status, body) = patch_form(
@@ -293,7 +297,7 @@ async fn patch_service_config_creates_entry_with_limits() {
 
 #[tokio::test]
 async fn patch_service_config_keeps_endpoint_when_blank() {
-    let _guard = lock();
+    let _guard = lock().await;
     reset_config();
 
     let (status, _) = patch_form(
@@ -322,7 +326,7 @@ async fn patch_service_config_keeps_endpoint_when_blank() {
 
 #[tokio::test]
 async fn toggle_service_persists_disabled_state() {
-    let _guard = lock();
+    let _guard = lock().await;
     reset_config();
 
     let (status, _) = patch_form(
@@ -348,7 +352,7 @@ async fn toggle_service_persists_disabled_state() {
 
 #[tokio::test]
 async fn toggle_service_defaults_to_enabled_for_unknown_service() {
-    let _guard = lock();
+    let _guard = lock().await;
     reset_config();
 
     let (status, body) = post_json("/api/dashboard/services/Ghost/toggle", r#"{}"#).await;
@@ -368,7 +372,7 @@ async fn toggle_service_defaults_to_enabled_for_unknown_service() {
 // ── Service restart ──────────────────────────────────────────────────────────
 
 /// Restart tests mutate a process-wide env var, so they hold the file lock.
-struct RestartEnv(&'static str);
+struct RestartEnv;
 
 impl RestartEnv {
     fn set(value: &'static str) -> Self {
@@ -376,7 +380,7 @@ impl RestartEnv {
         // undefined behaviour. Only the restart tests touch this variable, and
         // every one of them holds `lock()` for its whole body.
         unsafe { std::env::set_var("AGILEPLUS_SERVICE_RESTART_CMD", value) };
-        Self(value)
+        Self
     }
 }
 
@@ -388,7 +392,7 @@ impl Drop for RestartEnv {
 
 #[tokio::test]
 async fn restart_service_rejects_template_without_placeholder() {
-    let _guard = lock();
+    let _guard = lock().await;
     let _env = RestartEnv::set("echo restarted");
 
     let (status, body) = post_json("/api/dashboard/services/Plane/restart", "{}").await;
@@ -404,7 +408,7 @@ async fn restart_service_rejects_template_without_placeholder() {
 
 #[tokio::test]
 async fn restart_service_rejects_disallowed_program() {
-    let _guard = lock();
+    let _guard = lock().await;
     let _env = RestartEnv::set("rm -rf {}");
 
     let (status, body) = post_json("/api/dashboard/services/Plane/restart", "{}").await;
@@ -418,7 +422,7 @@ async fn restart_service_rejects_disallowed_program() {
 
 #[tokio::test]
 async fn restart_service_runs_an_allowed_command() {
-    let _guard = lock();
+    let _guard = lock().await;
     let _env = RestartEnv::set("echo restarted {}");
 
     let (status, body) = post_json("/api/dashboard/services/Plane/restart", "{}").await;

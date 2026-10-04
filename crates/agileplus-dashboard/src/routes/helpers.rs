@@ -589,9 +589,11 @@ mod tests {
 
     #[test]
     fn load_projects_maps_fields_and_active() {
-        let mut store = DashboardStore::default();
-        store.projects = vec![project(1, "alpha", "Alpha"), project(2, "beta", "Beta")];
-        store.active_project_id = Some(2);
+        let store = DashboardStore {
+            projects: vec![project(1, "alpha", "Alpha"), project(2, "beta", "Beta")],
+            active_project_id: Some(2),
+            ..Default::default()
+        };
         let (views, active) = load_projects(&store);
         assert_eq!(views.len(), 2);
         assert_eq!(views[1].slug, "beta");
@@ -600,8 +602,10 @@ mod tests {
 
     #[test]
     fn load_projects_no_active_returns_none() {
-        let mut store = DashboardStore::default();
-        store.projects = vec![project(1, "alpha", "Alpha")];
+        let store = DashboardStore {
+            projects: vec![project(1, "alpha", "Alpha")],
+            ..Default::default()
+        };
         let (views, active) = load_projects(&store);
         assert_eq!(views.len(), 1);
         assert!(active.is_none());
@@ -609,13 +613,15 @@ mod tests {
 
     #[test]
     fn build_project_summaries_counts_per_project() {
-        let mut store = DashboardStore::default();
-        store.projects = vec![project(1, "alpha", "Alpha"), project(2, "beta", "Beta")];
-        store.features = vec![
-            feature_with(1, FeatureState::Created, Some(1)),
-            feature_with(2, FeatureState::Shipped, Some(1)),
-            feature_with(3, FeatureState::Implementing, Some(2)),
-        ];
+        let store = DashboardStore {
+            projects: vec![project(1, "alpha", "Alpha"), project(2, "beta", "Beta")],
+            features: vec![
+                feature_with(1, FeatureState::Created, Some(1)),
+                feature_with(2, FeatureState::Shipped, Some(1)),
+                feature_with(3, FeatureState::Implementing, Some(2)),
+            ],
+            ..Default::default()
+        };
         let summaries = build_project_summaries(&store);
         assert_eq!(summaries.len(), 2);
         assert_eq!(summaries[0].feature_count, 2);
@@ -686,8 +692,10 @@ mod tests {
 
     #[test]
     fn build_kanban_cards_places_features_in_state_bucket() {
-        let mut store = DashboardStore::default();
-        store.features = vec![feature_with(1, FeatureState::Created, None)];
+        let store = DashboardStore {
+            features: vec![feature_with(1, FeatureState::Created, None)],
+            ..Default::default()
+        };
         let cards = build_kanban_cards(&store, DashboardFilter::All);
         assert_eq!(cards["created"].len(), 1);
         assert!(cards["shipped"].is_empty());
@@ -695,11 +703,13 @@ mod tests {
 
     #[test]
     fn build_kanban_cards_active_filter_excludes_shipped() {
-        let mut store = DashboardStore::default();
-        store.features = vec![
-            feature_with(1, FeatureState::Created, None),
-            feature_with(2, FeatureState::Shipped, None),
-        ];
+        let store = DashboardStore {
+            features: vec![
+                feature_with(1, FeatureState::Created, None),
+                feature_with(2, FeatureState::Shipped, None),
+            ],
+            ..Default::default()
+        };
         let cards = build_kanban_cards(&store, DashboardFilter::Active);
         assert_eq!(cards["created"].len(), 1);
         assert!(cards["shipped"].is_empty());
@@ -707,13 +717,15 @@ mod tests {
 
     #[test]
     fn build_kanban_cards_scopes_to_active_project() {
-        let mut store = DashboardStore::default();
-        store.projects = vec![project(1, "alpha", "Alpha")];
-        store.active_project_id = Some(1);
-        store.features = vec![
-            feature_with(1, FeatureState::Created, Some(1)),
-            feature_with(2, FeatureState::Created, Some(2)),
-        ];
+        let store = DashboardStore {
+            projects: vec![project(1, "alpha", "Alpha")],
+            active_project_id: Some(1),
+            features: vec![
+                feature_with(1, FeatureState::Created, Some(1)),
+                feature_with(2, FeatureState::Created, Some(2)),
+            ],
+            ..Default::default()
+        };
         let cards = build_kanban_cards(&store, DashboardFilter::All);
         assert_eq!(cards["created"].len(), 1);
     }

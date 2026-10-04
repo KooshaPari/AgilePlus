@@ -23,21 +23,22 @@ fn import_report_default_all_zero() {
 
 #[test]
 fn import_report_fields_are_mutable() {
-    let mut report = ImportReport::default();
-    report.projects_created = 3;
-    report.projects_updated = 1;
-    report.modules_created = 5;
-    report.modules_updated = 2;
-    report.features_created = 10;
-    report.features_updated = 4;
-    report.cycles_created = 2;
-    report.cycles_updated = 1;
-    report.work_packages_created = 20;
-    report.work_packages_updated = 7;
-    report.module_links_created = 8;
-    report.cycle_links_created = 3;
-    report.artifacts_written = 20;
-    report.audits_written = 10;
+    let report = ImportReport {
+        projects_created: 3,
+        projects_updated: 1,
+        modules_created: 5,
+        modules_updated: 2,
+        features_created: 10,
+        features_updated: 4,
+        cycles_created: 2,
+        cycles_updated: 1,
+        work_packages_created: 20,
+        work_packages_updated: 7,
+        module_links_created: 8,
+        cycle_links_created: 3,
+        artifacts_written: 20,
+        audits_written: 10,
+    };
 
     assert_eq!(report.projects_created, 3);
     assert_eq!(report.projects_updated, 1);
@@ -57,10 +58,12 @@ fn import_report_fields_are_mutable() {
 
 #[test]
 fn import_report_json_roundtrip() {
-    let mut report = ImportReport::default();
-    report.projects_created = 1;
-    report.features_created = 5;
-    report.artifacts_written = 10;
+    let report = ImportReport {
+        projects_created: 1,
+        features_created: 5,
+        artifacts_written: 10,
+        ..Default::default()
+    };
 
     let json = serde_json::to_string(&report).unwrap();
     let restored: ImportReport = serde_json::from_str(&json).unwrap();
@@ -75,8 +78,10 @@ fn import_report_json_roundtrip() {
 
 #[test]
 fn import_report_clone() {
-    let mut report = ImportReport::default();
-    report.modules_created = 7;
+    let report = ImportReport {
+        modules_created: 7,
+        ..Default::default()
+    };
 
     let cloned = report.clone();
     assert_eq!(cloned.modules_created, 7);

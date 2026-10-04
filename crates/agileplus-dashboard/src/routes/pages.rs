@@ -309,7 +309,7 @@ mod tests {
         let response = features_page(State(state)).await;
         let body = response.into_body();
         let bytes = axum::body::to_bytes(body, usize::MAX).await.unwrap();
-        assert_eq!(bytes.len() > 0, true);
+        assert!(!bytes.is_empty());
     }
 
     #[tokio::test]

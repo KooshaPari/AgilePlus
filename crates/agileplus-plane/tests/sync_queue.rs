@@ -694,8 +694,8 @@ fn queue_error_debug_format() {
 
 #[test]
 fn queue_capacity_is_reasonable() {
-    assert!(QUEUE_CAPACITY > 0);
-    assert!(QUEUE_CAPACITY <= 100_000);
+    const { assert!(QUEUE_CAPACITY > 0) };
+    const { assert!(QUEUE_CAPACITY <= 100_000) };
 }
 
 #[test]
