@@ -9,7 +9,6 @@ description = "Transport-layer integration tests (gRPC helpers, CLI, SQLite roun
 [dependencies]
 agileplus-domain = { version = "0.2.1", path = "../../crates/agileplus-domain" }
 agileplus-grpc = { version = "0.2.1", path = "../../crates/agileplus-grpc" }
-agileplus-proto = { version = "0.2.1", path = "../../crates/agileplus-proto" }
 agileplus-sqlite = { version = "0.2.1", path = "../../crates/agileplus-sqlite" }
 rusqlite = { version = "0.40", features = ["bundled"] }
 tonic.workspace = true

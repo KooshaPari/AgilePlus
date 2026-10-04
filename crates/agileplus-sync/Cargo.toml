@@ -9,7 +9,6 @@ repository.workspace = true
 
 [dependencies]
 agileplus-domain = { version = "0.2.4", path = "../agileplus-domain" }
-agileplus-nats = { version = "0.2.4", path = "../agileplus-nats" }
 async-nats.workspace = true
 async-trait.workspace = true
 chrono.workspace = true

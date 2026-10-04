@@ -15,7 +15,6 @@ tracing-opentelemetry.workspace = true
 opentelemetry.workspace = true
 opentelemetry-otlp.workspace = true
 opentelemetry_sdk.workspace = true
-reqwest = { version = "0.13" }
 serde = { workspace = true, features = ["derive"] }
 serde_yaml = "0.9"
 chrono = { workspace = true }
