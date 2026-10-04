@@ -32,8 +32,11 @@ services:
       - "443:443"
     restart: unless-stopped
 
+  # Optional future public ingress. The private/operator release uses the
+  # tailnet directly and does not require cloudflared.
   cloudflared:
     image: cloudflare/cloudflared:latest
+    profiles: ["public-ingress"]
     depends_on:
       - caddy
     command:
@@ -41,7 +44,7 @@ services:
       - --no-autoupdate
       - run
       - --token
-      - ${CF_TUNNEL_TOKEN:?CF_TUNNEL_TOKEN is required}
+      - ${CF_TUNNEL_TOKEN:?CF_TUNNEL_TOKEN is required for public-ingress profile}
     restart: unless-stopped
 
 volumes:
