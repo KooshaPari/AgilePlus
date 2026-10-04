@@ -1,11 +1,11 @@
 name: Mutation Testing & Fuzz Build Check
 
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
-  workflow_dispatch:
+    push:
+        branches: [main]
+    pull_request:
+        branches: [main]
+    workflow_dispatch:
 
 # Fuzz targets live in crates/agileplus-domain/fuzz/ (5 targets):
 #   parse_domain_config  — TOML/JSON AppConfig deserialization
@@ -16,87 +16,87 @@ on:
 # Run locally: cd crates/agileplus-domain && cargo +nightly fuzz run <target>
 
 permissions:
-  contents: read
+    contents: read
 
 concurrency:
-  group: mutation-${{ github.ref }}
-  cancel-in-progress: true
+    group: mutation-${{ github.ref }}
+    cancel-in-progress: true
 
 env:
-  CARGO_TERM_COLOR: always
+    CARGO_TERM_COLOR: always
 
 jobs:
-  mutants:
-    name: cargo-mutants (agileplus-domain)
-    runs-on: ubuntu-latest
-    timeout-minutes: 90
-    steps:
-      - uses: actions/checkout@v7
+    mutants:
+        name: cargo-mutants (agileplus-domain)
+        runs-on: ubuntu-latest
+        timeout-minutes: 90
+        steps:
+            - uses: actions/checkout@v7
 
-      - name: Install Rust (stable)
-        uses: dtolnay/rust-toolchain@stable
+            - name: Install Rust (stable)
+              uses: dtolnay/rust-toolchain@stable
 
-      - uses: Swatinem/rust-cache@v2
-        with:
-          cache-all-crates: true
-          key: mutants-${{ github.sha }}
+            - uses: Swatinem/rust-cache@v2
+              with:
+                  cache-all-crates: true
+                  key: mutants-${{ github.sha }}
 
-      - name: Install cargo-mutants
-        uses: taiki-e/install-action@v2
-        with:
-          tool: cargo-mutants
+            - name: Install cargo-mutants
+              uses: taiki-e/install-action@v2
+              with:
+                  tool: cargo-mutants
 
-      - name: Run cargo-mutants on agileplus-domain
-        run: cargo mutants --manifest-path crates/agileplus-domain/Cargo.toml
-        continue-on-error: true
+            - name: Run cargo-mutants on agileplus-domain
+              run: cargo mutants --manifest-path crates/agileplus-domain/Cargo.toml
+              continue-on-error: true
 
-      - name: List mutation results
-        if: always()
-        run: |
-          if [ -f mutants.out ]; then
-            echo "=== Mutation Results ==="
-            cat mutants.out
-          fi
-          echo "---"
-          ls -la mutants.out 2>/dev/null || echo "No mutants.out file"
-          ls -la target/mutants/ 2>/dev/null || echo "No target/mutants/ directory"
+            - name: List mutation results
+              if: always()
+              run: |
+                  if [ -f mutants.out ]; then
+                    echo "=== Mutation Results ==="
+                    cat mutants.out
+                  fi
+                  echo "---"
+                  ls -la mutants.out 2>/dev/null || echo "No mutants.out file"
+                  ls -la target/mutants/ 2>/dev/null || echo "No target/mutants/ directory"
 
-      - name: Upload mutation report
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: mutation-report
-          path: |
-            mutants.out
-            target/mutants/
-          retention-days: 14
+            - name: Upload mutation report
+              if: always()
+              uses: actions/upload-artifact@v7
+              with:
+                  name: mutation-report
+                  path: |
+                      mutants.out
+                      target/mutants/
+                  retention-days: 14
 
-  fuzz-check:
-    name: cargo-fuzz build check (agileplus-domain)
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v7
+    fuzz-check:
+        name: cargo-fuzz build check (agileplus-domain)
+        runs-on: ubuntu-latest
+        timeout-minutes: 30
+        steps:
+            - uses: actions/checkout@v7
 
-      - name: Install Rust (nightly)
-        uses: dtolnay/rust-toolchain@nightly
-        with:
-          targets: x86_64-unknown-linux-musl
+            - name: Install Rust (nightly)
+              uses: dtolnay/rust-toolchain@nightly
+              with:
+                  targets: x86_64-unknown-linux-musl
 
-      - uses: Swatinem/rust-cache@v2
-        with:
-          cache-all-crates: true
-          key: fuzz-${{ github.sha }}
+            - uses: Swatinem/rust-cache@v2
+              with:
+                  cache-all-crates: true
+                  key: fuzz-${{ github.sha }}
 
-      - name: Install cargo-fuzz
-        uses: taiki-e/install-action@v2
-        with:
-          tool: cargo-fuzz
+            - name: Install cargo-fuzz
+              uses: taiki-e/install-action@v2
+              with:
+                  tool: cargo-fuzz
 
-      - name: Build fuzz targets (agileplus-domain)
-        run: >-
-          cargo +nightly fuzz build --target "$(rustc +nightly -vV | sed -n 's/^host: //p')"
-        working-directory: crates/agileplus-domain
-        env:
-          # AddressSanitizer cannot run with musl's statically linked libc.
-          RUSTFLAGS: "-C target-feature=-crt-static"
+            - name: Build fuzz targets (agileplus-domain)
+              run: >-
+                  cargo +nightly fuzz build --target "$(rustc +nightly -vV | sed -n 's/^host: //p')"
+              working-directory: crates/agileplus-domain
+              env:
+                  # AddressSanitizer cannot run with musl's statically linked libc.
+                  RUSTFLAGS: "-C target-feature=-crt-static"

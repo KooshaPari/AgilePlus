@@ -8,11 +8,6 @@ pr_draft = false
 semver_check = false
 
 [[package]]
-name = "agileplus"
-publish = false
-release = false
-
-[[package]]
 name = "agileplus-benchmarks"
 publish = false
 release = false
@@ -24,10 +19,5 @@ release = false
 
 [[package]]
 name = "agileplus-integration-tests"
-publish = false
-release = false
-
-[[package]]
-name = "xtask-anti-patterns"
 publish = false
 release = false
