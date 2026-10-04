@@ -1,59 +1,52 @@
-version: '3.8'
-
 services:
-  agileplus-cli:
-    image: agileplus:latest
-    container_name: agileplus-cli
-    restart: unless-stopped
-    command: agileplus --db /data/agileplus.db list-projects
+  agileplus-api:
+    image: rust:1.82-bookworm
+    working_dir: /workspace
+    command: sh -lc "cargo run --release -p agileplus-api"
     environment:
-      AGILEPLUS_DB: /data/agileplus.db
-      LOG_LEVEL: "info"
+      API_HOST: 0.0.0.0
+      DATABASE_URL: sqlite:/data/agileplus.db
+      AGILEPLUS_API_KEY: ${AGILEPLUS_API_KEY:?AGILEPLUS_API_KEY is required}
+      RUST_LOG: info
     volumes:
+      - ../..:/workspace
       - agileplus-data:/data
-    networks:
-      - agileplus-net
+      - agileplus-cargo-cache:/usr/local/cargo/registry
+      - agileplus-target-cache:/workspace/target
+    expose:
+      - "3000"
+    restart: unless-stopped
 
   caddy:
-    image: caddy:latest
-    container_name: agileplus-caddy
-    restart: unless-stopped
+    image: caddy:2.8-alpine
+    depends_on:
+      - agileplus-api
+    environment:
+      HOSTNAME: ${HOSTNAME:-api.agileplus.pheno.studio}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
     ports:
       - "80:80"
       - "443:443"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
-      - caddy-data:/data
-      - caddy-config:/config
-    environment:
-      HOSTNAME: ${HOSTNAME:-agileplus.pheno.studio}
-    networks:
-      - agileplus-net
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+    restart: unless-stopped
 
   cloudflared:
     image: cloudflare/cloudflared:latest
-    container_name: agileplus-cloudflared
-    restart: unless-stopped
-    command: tunnel --no-autoupdate run
-    environment:
-      TUNNEL_TOKEN: ${CF_TUNNEL_TOKEN:-}
-    networks:
-      - agileplus-net
     depends_on:
       - caddy
-    profiles:
-      - cloudflare
+    command:
+      - tunnel
+      - --no-autoupdate
+      - run
+      - --token
+      - ${CF_TUNNEL_TOKEN:?CF_TUNNEL_TOKEN is required}
+    restart: unless-stopped
 
 volumes:
   agileplus-data:
+  agileplus-cargo-cache:
+  agileplus-target-cache:
   caddy-data:
   caddy-config:
-
-networks:
-  agileplus-net:
-    driver: bridge
