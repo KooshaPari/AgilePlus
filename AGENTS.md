@@ -1,5 +1,28 @@
 # AgilePlus AGENTS.MD
 
+## Recovery Authority (2026-10-04)
+
+For the active mature-first recovery branch, use these files as the operational
+entrypoint before inferring state from older docs:
+
+- `spec/product/mature-contract.v1.json` — accepted mature semantic contract.
+- `verification/FORWARD_WBS_2026-10-04.md` — current execution/release WBS.
+- `docs/architecture/NETWORK_DEPLOYMENT_DOCTRINE.md` — canonical tailnet-first
+  deployment/network architecture.
+- `verification/NEXT_DEPLOYABLE_RELEASE_2026-10-04.md` — deployed-release gate.
+
+Important invariants:
+
+- AgilePlus AcceptedWork is not Tracera Satisfied.
+- Generic state-transition transports must not award terminal acceptance.
+- Test not executed is not test passed.
+- Deployment status and time-to-next-deployed/installable release are
+  first-class status dimensions.
+- Private/operator deployment is tailnet-first; Cloudflare Tunnel is optional
+  future public ingress, not the private network foundation.
+- Run one host-level Caddy per physical host; do not stack per-project reverse
+  proxies without a demonstrated requirement.
+
 ## Project Overview
 AgilePlus is the Phenotype-org spec-driven development framework. Rust CLI + workspace for managing specs, work packages, and project governance. CLI: `agileplus <command>`
 
