@@ -42,6 +42,7 @@
 ### Task 1: Define and test the canonical repository context
 
 **Files:**
+
 - Create: `crates/agileplus-git/src/project_context.rs`
 - Modify: `crates/agileplus-git/src/lib.rs`
 - Test: `crates/agileplus-git/tests/project_context.rs`
@@ -113,6 +114,7 @@ git commit -m "feat(git): resolve repository-local AgilePlus context"
 ### Task 2: Remove implicit core and CLI database selection
 
 **Files:**
+
 - Modify: `crates/agileplus-grpc/src/runtime.rs`
 - Modify: `crates/agileplus-grpc/src/main.rs`
 - Modify: `crates/agileplus-grpc/tests/runtime_config.rs`
@@ -167,6 +169,7 @@ git commit -m "fix(runtime): require repository-local state context"
 ### Task 3: Scope MCP and gRPC requests to one repository
 
 **Files:**
+
 - Modify: `proto/agileplus/v1/common.proto`
 - Modify: `proto/agileplus/v1/core.proto`
 - Modify: `crates/agileplus-proto/build.rs`
@@ -177,7 +180,9 @@ git commit -m "fix(runtime): require repository-local state context"
 - [ ] **Step 1: Add a failing MCP test for a session root.**
 
 ```python
-async def test_workspace_roots_are_scoped_to_the_client_repository(monkeypatch, tmp_path):
+async def test_workspace_roots_are_scoped_to_the_client_repository(
+    monkeypatch, tmp_path
+):
     repo = tmp_path / "project"
     (repo / ".git").mkdir(parents=True)
     monkeypatch.setattr(server, "_session_project_root", repo)
@@ -215,6 +220,7 @@ git commit -m "feat(mcp): bind stateful requests to one repository"
 ### Task 4: Materialize project documentation and isolate machine state
 
 **Files:**
+
 - Modify: `crates/agileplus-git/src/materialize.rs`
 - Test: `crates/agileplus-git/src/materialize.rs`
 - Create: `docs/agileplus/repo-state-contract.md`
@@ -259,6 +265,7 @@ git commit -m "feat(artifacts): materialize AgilePlus records in project docs"
 ### Task 5: Create a reviewed, lossless migration workflow
 
 **Files:**
+
 - Create: `scripts/export-central-state.py`
 - Create: `scripts/import-repo-state.py`
 - Create: `docs/agileplus/central-state-owner-map.example.yaml`
@@ -272,6 +279,7 @@ def test_import_refuses_an_owner_not_in_the_reviewed_manifest(tmp_path):
     result = run_import(tmp_path, owner_map={})
     assert result.returncode != 0
     assert "missing reviewed owner" in result.stderr
+
 
 def test_export_records_the_source_database_sha256(tmp_path):
     result = run_export(tmp_path / "core.db")
@@ -306,6 +314,7 @@ git commit -m "feat(migration): require reviewed repository ownership"
 ### Task 6: Verify two-repository isolation and document the final fleet gate
 
 **Files:**
+
 - Create: `tests/e2e/repository_isolation.rs`
 - Modify: `docs/agileplus/repo-state-contract.md`
 

@@ -55,7 +55,7 @@ import grpc
 from agileplus.v1 import core_pb2, core_pb2_grpc
 
 # Create a secure or insecure channel
-channel = grpc.insecure_channel('localhost:50051')
+channel = grpc.insecure_channel("localhost:50051")
 stub = core_pb2_grpc.AgilePlusCoreServiceStub(channel)
 
 # Query a feature
@@ -289,25 +289,25 @@ export AGILEPLUS_GRPC_PORT="50051"
 
 All RPC methods return detailed error information via gRPC status codes:
 
-| Code | Meaning |
-|------|---------|
-| `OK` | Success |
-| `INVALID_ARGUMENT` | Malformed request (missing required field, invalid state) |
-| `NOT_FOUND` | Feature or work package does not exist |
-| `FAILED_PRECONDITION` | State transition not allowed (governance gate violation) |
-| `INTERNAL` | Database or VCS error |
+| Code                  | Meaning                                                   |
+| --------------------- | --------------------------------------------------------- |
+| `OK`                  | Success                                                   |
+| `INVALID_ARGUMENT`    | Malformed request (missing required field, invalid state) |
+| `NOT_FOUND`           | Feature or work package does not exist                    |
+| `FAILED_PRECONDITION` | State transition not allowed (governance gate violation)  |
+| `INTERNAL`            | Database or VCS error                                     |
 
 Example error response:
 
 ```json
 {
-  "code": "FAILED_PRECONDITION",
-  "message": "Cannot transition from SPECIFY to REVIEW: governance gates not passed",
-  "details": [
-    {
-      "field": "rule_id",
-      "reason": "FR-REVIEW-001: At least one approved review required"
-    }
-  ]
+    "code": "FAILED_PRECONDITION",
+    "message": "Cannot transition from SPECIFY to REVIEW: governance gates not passed",
+    "details": [
+        {
+            "field": "rule_id",
+            "reason": "FR-REVIEW-001: At least one approved review required"
+        }
+    ]
 }
 ```

@@ -37,6 +37,7 @@ async def specify(
 **Exploitability:** Medium. The actual risk depends on how the Rust backend handles the `from_file` argument. If the Rust side opens and reads this file, this is a path traversal vulnerability. The MCP layer acts as a pass-through with no sanitization.
 
 **Remediation:**
+
 - Validate `from_file` against an allowlist of directories (e.g., must be under `kitty-specs/`)
 - Reject paths containing `..` components
 - Resolve the path and verify it stays within the workspace root
@@ -46,6 +47,7 @@ async def specify(
 ### FINDING 2 — gRPC channel uses `insecure_channel` (no TLS) [MEDIUM]
 
 **Files:**
+
 - `python/src/agileplus_mcp/grpc_client.py`, line 59
 - `agileplus-mcp/src/agileplus_mcp/grpc_client.py`, line 32
 
@@ -62,6 +64,7 @@ self._channel = grpc.insecure_channel(self.target)
 **Exploitability:** Medium in production. On localhost this is acceptable for development, but if the gRPC server runs on a different host (the address is configurable via `AGILEPLUS_GRPC_ADDRESS`), any network observer can read or tamper with traffic. There is no mutual authentication, so a malicious actor could impersonate the Rust core.
 
 **Remediation:**
+
 - Support `grpc.aio.secure_channel()` with TLS certificates
 - Make TLS the default for non-localhost addresses
 - Add mTLS or token-based authentication for production deployments
@@ -71,6 +74,7 @@ self._channel = grpc.insecure_channel(self.target)
 ### FINDING 3 — No input validation on MCP tool string parameters [LOW]
 
 **Files:** All tool modules:
+
 - `python/src/agileplus_mcp/tools/features.py` (lines 28-47, 54-68, 71-88, 90-111)
 - `python/src/agileplus_mcp/tools/governance.py` (lines 24-45, 47-58, 60-79, 81-92)
 - `python/src/agileplus_mcp/tools/status.py` (lines 25-49, 51-70, 72-88, 90-105)
@@ -78,6 +82,7 @@ self._channel = grpc.insecure_channel(self.target)
 - `python/src/agileplus_mcp/server.py` (lines 93-152, 155-198, 206-222)
 
 **Issue:** None of the MCP tool handlers validate their string inputs beyond Python's type system. Parameters like `feature_slug`, `transition`, `target_branch`, `wp_id`, `item_type`, and `tier` are passed directly to gRPC calls without:
+
 - Length limits (a 100MB string could be sent as a feature_slug)
 - Character set validation (feature_slug should be kebab-case per the docstrings, but this isn't enforced)
 - Format validation (transition should match a pattern like `state->state`)
@@ -85,6 +90,7 @@ self._channel = grpc.insecure_channel(self.target)
 **Exploitability:** Low. The Rust core via protobuf will enforce its own schema constraints, and gRPC has default message size limits (~4MB). However, defense-in-depth mandates validating at the MCP boundary.
 
 **Remediation:**
+
 - Add a `validate_slug(s: str)` helper that enforces `^[a-z0-9][a-z0-9-]*$` and a max length (e.g., 128 chars)
 - Add length limits to free-text fields
 - Validate `transition` format (e.g., `^[a-z_]+->[a-z_]+$`)
@@ -105,6 +111,7 @@ GRPC_ADDRESS = os.environ.get("AGILEPLUS_GRPC_ADDRESS", "localhost:50051")
 **Exploitability:** Low. Requires control over the process environment, which typically implies existing host compromise. However, in containerized deployments, environment variable injection can sometimes occur via misconfigured orchestrators.
 
 **Remediation:**
+
 - Validate the address format (host:port)
 - Consider an allowlist of permitted gRPC addresses
 - Log a warning if the address is not localhost
@@ -122,7 +129,9 @@ def _call_omniroute(route: str, payload: dict[str, Any]) -> dict[str, Any]:
         raise ValueError("OMNIROUTE_URL environment variable is not set.")
     parsed = urlparse(base)
     if parsed.scheme not in ("http", "https"):
-        raise ValueError(f"OMNIROUTE_URL must use http or https scheme, got: {parsed.scheme!r}")
+        raise ValueError(
+            f"OMNIROUTE_URL must use http or https scheme, got: {parsed.scheme!r}"
+        )
 ```
 
 **Issue:** The URL is validated for scheme but not for hostname. The `route` parameter (which comes from hardcoded string literals in the current code, not from user input) is concatenated via string formatting. The `follow_redirects=False` setting is good — it prevents open-redirect SSRF. However, the response sanitization in `_sanitize_response` only strips keys at the top level.
@@ -130,6 +139,7 @@ def _call_omniroute(route: str, payload: dict[str, Any]) -> dict[str, Any]:
 **Exploitability:** Low. The route values are hardcoded (`"dispatch"`, `"health"`), not user-controlled. The `OMNIROUTE_URL` requires env-var control. The response allowlist (`_ALLOWED_RESPONSE_KEYS`) is a good defense.
 
 **Positive notes:**
+
 - `follow_redirects=False` prevents SSRF via redirect
 - Response key allowlisting prevents information leakage
 - Message length is bounded by `MAX_MESSAGE_LENGTH = 4096`
@@ -169,6 +179,7 @@ async def import_backlog_items(self, items: list[dict[str, Any]]) -> list[dict[s
 ```
 
 **Issue:** The batch import accepts a list of arbitrary dicts. While `title` is checked for presence, there is:
+
 - No limit on the number of items in a batch (DoS vector via sending thousands of items)
 - No validation of individual field lengths
 - No validation of field types beyond coercion via `str()`
@@ -176,6 +187,7 @@ async def import_backlog_items(self, items: list[dict[str, Any]]) -> list[dict[s
 **Exploitability:** Low. Protobuf serialization provides some inherent limits, and the gRPC max message size caps the total payload. But a malicious MCP client could submit a very large batch causing memory pressure.
 
 **Remediation:**
+
 - Add a batch size limit (e.g., max 100 items per import)
 - Add field length limits
 - Validate `item_type` against an allowlist
@@ -189,14 +201,18 @@ async def import_backlog_items(self, items: list[dict[str, Any]]) -> list[dict[s
 ```python
 for feature in features:
     slug = feature["slug"]
-    roots.append({
-        "uri": f"file://kitty-specs/{slug}/",
-        "name": f"feature-spec-{slug}",
-    })
-    roots.append({
-        "uri": f"file://.worktrees/{slug}/",
-        "name": f"feature-worktree-{slug}",
-    })
+    roots.append(
+        {
+            "uri": f"file://kitty-specs/{slug}/",
+            "name": f"feature-spec-{slug}",
+        }
+    )
+    roots.append(
+        {
+            "uri": f"file://.worktrees/{slug}/",
+            "name": f"feature-worktree-{slug}",
+        }
+    )
 ```
 
 **Issue:** Feature slugs returned from gRPC are interpolated into file URIs without validation. If a slug contained path-traversal characters (e.g., `../../etc`), it would produce a malicious URI. However, slugs originate from the Rust backend (a trusted source), not directly from MCP tool input.
@@ -204,6 +220,7 @@ for feature in features:
 **Exploitability:** Very Low. The slug comes from the Rust core, which presumably validates slug format. However, defense-in-depth suggests validating the slug format before interpolation.
 
 **Remediation:**
+
 - Validate slug format (`^[a-z0-9-]+$`) before interpolating into URIs
 
 ---
@@ -232,15 +249,15 @@ These are security-positive patterns observed in the codebase:
 
 ## Risk Matrix
 
-| ID | Severity | Category | File | Exploitable? |
-|----|----------|----------|------|-------------|
-| F1 | Medium | Path Traversal | `tools/features.py` | Depends on Rust backend |
-| F2 | Medium | Cleartext Transport | `grpc_client.py` | Yes, if non-localhost |
-| F3 | Low | Input Validation | All tool modules | Limited by protobuf |
-| F4 | Low | Configuration | `server.py` | Requires env control |
-| F5 | Low | SSRF (partial) | `dispatch-mcp/server.py` | Mitigated well |
-| F6 | Low | DoS / Batch Abuse | `tools/queue.py` | Limited by gRPC size |
-| F7 | Info | URI Injection | `server.py` | Very low (trusted source) |
+| ID  | Severity | Category            | File                     | Exploitable?              |
+| --- | -------- | ------------------- | ------------------------ | ------------------------- |
+| F1  | Medium   | Path Traversal      | `tools/features.py`      | Depends on Rust backend   |
+| F2  | Medium   | Cleartext Transport | `grpc_client.py`         | Yes, if non-localhost     |
+| F3  | Low      | Input Validation    | All tool modules         | Limited by protobuf       |
+| F4  | Low      | Configuration       | `server.py`              | Requires env control      |
+| F5  | Low      | SSRF (partial)      | `dispatch-mcp/server.py` | Mitigated well            |
+| F6  | Low      | DoS / Batch Abuse   | `tools/queue.py`         | Limited by gRPC size      |
+| F7  | Info     | URI Injection       | `server.py`              | Very low (trusted source) |
 
 ---
 

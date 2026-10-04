@@ -27,6 +27,7 @@ grep -r "nats\|jetstream\|JetStream" --include="*.rs" --include="*.toml" -l \
 ```
 
 Document each sync pipeline:
+
 - Source (what DB/endpoint?)
 - Destination (what DB/endpoint?)
 - Sync interval (hourly/daily/manual?)
@@ -45,65 +46,65 @@ name: data-sync-{PIPELINE_NAME}
 description: Sync data from {SOURCE} to {DESTINATION}
 
 on:
-  cron: "{SCHEDULE}"  # e.g., "0 */6 * * *" (every 6 hours)
+    cron: "{SCHEDULE}" # e.g., "0 */6 * * *" (every 6 hours)
 
 concurrency:
-  limit: 1  # Never run two syncs of the same pipeline concurrently
+    limit: 1 # Never run two syncs of the same pipeline concurrently
 
 retries:
-  max_attempts: 3
-  initial_interval: 60s
-  max_interval: 3600s
-  multiplier: 2.0
+    max_attempts: 3
+    initial_interval: 60s
+    max_interval: 3600s
+    multiplier: 2.0
 
 steps:
-  - name: extract
-    run: |
-      echo "Extracting from {SOURCE}..."
-      # Implement source-specific extraction
-    timeout: 300s
-    on_failure:
-      step: alert-extract-failed
+    - name: extract
+      run: |
+          echo "Extracting from {SOURCE}..."
+          # Implement source-specific extraction
+      timeout: 300s
+      on_failure:
+          step: alert-extract-failed
 
-  - name: transform
-    run: |
-      echo "Transforming data..."
-      # Implement data transformation
-    timeout: 600s
-    on_failure:
-      step: alert-transform-failed
+    - name: transform
+      run: |
+          echo "Transforming data..."
+          # Implement data transformation
+      timeout: 600s
+      on_failure:
+          step: alert-transform-failed
 
-  - name: load
-    run: |
-      echo "Loading to {DESTINATION}..."
-      # Implement destination write
-    timeout: 600s
-    on_failure:
-      step: alert-load-failed
+    - name: load
+      run: |
+          echo "Loading to {DESTINATION}..."
+          # Implement destination write
+      timeout: 600s
+      on_failure:
+          step: alert-load-failed
 
-  - name: verify
-    run: |
-      echo "Verifying sync integrity..."
-      # Compare source and destination record counts
-    timeout: 120s
-    on_failure:
-      step: alert-verify-failed
+    - name: verify
+      run: |
+          echo "Verifying sync integrity..."
+          # Compare source and destination record counts
+      timeout: 120s
+      on_failure:
+          step: alert-verify-failed
 
-  - name: notify-success
-    run: |
-      echo "Sync completed successfully"
-      curl -s -X POST "$SLACK_WEBHOOK_URL" \
-        -H "Content-Type: application/json" \
-        -d '{"text":"[{PIPELINE}] sync completed at $(date)"}'
-    timeout: 30s
+    - name: notify-success
+      run: |
+          echo "Sync completed successfully"
+          curl -s -X POST "$SLACK_WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -d '{"text":"[{PIPELINE}] sync completed at $(date)"}'
+      timeout: 30s
 
 failure:
-  step: alert-sync-failed
-  run: |
-    echo "Data sync failed after all retries"
-    curl -s -X POST "$SLACK_WEBHOOK_URL" \
-      -H "Content-Type: application/json" \
-      -d '{"text":"[{PIPELINE}] data sync FAILED after all retries. Manual intervention required."}'
+    step: alert-sync-failed
+    run: |
+        echo "Data sync failed after all retries"
+        curl -s -X POST "$SLACK_WEBHOOK_URL" \
+          -H "Content-Type: application/json" \
+          -d '{"text":"[{PIPELINE}] data sync FAILED after all retries. Manual intervention required."}'
 ```
 
 ### Implement Each Sync Pipeline
@@ -119,6 +120,7 @@ from datetime import datetime
 import psycopg2
 import logging
 
+
 @hatchet.step()
 def extract():
     conn = psycopg2.connect(os.environ["SOURCE_DB_URL"])
@@ -129,15 +131,20 @@ def extract():
     conn.close()
     return {"rows": rows, "columns": columns}
 
+
 @hatchet.step()
 def transform(data):
     # Example: clean timestamps, normalize fields
     return {
         "cleaned": [
-            {**dict(zip(data["columns"], row)), "synced_at": datetime.utcnow().isoformat()}
+            {
+                **dict(zip(data["columns"], row)),
+                "synced_at": datetime.utcnow().isoformat(),
+            }
             for row in data["rows"]
         ]
     }
+
 
 @hatchet.step()
 def load(data):
@@ -147,7 +154,7 @@ def load(data):
         cursor.execute(
             "INSERT INTO events_sink (SELECT * FROM jsonb_populate_record(NULL::events_sink, %s)) "
             "ON CONFLICT DO NOTHING",
-            [json.dumps(row)]
+            [json.dumps(row)],
         )
     conn.commit()
     conn.close()

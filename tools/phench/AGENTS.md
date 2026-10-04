@@ -3,6 +3,7 @@
 This repository is designed to work seamlessly with Claude (and other advanced AI agents) as an autonomous software engineer.
 
 ## Child-Agent and Delegation Policy
+
 - Use child agents for scoped discovery, audits, multi-repo scans, and implementation planning before direct parent-agent edits.
 - Delegate high-context or high-churn tasks to subagents and keep parent-agent writes narrowly focused on integration.
 - Reserve parent-agent direct writes for the final decision layer.
@@ -36,6 +37,7 @@ This repository is designed to work seamlessly with Claude (and other advanced A
 Agents MUST operate with **maximum autonomy**:
 
 **When to proceed without asking:**
+
 - Implementation details and technical approach decisions
 - Library/framework choices aligned with existing patterns
 - Code structure and organization
@@ -48,6 +50,7 @@ Agents MUST operate with **maximum autonomy**:
 - Removing dead code and legacy patterns
 
 **Only ask when truly blocked by:**
+
 - Missing credentials/secrets (cannot be inferred from environment)
 - External service access permissions
 - Genuine product ambiguity (behavior not determinable from specs/code/tests)
@@ -65,6 +68,7 @@ Agents MUST operate with **maximum autonomy**:
 Before implementing ANY feature or fix, agents MUST conduct comprehensive research:
 
 **1. Codebase Research (Always Required):**
+
 ```bash
 # Find similar implementations
 rg "pattern_name" --type py -A 5 -B 5
@@ -92,6 +96,7 @@ rg "raise.*Error\|except.*:" --type py -A 2
 ```
 
 **2. Web Research (When Needed):**
+
 - External API documentation
 - Library usage patterns (when introducing new dependencies)
 - Best practices for performance/security patterns
@@ -100,6 +105,7 @@ rg "raise.*Error\|except.*:" --type py -A 2
 - Cloud service integration patterns (Supabase, Vercel, etc.)
 
 **3. Research Documentation:**
+
 - Document findings in `docs/sessions/<session-id>/01_RESEARCH.md`
 - Include URLs, code examples, and decision rationale
 - Update continuously as new information discovered
@@ -111,10 +117,10 @@ Follow continuous loop: **research → plan → execute → validate → polish 
 
 - Do not ask for step-by-step guidance unless blocked
 - Make decisions based on:
-  - Existing codebase patterns
-  - This contract file
-  - Research findings
-  - Test results and validation
+    - Existing codebase patterns
+    - This contract file
+    - Research findings
+    - Test results and validation
 
 ### Environment & Tooling
 
@@ -141,12 +147,14 @@ uv pip install <package>
 - **Update ALL callers simultaneously** when changing signatures
 
 **Forward-Only Progression:**
+
 - NO `git revert` or `git reset` (fix forward instead)
 - NO haphazard delete-and-rewrite cycles
 - Push forward to clean, working states via incremental fixes
 - Document issues in `05_KNOWN_ISSUES.md`, resolve systematically
 
 **Full Production-Grade Implementation:**
+
 - NO minimal implementations or MVPs
 - NO "we'll add this later" placeholder code
 - Every feature: production-ready, fully tested, documented
@@ -160,12 +168,14 @@ uv pip install <package>
 Understand these as first-class constraints before editing:
 
 ### Runtime & Framework
+
 - **Python**: 3.10+ (async-first)
 - **Framework**: FastAPI/FastMCP
 - **Package Manager**: uv preferred
 - **Type System**: Pydantic models, strict typing
 
 ### Key Modules
+
 ```
 src/<package>/
   main.py              # Application entrypoint
@@ -201,6 +211,7 @@ docs/
 ```
 
 ### Style Constraints
+
 - **Line length**: 100 characters
 - **Formatter**: Ruff/Black
 - **Type checker**: mypy/pyright
@@ -210,6 +221,7 @@ docs/
 - **Logging**: clear, structured logging
 
 ### Agent Must:
+
 - Reuse existing layers instead of bypassing them
 - Keep changes minimal, composable, and driven by tests
 - Proactively decompose files approaching 350 lines
@@ -247,6 +259,7 @@ Before adding features to any file, check its current line count. If it approach
 ### Decomposition Patterns
 
 **Pattern 1: Service Submodule**
+
 ```
 # Before: services/embedding_factory.py (400+ lines)
 # After:
@@ -259,6 +272,7 @@ services/embedding/
 ```
 
 **Pattern 2: Adapter Extraction**
+
 ```
 # Before: infrastructure/adapters.py (500+ lines)
 # After:
@@ -270,6 +284,7 @@ infrastructure/
 ```
 
 **Pattern 3: Tool Decomposition**
+
 ```
 # Before: tools/entity.py (400+ lines)
 # After:
@@ -281,6 +296,7 @@ tools/entity/
 ```
 
 **Pattern 4: API Route Splitting**
+
 ```
 # Before: api/routes/users.py (500+ lines)
 # After:
@@ -292,6 +308,7 @@ api/routes/users/
 ```
 
 **Pattern 5: Test Consolidation**
+
 ```
 # Before: Multiple test files for same concern
 # After: Single file with fixtures/markers
@@ -301,6 +318,7 @@ tests/unit/services/
 ```
 
 **Pattern 6: Database Models**
+
 ```
 # Before: db/models.py (600+ lines)
 # After:
@@ -325,46 +343,54 @@ db/models/
 For every task (bug, feature, infra, test):
 
 ### 1. Review
+
 - Read the issue/error, relevant code, and existing tests
 - Use search (`rg`, Glob/Read tools) to map usages before editing
 - Check line counts on affected files; note decomposition needs
 - Identify all callers and dependencies
 
 ### 2. Research
+
 - Check related modules and patterns in-repo
 - When external APIs/libraries are involved, consult their official docs via web search
 - Reference this contract for architectural constraints
 - Document findings in session folder
 
 ### 3. Plan
+
 - Formulate a short, concrete plan (in your reasoning, keep user-facing text concise)
 - Ensure the plan aligns with existing abstractions and auth/infra patterns
 - If any file will exceed 350 lines, include decomposition in the plan
 - Identify test coverage requirements
 
 ### 4. Execute
+
 - Implement in small, verifiable increments
 - Match coding style, respect typing and logging conventions
 - Decompose proactively; don't wait until a file hits 500 lines
 - Update all callers simultaneously
 
 ### 5. Size-Check
+
 - If any edited file nears 350 lines, plan decomposition
 - Identify ALL callers/dependencies before changes—no partial updates
 - Verify interfaces remain narrow and clear
 
 ### 6. Test
+
 - Run targeted tests via CLI or `uv run pytest …` relevant to the change
 - Start with focused suites; only widen scope if risk is broader
 - Verify decomposed modules have equivalent test coverage
 - For new test files: follow canonical naming (see Test File Naming section)
 
 ### 7. Review & Polish
+
 - Re-read diffs mentally; simplify, remove dead code, align naming with repo norms
 - Verify all files stay ≤500 lines (ideally ≤350)
 - Ensure no backwards compatibility shims remain
 
 ### 8. Repeat
+
 - If tests or behavior fail, loop without waiting for user direction
 - Continue until clean; pause only when blocked
 
@@ -423,18 +449,18 @@ python cli.py tools --help
 
 ### CLI Command Reference
 
-| Operation | CLI Command | Direct Command (avoid) |
-|-----------|-------------|------------------------|
-| **Testing** | `python cli.py test run` | `uv run pytest` |
-| **Unit Tests** | `python cli.py test run --scope unit` | `uv run pytest tests/unit` |
+| Operation       | CLI Command                                  | Direct Command (avoid)            |
+| --------------- | -------------------------------------------- | --------------------------------- |
+| **Testing**     | `python cli.py test run`                     | `uv run pytest`                   |
+| **Unit Tests**  | `python cli.py test run --scope unit`        | `uv run pytest tests/unit`        |
 | **Integration** | `python cli.py test run --scope integration` | `uv run pytest tests/integration` |
-| **Coverage** | `python cli.py test run --coverage` | `uv run pytest --cov` |
-| **Linting** | `python cli.py lint check` | `uv run ruff check` |
-| **Lint Fix** | `python cli.py lint fix` | `uv run ruff check --fix` |
-| **Formatting** | `python cli.py format` | `uv run ruff format` |
-| **Type Check** | `python cli.py types check` | `uv run mypy` |
-| **Server** | `python cli.py server start` | `uvicorn app:app` |
-| **DB Migrate** | `python cli.py db migrate` | Manual SQL |
+| **Coverage**    | `python cli.py test run --coverage`          | `uv run pytest --cov`             |
+| **Linting**     | `python cli.py lint check`                   | `uv run ruff check`               |
+| **Lint Fix**    | `python cli.py lint fix`                     | `uv run ruff check --fix`         |
+| **Formatting**  | `python cli.py format`                       | `uv run ruff format`              |
+| **Type Check**  | `python cli.py types check`                  | `uv run mypy`                     |
+| **Server**      | `python cli.py server start`                 | `uvicorn app:app`                 |
+| **DB Migrate**  | `python cli.py db migrate`                   | Manual SQL                        |
 
 ### Fallback Commands (Only When CLI Unavailable)
 
@@ -486,6 +512,7 @@ The name of a test file should answer: **"What component/concern does this test?
 ### Naming Rules with Detailed Rationale
 
 ✅ **Good (canonical - concern-based):**
+
 - `test_entity.py` – tests the entity tool; any implementation detail for entity operations belongs here
 - `test_entity_crud.py` – tests CREATE/READ/UPDATE/DELETE operations; separated by operation domain
 - `test_entity_validation.py` – tests entity validation logic; separated by technical concern (validation)
@@ -498,57 +525,61 @@ The name of a test file should answer: **"What component/concern does this test?
 - `test_embedding_factory.py` – all embedding factory tests; factory is the component
 
 **Why each is canonical:**
-- Each name describes *what's being tested* (the component, tool, domain, or integration point)
+
+- Each name describes _what's being tested_ (the component, tool, domain, or integration point)
 - Two files with same test names would indicate duplication → consolidate
 - File name and implementation are tightly coupled; changing implementation invites consolidation review
 
 ❌ **Bad (not canonical - metadata-based):**
-- `test_entity_fast.py` – ❌ "fast" describes *speed*, not *content*. Use `@pytest.mark.performance` or `@pytest.mark.smoke` instead
-- `test_entity_slow.py` – ❌ "slow" describes *duration*, not *concern*. Use markers in the same file
-- `test_entity_unit.py` – ❌ "unit" describes *execution scope*, not *what's tested*. Use conftest fixtures (`mcp_client_inmemory`)
-- `test_entity_integration.py` – ❌ "integration" describes *client type*, not *component*. Use fixture parametrization
-- `test_entity_e2e.py` – ❌ "e2e" describes *test stage*, not *concern*. Use fixtures and markers instead
+
+- `test_entity_fast.py` – ❌ "fast" describes _speed_, not _content_. Use `@pytest.mark.performance` or `@pytest.mark.smoke` instead
+- `test_entity_slow.py` – ❌ "slow" describes _duration_, not _concern_. Use markers in the same file
+- `test_entity_unit.py` – ❌ "unit" describes _execution scope_, not _what's tested_. Use conftest fixtures (`mcp_client_inmemory`)
+- `test_entity_integration.py` – ❌ "integration" describes _client type_, not _component_. Use fixture parametrization
+- `test_entity_e2e.py` – ❌ "e2e" describes _test stage_, not _concern_. Use fixtures and markers instead
 - `test_auth_final.py` – ❌ "final" is vague and temporal; adds no semantic information. Remove or name by concern
 - `test_auth_v2.py` – ❌ Versioning belongs in git history (branch/tag), not file names. If truly different code, name by concern
 - `test_entity_old.py`, `test_entity_new.py` – ❌ Temporal metadata. Refactor, merge, or delete instead
-- `test_api_integration.py` – ❌ "integration" is redundant; file is in `tests/`. Name by *which API* is integrated
+- `test_api_integration.py` – ❌ "integration" is redundant; file is in `tests/`. Name by _which API_ is integrated
 - `test_api_complete.py` – ❌ "complete" is vague; what's incomplete?
 - `test_api_2.py` – ❌ Arbitrary numbering; merge or name by concern
 
 **How to recognize bad naming:**
-- Does the suffix describe *how* to run the test? → Bad (use markers/fixtures)
-- Does the suffix describe *when* it was written? → Bad (belongs in commit message)
-- Does the suffix describe *temporal state*? (old/new/final/draft) → Bad (refactor instead)
-- Does the suffix describe *test execution speed*? → Bad (use markers)
+
+- Does the suffix describe _how_ to run the test? → Bad (use markers/fixtures)
+- Does the suffix describe _when_ it was written? → Bad (belongs in commit message)
+- Does the suffix describe _temporal state_? (old/new/final/draft) → Bad (refactor instead)
+- Does the suffix describe _test execution speed_? → Bad (use markers)
 - Could two files have the same test name if they tested slightly different concerns? → They should consolidate
 
 ### Why Canonical Naming Matters
 
-1. **Prevents accidental duplication**: When two test files have *nearly canonical* names, it signals they should be merged.
-   - Example: `test_entity_unit.py` + `test_entity_integration.py` both test entity → merge, parametrize with fixtures
-   - Non-canonical names hide duplication: `test_entity_fast.py` + `test_entity_comprehensive.py` might test the same thing but you won't notice
+1. **Prevents accidental duplication**: When two test files have _nearly canonical_ names, it signals they should be merged.
+    - Example: `test_entity_unit.py` + `test_entity_integration.py` both test entity → merge, parametrize with fixtures
+    - Non-canonical names hide duplication: `test_entity_fast.py` + `test_entity_comprehensive.py` might test the same thing but you won't notice
 
 2. **Aids discovery**: File name immediately tells what's being tested without opening the file.
-   - Maintainer looking at `test_auth_supabase.py` knows: "ah, this is Supabase auth integration"
-   - Maintainer looking at `test_auth_v2.py` knows: ???
+    - Maintainer looking at `test_auth_supabase.py` knows: "ah, this is Supabase auth integration"
+    - Maintainer looking at `test_auth_v2.py` knows: ???
 
 3. **Supports consolidation**: When refactoring, canonical names make it obvious which files should merge.
-   - Same component? → Same concern → Same file. If `test_entity.py` and `test_entity_crud.py` both exist, merge.
-   - Different components? → Different concerns → Different files. `test_auth_supabase.py` and `test_auth_authkit.py` have different integration points, keep separate (unless they converge later)
+    - Same component? → Same concern → Same file. If `test_entity.py` and `test_entity_crud.py` both exist, merge.
+    - Different components? → Different concerns → Different files. `test_auth_supabase.py` and `test_auth_authkit.py` have different integration points, keep separate (unless they converge later)
 
 4. **Reduces clutter**: No `_old`, `_new`, `_backup`, `_temp`, `_draft` suffixes cluttering the tree.
-   - Canonical names → code review → merge or delete. Not: save old versions as separate files
-   - One source of truth per concern
+    - Canonical names → code review → merge or delete. Not: save old versions as separate files
+    - One source of truth per concern
 
 5. **Enables automation**: Tools and scripts can scan test/ directory and understand structure.
-   - CI/CD can identify which tests to run based on changed component (if naming is consistent)
-   - Agents (like Claude) can suggest consolidation automatically (if naming is canonical)
+    - CI/CD can identify which tests to run based on changed component (if naming is consistent)
+    - Agents (like Claude) can suggest consolidation automatically (if naming is canonical)
 
 ### Variant Testing (Unit/Integration/E2E)
 
 **Core principle**: Use **fixtures and markers**, NOT separate files, to handle test variants.
 
 **Why?**
+
 - One file = one concern = one source of truth
 - Fixtures parametrize execution without duplication
 - Markers categorize tests for selective runs
@@ -559,6 +590,7 @@ The name of a test file should answer: **"What component/concern does this test?
 ```python
 # ✅ GOOD: One file, fixture parametrization determines variant
 # tests/unit/tools/test_entity.py
+
 
 @pytest.fixture(params=["unit", "integration", "e2e"])
 def mcp_client(request):
@@ -574,11 +606,12 @@ def mcp_client(request):
     if request.param == "unit":
         return InMemoryMcpClient()  # Fast, deterministic
     elif request.param == "integration":
-        return HttpMcpClient(...)   # Live database
+        return HttpMcpClient(...)  # Live database
     elif request.param == "e2e":
         return DeploymentMcpClient(...)  # Production setup
 
     return get_client(request.param)
+
 
 async def test_entity_creation(mcp_client):
     """Test entity creation across all variants.
@@ -593,6 +626,7 @@ async def test_entity_creation(mcp_client):
 ```
 
 **Benefits:**
+
 - Single file, not three
 - Same test logic runs across variants automatically
 - Adding new variant only requires updating fixture
@@ -602,6 +636,7 @@ async def test_entity_creation(mcp_client):
 
 ```python
 # ✅ GOOD: Markers for categorizing tests within one file
+
 
 @pytest.mark.asyncio
 @pytest.mark.performance
@@ -613,6 +648,7 @@ async def test_entity_creation_performance(mcp_client):
     """
     ...
 
+
 @pytest.mark.asyncio
 @pytest.mark.smoke
 async def test_entity_basic_creation(mcp_client):
@@ -621,6 +657,7 @@ async def test_entity_basic_creation(mcp_client):
     Run with: pytest -m smoke  # <1 second
     """
     ...
+
 
 @pytest.mark.asyncio
 @pytest.mark.integration
@@ -631,6 +668,7 @@ async def test_entity_with_real_database(mcp_client):
     Skip in CI with: pytest -m "not integration"
     """
     ...
+
 
 @pytest.mark.asyncio
 @pytest.mark.slow
@@ -644,6 +682,7 @@ async def test_entity_large_dataset(mcp_client):
 ```
 
 **CI/CD Usage:**
+
 ```bash
 # Quick smoke tests only
 pytest -m smoke  # 5 seconds
@@ -666,12 +705,13 @@ pytest -m "not slow"  # Fast feedback
 ```python
 # ❌ BAD: Three files with redundant test code
 # tests/unit/tools/test_entity.py
-async def test_entity_creation(mcp_client_inmemory):
-    ...
+async def test_entity_creation(mcp_client_inmemory): ...
+
 
 # tests/integration/tools/test_entity.py
 async def test_entity_creation(mcp_client_http):  # Same test name!
     ...
+
 
 # tests/e2e/tools/test_entity.py
 async def test_entity_creation(mcp_client_e2e):  # Same test name again!
@@ -679,6 +719,7 @@ async def test_entity_creation(mcp_client_e2e):  # Same test name again!
 ```
 
 **Problems:**
+
 - Code duplication (test logic repeated 3 times)
 - Maintenance burden (change test → update in 3 places)
 - Confusing directory structure
@@ -690,18 +731,22 @@ async def test_entity_creation(mcp_client_e2e):  # Same test name again!
 When multiple test files cover overlapping concerns, use this decision tree:
 
 **Question 1: Do they test the same component/tool?**
+
 - **Yes** → They should be one file
 - **No** → Proceed to Q2
 
 **Question 2: Do they use different clients?**
+
 - **Yes** → Use fixture parametrization (see Pattern 1 above), same file
 - **No** → Proceed to Q3
 
 **Question 3: Are they fundamentally different test types?**
+
 - **Yes** (e.g., slow perf tests vs quick unit tests) → Use markers (see Pattern 2), same file
 - **No** → Proceed to Q4
 
 **Question 4: Do they test genuinely different subsystems?**
+
 - **Yes** → Split by subsystem concern, keep separate
 - **No** → Merge them; they have duplicate concerns
 
@@ -753,15 +798,15 @@ tests/
 
 ### Real-World Example: How We Fixed test_relationship.py
 
-| Aspect | Before | After | Action |
-|--------|--------|-------|--------|
-| **Lines** | 3,245 | 228 | Removed 3-variant duplication |
-| **Test Classes** | 14 | 8 | Consolidated redundant classes |
-| **Variants** | 3 (unit/integration/e2e) | 1 (unit via fixtures) | Removed file duplication, used fixtures |
-| **Errors** | "too many open files" | None | Smaller file, no resource exhaustion |
-| **Readability** | Complex | Clear | Focused on core functionality |
+| Aspect           | Before                   | After                 | Action                                  |
+| ---------------- | ------------------------ | --------------------- | --------------------------------------- |
+| **Lines**        | 3,245                    | 228                   | Removed 3-variant duplication           |
+| **Test Classes** | 14                       | 8                     | Consolidated redundant classes          |
+| **Variants**     | 3 (unit/integration/e2e) | 1 (unit via fixtures) | Removed file duplication, used fixtures |
+| **Errors**       | "too many open files"    | None                  | Smaller file, no resource exhaustion    |
+| **Readability**  | Complex                  | Clear                 | Focused on core functionality           |
 
-**Key insight**: The original file had the *same test logic* repeated across 3 variants. By using fixtures instead of separate files, we eliminated duplication while maintaining variant coverage.
+**Key insight**: The original file had the _same test logic_ repeated across 3 variants. By using fixtures instead of separate files, we eliminated duplication while maintaining variant coverage.
 
 ---
 
@@ -784,6 +829,7 @@ tests/
 ### Valid vs Invalid Patterns
 
 **✅ GOOD - Clear decomposition:**
+
 ```
 services/auth/password.py          # Password operations
 services/auth/session.py           # Session management
@@ -808,6 +854,7 @@ storage/s3.py                      # S3 storage
 ```
 
 **❌ BAD - Meaningless suffixes (MERGE IMMEDIATELY):**
+
 ```
 services/auth_fast.py              # Merge into auth.py
 services/auth_v2.py                # Use git history
@@ -841,6 +888,7 @@ api/api_routes.py                   # Just api/routes.py
 ### Before Creating ANY File
 
 Ask these questions:
+
 1. ✅ **Does this concern already have a file?** → Add to existing
 2. ✅ **Can I name it with ONE clear noun/verb?** → If no, rethink
 3. ✅ **Does the name describe a decomposition?** → If no, probably wrong
@@ -875,17 +923,18 @@ uv run pytest tests/
 
 ### Naming Patterns Reference
 
-| Type | Pattern | Good Example | Bad Example |
-|------|---------|--------------|-------------|
-| Module | `<noun>.py` | `auth.py` | `auth_module.py` |
-| Submodule | `<feature>/<aspect>.py` | `auth/password.py` | `auth/password_utils.py` |
-| Test | `test_<module>.py` | `test_auth.py` | `test_auth_suite.py` |
-| Test variant | `test_<module>_<scenario>.py` | `test_auth_expired.py` | `test_auth_2.py` |
-| Implementation | `<interface>_<impl>.py` | `storage_s3.py` | `storage_s3_final.py` |
+| Type           | Pattern                       | Good Example           | Bad Example              |
+| -------------- | ----------------------------- | ---------------------- | ------------------------ |
+| Module         | `<noun>.py`                   | `auth.py`              | `auth_module.py`         |
+| Submodule      | `<feature>/<aspect>.py`       | `auth/password.py`     | `auth/password_utils.py` |
+| Test           | `test_<module>.py`            | `test_auth.py`         | `test_auth_suite.py`     |
+| Test variant   | `test_<module>_<scenario>.py` | `test_auth_expired.py` | `test_auth_2.py`         |
+| Implementation | `<interface>_<impl>.py`       | `storage_s3.py`        | `storage_s3_final.py`    |
 
 ### Real-World Examples
 
 **Scenario 1: Found duplicate files**
+
 ```bash
 # BEFORE
 src/<package>/services/chat.py              # 200 lines
@@ -901,6 +950,7 @@ src/<package>/services/chat.py              # 350 lines
 ```
 
 **Scenario 2: Need to split large file**
+
 ```bash
 # BEFORE
 src/<package>/services/claude_client.py     # 600 lines
@@ -921,6 +971,7 @@ src/<package>/services/claude/
 ```
 
 **Scenario 3: Multiple test files for same thing**
+
 ```bash
 # BEFORE
 tests/test_auth.py                 # Basic tests
@@ -964,49 +1015,50 @@ docs/sessions/<YYYYMMDD-descriptive-name>/
 **Required session documents (living docs, continuously updated):**
 
 1. **`00_SESSION_OVERVIEW.md`**
-   - Session goals and success criteria
-   - Key decisions with rationale
-   - Links to PRs, issues, discussions
+    - Session goals and success criteria
+    - Key decisions with rationale
+    - Links to PRs, issues, discussions
 
 2. **`01_RESEARCH.md`**
-   - External API/documentation research
-   - Precedents from codebase
-   - Third-party library patterns discovered
-   - URLs and references
+    - External API/documentation research
+    - Precedents from codebase
+    - Third-party library patterns discovered
+    - URLs and references
 
 3. **`02_SPECIFICATIONS.md`**
-   - Full feature specifications
-   - Acceptance criteria
-   - **ARUs (Assumptions, Risks, Uncertainties)** with mitigation plans
-   - API contracts and data models
+    - Full feature specifications
+    - Acceptance criteria
+    - **ARUs (Assumptions, Risks, Uncertainties)** with mitigation plans
+    - API contracts and data models
 
 4. **`03_DAG_WBS.md`**
-   - Dependency graph (DAG) showing task dependencies
-   - Work breakdown structure (WBS) with estimates
-   - Critical path analysis
-   - Blockers and their resolutions
+    - Dependency graph (DAG) showing task dependencies
+    - Work breakdown structure (WBS) with estimates
+    - Critical path analysis
+    - Blockers and their resolutions
 
 5. **`04_IMPLEMENTATION_STRATEGY.md`**
-   - Technical approach and design patterns
-   - Architecture decisions and alternatives considered
-   - Code organization rationale
-   - Performance and security considerations
+    - Technical approach and design patterns
+    - Architecture decisions and alternatives considered
+    - Code organization rationale
+    - Performance and security considerations
 
 6. **`05_KNOWN_ISSUES.md`**
-   - Current bugs and their severity/impact
-   - Workarounds applied
-   - Technical debt introduced
-   - Future work recommendations
+    - Current bugs and their severity/impact
+    - Workarounds applied
+    - Technical debt introduced
+    - Future work recommendations
 
 7. **`06_TESTING_STRATEGY.md`**
-   - Test plan and coverage goals
-   - Testing approach (unit/integration/e2e)
-   - Test data strategies
-   - Acceptance test scenarios
+    - Test plan and coverage goals
+    - Testing approach (unit/integration/e2e)
+    - Test data strategies
+    - Acceptance test scenarios
 
 ### Documentation Update Protocol
 
 **When to update (prefer updating over creating new files):**
+
 - Discovery → update `01_RESEARCH.md`
 - Requirements change → update `02_SPECIFICATIONS.md` + `03_DAG_WBS.md`
 - Implementation pivot → update `04_IMPLEMENTATION_STRATEGY.md`
@@ -1014,6 +1066,7 @@ docs/sessions/<YYYYMMDD-descriptive-name>/
 - Test added/changed → update `06_TESTING_STRATEGY.md`
 
 **Frequency:**
+
 - After significant discoveries
 - Before context switches
 - When blocked by uncertainty (document in ARUs)
@@ -1025,28 +1078,31 @@ docs/sessions/<YYYYMMDD-descriptive-name>/
 **When encountering doc proliferation (anywhere in repo):**
 
 1. **Detect orphaned docs**
-   ```bash
-   find . -name "*.md" -type f | grep -E "(SUMMARY|STATUS|REPORT|COMPLETE|FINAL|CHECKLIST|V[0-9]|_OLD|_NEW|_DRAFT)"
-   ```
+
+    ```bash
+    find . -name "*.md" -type f | grep -E "(SUMMARY|STATUS|REPORT|COMPLETE|FINAL|CHECKLIST|V[0-9]|_OLD|_NEW|_DRAFT)"
+    ```
 
 2. **Apply decision tree**
-   ```
-   Is doc still relevant?
-   ├─ NO  → Delete immediately (after reviewing for unique info)
-   └─ YES → Is it session-specific?
-          ├─ YES → Move to docs/sessions/<session-id>/
-          └─ NO  → Is it canonical repo doc?
-                 ├─ YES → Keep in docs/ (README, ARCHITECTURE, etc.)
-                 └─ NO  → Merge into canonical doc or delete
-   ```
+
+    ```
+    Is doc still relevant?
+    ├─ NO  → Delete immediately (after reviewing for unique info)
+    └─ YES → Is it session-specific?
+           ├─ YES → Move to docs/sessions/<session-id>/
+           └─ NO  → Is it canonical repo doc?
+                  ├─ YES → Keep in docs/ (README, ARCHITECTURE, etc.)
+                  └─ NO  → Merge into canonical doc or delete
+    ```
 
 3. **Consolidation actions**
-   - Extract unique information from temporal docs
-   - Merge into appropriate session document
-   - Delete redundant files without hesitation
-   - Update session folder structure if needed
+    - Extract unique information from temporal docs
+    - Merge into appropriate session document
+    - Delete redundant files without hesitation
+    - Update session folder structure if needed
 
 **Examples:**
+
 ```bash
 # Session-specific, still relevant → move to session
 mv OAUTH_COMPLETION_SUMMARY.md docs/sessions/20251110-oauth-impl/06_COMPLETION.md
@@ -1062,6 +1118,7 @@ rm GUIDE_V1.md GUIDE_V2.md GUIDE_FINAL.md
 ### Canonical Repository Documentation (Exceptions)
 
 These live in `docs/` root and persist across sessions:
+
 - `docs/README.md` - Project overview, getting started
 - `docs/ARCHITECTURE.md` - System architecture, design patterns
 - `docs/API_REFERENCE.md` - Tool/API documentation
@@ -1070,6 +1127,7 @@ These live in `docs/` root and persist across sessions:
 - `docs/TROUBLESHOOTING.md` - Common issues, debugging
 
 **Update protocol:**
+
 - Session details → session folder
 - Permanent architectural changes → canonical docs
 - Uncertain → start in session folder, promote if universally relevant
@@ -1077,23 +1135,27 @@ These live in `docs/` root and persist across sessions:
 ### Agent Behavioral Rules for Documentation
 
 **Session start:**
+
 1. Create `docs/sessions/<session-id>/` directory
 2. Initialize `00_SESSION_OVERVIEW.md` with goals
 3. Reference (don't duplicate) canonical docs
 
 **During session:**
+
 1. Update session docs continuously (living documents)
 2. Never create temporal suffixed docs
 3. Consolidate new findings into existing session docs
 4. When creating diagrams/artifacts → save to `artifacts/` subdirectory
 
 **Before ending session:**
+
 1. Review all session docs for completeness
 2. Scan repo for orphaned docs created during work
 3. Move/consolidate docs outside session folder
 4. Update canonical docs if permanent changes made
 
 **When finding doc proliferation:**
+
 1. Immediately flag for consolidation
 2. Apply decision tree (above)
 3. Delete temporal/redundant docs aggressively
@@ -1127,11 +1189,13 @@ find . -name "*.md" -type f | sed 's|/[^/]*$||' | sort | uniq -c | sort -rn
 ### Real-World Impact
 
 **Before:**
+
 - Root: 37 .md files (various STATUS, SUMMARY, FINAL docs)
 - tests/: 49 .md files (GUIDE, REPORT, CHECKLIST docs)
 - Difficult to find current information
 
 **After:**
+
 - Root: ~4 .md files (AGENTS.md, CLAUDE.md, WARP.md, README.md)
 - tests/: 1 .md file (README.md)
 - All session work in `docs/sessions/<date-name>/`
@@ -1190,32 +1254,32 @@ find . -name "*.md" -type f | sed 's|/[^/]*$||' | sort | uniq -c | sort -rn
 ### Layer Boundaries (CRITICAL)
 
 - **API Layer**: Only route handling, validation, response formatting
-  - Receives HTTP requests
-  - Validates input with Pydantic
-  - Calls service layer
-  - Formats responses
+    - Receives HTTP requests
+    - Validates input with Pydantic
+    - Calls service layer
+    - Formats responses
 
 - **Service Layer**: Business logic, orchestration, external API calls
-  - Contains domain logic
-  - Orchestrates multiple operations
-  - Calls infrastructure layer for data
-  - Never accesses DB directly
+    - Contains domain logic
+    - Orchestrates multiple operations
+    - Calls infrastructure layer for data
+    - Never accesses DB directly
 
 - **Infrastructure Layer**: Database queries, external service clients
-  - Supabase adapter for DB
-  - Auth adapter for authentication
-  - Storage adapter for files
-  - Rate limiter for throttling
+    - Supabase adapter for DB
+    - Auth adapter for authentication
+    - Storage adapter for files
+    - Rate limiter for throttling
 
 - **No Cross-Layer Bypass**: Always go through proper abstractions
-  - Services don't query DB directly
-  - Routes don't call infrastructure directly
-  - Tools use services for logic
+    - Services don't query DB directly
+    - Routes don't call infrastructure directly
+    - Tools use services for logic
 
 - **Stateless Design**: Pass context explicitly; avoid global state
-  - Request context passed through call stack
-  - No module-level mutable state
-  - Configuration via dependency injection
+    - Request context passed through call stack
+    - No module-level mutable state
+    - Configuration via dependency injection
 
 ### Key Architectural Patterns
 
@@ -1235,19 +1299,19 @@ find . -name "*.md" -type f | sed 's|/[^/]*$||' | sort | uniq -c | sort -rn
 # Standard endpoint structure
 @router.post("/v1/<resource>")
 async def create_resource(
-    request: CreateResourceRequest,
-    service: ResourceService = Depends(get_service)
+    request: CreateResourceRequest, service: ResourceService = Depends(get_service)
 ) -> ResourceResponse:
     """Create a new resource."""
     result = await service.create(request)
     return ResourceResponse.from_model(result)
+
 
 # With authentication
 @router.get("/v1/<resource>/{id}")
 async def get_resource(
     id: str,
     user: User = Depends(get_current_user),
-    service: ResourceService = Depends(get_service)
+    service: ResourceService = Depends(get_service),
 ) -> ResourceResponse:
     """Get a resource by ID."""
     result = await service.get(id, user_id=user.id)
@@ -1255,11 +1319,12 @@ async def get_resource(
         raise HTTPException(status_code=404, detail="Resource not found")
     return ResourceResponse.from_model(result)
 
+
 # OpenAI-compatible endpoint
 @router.post("/v1/chat/completions")
 async def chat_completions(
     request: ChatCompletionRequest,
-    claude_client: ClaudeClient = Depends(get_claude_client)
+    claude_client: ClaudeClient = Depends(get_claude_client),
 ) -> ChatCompletionResponse:
     """OpenAI-compatible chat completions endpoint."""
     # Convert OpenAI format to Claude format
@@ -1313,9 +1378,9 @@ class ResourceRepository:
     async def save(self, resource: Resource) -> Resource:
         """Save a resource."""
         # Never bypass this layer for DB access
-        result = await self.db.table("resources").insert(
-            resource.model_dump()
-        ).execute()
+        result = (
+            await self.db.table("resources").insert(resource.model_dump()).execute()
+        )
         return Resource.model_validate(result.data[0])
 
     async def get(self, id: str) -> Resource | None:
@@ -1327,9 +1392,13 @@ class ResourceRepository:
 
     async def list(self, user_id: str, limit: int = 100) -> list[Resource]:
         """List resources for a user."""
-        result = await self.db.table("resources").select("*").eq(
-            "user_id", user_id
-        ).limit(limit).execute()
+        result = (
+            await self.db.table("resources")
+            .select("*")
+            .eq("user_id", user_id)
+            .limit(limit)
+            .execute()
+        )
         return [Resource.model_validate(r) for r in result.data]
 ```
 
@@ -1338,6 +1407,7 @@ class ResourceRepository:
 ```python
 from pydantic_settings import BaseSettings
 from pydantic import Field
+
 
 class Settings(BaseSettings):
     """Application settings."""
@@ -1364,6 +1434,7 @@ class Settings(BaseSettings):
         env_file = ".env"
         env_file_encoding = "utf-8"
 
+
 # Usage
 settings = Settings()
 ```
@@ -1375,11 +1446,10 @@ from fastmcp import FastMCP
 
 mcp = FastMCP("my-server")
 
+
 @mcp.tool
 async def my_tool(
-    param: str,
-    optional_param: int = 10,
-    context: Context = None
+    param: str, optional_param: int = 10, context: Context = None
 ) -> dict:
     """Tool description for Claude.
 
@@ -1405,10 +1475,7 @@ async def my_tool(
     return {
         "success": True,
         "data": result,
-        "metadata": {
-            "param": param,
-            "optional_param": optional_param
-        }
+        "metadata": {"param": param, "optional_param": optional_param},
     }
 ```
 
@@ -1416,10 +1483,7 @@ async def my_tool(
 
 ```python
 # In services/mcp_registry.py
-async def register_mcp_server(
-    org_id: str,
-    config: MCPServerConfig
-) -> MCPServer:
+async def register_mcp_server(org_id: str, config: MCPServerConfig) -> MCPServer:
     """Register new MCP server configuration."""
     # Validate config
     validate_mcp_config(config)
@@ -1439,9 +1503,7 @@ async def register_mcp_server(
 ```python
 # In services/prompts.py
 async def build_prompt_stack(
-    org_id: str,
-    user_id: str | None = None,
-    workflow_id: str | None = None
+    org_id: str, user_id: str | None = None, workflow_id: str | None = None
 ) -> list[Message]:
     """Build layered prompt stack."""
     messages = []
@@ -1478,34 +1540,45 @@ from pydantic import BaseModel
 
 T = TypeVar("T")
 
+
 class Result(BaseModel, Generic[T]):
     """Generic result wrapper."""
+
     success: bool
     data: T | None = None
     error: str | None = None
     error_code: str | None = None
 
+
 class AppError(Exception):
     """Base application error."""
+
     def __init__(self, message: str, code: str = "UNKNOWN_ERROR"):
         self.message = message
         self.code = code
         super().__init__(message)
 
+
 class NotFoundError(AppError):
     """Resource not found error."""
+
     def __init__(self, resource: str, id: str):
         super().__init__(f"{resource} with id {id} not found", "NOT_FOUND")
 
+
 class ValidationError(AppError):
     """Validation error."""
+
     def __init__(self, message: str):
         super().__init__(message, "VALIDATION_ERROR")
 
+
 class PermissionError(AppError):
     """Permission denied error."""
+
     def __init__(self, message: str = "Permission denied"):
         super().__init__(message, "PERMISSION_DENIED")
+
 
 # Error handler middleware
 @app.exception_handler(AppError)
@@ -1517,11 +1590,7 @@ async def app_error_handler(request: Request, exc: AppError):
     }
     return JSONResponse(
         status_code=status_codes.get(exc.code, 500),
-        content={
-            "success": False,
-            "error": exc.message,
-            "error_code": exc.code
-        }
+        content={"success": False, "error": exc.message, "error_code": exc.code},
     )
 ```
 
@@ -1533,13 +1602,17 @@ from functools import wraps
 
 logger = structlog.get_logger()
 
+
 def log_operation(operation_name: str):
     """Decorator for logging operations."""
+
     def decorator(func):
         @wraps(func)
         async def wrapper(*args, **kwargs):
             log = logger.bind(operation=operation_name)
-            log.info("operation_started", args=str(args)[:100], kwargs=str(kwargs)[:100])
+            log.info(
+                "operation_started", args=str(args)[:100], kwargs=str(kwargs)[:100]
+            )
             try:
                 result = await func(*args, **kwargs)
                 log.info("operation_completed", success=True)
@@ -1547,13 +1620,15 @@ def log_operation(operation_name: str):
             except Exception as e:
                 log.error("operation_failed", error=str(e), error_type=type(e).__name__)
                 raise
+
         return wrapper
+
     return decorator
+
 
 # Usage
 @log_operation("create_entity")
-async def create_entity(data: EntityCreate) -> Entity:
-    ...
+async def create_entity(data: EntityCreate) -> Entity: ...
 ```
 
 ---
@@ -1561,6 +1636,7 @@ async def create_entity(data: EntityCreate) -> Entity:
 ## 11. Security & Secrets
 
 ### Never:
+
 - Add real credentials or tokens to code
 - Hardcode secrets in configuration
 - Log sensitive information (API keys, passwords, tokens)
@@ -1569,6 +1645,7 @@ async def create_entity(data: EntityCreate) -> Entity:
 - Include secrets in error messages
 
 ### Always:
+
 ```bash
 # Use environment variables
 export API_KEY="your-key"
@@ -1594,6 +1671,7 @@ rg -i "api[_-]?key|secret|password|token|bearer" src/ config/ tests/
 import os
 from pydantic_settings import BaseSettings
 
+
 class Settings(BaseSettings):
     api_key: str = Field(..., env="API_KEY")
     database_url: str = Field(..., env="DATABASE_URL")
@@ -1601,14 +1679,17 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"  # .env is gitignored
 
+
 # Good: Use secret manager for production
 from google.cloud import secretmanager
+
 
 def get_secret(secret_id: str) -> str:
     client = secretmanager.SecretManagerServiceClient()
     name = f"projects/{project_id}/secrets/{secret_id}/versions/latest"
     response = client.access_secret_version(request={"name": name})
     return response.payload.data.decode("UTF-8")
+
 
 # Bad: Hardcoded secrets
 API_KEY = "sk-1234567890"  # ❌ Never do this
@@ -1620,17 +1701,17 @@ API_KEY = "sk-1234567890"  # ❌ Never do this
 # JWT validation
 from jose import jwt, JWTError
 
+
 async def validate_token(token: str) -> dict:
     """Validate JWT token."""
     try:
         payload = jwt.decode(
-            token,
-            settings.jwt_secret,
-            algorithms=[settings.jwt_algorithm]
+            token, settings.jwt_secret, algorithms=[settings.jwt_algorithm]
         )
         return payload
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
+
 
 # API key validation
 async def validate_api_key(api_key: str) -> bool:
@@ -1638,10 +1719,9 @@ async def validate_api_key(api_key: str) -> bool:
     # Use constant-time comparison to prevent timing attacks
     return secrets.compare_digest(api_key, settings.api_key)
 
+
 # Dependency for protected routes
-async def get_current_user(
-    authorization: str = Header(None)
-) -> User:
+async def get_current_user(authorization: str = Header(None)) -> User:
     """Get current authenticated user."""
     if not authorization:
         raise HTTPException(status_code=401, detail="Missing authorization")
@@ -1680,6 +1760,7 @@ async def chat_completions(request: Request, ...):
 from pydantic import BaseModel, Field, validator
 import re
 
+
 class UserCreate(BaseModel):
     """User creation model with validation."""
 
@@ -1709,6 +1790,7 @@ class UserCreate(BaseModel):
 ## 12. Common Workflows
 
 ### Adding a New API Endpoint
+
 ```bash
 # 1. Define route in api/routes/
 # Create new file or add to existing router
@@ -1735,6 +1817,7 @@ python cli.py types check
 ```
 
 ### Adding a New MCP Tool
+
 ```bash
 # 1. Define tool in tools/<domain>.py or tools/<domain>/
 @mcp.tool
@@ -1753,6 +1836,7 @@ python cli.py mcp inspect
 ```
 
 ### Adding a New Service
+
 ```bash
 # 1. Create service in services/<domain>.py
 # If >350 lines, create services/<domain>/ submodule
@@ -1771,6 +1855,7 @@ wc -l src/<package>/services/<domain>.py
 ```
 
 ### Refactoring Large File
+
 ```bash
 # 1. Check current size
 wc -l src/<file>.py
@@ -1802,6 +1887,7 @@ python cli.py test run
 ```
 
 ### Updating Database Schema
+
 ```bash
 # 1. Update schema in Supabase or migration file
 
@@ -1817,6 +1903,7 @@ python cli.py test run --scope integration
 ```
 
 ### Debugging a Test Failure
+
 ```bash
 # 1. Run the specific failing test with verbose output
 uv run pytest tests/path/to/test.py::test_name -v --tb=long
@@ -1842,6 +1929,7 @@ python cli.py test run
 ### Common Issues
 
 **Import errors:**
+
 ```bash
 # Ensure venv is activated
 source .venv/bin/activate
@@ -1857,6 +1945,7 @@ uv pip list | grep <package>
 ```
 
 **Type errors:**
+
 ```bash
 # Run mypy for details
 uv run mypy src/<package>
@@ -1869,6 +1958,7 @@ uv run mypy src/<package>/services/<file>.py
 ```
 
 **Test failures:**
+
 ```bash
 # Run with verbose output
 uv run pytest tests/ -v
@@ -1887,6 +1977,7 @@ uv run pytest tests/test_<module>.py::<test_name> -v --pdb
 ```
 
 **Database connection issues:**
+
 ```bash
 # Check environment variables
 echo $DATABASE_URL
@@ -1900,6 +1991,7 @@ curl $SUPABASE_URL/rest/v1/ -H "apikey: $SUPABASE_KEY"
 ```
 
 **Rate limiting issues:**
+
 ```bash
 # Check rate limit status
 # Review logs for rate limit errors
@@ -1911,6 +2003,7 @@ curl $SUPABASE_URL/rest/v1/ -H "apikey: $SUPABASE_KEY"
 ```
 
 **Memory issues:**
+
 ```bash
 # Profile memory usage
 python -m memory_profiler src/<package>/main.py
@@ -1951,16 +2044,19 @@ find . -type d -name __pycache__ -exec rm -rf {} +
 ```python
 # Add temporary debugging
 import logging
+
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 # In function
 logger.debug(f"Variable state: {variable}")
 
+
 # Use breakpoint for interactive debugging
 def problematic_function():
     breakpoint()  # Drops into pdb
     ...
+
 
 # Profile slow code
 import cProfile
@@ -1971,7 +2067,7 @@ profiler.enable()
 # ... code to profile ...
 profiler.disable()
 stats = pstats.Stats(profiler)
-stats.sort_stats('cumulative')
+stats.sort_stats("cumulative")
 stats.print_stats(10)
 ```
 
@@ -1980,6 +2076,7 @@ stats.print_stats(10)
 ## 14. Performance Metrics
 
 ### Key Indicators
+
 - **API Response Time**: <500ms for typical requests
 - **Database Query Time**: <100ms for simple queries
 - **Test Execution**: <30s for unit suite, <5min for full suite
@@ -1987,6 +2084,7 @@ stats.print_stats(10)
 - **File Size**: All modules ≤500 lines
 
 ### Optimization Targets
+
 - Use async/await for all I/O operations
 - Cache expensive computations (embeddings, queries)
 - Optimize database queries with proper indexes
@@ -2001,6 +2099,7 @@ stats.print_stats(10)
 import time
 from functools import wraps
 
+
 def timed(func):
     @wraps(func)
     async def wrapper(*args, **kwargs):
@@ -2009,11 +2108,12 @@ def timed(func):
         duration = time.perf_counter() - start
         logger.info(f"{func.__name__} took {duration:.3f}s")
         return result
+
     return wrapper
 
+
 @timed
-async def slow_operation():
-    ...
+async def slow_operation(): ...
 ```
 
 ### Caching Patterns
@@ -2023,13 +2123,15 @@ from functools import lru_cache
 from cachetools import TTLCache
 import asyncio
 
+
 # Simple LRU cache for sync functions
 @lru_cache(maxsize=100)
-def get_config(key: str) -> str:
-    ...
+def get_config(key: str) -> str: ...
+
 
 # TTL cache for async functions
 cache = TTLCache(maxsize=1000, ttl=300)  # 5 minute TTL
+
 
 async def get_cached_data(key: str) -> dict:
     if key in cache:
@@ -2049,21 +2151,20 @@ async def get_cached_data(key: str) -> dict:
 ```python
 from fastmcp import FastMCP
 
-mcp = FastMCP(
-    name="my-mcp-server",
-    version="1.0.0",
-    description="My MCP Server"
-)
+mcp = FastMCP(name="my-mcp-server", version="1.0.0", description="My MCP Server")
+
 
 @mcp.tool
 async def my_tool(param: str) -> dict:
     """Tool description."""
     return {"result": param}
 
+
 @mcp.resource("resource://{id}")
 async def get_resource(id: str) -> str:
     """Get resource by ID."""
     return f"Resource {id}"
+
 
 @mcp.prompt
 async def my_prompt(context: str) -> str:
@@ -2078,11 +2179,9 @@ from fastmcp import FastMCP, Context
 
 mcp = FastMCP("authenticated-server")
 
+
 @mcp.tool
-async def protected_tool(
-    param: str,
-    context: Context
-) -> dict:
+async def protected_tool(param: str, context: Context) -> dict:
     """Protected tool requiring authentication."""
     # Get user from context
     user = context.user
@@ -2100,11 +2199,7 @@ async def protected_tool(
 
 ```python
 @mcp.tool
-async def create_entity(
-    name: str,
-    description: str,
-    context: Context
-) -> dict:
+async def create_entity(name: str, description: str, context: Context) -> dict:
     """Create a new entity."""
     # Get user context
     user_id = context.user.id
@@ -2112,22 +2207,17 @@ async def create_entity(
 
     # Create entity via service
     entity = await entity_service.create(
-        name=name,
-        description=description,
-        user_id=user_id,
-        workspace_id=workspace_id
+        name=name, description=description, user_id=user_id, workspace_id=workspace_id
     )
 
-    return {
-        "success": True,
-        "entity": entity.model_dump()
-    }
+    return {"success": True, "entity": entity.model_dump()}
 ```
 
 ### MCP Error Handling
 
 ```python
 from fastmcp import FastMCP, MCPError
+
 
 @mcp.tool
 async def risky_tool(param: str) -> dict:
@@ -2163,17 +2253,12 @@ def select_model(task_type: str, context_size: int) -> str:
     else:
         return "claude-sonnet-4"  # Default
 
+
 # Explicit model selection
-async def analyze_with_model(
-    content: str,
-    model: str = "auto"
-) -> dict:
+async def analyze_with_model(content: str, model: str = "auto") -> dict:
     """Analyze content with specified model."""
     if model == "auto":
-        model = select_model(
-            task_type="analysis",
-            context_size=len(content)
-        )
+        model = select_model(task_type="analysis", context_size=len(content))
 
     return await call_model(model, content)
 ```
@@ -2182,14 +2267,10 @@ async def analyze_with_model(
 
 ```python
 async def get_consensus(
-    prompt: str,
-    models: list[str] = ["claude-sonnet-4", "gemini-2.5-pro"]
+    prompt: str, models: list[str] = ["claude-sonnet-4", "gemini-2.5-pro"]
 ) -> dict:
     """Get consensus from multiple models."""
-    responses = await asyncio.gather(*[
-        call_model(model, prompt)
-        for model in models
-    ])
+    responses = await asyncio.gather(*[call_model(model, prompt) for model in models])
 
     # Synthesize responses
     consensus = synthesize_responses(responses)
@@ -2197,7 +2278,7 @@ async def get_consensus(
     return {
         "consensus": consensus,
         "individual_responses": responses,
-        "models_used": models
+        "models_used": models,
     }
 ```
 
@@ -2233,15 +2314,11 @@ class ConversationContext:
 ```python
 # Code review workflow
 async def code_review_workflow(
-    files: list[str],
-    models: list[str] = ["claude-sonnet-4", "gemini-2.5-pro"]
+    files: list[str], models: list[str] = ["claude-sonnet-4", "gemini-2.5-pro"]
 ) -> dict:
     """Multi-model code review workflow."""
     # Step 1: Parallel analysis
-    analyses = await asyncio.gather(*[
-        analyze_code(files, model)
-        for model in models
-    ])
+    analyses = await asyncio.gather(*[analyze_code(files, model) for model in models])
 
     # Step 2: Synthesize findings
     synthesis = await synthesize_findings(analyses)
@@ -2256,25 +2333,21 @@ async def code_review_workflow(
         "analyses": analyses,
         "synthesis": synthesis,
         "prioritized_issues": prioritized,
-        "action_plan": plan
+        "action_plan": plan,
     }
 
+
 # Debugging workflow
-async def debug_workflow(
-    error: str,
-    context: str
-) -> dict:
+async def debug_workflow(error: str, context: str) -> dict:
     """Multi-model debugging workflow."""
     # Use different models for different aspects
     root_cause = await call_model("o3", f"Analyze root cause: {error}\n{context}")
     patterns = await call_model("gemini-flash", f"Check common patterns: {error}")
-    solution = await call_model("claude-sonnet-4", f"Propose solution: {error}\n{root_cause}")
+    solution = await call_model(
+        "claude-sonnet-4", f"Propose solution: {error}\n{root_cause}"
+    )
 
-    return {
-        "root_cause": root_cause,
-        "patterns": patterns,
-        "solution": solution
-    }
+    return {"root_cause": root_cause, "patterns": patterns, "solution": solution}
 ```
 
 ---
@@ -2282,11 +2355,13 @@ async def debug_workflow(
 ## 17. Behavioral Constraints for Agents
 
 ### Autonomous Operation
+
 - Do NOT ask user what to do next unless blocked
 - Loop through SWE cycle until clean
 - Only pause for: missing secrets, true ambiguity, destructive ops
 
 ### Code Quality
+
 - Never introduce security vulnerabilities (OWASP top 10)
 - Always respect file size limits (350/500)
 - Match existing patterns; don't invent new ones
@@ -2296,11 +2371,13 @@ async def debug_workflow(
 ### When to Ask
 
 Only pause for user input when:
+
 - Credentials, API keys, or external IDs are required and cannot be inferred
 - There is a genuine product/behavior ambiguity not answered by code/tests/docs
 - An operation may be destructive (data deletion, production migrations, forced pushes)
 
 ### Communication Style
+
 - Keep explanations concise; focus tokens on accurate code and commands
 - Document decisions in session folder, not in chat
 - Provide actionable next steps, not vague suggestions
@@ -2310,6 +2387,7 @@ Only pause for user input when:
 ## 18. Quick Reference Commands
 
 ### Testing
+
 ```bash
 python cli.py test run                    # All tests via CLI
 python cli.py test run --scope unit       # Unit tests
@@ -2321,6 +2399,7 @@ uv run pytest -m "not slow"               # Skip slow tests
 ```
 
 ### Quality
+
 ```bash
 python cli.py lint check                  # Lint via CLI
 python cli.py lint fix                    # Auto-fix via CLI
@@ -2331,6 +2410,7 @@ uv run mypy src/                          # Type check
 ```
 
 ### Git
+
 ```bash
 git status                                # Status
 git diff                                  # Changes
@@ -2340,6 +2420,7 @@ git log --oneline -10                     # Recent history
 ```
 
 ### Files
+
 ```bash
 wc -l <file>                              # Line count
 find src/ -name "*.py" -exec wc -l {} +   # All Python files
@@ -2349,6 +2430,7 @@ rg "pattern" --type py -A 5 -B 5          # With context
 ```
 
 ### Documentation
+
 ```bash
 # Find markdown creep
 find . -name "*.md" -not -path "./docs/*" -not -name "README.md"
@@ -2371,6 +2453,7 @@ from supabase import create_client, Client
 from typing import Optional
 import os
 
+
 class SupabaseAdapter:
     """Adapter for Supabase database operations."""
 
@@ -2392,11 +2475,7 @@ class SupabaseAdapter:
         return result.data[0] if result.data else None
 
     async def list_all(
-        self,
-        table: str,
-        filters: dict = None,
-        limit: int = 100,
-        offset: int = 0
+        self, table: str, filters: dict = None, limit: int = 100, offset: int = 0
     ) -> list[dict]:
         """List records with optional filters."""
         query = self.client.table(table).select("*")
@@ -2530,6 +2609,7 @@ class QueryBuilder:
         result = query.execute()
         return result.count
 
+
 # Usage
 async def get_user_entities(user_id: str) -> list[dict]:
     return await (
@@ -2547,6 +2627,7 @@ async def get_user_entities(user_id: str) -> list[dict]:
 
 ```python
 from contextlib import asynccontextmanager
+
 
 class TransactionManager:
     """Manage database transactions."""
@@ -2576,10 +2657,10 @@ class TransactionManager:
         finally:
             self._operations.clear()
 
+
 # Usage
 async def create_entity_with_relationships(
-    entity_data: dict,
-    relationships: list[dict]
+    entity_data: dict, relationships: list[dict]
 ) -> dict:
     tx = TransactionManager(adapter)
 
@@ -2667,22 +2748,28 @@ from uuid import UUID
 
 router = APIRouter(prefix="/v1/entities", tags=["entities"])
 
+
 # Request/Response Models
 class EntityCreate(BaseModel):
     """Create entity request."""
+
     name: str = Field(..., min_length=1, max_length=255)
     description: Optional[str] = Field(None, max_length=2000)
     entity_type: str = Field("generic", pattern="^[a-z_]+$")
     metadata: dict = Field(default_factory=dict)
 
+
 class EntityUpdate(BaseModel):
     """Update entity request."""
+
     name: Optional[str] = Field(None, min_length=1, max_length=255)
     description: Optional[str] = Field(None, max_length=2000)
     metadata: Optional[dict] = None
 
+
 class EntityResponse(BaseModel):
     """Entity response."""
+
     id: UUID
     workspace_id: UUID
     name: str
@@ -2692,13 +2779,16 @@ class EntityResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
+
 class EntityListResponse(BaseModel):
     """Paginated entity list response."""
+
     items: list[EntityResponse]
     total: int
     page: int
     page_size: int
     has_more: bool
+
 
 # Endpoints
 @router.post("", response_model=EntityResponse, status_code=201)
@@ -2706,27 +2796,25 @@ async def create_entity(
     data: EntityCreate,
     workspace_id: UUID = Query(..., description="Workspace ID"),
     user: User = Depends(get_current_user),
-    service: EntityService = Depends(get_entity_service)
+    service: EntityService = Depends(get_entity_service),
 ) -> EntityResponse:
     """Create a new entity."""
-    entity = await service.create(
-        workspace_id=workspace_id,
-        user_id=user.id,
-        data=data
-    )
+    entity = await service.create(workspace_id=workspace_id, user_id=user.id, data=data)
     return EntityResponse.model_validate(entity)
+
 
 @router.get("/{entity_id}", response_model=EntityResponse)
 async def get_entity(
     entity_id: UUID = Path(..., description="Entity ID"),
     user: User = Depends(get_current_user),
-    service: EntityService = Depends(get_entity_service)
+    service: EntityService = Depends(get_entity_service),
 ) -> EntityResponse:
     """Get an entity by ID."""
     entity = await service.get(entity_id, user_id=user.id)
     if not entity:
         raise HTTPException(status_code=404, detail="Entity not found")
     return EntityResponse.model_validate(entity)
+
 
 @router.get("", response_model=EntityListResponse)
 async def list_entities(
@@ -2736,7 +2824,7 @@ async def list_entities(
     page: int = Query(1, ge=1, description="Page number"),
     page_size: int = Query(20, ge=1, le=100, description="Items per page"),
     user: User = Depends(get_current_user),
-    service: EntityService = Depends(get_entity_service)
+    service: EntityService = Depends(get_entity_service),
 ) -> EntityListResponse:
     """List entities with pagination and filters."""
     result = await service.list(
@@ -2745,38 +2833,36 @@ async def list_entities(
         entity_type=entity_type,
         search=search,
         page=page,
-        page_size=page_size
+        page_size=page_size,
     )
     return EntityListResponse(
         items=[EntityResponse.model_validate(e) for e in result.items],
         total=result.total,
         page=page,
         page_size=page_size,
-        has_more=result.total > page * page_size
+        has_more=result.total > page * page_size,
     )
+
 
 @router.patch("/{entity_id}", response_model=EntityResponse)
 async def update_entity(
     entity_id: UUID = Path(..., description="Entity ID"),
     data: EntityUpdate = ...,
     user: User = Depends(get_current_user),
-    service: EntityService = Depends(get_entity_service)
+    service: EntityService = Depends(get_entity_service),
 ) -> EntityResponse:
     """Update an entity."""
-    entity = await service.update(
-        entity_id=entity_id,
-        user_id=user.id,
-        data=data
-    )
+    entity = await service.update(entity_id=entity_id, user_id=user.id, data=data)
     if not entity:
         raise HTTPException(status_code=404, detail="Entity not found")
     return EntityResponse.model_validate(entity)
+
 
 @router.delete("/{entity_id}", status_code=204)
 async def delete_entity(
     entity_id: UUID = Path(..., description="Entity ID"),
     user: User = Depends(get_current_user),
-    service: EntityService = Depends(get_entity_service)
+    service: EntityService = Depends(get_entity_service),
 ) -> None:
     """Delete an entity (soft delete)."""
     success = await service.delete(entity_id=entity_id, user_id=user.id)
@@ -2792,16 +2878,20 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import Optional, Any
 
+
 class ErrorResponse(BaseModel):
     """Standard error response."""
+
     success: bool = False
     error: str
     error_code: str
     details: Optional[dict[str, Any]] = None
     request_id: Optional[str] = None
 
+
 class ErrorCodes:
     """Standard error codes."""
+
     VALIDATION_ERROR = "VALIDATION_ERROR"
     NOT_FOUND = "NOT_FOUND"
     PERMISSION_DENIED = "PERMISSION_DENIED"
@@ -2812,6 +2902,7 @@ class ErrorCodes:
     RESOURCE_CONFLICT = "RESOURCE_CONFLICT"
     SERVICE_UNAVAILABLE = "SERVICE_UNAVAILABLE"
 
+
 # Error handlers
 @app.exception_handler(ValidationError)
 async def validation_error_handler(request: Request, exc: ValidationError):
@@ -2820,9 +2911,10 @@ async def validation_error_handler(request: Request, exc: ValidationError):
         content=ErrorResponse(
             error=str(exc),
             error_code=ErrorCodes.VALIDATION_ERROR,
-            request_id=request.state.request_id
-        ).model_dump()
+            request_id=request.state.request_id,
+        ).model_dump(),
     )
+
 
 @app.exception_handler(NotFoundError)
 async def not_found_handler(request: Request, exc: NotFoundError):
@@ -2831,9 +2923,10 @@ async def not_found_handler(request: Request, exc: NotFoundError):
         content=ErrorResponse(
             error=str(exc),
             error_code=ErrorCodes.NOT_FOUND,
-            request_id=request.state.request_id
-        ).model_dump()
+            request_id=request.state.request_id,
+        ).model_dump(),
     )
+
 
 @app.exception_handler(PermissionDeniedError)
 async def permission_denied_handler(request: Request, exc: PermissionDeniedError):
@@ -2842,9 +2935,10 @@ async def permission_denied_handler(request: Request, exc: PermissionDeniedError
         content=ErrorResponse(
             error=str(exc),
             error_code=ErrorCodes.PERMISSION_DENIED,
-            request_id=request.state.request_id
-        ).model_dump()
+            request_id=request.state.request_id,
+        ).model_dump(),
     )
+
 
 @app.exception_handler(RateLimitError)
 async def rate_limit_handler(request: Request, exc: RateLimitError):
@@ -2854,9 +2948,9 @@ async def rate_limit_handler(request: Request, exc: RateLimitError):
             error="Rate limit exceeded",
             error_code=ErrorCodes.RATE_LIMITED,
             details={"retry_after": exc.retry_after},
-            request_id=request.state.request_id
+            request_id=request.state.request_id,
         ).model_dump(),
-        headers={"Retry-After": str(exc.retry_after)}
+        headers={"Retry-After": str(exc.retry_after)},
     )
 ```
 
@@ -2869,9 +2963,11 @@ from dataclasses import dataclass
 
 T = TypeVar("T")
 
+
 @dataclass
 class PaginationParams:
     """Pagination parameters."""
+
     page: int = 1
     page_size: int = 20
     sort_by: Optional[str] = None
@@ -2885,8 +2981,10 @@ class PaginationParams:
     def limit(self) -> int:
         return self.page_size
 
+
 class PaginatedResponse(BaseModel, Generic[T]):
     """Generic paginated response."""
+
     items: list[T]
     total: int
     page: int
@@ -2897,10 +2995,7 @@ class PaginatedResponse(BaseModel, Generic[T]):
 
     @classmethod
     def create(
-        cls,
-        items: list[T],
-        total: int,
-        params: PaginationParams
+        cls, items: list[T], total: int, params: PaginationParams
     ) -> "PaginatedResponse[T]":
         total_pages = (total + params.page_size - 1) // params.page_size
         return cls(
@@ -2910,34 +3005,33 @@ class PaginatedResponse(BaseModel, Generic[T]):
             page_size=params.page_size,
             total_pages=total_pages,
             has_next=params.page < total_pages,
-            has_prev=params.page > 1
+            has_prev=params.page > 1,
         )
+
 
 # Dependency for pagination
 def get_pagination_params(
     page: int = Query(1, ge=1, description="Page number"),
     page_size: int = Query(20, ge=1, le=100, description="Items per page"),
     sort_by: Optional[str] = Query(None, description="Sort field"),
-    sort_order: str = Query("asc", pattern="^(asc|desc)$", description="Sort order")
+    sort_order: str = Query("asc", pattern="^(asc|desc)$", description="Sort order"),
 ) -> PaginationParams:
     return PaginationParams(
-        page=page,
-        page_size=page_size,
-        sort_by=sort_by,
-        sort_order=sort_order
+        page=page, page_size=page_size, sort_by=sort_by, sort_order=sort_order
     )
+
 
 # Usage in endpoint
 @router.get("", response_model=PaginatedResponse[EntityResponse])
 async def list_entities(
     pagination: PaginationParams = Depends(get_pagination_params),
-    service: EntityService = Depends(get_entity_service)
+    service: EntityService = Depends(get_entity_service),
 ):
     items, total = await service.list_paginated(
         offset=pagination.offset,
         limit=pagination.limit,
         sort_by=pagination.sort_by,
-        sort_order=pagination.sort_order
+        sort_order=pagination.sort_order,
     )
     return PaginatedResponse.create(items, total, pagination)
 ```
@@ -2949,8 +3043,10 @@ from pydantic import BaseModel
 from typing import Optional, Any
 from enum import Enum
 
+
 class FilterOperator(str, Enum):
     """Filter operators."""
+
     EQ = "eq"
     NE = "ne"
     GT = "gt"
@@ -2962,16 +3058,21 @@ class FilterOperator(str, Enum):
     IS_NULL = "is_null"
     IS_NOT_NULL = "is_not_null"
 
+
 class Filter(BaseModel):
     """Single filter condition."""
+
     field: str
     operator: FilterOperator
     value: Any
 
+
 class FilterSet(BaseModel):
     """Collection of filters."""
+
     filters: list[Filter] = []
     logic: str = "and"  # "and" or "or"
+
 
 def parse_filters(filter_string: Optional[str]) -> FilterSet:
     """Parse filter string into FilterSet.
@@ -2985,12 +3086,9 @@ def parse_filters(filter_string: Optional[str]) -> FilterSet:
     filters = []
     for part in filter_string.split(","):
         field, op, value = part.split(":", 2)
-        filters.append(Filter(
-            field=field,
-            operator=FilterOperator(op),
-            value=value
-        ))
+        filters.append(Filter(field=field, operator=FilterOperator(op), value=value))
     return FilterSet(filters=filters)
+
 
 def apply_filters(query, filters: FilterSet):
     """Apply filters to query builder."""
@@ -3028,6 +3126,7 @@ def apply_filters(query, filters: FilterSet):
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
+
 @asynccontextmanager
 async def db_session() -> AsyncGenerator[Database, None]:
     """Provide database session with cleanup."""
@@ -3037,17 +3136,21 @@ async def db_session() -> AsyncGenerator[Database, None]:
     finally:
         await session.disconnect()
 
+
 @asynccontextmanager
 async def http_client() -> AsyncGenerator[httpx.AsyncClient, None]:
     """Provide HTTP client with cleanup."""
     async with httpx.AsyncClient(timeout=30.0) as client:
         yield client
 
+
 # Usage
 async def fetch_and_store(url: str):
     async with http_client() as client, db_session() as db:
         response = await client.get(url)
-        await db.execute("INSERT INTO cache (url, data) VALUES ($1, $2)", url, response.text)
+        await db.execute(
+            "INSERT INTO cache (url, data) VALUES ($1, $2)", url, response.text
+        )
 ```
 
 ### Async Iterators
@@ -3055,16 +3158,14 @@ async def fetch_and_store(url: str):
 ```python
 from typing import AsyncIterator
 
+
 async def stream_large_dataset(
-    query: str,
-    batch_size: int = 100
+    query: str, batch_size: int = 100
 ) -> AsyncIterator[dict]:
     """Stream large dataset in batches."""
     offset = 0
     while True:
-        batch = await db.fetch_all(
-            f"{query} LIMIT {batch_size} OFFSET {offset}"
-        )
+        batch = await db.fetch_all(f"{query} LIMIT {batch_size} OFFSET {offset}")
         if not batch:
             break
 
@@ -3072,6 +3173,7 @@ async def stream_large_dataset(
             yield dict(record)
 
         offset += batch_size
+
 
 # Usage
 async def process_all_entities():
@@ -3087,9 +3189,9 @@ from typing import TypeVar, Callable, Awaitable
 
 T = TypeVar("T")
 
+
 async def gather_with_limit(
-    tasks: list[Callable[[], Awaitable[T]]],
-    limit: int = 10
+    tasks: list[Callable[[], Awaitable[T]]], limit: int = 10
 ) -> list[T]:
     """Execute tasks concurrently with concurrency limit."""
     semaphore = asyncio.Semaphore(limit)
@@ -3100,16 +3202,15 @@ async def gather_with_limit(
 
     return await asyncio.gather(*[limited_task(t) for t in tasks])
 
+
 async def map_async(
-    func: Callable[[T], Awaitable[any]],
-    items: list[T],
-    concurrency: int = 10
+    func: Callable[[T], Awaitable[any]], items: list[T], concurrency: int = 10
 ) -> list[any]:
     """Map function over items with concurrency limit."""
     return await gather_with_limit(
-        [lambda i=i: func(i) for i in items],
-        limit=concurrency
+        [lambda i=i: func(i) for i in items], limit=concurrency
     )
+
 
 # Usage
 async def enrich_entities(entities: list[Entity]) -> list[Entity]:
@@ -3127,13 +3228,15 @@ import asyncio
 from functools import wraps
 from typing import Type
 
+
 def retry_async(
     max_retries: int = 3,
     delay: float = 1.0,
     backoff: float = 2.0,
-    exceptions: tuple[Type[Exception], ...] = (Exception,)
+    exceptions: tuple[Type[Exception], ...] = (Exception,),
 ):
     """Decorator for async retry with exponential backoff."""
+
     def decorator(func):
         @wraps(func)
         async def wrapper(*args, **kwargs):
@@ -3152,7 +3255,9 @@ def retry_async(
             raise last_exception
 
         return wrapper
+
     return decorator
+
 
 # Usage
 @retry_async(max_retries=3, delay=1.0, exceptions=(httpx.RequestError,))
@@ -3169,20 +3274,22 @@ async def fetch_external_api(url: str) -> dict:
 import asyncio
 from functools import wraps
 
+
 def timeout_async(seconds: float):
     """Decorator for async timeout."""
+
     def decorator(func):
         @wraps(func)
         async def wrapper(*args, **kwargs):
             try:
-                return await asyncio.wait_for(
-                    func(*args, **kwargs),
-                    timeout=seconds
-                )
+                return await asyncio.wait_for(func(*args, **kwargs), timeout=seconds)
             except asyncio.TimeoutError:
                 raise TimeoutError(f"{func.__name__} timed out after {seconds}s")
+
         return wrapper
+
     return decorator
+
 
 # Usage
 @timeout_async(30.0)
@@ -3201,6 +3308,7 @@ from typing import Protocol
 from abc import abstractmethod
 import numpy as np
 
+
 class EmbeddingProvider(Protocol):
     """Protocol for embedding providers."""
 
@@ -3214,6 +3322,7 @@ class EmbeddingProvider(Protocol):
         """Generate embeddings for multiple texts."""
         ...
 
+
 class OpenAIEmbeddingProvider:
     """OpenAI embedding provider."""
 
@@ -3226,7 +3335,7 @@ class OpenAIEmbeddingProvider:
             response = await client.post(
                 "https://api.openai.com/v1/embeddings",
                 headers={"Authorization": f"Bearer {self.api_key}"},
-                json={"input": text, "model": self.model}
+                json={"input": text, "model": self.model},
             )
             return response.json()["data"][0]["embedding"]
 
@@ -3235,17 +3344,16 @@ class OpenAIEmbeddingProvider:
             response = await client.post(
                 "https://api.openai.com/v1/embeddings",
                 headers={"Authorization": f"Bearer {self.api_key}"},
-                json={"input": texts, "model": self.model}
+                json={"input": texts, "model": self.model},
             )
             return [d["embedding"] for d in response.json()["data"]]
+
 
 class EmbeddingService:
     """Service for managing embeddings."""
 
     def __init__(
-        self,
-        provider: EmbeddingProvider,
-        cache: Optional[EmbeddingCache] = None
+        self, provider: EmbeddingProvider, cache: Optional[EmbeddingCache] = None
     ):
         self.provider = provider
         self.cache = cache
@@ -3265,23 +3373,24 @@ class EmbeddingService:
         return embedding
 
     async def similarity_search(
-        self,
-        query: str,
-        collection: str,
-        limit: int = 10,
-        threshold: float = 0.7
+        self, query: str, collection: str, limit: int = 10, threshold: float = 0.7
     ) -> list[dict]:
         """Search for similar items."""
         query_embedding = await self.get_embedding(query)
 
         # Use pgvector for similarity search
-        results = await db.fetch_all(f"""
+        results = await db.fetch_all(
+            f"""
             SELECT *, 1 - (embedding <=> $1::vector) as similarity
             FROM {collection}
             WHERE 1 - (embedding <=> $1::vector) > $2
             ORDER BY embedding <=> $1::vector
             LIMIT $3
-        """, query_embedding, threshold, limit)
+        """,
+            query_embedding,
+            threshold,
+            limit,
+        )
 
         return [dict(r) for r in results]
 ```
@@ -3297,10 +3406,7 @@ class VectorStore:
         self.embedding_service = embedding_service
 
     async def add_document(
-        self,
-        collection: str,
-        document: dict,
-        text_field: str = "content"
+        self, collection: str, document: dict, text_field: str = "content"
     ) -> dict:
         """Add document with embedding."""
         text = document.get(text_field, "")
@@ -3310,10 +3416,7 @@ class VectorStore:
         return await self.adapter.create(collection, document)
 
     async def add_documents(
-        self,
-        collection: str,
-        documents: list[dict],
-        text_field: str = "content"
+        self, collection: str, documents: list[dict], text_field: str = "content"
     ) -> list[dict]:
         """Add multiple documents with embeddings."""
         texts = [d.get(text_field, "") for d in documents]
@@ -3329,11 +3432,7 @@ class VectorStore:
         return results
 
     async def search(
-        self,
-        collection: str,
-        query: str,
-        limit: int = 10,
-        filters: dict = None
+        self, collection: str, query: str, limit: int = 10, filters: dict = None
     ) -> list[dict]:
         """Semantic search."""
         query_embedding = await self.embedding_service.get_embedding(query)
@@ -3354,10 +3453,9 @@ class VectorStore:
         sql += f" ORDER BY embedding <=> $1::vector LIMIT ${len(params) + 1}"
         params.append(limit)
 
-        results = await self.adapter.client.rpc("vector_search", {
-            "query_embedding": query_embedding,
-            "match_count": limit
-        }).execute()
+        results = await self.adapter.client.rpc(
+            "vector_search", {"query_embedding": query_embedding, "match_count": limit}
+        ).execute()
 
         return results.data
 
@@ -3367,25 +3465,24 @@ class VectorStore:
         query: str,
         limit: int = 10,
         keyword_weight: float = 0.3,
-        semantic_weight: float = 0.7
+        semantic_weight: float = 0.7,
     ) -> list[dict]:
         """Hybrid search combining keyword and semantic."""
         # Semantic search
         semantic_results = await self.search(collection, query, limit * 2)
 
         # Full-text search
-        keyword_results = await self.adapter.client.table(collection).select("*").textSearch(
-            "content",
-            query,
-            type="websearch"
-        ).limit(limit * 2).execute()
+        keyword_results = (
+            await self.adapter.client.table(collection)
+            .select("*")
+            .textSearch("content", query, type="websearch")
+            .limit(limit * 2)
+            .execute()
+        )
 
         # Combine and re-rank
         combined = self._combine_results(
-            semantic_results,
-            keyword_results.data,
-            keyword_weight,
-            semantic_weight
+            semantic_results, keyword_results.data, keyword_weight, semantic_weight
         )
 
         return combined[:limit]
@@ -3395,7 +3492,7 @@ class VectorStore:
         semantic: list[dict],
         keyword: list[dict],
         kw_weight: float,
-        sem_weight: float
+        sem_weight: float,
     ) -> list[dict]:
         """Combine and rank results."""
         scores = {}
@@ -3407,7 +3504,10 @@ class VectorStore:
             if r["id"] in scores:
                 scores[r["id"]]["score"] += kw_weight * (1 - i / len(keyword))
             else:
-                scores[r["id"]] = {"doc": r, "score": kw_weight * (1 - i / len(keyword))}
+                scores[r["id"]] = {
+                    "doc": r,
+                    "score": kw_weight * (1 - i / len(keyword)),
+                }
 
         ranked = sorted(scores.values(), key=lambda x: x["score"], reverse=True)
         return [r["doc"] for r in ranked]
@@ -3424,6 +3524,7 @@ from dataclasses import dataclass
 from typing import Callable, Awaitable, Any, Optional
 from enum import Enum
 
+
 class StepStatus(str, Enum):
     PENDING = "pending"
     RUNNING = "running"
@@ -3431,9 +3532,11 @@ class StepStatus(str, Enum):
     FAILED = "failed"
     SKIPPED = "skipped"
 
+
 @dataclass
 class WorkflowStep:
     """Single step in a workflow."""
+
     name: str
     handler: Callable[..., Awaitable[Any]]
     depends_on: list[str] = None
@@ -3441,14 +3544,17 @@ class WorkflowStep:
     timeout: float = 300.0
     condition: Optional[Callable[[dict], bool]] = None
 
+
 @dataclass
 class WorkflowResult:
     """Result of workflow execution."""
+
     success: bool
     steps: dict[str, StepStatus]
     outputs: dict[str, Any]
     errors: dict[str, str]
     duration: float
+
 
 class Workflow:
     """Workflow orchestrator."""
@@ -3463,9 +3569,10 @@ class Workflow:
         depends_on: list[str] = None,
         retry_count: int = 3,
         timeout: float = 300.0,
-        condition: Optional[Callable[[dict], bool]] = None
+        condition: Optional[Callable[[dict], bool]] = None,
     ):
         """Decorator to register workflow step."""
+
         def decorator(func: Callable[..., Awaitable[Any]]):
             self.steps[name] = WorkflowStep(
                 name=name,
@@ -3473,18 +3580,22 @@ class Workflow:
                 depends_on=depends_on or [],
                 retry_count=retry_count,
                 timeout=timeout,
-                condition=condition
+                condition=condition,
             )
             return func
+
         return decorator
 
     async def execute(self, context: dict = None) -> WorkflowResult:
         """Execute the workflow."""
         import time
+
         start_time = time.time()
 
         context = context or {}
-        statuses: dict[str, StepStatus] = {name: StepStatus.PENDING for name in self.steps}
+        statuses: dict[str, StepStatus] = {
+            name: StepStatus.PENDING for name in self.steps
+        }
         outputs: dict[str, Any] = {}
         errors: dict[str, str] = {}
 
@@ -3496,8 +3607,7 @@ class Workflow:
 
             # Check dependencies
             deps_completed = all(
-                statuses[dep] == StepStatus.COMPLETED
-                for dep in step.depends_on
+                statuses[dep] == StepStatus.COMPLETED for dep in step.depends_on
             )
             if not deps_completed:
                 statuses[step_name] = StepStatus.SKIPPED
@@ -3513,7 +3623,7 @@ class Workflow:
             try:
                 result = await asyncio.wait_for(
                     self._execute_with_retry(step, context, outputs),
-                    timeout=step.timeout
+                    timeout=step.timeout,
                 )
                 outputs[step_name] = result
                 statuses[step_name] = StepStatus.COMPLETED
@@ -3522,21 +3632,20 @@ class Workflow:
                 statuses[step_name] = StepStatus.FAILED
 
         duration = time.time() - start_time
-        success = all(s in (StepStatus.COMPLETED, StepStatus.SKIPPED) for s in statuses.values())
+        success = all(
+            s in (StepStatus.COMPLETED, StepStatus.SKIPPED) for s in statuses.values()
+        )
 
         return WorkflowResult(
             success=success,
             steps=statuses,
             outputs=outputs,
             errors=errors,
-            duration=duration
+            duration=duration,
         )
 
     async def _execute_with_retry(
-        self,
-        step: WorkflowStep,
-        context: dict,
-        outputs: dict
+        self, step: WorkflowStep, context: dict, outputs: dict
     ) -> Any:
         """Execute step with retries."""
         last_error = None
@@ -3546,7 +3655,7 @@ class Workflow:
             except Exception as e:
                 last_error = e
                 if attempt < step.retry_count - 1:
-                    await asyncio.sleep(2 ** attempt)
+                    await asyncio.sleep(2**attempt)
         raise last_error
 
     def _get_execution_order(self) -> list[str]:
@@ -3567,13 +3676,16 @@ class Workflow:
 
         return order
 
+
 # Usage
 workflow = Workflow("data_processing")
+
 
 @workflow.step("fetch_data")
 async def fetch_data(context: dict, outputs: dict) -> dict:
     """Fetch data from source."""
     return await fetch_from_api(context["source_url"])
+
 
 @workflow.step("transform_data", depends_on=["fetch_data"])
 async def transform_data(context: dict, outputs: dict) -> dict:
@@ -3581,11 +3693,13 @@ async def transform_data(context: dict, outputs: dict) -> dict:
     data = outputs["fetch_data"]
     return transform(data)
 
+
 @workflow.step("store_data", depends_on=["transform_data"])
 async def store_data(context: dict, outputs: dict) -> dict:
     """Store transformed data."""
     data = outputs["transform_data"]
     return await store_in_db(data)
+
 
 # Execute
 result = await workflow.execute({"source_url": "https://api.example.com/data"})
