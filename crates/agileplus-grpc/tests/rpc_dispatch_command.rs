@@ -1,8 +1,9 @@
 //! RPC handler tests for `DispatchCommand`.
 //!
-//! Exercises the agent-proxy branch, every core command's state transition,
-//! the governance gate applied to `validate`, and the rejection paths
-//! (unknown command, unknown feature, invalid transition, missing scope).
+//! Exercises the agent-proxy branch, non-terminal core transitions, terminal
+//! fail-closed boundaries, and rejection paths. Positive terminal acceptance
+//! is covered by `atomic_acceptance_rpc.rs` through the canonical
+//! `AcceptanceCore` decorator.
 //!
 //! Traceability: WP14-T079, T080b
 
@@ -163,48 +164,60 @@ async fn dispatch_command_specify_persists_the_new_state_and_echoes_args() {
 }
 
 #[tokio::test]
-async fn dispatch_command_drives_the_feature_through_the_whole_lifecycle() {
+async fn dispatch_command_drives_nonterminal_lifecycle_and_keeps_terminal_authority_separate() {
     let harness = Harness::new().await;
     let feature = harness.seed_feature("alpha", FeatureState::Created).await;
 
-    let steps = [
+    for (command, expected_state) in [
         ("specify", "specified"),
         ("research", "researched"),
         ("plan", "planned"),
-    ];
-    for (command, expected_state) in steps {
-        let result = dispatch(&harness, command, "alpha", &[])
-            .await
-            .unwrap_or_else(|status| panic!("{command} failed: {status:?}"));
-        assert!(result.success, "{command} should report success");
-        assert!(result.message.contains(expected_state));
-        assert_eq!(
-            harness.persisted_feature("alpha").await.state.to_string(),
-            expected_state
-        );
-    }
-
-    // `implement` is an agent command, so the lifecycle jumps straight from
-    // planned to implementing once the agent completes.
-    harness
-        .set_feature_state(feature.id, FeatureState::Implementing)
-        .await;
-
-    for (command, expected_state) in [
-        ("validate", "validated"),
-        ("ship", "shipped"),
-        ("retrospective", "retrospected"),
     ] {
         let result = dispatch(&harness, command, "alpha", &[])
             .await
             .unwrap_or_else(|status| panic!("{command} failed: {status:?}"));
         assert!(result.success, "{command} should report success");
-        assert!(result.message.contains(expected_state));
         assert_eq!(
             harness.persisted_feature("alpha").await.state.to_string(),
             expected_state
         );
     }
+
+    harness
+        .set_feature_state(feature.id, FeatureState::Implementing)
+        .await;
+    let validate = dispatch(&harness, "validate", "alpha", &[])
+        .await
+        .expect_err("generic validate must not mint terminal acceptance");
+    assert_eq!(validate.code(), Code::Unimplemented);
+    assert_eq!(
+        harness.persisted_feature("alpha").await.state,
+        FeatureState::Implementing
+    );
+
+    harness
+        .set_feature_state(feature.id, FeatureState::Validated)
+        .await;
+    let ship = dispatch(&harness, "ship", "alpha", &[])
+        .await
+        .expect_err("generic ship must not mint promotion");
+    assert_eq!(ship.code(), Code::Unimplemented);
+    assert_eq!(
+        harness.persisted_feature("alpha").await.state,
+        FeatureState::Validated
+    );
+
+    harness
+        .set_feature_state(feature.id, FeatureState::Shipped)
+        .await;
+    let retrospective = dispatch(&harness, "retrospective", "alpha", &[])
+        .await
+        .expect("retrospective remains a non-acceptance transition");
+    assert!(retrospective.success);
+    assert_eq!(
+        harness.persisted_feature("alpha").await.state,
+        FeatureState::Retrospected
+    );
 }
 
 #[tokio::test]
@@ -332,7 +345,7 @@ async fn dispatch_command_validate_blocks_when_required_evidence_is_missing() {
 }
 
 #[tokio::test]
-async fn dispatch_command_validate_blocks_on_an_unrecognized_evidence_type() {
+async fn generic_validate_never_interprets_governance_or_evidence_locally() {
     let harness = Harness::new().await;
     let feature = harness
         .seed_feature("alpha", FeatureState::Implementing)
@@ -342,91 +355,21 @@ async fn dispatch_command_validate_blocks_on_an_unrecognized_evidence_type() {
         .seed_evidence(wp.id, "FR-7", EvidenceType::TestResult)
         .await;
     harness
-        .seed_contract(feature.id, 1, vec![rule("validate", &["FR-7:scan"])])
+        .seed_contract(
+            feature.id,
+            1,
+            vec![rule("validate", &["FR-7:test_result"])],
+        )
         .await;
 
     let status = dispatch(&harness, "validate", "alpha", &[])
         .await
-        .expect_err("an undefined evidence type cannot be satisfied");
-
-    assert_eq!(status.code(), Code::FailedPrecondition);
-    assert!(status.message().contains("FR-7:scan"));
-}
-
-#[tokio::test]
-async fn dispatch_command_validate_blocks_on_evidence_from_another_feature() {
-    let harness = Harness::new().await;
-    let feature = harness
-        .seed_feature("alpha", FeatureState::Implementing)
-        .await;
-    let other = harness
-        .seed_feature("beta", FeatureState::Implementing)
-        .await;
-    let other_wp = harness.seed_wp(other.id, 1, WpState::Done).await;
-    harness
-        .seed_evidence(other_wp.id, "FR-7", EvidenceType::TestResult)
-        .await;
-    harness.seed_wp(feature.id, 1, WpState::Done).await;
-    harness
-        .seed_contract(feature.id, 1, vec![rule("validate", &["FR-7:test_result"])])
-        .await;
-
-    let status = dispatch(&harness, "validate", "alpha", &[])
-        .await
-        .expect_err("evidence from another feature must not satisfy the contract");
-
-    assert_eq!(status.code(), Code::FailedPrecondition);
-    assert!(status.message().contains("governance violation"));
-}
-
-#[tokio::test]
-async fn dispatch_command_validate_ignores_contract_rules_for_other_transitions() {
-    let harness = Harness::new().await;
-    let feature = harness
-        .seed_feature("alpha", FeatureState::Implementing)
-        .await;
-    harness.seed_wp(feature.id, 1, WpState::Done).await;
-    harness
-        .seed_contract(feature.id, 1, vec![rule("ship", &["FR-7:test_result"])])
-        .await;
-
-    let result = dispatch(&harness, "validate", "alpha", &[])
-        .await
-        .expect("a ship-scoped rule must not block validate");
-
-    assert!(result.success);
+        .expect_err("generic validate must delegate terminal authority");
+    assert_eq!(status.code(), Code::Unimplemented);
+    assert!(status.message().contains("canonical acceptance"));
     assert_eq!(
         harness.persisted_feature("alpha").await.state,
-        FeatureState::Validated
-    );
-}
-
-#[tokio::test]
-async fn dispatch_command_validate_accepts_evidence_from_a_feature_work_package() {
-    let harness = Harness::new().await;
-    let feature = harness
-        .seed_feature("alpha", FeatureState::Implementing)
-        .await;
-    let wp = harness.seed_wp(feature.id, 1, WpState::Done).await;
-    harness
-        .seed_evidence(wp.id, "FR-7", EvidenceType::TestResult)
-        .await;
-    harness
-        .seed_contract(feature.id, 1, vec![rule("validate", &["FR-7:test_result"])])
-        .await;
-
-    let result = dispatch(&harness, "validate", "alpha", &[])
-        .await
-        .expect("matching evidence should satisfy the gate");
-
-    assert!(result.success);
-    assert_eq!(
-        result.outputs.get("state").map(String::as_str),
-        Some("validated")
-    );
-    assert_eq!(
-        harness.persisted_feature("alpha").await.state,
-        FeatureState::Validated
+        FeatureState::Implementing
     );
 }
 
