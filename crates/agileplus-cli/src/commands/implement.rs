@@ -393,9 +393,14 @@ where
         // A process restart must not create a second live Attempt for the same
         // durable Assignment. Preserve interrupted history and expire any
         // Pending/Running attempts before appending the replacement.
-        expire_interrupted_attempts(storage, &assignment_id, now)
+        let expired_attempts = expire_interrupted_attempts(storage, &assignment_id, now)
             .await
             .context("reconciling interrupted attempts")?;
+        if expired_attempts > 0 {
+            println!(
+                "  Recovery: expired {expired_attempts} interrupted attempt(s) before replacement."
+            );
+        }
 
         let attempt_id = format!("attempt:{}:{}", wp.id, now.timestamp_micros());
         storage
@@ -918,6 +923,49 @@ mod tests {
         assert_eq!(
             completed.result_candidate_ref.as_deref(),
             Some("git:accepted-history")
+        );
+
+        ExecutionRecordPort::create_attempt(
+            &db,
+            &Attempt {
+                id: "attempt:replacement".into(),
+                assignment_id: assignment.id.clone(),
+                worker_id: "worker-b".into(),
+                backend: "test".into(),
+                job_id: Some("job:replacement".into()),
+                worktree_path: Some("/tmp/replacement".into()),
+                base_candidate_ref: Some("git:base".into()),
+                result_candidate_ref: None,
+                status: AttemptStatus::Running,
+                failure_class: None,
+                started_at: now,
+                ended_at: None,
+            },
+        )
+        .await
+        .expect("replacement attempt");
+
+        let history = ExecutionRecordPort::list_attempts(&db, &assignment.id)
+            .await
+            .expect("replacement history");
+        assert_eq!(history.len(), 4);
+        assert_eq!(
+            history
+                .iter()
+                .filter(|attempt| {
+                    matches!(attempt.status, AttemptStatus::Pending | AttemptStatus::Running)
+                })
+                .count(),
+            1,
+            "exactly one live replacement attempt may remain"
+        );
+        assert_eq!(
+            history
+                .iter()
+                .find(|attempt| attempt.id == "attempt:replacement")
+                .unwrap()
+                .worker_id,
+            "worker-b"
         );
     }
 
