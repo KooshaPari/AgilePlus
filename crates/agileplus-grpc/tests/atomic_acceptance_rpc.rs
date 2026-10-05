@@ -242,7 +242,6 @@ async fn grpc_storage_failure_rolls_back_and_redacts_details() {
     }
 }
 
-
 #[tokio::test]
 async fn grpc_rejects_stale_governance_version_without_mutation() {
     let (server, db, id) = setup().await;
@@ -303,5 +302,8 @@ async fn grpc_same_request_id_with_changed_command_conflicts_instead_of_regradin
             |row| row.get(0),
         )
         .unwrap();
-    assert_eq!(receipt_count, 1, "conflicting retry must not create a second receipt");
+    assert_eq!(
+        receipt_count, 1,
+        "conflicting retry must not create a second receipt"
+    );
 }
