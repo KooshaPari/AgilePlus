@@ -390,6 +390,13 @@ where
             }
         };
 
+        // A process restart must not create a second live Attempt for the same
+        // durable Assignment. Preserve interrupted history and expire any
+        // Pending/Running attempts before appending the replacement.
+        expire_interrupted_attempts(storage, &assignment_id, now)
+            .await
+            .context("reconciling interrupted attempts")?;
+
         let attempt_id = format!("attempt:{}:{}", wp.id, now.timestamp_micros());
         storage
             .create_attempt(&Attempt {
@@ -708,6 +715,35 @@ where
     );
 
     Ok(())
+}
+
+async fn expire_interrupted_attempts<S: ExecutionRecordPort>(
+    storage: &S,
+    assignment_id: &str,
+    ended_at: chrono::DateTime<Utc>,
+) -> Result<usize> {
+    let attempts = storage
+        .list_attempts(assignment_id)
+        .await
+        .context("listing attempts for restart reconciliation")?;
+    let mut expired = 0;
+    for attempt in attempts {
+        if matches!(attempt.status, AttemptStatus::Pending | AttemptStatus::Running) {
+            storage
+                .update_attempt_runtime(
+                    &attempt.id,
+                    AttemptStatus::Expired,
+                    attempt.job_id.as_deref(),
+                    None,
+                    Some("interrupted_before_replacement"),
+                    Some(ended_at),
+                )
+                .await
+                .with_context(|| format!("expiring interrupted Attempt {}", attempt.id))?;
+            expired += 1;
+        }
+    }
+    Ok(expired)
 }
 
 fn materialize_artifact(worktree_root: &Path, relative_path: &str, content: &str) -> Result<()> {
