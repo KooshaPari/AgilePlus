@@ -2,9 +2,13 @@
 //! Ordinary RPCs retain their implementation; validate uses the same atomic port
 //! as CLI/HTTP. Shipping remains fail-closed until promotion has its own service.
 
+use agileplus_application::{
+    error::AppError,
+    use_cases::accept_feature::{accept_feature, AcceptFeatureCommand},
+};
 use agileplus_domain::{
     credentials::CredentialStore,
-    domain::{acceptance::AcceptFeatureCommand, governance_evaluator::evaluate_governance},
+    domain::governance_evaluator::evaluate_governance,
     error::DomainError,
     ports::{StoragePort, execution::AtomicAcceptancePort},
 };
@@ -39,6 +43,17 @@ impl<T, S> AcceptanceCore<T, S> {
             storage,
             credentials,
             canonical_repo_root,
+        }
+    }
+}
+
+fn app_status(error: AppError) -> Status {
+    match error {
+        AppError::Domain(error) => domain_status(error),
+        AppError::NotFound(_) => Status::not_found("feature or acceptance record not found"),
+        AppError::Storage(error) => {
+            tracing::error!(%error, "gRPC atomic acceptance application failure");
+            Status::internal("acceptance persistence failed")
         }
     }
 }
@@ -263,11 +278,9 @@ where
         accept
             .validate()
             .map_err(|_| Status::invalid_argument("invalid acceptance command identity"))?;
-        let outcome = self
-            .storage
-            .accept_feature_atomic(&accept)
+        let outcome = accept_feature(self.storage.as_ref(), &accept)
             .await
-            .map_err(domain_status)?;
+            .map_err(app_status)?;
         let mut outputs = HashMap::new();
         outputs.insert(
             "acceptance_receipt".into(),
