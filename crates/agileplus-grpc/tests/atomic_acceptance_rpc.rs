@@ -241,3 +241,67 @@ async fn grpc_storage_failure_rolls_back_and_redacts_details() {
         assert_eq!(count, 0, "{table}");
     }
 }
+
+
+#[tokio::test]
+async fn grpc_rejects_stale_governance_version_without_mutation() {
+    let (server, db, id) = setup().await;
+    let mut req = request(true, &[]);
+    req.get_mut()
+        .command
+        .as_mut()
+        .unwrap()
+        .args
+        .insert("expected_governance_version".into(), "999".into());
+
+    let error = server.dispatch_command(req).await.unwrap_err();
+    assert_eq!(error.code(), Code::Aborted);
+    assert_eq!(
+        StoragePort::get_feature_by_id(db.as_ref(), id)
+            .await
+            .unwrap()
+            .unwrap()
+            .state,
+        FeatureState::Implementing
+    );
+}
+
+#[tokio::test]
+async fn grpc_same_request_id_with_changed_command_conflicts_instead_of_regrading() {
+    let (server, db, id) = setup().await;
+    let first = server
+        .dispatch_command(request(true, &[]))
+        .await
+        .expect("first acceptance");
+    assert!(first.into_inner().result.unwrap().success);
+
+    let mut changed = request(true, &[]);
+    changed
+        .get_mut()
+        .command
+        .as_mut()
+        .unwrap()
+        .args
+        .insert("expected_governance_version".into(), "999".into());
+
+    let error = server.dispatch_command(changed).await.unwrap_err();
+    assert_eq!(error.code(), Code::Aborted);
+    assert_eq!(
+        StoragePort::get_feature_by_id(db.as_ref(), id)
+            .await
+            .unwrap()
+            .unwrap()
+            .state,
+        FeatureState::Validated
+    );
+
+    let conn = db.conn_for_bench().unwrap();
+    let receipt_count: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM feature_acceptance_receipts WHERE request_id='rpc:request:1'",
+            [],
+            |row| row.get(0),
+        )
+        .unwrap();
+    assert_eq!(receipt_count, 1, "conflicting retry must not create a second receipt");
+}
