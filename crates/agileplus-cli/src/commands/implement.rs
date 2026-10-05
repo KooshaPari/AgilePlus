@@ -953,7 +953,10 @@ mod tests {
             history
                 .iter()
                 .filter(|attempt| {
-                    matches!(attempt.status, AttemptStatus::Pending | AttemptStatus::Running)
+                    matches!(
+                        attempt.status,
+                        AttemptStatus::Pending | AttemptStatus::Running
+                    )
                 })
                 .count(),
             1,
