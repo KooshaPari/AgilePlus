@@ -278,7 +278,6 @@ fn ship_appends_state_transition_event_with_chained_hash() {
     })
 }
 
-
 #[test]
 fn ship_rejects_candidate_drift_before_any_merge_or_terminal_state_change() {
     block_on(async {
@@ -307,10 +306,12 @@ fn ship_rejects_candidate_drift_before_any_merge_or_terminal_state_change() {
             .unwrap()
             .unwrap();
         assert_eq!(feature.state, FeatureState::Validated);
-        assert!(StoragePort::get_audit_trail(&storage, id)
-            .await
-            .unwrap()
-            .is_empty());
+        assert!(
+            StoragePort::get_audit_trail(&storage, id)
+                .await
+                .unwrap()
+                .is_empty()
+        );
     })
 }
 

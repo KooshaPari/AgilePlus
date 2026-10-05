@@ -12,10 +12,7 @@ use agileplus_domain::{
     ports::{ExecutionRecordPort, StoragePort, VcsPort},
 };
 
-use crate::{
-    error::AppError,
-    use_cases::acceptance::accepted_candidate_for_wp,
-};
+use crate::{error::AppError, use_cases::acceptance::accepted_candidate_for_wp};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PromotionPlanEntry {
@@ -39,10 +36,7 @@ fn validation(message: impl Into<String>) -> AppError {
     agileplus_domain::error::DomainError::Validation(message.into()).into()
 }
 
-async fn resolve_branch_commit<V: VcsPort>(
-    vcs: &V,
-    branch: &str,
-) -> Result<String, AppError> {
+async fn resolve_branch_commit<V: VcsPort>(vcs: &V, branch: &str) -> Result<String, AppError> {
     for remote in [false, true] {
         let branches = vcs.list_branches(Some(branch), remote).await?;
         if let Some(info) = branches
@@ -101,7 +95,11 @@ where
         let accepted_path = accepted.worktree_path.as_ref().map(PathBuf::from);
         let matching_worktree = accepted_path
             .as_ref()
-            .and_then(|path| active_worktrees.iter().find(|worktree| &worktree.path == path))
+            .and_then(|path| {
+                active_worktrees
+                    .iter()
+                    .find(|worktree| &worktree.path == path)
+            })
             .or_else(|| {
                 active_worktrees.iter().find(|worktree| {
                     worktree.feature_slug == feature_slug
@@ -151,7 +149,10 @@ pub async fn verify_promotion_source<V: VcsPort>(
     entry: &PromotionPlanEntry,
 ) -> Result<String, AppError> {
     let current_commit = if let Ok(worktrees) = vcs.list_worktrees().await {
-        if let Some(worktree) = worktrees.iter().find(|worktree| worktree.branch == entry.branch) {
+        if let Some(worktree) = worktrees
+            .iter()
+            .find(|worktree| worktree.branch == entry.branch)
+        {
             worktree.commit.clone()
         } else {
             resolve_branch_commit(vcs, &entry.branch).await?
