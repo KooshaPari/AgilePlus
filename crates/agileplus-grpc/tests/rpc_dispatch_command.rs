@@ -274,9 +274,9 @@ async fn dispatch_command_rejects_an_invalid_transition() {
     let harness = Harness::new().await;
     harness.seed_feature("alpha", FeatureState::Created).await;
 
-    let status = dispatch(&harness, "ship", "alpha", &[])
+    let status = dispatch(&harness, "research", "alpha", &[])
         .await
-        .expect_err("shipping a created feature must fail");
+        .expect_err("researching a created feature must fail");
 
     assert_eq!(status.code(), Code::FailedPrecondition);
     assert!(status.message().contains("invalid transition"));
