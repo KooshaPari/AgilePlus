@@ -7,11 +7,11 @@
 use anyhow::{Context, Result};
 use chrono::Utc;
 
-use agileplus_application::use_cases::acceptance::accepted_candidate_for_wp;
+use agileplus_application::use_cases::promotion::{prepare_promotion, verify_promotion_source};
 use agileplus_domain::domain::audit::{AuditEntry, hash_entry};
 use agileplus_domain::domain::event::Event;
 use agileplus_domain::domain::state_machine::FeatureState;
-use agileplus_domain::domain::work_package::{WorkPackage, WpState};
+use agileplus_domain::domain::work_package::WpState;
 use agileplus_domain::ports::{ExecutionRecordPort, StoragePort, VcsPort};
 use agileplus_events::{EventStore, compute_hash};
 
@@ -44,189 +44,48 @@ where
     let start = std::time::Instant::now();
     let slug = &args.feature;
 
-    // Look up feature
-    let feature = storage
-        .get_feature_by_slug(slug)
+    let plan = prepare_promotion(storage, vcs, slug, args.target.as_deref())
         .await
-        .context("looking up feature")?
-        .ok_or_else(|| {
-            anyhow::anyhow!(
-                "Feature '{}' not found. Run `agileplus plan --feature {}` first.",
-                slug,
-                slug
-            )
-        })?;
-
-    // State enforcement. `--skip-validate` is retained for CLI compatibility
-    // but cannot authorize a terminal state transition under the mature MACE contract.
-    if args.skip_validate {
-        anyhow::bail!(
-            "--skip-validate is diagnostic-only under the mature contract and cannot ship a feature"
-        );
-    }
-    if feature.state != FeatureState::Validated {
-        anyhow::bail!(
-            "Feature '{}' is in state '{}'. Expected 'Validated'. \
-            Run `agileplus validate --feature {}` first.",
-            slug,
-            feature.state,
-            slug
-        );
-    }
-
-    // Determine target branch
-    let target_branch = args
-        .target
-        .clone()
-        .unwrap_or_else(|| feature.target_branch.clone());
-    tracing::debug!(target_branch = %target_branch, "shipping to target branch");
-
-    // Load all WPs for the feature
-    let all_wps = storage
-        .list_wps_by_feature(feature.id)
-        .await
-        .context("listing work packages")?;
-
-    if all_wps.is_empty() && !args.dry_run {
-        anyhow::bail!(
-            "Feature '{}' has no work packages; shipping cannot be vacuously accepted",
-            slug
-        );
-    }
-
-    // Check all WPs are done
-    let incomplete: Vec<_> = all_wps
-        .iter()
-        .filter(|wp| wp.state != WpState::Done)
-        .collect();
-
-    if !incomplete.is_empty() {
-        let names: Vec<String> = incomplete
-            .iter()
-            .map(|wp| {
-                format!(
-                    "WP{:02} '{}' (state: {:?})",
-                    wp.sequence, wp.title, wp.state
-                )
-            })
-            .collect();
-        anyhow::bail!(
-            "Feature '{}' has incomplete work packages:\n  {}\nFinish all WPs before shipping.",
-            slug,
-            names.join("\n  ")
-        );
-    }
-
-    // Collect WPs in sequence order and bind each merge source to the exact
-    // independently accepted candidate before any target mutation occurs.
-    let mut sorted_wps = all_wps.clone();
-    sorted_wps.sort_by_key(|wp| wp.sequence);
-
-    let active_worktrees = vcs.list_worktrees().await.unwrap_or_default();
-    let mut wp_branches: Vec<(String, String, String)> = Vec::with_capacity(sorted_wps.len());
-    for wp in &sorted_wps {
-        let accepted = accepted_candidate_for_wp(storage, wp)
-            .await
-            .map_err(anyhow::Error::new)
-            .with_context(|| format!("checking accepted candidate for WP{:02}", wp.sequence))?;
-
-        let accepted_worktree_path = accepted
-            .worktree_path
-            .as_ref()
-            .map(std::path::PathBuf::from);
-        let matching_worktree = accepted_worktree_path
-            .as_ref()
-            .and_then(|path| active_worktrees.iter().find(|wt| &wt.path == path))
-            .or_else(|| {
-                active_worktrees.iter().find(|wt| {
-                    wt.feature_slug == *slug && wt.wp_id == format!("WP{:02}", wp.sequence)
-                })
-            });
-
-        let branch = matching_worktree
-            .map(|wt| wt.branch.clone())
-            // The Git adapter's canonical worktree branch is
-            // feat/<feature-slug>/<WP-ID>. A filesystem worktree path is an
-            // execution resource, not a branch identity, so never derive a
-            // source ref from its directory name.
-            .unwrap_or_else(|| format!("feat/{slug}/WP{:02}", wp.sequence));
-
-        let current_commit = match matching_worktree {
-            Some(worktree) => worktree.commit.clone(),
-            None => resolve_branch_commit(vcs, &branch)
-                .await
-                .with_context(|| format!("resolving source branch {branch}"))?,
-        };
-        let current_candidate = format!("git:{current_commit}");
-        if current_candidate != accepted.candidate_ref {
-            anyhow::bail!(
-                "WP{:02} source '{}' drifted from accepted candidate: current {}, accepted {}",
-                wp.sequence,
-                branch,
-                current_candidate,
-                accepted.candidate_ref
-            );
-        }
-
-        wp_branches.push((
-            format!("WP{:02}", wp.sequence),
-            branch,
-            accepted.candidate_ref,
-        ));
-    }
+        .map_err(anyhow::Error::new)
+        .context("preparing exact-candidate promotion")?;
+    let target_branch = plan.target_branch.clone();
 
     // Dry-run: just show the merge plan
     if args.dry_run {
         println!("Dry-run: merge plan for feature '{slug}'");
         println!("  Target branch: {target_branch}");
-        println!("  WPs to merge ({} total):", sorted_wps.len());
-        for (wp, (wp_label, branch, candidate)) in sorted_wps.iter().zip(wp_branches.iter()) {
+        println!("  WPs to merge ({} total):", plan.entries.len());
+        for entry in &plan.entries {
             println!(
                 "    {} '{}' <- branch: {} @ {}",
-                wp_label, wp.title, branch, candidate
+                entry.wp_label, entry.title, entry.branch, entry.accepted_candidate_ref
             );
-        }
-        if sorted_wps.is_empty() {
-            println!("    (no WPs to merge)");
         }
         return Ok(());
     }
 
-    // Perform merges in order
+    // Perform merges in order. Recheck each source immediately before merge.
     let mut merged_branches: Vec<String> = Vec::new();
-    for (wp, (wp_label, branch, accepted_candidate)) in sorted_wps.iter().zip(wp_branches.iter()) {
-        tracing::info!(wp_seq = wp.sequence, branch = %branch, target = %target_branch, accepted_candidate = %accepted_candidate, "merging WP branch");
+    for entry in &plan.entries {
+        tracing::info!(
+            wp_seq = entry.wp_sequence,
+            branch = %entry.branch,
+            target = %target_branch,
+            accepted_candidate = %entry.accepted_candidate_ref,
+            "merging accepted WP candidate"
+        );
 
-        // Re-read the source ref immediately before merge to reduce the
-        // preflight-to-merge drift window.
-        let source_commit = resolve_source_commit(vcs, branch)
+        let accepted_commit = verify_promotion_source(vcs, entry)
             .await
-            .with_context(|| format!("rechecking source branch {branch}"))?;
-        let source_candidate = format!("git:{source_commit}");
-        if &source_candidate != accepted_candidate {
-            anyhow::bail!(
-                "WP{:02} source '{}' changed after preflight: current {}, accepted {}",
-                wp.sequence,
-                branch,
-                source_candidate,
-                accepted_candidate
-            );
-        }
-
-        let accepted_commit = accepted_candidate.strip_prefix("git:").ok_or_else(|| {
-            anyhow::anyhow!(
-                "{} accepted candidate is not a Git commit: {}",
-                wp_label,
-                accepted_candidate
-            )
-        })?;
+            .map_err(anyhow::Error::new)
+            .with_context(|| format!("rechecking {}", entry.wp_label))?;
         let merge_result = vcs
-            .merge_to_target(accepted_commit, &target_branch)
+            .merge_to_target(&accepted_commit, &target_branch)
             .await
             .with_context(|| {
                 format!(
                     "merging {} accepted candidate '{}' (from branch '{}') into '{}'; shipping fails closed on merge errors",
-                    wp_label, accepted_commit, branch, target_branch
+                    entry.wp_label, accepted_commit, entry.branch, target_branch
                 )
             })?;
 
@@ -234,22 +93,22 @@ where
             let conflicts: Vec<String> = merge_result
                 .conflicts
                 .iter()
-                .map(|c| c.path.clone())
+                .map(|conflict| conflict.path.clone())
                 .collect();
             anyhow::bail!(
                 "Merge conflict when merging {} accepted candidate '{}' from branch '{}' into '{}'.\n\
                 Conflicting files:\n  {}\n\
                 Resolve conflicts and re-evaluate the exact candidate before re-running `agileplus ship`.",
-                wp_label,
+                entry.wp_label,
                 accepted_commit,
-                branch,
+                entry.branch,
                 target_branch,
                 conflicts.join("\n  ")
             );
         }
 
-        merged_branches.push(branch.clone());
-        tracing::info!(branch = %branch, commit = ?merge_result.merged_commit, "merged successfully");
+        merged_branches.push(entry.branch.clone());
+        tracing::info!(branch = %entry.branch, commit = ?merge_result.merged_commit, "merged successfully");
     }
 
     // Clean up worktrees
@@ -272,10 +131,14 @@ where
         "target_branch": target_branch,
         "shipped_at": Utc::now().to_rfc3339(),
         "merged_branches": merged_branches,
-        "accepted_candidates": wp_branches.iter().map(|(wp, branch, candidate)| {
-            serde_json::json!({"wp": wp, "branch": branch, "candidate": candidate})
+        "accepted_candidates": plan.entries.iter().map(|entry| {
+            serde_json::json!({
+                "wp": entry.wp_label,
+                "branch": entry.branch,
+                "candidate": entry.accepted_candidate_ref
+            })
         }).collect::<Vec<_>>(),
-        "wp_count": all_wps.len(),
+        "wp_count": plan.entries.len(),
     });
     let meta_json = serde_json::to_string_pretty(&meta).unwrap_or_default();
     vcs.write_artifact(slug, "meta.json", &meta_json)
@@ -324,36 +187,6 @@ where
     println!("  State: Validated -> Shipped");
 
     Ok(())
-}
-
-async fn resolve_branch_commit<V: VcsPort>(vcs: &V, branch: &str) -> Result<String> {
-    for remote in [false, true] {
-        let branches = vcs
-            .list_branches(Some(branch), remote)
-            .await
-            .with_context(|| {
-                format!(
-                    "listing {}branches for {branch}",
-                    if remote { "remote " } else { "" }
-                )
-            })?;
-        if let Some(info) = branches
-            .into_iter()
-            .find(|info| info.name == branch || info.name.ends_with(&format!("/{branch}")))
-        {
-            return Ok(info.commit);
-        }
-    }
-    anyhow::bail!("source branch '{branch}' could not be resolved to an exact commit")
-}
-
-async fn resolve_source_commit<V: VcsPort>(vcs: &V, branch: &str) -> Result<String> {
-    if let Ok(worktrees) = vcs.list_worktrees().await
-        && let Some(worktree) = worktrees.iter().find(|worktree| worktree.branch == branch)
-    {
-        return Ok(worktree.commit.clone());
-    }
-    resolve_branch_commit(vcs, branch).await
 }
 
 async fn get_latest_hash<S: StoragePort>(storage: &S, feature_id: i64) -> [u8; 32] {
