@@ -728,7 +728,10 @@ async fn expire_interrupted_attempts<S: ExecutionRecordPort>(
         .context("listing attempts for restart reconciliation")?;
     let mut expired = 0;
     for attempt in attempts {
-        if matches!(attempt.status, AttemptStatus::Pending | AttemptStatus::Running) {
+        if matches!(
+            attempt.status,
+            AttemptStatus::Pending | AttemptStatus::Running
+        ) {
             storage
                 .update_attempt_runtime(
                     &attempt.id,
@@ -848,7 +851,12 @@ mod tests {
 
         for (id, status, job, candidate) in [
             ("attempt:pending", AttemptStatus::Pending, None, None),
-            ("attempt:running", AttemptStatus::Running, Some("job:running"), None),
+            (
+                "attempt:running",
+                AttemptStatus::Running,
+                Some("job:running"),
+                None,
+            ),
             (
                 "attempt:completed",
                 AttemptStatus::Completed,
