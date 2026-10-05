@@ -803,6 +803,116 @@ mod tests {
 
     // ── slugify ───────────────────────────────────────────────────────────
 
+    #[tokio::test]
+    async fn restart_reconciliation_expires_only_live_attempts() {
+        use agileplus_sqlite::SqliteStorageAdapter;
+
+        let db = SqliteStorageAdapter::in_memory().expect("sqlite");
+        let feature = agileplus_domain::domain::feature::Feature::new(
+            "restart-attempts",
+            "Restart Attempts",
+            [9; 32],
+            None,
+        );
+        let feature_id = StoragePort::create_feature(&db, &feature)
+            .await
+            .expect("feature");
+        let wp = WorkPackage::new(feature_id, "WP", 1, "criterion");
+        let wp_id = StoragePort::create_work_package(&db, &wp)
+            .await
+            .expect("work package");
+        let now = Utc::now();
+        let spec = SpecRevision {
+            id: "spec:restart".into(),
+            feature_id,
+            content_hash: "sha256:restart".into(),
+            parent_revision_id: None,
+            accepted_at: now,
+            authority: "test".into(),
+        };
+        ExecutionRecordPort::create_spec_revision(&db, &spec)
+            .await
+            .expect("spec");
+        let assignment = Assignment {
+            id: "assignment:restart".into(),
+            wp_id,
+            spec_revision_id: spec.id,
+            created_at: now,
+            supersedes_assignment_id: None,
+            status: AssignmentStatus::Active,
+        };
+        let criteria = snapshot_acceptance_criteria("criterion");
+        ExecutionRecordPort::create_assignment_with_criteria(&db, &assignment, &criteria)
+            .await
+            .expect("assignment");
+
+        for (id, status, job, candidate) in [
+            ("attempt:pending", AttemptStatus::Pending, None, None),
+            ("attempt:running", AttemptStatus::Running, Some("job:running"), None),
+            (
+                "attempt:completed",
+                AttemptStatus::Completed,
+                Some("job:completed"),
+                Some("git:accepted-history"),
+            ),
+        ] {
+            ExecutionRecordPort::create_attempt(
+                &db,
+                &Attempt {
+                    id: id.into(),
+                    assignment_id: assignment.id.clone(),
+                    worker_id: id.into(),
+                    backend: "test".into(),
+                    job_id: job.map(str::to_string),
+                    worktree_path: Some(format!("/tmp/{id}")),
+                    base_candidate_ref: Some("git:base".into()),
+                    result_candidate_ref: candidate.map(str::to_string),
+                    status,
+                    failure_class: None,
+                    started_at: now,
+                    ended_at: (status == AttemptStatus::Completed).then_some(now),
+                },
+            )
+            .await
+            .expect("attempt");
+        }
+
+        let expired = expire_interrupted_attempts(&db, &assignment.id, now)
+            .await
+            .expect("reconcile");
+        assert_eq!(expired, 2);
+
+        let attempts = ExecutionRecordPort::list_attempts(&db, &assignment.id)
+            .await
+            .expect("attempt history");
+        assert_eq!(attempts.len(), 3, "recovery must preserve attempt history");
+        let pending = attempts
+            .iter()
+            .find(|attempt| attempt.id == "attempt:pending")
+            .unwrap();
+        let running = attempts
+            .iter()
+            .find(|attempt| attempt.id == "attempt:running")
+            .unwrap();
+        let completed = attempts
+            .iter()
+            .find(|attempt| attempt.id == "attempt:completed")
+            .unwrap();
+
+        assert_eq!(pending.status, AttemptStatus::Expired);
+        assert_eq!(
+            pending.failure_class.as_deref(),
+            Some("interrupted_before_replacement")
+        );
+        assert_eq!(running.status, AttemptStatus::Expired);
+        assert_eq!(running.job_id.as_deref(), Some("job:running"));
+        assert_eq!(completed.status, AttemptStatus::Completed);
+        assert_eq!(
+            completed.result_candidate_ref.as_deref(),
+            Some("git:accepted-history")
+        );
+    }
+
     #[test]
     fn slugify_basic() {
         assert_eq!(
