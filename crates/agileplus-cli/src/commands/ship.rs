@@ -11,7 +11,6 @@ use agileplus_application::use_cases::promotion::{prepare_promotion, verify_prom
 use agileplus_domain::domain::audit::{AuditEntry, hash_entry};
 use agileplus_domain::domain::event::Event;
 use agileplus_domain::domain::state_machine::FeatureState;
-use agileplus_domain::domain::work_package::WpState;
 use agileplus_domain::ports::{ExecutionRecordPort, StoragePort, VcsPort};
 use agileplus_events::{EventStore, compute_hash};
 
@@ -43,6 +42,12 @@ where
 {
     let start = std::time::Instant::now();
     let slug = &args.feature;
+
+    if args.skip_validate {
+        anyhow::bail!(
+            "--skip-validate is diagnostic-only under the mature contract and cannot ship a feature"
+        );
+    }
 
     let plan = prepare_promotion(storage, vcs, slug, args.target.as_deref())
         .await
@@ -149,15 +154,15 @@ where
 
     // Transition feature state to Shipped
     storage
-        .update_feature_state(feature.id, FeatureState::Shipped)
+        .update_feature_state(plan.feature_id, FeatureState::Shipped)
         .await
         .context("transitioning feature to Shipped")?;
 
     // Append audit entry
-    let prev_hash = get_latest_hash(storage, feature.id).await;
+    let prev_hash = get_latest_hash(storage, plan.feature_id).await;
     let mut audit = AuditEntry {
         id: 0,
-        feature_id: feature.id,
+        feature_id: plan.feature_id,
         wp_id: None,
         timestamp: Utc::now(),
         actor: "user".into(),
@@ -174,7 +179,7 @@ where
         .await
         .context("appending audit entry")?;
 
-    append_feature_transition_event(storage, feature.id, "Validated", "Shipped", "user")
+    append_feature_transition_event(storage, plan.feature_id, "Validated", "Shipped", "user")
         .await
         .context("appending state transition event")?;
 
