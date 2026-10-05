@@ -6,7 +6,7 @@ For the active mature-first recovery branch, use these files as the operational
 entrypoint before inferring state from older docs:
 
 - `spec/product/mature-contract.v1.json` — accepted mature semantic contract.
-- `verification/FORWARD_WBS_2026-10-04.md` — current execution/release WBS.
+- `verification/FORWARD_WBS_2026-10-04.md`\n- `verification/FORWARD_DELTA_2026-10-04.md` — current execution/release WBS.
 - `docs/architecture/NETWORK_DEPLOYMENT_DOCTRINE.md` — canonical tailnet-first
   deployment/network architecture.
 - `verification/NEXT_DEPLOYABLE_RELEASE_2026-10-04.md` — deployed-release gate.
