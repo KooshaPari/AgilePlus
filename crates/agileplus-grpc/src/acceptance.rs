@@ -4,7 +4,7 @@
 
 use agileplus_application::{
     error::AppError,
-    use_cases::accept_feature::{accept_feature, AcceptFeatureCommand},
+    use_cases::accept_feature::{AcceptFeatureCommand, accept_feature},
 };
 use agileplus_domain::{
     credentials::CredentialStore,

@@ -355,11 +355,7 @@ async fn generic_validate_never_interprets_governance_or_evidence_locally() {
         .seed_evidence(wp.id, "FR-7", EvidenceType::TestResult)
         .await;
     harness
-        .seed_contract(
-            feature.id,
-            1,
-            vec![rule("validate", &["FR-7:test_result"])],
-        )
+        .seed_contract(feature.id, 1, vec![rule("validate", &["FR-7:test_result"])])
         .await;
 
     let status = dispatch(&harness, "validate", "alpha", &[])
