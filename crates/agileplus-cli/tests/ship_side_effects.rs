@@ -277,3 +277,69 @@ fn ship_appends_state_transition_event_with_chained_hash() {
         assert_eq!(transition.payload["to"], "Shipped");
     })
 }
+
+
+#[test]
+fn ship_rejects_candidate_drift_before_any_merge_or_terminal_state_change() {
+    block_on(async {
+        let storage = SqliteStorageAdapter::in_memory().unwrap();
+        let vcs = RecordingVcs::new().with_branch_commit("unexpected-commit");
+        let id = seed(
+            &storage,
+            "drift-feat",
+            FeatureState::Validated,
+            &[(1, WpState::Done)],
+        )
+        .await;
+
+        let err = run_ship(args("drift-feat"), &storage, &vcs)
+            .await
+            .expect_err("promotion must fail closed on candidate drift");
+        assert!(
+            err.to_string().contains("drifted from accepted candidate")
+                || format!("{err:#}").contains("drifted from accepted candidate"),
+            "unexpected error: {err:#}"
+        );
+        assert!(vcs.merges.lock().unwrap().is_empty());
+
+        let feature = StoragePort::get_feature_by_id(&storage, id)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(feature.state, FeatureState::Validated);
+        assert!(StoragePort::get_audit_trail(&storage, id)
+            .await
+            .unwrap()
+            .is_empty());
+    })
+}
+
+#[test]
+fn ship_dry_run_preflights_exact_candidates_without_side_effects() {
+    block_on(async {
+        let storage = SqliteStorageAdapter::in_memory().unwrap();
+        let vcs = RecordingVcs::new();
+        let id = seed(
+            &storage,
+            "dry-run-feat",
+            FeatureState::Validated,
+            &[(1, WpState::Done), (2, WpState::Done)],
+        )
+        .await;
+        let mut command = args("dry-run-feat");
+        command.dry_run = true;
+
+        run_ship(command, &storage, &vcs)
+            .await
+            .expect("dry-run preflight");
+        assert!(vcs.merges.lock().unwrap().is_empty());
+        assert!(vcs.cleaned.lock().unwrap().is_empty());
+        assert!(vcs.artifacts.lock().unwrap().is_empty());
+
+        let feature = StoragePort::get_feature_by_id(&storage, id)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(feature.state, FeatureState::Validated);
+    })
+}
