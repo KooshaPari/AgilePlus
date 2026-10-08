@@ -37,8 +37,13 @@ jobs:
           git rev-parse HEAD^{tree}
           rustc --version
           cargo --version
+      - name: Verify committed dependency resolution
+        run: cargo tree --locked -p agileplus-sqlite --depth 1 > /dev/null
       - name: SQLite atomic acceptance and failure injection
         run: cargo test --locked -p agileplus-sqlite --test atomic_acceptance -- --nocapture
+      - name: Application acceptance unit tests
+        if: ${{ !cancelled() && steps.toolchain.outcome == 'success' }}
+        run: cargo test --locked -p agileplus-application --lib -- --nocapture
       - name: Migration regression tests
         if: ${{ !cancelled() && steps.toolchain.outcome == 'success' }}
         run: cargo test --locked -p agileplus-sqlite --lib migrations::tests -- --nocapture
