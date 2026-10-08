@@ -1,8 +1,11 @@
+# API-only bootstrap for the owner's desktop. Networking is owned by the
+# host's existing Tailscale + ONE global Caddy, never by this project.
+# This is an optional containerized bootstrap; native supervision is preferred.
 services:
   agileplus-api:
-    image: rust:1.82-bookworm
+    image: rust:1.99-bookworm
     working_dir: /workspace
-    command: sh -lc "cargo run --release -p agileplus-api"
+    command: sh -lc "cargo run --locked --release -p agileplus-api"
     environment:
       API_HOST: 0.0.0.0
       DATABASE_URL: sqlite:/data/agileplus.db
@@ -13,43 +16,13 @@ services:
       - agileplus-data:/data
       - agileplus-cargo-cache:/usr/local/cargo/registry
       - agileplus-target-cache:/workspace/target
-    expose:
-      - "3000"
-    restart: unless-stopped
-
-  caddy:
-    image: caddy:2.8-alpine
-    depends_on:
-      - agileplus-api
-    environment:
-      HOSTNAME: ${HOSTNAME:-api.agileplus.pheno.studio}
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy-data:/data
-      - caddy-config:/config
+    # Only the desktop can reach this port. Caddy runs at the host edge.
+    # Never expose this port to the LAN or public internet directly.
     ports:
-      - "80:80"
-      - "443:443"
-    restart: unless-stopped
-
-  # Optional future public ingress. The private/operator release uses the
-  # tailnet directly and does not require cloudflared.
-  cloudflared:
-    image: cloudflare/cloudflared:latest
-    profiles: ["public-ingress"]
-    depends_on:
-      - caddy
-    command:
-      - tunnel
-      - --no-autoupdate
-      - run
-      - --token
-      - ${CF_TUNNEL_TOKEN:?CF_TUNNEL_TOKEN is required for public-ingress profile}
+      - "127.0.0.1:${AGILEPLUS_HOST_PORT:-3000}:3000"
     restart: unless-stopped
 
 volumes:
   agileplus-data:
   agileplus-cargo-cache:
   agileplus-target-cache:
-  caddy-data:
-  caddy-config:
