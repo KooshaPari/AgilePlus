@@ -1,67 +1,67 @@
 name: perf
 
 on:
-  push:
-    branches: [main, master]
-  pull_request:
-    branches: [main, master]
-  workflow_dispatch:
+    push:
+        branches: [main, master]
+    pull_request:
+        branches: [main, master]
+    workflow_dispatch:
 
 permissions:
-  contents: read
+    contents: read
 
 concurrency:
-  group: perf-${{ github.ref }}
-  cancel-in-progress: true
+    group: perf-${{ github.ref }}
+    cancel-in-progress: true
 
 jobs:
-  perf-proc:
-    name: perf (T118 real HTTP; warning targets)
-    runs-on: ubuntu-24.04
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
-        with:
-          python-version: "3.12"
-      - name: Validate measurement harness
-        run: python -m unittest discover -s scripts/perf -p 'test_*.py' -v
-      - name: Install protoc
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y protobuf-compiler
-          protoc --version
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
-      - name: Build real release API
-        run: cargo build --locked --release -p agileplus-api --bin agileplus-api
-      - name: Measure isolated loopback HTTP workload
-        run: |
-          python scripts/perf/http_benchmark.py \
-            --binary target/release/agileplus-api \
-            --report-dir .perf-reports
-      - name: Upload measurements and API log
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: perf-reports-${{ github.run_id }}
-          path: .perf-reports/
-          include-hidden-files: true
-          if-no-files-found: error
+    perf-proc:
+        name: perf (T118 real HTTP; warning targets)
+        runs-on: ubuntu-24.04
+        timeout-minutes: 30
+        steps:
+            - uses: actions/checkout@v7
+            - uses: actions/setup-python@v7
+              with:
+                  python-version: "3.12"
+            - name: Validate measurement harness
+              run: python -m unittest discover -s scripts/perf -p 'test_*.py' -v
+            - name: Install protoc
+              run: |
+                  sudo apt-get update -qq
+                  sudo apt-get install -y protobuf-compiler
+                  protoc --version
+            - name: Install Rust
+              uses: dtolnay/rust-toolchain@stable
+            - uses: Swatinem/rust-cache@v2
+            - name: Build real release API
+              run: cargo build --locked --release -p agileplus-api --bin agileplus-api
+            - name: Measure isolated loopback HTTP workload
+              run: |
+                  python scripts/perf/http_benchmark.py \
+                    --binary target/release/agileplus-api \
+                    --report-dir .perf-reports
+            - name: Upload measurements and API log
+              if: always()
+              uses: actions/upload-artifact@v7
+              with:
+                  name: perf-reports-${{ github.run_id }}
+                  path: .perf-reports/
+                  include-hidden-files: true
+                  if-no-files-found: error
 
-  perf-qe-gate:
-    name: perf-qe-gate (execution integrity)
-    needs: [perf-proc]
-    runs-on: ubuntu-24.04
-    if: always()
-    steps:
-      - name: Require complete real HTTP execution
-        env:
-          PERF_RESULT: ${{ needs.perf-proc.result }}
-        run: |
-          if [ "$PERF_RESULT" != "success" ]; then
-            echo "::error::Real HTTP measurement failed or did not complete."
-            exit 1
-          fi
-          echo "HTTP measurement completed; T118 latency targets remain warning-level."
+    perf-qe-gate:
+        name: perf-qe-gate (execution integrity)
+        needs: [perf-proc]
+        runs-on: ubuntu-24.04
+        if: always()
+        steps:
+            - name: Require complete real HTTP execution
+              env:
+                  PERF_RESULT: ${{ needs.perf-proc.result }}
+              run: |
+                  if [ "$PERF_RESULT" != "success" ]; then
+                    echo "::error::Real HTTP measurement failed or did not complete."
+                    exit 1
+                  fi
+                  echo "HTTP measurement completed; T118 latency targets remain warning-level."

@@ -18,12 +18,12 @@ failure or SIGTERM. API logs and complete request samples survive in the report 
 
 T118 targets come from `kitty-specs/003-agileplus-platform-completion/tasks/WP21-performance-benchmarks.md`:
 
-| Endpoint | p95 target | p99 target |
-|---|---:|---:|
-| List 100 features | <100 ms | <200 ms |
-| Feature detail | <50 ms | <100 ms |
-| Feature transition | <100 ms | <200 ms |
-| Health | <10 ms | <20 ms |
+| Endpoint           | p95 target | p99 target |
+| ------------------ | ---------: | ---------: |
+| List 100 features  |    <100 ms |    <200 ms |
+| Feature detail     |     <50 ms |    <100 ms |
+| Feature transition |    <100 ms |    <200 ms |
+| Health             |     <10 ms |     <20 ms |
 
 These are warning targets. Missing measurements, invalid responses, failed
 authentication checks or absent state changes fail the command. Percentiles use
