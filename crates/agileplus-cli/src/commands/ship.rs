@@ -51,8 +51,11 @@ where
 
     let plan = prepare_promotion(storage, vcs, slug, args.target.as_deref())
         .await
-        .map_err(anyhow::Error::new)
-        .context("preparing exact-candidate promotion")?;
+        // The CLI's top-level message must reveal the concrete rejection
+        // (missing feature, stale criterion receipt, branch drift, etc.).
+        // A generic context-only error makes a fail-closed decision impossible
+        // for a human operator to diagnose.
+        .map_err(|error| anyhow::anyhow!("preparing exact-candidate promotion: {error}"))?;
     let target_branch = plan.target_branch.clone();
 
     // Dry-run: just show the merge plan
