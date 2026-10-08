@@ -1,0 +1,54 @@
+# Import this site into the ONE host-level Caddy instance.
+# Private/operator alpha only: Tailscale ACL + HTTP Basic authentication.
+# DNS-01/custom-domain TLS is configured by the host Caddy, not this fragment.
+#
+# REQUIRED host-only environment (never checked into Vite/Vercel):
+# AGILEPLUS_OPERATOR_USERNAME
+# AGILEPLUS_OPERATOR_PASSWORD_HASH  (generate with caddy hash-password)
+# AGILEPLUS_API_KEY
+# AGILEPLUS_FRONTEND_UPSTREAM_HOST  (the *.vercel.app deployment hostname)
+#
+# Internal split DNS resolves agileplus.pheno.studio to the authorized
+# tailnet edge. Public DNS may still resolve the frontend to Vercel.
+# Crucially the Caddy upstream must be the *.vercel.app hostname, not
+# agileplus.pheno.studio, to avoid split-DNS proxy recursion.
+
+agileplus.pheno.studio {
+    encode zstd gzip
+
+    header {
+        Strict-Transport-Security "max-age=31536000"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        X-Frame-Options "DENY"
+        Permissions-Policy "geolocation=(), microphone=(), camera=()"
+        -Server
+    }
+
+    route {
+        basic_auth {
+            {$AGILEPLUS_OPERATOR_USERNAME} {$AGILEPLUS_OPERATOR_PASSWORD_HASH}
+        }
+
+        @backend path /api/*
+        handle @backend {
+            header Cache-Control "no-store"
+            reverse_proxy 127.0.0.1:3000 {
+                # The browser never sees the durable backend API key.
+                header_up X-API-Key {$AGILEPLUS_API_KEY}
+                # Do not forward the operator's Basic credential to the API.
+                header_up -Authorization
+            }
+        }
+
+        handle {
+            reverse_proxy https://{$AGILEPLUS_FRONTEND_UPSTREAM_HOST} {
+                header_up Host {$AGILEPLUS_FRONTEND_UPSTREAM_HOST}
+                # Do not forward private-edge credentials/cookies to Vercel.
+                header_up -Authorization
+                header_up -Cookie
+                header_down -Set-Cookie
+            }
+        }
+    }
+}
