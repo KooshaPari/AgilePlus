@@ -25,6 +25,16 @@ jobs:
       - uses: actions/checkout@v4
       - name: Validate resolved Compose and host Caddy boundary
         run: python3 scripts/verify-private-deploy.py
+      - name: Parse operator-alpha Caddy route with real Caddy
+        run: |
+          HASH="$(docker run --rm caddy:2.8-alpine caddy hash-password --plaintext smoke-only-password)"
+          docker run --rm \
+            -e AGILEPLUS_OPERATOR_USERNAME=smoke \
+            -e AGILEPLUS_OPERATOR_PASSWORD_HASH="$HASH" \
+            -e AGILEPLUS_API_KEY=smoke-test-only \
+            -e AGILEPLUS_FRONTEND_UPSTREAM_HOST=static-smoke.vercel.app \
+            -v "$PWD/deploy/selfhost/Caddy.operator-alpha.caddy:/etc/caddy/Caddyfile:ro" \
+            caddy:2.8-alpine caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
       - name: Verify SQLite WAL backup and offline restore behavior
         run: python3 -m unittest discover -s tests/ops -p 'test_agileplus_sqlite_backup.py' -v
       - name: Declare evidence boundary
