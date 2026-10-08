@@ -77,6 +77,7 @@ pub struct TempVcs {
     created: Mutex<Vec<PathBuf>>,
     cleaned: Mutex<Vec<PathBuf>>,
     pub missing_prompt: bool,
+    unresolved_candidate: bool,
 }
 
 impl TempVcs {
@@ -95,11 +96,17 @@ impl TempVcs {
             created: Mutex::new(vec![]),
             cleaned: Mutex::new(vec![]),
             missing_prompt: false,
+            unresolved_candidate: false,
         }
     }
 
     pub fn with_missing_prompt(mut self) -> Self {
         self.missing_prompt = true;
+        self
+    }
+
+    pub fn with_unresolved_candidate(mut self) -> Self {
+        self.unresolved_candidate = true;
         self
     }
 
@@ -176,6 +183,9 @@ impl VcsPort for TempVcs {
     }
 
     async fn list_worktrees(&self) -> Result<Vec<WorktreeInfo>, DomainError> {
+        if self.unresolved_candidate {
+            return Ok(Vec::new());
+        }
         // Approved Review needs a VCS-resolved exact Git candidate. The fake
         // previously returned an empty list, so it could only exercise the
         // unresolved-candidate failure path—not a legitimate success journey.
