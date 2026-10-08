@@ -1,0 +1,5 @@
+{
+  "extends": "./tsconfig.json",
+  "include": ["src/main.tsx", "src/OperatorDashboard.tsx", "src/operator-api.ts"],
+  "references": []
+}

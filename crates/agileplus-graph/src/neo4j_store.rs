@@ -21,7 +21,6 @@ mod inner {
     impl Neo4jGraphStore {
         pub async fn connect(uri: &str, user: &str, password: &str) -> Result<Self, GraphError> {
             let graph = Neo4jGraph::new(uri, user, password)
-                .await
                 .map_err(|e| GraphError::ConnectionError(e.to_string()))?;
             Ok(Self {
                 graph: Arc::new(graph),

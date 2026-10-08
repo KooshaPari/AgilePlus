@@ -14,7 +14,7 @@ use axum::{
     Json, Router,
     extract::{Path, State},
     http::StatusCode,
-    routing::post,
+    routing::{get, post},
 };
 use serde::Deserialize;
 use serde_json::{Value, json};
@@ -35,7 +35,49 @@ where
     V: VcsPort + Send + Sync + 'static,
     O: ObservabilityPort + Send + Sync + 'static,
 {
-    Router::new().route("/{slug}/accept", post(accept::<S, V, O>))
+    Router::new()
+        .route("/{slug}/accept", post(accept::<S, V, O>))
+        .route("/{slug}/acceptance-receipt", get(receipt::<S, V, O>))
+}
+
+/// Returns a historical committed receipt; does not assert current applicability.
+pub async fn receipt<S, V, O>(
+    State(state): State<AppState<S, V, O>>,
+    Path(slug): Path<String>,
+) -> Result<Json<agileplus_domain::domain::acceptance::FeatureAcceptanceReceipt>, HttpError>
+where
+    S: StoragePort + Send + Sync + 'static,
+    V: VcsPort + Send + Sync + 'static,
+    O: ObservabilityPort + Send + Sync + 'static,
+{
+    let port = state.atomic_acceptance.as_ref().ok_or_else(|| {
+        (
+            StatusCode::NOT_IMPLEMENTED,
+            Json(json!({"error":"atomic_acceptance_not_configured"})),
+        )
+    })?;
+    let feature = state
+        .storage
+        .get_feature_by_slug(&slug)
+        .await
+        .map_err(domain_error)?
+        .ok_or_else(|| {
+            (
+                StatusCode::NOT_FOUND,
+                Json(json!({"error":"feature_not_found"})),
+            )
+        })?;
+    let receipt = port
+        .get_feature_acceptance_receipt(feature.id)
+        .await
+        .map_err(domain_error)?
+        .ok_or_else(|| {
+            (
+                StatusCode::NOT_FOUND,
+                Json(json!({"error":"acceptance_receipt_not_found"})),
+            )
+        })?;
+    Ok(Json(receipt))
 }
 
 pub async fn accept<S, V, O>(

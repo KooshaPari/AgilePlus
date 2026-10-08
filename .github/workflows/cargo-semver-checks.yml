@@ -1,10 +1,32 @@
 name: cargo-semver-checks
 on:
-  pull_request: { paths: ['**/Cargo.toml'] }
-  workflow_dispatch:
+    pull_request:
+        paths:
+            [
+                "**/Cargo.toml",
+                "**/*.rs",
+                "Cargo.lock",
+                ".github/workflows/cargo-semver-checks.yml",
+            ]
+    workflow_dispatch:
+        inputs:
+            baseline:
+                description: Git revision to compare against
+                required: true
+                type: string
 jobs:
-  semver-checks:
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v7
-      - uses: obi1kenobi/cargo-semver-checks-action@v2
+    semver-checks:
+        runs-on: ubuntu-24.04
+        steps:
+            - uses: actions/checkout@v7
+              with:
+                  fetch-depth: 0
+            - name: Native Rust documentation prerequisites
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y protobuf-compiler libssl-dev libgtk-3-dev libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf
+            - uses: obi1kenobi/cargo-semver-checks-action@v2
+              with:
+                  # Unpublished packages have no crates.io baseline. Compare the exact
+                  # PR base, or an explicit revision for a manually requested check.
+                  baseline-rev: ${{ github.event.pull_request.base.sha || inputs.baseline }}

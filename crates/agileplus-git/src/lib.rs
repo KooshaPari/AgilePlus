@@ -39,6 +39,7 @@ pub mod conflict;
 pub mod materialize;
 pub mod merge;
 pub mod project_context;
+mod promotion;
 #[path = "lib/vcs_port_impl.rs"]
 mod vcs_port_impl;
 

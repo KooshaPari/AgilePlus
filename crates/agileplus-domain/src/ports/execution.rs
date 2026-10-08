@@ -62,6 +62,14 @@ pub trait ExecutionRecordPort: Send + Sync {
 /// transaction and commit state, audit, event, and idempotency receipt together.
 #[async_trait]
 pub trait AtomicAcceptancePort: Send + Sync {
+    /// Read the last committed historical decision, without regrading or mutation.
+    async fn get_feature_acceptance_receipt(
+        &self,
+        _feature_id: i64,
+    ) -> Result<Option<crate::domain::acceptance::FeatureAcceptanceReceipt>, DomainError> {
+        Err(DomainError::NotImplemented)
+    }
+
     async fn accept_feature_atomic(
         &self,
         _command: &crate::domain::acceptance::AcceptFeatureCommand,

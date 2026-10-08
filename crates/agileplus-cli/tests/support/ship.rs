@@ -84,6 +84,7 @@ pub struct RecordingVcs {
     branch_commit_override: Option<String>,
     /// `(source_branch, target_branch)` per merge attempt, in call order.
     pub merges: Mutex<Vec<(String, String)>>,
+    pub promotion_target: Mutex<String>,
     /// Worktree paths passed to a successful `cleanup_worktree`.
     pub cleaned: Mutex<Vec<PathBuf>>,
     /// `(slug, relative_path, content)` per successful `write_artifact`.
@@ -100,6 +101,7 @@ impl Default for RecordingVcs {
             write_artifact_fails: false,
             branch_commit_override: None,
             merges: Mutex::new(vec![]),
+            promotion_target: Mutex::new("base".into()),
             cleaned: Mutex::new(vec![]),
             artifacts: Mutex::new(vec![]),
         }
@@ -412,6 +414,17 @@ pub async fn seed(
     fstate: FeatureState,
     states: &[(i32, WpState)],
 ) -> i64 {
+    seed_with_candidate(storage, slug, fstate, states, None, true).await
+}
+
+pub async fn seed_with_candidate(
+    storage: &SqliteStorageAdapter,
+    slug: &str,
+    fstate: FeatureState,
+    states: &[(i32, WpState)],
+    candidate: Option<&str>,
+    record_receipt: bool,
+) -> i64 {
     let id = StoragePort::create_feature(storage, &feature(slug, fstate))
         .await
         .unwrap();
@@ -430,6 +443,15 @@ pub async fn seed(
             seed_accepted_execution(storage, id, wp_id, *seq, None).await;
         }
     }
+    if let Some(candidate) = candidate {
+        let connection = storage.conn_for_bench().unwrap();
+        connection.execute("UPDATE attempts SET result_candidate_ref=?1 WHERE assignment_id IN (SELECT id FROM assignments WHERE wp_id IN (SELECT id FROM work_packages WHERE feature_id=?2))",rusqlite::params![format!("git:{candidate}"),id]).unwrap();
+        connection.execute("UPDATE evaluations SET candidate_ref=?1 WHERE assignment_id IN (SELECT id FROM assignments WHERE wp_id IN (SELECT id FROM work_packages WHERE feature_id=?2))",rusqlite::params![format!("git:{candidate}"),id]).unwrap();
+    }
+    if record_receipt {
+        seed_receipt(storage, id).await;
+    }
+
     id
 }
 
@@ -456,5 +478,79 @@ pub async fn seed_with_worktree_wp(
         .await
         .unwrap();
     seed_accepted_execution(storage, id, wp_id, sequence, Some(worktree_path)).await;
+    seed_receipt(storage, id).await;
     (id, wp_id)
+}
+
+async fn seed_receipt(storage: &SqliteStorageAdapter, id: i64) {
+    use agileplus_domain::domain::acceptance::FeatureAcceptanceReceipt;
+    let mut candidates = Vec::new();
+    for wp in StoragePort::list_wps_by_feature(storage, id)
+        .await
+        .unwrap()
+        .into_iter()
+        .filter(|wp| wp.state == WpState::Done)
+    {
+        candidates.push(
+            agileplus_application::use_cases::acceptance::accepted_candidate_for_wp(storage, &wp)
+                .await
+                .unwrap(),
+        );
+    }
+    let receipt = FeatureAcceptanceReceipt {
+        request_id: format!("acceptance:{id}"),
+        feature_id: id,
+        actor: "test".into(),
+        governance_contract_id: 1,
+        governance_version: 1,
+        accepted_candidates: candidates,
+        audit_ids: vec![],
+        event_id: 1,
+        committed_at: chrono::Utc::now(),
+    };
+    storage.conn_for_bench().unwrap().execute("INSERT INTO feature_acceptance_receipts(request_id,feature_id,command_json,receipt_json,committed_at) VALUES (?1,?2,'{}',?3,?4)",rusqlite::params![receipt.request_id,id,serde_json::to_string(&receipt).unwrap(),receipt.committed_at.to_rfc3339()]).unwrap();
+}
+
+#[async_trait]
+impl agileplus_domain::ports::promotion::PromotionVcsPort for RecordingVcs {
+    async fn promotion_target(&self, _target: &str) -> Result<String, DomainError> {
+        Ok(self.promotion_target.lock().unwrap().clone())
+    }
+    async fn prepare_promotion_merge(
+        &self,
+        source: &str,
+        expected: &str,
+    ) -> Result<String, DomainError> {
+        match &self.merge_outcome {
+            MergeOutcome::Ok => Ok(format!("merge:{expected}:{source}")),
+            MergeOutcome::Error => Err(DomainError::NotFound(
+                "merging branch missing; fails closed".into(),
+            )),
+            MergeOutcome::Conflicts(paths) => Err(DomainError::Validation(format!(
+                "Merge conflict: {}",
+                paths.join(",")
+            ))),
+        }
+    }
+    async fn publish_promotion_merge(
+        &self,
+        target: &str,
+        expected: &str,
+        result: &str,
+    ) -> Result<(), DomainError> {
+        let mut head = self.promotion_target.lock().unwrap();
+        if *head == result {
+            return Ok(());
+        }
+        if *head != expected {
+            return Err(DomainError::Conflict("target drift".into()));
+        }
+        let source = result.rsplit(':').next().unwrap();
+        self.merges
+            .lock()
+            .unwrap()
+            .push((source.into(), target.into()));
+        *head = result.into();
+        Ok(())
+    }
 }

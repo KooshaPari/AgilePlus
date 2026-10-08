@@ -27,7 +27,7 @@ use agileplus_domain::{
 use agileplus_sqlite::SqliteStorageAdapter;
 use chrono::Utc;
 
-async fn seed(db: &SqliteStorageAdapter) -> i64 {
+pub(crate) async fn seed(db: &SqliteStorageAdapter) -> i64 {
     let mut feature = Feature::new("atomic", "Atomic acceptance", [7; 32], None);
     feature.state = FeatureState::Implementing;
     let feature_id = StoragePort::create_feature(db, &feature).await.unwrap();
@@ -131,7 +131,7 @@ async fn seed(db: &SqliteStorageAdapter) -> i64 {
 }
 
 const KEY: &str = "atomic-acceptance-fixture-only";
-struct Noop;
+pub(crate) struct Noop;
 impl ObservabilityPort for Noop {
     fn start_span(&self, _: &str, _: Option<&SpanContext>) -> SpanContext {
         SpanContext {
@@ -154,6 +154,10 @@ impl ObservabilityPort for Noop {
 async fn server(configured: bool) -> (TestServer, Arc<SqliteStorageAdapter>, i64) {
     let db = Arc::new(SqliteStorageAdapter::in_memory().unwrap());
     let id = seed(db.as_ref()).await;
+    (mounted_server(db.clone(), configured), db, id)
+}
+
+fn mounted_server(db: Arc<SqliteStorageAdapter>, configured: bool) -> TestServer {
     let credentials: Arc<dyn CredentialStore> = Arc::new(InMemoryCredentialStore::new());
     agileplus_api::api_key::import_api_key(credentials.as_ref(), KEY).unwrap();
     let mut state = AppState::new(
@@ -166,7 +170,7 @@ async fn server(configured: bool) -> (TestServer, Arc<SqliteStorageAdapter>, i64
     if configured {
         state = state.with_atomic_acceptance();
     }
-    (TestServer::new(create_router(state)), db, id)
+    TestServer::new(create_router(state))
 }
 fn request() -> Value {
     json!({"request_id":"http:request:1", "expected_governance_version":1})
@@ -176,6 +180,80 @@ fn count(db: &SqliteStorageAdapter, table: &str) -> i64 {
         .unwrap()
         .query_row(&format!("SELECT COUNT(*) FROM {table}"), [], |r| r.get(0))
         .unwrap()
+}
+
+#[tokio::test]
+async fn receipt_lookup_requires_auth_and_never_awards_acceptance() {
+    let (api, db, id) = server(true).await;
+    api.get("/api/v1/features/atomic/acceptance-receipt")
+        .await
+        .assert_status_unauthorized();
+    let missing = api
+        .get("/api/v1/features/atomic/acceptance-receipt")
+        .add_header("X-API-Key", KEY)
+        .await;
+    missing.assert_status(StatusCode::NOT_FOUND);
+    assert_eq!(
+        missing.json::<Value>()["error"],
+        "acceptance_receipt_not_found"
+    );
+    api.get("/api/v1/features/missing/acceptance-receipt")
+        .add_header("X-API-Key", KEY)
+        .await
+        .assert_status(StatusCode::NOT_FOUND);
+    assert_eq!(
+        StoragePort::get_feature_by_id(db.as_ref(), id)
+            .await
+            .unwrap()
+            .unwrap()
+            .state,
+        FeatureState::Implementing
+    );
+    for table in ["audit_log", "events", "feature_acceptance_receipts"] {
+        assert_eq!(count(&db, table), 0);
+    }
+}
+
+#[tokio::test]
+async fn mounted_receipt_survives_database_reopen_without_regrading() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("receipt.db");
+    let original = {
+        let db = Arc::new(SqliteStorageAdapter::new(&path).unwrap());
+        seed(db.as_ref()).await;
+        let api = mounted_server(db, true);
+        api.post("/api/v1/features/atomic/accept")
+            .add_header("X-API-Key", KEY)
+            .json(&request())
+            .await
+            .json::<Value>()["receipt"]
+            .clone()
+    };
+    let db = Arc::new(SqliteStorageAdapter::new(&path).unwrap());
+    let api = mounted_server(db.clone(), true);
+    let result = api
+        .get("/api/v1/features/atomic/acceptance-receipt")
+        .add_header("X-API-Key", KEY)
+        .await;
+    result.assert_status_ok();
+    assert_eq!(result.json::<Value>(), original);
+    assert_eq!(count(&db, "events"), 1);
+    assert_eq!(count(&db, "feature_acceptance_receipts"), 1);
+}
+
+#[tokio::test]
+async fn receipt_lookup_redacts_storage_failures() {
+    let (api, db, _) = server(true).await;
+    db.conn_for_bench()
+        .unwrap()
+        .execute_batch("DROP TABLE feature_acceptance_receipts")
+        .unwrap();
+    let result = api
+        .get("/api/v1/features/atomic/acceptance-receipt")
+        .add_header("X-API-Key", KEY)
+        .await;
+    result.assert_status(StatusCode::INTERNAL_SERVER_ERROR);
+    assert!(!result.json::<Value>().to_string().contains("no such table"));
 }
 
 #[tokio::test]

@@ -128,12 +128,6 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
       aria-busy={!error && done < total}
       aria-labelledby="splash-title"
       aria-describedby="splash-tagline"
-      onClick={() => {
-        if (done === total && onDismiss) {
-          setDismissed(true);
-          onDismiss();
-        }
-      }}
       className={cn(
         'fixed inset-0 z-50 flex flex-col items-center justify-center gap-8',
         'bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950',
@@ -206,6 +200,9 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
         </div>
       )}
 
+      {done === total && onDismiss && !error ? <button type="button"
+        className="rounded border border-slate-500 px-4 py-2 text-sm focus-visible:outline focus-visible:outline-2"
+        onClick={() => { setDismissed(true); onDismiss(); }}>Continue</button> : null}
       {/* Footer hint */}
       <p className="text-[10px] uppercase tracking-widest text-slate-600">
         Press Esc to dismiss
