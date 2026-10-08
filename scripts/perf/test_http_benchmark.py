@@ -2,10 +2,12 @@
 
 import http.server
 import importlib.util
+import io
 import json
 import tempfile
 import threading
 import unittest
+from contextlib import redirect_stdout
 from pathlib import Path
 from typing import ClassVar
 
@@ -117,7 +119,8 @@ class HarnessTests(unittest.TestCase):
             )
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            self.assertEqual(benchmark.run(root / "missing", root / "reports"), 1)
+            with redirect_stdout(io.StringIO()):
+                self.assertEqual(benchmark.run(root / "missing", root / "reports"), 1)
             report = json.loads((root / "reports/http-results.json").read_text())
             self.assertEqual(report["status"], "failed")
             self.assertEqual(report["distributions"], {})
@@ -136,7 +139,17 @@ class HarnessTests(unittest.TestCase):
                 + "FixtureHandler).serve_forever()\n"
             )
             executable.chmod(0o700)
-            self.assertEqual(benchmark.run(executable, root / "reports"), 0)
+            output = io.StringIO()
+            with redirect_stdout(output):
+                self.assertEqual(benchmark.run(executable, root / "reports"), 0)
+            metrics_line = next(
+                line
+                for line in output.getvalue().splitlines()
+                if line.startswith("HTTP_MEASUREMENTS ")
+            )
+            metrics = json.loads(metrics_line.removeprefix("HTTP_MEASUREMENTS "))
+            self.assertEqual(metrics["server_binary"], "fixture-api")
+            self.assertEqual(metrics["post_transition_verified"], 100)
             report = json.loads((root / "reports/http-results.json").read_text())
             self.assertEqual(report["status"], "completed")
             self.assertEqual(len(report["after_state_change"]), 100)

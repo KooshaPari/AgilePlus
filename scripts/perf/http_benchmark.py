@@ -337,6 +337,22 @@ def run(binary, directory):
         write_reports(directory, report)
     if report.get("error"):
         print(f"::error::{report['error']}")
+    print(
+        "HTTP_MEASUREMENTS "
+        + json.dumps(
+            {
+                "status": report["status"],
+                "server_binary": binary.name,
+                "source_commit": report["source_commit"],
+                "binary_sha256": report.get("binary_sha256"),
+                "run_id": os.environ.get("GITHUB_RUN_ID"),
+                "workload": report["workload"],
+                "post_transition_verified": len(report["after_state_change"]),
+                "distributions": report["distributions"],
+                "cleanup": report.get("cleanup"),
+            }
+        )
+    )
     for name, row in report["distributions"].items():
         if row["warnings"]:
             print(
