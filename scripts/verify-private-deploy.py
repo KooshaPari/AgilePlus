@@ -18,6 +18,7 @@ import tomllib
 ROOT = Path(__file__).resolve().parents[1]
 COMPOSE = ROOT / "deploy/selfhost/docker-compose.selfhost.yml"
 CADDY = ROOT / "deploy/selfhost/Caddyfile"
+OPERATOR_CADDY = ROOT / "deploy/selfhost/Caddy.operator-alpha.caddy"
 
 
 def require(condition: bool, message: str) -> None:
@@ -84,6 +85,30 @@ def main() -> int:
             "shared host Caddy must route to the loopback API port")
     require("api.agileplus.pheno.studio" in caddy,
             "Caddy fragment must use the owned product API hostname")
+
+    operator = OPERATOR_CADDY.read_text()
+    require("agileplus.pheno.studio {" in operator,
+            "operator-alpha route must use the owned product hostname")
+    require("basic_auth {" in operator and "route {" in operator,
+            "operator-alpha site must authenticate before routing")
+    require(operator.index("basic_auth {") < operator.index("handle @backend {"),
+            "operator auth must run before API proxy")
+    require("@backend path /api/*" in operator,
+            "operator-alpha API must keep the original /api path")
+    require("reverse_proxy 127.0.0.1:3000" in operator,
+            "operator-alpha API must reach only the loopback backend")
+    require("header_up X-API-Key {$AGILEPLUS_API_KEY}" in operator,
+            "operator-alpha gateway must inject the backend API key server-side")
+    require(operator.count("header_up -Authorization") >= 2,
+            "do not forward browser Basic credentials to API or frontend origin")
+    require("header_up -Cookie" in operator,
+            "private browser cookies must not reach the public frontend origin")
+    require("reverse_proxy https://{$AGILEPLUS_FRONTEND_UPSTREAM_HOST}" in operator,
+            "frontend upstream must use a distinct Vercel origin hostname")
+    require("AGILEPLUS_OPERATOR_PASSWORD_HASH" in operator,
+            "operator-alpha site must use a host-supplied password hash")
+    require("AGILEPLUS_FRONTEND_UPSTREAM_HOST" in operator,
+            "operator-alpha site needs an explicit non-recursive upstream")
 
     print("PASS: static private-deploy contract (NOT live-deployment evidence)")
     return 0
