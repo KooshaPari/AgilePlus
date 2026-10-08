@@ -9,9 +9,14 @@ use crate::routes::{
 use crate::state::AppState;
 use agileplus_domain::ports::vcs::VcsPort;
 use agileplus_domain::ports::{ContentStoragePort, ObservabilityPort, StoragePort};
-use axum::{Router, middleware, routing::get};
+use axum::{
+    http::{header, HeaderValue, Method},
+    middleware, routing::get, Router,
+};
 use std::{net::SocketAddr, sync::Arc};
-use tower_http::{cors::CorsLayer, services::ServeDir, trace::TraceLayer};
+use tower_http::{
+    cors::{AllowOrigin, CorsLayer}, services::ServeDir, trace::TraceLayer,
+};
 
 type BoxError = Box<dyn std::error::Error + Send + Sync>;
 
@@ -60,7 +65,7 @@ where
         .merge(protected)
         .nest_service("/static", ServeDir::new("templates/static"))
         .layer(TraceLayer::new_for_http())
-        .layer(CorsLayer::permissive())
+        .layer(configured_cors())
 }
 
 pub async fn start_api<S, V, O>(addr: SocketAddr, state: AppState<S, V, O>) -> Result<(), BoxError>
@@ -74,4 +79,84 @@ where
     tracing::info!(%addr, "HTTP API listening");
     axum::serve(listener, app).await?;
     Ok(())
+}
+
+/// Default deny for cross-origin browser access. Tailnet routing is not a
+/// substitute for browser authorization, and operator API credentials must
+/// never be exposed to arbitrary web origins.
+fn configured_cors() -> CorsLayer {
+    let configured = std::env::var("AGILEPLUS_ALLOWED_ORIGINS").ok();
+    let origins = parse_allowed_origins(configured.as_deref());
+    if origins.is_empty() {
+        return CorsLayer::new();
+    }
+    CorsLayer::new()
+        .allow_origin(AllowOrigin::list(origins))
+        .allow_methods([Method::GET, Method::POST, Method::PUT, Method::PATCH, Method::DELETE])
+        .allow_headers([
+            header::AUTHORIZATION,
+            header::CONTENT_TYPE,
+            header::HeaderName::from_static("x-api-key"),
+            header::HeaderName::from_static("x-request-id"),
+        ])
+}
+
+fn parse_allowed_origins(configured: Option<&str>) -> Vec<HeaderValue> {
+    configured
+        .unwrap_or_default()
+        .split(',')
+        .filter_map(|candidate| {
+            let candidate = candidate.trim();
+            // Origin is scheme + authority, not a full URL. Only explicit
+            // HTTPS origins or local HTTP development origins are supported.
+            let scheme_ok = candidate.starts_with("https://")
+                || candidate.starts_with("http://localhost:")
+                || candidate.starts_with("http://127.0.0.1:");
+            let authority = candidate
+                .split_once("://")
+                .map(|(_, authority)| authority)
+                .unwrap_or_default();
+            if !scheme_ok
+                || authority.is_empty()
+                || authority.contains(['/', '?', '#', '@', ' '])
+                || candidate == "*"
+                || candidate == "null"
+            {
+                if !candidate.is_empty() {
+                    tracing::warn!(origin = %candidate, "ignoring invalid AgilePlus CORS origin");
+                }
+                return None;
+            }
+            HeaderValue::from_str(candidate).ok()
+        })
+        .collect()
+}
+
+#[cfg(test)]
+mod cors_policy_tests {
+    use super::*;
+
+    #[test]
+    fn cross_origin_is_disabled_without_explicit_configuration() {
+        assert!(parse_allowed_origins(None).is_empty());
+        assert!(parse_allowed_origins(Some("")).is_empty());
+    }
+
+    #[test]
+    fn wildcard_http_remote_and_path_bearing_origins_are_rejected() {
+        let origins = parse_allowed_origins(Some(
+            "*,null,http://public.example,https://dashboard.example/path,https://bad.example?x=1",
+        ));
+        assert!(origins.is_empty());
+    }
+
+    #[test]
+    fn explicit_https_and_local_development_origins_are_accepted() {
+        let origins = parse_allowed_origins(Some(
+            "https://agileplus.pheno.studio, http://localhost:5173",
+        ));
+        assert_eq!(origins.len(), 2);
+        assert_eq!(origins[0], "https://agileplus.pheno.studio");
+        assert_eq!(origins[1], "http://localhost:5173");
+    }
 }
