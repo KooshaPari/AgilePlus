@@ -6,7 +6,7 @@ metadata:
   description: Specification authoring, traceability, work packages, and project governance.
   annotations:
     github.com/project-slug: KooshaPari/AgilePlus
-    backstage.io/source-location: url:https://github.com/KooshaPari/AgilePlus
+    backstage.io/source-location: url:https://github.com/KooshaPari/AgilePlus/
   tags:
     - rust
     - phenotype-pilot
