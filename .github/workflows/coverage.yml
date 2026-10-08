@@ -108,8 +108,11 @@ jobs:
                   # switches tests to its isolated instrumentation target.
                   cargo build --locked -p agileplus-cli --bin agileplus
                   cargo llvm-cov --workspace --all-features --lcov --output-path .coverage/rust-lcov.info
-                  # Ratchet: increase this floor as coverage improves. Current baseline ~15%.
-                  cargo llvm-cov report --fail-under-lines 20
+                  # Floor matches the gate name (`coverage-gate (>=85% lines)`). Observed
+                  # line coverage at 88dc4cd2 was 94.09% (81070/86163 lines, 390 files);
+                  # see ci_rollup_resp.json / rust-coverage-lcov artifact. 85 leaves ~9
+                  # points of headroom; raise as coverage stabilizes above 95.
+                  cargo llvm-cov report --fail-under-lines 85
 
             - name: Upload coverage artifact
               uses: actions/upload-artifact@v7
