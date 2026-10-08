@@ -166,7 +166,7 @@ async fn server(configured: bool) -> (TestServer, Arc<SqliteStorageAdapter>, i64
     if configured {
         state = state.with_atomic_acceptance();
     }
-    (TestServer::new(create_router(state)).unwrap(), db, id)
+    (TestServer::new(create_router(state)), db, id)
 }
 fn request() -> Value {
     json!({"request_id":"http:request:1", "expected_governance_version":1})
