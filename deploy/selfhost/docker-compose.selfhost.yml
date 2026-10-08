@@ -10,6 +10,7 @@ services:
       API_HOST: 0.0.0.0
       DATABASE_URL: sqlite:/data/agileplus.db
       AGILEPLUS_API_KEY: ${AGILEPLUS_API_KEY:?AGILEPLUS_API_KEY is required}
+      AGILEPLUS_ALLOWED_ORIGINS: ${AGILEPLUS_ALLOWED_ORIGINS:-}
       RUST_LOG: info
     volumes:
       - ../..:/workspace
