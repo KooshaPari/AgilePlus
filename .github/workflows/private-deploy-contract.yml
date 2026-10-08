@@ -6,6 +6,8 @@ on:
       - "Cargo.toml"
       - "deploy/selfhost/**"
       - "scripts/verify-private-deploy.py"
+      - "scripts/backup-agileplus-sqlite.py"
+      - "tests/ops/test_agileplus_sqlite_backup.py"
       - ".github/workflows/private-deploy-contract.yml"
   pull_request:
     paths:
@@ -23,5 +25,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Validate resolved Compose and host Caddy boundary
         run: python3 scripts/verify-private-deploy.py
+      - name: Verify SQLite WAL backup and offline restore behavior
+        run: python3 -m unittest discover -s tests/ops -p 'test_agileplus_sqlite_backup.py' -v
       - name: Declare evidence boundary
         run: echo "Static deploy configuration validated; NO live DNS/TLS/tailnet/browser claim."
