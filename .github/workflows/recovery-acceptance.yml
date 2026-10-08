@@ -55,6 +55,9 @@ jobs:
       - name: Mounted HTTP acceptance
         if: ${{ !cancelled() && steps.toolchain.outcome == 'success' }}
         run: cargo test --locked -p agileplus-api --test atomic_acceptance_http -- --nocapture
+      - name: API browser-origin policy
+        if: ${{ !cancelled() && steps.toolchain.outcome == 'success' }}
+        run: cargo test --locked -p agileplus-api --lib router::compose::cors_policy_tests -- --nocapture
       - name: Authenticated gRPC acceptance
         if: ${{ !cancelled() && steps.toolchain.outcome == 'success' }}
         run: cargo test --locked -p agileplus-grpc --test atomic_acceptance_rpc -- --nocapture
