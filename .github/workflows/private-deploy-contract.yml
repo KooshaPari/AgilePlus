@@ -1,0 +1,27 @@
+name: Private Desktop Deploy Contract
+on:
+  push:
+    branches: [spec/mature-product-contract-v2]
+    paths:
+      - "Cargo.toml"
+      - "deploy/selfhost/**"
+      - "scripts/verify-private-deploy.py"
+      - ".github/workflows/private-deploy-contract.yml"
+  pull_request:
+    paths:
+      - "Cargo.toml"
+      - "deploy/selfhost/**"
+      - "scripts/verify-private-deploy.py"
+      - ".github/workflows/private-deploy-contract.yml"
+permissions:
+  contents: read
+jobs:
+  static-deploy-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate resolved Compose and host Caddy boundary
+        run: python3 scripts/verify-private-deploy.py
+      - name: Declare evidence boundary
+        run: echo "Static deploy configuration validated; NO live DNS/TLS/tailnet/browser claim."
