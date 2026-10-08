@@ -118,7 +118,7 @@ fn parse_allowed_origins(configured: Option<&str>) -> Vec<HeaderValue> {
                 .unwrap_or_default();
             if !scheme_ok
                 || authority.is_empty()
-                || authority.contains(['/', '?', '#', '@', ' '])
+                || authority.chars().any(|ch| matches!(ch, '/' | '?' | '#' | '@' | ' '))
                 || candidate == "*"
                 || candidate == "null"
             {
