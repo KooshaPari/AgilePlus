@@ -35,3 +35,28 @@ The source candidate is reviewable; the remotely usable operator release remains
 ## Remaining release checks
 
 Cargo Deny licenses, bans and sources passed; advisories and OSV remain blocking on the Linux desktop GTK/GLib/Unicode chain. Cargo audit, secret scans, workspace audit, Python security and fuzz CI passed on the tested commit. Registry-based semver checks cannot find the unpublished agileplus-agent-dispatch baseline; CLI publish dry-run cannot resolve unpublished agileplus-application. These are release preparation blockers, not waived checks. The release workflow was regenerated with cargo-dist 0.33.0; its generation check passes. The newer faster-hex finding is fixed by locking 0.10.1. Accessibility path and Prettier errors found by CI are corrected in the follow-up; their rerun must be observed before claiming those CI gates passed.
+
+## Latest candidate and access continuation
+
+At `273c61b92fc3622ac8ad308f60d95ae6276d6557`, Recovery Acceptance,
+Operator browser acceptance, accessibility, AgilePlus E2E, private deployment
+contract, release generation, workspace audit, fuzz, secret scans and cargo audit
+all passed CI. Security advisories and registry publication remain blocked.
+Trunk failed solely because Prettier attempted to reformat the cargo-dist-owned
+release workflow; the follow-up keeps that file under its existing generator
+check. Semver CI is changed to compare the actual PR Git base instead of looking
+for unpublished crates in crates.io; its execution remains pending.
+
+The user authorized cloud-browser fallback and identified `kooshapari-desk` as
+the Windows deployment host, and requested both binaries and crates.io libraries.
+Browser tab metadata shows the AgilePlus Vercel project, but attaching to it
+continues to time out before inspection or a secure authentication handoff.
+This workspace has no established tailnet/SSH route to the host; account and
+SSH-service details are still needed. No production changes are claimed.
+
+`scripts/release-plan.py` produces a dependency-ordered, plan-only release list
+for the CLI/API and their required libraries from Cargo metadata. It rejects
+cycles, prohibited publication, unversioned workspace dependencies and external
+path/Git dependencies needing registry reconciliation. It does not publish or
+claim registry ownership, package verification or security clearance. Existing
+publish dry-run remains enforced until dependencies are actually available.
