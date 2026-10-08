@@ -174,7 +174,6 @@ async fn run_test<S: StoragePort>(args: RunTestArgs, storage: &S) -> Result<()> 
         })?;
     if !wp.acceptance_criteria.lines().any(|line| {
         line.trim_start_matches([' ', '-'])
-            .trim_start()
             .split_whitespace()
             .next()
             == Some(args.fr.as_str())
@@ -278,7 +277,6 @@ async fn run_attach<S: StoragePort>(
         && args.fr != "FR-REVIEW"
         && !wp.acceptance_criteria.lines().any(|line| {
             line.trim_start_matches([' ', '-'])
-                .trim_start()
                 .split_whitespace()
                 .next()
                 == Some(args.fr.as_str())

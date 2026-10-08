@@ -359,6 +359,7 @@ fn parse_functional_requirements(spec: &str) -> Vec<FunctionalRequirement> {
     let definition =
         regex::Regex::new(r"^\s*(?:[-*]\s+)?(?:\*\*)?(FR-[0-9]+)(?:\*\*)?\s*:\s*(.+)$")
             .expect("valid FR definition pattern");
+    let dependency_ids = regex::Regex::new(r"FR-[0-9]+").expect("valid FR pattern");
     let mut seen = std::collections::HashSet::new();
     for line in spec.lines() {
         // A scenario can mention an FR before its definition. Only definition
@@ -377,8 +378,8 @@ fn parse_functional_requirements(spec: &str) -> Vec<FunctionalRequirement> {
                     .find("depends on")
                     .map(|offset| {
                         let clause = &description[offset + "depends on".len()..];
-                        let re = regex::Regex::new(r"FR-[0-9]+").expect("valid FR pattern");
-                        re.find_iter(clause)
+                        dependency_ids
+                            .find_iter(clause)
                             .map(|m| m.as_str().to_string())
                             .collect()
                     })
@@ -397,7 +398,6 @@ fn parse_functional_requirements(spec: &str) -> Vec<FunctionalRequirement> {
 fn wp_has_fr(wp: &WorkPackage, fr_id: &str) -> bool {
     wp.acceptance_criteria.lines().any(|line| {
         line.trim_start_matches([' ', '-'])
-            .trim_start()
             .split_whitespace()
             .next()
             == Some(fr_id)
@@ -680,7 +680,6 @@ fn build_governance_contract(feature_id: i64, wps: &[WorkPackage]) -> Governance
         for line in wp.acceptance_criteria.lines() {
             if let Some(fr) = line
                 .trim_start_matches([' ', '-'])
-                .trim_start()
                 .split_whitespace()
                 .next()
                 && fr.starts_with("FR-")
