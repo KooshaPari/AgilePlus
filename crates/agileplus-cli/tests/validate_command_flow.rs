@@ -369,7 +369,7 @@ fn validate_rejects_governance_green_without_exact_candidate_acceptance() {
             .await
             .expect_err("governance evidence alone must not validate");
         assert!(
-            err.to_string().contains("exact-candidate work acceptance"),
+            err.to_string().contains("WP01 has no active Assignment"),
             "unexpected error: {err}"
         );
         let feature = StoragePort::get_feature_by_id(&storage, id)
@@ -606,7 +606,7 @@ fn validate_is_atomic_across_work_packages_when_one_lacks_acceptance() {
             .await
             .expect_err("one accepted WP must not validate the feature");
         assert!(
-            err.to_string().contains("exact-candidate work acceptance"),
+            err.to_string().contains("WP02 has no active Assignment"),
             "unexpected error: {err}"
         );
 

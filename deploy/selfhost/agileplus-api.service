@@ -1,0 +1,30 @@
+[Unit]
+Description=AgilePlus private desktop API
+After=network.target
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=agileplus
+Group=agileplus
+# GitVcsAdapter requires an actual repository as its working directory.
+WorkingDirectory=/srv/agileplus/repository
+EnvironmentFile=/etc/agileplus/api.env
+Environment=API_HOST=127.0.0.1
+Environment=DATABASE_URL=sqlite:/var/lib/agileplus/agileplus.db
+ExecStart=/opt/agileplus/bin/agileplus-api
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+UMask=0077
+StateDirectory=agileplus
+StateDirectoryMode=0700
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/srv/agileplus/repository
+
+[Install]
+WantedBy=multi-user.target

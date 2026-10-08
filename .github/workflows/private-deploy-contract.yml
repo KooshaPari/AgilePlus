@@ -8,12 +8,15 @@ on:
       - "scripts/verify-private-deploy.py"
       - "scripts/backup-agileplus-sqlite.py"
       - "tests/ops/test_agileplus_sqlite_backup.py"
+      - "tests/ops/test_operator_gateway.py"
       - ".github/workflows/private-deploy-contract.yml"
   pull_request:
     paths:
       - "Cargo.toml"
       - "deploy/selfhost/**"
       - "scripts/verify-private-deploy.py"
+      - "scripts/backup-agileplus-sqlite.py"
+      - "tests/ops/**"
       - ".github/workflows/private-deploy-contract.yml"
 permissions:
   contents: read
@@ -37,5 +40,12 @@ jobs:
             caddy:2.8-alpine caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
       - name: Verify SQLite WAL backup and offline restore behavior
         run: python3 -m unittest discover -s tests/ops -p 'test_agileplus_sqlite_backup.py' -v
+      - name: Exercise real operator gateway authentication and CSRF boundary
+        run: |
+          CONTAINER_ID="$(docker create caddy:2.8-alpine)"
+          trap 'docker rm "$CONTAINER_ID"' EXIT
+          docker cp "$CONTAINER_ID:/usr/bin/caddy" /tmp/agileplus-caddy
+          chmod +x /tmp/agileplus-caddy
+          CADDY_BIN=/tmp/agileplus-caddy python3 -m unittest discover -s tests/ops -p 'test_operator_gateway.py' -v
       - name: Declare evidence boundary
         run: echo "Static deploy configuration validated; NO live DNS/TLS/tailnet/browser claim."

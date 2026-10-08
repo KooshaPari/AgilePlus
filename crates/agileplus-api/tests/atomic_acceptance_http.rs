@@ -236,6 +236,42 @@ async fn unauthorized_http_cannot_reach_acceptance() {
 }
 
 #[tokio::test]
+async fn missing_feature_returns_404_without_acceptance_side_effects() {
+    let (api, db, _) = server(true).await;
+    api.post("/api/v1/features/missing/accept")
+        .add_header("X-API-Key", KEY)
+        .json(&request())
+        .await
+        .assert_status(StatusCode::NOT_FOUND);
+    for table in ["audit_log", "events", "feature_acceptance_receipts"] {
+        assert_eq!(count(&db, table), 0);
+    }
+}
+
+#[tokio::test]
+async fn stale_governance_expectation_cannot_accept_over_http() {
+    let (api, db, id) = server(true).await;
+    let mut payload = request();
+    payload["expected_governance_version"] = json!(0);
+    api.post("/api/v1/features/atomic/accept")
+        .add_header("X-API-Key", KEY)
+        .json(&payload)
+        .await
+        .assert_status(StatusCode::CONFLICT);
+    assert_eq!(
+        StoragePort::get_feature_by_id(db.as_ref(), id)
+            .await
+            .unwrap()
+            .unwrap()
+            .state,
+        FeatureState::Implementing
+    );
+    for table in ["audit_log", "events", "feature_acceptance_receipts"] {
+        assert_eq!(count(&db, table), 0);
+    }
+}
+
+#[tokio::test]
 async fn client_cannot_supply_a_pass_or_actor_override() {
     let (api, db, _) = server(true).await;
     for extra in [

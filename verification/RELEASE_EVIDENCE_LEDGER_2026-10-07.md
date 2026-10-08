@@ -114,6 +114,43 @@ SaaS is outside this operator-alpha gate.
 
 ## Reporting rule
 
+## Work-mode continuation (2026-10-07, local execution)
+
+Inspected source base: `38e6e8c48e44f4cec5a1f617219755c259681250`.
+Recovery branch subsequently advanced to `4e9f454babcf602540bb10d37ac17d6a73b368fd`
+with an evidence-only update; that update is preserved by this continuation.
+
+- SQLite atomic acceptance: 10/10 executed and passed on Rust 1.99 stable,
+  also 10/10 on the repository-pinned nightly.
+- Application library: 165/165 executed and passed on stable.
+- SQLite backup/restore witnesses: 3/3 executed and passed.
+- Operator gateway: 4/4 executed and passed through real local Caddy 2.11.7
+  with disposable loopback upstreams. Includes twenty blocked mutations across
+  absent, null, foreign, suffix-spoofed and alternate-port origins; authorized
+  same-origin mutations; 401 rejection; and upstream credential stripping.
+- Operator gateway now rejects unsafe API requests without the exact owned
+  product Origin. It strips browser-supplied API keys from frontend requests.
+- Native Linux systemd template added. Its syntax was checked with a disposable
+  executable substitution; actual service startup, account permissions and
+  reboot recovery still require the target host.
+- Additional mounted HTTP witnesses cover missing Feature and stale expected
+  governance. Their execution results must be recorded after the native suite
+  finishes; source existence alone does not close those gates.
+- Recovery acceptance CI now also runs on PRs targeting the recovery branch.
+
+**Confirmed dashboard blocker:** `web/index.html` loads `src/main.tsx`, whose
+requests use `/api/dashboard/work-packages.json` and
+`/api/dashboard/epics-stories.json`. The canonical Rust router exposes
+`/api/v1/...` and does not mount those dashboard endpoints. Separately,
+`src/App.tsx` substitutes seed data on API errors/empty results. Resolve the
+active entrypoint and canonical API mapping, then demonstrate live data and
+visible offline/error states before claiming R1. Proxy configuration alone
+does not repair the dashboard contract.
+
+Promotion saga, live desktop access, tailnet/DNS/TLS configuration, Vercel
+origin authorization, deployed browser acceptance and reboot/restore drills
+remain open. No live infrastructure configuration was performed here.
+
 Every future status report must state the exact branch SHA, CI run, deployed
 environment, which journeys were *executed*, and time-to-next-release. Never
 count a static design, a URL, or a mock response as a usable release.
