@@ -39,11 +39,18 @@ pub async fn spawn_codex(
             .spawn()
             .map_err(|e| DomainError::ProcessError(format!("failed to spawn codex: {e}")))?;
 
-        if let Some(mut stdin) = child.stdin.take() {
-            stdin
-                .write_all(prompt.as_bytes())
-                .await
-                .map_err(|e| DomainError::ProcessError(format!("stdin write failed: {e}")))?;
+        // A child that gives up before draining stdin (e.g. Codex bailing
+        // out on a missing credential) closes its end of the pipe, so the
+        // write can fail with `BrokenPipe`. That is not an infrastructure
+        // error: the child's exit status and stderr are the contract, so
+        // continue and let `wait_with_output` report them.
+        if let Some(mut stdin) = child.stdin.take()
+            && let Err(e) = stdin.write_all(prompt.as_bytes()).await
+            && e.kind() != std::io::ErrorKind::BrokenPipe
+        {
+            return Err(DomainError::ProcessError(format!(
+                "stdin write failed: {e}"
+            )));
         }
 
         let output = child

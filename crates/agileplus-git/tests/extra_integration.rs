@@ -17,7 +17,11 @@ use tempfile::TempDir;
 
 fn setup_test_repo() -> (TempDir, GitVcsAdapter) {
     let dir = tempfile::tempdir().expect("tempdir");
-    let repo = Repository::init(dir.path()).expect("git init");
+    // Pin the initial branch: `Repository::init` honours the ambient
+    // `init.defaultBranch`, which CI runners leave unset (`master`).
+    let mut opts = git2::RepositoryInitOptions::new();
+    opts.initial_head("main");
+    let repo = Repository::init_opts(dir.path(), &opts).expect("git init");
     let mut config = repo.config().unwrap();
     config.set_str("user.name", "Test User").unwrap();
     config.set_str("user.email", "test@test.com").unwrap();

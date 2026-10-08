@@ -32,12 +32,17 @@ pub async fn spawn_claude_code(
             .spawn()
             .map_err(|e| DomainError::ProcessError(format!("failed to spawn claude: {e}")))?;
 
-        // Feed prompt via stdin.
-        if let Some(mut stdin) = child.stdin.take() {
-            stdin
-                .write_all(prompt.as_bytes())
-                .await
-                .map_err(|e| DomainError::ProcessError(format!("stdin write failed: {e}")))?;
+        // Feed prompt via stdin. A child that exits without reading stdin
+        // closes the pipe and the write can fail with `BrokenPipe`; that is
+        // still a reportable agent result, not a process error, so fall
+        // through to `wait_with_output`.
+        if let Some(mut stdin) = child.stdin.take()
+            && let Err(e) = stdin.write_all(prompt.as_bytes()).await
+            && e.kind() != std::io::ErrorKind::BrokenPipe
+        {
+            return Err(DomainError::ProcessError(format!(
+                "stdin write failed: {e}"
+            )));
         }
 
         let output = child
