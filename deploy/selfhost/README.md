@@ -81,6 +81,61 @@ validation is not a safe assumption. Use DNS-01 with a Caddy build that has
 the Cloudflare DNS plugin, or provision a trusted certificate separately.
 A stock Caddy binary does not automatically include every DNS provider module.
 
+## Optional single-origin private operator alpha
+
+The fastest **browser-accessible private alpha** can use one extra site fragment
+in the **same shared host-level Caddy process**:
+
+`deploy/selfhost/Caddy.operator-alpha.caddy`
+
+```text
+authorized tailnet browser
+  -> https://agileplus.pheno.studio (private split-DNS answer)
+  -> shared Caddy: HTTP Basic operator authentication
+  -> /api/*: local AgilePlus API with host-injected X-API-Key
+  -> other paths: Vercel static frontend via its distinct *.vercel.app origin
+```
+
+This avoids a second per-project proxy, exposes no backend key in JavaScript,
+and avoids assuming Vercel cloud functions are on the tailnet. Keep the public
+Cloudflare DNS entry for `agileplus.pheno.studio` pointing to Vercel if desired;
+the **authorized tailnet's private DNS** should override that exact hostname
+to the internal edge. Do not point the Caddy frontend upstream at the same
+product hostname or it may recurse through split DNS.
+
+The host Caddy needs these **host-only** values:
+
+- `AGILEPLUS_OPERATOR_USERNAME`
+- `AGILEPLUS_OPERATOR_PASSWORD_HASH` (generated with `caddy hash-password`)
+- `AGILEPLUS_API_KEY` (same protected API key used by the backend)
+- `AGILEPLUS_FRONTEND_UPSTREAM_HOST` (actual Vercel deployment hostname,
+  without `https://`, never the custom product hostname)
+
+Generate a strong secret and hash it using the installed Caddy binary; do not
+check either plaintext or hash into source. The host must have TLS certificates
+for the owned product domain, typically via Cloudflare DNS-01, and must bind
+or firewall this vhost to authorized tailnet access. A private DNS name by
+itself is **not** an access-control mechanism.
+
+Before marking operator alpha usable:
+
+1. validate Caddy with the actual host-only environment set;
+2. unauthenticated browser request receives 401;
+3. authenticated browser loads the real Vercel frontend via the shared Caddy;
+4. same-origin `/api/v1/features` reaches desktop SQLite, not a stub;
+5. acceptance returns a real immutable receipt and survives refresh/restart;
+6. backend key and Basic credential are absent from browser assets and upstream
+   frontend requests;
+7. a non-tailnet device cannot reach the private edge;
+8. test CSRF/origin protections on all mutating browser actions.
+
+**Security limit:** Basic authentication plus a shared backend operator
+credential is acceptable only for a tightly controlled single-operator alpha.
+It is not per-user authorization or a production SaaS session model. A
+compromised frontend script could still act with that operator's authority.
+Do not expand access to external collaborators/public users without a
+first-class identity and authorization layer and tested CSRF protections.
+
 ## Browser-origin boundary
 
 The Rust HTTP API disables cross-origin browser access by default. For a
