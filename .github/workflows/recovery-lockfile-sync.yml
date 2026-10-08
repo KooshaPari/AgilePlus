@@ -20,8 +20,8 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - name: Synchronize dependency graph without upgrading unrelated crates deliberately
         run: |
-          cargo metadata --format-version 1 --no-deps > /dev/null
-          cargo metadata --locked --format-version 1 --no-deps > /dev/null
+          cargo metadata --format-version 1 > /dev/null
+          cargo tree --locked -p agileplus-sqlite --depth 1 > /dev/null
           git diff --check
           git status --short Cargo.lock
       - name: Commit only Cargo.lock if changed
