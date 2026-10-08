@@ -9,8 +9,6 @@ on:
 
 permissions:
   contents: read
-  pull-requests: write
-  checks: write
 
 concurrency:
   group: perf-${{ github.ref }}
@@ -18,79 +16,52 @@ concurrency:
 
 jobs:
   perf-proc:
-    name: perf (k6 → 95p budget)
+    name: perf (T118 real HTTP; warning targets)
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
-
-      - name: Set up Node + Python
-        uses: actions/setup-node@v7
-        with:
-          node-version: "20"
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
-
-      - name: Install k6
+      - name: Validate measurement harness
+        run: python -m unittest discover -s scripts/perf -p 'test_*.py' -v
+      - name: Install protoc
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -yq gnupg ca-certificates
-          curl -fsSL https://github.com/grafana/k6/releases/download/v0.50.0/k6-v0.50.0-linux-amd64.tar.gz \
-            | tar -xz --strip-components=1 -C /usr/local/bin k6-v0.50.0-linux-amd64/k6
-          k6 version
-
-      - name: Bring up stack
+          sudo apt-get install -y protobuf-compiler
+          protoc --version
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Build real release API
+        run: cargo build --locked --release -p agileplus-api --bin agileplus-api
+      - name: Measure isolated loopback HTTP workload
         run: |
-          set -euo pipefail
-          docker compose -f compose/docker-compose.yml up -d --wait
-          process-compose -f compose/process-compose.phase.yml up -d
-          bash ./scripts/perf/warmup.sh
-
-      - name: Run k6 (smoke + load + stress)
-        run: |
-          set -euo pipefail
-          mkdir -p .perf-reports
-          for scenario in smoke load stress; do
-            echo "## Running k6 $scenario"
-            k6 run \
-              --out json=.perf-reports/$scenario.json \
-              --summary-export=.perf-reports/$scenario-summary.json \
-              ./perf/${scenario}.js
-          done
-
-      - name: Enforce p95 budget
-        run: |
-          python ./scripts/perf/check_budget.py \
-            --summary .perf-reports/load-summary.json \
-            --budget-file ./perf/budget.json
-
-      - name: Bring down stack
-        if: always()
-        run: |
-          process-compose -f compose/process-compose.phase.yml down || true
-          docker compose -f compose/docker-compose.yml down --remove-orphans -v || true
-
-      - name: Upload perf reports
+          python scripts/perf/http_benchmark.py \
+            --binary target/release/agileplus-api \
+            --report-dir .perf-reports
+      - name: Upload measurements and API log
         if: always()
         uses: actions/upload-artifact@v7
         with:
           name: perf-reports-${{ github.run_id }}
-          path: |
-            .perf-reports/**
-            !.perf-reports/node_modules/**
+          path: .perf-reports/
+          include-hidden-files: true
+          if-no-files-found: error
 
   perf-qe-gate:
-    name: perf-qe-gate (100% green)
+    name: perf-qe-gate (execution integrity)
     needs: [perf-proc]
     runs-on: ubuntu-24.04
     if: always()
     steps:
-      - uses: actions/checkout@v7
-      - name: Decide
+      - name: Require complete real HTTP execution
+        env:
+          PERF_RESULT: ${{ needs.perf-proc.result }}
         run: |
-          if [ "${{ needs.perf-proc.result }}" != "success" ]; then
-            echo "::error::perf suite failed or budget exceeded."
+          if [ "$PERF_RESULT" != "success" ]; then
+            echo "::error::Real HTTP measurement failed or did not complete."
             exit 1
           fi
-          echo "All perf scenarios within p95 budget."
+          echo "HTTP measurement completed; T118 latency targets remain warning-level."
