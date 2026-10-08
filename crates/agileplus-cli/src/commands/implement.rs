@@ -45,6 +45,10 @@ pub struct ImplementArgs {
     /// Resume from last checkpoint (re-attach to in-progress WPs).
     #[arg(long)]
     pub resume: bool,
+
+    /// Start a user-managed implementation without dispatching agents or creating PRs.
+    #[arg(long)]
+    pub manual: bool,
 }
 
 /// Run the `implement` command.
@@ -61,6 +65,9 @@ where
 {
     let start = std::time::Instant::now();
     let slug = &args.feature;
+    if args.manual && (args.wp.is_some() || args.resume) {
+        anyhow::bail!("--manual starts a feature; --wp and --resume cannot be combined with it");
+    }
 
     // Look up feature
     let feature = storage
@@ -85,6 +92,18 @@ where
                 feature.state
             );
         }
+    }
+
+    let all_wps = storage
+        .list_wps_by_feature(feature.id)
+        .await
+        .context("loading work packages")?;
+    if all_wps.is_empty() {
+        anyhow::bail!(
+            "No work packages found for feature '{}'. Run `agileplus plan --feature {}` first.",
+            slug,
+            slug
+        );
     }
 
     // Transition to Implementing if not already
@@ -116,18 +135,11 @@ where
         println!("Feature '{slug}' transitioned to Implementing.");
     }
 
-    // Load all WPs for this feature
-    let all_wps = storage
-        .list_wps_by_feature(feature.id)
-        .await
-        .context("loading work packages")?;
-
-    if all_wps.is_empty() {
-        anyhow::bail!(
-            "No work packages found for feature '{}'. Run `agileplus plan --feature {}` first.",
-            slug,
-            slug
+    if args.manual {
+        println!(
+            "Manual implementation ready for '{slug}'. Attach results with `agileplus evidence attach` before validation."
         );
+        return Ok(());
     }
 
     // Determine which WPs to process

@@ -14,9 +14,9 @@ use clap::{Parser, Subcommand};
 
 use agent_adapter::RealAgentAdapter;
 use agileplus_cli::commands::{
-    cockpit::CockpitArgs, cycle::CycleArgs, dag::DagArgs, dashboard::DashboardArgs, list::ListArgs,
-    module::ModuleArgs, mvp::MvpArgs, okf::OkfArgs, queue::QueueArgs, rubric::RubricArgs,
-    specify::SpecifyArgs,
+    cockpit::CockpitArgs, cycle::CycleArgs, dag::DagArgs, dashboard::DashboardArgs,
+    evidence::EvidenceArgs, list::ListArgs, module::ModuleArgs, mvp::MvpArgs, okf::OkfArgs,
+    queue::QueueArgs, rubric::RubricArgs, specify::SpecifyArgs,
 };
 #[cfg(feature = "full-deps")]
 use agileplus_cli::commands::{
@@ -52,6 +52,8 @@ enum Commands {
     Cycle(CycleArgs),
     /// List features in the database (optional filter by state).
     List(ListArgs),
+    /// Attach local result artifacts to work packages.
+    Evidence(EvidenceArgs),
     /// Create or revise a feature specification.
     Specify(SpecifyArgs),
     /// Manage the triage backlog queue.
@@ -147,6 +149,12 @@ async fn run(cli: Cli) -> Result<()> {
     }
 
     match cli.command {
+        Commands::Evidence(args) => {
+            let db = repository_database(&cli.repo)?;
+            let storage = SqliteStorageAdapter::new(&db)
+                .with_context(|| format!("opening database at {}", db.display()))?;
+            agileplus_cli::commands::evidence::run_evidence(args, &storage).await
+        }
         Commands::Rubric(args) => agileplus_cli::commands::rubric::run(&args),
         Commands::Dag(args) => agileplus_cli::commands::dag::run_dag(args).await,
         Commands::Okf(args) => {
