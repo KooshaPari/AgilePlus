@@ -23,10 +23,7 @@ export interface LocaleContextValue {
 
 // ─── Locale registry — add new locales here ───────────────────────────────────
 
-const LOCALE_MESSAGES: Record<string, () => Promise<MessageCatalog>> = {
-  en: () => import('./messages/en.json').then((m) => m.default ?? m),
-  de: () => import('./messages/de.json').then((m) => m.default ?? m),
-};
+const LOCALE_MESSAGES = import.meta.glob<{ default: MessageCatalog }>('./messages/*.json');
 
 // ─── Context ───────────────────────────────────────────────────────────────────
 
@@ -52,19 +49,11 @@ interface LocaleProviderProps {
  */
 export function LocaleProvider({ children, defaultLocale = 'en' }: LocaleProviderProps) {
   const [locale, setLocaleState] = useState(defaultLocale);
-  const [messages, setMessages] = useState<MessageCatalog>(() => {
-    // Synchronously require the default locale so first render is never empty
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      return require('./messages/en.json') as MessageCatalog;
-    } catch {
-      return {};
-    }
-  });
+  const [messages, setMessages] = useState<MessageCatalog>({});
   const loadingRef = useRef(false);
 
   const switchLocale = useCallback(async (next: string) => {
-    const loader = LOCALE_MESSAGES[next];
+    const loader = LOCALE_MESSAGES[`./messages/${next}.json`];
     if (!loader) {
       console.warn(`[i18n] Unknown locale "${next}", falling back to key passthrough`);
       setLocaleState(next);
@@ -77,7 +66,7 @@ export function LocaleProvider({ children, defaultLocale = 'en' }: LocaleProvide
 
     try {
       const mod = await loader();
-      setMessages(mod);
+      setMessages(mod.default);
       setLocaleState(next);
     } catch (err) {
       console.error(`[i18n] Failed to load messages for "${next}":`, err);
@@ -91,7 +80,7 @@ export function LocaleProvider({ children, defaultLocale = 'en' }: LocaleProvide
       let value = messages[key];
       if (value === undefined) {
         // Fall back to the key itself so the UI doesn't break
-        if (process.env.NODE_ENV === 'development') {
+        if (import.meta.env.DEV) {
           console.warn(`[i18n] Missing translation for "${key}" in locale "${locale}"`);
         }
         value = key;
