@@ -1,0 +1,37 @@
+name: Recovery Lockfile Sync
+on:
+  push:
+    branches: [spec/mature-product-contract-v2]
+    paths: [".github/workflows/recovery-lockfile-sync.yml"]
+permissions:
+  contents: write
+concurrency:
+  group: recovery-lockfile-sync-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  sync-lock:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: spec/mature-product-contract-v2
+          persist-credentials: true
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Synchronize dependency graph without upgrading unrelated crates deliberately
+        run: |
+          cargo metadata --format-version 1 --no-deps > /dev/null
+          cargo metadata --locked --format-version 1 --no-deps > /dev/null
+          git diff --check
+          git status --short Cargo.lock
+      - name: Commit only Cargo.lock if changed
+        run: |
+          if ! git diff --quiet -- Cargo.lock; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add Cargo.lock
+            git commit -m "fix(build): synchronize Cargo.lock for recovery acceptance"
+            git push origin HEAD:spec/mature-product-contract-v2
+          else
+            echo "Cargo.lock already synchronized"
+          fi
