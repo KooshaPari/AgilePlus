@@ -1,20 +1,24 @@
 """Harness correctness tests. The fixture server is not product performance evidence."""
+
 import http.server
 import importlib.util
 import json
-from pathlib import Path
 import tempfile
 import threading
 import unittest
+from pathlib import Path
+from typing import ClassVar
 
-spec = importlib.util.spec_from_file_location("http_benchmark", Path(__file__).with_name("http_benchmark.py"))
+spec = importlib.util.spec_from_file_location(
+    "http_benchmark", Path(__file__).with_name("http_benchmark.py")
+)
 benchmark = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(benchmark)
 
 
 class FixtureHandler(http.server.BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
-    states = {}
+    states: ClassVar[dict[int, str]] = {}
     auth_key = "fixture-key"
 
     def log_message(self, *_):
@@ -33,16 +37,23 @@ class FixtureHandler(http.server.BaseHTTPRequestHandler):
             self.send(200, {"status": "healthy", "service": "agileplus-api"})
         elif self.headers.get("Authorization") != f"Bearer {self.auth_key}":
             self.send(401, {"error": "unauthorized"})
-        elif self.path == "/api/v1/features/":
-            self.send(200, [{"slug": f"perf-feature-{i:03}", "state": self.states[i]}
-                            for i in range(100)])
+        elif self.path == "/api/v1/features":
+            self.send(
+                200,
+                [
+                    {"slug": f"perf-feature-{i:03}", "state": self.states[i]}
+                    for i in range(100)
+                ],
+            )
         else:
             index = int(self.path.rsplit("-", 1)[1])
-            self.send(200, {"slug": f"perf-feature-{index:03}", "state": self.states[index]})
+            self.send(
+                200, {"slug": f"perf-feature-{index:03}", "state": self.states[index]}
+            )
 
     def do_POST(self):
         payload = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
-        if self.path == "/api/v1/features/":
+        if self.path == "/api/v1/features":
             index = int(payload["title"].split()[-1])
             self.states[index] = "created"
             self.send(201, {"slug": f"perf-feature-{index:03}", "state": "created"})
@@ -59,9 +70,9 @@ class FixtureHandler(http.server.BaseHTTPRequestHandler):
 class HarnessTests(unittest.TestCase):
     def test_percentiles_require_measurements_and_use_nearest_rank(self):
         with self.assertRaises(ValueError):
-            benchmark.percentile([], .95)
-        self.assertEqual(benchmark.percentile(list(range(1, 101)), .95), 95)
-        self.assertEqual(benchmark.percentile(list(range(1, 101)), .99), 99)
+            benchmark.percentile([], 0.95)
+        self.assertEqual(benchmark.percentile(list(range(1, 101)), 0.95), 95)
+        self.assertEqual(benchmark.percentile(list(range(1, 101)), 0.99), 99)
 
     def test_budget_exceedance_is_reported_as_warning_and_incomplete_samples_fail(self):
         row = benchmark.distribution([{"elapsed_ms": 500}] * 100, "list")
@@ -70,7 +81,9 @@ class HarnessTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             benchmark.distribution([{"elapsed_ms": 1}] * 99, "list")
 
-    def test_real_http_fixture_checks_responses_and_transitions_for_all_ten_clients(self):
+    def test_real_http_fixture_checks_responses_and_transitions_for_all_ten_clients(
+        self,
+    ):
         FixtureHandler.states = dict.fromkeys(range(100), "created")
         server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), FixtureHandler)
         thread = threading.Thread(target=server.serve_forever, daemon=True)
@@ -93,11 +106,15 @@ class HarnessTests(unittest.TestCase):
             server.server_close()
             thread.join(timeout=5)
 
-    def test_invalid_response_and_missing_binary_fail_instead_of_publishing_success(self):
+    def test_invalid_response_and_missing_binary_fail_instead_of_publishing_success(
+        self,
+    ):
         with self.assertRaises(RuntimeError):
             benchmark.validate_response("list", [])
         with self.assertRaises(RuntimeError):
-            benchmark.validate_response("health", {"status": "healthy", "service": "stub"})
+            benchmark.validate_response(
+                "health", {"status": "healthy", "service": "stub"}
+            )
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             self.assertEqual(benchmark.run(root / "missing", root / "reports"), 1)
@@ -116,7 +133,8 @@ class HarnessTests(unittest.TestCase):
                 + "from http.server import ThreadingHTTPServer\n"
                 + "FixtureHandler.auth_key = os.environ['AGILEPLUS_API_KEY']\n"
                 + "ThreadingHTTPServer(('127.0.0.1', int(os.environ['AGILEPLUS_API_PORT'])), "
-                + "FixtureHandler).serve_forever()\n")
+                + "FixtureHandler).serve_forever()\n"
+            )
             executable.chmod(0o700)
             self.assertEqual(benchmark.run(executable, root / "reports"), 0)
             report = json.loads((root / "reports/http-results.json").read_text())
@@ -128,4 +146,3 @@ class HarnessTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
