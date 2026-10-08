@@ -29,6 +29,24 @@ fn invalid(message: impl Into<String>) -> DomainError {
 
 #[async_trait::async_trait]
 impl AtomicAcceptancePort for SqliteStorageAdapter {
+    async fn get_feature_acceptance_receipt(
+        &self,
+        feature_id: i64,
+    ) -> Result<Option<FeatureAcceptanceReceipt>, DomainError> {
+        let connection = self.lock()?;
+        let receipt: Option<String> = connection
+            .query_row(
+                "SELECT receipt_json FROM feature_acceptance_receipts WHERE feature_id=?1 ORDER BY committed_at DESC, request_id DESC LIMIT 1",
+                [feature_id],
+                |row| row.get(0),
+            )
+            .optional()
+            .map_err(storage)?;
+        receipt
+            .map(|json| serde_json::from_str(&json).map_err(storage))
+            .transpose()
+    }
+
     async fn accept_feature_atomic(
         &self,
         command: &AcceptFeatureCommand,
