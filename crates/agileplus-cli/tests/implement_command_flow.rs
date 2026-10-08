@@ -204,6 +204,56 @@ fn implement_approved_stops_at_review_pending_independent_acceptance() {
     });
 }
 
+/// An agent claiming review success without a resolvable Git commit must
+/// not receive Review/Done. Preserve the failed Attempt and Unknown Evaluation.
+#[test]
+fn implement_approved_without_git_candidate_fails_closed_with_durable_history() {
+    block_on_paused(async {
+        use agileplus_domain::domain::execution::{AttemptStatus, EvaluationResult};
+        use agileplus_domain::ports::ExecutionRecordPort;
+
+        let storage = SqliteStorageAdapter::in_memory().expect("in-memory db");
+        let (_, wp_id) = seed(&storage, "unresolved", FeatureState::Planned).await;
+        let vcs = TempVcs::new().with_unresolved_candidate();
+        let agent = ScriptedAgent::success();
+
+        let err = run_implement(args("unresolved"), &storage, &vcs, &agent)
+            .await
+            .expect_err("review success with no Git candidate must be rejected");
+        assert!(
+            format!("{err:#}").contains("exact Git candidate could not be resolved"),
+            "{err:#}"
+        );
+        let wp = StoragePort::get_work_package(&storage, wp_id)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(wp.state, WpState::Blocked);
+
+        let assignment = ExecutionRecordPort::get_active_assignment(&storage, wp_id)
+            .await
+            .unwrap()
+            .expect("assignment must be durable");
+        let attempts = ExecutionRecordPort::list_attempts(&storage, &assignment.id)
+            .await
+            .unwrap();
+        assert_eq!(attempts.len(), 1);
+        assert_eq!(attempts[0].status, AttemptStatus::Failed);
+        assert_eq!(attempts[0].failure_class.as_deref(), Some("candidate_unresolved"));
+        assert!(attempts[0].result_candidate_ref.is_none());
+
+        let evaluations = ExecutionRecordPort::list_evaluations(&storage, &assignment.id)
+            .await
+            .unwrap();
+        assert_eq!(evaluations.len(), 1);
+        assert_eq!(evaluations[0].result, EvaluationResult::Unknown);
+        assert!(evaluations[0].candidate_ref.starts_with("unresolved:job:"));
+
+        assert!(vcs.cleaned_worktrees().is_empty());
+        vcs.cleanup();
+    });
+}
+
 /// A WP whose agent never succeeds exhausts the review cycles and is marked
 /// Blocked, with the last feedback surfaced and fed back to the agent.
 #[test]
