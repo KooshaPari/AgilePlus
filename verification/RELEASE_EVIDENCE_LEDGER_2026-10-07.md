@@ -112,8 +112,6 @@ are available, R0 may need roughly 1–2 focused workdays; R1 roughly 2–5 furt
 focused workdays depending on Caddy/TLS/DNS/browser integration. Multi-user
 SaaS is outside this operator-alpha gate.
 
-## Reporting rule
-
 ## Work-mode continuation (2026-10-07, local execution)
 
 Inspected source base: `38e6e8c48e44f4cec5a1f617219755c259681250`.
@@ -133,9 +131,17 @@ with an evidence-only update; that update is preserved by this continuation.
 - Native Linux systemd template added. Its syntax was checked with a disposable
   executable substitution; actual service startup, account permissions and
   reboot recovery still require the target host.
-- Additional mounted HTTP witnesses cover missing Feature and stale expected
-  governance. Their execution results must be recorded after the native suite
-  finishes; source existence alone does not close those gates.
+- Expanded mounted HTTP acceptance: 7/7 passed, including missing Feature and
+  stale expected governance.
+- Authenticated gRPC acceptance: 6/6 passed.
+- CLI implementation: 10/10 passed; shipping: 14/14 passed; validation: 12/12
+  passed after repairing diagnostics and the duplicate-WP-sequence fixture.
+- Migrations: 15/15 passed; API CORS policy: 3/3 passed.
+- Workspace formatting and `git diff --check` passed.
+- Selected-crate Clippy exposed a pre-existing denied approximate-PI literal
+  in a CLI decimal-formatting test. Replacing that arbitrary value with 2.5
+  made CLI all-targets Clippy pass; existing warnings remain. This is not a
+  full desktop/all-workspace quality-gate claim.
 - Recovery acceptance CI now also runs on PRs targeting the recovery branch.
 
 **Confirmed dashboard blocker:** `web/index.html` loads `src/main.tsx`, whose
@@ -150,6 +156,8 @@ does not repair the dashboard contract.
 Promotion saga, live desktop access, tailnet/DNS/TLS configuration, Vercel
 origin authorization, deployed browser acceptance and reboot/restore drills
 remain open. No live infrastructure configuration was performed here.
+
+## Reporting rule
 
 Every future status report must state the exact branch SHA, CI run, deployed
 environment, which journeys were *executed*, and time-to-next-release. Never

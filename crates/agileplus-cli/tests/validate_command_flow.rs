@@ -70,7 +70,15 @@ async fn seed_governance_evidence(
     feature_id: i64,
     fr_id: &str,
 ) -> i64 {
-    let mut wp = WorkPackage::new(feature_id, "WP one", 1, "works");
+    let sequence = StoragePort::list_wps_by_feature(storage, feature_id)
+        .await
+        .unwrap()
+        .iter()
+        .map(|wp| wp.sequence)
+        .max()
+        .unwrap_or(0)
+        + 1;
+    let mut wp = WorkPackage::new(feature_id, "Fixture WP", sequence, "works");
     wp.state = WpState::Review;
     let wp_id = StoragePort::create_work_package(storage, &wp)
         .await
