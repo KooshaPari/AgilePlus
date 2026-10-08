@@ -38,6 +38,12 @@ Use this ledger with `AGENTS.md`, `spec/product/AUTHORITY_INDEX.md`,
   `1a60b127`, including static Compose/Caddy boundary checks and offline
   WAL backup/restore tests.
 - gitleaks run `37710077217` passed on `1a60b127`.
+- Private Desktop Deploy Contract run `37710277023` (commit `38e6e8c4`)
+  passed real Caddy 2.8 syntax validation for the operator-alpha vhost using
+  disposable credentials, resolved-Compose static security checks, and
+  SQLite WAL backup/restore smoke tests. This does not prove a deployed host
+  vhost, real DNS-01 TLS certificate, live browser authentication, or tailnet
+  reachability.
 - A passing deploy *contract* does not mean live DNS, TLS, Tailscale, Vercel,
   or a running desktop backend was tested.
 
