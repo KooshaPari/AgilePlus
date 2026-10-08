@@ -10,12 +10,16 @@ use crate::state::AppState;
 use agileplus_domain::ports::vcs::VcsPort;
 use agileplus_domain::ports::{ContentStoragePort, ObservabilityPort, StoragePort};
 use axum::{
-    http::{header, HeaderValue, Method},
-    middleware, routing::get, Router,
+    Router,
+    http::{HeaderValue, Method, header},
+    middleware,
+    routing::get,
 };
 use std::{net::SocketAddr, sync::Arc};
 use tower_http::{
-    cors::{AllowOrigin, CorsLayer}, services::ServeDir, trace::TraceLayer,
+    cors::{AllowOrigin, CorsLayer},
+    services::ServeDir,
+    trace::TraceLayer,
 };
 
 type BoxError = Box<dyn std::error::Error + Send + Sync>;
@@ -92,7 +96,13 @@ fn configured_cors() -> CorsLayer {
     }
     CorsLayer::new()
         .allow_origin(AllowOrigin::list(origins))
-        .allow_methods([Method::GET, Method::POST, Method::PUT, Method::PATCH, Method::DELETE])
+        .allow_methods([
+            Method::GET,
+            Method::POST,
+            Method::PUT,
+            Method::PATCH,
+            Method::DELETE,
+        ])
         .allow_headers([
             header::AUTHORIZATION,
             header::CONTENT_TYPE,
@@ -118,7 +128,9 @@ fn parse_allowed_origins(configured: Option<&str>) -> Vec<HeaderValue> {
                 .unwrap_or_default();
             if !scheme_ok
                 || authority.is_empty()
-                || authority.chars().any(|ch| matches!(ch, '/' | '?' | '#' | '@' | ' '))
+                || authority
+                    .chars()
+                    .any(|ch| matches!(ch, '/' | '?' | '#' | '@' | ' '))
                 || candidate == "*"
                 || candidate == "null"
             {
