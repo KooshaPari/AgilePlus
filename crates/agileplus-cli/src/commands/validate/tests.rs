@@ -262,13 +262,15 @@ async fn create_evidence(
     fr_id: &str,
     evidence_type: EvidenceType,
 ) {
+    let (_, artifact_path) = tempfile::NamedTempFile::new().unwrap().keep().unwrap();
+    let digest = crate::commands::evidence::digest_file(&artifact_path).unwrap();
     let evidence = Evidence {
         id: 0,
         wp_id,
         fr_id: fr_id.to_string(),
         evidence_type,
-        artifact_path: "artifact.txt".to_string(),
-        metadata: None,
+        artifact_path: artifact_path.display().to_string(),
+        metadata: Some(serde_json::json!({"result":"pass", "sha256":digest})),
         created_at: Utc::now(),
     };
     StoragePort::create_evidence(db, &evidence).await.unwrap();
@@ -442,4 +444,97 @@ fn report_to_json_with_policies_and_missing() {
     assert!(v["policy_results"].as_array().unwrap().len() == 1);
     assert!(v["missing_evidence"].as_array().unwrap().len() == 1);
     assert!(v["governance_exceptions"].as_array().unwrap().len() == 1);
+}
+
+#[tokio::test]
+async fn one_wp_cannot_satisfy_another_wp_rule() {
+    let db = SqliteStorageAdapter::in_memory().unwrap();
+    let (feature_id, wp1_id) = create_feature_with_wp(&db).await;
+    StoragePort::create_work_package(
+        &db,
+        &WorkPackage::new(feature_id, "WP02", 2, "- FR-004 -- task"),
+    )
+    .await
+    .unwrap();
+    create_evidence(&db, wp1_id, "FR-CI", EvidenceType::CiOutput).await;
+    let contract = GovernanceContract {
+        id: 0,
+        feature_id,
+        version: 1,
+        bound_at: Utc::now(),
+        rules: vec![
+            GovernanceRule {
+                transition: "WP01: Doing -> Review".into(),
+                required_evidence: vec!["FR-CI:ci_output".into()],
+                policy_refs: vec![],
+            },
+            GovernanceRule {
+                transition: "WP02: Doing -> Review".into(),
+                required_evidence: vec!["FR-CI:ci_output".into()],
+                policy_refs: vec![],
+            },
+        ],
+    };
+    let (results, missing) = super::evidence::evaluate_evidence(&db, &contract, feature_id)
+        .await
+        .unwrap();
+    assert!(results[0].found);
+    assert!(!results[1].found);
+    assert_eq!(missing.len(), 1);
+}
+
+#[tokio::test]
+async fn failed_missing_or_changed_artifact_never_satisfies_rule() {
+    let db = SqliteStorageAdapter::in_memory().unwrap();
+    let (feature_id, wp_id) = create_feature_with_wp(&db).await;
+    let contract = make_contract(feature_id);
+    let file = tempfile::NamedTempFile::new().unwrap();
+    let path = file.path().display().to_string();
+    let original_digest = crate::commands::evidence::digest_file(file.path()).unwrap();
+    for (result, artifact_path) in [
+        ("fail", path.clone()),
+        ("pass", "/definitely/missing/agileplus-proof".into()),
+    ] {
+        StoragePort::create_evidence(
+            &db,
+            &Evidence {
+                id: 0,
+                wp_id,
+                fr_id: "FR-001".into(),
+                evidence_type: EvidenceType::CiOutput,
+                artifact_path,
+                metadata: Some(serde_json::json!({"result":result,"sha256":original_digest})),
+                created_at: Utc::now(),
+            },
+        )
+        .await
+        .unwrap();
+    }
+    let (_, missing) = super::evidence::evaluate_evidence(&db, &contract, feature_id)
+        .await
+        .unwrap();
+    assert_eq!(missing.len(), 1);
+    StoragePort::create_evidence(
+        &db,
+        &Evidence {
+            id: 0,
+            wp_id,
+            fr_id: "FR-001".into(),
+            evidence_type: EvidenceType::CiOutput,
+            artifact_path: path,
+            metadata: Some(serde_json::json!({"result":"pass","sha256":original_digest})),
+            created_at: Utc::now(),
+        },
+    )
+    .await
+    .unwrap();
+    let (_, missing) = super::evidence::evaluate_evidence(&db, &contract, feature_id)
+        .await
+        .unwrap();
+    assert!(missing.is_empty());
+    std::fs::write(file.path(), b"changed").unwrap();
+    let (_, missing) = super::evidence::evaluate_evidence(&db, &contract, feature_id)
+        .await
+        .unwrap();
+    assert_eq!(missing.len(), 1);
 }

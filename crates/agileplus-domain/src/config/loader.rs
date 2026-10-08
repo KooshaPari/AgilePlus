@@ -19,8 +19,11 @@ pub enum ConfigError {
 }
 
 impl AppConfig {
-    /// Path to the user-level config file: `~/.agileplus/config.toml`.
+    /// Explicit `AGILEPLUS_CONFIG_PATH`, otherwise `~/.agileplus/config.toml`.
     pub fn config_path() -> PathBuf {
+        if let Some(path) = env::var_os("AGILEPLUS_CONFIG_PATH") {
+            return PathBuf::from(path);
+        }
         dirs_next::home_dir()
             .unwrap_or_else(|| PathBuf::from("."))
             .join(".agileplus")
@@ -129,7 +132,8 @@ mod tests {
 
     /// Env vars `load_with_env_overrides` understands, cleared for the duration
     /// of a test so the ambient developer environment cannot leak in.
-    const OVERRIDE_VARS: [&str; 7] = [
+    const OVERRIDE_VARS: [&str; 8] = [
+        "AGILEPLUS_CONFIG_PATH",
         "API_PORT",
         "AGILEPLUS_HTTP_PORT",
         "AGILEPLUS_API_PORT",
@@ -205,6 +209,17 @@ mod tests {
             AppConfig::config_path(),
             home.join(".agileplus").join("config.toml")
         );
+    }
+
+    #[test]
+    fn explicit_config_path_is_loaded_without_using_user_configuration() {
+        let directory = tempfile::tempdir().unwrap();
+        let _sandbox = EnvSandbox::new(directory.path());
+        let path = directory.path().join("isolated-config.toml");
+        std::fs::write(&path, "[api]\nport = 4242\n").unwrap();
+        _sandbox.set("AGILEPLUS_CONFIG_PATH", path.to_str().unwrap());
+        assert_eq!(AppConfig::config_path(), path);
+        assert_eq!(AppConfig::load().unwrap().api.port, 4242);
     }
 
     #[test]

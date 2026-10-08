@@ -195,6 +195,8 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v7
+              with:
+                  fetch-depth: 0
             - name: gitleaks
               uses: gitleaks/gitleaks-action@v3
               env:
@@ -264,5 +266,11 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Test gate
+              env:
+                  AGGREGATE_RESULT: ${{ needs.lint.result }}
               run: |
-                  echo "✅ All test stages passed (gated via ci / lint)"
+                  if [ "$AGGREGATE_RESULT" != "success" ]; then
+                    echo "Aggregate gate did not pass: $AGGREGATE_RESULT"
+                    exit 1
+                  fi
+                  echo "All required stages passed via aggregate gate"

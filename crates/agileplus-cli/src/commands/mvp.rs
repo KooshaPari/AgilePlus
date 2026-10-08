@@ -359,10 +359,84 @@ pub async fn transition<S: StoragePort>(args: &TransitionArgs, storage: &S) -> R
             if !wp.state.can_transition_to(target) {
                 bail!("illegal wp transition: {:?} -> {:?}", wp.state, target);
             }
+            if target == WpState::Doing {
+                for dependency in storage
+                    .get_wp_dependencies(wp_id)
+                    .await
+                    .context("loading work-package dependencies")?
+                {
+                    let prerequisite = storage
+                        .get_work_package(dependency.depends_on)
+                        .await
+                        .context("loading prerequisite work package")?
+                        .ok_or_else(|| {
+                            anyhow!("prerequisite WP {} not found", dependency.depends_on)
+                        })?;
+                    if prerequisite.state != WpState::Done {
+                        bail!(
+                            "WP{:02} is blocked by WP{:02} ({:?})",
+                            wp.sequence,
+                            prerequisite.sequence,
+                            prerequisite.state
+                        );
+                    }
+                }
+            }
+            if let Some(contract) = storage
+                .get_latest_governance_contract(wp.feature_id)
+                .await
+                .context("loading governance contract for work-package transition")?
+            {
+                let transition = format!("WP{:02}: {:?} -> {:?}", wp.sequence, wp.state, target);
+                let items = storage
+                    .get_evidence_by_wp(wp.id)
+                    .await
+                    .context("loading work-package evidence")?;
+                for rule in contract
+                    .rules
+                    .iter()
+                    .filter(|rule| rule.transition == transition)
+                {
+                    for requirement in &rule.required_evidence {
+                        if !items.iter().any(|item| {
+                            crate::commands::evidence::matches_requirement(requirement, item)
+                        }) {
+                            bail!(
+                                "{} requires valid {} evidence before the state changes",
+                                transition,
+                                requirement
+                            );
+                        }
+                    }
+                }
+            }
             storage
                 .update_wp_state(wp_id, target)
                 .await
                 .context("updating work package state")?;
+            let prev_hash = storage
+                .get_latest_audit_entry(wp.feature_id)
+                .await
+                .context("loading prior work-package audit")?
+                .map_or([0u8; 32], |entry| entry.hash);
+            let mut audit = agileplus_domain::domain::audit::AuditEntry {
+                id: 0,
+                feature_id: wp.feature_id,
+                wp_id: Some(wp.id),
+                timestamp: chrono::Utc::now(),
+                actor: "user".into(),
+                transition: format!("WP{:02}: {:?} -> {:?}", wp.sequence, wp.state, target),
+                evidence_refs: vec![],
+                prev_hash,
+                hash: [0u8; 32],
+                event_id: None,
+                archived_to: None,
+            };
+            audit.hash = agileplus_domain::domain::audit::hash_entry(&audit);
+            storage
+                .append_audit_entry(&audit)
+                .await
+                .context("recording work-package transition")?;
             println!("wp_state: {wp_id} -> {}", wp_state_label(target));
         }
         (None, Some(story_id)) => {
@@ -461,6 +535,104 @@ impl From<DepTypeArg> for DependencyType {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[tokio::test]
+    async fn wp_transition_requires_its_contract_evidence_before_mutation() {
+        use agileplus_domain::domain::feature::Feature;
+        use agileplus_domain::domain::governance::{
+            Evidence, EvidenceType, GovernanceContract, GovernanceRule,
+        };
+        use agileplus_sqlite::SqliteStorageAdapter;
+        use chrono::Utc;
+
+        let db = SqliteStorageAdapter::in_memory().unwrap();
+        let feature_id = db
+            .create_feature(&Feature::new("gate", "Gate", [0; 32], None))
+            .await
+            .unwrap();
+        let wp_id = db
+            .create_work_package(&WorkPackage::new(
+                feature_id,
+                "First",
+                1,
+                "- FR-001 -- task",
+            ))
+            .await
+            .unwrap();
+        db.update_wp_state(wp_id, WpState::Doing).await.unwrap();
+        db.create_governance_contract(&GovernanceContract {
+            id: 0,
+            feature_id,
+            version: 1,
+            bound_at: Utc::now(),
+            rules: vec![GovernanceRule {
+                transition: "WP01: Doing -> Review".into(),
+                required_evidence: vec!["FR-CI:ci_output".into(), "FR-001:test_result".into()],
+                policy_refs: vec![],
+            }],
+        })
+        .await
+        .unwrap();
+        let args = TransitionArgs {
+            wp: Some(wp_id),
+            story: None,
+            to: "review".into(),
+        };
+        assert!(
+            transition(&args, &db)
+                .await
+                .unwrap_err()
+                .to_string()
+                .contains("FR-CI")
+        );
+        assert_eq!(
+            db.get_work_package(wp_id).await.unwrap().unwrap().state,
+            WpState::Doing
+        );
+        let artifact = tempfile::NamedTempFile::new().unwrap();
+        let digest = crate::commands::evidence::digest_file(artifact.path()).unwrap();
+        db.create_evidence(&Evidence {
+            id: 0,
+            wp_id,
+            fr_id: "FR-CI".into(),
+            evidence_type: EvidenceType::CiOutput,
+            artifact_path: artifact.path().display().to_string(),
+            metadata: Some(serde_json::json!({"result":"pass", "sha256":digest})),
+            created_at: Utc::now(),
+        })
+        .await
+        .unwrap();
+        let receipts = tempfile::tempdir().unwrap();
+        crate::commands::evidence::run_evidence(
+            crate::commands::evidence::EvidenceArgs {
+                command: crate::commands::evidence::EvidenceCommand::RunTest(
+                    crate::commands::evidence::RunTestArgs {
+                        feature: "gate".into(),
+                        wp: "WP01".into(),
+                        fr: "FR-001".into(),
+                        artifact: receipts.path().join("fr001.json"),
+                        command: vec!["/bin/true".into()],
+                    },
+                ),
+            },
+            &db,
+        )
+        .await
+        .unwrap();
+        transition(&args, &db).await.unwrap();
+        assert_eq!(
+            db.get_work_package(wp_id).await.unwrap().unwrap().state,
+            WpState::Review
+        );
+        assert_eq!(
+            db.get_latest_audit_entry(feature_id)
+                .await
+                .unwrap()
+                .unwrap()
+                .transition,
+            "WP01: Doing -> Review"
+        );
+    }
 
     // ── parse_csv ────────────────────────────────────────────────────────────
 

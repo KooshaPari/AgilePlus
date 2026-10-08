@@ -145,7 +145,7 @@ async fn research_pre_specify<V: VcsPort>(slug: &str, vcs: &V) -> Result<()> {
         .context("writing research.md")?;
 
     println!("Pre-specify research complete for '{slug}'.");
-    println!("  Research saved to: kitty-specs/{slug}/research.md");
+    println!("  Research saved to: docs/agileplus/{slug}/research.md");
     Ok(())
 }
 
@@ -228,7 +228,7 @@ async fn research_post_specify<S: StoragePort, V: VcsPort>(
         .context("appending audit entry")?;
 
     println!("Post-specify research complete for '{slug}'.");
-    println!("  Research saved to: kitty-specs/{slug}/research.md");
+    println!("  Research saved to: docs/agileplus/{slug}/research.md");
     println!("  State: Specified -> Researched");
     Ok(())
 }

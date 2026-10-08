@@ -5,11 +5,12 @@
 //! evidence evaluation, policy evaluation, report formatting, and the
 //! Implementing -> Validated transition with audit entry.
 
+use agileplus_cli::commands::evidence::{EvidenceArgs, EvidenceCommand, RunTestArgs, run_evidence};
 use agileplus_cli::commands::validate::{ValidateArgs, run_validate};
 use agileplus_domain::domain::feature::Feature;
 use agileplus_domain::domain::governance::{GovernanceContract, GovernanceRule};
 use agileplus_domain::domain::state_machine::FeatureState;
-use agileplus_domain::domain::work_package::WorkPackage;
+use agileplus_domain::domain::work_package::{WorkPackage, WpState};
 use agileplus_domain::ports::StoragePort;
 use agileplus_git::GitVcsAdapter;
 use agileplus_sqlite::SqliteStorageAdapter;
@@ -68,6 +69,17 @@ fn args(feature: &str) -> ValidateArgs {
     }
 }
 
+async fn create_done_wp(storage: &SqliteStorageAdapter, feature_id: i64, criteria: &str) -> i64 {
+    let wp = WorkPackage::new(feature_id, "WP one", 1, criteria);
+    let id = StoragePort::create_work_package(storage, &wp)
+        .await
+        .unwrap();
+    StoragePort::update_wp_state(storage, id, WpState::Done)
+        .await
+        .unwrap();
+    id
+}
+
 #[test]
 fn validate_errors_for_unknown_feature() {
     block_on(async {
@@ -116,6 +128,7 @@ fn validate_force_overrides_wrong_state_and_records_exception() {
         StoragePort::create_governance_contract(&storage, &contract_for(id, vec![]))
             .await
             .unwrap();
+        create_done_wp(&storage, id, "- FR-001 -- checked").await;
         let mut a = args("forced-feat");
         a.force = true;
         run_validate(a, &storage, &vcs)
@@ -129,10 +142,8 @@ fn validate_force_overrides_wrong_state_and_records_exception() {
         // Governance exception appended as audit entry.
         let trail = StoragePort::get_audit_trail(&storage, id).await.unwrap();
         assert!(
-            trail
-                .iter()
-                .any(|e| e.transition.contains("Implementing -> Validated")),
-            "expected audit entry for transition"
+            trail.iter().any(|e| e.transition == "Planned -> Validated"),
+            "forced transition must audit the actual prior state"
         );
     })
 }
@@ -180,21 +191,32 @@ fn validate_passes_with_evidence_and_transitions() {
         )
         .await
         .unwrap();
-        let mut wp = WorkPackage::new(id, "WP one", 1, "works");
-        wp.id = 0;
-        let wp_id = StoragePort::create_work_package(&storage, &wp)
-            .await
-            .unwrap();
-        let ev = agileplus_domain::domain::governance::Evidence {
-            id: 0,
-            wp_id,
-            fr_id: "FR-001".to_string(),
-            evidence_type: agileplus_domain::domain::governance::EvidenceType::TestResult,
-            artifact_path: "target/test.log".to_string(),
-            metadata: None,
-            created_at: chrono::Utc::now(),
-        };
-        StoragePort::create_evidence(&storage, &ev).await.unwrap();
+        create_done_wp(&storage, id, "- FR-001 -- validation flow").await;
+        let artifact = std::env::temp_dir().join(format!(
+            "agileplus-validate-executed-{}.json",
+            std::process::id()
+        ));
+        run_evidence(
+            EvidenceArgs {
+                command: EvidenceCommand::RunTest(RunTestArgs {
+                    feature: "happy-feat".into(),
+                    wp: "WP01".into(),
+                    fr: "FR-001".into(),
+                    artifact: artifact.clone(),
+                    command: vec![
+                        std::env::current_exe()
+                            .unwrap()
+                            .to_string_lossy()
+                            .into_owned(),
+                        "--exact".into(),
+                        "validate_errors_for_unknown_feature".into(),
+                    ],
+                }),
+            },
+            &storage,
+        )
+        .await
+        .expect("executed test evidence");
         run_validate(args("happy-feat"), &storage, &vcs)
             .await
             .expect("validates with evidence");
@@ -211,6 +233,7 @@ fn validate_passes_with_evidence_and_transitions() {
             trail.iter().all(|e| e.hash != [0u8; 32]),
             "hash must be computed"
         );
+        let _ = std::fs::remove_file(artifact);
     })
 }
 #[test]
@@ -224,6 +247,7 @@ fn validate_json_format_writes_report_file() {
         StoragePort::create_governance_contract(&storage, &contract_for(id, vec![]))
             .await
             .unwrap();
+        create_done_wp(&storage, id, "- FR-001 -- checked").await;
         let out =
             std::env::temp_dir().join(format!("agileplus-validate-json-{}.md", std::process::id()));
         let mut a = args("json-feat");

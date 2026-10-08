@@ -1,4 +1,4 @@
-use std::collections::BTreeSet;
+use std::collections::{BTreeSet, HashMap};
 
 use anyhow::{Context, Result};
 
@@ -8,6 +8,7 @@ use agileplus_domain::domain::governance::{
 use agileplus_domain::ports::StoragePort;
 
 use super::{EvidenceCheck, PolicyEvalResult};
+use crate::commands::evidence::valid_artifact;
 
 /// Parse `FR-ID` or `FR-ID:evidence_type` contract evidence keys.
 fn parse_requirement(raw: &str) -> (String, Option<EvidenceType>) {
@@ -38,17 +39,21 @@ pub(crate) async fn evaluate_evidence<S: StoragePort>(
     let feature_evidence = load_feature_evidence(storage, feature_id).await?;
 
     for rule in &contract.rules {
+        let wp_sequence = rule_wp_sequence(&rule.transition);
         for raw in &rule.required_evidence {
             let (fr_id, expected_type) = parse_requirement(raw);
             let relevant = match expected_type {
-                Some(ty) => feature_evidence.evidence_for(fr_id.as_str(), ty),
-                None => feature_evidence.evidence_for_fr(fr_id.as_str()),
+                Some(ty) => feature_evidence.evidence_for(fr_id.as_str(), ty, wp_sequence),
+                None => feature_evidence.evidence_for_fr(fr_id.as_str(), wp_sequence),
             };
             let found = !relevant.is_empty();
             let message = if found {
                 "OK".to_string()
             } else {
-                format!("No evidence found for FR `{fr_id}`")
+                format!(
+                    "No valid evidence found for FR `{fr_id}` at {}",
+                    rule.transition
+                )
             };
 
             if !found {
@@ -205,7 +210,7 @@ fn evaluate_evidence_policy(
         let any = feature_evidence
             .evidence
             .iter()
-            .any(|e| e.evidence_type == evidence_type);
+            .any(|e| e.evidence_type == evidence_type && valid_artifact(e));
         return if any {
             (true, format!("{} evidence present", evidence_type.as_str()))
         } else {
@@ -222,10 +227,10 @@ fn evaluate_evidence_policy(
     let mut satisfied = 0usize;
     let mut missing = Vec::new();
 
-    for fr_id in &requirements {
-        let relevant = feature_evidence.evidence_for(fr_id, evidence_type);
+    for (fr_id, wp_sequence) in &requirements {
+        let relevant = feature_evidence.evidence_for(fr_id, evidence_type, *wp_sequence);
         if relevant.is_empty() {
-            missing.push(fr_id.clone());
+            missing.push(format!("{fr_id} for WP {wp_sequence:?}"));
         } else {
             satisfied += 1;
         }
@@ -254,19 +259,45 @@ fn evaluate_evidence_policy(
 
 struct FeatureEvidence {
     evidence: Vec<Evidence>,
+    wp_sequences: HashMap<i64, i32>,
 }
 
 impl FeatureEvidence {
-    fn evidence_for(&self, fr_id: &str, evidence_type: EvidenceType) -> Vec<&Evidence> {
+    fn evidence_for(
+        &self,
+        fr_id: &str,
+        evidence_type: EvidenceType,
+        wp_sequence: Option<i32>,
+    ) -> Vec<&Evidence> {
         self.evidence
             .iter()
-            .filter(|e| e.fr_id == fr_id && e.evidence_type == evidence_type)
+            .filter(|e| {
+                e.fr_id == fr_id
+                    && e.evidence_type == evidence_type
+                    && self.in_scope(e, wp_sequence)
+                    && valid_artifact(e)
+            })
             .collect()
     }
 
-    fn evidence_for_fr(&self, fr_id: &str) -> Vec<&Evidence> {
-        self.evidence.iter().filter(|e| e.fr_id == fr_id).collect()
+    fn evidence_for_fr(&self, fr_id: &str, wp_sequence: Option<i32>) -> Vec<&Evidence> {
+        self.evidence
+            .iter()
+            .filter(|e| e.fr_id == fr_id && self.in_scope(e, wp_sequence) && valid_artifact(e))
+            .collect()
     }
+
+    fn in_scope(&self, evidence: &Evidence, sequence: Option<i32>) -> bool {
+        sequence.is_none_or(|sequence| self.wp_sequences.get(&evidence.wp_id) == Some(&sequence))
+    }
+}
+
+fn rule_wp_sequence(transition: &str) -> Option<i32> {
+    transition
+        .split_once(':')
+        .and_then(|(prefix, _)| prefix.strip_prefix("WP"))?
+        .parse()
+        .ok()
 }
 
 async fn load_feature_evidence<S: StoragePort>(
@@ -278,14 +309,19 @@ async fn load_feature_evidence<S: StoragePort>(
         .await
         .context("listing work packages for evidence")?;
     let mut evidence = Vec::new();
+    let mut wp_sequences = HashMap::new();
     for wp in wps {
+        wp_sequences.insert(wp.id, wp.sequence);
         let mut items = storage
             .get_evidence_by_wp(wp.id)
             .await
             .with_context(|| format!("listing evidence for WP {}", wp.id))?;
         evidence.append(&mut items);
     }
-    Ok(FeatureEvidence { evidence })
+    Ok(FeatureEvidence {
+        evidence,
+        wp_sequences,
+    })
 }
 
 async fn evaluate_metric_policy<S: StoragePort>(
@@ -318,16 +354,16 @@ async fn evaluate_metric_policy<S: StoragePort>(
 fn requirements_for_evidence_type(
     contract: &GovernanceContract,
     evidence_type: EvidenceType,
-) -> Vec<String> {
+) -> Vec<(String, Option<i32>)> {
     contract
         .rules
         .iter()
-        .flat_map(|rule| rule.required_evidence.iter())
-        .filter_map(|raw| {
+        .flat_map(|rule| rule.required_evidence.iter().map(move |raw| (rule, raw)))
+        .filter_map(|(rule, raw)| {
             let (fr, ty) = parse_requirement(raw);
             match ty {
-                Some(t) if t == evidence_type => Some(fr),
-                None => Some(fr),
+                Some(t) if t == evidence_type => Some((fr, rule_wp_sequence(&rule.transition))),
+                None => Some((fr, rule_wp_sequence(&rule.transition))),
                 _ => None,
             }
         })
