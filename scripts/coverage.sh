@@ -62,11 +62,28 @@ echo "==> running the workspace suite under llvm-cov"
 # --no-clean matters: by default cargo-llvm-cov cleans its target directory, and
 # the instrumented test binaries this script later needs are exactly what
 # disappears. Without it the union pass finds nothing to run.
-cargo llvm-cov --workspace --summary-only --no-clean > "$work_dir/workspace.txt" 2>&1 || true
-grep -E '^TOTAL' "$work_dir/workspace.txt" | tail -1 || echo "workspace summary unavailable"
+#
+# cargo-llvm-cov exits non-zero when a TEST fails, which is fine - the summary
+# is still complete. What is never fine is proceeding without a summary: a
+# build failure or crashed report leaves no TOTAL line, and totals read from
+# that would be a partial number published as if complete (audit finding C).
+if ! cargo llvm-cov --workspace --summary-only --no-clean > "$work_dir/workspace.txt" 2>&1; then
+    if ! grep -qE '^TOTAL' "$work_dir/workspace.txt"; then
+        echo "cargo llvm-cov failed before producing a summary; refusing to print a partial total. Last lines:" >&2
+        tail -20 "$work_dir/workspace.txt" >&2
+        exit 1
+    fi
+    echo "cargo llvm-cov exited non-zero (failing tests) but produced a complete summary; continuing"
+fi
+if ! grep -qE '^TOTAL' "$work_dir/workspace.txt"; then
+    echo "workspace summary unavailable (no TOTAL line in $work_dir/workspace.txt); refusing to print a partial total" >&2
+    exit 1
+fi
+grep -E '^TOTAL' "$work_dir/workspace.txt" | tail -1
 
 echo "==> hand-measuring agileplus-cli from its own test binaries"
 rm -f "$work_dir"/cli-*.profraw "$work_dir"/cli.profdata
+cli_bin_failures=0
 
 shopt -s nullglob
 bins=("$target_dir"/debug/build/agileplus-cli/*/out/agileplus_cli-*)
@@ -78,11 +95,30 @@ fi
 for bin in "${bins[@]}"; do
     [ -x "$bin" ] || continue
     echo "    running $(basename "$bin")"
-    LLVM_PROFILE_FILE="$work_dir/cli-%p.profraw" "$bin" --test-threads=4 >/dev/null 2>&1 || true
-    "$llvm_profdata" merge -sparse "$work_dir"/cli-*.profraw -o "$work_dir/cli.profdata" 2>/dev/null
-    "$llvm_cov" report "$bin" -instr-profile="$work_dir/cli.profdata" \
-        > "$work_dir/cli-report.txt" 2>/dev/null
+    # A non-zero test exit usually just means failing tests (the coverage
+    # profile is still complete), but it can also mean a crash with a
+    # truncated profile - record it loudly instead of swallowing it; the
+    # cli_lines check below still refuses to print a percentage when nothing
+    # usable was measured (audit finding C).
+    if ! LLVM_PROFILE_FILE="$work_dir/cli-%p.profraw" "$bin" --test-threads=4 >/dev/null 2>&1; then
+        echo "    WARNING: $(basename "$bin") exited non-zero; its profile may be partial" >&2
+        cli_bin_failures=$((cli_bin_failures + 1))
+    fi
+    if ! "$llvm_profdata" merge -sparse "$work_dir"/cli-*.profraw -o "$work_dir/cli.profdata" 2> "$work_dir/profdata-merge.err"; then
+        echo "FAILED: llvm-profdata merge for $(basename "$bin"):" >&2
+        sed 's/^/    /' "$work_dir/profdata-merge.err" >&2
+        exit 1
+    fi
+    if ! "$llvm_cov" report "$bin" -instr-profile="$work_dir/cli.profdata" \
+        > "$work_dir/cli-report.txt" 2> "$work_dir/cli-report.err"; then
+        echo "FAILED: llvm-cov report for $(basename "$bin"):" >&2
+        sed 's/^/    /' "$work_dir/cli-report.err" >&2
+        exit 1
+    fi
 done
+if [ "$cli_bin_failures" -gt 0 ]; then
+    echo "    WARNING: $cli_bin_failures agileplus-cli test binary run(s) failed; see warnings above" >&2
+fi
 
 # llvm-cov prints paths without a leading '/', so match on the fragment.
 cli_root="${repo_root#/}"
