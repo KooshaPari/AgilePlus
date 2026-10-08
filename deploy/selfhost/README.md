@@ -41,6 +41,8 @@ Set secrets in an untracked environment file, never in frontend builds:
 
 ```env
 AGILEPLUS_API_KEY=<strong-operator-secret>
+# Optional: explicit trusted browser origins, never wildcard
+AGILEPLUS_ALLOWED_ORIGINS=https://agileplus.pheno.studio
 AGILEPLUS_HOST_PORT=3000
 ```
 
@@ -78,6 +80,21 @@ Because `api.agileplus.pheno.studio` is private, standard public HTTP-01 TLS
 validation is not a safe assumption. Use DNS-01 with a Caddy build that has
 the Cloudflare DNS plugin, or provision a trusted certificate separately.
 A stock Caddy binary does not automatically include every DNS provider module.
+
+## Browser-origin boundary
+
+The Rust HTTP API disables cross-origin browser access by default. For a
+cross-origin browser frontend, configure `AGILEPLUS_ALLOWED_ORIGINS` with
+explicit comma-separated origins (for example,
+`https://agileplus.pheno.studio`). Wildcards, arbitrary public HTTP origins,
+and URL paths are rejected. An unset variable leaves same-origin and
+nonbrowser clients unaffected but does not enable a cross-origin dashboard.
+
+**CORS is not authentication.** An allowed origin must still use a safe
+identity-aware session/BFF; never transmit the operator API key in browser
+JavaScript. Avoid a direct Vercel serverless-to-tailnet route: Vercel's cloud
+runtime is not a tailnet member merely because the frontend uses a familiar
+domain.
 
 ## Browser credential boundary
 
