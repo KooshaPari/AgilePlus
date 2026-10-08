@@ -14,7 +14,9 @@ A target checked out in any worktree must be freed before publication. The saga 
 - Fourteen CLI ship gate/flow tests and ten ship side-effect tests passed.
 - Mounted HTTP acceptance suite: ten passed after the schema addition.
 - Full dashboard typecheck, nine operator component tests, production build and JSX accessibility lint passed.
-- Playwright browser witness discovery passed. Browser execution on the new code is pending GitHub CI; local Chromium downloads were unavailable. This is not end-to-end pass evidence yet.
+- Real Chromium browser journey passed against the actual Axum/file SQLite API, production Caddy fragment and built frontend at commit `f959fad5390b8ff5e016be38cc2caedd27121597`: [CI run 37718656528](https://github.com/KooshaPari/AgilePlus/actions/runs/37718656528). It includes gateway authentication, axe accessibility, a lost response after committed acceptance, API restart, receipt replay and exactly one persisted event. [HTML report and sandbox screenshot](https://github.com/KooshaPari/AgilePlus/actions/runs/37718656528/artifacts/11524233847) were uploaded. This is a disposable CI environment witness, not production deployment evidence.
+- Recovery Acceptance Witnesses [CI run 37718656424](https://github.com/KooshaPari/AgilePlus/actions/runs/37718656424) passed all SQLite, application, migration, HTTP, origin, authenticated gRPC and CLI recovery gates on the tested commit.
+- Focused CLI/API/application/Git/SQLite Clippy with all targets passed. Full workspace tests were attempted but could not compile the Linux desktop dependency because GLib development prerequisites are absent locally.
 
 ## Dependency and CI repair
 
@@ -28,4 +30,8 @@ The accessibility workflow now uses the root committed npm lockfile, Node 24, in
 
 The cloud browser opened the public product URL and observed the old dashboard, with zero epics/stories. That is not evidence that the private desktop backend works. Vercel project metadata listed a READY deployment, but scoped deployment inspection returned 403 for the owning team. No new preview or production deployment was created from this patch. No desktop/tailnet host execution capability was established.
 
-The source candidate is reviewable; the remotely usable operator release remains blocked by actual desktop/tailnet execution and scoped Vercel deployment access, plus browser CI and the retained dependency findings. No incremental paid service was provisioned.
+The source candidate is reviewable; the remotely usable operator release remains blocked by actual desktop/tailnet execution and scoped Vercel deployment access, the retained desktop dependency findings and unpublished crates.io workspace dependencies. No incremental paid service was provisioned.
+
+## Remaining release checks
+
+Cargo Deny licenses, bans and sources passed; advisories and OSV remain blocking on the Linux desktop GTK/GLib/Unicode chain. Cargo audit, secret scans, workspace audit, Python security and fuzz CI passed on the tested commit. Registry-based semver checks cannot find the unpublished agileplus-agent-dispatch baseline; CLI publish dry-run cannot resolve unpublished agileplus-application. These are release preparation blockers, not waived checks. The release workflow was regenerated with cargo-dist 0.33.0; its generation check passes. The newer faster-hex finding is fixed by locking 0.10.1. Accessibility path and Prettier errors found by CI are corrected in the follow-up; their rerun must be observed before claiming those CI gates passed.

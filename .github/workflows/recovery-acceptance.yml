@@ -1,76 +1,86 @@
 name: Recovery Acceptance Witnesses
 on:
-  pull_request:
-    branches: [spec/mature-product-contract-v2, fix/release-closure-20261007, fix/operator-dashboard-20261008]
-    paths:
-      - 'crates/**'
-      - 'Cargo.toml'
-      - 'Cargo.lock'
-      - '.github/workflows/recovery-acceptance.yml'
-  push:
-    branches: [spec/mature-product-contract-v2, fix/release-closure-20261007, fix/operator-dashboard-20261008]
-    paths:
-      - 'crates/**'
-      - 'Cargo.toml'
-      - 'Cargo.lock'
-      - '.github/workflows/recovery-acceptance.yml'
+    pull_request:
+        branches:
+            [
+                spec/mature-product-contract-v2,
+                fix/release-closure-20261007,
+                fix/operator-dashboard-20261008,
+            ]
+        paths:
+            - "crates/**"
+            - "Cargo.toml"
+            - "Cargo.lock"
+            - ".github/workflows/recovery-acceptance.yml"
+    push:
+        branches:
+            [
+                spec/mature-product-contract-v2,
+                fix/release-closure-20261007,
+                fix/operator-dashboard-20261008,
+            ]
+        paths:
+            - "crates/**"
+            - "Cargo.toml"
+            - "Cargo.lock"
+            - ".github/workflows/recovery-acceptance.yml"
 permissions:
-  contents: read
+    contents: read
 concurrency:
-  group: recovery-acceptance-${{ github.ref }}
-  cancel-in-progress: true
+    group: recovery-acceptance-${{ github.ref }}
+    cancel-in-progress: true
 jobs:
-  atomic-acceptance:
-    if: github.repository == 'KooshaPari/AgilePlus' && github.event.repository.private == false
-    runs-on: ubuntu-24.04
-    timeout-minutes: 35
-    env:
-      CARGO_BUILD_JOBS: '2'
-      CARGO_TERM_COLOR: never
-      RUST_BACKTRACE: '1'
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-        with:
-          ref: ${{ github.sha }}
-          persist-credentials: false
-      - id: toolchain
-        uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87
-        with:
-          toolchain: stable
-          components: rustfmt, clippy
-      - name: Install protoc for real tonic/prost types (never fallback stubs)
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y protobuf-compiler
-          protoc --version
-      - name: Exact evidence identity
-        run: |
-          git rev-parse HEAD
-          git rev-parse HEAD^{tree}
-          rustc --version
-          cargo --version
-      - name: Verify committed dependency resolution
-        run: cargo tree --locked -p agileplus-sqlite --depth 1 > /dev/null
-      - name: SQLite atomic acceptance and failure injection
-        run: cargo test --locked -p agileplus-sqlite --test atomic_acceptance -- --nocapture
-      - name: Application acceptance unit tests
-        if: ${{ !cancelled() && steps.toolchain.outcome == 'success' }}
-        run: cargo test --locked -p agileplus-application --lib -- --nocapture
-      - name: Migration regression tests
-        if: ${{ !cancelled() && steps.toolchain.outcome == 'success' }}
-        run: cargo test --locked -p agileplus-sqlite --lib migrations::tests -- --nocapture
-      - name: Mounted HTTP acceptance
-        if: ${{ !cancelled() && steps.toolchain.outcome == 'success' }}
-        run: cargo test --locked -p agileplus-api --test atomic_acceptance_http -- --nocapture
-      - name: API browser-origin policy
-        if: ${{ !cancelled() && steps.toolchain.outcome == 'success' }}
-        run: cargo test --locked -p agileplus-api --lib router::compose::cors_policy_tests -- --nocapture
-      - name: Authenticated gRPC acceptance
-        if: ${{ !cancelled() && steps.toolchain.outcome == 'success' }}
-        run: cargo test --locked -p agileplus-grpc --test atomic_acceptance_rpc -- --nocapture
-      - name: CLI acceptance and candidate continuity
-        if: ${{ !cancelled() && steps.toolchain.outcome == 'success' }}
-        run: cargo test --locked -p agileplus-cli --test validate_command_flow --test ship_command_flow --test implement_command_flow --test promotion_recovery --test ship_side_effects -- --nocapture
-      - name: Formatting gate is independent of executed tests
-        if: ${{ !cancelled() && steps.toolchain.outcome == 'success' }}
-        run: cargo fmt --all -- --check
+    atomic-acceptance:
+        if: github.repository == 'KooshaPari/AgilePlus' && github.event.repository.private == false
+        runs-on: ubuntu-24.04
+        timeout-minutes: 35
+        env:
+            CARGO_BUILD_JOBS: "2"
+            CARGO_TERM_COLOR: never
+            RUST_BACKTRACE: "1"
+        steps:
+            - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+              with:
+                  ref: ${{ github.sha }}
+                  persist-credentials: false
+            - id: toolchain
+              uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87
+              with:
+                  toolchain: stable
+                  components: rustfmt, clippy
+            - name: Install protoc for real tonic/prost types (never fallback stubs)
+              run: |
+                  sudo apt-get update -qq
+                  sudo apt-get install -y protobuf-compiler
+                  protoc --version
+            - name: Exact evidence identity
+              run: |
+                  git rev-parse HEAD
+                  git rev-parse HEAD^{tree}
+                  rustc --version
+                  cargo --version
+            - name: Verify committed dependency resolution
+              run: cargo tree --locked -p agileplus-sqlite --depth 1 > /dev/null
+            - name: SQLite atomic acceptance and failure injection
+              run: cargo test --locked -p agileplus-sqlite --test atomic_acceptance -- --nocapture
+            - name: Application acceptance unit tests
+              if: ${{ !cancelled() && steps.toolchain.outcome == 'success' }}
+              run: cargo test --locked -p agileplus-application --lib -- --nocapture
+            - name: Migration regression tests
+              if: ${{ !cancelled() && steps.toolchain.outcome == 'success' }}
+              run: cargo test --locked -p agileplus-sqlite --lib migrations::tests -- --nocapture
+            - name: Mounted HTTP acceptance
+              if: ${{ !cancelled() && steps.toolchain.outcome == 'success' }}
+              run: cargo test --locked -p agileplus-api --test atomic_acceptance_http -- --nocapture
+            - name: API browser-origin policy
+              if: ${{ !cancelled() && steps.toolchain.outcome == 'success' }}
+              run: cargo test --locked -p agileplus-api --lib router::compose::cors_policy_tests -- --nocapture
+            - name: Authenticated gRPC acceptance
+              if: ${{ !cancelled() && steps.toolchain.outcome == 'success' }}
+              run: cargo test --locked -p agileplus-grpc --test atomic_acceptance_rpc -- --nocapture
+            - name: CLI acceptance and candidate continuity
+              if: ${{ !cancelled() && steps.toolchain.outcome == 'success' }}
+              run: cargo test --locked -p agileplus-cli --test validate_command_flow --test ship_command_flow --test implement_command_flow --test promotion_recovery --test ship_side_effects -- --nocapture
+            - name: Formatting gate is independent of executed tests
+              if: ${{ !cancelled() && steps.toolchain.outcome == 'success' }}
+              run: cargo fmt --all -- --check
