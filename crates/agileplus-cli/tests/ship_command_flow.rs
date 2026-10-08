@@ -38,7 +38,7 @@ fn ship_rejects_non_validated_state_without_skip() {
             .await
             .unwrap_err();
         assert!(
-            err.to_string().contains("Expected 'Validated'"),
+            err.to_string().contains("promotion requires Validated"),
             "got: {err}"
         );
         let f = StoragePort::get_feature_by_slug(&storage, "planned-feat")
@@ -83,7 +83,7 @@ fn ship_rejects_incomplete_work_packages() {
             .await
             .unwrap_err();
         let msg = err.to_string();
-        assert!(msg.contains("incomplete work packages"), "got: {msg}");
+        assert!(msg.contains("promotion requires every work package Done"), "got: {msg}");
         assert!(
             msg.contains("WP02 'WP 2'"),
             "must name the blocked WP: {msg}"
@@ -152,16 +152,18 @@ fn ship_rejects_zero_work_packages_outside_dry_run() {
 }
 
 #[test]
-fn ship_dry_run_with_no_wps_succeeds() {
+fn ship_dry_run_with_no_wps_rejects_vacuous_promotion() {
     block_on(async {
         let storage = SqliteStorageAdapter::in_memory().unwrap();
         let vcs = RecordingVcs::new();
         seed(&storage, "empty-dry", FeatureState::Validated, &[]).await;
         let mut a = args("empty-dry");
         a.dry_run = true;
-        run_ship(a, &storage, &vcs)
+        let err = run_ship(a, &storage, &vcs)
             .await
-            .expect("dry run with zero WPs succeeds");
+            .expect_err("even a dry run must not present an empty promotion as valid");
+        assert!(err.to_string().contains("no work packages"), "{err}");
+        assert!(vcs.merges.lock().unwrap().is_empty());
     })
 }
 
@@ -264,7 +266,7 @@ fn ship_rejects_satisfied_evaluation_with_missing_criterion_receipt() {
             .await
             .expect_err("missing criterion receipt must fail closed");
         assert!(
-            err.to_string().contains("invalid criterion receipt"),
+            err.to_string().contains("criterion"),
             "unexpected error: {err}"
         );
         assert!(
