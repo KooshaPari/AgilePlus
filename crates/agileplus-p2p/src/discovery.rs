@@ -176,10 +176,16 @@ pub async fn discover_peers() -> Result<Vec<PeerInfo>, PeerDiscoveryError> {
 #[cfg(unix)]
 async fn probe_agileplus(ip: &str) -> PeerStatus {
     use tokio::net::TcpStream;
-    use tokio::time::{Duration, timeout};
-
     let addr = format!("{ip}:3000");
-    match timeout(Duration::from_secs(2), TcpStream::connect(&addr)).await {
+    probe_connection(TcpStream::connect(&addr), std::time::Duration::from_secs(2)).await
+}
+
+#[cfg(unix)]
+async fn probe_connection<F, T>(connection: F, duration: std::time::Duration) -> PeerStatus
+where
+    F: std::future::Future<Output = std::io::Result<T>>,
+{
+    match tokio::time::timeout(duration, connection).await {
         Ok(Ok(_)) => PeerStatus::Online,
         Ok(Err(_)) => PeerStatus::Offline,
         Err(_) => PeerStatus::Unknown,
@@ -322,11 +328,20 @@ mod deep_tests {
 
     #[cfg(unix)]
     #[tokio::test]
-    async fn probe_agileplus_unroutable_ip_times_out_to_unknown() {
-        // 192.0.2.0/24 is TEST-NET-1: guaranteed non-routable, so the 2s
-        // connect timeout fires and the peer is reported Unknown.
-        let status = probe_agileplus("192.0.2.1").await;
+    async fn probe_connection_timeout_is_unknown_without_external_network_assumptions() {
+        let status = probe_connection(
+            std::future::pending::<std::io::Result<()>>(),
+            std::time::Duration::from_millis(1),
+        )
+        .await;
         assert_eq!(status, PeerStatus::Unknown);
+        let refused = std::future::ready(Err::<(), _>(std::io::Error::from(
+            std::io::ErrorKind::ConnectionRefused,
+        )));
+        assert_eq!(
+            probe_connection(refused, std::time::Duration::from_secs(1)).await,
+            PeerStatus::Offline
+        );
     }
 
     #[test]

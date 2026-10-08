@@ -1,0 +1,16 @@
+{
+  "nav.dashboard": "Übersicht",
+  "stories.shown": "{count} Stories angezeigt",
+  "overview.title": "Übersicht",
+  "settings.title": "Einstellungen",
+  "settings.appearance": "Darstellung",
+  "settings.theme": "Design",
+  "settings.language": "Sprache",
+  "settings.notifications": "Benachrichtigungen",
+  "settings.desktopNotifications": "Desktop-Benachrichtigungen",
+  "settings.emailDigest": "E-Mail-Zusammenfassung",
+  "settings.about": "Über",
+  "settings.version": "Version",
+  "settings.documentation": "Dokumentation",
+  "settings.repository": "Repository"
+}

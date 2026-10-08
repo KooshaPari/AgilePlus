@@ -10,33 +10,40 @@
     "typecheck:tsgo": "tsgo --noEmit -p tsconfig.json",
     "typecheck:experimental": "bun run typecheck:tsgo",
     "test:operator": "vitest run src/OperatorDashboard.test.tsx",
-    "typecheck:operator": "tsgo --noEmit -p tsconfig.operator.json"
+    "typecheck:operator": "tsgo --noEmit -p tsconfig.operator.json",
+    "test:operator:browser": "playwright test --config playwright.operator.config.ts",
+    "lint:a11y": "eslint --max-warnings 0 src"
   },
   "dependencies": {
+    "axios": "^1.14.1",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
-    "zustand": "^5.0.12",
-    "axios": "^1.14.1",
-    "clsx": "^2.1.1",
     "tailwind-merge": "^3.3.1",
-    "class-variance-authority": "^0.7.1"
+    "zustand": "^5.0.12"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@babel/core": "^7.29.7",
+    "@babel/eslint-parser": "^7.29.9",
     "@playwright/test": "^1.61.1",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
+    "@typescript/native-preview": "^7.0.0-dev.20260707.2",
     "@vitejs/plugin-react": "^5.1.0",
     "@vitest/coverage-v8": "^4.1.11",
     "autoprefixer": "^10.4.21",
+    "eslint": "^9.39.5",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
     "jsdom": "^26.1.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.17",
     "typescript": "^7.0.0",
     "vite": "^8.0.1",
-    "vitest": "^4.1.11",
-    "@typescript/native-preview": "^7.0.0-dev.20260707.2"
+    "vitest": "^4.1.11"
   }
 }

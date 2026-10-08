@@ -5,6 +5,7 @@ pub mod epic;
 pub mod events;
 pub mod execution;
 pub mod observability;
+pub mod promotion;
 pub mod review;
 pub mod storage;
 pub mod story;

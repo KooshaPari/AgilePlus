@@ -1,14 +1,14 @@
 name: Recovery Acceptance Witnesses
 on:
   pull_request:
-    branches: [spec/mature-product-contract-v2]
+    branches: [spec/mature-product-contract-v2, fix/release-closure-20261007, fix/operator-dashboard-20261008]
     paths:
       - 'crates/**'
       - 'Cargo.toml'
       - 'Cargo.lock'
       - '.github/workflows/recovery-acceptance.yml'
   push:
-    branches: [spec/mature-product-contract-v2]
+    branches: [spec/mature-product-contract-v2, fix/release-closure-20261007, fix/operator-dashboard-20261008]
     paths:
       - 'crates/**'
       - 'Cargo.toml'
@@ -70,7 +70,7 @@ jobs:
         run: cargo test --locked -p agileplus-grpc --test atomic_acceptance_rpc -- --nocapture
       - name: CLI acceptance and candidate continuity
         if: ${{ !cancelled() && steps.toolchain.outcome == 'success' }}
-        run: cargo test --locked -p agileplus-cli --test validate_command_flow --test ship_command_flow --test implement_command_flow -- --nocapture
+        run: cargo test --locked -p agileplus-cli --test validate_command_flow --test ship_command_flow --test implement_command_flow --test promotion_recovery --test ship_side_effects -- --nocapture
       - name: Formatting gate is independent of executed tests
         if: ${{ !cancelled() && steps.toolchain.outcome == 'success' }}
         run: cargo fmt --all -- --check
