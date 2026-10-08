@@ -498,6 +498,7 @@ dependencies = [
 name = "agileplus-grpc"
 version = "0.2.4"
 dependencies = [
+ "agileplus-application",
  "agileplus-domain",
  "agileplus-git",
  "agileplus-proto",
