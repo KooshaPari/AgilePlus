@@ -73,8 +73,10 @@ def main() -> int:
     require(api.get("environment", {}).get("AGILEPLUS_API_KEY"),
             "API credential must be provided to backend at runtime")
     require(not api.get("privileged", False), "API container must not be privileged")
-    require("--locked" in api.get("command", [] if False else "") if isinstance(api.get("command"), str)
-            else "--locked" in " ".join(api.get("command", [])),
+    command = api.get("command", "")
+    if isinstance(command, list):
+        command = " ".join(command)
+    require("--locked" in command,
             "production bootstrap should use the exact Cargo.lock")
 
     caddy = CADDY.read_text()
