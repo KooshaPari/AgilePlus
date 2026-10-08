@@ -116,6 +116,38 @@ repository and should not be made a hard dependency of private deployments.
 A public ingress also requires abuse protections, identity, authorization
 and a reviewed backup/incident path.
 
+## Persistent SQLite backup / restore
+
+The desktop's writable SQLite database needs snapshots that include committed
+WAL transactions. **Do not copy the live `.db` file directly**: a file-only
+copy can omit WAL data or be inconsistent.
+
+When running AgilePlus as a native host service with a filesystem database:
+
+```sh
+python3 scripts/backup-agileplus-sqlite.py \\
+  --database /srv/agileplus/data/agileplus.db \\
+  --output-dir /srv/agileplus/backups
+```
+
+The script uses the SQLite online backup API, verifies `PRAGMA integrity_check`,
+and atomically renames the verified snapshot. It deliberately performs no
+automatic pruning. Configure scheduled execution and retention **separately**
+after testing restore and disk-space policy.
+
+For a restoration drill, stop the application writer, copy a verified snapshot
+to a *new* database path, start a test instance against that restored path,
+and verify Feature, WorkPackage, audit, event, and acceptance-receipt identity.
+Never overwrite the production file while the API still has it open. A
+Compose-managed named volume is not the same as a host-visible SQLite path;
+run the backup tool in a maintenance environment with that volume mounted or
+adopt a native host-path deployment. Do not assume the native path example
+above works for the named Compose volume.
+
+The CI backup smoke tests validate WAL consistency and offline restoration on
+a disposable fixture. They do **not** establish that a real desktop backup
+schedule, encrypted off-host copy, or disaster recovery procedure exists.
+
 ## Deployment release gates
 
 No "deployed" claim until all are executed:
