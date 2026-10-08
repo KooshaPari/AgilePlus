@@ -1,14 +1,24 @@
-{$HOSTNAME:api.agileplus.pheno.studio} {
-	encode zstd gzip
-
-	header {
-		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-		X-Content-Type-Options "nosniff"
-		X-Frame-Options "DENY"
-		Referrer-Policy "strict-origin-when-cross-origin"
-		Permissions-Policy "geolocation=(), microphone=(), camera=()"
-		-Server
-	}
-
-	reverse_proxy agileplus-api:3000
+# IMPORT INTO THE SINGLE HOST-LEVEL CADDY CONFIG. Do not start another
+# Caddy instance for AgilePlus.
+#
+# The host Caddy must support ACME DNS-01 with the Cloudflare DNS module
+# (or use separately provisioned TLS certs) because this private tailnet
+# hostname is not publicly reachable for HTTP-01 challenges.
+#
+# Prerequisites:
+# - custom-domain cert issuance configured on the host Caddy
+# - firewall permits HTTPS only on the Tailscale interface for this hostname
+# - private DNS resolves this name to the authorized tailnet edge/service
+#
+# Replace this hostname only when the canonical product DNS name changes.
+api.agileplus.pheno.studio {
+    encode zstd gzip
+    header {
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        X-Frame-Options "DENY"
+        Permissions-Policy "geolocation=(), microphone=(), camera=()"
+        -Server
+    }
+    reverse_proxy 127.0.0.1:3000
 }
