@@ -35,7 +35,7 @@ from pathlib import Path
 # Reuse the parsing logic from the single-run script. Keeps the two scripts
 # in lockstep on regex / unit handling.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from check_bench_regressions import parse_bench
+from check_bench_regressions import parse_bench, safe_read_text
 
 
 def load_exclude_names(path: Path | None) -> set[str]:
@@ -43,7 +43,7 @@ def load_exclude_names(path: Path | None) -> set[str]:
         return set()
     return {
         line.strip()
-        for line in path.read_text(errors="ignore").splitlines()
+        for line in safe_read_text(path).splitlines()
         if line.strip() and not line.strip().startswith("#")
     }
 
@@ -91,7 +91,7 @@ def main() -> int:
             continue
         median_per_bench[name] = int(statistics.median(samples))
 
-    baseline = json.loads(Path(baseline_path).read_text())
+    baseline = json.loads(safe_read_text(Path(baseline_path)))
 
     regressions: list[dict] = []
     skipped_excluded: list[str] = []

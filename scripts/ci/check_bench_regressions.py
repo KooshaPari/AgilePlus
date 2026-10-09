@@ -49,10 +49,26 @@ def to_ns(value: float, unit: str) -> int:
     return int(value * NS_PER_UNIT[unit])
 
 
+def safe_read_text(path: Path) -> str:
+    """Read a CI-local file, refusing paths that escape the working directory.
+
+    These scripts only ever read files from the workspace they are invoked in
+    (bench outputs, baselines, exclude lists). Resolving against the current
+    directory and rejecting escapes keeps every read inside that workspace, so
+    a stray or crafted CLI argument cannot reach elsewhere on the runner
+    (SonarCloud pythonsecurity:S8707).
+    """
+    resolved = path.resolve()
+    base = Path.cwd().resolve()
+    if not resolved.is_relative_to(base):
+        raise ValueError(f"refusing to read outside the working directory: {path}")
+    return resolved.read_text(encoding="utf-8", errors="ignore")
+
+
 def parse_bench(path: Path, exclude: set[str] | None = None) -> dict[str, int]:
     out: dict[str, int] = {}
     pending_name: str | None = None
-    for line in path.read_text(errors="ignore").splitlines():
+    for line in safe_read_text(path).splitlines():
         stripped = line.strip()
         m = BENCH_RE.match(stripped)
         if m:
@@ -77,7 +93,7 @@ def load_exclude_names(path: Path | None) -> set[str]:
         return set()
     return {
         line.strip()
-        for line in path.read_text(errors="ignore").splitlines()
+        for line in safe_read_text(path).splitlines()
         if line.strip() and not line.strip().startswith("#")
     }
 
@@ -97,7 +113,7 @@ def main() -> int:
 
     exclude = load_exclude_names(args.exclude_file)
     current = parse_bench(Path(args.bench), exclude=exclude)
-    baseline = json.loads(Path(args.baseline).read_text())
+    baseline = json.loads(safe_read_text(Path(args.baseline)))
 
     regressions: list[dict] = []
     for name, cur_ns in current.items():
