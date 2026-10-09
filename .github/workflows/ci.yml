@@ -110,7 +110,15 @@ jobs:
                     libappindicator3-dev \
                     librsvg2-dev \
                     patchelf
+            # Pin to the same nightly as rust-toolchain.toml so CI matches local dev.
+            # Without this, dtolnay/rust-toolchain@stable silently ignores the
+            # toolchain file and CI runs against whatever stable is at this
+            # moment — nightly-feature breakage in cargo doc / clippy would
+            # not be caught in CI.
             - uses: dtolnay/rust-toolchain@stable
+              with:
+                  toolchain: nightly-2026-07-31
+                  components: rustfmt, clippy, rust-docs
             - uses: Swatinem/rust-cache@v2
             - name: cargo fmt --check
               run: cargo fmt --all -- --check
@@ -127,6 +135,8 @@ jobs:
         steps:
             - uses: actions/checkout@v7
             - uses: dtolnay/rust-toolchain@stable
+              with:
+                  toolchain: nightly-2026-07-31
             - name: cargo-deny check
               uses: EmbarkStudios/cargo-deny-action@v2
               with:
@@ -195,6 +205,13 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v7
+              with:
+                  # gitleaks/gitleaks-action@v3 (post-befd6850) runs
+                  # `git log -p -U0 --no-merges --first-parent <base>..<head>`
+                  # which requires the full PR history in the working tree.
+                  # A default `fetch-depth: 1` checkout can't resolve those
+                  # SHAs and the job fails with "fatal: ambiguous argument".
+                  fetch-depth: 0
             - name: gitleaks
               uses: gitleaks/gitleaks-action@v3
               env:
