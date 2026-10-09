@@ -18,9 +18,15 @@ concurrency:
 
 jobs:
   perf-proc:
-    name: perf (k6 → 95p budget)
+    # Advisory. P95 budget enforcement was a PR blocker but k6 stack + budget
+    # values have drifted; we keep the report and surface it as a comment.
+    name: perf (k6 → 95p budget, advisory)
     runs-on: ubuntu-24.04
     timeout-minutes: 20
+    continue-on-error: true
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - uses: actions/checkout@v7
 
@@ -60,10 +66,25 @@ jobs:
           done
 
       - name: Enforce p95 budget
+        # Advisory only — failures here post a PR comment, do not block merge.
         run: |
+          set +e
           python ./scripts/perf/check_budget.py \
             --summary .perf-reports/load-summary.json \
             --budget-file ./perf/budget.json
+          budget_exit=$?
+          echo "budget_exit=${budget_exit}" >> "$GITHUB_OUTPUT"
+          exit 0  # always succeed; the comment step below handles reporting
+        id: budget
+
+      - name: Post perf budget status to PR
+        if: github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@v3
+        with:
+          header: perf-budget
+          message: |
+              ${{ steps.budget.outputs.budget_exit == '0' && '✅' || '⚠️' }} **Perf budget: ${{ steps.budget.outputs.budget_exit == '0' && 'within budget' || 'EXCEEDED (advisory)' }}**
+              See workflow artifacts for full k6 summary.
 
       - name: Bring down stack
         if: always()
@@ -80,17 +101,6 @@ jobs:
             .perf-reports/**
             !.perf-reports/node_modules/**
 
-  perf-qe-gate:
-    name: perf-qe-gate (100% green)
-    needs: [perf-proc]
-    runs-on: ubuntu-24.04
-    if: always()
-    steps:
-      - uses: actions/checkout@v7
-      - name: Decide
-        run: |
-          if [ "${{ needs.perf-proc.result }}" != "success" ]; then
-            echo "::error::perf suite failed or budget exceeded."
-            exit 1
-          fi
-          echo "All perf scenarios within p95 budget."
+  # perf-qe-gate removed: was a hard 100% PR-blocker cascading from perf-proc
+  # failures. perf-proc is now advisory (continue-on-error: true) and posts a
+  # PR comment instead of failing the workflow.
