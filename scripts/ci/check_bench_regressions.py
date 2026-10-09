@@ -49,7 +49,7 @@ def to_ns(value: float, unit: str) -> int:
     return int(value * NS_PER_UNIT[unit])
 
 
-def parse_bench(path: Path) -> dict[str, int]:
+def parse_bench(path: Path, exclude: set[str] | None = None) -> dict[str, int]:
     out: dict[str, int] = {}
     pending_name: str | None = None
     for line in path.read_text(errors="ignore").splitlines():
@@ -63,10 +63,23 @@ def parse_bench(path: Path) -> dict[str, int]:
             m = TIME_RE.match(stripped)
         if not m or not pending_name:
             continue
+        if exclude and pending_name in exclude:
+            pending_name = None
+            continue
         ns = to_ns(float(m["median"]), m["unit2"])
         out[pending_name] = ns
         pending_name = None
     return out
+
+
+def load_exclude_names(path: Path | None) -> set[str]:
+    if not path or not path.exists():
+        return set()
+    return {
+        line.strip()
+        for line in path.read_text(errors="ignore").splitlines()
+        if line.strip() and not line.strip().startswith("#")
+    }
 
 
 def main() -> int:
@@ -74,9 +87,16 @@ def main() -> int:
     p.add_argument("bench")
     p.add_argument("baseline")
     p.add_argument("--max-regress", type=float, default=15.0)
+    p.add_argument(
+        "--exclude-file",
+        type=Path,
+        default=None,
+        help="File with one bench name per line to exclude from the threshold gate.",
+    )
     args = p.parse_args()
 
-    current = parse_bench(Path(args.bench))
+    exclude = load_exclude_names(args.exclude_file)
+    current = parse_bench(Path(args.bench), exclude=exclude)
     baseline = json.loads(Path(args.baseline).read_text())
 
     regressions: list[dict] = []
@@ -103,6 +123,7 @@ def main() -> int:
         "regressions": regressions,
         "ok": not regressions,
         "checked": len(current),
+        "excluded": len(exclude),
         "baseline_size": len(baseline),
     }
     json.dump(report, sys.stdout, indent=2)
