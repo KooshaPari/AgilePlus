@@ -195,6 +195,13 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v7
+              with:
+                  # gitleaks/gitleaks-action@v3 (post-befd6850) runs
+                  # `git log -p -U0 --no-merges --first-parent <base>..<head>`
+                  # which requires the full PR history in the working tree.
+                  # A default `fetch-depth: 1` checkout can't resolve those
+                  # SHAs and the job fails with "fatal: ambiguous argument".
+                  fetch-depth: 0
             - name: gitleaks
               uses: gitleaks/gitleaks-action@v3
               env:
