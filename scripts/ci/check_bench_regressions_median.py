@@ -35,7 +35,7 @@ from pathlib import Path
 # Reuse the parsing logic from the single-run script. Keeps the two scripts
 # in lockstep on regex / unit handling.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from check_bench_regressions import parse_bench  # noqa: E402
+from check_bench_regressions import parse_bench
 
 
 def load_exclude_names(path: Path | None) -> set[str]:
@@ -65,7 +65,10 @@ def main() -> int:
     args = p.parse_args()
 
     if len(args.runs) < 2:
-        print("error: need at least 2 positional args (>=1 run + baseline)", file=sys.stderr)
+        print(
+            "error: need at least 2 positional args (>=1 run + baseline)",
+            file=sys.stderr,
+        )
         return 2
 
     *run_paths, baseline_path = args.runs
@@ -121,7 +124,9 @@ def main() -> int:
         "run_count": len(run_paths),
         "regressions": regressions,
         "ok": not regressions,
-        "checked": len(median_per_bench) - len(skipped_excluded) - len(skipped_no_baseline),
+        "checked": len(median_per_bench)
+        - len(skipped_excluded)
+        - len(skipped_no_baseline),
         "excluded": len(skipped_excluded),
         "no_baseline": len(skipped_no_baseline),
         "baseline_size": len(baseline),
