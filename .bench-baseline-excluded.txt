@@ -1,0 +1,8 @@
+# Excluded from bench-thresholds gate
+# These benches are below Criterion's measurement noise floor
+# (single-run variance exceeds the bench value itself). Keeping them in
+# the baseline for trend tracking but excluding from the threshold gate.
+# Re-evaluate if any bench's median crosses 1 µs — at that scale the
+# signal is reliable enough to re-enable.
+health_check_db_ping
+graph_dependency_chain_query

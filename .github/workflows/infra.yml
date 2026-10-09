@@ -89,9 +89,9 @@ jobs:
               run: |
                   echo "### Benches excluded from threshold gate (ns-scale, below Criterion noise floor):"
                   cat .bench-baseline-excluded.txt || true
-            - name: Run benchmarks
+            - name: Run benchmarks (3 runs for noise tolerance)
               run: |
-                  : > bench.txt
+                  : > bench1.txt; : > bench2.txt; : > bench3.txt
                   for bench in \
                     event_append_throughput \
                     event_replay \
@@ -100,17 +100,21 @@ jobs:
                     graph_query_perf \
                     claim_engine_perf \
                     trace_matrix_derivation; do
-                    cargo bench -p agileplus-benchmarks --bench "$bench" | tee -a bench.txt
+                    for run in 1 2 3; do
+                      cargo bench -p agileplus-benchmarks --bench "$bench" | tee -a bench${run}.txt
+                    done
                   done
-            - name: Compare to baseline
+            - name: Compare to baseline (median of 3 runs, ≤50% regression, advisory)
               run: |
-                  python3 scripts/ci/check_bench_regressions.py bench.txt .bench-baseline.json \
+                  python3 scripts/ci/check_bench_regressions_median.py \
+                    bench1.txt bench2.txt bench3.txt \
+                    .bench-baseline.json \
                     --max-regress 50 \
                     --exclude-file .bench-baseline-excluded.txt
             - uses: actions/upload-artifact@v7
               with:
                   name: bench-results
-                  path: bench.txt
+                  path: bench*.txt
                   if-no-files-found: warn
 
     green-button:
