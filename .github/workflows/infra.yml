@@ -79,7 +79,9 @@ jobs:
         # NS-scale benches are excluded via .bench-baseline-excluded.txt.
         name: benchmark thresholds (advisory)
         runs-on: ubuntu-latest
-        timeout-minutes: 60
+        # 3 measurement passes per bench; compile is cached via rust-cache,
+        # but measurement phase triples. 60m was the single-pass budget.
+        timeout-minutes: 120
         continue-on-error: true
         steps:
             - uses: actions/checkout@v7
