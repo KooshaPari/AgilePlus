@@ -49,10 +49,30 @@ def to_ns(value: float, unit: str) -> int:
     return int(value * NS_PER_UNIT[unit])
 
 
-def parse_bench(path: Path) -> dict[str, int]:
+def safe_read_text(path: Path) -> str:
+    """Read a CI-local file, refusing paths that escape the working directory.
+
+    These scripts only ever read files from the workspace they are invoked in
+    (bench outputs, baselines, exclude lists). Resolving against the current
+    directory and rejecting escapes keeps every read inside that workspace, so
+    a stray or crafted CLI argument cannot reach elsewhere on the runner
+    (SonarCloud pythonsecurity:S8707).
+    """
+    resolved = path.resolve()
+    base = Path.cwd().resolve()
+    if not resolved.is_relative_to(base):
+        raise ValueError(f"refusing to read outside the working directory: {path}")
+    # `errors="replace"` (not "ignore") so any malformed UTF-8 byte in a bench output or
+    # baseline is surfaced as the unicode replacement character (\uFFFD) in the parsed
+    # output rather than silently dropped. A silently dropped byte could merge two bench
+    # lines that the parser would otherwise see as distinct.
+    return resolved.read_text(encoding="utf-8", errors="replace")
+
+
+def parse_bench(path: Path, exclude: set[str] | None = None) -> dict[str, int]:
     out: dict[str, int] = {}
     pending_name: str | None = None
-    for line in path.read_text(errors="ignore").splitlines():
+    for line in safe_read_text(path).splitlines():
         stripped = line.strip()
         m = BENCH_RE.match(stripped)
         if m:
@@ -63,10 +83,23 @@ def parse_bench(path: Path) -> dict[str, int]:
             m = TIME_RE.match(stripped)
         if not m or not pending_name:
             continue
+        if exclude and pending_name in exclude:
+            pending_name = None
+            continue
         ns = to_ns(float(m["median"]), m["unit2"])
         out[pending_name] = ns
         pending_name = None
     return out
+
+
+def load_exclude_names(path: Path | None) -> set[str]:
+    if not path or not path.exists():
+        return set()
+    return {
+        line.strip()
+        for line in safe_read_text(path).splitlines()
+        if line.strip() and not line.strip().startswith("#")
+    }
 
 
 def main() -> int:
@@ -74,10 +107,17 @@ def main() -> int:
     p.add_argument("bench")
     p.add_argument("baseline")
     p.add_argument("--max-regress", type=float, default=15.0)
+    p.add_argument(
+        "--exclude-file",
+        type=Path,
+        default=None,
+        help="File with one bench name per line to exclude from the threshold gate.",
+    )
     args = p.parse_args()
 
-    current = parse_bench(Path(args.bench))
-    baseline = json.loads(Path(args.baseline).read_text())
+    exclude = load_exclude_names(args.exclude_file)
+    current = parse_bench(Path(args.bench), exclude=exclude)
+    baseline = json.loads(safe_read_text(Path(args.baseline)))
 
     regressions: list[dict] = []
     for name, cur_ns in current.items():
@@ -103,6 +143,7 @@ def main() -> int:
         "regressions": regressions,
         "ok": not regressions,
         "checked": len(current),
+        "excluded": len(exclude),
         "baseline_size": len(baseline),
     }
     json.dump(report, sys.stdout, indent=2)

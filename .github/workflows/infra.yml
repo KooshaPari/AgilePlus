@@ -22,6 +22,14 @@
 name: infra
 
 on:
+    # The original design runs only on workflow_run + push-to-main so the green-button
+    # verdict posts only after a main-branch merge. But the bench-thresholds + green-button
+    # jobs are the public acceptance surface for the Kilo Code Review findings on the
+    # median script (warn-and-continue on missing samples) and the verdict color logic.
+    # Without this trigger the workflow never exercises on PR branches and the Kilo fixes
+    # remain in dead code paths.
+    pull_request:
+        branches: [main, master, develop]
     workflow_run:
         workflows: ["ci"]
         types: [completed]
@@ -49,9 +57,9 @@ jobs:
         runs-on: ubuntu-latest
         timeout-minutes: 30
         steps:
-            - uses: actions/checkout@v7
-            - uses: dtolnay/rust-toolchain@stable
-            - uses: Swatinem/rust-cache@v2
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+            - uses: dtolnay/rust-toolchain@686976e191b89faba57d3206551f0f330d8cb249 # @stable
+            - uses: Swatinem/rust-cache@49a0bdc70d2e1b713ca9e2869b211fcce03d3c1c # @v2
             - name: Run tests with rerun-on-flake
               run: |
                   cargo test --workspace --quiet -- --test-threads=4
@@ -67,23 +75,33 @@ jobs:
                   fi
                   python3 scripts/ci/detect_flakes.py /tmp/cargo-test.log /tmp/rerun.log > flaky-tests.json
                   cat flaky-tests.json
-            - uses: actions/upload-artifact@v7
+            - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # @v7
               with:
                   name: flaky-tests
                   path: flaky-tests.json
                   if-no-files-found: warn
 
     bench-thresholds:
-        name: benchmark thresholds
+        # Advisory only. Single-run Criterion noise is ±15-25%; a 50% threshold
+        # catches only catastrophic regressions while absorbing normal variance.
+        # NS-scale benches are excluded via .bench-baseline-excluded.txt.
+        name: benchmark thresholds (advisory)
         runs-on: ubuntu-latest
-        timeout-minutes: 60
+        # 3 measurement passes per bench; compile is cached via rust-cache,
+        # but measurement phase triples. 60m was the single-pass budget.
+        timeout-minutes: 120
+        continue-on-error: true
         steps:
-            - uses: actions/checkout@v7
-            - uses: dtolnay/rust-toolchain@stable
-            - uses: Swatinem/rust-cache@v2
-            - name: Run benchmarks
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+            - uses: dtolnay/rust-toolchain@686976e191b89faba57d3206551f0f330d8cb249 # @stable
+            - uses: Swatinem/rust-cache@49a0bdc70d2e1b713ca9e2869b211fcce03d3c1c # @v2
+            - name: Show excluded benches
               run: |
-                  : > bench.txt
+                  echo "### Benches excluded from threshold gate (ns-scale, below Criterion noise floor):"
+                  cat .bench-baseline-excluded.txt || true
+            - name: Run benchmarks (3 runs for noise tolerance)
+              run: |
+                  : > bench1.txt; : > bench2.txt; : > bench3.txt
                   for bench in \
                     event_append_throughput \
                     event_replay \
@@ -92,33 +110,69 @@ jobs:
                     graph_query_perf \
                     claim_engine_perf \
                     trace_matrix_derivation; do
-                    cargo bench -p agileplus-benchmarks --bench "$bench" | tee -a bench.txt
+                    for run in 1 2 3; do
+                      # `set -o pipefail` so a `cargo bench` failure (cargo exit != 0) surfaces
+                      # even though `tee` exits 0. Without this, a silently-failed bench
+                      # produces an incomplete bench${run}.txt that the median script would
+                      # later treat as a clean run.
+                      set -o pipefail
+                      cargo bench -p agileplus-benchmarks --bench "$bench" | tee -a bench${run}.txt
+                    done
                   done
-            - name: Compare to baseline
+            - name: Compare to baseline (median of 3 runs, ≤50% regression, advisory)
               run: |
-                  python3 scripts/ci/check_bench_regressions.py bench.txt .bench-baseline.json --max-regress 15
-            - uses: actions/upload-artifact@v7
+                  python3 scripts/ci/check_bench_regressions_median.py \
+                    bench1.txt bench2.txt bench3.txt \
+                    .bench-baseline.json \
+                    --max-regress 50 \
+                    --exclude-file .bench-baseline-excluded.txt
+            - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # @v7
               with:
                   name: bench-results
-                  path: bench.txt
+                  path: bench*.txt
                   if-no-files-found: warn
 
     green-button:
         name: green-button summary
         needs: [flaky-tests, bench-thresholds]
         runs-on: ubuntu-latest
-        if: github.event_name == 'pull_request'
+        # The original `if: github.event_name == 'pull_request'` was being
+        # skipped on the first PR-branch run (event=pull_request) for an
+        # unknown reason. The bracketed `${{ github.event_name == 'pull_request' }}`
+        # form (commit c2023ec5) did not fix it either, suggesting the
+        # condition is being evaluated against a non-PR context even on
+        # a pull_request event. This if: works around the issue by
+        # accepting both pull_request and workflow_run. The Comment on PR
+        # step has its own `if: github.event.pull_request` so the comment
+        # is only posted on actual PR contexts.
+        if: ${{ always() && (github.event_name == 'pull_request' || github.event_name == 'workflow_run') }}
         steps:
-            - uses: actions/checkout@v7
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
             - name: Compute summary
               id: summary
               run: |
-                  echo "status=green" >> "$GITHUB_OUTPUT"
+                  FLAKY_RESULT="${{ needs.flaky-tests.result }}"
+                  BENCH_RESULT="${{ needs.bench-thresholds.result }}"
+                  OVERALL="green"
+                  REASON=""
+                  if [ "$FLAKY_RESULT" != "success" ]; then
+                      OVERALL="red"
+                      REASON="flaky-tests: $FLAKY_RESULT"
+                  fi
+                  if [ "$BENCH_RESULT" != "success" ]; then
+                      if [ "$OVERALL" = "green" ]; then
+                          OVERALL="yellow"
+                      fi
+                      REASON="$REASON; bench-thresholds: $BENCH_RESULT (advisory)"
+                  fi
+                  echo "status=$OVERALL" >> "$GITHUB_OUTPUT"
+                  echo "reason=$REASON" >> "$GITHUB_OUTPUT"
             - name: Comment on PR
-              uses: marocchino/sticky-pull-request-comment@v3
+              if: ${{ github.event.pull_request }}
+              uses: marocchino/sticky-pull-request-comment@5770ad5eb8f42dd2c4f34da00c94c5381e49af88 # @v3
               with:
                   header: green-button
                   message: |
-                      ✅ **All infrastructure checks green.**
-                      - flaky-tests: passed
-                      - bench-thresholds: passed (≤15 % regression)
+                      ${{ steps.summary.outputs.status == 'green' && '✅' || (steps.summary.outputs.status == 'yellow' && '⚠️' || '❌') }} **Infrastructure checks: ${{ steps.summary.outputs.status }}** (${{ steps.summary.outputs.reason || 'all upstreams green' }})
+                      - flaky-tests: ${{ needs.flaky-tests.result }}
+                      - bench-thresholds: ${{ needs.bench-thresholds.result }} (advisory)
