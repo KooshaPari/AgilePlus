@@ -104,7 +104,8 @@ where
     let (evidence_results, missing_evidence) =
         evaluate_evidence(storage, &contract, feature.id).await?;
 
-    // Evaluate policies (unless skipped)
+    // Evaluate policies unless explicitly running a diagnostic-only evidence check.
+    // Skipping policy evaluation must never authorize a Validated transition.
     let policy_results = if args.skip_policies {
         Vec::new()
     } else {
@@ -116,6 +117,7 @@ where
         missing_evidence.is_empty() && evidence_results.iter().all(|e| e.found && e.threshold_met);
     let policy_pass = policy_results.iter().all(|p| p.passed);
     let overall_pass = evidence_pass && policy_pass;
+    let authoritative_transition = !args.skip_policies && !args.force;
 
     let report = ValidationReport {
         feature_slug: slug.clone(),
@@ -147,6 +149,13 @@ where
     if !overall_pass {
         anyhow::bail!(
             "Validation FAILED for feature '{}'. Fix the issues above and re-run validate.",
+            slug
+        );
+    }
+
+    if !authoritative_transition {
+        anyhow::bail!(
+            "Validation checks completed, but --force/--skip-policies is diagnostic-only and cannot transition feature '{}' to Validated",
             slug
         );
     }

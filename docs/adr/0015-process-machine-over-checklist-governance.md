@@ -1,5 +1,7 @@
 # ADR-0015: Process Machine Over Checklist Governance
 
+> **Current status note:** PARTIALLY SUPERSEDED by ADR-0018 (2026-09-30). Preserve the principle that AgilePlus execution progression is enforced by its process machine. Supersede only the premise that Tracera must embed/call AgilePlus as a mandatory runtime dependency.
+
 ## Status
 
 Proposed
