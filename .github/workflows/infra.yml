@@ -136,13 +136,16 @@ jobs:
         name: green-button summary
         needs: [flaky-tests, bench-thresholds]
         runs-on: ubuntu-latest
-        # Use explicit ${{ }} expression form for the if: condition. The bare
-        # form `if: github.event_name == 'pull_request'` was being skipped on
-        # the first PR-branch run despite the event being pull_request; the
-        # bracketed form forces GitHub Actions to evaluate the expression
-        # against the current event context and is the form recommended in
-        # the GitHub Actions docs for conditional execution.
-        if: ${{ github.event_name == 'pull_request' }}
+        # The original `if: github.event_name == 'pull_request'` was being
+        # skipped on the first PR-branch run (event=pull_request) for an
+        # unknown reason. The bracketed `${{ github.event_name == 'pull_request' }}`
+        # form (commit c2023ec5) did not fix it either, suggesting the
+        # condition is being evaluated against a non-PR context even on
+        # a pull_request event. This if: works around the issue by
+        # accepting both pull_request and workflow_run. The Comment on PR
+        # step has its own `if: github.event.pull_request` so the comment
+        # is only posted on actual PR contexts.
+        if: ${{ always() && (github.event_name == 'pull_request' || github.event_name == 'workflow_run') }}
         steps:
             - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
             - name: Compute summary
@@ -165,6 +168,7 @@ jobs:
                   echo "status=$OVERALL" >> "$GITHUB_OUTPUT"
                   echo "reason=$REASON" >> "$GITHUB_OUTPUT"
             - name: Comment on PR
+              if: ${{ github.event.pull_request }}
               uses: marocchino/sticky-pull-request-comment@5770ad5eb8f42dd2c4f34da00c94c5381e49af88 # @v3
               with:
                   header: green-button
