@@ -103,6 +103,11 @@ jobs:
                     claim_engine_perf \
                     trace_matrix_derivation; do
                     for run in 1 2 3; do
+                      # `set -o pipefail` so a `cargo bench` failure (cargo exit != 0) surfaces
+                      # even though `tee` exits 0. Without this, a silently-failed bench
+                      # produces an incomplete bench${run}.txt that the median script would
+                      # later treat as a clean run.
+                      set -o pipefail
                       cargo bench -p agileplus-benchmarks --bench "$bench" | tee -a bench${run}.txt
                     done
                   done

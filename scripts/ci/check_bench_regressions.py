@@ -62,7 +62,11 @@ def safe_read_text(path: Path) -> str:
     base = Path.cwd().resolve()
     if not resolved.is_relative_to(base):
         raise ValueError(f"refusing to read outside the working directory: {path}")
-    return resolved.read_text(encoding="utf-8", errors="ignore")
+    # `errors="replace"` (not "ignore") so any malformed UTF-8 byte in a bench output or
+    # baseline is surfaced as the unicode replacement character (\uFFFD) in the parsed
+    # output rather than silently dropped. A silently dropped byte could merge two bench
+    # lines that the parser would otherwise see as distinct.
+    return resolved.read_text(encoding="utf-8", errors="replace")
 
 
 def parse_bench(path: Path, exclude: set[str] | None = None) -> dict[str, int]:

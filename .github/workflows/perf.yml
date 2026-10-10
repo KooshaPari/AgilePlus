@@ -78,7 +78,7 @@ jobs:
               id: budget
 
             - name: Post perf budget status to PR
-              if: github.event_name == 'pull_request'
+              if: github.event_name == 'pull_request' && !cancelled()
               uses: marocchino/sticky-pull-request-comment@5770ad5eb8f42dd2c4f34da00c94c5381e49af88 # v3.0.5 (rolling branch heads/v3)
               with:
                   header: perf-budget
