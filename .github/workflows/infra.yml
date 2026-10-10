@@ -49,9 +49,9 @@ jobs:
         runs-on: ubuntu-latest
         timeout-minutes: 30
         steps:
-            - uses: actions/checkout@v7
-            - uses: dtolnay/rust-toolchain@stable
-            - uses: Swatinem/rust-cache@v2
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+            - uses: dtolnay/rust-toolchain@686976e191b89faba57d3206551f0f330d8cb249 # @stable
+            - uses: Swatinem/rust-cache@49a0bdc70d2e1b713ca9e2869b211fcce03d3c1c # @v2
             - name: Run tests with rerun-on-flake
               run: |
                   cargo test --workspace --quiet -- --test-threads=4
@@ -67,7 +67,7 @@ jobs:
                   fi
                   python3 scripts/ci/detect_flakes.py /tmp/cargo-test.log /tmp/rerun.log > flaky-tests.json
                   cat flaky-tests.json
-            - uses: actions/upload-artifact@v7
+            - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # @v7
               with:
                   name: flaky-tests
                   path: flaky-tests.json
@@ -84,9 +84,9 @@ jobs:
         timeout-minutes: 120
         continue-on-error: true
         steps:
-            - uses: actions/checkout@v7
-            - uses: dtolnay/rust-toolchain@stable
-            - uses: Swatinem/rust-cache@v2
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+            - uses: dtolnay/rust-toolchain@686976e191b89faba57d3206551f0f330d8cb249 # @stable
+            - uses: Swatinem/rust-cache@49a0bdc70d2e1b713ca9e2869b211fcce03d3c1c # @v2
             - name: Show excluded benches
               run: |
                   echo "### Benches excluded from threshold gate (ns-scale, below Criterion noise floor):"
@@ -118,7 +118,7 @@ jobs:
                     .bench-baseline.json \
                     --max-regress 50 \
                     --exclude-file .bench-baseline-excluded.txt
-            - uses: actions/upload-artifact@v7
+            - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # @v7
               with:
                   name: bench-results
                   path: bench*.txt
@@ -130,13 +130,13 @@ jobs:
         runs-on: ubuntu-latest
         if: github.event_name == 'pull_request'
         steps:
-            - uses: actions/checkout@v7
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
             - name: Compute summary
               id: summary
               run: |
                   echo "status=green" >> "$GITHUB_OUTPUT"
             - name: Comment on PR
-              uses: marocchino/sticky-pull-request-comment@v3
+              uses: marocchino/sticky-pull-request-comment@5770ad5eb8f42dd2c4f34da00c94c5381e49af88 # @v3
               with:
                   header: green-button
                   message: |
