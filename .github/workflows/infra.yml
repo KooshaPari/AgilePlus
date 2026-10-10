@@ -136,7 +136,13 @@ jobs:
         name: green-button summary
         needs: [flaky-tests, bench-thresholds]
         runs-on: ubuntu-latest
-        if: github.event_name == 'pull_request'
+        # Use explicit ${{ }} expression form for the if: condition. The bare
+        # form `if: github.event_name == 'pull_request'` was being skipped on
+        # the first PR-branch run despite the event being pull_request; the
+        # bracketed form forces GitHub Actions to evaluate the expression
+        # against the current event context and is the form recommended in
+        # the GitHub Actions docs for conditional execution.
+        if: ${{ github.event_name == 'pull_request' }}
         steps:
             - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
             - name: Compute summary
