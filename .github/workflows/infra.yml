@@ -22,6 +22,14 @@
 name: infra
 
 on:
+    # The original design runs only on workflow_run + push-to-main so the green-button
+    # verdict posts only after a main-branch merge. But the bench-thresholds + green-button
+    # jobs are the public acceptance surface for the Kilo Code Review findings on the
+    # median script (warn-and-continue on missing samples) and the verdict color logic.
+    # Without this trigger the workflow never exercises on PR branches and the Kilo fixes
+    # remain in dead code paths.
+    pull_request:
+        branches: [main, master, develop]
     workflow_run:
         workflows: ["ci"]
         types: [completed]
