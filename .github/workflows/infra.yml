@@ -134,12 +134,27 @@ jobs:
             - name: Compute summary
               id: summary
               run: |
-                  echo "status=green" >> "$GITHUB_OUTPUT"
+                  FLAKY_RESULT="${{ needs.flaky-tests.result }}"
+                  BENCH_RESULT="${{ needs.bench-thresholds.result }}"
+                  OVERALL="green"
+                  REASON=""
+                  if [ "$FLAKY_RESULT" != "success" ]; then
+                      OVERALL="red"
+                      REASON="flaky-tests: $FLAKY_RESULT"
+                  fi
+                  if [ "$BENCH_RESULT" != "success" ]; then
+                      if [ "$OVERALL" = "green" ]; then
+                          OVERALL="yellow"
+                      fi
+                      REASON="$REASON; bench-thresholds: $BENCH_RESULT (advisory)"
+                  fi
+                  echo "status=$OVERALL" >> "$GITHUB_OUTPUT"
+                  echo "reason=$REASON" >> "$GITHUB_OUTPUT"
             - name: Comment on PR
               uses: marocchino/sticky-pull-request-comment@5770ad5eb8f42dd2c4f34da00c94c5381e49af88 # @v3
               with:
                   header: green-button
                   message: |
-                      ✅ **All infrastructure checks green.**
-                      - flaky-tests: passed
-                      - bench-thresholds: passed (≤50 % regression, advisory)
+                      ${{ steps.summary.outputs.status == 'green' && '✅' || (steps.summary.outputs.status == 'yellow' && '⚠️' || '❌') }} **Infrastructure checks: ${{ steps.summary.outputs.status }}** (${{ steps.summary.outputs.reason || 'all upstreams green' }})
+                      - flaky-tests: ${{ needs.flaky-tests.result }}
+                      - bench-thresholds: ${{ needs.bench-thresholds.result }} (advisory)

@@ -85,11 +85,24 @@ def main() -> int:
     all_names: set[str] = set().union(*(d.keys() for d in per_run))
 
     median_per_bench: dict[str, int] = {}
+    missing_samples: list[tuple[str, int]] = []
     for name in all_names:
         samples = [d[name] for d in per_run if name in d]
         if not samples:
+            missing_samples.append((name, 0))
             continue
+        if len(samples) < len(per_run):
+            missing_samples.append((name, len(samples)))
         median_per_bench[name] = int(statistics.median(samples))
+
+    if missing_samples:
+        print(
+            f"WARNING: {len(missing_samples)} benchmark(s) had missing samples "
+            f"(out of {len(per_run)} runs each):",
+            file=sys.stderr,
+        )
+        for name, have in missing_samples:
+            print(f"  - {name}: {have}/{len(per_run)} runs", file=sys.stderr)
 
     baseline = json.loads(safe_read_text(Path(baseline_path)))
 
