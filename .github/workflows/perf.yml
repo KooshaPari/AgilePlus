@@ -78,7 +78,11 @@ jobs:
               id: budget
 
             - name: Post perf budget status to PR
-              if: github.event_name == 'pull_request' && !cancelled()
+              # Only post when the budget step actually completed. If upstream k6
+              # stack failed and the budget step was skipped, don't report
+              # "EXCEEDED" (would be misleading) — that case is covered by the
+              # perf-proc job's own job-level continue-on-error: true.
+              if: github.event_name == 'pull_request' && !cancelled() && steps.budget.outcome != 'skipped'
               uses: marocchino/sticky-pull-request-comment@5770ad5eb8f42dd2c4f34da00c94c5381e49af88 # v3.0.5 (rolling branch heads/v3)
               with:
                   header: perf-budget

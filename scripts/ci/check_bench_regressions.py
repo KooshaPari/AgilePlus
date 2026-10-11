@@ -93,7 +93,11 @@ def parse_bench(path: Path, exclude: set[str] | None = None) -> dict[str, int]:
 
 
 def load_exclude_names(path: Path | None) -> set[str]:
-    if not path or not path.exists():
+    # If no exclude file was given, no exclusions. If a path was given but the
+    # file does not exist, let safe_read_text raise — fail fast rather than
+    # silently treating the gate as having no exclusions (which would let ns-
+    # scale benches count toward the threshold and false-positive regress).
+    if not path:
         return set()
     return {
         line.strip()
