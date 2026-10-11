@@ -62,7 +62,7 @@ fn args(feature: &str) -> ValidateArgs {
     ValidateArgs {
         feature: feature.to_string(),
         format: "markdown".to_string(),
-        skip_policies: true,
+        skip_policies: false,
         output: None,
         force: false,
     }
@@ -106,7 +106,7 @@ fn validate_rejects_wrong_state_without_force() {
     })
 }
 #[test]
-fn validate_force_overrides_wrong_state_and_records_exception() {
+fn validate_force_is_diagnostic_only_and_does_not_promote_state() {
     block_on(async {
         let storage = SqliteStorageAdapter::in_memory().unwrap();
         let vcs = GitVcsAdapter::new(std::env::temp_dir());
@@ -118,24 +118,39 @@ fn validate_force_overrides_wrong_state_and_records_exception() {
             .unwrap();
         let mut a = args("forced-feat");
         a.force = true;
-        run_validate(a, &storage, &vcs)
-            .await
-            .expect("force validates");
+        let err = run_validate(a, &storage, &vcs).await.unwrap_err();
+        assert!(err.to_string().contains("diagnostic-only"), "got: {err}");
         let f = StoragePort::get_feature_by_slug(&storage, "forced-feat")
             .await
             .unwrap()
             .unwrap();
-        assert_eq!(f.state, FeatureState::Validated);
-        // Governance exception appended as audit entry.
-        let trail = StoragePort::get_audit_trail(&storage, id).await.unwrap();
-        assert!(
-            trail
-                .iter()
-                .any(|e| e.transition.contains("Implementing -> Validated")),
-            "expected audit entry for transition"
-        );
+        assert_eq!(f.state, FeatureState::Planned);
     })
 }
+
+#[test]
+fn validate_skip_policies_is_diagnostic_only() {
+    block_on(async {
+        let storage = SqliteStorageAdapter::in_memory().unwrap();
+        let vcs = GitVcsAdapter::new(std::env::temp_dir());
+        let id = StoragePort::create_feature(&storage, &implementing_feature("skip-policies"))
+            .await
+            .unwrap();
+        StoragePort::create_governance_contract(&storage, &contract_for(id, vec![]))
+            .await
+            .unwrap();
+        let mut a = args("skip-policies");
+        a.skip_policies = true;
+        let err = run_validate(a, &storage, &vcs).await.unwrap_err();
+        assert!(err.to_string().contains("diagnostic-only"), "got: {err}");
+        let f = StoragePort::get_feature_by_slug(&storage, "skip-policies")
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(f.state, FeatureState::Implementing);
+    })
+}
+
 #[test]
 fn validate_fails_when_required_evidence_missing() {
     block_on(async {

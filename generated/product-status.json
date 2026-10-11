@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.1.0",
+  "product_id": "PRD-AGILEPLUS",
+  "record_type": "specification_correction_status_not_runtime_assessment",
+  "recorded_on": "2026-09-29",
+  "source_snapshot": "f4deadab516293651398fb69b6f5cc38d621d069",
+  "specification_pass_complete": false,
+  "catalog_status": "invalidated_requires_source_backed_replacement",
+  "requirement_count": null,
+  "count_policy": "derived_only",
+  "grading_eligible": false,
+  "test_generation_ready": false,
+  "test_generation": "deferred",
+  "mature_contract_completeness": null,
+  "highest_achieved_stage": null,
+  "stage_readiness": null,
+  "structural_shape": null,
+  "feature_closure": null,
+  "journey_closure": null,
+  "implementation_survivability": null,
+  "mature_contract_compatibility": null,
+  "transition_burden": null,
+  "blockers": [
+    "Replace template-product records with source-backed independently falsifiable obligations.",
+    "Reconcile source-native requirements, PRD, ADRs, journeys, current interfaces and documented gaps.",
+    "Derive stage, feature and journey membership from actual dependency closure.",
+    "Complete concrete test/oracle design; executable product-test generation remains deferred."
+  ]
+}

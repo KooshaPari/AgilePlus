@@ -1,0 +1,30 @@
+{
+  "schema_version": "1.1.0",
+  "record_type": "invalidated_contract_manifest",
+  "product_id": "PRD-AGILEPLUS",
+  "canonical_name": "AgilePlus",
+  "repository": "KooshaPari/AgilePlus",
+  "status": "invalidated_requires_source_backed_replacement",
+  "accepted": false,
+  "grading_eligible": false,
+  "test_generation_ready": false,
+  "requirement_count_policy": "derived_only_no_target_floor_ceiling_or_range",
+  "rejection_reason": "The previous generator multiplied 25 domains by 8 features by 5 generic dimensions. Its 1000 rows were not independently derived atomic functional requirements. Stage assignments used feature array positions. Generic oracle text and reserved test IDs did not establish test-generation readiness.",
+  "rejected_artifact": {
+    "commit": "3382beb9ee599c9a9f91ea7e440fda9371c695ab",
+    "path": "spec/product/mature-contract.v1.json",
+    "claimed_baseline": "AGP-MATURE-V1",
+    "generated_id_range": ["AGP-FR-0001", "AGP-FR-1000"],
+    "disposition": "retained_in_git_history_for_audit_not_a_product_baseline",
+    "id_policy": "Do not silently reuse generated IDs. Map any salvageable statement after semantic review. Existing source-native requirement IDs remain authoritative within their documented provenance."
+  },
+  "current_contract": null,
+  "requirements": [],
+  "stage_projections": [],
+  "catalogued_requirement_count": null,
+  "empty_inventory_semantics": "invalidated_catalog_not_zero_product_scope_and_never_100_percent",
+  "governing_method": "governance/COUNT_INDEPENDENT_SPECIFICATION.md",
+  "coverage_review_status": "incomplete",
+  "test_generation": "deferred_by_user",
+  "runtime_verification": "not_performed"
+}

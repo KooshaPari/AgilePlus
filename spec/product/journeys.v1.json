@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.1.0",
+  "product_id": "PRD-AGILEPLUS",
+  "status": "candidate_journey_map_requires_semantic_bindings",
+  "grading_eligible": false,
+  "accepted_journeys": [],
+  "prior_candidate_map": {
+    "commit": "cc251b5b737dfb6f2db3f2acfbbd225a942619f0",
+    "path": "spec/product/journeys.v1.json",
+    "disposition": "review_leads_only_not_validated_journey_closure"
+  },
+  "required_rework": [
+    "Reconcile USER_JOURNEYS.md with current accepted intent and real entry points.",
+    "Specify actor, preconditions, steps, observable outcomes, failure/recovery and required environment.",
+    "Bind explicit source-backed FRs and dependency closure rather than pillar keywords.",
+    "Justify stage membership semantically and define concrete oracle intent without generating product tests."
+  ]
+}

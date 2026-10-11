@@ -56,22 +56,21 @@ where
             )
         })?;
 
-    // State enforcement
+    // State enforcement. `--skip-validate` is retained for CLI compatibility
+    // but cannot authorize a terminal state transition under the mature MACE contract.
+    if args.skip_validate {
+        anyhow::bail!(
+            "--skip-validate is diagnostic-only under the mature contract and cannot ship a feature"
+        );
+    }
     if feature.state != FeatureState::Validated {
-        if args.skip_validate {
-            eprintln!(
-                "Warning: --skip-validate used. Feature '{}' is in state '{}' (expected 'Validated').",
-                slug, feature.state
-            );
-        } else {
-            anyhow::bail!(
-                "Feature '{}' is in state '{}'. Expected 'Validated'. \
-                Run `agileplus validate --feature {}` first, or use --skip-validate.",
-                slug,
-                feature.state,
-                slug
-            );
-        }
+        anyhow::bail!(
+            "Feature '{}' is in state '{}'. Expected 'Validated'. \
+            Run `agileplus validate --feature {}` first.",
+            slug,
+            feature.state,
+            slug
+        );
     }
 
     // Determine target branch
@@ -154,13 +153,15 @@ where
     for (wp, (wp_label, branch)) in sorted_wps.iter().zip(wp_branches.iter()) {
         tracing::info!(wp_seq = wp.sequence, branch = %branch, target = %target_branch, "merging WP branch");
 
-        let merge_result = match vcs.merge_to_target(branch, &target_branch).await {
-            Ok(r) => r,
-            Err(e) => {
-                tracing::warn!(branch = %branch, error = %e, "merge failed (branch may not exist, skipping)");
-                continue;
-            }
-        };
+        let merge_result = vcs
+            .merge_to_target(branch, &target_branch)
+            .await
+            .with_context(|| {
+                format!(
+                    "merging {} branch '{}' into '{}'; shipping fails closed on merge errors",
+                    wp_label, branch, target_branch
+                )
+            })?;
 
         if !merge_result.success {
             let conflicts: Vec<String> = merge_result
