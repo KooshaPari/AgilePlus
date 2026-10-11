@@ -1,0 +1,16 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: agileplus
+  title: AgilePlus
+  description: Specification authoring, traceability, work packages, and project governance.
+  annotations:
+    github.com/project-slug: KooshaPari/AgilePlus
+    backstage.io/source-location: url:https://github.com/KooshaPari/AgilePlus/
+  tags:
+    - rust
+    - phenotype-pilot
+spec:
+  type: tool
+  lifecycle: experimental
+  owner: group:default/phenotype-pilot
