@@ -79,10 +79,6 @@
     "median_ns": 3458,
     "stddev_ns": 0
   },
-  "graph_dependency_chain_query": {
-    "median_ns": 62,
-    "stddev_ns": 0
-  },
   "graph_get_feature_node": {
     "median_ns": 194,
     "stddev_ns": 0
@@ -97,10 +93,6 @@
   },
   "graph_seed_features/seed_features/50": {
     "median_ns": 70801,
-    "stddev_ns": 0
-  },
-  "health_check_db_ping": {
-    "median_ns": 443,
     "stddev_ns": 0
   },
   "heartbeat_1000_rounds": {
