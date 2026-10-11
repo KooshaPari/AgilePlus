@@ -24,6 +24,7 @@ allow = [
   "BSD-2-Clause",
   "BSD-3-Clause",
   "BSD-3-Clause-Clear",
+  "BSL-1.0",  # xxhash-rust v0.8.19 (transitive via redis 1.7.1 -> agileplus-cache)
   "CC0-1.0",
   "CC-BY-SA-4.0",
   "GPL-3.0",

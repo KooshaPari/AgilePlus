@@ -79,7 +79,7 @@ install-path = "CARGO_HOME"
 pr-run-mode = "plan"
 # Whether to install an updater program
 install-updater = false
-# Only build the CLI package, not the whole workspace (avoids needing protoc for agent-service)
+# Build only the required packages, and individually
 precise-builds = true
 
 # System build dependencies for CI
