@@ -20,6 +20,11 @@ concurrency:
 
 env:
     CARGO_TERM_COLOR: always
+    # Pinned by SHA: taiki-e/install-action v2.87.26. Installs release-plz
+    # binary so we can pass --allow-dirty directly to the CLI (the upstream
+    # release-plz/action v0.5 wrapper has a hardcoded flag list and no args:
+    # input — see release-plz/action#14).
+    RELEASE_PLZ_VERSION: "0.3.170"
 
 jobs:
     release-pr:
@@ -35,12 +40,36 @@ jobs:
                   fetch-depth: 0
             - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
             - uses: Swatinem/rust-cache@42dc69e1aa15d09112580998cf2ef0119e2e91ae # v2
-            - name: Create or update release PR
-              uses: release-plz/action@v0.5
+            - name: Install release-plz
+              uses: taiki-e/install-action@f7e5d7c961414b23f5b25b2da9294395d08513ad # v2.87.26
               with:
-                  command: release-pr
+                  tool: release-plz@${{ env.RELEASE_PLZ_VERSION }}
+            - name: Configure git user
+              uses: release-plz/git-config@59144859caf016f8b817a2ac9b051578729173c4
+            - name: Create or update release PR
+              id: release-plz
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              run: |
+                  set -euo pipefail
+                  release_pr_output=$(release-plz release-pr \
+                      --git-token "${GITHUB_TOKEN}" \
+                      --repo-url "${GITHUB_SERVER_URL:-https://github.com}/${GITHUB_REPOSITORY}" \
+                      --allow-dirty \
+                      -o json)
+                  echo "release_pr_output: $release_pr_output"
+                  prs=$(echo "$release_pr_output" | jq -c .prs)
+                  echo "prs=$prs" >> "$GITHUB_OUTPUT"
+                  prs_length=$(echo "$prs" | jq 'length')
+                  if [ "$prs_length" != "0" ]; then
+                      prs_created=true
+                      first_pr=$(echo "$prs" | jq -c '.[0]')
+                  else
+                      prs_created=false
+                      first_pr="{}"
+                  fi
+                  echo "pr=$first_pr" >> "$GITHUB_OUTPUT"
+                  echo "prs_created=$prs_created" >> "$GITHUB_OUTPUT"
 
     publish:
         if: github.event_name == 'pull_request' && github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release-plz-')
@@ -56,10 +85,30 @@ jobs:
                   ref: ${{ github.event.pull_request.merge_commit_sha }}
             - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
             - uses: Swatinem/rust-cache@42dc69e1aa15d09112580998cf2ef0119e2e91ae # v2
-            - name: Publish released crates
-              uses: release-plz/action@v0.5
+            - name: Install release-plz
+              uses: taiki-e/install-action@f7e5d7c961414b23f5b25b2da9294395d08513ad # v2.87.26
               with:
-                  command: release
+                  tool: release-plz@${{ env.RELEASE_PLZ_VERSION }}
+            - name: Configure git user
+              uses: release-plz/git-config@59144859caf016f8b817a2ac9b051578729173c4
+            - name: Publish released crates
+              id: release-plz
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                   CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+              run: |
+                  set -euo pipefail
+                  release_output=$(release-plz release \
+                      --git-token "${GITHUB_TOKEN}" \
+                      --allow-dirty \
+                      -o json)
+                  echo "release_output: $release_output"
+                  releases=$(echo "$release_output" | jq -c .releases)
+                  echo "releases=$releases" >> "$GITHUB_OUTPUT"
+                  releases_length=$(echo "$releases" | jq 'length')
+                  if [ "$releases_length" != "0" ]; then
+                      releases_created=true
+                  else
+                      releases_created=false
+                  fi
+                  echo "releases_created=$releases_created" >> "$GITHUB_OUTPUT"
