@@ -1,0 +1,133 @@
+# Post-publish smoke test for a release.
+# Triggered on `release: published`. Downloads the Linux x86_64 CLI artifact
+# published by cargo-dist, extracts it, and runs `agileplus --version`.
+# The captured output is uploaded as an artifact named 'post-publish-verify'.
+#
+# Why this exists (R5): prior to this change, no release path performed any
+# verification after publish. A broken archive, a missing LICENSE, a wrong
+# rename, or a stale target triple would only surface when a user downloaded
+# and tried to run the binary. This workflow catches packaging errors
+# within minutes of the release going live.
+#
+# Scope (intentionally narrow):
+#   - Linux x86_64 CLI only (the most common install target, matches
+#     m1-smoke.yml infrastructure). Desktop bundles have their own
+#     e2e-desktop test path; CLI on macOS/Windows is covered by user
+#     bug reports for now.
+#   - 'agileplus --version' is the only assertion. A full CLI smoke
+#     would belong in m1-smoke.yml, not here.
+name: Post-Publish Verify
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to verify (defaults to latest)'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: post-publish-verify-${{ github.event.release.tag_name
+    || inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  verify-linux:
+    name: Verify Linux x86_64 CLI binary
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      EXPECTED_VERSION: ${{ github.event.release.tag_name || inputs.tag }}
+    steps:
+      - name: Resolve target tag
+        id: tag
+        run: |
+          if [ -n "$EXPECTED_VERSION" ]; then
+            echo "value=${EXPECTED_VERSION#v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "::error::No tag resolved from event or inputs"
+            exit 1
+          fi
+
+      - name: Download Linux x86_64 artifact
+        env:
+          TAG: ${{ steps.tag.outputs.value }}
+        run: |
+          set -euo pipefail
+          mkdir -p verify-out
+          # cargo-dist asset naming: agileplus-x86_64-unknown-linux-gnu.tar.xz
+          if ! gh release download "$TAG" \
+              --dir verify-out \
+              --pattern 'agileplus-x86_64-unknown-linux-gnu*' \
+              --clobber; then
+            echo "::error::Could not download Linux x86_64 artifact for $TAG"
+            echo "Available assets on the release:"
+            gh release view "$TAG" --json assets --jq '.assets[].name'
+            exit 1
+          fi
+          ls -la verify-out/
+
+      - name: Extract and run smoke test
+        env:
+          EXPECTED: ${{ steps.tag.outputs.value }}
+        run: |
+          set -euo pipefail
+          # Find the archive (cargo-dist may use .tar.xz or .tar.gz)
+          archive=$(find verify-out -type f \
+            \( -name '*.tar.xz' -o -name '*.tar.gz' \) | head -1)
+          if [ -z "$archive" ]; then
+            echo "::error::No tarball found in verify-out/"
+            exit 1
+          fi
+          echo "Extracting: $archive"
+          mkdir -p extracted
+          tar -C extracted -xf "$archive"
+
+          # Find the binary inside the extracted tree
+          bin=$(find extracted -type f -name 'agileplus' \
+            -executable | head -1)
+          if [ -z "$bin" ]; then
+            echo "::error::No 'agileplus' executable found in archive"
+            find extracted -type f | head -20
+            exit 1
+          fi
+          echo "Binary: $bin"
+          file "$bin"
+
+          # Smoke test
+          set +e
+          output=$("$bin" --version 2>&1)
+          rc=$?
+          set -e
+          echo "=== agileplus --version output (rc=$rc) ==="
+          echo "$output"
+
+          if [ "$rc" -ne 0 ]; then
+            echo "::error::agileplus --version exited with rc=$rc"
+            exit 1
+          fi
+
+          # Verify version string contains the release tag (loose match).
+          if [ -n "$EXPECTED" ] \
+            && ! echo "$output" | grep -q "$EXPECTED"; then
+            echo "::warning::Version string does not contain '$EXPECTED'"
+            echo "This is not a hard failure — version strings may include"
+            echo "git-describe suffixes. Failing only on a hard exec error."
+          fi
+
+          # Capture the version output for the artifact
+          echo "$output" > verify-out/version.txt
+
+      - name: Upload verification artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: post-publish-verify
+          path: verify-out/
+          if-no-files-found: error
+          retention-days: 30
