@@ -347,16 +347,21 @@ function App() {
   const [epicStoriesLoading, setEpicStoriesLoading] = useState(true);
   const [view, setView] = useState<View>('dashboard');
   const [apiError, setApiError] = useState<string | null>(null);
+  const apiUnavailableMessage = 'Project data is unavailable. This preview is not connected to the AgilePlus API.';
 
   // Fetch work packages
   useEffect(() => {
     setLoading(true);
     axios
-      .get('/api/dashboard/work-packages.json')
+      .get('/api/dashboard/work-packages.json', { timeout: 3000 })
       .then((res) => {
-        const data = res.data as { work_packages: any[] };
+        const data: unknown = res.data;
+        if (!data || typeof data !== 'object' ||
+            !('work_packages' in data) || !Array.isArray(data.work_packages)) {
+          throw new Error('Invalid work package API response');
+        }
         setWorkPackages(
-          (data.work_packages ?? []).map((wp: any) => ({
+          data.work_packages.map((wp: any) => ({
             id: String(wp.id),
             title: wp.title ?? '(untitled)',
             status: wp.status ?? 'planned',
@@ -365,25 +370,26 @@ function App() {
           })),
         );
       })
-      .catch(() => {})
+      .catch(() => setApiError(apiUnavailableMessage))
       .finally(() => setLoading(false));
   }, [setWorkPackages, setLoading]);
 
   // Fetch epics + stories
   useEffect(() => {
     setEpicStoriesLoading(true);
-    setApiError(null);
     axios
-      .get('/api/dashboard/epics-stories.json')
+      .get('/api/dashboard/epics-stories.json', { timeout: 3000 })
       .then((res) => {
-        const data = res.data as { epics: Epic[]; stories: Story[]; error?: string };
-        if (data.error) setApiError(data.error);
-        setEpics(data.epics ?? []);
-        setStories(data.stories ?? []);
+        const data: unknown = res.data;
+        if (!data || typeof data !== 'object' ||
+            !('epics' in data) || !Array.isArray(data.epics) ||
+            !('stories' in data) || !Array.isArray(data.stories)) {
+          throw new Error('Invalid epic/story API response');
+        }
+        setEpics(data.epics as Epic[]);
+        setStories(data.stories as Story[]);
       })
-      .catch((err) => {
-        setApiError(`API unavailable: ${err.message}. Start backend with API_PORT=4000 DATABASE_PATH=agileplus.db`);
-      })
+      .catch(() => setApiError(apiUnavailableMessage))
       .finally(() => setEpicStoriesLoading(false));
   }, []);
 
@@ -410,7 +416,7 @@ function App() {
       {/* Main content */}
       <main style={{ maxWidth: '960px', margin: '0 auto', padding: '2rem 1rem' }}>
         {apiError && (
-          <div
+          <div role="status"
             style={{
               background: '#fef2f2',
               border: '1px solid #fecaca',
