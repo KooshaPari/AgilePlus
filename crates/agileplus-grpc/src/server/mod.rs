@@ -739,30 +739,26 @@ where
             .map_err(domain_error_to_status)?;
 
         // Command-specific post-transition logic.
-        match command {
-            "plan" => {
-                // Create a default governance contract for the planned feature.
-                let contract = GovernanceContract {
-                    id: 0,
-                    feature_id: feature.id,
-                    version: 1,
-                    rules: vec![GovernanceRule {
-                        transition: String::new(),
-                        required_evidence: Vec::new(),
-                        policy_refs: Vec::new(),
-                    }],
-                    bound_at: Utc::now(),
-                };
-                if let Err(e) = self.storage.create_governance_contract(&contract).await {
-                    info!(
-                        feature_slug,
-                        error = %e,
-                        "governance contract creation skipped (storage may not support it)"
-                    );
-                }
+        if command == "plan" {
+            // Create a default governance contract for the planned feature.
+            let contract = GovernanceContract {
+                id: 0,
+                feature_id: feature.id,
+                version: 1,
+                rules: vec![GovernanceRule {
+                    transition: String::new(),
+                    required_evidence: Vec::new(),
+                    policy_refs: Vec::new(),
+                }],
+                bound_at: Utc::now(),
+            };
+            if let Err(e) = self.storage.create_governance_contract(&contract).await {
+                info!(
+                    feature_slug,
+                    error = %e,
+                    "governance contract creation skipped (storage may not support it)"
+                );
             }
-
-            _ => {}
         }
 
         let new_state = feature.state.to_string();
