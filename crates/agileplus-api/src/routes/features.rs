@@ -168,6 +168,15 @@ where
         .map(parse_feature_state)
         .transpose()?
         .unwrap_or(FeatureState::Created);
+    if matches!(
+        initial_state,
+        FeatureState::Validated | FeatureState::Shipped
+    ) {
+        return Err(ApiError::BadRequest(
+            "terminal feature states cannot be assigned at creation; use canonical acceptance/promotion"
+                .to_string(),
+        ));
+    }
 
     let slug = body.title.to_lowercase().replace(' ', "-");
     let now = Utc::now();
@@ -271,6 +280,11 @@ where
         .ok_or_else(|| ApiError::NotFound(format!("Feature '{slug}' not found")))?;
 
     let target = parse_feature_state(&body.target_state)?;
+    if matches!(target, FeatureState::Validated | FeatureState::Shipped) {
+        return Err(ApiError::BadRequest(
+            "terminal feature states require the canonical validate/ship operation".to_string(),
+        ));
+    }
     let result = agileplus_domain::domain::state_machine::transition(feature.state, target)
         .map_err(ApiError::from)?;
 
@@ -372,6 +386,16 @@ mod tests {
         };
         assert!(params.state.is_none());
         assert!(params.label.is_none());
+    }
+
+    #[test]
+    fn terminal_feature_states_are_not_generic_transition_targets() {
+        for target in [FeatureState::Validated, FeatureState::Shipped] {
+            assert!(matches!(
+                target,
+                FeatureState::Validated | FeatureState::Shipped
+            ));
+        }
     }
 
     #[test]

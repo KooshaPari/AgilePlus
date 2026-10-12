@@ -32,6 +32,8 @@ pub mod specify;
 
 // ── full-deps SDD modules ─────────────────────────────────────────────────────
 #[cfg(feature = "full-deps")]
+pub mod evaluate;
+#[cfg(feature = "full-deps")]
 pub mod implement;
 #[cfg(feature = "full-deps")]
 pub mod plan;

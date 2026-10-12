@@ -1,0 +1,880 @@
+{
+  "schema_version": "0.3.0",
+  "product_id": "PRD-AGILEPLUS",
+  "catalog_status": "accepted_mature_semantic_contract",
+  "count_policy": "derived_only",
+  "authority": "spec/product/CANONICAL_SEMANTIC_DECISIONS.md",
+  "requirements": [
+    {
+      "id": "AP-R-DEV-ID",
+      "title": "Durable development identity",
+      "statement": "A development/change effort has a stable identity independent of worker, worktree, branch, PR, claim, or transport.",
+      "journeys": [
+        "AP-J-01"
+      ],
+      "status": "accepted_semantic_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-SPEC-REV",
+      "title": "Immutable accepted specification revisions",
+      "statement": "Accepted behavior/instructions are represented by immutable SpecRevision identities; changes create explicit revisions.",
+      "journeys": [
+        "AP-J-01"
+      ],
+      "status": "accepted_semantic_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-AMBIGUITY",
+      "title": "Material ambiguity blocks acceptance",
+      "statement": "Unresolved contradictions or material ambiguity remain explicit and cannot be hidden by accepting a document shell.",
+      "journeys": [
+        "AP-J-01"
+      ],
+      "status": "accepted_semantic_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-ARTIFACT-ROLE",
+      "title": "Framework-neutral artifact authority",
+      "statement": "Canonical artifact authority is based on typed roles, identity, revision and provenance rather than a framework-specific filesystem root.",
+      "journeys": [
+        "AP-J-01"
+      ],
+      "status": "accepted_semantic_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-WP-DAG",
+      "title": "Dependency-aware durable work packages",
+      "statement": "Accepted work can be decomposed into durable WorkPackages with explicit dependencies and cycle detection.",
+      "journeys": [
+        "AP-J-02"
+      ],
+      "status": "accepted_semantic_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-ASSIGNMENT",
+      "title": "Frozen executable assignment",
+      "statement": "An Assignment binds exact WorkPackage, SpecRevision, context/scope, criteria and execution constraints without later silent mutation.",
+      "journeys": [
+        "AP-J-02"
+      ],
+      "status": "accepted_semantic_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-CRITERIA-NONEMPTY",
+      "title": "No vacuous assignment acceptance",
+      "statement": "An Assignment with zero applicable mandatory criteria cannot be accepted or graded successful.",
+      "journeys": [
+        "AP-J-02"
+      ],
+      "status": "accepted_semantic_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-CONTEXT",
+      "title": "Bounded provenance-bearing context bundle",
+      "statement": "Assignments provide sufficient bounded context with source provenance, prerequisites, exclusions and allowed/forbidden work surfaces.",
+      "journeys": [
+        "AP-J-02"
+      ],
+      "status": "accepted_semantic_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-ATTEMPT-ID",
+      "title": "Replaceable execution attempts",
+      "statement": "Each worker execution episode has a durable Attempt identity distinct from Assignment and worker identity.",
+      "journeys": [
+        "AP-J-03"
+      ],
+      "status": "accepted_semantic_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-CLAIM",
+      "title": "Temporary explicit execution authority",
+      "statement": "Claims/leases grant bounded temporary authority, expire/reap explicitly, and do not define durable work identity.",
+      "journeys": [
+        "AP-J-03"
+      ],
+      "status": "accepted_semantic_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-CLAIM-NOINHERIT",
+      "title": "Authority is not inherited by replacement",
+      "statement": "Replacement workers receive newly authorized claims/credentials; transfer does not implicitly inherit unrelated authority.",
+      "journeys": [
+        "AP-J-03"
+      ],
+      "status": "accepted_semantic_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-ISOLATION",
+      "title": "Execution isolation is explicit",
+      "statement": "Worktree/sandbox/resource boundaries are attached to Attempts and prevent accidental cross-attempt mutation where the profile requires isolation.",
+      "journeys": [
+        "AP-J-03"
+      ],
+      "status": "accepted_semantic_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-CANDIDATE",
+      "title": "Exact candidate identity",
+      "statement": "Produced work is represented by an exact immutable candidate reference sufficient for independent evaluation and promotion.",
+      "journeys": [
+        "AP-J-03"
+      ],
+      "status": "accepted_semantic_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-EVALUATION",
+      "title": "Independent exact-candidate evaluation",
+      "statement": "Evaluation binds exact Assignment/SpecRevision/Candidate and evaluator identity/version and records criterion-level outcomes.",
+      "journeys": [
+        "AP-J-04"
+      ],
+      "status": "accepted_semantic_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-NO-SELF-GRADE",
+      "title": "Worker cannot self-award terminal acceptance",
+      "statement": "Worker completion/self-report cannot substitute for the independent accepted evaluation boundary.",
+      "journeys": [
+        "AP-J-04"
+      ],
+      "status": "accepted_semantic_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-EVAL-FAIL",
+      "title": "Evaluator failure is non-green",
+      "statement": "Unavailable, failed, cancelled or mismatched required evaluation yields explicit non-success semantics.",
+      "journeys": [
+        "AP-J-04"
+      ],
+      "status": "accepted_semantic_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-EVIDENCE",
+      "title": "Evaluation evidence receipts are attributable",
+      "statement": "Evaluation retains raw/derived evidence references, verifier context and enough provenance for audit/replay/reassessment.",
+      "journeys": [
+        "AP-J-04"
+      ],
+      "status": "accepted_semantic_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-ACCEPT-BOTH",
+      "title": "Accepted work requires correctness and governance",
+      "statement": "Terminal accepted work requires mandatory criterion satisfaction plus applicable governance/authority permission.",
+      "journeys": [
+        "AP-J-05"
+      ],
+      "status": "accepted_semantic_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-REVIEW-NOT-DONE",
+      "title": "Review/CI alone are insufficient",
+      "statement": "Review approval, CI green, policy presence or merge alone cannot award AcceptedWork.",
+      "journeys": [
+        "AP-J-05"
+      ],
+      "status": "accepted_semantic_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-POLICY-SEPARATE",
+      "title": "Policy permission and correctness proof remain separate",
+      "statement": "GovernanceContract cannot substitute for criterion grading and grading cannot bypass policy.",
+      "journeys": [
+        "AP-J-05"
+      ],
+      "status": "accepted_semantic_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-PROMOTE-EXACT",
+      "title": "Promotion uses the evaluated candidate",
+      "statement": "Promotion/ship/integration operates on the exact accepted candidate and fails if it changed or acceptance became stale.",
+      "journeys": [
+        "AP-J-06"
+      ],
+      "status": "accepted_semantic_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-PROMOTE-CLOSED",
+      "title": "Promotion fails closed",
+      "statement": "Merge conflict, transport error, missing authority or stale/invalid acceptance prevents promotion.",
+      "journeys": [
+        "AP-J-06"
+      ],
+      "status": "accepted_semantic_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-RECOVERY",
+      "title": "Durable recovery without owner replay",
+      "statement": "Accepted specs, DAG, assignments, attempts, claims, candidates, evaluations and decisions are recoverable enough to continue after interruption.",
+      "journeys": [
+        "AP-J-07"
+      ],
+      "status": "accepted_semantic_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-PROFILE",
+      "title": "Adaptive methodology profiles",
+      "statement": "Workflow profiles may vary research/design/planning depth while preserving semantic prerequisites for acceptance.",
+      "journeys": [
+        "AP-J-08"
+      ],
+      "status": "accepted_semantic_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-IMPORT",
+      "title": "Provenance-preserving framework harmonization",
+      "statement": "External framework artifacts map into canonical roles/identities with aliases/provenance and explicit conflict handling.",
+      "journeys": [
+        "AP-J-09"
+      ],
+      "status": "accepted_semantic_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-NO-DUP-AUTH",
+      "title": "Imports cannot create competing accepted intent",
+      "statement": "Equivalent/imported artifacts do not create parallel accepted authorities; conflicts require explicit reconciliation.",
+      "journeys": [
+        "AP-J-09"
+      ],
+      "status": "accepted_semantic_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-FEDERATION",
+      "title": "Versioned Tracera evidence handoff",
+      "statement": "AgilePlus can export exact work/evaluation evidence references to Tracera without asserting product satisfaction.",
+      "journeys": [
+        "AP-J-10"
+      ],
+      "status": "accepted_semantic_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-STANDALONE",
+      "title": "AgilePlus acceptance remains standalone",
+      "statement": "AgilePlus can evaluate/recover its own work when Tracera is unavailable; federation failure does not erase work truth.",
+      "journeys": [
+        "AP-J-10"
+      ],
+      "status": "accepted_semantic_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-PRODUCT-BOUNDARY",
+      "title": "Work acceptance is not product satisfaction",
+      "statement": "Tracera independently decides product-level applicability/acceptance of AgilePlus evidence.",
+      "journeys": [
+        "AP-J-10"
+      ],
+      "status": "accepted_semantic_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-INTERFACE-PARITY",
+      "title": "Interface semantic parity",
+      "statement": "Supported CLI/API/MCP/human surfaces expose matching canonical identities, revisions, status and acceptance meaning.",
+      "journeys": [
+        "AP-J-11"
+      ],
+      "status": "accepted_semantic_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-ERROR-TRUTH",
+      "title": "Interfaces fail truthfully",
+      "statement": "Invalid, unauthorized, missing, stale, dependency and internal failures cannot be represented as successful work state.",
+      "journeys": [
+        "AP-J-11"
+      ],
+      "status": "accepted_semantic_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-AUDIT-V1",
+      "title": "Historical audit-hash-v1 envelope is explicit",
+      "statement": "v1 verification covers only its actual transition-core fields and documentation does not claim broader tamper evidence.",
+      "journeys": [
+        "AP-J-12"
+      ],
+      "status": "accepted_semantic_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-AUDIT-V2",
+      "title": "Versioned stronger audit receipts",
+      "statement": "Future audit-hash-v2 defines canonical serialization, covered fields, immutable evidence/evaluation references and cross-version verification without rewriting v1 history.",
+      "journeys": [
+        "AP-J-12"
+      ],
+      "status": "accepted_semantic_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-TRACE",
+      "title": "Bidirectional work traceability",
+      "statement": "Durable links connect intent/spec/work/assignment/attempt/candidate/evaluation/evidence/promotion in both explanatory directions.",
+      "journeys": [
+        "AP-J-12"
+      ],
+      "status": "accepted_semantic_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-HISTORY",
+      "title": "Supersession preserves history",
+      "statement": "Revisions, assignment supersession, failed attempts, rejected evaluations and promotions remain attributable rather than overwritten.",
+      "journeys": [
+        "AP-J-07"
+      ],
+      "status": "accepted_semantic_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-IFACE-CANON",
+      "title": "Interfaces share one application semantics",
+      "statement": "CLI/HTTP/MCP/UI and optional gRPC project the same canonical identities, revisions, evaluation and acceptance semantics.",
+      "journeys": [
+        "AP-J-11"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-IFACE-MACHINE",
+      "title": "Automation-critical operations have machine-readable truthful results",
+      "statement": "Automation surfaces expose structured status/identity/error data sufficient to avoid parsing optimistic human prose.",
+      "journeys": [
+        "AP-J-11"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-MUTATE-PRECOND",
+      "title": "Accepted-state mutations bind authority and concurrency preconditions",
+      "statement": "Mutations identify actor/authority and use idempotency/version preconditions where retry/concurrency could duplicate or lose accepted state.",
+      "journeys": [
+        "AP-J-11"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-MCP-UNTRUST",
+      "title": "MCP prompts/sampling cannot grant authority",
+      "statement": "Prompt/model output is untrusted proposal/work content until accepted/evaluated and cannot self-authorize mutation or acceptance.",
+      "journeys": [
+        "AP-J-11"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-GIT-BASE",
+      "title": "Attempt binds exact Git base where Git profile applies",
+      "statement": "Software Attempt records exact base candidate and detects dirty/base drift before evaluation/promotion.",
+      "journeys": [
+        "AP-J-03"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-PR-CONTEXT",
+      "title": "PR/review state is context/evidence, not acceptance",
+      "statement": "Pull request state and review approval cannot substitute for canonical Evaluation/AcceptedWork.",
+      "journeys": [
+        "AP-J-05"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-TRIAGE-PROV",
+      "title": "Automated intake classification retains provenance",
+      "statement": "Triage classification/routing/priority retains source and model/method/confidence where derived and supports authorized override.",
+      "journeys": [
+        "AP-J-09"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-SCHED-DEPS",
+      "title": "Scheduler respects dependency readiness",
+      "statement": "Work is not scheduled as executable while mandatory predecessors/dependencies remain unsatisfied.",
+      "journeys": [
+        "AP-J-02"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-SCHED-EXCL",
+      "title": "Scheduler prevents double-authorized exclusive mutation",
+      "statement": "Exclusive resources cannot be simultaneously granted to conflicting active claims/attempts.",
+      "journeys": [
+        "AP-J-03"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-REVIEW-ESC",
+      "title": "Review/HITL escalation is policy-driven and explicit",
+      "statement": "High-severity unresolved findings, repeated evaluator failure, authority ambiguity or policy-defined irreversible actions escalate rather than silently continue.",
+      "journeys": [
+        "AP-J-05"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-RELEASE-ID",
+      "title": "Promotion creates exact release/promotion receipt",
+      "statement": "Promotion records release/profile identity, exact candidate, governing acceptance and outcome.",
+      "journeys": [
+        "AP-J-06"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-RELEASE-HITL",
+      "title": "Stable/official release honors human gate where policy requires",
+      "statement": "Automation cannot bypass a profile-defined human authorization gate for stable/official promotion.",
+      "journeys": [
+        "AP-J-06"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-RELEASE-ROLLBACK",
+      "title": "Rollback/supersession preserves release history",
+      "statement": "Rollback or supersession does not erase the prior promotion/evaluation history.",
+      "journeys": [
+        "AP-J-06"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-OPTIONAL-FAIL",
+      "title": "Optional integration failure cannot redefine core work truth",
+      "statement": "Failure/unavailability of optional Plane/NATS/Neo4j/MinIO/P2P/etc profiles is isolated and explicitly degraded.",
+      "journeys": [
+        "AP-J-07"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-OBS-NOINFLUENCE",
+      "title": "Observability cannot alter correctness",
+      "statement": "Metrics/traces/logging/health collection failure or sampling cannot manufacture or erase accepted correctness results.",
+      "journeys": [
+        "AP-J-11"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-OBS-ATTRIB",
+      "title": "Operational evidence is attributable",
+      "statement": "Metrics/traces/health used as evidence identify operation/component/candidate/environment/time sufficiently for interpretation.",
+      "journeys": [
+        "AP-J-12"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-SEC-LEAST",
+      "title": "Least-privilege execution authority",
+      "statement": "Workers/evaluators/integrations receive only authority needed for their bounded operation and authority expiry/revocation is explicit.",
+      "journeys": [
+        "AP-J-03"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-SEC-CRED",
+      "title": "Credential delegation is explicit and auditable",
+      "statement": "Credential use is bound to actor/attempt/purpose/scope where feasible and secrets are not copied into ordinary spec/evidence artifacts.",
+      "journeys": [
+        "AP-J-03"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-SEC-REDACT",
+      "title": "Sensitive evidence redaction preserves references",
+      "statement": "Redaction removes protected payload while retaining allowed immutable receipt/provenance references required for audit.",
+      "journeys": [
+        "AP-J-12"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-PERSIST-DURABLE",
+      "title": "Canonical work state is durable",
+      "statement": "Accepted SpecRevisions, WPs, Assignments, Attempts, Evaluations and promotion history survive supported restart/reopen without identity drift.",
+      "journeys": [
+        "AP-J-07"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-PERSIST-TXN",
+      "title": "Accepted-state mutations are atomic",
+      "statement": "Multi-record accepted-state changes do not expose silently half-applied canonical work truth.",
+      "journeys": [
+        "AP-J-07"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-PERSIST-MIG",
+      "title": "Migrations preserve canonical identities/history",
+      "statement": "Supported schema migration preserves durable identities, relationships and audit/evaluation history or fails with explicit recovery path.",
+      "journeys": [
+        "AP-J-07"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-PERSIST-BACKUP",
+      "title": "Backup/restore preserves work truth",
+      "statement": "Supported backup/restore recovers canonical development/spec/work/evaluation history and detects incompatible/incomplete restore.",
+      "journeys": [
+        "AP-J-07"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-CONFIG-PREC",
+      "title": "Configuration precedence is deterministic",
+      "statement": "Repository/user/environment/profile/tool/provider configuration has documented precedence and identical inputs resolve identically.",
+      "journeys": [
+        "AP-J-08"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-CONFIG-REV",
+      "title": "Acceptance-relevant configuration is revision-bound",
+      "statement": "Evaluator/profile/policy configuration affecting acceptance is identified/versioned in Assignment/Evaluation receipts.",
+      "journeys": [
+        "AP-J-04"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-CONFIG-SECRET",
+      "title": "Secrets are separate from ordinary configuration",
+      "statement": "Secret values use bounded secret mechanisms and do not leak through generated config, logs, prompts or receipts.",
+      "journeys": [
+        "AP-J-03"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-PLUGIN-WORKER",
+      "title": "Worker backends are replaceable",
+      "statement": "Worker/provider adapters implement a stable dispatch/result contract; backend choice does not redefine Assignment or acceptance semantics.",
+      "journeys": [
+        "AP-J-03"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-PLUGIN-EVAL",
+      "title": "Evaluator backends are replaceable but versioned",
+      "statement": "Evaluator implementations may vary while Evaluation records exact evaluator/version and criterion semantics remain accepted-contract authority.",
+      "journeys": [
+        "AP-J-04"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-PLUGIN-STORE",
+      "title": "Storage/integration adapters cannot redefine domain semantics",
+      "statement": "Replaceable persistence/integration adapters preserve canonical identity/status semantics and expose unsupported capabilities explicitly.",
+      "journeys": [
+        "AP-J-07"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-DOC-DOSSIER",
+      "title": "Fresh-context product dossier is sufficient",
+      "statement": "A fresh authorized agent can recover product boundary, canonical semantics, current contract, journeys, oracle rules, decisions, unresolved debt and execution gates without owner replay.",
+      "journeys": [
+        "AP-J-07"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-DOC-PROV",
+      "title": "Raw intent and decision provenance remain reachable",
+      "statement": "Canonical summaries link to raw/historical sources and supersession rationale so abstraction does not erase why decisions exist.",
+      "journeys": [
+        "AP-J-07"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    },
+    {
+      "id": "AP-R-DOC-STALE",
+      "title": "Documentation authority and staleness are explicit",
+      "statement": "Historical/proposed/superseded documents cannot masquerade as current authority; canonical entrypoints identify their status.",
+      "journeys": [
+        "AP-J-07"
+      ],
+      "status": "accepted_mature_requirement",
+      "stages": [
+        "MATURE"
+      ],
+      "verification_status": "specified_not_executed"
+    }
+  ]
+}

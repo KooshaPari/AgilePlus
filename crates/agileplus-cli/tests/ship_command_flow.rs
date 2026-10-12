@@ -38,7 +38,7 @@ fn ship_rejects_non_validated_state_without_skip() {
             .await
             .unwrap_err();
         assert!(
-            err.to_string().contains("Expected 'Validated'"),
+            err.to_string().contains("promotion requires Validated"),
             "got: {err}"
         );
         let f = StoragePort::get_feature_by_slug(&storage, "planned-feat")
@@ -83,7 +83,7 @@ fn ship_rejects_incomplete_work_packages() {
             .await
             .unwrap_err();
         let msg = err.to_string();
-        assert!(msg.contains("incomplete work packages"), "got: {msg}");
+        assert!(msg.contains("promotion requires every work package Done"), "got: {msg}");
         assert!(
             msg.contains("WP02 'WP 2'"),
             "must name the blocked WP: {msg}"
@@ -129,21 +129,46 @@ fn ship_dry_run_makes_no_changes() {
 }
 
 #[test]
-fn ship_dry_run_with_no_wps_succeeds() {
+fn ship_rejects_zero_work_packages_outside_dry_run() {
+    block_on(async {
+        let storage = SqliteStorageAdapter::in_memory().unwrap();
+        let vcs = RecordingVcs::new();
+        let id = seed(&storage, "empty-ship", FeatureState::Validated, &[]).await;
+
+        let err = run_ship(args("empty-ship"), &storage, &vcs)
+            .await
+            .expect_err("zero-work promotion must fail closed");
+        assert!(
+            err.to_string().contains("no work packages"),
+            "unexpected error: {err}"
+        );
+        assert!(vcs.merges.lock().unwrap().is_empty());
+        let feature = StoragePort::get_feature_by_id(&storage, id)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(feature.state, FeatureState::Validated);
+    })
+}
+
+#[test]
+fn ship_dry_run_with_no_wps_rejects_vacuous_promotion() {
     block_on(async {
         let storage = SqliteStorageAdapter::in_memory().unwrap();
         let vcs = RecordingVcs::new();
         seed(&storage, "empty-dry", FeatureState::Validated, &[]).await;
         let mut a = args("empty-dry");
         a.dry_run = true;
-        run_ship(a, &storage, &vcs)
+        let err = run_ship(a, &storage, &vcs)
             .await
-            .expect("dry run with zero WPs succeeds");
+            .expect_err("even a dry run must not present an empty promotion as valid");
+        assert!(err.to_string().contains("no work packages"), "{err}");
+        assert!(vcs.merges.lock().unwrap().is_empty());
     })
 }
 
 #[test]
-fn ship_derives_branches_and_merges_in_sequence_order() {
+fn ship_merges_exact_accepted_candidates_in_sequence_order() {
     block_on(async {
         let storage = SqliteStorageAdapter::in_memory().unwrap();
         let vcs = RecordingVcs::new();
@@ -161,12 +186,8 @@ fn ship_derives_branches_and_merges_in_sequence_order() {
         let sources: Vec<&str> = merges.iter().map(|(s, _)| s.as_str()).collect();
         assert_eq!(
             sources,
-            vec![
-                "feature/merge-feat/wp01",
-                "feature/merge-feat/wp02",
-                "feature/merge-feat/wp10"
-            ],
-            "WP10 must be zero-padded, and order must follow sequence"
+            vec!["candidate-1", "candidate-2", "candidate-10"],
+            "merge source must be the immutable accepted candidate in WP sequence order"
         );
         assert!(
             merges.iter().all(|(_, t)| t == "main"),
@@ -199,7 +220,7 @@ fn ship_honors_target_branch_override() {
 }
 
 #[test]
-fn ship_uses_worktree_path_as_branch_when_present() {
+fn ship_merges_evaluated_candidate_when_worktree_path_is_present() {
     block_on(async {
         let storage = SqliteStorageAdapter::in_memory().unwrap();
         let vcs = RecordingVcs::new();
@@ -216,9 +237,79 @@ fn ship_uses_worktree_path_as_branch_when_present() {
             .expect("ship");
         let merges = vcs.merges.lock().unwrap().clone();
         assert_eq!(
-            merges[0].0, "wt-feat-WP01",
-            "worktree file_name wins over the convention"
+            merges[0].0, "candidate-1",
+            "ship must merge the evaluated commit rather than a mutable branch or worktree path"
         );
+    })
+}
+
+#[test]
+fn ship_rejects_satisfied_evaluation_with_missing_criterion_receipt() {
+    block_on(async {
+        let storage = SqliteStorageAdapter::in_memory().unwrap();
+        let vcs = RecordingVcs::new();
+        let id = seed(
+            &storage,
+            "receipt-loss",
+            FeatureState::Validated,
+            &[(1, WpState::Done)],
+        )
+        .await;
+
+        {
+            let conn = storage.conn_for_bench().unwrap();
+            conn.execute("DELETE FROM evaluation_criterion_results", [])
+                .unwrap();
+        }
+
+        let err = run_ship(args("receipt-loss"), &storage, &vcs)
+            .await
+            .expect_err("missing criterion receipt must fail closed");
+        assert!(
+            err.to_string().contains("criterion"),
+            "unexpected error: {err}"
+        );
+        assert!(
+            vcs.merges.lock().unwrap().is_empty(),
+            "no merge may occur after receipt loss"
+        );
+        let feature = StoragePort::get_feature_by_id(&storage, id)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(feature.state, FeatureState::Validated);
+    })
+}
+
+#[test]
+fn ship_rejects_source_branch_that_drifted_from_accepted_candidate() {
+    block_on(async {
+        let storage = SqliteStorageAdapter::in_memory().unwrap();
+        let vcs = RecordingVcs::new().with_branch_commit("stale-commit");
+        let id = seed(
+            &storage,
+            "drift-feat",
+            FeatureState::Validated,
+            &[(1, WpState::Done)],
+        )
+        .await;
+
+        let err = run_ship(args("drift-feat"), &storage, &vcs)
+            .await
+            .expect_err("candidate drift must fail closed");
+        assert!(
+            err.to_string().contains("drifted from accepted candidate"),
+            "unexpected error: {err}"
+        );
+        assert!(
+            vcs.merges.lock().unwrap().is_empty(),
+            "no merge after drift"
+        );
+        let feature = StoragePort::get_feature_by_id(&storage, id)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(feature.state, FeatureState::Validated);
     })
 }
 

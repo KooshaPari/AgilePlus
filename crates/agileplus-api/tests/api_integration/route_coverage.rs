@@ -513,6 +513,34 @@ async fn coverage_transition_work_package_planned_to_doing() {
 }
 
 #[tokio::test]
+async fn coverage_transition_work_package_direct_done_is_409() {
+    let server = setup_test_server().await;
+    let created = server
+        .post("/api/v1/features/test-feature/work-packages")
+        .add_header(KEY, TEST_API_KEY)
+        .json(&serde_json::json!({ "title": "WP-ACCEPTANCE" }))
+        .await;
+    let body: serde_json::Value = created.json();
+    let id = body["id"].as_i64().expect("wp id");
+
+    for target in ["doing", "review"] {
+        server
+            .post(&format!("/api/v1/work-packages/{id}/transition"))
+            .add_header(KEY, TEST_API_KEY)
+            .json(&serde_json::json!({ "target_state": target }))
+            .await
+            .assert_status_ok();
+    }
+
+    server
+        .post(&format!("/api/v1/work-packages/{id}/transition"))
+        .add_header(KEY, TEST_API_KEY)
+        .json(&serde_json::json!({ "target_state": "done" }))
+        .await
+        .assert_status(StatusCode::CONFLICT);
+}
+
+#[tokio::test]
 async fn coverage_transition_work_package_invalid_state_is_400() {
     let server = setup_test_server().await;
     server

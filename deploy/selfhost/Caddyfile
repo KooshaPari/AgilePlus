@@ -1,40 +1,24 @@
-{$HOSTNAME:localhost} {
-	header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-	header X-Content-Type-Options "nosniff"
-	header X-Frame-Options "DENY"
-	header X-XSS-Protection "1; mode=block"
-	header Referrer-Policy "strict-origin-when-cross-origin"
-	header Permissions-Policy "geolocation=(), microphone=(), camera=()"
-	header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self' https:; frame-ancestors 'none'"
-
-	handle /status {
-		respond "AgilePlus CLI self-hosted instance running. No HTTP API available. Use CLI directly." 200
-	}
-
-	handle /health {
-		respond "ok" 200
-	}
-
-	handle {
-		header Content-Type text/html
-		respond `<!DOCTYPE html>
-<html>
-<head><title>AgilePlus Self-Hosted</title></head>
-<body>
-<h1>AgilePlus Self-Hosted Instance</h1>
-<p><strong>AgilePlus is a CLI tool</strong> with no built-in HTTP server. This instance serves as a database container.</p>
-<p><strong>Database location:</strong> /data/agileplus.db</p>
-<p>Mount the agileplus-data volume or run: docker compose exec agileplus-cli agileplus --help</p>
-</body>
-</html>` 200
-	}
-
-	log {
-		output stdout
-		format json
-	}
-}
-
-localhost:8081 {
-	respond `AgilePlus CLI instance (local). No HTTP API.` 200
+# IMPORT INTO THE SINGLE HOST-LEVEL CADDY CONFIG. Do not start another
+# Caddy instance for AgilePlus.
+#
+# The host Caddy must support ACME DNS-01 with the Cloudflare DNS module
+# (or use separately provisioned TLS certs) because this private tailnet
+# hostname is not publicly reachable for HTTP-01 challenges.
+#
+# Prerequisites:
+# - custom-domain cert issuance configured on the host Caddy
+# - firewall permits HTTPS only on the Tailscale interface for this hostname
+# - private DNS resolves this name to the authorized tailnet edge/service
+#
+# Replace this hostname only when the canonical product DNS name changes.
+api.agileplus.pheno.studio {
+    encode zstd gzip
+    header {
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        X-Frame-Options "DENY"
+        Permissions-Policy "geolocation=(), microphone=(), camera=()"
+        -Server
+    }
+    reverse_proxy 127.0.0.1:3000
 }
