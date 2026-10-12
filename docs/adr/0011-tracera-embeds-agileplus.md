@@ -1,5 +1,7 @@
 # ADR-0011: Tracera Embeds AgilePlus
 
+> **Current status note:** SUPERSEDED by ADR-0018 (2026-09-30). Historical rationale retained. The mature-product program now treats Tracera and AgilePlus as interoperable sibling runtimes; Tracera product truth must not depend on AgilePlus availability.
+
 ## Status
 
 Proposed

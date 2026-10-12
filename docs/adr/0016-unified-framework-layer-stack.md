@@ -1,5 +1,7 @@
 # ADR-0016: Unified Framework Layer Stack
 
+> **Current status note:** PARTIALLY SUPERSEDED by ADR-0018 (2026-09-30). The L0–L4 framework decomposition remains research input; runtime ownership rows that make Tracera subordinate to AgilePlus require re-evaluation.
+
 ## Status
 
 Proposed

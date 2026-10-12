@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   call-sbom-refresh:
-    uses: KooshaPari/PhenoShared/.github/workflows/sbom-monthly.yml@62368071d186b044cef50ee904064cf923fe5420
+    uses: KooshaPari/PhenoShared/.github/workflows/sbom-monthly.yml@52bdb0ad3d30318606aa5c4e302457162622d863
     with:
       repo_path: '.'
       build_system: 'rust'

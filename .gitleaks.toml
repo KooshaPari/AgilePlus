@@ -38,6 +38,20 @@ paths = [
   '''\.serena/''',
   '''\.forge/''',
   '''\.kittify/''',
+  # 2026-10-08: documentation example values flagged by gitleaks
+  # generic-api-key rule. All four are explicit placeholders (abc123...,
+  # GOCSPX-abc123..., or Go package name in YAML frontmatter) — not secrets.
+  # See gitleaks run 37725421526, fingerprint 6e4a8243:*:generic-api-key.
+  '''docs/reference/env-vars\.md''',
+  '''kitty-specs/.*\.md''',
+  '''references/fastmcp\.txt''',
+  # 2026-10-11: false positive on the literal string "tailnet/DNS/TLS"
+  # in verification/release ledgers (network-topology reference, not a
+  # secret). The 2026-10-07 ledger was removed from main; gitleaks keeps
+  # flagging it on --full-history scans. Allowlist the path pattern.
+  # See gitleaks run 38109281828, fingerprint
+  # 05391d4c7857702e86fc788fa6e0c099b7743c0c:*:generic-api-key:150.
+  '''verification/RELEASE_EVIDENCE_LEDGER_.*\.md''',
 ]
 
 # Stopwords reduce false positives on common identifiers that look

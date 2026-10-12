@@ -1,5 +1,7 @@
 # ADR-0017: Tracera Embedding Migration Path
 
+> **Current status note:** SUPERSEDED by ADR-0018 (2026-09-30). Historical migration design retained. Do not execute the mandatory-embedding migration as current architecture.
+
 ## Status
 
 Proposed

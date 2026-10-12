@@ -1,0 +1,10 @@
+{
+  "overrides": [
+    {
+      "files": ".github/workflows/release.yml",
+      "options": {
+        "tabWidth": 2
+      }
+    }
+  ]
+}

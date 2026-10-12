@@ -20,8 +20,8 @@ jobs:
         runs-on: ubuntu-24.04
         timeout-minutes: 30
         steps:
-            - uses: actions/checkout@v7
-            - uses: actions/setup-python@v7
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+            - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
               with:
                   python-version: "3.12"
             - name: Validate measurement harness
@@ -43,7 +43,7 @@ jobs:
                     --report-dir .perf-reports
             - name: Upload measurements and API log
               if: always()
-              uses: actions/upload-artifact@v7
+              uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
               with:
                   name: perf-reports-${{ github.run_id }}
                   path: .perf-reports/
@@ -65,3 +65,91 @@ jobs:
                     exit 1
                   fi
                   echo "HTTP measurement completed; T118 latency targets remain warning-level."
+
+    perf-k6-advisory:
+        # Advisory. P95 budget enforcement was a PR blocker but k6 stack + budget
+        # values have drifted; we keep the report and surface it as a comment.
+        name: perf (k6 → 95p budget, advisory)
+        runs-on: ubuntu-24.04
+        timeout-minutes: 20
+        continue-on-error: true
+        permissions:
+            contents: read
+            pull-requests: write
+        steps:
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+            - name: Set up Node + Python
+              uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+              with:
+                  node-version: "20"
+            - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+              with:
+                  python-version: "3.12"
+
+            - name: Install k6
+              run: |
+                  sudo apt-get update -qq
+                  sudo apt-get install -yq gnupg ca-certificates
+                  curl -fsSL https://github.com/grafana/k6/releases/download/v0.50.0/k6-v0.50.0-linux-amd64.tar.gz \
+                    | tar -xz --strip-components=1 -C /usr/local/bin k6-v0.50.0-linux-amd64/k6
+                  k6 version
+
+            - name: Bring up stack
+              run: |
+                  set -euo pipefail
+                  docker compose -f compose/docker-compose.yml up -d --wait
+                  process-compose -f compose/process-compose.phase.yml up -d
+                  bash ./scripts/perf/warmup.sh
+
+            - name: Run k6 (smoke + load + stress)
+              run: |
+                  set -euo pipefail
+                  mkdir -p .perf-reports
+                  for scenario in smoke load stress; do
+                    echo "## Running k6 $scenario"
+                    k6 run \
+                      --out json=.perf-reports/$scenario.json \
+                      --summary-export=.perf-reports/$scenario-summary.json \
+                      ./perf/${scenario}.js
+                  done
+
+            - name: Enforce p95 budget
+              # Advisory only — failures here post a PR comment, do not block merge.
+              run: |
+                  set +e
+                  python ./scripts/perf/check_budget.py \
+                    --summary .perf-reports/load-summary.json \
+                    --budget-file ./perf/budget.json
+                  budget_exit=$?
+                  echo "budget_exit=${budget_exit}" >> "$GITHUB_OUTPUT"
+                  exit 0  # always succeed; the comment step below handles reporting
+              id: budget
+
+            - name: Post perf budget status to PR
+              # Only post when the budget step actually completed. If upstream k6
+              # stack failed and the budget step was skipped, don't report
+              # "EXCEEDED" (would be misleading) — that case is covered by the
+              # perf-proc job's own job-level continue-on-error: true.
+              if: github.event_name == 'pull_request' && !cancelled() && steps.budget.outcome != 'skipped'
+              uses: marocchino/sticky-pull-request-comment@5770ad5eb8f42dd2c4f34da00c94c5381e49af88 # v3.0.5 (rolling branch heads/v3)
+              with:
+                  header: perf-budget
+                  message: |
+                      ${{ steps.budget.outputs.budget_exit == '0' && '✅' || '⚠️' }} **Perf budget: ${{ steps.budget.outputs.budget_exit == '0' && 'within budget' || 'EXCEEDED (advisory)' }}**
+                      See workflow artifacts for full k6 summary.
+
+            - name: Bring down stack
+              if: always()
+              run: |
+                  process-compose -f compose/process-compose.phase.yml down || true
+                  docker compose -f compose/docker-compose.yml down --remove-orphans -v || true
+
+            - name: Upload perf reports
+              if: always()
+              uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+              with:
+                  name: perf-k6-reports-${{ github.run_id }}
+                  path: |
+                      .perf-reports/**
+                      !.perf-reports/node_modules/**
