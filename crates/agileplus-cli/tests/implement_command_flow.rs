@@ -239,7 +239,10 @@ fn implement_approved_without_git_candidate_fails_closed_with_durable_history() 
             .unwrap();
         assert_eq!(attempts.len(), 1);
         assert_eq!(attempts[0].status, AttemptStatus::Failed);
-        assert_eq!(attempts[0].failure_class.as_deref(), Some("candidate_unresolved"));
+        assert_eq!(
+            attempts[0].failure_class.as_deref(),
+            Some("candidate_unresolved")
+        );
         assert!(attempts[0].result_candidate_ref.is_none());
 
         let evaluations = ExecutionRecordPort::list_evaluations(&storage, &assignment.id)

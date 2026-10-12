@@ -83,7 +83,10 @@ fn ship_rejects_incomplete_work_packages() {
             .await
             .unwrap_err();
         let msg = err.to_string();
-        assert!(msg.contains("promotion requires every work package Done"), "got: {msg}");
+        assert!(
+            msg.contains("promotion requires every work package Done"),
+            "got: {msg}"
+        );
         assert!(
             msg.contains("WP02 'WP 2'"),
             "must name the blocked WP: {msg}"
