@@ -1,9 +1,29 @@
+# Attest the actual artifacts published in a GitHub release, with SLSA Build L2.
+# Triggered on `release: published` — at this point the release assets exist and
+# have already been built by the upstream pipeline (cargo-dist for CLI,
+# release-desktop for desktop, etc.). We do NOT rebuild here; we attest the
+# exact bytes that the user downloads.
+#
+# Previously (R4 audit finding) this workflow rebuilt the workspace with
+# 'cargo build --release --locked --workspace --all-targets', which produced
+# a binary that was almost-but-not-exactly identical to the released one
+# (different target triple, different build host, different timestamps). The
+# attestation covered a different binary than the one users actually got.
+#
+# New behavior: download the release assets via `gh release download`, then
+# attach SLSA Build L2 provenance to those exact bytes. The attestation
+# links back to the release tag, not to a fresh build.
 name: Release Attestation
 
 on:
   release:
     types: [published]
   workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to attest (defaults to latest)'
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -11,73 +31,70 @@ permissions:
   attestations: write
 
 jobs:
-  build-and-attest:
-    name: Build and Attest (SLSA Build L2)
+  download-and-attest:
+    name: Download release artifacts and attest (SLSA Build L2)
     runs-on: ubuntu-24.04
     permissions:
       contents: read
       id-token: write
       attestations: write
     env:
-      CARGO_WORKDIR: .
+      # Allow `gh release download` to read the release we just published.
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - name: Checkout source
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-        with:
-          fetch-depth: 0
-
-      - name: Set up Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: stable
-
-      - name: Cache cargo registry and build artifacts
-        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32
-        with:
-          workspaces: |
-            . -> target
-
-      - name: Build release artifacts
-        working-directory: ${{ env.CARGO_WORKDIR }}
+      - name: Resolve target tag
+        id: tag
         run: |
-          set -euo pipefail
-          cargo build --release --locked --workspace --all-targets
+          if [ -n "${{ inputs.tag }}" ]; then
+            echo "value=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            tag="${{ github.event.release.tag_name }}"
+            echo "value=$tag" >> "$GITHUB_OUTPUT"
+          fi
 
-      - name: Stage release artifacts
-        working-directory: ${{ env.CARGO_WORKDIR }}
+      - name: Download release assets
+        env:
+          TAG: ${{ steps.tag.outputs.value }}
         run: |
           set -euo pipefail
           mkdir -p release-artifacts
-          # Copy all built executables
-          find target/release -maxdepth 1 -type f -executable \
-            -exec cp -t release-artifacts/ {} + 2>/dev/null || true
-          # Source tarball
-          tar \
-            --exclude='./target' \
-            --exclude='./.git' \
-            --exclude='./release-artifacts' \
-            -czf release-artifacts/source.tar.gz \
-            -C "$GITHUB_WORKSPACE/${{ env.CARGO_WORKDIR }}" .
-          # Build manifest
+          gh release download "$TAG" \
+            --dir release-artifacts \
+            --pattern '*' \
+            --clobber
+
+          echo "=== Downloaded assets ==="
+          ls -la release-artifacts/
+
+          count=$(find release-artifacts -type f | wc -l)
+          if [ "$count" -eq 0 ]; then
+            echo "::error::No assets downloaded for release $TAG"
+            exit 1
+          fi
+          echo "Downloaded $count asset(s) for release $TAG"
+
+      - name: Build provenance manifest
+        run: |
+          set -euo pipefail
+          sha256sum release-artifacts/* > release-artifacts/SHA256SUMS
           cat > release-artifacts/BUILD_MANIFEST.txt <<EOF
           # Release Build Manifest
           repository: ${{ github.repository }}
-          ref:        ${{ github.ref }}
-          sha:        ${{ github.sha }}
+          tag:        ${{ steps.tag.outputs.value }}
+          release_id: ${{ github.event.release.id }}
           runner:     ${{ runner.os }}
-          rustc:      $(rustc --version)
-          cargo:      $(cargo --version)
-          built_at:   $(date -u +%Y-%m-%dT%H:%M:%SZ)
+          attested_at: $(date -u +%Y-%m-%dT%H:%M:%SZ)
+          artifacts: see SHA256SUMS in this directory
           EOF
-          echo "=== Release artifacts ==="
-          ls -la release-artifacts/
+          echo "=== Provenance manifest ==="
+          cat release-artifacts/BUILD_MANIFEST.txt
 
       - name: Upload artifacts for provenance
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: release-artifacts
-          path: ${{ env.CARGO_WORKDIR }}/release-artifacts/
-          if-no-files-found: warn
+          path: release-artifacts/
+          if-no-files-found: error
           retention-days: 90
 
       - name: Attest build provenance (SLSA Build L2)

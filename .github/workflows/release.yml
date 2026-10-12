@@ -12,6 +12,20 @@
 #
 # Note that the GitHub Release will be created with a generated
 # title/body based on your changelogs.
+#
+# KNOWN LIMITATION (release-lifecycle-v2 audit R6): this workflow is
+# cargo-dist-managed and re-emitted by 'cargo dist generate'. A direct
+# 'needs: ci-gate' job here would be lost on regen. The sister workflow
+# .github/workflows/release-crates.yml (also tag-triggered) carries a
+# hand-written ci-gate that queries the latest ci.yml run for the
+# commit and refuses to publish if CI didn't pass. Apply the same
+# pattern here by:
+#   1. Edit [workspace.metadata.dist] in Cargo.toml to disable direct
+#      publish-on-tag, and
+#   2. Trigger release.yml via workflow_run on a successful CI.
+# Until that's done, tag pushes publish without an upstream CI gate.
+# See https://axodotdev.github.io/cargo-dist/book/ci/github.html
+# for the supported pattern.
 
 name: Release
 permissions:

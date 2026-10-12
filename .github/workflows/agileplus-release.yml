@@ -1,5 +1,12 @@
-# Manual-trigger release for agileplus-cli (all-3 distribution).
-# Tag-triggered releases are handled by .github/workflows/release.yml (cargo-dist).
+# Manual-trigger release for agileplus-cli (build matrix + crates.io publish).
+# The tag-triggered GitHub Release is owned by .github/workflows/release.yml
+# (cargo-dist). This workflow remains the manual fallback for:
+#   * building the 4-OS CLI matrix (used by hand for hotfixes)
+#   * publishing the workspace crates to crates.io (publish-crates.sh)
+#
+# If you push a tag, cargo-dist publishes the GitHub Release; this
+# workflow's publish-crates job still runs and ships the crates.
+# See release-lifecycle-v2 audit R1 for the consolidation rationale.
 name: AgilePlus Release
 
 on:
@@ -102,27 +109,6 @@ jobs:
           path: release-upload/*
           if-no-files-found: error
           retention-days: 14
-
-  github-release:
-    name: Publish GitHub Release
-    needs: build-matrix
-    runs-on: ubuntu-24.04
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@v7
-
-      - uses: actions/download-artifact@v8
-        with:
-          path: release-assets
-          merge-multiple: true
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v3
-        with:
-          files: release-assets/*
-          generate_release_notes: true
-          draft: false
-          prerelease: ${{ contains(github.ref_name, '-') }}
 
   publish-crates:
     name: Publish to crates.io
