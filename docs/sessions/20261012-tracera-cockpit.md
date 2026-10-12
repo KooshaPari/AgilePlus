@@ -1,0 +1,7 @@
+# Cockpit — Tracera load check (2026-10-12T21:10Z)
+
+1. **Task:** Low-risk read-only check of 2,490 Tracera items (project AGILEPLUS at `tracera.pheno.studio`) vs AgilePlus repo. Output: `docs/TRACERA-LOAD-CHECK.md` (267 lines, untracked, fully reversible).
+2. **Result:** **AUTH BLOCKED.** Cloudflare Access (Zero Trust) protects all paths; agent has no service token or IdP credentials. No bypass attempted per stop condition. False-positive / false-negative counts: UNKNOWN, not zero.
+3. **Repo-side baseline established (ready to re-run when auth is restored):** 30 active workspace members (not 36); 67 requirements + 12 journeys + 92 oracles (spec branch only); 8 narrative journey pages; `STABLE.md`, `crates/traceability-core/`, 9 release workflows all on disk.
+4. **Likely false-positive candidates once auth lands:** `.github/workflows/gate-check.yml` (referenced by `promote.yml`, doesn't exist on disk); `verification/semantic-verification-cases.v1.json` (spec-branch-only); pre-A''-merge items pointing at the invalidated 1.1.0 envelope rather than 2.1.0 source-backed.
+5. **Next:** Provision a Cloudflare Access service token for the agent fleet (scoped read-only to tracera.pheno.studio AGILEPLUS project); re-run using the section 6 checklist; do NOT block the A'' merge on this check (orthogonal). tx-agent: jcode, tx-validated: manual, tx-task: tracera-load-check-20261012, tx-scope: docs/TRACERA-LOAD-CHECK.md, tx-intent: Auth-blocked Tracera load check with repo-side baseline.
