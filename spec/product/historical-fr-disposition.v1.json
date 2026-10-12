@@ -1,0 +1,371 @@
+{
+  "schema_version": "0.1.0",
+  "source": "FUNCTIONAL_REQUIREMENTS.md v2.2",
+  "product_id": "PRD-AGILEPLUS",
+  "status": "accepted_historical_id_disposition",
+  "count_policy": "derived_only",
+  "historical_requirement_count": 90,
+  "authority": "spec/product/CANONICAL_SEMANTIC_DECISIONS.md",
+  "mappings": [
+    {
+      "historical_id": "FR-DOMAIN-001",
+      "disposition": "ADAPT"
+    },
+    {
+      "historical_id": "FR-DOMAIN-002",
+      "disposition": "SUPERSEDED_BY:adaptive-partial-order-lifecycle"
+    },
+    {
+      "historical_id": "FR-DOMAIN-003",
+      "disposition": "SUPERSEDED_BY:adaptive-partial-order-lifecycle"
+    },
+    {
+      "historical_id": "FR-DOMAIN-004",
+      "disposition": "ADAPT"
+    },
+    {
+      "historical_id": "FR-DOMAIN-005",
+      "disposition": "ADAPT"
+    },
+    {
+      "historical_id": "FR-DOMAIN-006",
+      "disposition": "ADAPT"
+    },
+    {
+      "historical_id": "FR-DOMAIN-007",
+      "disposition": "KEEP"
+    },
+    {
+      "historical_id": "FR-DOMAIN-008",
+      "disposition": "KEEP"
+    },
+    {
+      "historical_id": "FR-DOMAIN-009",
+      "disposition": "KEEP"
+    },
+    {
+      "historical_id": "FR-DOMAIN-010",
+      "disposition": "KEEP"
+    },
+    {
+      "historical_id": "FR-DOMAIN-011",
+      "disposition": "KEEP"
+    },
+    {
+      "historical_id": "FR-DOMAIN-012",
+      "disposition": "KEEP"
+    },
+    {
+      "historical_id": "FR-DOMAIN-013",
+      "disposition": "KEEP"
+    },
+    {
+      "historical_id": "FR-DOMAIN-014",
+      "disposition": "KEEP"
+    },
+    {
+      "historical_id": "FR-DOMAIN-015",
+      "disposition": "ADAPT"
+    },
+    {
+      "historical_id": "FR-DOMAIN-016",
+      "disposition": "OPTIONAL_PROFILE:p2p"
+    },
+    {
+      "historical_id": "FR-AUDIT-001",
+      "disposition": "ADAPT"
+    },
+    {
+      "historical_id": "FR-AUDIT-002",
+      "disposition": "ADAPT:audit-hash-v1-exact-envelope"
+    },
+    {
+      "historical_id": "FR-AUDIT-003",
+      "disposition": "KEEP"
+    },
+    {
+      "historical_id": "FR-AUDIT-004",
+      "disposition": "ADAPT"
+    },
+    {
+      "historical_id": "FR-AUDIT-005",
+      "disposition": "KEEP"
+    },
+    {
+      "historical_id": "FR-AUDIT-006",
+      "disposition": "OPTIONAL_PROFILE:object-archive"
+    },
+    {
+      "historical_id": "FR-CLI-001",
+      "disposition": "ADAPT"
+    },
+    {
+      "historical_id": "FR-CLI-002",
+      "disposition": "ADAPT"
+    },
+    {
+      "historical_id": "FR-CLI-003",
+      "disposition": "ADAPT"
+    },
+    {
+      "historical_id": "FR-CLI-004",
+      "disposition": "ADAPT"
+    },
+    {
+      "historical_id": "FR-CLI-005",
+      "disposition": "ADAPT"
+    },
+    {
+      "historical_id": "FR-CLI-006",
+      "disposition": "ADAPT"
+    },
+    {
+      "historical_id": "FR-CLI-007",
+      "disposition": "ADAPT"
+    },
+    {
+      "historical_id": "FR-CLI-008",
+      "disposition": "OPTIONAL_PROFILE:external-sync"
+    },
+    {
+      "historical_id": "FR-CLI-009",
+      "disposition": "OPTIONAL_PROFILE:human-dashboard"
+    },
+    {
+      "historical_id": "FR-CLI-010",
+      "disposition": "ADAPT"
+    },
+    {
+      "historical_id": "FR-CLI-011",
+      "disposition": "ADAPT"
+    },
+    {
+      "historical_id": "FR-API-001",
+      "disposition": "ADAPT"
+    },
+    {
+      "historical_id": "FR-API-002",
+      "disposition": "ADAPT"
+    },
+    {
+      "historical_id": "FR-API-003",
+      "disposition": "ADAPT"
+    },
+    {
+      "historical_id": "FR-API-004",
+      "disposition": "ADAPT"
+    },
+    {
+      "historical_id": "FR-API-005",
+      "disposition": "ADAPT"
+    },
+    {
+      "historical_id": "FR-API-006",
+      "disposition": "ADAPT"
+    },
+    {
+      "historical_id": "FR-API-007",
+      "disposition": "ADAPT:authn-authz-profile-not-api-key-only"
+    },
+    {
+      "historical_id": "FR-API-008",
+      "disposition": "ADAPT"
+    },
+    {
+      "historical_id": "FR-GRPC-001",
+      "disposition": "OPTIONAL_PROFILE:grpc"
+    },
+    {
+      "historical_id": "FR-GRPC-002",
+      "disposition": "OPTIONAL_PROFILE:grpc"
+    },
+    {
+      "historical_id": "FR-GRPC-003",
+      "disposition": "OPTIONAL_PROFILE:grpc"
+    },
+    {
+      "historical_id": "FR-GRPC-004",
+      "disposition": "OPTIONAL_PROFILE:grpc"
+    },
+    {
+      "historical_id": "FR-GRPC-005",
+      "disposition": "OPTIONAL_PROFILE:grpc"
+    },
+    {
+      "historical_id": "FR-STORAGE-001",
+      "disposition": "KEEP:local-first-port-boundary"
+    },
+    {
+      "historical_id": "FR-STORAGE-002",
+      "disposition": "IMPLEMENTATION_CHOICE"
+    },
+    {
+      "historical_id": "FR-STORAGE-003",
+      "disposition": "IMPLEMENTATION_CHOICE"
+    },
+    {
+      "historical_id": "FR-STORAGE-004",
+      "disposition": "IMPLEMENTATION_CHOICE"
+    },
+    {
+      "historical_id": "FR-EVENTS-001",
+      "disposition": "OPTIONAL_PROFILE:event-bus"
+    },
+    {
+      "historical_id": "FR-EVENTS-002",
+      "disposition": "ADAPT"
+    },
+    {
+      "historical_id": "FR-EVENTS-003",
+      "disposition": "OPTIONAL_PROFILE:event-bus"
+    },
+    {
+      "historical_id": "FR-GRAPH-001",
+      "disposition": "ADAPT"
+    },
+    {
+      "historical_id": "FR-GRAPH-002",
+      "disposition": "ADAPT"
+    },
+    {
+      "historical_id": "FR-GRAPH-003",
+      "disposition": "OPTIONAL_PROFILE:neo4j"
+    },
+    {
+      "historical_id": "FR-GRAPH-004",
+      "disposition": "ADAPT"
+    },
+    {
+      "historical_id": "FR-GRAPH-005",
+      "disposition": "OPTIONAL_PROFILE:neo4j"
+    },
+    {
+      "historical_id": "FR-IMPORT-001",
+      "disposition": "KEEP"
+    },
+    {
+      "historical_id": "FR-IMPORT-002",
+      "disposition": "KEEP"
+    },
+    {
+      "historical_id": "FR-IMPORT-003",
+      "disposition": "KEEP"
+    },
+    {
+      "historical_id": "FR-IMPORT-004",
+      "disposition": "KEEP"
+    },
+    {
+      "historical_id": "FR-TRIAGE-001",
+      "disposition": "ADAPT"
+    },
+    {
+      "historical_id": "FR-TRIAGE-002",
+      "disposition": "ADAPT"
+    },
+    {
+      "historical_id": "FR-TRIAGE-003",
+      "disposition": "ADAPT"
+    },
+    {
+      "historical_id": "FR-TRIAGE-004",
+      "disposition": "ADAPT"
+    },
+    {
+      "historical_id": "FR-PLANE-001",
+      "disposition": "OPTIONAL_PROFILE:plane"
+    },
+    {
+      "historical_id": "FR-PLANE-002",
+      "disposition": "OPTIONAL_PROFILE:plane"
+    },
+    {
+      "historical_id": "FR-PLANE-003",
+      "disposition": "OPTIONAL_PROFILE:plane"
+    },
+    {
+      "historical_id": "FR-GIT-001",
+      "disposition": "ADAPT"
+    },
+    {
+      "historical_id": "FR-GIT-002",
+      "disposition": "ADAPT"
+    },
+    {
+      "historical_id": "FR-GIT-003",
+      "disposition": "ADAPT"
+    },
+    {
+      "historical_id": "FR-GOVERN-001",
+      "disposition": "ADAPT:ADR-0019"
+    },
+    {
+      "historical_id": "FR-GOVERN-002",
+      "disposition": "ADAPT:ADR-0019"
+    },
+    {
+      "historical_id": "FR-GOVERN-003",
+      "disposition": "MAPPED_TO:FR-TRIAGE-family"
+    },
+    {
+      "historical_id": "FR-GOVERN-004",
+      "disposition": "MAPPED_TO:observability-profile"
+    },
+    {
+      "historical_id": "FR-P2P-001",
+      "disposition": "OPTIONAL_PROFILE:p2p"
+    },
+    {
+      "historical_id": "FR-P2P-002",
+      "disposition": "OPTIONAL_PROFILE:p2p"
+    },
+    {
+      "historical_id": "FR-P2P-003",
+      "disposition": "OPTIONAL_PROFILE:p2p"
+    },
+    {
+      "historical_id": "FR-P2P-004",
+      "disposition": "OPTIONAL_PROFILE:p2p"
+    },
+    {
+      "historical_id": "FR-P2P-005",
+      "disposition": "OPTIONAL_PROFILE:p2p"
+    },
+    {
+      "historical_id": "FR-P2P-006",
+      "disposition": "OPTIONAL_PROFILE:p2p"
+    },
+    {
+      "historical_id": "FR-AGENT-001",
+      "disposition": "ADAPT:Assignment-Attempt-Evaluation-model"
+    },
+    {
+      "historical_id": "FR-AGENT-002",
+      "disposition": "ADAPT:Assignment-Attempt-Evaluation-model"
+    },
+    {
+      "historical_id": "FR-AGENT-003",
+      "disposition": "ADAPT:Assignment-Attempt-Evaluation-model"
+    },
+    {
+      "historical_id": "FR-AGENT-004",
+      "disposition": "ADAPT:Assignment-Attempt-Evaluation-model"
+    },
+    {
+      "historical_id": "FR-AGENT-005",
+      "disposition": "ADAPT:Assignment-Attempt-Evaluation-model"
+    },
+    {
+      "historical_id": "FR-CONTENT-001",
+      "disposition": "ADAPT:typed-artifact-roles"
+    },
+    {
+      "historical_id": "FR-CONTENT-002",
+      "disposition": "ADAPT:typed-artifact-roles"
+    },
+    {
+      "historical_id": "FR-CONTENT-003",
+      "disposition": "ADAPT:typed-artifact-roles"
+    }
+  ]
+}

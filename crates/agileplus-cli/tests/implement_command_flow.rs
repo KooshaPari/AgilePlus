@@ -103,11 +103,10 @@ fn implement_reports_feature_without_work_packages() {
     });
 }
 
-/// The happy path: a Planned feature is transitioned to Implementing, the WP
-/// advances through Doing -> Review -> Done, the worktree is cleaned up, and
-/// the feature audit chain records the transition.
+/// Review approval produces an exact candidate but is not terminal acceptance.
+/// The WP stops at Review and the worktree remains available for independent grading.
 #[test]
-fn implement_approved_moves_wp_to_done_and_cleans_worktree() {
+fn implement_approved_stops_at_review_pending_independent_acceptance() {
     block_on_paused(async {
         let storage = SqliteStorageAdapter::in_memory().expect("in-memory db");
         let (fid, wp_id) = seed(&storage, "happy", FeatureState::Planned).await;
@@ -125,18 +124,24 @@ fn implement_approved_moves_wp_to_done_and_cleans_worktree() {
             .unwrap();
         assert_eq!(feature.state, FeatureState::Implementing);
 
-        // The WP reached Done via the approved review outcome.
+        // Review approval alone is explicitly non-terminal.
         let wp = StoragePort::get_work_package(&storage, wp_id)
             .await
             .unwrap()
             .unwrap();
-        assert_eq!(wp.state, WpState::Done, "approved WP must be Done");
+        assert_eq!(
+            wp.state,
+            WpState::Review,
+            "review approval must not self-award terminal Done"
+        );
 
-        // Exactly one worktree was created and then cleaned up.
+        // Keep the worktree until terminal acceptance/explicit cleanup.
         let created = vcs.created_worktrees();
         assert_eq!(created.len(), 1, "one worktree per WP");
-        let cleaned = vcs.cleaned_worktrees();
-        assert_eq!(cleaned, created, "the created worktree must be cleaned");
+        assert!(
+            vcs.cleaned_worktrees().is_empty(),
+            "review-pending candidate worktree must remain available"
+        );
 
         // The review loop actually ran through the real orchestration.
         assert_eq!(agent.polls(), 1, "approved after a single poll");
@@ -177,7 +182,7 @@ fn implement_approved_moves_wp_to_done_and_cleans_worktree() {
             "agent must be pointed at the materialized prompt"
         );
 
-        // The audit chain recorded the feature transition and the WP completion.
+        // The audit chain records candidate production without claiming completion.
         let entries = StoragePort::get_audit_trail(&storage, fid).await.unwrap();
         let transitions: Vec<&str> = entries.iter().map(|e| e.transition.as_str()).collect();
         assert!(
@@ -187,10 +192,67 @@ fn implement_approved_moves_wp_to_done_and_cleans_worktree() {
             "expected the feature transition in the audit chain, got {transitions:?}"
         );
         assert!(
-            transitions.iter().any(|t| t.contains("Planned -> Done")),
-            "expected the WP completion in the audit chain, got {transitions:?}"
+            transitions.iter().any(|t| t.contains("Doing -> Review")),
+            "expected the non-terminal WP review transition in the audit chain, got {transitions:?}"
+        );
+        assert!(
+            !transitions.iter().any(|t| t.contains("-> Done")),
+            "review approval must not emit terminal completion, got {transitions:?}"
         );
 
+        vcs.cleanup();
+    });
+}
+
+/// An agent claiming review success without a resolvable Git commit must
+/// not receive Review/Done. Preserve the failed Attempt and Unknown Evaluation.
+#[test]
+fn implement_approved_without_git_candidate_fails_closed_with_durable_history() {
+    block_on_paused(async {
+        use agileplus_domain::domain::execution::{AttemptStatus, EvaluationResult};
+        use agileplus_domain::ports::ExecutionRecordPort;
+
+        let storage = SqliteStorageAdapter::in_memory().expect("in-memory db");
+        let (_, wp_id) = seed(&storage, "unresolved", FeatureState::Planned).await;
+        let vcs = TempVcs::new().with_unresolved_candidate();
+        let agent = ScriptedAgent::success();
+
+        let err = run_implement(args("unresolved"), &storage, &vcs, &agent)
+            .await
+            .expect_err("review success with no Git candidate must be rejected");
+        assert!(
+            format!("{err:#}").contains("exact Git candidate could not be resolved"),
+            "{err:#}"
+        );
+        let wp = StoragePort::get_work_package(&storage, wp_id)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(wp.state, WpState::Blocked);
+
+        let assignment = ExecutionRecordPort::get_active_assignment(&storage, wp_id)
+            .await
+            .unwrap()
+            .expect("assignment must be durable");
+        let attempts = ExecutionRecordPort::list_attempts(&storage, &assignment.id)
+            .await
+            .unwrap();
+        assert_eq!(attempts.len(), 1);
+        assert_eq!(attempts[0].status, AttemptStatus::Failed);
+        assert_eq!(
+            attempts[0].failure_class.as_deref(),
+            Some("candidate_unresolved")
+        );
+        assert!(attempts[0].result_candidate_ref.is_none());
+
+        let evaluations = ExecutionRecordPort::list_evaluations(&storage, &assignment.id)
+            .await
+            .unwrap();
+        assert_eq!(evaluations.len(), 1);
+        assert_eq!(evaluations[0].result, EvaluationResult::Unknown);
+        assert!(evaluations[0].candidate_ref.starts_with("unresolved:job:"));
+
+        assert!(vcs.cleaned_worktrees().is_empty());
         vcs.cleanup();
     });
 }
@@ -313,7 +375,11 @@ fn implement_single_wp_selector_runs_only_that_wp() {
         assert_eq!(wps.len(), 2);
         let by_seq = |seq: i32| wps.iter().find(|w| w.sequence == seq).unwrap().state;
         assert_eq!(by_seq(1), WpState::Planned, "WP01 must be untouched");
-        assert_eq!(by_seq(2), WpState::Done, "WP02 must be done");
+        assert_eq!(
+            by_seq(2),
+            WpState::Review,
+            "WP02 must stop at Review pending independent acceptance"
+        );
 
         // Only the selected WP was dispatched and given a worktree.
         assert_eq!(vcs.created_worktrees().len(), 1);

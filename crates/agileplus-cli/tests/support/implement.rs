@@ -66,6 +66,8 @@ pub fn args(feature: &str) -> ImplementArgs {
 /// Plan artifacts `run_implement` reads before dispatching an agent.
 pub const SPEC: &str = "# Spec\nAcceptance: the thing works.\n";
 pub const PLAN: &str = "# Plan\nStep one.\n";
+/// Exact immutable commit reported by the simulated worktree and worker.
+const TEST_CANDIDATE_COMMIT: &str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 
 /// A VCS double that materializes real files under a temp worktree root so the
 /// artifact-materialization step in `run_implement` performs genuine filesystem
@@ -75,6 +77,7 @@ pub struct TempVcs {
     created: Mutex<Vec<PathBuf>>,
     cleaned: Mutex<Vec<PathBuf>>,
     pub missing_prompt: bool,
+    unresolved_candidate: bool,
 }
 
 impl TempVcs {
@@ -93,11 +96,17 @@ impl TempVcs {
             created: Mutex::new(vec![]),
             cleaned: Mutex::new(vec![]),
             missing_prompt: false,
+            unresolved_candidate: false,
         }
     }
 
     pub fn with_missing_prompt(mut self) -> Self {
         self.missing_prompt = true;
+        self
+    }
+
+    pub fn with_unresolved_candidate(mut self) -> Self {
+        self.unresolved_candidate = true;
         self
     }
 
@@ -174,7 +183,35 @@ impl VcsPort for TempVcs {
     }
 
     async fn list_worktrees(&self) -> Result<Vec<WorktreeInfo>, DomainError> {
-        Ok(vec![])
+        if self.unresolved_candidate {
+            return Ok(Vec::new());
+        }
+        // Approved Review needs a VCS-resolved exact Git candidate. The fake
+        // previously returned an empty list, so it could only exercise the
+        // unresolved-candidate failure path—not a legitimate success journey.
+        Ok(self
+            .created
+            .lock()
+            .unwrap()
+            .iter()
+            .map(|path| {
+                let wp_id = path.file_name().unwrap().to_string_lossy().into_owned();
+                let feature_slug = path
+                    .parent()
+                    .unwrap()
+                    .file_name()
+                    .unwrap()
+                    .to_string_lossy()
+                    .into_owned();
+                WorktreeInfo {
+                    path: path.clone(),
+                    commit: TEST_CANDIDATE_COMMIT.to_string(),
+                    branch: format!("feat/{feature_slug}/{wp_id}"),
+                    feature_slug,
+                    wp_id,
+                }
+            })
+            .collect())
     }
 
     async fn cleanup_worktree(&self, worktree_path: &Path) -> Result<(), DomainError> {
@@ -362,7 +399,7 @@ impl AgentPort for ScriptedAgent {
                     result: AgentResult {
                         success: true,
                         pr_url: Some("https://example.invalid/pr/1".to_string()),
-                        commits: vec!["abc123".to_string()],
+                        commits: vec![TEST_CANDIDATE_COMMIT.to_string()],
                         stdout: String::new(),
                         stderr: String::new(),
                         exit_code: 0,

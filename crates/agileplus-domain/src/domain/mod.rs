@@ -5,15 +5,19 @@
 //! directory forms (the flat `.rs` duplicates were removed to fix the E0761 that
 //! #873 originally addressed and #877 reintroduced).
 
+pub mod acceptance;
 pub mod api_key;
 pub mod audit;
 pub mod backlog;
 pub mod cycle;
 pub mod device_node;
 pub mod epic;
+pub mod evaluation;
 pub mod event;
+pub mod execution;
 pub mod feature;
 pub mod governance;
+pub mod governance_evaluator;
 pub mod metric;
 pub mod module;
 pub mod project;

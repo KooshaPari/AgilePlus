@@ -131,11 +131,15 @@ where
                     .update_wp_state(wp.id, WpState::Review)
                     .await
                     .context("transitioning WP to Review")?;
-                ctx.storage
-                    .update_wp_state(wp.id, WpState::Done)
-                    .await
-                    .context("transitioning WP to Done")?;
-                ctx.completed.insert(wp.id);
+
+                // Review approval proves only that the review loop completed.
+                // Terminal Done requires a candidate-bound independent evaluation
+                // plus applicable governance/authority and is intentionally not
+                // awarded from this worker path.
+                println!(
+                    "  WP{:02} candidate is in Review; independent acceptance is pending.",
+                    wp.sequence
+                );
 
                 let prev_hash = get_latest_hash(ctx.storage, ctx.feature.id).await;
                 let mut audit = AuditEntry {
@@ -144,7 +148,10 @@ where
                     wp_id: Some(wp.id),
                     timestamp: Utc::now(),
                     actor: "agent".into(),
-                    transition: format!("WP{:02} Planned -> Done", wp.sequence),
+                    transition: format!(
+                        "WP{:02} Doing -> Review (candidate produced; independent evaluation pending)",
+                        wp.sequence
+                    ),
                     evidence_refs: vec![],
                     prev_hash,
                     hash: [0u8; 32],
@@ -157,9 +164,8 @@ where
                     .await
                     .context("appending audit entry")?;
 
-                if let Err(e) = ctx.vcs.cleanup_worktree(&worktree_path).await {
-                    tracing::warn!(error = %e, "worktree cleanup failed (non-fatal)");
-                }
+                // Keep the review worktree available until terminal acceptance or an
+                // explicit cleanup policy handles the exact candidate.
             }
             ReviewOutcome::MaxCyclesReached {
                 cycles,

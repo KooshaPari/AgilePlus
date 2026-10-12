@@ -704,8 +704,15 @@ where
             "specify" => FeatureState::Specified,
             "research" => FeatureState::Researched,
             "plan" => FeatureState::Planned,
-            "validate" => FeatureState::Validated,
-            "ship" => FeatureState::Shipped,
+            // Terminal acceptance and promotion have stronger invariants than a
+            // generic state transition. Until gRPC is wired to the canonical
+            // validate/ship application services, fail closed rather than minting
+            // Validated/Shipped states from transport-local checks.
+            "validate" | "ship" => {
+                return Err(Status::unimplemented(format!(
+                    "command '{command}' requires the canonical acceptance/promotion service"
+                )));
+            }
             "retrospective" => FeatureState::Retrospected,
             other => {
                 return Err(Status::unimplemented(format!("unknown command: '{other}'")));
@@ -732,76 +739,26 @@ where
             .map_err(domain_error_to_status)?;
 
         // Command-specific post-transition logic.
-        match command {
-            "plan" => {
-                // Create a default governance contract for the planned feature.
-                let contract = GovernanceContract {
-                    id: 0,
-                    feature_id: feature.id,
-                    version: 1,
-                    rules: vec![GovernanceRule {
-                        transition: String::new(),
-                        required_evidence: Vec::new(),
-                        policy_refs: Vec::new(),
-                    }],
-                    bound_at: Utc::now(),
-                };
-                if let Err(e) = self.storage.create_governance_contract(&contract).await {
-                    info!(
-                        feature_slug,
-                        error = %e,
-                        "governance contract creation skipped (storage may not support it)"
-                    );
-                }
+        if command == "plan" {
+            // Create a default governance contract for the planned feature.
+            let contract = GovernanceContract {
+                id: 0,
+                feature_id: feature.id,
+                version: 1,
+                rules: vec![GovernanceRule {
+                    transition: String::new(),
+                    required_evidence: Vec::new(),
+                    policy_refs: Vec::new(),
+                }],
+                bound_at: Utc::now(),
+            };
+            if let Err(e) = self.storage.create_governance_contract(&contract).await {
+                info!(
+                    feature_slug,
+                    error = %e,
+                    "governance contract creation skipped (storage may not support it)"
+                );
             }
-            "validate" => {
-                // Check governance evidence requirements if a contract exists.
-                if let Ok(Some(contract)) = self
-                    .storage
-                    .get_latest_governance_contract(feature.id)
-                    .await
-                {
-                    let feature_wp_ids: HashSet<i64> = self
-                        .storage
-                        .list_wps_by_feature(feature.id)
-                        .await
-                        .map_err(domain_error_to_status)?
-                        .into_iter()
-                        .map(|wp| wp.id)
-                        .collect();
-
-                    let relevant_rules: Vec<_> = contract
-                        .rules
-                        .iter()
-                        .filter(|r| r.transition.is_empty() || r.transition == "validate")
-                        .collect();
-
-                    for rule in &relevant_rules {
-                        for raw_requirement in &rule.required_evidence {
-                            let (fr_id, expected_type, recognized) =
-                                parse_evidence_requirement(raw_requirement);
-                            let evidence = self
-                                .storage
-                                .get_evidence_by_fr(fr_id)
-                                .await
-                                .map_err(domain_error_to_status)?;
-                            if !recognized
-                                || !evidence_satisfies_requirement(
-                                    &evidence,
-                                    &feature_wp_ids,
-                                    fr_id,
-                                    expected_type,
-                                )
-                            {
-                                return Err(Status::failed_precondition(format!(
-                                    "governance violation: missing evidence for {raw_requirement}"
-                                )));
-                            }
-                        }
-                    }
-                }
-            }
-            _ => {}
         }
 
         let new_state = feature.state.to_string();

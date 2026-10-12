@@ -3,6 +3,7 @@
 pub mod agent;
 pub mod epic;
 pub mod events;
+pub mod execution;
 pub mod observability;
 pub mod review;
 pub mod storage;
@@ -12,6 +13,7 @@ pub mod vcs;
 
 pub use agent::AgentPort;
 pub use epic::EpicRepository;
+pub use execution::ExecutionRecordPort;
 pub use observability::ObservabilityPort;
 pub use review::ReviewPort;
 pub use story::StoryRepository;

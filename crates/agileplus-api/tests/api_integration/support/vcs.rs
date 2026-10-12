@@ -60,6 +60,7 @@ pub(crate) struct MockVcs {
     inner: Arc<MockVcsInner>,
 }
 
+#[allow(dead_code)] // Test-support helpers used by some binaries but not all.
 impl MockVcs {
     pub(crate) fn new() -> Self {
         Self::default()

@@ -1,59 +1,29 @@
-version: '3.8'
-
+# API-only bootstrap for the owner's desktop. Networking is owned by the
+# host's existing Tailscale + ONE global Caddy, never by this project.
+# This is an optional containerized bootstrap; native supervision is preferred.
 services:
-  agileplus-cli:
-    image: agileplus:latest
-    container_name: agileplus-cli
-    restart: unless-stopped
-    command: agileplus --db /data/agileplus.db list-projects
+  agileplus-api:
+    image: rust:1.99-bookworm
+    working_dir: /workspace
+    command: sh -lc "cargo run --locked --release -p agileplus-api"
     environment:
-      AGILEPLUS_DB: /data/agileplus.db
-      LOG_LEVEL: "info"
+      API_HOST: 0.0.0.0
+      DATABASE_URL: sqlite:/data/agileplus.db
+      AGILEPLUS_API_KEY: ${AGILEPLUS_API_KEY:?AGILEPLUS_API_KEY is required}
+      AGILEPLUS_ALLOWED_ORIGINS: ${AGILEPLUS_ALLOWED_ORIGINS:-}
+      RUST_LOG: info
     volumes:
+      - ../..:/workspace
       - agileplus-data:/data
-    networks:
-      - agileplus-net
-
-  caddy:
-    image: caddy:latest
-    container_name: agileplus-caddy
-    restart: unless-stopped
+      - agileplus-cargo-cache:/usr/local/cargo/registry
+      - agileplus-target-cache:/workspace/target
+    # Only the desktop can reach this port. Caddy runs at the host edge.
+    # Never expose this port to the LAN or public internet directly.
     ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
-      - caddy-data:/data
-      - caddy-config:/config
-    environment:
-      HOSTNAME: ${HOSTNAME:-agileplus.pheno.studio}
-    networks:
-      - agileplus-net
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  cloudflared:
-    image: cloudflare/cloudflared:latest
-    container_name: agileplus-cloudflared
+      - "127.0.0.1:${AGILEPLUS_HOST_PORT:-3000}:3000"
     restart: unless-stopped
-    command: tunnel --no-autoupdate run
-    environment:
-      TUNNEL_TOKEN: ${CF_TUNNEL_TOKEN:-}
-    networks:
-      - agileplus-net
-    depends_on:
-      - caddy
-    profiles:
-      - cloudflare
 
 volumes:
   agileplus-data:
-  caddy-data:
-  caddy-config:
-
-networks:
-  agileplus-net:
-    driver: bridge
+  agileplus-cargo-cache:
+  agileplus-target-cache:

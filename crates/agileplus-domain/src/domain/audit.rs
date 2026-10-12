@@ -65,7 +65,11 @@ impl AuditChain {
     }
 }
 
-/// Compute the SHA-256 hash of an audit entry (covers all mutable fields).
+/// Compute the legacy audit-hash-v1 SHA-256 receipt.
+///
+/// v1 covers only feature_id, optional wp_id, timestamp, actor, transition,
+/// and prev_hash. It intentionally does NOT cover evidence_refs, event_id,
+/// archived_to, or id. Do not claim full-entry tamper evidence from v1.
 pub fn hash_entry(entry: &AuditEntry) -> [u8; 32] {
     let mut hasher = Sha256::new();
     hasher.update(entry.feature_id.to_be_bytes());
@@ -110,6 +114,26 @@ mod tests {
         let h1 = hash_entry(&e);
         let h2 = hash_entry(&e);
         assert_eq!(h1, h2);
+    }
+
+    #[test]
+    fn audit_hash_v1_does_not_claim_noncovered_fields() {
+        let mut e = make_entry(1, [0u8; 32]);
+        let original = hash_entry(&e);
+
+        e.evidence_refs.push(EvidenceRef {
+            evidence_id: 42,
+            fr_id: "FR-TEST".into(),
+        });
+        e.event_id = Some(7);
+        e.archived_to = Some("archive://receipt".into());
+        e.id = 99;
+
+        assert_eq!(
+            hash_entry(&e),
+            original,
+            "audit-hash-v1 must remain stable for fields outside its documented envelope"
+        );
     }
 
     #[test]

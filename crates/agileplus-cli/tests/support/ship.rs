@@ -13,6 +13,11 @@ use std::sync::Mutex;
 use async_trait::async_trait;
 
 use agileplus_cli::commands::ship::ShipArgs;
+use agileplus_domain::domain::execution::{
+    Assignment, AssignmentStatus, Attempt, AttemptStatus, CriterionEvaluation, Evaluation,
+    EvaluationResult, SpecRevision, aggregate_evidence_refs, reduce_criterion_results,
+    snapshot_acceptance_criteria,
+};
 use agileplus_domain::domain::feature::Feature;
 use agileplus_domain::domain::state_machine::FeatureState;
 use agileplus_domain::domain::work_package::{WorkPackage, WpState};
@@ -20,7 +25,7 @@ use agileplus_domain::error::DomainError;
 use agileplus_domain::ports::vcs::{
     BranchInfo, ConflictInfo, FeatureArtifacts, MergeResult, WorktreeInfo,
 };
-use agileplus_domain::ports::{StoragePort, VcsPort};
+use agileplus_domain::ports::{ExecutionRecordPort, StoragePort, VcsPort};
 use agileplus_sqlite::SqliteStorageAdapter;
 
 /// `tokio` macros are not enabled for this crate, so drive futures by hand.
@@ -76,6 +81,7 @@ pub struct RecordingVcs {
     cleanup_fails: bool,
     list_worktrees_fails: bool,
     write_artifact_fails: bool,
+    branch_commit_override: Option<String>,
     /// `(source_branch, target_branch)` per merge attempt, in call order.
     pub merges: Mutex<Vec<(String, String)>>,
     /// Worktree paths passed to a successful `cleanup_worktree`.
@@ -92,6 +98,7 @@ impl Default for RecordingVcs {
             cleanup_fails: false,
             list_worktrees_fails: false,
             write_artifact_fails: false,
+            branch_commit_override: None,
             merges: Mutex::new(vec![]),
             cleaned: Mutex::new(vec![]),
             artifacts: Mutex::new(vec![]),
@@ -129,12 +136,17 @@ impl RecordingVcs {
         self
     }
 
+    pub fn with_branch_commit(mut self, commit: &str) -> Self {
+        self.branch_commit_override = Some(commit.to_string());
+        self
+    }
+
     /// A worktree belonging to `slug`, for cleanup-filtering tests.
     pub fn worktree(path: &str, slug: &str) -> WorktreeInfo {
         WorktreeInfo {
             path: PathBuf::from(path),
-            commit: "a".into(),
-            branch: format!("{slug}/wp01"),
+            commit: candidate_commit_for_sequence(1),
+            branch: format!("feat/{slug}/WP01"),
             feature_slug: slug.to_string(),
             wp_id: "WP01".into(),
         }
@@ -176,10 +188,21 @@ impl VcsPort for RecordingVcs {
 
     async fn list_branches(
         &self,
-        _pattern: Option<&str>,
+        pattern: Option<&str>,
         _remote: bool,
     ) -> Result<Vec<BranchInfo>, DomainError> {
-        Ok(vec![])
+        let Some(name) = pattern else {
+            return Ok(vec![]);
+        };
+        let commit = self
+            .branch_commit_override
+            .clone()
+            .unwrap_or_else(|| candidate_commit_for_branch(name));
+        Ok(vec![BranchInfo {
+            name: name.to_string(),
+            commit,
+            is_remote: false,
+        }])
     }
 
     async fn delete_branch(
@@ -289,6 +312,98 @@ impl VcsPort for RecordingVcs {
     }
 }
 
+fn candidate_commit_for_sequence(sequence: i32) -> String {
+    format!("candidate-{sequence}")
+}
+
+fn candidate_commit_for_branch(branch: &str) -> String {
+    let digits: String = branch
+        .chars()
+        .rev()
+        .take_while(|c| c.is_ascii_digit())
+        .collect::<String>()
+        .chars()
+        .rev()
+        .collect();
+    let sequence = digits.parse::<i32>().unwrap_or(1);
+    candidate_commit_for_sequence(sequence)
+}
+
+async fn seed_accepted_execution(
+    storage: &SqliteStorageAdapter,
+    feature_id: i64,
+    wp_id: i64,
+    sequence: i32,
+    worktree_path: Option<&str>,
+) {
+    let t0 = chrono::Utc::now();
+    let revision = SpecRevision {
+        id: format!("spec:{feature_id}:{sequence}"),
+        feature_id,
+        content_hash: format!("sha256:{feature_id}:{sequence}"),
+        parent_revision_id: None,
+        accepted_at: t0,
+        authority: "ship-test".into(),
+    };
+    ExecutionRecordPort::create_spec_revision(storage, &revision)
+        .await
+        .expect("spec revision");
+    let assignment = Assignment {
+        id: format!("assignment:{wp_id}"),
+        wp_id,
+        spec_revision_id: revision.id,
+        created_at: t0,
+        supersedes_assignment_id: None,
+        status: AssignmentStatus::Active,
+    };
+    let criteria = snapshot_acceptance_criteria("done");
+    ExecutionRecordPort::create_assignment_with_criteria(storage, &assignment, &criteria)
+        .await
+        .expect("assignment");
+    let candidate = format!("git:{}", candidate_commit_for_sequence(sequence));
+    let attempt = Attempt {
+        id: format!("attempt:{wp_id}"),
+        assignment_id: assignment.id.clone(),
+        worker_id: "worker".into(),
+        backend: "test".into(),
+        job_id: Some(format!("job:{wp_id}")),
+        worktree_path: worktree_path.map(ToString::to_string),
+        base_candidate_ref: Some("git:base".into()),
+        result_candidate_ref: Some(candidate.clone()),
+        status: AttemptStatus::Completed,
+        failure_class: None,
+        started_at: t0,
+        ended_at: Some(t0),
+    };
+    ExecutionRecordPort::create_attempt(storage, &attempt)
+        .await
+        .expect("attempt");
+    let criterion_results = vec![CriterionEvaluation {
+        criterion_id: criteria[0].id.clone(),
+        result: EvaluationResult::Satisfied,
+        evidence_refs: vec!["evidence:test".into()],
+        rationale: Some("ship fixture".into()),
+    }];
+    ExecutionRecordPort::create_evaluation_receipt(
+        storage,
+        &Evaluation {
+            id: format!("evaluation:{wp_id}"),
+            assignment_id: assignment.id,
+            attempt_id: Some(attempt.id),
+            candidate_ref: candidate,
+            evaluator_id: "independent-test-evaluator".into(),
+            evaluator_version: "1".into(),
+            result: reduce_criterion_results(&criteria, &criterion_results),
+            evidence_refs: aggregate_evidence_refs(&criterion_results),
+            started_at: t0,
+            finished_at: t0,
+        },
+        &criterion_results,
+    )
+    .await
+    .expect("evaluation");
+}
+
 /// Create a feature plus one work package per `(sequence, state)` pair,
 /// persisting each WP's requested state. Returns the feature id.
 pub async fn seed(
@@ -311,13 +426,16 @@ pub async fn seed(
                 .await
                 .unwrap();
         }
+        if *state == WpState::Done {
+            seed_accepted_execution(storage, id, wp_id, *seq, None).await;
+        }
     }
     id
 }
 
-/// Create a Done work package whose `worktree_path` is set, so ship derives
-/// its branch from the worktree name rather than the `feature/{slug}/wpNN`
-/// convention.
+/// Create a Done work package whose `worktree_path` is set. The path is an
+/// execution resource; branch identity remains the Git adapter convention
+/// `feat/<slug>/WPNN` unless an active worktree supplies the exact branch.
 pub async fn seed_with_worktree_wp(
     storage: &SqliteStorageAdapter,
     slug: &str,
@@ -337,5 +455,6 @@ pub async fn seed_with_worktree_wp(
     StoragePort::update_wp_state(storage, wp_id, WpState::Done)
         .await
         .unwrap();
+    seed_accepted_execution(storage, id, wp_id, sequence, Some(worktree_path)).await;
     (id, wp_id)
 }

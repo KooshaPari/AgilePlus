@@ -181,6 +181,22 @@ mod deep_tests {
     }
 
     #[test]
+    fn merge_in_dir_accepts_exact_commit_sha_as_source() {
+        let (_d, path) = make_repo();
+        git(&path, &["checkout", "-q", "-b", "feature"]);
+        commit_file(&path, "exact.txt", "exact\n", "exact candidate");
+        let candidate = git_out(&path, &["rev-parse", "HEAD"]);
+        git(&path, &["checkout", "-q", "main"]);
+
+        let adapter = GitVcsAdapter::new(path.clone());
+        let result = adapter
+            .merge_in_dir(&path, &candidate, "main")
+            .expect("merge exact candidate");
+        assert!(result.success);
+        assert!(path.join("exact.txt").is_file());
+    }
+
+    #[test]
     fn merge_in_dir_conflict_reports_paths() {
         let (_d, path) = make_repo();
         git(&path, &["checkout", "-q", "-b", "feature"]);

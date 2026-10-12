@@ -240,6 +240,11 @@ where
         .ok_or_else(|| ApiError::NotFound(format!("WorkPackage {id} not found")))?;
 
     let target = parse_wp_state(&body.target_state)?;
+    if target == WpState::Done {
+        return Err(ApiError::Conflict(
+            "direct transition to Done is not permitted; terminal acceptance requires an exact candidate-bound evaluation plus governance".into(),
+        ));
+    }
     if !wp.state.can_transition_to(target) {
         return Err(ApiError::Conflict(format!(
             "invalid transition {:?} -> {:?}",
