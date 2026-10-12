@@ -78,5 +78,7 @@ pull_request_rules:
         add:
           - typescript
 
-  # Close stale PRs after 30 days
-  - name: Close stale PRs
+# Stale PR closing is handled by .github/workflows/stale.yml
+# (actions/stale v11, daily cron). Do not duplicate here — keeping an
+# empty rule in .mergify.yml will silently fail to match anything and
+# adds noise to the dashboard. See release-lifecycle-v2 audit R10.
