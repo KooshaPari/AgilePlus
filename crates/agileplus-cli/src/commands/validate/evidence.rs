@@ -28,6 +28,7 @@ fn parse_requirement(raw: &str) -> (String, Option<EvidenceType>) {
 }
 
 /// Evaluate governance evidence requirements against stored evidence.
+#[allow(dead_code)] // Reserved for future governance gate expansion; not used by current test suite.
 pub(crate) async fn evaluate_evidence<S: StoragePort>(
     storage: &S,
     contract: &GovernanceContract,
@@ -268,6 +269,7 @@ impl FeatureEvidence {
             .collect()
     }
 
+    #[allow(dead_code)] // Reserved for future evidence expansion; called only from evaluate_evidence.
     fn evidence_for_fr(&self, fr_id: &str) -> Vec<&Evidence> {
         self.evidence.iter().filter(|e| e.fr_id == fr_id).collect()
     }
