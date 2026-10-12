@@ -67,6 +67,21 @@ For the long-term native deployment, use the host's process supervisor
 (systemd on Linux; a suitable native service manager on Windows) and a
 persistent, backed-up data directory rather than compiling on every boot.
 
+`agileplus-api.service` is the native Linux supervisor template. Provision an
+`agileplus` service account with `/var/lib/agileplus` as its home, an actual Git repository at
+`/srv/agileplus/repository`, and a verified release binary at
+`/opt/agileplus/bin/agileplus-api`. Supply `AGILEPLUS_API_KEY` through
+`/etc/agileplus/api.env` (root-owned, mode 0600). For a headless host, also supply
+`AGILEPLUS_CREDENTIAL_KEY` for the encrypted credential-store fallback; retain
+that key with the protected recovery secrets. The service account home must
+be writable so its `.agileplus/credentials.enc` can be created. Install the unit into
+`/etc/systemd/system/` after reviewing host-specific paths. The unit keeps the
+API on loopback, stores SQLite under `/var/lib/agileplus`, and restarts failed
+processes. It does not start or configure the shared Caddy/tailnet services.
+Use `systemd-analyze verify deploy/selfhost/agileplus-api.service` on the target
+host, then prove health, kill/restart, reboot, and restore behavior there.
+The unit's existence is not evidence of an installed or recovered service.
+
 ## Shared Caddy, not one proxy per project
 
 `deploy/selfhost/Caddyfile` is an **importable host-level site definition**.
@@ -128,6 +143,14 @@ Before marking operator alpha usable:
    frontend requests;
 7. a non-tailnet device cannot reach the private edge;
 8. test CSRF/origin protections on all mutating browser actions.
+
+The operator site rejects non-GET/HEAD/OPTIONS API requests unless `Origin`
+is exactly `https://agileplus.pheno.studio`. Missing or `null` origins are
+rejected too. Nonbrowser clients should use the separate authenticated API
+hostname. This policy does not prevent a compromised same-origin script from
+acting as the operator. The local gateway witness exercises real Caddy with
+disposable upstreams; run it with `CADDY_BIN=/path/to/caddy python3 -m unittest
+discover -s tests/ops -p 'test_operator_gateway.py' -v`.
 
 **Security limit:** Basic authentication plus a shared backend operator
 credential is acceptable only for a tightly controlled single-operator alpha.

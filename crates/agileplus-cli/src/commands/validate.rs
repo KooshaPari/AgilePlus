@@ -139,8 +139,7 @@ where
         },
     )
     .await
-    .map_err(anyhow::Error::new)
-    .context("accepting exact-candidate work and transitioning feature")?;
+    .map_err(|error| anyhow::anyhow!("exact-candidate work acceptance failed: {error}"))?;
     let report_md = if args.format == "json" {
         report.to_markdown()
     } else {

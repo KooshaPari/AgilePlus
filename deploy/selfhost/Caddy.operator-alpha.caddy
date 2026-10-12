@@ -30,6 +30,17 @@ agileplus.pheno.studio {
             {$AGILEPLUS_OPERATOR_USERNAME} {$AGILEPLUS_OPERATOR_PASSWORD_HASH}
         }
 
+        # Basic credentials can be attached automatically by a browser.
+        # Require the exact product Origin for every mutating API request;
+        # missing, null, alternate-port and cross-site origins fail closed.
+        # Nonbrowser operator clients use the separate API hostname.
+        @unsafe_api {
+            path /api/*
+            not method GET HEAD OPTIONS
+            not header Origin https://agileplus.pheno.studio
+        }
+        respond @unsafe_api "Untrusted browser origin" 403
+
         @backend path /api/*
         handle @backend {
             header Cache-Control "no-store"
@@ -47,6 +58,7 @@ agileplus.pheno.studio {
                 # Do not forward private-edge credentials/cookies to Vercel.
                 header_up -Authorization
                 header_up -Cookie
+                header_up -X-API-Key
                 header_down -Set-Cookie
             }
         }

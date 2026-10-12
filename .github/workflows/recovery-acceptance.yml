@@ -1,5 +1,12 @@
 name: Recovery Acceptance Witnesses
 on:
+  pull_request:
+    branches: [spec/mature-product-contract-v2]
+    paths:
+      - 'crates/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - '.github/workflows/recovery-acceptance.yml'
   push:
     branches: [spec/mature-product-contract-v2]
     paths:

@@ -70,7 +70,15 @@ async fn seed_governance_evidence(
     feature_id: i64,
     fr_id: &str,
 ) -> i64 {
-    let mut wp = WorkPackage::new(feature_id, "WP one", 1, "works");
+    let sequence = StoragePort::list_wps_by_feature(storage, feature_id)
+        .await
+        .unwrap()
+        .iter()
+        .map(|wp| wp.sequence)
+        .max()
+        .unwrap_or(0)
+        + 1;
+    let mut wp = WorkPackage::new(feature_id, "Fixture WP", sequence, "works");
     wp.state = WpState::Review;
     let wp_id = StoragePort::create_work_package(storage, &wp)
         .await
@@ -369,7 +377,7 @@ fn validate_rejects_governance_green_without_exact_candidate_acceptance() {
             .await
             .expect_err("governance evidence alone must not validate");
         assert!(
-            err.to_string().contains("exact-candidate work acceptance"),
+            err.to_string().contains("WP01 has no active Assignment"),
             "unexpected error: {err}"
         );
         let feature = StoragePort::get_feature_by_id(&storage, id)
@@ -606,7 +614,7 @@ fn validate_is_atomic_across_work_packages_when_one_lacks_acceptance() {
             .await
             .expect_err("one accepted WP must not validate the feature");
         assert!(
-            err.to_string().contains("exact-candidate work acceptance"),
+            err.to_string().contains("WP02 has no active Assignment"),
             "unexpected error: {err}"
         );
 
