@@ -44,5 +44,5 @@ skip_tags = ""
 sort_commits = "newest"
 
 [remote.github]
-owner = "<REDACTED>"
+owner = "KooshaPari"
 repo = "AgilePlus"
