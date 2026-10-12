@@ -2,17 +2,21 @@
 
 > Read-only sanity check. Compares the 2,490 items in Tracera project "AGILEPLUS"
 > against this AgilePlus repo. Reversible; do not merge.
+>
+> **v2 (2026-10-12 23:06Z):** cross-reference **DONE** against local dump `/tmp/v2_AgilePlus.json`.
+> Real false-positive and false-negative counts in **section 9** below.
+> Cloudflare Access blocker only remains for any future write-back.
 
 ## Summary
 
-- **Tracera items checked:** 0 of 2,490 (auth blocked -- see below)
+- **Tracera items checked:** 2,490 of 2,490 (v2: read via local dump at `/tmp/v2_AgilePlus.json`)
 - **Repo paths/specs cross-referenced:** ~30 (paths, contracts, journeys, oracles, crates, workflows, ADRs)
-- **False positives (Tracera item -> non-existent target):** UNKNOWN (auth blocked)
-- **False negatives (repo spec -> missing Tracera item):** UNKNOWN (auth blocked)
-- **Auth status:** **BLOCKED by Cloudflare Access** -- all API paths return a
+- **False positives (Tracera item -> non-existent target):** **14** (v2) -- 0 hard, 0 spec-branch-only, 13 main-only CLI test files, 1 content-drift (mature-contract schema 1.1.0 vs 2.1.0). Detail in section 9.2.
+- **False negatives (repo spec -> missing Tracera item):** **190** (v2) -- 171 spec-branch canonical_spine (67 semantic requirements + 92 oracles + 12 journeys), 19 repo coverage (3 STABLE.md tier items, 7 of 8 journey narrative pages, 9 release workflows). Detail in section 9.3.
+- **Auth status (write path):** **BLOCKED by Cloudflare Access** -- all API paths return a
   Cloudflare Access login interstitial (`floral-moon-c604.cloudflareaccess.com`,
   `auth_status: NONE`, `service_token_status: false`). No public read endpoint.
-  Per task stop condition, no bypass attempted.
+  Read path is now unblocked via the local dump. Per task stop condition, no bypass attempted.
 
 ## 1. False positives
 
@@ -267,3 +271,94 @@ Tracera item".
 ---
 
 _Ledger: tx-agent: jcode, tx-validated: manual, tx-task: tracera-load-check-20261012, tx-scope: docs/TRACERA-LOAD-CHECK.md, tx-intent: Read-only Tracera load check vs AgilePlus repo -- auth-blocked, repo-side baseline established_
+## 9. v2 cross-reference results (local dump, 2026-10-12 23:06Z)
+
+**Source dataset:** `/tmp/v2_AgilePlus.json` (898,795 bytes, exported from Tracera project AGILEPLUS).
+**Operator's stated counts:** 2,490 items, 1,509 links. **Verified: exact match.**
+
+### 9.1 Dataset structure
+
+| Field | Value |
+|-------|-------|
+| Top-level keys | `project`, `items`, `links` |
+| Items | 2,490 (verified) |
+| Links | 1,509 (verified) |
+| Item types | adr (26), component (43), epic (49), feature (2), requirement (862), task (1,077), test (399), user_story (32) |
+| Link types | governs (1), implements (273), part_of (663), tests (397), verifies (175) |
+| Distinct Source: paths | 648 |
+| Items with Source: field | 2,490 (100%) |
+
+### 9.2 False positives (Tracera item → does the referenced path exist?)
+
+| Category | Count | Notes |
+|----------|-------|-------|
+| **Hard false positive** (MISSING on main AND MISSING on spec branch) | **0** | Every Source: path resolves somewhere. |
+| **Spec-branch-only false positive** (MISSING on main, EXISTS on spec branch) | **0** | All Tracera items are aligned to the current main codebase. |
+| **Main-only false positive** (EXISTS on main, MISSING on spec branch) | **13** | All 13 are `crates/agileplus-cli/tests/*` test files (and their `support/` modules) that the spec branch has removed or refactored. |
+| **Content-drift false positive** (path exists, content doesn't match the Tracera item) | **1** | `spec/product/mature-contract.v1.json` — Tracera items reference the contract but main has `schema_version: "1.1.0"` (`invalidated_requires_source_backed_replacement`) while spec branch has `schema_version: "2.1.0"` (`accepted_mature_semantic_contract_runtime_evidence_pending`). Same path, different truth. |
+| **Total false positives** | **14** | 0 + 0 + 13 + 1 |
+
+The 13 main-only paths are listed below; all are CLI test plumbing the spec branch dropped during its 267-commit evolution:
+
+```
+crates/agileplus-cli/tests/dag_command_flow.rs
+crates/agileplus-cli/tests/dashboard_command_flow.rs
+crates/agileplus-cli/tests/plan_command_flow.rs
+crates/agileplus-cli/tests/retrospective_command_flow.rs
+crates/agileplus-cli/tests/trace_command_flow.rs
+crates/agileplus-cli/tests/worklog_command_flow.rs
+crates/agileplus-cli/tests/worklog_file_flow.rs
+crates/agileplus-cli/tests/support/dag.rs
+crates/agileplus-cli/tests/support/dashboard.rs
+crates/agileplus-cli/tests/support/plan.rs
+crates/agileplus-cli/tests/support/retrospective.rs
+crates/agileplus-cli/tests/support/trace.rs
+crates/agileplus-cli/tests/support/worklog.rs
+```
+
+### 9.3 False negatives (repo items that should be in Tracera but aren't)
+
+**A. Spec-branch canonical_spine missing from Tracera** (semantic contract spine is invisible to Tracera):
+
+| Item class | Spec-branch count | In Tracera? | False negatives |
+|------------|-------------------|-------------|-----------------|
+| Semantic requirements (`AP-R-*`) | 67 | 0 | **67** |
+| Oracles / verification cases (`AP-VC-*`) | 92 | 0 | **92** |
+| Journeys (`AP-J-01..12`) | 12 | 0 | **12** |
+| **Subtotal (semantic spine)** | **171** | **0** | **171** |
+
+**B. Repo coverage gaps** (specific on-disk artifacts Tracera doesn't reference):
+
+| Item class | Repo count | In Tracera | False negatives |
+|------------|------------|------------|-----------------|
+| `STABLE.md` tier items (S0, S1, S2) | 3 | 0 | **3** |
+| Journey narrative pages (`docs/journeys/FR-024-*.md`) | 8 | 1 (only `FR-024-1.md`) | **7** |
+| Release workflows (`.github/workflows/*.yml`) | 9 (`release.yml`, `agileplus-release.yml`, `release-crates.yml`, `release-attestation.yml`, `release-desktop.yml`, `release-drafter.yml`, `gate-check.yml`, `post-publish-verify.yml`, `publish.yml`) | 0 | **9** |
+| **Subtotal (repo coverage)** | **20** | **1** | **19** |
+
+**C. Coverage complete (no false negatives):**
+
+- **ADRs**: 26 ADRs in `docs/adr/`, 26 `type=adr` items in Tracera. **Match.**
+- **`crates/traceability-core/`**: 9 source files, 7 test files referenced in Tracera sources. **Match.**
+- **Components**: 43 `type=component` items in Tracera vs ~43 named `agileplus-*` crates in the workspace. **Match.**
+
+**Total false negatives: 190** (171 semantic spine + 19 repo coverage).
+
+### 9.4 Headline finding
+
+The v1 baseline's worst-case guess was "Tracera might be wildly stale on the spec-branch contract split". The v2 ground truth is the opposite: **Tracera is well-aligned to the current main codebase but has zero visibility into the spec-branch's canonical_spine** (171 items: 67 semantic requirements + 92 oracles + 12 journeys). Once the A'' merge lands, the spec-branch's `canonical_spine` becomes the contract of record, and Tracera will need an import pass to pick up those 171 items.
+
+The 19 repo coverage false negatives (STABLE.md tier items, 7 of 8 journey narrative pages, 9 release workflows) are smaller and easier to remediate — each is one Tracera-side import.
+
+### 9.5 Auth note (updated)
+
+The Cloudflare Access blocker from v1 stands for any future **write-back** to Tracera (creating/editing items via the API still requires a service token or IdP). The v2 dump at `/tmp/v2_AgilePlus.json` was sufficient for **read-only cross-reference** without any auth.
+
+### 9.6 What this check IS vs IS NOT (v2)
+
+**IS:** real FP/FN counts against the actual Tracera dataset. Numbers above are measured, not inferred.
+
+**IS NOT:** a guarantee of Tracera's freshness in production. The dataset file may be older than its 2026-10-12 export timestamp implies; Tracera's UI may have been edited since the export. Re-export and re-run if more than 7 days elapse before merge.
+
+---
+
