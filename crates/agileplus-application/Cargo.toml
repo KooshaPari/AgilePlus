@@ -16,6 +16,7 @@ agileplus-domain = { version = "0.2.4", path = "../agileplus-domain" }
 agileplus-triage = { version = "0.2.4", path = "../agileplus-triage" }
 agileplus-graph = { version = "0.2.4", path = "../agileplus-graph" }
 serde = { workspace = true, features = ["derive"] }
+serde_json.workspace = true
 anyhow = "1.0"
 async-trait.workspace = true
 thiserror.workspace = true

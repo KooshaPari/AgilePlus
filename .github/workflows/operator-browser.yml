@@ -1,0 +1,69 @@
+name: Operator browser acceptance
+on:
+    pull_request:
+        paths:
+            - "crates/**"
+            - "deploy/selfhost/Caddy.operator-alpha.caddy"
+            - "Cargo.lock"
+            - "package-lock.json"
+            - ".github/workflows/operator-browser.yml"
+    workflow_dispatch:
+permissions:
+    contents: read
+concurrency:
+    group: operator-browser-${{ github.ref }}
+    cancel-in-progress: true
+jobs:
+    real-operator:
+        if: github.repository == 'KooshaPari/AgilePlus' && github.event.repository.private == false
+        runs-on: ubuntu-24.04
+        timeout-minutes: 35
+        env:
+            CARGO_INCREMENTAL: "0"
+            CARGO_PROFILE_DEV_DEBUG: "0"
+            CARGO_PROFILE_TEST_DEBUG: "0"
+            CARGO_BUILD_JOBS: "2"
+            CADDY_BIN: /tmp/caddy
+        steps:
+            - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+              with:
+                  persist-credentials: false
+            - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87
+              with:
+                  toolchain: stable
+            - uses: actions/setup-node@v7
+              with:
+                  node-version: "24"
+                  cache: npm
+                  cache-dependency-path: package-lock.json
+            - name: Native fixture prerequisites
+              run: |
+                  sudo apt-get update -qq
+                  sudo apt-get install -y protobuf-compiler libssl-dev pkg-config
+                  curl -fsSL https://github.com/caddyserver/caddy/releases/download/v2.11.7/caddy_2.11.7_linux_amd64.tar.gz -o /tmp/caddy.tar.gz
+                  echo "727b91701a392de6ebc5027509f548bf39979e5216340d0faed8fa5e69c84f8b  /tmp/caddy.tar.gz" | sha256sum --check
+                  tar -xzf /tmp/caddy.tar.gz -C /tmp caddy
+            - run: npm ci --ignore-scripts --no-audit
+            - name: Full frontend typecheck and operator component tests
+              working-directory: crates/agileplus-dashboard/web
+              run: |
+                  npm run typecheck:tsgo
+                  npm run test:operator
+                  npm run build
+            - name: Compile real file SQLite API fixture
+              run: cargo test --locked -p agileplus-api --test atomic_acceptance_http && cargo build --locked -p agileplus-api --example operator_fixture
+            - name: Install Chromium
+              working-directory: crates/agileplus-dashboard/web
+              run: npx playwright install --with-deps chromium
+            - name: Real gateway acceptance and restart journey
+              working-directory: crates/agileplus-dashboard/web
+              run: npm run test:operator:browser
+            - name: Browser evidence
+              if: always()
+              uses: actions/upload-artifact@v7
+              with:
+                  name: operator-browser-evidence
+                  path: |
+                      crates/agileplus-dashboard/web/operator-browser-report
+                      crates/agileplus-dashboard/web/operator-browser-receipt.png
+                  if-no-files-found: warn

@@ -53,3 +53,8 @@ target/
 node_modules/
 .tauri/
 agileplus-recovery-wtrees/
+
+# Disposable browser verification output
+crates/agileplus-dashboard/web/operator-browser-report/
+crates/agileplus-dashboard/web/test-results/
+crates/agileplus-dashboard/web/operator-browser-receipt.png

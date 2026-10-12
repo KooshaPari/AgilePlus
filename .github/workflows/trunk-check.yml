@@ -72,7 +72,7 @@ jobs:
                     if [ -f .prettierignore ]; then
                       raw=$(prettier --check 2>&1 || true)
                     else
-                      raw=$(prettier --check '**/*.{md,yml,yaml,json,jsonc,mdx}' 2>&1 || true)
+                      raw=$(prettier --check '**/*.{md,yml,yaml,json,jsonc,mdx}' '!.github/workflows/release.yml' 2>&1 || true)
                     fi
                     if grep -qE "\[warn\]|\[error\]" <<<"$raw"; then
                       printf '%s\n' "$raw" | grep -E "\[warn\]|\[error\]" | head -80
@@ -93,7 +93,9 @@ jobs:
 
                   git fetch --no-tags --depth=1 origin "$base_ref"
 
-                  files_arg="$(cd "$GITHUB_WORKSPACE" && git diff --diff-filter=ACMR --name-only FETCH_HEAD HEAD -- '*.md' '*.yml' '*.yaml' '*.json' '*.jsonc' '*.mdx')"
+                  # cargo-dist owns release.yml byte-for-byte; Release CI checks
+                  # it with the pinned generator. Prettier would invalidate it.
+                  files_arg="$(cd "$GITHUB_WORKSPACE" && git diff --diff-filter=ACMR --name-only FETCH_HEAD HEAD -- '*.md' '*.yml' '*.yaml' '*.json' '*.jsonc' '*.mdx' ':!.github/workflows/release.yml')"
 
                   if [ -z "$files_arg" ]; then
                     echo "No changed Prettier-supported files to check."

@@ -17,23 +17,22 @@ This file records implemented deltas that supersede earlier WBS wording.
 - Promotion drift now fails before merge/state mutation.
 - Dry-run preflights exact candidates without merge/cleanup/artifact/state side effects.
 
-## Promotion boundary still open
+## Promotion boundary closed in source — 2026-10-08
 
 The merge itself is an external VCS side effect and is not transactionally
 coupled to SQLite. The remaining promotion work is therefore a resumable saga,
 not an attempt to pretend Git+DB can be one ACID transaction.
 
-Next design must durably distinguish:
+The implemented saga persists planned promotion, immutable prepared merge identities,
+compare-and-swap publication, per-step confirmation, atomic Shipped/audit/event
+receipt finalization and post-commit cleanup status. Eight real Git/file SQLite
+recovery witnesses and 24 CLI ship witnesses passed. Receipt replay resumes
+without blindly remerging after a lost confirmation or late SQL failure.
+See [current recovery evidence](PROMOTION_RECOVERY_2026-10-08.md).
 
-1. planned promotion;
-2. each accepted candidate merge attempt;
-3. resulting merge identity;
-4. terminal Shipped persistence;
-5. audit/event receipt;
-6. cleanup completion.
-
-A crash after merge but before DB finalization must be recoverable without
-blindly merging the candidate again.
+The active operator dashboard also passed a real Chromium/Caddy/Axum/file SQLite
+acceptance-and-restart journey in CI. Public production still displays the older
+dashboard; no production deployment or desktop/tailnet execution is claimed.
 
 ## Immediate native gate
 
@@ -46,3 +45,13 @@ The exact current candidate still requires authoritative native execution of:
 - promotion preflight/drift tests.
 
 Test existence is not test execution.
+
+## Current release blockers — 2026-10-08
+
+Scoped Vercel deployment inspection returns 403 and no native desktop/tailnet
+execution surface has been established. Linux desktop dependency advisories and
+unpublished registry dependencies remain release blockers. Full workspace tests
+are locally blocked on missing GLib development prerequisites. Focused changed
+Rust package Clippy passed; full frontend typecheck, nine operator component
+tests, build and accessibility lint passed. This source progress is separate
+from remotely usable release progress.

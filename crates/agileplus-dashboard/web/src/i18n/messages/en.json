@@ -1,0 +1,16 @@
+{
+  "nav.dashboard": "Dashboard",
+  "stories.shown": "{count} stories shown",
+  "overview.title": "Overview",
+  "settings.title": "Settings",
+  "settings.appearance": "Appearance",
+  "settings.theme": "Theme",
+  "settings.language": "Language",
+  "settings.notifications": "Notifications",
+  "settings.desktopNotifications": "Desktop notifications",
+  "settings.emailDigest": "Email digest",
+  "settings.about": "About",
+  "settings.version": "Version",
+  "settings.documentation": "Documentation",
+  "settings.repository": "Repository"
+}

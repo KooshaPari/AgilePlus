@@ -1,4 +1,6 @@
-import React, { createContext, useState, useCallback, useRef } from 'react';
+import React, { createContext, useState, useCallback } from 'react';
+import english from './messages/en.json';
+import german from './messages/de.json';
 import type { ReactNode } from 'react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -44,7 +46,7 @@ interface LocaleProviderProps {
 /**
  * Provides locale state and a `t()` translation function to the component tree.
  *
- * Messages are loaded lazily via dynamic import when the locale changes.
+ * Messages are imported as browser-compatible modules.
  * Falls back to the message key itself when a translation is missing.
  */
 export function LocaleProvider({ children, defaultLocale = 'en' }: LocaleProviderProps) {

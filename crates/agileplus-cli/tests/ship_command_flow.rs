@@ -339,8 +339,8 @@ fn ship_reports_merge_conflicts_and_stops() {
         assert!(msg.contains("src/a.rs") && msg.contains("src/b.rs"));
         assert_eq!(
             vcs.merges.lock().unwrap().len(),
-            1,
-            "must abort on the first conflicting merge"
+            0,
+            "merge preparation conflicts must never publish a target ref"
         );
         let f = StoragePort::get_feature_by_id(&storage, id)
             .await
@@ -372,8 +372,8 @@ fn ship_fails_closed_when_merge_errors() {
         assert!(err.to_string().contains("fails closed") || err.to_string().contains("merging"));
         assert_eq!(
             vcs.merges.lock().unwrap().len(),
-            1,
-            "stop on first merge error"
+            0,
+            "merge preparation errors must never publish a target ref"
         );
         let f = StoragePort::get_feature_by_id(&storage, id)
             .await

@@ -16,7 +16,8 @@ thiserror = { workspace = true }
 tokio = { workspace = true }
 async-trait = { workspace = true }
 uuid = { version = "1", features = ["v4", "serde"] }
-neo4rs = { version = "0.8", optional = true }
+tracing = { workspace = true }
+neo4rs = { version = "=0.9.0-rc.10", optional = true }
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["full", "macros"] }

@@ -13,6 +13,7 @@ pub mod governance;
 pub mod metrics;
 pub mod modules;
 pub mod projects;
+pub mod promotion;
 pub mod stories;
 pub mod sync_mappings;
 pub mod users;

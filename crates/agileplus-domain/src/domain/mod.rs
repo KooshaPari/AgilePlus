@@ -21,6 +21,7 @@ pub mod governance_evaluator;
 pub mod metric;
 pub mod module;
 pub mod project;
+pub mod promotion;
 pub mod service_health;
 pub mod snapshot;
 pub mod state_machine;

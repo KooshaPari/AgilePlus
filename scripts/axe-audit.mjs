@@ -5,25 +5,25 @@
 //
 // Traces to: FR-A11Y-01 (accessibility), pillar L76 (Accessibility)
 
-import { chromium } from 'playwright';
-import { AxeBuilder } from '@axe-core/playwright';
-import fs from 'node:fs';
+import { chromium } from "playwright";
+import { AxeBuilder } from "@axe-core/playwright";
+import fs from "node:fs";
 
 const browser = await chromium.launch();
 const context = await browser.newContext();
 const page = await context.newPage();
 
-const baseUrl = process.env.AXE_BASE_URL ?? 'http://localhost:5173';
-const rules = (process.env.AXE_DISABLE_RULES ?? '')
-  .split(',')
+const baseUrl = process.env.AXE_BASE_URL ?? "http://localhost:5173";
+const rules = (process.env.AXE_DISABLE_RULES ?? "")
+  .split(",")
   .map((s) => s.trim())
   .filter(Boolean);
 
 const targets = [
-  { name: 'home', url: '/' },
-  { name: 'features', url: '/features' },
-  { name: 'cycles', url: '/cycles' },
-  { name: 'cockpit', url: '/cockpit' },
+  { name: "home", url: "/" },
+  { name: "features", url: "/features" },
+  { name: "cycles", url: "/cycles" },
+  { name: "cockpit", url: "/cockpit" },
 ];
 
 const report = {
@@ -34,12 +34,15 @@ const report = {
 
 for (const t of targets) {
   try {
-    await page.goto(baseUrl + t.url, { waitUntil: 'networkidle', timeout: 10_000 });
+    await page.goto(baseUrl + t.url, {
+      waitUntil: "networkidle",
+      timeout: 10_000,
+    });
     const builder = new AxeBuilder({ page }).withTags([
-      'wcag2a',
-      'wcag2aa',
-      'wcag21a',
-      'wcag21aa',
+      "wcag2a",
+      "wcag2aa",
+      "wcag21a",
+      "wcag21aa",
     ]);
     for (const r of rules) builder.disableRules([r]);
     const r = await builder.analyze();
@@ -57,7 +60,7 @@ for (const t of targets) {
 }
 
 fs.writeFileSync(
-  process.env.AXE_REPORT_PATH ?? 'axe-report.json',
+  process.env.AXE_REPORT_PATH ?? "axe-report.json",
   JSON.stringify(report, null, 2),
 );
 
@@ -73,8 +76,9 @@ const serious = report.results.reduce(
   (s, r) =>
     s +
     (r.violations?.filter(
-      (v) => v.impact === 'serious' || v.impact === 'critical',
+      (v) => v.impact === "serious" || v.impact === "critical",
     ).length ?? 0),
   0,
 );
-process.exit(serious > 5 ? 1 : 0);
+const failedAudits = report.results.filter((r) => r.error).length;
+process.exit(failedAudits > 0 || serious > 5 ? 1 : 0);
