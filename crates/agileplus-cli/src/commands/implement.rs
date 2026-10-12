@@ -49,6 +49,10 @@ pub struct ImplementArgs {
     /// Resume from last checkpoint (re-attach to in-progress WPs).
     #[arg(long)]
     pub resume: bool,
+
+    /// Start a user-managed implementation without dispatching agents or creating PRs.
+    #[arg(long)]
+    pub manual: bool,
 }
 
 /// Run the `implement` command.
@@ -65,6 +69,9 @@ where
 {
     let start = std::time::Instant::now();
     let slug = &args.feature;
+    if args.manual && (args.wp.is_some() || args.resume) {
+        anyhow::bail!("--manual starts a feature; --wp and --resume cannot be combined with it");
+    }
 
     // Look up feature
     let feature = storage
@@ -89,6 +96,18 @@ where
                 feature.state
             );
         }
+    }
+
+    let all_wps = storage
+        .list_wps_by_feature(feature.id)
+        .await
+        .context("loading work packages")?;
+    if all_wps.is_empty() {
+        anyhow::bail!(
+            "No work packages found for feature '{}'. Run `agileplus plan --feature {}` first.",
+            slug,
+            slug
+        );
     }
 
     // Transition to Implementing if not already
@@ -120,18 +139,11 @@ where
         println!("Feature '{slug}' transitioned to Implementing.");
     }
 
-    // Load all WPs for this feature
-    let all_wps = storage
-        .list_wps_by_feature(feature.id)
-        .await
-        .context("loading work packages")?;
-
-    if all_wps.is_empty() {
-        anyhow::bail!(
-            "No work packages found for feature '{}'. Run `agileplus plan --feature {}` first.",
-            slug,
-            slug
+    if args.manual {
+        println!(
+            "Manual implementation ready for '{slug}'. Attach results with `agileplus evidence attach` before validation."
         );
+        return Ok(());
     }
 
     // Determine which WPs to process
@@ -473,6 +485,7 @@ where
 
         match outcome {
             ReviewOutcome::Approved => {
+<<<<<<< HEAD
                 println!("  WP{:02} approved!", wp.sequence);
                 let evaluated_at = Utc::now();
                 // Resolve the immutable git commit currently checked out by the
@@ -585,12 +598,58 @@ where
                     hash: [0u8; 32],
                     event_id: None,
                     archived_to: None,
-                };
-                audit.hash = hash_entry(&audit);
-                storage
-                    .append_audit_entry(&audit)
+=======
+                // The scaffold review loop reports agent completion, not
+                // authenticated CI/reviewer approval. Apply the same contract
+                // gates as the public transition command before claiming Done.
+                let Some(contract) = storage
+                    .get_latest_governance_contract(feature.id)
                     .await
-                    .context("appending audit entry")?;
+                    .context("loading governance contract before agent completion")?
+                else {
+                    println!(
+                        "  WP{:02} awaits a governance contract; worktree retained.",
+                        wp.sequence
+                    );
+                    continue;
+>>>>>>> origin/fix/journey-acceptance-20261008
+                };
+                let required_transitions = [
+                    format!("WP{:02}: Doing -> Review", wp.sequence),
+                    format!("WP{:02}: Review -> Done", wp.sequence),
+                ];
+                if required_transitions.iter().any(|transition| {
+                    !contract.rules.iter().any(|rule| {
+                        rule.transition == *transition && !rule.required_evidence.is_empty()
+                    })
+                }) {
+                    println!(
+                        "  WP{:02} awaits non-empty CI/test and review contract gates; worktree retained.",
+                        wp.sequence
+                    );
+                    continue;
+                }
+                let mut gated = true;
+                for target in ["review", "done"] {
+                    let transition = super::mvp::TransitionArgs {
+                        wp: Some(wp.id),
+                        story: None,
+                        to: target.into(),
+                    };
+                    if let Err(error) = super::mvp::transition(&transition, storage).await {
+                        println!(
+                            "  WP{:02} awaits evidence: {error:#}; worktree retained.",
+                            wp.sequence
+                        );
+                        gated = false;
+                        break;
+                    }
+                }
+                if !gated {
+                    continue;
+                }
+                completed.insert(wp.id);
+                println!("  WP{:02} completed with contract evidence.", wp.sequence);
 
                 println!(
                     "  WP{:02} candidate {} is in Review; review approval is not terminal acceptance.",

@@ -5,6 +5,7 @@
 //! evidence evaluation, policy evaluation, report formatting, and the
 //! Implementing -> Validated transition with audit entry.
 
+use agileplus_cli::commands::evidence::{EvidenceArgs, EvidenceCommand, RunTestArgs, run_evidence};
 use agileplus_cli::commands::validate::{ValidateArgs, run_validate};
 use agileplus_domain::domain::execution::{
     Assignment, AssignmentStatus, Attempt, AttemptStatus, CriterionEvaluation, Evaluation,
@@ -17,7 +18,7 @@ use agileplus_domain::domain::governance::{
 };
 use agileplus_domain::domain::state_machine::FeatureState;
 use agileplus_domain::domain::work_package::{WorkPackage, WpState};
-use agileplus_domain::ports::{ExecutionRecordPort, StoragePort};
+use agileplus_domain::ports::StoragePort;
 use agileplus_git::GitVcsAdapter;
 use agileplus_sqlite::SqliteStorageAdapter;
 
@@ -183,6 +184,17 @@ fn args(feature: &str) -> ValidateArgs {
     }
 }
 
+async fn create_done_wp(storage: &SqliteStorageAdapter, feature_id: i64, criteria: &str) -> i64 {
+    let wp = WorkPackage::new(feature_id, "WP one", 1, criteria);
+    let id = StoragePort::create_work_package(storage, &wp)
+        .await
+        .unwrap();
+    StoragePort::update_wp_state(storage, id, WpState::Done)
+        .await
+        .unwrap();
+    id
+}
+
 #[test]
 fn validate_errors_for_unknown_feature() {
     block_on(async {
@@ -228,13 +240,10 @@ fn validate_force_is_diagnostic_only_and_does_not_promote_state() {
         let id = StoragePort::create_feature(&storage, &wrong_state_feature("forced-feat"))
             .await
             .unwrap();
-        StoragePort::create_governance_contract(
-            &storage,
-            &contract_for(id, vec!["FR-FORCE:test_result".to_string()]),
-        )
-        .await
-        .unwrap();
-        seed_governance_evidence(&storage, id, "FR-FORCE").await;
+        StoragePort::create_governance_contract(&storage, &contract_for(id, vec![]))
+            .await
+            .unwrap();
+        create_done_wp(&storage, id, "- FR-001 -- checked").await;
         let mut a = args("forced-feat");
         a.force = true;
         let err = run_validate(a, &storage, &vcs).await.unwrap_err();
@@ -244,6 +253,12 @@ fn validate_force_is_diagnostic_only_and_does_not_promote_state() {
             .unwrap()
             .unwrap();
         assert_eq!(f.state, FeatureState::Planned);
+        // Diagnostic execution must not emit an authoritative transition audit.
+        let trail = StoragePort::get_audit_trail(&storage, id).await.unwrap();
+        assert!(
+            !trail.iter().any(|e| e.transition == "Planned -> Validated"),
+            "diagnostic force must not audit a state transition"
+        );
     })
 }
 
@@ -255,13 +270,10 @@ fn validate_skip_policies_is_diagnostic_only() {
         let id = StoragePort::create_feature(&storage, &implementing_feature("skip-policies"))
             .await
             .unwrap();
-        StoragePort::create_governance_contract(
-            &storage,
-            &contract_for(id, vec!["FR-SKIP:test_result".to_string()]),
-        )
-        .await
-        .unwrap();
-        seed_governance_evidence(&storage, id, "FR-SKIP").await;
+        StoragePort::create_governance_contract(&storage, &contract_for(id, vec![]))
+            .await
+            .unwrap();
+        create_done_wp(&storage, id, "- FR-001 -- checked").await;
         let mut a = args("skip-policies");
         a.skip_policies = true;
         let err = run_validate(a, &storage, &vcs).await.unwrap_err();
@@ -318,8 +330,32 @@ fn validate_passes_with_evidence_and_transitions() {
         )
         .await
         .unwrap();
-        let wp_id = seed_governance_evidence(&storage, id, "FR-001").await;
-        seed_exact_candidate_acceptance(&storage, id, wp_id).await;
+        create_done_wp(&storage, id, "- FR-001 -- validation flow").await;
+        let artifact = std::env::temp_dir().join(format!(
+            "agileplus-validate-executed-{}.json",
+            std::process::id()
+        ));
+        run_evidence(
+            EvidenceArgs {
+                command: EvidenceCommand::RunTest(RunTestArgs {
+                    feature: "happy-feat".into(),
+                    wp: "WP01".into(),
+                    fr: "FR-001".into(),
+                    artifact: artifact.clone(),
+                    command: vec![
+                        std::env::current_exe()
+                            .unwrap()
+                            .to_string_lossy()
+                            .into_owned(),
+                        "--exact".into(),
+                        "validate_errors_for_unknown_feature".into(),
+                    ],
+                }),
+            },
+            &storage,
+        )
+        .await
+        .expect("executed test evidence");
         run_validate(args("happy-feat"), &storage, &vcs)
             .await
             .expect("validates with evidence");
@@ -345,16 +381,7 @@ fn validate_passes_with_evidence_and_transitions() {
             trail.iter().all(|e| e.hash != [0u8; 32]),
             "hash must be computed"
         );
-        assert!(
-            trail.iter().any(|entry| {
-                entry.wp_id == Some(wp_id)
-                    && entry.transition.contains("Review -> Done")
-                    && entry
-                        .transition
-                        .contains("correctness + governance accepted")
-            }),
-            "terminal WP acceptance must have its own audit receipt: {trail:?}"
-        );
+        let _ = std::fs::remove_file(artifact);
     })
 }
 #[test]
@@ -648,14 +675,10 @@ fn validate_json_format_writes_report_file() {
         let id = StoragePort::create_feature(&storage, &implementing_feature("json-feat"))
             .await
             .unwrap();
-        StoragePort::create_governance_contract(
-            &storage,
-            &contract_for(id, vec!["FR-JSON:test_result".to_string()]),
-        )
-        .await
-        .unwrap();
-        let wp_id = seed_governance_evidence(&storage, id, "FR-JSON").await;
-        seed_exact_candidate_acceptance(&storage, id, wp_id).await;
+        StoragePort::create_governance_contract(&storage, &contract_for(id, vec![]))
+            .await
+            .unwrap();
+        create_done_wp(&storage, id, "- FR-001 -- checked").await;
         let out =
             std::env::temp_dir().join(format!("agileplus-validate-json-{}.md", std::process::id()));
         let mut a = args("json-feat");

@@ -60,6 +60,7 @@ pub fn args(feature: &str) -> ImplementArgs {
         parallel: 1,
         max_review_cycles: 2,
         resume: false,
+        manual: false,
     }
 }
 

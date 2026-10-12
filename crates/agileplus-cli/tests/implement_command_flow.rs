@@ -103,13 +103,37 @@ fn implement_reports_feature_without_work_packages() {
     });
 }
 
-/// Review approval produces an exact candidate but is not terminal acceptance.
-/// The WP stops at Review and the worktree remains available for independent grading.
+/// Agent success does not imply CI or independent review approval. The WP
+/// remains Doing and its worktree is retained when required evidence is absent.
 #[test]
-fn implement_approved_stops_at_review_pending_independent_acceptance() {
+fn implement_agent_success_requires_contract_evidence_and_retains_worktree() {
     block_on_paused(async {
         let storage = SqliteStorageAdapter::in_memory().expect("in-memory db");
         let (fid, wp_id) = seed(&storage, "happy", FeatureState::Planned).await;
+        use agileplus_domain::domain::governance::{GovernanceContract, GovernanceRule};
+        StoragePort::create_governance_contract(
+            &storage,
+            &GovernanceContract {
+                id: 0,
+                feature_id: fid,
+                version: 1,
+                rules: vec![
+                    GovernanceRule {
+                        transition: "WP01: Doing -> Review".into(),
+                        required_evidence: vec!["FR-CI:ci_output".into()],
+                        policy_refs: vec![],
+                    },
+                    GovernanceRule {
+                        transition: "WP01: Review -> Done".into(),
+                        required_evidence: vec!["FR-REVIEW:review_approval".into()],
+                        policy_refs: vec![],
+                    },
+                ],
+                bound_at: chrono::Utc::now(),
+            },
+        )
+        .await
+        .unwrap();
         let vcs = TempVcs::new();
         let agent = ScriptedAgent::success();
 
@@ -124,24 +148,22 @@ fn implement_approved_stops_at_review_pending_independent_acceptance() {
             .unwrap();
         assert_eq!(feature.state, FeatureState::Implementing);
 
-        // Review approval alone is explicitly non-terminal.
+        // Agent completion cannot bypass the missing CI evidence.
         let wp = StoragePort::get_work_package(&storage, wp_id)
             .await
             .unwrap()
             .unwrap();
         assert_eq!(
             wp.state,
-            WpState::Review,
-            "review approval must not self-award terminal Done"
+            WpState::Doing,
+            "agent completion is not CI approval"
         );
 
-        // Keep the worktree until terminal acceptance/explicit cleanup.
+        // Keep the worktree available for evidence collection and review.
         let created = vcs.created_worktrees();
         assert_eq!(created.len(), 1, "one worktree per WP");
-        assert!(
-            vcs.cleaned_worktrees().is_empty(),
-            "review-pending candidate worktree must remain available"
-        );
+        let cleaned = vcs.cleaned_worktrees();
+        assert!(cleaned.is_empty(), "unaccepted worktree must be retained");
 
         // The review loop actually ran through the real orchestration.
         assert_eq!(agent.polls(), 1, "approved after a single poll");
@@ -182,7 +204,7 @@ fn implement_approved_stops_at_review_pending_independent_acceptance() {
             "agent must be pointed at the materialized prompt"
         );
 
-        // The audit chain records candidate production without claiming completion.
+        // Only the genuine feature transition is recorded, not false completion.
         let entries = StoragePort::get_audit_trail(&storage, fid).await.unwrap();
         let transitions: Vec<&str> = entries.iter().map(|e| e.transition.as_str()).collect();
         assert!(
@@ -192,67 +214,129 @@ fn implement_approved_stops_at_review_pending_independent_acceptance() {
             "expected the feature transition in the audit chain, got {transitions:?}"
         );
         assert!(
-            transitions.iter().any(|t| t.contains("Doing -> Review")),
-            "expected the non-terminal WP review transition in the audit chain, got {transitions:?}"
-        );
-        assert!(
             !transitions.iter().any(|t| t.contains("-> Done")),
-            "review approval must not emit terminal completion, got {transitions:?}"
+            "must not audit unapproved completion, got {transitions:?}"
         );
 
         vcs.cleanup();
     });
 }
 
-/// An agent claiming review success without a resolvable Git commit must
-/// not receive Review/Done. Preserve the failed Attempt and Unknown Evaluation.
+/// An empty contract is not an implicit authorization to complete agent work.
 #[test]
-fn implement_approved_without_git_candidate_fails_closed_with_durable_history() {
+fn implement_agent_success_with_empty_contract_keeps_work_in_progress() {
     block_on_paused(async {
-        use agileplus_domain::domain::execution::{AttemptStatus, EvaluationResult};
-        use agileplus_domain::ports::ExecutionRecordPort;
-
-        let storage = SqliteStorageAdapter::in_memory().expect("in-memory db");
-        let (_, wp_id) = seed(&storage, "unresolved", FeatureState::Planned).await;
-        let vcs = TempVcs::new().with_unresolved_candidate();
+        use agileplus_domain::domain::governance::GovernanceContract;
+        let storage = SqliteStorageAdapter::in_memory().unwrap();
+        let (fid, wp_id) = seed(&storage, "empty-contract", FeatureState::Planned).await;
+        StoragePort::create_governance_contract(
+            &storage,
+            &GovernanceContract {
+                id: 0,
+                feature_id: fid,
+                version: 1,
+                rules: vec![],
+                bound_at: chrono::Utc::now(),
+            },
+        )
+        .await
+        .unwrap();
+        let vcs = TempVcs::new();
         let agent = ScriptedAgent::success();
-
-        let err = run_implement(args("unresolved"), &storage, &vcs, &agent)
+        run_implement(args("empty-contract"), &storage, &vcs, &agent)
             .await
-            .expect_err("review success with no Git candidate must be rejected");
-        assert!(
-            format!("{err:#}").contains("exact Git candidate could not be resolved"),
-            "{err:#}"
-        );
+            .unwrap();
         let wp = StoragePort::get_work_package(&storage, wp_id)
             .await
             .unwrap()
             .unwrap();
-        assert_eq!(wp.state, WpState::Blocked);
+        assert_eq!(wp.state, WpState::Doing);
+        assert!(vcs.cleaned_worktrees().is_empty());
+        assert_eq!(agent.polls(), 1);
+        vcs.cleanup();
+    });
+}
 
-        let assignment = ExecutionRecordPort::get_active_assignment(&storage, wp_id)
+/// A simulated CI artifact is confined to this in-memory test fixture. Even
+/// with that gate satisfied, agent success cannot invent review approval.
+#[test]
+fn implement_ci_fixture_without_review_stays_in_review_and_retains_worktree() {
+    block_on_paused(async {
+        use agileplus_cli::commands::evidence::{
+            AttachArgs, EvidenceArgs, EvidenceCommand, run_evidence,
+        };
+        use agileplus_domain::domain::governance::{GovernanceContract, GovernanceRule};
+        let storage = SqliteStorageAdapter::in_memory().unwrap();
+        let (fid, wp_id) = seed(&storage, "pending-review", FeatureState::Planned).await;
+        StoragePort::create_governance_contract(
+            &storage,
+            &GovernanceContract {
+                id: 0,
+                feature_id: fid,
+                version: 1,
+                rules: vec![
+                    GovernanceRule {
+                        transition: "WP01: Doing -> Review".into(),
+                        required_evidence: vec!["FR-CI:ci_output".into()],
+                        policy_refs: vec![],
+                    },
+                    GovernanceRule {
+                        transition: "WP01: Review -> Done".into(),
+                        required_evidence: vec!["FR-REVIEW:review_approval".into()],
+                        policy_refs: vec![],
+                    },
+                ],
+                bound_at: chrono::Utc::now(),
+            },
+        )
+        .await
+        .unwrap();
+        let artifact = tempfile::NamedTempFile::new().unwrap();
+        std::fs::write(artifact.path(), b"Simulated CI output for an isolated negative review-gate test; not real CI acceptance.").unwrap();
+        run_evidence(
+            EvidenceArgs {
+                command: EvidenceCommand::Attach(AttachArgs {
+                    feature: "pending-review".into(),
+                    wp: "WP01".into(),
+                    fr: "FR-CI".into(),
+                    evidence_type: "ci_output".into(),
+                    artifact: artifact.path().to_path_buf(),
+                    result: "pass".into(),
+                }),
+            },
+            &storage,
+        )
+        .await
+        .unwrap();
+        let vcs = TempVcs::new();
+        let agent = ScriptedAgent::success();
+        run_implement(args("pending-review"), &storage, &vcs, &agent)
+            .await
+            .unwrap();
+        let wp = StoragePort::get_work_package(&storage, wp_id)
             .await
             .unwrap()
-            .expect("assignment must be durable");
-        let attempts = ExecutionRecordPort::list_attempts(&storage, &assignment.id)
-            .await
             .unwrap();
-        assert_eq!(attempts.len(), 1);
-        assert_eq!(attempts[0].status, AttemptStatus::Failed);
-        assert_eq!(
-            attempts[0].failure_class.as_deref(),
-            Some("candidate_unresolved")
-        );
-        assert!(attempts[0].result_candidate_ref.is_none());
-
-        let evaluations = ExecutionRecordPort::list_evaluations(&storage, &assignment.id)
-            .await
-            .unwrap();
-        assert_eq!(evaluations.len(), 1);
-        assert_eq!(evaluations[0].result, EvaluationResult::Unknown);
-        assert!(evaluations[0].candidate_ref.starts_with("unresolved:job:"));
-
+        assert_eq!(wp.state, WpState::Review);
         assert!(vcs.cleaned_worktrees().is_empty());
+        let audit = StoragePort::get_audit_trail(&storage, fid).await.unwrap();
+        assert!(
+            audit
+                .iter()
+                .any(|entry| entry.transition == "WP01: Doing -> Review")
+        );
+        assert!(
+            !audit
+                .iter()
+                .any(|entry| entry.transition.contains("-> Done"))
+        );
+        assert!(
+            StoragePort::get_evidence_by_wp(&storage, wp_id)
+                .await
+                .unwrap()
+                .iter()
+                .all(|e| e.fr_id != "FR-REVIEW")
+        );
         vcs.cleanup();
     });
 }
@@ -377,8 +461,8 @@ fn implement_single_wp_selector_runs_only_that_wp() {
         assert_eq!(by_seq(1), WpState::Planned, "WP01 must be untouched");
         assert_eq!(
             by_seq(2),
-            WpState::Review,
-            "WP02 must stop at Review pending independent acceptance"
+            WpState::Doing,
+            "WP02 awaits its governance contract"
         );
 
         // Only the selected WP was dispatched and given a worktree.
