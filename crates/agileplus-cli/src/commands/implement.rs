@@ -345,37 +345,56 @@ where
 
         match outcome {
             ReviewOutcome::Approved => {
-                println!("  WP{:02} approved!", wp.sequence);
-                storage
-                    .update_wp_state(wp.id, WpState::Review)
+                // The scaffold review loop reports agent completion, not
+                // authenticated CI/reviewer approval. Apply the same contract
+                // gates as the public transition command before claiming Done.
+                let Some(contract) = storage
+                    .get_latest_governance_contract(feature.id)
                     .await
-                    .context("transitioning WP to Review")?;
-                storage
-                    .update_wp_state(wp.id, WpState::Done)
-                    .await
-                    .context("transitioning WP to Done")?;
-                completed.insert(wp.id);
-
-                // Audit
-                let prev_hash = get_latest_hash(storage, feature.id).await;
-                let mut audit = AuditEntry {
-                    id: 0,
-                    feature_id: feature.id,
-                    wp_id: Some(wp.id),
-                    timestamp: Utc::now(),
-                    actor: "agent".into(),
-                    transition: format!("WP{:02} Planned -> Done", wp.sequence),
-                    evidence_refs: vec![],
-                    prev_hash,
-                    hash: [0u8; 32],
-                    event_id: None,
-                    archived_to: None,
+                    .context("loading governance contract before agent completion")?
+                else {
+                    println!(
+                        "  WP{:02} awaits a governance contract; worktree retained.",
+                        wp.sequence
+                    );
+                    continue;
                 };
-                audit.hash = hash_entry(&audit);
-                storage
-                    .append_audit_entry(&audit)
-                    .await
-                    .context("appending audit entry")?;
+                let required_transitions = [
+                    format!("WP{:02}: Doing -> Review", wp.sequence),
+                    format!("WP{:02}: Review -> Done", wp.sequence),
+                ];
+                if required_transitions.iter().any(|transition| {
+                    !contract.rules.iter().any(|rule| {
+                        rule.transition == *transition && !rule.required_evidence.is_empty()
+                    })
+                }) {
+                    println!(
+                        "  WP{:02} awaits non-empty CI/test and review contract gates; worktree retained.",
+                        wp.sequence
+                    );
+                    continue;
+                }
+                let mut gated = true;
+                for target in ["review", "done"] {
+                    let transition = super::mvp::TransitionArgs {
+                        wp: Some(wp.id),
+                        story: None,
+                        to: target.into(),
+                    };
+                    if let Err(error) = super::mvp::transition(&transition, storage).await {
+                        println!(
+                            "  WP{:02} awaits evidence: {error:#}; worktree retained.",
+                            wp.sequence
+                        );
+                        gated = false;
+                        break;
+                    }
+                }
+                if !gated {
+                    continue;
+                }
+                completed.insert(wp.id);
+                println!("  WP{:02} completed with contract evidence.", wp.sequence);
 
                 // Cleanup worktree
                 if let Err(e) = vcs.cleanup_worktree(&worktree_path).await {
