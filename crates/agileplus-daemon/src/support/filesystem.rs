@@ -16,7 +16,21 @@ pub(crate) fn prepare_registry_directory(path: &Path) -> Result<(), RegistryErro
         ),
         source,
     })?;
-    harden_directory_permissions(parent)
+    let metadata = fs::metadata(parent).map_err(|source| RegistryError::Io {
+        context: format!(
+            "cannot inspect device-registry directory {}",
+            parent.display()
+        ),
+        source,
+    })?;
+    if metadata.is_dir() {
+        Ok(())
+    } else {
+        Err(RegistryError::Corrupt(format!(
+            "registry parent {} is not a directory",
+            parent.display()
+        )))
+    }
 }
 
 pub(crate) fn validate_existing_registry_file(path: &Path) -> Result<(), RegistryError> {
@@ -34,7 +48,7 @@ pub(crate) fn validate_existing_registry_file(path: &Path) -> Result<(), Registr
 }
 
 #[cfg(unix)]
-fn harden_directory_permissions(path: &Path) -> Result<(), RegistryError> {
+pub(crate) fn harden_registry_directory(path: &Path) -> Result<(), RegistryError> {
     use std::os::unix::fs::PermissionsExt;
 
     fs::set_permissions(path, fs::Permissions::from_mode(0o700)).map_err(|source| {
@@ -49,7 +63,7 @@ fn harden_directory_permissions(path: &Path) -> Result<(), RegistryError> {
 }
 
 #[cfg(not(unix))]
-fn harden_directory_permissions(_path: &Path) -> Result<(), RegistryError> {
+pub(crate) fn harden_registry_directory(_path: &Path) -> Result<(), RegistryError> {
     Ok(())
 }
 
