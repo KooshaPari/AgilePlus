@@ -1,10 +1,13 @@
 {
-  "overrides": [
-    {
-      "files": ".github/workflows/release.yml",
-      "options": {
-        "tabWidth": 2
-      }
-    }
-  ]
+    "overrides": [
+        {
+            "files": [
+                ".github/workflows/release.yml",
+                ".github/workflows/ci.yml"
+            ],
+            "options": {
+                "tabWidth": 2
+            }
+        }
+    ]
 }
