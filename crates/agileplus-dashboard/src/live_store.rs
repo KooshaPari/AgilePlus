@@ -18,11 +18,11 @@ use agileplus_domain::domain::{
     state_machine::FeatureState,
     work_package::{PrState, WorkPackage, WpState},
 };
-use axum::extract::{Extension, Request, State};
+use axum::Json;
+use axum::extract::{Extension, Request};
 use axum::http::{Method, StatusCode};
 use axum::middleware::Next;
 use axum::response::{IntoResponse, Response};
-use axum::Json;
 use chrono::{DateTime, Utc};
 use rusqlite::{Connection, OpenFlags, Row};
 use serde::Serialize;
@@ -77,7 +77,9 @@ impl DashboardSource {
             connected: false,
             read_only: false,
             project_name: Some("AgilePlus demo fixtures".into()),
-            message: "Explicit demo mode: all displayed records are fixtures, not live project state.".into(),
+            message:
+                "Explicit demo mode: all displayed records are fixtures, not live project state."
+                    .into(),
             loaded_at: Utc::now(),
             feature_count: store.features.len(),
             work_package_count: store.work_packages.values().map(Vec::len).sum(),
@@ -211,9 +213,6 @@ pub fn load_project_store(project_root: &Path) -> Result<(PathBuf, DashboardStor
             last_check: Utc::now(),
         }],
         projects,
-        // Current feature rows do not carry a reliable project foreign key.
-        // Leaving selection unset shows every live feature instead of silently
-        // filtering them all out under a fabricated association.
         active_project_id: None,
         governance_client: None,
         plane_client: None,
@@ -263,18 +262,19 @@ fn load_features(connection: &Connection) -> Result<Vec<Feature>, String> {
              FROM features ORDER BY created_at DESC",
         )
         .map_err(|error| format!("cannot prepare live feature projection: {error}"))?;
-    statement
+    let features = statement
         .query_map([], row_to_feature)
         .map_err(|error| format!("cannot query live features: {error}"))?
         .collect::<Result<Vec<_>, _>>()
-        .map_err(|error| format!("cannot decode live feature row: {error}"))
+        .map_err(|error| format!("cannot decode live feature row: {error}"))?;
+    Ok(features)
 }
 
 fn row_to_feature(row: &Row<'_>) -> rusqlite::Result<Feature> {
     let state_text: String = row.get(3)?;
-    let state = state_text.parse::<FeatureState>().map_err(|error| {
-        conversion_error(3, rusqlite::types::Type::Text, error)
-    })?;
+    let state = state_text
+        .parse::<FeatureState>()
+        .map_err(|error| conversion_error(3, rusqlite::types::Type::Text, error))?;
     let spec_hash_bytes: Vec<u8> = row.get(4)?;
     let spec_hash: [u8; 32] = spec_hash_bytes.try_into().map_err(|bytes: Vec<u8>| {
         conversion_error(
@@ -314,11 +314,12 @@ fn load_work_packages(connection: &Connection) -> Result<Vec<WorkPackage>, Strin
              FROM work_packages ORDER BY feature_id, sequence",
         )
         .map_err(|error| format!("cannot prepare live work-package projection: {error}"))?;
-    statement
+    let work_packages = statement
         .query_map([], row_to_work_package)
         .map_err(|error| format!("cannot query live work packages: {error}"))?
         .collect::<Result<Vec<_>, _>>()
-        .map_err(|error| format!("cannot decode live work-package row: {error}"))
+        .map_err(|error| format!("cannot decode live work-package row: {error}"))?;
+    Ok(work_packages)
 }
 
 fn row_to_work_package(row: &Row<'_>) -> rusqlite::Result<WorkPackage> {
@@ -384,7 +385,7 @@ fn load_projects(connection: &Connection) -> Result<Vec<Project>, String> {
              FROM projects ORDER BY created_at ASC",
         )
         .map_err(|error| format!("cannot prepare live project projection: {error}"))?;
-    statement
+    let projects = statement
         .query_map([], |row| {
             let description: String = row.get(3)?;
             Ok(Project {
@@ -398,7 +399,8 @@ fn load_projects(connection: &Connection) -> Result<Vec<Project>, String> {
         })
         .map_err(|error| format!("cannot query live projects: {error}"))?
         .collect::<Result<Vec<_>, _>>()
-        .map_err(|error| format!("cannot decode live project row: {error}"))
+        .map_err(|error| format!("cannot decode live project row: {error}"))?;
+    Ok(projects)
 }
 
 fn parse_datetime(row: &Row<'_>, index: usize) -> rusqlite::Result<DateTime<Utc>> {
@@ -430,14 +432,15 @@ pub async fn source_status(
 }
 
 pub async fn mutation_guard(
-    State(source): State<Arc<DashboardSource>>,
+    Extension(source): Extension<Arc<DashboardSource>>,
     request: Request,
     next: Next,
 ) -> Response {
-    if matches!(
-        *request.method(),
-        Method::GET | Method::HEAD | Method::OPTIONS
-    ) || source.allows_mutation()
+    let method = request.method();
+    if method == Method::GET
+        || method == Method::HEAD
+        || method == Method::OPTIONS
+        || source.allows_mutation()
     {
         return next.run(request).await;
     }
@@ -456,10 +459,10 @@ pub async fn mutation_guard(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use axum::Router;
     use axum::body::Body;
     use axum::middleware;
     use axum::routing::post;
-    use axum::Router;
     use std::sync::atomic::{AtomicU32, Ordering};
     use tower::ServiceExt;
 
@@ -567,16 +570,20 @@ mod tests {
     fn demo_requires_explicit_opt_in() {
         let scratch = Scratch::new("demo");
         let disconnected = initialize(false, None, scratch.path());
-        assert_eq!(
-            disconnected.source.mode,
-            DashboardSourceMode::Disconnected
-        );
+        assert_eq!(disconnected.source.mode, DashboardSourceMode::Disconnected);
         assert!(disconnected.store.features.is_empty());
 
         let demo = initialize(true, None, scratch.path());
         assert_eq!(demo.source.mode, DashboardSourceMode::Demo);
         assert!(!demo.store.features.is_empty());
         assert!(demo.source.allows_mutation());
+    }
+
+    fn guarded_router(source: Arc<DashboardSource>) -> Router {
+        Router::new()
+            .route("/mutate", post(|| async { StatusCode::NO_CONTENT }))
+            .layer(middleware::from_fn(mutation_guard))
+            .layer(Extension(source))
     }
 
     #[tokio::test]
@@ -593,10 +600,7 @@ mod tests {
             project_count: 1,
             diagnostic: None,
         });
-        let app = Router::new()
-            .route("/mutate", post(|| async { StatusCode::NO_CONTENT }))
-            .layer(middleware::from_fn_with_state(source, mutation_guard));
-        let response = app
+        let response = guarded_router(source)
             .oneshot(
                 Request::builder()
                     .method(Method::POST)
@@ -613,10 +617,7 @@ mod tests {
     async fn explicit_demo_mode_allows_fixture_mutation() {
         let store = DashboardStore::seeded();
         let source = Arc::new(DashboardSource::demo(&store));
-        let app = Router::new()
-            .route("/mutate", post(|| async { StatusCode::NO_CONTENT }))
-            .layer(middleware::from_fn_with_state(source, mutation_guard));
-        let response = app
+        let response = guarded_router(source)
             .oneshot(
                 Request::builder()
                     .method(Method::POST)
