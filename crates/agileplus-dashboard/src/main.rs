@@ -27,7 +27,6 @@ async fn main() {
     let source = Arc::new(runtime.source);
     let mut store: DashboardStore = runtime.store;
 
-    // Optional auxiliary clients do not replace the canonical project source.
     store = match agileplus_governance::GovernanceClient::with_defaults().await {
         Ok(client) => store.with_governance(client),
         Err(error) => {
@@ -43,14 +42,9 @@ async fn main() {
         std::env::var("PLANE_PROJECT").ok(),
     );
     store = match plane_args {
-        (base_url, Some(api_key), Some(workspace), Some(project)) => {
-            store.with_plane(agileplus_plane::PlaneClient::new(
-                base_url,
-                api_key,
-                workspace,
-                project,
-            ))
-        }
+        (base_url, Some(api_key), Some(workspace), Some(project)) => store.with_plane(
+            agileplus_plane::PlaneClient::new(base_url, api_key, workspace, project),
+        ),
         _ => {
             tracing::info!(
                 "PLANE_API_KEY/PLANE_WORKSPACE/PLANE_PROJECT not set; Plane projection remains unavailable"
@@ -61,15 +55,9 @@ async fn main() {
 
     let state = Arc::new(tokio::sync::RwLock::new(store));
     let app = router(state)
-        .route(
-            "/api/dashboard/source.json",
-            get(live_store::source_status),
-        )
-        .layer(Extension(source.clone()))
-        .layer(middleware::from_fn_with_state(
-            source,
-            live_store::mutation_guard,
-        ));
+        .route("/api/dashboard/source.json", get(live_store::source_status))
+        .layer(middleware::from_fn(live_store::mutation_guard))
+        .layer(Extension(source));
 
     let port: u16 = std::env::var("PORT")
         .ok()
