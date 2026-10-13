@@ -3,6 +3,7 @@
 
 pub use error::DomainError;
 pub use error::ErrorCode;
+pub use stable_identity_port::StableIdentityPort;
 pub type DomainResult<T> = std::result::Result<T, DomainError>;
 
 pub mod adapters;
@@ -14,6 +15,7 @@ pub mod error;
 pub mod ids;
 pub mod intent_graph;
 pub mod ports;
+pub mod stable_identity_port;
 pub mod traceability;
 
 // Shared PM/traceability spine (phenotype-pm-core). AgilePlus-local aggregates
