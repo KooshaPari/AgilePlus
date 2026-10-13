@@ -3,11 +3,10 @@
 Requires CADDY_BIN (or caddy on PATH). This proves local proxy behavior,
 not production DNS, certificates, tailnet ACLs or application acceptance.
 """
+
 import base64
 import http.client
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import os
-from pathlib import Path
 import shutil
 import socket
 import subprocess
@@ -15,13 +14,16 @@ import tempfile
 import threading
 import time
 import unittest
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
+from typing import ClassVar
 
 ROOT = Path(__file__).resolve().parents[2]
 ORIGIN = "https://agileplus.pheno.studio"
 
 
 class Upstream(BaseHTTPRequestHandler):
-    requests = []
+    requests: ClassVar[list] = []
 
     def handle_request(self):
         self.requests.append((self.command, self.path, dict(self.headers)))
@@ -41,7 +43,9 @@ class OperatorGateway(unittest.TestCase):
     def setUpClass(cls):
         caddy = os.environ.get("CADDY_BIN") or shutil.which("caddy")
         if not caddy:
-            raise RuntimeError("Real Caddy is required; gateway evidence cannot be skipped")
+            raise RuntimeError(
+                "Real Caddy is required; gateway evidence cannot be skipped"
+            )
         cls.temp = tempfile.TemporaryDirectory()
         cls.upstream = ThreadingHTTPServer(("127.0.0.1", 0), Upstream)
         cls.thread = threading.Thread(target=cls.upstream.serve_forever, daemon=True)
@@ -51,28 +55,43 @@ class OperatorGateway(unittest.TestCase):
             cls.port = sock.getsockname()[1]
         upstream = f"127.0.0.1:{cls.upstream.server_port}"
         source = (ROOT / "deploy/selfhost/Caddy.operator-alpha.caddy").read_text()
-        source = source.replace("agileplus.pheno.studio {", f"http://127.0.0.1:{cls.port} {{")
-        source = source.replace("reverse_proxy 127.0.0.1:3000", f"reverse_proxy {upstream}")
-        source = source.replace("reverse_proxy https://{$AGILEPLUS_FRONTEND_UPSTREAM_HOST}", f"reverse_proxy http://{upstream}")
+        source = source.replace(
+            "agileplus.pheno.studio {", f"http://127.0.0.1:{cls.port} {{"
+        )
+        source = source.replace(
+            "reverse_proxy 127.0.0.1:3000", f"reverse_proxy {upstream}"
+        )
+        source = source.replace(
+            "reverse_proxy https://{$AGILEPLUS_FRONTEND_UPSTREAM_HOST}",
+            f"reverse_proxy http://{upstream}",
+        )
         config = Path(cls.temp.name) / "Caddyfile"
         config.write_text("{\n admin off\n auto_https off\n}\n" + source)
         env = dict(os.environ)
-        env.update(AGILEPLUS_OPERATOR_USERNAME="smoke", AGILEPLUS_API_KEY="backend-fixture-key",
-                   AGILEPLUS_FRONTEND_UPSTREAM_HOST="fixture.vercel.app")
+        env.update(
+            AGILEPLUS_OPERATOR_USERNAME="smoke",
+            AGILEPLUS_API_KEY="backend-fixture-key",
+            AGILEPLUS_FRONTEND_UPSTREAM_HOST="fixture.vercel.app",
+        )
         env["AGILEPLUS_OPERATOR_PASSWORD_HASH"] = subprocess.check_output(
-            [caddy, "hash-password", "--plaintext", "fixture-password"], text=True).strip()
-        cls.log = open(Path(cls.temp.name) / "caddy.log", "w+")
-        cls.process = subprocess.Popen([caddy, "run", "--config", str(config), "--adapter", "caddyfile"],
-                                       env=env, stdout=cls.log, stderr=cls.log)
+            [caddy, "hash-password", "--plaintext", "fixture-password"], text=True
+        ).strip()
+        cls.log = open(Path(cls.temp.name) / "caddy.log", "w+")  # noqa: SIM115 - torn down in tearDownClass
+        cls.process = subprocess.Popen(
+            [caddy, "run", "--config", str(config), "--adapter", "caddyfile"],
+            env=env,
+            stdout=cls.log,
+            stderr=cls.log,
+        )
         for _ in range(100):
             if cls.process.poll() is not None:
                 cls.log.seek(0)
                 raise RuntimeError(cls.log.read())
             try:
-                with socket.create_connection(("127.0.0.1", cls.port), timeout=.1):
+                with socket.create_connection(("127.0.0.1", cls.port), timeout=0.1):
                     return
             except OSError:
-                time.sleep(.05)
+                time.sleep(0.05)
         raise RuntimeError("Caddy did not start")
 
     @classmethod
@@ -87,7 +106,9 @@ class OperatorGateway(unittest.TestCase):
     def request(self, method="GET", origin=None, auth=True, path="/api/v1/features"):
         headers = {"Cookie": "private=secret", "X-API-Key": "browser-spoof"}
         if auth:
-            headers["Authorization"] = "Basic " + base64.b64encode(b"smoke:fixture-password").decode()
+            headers["Authorization"] = (
+                "Basic " + base64.b64encode(b"smoke:fixture-password").decode()
+            )
         if origin is not None:
             headers["Origin"] = origin
         conn = http.client.HTTPConnection("127.0.0.1", self.port, timeout=3)
@@ -106,7 +127,13 @@ class OperatorGateway(unittest.TestCase):
 
     def test_cross_site_and_missing_origins_never_mutate(self):
         for method in ["POST", "PUT", "PATCH", "DELETE"]:
-            for origin in [None, "null", "https://evil.example", ORIGIN + ".evil.example", ORIGIN + ":444"]:
+            for origin in [
+                None,
+                "null",
+                "https://evil.example",
+                ORIGIN + ".evil.example",
+                ORIGIN + ":444",
+            ]:
                 with self.subTest(method=method, origin=origin):
                     before = len(Upstream.requests)
                     self.assertEqual(self.request(method, origin)[0], 403)

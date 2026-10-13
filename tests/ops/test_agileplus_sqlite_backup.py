@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 import runpy
 import shutil
 import sqlite3
 import tempfile
 import unittest
+from pathlib import Path
 
 SCRIPT = Path(__file__).resolve().parents[2] / "scripts" / "backup-agileplus-sqlite.py"
 FUNCTIONS = runpy.run_path(str(SCRIPT))
@@ -27,7 +27,9 @@ class BackupWitnesses(unittest.TestCase):
         writer = sqlite3.connect(self.database)
         self.addCleanup(writer.close)
         writer.execute("PRAGMA journal_mode=WAL")
-        writer.execute("CREATE TABLE receipts (id TEXT PRIMARY KEY, state TEXT NOT NULL)")
+        writer.execute(
+            "CREATE TABLE receipts (id TEXT PRIMARY KEY, state TEXT NOT NULL)"
+        )
         writer.execute("INSERT INTO receipts VALUES (?, ?)", ("a", "validated"))
         writer.commit()
 
@@ -47,7 +49,9 @@ class BackupWitnesses(unittest.TestCase):
         writer.execute("INSERT INTO receipts VALUES (?, ?)", ("b", "review"))
         writer.commit()
         with sqlite3.connect(restored) as reader:
-            self.assertEqual(reader.execute("SELECT COUNT(*) FROM receipts").fetchone()[0], 1)
+            self.assertEqual(
+                reader.execute("SELECT COUNT(*) FROM receipts").fetchone()[0], 1
+            )
 
     def test_missing_source_fails_without_creating_fake_backup(self) -> None:
         with self.assertRaises(FileNotFoundError):

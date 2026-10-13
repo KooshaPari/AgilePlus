@@ -8,12 +8,12 @@ consistently. Does not stop or mutate the live database.
 from __future__ import annotations
 
 import argparse
-from datetime import datetime, timezone
 import os
-from pathlib import Path
 import sqlite3
 import sys
 import uuid
+from datetime import datetime, timezone
+from pathlib import Path
 
 
 def backup_database(source: Path, output_dir: Path) -> Path:
@@ -32,12 +32,14 @@ def backup_database(source: Path, output_dir: Path) -> Path:
     final = output_dir / filename
 
     try:
-        with sqlite3.connect(f"{source.as_uri()}?mode=ro", uri=True, timeout=30) as live:
-            with sqlite3.connect(temporary, timeout=30) as snapshot:
-                live.backup(snapshot, pages=64, sleep=0.1)
-                result = snapshot.execute("PRAGMA integrity_check").fetchone()
-                if result is None or result[0] != "ok":
-                    raise RuntimeError(f"backup integrity check failed: {result}")
+        with (
+            sqlite3.connect(f"{source.as_uri()}?mode=ro", uri=True, timeout=30) as live,
+            sqlite3.connect(temporary, timeout=30) as snapshot,
+        ):
+            live.backup(snapshot, pages=64, sleep=0.1)
+            result = snapshot.execute("PRAGMA integrity_check").fetchone()
+            if result is None or result[0] != "ok":
+                raise RuntimeError(f"backup integrity check failed: {result}")
         if os.name == "posix":
             temporary.chmod(0o600)
         with temporary.open("rb") as file:
