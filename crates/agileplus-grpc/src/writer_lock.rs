@@ -7,10 +7,10 @@
 use std::fs::{self, File, OpenOptions};
 use std::io::{ErrorKind, Write};
 use std::path::{Path, PathBuf};
+use std::process::Command;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use serde::{Deserialize, Serialize};
-use sysinfo::{Pid, System};
 
 const LOCK_VERSION: u32 = 1;
 const LOCK_FILE_NAME: &str = "core-writer.lock";
@@ -20,7 +20,6 @@ const MAX_ACQUIRE_ATTEMPTS: usize = 4;
 struct LockOwner {
     version: u32,
     pid: u32,
-    process_start_time: u64,
     executable: Option<String>,
     token: String,
     acquired_at_unix_nanos: u128,
@@ -29,9 +28,10 @@ struct LockOwner {
 
 /// Holds exclusive ownership of one project's canonical gRPC core process.
 ///
-/// `create_new` provides the atomic winner selection. If a process crashes, a
-/// later contender verifies the recorded PID, process start time, and executable
-/// before quarantining a stale record and retrying.
+/// `create_new` provides atomic winner selection. If a process crashes, a later
+/// contender checks whether the recorded PID still exists before quarantining a
+/// stale record and retrying. PID reuse is intentionally conservative: a reused
+/// live PID blocks automatic recovery rather than allowing ownership theft.
 pub struct ProjectWriterLock {
     path: PathBuf,
     token: String,
@@ -119,9 +119,6 @@ impl Drop for ProjectWriterLock {
 impl LockOwner {
     fn for_current_process(canonical_repo_root: &Path) -> Result<Self, String> {
         let pid = std::process::id();
-        let process_start_time = process_identity(pid)
-            .map(|identity| identity.start_time)
-            .unwrap_or_default();
         let executable = std::env::current_exe()
             .ok()
             .and_then(|path| canonical_path_string(&path));
@@ -134,29 +131,12 @@ impl LockOwner {
         Ok(Self {
             version: LOCK_VERSION,
             pid,
-            process_start_time,
             executable,
-            token: format!("{pid}:{process_start_time}:{acquired_at_unix_nanos}"),
+            token: format!("{pid}:{acquired_at_unix_nanos}"),
             acquired_at_unix_nanos,
             canonical_repo_root,
         })
     }
-}
-
-#[derive(Debug)]
-struct ProcessIdentity {
-    start_time: u64,
-    executable: Option<String>,
-}
-
-fn process_identity(pid: u32) -> Option<ProcessIdentity> {
-    let mut system = System::new_all();
-    system.refresh_all();
-    let process = system.process(Pid::from_u32(pid))?;
-    Some(ProcessIdentity {
-        start_time: process.start_time(),
-        executable: process.exe().and_then(canonical_path_string),
-    })
 }
 
 fn canonical_path_string(path: &Path) -> Option<String> {
@@ -232,7 +212,7 @@ fn quarantine_if_stale(path: &Path, canonical_repo_root: &Path) -> Result<bool, 
             path.display()
         ));
     }
-    if owner_is_live(&owner) {
+    if process_is_live(owner.pid)? {
         return Ok(false);
     }
 
@@ -252,22 +232,43 @@ fn quarantine_if_stale(path: &Path, canonical_repo_root: &Path) -> Result<bool, 
     }
 }
 
-fn owner_is_live(owner: &LockOwner) -> bool {
-    let Some(identity) = process_identity(owner.pid) else {
-        return false;
-    };
-    if owner.process_start_time != 0
-        && identity.start_time != 0
-        && owner.process_start_time != identity.start_time
-    {
-        return false;
+#[cfg(unix)]
+fn process_is_live(pid: u32) -> Result<bool, String> {
+    let output = Command::new("ps")
+        .args(["-p", &pid.to_string(), "-o", "pid="])
+        .output()
+        .map_err(|error| format!("cannot probe lock owner pid {pid} with ps: {error}"))?;
+    if !output.status.success() {
+        return Ok(false);
     }
-    if let (Some(expected), Some(observed)) = (&owner.executable, &identity.executable)
-        && expected != observed
-    {
-        return false;
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    Ok(stdout
+        .split_whitespace()
+        .any(|candidate| candidate == pid.to_string()))
+}
+
+#[cfg(windows)]
+fn process_is_live(pid: u32) -> Result<bool, String> {
+    let filter = format!("PID eq {pid}");
+    let output = Command::new("tasklist")
+        .args(["/FI", &filter, "/FO", "CSV", "/NH"])
+        .output()
+        .map_err(|error| format!("cannot probe lock owner pid {pid} with tasklist: {error}"))?;
+    if !output.status.success() {
+        return Err(format!(
+            "tasklist failed while probing lock owner pid {pid}: {}",
+            String::from_utf8_lossy(&output.stderr).trim()
+        ));
     }
-    true
+    let quoted_pid = format!("\"{pid}\"");
+    Ok(String::from_utf8_lossy(&output.stdout).contains(&quoted_pid))
+}
+
+#[cfg(not(any(unix, windows)))]
+fn process_is_live(pid: u32) -> Result<bool, String> {
+    Err(format!(
+        "cannot safely recover AgilePlus core writer lock for pid {pid} on this platform"
+    ))
 }
 
 fn unix_nanos() -> Result<u128, String> {
@@ -334,7 +335,6 @@ mod tests {
         let stale = LockOwner {
             version: LOCK_VERSION,
             pid: u32::MAX,
-            process_start_time: 1,
             executable: Some("/definitely/not/a/process".into()),
             token: "stale".into(),
             acquired_at_unix_nanos: 1,
@@ -344,10 +344,12 @@ mod tests {
 
         let recovered = ProjectWriterLock::acquire(scratch.path()).expect("recover stale lock");
         assert!(recovered.path().exists());
-        let quarantined = fs::read_dir(&state)
-            .unwrap()
-            .flatten()
-            .any(|entry| entry.file_name().to_string_lossy().starts_with("core-writer.lock.stale."));
+        let quarantined = fs::read_dir(&state).unwrap().flatten().any(|entry| {
+            entry
+                .file_name()
+                .to_string_lossy()
+                .starts_with("core-writer.lock.stale.")
+        });
         assert!(quarantined, "stale ownership record must remain as evidence");
     }
 
