@@ -229,18 +229,18 @@ jobs:
           echo ""
           echo "✅ All lint checks passed (or were skipped)"
 
-    test:
-        name: ci / test
-        if: always()
-        needs: [lint]
-        runs-on: ubuntu-latest
-        steps:
-            - name: Test gate
-              env:
-                  AGGREGATE_RESULT: ${{ needs.lint.result }}
-              run: |
-                  if [ "$AGGREGATE_RESULT" != "success" ]; then
-                    echo "Aggregate gate did not pass: $AGGREGATE_RESULT"
-                    exit 1
-                  fi
-                  echo "All required stages passed via aggregate gate"
+  test:
+    name: ci / test
+    if: always()
+    needs: [lint]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test gate
+        env:
+          AGGREGATE_RESULT: ${{ needs.lint.result }}
+        run: |
+          if [ "$AGGREGATE_RESULT" != "success" ]; then
+            echo "Aggregate gate did not pass: $AGGREGATE_RESULT"
+            exit 1
+          fi
+          echo "All required stages passed via aggregate gate"
