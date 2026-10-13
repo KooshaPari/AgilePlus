@@ -500,7 +500,8 @@ export_interval_ms: 456
 
     #[test]
     fn config_error_yaml_display() {
-        let e = ConfigError::Yaml(serde_norway::from_str::<TelemetryConfig>(": bad {").unwrap_err());
+        let e =
+            ConfigError::Yaml(serde_norway::from_str::<TelemetryConfig>(": bad {").unwrap_err());
         assert!(e.to_string().contains("YAML parse error"));
     }
 
