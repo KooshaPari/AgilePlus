@@ -24,6 +24,7 @@ pub mod project;
 pub mod promotion;
 pub mod service_health;
 pub mod snapshot;
+pub mod stable_identity;
 pub mod state_machine;
 pub mod story;
 pub mod sync_mapping;
