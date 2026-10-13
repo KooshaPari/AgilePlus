@@ -1,11 +1,12 @@
 use tauri::{
+    Manager,
     menu::{Menu, MenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
-    Manager,
 };
 
 mod adrs;
 mod cli_bridge;
+mod cli_runtime;
 mod commands;
 mod crashes;
 mod db;
@@ -110,13 +111,13 @@ pub fn run() {
                         }
                         id if id.starts_with("advance:") => {
                             let slug = id["advance:".len()..].to_string();
+                            let repo_path = app.state::<AppState>().repo_path();
                             let app_handle = app.clone();
                             std::thread::spawn(move || {
-                                let result = tray::cli::run_cli_with_timeout(&[
-                                    "specify",
-                                    "--feature",
-                                    &slug,
-                                ]);
+                                let result = tray::cli::run_cli_with_timeout(
+                                    &["specify", "--feature", &slug],
+                                    std::path::Path::new(&repo_path),
+                                );
                                 match result {
                                     Ok(_) => tray::notify::notify_user(
                                         &app_handle,
