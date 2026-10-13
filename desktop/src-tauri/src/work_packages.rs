@@ -1,5 +1,9 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! Work package CRUD commands — reads from CLI's .agileplus schema.
+//! Work package projection commands for the desktop client.
+//!
+//! Reads use a query-only SQLite connection. Mutations remain registered for
+//! IPC compatibility but fail closed until they are routed through the
+//! canonical AgilePlus application/device-service boundary.
 
 use serde::{Deserialize, Serialize};
 use tauri::State;
@@ -20,6 +24,10 @@ pub struct WorkPackage {
     pub updated_at: String,
 }
 
+fn mutation_disabled<T>(operation: &str) -> Result<T, String> {
+    Err(crate::db::direct_mutation_disabled(operation))
+}
+
 #[tauri::command]
 pub fn list_work_packages(
     state: State<'_, AppState>,
@@ -38,105 +46,58 @@ pub fn list_work_packages(
         )
         .map_err(|e| e.to_string())?;
 
-    let packages = stmt
-        .query_map([feature_id], |row| {
-            Ok(WorkPackage {
-                id: row.get(0)?,
-                feature_id: row.get(1)?,
-                title: row.get(2)?,
-                state: row.get(3)?,
-                sequence: row.get(4)?,
-                acceptance_criteria: row.get(5)?,
-                pr_url: row.get(6)?,
-                pr_state: row.get(7)?,
-                created_at: row.get(8)?,
-                updated_at: row.get(9)?,
-            })
+    stmt.query_map([feature_id], |row| {
+        Ok(WorkPackage {
+            id: row.get(0)?,
+            feature_id: row.get(1)?,
+            title: row.get(2)?,
+            state: row.get(3)?,
+            sequence: row.get(4)?,
+            acceptance_criteria: row.get(5)?,
+            pr_url: row.get(6)?,
+            pr_state: row.get(7)?,
+            created_at: row.get(8)?,
+            updated_at: row.get(9)?,
         })
-        .map_err(|e| e.to_string())?
-        .filter_map(|r| r.ok())
-        .collect();
-
-    Ok(packages)
+    })
+    .map_err(|e| e.to_string())?
+    .collect::<Result<Vec<_>, _>>()
+    .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 pub fn create_work_package(
-    state: State<'_, AppState>,
-    feature_id: i64,
-    title: String,
-    acceptance_criteria: Option<String>,
+    _state: State<'_, AppState>,
+    _feature_id: i64,
+    _title: String,
+    _acceptance_criteria: Option<String>,
 ) -> Result<WorkPackage, String> {
-    let now = chrono::Utc::now().to_rfc3339();
-    let ac = acceptance_criteria.unwrap_or_default();
-
-    let id: i64 = {
-        let conn_guard = state.db_connection()?;
-        let conn = conn_guard.as_ref().ok_or("Database not initialized")?;
-        conn.execute(
-            "INSERT INTO work_packages \
-             (feature_id, title, state, sequence, acceptance_criteria, created_at, updated_at) \
-             VALUES (?1, ?2, 'planned', 0, ?3, ?4, ?5)",
-            rusqlite::params![feature_id, title, ac, now, now],
-        )
-        .map_err(|e| e.to_string())?;
-        conn.last_insert_rowid()
-    };
-
-    Ok(WorkPackage {
-        id,
-        feature_id,
-        title,
-        state: "planned".to_string(),
-        sequence: 0,
-        acceptance_criteria: ac,
-        pr_url: None,
-        pr_state: None,
-        created_at: now.clone(),
-        updated_at: now,
-    })
+    mutation_disabled("create_work_package")
 }
 
 #[tauri::command]
 pub fn update_work_package_state(
-    state: State<'_, AppState>,
-    id: i64,
-    new_state: String,
+    _state: State<'_, AppState>,
+    _id: i64,
+    _new_state: String,
 ) -> Result<WorkPackage, String> {
-    let now = chrono::Utc::now().to_rfc3339();
+    mutation_disabled("update_work_package_state")
+}
 
-    {
-        let conn_guard = state.db_connection()?;
-        let conn = conn_guard.as_ref().ok_or("Database not initialized")?;
-        conn.execute(
-            "UPDATE work_packages SET state = ?1, updated_at = ?2 WHERE id = ?3",
-            rusqlite::params![new_state, now, id],
-        )
-        .map_err(|e| e.to_string())?;
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn work_package_mutations_fail_closed() {
+        let create = mutation_disabled::<WorkPackage>("create_work_package")
+            .expect_err("direct create must be rejected");
+        assert!(create.contains("create_work_package"));
+        assert!(create.contains("device service"));
+
+        let update = mutation_disabled::<WorkPackage>("update_work_package_state")
+            .expect_err("direct state update must be rejected");
+        assert!(update.contains("update_work_package_state"));
+        assert!(update.contains("governance"));
     }
-
-    let conn_guard = state.db_connection()?;
-    let conn = conn_guard.as_ref().ok_or("Database not initialized")?;
-
-    conn.query_row(
-        "SELECT id, feature_id, title, state, sequence, acceptance_criteria,
-                pr_url, pr_state, created_at, updated_at
-         FROM work_packages WHERE id = ?1",
-        [id],
-        |row| {
-            Ok(WorkPackage {
-                id: row.get(0)?,
-                feature_id: row.get(1)?,
-                title: row.get(2)?,
-                state: row.get(3)?,
-                sequence: row.get(4)?,
-                acceptance_criteria: row.get(5)?,
-                pr_url: row.get(6)?,
-                pr_state: row.get(7)?,
-                created_at: row.get(8)?,
-                updated_at: row.get(9)?,
-            })
-        },
-    )
-    .map_err(|e| e.to_string())
 }
