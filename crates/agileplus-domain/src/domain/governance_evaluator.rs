@@ -226,10 +226,7 @@ pub fn evaluate_governance_snapshot(
             } else if expected.is_none() {
                 // No type hint: strict FR id match.
                 evidence.iter().any(|e| e.fr_id == fr)
-            } else if fr.parse::<i64>().is_ok()
-                || fr.starts_with("FR-")
-                || fr.starts_with("fr-")
-            {
+            } else if fr.parse::<i64>().is_ok() || fr.starts_with("FR-") || fr.starts_with("fr-") {
                 // Looks like a real FR id with a type narrowing: honour
                 // both the fr_id and the type.
                 evidence
@@ -275,10 +272,9 @@ pub fn evaluate_governance_snapshot(
     // refs (no DB policy, no BuiltinPolicy) are intentionally NOT recorded
     // — a known-intent ref the runtime cannot dispatch is a no-op for
     // satisfaction, not a failure.
-    let mut per_rule_passed: Vec<std::collections::BTreeSet<String>> =
-        (0..contract.rules.len())
-            .map(|_| std::collections::BTreeSet::new())
-            .collect();
+    let mut per_rule_passed: Vec<std::collections::BTreeSet<String>> = (0..contract.rules.len())
+        .map(|_| std::collections::BTreeSet::new())
+        .collect();
     let mut per_rule_failed: Vec<Vec<String>> =
         (0..contract.rules.len()).map(|_| Vec::new()).collect();
     let mut policy_results = Vec::new();
@@ -337,7 +333,7 @@ pub fn evaluate_governance_snapshot(
             // contain this policy's id, so per-rule satisfaction can be
             // derived without re-iterating the contract.
             for (rule_index, rule) in contract.rules.iter().enumerate() {
-                if rule.policy_refs.iter().any(|r| *r == policy.id) {
+                if rule.policy_refs.contains(&policy.id) {
                     if passed {
                         per_rule_passed[rule_index].insert(policy.id.to_string());
                     } else {

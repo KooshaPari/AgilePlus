@@ -108,6 +108,7 @@ pub(crate) fn evaluate_threshold(evidence: &[&Evidence], threshold: &serde_json:
 }
 
 /// Evaluate active policy rules and built-in contract policy refs against stored evidence.
+#[allow(dead_code)] // Called transitively from `evaluate_evidence` (reserved for future governance gate expansion).
 pub(crate) async fn evaluate_policies<S: StoragePort>(
     storage: &S,
     contract: &GovernanceContract,
@@ -204,6 +205,7 @@ pub(crate) async fn evaluate_policies<S: StoragePort>(
     Ok(results)
 }
 
+#[allow(dead_code)] // Called transitively from `evaluate_policies`.
 fn evaluate_evidence_policy(
     contract: &GovernanceContract,
     feature_evidence: &FeatureEvidence,
@@ -329,6 +331,7 @@ async fn load_feature_evidence<S: StoragePort>(
     })
 }
 
+#[allow(dead_code)] // Called transitively from `evaluate_policies`.
 async fn evaluate_metric_policy<S: StoragePort>(
     storage: &S,
     feature_id: i64,
@@ -356,6 +359,7 @@ async fn evaluate_metric_policy<S: StoragePort>(
     })
 }
 
+#[allow(dead_code)] // Called transitively from `evaluate_evidence_policy`.
 fn requirements_for_evidence_type(
     contract: &GovernanceContract,
     evidence_type: EvidenceType,
@@ -375,6 +379,7 @@ fn requirements_for_evidence_type(
         .collect()
 }
 
+#[allow(dead_code)] // Called transitively from `evaluate_metric_policy`.
 fn metric_value(metric: &agileplus_domain::domain::metric::Metric, name: &str) -> Option<f64> {
     let direct = match name {
         "duration_ms" => Some(metric.duration_ms as f64),

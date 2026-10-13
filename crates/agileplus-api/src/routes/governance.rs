@@ -116,7 +116,11 @@ where
     // for empty contracts that have *no* contract row at all (handled
     // upstream as a 404).
     let total_rules = evaluation.rule_results.len();
-    let satisfied_rules = evaluation.rule_results.iter().filter(|r| r.satisfied).count();
+    let satisfied_rules = evaluation
+        .rule_results
+        .iter()
+        .filter(|r| r.satisfied)
+        .count();
     let compliant = total_rules == 0 || satisfied_rules == total_rules;
     let result = if !evaluation.configured(&contract) {
         GovernanceResult::NotConfigured

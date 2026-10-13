@@ -4,10 +4,7 @@
 use crate::commands::validate::evidence::evaluate_evidence;
 use agileplus_application::use_cases::accept_feature::{AcceptFeatureCommand, accept_feature};
 use agileplus_domain::{
-    domain::{
-        state_machine::FeatureState,
-        work_package::WpState,
-    },
+    domain::{state_machine::FeatureState, work_package::WpState},
     ports::{StoragePort, VcsPort, execution::AtomicAcceptancePort},
 };
 use anyhow::{Context, Result};
@@ -126,14 +123,8 @@ where
         feature_slug: slug.clone(),
         timestamp: Utc::now(),
         overall_pass,
-        evidence_results: evidence_results
-            .into_iter()
-            .map(EvidenceCheck::from)
-            .collect(),
-        policy_results: policy_results
-            .into_iter()
-            .map(PolicyEvalResult::from)
-            .collect(),
+        evidence_results,
+        policy_results,
         missing_evidence,
         governance_exceptions,
     };

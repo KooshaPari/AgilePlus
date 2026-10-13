@@ -408,7 +408,7 @@ fn validate_rejects_governance_green_without_exact_candidate_acceptance() {
         )
         .await
         .unwrap();
-        let wp_id = create_done_wp(&storage, id, "- FR-GREEN -- validation flow").await;
+        let _wp_id = create_done_wp(&storage, id, "- FR-GREEN -- validation flow").await;
         let artifact = std::env::temp_dir().join(format!(
             "agileplus-validate-green-{}.json",
             std::process::id()
