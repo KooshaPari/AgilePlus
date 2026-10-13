@@ -105,16 +105,22 @@ where
     let evaluation = evaluate_governance(state.storage.as_ref(), &contract, feature.id)
         .await
         .map_err(ApiError::from)?;
+    // Per-rule satisfaction is now derivable from `evaluation.rule_results`
+    // — the evaluator records each rule independently so a partially
+    // satisfied contract still reports a meaningful count. Falling back to
+    // the binary pass/fail would lose that fidelity and would also mask
+    // vacuous rules (zero required_evidence, no policy_refs) from the
+    // satisfied count.
+    let total_rules = evaluation.rule_results.len();
+    let satisfied_rules = evaluation.rule_results.iter().filter(|r| r.satisfied).count();
+    let compliant = total_rules > 0 && satisfied_rules == total_rules;
     let result = if !evaluation.configured(&contract) {
         GovernanceResult::NotConfigured
-    } else if evaluation.passed(&contract) {
+    } else if compliant {
         GovernanceResult::Satisfied
     } else {
         GovernanceResult::Unsatisfied
     };
-    let compliant = result.compliant();
-    let total_rules = contract.rules.len();
-    let satisfied_rules = if compliant { total_rules } else { 0 };
 
     Ok(Json(json!({
         "feature_slug": slug,
