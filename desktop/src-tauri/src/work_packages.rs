@@ -46,23 +46,26 @@ pub fn list_work_packages(
         )
         .map_err(|e| e.to_string())?;
 
-    stmt.query_map([feature_id], |row| {
-        Ok(WorkPackage {
-            id: row.get(0)?,
-            feature_id: row.get(1)?,
-            title: row.get(2)?,
-            state: row.get(3)?,
-            sequence: row.get(4)?,
-            acceptance_criteria: row.get(5)?,
-            pr_url: row.get(6)?,
-            pr_state: row.get(7)?,
-            created_at: row.get(8)?,
-            updated_at: row.get(9)?,
+    let packages = stmt
+        .query_map([feature_id], |row| {
+            Ok(WorkPackage {
+                id: row.get(0)?,
+                feature_id: row.get(1)?,
+                title: row.get(2)?,
+                state: row.get(3)?,
+                sequence: row.get(4)?,
+                acceptance_criteria: row.get(5)?,
+                pr_url: row.get(6)?,
+                pr_state: row.get(7)?,
+                created_at: row.get(8)?,
+                updated_at: row.get(9)?,
+            })
         })
-    })
-    .map_err(|e| e.to_string())?
-    .collect::<Result<Vec<_>, _>>()
-    .map_err(|e| e.to_string())
+        .map_err(|e| e.to_string())?
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|e| e.to_string())?;
+
+    Ok(packages)
 }
 
 #[tauri::command]

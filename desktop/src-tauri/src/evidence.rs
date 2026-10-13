@@ -39,19 +39,22 @@ pub fn list_evidence(state: State<'_, AppState>, feature_id: i64) -> Result<Vec<
         )
         .map_err(|e| e.to_string())?;
 
-    stmt.query_map([feature_id], |row| {
-        Ok(Evidence {
-            id: row.get(0)?,
-            wp_id: row.get(1)?,
-            fr_id: row.get(2)?,
-            evidence_type: row.get(3)?,
-            artifact_path: row.get(4)?,
-            created_at: row.get(5)?,
+    let evidence = stmt
+        .query_map([feature_id], |row| {
+            Ok(Evidence {
+                id: row.get(0)?,
+                wp_id: row.get(1)?,
+                fr_id: row.get(2)?,
+                evidence_type: row.get(3)?,
+                artifact_path: row.get(4)?,
+                created_at: row.get(5)?,
+            })
         })
-    })
-    .map_err(|e| e.to_string())?
-    .collect::<Result<Vec<_>, _>>()
-    .map_err(|e| e.to_string())
+        .map_err(|e| e.to_string())?
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|e| e.to_string())?;
+
+    Ok(evidence)
 }
 
 #[tauri::command]
