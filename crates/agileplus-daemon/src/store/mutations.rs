@@ -24,7 +24,7 @@ impl DeviceRegistry {
         &mut self,
         project_root: &Path,
     ) -> Result<RegisteredProject, RegistryError> {
-        self.register_project_with_uid(Uuid::new_v4(), project_root)
+        self.register_project_with_uid(Uuid::now_v7(), project_root)
     }
 
     /// Register a canonical Git project with a caller-provided stable identity.
