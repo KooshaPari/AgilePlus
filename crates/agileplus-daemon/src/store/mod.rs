@@ -11,9 +11,9 @@ use uuid::Uuid;
 use crate::model::{RegisteredProject, RegistryError, RegistrySummary};
 use crate::schema::{INITIAL_SCHEMA, REGISTRY_FILE_NAME, SCHEMA_VERSION};
 use crate::support::{
-    get_project_from_connection, harden_registry_permissions, list_projects_from_connection,
-    prepare_registry_directory, read_revision, validate_existing_registry_file,
-    validate_integrity,
+    get_project_from_connection, harden_registry_directory, harden_registry_permissions,
+    list_projects_from_connection, prepare_registry_directory, read_revision,
+    validate_existing_registry_file, validate_integrity,
 };
 
 const SQLITE_BUSY_TIMEOUT: Duration = Duration::from_secs(5);
@@ -34,14 +34,21 @@ impl DeviceRegistry {
     /// Returns an error when the platform data directory is unavailable or the
     /// registry cannot be opened and validated.
     pub fn open_default() -> Result<Self, RegistryError> {
-        Self::open(default_registry_path()?)
+        let path = default_registry_path()?;
+        prepare_registry_directory(&path)?;
+        let parent = path
+            .parent()
+            .ok_or_else(|| RegistryError::Corrupt("default registry has no parent".into()))?;
+        harden_registry_directory(parent)?;
+        Self::open(path)
     }
 
     /// Open or initialize a registry at an explicit path.
     ///
     /// Existing malformed, incomplete, symlinked, or unsupported registries are
     /// rejected without replacement. A missing file is initialized atomically by
-    /// SQLite transactions.
+    /// SQLite transactions. Explicit registry paths never change permissions on
+    /// an already existing parent directory.
     ///
     /// # Errors
     ///
