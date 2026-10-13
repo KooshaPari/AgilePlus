@@ -721,14 +721,13 @@ impl IntentGraph {
         let source_node = node_map.get(&edge.source)?;
         let target_node = node_map.get(&edge.target)?;
 
-        // orphaned edge check
-        if source_node.id != edge.source || target_node.id != edge.target {
-            // This path is unreachable because we used the map, but keep for safety.
-            return Some(ValidationError::OrphanedEdge {
-                edge_id: edge.id.clone(),
-                node_id: edge.source.clone(),
-            });
-        }
+        // Invariant: `source_node`/`target_node` are looked up by `edge.source`/`edge.target`,
+        // so their `id` fields are guaranteed to match the lookup keys. We keep a
+        // debug-assert rather than a runtime branch because the prior `if` block
+        // was flagged by mutation testing as untestable dead code (no input can
+        // ever diverge the map-key identity from the node id).
+        debug_assert_eq!(source_node.id, edge.source);
+        debug_assert_eq!(target_node.id, edge.target);
 
         // meta source must be non-empty
         if edge.meta.source.trim().is_empty() {
