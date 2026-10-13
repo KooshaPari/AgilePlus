@@ -23,6 +23,12 @@ jobs:
         permissions:
             contents: read
             checks: write
+            # rustsec/audit-check@v2 creates one GitHub issue per advisory
+            # (incl. informational) when triggered on `schedule:`. Without
+            # `issues: write` the POST /repos/.../issues call returns
+            # "Resource not accessible by integration" and fails the step
+            # even though `cargo audit` itself reports "No vulnerabilities".
+            issues: write
         steps:
             - uses: actions/checkout@v7
             - uses: rustsec/audit-check@v2.0.0
