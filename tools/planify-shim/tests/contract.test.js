@@ -124,6 +124,7 @@ test("HTTP fixture: real read mapping, no writable or phantom-success endpoints"
     assert.equal((await result.json()).error, "read_only");
   }
   api.kill();
+  await once(api, "exit"); // ensure shutdown before asserting the outage response
   const downRes = await fetch(`${origin}/api/workspaces/agileplus/projects/`);
   assert.equal(downRes.status, 502, "backend outage must not show a successful empty board");
 });
