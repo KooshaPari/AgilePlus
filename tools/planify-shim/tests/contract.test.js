@@ -6,7 +6,7 @@ import { createServer } from "node:net";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 import { assertFeatures, assertWorkPackages } from "../src/validate.js";
-import { featureToProject, wpToIssue, stateGroup, uuidFrom } from "../src/map.js";
+import { featureToProject, wpToIssue, statesForProject, stateGroup, uuidFrom } from "../src/map.js";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const feature = { id: 1, slug: "example-feature", name: "Example", state: "Implementing" };
@@ -26,6 +26,16 @@ test("stable Plane-compatible IDs and explicit AgilePlus state mapping", () => {
   const issue = wpToIssue({ ...wp, acceptance_criteria: "<script>x</script>" }, project);
   assert.equal(issue.state__group, "started");
   assert.equal(issue.completed_at, null);
+  const states = statesForProject(project.id);
+  const byName = new Map(states.map((s) => [s.name, s]));
+  assert.equal(states.length, 8);
+  assert.equal(issue.state_id, byName.get("In Review").id);
+  const blocked = wpToIssue({ ...wp, state: "Blocked" }, project);
+  assert.equal(blocked.state_id, byName.get("Blocked").id);
+  const done = wpToIssue({ ...wp, state: "Done" }, project);
+  assert.equal(done.state_id, byName.get("Work Package Done").id);
+  assert.notEqual(done.state_id, byName.get("Shipped Feature").id);
+  assert.equal(done._agileplus_product_acceptance, "not_inferred");
   assert.ok(!issue.description_html.includes("<script>"));
 });
 
@@ -109,6 +119,13 @@ test("HTTP fixture: real read mapping, no writable or phantom-success endpoints"
   assert.equal(issues.total_count, 2);
   assert.ok(issues.results.some((x) => x.state__group === "completed"));
   assert.ok(issues.results.some((x) => x.state__group === "started"));
+  const states = await (await fetch(`${origin}/api/workspaces/agileplus/projects/${p.id}/states/`)).json();
+  const wpDone = states.find((s) => s.name === "Work Package Done");
+  const shipped = states.find((s) => s.name === "Shipped Feature");
+  assert.ok(wpDone && shipped);
+  assert.notEqual(wpDone.id, shipped.id);
+  assert.ok(issues.results.some((issue) => issue.state_id === wpDone.id));
+  assert.ok(issues.results.every((issue) => issue.state_id !== shipped.id));
   for (const path of [
     "/api/workspaces/unknown/projects/",
     "/api/workspaces/agileplus/projects/no-such-project/states/",
