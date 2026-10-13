@@ -93,13 +93,9 @@ jobs:
 
                   git fetch --no-tags --depth=1 origin "$base_ref"
 
-<<<<<<< HEAD
                   # cargo-dist owns release.yml byte-for-byte; Release CI checks
                   # it with the pinned generator. Prettier would invalidate it.
                   files_arg="$(cd "$GITHUB_WORKSPACE" && git diff --diff-filter=ACMR --name-only FETCH_HEAD HEAD -- '*.md' '*.yml' '*.yaml' '*.json' '*.jsonc' '*.mdx' ':!.github/workflows/release.yml')"
-=======
-                  files_arg="$(cd "$GITHUB_WORKSPACE" && git diff --diff-filter=ACMR --name-only FETCH_HEAD HEAD -- '*.md' '*.yml' '*.yaml' '*.json' '*.jsonc' '*.mdx' ':(exclude).github/workflows/release.yml')"
->>>>>>> origin/fix/journey-acceptance-20261008
 
                   if [ -z "$files_arg" ]; then
                     echo "No changed Prettier-supported files to check."

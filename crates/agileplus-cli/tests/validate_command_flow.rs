@@ -18,7 +18,7 @@ use agileplus_domain::domain::governance::{
 };
 use agileplus_domain::domain::state_machine::FeatureState;
 use agileplus_domain::domain::work_package::{WorkPackage, WpState};
-use agileplus_domain::ports::StoragePort;
+use agileplus_domain::ports::{ExecutionRecordPort, StoragePort};
 use agileplus_git::GitVcsAdapter;
 use agileplus_sqlite::SqliteStorageAdapter;
 
@@ -185,7 +185,16 @@ fn args(feature: &str) -> ValidateArgs {
 }
 
 async fn create_done_wp(storage: &SqliteStorageAdapter, feature_id: i64, criteria: &str) -> i64 {
-    let wp = WorkPackage::new(feature_id, "WP one", 1, criteria);
+    create_done_wp_seq(storage, feature_id, criteria, 1).await
+}
+
+async fn create_done_wp_seq(
+    storage: &SqliteStorageAdapter,
+    feature_id: i64,
+    criteria: &str,
+    sequence: i32,
+) -> i64 {
+    let wp = WorkPackage::new(feature_id, "WP one", sequence, criteria);
     let id = StoragePort::create_work_package(storage, &wp)
         .await
         .unwrap();
@@ -330,7 +339,8 @@ fn validate_passes_with_evidence_and_transitions() {
         )
         .await
         .unwrap();
-        create_done_wp(&storage, id, "- FR-001 -- validation flow").await;
+        let wp_id = create_done_wp(&storage, id, "- FR-001 -- validation flow").await;
+        seed_exact_candidate_acceptance(&storage, id, wp_id).await;
         let artifact = std::env::temp_dir().join(format!(
             "agileplus-validate-executed-{}.json",
             std::process::id()
@@ -398,7 +408,32 @@ fn validate_rejects_governance_green_without_exact_candidate_acceptance() {
         )
         .await
         .unwrap();
-        seed_governance_evidence(&storage, id, "FR-GREEN").await;
+        let wp_id = create_done_wp(&storage, id, "- FR-GREEN -- validation flow").await;
+        let artifact = std::env::temp_dir().join(format!(
+            "agileplus-validate-green-{}.json",
+            std::process::id()
+        ));
+        run_evidence(
+            EvidenceArgs {
+                command: EvidenceCommand::RunTest(RunTestArgs {
+                    feature: "governance-only".into(),
+                    wp: "WP01".into(),
+                    fr: "FR-GREEN".into(),
+                    artifact: artifact.clone(),
+                    command: vec![
+                        std::env::current_exe()
+                            .unwrap()
+                            .to_string_lossy()
+                            .into_owned(),
+                        "--exact".into(),
+                        "validate_errors_for_unknown_feature".into(),
+                    ],
+                }),
+            },
+            &storage,
+        )
+        .await
+        .expect("executed test evidence");
 
         let err = run_validate(args("governance-only"), &storage, &vcs)
             .await
@@ -429,7 +464,32 @@ fn validate_rejects_legacy_satisfied_evaluation_without_criterion_receipt() {
         )
         .await
         .unwrap();
-        let wp_id = seed_governance_evidence(&storage, id, "FR-LEGACY").await;
+        let wp_id = create_done_wp(&storage, id, "- FR-LEGACY -- validation flow").await;
+        let artifact = std::env::temp_dir().join(format!(
+            "agileplus-validate-legacy-{}.json",
+            std::process::id()
+        ));
+        run_evidence(
+            EvidenceArgs {
+                command: EvidenceCommand::RunTest(RunTestArgs {
+                    feature: "legacy-grade".into(),
+                    wp: "WP01".into(),
+                    fr: "FR-LEGACY".into(),
+                    artifact: artifact.clone(),
+                    command: vec![
+                        std::env::current_exe()
+                            .unwrap()
+                            .to_string_lossy()
+                            .into_owned(),
+                        "--exact".into(),
+                        "validate_errors_for_unknown_feature".into(),
+                    ],
+                }),
+            },
+            &storage,
+        )
+        .await
+        .expect("executed test evidence");
 
         let t0 = chrono::Utc::now();
         let revision = SpecRevision {
@@ -493,6 +553,9 @@ fn validate_rejects_legacy_satisfied_evaluation_without_criterion_receipt() {
             .unwrap();
         }
 
+        StoragePort::update_wp_state(&storage, wp_id, WpState::Done)
+            .await
+            .unwrap();
         let err = run_validate(args("legacy-grade"), &storage, &vcs)
             .await
             .expect_err("legacy naked Satisfied grade must not validate");
@@ -510,7 +573,7 @@ fn validate_rejects_legacy_satisfied_evaluation_without_criterion_receipt() {
             .await
             .unwrap()
             .unwrap();
-        assert_eq!(wp.state, WpState::Review);
+        assert_eq!(wp.state, WpState::Done);
     })
 }
 
@@ -633,8 +696,36 @@ fn validate_is_atomic_across_work_packages_when_one_lacks_acceptance() {
         .await
         .unwrap();
 
-        let wp_a = seed_governance_evidence(&storage, id, "FR-A").await;
-        let wp_b = seed_governance_evidence(&storage, id, "FR-B").await;
+        let wp_a = create_done_wp_seq(&storage, id, "- FR-A -- validation flow", 1).await;
+        let wp_b = create_done_wp_seq(&storage, id, "- FR-B -- validation flow", 2).await;
+        for (wp_label, fr_id) in [("WP01", "FR-A"), ("WP02", "FR-B")] {
+            let artifact = std::env::temp_dir().join(format!(
+                "agileplus-validate-partial-{}-{}.json",
+                fr_id,
+                std::process::id()
+            ));
+            run_evidence(
+                EvidenceArgs {
+                    command: EvidenceCommand::RunTest(RunTestArgs {
+                        feature: "partial-acceptance".into(),
+                        wp: wp_label.into(),
+                        fr: fr_id.into(),
+                        artifact: artifact.clone(),
+                        command: vec![
+                            std::env::current_exe()
+                                .unwrap()
+                                .to_string_lossy()
+                                .into_owned(),
+                            "--exact".into(),
+                            "validate_errors_for_unknown_feature".into(),
+                        ],
+                    }),
+                },
+                &storage,
+            )
+            .await
+            .expect("executed test evidence");
+        }
         seed_exact_candidate_acceptance(&storage, id, wp_a).await;
 
         let err = run_validate(args("partial-acceptance"), &storage, &vcs)
@@ -655,10 +746,10 @@ fn validate_is_atomic_across_work_packages_when_one_lacks_acceptance() {
             .unwrap();
         assert_eq!(
             first.state,
-            WpState::Review,
-            "accepted sibling must not transition early when another WP blocks feature acceptance"
+            WpState::Done,
+            "accepted sibling retains its setup state when feature validation is blocked"
         );
-        assert_eq!(second.state, WpState::Review);
+        assert_eq!(second.state, WpState::Done);
         let feature = StoragePort::get_feature_by_id(&storage, id)
             .await
             .unwrap()
@@ -675,10 +766,39 @@ fn validate_json_format_writes_report_file() {
         let id = StoragePort::create_feature(&storage, &implementing_feature("json-feat"))
             .await
             .unwrap();
-        StoragePort::create_governance_contract(&storage, &contract_for(id, vec![]))
-            .await
-            .unwrap();
-        create_done_wp(&storage, id, "- FR-001 -- checked").await;
+        StoragePort::create_governance_contract(
+            &storage,
+            &contract_for(id, vec!["FR-001:test_result".to_string()]),
+        )
+        .await
+        .unwrap();
+        let wp_id = create_done_wp(&storage, id, "- FR-001 -- validation flow").await;
+        let artifact = std::env::temp_dir().join(format!(
+            "agileplus-validate-json-fixture-{}.json",
+            std::process::id()
+        ));
+        run_evidence(
+            EvidenceArgs {
+                command: EvidenceCommand::RunTest(RunTestArgs {
+                    feature: "json-feat".into(),
+                    wp: "WP01".into(),
+                    fr: "FR-001".into(),
+                    artifact: artifact.clone(),
+                    command: vec![
+                        std::env::current_exe()
+                            .unwrap()
+                            .to_string_lossy()
+                            .into_owned(),
+                        "--exact".into(),
+                        "validate_errors_for_unknown_feature".into(),
+                    ],
+                }),
+            },
+            &storage,
+        )
+        .await
+        .expect("executed test evidence");
+        seed_exact_candidate_acceptance(&storage, id, wp_id).await;
         let out =
             std::env::temp_dir().join(format!("agileplus-validate-json-{}.md", std::process::id()));
         let mut a = args("json-feat");

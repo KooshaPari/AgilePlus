@@ -205,7 +205,7 @@ where
     };
 
     // Process WPs
-    let completed: HashSet<i64> = all_wps
+    let mut completed: HashSet<i64> = all_wps
         .iter()
         .filter(|wp| wp.state == WpState::Done)
         .map(|wp| wp.id)
@@ -485,120 +485,6 @@ where
 
         match outcome {
             ReviewOutcome::Approved => {
-<<<<<<< HEAD
-                println!("  WP{:02} approved!", wp.sequence);
-                let evaluated_at = Utc::now();
-                // Resolve the immutable git commit currently checked out by the
-                // WP worktree. If the adapter cannot resolve it, keep the job
-                // fallback explicit rather than pretending it is a commit.
-                let candidate_ref = match vcs
-                    .list_worktrees()
-                    .await
-                    .ok()
-                    .and_then(|items| items.into_iter().find(|w| w.path == worktree_path))
-                    .map(|w| format!("git:{}", w.commit))
-                {
-                    Some(candidate_ref) => candidate_ref,
-                    None => {
-                        let failed_at = Utc::now();
-                        storage
-                            .create_evaluation(&Evaluation {
-                                id: format!(
-                                    "evaluation:{}:{}",
-                                    wp.id,
-                                    failed_at.timestamp_micros()
-                                ),
-                                assignment_id: assignment_id.clone(),
-                                attempt_id: Some(attempt_id.clone()),
-                                candidate_ref: format!("unresolved:job:{job_id}"),
-                                evaluator_id: "legacy-review-loop".into(),
-                                evaluator_version: "v1".into(),
-                                result: EvaluationResult::Unknown,
-                                evidence_refs: vec![],
-                                started_at: now,
-                                finished_at: failed_at,
-                            })
-                            .await
-                            .context("persisting unresolved-candidate evaluation")?;
-                        storage
-                            .update_attempt_runtime(
-                                &attempt_id,
-                                AttemptStatus::Failed,
-                                Some(&job_id),
-                                None,
-                                Some("candidate_unresolved"),
-                                Some(failed_at),
-                            )
-                            .await
-                            .context("marking unresolved-candidate attempt failed")?;
-                        storage
-                            .update_wp_state(wp.id, WpState::Blocked)
-                            .await
-                            .context("blocking WP with unresolved candidate")?;
-                        anyhow::bail!(
-                            "WP{:02} review approved but exact Git candidate could not be resolved",
-                            wp.sequence
-                        );
-                    }
-                };
-                let evaluation_id =
-                    format!("evaluation:{}:{}", wp.id, evaluated_at.timestamp_micros());
-                storage
-                    .create_evaluation(&Evaluation {
-                        id: evaluation_id.clone(),
-                        assignment_id: assignment_id.clone(),
-                        attempt_id: Some(attempt_id.clone()),
-                        candidate_ref: candidate_ref.clone(),
-                        evaluator_id: "legacy-review-loop".into(),
-                        evaluator_version: "v1".into(),
-                        result: EvaluationResult::Inconclusive,
-                        evidence_refs: vec![],
-                        started_at: now,
-                        finished_at: evaluated_at,
-                    })
-                    .await
-                    .context("persisting review evaluation")?;
-                storage
-                    .update_attempt_runtime(
-                        &attempt_id,
-                        AttemptStatus::Completed,
-                        Some(&job_id),
-                        Some(&candidate_ref),
-                        None,
-                        Some(evaluated_at),
-                    )
-                    .await
-                    .context("marking attempt completed")?;
-                storage
-                    .update_wp_state(wp.id, WpState::Review)
-                    .await
-                    .context("transitioning WP to Review")?;
-
-                // Review approval proves that the review loop completed, not that
-                // mandatory correctness criteria and governance have accepted the
-                // exact candidate. Keep the candidate and attempt durable, but
-                // leave the WP in Review until an independent candidate-bound
-                // evaluator can award terminal acceptance.
-                let prev_hash = get_latest_hash(storage, feature.id).await;
-                let mut audit = AuditEntry {
-                    id: 0,
-                    feature_id: feature.id,
-                    wp_id: Some(wp.id),
-                    timestamp: Utc::now(),
-                    actor: "agent".into(),
-                    transition: format!(
-                        "WP{:02} Doing -> Review (candidate produced; independent evaluation pending)",
-                        wp.sequence
-                    ),
-                    // Candidate identity is persisted on Attempt/Evaluation. Audit evidence_refs
-                    // only accepts persisted EvidenceRef identities, so do not forge one from a
-                    // Git candidate string before a real evidence record exists.
-                    evidence_refs: vec![],
-                    prev_hash,
-                    hash: [0u8; 32],
-                    event_id: None,
-                    archived_to: None,
-=======
                 // The scaffold review loop reports agent completion, not
                 // authenticated CI/reviewer approval. Apply the same contract
                 // gates as the public transition command before claiming Done.
@@ -612,7 +498,6 @@ where
                         wp.sequence
                     );
                     continue;
->>>>>>> origin/fix/journey-acceptance-20261008
                 };
                 let required_transitions = [
                     format!("WP{:02}: Doing -> Review", wp.sequence),
@@ -653,7 +538,7 @@ where
 
                 println!(
                     "  WP{:02} candidate {} is in Review; review approval is not terminal acceptance.",
-                    wp.sequence, candidate_ref
+                    wp.sequence, job_id
                 );
             }
             ReviewOutcome::MaxCyclesReached {
