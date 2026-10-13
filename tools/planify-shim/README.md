@@ -47,8 +47,17 @@ key) so the same feature/work-package always maps to the same id.
 
 Auth is a **local-review stub**: a fixed CSRF token and a synthetic "me" user
 are returned so the SPA treats the session as authenticated. The shim itself
-authenticates to AgilePlus with `X-API-Key`. Writes are out of scope.
-Any unmapped read returns `[]` (200) to avoid the SPA's 401 redirect loop.
+authenticates to AgilePlus with `X-API-Key`. **This is never an authentication
+gateway and must not be exposed beyond loopback.** It binds to `127.0.0.1`
+only, requires an explicit `AGILEPLUS_API_KEY`, times out upstream calls,
+rejects every non-read request with HTTP 405, and returns HTTP 404 for
+unimplemented reads instead of disguising missing functionality as empty data.
+Malformed upstream features or work packages result in HTTP 502. Production
+identity and authorization integration remains an unsatisfied adoption gate.
+
+Local smoke/contract tests: `npm install --no-audit --no-fund`, then `npm test`.
+Tests use a synthetic AgilePlus HTTP fixture and never write to real AgilePlus,
+Plane, Planify or desk databases.
 
 ## Run sequence + ports
 
@@ -79,7 +88,7 @@ state columns.
 | --- | --- | --- |
 | `PORT` | `8000` | shim listen port (must match `VITE_API_BASE_URL`) |
 | `AGILEPLUS_API_URL` | `http://localhost:4000` | AgilePlus Axum base URL |
-| `AGILEPLUS_API_KEY` | `dev-api-key` | key sent as `X-API-Key` to AgilePlus |
+| `AGILEPLUS_API_KEY` | **required** | local test key sent as `X-API-Key`; no implicit credential |
 | `WEB_ORIGIN` | `http://localhost:4400` | allowed credentialed CORS origin |
 
 ## What renders / what doesn't
@@ -93,6 +102,7 @@ Plane state groups).
 - Writes (create/update/transition) are not mapped — board is read-only.
 - Labels, cycles, modules, members beyond `me`, comments, attachments return
   empty stubs.
-- Auth is a stub (no real login/session); not for shared/prod use.
+- Auth is a stub (no real login/session); **loopback-only; not for shared/prod use**.
+- Unimplemented endpoints return 404, not synthetic success; frontend gaps stay visible.
 - One synthetic workspace; AgilePlus modules/projects hierarchy is flattened
   to Feature=Project.

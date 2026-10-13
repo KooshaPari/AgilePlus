@@ -45,6 +45,7 @@ const STATE_GROUP = {
   // work-package states (best-effort; unknown -> unstarted)
   todo: "unstarted",
   doing: "started",
+  review: "started",
   done: "completed",
   blocked: "started",
 };
@@ -58,7 +59,9 @@ const GROUP_COLOR = {
 };
 
 export function stateGroup(name) {
-  return STATE_GROUP[String(name || "").toLowerCase()] || "unstarted";
+  const state = String(name || "").toLowerCase();
+  if (!Object.hasOwn(STATE_GROUP, state)) throw new Error(`Unrecognized AgilePlus state: ${state}`);
+  return STATE_GROUP[state];
 }
 
 /** Build the canonical, fixed set of board columns (states) for a project. */
@@ -121,6 +124,7 @@ export function featureToProject(f) {
     sort_order: f.id ?? 0,
     estimate: null,
     _agileplus_slug: f.slug,
+    _agileplus_id: f.id,
   };
 }
 
