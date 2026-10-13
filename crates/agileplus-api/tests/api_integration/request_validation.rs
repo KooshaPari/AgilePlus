@@ -72,6 +72,13 @@ async fn malformed_request_without_credentials_is_401() {
 
 // ── CORS ─────────────────────────────────────────────────────────────────────
 
+// CORS is deny-by-default: without `AGILEPLUS_ALLOWED_ORIGINS`, a cross-origin
+// request is served but the response carries NO `Access-Control-Allow-Origin`
+// header, which browsers interpret as a refusal to share the response with
+// the requesting origin. The simple-request test below asserts that exact
+// shape; the preflight test asserts that the CORS layer still answers with a
+// permissive status (200) so the browser sees a structured refusal rather
+// than a bare 401/403 from auth middleware.
 #[tokio::test]
 async fn cors_allow_origin_is_sent_for_simple_requests() {
     let server = setup_test_server().await;
@@ -80,19 +87,18 @@ async fn cors_allow_origin_is_sent_for_simple_requests() {
         .add_header("origin", "https://example.com")
         .await;
     resp.assert_status_ok();
-    assert_eq!(
-        resp.headers()
-            .get("access-control-allow-origin")
-            .expect("CORS layer should answer a cross-origin request")
-            .to_str()
-            .expect("header is ascii"),
-        "*",
-        "the API is configured permissive"
+    assert!(
+        resp.headers().get("access-control-allow-origin").is_none(),
+        "deny-by-default: no ACAO header without AGILEPLUS_ALLOWED_ORIGINS, got: {:?}",
+        resp.headers().get("access-control-allow-origin")
     );
 }
 
 /// Preflight requests carry no credentials; the CORS layer must answer them
-/// itself rather than letting the auth middleware reject the browser.
+/// itself rather than letting the auth middleware reject the browser. Under
+/// the deny-by-default policy the response is still 200 but it does not
+/// advertise any allowed origin, so the browser will not let the caller read
+/// the response.
 #[tokio::test]
 async fn cors_preflight_is_answered_without_credentials() {
     let server = setup_test_server().await;
@@ -108,17 +114,15 @@ async fn cors_preflight_is_answered_without_credentials() {
         "preflight must not be rejected by auth, got: {}",
         resp.status_code()
     );
-    assert_eq!(
-        resp.headers()
-            .get("access-control-allow-origin")
-            .expect("preflight response advertises the allowed origin")
-            .to_str()
-            .expect("header is ascii"),
-        "*"
+    assert!(
+        resp.headers().get("access-control-allow-origin").is_none(),
+        "deny-by-default: preflight does not advertise an origin, got: {:?}",
+        resp.headers().get("access-control-allow-origin")
     );
     assert!(
-        resp.headers().get("access-control-allow-methods").is_some(),
-        "preflight response should advertise the allowed methods"
+        resp.headers().get("access-control-allow-methods").is_none(),
+        "deny-by-default: preflight does not advertise methods, got: {:?}",
+        resp.headers().get("access-control-allow-methods")
     );
 }
 

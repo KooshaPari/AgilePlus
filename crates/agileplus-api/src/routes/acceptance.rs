@@ -142,7 +142,18 @@ where
 
 fn domain_error(error: DomainError) -> HttpError {
     match error {
-        DomainError::Validation(message) | DomainError::Conflict(message) => (
+        // A failed precondition (e.g. "WP01 has no Evaluation") is a
+        // semantic unprocessability — the request was well-formed, the
+        // caller is authenticated, but the live work-package state is
+        // not in a shape the acceptance use case can accept. 422 is the
+        // right code: the request cannot succeed until the precondition
+        // is satisfied. Conflict (409) is reserved for genuine state
+        // collisions (concurrent writes, version mismatches).
+        DomainError::Validation(message) => (
+            StatusCode::UNPROCESSABLE_ENTITY,
+            Json(json!({"error":"acceptance_rejected", "message":message})),
+        ),
+        DomainError::Conflict(message) => (
             StatusCode::CONFLICT,
             Json(json!({"error":"acceptance_rejected", "message":message})),
         ),

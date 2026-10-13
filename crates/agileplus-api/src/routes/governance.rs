@@ -110,10 +110,14 @@ where
     // satisfied contract still reports a meaningful count. Falling back to
     // the binary pass/fail would lose that fidelity and would also mask
     // vacuous rules (zero required_evidence, no policy_refs) from the
-    // satisfied count.
+    // satisfied count. A contract with zero rules is treated as vacuously
+    // satisfied per the documented contract ("no rules → all satisfied");
+    // the `result` field still distinguishes "not configured" semantics
+    // for empty contracts that have *no* contract row at all (handled
+    // upstream as a 404).
     let total_rules = evaluation.rule_results.len();
     let satisfied_rules = evaluation.rule_results.iter().filter(|r| r.satisfied).count();
-    let compliant = total_rules > 0 && satisfied_rules == total_rules;
+    let compliant = total_rules == 0 || satisfied_rules == total_rules;
     let result = if !evaluation.configured(&contract) {
         GovernanceResult::NotConfigured
     } else if compliant {

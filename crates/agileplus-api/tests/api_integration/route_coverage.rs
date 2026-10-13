@@ -243,9 +243,33 @@ create_feature_state_test!(coverage_create_feature_specified, "specified");
 create_feature_state_test!(coverage_create_feature_researched, "researched");
 create_feature_state_test!(coverage_create_feature_planned, "planned");
 create_feature_state_test!(coverage_create_feature_implementing, "implementing");
-create_feature_state_test!(coverage_create_feature_validated, "validated");
-create_feature_state_test!(coverage_create_feature_shipped, "shipped");
 create_feature_state_test!(coverage_create_feature_retrospected, "retrospected");
+
+// `validated` and `shipped` are terminal states and must NOT be assignable
+// at creation. The canonical path is the acceptance/promotion use case. The
+// positive macro above skips them on purpose; this negative test covers
+// both terminal values to keep the full state enum represented in the
+// route-coverage suite.
+#[tokio::test]
+async fn coverage_create_feature_rejects_terminal_states() {
+    for terminal in ["validated", "shipped"] {
+        let server = setup_test_server().await;
+        let resp = server
+            .post("/api/v1/features")
+            .add_header(KEY, TEST_API_KEY)
+            .json(&serde_json::json!({ "title": "State Feature", "state": terminal }))
+            .await;
+        resp.assert_status(StatusCode::BAD_REQUEST);
+        let body: serde_json::Value = resp.json();
+        assert!(
+            body["error"]
+                .as_str()
+                .unwrap_or("")
+                .contains("terminal feature states"),
+            "expected terminal-state rejection, got: {body}"
+        );
+    }
+}
 
 #[tokio::test]
 async fn coverage_create_feature_defaults_to_created() {
