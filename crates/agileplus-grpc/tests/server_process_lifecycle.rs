@@ -262,7 +262,10 @@ async fn second_core_for_same_project_is_rejected_then_restart_succeeds() {
     await_listening(&mut restarted, restart_port).await;
     restarted.terminate();
     let stopped = restarted.wait_for_exit(Duration::from_secs(15));
-    assert!(stopped.success(), "the project should restart after lock release");
+    assert!(
+        stopped.success(),
+        "the project should restart after lock release"
+    );
 
     let _ = std::fs::remove_dir_all(&root);
 }
