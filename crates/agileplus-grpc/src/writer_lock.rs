@@ -234,8 +234,9 @@ fn quarantine_if_stale(path: &Path, canonical_repo_root: &Path) -> Result<bool, 
 
 #[cfg(unix)]
 fn process_is_live(pid: u32) -> Result<bool, String> {
+    let pid_text = pid.to_string();
     let output = Command::new("ps")
-        .args(["-p", &pid.to_string(), "-o", "pid="])
+        .args(["-p", &pid_text, "-o", "pid="])
         .output()
         .map_err(|error| format!("cannot probe lock owner pid {pid} with ps: {error}"))?;
     if !output.status.success() {
@@ -244,7 +245,7 @@ fn process_is_live(pid: u32) -> Result<bool, String> {
     let stdout = String::from_utf8_lossy(&output.stdout);
     Ok(stdout
         .split_whitespace()
-        .any(|candidate| candidate == pid.to_string()))
+        .any(|candidate| candidate == pid_text.as_str()))
 }
 
 #[cfg(windows)]
@@ -350,7 +351,10 @@ mod tests {
                 .to_string_lossy()
                 .starts_with("core-writer.lock.stale.")
         });
-        assert!(quarantined, "stale ownership record must remain as evidence");
+        assert!(
+            quarantined,
+            "stale ownership record must remain as evidence"
+        );
     }
 
     #[test]
