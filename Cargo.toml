@@ -185,7 +185,7 @@ reqwest = { version = "0.12", features = ["json"] }
 criterion = "0.8"
 
 # Utils
-uuid = { version = "1", features = ["v4", "serde"] }
+uuid = { version = "1", features = ["v4", "v7", "serde"] }
 rand = "0.10"
 toml = "1.1"
 dirs-next = "2"
