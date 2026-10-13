@@ -114,6 +114,10 @@ const MIGRATIONS: &[(&str, &str)] = &[
         include_str!("030_atomic_acceptance.sql"),
     ),
     ("031_promotion_saga", include_str!("031_promotion_saga.sql")),
+    (
+        "032_stable_entity_ids",
+        include_str!("032_stable_entity_ids.sql"),
+    ),
 ];
 
 fn find_up_body_start(sql: &str) -> Option<usize> {
