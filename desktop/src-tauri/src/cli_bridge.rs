@@ -6,7 +6,7 @@ use std::path::PathBuf;
 use std::time::Duration;
 use tauri::State;
 
-use crate::{AppState, cli_runtime};
+use crate::{cli_runtime, AppState};
 
 /// Read command timeout: 30 seconds.
 const READ_TIMEOUT: Duration = Duration::from_secs(30);

@@ -1,7 +1,7 @@
 use tauri::{
-    Manager,
     menu::{Menu, MenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
+    Manager,
 };
 
 mod adrs;

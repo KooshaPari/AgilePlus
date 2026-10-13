@@ -334,12 +334,8 @@ mod tests {
     fn path_search_finds_installed_cli() {
         let scratch = Scratch::new("path-search");
         let expected = scratch.executable("");
-        let resolved = resolve_agileplus_binary_from(
-            None,
-            None,
-            Some(scratch.path().as_os_str()),
-        )
-        .expect("resolve PATH binary");
+        let resolved = resolve_agileplus_binary_from(None, None, Some(scratch.path().as_os_str()))
+            .expect("resolve PATH binary");
         assert_eq!(resolved, fs::canonicalize(expected).unwrap());
     }
 
@@ -347,9 +343,8 @@ mod tests {
     #[test]
     fn process_output_and_exit_code_are_preserved() {
         let scratch = Scratch::new("output");
-        let binary = scratch.executable(
-            "#!/bin/sh\nprintf 'hello-out'\nprintf 'hello-err' >&2\nexit 7\n",
-        );
+        let binary =
+            scratch.executable("#!/bin/sh\nprintf 'hello-out'\nprintf 'hello-err' >&2\nexit 7\n");
         let output = run_binary(&binary, &[], scratch.path(), Duration::from_secs(2))
             .expect("run executable fixture");
         assert_eq!(output.code, 7);

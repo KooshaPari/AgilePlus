@@ -20,7 +20,10 @@ pub fn run_cli_command_with_timeout(
     repo_path: &Path,
     timeout: Duration,
 ) -> Result<String, String> {
-    let args: Vec<String> = args.iter().map(|argument| (*argument).to_string()).collect();
+    let args: Vec<String> = args
+        .iter()
+        .map(|argument| (*argument).to_string())
+        .collect();
     let output = cli_runtime::run_agileplus(&args, repo_path, timeout)?;
 
     if output.code == 0 {
