@@ -201,7 +201,7 @@ output: "stdout"
 include_spans: false
 include_target: true
 "#;
-        let cfg: LogConfig = serde_yaml::from_str(yaml).unwrap();
+        let cfg: LogConfig = serde_norway::from_str(yaml).unwrap();
         assert_eq!(cfg.level, "debug");
         assert!(!cfg.include_spans);
     }
@@ -218,23 +218,23 @@ mod deep_tests {
 
     #[test]
     fn log_output_stdout_serde() {
-        let s = serde_yaml::to_string(&LogOutput::Stdout).unwrap();
+        let s = serde_norway::to_string(&LogOutput::Stdout).unwrap();
         assert_eq!(s.trim(), "stdout");
     }
 
     #[test]
     fn log_output_file_serde_roundtrip() {
         let out = LogOutput::File(PathBuf::from("/tmp/x.log"));
-        let s = serde_yaml::to_string(&out).unwrap();
-        let back: LogOutput = serde_yaml::from_str(&s).unwrap();
+        let s = serde_norway::to_string(&out).unwrap();
+        let back: LogOutput = serde_norway::from_str(&s).unwrap();
         assert_eq!(back, out);
     }
 
     #[test]
     fn log_output_both_serde_roundtrip() {
         let out = LogOutput::Both(PathBuf::from("/var/log/ap.log"));
-        let s = serde_yaml::to_string(&out).unwrap();
-        let back: LogOutput = serde_yaml::from_str(&s).unwrap();
+        let s = serde_norway::to_string(&out).unwrap();
+        let back: LogOutput = serde_norway::from_str(&s).unwrap();
         assert_eq!(back, out);
     }
 
@@ -249,7 +249,7 @@ mod deep_tests {
 
     #[test]
     fn log_config_defaults_via_serde_empty_map() {
-        let cfg: LogConfig = serde_yaml::from_str("{}").unwrap();
+        let cfg: LogConfig = serde_norway::from_str("{}").unwrap();
         assert_eq!(cfg.level, "info");
         assert_eq!(cfg.output, LogOutput::Stdout);
         assert!(cfg.include_spans);
@@ -264,8 +264,8 @@ mod deep_tests {
             include_spans: false,
             include_target: false,
         };
-        let yaml = serde_yaml::to_string(&cfg).unwrap();
-        let back: LogConfig = serde_yaml::from_str(&yaml).unwrap();
+        let yaml = serde_norway::to_string(&cfg).unwrap();
+        let back: LogConfig = serde_norway::from_str(&yaml).unwrap();
         assert_eq!(back.level, "warn");
         assert_eq!(back.output, cfg.output);
         assert!(!back.include_spans);
@@ -326,7 +326,7 @@ mod deep_tests {
     #[test]
     fn output_file_with_no_parent_serialises() {
         let out = LogOutput::File(PathBuf::from("relative.log"));
-        let s = serde_yaml::to_string(&out).unwrap();
+        let s = serde_norway::to_string(&out).unwrap();
         assert!(s.contains("relative.log"));
     }
 }

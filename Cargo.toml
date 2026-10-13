@@ -96,7 +96,7 @@ protoc = '*'
 # Serialization
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1"
-serde_yaml = "0.9"
+serde_norway = "0.9"
 
 # Async runtime
 tokio = { version = "1.39", features = ["full"] }
@@ -222,7 +222,7 @@ ignored = [
   "axum-test",
   "paste",
   "dirs",
-  "serde_yaml",
+  "serde_norway",
   "uuid",
   "async-trait",
   "tracing-subscriber",

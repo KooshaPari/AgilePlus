@@ -105,8 +105,8 @@ mod tests {
             audits_written: 14,
         };
 
-        let yaml = serde_yaml::to_string(&report).unwrap();
-        let restored: ImportReport = serde_yaml::from_str(&yaml).unwrap();
+        let yaml = serde_norway::to_string(&report).unwrap();
+        let restored: ImportReport = serde_norway::from_str(&yaml).unwrap();
 
         assert_eq!(restored, report);
     }

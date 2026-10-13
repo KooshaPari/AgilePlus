@@ -158,20 +158,20 @@ fn json_roundtrip_option_set() {
     assert_eq!(orig, back);
 }
 
-// --- YAML (serde_yaml) -----------------------------------------------------------
+// --- YAML (serde_norway) -----------------------------------------------------
 
 #[test]
 fn yaml_roundtrip() {
     let orig = TopicConfig::default().with_partitions(12);
-    let yaml = serde_yaml::to_string(&orig).unwrap();
-    let back: TopicConfig = serde_yaml::from_str(&yaml).unwrap();
+    let yaml = serde_norway::to_string(&orig).unwrap();
+    let back: TopicConfig = serde_norway::from_str(&yaml).unwrap();
     assert_eq!(orig, back);
 }
 
 #[test]
 fn yaml_serialize_contains_keys() {
     let c = TopicConfig::default();
-    let yaml = serde_yaml::to_string(&c).unwrap();
+    let yaml = serde_norway::to_string(&c).unwrap();
     assert!(yaml.contains("name: general"));
     assert!(yaml.contains("partitions: 1"));
 }
@@ -179,7 +179,7 @@ fn yaml_serialize_contains_keys() {
 #[test]
 fn yaml_deserialize_values() {
     let yaml = "name: analytics\npartitions: 32\nreplication: 3\n";
-    let c: TopicConfig = serde_yaml::from_str(yaml).unwrap();
+    let c: TopicConfig = serde_norway::from_str(yaml).unwrap();
     assert_eq!(c.name, "analytics");
     assert_eq!(c.partitions, 32);
     assert_eq!(c.replication, 3);
@@ -187,7 +187,7 @@ fn yaml_deserialize_values() {
 
 #[test]
 fn yaml_deserialize_invalid_fails() {
-    assert!(serde_yaml::from_str::<TopicConfig>("partitions: notanint").is_err());
+    assert!(serde_norway::from_str::<TopicConfig>("partitions: notanint").is_err());
 }
 
 // --- Cross-format equivalence ----------------------------------------------------
@@ -196,7 +196,7 @@ fn yaml_deserialize_invalid_fails() {
 fn json_and_yaml_produce_same_values() {
     let c = ApiConfig::default().with_base_url("cross").with_retries(9);
     let json: ApiConfig = serde_json::from_str(&serde_json::to_string(&c).unwrap()).unwrap();
-    let yaml: ApiConfig = serde_yaml::from_str(&serde_yaml::to_string(&c).unwrap()).unwrap();
+    let yaml: ApiConfig = serde_norway::from_str(&serde_norway::to_string(&c).unwrap()).unwrap();
     assert_eq!(json, c);
     assert_eq!(yaml, c);
     assert_eq!(json, yaml);

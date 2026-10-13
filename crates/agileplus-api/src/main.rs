@@ -19,7 +19,7 @@ async fn main() -> Result<()> {
         use utoipa::OpenApi;
         let openapi = agileplus_api::openapi::ApiDoc::openapi();
         let yaml =
-            serde_yaml::to_string(&openapi).context("failed to serialize OpenAPI to YAML")?;
+            serde_norway::to_string(&openapi).context("failed to serialize OpenAPI to YAML")?;
         print!("{yaml}");
         return Ok(());
     }

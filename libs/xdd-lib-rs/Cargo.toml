@@ -13,7 +13,7 @@ description = "Cross-dialect development library for AgilePlus - convert between
 [dependencies]
 serde_json.workspace = true
 toml.workspace = true
-serde_yaml = "0.9"
+serde_norway.workspace = true
 thiserror.workspace = true
 parking_lot = "0.12"
 

@@ -49,8 +49,8 @@ impl From<toml::ser::Error> for DialectError {
     }
 }
 
-impl From<serde_yaml::Error> for DialectError {
-    fn from(e: serde_yaml::Error) -> Self {
+impl From<serde_norway::Error> for DialectError {
+    fn from(e: serde_norway::Error) -> Self {
         DialectError::Yaml(e.to_string())
     }
 }
@@ -119,10 +119,10 @@ impl Dialect for YamlDialect {
         &["yaml", "yml"]
     }
     fn parse(&self, input: &str) -> Result<Value, DialectError> {
-        Ok(serde_yaml::from_str(input)?)
+        Ok(serde_norway::from_str(input)?)
     }
     fn serialize(&self, value: &Value) -> Result<String, DialectError> {
-        Ok(serde_yaml::to_string(value)?)
+        Ok(serde_norway::to_string(value)?)
     }
 }
 

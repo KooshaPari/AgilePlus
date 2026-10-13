@@ -16,7 +16,7 @@ opentelemetry.workspace = true
 opentelemetry-otlp.workspace = true
 opentelemetry_sdk.workspace = true
 serde = { workspace = true, features = ["derive"] }
-serde_yaml = "0.9"
+serde_norway.workspace = true
 chrono = { workspace = true }
 thiserror = { workspace = true }
 dirs = "7"

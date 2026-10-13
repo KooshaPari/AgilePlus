@@ -22,7 +22,7 @@ pub enum ConfigError {
     #[error("IO error reading telemetry config: {0}")]
     Io(#[from] std::io::Error),
     #[error("YAML parse error in telemetry config: {0}")]
-    Yaml(#[from] serde_yaml::Error),
+    Yaml(#[from] serde_norway::Error),
     #[error("invalid config: {0}")]
     Validation(String),
 }
@@ -138,7 +138,7 @@ impl TelemetryConfig {
     /// Load from an explicit path (useful for testing).
     pub fn load_from(path: &Path) -> Result<Self, ConfigError> {
         let content = std::fs::read_to_string(path)?;
-        let mut cfg: TelemetryConfig = serde_yaml::from_str(&content)?;
+        let mut cfg: TelemetryConfig = serde_norway::from_str(&content)?;
         cfg.apply_env_overrides();
         cfg.validate()?;
         Ok(cfg)
@@ -291,17 +291,17 @@ mod deep_tests {
 
     #[test]
     fn otlp_protocol_serde_roundtrip_grpc() {
-        let s = serde_yaml::to_string(&OtlpProtocol::Grpc).unwrap();
+        let s = serde_norway::to_string(&OtlpProtocol::Grpc).unwrap();
         assert_eq!(s.trim(), "grpc");
-        let p: OtlpProtocol = serde_yaml::from_str("grpc").unwrap();
+        let p: OtlpProtocol = serde_norway::from_str("grpc").unwrap();
         assert_eq!(p, OtlpProtocol::Grpc);
     }
 
     #[test]
     fn otlp_protocol_serde_roundtrip_http() {
-        let s = serde_yaml::to_string(&OtlpProtocol::Http).unwrap();
+        let s = serde_norway::to_string(&OtlpProtocol::Http).unwrap();
         assert_eq!(s.trim(), "http");
-        let p: OtlpProtocol = serde_yaml::from_str("http").unwrap();
+        let p: OtlpProtocol = serde_norway::from_str("http").unwrap();
         assert_eq!(p, OtlpProtocol::Http);
     }
 
@@ -310,7 +310,7 @@ mod deep_tests {
         let yaml = r#"
 endpoint: "http://localhost:4317"
 "#;
-        let otlp: OtlpConfig = serde_yaml::from_str(yaml).unwrap();
+        let otlp: OtlpConfig = serde_norway::from_str(yaml).unwrap();
         assert_eq!(otlp.protocol, OtlpProtocol::Grpc);
         assert_eq!(otlp.timeout_ms, 5_000);
         assert_eq!(otlp.export_interval_ms, 60_000);
@@ -325,7 +325,7 @@ headers:
   authorization: "Bearer xyz"
   x-tenant: "acme"
 "#;
-        let otlp: OtlpConfig = serde_yaml::from_str(yaml).unwrap();
+        let otlp: OtlpConfig = serde_norway::from_str(yaml).unwrap();
         assert_eq!(otlp.headers.get("authorization").unwrap(), "Bearer xyz");
         assert_eq!(otlp.headers.get("x-tenant").unwrap(), "acme");
         assert_eq!(otlp.headers.len(), 2);
@@ -338,7 +338,7 @@ endpoint: "http://localhost:4317"
 timeout_ms: 123
 export_interval_ms: 456
 "#;
-        let otlp: OtlpConfig = serde_yaml::from_str(yaml).unwrap();
+        let otlp: OtlpConfig = serde_norway::from_str(yaml).unwrap();
         assert_eq!(otlp.timeout_ms, 123);
         assert_eq!(otlp.export_interval_ms, 456);
     }
@@ -467,8 +467,8 @@ export_interval_ms: 456
             logging: LogConfig::default(),
             sampling: SamplingConfig { trace_ratio: 0.25 },
         };
-        let yaml = serde_yaml::to_string(&cfg).unwrap();
-        let back: TelemetryConfig = serde_yaml::from_str(&yaml).unwrap();
+        let yaml = serde_norway::to_string(&cfg).unwrap();
+        let back: TelemetryConfig = serde_norway::from_str(&yaml).unwrap();
         assert_eq!(back.sampling.trace_ratio, 0.25);
         assert_eq!(back.otlp.as_ref().unwrap().timeout_ms, 111);
         assert_eq!(back.otlp.unwrap().protocol, OtlpProtocol::Http);
@@ -500,7 +500,7 @@ export_interval_ms: 456
 
     #[test]
     fn config_error_yaml_display() {
-        let e = ConfigError::Yaml(serde_yaml::from_str::<TelemetryConfig>(": bad {").unwrap_err());
+        let e = ConfigError::Yaml(serde_norway::from_str::<TelemetryConfig>(": bad {").unwrap_err());
         assert!(e.to_string().contains("YAML parse error"));
     }
 
@@ -545,8 +545,8 @@ logging:
             timeout_ms: 5,
             export_interval_ms: 6,
         };
-        let yaml = serde_yaml::to_string(&otlp).unwrap();
-        let back: OtlpConfig = serde_yaml::from_str(&yaml).unwrap();
+        let yaml = serde_norway::to_string(&otlp).unwrap();
+        let back: OtlpConfig = serde_norway::from_str(&yaml).unwrap();
         assert_eq!(back.headers.get("a").unwrap(), "1");
     }
 
@@ -559,7 +559,7 @@ logging:
 
     #[test]
     fn otlp_protocol_lowercase_serde_rejects_uppercase() {
-        let r: Result<OtlpProtocol, _> = serde_yaml::from_str("GRPC");
+        let r: Result<OtlpProtocol, _> = serde_norway::from_str("GRPC");
         assert!(r.is_err());
     }
 }

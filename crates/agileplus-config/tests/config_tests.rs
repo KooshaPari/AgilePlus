@@ -471,8 +471,8 @@ fn serde_deserialize_from_json() {
 #[test]
 fn serde_roundtrip_yaml() {
     let original = SerdeConfig::default().with_name("yaml-test").with_count(55);
-    let yaml = serde_yaml::to_string(&original).unwrap();
-    let restored: SerdeConfig = serde_yaml::from_str(&yaml).unwrap();
+    let yaml = serde_norway::to_string(&original).unwrap();
+    let restored: SerdeConfig = serde_norway::from_str(&yaml).unwrap();
     assert_eq!(original, restored);
 }
 
@@ -484,7 +484,7 @@ tag: null
 count: 123
 enabled: true
 "#;
-    let c: SerdeConfig = serde_yaml::from_str(yaml).unwrap();
+    let c: SerdeConfig = serde_norway::from_str(yaml).unwrap();
     assert_eq!(c.name, "from-yaml");
     assert!(c.tag.is_none());
     assert_eq!(c.count, 123);

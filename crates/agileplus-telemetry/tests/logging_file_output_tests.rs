@@ -53,7 +53,7 @@ fn file_output_writes_structured_json_and_rejects_a_second_init() {
         .collect();
     assert_eq!(lines.len(), 1, "exactly one event was logged: {content:?}");
 
-    let record: serde_yaml::Value = serde_yaml::from_str(lines[0]).expect("log line must be JSON");
+    let record: serde_norway::Value = serde_norway::from_str(lines[0]).expect("log line must be JSON");
     assert_eq!(record["level"].as_str(), Some("INFO"));
     assert_eq!(
         record["fields"]["message"].as_str(),

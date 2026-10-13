@@ -10,13 +10,21 @@ db-path = "$CARGO_HOME/advisory-db"
 # commit-chain 2026-10-13 because none of the underlying crates still match
 # the advisory criteria after upstream migrations.
 #
-# The remaining advisory (RUSTSEC-2024-0449, unsafe-libyaml) is reachable
-# only through the deprecated `serde_yaml` 0.9.x line via `agileplus-import`
-# and `agileplus-telemetry`; the upstream recommendation is to migrate to
-# `serde_yml` or `serde_norway`, tracked separately.
+# RUSTSEC-2024-0449 (unsafe-libyaml) was reachable only through the deprecated
+# `serde_yaml` 0.9.x line. The migration in commit-chain 2026-10-13 (issue
+# #1107) replaces `serde_yaml` with `serde_norway` 0.9 (the maintained
+# 0.9-line fork by cafkafk/emberian, pure-Rust parser, no `unsafe-libyaml`).
+# `serde_yml` was considered and rejected: deprecated in 0.0.13 in favor of
+# `noyalib`. `serde_yaml_ng` (acatton's continuation of the dtolnay line)
+# was also tried first and was rejected: it still pulls in `unsafe-libyaml`,
+# so the advisory would persist.
+#
+# RUSTSEC-2024-0370 (proc-macro-error) remains: build-time only via
+# glib-macros 0.18 (tauri tray-icon stack); glib 0.18 pins it, no fix until
+# tauri/tray-icon bump to a version that drops the libappindicator default
+# or ships a maintained ksni-only path.
 ignore = [
-  { id = "RUSTSEC-2024-0449", reason = "unsafe-libyaml unmaintained: transitive via serde_yaml 0.9.x (agileplus-import, agileplus-telemetry); upstream recommends serde_yml or serde_norway, migration tracked separately." },
-  { id = "RUSTSEC-2024-0370", reason = "proc-macro-error unmaintained: build-time only via glib-macros 0.18 (tauri stack); glib 0.18 pins it, no fix until tauri/glib bump." },
+  { id = "RUSTSEC-2024-0370", reason = "proc-macro-error unmaintained: build-time only via glib-macros 0.18 (tauri stack); glib 0.18 pins it, no fix until tauri/tray-icon bump." },
 ]
 
 [licenses]

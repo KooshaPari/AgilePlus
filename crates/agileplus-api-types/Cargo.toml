@@ -8,4 +8,4 @@ authors.workspace = true
 repository.workspace = true
 
 [dev-dependencies]
-serde_yaml = { workspace = true }
+serde_norway = { workspace = true }

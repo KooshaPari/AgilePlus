@@ -110,11 +110,11 @@ impl Dialect for YamlDialect {
     }
 
     fn parse(&self, input: &str) -> XddResult<Value> {
-        serde_yaml::from_str(input).map_err(|e| XddError::ParseError(e.to_string()))
+        serde_norway::from_str(input).map_err(|e| XddError::ParseError(e.to_string()))
     }
 
     fn serialize(&self, value: &Value) -> XddResult<String> {
-        serde_yaml::to_string(value).map_err(|e| XddError::SerializationError(e.to_string()))
+        serde_norway::to_string(value).map_err(|e| XddError::SerializationError(e.to_string()))
     }
 }
 

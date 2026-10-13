@@ -70,14 +70,14 @@ fn capture_lines<F: FnOnce()>(body: F) -> String {
     String::from_utf8(bytes).expect("captured output is UTF-8")
 }
 
-/// Parse the first captured JSON line. JSON is a YAML subset, so `serde_yaml`
+/// Parse the first captured JSON line. JSON is a YAML subset, so `serde_norway`
 /// reads it without pulling in another dev-dependency.
-fn first_line(output: &str) -> serde_yaml::Value {
+fn first_line(output: &str) -> serde_norway::Value {
     let line = output
         .lines()
         .find(|line| !line.trim().is_empty())
         .unwrap_or_else(|| panic!("no log lines were captured; output was {output:?}"));
-    serde_yaml::from_str(line)
+    serde_norway::from_str(line)
         .unwrap_or_else(|err| panic!("captured line is not valid JSON/YAML ({err}): {line}"))
 }
 
@@ -86,39 +86,39 @@ fn first_line(output: &str) -> serde_yaml::Value {
 /// The JSON formatter nests the current span under `span` and the span path under
 /// `spans`, so a plain path lookup would be brittle. Searching recursively also
 /// proves the field is present *somewhere* in the emitted span context.
-fn find_field<'a>(value: &'a serde_yaml::Value, field: &str) -> Option<&'a serde_yaml::Value> {
+fn find_field<'a>(value: &'a serde_norway::Value, field: &str) -> Option<&'a serde_norway::Value> {
     match value {
-        serde_yaml::Value::Mapping(map) => {
-            if let Some(found) = map.get(serde_yaml::Value::String(field.to_string())) {
+        serde_norway::Value::Mapping(map) => {
+            if let Some(found) = map.get(serde_norway::Value::String(field.to_string())) {
                 return Some(found);
             }
             map.values().find_map(|nested| find_field(nested, field))
         }
-        serde_yaml::Value::Sequence(sequence) => {
+        serde_norway::Value::Sequence(sequence) => {
             sequence.iter().find_map(|nested| find_field(nested, field))
         }
         _ => None,
     }
 }
 
-fn text_field<'a>(value: &'a serde_yaml::Value, field: &str) -> Option<&'a str> {
-    find_field(value, field).and_then(serde_yaml::Value::as_str)
+fn text_field<'a>(value: &'a serde_norway::Value, field: &str) -> Option<&'a str> {
+    find_field(value, field).and_then(serde_norway::Value::as_str)
 }
 
 /// A custom field attached to an emitted event (`fields.<name>` in the JSON line).
-fn event_field<'a>(line: &'a serde_yaml::Value, name: &str) -> Option<&'a serde_yaml::Value> {
+fn event_field<'a>(line: &'a serde_norway::Value, name: &str) -> Option<&'a serde_norway::Value> {
     line.get("fields").and_then(|fields| fields.get(name))
 }
 
 /// The emitted span path, root first.
-fn span_path(line: &serde_yaml::Value) -> &[serde_yaml::Value] {
+fn span_path(line: &serde_norway::Value) -> &[serde_norway::Value] {
     line["spans"]
         .as_sequence()
         .map(Vec::as_slice)
         .unwrap_or_else(|| panic!("no span path was emitted: {line:?}"))
 }
 
-fn span_names(line: &serde_yaml::Value) -> Vec<&str> {
+fn span_names(line: &serde_norway::Value) -> Vec<&str> {
     span_path(line)
         .iter()
         .filter_map(|span| span["name"].as_str())
@@ -265,11 +265,11 @@ fn record_span_event_emits_the_event_name_and_attribute_pairs() {
     let line = first_line(&output);
 
     assert_eq!(
-        event_field(&line, "event").and_then(serde_yaml::Value::as_str),
+        event_field(&line, "event").and_then(serde_norway::Value::as_str),
         Some("pr_created")
     );
     let fields = event_field(&line, "fields")
-        .and_then(serde_yaml::Value::as_str)
+        .and_then(serde_norway::Value::as_str)
         .unwrap_or_else(|| panic!("attribute list must be emitted as text: {line:?}"));
     assert!(fields.contains("wp_id=WP10"), "fields: {fields}");
     assert!(fields.contains("run_id=42"), "fields: {fields}");
@@ -286,11 +286,11 @@ fn record_span_event_without_attributes_emits_an_empty_list() {
     let line = first_line(&output);
 
     assert_eq!(
-        event_field(&line, "event").and_then(serde_yaml::Value::as_str),
+        event_field(&line, "event").and_then(serde_norway::Value::as_str),
         Some("noop")
     );
     assert_eq!(
-        event_field(&line, "fields").and_then(serde_yaml::Value::as_str),
+        event_field(&line, "fields").and_then(serde_norway::Value::as_str),
         Some("[]"),
         "line: {line:?}"
     );

@@ -23,18 +23,18 @@ fn otlp_protocol_default_is_grpc() {
 #[test]
 fn otlp_protocol_serde_roundtrip_grpc() {
     let proto = OtlpProtocol::Grpc;
-    let yaml = serde_yaml::to_string(&proto).unwrap();
+    let yaml = serde_norway::to_string(&proto).unwrap();
     assert_eq!(yaml.trim(), "grpc");
-    let deserialized: OtlpProtocol = serde_yaml::from_str(&yaml).unwrap();
+    let deserialized: OtlpProtocol = serde_norway::from_str(&yaml).unwrap();
     assert_eq!(deserialized, OtlpProtocol::Grpc);
 }
 
 #[test]
 fn otlp_protocol_serde_roundtrip_http() {
     let proto = OtlpProtocol::Http;
-    let yaml = serde_yaml::to_string(&proto).unwrap();
+    let yaml = serde_norway::to_string(&proto).unwrap();
     assert_eq!(yaml.trim(), "http");
-    let deserialized: OtlpProtocol = serde_yaml::from_str(&yaml).unwrap();
+    let deserialized: OtlpProtocol = serde_norway::from_str(&yaml).unwrap();
     assert_eq!(deserialized, OtlpProtocol::Http);
 }
 
@@ -87,8 +87,8 @@ fn otlp_config_serde_roundtrip() {
         timeout_ms: 10_000,
         export_interval_ms: 30_000,
     };
-    let yaml = serde_yaml::to_string(&cfg).unwrap();
-    let deserialized: OtlpConfig = serde_yaml::from_str(&yaml).unwrap();
+    let yaml = serde_norway::to_string(&cfg).unwrap();
+    let deserialized: OtlpConfig = serde_norway::from_str(&yaml).unwrap();
     assert_eq!(deserialized.endpoint, "http://collector:4317");
     assert_eq!(deserialized.protocol, OtlpProtocol::Http);
     assert_eq!(
@@ -104,7 +104,7 @@ fn otlp_config_missing_protocol_defaults_to_grpc() {
     let yaml = r#"
 endpoint: "http://localhost:4317"
 "#;
-    let cfg: OtlpConfig = serde_yaml::from_str(yaml).unwrap();
+    let cfg: OtlpConfig = serde_norway::from_str(yaml).unwrap();
     assert_eq!(cfg.protocol, OtlpProtocol::Grpc);
     assert_eq!(cfg.timeout_ms, 5_000); // default
     assert_eq!(cfg.export_interval_ms, 60_000); // default
@@ -151,15 +151,15 @@ fn sampling_config_default_ratio_is_one() {
 #[test]
 fn sampling_config_serde_roundtrip() {
     let cfg = SamplingConfig { trace_ratio: 0.5 };
-    let yaml = serde_yaml::to_string(&cfg).unwrap();
-    let deserialized: SamplingConfig = serde_yaml::from_str(&yaml).unwrap();
+    let yaml = serde_norway::to_string(&cfg).unwrap();
+    let deserialized: SamplingConfig = serde_norway::from_str(&yaml).unwrap();
     assert_eq!(deserialized.trace_ratio, 0.5);
 }
 
 #[test]
 fn sampling_config_missing_ratio_defaults_to_one() {
     let yaml = "{}";
-    let cfg: SamplingConfig = serde_yaml::from_str(yaml).unwrap();
+    let cfg: SamplingConfig = serde_norway::from_str(yaml).unwrap();
     assert_eq!(cfg.trace_ratio, 1.0);
 }
 
@@ -206,8 +206,8 @@ fn telemetry_config_debug_format() {
 #[test]
 fn telemetry_config_serde_roundtrip_default() {
     let cfg = TelemetryConfig::default();
-    let yaml = serde_yaml::to_string(&cfg).unwrap();
-    let deserialized: TelemetryConfig = serde_yaml::from_str(&yaml).unwrap();
+    let yaml = serde_norway::to_string(&cfg).unwrap();
+    let deserialized: TelemetryConfig = serde_norway::from_str(&yaml).unwrap();
     assert!(deserialized.otlp.is_none());
     assert_eq!(deserialized.sampling.trace_ratio, 1.0);
 }
@@ -228,8 +228,8 @@ fn telemetry_config_serde_roundtrip_with_otlp() {
         },
         sampling: SamplingConfig { trace_ratio: 0.1 },
     };
-    let yaml = serde_yaml::to_string(&cfg).unwrap();
-    let deserialized: TelemetryConfig = serde_yaml::from_str(&yaml).unwrap();
+    let yaml = serde_norway::to_string(&cfg).unwrap();
+    let deserialized: TelemetryConfig = serde_norway::from_str(&yaml).unwrap();
     let otlp = deserialized.otlp.unwrap();
     assert_eq!(otlp.endpoint, "http://tracing:4317");
     assert_eq!(otlp.protocol, OtlpProtocol::Http);
@@ -245,7 +245,7 @@ fn telemetry_config_missing_sampling_defaults() {
 otlp:
   endpoint: "http://localhost:4317"
 "#;
-    let cfg: TelemetryConfig = serde_yaml::from_str(yaml).unwrap();
+    let cfg: TelemetryConfig = serde_norway::from_str(yaml).unwrap();
     assert_eq!(cfg.sampling.trace_ratio, 1.0); // default
 }
 
@@ -255,7 +255,7 @@ fn telemetry_config_missing_logging_defaults() {
 sampling:
   trace_ratio: 0.5
 "#;
-    let cfg: TelemetryConfig = serde_yaml::from_str(yaml).unwrap();
+    let cfg: TelemetryConfig = serde_norway::from_str(yaml).unwrap();
     assert_eq!(cfg.logging.level, "info");
     assert!(cfg.logging.include_spans);
 }
@@ -266,7 +266,7 @@ sampling:
 
 #[test]
 fn default_config_yaml_parses() {
-    let cfg: TelemetryConfig = serde_yaml::from_str(DEFAULT_CONFIG_YAML).unwrap();
+    let cfg: TelemetryConfig = serde_norway::from_str(DEFAULT_CONFIG_YAML).unwrap();
     let otlp = cfg.otlp.unwrap();
     assert_eq!(otlp.endpoint, "http://localhost:4317");
     assert_eq!(otlp.protocol, OtlpProtocol::Grpc);
@@ -284,9 +284,9 @@ fn default_config_yaml_parses() {
 
 #[test]
 fn default_config_yaml_roundtrips() {
-    let cfg1: TelemetryConfig = serde_yaml::from_str(DEFAULT_CONFIG_YAML).unwrap();
-    let yaml = serde_yaml::to_string(&cfg1).unwrap();
-    let cfg2: TelemetryConfig = serde_yaml::from_str(&yaml).unwrap();
+    let cfg1: TelemetryConfig = serde_norway::from_str(DEFAULT_CONFIG_YAML).unwrap();
+    let yaml = serde_norway::to_string(&cfg1).unwrap();
+    let cfg2: TelemetryConfig = serde_norway::from_str(&yaml).unwrap();
     assert_eq!(
         cfg1.otlp.as_ref().unwrap().endpoint,
         cfg2.otlp.as_ref().unwrap().endpoint
@@ -514,7 +514,7 @@ fn load_comment_only_file_defaults() {
 
 #[test]
 fn otlp_protocol_serde_rejects_unknown_variant() {
-    let result = serde_yaml::from_str::<OtlpProtocol>("\"quic\"");
+    let result = serde_norway::from_str::<OtlpProtocol>("\"quic\"");
     assert!(result.is_err());
 }
 
@@ -541,7 +541,7 @@ logging:
 sampling:
   trace_ratio: 0.75
 "#;
-    let cfg: TelemetryConfig = serde_yaml::from_str(yaml).unwrap();
+    let cfg: TelemetryConfig = serde_norway::from_str(yaml).unwrap();
     let otlp = cfg.otlp.unwrap();
     assert_eq!(otlp.endpoint, "http://tracing.example.com:4317");
     assert_eq!(otlp.protocol, OtlpProtocol::Http);
@@ -561,7 +561,7 @@ logging:
   include_spans: true
   include_target: false
 "#;
-    let cfg: TelemetryConfig = serde_yaml::from_str(yaml).unwrap();
+    let cfg: TelemetryConfig = serde_norway::from_str(yaml).unwrap();
     assert!(cfg.otlp.is_none());
     assert_eq!(cfg.logging.level, "warn");
     assert!(!cfg.logging.include_target);

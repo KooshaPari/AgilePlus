@@ -91,8 +91,8 @@ fn import_bundle_yaml_roundtrip() {
         cycles: vec![],
     };
 
-    let yaml = serde_yaml::to_string(&bundle).unwrap();
-    let restored: ImportBundle = serde_yaml::from_str(&yaml).unwrap();
+    let yaml = serde_norway::to_string(&bundle).unwrap();
+    let restored: ImportBundle = serde_norway::from_str(&yaml).unwrap();
 
     assert_eq!(restored.projects.len(), 1);
     assert_eq!(restored.projects[0].name, "Proj");
@@ -505,8 +505,8 @@ fn full_bundle_yaml_roundtrip() {
         }],
     };
 
-    let yaml = serde_yaml::to_string(&bundle).unwrap();
-    let restored: ImportBundle = serde_yaml::from_str(&yaml).unwrap();
+    let yaml = serde_norway::to_string(&bundle).unwrap();
+    let restored: ImportBundle = serde_norway::from_str(&yaml).unwrap();
 
     assert_eq!(restored.projects[0].features[0].work_packages.len(), 2);
     assert_eq!(
