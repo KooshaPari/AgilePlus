@@ -8,6 +8,7 @@
   "required": [
     "contract_version",
     "project_uid",
+    "exported_at",
     "external_refs",
     "external_links"
   ],
@@ -25,13 +26,15 @@
       "type": "array",
       "items": {
         "$ref": "#/$defs/external_ref"
-      }
+      },
+      "uniqueItems": true
     },
     "external_links": {
       "type": "array",
       "items": {
         "$ref": "#/$defs/external_link"
-      }
+      },
+      "uniqueItems": true
     }
   },
   "$defs": {
@@ -228,7 +231,33 @@
         "superseded_at": {
           "$ref": "#/$defs/timestamp"
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "conflict_state": {
+                "const": "superseded"
+              }
+            },
+            "required": [
+              "conflict_state"
+            ]
+          },
+          "then": {
+            "required": [
+              "superseded_at"
+            ]
+          },
+          "else": {
+            "not": {
+              "required": [
+                "superseded_at"
+              ]
+            }
+          }
+        }
+      ]
     }
   }
 }
