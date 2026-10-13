@@ -92,9 +92,7 @@ def convert_to_utf8(
         return False
 
 
-def scan_directory(
-    directory: Path, fix: bool = False, dry_run: bool = False
-) -> list[Path]:
+def scan_directory(directory: Path, fix: bool = False, dry_run: bool = False) -> list[Path]:
     """
     Scan directory for markdown files with encoding issues.
 
@@ -142,26 +140,20 @@ def scan_directory(
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Validate UTF-8 encoding in markdown files"
-    )
+    parser = argparse.ArgumentParser(description="Validate UTF-8 encoding in markdown files")
     parser.add_argument(
         "path",
         nargs="?",
         default="kitty-specs",
         help="Path to scan (default: kitty-specs)",
     )
-    parser.add_argument(
-        "--fix", action="store_true", help="Attempt to fix encoding issues"
-    )
+    parser.add_argument("--fix", action="store_true", help="Attempt to fix encoding issues")
     parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Show what would be fixed without making changes",
     )
-    parser.add_argument(
-        "--scan-all", action="store_true", help="Scan entire repository"
-    )
+    parser.add_argument("--scan-all", action="store_true", help="Scan entire repository")
 
     args = parser.parse_args()
 

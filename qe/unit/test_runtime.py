@@ -58,14 +58,10 @@ def test_candidate_sha_returns_the_repository_head(tmp_path: Path) -> None:
         ["git", "-C", str(tmp_path), "config", "user.email", "qe@example.invalid"],
         check=True,
     )
-    subprocess.run(
-        ["git", "-C", str(tmp_path), "config", "user.name", "QE"], check=True
-    )
+    subprocess.run(["git", "-C", str(tmp_path), "config", "user.name", "QE"], check=True)
     (tmp_path / "candidate.txt").write_text("candidate\n")
     subprocess.run(["git", "-C", str(tmp_path), "add", "candidate.txt"], check=True)
-    subprocess.run(
-        ["git", "-C", str(tmp_path), "commit", "-qm", "test candidate"], check=True
-    )
+    subprocess.run(["git", "-C", str(tmp_path), "commit", "-qm", "test candidate"], check=True)
     expected = subprocess.check_output(
         ["git", "-C", str(tmp_path), "rev-parse", "HEAD"], text=True
     ).strip()
@@ -111,9 +107,7 @@ def test_mcp_environment_contains_only_allowlisted_parent_values() -> None:
         "TOKEN": "must-not-leak",
     }
 
-    result = build_mcp_environment(
-        core_address="127.0.0.1:50051", port=8765, parent=parent
-    )
+    result = build_mcp_environment(core_address="127.0.0.1:50051", port=8765, parent=parent)
 
     assert result == {
         "AGILEPLUS_GRPC_ADDRESS": "127.0.0.1:50051",

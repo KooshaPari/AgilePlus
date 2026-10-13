@@ -43,9 +43,7 @@ class OperatorGateway(unittest.TestCase):
     def setUpClass(cls):
         caddy = os.environ.get("CADDY_BIN") or shutil.which("caddy")
         if not caddy:
-            raise RuntimeError(
-                "Real Caddy is required; gateway evidence cannot be skipped"
-            )
+            raise RuntimeError("Real Caddy is required; gateway evidence cannot be skipped")
         cls.temp = tempfile.TemporaryDirectory()
         cls.upstream = ThreadingHTTPServer(("127.0.0.1", 0), Upstream)
         cls.thread = threading.Thread(target=cls.upstream.serve_forever, daemon=True)
@@ -55,12 +53,8 @@ class OperatorGateway(unittest.TestCase):
             cls.port = sock.getsockname()[1]
         upstream = f"127.0.0.1:{cls.upstream.server_port}"
         source = (ROOT / "deploy/selfhost/Caddy.operator-alpha.caddy").read_text()
-        source = source.replace(
-            "agileplus.pheno.studio {", f"http://127.0.0.1:{cls.port} {{"
-        )
-        source = source.replace(
-            "reverse_proxy 127.0.0.1:3000", f"reverse_proxy {upstream}"
-        )
+        source = source.replace("agileplus.pheno.studio {", f"http://127.0.0.1:{cls.port} {{")
+        source = source.replace("reverse_proxy 127.0.0.1:3000", f"reverse_proxy {upstream}")
         source = source.replace(
             "reverse_proxy https://{$AGILEPLUS_FRONTEND_UPSTREAM_HOST}",
             f"reverse_proxy http://{upstream}",

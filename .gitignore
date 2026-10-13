@@ -13,6 +13,7 @@
 !.coderabbit.yaml
 !desktop/pnpm-lock.yaml
 !tauri.conf.json
+!ruff.toml
 
 # Environment configuration
 .env

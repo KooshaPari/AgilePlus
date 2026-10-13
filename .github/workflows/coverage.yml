@@ -113,6 +113,11 @@ jobs:
             - name: Cache cargo
               uses: Swatinem/rust-cache@v2
 
+            - uses: arduino/setup-protoc@v3
+              with:
+                  version: "28.x"
+                  repo-token: ${{ secrets.GITHUB_TOKEN }}
+
             - name: Install cargo-llvm-cov
               run: cargo install --locked cargo-llvm-cov
 

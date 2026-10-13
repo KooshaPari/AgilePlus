@@ -24,13 +24,9 @@ def release_order(packages, roots):
                 continue
             if dependency["name"] in by_name:
                 if dependency["req"] == "*":
-                    raise ValueError(
-                        f"{name}: {dependency['name']} lacks a registry version"
-                    )
+                    raise ValueError(f"{name}: {dependency['name']} lacks a registry version")
                 visit(dependency["name"])
-            elif dependency.get("path") or (dependency.get("source") or "").startswith(
-                "git+"
-            ):
+            elif dependency.get("path") or (dependency.get("source") or "").startswith("git+"):
                 raise ValueError(
                     f"{name}: external dependency {dependency['name']} needs registry reconciliation"
                 )

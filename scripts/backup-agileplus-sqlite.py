@@ -12,7 +12,7 @@ import os
 import sqlite3
 import sys
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 
@@ -25,7 +25,7 @@ def backup_database(source: Path, output_dir: Path) -> Path:
     if not output_dir.is_dir():
         raise NotADirectoryError(output_dir)
 
-    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
+    timestamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%S%fZ")
     unique_id = uuid.uuid4().hex[:8]
     filename = f"agileplus-{timestamp}-{unique_id}.sqlite3"
     temporary = output_dir / f".{filename}.incomplete"

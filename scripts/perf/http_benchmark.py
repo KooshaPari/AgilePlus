@@ -74,9 +74,7 @@ class Client:
         data = response.read()
         elapsed_ms = (time.perf_counter_ns() - start) / 1e6
         if response.status != expected:
-            raise RuntimeError(
-                f"{method} {path}: expected HTTP {expected}, got {response.status}"
-            )
+            raise RuntimeError(f"{method} {path}: expected HTTP {expected}, got {response.status}")
         return json.loads(data), {
             "method": method,
             "path": path,
@@ -93,9 +91,7 @@ def validate_response(name, body, index=None):
             raise RuntimeError("feature list does not match the seeded 100 features")
     elif name == "health":
         if body.get("status") != "healthy" or body.get("service") != "agileplus-api":
-            raise RuntimeError(
-                "health did not identify the actual healthy AgilePlus API"
-            )
+            raise RuntimeError("health did not identify the actual healthy AgilePlus API")
     elif name == "detail":
         if body.get("slug") != f"perf-feature-{index:03}":
             raise RuntimeError("feature detail returned the wrong feature")
@@ -128,9 +124,7 @@ def concurrent_measurements(port, key, name):
         client = Client(port, key)
         try:
             barrier.wait(timeout=15)
-            return [
-                measure(client, name, i) for i in range(worker_id, FEATURES, CLIENTS)
-            ]
+            return [measure(client, name, i) for i in range(worker_id, FEATURES, CLIENTS)]
         finally:
             client.close()
 
@@ -272,9 +266,7 @@ def run(binary, directory):
                         # Auth is part of the real flow, not bypassed for benchmarking.
                         unauthenticated = Client(port, "invalid-perf-key")
                         try:
-                            unauthenticated.request(
-                                "GET", "/api/v1/features", expected=401
-                            )
+                            unauthenticated.request("GET", "/api/v1/features", expected=401)
                         finally:
                             unauthenticated.close()
                         for i in range(FEATURES):
@@ -284,13 +276,8 @@ def run(binary, directory):
                                 {"title": f"perf feature {i:03}"},
                                 expected=201,
                             )
-                            if (
-                                body["slug"] != f"perf-feature-{i:03}"
-                                or body["state"] != "created"
-                            ):
-                                raise RuntimeError(
-                                    "seeded feature has incorrect identity/state"
-                                )
+                            if body["slug"] != f"perf-feature-{i:03}" or body["state"] != "created":
+                                raise RuntimeError("seeded feature has incorrect identity/state")
                         for name in ["health", "list", "detail"]:
                             report["initial_requests"][name] = measure(client, name)
                         for name in ["health", "list", "detail", "transition"]:
@@ -355,9 +342,7 @@ def run(binary, directory):
     )
     for name, row in report["distributions"].items():
         if row["warnings"]:
-            print(
-                f"::warning::{name} exceeds T118 warning targets: {', '.join(row['warnings'])}"
-            )
+            print(f"::warning::{name} exceeds T118 warning targets: {', '.join(row['warnings'])}")
     return 0 if report["status"] == "completed" else 1
 
 

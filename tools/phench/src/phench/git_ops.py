@@ -54,9 +54,7 @@ def _safe_remove_path(path: Path) -> None:
     shutil.rmtree(path)
 
 
-def materialize_repo_checkout(
-    source_repo: Path, checkout_path: Path, resolved_sha: str
-) -> None:
+def materialize_repo_checkout(source_repo: Path, checkout_path: Path, resolved_sha: str) -> None:
     checkout_path.parent.mkdir(parents=True, exist_ok=True)
 
     # Remove existing materialization to keep deterministic state.
@@ -95,8 +93,7 @@ def materialize_repo_checkout(
     )
     if proc.returncode != 0:
         raise RuntimeError(
-            "git worktree add failed for "
-            f"{source_repo} @ {resolved_sha}: {proc.stderr.strip()}"
+            f"git worktree add failed for {source_repo} @ {resolved_sha}: {proc.stderr.strip()}"
         )
 
 

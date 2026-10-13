@@ -17,9 +17,7 @@ def main():
 
     # Get unmerged branches
     print("Getting unmerged branches...")
-    stdout, stderr, code = run_command(
-        "git branch -r --no-merged origin/main", cwd=repo_path
-    )
+    stdout, stderr, code = run_command("git branch -r --no-merged origin/main", cwd=repo_path)
     if code != 0:
         print(f"Error getting branches: {stderr}")
         return
@@ -93,13 +91,9 @@ def main():
                     print(f"Successfully created PR for {branch} after merge: {pr_url}")
                     results.append(f"Created PR for {branch} (after merge): {pr_url}")
                 else:
-                    print(
-                        f"Failed to create PR for {branch} even after merge: {stderr_retry}"
-                    )
+                    print(f"Failed to create PR for {branch} even after merge: {stderr_retry}")
             else:
-                print(
-                    f"Failed to merge origin/main into {branch}. Likely conflicts. Skipping."
-                )
+                print(f"Failed to merge origin/main into {branch}. Likely conflicts. Skipping.")
                 run_command("git merge --abort", cwd=repo_path)
 
             run_command("git checkout main", cwd=repo_path)

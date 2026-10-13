@@ -294,9 +294,6 @@ dependencies = [
 name = "agileplus-desktop"
 version = "0.2.0"
 dependencies = [
- "agileplus-application",
- "agileplus-domain",
- "agileplus-sqlite",
  "chrono",
  "dirs-next",
  "log",
@@ -467,7 +464,6 @@ dependencies = [
  "serde_json",
  "thiserror 2.0.21",
  "tokio",
- "tracing",
  "uuid",
 ]
 

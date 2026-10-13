@@ -61,10 +61,7 @@ class StoreTests(unittest.TestCase):
             / "state.json"
         )
         mirror_file = (
-            Path(os.environ["THGENT_PHENCH_HOME_ROOT"])
-            / "alpha"
-            / ".phench"
-            / "state.json"
+            Path(os.environ["THGENT_PHENCH_HOME_ROOT"]) / "alpha" / ".phench" / "state.json"
         )
         project_file.write_text(
             '{"content_hash":"x","payload":{"source":"projects"},"sync_id":"1"}\n',

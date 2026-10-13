@@ -1,0 +1,17 @@
+# Root ruff config — applies to all .py files at this level and below.
+#
+# WHY: CI runs `ruff check .` from the repo root with Python 3.11.
+# Without a root config, ruff defaults to target-version=py310 which
+# disagrees with CI's target-version=py311 on UP017 (`datetime.UTC`
+# is only available in 3.11+), and a handful of other rules.
+# Locking target-version=py311 at the root guarantees local
+# `ruff check .` matches CI exactly.
+#
+# We intentionally do NOT enable extra rule families (B, UP, SIM,
+# RUF) here because CI uses ruff's defaults. The auto-discovered
+# ruleset catches the same errors locally that CI catches remotely.
+#
+# Module-specific overrides live in `python/ruff.toml` (which has
+# its own py314 target for the agent-runtime modules there).
+target-version = "py311"
+line-length = 100

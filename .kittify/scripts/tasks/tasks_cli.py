@@ -8,7 +8,7 @@ import json
 import os
 import subprocess
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -68,9 +68,7 @@ def stage_update(
     wp.frontmatter = set_scalar(wp.frontmatter, "agent", agent)
     if shell_pid:
         wp.frontmatter = set_scalar(wp.frontmatter, "shell_pid", shell_pid)
-    log_entry = (
-        f"- {timestamp} – {agent} – shell_pid={shell_pid} – lane={target_lane} – {note}"
-    )
+    log_entry = f"- {timestamp} – {agent} – shell_pid={shell_pid} – lane={target_lane} – {note}"
     new_body = append_activity_log(wp.body, log_entry)
 
     new_content = build_document(wp.frontmatter, new_body, wp.padding)
@@ -230,9 +228,7 @@ def history_command(args: argparse.Namespace) -> None:
     if lane != wp.current_lane:
         wp.frontmatter = set_scalar(wp.frontmatter, "lane", lane)
 
-    log_entry = (
-        f"- {timestamp} – {agent} – shell_pid={shell_pid} – lane={lane} – {note}"
-    )
+    log_entry = f"- {timestamp} – {agent} – shell_pid={shell_pid} – lane={lane} – {note}"
     updated_body = append_activity_log(wp.body, log_entry)
 
     if args.update_shell and shell_pid:
@@ -259,9 +255,7 @@ def list_command(args: argparse.Namespace) -> None:
     feature_path = repo_root / "kitty-specs" / args.feature
     feature_dir = feature_path / "tasks"
     if not feature_dir.exists():
-        raise TaskCliError(
-            f"Feature '{args.feature}' has no tasks directory at {feature_dir}."
-        )
+        raise TaskCliError(f"Feature '{args.feature}' has no tasks directory at {feature_dir}.")
 
     # Check for legacy format and warn
     use_legacy = is_legacy_format(feature_path)
@@ -340,15 +334,9 @@ def list_command(args: argparse.Namespace) -> None:
 
     width_id = max(len(row["id"]) for row in rows)
     width_lane = max(len(row["lane"]) for row in rows)
-    width_agent = (
-        max(len(row["agent"]) for row in rows)
-        if any(row["agent"] for row in rows)
-        else 5
-    )
+    width_agent = max(len(row["agent"]) for row in rows) if any(row["agent"] for row in rows) else 5
     width_assignee = (
-        max(len(row["assignee"]) for row in rows)
-        if any(row["assignee"] for row in rows)
-        else 8
+        max(len(row["assignee"]) for row in rows) if any(row["assignee"] for row in rows) else 8
     )
 
     header = (
@@ -375,9 +363,7 @@ def rollback_command(args: argparse.Namespace) -> None:
     wp = locate_work_package(repo_root, args.feature, args.work_package)
     entries = activity_entries(wp.body)
     if len(entries) < 2:
-        raise TaskCliError(
-            "Not enough activity entries to determine the previous lane."
-        )
+        raise TaskCliError("Not enough activity entries to determine the previous lane.")
 
     previous_lane = ensure_lane(entries[-2]["lane"])
     note = args.note or f"Rolled back to {previous_lane}"
@@ -424,9 +410,7 @@ def _summary_to_text(summary: AcceptanceSummary) -> list[str]:
         lines.append("All acceptance checks passed.")
     if summary.optional_missing:
         lines.append("")
-        lines.append(
-            "Optional artifacts missing: " + ", ".join(summary.optional_missing)
-        )
+        lines.append("Optional artifacts missing: " + ", ".join(summary.optional_missing))
     return lines
 
 
@@ -521,9 +505,7 @@ def accept_command(args: argparse.Namespace) -> None:
         print(json.dumps(result.to_dict(), indent=2))
         return
 
-    print(
-        f"✅ Feature '{feature}' accepted at {result.accepted_at} by {result.accepted_by}"
-    )
+    print(f"✅ Feature '{feature}' accepted at {result.accepted_at} by {result.accepted_by}")
     if result.accept_commit:
         print(f"   Acceptance commit: {result.accept_commit}")
     if result.parent_commit:
@@ -547,12 +529,7 @@ def _merge_actor(repo_root: Path) -> str:
         name = configured.stdout.strip()
         if name:
             return name
-    return (
-        os.getenv("GIT_AUTHOR_NAME")
-        or os.getenv("USER")
-        or os.getenv("USERNAME")
-        or "system"
-    )
+    return os.getenv("GIT_AUTHOR_NAME") or os.getenv("USER") or os.getenv("USERNAME") or "system"
 
 
 def _prepare_merge_metadata(
@@ -566,7 +543,7 @@ def _prepare_merge_metadata(
     feature_dir.mkdir(parents=True, exist_ok=True)
     meta_path = feature_dir / "meta.json"
 
-    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    timestamp = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
     merged_by = _merge_actor(repo_root)
 
     entry: dict[str, Any] = {
@@ -599,9 +576,7 @@ def _prepare_merge_metadata(
     meta["merged_strategy"] = strategy
     meta["merged_push"] = pushed
 
-    meta_path.write_text(
-        json.dumps(meta, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-    )
+    meta_path.write_text(json.dumps(meta, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return meta_path
 
 
@@ -619,9 +594,7 @@ def _finalize_merge_metadata(meta_path: Path | None, merge_commit: str) -> None:
         history[-1]["merge_commit"] = merge_commit
     meta["merged_commit"] = merge_commit
 
-    meta_path.write_text(
-        json.dumps(meta, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-    )
+    meta_path.write_text(json.dumps(meta, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
 def merge_command(args: argparse.Namespace) -> None:
@@ -785,27 +758,17 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Spec Kitty task utilities")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    update = subparsers.add_parser(
-        "update", help="Update a work package's lane in frontmatter"
-    )
-    update.add_argument(
-        "feature", help="Feature directory slug (e.g., 008-awesome-feature)"
-    )
+    update = subparsers.add_parser("update", help="Update a work package's lane in frontmatter")
+    update.add_argument("feature", help="Feature directory slug (e.g., 008-awesome-feature)")
     update.add_argument("work_package", help="Work package identifier (e.g., WP03)")
     update.add_argument("lane", help=f"Target lane ({', '.join(LANES)})")
     update.add_argument("--note", help="Activity note to record with the update")
     update.add_argument(
         "--agent", help="Agent identifier to record (defaults to existing agent/system)"
     )
-    update.add_argument(
-        "--assignee", help="Friendly assignee name to store in frontmatter"
-    )
-    update.add_argument(
-        "--shell-pid", help="Shell PID to capture in frontmatter/history"
-    )
-    update.add_argument(
-        "--timestamp", help="Override UTC timestamp (YYYY-MM-DDTHH:mm:ssZ)"
-    )
+    update.add_argument("--assignee", help="Friendly assignee name to store in frontmatter")
+    update.add_argument("--shell-pid", help="Shell PID to capture in frontmatter/history")
+    update.add_argument("--timestamp", help="Override UTC timestamp (YYYY-MM-DDTHH:mm:ssZ)")
     update.add_argument(
         "--dry-run",
         action="store_true",
@@ -815,16 +778,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--force", action="store_true", help="Ignore other staged work-package files"
     )
 
-    history = subparsers.add_parser(
-        "history", help="Append a history entry without changing lanes"
-    )
+    history = subparsers.add_parser("history", help="Append a history entry without changing lanes")
     history.add_argument("feature", help="Feature directory slug")
     history.add_argument("work_package", help="Work package identifier (e.g., WP03)")
     history.add_argument("--note", required=True, help="History note to append")
     history.add_argument("--lane", help="Lane to record (defaults to current lane)")
-    history.add_argument(
-        "--agent", help="Agent identifier (defaults to frontmatter/system)"
-    )
+    history.add_argument("--agent", help="Agent identifier (defaults to frontmatter/system)")
     history.add_argument("--assignee", help="Assignee value to set/override")
     history.add_argument("--shell-pid", help="Shell PID to record")
     history.add_argument(
@@ -842,17 +801,11 @@ def build_parser() -> argparse.ArgumentParser:
     list_parser = subparsers.add_parser("list", help="List work packages by lane")
     list_parser.add_argument("feature", help="Feature directory slug")
 
-    rollback = subparsers.add_parser(
-        "rollback", help="Return a work package to its prior lane"
-    )
+    rollback = subparsers.add_parser("rollback", help="Return a work package to its prior lane")
     rollback.add_argument("feature", help="Feature directory slug")
     rollback.add_argument("work_package", help="Work package identifier (e.g., WP03)")
-    rollback.add_argument(
-        "--note", help="History note to record (default: Rolled back to <lane>)"
-    )
-    rollback.add_argument(
-        "--agent", help="Agent identifier to record for the rollback entry"
-    )
+    rollback.add_argument("--note", help="History note to record (default: Rolled back to <lane>)")
+    rollback.add_argument("--agent", help="Agent identifier to record for the rollback entry")
     rollback.add_argument("--assignee", help="Assignee override to apply")
     rollback.add_argument("--shell-pid", help="Shell PID to capture")
     rollback.add_argument("--timestamp", help="Override UTC timestamp")
@@ -865,32 +818,20 @@ def build_parser() -> argparse.ArgumentParser:
         "--force", action="store_true", help="Ignore other staged work-package files"
     )
 
-    status = subparsers.add_parser(
-        "status", help="Summarize work packages for a feature"
-    )
-    status.add_argument(
-        "--feature", help="Feature directory slug (auto-detect by default)"
-    )
+    status = subparsers.add_parser("status", help="Summarize work packages for a feature")
+    status.add_argument("--feature", help="Feature directory slug (auto-detect by default)")
     status.add_argument("--json", action="store_true", help="Emit JSON summary")
-    status.add_argument(
-        "--lenient", action="store_true", help="Skip strict metadata validation"
-    )
+    status.add_argument("--lenient", action="store_true", help="Skip strict metadata validation")
     status.add_argument(
         "--normalize-encoding",
         action="store_true",
         help="Automatically repair non-UTF-8 artifact files",
     )
 
-    verify = subparsers.add_parser(
-        "verify", help="Run acceptance checks without committing"
-    )
-    verify.add_argument(
-        "--feature", help="Feature directory slug (auto-detect by default)"
-    )
+    verify = subparsers.add_parser("verify", help="Run acceptance checks without committing")
+    verify.add_argument("--feature", help="Feature directory slug (auto-detect by default)")
     verify.add_argument("--json", action="store_true", help="Emit JSON summary")
-    verify.add_argument(
-        "--lenient", action="store_true", help="Skip strict metadata validation"
-    )
+    verify.add_argument("--lenient", action="store_true", help="Skip strict metadata validation")
     verify.add_argument(
         "--normalize-encoding",
         action="store_true",
@@ -898,27 +839,17 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     accept = subparsers.add_parser("accept", help="Perform feature acceptance workflow")
-    accept.add_argument(
-        "--feature", help="Feature directory slug (auto-detect by default)"
-    )
-    accept.add_argument(
-        "--mode", choices=["auto", "pr", "local", "checklist"], default="auto"
-    )
-    accept.add_argument(
-        "--actor", help="Override acceptance author (defaults to system/user)"
-    )
+    accept.add_argument("--feature", help="Feature directory slug (auto-detect by default)")
+    accept.add_argument("--mode", choices=["auto", "pr", "local", "checklist"], default="auto")
+    accept.add_argument("--actor", help="Override acceptance author (defaults to system/user)")
     accept.add_argument(
         "--test",
         action="append",
         help="Record validation command executed (repeatable)",
     )
     accept.add_argument("--json", action="store_true", help="Emit JSON result")
-    accept.add_argument(
-        "--lenient", action="store_true", help="Skip strict metadata validation"
-    )
-    accept.add_argument(
-        "--no-commit", action="store_true", help="Skip auto-commit (report only)"
-    )
+    accept.add_argument("--lenient", action="store_true", help="Skip strict metadata validation")
+    accept.add_argument("--no-commit", action="store_true", help="Skip auto-commit (report only)")
     accept.add_argument(
         "--allow-fail",
         action="store_true",
@@ -930,30 +861,18 @@ def build_parser() -> argparse.ArgumentParser:
         help="Automatically repair non-UTF-8 artifact files before acceptance",
     )
 
-    merge = subparsers.add_parser(
-        "merge", help="Merge a feature branch into the target branch"
-    )
-    merge.add_argument(
-        "--feature", help="Feature directory slug (auto-detect by default)"
-    )
-    merge.add_argument(
-        "--strategy", choices=["merge", "squash", "rebase"], default="merge"
-    )
+    merge = subparsers.add_parser("merge", help="Merge a feature branch into the target branch")
+    merge.add_argument("--feature", help="Feature directory slug (auto-detect by default)")
+    merge.add_argument("--strategy", choices=["merge", "squash", "rebase"], default="merge")
     merge.add_argument("--target", default="main", help="Target branch to merge into")
-    merge.add_argument(
-        "--push", action="store_true", help="Push to origin after merging"
-    )
-    merge.add_argument(
-        "--delete-branch", dest="delete_branch", action="store_true", default=True
-    )
+    merge.add_argument("--push", action="store_true", help="Push to origin after merging")
+    merge.add_argument("--delete-branch", dest="delete_branch", action="store_true", default=True)
     merge.add_argument("--keep-branch", dest="delete_branch", action="store_false")
     merge.add_argument(
         "--remove-worktree", dest="remove_worktree", action="store_true", default=True
     )
     merge.add_argument("--keep-worktree", dest="remove_worktree", action="store_false")
-    merge.add_argument(
-        "--dry-run", action="store_true", help="Show actions without executing"
-    )
+    merge.add_argument("--dry-run", action="store_true", help="Show actions without executing")
 
     return parser
 

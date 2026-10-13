@@ -67,15 +67,9 @@ def generate_html(history_data: dict, config: dict) -> str:
     latest = history[-1]["metrics"]
 
     # Group metrics for charts
-    latency_keys = [
-        k for k, v in metrics_def.items() if v.get("chart_group") == "latency"
-    ]
-    throughput_keys = [
-        k for k, v in metrics_def.items() if v.get("chart_group") == "throughput"
-    ]
-    memory_keys = [
-        k for k, v in metrics_def.items() if v.get("chart_group") == "memory"
-    ]
+    latency_keys = [k for k, v in metrics_def.items() if v.get("chart_group") == "latency"]
+    throughput_keys = [k for k, v in metrics_def.items() if v.get("chart_group") == "throughput"]
+    memory_keys = [k for k, v in metrics_def.items() if v.get("chart_group") == "memory"]
 
     def metric_data(key):
         return [h["metrics"].get(key, 0) for h in history]
@@ -417,9 +411,7 @@ def generate_html(history_data: dict, config: dict) -> str:
 
 def main():
     parser = argparse.ArgumentParser(description="Generate perf trend dashboard HTML")
-    parser.add_argument(
-        "--history", required=True, help="Path to perf-trend-history.json"
-    )
+    parser.add_argument("--history", required=True, help="Path to perf-trend-history.json")
     parser.add_argument("--config", required=True, help="Path to dashboard-config.json")
     parser.add_argument("--output", required=True, help="Output HTML file path")
     args = parser.parse_args()

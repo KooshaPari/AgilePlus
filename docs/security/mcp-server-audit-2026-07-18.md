@@ -129,9 +129,7 @@ def _call_omniroute(route: str, payload: dict[str, Any]) -> dict[str, Any]:
         raise ValueError("OMNIROUTE_URL environment variable is not set.")
     parsed = urlparse(base)
     if parsed.scheme not in ("http", "https"):
-        raise ValueError(
-            f"OMNIROUTE_URL must use http or https scheme, got: {parsed.scheme!r}"
-        )
+        raise ValueError(f"OMNIROUTE_URL must use http or https scheme, got: {parsed.scheme!r}")
 ```
 
 **Issue:** The URL is validated for scheme but not for hostname. The `route` parameter (which comes from hardcoded string literals in the current code, not from user input) is concatenated via string formatting. The `follow_redirects=False` setting is good — it prevents open-redirect SSRF. However, the response sanitization in `_sanitize_response` only strips keys at the top level.

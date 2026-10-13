@@ -98,6 +98,20 @@ jobs:
         with:
           version: "28.x"
           repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install Linux system dependencies (Tauri/gtk)
+        if: runner.os == 'Linux'
+        run: |
+          # Same package set as .github/workflows/infra.yml. The cargo test
+          # step runs `cargo test --workspace` which builds the desktop/
+          # src-tauri -> gtk stack; without these apt packages, rust-lld
+          # fails to find -lgdk-3, -lpangocairo-1.0, etc.
+          sudo apt-get update
+          sudo apt-get install -y \
+            pkg-config \
+            libglib2.0-dev \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev
       - name: cargo fmt --check
         run: cargo fmt --all -- --check
       - name: cargo clippy

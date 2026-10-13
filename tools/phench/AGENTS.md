@@ -1378,9 +1378,7 @@ class ResourceRepository:
     async def save(self, resource: Resource) -> Resource:
         """Save a resource."""
         # Never bypass this layer for DB access
-        result = (
-            await self.db.table("resources").insert(resource.model_dump()).execute()
-        )
+        result = await self.db.table("resources").insert(resource.model_dump()).execute()
         return Resource.model_validate(result.data[0])
 
     async def get(self, id: str) -> Resource | None:
@@ -1448,9 +1446,7 @@ mcp = FastMCP("my-server")
 
 
 @mcp.tool
-async def my_tool(
-    param: str, optional_param: int = 10, context: Context = None
-) -> dict:
+async def my_tool(param: str, optional_param: int = 10, context: Context = None) -> dict:
     """Tool description for Claude.
 
     Args:
@@ -1610,9 +1606,7 @@ def log_operation(operation_name: str):
         @wraps(func)
         async def wrapper(*args, **kwargs):
             log = logger.bind(operation=operation_name)
-            log.info(
-                "operation_started", args=str(args)[:100], kwargs=str(kwargs)[:100]
-            )
+            log.info("operation_started", args=str(args)[:100], kwargs=str(kwargs)[:100])
             try:
                 result = await func(*args, **kwargs)
                 log.info("operation_completed", success=True)
@@ -1705,9 +1699,7 @@ from jose import jwt, JWTError
 async def validate_token(token: str) -> dict:
     """Validate JWT token."""
     try:
-        payload = jwt.decode(
-            token, settings.jwt_secret, algorithms=[settings.jwt_algorithm]
-        )
+        payload = jwt.decode(token, settings.jwt_secret, algorithms=[settings.jwt_algorithm])
         return payload
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
@@ -2343,9 +2335,7 @@ async def debug_workflow(error: str, context: str) -> dict:
     # Use different models for different aspects
     root_cause = await call_model("o3", f"Analyze root cause: {error}\n{context}")
     patterns = await call_model("gemini-flash", f"Check common patterns: {error}")
-    solution = await call_model(
-        "claude-sonnet-4", f"Propose solution: {error}\n{root_cause}"
-    )
+    solution = await call_model("claude-sonnet-4", f"Propose solution: {error}\n{root_cause}")
 
     return {"root_cause": root_cause, "patterns": patterns, "solution": solution}
 ```
@@ -2659,9 +2649,7 @@ class TransactionManager:
 
 
 # Usage
-async def create_entity_with_relationships(
-    entity_data: dict, relationships: list[dict]
-) -> dict:
+async def create_entity_with_relationships(entity_data: dict, relationships: list[dict]) -> dict:
     tx = TransactionManager(adapter)
 
     async with tx.transaction():
@@ -2994,9 +2982,7 @@ class PaginatedResponse(BaseModel, Generic[T]):
     has_prev: bool
 
     @classmethod
-    def create(
-        cls, items: list[T], total: int, params: PaginationParams
-    ) -> "PaginatedResponse[T]":
+    def create(cls, items: list[T], total: int, params: PaginationParams) -> "PaginatedResponse[T]":
         total_pages = (total + params.page_size - 1) // params.page_size
         return cls(
             items=items,
@@ -3016,9 +3002,7 @@ def get_pagination_params(
     sort_by: Optional[str] = Query(None, description="Sort field"),
     sort_order: str = Query("asc", pattern="^(asc|desc)$", description="Sort order"),
 ) -> PaginationParams:
-    return PaginationParams(
-        page=page, page_size=page_size, sort_by=sort_by, sort_order=sort_order
-    )
+    return PaginationParams(page=page, page_size=page_size, sort_by=sort_by, sort_order=sort_order)
 
 
 # Usage in endpoint
@@ -3148,9 +3132,7 @@ async def http_client() -> AsyncGenerator[httpx.AsyncClient, None]:
 async def fetch_and_store(url: str):
     async with http_client() as client, db_session() as db:
         response = await client.get(url)
-        await db.execute(
-            "INSERT INTO cache (url, data) VALUES ($1, $2)", url, response.text
-        )
+        await db.execute("INSERT INTO cache (url, data) VALUES ($1, $2)", url, response.text)
 ```
 
 ### Async Iterators
@@ -3159,9 +3141,7 @@ async def fetch_and_store(url: str):
 from typing import AsyncIterator
 
 
-async def stream_large_dataset(
-    query: str, batch_size: int = 100
-) -> AsyncIterator[dict]:
+async def stream_large_dataset(query: str, batch_size: int = 100) -> AsyncIterator[dict]:
     """Stream large dataset in batches."""
     offset = 0
     while True:
@@ -3190,9 +3170,7 @@ from typing import TypeVar, Callable, Awaitable
 T = TypeVar("T")
 
 
-async def gather_with_limit(
-    tasks: list[Callable[[], Awaitable[T]]], limit: int = 10
-) -> list[T]:
+async def gather_with_limit(tasks: list[Callable[[], Awaitable[T]]], limit: int = 10) -> list[T]:
     """Execute tasks concurrently with concurrency limit."""
     semaphore = asyncio.Semaphore(limit)
 
@@ -3207,9 +3185,7 @@ async def map_async(
     func: Callable[[T], Awaitable[any]], items: list[T], concurrency: int = 10
 ) -> list[any]:
     """Map function over items with concurrency limit."""
-    return await gather_with_limit(
-        [lambda i=i: func(i) for i in items], limit=concurrency
-    )
+    return await gather_with_limit([lambda i=i: func(i) for i in items], limit=concurrency)
 
 
 # Usage
@@ -3352,9 +3328,7 @@ class OpenAIEmbeddingProvider:
 class EmbeddingService:
     """Service for managing embeddings."""
 
-    def __init__(
-        self, provider: EmbeddingProvider, cache: Optional[EmbeddingCache] = None
-    ):
+    def __init__(self, provider: EmbeddingProvider, cache: Optional[EmbeddingCache] = None):
         self.provider = provider
         self.cache = cache
 
@@ -3593,9 +3567,7 @@ class Workflow:
         start_time = time.time()
 
         context = context or {}
-        statuses: dict[str, StepStatus] = {
-            name: StepStatus.PENDING for name in self.steps
-        }
+        statuses: dict[str, StepStatus] = {name: StepStatus.PENDING for name in self.steps}
         outputs: dict[str, Any] = {}
         errors: dict[str, str] = {}
 
@@ -3606,9 +3578,7 @@ class Workflow:
             step = self.steps[step_name]
 
             # Check dependencies
-            deps_completed = all(
-                statuses[dep] == StepStatus.COMPLETED for dep in step.depends_on
-            )
+            deps_completed = all(statuses[dep] == StepStatus.COMPLETED for dep in step.depends_on)
             if not deps_completed:
                 statuses[step_name] = StepStatus.SKIPPED
                 continue
@@ -3632,9 +3602,7 @@ class Workflow:
                 statuses[step_name] = StepStatus.FAILED
 
         duration = time.time() - start_time
-        success = all(
-            s in (StepStatus.COMPLETED, StepStatus.SKIPPED) for s in statuses.values()
-        )
+        success = all(s in (StepStatus.COMPLETED, StepStatus.SKIPPED) for s in statuses.values())
 
         return WorkflowResult(
             success=success,
@@ -3644,9 +3612,7 @@ class Workflow:
             duration=duration,
         )
 
-    async def _execute_with_retry(
-        self, step: WorkflowStep, context: dict, outputs: dict
-    ) -> Any:
+    async def _execute_with_retry(self, step: WorkflowStep, context: dict, outputs: dict) -> Any:
         """Execute step with retries."""
         last_error = None
         for attempt in range(step.retry_count):

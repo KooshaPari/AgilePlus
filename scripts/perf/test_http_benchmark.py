@@ -42,16 +42,11 @@ class FixtureHandler(http.server.BaseHTTPRequestHandler):
         elif self.path == "/api/v1/features":
             self.send(
                 200,
-                [
-                    {"slug": f"perf-feature-{i:03}", "state": self.states[i]}
-                    for i in range(100)
-                ],
+                [{"slug": f"perf-feature-{i:03}", "state": self.states[i]} for i in range(100)],
             )
         else:
             index = int(self.path.rsplit("-", 1)[1])
-            self.send(
-                200, {"slug": f"perf-feature-{index:03}", "state": self.states[index]}
-            )
+            self.send(200, {"slug": f"perf-feature-{index:03}", "state": self.states[index]})
 
     def do_POST(self):
         payload = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
@@ -114,9 +109,7 @@ class HarnessTests(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             benchmark.validate_response("list", [])
         with self.assertRaises(RuntimeError):
-            benchmark.validate_response(
-                "health", {"status": "healthy", "service": "stub"}
-            )
+            benchmark.validate_response("health", {"status": "healthy", "service": "stub"})
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             with redirect_stdout(io.StringIO()):

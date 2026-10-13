@@ -32,9 +32,7 @@ class ManagedProcess:
     process: subprocess.Popen[bytes]
     stdout_path: Path
     stderr_path: Path
-    _ownership_token: object | None = field(
-        default=None, init=False, repr=False, compare=False
-    )
+    _ownership_token: object | None = field(default=None, init=False, repr=False, compare=False)
 
 
 @dataclass(frozen=True)
@@ -70,9 +68,7 @@ def _owned_identity(process: ManagedProcess) -> _OwnedIdentity:
     with _OWNED_LOCK:
         identity = _OWNED.get(token) if token is not None else None
     if identity is None or identity.process is not process.process:
-        raise ProcessOwnershipError(
-            f"process {process.name!r} is not owned by this harness"
-        )
+        raise ProcessOwnershipError(f"process {process.name!r} is not owned by this harness")
     return identity
 
 
@@ -85,9 +81,7 @@ def reserve_loopback_port() -> int:
 
 def candidate_sha(repo: Path) -> str:
     """Return the exact Git candidate at ``repo``."""
-    return subprocess.check_output(
-        ["git", "-C", str(repo), "rev-parse", "HEAD"], text=True
-    ).strip()
+    return subprocess.check_output(["git", "-C", str(repo), "rev-parse", "HEAD"], text=True).strip()
 
 
 def binary_sha256(path: Path) -> str:
@@ -99,9 +93,7 @@ def binary_sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def _allowlisted_environment(
-    parent: Mapping[str, str], keys: Sequence[str]
-) -> dict[str, str]:
+def _allowlisted_environment(parent: Mapping[str, str], keys: Sequence[str]) -> dict[str, str]:
     return {key: parent[key] for key in keys if key in parent}
 
 
@@ -268,8 +260,7 @@ async def wait_until(
         return_code = process.process.poll()
         if return_code is not None:
             raise WaitTimeout(
-                f"{name}: {process.name} exited with code {return_code}\n"
-                f"{_diagnostics(process)}"
+                f"{name}: {process.name} exited with code {return_code}\n{_diagnostics(process)}"
             )
         try:
             await probe()

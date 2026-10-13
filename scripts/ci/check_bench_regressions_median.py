@@ -137,9 +137,7 @@ def main() -> int:
         "run_count": len(run_paths),
         "regressions": regressions,
         "ok": not regressions,
-        "checked": len(median_per_bench)
-        - len(skipped_excluded)
-        - len(skipped_no_baseline),
+        "checked": len(median_per_bench) - len(skipped_excluded) - len(skipped_no_baseline),
         "excluded": len(skipped_excluded),
         "no_baseline": len(skipped_no_baseline),
         "baseline_size": len(baseline),

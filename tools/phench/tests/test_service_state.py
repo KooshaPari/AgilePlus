@@ -59,10 +59,7 @@ class ServiceStateTests(unittest.TestCase):
     def test_sync_target_repairs_missing_mirror_copy(self) -> None:
         init_target("alpha", mode="repo")
         mirror_file = (
-            Path(os.environ["THGENT_PHENCH_HOME_ROOT"])
-            / "alpha"
-            / ".phench"
-            / "target.lock.json"
+            Path(os.environ["THGENT_PHENCH_HOME_ROOT"]) / "alpha" / ".phench" / "target.lock.json"
         )
         mirror_file.unlink()
 

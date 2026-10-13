@@ -138,11 +138,7 @@ def python_check(file_path: Path, repo_root: Path, findings: list) -> None:
             line = line.strip()
             if not line:
                 continue
-            severity = (
-                "HIGH"
-                if "error" in line.lower() or "failure" in line.lower()
-                else "MEDIUM"
-            )
+            severity = "HIGH" if "error" in line.lower() or "failure" in line.lower() else "MEDIUM"
             findings.append(
                 {
                     "file": str(file_path.relative_to(repo_root)),
@@ -232,9 +228,7 @@ def typescript_check(file_path: Path, repo_root: Path, findings: list) -> None:
 
 def markdown_check(file_path: Path, repo_root: Path, findings: list) -> None:
     """Run markdownlint on a .md file if markdownlint is installed."""
-    rc, stdout, _stderr = run_tool(
-        ["npx", "markdownlint", str(file_path)], cwd=repo_root
-    )
+    rc, stdout, _stderr = run_tool(["npx", "markdownlint", str(file_path)], cwd=repo_root)
     if rc == 127:
         pass
     elif rc != 0:

@@ -493,9 +493,7 @@ results.
 
     ```python
     @tool(name="agileplus_status")
-    async def status(
-        feature_slug: str | None = None, client: AgilePlusCoreClient = None
-    ) -> dict:
+    async def status(feature_slug: str | None = None, client: AgilePlusCoreClient = None) -> dict:
         """Get status of features and work packages."""
         if feature_slug:
             feature = await client.get_feature(feature_slug)
@@ -511,9 +509,7 @@ results.
         feature_slug: str, target_branch: str = "main", client: AgilePlusCoreClient = None
     ) -> dict:
         """Ship a validated feature to the target branch."""
-        result = await client.run_command(
-            "ship", feature=feature_slug, target=target_branch
-        )
+        result = await client.run_command("ship", feature=feature_slug, target=target_branch)
         return result
     ```
 
@@ -607,9 +603,7 @@ from the Rust core.
 
     ```python
     @tool(name="agileplus_stream_status")
-    async def stream_status(
-        feature_slug: str, client: AgilePlusCoreClient
-    ) -> AsyncIterator[dict]:
+    async def stream_status(feature_slug: str, client: AgilePlusCoreClient) -> AsyncIterator[dict]:
         async for event in client.stream_agent_events(feature_slug):
             yield event
     ```

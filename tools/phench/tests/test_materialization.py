@@ -42,9 +42,7 @@ class MaterializationTests(unittest.TestCase):
     def _make_git_repo(self, name: str) -> Path:
         repo = Path(self._tmp.name) / name
         repo.mkdir(parents=True)
-        subprocess.run(
-            ["git", "init", "-b", "main"], cwd=repo, check=True, capture_output=True
-        )
+        subprocess.run(["git", "init", "-b", "main"], cwd=repo, check=True, capture_output=True)
         subprocess.run(
             ["git", "config", "user.name", "Codex"],
             cwd=repo,
@@ -62,9 +60,7 @@ class MaterializationTests(unittest.TestCase):
             "build:\n\t@echo build\nlint:\n\t@echo lint\n", encoding="utf-8"
         )
         subprocess.run(["git", "add", "."], cwd=repo, check=True, capture_output=True)
-        subprocess.run(
-            ["git", "commit", "-m", "init"], cwd=repo, check=True, capture_output=True
-        )
+        subprocess.run(["git", "commit", "-m", "init"], cwd=repo, check=True, capture_output=True)
         return repo
 
     def test_materialize_target_creates_detached_checkout_and_env_snapshot(

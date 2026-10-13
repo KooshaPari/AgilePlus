@@ -34,6 +34,10 @@ jobs:
             - name: Install Rust
               uses: dtolnay/rust-toolchain@stable
             - uses: Swatinem/rust-cache@v2
+            - uses: arduino/setup-protoc@v3
+              with:
+                  version: "28.x"
+                  repo-token: ${{ secrets.GITHUB_TOKEN }}
             - name: Build real release API
               run: cargo build --locked --release -p agileplus-api --bin agileplus-api
             - name: Measure isolated loopback HTTP workload

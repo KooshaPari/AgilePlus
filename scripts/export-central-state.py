@@ -10,7 +10,7 @@ import shutil
 import sqlite3
 import sys
 import tempfile
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 
@@ -93,8 +93,7 @@ def main() -> int:
             else database_path.parent
         )
         durable_export_dir = export_dir / (
-            f"agileplus-export-{database_path.stem}-"
-            f"{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}"
+            f"agileplus-export-{database_path.stem}-{datetime.now(UTC).strftime('%Y%m%dT%H%M%SZ')}"
         )
         durable_export_dir.mkdir(parents=True, exist_ok=False)
         durable_snapshot_path = durable_export_dir / "snapshot.db"

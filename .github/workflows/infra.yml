@@ -60,6 +60,10 @@ jobs:
             - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
             - uses: dtolnay/rust-toolchain@686976e191b89faba57d3206551f0f330d8cb249 # @stable
             - uses: Swatinem/rust-cache@49a0bdc70d2e1b713ca9e2869b211fcce03d3c1c # @v2
+            - uses: arduino/setup-protoc@v3
+              with:
+                  version: "28.x"
+                  repo-token: ${{ secrets.GITHUB_TOKEN }}
             - name: Install Linux system dependencies (Tauri/gtk)
               if: runner.os == 'Linux'
               run: |
@@ -111,6 +115,10 @@ jobs:
             - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
             - uses: dtolnay/rust-toolchain@686976e191b89faba57d3206551f0f330d8cb249 # @stable
             - uses: Swatinem/rust-cache@49a0bdc70d2e1b713ca9e2869b211fcce03d3c1c # @v2
+            - uses: arduino/setup-protoc@v3
+              with:
+                  version: "28.x"
+                  repo-token: ${{ secrets.GITHUB_TOKEN }}
             - name: Show excluded benches
               run: |
                   echo "### Benches excluded from threshold gate (ns-scale, below Criterion noise floor):"

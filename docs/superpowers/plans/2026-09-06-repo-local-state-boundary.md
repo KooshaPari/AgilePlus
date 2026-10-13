@@ -180,9 +180,7 @@ git commit -m "fix(runtime): require repository-local state context"
 - [ ] **Step 1: Add a failing MCP test for a session root.**
 
 ```python
-async def test_workspace_roots_are_scoped_to_the_client_repository(
-    monkeypatch, tmp_path
-):
+async def test_workspace_roots_are_scoped_to_the_client_repository(monkeypatch, tmp_path):
     repo = tmp_path / "project"
     (repo / ".git").mkdir(parents=True)
     monkeypatch.setattr(server, "_session_project_root", repo)

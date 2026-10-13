@@ -31,7 +31,7 @@ Validation: duplicate unit_ids cause an error before any files are written.
 import argparse
 import json
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 
@@ -52,8 +52,7 @@ def validate_manifest(manifest: dict) -> list[dict]:
             continue
         if uid in seen_ids:
             errors.append(
-                f"Duplicate unit_id '{uid}' at index {i} "
-                f"(first seen at index {seen_ids[uid]})"
+                f"Duplicate unit_id '{uid}' at index {i} (first seen at index {seen_ids[uid]})"
             )
         seen_ids[uid] = i
 
@@ -68,7 +67,7 @@ def validate_manifest(manifest: dict) -> list[dict]:
 def generate_spec_md(epic: str, manifest: dict) -> str:
     """Generate a spec.md for the DAG epic."""
     units = manifest.get("units", [])
-    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    now = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     lines = [
         f"# {manifest.get('title', 'DAG Epic')}",
@@ -91,8 +90,7 @@ def generate_spec_md(epic: str, manifest: dict) -> str:
     for unit in units:
         deps = ", ".join(unit.get("dependencies", [])) or "—"
         lines.append(
-            f"| {unit['unit_id']} | {unit['title']} | "
-            f"{unit.get('type', 'automation')} | {deps} |"
+            f"| {unit['unit_id']} | {unit['title']} | {unit.get('type', 'automation')} | {deps} |"
         )
 
     lines += [
@@ -120,7 +118,7 @@ def generate_spec_md(epic: str, manifest: dict) -> str:
 
 def generate_wp_md(unit: dict, epic: str, phase: str) -> str:
     """Generate a work-package .md file for a single DAG unit."""
-    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    now = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
     wp_id = unit["unit_id"]
     deps = unit.get("dependencies", [])
     subtasks = unit.get("subtasks", [])
@@ -189,7 +187,7 @@ def generate_wp_md(unit: dict, epic: str, phase: str) -> str:
 
 def generate_tasks_md(units: list[dict], epic: str) -> str:
     """Generate an aggregated tasks.md listing all work packages."""
-    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    now = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
     lines = [
         f"# Work Packages: {epic}",
         "",
@@ -309,7 +307,7 @@ def main():
     meta = {
         "epic": epic,
         "title": manifest.get("title", ""),
-        "generated": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "generated": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "unit_count": len(units),
         "unit_ids": [u["unit_id"] for u in units],
     }

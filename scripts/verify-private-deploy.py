@@ -12,9 +12,8 @@ import json
 import os
 import subprocess
 import sys
-from pathlib import Path
-
 import tomllib
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 COMPOSE = ROOT / "deploy/selfhost/docker-compose.selfhost.yml"
@@ -52,9 +51,9 @@ def main() -> int:
         "private bootstrap must not start per-project Caddy, Traefik or Tunnel",
     )
     api = services["agileplus-api"]
-    rust_version = tomllib.loads((ROOT / "Cargo.toml").read_text())["workspace"][
-        "package"
-    ]["rust-version"]
+    rust_version = tomllib.loads((ROOT / "Cargo.toml").read_text())["workspace"]["package"][
+        "rust-version"
+    ]
     image = api["image"]
     require(image.startswith("rust:"), "bootstrap must use an explicit Rust image")
     image_version = image.split(":", 1)[1].split("-", 1)[0]
@@ -92,9 +91,7 @@ def main() -> int:
     command = api.get("command", "")
     if isinstance(command, list):
         command = " ".join(command)
-    require(
-        "--locked" in command, "production bootstrap should use the exact Cargo.lock"
-    )
+    require("--locked" in command, "production bootstrap should use the exact Cargo.lock")
 
     caddy = CADDY.read_text()
     require(

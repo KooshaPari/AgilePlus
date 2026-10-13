@@ -130,13 +130,9 @@ def materialize_target(target: str) -> RuntimeState:
 
     for repo in lock.repos:
         if not repo.resolved_sha:
-            raise ValueError(
-                f"repo {repo.repo_id} is not locked; run target lock first"
-            )
+            raise ValueError(f"repo {repo.repo_id} is not locked; run target lock first")
         checkout_path = repos_root / repo.repo_id
-        materialize_repo_checkout(
-            Path(repo.repo_path), checkout_path, repo.resolved_sha
-        )
+        materialize_repo_checkout(Path(repo.repo_path), checkout_path, repo.resolved_sha)
         runtime_repos.append(
             RuntimeRepo(
                 repo_id=repo.repo_id,
@@ -184,9 +180,7 @@ def target_status(target: str) -> dict[str, Any]:
     }
 
 
-def target_timeline(
-    target: str, repo_id: str | None = None, limit: int = 30
-) -> dict[str, Any]:
+def target_timeline(target: str, repo_id: str | None = None, limit: int = 30) -> dict[str, Any]:
     lock = load_target_lock(target)
     if not lock.repos:
         raise ValueError("target has no repos")
@@ -213,20 +207,14 @@ def build_catalog(target: str, repo_id: str | None = None) -> RunnerCatalog:
     try:
         runtime = read_dual(target, RUNTIME_FILE)
     except FileNotFoundError as exc:
-        raise ValueError(
-            "target has no runtime materialization; run target materialize"
-        ) from exc
+        raise ValueError("target has no runtime materialization; run target materialize") from exc
     materializations = runtime.get("repo_materializations")
     if not isinstance(materializations, list) or not materializations:
-        raise ValueError(
-            "target has no runtime materialization; run target materialize"
-        )
+        raise ValueError("target has no runtime materialization; run target materialize")
 
     selected = materializations[0]
     if repo_id:
-        selected = next(
-            (item for item in materializations if item.get("repo_id") == repo_id), None
-        )
+        selected = next((item for item in materializations if item.get("repo_id") == repo_id), None)
         if not selected:
             raise ValueError(f"repo_id not materialized: {repo_id}")
     checkout = Path(str(selected.get("checkout_path", ""))).resolve()
@@ -286,15 +274,11 @@ def run_target(
     runtime = read_dual(target, RUNTIME_FILE)
     materializations = runtime.get("repo_materializations")
     if not isinstance(materializations, list) or not materializations:
-        raise ValueError(
-            "target has no runtime materialization; run target materialize"
-        )
+        raise ValueError("target has no runtime materialization; run target materialize")
 
     selected_items = materializations
     if repo_id is not None:
-        selected = next(
-            (item for item in materializations if item.get("repo_id") == repo_id), None
-        )
+        selected = next((item for item in materializations if item.get("repo_id") == repo_id), None)
         if selected is None:
             raise ValueError(f"repo_id not materialized: {repo_id}")
         selected_items = [selected]
@@ -310,9 +294,7 @@ def run_target(
     if execution_mode == "parallel" and len(runs) > 1:
         with ThreadPoolExecutor(max_workers=len(runs)) as pool:
             futures = [
-                pool.submit(
-                    _run_single_repo_target, checkout, catalog, runner, command_name
-                )
+                pool.submit(_run_single_repo_target, checkout, catalog, runner, command_name)
                 for checkout, catalog in runs
             ]
             results = [future.result() for future in futures]
@@ -330,17 +312,11 @@ def run_env_doctor_for_target(target: str) -> dict[str, Any]:
     try:
         runtime = read_dual(target, RUNTIME_FILE)
     except FileNotFoundError as exc:
-        raise ValueError(
-            "target has no runtime materialization; run target materialize"
-        ) from exc
+        raise ValueError("target has no runtime materialization; run target materialize") from exc
     materializations = runtime.get("repo_materializations")
     if not isinstance(materializations, list) or not materializations:
-        raise ValueError(
-            "target has no runtime materialization; run target materialize"
-        )
-    checkouts = [
-        Path(str(item.get("checkout_path", ""))).resolve() for item in materializations
-    ]
+        raise ValueError("target has no runtime materialization; run target materialize")
+    checkouts = [Path(str(item.get("checkout_path", ""))).resolve() for item in materializations]
     report = run_env_doctor(target, checkouts)
     dual_write(target, ENV_FILE, report)
     return asdict(report)

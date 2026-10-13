@@ -97,9 +97,7 @@ def target_materialize_cmd(name: str) -> None:
 
 @app.command("timeline")
 def timeline_cmd(name: str, repo_id: str | None = None, limit: int = 30) -> None:
-    console.print_json(
-        json.dumps(target_timeline(name, repo_id=repo_id, limit=limit)).decode()
-    )
+    console.print_json(json.dumps(target_timeline(name, repo_id=repo_id, limit=limit)).decode())
 
 
 @app.command("run")
@@ -155,9 +153,7 @@ def tui_cmd() -> None:
     selected_target = targets[target_index - 1]
 
     timeline = target_timeline(selected_target, limit=20)
-    console.print(
-        f"Timeline for [bold]{selected_target}[/bold] ({timeline['repo_id']}):"
-    )
+    console.print(f"Timeline for [bold]{selected_target}[/bold] ({timeline['repo_id']}):")
     for line in timeline.get("recent", []):
         console.print(f"  {line}")
 

@@ -40,9 +40,7 @@ class RunContractTests(unittest.TestCase):
     def _make_git_repo(self, name: str, files: dict[str, str]) -> Path:
         repo = Path(self._tmp.name) / name
         repo.mkdir(parents=True)
-        subprocess.run(
-            ["git", "init", "-b", "main"], cwd=repo, check=True, capture_output=True
-        )
+        subprocess.run(["git", "init", "-b", "main"], cwd=repo, check=True, capture_output=True)
         subprocess.run(
             ["git", "config", "user.name", "Codex"],
             cwd=repo,
@@ -60,9 +58,7 @@ class RunContractTests(unittest.TestCase):
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(content, encoding="utf-8")
         subprocess.run(["git", "add", "."], cwd=repo, check=True, capture_output=True)
-        subprocess.run(
-            ["git", "commit", "-m", "init"], cwd=repo, check=True, capture_output=True
-        )
+        subprocess.run(["git", "commit", "-m", "init"], cwd=repo, check=True, capture_output=True)
         return repo
 
     def _materialize_repo(self, repo: Path, repo_id: str) -> None:
@@ -75,9 +71,7 @@ class RunContractTests(unittest.TestCase):
         repo = self._make_git_repo("plain", {"README.md": "# plain\n"})
         self._materialize_repo(repo, "plain")
 
-        with self.assertRaisesRegex(
-            ValueError, "runner has no discovered commands: make"
-        ):
+        with self.assertRaisesRegex(ValueError, "runner has no discovered commands: make"):
             run_target("alpha", runner="make")
 
     def test_run_target_rejects_noninteractive_selection_without_tty(self) -> None:

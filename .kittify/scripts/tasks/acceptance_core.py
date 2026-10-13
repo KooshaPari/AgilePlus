@@ -23,7 +23,7 @@ import os
 import re
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 try:
@@ -127,9 +127,7 @@ class AcceptanceSummary:
     @property
     def all_done(self) -> bool:
         return not (
-            self.lanes.get("planned")
-            or self.lanes.get("doing")
-            or self.lanes.get("for_review")
+            self.lanes.get("planned") or self.lanes.get("doing") or self.lanes.get("for_review")
         )
 
     @property
@@ -255,9 +253,7 @@ def _iter_work_packages(repo_root: Path, feature: str) -> Iterable[WorkPackage]:
     feature_path = repo_root / "kitty-specs" / feature
     tasks_dir = feature_path / "tasks"
     if not tasks_dir.exists():
-        raise AcceptanceError(
-            f"Feature '{feature}' has no tasks directory at {tasks_dir}."
-        )
+        raise AcceptanceError(f"Feature '{feature}' has no tasks directory at {tasks_dir}.")
 
     use_legacy = is_legacy_format(feature_path)
 
@@ -336,12 +332,8 @@ def _missing_artifacts(feature_dir: Path) -> tuple[list[str], list[str]]:
         feature_dir / "research.md",
         feature_dir / "contracts",
     ]
-    missing_required = [
-        str(p.relative_to(feature_dir)) for p in required if not p.exists()
-    ]
-    missing_optional = [
-        str(p.relative_to(feature_dir)) for p in optional if not p.exists()
-    ]
+    missing_required = [str(p.relative_to(feature_dir)) for p in required if not p.exists()]
+    missing_optional = [str(p.relative_to(feature_dir)) for p in optional if not p.exists()]
     return missing_required, missing_optional
 
 
@@ -393,9 +385,7 @@ def collect_feature_summary(
     # Resolve worktree root
     try:
         worktree_root = Path(
-            run_git(
-                ["rev-parse", "--show-toplevel"], cwd=repo_root, check=True
-            ).stdout.strip()
+            run_git(["rev-parse", "--show-toplevel"], cwd=repo_root, check=True).stdout.strip()
         ).resolve()
     except TaskCliError:
         worktree_root = repo_root
@@ -403,9 +393,7 @@ def collect_feature_summary(
     # Resolve primary (main) repo root
     try:
         git_common_dir = Path(
-            run_git(
-                ["rev-parse", "--git-common-dir"], cwd=repo_root, check=True
-            ).stdout.strip()
+            run_git(["rev-parse", "--git-common-dir"], cwd=repo_root, check=True).stdout.strip()
         ).resolve()
         primary_repo_root = git_common_dir.parent
     except TaskCliError:
@@ -459,9 +447,7 @@ def collect_feature_summary(
                     f"{wp_id}: Activity Log missing entry for lane={wp.current_lane}"
                 )
             if wp.current_lane == "done" and entries[-1]["lane"] != "done":
-                activity_issues.append(
-                    f"{wp_id}: latest Activity Log entry not lane=done"
-                )
+                activity_issues.append(f"{wp_id}: latest Activity Log entry not lane=done")
 
         work_packages.append(
             WorkPackageState(
@@ -509,9 +495,7 @@ def collect_feature_summary(
         work_packages=work_packages,
         metadata_issues=metadata_issues,
         activity_issues=activity_issues,
-        unchecked_tasks=unchecked_tasks
-        if unchecked_tasks != ["tasks.md missing"]
-        else [],
+        unchecked_tasks=unchecked_tasks if unchecked_tasks != ["tasks.md missing"] else [],
         needs_clarification=needs_clarification,
         missing_artifacts=missing_required,
         optional_missing=missing_optional,
@@ -533,9 +517,7 @@ def choose_mode(preference: str | None, repo_root: Path) -> AcceptanceMode:
     if preference in {"pr", "local", "checklist"}:
         return preference
     try:
-        remotes = (
-            run_git(["remote"], cwd=repo_root, check=False).stdout.strip().splitlines()
-        )
+        remotes = run_git(["remote"], cwd=repo_root, check=False).stdout.strip().splitlines()
         if remotes:
             return "pr"
     except TaskCliError:
@@ -569,14 +551,10 @@ def perform_acceptance(
             ``checklist``.
     """
     if mode != "checklist" and not summary.ok:
-        raise AcceptanceError(
-            "Acceptance checks failed; run verify to see outstanding issues."
-        )
+        raise AcceptanceError("Acceptance checks failed; run verify to see outstanding issues.")
 
-    actor_name = (
-        actor or os.getenv("USER") or os.getenv("USERNAME") or "system"
-    ).strip()
-    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    actor_name = (actor or os.getenv("USER") or os.getenv("USERNAME") or "system").strip()
+    timestamp = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     parent_commit: str | None = None
     accept_commit: str | None = None
@@ -585,9 +563,7 @@ def perform_acceptance(
     if auto_commit and mode != "checklist":
         try:
             parent_commit = (
-                run_git(
-                    ["rev-parse", "HEAD"], cwd=summary.repo_root, check=False
-                ).stdout.strip()
+                run_git(["rev-parse", "HEAD"], cwd=summary.repo_root, check=False).stdout.strip()
                 or None
             )
         except TaskCliError:
@@ -620,9 +596,7 @@ def perform_acceptance(
         if len(history) > 20:
             meta["acceptance_history"] = history[-20:]
 
-        meta_path.write_text(
-            json.dumps(meta, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-        )
+        meta_path.write_text(json.dumps(meta, indent=2, sort_keys=True) + "\n", encoding="utf-8")
         run_git(
             ["add", str(meta_path.relative_to(summary.repo_root))],
             cwd=summary.repo_root,
@@ -634,9 +608,7 @@ def perform_acceptance(
             cwd=summary.repo_root,
             check=True,
         )
-        staged_files = [
-            line.strip() for line in status.stdout.splitlines() if line.strip()
-        ]
+        staged_files = [line.strip() for line in status.stdout.splitlines() if line.strip()]
         if staged_files:
             commit_msg = f"Accept {summary.feature}"
             run_git(
@@ -676,17 +648,13 @@ def perform_acceptance(
             ]
         )
     else:  # checklist
-        instructions.append(
-            "All checks passed. Proceed with your manual acceptance workflow."
-        )
+        instructions.append("All checks passed. Proceed with your manual acceptance workflow.")
 
     if summary.worktree_root != summary.primary_repo_root:
         cleanup_instructions.append(
             f"After merging, remove the worktree: `git worktree remove {summary.worktree_root}`"
         )
-    cleanup_instructions.append(
-        f"Delete the feature branch when done: `git branch -d {branch}`"
-    )
+    cleanup_instructions.append(f"Delete the feature branch when done: `git branch -d {branch}`")
 
     notes: list[str] = []
     if accept_commit:

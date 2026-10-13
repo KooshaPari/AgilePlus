@@ -42,11 +42,7 @@ def _task_targets(path: Path) -> list[str]:
             continue
         if line.startswith("#"):
             continue
-        if (
-            line.endswith(":")
-            and not line.startswith("version:")
-            and not line.startswith("tasks:")
-        ):
+        if line.endswith(":") and not line.startswith("version:") and not line.startswith("tasks:"):
             targets.append(line[:-1].strip())
     return sorted({t for t in targets if t})
 

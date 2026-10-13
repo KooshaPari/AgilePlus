@@ -12,7 +12,7 @@ import json
 import re
 import sqlite3
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -100,7 +100,7 @@ class FeatureSeed:
 
 
 def utc_now() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 def feature_state_from_spec(spec_text: str, task_done: int, task_total: int) -> str:
@@ -163,9 +163,7 @@ def parse_large_tasks(task_text: str) -> list[WorkPackageSeed]:
         for pattern in WP_HEADING_PATTERNS:
             match = pattern.match(line)
             if match:
-                headings.append(
-                    (match.group(1), normalize_title(match.group(2)), idx, -1)
-                )
+                headings.append((match.group(1), normalize_title(match.group(2)), idx, -1))
                 break
     if not headings:
         return []
@@ -257,9 +255,7 @@ def ensure_project(conn: sqlite3.Connection) -> None:
     )
 
 
-def ensure_module(
-    conn: sqlite3.Connection, slug: str, name: str, description: str
-) -> int:
+def ensure_module(conn: sqlite3.Connection, slug: str, name: str, description: str) -> int:
     now = utc_now()
     row = conn.execute(
         "SELECT id FROM modules WHERE slug = ? AND parent_module_id IS NULL", (slug,)
@@ -282,16 +278,10 @@ def ensure_module(
 
 def upsert_feature(conn: sqlite3.Connection, seed: FeatureSeed, module_id: int) -> int:
     now = utc_now()
-    row = conn.execute(
-        "SELECT id, state FROM features WHERE slug = ?", (seed.slug,)
-    ).fetchone()
+    row = conn.execute("SELECT id, state FROM features WHERE slug = ?", (seed.slug,)).fetchone()
     if row:
         feature_id, existing_state = int(row[0]), row[1]
-        state = (
-            existing_state
-            if existing_state in {"shipped", "retrospected"}
-            else seed.state
-        )
+        state = existing_state if existing_state in {"shipped", "retrospected"} else seed.state
         conn.execute(
             """
             UPDATE features
