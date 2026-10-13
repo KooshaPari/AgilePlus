@@ -24,7 +24,7 @@ to AgilePlus's REST + auth on the backend.
 | --- | --- |
 | Workspace (single, slug `agileplus`) | the AgilePlus root |
 | Project | `Feature` (`GET /api/v1/features`) |
-| Project states (board columns) | fixed set derived from `FeatureState` (Created → Planned → Implementing → Validated → Shipped), grouped into Plane groups (backlog/unstarted/started/completed) |
+| Project states (board columns) | eight explicit columns: Created, Planned, Implementing, In Review, Blocked, Validated Feature, Work Package Done, Shipped Feature. WorkPackage Done is **not** Feature Shipped. |
 | Issue | `WorkPackage` (`GET /api/v1/features/:slug/work-packages`) |
 | Issue state group | `WorkPackage.state` snapped onto the nearest column group |
 | `me` user / members / labels | local stubs (read-only review) |
@@ -106,3 +106,14 @@ Plane state groups).
 - Unimplemented endpoints return 404, not synthetic success; frontend gaps stay visible.
 - One synthetic workspace; AgilePlus modules/projects hierarchy is flattened
   to Feature=Project.
+
+## State authority distinction
+
+The board is a **projection**: an AgilePlus `WorkPackage.state=done` appears
+in **Work Package Done**, never **Shipped Feature**. The latter is a separate
+product/feature state and cannot be inferred from a work package finishing.
+Blocked and In Review remain explicit columns. Native AgilePlus acceptance
+and Tracera product verification remain their respective governed boundaries.
+This shim does not implement product-acceptance writes or prove verified
+usability. Its custom `_agileplus_*` fields carry local source provenance for
+reconciliation; these fields are not native Plane API guarantees.
