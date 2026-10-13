@@ -1,0 +1,234 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://phenotype.space/agileplus/schemas/external-link-contract.v1.schema.json",
+  "title": "AgilePlus external identity and link contract v1",
+  "description": "Provider-neutral references and typed links. This schema carries identity and projection metadata; it does not grant AgilePlus acceptance authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_version",
+    "project_uid",
+    "external_refs",
+    "external_links"
+  ],
+  "properties": {
+    "contract_version": {
+      "const": "1.0.0"
+    },
+    "project_uid": {
+      "$ref": "#/$defs/uuid"
+    },
+    "exported_at": {
+      "$ref": "#/$defs/timestamp"
+    },
+    "external_refs": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/external_ref"
+      }
+    },
+    "external_links": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/external_link"
+      }
+    }
+  },
+  "$defs": {
+    "uuid": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "provider": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_-]{0,63}$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "external_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "external_ref_uid",
+        "provider",
+        "instance_uid",
+        "external_kind",
+        "external_id",
+        "revision_state",
+        "first_observed_at"
+      ],
+      "properties": {
+        "external_ref_uid": {
+          "$ref": "#/$defs/uuid"
+        },
+        "provider": {
+          "$ref": "#/$defs/provider"
+        },
+        "instance_uid": {
+          "$ref": "#/$defs/uuid"
+        },
+        "external_kind": {
+          "type": "string",
+          "enum": [
+            "product_record",
+            "capability",
+            "change",
+            "task",
+            "work_item",
+            "other"
+          ]
+        },
+        "external_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "revision_state": {
+          "type": "string",
+          "enum": [
+            "pinned",
+            "provider_has_no_revision",
+            "revision_unavailable"
+          ]
+        },
+        "external_revision": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "external_url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "content_hash": {
+          "$ref": "#/$defs/sha256"
+        },
+        "first_observed_at": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "last_verified_at": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "superseded_by_ref_uid": {
+          "$ref": "#/$defs/uuid"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "revision_state": {
+                "const": "pinned"
+              }
+            },
+            "required": [
+              "revision_state"
+            ]
+          },
+          "then": {
+            "required": [
+              "external_revision"
+            ]
+          },
+          "else": {
+            "not": {
+              "required": [
+                "external_revision"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "external_link": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "link_uid",
+        "project_uid",
+        "local_kind",
+        "local_uid",
+        "external_ref_uid",
+        "relation",
+        "direction",
+        "authority_domain",
+        "conflict_state",
+        "created_at"
+      ],
+      "properties": {
+        "link_uid": {
+          "$ref": "#/$defs/uuid"
+        },
+        "project_uid": {
+          "$ref": "#/$defs/uuid"
+        },
+        "local_kind": {
+          "type": "string",
+          "enum": [
+            "project",
+            "feature",
+            "work_package",
+            "spec_revision",
+            "acceptance_receipt"
+          ]
+        },
+        "local_uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "external_ref_uid": {
+          "$ref": "#/$defs/uuid"
+        },
+        "relation": {
+          "type": "string",
+          "enum": [
+            "implements",
+            "verifies",
+            "references",
+            "planned_by",
+            "tracked_by",
+            "supersedes"
+          ]
+        },
+        "direction": {
+          "type": "string",
+          "enum": [
+            "inbound",
+            "outbound",
+            "bidirectional_projection"
+          ]
+        },
+        "authority_domain": {
+          "type": "string",
+          "enum": [
+            "development",
+            "product",
+            "planning"
+          ]
+        },
+        "conflict_state": {
+          "type": "string",
+          "enum": [
+            "none",
+            "pending_reconciliation",
+            "disputed",
+            "superseded"
+          ]
+        },
+        "created_at": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "superseded_at": {
+          "$ref": "#/$defs/timestamp"
+        }
+      }
+    }
+  }
+}
