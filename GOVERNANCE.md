@@ -1,108 +1,130 @@
-# GOVERNANCE.md — repos shelf governance
+# AgilePlus repository governance
 
-## Shelf Governance
+## Scope
 
-This shelf is a **polyrepo of independent projects** owned by a single
-individual (koosha-pari). Governance is therefore lightweight — the owner
-makes all decisions, with agents acting as trusted helpers.
+This document governs `KooshaPari/AgilePlus`, the AgilePlus tooling/product codebase.
 
-## Decision Making
+AgilePlus is not a repository shelf. Sibling products, organization plans, personal tasks, and their canonical specifications remain in their owning systems and repositories. AgilePlus may reference or operate on external Git repositories without absorbing their source or authority.
 
-| Decision type | Process |
-|---------------|---------|
-| New project | Owner creates + names, agent documents |
-| Architecture (cross-project) | Owner decides, agent researches |
-| Architecture (per-project) | Project owner decides |
-| Dependency conflicts | Agent proposes options, owner chooses |
-| PR merge | Owner reviews + merges |
-| Deleting/archiving project | Owner initiates, agent executes |
+## Product authority
 
-## Code Review Standards
+| Domain | Canonical authority |
+|---|---|
+| Code-project specifications, WorkPackages, execution records, evidence, evaluation, audit, and development acceptance | AgilePlus |
+| Persistent product/system records and product-state interpretation | Tracera |
+| Organization/personal hierarchy, schedule, due date, and coordination status, when adopted | Plane or Paperclip |
+| Repository/release approval | Koosha/operator and configured repository protections |
 
-### Per-Project Rules
-Each project may define its own review standards in `CONTRIBUTING.md`.
+No external product, planning system, dashboard, import, or generic state-transition API may grant AgilePlus terminal acceptance.
 
-### Shelf-Level Standards
-- No shelf-level changes without understanding downstream impact
-- Breaking changes across projects must be coordinated
-- Test coverage must not regress
+## Decision making
 
-### Agent Recommendations
-Agents may flag concerns:
-- Security implications
-- Dependency bloat
-- Cross-project duplication
-- Performance regressions
+| Decision | Authority and process |
+|---|---|
+| Product scope or ecosystem boundary | Operator ruling, recorded in an issue/ADR when material |
+| Architecture | Evidence-backed proposal and ADR; operator accepts material trade-offs |
+| Requirement or semantic-contract change | Preserve source intent and supersession; review against authority index and executable acceptance |
+| Dependency change | Focused PR with lockfile/source impact, advisories, compatibility, and relevant tests |
+| Database migration | Additive/reversible where possible; backup, compatibility, negative controls, and migration receipt |
+| Release/deployment | Evidence gates in `STABLE.md` and release records; no badge-only approval |
+| Merge | Required review/protection plus explicit authorized merge action |
+| Removal/retirement | Proven ownership and replacement/retirement decision; preserve provenance |
 
-Agents flag; owner decides.
+Agents research, implement bounded changes, and report evidence. They do not manufacture human approval.
 
-## Release Management
+## Repository boundary
 
-Projects manage their own release cycles. Shelf-level coordination only
-when:
-- A project is archived or deleted
-- Cross-project dependency changes
-- Major shelf reorganization
+### Allowed
 
-## Standards & Conventions
+- AgilePlus source, tests, schemas, migrations, documentation, packaging, and product-owned adapters.
+- Typed references to external repositories and records.
+- Fixtures or vendored dependencies with explicit provenance, license, update, and build boundaries.
+- Historical/recovery evidence retained with clear status.
 
-### Naming
-- Projects: kebab-case (`heliosCLI`, `thegent`, `phenotype-config`)
-- Branches: `<project>/<type>/<description>`
-- Sessions: `<project>:<brief-task>`
-- Plans: `<project>-<YYYYMMDD>-<task>.md`
+### Not allowed by default
 
-### Quality Gates
-- **Rust projects**: `cargo clippy -- -D warnings` + tests
-- **JS/TS projects**: lint + typecheck + tests
-- **Python projects**: ruff check + pyright + tests
-- **Cross-project**: duplication audit before major refactors
+- Sibling repository clones or worktrees placed under AgilePlus.
+- Canonical sibling product specifications copied into AgilePlus.
+- Organization/personal planning records treated as AgilePlus WorkPackages.
+- Plane-derived product forks implemented as AgilePlus native clients.
+- Tracera product records duplicated as an AgilePlus product SSOT.
+- Unclassified foreign trees presented as active AgilePlus implementation.
 
-## Project Lifecycle
+Suspected shelf-era or misplaced material is preserved and classified through issue #1128 rather than silently deleted or accepted.
 
-### Active Projects
-Listed in `projects/INDEX.md` with status `active`.
-Regular development, owned by the shelf owner.
+## Change workflow
 
-### Maintenance Projects
-Listed with status `maintenance`.
-Minimal changes, bug fixes only, no new features.
+1. Identify the owning domain and source of intent.
+2. Inspect current implementation, tests, packaging, and relevant history.
+3. State observed behavior separately from proposed target behavior.
+4. Open or reference a bounded issue/spec/ADR.
+5. Work on a focused branch or isolated worktree.
+6. Add positive and negative tests that can distinguish the intended behavior from trivial/stub behavior.
+7. Run applicable checks and retain exact evidence.
+8. Open a draft PR while evidence, review, migration, or rollout gates remain incomplete.
+9. Merge only through an authorized action after required evidence and review.
+10. Deploy/release separately; a merged PR is not deployment evidence.
 
-### Archived Projects
-Listed with status `archived` in `projects/INDEX.md`.
-Actual code lives in `.archive/`.
-Can be restored to active if needed.
+## Quality and acceptance gates
 
-### Deletion
-Rare. Only after confirmed backup + no downstream dependencies.
+Applicable changes should address:
 
-## Tooling Governance
+- formatting, lint, build, unit/integration tests;
+- domain and lifecycle invariants;
+- evidence and audit-chain integrity;
+- migration and rollback safety;
+- platform and packaging behavior;
+- authorization, credentials, and secret handling;
+- accessibility and operator error handling;
+- performance/resource bounds where material;
+- failure propagation and negative controls;
+- exact artifact/revision provenance.
 
-| Tool | Purpose | Governance |
-|------|---------|------------|
-| `agileplus` | Project management | Per-project spec system |
-| `agileplus` CLI | Work tracking | AgilePlus project only |
-| `cargo` | Rust build | Project-level |
-| `bun` | JS/TS package management | Project-level |
-| `task` | Task runner | Project-level |
-| `buf` | Proto management | Project-level |
-| `mise` | Runtime version management | Shelf-level dotfile |
+Skipped, waived, advisory, environment-blocked, and not-run checks remain distinct from passes. Baseline CI defects are isolated rather than hidden inside product PRs.
 
-## Agent Authority Levels
+Terminal development acceptance follows ADR-0019. It requires exact-candidate correctness evidence plus applicable governance/policy. Review approval, external task completion, or evidence presence alone is insufficient.
 
-| Agent | Can edit | Can commit | Can push | Can merge |
-|-------|----------|------------|----------|-----------|
-| Forge | Any file | Any branch | Own worktrees | No |
-| Muse | Comments only | No | No | No |
-| Sage | Any file | Any branch | Own worktrees | No |
-| Helios | Test/config files | Test branches | No | No |
+## Client and writer governance
 
-**All agents ask before acting outside their authority.**
+- CLI, MCP, native web, and tray/desktop converge on one application/writer boundary.
+- Raw client SQL must not bypass lifecycle, audit, event, or acceptance semantics.
+- During daemon migration, direct SQLite and daemon-backed mutation paths must be explicitly fenced; no silent dual-writer operation.
+- External projections use typed, idempotent, asynchronous contracts and cannot control local acceptance.
 
-## Change Log
+## Release governance
 
-This file tracks governance changes to the shelf itself.
+The authoritative release posture is evidence-bound and tiered in `STABLE.md`.
+
+A release claim must identify:
+
+- exact source revision;
+- artifacts built from that revision;
+- platforms and signing state;
+- checks actually executed;
+- installer/upgrade/rollback/uninstall results;
+- known waivers and residual advisories;
+- deployed or installed instances actually verified.
+
+Static badges, file presence, historical releases, and workflow definitions do not establish current rollout completion.
+
+## Agent authority
+
+| Action | Default agent authority |
+|---|---|
+| Read/search/history inspection | Allowed when access is authorized |
+| Isolated reproduction and bounded validation | Allowed with safety/resource limits |
+| Documentation, diagnostics, focused branch commits, draft PRs | Allowed when the task authorizes repository work |
+| Modify unrelated concurrent work or active user worktree | Not allowed |
+| Merge, force-push, delete refs/history, deploy, publish, DNS/auth/billing changes | Not allowed without explicit authorization |
+| Move/delete sibling or historical material | Not allowed without provenance and approved disposition |
+
+## Historical governance material
+
+Shelf-era governance, portfolio specifications, and embedded project instructions remain historical evidence pending disposition. They are non-authoritative when they conflict with this document, accepted ADRs, or explicit operator rulings. Supersession should be recorded; history should not be rewritten to hide the conflict.
+
+## Change log
 
 | Date | Change |
-|------|--------|
-| 2026-03-29 | Initial shelf governance written (previously AgilePlus-specific) |
+|---|---|
+| 2026-03-29 | Shelf-governance document introduced, displacing AgilePlus-specific governance. |
+| 2026-10-13 | Repository governance restored to the AgilePlus product boundary; shelf-era material retained as historical evidence pending issue #1128. |
