@@ -46,6 +46,16 @@ fn new_registry_is_versioned_and_empty() {
 }
 
 #[test]
+fn generated_project_identity_is_uuid_v7() {
+    let directory = tempfile::tempdir().unwrap();
+    let project = git_project("uuid-v7");
+    let mut registry = DeviceRegistry::open(registry_path(&directory)).unwrap();
+
+    let registered = registry.register_project(project.path()).unwrap();
+    assert_eq!(registered.project_uid.as_bytes()[6] >> 4, 7);
+}
+
+#[test]
 fn register_list_and_desired_state_are_revisioned() {
     let directory = tempfile::tempdir().unwrap();
     let project = git_project("register");
@@ -112,6 +122,23 @@ fn symlink_alias_is_rejected_as_duplicate_root() {
 
     let error = registry.register_project(&alias).unwrap_err();
     assert!(matches!(error, RegistryError::DuplicateRoot { .. }));
+}
+
+#[cfg(unix)]
+#[test]
+fn explicit_registry_path_does_not_chmod_existing_parent() {
+    use std::os::unix::fs::PermissionsExt;
+
+    let directory = tempfile::tempdir().unwrap();
+    let shared_parent = directory.path().join("shared-parent");
+    fs::create_dir(&shared_parent).unwrap();
+    fs::set_permissions(&shared_parent, fs::Permissions::from_mode(0o755)).unwrap();
+
+    let path = shared_parent.join(REGISTRY_FILE_NAME);
+    drop(DeviceRegistry::open(path).unwrap());
+
+    let mode = fs::metadata(shared_parent).unwrap().permissions().mode() & 0o777;
+    assert_eq!(mode, 0o755);
 }
 
 #[test]
