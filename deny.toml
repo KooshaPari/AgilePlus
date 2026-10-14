@@ -24,15 +24,21 @@ db-path = "$CARGO_HOME/advisory-db"
 # tauri/tray-icon bump to a version that drops the libappindicator default
 # or ships a maintained ksni-only path.
 #
-# RUSTSEC-2024-0429 (glib VariantStrIter) remains: glib 0.18.5 is the latest
-# resolvable version in this graph; upstream fixed only in 0.20.0, reachable
-# once tauri PR #16170 ("chore(deps): update gtk crates to 0.19") lands. The
-# 2026-10-14 Dependabot run (38524349833) confirmed this by reporting
-# "security_update_not_possible": latest-resolvable 0.18.5, lowest-non-vulnerable
-# 0.20.0, conflicting-dependencies [].
+# RUSTSEC-2024-0429 (glib VariantStrIter): glib reaches this tree only through
+# libappindicator -> tray-icon -> tauri, a LINUX-ONLY path (macOS builds use
+# muda directly, with no gtk/glib). Consequence: cargo-deny emits
+# `advisory-not-detected` for this ignore entry when run on a macOS host,
+# because no crate in the host graph matches. On ubuntu (what CI uses) the
+# crate matches and the ignore is required. Do not remove it based on a
+# local macOS warning. glib 0.18.5 is the latest resolvable version in this
+# graph; upstream fixed only in 0.20.0, reachable once tauri PR #16170
+# ("chore(deps): update gtk crates to 0.19") lands. Dependabot run
+# 38524349833 (2026-10-14) confirmed security_update_not_possible:
+# latest-resolvable 0.18.5, lowest-non-vulnerable 0.20.0,
+# conflicting-dependencies [].
 ignore = [
   { id = "RUSTSEC-2024-0370", reason = "proc-macro-error unmaintained: build-time only via glib-macros 0.18 (tauri stack); glib 0.18 pins it, no fix until tauri/tray-icon bump." },
-  { id = "RUSTSEC-2024-0429", reason = "glib VariantStrIter: glib 0.18.5 is latest resolvable in this tauri graph; fixed in 0.20.0 behind tauri PR #16170 (gtk 0.19). Dependabot 2026-10-14 confirmed conflicting-dependencies [] and update-not-possible." },
+  { id = "RUSTSEC-2024-0429", reason = "glib VariantStrIter: latest resolvable glib is 0.18.5; fixed in 0.20.0 behind tauri PR #16170. LINUX-ONLY path (libappindicator->tray-icon->tauri), so cargo-deny on a macOS host warns advisory-not-detected for this entry - benign, CI runs ubuntu. Re-evaluate when tauri PR #16170 lands." },
 ]
 
 [licenses]
