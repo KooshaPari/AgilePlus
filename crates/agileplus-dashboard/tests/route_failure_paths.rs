@@ -299,10 +299,12 @@ async fn epics_stories_reports_a_database_that_cannot_be_opened() {
     set_var("DATABASE_PATH", directory.to_str().expect("utf-8 path"));
 
     let (status, body) = get(
-        &app(state(DashboardStore {
-            project_root: Some(directory.clone()),
-            ..Default::default()
-        })),
+        &app(state(DashboardStore::default())).layer(axum::Extension(Arc::new(
+            agileplus_dashboard::live_store::DashboardSource::live(
+                &directory,
+                &DashboardStore::default(),
+            ),
+        ))),
         "/api/dashboard/epics-stories.json",
     )
     .await;

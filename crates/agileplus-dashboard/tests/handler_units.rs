@@ -14,7 +14,8 @@ use agileplus_dashboard::app_state::{
     DashboardStore, ServiceHealth as StoreServiceHealth, SharedState, default_health,
 };
 use agileplus_dashboard::routes::{
-    agents, dashboard as dash_routes, evidence, features, health as health_routes, pages, settings,
+    agents, dashboard as dash_routes, evidence::demo as evidence, features,
+    health as health_routes, pages, settings,
 };
 use agileplus_dashboard::templates::*;
 use agileplus_domain::domain::feature::Feature;
@@ -35,7 +36,6 @@ fn state_with(store: DashboardStore) -> SharedState {
 
 fn store() -> DashboardStore {
     DashboardStore {
-        demo_mode: true, // These handlers are exercised with illustrative fixtures.
         health: default_health(),
         ..Default::default()
     }
@@ -265,7 +265,7 @@ async fn features_media_not_found() {
 async fn features_media_contains_gallery_wrapper() {
     let mut store = store();
     store.features = vec![feature(1, FeatureState::Implementing, None)];
-    let html = text(features::feature_media(State(state_with(store)), Path(1)).await).await;
+    let html = text(features::demo::feature_media(State(state_with(store)), Path(1)).await).await;
     assert!(html.contains("media-gallery"));
 }
 

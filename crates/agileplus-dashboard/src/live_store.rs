@@ -53,6 +53,9 @@ pub struct DashboardSource {
     pub project_count: usize,
     #[serde(skip)]
     pub diagnostic: Option<String>,
+    /// Selected query source, never inferred from request CWD or database overrides.
+    #[serde(skip)]
+    pub project_root: Option<PathBuf>,
 }
 
 impl DashboardSource {
@@ -68,10 +71,11 @@ impl DashboardSource {
             work_package_count: 0,
             project_count: 0,
             diagnostic: Some(diagnostic.into()),
+            project_root: None,
         }
     }
 
-    fn demo(store: &DashboardStore) -> Self {
+    pub fn demo(store: &DashboardStore) -> Self {
         Self {
             mode: DashboardSourceMode::Demo,
             connected: false,
@@ -85,10 +89,11 @@ impl DashboardSource {
             work_package_count: store.work_packages.values().map(Vec::len).sum(),
             project_count: store.projects.len(),
             diagnostic: None,
+            project_root: None,
         }
     }
 
-    fn live(project_root: &Path, store: &DashboardStore) -> Self {
+    pub fn live(project_root: &Path, store: &DashboardStore) -> Self {
         Self {
             mode: DashboardSourceMode::ProjectDatabaseSnapshot,
             // The connection closes after loading. This is not a monitored live connection.
@@ -104,12 +109,21 @@ impl DashboardSource {
             work_package_count: store.work_packages.values().map(Vec::len).sum(),
             project_count: store.projects.len(),
             diagnostic: None,
+            project_root: Some(project_root.to_path_buf()),
         }
     }
 
     pub fn allows_mutation(&self) -> bool {
         self.mode == DashboardSourceMode::Demo
     }
+}
+
+pub(crate) type OptionalSource = Option<Extension<Arc<DashboardSource>>>;
+
+pub(crate) fn source_is_demo(source: &OptionalSource) -> bool {
+    source
+        .as_ref()
+        .is_some_and(|Extension(source)| source.mode == DashboardSourceMode::Demo)
 }
 
 pub struct DashboardRuntime {
@@ -201,8 +215,6 @@ pub fn load_project_store(project_root: &Path) -> Result<(PathBuf, DashboardStor
     );
 
     let store = DashboardStore {
-        project_root: Some(canonical_root.clone()),
-        demo_mode: false,
         features,
         work_packages,
         modules: Vec::new(),
@@ -602,6 +614,7 @@ mod tests {
             work_package_count: 1,
             project_count: 1,
             diagnostic: None,
+            project_root: None,
         });
         let response = guarded_router(source)
             .oneshot(

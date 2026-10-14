@@ -17,7 +17,7 @@ use std::sync::{Arc, Mutex, MutexGuard, OnceLock};
 use std::time::Duration;
 
 use agileplus_dashboard::app_state::{DashboardStore, SharedState, default_health};
-use agileplus_dashboard::routes::{
+use agileplus_dashboard::routes::evidence::demo::{
     evidence_content, evidence_preview, feature_evidence_generate, feature_evidence_json,
     feature_evidence_list,
 };
@@ -85,7 +85,6 @@ fn lock_cwd(name: &str) -> CwdGuard {
 
 fn state() -> SharedState {
     Arc::new(RwLock::new(DashboardStore {
-        demo_mode: true,
         health: default_health(),
         ..Default::default()
     }))

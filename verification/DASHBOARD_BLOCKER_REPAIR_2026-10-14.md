@@ -14,7 +14,7 @@ startup projection claiming an ongoing live connection after the database went
 away. A fourth regression exposed unbound process-CWD evidence through direct
 artifact/gallery URLs and failed before the additional provenance guard.
 
-The candidate explicitly marks seeded stores as demo fixtures. Only that mode may
+The candidate uses request-scoped source metadata to mark seeded demo fixtures. Only that mode may
 render generated events, artifact/media entries and coverage illustrations.
 Actual project snapshots have no canonical evidence/evaluation receipt query;
 their artifact/gallery URLs therefore return 503 `evidence_source_unavailable`
@@ -35,6 +35,13 @@ The main work-state projection remains a startup snapshot. Its mode is now
 closed, and its banner displays `loaded_at` and the reload action. It does not
 claim ongoing connectivity or current data. No live refresh daemon is added.
 
+The source metadata is installed as an Axum extension, preserving exhaustive
+construction of the existing public `DashboardStore`. The public zero-argument
+`epics_stories_json` facade also remains callable and returns unavailable without
+source context. Configured routes select the explicit source; direct illustrative
+fixture handlers require the `demo` module. Two downstream-style API regressions
+failed before this compatibility repair and pass afterward.
+
 ## Executed acceptance
 
 All commands ran in the isolated candidate after sourcing
@@ -42,7 +49,7 @@ All commands ran in the isolated candidate after sourcing
 
 | Command                                                                         | Actual result                     |
 | ------------------------------------------------------------------------------- | --------------------------------- |
-| `cargo test --locked -p agileplus-dashboard --no-fail-fast -- --test-threads=1` | 518 passed, zero failures/ignored |
+| `cargo test --locked -p agileplus-dashboard --no-fail-fast -- --test-threads=1` | 520 passed, zero failures/ignored |
 | `cargo clippy --locked -p agileplus-dashboard --all-targets -- -D warnings`     | Exit 0                            |
 | `cargo fmt --all -- --check` and `git diff --check`                             | Exit 0                            |
 

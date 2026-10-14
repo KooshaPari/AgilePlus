@@ -108,10 +108,9 @@ fn app(state: SharedState) -> Router {
 }
 
 fn selected_app(root: &Path) -> Router {
-    app(Arc::new(RwLock::new(DashboardStore {
-        project_root: Some(root.to_path_buf()),
-        ..Default::default()
-    })))
+    let store = DashboardStore::default();
+    let source = agileplus_dashboard::live_store::DashboardSource::live(root, &store);
+    app(Arc::new(RwLock::new(store))).layer(axum::Extension(Arc::new(source)))
 }
 
 fn selected_database(root: &Path) -> PathBuf {

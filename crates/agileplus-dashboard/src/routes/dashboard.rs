@@ -23,8 +23,8 @@ use serde::{Deserialize, Serialize};
 use crate::app_state::SharedState;
 use crate::templates::{
     AgentActivityPartial, AgentView, DashboardPage, EventTimelinePartial, EvidenceBundleView,
-    FeatureDetailPage, FeatureView, HealthPanelPartial, KanbanPartial, MediaAssetView,
-    ProjectSwitcherPartial, ProjectView, ReportArtifactView, WpListPartial, WpView,
+    FeatureView, HealthPanelPartial, KanbanPartial, MediaAssetView, ProjectSwitcherPartial,
+    ProjectView, ReportArtifactView, WpListPartial, WpView,
 };
 
 use super::helpers::{
@@ -257,37 +257,7 @@ pub async fn feature_detail(
     Path(id): Path<i64>,
     _headers: HeaderMap,
 ) -> Response {
-    let store = state.read().await;
-    let feature = match store.features.iter().find(|f| f.id == id) {
-        Some(f) => FeatureView::from_feature(f),
-        None => return (StatusCode::NOT_FOUND, "Feature not found").into_response(),
-    };
-    let fid = feature.id;
-    let wps: Vec<WpView> = store
-        .work_packages
-        .get(&id)
-        .map(|v| v.iter().map(WpView::from_wp).collect())
-        .unwrap_or_default();
-    let (events, evidence_bundles, media_assets, reports) = if store.demo_mode {
-        (
-            build_feature_events(&feature, &wps),
-            build_feature_evidence_bundles(&feature, &wps),
-            build_feature_media_assets(&feature, &wps),
-            build_feature_reports(&feature, &wps),
-        )
-    } else {
-        (Vec::new(), Vec::new(), Vec::new(), Vec::new())
-    };
-
-    render(FeatureDetailPage {
-        feature,
-        feature_id: fid,
-        workpackages: wps,
-        events,
-        evidence_bundles,
-        media_assets,
-        reports,
-    })
+    super::features::feature_detail(State(state), Path(id), _headers).await
 }
 
 pub async fn wp_list(State(state): State<SharedState>, Path(id): Path<i64>) -> Response {
@@ -461,8 +431,14 @@ pub async fn all_work_packages_json(State(state): State<SharedState>) -> impl In
 /// GET /api/dashboard/epics-stories.json
 /// Reads Epics + Stories directly from the SQLite database and returns them
 /// as a flat JSON payload. Used by the React dashboard at port 5176.
-pub async fn epics_stories_json(State(state): State<SharedState>) -> Response {
-    let root = state.read().await.project_root.clone();
+pub async fn epics_stories_json() -> impl IntoResponse {
+    epics_stories_for_source(None).await
+}
+
+pub(crate) async fn epics_stories_for_source(
+    source: crate::live_store::OptionalSource,
+) -> Response {
+    let root = source.and_then(|axum::extract::Extension(source)| source.project_root.clone());
     let Some(root) = root else {
         return (
             StatusCode::SERVICE_UNAVAILABLE,

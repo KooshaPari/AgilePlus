@@ -425,10 +425,11 @@ fn load_evidence_bundles_from_disk(feature_id: &str) -> Vec<EvidenceBundleView> 
 /// GET /api/dashboard/features/:id
 /// Returns the full feature detail page with all associated data:
 /// events, evidence bundles, media assets, and reports.
-pub async fn feature_detail(
+async fn feature_detail_in_mode(
     State(state): State<SharedState>,
     Path(id): Path<i64>,
     _headers: HeaderMap,
+    demo_mode: bool,
 ) -> Response {
     let store = state.read().await;
     let feature = match store.features.iter().find(|f| f.id == id) {
@@ -443,7 +444,7 @@ pub async fn feature_detail(
         .unwrap_or_default();
     // The snapshot contains work state, not evidence/evaluation/artifact receipts.
     // Illustrations are permitted only for explicitly selected demo fixtures.
-    let (events, evidence_bundles, media_assets, reports) = if store.demo_mode {
+    let (events, evidence_bundles, media_assets, reports) = if demo_mode {
         (
             build_feature_events(&feature, &wps),
             build_feature_evidence_bundles(&feature, &wps),
@@ -473,9 +474,10 @@ pub async fn feature_page(State(state): State<SharedState>, Path(id): Path<i64>)
 
 /// GET /api/dashboard/features/:id/events
 /// Returns the event timeline partial for a feature (HTMX).
-pub async fn feature_events(
+async fn feature_events_in_mode(
     State(state): State<SharedState>,
     Path(feature_id): Path<i64>,
+    demo_mode: bool,
 ) -> Response {
     let store = state.read().await;
     let feature = match store.features.iter().find(|f| f.id == feature_id) {
@@ -487,7 +489,7 @@ pub async fn feature_events(
         .get(&feature_id)
         .map(|v| v.iter().map(WpView::from_wp).collect())
         .unwrap_or_default();
-    let events = if store.demo_mode {
+    let events = if demo_mode {
         build_feature_events(&feature, &wps)
     } else {
         Vec::new()
@@ -499,9 +501,10 @@ pub async fn feature_events(
 /// GET /api/dashboard/features/:id/media
 /// Returns the media gallery partial for a feature (HTMX).
 /// Renders as a 2-column grid of media assets.
-pub async fn feature_media(
+async fn feature_media_in_mode(
     State(state): State<SharedState>,
     Path(feature_id): Path<i64>,
+    demo_mode: bool,
 ) -> Response {
     let store = state.read().await;
     let feature = match store.features.iter().find(|f| f.id == feature_id) {
@@ -513,7 +516,7 @@ pub async fn feature_media(
         .get(&feature_id)
         .map(|v| v.iter().map(WpView::from_wp).collect())
         .unwrap_or_default();
-    let media = if store.demo_mode {
+    let media = if demo_mode {
         build_feature_media_assets(&feature, &wps)
     } else {
         Vec::new()
@@ -619,5 +622,108 @@ mod tests {
             .find(|feature| feature.id == 4)
             .expect("seeded feature 4");
         assert_eq!(feature.state, FeatureState::Validated);
+    }
+}
+
+pub async fn feature_detail(
+    State(state): State<SharedState>,
+    Path(id): Path<i64>,
+    headers: HeaderMap,
+) -> Response {
+    feature_detail_in_mode(State(state), Path(id), headers, false).await
+}
+
+pub(crate) async fn feature_detail_for_source(
+    State(state): State<SharedState>,
+    Path(id): Path<i64>,
+    headers: HeaderMap,
+    source: crate::live_store::OptionalSource,
+) -> Response {
+    feature_detail_in_mode(
+        State(state),
+        Path(id),
+        headers,
+        crate::live_store::source_is_demo(&source),
+    )
+    .await
+}
+
+pub async fn feature_events(
+    State(state): State<SharedState>,
+    Path(feature_id): Path<i64>,
+) -> Response {
+    feature_events_in_mode(State(state), Path(feature_id), false).await
+}
+
+pub(crate) async fn feature_events_for_source(
+    State(state): State<SharedState>,
+    Path(feature_id): Path<i64>,
+    source: crate::live_store::OptionalSource,
+) -> Response {
+    feature_events_in_mode(
+        State(state),
+        Path(feature_id),
+        crate::live_store::source_is_demo(&source),
+    )
+    .await
+}
+
+pub async fn feature_media(
+    State(state): State<SharedState>,
+    Path(feature_id): Path<i64>,
+) -> Response {
+    feature_media_in_mode(State(state), Path(feature_id), false).await
+}
+
+pub(crate) async fn feature_media_for_source(
+    State(state): State<SharedState>,
+    Path(feature_id): Path<i64>,
+    source: crate::live_store::OptionalSource,
+) -> Response {
+    feature_media_in_mode(
+        State(state),
+        Path(feature_id),
+        crate::live_store::source_is_demo(&source),
+    )
+    .await
+}
+
+pub(crate) async fn feature_page_for_source(
+    State(state): State<SharedState>,
+    Path(id): Path<i64>,
+    source: crate::live_store::OptionalSource,
+) -> Response {
+    feature_detail_in_mode(
+        State(state),
+        Path(id),
+        HeaderMap::new(),
+        crate::live_store::source_is_demo(&source),
+    )
+    .await
+}
+
+/// Explicit illustrative fixture handlers. Production routing uses source context.
+pub mod demo {
+    use super::*;
+    pub async fn feature_detail(
+        State(state): State<SharedState>,
+        Path(id): Path<i64>,
+        headers: HeaderMap,
+    ) -> Response {
+        super::feature_detail_in_mode(State(state), Path(id), headers, true).await
+    }
+
+    pub async fn feature_events(
+        State(state): State<SharedState>,
+        Path(feature_id): Path<i64>,
+    ) -> Response {
+        super::feature_events_in_mode(State(state), Path(feature_id), true).await
+    }
+
+    pub async fn feature_media(
+        State(state): State<SharedState>,
+        Path(feature_id): Path<i64>,
+    ) -> Response {
+        super::feature_media_in_mode(State(state), Path(feature_id), true).await
     }
 }

@@ -108,7 +108,7 @@ pub fn router(state: SharedState) -> Router {
         .route("/home", get(home))
         .route("/dashboard", get(dashboard_page))
         .route("/features", get(features_page))
-        .route("/features/{id}", get(feature_page))
+        .route("/features/{id}", get(features::feature_page_for_source))
         .route("/events", get(events_page))
         // NOTE: /health is owned by agileplus-api (router.rs, T070, detailed
         // JSON health). The HTML health page lives at /health-page to avoid
@@ -142,10 +142,19 @@ pub fn router(state: SharedState) -> Router {
             post(toggle_service),
         )
         .route("/api/dashboard/kanban", get(kanban_board))
-        .route("/api/dashboard/features/{id}", get(feature_detail))
+        .route(
+            "/api/dashboard/features/{id}",
+            get(features::feature_detail_for_source),
+        )
         .route("/api/dashboard/features/{id}/work-packages", get(wp_list))
-        .route("/api/dashboard/features/{id}/events", get(feature_events))
-        .route("/api/dashboard/features/{id}/media", get(feature_media))
+        .route(
+            "/api/dashboard/features/{id}/events",
+            get(features::feature_events_for_source),
+        )
+        .route(
+            "/api/dashboard/features/{id}/media",
+            get(features::feature_media_for_source),
+        )
         // HTML partial endpoints (HTMX-compatible)
         .route("/api/dashboard/health", get(health_panel))
         .route("/api/dashboard/events", get(event_timeline))
@@ -157,7 +166,10 @@ pub fn router(state: SharedState) -> Router {
             "/api/dashboard/work-packages.json",
             get(all_work_packages_json),
         )
-        .route("/api/dashboard/epics-stories.json", get(epics_stories_json))
+        .route(
+            "/api/dashboard/epics-stories.json",
+            get(dashboard::epics_stories_for_source),
+        )
         .route("/api/dashboard/projects", get(project_switcher))
         .route(
             "/api/dashboard/projects/{id}/activate",
@@ -171,20 +183,23 @@ pub fn router(state: SharedState) -> Router {
         .route("/api/stream-placeholder", get(sse_stream))
         .route(
             "/api/evidence/{feature_id}/{artifact_id}/content",
-            get(evidence_content),
+            get(evidence::evidence_content_for_source),
         )
         .route(
             "/api/evidence/{feature_id}/{artifact_id}/preview",
-            get(evidence_preview),
+            get(evidence::evidence_preview_for_source),
         )
-        .route("/api/features/{id}/evidence", get(feature_evidence_list))
+        .route(
+            "/api/features/{id}/evidence",
+            get(evidence::feature_evidence_list_for_source),
+        )
         .route(
             "/api/features/{id}/evidence/generate",
             post(feature_evidence_generate),
         )
         .route(
             "/api/dashboard/features/{id}/evidence.json",
-            get(feature_evidence_json),
+            get(evidence::feature_evidence_json_for_source),
         )
         .route("/api/features/{id}/transition", post(feature_transition))
         .route("/api/dashboard/governance/status", get(governance_status))

@@ -167,8 +167,6 @@ pub fn build_dashboard_store() -> DashboardStore {
     }];
 
     DashboardStore {
-        project_root: None,
-        demo_mode: true,
         features,
         work_packages,
         modules,

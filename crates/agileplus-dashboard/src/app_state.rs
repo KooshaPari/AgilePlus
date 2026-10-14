@@ -28,10 +28,6 @@ pub struct ServiceHealth {
 /// In production this would delegate to repositories.
 #[derive(Default)]
 pub struct DashboardStore {
-    /// Canonical selected project; never replace it with process CWD or database env overrides.
-    pub project_root: Option<std::path::PathBuf>,
-    /// Only explicit seeded demo data may produce illustrative artifacts.
-    pub demo_mode: bool,
     pub features: Vec<Feature>,
     pub work_packages: HashMap<i64, Vec<WorkPackage>>,
     pub modules: Vec<Module>,
