@@ -38,14 +38,14 @@ fencing, not a complete worker lease/generation or external side-effect fence.
 All commands ran in the isolated candidate after sourcing
 `/workspace/.onboarding/env.sh`, with two Cargo jobs and dev/test debug disabled.
 
-| Command | Actual result |
-| --- | --- |
+| Command                                                                                                                                                       | Actual result                                                            |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
 | `cargo test --locked -p agileplus-grpc --lib --test writer_lock_regressions --test server_process_lifecycle --test atomic_acceptance_rpc -- --test-threads=1` | 79 passed, zero failures/ignored; includes one child-probe harness entry |
-| `cargo test --locked -p agileplus-sqlite -- --test-threads=1` | 614 passed, zero failures/ignored |
-| `cargo test --locked -p agileplus-cli --test implement_command_flow -- --test-threads=1` | 11 passed |
-| `cargo test --locked -p agileplus-cli --lib restart_reconciliation_expires_only_live_attempts` | 1 passed; 765 filtered |
-| `cargo clippy --locked -p agileplus-grpc -p agileplus-sqlite --all-targets -- -D warnings` | Exit 0 |
-| `cargo fmt --all -- --check` and `git diff --check` | Exit 0 |
+| `cargo test --locked -p agileplus-sqlite -- --test-threads=1`                                                                                                 | 614 passed, zero failures/ignored                                        |
+| `cargo test --locked -p agileplus-cli --test implement_command_flow -- --test-threads=1`                                                                      | 11 passed                                                                |
+| `cargo test --locked -p agileplus-cli --lib restart_reconciliation_expires_only_live_attempts`                                                                | 1 passed; 765 filtered                                                   |
+| `cargo clippy --locked -p agileplus-grpc -p agileplus-sqlite --all-targets -- -D warnings`                                                                    | Exit 0                                                                   |
+| `cargo fmt --all -- --check` and `git diff --check`                                                                                                           | Exit 0                                                                   |
 
 Regression sources: `writer_lock_regressions.rs` and
 `repository::execution::runtime_update_regressions`. They preserve the rejected
