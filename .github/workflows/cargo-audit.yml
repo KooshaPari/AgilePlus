@@ -14,9 +14,18 @@ on:
 jobs:
     audit:
         runs-on: ubuntu-24.04
+        # rustsec/audit-check@v2 creates one GitHub issue per advisory
+        # (incl. informational) when triggered on `schedule:`. Without
+        # `issues: write` the POST /repos/.../issues call returns
+        # "Resource not accessible by integration" and fails the step
+        # even though `cargo audit` itself reports "No vulnerabilities".
+        # Same root cause fixed in security.yml by 61f0aade; this
+        # workflow has been failing every Wednesday cron since 2026-08-26
+        # (run 32936521807 was the last success; 9 consecutive failures).
         permissions:
             contents: read
             checks: write
+            issues: write
         steps:
             - uses: actions/checkout@v7
             - uses: rustsec/audit-check@v2.0.0
