@@ -441,10 +441,18 @@ pub async fn feature_detail(
         .get(&id)
         .map(|v| v.iter().map(WpView::from_wp).collect())
         .unwrap_or_default();
-    let events = build_feature_events(&feature, &wps);
-    let evidence_bundles = build_feature_evidence_bundles(&feature, &wps);
-    let media_assets = build_feature_media_assets(&feature, &wps);
-    let reports = build_feature_reports(&feature, &wps);
+    // The snapshot contains work state, not evidence/evaluation/artifact receipts.
+    // Illustrations are permitted only for explicitly selected demo fixtures.
+    let (events, evidence_bundles, media_assets, reports) = if store.demo_mode {
+        (
+            build_feature_events(&feature, &wps),
+            build_feature_evidence_bundles(&feature, &wps),
+            build_feature_media_assets(&feature, &wps),
+            build_feature_reports(&feature, &wps),
+        )
+    } else {
+        (Vec::new(), Vec::new(), Vec::new(), Vec::new())
+    };
 
     render(FeatureDetailPage {
         feature,
@@ -479,7 +487,11 @@ pub async fn feature_events(
         .get(&feature_id)
         .map(|v| v.iter().map(WpView::from_wp).collect())
         .unwrap_or_default();
-    let events = build_feature_events(&feature, &wps);
+    let events = if store.demo_mode {
+        build_feature_events(&feature, &wps)
+    } else {
+        Vec::new()
+    };
 
     render(EventTimelinePartial { feature_id, events })
 }
@@ -501,7 +513,11 @@ pub async fn feature_media(
         .get(&feature_id)
         .map(|v| v.iter().map(WpView::from_wp).collect())
         .unwrap_or_default();
-    let media = build_feature_media_assets(&feature, &wps);
+    let media = if store.demo_mode {
+        build_feature_media_assets(&feature, &wps)
+    } else {
+        Vec::new()
+    };
 
     // Return media assets as a simple HTML partial
     let html = media

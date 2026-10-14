@@ -132,13 +132,13 @@ async function refreshDashboardSource() {
     });
     if (!response.ok) throw new Error('source status ' + response.status);
     const source = await response.json();
-    const counts = source.connected
+    const counts = source.mode === 'project_database_snapshot' || source.connected
       ? ' · ' + source.feature_count + ' features · ' + source.work_package_count + ' work packages'
       : '';
 
-    if (source.mode === 'project_database_read_only') {
+    if (source.mode === 'project_database_snapshot') {
       banner.className = 'border-b border-amber-700 bg-amber-950 px-4 md:px-6 py-2 text-xs text-amber-200';
-      banner.textContent = 'Live read-only · ' + source.message + counts;
+      banner.textContent = 'Snapshot loaded at ' + source.loaded_at + ' · ' + source.message + counts;
     } else if (source.mode === 'demo') {
       banner.className = 'border-b border-fuchsia-700 bg-fuchsia-950 px-4 md:px-6 py-2 text-xs text-fuchsia-200';
       banner.textContent = 'Demo fixtures · ' + source.message + counts;

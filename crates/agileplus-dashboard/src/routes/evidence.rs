@@ -169,13 +169,27 @@ pub fn load_evidence_bundles_from_disk(feature_id: &str) -> Vec<EvidenceBundleVi
 
 // ── HTTP Handlers ──────────────────────────────────────────────────────────
 
+fn snapshot_evidence_unavailable() -> Response {
+    (
+        StatusCode::SERVICE_UNAVAILABLE,
+        axum::Json(serde_json::json!({
+            "error": "evidence_source_unavailable",
+            "message": "Evidence provenance is unavailable in this project snapshot."
+        })),
+    )
+        .into_response()
+}
+
 /// `GET /api/evidence/{feature_id}/{artifact_id}`
 /// Serves raw evidence artifact content from `.agileplus/evidence/<feature_id>/<artifact_id>`.
 /// HTML-escapes plaintext for safe browser rendering; validates artifact_id to prevent path traversal.
 pub async fn evidence_content(
-    State(_state): State<SharedState>,
+    State(state): State<SharedState>,
     Path((feature_id, artifact_id)): Path<(i64, String)>,
 ) -> Response {
+    if !state.read().await.demo_mode {
+        return snapshot_evidence_unavailable();
+    }
     // Serve from .agileplus/evidence/<feature_id>/<artifact_id>
     let base_path = PathBuf::from(".agileplus")
         .join("evidence")
@@ -210,9 +224,12 @@ pub async fn evidence_content(
 /// `GET /api/evidence/{feature_id}/{artifact_id}/preview`
 /// Serves a brief HTML preview of an evidence artifact (for lightbox/modal display).
 pub async fn evidence_preview(
-    State(_state): State<SharedState>,
+    State(state): State<SharedState>,
     Path((feature_id, artifact_id)): Path<(i64, String)>,
 ) -> Response {
+    if !state.read().await.demo_mode {
+        return snapshot_evidence_unavailable();
+    }
     let artifact_path = PathBuf::from(".agileplus")
         .join("evidence")
         .join(feature_id.to_string())
@@ -232,9 +249,12 @@ pub async fn evidence_preview(
 /// `GET /api/features/{id}/evidence`
 /// Returns the evidence gallery partial (HTML template) for the feature detail page.
 pub async fn feature_evidence_list(
-    State(_state): State<SharedState>,
+    State(state): State<SharedState>,
     Path(feature_id): Path<String>,
 ) -> Response {
+    if !state.read().await.demo_mode {
+        return snapshot_evidence_unavailable();
+    }
     let bundles = load_evidence_bundles_from_disk(&feature_id);
     let tmpl = FeatureEvidencePartial {
         evidence_bundles: bundles,
@@ -309,9 +329,12 @@ pub async fn feature_evidence_generate(
 /// Returns evidence gallery metadata as JSON for lightbox/modal integration.
 /// Extracts artifact metadata from loaded bundles and serializes as a structured JSON response.
 pub async fn feature_evidence_json(
-    State(_state): State<SharedState>,
+    State(state): State<SharedState>,
     Path(feature_id): Path<String>,
-) -> impl IntoResponse {
+) -> Response {
+    if !state.read().await.demo_mode {
+        return snapshot_evidence_unavailable();
+    }
     let bundles = load_evidence_bundles_from_disk(&feature_id);
 
     // Extract artifacts from bundles for gallery JSON response
@@ -334,6 +357,7 @@ pub async fn feature_evidence_json(
         artifacts,
         generated_at,
     })
+    .into_response()
 }
 
 // ── Tests ──────────────────────────────────────────────────────────────────

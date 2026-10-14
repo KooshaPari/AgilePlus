@@ -37,7 +37,7 @@ const PROJECT_ROOT_ENV: &str = "AGILEPLUS_PROJECT_ROOT";
 pub enum DashboardSourceMode {
     Disconnected,
     Demo,
-    ProjectDatabaseReadOnly,
+    ProjectDatabaseSnapshot,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -90,14 +90,15 @@ impl DashboardSource {
 
     fn live(project_root: &Path, store: &DashboardStore) -> Self {
         Self {
-            mode: DashboardSourceMode::ProjectDatabaseReadOnly,
-            connected: true,
+            mode: DashboardSourceMode::ProjectDatabaseSnapshot,
+            // The connection closes after loading. This is not a monitored live connection.
+            connected: false,
             read_only: true,
             project_name: project_root
                 .file_name()
                 .and_then(OsStr::to_str)
                 .map(str::to_owned),
-            message: "Live project database projection. Mutations are disabled until routed through the AgilePlus device service.".into(),
+            message: "Read-only startup snapshot. Restart the dashboard to reload project data; ongoing connectivity is not monitored.".into(),
             loaded_at: Utc::now(),
             feature_count: store.features.len(),
             work_package_count: store.work_packages.values().map(Vec::len).sum(),
@@ -200,13 +201,15 @@ pub fn load_project_store(project_root: &Path) -> Result<(PathBuf, DashboardStor
     );
 
     let store = DashboardStore {
+        project_root: Some(canonical_root.clone()),
+        demo_mode: false,
         features,
         work_packages,
         modules: Vec::new(),
         cycles: Vec::new(),
         cycle_features: HashMap::new(),
         health: vec![ServiceHealth {
-            name: "Project SQLite projection".into(),
+            name: "Project SQLite snapshot loaded".into(),
             healthy: true,
             degraded: false,
             latency_ms: None,
@@ -589,7 +592,7 @@ mod tests {
     #[tokio::test]
     async fn live_mode_blocks_non_get_requests() {
         let source = Arc::new(DashboardSource {
-            mode: DashboardSourceMode::ProjectDatabaseReadOnly,
+            mode: DashboardSourceMode::ProjectDatabaseSnapshot,
             connected: true,
             read_only: true,
             project_name: Some("project".into()),

@@ -35,6 +35,7 @@ fn state_with(store: DashboardStore) -> SharedState {
 
 fn store() -> DashboardStore {
     DashboardStore {
+        demo_mode: true, // These handlers are exercised with illustrative fixtures.
         health: default_health(),
         ..Default::default()
     }

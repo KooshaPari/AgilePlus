@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! Evidence handlers driven by real bundles on disk.
+//! Demo evidence handlers driven by synthetic bundles on disk.
 //!
 //! `evidence_content`, `evidence_preview`, `feature_evidence_list`,
 //! `feature_evidence_json`, and `feature_evidence_generate` all resolve paths
@@ -85,6 +85,7 @@ fn lock_cwd(name: &str) -> CwdGuard {
 
 fn state() -> SharedState {
     Arc::new(RwLock::new(DashboardStore {
+        demo_mode: true,
         health: default_health(),
         ..Default::default()
     }))

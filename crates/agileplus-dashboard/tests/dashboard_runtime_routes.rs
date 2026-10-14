@@ -1,11 +1,9 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! Routes whose response is resolved at request time from the environment, the
-//! working directory, or a live stream rather than from dashboard state.
+//! Selected-project read-only queries and runtime stream/service routes.
 //!
 //! Covered here:
-//! - `GET /api/dashboard/epics-stories.json` — the `DATABASE_URL` / `DATABASE_PATH`
-//!   / default-file resolution that the raw `epics_stories_json_for_path` unit
-//!   tests never reach.
+//! - `GET /api/dashboard/epics-stories.json` — selected project authority,
+//!   refusal of environment/CWD overrides, and no database creation on GET.
 //! - `GET /api/stream` — the Server-Sent Events body itself. The existing route
 //!   tests only assert that the response opens; nothing polls the frames.
 //! - `POST /api/dashboard/services/{name}/restart` — the fallback template used
@@ -109,6 +107,18 @@ fn app(state: SharedState) -> Router {
     router(state)
 }
 
+fn selected_app(root: &Path) -> Router {
+    app(Arc::new(RwLock::new(DashboardStore {
+        project_root: Some(root.to_path_buf()),
+        ..Default::default()
+    })))
+}
+
+fn selected_database(root: &Path) -> PathBuf {
+    std::fs::create_dir_all(root.join(".agileplus")).unwrap();
+    root.join(".agileplus/agileplus.db")
+}
+
 async fn get_json(app: &Router, uri: &str) -> serde_json::Value {
     let request = Request::builder()
         .method("GET")
@@ -176,21 +186,24 @@ fn create_epics_db(path: &Path, epic_titles: &[&str]) {
 // ── /api/dashboard/epics-stories.json ────────────────────────────────────────
 
 #[tokio::test]
-async fn epics_stories_route_reads_database_path_env() {
+async fn epics_stories_route_ignores_database_path_override() {
     let (_guard, work) = enter_sandbox("database-path");
     let db = work.join("runtime-path.db");
-    create_epics_db(&db, &["Epic from DATABASE_PATH"]);
+    create_epics_db(&db, &["Unselected epic"]);
+    let selected = selected_database(&work);
+    create_epics_db(&selected, &["Selected project epic"]);
+    let original = std::fs::read(&selected).unwrap();
 
     set_var("DATABASE_PATH", db.to_str().expect("utf-8 path"));
     unset_var("DATABASE_URL");
 
-    let json = get_json(&app(state(Vec::new())), "/api/dashboard/epics-stories.json").await;
+    let json = get_json(&selected_app(&work), "/api/dashboard/epics-stories.json").await;
 
     assert!(json.get("error").is_none(), "unexpected error: {json}");
     assert_eq!(json["epic_count"], 1);
     assert_eq!(json["story_count"], 1);
     assert_eq!(json["epics"][0]["id"], 1);
-    assert_eq!(json["epics"][0]["title"], "Epic from DATABASE_PATH");
+    assert_eq!(json["epics"][0]["title"], "Selected project epic");
     assert_eq!(json["epics"][0]["requirement_id"], "FR-1");
     assert_eq!(json["stories"][0]["epic_id"], 1);
     assert_eq!(json["stories"][0]["requirement_id"], "FR-1-S1");
@@ -200,18 +213,24 @@ async fn epics_stories_route_reads_database_path_env() {
             .is_some_and(|ts| ts.contains('T')),
         "timestamp must be an RFC3339 instant: {json}"
     );
+    assert_eq!(
+        std::fs::read(selected).unwrap(),
+        original,
+        "GET must leave the selected database unchanged"
+    );
 }
 
 #[tokio::test]
-async fn epics_stories_route_strips_sqlite_scheme_from_database_url() {
+async fn epics_stories_route_ignores_sqlite_url_override() {
     let (_guard, work) = enter_sandbox("database-url");
     let db = work.join("runtime-url.db");
-    create_epics_db(&db, &["First epic", "Second epic"]);
+    create_epics_db(&db, &["Unselected epic"]);
+    create_epics_db(&selected_database(&work), &["First epic", "Second epic"]);
 
     set_var("DATABASE_URL", &format!("sqlite:{}", db.display()));
     unset_var("DATABASE_PATH");
 
-    let json = get_json(&app(state(Vec::new())), "/api/dashboard/epics-stories.json").await;
+    let json = get_json(&selected_app(&work), "/api/dashboard/epics-stories.json").await;
 
     assert!(json.get("error").is_none(), "unexpected error: {json}");
     assert_eq!(json["epic_count"], 2);
@@ -219,45 +238,77 @@ async fn epics_stories_route_strips_sqlite_scheme_from_database_url() {
 }
 
 #[tokio::test]
-async fn epics_stories_route_reads_plain_database_url_without_scheme() {
+async fn epics_stories_route_ignores_plain_url_override() {
     let (_guard, work) = enter_sandbox("database-url-plain");
     let db = work.join("runtime-plain.db");
-    create_epics_db(&db, &["Plain path epic"]);
+    create_epics_db(&db, &["Unselected epic"]);
+    create_epics_db(&selected_database(&work), &["Selected plain path epic"]);
 
-    // `strip_prefix("sqlite:")` must leave a scheme-less absolute path alone.
+    // Neither a plain path nor a sqlite URL may replace the selected project.
     set_var("DATABASE_URL", db.to_str().expect("utf-8 path"));
     unset_var("DATABASE_PATH");
 
-    let json = get_json(&app(state(Vec::new())), "/api/dashboard/epics-stories.json").await;
+    let json = get_json(&selected_app(&work), "/api/dashboard/epics-stories.json").await;
 
     assert_eq!(json["epic_count"], 1);
-    assert_eq!(json["epics"][0]["title"], "Plain path epic");
+    assert_eq!(json["epics"][0]["title"], "Selected plain path epic");
 }
 
 #[tokio::test]
-async fn epics_stories_route_reports_missing_schema_for_default_database() {
+async fn epics_stories_route_without_selected_project_never_creates_default_database() {
     let (_guard, work) = enter_sandbox("default-database");
     unset_var("DATABASE_URL");
     unset_var("DATABASE_PATH");
 
-    let json = get_json(&app(state(Vec::new())), "/api/dashboard/epics-stories.json").await;
+    let response = app(state(Vec::new()))
+        .oneshot(
+            Request::builder()
+                .uri("/api/dashboard/epics-stories.json")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
+    let json: serde_json::Value = serde_json::from_str(&body_text(response).await).unwrap();
+    assert!(
+        json["epics"].as_array().expect("epics array").is_empty(),
+        "unavailable projection must contain no invented epics: {json}"
+    );
+    assert_eq!(json["error"], "project_source_unavailable");
+    assert!(
+        !work.join("agileplus.db").exists(),
+        "GET must never create a default working-directory database"
+    );
+}
 
+#[tokio::test]
+async fn selected_database_schema_failure_is_visible_without_mutation() {
+    let (_guard, work) = enter_sandbox("selected-missing-schema");
+    let selected = selected_database(&work);
+    drop(Connection::open(&selected).unwrap());
+    let original = std::fs::read(&selected).unwrap();
+    let response = selected_app(&work)
+        .oneshot(
+            Request::builder()
+                .uri("/api/dashboard/epics-stories.json")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
+    let json: serde_json::Value = serde_json::from_str(&body_text(response).await).unwrap();
     assert_eq!(json["epic_count"], 0);
     assert_eq!(json["story_count"], 0);
     assert!(
-        json["epics"].as_array().expect("epics array").is_empty(),
-        "no epics can exist in a fresh database: {json}"
-    );
-    assert!(
         json["error"]
             .as_str()
-            .is_some_and(|error| error.contains("epics query failed")),
-        "missing schema must surface as an error: {json}"
+            .unwrap()
+            .contains("epics query failed")
     );
-    assert!(
-        work.join("agileplus.db").exists(),
-        "the default database path must resolve against the working directory"
-    );
+    assert_eq!(std::fs::read(selected).unwrap(), original);
+    assert!(!work.join("agileplus.db").exists());
 }
 
 // ── /api/stream ──────────────────────────────────────────────────────────────

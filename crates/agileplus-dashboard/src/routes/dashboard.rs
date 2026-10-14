@@ -11,7 +11,6 @@
 //! partial template; otherwise return the full page layout.
 
 use std::collections::HashMap;
-use std::path::PathBuf;
 
 use axum::{
     extract::{Path, Query, State},
@@ -269,10 +268,16 @@ pub async fn feature_detail(
         .get(&id)
         .map(|v| v.iter().map(WpView::from_wp).collect())
         .unwrap_or_default();
-    let events = build_feature_events(&feature, &wps);
-    let evidence_bundles = build_feature_evidence_bundles(&feature, &wps);
-    let media_assets = build_feature_media_assets(&feature, &wps);
-    let reports = build_feature_reports(&feature, &wps);
+    let (events, evidence_bundles, media_assets, reports) = if store.demo_mode {
+        (
+            build_feature_events(&feature, &wps),
+            build_feature_evidence_bundles(&feature, &wps),
+            build_feature_media_assets(&feature, &wps),
+            build_feature_reports(&feature, &wps),
+        )
+    } else {
+        (Vec::new(), Vec::new(), Vec::new(), Vec::new())
+    };
 
     render(FeatureDetailPage {
         feature,
@@ -456,21 +461,30 @@ pub async fn all_work_packages_json(State(state): State<SharedState>) -> impl In
 /// GET /api/dashboard/epics-stories.json
 /// Reads Epics + Stories directly from the SQLite database and returns them
 /// as a flat JSON payload. Used by the React dashboard at port 5176.
-pub async fn epics_stories_json() -> impl IntoResponse {
-    // Resolve db path: DATABASE_URL env â†’ DATABASE_PATH env â†’ default agileplus.db
-    let db_path: PathBuf = if let Ok(url) = std::env::var("DATABASE_URL") {
-        url.strip_prefix("sqlite:").unwrap_or(&url).into()
-    } else if let Ok(p) = std::env::var("DATABASE_PATH") {
-        PathBuf::from(p)
-    } else {
-        PathBuf::from("agileplus.db")
+pub async fn epics_stories_json(State(state): State<SharedState>) -> Response {
+    let root = state.read().await.project_root.clone();
+    let Some(root) = root else {
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            axum::Json(serde_json::json!({
+                "error": "project_source_unavailable", "epics": [], "stories": []
+            })),
+        )
+            .into_response();
     };
-
-    epics_stories_json_for_path(&db_path)
+    let projection = epics_stories_json_for_path(&root.join(".agileplus/agileplus.db"));
+    if projection.0.get("error").is_some() {
+        (StatusCode::SERVICE_UNAVAILABLE, projection).into_response()
+    } else {
+        projection.into_response()
+    }
 }
 
 fn epics_stories_json_for_path(db_path: &std::path::Path) -> axum::Json<serde_json::Value> {
-    let conn = match rusqlite::Connection::open(db_path) {
+    let conn = match rusqlite::Connection::open_with_flags(
+        db_path,
+        rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY,
+    ) {
         Ok(c) => c,
         Err(e) => {
             return axum::Json(serde_json::json!({
@@ -482,6 +496,9 @@ fn epics_stories_json_for_path(db_path: &std::path::Path) -> axum::Json<serde_js
             }));
         }
     };
+    if let Err(error) = conn.execute_batch("PRAGMA query_only=ON; BEGIN;") {
+        return epics_stories_error("read-only projection unavailable", error);
+    }
 
     let epics_requirement_id = column_expression(&conn, "epics", "requirement_id");
     let epics_query = format!(
@@ -568,6 +585,7 @@ fn epics_stories_error(context: &str, error: rusqlite::Error) -> axum::Json<serd
 mod epics_stories_json_tests {
     use super::*;
     use crate::app_state::{DashboardStore, default_health};
+    use std::path::PathBuf;
     use std::sync::Arc;
     use tokio::sync::RwLock;
 

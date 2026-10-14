@@ -291,19 +291,23 @@ async fn epics_stories_reports_a_database_that_cannot_be_opened() {
     let _url = EnvRestore::capture("DATABASE_URL");
     let _path = EnvRestore::capture("DATABASE_PATH");
 
-    // Point the resolver at a directory: SQLite cannot open one as a database.
+    // A selected project whose database path is a directory must fail closed.
     let directory = sandbox_home().join("not-a-database");
     std::fs::create_dir_all(&directory).expect("create directory-instead-of-db");
+    std::fs::create_dir_all(directory.join(".agileplus/agileplus.db")).unwrap();
     unset_var("DATABASE_URL");
     set_var("DATABASE_PATH", directory.to_str().expect("utf-8 path"));
 
     let (status, body) = get(
-        &app(state(DashboardStore::default())),
+        &app(state(DashboardStore {
+            project_root: Some(directory.clone()),
+            ..Default::default()
+        })),
         "/api/dashboard/epics-stories.json",
     )
     .await;
 
-    assert_eq!(status, StatusCode::OK);
+    assert_eq!(status, StatusCode::SERVICE_UNAVAILABLE);
     let json: serde_json::Value = serde_json::from_str(&body)
         .unwrap_or_else(|error| panic!("expected JSON: {body}: {error}"));
 

@@ -49,17 +49,19 @@ fn work_package(id: i64, feature_id: i64, state: WpState) -> WorkPackage {
     wp
 }
 
-/// Empty store with default health only.
+/// Explicit empty demo store with default health only.
 fn empty_state() -> SharedState {
     Arc::new(RwLock::new(DashboardStore {
+        demo_mode: true,
         health: default_health(),
         ..Default::default()
     }))
 }
 
-/// A populated but fully in-memory store with one project and a few features.
+/// Explicit demo fixtures with one project and a few features.
 fn populated_state() -> SharedState {
     let mut store = DashboardStore {
+        demo_mode: true,
         health: default_health(),
         ..Default::default()
     };
