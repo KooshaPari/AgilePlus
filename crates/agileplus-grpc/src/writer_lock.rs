@@ -12,8 +12,9 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use serde::{Deserialize, Serialize};
 
-const LOCK_VERSION: u32 = 1;
+const LOCK_VERSION: u32 = 2;
 const LOCK_FILE_NAME: &str = "core-writer.lock";
+const GUARD_FILE_NAME: &str = "core-writer.guard";
 const MAX_ACQUIRE_ATTEMPTS: usize = 4;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -28,7 +29,8 @@ struct LockOwner {
 
 /// Holds exclusive ownership of one project's canonical gRPC core process.
 ///
-/// `create_new` provides atomic winner selection. If a process crashes, a later
+/// A persistent kernel-locked guard serializes acquisition, recovery and cleanup.
+/// The guard inode is never renamed or deleted. If a process crashes, a later
 /// contender checks whether the recorded PID still exists before quarantining a
 /// stale record and retrying. PID reuse is intentionally conservative: a reused
 /// live PID blocks automatic recovery rather than allowing ownership theft.
@@ -36,6 +38,8 @@ pub struct ProjectWriterLock {
     path: PathBuf,
     token: String,
     file: Option<File>,
+    // Keep the kernel lock through owner-record cleanup. Closing releases it on crash.
+    _guard: File,
 }
 
 impl ProjectWriterLock {
@@ -54,6 +58,7 @@ impl ProjectWriterLock {
             )
         })?;
         let path = state_dir.join(LOCK_FILE_NAME);
+        let guard = acquire_guard(&state_dir)?;
 
         for _ in 0..MAX_ACQUIRE_ATTEMPTS {
             match OpenOptions::new()
@@ -73,6 +78,7 @@ impl ProjectWriterLock {
                         path,
                         token: owner.token,
                         file: Some(file),
+                        _guard: guard,
                     });
                 }
                 Err(error) if error.kind() == ErrorKind::AlreadyExists => {
@@ -99,6 +105,50 @@ impl ProjectWriterLock {
     pub fn path(&self) -> &Path {
         &self.path
     }
+}
+
+fn acquire_guard(state_dir: &Path) -> Result<File, String> {
+    let path = state_dir.join(GUARD_FILE_NAME);
+    match fs::symlink_metadata(&path) {
+        Ok(metadata) if !metadata.is_file() || metadata.file_type().is_symlink() => {
+            return Err("core writer guard is not a regular file; refusing ownership".into());
+        }
+        Ok(_) => {}
+        Err(error) if error.kind() == ErrorKind::NotFound => {}
+        Err(error) => return Err(format!("cannot inspect core writer guard: {error}")),
+    }
+    let guard = OpenOptions::new()
+        .create(true)
+        .truncate(false)
+        .read(true)
+        .write(true)
+        .open(&path)
+        .map_err(|error| format!("cannot open core writer guard: {error}"))?;
+    fs2::FileExt::try_lock_exclusive(&guard).map_err(|error| {
+        if error.kind() == ErrorKind::WouldBlock
+            || error.raw_os_error() == fs2::lock_contended_error().raw_os_error()
+        {
+            "AgilePlus project already has a live core writer or recovery contender".into()
+        } else {
+            format!("cannot lock core writer guard; refusing ownership: {error}")
+        }
+    })?;
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::MetadataExt;
+        let opened = guard
+            .metadata()
+            .map_err(|error| format!("cannot inspect open guard: {error}"))?;
+        let current = fs::symlink_metadata(&path)
+            .map_err(|error| format!("cannot inspect guard path: {error}"))?;
+        if current.file_type().is_symlink()
+            || opened.dev() != current.dev()
+            || opened.ino() != current.ino()
+        {
+            return Err("core writer guard path changed; refusing ownership".into());
+        }
+    }
+    Ok(guard)
 }
 
 impl Drop for ProjectWriterLock {
@@ -181,7 +231,9 @@ fn read_owner(path: &Path) -> Result<LockOwner, String> {
             path.display()
         )
     })?;
-    if owner.version != LOCK_VERSION {
+    // Version 1 is a legacy PID-only owner: probe it before migration. New
+    // records use version 2 so legacy binaries cannot recover a guarded owner.
+    if owner.version != 1 && owner.version != LOCK_VERSION {
         return Err(format!(
             "AgilePlus core writer lock {} uses unsupported version {}; refusing recovery",
             path.display(),
@@ -239,13 +291,23 @@ fn process_is_live(pid: u32) -> Result<bool, String> {
         .args(["-p", &pid_text, "-o", "pid="])
         .output()
         .map_err(|error| format!("cannot probe lock owner pid {pid} with ps: {error}"))?;
+    if output.status.code() == Some(1) && output.stdout.is_empty() && output.stderr.is_empty() {
+        return Ok(false); // procps reports a verified absent PID this way.
+    }
     if !output.status.success() {
-        return Ok(false);
+        return Err(format!(
+            "ps failed while probing lock owner pid {pid}; refusing recovery: {}",
+            String::from_utf8_lossy(&output.stderr).trim()
+        ));
     }
     let stdout = String::from_utf8_lossy(&output.stdout);
-    Ok(stdout
-        .split_whitespace()
-        .any(|candidate| candidate == pid_text.as_str()))
+    if stdout.trim() == pid_text {
+        Ok(true)
+    } else {
+        Err(format!(
+            "ps returned ambiguous output for lock owner pid {pid}; refusing recovery"
+        ))
+    }
 }
 
 #[cfg(windows)]
@@ -335,7 +397,7 @@ mod tests {
         let path = state.join(LOCK_FILE_NAME);
         let stale = LockOwner {
             version: LOCK_VERSION,
-            pid: u32::MAX,
+            pid: i32::MAX as u32,
             executable: Some("/definitely/not/a/process".into()),
             token: "stale".into(),
             acquired_at_unix_nanos: 1,
