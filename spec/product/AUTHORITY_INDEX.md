@@ -32,6 +32,7 @@ ADR-0019 and other ADRs explicitly marked accepted remain authority only where t
 - old framework-specific docs.
 
 These are provenance/lineage. Their mature disposition is governed by:
+
 - `HISTORICAL_REQUIREMENT_DISPOSITION.md`;
 - `historical-fr-disposition.v1.json`;
 - `METHODOLOGY_RECONCILIATION.md`.
@@ -45,6 +46,7 @@ Current code/tests establish runtime behavior/evidence. If they disagree with A1
 ## Fresh-context recovery sequence
 
 Read:
+
 1. this authority index;
 2. mature-contract manifest;
 3. canonical semantic decisions;
@@ -55,3 +57,10 @@ Read:
 8. runtime mounting/current-state evidence as needed.
 
 This ordering prevents old fixed-FSM, kitty-specs-only, mandatory Neo4j/NATS/MinIO/Plane, or review→Done assumptions from regaining authority accidentally.
+
+## Supplemental recovery evidence (proposed)
+
+The [2026-10-14 intent dossier](recovery-2026-10-14/README.md) records selected
+owner excerpts, a derived requirement crosswalk, proposed ADR amendments and
+unregistered future work. It does not supersede A1 or establish runtime evidence.
+Its source coverage and unavailable archive are explicitly bounded.
