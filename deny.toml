@@ -23,8 +23,16 @@ db-path = "$CARGO_HOME/advisory-db"
 # glib-macros 0.18 (tauri tray-icon stack); glib 0.18 pins it, no fix until
 # tauri/tray-icon bump to a version that drops the libappindicator default
 # or ships a maintained ksni-only path.
+#
+# RUSTSEC-2024-0429 (glib VariantStrIter) remains: glib 0.18.5 is the latest
+# resolvable version in this graph; upstream fixed only in 0.20.0, reachable
+# once tauri PR #16170 ("chore(deps): update gtk crates to 0.19") lands. The
+# 2026-10-14 Dependabot run (38524349833) confirmed this by reporting
+# "security_update_not_possible": latest-resolvable 0.18.5, lowest-non-vulnerable
+# 0.20.0, conflicting-dependencies [].
 ignore = [
   { id = "RUSTSEC-2024-0370", reason = "proc-macro-error unmaintained: build-time only via glib-macros 0.18 (tauri stack); glib 0.18 pins it, no fix until tauri/tray-icon bump." },
+  { id = "RUSTSEC-2024-0429", reason = "glib VariantStrIter: glib 0.18.5 is latest resolvable in this tauri graph; fixed in 0.20.0 behind tauri PR #16170 (gtk 0.19). Dependabot 2026-10-14 confirmed conflicting-dependencies [] and update-not-possible." },
 ]
 
 [licenses]
