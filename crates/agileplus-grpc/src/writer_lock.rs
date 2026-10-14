@@ -154,15 +154,18 @@ fn acquire_guard(state_dir: &Path) -> Result<File, String> {
 impl Drop for ProjectWriterLock {
     fn drop(&mut self) {
         drop(self.file.take());
-        let Ok(contents) = fs::read_to_string(&self.path) else {
-            return;
-        };
-        let Ok(owner) = serde_json::from_str::<LockOwner>(&contents) else {
-            return;
-        };
-        if owner.token == self.token {
+        if let Ok(contents) = fs::read_to_string(&self.path)
+            && let Ok(owner) = serde_json::from_str::<LockOwner>(&contents)
+            && owner.token == self.token
+        {
             let _ = fs::remove_file(&self.path);
         }
+        // Closing our descriptor alone need not release flock while a child
+        // fork or duplicate retains the same open file description. Release
+        // authority explicitly, after cleanup and before closing the guard.
+        // Closing alone may leave the lock held by a forked/duplicated descriptor.
+        // Release only after owner-record cleanup, while the guard is still held.
+        let _ = fs2::FileExt::unlock(&self._guard);
     }
 }
 
@@ -386,6 +389,23 @@ mod tests {
         let replacement =
             ProjectWriterLock::acquire(scratch.path()).expect("lock released after drop");
         assert!(replacement.path().exists());
+    }
+
+    #[test]
+    fn owner_release_unlocks_a_descriptor_inherited_during_spawn() {
+        let scratch = Scratch::new("inherited-descriptor");
+        let first = ProjectWriterLock::acquire(scratch.path()).expect("first owner");
+        // A fork can temporarily retain this open file description before exec
+        // closes CLOEXEC descriptors. Keep a duplicate to deterministically model it.
+        let inherited = first
+            ._guard
+            .try_clone()
+            .expect("duplicate guard descriptor");
+        drop(first);
+        let replacement = ProjectWriterLock::acquire(scratch.path())
+            .expect("owner release must explicitly unlock despite an inherited descriptor");
+        assert!(replacement.path().exists());
+        drop(inherited);
     }
 
     #[test]

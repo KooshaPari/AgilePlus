@@ -14,6 +14,12 @@ persistent kernel-locked `core-writer.guard` throughout acquisition, stale-recor
 quarantine and cleanup. This guard inode is never deleted or renamed. A crash
 releases its OS lock. Ambiguous/failed process probes fail closed.
 
+Current-head parallel CI exposed a further descriptor-lifetime race: closing the
+owner descriptor does not unlock while a fork/duplicate retains the same open
+file description. Cleanup now explicitly unlocks after token-checked record
+removal. A deterministic duplicated-descriptor regression failed before the fix;
+all 68 gRPC library tests subsequently passed with default parallel execution.
+
 New owner records use version 2, which legacy binaries refuse to recover. Version
 1 records are retained and probed before migration. Adoption must be coordinated:
 all recovery contenders must use the new protocol; an already-in-flight legacy
@@ -40,7 +46,7 @@ All commands ran in the isolated candidate after sourcing
 
 | Command                                                                                                                                                       | Actual result                                                            |
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| `cargo test --locked -p agileplus-grpc --lib --test writer_lock_regressions --test server_process_lifecycle --test atomic_acceptance_rpc -- --test-threads=1` | 79 passed, zero failures/ignored; includes one child-probe harness entry |
+| `cargo test --locked -p agileplus-grpc --lib --test writer_lock_regressions --test server_process_lifecycle --test atomic_acceptance_rpc -- --test-threads=1` | 80 passed, zero failures/ignored; includes one child-probe harness entry |
 | `cargo test --locked -p agileplus-sqlite -- --test-threads=1`                                                                                                 | 614 passed, zero failures/ignored                                        |
 | `cargo test --locked -p agileplus-cli --test implement_command_flow -- --test-threads=1`                                                                      | 11 passed                                                                |
 | `cargo test --locked -p agileplus-cli --lib restart_reconciliation_expires_only_live_attempts`                                                                | 1 passed; 765 filtered                                                   |
