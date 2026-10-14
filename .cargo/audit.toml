@@ -1,2 +1,37 @@
 [advisories]
-ignore = ["RUSTSEC-2025-0140", "RUSTSEC-2026-0049"]
+# Repository-local config for `cargo audit` / rustsec/audit-check.
+#
+# PATH IS LOAD-BEARING: cargo-audit resolves the repo-local config from
+# `.cargo/audit.toml`, NOT from `./audit.toml`. A root `audit.toml` existed
+# with 8 IDs and was silently dead config — verified 2026-10-14 because
+# `cargo audit` reported RUSTSEC-2024-0370 while that ID sat in the root
+# file's ignore list. The root file was removed and its content merged here.
+ignore = [
+  # rsa: Marvin Attack — no fix available upstream yet, low risk in our usage
+  "RUSTSEC-2023-0071",
+  # paste: unmaintained — no security impact, only used in proc-macro context
+  "RUSTSEC-2025-0012",
+  # derivative: unmaintained — only used in derive macros, no security impact
+  "RUSTSEC-2024-0384",
+  # idna: unicode normalization issue — no fix available in current dep tree
+  "RUSTSEC-2024-0436",
+  # proc-macro-error: unmaintained, build-time only via glib-macros 0.18
+  # (tauri tray-icon stack). glib 0.18 pins it; no fix until tauri/tray-icon
+  # bump. Classified informational/unmaintained, not a code vuln.
+  "RUSTSEC-2024-0370",
+  # tonic/prost: informational advisory
+  "RUSTSEC-2025-0058",
+  # instant: unmaintained, no security impact
+  "RUSTSEC-2025-0134",
+  # glib VariantStrIter: 0.18.5 is latest resolvable in this tauri graph;
+  # fixed in 0.20.0 behind tauri PR #16170 ("update gtk crates to 0.19").
+  # Dependabot run 38524349833 (2026-10-14) confirmed
+  # security_update_not_possible: latest-resolvable 0.18.5,
+  # lowest-non-vulnerable 0.20.0, conflicting-dependencies [].
+  # Re-evaluate when tauri PR #16170 lands.
+  "RUSTSEC-2024-0429",
+  # Pre-existing entries retained verbatim (no per-entry rationale was
+  # recorded in the old .cargo/audit.toml).
+  "RUSTSEC-2025-0140",
+  "RUSTSEC-2026-0049",
+]
