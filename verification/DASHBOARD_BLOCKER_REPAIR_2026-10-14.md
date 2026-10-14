@@ -40,11 +40,11 @@ claim ongoing connectivity or current data. No live refresh daemon is added.
 All commands ran in the isolated candidate after sourcing
 `/workspace/.onboarding/env.sh`, with two Cargo jobs and dev/test debug disabled.
 
-| Command | Actual result |
-| --- | --- |
+| Command                                                                         | Actual result                     |
+| ------------------------------------------------------------------------------- | --------------------------------- |
 | `cargo test --locked -p agileplus-dashboard --no-fail-fast -- --test-threads=1` | 518 passed, zero failures/ignored |
-| `cargo clippy --locked -p agileplus-dashboard --all-targets -- -D warnings` | Exit 0 |
-| `cargo fmt --all -- --check` and `git diff --check` | Exit 0 |
+| `cargo clippy --locked -p agileplus-dashboard --all-targets -- -D warnings`     | Exit 0                            |
+| `cargo fmt --all -- --check` and `git diff --check`                             | Exit 0                            |
 
 The four new `source_truth_regressions` execute real native HTTP/HTML requests,
 including selected requirement references and no fabricated artifacts. They are
