@@ -195,6 +195,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          # gitleaks scans the pull-request commit range; a shallow checkout
+          # omits the parent revision and fails before scanning any bytes.
+          fetch-depth: 0
       - name: gitleaks
         uses: gitleaks/gitleaks-action@v3
         env:
