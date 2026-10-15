@@ -63,7 +63,15 @@
 # 0.102.8) plus 13 warnings (per `##[warning]13 warnings found` in
 # the cargo-audit output of 37617720114). The vulnerability and
 # warning counts are audit-database state, not part of the failure
-# mode that the campaign addressed.)
+# mode that the campaign addressed.
+#
+# Post-session end-to-end validation (2026-10-15T08:56Z): a `workflow_dispatch`
+# of `cargo-audit.yml` against `65805269` (run 38709313515) reproduced the
+# same outcome on the campaign's HEAD: `vulnerabilities.count:0`,
+# `warnings:{}` (empty), all 10 ignore IDs present, "No vulnerabilities
+# were found", "No warnings were found", job `audit` conc=success. The
+# 200-run window's first success (38550458606 on 45bb5c9fde) and the
+# deliberate re-trigger (38709313515 on 65805269) agree.
 ignore = [
   # rsa: Marvin Attack (RUSTSEC-2023-0071) — no fixed release upstream;
   # low risk in our usage (verification only, no decryption oracle).
