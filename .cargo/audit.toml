@@ -54,8 +54,16 @@
 # `vulnerabilities count:3` -- the gate asserts on the issue POST,
 # not on the advisory count. (The 7-streak runs had a different
 # vulnerability count: run 32221570076 reported `vulnerabilities
-# count:1` (RUSTSEC-2026-0258, h2) plus 6 warnings; same failure mode,
-# same root cause.)
+# count:1` (RUSTSEC-2026-0258, h2) plus 6 warnings (per
+# `##[warning]6 warnings found`); same failure mode, same root cause.
+# The 6-streak's count and warnings changed as new advisories were
+# added to the DB over the 6 weeks: the first 2 runs reported `count:0`
+# (no vulnerabilities), and the last 4 runs (starting 2026-09-16)
+# reported `count:3` (RUSTSEC-2026-0098/0099/0104, all rustls-webpki
+# 0.102.8) plus 13 warnings (per `##[warning]13 warnings found` in
+# the cargo-audit output of 37617720114). The vulnerability and
+# warning counts are audit-database state, not part of the failure
+# mode that the campaign addressed.)
 ignore = [
   # rsa: Marvin Attack (RUSTSEC-2023-0071) — no fixed release upstream;
   # low risk in our usage (verification only, no decryption oracle).
