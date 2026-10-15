@@ -1,0 +1,217 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+## [0.2.5](https://github.com/KooshaPari/AgilePlus/compare/agileplus-domain-v0.2.4...agileplus-domain-v0.2.5) - 2026-10-15
+
+### Added
+
+- *(domain)* export transactional acceptance port
+- *(domain)* add focused transactional acceptance port
+- *(acceptance)* commit work state audit event and receipt atomically
+- *(evaluation)* bind terminal grades to frozen assignment criteria
+- *(execution)* expose active assignment supersession port
+- *(governance)* expose evaluation result semantics
+- *(governance)* add shared evaluation result semantics
+- *(mace)* expose attempt lifecycle transition
+- *(mace)* expose execution record port
+- *(mace)* add execution record port
+- *(mace)* expose execution domain records
+- *(mace)* add immutable execution domain records
+- wtree-sprawl cleanup — core-mcp-runtime and CI workflow refinements
+- *(agileplus)* shard #956 triage + #954 governance-dashboard onto main ([#958](https://github.com/KooshaPari/AgilePlus/pull/958))
+- *(AgilePlus)* storage_port backdrop/backlog + dashboard app_state wiring
+- *(dashboard)* wire Plane.so settings, agent sessions, and absorbed frontend attempts ([#927](https://github.com/KooshaPari/AgilePlus/pull/927))
+- *(cli)* wire RealAgentAdapter for implement dispatch ([#919](https://github.com/KooshaPari/AgilePlus/pull/919))
+- *(cli)* wire full-deps SDD surface and restore platform dogfood path ([#917](https://github.com/KooshaPari/AgilePlus/pull/917))
+- *(events)* add EventBus pub/sub + proptest for 6 domain enums (L26 + L21)
+- *(fuzz)* add sql_fragments fuzz target for tokenization safety (L22)
+- *(domain)* add newtype ID wrappers for compile-time type safety (L10)
+- *(fuzz)* add cargo-fuzz harness with 9 targets for domain parsing
+- phase-2 audit remediation — fuzzing targets, memory profiling, demo mode
+- add fuzzing harness (L22) and onboarding tour (L71/L72)
+- *(dashboard)* theme system, i18n scaffolding, skeleton/empty-state components, CI improvements
+- *(governance)* SpecKitty rubric — catalog + parser (P2.1+P2.2) ([#893](https://github.com/KooshaPari/AgilePlus/pull/893))
+- shared-core traceability spine + docs consolidation (Phase 3)
+- *(agileplus)* consolidate all branches — full spec→test→traceability e2e
+- *(reconciliation)* apply stash #2 — WIP at09367ce37
+- *(reconciliation)* apply stash — claim.rs, git claim_bound, triage port adapter, QA gates
+- *(triage)* apply stash — claim.rs, edge_cases, hybrid_pipeline, dedup
+- *(intent)* add new mcp-intent crate, domain modules, and SQL migrations
+- *(intent)* integrate intent graph, builder, mcp-intent stub, and CLI command
+- final-wave libification + OTel + SOTA (9 commits, 30+ files) ([#708](https://github.com/KooshaPari/AgilePlus/pull/708))
+- *(workspace)* use phenotype error and logging crates
+- *(errors)* add DomainError + AppError with PhenotypeErrorKind lifts
+- *(plane)* FR-AGP-018 Plane.so integration adapter ([#620](https://github.com/KooshaPari/AgilePlus/pull/620))
+- *(FR-AGP-017)* rule-based triage engine for synced GitHub items ([#618](https://github.com/KooshaPari/AgilePlus/pull/618))
+- *(FR-AGP-011)* tonic WorkItemsService + agileplus-proto stub crate ([#617](https://github.com/KooshaPari/AgilePlus/pull/617))
+- *(FR-AGP-016)* add CLI list-projects / list-epics / list-stories subcommands
+- *(FR-AGP-015)* OpenTelemetry tracing — init_subscriber, OTLP adapter, request-span middleware ([#615](https://github.com/KooshaPari/AgilePlus/pull/615))
+- *(sync-persistence)* wire GitHub sync to SQLite via PersistSyncedStories use case (FR-AGP-013) ([#610](https://github.com/KooshaPari/AgilePlus/pull/610))
+- *(requirements)* ingest FR/NFR catalogs as Epics/Stories with Tracera cross-refs ([#609](https://github.com/KooshaPari/AgilePlus/pull/609))
+- *(api)* wire application use-cases to AppState composition root ([#606](https://github.com/KooshaPari/AgilePlus/pull/606))
+- *(application)* hexagonal application/use-case layer ([#603](https://github.com/KooshaPari/AgilePlus/pull/603))
+- *(sqlite)* SQLite-backed repository for User/Project/Epic/Story ([#602](https://github.com/KooshaPari/AgilePlus/pull/602))
+- *(domain)* add User, Epic, Story aggregates; harden Project constructor ([#595](https://github.com/KooshaPari/AgilePlus/pull/595))
+- *(api)* bootstrap agileplus-api axum HTTP server ([#587](https://github.com/KooshaPari/AgilePlus/pull/587))
+- *(cli)* bootstrap agileplus-cli with clap derive and in-memory mock ([#586](https://github.com/KooshaPari/AgilePlus/pull/586))
+- *(domain)* scaffold agileplus-domain with all aggregate types and port traits ([#581](https://github.com/KooshaPari/AgilePlus/pull/581))
+- *(workflows)* add GitHub workflows and templates
+- create agileplus-fixtures shared test crate ([#235](https://github.com/KooshaPari/AgilePlus/pull/235))
+- *(import)* add project batch import support ([#181](https://github.com/KooshaPari/AgilePlus/pull/181))
+- add plugin integration layer to agileplus-domain
+- modernize AgilePlus tooling (axum 0.8, reqwest 0.13, workspace deps)
+- multi-project dashboard, Plane.so integration, dogfood seeding ([#17](https://github.com/KooshaPari/AgilePlus/pull/17))
+- *(004)* add Plane.so Module & Cycle sync (WP06)
+- *(004)* add CLI cycle subcommands (WP04)
+- *(004)* implement StoragePort + SQLite adapter for Modules & Cycles (WP02)
+- *(004)* implement Module & Cycle domain entities (WP01)
+- *(WP01)* add domain model extensions for platform completion
+- *(WP15)* API layer and credential management
+- *(WP01)* scaffold agileplus-core Rust workspace with 7 crates
+
+### Fixed
+
+- *(lint)* unblock CI clippy with manual_contains, dead_code, useless_conversion, and rustfmt
+- *(governance)* per-rule satisfaction and by-type-label evidence fallback
+- *(ci)* green 5 align-with-reality reds introduced by 6e4a8243 ([#1101](https://github.com/KooshaPari/AgilePlus/pull/1101))
+- *(machete)* remove 33 genuinely unused deps; ignore the 3 prost codegen false positives
+- *(clippy)* clear all 50 workspace lints so the Rust job's clippy gate passes
+- *(governance)* terminate automated policy match arm
+- *(governance)* fail closed for unevaluated automated policy
+- *(governance)* preserve command-metric policy semantics
+- *(governance)* preserve requirement-scoped evidence semantics
+- block comment detection in repl + version bump to 0.2.4
+- resolve CI release build failures
+- comprehensive tests, BDD fixes, and gRPC command implementations
+- *(core)* restore reachable gRPC and MCP runtime
+- *(test)* case-insensitive Intent parsing, format cfg(test) indentation ([#1013](https://github.com/KooshaPari/AgilePlus/pull/1013))
+- *(nightly)* pin toolchain to nightly-2026-07-31 and normalize formatting ([#976](https://github.com/KooshaPari/AgilePlus/pull/976))
+- *(cli)* restore strict build coverage path ([#961](https://github.com/KooshaPari/AgilePlus/pull/961))
+- align StoragePort trait renames and resolve all merge conflicts for clean build
+- *(credentials)* commit file mutations transactionally
+- *(credentials)* harden migration durability
+- *(credentials)* migrate legacy Plane secrets safely
+- *(credentials)* require secure operator key lifecycle
+- *(credentials)* prevent dashboard secret persistence
+- *(credentials)* encrypt persisted secrets
+- *(domain)* declare optional keychain feature ([#923](https://github.com/KooshaPari/AgilePlus/pull/923))
+- *(governance)* regenerate catalog w/ canonical C09 pillar ids + tidy script
+- *(engine)* un-park cli + build the missing github sync API — full engine compiles
+- *(domain)* un-park U5+U7 — domain crate now compiles (0 errors, was 31)
+- *(domain)* un-park U4 — async_trait on Story/Epic repository ports (14->5 errors)
+- *(domain)* un-park PR-A leaf fixes U1+U2+U3 (domain 20->14 errors)
+- *(ci)* drop agileplus-validate from domain deps + use prebuilt taplo ([#795](https://github.com/KooshaPari/AgilePlus/pull/795))
+- *(domain)* remove async-trait + uuid from agileplus-domain; sync traits; CodeQL cpp removal ([#792](https://github.com/KooshaPari/AgilePlus/pull/792))
+- *(ci)* domain zero-dep lint + config lint taplo path ([#789](https://github.com/KooshaPari/AgilePlus/pull/789))
+- *(workspace)* add missing sqlx, remove duplicate deps, add EpicRepository blanket impl, fix merge conflicts
+- bump MSRV pin 1.85 → 1.88 (unblocks verify gate) ([#701](https://github.com/KooshaPari/AgilePlus/pull/701))
+- align domain models and restore dashboard templates ([#585](https://github.com/KooshaPari/AgilePlus/pull/585))
+- restore agileplus crates + dashboard web (without node_modules) ([#578](https://github.com/KooshaPari/AgilePlus/pull/578))
+- *(rust)* tighten deny.toml wildcards policy in AgilePlus
+- bind validate policies to explicit refs ([#434](https://github.com/KooshaPari/AgilePlus/pull/434))
+- implement evidence-backed validate policies ([#424](https://github.com/KooshaPari/AgilePlus/pull/424))
+- *(gitignore)* narrow *.toml → drop blanket, restore agileplus-fixtures/Cargo.toml ([#364](https://github.com/KooshaPari/AgilePlus/pull/364))
+- add #[default] to BacklogStatus enum for Rust 2024
+- stabilize CI for AgilePlus (lint and tests) ([#162](https://github.com/KooshaPari/AgilePlus/pull/162))
+- stabilize agileplus and sync with main
+- resolve compilation errors and apply formatting standards ([#154](https://github.com/KooshaPari/AgilePlus/pull/154))
+- resolve clippy warnings in dashboard and git snapshot
+- resolve Rust compilation errors across workspace ([#33](https://github.com/KooshaPari/AgilePlus/pull/33))
+- resolve CI failures for domain deps, MSRV, fmt, audit, and machete
+- add TransitionResult, FromStr for FeatureState, fix test case assertions
+- *(WP03)* add missing Serialize/Deserialize derives on StateTransition, TransitionResult, WpDependency
+
+### Other
+
+- *(domain)* kill 8 mutation-testing survivors in intent_graph + credentials/factory
+- PR #1097 require executed acceptance evidence and gate agent work-package completion
+- PR #1096 close operator acceptance and durable Git/SQLite promotion recovery
+- Merge current main while preserving canonical acceptance and executed HTTP performance gates
+- *(contract)* 3-way merge spec/mature-product-contract-v2 into main (A'' step 2)
+- Measure canonical T118 workload against the real loopback HTTP API
+- chore(deps)(deps): bump the major group across 1 directory with 9 updates
+- Make promotion resumable across Git and SQLite; repair dependency and browser CI gates
+- Connect operator dashboard to canonical acceptance and durable receipt lookup
+- *(domain)* keep single atomic acceptance port
+- *(rust)* apply cargo fmt
+- *(audit)* fix v1 receipt comment formatting
+- *(audit)* codify exact audit-hash-v1 envelope
+- *(rust)* apply cargo fmt
+- *(governance)* route CLI through shared evaluator
+- *(governance)* expose shared evaluator
+- *(governance)* extract shared evidence policy evaluator
+- *(fmt)* format the workspace with CI's exact toolchain
+- *(domain,import,dispatch)* cover intent graph, builders, file credentials, WP dependencies, agent harnesses and PR loop
+- *(domain)* deepen agileplus-domain aggregate and config coverage
+- *(agileplus-domain)* cover port wire contracts and credential error surface
+- *(domain)* cover port defaults, config loading, and credential error paths
+- *(domain)* deepen coverage
+- bring forward uncommitted changes
+- PII sweep — redact names, emails, paths across all files
+- bump workspace version to 0.2.2
+- add integration tests for sqlite and domain
+- *(domain)* add comprehensive test coverage
+- remove 55 orphaned source files (~6.2k LOC)
+- sync Cargo.lock and crate adjustments
+- update domain ports module
+- update Cargo.lock and minor crate adjustments
+- audit phase 2b — EventBus pub/sub, fuzz targets, structured tracing
+- audit remediation phase 2 — fuzz targets, memory profiling, demo mode, onboarding, i18n, themes
+- speckitty pillars catalog, code scanner, rubric, domain crate unpark
+- API clean recovery and credential hardening
+- *(credentials)* cover production factory and config loader
+- *(credentials)* prove router rotation and configured file backend
+- *(domain)* add 4 proptest properties for FeatureState transitions (L21)
+- vendor agileplus boundary types
+- *(domain+sqlite+github)* reconcile test compilation, +domain 153 pass / 18 ignored
+- *(domain)* remove duplicate mod tests (paste corruption, un-park test-suite WP)
+- *(domain)* un-park step 1 — wire traceability-core, fix E0761, restore mod decls
+- Revert out-of-scope domain crate edits, fix release binary install ([#878](https://github.com/KooshaPari/AgilePlus/pull/878))
+- Release workflow refactor - use cargo install from crates.io ([#877](https://github.com/KooshaPari/AgilePlus/pull/877))
+- Fix E0761 module conflicts and E0255 duplicate definition errors ([#873](https://github.com/KooshaPari/AgilePlus/pull/873))
+- Remove dead phenoShared dependency from agileplus-application ([#871](https://github.com/KooshaPari/AgilePlus/pull/871))
+- [codex] fix(domain): localize domain error type ([#788](https://github.com/KooshaPari/AgilePlus/pull/788))
+- absorb 2 protected-pattern branches (L5-110.5) ([#769](https://github.com/KooshaPari/AgilePlus/pull/769))
+- absorb 24 large w35/w36 stragglers (L5-110.4) ([#767](https://github.com/KooshaPari/AgilePlus/pull/767))
+- absorb 5 medium stragglers (L5-110.3) ([#766](https://github.com/KooshaPari/AgilePlus/pull/766))
+- absorb 35 small stragglers (L5-110.2) ([#765](https://github.com/KooshaPari/AgilePlus/pull/765))
+- *(license)* add SPDX-License-Identifier to source files (rebased on main 2026-06-18) ([#760](https://github.com/KooshaPari/AgilePlus/pull/760))
+- *(workflows)* pin remaining tag-based action references to SHAs
+- *(workflows)* standardize to ci/audit/deny/scorecard/release
+- *(contracts)* add 4 cross-crate contract tests (T112-T115) and fix duplicate InvalidClaim
+- Merge branch 'chore/l5-87-focus-repo-specs-2026-06-11'
+- Merge branch 'chore/agileplus-reconciliation-2026-06-12'
+- Merge branch 'feature/agileplus-sota-suite-2026-06-12'
+- Merge branch 'chore/fix-doc-links'
+- Merge branch 'chore/l5-88-focus-repo-readme-agents-2026-06-11'
+- Merge branch 'temp-recon2' into chore/agileplus-reconciliation-2026-06-12
+- *(focus-repos)* add SPEC.md to all focus repos (L5 #87)
+- Merge chore/L4-031-triage-port-adapter-2026-06-11
+- Merge chore/L3-021-proptest-validate-2026-06-11
+- *(forge-commit)* 21 files from agent worktree
+- *(forge-commit)* 42 files from agent worktree
+- *(domain)* cover entity invariants ([#711](https://github.com/KooshaPari/AgilePlus/pull/711))
+- *(docs)* add CARGO-WORKSPACE.md and per-crate README public API indexes (L3 #45)
+- *(governance)* add CODEOWNERS, CONTRIBUTING, SECURITY, FUNDING (L2 #30)
+- *(agileplus)* add justfile ([#692](https://github.com/KooshaPari/AgilePlus/pull/692))
+- *(domain)* add FR-DOMAIN-001 traceability for Event and Snapshot ([#686](https://github.com/KooshaPari/AgilePlus/pull/686))
+- *(spec)* add FR-CONTRACT-001 and FR-INTEGRATION-001 stubs ([#685](https://github.com/KooshaPari/AgilePlus/pull/685))
+- *(docs)* fix broken rich-media stub links in journey-traceability
+- *(AgilePlus)* CI fixes — explicit workspace members, workflow bugfixes ([#582](https://github.com/KooshaPari/AgilePlus/pull/582))
+- *(fmt)* sweep cargo fmt drift across workspace ([#408](https://github.com/KooshaPari/AgilePlus/pull/408))
+- remove deprecated config files and GitHub templates
+- update ADR, process docs, and kitty-specs
+- modernize tooling ([#176](https://github.com/KooshaPari/AgilePlus/pull/176))
+- fix duplicate workspace member, add agileplus-github, clean unused imports
+- Merge spec001 WP15
+- Merge spec001 WP05
+- Merge spec001 WP04
+- Implement WP05 port traits and prerequisite domain types
+- Implement WP04: Domain Model — Governance & Audit
+- Implement WP03: Domain model with Feature & state machine

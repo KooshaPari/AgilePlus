@@ -11,6 +11,6 @@ repository.workspace = true
 dist = false
 
 [dev-dependencies]
-agileplus-domain = { version = "0.2.4", path = "../agileplus-domain" }
+agileplus-domain = { version = "0.2.5", path = "../agileplus-domain" }
 tokio = { workspace = true }
 serde_json.workspace = true

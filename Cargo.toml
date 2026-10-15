@@ -45,7 +45,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.2.4"
+version = "0.2.5"
 edition = "2024"
 license = "MIT"
 rust-version = "1.88"
@@ -208,7 +208,7 @@ async-nats = "0.50"
 paste = { package = "pastey", version = "0.2" }
 agileplus-config = { path = "crates/agileplus-config" }
 agileplus-proto = { path = "crates/agileplus-proto" }
-agileplus-telemetry = { version = "0.2.1", path = "crates/agileplus-telemetry" }
+agileplus-telemetry = { version = "0.2.5", path = "crates/agileplus-telemetry" }
 
 # The profile that 'dist' will build with
 [profile.dist]

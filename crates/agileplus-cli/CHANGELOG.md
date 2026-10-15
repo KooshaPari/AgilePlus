@@ -1,0 +1,265 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+## [0.2.5](https://github.com/KooshaPari/AgilePlus/compare/agileplus-cli-v0.2.4...agileplus-cli-v0.2.5) - 2026-10-15
+
+### Added
+
+- *(implement)* expire interrupted attempts before replacement
+- *(acceptance)* wire authenticated gRPC and repair transport test compilation
+- *(acceptance)* commit work state audit event and receipt atomically
+- *(acceptance)* audit terminal WP acceptance
+- *(evaluation)* bind terminal grades to frozen assignment criteria
+- *(mace)* bind evaluations to worktree git candidates
+- *(mace)* persist attempt lifecycle and review evaluations
+- *(mace)* persist assignment and attempt before dispatch
+- *(tests)* add coverage tests for application, specify, trace, validate
+- *(tests)* coverage tests for traceability, git, CLI, sqlite
+- *(tests)* CLI coverage tests for 6 command modules
+- *(tests)* add coverage tests for dashboard and retrospective commands
+- *(tests)* add coverage tests for worklog and plan commands
+- agent adapter lifecycle fix, desktop mutations, ADR-018/020 update
+- *(agileplus-mcp)* ProjectScope per-session repo-root binding + repo-local artifact paths ([#1077](https://github.com/KooshaPari/AgilePlus/pull/1077))
+- wtree-sprawl cleanup — core-mcp-runtime and CI workflow refinements
+- *(cli)* wire RealAgentAdapter for implement dispatch ([#919](https://github.com/KooshaPari/AgilePlus/pull/919))
+- *(cli)* wire dashboard subcommand to SQLite DAG view ([#918](https://github.com/KooshaPari/AgilePlus/pull/918))
+- *(cli)* wire full-deps SDD surface and restore platform dogfood path ([#917](https://github.com/KooshaPari/AgilePlus/pull/917))
+- *(observability)* convert 12 unstructured tracing sites to structured fields (L13)
+- phase-2b audit remediation — REPL, splash screen, accessibility CI, infra CI
+- phase-1 audit remediation — CLI self-update, Electrobun shell, settings UI
+- *(dashboard)* theme system, i18n scaffolding, skeleton/empty-state components, CI improvements
+- *(cli)* ap cockpit read — TUI table of rubric scores per repo ([#909](https://github.com/KooshaPari/AgilePlus/pull/909))
+- *(cli)* ap okf validate|summarize|merge subcommands (OKF v1.0) ([#907](https://github.com/KooshaPari/AgilePlus/pull/907))
+- *(cli)* ap rubric fix-list — prioritized gap table for cockpit dashboards ([#905](https://github.com/KooshaPari/AgilePlus/pull/905))
+- *(cli)* ap cockpit publish — NDJSON rubric scorecards ([#903](https://github.com/KooshaPari/AgilePlus/pull/903))
+- *(governance)* rubric v2 content-probe rules + --probes CLI flag ([#902](https://github.com/KooshaPari/AgilePlus/pull/902))
+- *(governance)* SpecKitty → AgilePlus migration — scoring engine + ap rubric + 14 cursor shims ([#901](https://github.com/KooshaPari/AgilePlus/pull/901))
+- *(governance)* SpecKitty rubric — catalog + parser (P2.1+P2.2) ([#893](https://github.com/KooshaPari/AgilePlus/pull/893))
+- *(release)* cargo-dist installers + crates.io metadata (rebased) ([#843](https://github.com/KooshaPari/AgilePlus/pull/843))
+- shared-core traceability spine + docs consolidation (Phase 3)
+- *(agileplus)* consolidate all branches — full spec→test→traceability e2e
+- *(cli)* add 6 new subcommands and integration tests
+- *(intent)* add new mcp-intent crate, domain modules, and SQL migrations
+- *(intent)* integrate intent graph, builder, mcp-intent stub, and CLI command
+- add xdd-lib-rs cross-dialect library
+- *(agileplus-cli)* add 5 traceability subcommands from L2 #25 worktree (gate-add, gate-run, run-record, scope-status, sidecar-status)
+- *(agileplus-cli)* add ap trace link + ap dashboard (L2 #40 worktree)
+- *(triage,cli)* add dedup/claim/repo_introspect + dag subcommands + import-dagctl migration
+- *(trace-validator+governance+ci)* P0 closure + SOTA upgrade suite
+- final-wave libification + OTel + SOTA (9 commits, 30+ files) ([#708](https://github.com/KooshaPari/AgilePlus/pull/708))
+- *(cli)* add worklog subcommand for schema validation and conversion
+- *(observability)* wire OpenTelemetry startup
+- *(test)* raise CLI coverage
+- *(FR-AGP-016)* add CLI list-projects / list-epics / list-stories subcommands
+- *(requirements)* ingest FR/NFR catalogs as Epics/Stories with Tracera cross-refs ([#609](https://github.com/KooshaPari/AgilePlus/pull/609))
+- *(cli)* add sync subcommand for GitHub repository sync ([#601](https://github.com/KooshaPari/AgilePlus/pull/601))
+- *(cli)* bootstrap agileplus-cli with clap derive and in-memory mock ([#586](https://github.com/KooshaPari/AgilePlus/pull/586))
+- *(cli)* wire agileplus sync subcommand into main CLI dispatch ([#289](https://github.com/KooshaPari/AgilePlus/pull/289))
+- apply governance standards ([#285](https://github.com/KooshaPari/AgilePlus/pull/285))
+- *(workflows)* add GitHub workflows and templates
+- create agileplus-fixtures shared test crate ([#235](https://github.com/KooshaPari/AgilePlus/pull/235))
+- *(cli)* add list command for feature database query ([#213](https://github.com/KooshaPari/AgilePlus/pull/213))
+- modernize AgilePlus tooling (axum 0.8, reqwest 0.13, workspace deps)
+- *(004)* add CLI cycle subcommands (WP04)
+- *(004)* add CLI module subcommands (WP03)
+- *(WP01)* add domain model extensions for platform completion
+- *(WP21)* Add triage/queue CLI commands and seed 25 prompt files
+- *(WP13)* implement CLI validate, ship, and retrospective commands
+- *(WP12)* implement CLI plan & implement commands
+- *(WP11)* implement CLI specify & research commands
+- *(WP01)* scaffold agileplus-core Rust workspace with 7 crates
+
+### Fixed
+
+- *(lint)* unblock CI clippy with manual_contains, dead_code, useless_conversion, and rustfmt
+- resolve PR #1097 merge conflict leftovers
+- *(acceptance)* gate agent WP completion on contract evidence and restore release generator output
+- *(clippy)* allow dead code on test-only helpers and reserved functions
+- *(release)* enforce operator origin boundary and expose acceptance rejection
+- *(ship)* surface exact promotion rejection in CLI errors
+- *(test)* give approved worker a real exact-candidate VCS witness
+- *(ship)* preserve fail-closed promotion semantics
+- *(machete)* remove 33 genuinely unused deps; ignore the 3 prost codegen false positives
+- *(ship)* keep accepted worktree path alive during lookup
+- *(implement)* satisfy clippy and preserve failed candidate identity
+- *(test)* use raw SQL literal for legacy evaluation fixture
+- *(acceptance)* reject legacy naked satisfied grades
+- *(acceptance)* retain review worktree pending terminal grade
+- *(acceptance)* block review-only terminal completion
+- *(acceptance)* block review-only terminal completion
+- *(implement)* keep candidate identity out of audit evidence refs
+- *(ship)* merge immutable evaluated commit instead of mutable branch
+- *(ship)* re-read source commit immediately before merge
+- *(ship)* reject vacuous zero-work promotion
+- *(ship)* use canonical Git worktree branch identity
+- *(ship)* merge only exact independently accepted candidates
+- *(validate)* require exact-candidate work acceptance
+- *(execution)* keep review approval non-terminal
+- *(execution)* link changed spec revisions to prior assignment basis
+- *(execution)* keep unresolved jobs out of exact candidate field
+- *(execution)* reuse assignments and require exact approved candidate
+- *(governance)* fail closed for unevaluated automated policy
+- *(mace)* make validate bypass flags diagnostic only
+- *(mace)* fail closed on ship validation and merge errors
+- block comment detection in repl + version bump to 0.2.4
+- resolve CI release build failures
+- close feedback loops — verify decomposition with real tests + E2E
+- *(agent-adapter)* resolve Send bound and ownership errors
+- *(core)* restore reachable gRPC and MCP runtime
+- *(fmt)* normalize to stable rustfmt + untrack node_modules ([#1045](https://github.com/KooshaPari/AgilePlus/pull/1045))
+- *(cli)* wire orphaned dag, okf, and mvp commands
+- *(nightly)* pin toolchain to nightly-2026-07-31 and normalize formatting ([#976](https://github.com/KooshaPari/AgilePlus/pull/976))
+- *(cli)* restore strict build coverage path ([#961](https://github.com/KooshaPari/AgilePlus/pull/961))
+- *(dashboard)* remove manifest conflict markers ([#952](https://github.com/KooshaPari/AgilePlus/pull/952))
+- *(cli)* register cockpit reader filter ([#951](https://github.com/KooshaPari/AgilePlus/pull/951))
+- align StoragePort trait renames and resolve all merge conflicts for clean build
+- *(cli)* unblock workspace build — rebase onto post-#893 merged main ([#897](https://github.com/KooshaPari/AgilePlus/pull/897))
+- resolve committed merge-conflict markers from bad pr-769 landing ([#891](https://github.com/KooshaPari/AgilePlus/pull/891))
+- *(spdx)* restore Rust sources corrupted by #760 ([#768](https://github.com/KooshaPari/AgilePlus/pull/768))
+- *(workspace)* add missing sqlx, remove duplicate deps, add EpicRepository blanket impl, fix merge conflicts
+- bump MSRV pin 1.85 → 1.88 (unblocks verify gate) ([#701](https://github.com/KooshaPari/AgilePlus/pull/701))
+- *(workspace)* scaffold 9 missing critical-path stub crates ([#583](https://github.com/KooshaPari/AgilePlus/pull/583))
+- *(rust)* tighten deny.toml wildcards policy in AgilePlus
+- bind validate policies to explicit refs ([#434](https://github.com/KooshaPari/AgilePlus/pull/434))
+- implement evidence-backed validate policies ([#424](https://github.com/KooshaPari/AgilePlus/pull/424))
+- *(quality)* AgilePlus zero warnings workspace-wide
+- stabilize CI for AgilePlus (lint and tests) ([#162](https://github.com/KooshaPari/AgilePlus/pull/162))
+- stabilize agileplus and sync with main
+- resolve nightly clippy manual_checked_ops, CI audit permissions, and protoc rate limits
+- resolve CI failures for domain deps, MSRV, fmt, audit, and machete
+- wire dashboard/platform CLI subcommands, fix BDD test fields and race condition - 622 tests passing
+
+### Other
+
+- PR #1097 require executed acceptance evidence and gate agent work-package completion
+- PR #1096 close operator acceptance and durable Git/SQLite promotion recovery
+- PR #1095 close private operator origin boundary and repair acceptance diagnostics
+- Merge current main while preserving canonical acceptance and executed HTTP performance gates
+- *(spec)* cargo fmt pass on spec-side files (A'' step 4)
+- *(contract)* 3-way merge spec/mature-product-contract-v2 into main (A'' step 2)
+- *(cli)* fix rustfmt violation in ship_command_flow.rs ([#1114](https://github.com/KooshaPari/AgilePlus/pull/1114))
+- invalidate quota-generated catalogue; source-backed rewrite required ([#1088](https://github.com/KooshaPari/AgilePlus/pull/1088))
+- Repair validation fixtures, scan full history and converge secure NATS dependencies
+- Fix acceptance CLI clippy diagnostics and integration argument initializer
+- Require executed WP evidence and preserve formal requirements in specification planning
+- Make promotion resumable across Git and SQLite; repair dependency and browser CI gates
+- *(release)* close native witnesses and repair fixture identities
+- *(implement)* preserve fail-closed unresolved-candidate oracle
+- *(implement)* distinguish valid and unresolved VCS candidate fixtures
+- *(ship)* align legacy oracles with nonvacuous canonical preflight
+- *(rust)* apply cargo fmt
+- *(ship)* prove promotion preflight is side-effect free and drift-safe
+- *(ship)* consume canonical promotion preflight
+- *(rust)* apply cargo fmt
+- *(implement)* prove interrupted attempt replacement history
+- *(rust)* apply cargo fmt
+- *(implement)* prove restart attempt reconciliation preserves history
+- *(cli)* wave 15 -- 36 behavior tests for dashboard, trace, retrospective
+- *(cli)* wave 14 -- 9 behavior tests for the `plan` command
+- *(rust)* apply cargo fmt
+- *(rust)* apply cargo fmt
+- *(validate)* delegate terminal mutation to application use case
+- *(rust)* apply cargo fmt
+- *(ship)* reuse canonical exact-candidate oracle
+- *(validate)* consume shared exact-candidate oracle
+- *(ship)* satisfy strict clippy candidate resolver
+- *(rust)* apply cargo fmt
+- *(acceptance)* require terminal WP audit receipt
+- *(rust)* apply cargo fmt
+- *(evaluation)* enforce receipt-only satisfied grades
+- *(cli)* cover the worklog command through the rlib
+- *(mvp)* reject generic terminal WP transition
+- *(validate)* enforce candidate match and atomic WP acceptance
+- *(acceptance)* require independent grade after review
+- *(rust)* apply cargo fmt
+- *(ship)* assert accepted candidates in promotion receipt
+- *(ship)* assert immutable accepted commit merge sources
+- *(ship)* reject vacuous zero-work promotion
+- *(ship)* assert canonical feat branch convention
+- *(ship)* align worktree branch helper with Git adapter
+- *(ship)* reject stale accepted candidate before merge
+- *(ship)* align worktree doubles with accepted candidate
+- *(ship)* seed exact accepted candidates in fixtures
+- *(validate)* require governance plus exact candidate acceptance
+- *(governance)* automated policy without evaluator fails closed
+- *(rust)* apply cargo fmt
+- *(governance)* cover command-metric evaluator parity
+- *(governance)* route CLI through shared evaluator
+- *(governance)* reject partial requirement evidence
+- *(governance)* add legacy shared evaluator differential oracle
+- *(mace)* assert validate bypasses are diagnostic only
+- *(mace)* assert ship bypasses fail closed
+- *(fmt)* format the workspace with CI's exact toolchain
+- *(cli)* cover the queue command end to end (17 tests)
+- *(test)* clear CI fmt and clippy failures in test files this campaign added
+- *(cli)* cover review-loop job routing and stderr integrity
+- *(cli)* cover the real run_implement command path end to end
+- *(cli)* add review loop flow integration tests (11 tests)
+- *(cli)* add ship command flow and side-effect integration tests (19 tests)
+- *(cli)* add validate command flow integration tests (7 tests, full run_validate flow)
+- *(cli)* deepen coverage of agileplus-cli command-layer entry points
+- *(cli)* keep only the untag gaps, drop duplicated module tests
+- *(cli)* drive module tag, untag, and delete handlers
+- *(cli)* cover module and cycle command handlers
+- bring forward uncommitted changes
+- *(cli)* add 1868 lines of integration tests (cockpit, context)
+- PII sweep — redact names, emails, paths across all files
+- add unit tests for cli, dashboard, plane crates + cleanup
+- bump workspace version to 0.2.2
+- add integration tests for cli, events, git, domain
+- *(cli)* add comprehensive test coverage
+- add swarm worker test coverage for CLI, application, retrospective, and fix mojibake truncate assertions
+- apply cargo fmt to all crates
+- remove 55 orphaned source files (~6.2k LOC)
+- remove platform subcommand (ADR-018 item 4)
+- decompose oversized modules + implement CLI --json + fix desktop reads
+- wtree-sprawl cleanup — core-mcp-runtime linear2 (MCP runtime+CI fixes, 72 commits unique to local) ([#1060](https://github.com/KooshaPari/AgilePlus/pull/1060))
+- *(deps)* bump the major group with 21 updates
+- *(cli)* remove orphaned cli_smoke, fix help_prints_usage text ([#1027](https://github.com/KooshaPari/AgilePlus/pull/1027))
+- *(m2)* validation, drift detection, templates, CLI wiring ([#1021](https://github.com/KooshaPari/AgilePlus/pull/1021))
+- *(m1)* add end-to-end smoke test workflow + wire rubric subcommand ([#1016](https://github.com/KooshaPari/AgilePlus/pull/1016))
+- sync Cargo.lock and crate adjustments
+- audit phase 2b — EventBus pub/sub, fuzz targets, structured tracing
+- audit remediation phase 2 — fuzz targets, memory profiling, demo mode, onboarding, i18n, themes
+- *(audit)* v37 overhaul — L10/L11/L31/L34/L37 fixes ([#849](https://github.com/KooshaPari/AgilePlus/pull/849))
+- absorb 2 protected-pattern branches (L5-110.5) ([#769](https://github.com/KooshaPari/AgilePlus/pull/769))
+- absorb 24 large w35/w36 stragglers (L5-110.4) ([#767](https://github.com/KooshaPari/AgilePlus/pull/767))
+- absorb 5 medium stragglers (L5-110.3) ([#766](https://github.com/KooshaPari/AgilePlus/pull/766))
+- absorb 35 small stragglers (L5-110.2) ([#765](https://github.com/KooshaPari/AgilePlus/pull/765))
+- *(license)* add SPDX-License-Identifier to source files (rebased on main 2026-06-18) ([#760](https://github.com/KooshaPari/AgilePlus/pull/760))
+- *(workflows)* pin remaining tag-based action references to SHAs
+- *(workflows)* standardize to ci/audit/deny/scorecard/release
+- Merge branch 'chore/l5-87-focus-repo-specs-2026-06-11'
+- Merge branch 'feature/agileplus-sota-wraps-2026-06-12'
+- Merge branch 'feature/agileplus-sota-suite-2026-06-12'
+- Merge branch 'chore/fix-doc-links'
+- add pre-push hook, sweep-stale-worktrees.sh, branch-hygiene CI gate
+- *(focus-repos)* add SPEC.md to all focus repos (L5 #87)
+- *(merge)* stage residual modifications from L-branch merges
+- Merge chore/L4-032-triage-libification-2026-06-11
+- Merge chore/L4-031-triage-port-adapter-2026-06-11
+- Merge chore/L2-011-async-trait-tokio-2026-06-11
+- Merge chore/L1-001-sota-2026-06-11-from-wt
+- *(forge-commit)* 13 files from agent worktree
+- *(forge-commit)* 21 files from agent worktree
+- *(sota)* SOTA improvement from L2-L5 batch (committed by Forge on agent behalf)
+- *(cli)* add async-trait support to agileplus-cli (L2-011)
+- *(L1-001)* SOTA testing patterns: proptest, mockall, testcontainers
+- *(docs)* add CARGO-WORKSPACE.md and per-crate README public API indexes (L3 #45)
+- *(governance)* add CODEOWNERS, CONTRIBUTING, SECURITY, FUNDING (L2 #30)
+- *(domain)* add FR-DOMAIN-001 traceability for Event and Snapshot ([#686](https://github.com/KooshaPari/AgilePlus/pull/686))
+- *(docs)* fix broken rich-media stub links in journey-traceability
+- extend seed-requirements to 6 catalogs (PhenoMCP + PhenoObservability) ([#613](https://github.com/KooshaPari/AgilePlus/pull/613))
+- *(AgilePlus)* CI fixes — explicit workspace members, workflow bugfixes ([#582](https://github.com/KooshaPari/AgilePlus/pull/582))
+- *(fmt)* sweep cargo fmt drift across workspace ([#408](https://github.com/KooshaPari/AgilePlus/pull/408))
+- *(cli)* isolate event flow command updates ([#276](https://github.com/KooshaPari/AgilePlus/pull/276))
+- remove deprecated config files and GitHub templates
+- rescue stashed WIP changes (CLI branch command + worklog) ([#227](https://github.com/KooshaPari/AgilePlus/pull/227))
+- fix duplicate workspace member, add agileplus-github, clean unused imports
+- combine WP03 (module CLI) + WP04 (cycle CLI) into WP07 branch
