@@ -10,14 +10,19 @@
 # `settings.ignore` as the CLI flag alone (the root file was never read); with
 # `.cargo/audit.toml` present, all 10 IDs appeared in `settings.ignore`.
 #
-# DO NOT ATTRIBUTE THE CRON FAILURE HISTORY TO THIS FILE. The 14 consecutive
-# schedule failures 2026-08-05..2026-10-07 had ONE root cause: the missing
-# `issues: write` grant (fixed by 61f0aade, verified by schedule run 38525286586
-# creating issues #1132/#1133). An ignore-list change does not control the
-# exit code here -- every entry below was individually removed and `cargo audit`
-# still exited 0, because these advisories classify as informational
-# warnings, not `vulnerabilities`. See run 37617720114, which failed with
-# `Resource not accessible by integration` while reporting count:3.
+# DO NOT ATTRIBUTE THE CRON FAILURE HISTORY TO THIS FILE. The longest
+# schedule-run failure streak in the 100-run window ending 2026-10-15
+# is 7 consecutive runs, 2026-10-11T03:36Z to 2026-10-12T00:08Z, all on
+# commit 2701f24. Its ONE root cause was the missing `issues: write`
+# grant (fixed by 61f0aade; verified by cargo-audit schedule run
+# 38550458606 on 2026-10-14T10:33:56Z, "No vulnerabilities were found").
+# An ignore-list change does not control the exit code here -- every
+# entry below was individually removed and `cargo audit` still exited 0,
+# because these advisories classify as informational warnings, not
+# `vulnerabilities`. See run 37617720114, which failed with
+# `Resource not accessible by integration` while reporting
+# `vulnerabilities count:3` — the gate asserts on the issue POST, not
+# on the advisory count.
 ignore = [
   # rsa: Marvin Attack (RUSTSEC-2023-0071) — no fixed release upstream;
   # low risk in our usage (verification only, no decryption oracle).
