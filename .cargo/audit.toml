@@ -13,16 +13,26 @@
 # DO NOT ATTRIBUTE THE CRON FAILURE HISTORY TO THIS FILE. The
 # schedule-run failure history (event=schedule on the `cargo-audit`
 # workflow, 200-run window ending 2026-10-15) actually shows two
-# distinct streaks, both ending in success:
+# distinct streaks, both ending in success, both with the SAME
+# root cause (missing `issues: write`):
 #   1. EARLIER STREAK (not closed by this campaign): 7 consecutive
 #      weekly failures 2026-07-08T07:55:15Z -> 2026-08-19T06:00:00Z,
 #      heads a83a7677 / a83a7677 / a086185b / 5d5a460e / 559ca8a8 /
 #      b3237672 / 193477e8 -> runs 28926852265, 29397528502,
 #      29902093285, 30434341172, 30987617489, 31571925705, 32221570076.
-#      The 2026-08-26 run 32936521807 (head 130b60b3) succeeded, but
-#      the workflow file at that head still had no `issues: write`
-#      grant, so the 7-streak's failure mode was different from
-#      (and not the same as) the 6-streak below. Out of scope here.
+#      All seven failed with `##[error]Resource not accessible by
+#      integration` (verified by direct log inspection of
+#      32221570076, the last of the streak), the same root cause
+#      as the 6-streak below. The 2026-08-26 run 32936521807
+#      (head 130b60b3) succeeded ONLY because rustsec/audit-check
+#      found that the 2 unmaintained warnings (paste, rustls-pemfile)
+#      were already mentioned in the issues/PRs and skipped
+#      issue-creation, so the API call was never made. The
+#      workflow file at that head still had no `issues: write`,
+#      so the next schedule run (2026-09-02) regressed to the
+#      same failure mode. Out of scope for this campaign only
+#      because the fix wasn't applied at the time; the same
+#      commit (e7086b16) would have closed it too.
 #   2. CAMPAIGN-CLOSED STREAK: 6 consecutive weekly failures
 #      2026-09-02T09:52:42Z -> 2026-10-07T11:58:24Z, each on a
 #      different head SHA in mainline order: f1b4b59e48 (33616502499),
@@ -31,7 +41,7 @@
 #      13d5c88407 (37617720114). The next weekly schedule run
 #      2026-10-14T10:33:56Z (38550458606, head 45bb5c9fde) was the
 #      first success after the streak.
-# ONE root cause for streak 2: the missing `issues: write` grant
+# ONE root cause for BOTH streaks: the missing `issues: write` grant
 # on the `cargo-audit` workflow file, fixed by `e7086b16` (the same
 # day, `61f0aade` did the parallel fix for `security.yml`; the
 # schedule workflow is `cargo-audit.yml`, not `security.yml`).
@@ -42,7 +52,10 @@
 # `vulnerabilities`. See run 37617720114, which failed with
 # `Resource not accessible by integration` while reporting
 # `vulnerabilities count:3` -- the gate asserts on the issue POST,
-# not on the advisory count.
+# not on the advisory count. (The 7-streak runs had a different
+# vulnerability count: run 32221570076 reported `vulnerabilities
+# count:1` (RUSTSEC-2026-0258, h2) plus 6 warnings; same failure mode,
+# same root cause.)
 ignore = [
   # rsa: Marvin Attack (RUSTSEC-2023-0071) — no fixed release upstream;
   # low risk in our usage (verification only, no decryption oracle).
