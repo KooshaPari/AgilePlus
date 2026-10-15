@@ -7,7 +7,7 @@ on:
             - "Cargo.lock"
             - "crates/**"
             - "deny.toml"
-            - ".github/workflows/cargo-deny.yml"
+            - ".github/workflows/deny.yml"
     push:
         branches:
             - main
@@ -16,7 +16,7 @@ on:
             - "Cargo.lock"
             - "crates/**"
             - "deny.toml"
-            - ".github/workflows/cargo-deny.yml"
+            - ".github/workflows/deny.yml"
     schedule:
         - cron: "17 5 * * 1" # weekly Monday 05:17 UTC
     workflow_dispatch:
