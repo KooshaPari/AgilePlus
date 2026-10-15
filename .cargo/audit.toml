@@ -12,12 +12,13 @@
 #
 # DO NOT ATTRIBUTE THE CRON FAILURE HISTORY TO THIS FILE. The longest
 # schedule-run failure streak in the 100-run window ending 2026-10-15
-# is 7 consecutive runs, 2026-10-11T03:36Z to 2026-10-12T00:08Z, all on
-# commit 2701f24. Its ONE root cause was the missing `issues: write`
-# grant (fixed by 61f0aade; verified by cargo-audit schedule run
-# 38550458606 on 2026-10-14T10:33:56Z, "No vulnerabilities were found").
-# An ignore-list change does not control the exit code here -- every
-# entry below was individually removed and `cargo audit` still exited 0,
+# is 6 consecutive runs, 2026-10-11T08:06Z to 2026-10-12T00:08Z, all on
+# commit 2701f24 (the next run on that commit at 2026-10-12T03:49Z was
+# success). Its ONE root cause was the missing `issues: write` grant
+# (fixed by 61f0aade; verified by cargo-audit schedule run 38550458606
+# on 2026-10-14T10:33:56Z, "No vulnerabilities were found"). An
+# ignore-list change does not control the exit code here -- every entry
+# below was individually removed and `cargo audit` still exited 0,
 # because these advisories classify as informational warnings, not
 # `vulnerabilities`. See run 37617720114, which failed with
 # `Resource not accessible by integration` while reporting
