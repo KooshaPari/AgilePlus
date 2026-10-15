@@ -194,7 +194,12 @@ jobs:
     if: needs.detect.outputs.has_security == 'true'
     runs-on: ubuntu-latest
     steps:
+      # gitleaks-action@v3 scans the push range `prev_commit^..head_commit`; the
+      # default fetch-depth 1 omits the parent object, which makes git fail with
+      # "unknown revision" and turns the job red with no leaks present.
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
       - name: gitleaks
         uses: gitleaks/gitleaks-action@v3
         env:
