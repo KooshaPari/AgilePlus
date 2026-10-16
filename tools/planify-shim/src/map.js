@@ -45,6 +45,7 @@ const STATE_GROUP = {
   // work-package states (best-effort; unknown -> unstarted)
   todo: "unstarted",
   doing: "started",
+  review: "started",
   done: "completed",
   blocked: "started",
 };
@@ -58,17 +59,30 @@ const GROUP_COLOR = {
 };
 
 export function stateGroup(name) {
-  return STATE_GROUP[String(name || "").toLowerCase()] || "unstarted";
+  const state = String(name || "").toLowerCase();
+  if (!Object.hasOwn(STATE_GROUP, state)) throw new Error(`Unrecognized AgilePlus state: ${state}`);
+  return STATE_GROUP[state];
 }
 
 /** Build the canonical, fixed set of board columns (states) for a project. */
 export function statesForProject(projectId) {
-  const order = ["created", "planned", "implementing", "validated", "shipped"];
-  return order.map((name, i) => {
+  // Separate WorkPackage terminal states from Feature shipped/validated
+  // states: a finished WP is not evidence that its feature was shipped.
+  const columns = [
+    ["created", "Created"],
+    ["planned", "Planned"],
+    ["implementing", "Implementing"],
+    ["review", "In Review"],
+    ["blocked", "Blocked"],
+    ["validated", "Validated Feature"],
+    ["done", "Work Package Done"],
+    ["shipped", "Shipped Feature"],
+  ];
+  return columns.map(([name, label], i) => {
     const group = stateGroup(name);
     return {
       id: uuidFrom("state", `${projectId}:${name}`),
-      name: name.charAt(0).toUpperCase() + name.slice(1),
+      name: label,
       color: GROUP_COLOR[group],
       group,
       default: i === 0,
@@ -121,6 +135,9 @@ export function featureToProject(f) {
     sort_order: f.id ?? 0,
     estimate: null,
     _agileplus_slug: f.slug,
+    _agileplus_id: f.id,
+    _agileplus_entity_type: "feature",
+    _agileplus_source_state: f.state,
   };
 }
 
@@ -159,16 +176,28 @@ export function wpToIssue(wp, project) {
     updated_at: wp.updated_at || NOW,
     created_by: USER_ID,
     updated_by: USER_ID,
+    _agileplus_entity_type: "work_package",
+    _agileplus_work_package_id: wp.id,
+    _agileplus_source_state: wp.state,
+    _agileplus_product_acceptance: "not_inferred",
   };
 }
 
-// Snap any AgilePlus state onto one of the 5 fixed board columns.
+// Explicit WorkPackage-state mapping; never turn a WorkPackage Done into
+// "Shipped Feature" or disguise a Blocked/Review task as Implementing.
 function nearestColumn(name) {
-  const g = stateGroup(name);
-  return (
-    { backlog: "created", unstarted: "planned", started: "implementing", completed: "shipped" }[g] ||
-    "planned"
-  );
+  const normalized = String(name || "").toLowerCase();
+  const mappings = {
+    planned: "planned",
+    doing: "implementing",
+    review: "review",
+    blocked: "blocked",
+    done: "done",
+  };
+  if (!Object.hasOwn(mappings, normalized)) {
+    throw new Error(`Unrecognized AgilePlus work-package state: ${normalized}`);
+  }
+  return mappings[normalized];
 }
 
 function escapeHtml(s) {

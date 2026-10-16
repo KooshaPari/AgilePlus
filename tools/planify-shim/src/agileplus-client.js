@@ -12,11 +12,13 @@
  */
 
 const BASE = process.env.AGILEPLUS_API_URL || "http://localhost:4000";
-const API_KEY = process.env.AGILEPLUS_API_KEY || "dev-api-key";
+const API_KEY = process.env.AGILEPLUS_API_KEY;
+if (!API_KEY) throw new Error("AGILEPLUS_API_KEY must be explicitly provided (local review only)");
 
 async function call(path) {
   const res = await fetch(`${BASE}${path}`, {
     headers: { "X-API-Key": API_KEY, Accept: "application/json" },
+    signal: AbortSignal.timeout(5000),
   });
   if (!res.ok) {
     const body = await res.text().catch(() => "");

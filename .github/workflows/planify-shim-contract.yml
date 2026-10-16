@@ -1,0 +1,31 @@
+name: Planify shim read-only contract
+
+on:
+  pull_request:
+    paths:
+      - "tools/planify-shim/**"
+      - ".github/workflows/planify-shim-contract.yml"
+  push:
+    branches: [main]
+    paths:
+      - "tools/planify-shim/**"
+      - ".github/workflows/planify-shim-contract.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install shim dependencies (local review only)
+        working-directory: tools/planify-shim
+        run: npm install --no-audit --no-fund --package-lock=false
+      - name: Contract and fixture HTTP tests
+        working-directory: tools/planify-shim
+        run: npm test
