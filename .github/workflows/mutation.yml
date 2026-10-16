@@ -20,7 +20,12 @@ permissions:
 
 concurrency:
     group: mutation-${{ github.ref }}
-    cancel-in-progress: true
+    # Superseded runs are cancelled today, but every such cancellation is wasted
+    # compute: the job never finishes, so it never produces mutants.out or the
+    # mutation-report artifact. On `main` there is only ever one ref, so this
+    # group never has legitimate concurrent work to supersede. Observed on
+    # 2026-10-15: 12 of 12 runs on main concluded `cancelled`, none completed.
+    cancel-in-progress: false
 
 env:
     CARGO_TERM_COLOR: always
@@ -29,7 +34,10 @@ jobs:
     mutants:
         name: cargo-mutants (agileplus-domain)
         runs-on: ubuntu-latest
-        timeout-minutes: 90
+        # cargo-mutants needs ~106 min to finish 653 mutants on this crate;
+        # 90 min killed it at ~85% (run 38711576643, 0 missed of 221 caught).
+        # 180 leaves ~1.7x headroom and still bounds a hung run.
+        timeout-minutes: 180
         steps:
             - uses: actions/checkout@v7
 
