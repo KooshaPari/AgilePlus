@@ -10,14 +10,68 @@
 # `settings.ignore` as the CLI flag alone (the root file was never read); with
 # `.cargo/audit.toml` present, all 10 IDs appeared in `settings.ignore`.
 #
-# DO NOT ATTRIBUTE THE CRON FAILURE HISTORY TO THIS FILE. The 14 consecutive
-# schedule failures 2026-08-05..2026-10-07 had ONE root cause: the missing
-# `issues: write` grant (fixed by 61f0aade, verified by schedule run 38525286586
-# creating issues #1132/#1133). An ignore-list change does not control the
-# exit code here -- every entry below was individually removed and `cargo audit`
-# still exited 0, because these advisories classify as informational
-# warnings, not `vulnerabilities`. See run 37617720114, which failed with
-# `Resource not accessible by integration` while reporting count:3.
+# DO NOT ATTRIBUTE THE CRON FAILURE HISTORY TO THIS FILE. The
+# schedule-run failure history (event=schedule on the `cargo-audit`
+# workflow, 200-run window ending 2026-10-15) actually shows two
+# distinct streaks, both ending in success, both with the SAME
+# root cause (missing `issues: write`):
+#   1. EARLIER STREAK (not closed by this campaign): 7 consecutive
+#      weekly failures 2026-07-08T07:55:15Z -> 2026-08-19T06:00:00Z,
+#      heads a83a7677 / a83a7677 / a086185b / 5d5a460e / 559ca8a8 /
+#      b3237672 / 193477e8 -> runs 28926852265, 29397528502,
+#      29902093285, 30434341172, 30987617489, 31571925705, 32221570076.
+#      All seven failed with `##[error]Resource not accessible by
+#      integration` (verified by direct log inspection of
+#      32221570076, the last of the streak), the same root cause
+#      as the 6-streak below. The 2026-08-26 run 32936521807
+#      (head 130b60b3) succeeded ONLY because rustsec/audit-check
+#      found that the 2 unmaintained warnings (paste, rustls-pemfile)
+#      were already mentioned in the issues/PRs and skipped
+#      issue-creation, so the API call was never made. The
+#      workflow file at that head still had no `issues: write`,
+#      so the next schedule run (2026-09-02) regressed to the
+#      same failure mode. Out of scope for this campaign only
+#      because the fix wasn't applied at the time; the same
+#      commit (e7086b16) would have closed it too.
+#   2. CAMPAIGN-CLOSED STREAK: 6 consecutive weekly failures
+#      2026-09-02T09:52:42Z -> 2026-10-07T11:58:24Z, each on a
+#      different head SHA in mainline order: f1b4b59e48 (33616502499),
+#      82130cae16 (34338261424), 3cc0c145ae (35084023071),
+#      26e3d9a96b (35847731401), e367f89e37 (36707907906),
+#      13d5c88407 (37617720114). The next weekly schedule run
+#      2026-10-14T10:33:56Z (38550458606, head 45bb5c9fde) was the
+#      first success after the streak.
+# ONE root cause for BOTH streaks: the missing `issues: write` grant
+# on the `cargo-audit` workflow file, fixed by `e7086b16` (the same
+# day, `61f0aade` did the parallel fix for `security.yml`; the
+# schedule workflow is `cargo-audit.yml`, not `security.yml`).
+# Verified by run 38550458606, "No vulnerabilities were found". An
+# ignore-list change does not control the exit code here -- every
+# entry below was individually removed and `cargo audit` still exited
+# 0, because these advisories classify as informational warnings, not
+# `vulnerabilities`. See run 37617720114, which failed with
+# `Resource not accessible by integration` while reporting
+# `vulnerabilities count:3` -- the gate asserts on the issue POST,
+# not on the advisory count. (The 7-streak runs had a different
+# vulnerability count: run 32221570076 reported `vulnerabilities
+# count:1` (RUSTSEC-2026-0258, h2) plus 6 warnings (per
+# `##[warning]6 warnings found`); same failure mode, same root cause.
+# The 6-streak's count and warnings changed as new advisories were
+# added to the DB over the 6 weeks: the first 2 runs reported `count:0`
+# (no vulnerabilities), and the last 4 runs (starting 2026-09-16)
+# reported `count:3` (RUSTSEC-2026-0098/0099/0104, all rustls-webpki
+# 0.102.8) plus 13 warnings (per `##[warning]13 warnings found` in
+# the cargo-audit output of 37617720114). The vulnerability and
+# warning counts are audit-database state, not part of the failure
+# mode that the campaign addressed.
+#
+# Post-session end-to-end validation (2026-10-15T08:56Z): a `workflow_dispatch`
+# of `cargo-audit.yml` against `65805269` (run 38709313515) reproduced the
+# same outcome on the campaign's HEAD: `vulnerabilities.count:0`,
+# `warnings:{}` (empty), all 10 ignore IDs present, "No vulnerabilities
+# were found", "No warnings were found", job `audit` conc=success. The
+# 200-run window's first success (38550458606 on 45bb5c9fde) and the
+# deliberate re-trigger (38709313515 on 65805269) agree.
 ignore = [
   # rsa: Marvin Attack (RUSTSEC-2023-0071) — no fixed release upstream;
   # low risk in our usage (verification only, no decryption oracle).
