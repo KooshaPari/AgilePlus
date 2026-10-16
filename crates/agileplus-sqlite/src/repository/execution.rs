@@ -612,10 +612,136 @@ pub fn update_attempt_runtime(
         AttemptStatus::Completed => "completed",
         AttemptStatus::Expired => "expired",
     };
-    let changed=c.execute("UPDATE attempts SET status=?2, job_id=COALESCE(?3,job_id), result_candidate_ref=COALESCE(?4,result_candidate_ref), failure_class=COALESCE(?5,failure_class), ended_at=COALESCE(?6,ended_at) WHERE id=?1",
+    // Check lifecycle state in the same statement as the write. A late worker
+    // cannot resurrect an expired/failed/cancelled attempt or rewrite a receipt's
+    // terminal candidate. Identical terminal callbacks remain idempotent.
+    let changed=c.execute("UPDATE attempts SET status=?2, job_id=COALESCE(?3,job_id), result_candidate_ref=COALESCE(?4,result_candidate_ref), failure_class=COALESCE(?5,failure_class), ended_at=COALESCE(?6,ended_at)
+        WHERE id=?1 AND (status IN ('pending','running') OR
+            (status=?2 AND (?3 IS NULL OR job_id IS ?3)
+                AND (?4 IS NULL OR result_candidate_ref IS ?4)
+                AND (?5 IS NULL OR failure_class IS ?5)
+                AND (?6 IS NULL OR ended_at IS ?6)))",
  params![id,st,job_id,result_candidate_ref,failure_class,ended_at.map(|d|d.to_rfc3339())]).map_err(err)?;
     if changed != 1 {
+        let exists: bool = c
+            .query_row(
+                "SELECT EXISTS(SELECT 1 FROM attempts WHERE id=?1)",
+                [id],
+                |row| row.get(0),
+            )
+            .map_err(err)?;
+        if exists {
+            return Err(DomainError::Conflict(format!(
+                "attempt {id} is terminal; stale or divergent runtime update rejected"
+            )));
+        }
         return Err(DomainError::Storage(format!("attempt {id} not found")));
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod runtime_update_regressions {
+    use super::*;
+
+    fn fixture(status: &str) -> Connection {
+        let connection = Connection::open_in_memory().unwrap();
+        connection
+            .execute_batch(
+                "CREATE TABLE attempts (id TEXT PRIMARY KEY, status TEXT,
+            job_id TEXT, result_candidate_ref TEXT, failure_class TEXT, ended_at TEXT);",
+            )
+            .unwrap();
+        connection
+            .execute(
+                "INSERT INTO attempts VALUES ('old', ?1, 'job-old', NULL, NULL, NULL)",
+                [status],
+            )
+            .unwrap();
+        connection
+    }
+
+    #[test]
+    fn expired_attempt_rejects_late_completion_without_mutation() {
+        let connection = fixture("expired");
+        let outcome = update_attempt_runtime(
+            &connection,
+            "old",
+            AttemptStatus::Completed,
+            Some("job-old"),
+            Some("git:late"),
+            None,
+            None,
+        );
+        assert!(
+            matches!(outcome, Err(DomainError::Conflict(_))),
+            "expired attempt must stay fenced: {outcome:?}"
+        );
+        let state: (String, Option<String>) = connection
+            .query_row(
+                "SELECT status,result_candidate_ref FROM attempts",
+                [],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .unwrap();
+        assert_eq!(state, ("expired".into(), None));
+    }
+
+    #[test]
+    fn completed_attempt_rejects_rewriting_its_candidate() {
+        let connection = fixture("running");
+        update_attempt_runtime(
+            &connection,
+            "old",
+            AttemptStatus::Completed,
+            None,
+            Some("git:first"),
+            None,
+            None,
+        )
+        .unwrap();
+        let outcome = update_attempt_runtime(
+            &connection,
+            "old",
+            AttemptStatus::Completed,
+            None,
+            Some("git:changed"),
+            None,
+            None,
+        );
+        assert!(matches!(outcome, Err(DomainError::Conflict(_))));
+        let candidate: String = connection
+            .query_row("SELECT result_candidate_ref FROM attempts", [], |r| {
+                r.get(0)
+            })
+            .unwrap();
+        assert_eq!(candidate, "git:first");
+    }
+
+    #[test]
+    fn active_progress_and_identical_terminal_replay_still_work() {
+        let connection = fixture("pending");
+        update_attempt_runtime(
+            &connection,
+            "old",
+            AttemptStatus::Running,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        for _ in 0..2 {
+            update_attempt_runtime(
+                &connection,
+                "old",
+                AttemptStatus::Completed,
+                Some("job-old"),
+                Some("git:first"),
+                None,
+                None,
+            )
+            .unwrap();
+        }
+    }
 }
