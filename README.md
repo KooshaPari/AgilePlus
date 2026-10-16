@@ -1,132 +1,95 @@
-<!-- work-state: 🟢 ready | ██████████ 100% (phase-finish-stack complete) -->
-[![AI slop inside](https://sladge.net/badge.svg)](https://sladge.net) [![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/<REDACTED>/AgilePlus/total)](https://github.com/KooshaPari/AgilePlus/releases)
-# build / coverage / e2e / perf / qe
-[![Coverage ≥85%](https://img.shields.io/badge/coverage-≥85%25-brightgreen)](.github/workflows/coverage.yml)
-[![E2E](https://img.shields.io/badge/e2e-100%25-brightgreen)](.github/workflows/e2e.yml)
-[![Perf](https://img.shields.io/badge/perf-100%25-brightgreen)](.github/workflows/perf.yml)
-[![QE](https://img.shields.io/badge/qe-100%25-brightgreen)](.github/workflows/qe.yml)
-[![Deploy Worker](https://img.shields.io/badge/CF%20Workers-deployed-blue)](.github/workflows/deploy-worker.yml)
-[![Vercel](https://img.shields.io/badge/Vercel-serverless-black)](vercel.json)
-[![GH Pages](https://img.shields.io/badge/GitHub%20Pages-live-success)](.github/workflows/deploy-frontend.yml)
-[![Helm](https://img.shields.io/badge/Helm-chart-blueviolet)](deploy/kubernetes/Chart.yaml)
-[![PWA](https://img.shields.io/badge/PWA-installable-orange)](workspace/manifest.json)
-
-**Quality Gate:** coverage ≥85% · e2e 100% · perf 100% · qe 100%
-
-<p align="center">
-  <a href="assets/brand/logo.svg"><img src="assets/brand/logo.svg" alt="AgilePlus" width="160" height="160"></a>
-</p>
-<p align="center"><em>AI-native project management with hexagonal Rust core, Plane.so / GitHub integration, and an AI-agent MCP surface.</em></p>
-<p align="center"><sub><a href="assets/brand/README.md">Brand assets &amp; palette</a> · <a href="docs/assets/identity/">visual identity demo</a></sub></p>
-
-
-## DINOForge Integration
-
-**DINOForge** (`Dino/`) — mod operating system for Diplomacy is Not an Option.
-- 12K+ files, .NET + Rust + Python + Go + Zig polyglot
-- 52 CI workflows, 21 releases (v1.1.0), 3,613+ tests
-- Pack system (YAML-first declarative content)
-- Game automation framework (headless testing)
-- **Scorecard**: C (61/100) — see `.forge/dino-quality-gate.md`
-- **Spec**: `specs/dino-agileplus-integration.md`
-
----
-
 # AgilePlus
 
-**Project management system with AI agent integration** — 21-crate Rust workspace with hexagonal architecture, Python MCP server, and Plane.so/GitHub integration.
+AgilePlus is a standalone, local-first tooling codebase for **governed code-project work**: specifications, work packages, execution records, evidence, evaluation, audit, and development acceptance.
 
-## Project Overview
+> **Repository boundary:** this repository is the AgilePlus product source tree. It is not a project shelf, an organization-planning repository, or the canonical home for sibling products. AgilePlus may register and operate on external Git repositories at runtime without copying their source, worktrees, or product specifications into this repository.
 
-AgilePlus is a full-stack project management platform built with:
-- **Rust** (21 active crates) — Core domain, storage, event sourcing, CLI, REST API
-- **Python** — MCP server for AI agent integration
-- **TypeScript** — Electrobun desktop shell
+## Current state
 
-## Key Features
+AgilePlus has substantial implementation, but it is still in recovery and rollout work. Do not infer release readiness from file presence, historical badges, or completion claims.
 
-- Domain model: Feature, WorkPackage, Cycle, Module with state machines
-- Event sourcing with audit trails and hash chains
-- SQLite storage with hexagonal adapter pattern
-- gRPC protocol definitions
-- REST API with API key authentication
-- OpenTelemetry tracing and metrics
-- Git VCS adapter integration
-- Plane.so sync (push/pull)
-- GitHub integration
+Implemented or materially present on the current line includes:
 
-## About this shelf
+- Rust domain, application, governance, event, SQLite, Git, HTTP API, and gRPC crates;
+- a Rust CLI;
+- a Python FastMCP bridge to the gRPC core;
+- an Askama/Axum web application;
+- a Tauri desktop/tray client;
+- immutable execution/evidence/acceptance records and an atomic SQLite acceptance boundary;
+- packaging and release workflows at different maturity levels.
+
+The complete rollout target—one coherent web, device-daemon, tray/desktop, CLI, and MCP bundle installed and verified on both target machines—is **not yet complete**. See [the stable-release definition](STABLE.md) and [the device-daemon rollout issue](https://github.com/KooshaPari/AgilePlus/issues/1119).
+
+## Product and authority boundaries
+
+| Domain | Canonical authority |
+|---|---|
+| Governed code-project work packages, execution evidence, evaluation, audit, and development acceptance | **AgilePlus** |
+| Persistent product/system records and product-state interpretation | **Tracera** |
+| Organization/personal planning, scheduling, and coordination, when adopted | **Plane or Paperclip** |
+
+External systems may reference or project AgilePlus work. They cannot create or replace an AgilePlus acceptance receipt. See [ADR-0018](docs/adr/0018-tracera-agileplus-sibling-runtimes.md), [ADR-0019](docs/adr/0019-acceptance-authority-terminal-gates.md), and [issue #1117](https://github.com/KooshaPari/AgilePlus/issues/1117).
+
+## Repository layout
+
+```text
+.
+├── crates/                 # Rust domain, application, storage, API, gRPC, web, integrations
+├── agileplus-agents/       # Agent adapters and services owned by AgilePlus
+├── python/                 # FastMCP bridge and generated gRPC bindings
+├── desktop/                # Active Tauri desktop/tray client
+├── spec/product/           # Mature product contracts and authority records
+├── verification/           # Executed-evidence contracts, acceptance and recovery records
+├── docs/                   # Architecture, ADRs, operations, ecosystem, research, and history
+├── kitty-specs/            # Historical and active specification lineage; status varies by bundle
+└── .github/workflows/      # CI, security, release, coverage, performance, and deployment workflows
+```
+
+Some tracked paths are historical shelf-era, recovery, vendored, generated, or sibling-owned candidates. Their presence does not make them active AgilePlus requirements. See [the root-scope contamination checkpoint](docs/forensics/ROOT_SCOPE_CONTAMINATION_CHECKPOINT.md) and [issue #1128](https://github.com/KooshaPari/AgilePlus/issues/1128).
+
+## Build and test
+
+From the repository root:
 
 ```bash
-# Setup
-cd AgilePlus
-bun install
 cargo build --workspace
-
-# Run CLI
-cargo run --package agileplus-cli -- --help
-
-# Start REST server
-cargo run --package agileplus-api
-
-# Run tests
-cargo test --workspace
+cargo test --workspace --no-fail-fast
+cargo fmt --all -- --check
+cargo clippy --all-targets -- -D warnings
 ```
 
-## Documentation
+Useful entry points:
 
-| Document | Purpose |
-|----------|---------|
-| [PLAN.md](./PLAN.md) | Implementation phases and task tracking |
-| [PRD.md](./PRD.md) | Product requirements and user journeys |
-| [FUNCTIONAL_REQUIREMENTS.md](./FUNCTIONAL_REQUIREMENTS.md) | Detailed FR traceability |
-| [AGENTS.md](./AGENTS.md) | Agent interaction rules |
-| [GOVERNANCE.md](./GOVERNANCE.md) | Project governance |
-
-### MCP, APIs, and routing infrastructure
-
-```
-AgilePlus/
-├── crates/          # 21 active Rust crates (workspace)
-├── python/          # Python MCP server
-├── desktop/         # Electrobun desktop shell
-├── kitty-specs/     # Feature specifications
-├── docs/            # Documentation
-└── harnesses/       # Agent harness configs
+```bash
+cargo run -p agileplus-cli -- --help
+cargo run -p agileplus-dashboard
+cargo run -p agileplus-grpc
+uv run --project python agileplus-mcp
 ```
 
-## Traceability
+Individual surfaces may require platform libraries, credentials, or a configured project root. A command compiling is not proof that its complete user journey is deployed or accepted.
 
-1. **Identify the project** — Check `projects/INDEX.md` or ask the user
-2. **Navigate to project** — `cd <project-name>`
-3. **Read project rules** — Check for `CLAUDE.md` or `AGENTS.md` in project
-4. **Do the work** — Follow shelf rules in `AGENTS.md`
-5. **Commit & push** — Use conventional commits, open PR if needed
+## Working on AgilePlus
 
-## NOT AgilePlus
+1. Treat this repository root as the AgilePlus source root.
+2. Read [AGENTS.md](AGENTS.md), [GOVERNANCE.md](GOVERNANCE.md), and the applicable specification/ADR before changing behavior.
+3. Keep sibling-product work in its owning repository.
+4. Use a branch or isolated worktree; do not place sibling checkouts inside AgilePlus.
+5. Bind claims to commands, revisions, logs, and receipts. Not run means not passed.
+6. Open a reviewable pull request. Do not merge, deploy, or publish without the required authority.
 
-This shelf contains **many projects**, of which AgilePlus is one.
-AgilePlus-specific documentation lives inside the `AgilePlus/` project directory,
-not at shelf level.
+## Canonical operational references
 
-The files that were previously here describing AgilePlus have been moved to
-their correct locations:
-- AgilePlus governance → `AgilePlus/GOVERNANCE.md`
-- AgilePlus agent rules → `AgilePlus/AGENTS.md`
-- AgilePlus README → `AgilePlus/README.md`
+- [Agent rules](AGENTS.md)
+- [Repository governance](GOVERNANCE.md)
+- [Stable-release definition](STABLE.md)
+- [Product authority index](spec/product/AUTHORITY_INDEX.md)
+- [Canonical semantic decisions](spec/product/CANONICAL_SEMANTIC_DECISIONS.md)
+- [Forward work breakdown](verification/FORWARD_WBS_2026-10-04.md)
+- [Forward delta and release work](verification/FORWARD_DELTA_2026-10-04.md)
+- [Next deployable release gate](verification/NEXT_DEPLOYABLE_RELEASE_2026-10-04.md)
+- [Repository identity correction tracker](https://github.com/KooshaPari/AgilePlus/issues/1128)
 
-## Getting Help
+## Historical material
 
-- Shelf-level issues: Ask here
-- Project-specific issues: `cd <project>` and check that project's docs
-- Architecture decisions: `cat docs/adr/INDEX.md`
-- General questions: Check `projects/INDEX.md` first
-
-
-## Worklog schema — cross-reference (ADR-032, 2026-06-18)
-
-This repo's `WORKLOG.md` uses the **AgilePlus team-sprint schema** (`L#-#` req_ids, device/topic/branch/scope/owner/eta + per-sprint entries). It coexists with the **pheno-worklog-schema v2.0/v2.1** (`L5-###` req_ids, 10/11 columns) used by the fleet-substrate layer.
-
-Per [ADR-032](https://github.com/KooshaPari/phenotype-org-audits/blob/main/audits/2026-06-18_ADR-032-worklog-schema-both-stay.md), **both schemas stay** — they track different metadata (team-sprint vs. fleet-level), have non-colliding `req_id` prefixes, and the cost of forcing convergence is higher than the cost of divergence. The `req_id` is the join key if cross-schema audit is ever needed.
-
-To query across both schemas, use the `req_id` prefix as a discriminator: `L#-#` (this repo) vs. `L5-###` (fleet substrate).
+Historical shelf, portfolio, sibling-project, and alternative-client documents remain useful forensic evidence. They are not current instructions merely because they are newer, larger, or located at repository root. Preserve provenance, mark supersession, and migrate ownership through reviewed work rather than deleting or reviving material by assumption.

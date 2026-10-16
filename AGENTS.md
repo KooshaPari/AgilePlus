@@ -1,128 +1,134 @@
-# AgilePlus AGENTS.MD
+# AgilePlus agent instructions
 
-## Recovery Authority (2026-10-04)
+## Repository identity
 
-For the active mature-first recovery branch, use these files as the operational
-entrypoint before inferring state from older docs:
+This repository is the **AgilePlus tooling/product codebase**. The repository root is the working source root.
 
-- `spec/product/mature-contract.v1.json` — accepted mature semantic contract.
+It is **not**:
+
+- a parent shelf containing many independent projects;
+- an organization or personal planning repository;
+- a destination for sibling-repository checkouts, worktrees, specifications, or product documents;
+- the canonical product model owned by Tracera;
+- the canonical home of Plane-derived product forks.
+
+AgilePlus may register and operate on external Git project roots. Runtime references to an external repository do not transfer source or specification ownership into AgilePlus.
+
+## Scope and authority invariants
+
+- AgilePlus owns governed code-project specifications, work packages, execution records, evidence, evaluation, audit, and development acceptance.
+- AgilePlus `AcceptedWork` is not Tracera `Satisfied`.
+- Tracera owns persistent product/system records and product-state interpretation.
+- Plane or Paperclip, if adopted, owns organization/personal planning one level above code projects.
+- No external state-transition transport may award AgilePlus terminal acceptance.
+- A test not executed is not a test passed.
+- Documentation, badges, code presence, compilation, or a successful projection is not proof of an accepted end-to-end journey.
+- Current `main` is evidence, not automatically the complete intended product.
+
+When requirements, code, and documents disagree, preserve the contradiction and use the accepted authority chain rather than choosing the newest or largest artifact.
+
+## Operational authority
+
+For mature-product and release work, begin with:
+
+- `spec/product/AUTHORITY_INDEX.md`
+- `spec/product/mature-contract.v1.json`
+- `spec/product/CANONICAL_SEMANTIC_DECISIONS.md`
 - `verification/FORWARD_WBS_2026-10-04.md`
-- `verification/FORWARD_DELTA_2026-10-04.md` — current execution/release WBS.
-- `docs/architecture/NETWORK_DEPLOYMENT_DOCTRINE.md` — canonical tailnet-first
-  deployment/network architecture.
-- `verification/NEXT_DEPLOYABLE_RELEASE_2026-10-04.md` — deployed-release gate.
+- `verification/FORWARD_DELTA_2026-10-04.md`
+- `verification/NEXT_DEPLOYABLE_RELEASE_2026-10-04.md`
+- `STABLE.md`
+- applicable records in `docs/adr/`
 
-Important invariants:
+Relevant boundary decisions include:
 
-- AgilePlus AcceptedWork is not Tracera Satisfied.
-- Generic state-transition transports must not award terminal acceptance.
-- Test not executed is not test passed.
-- Deployment status and time-to-next-deployed/installable release are
-  first-class status dimensions.
-- Private/operator deployment is tailnet-first; Cloudflare Tunnel is optional
-  future public ingress, not the private network foundation.
-- Run one host-level Caddy per physical host; do not stack per-project reverse
-  proxies without a demonstrated requirement.
+- `docs/adr/0018-tracera-agileplus-sibling-runtimes.md`
+- `docs/adr/0019-acceptance-authority-terminal-gates.md`
 
-## Project Overview
-AgilePlus is the Phenotype-org spec-driven development framework. Rust CLI + workspace for managing specs, work packages, and project governance. CLI: `agileplus <command>`
+Historical documents remain evidence. They do not override accepted human intent or active authority records merely because they are tracked here.
 
-## Stack
-- Language: Rust
-- Build: Cargo workspace (members added when source exists; scaffolded crates/libs excluded until populated)
-- CLI: Custom typer-based CLI
-- Spec storage: `kitty-specs/` (inside the agileplus workspace)
+## Repository boundary rules
 
-## Key Commands
-- `cargo build --release`
-- `cargo test`
-- `agileplus specify [--feature <slug>] [--from-file <path>] [--force]` — create/revise a feature spec (no `--title` / `--description` flags)
-- `agileplus list [--state <state>]` — list features in SQLite (there is no top-level `agileplus status` for WP/product status)
-- `agileplus platform status` — service health via PATH wrapper (`.agileplus/platform-status.sh`); Neo4j optional
-- There is no `agileplus init` command; SDD starts with `specify` in a git repo
+1. Work from this repository root or an isolated AgilePlus worktree.
+2. Do not create `AgilePlus/`, `agileplus/`, `projects/`, or other nested containers as alternate source roots.
+3. Do not clone or place sibling repositories inside this repository.
+4. Do not copy a sibling project's canonical specifications into AgilePlus. Store a typed reference or handoff instead.
+5. Do not treat embedded historical/sibling-looking paths as active dependencies until provenance, build reachability, and ownership are verified.
+6. Do not mass-delete historical or foreign-looking material. Classify and migrate it through issue #1128 and the forensic disposition checkpoint.
+7. New Planify/Plane-derived product work belongs in Planify, not in an AgilePlus client directory.
+8. Tracera changes are handled by the Tracera repository/recovery process; AgilePlus may provide contract handoffs only unless separately authorized.
 
-## Quality Gates
-- `cargo clippy --all` + `cargo fmt --all`
-- `cargo test --workspace`
-- `cargo deny check licenses` (configured via `deny.toml`)
-- `ruff check python/` (Python quality)
+## Current implementation surfaces
 
-## Branch Discipline
-- Feature work: `<repo>-wtrees/<subject>/` (e.g., `AgilePlus-wtrees/<topic>/`)
-- Canonical `AgilePlus/` = bare repo (main only, no direct commits)
-- Tracked workspace: `agileplus/` (lowercase; actual git worktree)
-- Branch naming: `chore/`, `feat/`, `fix/` prefixes
+- Rust workspace: `crates/`
+- Agent adapters/services: `agileplus-agents/`
+- Python FastMCP bridge: `python/`
+- Native Askama/Axum web application: `crates/agileplus-dashboard/`
+- Active desktop/tray client: `desktop/` using Tauri
+- Product contracts: `spec/product/`
+- Verification/evidence records: `verification/`
+- Architecture and decisions: `docs/`
 
-## Governance Integration
-- Specs: `kitty-specs/<feature-id>/` (relative to agileplus workspace root)
-- Worklog: `AgilePlus/.work-audit/worklog.md`
+Electrobun and other frontend/client lineages are historical candidates unless an explicit recovery decision says otherwise. Do not create another frontend to avoid reconciling the existing web and Tauri paths.
 
-## Repo Structure
-- `agileplus/` — **primary tracked workspace** (lowercase; all actual source lives here)
-- `AgilePlus/` — bare git repo (remote: <REDACTED>/AgilePlus; commits only via PR merge)
-- `*-wtrees/` — feature worktrees; safe to work in directly
-- `kitty-specs/` — root-level spec archive (legacy, read-only)
-- Individual repos: `Agentora/`, `pheno/`, etc.
+## Common commands
 
-## Important Notes
-- **Never commit directly to `AgilePlus/` main** — it is bare. All changes go through PRs.
-- **Do not use `AgilePlus-wtrees/<subject>/`** — the worktree convention is `<repo>-wtrees/` (lowercase repo name).
-- See `agileplus/CLAUDE.md` for detailed workspace structure, bootstrap status, and agent operating notes.
+```bash
+cargo build --workspace
+cargo test --workspace --no-fail-fast
+cargo fmt --all -- --check
+cargo clippy --all-targets -- -D warnings
+cargo deny check
+ruff check python
+```
 
-## Desktop & OS Safety (CRITICAL)
+Entry points:
 
-- **NEVER** blind-test on the user's main OS
-- **NEVER** take screenshots of the user's live desktop for testing
-- Use process lists (`ps aux`), window lists (`list_windows`), and log output to verify app state
-- For visual verification, use sandboxed environments: Docker, Apple Container, ephemeral user sessions, or CI runners
-- Desktop apps should be verified via `cargo check`, process enumeration, and window enumeration only
+```bash
+cargo run -p agileplus-cli -- --help
+cargo run -p agileplus-dashboard
+cargo run -p agileplus-grpc
+uv run --project python agileplus-mcp
+```
 
-## Architecture Decision Records
+Use the repository's pinned toolchains and workflow commands when they differ. Record exact revision, environment, command, exit status, and relevant logs.
 
-This repo documents architecture decisions in two locations:
-- **`ADR.md`** (root) --- inline ADR-001 through ADR-014
-- **`docs/adr/`** --- individual ADR files covering additional decisions
+## Change discipline
 
-| ID | Title | Status | Location |
-|----|-------|--------|----------|
-| ADR-001 | Rust Workspace Monorepo with 22 Crates | Accepted | [`ADR.md`](ADR.md) |
-| ADR-002 | Hexagonal Architecture with Port/Adapter Pattern | Accepted | [`ADR.md`](ADR.md) |
-| ADR-003 | SQLite as Local-First Storage with Optional External Sync | Accepted | [`ADR.md`](ADR.md) |
-| ADR-004 | SHA-256 Hash-Chained Immutable Audit Log and Event Store | Accepted | [`ADR.md`](ADR.md) |
-| ADR-005 | gRPC Service Layer with Tonic + Protobuf | Accepted | [`ADR.md`](ADR.md) |
-| ADR-006 | NATS JetStream as the Event Bus | Accepted | [`ADR.md`](ADR.md) |
-| ADR-007 | Plugin Architecture via External Git-Sourced Crates | Accepted | [`ADR.md`](ADR.md) |
-| ADR-008 | Python MCP Server for AI Agent Integration | Accepted | [`ADR.md`](ADR.md) |
-| ADR-009 | OpenTelemetry for Observability with OTLP Export | Accepted | [`ADR.md`](ADR.md) |
-| ADR-010 | process-compose for Local Dev Orchestration | Accepted | [`ADR.md`](ADR.md) |
-| ADR-011 | Credentials Management via OS Keychain | Accepted | [`ADR.md`](ADR.md) |
-| ADR-012 | P2P Replication with Vector Clocks | Accepted | [`ADR.md`](ADR.md) |
-| ADR-013 | Neo4j for Graph-Based Dependency Queries | Accepted | [`ADR.md`](ADR.md) |
-| ADR-014 | Import Subsystem with Manifest-Driven Ingestion | Accepted | [`ADR.md`](ADR.md) |
-| ADR-0002 | Integration/Consolidate Branch Strategy | Accepted | [`docs/adr/0002-integration-consolidate-branch-strategy.md`](docs/adr/0002-integration-consolidate-branch-strategy.md) |
-| ADR-0003 | Docs Tree Consolidation | Accepted | [`docs/adr/0003-docs-tree-consolidation.md`](docs/adr/0003-docs-tree-consolidation.md) |
-| ADR-0004 | JSON Metadata to YAML Frontmatter + Code Decorators | Accepted | [`docs/adr/0004-json-to-frontmatter-decorators.md`](docs/adr/0004-json-to-frontmatter-decorators.md) |
-| ADR-0005 | traceability-core Git Dependency | Accepted | [`docs/adr/0005-traceability-core-git-dependency.md`](docs/adr/0005-traceability-core-git-dependency.md) |
-| ADR-0006 | Absorb agileplus-spec-harmonizer into workspace | Accepted | [`docs/adr/0006-agileplus-spec-harmonizer-absorption.md`](docs/adr/0006-agileplus-spec-harmonizer-absorption.md) |
-| --- | Task Runner Selection | Accepted | [`docs/adr/001-task-runner-selection.md`](docs/adr/001-task-runner-selection.md) |
-| --- | Registry Adapter Architecture | Accepted | [`docs/adr/002-registry-adapter-architecture.md`](docs/adr/002-registry-adapter-architecture.md) |
-| ADR-012 | Plugin Architecture (docs/adr copy) | Accepted | [`docs/adr/ADR-012-plugin-architecture.md`](docs/adr/ADR-012-plugin-architecture.md) |
+- Use a focused branch or isolated worktree.
+- Keep unrelated fixes in separate commits/PRs, especially baseline CI repairs versus product work.
+- Preserve dirty files and concurrent work; never reset, clean, stash, prune, or switch another agent's active worktree without authority.
+- Do not rewrite history, delete branches, merge, deploy, publish, change billing/DNS/authentication, or rotate credentials unless explicitly authorized.
+- Pull requests remain draft while executable evidence or required review is incomplete.
+- A green aggregate check is not sufficient if a required subcheck was skipped, waived, or tested the wrong artifact.
+- A red aggregate check is not automatically a product defect; inspect the failing job and separate baseline/tooling failure from branch-local behavior.
 
-## DINO Integration
+## Work and acceptance rules
 
-DINOForge (`Dino/`) is a mod platform for Diplomacy is Not an Option, tracked as an AgilePlus submodule.
+- Stable IDs and accepted lifecycle transitions come from the canonical AgilePlus application/domain boundary, not raw client SQL.
+- CLI, MCP, web, and tray should converge on one writer/application service.
+- WorkPackage `Done` and Feature `Validated` require the acceptance and governance conditions in ADR-0019.
+- Review approval, external task completion, evidence presence alone, or caller-supplied booleans are insufficient.
+- Preserve exact-candidate, SpecRevision, Assignment, Attempt, Evaluation, evidence, audit, event, and receipt identity.
+- External projections are asynchronous and non-authoritative; their failure must not roll back committed local acceptance.
 
-- **Submodule**: `Dino/` (pinned SHA via AgilePlus worktree convention)
-- **Spec**: `specs/dino-agileplus-integration.md` (PR#972)
-- **Quality Gate**: `.forge/dino-quality-gate.md`
-- **CI**: 52 workflows in Dino repo (fuzz, benchmarks, game-launch, pack-validation, etc.)
-- **Current Grade**: C (61/100) per 30-pillar audit
+## Desktop and OS safety
 
-### Dino Worktree Convention
-- Feature work: `Dino-wtrees/<topic>/` (same as other submodules)
-- The `dinoforge-packs` and `dinoforge-packs-wtrees/journey-impl` submodule references are **archived** (repos absorbed into Dino via PR#377)
-- Do NOT re-create separate dinoforge-packs submodule
+- Never blind-test on the user's foreground operating system.
+- Never capture the user's live desktop merely to prove a visual flow.
+- Prefer CI, disposable users/VMs/containers, process/window enumeration, structured accessibility output, and logs.
+- Any actual clean-account install, startup registration, signing/notarization, tray, or rollback test must identify the machine/platform and preserve user data.
+- Do not claim a hard timeout unless descendant processes and inherited output pipes are bounded and reaped on each supported platform.
 
-### Important
-- Dino has its own CI pipeline — do not duplicate workflows in AgilePlus
-- Dependabot PRs in Dino are auto-merged (patch/minor) via `agent-merge-on-bot-approve.yml`
+## Documentation and evidence
+
+- Mark facts as observed, historically demonstrated, inferred, proposed, blocked, or unknown.
+- Preserve stable requirement/ADR/work IDs and source provenance.
+- Do not reconstruct missing human wording and call it verbatim.
+- Do not turn a historical prototype into a permanent requirement by default.
+- Do not bless an accidental regression by rewriting the requirement to match it.
+- Root authority contamination and shelf-era material are tracked by issue #1128 and `docs/forensics/ROOT_SCOPE_CONTAMINATION_CHECKPOINT.md`.
+
+## Agent authority
+
+Agents may investigate, prepare isolated changes, run bounded tests, and open reviewable draft pull requests when authorized. Agents do not merge or deploy by default. Human/operator rulings control product scope and final authority.
