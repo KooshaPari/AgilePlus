@@ -34,10 +34,16 @@ jobs:
     mutants:
         name: cargo-mutants (agileplus-domain)
         runs-on: ubuntu-latest
-        # cargo-mutants needs ~106 min to finish 653 mutants on this crate;
-        # 90 min killed it at ~85% (run 38711576643, 0 missed of 221 caught).
-        # 180 leaves ~1.7x headroom and still bounds a hung run.
-        timeout-minutes: 180
+        # 180m still cancelled the job. Run 38830178393 (c505e863), job
+        # 116746915954: "Found 653 mutants" at 00:34:52Z, still scoring
+        # evaluation.rs at 03:33:59Z, then "The operation was canceled" at
+        # 03:34:26Z. Cleanup killed cargo-mutants and an in-flight
+        # credentials_file_store_integration_test. The 425/425 artifact is a
+        # mid-run snapshot, not a finished campaign. Tail pace is ~38s per
+        # mutant, so the ~228 not yet finished need ~144m (324m total).
+        # 360 is the GitHub-hosted job maximum: about 36m of slack at that
+        # pace, and the ceiling if a later mutant runs long.
+        timeout-minutes: 360
         steps:
             - uses: actions/checkout@v7
 
