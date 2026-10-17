@@ -1,0 +1,111 @@
+{
+  "snapshot_id": "ap-sfd-2026-10-17T23-08Z@cargo-cohort",
+  "_previous_snapshot_id": "ap-sfd-2026-10-17T22-25Z@AP-RVC-056-downgrade",
+  "_delta_reason": "Cargo audit subagent (turtle, session_turtle_1792276280540_e23e9ee4fff9c99f) closed 4 cells on 2026-10-17T23:08Z. B.6/E.6 Validation: NOT_RUN→PASS (cargo test -p agileplus-events: 20 tests pass, 0 failed). D.3/NDR-3 Implementation: UNKNOWN→PASS (cargo build -p agileplus-desktop --release: exit 0, 15m 29s). E.20/G20 Validation: re-validated, FAIL (1 documented RUSTSEC-2024-0429 macOS-ignore intentional; tauri PR #16170 unlanded). E.19/G19 Validation: cold llvm-cov run aborted >20m, no fresh coverage data; verdict remains NOT_RUN.",
+  "head_sha": "8179b549",
+  "branch": "docs/state-forward-docket-20261017",
+  "workspace_members": 38,
+  "case_binding": {
+    "file": "verification/CASE_BINDING_2026-10-17.md",
+    "schema_status": "parallel file (semantic-verification-cases.v1.json schema 0.4.0 is field-locked)",
+    "tests_read": 29,
+    "distinct_cases_bound_STRONG": 5,
+    "distinct_cases_bound_ADJACENT": 5,
+    "strong_case_ids": ["AP-RVC-057", "AP-RVC-081", "AP-VC-028", "AP-VC-008", "AP-VC-009"],
+    "adjacent_case_ids": ["AP-VC-002", "AP-VC-038", "AP-VC-034", "AP-RVC-049", "AP-RVC-056"],
+    "headline_movement_when_schema_bumps_to_0_5_0": {
+      "before": "0/92 cases executed_with_witness",
+      "after": "5/92 cases executed_with_witness + 5/92 cases partial_witness_adjacent"
+    }
+  },
+  "intents": {
+    "A_operator_directive_sections": 10,
+    "B_prd_epics": 12,
+    "C_journeys": 12,
+    "D_ndr_items": 10,
+    "E_gates": 20,
+    "total_intent_rows": 64
+  },
+  "dimensions": ["Implementation", "Usability", "Validation", "Assurance"],
+  "total_cells": 256,
+  "dimension_breakdown": {
+    "Implementation": {
+      "PASS": 32, "PARTIAL": 6, "FAIL": 4, "NOT_RUN": 11, "UNKNOWN": 2,
+      "STALE": 1, "NOT_APPLICABLE": 1, "dim_not_meaningful": 7, "total": 64
+    },
+    "Usability": {
+      "PASS": 4, "PARTIAL": 4, "FAIL": 12, "NOT_RUN": 14, "UNKNOWN": 4,
+      "STALE": 1, "NOT_APPLICABLE": 1, "dim_not_meaningful": 24, "total": 64
+    },
+    "Validation": {
+      "PASS": 7, "PARTIAL": 4, "FAIL": 4, "NOT_RUN": 37, "UNKNOWN": 3,
+      "STALE": 0, "NOT_APPLICABLE": 0, "dim_not_meaningful": 9, "total": 64
+    },
+    "Assurance": {
+      "PASS": 3, "PARTIAL": 0, "FAIL": 0, "NOT_RUN": 0, "UNKNOWN": 0,
+      "STALE": 0, "NOT_APPLICABLE": 0, "dim_not_meaningful": 61, "total": 64
+    }
+  },
+  "headline_counts": {
+    "cells_pass_any": "45/256",
+    "cells_pass_meaningful": "45/150",
+    "verification_cases_executed_target_level": "0/92 (current schema 0.4.0; pending 0.5.0 schema-bump)",
+    "verification_cases_with_STRONG_witness": "5/92 (per CASE_BINDING_2026-10-17.md; AP-RVC-056 was downgraded from STRONG to ADJACENT after re-reading the case body)",
+    "verification_cases_with_ADJACENT_witness": "5/92 (per CASE_BINDING_2026-10-17.md)",
+    "requirements_runtime_verified": "0/67",
+    "ndr_items_with_target_witness": "3/10 (NDR-1, NDR-2, NDR-3 — NDR-3 closed by cargo build -p agileplus-desktop --release PASS at 2026-10-17T23:02Z)",
+    "integration_surfaces_live": "1/11",
+    "gates_pass": "3/20 (G1, G4, +B.6/E.6 Validation closed by cargo test -p agileplus-events 2026-10-17T23:08Z)"
+  },
+  "policy_reference": {
+    "memory_id": "mem_1792275198980_10767103059655466859",
+    "policy_file": "~/.jcode/memories/global/cockpit-progress-tree-policy.md",
+    "agents_md_harnesses": ["jcode", "codex", "forge", "kcode", "helioslite"]
+  },
+  "evidence_files": {
+    "raw": "docs/sessions/20261017-state-forward-docket/PROGRESS_TREE_RAW.md",
+    "tree": "docs/sessions/20261017-state-forward-docket/PROGRESS_TREE.md",
+    "docket": "docs/sessions/20261017-state-forward-docket/DOCKET.md",
+    "execution_receipt": "verification/ATOMIC_ACCEPTANCE_EXECUTION_2026-10-17.md",
+    "case_binding": "verification/CASE_BINDING_2026-10-17.md",
+    "integration_audit": "docs/sessions/20261017-integration-audit/INTEGRATION.md"
+  },
+  "cargo_audit_2026-10-17": {
+    "subagent": "session_turtle_1792276280540_e23e9ee4fff9c99f",
+    "model": "openai-compatible:MiniMax-M3",
+    "completed_at": "2026-10-17T23:08Z",
+    "commands": [
+      {"id": 1, "name": "cargo llvm-cov --workspace --summary-only", "verdict": "ABORTED (>20m cold-run timeout, no fresh coverage data); install: /Users/kooshapari/.cargo/bin/cargo-llvm-cov (confirmed)"},
+      {"id": 2, "name": "cargo deny check", "verdict": "FAIL (advisories: 1 documented RUSTSEC-2024-0429 macOS-ignore, intentional; tauri PR #16170 unlanded); bans/licenses/sources ok"},
+      {"id": 3, "name": "cargo test -p agileplus-events", "verdict": "PASS (20 tests passed, 0 failed, 0 ignored)"},
+      {"id": 4, "name": "cargo build -p agileplus-desktop --release", "verdict": "PASS (exit 0, 15m 29s)"},
+      {"id": "bonus", "name": "cargo test --workspace --no-run", "verdict": "PASS (exit 0, many test executables produced across 38 crates)"}
+    ],
+    "cell_movements": [
+      {"cell": "B.6 / E.6 Validation", "from": "NOT_RUN", "to": "PASS"},
+      {"cell": "D.3 / NDR-3 Implementation", "from": "UNKNOWN", "to": "PASS"},
+      {"cell": "E.19 / G19 Validation", "from": "NOT_RUN", "to": "NOT_RUN (no change; cold-run aborted, no fresh data)"},
+      {"cell": "E.20 / G20 Validation", "from": "FAIL", "to": "FAIL (no change; re-validated, advisory-not-detected is intentional macOS ignore)"}
+    ]
+  },
+  "cheap_closes": [
+    {"cell": "A.4 / E.19 Validation", "move": "cargo llvm-cov --workspace --summary-only --fail-under 85", "eta_min": 15, "note": "ABORTED at >20m on 2026-10-17T23:08Z; needs warm cache or shorter incremental run"},
+    {"cell": "A.4 / E.20 Validation", "move": "cargo deny check advisories sources licenses bans", "eta_min": 5, "note": "RE-VALIDATED FAIL on 2026-10-17T23:08Z; 1 documented RUSTSEC-2024-0429 macOS-ignore is intentional"},
+    {"cell": "B.5 case-level", "move": "bind 4 atomic_acceptance*.rs test names to AP-VC-* ids; edit cases file", "eta_min": 30},
+    {"cell": "B.6 / E.6 Validation", "move": "cargo test -p agileplus-events --test event_store_tests + replay_tests + proptest_audit", "eta_min": 5, "note": "CLOSED 2026-10-17T23:08Z by cargo audit subagent (20 tests pass, 0 failed)"},
+    {"cell": "B.3 / B.4 Usability", "move": "smoke-run agileplus CLI", "eta_min": 10},
+    {"cell": "D.3 Implementation", "move": "cargo build -p agileplus-desktop --release; record --help exit", "eta_min": 5, "note": "CLOSED 2026-10-17T23:02Z by cargo audit subagent (exit 0, 15m 29s)"},
+    {"cell": "D.3 Validation", "move": "restart agileplus-api, observe atomic_acceptance_sqlite reopen", "eta_min": 10},
+    {"cell": "E.2 / E.5 Validation", "move": "run P1+P2 command list from FORWARD_WBS_2026-10-04.md", "eta_min": 120},
+    {"cell": "F.3 doc gaps", "move": "open 1 docs PR with 6 new files (RISK_REGISTER, COVERAGE_REPORT, DASHBOARD_PROD_OBSERVED, etc.)", "eta_min": 30}
+  ],
+  "operator_gated": [
+    {"cell": "A.7 Usability (NATS/MinIO/Neo4j)", "reason": "operator must start dormant homebrew binaries and provision S3 client"},
+    {"cell": "A.9 / A.10 Risk register", "reason": "no central file; operator convening authority"},
+    {"cell": "D.4-D.10 Validation (6/10 NDR)", "reason": "Tailscale provisioning + Vercel team access + Windows deploy creds"},
+    {"cell": "E.7 / E.8 / E.13 / E.17 production", "reason": "Vercel deploy + PLANE_API_KEY env + reachable URL"},
+    {"cell": "E.9 GitHub live", "reason": "GITHUB_TOKEN + actual repo to list"},
+    {"cell": "Cargo registry semver", "reason": "operator publish decision (agileplus-agent-dispatch unpublished)"},
+    {"cell": "Vercel team-scope access", "reason": "FORWARD_DELTA: scoped deployment inspection returned 403"}
+  ]
+}

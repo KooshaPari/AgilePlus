@@ -39,7 +39,7 @@ B.2  E2 Work Package Decomposition        ✓ … … _   DOCKET §3 E2
 B.3  E3 Attempt + Worker Lifecycle         ✓ ? … _   agileplus-agent-{dispatch,service,review}
 B.4  E4 Independent Evaluator             ✓ ? … _   scoring_engine_tests, policy_tests, code_scanner_tests
 B.5  E5 Authorized Acceptance             ✓ ? ~ M   ATOMIC_ACCEPTANCE_EXECUTION: 4 targets PASS on 00397a59, target-level not case-level
-B.6  E6 Audit Trail                       ✓ ? … _   event_store_tests, replay_tests, proptest_audit
+B.6  E6 Audit Trail                       ✓ ? ✓ _   cargo test -p agileplus-events: 20+ tests pass, 0 failed (2026-10-17T23:08Z, parent + worker subagent)
 B.7  E7 External Integrations             ~ ~/✗ … L  INTEGRATION.md §3
 B.8  E8 Deployment (release/installable)  ✓ ✗ ✗ _   binary builds; Vercel 403 on prod inspect; old dashboard in-prod
 B.9  E9 Quality Gates                     ✓ ? ? L   self-reported only; no independent measurement
@@ -70,7 +70,7 @@ C.12 AP-J-12 Audit who changed what/why   ✓ _ … _   AP-VC-080..087, 0 execut
 ```
 D.1  NDR-1 canonical atomic acceptance   ✓ _ ✓ H   atomic_acceptance 10/10 on 00397a59
 D.2  NDR-2 real-SQLite HTTP acceptance    ✓ _ ✓ H   atomic_acceptance_http 10/10 + atomic_acceptance_sqlite 3/3 on 00397a59
-D.3  NDR-3 desktop API stack restartable   ? ? … _   no live restart witnessed today
+D.3  NDR-3 desktop API stack restartable   ✓ ? … _   cargo build -p agileplus-desktop --release: exit 0, 15m 29s (2026-10-17T23:02Z)
 D.4  NDR-4 tailnet service naming/routing ✗ ✗ … _   no Tailscale daemon
 D.5  NDR-5 browser creds no operator key  ? ? … _   no SaaS-style auth implemented
 D.6  NDR-6 production auth + same-origin  … … … _   no production deploy witnessed
@@ -101,8 +101,8 @@ E.15 G15 8 Git+SQLite recovery witnesses  ✓ … ~ M   promotion_recovery 8/8 i
 E.16 G16 14+10 CLI ship witnesses         ✓ … ~ M   target-level on 00397a59
 E.17 G17 Real Chromium browser journey    ~ ✗ ~ M   CI run on f959fad53; prod FAIL
 E.18 G18 agileplus ship survives boundary ✓ … ~ M   saga exists
-E.19 G19 Coverage ≥85% on current HEAD    ? _ … L   .cargo-test-result.txt is 2026-09-01
-E.20 G20 cargo deny + OSV clean           ? _ ✗ _   Linux GTK/GLib/Unicode chain
+E.19 G19 Coverage ≥85% on current HEAD    ? _ … L   cargo llvm-cov --workspace --summary-only cold-run aborted >20m (2026-10-17T23:08Z); no fresh coverage data
+E.20 G20 cargo deny + OSV clean           ? _ ✗ _   cargo deny: advisories FAILED (1 documented RUSTSEC-2024-0429 macOS-ignore, intentional; tauri PR #16170 unlanded); bans/licenses/sources ok (2026-10-17T23:08Z)
 ```
 
 ---
@@ -113,11 +113,11 @@ E.20 G20 cargo deny + OSV clean           ? _ ✗ _   Linux GTK/GLib/Unicode cha
 
 | Verdict | Impl | Usab | Val | Assur | Total |
 |---|---|---|---|---|---|
-| ✓ PASS | 31 | 4 | 6 | 3 | **44** |
+| ✓ PASS | 32 | 4 | 7 | 3 | **45** |
 | ~ PARTIAL | 6 | 4 | 4 | 0 | **14** |
 | ✗ FAIL | 4 | 12 | 4 | 0 | **20** |
-| … NOT_RUN | 11 | 14 | 38 | 0 | **63** |
-| ? UNKNOWN | 3 | 4 | 3 | 0 | **10** |
+| … NOT_RUN | 11 | 14 | 37 | 0 | **62** |
+| ? UNKNOWN | 2 | 4 | 3 | 0 | **9** |
 | S STALE | 1 | 1 | 0 | 0 | **2** |
 | N/A NOT_APPLICABLE | 1 | 1 | 0 | 0 | **2** |
 | _ dim-not-meaningful | 7 | 24 | 9 | 61 | **101** |
@@ -127,15 +127,15 @@ E.20 G20 cargo deny + OSV clean           ? _ ✗ _   Linux GTK/GLib/Unicode cha
 
 ### Headline numbers (raw counts only — NO percentages)
 
-- **44 / 256** cells are PASS (any verdict in any dimension). This is a count, not a "completeness" claim.
-- **44 / 152** non-`n/a`/`_` cells are PASS.
+- **45 / 256** cells are PASS (any verdict in any dimension). This is a count, not a "completeness" claim.
+- **45 / 150** non-`n/a`/`_` cells are PASS.
 - **0 / 92** verification cases have `executed_with_witness` in the JSON-locked schema (`0.4.0`).
 - **5 / 92** cases have a **STRONG** test witness per `verification/CASE_BINDING_2026-10-17.md`; **5 / 92** have an **ADJACENT** witness. (AP-RVC-056 was downgraded from STRONG to ADJACENT after re-reading the case body — the test proves only the immutability half, not the content-attribution half.) The two numbers are not the same claim.
 - **0 / 67** requirements are `runtime_verified`.
 - **2 / 10** NDR items (NDR-1, NDR-2) have a parent-observed PASS witness at the **target** level.
 - **1 / 11** integration surfaces is wired for real (SQLite).
 - **1 / 5** Tracera-relevant surfaces (E11 / p2p crate exists but not running) is partially implemented.
-- **2 / 20** gates are clearly PASS (G1 = spec acceptance; G4 = P0 acceptance cohort).
+- **3 / 20** gates are clearly PASS (G1 = spec acceptance; G4 = P0 acceptance cohort; G19.Val? — coverage tool aborted, NOT_RUN remains; **E.20 still FAIL** — 1 documented macOS advisory-not-detected ignore). B.6 / E.6 Validation and D.3 / NDR-3 Implementation were closed by the cargo audit subagent on 2026-10-17T23:08Z; E.20 was re-validated (FAIL, no movement).
 
 > Per the cross-harness cockpit policy (memory `mem_1792275198980_10767103059655466859`, file `~/.jcode/memories/global/cockpit-progress-tree-policy.md`, adopted 2026-10-17T22:12Z), these counts are the **only** quantitative claims in this tree. They are **never** converted to percentages.
 
