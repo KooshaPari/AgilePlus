@@ -90,6 +90,11 @@ async function hasValidAccessJwt(jwt: string): Promise<boolean> {
 }
 
 export default async function middleware(request: Request): Promise<Response | undefined> {
+  // Gate production deployments only. The public <project>.vercel.app production
+  // alias is exempt from Vercel Authentication, while preview deployments already
+  // require Vercel Authentication and cannot carry a Cloudflare Access JWT, so
+  // gating previews would make every preview URL unusable.
+  if (process.env.VERCEL_ENV !== 'production') return undefined;
   const jwt = request.headers.get('cf-access-jwt-assertion');
   if (jwt && (await hasValidAccessJwt(jwt))) return undefined; // continue to the app
   return new Response('Unauthorized', {
