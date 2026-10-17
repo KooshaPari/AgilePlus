@@ -100,6 +100,41 @@ try {
   assert.equal(issues.results[0]._agileplus_product_acceptance, "not_inferred");
   assert.equal((await fetch(shim + issuePath, { method: "POST" })).status, 405);
   assert.equal((await apiCall(api, key, "/api/v1/work-packages/" + wp.data.id)).data.state, "review");
+  if (process.env.PLANIFY_DIR) {
+    const { chromium } = await import("playwright");
+    const { writeFile } = await import("node:fs/promises");
+    const path = process.env.PLANIFY_ARTIFACTS_DIR || join(tmp, "browser-evidence");
+    await mkdir(path, { recursive: true });
+    const web = start("pnpm", ["--filter", "web", "dev"], process.env.PLANIFY_DIR, {
+      VITE_API_BASE_URL: shim,
+      VITE_WEB_BASE_URL: "http://127.0.0.1:3000",
+    }, "Planify browser frontend");
+    await ready("http://127.0.0.1:3000", web, 120000);
+    const browser = await chromium.launch({ headless: true });
+    const evidence = { browserErrors: [], shimRequests: [], expectedWorkPackage: "SSOT Real API Work Package" };
+    try {
+      const page = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+      page.on("pageerror", (error) => evidence.browserErrors.push(error.message));
+      page.on("response", (response) => {
+        if (response.url().startsWith(shim)) {
+          evidence.shimRequests.push({ path: response.url().slice(shim.length), status: response.status() });
+        }
+      });
+      const url = "http://127.0.0.1:3000/agileplus/projects/" + project.id + "/issues";
+      await page.goto(url, { waitUntil: "domcontentloaded", timeout: 90000 });
+      await page.waitForTimeout(14000);
+      evidence.url = page.url();
+      evidence.title = await page.title();
+      evidence.body = (await page.locator("body").innerText()).slice(0, 6000);
+      await page.screenshot({ path: join(path, "real-planify.png"), fullPage: true });
+      await writeFile(join(path, "result.json"), JSON.stringify(evidence, null, 2));
+      assert.ok(evidence.body.includes("SSOT Real API Work Package"), "Planify browser did not render canonical WP; inspect uploaded screenshot and response trace");
+      assert.ok(evidence.shimRequests.some((r) => r.path.includes("/projects/") && r.status === 200),
+        "Planify UI did not load a real project response from the shim");
+      console.log("PLANIFY BROWSER PASS: actual owned fork rendered a Rust-backed WP");
+    } finally { await browser.close(); }
+  }
+
   console.log("REAL RUST INTEGRATION PASS: source=" + f.data.slug + ", WP=" + wp.data.id + ", project=" + project.id);
 } finally {
   for (const item of processes.reverse()) await stop(item);
