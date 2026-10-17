@@ -9,6 +9,7 @@ import re
 import subprocess
 from pathlib import Path
 from urllib.parse import urlparse
+
 import jsonschema
 
 root = Path(__file__).resolve().parents[1]
@@ -67,7 +68,7 @@ for case in c:
     if "requirement_id" in case:
         assert case["requirement_id"] in by_id
 sources = set(
-    re.findall(r"^## (S\d+) ", (folder / "OWNER_EXCERPTS.md").read_text(), re.M)
+    re.findall(r"^## (S\d+) ", (folder / "OWNER_EXCERPTS.md").read_text(), re.MULTILINE)
 )
 assert len(sources) == 9
 for row in rows:
