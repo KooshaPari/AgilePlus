@@ -13,12 +13,13 @@ const ISSUER = `https://${TEAM_DOMAIN}`;
 
 // Access application AUDs accepted by this deployment (all "Koosha only" policy):
 //   pheno-studio-wildcard (*.pheno.studio), pheno-agileplus, pheno-tracera,
-//   pheno-shop-wildcard (*.pheno.shop)
+//   pheno-shop-wildcard (*.pheno.shop), pheno-agileplus-space (agileplus.phenotype.space)
 const TRUSTED_AUDS = [
   'cd5a353030d8379b9322508233a0dbeaaa6896103c6237fa54cdb907e2b5852a',
   '019aa5a73cbde4c84fcac461f8ff1c7f0d0489e65df767d7a4f91759855f8a76',
   '1502c30a5519bf4a7dbd7ad0148e5d2b9d951aa8371d64ff4858bdc468396b27',
   'ac34527585f7e7c796b8fade8ea011f998ed019bc90bc227949324181224efc3',
+  'a47099890d858f9ac98e4388b9c3ec007d78b6404c40348717f111018065e6a8',
 ];
 
 let keysPromise: Promise<Map<string, CryptoKey>> | null = null;
