@@ -29,6 +29,7 @@ where
     pub event_tx: broadcast::Sender<serde_json::Value>,
     /// Embedders without an atomic adapter remain fail-closed.
     pub atomic_acceptance: Option<Arc<dyn AtomicAcceptancePort>>,
+    pub work_items: Option<Arc<dyn agileplus_domain::ports::work_item::WorkItemPort>>,
     pub create_feature_uc: Arc<CreateFeature>,
     pub advance_feature_uc: Arc<AdvanceFeature>,
     pub create_story_uc: Arc<CreateStory>,
@@ -51,6 +52,7 @@ where
             credentials: self.credentials.clone(),
             event_tx: self.event_tx.clone(),
             atomic_acceptance: self.atomic_acceptance.clone(),
+            work_items: self.work_items.clone(),
             create_feature_uc: self.create_feature_uc.clone(),
             advance_feature_uc: self.advance_feature_uc.clone(),
             create_story_uc: self.create_story_uc.clone(),
@@ -101,6 +103,7 @@ where
             credentials,
             event_tx,
             atomic_acceptance: None,
+            work_items: None,
             create_feature_uc,
             advance_feature_uc,
             create_story_uc,
@@ -130,5 +133,17 @@ impl agileplus_domain::ports::events::DomainEventPublisher for NoOpPublisher {
         _event: agileplus_domain::ports::events::DomainEvent,
     ) -> Result<(), agileplus_domain::error::DomainError> {
         Ok(())
+    }
+}
+
+impl<S, V, O> AppState<S, V, O>
+where
+    S: StoragePort + agileplus_domain::ports::work_item::WorkItemPort + 'static,
+    V: VcsPort + 'static,
+    O: ObservabilityPort + 'static,
+{
+    pub fn with_work_items(mut self) -> Self {
+        self.work_items = Some(self.storage.clone());
+        self
     }
 }
