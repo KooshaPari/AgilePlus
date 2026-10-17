@@ -56,6 +56,8 @@ jobs:
 
   dry-run:
     name: Dry run publish
+    # TODO(#1140): re-enable as a hard gate once agileplus-application is published to crates.io
+    continue-on-error: true
     if: ${{ github.event_name == 'pull_request' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 20
