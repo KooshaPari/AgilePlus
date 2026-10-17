@@ -1,0 +1,85 @@
+name: qe
+
+on:
+    push:
+        branches: [main]
+    pull_request:
+        branches: [main]
+    workflow_dispatch:
+
+permissions:
+    contents: read
+
+concurrency:
+    group: qe-${{ github.ref }}
+    cancel-in-progress: true
+
+env:
+    CARGO_BUILD_JOBS: "2"
+    CARGO_TERM_COLOR: always
+
+defaults:
+    run:
+        shell: bash --noprofile --norc -euo pipefail {0}
+
+jobs:
+    lint:
+        name: qe / lint
+        runs-on: ubuntu-latest
+        timeout-minutes: 60
+        steps:
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+            - name: Install workspace build dependencies
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y build-essential pkg-config libssl-dev protobuf-compiler libglib2.0-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev
+            - name: Require real protobuf generation
+              run: |
+                  protoc --version
+                  test -z "${SKIP_PROTO_BUILD+x}"
+            - name: Install pinned Rust toolchain
+              run: rustup toolchain install nightly-2026-07-31 --profile minimal --component rustfmt,clippy,rust-docs
+            - uses: Swatinem/rust-cache@49a0bdc70d2e1b713ca9e2869b211fcce03d3c1c # v2
+            # Unconditional commands: absent tools/manifests and nonzero exits fail.
+            - name: Rust formatting
+              run: cargo fmt --all -- --check
+            - name: Rust lint (warnings are errors)
+              run: cargo clippy --workspace --all-targets --locked -- -D warnings
+
+    test:
+        name: qe / test
+        env:
+            # Keep workspace test artifacts bounded on constrained hosts.
+            CARGO_PROFILE_TEST_DEBUG: "0"
+        runs-on: ubuntu-latest
+        timeout-minutes: 60
+        steps:
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+            - name: Install workspace build dependencies
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y build-essential pkg-config libssl-dev protobuf-compiler libglib2.0-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev
+            - name: Require real protobuf generation
+              run: |
+                  protoc --version
+                  test -z "${SKIP_PROTO_BUILD+x}"
+            - name: Install pinned Rust toolchain
+              run: rustup toolchain install nightly-2026-07-31 --profile minimal --component rustfmt,clippy,rust-docs
+            - uses: Swatinem/rust-cache@49a0bdc70d2e1b713ca9e2869b211fcce03d3c1c # v2
+            # Dispatch tests currently call real CLI names instead of hermetic fakes.
+            # Reject equipped hosts before tests can launch an installed harness.
+            - name: Require an isolated test host
+              run: |
+                  for harness in claude codex; do
+                      if command -v "$harness" >/dev/null 2>&1; then
+                          echo "::error::$harness is installed; dispatch tests must be made hermetic before this host can run them."
+                          exit 1
+                      fi
+                  done
+            # Independent of lint so a lint failure does not skip the test run.
+            - name: Rust workspace tests
+              run: cargo test --workspace --locked --no-fail-fast
