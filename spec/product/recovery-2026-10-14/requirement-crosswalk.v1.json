@@ -1,0 +1,947 @@
+{
+    "schema_version": "1.0.0",
+    "record_type": "supplemental_intent_crosswalk",
+    "status": "proposed_source_reconciliation_not_authority",
+    "base_revision": "45bb5c9fde4d15ee698f42a6e5f9304aae336ff5",
+    "authority_index": "spec/product/AUTHORITY_INDEX.md",
+    "source_catalog": "spec/product/recovery-2026-10-14/OWNER_EXCERPTS.md",
+    "source_coverage": "selected_directly_supplied_excerpts_archive_unavailable_full_matrix_unverified",
+    "mapping_policy": "intent_theme connects broad owner intent; inherited_contract retains accepted details without claiming verbatim owner derivation. Journey-context oracles are not direct requirement witnesses. No runtime verdict is inferred.",
+    "canonical_inputs": {
+        "requirements": {
+            "path": "spec/product/requirements.semantic.v1.json",
+            "sha256": "5624abc25088351bd23ba9595ab12501aabe218708c9a3e8e2c33e91e8c835d1"
+        },
+        "journeys": {
+            "path": "spec/product/journeys.v1.json",
+            "sha256": "f67993e36868a6c5e15b3c0fc1c59f8a90712d0ba0e04ca507accdf5c1e53c0b"
+        },
+        "oracles": {
+            "path": "verification/semantic-verification-cases.v1.json",
+            "sha256": "020b63be34005b671a20bc28528d4182e121ab136981434d815afa78ef2cf83c"
+        },
+        "manifest": {
+            "path": "spec/product/mature-contract.v1.json",
+            "sha256": "e460016dc2414e019720a0fff6a552a3b82975d263f30c9337388da4c8075cbf"
+        }
+    },
+    "derived_counts": {
+        "requirements": 67,
+        "journeys": 12,
+        "oracles": 92
+    },
+    "mappings": [
+        {
+            "requirement_id": "AP-R-DEV-ID",
+            "title": "Durable development identity",
+            "source_refs": ["S02", "S03", "S04"],
+            "mapping_basis": "inherited_contract",
+            "intent_theme": "Stable identities and traceability",
+            "rationale": "Cross-linked product views and traceability-first assignments motivate durable links. This row inherits the exact work identity/history semantics rather than importing product identity into AgilePlus.",
+            "journey_ids": ["AP-J-01"],
+            "direct_oracle_ids": ["AP-RVC-040"],
+            "journey_context_oracle_ids": ["AP-VC-001", "AP-VC-002"],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-SPEC-REV",
+            "title": "Immutable accepted specification revisions",
+            "source_refs": ["S04"],
+            "mapping_basis": "intent_theme",
+            "intent_theme": "Adaptive methodology and accepted specification",
+            "rationale": "S04 supports adaptive methodology synthesis and rigorous specification. Canonical semantics determine the exact obligation and authority; source import cannot create competing accepted intent.",
+            "journey_ids": ["AP-J-01"],
+            "direct_oracle_ids": ["AP-RVC-041"],
+            "journey_context_oracle_ids": ["AP-VC-001", "AP-VC-002"],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-AMBIGUITY",
+            "title": "Material ambiguity blocks acceptance",
+            "source_refs": ["S04"],
+            "mapping_basis": "intent_theme",
+            "intent_theme": "Adaptive methodology and accepted specification",
+            "rationale": "S04 supports adaptive methodology synthesis and rigorous specification. Canonical semantics determine the exact obligation and authority; source import cannot create competing accepted intent.",
+            "journey_ids": ["AP-J-01"],
+            "direct_oracle_ids": ["AP-RVC-042"],
+            "journey_context_oracle_ids": ["AP-VC-001", "AP-VC-002"],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-ARTIFACT-ROLE",
+            "title": "Framework-neutral artifact authority",
+            "source_refs": ["S04"],
+            "mapping_basis": "intent_theme",
+            "intent_theme": "Adaptive methodology and accepted specification",
+            "rationale": "S04 supports adaptive methodology synthesis and rigorous specification. Canonical semantics determine the exact obligation and authority; source import cannot create competing accepted intent.",
+            "journey_ids": ["AP-J-01"],
+            "direct_oracle_ids": ["AP-RVC-043"],
+            "journey_context_oracle_ids": ["AP-VC-001", "AP-VC-002"],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-WP-DAG",
+            "title": "Dependency-aware durable work packages",
+            "source_refs": ["S04"],
+            "mapping_basis": "inherited_contract",
+            "intent_theme": "Rigorous bounded assignments and independent acceptance",
+            "rationale": "The detailed obligation is inherited from the accepted canonical contract; S04 supplies the broader assignment/autograder motivation, not a literal statement of this behavior.",
+            "journey_ids": ["AP-J-02"],
+            "direct_oracle_ids": ["AP-RVC-044"],
+            "journey_context_oracle_ids": ["AP-VC-003", "AP-VC-004"],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-ASSIGNMENT",
+            "title": "Frozen executable assignment",
+            "source_refs": ["S04"],
+            "mapping_basis": "inherited_contract",
+            "intent_theme": "Rigorous bounded assignments and independent acceptance",
+            "rationale": "The detailed obligation is inherited from the accepted canonical contract; S04 supplies the broader assignment/autograder motivation, not a literal statement of this behavior.",
+            "journey_ids": ["AP-J-02"],
+            "direct_oracle_ids": ["AP-RVC-045"],
+            "journey_context_oracle_ids": ["AP-VC-003", "AP-VC-004"],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-CRITERIA-NONEMPTY",
+            "title": "No vacuous assignment acceptance",
+            "source_refs": ["S04"],
+            "mapping_basis": "inherited_contract",
+            "intent_theme": "Rigorous bounded assignments and independent acceptance",
+            "rationale": "The detailed obligation is inherited from the accepted canonical contract; S04 supplies the broader assignment/autograder motivation, not a literal statement of this behavior.",
+            "journey_ids": ["AP-J-02"],
+            "direct_oracle_ids": ["AP-RVC-046"],
+            "journey_context_oracle_ids": ["AP-VC-003", "AP-VC-004"],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-CONTEXT",
+            "title": "Bounded provenance-bearing context bundle",
+            "source_refs": ["S04", "S05", "S07", "S08"],
+            "mapping_basis": "inherited_contract",
+            "intent_theme": "Provenance-bearing scenario and experiment inputs",
+            "rationale": "Scenario and research inputs motivate explicit assumptions, baselines and reproducible evaluation context. Detailed evidence/configuration obligations remain inherited; simulation integration is proposed.",
+            "journey_ids": ["AP-J-02"],
+            "direct_oracle_ids": ["AP-RVC-047"],
+            "journey_context_oracle_ids": ["AP-VC-003", "AP-VC-004"],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-ATTEMPT-ID",
+            "title": "Replaceable execution attempts",
+            "source_refs": ["S04"],
+            "mapping_basis": "inherited_contract",
+            "intent_theme": "Rigorous bounded assignments and independent acceptance",
+            "rationale": "The detailed obligation is inherited from the accepted canonical contract; S04 supplies the broader assignment/autograder motivation, not a literal statement of this behavior.",
+            "journey_ids": ["AP-J-03"],
+            "direct_oracle_ids": ["AP-RVC-048"],
+            "journey_context_oracle_ids": [
+                "AP-VC-005",
+                "AP-VC-006",
+                "AP-VC-007"
+            ],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-CLAIM",
+            "title": "Temporary explicit execution authority",
+            "source_refs": ["S04"],
+            "mapping_basis": "inherited_contract",
+            "intent_theme": "Rigorous bounded assignments and independent acceptance",
+            "rationale": "The detailed obligation is inherited from the accepted canonical contract; S04 supplies the broader assignment/autograder motivation, not a literal statement of this behavior.",
+            "journey_ids": ["AP-J-03"],
+            "direct_oracle_ids": ["AP-RVC-049"],
+            "journey_context_oracle_ids": [
+                "AP-VC-005",
+                "AP-VC-006",
+                "AP-VC-007"
+            ],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-CLAIM-NOINHERIT",
+            "title": "Authority is not inherited by replacement",
+            "source_refs": ["S04"],
+            "mapping_basis": "inherited_contract",
+            "intent_theme": "Rigorous bounded assignments and independent acceptance",
+            "rationale": "The detailed obligation is inherited from the accepted canonical contract; S04 supplies the broader assignment/autograder motivation, not a literal statement of this behavior.",
+            "journey_ids": ["AP-J-03"],
+            "direct_oracle_ids": ["AP-RVC-050"],
+            "journey_context_oracle_ids": [
+                "AP-VC-005",
+                "AP-VC-006",
+                "AP-VC-007"
+            ],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-ISOLATION",
+            "title": "Execution isolation is explicit",
+            "source_refs": ["S04"],
+            "mapping_basis": "inherited_contract",
+            "intent_theme": "Rigorous bounded assignments and independent acceptance",
+            "rationale": "The detailed obligation is inherited from the accepted canonical contract; S04 supplies the broader assignment/autograder motivation, not a literal statement of this behavior.",
+            "journey_ids": ["AP-J-03"],
+            "direct_oracle_ids": ["AP-RVC-051"],
+            "journey_context_oracle_ids": [
+                "AP-VC-005",
+                "AP-VC-006",
+                "AP-VC-007"
+            ],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-CANDIDATE",
+            "title": "Exact candidate identity",
+            "source_refs": ["S04"],
+            "mapping_basis": "inherited_contract",
+            "intent_theme": "Rigorous bounded assignments and independent acceptance",
+            "rationale": "The detailed obligation is inherited from the accepted canonical contract; S04 supplies the broader assignment/autograder motivation, not a literal statement of this behavior.",
+            "journey_ids": ["AP-J-03"],
+            "direct_oracle_ids": ["AP-RVC-052"],
+            "journey_context_oracle_ids": [
+                "AP-VC-005",
+                "AP-VC-006",
+                "AP-VC-007"
+            ],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-EVALUATION",
+            "title": "Independent exact-candidate evaluation",
+            "source_refs": ["S04"],
+            "mapping_basis": "inherited_contract",
+            "intent_theme": "Rigorous bounded assignments and independent acceptance",
+            "rationale": "The detailed obligation is inherited from the accepted canonical contract; S04 supplies the broader assignment/autograder motivation, not a literal statement of this behavior.",
+            "journey_ids": ["AP-J-04"],
+            "direct_oracle_ids": ["AP-RVC-053"],
+            "journey_context_oracle_ids": [
+                "AP-VC-008",
+                "AP-VC-009",
+                "AP-VC-010"
+            ],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-NO-SELF-GRADE",
+            "title": "Worker cannot self-award terminal acceptance",
+            "source_refs": ["S04"],
+            "mapping_basis": "inherited_contract",
+            "intent_theme": "Rigorous bounded assignments and independent acceptance",
+            "rationale": "The detailed obligation is inherited from the accepted canonical contract; S04 supplies the broader assignment/autograder motivation, not a literal statement of this behavior.",
+            "journey_ids": ["AP-J-04"],
+            "direct_oracle_ids": ["AP-RVC-054"],
+            "journey_context_oracle_ids": [
+                "AP-VC-008",
+                "AP-VC-009",
+                "AP-VC-010"
+            ],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-EVAL-FAIL",
+            "title": "Evaluator failure is non-green",
+            "source_refs": ["S04"],
+            "mapping_basis": "inherited_contract",
+            "intent_theme": "Rigorous bounded assignments and independent acceptance",
+            "rationale": "The detailed obligation is inherited from the accepted canonical contract; S04 supplies the broader assignment/autograder motivation, not a literal statement of this behavior.",
+            "journey_ids": ["AP-J-04"],
+            "direct_oracle_ids": ["AP-RVC-055"],
+            "journey_context_oracle_ids": [
+                "AP-VC-008",
+                "AP-VC-009",
+                "AP-VC-010"
+            ],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-EVIDENCE",
+            "title": "Evaluation evidence receipts are attributable",
+            "source_refs": ["S04", "S05", "S07", "S08"],
+            "mapping_basis": "inherited_contract",
+            "intent_theme": "Provenance-bearing scenario and experiment inputs",
+            "rationale": "Scenario and research inputs motivate explicit assumptions, baselines and reproducible evaluation context. Detailed evidence/configuration obligations remain inherited; simulation integration is proposed.",
+            "journey_ids": ["AP-J-04"],
+            "direct_oracle_ids": ["AP-RVC-056"],
+            "journey_context_oracle_ids": [
+                "AP-VC-008",
+                "AP-VC-009",
+                "AP-VC-010"
+            ],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-ACCEPT-BOTH",
+            "title": "Accepted work requires correctness and governance",
+            "source_refs": ["S04"],
+            "mapping_basis": "inherited_contract",
+            "intent_theme": "Rigorous bounded assignments and independent acceptance",
+            "rationale": "The detailed obligation is inherited from the accepted canonical contract; S04 supplies the broader assignment/autograder motivation, not a literal statement of this behavior.",
+            "journey_ids": ["AP-J-05"],
+            "direct_oracle_ids": ["AP-RVC-057"],
+            "journey_context_oracle_ids": [
+                "AP-VC-011",
+                "AP-VC-012",
+                "AP-VC-013"
+            ],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-REVIEW-NOT-DONE",
+            "title": "Review/CI alone are insufficient",
+            "source_refs": ["S04"],
+            "mapping_basis": "inherited_contract",
+            "intent_theme": "Rigorous bounded assignments and independent acceptance",
+            "rationale": "The detailed obligation is inherited from the accepted canonical contract; S04 supplies the broader assignment/autograder motivation, not a literal statement of this behavior.",
+            "journey_ids": ["AP-J-05"],
+            "direct_oracle_ids": ["AP-RVC-058"],
+            "journey_context_oracle_ids": [
+                "AP-VC-011",
+                "AP-VC-012",
+                "AP-VC-013"
+            ],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-POLICY-SEPARATE",
+            "title": "Policy permission and correctness proof remain separate",
+            "source_refs": ["S04"],
+            "mapping_basis": "inherited_contract",
+            "intent_theme": "Rigorous bounded assignments and independent acceptance",
+            "rationale": "The detailed obligation is inherited from the accepted canonical contract; S04 supplies the broader assignment/autograder motivation, not a literal statement of this behavior.",
+            "journey_ids": ["AP-J-05"],
+            "direct_oracle_ids": ["AP-RVC-059"],
+            "journey_context_oracle_ids": [
+                "AP-VC-011",
+                "AP-VC-012",
+                "AP-VC-013"
+            ],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-PROMOTE-EXACT",
+            "title": "Promotion uses the evaluated candidate",
+            "source_refs": ["S04"],
+            "mapping_basis": "inherited_contract",
+            "intent_theme": "Rigorous bounded assignments and independent acceptance",
+            "rationale": "The detailed obligation is inherited from the accepted canonical contract; S04 supplies the broader assignment/autograder motivation, not a literal statement of this behavior.",
+            "journey_ids": ["AP-J-06"],
+            "direct_oracle_ids": ["AP-RVC-060"],
+            "journey_context_oracle_ids": ["AP-VC-014", "AP-VC-015"],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-PROMOTE-CLOSED",
+            "title": "Promotion fails closed",
+            "source_refs": ["S04"],
+            "mapping_basis": "inherited_contract",
+            "intent_theme": "Rigorous bounded assignments and independent acceptance",
+            "rationale": "The detailed obligation is inherited from the accepted canonical contract; S04 supplies the broader assignment/autograder motivation, not a literal statement of this behavior.",
+            "journey_ids": ["AP-J-06"],
+            "direct_oracle_ids": ["AP-RVC-061"],
+            "journey_context_oracle_ids": ["AP-VC-014", "AP-VC-015"],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-RECOVERY",
+            "title": "Durable recovery without owner replay",
+            "source_refs": ["S04"],
+            "mapping_basis": "inherited_contract",
+            "intent_theme": "Rigorous bounded assignments and independent acceptance",
+            "rationale": "The detailed obligation is inherited from the accepted canonical contract; S04 supplies the broader assignment/autograder motivation, not a literal statement of this behavior.",
+            "journey_ids": ["AP-J-07"],
+            "direct_oracle_ids": ["AP-RVC-062"],
+            "journey_context_oracle_ids": ["AP-VC-016"],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-PROFILE",
+            "title": "Adaptive methodology profiles",
+            "source_refs": ["S04"],
+            "mapping_basis": "intent_theme",
+            "intent_theme": "Adaptive methodology and accepted specification",
+            "rationale": "S04 supports adaptive methodology synthesis and rigorous specification. Canonical semantics determine the exact obligation and authority; source import cannot create competing accepted intent.",
+            "journey_ids": ["AP-J-08"],
+            "direct_oracle_ids": ["AP-RVC-063"],
+            "journey_context_oracle_ids": ["AP-VC-017"],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-IMPORT",
+            "title": "Provenance-preserving framework harmonization",
+            "source_refs": ["S04"],
+            "mapping_basis": "intent_theme",
+            "intent_theme": "Adaptive methodology and accepted specification",
+            "rationale": "S04 supports adaptive methodology synthesis and rigorous specification. Canonical semantics determine the exact obligation and authority; source import cannot create competing accepted intent.",
+            "journey_ids": ["AP-J-09"],
+            "direct_oracle_ids": ["AP-RVC-064"],
+            "journey_context_oracle_ids": ["AP-VC-018", "AP-VC-019"],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-NO-DUP-AUTH",
+            "title": "Imports cannot create competing accepted intent",
+            "source_refs": ["S04"],
+            "mapping_basis": "intent_theme",
+            "intent_theme": "Adaptive methodology and accepted specification",
+            "rationale": "S04 supports adaptive methodology synthesis and rigorous specification. Canonical semantics determine the exact obligation and authority; source import cannot create competing accepted intent.",
+            "journey_ids": ["AP-J-09"],
+            "direct_oracle_ids": ["AP-RVC-065"],
+            "journey_context_oracle_ids": ["AP-VC-018", "AP-VC-019"],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-FEDERATION",
+            "title": "Versioned Tracera evidence handoff",
+            "source_refs": ["S02", "S03", "S04", "S06", "S07", "S09"],
+            "mapping_basis": "intent_theme",
+            "intent_theme": "Product graph to bounded work federation",
+            "rationale": "Graph editing and model-first findings motivate work input. Existing canonical semantics retain standalone AgilePlus work acceptance and independent Tracera product applicability; envelope extension remains proposed.",
+            "journey_ids": ["AP-J-10"],
+            "direct_oracle_ids": ["AP-RVC-066"],
+            "journey_context_oracle_ids": ["AP-VC-020", "AP-VC-021"],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-STANDALONE",
+            "title": "AgilePlus acceptance remains standalone",
+            "source_refs": ["S02", "S03", "S04", "S06", "S07", "S09"],
+            "mapping_basis": "intent_theme",
+            "intent_theme": "Product graph to bounded work federation",
+            "rationale": "Graph editing and model-first findings motivate work input. Existing canonical semantics retain standalone AgilePlus work acceptance and independent Tracera product applicability; envelope extension remains proposed.",
+            "journey_ids": ["AP-J-10"],
+            "direct_oracle_ids": ["AP-RVC-067"],
+            "journey_context_oracle_ids": ["AP-VC-020", "AP-VC-021"],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-PRODUCT-BOUNDARY",
+            "title": "Work acceptance is not product satisfaction",
+            "source_refs": ["S02", "S03", "S04", "S06", "S07", "S09"],
+            "mapping_basis": "intent_theme",
+            "intent_theme": "Product graph to bounded work federation",
+            "rationale": "Graph editing and model-first findings motivate work input. Existing canonical semantics retain standalone AgilePlus work acceptance and independent Tracera product applicability; envelope extension remains proposed.",
+            "journey_ids": ["AP-J-10"],
+            "direct_oracle_ids": ["AP-RVC-068"],
+            "journey_context_oracle_ids": ["AP-VC-020", "AP-VC-021"],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-INTERFACE-PARITY",
+            "title": "Interface semantic parity",
+            "source_refs": ["S03", "S04", "S06"],
+            "mapping_basis": "inherited_contract",
+            "intent_theme": "Truthful projections of canonical work",
+            "rationale": "Multiple product views motivate truthful projections; AgilePlus interfaces retain their accepted shared work semantics. This does not assign Tracera product lenses to AgilePlus or claim UI implementation.",
+            "journey_ids": ["AP-J-11"],
+            "direct_oracle_ids": ["AP-RVC-069"],
+            "journey_context_oracle_ids": ["AP-VC-022"],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-ERROR-TRUTH",
+            "title": "Interfaces fail truthfully",
+            "source_refs": ["S03", "S04", "S06"],
+            "mapping_basis": "inherited_contract",
+            "intent_theme": "Truthful projections of canonical work",
+            "rationale": "Multiple product views motivate truthful projections; AgilePlus interfaces retain their accepted shared work semantics. This does not assign Tracera product lenses to AgilePlus or claim UI implementation.",
+            "journey_ids": ["AP-J-11"],
+            "direct_oracle_ids": ["AP-RVC-070"],
+            "journey_context_oracle_ids": ["AP-VC-022"],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-AUDIT-V1",
+            "title": "Historical audit-hash-v1 envelope is explicit",
+            "source_refs": ["S04"],
+            "mapping_basis": "inherited_contract",
+            "intent_theme": "Rigorous bounded assignments and independent acceptance",
+            "rationale": "The detailed obligation is inherited from the accepted canonical contract; S04 supplies the broader assignment/autograder motivation, not a literal statement of this behavior.",
+            "journey_ids": ["AP-J-12"],
+            "direct_oracle_ids": ["AP-RVC-071"],
+            "journey_context_oracle_ids": [
+                "AP-VC-023",
+                "AP-VC-024",
+                "AP-VC-025"
+            ],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-AUDIT-V2",
+            "title": "Versioned stronger audit receipts",
+            "source_refs": ["S04"],
+            "mapping_basis": "inherited_contract",
+            "intent_theme": "Rigorous bounded assignments and independent acceptance",
+            "rationale": "The detailed obligation is inherited from the accepted canonical contract; S04 supplies the broader assignment/autograder motivation, not a literal statement of this behavior.",
+            "journey_ids": ["AP-J-12"],
+            "direct_oracle_ids": ["AP-RVC-072"],
+            "journey_context_oracle_ids": [
+                "AP-VC-023",
+                "AP-VC-024",
+                "AP-VC-025"
+            ],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-TRACE",
+            "title": "Bidirectional work traceability",
+            "source_refs": ["S02", "S03", "S04", "S09"],
+            "mapping_basis": "inherited_contract",
+            "intent_theme": "Stable identities and traceability",
+            "rationale": "Cross-linked product views and traceability-first assignments motivate durable links. This row inherits the exact work identity/history semantics rather than importing product identity into AgilePlus.",
+            "journey_ids": ["AP-J-12"],
+            "direct_oracle_ids": ["AP-RVC-073"],
+            "journey_context_oracle_ids": [
+                "AP-VC-023",
+                "AP-VC-024",
+                "AP-VC-025"
+            ],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-HISTORY",
+            "title": "Supersession preserves history",
+            "source_refs": ["S02", "S03", "S04"],
+            "mapping_basis": "inherited_contract",
+            "intent_theme": "Stable identities and traceability",
+            "rationale": "Cross-linked product views and traceability-first assignments motivate durable links. This row inherits the exact work identity/history semantics rather than importing product identity into AgilePlus.",
+            "journey_ids": ["AP-J-07"],
+            "direct_oracle_ids": ["AP-RVC-074"],
+            "journey_context_oracle_ids": ["AP-VC-016"],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-IFACE-CANON",
+            "title": "Interfaces share one application semantics",
+            "source_refs": ["S03", "S04", "S06"],
+            "mapping_basis": "inherited_contract",
+            "intent_theme": "Truthful projections of canonical work",
+            "rationale": "Multiple product views motivate truthful projections; AgilePlus interfaces retain their accepted shared work semantics. This does not assign Tracera product lenses to AgilePlus or claim UI implementation.",
+            "journey_ids": ["AP-J-11"],
+            "direct_oracle_ids": ["AP-VC-026"],
+            "journey_context_oracle_ids": ["AP-VC-022"],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-IFACE-MACHINE",
+            "title": "Automation-critical operations have machine-readable truthful results",
+            "source_refs": ["S03", "S04", "S06"],
+            "mapping_basis": "inherited_contract",
+            "intent_theme": "Truthful projections of canonical work",
+            "rationale": "Multiple product views motivate truthful projections; AgilePlus interfaces retain their accepted shared work semantics. This does not assign Tracera product lenses to AgilePlus or claim UI implementation.",
+            "journey_ids": ["AP-J-11"],
+            "direct_oracle_ids": ["AP-VC-027"],
+            "journey_context_oracle_ids": ["AP-VC-022"],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-MUTATE-PRECOND",
+            "title": "Accepted-state mutations bind authority and concurrency preconditions",
+            "source_refs": ["S04"],
+            "mapping_basis": "inherited_contract",
+            "intent_theme": "Rigorous bounded assignments and independent acceptance",
+            "rationale": "The detailed obligation is inherited from the accepted canonical contract; S04 supplies the broader assignment/autograder motivation, not a literal statement of this behavior.",
+            "journey_ids": ["AP-J-11"],
+            "direct_oracle_ids": ["AP-VC-028"],
+            "journey_context_oracle_ids": ["AP-VC-022"],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-MCP-UNTRUST",
+            "title": "MCP prompts/sampling cannot grant authority",
+            "source_refs": ["S04"],
+            "mapping_basis": "inherited_contract",
+            "intent_theme": "Rigorous bounded assignments and independent acceptance",
+            "rationale": "The detailed obligation is inherited from the accepted canonical contract; S04 supplies the broader assignment/autograder motivation, not a literal statement of this behavior.",
+            "journey_ids": ["AP-J-11"],
+            "direct_oracle_ids": ["AP-VC-029"],
+            "journey_context_oracle_ids": ["AP-VC-022"],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-GIT-BASE",
+            "title": "Attempt binds exact Git base where Git profile applies",
+            "source_refs": ["S04"],
+            "mapping_basis": "inherited_contract",
+            "intent_theme": "Rigorous bounded assignments and independent acceptance",
+            "rationale": "The detailed obligation is inherited from the accepted canonical contract; S04 supplies the broader assignment/autograder motivation, not a literal statement of this behavior.",
+            "journey_ids": ["AP-J-03"],
+            "direct_oracle_ids": ["AP-VC-030"],
+            "journey_context_oracle_ids": [
+                "AP-VC-005",
+                "AP-VC-006",
+                "AP-VC-007"
+            ],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-PR-CONTEXT",
+            "title": "PR/review state is context/evidence, not acceptance",
+            "source_refs": ["S04"],
+            "mapping_basis": "inherited_contract",
+            "intent_theme": "Rigorous bounded assignments and independent acceptance",
+            "rationale": "The detailed obligation is inherited from the accepted canonical contract; S04 supplies the broader assignment/autograder motivation, not a literal statement of this behavior.",
+            "journey_ids": ["AP-J-05"],
+            "direct_oracle_ids": ["AP-VC-031"],
+            "journey_context_oracle_ids": [
+                "AP-VC-011",
+                "AP-VC-012",
+                "AP-VC-013"
+            ],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-TRIAGE-PROV",
+            "title": "Automated intake classification retains provenance",
+            "source_refs": ["S04", "S05", "S07", "S08"],
+            "mapping_basis": "inherited_contract",
+            "intent_theme": "Provenance-bearing scenario and experiment inputs",
+            "rationale": "Scenario and research inputs motivate explicit assumptions, baselines and reproducible evaluation context. Detailed evidence/configuration obligations remain inherited; simulation integration is proposed.",
+            "journey_ids": ["AP-J-09"],
+            "direct_oracle_ids": ["AP-VC-032"],
+            "journey_context_oracle_ids": ["AP-VC-018", "AP-VC-019"],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-SCHED-DEPS",
+            "title": "Scheduler respects dependency readiness",
+            "source_refs": ["S04"],
+            "mapping_basis": "inherited_contract",
+            "intent_theme": "Rigorous bounded assignments and independent acceptance",
+            "rationale": "The detailed obligation is inherited from the accepted canonical contract; S04 supplies the broader assignment/autograder motivation, not a literal statement of this behavior.",
+            "journey_ids": ["AP-J-02"],
+            "direct_oracle_ids": ["AP-VC-033"],
+            "journey_context_oracle_ids": ["AP-VC-003", "AP-VC-004"],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-SCHED-EXCL",
+            "title": "Scheduler prevents double-authorized exclusive mutation",
+            "source_refs": ["S04"],
+            "mapping_basis": "inherited_contract",
+            "intent_theme": "Rigorous bounded assignments and independent acceptance",
+            "rationale": "The detailed obligation is inherited from the accepted canonical contract; S04 supplies the broader assignment/autograder motivation, not a literal statement of this behavior.",
+            "journey_ids": ["AP-J-03"],
+            "direct_oracle_ids": ["AP-VC-034"],
+            "journey_context_oracle_ids": [
+                "AP-VC-005",
+                "AP-VC-006",
+                "AP-VC-007"
+            ],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-REVIEW-ESC",
+            "title": "Review/HITL escalation is policy-driven and explicit",
+            "source_refs": ["S04"],
+            "mapping_basis": "inherited_contract",
+            "intent_theme": "Rigorous bounded assignments and independent acceptance",
+            "rationale": "The detailed obligation is inherited from the accepted canonical contract; S04 supplies the broader assignment/autograder motivation, not a literal statement of this behavior.",
+            "journey_ids": ["AP-J-05"],
+            "direct_oracle_ids": ["AP-VC-035"],
+            "journey_context_oracle_ids": [
+                "AP-VC-011",
+                "AP-VC-012",
+                "AP-VC-013"
+            ],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-RELEASE-ID",
+            "title": "Promotion creates exact release/promotion receipt",
+            "source_refs": ["S04"],
+            "mapping_basis": "inherited_contract",
+            "intent_theme": "Rigorous bounded assignments and independent acceptance",
+            "rationale": "The detailed obligation is inherited from the accepted canonical contract; S04 supplies the broader assignment/autograder motivation, not a literal statement of this behavior.",
+            "journey_ids": ["AP-J-06"],
+            "direct_oracle_ids": ["AP-VC-036"],
+            "journey_context_oracle_ids": ["AP-VC-014", "AP-VC-015"],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-RELEASE-HITL",
+            "title": "Stable/official release honors human gate where policy requires",
+            "source_refs": ["S04"],
+            "mapping_basis": "inherited_contract",
+            "intent_theme": "Rigorous bounded assignments and independent acceptance",
+            "rationale": "The detailed obligation is inherited from the accepted canonical contract; S04 supplies the broader assignment/autograder motivation, not a literal statement of this behavior.",
+            "journey_ids": ["AP-J-06"],
+            "direct_oracle_ids": ["AP-VC-037"],
+            "journey_context_oracle_ids": ["AP-VC-014", "AP-VC-015"],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-RELEASE-ROLLBACK",
+            "title": "Rollback/supersession preserves release history",
+            "source_refs": ["S04"],
+            "mapping_basis": "inherited_contract",
+            "intent_theme": "Rigorous bounded assignments and independent acceptance",
+            "rationale": "The detailed obligation is inherited from the accepted canonical contract; S04 supplies the broader assignment/autograder motivation, not a literal statement of this behavior.",
+            "journey_ids": ["AP-J-06"],
+            "direct_oracle_ids": ["AP-VC-038"],
+            "journey_context_oracle_ids": ["AP-VC-014", "AP-VC-015"],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-OPTIONAL-FAIL",
+            "title": "Optional integration failure cannot redefine core work truth",
+            "source_refs": ["S04"],
+            "mapping_basis": "inherited_contract",
+            "intent_theme": "Rigorous bounded assignments and independent acceptance",
+            "rationale": "The detailed obligation is inherited from the accepted canonical contract; S04 supplies the broader assignment/autograder motivation, not a literal statement of this behavior.",
+            "journey_ids": ["AP-J-07"],
+            "direct_oracle_ids": ["AP-VC-039"],
+            "journey_context_oracle_ids": ["AP-VC-016"],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-OBS-NOINFLUENCE",
+            "title": "Observability cannot alter correctness",
+            "source_refs": ["S04"],
+            "mapping_basis": "inherited_contract",
+            "intent_theme": "Rigorous bounded assignments and independent acceptance",
+            "rationale": "The detailed obligation is inherited from the accepted canonical contract; S04 supplies the broader assignment/autograder motivation, not a literal statement of this behavior.",
+            "journey_ids": ["AP-J-11"],
+            "direct_oracle_ids": ["AP-RVC-075"],
+            "journey_context_oracle_ids": ["AP-VC-022"],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-OBS-ATTRIB",
+            "title": "Operational evidence is attributable",
+            "source_refs": ["S03", "S04", "S06"],
+            "mapping_basis": "inherited_contract",
+            "intent_theme": "Truthful projections of canonical work",
+            "rationale": "Multiple product views motivate truthful projections; AgilePlus interfaces retain their accepted shared work semantics. This does not assign Tracera product lenses to AgilePlus or claim UI implementation.",
+            "journey_ids": ["AP-J-12"],
+            "direct_oracle_ids": ["AP-RVC-076"],
+            "journey_context_oracle_ids": [
+                "AP-VC-023",
+                "AP-VC-024",
+                "AP-VC-025"
+            ],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-SEC-LEAST",
+            "title": "Least-privilege execution authority",
+            "source_refs": ["S04"],
+            "mapping_basis": "inherited_contract",
+            "intent_theme": "Rigorous bounded assignments and independent acceptance",
+            "rationale": "The detailed obligation is inherited from the accepted canonical contract; S04 supplies the broader assignment/autograder motivation, not a literal statement of this behavior.",
+            "journey_ids": ["AP-J-03"],
+            "direct_oracle_ids": ["AP-RVC-077"],
+            "journey_context_oracle_ids": [
+                "AP-VC-005",
+                "AP-VC-006",
+                "AP-VC-007"
+            ],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-SEC-CRED",
+            "title": "Credential delegation is explicit and auditable",
+            "source_refs": ["S04"],
+            "mapping_basis": "inherited_contract",
+            "intent_theme": "Rigorous bounded assignments and independent acceptance",
+            "rationale": "The detailed obligation is inherited from the accepted canonical contract; S04 supplies the broader assignment/autograder motivation, not a literal statement of this behavior.",
+            "journey_ids": ["AP-J-03"],
+            "direct_oracle_ids": ["AP-RVC-078"],
+            "journey_context_oracle_ids": [
+                "AP-VC-005",
+                "AP-VC-006",
+                "AP-VC-007"
+            ],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-SEC-REDACT",
+            "title": "Sensitive evidence redaction preserves references",
+            "source_refs": ["S04"],
+            "mapping_basis": "inherited_contract",
+            "intent_theme": "Rigorous bounded assignments and independent acceptance",
+            "rationale": "The detailed obligation is inherited from the accepted canonical contract; S04 supplies the broader assignment/autograder motivation, not a literal statement of this behavior.",
+            "journey_ids": ["AP-J-12"],
+            "direct_oracle_ids": ["AP-RVC-079"],
+            "journey_context_oracle_ids": [
+                "AP-VC-023",
+                "AP-VC-024",
+                "AP-VC-025"
+            ],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-PERSIST-DURABLE",
+            "title": "Canonical work state is durable",
+            "source_refs": ["S04"],
+            "mapping_basis": "inherited_contract",
+            "intent_theme": "Rigorous bounded assignments and independent acceptance",
+            "rationale": "The detailed obligation is inherited from the accepted canonical contract; S04 supplies the broader assignment/autograder motivation, not a literal statement of this behavior.",
+            "journey_ids": ["AP-J-07"],
+            "direct_oracle_ids": ["AP-RVC-080"],
+            "journey_context_oracle_ids": ["AP-VC-016"],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-PERSIST-TXN",
+            "title": "Accepted-state mutations are atomic",
+            "source_refs": ["S04"],
+            "mapping_basis": "inherited_contract",
+            "intent_theme": "Rigorous bounded assignments and independent acceptance",
+            "rationale": "The detailed obligation is inherited from the accepted canonical contract; S04 supplies the broader assignment/autograder motivation, not a literal statement of this behavior.",
+            "journey_ids": ["AP-J-07"],
+            "direct_oracle_ids": ["AP-RVC-081"],
+            "journey_context_oracle_ids": ["AP-VC-016"],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-PERSIST-MIG",
+            "title": "Migrations preserve canonical identities/history",
+            "source_refs": ["S04"],
+            "mapping_basis": "inherited_contract",
+            "intent_theme": "Rigorous bounded assignments and independent acceptance",
+            "rationale": "The detailed obligation is inherited from the accepted canonical contract; S04 supplies the broader assignment/autograder motivation, not a literal statement of this behavior.",
+            "journey_ids": ["AP-J-07"],
+            "direct_oracle_ids": ["AP-RVC-082"],
+            "journey_context_oracle_ids": ["AP-VC-016"],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-PERSIST-BACKUP",
+            "title": "Backup/restore preserves work truth",
+            "source_refs": ["S04"],
+            "mapping_basis": "inherited_contract",
+            "intent_theme": "Rigorous bounded assignments and independent acceptance",
+            "rationale": "The detailed obligation is inherited from the accepted canonical contract; S04 supplies the broader assignment/autograder motivation, not a literal statement of this behavior.",
+            "journey_ids": ["AP-J-07"],
+            "direct_oracle_ids": ["AP-RVC-083"],
+            "journey_context_oracle_ids": ["AP-VC-016"],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-CONFIG-PREC",
+            "title": "Configuration precedence is deterministic",
+            "source_refs": ["S04"],
+            "mapping_basis": "inherited_contract",
+            "intent_theme": "Rigorous bounded assignments and independent acceptance",
+            "rationale": "The detailed obligation is inherited from the accepted canonical contract; S04 supplies the broader assignment/autograder motivation, not a literal statement of this behavior.",
+            "journey_ids": ["AP-J-08"],
+            "direct_oracle_ids": ["AP-RVC-084"],
+            "journey_context_oracle_ids": ["AP-VC-017"],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-CONFIG-REV",
+            "title": "Acceptance-relevant configuration is revision-bound",
+            "source_refs": ["S04", "S05", "S07", "S08"],
+            "mapping_basis": "inherited_contract",
+            "intent_theme": "Provenance-bearing scenario and experiment inputs",
+            "rationale": "Scenario and research inputs motivate explicit assumptions, baselines and reproducible evaluation context. Detailed evidence/configuration obligations remain inherited; simulation integration is proposed.",
+            "journey_ids": ["AP-J-04"],
+            "direct_oracle_ids": ["AP-RVC-085"],
+            "journey_context_oracle_ids": [
+                "AP-VC-008",
+                "AP-VC-009",
+                "AP-VC-010"
+            ],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-CONFIG-SECRET",
+            "title": "Secrets are separate from ordinary configuration",
+            "source_refs": ["S04"],
+            "mapping_basis": "inherited_contract",
+            "intent_theme": "Rigorous bounded assignments and independent acceptance",
+            "rationale": "The detailed obligation is inherited from the accepted canonical contract; S04 supplies the broader assignment/autograder motivation, not a literal statement of this behavior.",
+            "journey_ids": ["AP-J-03"],
+            "direct_oracle_ids": ["AP-RVC-086"],
+            "journey_context_oracle_ids": [
+                "AP-VC-005",
+                "AP-VC-006",
+                "AP-VC-007"
+            ],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-PLUGIN-WORKER",
+            "title": "Worker backends are replaceable",
+            "source_refs": ["S04"],
+            "mapping_basis": "inherited_contract",
+            "intent_theme": "Rigorous bounded assignments and independent acceptance",
+            "rationale": "The detailed obligation is inherited from the accepted canonical contract; S04 supplies the broader assignment/autograder motivation, not a literal statement of this behavior.",
+            "journey_ids": ["AP-J-03"],
+            "direct_oracle_ids": ["AP-RVC-087"],
+            "journey_context_oracle_ids": [
+                "AP-VC-005",
+                "AP-VC-006",
+                "AP-VC-007"
+            ],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-PLUGIN-EVAL",
+            "title": "Evaluator backends are replaceable but versioned",
+            "source_refs": ["S04"],
+            "mapping_basis": "inherited_contract",
+            "intent_theme": "Rigorous bounded assignments and independent acceptance",
+            "rationale": "The detailed obligation is inherited from the accepted canonical contract; S04 supplies the broader assignment/autograder motivation, not a literal statement of this behavior.",
+            "journey_ids": ["AP-J-04"],
+            "direct_oracle_ids": ["AP-RVC-088"],
+            "journey_context_oracle_ids": [
+                "AP-VC-008",
+                "AP-VC-009",
+                "AP-VC-010"
+            ],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-PLUGIN-STORE",
+            "title": "Storage/integration adapters cannot redefine domain semantics",
+            "source_refs": ["S04"],
+            "mapping_basis": "inherited_contract",
+            "intent_theme": "Rigorous bounded assignments and independent acceptance",
+            "rationale": "The detailed obligation is inherited from the accepted canonical contract; S04 supplies the broader assignment/autograder motivation, not a literal statement of this behavior.",
+            "journey_ids": ["AP-J-07"],
+            "direct_oracle_ids": ["AP-RVC-089"],
+            "journey_context_oracle_ids": ["AP-VC-016"],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-DOC-DOSSIER",
+            "title": "Fresh-context product dossier is sufficient",
+            "source_refs": ["S01", "S04", "S06", "S07"],
+            "mapping_basis": "inherited_contract",
+            "intent_theme": "Recoverable intent and explicit authority",
+            "rationale": "The source dating caveat and later elaboration require reachable provenance and explicit proposal status. Exact dossier/staleness obligations come from the accepted contract.",
+            "journey_ids": ["AP-J-07"],
+            "direct_oracle_ids": ["AP-RVC-090"],
+            "journey_context_oracle_ids": ["AP-VC-016"],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-DOC-PROV",
+            "title": "Raw intent and decision provenance remain reachable",
+            "source_refs": ["S01", "S04", "S06", "S07"],
+            "mapping_basis": "inherited_contract",
+            "intent_theme": "Recoverable intent and explicit authority",
+            "rationale": "The source dating caveat and later elaboration require reachable provenance and explicit proposal status. Exact dossier/staleness obligations come from the accepted contract.",
+            "journey_ids": ["AP-J-07"],
+            "direct_oracle_ids": ["AP-RVC-091"],
+            "journey_context_oracle_ids": ["AP-VC-016"],
+            "runtime_status": "not_assessed"
+        },
+        {
+            "requirement_id": "AP-R-DOC-STALE",
+            "title": "Documentation authority and staleness are explicit",
+            "source_refs": ["S01", "S04", "S06", "S07"],
+            "mapping_basis": "inherited_contract",
+            "intent_theme": "Recoverable intent and explicit authority",
+            "rationale": "The source dating caveat and later elaboration require reachable provenance and explicit proposal status. Exact dossier/staleness obligations come from the accepted contract.",
+            "journey_ids": ["AP-J-07"],
+            "direct_oracle_ids": ["AP-RVC-092"],
+            "journey_context_oracle_ids": ["AP-VC-016"],
+            "runtime_status": "not_assessed"
+        }
+    ]
+}
