@@ -1,0 +1,89 @@
+name: Planify real Rust API integration
+on:
+  pull_request:
+    paths:
+      - "tools/planify-shim/**"
+      - ".github/workflows/planify-real-rust.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  real-backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 65
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: arduino/setup-protoc@v3
+        with:
+          version: "28.x"
+      - name: Install native Rust dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkg-config libglib2.0-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Compile actual AgilePlus REST executable
+        run: cargo build -p agileplus-api --bin agileplus-api
+      - name: Install shim dependencies
+        working-directory: tools/planify-shim
+        run: npm install --no-audit --no-fund --package-lock=false
+      - name: Run real REST + isolated SQLite + Planify adapter assertions
+        run: node tools/planify-shim/tests/real-backend.integration.mjs
+      - name: Upload ephemeral test-built API binary for browser job
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: agileplus-real-api-test-bin
+          path: target/debug/agileplus-api
+          retention-days: 2
+
+  planify-browser:
+    needs: real-backend
+    runs-on: ubuntu-latest
+    timeout-minutes: 65
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: actions/download-artifact@v4
+        with:
+          name: agileplus-real-api-test-bin
+          path: target/debug
+      - run: chmod +x target/debug/agileplus-api
+      - name: Checkout pinned owned Planify fork
+        run: |
+          git clone --filter=blob:none --no-checkout --depth=1 --branch master https://github.com/KooshaPari/zz-aa-dep-Planify.git /tmp/planify
+          cd /tmp/planify
+          git sparse-checkout init --cone
+          git sparse-checkout set apps/web packages
+          git checkout bdfc383eae8c18b96a0fbd7df9049f6acce41be5
+          test "$(git rev-parse HEAD)" = bdfc383eae8c18b96a0fbd7df9049f6acce41be5
+      - name: Install Planify workspace
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.32.1 --activate
+          cd /tmp/planify
+          pnpm install --filter web... --frozen-lockfile
+      - name: Install shim and actual Chromium browser test dependencies
+        working-directory: tools/planify-shim
+        run: |
+          npm install --no-audit --no-fund --package-lock=false
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+      - name: Run full Rust + shim + owned Planify browser test
+        run: |
+          PLANIFY_DIR=/tmp/planify PLANIFY_ARTIFACTS_DIR=/tmp/planify-browser-evidence node tools/planify-shim/tests/real-backend.integration.mjs
+      - name: Upload browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: real-planify-browser-evidence
+          path: /tmp/planify-browser-evidence
+          if-no-files-found: ignore
+          retention-days: 7

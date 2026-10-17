@@ -26,6 +26,7 @@
 import cors from "cors";
 import express from "express";
 import { agileplus } from "./agileplus-client.js";
+import { assertFeatures, assertWorkPackages } from "./validate.js";
 import {
   USER_ID,
   WORKSPACE_ID,
@@ -40,6 +41,13 @@ const WEB_ORIGIN = process.env.WEB_ORIGIN || "http://localhost:4400";
 const CSRF = "planify-shim-csrf-token";
 
 const app = express();
+// Deliberately a localhost-only, read-only UI evaluation tool.  No synthetic
+// CSRF or user object here authorizes a write into the AgilePlus domain.
+app.use((req, res, next) => {
+  if (["GET", "HEAD", "OPTIONS"].includes(req.method)) return next();
+  res.set("Allow", "GET, HEAD, OPTIONS");
+  return res.status(405).json({ error: "read_only", detail: "Use AgilePlus governed APIs for mutations." });
+});
 app.use(express.json());
 app.use(
   cors({
@@ -57,9 +65,25 @@ app.use(log);
 
 const NOW = new Date().toISOString();
 
+// A fabricated workspace/user exists for local frontend compatibility only.
+// Never run this shim as a network-facing authentication or authorization service.
+app.param("slug", (req, res, next, slug) => {
+  if (slug !== WORKSPACE_SLUG) return res.status(404).json({ error: "workspace_not_found" });
+  next();
+});
+app.param("projectId", async (req, res, next, id) => {
+  try {
+    const { byId } = await featuresIndex();
+    if (!byId.has(id)) return res.status(404).json({ error: "project_not_found" });
+    next();
+  } catch (e) {
+    res.status(502).json({ error: "agileplus_unavailable" });
+  }
+});
+
 // ---- find an AgilePlus feature by the project UUID we synthesised ----
 async function featuresIndex() {
-  const features = await agileplus.listFeatures();
+  const features = assertFeatures(await agileplus.listFeatures());
   const projects = features.map(featureToProject);
   const byId = new Map(projects.map((p) => [p.id, p]));
   return { features, projects, byId };
@@ -226,7 +250,7 @@ async function issuesHandler(req, res) {
     const { byId } = await featuresIndex();
     const project = byId.get(req.params.projectId);
     if (!project) return res.status(404).json({ error: "project not found" });
-    const wps = await agileplus.listWorkPackages(project._agileplus_slug);
+    const wps = assertWorkPackages(await agileplus.listWorkPackages(project._agileplus_slug), project._agileplus_id);
     const results = wps.map((wp) => wpToIssue(wp, project));
     res.json({
       grouped_by: null,
@@ -251,20 +275,20 @@ app.get("/api/workspaces/:slug/projects/:projectId/issues-detail/", issuesHandle
 app.get("/shim/health", async (_req, res) => {
   try {
     const f = await agileplus.listFeatures();
-    res.json({ ok: true, agileplus: agileplus.base, features: f.length });
+    res.json({ ok: true, mode: "local-read-only", features: assertFeatures(f).length });
   } catch (e) {
     res.status(502).json({ ok: false, error: String(e.message || e) });
   }
 });
 
-// Default: empty-but-valid 200 so unimplemented reads don't 401-redirect-loop
-// the frontend. (Writes are out of scope for read-only candidate review.)
+// Never disguise unimplemented APIs as successful empty data.
 app.use((req, res) => {
-  console.warn(`UNMAPPED ${req.method} ${req.originalUrl} -> []`);
-  res.json([]);
+  console.warn(`UNMAPPED ${req.method} ${req.path} -> 404`);
+  res.status(404).json({ error: "not_implemented", detail: "This is a read-only prototype." });
 });
 
-app.listen(PORT, () => {
+// The synthetic user/CSRF is only defensible on loopback. No 0.0.0.0 bind.
+app.listen(PORT, "127.0.0.1", () => {
   console.log(`planify-shim listening on http://localhost:${PORT}`);
   console.log(`  -> AgilePlus backend: ${agileplus.base}`);
   console.log(`  -> CORS origin:       ${WEB_ORIGIN}`);
