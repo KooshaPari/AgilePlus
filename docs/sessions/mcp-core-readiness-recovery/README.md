@@ -63,3 +63,39 @@ Numeric implementation, verified engineering, and usable journey axes remain
 unscored pending the owner-held denominator and independent disposition;
 user validation is separate. This SOURCE_REPORT alone earns no operational
 credit.
+
+## Source-bound core followup
+
+A new core was built directly from the clean tracked candidate
+`b045f195311a683a12f65e71d02ce6490683e0b3` (tree
+`6f35ba5d9c1538ed55b5fba60d6988080a00e790`) with unchanged Cargo.lock
+`503449ad658a0f1d2415b6981898745e455a53ec20c765aca1a353f1eff8d80d`.
+All workspace/path dependencies are inside that same checkout, with no external
+path dependency. The scoped `cargo build --locked --offline -j 1 -p
+agileplus-grpc --bin agileplus-grpc` completed in 3m39s using an owned isolated
+`.recovery-target`; SDKROOT and macOS deployment target were explicit.
+
+The new core SHA-256 is
+`ef3da2c32b3928500765a7dae92e792616cea2cc53feac39080fad6f283ecdd1`.
+Its package version is 0.2.4; no version string was inserted into source.
+`source-bound-core-e2e.json` preserves the repeated real MCP/SQLite journey:
+1 passed in 10.44s, with late core startup and stop/restart recovery of identical
+feature ID and dashboard in the same MCP session. The cached seed CLI remains
+an independently hashed fixture with unknown source identity in this receipt.
+The earlier `real-e2e.json` is preserved unchanged and still describes its
+original cached core as UNKNOWN.
+
+Placement was all on device: measured 16GiB physical RAM, 48% memory free by
+`memory_pressure -Q`, 121GiB disk available, and one Cargo job. Resource peaks
+were not instrumented. No shared target, process, runtime, or global config was
+changed. Whole-workspace offline metadata had an unrelated uncached Android
+package; the actual scoped core build succeeded fully offline.
+
+The optional source CLI build also completed offline in 3m03s from the same
+candidate/lock/owned target (`-p agileplus-cli --bin agileplus`). The same real
+journey rerun using BOTH newly built artifacts passed in 8.47s.
+`source-bound-core-cli-e2e.json` binds their exact paths, hashes, commands,
+source revision and outputs. This removes the cached seed CLI identity gap for
+this new execution while retaining both earlier executions unchanged in meaning.
+No source files changed for the provenance upgrade; user validation remains
+NOT_RUN and release/deployment acceptance remains unclaimed.
