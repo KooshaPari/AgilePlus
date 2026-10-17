@@ -1585,6 +1585,26 @@ implemented as an in-memory bus, not as a NATS client. The name is the
 counterexample.</li>
 <li><strong>“PRD names 22 crates”</strong> — <code>cargo metadata</code>
 says 38. The PRD is a counterexample to the repository state.</li>
+<li><strong>This docket’s own §9a first draft named four of six packages
+incorrectly.</strong> The 2026-10-17 first draft of §9a said
+<code>cargo test -p agileplus-application --test atomic_acceptance</code>,
+<code>-p agileplus-application --test wp_dependency_graph_integration_test</code>,
+<code>-p agileplus-application --test acceptance_traceability_integration_test</code>,
+and <code>-p agileplus-application --test promotion_recovery</code>. A
+cross-check against <code>cargo metadata --no-deps</code> showed that
+<code>atomic_acceptance</code> lives in <code>agileplus-sqlite</code>,
+that <code>wp_dependency_graph_integration_test</code> and
+<code>acceptance_traceability_integration_test</code> live in
+<code>agileplus-domain</code>, and that <code>promotion_recovery</code>
+lives in <code>agileplus-cli</code>. <code>agileplus-application</code>
+has only four test targets (<code>domain_use_case_tests</code>,
+<code>dto_serialization</code>, <code>error_types</code>,
+<code>triage_app_state_tests</code>) and none of them is an acceptance
+witness. <strong>This is logged deliberately</strong>: a forward path
+that names nonexistent targets would have produced four spurious
+<code>TARGET_NOT_FOUND</code> results and looked like a verification
+attempt while closing zero cases. The corrected list is what §9a now
+shows.</li>
 </ol>
 <hr />
 <h2
@@ -1596,20 +1616,26 @@ contract</strong>, not separate products. The SFD v1.0 example is
 explicit about this.</p>
 <h3 id="a.-30-minutes-the-operator-alphas-first-witness">9a. 30 minutes
 (the operator alpha’s first witness)</h3>
-<p>Run on the current HEAD <code>00397a59</code> (no code change):</p>
+<p>Run on the current HEAD <code>00397a59</code> (no code change).
+<strong>Package names below were verified against
+<code>cargo metadata --no-deps</code> on 2026-10-17 after the first
+draft of this docket named four of them incorrectly (see §8
+counterexample 9).</strong></p>
 <ul>
-<li><code>cargo test -p agileplus-application --test atomic_acceptance -- --nocapture</code>
-(P0 cohort #1)</li>
+<li><code>cargo test -p agileplus-sqlite --test atomic_acceptance</code>
+(P0 cohort #1 — the canonical atomic-acceptance native suite)</li>
 <li><code>cargo test -p agileplus-api --test atomic_acceptance_http</code>
 (P0 cohort #2)</li>
+<li><code>cargo test -p agileplus-api --test atomic_acceptance_sqlite</code>
+(P0 cohort #2b — real-SQLite HTTP variant)</li>
 <li><code>cargo test -p agileplus-grpc --test atomic_acceptance_rpc</code>
 (P0 cohort #3)</li>
-<li><code>cargo test -p agileplus-application --test wp_dependency_graph_integration_test</code>
+<li><code>cargo test -p agileplus-domain --test wp_dependency_graph_integration_test</code>
 (AP-R-WP-DAG)</li>
-<li><code>cargo test -p agileplus-application --test acceptance_traceability_integration_test</code>
+<li><code>cargo test -p agileplus-domain --test acceptance_traceability_integration_test</code>
 (AP-R-TRACE)</li>
 </ul>
-<p>If the suite passes, transition at least 5 cases from
+<p>If the suite passes, transition at least 6 cases from
 <code>specified_not_executed</code> to
 <code>executed_with_witness</code> and record the CI run id. If the
 suite fails, record the failure and move to the 4-hour path.</p>
