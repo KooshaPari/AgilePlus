@@ -1,0 +1,181 @@
+{
+  "schema": "agileplus-recovery-execution-v1",
+  "core_binary": "/Users/kooshapari/CodeProjects/Phenotype/repos/agileplus-wtrees/mcp-core-readiness-recovery/.recovery-target/debug/agileplus-grpc",
+  "core_sha256": "ef3da2c32b3928500765a7dae92e792616cea2cc53feac39080fad6f283ecdd1",
+  "core_source_sha": "b045f195311a683a12f65e71d02ce6490683e0b3",
+  "core_source_sha_reason": "built from exact clean tracked source; all local path dependencies belong to this same checkout",
+  "cli_binary": "/Users/kooshapari/CodeProjects/Phenotype/repos/agileplus-wtrees/mcp-core-readiness-recovery/.recovery-target/debug/agileplus",
+  "cli_sha256": "c050a4b1261494b6a18a2bda787a342df4a93e63083b1f041c09defb8b04404b",
+  "input_spec_sha256": "195eb73bc464ab82ff4fbfe8e2821e0ce81176ae31178cea0337352c9b8ecf21",
+  "seed_stdout": "Feature 'recovery-journey' specified.\n  Spec written to: docs/agileplus/recovery-journey/spec.md\n  State: Created -> Specified\n2026-10-17T11:58:58.379220Z  INFO specify completed command=\"specify\" slug=recovery-journey elapsed_ms=4\n",
+  "subject_root": "/private/var/folders/wl/z8733y815nzg28yy0_1_lh7w0000gn/T/pytest-of-kooshapari/pytest-6/test_real_core_late_start_rest0/subject",
+  "grpc_address": "127.0.0.1:53225",
+  "observations": [
+    {
+      "stage": "mcp_before_core",
+      "health": {
+        "status": "unhealthy",
+        "live": true,
+        "ready": false,
+        "mcp_server": "ok",
+        "grpc_core": "unreachable",
+        "version": "0.1.0",
+        "error": "gRPC call failed after 3 retries"
+      }
+    },
+    {
+      "stage": "late_core",
+      "health": {
+        "status": "healthy",
+        "mcp_server": "ok",
+        "grpc_core": "ok",
+        "version": "0.1.0",
+        "live": true,
+        "ready": true
+      },
+      "feature": {
+        "id": 1,
+        "slug": "recovery-journey",
+        "friendly_name": "Recovery Journey",
+        "state": "specified",
+        "target_branch": "main",
+        "created_at": "2026-10-17T11:58:58.375265+00:00",
+        "updated_at": "2026-10-17T11:58:58.375631+00:00",
+        "wp_count": 0,
+        "wp_done": 0
+      },
+      "dashboard": {
+        "feature_counts": {
+          "specified": 1
+        },
+        "active_work_packages": [],
+        "recent_audit_entries": [
+          {
+            "id": 1,
+            "feature_slug": "recovery-journey",
+            "wp_sequence": 0,
+            "timestamp": "2026-10-17T11:58:58.378825+00:00",
+            "actor": "user",
+            "transition": "Created -> Specified",
+            "evidence_refs": [],
+            "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+            "hash": "42e732fee9378071682acdd11996ca1cbc2d65c9251ec11a37d6549089554acd"
+          }
+        ],
+        "health": "healthy"
+      }
+    },
+    {
+      "stage": "core_stopped",
+      "health": {
+        "status": "unhealthy",
+        "live": true,
+        "ready": false,
+        "mcp_server": "ok",
+        "grpc_core": "unreachable",
+        "version": "0.1.0",
+        "error": "gRPC call failed after 3 retries"
+      }
+    },
+    {
+      "stage": "core_restarted_same_mcp_session",
+      "health": {
+        "status": "healthy",
+        "mcp_server": "ok",
+        "grpc_core": "ok",
+        "version": "0.1.0",
+        "live": true,
+        "ready": true
+      },
+      "feature": {
+        "id": 1,
+        "slug": "recovery-journey",
+        "friendly_name": "Recovery Journey",
+        "state": "specified",
+        "target_branch": "main",
+        "created_at": "2026-10-17T11:58:58.375265+00:00",
+        "updated_at": "2026-10-17T11:58:58.375631+00:00",
+        "wp_count": 0,
+        "wp_done": 0
+      },
+      "dashboard": {
+        "feature_counts": {
+          "specified": 1
+        },
+        "active_work_packages": [],
+        "recent_audit_entries": [
+          {
+            "id": 1,
+            "feature_slug": "recovery-journey",
+            "wp_sequence": 0,
+            "timestamp": "2026-10-17T11:58:58.378825+00:00",
+            "actor": "user",
+            "transition": "Created -> Specified",
+            "evidence_refs": [],
+            "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+            "hash": "42e732fee9378071682acdd11996ca1cbc2d65c9251ec11a37d6549089554acd"
+          }
+        ],
+        "health": "healthy"
+      }
+    }
+  ],
+  "user_validation": "NOT_RUN",
+  "scope": "local cached Rust artifacts plus new canonical Python candidate",
+  "core_source_tree": "6f35ba5d9c1538ed55b5fba60d6988080a00e790",
+  "core_package_version": "0.2.4",
+  "cargo_lock_sha256": "503449ad658a0f1d2415b6981898745e455a53ec20c765aca1a353f1eff8d80d",
+  "toolchain": {
+    "rustc": "1.99.0-nightly (8ab9fdff5 2026-07-30)",
+    "cargo": "1.99.0-nightly (7c83d4cc0 2026-07-29)",
+    "protoc": "libprotoc 36.1"
+  },
+  "build": {
+    "command": "SDKROOT=/Library/Developer/CommandLineTools/SDKs/MacOSX26.sdk MACOSX_DEPLOYMENT_TARGET=15.0 CARGO_TARGET_DIR=/Users/kooshapari/CodeProjects/Phenotype/repos/agileplus-wtrees/mcp-core-readiness-recovery/.recovery-target cargo build --locked --offline -j 1 -p agileplus-grpc --bin agileplus-grpc",
+    "exit_code": 0,
+    "duration": "3m39s",
+    "log_sha256": "ba8aa317c12570faf254f18f63a08f22217e92fcb0258190dc25285d7a00457b",
+    "owned_target": "/Users/kooshapari/CodeProjects/Phenotype/repos/agileplus-wtrees/mcp-core-readiness-recovery/.recovery-target",
+    "dependency_tree_sha256": "3eca8141128f8ff810540a672a771463cf80882571ca3b2b139b8c1ff8fa5402",
+    "path_dependencies_outside_checkout": [],
+    "tracked_dirty_before": false,
+    "tracked_dirty_after": false,
+    "source_mutations": false
+  },
+  "placement": {
+    "mode": "all on device",
+    "physical_ram_bytes": 17179869184,
+    "memory_pressure_free_percent_before": 48,
+    "disk_available_gib_before": 121,
+    "jobs": 1,
+    "peak_rss": null,
+    "peak_rss_reason": "not instrumented"
+  },
+  "cli_source_sha": "b045f195311a683a12f65e71d02ce6490683e0b3",
+  "cli_source_sha_reason": "built from same exact clean tracked candidate with unchanged locked dependencies",
+  "cli_version": "agileplus 0.2.4",
+  "cli_build": {
+    "command": "SDKROOT=/Library/Developer/CommandLineTools/SDKs/MacOSX26.sdk MACOSX_DEPLOYMENT_TARGET=15.0 CARGO_TARGET_DIR=/Users/kooshapari/CodeProjects/Phenotype/repos/agileplus-wtrees/mcp-core-readiness-recovery/.recovery-target cargo build --locked --offline -j 1 -p agileplus-cli --bin agileplus",
+    "exit_code": 0,
+    "duration": "3m03s",
+    "log_sha256": "ef388f5789b1d2b95dc8c2f50a5e3adeeb34d30abd42edb35b37d63449162205"
+  },
+  "test": {
+    "command": "AGILEPLUS_TEST_CORE_BINARY=/Users/kooshapari/CodeProjects/Phenotype/repos/agileplus-wtrees/mcp-core-readiness-recovery/.recovery-target/debug/agileplus-grpc AGILEPLUS_TEST_CLI_BINARY=/Users/kooshapari/CodeProjects/Phenotype/repos/agileplus-wtrees/mcp-core-readiness-recovery/.recovery-target/debug/agileplus AGILEPLUS_TEST_RECEIPT=/tmp/agileplus-source-bound-both-e2e.json uv run --project python pytest python/tests/test_core_process_recovery.py",
+    "passed": 1,
+    "failed": 0,
+    "duration_seconds": 8.47,
+    "output_sha256": "561e4c148722dd22b4d81cad865634d6f5fb2d486094ade22f9830d8cb21517c"
+  },
+  "prior_evidence_preserved": [
+    "real-e2e.json",
+    "source-bound-core-e2e.json"
+  ],
+  "review": "independent core provenance PASS; both-source artifact extension pending review",
+  "axes": {
+    "implementation": null,
+    "verified_engineering": null,
+    "usable_journey": null,
+    "reason": "no owner denominator reduction or user acceptance inferred"
+  }
+}
