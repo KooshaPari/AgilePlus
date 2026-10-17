@@ -1,0 +1,36 @@
+name: Planify real Rust API integration
+on:
+  pull_request:
+    paths:
+      - "tools/planify-shim/**"
+      - ".github/workflows/planify-real-rust.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  real-backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 65
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: arduino/setup-protoc@v3
+        with:
+          version: "28.x"
+      - name: Install native Rust dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkg-config libglib2.0-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Compile actual AgilePlus REST executable
+        run: cargo build -p agileplus-api --bin agileplus-api
+      - name: Install shim dependencies
+        working-directory: tools/planify-shim
+        run: npm install --no-audit --no-fund --package-lock=false
+      - name: Run real REST + isolated SQLite + Planify adapter assertions
+        run: node tools/planify-shim/tests/real-backend.integration.mjs
