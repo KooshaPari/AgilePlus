@@ -1,0 +1,156 @@
+{
+  "schema": "agileplus-recovery-execution-v1",
+  "core_binary": "/Users/kooshapari/CodeProjects/Phenotype/repos/AgilePlus/target/debug/agileplus-grpc",
+  "core_sha256": "2f088ed753adf7a94d537cc9f4c5fc8a75398ab49a362014c53e20bd75329004",
+  "core_source_sha": null,
+  "core_source_sha_reason": "cached artifact build provenance is UNKNOWN",
+  "cli_binary": "/Users/kooshapari/CodeProjects/Phenotype/repos/AgilePlus/target/debug/agileplus",
+  "cli_sha256": "9a2c5f46a9317219c0c5973def855a2a7f13d26fa016007529a63b60d0be3a5a",
+  "input_spec_sha256": "195eb73bc464ab82ff4fbfe8e2821e0ce81176ae31178cea0337352c9b8ecf21",
+  "seed_stdout": "Feature 'recovery-journey' specified.\n  Spec written to: docs/agileplus/recovery-journey/spec.md\n  State: Created -> Specified\n2026-10-17T10:28:02.327282Z  INFO specify completed command=\"specify\" slug=recovery-journey elapsed_ms=18\n",
+  "subject_root": "/private/var/folders/wl/z8733y815nzg28yy0_1_lh7w0000gn/T/pytest-of-kooshapari/pytest-4/test_real_core_late_start_rest0/subject",
+  "grpc_address": "127.0.0.1:58738",
+  "observations": [
+    {
+      "stage": "mcp_before_core",
+      "health": {
+        "status": "unhealthy",
+        "live": true,
+        "ready": false,
+        "mcp_server": "ok",
+        "grpc_core": "unreachable",
+        "version": "0.1.0",
+        "error": "gRPC call failed after 3 retries"
+      }
+    },
+    {
+      "stage": "late_core",
+      "health": {
+        "status": "healthy",
+        "mcp_server": "ok",
+        "grpc_core": "ok",
+        "version": "0.1.0",
+        "live": true,
+        "ready": true
+      },
+      "feature": {
+        "id": 1,
+        "slug": "recovery-journey",
+        "friendly_name": "Recovery Journey",
+        "state": "specified",
+        "target_branch": "main",
+        "created_at": "2026-10-17T10:28:02.321829+00:00",
+        "updated_at": "2026-10-17T10:28:02.322601+00:00",
+        "wp_count": 0,
+        "wp_done": 0
+      },
+      "dashboard": {
+        "feature_counts": {
+          "specified": 1
+        },
+        "active_work_packages": [],
+        "recent_audit_entries": [
+          {
+            "id": 1,
+            "feature_slug": "recovery-journey",
+            "wp_sequence": 0,
+            "timestamp": "2026-10-17T10:28:02.325803+00:00",
+            "actor": "user",
+            "transition": "Created -> Specified",
+            "evidence_refs": [],
+            "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+            "hash": "254c18d857e568f0017799378c756693bdb27fb6d7cd758658bcbe187f40cf96"
+          }
+        ],
+        "health": "healthy"
+      }
+    },
+    {
+      "stage": "core_stopped",
+      "health": {
+        "status": "unhealthy",
+        "live": true,
+        "ready": false,
+        "mcp_server": "ok",
+        "grpc_core": "unreachable",
+        "version": "0.1.0",
+        "error": "gRPC call failed after 3 retries"
+      }
+    },
+    {
+      "stage": "core_restarted_same_mcp_session",
+      "health": {
+        "status": "healthy",
+        "mcp_server": "ok",
+        "grpc_core": "ok",
+        "version": "0.1.0",
+        "live": true,
+        "ready": true
+      },
+      "feature": {
+        "id": 1,
+        "slug": "recovery-journey",
+        "friendly_name": "Recovery Journey",
+        "state": "specified",
+        "target_branch": "main",
+        "created_at": "2026-10-17T10:28:02.321829+00:00",
+        "updated_at": "2026-10-17T10:28:02.322601+00:00",
+        "wp_count": 0,
+        "wp_done": 0
+      },
+      "dashboard": {
+        "feature_counts": {
+          "specified": 1
+        },
+        "active_work_packages": [],
+        "recent_audit_entries": [
+          {
+            "id": 1,
+            "feature_slug": "recovery-journey",
+            "wp_sequence": 0,
+            "timestamp": "2026-10-17T10:28:02.325803+00:00",
+            "actor": "user",
+            "transition": "Created -> Specified",
+            "evidence_refs": [],
+            "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+            "hash": "254c18d857e568f0017799378c756693bdb27fb6d7cd758658bcbe187f40cf96"
+          }
+        ],
+        "health": "healthy"
+      }
+    }
+  ],
+  "user_validation": "NOT_RUN",
+  "scope": "local cached Rust artifacts plus new canonical Python candidate",
+  "candidate_base_sha": "00397a5948698ee9c22bcbcc9c7a70d03d24010a",
+  "candidate_branch": "fix/mcp-core-readiness-recovery",
+  "candidate_files": {
+    "python/src/agileplus_mcp/grpc_client.py": "546227931cd221e7bb3bec33c5046112c6ff6093e6f8fd66fa0a4355e4b1f418",
+    "python/src/agileplus_mcp/server.py": "d9f4fd59be6fc4cab21cf5c11f35a76937f823290409b89af23e735779ab2cc3",
+    "python/src/agileplus_mcp/compatibility.py": "ca8250f3f11c9892c30ddd6a93c36ba309f075e61627989a7880ed1a0961b7fd",
+    "python/tests/test_grpc_recovery.py": "a1721fb459c1295a44f0ee85a5a45aab3fff65102245a91bab697cb929863b90",
+    "python/tests/test_core_process_recovery.py": "8e318337bad1bb3fd3170b9555eb40dba7fa7448bfc32593b761b2a8a3d45163",
+    "python/tests/test_grpc_client_contracts.py": "2e23344d43a3ef9c5a14b607cafef677e11e478bf4a09af5a5746c3642bca13e"
+  },
+  "test_result": {
+    "command": "uv run --project python pytest python/tests",
+    "passed": 91,
+    "skipped": 10,
+    "failed": 0,
+    "duration_seconds": 8.5
+  },
+  "lint_result": {
+    "command": "uvx ruff check python/",
+    "result": "PASS"
+  },
+  "review": "PENDING independent reviewer",
+  "axes": {
+    "implementation": null,
+    "verified_engineering": null,
+    "usable_journey": null,
+    "reason": "owner-held denominator and review not reduced by SOURCE_REPORT"
+  },
+  "placement": "all on device; Python and cached Rust artifacts",
+  "rust_gates": "NOT_RUN; no Rust source changed",
+  "schema_authority_sha": "05e163820f1a207f2f827a5485ce6ca04084107f"
+}
