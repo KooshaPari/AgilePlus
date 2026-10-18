@@ -1,7 +1,7 @@
 {
-  "snapshot_id": "ap-sfd-2026-10-18T09-47Z@storage-hygiene-fix-cohort",
-  "_previous_snapshot_id": "ap-sfd-2026-10-18T09-39Z@cheap-close-bulk-plus-usability-cohort",
-  "_delta_reason": "Cohort storage-hygiene-fix: gecko subagent (session_penguin_1792316532003_8ac0bf81ce91ea5e; 261s) diagnosed and fixed the local agileplus.db corruption. Root cause: 5 rows (1 features.id=1, 4 backlog_items.id=1..4) had `updated_at` stored as SQLite TEXT form 'YYYY-MM-DD HH:MM:SS' instead of RFC3339, causing row_to_feature (features.rs:36-87) and row_to_backlog_item (backlog.rs:71) parse::<chrono::DateTime<Utc>>() to fail, wrapped as FromSqlConversionFailure(7|10, Type::Text). Fix: UPDATE features/backlog_items SET updated_at = created_at WHERE NOT rfc3339. Pre-fix backup at .agileplus/agileplus.db.bak-pre-fix-1792316706. Re-test: agileplus list exit 0 (1 row: portage-fork-clean-followups), agileplus queue list exit 0 (4 items), PRAGMA integrity_check ok. This unlocks both B.3/B.4 Usability (PARTIAL→PASS) and B.6/B.7 Storage Hygiene (NOT_RUN→PASS). Implementation dim: PASS 32→33. Usability dim: PARTIAL 5→4, PASS 4→5, NOT_RUN 13→12. cells_pass_any: 47/256→49/256. cells_pass_meaningful: 47/150→49/150. cheap_closes_resolved: 6/11→8/11. Snapshot ID bumped to storage-hygiene-fix-cohort.",
+  "snapshot_id": "ap-sfd-2026-10-18T10-00Z@bx-source-findings-cohort",
+  "_previous_snapshot_id": "ap-sfd-2026-10-18T09-47Z@storage-hygiene-fix-cohort",
+  "_delta_reason": "Cohort bx-source-findings: newt subagent (session_shark_1792317065533_7afdcc8911bfe858; 210s) investigated gecko's carry-forward (find source of non-RFC3339 updated_at binding). Verdict: CLOSED-PARTIAL. The 5 corrupt rows in .agileplus/agileplus.db were NOT written by any current Rust source-line binding. ALL 14 repository UPDATE bindings audited in crates/agileplus-sqlite/src/repository/*.rs and desktop/src-tauri/src/work_packages.rs use chrono::Utc::now().to_rfc3339() (valid RFC3339). The actual root cause is upstream: commit ea5a517a (2026-08-07 10:43:57 UTC, 'chore: resolve dashboard Cargo.toml merge conflict') overwrote .agileplus/agileplus.db (binary, 532480 bytes) wholesale with a local copy that already contained 5 corrupt rows from a prior dev session. The corruption was carried in via binary file replacement, not Rust code. Pattern has happened before: dc5c4006 was 'fix: correct Vale action syntax and remove accidentally committed .agileplus/ directory (#866)'. The durable fix is gitignore the tracked DB + add a pre-commit hook to reject non-RFC3339 rows in committed DBs; filed as B.y follow-up (eta 30m, opens 1 PR). .agileplus/ is already in .gitignore but the DB was already tracked at the time gitignore was added, so it remains in `git ls-files .agileplus/`. No Rust source line needs fixing. cells_pass_any unchanged (no new PASS cells). cheap_closes_resolved: 7/12→8/14 (B.x added as CLOSED-PARTIAL). B.y added as OPEN.",
   "head_sha": "70d435d0",
   "branch": "docs/state-forward-docket-20261017",
   "workspace_members": 38,
@@ -316,6 +316,27 @@
       "verdict": "PASS",
       "rows_fixed": 5,
       "tables_affected": ["features", "backlog_items"]
+    },
+    {
+      "cell": "B.x follow-up: find source of non-RFC3339 updated_at",
+      "move": "grep codebase for `UPDATE ... SET updated_at` bindings that pass a non-RFC3339 string",
+      "eta_min": 15,
+      "note": "CLOSED-PARTIAL 2026-10-18T09:58:14Z by newt subagent (210s wall-clock). No Rust source line is the culprit. ALL repository UPDATE bindings in crates/agileplus-sqlite/src/repository/*.rs and desktop/src-tauri/src/work_packages.rs use chrono::Utc::now().to_rfc3339() (valid RFC3339). Root cause is upstream: commit ea5a517a (2026-08-07 10:43:57 UTC, 'chore: resolve dashboard Cargo.toml merge conflict') overwrote .agileplus/agileplus.db (binary, 532480 bytes) with a local copy that had 5 corrupt rows. The 5 rows were carried in via the binary replacement, not written by any current Rust source-line binding. gecko's UPDATE fix is durable for those 5 rows; the durable fix for future corruption is gitignore the tracked DB + add a pre-commit hook to reject non-RFC3339 rows. Filed as B.y follow-up. Cell movement: NOT_RUN → CLOSED-PARTIAL.",
+      "closed_by": "newt subagent (CLOSED-PARTIAL, session_shark_1792317065533_7afdcc8911bfe858)",
+      "closed_at": "2026-10-18T09:58:14Z",
+      "evidence_file": "docs/sessions/20261017-state-forward-docket/bx_updated_at_2026-10-18-newt-result.md",
+      "verdict": "CLOSED-PARTIAL",
+      "rust_source_lines_audited": 14,
+      "rust_source_uses_to_rfc3339_everywhere": true,
+      "upstream_source": "commit ea5a517a (2026-08-07 10:43:57 UTC) binary replacement of .agileplus/agileplus.db"
+    },
+    {
+      "cell": "B.y: gitignore tracked .agileplus/*.db + pre-commit hook to reject non-RFC3339 rows",
+      "move": "git rm --cached .agileplus/agileplus.db; add .agileplus/*.db to .gitignore; add .agileplus/*.db-* patterns; create .githooks/pre-commit-validate-timestamps that scans any staged .agileplus/*.db for non-RFC3339 updated_at rows and rejects; wire into core.hooksPath; open 1 PR",
+      "eta_min": 30,
+      "note": "FILED 2026-10-18T09:58:14Z as carry-forward from newt's B.x finding. .agileplus/ is already in .gitignore (line: .agileplus/) but the DB was already tracked at the time gitignore was added, so gitignore does not untrack it. Currently `git ls-files .agileplus/` shows .agileplus/agileplus.db as still tracked. Pattern has happened before: dc5c4006 was 'fix: correct Vale action syntax and remove accidentally committed .agileplus/ directory (#866)'. Concrete plan: (1) `git rm --cached .agileplus/agileplus.db` to untrack; (2) confirm .agileplus/ is in .gitignore (it is, but might need .agileplus/*.db explicit line); (3) add .githooks/pre-commit-validate-timestamps that uses sqlite3 to SELECT name FROM sqlite_master WHERE type='table' AND sql LIKE '%updated_at%' then SELECT * FROM <table> WHERE updated_at NOT GLOB '*T*' AND updated_at IS NOT NULL; (4) wire via core.hooksPath or as a lefthook/local hook; (5) open 1 PR. Could be combined with F.3 doc gaps as 1 PR with 6 new files: 1 .gitignore change + 1 hook + 4 doc files. Estimated 30m wall-clock for a subagent (single subagent task, no operators needed).",
+      "source": "newt subagent 2026-10-18T09:58:14Z carry-forward (B.x CLOSED-PARTIAL)",
+      "verdict": "OPEN"
     },
     {
       "cell": "D.3 Implementation",
@@ -828,5 +849,44 @@
     "result_file": "/tmp/b67_storage_2026-10-18-result.md (7808 bytes, 116 lines)",
     "log_file": "/tmp/b67_storage_2026-10-18.log (29635 bytes, 692 lines)",
     "evidence_durable_copy": "docs/sessions/20261017-state-forward-docket/b67_storage_2026-10-18-gecko-result.md"
+  },
+  "bx_source_findings_2026-10-18-newt": {
+    "subagent_session": "session_shark_1792317065533_7afdcc8911bfe858",
+    "subagent_label": "newt",
+    "dispatched_at": "2026-10-18T09:51:05Z",
+    "delivered_at": "2026-10-18T09:58:14Z",
+    "wall_clock_seconds": 210,
+    "verdict": "CLOSED-PARTIAL",
+    "carry_forward": "B.y: gitignore tracked .agileplus/*.db + pre-commit hook to reject non-RFC3339 rows (eta 30m, opens 1 PR)",
+    "cells": ["B.x follow-up: find source of non-RFC3339 updated_at (NOT_RUN → CLOSED-PARTIAL)"],
+    "rust_source_audit": {
+      "bindings_audited": 14,
+      "all_use_to_rfc3339": true,
+      "all_correct": true,
+      "files_audited": [
+        "crates/agileplus-sqlite/src/repository/modules/crud.rs:75-78",
+        "crates/agileplus-sqlite/src/repository/users.rs:101,116",
+        "crates/agileplus-sqlite/src/repository/epics.rs:133-136",
+        "crates/agileplus-sqlite/src/repository/backlog.rs:229,243",
+        "crates/agileplus-sqlite/src/repository/stories.rs:146",
+        "crates/agileplus-sqlite/src/repository/cycles/mod.rs:64",
+        "crates/agileplus-sqlite/src/repository/features.rs:158",
+        "crates/agileplus-sqlite/src/repository/work_packages.rs:188-191",
+        "crates/agileplus-sqlite/src/repository/acceptance/mod.rs:170,191",
+        "crates/agileplus-sqlite/src/repository/promotion.rs:187",
+        "desktop/src-tauri/src/work_packages.rs:96,106,112"
+      ]
+    },
+    "root_cause": "5 corrupt rows were carried in via binary file replacement, NOT written by any current Rust source-line binding. The upstream culprit is commit ea5a517a (2026-08-07 10:43:57 UTC) which overwrote .agileplus/agileplus.db (binary, 532480 bytes) wholesale with a local copy that already contained the 5 corrupt rows. Pattern has happened before: dc5c4006 was 'fix: correct Vale action syntax and remove accidentally committed .agileplus/ directory (#866)'. Pre-corruption local copy would only exist in operator's local git stash or working tree from 2026-08-07 ~10:43, outside subagent scope.",
+    "upstream_corroboration": {
+      "commit_ea5a517a_timestamp": "2026-08-07 03:43:57 -0700 = 10:43:57 UTC",
+      "matches_corruption_window": true,
+      "only_file_changed": ".agileplus/agileplus.db (binary, 532480 → 532480 bytes, 0 insertions, 0 deletions)",
+      "prior_clean_state": "3bfd04cb feat(dashboard): wire Plane.so settings, agent sessions, and absorbed frontend attempts (#927) at 2026-08-06"
+    },
+    "durable_fix_recommendation": "No Rust source line to change. The corruption is already gone (gecko dispatch 2026-10-18T09:46:39Z UPDATE'd the 5 rows). The durable fix is:\n1. `git rm --cached .agileplus/agileplus.db` to untrack\n2. Confirm `.agileplus/*.db` is in `.gitignore` (currently `.agileplus/` is in .gitignore but does not retroactively untrack the already-tracked DB)\n3. Add `.githooks/pre-commit-validate-timestamps` that uses sqlite3 to scan any staged .agileplus/*.db for non-RFC3339 updated_at rows and rejects the commit\n4. Wire via `core.hooksPath` or as a lefthook/local hook\n5. Open 1 PR",
+    "result_file": "/tmp/bx_updated_at_2026-10-18-result.md (8577 bytes, 123 lines)",
+    "log_file": "/tmp/bx_updated_at_2026-10-18.log (117313 bytes, 692 lines)",
+    "evidence_durable_copy": "docs/sessions/20261017-state-forward-docket/bx_updated_at_2026-10-18-newt-result.md"
   }
 }
