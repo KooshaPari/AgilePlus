@@ -1,7 +1,7 @@
 {
-  "snapshot_id": "ap-sfd-2026-10-18T01-42Z@owl-cargo-warm-cohort",
-  "_previous_snapshot_id": "ap-sfd-2026-10-17T23-08Z@cargo-cohort",
-  "_delta_reason": "Owl cargo warm-cache audit subagent (session_vole_1792286565393_45ef575c308938d9, 2026-10-18T01:39Z) ran 4 cargo commands. A.4 / E.9 Validation: UNKNOWN→FAIL (cargo test --workspace: 5515 passed, 1 failed in agileplus-cli at mvp.rs:626 — panics on `/bin/true` ENOENT; macOS has `/usr/bin/true` only, portability bug not a logic bug). E.20 / G20 Validation: re-validated FAIL (cargo deny: advisories FAILED with 3 NEW unmaintained advisories RUSTSEC-2026-0370/0371/0372 about zvariant/zbus_names/zvariant_derive via zbus→keyring→agileplus-domain; existing RUSTSEC-2024-0429 macOS-ignore still intentional). E.19 / G19 Validation: cold + warm-cache llvm-cov not executed in 35-min budget (task 2 SKIPPED); verdict remains NOT_RUN. cargo clippy --workspace --all-targets: PASS (exit 0, 5m 05s, zero warnings, zero errors — fresh lint baseline established).",
+  "snapshot_id": "ap-sfd-2026-10-18T07-25Z@ci-blockers-plus-coverage-attempted",
+  "_previous_snapshot_id": "ap-sfd-2026-10-18T06-50Z@ci-blockers-cohort",
+  "_delta_reason": "Cohort 2: ci-blockers integrated (E.20 Val FAIL\u2192PARTIAL via PR #1157). Cohort 3-attempted: sloth llvm-cov run hit ENOSPC at 06:43:43Z (disk 100% full). E.19 Val remains NOT_RUN; re-attempt requires disk cleanup. Snapshot ID bumped to ci-blockers-plus-coverage-attempted to record the infrastructure failure as a captured observation, not a silent skip.",
   "head_sha": "8179b549",
   "branch": "docs/state-forward-docket-20261017",
   "workspace_members": 38,
@@ -11,8 +11,20 @@
     "tests_read": 29,
     "distinct_cases_bound_STRONG": 5,
     "distinct_cases_bound_ADJACENT": 5,
-    "strong_case_ids": ["AP-RVC-057", "AP-RVC-081", "AP-VC-028", "AP-VC-008", "AP-VC-009"],
-    "adjacent_case_ids": ["AP-VC-002", "AP-VC-038", "AP-VC-034", "AP-RVC-049", "AP-RVC-056"],
+    "strong_case_ids": [
+      "AP-RVC-057",
+      "AP-RVC-081",
+      "AP-VC-028",
+      "AP-VC-008",
+      "AP-VC-009"
+    ],
+    "adjacent_case_ids": [
+      "AP-VC-002",
+      "AP-VC-038",
+      "AP-VC-034",
+      "AP-RVC-049",
+      "AP-RVC-056"
+    ],
     "headline_movement_when_schema_bumps_to_0_5_0": {
       "before": "0/92 cases executed_with_witness",
       "after": "5/92 cases executed_with_witness + 5/92 cases partial_witness_adjacent"
@@ -26,24 +38,57 @@
     "E_gates": 20,
     "total_intent_rows": 64
   },
-  "dimensions": ["Implementation", "Usability", "Validation", "Assurance"],
+  "dimensions": [
+    "Implementation",
+    "Usability",
+    "Validation",
+    "Assurance"
+  ],
   "total_cells": 256,
   "dimension_breakdown": {
     "Implementation": {
-      "PASS": 32, "PARTIAL": 6, "FAIL": 4, "NOT_RUN": 11, "UNKNOWN": 2,
-      "STALE": 1, "NOT_APPLICABLE": 1, "dim_not_meaningful": 7, "total": 64
+      "PASS": 32,
+      "PARTIAL": 6,
+      "FAIL": 4,
+      "NOT_RUN": 11,
+      "UNKNOWN": 2,
+      "STALE": 1,
+      "NOT_APPLICABLE": 1,
+      "dim_not_meaningful": 7,
+      "total": 64
     },
     "Usability": {
-      "PASS": 4, "PARTIAL": 4, "FAIL": 12, "NOT_RUN": 14, "UNKNOWN": 4,
-      "STALE": 1, "NOT_APPLICABLE": 1, "dim_not_meaningful": 24, "total": 64
+      "PASS": 4,
+      "PARTIAL": 4,
+      "FAIL": 12,
+      "NOT_RUN": 14,
+      "UNKNOWN": 4,
+      "STALE": 1,
+      "NOT_APPLICABLE": 1,
+      "dim_not_meaningful": 24,
+      "total": 64
     },
     "Validation": {
-      "PASS": 7, "PARTIAL": 4, "FAIL": 5, "NOT_RUN": 37, "UNKNOWN": 2,
-      "STALE": 0, "NOT_APPLICABLE": 0, "dim_not_meaningful": 9, "total": 64
+      "PASS": 7,
+      "PARTIAL": 5,
+      "FAIL": 4,
+      "NOT_RUN": 37,
+      "UNKNOWN": 2,
+      "STALE": 0,
+      "NOT_APPLICABLE": 0,
+      "dim_not_meaningful": 9,
+      "total": 64
     },
     "Assurance": {
-      "PASS": 3, "PARTIAL": 0, "FAIL": 0, "NOT_RUN": 0, "UNKNOWN": 0,
-      "STALE": 0, "NOT_APPLICABLE": 0, "dim_not_meaningful": 61, "total": 64
+      "PASS": 3,
+      "PARTIAL": 0,
+      "FAIL": 0,
+      "NOT_RUN": 0,
+      "UNKNOWN": 0,
+      "STALE": 0,
+      "NOT_APPLICABLE": 0,
+      "dim_not_meaningful": 61,
+      "total": 64
     }
   },
   "headline_counts": {
@@ -53,14 +98,21 @@
     "verification_cases_with_STRONG_witness": "5/92 (per CASE_BINDING_2026-10-17.md; AP-RVC-056 was downgraded from STRONG to ADJACENT after re-reading the case body)",
     "verification_cases_with_ADJACENT_witness": "5/92 (per CASE_BINDING_2026-10-17.md)",
     "requirements_runtime_verified": "0/67",
-    "ndr_items_with_target_witness": "3/10 (NDR-1, NDR-2, NDR-3 — NDR-3 closed by cargo build -p agileplus-desktop --release PASS at 2026-10-17T23:02Z)",
+    "ndr_items_with_target_witness": "3/10 (NDR-1, NDR-2, NDR-3 \u2014 NDR-3 closed by cargo build -p agileplus-desktop --release PASS at 2026-10-17T23:02Z)",
     "integration_surfaces_live": "1/11",
-    "gates_pass": "3/20 (G1, G4, +B.6/E.6 Validation closed by cargo test -p agileplus-events 2026-10-17T23:08Z)"
+    "gates_pass": "3/20 (G1, G4, +B.6/E.6 Validation closed by cargo test -p agileplus-events 2026-10-17T23:08Z)",
+    "cells_advanced_in_cohort": "0 PASS, 1 FAIL\u2192PARTIAL (E.20 / G20 Validation). E.19 attempt aborted by ENOSPC \u2014 no verdict movement."
   },
   "policy_reference": {
     "memory_id": "mem_1792275198980_10767103059655466859",
     "policy_file": "~/.jcode/memories/global/cockpit-progress-tree-policy.md",
-    "agents_md_harnesses": ["jcode", "codex", "forge", "kcode", "helioslite"]
+    "agents_md_harnesses": [
+      "jcode",
+      "codex",
+      "forge",
+      "kcode",
+      "helioslite"
+    ]
   },
   "evidence_files": {
     "raw": "docs/sessions/20261017-state-forward-docket/PROGRESS_TREE_RAW.md",
@@ -77,15 +129,43 @@
     "branch": "docs/state-forward-docket-20261017",
     "head_before": "61d921f7",
     "commands": [
-      {"id": 1, "name": "cargo test --workspace", "verdict": "KILLED (timeout/signal at 431s, SIGKILL); per-binary results: 130 test binaries completed before kill; total passed=5515, failed=1, ignored=0 across 15 crates seen; 1 failure in agileplus-cli mvp.rs:626 (macOS /bin/true portability bug)"},
-      {"id": 2, "name": "cargo llvm-cov --workspace --summary-only", "verdict": "SKIPPED (out of 35-min budget after task 1 was killed at 431s); warm cache partially built, no coverage report emitted"},
-      {"id": 3, "name": "cargo deny check", "verdict": "FAIL (advisories: 3 NEW RUSTSEC-2026-0370/0371/0372 unmaintained advisories for zvariant/zbus_names/zvariant_derive via zbus→keyring→agileplus-domain; 1 documented RUSTSEC-2024-0429 macOS-ignore intentional); bans/licenses/sources ok"},
-      {"id": 4, "name": "cargo clippy --workspace --all-targets", "verdict": "PASS (exit 0, 5m 05s, zero warnings, zero errors)"}
+      {
+        "id": 1,
+        "name": "cargo test --workspace",
+        "verdict": "KILLED (timeout/signal at 431s, SIGKILL); per-binary results: 130 test binaries completed before kill; total passed=5515, failed=1, ignored=0 across 15 crates seen; 1 failure in agileplus-cli mvp.rs:626 (macOS /bin/true portability bug)"
+      },
+      {
+        "id": 2,
+        "name": "cargo llvm-cov --workspace --summary-only",
+        "verdict": "SKIPPED (out of 35-min budget after task 1 was killed at 431s); warm cache partially built, no coverage report emitted"
+      },
+      {
+        "id": 3,
+        "name": "cargo deny check",
+        "verdict": "FAIL (advisories: 3 NEW RUSTSEC-2026-0370/0371/0372 unmaintained advisories for zvariant/zbus_names/zvariant_derive via zbus\u2192keyring\u2192agileplus-domain; 1 documented RUSTSEC-2024-0429 macOS-ignore intentional); bans/licenses/sources ok"
+      },
+      {
+        "id": 4,
+        "name": "cargo clippy --workspace --all-targets",
+        "verdict": "PASS (exit 0, 5m 05s, zero warnings, zero errors)"
+      }
     ],
     "cell_movements": [
-      {"cell": "A.4 / E.9 Validation", "from": "UNKNOWN", "to": "FAIL"},
-      {"cell": "E.20 / G20 Validation", "from": "FAIL", "to": "FAIL (re-validated, fresh evidence; 3 NEW unmaintained advisories recorded)"},
-      {"cell": "E.19 / G19 Validation", "from": "NOT_RUN", "to": "NOT_RUN (no change; warm-cache llvm-cov not run)"}
+      {
+        "cell": "A.4 / E.9 Validation",
+        "from": "UNKNOWN",
+        "to": "FAIL"
+      },
+      {
+        "cell": "E.20 / G20 Validation",
+        "from": "FAIL",
+        "to": "FAIL (re-validated, fresh evidence; 3 NEW unmaintained advisories recorded)"
+      },
+      {
+        "cell": "E.19 / G19 Validation",
+        "from": "NOT_RUN",
+        "to": "NOT_RUN (no change; warm-cache llvm-cov not run)"
+      }
     ],
     "regressions_detected": [
       {
@@ -98,10 +178,18 @@
       },
       {
         "type": "new_advisories",
-        "ids": ["RUSTSEC-2026-0370", "RUSTSEC-2026-0371", "RUSTSEC-2026-0372"],
+        "ids": [
+          "RUSTSEC-2026-0370",
+          "RUSTSEC-2026-0371",
+          "RUSTSEC-2026-0372"
+        ],
         "category": "unmaintained",
-        "affected_crates": ["zvariant", "zbus_names", "zvariant_derive"],
-        "transitive_path": "zbus → keyring → agileplus-domain",
+        "affected_crates": [
+          "zvariant",
+          "zbus_names",
+          "zvariant_derive"
+        ],
+        "transitive_path": "zbus \u2192 keyring \u2192 agileplus-domain",
         "mitigation": "no safe upgrade available per advisory; tracking zbus 6.0.0+ for upstream migration"
       }
     ]
@@ -111,38 +199,210 @@
     "model": "openai-compatible:MiniMax-M3",
     "completed_at": "2026-10-17T23:08Z",
     "commands": [
-      {"id": 1, "name": "cargo llvm-cov --workspace --summary-only", "verdict": "ABORTED (>20m cold-run timeout, no fresh coverage data); install: /Users/kooshapari/.cargo/bin/cargo-llvm-cov (confirmed)"},
-      {"id": 2, "name": "cargo deny check", "verdict": "FAIL (advisories: 1 documented RUSTSEC-2024-0429 macOS-ignore, intentional; tauri PR #16170 unlanded); bans/licenses/sources ok"},
-      {"id": 3, "name": "cargo test -p agileplus-events", "verdict": "PASS (20 tests passed, 0 failed, 0 ignored)"},
-      {"id": 4, "name": "cargo build -p agileplus-desktop --release", "verdict": "PASS (exit 0, 15m 29s)"},
-      {"id": "bonus", "name": "cargo test --workspace --no-run", "verdict": "PASS (exit 0, many test executables produced across 38 crates)"}
+      {
+        "id": 1,
+        "name": "cargo llvm-cov --workspace --summary-only",
+        "verdict": "ABORTED (>20m cold-run timeout, no fresh coverage data); install: /Users/kooshapari/.cargo/bin/cargo-llvm-cov (confirmed)"
+      },
+      {
+        "id": 2,
+        "name": "cargo deny check",
+        "verdict": "FAIL (advisories: 1 documented RUSTSEC-2024-0429 macOS-ignore, intentional; tauri PR #16170 unlanded); bans/licenses/sources ok"
+      },
+      {
+        "id": 3,
+        "name": "cargo test -p agileplus-events",
+        "verdict": "PASS (20 tests passed, 0 failed, 0 ignored)"
+      },
+      {
+        "id": 4,
+        "name": "cargo build -p agileplus-desktop --release",
+        "verdict": "PASS (exit 0, 15m 29s)"
+      },
+      {
+        "id": "bonus",
+        "name": "cargo test --workspace --no-run",
+        "verdict": "PASS (exit 0, many test executables produced across 38 crates)"
+      }
     ],
     "cell_movements": [
-      {"cell": "B.6 / E.6 Validation", "from": "NOT_RUN", "to": "PASS"},
-      {"cell": "D.3 / NDR-3 Implementation", "from": "UNKNOWN", "to": "PASS"},
-      {"cell": "E.19 / G19 Validation", "from": "NOT_RUN", "to": "NOT_RUN (no change; cold-run aborted, no fresh data)"},
-      {"cell": "E.20 / G20 Validation", "from": "FAIL", "to": "FAIL (no change; re-validated, advisory-not-detected is intentional macOS ignore)"}
+      {
+        "cell": "B.6 / E.6 Validation",
+        "from": "NOT_RUN",
+        "to": "PASS"
+      },
+      {
+        "cell": "D.3 / NDR-3 Implementation",
+        "from": "UNKNOWN",
+        "to": "PASS"
+      },
+      {
+        "cell": "E.19 / G19 Validation",
+        "from": "NOT_RUN",
+        "to": "NOT_RUN (no change; cold-run aborted, no fresh data)"
+      },
+      {
+        "cell": "E.20 / G20 Validation",
+        "from": "FAIL",
+        "to": "FAIL (no change; re-validated, advisory-not-detected is intentional macOS ignore)"
+      }
     ]
   },
   "cheap_closes": [
-    {"cell": "A.4 / E.19 Validation", "move": "cargo llvm-cov --workspace --summary-only --fail-under 85", "eta_min": 15, "note": "ABORTED at >20m on 2026-10-17T23:08Z; warm-cache rerun SKIPPED 2026-10-18T01:39Z (owl subagent budget)"},
-    {"cell": "A.4 / E.20 Validation", "move": "cargo deny check advisories sources licenses bans", "eta_min": 5, "note": "RE-VALIDATED FAIL on 2026-10-18T01:33Z; 1 documented RUSTSEC-2024-0429 macOS-ignore + 3 NEW unmaintained advisories RUSTSEC-2026-0370/371/372 (zvariant/zbus_names/zvariant_derive via zbus→keyring→agileplus-domain); no safe upgrade per advisory"},
-    {"cell": "A.4 / E.9 Validation", "move": "fix mvp.rs:619 /bin/true → /usr/bin/true (or Rust-native), then re-run cargo test -p agileplus-cli --lib", "eta_min": 5, "note": "NEW REGRESSION 2026-10-18T01:42Z; macOS Sequoia has /usr/bin/true only; this is a portability bug, not a logic bug; one-line fix in 1 file"},
-    {"cell": "B.5 case-level", "move": "bind 4 atomic_acceptance*.rs test names to AP-VC-* ids; edit cases file", "eta_min": 30},
-    {"cell": "B.6 / E.6 Validation", "move": "cargo test -p agileplus-events --test event_store_tests + replay_tests + proptest_audit", "eta_min": 5, "note": "CLOSED 2026-10-17T23:08Z by cargo audit subagent (20 tests pass, 0 failed)"},
-    {"cell": "B.3 / B.4 Usability", "move": "smoke-run agileplus CLI", "eta_min": 10},
-    {"cell": "D.3 Implementation", "move": "cargo build -p agileplus-desktop --release; record --help exit", "eta_min": 5, "note": "CLOSED 2026-10-17T23:02Z by cargo audit subagent (exit 0, 15m 29s)"},
-    {"cell": "D.3 Validation", "move": "restart agileplus-api, observe atomic_acceptance_sqlite reopen", "eta_min": 10},
-    {"cell": "E.2 / E.5 Validation", "move": "run P1+P2 command list from FORWARD_WBS_2026-10-04.md", "eta_min": 120},
-    {"cell": "F.3 doc gaps", "move": "open 1 docs PR with 6 new files (RISK_REGISTER, COVERAGE_REPORT, DASHBOARD_PROD_OBSERVED, etc.)", "eta_min": 30}
+    {
+      "cell": "A.4 / E.19 Validation",
+      "move": "cargo llvm-cov --workspace --summary-only --fail-under 85",
+      "eta_min": 15,
+      "note": "ABORTED at >20m on 2026-10-17T23:08Z; warm-cache rerun SKIPPED 2026-10-18T01:39Z (owl subagent budget)"
+    },
+    {
+      "cell": "A.4 / E.20 Validation",
+      "move": "cargo deny check advisories sources licenses bans",
+      "eta_min": 5,
+      "note": "RE-VALIDATED FAIL\u2192PARTIAL on 2026-10-18T06:48Z by parrot subagent (PR #1157 commit 070babcd). 3 newly-ignored RUSTSEC-2026-0370/0371/0372 advisories silenced; cargo deny check exits 0. PARTIAL retained (not PASS) because advisories still exist (only their acceptance is declared). Re-evaluate to PASS when zbus 6.0.0+ upstream migration lands. Re-validation block in ci_blockers_fix_2026-10-18.",
+      "mitigation_pr": 1157,
+      "mitigation_commit": "070babcd8320a4a51bb48b109ec36af9b8f0ca98"
+    },
+    {
+      "cell": "A.4 / E.9 Validation",
+      "move": "fix mvp.rs:619 /bin/true \u2192 /usr/bin/true (or Rust-native), then re-run cargo test -p agileplus-cli --lib",
+      "eta_min": 5,
+      "note": "NEW REGRESSION 2026-10-18T01:42Z; macOS Sequoia has /usr/bin/true only; this is a portability bug, not a logic bug; one-line fix in 1 file"
+    },
+    {
+      "cell": "B.5 case-level",
+      "move": "bind 4 atomic_acceptance*.rs test names to AP-VC-* ids; edit cases file",
+      "eta_min": 30
+    },
+    {
+      "cell": "B.6 / E.6 Validation",
+      "move": "cargo test -p agileplus-events --test event_store_tests + replay_tests + proptest_audit",
+      "eta_min": 5,
+      "note": "CLOSED 2026-10-17T23:08Z by cargo audit subagent (20 tests pass, 0 failed)"
+    },
+    {
+      "cell": "B.3 / B.4 Usability",
+      "move": "smoke-run agileplus CLI",
+      "eta_min": 10
+    },
+    {
+      "cell": "D.3 Implementation",
+      "move": "cargo build -p agileplus-desktop --release; record --help exit",
+      "eta_min": 5,
+      "note": "CLOSED 2026-10-17T23:02Z by cargo audit subagent (exit 0, 15m 29s)"
+    },
+    {
+      "cell": "D.3 Validation",
+      "move": "restart agileplus-api, observe atomic_acceptance_sqlite reopen",
+      "eta_min": 10
+    },
+    {
+      "cell": "E.2 / E.5 Validation",
+      "move": "run P1+P2 command list from FORWARD_WBS_2026-10-04.md",
+      "eta_min": 120
+    },
+    {
+      "cell": "F.3 doc gaps",
+      "move": "open 1 docs PR with 6 new files (RISK_REGISTER, COVERAGE_REPORT, DASHBOARD_PROD_OBSERVED, etc.)",
+      "eta_min": 30
+    },
+    {
+      "cell": "A.4 / E.9 Validation",
+      "move": "merge PR #1156 (mvp.rs:619 /bin/true \u2192 /usr/bin/true via parse_csv(\"true\")), then re-run cargo test -p agileplus-cli --lib on default",
+      "eta_min": 5,
+      "note": "NEW REGRESSION from owl cohort (2026-10-18T01:42Z). mvp.rs:619 hardcodes /bin/true (Linux path); macOS has /usr/bin/true only. PR #1156 (snail subagent, commit 39ee805b, off main) ready and unmerged as of 2026-10-18T06:50Z. The fix uses Command::new(\"true\") via parse_csv(\"true\") for PATH-based lookup. Merge PR #1156 to clear this entry.",
+      "fix_pr": 1156,
+      "fix_commit": "39ee805b",
+      "fix_status": "OPEN"
+    }
   ],
   "operator_gated": [
-    {"cell": "A.7 Usability (NATS/MinIO/Neo4j)", "reason": "operator must start dormant homebrew binaries and provision S3 client"},
-    {"cell": "A.9 / A.10 Risk register", "reason": "no central file; operator convening authority"},
-    {"cell": "D.4-D.10 Validation (6/10 NDR)", "reason": "Tailscale provisioning + Vercel team access + Windows deploy creds"},
-    {"cell": "E.7 / E.8 / E.13 / E.17 production", "reason": "Vercel deploy + PLANE_API_KEY env + reachable URL"},
-    {"cell": "E.9 GitHub live", "reason": "GITHUB_TOKEN + actual repo to list"},
-    {"cell": "Cargo registry semver", "reason": "operator publish decision (agileplus-agent-dispatch unpublished)"},
-    {"cell": "Vercel team-scope access", "reason": "FORWARD_DELTA: scoped deployment inspection returned 403"}
-  ]
+    {
+      "cell": "A.7 Usability (NATS/MinIO/Neo4j)",
+      "reason": "operator must start dormant homebrew binaries and provision S3 client"
+    },
+    {
+      "cell": "A.9 / A.10 Risk register",
+      "reason": "no central file; operator convening authority"
+    },
+    {
+      "cell": "D.4-D.10 Validation (6/10 NDR)",
+      "reason": "Tailscale provisioning + Vercel team access + Windows deploy creds"
+    },
+    {
+      "cell": "E.7 / E.8 / E.13 / E.17 production",
+      "reason": "Vercel deploy + PLANE_API_KEY env + reachable URL"
+    },
+    {
+      "cell": "E.9 GitHub live",
+      "reason": "GITHUB_TOKEN + actual repo to list"
+    },
+    {
+      "cell": "Cargo registry semver",
+      "reason": "operator publish decision (agileplus-agent-dispatch unpublished)"
+    },
+    {
+      "cell": "Vercel team-scope access",
+      "reason": "FORWARD_DELTA: scoped deployment inspection returned 403"
+    }
+  ],
+  "ci_blockers_fix_2026-10-18": {
+    "subagent": "session_parrot_1792305596368_207d32154b333d75",
+    "label": "parrot (CI blockers fix)",
+    "model": "openai-compatible:MiniMax-M3",
+    "completed_at": "2026-10-18T06:48Z",
+    "branch": "fix/ci-blockers-allow-dirty-zbus-ignore",
+    "head_before": "00397a5948698ee9c22bcbcc9c7a70d03d24010a",
+    "commit": "070babcd8320a4a51bb48b109ec36af9b8f0ca98",
+    "pr": 1157,
+    "pr_url": "https://github.com/KooshaPari/AgilePlus/pull/1157",
+    "diff_stat": "Cargo.toml +5, deny.toml +3 (8 insertions, 0 deletions)",
+    "commands": [
+      {
+        "cmd": "cargo dist plan --output-format=json",
+        "exit": 0,
+        "evidence": "valid dist-manifest.json emitted, post-fix with `allow-dirty = [\"ci\"]`"
+      },
+      {
+        "cmd": "cargo deny check advisories",
+        "exit": 0,
+        "evidence": "3 newly-ignored RUSTSEC-2026-0370/0371/0372 silenced; pre-existing RUSTSEC-2024-0429 macOS-conditional pattern preserved"
+      },
+      {
+        "cmd": "cargo build -p agileplus-cli",
+        "exit": 0,
+        "evidence": "compiled clean in 74.84s, 0 errors"
+      },
+      {
+        "cmd": "cargo test -p agileplus-cli --lib",
+        "exit": 1,
+        "evidence": "765 pass / 1 fail (mvp.rs:619 /bin/true ENOENT \u2014 pre-existing, separately fixed in PR #1156)"
+      }
+    ],
+    "cell_movements": [
+      {
+        "cell": "E.20 / G20 Validation",
+        "before": "FAIL",
+        "after": "PARTIAL",
+        "evidence": "cargo deny check advisories exits 0 after the 3 new ignore entries; advisories no longer block the build. PARTIAL (not PASS) because the advisories still exist \u2014 only their acceptance is declared. RUSTSEC-2024-0429 still intentional macOS-conditional ignore. Re-evaluate to PASS when zbus 6.0.0+ upstream migration (keyring's Linux backend on zbus 6) lands."
+      }
+    ],
+    "regressions_detected": [
+      "No NEW regressions; the 1 mvp.rs test failure is a pre-existing portability bug (also seen on base branch with the patch stashed) that is out of scope for this fix and separately addressed in PR #1156."
+    ],
+    "ci_blockers_resolved": [
+      "PR #1151's plan check (cargo dist plan exit 255) \u2014 RESOLVED by `allow-dirty = [\"ci\"]` in Cargo.toml",
+      "PR #1151's cargo-deny check (3 NEW unmaintained advisories FAILED) \u2014 RESOLVED by adding 3 ignore entries to deny.toml"
+    ]
+  },
+  "llvm_cov_2026-10-18": {
+    "subagent": "sloth",
+    "session_id": "session_sloth_1792305067346_ccff4adf0fd0175a",
+    "model": "openai-compatible:MiniMax-M3",
+    "completed_at": "2026-10-18T06:43:43Z",
+    "outcome": "FAIL_INFRASTRUCTURE",
+    "failure_reason": "ENOSPC (errno 28) during cargo test --no-run --workspace on llvm-cov-target. Disk /Users/kooshapari was at 100% (1.3 GB free of 926 GB) at attempt time. ld linker write() failed in 3 places; cargo fell back to incremental-copy failures (os error 28). Compile-time at compile: agileplus-telemetry (logging_file_output_tests), agileplus-github (sync_adapter_tests), agileplus-cli (--test).",
+    "remediation": "Free disk space; llvm-cov-target dir weighs 2331 entries. Then re-run `cargo llvm-cov --workspace --summary-only` in a fresh subagent. Verdict on E.19 / G19 Val remains NOT_RUN.",
+    "verdict_impact": "E.19 / G19 Validation: NOT_RUN (unchanged from owl cohort). No new verdicts, no regression."
+  }
 }

@@ -1,6 +1,6 @@
 # Progress Tree — AgilePlus per-intent × per-dimension state
 
-**Snapshot identity:** `ap-sfd-2026-10-17T22-14Z@d6b418a6`
+**Snapshot identity:** `ap-sfd-2026-10-18T07-25Z@ci-blockers-plus-coverage-attempted`
 **HEAD at capture:** `d6b418a6 docs(sfd): correct 9a package names after cargo metadata cross-check` (branch `docs/state-forward-docket-20261017`)
 **Workspace members:** 38 (verified by `cargo metadata` at 22:12:26Z)
 **Mode:** evidence-cell tree; per-cell verdict + source. **No** percentage fabrication, **no** dimension collapse. Every non-`?` cell cites its source.
@@ -101,8 +101,8 @@ E.15 G15 8 Git+SQLite recovery witnesses  ✓ … ~ M   promotion_recovery 8/8 i
 E.16 G16 14+10 CLI ship witnesses         ✓ … ~ M   target-level on 00397a59
 E.17 G17 Real Chromium browser journey    ~ ✗ ~ M   CI run on f959fad53; prod FAIL
 E.18 G18 agileplus ship survives boundary ✓ … ~ M   saga exists
-E.19 G19 Coverage ≥85% on current HEAD    ? _ … L   cargo llvm-cov --workspace --summary-only cold-run aborted >20m (2026-10-17T23:08Z) AND warm-cache rerun not executed in 35-min budget (2026-10-18T01:39Z, owl subagent task 2 SKIPPED); no fresh coverage data; cargo clippy --workspace --all-targets is the only fresh evidence (clean, exit 0)
-E.20 G20 cargo deny + OSV clean           ? _ ✗ _   cargo deny: advisories FAILED (2026-10-18T01:33Z, owl subagent) — 1 documented RUSTSEC-2024-0429 macOS-ignore intentional (Linux-only tauri PR #16170) + 3 NEW unmaintained advisories: RUSTSEC-2026-0370 (zvariant), RUSTSEC-2026-0371 (zbus_names), RUSTSEC-2026-0372 (zvariant_derive); all via zbus→keyring→agileplus-domain transitive; bans/licenses/sources ok
+E.19 G19 Coverage ≥85% on current HEAD    ? _ … L   cargo llvm-cov --workspace --summary-only cold-run aborted >20m (2026-10-17T23:08Z); warm-cache rerun not executed in 35-min budget (2026-10-18T01:39Z, owl subagent task 2 SKIPPED); **fresh 06:43:43Z sloth run hit ENOSPC (disk /Users/kooshapari 100% full, 1.3 GB free)** — `cargo test --no-run --workspace` failed with `ld: write() failed, errno=28` and `os error 28: No space left on device` in 3 places (agileplus-telemetry logging_file_output_tests, agileplus-github sync_adapter_tests, agileplus-cli --test); verdict remains NOT_RUN; remediation: free disk space then re-dispatch sloth; cargo clippy --workspace --all-targets is the only fresh evidence (clean, exit 0)
+E.20 G20 cargo deny + OSV clean           ? _ ~ _   cargo deny: advisories PARTIAL (2026-10-18T06:48Z, parrot subagent) — 1 documented RUSTSEC-2024-0429 macOS-ignore intentional (Linux-only tauri PR #16170) + 3 newly-IGNORED RUSTSEC-2026-0370/0371/0372 (zvariant/zbus_names/zvariant_derive unmaintained-info via zbus→keyring→agileplus-domain); all 3 silenced via deny.toml ignore PR #1157 (commit 070babcd, open); bans/licenses/sources ok; PARTIAL (not PASS) because advisories still exist (only acceptance is declared); re-evaluate to PASS when zbus 6.0.0+ upstream migration lands
 ```
 
 ---
@@ -114,8 +114,8 @@ E.20 G20 cargo deny + OSV clean           ? _ ✗ _   cargo deny: advisories FAI
 | Verdict | Impl | Usab | Val | Assur | Total |
 |---|---|---|---|---|---|
 | ✓ PASS | 32 | 4 | 7 | 3 | **46** |
-| ~ PARTIAL | 6 | 4 | 4 | 0 | **14** |
-| ✗ FAIL | 4 | 12 | 5 | 0 | **21** |
+| ~ PARTIAL | 6 | 4 | 5 | 0 | **15** |
+| ✗ FAIL | 4 | 12 | 4 | 0 | **20** |
 | … NOT_RUN | 11 | 14 | 37 | 0 | **62** |
 | ? UNKNOWN | 2 | 4 | 2 | 0 | **8** |
 | S STALE | 1 | 1 | 0 | 0 | **2** |
@@ -135,7 +135,7 @@ E.20 G20 cargo deny + OSV clean           ? _ ✗ _   cargo deny: advisories FAI
 - **3 / 10** NDR items (NDR-1, NDR-2, NDR-3) have a parent-observed PASS witness at the **target** level.
 - **1 / 11** integration surfaces is wired for real (SQLite).
 - **1 / 5** Tracera-relevant surfaces (E11 / p2p crate exists but not running) is partially implemented.
-- **3 / 20** gates are clearly PASS (G1 = spec acceptance; G4 = P0 acceptance cohort; G19.Val? — coverage tool aborted, NOT_RUN remains; **E.20 still FAIL** — 1 documented macOS advisory-not-detected ignore + 3 NEW unmaintained advisories (RUSTSEC-2026-0370/371/372 zvariant/zbus_names/zvariant_derive via zbus→keyring→agileplus-domain). B.6 / E.6 Validation and D.3 / NDR-3 Implementation were closed by the cargo audit subagent on 2026-10-17T23:08Z; E.20 was re-validated on 2026-10-18T01:33Z (FAIL, no movement; 3 NEW unmaintained advisories recorded). **A.4 / E.9 Validation transitioned UNKNOWN→FAIL on 2026-10-18T01:42Z** (cargo test --workspace 1 fail: `agileplus-cli::commands::mvp::tests::wp_transition_requires_its_contract_evidence_before_mutation` at mvp.rs:626 — panics on `/bin/true` ENOENT; macOS has `/usr/bin/true` only). **E.19 Val still NOT_RUN**; warm-cache `cargo llvm-cov` rerun was budget-cut by owl subagent on 2026-10-18T01:39Z.
+- **3 / 20** gates are clearly PASS (G1 = spec acceptance; G4 = P0 acceptance cohort; G19.Val? — coverage tool aborted, NOT_RUN remains; **E.20 transitioned FAIL→PARTIAL on 2026-10-18T06:48Z** — 3 RUSTSEC-2026-0370/371/372 unmaintained advisories now silenced via deny.toml ignore (PR #1157, commit 070babcd, open); PARTIAL retained (not PASS) because the advisories still exist (only acceptance is declared). B.6 / E.6 Validation and D.3 / NDR-3 Implementation were closed by the cargo audit subagent on 2026-10-17T23:08Z; E.20 was re-validated on 2026-10-18T01:33Z (FAIL, 3 NEW advisories recorded) and again on 2026-10-18T06:48Z (PARTIAL, mitigations recorded). **A.4 / E.9 Validation transitioned UNKNOWN→FAIL on 2026-10-18T01:42Z** (cargo test --workspace 1 fail: `agileplus-cli::commands::mvp::tests::wp_transition_requires_its_contract_evidence_before_mutation` at mvp.rs:626 — panics on `/bin/true` ENOENT; macOS has `/usr/bin/true` only; fix is in PR #1156 / commit 39ee805b, open, unmerged). **E.19 Val still NOT_RUN**; warm-cache `cargo llvm-cov` rerun was budget-cut by owl subagent on 2026-10-18T01:39Z; **fresh sloth attempt at 2026-10-18T06:43:43Z hit ENOSPC** (disk 100% full) — see `llvm_cov_2026-10-18` block in PROGRESS_TREE.snapshot.json.
 
 > Per the cross-harness cockpit policy (memory `mem_1792275198980_10767103059655466859`, file `~/.jcode/memories/global/cockpit-progress-tree-policy.md`, adopted 2026-10-17T22:12Z), these counts are the **only** quantitative claims in this tree. They are **never** converted to percentages.
 
