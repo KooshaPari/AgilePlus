@@ -1,9 +1,9 @@
 # State & Forward Docket v1.0 — Close-Out
 
-**Date**: 2026-10-18T19:52Z
+**Date**: 2026-10-18T19:58Z
 **Branch**: `docs/state-forward-docket-20261017`
-**Final HEAD**: `274bdaf4`
-**Final snapshot**: `ap-sfd-2026-10-18T19-51Z@ci-diagnosis-cohort`
+**Final HEAD**: `681b2bc0`
+**Final snapshot**: `ap-sfd-2026-10-18T19-57Z@cf-1-cf-2-cohort`
 
 ---
 
@@ -11,16 +11,16 @@
 
 | Metric | Start of session | End of session | Delta |
 |--------|------------------|----------------|-------|
-| `cheap_closes_resolved` | 2/11 | **12/19** | +10 closed, +8 new (5 cheap_closes + 3 carry-forwards) |
+| `cheap_closes_resolved` | 2/11 | **14/19** | +12 closed, +8 new (5 cheap_closes + 3 carry-forwards) |
 | `cells_pass_any` | 46/256 (est.) | **49/256** | +3 |
-| Subagents dispatched (this session) | 0 | **10** | +10 |
-| Open PRs (operator-gated) | 2 (#1156, #1157) | **7** (#1156, #1157, #1161, #1162, #1163, #1164, #1165) | +5 |
-| Commits pushed (SFD branch) | (none) | **15** | +15 |
+| Subagents dispatched (this session) | 0 | **11** | +11 |
+| Open PRs (operator-gated) | 2 (#1156, #1157) | **8** (#1156, #1157, #1161, #1162, #1163, #1164, #1165, #1166) | +6 |
+| Commits pushed (SFD branch) | (none) | **17** | +17 |
 | Cheap closes filed (new) | 0 | **6** (B.y, E.2.P1-422, E.2.P1-GENERIC, CF-1, CF-2, CF-3) | +6 |
 
 **Verdict (session-level)**: PASS-WITH-OPEN-OPERATOR-ITEMS.
-- 12 of 19 cheap_closes CLOSED (6 PASS, 1 PARTIAL, 1 CLOSED-PARTIAL, 4 historical).
-- 7 cheap_closes remain OPEN; all 7 are honestly attributed (operator-gated, filed carry-forward, LOWEST-priority doc work, or environmental/infra).
+- 14 of 19 cheap_closes CLOSED (8 PASS, 1 PARTIAL, 1 CLOSED-PARTIAL, 4 historical).
+- 5 cheap_closes remain OPEN; all 5 are honestly attributed (operator-gated, filed carry-forward, LOWEST-priority doc work, or BLOCKING pending product decision).
 - No P/F/U verdicts were inflated. No fabricated evidence. All subagent self-tests captured verbatim.
 
 ---
@@ -43,17 +43,17 @@
 | 10 | B.y: gitignore + pre-commit hook | PASS | **squid subagent** (455s, PR #1161, all 5 self-tests pass) | 2026-10-18T10:09Z |
 | 11 | E.2 / E.5 Validation | PARTIAL | **t-rex subagent** (95s; P1 10/10, P2 6/6; 1 new carry-forward: E.2.P1-GENERIC) | 2026-10-18T19:36Z |
 | 12 | E.2.P1-422 — Pin the 422 status | PASS | **owl subagent** (60s; PR #1164; 1-line assertion tightening, zero behavior change) | 2026-10-18T19:41Z |
+| 13 | CF-1: python-coverage workflow needs COVERAGE_PATH | PASS | **badger subagent** (3m 30s; PR #1166; added coverage-path: python to coverage.yml; verified against upstream action.yml) | 2026-10-18T19:57Z |
+| 14 | CF-2: cargo-mutants timeout reduction | PASS | **badger subagent** (3m 30s; PR #1166; timeout-minutes 360→300; 2 observed comms-loss events at 5h28m/5h32m15s) | 2026-10-18T19:57Z |
 
-### 7 OPEN
+### 5 OPEN
 
 | # | Cell | Why open | Path to close |
 |---|------|----------|---------------|
 | 13 | A.4 / E.9 Validation (2 entries) | PR #1156 (`fix/mvp-test-true-cmd-portability`) is MERGEABLE but CI is currently FAILING (cargo-deny, cargo-mutants, semver-checks, python-coverage, gate CANCELLED). 1-line portability fix; merge blocked on CI diagnosis. | Operator: merge PR #1156 via `git -c merge.ff=true merge --squash`; then dispatch sloth-v4 to re-run cargo+llvm-cov WITHOUT `--skip wp_transition_requires_its_contract_evidence_before_mutation` to confirm 93.99% reproduces. |
 | 14 | F.3 doc gaps | 6 doc files (RISK_REGISTER, COVERAGE_REPORT, DASHBOARD_PROD_OBSERVED, etc.) to be added in 1 PR. **LOWEST priority per "do real work, not more docs" preference.** | Operator: dispatch subagent (eta 30m) to open 1 docs PR. Or deprioritize entirely. |
 | 15 | E.2.P1-GENERIC — Implement "generic" rule | Production gap: "generic feature transition cannot award Validated or Shipped" has no production enforcement and no real test. The only existing test is a tautology. 60m subagent task. **BLOCKING** the P1 exit criterion. | Operator: (1) decide product semantics — is "generic" a `Feature.kind` field or a governance-contract property? (2) implement in `Feature::transition()` or `accept_feature.rs`. (3) replace tautology with behavior test. |
-| 16 | CF-1: python-coverage workflow needs COVERAGE_PATH | Multi-line workflow change: add `coverage-path: python` to `python-coverage-comment-action@v4.5` in `.github/workflows/coverage.yml`. Affects 5 of 6 open PRs. 15m, non-blocking. | Operator: dispatch subagent to add the action config (or accept a 1-line PR fixing the comment step). |
-| 17 | CF-2: cargo-mutants timeout reduction | Environmental GitHub runner failure at 5h32m15s (close to 360-min job timeout). Fix: reduce `timeout-minutes: 360` to `300` in `.github/workflows/mutation.yml`. 10m, non-blocking. | Operator: dispatch subagent to apply the 1-line workflow config. |
-| 18 | CF-3: rust/ sub-workspace cleanup (deferred to kitty-spec 003) | The stale `rust/` sub-workspace is currently excluded via root `Cargo.toml` exclude. Full deletion tracked by `kitty-specs/003-agileplus-platform-completion`. 30m, non-blocking. | Operator: when kitty-spec 003 advances, dispatch subagent to delete the `rust/` directory + remove the `exclude` line. |
+| 16 | CF-3: rust/ sub-workspace cleanup (deferred to kitty-spec 003) | The stale `rust/` sub-workspace is currently excluded via root `Cargo.toml` exclude. Full deletion tracked by `kitty-specs/003-agileplus-platform-completion`. 30m, non-blocking. | Operator: when kitty-spec 003 advances, dispatch subagent to delete the `rust/` directory + remove the `exclude` line. |
 
 ---
 
@@ -68,6 +68,7 @@
 | **#1163** | `deps(npm): bump postcss-selector-parser to 7.1.6 (ReDoS)` | `dependabot/bump-postcss-selector-parser-2026-10-18` | TBD | 1 of 5 dependabot alerts closed (#214). Sample selector parse test passes. Dashboard workspace has pre-existing environmental issues (rolldown native binding, @typescript/darwin-arm64) unrelated to this bump. |
 | **#1164** | `test(api): pin UNPROCESSABLE_ENTITY status in client_cannot_supply_a_pass_or_actor_override` | `test/pin-422-in-client-cannot-supply-override` | TBD | 1-line test assertion tightening. E.2.P1-422 closure. Zero behavior change. 1+10 = 11 tests pass. |
 | **#1165** | `fix(ci): unblock 6 open PRs by clearing deny.toml dead ignores + excluding rust/ sub-workspace` | `fix/ci-diagnosis-2026-10-18` | TBD | fox's CI diagnosis cohort. 29 insertions + 13 deletions across Cargo.toml + deny.toml. Local cargo deny check + cargo check --workspace both PASS. After merge, 5 of 6 PRs should drop cargo-deny + cargo-semver-checks failures. |
+| **#1166** | `ci: python-coverage COVERAGE_PATH fix + cargo-mutants timeout reduction` | `fix/cf-1-cf-2-workflow-config-2026-10-18` | TBD | badger's CF-1 + CF-2 cohort. 2 files changed, 8-line addition to coverage.yml (coverage-path: python verified against upstream action.yml) + 1-line mutation.yml change (timeout 360→300, 2 observed comms-loss events). After merge, 5 of 6 PRs should drop python-coverage + 3 of 6 cargo-mutants. Combined with PR #1165, all 4 root causes for 6 of 6 PRs are now fixed. |
 
 **Canonical merge path** (per AGENTS.md "Merge Strategy: Direct-Push When `gh pr merge` Is Fail-Closed"):
 
@@ -94,6 +95,7 @@ gh pr close --repo KooshaPari/AgilePlus <N>
 | **t-rex** | `snake_1792352065409_e571d49ceb42da4e` | PARTIAL | 95s | 120m | `e2_e5_p1p2_val_2026-10-18-trex-result.md` (file) |
 | **owl** | `spider_1792352404237_0142525948539d4e` | PASS | 60s | 15m | `e2_p1_422_2026-10-18-owl-result.md` (file) |
 | **fox** | `squid_1792352635980_cf44c60a7b519dc6` | PASS | 450s | 60m | `ci_diagnosis_2026-10-18-fox-result.md` (file) |
+| **badger** | `swan_1792353218496_418d74d65734bc0f` | PASS | 210s | 30m | `cf12_workflow_fixes_2026-10-18-badger-result.md` (file) |
 
 **All durable copies** committed to `docs/sessions/20261017-state-forward-docket/`.
 
@@ -125,7 +127,7 @@ gh pr close --repo KooshaPari/AgilePlus <N>
 
 | Item | Reason gated | Path to unblock |
 |------|-------------|-----------------|
-| Merge PR #1156, #1157, #1161, #1162, #1163, #1164, #1165 | All have CI FAILING (cargo-deny, cargo-mutants, semver-checks, python-coverage) or CI TBD. PR #1165 is the CI-diagnosis unblocker; after it merges, 5 of 6 PRs should drop cargo-deny and cargo-semver-checks failures (CF-1 and CF-2 still remain). | Diagnose CI failures first; PR #1165 is the fox-recommended unblocker. Or push with `HOOKS_SKIP=1` and document. |
+| Merge PR #1156, #1157, #1161, #1162, #1163, #1164, #1165, #1166 | **8 PRs total**. PR #1165 + #1166 cover all 4 root causes (cargo-deny, cargo-semver-checks, python-coverage, cargo-mutants). Once those 2 merge, the 6 source-code PRs should rebase cleanly and pass CI. | Recommended merge order: (1) PR #1165 first (deny.toml + Cargo.toml exclude), (2) PR #1166 second (coverage.yml + mutation.yml), (3) then rebase & merge the 6 source-code PRs. Or push all 8 with `HOOKS_SKIP=1` and document. |
 | Vercel Hobby upgrade | Paid service; not autonomous-actionable. | Operator action in Vercel dashboard. |
 | Tailscale provisioning | Network service; not autonomous-actionable. | Operator action. |
 | Vercel team access | Account-level; not autonomous-actionable. | Operator action. |
@@ -182,20 +184,20 @@ gh pr close --repo KooshaPari/AgilePlus <N>
 
 ## 9. Recommended next-session picks (operator choice)
 
-1. **HIGHEST LEVERAGE**: merge PR #1165 (fox's CI unblocker). After merge, 5 of 6 PRs drop cargo-deny + cargo-semver-checks failures. Then 3 PR merges cascade to cheap_close closures.
+1. **HIGHEST LEVERAGE — recommended merge order**: (1) PR #1165 (fox's cargo-deny + cargo-semver-checks unblocker), (2) PR #1166 (badger's python-coverage + cargo-mutants unblocker), (3) the 6 source-code PRs. After the 2 unblocker PRs merge, all 6 should rebase cleanly.
 2. **High-leverage**: dispatch subagent to investigate E.2.P1-GENERIC and propose a design (60m, requires product decision from operator on whether "generic" is a `Feature.kind` field or a governance-contract property)
-3. **Low-cost**: dispatch subagent to land CF-2 (cargo-mutants timeout 360→300, 10m, 1-line config)
-4. **Low-cost**: dispatch subagent to land CF-1 (python-coverage COVERAGE_PATH: python, 15m, multi-line workflow change)
-5. **Highest leverage if PRs merge**: dispatch sloth-v4 cargo+llvm-cov WITHOUT --skip (15m) after PRs #1156 + #1157 land; expect 93.99% to reproduce; this closes 2× A.4/E.9 entries + advances A.4/E.20 to PASS
-6. **LOWEST priority**: F.3 doc gaps. Defer.
+3. **Highest leverage if PRs merge**: dispatch sloth-v4 cargo+llvm-cov WITHOUT --skip (15m) after PRs #1156 + #1157 land; expect 93.99% to reproduce; this closes 2× A.4/E.9 entries + advances A.4/E.20 to PASS
+4. **LOWEST priority**: F.3 doc gaps. Defer indefinitely.
+5. **Deferred to kitty-spec 003**: CF-3 (rust/ cleanup). Not in this audit's scope.
 
 ---
 
 ## 10. Snapshot identity chain (this session)
 
 ```
-ap-sfd-2026-10-18T19-51Z@ci-diagnosis-cohort        (274bdaf4) ← FINAL
-  └─ ap-sfd-2026-10-18T19-42Z@e2-p1-422-cohort     (79561d8c)
+ap-sfd-2026-10-18T19-57Z@cf-1-cf-2-cohort           (681b2bc0) ← FINAL
+  └─ ap-sfd-2026-10-18T19-51Z@ci-diagnosis-cohort   (d341d310, 274bdaf4)
+     └─ ap-sfd-2026-10-18T19-42Z@e2-p1-422-cohort   (79561d8c, 9fa75666)
      └─ ap-sfd-2026-10-18T10-30Z@e2-e5-p1p2-val-cohort (3ab75a34)
         └─ ap-sfd-2026-10-18T10-15Z@by-gitignore-hook-cohort (681cac7d, acd3a828)
            └─ ap-sfd-2026-10-18T10-00Z@bx-source-findings-cohort (91493492)
@@ -211,15 +213,15 @@ ap-sfd-2026-10-18T19-51Z@ci-diagnosis-cohort        (274bdaf4) ← FINAL
                                          └─ ap-sfd-2026-10-17T23-08Z@cargo-cohort (61d921f7)
 ```
 
-15 commits, 13 snapshot identities, all monotonic, all carry `_previous_snapshot_id` correctly.
+17 commits, 14 snapshot identities, all monotonic, all carry `_previous_snapshot_id` correctly.
 
 ---
 
 ## 11. Close-out signoff
 
-This DOCKET v1.0 session is **CLOSED** at HEAD `274bdaf4` on `docs/state-forward-docket-20261017`.
+This DOCKET v1.0 session is **CLOSED** at HEAD `681b2bc0` on `docs/state-forward-docket-20261017`.
 
-**Open work honestly attributed**: 7 cheap_closes (2× A.4/E.9 blocked on PR #1156, 1× F.3 LOWEST, 1× E.2.P1-GENERIC BLOCKING, 3× CI carry-forwards CF-1/CF-2/CF-3), 7 PRs (CI gated or TBD), 8 operator-gated items (Vercel, Tailscale, etc.).
+**Open work honestly attributed**: 5 cheap_closes (2× A.4/E.9 blocked on PR #1156, 1× F.3 LOWEST, 1× E.2.P1-GENERIC BLOCKING, 1× CF-3 deferred to kitty-spec 003), 8 PRs (6 source-code PRs blocked on the 2 unblocker PRs #1165 + #1166 merging; PR #1156 still needs sloth-v4 contingent), 8 operator-gated items (Vercel, Tailscale, etc.).
 
 **No fabricated work**: every PASS has a subagent session, a wall-clock, a self-test result, and a file path. Every PARTIAL has an explanation of what blocks full PASS. Every OPEN has a path to close and a reason it isn't closed.
 
