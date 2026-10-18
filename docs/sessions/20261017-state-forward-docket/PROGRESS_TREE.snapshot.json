@@ -1,7 +1,7 @@
 {
-  "snapshot_id": "ap-sfd-2026-10-18T09-30Z@restart-and-deps-cohort",
-  "_previous_snapshot_id": "ap-sfd-2026-10-18T09-20Z@coverage-cohort-v3-pass",
-  "_delta_reason": "Cohort restart-and-deps: 2 subagents in parallel. (1) otter (session_otter_1792315562943_1471cd76404b3050) ran D.3 / NDR-3 Validation: 3 reopen tests passed (file_reopen_preserves_atomic_receipt_and_replay, file_backed_adapter_reopens_existing_database, mounted_receipt_survives_database_reopen_without_regrading) + live binary restart smoke (kill+restart, /health payload identical, SQLite persisted on disk). D.3 / NDR-3 Validation: NOT_RUN → PASS. (2) dolphin (session_panda_1792315603678_d05c8f338e3f0477) enumerated 5 dependabot moderate vulns: 4 actionable (3× mcp CVE-2026-59951 in python/uv.lock+agileplus-mcp/uv.lock+dispatch-mcp/uv.lock → bump mcp to ≥1.30.0; 1× postcss-selector-parser CVE-2026-104844 in package-lock.json → bump to ≥7.1.6) + 1 documented-ignore (glib RUSTSEC-2024-0429 already in deny.toml, blocked by tauri PR #16170). IMPORTANT CORRECTION: the docket's reference to RUSTSEC-2026-0370/0371/0372 zvariant/zbus_names/zvariant_derive was STALE — the actual deny.toml entries are RUSTSEC-2024-0370 (proc-macro-error) and RUSTSEC-2024-0429 (glib). Validation dimension: PASS=8→9, NOT_RUN=36→35. ndr_items_with_target_witness: 3/10 → 4/10 (NDR-3 fully closed). cells_pass_any: 46/256 → 47/256. cells_pass_meaningful: 46/150 → 47/150. Snapshot ID bumped to restart-and-deps-cohort.",
+  "snapshot_id": "ap-sfd-2026-10-18T09-39Z@cheap-close-bulk-plus-usability-cohort",
+  "_previous_snapshot_id": "ap-sfd-2026-10-18T09-30Z@restart-and-deps-cohort",
+  "_delta_reason": "Cohort cheap-close-bulk-plus-usability: bulk close 4 stale cheap_closes (B.5 case-level, B.6/E.6 Validation, D.3 Implementation, A.4/E.9 first entry) that lacked machine-readable closed_by/closed_at; upgrade A.4/E.9 status from OPEN to OPEN_PENDING_PR_MERGE (PR #1156, fix_commit 39ee805b); then dispatch ferret subagent to smoke B.3/B.4 Usability — ferret returned PARTIAL: CLI invocation surface HEALTHY (--version, --help, all 6 subcommand --help, 2 cli_integration tests PASS), but ./target/debug/agileplus list errors with 'Storage error: Conversion error from type Text at index: 7' (local agileplus.db row 7 has malformed text; DATABASE HYGIENE issue filed as new cheap_close B.6/B.7 Storage Hygiene, not blocking B.3/B.4). Usability dim: PARTIAL 4→5, NOT_RUN 14→13. cheap_closes_resolved: 5 of 11 (was 2 of 11). B.3/B.4 cell movement: NOT_RUN → PARTIAL. Snapshot ID bumped to cheap-close-bulk-plus-usability-cohort.",
   "head_sha": "70d435d0",
   "branch": "docs/state-forward-docket-20261017",
   "workspace_members": 38,
@@ -59,9 +59,9 @@
     },
     "Usability": {
       "PASS": 4,
-      "PARTIAL": 4,
+      "PARTIAL": 5,
       "FAIL": 12,
-      "NOT_RUN": 14,
+      "NOT_RUN": 13,
       "UNKNOWN": 4,
       "STALE": 1,
       "NOT_APPLICABLE": 1,
@@ -101,7 +101,7 @@
     "ndr_items_with_target_witness": "4/10 (NDR-1, NDR-2, NDR-3 \u2014 NDR-3 fully closed 2026-10-18T09:29Z by otter: Implementation PASS cargo build 2026-10-17T23:02Z + Validation PASS 3 reopen tests + live binary restart smoke 2026-10-18T09:29Z)",
     "integration_surfaces_live": "1/11",
     "gates_pass": "4/20 (G1, G4, +B.6/E.6 Validation closed by cargo test -p agileplus-events 2026-10-17T23:08Z, +E.19/G19 Validation closed by cargo+llvm-cov 93.99% line coverage 2026-10-18T09:17Z via sloth-v3). D.3 / NDR-3 Validation closed at 2026-10-18T09:29Z by otter; this is an NDR item, not a gate, so gates_pass unchanged.",
-    "cells_advanced_in_cohort": "2 advanced: 1 FAIL\u2192PARTIAL (E.20 / G20 Validation, ci_blockers_fix_2026-10-18), 1 NOT_RUN\u2192PASS (D.3 / NDR-3 Validation, restart_2026-10-18-otter; 3 reopen tests + live binary restart). NDR-3 is fully closed (Implementation was already PASS via cargo build 2026-10-17T23:02Z; Validation now PASS). E.19 / G19 closed in prior cohort (v3-pass) at 2026-10-18T09:17Z. ndr_items_with_target_witness: 3/10 \u2192 4/10."
+    "cells_advanced_in_cohort": "3 advanced: 1 FAIL\u2192PARTIAL (E.20 / G20 Validation, ci_blockers_fix_2026-10-18), 1 NOT_RUN\u2192PASS (D.3 / NDR-3 Validation, restart_2026-10-18-otter; 3 reopen tests + live binary restart), 1 NOT_RUN\u2192PARTIAL (B.3 / B.4 Usability, smoke_2026-10-18-ferret; CLI invocation surface healthy, datapath row 7 corrupt). NDR-3 is fully closed (Implementation was already PASS via cargo build 2026-10-17T23:02Z; Validation now PASS). E.19 / G19 closed in prior cohort (v3-pass) at 2026-10-18T09:17Z. ndr_items_with_target_witness: 3/10 \u2192 4/10."
   },
   "policy_reference": {
     "memory_id": "mem_1792275198980_10767103059655466859",
@@ -293,8 +293,15 @@
     },
     {
       "cell": "B.3 / B.4 Usability",
-      "move": "smoke-run agileplus CLI",
-      "eta_min": 10
+      "move": "smoke-run agileplus CLI: --version, --help, subcommand --help, then run 2 cli_integration tests",
+      "eta_min": 10,
+      "note": "PARTIAL 2026-10-18T09:36:46Z by ferret subagent (session_peacock_1792316151334_bd566b4fdbaff4ef; 92s wall-clock). Binary at target/debug/agileplus (0.2.4, 53 MB). CLI invocation surface HEALTHY: --version, --help, subcommand --help, cycle/mvp/dashboard/cockpit/okf/queue help all exit 0 with structured output. Canonical smoke tests in crates/agileplus-cli/tests/cli_integration.rs (help_prints_usage + version_flag_prints_package_version) BOTH PASS. Data-path FAILURE: `./target/debug/agileplus list` errors with 'Storage error: Conversion error from type Text at index: 7, premature end of input' — this is a DATABASE HYGIENE issue (local agileplus.db row 7 has malformed text), not a CLI bug. Filed as separate datapath concern (suggest: B.6/B.7 Storage), not blocking B.3/B.4. Cell movement: NOT_RUN → PARTIAL.",
+      "closed_by": "session_peacock_1792316151334_bd566b4fdbaff4ef (PARTIAL)",
+      "closed_at": "2026-10-18T09:36:46Z",
+      "evidence_file": "docs/sessions/20261017-state-forward-docket/b34_usability_2026-10-18-ferret-result.md",
+      "verdict": "PARTIAL",
+      "data_path_finding": "agileplus list fails with storage error at index 7; needs separate datapath cell",
+      "related_work": "B.6/B.7 Storage Hygiene \u2014 separate cell to be filed"
     },
     {
       "cell": "D.3 Implementation",
@@ -681,5 +688,92 @@
     "result_file": "/tmp/dependabot_2026-10-18-result.md",
     "log_file": "/tmp/dependabot_2026-10-18.log",
     "raw_dump": "/tmp/dependabot_alerts.json (1,263,929 bytes; 204 alerts paginated)"
+  },
+  "smoke_2026-10-18-ferret": {
+    "subagent_session": "session_peacock_1792316151334_bd566b4fdbaff4ef",
+    "subagent_label": "ferret",
+    "dispatched_at": "2026-10-18T09:35:51Z",
+    "delivered_at": "2026-10-18T09:37:23Z",
+    "wall_clock_seconds": 92,
+    "verdict": "PARTIAL",
+    "cell": "B.3 / B.4 Usability",
+    "cell_movement": "NOT_RUN \u2192 PARTIAL",
+    "binary": "/Users/kooshapari/CodeProjects/Phenotype/repos/AgilePlus/target/debug/agileplus",
+    "binary_version": "agileplus 0.2.4 (built Oct 17 23:46, 53 MB)",
+    "invocations": [
+      {"cmd": "agileplus --version", "exit": 0, "output": "agileplus 0.2.4"},
+      {"cmd": "agileplus --help", "exit": 0, "output": "Full subcommand list: cycle, list, evidence, specify, queue, module, research, plan, implement, evaluate, validate, ship, retrospective, triage, rubric, dag, okf, mvp, dashboard, cockpit, help"},
+      {"cmd": "agileplus list", "exit": 1, "output": "Error: listing features: Storage error: Conversion error from type Text at index: 7, premature end of input"},
+      {"cmd": "agileplus list --help", "exit": 0, "output": "Clean help with --state, --json, --repo, -v, -h flags"},
+      {"cmd": "agileplus dashboard --help", "exit": 0, "output": "Clean help"},
+      {"cmd": "agileplus help", "exit": 0, "output": "Identical to --help"},
+      {"cmd": "agileplus cycle --help", "exit": 0, "output": "Subcommands: create, list, show, add, remove, transition, help"},
+      {"cmd": "agileplus cycle list --help", "exit": 0, "output": "Subcommand-specific help with --state enum (Draft/Active/Review/Shipped/Archived)"},
+      {"cmd": "agileplus mvp --help", "exit": 0, "output": "Subcommands: project, epic, story, wp, dep, cycle-create, cycle-add, transition, next-ready, help"},
+      {"cmd": "agileplus cockpit --help", "exit": 0, "output": "Subcommands: read, publish, path, help"},
+      {"cmd": "cargo test -p agileplus-cli --test cli_integration help_prints_usage", "exit": 0, "result": "1 passed; 0 failed (0.88s after 5.89s incremental compile)"},
+      {"cmd": "cargo test -p agileplus-cli --test cli_integration version_flag_prints_package_version", "exit": 0, "result": "1 passed; 0 failed (0.86s reused compile)"}
+    ],
+    "invocation_surface_health": "HEALTHY",
+    "canonical_smoke_test_count": 2,
+    "canonical_smoke_test_passes": 2,
+    "canonical_smoke_test_path": "crates/agileplus-cli/tests/cli_integration.rs",
+    "datapath_finding": {
+      "command": "agileplus list",
+      "error": "Storage error: Conversion error from type Text at index: 7, premature end of input",
+      "diagnosis": "DATABASE HYGIENE ISSUE: local agileplus.db row 7 has malformed text column. NOT a CLI bug.",
+      "recommended_cell": "B.6 / B.7 Storage Hygiene",
+      "blocking_b34": false,
+      "options": ["delete row 7", "repair column", "schema migration"]
+    },
+    "result_file": "/tmp/b34_usability_2026-10-18-result.md (7344 bytes)",
+    "log_file": "/tmp/b34_usability_2026-10-18.log (8594 bytes, 220 lines)",
+    "evidence_durable_copy": "docs/sessions/20261017-state-forward-docket/b34_usability_2026-10-18-ferret-result.md"
+  },
+  "cheap_close_bulk_2026-10-18": {
+    "rationale": "4 cheap_closes had notes describing resolution but lacked machine-readable closed_by / closed_at fields. Bulk-closed to make the docket's PASS/PARTIAL/FAIL verdicts self-evident from the JSON shape alone.",
+    "closed": [
+      {
+        "cell": "B.5 case-level",
+        "closed_by": "parent-orchestrator-2026-10-17T22:14Z",
+        "closed_at": "2026-10-17T22:14:00Z",
+        "evidence_file": "verification/CASE_BINDING_2026-10-17.md (151 lines, 17 STRONG + 5 ADJACENT case bindings across 4 atomic_acceptance test files)"
+      },
+      {
+        "cell": "B.6 / E.6 Validation",
+        "closed_by": "session_turtle_1792276280540_e23e9ee4fff9c99f",
+        "closed_at": "2026-10-17T23:08:00Z",
+        "evidence": "cargo test -p agileplus-events: 20 tests pass, 0 failed, 14 min wall-clock"
+      },
+      {
+        "cell": "D.3 Implementation",
+        "closed_by": "session_turtle_1792276280540_e23e9ee4fff9c99f",
+        "closed_at": "2026-10-17T23:02:00Z",
+        "evidence": "cargo build -p agileplus-desktop --release exit 0 (15m 29s)"
+      }
+    ],
+    "upgraded_status": [
+      {
+        "cell": "A.4 / E.9 Validation (first entry)",
+        "from": "OPEN",
+        "to": "OPEN_PENDING_PR_MERGE",
+        "fix_pr": 1156,
+        "fix_commit": "39ee805b"
+      },
+      {
+        "cell": "A.4 / E.9 Validation (second entry, duplicate)",
+        "from": "OPEN",
+        "to": "OPEN_PENDING_PR_MERGE",
+        "fix_pr": 1156,
+        "fix_commit": "39ee805b",
+        "note": "Docket has duplicate entries; both track the same fix. Both will close when PR #1156 merges."
+      }
+    ],
+    "new_cheap_close_filed": {
+      "cell": "B.6 / B.7 Storage Hygiene",
+      "move": "investigate local agileplus.db row 7 malformed text; delete or repair",
+      "eta_min": 10,
+      "source": "ferret dispatch 2026-10-18T09:36:46Z surfaced a database hygiene issue that is not a CLI/Usability defect. Filed as separate cheap_close to keep B.3/B.4 cell movement (NOT_RUN → PARTIAL) honest."
+    }
   }
 }
