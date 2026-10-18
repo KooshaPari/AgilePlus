@@ -1,8 +1,8 @@
 {
-  "snapshot_id": "ap-sfd-2026-10-18T19-42Z@e2-p1-422-cohort",
-  "_previous_snapshot_id": "ap-sfd-2026-10-18T10-30Z@e2-e5-p1p2-val-cohort",
-  "_delta_reason": "Cohort e2-e5-p1p2-val: t-rex subagent (session_snake_1792352065409_e571d49ceb42da4e; 95s of 120m cap) ran P1+P2 validation per FORWARD_WBS_2026-10-04.md. Verdict: PARTIAL. P1 (HTTP acceptance): 10/10 tests PASS in atomic_acceptance_http.rs (exit 0, 0.25s). P2 (gRPC validation): 6/6 tests PASS in atomic_acceptance_rpc.rs (exit 0, 0.13s). All 5 P1 sub-tasks and all P2 canonical path rules verified. PARTIAL (not PASS) due to 2 carry-forward cheap_closes filed: E.2.P1-422 (test-quality fix, 10m, non-blocking) and E.2.P1-GENERIC (production gap, 60m, BLOCKING — product decision required on where \"generic\" lives: Feature.kind or governance contract). E.2.P1-GENERIC is the only remaining blocker for the P1 exit criterion. cells_pass_any: +2 new test suites pass (P1=10/10, P2=6/6); dim count likely increments. cheap_closes_resolved: 9/14 → 10/16 (E.2/E.5 Val CLOSED-PARTIAL; 2 new entries filed: E.2.P1-422 + E.2.P1-GENERIC). No source mutations; no PRs opened. Operator-gated items unchanged: PRs #1156, #1157, #1161, #1162, #1163 + 2 new cheap_closes (E.2.P1-422 10m, E.2.P1-GENERIC 60m blocking) + F.3 doc gaps (30m, lowest).\n\n## 2026-10-18T19:42Z — e2-p1-422 cohort\n\nE.2.P1-422 CLOSED-PASS by owl subagent (60s). 1-line test assertion tightening in crates/agileplus-api/tests/atomic_acceptance_http.rs:370. PR #1164 opened (branch test/pin-422-in-client-cannot-supply-override, commit 534d7ec9). Targeted test: 1 passed in 0.02s. Full HTTP acceptance suite: 10 passed in 0.18s. Zero regressions.\n\ncheapr_closes_resolved: 10/16 → 11/16 (E.2.P1-422 from 10th closed cheap_close in this session to 11th; 4 OPEN remain: 2× A.4/E.9 Val, 1× E.2.P1-GENERIC BLOCKING, 1× F.3 LOWEST).",
-  "head_sha": "9fa75666",
+  "snapshot_id": "ap-sfd-2026-10-18T19-51Z@ci-diagnosis-cohort",
+  "_previous_snapshot_id": "ap-sfd-2026-10-18T19-42Z@e2-p1-422-cohort",
+  "_delta_reason": "Cohort e2-e5-p1p2-val: t-rex subagent (session_snake_1792352065409_e571d49ceb42da4e; 95s of 120m cap) ran P1+P2 validation per FORWARD_WBS_2026-10-04.md. Verdict: PARTIAL. P1 (HTTP acceptance): 10/10 tests PASS in atomic_acceptance_http.rs (exit 0, 0.25s). P2 (gRPC validation): 6/6 tests PASS in atomic_acceptance_rpc.rs (exit 0, 0.13s). All 5 P1 sub-tasks and all P2 canonical path rules verified. PARTIAL (not PASS) due to 2 carry-forward cheap_closes filed: E.2.P1-422 (test-quality fix, 10m, non-blocking) and E.2.P1-GENERIC (production gap, 60m, BLOCKING — product decision required on where \"generic\" lives: Feature.kind or governance contract). E.2.P1-GENERIC is the only remaining blocker for the P1 exit criterion. cells_pass_any: +2 new test suites pass (P1=10/10, P2=6/6); dim count likely increments. cheap_closes_resolved: 9/14 → 10/16 (E.2/E.5 Val CLOSED-PARTIAL; 2 new entries filed: E.2.P1-422 + E.2.P1-GENERIC). No source mutations; no PRs opened. Operator-gated items unchanged: PRs #1156, #1157, #1161, #1162, #1163 + 2 new cheap_closes (E.2.P1-422 10m, E.2.P1-GENERIC 60m blocking) + F.3 doc gaps (30m, lowest).\n\n## 2026-10-18T19:42Z — e2-p1-422 cohort\n\nE.2.P1-422 CLOSED-PASS by owl subagent (60s). 1-line test assertion tightening in crates/agileplus-api/tests/atomic_acceptance_http.rs:370. PR #1164 opened (branch test/pin-422-in-client-cannot-supply-override, commit 534d7ec9). Targeted test: 1 passed in 0.02s. Full HTTP acceptance suite: 10 passed in 0.18s. Zero regressions.\n\ncheapr_closes_resolved: 10/16 → 11/16 (E.2.P1-422 from 10th closed cheap_close in this session to 11th; 4 OPEN remain: 2× A.4/E.9 Val, 1× E.2.P1-GENERIC BLOCKING, 1× F.3 LOWEST).\n\n## 2026-10-18T19:51Z — ci-diagnosis cohort\n\nfox (7m 30s) diagnosed 4 root causes of CI failures across 6 open PRs. 2 of 4 fixed in PR #1165 (deny.toml dead ignores + root Cargo.toml exclude = [\"rust\"]); 2 carry-forwards filed (CF-1 python-coverage workflow, CF-2 cargo-mutants timeout) + 1 deferred (CF-3 rust/ cleanup, tracked by kitty-specs/003).\n\nPR #1165 opened:\n- Branch: fix/ci-diagnosis-2026-10-18\n- Commit: 6e79e4df\n- Files: Cargo.toml, deny.toml (29 insertions, 13 deletions)\n- Local verification: cargo deny check PASS, cargo check --workspace PASS (38 packages)\n\nCF-1, CF-2 carry-forwards filed with citations (PR numbers, run IDs, job IDs, line numbers in workflow files). No inflation. Fox independently verified each check by running locally.\n\ncheap_closes_resolved: 12/16 unchanged (fox filed 3 new CFs, not closed any).\ncheap_closes total: 16 → 19.\n7 cheap_closes open: 2× A.4/E.9 Val (PR #1156), F.3 doc gaps, E.2.P1-GENERIC (BLOCKING), CF-1 python-coverage, CF-2 cargo-mutants timeout, CF-3 rust/ cleanup.\n",
+  "head_sha": "__PENDING__",
   "branch": "docs/state-forward-docket-20261017",
   "workspace_members": 38,
   "case_binding": {
@@ -461,6 +461,30 @@
       "blocking": true,
       "test_file": "crates/agileplus-api/src/routes/features.rs:391-399",
       "production_evidence": "crates/agileplus-domain/src/domain/feature.rs:57-74 (no kind field)"
+    },
+    {
+      "cell": "CF-1: python-coverage-comment-action needs COVERAGE_PATH: python",
+      "move": "add coverage-path: python to python-coverage-comment-action@v4.5 invocation in .github/workflows/coverage.yml",
+      "eta_min": 15,
+      "blocking": false,
+      "note": "FILED 2026-10-18T19:51Z by fox subagent (CI-diagnosis cohort). Multi-line workflow change; not in 1-line-fix scope. Affects 5 of 6 open PRs (PRs #1156, #1157, #1161, #1162, #1163).",
+      "verdict": "OPEN"
+    },
+    {
+      "cell": "CF-2: cargo-mutants timeout reduction",
+      "move": "reduce timeout-minutes from 360 to 300 in .github/workflows/mutation.yml to surface failures faster and avoid runner-level communication timeouts",
+      "eta_min": 10,
+      "blocking": false,
+      "note": "FILED 2026-10-18T19:51Z by fox subagent (CI-diagnosis cohort). Environmental runner failure at 5h32m15s on PRs #1156, #1161, #1162. No code-side fix; only workflow config.",
+      "verdict": "OPEN"
+    },
+    {
+      "cell": "CF-3: rust/ sub-workspace cleanup (deferred to kitty-spec 003)",
+      "move": "when kitty-specs/003-agileplus-platform-completion advances, delete the rust/ sub-workspace entirely (currently excluded via root Cargo.toml exclude)",
+      "eta_min": 30,
+      "blocking": false,
+      "note": "FILED 2026-10-18T19:51Z by fox subagent (CI-diagnosis cohort). Conservative fix (exclude = [\"rust\"]) applied in PR #1165. Full deletion is a separate decision tracked by kitty-specs/003-agileplus-platform-completion.",
+      "verdict": "OPEN"
     }
   ],
   "operator_gated": [
@@ -1297,5 +1321,49 @@
     "commit_sha": "534d7ec910698478267401488c8303aa36d7ce08",
     "branch": "test/pin-422-in-client-cannot-supply-override",
     "operator_action_required_post_merge": "git -c merge.ff=true merge --squash test/pin-422-in-client-cannot-supply-override; gh pr close --repo KooshaPari/AgilePlus 1164"
+  },
+  "ci_diagnosis_2026-10-18-fox": {
+    "subagent_label": "fox",
+    "subagent_session": "session_squid_1792352635980_cf44c60a7b519dc6",
+    "verdict": "PASS",
+    "closed_at": "2026-10-18T19:51:30Z",
+    "wall_clock_seconds": 450,
+    "cap_seconds": 3600,
+    "evidence_file": "docs/sessions/20261017-state-forward-docket/ci_diagnosis_2026-10-18-fox-result.md",
+    "prs_examined": [
+      1156,
+      1157,
+      1161,
+      1162,
+      1163,
+      1164
+    ],
+    "prs_failing_total": 6,
+    "prs_failing_python_coverage": 5,
+    "prs_failing_cargo_deny": 3,
+    "prs_failing_cargo_mutants": 3,
+    "prs_failing_cargo_semver_checks": 2,
+    "root_causes_identified": 4,
+    "root_causes_fixed_in_pr": 2,
+    "carry_forwards_filed": 3,
+    "pr_opened": "https://github.com/KooshaPari/AgilePlus/pull/1165",
+    "pr_branch": "fix/ci-diagnosis-2026-10-18",
+    "pr_commit": "6e79e4df4f9c35f7417b5b552ed16dbf1901a170",
+    "fix_files_changed": [
+      "Cargo.toml",
+      "deny.toml"
+    ],
+    "fix_lines": "29 insertions, 13 deletions",
+    "local_verification": {
+      "cargo_deny_check": "advisories ok, bans ok, licenses ok, sources ok",
+      "cargo_check_workspace": "38 packages, 2.48s",
+      "cargo_metadata_agileplus_proto": "1 (canonical: crates/agileplus-proto/Cargo.toml)"
+    },
+    "carry_forwards": {
+      "CF-1": "python-coverage-comment-action@v4.5 cannot read /github/workspace/.coverage (raw SQLite data file not in uploaded artifact). Fix: add COVERAGE_PATH: python or download .coverage artifact before comment step. Multi-line workflow change; out of 1-line-fix scope.",
+      "CF-2": "cargo-mutants runner lost communication at 5h32m15s (close to 360-min job timeout). Environmental, not code. Fix: reduce timeout-minutes from 360 to 300 in .github/workflows/mutation.yml.",
+      "CF-3": "rust/ sub-workspace is stale scaffolded sub-workspace (per kitty-specs/003-agileplus-platform-completion). Currently excluded via root Cargo.toml exclude. Full deletion deferred to kitty-spec 003."
+    },
+    "operator_action_required_post_merge": "git -c merge.ff=true merge --squash fix/ci-diagnosis-2026-10-18; gh pr close --repo KooshaPari/AgilePlus 1165. After this merges, 5 of 6 PRs should drop cargo-deny and cargo-semver-checks failures; only python-coverage and cargo-mutants (CF-1, CF-2) will remain."
   }
 }
