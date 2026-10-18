@@ -1,0 +1,17 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.79s
+     Running tests/atomic_acceptance_http.rs (target/debug/build/agileplus-api/70173d3d94d5e26e/out/atomic_acceptance_http-70173d3d94d5e26e)
+
+running 10 tests
+test unauthorized_http_cannot_reach_acceptance ... ok
+test receipt_lookup_redacts_storage_failures ... ok
+test missing_feature_returns_404_without_acceptance_side_effects ... ok
+test unsupported_embedder_returns_501_not_an_optimistic_success ... ok
+test client_cannot_supply_a_pass_or_actor_override ... ok
+test receipt_lookup_requires_auth_and_never_awards_acceptance ... ok
+test stale_governance_expectation_cannot_accept_over_http ... ok
+test persistence_failure_over_http_leaves_no_terminal_state_or_receipt ... ok
+test authenticated_http_acceptance_commits_and_replays_one_receipt ... ok
+test mounted_receipt_survives_database_reopen_without_regrading ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.25s
+

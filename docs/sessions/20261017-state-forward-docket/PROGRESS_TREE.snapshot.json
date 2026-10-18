@@ -1,8 +1,8 @@
 {
-  "snapshot_id": "ap-sfd-2026-10-18T10-30Z@e2-e5-p1p2-val-cohort",
-  "_previous_snapshot_id": "ap-sfd-2026-10-18T10-15Z@by-gitignore-hook-cohort",
-  "_delta_reason": "Cohort e2-e5-p1p2-val: t-rex subagent (session_snake_1792352065409_e571d49ceb42da4e; 95s of 120m cap) ran P1+P2 validation per FORWARD_WBS_2026-10-04.md. Verdict: PARTIAL. P1 (HTTP acceptance): 10/10 tests PASS in atomic_acceptance_http.rs (exit 0, 0.25s). P2 (gRPC validation): 6/6 tests PASS in atomic_acceptance_rpc.rs (exit 0, 0.13s). All 5 P1 sub-tasks and all P2 canonical path rules verified. PARTIAL (not PASS) due to 2 carry-forward cheap_closes filed: E.2.P1-422 (test-quality fix, 10m, non-blocking) and E.2.P1-GENERIC (production gap, 60m, BLOCKING — product decision required on where \"generic\" lives: Feature.kind or governance contract). E.2.P1-GENERIC is the only remaining blocker for the P1 exit criterion. cells_pass_any: +2 new test suites pass (P1=10/10, P2=6/6); dim count likely increments. cheap_closes_resolved: 9/14 → 10/16 (E.2/E.5 Val CLOSED-PARTIAL; 2 new entries filed: E.2.P1-422 + E.2.P1-GENERIC). No source mutations; no PRs opened. Operator-gated items unchanged: PRs #1156, #1157, #1161, #1162, #1163 + 2 new cheap_closes (E.2.P1-422 10m, E.2.P1-GENERIC 60m blocking) + F.3 doc gaps (30m, lowest).",
-  "head_sha": "3fcb143d",
+  "snapshot_id": "ap-sfd-2026-10-18T19-42Z@e2-p1-422-cohort",
+  "_previous_snapshot_id": "ap-sfd-2026-10-18T10-30Z@e2-e5-p1p2-val-cohort",
+  "_delta_reason": "Cohort e2-e5-p1p2-val: t-rex subagent (session_snake_1792352065409_e571d49ceb42da4e; 95s of 120m cap) ran P1+P2 validation per FORWARD_WBS_2026-10-04.md. Verdict: PARTIAL. P1 (HTTP acceptance): 10/10 tests PASS in atomic_acceptance_http.rs (exit 0, 0.25s). P2 (gRPC validation): 6/6 tests PASS in atomic_acceptance_rpc.rs (exit 0, 0.13s). All 5 P1 sub-tasks and all P2 canonical path rules verified. PARTIAL (not PASS) due to 2 carry-forward cheap_closes filed: E.2.P1-422 (test-quality fix, 10m, non-blocking) and E.2.P1-GENERIC (production gap, 60m, BLOCKING — product decision required on where \"generic\" lives: Feature.kind or governance contract). E.2.P1-GENERIC is the only remaining blocker for the P1 exit criterion. cells_pass_any: +2 new test suites pass (P1=10/10, P2=6/6); dim count likely increments. cheap_closes_resolved: 9/14 → 10/16 (E.2/E.5 Val CLOSED-PARTIAL; 2 new entries filed: E.2.P1-422 + E.2.P1-GENERIC). No source mutations; no PRs opened. Operator-gated items unchanged: PRs #1156, #1157, #1161, #1162, #1163 + 2 new cheap_closes (E.2.P1-422 10m, E.2.P1-GENERIC 60m blocking) + F.3 doc gaps (30m, lowest).\n\n## 2026-10-18T19:42Z — e2-p1-422 cohort\n\nE.2.P1-422 CLOSED-PASS by owl subagent (60s). 1-line test assertion tightening in crates/agileplus-api/tests/atomic_acceptance_http.rs:370. PR #1164 opened (branch test/pin-422-in-client-cannot-supply-override, commit 534d7ec9). Targeted test: 1 passed in 0.02s. Full HTTP acceptance suite: 10 passed in 0.18s. Zero regressions.\n\ncheapr_closes_resolved: 10/16 → 11/16 (E.2.P1-422 from 10th closed cheap_close in this session to 11th; 4 OPEN remain: 2× A.4/E.9 Val, 1× E.2.P1-GENERIC BLOCKING, 1× F.3 LOWEST).",
+  "head_sha": "__PENDING__",
   "branch": "docs/state-forward-docket-20261017",
   "workspace_members": 38,
   "case_binding": {
@@ -430,11 +430,26 @@
       "cell": "E.2.P1-422 — Pin the 422 status in client_cannot_supply_a_pass_or_actor_override",
       "move": "tighten assertion in crates/agileplus-api/tests/atomic_acceptance_http.rs:370 from response.status_code().is_client_error() to assert_eq!(response.status_code(), StatusCode::UNPROCESSABLE_ENTITY) for the passed:true, authoritative:true, and actor:\"owner\" payloads",
       "eta_min": 10,
-      "note": "FILED 2026-10-18T19:36:07Z by t-rex subagent (carry-forward from E.2/E.5 Val PARTIAL closure). Production code at crates/agileplus-api/src/routes/acceptance.rs:152-155 already maps DomainError::Validation to HTTP 422 correctly. The test simply does not pin it (asserts any 4xx). Zero behavior change; assertion tightening only. Non-blocking; cheap to land.",
+      "note": "CARRY-FORWARD CLOSED-PASS 2026-10-18T19:41:30Z by owl subagent. 1-line test assertion tightening, zero behavior change. PR #1164 open, awaiting operator merge.",
       "source": "t-rex subagent 2026-10-18T19:36:07Z carry-forward (E.2/E.5 Val PARTIAL)",
-      "verdict": "OPEN",
+      "verdict": "PASS",
       "test_file": "crates/agileplus-api/tests/atomic_acceptance_http.rs:370",
-      "production_evidence": "crates/agileplus-api/src/routes/acceptance.rs:152-155"
+      "production_evidence": "crates/agileplus-api/src/routes/acceptance.rs:152-155",
+      "closed_by": "owl subagent (session_spider_1792352404237_0142525948539d4e)",
+      "closed_at": "2026-10-18T19:41:30Z",
+      "evidence_file": "docs/sessions/20261017-state-forward-docket/e2_p1_422_2026-10-18-owl-result.md",
+      "pr_url": "https://github.com/KooshaPari/AgilePlus/pull/1164",
+      "pr_number": 1164,
+      "commit_sha": "534d7ec910698478267401488c8303aa36d7ce08",
+      "branch": "test/pin-422-in-client-cannot-supply-override",
+      "files_changed": [
+        "crates/agileplus-api/tests/atomic_acceptance_http.rs"
+      ],
+      "self_tests": {
+        "targeted_test": "cargo test -p agileplus-api --test atomic_acceptance_http client_cannot_supply_a_pass_or_actor_override → 1 passed in 0.02s",
+        "full_http_suite": "cargo test -p agileplus-api --test atomic_acceptance_http --no-fail-fast → 10 passed in 0.18s"
+      },
+      "wall_clock_seconds": 60
     },
     {
       "cell": "E.2.P1-GENERIC — Implement \"generic feature transition cannot award Validated or Shipped\"",
@@ -1263,5 +1278,24 @@
     "result_file": "/tmp/e2_e5_p1p2_val_2026-10-18-result.md",
     "log_file": "/tmp/e2_e5_p1p2_val_2026-10-18.log",
     "evidence_durable_copy": "docs/sessions/20261017-state-forward-docket/e2_e5_p1p2_val_2026-10-18-trex-result.md"
+  },
+  "e2_p1_422_2026-10-18-owl": {
+    "subagent_label": "owl",
+    "subagent_session": "session_spider_1792352404237_0142525948539d4e",
+    "verdict": "PASS",
+    "closed_at": "2026-10-18T19:41:30Z",
+    "wall_clock_seconds": 60,
+    "cap_seconds": 900,
+    "evidence_file": "docs/sessions/20261017-state-forward-docket/e2_p1_422_2026-10-18-owl-result.md",
+    "files_changed": [
+      "crates/agileplus-api/tests/atomic_acceptance_http.rs"
+    ],
+    "tests_passed": 10,
+    "tests_total": 10,
+    "pr_url": "https://github.com/KooshaPari/AgilePlus/pull/1164",
+    "pr_number": 1164,
+    "commit_sha": "534d7ec910698478267401488c8303aa36d7ce08",
+    "branch": "test/pin-422-in-client-cannot-supply-override",
+    "operator_action_required_post_merge": "git -c merge.ff=true merge --squash test/pin-422-in-client-cannot-supply-override; gh pr close --repo KooshaPari/AgilePlus 1164"
   }
 }
